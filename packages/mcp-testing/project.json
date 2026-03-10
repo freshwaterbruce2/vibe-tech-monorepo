@@ -1,0 +1,39 @@
+{
+  "name": "mcp-testing",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/mcp-testing/src",
+  "projectType": "library",
+  "tags": ["scope:mcp", "type:lib", "type:testing"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "dependsOn": ["^build"],
+      "options": {
+        "command": "pnpm tsup",
+        "cwd": "packages/mcp-testing"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm vitest run",
+        "cwd": "packages/mcp-testing"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm tsc --noEmit",
+        "cwd": "packages/mcp-testing"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm eslint src --ext .ts",
+        "cwd": "packages/mcp-testing"
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "displayName": "AI YouTube Pipeline",
+  "description": "Video content pipeline",
+  "version": "1.0.0",
+  "category": "ai",
+  "icon": "/app-icons/ai-youtube-pipeline.png",
+  "launch": "pnpm dev",
+  "port": null,
+  "type": "web",
+  "features": [
+    "vtde-autodiscovered"
+  ]
+}

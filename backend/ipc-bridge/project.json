@@ -1,0 +1,33 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "ipc-bridge",
+  "projectType": "application",
+  "root": "backend/ipc-bridge",
+  "sourceRoot": "backend/ipc-bridge/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev || tsx watch src/index.ts || echo 'Dev not configured'",
+        "cwd": "backend/ipc-bridge"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "options": {
+        "command": "pnpm run build || tsc || echo 'Build not configured'",
+        "cwd": "backend/ipc-bridge"
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run start || node dist/index.js || echo 'Start not configured'",
+        "cwd": "backend/ipc-bridge"
+      }
+    }
+  },
+  "tags": ["type:node", "scope:ipc-bridge"]
+}

@@ -1,0 +1,823 @@
+﻿VIBE-TECH GEMINI GEM CONTEXT - 12/25/2025 20:12:12
+==========================================
+This file contains the high-level architectural map and key schemas for the Vibe ecosystem.
+Use this to understand the relationships between apps, the IPC bridge, and the database models.
+
+--- SYSTEM MAP (Depth 2) ---
+
+>>> IPC MESSAGE SCHEMAS (Central Nervous System) (C:\dev\packages\shared-ipc\src\schemas.ts)
+------------------------------------------
+import { z } from 'zod';
+
+// Message sources/targets
+export const appSourceSchema = z.enum(['nova', 'vibe', 'bridge', 'deepcode', 'desktop-commander-v3']);
+export type AppSource = z.infer<typeof appSourceSchema>;
+
+// Message types enum
+export enum IPCMessageType {
+    // Connection lifecycle
+    CONNECT = 'connect',
+    DISCONNECT = 'disconnect',
+    PING = 'ping',
+    PONG = 'pong',
+    IDENTIFY = 'identify',
+
+    // File operations
+    FILE_OPEN = 'file:open',
+    FILE_OPENED = 'file:opened',
+    FILE_CLOSE = 'file:close',
+    FILE_CHANGED = 'file:changed',
+
+    // Learning + project updates
+    LEARNING_SYNC = 'learning:sync',
+    LEARNING_EVENT = 'learning_event',
+    PROJECT_UPDATE = 'project:update',
+    PROJECT_OPEN = 'project:open',
+    CONTEXT_UPDATE = 'context:update',
+    NOTIFICATION = 'notification',
+
+    // Task lifecycle (Agent Mode)
+    TASK_STARTED = 'task_started',
+    TASK_STOPPED = 'task_stopped',
+    TASK_PROGRESS = 'task_progress',
+    TASK_ACTIVITY = 'task_activity',
+    TASK_INSIGHTS = 'task_insights_ready',
+    TASK_UPDATE = 'task:update',
+
+    // Desktop Context Aware Guide
+    ACTIVITY_SYNC = 'activity:sync',
+    PROJECT_CREATE = 'project:create',
+    GUIDANCE_REQUEST = 'guidance:request',
+    GUIDANCE_RESPONSE = 'guidance:response',
+
+    // Git operations (legacy support)
+    GET_GIT_STATUS = 'get_git_status',
+    GIT_STATUS_UPDATE = 'git_status_update',
+
+    // Command routing (Phase 3.2)
+    COMMAND_REQUEST = 'command_request',
+    COMMAND_EXECUTE = 'command_execute',
+    COMMAND_RESULT = 'command_result',
+    COMMAND_RESPONSE = 'command_response',
+
+    // Bridge telemetry
+    BRIDGE_STATS = 'bridge_stats',
+
+    // Error/ack
+    ERROR = 'error',
+    ACK = 'ack',
+}
+
+// Base message schema
+export const baseMessageSchema = z.object({
+    messageId: z.string().min(1, 'messageId is required'),
+    type: z.nativeEnum(IPCMessageType),
+    timestamp: z.number(),
+    source: appSourceSchema,
+    target: appSourceSchema.optional(),
+    version: z.string().default('1.0.0'),
+    correlationId: z.string().optional(),
+    timeoutMs: z.number().int().positive().optional(),
+    metadata: z.record(z.any()).optional(),
+    id: z.string().uuid().optional(), // Legacy compatibility for older clients
+});
+
+// Specific message payloads
+export const openFilePayloadSchema = z.object({
+    filePath: z.string().min(1, 'File path cannot be empty'),
+    line: z.number().optional(),
+    column: z.number().optional(),
+    context: z.string().optional(),
+});
+
+export const openProjectPayloadSchema = z.object({
+    projectPath: z.string().min(1, 'Project path cannot be empty'),
+    context: z.string().optional(),
+});
+
+export const gitStatusPayloadSchema = z.object({
+    branch: z.string(),
+    modified: z.array(z.string()),
+    added: z.array(z.string()),
+    deleted: z.array(z.string()),
+    untracked: z.array(z.string()),
+});
+
+export const learningEventPayloadSchema = z.object({
+    eventType: z.enum(['mistake', 'knowledge', 'pattern']),
+    data: z.record(z.any()),
+    source: appSourceSchema,
+});
+
+export const errorPayloadSchema = z.object({
+    code: z.string(),
+    message: z.string(),
+    details: z.any().optional(),
+});
+
+// Task lifecycle payloads (Agent Mode)
+export const taskStartedPayloadSchema = z.object({
+    task_id: z.string().min(1, 'task_id is required'),
+    task_type: z.string().min(1, 'task_type is required'),
+    title: z.string().min(1, 'title is required'),
+    context: z.record(z.any()).optional(),
+});
+
+export const taskStoppedPayloadSchema = z.object({
+    task_id: z.string().min(1, 'task_id is required'),
+    status: z.enum(['completed', 'paused', 'abandoned', 'error']),
+    duration_minutes: z.number().nonnegative().optional(),
+    result: z
+        .object({
+            success: z.boolean(),
+            output: z.string().optional(),
+            error: z.string().optional(),
+        })
+        .optional(),
+});
+
+export const taskProgressPayloadSchema = z.object({
+    task_id: z.string().min(1, 'task_id is required'),
+    progress: z.number().min(0).max(100),
+    current_step: z.string().optional(),
+    steps_completed: z.number().int().nonnegative().optional(),
+    total_steps: z.number().int().positive().optional(),
+});
+
+export const taskActivityPayloadSchema = z.object({
+    task_id: z.string().min(1, 'task_id is required'),
+    activity_type: z.enum(['code_edit', 'file_open', 'git_commit', 'test_run', 'command_execute']),
+    details: z.record(z.any()).optional(),
+});
+
+export const taskInsightsPayloadSchema = z.object({
+    task_id: z.string().min(1, 'task_id is required'),
+    insights: z.record(z.any()),
+});
+
+// Context update payload
+export const contextUpdatePayloadSchema = z.object({
+    workspaceRoot: z.string().optional(),
+    openFiles: z.array(z.string()).optional(),
+    currentFile: z.string().optional(),
+    cursorPosition: z
+        .object({
+            line: z.number().int().nonnegative(),
+            column: z.number().int().nonnegative(),
+        })
+        .optional(),
+    selection: z
+        .object({
+            start: z.object({ line: z.number(), column: z.number() }),
+            end: z.object({ line: z.number(), column: z.number() }),
+        })
+        .optional(),
+    diagnostics: z
+        .array(
+            z.object({
+                file: z.string(),
+                message: z.string(),
+                severity: z.string(),
+                line: z.number(),
+            })
+        )
+        .optional(),
+});
+
+// File changed payload
+export const fileChangedPayloadSchema = z.object({
+    filePath: z.string().min(1, 'filePath is required'),
+    changeType: z.enum(['created', 'modified', 'deleted']),
+    content: z.string().optional(),
+});
+
+// Desktop Context Aware Guide payloads
+export const activitySyncPayloadSchema = z.object({
+    activeWindow: z.string().optional(),
+    activeProcess: z.string().optional(),
+    timestamp: z.number(),
+    workspacePath: z.string().optional(),
+});
+
+export const projectCreatePayloadSchema = z.object({
+    templateId: z.string().min(1, 'templateId is required'),
+    projectName: z.string().min(1, 'projectName is required'),
+    targetPath: z.string().min(1, 'targetPath is required'),
+    options: z.record(z.any()).optional(),
+});
+
+export const guidanceRequestPayloadSchema = z.object({
+    context: z.record(z.any()),
+    taskId: z.string().optional(),
+});
+
+export const guidanceResponsePayloadSchema = z.object({
+    nextSteps: z.array(z.string()),
+    doingRight: z.array(z.string()),
+    atRisk: z.array(z.string()),
+    timestamp: z.number(),
+});
+
+export const taskUpdatePayloadSchema = z.object({
+    taskId: z.string().min(1, 'taskId is required'),
+    status: z.enum(['open', 'in_progress', 'blocked', 'completed']),
+    updates: z.record(z.any()).optional(),
+});
+
+export const commandRequestPayloadSchema = z.object({
+    text: z.string().min(1, 'Command text cannot be empty'),
+    target: appSourceSchema.optional(),
+    context: z.record(z.any()).optional(),
+    metadata: z.record(z.any()).optional(),
+});
+
+export const commandExecutePayloadSchema = z.object({
+    commandId: z.string().min(1, 'commandId is required'),
+    command: z.string().min(1, 'command is required'),
+    args: z.array(z.string()).optional(),
+    text: z.string().min(1, 'command text is required'),
+    originalSender: z.string().min(1),
+});
+
+export const commandResultPayloadSchema = z.object({
+    commandId: z.string().min(1, 'commandId is required'),
+    success: z.boolean(),
+    result: z.any().optional(),
+    error: z.string().optional(),
+    metrics: z
+        .object({
+            elapsedMs: z.number().nonnegative().optional(),
+            startedAt: z.number().optional(),
+            finishedAt: z.number().optional(),
+        })
+        .optional(),
+});
+
+export const bridgeStatsPayloadSchema = z.object({
+    server: z.object({
+        uptime: z.number(),
+        port: z.number(),
+    }),
+    connections: z.object({
+        active: z.number().int(),
+        total: z.number().int(),
+        disconnections: z.number().int(),
+    }),
+    messages: z.object({
+        total: z.number().int(),
+        byType: z.record(z.number().int()),
+        recentCount: z.number().int(),
+    }),
+    clients: z.array(
+        z.object({
+            id: z.string(),
+            source: z.string(),
+            messageCount: z.number().int(),
+            connected: z.number().int(),
+        })
+    ),
+});
+
+// Full message schemas
+export const openFileMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.FILE_OPEN),
+    payload: openFilePayloadSchema,
+});
+
+export const openProjectMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.PROJECT_OPEN),
+    payload: openProjectPayloadSchema,
+});
+
+export const gitStatusMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.GET_GIT_STATUS),
+    payload: z.object({}).optional(),
+});
+
+export const gitStatusUpdateMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.GIT_STATUS_UPDATE),
+    payload: gitStatusPayloadSchema,
+});
+
+export const learningEventMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.LEARNING_EVENT),
+    payload: learningEventPayloadSchema,
+});
+
+export const errorMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.ERROR),
+    payload: errorPayloadSchema,
+});
+
+export const ackMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.ACK),
+    payload: z.object({
+        messageId: z.string().min(1),
+    }),
+});
+
+export const commandRequestMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.COMMAND_REQUEST),
+    timeoutMs: z.number().int().positive().optional(),
+    payload: commandRequestPayloadSchema,
+});
+
+export const commandExecuteMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.COMMAND_EXECUTE),
+    payload: commandExecutePayloadSchema,
+});
+
+export const commandResultMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.COMMAND_RESULT),
+    payload: commandResultPayloadSchema,
+});
+
+export const commandResponseMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.COMMAND_RESPONSE),
+    payload: commandResultPayloadSchema.extend({
+        targetClientId: z.string().optional(),
+    }),
+});
+
+export const bridgeStatsMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.BRIDGE_STATS),
+    payload: bridgeStatsPayloadSchema,
+});
+
+// Task lifecycle message schemas
+export const taskStartedMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.TASK_STARTED),
+    payload: taskStartedPayloadSchema,
+});
+
+export const taskStoppedMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.TASK_STOPPED),
+    payload: taskStoppedPayloadSchema,
+});
+
+export const taskProgressMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.TASK_PROGRESS),
+    payload: taskProgressPayloadSchema,
+});
+
+export const taskActivityMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.TASK_ACTIVITY),
+    payload: taskActivityPayloadSchema,
+});
+
+export const taskInsightsMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.TASK_INSIGHTS),
+    payload: taskInsightsPayloadSchema,
+});
+
+// Context and file change message schemas
+export const contextUpdateMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.CONTEXT_UPDATE),
+    payload: contextUpdatePayloadSchema,
+});
+
+export const fileChangedMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.FILE_CHANGED),
+    payload: fileChangedPayloadSchema,
+});
+
+// Desktop Context Aware Guide message schemas
+export const activitySyncMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.ACTIVITY_SYNC),
+    payload: activitySyncPayloadSchema,
+});
+
+export const projectCreateMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.PROJECT_CREATE),
+    payload: projectCreatePayloadSchema,
+});
+
+export const guidanceRequestMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.GUIDANCE_REQUEST),
+    payload: guidanceRequestPayloadSchema,
+});
+
+export const guidanceResponseMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.GUIDANCE_RESPONSE),
+    payload: guidanceResponsePayloadSchema,
+});
+
+export const taskUpdateMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.TASK_UPDATE),
+    payload: taskUpdatePayloadSchema,
+});
+
+// Union of all message types
+export const ipcMessageSchema = z.discriminatedUnion('type', [
+    openFileMessageSchema,
+    openProjectMessageSchema,
+    gitStatusMessageSchema,
+    gitStatusUpdateMessageSchema,
+    learningEventMessageSchema,
+    errorMessageSchema,
+    ackMessageSchema,
+    commandRequestMessageSchema,
+    commandExecuteMessageSchema,
+    commandResultMessageSchema,
+    commandResponseMessageSchema,
+    bridgeStatsMessageSchema,
+    taskStartedMessageSchema,
+    taskStoppedMessageSchema,
+    taskProgressMessageSchema,
+    taskActivityMessageSchema,
+    taskInsightsMessageSchema,
+    contextUpdateMessageSchema,
+    fileChangedMessageSchema,
+    activitySyncMessageSchema,
+    projectCreateMessageSchema,
+    guidanceRequestMessageSchema,
+    guidanceResponseMessageSchema,
+    taskUpdateMessageSchema,
+]);
+
+// TypeScript types
+export type BaseMessage = z.infer<typeof baseMessageSchema>;
+export type OpenFilePayload = z.infer<typeof openFilePayloadSchema>;
+export type OpenProjectPayload = z.infer<typeof openProjectPayloadSchema>;
+export type GitStatusPayload = z.infer<typeof gitStatusPayloadSchema>;
+export type LearningEventPayload = z.infer<typeof learningEventPayloadSchema>;
+export type ErrorPayload = z.infer<typeof errorPayloadSchema>;
+export type CommandRequestPayload = z.infer<typeof commandRequestPayloadSchema>;
+export type CommandExecutePayload = z.infer<typeof commandExecutePayloadSchema>;
+export type CommandResultPayload = z.infer<typeof commandResultPayloadSchema>;
+export type BridgeStatsPayload = z.infer<typeof bridgeStatsPayloadSchema>;
+
+// Task payload types
+export type TaskStartedPayload = z.infer<typeof taskStartedPayloadSchema>;
+export type TaskStoppedPayload = z.infer<typeof taskStoppedPayloadSchema>;
+export type TaskProgressPayload = z.infer<typeof taskProgressPayloadSchema>;
+export type TaskActivityPayload = z.infer<typeof taskActivityPayloadSchema>;
+export type TaskInsightsPayload = z.infer<typeof taskInsightsPayloadSchema>;
+export type ContextUpdatePayload = z.infer<typeof contextUpdatePayloadSchema>;
+export type FileChangedPayload = z.infer<typeof fileChangedPayloadSchema>;
+
+// Desktop Context Aware Guide payload types
+export type ActivitySyncPayload = z.infer<typeof activitySyncPayloadSchema>;
+export type ProjectCreatePayload = z.infer<typeof projectCreatePayloadSchema>;
+export type GuidanceRequestPayload = z.infer<typeof guidanceRequestPayloadSchema>;
+export type GuidanceResponsePayload = z.infer<typeof guidanceResponsePayloadSchema>;
+export type TaskUpdatePayload = z.infer<typeof taskUpdatePayloadSchema>;
+
+export type OpenFileMessage = z.infer<typeof openFileMessageSchema>;
+export type OpenProjectMessage = z.infer<typeof openProjectMessageSchema>;
+export type GitStatusMessage = z.infer<typeof gitStatusMessageSchema>;
+export type GitStatusUpdateMessage = z.infer<typeof gitStatusUpdateMessageSchema>;
+export type LearningEventMessage = z.infer<typeof learningEventMessageSchema>;
+export type ErrorMessage = z.infer<typeof errorMessageSchema>;
+export type AckMessage = z.infer<typeof ackMessageSchema>;
+export type CommandRequestMessage = z.infer<typeof commandRequestMessageSchema>;
+export type CommandExecuteMessage = z.infer<typeof commandExecuteMessageSchema>;
+export type CommandResultMessage = z.infer<typeof commandResultMessageSchema>;
+export type CommandResponseMessage = z.infer<typeof commandResponseMessageSchema>;
+export type BridgeStatsMessage = z.infer<typeof bridgeStatsMessageSchema>;
+
+// Task message types
+export type TaskStartedMessage = z.infer<typeof taskStartedMessageSchema>;
+export type TaskStoppedMessage = z.infer<typeof taskStoppedMessageSchema>;
+export type TaskProgressMessage = z.infer<typeof taskProgressMessageSchema>;
+export type TaskActivityMessage = z.infer<typeof taskActivityMessageSchema>;
+export type TaskInsightsMessage = z.infer<typeof taskInsightsMessageSchema>;
+export type ContextUpdateMessage = z.infer<typeof contextUpdateMessageSchema>;
+export type FileChangedMessage = z.infer<typeof fileChangedMessageSchema>;
+
+// Desktop Context Aware Guide message types
+export type ActivitySyncMessage = z.infer<typeof activitySyncMessageSchema>;
+export type ProjectCreateMessage = z.infer<typeof projectCreateMessageSchema>;
+export type GuidanceRequestMessage = z.infer<typeof guidanceRequestMessageSchema>;
+export type GuidanceResponseMessage = z.infer<typeof guidanceResponseMessageSchema>;
+export type TaskUpdateMessage = z.infer<typeof taskUpdateMessageSchema>;
+
+export type IPCMessage = z.infer<typeof ipcMessageSchema>;
+
+==========================================
+
+>>> WORKFLOW ENGINE DATABASE (C:\dev\backend\workflow-engine\schemas\workflow_schema.sql)
+------------------------------------------
+-- Workflow Automation Schema
+-- Created: 2025-11-10
+-- Part of P3.4: Automation & Workflows
+
+-- Workflow Templates (Pre-defined workflows)
+CREATE TABLE IF NOT EXISTS workflow_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT,
+    category TEXT CHECK(category IN ('development', 'bug_fix', 'learning', 'custom')),
+    steps TEXT NOT NULL, -- JSON array of steps
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    usage_count INTEGER DEFAULT 0,
+    success_rate REAL DEFAULT 0.0
+);
+
+-- Active Workflow Instances
+CREATE TABLE IF NOT EXISTS workflow_instances (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    template_id INTEGER NOT NULL,
+    workflow_name TEXT NOT NULL,
+    current_step INTEGER NOT NULL DEFAULT 0,
+    state_data TEXT, -- JSON with context
+    status TEXT CHECK(status IN ('pending', 'in_progress', 'completed', 'failed', 'paused')),
+    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP,
+    FOREIGN KEY (template_id) REFERENCES workflow_templates(id)
+);
+
+-- Workflow Step Execution Log
+CREATE TABLE IF NOT EXISTS workflow_steps (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    workflow_id INTEGER NOT NULL,
+    step_index INTEGER NOT NULL,
+    step_name TEXT NOT NULL,
+    app_source TEXT CHECK(app_source IN ('nova', 'vibe', 'auto', 'ml')),
+    status TEXT CHECK(status IN ('pending', 'in_progress', 'completed', 'failed', 'skipped')),
+    started_at TIMESTAMP,
+    completed_at TIMESTAMP,
+    duration_seconds INTEGER,
+    output_data TEXT, -- JSON
+    error_message TEXT,
+    FOREIGN KEY (workflow_id) REFERENCES workflow_instances(id)
+);
+
+-- Workflow Events/Triggers
+CREATE TABLE IF NOT EXISTS workflow_triggers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    trigger_type TEXT CHECK(trigger_type IN (
+        'task_created',
+        'mistake_detected',
+        'file_saved',
+        'test_failed',
+        'manual'
+    )),
+    template_id INTEGER NOT NULL,
+    conditions TEXT, -- JSON
+    enabled BOOLEAN DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (template_id) REFERENCES workflow_templates(id)
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_workflow_instances_status ON workflow_instances(status);
+CREATE INDEX IF NOT EXISTS idx_workflow_instances_template ON workflow_instances(template_id);
+CREATE INDEX IF NOT EXISTS idx_workflow_steps_workflow ON workflow_steps(workflow_id);
+CREATE INDEX IF NOT EXISTS idx_workflow_steps_status ON workflow_steps(status);
+CREATE INDEX IF NOT EXISTS idx_workflow_triggers_type ON workflow_triggers(trigger_type);
+CREATE INDEX IF NOT EXISTS idx_workflow_templates_category ON workflow_templates(category);
+
+-- Insert default workflow templates
+INSERT OR IGNORE INTO workflow_templates (name, description, category, steps) VALUES
+('feature_development', 'Complete feature development workflow', 'development',
+ '[
+    {"name":"Create Task","app":"nova","action":"create_task"},
+    {"name":"Research","app":"nova","action":"gather_context"},
+    {"name":"Open Files","app":"vibe","action":"open_related_files"},
+    {"name":"Implementation","app":"vibe","action":"code"},
+    {"name":"Run Tests","app":"auto","action":"run_tests"},
+    {"name":"Review","app":"ml","action":"analyze_code"},
+    {"name":"Deploy","app":"auto","action":"deploy"}
+  ]'),
+
+('bug_fix', 'Bug fix workflow', 'bug_fix',
+ '[
+    {"name":"Detect Bug","app":"auto","action":"detect"},
+    {"name":"Gather Context","app":"auto","action":"gather_context"},
+    {"name":"Find Similar","app":"nova","action":"search_mistakes"},
+    {"name":"Open File","app":"vibe","action":"open_file"},
+    {"name":"Apply Fix","app":"vibe","action":"edit"},
+    {"name":"Test Fix","app":"auto","action":"run_tests"},
+    {"name":"Update Learning","app":"nova","action":"log_solution"}
+  ]'),
+
+('learning', 'Learning and improvement workflow', 'learning',
+ '[
+    {"name":"Detect Mistake","app":"auto","action":"detect"},
+    {"name":"Analyze Pattern","app":"ml","action":"analyze"},
+    {"name":"Find Root Cause","app":"nova","action":"investigate"},
+    {"name":"Generate Strategy","app":"ml","action":"suggest"},
+    {"name":"Update Knowledge","app":"nova","action":"add_knowledge"},
+    {"name":"Create Task","app":"nova","action":"create_improvement_task"}
+  ]');
+
+==========================================
+
+>>> VIBE SHOP PRISMA SCHEMA (C:\dev\apps\vibe-shop\prisma\schema.prisma)
+------------------------------------------
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id               String            @id @default(uuid())
+  name             String
+  slug             String            @unique
+  parentId         String?           @map("parent_id")
+  isActive         Boolean           @default(true) @map("is_active")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  parent           Category?         @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children         Category[]        @relation("CategoryHierarchy")
+  products         Product[]
+  trendingKeywords TrendingKeyword[]
+
+  @@map("categories")
+}
+
+model Product {
+  id             String    @id @default(uuid())
+  externalId     String    @map("external_id")
+  network        String
+  name           String
+  description    String?
+  price          Decimal
+  currency       String    @default("USD")
+  imageUrl       String?   @map("image_url")
+  affiliateLink  String    @map("affiliate_link")
+  categoryId     String?   @map("category_id")
+  trendScore     Decimal   @default(0) @map("trend_score")
+  commissionRate Decimal?  @map("commission_rate")
+  merchantName   String?   @map("merchant_name")
+  isActive       Boolean   @default(true) @map("is_active")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  expiresAt      DateTime? @map("expires_at")
+  clicks         Click[]
+  category       Category? @relation(fields: [categoryId], references: [id])
+
+  @@unique([network, externalId])
+  @@index([trendScore(sort: Desc)])
+  @@index([categoryId])
+  @@map("products")
+}
+
+model TrendingKeyword {
+  id           String    @id @default(uuid())
+  keyword      String
+  trendScore   Int       @map("trend_score")
+  categoryId   String?   @map("category_id")
+  discoveredAt DateTime  @default(now()) @map("discovered_at")
+  lastChecked  DateTime  @default(now()) @map("last_checked")
+  category     Category? @relation(fields: [categoryId], references: [id])
+
+  @@index([trendScore(sort: Desc)])
+  @@index([keyword])
+  @@map("trending_keywords")
+}
+
+model SyncLog {
+  id              String    @id @default(uuid())
+  syncType        String    @map("sync_type")
+  status          String
+  productsAdded   Int       @default(0) @map("products_added")
+  productsRemoved Int       @default(0) @map("products_removed")
+  errorMessage    String?   @map("error_message")
+  startedAt       DateTime  @default(now()) @map("started_at")
+  completedAt     DateTime? @map("completed_at")
+
+  @@map("sync_logs")
+}
+
+model Click {
+  id        String   @id @default(uuid())
+  productId String   @map("product_id")
+  referrer  String?
+  userAgent String?  @map("user_agent")
+  ipHash    String?  @map("ip_hash")
+  clickedAt DateTime @default(now()) @map("clicked_at")
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@map("clicks")
+}
+
+==========================================
+
+>>> NOVA CORE DATABASE MANAGER (C:\dev\packages\nova-core\src\persistence\DatabaseManager.ts)
+------------------------------------------
+import Database from 'better-sqlite3';
+import * as fs from 'fs';
+import * as path from 'path';
+
+/**
+ * DatabaseManager - Singleton manager for Nova's persistent storage
+ * All databases are stored on D:\NovaData as per AGENTS.md requirements
+ */
+export class DatabaseManager {
+    private static instance: DatabaseManager | null = null;
+    private db: Database.Database | null = null;
+    private readonly dbPath: string;
+    private readonly dbDir: string;
+
+    private constructor() {
+        // Per AGENTS.md: All persistent data goes to D: drive
+        this.dbDir = 'D:\\databases';
+        this.dbPath = path.join(this.dbDir, 'nova_memory.db');
+    }
+
+    public static getInstance(): DatabaseManager {
+        if (!DatabaseManager.instance) {
+            DatabaseManager.instance = new DatabaseManager();
+        }
+        return DatabaseManager.instance;
+    }
+
+    /**
+     * Initialize the database connection with WAL mode enabled
+     */
+    public initialize(): void {
+        if (this.db) {
+            console.log('DatabaseManager: Already initialized');
+            return;
+        }
+
+        // Ensure directory exists
+        if (!fs.existsSync(this.dbDir)) {
+            fs.mkdirSync(this.dbDir, { recursive: true });
+            console.log(`DatabaseManager: Created directory ${this.dbDir}`);
+        }
+
+        // Connect with WAL mode for better concurrency
+        this.db = new Database(this.dbPath);
+        this.db.pragma('journal_mode = WAL');
+        console.log(`DatabaseManager: Connected to ${this.dbPath} with WAL mode`);
+
+        // Create tables
+        this.createTables();
+    }
+
+    /**
+     * Create required tables if they don't exist
+     */
+    private createTables(): void {
+        if (!this.db) throw new Error('Database not initialized');
+
+        // Interaction logs table
+        this.db.exec(`
+            CREATE TABLE IF NOT EXISTS interaction_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                type TEXT NOT NULL,
+                payload TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // Learning events table
+        this.db.exec(`
+            CREATE TABLE IF NOT EXISTS learning_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_type TEXT NOT NULL,
+                data TEXT,
+                source TEXT,
+                outcome TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // Task state table
+        this.db.exec(`
+            CREATE TABLE IF NOT EXISTS tasks (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                status TEXT DEFAULT 'pending',
+                context TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        console.log('DatabaseManager: Tables created/verified');
+    }
+
+    /**
+     * Get the database connection
+     * @throws Error if not initialized
+     */
+    public getConnection(): Database.Database {
+        if (!this.db) {
+            throw new Error('DatabaseManager not initialized. Call initialize() first.');
+        }
+        return this.db;
+    }
+
+    /**
+     * Close the database connection
+     */
+    public close(): void {
+        if (this.db) {
+            this.db.close();
+            this.db = null;
+            console.log('DatabaseManager: Connection closed');
+        }
+    }
+}
+
+==========================================
+

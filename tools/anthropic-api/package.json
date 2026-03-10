@@ -1,0 +1,20 @@
+{
+  "name": "@vibetech/anthropic-api-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CLI utilities for direct Anthropic API usage - batch review, PR summaries, doc generation",
+  "type": "module",
+  "scripts": {
+    "batch-review": "tsx src/batch-review.ts",
+    "pr-summary": "tsx src/pr-summary.ts",
+    "doc-generator": "tsx src/doc-generator.ts",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

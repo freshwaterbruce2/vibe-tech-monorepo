@@ -1,0 +1,34 @@
+{
+  "name": "desktop-commander-v3",
+  "version": "2.0.0",
+  "type": "module",
+  "description": "MCP Server with Unrestricted Terminal Access (PowerShell/CMD) for AI Agents",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --incremental false",
+    "start": "node dist/index.js",
+    "start:mcp": "node dist/mcp.js",
+    "dev": "tsx watch src/index.ts",
+    "lint": "cd ../.. && npx eslint apps/desktop-commander-v3/src --ext .ts",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.0",
+    "@vibetech/shared-ipc": "workspace:^1.0.0",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "node-powershell": "^5.0.1",
+    "open": "^11.0.0",
+    "systeminformation": "^5.30.7",
+    "ws": "^8.19.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "@types/ws": "^8.18.1",
+    "eslint": "^9.39.2",
+    "tsx": "^4.21.0",
+    "typescript": "5.9.3",
+    "vitest": "^4.0.18"
+  }
+}

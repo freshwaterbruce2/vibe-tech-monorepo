@@ -1,0 +1,7 @@
+# GitHub Pages configuration for Vibe-Tutor documentation
+theme: jekyll-theme-minimal
+title: Vibe-Tutor Documentation
+description: Privacy Policy and documentation for Vibe-Tutor app
+show_downloads: false
+
+

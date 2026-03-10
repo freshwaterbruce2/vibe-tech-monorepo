@@ -1,0 +1,118 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/dev/apps/vibe-tutor[39m
+
+[90mstdout[2m | src/services/__tests__/adaptiveDifficulty.test.ts[2m > [22m[2madaptiveDifficulty[2m > [22m[2msaveGamePerformance + getGameHistory[2m > [22m[2msaves and retrieves game performance
+[22m[39m[AdaptiveDifficulty] Saved performance for memory
+
+[90mstdout[2m | src/services/__tests__/adaptiveDifficulty.test.ts[2m > [22m[2madaptiveDifficulty[2m > [22m[2msaveGamePerformance + getGameHistory[2m > [22m[2maccumulates multiple performances
+[22m[39m[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+
+[90mstdout[2m | src/services/__tests__/adaptiveDifficulty.test.ts[2m > [22m[2madaptiveDifficulty[2m > [22m[2msaveGamePerformance + getGameHistory[2m > [22m[2mkeeps per-gameType histories separate
+[22m[39m[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for anagram
+
+[90mstdout[2m | src/services/__tests__/adaptiveDifficulty.test.ts[2m > [22m[2madaptiveDifficulty[2m > [22m[2msaveGamePerformance + getGameHistory[2m > [22m[2mcaps history at 20 entries
+[22m[39m[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+
+[90mstdout[2m | src/services/__tests__/adaptiveDifficulty.test.ts[2m > [22m[2madaptiveDifficulty[2m > [22m[2mgetRecommendedDifficulty[2m > [22m[2mreturns insufficient data when fewer than 3 games
+[22m[39m[AdaptiveDifficulty] Saved performance for memory
+
+[90mstdout[2m | src/services/__tests__/adaptiveDifficulty.test.ts[2m > [22m[2madaptiveDifficulty[2m > [22m[2mgetRecommendedDifficulty[2m > [22m[2mrecommends staying when in sweet spot (70-80%)
+[22m[39m[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+
+[90mstdout[2m | src/services/__tests__/adaptiveDifficulty.test.ts[2m > [22m[2madaptiveDifficulty[2m > [22m[2mgetRecommendedDifficulty[2m > [22m[2mrecommends increase when success rate > 90%
+[22m[39m[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+
+[90mstdout[2m | src/services/__tests__/adaptiveDifficulty.test.ts[2m > [22m[2madaptiveDifficulty[2m > [22m[2mgetRecommendedDifficulty[2m > [22m[2mrecommends decrease when success rate < 60%
+[22m[39m[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+
+[90mstdout[2m | src/services/__tests__/adaptiveDifficulty.test.ts[2m > [22m[2madaptiveDifficulty[2m > [22m[2mgetRecommendedDifficulty[2m > [22m[2mcaps at expert and stays
+[22m[39m[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+
+[90mstdout[2m | src/services/__tests__/adaptiveDifficulty.test.ts[2m > [22m[2madaptiveDifficulty[2m > [22m[2mresetGameHistory[2m > [22m[2mclears history for a specific game
+[22m[39m[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for anagram
+[AdaptiveDifficulty] Reset history for memory
+
+[90mstdout[2m | src/services/__tests__/adaptiveDifficulty.test.ts[2m > [22m[2madaptiveDifficulty[2m > [22m[2mgetAllGameStats[2m > [22m[2mreturns stats for games that have history
+[22m[39m[AdaptiveDifficulty] Saved performance for memory
+[AdaptiveDifficulty] Saved performance for memory
+
+ [31mΓ¥»[39m src/services/__tests__/adaptiveDifficulty.test.ts [2m([22m[2m15 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 17[2mms[22m[39m
+       [32mΓ£ô[39m saves and retrieves game performance[32m 3[2mms[22m[39m
+       [32mΓ£ô[39m accumulates multiple performances[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m keeps per-gameType histories separate[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m caps history at 20 entries[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m returns empty for unknown game type[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m returns insufficient data when fewer than 3 games[32m 1[2mms[22m[39m
+[31m       [31m├ù[31m recommends staying when in sweet spot (70-80%)[39m[32m 5[2mms[22m[39m
+       [32mΓ£ô[39m recommends increase when success rate > 90%[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m recommends decrease when success rate < 60%[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m caps at expert and stays[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m returns indices for all levels[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m returns different colors per level[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m clears history for a specific game[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m returns stats for games that have history[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m returns empty object when no history[32m 0[2mms[22m[39m
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Tests 1 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+ FAIL  src/services/__tests__/adaptiveDifficulty.test.ts > adaptiveDifficulty > getRecommendedDifficulty > recommends staying when in sweet spot (70-80%)
+AssertionError: expected 'medium' to be 'easy' // Object.is equality
+
+Expected: "easy"
+Received: "medium"
+
+ Γ¥» src/services/__tests__/adaptiveDifficulty.test.ts:112:41
+    110|       }
+    111|       const rec = getRecommendedDifficulty('memory', 'easy');
+    112|       expect(rec.recommendedDifficulty).toBe('easy');
+       |                                         ^
+    113|       expect(rec.confidenceLevel).toBe(90);
+    114|       expect(rec.reason).toContain('flow zone');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/1]ΓÄ»
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m14 passed[39m[22m[90m (15)[39m
+[2m   Start at [22m 15:30:15
+[2m   Duration [22m 1.60s[2m (transform 85ms, setup 148ms, import 79ms, tests 17ms, environment 1.14s)[22m
+

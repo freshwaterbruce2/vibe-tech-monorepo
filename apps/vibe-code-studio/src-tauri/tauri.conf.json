@@ -1,0 +1,52 @@
+{
+  "productName": "Vibe Code Studio",
+  "version": "1.0.21",
+  "identifier": "com.vibetech.vibe-code-studio",
+  "build": {
+    "beforeDevCommand": "pnpm exec vite --port 5174",
+    "beforeBuildCommand": "pnpm exec vite build",
+    "devUrl": "http://localhost:5174",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "Vibe Code Studio",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 800,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' http://localhost:* ws://localhost:* https://openrouter.ai https://api.anthropic.com https://fonts.googleapis.com https://fonts.gstatic.com",
+      "dangerousDisableAssetCspModification": false
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "wix": null,
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    }
+  },
+  "plugins": {
+    "shell": {
+      "open": true
+    }
+  }
+}

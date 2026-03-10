@@ -1,0 +1,10 @@
+{
+  "explain": "Please explain this code:\n\n${selectedCode}",
+  "generate-tests": "Generate comprehensive test cases for this code:\n\n${selectedCode}",
+  "refactor": "Refactor this code to improve quality, readability, and maintainability:\n\n${selectedCode}",
+  "fix-bugs": "Analyze this code for potential bugs and suggest fixes:\n\n${selectedCode}",
+  "optimize": "Optimize this code for better performance:\n\n${selectedCode}",
+  "add-comments": "Add clear, helpful comments to this code:\n\n${selectedCode}",
+  "generate-component": "Generate a React component based on the following description:\n[Component description]"
+}
+

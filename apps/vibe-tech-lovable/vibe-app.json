@@ -1,0 +1,13 @@
+{
+  "displayName": "Vibe Tech Showcase",
+  "description": "Technology showcase",
+  "version": "1.0.0",
+  "category": "utility",
+  "icon": "/app-icons/vibe-tech-lovable.png",
+  "launch": "pnpm dev",
+  "port": null,
+  "type": "web",
+  "features": [
+    "vtde-autodiscovered"
+  ]
+}

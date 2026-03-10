@@ -1,0 +1,16 @@
+--index-url https://download.pytorch.org/whl/cu124
+torch==2.6.0+cu124
+torchvision==0.21.0+cu124
+torchaudio==2.6.0+cu124
+transformers>=4.40.0
+datasets>=2.19.0
+peft>=0.10.0
+bitsandbytes>=0.43.0
+scipy
+fastapi
+uvicorn
+pydantic
+unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git
+tqdm
+pathspec
+packaging

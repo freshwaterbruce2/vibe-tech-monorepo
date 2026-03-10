@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Backup rules for DC8980 Shipping App -->
+<!-- Controls what data can be backed up by Android's backup service -->
+<full-backup-content>
+    <!-- Include user data that should be backed up -->
+    <include domain="database" path="." />
+    <include domain="sharedpref" path="user_settings.xml" />
+    <include domain="file" path="exports/" />
+
+    <!-- Exclude sensitive data that should never be backed up -->
+    <exclude domain="database" path="temp.db" />
+    <exclude domain="sharedpref" path="device_specific.xml" />
+    <exclude domain="file" path="cache/" />
+    <exclude domain="file" path="temp/" />
+    <exclude domain="file" path="logs/" />
+
+    <!-- Exclude any potential credential storage -->
+    <exclude domain="sharedpref" path="credentials.xml" />
+    <exclude domain="sharedpref" path="auth_tokens.xml" />
+
+    <!-- Exclude voice command temporary files -->
+    <exclude domain="file" path="voice_temp/" />
+    <exclude domain="file" path="audio_cache/" />
+</full-backup-content>

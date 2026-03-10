@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NOVA Agent - AI Desktop Assistant</title>
+    <meta name="description" content="Neural Omnipresent Virtual Assistant - A powerful AI desktop assistant with memory, learning, and system integration" />
+    <meta name="author" content="Nova Agent" />
+    <meta name="robots" content="noindex, nofollow" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#a855f7" />
+
+    <!-- Prevent zoom on mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <!-- Tauri CSP - disabled for dev debugging
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' ws://localhost:* http://localhost:* http://ipc.localhost:* https://api.deepseek.com https://api.groq.com;">
+    -->
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

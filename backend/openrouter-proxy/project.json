@@ -1,0 +1,60 @@
+{
+  "name": "openrouter-proxy",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "backend/openrouter-proxy/src",
+  "projectType": "application",
+  "tags": ["backend", "api", "openrouter"],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx watch src/index.ts",
+        "cwd": "backend/openrouter-proxy"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc",
+        "cwd": "backend/openrouter-proxy"
+      },
+      "outputs": ["{projectRoot}/dist"]
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node dist/index.js",
+        "cwd": "backend/openrouter-proxy"
+      },
+      "dependsOn": ["build"]
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run",
+        "cwd": "backend/openrouter-proxy"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint src --ext .ts",
+        "cwd": "backend/openrouter-proxy"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "backend/openrouter-proxy"
+      }
+    },
+    "install": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm install",
+        "cwd": "backend/openrouter-proxy"
+      }
+    }
+  }
+}

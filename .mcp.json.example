@@ -1,0 +1,43 @@
+{
+  "mcpServers": {
+    "nx-mcp": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "nx", "mcp"]
+    },
+    "filesystem": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "C:\\dev",
+        "C:\\dev\\projects",
+        "D:\\"
+      ]
+    },
+    "puppeteer": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-puppeteer"]
+    },
+    "codeberg": {
+      "command": "node",
+      "args": ["C:/dev/apps/mcp-codeberg/dist/index.js"],
+      "env": {
+        "CODEBERG_TOKEN": "YOUR_CODEBERG_ACCESS_TOKEN_HERE",
+        "_NOTE": "Legacy - repo migrated to GitHub. Consider replacing with GitHub MCP."
+      }
+    },
+    "postgres": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "sqlite://C:/dev/projects/crypto-enhanced/trading.db"
+      ]
+    }
+  }
+}

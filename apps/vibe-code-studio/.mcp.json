@@ -1,0 +1,44 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "C:\\dev\\active-projects\\desktop-apps\\deepcode-editor"]
+    },
+    "github": {
+      "command": "node",
+      "args": ["C:/dev/apps/mcp-codeberg/dist/index.js"],
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      }
+    },
+    "memory-bank": {
+      "command": "npx",
+      "args": ["-y", "mcp-memory-bank"]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp"]
+    },
+    "puppeteer": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-puppeteer"]
+    },
+    "desktop-commander": {
+      "command": "node",
+      "args": ["C:\\\\dev\\\\apps\\\\desktop-commander-v3\\\\dist\\\\mcp.js"],
+      "env": {
+        "NODE_ENV": "production"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "dc_get_system_info",
+        "dc_list_windows",
+        "dc_get_allowed_paths"
+      ]
+    }
+  }
+}

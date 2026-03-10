@@ -1,0 +1,136 @@
+{
+  "name": "vibe-tutor",
+  "root": "apps/vibe-tutor",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/vibe-tutor/src",
+  "projectType": "application",
+  "tags": ["scope:mobile", "type:pwa", "platform:android", "language:typescript", "analytics", "filesystem"],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "dev"
+      },
+      "cache": false
+    },
+    "build": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "build"
+      },
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true
+    },
+    "test": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "test:unit"
+      },
+      "cache": true
+    },
+    "preview": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "preview"
+      },
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "start": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "start"
+      },
+      "cache": false
+    },
+    "android:sync": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:sync"
+      },
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "android:build": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:build"
+      },
+      "outputs": ["{projectRoot}/android/app/build"],
+      "cache": true
+    },
+    "android:build:clean": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:build:clean"
+      },
+      "cache": false
+    },
+    "android:bundle:release": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:bundle:release"
+      },
+      "outputs": ["{projectRoot}/android/app/build/outputs/bundle/release"],
+      "cache": false
+    },
+    "android:open": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:open"
+      },
+      "cache": false
+    },
+    "android:doctor": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:doctor"
+      },
+      "cache": false
+    },
+    "android:install": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:install"
+      },
+      "cache": false
+    },
+    "android:uninstall": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:uninstall"
+      },
+      "cache": false
+    },
+    "android:logs": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:logs"
+      },
+      "cache": false
+    },
+    "android:full-build": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:full-build"
+      },
+      "outputs": ["{projectRoot}/android/app/build"],
+      "cache": false
+    },
+    "android:full-release": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:full-release"
+      },
+      "outputs": ["{projectRoot}/android/app/build/outputs/bundle/release"],
+      "cache": false
+    },
+    "android:deploy": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:deploy"
+      },
+      "cache": false
+    }
+  }
+}

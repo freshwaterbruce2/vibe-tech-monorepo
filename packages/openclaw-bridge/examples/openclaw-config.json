@@ -1,0 +1,67 @@
+{
+  "$schema": "https://openclaw.io/schema/config.json",
+  "version": "2026.2.19",
+  "extensions": {
+    "vibetech-bridge": {
+      "enabled": true,
+      "auto_load": true,
+      "config": {
+        "ipc_bridge_url": "ws://localhost:5004",
+        "auto_reconnect": true,
+        "reconnect_delay": 5000,
+        "max_reconnect_attempts": 5,
+        "debug": false,
+        "default_timeout": 30000,
+        "health_check_interval": 60000
+      }
+    }
+  },
+  "webhooks": {
+    "on_message": {
+      "enabled": true,
+      "handler": "webhooks/on_message.js",
+      "platforms": [
+        "telegram",
+        "discord",
+        "slack",
+        "whatsapp",
+        "teams"
+      ],
+      "priority": 10,
+      "filters": {
+        "commands_only": false,
+        "prefix": "/mcp"
+      }
+    }
+  },
+  "messaging": {
+    "telegram": {
+      "enabled": true,
+      "bot_token": "${TELEGRAM_BOT_TOKEN}",
+      "allowed_users": ["*"]
+    },
+    "discord": {
+      "enabled": false,
+      "bot_token": "${DISCORD_BOT_TOKEN}"
+    },
+    "slack": {
+      "enabled": false,
+      "bot_token": "${SLACK_BOT_TOKEN}"
+    }
+  },
+  "logging": {
+    "level": "info",
+    "file": "~/.openclaw/logs/openclaw.log",
+    "max_size": "10M",
+    "max_files": 5
+  },
+  "security": {
+    "enable_safety_scanner": true,
+    "enforce_path_containment": true,
+    "allowed_directories": [
+      "C:\\dev",
+      "D:\\screenshots",
+      "~/.openclaw"
+    ]
+  }
+}

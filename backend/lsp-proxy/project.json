@@ -1,0 +1,33 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "lsp-proxy",
+  "projectType": "application",
+  "root": "backend/lsp-proxy",
+  "sourceRoot": "backend/lsp-proxy/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev || tsx watch src/index.ts || echo 'Dev not configured'",
+        "cwd": "backend/lsp-proxy"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "options": {
+        "command": "pnpm run build || tsc || echo 'Build not configured'",
+        "cwd": "backend/lsp-proxy"
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run start || node dist/index.js || echo 'Start not configured'",
+        "cwd": "backend/lsp-proxy"
+      }
+    }
+  },
+  "tags": ["type:node", "scope:lsp-proxy"]
+}

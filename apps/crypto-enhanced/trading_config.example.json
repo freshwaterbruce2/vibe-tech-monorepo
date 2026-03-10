@@ -1,0 +1,60 @@
+{
+	"trading_pairs": ["XLM/USD"],
+	"risk_management": {
+		"max_position_size": 10,
+		"max_total_exposure": 10,
+		"max_positions": 1,
+		"max_risk_score": 0.6,
+		"min_balance_required": 15,
+		"enhanced": {
+			"enabled": true,
+			"base_kelly_fraction": 0.02,
+			"max_leverage": 3.0,
+			"min_position_fraction": 0.01,
+			"max_position_fraction": 0.25,
+			"atr_lookback": 14,
+			"regime_lookback": 50
+		}
+	},
+	"trading_parameters": {
+		"engine_loop_interval": 30,
+		"slippage_tolerance": 0.001,
+		"default_order_type": "limit"
+	},
+	"fees": {
+		"maker_fee": 0.0016,
+		"taker_fee": 0.0026
+	},
+	"monitoring": {
+		"enable_monitoring": true,
+		"monitoring_interval": 60,
+		"min_balance_alert": 50
+	},
+	"websocket": {
+		"reconnect_interval": 5,
+		"heartbeat_interval": 30
+	},
+	"xlm_specific": {
+		"min_order_size": 20,
+		"price_range_min": 0.3,
+		"price_range_max": 0.45,
+		"stop_loss_pct": 0.015,
+		"take_profit_pct": 0.015,
+		"cooldown_minutes": 5
+	},
+	"strategies": {
+		"mean_reversion": {
+			"enabled": true,
+			"rsi_oversold": 35,
+			"rsi_overbought": 65,
+			"min_profit_target": 0.004,
+			"max_position_accumulation_xlm": 50,
+			"stop_loss_pct": 0.015,
+			"entry_levels": 3
+		},
+		"range_trading": {
+			"enabled": true,
+			"max_position_accumulation_xlm": 40
+		}
+	}
+}

@@ -1,0 +1,14 @@
+{
+  "PreToolUse": [
+    {
+      "matcher": "Write|Edit",
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "Check if the file being written/edited contains cross-project imports that violate architectural boundaries. Specifically check for:\n1. Relative imports crossing project boundaries (e.g., '../../apps/other-app/src/...')\n2. Deep imports into another package's internals (e.g., '@vibetech/shared-utils/src/internal/...')\n3. Desktop code importing mobile-specific modules or vice versa\n\nIf a violation is found, warn the user with: 'BOUNDARY WARNING: This file contains a cross-project import that may violate architectural constraints: [import path]. Consider using the package's public API instead.'\n\nIf no violation is found, approve silently.",
+          "timeout": 10
+        }
+      ]
+    }
+  ]
+}

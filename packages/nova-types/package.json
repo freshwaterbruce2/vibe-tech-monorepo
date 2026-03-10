@@ -1,0 +1,40 @@
+{
+  "name": "@nova/types",
+  "version": "2.0.0",
+  "description": "NOVA Agent shared TypeScript types and interfaces",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./activity": "./dist/activity.js",
+    "./context": "./dist/context.js",
+    "./recommendations": "./dist/recommendations.js",
+    "./monitoring": "./dist/monitoring.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "build:watch": "tsc --watch -p tsconfig.build.json",
+    "clean": "rimraf dist",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "rimraf": "^6.1.2",
+    "typescript": "5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "keywords": [
+    "nova",
+    "types",
+    "typescript"
+  ],
+  "author": "NOVA",
+  "license": "MIT"
+}

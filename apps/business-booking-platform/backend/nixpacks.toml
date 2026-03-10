@@ -1,0 +1,14 @@
+[phases.setup]
+nixPkgs = ["nodejs-20_x", "python3"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[start]
+cmd = "npx tsx src/server.ts"
+
+[variables]
+NODE_ENV = "production"
+LOCAL_SQLITE = "true"
+PORT = "3001"
+NIXPACKS_NODE_VERSION = "20"

@@ -1,0 +1,17 @@
+{
+	"mcpServers": {
+		"desktop-commander": {
+			"command": "node",
+			"args": ["C:\\dev\\apps\\desktop-commander-v3\\dist\\mcp.js"],
+			"env": {
+				"NODE_ENV": "production"
+			},
+			"disabled": false,
+			"autoApprove": [
+				"dc_get_system_info",
+				"dc_list_windows",
+				"dc_get_allowed_paths"
+			]
+		}
+	}
+}

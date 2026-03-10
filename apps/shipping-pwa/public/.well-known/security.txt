@@ -1,0 +1,44 @@
+# DC8980 Shipping Security Policy
+# https://dc8980shipping.com/.well-known/security.txt
+
+Contact: security@dc8980shipping.com
+Expires: 2026-09-22T00:00:00.000Z
+Encryption: https://dc8980shipping.com/pgp-key.txt
+Acknowledgments: https://dc8980shipping.com/security-hall-of-fame
+Preferred-Languages: en
+Canonical: https://dc8980shipping.com/.well-known/security.txt
+Policy: https://dc8980shipping.com/security-policy
+
+# Security Reporting
+
+We take security seriously at DC8980 Shipping. If you discover a security vulnerability,
+please report it to security@dc8980shipping.com with the following information:
+
+1. Description of the vulnerability
+2. Steps to reproduce
+3. Potential impact
+4. Suggested fix (if any)
+
+We will acknowledge receipt within 48 hours and provide updates on the resolution.
+
+# Bug Bounty Program
+
+We offer rewards for valid security vulnerabilities:
+- Critical: $500-$1000
+- High: $200-$500
+- Medium: $50-$200
+- Low: Recognition in our Hall of Fame
+
+# Scope
+
+In scope:
+- dc8980shipping.com and all subdomains
+- Mobile applications (iOS and Android)
+- API endpoints
+
+Out of scope:
+- Social engineering attacks
+- Physical security
+- Third-party services
+
+Thank you for helping keep DC8980 Shipping secure!

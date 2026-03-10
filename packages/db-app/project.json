@@ -1,0 +1,19 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@vibetech/db-app",
+  "projectType": "library",
+  "root": "packages/db-app",
+  "sourceRoot": "packages/db-app/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "options": {
+        "command": "tsc",
+        "cwd": "packages/db-app"
+      }
+    }
+  },
+  "tags": ["type:library", "scope:database"]
+}

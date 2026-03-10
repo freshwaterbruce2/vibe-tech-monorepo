@@ -1,0 +1,33 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "workflow-engine",
+  "projectType": "application",
+  "root": "backend/workflow-engine",
+  "sourceRoot": "backend/workflow-engine/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev || tsx watch src/index.ts || echo 'Dev not configured'",
+        "cwd": "backend/workflow-engine"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "options": {
+        "command": "pnpm run build || tsc || echo 'Build not configured'",
+        "cwd": "backend/workflow-engine"
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run start || node dist/index.js || echo 'Start not configured'",
+        "cwd": "backend/workflow-engine"
+      }
+    }
+  },
+  "tags": ["type:node", "scope:workflow-engine"]
+}

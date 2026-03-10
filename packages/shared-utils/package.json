@@ -1,0 +1,56 @@
+{
+  "name": "@vibetech/shared-utils",
+  "version": "1.0.0",
+  "description": "Shared utilities for Vibetech monorepo projects",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./ai": {
+      "types": "./dist/ai/index.d.ts",
+      "import": "./dist/ai/index.js",
+      "default": "./dist/ai/index.js"
+    },
+    "./ai/*": {
+      "types": "./dist/ai/*.d.ts",
+      "import": "./dist/ai/*.js",
+      "default": "./dist/ai/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint ."
+  },
+  "keywords": [
+    "utilities",
+    "shared",
+    "monorepo"
+  ],
+  "author": "Vibetech",
+  "license": "MIT",
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "crypto-js": "^4.2.0",
+    "tailwind-merge": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/crypto-js": "^4.2.2",
+    "@types/node": "^25.2.0",
+    "@vitest/coverage-v8": "^4.0.18",
+    "@vitest/ui": "^4.0.18",
+    "jsdom": "28.0.0",
+    "typescript": "5.9.3",
+    "vitest": "^4.0.18"
+  }
+}

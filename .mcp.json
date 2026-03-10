@@ -1,0 +1,119 @@
+{
+  "mcpServers": {
+    "desktop-commander": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "C:/dev/apps/desktop-commander-v3/dist/mcp.js"
+      ],
+      "env": {
+        "NODE_ENV": "production"
+      }
+    },
+    "filesystem": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "C:/dev",
+        "D:/databases",
+        "D:/logs",
+        "D:/learning-system",
+        "D:/data"
+      ]
+    },
+    "codeberg": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "C:/dev/apps/mcp-codeberg/dist/index.js"
+      ],
+      "env": {
+        "CODEBERG_API_URL": "https://codeberg.org/api/v1",
+        "_NOTE": "Legacy Codeberg MCP - repo migrated to GitHub"
+      }
+    },
+    "nx-mcp": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "nx-mcp@latest"
+      ],
+      "env": {
+        "NX_WORKSPACE_ROOT": "C:/dev"
+      }
+    },
+    "sqlite": {
+      "type": "stdio",
+      "command": "C:/Users/fresh_zxae3v6/.local/bin/uvx.exe",
+      "args": [
+        "mcp-server-sqlite",
+        "--db-path",
+        "D:/databases/database.db"
+      ]
+    },
+    "sqlite-trading": {
+      "type": "stdio",
+      "command": "C:/Users/fresh_zxae3v6/.local/bin/uvx.exe",
+      "args": [
+        "mcp-server-sqlite",
+        "--db-path",
+        "D:/databases/trading.db"
+      ]
+    },
+    "skills": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "C:/dev/apps/mcp-skills-server/dist/index.js"
+      ]
+    },
+    "memory": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "C:/dev/apps/memory-mcp/dist/index.js"
+      ],
+      "env": {
+        "MEMORY_DB_PATH": "C:/Users/fresh_zxae3v6/.codex/memories/memory.db",
+        "MEMORY_EMBEDDING_MODEL": "nomic-embed-text",
+        "MEMORY_EMBEDDING_DIM": "768",
+        "MEMORY_FALLBACK_TRANSFORMERS": "true"
+      }
+    },
+    "youtube": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@anaisbetts/mcp-youtube"
+      ]
+    },
+    "notebooklm": {
+      "type": "stdio",
+      "command": "python",
+      "args": [
+        "-m",
+        "notebooklm_mcp_server"
+      ]
+    },
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "chrome-devtools-mcp@latest"
+      ]
+    }
+  }
+}

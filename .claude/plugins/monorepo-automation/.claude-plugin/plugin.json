@@ -1,0 +1,25 @@
+{
+	"name": "monorepo-automation",
+	"version": "1.0.0",
+	"description": "Comprehensive monorepo automation plugin with 12 specialized agents for quality, maintenance, project management, and deployment workflows",
+	"author": {
+		"name": "VibeTech",
+		"email": "dev@vibetech.io"
+	},
+	"homepage": "https://github.com/freshwaterbruce2/vibetech",
+	"repository": "https://github.com/freshwaterbruce2/vibetech",
+	"license": "MIT",
+	"keywords": [
+		"monorepo",
+		"nx",
+		"automation",
+		"quality",
+		"testing",
+		"deployment",
+		"ci-cd",
+		"maintenance"
+	],
+	"engines": {
+		"claude": ">=1.0.0"
+	}
+}

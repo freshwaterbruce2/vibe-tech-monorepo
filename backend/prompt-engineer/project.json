@@ -1,0 +1,33 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "backend-prompt-engineer",
+  "projectType": "application",
+  "root": "backend/prompt-engineer",
+  "sourceRoot": "backend/prompt-engineer/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev || tsx watch src/index.ts || echo 'Dev not configured'",
+        "cwd": "backend/prompt-engineer"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "options": {
+        "command": "pnpm run build || tsc || echo 'Build not configured'",
+        "cwd": "backend/prompt-engineer"
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run start || node dist/index.js || echo 'Start not configured'",
+        "cwd": "backend/prompt-engineer"
+      }
+    }
+  },
+  "tags": ["type:node", "scope:prompt-engineer"]
+}

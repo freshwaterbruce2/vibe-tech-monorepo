@@ -1,0 +1,39 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "symptom-tracker-api",
+  "projectType": "application",
+  "root": "backend/symptom-tracker-api",
+  "sourceRoot": "backend/symptom-tracker-api/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "backend/symptom-tracker-api"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "backend/symptom-tracker-api"
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run start",
+        "cwd": "backend/symptom-tracker-api"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run typecheck",
+        "cwd": "backend/symptom-tracker-api"
+      }
+    }
+  },
+  "tags": ["type:node", "scope:symptom-tracker"]
+}

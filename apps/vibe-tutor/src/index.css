@@ -1,0 +1,516 @@
+/* OpenDyslexic Font for accessibility - must come before @tailwind */
+@import url('https://fonts.googleapis.com/css2?family=OpenDyslexic:wght@400;700&display=swap');
+
+@import 'tailwindcss';
+
+.dyslexia-font {
+  font-family: 'OpenDyslexic', 'Comic Sans MS', sans-serif;
+}
+
+/* Animation controls for sensory preferences */
+[data-animation-speed='none'] * {
+  animation: none !important;
+  transition: none !important;
+}
+
+[data-animation-speed='reduced'] * {
+  animation-duration: 0.3s !important;
+  transition-duration: 0.15s !important;
+}
+
+/* Font size controls */
+[data-font-size='small'] {
+  font-size: 14px;
+}
+
+[data-font-size='medium'] {
+  font-size: 16px;
+}
+
+[data-font-size='large'] {
+  font-size: 20px;
+  line-height: 1.6;
+}
+
+/* Color mode controls for sensory preferences */
+[data-color-mode='high-contrast'] {
+  --background-main: #000000;
+  --text-primary: #ffffff;
+  --primary-accent: #ffff00;
+}
+
+[data-color-mode='warm'] {
+  filter: sepia(0.2) saturate(1.1);
+}
+
+[data-color-mode='cool'] {
+  filter: hue-rotate(180deg) saturate(0.8);
+}
+
+/* Custom CSS variables and styles will be in index.html */
+
+.vibe-splitpane {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  overflow: hidden;
+  --vibe-split-left: 35%;
+}
+
+.vibe-splitpane__left {
+  flex: 0 0 var(--vibe-split-left);
+  min-width: 0;
+}
+
+.vibe-splitpane__right {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Game card staggered entrance animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mobile "More" drawer slide-up animation */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* Animation delay utilities */
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+
+/* Gradient icon glow effects */
+.gradient-icon-glow {
+  filter: drop-shadow(0 0 3px rgba(139, 92, 246, 0.3));
+}
+
+.gradient-icon-glow-solid {
+  filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.4));
+}
+
+.gradient-icon-glow-mobile {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+/* ---- GradientIcon: SVG gradient defs container ---- */
+.gradient-defs-svg {
+  position: absolute;
+}
+
+/* GradientIcon: touch target sizing (set --icon-min via style) */
+.gradient-icon-touch-target {
+  min-width: var(--icon-min);
+  min-height: var(--icon-min);
+}
+
+/* ---- ChatWindow: staggered animation delay ---- */
+.chat-stagger-delay {
+  animation-delay: var(--stagger-delay);
+}
+
+/* ---- Sidebar: safe-area + touch-action utilities ---- */
+.sidebar-safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom, 8px), 8px);
+}
+
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+/* ---- SubjectCards: dynamic progress bar width ---- */
+.progress-bar-fill {
+  width: var(--bar-width);
+}
+
+/* ---- GamesHub styles ---- */
+
+/* Fallback loading spinner */
+.gh-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 3rem;
+}
+
+.gh-fallback-inner {
+  text-align: center;
+}
+
+.gh-fallback-icon {
+  color: #6366f1;
+  margin-bottom: 1rem;
+  animation: spin 2s linear infinite;
+}
+
+.gh-fallback-text {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+/* Active game wrapper */
+.gh-active-game {
+  height: 100%;
+  position: relative;
+}
+
+/* Back button (in-game) */
+.gh-back-btn {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 10;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  color: #e2e8f0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+}
+
+/* Hub container */
+.gh-hub {
+  padding: 1.25rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Header row */
+.gh-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.gh-header-back {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+  padding: 0.25rem;
+}
+
+.gh-title {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.gh-title-icon {
+  color: #6366f1;
+}
+
+.gh-header-spacer {
+  min-width: 80px;
+}
+
+/* Stats grid */
+.gh-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.gh-stat-box {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-color: var(--stat-accent, rgba(99, 102, 241, 0.2));
+  border-radius: 0.75rem;
+  padding: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.gh-stat-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.gh-stat-label {
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+/* XP progress */
+.gh-xp-section {
+  margin-bottom: 1.25rem;
+}
+
+.gh-xp-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-bottom: 0.25rem;
+}
+
+.gh-xp-track {
+  background: #1e293b;
+  border-radius: 9999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.gh-xp-fill {
+  width: var(--xp-pct);
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  border-radius: 9999px;
+  transition: width 0.5s ease;
+}
+
+/* Chest unlock animation */
+.gh-chest-banner {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  text-align: center;
+  margin-bottom: 1rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.gh-chest-icon {
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.gh-chest-text {
+  color: #fff;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Zone filter tabs */
+.gh-filters {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.gh-filter-btn {
+  padding: 0.4rem 0.9rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: capitalize;
+  transition: all 0.2s ease;
+}
+
+.gh-filter-btn--active {
+  border: 2px solid var(--filter-accent, #6366f1);
+  background: rgba(99, 102, 241, 0.15);
+  color: #e2e8f0;
+}
+
+.gh-filter-btn--inactive {
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.5);
+  color: #94a3b8;
+}
+
+/* ---- Zone sections ---- */
+.gh-zones {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.gh-zone-section {
+  background: rgba(15, 23, 42, 0.35);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 1rem;
+  padding: 1rem;
+  border-left: 3px solid var(--zone-color);
+}
+
+/* Zone header */
+.gh-zone-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.gh-zone-emoji {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.gh-zone-info {
+  flex: 1;
+}
+
+.gh-zone-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.gh-zone-desc {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.gh-zone-count {
+  font-size: 0.7rem;
+  color: #64748b;
+  background: rgba(100, 116, 139, 0.15);
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+/* Games row within zone */
+.gh-zone-games {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+/* Game card */
+.gh-game-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 0.75rem;
+  padding: 1.1rem;
+  padding-top: 1.35rem;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.gh-game-card:not(.gh-game-card--locked):hover {
+  transform: translateY(-3px);
+  border-color: var(--zone-color, rgba(148, 163, 184, 0.3));
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+}
+
+.gh-game-card--locked {
+  background: rgba(30, 41, 59, 0.4);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Zone accent stripe on card */
+.gh-card-stripe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--stripe-color);
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+
+/* Game icon container */
+.gh-game-icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.75rem;
+  background: var(--icon-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+/* Game card text */
+.gh-game-name {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+  color: #f1f5f9;
+  font-weight: 600;
+}
+
+.gh-game-desc {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.3;
+}
+
+/* Token reward */
+.gh-token-reward {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.gh-token-icon {
+  color: #f59e0b;
+}
+
+.gh-token-text {
+  font-size: 0.75rem;
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Word Search strikethrough sweep animation */
+@keyframes strikethrough {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.animate-strikethrough {
+  animation: strikethrough 0.4s ease-out forwards;
+}

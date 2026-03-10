@@ -1,0 +1,13 @@
+{
+  "displayName": "Memory MCP",
+  "description": "Memory system — 56/56 tests",
+  "version": "1.0.0",
+  "category": "ai",
+  "icon": "/app-icons/memory-mcp.png",
+  "launch": "pnpm dev",
+  "port": null,
+  "type": "native",
+  "features": [
+    "vtde-autodiscovered"
+  ]
+}

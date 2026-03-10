@@ -1,0 +1,41 @@
+{
+	"PreToolUse": [
+		{
+			"matcher": "Write|Edit",
+			"description": "Pre-commit quality gate - blocks commits with quality issues",
+			"hooks": [
+				{
+					"type": "prompt",
+					"prompt": "Before modifying code, trigger the pre-commit-quality-gate agent to run quality checks (lint, typecheck, tests) on affected projects. BLOCK the commit if any checks fail. Only allow commits when all quality checks pass.",
+					"timeout": 120
+				}
+			]
+		}
+	],
+	"PostToolUse": [
+		{
+			"matcher": "Write|Edit",
+			"description": "Auto-sync documentation after code changes",
+			"hooks": [
+				{
+					"type": "prompt",
+					"prompt": "After code changes, trigger the documentation-sync-agent to check if API signatures changed and update relevant CLAUDE.md and README.md files to keep documentation synchronized with code.",
+					"timeout": 60
+				}
+			]
+		}
+	],
+	"UserPromptSubmit": [
+		{
+			"matcher": ".*",
+			"description": "Proactive agent activation based on user context",
+			"hooks": [
+				{
+					"type": "command",
+					"command": "node $CLAUDE_PLUGIN_ROOT/scripts/hooks/detect-context.js",
+					"timeout": 10
+				}
+			]
+		}
+	]
+}

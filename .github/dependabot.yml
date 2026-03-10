@@ -1,0 +1,33 @@
+# Dependabot configuration
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
+
+version: 2
+updates:
+  # GitHub Actions - check for action updates weekly
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    open-pull-requests-limit: 5
+
+  # Root npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    commit-message:
+      prefix: "deps"
+    labels:
+      - "dependencies"
+    open-pull-requests-limit: 10
+    ignore:
+      # Don't auto-update major versions (breaking changes)
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]

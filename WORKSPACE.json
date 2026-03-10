@@ -1,0 +1,378 @@
+{
+  "version": "1.2.0",
+  "lastUpdated": "2026-02-28T22:15:00-05:00",
+  "techStack": {
+    "packageManager": "pnpm@10.28.2",
+    "node": "22.x",
+    "typescript": "5.9",
+    "react": "19",
+    "buildSystem": "nx"
+  },
+  "versionControl": {
+    "provider": "github",
+    "repo": "https://github.com/freshwaterbruce2/Monorepo.git",
+    "branch": "main"
+  },
+  "aiModels": {
+    "primary": "deepseek-r1",
+    "provider": "openrouter"
+  },
+  "recentActivity": [
+    {
+      "date": "2026-02-28",
+      "project": "business-booking-platform",
+      "action": "Explored booking frontend and planned booking backend architecture."
+    },
+    {
+      "date": "2026-02-23",
+      "project": "vtde",
+      "action": "Control Plane Polish complete - ErrorBoundary, loading spinners, strict D3 typing, exhaustive widget UI audit (0 Tailwind classes)"
+    },
+    {
+      "date": "2026-02-17",
+      "project": "monorepo",
+      "action": "Herd trim — deleted 8 stale/redundant apps: vibe-desktop, vibe-agent, vibe-subscription-guard, n8n-automation, vibe-neural-interface, digital-content-builder, shared-web, VibeOS"
+    },
+    {
+      "date": "2026-02-16",
+      "project": "vtde",
+      "action": "Phase 1+2: Terminal widget, WindowFrame, MemoryPanel, NovaQuickChat memory wiring, vibe-app.json protocol"
+    },
+    {
+      "date": "2026-02-16",
+      "project": "memory-mcp",
+      "action": "Wired memory_summarize_session and memory_decay_stats tools into MCP handlers"
+    },
+    {
+      "date": "2026-02-16",
+      "project": "memory",
+      "action": "Fixed Vitest binary shim — resolved pnpm hoisting issue for @vibetech/memory"
+    },
+    {
+      "date": "2026-02-16",
+      "project": "memory",
+      "action": "Phase 3B/3C complete — 10 issues (real embeddings, schema versioning, TTL cache, strict TS, 16 new tests)"
+    },
+    {
+      "date": "2026-02-16",
+      "project": "nova-mobile-app",
+      "action": "Full revival — 4-screen navigation, HTTP bridge, Zustand stores, 12/12 tests"
+    },
+    {
+      "date": "2026-02-16",
+      "project": "memory",
+      "action": "Fixed MemoryConsolidator test bugs (async/await + property name), 56/56 green"
+    },
+    {
+      "date": "2026-02-15",
+      "project": "monorepo",
+      "action": "Dependency drift fix — all packages aligned to canonical root versions"
+    },
+    {
+      "date": "2026-02-15",
+      "project": "vibe-tutor",
+      "action": "ESLint cleanup (zero warnings) + Play Store readiness audit passed"
+    },
+    {
+      "date": "2026-02-12",
+      "project": "vtde",
+      "action": "Healing toast notifications + useHealingNotifier hook"
+    },
+    {
+      "date": "2026-02-10",
+      "project": "vtde",
+      "action": "Healing Dashboard + backdrop dismiss UX + E2E tests"
+    },
+    {
+      "date": "2026-02-10",
+      "project": "self-healing",
+      "action": "Live mode enabled, GitHub Actions pipeline created"
+    },
+    {
+      "date": "2026-02-09",
+      "project": "vtde",
+      "action": "Tauri 2.0 real backend (sysinfo, app discovery, AppIcon fix)"
+    },
+    {
+      "date": "2026-02-09",
+      "project": "self-healing",
+      "action": "Ralph dry-run verified, safety gate confirmed"
+    },
+    {
+      "date": "2026-02-08",
+      "project": "clawdbot-desktop",
+      "action": "nut-js → @nut-tree-fork/nut-js migration"
+    }
+  ],
+  "projects": {
+    "apps": {
+      "nova-agent": {
+        "status": "production",
+        "priority": "high",
+        "description": "Desktop Context Aware Guide (Tauri 2.0)"
+      },
+      "vibe-code-studio": {
+        "status": "production",
+        "priority": "high",
+        "description": "Advanced Development & Packaging IDE (Electron)"
+      },
+      "vibe-tutor": {
+        "status": "production",
+        "priority": "high",
+        "description": "AI Tutor System (React Native/Expo)"
+      },
+      "nova-mobile-app": {
+        "status": "beta",
+        "priority": "high",
+        "description": "Mobile Client for Nova (React Navigation, Zustand, Bridge Active)"
+      },
+      "vtde": {
+        "status": "beta",
+        "priority": "high",
+        "description": "Vibe-Tech Desktop Environment (Tauri 2.0) — terminal, draggable windows, memory integration, vibe-app.json protocol, healing dashboard"
+      },
+      "clawdbot-desktop": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Desktop automation (Electron, @nut-tree-fork)"
+      },
+      "shipping-pwa": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Logistics PWA"
+      },
+      "invoice-automation-saas": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Invoice processing (Next.js, Stripe)"
+      },
+      "vibe-tech-lovable": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Vibe Tech landing page"
+      },
+      "VibeBlox": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Gamified token economy (Hono, SQLite)"
+      },
+      "vibe-justice": {
+        "status": "maintenance",
+        "priority": "medium",
+        "description": "Legal document analysis (Claude API)"
+      },
+      "crypto-enhanced": {
+        "status": "storage",
+        "priority": "low",
+        "description": "Trading logic (Python, storage mode)"
+      },
+      "prompt-engineer": {
+        "status": "maintenance",
+        "priority": "medium",
+        "description": "Prompt Management System"
+      },
+      "mcp-codeberg": {
+        "status": "production",
+        "priority": "high",
+        "description": "Git operations MCP server"
+      },
+      "mcp-skills-server": {
+        "status": "production",
+        "priority": "high",
+        "description": "Skill library MCP server"
+      },
+      "mcp-gateway": {
+        "status": "development",
+        "priority": "medium",
+        "description": "MCP gateway server"
+      },
+      "memory-mcp": {
+        "status": "development",
+        "priority": "high",
+        "description": "Memory system MCP server"
+      },
+      "avge-dashboard": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Autonomous Video Generation Engine dashboard (Vite, React)"
+      },
+      "ai-youtube-pipeline": {
+        "status": "development",
+        "priority": "low",
+        "description": "YouTube content pipeline"
+      },
+      "business-booking-platform": {
+        "status": "development",
+        "priority": "low",
+        "description": "Booking platform"
+      },
+      "desktop-commander-v3": {
+        "status": "maintenance",
+        "priority": "low",
+        "description": "Desktop commander"
+      },
+      "monorepo-dashboard": {
+        "status": "maintenance",
+        "priority": "low",
+        "description": "Monorepo dashboard"
+      },
+      "symptom-tracker": {
+        "status": "maintenance",
+        "priority": "low",
+        "description": "Symptom tracking"
+      },
+      "gravity-claw": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Gravity claw application"
+      }
+    },
+    "packages": {
+      "shared-ipc": {
+        "status": "production",
+        "priority": "high",
+        "description": "IPC message schemas (Zod)"
+      },
+      "nova-core": {
+        "status": "production",
+        "priority": "high",
+        "description": "Core Logic for Nova"
+      },
+      "nova-types": {
+        "status": "production",
+        "priority": "high",
+        "description": "Shared Types for Nova"
+      },
+      "nova-database": {
+        "status": "production",
+        "priority": "high",
+        "description": "Nova database layer"
+      },
+      "db-learning": {
+        "status": "production",
+        "priority": "critical",
+        "description": "Learning system database"
+      },
+      "db-app": {
+        "status": "production",
+        "priority": "medium",
+        "description": "App database utilities"
+      },
+      "backend": {
+        "status": "production",
+        "priority": "high",
+        "description": "Shared backend utilities"
+      },
+      "feature-flags": {
+        "status": "development",
+        "priority": "high",
+        "description": "Feature Flag System"
+      },
+      "shared-config": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Shared configuration"
+      },
+      "shared-utils": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Shared utilities"
+      },
+      "shared-logic": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Shared business logic"
+      },
+      "testing-utils": {
+        "status": "production",
+        "priority": "high",
+        "description": "Testing utilities"
+      },
+      "ui": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Shared UI Components"
+      },
+      "logger": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Logging library"
+      },
+      "mcp-core": {
+        "status": "development",
+        "priority": "medium",
+        "description": "MCP core utilities"
+      },
+      "mcp-testing": {
+        "status": "development",
+        "priority": "medium",
+        "description": "MCP testing utilities"
+      },
+      "openrouter-client": {
+        "status": "production",
+        "priority": "medium",
+        "description": "OpenRouter API client"
+      },
+      "service-common": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Common service patterns"
+      },
+      "vibetech-hooks": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Shared React hooks"
+      },
+      "vibetech-shared": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Shared Vibe utilities"
+      },
+      "vibetech-types": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Shared TypeScript types"
+      },
+      "vibe-python-shared": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Shared Python utilities"
+      },
+      "memory": {
+        "status": "development",
+        "priority": "high",
+        "description": "Memory consolidation and recall system"
+      },
+      "openclaw-bridge": {
+        "status": "development",
+        "priority": "medium",
+        "description": "OpenClaw integration bridge"
+      }
+    }
+  },
+  "tools": {
+    "ralph": {
+      "status": "production",
+      "description": "Autonomous maintenance system — live mode, 4AM cron, GitHub Actions"
+    },
+    "autofixer": {
+      "status": "production",
+      "description": "Real-time autofixer agent"
+    },
+    "vibe-finisher": {
+      "status": "production",
+      "description": "Project completion tool"
+    }
+  },
+  "currentFocus": ["business-booking-platform", "backend-setup"],
+  "blockers": [],
+  "rules": "./docs/ai/RULES.md",
+  "paths": {
+    "apps": "C:/dev/apps",
+    "packages": "C:/dev/packages",
+    "tools": "C:/dev/tools",
+    "logs": "D:/logs",
+    "data": "D:/",
+    "learning": "D:/learning-system"
+  }
+}

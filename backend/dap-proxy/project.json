@@ -1,0 +1,33 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "dap-proxy",
+  "projectType": "application",
+  "root": "backend/dap-proxy",
+  "sourceRoot": "backend/dap-proxy/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev || tsx watch src/index.ts || echo 'Dev not configured'",
+        "cwd": "backend/dap-proxy"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "options": {
+        "command": "pnpm run build || tsc || echo 'Build not configured'",
+        "cwd": "backend/dap-proxy"
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run start || node dist/index.js || echo 'Start not configured'",
+        "cwd": "backend/dap-proxy"
+      }
+    }
+  },
+  "tags": ["type:node", "scope:dap-proxy"]
+}

@@ -1,0 +1,13 @@
+{
+  "displayName": "Crypto Enhanced",
+  "description": "Cryptocurrency trading bot",
+  "version": "1.0.0",
+  "category": "finance",
+  "icon": "/app-icons/crypto-enhanced.png",
+  "launch": "pnpm dev",
+  "port": null,
+  "type": "web",
+  "features": [
+    "vtde-autodiscovered"
+  ]
+}

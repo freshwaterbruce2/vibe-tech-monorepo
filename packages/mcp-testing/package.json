@@ -1,0 +1,58 @@
+{
+  "name": "@vibetech/mcp-testing",
+  "version": "1.0.0",
+  "description": "Testing utilities for VibeTech MCP servers",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./mocks": {
+      "types": "./dist/mocks/index.d.ts",
+      "import": "./dist/mocks/index.mjs",
+      "require": "./dist/mocks/index.js"
+    },
+    "./helpers": {
+      "types": "./dist/helpers/index.d.ts",
+      "import": "./dist/helpers/index.mjs",
+      "require": "./dist/helpers/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "@vibetech/mcp-core": "workspace:^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "tsup": "^8.5.1",
+    "typescript": "5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "peerDependencies": {
+    "vitest": ">=1.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "mcp",
+    "testing",
+    "vibetech",
+    "mock"
+  ],
+  "license": "MIT"
+}

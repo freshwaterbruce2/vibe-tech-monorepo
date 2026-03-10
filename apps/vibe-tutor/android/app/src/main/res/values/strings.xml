@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Vibe Tutor</string>
+    <string name="title_activity_main">Vibe Tutor</string>
+    <string name="package_name">com.vibetech.tutor</string>
+    <string name="custom_url_scheme">com.vibetech.tutor</string>
+    <string name="audio_player_service_description">Vibe Tutor audio playback service</string>
+</resources>

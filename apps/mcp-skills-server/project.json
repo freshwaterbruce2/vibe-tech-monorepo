@@ -1,0 +1,31 @@
+{
+  "name": "mcp-skills-server",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/mcp-skills-server/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm build",
+        "cwd": "apps/mcp-skills-server"
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node dist/index.js",
+        "cwd": "apps/mcp-skills-server"
+      },
+      "dependsOn": ["build"]
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm dev",
+        "cwd": "apps/mcp-skills-server"
+      }
+    }
+  },
+  "tags": ["type:mcp", "scope:agent"]
+}

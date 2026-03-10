@@ -1,0 +1,41 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+    "module": "ESNext",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node", "@testing-library/jest-dom"],
+    "moduleResolution": "bundler",
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "allowJs": true,
+    "jsx": "preserve",
+    // Type Safety: Gradual strict mode enablement
+    "strict": false,  // Keep disabled for now
+    "strictNullChecks": true,  // ✓ Enabled: Catch null/undefined bugs
+    "strictFunctionTypes": true,  // ✓ Enabled: Better function type checking
+    "noImplicitThis": true,  // ✓ Enabled: Require explicit 'this' typing
+    "noUncheckedIndexedAccess": true,  // ✓ Enabled: Array/object access safety
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  },
+  "include": [
+    "src/**/*",
+    "src/types/**/*",
+    "electron/**/*",
+    "tests/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "*.config.ts",
+    "capacitor.config.ts"
+  ],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}

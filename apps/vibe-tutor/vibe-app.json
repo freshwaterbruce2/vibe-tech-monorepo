@@ -1,0 +1,11 @@
+{
+  "displayName": "Vibe Tutor",
+  "description": "AI-powered learning companion",
+  "version": "1.0.0",
+  "category": "education",
+  "icon": "/app-icons/vibe-tutor.png",
+  "launch": "pnpm dev",
+  "port": null,
+  "type": "native",
+  "features": ["ai", "learning", "mobile"]
+}

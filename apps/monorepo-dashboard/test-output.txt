@@ -1,0 +1,53 @@
+========================================
+API Endpoint Testing - monorepo-dashboard
+========================================
+Backend: http://localhost:5177
+Started: 2026-01-18T15:08:32.604Z
+
+Waiting for server to be ready...
+✅ Server is ready
+
+========================================
+Main Endpoint Tests
+========================================
+
+Test: GET /api/nx-cloud/status
+  URI: http://localhost:5177/api/nx-cloud/status
+  Status: 200 ✅
+  Response Time: 10ms ✅
+  CORS Origin: *
+  Data Type: Object
+  Keys: connected, authenticationRequired, lastSync, buildsInDatabase, error
+
+Test: GET /api/coverage/latest
+  URI: http://localhost:5177/api/coverage/latest
+  Status: 200 ✅
+  Response Time: 55ms ✅
+  CORS Origin: *
+  Data Type: Array [3 items]
+  First Item Keys: projectName, timestamp, metrics
+
+Test: GET /api/coverage/trends?days=30
+  URI: http://localhost:5177/api/coverage/trends?days=30
+  Status: 200 ✅
+  Response Time: 6ms ✅
+  CORS Origin: *
+  Data Type: Array [3 items]
+  First Item Keys: projectName, dataPoints
+
+Test: GET /api/bundles/latest
+  URI: http://localhost:5177/api/bundles/latest
+  Status: 200 ✅
+  Response Time: 5ms ✅
+  CORS Origin: *
+  Data Type: Array [0 items]
+
+Test: GET /api/bundles/trends?days=30
+  URI: http://localhost:5177/api/bundles/trends?days=30
+  Status: 200 ✅
+  Response Time: 3ms ✅
+  CORS Origin: *
+  Data Type: Array [0 items]
+
+Test: GET /api/dependencies/vulnerabilities
+  URI: http://localhost:5177/api/dependencies/vulnerabilities

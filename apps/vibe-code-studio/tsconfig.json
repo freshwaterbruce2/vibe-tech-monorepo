@@ -1,0 +1,55 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "declaration": false,
+    "declarationMap": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@components/*": ["./src/components/*"],
+      "@services/*": ["./src/services/*"],
+      "@hooks/*": ["./src/hooks/*"],
+      "@types/*": ["./src/types/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@electron/*": ["./electron/*"],
+      "@vibetech/*": ["../../packages/*/src"],
+      "@dev/feature-flags-*": ["../../packages/feature-flags/*/src"]
+    },
+    "types": ["vitest/globals"]
+  },
+  "include": [
+    "src/**/*",
+    "src/**/*.tsx",
+    "src/**/*.ts",
+    "src/vite-env.d.ts",
+    "electron/**/*",
+    "electron/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/*.spec.tsx",
+    "**/*.test.tsx",
+    "dist/**/*",
+    "build/**/*",
+    "src/__tests__/**/*"
+  ],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs"
+    }
+  }
+}

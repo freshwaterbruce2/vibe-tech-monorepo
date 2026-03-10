@@ -1,0 +1,55 @@
+name: Vibe Tutor Privacy Policy Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/vibe-tutor-privacy-policy-pages.yml'
+      - 'apps/vibe-tutor/docs/privacy-policy/**'
+      - 'apps/vibe-tutor/public/privacy-policy.html'
+      - 'apps/vibe-tutor/docs/PRIVACY_POLICY.md'
+      - 'apps/vibe-tutor/docs/PRIVACY_POLICY_HOSTING.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: vibe-tutor-privacy-policy-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Pages Artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Stage privacy policy site
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist-pages/privacy-policy
+          cp apps/vibe-tutor/docs/privacy-policy/index.html dist-pages/privacy-policy/index.html
+          touch dist-pages/.nojekyll
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist-pages
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

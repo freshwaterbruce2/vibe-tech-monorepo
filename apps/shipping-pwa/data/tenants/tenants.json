@@ -1,0 +1,204 @@
+[
+  {
+    "id": "tenant_1758483589292_t42ykbv5i",
+    "name": "Test Warehouse Co",
+    "subdomain": "testwarehouse",
+    "apiKey": "sk_1758483589292_5qptt9phzew",
+    "config": {
+      "companyName": "Test Warehouse Co",
+      "warehouseName": "Main Distribution Center",
+      "warehouseCode": "TWC001",
+      "appName": "Test Warehouse Shipping System",
+      "appShortName": "TWC Shipping",
+      "appDescription": "Streamlined shipping operations for Test Warehouse Co",
+      "brandColors": {
+        "primary": "#1e40af",
+        "secondary": "#3b82f6",
+        "accent": "#60a5fa",
+        "background": "#f8fafc",
+        "text": "#1e293b"
+      },
+      "doorNumberRange": {
+        "min": 100,
+        "max": 200
+      },
+      "destinationDCs": [
+        "DC001",
+        "DC002",
+        "DC003"
+      ],
+      "freightTypes": [
+        "Standard",
+        "Express",
+        "Overnight"
+      ],
+      "location": {
+        "address": "123 Warehouse St",
+        "city": "TestCity",
+        "state": "TC",
+        "zipCode": "12345"
+      }
+    },
+    "subscription": {
+      "tier": "free",
+      "status": "active",
+      "expiresAt": "2025-10-21T19:39:49.292Z",
+      "maxUsers": 5,
+      "maxDoors": 20
+    },
+    "createdAt": "2025-09-21T19:39:49.292Z",
+    "updatedAt": "2025-09-21T19:39:49.292Z"
+  },
+  {
+    "id": "tenant_1758483623062_ms9w9nsj4",
+    "name": "Another Warehouse Corp",
+    "subdomain": "anotherwarehouse",
+    "apiKey": "sk_1758483623062_bjbl12ijmsk",
+    "config": {
+      "companyName": "Another Warehouse Corp",
+      "warehouseName": "Secondary Facility",
+      "warehouseCode": "AWC002",
+      "appName": "AWC Logistics System",
+      "appShortName": "AWC Logistics",
+      "appDescription": "Advanced logistics for Another Warehouse Corp",
+      "brandColors": {
+        "primary": "#dc2626",
+        "secondary": "#ef4444",
+        "accent": "#f87171",
+        "background": "#fef2f2",
+        "text": "#7f1d1d"
+      },
+      "doorNumberRange": {
+        "min": 300,
+        "max": 400
+      },
+      "destinationDCs": [
+        "AWC-HUB1",
+        "AWC-HUB2"
+      ],
+      "freightTypes": [
+        "Priority",
+        "Regular"
+      ],
+      "location": {
+        "address": "456 Logistics Ave",
+        "city": "AnotherCity",
+        "state": "AC",
+        "zipCode": "54321"
+      }
+    },
+    "subscription": {
+      "tier": "free",
+      "status": "active",
+      "expiresAt": "2025-10-21T19:40:23.062Z",
+      "maxUsers": 5,
+      "maxDoors": 20
+    },
+    "createdAt": "2025-09-21T19:40:23.062Z",
+    "updatedAt": "2025-09-21T19:40:23.062Z"
+  },
+  {
+    "id": "tenant_1758484919354_uzyqkx8zo",
+    "name": "Elite Logistics Corp",
+    "subdomain": "elitelogistics",
+    "apiKey": "sk_1758484919354_sdjqo63z05l",
+    "config": {
+      "companyName": "Elite Logistics Corp",
+      "warehouseName": "Premium Distribution Hub",
+      "warehouseCode": "ELC-PDH",
+      "appName": "Elite Logistics Command Center",
+      "appShortName": "Elite Command",
+      "appDescription": "Advanced logistics management for Elite Logistics Corp",
+      "brandColors": {
+        "primary": "#dc2626",
+        "secondary": "#ef4444",
+        "accent": "#f87171",
+        "background": "#fef2f2",
+        "text": "#7f1d1d"
+      },
+      "doorNumberRange": {
+        "min": 500,
+        "max": 600
+      },
+      "destinationDCs": [
+        "ELC-EAST",
+        "ELC-WEST",
+        "ELC-CENTRAL",
+        "ELC-SOUTH"
+      ],
+      "freightTypes": [
+        "Priority",
+        "Express",
+        "Standard",
+        "Economy"
+      ],
+      "location": {
+        "address": "789 Elite Industrial Blvd",
+        "city": "Elite City",
+        "state": "EC",
+        "zipCode": "90210"
+      }
+    },
+    "subscription": {
+      "tier": "free",
+      "status": "active",
+      "expiresAt": "2025-10-21T20:01:59.354Z",
+      "maxUsers": 5,
+      "maxDoors": 20
+    },
+    "createdAt": "2025-09-21T20:01:59.354Z",
+    "updatedAt": "2025-09-21T20:01:59.354Z"
+  },
+  {
+    "id": "tenant_1758484935318_94g8el50m",
+    "name": "Premium Freight Solutions",
+    "subdomain": "premiumfreight",
+    "apiKey": "sk_1758484935318_vui4o4vpfh",
+    "config": {
+      "companyName": "Premium Freight Solutions",
+      "warehouseName": "Advanced Distribution Center",
+      "warehouseCode": "PFS-ADC",
+      "appName": "Premium Freight Command Portal",
+      "appShortName": "PFS Portal",
+      "appDescription": "State-of-the-art freight management for Premium Freight Solutions",
+      "brandColors": {
+        "primary": "#059669",
+        "secondary": "#10b981",
+        "accent": "#34d399",
+        "background": "#ecfdf5",
+        "text": "#064e3b"
+      },
+      "doorNumberRange": {
+        "min": 750,
+        "max": 850
+      },
+      "destinationDCs": [
+        "PFS-NORTH",
+        "PFS-SOUTH",
+        "PFS-MIDWEST",
+        "PFS-PACIFIC"
+      ],
+      "freightTypes": [
+        "Expedited",
+        "Standard",
+        "Economy",
+        "Oversized"
+      ],
+      "location": {
+        "address": "1001 Premium Way",
+        "city": "Freight City",
+        "state": "FC",
+        "zipCode": "54321"
+      }
+    },
+    "subscription": {
+      "tier": "free",
+      "status": "active",
+      "expiresAt": "2025-10-21T20:02:15.318Z",
+      "maxUsers": 5,
+      "maxDoors": 20
+    },
+    "createdAt": "2025-09-21T20:02:15.318Z",
+    "updatedAt": "2025-09-21T20:02:15.318Z"
+  }
+]

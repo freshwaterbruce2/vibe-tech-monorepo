@@ -1,0 +1,19 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@vibetech/hooks",
+  "projectType": "library",
+  "root": "packages/vibetech-hooks",
+  "sourceRoot": "packages/vibetech-hooks/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "options": {
+        "command": "tsc",
+        "cwd": "packages/vibetech-hooks"
+      }
+    }
+  },
+  "tags": ["type:library", "scope:vibetech"]
+}

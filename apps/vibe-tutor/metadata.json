@@ -1,0 +1,7 @@
+{
+  "name": "Vibe-Tutor",
+  "description": "An AI-powered homework manager and tutor from Vibe-Tech AI, designed to make learning organized and engaging.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

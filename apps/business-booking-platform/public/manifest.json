@@ -1,0 +1,165 @@
+{
+	"name": "Vibe Hotels - Find Your Perfect Vibe",
+	"short_name": "Vibe Hotels",
+	"description": "AI-powered hotel matching based on your unique passions and vibe. Earn 5% rewards on every booking.",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#ffffff",
+	"theme_color": "#3b82f6",
+	"orientation": "portrait-primary",
+	"scope": "/",
+	"categories": ["travel", "lifestyle", "business"],
+	"lang": "en-US",
+	"dir": "ltr",
+
+	"icons": [
+		{
+			"src": "/icon.svg",
+			"sizes": "72x72",
+			"type": "image/svg+xml",
+			"purpose": "any"
+		},
+		{
+			"src": "/icon.svg",
+			"sizes": "96x96",
+			"type": "image/svg+xml",
+			"purpose": "any"
+		},
+		{
+			"src": "/icon.svg",
+			"sizes": "128x128",
+			"type": "image/svg+xml",
+			"purpose": "any"
+		},
+		{
+			"src": "/icon.svg",
+			"sizes": "144x144",
+			"type": "image/svg+xml",
+			"purpose": "any"
+		},
+		{
+			"src": "/icon.svg",
+			"sizes": "152x152",
+			"type": "image/svg+xml",
+			"purpose": "any"
+		},
+		{
+			"src": "/icon.svg",
+			"sizes": "192x192",
+			"type": "image/svg+xml",
+			"purpose": "any maskable"
+		},
+		{
+			"src": "/icon.svg",
+			"sizes": "384x384",
+			"type": "image/svg+xml",
+			"purpose": "any"
+		},
+		{
+			"src": "/icon.svg",
+			"sizes": "512x512",
+			"type": "image/svg+xml",
+			"purpose": "any maskable"
+		}
+	],
+
+	"screenshots": [
+		{
+			"src": "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=390&h=844&fit=crop&crop=center",
+			"sizes": "390x844",
+			"type": "image/jpeg",
+			"form_factor": "narrow",
+			"label": "AI-powered hotel search matching your unique vibe"
+		},
+		{
+			"src": "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=390&h=844&fit=crop&crop=center",
+			"sizes": "390x844",
+			"type": "image/jpeg",
+			"form_factor": "narrow",
+			"label": "Passion-based hotel recommendations with 5% rewards"
+		},
+		{
+			"src": "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=1024&h=768&fit=crop&crop=center",
+			"sizes": "1024x768",
+			"type": "image/jpeg",
+			"form_factor": "wide",
+			"label": "Immersive desktop experience for finding your perfect vibe"
+		}
+	],
+
+	"shortcuts": [
+		{
+			"name": "Find Hotels",
+			"short_name": "Search",
+			"description": "Search for hotels that match your vibe",
+			"url": "/search",
+			"icons": [
+				{
+					"src": "/icon.svg",
+					"sizes": "96x96",
+					"type": "image/svg+xml"
+				}
+			]
+		},
+		{
+			"name": "My Bookings",
+			"short_name": "Bookings",
+			"description": "View your hotel bookings and earn rewards",
+			"url": "/bookings",
+			"icons": [
+				{
+					"src": "/icon.svg",
+					"sizes": "96x96",
+					"type": "image/svg+xml"
+				}
+			]
+		},
+		{
+			"name": "Rewards",
+			"short_name": "Rewards",
+			"description": "Check your 5% booking rewards",
+			"url": "/rewards",
+			"icons": [
+				{
+					"src": "/icon.svg",
+					"sizes": "96x96",
+					"type": "image/svg+xml"
+				}
+			]
+		}
+	],
+
+	"related_applications": [],
+	"prefer_related_applications": false,
+
+	"edge_side_panel": {
+		"preferred_width": 400
+	},
+
+	"protocol_handlers": [
+		{
+			"protocol": "web+vibehotels",
+			"url": "/?action=%s"
+		}
+	],
+
+	"file_handlers": [
+		{
+			"action": "/",
+			"accept": {
+				"application/json": [".json"]
+			}
+		}
+	],
+
+	"share_target": {
+		"action": "/",
+		"method": "GET",
+		"enctype": "application/x-www-form-urlencoded",
+		"params": {
+			"title": "title",
+			"text": "text",
+			"url": "url"
+		}
+	}
+}

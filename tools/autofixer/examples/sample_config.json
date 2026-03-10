@@ -1,0 +1,56 @@
+{
+	"autofixer_config": {
+		"description": "Example configuration for autofixer agent",
+		"settings": {
+			"dry_run": false,
+			"create_backups": true,
+			"auto_apply_fixes": false,
+			"check_interval_seconds": 5,
+			"max_fixes_per_session": 10
+		},
+		"monitoring": {
+			"log_files": [
+				"/path/to/vite.log",
+				"/path/to/typescript.log",
+				"/path/to/python.log"
+			],
+			"file_extensions_to_fix": [".ts", ".tsx", ".js", ".jsx", ".py", ".json"]
+		},
+		"safety": {
+			"blocked_commands": [
+				"rm -rf",
+				"git reset --hard",
+				"npm uninstall",
+				"pnpm remove"
+			],
+			"require_confirmation_for": [
+				"npm install",
+				"pnpm install",
+				"pip install",
+				"git commit"
+			],
+			"max_file_size_bytes": 1048576,
+			"create_backup_before_edit": true
+		},
+		"error_patterns": {
+			"ignore_warnings": false,
+			"priority_errors": [
+				"SyntaxError",
+				"ModuleNotFoundError",
+				"TypeError",
+				"ReferenceError"
+			],
+			"auto_fix_types": [
+				"import_errors",
+				"missing_dependencies",
+				"type_annotations",
+				"unused_imports"
+			]
+		},
+		"notifications": {
+			"on_fix_applied": true,
+			"on_fix_failed": true,
+			"on_session_complete": true
+		}
+	}
+}

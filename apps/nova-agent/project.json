@@ -1,0 +1,104 @@
+{
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
+	"name": "nova-agent",
+	"projectType": "application",
+	"sourceRoot": "apps/nova-agent/src",
+	"targets": {
+		"dev": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "pnpm tauri dev",
+				"cwd": "apps/nova-agent"
+			}
+		},
+		"build": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "pnpm tauri build",
+				"cwd": "apps/nova-agent"
+			},
+			"outputs": [
+				"{projectRoot}/src-tauri/target/release",
+				"{projectRoot}/dist"
+			]
+		},
+		"build:frontend": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "vite build",
+				"cwd": "apps/nova-agent"
+			},
+			"outputs": ["{projectRoot}/dist"]
+		},
+		"build:rust": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "cargo build --release",
+				"cwd": "apps/nova-agent/src-tauri"
+			},
+			"outputs": ["{projectRoot}/src-tauri/target/release"]
+		},
+		"check:rust": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "cargo check",
+				"cwd": "apps/nova-agent/src-tauri"
+			}
+		},
+		"test:rust": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "cargo test",
+				"cwd": "apps/nova-agent/src-tauri"
+			}
+		},
+		"lint": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "eslint \"src/**/*.{ts,tsx}\" --ignore-pattern \"src/**/*.test.ts\" --ignore-pattern \"src/**/*.test.tsx\" --ignore-pattern \"src/**/__tests__/**\" --ignore-pattern \"src/test/**\" --ignore-pattern \"src/tests/**\"",
+				"cwd": "apps/nova-agent"
+			}
+		},
+		"typecheck": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "tsc --noEmit",
+				"cwd": "apps/nova-agent"
+			}
+		},
+		"test": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "vitest run",
+				"cwd": "apps/nova-agent"
+			}
+		},
+		"test:coverage": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "vitest run --coverage",
+				"cwd": "apps/nova-agent"
+			}
+		},
+		"clean": {
+			"executor": "nx:run-commands",
+			"options": {
+				"commands": [
+					"rimraf dist node_modules/.cache .nyc_output coverage",
+					"cargo clean"
+				],
+				"parallel": false,
+				"cwd": "apps/nova-agent"
+			}
+		}
+	},
+	"tags": [
+		"type:application",
+		"platform:desktop",
+		"stack:tauri",
+		"stack:rust",
+		"stack:react",
+		"filesystem",
+		"learning-system"
+	]
+}

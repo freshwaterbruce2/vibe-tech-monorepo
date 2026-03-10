@@ -1,0 +1,89 @@
+{
+  "cleanupPeriodDays": 30,
+  "env": {
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "128000",
+    "MAX_THINKING_TOKENS": "32000",
+    "BASH_DEFAULT_TIMEOUT_MS": "120000",
+    "BASH_MAX_TIMEOUT_MS": "600000",
+    "BASH_MAX_OUTPUT_LENGTH": "100000",
+    "MCP_TIMEOUT": "60000",
+    "MCP_TOOL_TIMEOUT": "60000",
+    "MAX_MCP_OUTPUT_TOKENS": "50000",
+    "DISABLE_COST_WARNINGS": "0",
+    "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "1",
+    "CLAUDE_CODE_DISABLE_TERMINAL_TITLE": "0",
+    "DISABLE_NON_ESSENTIAL_MODEL_CALLS": "0",
+    "SLASH_COMMAND_TOOL_CHAR_BUDGET": "20000",
+    "ENABLE_TOOL_SEARCH": "auto:5"
+  },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  },
+  "permissions": {
+    "allow": [
+      "Bash(pnpm:*)",
+      "Bash(pnpm run:*)",
+      "Bash(pnpm nx:*)",
+      "Bash(npm run:*)",
+      "Bash(npx nx:*)",
+      "Bash(npx:*)",
+      "Bash(tsx:*)",
+      "Bash(jj:*)",
+      "Bash(git diff:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git show:*)",
+      "Bash(python:*)",
+      "Bash(powershell:*)",
+      "Bash(node:*)",
+      "Bash(sqlite3:*)",
+      "Edit",
+      "Read"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Read(./apps/crypto-enhanced/.env)",
+      "Read(./apps/crypto-enhanced/nonce_state_primary.json)",
+      "Read(./apps/crypto-enhanced/nonce_state_secondary.json)",
+      "Read(./apps/crypto-enhanced/config.py)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(rm -rf:*)",
+      "Bash(format:*)",
+      "Bash(diskpart:*)"
+    ],
+    "ask": [
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git rebase:*)",
+      "Bash(rm:*)",
+      "Bash(del:*)",
+      "Write"
+    ],
+    "defaultMode": "default",
+    "additionalDirectories": [
+      "D:/databases",
+      "D:/logs",
+      "D:/learning-system",
+      "D:/data"
+    ]
+  },
+  "model": "claude-sonnet-4-5-20250929",
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [],
+  "disabledMcpjsonServers": [
+    "puppeteer"
+  ],
+  "statusLine": {
+    "type": "command",
+    "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/status-line.ps1"
+  },
+  "enabledPlugins": {
+    "csharp-lsp@claude-plugins-official": true
+  }
+}

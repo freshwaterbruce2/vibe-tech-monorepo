@@ -1,0 +1,45 @@
+{
+  "name": "mcp-core",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/mcp-core/src",
+  "projectType": "library",
+  "tags": ["scope:mcp", "type:lib"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "pnpm tsup",
+        "cwd": "packages/mcp-core"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm vitest run",
+        "cwd": "packages/mcp-core"
+      }
+    },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm vitest run --coverage",
+        "cwd": "packages/mcp-core"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm tsc --noEmit",
+        "cwd": "packages/mcp-core"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm eslint src --ext .ts",
+        "cwd": "packages/mcp-core"
+      }
+    }
+  }
+}

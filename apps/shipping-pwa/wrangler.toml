@@ -1,0 +1,100 @@
+# Cloudflare Workers Configuration for DC8980 Shipping PWA
+
+name = "dc8980-shipping-api"
+main = "worker/index.ts"
+compatibility_date = "2025-09-22"
+compatibility_flags = ["nodejs_compat"]
+
+# Account and deployment settings
+[env.production]
+name = "dc8980-shipping-api-prod"
+route = { pattern = "api.dc8980shipping.com/*", zone_id = "YOUR_ZONE_ID" }
+
+[env.staging]
+name = "dc8980-shipping-api-staging"
+route = { pattern = "staging-api.dc8980shipping.com/*", zone_id = "YOUR_ZONE_ID" }
+
+# D1 Database bindings
+[[d1_databases]]
+binding = "DB"
+database_name = "dc8980-shipping-db"
+database_id = "b6219a14-2b8b-410a-8a67-4938eab30fca"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "dc8980-shipping-db-prod"
+database_id = "YOUR_PRODUCTION_DATABASE_ID"
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "dc8980-shipping-db-staging"
+database_id = "YOUR_STAGING_DATABASE_ID"
+
+# KV Namespaces for session storage
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "a7f771096d93446d9b1bb25a3a79b10e"
+
+[[env.production.kv_namespaces]]
+binding = "SESSIONS"
+id = "YOUR_PRODUCTION_KV_ID"
+
+[[env.staging.kv_namespaces]]
+binding = "SESSIONS"
+id = "YOUR_STAGING_KV_ID"
+
+# Environment variables (non-sensitive)
+[vars]
+ENVIRONMENT = "development"
+CORS_ORIGINS = "http://localhost:5173,http://localhost:5174"
+RATE_LIMIT_WINDOW_MS = "60000"
+RATE_LIMIT_MAX_REQUESTS = "100"
+CIRCUIT_BREAKER_FAILURE_THRESHOLD = "3"
+CIRCUIT_BREAKER_TIMEOUT_MS = "30000"
+CIRCUIT_BREAKER_RETRY_TIMEOUT_MS = "60000"
+
+[env.production.vars]
+ENVIRONMENT = "production"
+CORS_ORIGINS = "https://app.dc8980shipping.com,https://dc8980shipping.com"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+CORS_ORIGINS = "https://staging.dc8980shipping.com"
+
+# Build configuration
+# [build]
+# command = "npm run build:worker"
+
+# Development settings
+[dev]
+port = 3001
+local_protocol = "http"
+upstream_protocol = "https"
+host = "localhost"
+
+# Analytics and logging (use observability instead)
+[observability]
+enabled = true
+
+# Rate limiting
+[[unsafe.bindings]]
+name = "RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "1"
+simple = { limit = 100, period = 60 }
+
+# Secrets (use wrangler secret put)
+# SQUARE_ACCESS_TOKEN
+# SQUARE_WEBHOOK_SECRET
+# SENDGRID_API_KEY
+# SMTP_PASSWORD
+# JWT_SECRET
+# ADMIN_PASSWORD_HASH
+# FIREBASE_SERVICE_ACCOUNT
+
+# Build and deployment commands
+# Development: wrangler dev
+# Staging: wrangler deploy --env staging
+# Production: wrangler deploy --env production
+
+# Pages deployment is handled separately via wrangler pages deploy

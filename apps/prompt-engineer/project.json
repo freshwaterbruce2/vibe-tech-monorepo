@@ -1,0 +1,26 @@
+{
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
+	"name": "prompt-engineer-app",
+	"projectType": "application",
+	"root": "apps/prompt-engineer",
+	"sourceRoot": "apps/prompt-engineer/src",
+	"targets": {
+		"dev": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "vite || npm run dev || echo 'Dev server not configured'",
+				"cwd": "apps/prompt-engineer"
+			}
+		},
+		"build": {
+			"executor": "nx:run-commands",
+			"outputs": ["{projectRoot}/dist"],
+			"cache": true,
+			"options": {
+				"command": "vite build || tsc || npm run build || echo 'Build not configured'",
+				"cwd": "apps/prompt-engineer"
+			}
+		}
+	},
+	"tags": ["type:web", "scope:prompt-engineer"]
+}

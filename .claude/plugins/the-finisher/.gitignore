@@ -1,0 +1,73 @@
+# The Finisher Plugin - Git Ignore Configuration
+
+# User-generated state files (should not be committed)
+FINISHER_STATE.md
+**/FINISHER_STATE.md
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# OS-specific files
+# Windows
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# macOS (in case plugin is shared)
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Test output
+test-results/
+coverage/
+.nyc_output/
+
+# Build artifacts
+dist/
+build/
+*.exe
+*.msi
+
+# PowerShell module cache
+*.psm1.cache
+
+# Node modules (if using npm for testing)
+node_modules/
+
+# Python cache (if tools expanded)
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment variables (should never be committed)
+.env
+.env.local
+.env.*.local
+
+# Validation reports (user-generated)
+VALIDATION_REPORT.md
+*_VALIDATION_*.md
+
+# Plugin testing artifacts
+test-output/
+test-state-*.md

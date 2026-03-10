@@ -1,0 +1,26 @@
+[2026-01-20 20:42:00] Starting Drive Organization...
+[2026-01-20 20:42:00] Mode: Active Execution
+[2026-01-20 20:42:00] Created: D:\Media
+[2026-01-20 20:42:00] Created: D:\Archives
+[2026-01-20 20:42:00] ERROR: Failed to move D:\logs
+[2026-01-20 20:42:00] Moved: D:\Attachments -> D:\Media
+[2026-01-20 20:42:00] Moved: D:\SCDEW -> D:\Archives
+[2026-01-20 20:42:00] Moved: D:\pnpm-store -> D:\Data
+[2026-01-20 20:42:00] Moved: D:\camera_roll -> D:\Media
+[2026-01-20 20:42:00] ERROR: Failed to move D:\dev
+[2026-01-20 20:42:00] Moved: D:\screenshots -> D:\Media
+[2026-01-20 20:42:00] Moved: D:\backups -> D:\Archives
+[2026-01-20 20:42:00] Moved: D:\christopher_coming_home -> D:\Media
+[2026-01-20 20:42:00] Moved: D:\installers -> D:\Archives
+[2026-01-20 20:42:00] Moved: D:\logsopenrouter-proxy -> D:\Logs
+[2026-01-20 20:42:00] Moved: D:\repositories -> D:\Dev
+[2026-01-20 20:42:00] Moved: D:\exports -> D:\Archives
+[2026-01-20 20:42:00] Moved: D:\models -> D:\Data
+[2026-01-20 20:42:25] Moved: D:\New folder -> D:\Archives
+[2026-01-20 20:42:25] Moved: D:\uploads -> D:\Media
+[2026-01-20 20:42:25] ERROR: Failed to move D:\fresh_zxae3v6
+[2026-01-20 20:42:25] Moved: D:\cameraroll -> D:\Media
+[2026-01-20 20:42:25] Deleted: DUMP2838.tmp
+[2026-01-20 20:42:25] Deleted: DumpStack.log
+[2026-01-20 20:42:25] Deleted: DumpStack.log.tmp
+[2026-01-20 20:42:25] Organization Complete.

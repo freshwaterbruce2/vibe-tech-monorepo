@@ -1,0 +1,28 @@
+# Build and dependency directories
+node_modules
+dist
+build
+coverage
+.nx
+.turbo
+.vite
+.cache
+
+# Package managers
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Generated files
+**/*.min.js
+**/*.bundle.js
+**/*.d.ts
+tsbuildinfo
+
+# OS metadata
+Thumbs.db
+.DS_Store
+
+# Tool configuration
+.idea
+.vscode

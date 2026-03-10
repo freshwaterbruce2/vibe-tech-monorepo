@@ -1,0 +1,13 @@
+{
+  "displayName": "Monorepo Dashboard",
+  "description": "Workspace visualization",
+  "version": "1.0.0",
+  "category": "dev",
+  "icon": "/app-icons/monorepo-dashboard.png",
+  "launch": "pnpm dev",
+  "port": null,
+  "type": "web",
+  "features": [
+    "vtde-autodiscovered"
+  ]
+}

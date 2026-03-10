@@ -1,0 +1,25 @@
+# Android App Signing Configuration
+# Copy this file to gradle.properties and fill in your actual keystore details
+
+# Keystore configuration for release builds
+MYAPP_UPLOAD_STORE_FILE=release-key.keystore
+MYAPP_UPLOAD_KEY_ALIAS=dc8980-shipping
+MYAPP_UPLOAD_STORE_PASSWORD=your_store_password_here
+MYAPP_UPLOAD_KEY_PASSWORD=your_key_password_here
+
+# Build optimization
+org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+org.gradle.parallel=true
+org.gradle.caching=true
+org.gradle.configureondemand=true
+
+# AndroidX migration
+android.useAndroidX=true
+android.enableJetifier=true
+
+# Enable R8 code shrinking
+android.enableR8.fullMode=true
+
+# Disable unnecessary features for better build performance
+android.enableBuildCache=true
+android.enableGradleWorkers=true

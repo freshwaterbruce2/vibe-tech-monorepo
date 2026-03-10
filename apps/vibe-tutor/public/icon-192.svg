@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#06B6D4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#EC4899;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:white;stop-opacity:0.3" />
+      <stop offset="70%" style="stop-color:white;stop-opacity:0.1" />
+      <stop offset="100%" style="stop-color:white;stop-opacity:0" />
+    </radialGradient>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect x="0" y="0" width="192" height="192" rx="28" ry="28" fill="url(#bgGrad)"/>
+
+  <!-- Inner glow -->
+  <rect x="0" y="0" width="192" height="192" rx="28" ry="28" fill="url(#glow)"/>
+
+  <!-- VT Text -->
+  <text x="96" y="90" font-family="Inter, Arial, sans-serif" font-size="68" font-weight="bold"
+        fill="white" text-anchor="middle" filter="url(#shadow)">VT</text>
+
+  <!-- TUTOR subtitle -->
+  <text x="96" y="125" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="500"
+        fill="white" text-anchor="middle" opacity="0.9">TUTOR</text>
+
+  <!-- Decorative stars -->
+  <g fill="white" opacity="0.8">
+    <path d="M30,30 L32,24 L34,30 L28,27 L36,27 Z" />
+    <path d="M162,38 L164,33 L166,38 L161,35.5 L169,35.5 Z" />
+    <path d="M38,154 L40,149 L42,154 L37,151.5 L45,151.5 Z" />
+    <path d="M154,162 L156,156 L158,162 L152,159 L160,159 Z" />
+  </g>
+</svg>

@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.nx/
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.production.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
+
+# Database (development - do NOT commit production database)
+*.db-journal
+
+# Temporary files
+*.tmp
+.cache/

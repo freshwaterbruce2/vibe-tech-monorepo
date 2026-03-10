@@ -1,0 +1,13 @@
+{
+  "displayName": "Desktop Commander",
+  "description": "MCP server for system control",
+  "version": "1.0.0",
+  "category": "dev",
+  "icon": "/app-icons/desktop-commander-v3.png",
+  "launch": "pnpm dev",
+  "port": null,
+  "type": "native",
+  "features": [
+    "vtde-autodiscovered"
+  ]
+}

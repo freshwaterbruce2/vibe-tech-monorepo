@@ -1,0 +1,68 @@
+src/firebase/services.ts(112,20): error TS2555: Expected at least 2 arguments, but got 1.
+src/firebase/services.ts(205,20): error TS2555: Expected at least 2 arguments, but got 1.
+src/pages/Analytics.tsx(268,28): error TS2322: Type '(value: any, name: string) => any[]' is not assignable to type 'Formatter<any, string> & ((value: any, name: string, item: Payload<any, string>, index: number, payload: Payload<any, string>[]) => ReactNode | [...])'.
+  Type '(value: any, name: string) => any[]' is not assignable to type 'Formatter<any, string>'.
+    Types of parameters 'name' and 'name' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+src/pages/Maps.tsx(202,43): error TS2322: Type 'Dispatch<SetStateAction<"satellite" | "terrain" | "street">>' is not assignable to type '(value: string) => void'.
+  Types of parameters 'value' and 'value' are incompatible.
+    Type 'string' is not assignable to type 'SetStateAction<"satellite" | "terrain" | "street">'.
+src/pages/Maps.tsx(338,68): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'SetStateAction<number>'.
+  Type 'undefined' is not assignable to type 'SetStateAction<number>'.
+src/services/advanced-offline-manager.ts(155,7): error TS2783: 'backoffDelay' is specified more than once, so this usage will be overwritten.
+src/services/advanced-offline-manager.ts(156,7): error TS2783: 'maxRetries' is specified more than once, so this usage will be overwritten.
+src/services/advanced-offline-manager.ts(257,35): error TS2345: Argument of type '{ operation: "UPDATE"; endpoint: string; data: any; priority: "normal"; maxRetries: number; }' is not assignable to parameter of type 'Omit<OfflineQueueItem, "id" | "timestamp" | "retryCount">'.
+  Property 'backoffDelay' is missing in type '{ operation: "UPDATE"; endpoint: string; data: any; priority: "normal"; maxRetries: number; }' but required in type 'Omit<OfflineQueueItem, "id" | "timestamp" | "retryCount">'.
+src/services/enhanced-notifications.ts(104,9): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(options?: PushSubscriptionOptionsInit | undefined): Promise<PushSubscription>', gave the following error.
+    Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'string | BufferSource | null | undefined'.
+      Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'ArrayBufferView<ArrayBuffer>'.
+        Types of property 'buffer' are incompatible.
+          Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
+            Type 'SharedArrayBuffer' is not assignable to type 'ArrayBuffer'.
+              Types of property '[Symbol.toStringTag]' are incompatible.
+                Type '"SharedArrayBuffer"' is not assignable to type '"ArrayBuffer"'.
+  Overload 2 of 2, '(options?: PushSubscriptionOptionsInit | undefined): Promise<PushSubscription>', gave the following error.
+    Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'string | BufferSource | null | undefined'.
+      Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'ArrayBufferView<ArrayBuffer>'.
+        Types of property 'buffer' are incompatible.
+          Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
+            Type 'SharedArrayBuffer' is not assignable to type 'ArrayBuffer'.
+              Types of property '[Symbol.toStringTag]' are incompatible.
+                Type '"SharedArrayBuffer"' is not assignable to type '"ArrayBuffer"'.
+src/services/enhanced-notifications.ts(131,7): error TS2353: Object literal may only specify known properties, and 'image' does not exist in type 'NotificationOptions'.
+src/services/enhanced-notifications.ts(175,35): error TS2345: Argument of type 'NotificationPayload | undefined' is not assignable to parameter of type 'NotificationPayload'.
+  Type 'undefined' is not assignable to type 'NotificationPayload'.
+src/services/shippingService.ts(176,5): error TS2322: Type '{ updatedAt: string; id?: string | undefined; doorNumber?: number | undefined; destinationDC?: string | undefined; freightType?: string | undefined; trailerStatus?: TrailerStatus | undefined; ... 5 more ...; notes?: string; }' is not assignable to type 'DoorSchedule'.
+  Types of property 'id' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/stores/analyticsStore.ts(406,40): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/stores/analyticsStore.ts(417,40): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/stores/analyticsStore.ts(479,19): error TS2538: Type 'undefined' cannot be used as an index type.
+src/stores/analyticsStore.ts(479,35): error TS2538: Type 'undefined' cannot be used as an index type.
+src/stores/analyticsStore.ts(611,15): error TS2322: Type '{ date: string | undefined; totalEvents: number; uniqueUsers: number; averageSessionDuration: number; topEvents: { name: string; count: number; }[]; errors: number; }[]' is not assignable to type '{ date: string; totalEvents: number; uniqueUsers: number; averageSessionDuration: number; topEvents: { name: string; count: number; }[]; errors: number; }[]'.
+  Type '{ date: string | undefined; totalEvents: number; uniqueUsers: number; averageSessionDuration: number; topEvents: { name: string; count: number; }[]; errors: number; }' is not assignable to type '{ date: string; totalEvents: number; uniqueUsers: number; averageSessionDuration: number; topEvents: { name: string; count: number; }[]; errors: number; }'.
+    Types of property 'date' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+src/stores/shipmentStore.ts(115,13): error TS2322: Type '{ updatedAt: string; id?: string | undefined; doorNumber?: number | undefined; destinationDC?: string | undefined; freightType?: string | undefined; trailerStatus?: TrailerStatus | undefined; ... 5 more ...; notes?: string; }' is not assignable to type 'DoorSchedule'.
+  Types of property 'id' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/stores/shipmentStore.ts(179,13): error TS2322: Type '{ updatedAt: string; id?: string | undefined; doorNumber?: number | undefined; count?: number | undefined; timestamp?: string | undefined; createdBy?: string | undefined; updatedBy?: string; isActive?: boolean; startTime?: string | null; endTime?: string | null; elapsedTime?: number; }' is not assignable to type 'PalletEntry'.
+  Types of property 'id' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/stores/shipmentStore.ts(185,80): error TS18048: 'oldEntry' is possibly 'undefined'.
+src/stores/storeTest.ts(30,28): error TS2345: Argument of type 'void' is not assignable to parameter of type 'string'.
+src/stores/userStore.ts(314,29): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(target: {}, source: Partial<User>): Partial<User>', gave the following error.
+    Argument of type 'WritableNonArrayDraft<User> | undefined' is not assignable to parameter of type '{}'.
+      Type 'undefined' is not assignable to type '{}'.
+  Overload 2 of 4, '(target: object, ...sources: any[]): any', gave the following error.
+    Argument of type 'WritableNonArrayDraft<User> | undefined' is not assignable to parameter of type 'object'.
+      Type 'undefined' is not assignable to type 'object'.

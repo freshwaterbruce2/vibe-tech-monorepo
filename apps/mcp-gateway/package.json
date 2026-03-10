@@ -1,0 +1,27 @@
+{
+  "name": "@vibetech/mcp-gateway",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "MCP Gateway: bridges OpenClaw (Brain) with Antigravity MCP servers (Environment) via IPC Bridge",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.0",
+    "@vibetech/shared-ipc": "workspace:^1.0.0",
+    "ws": "^8.19.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.21.0",
+    "typescript": "5.9.3",
+    "vitest": "^4.0.18"
+  }
+}

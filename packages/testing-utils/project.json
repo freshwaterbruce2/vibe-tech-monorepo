@@ -1,0 +1,34 @@
+{
+  "name": "@vibetech/testing-utils",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/testing-utils/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "packages/testing-utils/dist",
+        "main": "packages/testing-utils/src/index.ts",
+        "tsConfig": "packages/testing-utils/tsconfig.json",
+        "assets": ["packages/testing-utils/*.md"]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "packages/testing-utils"
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{workspaceRoot}/coverage/packages/testing-utils"],
+      "options": {
+        "passWithNoTests": true,
+        "reportsDirectory": "../../coverage/packages/testing-utils"
+      }
+    }
+  },
+  "tags": ["type:library", "scope:testing"]
+}

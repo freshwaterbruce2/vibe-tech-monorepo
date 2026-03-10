@@ -1,0 +1,118 @@
+# Codeberg/Woodpecker automation replacement for the loki-mode GitHub Actions workflows.
+#
+# Purpose:
+# - PR review workflow trigger (manual bot integration point)
+# - Versioned release artifact generation
+#
+pipeline:
+  # ---------------------------------------------------------------------------
+  # PR review / Claude interaction hook
+  # Maps from:
+  # - claude-code-review.yml
+  # - claude.yml
+  # ---------------------------------------------------------------------------
+  loki-claude-review:
+    image: node:22
+    when:
+      event: pull_request
+    commands:
+      - |
+        set -e
+        echo "⚠️ Codeberg/Woodpecker has no built-in Claude action equivalent."
+        echo "Use a webhook + bot service to run Claude on pull requests, then post PR comments via the Codeberg API."
+        echo "Suggested flow:"
+        echo "1) Configure pull_request and comment hooks in a custom bot"
+        echo "2) Resolve PR context from Woodpecker payload or the Codeberg API"
+        echo "3) Post feedback comments back to the PR through the Gitea/Codeberg API"
+
+        if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
+          echo "CLAUDE_CODE_OAUTH_TOKEN is not set. Skipping review execution."
+          exit 0
+        fi
+        if [ -z "${CODEBERG_TOKEN:-}" ]; then
+          echo "CODEBERG_TOKEN is not set. Skipping PR comment callbacks."
+          exit 0
+        fi
+        echo "Tokens are available. Wire your CLAUDE bot entrypoint here for end-to-end review actions."
+
+  # ---------------------------------------------------------------------------
+  # Release artifact build (Codeberg/Woodpecker equivalent of release.yml)
+  # ---------------------------------------------------------------------------
+  loki-release:
+    image: alpine:3.20
+    when:
+      event: push
+      branch: main
+    commands:
+      - apk add --no-cache bash git zip tar
+      - |
+        set -e
+
+        if [ ! -f VERSION ]; then
+          echo "VERSION file missing. Abort."
+          exit 1
+        fi
+
+        VERSION=$(cat VERSION | tr -d '\n')
+        if [ -z "$VERSION" ]; then
+          echo "VERSION file is empty. Abort."
+          exit 1
+        fi
+
+        if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+          echo "Tag v$VERSION already exists. Skipping release artifact build."
+          exit 0
+        fi
+
+        # Artifact 1: loki-mode.zip (root SKILL package)
+        mkdir -p release/skill-root release/api-package/loki-mode release/loki-mode
+        cp SKILL.md release/skill-root/
+        cp -r references release/skill-root/
+        cd release/skill-root
+        zip -r ../loki-mode-$VERSION.zip .
+        cd ../..
+
+        # Also create .skill alias
+        cp release/loki-mode-$VERSION.zip release/loki-mode-$VERSION.skill
+
+        # Artifact 2: API package
+        cp SKILL.md release/api-package/loki-mode/
+        cp -r references release/api-package/loki-mode/
+        cd release/api-package
+        zip -r ../loki-mode-api-$VERSION.zip loki-mode
+        cd ../..
+
+        # Artifact 3: Claude Code package
+        cp SKILL.md release/loki-mode/
+        cp README.md release/loki-mode/ 2>/dev/null || true
+        cp LICENSE release/loki-mode/ 2>/dev/null || true
+        cp VERSION release/loki-mode/
+        cp CHANGELOG.md release/loki-mode/
+        cp -r references release/loki-mode/
+        cp -r examples release/loki-mode/
+        cp -r tests release/loki-mode/
+        cp -r scripts release/loki-mode/
+        cp -r autonomy release/loki-mode/
+        cd release
+        zip -r loki-mode-claude-code-$VERSION.zip loki-mode
+        tar -czvf loki-mode-claude-code-$VERSION.tar.gz loki-mode
+        cd ..
+
+        # Tag step (local tag + optional remote push)
+        git config user.name "Codeberg CI"
+        git config user.email "bot@codeberg.org"
+        git tag -a "v$VERSION" -m "Release v$VERSION"
+        git push origin "v$VERSION" || echo "Tag push requires token access; skipping remote tag push."
+
+        # Optional Codeberg release publishing hook.
+        # Provide these env vars to enable API publish:
+        # CODEBERG_OWNER, CODEBERG_REPO, CODEBERG_TOKEN
+        if [ -n "${CODEBERG_TOKEN:-}" ] && [ -n "${CODEBERG_OWNER:-}" ] && [ -n "${CODEBERG_REPO:-}" ]; then
+          echo "Release artifacts are ready in release/."
+          echo "Add Codeberg API publish logic here if you want to automate release creation."
+          echo "API endpoint: https://codeberg.org/api/v1/repos/${CODEBERG_OWNER}/${CODEBERG_REPO}/releases"
+        else
+          echo "Skipping Codeberg API release publish: set CODEBERG_OWNER, CODEBERG_REPO, and CODEBERG_TOKEN."
+        fi
+
+        echo "Release artifacts created in release/."

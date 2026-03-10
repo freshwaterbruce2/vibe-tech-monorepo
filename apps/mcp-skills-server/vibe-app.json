@@ -1,0 +1,13 @@
+{
+  "displayName": "Skills Server",
+  "description": "206-skill library MCP",
+  "version": "1.0.0",
+  "category": "dev",
+  "icon": "/app-icons/mcp-skills-server.png",
+  "launch": "pnpm dev",
+  "port": null,
+  "type": "native",
+  "features": [
+    "vtde-autodiscovered"
+  ]
+}

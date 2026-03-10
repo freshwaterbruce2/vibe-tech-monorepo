@@ -1,0 +1,233 @@
+/* Mobile-specific styles for better phone display */
+/* NOTE: Import this file AFTER index.css which provides @theme tokens */
+
+@layer base {
+  /* Mobile viewport fixes */
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  body {
+    @apply text-base;
+    overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer components {
+  /* Mobile-optimized button styles */
+  .btn-mobile {
+    @apply min-h-touch px-6 py-3 text-mobile-base font-medium rounded-xl;
+    @apply active:scale-95 transition-transform duration-150;
+    @apply touch-manipulation select-none;
+  }
+
+  .btn-mobile-primary {
+    @apply btn-mobile bg-vibe-purple text-white;
+    @apply active:bg-purple-700;
+  }
+
+  .btn-mobile-secondary {
+    @apply btn-mobile bg-vibe-cyan text-white;
+    @apply active:bg-cyan-700;
+  }
+
+  /* Mobile card styles */
+  .card-mobile {
+    @apply bg-vibe-surface rounded-2xl p-4;
+    @apply border border-gray-700;
+  }
+
+  /* Mobile input styles */
+  .input-mobile {
+    @apply w-full min-h-touch px-4 py-3 rounded-xl;
+    @apply bg-gray-800 text-white text-mobile-base;
+    @apply border border-gray-600 focus:border-vibe-purple;
+    @apply focus:outline-none focus:ring-2 focus:ring-vibe-purple/30;
+  }
+
+  /* Mobile navigation */
+  .nav-mobile {
+    @apply fixed bottom-0 left-0 right-0 bg-vibe-dark;
+    @apply border-t border-gray-700 px-4 py-2;
+    @apply flex justify-around items-center;
+    @apply z-50;
+  }
+
+  .nav-mobile-item {
+    @apply flex flex-col items-center justify-center;
+    @apply min-w-touch min-h-touch;
+    @apply text-gray-400 active:text-vibe-purple;
+    @apply transition-colors duration-200;
+  }
+
+  /* Mobile header */
+  .header-mobile {
+    @apply sticky top-0 bg-vibe-dark/95 backdrop-blur-lg;
+    @apply px-4 py-3 border-b border-gray-700;
+    @apply z-40;
+  }
+
+  /* Touch-friendly spacing */
+  .space-touch {
+    @apply space-y-4;
+  }
+
+  /* Mobile text sizes */
+  .text-mobile-title {
+    @apply text-2xl font-bold;
+  }
+
+  .text-mobile-subtitle {
+    @apply text-lg font-semibold;
+  }
+
+  .text-mobile-body {
+    @apply text-mobile-base;
+  }
+
+  .text-mobile-caption {
+    @apply text-mobile-sm text-gray-400;
+  }
+
+  /* Simplified glass effects for mobile performance */
+  .glass-mobile {
+    @apply bg-gray-800/50 backdrop-blur-sm;
+    @apply border border-gray-600/50;
+    @apply rounded-2xl;
+  }
+
+  /* Mobile-optimized animations */
+  @media (prefers-reduced-motion: no-preference) {
+    .animate-mobile-fade {
+      animation: mobileFade 0.3s ease-in-out;
+    }
+
+    .animate-mobile-slide {
+      animation: mobileSlide 0.3s ease-out;
+    }
+  }
+
+  @keyframes mobileFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes mobileSlide {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+@layer utilities {
+  /* Touch gesture utilities */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
+  .touch-none {
+    touch-action: none;
+  }
+
+  /* Safe area padding for modern phones */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Mobile scrolling */
+  .scroll-mobile {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* Hide scrollbar on mobile */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Responsive breakpoints */
+@media (max-width: 640px) {
+  /* Ensure minimum touch targets on small screens */
+  button, a, .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Larger text for readability */
+  body {
+    font-size: 16px;
+  }
+
+  /* Prevent zoom on input focus */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+
+  /* Mobile-specific layout adjustments */
+  .container {
+    @apply px-4;
+  }
+
+  /* Stack elements vertically on mobile */
+  .flex-mobile-col {
+    @apply flex-col;
+  }
+
+  /* Hide desktop-only elements */
+  .desktop-only {
+    @apply hidden;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .container {
+    @apply px-6;
+  }
+
+  /* Show tablet navigation */
+  .tablet-nav {
+    @apply flex;
+  }
+}
+
+/* Landscape phone adjustments */
+@media (max-height: 600px) and (orientation: landscape) {
+  .header-mobile {
+    @apply py-2;
+  }
+
+  .nav-mobile {
+    @apply py-1;
+  }
+
+  .btn-mobile {
+    @apply min-h-touch-sm;
+  }
+}

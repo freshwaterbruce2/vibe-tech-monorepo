@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "NOVA AI Assistant",
+    "slug": "nova-ai-assistant",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a1a1a"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nova.assistant",
+      "buildNumber": "1.0.0",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a1a1a"
+      },
+      "package": "com.nova.assistant",
+      "versionCode": 1
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#1a1a1a"
+        }
+      ]
+    ]
+  }
+}

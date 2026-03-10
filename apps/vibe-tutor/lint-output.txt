@@ -1,0 +1,31 @@
+
+C:\dev\apps\vibe-tutor\src\components\games\WordSearchGame\WordSearchGame.tsx
+  59:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\dev\apps\vibe-tutor\src\components\games\WordSearchGame\WordSearchGame.tsx:59:5
+  57 |     const words = getRandomWords(subject, config.wordCount ?? 8, 'easy');
+  58 |     const wordSearch = generateWordSearch(words, config.gridSize ?? 12);
+> 59 |     setPuzzle(wordSearch);
+     |     ^^^^^^^^^ Avoid calling setState() directly within an effect
+  60 |     setStartTime(Date.now());
+  61 |
+  62 |     learningAnalytics.startSession('wordsearch', subject, config.difficulty);  react-hooks/set-state-in-effect
+
+C:\dev\apps\vibe-tutor\src\components\ui\ErrorBoundary.tsx
+  24:3  warning  Functions that return promises must be async. Consider adding an explicit return type annotation if the function is intended to return a union of promise and non-promise types  @typescript-eslint/promise-function-async
+
+C:\dev\apps\vibe-tutor\src\components\ui\RouteErrorBoundary.tsx
+  66:3  warning  Functions that return promises must be async. Consider adding an explicit return type annotation if the function is intended to return a union of promise and non-promise types  @typescript-eslint/promise-function-async
+
+C:\dev\apps\vibe-tutor\src\config.test.ts
+  232:13  warning  'config' is assigned a value but only used as a type. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+✖ 4 problems (1 error, 3 warnings)
+  0 errors and 2 warnings potentially fixable with the `--fix` option.
+

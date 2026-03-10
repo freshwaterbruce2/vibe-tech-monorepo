@@ -1,0 +1,294 @@
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+
+@layer base {
+  :root {
+    /* Dynamic brand colors - injected server-side */
+    --brand-primary: #1f2937;
+    --brand-secondary: #3f4f5f;
+    --brand-accent: #6b7280;
+    --brand-background: #ffffff;
+    --brand-text: #333333;
+
+    /* Base shadcn variables */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+
+    /* Dynamic brand colors - will be injected by tenant config */
+    --brand-primary: #1f2937;
+    --brand-secondary: #3f4f5f;
+    --brand-accent: #6b7280;
+    --brand-background: #ffffff;
+    --brand-text: #333333;
+
+    /* Walmart blue scale (legacy - will be overridden by brand colors) */
+    --wal-blue-50: #e6f3fa;
+    --wal-blue-100: #cce8f5;
+    --wal-blue-200: #99d0eb;
+    --wal-blue-300: #66b9e1;
+    --wal-blue-400: #33a1d7;
+    --wal-blue-500: #007dc6;
+    --wal-blue-600: #0064a1;
+    --wal-blue-700: #004b79;
+    --wal-blue-800: #003252;
+    --wal-blue-900: #00192a;
+
+    /* Walmart yellow scale */
+    --wal-yellow-50: #fff9e6;
+    --wal-yellow-100: #fff3cc;
+    --wal-yellow-200: #ffe799;
+    --wal-yellow-300: #ffdb66;
+    --wal-yellow-400: #ffcf33;
+    --wal-yellow-500: #ffc220;
+    --wal-yellow-600: #cc9b1a;
+    --wal-yellow-700: #997513;
+    --wal-yellow-800: #664e0d;
+    --wal-yellow-900: #332706;
+
+    /* Neutral gray scale */
+    --neutral-gray-50: #f7f7f7;
+    --neutral-gray-100: #efefef;
+    --neutral-gray-200: #dfdfdf;
+    --neutral-gray-300: #cfcfcf;
+    --neutral-gray-400: #bfbfbf;
+    --neutral-gray-500: #8e9196;
+    --neutral-gray-600: #727579;
+    --neutral-gray-700: #54575a;
+    --neutral-gray-800: #38393c;
+    --neutral-gray-900: #1c1c1e;
+
+    /* Legacy sidebar variables */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* Base shadcn variables for dark mode */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+
+    /* Dark mode sidebar */
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Walmart blue scale - dark mode */
+    --wal-blue-50: #00192a;
+    --wal-blue-100: #003252;
+    --wal-blue-200: #004b79;
+    --wal-blue-300: #0064a1;
+    --wal-blue-400: #0076b8;
+    --wal-blue-500: #007dc6;
+    --wal-blue-600: #3397d1;
+    --wal-blue-700: #66b2dc;
+    --wal-blue-800: #99cce7;
+    --wal-blue-900: #cce5f3;
+
+    /* Walmart yellow scale - dark mode */
+    --wal-yellow-50: #332706;
+    --wal-yellow-100: #664e0d;
+    --wal-yellow-200: #997513;
+    --wal-yellow-300: #cc9b1a;
+    --wal-yellow-400: #e6b01d;
+    --wal-yellow-500: #ffc220;
+    --wal-yellow-600: #ffce4d;
+    --wal-yellow-700: #ffda80;
+    --wal-yellow-800: #ffe6b3;
+    --wal-yellow-900: #fff3e6;
+
+    /* Neutral gray scale - dark mode */
+    --neutral-gray-50: #1c1c1e;
+    --neutral-gray-100: #38393c;
+    --neutral-gray-200: #54575a;
+    --neutral-gray-300: #727579;
+    --neutral-gray-400: #808389;
+    --neutral-gray-500: #8e9196;
+    --neutral-gray-600: #a5a8ac;
+    --neutral-gray-700: #bcbec1;
+    --neutral-gray-800: #d3d4d6;
+    --neutral-gray-900: #e9e9ea;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+      sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  }
+
+  /* Improved form elements focus states */
+  input:focus,
+  select:focus,
+  button:focus {
+    @apply outline-none ring-2 ring-offset-2 ring-walmart-blue;
+  }
+
+  /* Typography standards */
+  .text-heading {
+    @apply text-[22px] font-bold;
+  }
+
+  .text-value {
+    @apply text-[18px] font-semibold;
+  }
+
+  .text-label {
+    @apply text-[14px] font-medium text-neutral-gray-500;
+  }
+}
+
+/* Animation Utilities */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.3s ease-out;
+  }
+
+  .animate-slide-in {
+    animation: slide-in 0.3s ease-out;
+  }
+
+  .pulse-animation {
+    animation: pulse 2s infinite;
+  }
+
+  .transition-gpu {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  .hover-scale {
+    @apply transition-transform duration-200 hover:scale-105;
+  }
+}
+
+/* Mobile-friendly touch targets */
+@media (max-width: 768px) {
+  button,
+  input,
+  select,
+  a {
+    @apply min-h-[44px] min-w-[44px]; /* Min touch target size */
+  }
+
+  .touch-spacing > * + * {
+    @apply mt-4; /* Prevent accidental taps */
+  }
+}

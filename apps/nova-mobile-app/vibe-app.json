@@ -1,0 +1,13 @@
+{
+  "displayName": "Nova Mobile",
+  "description": "Mobile companion app — HTTP bridge",
+  "version": "1.0.0",
+  "category": "ai",
+  "icon": "/app-icons/nova-mobile-app.png",
+  "launch": "pnpm dev",
+  "port": null,
+  "type": "web",
+  "features": [
+    "vtde-autodiscovered"
+  ]
+}

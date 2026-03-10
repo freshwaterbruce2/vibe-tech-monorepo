@@ -1,0 +1,38 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "nova-mobile-app",
+  "projectType": "application",
+  "root": "apps/nova-mobile-app",
+  "sourceRoot": "apps/nova-mobile-app/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm start",
+        "cwd": "apps/nova-mobile-app"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec tsc --noEmit",
+        "cwd": "apps/nova-mobile-app"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec vitest run",
+        "cwd": "apps/nova-mobile-app"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec eslint src --ext .ts,.tsx",
+        "cwd": "apps/nova-mobile-app"
+      }
+    }
+  },
+  "tags": ["type:mobile", "scope:nova"]
+}

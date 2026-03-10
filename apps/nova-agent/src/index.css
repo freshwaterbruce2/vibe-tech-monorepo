@@ -1,0 +1,459 @@
+@import "tailwindcss";
+@import "./styles/neon-2026.css";
+
+/* ==============================================
+   VibeTech Design System - Nova Agent
+   ============================================== */
+
+@theme {
+  /* VibeTech Core Palette - Dark Slate (NOT pure black) */
+  --color-background: #07090f;
+  --color-foreground: #f0f4f8;
+
+  --color-card: #12141c;
+  --color-card-foreground: #f0f4f8;
+
+  --color-popover: #12141c;
+  --color-popover-foreground: #f0f4f8;
+
+  /* Primary: VibeTech Purple */
+  --color-primary: #7C3AED;
+  --color-primary-foreground: #ffffff;
+
+  /* Secondary: Blue accent */
+  --color-secondary: #3B82F6;
+  --color-secondary-foreground: #ffffff;
+
+  /* Muted tones - slate grays */
+  --color-muted: #1E1F2E;
+  --color-muted-foreground: #9CA3AF;
+
+  /* Accent: Cyan neon */
+  --color-accent: #00FFFF;
+  --color-accent-foreground: #07090f;
+
+  --color-destructive: #EF4444;
+  --color-destructive-foreground: #ffffff;
+
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-input: #1A1B26;
+  --color-ring: #7C3AED;
+
+  /* VibeTech Neon Colors */
+  --c-cyan: #00FFFF;
+  --c-purple: #B933FF;
+  --c-pink: #FF00AA;
+  --c-teal: #00FFCC;
+
+  /* VibeTech Background Gradient */
+  --bg-start: #07090f;
+  --bg-mid: #0D0D1A;
+  --bg-end: #12141c;
+
+  /* Glass Effects */
+  --glass-bg: rgba(18, 20, 28, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.08);
+
+  /* Radius */
+  --radius-lg: 1rem;
+  --radius-md: 0.75rem;
+  --radius-sm: 0.5rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+
+  /* Fonts */
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", monospace;
+  
+  /* Animations */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-pulse-glow: pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-gradient-shift: gradient-shift 8s ease infinite;
+  --animate-float: float 6s ease-in-out infinite;
+
+  @keyframes accordion-down {
+    from { height: 0 }
+    to { height: var(--radix-accordion-content-height) }
+  }
+  @keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height) }
+    to { height: 0 }
+  }
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 1;
+      filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.4));
+    }
+    50% {
+      opacity: 0.85;
+      filter: drop-shadow(0 0 15px rgba(124, 58, 237, 0.6));
+    }
+  }
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+}
+
+/* ==============================================
+   Base Styles & Legacy Variable Support
+   ============================================== */
+@layer base {
+  :root {
+    /* HSL versions for Tailwind compatibility */
+    --background: 227 38% 4%;
+    --foreground: 210 29% 97%;
+    --card: 230 24% 9%;
+    --card-foreground: 210 29% 97%;
+    --popover: 230 24% 9%;
+    --popover-foreground: 210 29% 97%;
+    --primary: 263 84% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 91% 60%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 230 25% 15%;
+    --muted-foreground: 218 11% 65%;
+    --accent: 180 100% 50%;
+    --accent-foreground: 227 38% 4%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 230 20% 18%;
+    --input: 228 30% 10%;
+    --ring: 263 84% 58%;
+    --radius: 1rem;
+
+    /* VibeTech Direct Variables */
+    --c-cyan: #00FFFF;
+    --c-purple: #B933FF;
+    --c-pink: #FF00AA;
+    --c-teal: #00FFCC;
+    --bg-start: #07090f;
+    --bg-mid: #0D0D1A;
+    --bg-end: #12141c;
+    --glass-bg: rgba(18, 20, 28, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.08);
+
+    /* Aura colors for backward compat */
+    --aura-background: 227 38% 4%;
+    --aura-background-light: 230 24% 9%;
+    --aura-accent: 263 84% 58%;
+    --aura-accent-secondary: 217 91% 60%;
+    --aura-text: 210 29% 97%;
+    --aura-text-secondary: 218 11% 65%;
+  }
+
+  * {
+    border-color: var(--glass-border);
+  }
+
+  body {
+    background: var(--bg-start);
+    color: #f0f4f8;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background: rgba(124, 58, 237, 0.3);
+    color: #ffffff;
+  }
+}
+
+/* ==============================================
+   Typography
+   ============================================== */
+@layer utilities {
+  .text-display {
+    @apply text-4xl font-bold tracking-tight lg:text-5xl;
+    line-height: 1.1;
+  }
+  
+  .text-h1 {
+    @apply text-3xl font-bold tracking-tight;
+    line-height: 1.2;
+  }
+  
+  .text-h2 {
+    @apply text-2xl font-semibold tracking-tight;
+    line-height: 1.25;
+  }
+  
+  .text-h3 {
+    @apply text-xl font-semibold tracking-tight;
+    line-height: 1.3;
+  }
+  
+  .text-body {
+    @apply text-base leading-relaxed;
+  }
+  
+  .text-small {
+    @apply text-sm font-medium leading-snug;
+  }
+}
+
+/* ==============================================
+   VibeTech Glass Utilities
+   ============================================== */
+@layer utilities {
+  /* Primary glass panel - matches VibeOS cards */
+  .glass {
+    background: rgba(18, 20, 28, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Card glass - subtle, professional */
+  .glass-card {
+    background: rgba(30, 31, 46, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+  }
+
+  .glass-card:hover {
+    background: rgba(30, 31, 46, 0.65);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(124, 58, 237, 0.1);
+    transform: translateY(-1px);
+  }
+
+  /* Navbar glass - matches VibeOS header */
+  .glass-nav {
+    background: rgba(7, 9, 15, 0.85);
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Input glass */
+  .glass-input {
+    background: rgba(26, 27, 38, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.2s ease;
+  }
+
+  .glass-input:focus {
+    background: rgba(26, 27, 38, 0.8);
+    border-color: rgba(124, 58, 237, 0.5);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+  }
+
+  /* VibeTech Gradient Text */
+  .gradient-text {
+    background: linear-gradient(135deg, 
+      var(--c-cyan) 0%, 
+      var(--c-purple) 50%, 
+      var(--c-pink) 100%
+    );
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient-shift 8s ease infinite;
+  }
+
+  /* VibeTech Neon Glow Effects */
+  .glow-primary {
+    box-shadow: 0 0 20px rgba(124, 58, 237, 0.4);
+  }
+
+  .glow-cyan {
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+  }
+
+  .glow-purple {
+    box-shadow: 0 0 20px rgba(185, 51, 255, 0.3);
+  }
+
+  .glow-pink {
+    box-shadow: 0 0 20px rgba(255, 0, 170, 0.3);
+  }
+
+  /* Status indicators */
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .status-dot-active {
+    background: #22C55E;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+  }
+
+  .status-dot-warning {
+    background: #EAB308;
+    box-shadow: 0 0 8px rgba(234, 179, 8, 0.6);
+  }
+
+  .status-dot-error {
+    background: #EF4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+  }
+
+  /* VibeTech Button Styles */
+  .btn-vibetech {
+    background: linear-gradient(135deg, #7C3AED 0%, #9333EA 100%);
+    color: white;
+    border: none;
+    border-radius: 0.75rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .btn-vibetech:hover {
+    box-shadow: 0 0 20px rgba(124, 58, 237, 0.4);
+    transform: translateY(-1px);
+  }
+
+  .btn-vibetech-outline {
+    background: transparent;
+    color: #f0f4f8;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .btn-vibetech-outline:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  /* VibeTech Tab Pills (like VibeOS All/Apps/Packages) */
+  .tab-pill {
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+
+  .tab-pill-active {
+    background: #3B82F6;
+    color: white;
+  }
+
+  .tab-pill-inactive {
+    background: transparent;
+    color: #9CA3AF;
+  }
+
+  .tab-pill-inactive:hover {
+    color: #f0f4f8;
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* ==============================================
+   Layout Utilities (Tailwind v4 fallback)
+   ============================================== */
+@layer utilities {
+  .flex { display: flex !important; }
+  .inline-flex { display: inline-flex !important; }
+  .grid { display: grid !important; }
+  .hidden { display: none !important; }
+  
+  .flex-col { flex-direction: column !important; }
+  .flex-row { flex-direction: row !important; }
+  .flex-1 { flex: 1 1 0% !important; }
+  .flex-shrink-0 { flex-shrink: 0 !important; }
+  
+  .items-center { align-items: center !important; }
+  .items-start { align-items: flex-start !important; }
+  .items-end { align-items: flex-end !important; }
+  .justify-between { justify-content: space-between !important; }
+  .justify-center { justify-content: center !important; }
+  .justify-start { justify-content: flex-start !important; }
+  
+  .gap-1 { gap: 0.25rem !important; }
+  .gap-2 { gap: 0.5rem !important; }
+  .gap-3 { gap: 0.75rem !important; }
+  .gap-4 { gap: 1rem !important; }
+  .gap-6 { gap: 1.5rem !important; }
+  .gap-8 { gap: 2rem !important; }
+  
+  .space-y-2 > * + * { margin-top: 0.5rem !important; }
+  .space-y-3 > * + * { margin-top: 0.75rem !important; }
+  .space-y-4 > * + * { margin-top: 1rem !important; }
+  .space-y-6 > * + * { margin-top: 1.5rem !important; }
+  .space-y-8 > * + * { margin-top: 2rem !important; }
+  
+  .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
+  .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+  
+  .col-span-2 { grid-column: span 2 / span 2 !important; }
+  
+  @media (min-width: 768px) {
+    .md\:flex { display: flex !important; }
+    .md\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    .md\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  }
+  
+  @media (min-width: 1024px) {
+    .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+    .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+    .lg\:col-span-2 { grid-column: span 2 / span 2 !important; }
+  }
+}
+
+/* ==============================================
+   Scrollbar Styling
+   ============================================== */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+}
+
+/* ==============================================
+   VibeTech Background Gradient (for body/main)
+   ============================================== */
+.bg-vibetech {
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    var(--bg-mid) 0%,
+    var(--bg-start) 50%,
+    var(--bg-end) 100%
+  );
+}
+
+.bg-aura-darkBg {
+  background: var(--bg-start);
+}

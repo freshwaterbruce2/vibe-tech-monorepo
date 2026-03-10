@@ -1,0 +1,180 @@
+# Symptom Tracker - Product Requirements Document (PRD)
+
+## Overview
+A web application for tracking and monitoring personal health symptoms over time, featuring a user-friendly dashboard with calendar integration and map visualization capabilities.
+
+## Features
+
+### 1. User Authentication
+- **Register/Login**: Secure user authentication system.
+- **Profile Management**: User profile page for managing personal details such as location, email, etc.
+
+### 2. Interactive Dashboard
+- **Symptom Tracking**: Track a variety of symptoms with customizable input.
+- **Calendar Integration**: View symptom history in a calendar format.
+- **Geographic Mapping**: Visualize symptom data on a map using Leaflet.js.
+
+### 3. Data Management
+- **Secure API**: RESTful API with rate limiting for security.
+- **Multi-Environment Support**: Development, test, and production environments.
+
+### 4. Future Enhancements
+- **Mobile App**: Development of a mobile application for iOS and Android.
+- **User Bridging**: Features to connect users with doctors or other users.
+- **Additional Symptoms**: Expand the list of trackable symptoms.
+
+## Technology Stack
+
+### Frontend
+- **HTML5, CSS3, JavaScript (Vanilla)**: Core technologies for the user interface.
+- **Leaflet.js**: For map integration and visualization.
+
+### Backend
+- **Node.js with http-server**: For development.
+- **Express.js**: RESTful API.
+- **PostgreSQL**: Database.
+- **Sequelize ORM**: For database management.
+- **JWT Authentication**: Secure user authentication.
+- **Express Rate Limiter**: For API protection.
+
+## Prerequisites
+- **Node.js**: v14 or higher.
+- **PostgreSQL**: v12 or higher.
+- **npm or yarn**: Package manager.
+
+## Installation
+
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/MannyD95/SymptomTracker.git
+   cd MySymptomTracker
+   ```
+
+2. **Install Backend Dependencies**:
+   ```bash
+   cd backend
+   npm install
+   ```
+
+3. **Install Frontend Dependencies**:
+   ```bash
+   cd frontend
+   npm install
+   ```
+
+4. **Configure Environment Variables**:
+   - Copy `.env.test` to `.env`.
+   - Update database credentials and other configurations as needed.
+
+5. **Setup Database**:
+   ```bash
+   createdb sniffly_dev
+   createdb sniffly_test
+   ```
+
+## Running the Application
+
+### Development Mode
+
+1. **Start the Backend**:
+   ```bash
+   cd backend
+   npm start
+   ```
+
+2. **Start the Frontend**:
+   ```bash
+   cd frontend
+   npm start
+   ```
+
+The application will be available at:
+- **Frontend**: [http://localhost:8080](http://localhost:8080)
+- **Backend API**: [http://localhost:3000](http://localhost:3000)
+
+## Environment Variables
+
+Required environment variables:
+- `DATABASE_URL`: PostgreSQL connection string.
+- `JWT_SECRET`: Secret key for JWT token generation.
+- Other environment-specific variables as defined in `.env.test`.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## About
+
+Regional Symptom Tracking
+
+### Resources
+
+- [Readme](https://github.com/mannyd95/symptomtracker#readme-ov-file)
+- [License](https://github.com/mannyd95/symptomtracker#MIT-1-ov-file)
+
+### Activity
+
+- [Activity](https://github.com/MannyD95/SymptomTracker/activity)
+
+### Stars
+
+- [1 star](https://github.com/MannyD95/SymptomTracker/stargazers)
+
+### Watchers
+
+- [1 watching](https://github.com/MannyD95/SymptomTracker/watchers)
+
+### Forks
+
+- [0 forks](https://github.com/MannyD95/SymptomTracker/forks)
+
+### Releases
+
+No releases published.
+
+### Packages
+
+No packages published.
+
+### Languages
+
+- JavaScript: 79.4%
+- HTML: 17.2%
+- CSS: 3.4%
+
+## Support
+
+For support, please:
+
+- Open an [issue](https://github.com/MannyD95/SymptomTracker/issues) on GitHub.
+- Email: [support@symptomtracker.com](mailto:support@symptomtracker.com)
+
+## Acknowledgements
+
+- [Leaflet.js](https://leafletjs.com/) for map integration.
+- [Express.js](https://expressjs.com/) for the backend framework.
+- [PostgreSQL](https://www.postgresql.org/) for the database.
+- All contributors and users.
+
+## Disclaimer
+
+This application is for informational purposes only and is not intended to replace professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.
+
+## Roadmap
+
+- **Cloud Sync & Backup**: Optional, encrypted cloud sync and backup.
+- **Advanced Data Visualization**: Enhanced data visualization and analytics.
+- **Reminder Notifications**: Reminder notifications for symptom tracking.
+- **Mobile App**: Development of a mobile app for iOS and Android.
+- **Health Platform Integration**: Integration with health platforms like Apple Health and Google Fit.
+- **Predictive Insights**: Predictive insights for symptom management.
+
+## Questions?
+
+Have questions or need help? Feel free to:
+
+- Open an issue on GitHub.
+- Check existing discussions.
+- Email: [support@symptomtracker.com](mailto:support@symptomtracker.com)
+
+Made with ❤️ for better health tracking.

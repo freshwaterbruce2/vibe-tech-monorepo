@@ -1,0 +1,39 @@
+{
+  "$schema": "./port-registry.schema.json",
+  "description": "VibeTech Monorepo Port Registry - Single source of truth for port assignments",
+  "lastUpdated": "2026-01-29",
+  "ranges": {
+    "vite-dev": { "start": 5173, "end": 5199, "description": "Vite dev servers" },
+    "backends": { "start": 3000, "end": 3099, "description": "Backend API servers" },
+    "specialized": { "start": 8000, "end": 8999, "description": "Specialized services" },
+    "mcp": { "start": 3100, "end": 3199, "description": "MCP servers" }
+  },
+  "ports": {
+    "3000": { "app": "nova-agent-backend", "type": "backend", "description": "Nova Agent API" },
+    "3001": { "app": "openrouter-proxy", "type": "backend", "description": "OpenRouter Proxy" },
+    "3002": {
+      "app": "digital-content-builder",
+      "type": "backend",
+      "description": "Digital Content Builder API"
+    },
+    "3003": { "app": "vibeblox-backend", "type": "backend", "description": "VibeBlox API" },
+    "3100": { "app": "mcp-sse-bridge", "type": "mcp", "description": "MCP SSE Bridge" },
+    "5173": { "app": "root-dev", "type": "vite", "description": "Root Vite dev server (default)" },
+    "5174": { "app": "vibeblox", "type": "vite", "description": "VibeBlox dev server" },
+    "5175": { "app": "shipping-pwa", "type": "vite", "description": "Shipping PWA dev server" },
+    "5176": { "app": "monorepo-dashboard", "type": "vite", "description": "Monorepo Dashboard" },
+    "5177": {
+      "app": "monorepo-dashboard-server",
+      "type": "backend",
+      "description": "Dashboard backend"
+    },
+    "5179": { "app": "symptom-tracker", "type": "vite", "description": "Symptom Tracker" },
+    "8000": {
+      "app": "crypto-enhanced",
+      "type": "python",
+      "description": "Crypto Trading API (FastAPI)"
+    },
+    "8765": { "app": "memory-bank", "type": "backend", "description": "Memory Bank WebSocket" },
+    "9001": { "app": "ai-backend", "type": "backend", "description": "AI/LLM Backend Proxy" }
+  }
+}

@@ -1,0 +1,65 @@
+# Self-Healing Monorepo Configuration
+# Source of truth for safety rules and healing loop settings.
+# Read by: tools/self-healing/orchestrator.py, scripts/validate-auto-fix-safety.mjs
+
+safety:
+  blocked_paths:
+    # Core infrastructure (existing)
+    - 'apps/crypto-enhanced/**'
+    - '**/migrations/**'
+    - '**/*.env*'
+    - '**/secrets/**'
+    - '**/credentials/**'
+    - 'scripts/validate-auto-fix-safety.mjs'
+    - '.github/workflows/ci.yml'
+    - 'tools/self-healing/**'
+    - '**/node_modules/**'
+    - '**/.git/**'
+    # Payment & financial logic
+    - '**/payment*'
+    - '**/billing*'
+    - '**/stripe*'
+    - '**/checkout*'
+    # Database schemas & ORM definitions
+    - '**/schema*'
+    - '**/drizzle/**'
+    - '**/prisma/**'
+    - '**/*.schema.*'
+    # Auth & security (reinforced)
+    - '**/auth/**'
+    - '**/jwt*'
+    - '**/session*'
+  max_file_size_kb: 500
+  kill_switch: false # Emergency stop — set true to halt ALL healing loops
+
+healing_loops:
+  lint:
+    enabled: true
+    scope: affected # "affected" | "all" | "project:<name>"
+    auto_apply: true # LIVE — will fix lint errors autonomously
+    max_retries: 3
+    timeout_seconds: 180
+  typecheck:
+    enabled: true
+    scope: affected
+    auto_apply: true # LIVE — will fix type errors autonomously
+    max_retries: 2
+    timeout_seconds: 120
+  dependencies:
+    enabled: true
+    scope: all
+    auto_apply: false # Report-only — requires human judgment
+    checks:
+      - missing_deps
+      - unused_deps
+      - version_drift
+  staleness:
+    enabled: true
+    threshold_days: 90
+    auto_apply: false # Report-only — staleness cannot be auto-fixed
+
+defaults:
+  dry_run: false # LIVE MODE ENABLED
+  log_path: "D:\\logs\\self-healing"
+  report_format: json # "json" | "console" | "both"
+  notify: webhook # "console" | "file" | "webhook"

@@ -1,0 +1,349 @@
+# Agent Delegation Configuration
+# Updated: 2026-01-18
+# Purpose: High-level workflow rules (sub-agent triggers are in config.yml)
+# MANDATORY: All agents must follow these role assignments
+# Reference: Anthropic Multi-Agent Research System patterns
+
+version: 4.0.0
+enforcement: MANDATORY
+phase: 4 # Phase 4: Mobile complete
+
+# =============================================================================
+# MODEL CAPABILITIES (Orchestrator-Worker Pattern)
+# =============================================================================
+# Per Anthropic: "Lead agent coordinates while delegating to specialized
+# subagents that operate in parallel"
+
+agents:
+  planning:
+    primary:
+      - model: 'Claude Opus 4.5'
+        role: 'Orchestrator'
+        capabilities:
+          - architectural_design
+          - multi_file_planning
+          - risk_assessment
+          - dependency_analysis
+          - test_strategy_design
+          - sub_agent_coordination
+        restrictions:
+          - no_direct_implementation
+          - planning_documents_only
+
+      - model: 'Claude Code'
+        role: 'Orchestrator'
+        capabilities:
+          - architectural_design
+          - multi_file_planning
+          - risk_assessment
+          - dependency_analysis
+          - test_strategy_design
+          - sub_agent_coordination
+        restrictions:
+          - no_direct_implementation
+          - planning_documents_only
+
+  implementation:
+    primary:
+      - model: 'Claude Sonnet 4.5'
+        role: 'Worker'
+        capabilities:
+          - code_implementation
+          - bug_fixes
+          - refactoring
+          - test_writing
+          - documentation_updates
+        restrictions:
+          - no_architectural_decisions
+          - follow_approved_plans_only
+          - enforce_500_line_limit
+          - no_file_renaming
+
+    sub_agents:
+      - model: 'Claude Haiku 4'
+        role: 'Specialist Worker'
+        for: 'deterministic tasks'
+        capabilities:
+          - builds
+          - cleanups
+          - pattern_matching
+          - api_implementation
+          - deployment_tasks
+          - pwa_configuration
+          - mobile_ui
+
+      - model: 'Claude Sonnet 4'
+        role: 'Specialist Worker'
+        for: 'reasoning tasks'
+        capabilities:
+          - security_audits
+          - database_design
+          - test_strategy
+          - ipc_security
+          - native_integration
+
+  review:
+    primary:
+      - model: 'Claude Opus 4.5'
+        role: 'Orchestrator'
+        capabilities:
+          - code_review
+          - architecture_validation
+          - compliance_checking
+          - performance_analysis
+        restrictions:
+          - review_only_no_implementation
+
+# =============================================================================
+# TASK DELEGATION RULES
+# =============================================================================
+delegation_rules:
+  planning_threshold:
+    files_modified: 3
+    complexity_indicators:
+      - new_feature
+      - breaking_change
+      - cross_module_dependency
+      - database_migration
+      - api_modification
+      - security_change
+      - native_plugin_integration
+
+  effort_scaling:
+    simple:
+      description: 'Single fact-finding or simple fix'
+      sub_agents: 1
+      tool_calls: '3-10'
+    moderate:
+      description: 'Direct comparisons, small features'
+      sub_agents: '2-4'
+      tool_calls: '10-15 each'
+    complex:
+      description: 'Multi-faceted features, security work'
+      sub_agents: '5+'
+      tool_calls: 'Divided responsibilities'
+
+  workflow:
+    - step: 1
+      name: 'Assessment'
+      handler: 'Any Agent'
+      actions:
+        - count_affected_files
+        - check_complexity
+        - determine_planning_need
+        - identify_parent_agent
+        - check_sub_agent_triggers
+
+    - step: 2
+      name: 'Planning'
+      handler: 'Claude Opus 4.5 / Claude Code'
+      trigger: 'files >= 3 OR complexity_indicator'
+      outputs:
+        - planning_document
+        - risk_assessment
+        - implementation_steps
+
+    - step: 3
+      name: 'Sub-Agent Delegation'
+      handler: 'Parent Agent'
+      trigger: 'keyword match in config.yml'
+      reference: '.claude/sub-agents/config.yml'
+      note: 'All sub-agent triggers defined in config.yml'
+
+    - step: 4
+      name: 'Implementation'
+      handler: 'Claude Sonnet 4.5 / Sub-Agent'
+      requires: 'approved_plan OR files < 3'
+      constraints:
+        - max_lines_per_file: 500
+        - architecture: 'modular_only'
+        - file_naming: 'immutable'
+
+    - step: 5
+      name: 'Review'
+      handler: 'Claude Opus 4.5'
+      trigger: 'implementation_complete'
+      actions:
+        - validate_compliance
+        - check_architecture
+        - verify_tests
+
+# =============================================================================
+# PARENT → SUB-AGENT MAPPING
+# =============================================================================
+# NOTE: Detailed triggers are in .claude/sub-agents/config.yml
+# This is the authoritative reference for which sub-agents exist
+
+parent_to_sub_agents:
+  desktop-expert:
+    status: '✅ Phase 1 Complete'
+    enabled_sub_agents:
+      - desktop-quality-checker # [Haiku-4]
+      - desktop-test-coordinator # [Sonnet-4]
+      - desktop-cleanup-specialist # [Haiku-4]
+      - desktop-build-specialist # [Haiku-4]
+      - desktop-integration-specialist # [Sonnet-4]
+    trigger_config: '.claude/sub-agents/config.yml#delegation.desktop-expert'
+
+  webapp-expert:
+    status: '✅ Phase 2 Complete'
+    enabled_sub_agents:
+      - vite-build-specialist # [Haiku-4]
+      - react-component-specialist # [Haiku-4]
+      - ui-integration-specialist # [Haiku-4]
+      - web-testing-specialist # [Haiku-4]
+      - web-cleanup-specialist # [Haiku-4]
+    trigger_config: '.claude/sub-agents/config.yml#delegation.webapp-expert'
+
+  backend-expert:
+    status: '✅ Phase 3 Complete'
+    enabled_sub_agents:
+      - api-implementation-specialist # [Haiku-4]
+      - database-integration-specialist # [Sonnet-4]
+      - backend-security-specialist # [Sonnet-4]
+      - backend-deployment-specialist # [Haiku-4]
+      - backend-testing-specialist # [Haiku-4]
+    trigger_config: '.claude/sub-agents/config.yml#delegation.backend-expert'
+    special_rules:
+      - "database-integration-specialist MUST enforce D:\\ storage policy"
+      - 'backend-security-specialist runs BEFORE backend-deployment-specialist'
+
+  mobile-expert:
+    status: '✅ Phase 4 Complete'
+    enabled_sub_agents:
+      - capacitor-build-specialist # [Sonnet-4]
+      - pwa-specialist # [Haiku-4]
+      - mobile-ui-specialist # [Haiku-4]
+      - mobile-testing-specialist # [Haiku-4]
+    trigger_config: '.claude/sub-agents/config.yml#delegation.mobile-expert'
+    special_rules:
+      - 'capacitor-build-specialist MUST increment versionCode for Android'
+      - 'pwa-specialist requires HTTPS for service worker registration'
+      - 'mobile-testing-specialist runs AFTER builds complete'
+
+  crypto-expert:
+    status: '📋 Phase 5 Planned'
+    enabled_sub_agents: [] # Defined but disabled in config.yml
+    trigger_config: '.claude/sub-agents/config.yml#delegation.crypto-expert'
+
+# =============================================================================
+# SEQUENTIAL EXECUTION RULES
+# =============================================================================
+# Per Anthropic: "Some domains require agents to share context or involve
+# dependencies between agents"
+
+sequential_rules:
+  backend:
+    description: 'Security must audit before deployment'
+    chains:
+      - [api-implementation-specialist, backend-security-specialist]
+      - [database-integration-specialist, backend-testing-specialist]
+      - [backend-security-specialist, backend-deployment-specialist]
+    reason: 'Prevent shipping vulnerabilities to production'
+
+  desktop:
+    description: 'Quality check before testing'
+    chains:
+      - [desktop-quality-checker, desktop-test-coordinator]
+    reason: 'Lint errors break test runs'
+
+  webapp:
+    description: 'Build before test'
+    chains:
+      - [vite-build-specialist, web-testing-specialist]
+      - [react-component-specialist, web-testing-specialist]
+    reason: 'Tests require compiled code'
+
+  mobile:
+    description: 'Build before test'
+    chains:
+      - [capacitor-build-specialist, mobile-testing-specialist]
+      - [pwa-specialist, mobile-testing-specialist]
+    reason: 'Device tests require built APK/PWA'
+
+# =============================================================================
+# ENFORCEMENT
+# =============================================================================
+enforcement_mechanisms:
+  pre_implementation:
+    - verify_agent_role
+    - check_planning_requirement
+    - validate_file_sizes
+    - check_sub_agent_triggers
+    - verify_sequential_rules
+
+  during_implementation:
+    - monitor_line_count
+    - prevent_file_renaming
+    - enforce_modular_structure
+    - check_database_paths
+    - verify_versionCode_increment
+
+  post_implementation:
+    - validate_all_rules
+    - generate_compliance_report
+    - log_violations
+    - security_audit_if_backend
+    - lighthouse_audit_if_pwa
+
+# =============================================================================
+# COMMUNICATION
+# =============================================================================
+communication:
+  planning_to_implementation:
+    format: 'markdown'
+    location: '.deepcode/plans/'
+    required_sections:
+      - objective
+      - affected_files
+      - implementation_steps
+      - risks
+      - testing_approach
+
+  sub_agent_feedback:
+    format: 'json'
+    includes:
+      - sub_agent_name
+      - execution_time
+      - success_status
+      - output_summary
+      - cache_hit
+
+  implementation_feedback:
+    format: 'json'
+    includes:
+      - files_modified
+      - lines_per_file
+      - tests_added
+      - compliance_status
+      - security_audit_status
+      - pwa_lighthouse_score
+
+# =============================================================================
+# OVERRIDES
+# =============================================================================
+overrides:
+  allowed: false
+  exception_process: 'None - Rules are immutable'
+
+# =============================================================================
+# MONITORING
+# =============================================================================
+monitoring:
+  track:
+    - agent_assignments
+    - sub_agent_delegations
+    - rule_violations
+    - file_size_breaches
+    - unauthorized_renames
+    - sequential_rule_violations
+    - database_path_violations
+    - versionCode_violations
+    - lighthouse_scores
+
+  reports:
+    location: '.deepcode/reports/'
+    frequency: 'per_session'
+    format: 'markdown'
+
+  metrics_path: "D:\\learning-system\\sub-agents\\metrics"

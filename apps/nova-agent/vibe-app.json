@@ -1,0 +1,13 @@
+{
+  "displayName": "Nova Agent",
+  "description": "AI desktop assistant with RAG — 121/121 tests",
+  "version": "1.0.0",
+  "category": "ai",
+  "icon": "/app-icons/nova-agent.png",
+  "launch": "pnpm dev",
+  "port": null,
+  "type": "native",
+  "features": [
+    "vtde-autodiscovered"
+  ]
+}

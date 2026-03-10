@@ -1,0 +1,37 @@
+{
+  "short_name": "VibeTutor",
+  "name": "Vibe-Tutor AI",
+  "description": "An AI-powered homework manager and tutor from Vibe-Tech AI.",
+  "icons": [
+    {
+      "src": "/launcher-icon-192.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/launcher-icon-512.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-192.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ],
+  "start_url": "/index.html",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#10121A",
+  "background_color": "#10121A",
+  "orientation": "portrait"
+}

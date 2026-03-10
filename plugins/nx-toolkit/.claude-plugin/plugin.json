@@ -1,0 +1,11 @@
+{
+  "name": "nx-toolkit",
+  "version": "1.0.0",
+  "description": "Advanced Nx monorepo toolkit for daily development: dependency sync, impact analysis, upgrade orchestration, governance, and workspace advisory",
+  "author": {
+    "name": "VibeTech",
+    "email": "dev@vibetech.org"
+  },
+  "license": "MIT",
+  "keywords": ["nx", "monorepo", "dependencies", "governance", "workspace"]
+}

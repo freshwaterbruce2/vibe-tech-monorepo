@@ -1,0 +1,17 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "allowJs": true,
+    "checkJs": true,
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": ["**/*.js", "**/*.mjs"],
+  "exclude": ["node_modules", "coverage", "dist", "**/dist", "**/build"]
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@nova/types",
+  "projectType": "library",
+  "root": "packages/nova-types",
+  "sourceRoot": "packages/nova-types/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "options": {
+        "command": "tsc -p tsconfig.build.json",
+        "cwd": "packages/nova-types"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "vitest run",
+        "cwd": "packages/nova-types"
+      }
+    }
+  },
+  "tags": ["type:library", "scope:nova"]
+}

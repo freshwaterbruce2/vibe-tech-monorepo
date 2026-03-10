@@ -1,0 +1,24 @@
+name = "dc8980-shipping-api"
+main = "simple-api.ts"
+compatibility_date = "2025-09-22"
+compatibility_flags = ["nodejs_compat"]
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "dc8980-shipping-db"
+database_id = "b6219a14-2b8b-410a-8a67-4938eab30fca"
+
+# KV Namespace for sessions
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "a7f771096d93446d9b1bb25a3a79b10e"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "production"
+CORS_ORIGINS = "https://dc8980-shipping.pages.dev,https://be5ee66c.dc8980-shipping.pages.dev"
+
+# Observability
+[observability]
+enabled = true

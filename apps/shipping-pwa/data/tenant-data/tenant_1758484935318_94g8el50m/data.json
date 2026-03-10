@@ -1,0 +1,29 @@
+{
+  "tenantId": "tenant_1758484935318_94g8el50m",
+  "doorEntries": [
+    {
+      "id": "door_pfs_1",
+      "doorNumber": 775,
+      "destinationDC": "PFS-NORTH",
+      "freightType": "Expedited",
+      "trailerStatus": "shipload",
+      "palletCount": 45,
+      "tcrPresent": true,
+      "notes": "Premium freight - expedited delivery"
+    }
+  ],
+  "palletData": {
+    "door_pfs_1": {
+      "count": 45,
+      "lastUpdate": "2025-09-21T20:03:00.000Z"
+    }
+  },
+  "users": [
+    {
+      "id": "user_pfs_1",
+      "name": "Sarah Johnson",
+      "role": "supervisor"
+    }
+  ],
+  "lastSyncAt": "2025-09-21T20:02:55.745Z"
+}

@@ -1,0 +1,50 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "vibe-booking-backend",
+  "projectType": "application",
+  "root": "apps/vibe-booking-backend",
+  "sourceRoot": "apps/vibe-booking-backend/src",
+  "implicitDependencies": [],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx watch src/main.ts",
+        "cwd": "apps/vibe-booking-backend"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "options": {
+        "command": "tsc -p tsconfig.json",
+        "cwd": "apps/vibe-booking-backend"
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node dist/main.js",
+        "cwd": "apps/vibe-booking-backend"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "apps/vibe-booking-backend"
+      },
+      "cache": true
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run",
+        "cwd": "apps/vibe-booking-backend"
+      },
+      "cache": true
+    }
+  },
+  "tags": ["type:api", "scope:business-booking"]
+}

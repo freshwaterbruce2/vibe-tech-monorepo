@@ -1,0 +1,13 @@
+{
+  "displayName": "AVGE Dashboard",
+  "description": "Analytics dashboard",
+  "version": "1.0.0",
+  "category": "finance",
+  "icon": "/app-icons/avge-dashboard.png",
+  "launch": "pnpm dev",
+  "port": null,
+  "type": "web",
+  "features": [
+    "vtde-autodiscovered"
+  ]
+}

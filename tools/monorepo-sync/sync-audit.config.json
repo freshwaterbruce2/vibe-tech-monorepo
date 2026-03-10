@@ -1,0 +1,41 @@
+{
+  "requiredTargets": [
+    "lint",
+    "typecheck",
+    "test",
+    "build"
+  ],
+  "allowedMissingTargets": {},
+  "allowedIsolatedProjects": [
+    "@vibetech/clawdbot-desktop",
+    "@vibetech/feature-flags",
+    "@vibetech/service-common",
+    "@vibetech/shared",
+    "agent-sdk-workspace",
+    "avge-dashboard",
+    "backend-config",
+    "backend-middleware",
+    "crypto-enhanced",
+    "dap-proxy",
+    "lsp-proxy",
+    "mcp-codeberg",
+    "mcp-skills-server",
+    "monorepo-dashboard",
+    "nova-mobile-app",
+    "nova-sqlite-mcp",
+    "openrouter-proxy",
+    "symptom-tracker",
+    "symptom-tracker-api",
+    "trendmart",
+    "vibe-booking-backend",
+    "legacy-booking-backend",
+    "vibe-justice",
+    "vibe-python-shared",
+    "vibe-tech-backend",
+    "vibe-tech-lovable-backend",
+    "workflow-engine"
+  ],
+  "allowedStandaloneTags": [
+    "standalone"
+  ]
+}

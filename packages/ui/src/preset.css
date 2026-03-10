@@ -1,0 +1,58 @@
+/*
+ * @vibetech/ui — Reference CSS Preset
+ *
+ * Vibe Tech "Cognitive Future" dark-mode palette.
+ * Import this in your app's global CSS as a starting point:
+ *
+ *   @import "@vibetech/ui/preset.css";
+ *
+ * Then override any token in your own :root / .dark blocks.
+ * All values are space-separated HSL: "H S% L%" (no commas).
+ */
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 183 100% 50%;
+    --primary-foreground: 220 30% 5%;
+    --secondary: 220 14.3% 95.9%;
+    --secondary-foreground: 220.9 39.3% 11%;
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 220 8.9% 46.1%;
+    --accent: 301 100% 50%;
+    --accent-foreground: 220 30% 5%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 183 100% 50%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 220 30% 5%;
+    --foreground: 220 20% 98%;
+    --card: 220 30% 7%;
+    --card-foreground: 220 20% 98%;
+    --popover: 220 30% 7%;
+    --popover-foreground: 220 20% 98%;
+    --primary: 183 100% 50%;
+    --primary-foreground: 220 30% 5%;
+    --secondary: 301 100% 50%;
+    --secondary-foreground: 220 20% 98%;
+    --muted: 220 30% 15%;
+    --muted-foreground: 220 20% 60%;
+    --accent: 301 100% 50%;
+    --accent-foreground: 220 30% 5%;
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 220 20% 98%;
+    --border: 220 30% 18%;
+    --input: 220 30% 18%;
+    --ring: 183 100% 50%;
+  }
+}

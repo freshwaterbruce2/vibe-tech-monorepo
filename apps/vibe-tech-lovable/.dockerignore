@@ -1,0 +1,15 @@
+node_modules
+dist
+build
+.git
+.github
+.vscode
+*.log
+.DS_Store
+.env*
+coverage
+playwright-report
+test-results
+*.md
+Dockerfile
+.dockerignore

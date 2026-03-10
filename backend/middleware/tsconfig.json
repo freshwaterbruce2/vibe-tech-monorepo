@@ -1,0 +1,17 @@
+{
+  "$schema": "../../node_modules/nx/schemas/tsconfig.schema.json",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "allowJs": true,
+    "checkJs": false,
+    "skipLibCheck": true,
+    "strict": false
+  },
+  "include": ["./**/*.js"],
+  "exclude": ["node_modules", "dist"]
+}

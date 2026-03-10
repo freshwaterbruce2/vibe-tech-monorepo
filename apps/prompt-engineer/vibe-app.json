@@ -1,0 +1,13 @@
+{
+  "displayName": "Prompt Lab",
+  "description": "Prompt optimization tool",
+  "version": "1.0.0",
+  "category": "ai",
+  "icon": "/app-icons/prompt-engineer.png",
+  "launch": "pnpm dev",
+  "port": null,
+  "type": "web",
+  "features": [
+    "vtde-autodiscovered"
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "version": "1.0",
+  "description": "Maps projects to relevant skills for auto-invocation",
+
+  "global_skills": {
+    "always": [
+      "systematic-debugging",
+      "verification-before-completion",
+      "clean-code"
+    ],
+    "on_bug": [
+      "systematic-debugging",
+      "test-driven-development"
+    ],
+    "on_feature": [
+      "test-driven-development",
+      "clean-code"
+    ],
+    "on_review": [
+      "code-review-checklist"
+    ]
+  },
+
+  "project_skills": {
+    "crypto-enhanced": {
+      "project_skill": "crypto/SKILL.md",
+      "community_skills": [
+        "python-patterns",
+        "systematic-debugging",
+        "test-driven-development"
+      ],
+      "keywords": ["trading", "exchange", "position", "backtest", "strategy"]
+    },
+    "vibe-code-studio": {
+      "project_skill": "vibe-code-studio/SKILL.md",
+      "community_skills": [
+        "typescript-expert",
+        "react-patterns",
+        "performance-profiling"
+      ],
+      "keywords": ["electron", "ipc", "main process", "renderer", "desktop"]
+    },
+    "nova-mobile-app": {
+      "project_skill": "nova-mobile-app/SKILL.md",
+      "community_skills": [
+        "react-patterns",
+        "testing-patterns",
+        "mobile-design"
+      ],
+      "keywords": ["mobile", "react native", "expo", "ios", "android", "navigation"]
+    },
+    "invoice-automation-saas": {
+      "project_skill": "invoice-automation-saas/SKILL.md",
+      "community_skills": [
+        "nextjs-best-practices",
+        "prisma-expert",
+        "stripe-integration"
+      ],
+      "keywords": ["invoice", "saas", "stripe", "subscription", "billing", "tenant"]
+    },
+    "vibe-justice": {
+      "project_skill": "vibe-justice/SKILL.md",
+      "community_skills": [
+        "nextjs-best-practices",
+        "llm-app-patterns",
+        "react-patterns"
+      ],
+      "keywords": ["case", "legal", "ai", "claude", "analysis"]
+    },
+    "memory-bank": {
+      "community_skills": [
+        "nodejs-best-practices",
+        "typescript-expert",
+        "testing-patterns"
+      ],
+      "keywords": ["memory", "context", "session", "store"]
+    },
+    "vibe-shop": {
+      "community_skills": [
+        "nextjs-best-practices",
+        "react-patterns",
+        "stripe-integration"
+      ],
+      "keywords": ["shop", "ecommerce", "cart", "checkout", "product"]
+    },
+    "iconforge": {
+      "community_skills": [
+        "react-patterns",
+        "canvas-design",
+        "typescript-expert"
+      ],
+      "keywords": ["icon", "svg", "design", "generate"]
+    },
+    "nova-agent": {
+      "project_skill": "nova-agent/SKILL.md",
+      "community_skills": [
+        "typescript-expert",
+        "react-patterns",
+        "performance-profiling",
+        "systematic-debugging"
+      ],
+      "keywords": ["agent", "tauri", "rust", "language server", "rag", "workspace", "service"]
+    }
+  },
+
+  "intent_keywords": {
+    "bug": ["bug", "error", "fix", "broken", "fail", "crash", "issue", "problem"],
+    "feature": ["implement", "add", "create", "build", "new feature", "develop"],
+    "refactor": ["refactor", "clean up", "improve", "optimize", "restructure"],
+    "test": ["test", "coverage", "spec", "unit test", "e2e"],
+    "review": ["review", "pr", "pull request", "check", "audit"]
+  }
+}

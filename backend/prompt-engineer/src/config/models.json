@@ -1,0 +1,192 @@
+{
+  "models": {
+    "claude-opus-4-6": {
+      "name": "Claude Opus 4.6",
+      "provider": "Anthropic",
+      "openRouterId": "anthropic/claude-opus-4.6",
+      "context": 200000,
+      "maxOutput": 128000,
+      "thinking": true,
+      "strengths": ["SOTA reasoning", "adaptive thinking", "agentic coding", "cybersecurity"],
+      "promptGuidelines": [
+        "Use XML tags to structure prompts: <task>, <context>, <constraints>, <examples>",
+        "Leverage adaptive thinking mode — the model adjusts reasoning depth automatically",
+        "Use 'consider' or 'evaluate' instead of 'think' when extended thinking is disabled",
+        "Provide positive AND negative examples to guide behavior precisely",
+        "For complex tasks, nest XML tags: <identity> for role, <task> for instructions, <rules> for constraints",
+        "Specify effort level expectations: high for complex reasoning, medium for balanced speed/quality",
+        "Supports 1M context (beta) — excellent for very large codebases and documents",
+        "Be explicit about tool use triggers — avoid 'MUST use' or 'NEVER use', prefer conditional guidance"
+      ]
+    },
+    "claude-sonnet-4-5": {
+      "name": "Claude Sonnet 4.5",
+      "provider": "Anthropic",
+      "openRouterId": "anthropic/claude-sonnet-4.5",
+      "context": 200000,
+      "maxOutput": 64000,
+      "thinking": true,
+      "strengths": ["balanced", "fast coding", "tool use", "context awareness"],
+      "promptGuidelines": [
+        "Use XML tags for structure: <task>, <context>, <output_format>",
+        "System prompts are highly effective — define tone, behavior, and defaults",
+        "Supports extended thinking mode for multi-step reasoning",
+        "Best balance of speed and intelligence for routine coding tasks",
+        "Provide examples to indicate desired format and style",
+        "Keep prompts focused — Sonnet excels when instructions are clear and direct"
+      ]
+    },
+    "claude-haiku-4-5": {
+      "name": "Claude Haiku 4.5",
+      "provider": "Anthropic",
+      "openRouterId": "anthropic/claude-haiku-4.5",
+      "context": 200000,
+      "maxOutput": 64000,
+      "thinking": true,
+      "strengths": ["fastest", "cost-effective", "multi-agent", "interactive"],
+      "promptGuidelines": [
+        "Keep prompts SHORT and CONCISE — Haiku is optimized for speed",
+        "Use for classification, extraction, and quick Q&A tasks",
+        "Supports extended thinking (first Haiku with this capability)",
+        "Ideal for multi-agent pipelines where latency matters",
+        "Avoid overly complex nested structures — simple XML tags work best",
+        "Fast enough for real-time interactive applications"
+      ]
+    },
+    "gemini-3-pro": {
+      "name": "Gemini 3 Pro",
+      "provider": "Google",
+      "openRouterId": "google/gemini-3-pro",
+      "context": 1000000,
+      "maxOutput": 65536,
+      "thinking": true,
+      "strengths": ["most intelligent", "multimodal", "agentic coding", "less verbose"],
+      "promptGuidelines": [
+        "Gemini 3 is LESS VERBOSE by default — explicitly request detailed responses if needed",
+        "Use XML tags (<role>, <instructions>, <constraints>) or Markdown headings for structure",
+        "Place all context FIRST, then instructions at the end with 'Based on the above...'",
+        "Use split-step verification: first verify info exists, then generate the answer",
+        "For complex tasks, chain prompts — output of one becomes input of next",
+        "Define verbosity level explicitly: Low/Medium/High in constraints",
+        "System instructions should combine: role definition + step-by-step plan + constraints",
+        "Prioritize critical instructions at the very beginning of the prompt"
+      ]
+    },
+    "gemini-2-5-flash": {
+      "name": "Gemini 2.5 Flash",
+      "provider": "Google",
+      "openRouterId": "google/gemini-2.5-flash",
+      "context": 1000000,
+      "maxOutput": 65536,
+      "thinking": true,
+      "strengths": ["workhorse", "fast", "1M context", "thinking mode"],
+      "promptGuidelines": [
+        "Fast response with massive 1M token context window",
+        "Use thinking mode for reasoning tasks — set level to LOW for speed",
+        "Structure prompts with clear sections using XML or Markdown",
+        "Good balance of speed and capability for high-throughput applications",
+        "Provide few-shot examples for specific formatting requirements",
+        "Use 'think silently' in system instructions for lower latency"
+      ]
+    },
+    "gemini-2-5-pro": {
+      "name": "Gemini 2.5 Pro",
+      "provider": "Google",
+      "openRouterId": "google/gemini-2.5-pro",
+      "context": 1000000,
+      "maxOutput": 65536,
+      "thinking": true,
+      "strengths": ["enhanced thinking", "code generation", "structured output"],
+      "promptGuidelines": [
+        "Enhanced thinking capabilities — great for complex analysis and code generation",
+        "Structure prompts with XML tags for best results",
+        "Supply context first, then ask questions at the end",
+        "Use few-shot examples to indicate desired output format (JSON, code, etc.)",
+        "Large 1M context allows processing entire codebases",
+        "Be direct and precise — avoid unnecessary or persuasive language"
+      ]
+    },
+    "codex-5-3": {
+      "name": "Codex 5.3",
+      "provider": "OpenAI",
+      "openRouterId": "openai/codex-5.3",
+      "context": 128000,
+      "maxOutput": 16384,
+      "thinking": true,
+      "strengths": ["agentic coding", "long-horizon tasks", "debugging", "cybersecurity"],
+      "promptGuidelines": [
+        "Give HIGH-LEVEL intent sketches — Codex is tuned for imprecise developer prompts",
+        "Designed for long-running autonomous tasks — describe the goal, not each step",
+        "Steer during execution without losing context — works like a colleague",
+        "Excellent at multi-step debugging, code review, and large codebase navigation",
+        "Specify scope explicitly: which files, which functions, what constraints",
+        "Excels at agentic workflows — delegate subtasks and let it plan",
+        "Top performance on vulnerability discovery and exploitation tasks"
+      ]
+    },
+    "codex-5-3-spark": {
+      "name": "Codex 5.3 Spark",
+      "provider": "OpenAI",
+      "openRouterId": "openai/codex-5.3-spark",
+      "context": 128000,
+      "maxOutput": 16384,
+      "thinking": false,
+      "strengths": ["ultra-fast", "real-time edits", "1000+ tok/s", "minimal changes"],
+      "promptGuidelines": [
+        "Use SHORT, TARGETED prompts — Spark defaults to minimal changes",
+        "Designed for real-time interactive coding: edits, logic tweaks, interface refinement",
+        "Ultra-fast: 1000+ tokens/second — ideal for rapid iteration loops",
+        "Explicitly request tests if needed — Spark won't auto-generate them",
+        "Best for: targeted function edits, quick logic adjustments, interface refinement",
+        "Not suited for long-horizon autonomous tasks — use Codex 5.3 for those",
+        "Interrupt and redirect mid-output for tight feedback loops"
+      ]
+    }
+  },
+  "modes": {
+    "plan": {
+      "name": "Plan",
+      "description": "Architecture and design planning",
+      "systemPromptAddition": "Focus on high-level architecture, system design, and planning. Break down complex problems into manageable components. Consider trade-offs and provide rationale for decisions.",
+      "guidelines": [
+        "Structure output with clear sections",
+        "Include diagrams or pseudocode when helpful",
+        "Consider scalability and maintainability",
+        "List assumptions and constraints"
+      ]
+    },
+    "edit": {
+      "name": "Edit",
+      "description": "Code modifications and implementation",
+      "systemPromptAddition": "Focus on precise code modifications. Provide complete, working code that follows best practices. Include necessary imports and handle edge cases.",
+      "guidelines": [
+        "Show complete code blocks",
+        "Explain key changes",
+        "Follow existing code style",
+        "Include error handling"
+      ]
+    },
+    "review": {
+      "name": "Review",
+      "description": "Code review and analysis",
+      "systemPromptAddition": "Analyze code for bugs, security issues, performance problems, and style violations. Provide specific, actionable feedback with line references.",
+      "guidelines": [
+        "Categorize issues by severity",
+        "Provide specific line references",
+        "Suggest concrete improvements",
+        "Consider security implications"
+      ]
+    },
+    "ask": {
+      "name": "Ask",
+      "description": "Questions and explanations",
+      "systemPromptAddition": "Provide clear, educational explanations. Use examples to illustrate concepts. Adjust complexity based on the apparent skill level of the question.",
+      "guidelines": [
+        "Use analogies when helpful",
+        "Provide code examples",
+        "Reference documentation",
+        "Build on fundamentals"
+      ]
+    }
+  }
+}

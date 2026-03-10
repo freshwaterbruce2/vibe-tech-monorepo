@@ -1,0 +1,18 @@
+{
+  "export_timestamp": "2025-12-22T00:00:00.000Z",
+  "device_id": "android_01",
+  "events": [
+    {
+      "id": "mem_1734825600000_math",
+      "summary": "Completed 5 algebra problems.",
+      "tags": ["math", "algebra"],
+      "timestamp": 1734825600000
+    },
+    {
+      "id": "mem_1734825660000_chat",
+      "summary": "Discussed Minecraft strategies.",
+      "tags": ["chat", "minecraft"],
+      "timestamp": 1734825660000
+    }
+  ]
+}

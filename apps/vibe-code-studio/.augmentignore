@@ -1,0 +1,49 @@
+# Augment workspace indexing exclusions
+# Uses gitignore-style patterns.
+
+# --- Big / generated ---
+node_modules/
+dist/
+dist-electron/
+out/
+build/
+release/
+coverage/
+reports/
+
+# --- Logs / caches ---
+logs/
+*.log
+build_log*.txt
+lint-output.txt
+eslint-report.json
+knip-report.json
+openrouter-usage.json
+.eslintcache
+.cache/
+.parcel-cache/
+.rpt2_cache/
+.rts2_cache_*/
+
+# --- Local tooling artifacts ---
+.deploy/
+.deploy-test/
+.serena/
+.claude/session-data/
+.claude/validation-reports/
+
+# --- Secrets / local-only ---
+.env
+.env.*
+secure-storage.json
+**/secure-storage.json
+
+# --- Large media/bundles (usually not needed for code understanding) ---
+*.zip
+*.7z
+*.rar
+*.tar
+*.tgz
+
+# If you explicitly want dependency source indexed (usually very large), uncomment:
+# !node_modules/

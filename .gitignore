@@ -1,0 +1,288 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+**/.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.*
+!.env.example
+!.env.*.example
+!.env.*.sample
+!.env.*.template
+
+# Package manager lockfiles (repo uses pnpm)
+package-lock.json
+npm-shrinkwrap.json
+
+# pnpm internal / local config (should not be committed)
+.pnpm/
+
+# Local Claude settings (machine-specific)
+.claude/settings.local.json
+**/.claude/settings.local.json
+
+# Local editor/AI assistant tooling
+.codex/
+.codex-home/
+.agent/
+.agents/
+.codeberg/
+.git-archive-*/
+.codex-readiness-integration-test/
+.playwright-cli/
+.playwright-mcp/
+.tabnine/
+.tabnineignore
+.traycer/
+**/.deepcode/agent-tasks/
+
+# Build directories
+build/
+.nx/
+.next/
+out/
+*.tsbuildinfo
+bin/
+obj/
+
+# Rust/Tauri build artifacts
+target/
+apps/nova-agent/src-tauri/target/
+apps/*/src-tauri/target/
+
+# Electron/Tauri packaging outputs
+dist-electron/
+apps/*/dist-electron/
+apps/*/src-tauri/target/release/bundle/
+apps/*/src-tauri/target/release/nsis/
+*.blockmap
+*.msi
+*.wixpdb
+*.nupkg
+**/electron.vite.config.*.mjs
+
+# C/C++ build artifacts
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+*.exe
+*.out
+*.ilk
+*.pdb
+*.exp
+
+
+# Vite cache
+.vite-cache/
+node_modules/.vite/
+
+# Test coverage
+coverage/
+*.lcov
+.nyc_output
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+.tmp.driveupload/
+/tmp/
+graph.json
+logger_lint.txt
+lsp_lint.txt
+null
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.backup
+*.bak
+*~
+_backup_*
+src.backup
+
+
+# OS files
+Thumbs.db
+desktop.ini
+
+# Windows device-name artifacts accidentally created by tools
+nul
+**/nul
+
+# Project-specific (to review)
+DesktopCommanderMCP/
+/Vibe-Tutor/
+opcode/
+
+# Sensitive files - API keys and credentials
+MY-API-KEYS.txt
+COPY-PASTE-VARIABLES.txt
+*.secret
+*.key
+*.keystore
+*-KEYS.txt
+NETLIFY-ADD-VARIABLES.txt
+**/android/keystore.properties
+**/android/key.properties
+
+# Status reports and temporary documentation
+*-REPORT.md
+*-SUMMARY.md
+*_REPORT.md
+*_PLAN.md
+!apps/vtde/TERMINAL_UPGRADE_PLAN.md
+*_STATUS.md
+CLEANUP_REPORT.md
+LAUNCH-SUCCESS.md
+LAUNCH-SUMMARY.md
+AGENTS_VALIDATION_REPORT.md
+AGENT_CLI_SUCCESS_REPORT.md
+AGENTS_MD_INTEGRATION_REPORT.md
+docs/reports/archive/
+
+# Log files
+*.log
+trading_new.log
+nx-init.log
+
+# State files
+nonce_state.json
+
+# Test artifacts
+playwright-report/
+test-results/
+
+# Local build/debug logs
+**/src-tauri/run_log*.txt
+**/typecheck_errors*.txt
+**/compile_errors*.txt
+**/test_output*.txt
+**/build_log*.txt
+
+# App-specific local scratch files
+apps/nova-agent/public/test.txt
+apps/nova-agent/src-tauri/tauri.conf.backup.json
+
+
+
+.nx/cache
+.nx/workspace-data
+.cursor/rules/nx-rules.mdc
+
+# Turbo cache
+.turbo/
+
+# Serena (AI tool config)
+.serena/
+
+# Deprecated file backups
+*.deprecated
+projects/active/desktop-apps/nova-agent-snapshots/archived-2025-10-04/web/styles/vibetech-theme.css
+
+# Playwright
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Backup files
+**/_backups/
+*.zip
+*.7z
+
+# Build/compile logs
+build_output.txt
+cargo_stderr.txt
+cargo_stdout.txt
+compile_error.txt
+test_run_output.txt
+test_error_fresh.txt
+check_phase*.txt
+
+# Temp cleanup files
+cleanup-phase*.ps1
+*_COMPLETE.md
+*_RESULTS.md
+*_READY.md
+*_REVIEW.md
+*-GUIDE.md
+final_memo.md
+
+# Workspace files
+*.code-workspace
+
+# Temp output files
+**/err.txt
+**/out.txt
+**/stderr.txt
+**/stdout.txt
+**/health_output.txt
+**/build_result.txt
+**/build_output*.txt
+/tmp/nx-graph.json
+/tmp/project-graph*.json
+/tmp/*lint-report*.json
+/tmp/monorepo-sync-audit-report.json
+/token*.png
+/id_zoom*.png
+/bottoken.png
+
+# Gravity Claw Standalone Repo
+apps/gravity-claw/
+
+# Generated media / run output
+apps/ai-youtube-pipeline/output/
+tools/vibe-finisher/output/
+apps/*/dev-dist/
+apps/*/build_final/
+apps/*/build_v*/
+
+# PyInstaller build output
+apps/vibe-justice/dist_v6/
+
+# Electron build output
+apps/vibe-tutor/release/
+

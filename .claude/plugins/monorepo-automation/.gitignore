@@ -1,0 +1,30 @@
+# Local settings (user-specific configurations)
+.claude/*.local.md
+
+# Node modules (if any scripts install dependencies)
+node_modules/
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Test artifacts
+test-results/
+coverage/
+
+# Build outputs (if plugin generates any)
+dist/
+build/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/

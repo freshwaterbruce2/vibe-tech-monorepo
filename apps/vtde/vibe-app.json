@@ -1,0 +1,13 @@
+{
+  "displayName": "VTDE",
+  "description": "Tauri 2.0 desktop environment (self)",
+  "version": "1.0.0",
+  "category": "dev",
+  "icon": "/app-icons/vtde.png",
+  "launch": "pnpm dev",
+  "port": null,
+  "type": "native",
+  "features": [
+    "vtde-autodiscovered"
+  ]
+}

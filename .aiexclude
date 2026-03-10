@@ -1,0 +1,215 @@
+# ========================================
+# Gemini Code Assist Context Exclusions (2026 Standard)
+# ========================================
+# Files and directories excluded from Gemini's context window
+# to optimize performance and relevance.
+# Migrated from .geminiignore
+
+# ========================================
+# Dependencies (massive, low context value)
+# ========================================
+node_modules/
+**/node_modules/
+.pnpm-store/
+.pnpm/
+bower_components/
+jspm_packages/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+bun.lock
+bun.lockb
+
+# ========================================
+# Build Outputs & Generated Code
+# ========================================
+dist/
+**/dist/
+build/
+**/build/
+.next/
+**/.next/
+.nuxt/
+.output/
+out/
+.nx/
+target/
+**/target/
+.turbo/
+.angular/
+storybook-static/
+generated/
+
+# ========================================
+# Test Artifacts
+# ========================================
+coverage/
+**/coverage/
+test-results/
+playwright-report/
+.nyc_output/
+junit-reports/
+cypress/videos/
+cypress/screenshots/
+
+# ========================================
+# Cache Directories
+# ========================================
+cache/
+.cache/
+**/.cache/
+.vite/
+**/.vite/
+*.tsbuildinfo
+.eslintcache
+.prettiercache
+.stylelintcache
+.sass-cache/
+
+# ========================================
+# AI Agent Data & Logs
+# ========================================
+.gemini/tmp/
+.claude/logs/
+.claude/context/
+.serena/
+.agent/data/
+.antigravity/cache/
+notebooklm/
+logs/
+**/logs/
+*.log
+*.log.*
+
+# ========================================
+# D:\ Drive Data Storage (Windows)
+# ========================================
+# Explicit excludes in case of symlinks or mishandling
+D:/databases/
+D:/logs/
+D:/temp/
+D:/backups/
+D:/data/
+D:/screenshots/
+D:/build-cache/
+D:/pnpm-store/
+D:/learning-system/
+
+# ========================================
+# Binary & Large Files
+# ========================================
+*.exe
+*.dll
+*.msi
+*.so
+*.dylib
+*.wasm
+*.bin
+*.iso
+*.img
+*.zip
+*.tar
+*.tar.gz
+*.7z
+*.rar
+*.pdf
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+*.mp4
+*.mov
+*.avi
+*.mp3
+*.wav
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.svg
+*.webp
+
+# ========================================
+# Database Files
+# ========================================
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-shm
+*.db-wal
+
+# ========================================
+# Secrets & Credentials
+# ========================================
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+credentials/
+
+# ========================================
+# IDE & Editor Files
+# ========================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# ========================================
+# OS Generated Files
+# ========================================
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+System Volume Information/
+
+# ========================================
+# Version Control
+# ========================================
+.git/
+.svn/
+.hg/
+
+# ========================================
+# Documentation Build Outputs
+# ========================================
+_site/
+.docusaurus/
+.storybook/
+
+# ========================================
+# Temporary Files
+# ========================================
+tmp/
+**/tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# ========================================
+# Specific Large/Noisy Directories
+# ========================================
+vibe-ecosystem-mcp-server/dist/
+apps/*/dist/
+backend/*/dist/
+packages/*/dist/

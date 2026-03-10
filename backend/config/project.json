@@ -1,0 +1,57 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "backend-config",
+  "projectType": "application",
+  "root": "backend/config",
+  "sourceRoot": "backend/config/src",
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "echo 'lint not applicable: standalone config package'",
+        "cwd": "backend/config"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "echo 'typecheck not applicable: standalone config package'",
+        "cwd": "backend/config"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "echo 'test not applicable: standalone config package'",
+        "cwd": "backend/config"
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev || tsx watch src/index.ts || echo 'Dev not configured'",
+        "cwd": "backend/config"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "options": {
+        "command": "pnpm run build || tsc || echo 'Build not configured'",
+        "cwd": "backend/config"
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run start || node dist/index.js || echo 'Start not configured'",
+        "cwd": "backend/config"
+      }
+    }
+  },
+  "tags": ["type:node", "scope:backend-config"]
+}

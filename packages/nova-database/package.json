@@ -1,0 +1,44 @@
+{
+  "name": "@nova/database",
+  "version": "2.1.0",
+  "description": "NOVA Agent SQLite database services (TypeScript)",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./activity": "./dist/activity-db.js",
+    "./context": "./dist/context-db.js",
+    "./recommendations": "./dist/recommendations-db.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "build:watch": "tsc --watch -p tsconfig.build.json",
+    "clean": "rimraf dist",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit"
+  },
+  "dependencies": {
+    "@nova/types": "workspace:^2.0.0",
+    "better-sqlite3": "12.6.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "rimraf": "^6.1.2",
+    "typescript": "5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "keywords": [
+    "nova",
+    "database",
+    "sqlite"
+  ],
+  "author": "NOVA",
+  "license": "MIT"
+}

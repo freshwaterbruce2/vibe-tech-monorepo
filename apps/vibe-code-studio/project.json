@@ -1,0 +1,196 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "vibe-code-studio",
+  "projectType": "application",
+  "root": "apps/vibe-code-studio",
+  "sourceRoot": "apps/vibe-code-studio/src",
+  "implicitDependencies": [],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/run-electron-vite-dev.cjs",
+        "cwd": "apps/vibe-code-studio"
+      }
+    },
+    "dev:web": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev:web",
+        "cwd": "apps/vibe-code-studio"
+      }
+    },
+    "backend": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run backend",
+        "cwd": "apps/vibe-code-studio"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist", "{projectRoot}/dist-electron"],
+      "cache": true,
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "apps/vibe-code-studio"
+      },
+      "configurations": {
+        "production": {
+          "command": "pnpm run build:production",
+          "cwd": "apps/vibe-code-studio"
+        }
+      }
+    },
+    "package": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist-electron"],
+      "cache": false,
+      "options": {
+        "command": "pnpm run package",
+        "cwd": "apps/vibe-code-studio"
+      }
+    },
+    "electron-build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist-electron"],
+      "cache": false,
+      "options": {
+        "command": "pnpm run electron:build",
+        "cwd": "apps/vibe-code-studio"
+      }
+    },
+    "electron-build-win": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist-electron"],
+      "cache": false,
+      "options": {
+        "command": "pnpm run electron:build:win",
+        "cwd": "apps/vibe-code-studio"
+      }
+    },
+    "release-build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist-electron"],
+      "cache": false,
+      "options": {
+        "command": "pnpm run release:build",
+        "cwd": "apps/vibe-code-studio"
+      }
+    },
+    "release-build-win": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist-electron"],
+      "cache": false,
+      "options": {
+        "command": "pnpm run release:build:win",
+        "cwd": "apps/vibe-code-studio"
+      }
+    },
+    "release-build-mac": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist-electron"],
+      "cache": false,
+      "options": {
+        "command": "pnpm run release:build:mac",
+        "cwd": "apps/vibe-code-studio"
+      }
+    },
+    "release-build-linux": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist-electron"],
+      "cache": false,
+      "options": {
+        "command": "pnpm run release:build:linux",
+        "cwd": "apps/vibe-code-studio"
+      }
+    },
+    "release-dist": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist-electron"],
+      "cache": false,
+      "options": {
+        "command": "pnpm run release:dist",
+        "cwd": "apps/vibe-code-studio"
+      }
+    },
+    "package-win-local": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist-electron"],
+      "cache": false,
+      "options": {
+        "command": "pnpm run prepare-native-modules && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" pnpm exec electron-vite build && pnpm exec electron-builder --win --publish never",
+        "cwd": "apps/vibe-code-studio"
+      }
+    },
+    "verify-app-working": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File verify-app-working.ps1",
+        "cwd": "apps/vibe-code-studio"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run lint",
+        "cwd": "apps/vibe-code-studio"
+      },
+      "cache": true
+    },
+    "lint-fix": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run lint:fix",
+        "cwd": "apps/vibe-code-studio"
+      },
+      "cache": true
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prettier --write \"src/**/*.{ts,tsx,js,jsx}\"",
+        "cwd": "apps/vibe-code-studio"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run typecheck",
+        "cwd": "apps/vibe-code-studio"
+      },
+      "cache": true
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test:electron",
+        "cwd": "apps/vibe-code-studio"
+      },
+      "cache": true
+    },
+    "test:electron": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test:electron",
+        "cwd": "apps/vibe-code-studio"
+      },
+      "cache": true
+    },
+    "rebuild-deps": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run rebuild-deps",
+        "cwd": "apps/vibe-code-studio"
+      }
+    },
+    "clean": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node -e \"const fs=require('fs'); const paths=['dist','dist-electron','build','.tsbuildinfo','.tsbuildinfo.node']; for (const p of paths) { try { fs.rmSync(p,{recursive:true,force:true}); } catch {} }\"",
+        "cwd": "apps/vibe-code-studio"
+      }
+    }
+  },
+  "tags": ["type:desktop", "scope:vibe-code-studio"]
+}

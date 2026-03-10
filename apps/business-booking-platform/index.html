@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Vibe Hotels - Discover hotels that match your vibe. Book with confidence and earn 5% rewards on every stay." />
+    <meta name="theme-color" content="#3b82f6" />
+
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Vibe Hotels">
+
+    <title>Vibe Hotels - Find Your Perfect Vibe</title>
+    <!-- Square Web Payments SDK -->
+    <script>
+      // Load Square SDK based on environment
+      const isProduction = window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1');
+      const squareUrl = isProduction 
+        ? 'https://web.squarecdn.com/v1/square.js'
+        : 'https://sandbox.web.squarecdn.com/v1/square.js';
+      
+      const script = document.createElement('script');
+      script.src = squareUrl;
+      script.defer = true;
+      document.head.appendChild(script);
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

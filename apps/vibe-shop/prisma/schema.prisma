@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client"
+  output   = "./generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Category {
+  id               String            @id @default(uuid())
+  name             String
+  slug             String            @unique
+  parentId         String?           @map("parent_id")
+  isActive         Boolean           @default(true) @map("is_active")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  parent           Category?         @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children         Category[]        @relation("CategoryHierarchy")
+  products         Product[]
+  trendingKeywords TrendingKeyword[]
+
+  @@map("categories")
+}
+
+model Product {
+  id             String    @id @default(uuid())
+  externalId     String    @map("external_id")
+  network        String
+  name           String
+  description    String?
+  price          Decimal
+  currency       String    @default("USD")
+  imageUrl       String?   @map("image_url")
+  affiliateLink  String    @map("affiliate_link")
+  categoryId     String?   @map("category_id")
+  trendScore     Decimal   @default(0) @map("trend_score")
+  commissionRate Decimal?  @map("commission_rate")
+  merchantName   String?   @map("merchant_name")
+  isActive       Boolean   @default(true) @map("is_active")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  expiresAt      DateTime? @map("expires_at")
+  clicks         Click[]
+  category       Category? @relation(fields: [categoryId], references: [id])
+
+  @@unique([network, externalId])
+  @@index([trendScore(sort: Desc)])
+  @@index([categoryId])
+  @@map("products")
+}
+
+model TrendingKeyword {
+  id           String    @id @default(uuid())
+  keyword      String    @unique
+  trendScore   Int       @map("trend_score")
+  categoryId   String?   @map("category_id")
+  discoveredAt DateTime  @default(now()) @map("discovered_at")
+  lastChecked  DateTime  @default(now()) @map("last_checked")
+  category     Category? @relation(fields: [categoryId], references: [id])
+
+  @@index([trendScore(sort: Desc)])
+  @@index([keyword])
+  @@map("trending_keywords")
+}
+
+model SyncLog {
+  id              String    @id @default(uuid())
+  syncType        String    @map("sync_type")
+  status          String
+  productsAdded   Int       @default(0) @map("products_added")
+  productsRemoved Int       @default(0) @map("products_removed")
+  errorMessage    String?   @map("error_message")
+  startedAt       DateTime  @default(now()) @map("started_at")
+  completedAt     DateTime? @map("completed_at")
+
+  @@map("sync_logs")
+}
+
+model Click {
+  id        String   @id @default(uuid())
+  productId String   @map("product_id")
+  referrer  String?
+  userAgent String?  @map("user_agent")
+  ipHash    String?  @map("ip_hash")
+  clickedAt DateTime @default(now()) @map("clicked_at")
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@map("clicks")
+}

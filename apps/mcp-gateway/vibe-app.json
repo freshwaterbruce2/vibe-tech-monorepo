@@ -1,0 +1,13 @@
+{
+  "displayName": "MCP Gateway",
+  "description": "MCP routing server",
+  "version": "1.0.0",
+  "category": "dev",
+  "icon": "/app-icons/mcp-gateway.png",
+  "launch": "pnpm dev",
+  "port": null,
+  "type": "native",
+  "features": [
+    "vtde-autodiscovered"
+  ]
+}

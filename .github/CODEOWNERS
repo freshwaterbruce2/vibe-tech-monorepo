@@ -1,0 +1,25 @@
+# CODEOWNERS - Require review for sensitive paths
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything
+* @freshwaterbruce2
+
+# CI/CD pipelines - critical, require explicit review
+.github/ @freshwaterbruce2
+.github/workflows/ @freshwaterbruce2
+
+# Security-sensitive configuration
+.npmrc @freshwaterbruce2
+.env* @freshwaterbruce2
+**/package.json @freshwaterbruce2
+pnpm-lock.yaml @freshwaterbruce2
+
+# Pre-commit hooks and quality gates
+.git/hooks/ @freshwaterbruce2
+scripts/validate-auto-fix-safety.mjs @freshwaterbruce2
+
+# Financial / trading system (NEVER auto-merge)
+apps/crypto-enhanced/ @freshwaterbruce2
+
+# Database and data paths
+scripts/version-control/ @freshwaterbruce2

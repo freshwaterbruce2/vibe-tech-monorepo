@@ -1,0 +1,28 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@vibetech/backend",
+  "projectType": "library",
+  "root": "packages/backend",
+  "sourceRoot": "packages/backend/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "options": {
+        "command": "tsc",
+        "cwd": "packages/backend"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "cache": true,
+      "options": {
+        "command": "vitest run --passWithNoTests",
+        "cwd": "packages/backend"
+      }
+    }
+  },
+  "tags": ["type:library", "scope:backend"]
+}

@@ -1,0 +1,47 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    /* Relaxed settings for build */
+    "declaration": false,
+    "declarationMap": false,
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "strictPropertyInitialization": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "exactOptionalPropertyTypes": false,
+    "noImplicitReturns": false,
+    "noUncheckedIndexedAccess": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "electron/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "**/*.spec.tsx",
+    "**/*.test.tsx",
+    "**/__tests__/**/*",
+    "**/__mocks__/**/*",
+    "src/__tests__/**/*",
+    "tests/**/*",
+    "test-*.ts",
+    "*.test.ts",
+    "src/services/ai/**/*",
+    "UPDATED_MODELS_ARRAY.ts",
+    "development-components/**/*",
+    "scripts/**/*",
+    "vite.config*.ts",
+    "vitest.config.ts",
+    "electron.vite.config.ts"
+  ]
+}

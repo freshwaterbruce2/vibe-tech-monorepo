@@ -1,0 +1,76 @@
+{
+	"name": "monorepo-dashboard",
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "apps/monorepo-dashboard/src",
+	"projectType": "application",
+	"tags": ["type:app", "scope:dashboard", "platform:web"],
+	"targets": {
+		"dev": {
+			"executor": "@nx/vite:dev-server",
+			"defaultConfiguration": "development",
+			"options": {
+				"buildTarget": "monorepo-dashboard:build",
+				"port": 5176
+			},
+			"configurations": {
+				"development": {
+					"buildTarget": "monorepo-dashboard:build:development",
+					"hmr": true
+				},
+				"production": {
+					"buildTarget": "monorepo-dashboard:build:production",
+					"hmr": false
+				}
+			}
+		},
+		"build": {
+			"executor": "@nx/vite:build",
+			"outputs": ["{options.outputPath}"],
+			"defaultConfiguration": "production",
+			"options": {
+				"configFile": "apps/monorepo-dashboard/vite.config.ts",
+				"outputPath": "dist/apps/monorepo-dashboard"
+			},
+			"configurations": {
+				"development": {
+					"mode": "development"
+				},
+				"production": {
+					"mode": "production"
+				}
+			}
+		},
+		"preview": {
+			"executor": "@nx/vite:preview-server",
+			"defaultConfiguration": "development",
+			"options": {
+				"buildTarget": "monorepo-dashboard:build",
+				"port": 4300
+			},
+			"configurations": {
+				"development": {
+					"buildTarget": "monorepo-dashboard:build:development"
+				},
+				"production": {
+					"buildTarget": "monorepo-dashboard:build:production"
+				}
+			}
+		},
+		"test": {
+			"executor": "@nx/vite:test",
+			"outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+			"options": {
+				"configFile": "apps/monorepo-dashboard/vite.config.ts",
+				"passWithNoTests": true,
+				"reportsDirectory": "../../coverage/apps/monorepo-dashboard"
+			}
+		},
+		"lint": {
+			"executor": "@nx/eslint:lint",
+			"outputs": ["{options.outputFile}"],
+			"options": {
+				"lintFilePatterns": ["apps/monorepo-dashboard/**/*.{ts,tsx,js,jsx}"]
+			}
+		}
+	}
+}

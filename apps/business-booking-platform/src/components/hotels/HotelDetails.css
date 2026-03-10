@@ -1,0 +1,17 @@
+/* Auto-generated styles for HotelDetails dynamic bars (replaces inline styles) */
+.passion-bar {
+	position: relative;
+}
+.passion-bar[data-width]::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	transform-origin: left center;
+	background: inherit;
+	width: 100%;
+	transform: scaleX(calc(var(--w, 0) / 100));
+}
+/* JavaScript-free progressive enhancement: set custom property via attribute selector */
+[data-width] {
+	--w: attr(data-width number);
+}

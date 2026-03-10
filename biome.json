@@ -1,0 +1,47 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "organizeImports": {
+    "enabled": true
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "style": {
+        "useBlockStatements": "off" 
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf",
+    "lineWidth": 100,
+    "attributePosition": "auto"
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double",
+      "quoteProperties": "asNeeded",
+      "trailingCommas": "all",
+      "semicolons": "always",
+      "arrowParentheses": "always",
+      "bracketSpacing": true,
+      "bracketSameLine": false
+    }
+  },
+  "files": {
+    "ignore": [
+      "dist",
+      "build",
+      "coverage",
+      "node_modules",
+      ".nx",
+      ".turbo",
+      "pnpm-lock.yaml"
+    ]
+  }
+}

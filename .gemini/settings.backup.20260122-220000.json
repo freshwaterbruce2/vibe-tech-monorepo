@@ -1,0 +1,76 @@
+{
+  "context": {
+    "fileName": ".gemini/rules-global.md"
+  },
+  "mcpServers": {
+    "filesystem": {
+      "transport": "stdio",
+      "command": "node",
+      "args": [
+        "C:\\Users\\fresh_zxae3v6\\AppData\\Roaming\\npm\\node_modules\\@modelcontextprotocol\\server-filesystem\\dist\\index.js",
+        "C:\\dev",
+        "D:\\databases",
+        "D:\\logs",
+        "D:\\learning-system"
+      ]
+    },
+    "nx-mcp": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["nx", "mcp"]
+    },
+    "sqlite": {
+      "transport": "stdio",
+      "command": "node",
+      "args": [
+        "C:\\Users\\fresh_zxae3v6\\AppData\\Roaming\\npm\\node_modules\\mcp-server-sqlite-npx\\dist\\index.js",
+        "D:\\databases\\database.db"
+      ]
+    },
+    "sqlite-trading": {
+      "transport": "stdio",
+      "command": "node",
+      "args": [
+        "C:\\Users\\fresh_zxae3v6\\AppData\\Roaming\\npm\\node_modules\\mcp-server-sqlite-npx\\dist\\index.js",
+        "D:\\databases\\crypto-enhanced\\trading.db"
+      ]
+    },
+    "contextstream": {
+      "transport": "stdio",
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@contextstream/mcp-server"],
+      "env": {
+        "CONTEXTSTREAM_CONFIG": "C:\\dev\\.contextstream.yml"
+      }
+    }
+  },
+  "general": {
+    "previewFeatures": true,
+    "sessionRetention": {
+      "enabled": true
+    },
+    "enablePromptCompletion": true
+  },
+  "ui": {
+    "showLineNumbers": true,
+    "showModelInfoInChat": true
+  },
+  "model": {
+    "maxSessionTurns": 100
+  },
+  "tools": {
+    "autoAccept": true,
+    "maxConcurrent": 2,
+    "timeout": 30000
+  },
+  "security": {
+    "folderTrust": {
+      "enabled": true
+    }
+  },
+  "experimental": {
+    "codebaseInvestigatorSettings": {
+      "maxNumTurns": 100
+    }
+  }
+}

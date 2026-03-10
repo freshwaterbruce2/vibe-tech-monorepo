@@ -1,0 +1,54 @@
+{
+  "name": "vibe-code-studio-vscode",
+  "displayName": "Vibe Code Studio",
+  "description": "Port of Vibe Code Studio AI features for VS Code",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Machine Learning",
+    "Programming Languages"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vibeCodeStudio.startAgent",
+        "title": "Vibe: Start Agent Mode"
+      },
+      {
+        "command": "vibeCodeStudio.completeCode",
+        "title": "Vibe: Complete Code"
+      }
+    ],
+    "configuration": {
+      "title": "Vibe Code Studio",
+      "properties": {
+        "vibeCodeStudio.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "DeepSeek API Key"
+        },
+        "vibeCodeStudio.model": {
+          "type": "string",
+          "default": "deepseek-chat",
+          "description": "DeepSeek Model"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "20.x",
+    "@types/vscode": "^1.109.0",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "axios": "^1.6.8"
+  }
+}

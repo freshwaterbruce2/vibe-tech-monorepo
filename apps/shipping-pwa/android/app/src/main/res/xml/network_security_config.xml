@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Network Security Configuration for DC8980 Shipping App -->
+<network-security-config>
+    <!-- Base configuration for all network connections -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Trust system Certificate Authorities -->
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+
+    <!-- Debug configuration (only for debug builds) -->
+    <debug-overrides>
+        <trust-anchors>
+            <!-- Trust user-added Certificate Authorities in debug -->
+            <certificates src="user"/>
+            <certificates src="system"/>
+        </trust-anchors>
+    </debug-overrides>
+
+    <!-- Domain-specific configurations -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">vibetech.dev</domain>
+        <domain includeSubdomains="true">api.vibetech.dev</domain>
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+        <!-- Pin certificates for enhanced security -->
+        <pin-set expiration="2026-01-01">
+            <!-- Add your certificate pins here when ready for production -->
+        </pin-set>
+    </domain-config>
+
+    <!-- Local development configuration (debug only) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">192.168.1.0/24</domain>
+    </domain-config>
+
+    <!-- Block cleartext traffic to all other domains -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">*</domain>
+    </domain-config>
+</network-security-config>

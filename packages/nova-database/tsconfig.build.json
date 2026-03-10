@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "lib": [
+      "ES2022"
+    ],
+    "moduleResolution": "bundler",
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@nova/types": [
+        "../nova-types/dist/index"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts"
+  ],
+  "extends": "../../tsconfig.base.json"
+}

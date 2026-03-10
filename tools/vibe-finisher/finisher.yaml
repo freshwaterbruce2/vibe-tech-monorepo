@@ -1,0 +1,48 @@
+# Vibe Finisher Configuration
+# Adapted from repomirror for Windows/PowerShell
+
+# Target project to finish (change this per project)
+targetProject: C:\dev\apps\vibe-code-studio
+
+# Backup location
+backupDir: C:\dev\_backups
+
+# Finish criteria - what defines "done"
+finishCriteria:
+  - "App launches without crashes"
+  - "No TypeScript errors (tsc --noEmit passes)"
+  - "Core features work (manual test checklist passes)"
+  - "Build produces exe/installer"
+
+# Agent settings
+agent:
+  model: claude-sonnet-4-20250514
+  maxTokens: 8192
+  timeout: 300000  # 5 minutes per iteration
+
+# Loop settings  
+loop:
+  sleepSeconds: 10
+  maxIterations: 100  # Safety limit
+  stopOnSuccess: true
+
+# What to ignore
+ignore:
+  - node_modules
+  - dist
+  - dist-electron
+  - "*.log"
+  - ".git"
+
+
+
+
+
+
+
+
+
+
+
+
+

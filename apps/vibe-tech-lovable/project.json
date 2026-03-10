@@ -1,0 +1,131 @@
+{
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "name": "vibe-tech-lovable",
+  "projectType": "application",
+  "sourceRoot": "apps/vibe-tech-lovable/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "apps/vibe-tech-lovable"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "apps/vibe-tech-lovable"
+      }
+    },
+    "build-production": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "pnpm run build:production",
+        "cwd": "apps/vibe-tech-lovable"
+      }
+    },
+    "build-dev": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "pnpm run build:dev",
+        "cwd": "apps/vibe-tech-lovable"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run lint",
+        "cwd": "apps/vibe-tech-lovable"
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run preview",
+        "cwd": "apps/vibe-tech-lovable"
+      }
+    },
+    "analyze": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run analyze",
+        "cwd": "apps/vibe-tech-lovable"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/playwright-report"],
+      "options": {
+        "command": "pnpm run test",
+        "cwd": "apps/vibe-tech-lovable"
+      }
+    },
+    "test-ui": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test:ui",
+        "cwd": "apps/vibe-tech-lovable"
+      }
+    },
+    "test-report": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test:report",
+        "cwd": "apps/vibe-tech-lovable"
+      }
+    },
+    "test-debug": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test:debug",
+        "cwd": "apps/vibe-tech-lovable"
+      }
+    },
+    "docker:build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "docker build -t ${DOCKER_REGISTRY:-docker.io/your-username}/vibe-tech-lovable:latest .",
+        "cwd": "apps/vibe-tech-lovable"
+      }
+    },
+    "docker:push": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["docker:build"],
+      "options": {
+        "command": "docker push ${DOCKER_REGISTRY:-docker.io/your-username}/vibe-tech-lovable:latest",
+        "cwd": "apps/vibe-tech-lovable"
+      }
+    },
+    "k8s:deploy": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["docker:push"],
+      "options": {
+        "commands": [
+          "kubectl apply -f k8s/base/namespace.yaml",
+          "kubectl apply -f k8s/base/configmap.yaml",
+          "kubectl apply -f k8s/web-apps/vibe-tech-lovable/"
+        ],
+        "parallel": false
+      }
+    },
+    "k8s:delete": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "kubectl delete -f k8s/web-apps/vibe-tech-lovable/ --ignore-not-found=true"
+      }
+    },
+    "k8s:logs": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "kubectl logs -f deployment/vibe-tech-lovable -n vibetech"
+      },
+      "cache": false
+    }
+  },
+  "tags": ["scope:web", "product:vibe-tech-lovable", "type:application"]
+}

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- File provider paths for DC8980 Shipping App -->
+<!-- Defines which files can be shared with other apps -->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Files in the app's private files directory -->
+    <files-path name="internal_files" path="." />
+
+    <!-- Cache directory for temporary files -->
+    <cache-path name="cache_files" path="." />
+
+    <!-- External files directory (if available) -->
+    <external-files-path name="external_files" path="." />
+
+    <!-- Exported data files that can be shared -->
+    <files-path name="exports" path="exports/" />
+
+    <!-- Temporary export files -->
+    <cache-path name="temp_exports" path="exports/" />
+
+    <!-- Documents directory for user-accessible files -->
+    <external-files-path name="documents" path="Documents/" />
+
+    <!-- Download directory for exported reports -->
+    <external-path name="downloads" path="Download/" />
+</paths>

@@ -1,0 +1,83 @@
+{
+  "name": "vibetech-bridge",
+  "version": "2.0.0",
+  "description": "VibeTech Antigravity MCP Bridge - Access filesystem, GitHub, and desktop tools",
+  "author": "VibeTech",
+  "license": "MIT",
+  "entry": "index.js",
+  "commands": [
+    {
+      "name": "mcp",
+      "description": "Call any MCP tool via the bridge",
+      "usage": "/mcp <server> <tool> [args]",
+      "examples": [
+        "/mcp filesystem list_directory {\"path\":\"./\"}",
+        "/mcp codeberg codeberg_search_repos {\"query\":\"vibetech\"}",
+        "/mcp desktop-commander dc_get_system_info {}"
+      ],
+      "handler": "commands/mcp.js",
+      "platforms": ["telegram", "discord", "slack", "whatsapp", "teams"]
+    },
+    {
+      "name": "files",
+      "description": "List files in a directory",
+      "usage": "/files [path]",
+      "examples": [
+        "/files",
+        "/files C:\\dev",
+        "/files /home/user/projects"
+      ],
+      "handler": "commands/files.js",
+      "platforms": ["telegram", "discord", "slack", "whatsapp"]
+    },
+    {
+      "name": "search",
+      "description": "Search GitHub repositories",
+      "usage": "/search <query> [--limit N]",
+      "examples": [
+        "/search vibetech",
+        "/search \"ai assistant\" --limit 10",
+        "/search openclaw"
+      ],
+      "handler": "commands/search.js",
+      "platforms": ["telegram", "discord", "slack"]
+    },
+    {
+      "name": "screenshot",
+      "description": "Take a screenshot (Windows only)",
+      "usage": "/screenshot [filename]",
+      "examples": [
+        "/screenshot",
+        "/screenshot my-capture.png"
+      ],
+      "handler": "commands/screenshot.js",
+      "platforms": ["telegram", "discord"],
+      "os": ["win32"]
+    }
+  ],
+  "capabilities": {
+    "filesystem": ["read", "write", "list"],
+    "codeberg": ["search", "read"],
+    "desktop": ["screenshot", "system_info"]
+  },
+  "config": {
+    "ipc_bridge_url": "ws://localhost:5004",
+    "auto_reconnect": true,
+    "reconnect_delay": 5000,
+    "max_reconnect_attempts": 5,
+    "debug": false,
+    "default_timeout": 30000,
+    "health_check_interval": 60000
+  },
+  "dependencies": {
+    "@vibetech/openclaw-bridge": "^2.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "bridge",
+    "filesystem",
+    "codeberg",
+    "automation",
+    "vibetech"
+  ]
+}

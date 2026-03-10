@@ -1,0 +1,13 @@
+{
+  "displayName": "Health Tracker",
+  "description": "Symptom tracking app",
+  "version": "1.0.0",
+  "category": "utility",
+  "icon": "/app-icons/symptom-tracker.png",
+  "launch": "pnpm dev",
+  "port": null,
+  "type": "web",
+  "features": [
+    "vtde-autodiscovered"
+  ]
+}

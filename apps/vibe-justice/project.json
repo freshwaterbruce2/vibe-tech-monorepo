@@ -1,0 +1,196 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "vibe-justice",
+  "projectType": "application",
+  "sourceRoot": "apps/vibe-justice",
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run lint",
+        "cwd": "apps/vibe-justice/frontend"
+      }
+    },
+    "lint:fix": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run lint:fix",
+        "cwd": "apps/vibe-justice/frontend"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run typecheck",
+        "cwd": "apps/vibe-justice/frontend"
+      }
+    },
+    "test:frontend": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test:run",
+        "cwd": "apps/vibe-justice/frontend"
+      }
+    },
+    "test:frontend:coverage": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/frontend/coverage"],
+      "options": {
+        "command": "pnpm run test:coverage",
+        "cwd": "apps/vibe-justice/frontend"
+      }
+    },
+    "test:backend": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "python -m pytest vibe_justice/tests tests -v --tb=short",
+        "cwd": "apps/vibe-justice/backend"
+      }
+    },
+    "test:backend:coverage": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/backend/coverage"],
+      "options": {
+        "command": "python -m pytest vibe_justice/tests tests -v --cov=vibe_justice --cov-report=html:coverage --cov-report=term",
+        "cwd": "apps/vibe-justice/backend"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["test:frontend", "test:backend"],
+      "options": {
+        "commands": ["echo All tests completed"]
+      }
+    },
+    "quality": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["lint", "typecheck", "test:frontend"],
+      "options": {
+        "commands": ["echo Quality checks completed"]
+      }
+    },
+    "quality:full": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["lint", "typecheck", "test:frontend", "test:backend"],
+      "options": {
+        "commands": ["echo Full quality checks completed"]
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "apps/vibe-justice/frontend"
+      }
+    },
+    "dev:frontend": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "apps/vibe-justice/frontend"
+      }
+    },
+    "dev:backend": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000",
+        "cwd": "apps/vibe-justice/backend"
+      }
+    },
+    "dev:all": {
+      "executor": "nx:run-many",
+      "options": {
+        "targets": ["dev:frontend", "dev:backend"],
+        "parallel": true
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/frontend/dist"],
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "apps/vibe-justice/frontend"
+      }
+    },
+    "build:frontend": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/frontend/dist"],
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "apps/vibe-justice/frontend"
+      }
+    },
+    "electron:dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run electron:dev",
+        "cwd": "apps/vibe-justice/frontend"
+      }
+    },
+    "electron:build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build:frontend"],
+      "outputs": ["{projectRoot}/frontend/dist", "{projectRoot}/frontend/dist-electron"],
+      "options": {
+        "command": "pnpm run electron:build",
+        "cwd": "apps/vibe-justice/frontend"
+      }
+    },
+    "backend:build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/backend/dist"],
+      "options": {
+        "command": "pwsh -File ../../build_v8_final.ps1",
+        "cwd": "apps/vibe-justice/backend"
+      }
+    },
+    "tauri:dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm tauri dev",
+        "cwd": "apps/vibe-justice/frontend"
+      }
+    },
+    "tauri:build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build:frontend"],
+      "outputs": ["{projectRoot}/frontend/src-tauri/target/release"],
+      "options": {
+        "command": "pnpm tauri build",
+        "cwd": "apps/vibe-justice/frontend"
+      }
+    },
+    "backend:lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "python -m ruff check .",
+        "cwd": "apps/vibe-justice/backend"
+      }
+    },
+    "backend:lint:fix": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "python -m ruff check . --fix",
+        "cwd": "apps/vibe-justice/backend"
+      }
+    },
+    "backend:typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "python -m mypy vibe_justice --ignore-missing-imports",
+        "cwd": "apps/vibe-justice/backend"
+      }
+    }
+  },
+  "tags": [
+    "scope:app",
+    "type:desktop",
+    "stack:tauri",
+    "stack:python",
+    "stack:react",
+    "stack:fastapi",
+    "filesystem",
+    "learning-system",
+    "2026-standards"
+  ]
+}

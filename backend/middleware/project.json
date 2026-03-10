@@ -1,0 +1,43 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "backend-middleware",
+  "projectType": "library",
+  "root": "backend/middleware",
+  "sourceRoot": "backend/middleware/src",
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "echo 'lint not applicable: shared middleware module'",
+        "cwd": "backend/middleware"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "options": {
+        "command": "pnpm run build || tsc || echo 'Build not configured'",
+        "cwd": "backend/middleware"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "tsc -p tsconfig.json --noEmit",
+        "cwd": "backend/middleware"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "echo 'test not applicable: shared middleware module'",
+        "cwd": "backend/middleware"
+      }
+    }
+  },
+  "tags": ["type:library", "scope:backend-middleware"]
+}

@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  vibe-code-studio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3001:80"
+    environment:
+      - VITE_DEEPSEEK_API_KEY=${VITE_DEEPSEEK_API_KEY}
+    restart: unless-stopped

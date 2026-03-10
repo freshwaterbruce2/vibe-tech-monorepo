@@ -1,0 +1,15 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"composite": true,
+		"skipLibCheck": true,
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"noEmit": true,
+		"declaration": false,
+		"declarationMap": false,
+		"tsBuildInfoFile": "./.tsbuildinfo.node",
+		"allowSyntheticDefaultImports": true
+	},
+	"include": ["vite.config.ts", "server/**/*.ts"]
+}

@@ -1,0 +1,53 @@
+========================================
+VIBE-TUTOR BACKEND - GITHUB DEPLOYMENT
+========================================
+
+📁 THIS FOLDER CONTAINS EVERYTHING YOU NEED
+
+FILES TO UPLOAD TO GITHUB:
+✅ server.mjs (UPLOAD THIS)
+✅ package.json (UPLOAD THIS)
+✅ .gitignore (UPLOAD THIS)
+
+FILES TO KEEP SECRET (DO NOT UPLOAD):
+❌ .env (NEVER upload - contains your API key!)
+❌ README.md (optional, not needed)
+❌ GITHUB_UPLOAD_INSTRUCTIONS.md (just instructions)
+❌ START_HERE.txt (this file)
+
+========================================
+STEP-BY-STEP INSTRUCTIONS:
+========================================
+
+1. Open: GITHUB_UPLOAD_INSTRUCTIONS.md
+   (Full detailed guide with screenshots descriptions)
+
+2. Quick Summary:
+   - Go to GitHub.com
+   - Create new repo: "vibe-tutor-backend"
+   - Upload ONLY: server.mjs, package.json, .gitignore
+   - Go to Render.com
+   - Connect your GitHub repo
+   - Add environment variables:
+   * GEMINI_API_KEY = YOUR_GEMINI_API_KEY
+   * OPENROUTER_API_KEY = YOUR_OPENROUTER_API_KEY
+   * NODE_ENV = production
+   - Deploy!
+   - Copy your Render URL
+
+3. After deployment:
+   - Share your Render URL with Claude
+   - Claude will rebuild the APK
+   - Install on phone
+   - Done!
+
+========================================
+NEED HELP?
+========================================
+
+Stuck? Share a screenshot of where you are!
+
+Full instructions in:
+GITHUB_UPLOAD_INSTRUCTIONS.md
+
+========================================

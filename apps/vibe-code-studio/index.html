@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/deepcode-icon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vibe Code Studio - Next-Generation AI-Powered Development Experience</title>
+  <meta name="description"
+    content="Vibe Code Studio is a next-generation AI-powered code editor designed for modern development workflows." />
+
+  <!-- Content Security Policy -->
+  <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.tailwindcss.com;
+      style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com;
+      img-src 'self' data: blob: https:;
+      font-src 'self' data: https://r2cdn.perplexity.ai;
+      connect-src 'self' http://localhost:3000 http://localhost:3001 http://localhost:3100 http://localhost:4000 http://localhost:5174 http://localhost:8000 ws://localhost:5174 http://ipc.localhost https://ipc.localhost ipc: https://api.deepseek.com https://api.openai.com https://api.anthropic.com https://api.groq.com https://api.github.com https://openrouter.ai https://generativelanguage.googleapis.com wss: ws: tauri:;
+      media-src 'self' blob:;
+      worker-src 'self' blob: data:;
+      child-src 'self' blob:;
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+    ">
+  <!-- Inline styles moved to external file for better CSP compliance -->
+  <link rel="stylesheet" href="/src/styles/loading.css" />
+</head>
+
+<body>
+  <div id="root">
+    <div class="loading-screen">
+      <div class="loading-logo">⚡ Vibe Code Studio</div>
+      <div class="loading-text">Where innovation meets elegant design</div>
+      <div class="loading-spinner"></div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

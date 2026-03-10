@@ -1,0 +1,115 @@
+{
+  "app": {
+    "name": "DC8980 Shipping",
+    "subtitle": "Warehouse Management Tool",
+    "version": "1.0.0",
+    "buildNumber": "1",
+    "bundleId": "com.vibetech.dc8980.shipping",
+    "category": "Business",
+    "contentRating": "4+",
+    "developer": {
+      "name": "VibeTech Solutions",
+      "email": "support@vibetech.dev",
+      "website": "https://vibetech.dev",
+      "privacyPolicy": "https://vibetech.dev/privacy/dc8980-shipping",
+      "supportUrl": "https://vibetech.dev/support/dc8980-shipping"
+    }
+  },
+  "descriptions": {
+    "short": "Professional shipping management for Walmart DC8980",
+    "long": "DC8980 Shipping is a comprehensive warehouse management application designed specifically for Walmart Distribution Center 8980. This professional tool streamlines daily shipping operations with powerful features including:\n\n• Door Schedule Management - Efficiently track and manage shipping door assignments\n• Pallet Counting System - Accurate inventory tracking with real-time counts\n• Voice Commands - Hands-free operation for busy warehouse environments\n• Offline Support - Continue working even without internet connectivity\n• Data Export - Generate detailed reports in CSV and ZIP formats\n• Real-time Updates - Instant synchronization across devices\n• User-friendly Interface - Intuitive design optimized for warehouse workflows\n\nKey Benefits:\n✓ Increase operational efficiency\n✓ Reduce manual data entry errors\n✓ Streamline warehouse workflows\n✓ Improve inventory accuracy\n✓ Generate comprehensive reports\n✓ Work offline when needed\n\nDesigned by warehouse professionals for warehouse professionals, this app transforms how shipping departments manage their daily operations. Whether you're handling door assignments, counting pallets, or generating reports, DC8980 Shipping provides the tools you need to work efficiently and accurately.\n\nPerfect for warehouse supervisors, shipping clerks, and logistics coordinators who need reliable, professional-grade tools for managing distribution center operations."
+  },
+  "keywords": {
+    "primary": ["shipping", "warehouse", "logistics", "inventory", "distribution"],
+    "secondary": ["Walmart", "management", "tracking", "voice commands", "offline", "reports", "productivity", "business"],
+    "combined": "shipping,warehouse,logistics,inventory,distribution,management,tracking,voice commands,offline,reports,productivity,business,Walmart"
+  },
+  "features": [
+    "Door schedule management with real-time updates",
+    "Pallet counting system with voice command support",
+    "Offline functionality for uninterrupted workflow",
+    "Comprehensive data export capabilities (CSV, ZIP)",
+    "User-friendly interface optimized for warehouse use",
+    "Voice commands for hands-free operation",
+    "Real-time synchronization across devices",
+    "Professional reporting and analytics",
+    "Secure data handling and storage",
+    "Cross-platform compatibility"
+  ],
+  "targetAudience": {
+    "primary": "Warehouse and distribution center workers",
+    "secondary": "Logistics coordinators, shipping supervisors, inventory managers",
+    "industries": ["Retail", "Distribution", "Logistics", "Warehouse Operations"]
+  },
+  "screenshots": {
+    "required": {
+      "6.5_inch": ["iPhone 14 Pro Max", "iPhone 13 Pro Max", "iPhone 12 Pro Max"],
+      "5.5_inch": ["iPhone 8 Plus", "iPhone 7 Plus", "iPhone 6s Plus"],
+      "12.9_inch_ipad": ["iPad Pro (6th gen)", "iPad Pro (5th gen)", "iPad Pro (4th gen)"]
+    },
+    "descriptions": [
+      "Main dashboard showing door schedules and quick actions",
+      "Pallet counting interface with voice command indicator",
+      "Data export options with multiple format support",
+      "Settings panel with customization options",
+      "Offline mode indicator and sync status"
+    ]
+  },
+  "appStoreOptimization": {
+    "title": "DC8980 Shipping - Warehouse Management",
+    "subtitle": "Professional logistics & inventory tool",
+    "promotionalText": "Streamline your warehouse operations with professional-grade shipping management tools.",
+    "searchAds": {
+      "keywords": ["warehouse management", "shipping software", "inventory tracking", "logistics app", "distribution center"],
+      "negativeKeywords": ["gaming", "entertainment", "social", "photo"]
+    }
+  },
+  "privacy": {
+    "dataCollection": {
+      "analytics": false,
+      "crashReports": true,
+      "diagnostics": true,
+      "userContent": true
+    },
+    "dataSharing": false,
+    "dataRetention": "Data stored locally on device only",
+    "permissions": {
+      "microphone": "Voice commands for hands-free operation",
+      "storage": "Export shipping data and reports to device",
+      "camera": "Future barcode scanning capabilities",
+      "network": "Sync data when internet available"
+    }
+  },
+  "localizations": {
+    "supported": ["en-US"],
+    "planned": ["es-ES", "fr-FR"]
+  },
+  "ratings": {
+    "targetAge": "4+",
+    "contentDescriptors": [],
+    "violenceCartoon": "None",
+    "violenceRealistic": "None",
+    "sexualContent": "None",
+    "profanityMild": "None",
+    "alcohol": "None",
+    "gambling": "None",
+    "horrorFear": "None",
+    "matureAdult": "None"
+  },
+  "technicalInfo": {
+    "minimumOSVersion": {
+      "iOS": "13.0",
+      "android": "21"
+    },
+    "supportedDevices": {
+      "iPhone": "iPhone 6s and later",
+      "iPad": "iPad (5th generation) and later",
+      "android": "Android 5.0 (API level 21) and later"
+    },
+    "fileSize": "< 50 MB",
+    "internetRequired": false,
+    "inAppPurchases": false,
+    "subscriptions": false,
+    "advertisements": false
+  }
+}

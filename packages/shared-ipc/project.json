@@ -1,0 +1,19 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@vibetech/shared-ipc",
+  "projectType": "library",
+  "root": "packages/shared-ipc",
+  "sourceRoot": "packages/shared-ipc/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "options": {
+        "command": "tsc",
+        "cwd": "packages/shared-ipc"
+      }
+    }
+  },
+  "tags": ["type:library", "scope:shared"]
+}

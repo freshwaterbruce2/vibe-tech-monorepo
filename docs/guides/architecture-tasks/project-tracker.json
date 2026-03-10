@@ -1,0 +1,75 @@
+﻿{
+  "project": "Architecture Improvement",
+  "created": "2026-01-30",
+  "lastUpdated": "2026-01-30",
+  "status": "Ready for Execution",
+  "phases": [
+    {
+      "id": 1,
+      "name": "Foundation & Analysis",
+      "status": "Ready",
+      "tasks": [
+        {
+          "id": "ARCH-1.1",
+          "name": "Dependency Graph Analysis",
+          "status": "Not Started",
+          "priority": "CRITICAL",
+          "estimatedHours": 3,
+          "dependencies": []
+        },
+        {
+          "id": "ARCH-1.2",
+          "name": "Package Consolidation Planning",
+          "status": "Not Started",
+          "priority": "CRITICAL",
+          "estimatedHours": 4,
+          "dependencies": ["ARCH-1.1"]
+        },
+        {
+          "id": "ARCH-1.3",
+          "name": "Tailwind Migration Assessment",
+          "status": "Not Started",
+          "priority": "CRITICAL",
+          "estimatedHours": 3,
+          "dependencies": []
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Critical Consolidation",
+      "status": "Blocked",
+      "tasks": [
+        {
+          "id": "ARCH-2.1",
+          "name": "Merge Shared Packages",
+          "status": "Blocked",
+          "priority": "CRITICAL",
+          "estimatedHours": 16,
+          "dependencies": ["ARCH-1.2"]
+        },
+        {
+          "id": "ARCH-2.2",
+          "name": "Standardize Tailwind v4",
+          "status": "Blocked",
+          "priority": "CRITICAL",
+          "estimatedHours": 24,
+          "dependencies": ["ARCH-1.3"]
+        },
+        {
+          "id": "ARCH-2.3",
+          "name": "Update Build Configurations",
+          "status": "Blocked",
+          "priority": "HIGH",
+          "estimatedHours": 8,
+          "dependencies": ["ARCH-2.1"]
+        }
+      ]
+    }
+  ],
+  "metrics": {
+    "packagesBefore": 52,
+    "packagesTarget": 40,
+    "totalEstimatedHours": 145
+  }
+}

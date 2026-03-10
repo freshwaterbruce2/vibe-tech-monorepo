@@ -1,0 +1,61 @@
+{
+  "name": "@vibetech/testing-utils",
+  "version": "1.0.0",
+  "description": "Shared testing utilities and fixtures for VibeTech monorepo",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./vitest": {
+      "import": "./dist/vitest/index.js",
+      "types": "./dist/vitest/index.d.ts"
+    },
+    "./fixtures": {
+      "import": "./dist/fixtures/index.js",
+      "types": "./dist/fixtures/index.d.ts"
+    },
+    "./mocks": {
+      "import": "./dist/mocks/index.js",
+      "types": "./dist/mocks/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint . --max-warnings 0"
+  },
+  "peerDependencies": {
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.5.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "vitest": "^4.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^25.2.0",
+    "@types/react": "19.2.10",
+    "@types/react-dom": "19.2.3",
+    "typescript": "5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "keywords": [
+    "testing",
+    "vitest",
+    "fixtures",
+    "mocks",
+    "utilities"
+  ]
+}

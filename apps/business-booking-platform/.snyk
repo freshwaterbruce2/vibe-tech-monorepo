@@ -1,0 +1,28 @@
+# Snyk (https://snyk.io) policy file
+version: v1.25.0
+
+# Ignore specific vulnerabilities for valid reasons
+ignore: {}
+
+# Patches to apply
+patch: {}
+
+# Security policies
+language-settings:
+  javascript:
+    enableLinters: true
+    
+  python:
+    enableLinters: true
+    
+# Custom rules for hotel booking application
+custom-rules:
+  - id: hotel-booking-pii-check
+    name: Check for PII exposure
+    description: Ensure no personal information is logged or exposed
+    severity: high
+    
+  - id: payment-security-check
+    name: Payment data security
+    description: Ensure payment information is properly handled
+    severity: critical

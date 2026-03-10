@@ -1,0 +1,13 @@
+{
+  "displayName": "VibeBlox",
+  "description": "Gamified token economy",
+  "version": "1.0.0",
+  "category": "education",
+  "icon": "/app-icons/VibeBlox.png",
+  "launch": "pnpm dev",
+  "port": null,
+  "type": "web",
+  "features": [
+    "vtde-autodiscovered"
+  ]
+}

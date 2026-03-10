@@ -1,0 +1,266 @@
+import { ArrowLeft, CheckCircle, Clock, Lightbulb, XCircle } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import type { AnagramChallenge } from '../../services/puzzleGenerator';
+import { calculateAnagramScore, generateAnagrams } from '../../services/puzzleGenerator';
+import { getAnagramWords } from '../../services/wordBanks';
+
+interface AnagramsGameProps {
+  subject: string;
+  onComplete: (score: number, stars: number, timeSpent: number) => void;
+  onBack: () => void;
+}
+
+const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
+  const [startTime] = useState(() => Date.now());
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
+  const anagrams = useMemo<AnagramChallenge[]>(() => {
+    const words = getAnagramWords(subject, 10);
+    return generateAnagrams(words);
+  }, [subject]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [userAnswer, setUserAnswer] = useState('');
+  const [solved, setSolved] = useState<Set<number>>(new Set());
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [showHint, setShowHint] = useState(false);
+  const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
+
+  const currentAnagram = anagrams[currentIndex];
+
+  const handleSubmit = () => {
+    if (!currentAnagram || !userAnswer.trim()) return;
+
+    if (userAnswer.toUpperCase() === currentAnagram.original) {
+      // Correct!
+      setFeedback('correct');
+      setSolved((prev) => new Set([...prev, currentIndex]));
+
+      setTimeout(() => {
+        if (currentIndex < anagrams.length - 1) {
+          setCurrentIndex((i) => i + 1);
+          setUserAnswer('');
+          setShowHint(false);
+          setFeedback(null);
+        } else {
+          // Game complete
+          const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+          const result = calculateAnagramScore(
+            solved.size + 1,
+            anagrams.length,
+            hintsUsed,
+            timeSpent,
+          );
+          onComplete(result.score, result.stars, timeSpent);
+        }
+      }, 1000);
+    } else {
+      setFeedback('wrong');
+      setTimeout(() => setFeedback(null), 1000);
+    }
+  };
+
+  const handleSkip = () => {
+    if (currentIndex < anagrams.length - 1) {
+      setCurrentIndex((i) => i + 1);
+      setUserAnswer('');
+      setShowHint(false);
+      setFeedback(null);
+    } else {
+      // Finish game
+      const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+      const result = calculateAnagramScore(solved.size, anagrams.length, hintsUsed, timeSpent);
+      onComplete(result.score, result.stars, timeSpent);
+    }
+  };
+
+  const handleHint = () => {
+    setShowHint(true);
+    setHintsUsed((h) => h + 1);
+  };
+
+  if (!currentAnagram) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6 flex items-center justify-center">
+        <div className="text-white text-xl">Loading anagrams...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6 pb-36 md:pb-8">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="glass-card p-4 mb-6 flex items-center justify-between">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+          >
+            <ArrowLeft size={20} />
+            Back
+          </button>
+
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <CheckCircle size={20} className="text-green-400" />
+              <span className="text-white font-medium">
+                {solved.size}/{anagrams.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Lightbulb size={20} className="text-yellow-400" />
+              <span className="text-white font-medium">{hintsUsed} hints</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock size={20} className="text-cyan-400" />
+              <span className="text-white font-medium">
+                {Math.floor((currentTime - startTime) / 1000)}s
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="glass-card p-8">
+          <h2 className="text-3xl font-bold text-center mb-6 neon-text-primary">
+            {subject} Anagrams
+          </h2>
+
+          {/* Progress */}
+          <div className="mb-6 text-center">
+            <div className="text-white/80 mb-2">
+              Question {currentIndex + 1} of {anagrams.length}
+            </div>
+            <div className="flex justify-center gap-1.5">
+              {anagrams.map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                    solved.has(i)
+                      ? 'bg-green-400 scale-110'
+                      : i === currentIndex
+                        ? 'bg-cyan-400 animate-pulse'
+                        : 'bg-white/20'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Scrambled Word */}
+          <div className="mb-8 text-center">
+            <div className="inline-flex gap-2 mb-4">
+              {currentAnagram.scrambled.split('').map((letter, i) => (
+                <div
+                  key={i}
+                  className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center bg-gradient-to-br from-cyan-600 to-blue-600 rounded-lg text-white text-2xl sm:text-3xl font-bold shadow-lg hover:scale-110 hover:-translate-y-1 transition-transform cursor-default"
+                  style={{ animationDelay: `${i * 0.05}s` }}
+                >
+                  {letter}
+                </div>
+              ))}
+            </div>
+            <p className="text-white/80 text-lg">Unscramble the letters!</p>
+          </div>
+
+          {/* Clue */}
+          <div className="mb-6 p-4 bg-purple-800/30 rounded-lg border border-purple-500/30">
+            <div className="text-sm text-white/60 mb-1">Clue:</div>
+            <div className="text-white font-medium">{currentAnagram.clue}</div>
+          </div>
+
+          {/* Hint */}
+          {showHint && (
+            <div className="mb-6 p-4 bg-yellow-800/30 rounded-lg border border-yellow-500/30">
+              <div className="flex items-center gap-2 text-yellow-400 mb-2">
+                <Lightbulb size={20} />
+                <span className="font-bold">Hint</span>
+              </div>
+              <div className="text-white">
+                First letter:{' '}
+                <span className="font-bold text-xl">{currentAnagram.original[0]}</span>
+              </div>
+              <div className="text-white">
+                Length: <span className="font-bold">{currentAnagram.original.length} letters</span>
+              </div>
+            </div>
+          )}
+
+          {/* Answer Input */}
+          <div className="mb-6">
+            <input
+              type="text"
+              value={userAnswer}
+              onChange={(e) => setUserAnswer(e.target.value.toUpperCase())}
+              onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
+              placeholder="Type your answer..."
+              className={`w-full px-6 py-4 bg-white/10 border-2 rounded-lg text-white text-xl font-bold text-center placeholder-white/50 focus:outline-none focus:ring-2 transition-all ${
+                feedback === 'correct'
+                  ? 'border-green-500 focus:ring-green-500'
+                  : feedback === 'wrong'
+                    ? 'border-red-500 focus:ring-red-500 shake'
+                    : 'border-purple-500 focus:ring-cyan-500'
+              }`}
+              autoFocus
+            />
+
+            {feedback === 'correct' && (
+              <div className="mt-2 flex items-center justify-center gap-2 text-green-400">
+                <CheckCircle size={20} />
+                <span className="font-bold">Correct!</span>
+              </div>
+            )}
+            {feedback === 'wrong' && (
+              <div className="mt-2 flex items-center justify-center gap-2 text-red-400">
+                <XCircle size={20} />
+                <span className="font-bold">Try again!</span>
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-4">
+            <button
+              onClick={handleHint}
+              disabled={showHint}
+              className={`flex-1 px-6 py-3 rounded-lg font-bold transition-all ${
+                showHint
+                  ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                  : 'bg-yellow-600 hover:bg-yellow-700 transform hover:scale-105'
+              }`}
+            >
+              Get Hint
+            </button>
+            <button
+              onClick={handleSubmit}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-lg font-bold transition-all transform hover:scale-105"
+            >
+              Submit
+            </button>
+            <button
+              onClick={handleSkip}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 rounded-lg font-bold transition-all transform hover:scale-105"
+            >
+              Skip
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-10px); }
+          75% { transform: translateX(10px); }
+        }
+        .shake {
+          animation: shake 0.5s;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default AnagramsGame;

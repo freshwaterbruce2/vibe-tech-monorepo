@@ -1,0 +1,22 @@
+{
+	"Stop": [
+		{
+			"matcher": ".*",
+			"hooks": [
+				{
+					"type": "command",
+					"command": "powershell",
+					"args": [
+						"-NoProfile",
+						"-ExecutionPolicy",
+						"Bypass",
+						"-File",
+						"${CLAUDE_PLUGIN_ROOT}/hooks/stop-hook.ps1"
+					],
+					"timeout": 10,
+					"description": "The Finisher loop enforcer - prevents exit until completion criteria met"
+				}
+			]
+		}
+	]
+}

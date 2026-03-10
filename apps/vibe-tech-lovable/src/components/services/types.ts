@@ -1,0 +1,16 @@
+
+export interface ServiceType {
+  id: string;
+  name: string;
+  description: string;
+  icon: {
+    type: any;
+    props: {
+      className: string;
+    }
+  };
+  features: string[];
+  technologies?: string[];
+  realProjects?: string[];
+  businessValue?: string;
+}

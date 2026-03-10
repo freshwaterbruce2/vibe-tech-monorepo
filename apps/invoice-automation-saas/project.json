@@ -1,0 +1,86 @@
+{
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
+	"name": "invoice-automation-saas",
+	"projectType": "application",
+	"root": "apps/invoice-automation-saas",
+	"sourceRoot": "apps/invoice-automation-saas/src",
+	"implicitDependencies": [],
+	"targets": {
+		"dev": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "vite",
+				"cwd": "apps/invoice-automation-saas"
+			}
+		},
+		"api:dev": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "tsx watch server/src/index.ts",
+				"cwd": "apps/invoice-automation-saas"
+			}
+		},
+		"api:build": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "tsc -p server/tsconfig.json",
+				"cwd": "apps/invoice-automation-saas"
+			},
+			"cache": true
+		},
+		"api:start": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "node server/dist/index.js",
+				"cwd": "apps/invoice-automation-saas"
+			}
+		},
+		"build": {
+			"executor": "nx:run-commands",
+			"outputs": ["{projectRoot}/dist"],
+			"cache": true,
+			"options": {
+				"command": "vite build",
+				"cwd": "apps/invoice-automation-saas"
+			},
+			"configurations": {
+				"production": {
+					"command": "NODE_ENV=production vite build",
+					"cwd": "apps/invoice-automation-saas"
+				}
+			}
+		},
+		"preview": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "vite preview",
+				"cwd": "apps/invoice-automation-saas"
+			}
+		},
+		"lint": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "eslint src",
+				"cwd": "apps/invoice-automation-saas"
+			},
+			"cache": true
+		},
+		"typecheck": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "tsc --noEmit",
+				"cwd": "apps/invoice-automation-saas"
+			},
+			"cache": true
+		},
+		"test": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "vitest",
+				"cwd": "apps/invoice-automation-saas"
+			},
+			"cache": true
+		}
+	},
+	"tags": ["type:web", "scope:invoice-automation-saas"]
+}

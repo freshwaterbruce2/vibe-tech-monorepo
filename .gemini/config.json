@@ -1,0 +1,94 @@
+{
+  "$schema": "https://schemas.google.com/gemini/config/v1",
+  "project": {
+    "name": "VibeTech Monorepo",
+    "type": "nx-monorepo",
+    "packageManager": "pnpm",
+    "version": "1.0.0"
+  },
+  "codeAssist": {
+    "contextFiles": [
+      "CLAUDE.md",
+      "AI.md",
+      "docs/ai/WORKSPACE.md",
+      "nx.json",
+      "pnpm-workspace.yaml",
+      ".claude/rules/*.md",
+      "MONOREPO_WORKFLOW.md",
+      "PNPM_QUICK_REFERENCE.md"
+    ],
+    "excludePaths": [
+      "**/node_modules/**",
+      "**/.nx/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/.vite/**",
+      "**/coverage/**",
+      "**/playwright-report/**",
+      "D:/databases/**",
+      "D:/logs/**",
+      "D:/data/**",
+      "D:/learning-system/**",
+      "**/*.log",
+      "**/*.db",
+      "**/*.sqlite",
+      "**/*.sqlite3"
+    ],
+    "indexingStrategy": "selective",
+    "maxFilesIndexed": 5000,
+    "enableSemanticSearch": true,
+    "enableCaching": true
+  },
+  "features": {
+    "inlineCompletions": true,
+    "chatAssist": true,
+    "nativeDiff": true,
+    "workspaceIndexing": true,
+    "crossFileContext": true,
+    "smartImports": true
+  },
+  "workspace": {
+    "roots": [
+      "apps",
+      "packages",
+      "backend"
+    ],
+    "importantDirectories": [
+      "apps/nova-agent",
+      "apps/vibe-tutor",
+      "apps/crypto-enhanced",
+      "apps/vibe-code-studio",
+      "apps/desktop-commander-v3",
+      "packages/shared-utils",
+      "packages/ui",
+      "backend/openrouter-proxy"
+    ],
+    "tsconfig": "tsconfig.json"
+  },
+  "completion": {
+    "triggerCharacters": [
+      ".",
+      "(",
+      "{",
+      "[",
+      "<",
+      " "
+    ],
+    "debounceMs": 150,
+    "maxSuggestions": 3,
+    "contextLines": 50
+  },
+  "quality": {
+    "enableLinting": true,
+    "enableTypeChecking": true,
+    "enableFormatting": true,
+    "respectEditorConfig": true,
+    "respectPrettierConfig": true
+  },
+  "performance": {
+    "maxConcurrentRequests": 3,
+    "requestTimeoutMs": 30000,
+    "cacheMaxSize": "500MB",
+    "enableBackgroundIndexing": true
+  }
+}

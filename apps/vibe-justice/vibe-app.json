@@ -1,0 +1,13 @@
+{
+  "displayName": "Vibe Justice",
+  "description": "Legal case management assistant",
+  "version": "1.0.0",
+  "category": "business",
+  "icon": "/app-icons/vibe-justice.png",
+  "launch": "pnpm dev",
+  "port": null,
+  "type": "web",
+  "features": [
+    "vtde-autodiscovered"
+  ]
+}

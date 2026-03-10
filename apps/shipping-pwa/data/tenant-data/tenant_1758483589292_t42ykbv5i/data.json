@@ -1,0 +1,29 @@
+{
+  "tenantId": "tenant_1758483589292_t42ykbv5i",
+  "doorEntries": [
+    {
+      "id": "door_1",
+      "doorNumber": 101,
+      "destinationDC": "DC001",
+      "freightType": "Standard",
+      "trailerStatus": "partial",
+      "palletCount": 15,
+      "tcrPresent": true,
+      "notes": "First test door entry"
+    }
+  ],
+  "palletData": {
+    "door_1": {
+      "count": 15,
+      "lastUpdate": "2025-09-21T19:40:00.000Z"
+    }
+  },
+  "users": [
+    {
+      "id": "user_1",
+      "name": "Test User",
+      "role": "operator"
+    }
+  ],
+  "lastSyncAt": "2025-09-21T19:40:05.726Z"
+}

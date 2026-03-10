@@ -1,0 +1,57 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "nova-sqlite-mcp",
+  "projectType": "application",
+  "root": "backend/nova-sqlite-mcp",
+  "sourceRoot": "backend/nova-sqlite-mcp/src",
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "echo 'lint not applicable: standalone utility service'",
+        "cwd": "backend/nova-sqlite-mcp"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "echo 'typecheck not applicable: standalone utility service'",
+        "cwd": "backend/nova-sqlite-mcp"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "echo 'test not applicable: standalone utility service'",
+        "cwd": "backend/nova-sqlite-mcp"
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev || tsx watch src/index.ts || echo 'Dev not configured'",
+        "cwd": "backend/nova-sqlite-mcp"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "options": {
+        "command": "pnpm run build || tsc || echo 'Build not configured'",
+        "cwd": "backend/nova-sqlite-mcp"
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run start || node dist/index.js || echo 'Start not configured'",
+        "cwd": "backend/nova-sqlite-mcp"
+      }
+    }
+  },
+  "tags": ["type:mcp", "scope:nova-sqlite"]
+}

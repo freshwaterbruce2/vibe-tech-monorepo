@@ -1,0 +1,32 @@
+{
+  "name": "@vibetech/shared-config",
+  "version": "1.0.0",
+  "description": "Shared configuration and environment utilities",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rimraf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint . --max-warnings 0"
+  },
+  "keywords": [
+    "config",
+    "environment"
+  ],
+  "author": "VibeTech",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "rimraf": "^6.1.2",
+    "typescript": "5.9.3",
+    "vitest": "^4.0.18"
+  }
+}

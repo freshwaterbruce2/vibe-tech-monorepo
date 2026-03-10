@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# Build outputs
+dist/
+build/
+coverage/
+.next/
+.nuxt/
+out/
+
+# Logs
+*.log
+
+# Environment files
+.env*
+
+# Generated files
+*.generated.ts
+*.generated.js
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+
+# Temporary files
+tmp/
+temp/
+
+# Project specific
+build-website-example/
+server.log

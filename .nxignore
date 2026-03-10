@@ -1,0 +1,11 @@
+.pytest_cache
+.pytest_cache/**
+.codex/**
+.playwright-cli/**
+.playwright-mcp/**
+tmp/nx-graph.json
+tmp/project-graph*.json
+tmp/monorepo-sync-audit-report.json
+token*.png
+id_zoom*.png
+bottoken.png

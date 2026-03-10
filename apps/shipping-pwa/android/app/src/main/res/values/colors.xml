@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Walmart brand colors -->
+    <color name="walmart_blue">#0052CC</color>
+    <color name="walmart_blue_dark">#003D99</color>
+    <color name="walmart_yellow">#FFC220</color>
+    <color name="walmart_white">#FFFFFF</color>
+
+    <!-- App theme colors -->
+    <color name="colorPrimary">#0052CC</color>
+    <color name="colorPrimaryDark">#003D99</color>
+    <color name="colorAccent">#FFC220</color>
+
+    <!-- Splash screen colors -->
+    <color name="splash_background">#0052CC</color>
+    <color name="splash_text">#FFFFFF</color>
+
+    <!-- Status bar and navigation -->
+    <color name="status_bar_color">#003D99</color>
+    <color name="navigation_bar_color">#0052CC</color>
+
+    <!-- General UI colors -->
+    <color name="background_color">#F8F9FA</color>
+    <color name="surface_color">#FFFFFF</color>
+    <color name="error_color">#DC3545</color>
+    <color name="success_color">#28A745</color>
+    <color name="warning_color">#FFC107</color>
+    <color name="info_color">#17A2B8</color>
+
+    <!-- Text colors -->
+    <color name="text_primary">#212529</color>
+    <color name="text_secondary">#6C757D</color>
+    <color name="text_on_primary">#FFFFFF</color>
+</resources>

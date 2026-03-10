@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline - PWA</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+    }
+    
+    .container {
+      max-width: 400px;
+      padding: 2rem;
+      animation: fadeIn 0.6s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1.5rem;
+      opacity: 0.9;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+    }
+    
+    h1 {
+      font-size: 2rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      opacity: 0.95;
+    }
+    
+    p {
+      font-size: 1.1rem;
+      opacity: 0.8;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+    
+    .status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 25px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      margin-bottom: 1.5rem;
+    }
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff6b6b;
+      animation: blink 1.5s infinite;
+    }
+    
+    @keyframes blink {
+      0%, 50% {
+        opacity: 1;
+      }
+      51%, 100% {
+        opacity: 0.3;
+      }
+    }
+    
+    .retry-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 0.75rem 2rem;
+      border-radius: 25px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .retry-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.5);
+      transform: translateY(-2px);
+    }
+    
+    .offline-features {
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .features-list {
+      list-style: none;
+      text-align: left;
+    }
+    
+    .features-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0;
+      opacity: 0.8;
+    }
+    
+    .check-icon {
+      width: 16px;
+      height: 16px;
+      color: #4ade80;
+      flex-shrink: 0;
+    }
+    
+    @media (max-width: 480px) {
+      .container {
+        padding: 1.5rem;
+      }
+      
+      h1 {
+        font-size: 1.75rem;
+      }
+      
+      p {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Offline Icon -->
+    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.5a9.5 9.5 0 100 19 9.5 9.5 0 000-19zM8 12l2.5 2.5L16 8"></path>
+    </svg>
+    
+    <h1>You're Offline</h1>
+    
+    <p>Don't worry! This app works offline. Some features are still available while you're disconnected.</p>
+    
+    <!-- Connection Status -->
+    <div class="status">
+      <div class="status-dot"></div>
+      <span id="status-text">No internet connection</span>
+    </div>
+    
+    <!-- Retry Button -->
+    <a href="/" class="retry-btn" onclick="window.location.reload(); return false;">
+      Try Again
+    </a>
+    
+    <!-- Available Offline Features -->
+    <div class="offline-features">
+      <h3 style="margin-bottom: 1rem; opacity: 0.9;">Available Offline:</h3>
+      <ul class="features-list">
+        <li>
+          <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+          </svg>
+          <span>View cached content</span>
+        </li>
+        <li>
+          <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+          </svg>
+          <span>Browse saved data</span>
+        </li>
+        <li>
+          <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+          </svg>
+          <span>Create drafts (syncs when online)</span>
+        </li>
+        <li>
+          <svg class="check-icon" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+          </svg>
+          <span>Access settings and preferences</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+  
+  <script>
+    // Monitor connection status
+    function updateConnectionStatus() {
+      const statusText = document.getElementById('status-text');
+      const statusDot = document.querySelector('.status-dot');
+      
+      if (navigator.onLine) {
+        statusText.textContent = 'Connection restored!';
+        statusDot.style.background = '#4ade80';
+        statusDot.style.animation = 'none';
+        
+        // Auto-redirect after connection is restored
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1500);
+      } else {
+        statusText.textContent = 'No internet connection';
+        statusDot.style.background = '#ff6b6b';
+        statusDot.style.animation = 'blink 1.5s infinite';
+      }
+    }
+    
+    // Listen for connection changes
+    window.addEventListener('online', updateConnectionStatus);
+    window.addEventListener('offline', updateConnectionStatus);
+    
+    // Check connection status on load
+    updateConnectionStatus();
+    
+    // Periodic connectivity check
+    setInterval(() => {
+      fetch('/favicon.ico', { 
+        method: 'HEAD',
+        cache: 'no-cache',
+        mode: 'no-cors'
+      }).then(() => {
+        if (!navigator.onLine) {
+          // Force online status if we can reach the server
+          navigator.onLine = true;
+          updateConnectionStatus();
+        }
+      }).catch(() => {
+        // Connection is definitely offline
+        if (navigator.onLine) {
+          navigator.onLine = false;
+          updateConnectionStatus();
+        }
+      });
+    }, 5000);
+    
+    // Service worker ready check
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(() => {
+        console.log('Service worker is ready - offline functionality available');
+      });
+    }
+  </script>
+</body>
+</html>

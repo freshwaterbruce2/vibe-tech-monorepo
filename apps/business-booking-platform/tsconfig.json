@@ -1,0 +1,37 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowUnusedLabels": false,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@vibetech/hooks": ["../../packages/vibetech-hooks/src/index.ts"],
+      "@vibetech/hooks/*": ["../../packages/vibetech-hooks/src/*"],
+      "@vibe/contracts": ["./packages/contracts/src"],
+      "@vibe/contracts/*": ["./packages/contracts/src/*"],
+      "@vibe/ui": ["./packages/ui/src"],
+      "@vibe/ui/*": ["./packages/ui/src/*"]
+    }
+  },
+  "include": ["src", "tests", "packages/contracts/src", "packages/ui/src"],
+  "exclude": [
+    "src/__tests__/**/*",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "tests/**/*"
+  ],
+  "references": [{ "path": "./tsconfig.node.json" }]
+}

@@ -1,0 +1,31 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "strict": false,
+    "strictNullChecks": true,
+    "strictPropertyInitialization": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": false
+  },
+  "include": ["src/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "dist-electron",
+    "android",
+    "electron/**/*",
+    "vitest.config.ts",
+    "playwright.config.ts",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__tests__/**"
+  ]
+}

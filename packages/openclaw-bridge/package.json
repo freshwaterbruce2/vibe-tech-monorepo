@@ -1,0 +1,56 @@
+{
+  "name": "@vibetech/openclaw-bridge",
+  "version": "2.0.0",
+  "type": "module",
+  "description": "OpenClaw IPC client — dispatches tasks to Antigravity MCP servers via IPC Bridge (compatible with OpenClaw 2026.2.19-2)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./cli": "./dist/cli.js"
+  },
+  "bin": {
+    "openclaw-dispatch": "dist/cli.js"
+  },
+  "keywords": [
+    "openclaw",
+    "mcp",
+    "ipc",
+    "bridge",
+    "antigravity",
+    "ai-assistant",
+    "websocket"
+  ],
+  "author": "VibeTech",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/freshwaterbruce2/Monorepo.git",
+    "directory": "packages/openclaw-bridge"
+  },
+  "scripts": {
+    "dev": "tsx watch src/cli.ts",
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "start": "node dist/cli.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "clean": "rimraf dist",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@vibetech/shared-ipc": "workspace:^1.0.0",
+    "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.21.0",
+    "typescript": "5.9.3",
+    "vitest": "^4.0.18"
+  }
+}

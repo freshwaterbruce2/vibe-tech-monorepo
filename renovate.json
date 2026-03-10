@@ -1,0 +1,92 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":separateMajorReleases",
+    ":combinePatchMinorReleases",
+    ":enableVulnerabilityAlertsWithLabel('security')"
+  ],
+  "labels": ["dependencies"],
+  "schedule": ["every weekend"],
+  "timezone": "America/New_York",
+  "prHourlyLimit": 5,
+  "prConcurrentLimit": 10,
+  "branchPrefix": "deps/",
+  "commitMessagePrefix": "chore(deps): ",
+  "packageRules": [
+    {
+      "description": "Group all non-major updates together",
+      "matchPackagePatterns": ["*"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "all non-major dependencies",
+      "groupSlug": "all-minor-patch"
+    },
+    {
+      "description": "Group React ecosystem",
+      "matchPackagePatterns": ["^react", "^@types/react"],
+      "groupName": "React",
+      "groupSlug": "react"
+    },
+    {
+      "description": "Group TypeScript ecosystem",
+      "matchPackagePatterns": ["typescript", "^@typescript-eslint"],
+      "groupName": "TypeScript",
+      "groupSlug": "typescript"
+    },
+    {
+      "description": "Group NX ecosystem",
+      "matchPackagePatterns": ["^@nx/", "^nx$"],
+      "groupName": "NX",
+      "groupSlug": "nx"
+    },
+    {
+      "description": "Group Vite ecosystem",
+      "matchPackagePatterns": ["^vite", "^@vitejs/"],
+      "groupName": "Vite",
+      "groupSlug": "vite"
+    },
+    {
+      "description": "Group Electron ecosystem",
+      "matchPackagePatterns": ["^electron", "electron-builder"],
+      "groupName": "Electron",
+      "groupSlug": "electron"
+    },
+    {
+      "description": "Group testing tools",
+      "matchPackagePatterns": ["vitest", "playwright", "@testing-library"],
+      "groupName": "Testing",
+      "groupSlug": "testing"
+    },
+    {
+      "description": "Group ESLint/Biome",
+      "matchPackagePatterns": ["eslint", "biome", "@biomejs"],
+      "groupName": "Linting",
+      "groupSlug": "linting"
+    },
+    {
+      "description": "Automerge patch updates for dev dependencies",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "branch"
+    },
+    {
+      "description": "Pin GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true
+    },
+    {
+      "description": "Major updates need manual review",
+      "matchUpdateTypes": ["major"],
+      "labels": ["dependencies", "breaking"],
+      "automerge": false
+    }
+  ],
+  "ignoreDeps": [
+    "node"
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"]
+  }
+}

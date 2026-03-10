@@ -1,0 +1,15 @@
+[
+  {
+    "id": "admin_superadmin_001",
+    "username": "superadmin",
+    "email": "admin@warehouse.system",
+    "passwordHash": "2e7d05797e3bc3fc1036633bb42e9adfceb2b4dfdb3e91711bf49b596258f7f0",
+    "role": "superadmin",
+    "permissions": [
+      "*"
+    ],
+    "isActive": true,
+    "createdAt": "2025-09-21T21:03:40.849Z",
+    "updatedAt": "2025-09-21T21:03:40.849Z"
+  }
+]

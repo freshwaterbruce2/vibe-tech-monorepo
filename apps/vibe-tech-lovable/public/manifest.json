@@ -1,0 +1,23 @@
+{
+  "name": "vibe-tech-lovable PWA",
+  "short_name": "vibe-tech-lovable",
+  "description": "Progressive Web App for vibe-tech-lovable",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,256 @@
+import { ArrowLeft, Music, Sparkles, Star, Trophy, Volume2, Zap } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { playCorrect, playTone, playWrong } from './musicNotesAudio';
+import type { NoteData } from './musicNotesData';
+import { getTier, pick, shuffle } from './musicNotesData';
+import StaffSVG from './MusicNotesStaff';
+
+/* ---------- Props ---------- */
+interface MusicNotesProps {
+  onEarnTokens?: (amount: number) => void;
+  onClose?: () => void;
+}
+
+/* ---------- Accent colors (cyan to match hub card #06b6d4) ---------- */
+const CYAN = '#06b6d4';
+const CYAN_DIM = 'rgba(6,182,212,0.2)';
+const CYAN_BORDER = 'rgba(6,182,212,0.3)';
+
+/* ---------- Component ---------- */
+const MusicNotesGame = ({ onEarnTokens, onClose }: MusicNotesProps) => {
+  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  const [totalTokens, setTotalTokens] = useState(0);
+  const [currentNote, setCurrentNote] = useState<NoteData | null>(null);
+  const [options, setOptions] = useState<string[]>([]);
+  const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
+  const [lastAnswer, setLastAnswer] = useState('');
+  const [questionsAnswered, setQuestionsAnswered] = useState(0);
+  const [correctAnswers, setCorrectAnswers] = useState(0);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const tier = useMemo(() => getTier(score), [score]);
+
+  const nextQuestion = useCallback(() => {
+    const t = getTier(score);
+    const note = pick(t.notes);
+    const wrongPool = t.notes.filter((n) => n.label !== note.label);
+    const wrongs = shuffle(wrongPool)
+      .slice(0, t.optionCount - 1)
+      .map((n) => n.label);
+    setCurrentNote(note);
+    setOptions(shuffle([note.label, ...wrongs]));
+    setFeedback(null);
+    setLastAnswer('');
+  }, [score]);
+
+  useEffect(() => {
+    nextQuestion();
+  }, []);
+
+  const handleAnswer = useCallback(
+    (chosen: string) => {
+      if (feedback !== null || !currentNote) return;
+      const correct = chosen === currentNote.label;
+      setFeedback(correct ? 'correct' : 'wrong');
+      setLastAnswer(chosen);
+      setQuestionsAnswered((q) => q + 1);
+
+      if (correct) {
+        playCorrect();
+        const streakBonus = streak >= 4 ? 2 : streak >= 2 ? 1 : 0;
+        const earned = 2 + streakBonus;
+        setScore((s) => s + earned);
+        setStreak((s) => s + 1);
+        setBestStreak((b) => globalThis.Math.max(b, streak + 1));
+        setTotalTokens((t) => t + earned);
+        setCorrectAnswers((c) => c + 1);
+        onEarnTokens?.(earned);
+        if ((streak + 1) % 5 === 0) {
+          setShowCelebration(true);
+          setTimeout(() => setShowCelebration(false), 1500);
+        }
+      } else {
+        playWrong();
+        setStreak(0);
+      }
+
+      feedbackTimer.current = setTimeout(nextQuestion, correct ? 1000 : 1800);
+    },
+    [feedback, currentNote, streak, nextQuestion, onEarnTokens],
+  );
+
+  const handleHear = useCallback(() => {
+    if (currentNote) playTone(currentNote.label, 0.5);
+  }, [currentNote]);
+
+  useEffect(
+    () => () => {
+      if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
+    },
+    [],
+  );
+
+  if (!currentNote) return null;
+
+  /* ---------- Option button style ---------- */
+  const optionStyle = (label: string) => {
+    const isChosen = lastAnswer === label;
+    const isCorrect = label === currentNote.label;
+    let bg = 'rgba(255,255,255,0.07)';
+    let border = '2px solid rgba(255,255,255,0.1)';
+    let color = '#e2e8f0';
+    if (feedback && isCorrect) {
+      bg = 'rgba(34,197,94,0.2)';
+      border = '2px solid #22c55e';
+      color = '#22c55e';
+    } else if (feedback && isChosen && !isCorrect) {
+      bg = 'rgba(239,68,68,0.15)';
+      border = '2px solid #ef4444';
+      color = '#ef4444';
+    }
+    return {
+      background: bg, border, color, borderRadius: 12,
+      padding: '14px 8px', fontSize: 18, fontWeight: 700,
+      cursor: feedback ? 'default' : 'pointer',
+      transition: 'all 0.15s ease', textAlign: 'center' as const,
+      fontFamily: 'monospace',
+    } as const;
+  };
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #0f172a 0%, #164e63 100%)',
+      color: '#e2e8f0', fontFamily: 'system-ui, sans-serif',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      padding: 16, position: 'relative', overflow: 'hidden',
+    }}>
+      {/* Header */}
+      <div style={{
+        width: '100%', maxWidth: 400, display: 'flex',
+        alignItems: 'center', justifyContent: 'space-between', marginBottom: 12,
+      }}>
+        <button
+          onClick={onClose}
+          style={{
+            background: 'rgba(255,255,255,0.08)', border: 'none', color: '#94a3b8',
+            borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 14,
+            display: 'flex', alignItems: 'center', gap: 4,
+          }}
+        >
+          <ArrowLeft size={16} /> Back
+        </button>
+        <div style={{ fontSize: 20, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Music size={22} color={CYAN} /> Music Notes
+        </div>
+        <div style={{ width: 60 }} />
+      </div>
+
+      {/* Stats */}
+      <div style={{ width: '100%', maxWidth: 400, display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+        {[
+          { val: totalTokens, lbl: 'Tokens', color: '#f59e0b', Icon: Zap },
+          { val: score, lbl: 'Score', color: '#22c55e', Icon: Star },
+          { val: streak, lbl: 'Streak', color: streak >= 3 ? '#f97316' : '#94a3b8', Icon: null },
+          { val: bestStreak, lbl: 'Best', color: CYAN, Icon: Trophy },
+        ].map(({ val, lbl, color, Icon }) => (
+          <div key={lbl} style={{
+            flex: 1, minWidth: 70, background: 'rgba(255,255,255,0.06)',
+            borderRadius: 10, padding: '8px 10px', textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color }}>{val}</div>
+            <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              {Icon && <Icon size={10} />} {lbl}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tier badge */}
+      <div style={{
+        background: CYAN_DIM, border: `1px solid ${CYAN_BORDER}`,
+        borderRadius: 20, padding: '4px 14px', fontSize: 12,
+        color: CYAN, marginBottom: 12, fontWeight: 600,
+      }}>
+        <Sparkles size={12} /> {tier.name}
+      </div>
+
+      {/* Staff card */}
+      <div style={{
+        background: 'rgba(255,255,255,0.04)', borderRadius: 16,
+        border: '1px solid rgba(255,255,255,0.08)',
+        padding: '20px 16px', marginBottom: 16, width: '100%', maxWidth: 400,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+      }}>
+        <div style={{ fontSize: 16, fontWeight: 600, color: '#cbd5e1' }}>What note is this?</div>
+        <StaffSVG note={currentNote} feedback={feedback} />
+        <button
+          onClick={handleHear}
+          style={{
+            background: CYAN_DIM, border: `1px solid ${CYAN_BORDER}`,
+            color: CYAN, borderRadius: 8, padding: '6px 16px',
+            cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4,
+          }}
+        >
+          <Volume2 size={14} /> Hear it
+        </button>
+      </div>
+
+      {/* Options */}
+      <div style={{
+        width: '100%', maxWidth: 400, display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: 10,
+      }}>
+        {options.map((label) => (
+          <button key={label} style={optionStyle(label)} onClick={() => handleAnswer(label)}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Feedback */}
+      <div style={{
+        marginTop: 12, fontSize: 15, fontWeight: 600, textAlign: 'center', minHeight: 24,
+        color: feedback === 'correct' ? '#4ade80' : '#f87171',
+      }}>
+        {feedback === 'correct' &&
+          `✓ ${currentNote.label} — Nice!${streak >= 3 ? ` 🔥 ${streak} streak!` : ''}`}
+        {feedback === 'wrong' && `✗ That was ${currentNote.label}`}
+      </div>
+
+      {/* Answered count */}
+      <div style={{ marginTop: 6, fontSize: 12, color: '#475569', textAlign: 'center' }}>
+        {questionsAnswered} answered ·{' '}
+        {questionsAnswered > 0
+          ? globalThis.Math.round((correctAnswers / questionsAnswered) * 100)
+          : 0}
+        % accuracy
+      </div>
+
+      {/* Streak celebration */}
+      {showCelebration && (
+        <div style={{
+          position: 'fixed', inset: 0, display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.5)', zIndex: 100,
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #0c4a6e, #164e63)', borderRadius: 20,
+            padding: '32px 40px', textAlign: 'center',
+            border: `2px solid ${CYAN_BORDER}`,
+          }}>
+            <div style={{ fontSize: 40, marginBottom: 8 }}>🔥</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#f59e0b' }}>{streak} Streak!</div>
+            <div style={{ fontSize: 14, color: '#94a3b8', marginTop: 4 }}>Keep it going!</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default MusicNotesGame;

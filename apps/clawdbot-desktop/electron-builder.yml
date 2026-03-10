@@ -1,0 +1,17 @@
+appId: org.vibetech.clawdbot-desktop
+productName: ClawdBot Desktop
+directories:
+  output: release
+files:
+  - out/**/*
+  - package.json
+extraMetadata:
+  main: out/main/index.js
+asar: true
+win:
+  target:
+    - nsis
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+publish: null

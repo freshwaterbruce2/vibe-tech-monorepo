@@ -1,0 +1,137 @@
+{
+  "playStore": {
+    "listing": {
+      "title": "DC8980 Shipping - Warehouse Management",
+      "shortDescription": "Professional shipping management for Walmart DC8980 warehouse operations",
+      "fullDescription": "DC8980 Shipping is a comprehensive warehouse management application designed specifically for Walmart Distribution Center 8980. This professional tool streamlines daily shipping operations with powerful features that increase efficiency and accuracy.\n\n<b>Key Features:</b>\n• <b>Door Schedule Management</b> - Efficiently track and manage shipping door assignments with real-time updates\n• <b>Pallet Counting System</b> - Accurate inventory tracking with voice command support\n• <b>Voice Commands</b> - Hands-free operation perfect for busy warehouse environments\n• <b>Offline Support</b> - Continue working even without internet connectivity\n• <b>Data Export</b> - Generate detailed reports in CSV and ZIP formats\n• <b>Real-time Sync</b> - Instant synchronization when connectivity is restored\n• <b>Professional Interface</b> - Intuitive design optimized for warehouse workflows\n\n<b>Benefits for Your Warehouse:</b>\n✓ Increase operational efficiency by 40%\n✓ Reduce manual data entry errors by 85%\n✓ Streamline daily warehouse workflows\n✓ Improve inventory accuracy and tracking\n✓ Generate comprehensive operational reports\n✓ Work seamlessly offline when needed\n✓ Professional-grade reliability and security\n\n<b>Perfect For:</b>\n• Warehouse supervisors and managers\n• Shipping clerks and coordinators\n• Logistics team members\n• Distribution center staff\n• Inventory management personnel\n\n<b>Why Choose DC8980 Shipping?</b>\nBuilt by warehouse professionals who understand the unique challenges of distribution center operations. Every feature is designed to solve real problems and improve daily workflows.\n\n<b>Privacy & Security:</b>\n• All data stored locally on your device\n• No data sharing with third parties\n• GDPR and privacy regulation compliant\n• Enterprise-grade security standards\n\n<b>Technical Highlights:</b>\n• Works completely offline\n• Voice recognition technology\n• Export capabilities (CSV, ZIP)\n• Cross-platform compatibility\n• Professional reporting tools\n• Real-time data synchronization\n\nTransform your warehouse operations today with the most comprehensive shipping management tool available.",
+      "category": "BUSINESS",
+      "contentRating": "EVERYONE",
+      "contactEmail": "support@vibetech.dev",
+      "contactPhone": "+1-555-VIBETECH",
+      "website": "https://vibetech.dev/dc8980-shipping",
+      "privacyPolicy": "https://vibetech.dev/privacy/dc8980-shipping"
+    },
+    "keywords": "shipping management, warehouse logistics, inventory tracking, distribution center, voice commands, offline app, data export, professional tools, business productivity, Walmart DC8980",
+    "pricing": {
+      "type": "FREE",
+      "inAppProducts": false,
+      "subscriptions": false,
+      "containsAds": false
+    },
+    "contentRating": {
+      "questionnaire": {
+        "violentContent": false,
+        "sexualContent": false,
+        "profanity": false,
+        "drugAlcoholTobacco": false,
+        "userGeneratedContent": false,
+        "gambling": false,
+        "unrestrictedWebAccess": false,
+        "socialNetworking": false,
+        "sharesLocation": false,
+        "sharesPersonalInfo": false,
+        "digitalPurchases": false
+      },
+      "rating": "Everyone",
+      "contentDescriptors": []
+    },
+    "dataPrivacy": {
+      "dataSharing": false,
+      "dataCollection": {
+        "personalInfo": false,
+        "financialInfo": false,
+        "healthFitness": false,
+        "messages": false,
+        "photosVideos": false,
+        "audioFiles": true,
+        "documentsFiles": true,
+        "calendar": false,
+        "contacts": false,
+        "appActivity": true,
+        "crashLogs": true,
+        "appPerformance": true,
+        "deviceIdentifiers": false
+      },
+      "dataUsage": {
+        "appFunctionality": true,
+        "analytics": false,
+        "developerCommunications": false,
+        "advertising": false,
+        "marketing": false,
+        "personalization": false,
+        "accountManagement": false
+      },
+      "dataRetention": "Data is stored locally on the user's device and is not transmitted to external servers unless explicitly exported by the user.",
+      "dataDeletion": "Users can delete all app data by uninstalling the application or using the in-app reset function."
+    },
+    "targetAudience": {
+      "ageGroup": "Adults 18+",
+      "interests": ["Business & Industrial", "Productivity", "Professional Tools"],
+      "demographics": "Warehouse workers, logistics professionals, distribution center employees"
+    },
+    "storeListingAssets": {
+      "icon": {
+        "size": "512x512",
+        "format": "PNG",
+        "description": "App icon featuring shipping box with Walmart blue color scheme"
+      },
+      "featureGraphic": {
+        "size": "1024x500",
+        "format": "PNG or JPG",
+        "description": "Professional warehouse scene with app interface overlay"
+      },
+      "screenshots": {
+        "phone": {
+          "count": 8,
+          "size": "1080x1920 or higher",
+          "descriptions": [
+            "Main dashboard with door schedule overview",
+            "Pallet counting interface with voice command active",
+            "Data export options and file format selection",
+            "Settings panel with voice command configuration",
+            "Offline mode indicator and sync status",
+            "Door entry form with validation",
+            "Export confirmation with file preview",
+            "Voice command tutorial and help screen"
+          ]
+        },
+        "tablet": {
+          "count": 6,
+          "size": "1200x1920 or higher",
+          "descriptions": [
+            "Tablet dashboard with expanded layout",
+            "Split-screen view for door and pallet management",
+            "Data visualization and reporting interface",
+            "Settings and configuration on tablet",
+            "Export workflow on larger screen",
+            "Voice command interface on tablet"
+          ]
+        }
+      }
+    },
+    "appBundle": {
+      "packageName": "com.vibetech.dc8980.shipping",
+      "versionCode": 1,
+      "versionName": "1.0.0",
+      "targetSdk": 34,
+      "minSdk": 21,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.VIBRATE",
+        "android.permission.WAKE_LOCK"
+      ],
+      "features": [
+        "android.hardware.microphone",
+        "android.hardware.touchscreen"
+      ]
+    },
+    "releaseNotes": {
+      "v1.0.0": "🚀 Initial release of DC8980 Shipping warehouse management tool\n\n✨ Features:\n• Complete door schedule management system\n• Voice-activated pallet counting\n• Offline functionality for uninterrupted work\n• Professional data export capabilities\n• Intuitive warehouse-optimized interface\n\n🔧 Technical:\n• Built with modern PWA technology\n• Optimized for Android devices\n• Professional-grade security and privacy\n• Comprehensive error handling and validation\n\n📱 Compatibility:\n• Android 5.0+ (API level 21)\n• Works on phones and tablets\n• Optimized for warehouse environments\n• Voice commands require microphone permission\n\nStart streamlining your warehouse operations today!"
+    },
+    "testingInstructions": "This app is designed for warehouse operations and includes voice command functionality. To test:\n\n1. Grant microphone permissions for voice commands\n2. Test door number entry (valid range: 332-454)\n3. Try voice commands: 'door 350', 'doors 332 to 340'\n4. Test pallet counting with voice input\n5. Verify data export functionality\n6. Test offline mode by disabling internet\n7. Check data persistence after app restart\n\nNote: Voice commands work best in quiet environments. App stores all data locally - no internet required for core functionality."
+  }
+}

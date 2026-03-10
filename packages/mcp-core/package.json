@@ -1,0 +1,63 @@
+{
+  "name": "@vibetech/mcp-core",
+  "version": "1.0.0",
+  "description": "Core types and utilities for VibeTech MCP servers",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./types": {
+      "import": "./dist/types/index.mjs",
+      "require": "./dist/types/index.js",
+      "types": "./dist/types/index.d.ts"
+    },
+    "./utils": {
+      "import": "./dist/utils/index.mjs",
+      "require": "./dist/utils/index.js",
+      "types": "./dist/utils/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "pino": "^10.3.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "@vitest/coverage-v8": "^4.0.18",
+    "tsup": "^8.5.1",
+    "typescript": "5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "vibetech",
+    "ai",
+    "llm"
+  ],
+  "license": "MIT"
+}

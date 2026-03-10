@@ -1,0 +1,8 @@
+{
+	"*.{ts,tsx}": [
+		"eslint --fix --max-warnings 0",
+		"bash -c 'tsc --noEmit || true'"
+	],
+	"*.{js,jsx,mjs,cjs}": ["eslint --fix --max-warnings 0"],
+	"*.{json,md,yml,yaml}": ["prettier --write"]
+}

@@ -1,0 +1,22 @@
+{
+	"name": "lsp-proxy",
+	"version": "1.0.0",
+	"description": "LSP WebSocket proxy for browser-based code editor",
+	"main": "src/index.js",
+	"scripts": {
+		"start": "node src/index.js",
+		"lint": "eslint . --max-warnings 0",
+		"typecheck": "node -e \"console.log('typecheck not applicable: JavaScript service')\"",
+		"test": "vitest run --passWithNoTests"
+	},
+	"keywords": [
+		"lsp",
+		"language-server",
+		"proxy"
+	],
+	"author": "",
+	"license": "MIT",
+	"dependencies": {
+		"ws": "^8.19.0"
+	}
+}

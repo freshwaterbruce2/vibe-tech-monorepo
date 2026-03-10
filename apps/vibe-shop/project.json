@@ -1,0 +1,60 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "trendmart",
+  "projectType": "application",
+  "sourceRoot": "apps/vibe-shop/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "apps/vibe-shop"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/.next"],
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "apps/vibe-shop"
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "pnpm run start",
+        "cwd": "apps/vibe-shop"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx eslint apps/vibe-shop/src",
+        "cwd": "."
+      }
+    },
+    "db:migrate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma migrate dev",
+        "cwd": "apps/vibe-shop"
+      }
+    },
+    "db:generate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma generate",
+        "cwd": "apps/vibe-shop"
+      }
+    },
+    "db:studio": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx prisma studio",
+        "cwd": "apps/vibe-shop"
+      }
+    }
+  },
+  "tags": ["scope:app", "type:web", "stack:nextjs", "stack:prisma"]
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@nova/database",
+  "projectType": "library",
+  "root": "packages/nova-database",
+  "sourceRoot": "packages/nova-database/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "options": {
+        "command": "tsc -p tsconfig.build.json",
+        "cwd": "packages/nova-database"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "vitest run",
+        "cwd": "packages/nova-database"
+      }
+    }
+  },
+  "tags": ["type:library", "scope:nova"]
+}

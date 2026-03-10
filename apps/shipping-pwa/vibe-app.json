@@ -1,0 +1,13 @@
+{
+  "displayName": "Shipping Tracker",
+  "description": "Logistics PWA",
+  "version": "1.0.0",
+  "category": "business",
+  "icon": "/app-icons/shipping-pwa.png",
+  "launch": "pnpm dev",
+  "port": null,
+  "type": "web",
+  "features": [
+    "vtde-autodiscovered"
+  ]
+}

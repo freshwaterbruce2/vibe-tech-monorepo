@@ -1,0 +1,35 @@
+{
+  "name": "@dev/feature-flags-sdk-react",
+  "version": "0.1.0",
+  "description": "React SDK for feature flags with hooks and components",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.tsx --format cjs,esm --dts --external react",
+    "dev": "tsup src/index.tsx --format cjs,esm --dts --external react --watch",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "dependencies": {
+    "@dev/feature-flags-core": "workspace:^0.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.10",
+    "react": "19.2.4",
+    "tsup": "^8.5.1",
+    "typescript": "5.9.3"
+  }
+}

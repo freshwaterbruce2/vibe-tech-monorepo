@@ -1,0 +1,568 @@
+/* ==============================================
+   NOVA 2026 - Neon Glassmorphism Design System
+   Purple/Pink Neon + Deep Glass + Vibrant UI
+   ============================================== */
+
+/* Enhanced Neon Color Palette */
+:root {
+  /* Neon Core */
+  --neon-purple: #b026ff;
+  --neon-pink: #ff2d95;
+  --neon-magenta: #ff00aa;
+  --neon-violet: #8b5cf6;
+  --neon-blue: #00d4ff;
+  --neon-cyan: #00ffff;
+  
+  /* Glass Backgrounds */
+  --glass-dark: rgba(10, 10, 20, 0.7);
+  --glass-medium: rgba(20, 15, 35, 0.6);
+  --glass-light: rgba(40, 30, 60, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-glow: rgba(176, 38, 255, 0.3);
+  
+  /* Deep Background */
+  --bg-deep: #050508;
+  --bg-base: #0a0a12;
+  --bg-elevated: #12101f;
+}
+
+/* ==============================================
+   Animated Background
+   ============================================== */
+@keyframes aurora {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes neon-pulse {
+  0%, 100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.8;
+    filter: brightness(1.2);
+  }
+}
+
+@keyframes glow-breathe {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(176, 38, 255, 0.4),
+                0 0 40px rgba(255, 45, 149, 0.2),
+                inset 0 0 20px rgba(176, 38, 255, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(176, 38, 255, 0.6),
+                0 0 60px rgba(255, 45, 149, 0.3),
+                inset 0 0 30px rgba(176, 38, 255, 0.15);
+  }
+}
+
+@keyframes float-subtle {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ==============================================
+   2026 Glass Cards
+   ============================================== */
+.glass-2026 {
+  background: linear-gradient(
+    135deg,
+    rgba(20, 15, 40, 0.8) 0%,
+    rgba(15, 10, 30, 0.9) 100%
+  );
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid rgba(176, 38, 255, 0.15);
+  border-radius: 24px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    0 0 80px -20px rgba(176, 38, 255, 0.15);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-2026:hover {
+  border-color: rgba(176, 38, 255, 0.3);
+  box-shadow: 
+    0 12px 48px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 0 100px -20px rgba(176, 38, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.glass-card-2026 {
+  background: rgba(15, 12, 28, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  box-shadow: 
+    0 4px 24px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.glass-card-2026:hover {
+  background: rgba(20, 15, 35, 0.8);
+  border-color: rgba(176, 38, 255, 0.2);
+  box-shadow: 
+    0 8px 40px rgba(0, 0, 0, 0.5),
+    0 0 40px -10px rgba(176, 38, 255, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* ==============================================
+   Neon Typography
+   ============================================== */
+.text-neon-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--neon-cyan) 0%,
+    var(--neon-purple) 35%,
+    var(--neon-pink) 70%,
+    var(--neon-magenta) 100%
+  );
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: aurora 8s ease infinite;
+}
+
+.text-neon-purple {
+  color: var(--neon-purple);
+  text-shadow: 
+    0 0 10px rgba(176, 38, 255, 0.8),
+    0 0 20px rgba(176, 38, 255, 0.5),
+    0 0 40px rgba(176, 38, 255, 0.3);
+}
+
+.text-neon-pink {
+  color: var(--neon-pink);
+  text-shadow: 
+    0 0 10px rgba(255, 45, 149, 0.8),
+    0 0 20px rgba(255, 45, 149, 0.5),
+    0 0 40px rgba(255, 45, 149, 0.3);
+}
+
+.hero-title-2026 {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+@media (min-width: 768px) {
+  .hero-title-2026 {
+    font-size: 4rem;
+  }
+}
+
+/* ==============================================
+   Neon Buttons
+   ============================================== */
+.btn-neon {
+  position: relative;
+  background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+  border: none;
+  border-radius: 14px;
+  padding: 14px 28px;
+  color: white;
+  font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 
+    0 4px 20px rgba(176, 38, 255, 0.4),
+    0 0 40px rgba(255, 45, 149, 0.2);
+}
+
+.btn-neon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.2) 0%,
+    transparent 50%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-neon:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 
+    0 8px 30px rgba(176, 38, 255, 0.6),
+    0 0 60px rgba(255, 45, 149, 0.4),
+    0 0 100px rgba(176, 38, 255, 0.2);
+}
+
+.btn-neon:hover::before {
+  opacity: 1;
+}
+
+.btn-neon:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
+.btn-neon-outline {
+  position: relative;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  padding: 12px 24px;
+  color: white;
+  font-weight: 600;
+  background-image: 
+    linear-gradient(rgba(15, 12, 28, 0.9), rgba(15, 12, 28, 0.9)),
+    linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 20px rgba(176, 38, 255, 0.2);
+}
+
+.btn-neon-outline:hover {
+  background-image: 
+    linear-gradient(rgba(25, 20, 45, 0.9), rgba(25, 20, 45, 0.9)),
+    linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+  box-shadow: 
+    0 0 30px rgba(176, 38, 255, 0.4),
+    0 0 60px rgba(255, 45, 149, 0.2);
+  transform: translateY(-2px);
+}
+
+.btn-glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 14px 24px;
+  color: white;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-glass:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(176, 38, 255, 0.3);
+  box-shadow: 0 0 30px rgba(176, 38, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+/* ==============================================
+   Metric Cards
+   ============================================== */
+.metric-card-2026 {
+  position: relative;
+  background: rgba(15, 12, 28, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  padding: 24px;
+  overflow: hidden;
+  transition: all 0.4s ease;
+}
+
+.metric-card-2026::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--neon-purple), var(--neon-pink), var(--neon-cyan));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.metric-card-2026:hover {
+  border-color: rgba(176, 38, 255, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.4),
+    0 0 60px -20px rgba(176, 38, 255, 0.3);
+}
+
+.metric-card-2026:hover::before {
+  opacity: 1;
+}
+
+.metric-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.8) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+}
+
+.metric-label {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metric-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(176, 38, 255, 0.2), rgba(255, 45, 149, 0.1));
+  border: 1px solid rgba(176, 38, 255, 0.2);
+}
+
+/* ==============================================
+   Status Indicators
+   ============================================== */
+.status-glow {
+  position: relative;
+}
+
+.status-glow::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: inherit;
+  filter: blur(6px);
+  opacity: 0.6;
+  z-index: -1;
+}
+
+.status-active {
+  background: #22c55e;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.8);
+}
+
+.status-warning {
+  background: #eab308;
+  box-shadow: 0 0 12px rgba(234, 179, 8, 0.8);
+}
+
+.status-error {
+  background: #ef4444;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.8);
+}
+
+.status-loading {
+  background: var(--neon-purple);
+  box-shadow: 0 0 12px rgba(176, 38, 255, 0.8);
+  animation: neon-pulse 1.5s ease-in-out infinite;
+}
+
+/* ==============================================
+   Sidebar / Nav
+   ============================================== */
+.nav-2026 {
+  background: rgba(8, 8, 15, 0.9);
+  backdrop-filter: blur(20px) saturate(1.2);
+  border-bottom: 1px solid rgba(176, 38, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+}
+
+.nav-link-2026 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.nav-link-2026:hover {
+  color: white;
+  background: rgba(176, 38, 255, 0.1);
+}
+
+.nav-link-2026.active {
+  color: white;
+  background: linear-gradient(135deg, rgba(176, 38, 255, 0.2), rgba(255, 45, 149, 0.1));
+  border: 1px solid rgba(176, 38, 255, 0.2);
+  box-shadow: 0 0 20px rgba(176, 38, 255, 0.2);
+}
+
+/* ==============================================
+   Scrollbar
+   ============================================== */
+.scrollbar-neon::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-neon::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+}
+
+.scrollbar-neon::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--neon-purple), var(--neon-pink));
+  border-radius: 4px;
+}
+
+.scrollbar-neon::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--neon-pink), var(--neon-purple));
+}
+
+/* ==============================================
+   Loading States
+   ============================================== */
+.skeleton-2026 {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(176, 38, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+  border-radius: 8px;
+}
+
+/* ==============================================
+   Badge Variants
+   ============================================== */
+.badge-neon {
+  background: linear-gradient(135deg, rgba(176, 38, 255, 0.2), rgba(255, 45, 149, 0.1));
+  border: 1px solid rgba(176, 38, 255, 0.3);
+  color: var(--neon-pink);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-glow {
+  box-shadow: 0 0 15px rgba(176, 38, 255, 0.4);
+}
+
+/* ==============================================
+   Input Fields
+   ============================================== */
+.input-2026 {
+  background: rgba(15, 12, 28, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px 18px;
+  color: white;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.input-2026:focus {
+  outline: none;
+  border-color: var(--neon-purple);
+  box-shadow: 
+    0 0 0 3px rgba(176, 38, 255, 0.15),
+    0 0 30px rgba(176, 38, 255, 0.2);
+}
+
+.input-2026::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* ==============================================
+   Animated Background Layer
+   ============================================== */
+.bg-aurora-2026 {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: 
+    radial-gradient(ellipse at 20% 20%, rgba(176, 38, 255, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(255, 45, 149, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(0, 212, 255, 0.05) 0%, transparent 70%),
+    linear-gradient(180deg, #050508 0%, #0a0a12 50%, #12101f 100%);
+  animation: aurora 20s ease infinite;
+  background-size: 200% 200%;
+}
+
+/* ==============================================
+   Dividers & Separators
+   ============================================== */
+.divider-neon {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(176, 38, 255, 0.3) 20%,
+    rgba(255, 45, 149, 0.3) 50%,
+    rgba(176, 38, 255, 0.3) 80%,
+    transparent 100%
+  );
+}
+
+/* ==============================================
+   Quick Action Grid
+   ============================================== */
+.action-grid-2026 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .action-grid-2026 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.action-item-2026 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px 16px;
+  background: rgba(15, 12, 28, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.action-item-2026:hover {
+  background: rgba(176, 38, 255, 0.1);
+  border-color: rgba(176, 38, 255, 0.3);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(176, 38, 255, 0.2);
+}
+
+.action-item-2026 .icon-wrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(176, 38, 255, 0.2), rgba(255, 45, 149, 0.1));
+  border: 1px solid rgba(176, 38, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.action-item-2026:hover .icon-wrapper {
+  background: linear-gradient(135deg, rgba(176, 38, 255, 0.3), rgba(255, 45, 149, 0.2));
+  box-shadow: 0 0 30px rgba(176, 38, 255, 0.4);
+  transform: scale(1.1);
+}
