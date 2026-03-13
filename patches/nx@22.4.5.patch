@@ -1,0 +1,19 @@
+diff --git a/bin/nx.js b/bin/nx.js
+index 64d7279..80c87f8 100644
+--- a/bin/nx.js
++++ b/bin/nx.js
+@@ -1,6 +1,13 @@
+ #!/usr/bin/env node
+ "use strict";
+ Object.defineProperty(exports, "__esModule", { value: true });
++const events = require("node:events");
++const listenerLimit = 64;
++if (events.defaultMaxListeners < listenerLimit) {
++    events.defaultMaxListeners = listenerLimit;
++}
++if (process.getMaxListeners() < listenerLimit) {
++    process.setMaxListeners(listenerLimit);
++}
+ const find_workspace_root_1 = require("../src/utils/find-workspace-root");
+ const chalk = require("chalk");
+ const dotenv_1 = require("../src/utils/dotenv");
