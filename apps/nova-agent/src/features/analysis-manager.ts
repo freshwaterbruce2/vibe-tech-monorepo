@@ -5,6 +5,7 @@ import path from "path";
 const REVIEW_VERSION = "grounded-review-v1";
 const DEFAULT_REVIEW_ARTIFACT_DIR = "D:\\databases\\nova-agent\\reviews";
 const MAX_RELEVANT_ENTRIES = 24;
+const TOP_LEVEL_DIRS = ["apps", "libs", "packages", "backend", "plugins", "projects"] as const;
 
 /** Per-review filesystem cache to eliminate redundant syscalls. */
 class FsCache {
@@ -201,9 +202,8 @@ export class AnalysisManager {
 
 	private collectRelevantEntries(cwd: string, evidence: ReturnType<AnalysisManager["createEvidenceRecorder"]>, fc: FsCache): string[] {
 		const relevant = new Set<string>();
-		const topLevelDirs = ["apps", "libs", "packages", "backend", "plugins", "projects"];
 
-		for (const dirName of topLevelDirs) {
+		for (const dirName of TOP_LEVEL_DIRS) {
 			const dirPath = path.join(cwd, dirName);
 			if (!fc.isDirectory(dirPath)) {
 				continue;
