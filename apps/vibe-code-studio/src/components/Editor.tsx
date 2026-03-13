@@ -1,7 +1,7 @@
 import { Editor as MonacoEditor } from '@monaco-editor/react';
 import { motion } from 'framer-motion';
 import type * as Monaco from 'monaco-editor';
-import { editor } from 'monaco-editor';
+import type { editor } from 'monaco-editor';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import styled, { keyframes } from 'styled-components';
@@ -313,7 +313,7 @@ const Editor = ({
       range: match.range,
       options: {
         className: 'find-match-decoration',
-        overviewRuler: { color: 'rgba(139, 92, 246, 0.8)', position: editor.OverviewRulerLane.Right },
+        overviewRuler: { color: 'rgba(139, 92, 246, 0.8)', position: 4 /* OverviewRulerLane.Right */ },
       },
     }));
     decorationsRef.current = editorRef.current.deltaDecorations([], decorations);
