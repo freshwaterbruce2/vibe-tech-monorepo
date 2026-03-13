@@ -4,30 +4,32 @@
  */
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { Suspense, useMemo, type MutableRefObject } from 'react';
+import { lazy, Suspense, useMemo, type MutableRefObject } from 'react';
 import styled from 'styled-components';
 
-// Components
-import { BackgroundTaskPanel } from '../components/BackgroundTaskPanel';
-import { ComponentLibrary } from '../components/ComponentLibrary';
+// Eagerly loaded core components (always visible)
 import Editor from '../components/Editor';
-import { EditorStreamPanel } from '../components/EditorStreamPanel';
-import { ErrorFixPanel } from '../components/ErrorFixPanel';
-import GitPanel from '../components/GitPanel';
-import { GlobalSearch } from '../components/GlobalSearch';
-import { KeyboardShortcuts } from '../components/KeyboardShortcuts';
 import { LazyAIChat, LazyCommandPalette, LazySettings } from '../components/LazyComponents';
-import { MultiFileEditApprovalPanel } from '../components/MultiFileEditApprovalPanel';
 import { NotificationContainer } from '../components/Notification';
-import PerformanceMonitor from '../components/PerformanceMonitor';
-import { PreviewPanel } from '../components/PreviewPanel';
-import { ScreenshotToCodePanel } from '../components/ScreenshotToCodePanel';
 import Sidebar from '../components/Sidebar';
 import StatusBar from '../components/StatusBar';
-import { TerminalPanel } from '../components/TerminalPanel';
 import TitleBar from '../components/TitleBar';
-import { VisualEditor } from '../components/VisualEditor';
-import WelcomeScreen from '../components/WelcomeScreen';
+
+// Lazy-loaded conditional components (only loaded when their panel is opened)
+const BackgroundTaskPanel = lazy(() => import('../components/BackgroundTaskPanel').then(m => ({ default: m.BackgroundTaskPanel })));
+const ComponentLibrary = lazy(() => import('../components/ComponentLibrary').then(m => ({ default: m.ComponentLibrary })));
+const EditorStreamPanel = lazy(() => import('../components/EditorStreamPanel').then(m => ({ default: m.EditorStreamPanel })));
+const ErrorFixPanel = lazy(() => import('../components/ErrorFixPanel'));
+const GitPanel = lazy(() => import('../components/GitPanel'));
+const GlobalSearch = lazy(() => import('../components/GlobalSearch').then(m => ({ default: m.GlobalSearch })));
+const KeyboardShortcuts = lazy(() => import('../components/KeyboardShortcuts').then(m => ({ default: m.KeyboardShortcuts })));
+const MultiFileEditApprovalPanel = lazy(() => import('../components/MultiFileEditApprovalPanel').then(m => ({ default: m.MultiFileEditApprovalPanel })));
+const PerformanceMonitor = lazy(() => import('../components/PerformanceMonitor'));
+const PreviewPanel = lazy(() => import('../components/PreviewPanel').then(m => ({ default: m.PreviewPanel })));
+const ScreenshotToCodePanel = lazy(() => import('../components/ScreenshotToCodePanel').then(m => ({ default: m.ScreenshotToCodePanel })));
+const TerminalPanel = lazy(() => import('../components/TerminalPanel').then(m => ({ default: m.TerminalPanel })));
+const VisualEditor = lazy(() => import('../components/VisualEditor').then(m => ({ default: m.VisualEditor })));
+const WelcomeScreen = lazy(() => import('../components/WelcomeScreen'));
 
 import { logger } from '../services/Logger';
 import type { AIModel, AIProvider } from '../services/ai/AIProviderInterface';
@@ -357,15 +359,17 @@ export function AppLayout(props: AppLayoutProps) {
               )}
             </>
           ) : (
-            <WelcomeScreen
-              onOpenFolder={handleOpenFolder}
-              onCreateFile={handleCreateFile}
-              onOpenAIChat={() => setAiChatOpen(true)}
-              onShowSettings={() => setSettingsOpen(true)}
-              workspaceContext={workspaceContext}
-              isIndexing={isIndexing}
-              indexingProgress={indexingProgress}
-            />
+            <Suspense fallback={null}>
+              <WelcomeScreen
+                onOpenFolder={handleOpenFolder}
+                onCreateFile={handleCreateFile}
+                onOpenAIChat={() => setAiChatOpen(true)}
+                onShowSettings={() => setSettingsOpen(true)}
+                workspaceContext={workspaceContext}
+                isIndexing={isIndexing}
+                indexingProgress={indexingProgress}
+              />
+            </Suspense>
           )}
         </EditorSection>
 
@@ -402,15 +406,17 @@ export function AppLayout(props: AppLayoutProps) {
           </Suspense>
         )}
 
-        {gitPanelOpen && <GitPanel workingDirectory={workspaceFolder ?? undefined} />}
+        {gitPanelOpen && <Suspense fallback={null}><GitPanel workingDirectory={workspaceFolder ?? undefined} /></Suspense>}
 
         {backgroundPanelOpen && (
-          <BackgroundTaskPanel
-            backgroundAgent={backgroundAgentSystem}
-            onTaskClick={(task) => {
-              logger.debug('[App] Background task clicked:', task);
-            }}
-          />
+          <Suspense fallback={null}>
+            <BackgroundTaskPanel
+              backgroundAgent={backgroundAgentSystem}
+              onTaskClick={(task) => {
+                logger.debug('[App] Background task clicked:', task);
+              }}
+            />
+          </Suspense>
         )}
       </MainContent>
 
@@ -433,17 +439,19 @@ export function AppLayout(props: AppLayoutProps) {
 
       <NotificationContainer notifications={notifications} onClose={removeNotification} />
 
-      <EditorStreamPanel
-        isStreaming={liveStream.isCurrentlyStreaming()}
-        onApprove={(filePath) => {
-          logger.debug(`[App] Approved changes for: ${filePath}`);
-          showSuccess('Changes Approved', `Applied changes to ${filePath}`);
-        }}
-        onReject={(filePath) => {
-          logger.debug(`[App] Rejected changes for: ${filePath}`);
-          showWarning('Changes Rejected', `Discarded changes to ${filePath}`);
-        }}
-      />
+      <Suspense fallback={null}>
+        <EditorStreamPanel
+          isStreaming={liveStream.isCurrentlyStreaming()}
+          onApprove={(filePath) => {
+            logger.debug(`[App] Approved changes for: ${filePath}`);
+            showSuccess('Changes Approved', `Applied changes to ${filePath}`);
+          }}
+          onReject={(filePath) => {
+            logger.debug(`[App] Rejected changes for: ${filePath}`);
+            showWarning('Changes Rejected', `Discarded changes to ${filePath}`);
+          }}
+        />
+      </Suspense>
 
       {/* Auto-Fix Error Panel */}
       {errorFixPanelOpen && currentError && (
@@ -454,34 +462,36 @@ export function AppLayout(props: AppLayoutProps) {
           zIndex: 2000,
           maxWidth: '600px',
         }}>
-          <ErrorFixPanel
-            error={currentError}
-            fix={currentFix}
-            isLoading={fixLoading}
-            errorMessage={fixError}
-            showDiff={true}
-            onApplyFix={handleApplyFix}
-            onDismiss={() => {
-              setErrorFixPanelOpen(false);
-              setCurrentError(null);
-              setCurrentFix(null);
-            }}
-            onRetry={() => {
-              if (currentError && editorRef.current && autoFixServiceRef.current) {
-                setFixLoading(true);
-                setFixError('');
-                autoFixServiceRef.current.generateFix(currentError, editorRef.current)
-                  .then((fix: any) => {
-                    setCurrentFix(fix);
-                    setFixLoading(false);
-                  })
-                  .catch((err: Error) => {
-                    setFixError(err.message || 'Failed to generate fix');
-                    setFixLoading(false);
-                  });
-              }
-            }}
-          />
+          <Suspense fallback={null}>
+            <ErrorFixPanel
+              error={currentError}
+              fix={currentFix}
+              isLoading={fixLoading}
+              errorMessage={fixError}
+              showDiff={true}
+              onApplyFix={handleApplyFix}
+              onDismiss={() => {
+                setErrorFixPanelOpen(false);
+                setCurrentError(null);
+                setCurrentFix(null);
+              }}
+              onRetry={() => {
+                if (currentError && editorRef.current && autoFixServiceRef.current) {
+                  setFixLoading(true);
+                  setFixError('');
+                  autoFixServiceRef.current.generateFix(currentError, editorRef.current)
+                    .then((fix: any) => {
+                      setCurrentFix(fix);
+                      setFixLoading(false);
+                    })
+                    .catch((err: Error) => {
+                      setFixError(err.message || 'Failed to generate fix');
+                      setFixLoading(false);
+                    });
+                }
+              }}
+            />
+          </Suspense>
         </div>
       )}
 
@@ -517,20 +527,24 @@ export function AppLayout(props: AppLayoutProps) {
         />
       </Suspense>
 
-      <GlobalSearch
-        isOpen={globalSearchOpen}
-        onClose={() => setGlobalSearchOpen(false)}
-        onOpenFile={handleOpenFileFromSearch}
-        onReplaceInFile={handleReplaceInFile}
-        onSearchInFiles={handleSearchInFiles}
-        workspaceFiles={openFiles.map((f) => f.path)}
-        workspaceRoot={workspaceFolder}
-      />
+      <Suspense fallback={null}>
+        <GlobalSearch
+          isOpen={globalSearchOpen}
+          onClose={() => setGlobalSearchOpen(false)}
+          onOpenFile={handleOpenFileFromSearch}
+          onReplaceInFile={handleReplaceInFile}
+          onSearchInFiles={handleSearchInFiles}
+          workspaceFiles={openFiles.map((f) => f.path)}
+          workspaceRoot={workspaceFolder}
+        />
+      </Suspense>
 
-      <KeyboardShortcuts
-        isOpen={keyboardShortcutsOpen}
-        onClose={() => setKeyboardShortcutsOpen(false)}
-      />
+      <Suspense fallback={null}>
+        <KeyboardShortcuts
+          isOpen={keyboardShortcutsOpen}
+          onClose={() => setKeyboardShortcutsOpen(false)}
+        />
+      </Suspense>
 
       {/* Visual No-Code Panels */}
       <AnimatePresence>
@@ -600,21 +614,27 @@ export function AppLayout(props: AppLayoutProps) {
         )}
 
         {multiFileApprovalOpen && multiFileEditPlan && (
-          <MultiFileEditApprovalPanel
-            plan={multiFileEditPlan}
-            changes={multiFileChanges}
-            onApply={handleApplyMultiFileChanges}
-            onReject={handleRejectMultiFileChanges}
-          />
+          <Suspense fallback={null}>
+            <MultiFileEditApprovalPanel
+              plan={multiFileEditPlan}
+              changes={multiFileChanges}
+              onApply={handleApplyMultiFileChanges}
+              onReject={handleRejectMultiFileChanges}
+            />
+          </Suspense>
         )}
       </AnimatePresence>
 
-      <TerminalPanel
-        isOpen={terminalOpen}
-        onClose={() => setTerminalOpen(false)}
-      />
+      <Suspense fallback={null}>
+        <TerminalPanel
+          isOpen={terminalOpen}
+          onClose={() => setTerminalOpen(false)}
+        />
+      </Suspense>
 
-      <PerformanceMonitor />
+      <Suspense fallback={null}>
+        <PerformanceMonitor />
+      </Suspense>
     </AppContainer>
   );
 }
