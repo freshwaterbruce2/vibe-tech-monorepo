@@ -6,6 +6,84 @@ const REVIEW_VERSION = "grounded-review-v1";
 const DEFAULT_REVIEW_ARTIFACT_DIR = "D:\\databases\\nova-agent\\reviews";
 const MAX_RELEVANT_ENTRIES = 24;
 
+/** Per-review filesystem cache to eliminate redundant syscalls. */
+class FsCache {
+	private existsCache = new Map<string, boolean>();
+	private statCache = new Map<string, fs.Stats | null>();
+	private readCache = new Map<string, string | null>();
+	private readdirCache = new Map<string, fs.Dirent[]>();
+	private jsonCache = new Map<string, unknown>();
+
+	exists(p: string): boolean {
+		let v = this.existsCache.get(p);
+		if (v === undefined) {
+			v = fs.existsSync(p);
+			this.existsCache.set(p, v);
+		}
+		return v;
+	}
+
+	stat(p: string): fs.Stats | null {
+		let v = this.statCache.get(p);
+		if (v === undefined) {
+			try {
+				v = fs.statSync(p);
+			} catch {
+				v = null;
+			}
+			this.statCache.set(p, v);
+		}
+		return v;
+	}
+
+	isDirectory(p: string): boolean {
+		return this.stat(p)?.isDirectory() === true;
+	}
+
+	readFile(p: string): string | null {
+		let v = this.readCache.get(p);
+		if (v === undefined) {
+			try {
+				v = fs.readFileSync(p, "utf-8");
+			} catch {
+				v = null;
+			}
+			this.readCache.set(p, v);
+		}
+		return v;
+	}
+
+	readdir(p: string): fs.Dirent[] {
+		let v = this.readdirCache.get(p);
+		if (v === undefined) {
+			try {
+				v = fs.readdirSync(p, { withFileTypes: true });
+			} catch {
+				v = [];
+			}
+			this.readdirCache.set(p, v);
+		}
+		return v;
+	}
+
+	readJson<T>(p: string): T | null {
+		if (this.jsonCache.has(p)) return this.jsonCache.get(p) as T | null;
+		const text = this.readFile(p);
+		if (text === null) {
+			this.jsonCache.set(p, null);
+			return null;
+		}
+		try {
+			const parsed = JSON.parse(text) as T;
+			this.jsonCache.set(p, parsed);
+			return parsed;
+		} catch {
+			this.jsonCache.set(p, null);
+			return null;
+		}
+	}
+}
+
 type RepoType =
 	| "nx-workspace"
 	| "node-project"
@@ -58,10 +136,13 @@ export class AnalysisManager {
 		}
 
 		const resolvedCwd = path.resolve(cwd);
-		if (!fs.existsSync(resolvedCwd)) {
+		let stat: fs.Stats;
+		try {
+			stat = fs.statSync(resolvedCwd);
+		} catch {
 			throw new Error(`Project path does not exist: ${resolvedCwd}`);
 		}
-		if (!fs.statSync(resolvedCwd).isDirectory()) {
+		if (!stat.isDirectory()) {
 			throw new Error(`Project path is not a directory: ${resolvedCwd}`);
 		}
 
@@ -87,12 +168,12 @@ export class AnalysisManager {
 		return relative && relative !== "" ? relative : ".";
 	}
 
-	private createEvidenceRecorder(basePath: string) {
+	private createEvidenceRecorder(basePath: string, fc: FsCache) {
 		const seen = new Map<string, ReviewEvidence>();
 
 		return {
 			add: (candidatePath: string, reason: string) => {
-				if (!candidatePath || !fs.existsSync(candidatePath)) {
+				if (!candidatePath || !fc.exists(candidatePath)) {
 					return;
 				}
 				const resolved = path.resolve(candidatePath);
@@ -111,34 +192,25 @@ export class AnalysisManager {
 		};
 	}
 
-	private readJson<T>(filePath: string): T | null {
-		try {
-			return JSON.parse(fs.readFileSync(filePath, "utf-8")) as T;
-		} catch {
-			return null;
-		}
-	}
-
-	private detectPackageManager(cwd: string): string | null {
-		if (fs.existsSync(path.join(cwd, "pnpm-lock.yaml"))) return "pnpm";
-		if (fs.existsSync(path.join(cwd, "package-lock.json"))) return "npm";
-		if (fs.existsSync(path.join(cwd, "yarn.lock"))) return "yarn";
+	private detectPackageManager(cwd: string, fc: FsCache): string | null {
+		if (fc.exists(path.join(cwd, "pnpm-lock.yaml"))) return "pnpm";
+		if (fc.exists(path.join(cwd, "package-lock.json"))) return "npm";
+		if (fc.exists(path.join(cwd, "yarn.lock"))) return "yarn";
 		return null;
 	}
 
-	private collectRelevantEntries(cwd: string, evidence: ReturnType<AnalysisManager["createEvidenceRecorder"]>): string[] {
+	private collectRelevantEntries(cwd: string, evidence: ReturnType<AnalysisManager["createEvidenceRecorder"]>, fc: FsCache): string[] {
 		const relevant = new Set<string>();
 		const topLevelDirs = ["apps", "libs", "packages", "backend", "plugins", "projects"];
 
 		for (const dirName of topLevelDirs) {
 			const dirPath = path.join(cwd, dirName);
-			if (!fs.existsSync(dirPath) || !fs.statSync(dirPath).isDirectory()) {
+			if (!fc.isDirectory(dirPath)) {
 				continue;
 			}
 			evidence.add(dirPath, `top-level ${dirName} directory`);
 
-			const children = fs
-				.readdirSync(dirPath, { withFileTypes: true })
+			const children = fc.readdir(dirPath)
 				.filter((entry) => entry.isDirectory())
 				.map((entry) => path.join(dirName, entry.name))
 				.slice(0, MAX_RELEVANT_ENTRIES);
@@ -150,8 +222,8 @@ export class AnalysisManager {
 		}
 
 		const packageJsonPath = path.join(cwd, "package.json");
-		if (fs.existsSync(packageJsonPath)) {
-			const packageJson = this.readJson<{ name?: string }>(packageJsonPath);
+		if (fc.exists(packageJsonPath)) {
+			const packageJson = fc.readJson<{ name?: string }>(packageJsonPath);
 			if (packageJson?.name) {
 				relevant.add(packageJson.name);
 			} else {
@@ -161,8 +233,8 @@ export class AnalysisManager {
 		}
 
 		const projectJsonPath = path.join(cwd, "project.json");
-		if (fs.existsSync(projectJsonPath)) {
-			const projectJson = this.readJson<{ name?: string }>(projectJsonPath);
+		if (fc.exists(projectJsonPath)) {
+			const projectJson = fc.readJson<{ name?: string }>(projectJsonPath);
 			if (projectJson?.name) {
 				relevant.add(projectJson.name);
 			}
@@ -170,7 +242,7 @@ export class AnalysisManager {
 		}
 
 		const srcTauriPath = path.join(cwd, "src-tauri");
-		if (fs.existsSync(srcTauriPath) && fs.statSync(srcTauriPath).isDirectory()) {
+		if (fc.isDirectory(srcTauriPath)) {
 			relevant.add(`${path.basename(cwd)}/src-tauri`);
 			evidence.add(srcTauriPath, "Tauri backend");
 		}
@@ -178,7 +250,7 @@ export class AnalysisManager {
 		return Array.from(relevant).slice(0, MAX_RELEVANT_ENTRIES);
 	}
 
-	private collectKeyConfigFiles(cwd: string, evidence: ReturnType<AnalysisManager["createEvidenceRecorder"]>): string[] {
+	private collectKeyConfigFiles(cwd: string, evidence: ReturnType<AnalysisManager["createEvidenceRecorder"]>, fc: FsCache): string[] {
 		const candidates = [
 			".git",
 			"AGENTS.md",
@@ -197,27 +269,26 @@ export class AnalysisManager {
 			path.join("src-tauri", "tauri.conf.json"),
 		];
 
-		return candidates
-			.filter((candidate) => {
-				const candidatePath = path.join(cwd, candidate);
-				if (!fs.existsSync(candidatePath)) {
-					return false;
-				}
-				evidence.add(candidatePath, "key config or documentation file");
-				return true;
-			})
-			.map((candidate) => candidate.split("/").join(path.sep));
+		return candidates.filter((candidate) => {
+			const candidatePath = path.join(cwd, candidate);
+			if (!fc.exists(candidatePath)) {
+				return false;
+			}
+			evidence.add(candidatePath, "key config or documentation file");
+			return true;
+		});
 	}
 
 	private collectBuildSignals(
 		cwd: string,
 		evidence: ReturnType<AnalysisManager["createEvidenceRecorder"]>,
+		fc: FsCache,
 	): BuildSignal[] {
 		const signals: BuildSignal[] = [];
 
 		const addSignal = (type: string, relativePath: string, details?: string) => {
 			const absolutePath = path.join(cwd, relativePath);
-			if (!fs.existsSync(absolutePath)) {
+			if (!fc.exists(absolutePath)) {
 				return;
 			}
 			evidence.add(absolutePath, `${type} signal`);
@@ -245,9 +316,10 @@ export class AnalysisManager {
 	private collectDependencySummary(
 		cwd: string,
 		evidence: ReturnType<AnalysisManager["createEvidenceRecorder"]>,
+		fc: FsCache,
 	): DependencySummary {
 		const dependencySummary: DependencySummary = {
-			packageManager: this.detectPackageManager(cwd),
+			packageManager: this.detectPackageManager(cwd, fc),
 			packageName: null,
 			dependencyCount: 0,
 			devDependencyCount: 0,
@@ -256,8 +328,8 @@ export class AnalysisManager {
 		};
 
 		const packageJsonPath = path.join(cwd, "package.json");
-		if (fs.existsSync(packageJsonPath)) {
-			const packageJson = this.readJson<{
+		if (fc.exists(packageJsonPath)) {
+			const packageJson = fc.readJson<{
 				name?: string;
 				dependencies?: Record<string, string>;
 				devDependencies?: Record<string, string>;
@@ -280,25 +352,27 @@ export class AnalysisManager {
 			}
 		}
 
-		const cargoTomlPath = fs.existsSync(path.join(cwd, "Cargo.toml"))
+		const cargoTomlPath = fc.exists(path.join(cwd, "Cargo.toml"))
 			? path.join(cwd, "Cargo.toml")
 			: path.join(cwd, "src-tauri", "Cargo.toml");
-		if (fs.existsSync(cargoTomlPath)) {
-			const cargoText = fs.readFileSync(cargoTomlPath, "utf-8");
-			const match = cargoText.match(/^\s*name\s*=\s*"([^"]+)"/m);
-			dependencySummary.cargoPackageName = match?.[1] || null;
-			evidence.add(cargoTomlPath, "cargo manifest");
+		if (fc.exists(cargoTomlPath)) {
+			const cargoText = fc.readFile(cargoTomlPath);
+			if (cargoText) {
+				const match = cargoText.match(/^\s*name\s*=\s*"([^"]+)"/m);
+				dependencySummary.cargoPackageName = match?.[1] || null;
+				evidence.add(cargoTomlPath, "cargo manifest");
+			}
 		}
 
 		return dependencySummary;
 	}
 
-	private determineRepoType(cwd: string): RepoType {
-		if (fs.existsSync(path.join(cwd, "nx.json"))) return "nx-workspace";
-		if (fs.existsSync(path.join(cwd, "src-tauri", "tauri.conf.json")))
+	private determineRepoType(cwd: string, fc: FsCache): RepoType {
+		if (fc.exists(path.join(cwd, "nx.json"))) return "nx-workspace";
+		if (fc.exists(path.join(cwd, "src-tauri", "tauri.conf.json")))
 			return "tauri-project";
-		if (fs.existsSync(path.join(cwd, "Cargo.toml"))) return "rust-project";
-		if (fs.existsSync(path.join(cwd, "package.json"))) return "node-project";
+		if (fc.exists(path.join(cwd, "Cargo.toml"))) return "rust-project";
+		if (fc.exists(path.join(cwd, "package.json"))) return "node-project";
 		return "directory";
 	}
 
@@ -307,6 +381,7 @@ export class AnalysisManager {
 		buildSignals: BuildSignal[],
 		keyConfigFiles: string[],
 		dependencySummary: DependencySummary,
+		fc: FsCache,
 	): string[] {
 		const risks: string[] = [];
 		const signalTypes = new Set(buildSignals.map((signal) => signal.type));
@@ -319,8 +394,8 @@ export class AnalysisManager {
 		}
 		if (
 			!signalTypes.has("vitest") &&
-			!fs.existsSync(path.join(cwd, "jest.config.js")) &&
-			!fs.existsSync(path.join(cwd, "jest.config.ts"))
+			!fc.exists(path.join(cwd, "jest.config.js")) &&
+			!fc.exists(path.join(cwd, "jest.config.ts"))
 		) {
 			risks.push("No obvious automated test configuration was found.");
 		}
@@ -437,20 +512,22 @@ export class AnalysisManager {
 
 	async reviewProject(cwd: string): Promise<ProjectReviewArtifact> {
 		const resolvedCwd = this.validateCwd(cwd);
-		const evidence = this.createEvidenceRecorder(resolvedCwd);
+		const fc = new FsCache();
+		const evidence = this.createEvidenceRecorder(resolvedCwd, fc);
 
 		evidence.add(resolvedCwd, "review root");
 
-		const buildSignals = this.collectBuildSignals(resolvedCwd, evidence);
-		const relevantEntries = this.collectRelevantEntries(resolvedCwd, evidence);
-		const keyConfigFiles = this.collectKeyConfigFiles(resolvedCwd, evidence);
-		const dependencySummary = this.collectDependencySummary(resolvedCwd, evidence);
-		const repoType = this.determineRepoType(resolvedCwd);
+		const buildSignals = this.collectBuildSignals(resolvedCwd, evidence, fc);
+		const relevantEntries = this.collectRelevantEntries(resolvedCwd, evidence, fc);
+		const keyConfigFiles = this.collectKeyConfigFiles(resolvedCwd, evidence, fc);
+		const dependencySummary = this.collectDependencySummary(resolvedCwd, evidence, fc);
+		const repoType = this.determineRepoType(resolvedCwd, fc);
 		const topRisks = this.collectTopRisks(
 			resolvedCwd,
 			buildSignals,
 			keyConfigFiles,
 			dependencySummary,
+			fc,
 		);
 		const unknowns = this.collectUnknowns(buildSignals, dependencySummary);
 		const collectedEvidence = evidence.list();
