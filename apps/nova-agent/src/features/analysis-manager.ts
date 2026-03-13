@@ -440,9 +440,14 @@ export class AnalysisManager {
 		return unknowns;
 	}
 
+	private static artifactDirCreated = false;
+
 	private createArtifactFilePath(cwd: string): string {
 		const artifactDir = this.getArtifactDirectory();
-		fs.mkdirSync(artifactDir, { recursive: true });
+		if (!AnalysisManager.artifactDirCreated) {
+			fs.mkdirSync(artifactDir, { recursive: true });
+			AnalysisManager.artifactDirCreated = true;
+		}
 
 		const normalizedPath = cwd.toLowerCase();
 		const hash = crypto.createHash("sha1").update(normalizedPath).digest("hex");
