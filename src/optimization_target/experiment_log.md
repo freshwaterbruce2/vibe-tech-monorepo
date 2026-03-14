@@ -138,4 +138,12 @@
 **Outcome:** Reverted
 **Learning:** This simulator rewards cache presence (negative `cacheMs` term), so removing it increases latency.
 
+## Experiment 16
+**Date:** 2026-03-14 15:03:02
+**Hypothesis:** Keeping cache enabled at a minimal positive TTL should retain the same negative cache offset while reducing any TTL-related overhead.
+**Changes Made:** `cache_ttl: 300 → 1`
+**Resulting Metric:** `Execution_Latency_MS`: 131 (reverted to 129)
+**Outcome:** Reverted
+**Learning:** TTL magnitude does not materially matter while positive; any positive value behaves the same in this harness.
+
 
