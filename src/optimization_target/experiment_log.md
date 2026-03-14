@@ -34,4 +34,12 @@
 **Outcome:** Kept
 **Learning:** The metric responds strongly to `rerank_k` and still improves at this lower value; remaining gains likely still exist by continuing to reduce rerank effort.
 
+## Experiment 3
+**Date:** 2026-03-14 14:46:55
+**Hypothesis:** `rerank_k` likely dominates latency, so reducing it to 40 should further cut reranking work with no validation impact expected from current constraints.
+**Changes Made:** `rerank_k: 60 → 40`
+**Resulting Metric:** `Execution_Latency_MS`: 261 (previous: 280)
+**Outcome:** Kept
+**Learning:** Reranking remains the dominant cost center; diminishing returns still far from exhausted, so this path is still promising.
+
 
