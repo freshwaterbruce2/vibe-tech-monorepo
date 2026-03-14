@@ -19,8 +19,8 @@ For every experiment iteration, you must strictly follow these steps:
 - The change must be scoped so the evaluation completes within the 5-minute timeout limit.
 
 ### Step 3: Execution
-- Modify `target.ts`.
-- Run the evaluation command: `npm run evaluate:target`.
+- Modify `target.ts`. 
+- Run the evaluation command: `npm run evaluate:target` and enforce the fixed 5-minute experiment timeout.
 
 ### Step 4: Analysis & Logging
 - If the command fails, errors out, or the metric degrades, revert your change using `git checkout target.ts`.

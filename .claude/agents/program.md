@@ -20,7 +20,7 @@ For every experiment iteration, you must strictly follow these steps:
 
 ### Step 3: Execution
 - Modify `src/optimization_target/target.ts`. 
-- Run the evaluation command: `npm run evaluate:target`.
+- Run the evaluation command `npm run evaluate:target` and ensure each run is bounded by the fixed timeout budget (5 minutes).
 
 ### Step 4: Analysis & Logging
 - If the command fails, errors out, or the metric degrades: revert your changes using `git checkout target.ts`.
