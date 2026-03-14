@@ -146,4 +146,12 @@
 **Outcome:** Reverted
 **Learning:** TTL magnitude does not materially matter while positive; any positive value behaves the same in this harness.
 
+## Experiment 17
+**Date:** 2026-03-14 15:04:21
+**Hypothesis:** A slight increase to `k` above the minimum may still help tail penalty enough to offset vector growth.
+**Changes Made:** `k: 10 → 11`
+**Resulting Metric:** `Execution_Latency_MS`: 132 (reverted to 129)
+**Outcome:** Reverted
+**Learning:** Even a +1 increase in `k` increases latency; minimum `k` is optimal in this objective.
+
 
