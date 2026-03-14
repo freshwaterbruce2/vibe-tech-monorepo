@@ -50,4 +50,12 @@
 **Outcome:** Kept
 **Learning:** Chunking cost decreases materially with larger chunk windows; this remains a strong remaining lever.
 
+## Experiment 5
+**Date:** 2026-03-14 14:48:58
+**Hypothesis:** Removing chunk overlap should reduce overlap-related latency with no structural validation violations.
+**Changes Made:** `chunk_overlap: 128 → 0`
+**Resulting Metric:** `Execution_Latency_MS`: 242 (previous: 253)
+**Outcome:** Kept
+**Learning:** Overlap is a meaningful chunk-level cost; reducing it lowers runtime substantially in this benchmark.
+
 
