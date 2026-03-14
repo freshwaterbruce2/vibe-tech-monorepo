@@ -96,8 +96,6 @@ Provide specific, production-ready solutions with code examples, best practices,
     const confidence = this.calculateConfidence(request, context);
 
     // Build contextual prompt
-    const prompt = this.buildPrompt(request, context);
-
     // In a real implementation, this would call an AI service
     // For now, return a structured response
     const response: AgentResponse = {

@@ -101,10 +101,10 @@ export async function callPythonModule<T = any>(
                     result: parsed as T,
                     durationMs: Date.now() - startedAt,
                 });
-            } catch (e: any) {
+            } catch (error: any) {
                 resolve({
                     success: false,
-                    error: `Invalid JSON from python module: ${e.message}`,
+                    error: `Invalid JSON from python module: ${error.message}`,
                     stderr,
                     durationMs: Date.now() - startedAt,
                 });
@@ -115,7 +115,7 @@ export async function callPythonModule<T = any>(
         try {
             child.stdin.write(JSON.stringify({ command, payload }));
             child.stdin.end();
-        } catch (e: any) {
+        } catch {
             // If writing fails, rely on 'error'/'exit' handlers
         }
     });

@@ -10,7 +10,7 @@ import { useAuth } from "../contexts/AuthContext";
 
 type LocationState = { from?: string } | null;
 
-const Login: React.FC = () => {
+const Login = () => {
 	const { signIn } = useAuth();
 	const navigate = useNavigate();
 	const location = useLocation();

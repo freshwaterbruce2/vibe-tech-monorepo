@@ -17,16 +17,55 @@ export interface RecognizedPattern {
   confidence: number;
 }
 
-export class PatternRecognizer {
+function extractPatternKey(description: string): string {
+  /**
+   * Extract a pattern key from mistake description
+   */
+  // Simple extraction - in production, this would use NLP
+  const lower = description.toLowerCase();
+
+  // Common patterns
+  if (lower.includes('undefined') || lower.includes('null')) {
+    return 'null-undefined-access';
+  }
+  if (lower.includes('async') || lower.includes('promise')) {
+    return 'async-handling';
+  }
+  if (lower.includes('type') || lower.includes('typescript')) {
+    return 'type-error';
+  }
+  if (lower.includes('import') || lower.includes('module')) {
+    return 'import-error';
+  }
+  if (lower.includes('performance') || lower.includes('slow')) {
+    return 'performance-issue';
+  }
+
+  // Default to first few words
+  return description.split(' ').slice(0, 3).join('-').toLowerCase();
+}
+
+function calculateSimilarity(a: string, b: string): number {
+  // Simple Jaccard similarity for now
+  const setA = new Set(a.toLowerCase().split(/[\s-]+/));
+  const setB = new Set(b.toLowerCase().split(/[\s-]+/));
+
+  const intersection = new Set([...setA].filter(x => setB.has(x)));
+  const union = new Set([...setA, ...setB]);
+
+  return intersection.size / union.size;
+}
+
+export const PatternRecognizer = {
   /**
    * Analyze mistakes to identify recurring patterns
    */
-  static analyzeMistakePatterns(mistakes: LearningMistake[]): RecognizedPattern[] {
+  analyzeMistakePatterns(mistakes: LearningMistake[]): RecognizedPattern[] {
     const patterns = new Map<string, RecognizedPattern>();
 
     for (const mistake of mistakes) {
       // Extract pattern from mistake type and description
-      const patternKey = this.extractPatternKey(mistake.description);
+      const patternKey = extractPatternKey(mistake.description);
 
       if (patterns.has(patternKey)) {
         const pattern = patterns.get(patternKey)!;
@@ -54,12 +93,12 @@ export class PatternRecognizer {
     });
 
     return result.sort((a, b) => b.frequency - a.frequency);
-  }
+  },
 
   /**
    * Find similar patterns across apps
    */
-  static findCrossAppPatterns(
+  findCrossAppPatterns(
     novaData: { mistakes: LearningMistake[]; knowledge: KnowledgeEntry[] },
     vibeData: { mistakes: LearningMistake[]; knowledge: KnowledgeEntry[] }
   ): RecognizedPattern[] {
@@ -71,7 +110,7 @@ export class PatternRecognizer {
     // Find patterns that appear in both apps
     for (const novaPattern of novaPatterns) {
       for (const vibePattern of vibePatterns) {
-        const similarity = this.calculateSimilarity(novaPattern.pattern, vibePattern.pattern);
+        const similarity = calculateSimilarity(novaPattern.pattern, vibePattern.pattern);
 
         if (similarity > 0.7) {
           crossAppPatterns.push({
@@ -88,12 +127,12 @@ export class PatternRecognizer {
     }
 
     return crossAppPatterns;
-  }
+  },
 
   /**
    * Get platform-specific patterns
    */
-  static getPlatformPatterns(
+  getPlatformPatterns(
     mistakes: LearningMistake[],
     platform: 'desktop' | 'web' | 'mobile' | 'python'
   ): RecognizedPattern[] {
@@ -108,47 +147,5 @@ export class PatternRecognizer {
     });
 
     return patterns;
-  }
-
-  /**
-   * Extract a pattern key from mistake description
-   */
-  private static extractPatternKey(description: string): string {
-    // Simple extraction - in production, this would use NLP
-    const lower = description.toLowerCase();
-
-    // Common patterns
-    if (lower.includes('undefined') || lower.includes('null')) {
-      return 'null-undefined-access';
-    }
-    if (lower.includes('async') || lower.includes('promise')) {
-      return 'async-handling';
-    }
-    if (lower.includes('type') || lower.includes('typescript')) {
-      return 'type-error';
-    }
-    if (lower.includes('import') || lower.includes('module')) {
-      return 'import-error';
-    }
-    if (lower.includes('performance') || lower.includes('slow')) {
-      return 'performance-issue';
-    }
-
-    // Default to first few words
-    return description.split(' ').slice(0, 3).join('-').toLowerCase();
-  }
-
-  /**
-   * Calculate similarity between two pattern strings
-   */
-  private static calculateSimilarity(a: string, b: string): number {
-    // Simple Jaccard similarity for now
-    const setA = new Set(a.toLowerCase().split(/[\s-]+/));
-    const setB = new Set(b.toLowerCase().split(/[\s-]+/));
-
-    const intersection = new Set([...setA].filter(x => setB.has(x)));
-    const union = new Set([...setA, ...setB]);
-
-    return intersection.size / union.size;
-  }
-}
+  },
+};

@@ -6,7 +6,7 @@ import Button from "../common/Button";
 import Card from "../common/Card";
 import Input from "../common/Input";
 
-const InvoiceForm: React.FC = () => {
+const InvoiceForm = () => {
 	const {
 		register,
 		formState: { errors },

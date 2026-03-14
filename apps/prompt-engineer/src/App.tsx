@@ -74,7 +74,6 @@ function App() {
       await checkConnection();
     };
     void syncApiKey();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only run on mount
   }, []);
 
   // Load history from D:\data\prompt-engineer\history.json on mount

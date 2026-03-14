@@ -91,27 +91,27 @@ export interface CrossAppPattern {
   usage_count: number;
 }
 
-export class CrossAppPatternTracker {
+export const CrossAppPatternTracker = {
   /**
    * Record a successful pattern transfer between apps
    */
-  static async recordPattern(
-    db: LearningDatabaseInterface,
-    pattern: Omit<CrossAppPattern, 'id' | 'usage_count'>
+  async recordPattern(
+    _db: LearningDatabaseInterface,
+    _pattern: Omit<CrossAppPattern, 'id' | 'usage_count'>
   ): Promise<void> {
     // Implementation depends on the platform
     // This is a placeholder for the interface
-  }
+  },
 
   /**
    * Get patterns that worked well from one app to suggest for another
    */
-  static async getSuggestedPatterns(
-    db: LearningDatabaseInterface,
-    targetApp: 'nova' | 'vibe',
-    minSuccessRate = 0.7
+  async getSuggestedPatterns(
+    _db: LearningDatabaseInterface,
+    _targetApp: 'nova' | 'vibe',
+    _minSuccessRate = 0.7
   ): Promise<CrossAppPattern[]> {
     // Implementation depends on the platform
     return [];
-  }
-}
+  },
+};

@@ -50,7 +50,10 @@ export function SettingsPanel({ apiKey, onApiKeyChange }: SettingsPanelProps) {
 
   // Check connection on mount and when API key changes
   useEffect(() => {
-    checkConnection();
+    const timer = setTimeout(() => {
+      void checkConnection();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [apiKey]);
 
   // Auto-refresh connection status every 30 seconds

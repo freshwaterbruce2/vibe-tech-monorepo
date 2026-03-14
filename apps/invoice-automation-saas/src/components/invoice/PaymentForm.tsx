@@ -14,11 +14,11 @@ const formatCurrency = (amount: number, currency: string) =>
 		amount,
 	);
 
-const PaymentForm: React.FC<PaymentFormProps> = ({
+const PaymentForm = ({
 	amount,
 	currency,
 	onPaid,
-}) => {
+}: PaymentFormProps) => {
 	const [submitting, setSubmitting] = useState(false);
 
 	const pay = async () => {

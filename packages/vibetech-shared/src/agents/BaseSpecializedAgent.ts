@@ -117,7 +117,7 @@ export abstract class BaseSpecializedAgent {
   /**
    * Generate follow-up questions based on response
    */
-  protected generateFollowupQuestions(response: string, context: AgentContext): string[] {
+  protected generateFollowupQuestions(response: string, _context: AgentContext): string[] {
     const questions: string[] = [];
 
     // This is a simplified implementation

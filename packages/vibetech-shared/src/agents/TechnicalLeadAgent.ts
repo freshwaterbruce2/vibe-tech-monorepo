@@ -112,8 +112,6 @@ Provide strategic, high-level guidance with practical implementation advice. Con
   async process(request: string, context: AgentContext): Promise<AgentResponse> {
     const confidence = this.calculateConfidence(request, context);
 
-    const prompt = this.buildPrompt(request, context);
-
     const response: AgentResponse = {
       content: `As a Technical Lead, I'll provide strategic guidance on: ${request}`,
       confidence,
@@ -142,7 +140,7 @@ Provide strategic, high-level guidance with practical implementation advice. Con
     ];
   }
 
-  protected isRelevantFileType(fileExtension: string): boolean {
+  protected isRelevantFileType(_fileExtension: string): boolean {
     // Technical Lead can work with any file type
     return true;
   }

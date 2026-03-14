@@ -13,10 +13,10 @@ interface RecurringSettingsProps {
 	onChange: (next: RecurringSettingsValue) => void;
 }
 
-const RecurringSettings: React.FC<RecurringSettingsProps> = ({
+const RecurringSettings = ({
 	value,
 	onChange,
-}) => {
+}: RecurringSettingsProps) => {
 	return (
 		<Card className="ui-stack ui-stack--md">
 			<div className="ui-row" style={{ justifyContent: "space-between" }}>

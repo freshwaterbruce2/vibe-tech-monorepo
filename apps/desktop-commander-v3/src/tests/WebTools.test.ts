@@ -191,7 +191,7 @@ describe("WebTools", () => {
 		it("should respect timeout", async () => {
 			const mockRequest = {
 				on: vi.fn(),
-				setTimeout: vi.fn((timeout, callback) => {
+				setTimeout: vi.fn((timeout, _callback) => {
 					expect(timeout).toBe(30000);
 				}),
 				end: vi.fn(),
@@ -313,7 +313,7 @@ describe("WebTools", () => {
 			const mockHtml = Array(20)
 				.fill(0)
 				.map(
-					(_, i) =>
+					(_value, i) =>
 						`<a class="result__a" href="https://example.com/page${i}">Page ${i}</a>`,
 				)
 				.join("\n");

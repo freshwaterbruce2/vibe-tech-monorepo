@@ -8,7 +8,7 @@ interface RecurringInvoicesProps {
 	invoices: Invoice[];
 }
 
-const RecurringInvoices: React.FC<RecurringInvoicesProps> = ({ invoices }) => {
+const RecurringInvoices = ({ invoices }: RecurringInvoicesProps) => {
 	const recurring = invoices.filter((i) => i.recurring?.enabled);
 
 	return (

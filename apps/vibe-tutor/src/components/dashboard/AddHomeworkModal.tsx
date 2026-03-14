@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { parseHomeworkFromVoice } from '../../services/homeworkParserService';
 import type { ParsedHomework } from '../../types';
+import { appStore } from '../../utils/electronStore';
 import { MicrophoneIcon } from '../ui/icons/MicrophoneIcon';
 
 interface AddHomeworkModalProps {
@@ -27,7 +28,7 @@ const AddHomeworkModal = ({ onClose, onAdd }: AddHomeworkModalProps) => {
   const [voiceTranscript, setVoiceTranscript] = useState('');
   const [isParsing, setIsParsing] = useState(false);
   const [voiceDisclosureAccepted, setVoiceDisclosureAccepted] = useState<boolean>(() => {
-    return localStorage.getItem(VOICE_DISCLOSURE_KEY) === '1';
+    return appStore.get(VOICE_DISCLOSURE_KEY) === '1';
   });
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -91,7 +92,7 @@ const AddHomeworkModal = ({ onClose, onAdd }: AddHomeworkModalProps) => {
         if (!accepted) {
           return;
         }
-        localStorage.setItem(VOICE_DISCLOSURE_KEY, '1');
+        appStore.set(VOICE_DISCLOSURE_KEY, '1');
         setVoiceDisclosureAccepted(true);
       }
       setVoiceTranscript('');

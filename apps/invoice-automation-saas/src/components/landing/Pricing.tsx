@@ -39,7 +39,7 @@ const tiers: PricingTier[] = [
 	},
 ];
 
-const Pricing: React.FC = () => {
+const Pricing = () => {
 	return (
 		<section id="pricing" className="ui-section ui-section--alt">
 			<div className="ui-container">

@@ -4,11 +4,11 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 	as?: "div" | "section" | "article";
 }
 
-const Card: React.FC<CardProps> = ({
+const Card = ({
 	as: Component = "div",
 	className,
 	...props
-}) => {
+}: CardProps) => {
 	return (
 		<Component
 			className={["ui-card", className].filter(Boolean).join(" ")}

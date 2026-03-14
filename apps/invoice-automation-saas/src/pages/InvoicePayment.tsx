@@ -8,7 +8,7 @@ import PaymentForm from "../components/invoice/PaymentForm";
 import { invoiceService } from "../services/invoiceService";
 import type { Invoice } from "../types/invoice";
 
-const InvoicePayment: React.FC = () => {
+const InvoicePayment = () => {
 	const { invoiceId } = useParams();
 	const location = useLocation();
 	const navigate = useNavigate();
@@ -96,7 +96,12 @@ const InvoicePayment: React.FC = () => {
 						<h1 className="ui-h1">Pay invoice</h1>
 						<div className="ui-muted">{invoice.invoiceNumber}</div>
 					</div>
-					<button className="ui-link" onClick={() => navigate("/")}>
+					<button
+						className="ui-link"
+						onClick={() => {
+							void navigate("/");
+						}}
+					>
 						Back to home
 					</button>
 				</div>

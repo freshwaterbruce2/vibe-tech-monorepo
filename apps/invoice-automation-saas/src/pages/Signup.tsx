@@ -8,7 +8,7 @@ import Input from "../components/common/Input";
 import Navigation from "../components/common/Navigation";
 import { useAuth } from "../contexts/AuthContext";
 
-const Signup: React.FC = () => {
+const Signup = () => {
 	const { signUp } = useAuth();
 	const navigate = useNavigate();
 

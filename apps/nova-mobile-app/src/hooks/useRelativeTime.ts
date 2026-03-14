@@ -33,7 +33,5 @@ export function useRelativeTimeMap(timestamps: string[]): Map<string, string> {
       map.set(ts, getRelativeTime(ts));
     }
     return map;
-    // tick is intentionally in deps to force recalculation
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timestamps.join(','), tick]);
+  }, [timestamps, tick]);
 }

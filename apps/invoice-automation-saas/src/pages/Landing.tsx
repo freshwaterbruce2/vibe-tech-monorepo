@@ -4,7 +4,7 @@ import Features from "../components/landing/Features";
 import Hero from "../components/landing/Hero";
 import Pricing from "../components/landing/Pricing";
 
-const Landing: React.FC = () => {
+const Landing = () => {
 	return (
 		<div className="ui-page">
 			<Navigation variant="public" />

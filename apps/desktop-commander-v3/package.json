@@ -8,7 +8,7 @@
     "start": "node dist/index.js",
     "start:mcp": "node dist/mcp.js",
     "dev": "tsx watch src/index.ts",
-    "lint": "cd ../.. && npx eslint apps/desktop-commander-v3/src --ext .ts",
+    "lint": "cd ../.. && pnpm exec eslint apps/desktop-commander-v3/src --ext .ts",
     "test": "vitest",
     "typecheck": "tsc --noEmit"
   },

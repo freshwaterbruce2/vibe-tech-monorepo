@@ -1,7 +1,7 @@
 import { addDays, format } from "date-fns";
 import type React from "react";
 import { useMemo, useState } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import Button from "../components/common/Button";
@@ -17,7 +17,16 @@ import type { Invoice, InvoiceFormData } from "../types/invoice";
 const safeNumber = (value: unknown) =>
 	Number.isFinite(Number(value)) ? Number(value) : 0;
 
-const CreateInvoice: React.FC = () => {
+function createInvoiceIdentifiers() {
+	const createdAtMs = Date.now();
+	return {
+		id: `inv_${createdAtMs}`,
+		clientId: `client_${createdAtMs}`,
+		invoiceNumber: `INV-${Math.floor(1000 + Math.random() * 9000)}`,
+	};
+}
+
+const CreateInvoice = () => {
 	const navigate = useNavigate();
 	const [recurring, setRecurring] = useState<RecurringSettingsValue>({
 		enabled: false,
@@ -40,7 +49,9 @@ const CreateInvoice: React.FC = () => {
 		mode: "onBlur",
 	});
 
-	const watched = methods.watch();
+	const watched = useWatch({
+		control: methods.control,
+	});
 
 	const totals = useMemo(() => {
 		const subtotal = (watched.items ?? []).reduce((sum, item) => {
@@ -54,8 +65,7 @@ const CreateInvoice: React.FC = () => {
 	}, [watched.items, watched.tax]);
 
 	const onSubmit = async (data: InvoiceFormData) => {
-		const id = `inv_${Date.now()}`;
-		const invoiceNumber = `INV-${Math.floor(1000 + Math.random() * 9000)}`;
+		const { id, clientId, invoiceNumber } = createInvoiceIdentifiers();
 
 		const invoice: Invoice = {
 			id,
@@ -63,7 +73,7 @@ const CreateInvoice: React.FC = () => {
 			issueDate: new Date(data.issueDate),
 			dueDate: new Date(data.dueDate),
 			client: {
-				id: `client_${Date.now()}`,
+				id: clientId,
 				name: data.client.name ?? "Client",
 				email: data.client.email ?? "",
 				address: data.client.address,
@@ -121,7 +131,9 @@ const CreateInvoice: React.FC = () => {
 					<Button
 						type="button"
 						variant="ghost"
-						onClick={() => navigate("/dashboard")}
+						onClick={() => {
+							void navigate("/dashboard");
+						}}
 					>
 						Back to dashboard
 					</Button>

@@ -7,7 +7,7 @@ interface NavigationProps {
   variant?: 'public' | 'app'
 }
 
-const Navigation: React.FC<NavigationProps> = ({ variant = 'app' }) => {
+const Navigation = ({ variant = 'app' }: NavigationProps) => {
   const { user, signOut } = useAuth()
 
   return (
