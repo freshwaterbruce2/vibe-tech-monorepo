@@ -82,4 +82,12 @@
 **Outcome:** Reverted
 **Learning:** In this setup, lowering `alpha` this far increased observed latency, likely due interaction noise or non-linear blending effects in the harness.
 
+## Experiment 9
+**Date:** 2026-03-14 14:55:24
+**Hypothesis:** `rerank_k` still appears to be the largest remaining latency contributor, so halving it again from 40 to 20 should cut reranking cost further.
+**Changes Made:** `rerank_k: 40 → 20`
+**Resulting Metric:** `Execution_Latency_MS`: 225 (previous: 236)
+**Outcome:** Kept
+**Learning:** Reranking remains the primary driver of latency, and lower `rerank_k` values continue to pay off in this benchmark.
+
 
