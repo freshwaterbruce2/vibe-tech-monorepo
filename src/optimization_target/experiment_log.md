@@ -106,4 +106,12 @@
 **Outcome:** Kept
 **Learning:** Vector scoring term dominates more than expected once rerank work is small; `k` is a stronger lever than initial intuition suggested.
 
+## Experiment 12
+**Date:** 2026-03-14 14:57:18
+**Hypothesis:** `chunk_size` still has residual overhead at 1024, so moving to the maximum should remove remaining chunk processing cost.
+**Changes Made:** `chunk_size: 1024 → 2048`
+**Resulting Metric:** `Execution_Latency_MS`: 133 (previous: 169)
+**Outcome:** Kept
+**Learning:** Chunk window size was still materially expensive at 1024; maxing it out gives a strong latency win in this harness.
+
 

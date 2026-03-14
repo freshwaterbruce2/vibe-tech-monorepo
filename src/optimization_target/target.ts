@@ -18,7 +18,7 @@ export const TARGET_PARAMS: TargetParams = {
   alpha: 0.7,
   k: 10,
   rerank_k: 10,
-  chunk_size: 1024,
+  chunk_size: 2048,
   chunk_overlap: 0,
   fts_boost: 1,
   cache_ttl: 300,
