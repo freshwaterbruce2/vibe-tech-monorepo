@@ -66,4 +66,12 @@
 **Outcome:** Reverted
 **Learning:** For this simulator, vector search term grows with `k` enough to dominate; larger `k` is counterproductive despite lower rerank constraint pressure.
 
+## Experiment 7
+**Date:** 2026-03-14 14:53:15
+**Hypothesis:** Lowering `fts_boost` to the minimum reduces full-text scoring overhead with no direct validity penalties.
+**Changes Made:** `fts_boost: 1.5 → 1`
+**Resulting Metric:** `Execution_Latency_MS`: 236 (previous: 242)
+**Outcome:** Kept
+**Learning:** Full-text boost contributes linearly to latency in this harness; the minimum setting is materially faster.
+
 
