@@ -74,4 +74,12 @@
 **Outcome:** Kept
 **Learning:** Full-text boost contributes linearly to latency in this harness; the minimum setting is materially faster.
 
+## Experiment 8
+**Date:** 2026-03-14 14:54:03
+**Hypothesis:** Reducing `alpha` to 0 should reduce alpha blending overhead and lower latency further.
+**Changes Made:** `alpha: 0.7 → 0`
+**Resulting Metric:** `Execution_Latency_MS`: 259 (reverted to 236)
+**Outcome:** Reverted
+**Learning:** In this setup, lowering `alpha` this far increased observed latency, likely due interaction noise or non-linear blending effects in the harness.
+
 
