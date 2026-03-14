@@ -66,6 +66,7 @@
     ]
   },
   "scripts": {
+    "evaluate:target": "tsx src/optimization_target/eval.ts",
     "dev": "nx run vtde:dev",
     "dev:gravity-claw": "cmd /d /s /c \"cd /d apps\\gravity-claw && npm install && npm run dev\"",
     "build": "echo 'ERROR: Do not run build from workspace root. cd into a specific app first.' && exit 1",
