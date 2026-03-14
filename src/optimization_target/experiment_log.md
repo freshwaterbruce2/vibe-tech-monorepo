@@ -42,4 +42,12 @@
 **Outcome:** Kept
 **Learning:** Reranking remains the dominant cost center; diminishing returns still far from exhausted, so this path is still promising.
 
+## Experiment 4
+**Date:** 2026-03-14 14:47:42
+**Hypothesis:** Larger chunk windows should reduce chunk processing latency because chunk latency scales as `(2048 - chunk_size) * 0.03`.
+**Changes Made:** `chunk_size: 512 → 1024`
+**Resulting Metric:** `Execution_Latency_MS`: 253 (previous: 261)
+**Outcome:** Kept
+**Learning:** Chunking cost decreases materially with larger chunk windows; this remains a strong remaining lever.
+
 
