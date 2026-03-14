@@ -90,4 +90,12 @@
 **Outcome:** Kept
 **Learning:** Reranking remains the primary driver of latency, and lower `rerank_k` values continue to pay off in this benchmark.
 
+## Experiment 10
+**Date:** 2026-03-14 14:56:05
+**Hypothesis:** Continuing the `rerank_k` reduction path to 10 should continue reducing rerank overhead until the lower constraint bound.
+**Changes Made:** `rerank_k: 20 → 10`
+**Resulting Metric:** `Execution_Latency_MS`: 215 (previous: 225)
+**Outcome:** Kept
+**Learning:** The lower bound for rerank work is still reachable and yields clear gains in this environment.
+
 
