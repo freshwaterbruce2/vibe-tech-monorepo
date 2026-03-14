@@ -58,4 +58,12 @@
 **Outcome:** Kept
 **Learning:** Overlap is a meaningful chunk-level cost; reducing it lowers runtime substantially in this benchmark.
 
+## Experiment 6
+**Date:** 2026-03-14 14:52:02
+**Hypothesis:** Raising `k` from 100 to 200 should reduce the `rerank_k <= k` pressure and might lower tail penalty.
+**Changes Made:** `k: 100 → 200`
+**Resulting Metric:** `Execution_Latency_MS`: 291 (reverted from 242)
+**Outcome:** Reverted
+**Learning:** For this simulator, vector search term grows with `k` enough to dominate; larger `k` is counterproductive despite lower rerank constraint pressure.
+
 
