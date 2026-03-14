@@ -122,4 +122,12 @@
 **Outcome:** Reverted
 **Learning:** Even when other settings are minimized, low `alpha` did not improve observed latency in this harness; this direction is not productive.
 
+## Experiment 14
+**Date:** 2026-03-14 15:00:12
+**Hypothesis:** `alpha` affects a fixed blend penalty and should reduce latency at `alpha = 1`, while staying within constraints.
+**Changes Made:** `alpha: 0.7 → 1`
+**Resulting Metric:** `Execution_Latency_MS`: 125 (best observed: 120-129 range over 5 runs)
+**Outcome:** Kept
+**Learning:** Raising `alpha` to its upper bound lowers latency in this harness, so blend penalty is now minimized.
+
 

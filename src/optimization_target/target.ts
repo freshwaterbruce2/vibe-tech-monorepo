@@ -15,7 +15,7 @@ export interface TargetParams {
 }
 
 export const TARGET_PARAMS: TargetParams = {
-  alpha: 0.7,
+  alpha: 1,
   k: 10,
   rerank_k: 10,
   chunk_size: 2048,
