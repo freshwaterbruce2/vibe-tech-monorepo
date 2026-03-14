@@ -98,4 +98,12 @@
 **Outcome:** Kept
 **Learning:** The lower bound for rerank work is still reachable and yields clear gains in this environment.
 
+## Experiment 11
+**Date:** 2026-03-14 14:56:42
+**Hypothesis:** With rerank now at minimum, lowering `k` to 10 should reduce vector work enough to dominate the next wins.
+**Changes Made:** `k: 100 → 10`
+**Resulting Metric:** `Execution_Latency_MS`: 169 (previous: 215)
+**Outcome:** Kept
+**Learning:** Vector scoring term dominates more than expected once rerank work is small; `k` is a stronger lever than initial intuition suggested.
+
 
