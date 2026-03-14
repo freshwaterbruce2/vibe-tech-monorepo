@@ -17,7 +17,7 @@ export interface TargetParams {
 export const TARGET_PARAMS: TargetParams = {
   alpha: 0.7,
   k: 100,
-  rerank_k: 75,
+  rerank_k: 60,
   chunk_size: 512,
   chunk_overlap: 128,
   fts_boost: 1.5,

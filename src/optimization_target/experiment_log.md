@@ -26,4 +26,12 @@
 **Outcome:** Kept
 **Learning:** Focused reductions to `rerank_k` deliver immediate latency gains; next iterations should test smaller decreases and compensate with alpha adjustments if needed.
 
+## Experiment 2
+**Date:** 2026-03-14 14:45:12
+**Hypothesis:** Lowering `rerank_k` further to 60 should continue reducing reranking overhead without violating the `rerank_k <= k` constraint.
+**Changes Made:** `rerank_k: 75 → 60`
+**Resulting Metric:** `Execution_Latency_MS`: 280 (previous: 292)
+**Outcome:** Kept
+**Learning:** The metric responds strongly to `rerank_k` and still improves at this lower value; remaining gains likely still exist by continuing to reduce rerank effort.
+
 
