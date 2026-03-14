@@ -114,4 +114,12 @@
 **Outcome:** Kept
 **Learning:** Chunk window size was still materially expensive at 1024; maxing it out gives a strong latency win in this harness.
 
+## Experiment 13
+**Date:** 2026-03-14 14:58:00
+**Hypothesis:** Reducing `alpha` should only reduce blending overhead and might further drop latency at the lower `k`/`rerank_k` settings.
+**Changes Made:** `alpha: 0.7 → 0`
+**Resulting Metric:** `Execution_Latency_MS`: 149 (reverted to 132)
+**Outcome:** Reverted
+**Learning:** Even when other settings are minimized, low `alpha` did not improve observed latency in this harness; this direction is not productive.
+
 
