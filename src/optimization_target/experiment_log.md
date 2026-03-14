@@ -130,4 +130,12 @@
 **Outcome:** Kept
 **Learning:** Raising `alpha` to its upper bound lowers latency in this harness, so blend penalty is now minimized.
 
+## Experiment 15
+**Date:** 2026-03-14 15:00:49
+**Hypothesis:** Disabling cache (`cache_ttl: 0`) might reduce overhead from cache bookkeeping.
+**Changes Made:** `cache_ttl: 300 → 0`
+**Resulting Metric:** `Execution_Latency_MS`: 157 (reverted to 129)
+**Outcome:** Reverted
+**Learning:** This simulator rewards cache presence (negative `cacheMs` term), so removing it increases latency.
+
 
