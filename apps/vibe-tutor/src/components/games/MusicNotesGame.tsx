@@ -17,39 +17,43 @@ const CYAN = '#06b6d4';
 const CYAN_DIM = 'rgba(6,182,212,0.2)';
 const CYAN_BORDER = 'rgba(6,182,212,0.3)';
 
+function buildQuestion(score: number): { note: NoteData; options: string[] } {
+  const tier = getTier(score);
+  const note = pick(tier.notes);
+  const wrongPool = tier.notes.filter((entry) => entry.label !== note.label);
+  const wrongs = shuffle(wrongPool)
+    .slice(0, tier.optionCount - 1)
+    .map((entry) => entry.label);
+
+  return {
+    note,
+    options: shuffle([note.label, ...wrongs]),
+  };
+}
+
 /* ---------- Component ---------- */
 const MusicNotesGame = ({ onEarnTokens, onClose }: MusicNotesProps) => {
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
   const [totalTokens, setTotalTokens] = useState(0);
-  const [currentNote, setCurrentNote] = useState<NoteData | null>(null);
-  const [options, setOptions] = useState<string[]>([]);
+  const [question, setQuestion] = useState(() => buildQuestion(0));
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [lastAnswer, setLastAnswer] = useState('');
   const [questionsAnswered, setQuestionsAnswered] = useState(0);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [showCelebration, setShowCelebration] = useState(false);
   const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const currentNote = question.note;
+  const options = question.options;
 
   const tier = useMemo(() => getTier(score), [score]);
 
   const nextQuestion = useCallback(() => {
-    const t = getTier(score);
-    const note = pick(t.notes);
-    const wrongPool = t.notes.filter((n) => n.label !== note.label);
-    const wrongs = shuffle(wrongPool)
-      .slice(0, t.optionCount - 1)
-      .map((n) => n.label);
-    setCurrentNote(note);
-    setOptions(shuffle([note.label, ...wrongs]));
+    setQuestion(buildQuestion(score));
     setFeedback(null);
     setLastAnswer('');
   }, [score]);
-
-  useEffect(() => {
-    nextQuestion();
-  }, []);
 
   const handleAnswer = useCallback(
     (chosen: string) => {
@@ -93,8 +97,6 @@ const MusicNotesGame = ({ onEarnTokens, onClose }: MusicNotesProps) => {
     },
     [],
   );
-
-  if (!currentNote) return null;
 
   /* ---------- Option button style ---------- */
   const optionStyle = (label: string) => {

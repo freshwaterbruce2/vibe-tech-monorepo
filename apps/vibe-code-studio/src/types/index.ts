@@ -130,6 +130,21 @@ export interface Project {
   files: string[];
 }
 
+export interface ProjectStructure {
+  rootPath: string;
+  packageJson?: {
+    main?: string;
+    module?: string;
+    [key: string]: unknown;
+  };
+  tsConfig?: Record<string, unknown>;
+  gitignore?: string[];
+  readmeContent?: string;
+  mainEntryPoints: string[];
+  testFiles: string[];
+  configFiles: string[];
+}
+
 export interface AICodeCompletion {
   text: string;
   range: {

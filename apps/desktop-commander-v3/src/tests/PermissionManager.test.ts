@@ -4,8 +4,7 @@
  */
 
 import * as fs from "fs";
-import * as path from "path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getPermissionManager, PermissionManager } from "../PermissionManager";
 
 // Mock dependencies
@@ -77,7 +76,7 @@ describe("PermissionManager", () => {
 			vi.mocked(fs.existsSync).mockReturnValue(true);
 			vi.mocked(fs.readFileSync).mockReturnValue(JSON.stringify(mockConfig));
 
-			const manager = new PermissionManager(customPath);
+			new PermissionManager(customPath);
 
 			expect(fs.readFileSync).toHaveBeenCalledWith(customPath, "utf-8");
 		});

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 import { config } from '../config';
 
@@ -7,11 +7,12 @@ const DOT_SIZE = 6;
 const DOTS = [0, 1, 2] as const;
 
 export function TypingIndicator() {
-  const anims = useRef(DOTS.map(() => new Animated.Value(0.3))).current;
+  const [anims] = useState(() => DOTS.map(() => new Animated.Value(0.3)));
 
   useEffect(() => {
     const animations = DOTS.map((i) => {
-      const anim = anims[i]!;
+      const anim = anims[i];
+      if (!anim) return null;
       return Animated.loop(
         Animated.sequence([
           Animated.delay(i * 200),
@@ -28,9 +29,12 @@ export function TypingIndicator() {
         ]),
       );
     });
+    
+    // Filter out nulls if any (TypeScript narrowing)
+    const validAnimations = animations.filter((a): a is Animated.CompositeAnimation => a !== null);
 
-    animations.forEach((a) => a.start());
-    return () => animations.forEach((a) => a.stop());
+    validAnimations.forEach((a) => a.start());
+    return () => validAnimations.forEach((a) => a.stop());
   }, [anims]);
 
   return (

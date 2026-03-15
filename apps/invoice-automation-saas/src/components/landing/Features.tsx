@@ -27,7 +27,7 @@ const features = [
 	},
 ] as const;
 
-const Features: React.FC = () => {
+const Features = () => {
 	return (
 		<section id="features" className="ui-section">
 			<div className="ui-container">

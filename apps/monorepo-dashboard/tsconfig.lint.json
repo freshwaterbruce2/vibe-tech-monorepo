@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true
+  },
+  "include": ["src/**/*", "server/**/*", "vite.config.ts", "vitest.config.ts", "tailwind.config.ts"],
+  "exclude": ["node_modules", "dist", "build", ".nx", "coverage"]
+}

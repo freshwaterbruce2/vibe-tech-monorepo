@@ -1,4 +1,4 @@
-import { and, avg, count, desc, eq, isNotNull, sql } from 'drizzle-orm';
+import { and, avg, count, desc, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
 import { getDb } from '../database';

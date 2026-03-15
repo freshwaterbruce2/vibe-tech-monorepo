@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated } from 'react-native';
 
 /**
@@ -7,8 +7,8 @@ import { Animated } from 'react-native';
  * only for messages added after initial render.
  */
 export function useMessageEntrance(isNew: boolean) {
-  const opacity = useRef(new Animated.Value(isNew ? 0 : 1)).current;
-  const translateY = useRef(new Animated.Value(isNew ? 12 : 0)).current;
+  const [opacity] = useState(() => new Animated.Value(isNew ? 0 : 1));
+  const [translateY] = useState(() => new Animated.Value(isNew ? 12 : 0));
 
   useEffect(() => {
     if (!isNew) return;

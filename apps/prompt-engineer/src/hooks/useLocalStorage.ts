@@ -8,7 +8,6 @@ interface ElectronStoreAPI {
 }
 
 function getElectronAPI(): ElectronStoreAPI | undefined {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const win = window as any;
   return win.electronAPI as ElectronStoreAPI | undefined;
 }
@@ -20,7 +19,7 @@ export function useLocalStorage<T>(
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const api = getElectronAPI();
-      // eslint-disable-next-line electron-security/no-localstorage-electron -- web-only app, no Electron
+      // eslint-disable-next-line electron-security/no-localstorage-electron -- browser fallback
       const item = api ? api.store.getItem(key) : localStorage.getItem(key);
       return item ? JSON.parse(item) : initialValue;
     } catch {
@@ -37,7 +36,7 @@ export function useLocalStorage<T>(
         if (api) {
           api.store.setItem(key, JSON.stringify(valueToStore));
         } else {
-          // eslint-disable-next-line electron-security/no-localstorage-electron -- web-only app, no Electron
+          // eslint-disable-next-line electron-security/no-localstorage-electron -- browser fallback
           localStorage.setItem(key, JSON.stringify(valueToStore));
         }
       } catch (error) {

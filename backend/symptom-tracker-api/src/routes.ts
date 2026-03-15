@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { randomUUID } from 'node:crypto'
+import type { SQLInputValue } from 'node:sqlite'
 import { z } from 'zod'
 import type { Db } from './db.js'
 
@@ -120,7 +121,7 @@ export function buildApiRouter(db: Db): Router {
     `
 
     const rows = db.prepare(sql).all(...params).map((row: Record<string, unknown>) => {
-      const tags = row.tagsJson ? (JSON.parse(row.tagsJson) as unknown) : undefined
+      const tags = typeof row.tagsJson === 'string' ? (JSON.parse(row.tagsJson) as unknown) : undefined
       const { tagsJson: _tagsJson, ...rest } = row
       return { ...rest, tags }
     })
@@ -182,7 +183,7 @@ export function buildApiRouter(db: Db): Router {
     }
 
     const updates: string[] = []
-    const params: Array<unknown> = []
+    const params: SQLInputValue[] = []
 
     if (parsed.data.date !== undefined) {
       updates.push('date = ?')
@@ -217,10 +218,7 @@ export function buildApiRouter(db: Db): Router {
       return
     }
 
-    db.prepare(`UPDATE symptom_entries SET ${updates.join(', ')} WHERE id = ?`).run(
-      ...(params as unknown[]),
-      id,
-    )
+    db.prepare(`UPDATE symptom_entries SET ${updates.join(', ')} WHERE id = ?`).run(...params, id)
 
     res.status(200).send(JSON.stringify({ ok: true }))
   })

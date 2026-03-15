@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import Button from "../common/Button";
 import Card from "../common/Card";
 
-const Hero: React.FC = () => {
+const Hero = () => {
 	return (
 		<section className="ui-hero">
 			<div className="ui-container ui-hero__grid">

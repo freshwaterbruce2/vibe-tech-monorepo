@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "name": "vibe-tech-lovable",
   "projectType": "application",
   "sourceRoot": "apps/vibe-tech-lovable/src",
@@ -19,7 +19,7 @@
         "cwd": "apps/vibe-tech-lovable"
       }
     },
-    "build-production": {
+    "build:production": {
       "executor": "nx:run-commands",
       "outputs": ["{projectRoot}/dist"],
       "options": {
@@ -27,7 +27,7 @@
         "cwd": "apps/vibe-tech-lovable"
       }
     },
-    "build-dev": {
+    "build:dev": {
       "executor": "nx:run-commands",
       "outputs": ["{projectRoot}/dist"],
       "options": {
@@ -64,7 +64,7 @@
         "cwd": "apps/vibe-tech-lovable"
       }
     },
-    "test-ui": {
+    "test:ui": {
       "executor": "nx:run-commands",
       "options": {
         "command": "pnpm run test:ui",

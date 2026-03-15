@@ -7,6 +7,9 @@ const DEFAULT_REVIEW_ARTIFACT_DIR = "D:\\databases\\nova-agent\\reviews";
 const MAX_RELEVANT_ENTRIES = 24;
 const TOP_LEVEL_DIRS = ["apps", "libs", "packages", "backend", "plugins", "projects"] as const;
 
+const INVALID_PATH_REGEX = /[\0\r\n]/;
+const VALID_FEATURE_NAME_REGEX = /^[A-Za-z][A-Za-z0-9_-]*$/;
+
 /** Per-review filesystem cache to eliminate redundant syscalls. */
 class FsCache {
 	private existsCache = new Map<string, boolean>();
@@ -132,7 +135,7 @@ export interface ProjectReviewArtifact {
 
 export class AnalysisManager {
 	private validateCwd(cwd: string): string {
-		if (!cwd || /[\0\r\n]/.test(cwd)) {
+		if (!cwd || INVALID_PATH_REGEX.test(cwd)) {
 			throw new Error("Invalid project path");
 		}
 
@@ -152,7 +155,7 @@ export class AnalysisManager {
 
 	private validateFeatureName(featureName: string): string {
 		const trimmed = featureName.trim();
-		if (!trimmed || !/^[A-Za-z][A-Za-z0-9_-]*$/.test(trimmed)) {
+		if (!trimmed || !VALID_FEATURE_NAME_REGEX.test(trimmed)) {
 			throw new Error("Invalid feature name");
 		}
 		return trimmed;

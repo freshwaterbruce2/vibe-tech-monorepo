@@ -1,5 +1,4 @@
 import { loader } from '@monaco-editor/react';
-import * as monaco from 'monaco-editor';
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 // Import Monaco workers using Vite's ?worker syntax (2025 best practice)
@@ -37,9 +36,19 @@ self.MonacoEnvironment = {
   }
 };
 
-// Configure Monaco Editor to use local files instead of CDN (required for Tauri/Electron)
-loader.config({ monaco });
-logger.debug('✅ Monaco Editor configured with Vite workers (Tauri-compatible mode)');
+// Configure Monaco Editor to lazily load from local files instead of CDN (required for Tauri/Electron)
+// Uses dynamic import to defer loading the ~3.7MB Monaco core until the editor is actually needed
+loader.config({
+  'vs/nls': { availableLanguages: { '*': '' } },
+});
+
+// Override the default loader to use our local Monaco build instead of CDN
+loader.init().then(monaco => {
+  logger.debug('✅ Monaco Editor loaded and ready');
+  return monaco;
+}).catch(err => {
+  logger.error('❌ Monaco Editor failed to load:', err);
+});
 
 // Use production error boundary (no dynamic imports to avoid blocking)
 const ErrorBoundary = ProductionErrorBoundary;

@@ -376,6 +376,7 @@ const ApiKeySettings: React.FC = () => {
             key: key, // stored in plain text as fallback
             metadata: { provider: provider.toLowerCase(), isValid: true, lastValidated: new Date(), encrypted: false }
           });
+          // eslint-disable-next-line electron-security/no-localstorage-electron
           localStorage.setItem(storageKey, storedData);
           saved = true;
         } catch (lsErr) {

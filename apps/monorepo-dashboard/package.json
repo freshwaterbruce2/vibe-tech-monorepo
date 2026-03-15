@@ -9,7 +9,7 @@
 		"dev:all": "node ../../node_modules/concurrently/dist/bin/concurrently.js \"pnpm dev\" \"pnpm dev:server\"",
 		"build": "node ../../node_modules/vite/bin/vite.js build",
 		"build:all": "pnpm build && echo 'Build complete!'",
-		"typecheck": "npx tsc --noEmit",
+		"typecheck": "tsc --noEmit",
 		"lint": "cd ../.. && npx eslint apps/monorepo-dashboard --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
 		"preview": "node ../../node_modules/vite/bin/vite.js preview",
 		"test": "node ../../node_modules/vitest/vitest.mjs",

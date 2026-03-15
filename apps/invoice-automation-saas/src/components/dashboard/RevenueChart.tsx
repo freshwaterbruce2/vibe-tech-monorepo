@@ -14,7 +14,7 @@ interface RevenueChartProps {
 const formatUsd = (value: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value)
 
-const RevenueChart: React.FC<RevenueChartProps> = ({ data }) => {
+const RevenueChart = ({ data }: RevenueChartProps) => {
   return (
     <Card className="ui-stack ui-stack--md">
       <div className="ui-row" style={{ justifyContent: 'space-between' }}>

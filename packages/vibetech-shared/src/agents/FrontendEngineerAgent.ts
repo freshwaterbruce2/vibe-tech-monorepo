@@ -102,8 +102,6 @@ Provide specific, production-ready solutions with code examples, accessibility c
   async process(request: string, context: AgentContext): Promise<AgentResponse> {
     const confidence = this.calculateConfidence(request, context);
 
-    const prompt = this.buildPrompt(request, context);
-
     const response: AgentResponse = {
       content: `As a Frontend Engineer, I'll help you with: ${request}`,
       confidence,

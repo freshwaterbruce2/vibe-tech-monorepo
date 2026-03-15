@@ -1,9 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { unifiedAI } from '../../../services/ai/UnifiedAIService';
-import type { IAIService } from '../../../types/ai';
-import { ArchitectureAnalyzer } from '../../../services/analysis/ArchitectureAnalyzer';
-import { DebtAnalyzer } from '../../../services/analysis/DebtAnalyzer';
-import { PatternAnalyzer } from '../../../services/analysis/PatternAnalyzer';
 import { FileSystemService } from '../../../services/FileSystemService';
 import { WorkspaceService } from '../../../services/WorkspaceService';
 import { GitService } from '../../../services/GitService';
@@ -12,34 +8,6 @@ import { ExecutionEngine } from '../../../services/ai/ExecutionEngine';
 import { liveEditorStream } from '../../../services/LiveEditorStream';
 import type { BackgroundAgentSystem } from '../../../services/BackgroundAgentSystem';
 
-interface LegacyAnalyzerService extends IAIService {
-  chat: () => Promise<string>;
-}
-
-// Mocks for legacy providers if they are still needed for type safety in other files
-// but in this hook we primarily initialize the Unified Service.
-const mockLegacyAnalyzerService: LegacyAnalyzerService = {
-  id: 'legacy-mock',
-  initialize: async () => {},
-  complete: async () => ({ content: '' }),
-  chat: async () => "",
-  stream: async function* () {
-    // Empty generator for mock
-    yield '';
-  },
-};
-
-const patternAnalyzer = new PatternAnalyzer(mockLegacyAnalyzerService);
-const debtAnalyzer = new DebtAnalyzer(mockLegacyAnalyzerService);
-const architectureAnalyzer = new ArchitectureAnalyzer(mockLegacyAnalyzerService);
-
-// Insrc/modules/core/hooks/useAppServices.ts
-import { codebaseAnalyzer } from '../../../services/analysis/CodebaseAnalyzer';
-
-// We'll keep these compatible for now, but really we should move consumers to use unifiedAI directly
-// or wrap unifiedAI in these provider classes if they add value.
-const tabCompletionProvider: Record<string, never> = {};
-const autoImportProvider: Record<string, never> = {};
 const multiFileEditor: Record<string, never> = {};
 const backgroundAgentSystem = {
   on: () => {},
@@ -104,14 +72,6 @@ export function useAppServices() {
     serviceError,
     // Expose the unified service
     aiService: unifiedAI,
-
-    // Legacy exports for compatibility - ensuring they don't break the app until refactored
-    codebaseAnalyzer,
-    tabCompletionProvider,
-    autoImportProvider,
-    patternAnalyzer,
-    debtAnalyzer,
-    architectureAnalyzer,
 
     // Real service instances
     fileSystemService,

@@ -10,11 +10,15 @@ import { useEffect, useState } from 'react';
 // } from '@stripe/react-stripe-js';
 import { PaymentService } from '../../services/payment';
 
+type PaymentIntentResult = Awaited<
+	ReturnType<typeof PaymentService.createPaymentIntent>
+>;
+
 interface PaymentElementFormProps {
 	bookingId: string;
 	amount: number;
 	currency: string;
-	onSuccess: (paymentIntent: any) => void;
+	onSuccess: (paymentIntent: PaymentIntentResult) => void;
 	onError: (error: string) => void;
 	billingDetails?: {
 		name: string;
@@ -47,7 +51,8 @@ export const PaymentElementForm: React.FC<PaymentElementFormProps> = ({
 	const [isLoading, setIsLoading] = useState(false);
 	const [isInitializing, setIsInitializing] = useState(true);
 	const [error, setError] = useState<string>('');
-	const [paymentIntent, setPaymentIntent] = useState<any>(null);
+	const [paymentIntent, setPaymentIntent] =
+		useState<PaymentIntentResult | null>(null);
 
 	// Initialize payment intent
 	useEffect(() => {
@@ -240,8 +245,8 @@ export const PaymentElementForm: React.FC<PaymentElementFormProps> = ({
 							<p className="text-sm font-medium text-blue-800">Total Amount</p>
 							<p className="text-lg font-bold text-blue-900">
 								{PaymentService.formatCurrency(
-									paymentIntent.amount,
-									paymentIntent.currency,
+									amount,
+									currency,
 								)}
 							</p>
 						</div>
@@ -249,8 +254,8 @@ export const PaymentElementForm: React.FC<PaymentElementFormProps> = ({
 							<p className="text-xs text-blue-600">Platform Fee (5%)</p>
 							<p className="text-sm font-medium text-blue-700">
 								{PaymentService.formatCurrency(
-									paymentIntent.commissionAmount,
-									paymentIntent.currency,
+									Math.round(amount * 0.05),
+									currency,
 								)}
 							</p>
 						</div>

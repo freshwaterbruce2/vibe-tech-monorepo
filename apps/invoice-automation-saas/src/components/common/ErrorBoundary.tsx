@@ -25,7 +25,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     })
   }
 
-  render() {
+  render(): React.ReactNode {
     if (!this.state.hasError) return this.props.children
 
     return (
@@ -41,10 +41,18 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
               <pre className="ui-code">{this.state.error.stack ?? this.state.error.message}</pre>
             ) : null}
             <div className="ui-row">
-              <Button onClick={() => window.location.reload()}>Refresh</Button>
+              <Button
+                onClick={() => {
+                  window.location.reload()
+                }}
+              >
+                Refresh
+              </Button>
               <Button
                 variant="ghost"
-                onClick={() => this.setState({ hasError: false, error: undefined })}
+                onClick={() => {
+                  this.setState({ hasError: false, error: undefined })
+                }}
               >
                 Dismiss
               </Button>

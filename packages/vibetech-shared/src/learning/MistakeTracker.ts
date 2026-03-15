@@ -16,11 +16,42 @@ export interface MistakeStats {
   mostCommon: { pattern: string; count: number }[];
 }
 
-export class MistakeTracker {
+function extractPattern(description: string): string {
+  /**
+   * Extract a pattern from mistake description
+   */
+  // This is simplified - production would use more sophisticated NLP
+  const keywords = [
+    'undefined', 'null', 'async', 'promise', 'type', 'import',
+    'error', 'performance', 'security', 'database', 'api'
+  ];
+
+  const lower = description.toLowerCase();
+  for (const keyword of keywords) {
+    if (lower.includes(keyword)) {
+      return keyword;
+    }
+  }
+
+  return 'other';
+}
+
+function areSimilar(desc1: string, desc2: string): boolean {
+  const words1 = new Set(desc1.toLowerCase().split(/\W+/));
+  const words2 = new Set(desc2.toLowerCase().split(/\W+/));
+
+  const intersection = new Set([...words1].filter(x => words2.has(x)));
+  const minSize = Math.min(words1.size, words2.size);
+
+  // Similar if they share > 50% of words
+  return intersection.size / minSize > 0.5;
+}
+
+export const MistakeTracker = {
   /**
    * Generate statistics from mistake history
    */
-  static generateStats(mistakes: LearningMistake[]): MistakeStats {
+  generateStats(mistakes: LearningMistake[]): MistakeStats {
     const stats: MistakeStats = {
       total: mistakes.length,
       byPlatform: {},
@@ -43,7 +74,7 @@ export class MistakeTracker {
       stats.bySeverity[severity] = (stats.bySeverity[severity] || 0) + 1;
 
       // Track pattern frequency
-      const pattern = this.extractPattern(mistake.description);
+      const pattern = extractPattern(mistake.description);
       patternCounts.set(pattern, (patternCounts.get(pattern) || 0) + 1);
     }
 
@@ -54,19 +85,19 @@ export class MistakeTracker {
       .slice(0, 10);
 
     return stats;
-  }
+  },
 
   /**
    * Check if a mistake is likely to recur based on history
    */
-  static assessRecurrenceRisk(
+  assessRecurrenceRisk(
     newMistake: Omit<LearningMistake, 'id' | 'created_at'>,
     history: LearningMistake[]
   ): { risk: 'low' | 'medium' | 'high'; similarCount: number } {
     let similarCount = 0;
 
     for (const mistake of history) {
-      if (this.areSimilar(newMistake.description, mistake.description)) {
+      if (areSimilar(newMistake.description, mistake.description)) {
         similarCount++;
       }
     }
@@ -79,31 +110,31 @@ export class MistakeTracker {
     }
 
     return { risk, similarCount };
-  }
+  },
 
   /**
    * Get prevention suggestions based on similar past mistakes
    */
-  static getPreventionSuggestions(
+  getPreventionSuggestions(
     description: string,
     history: LearningMistake[]
   ): string[] {
     const suggestions: string[] = [];
 
     for (const mistake of history) {
-      if (this.areSimilar(description, mistake.description) && mistake.prevention_strategy) {
+      if (areSimilar(description, mistake.description) && mistake.prevention_strategy) {
         suggestions.push(mistake.prevention_strategy);
       }
     }
 
     // Return unique suggestions
     return Array.from(new Set(suggestions)).slice(0, 5);
-  }
+  },
 
   /**
    * Categorize mistake by platform based on description
    */
-  static categorizePlatform(mistake: LearningMistake): 'desktop' | 'web' | 'mobile' | 'python' | 'general' {
+  categorizePlatform(mistake: LearningMistake): 'desktop' | 'web' | 'mobile' | 'python' | 'general' {
     const desc = mistake.description.toLowerCase();
     const context = mistake.context?.toLowerCase() || '';
 
@@ -121,39 +152,5 @@ export class MistakeTracker {
     }
 
     return 'general';
-  }
-
-  /**
-   * Extract a pattern from mistake description
-   */
-  private static extractPattern(description: string): string {
-    // This is simplified - production would use more sophisticated NLP
-    const keywords = [
-      'undefined', 'null', 'async', 'promise', 'type', 'import',
-      'error', 'performance', 'security', 'database', 'api'
-    ];
-
-    const lower = description.toLowerCase();
-    for (const keyword of keywords) {
-      if (lower.includes(keyword)) {
-        return keyword;
-      }
-    }
-
-    return 'other';
-  }
-
-  /**
-   * Check if two descriptions are similar
-   */
-  private static areSimilar(desc1: string, desc2: string): boolean {
-    const words1 = new Set(desc1.toLowerCase().split(/\W+/));
-    const words2 = new Set(desc2.toLowerCase().split(/\W+/));
-
-    const intersection = new Set([...words1].filter(x => words2.has(x)));
-    const minSize = Math.min(words1.size, words2.size);
-
-    // Similar if they share > 50% of words
-    return intersection.size / minSize > 0.5;
-  }
-}
+  },
+};

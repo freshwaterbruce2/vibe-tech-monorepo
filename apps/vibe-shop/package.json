@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "cd ../.. && npx eslint apps/vibe-shop/src",
+    "lint": "cd ../.. && pnpm exec eslint apps/vibe-shop/src",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",

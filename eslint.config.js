@@ -294,7 +294,7 @@ export default tseslint.config(
 
   // React-specific configuration
   {
-    files: ['apps/**/*.{jsx,tsx}', 'packages/**/*.{jsx,tsx}'],
+    files: ['apps/**/*.{jsx,tsx}', 'packages/**/*.{jsx,tsx}', 'apps/nova-mobile-app/src/**/*.{ts,tsx}'],
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
@@ -386,6 +386,39 @@ export default tseslint.config(
     },
   },
 
+  // These projects lint tests and config files that are intentionally excluded
+  // from their build-oriented tsconfig.json files.
+  {
+    files: [
+      'packages/shared-ipc/**/*.{ts,tsx}',
+      'packages/shared-config/**/*.{ts,tsx}',
+      'packages/nova-types/**/*.{ts,tsx}',
+      'packages/vibetech-shared/**/*.{ts,tsx}',
+      'apps/monorepo-dashboard/**/*.{ts,tsx}',
+      'apps/desktop-commander-v3/**/*.{ts,tsx}',
+      'apps/memory-mcp/**/*.{ts,tsx}',
+      'apps/vibe-shop/**/*.{ts,tsx}',
+      'apps/mcp-codeberg/**/*.ts',
+    ],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        projectService: false,
+        project: [
+          './packages/shared-ipc/tsconfig.lint.json',
+          './packages/shared-config/tsconfig.lint.json',
+          './packages/nova-types/tsconfig.lint.json',
+          './packages/vibetech-shared/tsconfig.lint.json',
+          './apps/monorepo-dashboard/tsconfig.lint.json',
+          './apps/desktop-commander-v3/tsconfig.lint.json',
+          './apps/memory-mcp/tsconfig.lint.json',
+          './apps/vibe-shop/tsconfig.lint.json',
+          './apps/mcp-codeberg/tsconfig.lint.json',
+        ],
+      },
+    },
+  },
+
   // Nova-agent test/example files linted outside tsconfig project
   {
     files: [
@@ -432,6 +465,8 @@ export default tseslint.config(
       'apps/prompt-engineer/**/*.{ts,tsx}',
       'apps/business-booking-platform/backend/src/**/*.{ts,tsx}',
       'apps/shipping-pwa/src/**/*.{ts,tsx}',
+      'apps/nova-mobile-app/src/**/*.{ts,tsx}',
+      'apps/mcp-codeberg/**/*.ts',
     ],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',

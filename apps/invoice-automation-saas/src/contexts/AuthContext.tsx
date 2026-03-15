@@ -25,9 +25,9 @@ export const useAuth = () => {
 	return context;
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+export const AuthProvider = ({
 	children,
-}) => {
+}: { children: React.ReactNode }) => {
 	const [user, setUser] = useState<LocalUser | null>(null);
 	const session = null;
 	const [loading, setLoading] = useState(true);

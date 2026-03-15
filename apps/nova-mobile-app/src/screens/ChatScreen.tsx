@@ -26,16 +26,13 @@ import { useOfflineQueueStore } from '../stores/offlineQueueStore';
 export function ChatScreen() {
   const [inputText, setInputText] = useState('');
   const flatListRef = useRef<FlatList>(null);
-  const messageCountRef = useRef(0);
+  const [dotOpacity] = useState(() => new Animated.Value(1));
 
   const { messages, isLoading, addMessage, updateMessageStatus, removeMessage, setLoading } =
     useChatStore();
   const { adapter, isConnected } = useConnectionStore();
   const { isOnline } = useNetworkStatus();
   const { queue, enqueue, dequeue } = useOfflineQueueStore();
-
-  // Connection dot pulse animation
-  const dotOpacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     if (isConnected) {
@@ -56,24 +53,46 @@ export function ChatScreen() {
   const timestamps = useMemo(() => messages.map((m) => m.timestamp), [messages]);
   const relativeTimeMap = useRelativeTimeMap(timestamps);
 
-  // Welcome message on first load
   useEffect(() => {
-    if (messages.length === 0) {
-      addMessage({
-        id: 'welcome',
-        role: 'assistant',
-        content: "Welcome to NOVA! I'm your AI assistant. How can I help you today?",
-        timestamp: new Date().toISOString(),
-        status: 'sent',
-      });
+    if (messages.length !== 0) {
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
-  // Track message count for entrance animations
-  useEffect(() => {
-    messageCountRef.current = messages.length;
-  }, [messages.length]);
+    addMessage({
+      id: 'welcome',
+      role: 'assistant',
+      content: "Welcome to NOVA! I'm your AI assistant. How can I help you today?",
+      timestamp: new Date().toISOString(),
+      status: 'sent',
+    });
+  }, [addMessage, messages.length]);
+
+  const executeSend = useCallback(
+    async (messageText: string, messageId: string) => {
+      if (!adapter) return;
+
+      setLoading(true);
+      updateMessageStatus(messageId, 'sending');
+
+      try {
+        const response = await adapter.chat(messageText);
+        updateMessageStatus(messageId, 'sent');
+        addMessage({
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: response,
+          timestamp: new Date().toISOString(),
+          status: 'sent',
+        });
+      } catch {
+        updateMessageStatus(messageId, 'error');
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [adapter, addMessage, setLoading, updateMessageStatus],
+  );
 
   // Flush offline queue when back online
   useEffect(() => {
@@ -99,33 +118,9 @@ export function ChatScreen() {
         }
       }
     };
+
     void flush();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOnline]);
-
-  // Reusable core send logic
-  const executeSend = async (messageText: string, messageId: string) => {
-    if (!adapter) return;
-    setLoading(true);
-    updateMessageStatus(messageId, 'sending');
-
-    try {
-      const response = await adapter.chat(messageText);
-      updateMessageStatus(messageId, 'sent');
-      addMessage({
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: response,
-        timestamp: new Date().toISOString(),
-        status: 'sent',
-      });
-    } catch {
-      updateMessageStatus(messageId, 'error');
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [adapter, addMessage, dequeue, isOnline, queue, updateMessageStatus]);
 
   const sendMessage = useCallback(async () => {
     const text = inputText.trim();
@@ -152,8 +147,7 @@ export function ChatScreen() {
     }
 
     void executeSend(text, newId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inputText, isLoading, adapter, isOnline]);
+  }, [adapter, addMessage, enqueue, executeSend, inputText, isLoading, isOnline, updateMessageStatus]);
 
   const retryMessage = useCallback(
     (item: ChatMessage) => {
@@ -161,8 +155,7 @@ export function ChatScreen() {
         void executeSend(item.content, item.id);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isLoading, adapter],
+    [adapter, executeSend, isLoading],
   );
 
   const handleRemoveMessage = useCallback(

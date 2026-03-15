@@ -4,8 +4,7 @@
  */
 
 import * as fs from "fs/promises";
-import * as path from "path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as FileSystem from "../FileSystemTools";
 import * as PathValidator from "../PathValidator";
 

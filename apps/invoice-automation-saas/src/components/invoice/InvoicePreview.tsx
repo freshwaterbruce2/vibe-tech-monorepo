@@ -18,11 +18,11 @@ const formatCurrency = (amount: number, currency: string) =>
 const safeNumber = (value: unknown) =>
 	Number.isFinite(Number(value)) ? Number(value) : 0;
 
-const InvoicePreview: React.FC<InvoicePreviewProps> = ({
+const InvoicePreview = ({
 	form,
 	invoiceNumber = "INV-0000",
 	currency = "USD",
-}) => {
+}: InvoicePreviewProps) => {
 	const totals = useMemo(() => {
 		const items = form.items ?? [];
 		const subtotal = items.reduce((sum, item) => {

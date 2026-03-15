@@ -13,7 +13,7 @@ const FREQ_MAP: Record<string, number> = {
 let audioCtx: AudioContext | null = null;
 
 function getCtx(): AudioContext {
-  if (!audioCtx) audioCtx = new AudioContext();
+  audioCtx ??= new AudioContext();
   return audioCtx;
 }
 

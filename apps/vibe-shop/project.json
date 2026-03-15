@@ -30,7 +30,7 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npx eslint apps/vibe-shop/src",
+        "command": "pnpm exec eslint apps/vibe-shop/src",
         "cwd": "."
       }
     },
