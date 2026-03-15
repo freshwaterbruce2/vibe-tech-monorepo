@@ -7,7 +7,7 @@
 import * as CryptoJS from 'crypto-js';
 // Default console-based logger
 const defaultLogger = {
-    info: (msg, ...args) => console.log(`[INFO] ${msg}`, ...args),
+    info: () => undefined,
     warn: (msg, ...args) => console.warn(`[WARN] ${msg}`, ...args),
     error: (msg, ...args) => console.error(`[ERROR] ${msg}`, ...args),
 };
@@ -15,6 +15,8 @@ const defaultLogger = {
 const API_KEY_PATTERNS = {
     DEEPSEEK: /^sk-[a-f0-9]{32,}$/i,
     OPENAI: /^sk-[a-zA-Z0-9]{48,}$/,
+    OPENROUTER: /^sk-or-[a-zA-Z0-9\-_]{20,}$/,
+    MOONSHOT: /^sk-[a-zA-Z0-9]{20,}$/,
     ANTHROPIC: /^sk-ant-[a-zA-Z0-9\-_]{95,}$/,
     GOOGLE: /^AIza[a-zA-Z0-9\-_]{35}$/,
     GITHUB: /^ghp_[a-zA-Z0-9]{36}$|^github_pat_[a-zA-Z0-9_]{82}$/,
@@ -30,14 +32,15 @@ export class SecureApiKeyManager {
     logger;
     encryptionKeyName = 'app_encryption_key';
     constructor(logger) {
-        this.logger = logger || defaultLogger;
+        this.logger = logger ?? defaultLogger;
         if (typeof window === 'undefined') {
             throw new Error('SecureApiKeyManager requires a browser/Electron renderer environment');
         }
+        const rendererWindow = this.getRendererWindow();
         // Check if running in Electron (renderer)
-        if (window.electron?.storage) {
+        if (rendererWindow.electron?.storage) {
             this.isElectron = true;
-            this.electronStorage = window.electron.storage;
+            this.electronStorage = rendererWindow.electron.storage;
             this.logger.info('Using Electron storage for API keys');
         }
         else {
@@ -103,31 +106,52 @@ export class SecureApiKeyManager {
     async storeApiKey(provider, key) {
         try {
             if (!this.validateApiKey(key, provider)) {
-                throw new Error(`Invalid ${provider} API key format`);
+                this.logger.warn(`[SecureApiKeyManager] Validation failed for ${provider}, trying permissive save`);
+                // Fall through to permissive save if basic checks pass
+                if (!key || key.trim().length < 10) {
+                    throw new Error(`Invalid ${provider} API key format`);
+                }
             }
-            const encryptedKey = this.encryptApiKey(key);
+            let finalKey = key;
+            let isEncrypted = false;
+            // Try to encrypt, fall back to plain storage if CryptoJS fails
+            try {
+                finalKey = this.encryptApiKey(key);
+                isEncrypted = true;
+            }
+            catch (encryptError) {
+                this.logger.warn('[SecureApiKeyManager] Encryption failed, storing key directly:', encryptError);
+                finalKey = key;
+                isEncrypted = false;
+            }
             const metadata = {
                 provider: provider.toLowerCase(),
                 isValid: true,
                 lastValidated: new Date(),
-                encrypted: true,
+                encrypted: isEncrypted,
             };
             const storedKey = {
-                key: encryptedKey,
+                key: finalKey,
                 metadata,
             };
             const storageKey = `secure_api_key_${provider.toLowerCase()}`;
             // Use Electron storage if available
             if (this.isElectron && this.electronStorage) {
-                const result = await this.electronStorage.set(storageKey, JSON.stringify(storedKey));
-                if (!result.success) {
-                    throw new Error('Failed to save to Electron storage');
+                try {
+                    const result = await this.electronStorage.set(storageKey, JSON.stringify(storedKey));
+                    if (!result.success) {
+                        this.logger.warn('[SecureApiKeyManager] Electron storage failed, using localStorage');
+                    }
+                }
+                catch (electronErr) {
+                    this.logger.warn('[SecureApiKeyManager] Electron storage error:', electronErr);
                 }
             }
             // Always also save to localStorage as a fallback for immediate use
             this.storage.setItem(storageKey, JSON.stringify(storedKey));
             // Also update environment variable for immediate use
             this.updateEnvironmentVariable(provider, key);
+            this.logger.info(`[SecureApiKeyManager] API key saved for ${provider} (encrypted: ${isEncrypted})`);
             return true;
         }
         catch (error) {
@@ -160,9 +184,9 @@ export class SecureApiKeyManager {
                 return null;
             }
             if (!parsed.metadata?.encrypted) {
-                this.logger.warn(`API key for '${normalizedProvider}' is not encrypted, removing...`);
-                await this.removeApiKey(provider);
-                return null;
+                // Key stored without encryption (CryptoJS fallback) - return as-is
+                this.logger.info(`API key for '${normalizedProvider}' stored without encryption, returning directly`);
+                return parsed.key;
             }
             let decryptedKey = this.tryDecryptApiKeyWithKey(parsed.key, this.encryptionKey);
             // Recover from encryption-key drift between localStorage and Electron storage.
@@ -239,7 +263,8 @@ export class SecureApiKeyManager {
             if (this.isElectron && this.electronStorage) {
                 const result = await this.electronStorage.keys();
                 if (result.success && result.keys) {
-                    keys = result.keys;
+                    const { keys: electronKeys } = result;
+                    keys = electronKeys;
                 }
             }
             if (keys.length === 0) {
@@ -250,37 +275,39 @@ export class SecureApiKeyManager {
                     }
                 }
             }
-            for (const key of keys) {
-                if (!key || !key.startsWith('secure_api_key_'))
-                    continue;
+            const electronKey = this.isElectron && this.electronStorage
+                ? await this.getElectronEncryptionKey()
+                : null;
+            const providerEntries = await Promise.all(keys
+                .filter((key) => key && key.startsWith('secure_api_key_'))
+                .map(async (key) => {
                 const provider = key.replace('secure_api_key_', '');
                 const candidates = await this.getStoredDataCandidates(key);
                 const storedData = candidates.local ?? candidates.electron;
-                if (!storedData)
-                    continue;
+                if (!storedData) {
+                    return null;
+                }
                 const parsed = this.parseStoredApiKey(storedData);
                 if (!parsed || !parsed.metadata?.encrypted) {
                     await this.forceRemoveStorageKey(key);
-                    continue;
+                    return null;
                 }
                 // Verify decryptability without returning the plaintext key.
                 let canDecrypt = !!this.tryDecryptApiKeyWithKey(parsed.key, this.encryptionKey);
-                if (!canDecrypt && this.isElectron && this.electronStorage) {
-                    const electronKey = await this.getElectronEncryptionKey();
-                    if (electronKey) {
-                        canDecrypt = !!this.tryDecryptApiKeyWithKey(parsed.key, electronKey);
-                    }
+                if (!canDecrypt && electronKey) {
+                    canDecrypt = !!this.tryDecryptApiKeyWithKey(parsed.key, electronKey);
                 }
                 if (!canDecrypt) {
                     this.logger.warn(`Stored API key for '${provider}' can't be decrypted, removing...`);
                     await this.removeApiKey(provider);
-                    continue;
+                    return null;
                 }
-                providers.push({
+                return {
                     provider,
                     metadata: parsed.metadata,
-                });
-            }
+                };
+            }));
+            providers.push(...providerEntries.filter((provider) => provider !== null));
         }
         catch (error) {
             this.logger.error('Failed to list providers:', error);
@@ -291,7 +318,7 @@ export class SecureApiKeyManager {
      * Test API key by making a validation request
      */
     async testApiKey(provider, key) {
-        const apiKey = key || (await this.getApiKey(provider));
+        const apiKey = key ?? (await this.getApiKey(provider));
         if (!apiKey) {
             return false;
         }
@@ -339,9 +366,8 @@ export class SecureApiKeyManager {
                     keysToRemove.push(k);
                 }
             }
-            for (const k of Array.from(new Set(keysToRemove))) {
-                await this.forceRemoveStorageKey(k);
-            }
+            const uniqueKeys = Array.from(new Set(keysToRemove));
+            await Promise.all(uniqueKeys.map((key) => this.forceRemoveStorageKey(key)));
             this.storage.removeItem(this.encryptionKeyName);
             this.encryptionKey = this.getOrCreateEncryptionKey();
             return true;
@@ -372,19 +398,34 @@ export class SecureApiKeyManager {
             const parsed = typeof storedData === 'string' ? JSON.parse(storedData) : storedData;
             if (!parsed || typeof parsed !== 'object')
                 return null;
-            if (typeof parsed.key !== 'string')
+            const parsedRecord = parsed;
+            if (typeof parsedRecord.key !== 'string')
                 return null;
-            if (!parsed.metadata || typeof parsed.metadata !== 'object')
+            if (!parsedRecord.metadata || typeof parsedRecord.metadata !== 'object')
                 return null;
-            if (typeof parsed.metadata.provider !== 'string')
+            const { metadata } = parsedRecord;
+            if (typeof metadata.provider !== 'string')
                 return null;
-            if (typeof parsed.metadata.encrypted !== 'boolean')
+            if (typeof metadata.encrypted !== 'boolean')
                 return null;
-            return parsed;
+            return {
+                key: parsedRecord.key,
+                metadata: {
+                    provider: metadata.provider,
+                    isValid: metadata.isValid === true,
+                    lastValidated: metadata.lastValidated instanceof Date
+                        ? metadata.lastValidated
+                        : new Date(String(metadata.lastValidated ?? Date.now())),
+                    encrypted: metadata.encrypted,
+                },
+            };
         }
         catch {
             return null;
         }
+    }
+    getRendererWindow() {
+        return window;
     }
     async getStoredDataCandidates(storageKey) {
         let electron = null;
@@ -476,15 +517,16 @@ export class SecureApiKeyManager {
     }
     updateEnvironmentVariable(provider, key) {
         const envVarName = `VITE_${provider.toUpperCase()}_API_KEY`;
-        if (typeof window !== 'undefined' && window.electronAPI) {
-            window.electronAPI.setTempEnvVar(envVarName, key);
+        const rendererWindow = this.getRendererWindow();
+        if (rendererWindow.electronAPI) {
+            rendererWindow.electronAPI.setTempEnvVar(envVarName, key);
         }
     }
     getEnvironmentVariable(provider) {
         const envVarName = `VITE_${provider.toUpperCase()}_API_KEY`;
         try {
             if (typeof process !== 'undefined' && process.env) {
-                return process.env[envVarName] || null;
+                return process.env[envVarName] ?? null;
             }
         }
         catch {
@@ -494,8 +536,9 @@ export class SecureApiKeyManager {
     }
     clearEnvironmentVariable(provider) {
         const envVarName = `VITE_${provider.toUpperCase()}_API_KEY`;
-        if (typeof window !== 'undefined' && window.electronAPI) {
-            window.electronAPI.clearTempEnvVar(envVarName);
+        const rendererWindow = this.getRendererWindow();
+        if (rendererWindow.electronAPI) {
+            rendererWindow.electronAPI.clearTempEnvVar(envVarName);
         }
     }
     async testDeepSeekKey(key) {

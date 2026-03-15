@@ -8,14 +8,14 @@ import * as CryptoJS from 'crypto-js';
 
 // Simple logger interface - projects can override with their own
 interface Logger {
-  info(message: string, ...args: any[]): void;
-  warn(message: string, ...args: any[]): void;
-  error(message: string, ...args: any[]): void;
+  info(message: string, ...args: unknown[]): void;
+  warn(message: string, ...args: unknown[]): void;
+  error(message: string, ...args: unknown[]): void;
 }
 
 // Default console-based logger
 const defaultLogger: Logger = {
-  info: (msg, ...args) => console.log(`[INFO] ${msg}`, ...args),
+  info: () => undefined,
   warn: (msg, ...args) => console.warn(`[WARN] ${msg}`, ...args),
   error: (msg, ...args) => console.error(`[ERROR] ${msg}`, ...args),
 };
@@ -46,10 +46,22 @@ interface StoredApiKey {
 }
 
 interface ElectronStorageAPI {
-  get: (key: string) => Promise<{ success: boolean; value: any }>;
-  set: (key: string, value: any) => Promise<{ success: boolean }>;
+  get: (key: string) => Promise<{ success: boolean; value: unknown }>;
+  set: (key: string, value: unknown) => Promise<{ success: boolean }>;
   remove: (key: string) => Promise<{ success: boolean }>;
   keys: () => Promise<{ success: boolean; keys: string[] }>;
+}
+
+interface ElectronRendererAPI {
+  setTempEnvVar: (name: string, value: string) => void;
+  clearTempEnvVar: (name: string) => void;
+}
+
+interface RendererWindow {
+  electron?: {
+    storage?: ElectronStorageAPI;
+  };
+  electronAPI?: ElectronRendererAPI;
 }
 
 export class SecureApiKeyManager {
@@ -64,16 +76,18 @@ export class SecureApiKeyManager {
   private readonly encryptionKeyName = 'app_encryption_key';
 
   private constructor(logger?: Logger) {
-    this.logger = logger || defaultLogger;
+    this.logger = logger ?? defaultLogger;
 
     if (typeof window === 'undefined') {
       throw new Error('SecureApiKeyManager requires a browser/Electron renderer environment');
     }
 
+    const rendererWindow = this.getRendererWindow();
+
     // Check if running in Electron (renderer)
-    if ((window as any).electron?.storage) {
+    if (rendererWindow.electron?.storage) {
       this.isElectron = true;
-      this.electronStorage = (window as any).electron.storage;
+      this.electronStorage = rendererWindow.electron.storage;
       this.logger.info('Using Electron storage for API keys');
     } else {
       this.logger.info('Using localStorage for API keys (browser mode)');
@@ -337,40 +351,53 @@ export class SecureApiKeyManager {
         }
       }
 
-      for (const key of keys) {
-        if (!key || !key.startsWith('secure_api_key_')) continue;
+      const electronKey =
+        this.isElectron && this.electronStorage ? await this.getElectronEncryptionKey() : null;
 
-        const provider = key.replace('secure_api_key_', '');
-        const candidates = await this.getStoredDataCandidates(key);
-        const storedData = candidates.local ?? candidates.electron;
-        if (!storedData) continue;
+      const providerEntries = await Promise.all(
+        keys
+          .filter((key): key is string => key.startsWith('secure_api_key_'))
+          .map(async (key) => {
+            const provider = key.replace('secure_api_key_', '');
+            const candidates = await this.getStoredDataCandidates(key);
+            const storedData = candidates.local ?? candidates.electron;
+            if (!storedData) {
+              return null;
+            }
 
-        const parsed = this.parseStoredApiKey(storedData);
-        if (!parsed || !parsed.metadata?.encrypted) {
-          await this.forceRemoveStorageKey(key);
-          continue;
-        }
+            const parsed = this.parseStoredApiKey(storedData);
+            if (!parsed?.metadata?.encrypted) {
+              await this.forceRemoveStorageKey(key);
+              return null;
+            }
 
-        // Verify decryptability without returning the plaintext key.
-        let canDecrypt = !!this.tryDecryptApiKeyWithKey(parsed.key, this.encryptionKey);
-        if (!canDecrypt && this.isElectron && this.electronStorage) {
-          const electronKey = await this.getElectronEncryptionKey();
-          if (electronKey) {
-            canDecrypt = !!this.tryDecryptApiKeyWithKey(parsed.key, electronKey);
-          }
-        }
+            // Verify decryptability without returning the plaintext key.
+            let canDecrypt = !!this.tryDecryptApiKeyWithKey(parsed.key, this.encryptionKey);
+            if (!canDecrypt && electronKey) {
+              canDecrypt = !!this.tryDecryptApiKeyWithKey(parsed.key, electronKey);
+            }
 
-        if (!canDecrypt) {
-          this.logger.warn(`Stored API key for '${provider}' can't be decrypted, removing...`);
-          await this.removeApiKey(provider);
-          continue;
-        }
+            if (!canDecrypt) {
+              this.logger.warn(`Stored API key for '${provider}' can't be decrypted, removing...`);
+              await this.removeApiKey(provider);
+              return null;
+            }
 
-        providers.push({
-          provider,
-          metadata: parsed.metadata,
-        });
-      }
+            return {
+              provider,
+              metadata: parsed.metadata,
+            };
+          })
+      );
+
+      providers.push(
+        ...providerEntries.filter(
+          (
+            providerEntry
+          ): providerEntry is { provider: string; metadata: ApiKeyMetadata } =>
+            providerEntry !== null
+        )
+      );
     } catch (error) {
       this.logger.error('Failed to list providers:', error);
     }
@@ -382,7 +409,7 @@ export class SecureApiKeyManager {
    * Test API key by making a validation request
    */
   public async testApiKey(provider: string, key?: string): Promise<boolean> {
-    const apiKey = key || (await this.getApiKey(provider));
+    const apiKey = key ?? (await this.getApiKey(provider));
     if (!apiKey) {
       return false;
     }
@@ -434,9 +461,8 @@ export class SecureApiKeyManager {
         }
       }
 
-      for (const k of Array.from(new Set(keysToRemove))) {
-        await this.forceRemoveStorageKey(k);
-      }
+      const uniqueKeys = Array.from(new Set(keysToRemove));
+      await Promise.all(uniqueKeys.map(async (key) => this.forceRemoveStorageKey(key)));
 
       this.storage.removeItem(this.encryptionKeyName);
       this.encryptionKey = this.getOrCreateEncryptionKey();
@@ -466,16 +492,39 @@ export class SecureApiKeyManager {
 
   private parseStoredApiKey(storedData: unknown): StoredApiKey | null {
     try {
-      const parsed: any = typeof storedData === 'string' ? JSON.parse(storedData) : storedData;
+      const parsed =
+        typeof storedData === 'string'
+          ? (JSON.parse(storedData) as unknown)
+          : storedData;
       if (!parsed || typeof parsed !== 'object') return null;
-      if (typeof parsed.key !== 'string') return null;
-      if (!parsed.metadata || typeof parsed.metadata !== 'object') return null;
-      if (typeof parsed.metadata.provider !== 'string') return null;
-      if (typeof parsed.metadata.encrypted !== 'boolean') return null;
-      return parsed as StoredApiKey;
+
+      const parsedRecord = parsed as Record<string, unknown>;
+      if (typeof parsedRecord.key !== 'string') return null;
+      if (!parsedRecord.metadata || typeof parsedRecord.metadata !== 'object') return null;
+
+      const metadata = parsedRecord.metadata as Record<string, unknown>;
+      if (typeof metadata.provider !== 'string') return null;
+      if (typeof metadata.encrypted !== 'boolean') return null;
+
+      return {
+        key: parsedRecord.key,
+        metadata: {
+          provider: metadata.provider,
+          isValid: metadata.isValid === true,
+          lastValidated:
+            metadata.lastValidated instanceof Date
+              ? metadata.lastValidated
+              : new Date(String(metadata.lastValidated ?? Date.now())),
+          encrypted: metadata.encrypted,
+        },
+      };
     } catch {
       return null;
     }
+  }
+
+  private getRendererWindow(): RendererWindow {
+    return window as unknown as RendererWindow;
   }
 
   private async getStoredDataCandidates(
@@ -582,8 +631,9 @@ export class SecureApiKeyManager {
 
   private updateEnvironmentVariable(provider: string, key: string): void {
     const envVarName = `VITE_${provider.toUpperCase()}_API_KEY`;
-    if (typeof window !== 'undefined' && (window as any).electronAPI) {
-      (window as any).electronAPI.setTempEnvVar(envVarName, key);
+    const rendererWindow = this.getRendererWindow();
+    if (rendererWindow.electronAPI) {
+      rendererWindow.electronAPI.setTempEnvVar(envVarName, key);
     }
   }
 
@@ -591,7 +641,7 @@ export class SecureApiKeyManager {
     const envVarName = `VITE_${provider.toUpperCase()}_API_KEY`;
     try {
       if (typeof process !== 'undefined' && process.env) {
-        return process.env[envVarName] || null;
+        return process.env[envVarName] ?? null;
       }
     } catch {
       // ignore
@@ -601,8 +651,9 @@ export class SecureApiKeyManager {
 
   private clearEnvironmentVariable(provider: string): void {
     const envVarName = `VITE_${provider.toUpperCase()}_API_KEY`;
-    if (typeof window !== 'undefined' && (window as any).electronAPI) {
-      (window as any).electronAPI.clearTempEnvVar(envVarName);
+    const rendererWindow = this.getRendererWindow();
+    if (rendererWindow.electronAPI) {
+      rendererWindow.electronAPI.clearTempEnvVar(envVarName);
     }
   }
 

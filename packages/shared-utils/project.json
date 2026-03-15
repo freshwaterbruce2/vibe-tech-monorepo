@@ -13,6 +13,22 @@
         "command": "tsc -p tsconfig.build.json",
         "cwd": "packages/shared-utils"
       }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "eslint . --max-warnings 0",
+        "cwd": "packages/shared-utils"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "packages/shared-utils"
+      }
     }
   },
   "tags": ["type:library", "scope:shared"]
