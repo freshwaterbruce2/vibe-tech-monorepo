@@ -12,13 +12,25 @@ import {
 	Share2,
 	Users,
 } from 'lucide-react';
-import React from 'react';
-import { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { PaymentService } from '../../services/payment';
 import { logger } from '../../utils/logger';
 
+interface PaymentIntentSummary {
+	id: string;
+	status?: string;
+	payment_method?: {
+		card?: {
+			brand?: string;
+			last4?: string;
+		};
+	};
+	created?: number;
+}
+
 interface PaymentConfirmationProps {
-	paymentIntent: any;
+	paymentIntent: PaymentIntentSummary;
 	bookingDetails: {
 		id: string;
 		confirmationNumber: string;
@@ -54,12 +66,7 @@ export const PaymentConfirmation: React.FC<PaymentConfirmationProps> = ({
 	const taxAmount = bookingDetails.totalAmount * 0.12;
 	const baseAmount = bookingDetails.totalAmount - taxAmount - commissionAmount;
 
-	useEffect(() => {
-		// Auto-send confirmation email
-		sendConfirmationEmail();
-	}, []);
-
-	const sendConfirmationEmail = async () => {
+	const sendConfirmationEmail = useCallback(async () => {
 		try {
 			// Email is sent automatically by the backend after payment confirmation
 			// This just updates the UI to show that email was sent
@@ -78,7 +85,11 @@ export const PaymentConfirmation: React.FC<PaymentConfirmationProps> = ({
 				},
 			);
 		}
-	};
+	}, [paymentIntent.id]);
+
+	useEffect(() => {
+		void sendConfirmationEmail();
+	}, [sendConfirmationEmail]);
 
 	const generatePDFReceipt = async () => {
 		try {
@@ -325,8 +336,8 @@ Hotel: ${bookingDetails.hotelName}
 Dates: ${format(bookingDetails.checkIn, 'MMM dd')} - ${format(bookingDetails.checkOut, 'MMM dd, yyyy')}
 Total: ${PaymentService.formatCurrency(bookingDetails.totalAmount, bookingDetails.currency)}`;
 
-			navigator.clipboard.writeText(shareText);
-			alert('Booking details copied to clipboard!');
+			void navigator.clipboard.writeText(shareText);
+			toast.success('Booking details copied to clipboard.');
 		}
 	};
 
@@ -452,7 +463,9 @@ Total: ${PaymentService.formatCurrency(bookingDetails.totalAmount, bookingDetail
 								</p>
 								<p className="text-gray-600">
 									<strong>Payment Date:</strong>{' '}
-									{format(new Date(paymentIntent.created * 1000), 'PPP')}
+									{paymentIntent.created
+										? format(new Date(paymentIntent.created * 1000), 'PPP')
+										: format(new Date(), 'PPP')}
 								</p>
 								<p className="text-gray-600">
 									<strong>Status:</strong>

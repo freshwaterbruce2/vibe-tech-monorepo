@@ -16,10 +16,10 @@ export function Toaster() {
 		<ToastProvider>
 			{toasts.map(function ({ id, title, description, action, variant, ...props }) {
 				return (
-					<Toast key={id} {...props} variant={variant}>
+					<Toast key={id} {...props} variant={variant ?? undefined}>
 						<div className="grid gap-1">
 							<div className="flex items-center gap-2">
-								<ToastIcon variant={variant || undefined} />
+								<ToastIcon variant={variant ?? undefined} />
 								{title && <ToastTitle>{title}</ToastTitle>}
 							</div>
 							{description && (

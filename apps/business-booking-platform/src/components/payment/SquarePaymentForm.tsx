@@ -17,6 +17,12 @@ import { paymentConfig } from '../../utils/paymentConfig';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 
+// Type reference for Square SDK global types
+type SquareCard = {
+	attach(selector: string): Promise<void>;
+	tokenize(): Promise<{ status: string; token?: string; errors?: { message: string }[] }>;
+};
+
 interface SquarePaymentFormProps {
 	bookingId: string;
 	amount: number;
@@ -60,7 +66,7 @@ const SquarePaymentForm = memo<SquarePaymentFormProps>(
 		const [squareError, setSquareError] = useState<string | null>(null);
 		const [paymentSuccess, setPaymentSuccess] = useState(false);
 		const [isDemoMode, setIsDemoMode] = useState(false);
-		const [card, setCard] = useState<any>(null);
+		const [card, setCard] = useState<SquareCard | null>(null);
 		const [billingInfo, setBillingInfo] = useState<BillingInfo>({
 			firstName: '',
 			lastName: '',
@@ -105,7 +111,7 @@ const SquarePaymentForm = memo<SquarePaymentFormProps>(
 				}
 
 				// Initialize Square Web SDK
-				const payments = (window as any).Square.payments(
+				const payments = await window.Square.payments(
 					config.applicationId,
 					config.locationId,
 				);

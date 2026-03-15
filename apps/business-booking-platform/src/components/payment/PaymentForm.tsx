@@ -7,11 +7,16 @@ import { useEffect, useState } from 'react';
 // import { PaymentElementForm } from './PaymentElementForm';
 import { PaymentSummary } from './PaymentSummary';
 
+interface PaymentIntentSummary {
+	id: string;
+	clientSecret: string;
+}
+
 interface PaymentFormProps {
 	bookingId: string;
 	amount: number;
 	currency?: string;
-	onSuccess: (paymentIntent: any) => void;
+	onSuccess: (paymentIntent: PaymentIntentSummary) => void;
 	onError: (error: string) => void;
 	bookingDetails?: {
 		hotelName: string;
