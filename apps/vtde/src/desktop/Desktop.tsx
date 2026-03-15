@@ -12,6 +12,7 @@ import { MemoryPanel } from '../widgets/MemoryPanel';
 import { NovaQuickChat } from '../widgets/NovaQuickChat';
 import { SystemMonitor } from '../widgets/SystemMonitor';
 import { Terminal } from '../widgets/Terminal';
+import { TerminalErrorBoundary } from '../widgets/TerminalErrorBoundary';
 import { ToastContainer } from '../widgets/Toast';
 import { useToasts } from '../widgets/useToasts';
 import { VibeExplorer } from '../widgets/VibeExplorer';
@@ -450,7 +451,11 @@ export function Desktop() {
               onFocus={() => setActiveWindowId(w.id)}
               zIndex={w.id === activeWindowId ? 100 : 10 + i}
             >
-              {w.type === 'terminal' && <Terminal onClose={() => handleCloseWindow(w.id)} />}
+              {w.type === 'terminal' && (
+                <TerminalErrorBoundary>
+                  <Terminal onClose={() => handleCloseWindow(w.id)} />
+                </TerminalErrorBoundary>
+              )}
               {w.type === 'memory' && <MemoryPanel onClose={() => handleCloseWindow(w.id)} />}
               {w.type === 'explorer' && <VibeExplorer />}
               {w.type === 'app' && w.url && <DelayedIframe url={w.url} title={w.title} />}
