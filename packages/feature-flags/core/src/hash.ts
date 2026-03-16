@@ -74,7 +74,7 @@ export function assignVariant(
   
   // Fallback to last variant (handles rounding errors)
   const last = variants[variants.length - 1];
-  return last ? last.key : variants[0]?.key || '';
+  return last?.key ?? variants[0]?.key ?? '';
 }
 
 /**
