@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import {
   DestinationDC,
   FreightType,
-  InteractionMode,
   UserSettings,
   VoiceEngine,
   VoiceActivationMode,
@@ -37,11 +36,12 @@ export const useUserSettings = () => {
     const savedSettings = window.electronAPI?.store.get("userSettings");
     if (savedSettings) {
       try {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSettings({
           ...DEFAULT_SETTINGS, // Ensure any new settings have defaults
           ...JSON.parse(savedSettings), // Override with saved settings
         });
-      } catch (_error) {
+      } catch {
         // Fallback to default settings
         setSettings(DEFAULT_SETTINGS);
       }

@@ -127,7 +127,7 @@ export const requestAndroidPermissions = async (): Promise<{
           name: 'persistent-storage',
         })
         permissions.storage = storageResult.state === 'granted'
-      } catch (_error) {
+      } catch {
         // Fallback - assume storage is available
         permissions.storage = true
       }
@@ -218,7 +218,7 @@ export const showAndroidCompatibilityMessage = (
   feature: string,
   isSupported: boolean
 ) => {
-  if (isSupported) return
+  if (isSupported) return undefined
 
   const deviceInfo = detectAndroidEnvironment()
 
@@ -250,7 +250,7 @@ export const initAndroidSupport = async () => {
 
   if (!deviceInfo.isAndroid) return deviceInfo
 
-  console.log('Android device detected, initializing optimizations...')
+  console.warn('Android device detected, initializing optimizations...')
 
   // Apply all Android optimizations
   optimizeForAndroid()
@@ -260,7 +260,7 @@ export const initAndroidSupport = async () => {
   // Request necessary permissions
   const permissions = await requestAndroidPermissions()
 
-  console.log('Android optimization complete:', {
+  console.warn('Android optimization complete:', {
     deviceInfo,
     permissions,
   })

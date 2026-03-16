@@ -25,6 +25,17 @@ export function LuxuryHeader() {
 	const [isScrolled, setIsScrolled] = useState(false);
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 	const [hoveredNav, setHoveredNav] = useState<string | null>(null);
+	const getNavItemClasses = (item: (typeof navItems)[number]) => {
+		if (location.pathname === item.href) {
+			return 'bg-gradient-to-r from-slate-800 to-slate-700 text-white shadow-lg';
+		}
+
+		if (item.highlight) {
+			return 'bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 hover:from-amber-100 hover:to-orange-100';
+		}
+
+		return 'hover:bg-slate-100 text-slate-700';
+	};
 
 	useEffect(() => {
 		const handleScroll = () => {
@@ -140,13 +151,7 @@ export function LuxuryHeader() {
 											to={item.href}
 											className={`
                         flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300
-                        ${
-													location.pathname === item.href
-														? 'bg-gradient-to-r from-slate-800 to-slate-700 text-white shadow-lg'
-														: item.highlight
-															? 'bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 hover:from-amber-100 hover:to-orange-100'
-															: 'hover:bg-slate-100 text-slate-700'
-												}
+                        ${getNavItemClasses(item)}
                       `}
 										>
 											<Icon className="w-4 h-4" />

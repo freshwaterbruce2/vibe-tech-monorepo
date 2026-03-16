@@ -25,7 +25,7 @@ function authLimiter(req: Request, res: Response, next: Function) {
   } else {
     authAttempts.set(ip, { count: 1, lastAttempt: now });
   }
-  next();
+  return next();
 }
 
 // Admin login (public endpoint)
@@ -52,14 +52,14 @@ router.post('/login', authLimiter, async (req: Request, res: Response) => {
     const result = await adminManager.authenticateAdmin(sanitizedUsername, password);
 
     if (result.success) {
-      res.json(result);
+      return res.json(result);
     } else {
-      res.status(401).json(result);
+      return res.status(401).json(result);
     }
   } catch (error) {
     healthService.incrementError();
     console.error('Admin login error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Login failed',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -122,7 +122,7 @@ router.get('/tenants/:id', adminAuthMiddleware, requirePermission('tenants:read'
 
     const tenantData = tenantManager.getTenantData(id);
 
-    res.json({
+    return res.json({
       success: true,
       tenant: { ...tenant, apiKey: `${tenant.apiKey.substring(0, 8)}...` },
       data: tenantData,
@@ -131,7 +131,7 @@ router.get('/tenants/:id', adminAuthMiddleware, requirePermission('tenants:read'
   } catch (error) {
     healthService.incrementError();
     console.error('Get tenant error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to get tenant',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -154,7 +154,7 @@ router.put('/tenants/:id', adminAuthMiddleware, requirePermission('tenants:write
       return res.status(404).json({ error: 'Tenant not found', tenantId: id });
     }
 
-    res.json({
+    return res.json({
       success: true,
       tenant: { ...updatedTenant, apiKey: `${updatedTenant.apiKey.substring(0, 8)}...` },
       admin: { id: req.admin.id, username: req.admin.username }
@@ -162,7 +162,7 @@ router.put('/tenants/:id', adminAuthMiddleware, requirePermission('tenants:write
   } catch (error) {
     healthService.incrementError();
     console.error('Update tenant error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to update tenant',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -185,7 +185,7 @@ router.post('/tenants/:id/suspend', adminAuthMiddleware, requirePermission('tena
       return res.status(404).json({ error: 'Tenant not found', tenantId: id });
     }
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Tenant suspended successfully',
       tenant: { ...updatedTenant, apiKey: `${updatedTenant.apiKey.substring(0, 8)}...` },
@@ -194,7 +194,7 @@ router.post('/tenants/:id/suspend', adminAuthMiddleware, requirePermission('tena
   } catch (error) {
     healthService.incrementError();
     console.error('Suspend tenant error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to suspend tenant',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -211,7 +211,7 @@ router.post('/tenants/:id/reactivate', adminAuthMiddleware, requirePermission('t
       return res.status(404).json({ error: 'Tenant not found', tenantId: id });
     }
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Tenant reactivated successfully',
       tenant: { ...updatedTenant, apiKey: `${updatedTenant.apiKey.substring(0, 8)}...` },
@@ -220,7 +220,7 @@ router.post('/tenants/:id/reactivate', adminAuthMiddleware, requirePermission('t
   } catch (error) {
     healthService.incrementError();
     console.error('Reactivate tenant error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to reactivate tenant',
       message: error instanceof Error ? error.message : 'Unknown error'
     });

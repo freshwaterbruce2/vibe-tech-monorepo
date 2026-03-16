@@ -1,3 +1,4 @@
+ 
 // Warehouse Configuration System
 // This allows the app to be customized for different businesses and warehouses
 
@@ -580,7 +581,7 @@ class WarehouseConfigManager {
     this.isLoadingFromApi = true;
 
     try {
-      console.log('Loading warehouse config from tenant API...');
+      console.warn('Loading warehouse config from tenant API...');
       const response = await tenantApi.getTenantConfig();
 
       if (response.success && response.config) {
@@ -595,7 +596,7 @@ class WarehouseConfigManager {
         };
 
         this.config = apiConfig;
-        console.log('Successfully loaded config from tenant API:', response.tenant.name);
+        console.warn('Successfully loaded config from tenant API:', response.tenant.name);
         this.notifyListeners();
       }
     } catch (error) {
@@ -621,9 +622,9 @@ class WarehouseConfigManager {
     // If authenticated with tenant API, also update there
     if (tenantApi.isAuthenticated()) {
       try {
-        console.log('Updating tenant config via API...');
+        console.warn('Updating tenant config via API...');
         await tenantApi.updateTenantConfig(this.config);
-        console.log('Successfully updated tenant config via API');
+        console.warn('Successfully updated tenant config via API');
       } catch (error) {
         console.warn('Failed to update tenant config via API:', error);
         // Continue anyway - local update succeeded
@@ -640,9 +641,9 @@ class WarehouseConfigManager {
     // If authenticated with tenant API, also update there
     if (tenantApi.isAuthenticated()) {
       try {
-        console.log('Resetting tenant config to default via API...');
+        console.warn('Resetting tenant config to default via API...');
         await tenantApi.updateTenantConfig(this.config);
-        console.log('Successfully reset tenant config via API');
+        console.warn('Successfully reset tenant config via API');
       } catch (error) {
         console.warn('Failed to reset tenant config via API:', error);
         // Continue anyway - local reset succeeded

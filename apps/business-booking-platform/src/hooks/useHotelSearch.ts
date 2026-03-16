@@ -1,8 +1,26 @@
 import axios from 'axios';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSearchStore } from '@/store/searchStore';
 import type { Amenity, Hotel, HotelImage } from '@/types/hotel';
 import { logger } from '@/utils/logger';
+
+interface ApiHotel {
+	id?: string;
+	name?: string;
+	description?: string;
+	address?: string;
+	city?: string;
+	country?: string;
+	coordinates?: { lat: number; lng: number };
+	rating?: number;
+	reviewCount?: number;
+	pricePerNight?: number;
+	currency?: string;
+	images?: string[];
+	amenities?: string[];
+	passions?: string[];
+	sustainabilityCertified?: boolean;
+}
 
 export function useHotelSearch() {
 	const [isSearching, setIsSearching] = useState(false);
@@ -15,7 +33,7 @@ export function useHotelSearch() {
 		setError,
 	} = useSearchStore();
 
-	const searchHotels = async (searchQuery?: string) => {
+	const searchHotels = useCallback(async (searchQuery?: string) => {
 		const destination = searchQuery || query;
 		if (!destination) {
 			setResults([]);
@@ -71,7 +89,7 @@ export function useHotelSearch() {
 			) {
 				// Transform the data to match our Hotel type
 				const hotels: Hotel[] = response.data.hotels.map(
-					(hotel: any, index: number) => ({
+					(hotel: ApiHotel, index: number) => ({
 						id: hotel.id || String(index + 1),
 						name: hotel.name || 'Unnamed Hotel',
 						description: hotel.description || 'A comfortable place to stay',
@@ -379,14 +397,14 @@ export function useHotelSearch() {
 			setIsSearching(false);
 			setLoading(false);
 		}
-	};
+	}, [guestCount.adults, guestCount.children, guestCount.rooms, query, selectedDateRange.checkIn, selectedDateRange.checkOut, setError, setLoading, setResults]);
 
 	useEffect(() => {
 		// Auto-search when query changes
 		if (query) {
-			searchHotels();
+			void searchHotels();
 		}
-	}, [query]);
+	}, [query, searchHotels]);
 
 	return {
 		searchHotels,

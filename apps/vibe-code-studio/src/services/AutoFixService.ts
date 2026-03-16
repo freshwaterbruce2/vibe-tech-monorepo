@@ -2,7 +2,7 @@
  * AutoFixService - Generate AI-powered fixes for errors
  * Updated Feb 3, 2026: Added Shadow Validation (Self-Healing)
  */
-import * as monaco from 'monaco-editor';
+import type * as Monaco from 'monaco-editor';
 
 import { logger } from '../services/Logger';
 
@@ -109,7 +109,7 @@ export class AutoFixService {
 
   async generateFix(
     error: DetectedError,
-    editor: monaco.editor.IStandaloneCodeEditor
+    editor: Monaco.editor.IStandaloneCodeEditor
   ): Promise<GeneratedFix> {
     const startTime = Date.now();
     const model = editor.getModel();
@@ -217,6 +217,7 @@ export class AutoFixService {
     targetError: DetectedError
   ): Promise<boolean> {
     // 1. Create Shadow Model (Hidden)
+    const monaco = await import('monaco-editor');
     const shadowUri = monaco.Uri.parse(`inmemory://shadow-validation/${randomUUID()}.${languageId === 'typescript' ? 'ts' : 'js'}`);
     const shadowModel = monaco.editor.createModel(originalContent, languageId, shadowUri);
 
@@ -227,7 +228,7 @@ export class AutoFixService {
       const endLine = suggestion.endLine - 1;
       
       // Simple line replacement logic (naive patch)
-      // In production, use monaco.Range for precise edits
+      // In production, use Monaco.Range for precise edits
       const newLines = [...lines];
       newLines.splice(startLine, endLine - startLine + 1, suggestion.code);
       const newContent = newLines.join('\n');

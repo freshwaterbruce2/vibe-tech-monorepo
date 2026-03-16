@@ -1,4 +1,3 @@
-import React from 'react';
 import PalletCounterComponent from '@/components/pallets/PalletCounter';
 
 const PalletCounter = () => {

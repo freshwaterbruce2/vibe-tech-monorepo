@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@vibetech/ui";
 import { Badge } from "@vibetech/ui";
 import { Button } from "@vibetech/ui";
@@ -21,12 +21,11 @@ import {
   Download,
   Zap,
   AlertTriangle,
-  CheckCircle, Clock, User, Building, Truck,
   Package,
-  BarChart3, Settings,
-  Globe, Shield,
+  BarChart3,
+  Globe,
   Headphones,
-  Send, Star,
+  Send,
   ThumbsUp,
   ThumbsDown
 } from "lucide-react";
@@ -233,7 +232,7 @@ const Support = () => {
 
   const handleTicketSubmit = () => {
     // Handle support ticket submission
-    console.log("Support ticket submitted:", supportTicket);
+    console.warn("Support ticket submitted:", supportTicket);
   };
 
   const filteredFAQ = faqCategories.map(category => ({

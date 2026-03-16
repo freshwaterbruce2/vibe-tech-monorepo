@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@vibetech/ui";
 import { Input } from "@vibetech/ui";
 import { Label } from '@/components/ui/label';

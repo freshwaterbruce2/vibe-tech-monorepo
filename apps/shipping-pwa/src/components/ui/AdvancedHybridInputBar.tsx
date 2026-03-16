@@ -17,6 +17,7 @@ const COMMAND_SUGGESTIONS = [
   // ...add more as needed
 ]
 
+ 
 export const AdvancedHybridInputBar = ({
   onSubmit,
 }: {
@@ -70,6 +71,7 @@ export const AdvancedHybridInputBar = ({
   // Update input with transcript when voice is active
   useEffect(() => {
     if (voiceActive && transcript) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setInput(transcript)
       updateSuggestions(transcript)
     }

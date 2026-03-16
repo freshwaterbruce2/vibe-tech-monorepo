@@ -1,9 +1,8 @@
-import React from 'react';
 import { TenantAuth } from '@/components/tenant/TenantAuth';
 import { useTenantAuth } from '@/contexts/TenantAuthContext';
 import { Navigate } from 'react-router-dom';
 
-const TenantAuthPage: React.FC = () => {
+const TenantAuthPage = () => {
   const { isAuthenticated } = useTenantAuth();
 
   // If already authenticated, redirect to main page

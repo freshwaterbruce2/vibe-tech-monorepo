@@ -186,7 +186,7 @@ export const useAndroidSpeechRecognition = (
           }
         }
         ;(recognition as any).onstart = () => {
-          console.log('Android speech recognition started')
+          console.warn('Android speech recognition started')
           setIsProcessing(true)
 
           // Set timeout for Android (some versions hang)
@@ -196,7 +196,7 @@ export const useAndroidSpeechRecognition = (
           }, commandTimeout)
         }
         ;(recognition as any).onend = () => {
-          console.log('Android speech recognition ended')
+          console.warn('Android speech recognition ended')
           setIsListening(false)
           setIsProcessing(false)
 
@@ -287,7 +287,7 @@ export const useAndroidSpeechRecognition = (
         recognitionRef.current = recognition
       } catch (error) {
         console.error('Failed to initialize Android speech recognition:', error)
-        setCompatibilityIssues(prev => [
+        setCompatibilityIssues(prev => [ // eslint-disable-line react-hooks/set-state-in-effect
           ...prev,
           'Speech recognition initialization failed',
         ])

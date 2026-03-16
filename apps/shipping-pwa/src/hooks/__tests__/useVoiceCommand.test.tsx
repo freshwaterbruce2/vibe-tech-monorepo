@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act as _act } from '@testing-library/react';
 import { useVoiceCommand } from '../useVoiceCommand';
 import { useSpeechRecognition } from '../useSpeechRecognition';
 import { useUserSettings } from '../useUserSettings';
@@ -128,7 +128,7 @@ describe('useVoiceCommand', () => {
 
   describe('Command Recognition', () => {
     it('recognizes simple commands', () => {
-      const { result } = renderHook(() =>
+      const { result: _result } = renderHook(() =>
         useVoiceCommand({
           commandPatterns: defaultCommandPatterns,
           onCommandRecognized: mockOnCommandRecognized,
@@ -161,7 +161,7 @@ describe('useVoiceCommand', () => {
     });
 
     it('recognizes commands with parameters', () => {
-      const { result } = renderHook(() =>
+      const { result: _result } = renderHook(() =>
         useVoiceCommand({
           commandPatterns: defaultCommandPatterns,
           onCommandRecognized: mockOnCommandRecognized,
@@ -217,7 +217,7 @@ describe('useVoiceCommand', () => {
     });
 
     it('prevents duplicate command processing', () => {
-      const { result } = renderHook(() =>
+      const { result: _result } = renderHook(() =>
         useVoiceCommand({
           commandPatterns: defaultCommandPatterns,
           onCommandRecognized: mockOnCommandRecognized,

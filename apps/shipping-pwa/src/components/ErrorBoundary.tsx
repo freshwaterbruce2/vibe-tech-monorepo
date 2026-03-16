@@ -1,4 +1,5 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import { Component, ErrorInfo, ReactNode, type ComponentType } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Button } from "@vibetech/ui";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@vibetech/ui";
@@ -188,7 +189,7 @@ export const useErrorHandler = () => {
 
 // Higher-order component for easy wrapping
 export const withErrorBoundary = <P extends object>(
-  Component: React.ComponentType<P>,
+  Component: ComponentType<P>,
   fallback?: ReactNode,
   onError?: (error: Error, errorInfo: ErrorInfo) => void
 ) => {

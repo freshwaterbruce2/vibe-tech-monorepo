@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiFetch } from '@/utils/api';
-import { ArrowRight, Building2, Check, Loader2, Truck, Users, Package } from 'lucide-react';
+import { ArrowRight, Check, Loader2, Truck } from 'lucide-react';
 import { Button } from "@vibetech/ui";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@vibetech/ui";
 import { Input } from "@vibetech/ui";
@@ -44,7 +44,7 @@ interface SignupFormData {
   teamSize: number;
 }
 
-const SignupPage: React.FC = () => {
+const SignupPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [step, setStep] = useState(1);

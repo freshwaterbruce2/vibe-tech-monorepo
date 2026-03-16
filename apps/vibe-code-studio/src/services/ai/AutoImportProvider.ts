@@ -1,4 +1,4 @@
-import * as monaco from 'monaco-editor';
+import type * as Monaco from 'monaco-editor';
 import type { UnifiedAIService } from './UnifiedAIService';
 
 export class AutoImportProvider {
@@ -8,10 +8,10 @@ export class AutoImportProvider {
    * Analyzes the code for missing imports and suggests fixes.
    */
   async resolveMissingImports(
-    model: monaco.editor.ITextModel,
+    model: Monaco.editor.ITextModel,
     code: string,
     diagnostics: string[]
-  ): Promise<monaco.languages.CodeAction[]> {
+  ): Promise<Monaco.languages.CodeAction[]> {
 
     if (diagnostics.length === 0) return [];
 
@@ -39,6 +39,7 @@ export class AutoImportProvider {
       const imports = JSON.parse(cleanJson);
 
       // Map to Monaco Code Actions
+      const monaco = await import('monaco-editor');
       return imports.map((imp: any) => ({
         title: `Import ${imp.symbol} from ${imp.module}`,
         kind: 'quickfix',

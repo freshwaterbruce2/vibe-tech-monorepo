@@ -60,7 +60,7 @@ class EmailService {
         sgMail.setApiKey(sendgridApiKey)
         this.provider = 'sendgrid'
         this.isConfigured = true
-        console.log('Email service initialized with SendGrid')
+        console.warn('Email service initialized with SendGrid')
         return
       } catch (error) {
         console.warn('Failed to initialize SendGrid:', error)
@@ -86,7 +86,7 @@ class EmailService {
         })
         this.provider = 'smtp'
         this.isConfigured = true
-        console.log('Email service initialized with SMTP')
+        console.warn('Email service initialized with SMTP')
         return
       } catch (error) {
         console.warn('Failed to initialize SMTP:', error)
@@ -498,12 +498,12 @@ This is an automated report. To change your email preferences, visit your accoun
     recipients: EmailRecipient[],
     template: EmailTemplate
   ): { success: boolean; messageId?: string; error?: string } {
-    console.log('=== EMAIL (Console Mode) ===')
-    console.log('To:', recipients.map(r => r.email).join(', '))
-    console.log('Subject:', template.subject)
-    console.log('---')
-    console.log(template.text ?? 'No text version')
-    console.log('===========================')
+    console.warn('=== EMAIL (Console Mode) ===')
+    console.warn('To:', recipients.map(r => r.email).join(', '))
+    console.warn('Subject:', template.subject)
+    console.warn('---')
+    console.warn(template.text ?? 'No text version')
+    console.warn('===========================')
 
     return {
       success: true,

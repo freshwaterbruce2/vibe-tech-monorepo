@@ -1,4 +1,3 @@
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@vibetech/ui";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -6,6 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { InteractionMode } from "@/types/shipping";
 
+ 
 export const InteractionSettings = () => {
   const { settings, updateSetting } = useUserSettings();
 

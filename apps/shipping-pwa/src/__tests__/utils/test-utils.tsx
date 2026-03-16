@@ -1,4 +1,5 @@
-import React from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import type { ReactElement } from 'react';
 import { render as rtlRender, RenderOptions } from '@testing-library/react';
 import { DoorSchedule } from '@/types/shipping';
 
@@ -19,7 +20,7 @@ export const createTestDoor = (overrides?: Partial<DoorSchedule>): DoorSchedule 
 
 // Custom render with providers if needed
 const customRender = (
-  ui: React.ReactElement,
+  ui: ReactElement,
   options?: Omit<RenderOptions, 'wrapper'>,
 ) => {
   return rtlRender(ui, { ...options });

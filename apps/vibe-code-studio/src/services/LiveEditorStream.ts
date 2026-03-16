@@ -5,7 +5,7 @@
  * Shows work happening live as the agent writes/edits code.
  */
 
-import * as monaco from 'monaco-editor';
+import type * as Monaco from 'monaco-editor';
 
 export interface StreamPosition {
   lineNumber: number;
@@ -43,7 +43,7 @@ type ProgressCallback = (progress: StreamProgress) => void;
  * Manages live streaming of code changes to Monaco editor
  */
 export class LiveEditorStream {
-  private editor: monaco.editor.IStandaloneCodeEditor | null = null;
+  private editor: Monaco.editor.IStandaloneCodeEditor | null = null;
   private decorations: string[] = [];
   private approvalCallback: ApprovalCallback | null = null;
   private progressCallback: ProgressCallback | null = null;
@@ -59,7 +59,7 @@ export class LiveEditorStream {
   /**
    * Initialize with Monaco editor instance
    */
-  setEditor(editor: monaco.editor.IStandaloneCodeEditor) {
+  setEditor(editor: Monaco.editor.IStandaloneCodeEditor) {
     this.editor = editor;
   }
 
@@ -143,6 +143,7 @@ export class LiveEditorStream {
       if (!this.isStreaming) {break;} // Allow interruption
 
       // Insert character at current position
+      const monaco = await import('monaco-editor');
       this.editor.executeEdits('live-stream', [
         {
           range: new monaco.Range(
@@ -204,17 +205,18 @@ export class LiveEditorStream {
    * // Monaco editor now shows red/green decorations
    * ```
    */
-  showDiffPreview(
+  async showDiffPreview(
     filePath: string,
     oldContent: string,
     newContent: string
-  ): DiffChange[] {
+  ): Promise<DiffChange[]> {
     if (!this.editor) {return [];}
 
     const changes = this.calculateDiff(oldContent, newContent);
 
     // Create Monaco decorations for additions and deletions
-    const decorationsArray: monaco.editor.IModelDeltaDecoration[] = [];
+    const monaco = await import('monaco-editor');
+    const decorationsArray: Monaco.editor.IModelDeltaDecoration[] = [];
 
     for (const change of changes) {
       const className =
@@ -224,7 +226,7 @@ export class LiveEditorStream {
           ? 'live-stream-deletion'
           : 'live-stream-modification';
 
-      const decoration: monaco.editor.IModelDeltaDecoration = {
+      const decoration: Monaco.editor.IModelDeltaDecoration = {
         range: new monaco.Range(
           change.startLine,
           1,

@@ -347,7 +347,7 @@ class AdvancedOfflineManager {
     const quota = await this.getStorageQuota()
 
     if (quota.percentage > 80) {
-      console.log('Storage optimization needed, starting cleanup...')
+      console.warn('Storage optimization needed, starting cleanup...')
 
       // Remove expired cache entries
       await this.cleanExpiredCache()
@@ -361,7 +361,7 @@ class AdvancedOfflineManager {
       // Remove old analytics data
       await this.cleanOldAnalytics()
 
-      console.log('Storage optimization completed')
+      console.warn('Storage optimization completed')
     }
   }
 
@@ -492,7 +492,7 @@ class AdvancedOfflineManager {
   // This is a comprehensive foundation for the advanced offline manager
 
   private async saveToDatabase(storeName: string, data: any): Promise<void> {
-    if (!this.db) return
+    if (!this.db) return undefined
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction([storeName], 'readwrite')
@@ -505,7 +505,7 @@ class AdvancedOfflineManager {
   }
 
   private async loadOfflineQueue(): Promise<void> {
-    if (!this.db) return
+    if (!this.db) return undefined
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['offlineQueue'], 'readonly')
@@ -522,12 +522,12 @@ class AdvancedOfflineManager {
 
   private setupNetworkListeners(): void {
     window.addEventListener('online', () => {
-      console.log('Network connection restored')
+      console.warn('Network connection restored')
       this.processQueue()
     })
 
     window.addEventListener('offline', () => {
-      console.log('Network connection lost')
+      console.warn('Network connection lost')
     })
   }
 

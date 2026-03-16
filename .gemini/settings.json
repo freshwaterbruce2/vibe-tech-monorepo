@@ -6,7 +6,7 @@
       "maxAge": "48h"
     },
     "enablePromptCompletion": true,
-    "defaultApprovalMode": "default"
+    "defaultApprovalMode": "auto_edit"
   },
   "ui": {
     "showLineNumbers": true,
@@ -15,26 +15,33 @@
     "showMemoryUsage": true
   },
   "model": {
-    "name": "gemini-3-pro-preview"
+    "name": "gemini-3.1-pro-preview"
   },
   "generationConfig": {
     "thinkingLevel": "HIGH",
     "temperature": 1
   },
   "tools": {
-    "autoAccept": false,
-    "approvalMode": "default",
+    "autoAccept": true,
     "useRipgrep": true,
-    "maxConcurrent": 2,
+    "maxConcurrent": 5,
     "timeout": 60000,
     "enableToolOutputTruncation": true,
-    "truncateToolOutputThreshold": 4000000
+    "truncateToolOutputThreshold": 4000000,
+    "shell": {
+      "enabled": true,
+      "autoApprove": true
+    },
+    "fileOperations": {
+      "read": true,
+      "write": true,
+      "edit": true,
+      "delete": true,
+      "search": true
+    }
   },
   "context": {
-    "fileName": [
-      "GEMINI.md",
-      ".gemini/rules-global.md"
-    ],
+    "fileName": ["GEMINI.md", ".gemini/rules-global.md"],
     "discoveryMaxDirs": 200,
     "fileFiltering": {
       "respectGitIgnore": true,
@@ -46,15 +53,15 @@
   "security": {
     "folderTrust": {
       "enabled": true
-    }
+    },
+    "toolApprovalPolicy": "auto",
+    "allowedPaths": ["C:\\dev", "D:\\"]
   },
   "mcpServers": {
     "nx-mcp": {
       "type": "stdio",
       "command": "C:\\Users\\fresh_zxae3v6\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe",
-      "args": [
-        "C:\\Users\\fresh_zxae3v6\\AppData\\Roaming\\npm\\node_modules\\nx-mcp\\main.js"
-      ],
+      "args": ["C:\\Users\\fresh_zxae3v6\\AppData\\Roaming\\npm\\node_modules\\nx-mcp\\main.js"],
       "env": {
         "NX_WORKSPACE_ROOT": "C:\\dev"
       },
@@ -78,29 +85,19 @@
     "sqlite-main": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/.local/bin/uvx.exe",
-      "args": [
-        "mcp-server-sqlite",
-        "--db-path",
-        "D:/databases/database.db"
-      ],
+      "args": ["mcp-server-sqlite", "--db-path", "D:/databases/database.db"],
       "trust": true
     },
     "sqlite-trading": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/.local/bin/uvx.exe",
-      "args": [
-        "mcp-server-sqlite",
-        "--db-path",
-        "D:/databases/trading.db"
-      ],
+      "args": ["mcp-server-sqlite", "--db-path", "D:/databases/trading.db"],
       "trust": true
     },
     "desktop-commander": {
       "type": "stdio",
       "command": "C:\\Users\\fresh_zxae3v6\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe",
-      "args": [
-        "C:\\dev\\apps\\desktop-commander-v3\\dist\\mcp.js"
-      ],
+      "args": ["C:\\dev\\apps\\desktop-commander-v3\\dist\\mcp.js"],
       "env": {
         "NODE_ENV": "production"
       },
@@ -109,20 +106,16 @@
     "codeberg": {
       "type": "stdio",
       "command": "C:\\Users\\fresh_zxae3v6\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe",
-      "args": [
-        "C:\\dev\\apps\\mcp-codeberg\\dist\\index.js"
-      ],
+      "args": ["C:\\dev\\apps\\mcp-codeberg\\dist\\index.js"],
       "env": {
-        "CODEBERG_API_URL": "https://api.github.com"
+        "CODEBERG_API_URL": "https://codeberg.org/api/v1"
       },
       "trust": true
     },
     "skills": {
       "type": "stdio",
       "command": "C:\\Users\\fresh_zxae3v6\\AppData\\Roaming\\fnm\\aliases\\default\\node.exe",
-      "args": [
-        "C:\\dev\\apps\\mcp-skills-server\\dist\\index.js"
-      ],
+      "args": ["C:\\dev\\apps\\mcp-skills-server\\dist\\index.js"],
       "trust": true
     }
   },
@@ -132,10 +125,7 @@
   },
   "advanced": {
     "autoConfigureMemory": true,
-    "excludedEnvVars": [
-      "DEBUG",
-      "DEBUG_MODE"
-    ]
+    "excludedEnvVars": ["DEBUG", "DEBUG_MODE"]
   },
   "ide": {
     "enabled": true

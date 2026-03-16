@@ -169,11 +169,11 @@ const Maps = () => {
 
   // Auto-refresh simulation
   useEffect(() => {
-    if (!autoRefresh) return
+    if (!autoRefresh) return undefined
 
     const interval = setInterval(() => {
       // Simulate real-time updates
-      console.log('Refreshing map data...')
+      console.warn('Refreshing map data...')
     }, refreshInterval * 1000)
 
     return () => clearInterval(interval)

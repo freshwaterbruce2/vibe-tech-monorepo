@@ -77,8 +77,8 @@ interface SpeechRecognitionHook {
   browserSupportsSpeechRecognition: boolean // Added for compatibility check
 }
 
-// JSGF grammar for warehouse commands
-const WAREHOUSE_GRAMMAR = `#JSGF V1.0;
+// JSGF grammar for warehouse commands (reserved for future use)
+const _WAREHOUSE_GRAMMAR = `#JSGF V1.0;
 grammar warehouseCommands;
 public <command> = <doorCommand> | <palletCommand>;
 <doorCommand> = (add | new) door [<doorNumber>] [to <dcNumber>] [freight <freightType>] [status <trailerStatus>];
@@ -105,7 +105,7 @@ export const createRecognizer = (_engine: Engine) => {
 }
 
 export const useSpeechRecognition = (
-  options: SpeechRecognitionOptions & { engine?: Engine } = {}
+  _options: SpeechRecognitionOptions & { engine?: Engine } = {}
 ): SpeechRecognitionHook => {
   const [transcript, setTranscript] = useState('')
   const [interimTranscript, setInterimTranscript] = useState('')

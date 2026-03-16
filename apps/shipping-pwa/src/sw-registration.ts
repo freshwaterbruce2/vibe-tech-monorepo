@@ -9,7 +9,7 @@ if ('serviceWorker' in navigator) {
         scope: '/'
       });
 
-      console.log('SW registered: ', registration);
+      console.warn('SW registered: ', registration);
 
       // Initialize PWA metrics
       // pwaMetrics.initialize(); // Commented out until module is created
@@ -22,7 +22,7 @@ if ('serviceWorker' in navigator) {
             if (newWorker.state === 'installed') {
               if (navigator.serviceWorker.controller) {
                 // New update available
-                console.log('New content is available; please refresh.');
+                console.warn('New content is available; please refresh.');
                 // Show update notification to user
                 dispatchEvent(new CustomEvent('sw-update-available'));
               }
@@ -32,7 +32,7 @@ if ('serviceWorker' in navigator) {
       });
       
     } catch (error) {
-      console.log('SW registration failed: ', error);
+      console.error('SW registration failed: ', error);
     }
   });
 }

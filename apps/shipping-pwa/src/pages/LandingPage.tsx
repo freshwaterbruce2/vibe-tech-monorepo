@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Check, Truck, Package, BarChart3, Shield, Clock, Users, Zap, ChevronRight, Star, Menu, X } from 'lucide-react';
+import { ArrowRight, Check, Truck, Package, BarChart3, Shield, Clock, Zap, ChevronRight, Star, Menu, X } from 'lucide-react';
 import { Button } from "@vibetech/ui";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@vibetech/ui";
 import { Badge } from "@vibetech/ui";
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
-const LandingPage: React.FC = () => {
+const LandingPage = () => {
   const [isAnnual, setIsAnnual] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();

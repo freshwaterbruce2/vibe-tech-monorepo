@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { tenantApi, TenantCredentials, TenantInfo } from '@/services/tenantApiService';
 import { warehouseConfig } from '@/config/warehouse';
 import { apiFetch } from '@/utils/api';
@@ -21,7 +22,7 @@ interface TenantAuthProviderProps {
   children: ReactNode;
 }
 
-export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children }) => {
+export const TenantAuthProvider = ({ children }: TenantAuthProviderProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [tenantInfo, setTenantInfo] = useState<TenantInfo | null>(null);
   const [credentials, setCredentials] = useState<TenantCredentials | null>(null);
@@ -86,7 +87,7 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
         // Refresh warehouse config from API
         await warehouseConfig.refreshFromApi();
 
-        console.log('Successfully authenticated with tenant:', response.tenant.name);
+        console.warn('Successfully authenticated with tenant:', response.tenant.name);
         return true;
       } else {
         throw new Error('Failed to authenticate with tenant API');
@@ -118,7 +119,7 @@ export const TenantAuthProvider: React.FC<TenantAuthProviderProps> = ({ children
     // Reset warehouse config to local/default
     warehouseConfig.resetToDefault();
 
-    console.log('Logged out from tenant');
+    console.warn('Logged out from tenant');
   };
 
   const refreshTenantInfo = async () => {

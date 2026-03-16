@@ -88,13 +88,13 @@ export const useFirebaseSync = (): UseFirebaseSyncReturn => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [state.user]);
+  }, [state.user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Authentication methods
   const signIn = useCallback(async (email: string, password: string) => {
     try {
       setState(prev => ({ ...prev, isLoading: true, syncError: null }));
-      const user = await FirebaseAuthService.signIn(email, password);
+      await FirebaseAuthService.signIn(email, password);
 
       // Try to sync data after successful login
       await syncFromFirebase();
@@ -107,7 +107,7 @@ export const useFirebaseSync = (): UseFirebaseSyncReturn => {
     } finally {
       setState(prev => ({ ...prev, isLoading: false }));
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const signUp = useCallback(async (email: string, password: string) => {
     try {

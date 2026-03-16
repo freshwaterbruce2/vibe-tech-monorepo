@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Drawer,
   DrawerContent,
@@ -15,9 +15,6 @@ import FreightTypeRadio from "./FreightTypeRadio";
 import TrailerStatusToggle from "./TrailerStatusToggle";
 import {
   DoorSchedule,
-  DestinationDC,
-  FreightType,
-  TrailerStatus,
 } from "@/types/shipping";
 
 type PickerTab = "door" | "dc" | "freight" | "status";
@@ -61,6 +58,7 @@ const UniversalPickerDrawer = ({
   // Reset to initial tab when drawer opens
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveTab(initialTab);
     }
   }, [isOpen, initialTab]);

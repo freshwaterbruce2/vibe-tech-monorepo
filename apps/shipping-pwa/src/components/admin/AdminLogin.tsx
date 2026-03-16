@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@vibetech/ui";
 import { Button } from "@vibetech/ui";
 import { Input } from "@vibetech/ui";
@@ -9,7 +9,8 @@ import { useAdminAuth } from '@/contexts/AdminAuthContext';
 import { Navigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-export const AdminLogin: React.FC = () => {
+ 
+export const AdminLogin = () => {
   const { login, isLoading, error, clearError, isAuthenticated } = useAdminAuth();
   const [formData, setFormData] = useState({
     username: '',

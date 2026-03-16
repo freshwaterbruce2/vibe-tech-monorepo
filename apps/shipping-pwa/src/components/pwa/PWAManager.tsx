@@ -30,6 +30,7 @@ interface ServiceWorkerMessage {
   payload?: any
 }
 
+ 
 export function PWAManager({ className }: PWAManagerProps) {
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [installPrompt, setInstallPrompt] =
@@ -160,7 +161,7 @@ export function PWAManager({ className }: PWAManagerProps) {
 
   // Service Worker Management
   useEffect(() => {
-    if (!('serviceWorker' in navigator)) return
+    if (!('serviceWorker' in navigator)) return undefined
     {
       // Listen for service worker messages
       navigator.serviceWorker.addEventListener(
@@ -225,6 +226,7 @@ export function PWAManager({ className }: PWAManagerProps) {
   // Check notification permission
   useEffect(() => {
     if ('Notification' in window) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNotificationPermission(Notification.permission)
     }
   }, [])

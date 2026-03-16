@@ -85,7 +85,8 @@ export function truncateToTokenLimit<T extends { role: string; content: string }
   // Add messages from newest to oldest until limit
   const startIndex = keepSystemMessage && messages[0]?.role === 'system' ? 1 : 0;
   for (let i = messages.length - 1; i >= startIndex; i--) {
-    const msg = messages[i]!;
+    const msg = messages[i];
+    if (!msg) continue;
     const msgTokens = estimateTokens(msg.content) + 2; // +2 for role
 
     if (totalTokens + msgTokens > availableTokens) {

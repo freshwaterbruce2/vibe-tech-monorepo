@@ -26,6 +26,7 @@ export const usePalletEntries = () => {
           }
           return entry;
         });
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setPalletEntries(migratedEntries);
       } catch (e) {
         console.error("Error parsing saved pallet entries:", e);

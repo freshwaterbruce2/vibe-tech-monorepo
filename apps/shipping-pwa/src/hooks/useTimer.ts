@@ -5,7 +5,7 @@ export function useTimer(initial?: number) {
   const [running, setRunning] = useState(false);
 
   useEffect(() => {
-    if (!running) return;
+    if (!running) return undefined;
 
     const id = setInterval(() => setElapsed((e) => e + 1), 1000);
 

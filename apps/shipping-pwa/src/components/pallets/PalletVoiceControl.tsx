@@ -1,4 +1,3 @@
-import React from "react";
 import { useVoiceCommand } from "@/hooks/useVoiceCommand";
 import { VoiceCommandButton } from "@/components/voice/VoiceCommandButton";
 import { VoiceFeedbackTooltip } from "@/components/voice/VoiceFeedbackTooltip";

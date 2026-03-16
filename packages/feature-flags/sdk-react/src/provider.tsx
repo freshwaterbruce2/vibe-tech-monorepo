@@ -1,56 +1,17 @@
 import type {
-    Environment,
-    EvaluationContext,
-    EvaluationResult,
-    FeatureFlag,
-    KillSwitchEvent,
+  EvaluationContext,
+  EvaluationResult,
+  FeatureFlag,
+  KillSwitchEvent,
 } from '@dev/feature-flags-core';
 import { assignVariant, isInPercentageRollout } from '@dev/feature-flags-core';
-import type { ReactNode } from 'react';
 import {
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
 } from 'react';
-
-// -----------------------------------------------------------------------------
-// Types
-// -----------------------------------------------------------------------------
-
-interface FeatureFlagContextValue {
-  flags: Map<string, FeatureFlag>;
-  context: Partial<EvaluationContext>;
-  isLoading: boolean;
-  error: Error | null;
-  isEnabled: (flagKey: string) => boolean;
-  getVariant: (flagKey: string) => { variant: string | null; payload?: Record<string, unknown> };
-  evaluate: (flagKey: string) => EvaluationResult;
-  refresh: () => Promise<void>;
-}
-
-interface FeatureFlagProviderProps {
-  children: ReactNode;
-  serverUrl: string;
-  environment: Environment;
-  context?: Partial<EvaluationContext>;
-  apiKey?: string;
-  refreshIntervalMs?: number;
-  onKillSwitch?: (event: KillSwitchEvent) => void;
-  onError?: (error: Error) => void;
-}
-
-// -----------------------------------------------------------------------------
-// Context
-// -----------------------------------------------------------------------------
-
-const FeatureFlagContext = createContext<FeatureFlagContextValue | null>(null);
-
-// -----------------------------------------------------------------------------
-// Provider
-// -----------------------------------------------------------------------------
+import { FeatureFlagContext, type FeatureFlagContextValue, type FeatureFlagProviderProps } from './context';
 
 export function FeatureFlagProvider({
   children,
@@ -66,7 +27,6 @@ export function FeatureFlagProvider({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Memoize the evaluation context
   const context = useMemo<Partial<EvaluationContext>>(
     () => ({
       environment,
@@ -75,7 +35,6 @@ export function FeatureFlagProvider({
     [environment, userContext]
   );
 
-  // Fetch flags from server
   const fetchFlags = useCallback(async () => {
     try {
       const headers: Record<string, string> = {
@@ -101,27 +60,27 @@ export function FeatureFlagProvider({
       setFlags(newFlags);
       setError(null);
     } catch (err) {
-      const error = err instanceof Error ? err : new Error(String(err));
-      setError(error);
-      onError?.(error);
+      const nextError = err instanceof Error ? err : new Error(String(err));
+      setError(nextError);
+      onError?.(nextError);
     } finally {
       setIsLoading(false);
     }
   }, [serverUrl, environment, apiKey, onError]);
 
-  // Initial fetch and polling
   useEffect(() => {
-    fetchFlags();
+    void fetchFlags();
 
-    const interval = setInterval(fetchFlags, refreshIntervalMs);
+    const interval = setInterval(() => {
+      void fetchFlags();
+    }, refreshIntervalMs);
     return () => clearInterval(interval);
   }, [fetchFlags, refreshIntervalMs]);
 
-  // WebSocket for real-time updates
   useEffect(() => {
     const wsUrl = serverUrl.replace(/^http/, 'ws') + '/ws/flags';
     let ws: WebSocket | null = null;
-    let reconnectTimeout: NodeJS.Timeout;
+    let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const connect = () => {
       ws = new WebSocket(wsUrl);
@@ -155,11 +114,12 @@ export function FeatureFlagProvider({
 
     return () => {
       ws?.close();
-      clearTimeout(reconnectTimeout);
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
     };
   }, [serverUrl, onKillSwitch]);
 
-  // Evaluation function
   const evaluate = useCallback(
     (flagKey: string): EvaluationResult => {
       const flag = flags.get(flagKey);
@@ -172,7 +132,6 @@ export function FeatureFlagProvider({
         };
       }
 
-      // Kill switch
       if (flag.type === 'kill_switch') {
         return {
           flagKey,
@@ -181,7 +140,6 @@ export function FeatureFlagProvider({
         };
       }
 
-      // Global disabled
       if (!flag.enabled) {
         return {
           flagKey,
@@ -190,7 +148,6 @@ export function FeatureFlagProvider({
         };
       }
 
-      // Environment check
       const envValue = flag.environments[environment];
       if (!envValue?.enabled) {
         return {
@@ -200,9 +157,8 @@ export function FeatureFlagProvider({
         };
       }
 
-      // Percentage rollout
       if ('percentage' in envValue && envValue.percentage !== undefined) {
-        const identifier = context.userId || context.sessionId || 'anonymous';
+        const identifier = context.userId ?? context.sessionId ?? 'anonymous';
         const inRollout = isInPercentageRollout(identifier, flagKey, envValue.percentage);
         return {
           flagKey,
@@ -211,11 +167,10 @@ export function FeatureFlagProvider({
         };
       }
 
-      // Variant assignment
       if (flag.variants && flag.variants.length > 0) {
-        const identifier = context.userId || context.sessionId || 'anonymous';
+        const identifier = context.userId ?? context.sessionId ?? 'anonymous';
         const variantKey = assignVariant(identifier, flagKey, flag.variants);
-        const variant = flag.variants.find((v) => v.key === variantKey);
+        const variant = flag.variants.find((entry) => entry.key === variantKey);
         return {
           flagKey,
           enabled: true,
@@ -234,15 +189,11 @@ export function FeatureFlagProvider({
     [flags, environment, context]
   );
 
-  // Simple boolean check
   const isEnabled = useCallback(
-    (flagKey: string): boolean => {
-      return evaluate(flagKey).enabled;
-    },
+    (flagKey: string): boolean => evaluate(flagKey).enabled,
     [evaluate]
   );
 
-  // Get variant
   const getVariant = useCallback(
     (flagKey: string): { variant: string | null; payload?: Record<string, unknown> } => {
       const result = evaluate(flagKey);
@@ -274,74 +225,3 @@ export function FeatureFlagProvider({
     </FeatureFlagContext.Provider>
   );
 }
-
-// -----------------------------------------------------------------------------
-// Hooks
-// -----------------------------------------------------------------------------
-
-export function useFeatureFlags(): FeatureFlagContextValue {
-  const context = useContext(FeatureFlagContext);
-  if (!context) {
-    throw new Error('useFeatureFlags must be used within a FeatureFlagProvider');
-  }
-  return context;
-}
-
-export function useFlag(flagKey: string): boolean {
-  const { isEnabled } = useFeatureFlags();
-  return isEnabled(flagKey);
-}
-
-export function useVariant(flagKey: string): {
-  variant: string | null;
-  payload?: Record<string, unknown>;
-} {
-  const { getVariant } = useFeatureFlags();
-  return getVariant(flagKey);
-}
-
-export function useFlagEvaluation(flagKey: string): EvaluationResult {
-  const { evaluate } = useFeatureFlags();
-  return evaluate(flagKey);
-}
-
-// Alias for backward compatibility or preference
-export const useFeatureFlag = useFlag;
-
-// -----------------------------------------------------------------------------
-// Components
-// -----------------------------------------------------------------------------
-
-interface FeatureGateProps {
-  flag: string;
-  children: ReactNode;
-  fallback?: ReactNode;
-}
-
-export function FeatureGate({ flag, children, fallback = null }: FeatureGateProps) {
-  const enabled = useFlag(flag);
-  return <>{enabled ? children : fallback}</>;
-}
-
-interface VariantGateProps {
-  flag: string;
-  variant: string;
-  children: ReactNode;
-  fallback?: ReactNode;
-}
-
-export function VariantGate({ flag, variant, children, fallback = null }: VariantGateProps) {
-  const { variant: currentVariant } = useVariant(flag);
-  return <>{currentVariant === variant ? children : fallback}</>;
-}
-
-// -----------------------------------------------------------------------------
-// Exports
-// -----------------------------------------------------------------------------
-
-export type {
-    FeatureFlagContextValue,
-    FeatureFlagProviderProps,
-    FeatureGateProps,
-    VariantGateProps
-};

@@ -3,7 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import helmet from 'helmet';
 import { fileURLToPath } from 'url';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync } from 'fs';
 
 import { tenantMiddleware } from './middleware/index.js';
 import { adminRoutes, tenantRoutes, paymentRoutes, healthRoutes } from './routes/index.js';
@@ -162,12 +162,12 @@ app.get('/', (req: any, res) => {
 });
 
 // Fallback for SPA routing
-app.get('*', (req, res) => {
+app.get('*', (_req, res) => {
   res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
 });
 
 // Global error handler
-app.use((error: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((error: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   healthService.incrementError();
   console.error('Unhandled error:', error);
 
@@ -180,49 +180,49 @@ app.use((error: Error, req: express.Request, res: express.Response, next: expres
 
 // Start server
 const server = app.listen(PORT, () => {
-  console.log(`[${new Date().toISOString()}] Multi-Tenant Shipping PWA Server starting...`);
-  console.log(`[${new Date().toISOString()}] Server running on http://localhost:${PORT}`);
-  console.log(`[${new Date().toISOString()}] Health check: http://localhost:${PORT}/api/health`);
-  console.log(`[${new Date().toISOString()}] Tenant onboarding: http://localhost:${PORT}/api/tenants/create`);
+  console.warn(`[${new Date().toISOString()}] Multi-Tenant Shipping PWA Server starting...`);
+  console.warn(`[${new Date().toISOString()}] Server running on http://localhost:${PORT}`);
+  console.warn(`[${new Date().toISOString()}] Health check: http://localhost:${PORT}/api/health`);
+  console.warn(`[${new Date().toISOString()}] Tenant onboarding: http://localhost:${PORT}/api/tenants/create`);
 
   // Set up periodic session cleanup (every 15 minutes)
   setInterval(() => {
     adminManager.cleanupExpiredSessions();
   }, 15 * 60 * 1000);
 
-  console.log(`[${new Date().toISOString()}] Features enabled:`);
-  console.log(`  - Multi-tenant architecture with data isolation`);
-  console.log(`  - Subscription-based access control and limits`);
-  console.log(`  - API key and subdomain-based tenant identification`);
-  console.log(`  - Circuit Breaker Pattern for API resilience`);
-  console.log(`  - Rate limiting (100 requests/minute per IP)`);
-  console.log(`  - DeepSeek AI integration with tenant context`);
-  console.log(`  - Comprehensive error handling and recovery`);
-  console.log(`  - Performance monitoring and health checks`);
+  console.warn(`[${new Date().toISOString()}] Features enabled:`);
+  console.warn(`  - Multi-tenant architecture with data isolation`);
+  console.warn(`  - Subscription-based access control and limits`);
+  console.warn(`  - API key and subdomain-based tenant identification`);
+  console.warn(`  - Circuit Breaker Pattern for API resilience`);
+  console.warn(`  - Rate limiting (100 requests/minute per IP)`);
+  console.warn(`  - DeepSeek AI integration with tenant context`);
+  console.warn(`  - Comprehensive error handling and recovery`);
+  console.warn(`  - Performance monitoring and health checks`);
 
   const tenants = tenantManager.getAllTenants();
-  console.log(`[${new Date().toISOString()}] Loaded ${tenants.length} existing tenants`);
+  console.warn(`[${new Date().toISOString()}] Loaded ${tenants.length} existing tenants`);
   if (tenants.length > 0) {
-    console.log(`[${new Date().toISOString()}] Active tenants:`);
+    console.warn(`[${new Date().toISOString()}] Active tenants:`);
     tenants.forEach(tenant => {
-      console.log(`  - ${tenant.name} (${tenant.subdomain}) - ${tenant.subscription.tier} tier`);
+      console.warn(`  - ${tenant.name} (${tenant.subdomain}) - ${tenant.subscription.tier} tier`);
     });
   }
 });
 
 // Graceful shutdown handling
 process.on('SIGTERM', () => {
-  console.log('[SIGTERM] Graceful shutdown initiated...');
+  console.warn('[SIGTERM] Graceful shutdown initiated...');
   server.close(() => {
-    console.log('Server closed successfully');
+    console.warn('Server closed successfully');
     process.exit(0);
   });
 });
 
 process.on('SIGINT', () => {
-  console.log('[SIGINT] Graceful shutdown initiated...');
+  console.warn('[SIGINT] Graceful shutdown initiated...');
   server.close(() => {
-    console.log('Server closed successfully');
+    console.warn('Server closed successfully');
     process.exit(0);
   });
 });

@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Button } from "@vibetech/ui";
-import { Card, CardContent, CardHeader, CardTitle } from "@vibetech/ui";
 import { Badge } from "@vibetech/ui";
-import { HelpCircle, Mic, X, Volume2 } from "lucide-react";
+import { HelpCircle, Mic, Volume2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,7 +15,7 @@ interface VoiceCommandHelpProps {
   commandType: "pallet" | "door";
 }
 
-const VoiceCommandHelp: React.FC<VoiceCommandHelpProps> = ({ commandType }) => {
+const VoiceCommandHelp = ({ commandType }: VoiceCommandHelpProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const palletCommands = [

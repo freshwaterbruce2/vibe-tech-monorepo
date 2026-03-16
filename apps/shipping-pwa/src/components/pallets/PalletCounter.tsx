@@ -1,9 +1,8 @@
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@vibetech/ui";
 import { Button } from "@vibetech/ui";
 import { Plus } from "lucide-react";
 import { usePalletEntries } from "@/hooks/usePalletEntries";
-import { PalletEntry } from "@/types/shipping";
+
 import PalletRow from "./PalletRow";
 import PalletExport from "./PalletExport";
 import PalletVoiceControl from "./PalletVoiceControl";

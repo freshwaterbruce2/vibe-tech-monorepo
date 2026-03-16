@@ -1,4 +1,4 @@
-import React from "react";
+import { useState, useEffect, useMemo, type ChangeEvent } from "react";
 import { Button } from "@vibetech/ui";
 import { Input } from "@vibetech/ui";
 import { Trash2, MinusCircle, PlusCircle, Play, Square } from "lucide-react";
@@ -28,17 +28,17 @@ const PalletRow = ({
   formatElapsedTime,
 }: PalletRowProps) => {
   const { settings } = useUserSettings();
-  const [swipeDirection, setSwipeDirection] = React.useState<string | null>(
+  const [swipeDirection, setSwipeDirection] = useState<string | null>(
     null,
   );
 
   // Timer display state
-  const [currentElapsed, setCurrentElapsed] = React.useState<number>(
+  const [currentElapsed, setCurrentElapsed] = useState<number>(
     entry.elapsedTime ?? 0,
   );
 
   // Update elapsed time while timer is active
-  React.useEffect(() => {
+  useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
 
     if (entry.isActive && entry.startTime) {
@@ -49,6 +49,7 @@ const PalletRow = ({
         setCurrentElapsed(elapsed);
       }, 1000);
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentElapsed(entry.elapsedTime ?? 0);
     }
 
@@ -58,7 +59,7 @@ const PalletRow = ({
   }, [entry.isActive, entry.startTime, entry.elapsedTime]);
 
   // Format time as HH:MM:SS
-  const displayTime = React.useMemo(() => {
+  const displayTime = useMemo(() => {
     if (formatElapsedTime) {
       return formatElapsedTime(currentElapsed);
     }
@@ -115,7 +116,7 @@ const PalletRow = ({
   };
 
   // Handle door number change
-  const handleDoorNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDoorNumberChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     const doorNumber = value === "" ? 0 : parseInt(value, 10);
 

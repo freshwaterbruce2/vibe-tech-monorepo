@@ -1,4 +1,3 @@
-import React from "react";
 import { Button } from "@vibetech/ui";
 import { Mic, MicOff } from "lucide-react";
 
@@ -10,6 +9,7 @@ interface VoiceCommandButtonProps {
   className?: string;
 }
 
+ 
 export const VoiceCommandButton = ({
   isListening,
   onToggle,
@@ -19,7 +19,7 @@ export const VoiceCommandButton = ({
 }: VoiceCommandButtonProps) => {
   // Detect if user is on mobile/iPhone for touch-friendly design
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
   return (
     <Button

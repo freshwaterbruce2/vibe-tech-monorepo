@@ -70,7 +70,7 @@ class SquarePaymentService {
           environment,
           token: accessToken
         });
-        console.log(`Square client initialized for ${environment} environment`);
+        console.warn(`Square client initialized for ${environment} environment`);
       } catch (error) {
         console.warn('Failed to initialize Square client:', error);
         this.client = null;
@@ -217,7 +217,7 @@ class SquarePaymentService {
 
   public async handleWebhook(payload: WebhookPayload): Promise<boolean> {
     try {
-      console.log('Processing Square webhook:', payload.type);
+      console.warn('Processing Square webhook:', payload.type);
 
       switch (payload.type) {
         case 'payment.created':
@@ -236,7 +236,7 @@ class SquarePaymentService {
           await this.handleSubscriptionCanceled(payload);
           break;
         default:
-          console.log('Unhandled webhook type:', payload.type);
+          console.warn('Unhandled webhook type:', payload.type);
       }
 
       return true;
@@ -247,34 +247,34 @@ class SquarePaymentService {
   }
 
   private async handlePaymentCreated(payload: WebhookPayload): Promise<void> {
-    console.log('Payment created:', payload.data.object.id);
+    console.warn('Payment created:', payload.data.object.id);
     // Update tenant payment status to 'processing'
   }
 
   private async handlePaymentCompleted(payload: WebhookPayload): Promise<void> {
-    console.log('Payment completed:', payload.data.object.id);
+    console.warn('Payment completed:', payload.data.object.id);
 
     const metadata = payload.data.object.metadata;
     if (metadata?.tenantId && metadata.planId) {
       // Update tenant subscription status
       // This would integrate with the tenant management system
-      console.log(`Activating subscription for tenant ${metadata.tenantId} on plan ${metadata.planId}`);
+      console.warn(`Activating subscription for tenant ${metadata.tenantId} on plan ${metadata.planId}`);
     }
   }
 
   private async handlePaymentFailed(payload: WebhookPayload): Promise<void> {
-    console.log('Payment failed:', payload.data.object.id);
+    console.warn('Payment failed:', payload.data.object.id);
     // Update tenant payment status to 'failed'
     // Send notification to tenant
   }
 
   private async handleSubscriptionStarted(payload: WebhookPayload): Promise<void> {
-    console.log('Subscription started:', payload.data.object.id);
+    console.warn('Subscription started:', payload.data.object.id);
     // Activate tenant subscription features
   }
 
   private async handleSubscriptionCanceled(payload: WebhookPayload): Promise<void> {
-    console.log('Subscription canceled:', payload.data.object.id);
+    console.warn('Subscription canceled:', payload.data.object.id);
     // Deactivate tenant subscription features
     // Optionally downgrade to free tier
   }

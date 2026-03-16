@@ -21,7 +21,7 @@ import {
   Sparkles,
   Truck,
 } from 'lucide-react'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 
 interface WelcomeWizardProps {
@@ -30,11 +30,11 @@ interface WelcomeWizardProps {
   onSkip: () => void
 }
 
-const WelcomeWizard: React.FC<WelcomeWizardProps> = ({
+const WelcomeWizard = ({
   isOpen,
   onComplete,
   onSkip,
-}) => {
+}: WelcomeWizardProps) => {
   const { config, updateConfig } = useWarehouseConfig()
   const { applyTheme } = useTheme()
   const [currentStep, setCurrentStep] = useState(0)

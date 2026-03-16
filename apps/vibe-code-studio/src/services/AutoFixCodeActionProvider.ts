@@ -3,7 +3,7 @@
  * Integrates Auto-Fix with VS Code-style quick fix UI (lightbulb + context menu)
  * Based on 2025 best practices from VS Code and Monaco Editor
  */
-import * as monaco from 'monaco-editor';
+import type * as Monaco from 'monaco-editor';
 
 import { logger } from '../services/Logger';
 
@@ -17,7 +17,7 @@ export interface AutoFixCodeActionProviderConfig {
   onFixFailed?: (error: Error) => void;
 }
 
-export class AutoFixCodeActionProvider implements monaco.languages.CodeActionProvider {
+export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionProvider {
   private autoFixService: AutoFixService;
   private errorDetector: ErrorDetector;
   private onFixApplied?: (fixTitle: string) => void;
@@ -35,22 +35,22 @@ export class AutoFixCodeActionProvider implements monaco.languages.CodeActionPro
    * Called when user opens context menu or hovers over error
    */
   async provideCodeActions(
-    model: monaco.editor.ITextModel,
-    range: monaco.Range,
-    context: monaco.languages.CodeActionContext,
-    _token: monaco.CancellationToken
-  ): Promise<monaco.languages.CodeActionList | undefined> {
+    model: Monaco.editor.ITextModel,
+    range: Monaco.Range,
+    context: Monaco.languages.CodeActionContext,
+    _token: Monaco.CancellationToken
+  ): Promise<Monaco.languages.CodeActionList | undefined> {
     // Check if there are any markers (errors) at this position
     const {markers} = context;
     if (!markers || markers.length === 0) {
       return undefined;
     }
 
-    const actions: monaco.languages.CodeAction[] = [];
+    const actions: Monaco.languages.CodeAction[] = [];
 
     // Filter markers to only include errors and warnings
     const relevantMarkers = markers.filter(
-      marker => marker.severity >= monaco.MarkerSeverity.Warning
+      marker => marker.severity >= 4 /* Monaco.MarkerSeverity.Warning */
     );
 
     if (relevantMarkers.length === 0) {
@@ -60,7 +60,7 @@ export class AutoFixCodeActionProvider implements monaco.languages.CodeActionPro
     // Add "Fix with AI" action for each error/warning
     for (const marker of relevantMarkers) {
       // Create main "Fix with AI" action
-      const fixAction: monaco.languages.CodeAction = {
+      const fixAction: Monaco.languages.CodeAction = {
         title: `✨ Fix with AI: ${this.truncateMessage(marker.message)}`,
         kind: 'quickfix',
         diagnostics: [marker],
@@ -76,7 +76,7 @@ export class AutoFixCodeActionProvider implements monaco.languages.CodeActionPro
 
       // Add "Fix All with AI" if multiple errors
       if (relevantMarkers.length > 1 && relevantMarkers.indexOf(marker) === 0) {
-        const fixAllAction: monaco.languages.CodeAction = {
+        const fixAllAction: Monaco.languages.CodeAction = {
           title: `✨ Fix All (${relevantMarkers.length} issues) with AI`,
           kind: 'quickfix',
           diagnostics: relevantMarkers,
@@ -102,9 +102,9 @@ export class AutoFixCodeActionProvider implements monaco.languages.CodeActionPro
    * Can be used to lazily fetch fix details only when action is selected
    */
   async resolveCodeAction?(
-    codeAction: monaco.languages.CodeAction,
-    _token: monaco.CancellationToken
-  ): Promise<monaco.languages.CodeAction> {
+    codeAction: Monaco.languages.CodeAction,
+    _token: Monaco.CancellationToken
+  ): Promise<Monaco.languages.CodeAction> {
     // For now, return the action as-is
     // In future, we could fetch AI-generated fixes here for preview
     return codeAction;
@@ -114,9 +114,9 @@ export class AutoFixCodeActionProvider implements monaco.languages.CodeActionPro
    * Register command handlers for the code actions
    * Must be called after provider is registered
    */
-  registerCommandHandlers(editor: monaco.editor.IStandaloneCodeEditor, monacoInstance: typeof monaco) {
+  registerCommandHandlers(editor: Monaco.editor.IStandaloneCodeEditor, monacoInstance: typeof Monaco) {
     // Handler for single fix
-    this.registerCommand(monacoInstance, 'autofix.fixWithAI', async (model: monaco.editor.ITextModel, marker: monaco.editor.IMarker) => {
+    this.registerCommand(monacoInstance, 'autofix.fixWithAI', async (model: Monaco.editor.ITextModel, marker: Monaco.editor.IMarker) => {
       try {
         logger.debug('[CodeActionProvider] Fixing single error:', marker.message);
 
@@ -149,7 +149,7 @@ export class AutoFixCodeActionProvider implements monaco.languages.CodeActionPro
     });
 
     // Handler for fix all
-    this.registerCommand(monacoInstance, 'autofix.fixAllWithAI', async (model: monaco.editor.ITextModel, markers: monaco.editor.IMarker[]) => {
+    this.registerCommand(monacoInstance, 'autofix.fixAllWithAI', async (model: Monaco.editor.ITextModel, markers: Monaco.editor.IMarker[]) => {
       try {
         logger.debug('[CodeActionProvider] Fixing multiple errors:', markers.length);
 
@@ -195,10 +195,10 @@ export class AutoFixCodeActionProvider implements monaco.languages.CodeActionPro
    * Convert Monaco marker to DetectedError format
    */
   private markerToDetectedError(
-    marker: monaco.editor.IMarker,
-    model: monaco.editor.ITextModel
+    marker: Monaco.editor.IMarker,
+    model: Monaco.editor.ITextModel
   ): any {
-    const severity = marker.severity >= monaco.MarkerSeverity.Error ? 'error' : 'warning';
+    const severity = marker.severity >= 8 /* Monaco.MarkerSeverity.Error */ ? 'error' : 'warning';
     const type = marker.source === 'eslint' ? 'eslint' : 'typescript';
 
     // Extract error code
@@ -223,12 +223,12 @@ export class AutoFixCodeActionProvider implements monaco.languages.CodeActionPro
    * Apply a fix suggestion to the editor
    */
   private applyFix(
-    editor: monaco.editor.IStandaloneCodeEditor,
-    model: monaco.editor.ITextModel,
+    editor: Monaco.editor.IStandaloneCodeEditor,
+    model: Monaco.editor.ITextModel,
     suggestion: any
   ): void {
     // Create edit operation
-    const edit: monaco.editor.IIdentifiedSingleEditOperation = {
+    const edit: Monaco.editor.IIdentifiedSingleEditOperation = {
       range: {
         startLineNumber: suggestion.startLine,
         startColumn: 1,
@@ -267,7 +267,7 @@ export class AutoFixCodeActionProvider implements monaco.languages.CodeActionPro
    * Helper method to handle command registration safely
    */
   private registerCommand(
-    monacoInstance: typeof monaco,
+    monacoInstance: typeof Monaco,
     commandId: string,
     handler: (...args: any[]) => void | Promise<void>
   ): void {

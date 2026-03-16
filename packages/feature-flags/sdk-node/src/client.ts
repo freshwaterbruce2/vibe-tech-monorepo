@@ -31,18 +31,18 @@ export class FeatureFlagClient {
   private logger: Logger;
 
   constructor(config: FeatureFlagClientConfig) {
-    this.logger = config.logger || this.createDefaultLogger();
+    this.logger = config.logger ?? this.createDefaultLogger();
     
     this.config = {
       serverUrl: config.serverUrl,
       environment: config.environment,
-      apiKey: config.apiKey || '',
-      refreshIntervalMs: config.refreshIntervalMs || DEFAULT_REFRESH_INTERVAL,
+      apiKey: config.apiKey ?? '',
+      refreshIntervalMs: config.refreshIntervalMs ?? DEFAULT_REFRESH_INTERVAL,
       enableWebSocket: config.enableWebSocket ?? true,
       enableLocalCache: config.enableLocalCache ?? true,
-      cacheMaxAge: config.cacheMaxAge || 300_000, // 5 minutes
-      onKillSwitch: config.onKillSwitch || (() => {}),
-      onError: config.onError || ((err) => this.logger.error('Feature flag error:', err)),
+      cacheMaxAge: config.cacheMaxAge ?? 300_000, // 5 minutes
+      onKillSwitch: config.onKillSwitch ?? (() => {}),
+      onError: config.onError ?? ((err) => this.logger.error('Feature flag error:', err)),
       logger: this.logger,
     };
 
@@ -92,7 +92,7 @@ export class FeatureFlagClient {
    */
   isKillSwitchActive(flagKey: string): boolean {
     const flag = this.cache.get(flagKey);
-    if (!flag || flag.type !== 'kill_switch') return false;
+    if (flag?.type !== 'kill_switch') return false;
     return flag.enabled;
   }
 
@@ -154,7 +154,7 @@ export class FeatureFlagClient {
 
     // Get environment-specific value
     const envValue = flag.environments[context.environment];
-    if (!envValue || !envValue.enabled) {
+    if (!envValue?.enabled) {
       return {
         flagKey,
         enabled: false,
@@ -179,7 +179,7 @@ export class FeatureFlagClient {
 
     // Percentage rollout
     if ('percentage' in envValue) {
-      const identifier = context.userId || context.sessionId || 'anonymous';
+      const identifier = context.userId ?? context.sessionId ?? 'anonymous';
       const inRollout = isInPercentageRollout(identifier, flagKey, envValue.percentage);
       
       return {
@@ -191,7 +191,7 @@ export class FeatureFlagClient {
 
     // Variant assignment
     if (flag.variants && flag.variants.length > 0) {
-      const identifier = context.userId || context.sessionId || 'anonymous';
+      const identifier = context.userId ?? context.sessionId ?? 'anonymous';
       const variantKey = assignVariant(identifier, flagKey, flag.variants);
       const variant = flag.variants.find(v => v.key === variantKey);
 
@@ -308,9 +308,10 @@ export class FeatureFlagClient {
         return String(attrValue).includes(String(rule.value));
       case 'in_list':
         return Array.isArray(rule.value) && rule.value.includes(attrValue);
-      case 'percentage':
-        const id = context.userId || context.sessionId || 'anonymous';
+      case 'percentage': {
+        const id = context.userId ?? context.sessionId ?? 'anonymous';
         return isInPercentageRollout(id, rule.id, Number(rule.value));
+      }
       default:
         return false;
     }
@@ -331,39 +332,43 @@ export class FeatureFlagClient {
 
   private startPolling(): void {
     this.refreshTimer = setInterval(() => {
-      this.refreshFlags();
+      void this.refreshFlags();
     }, this.config.refreshIntervalMs);
   }
 
   private startKillSwitchPolling(): void {
     // More aggressive polling for kill switches
-    this.killSwitchTimer = setInterval(async () => {
-      try {
-        const response = await fetch(
-          `${this.config.serverUrl}/api/kill-switch/active`,
-          { headers: this.getHeaders() }
-        );
-        
-        if (response.ok) {
-          const { flags } = await response.json();
-          for (const flag of flags) {
-            const cached = this.cache.get(flag.key);
-            if (cached && !cached.enabled && flag.enabled) {
-              // Kill switch was just activated
-              this.handleKillSwitchEvent({
-                flagKey: flag.key,
-                action: 'activated',
-                priority: flag.killSwitch?.priority || 'normal',
-                timestamp: new Date().toISOString(),
-              });
-            }
-            this.cache.set(flag.key, flag);
-          }
-        }
-      } catch (error) {
-        // Silent fail for kill switch polling - WebSocket is primary
-      }
+    this.killSwitchTimer = setInterval(() => {
+      void this.pollKillSwitches();
     }, KILL_SWITCH_CHECK_INTERVAL);
+  }
+
+  private async pollKillSwitches(): Promise<void> {
+    try {
+      const response = await fetch(
+        `${this.config.serverUrl}/api/kill-switch/active`,
+        { headers: this.getHeaders() }
+      );
+      
+      if (response.ok) {
+        const { flags } = await response.json();
+        for (const flag of flags) {
+          const cached = this.cache.get(flag.key);
+          if (cached && !cached.enabled && flag.enabled) {
+            // Kill switch was just activated
+            this.handleKillSwitchEvent({
+              flagKey: flag.key,
+              action: 'activated',
+              priority: flag.killSwitch?.priority ?? 'normal',
+              timestamp: new Date().toISOString(),
+            });
+          }
+          this.cache.set(flag.key, flag);
+        }
+      }
+    } catch {
+      // Silent fail for kill switch polling - WebSocket is primary
+    }
   }
 
   private connectWebSocket(): void {
@@ -388,7 +393,9 @@ export class FeatureFlagClient {
 
     this.ws.on('close', () => {
       this.logger.debug('WebSocket disconnected, reconnecting...');
-      setTimeout(() => this.connectWebSocket(), 5000);
+      setTimeout(() => {
+        this.connectWebSocket();
+      }, 5000);
     });
 
     this.ws.on('error', (error) => {
@@ -398,16 +405,18 @@ export class FeatureFlagClient {
 
   private handleWSMessage(message: WSMessage): void {
     switch (message.type) {
-      case 'flag_update':
+      case 'flag_update': {
         const flagUpdate = message.payload as { flag: FeatureFlag };
         this.cache.set(flagUpdate.flag.key, flagUpdate.flag);
         this.logger.debug(`Flag updated: ${flagUpdate.flag.key}`);
         break;
+      }
 
-      case 'kill_switch':
+      case 'kill_switch': {
         const ksPayload = message.payload as { event: KillSwitchEvent };
         this.handleKillSwitchEvent(ksPayload.event);
         break;
+      }
 
       case 'ping':
         // Respond with pong
@@ -427,7 +436,7 @@ export class FeatureFlagClient {
     }
 
     // Call user handler
-    this.config.onKillSwitch(event);
+    void this.config.onKillSwitch(event);
   }
 
   private getHeaders(): Record<string, string> {

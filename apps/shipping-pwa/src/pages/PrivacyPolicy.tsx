@@ -1,10 +1,9 @@
-import React from 'react';
 import { Button } from "@vibetech/ui";
 import { Card } from "@vibetech/ui";
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const PrivacyPolicy: React.FC = () => {
+const PrivacyPolicy = () => {
   const navigate = useNavigate();
 
   return (

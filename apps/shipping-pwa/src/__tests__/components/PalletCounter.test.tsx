@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import PalletCounter from '@/components/pallets/PalletCounter';
@@ -31,7 +32,7 @@ describe('Pallet Counter', () => {
     formatElapsedTime: vi.fn()
   };
 
-  const renderWithProviders = (ui: React.ReactElement) => {
+  const renderWithProviders = (ui: ReactElement) => {
     return render(
       <UserProvider>{ui}</UserProvider>
     );

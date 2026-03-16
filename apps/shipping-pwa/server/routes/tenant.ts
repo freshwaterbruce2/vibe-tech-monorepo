@@ -52,7 +52,7 @@ router.post('/create', async (req: Request, res: Response) => {
       );
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       tenant: {
         id: tenant.id,
@@ -71,7 +71,7 @@ router.post('/create', async (req: Request, res: Response) => {
   } catch (error) {
     healthService.incrementError();
     console.error('Tenant creation error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to create tenant',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -86,7 +86,7 @@ router.get('/config', (req: any, res: Response) => {
       return res.status(401).json({ error: 'Tenant not identified' });
     }
 
-    res.json({
+    return res.json({
       success: true,
       config: tenant.config,
       tenant: {
@@ -99,7 +99,7 @@ router.get('/config', (req: any, res: Response) => {
   } catch (error) {
     healthService.incrementError();
     console.error('Get tenant config error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to get tenant configuration',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -124,7 +124,7 @@ router.put('/config', (req: any, res: Response) => {
       return res.status(404).json({ error: 'Tenant not found' });
     }
 
-    res.json({
+    return res.json({
       success: true,
       config: updatedTenant.config,
       updatedAt: updatedTenant.updatedAt
@@ -132,7 +132,7 @@ router.put('/config', (req: any, res: Response) => {
   } catch (error) {
     healthService.incrementError();
     console.error('Update tenant config error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to update tenant configuration',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -160,11 +160,11 @@ router.get('/data', (req: any, res: Response) => {
       return res.json({ success: true, data: emptyData });
     }
 
-    res.json({ success: true, data });
+    return res.json({ success: true, data });
   } catch (error) {
     healthService.incrementError();
     console.error('Get tenant data error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to get tenant data',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -235,7 +235,7 @@ router.post('/data', async (req: any, res: Response) => {
       );
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: updatedData,
       limits: {
@@ -246,7 +246,7 @@ router.post('/data', async (req: any, res: Response) => {
   } catch (error) {
     healthService.incrementError();
     console.error('Update tenant data error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to update tenant data',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -267,7 +267,7 @@ router.get('/subscription', (req: any, res: Response) => {
       users: data?.users.length || 0
     };
 
-    res.json({
+    return res.json({
       success: true,
       subscription: tenant.subscription,
       usage,
@@ -280,7 +280,7 @@ router.get('/subscription', (req: any, res: Response) => {
   } catch (error) {
     healthService.incrementError();
     console.error('Get subscription error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to get subscription information',
       message: error instanceof Error ? error.message : 'Unknown error'
     });

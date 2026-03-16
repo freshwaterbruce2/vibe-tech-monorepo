@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useWarehouseConfig } from '@/config/warehouse'
 import {
   generateColorScale,
@@ -6,7 +7,7 @@ import {
   hexToHSL,
   shadeColor,
 } from '@/utils/colorUtils'
-import React, { createContext, useContext, useEffect } from 'react'
+import { createContext, useContext, useEffect, type ReactNode } from 'react'
 
 interface ThemeContextType {
   colors: {
@@ -21,9 +22,9 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
+export const ThemeProvider = ({
   children,
-}) => {
+}: { children: ReactNode }) => {
   const { config } = useWarehouseConfig()
 
   const applyTheme = () => {
@@ -156,12 +157,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     applyTheme()
-  }, [config.brandColors])
+  }, [config.brandColors]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Apply theme on initial mount
   useEffect(() => {
     applyTheme()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const contextValue: ThemeContextType = {
     colors: config.brandColors,

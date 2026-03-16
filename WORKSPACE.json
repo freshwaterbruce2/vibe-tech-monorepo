@@ -19,6 +19,11 @@
   },
   "recentActivity": [
     {
+      "date": "2026-03-14",
+      "project": "vibe-code-studio",
+      "action": "Workspace-wide lint zeroed. Fixed Out of Memory linting error and enforced 500-line limit on ComposerMode.tsx and AgentMode.tsx."
+    },
+    {
       "date": "2026-02-28",
       "project": "business-booking-platform",
       "action": "Explored booking frontend and planned booking backend architecture."
@@ -364,7 +369,7 @@
       "description": "Project completion tool"
     }
   },
-  "currentFocus": ["business-booking-platform", "backend-setup"],
+  "currentFocus": ["vibe-code-studio", "workspace-lint"],
   "blockers": [],
   "rules": "./docs/ai/RULES.md",
   "paths": {

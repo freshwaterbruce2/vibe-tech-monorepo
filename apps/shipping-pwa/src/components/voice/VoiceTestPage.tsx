@@ -1,13 +1,14 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { VoiceCommandButton } from "./VoiceCommandButton";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 import { Card, CardContent, CardHeader, CardTitle } from "@vibetech/ui";
 import { Badge } from "@vibetech/ui";
 import { Button } from "@vibetech/ui";
 
+ 
 export const VoiceTestPage = () => {
   const [testResults, setTestResults] = useState<string[]>([]);
-  const [isTestMode, setIsTestMode] = useState(false);
+  const [_isTestMode, _setIsTestMode] = useState(false);
 
   const {
     transcript,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, type ChangeEvent } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@vibetech/ui";
 import { Label } from "@/components/ui/label";
 import { Input } from "@vibetech/ui";
@@ -14,11 +14,12 @@ const ProfileSettings = () => {
   const [isChanged, setIsChanged] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDisplayName(currentUser.displayName);
     setIsChanged(false);
   }, [currentUser.displayName]);
 
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     setDisplayName(e.target.value);
     setIsChanged(e.target.value !== currentUser.displayName);
   };

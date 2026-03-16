@@ -8,7 +8,7 @@
  */
 
 import { loader } from '@monaco-editor/react';
-import * as monaco from 'monaco-editor';
+// Removed synchronous monaco-editor value import
 
 // Import Monaco workers using Vite's ?worker syntax (2025 best practice)
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
@@ -26,7 +26,7 @@ let isConfigured = false;
  * This should be called before using Monaco Editor
  * Safe to call multiple times (only configures once)
  */
-export function configureMonaco() {
+export async function configureMonaco() {
   if (isConfigured) {
     logger.debug('[Monaco] Already configured, skipping');
     return;
@@ -52,6 +52,7 @@ export function configureMonaco() {
   };
 
   // Configure Monaco Editor to use local files instead of CDN (required for Tauri/Electron)
+  const monaco = await import('monaco-editor');
   loader.config({ monaco });
 
   isConfigured = true;
@@ -63,6 +64,6 @@ export function configureMonaco() {
  * Ensures Monaco is configured before returning
  */
 export async function getMonaco() {
-  configureMonaco();
-  return monaco;
+  await configureMonaco();
+  return await import('monaco-editor');
 }

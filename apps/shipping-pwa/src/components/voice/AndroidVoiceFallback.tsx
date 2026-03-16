@@ -1,9 +1,9 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, type FormEvent, type KeyboardEvent } from 'react';
 import { Input } from "@vibetech/ui";
 import { Button } from "@vibetech/ui";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@vibetech/ui";
 import { Badge } from "@vibetech/ui";
-import { Mic, MicOff, Keyboard, AlertTriangle, Info } from 'lucide-react';
+import { Keyboard, AlertTriangle, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AndroidVoiceFallbackProps {
@@ -23,12 +23,13 @@ interface AndroidVoiceFallbackProps {
   };
 }
 
-export const AndroidVoiceFallback: React.FC<AndroidVoiceFallbackProps> = ({
+ 
+export const AndroidVoiceFallback = ({
   onCommandRecognized,
   commandPatterns,
   compatibilityIssues,
   androidDeviceInfo
-}) => {
+}: AndroidVoiceFallbackProps) => {
   const [textInput, setTextInput] = useState('');
   const [showKeyboard, setShowKeyboard] = useState(false);
   const [recentCommands, setRecentCommands] = useState<string[]>([]);
@@ -39,6 +40,7 @@ export const AndroidVoiceFallback: React.FC<AndroidVoiceFallbackProps> = ({
     const stored = window.electronAPI?.store.get('android-voice-fallback-commands');
     if (stored) {
       try {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setRecentCommands(JSON.parse(stored));
       } catch (error) {
         console.error('Error loading recent commands:', error);
@@ -95,12 +97,12 @@ export const AndroidVoiceFallback: React.FC<AndroidVoiceFallbackProps> = ({
     }
   }, [commandPatterns, onCommandRecognized, saveRecentCommand]);
 
-  const handleSubmit = useCallback((e: React.FormEvent) => {
+  const handleSubmit = useCallback((e: FormEvent) => {
     e.preventDefault();
     processTextCommand(textInput);
   }, [textInput, processTextCommand]);
 
-  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
+  const handleKeyPress = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       processTextCommand(textInput);

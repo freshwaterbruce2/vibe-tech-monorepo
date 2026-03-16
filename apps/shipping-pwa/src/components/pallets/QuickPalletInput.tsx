@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState, type MouseEvent } from 'react';
 import { Button } from "@vibetech/ui";
 import { X, Plus, Minus } from 'lucide-react'; // Added Plus/Minus for iconography
 
@@ -8,12 +8,12 @@ interface QuickPalletInputProps {
   onClose: () => void;
 }
 
-const QuickPalletInput: React.FC<QuickPalletInputProps> = ({
+const QuickPalletInput = ({
   currentCount,
   onUpdate,
   onClose,
-}) => {
-  const [inputValue, setInputValue] = React.useState<string>('');
+}: QuickPalletInputProps) => {
+  const [inputValue, setInputValue] = useState<string>('');
 
   const handleNumberClick = (num: number) => {
     // Limit input length if necessary
@@ -30,7 +30,7 @@ const QuickPalletInput: React.FC<QuickPalletInputProps> = ({
       onClose();
     } else {
       // Handle invalid input (optional: show error state)
-      console.error("Invalid pallet count input");
+      console.warn("Invalid pallet count input");
       setInputValue(''); // Clear invalid input
     }
   };
@@ -54,7 +54,7 @@ const QuickPalletInput: React.FC<QuickPalletInputProps> = ({
   };
 
   // Prevents click event from propagating
-  const stopPropagation = (e: React.MouseEvent) => {
+  const stopPropagation = (e: MouseEvent) => {
     e.stopPropagation();
   };
 

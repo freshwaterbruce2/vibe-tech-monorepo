@@ -275,7 +275,7 @@ export const useUserStore = create<UserStore>()(
               })
               return false
             }
-          } catch (_error) {
+          } catch {
             set(state => {
               state.authError = 'Login failed. Please try again.'
               state.isLoading = false

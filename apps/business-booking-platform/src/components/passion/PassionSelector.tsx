@@ -153,6 +153,17 @@ export const PassionSelector: React.FC<PassionSelectorProps> = ({
 		filters.passions || [],
 	);
 	const [hoveredPassion, setHoveredPassion] = useState<string | null>(null);
+	const getCardClasses = (isSelected: boolean, canSelect: boolean) => {
+		if (isSelected) {
+			return 'ring-2 ring-primary-500 shadow-lg scale-105';
+		}
+
+		if (canSelect) {
+			return 'hover:shadow-lg hover:scale-105';
+		}
+
+		return 'opacity-50 cursor-not-allowed pointer-events-none';
+	};
 
 	const handlePassionToggle = (passionId: string) => {
 		setSelectedPassions((prev) => {
@@ -221,12 +232,7 @@ export const PassionSelector: React.FC<PassionSelectorProps> = ({
 							key={passion.id}
 							className={cn(
 								'relative overflow-hidden cursor-pointer transition-all duration-300 group',
-								isSelected
-									? 'ring-2 ring-primary-500 shadow-lg scale-105'
-									: canSelect
-										? 'hover:shadow-lg hover:scale-105'
-										: 'opacity-50 cursor-not-allowed',
-								!canSelect && 'pointer-events-none',
+								getCardClasses(isSelected, canSelect),
 							)}
 							onClick={() => canSelect && handlePassionToggle(passion.id)}
 							onMouseEnter={() => setHoveredPassion(passion.id)}

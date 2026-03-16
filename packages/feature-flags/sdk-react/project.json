@@ -1,0 +1,43 @@
+{
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "name": "@dev/feature-flags-sdk-react",
+  "projectType": "library",
+  "root": "packages/feature-flags/sdk-react",
+  "sourceRoot": "packages/feature-flags/sdk-react/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "options": {
+        "command": "pnpm build",
+        "cwd": "packages/feature-flags/sdk-react"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "pnpm lint",
+        "cwd": "packages/feature-flags/sdk-react"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "pnpm typecheck",
+        "cwd": "packages/feature-flags/sdk-react"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "pnpm test",
+        "cwd": "packages/feature-flags/sdk-react"
+      }
+    }
+  },
+  "tags": ["type:library", "scope:feature-flags"]
+}

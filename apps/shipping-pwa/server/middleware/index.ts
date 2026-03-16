@@ -86,8 +86,8 @@ export function tenantMiddleware(req: Request, res: Response, next: NextFunction
   (req as any).tenant = tenant;
 
   healthService.incrementRequest();
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - ${clientId} - Tenant: ${tenant?.name || 'none'}`);
-  next();
+  console.warn(`[${new Date().toISOString()}] ${req.method} ${req.url} - ${clientId} - Tenant: ${tenant?.name || 'none'}`);
+  return next();
 }
 
 /**
@@ -113,7 +113,7 @@ export function adminAuthMiddleware(req: Request, res: Response, next: NextFunct
   }
 
   (req as any).admin = admin;
-  next();
+  return next();
 }
 
 /**
@@ -129,6 +129,6 @@ export function requirePermission(permission: string) {
         message: 'You do not have permission to perform this action'
       });
     }
-    next();
+    return next();
   };
 }

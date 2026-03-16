@@ -1,7 +1,7 @@
 import { Toaster } from '@/components/ui/toaster'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import React, { Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import ErrorBoundary from './components/ErrorBoundary'
 import TopNav from './components/layout/TopNav'
@@ -24,23 +24,23 @@ import {
 } from './components/lazy/LazyShippingComponents'
 
 // Keep some critical components as regular lazy imports
-const NotFound = React.lazy(async () => import('./pages/NotFound'))
-const TenantAuthPage = React.lazy(async () => import('./pages/TenantAuthPage'))
-const LandingPage = React.lazy(async () => import('./pages/LandingPage'))
-const SignupPage = React.lazy(async () => import('./pages/SignupPage'))
-const PrivacyPolicy = React.lazy(async () => import('./pages/PrivacyPolicy'))
-const TermsOfService = React.lazy(async () => import('./pages/TermsOfService'))
-const AdminLogin = React.lazy(async () =>
+const NotFound = lazy(async () => import('./pages/NotFound'))
+const TenantAuthPage = lazy(async () => import('./pages/TenantAuthPage'))
+const LandingPage = lazy(async () => import('./pages/LandingPage'))
+const SignupPage = lazy(async () => import('./pages/SignupPage'))
+const PrivacyPolicy = lazy(async () => import('./pages/PrivacyPolicy'))
+const TermsOfService = lazy(async () => import('./pages/TermsOfService'))
+const AdminLogin = lazy(async () =>
   import('./components/admin/AdminLogin').then(module => ({
     default: module.AdminLogin,
   }))
 )
 
 // New UI components pages
-const Dashboard = React.lazy(async () => import('./pages/Dashboard'))
-const Analytics = React.lazy(async () => import('./pages/Analytics'))
-const Maps = React.lazy(async () => import('./pages/Maps'))
-const Support = React.lazy(async () => import('./pages/Support'))
+const Dashboard = lazy(async () => import('./pages/Dashboard'))
+const Analytics = lazy(async () => import('./pages/Analytics'))
+const Maps = lazy(async () => import('./pages/Maps'))
+const Support = lazy(async () => import('./pages/Support'))
 
 // Loading component for Suspense fallback
 const PageLoader = () => (
@@ -74,7 +74,7 @@ const AppContent = () => {
     return () => {
       if (timer) clearTimeout(timer)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [config])
 
   const handleWelcomeComplete = () => {

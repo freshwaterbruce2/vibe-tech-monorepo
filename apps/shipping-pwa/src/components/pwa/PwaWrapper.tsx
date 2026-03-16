@@ -1,12 +1,12 @@
 import { Wifi, WifiOff } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import InstallPrompt from './InstallPrompt'
 // cspell:ignore sonner
 import { useUserSettings } from '@/hooks/useUserSettings'
 import { toast } from 'sonner'
 
 interface PwaWrapperProps {
-  children: React.ReactNode
+  children: ReactNode
 }
 
 interface SyncManager {
@@ -21,10 +21,10 @@ type ExtendedServiceWorkerRegistration = Omit<
   sync?: SyncManager
 }
 
-const PwaWrapper: React.FC<PwaWrapperProps> = ({ children }) => {
+const PwaWrapper = ({ children }: PwaWrapperProps) => {
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine)
   const [wasOffline, setWasOffline] = useState<boolean>(false)
-  const { settings } = useUserSettings() // Import user settings to ensure they're available app-wide
+  const { settings: _settings } = useUserSettings() // Import user settings to ensure they're available app-wide
 
   useEffect(() => {
     const handleOnline = () => {
@@ -52,6 +52,7 @@ const PwaWrapper: React.FC<PwaWrapperProps> = ({ children }) => {
                       console.error('Background sync registration failed:', err)
                     )
                 } else {
+                  // sync not available, skip silently
                 }
               } catch (error) {
                 console.error('Sync registration error:', error)

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@vibetech/ui";
 import { apiFetch } from '@/utils/api';
 import { Button } from "@vibetech/ui";
@@ -55,12 +55,13 @@ interface UpgradeButtonProps {
   showDetails?: boolean;
 }
 
-export const UpgradeButton: React.FC<UpgradeButtonProps> = ({
+ 
+export const UpgradeButton = ({
   variant = 'button',
   className = '',
-  showDetails = false
-}) => {
-  const { isAuthenticated, tenantInfo } = useTenantAuth();
+  showDetails: _showDetails = false
+}: UpgradeButtonProps) => {
+  const { isAuthenticated, tenantInfo: _tenantInfo } = useTenantAuth();
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | null>(null);
   const [availablePlans, setAvailablePlans] = useState<SubscriptionPlan[]>([]);
   const [isLoading, setIsLoading] = useState(false);

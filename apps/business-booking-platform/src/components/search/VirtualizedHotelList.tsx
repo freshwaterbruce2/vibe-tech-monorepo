@@ -3,6 +3,7 @@ import {
 	Car,
 	Coffee,
 	Heart,
+	type LucideIcon,
 	MapPin,
 	Share2,
 	Sparkles,
@@ -69,7 +70,7 @@ const HotelItem = memo<HotelItemProps>(({ index, style, data }) => {
 			});
 			// Implement save functionality
 		},
-		[hotel?.id],
+		[hotel],
 	);
 
 	const handleShareHotel = useCallback(
@@ -85,7 +86,7 @@ const HotelItem = memo<HotelItemProps>(({ index, style, data }) => {
 			});
 			// Implement share functionality
 		},
-		[hotel?.id],
+		[hotel],
 	);
 
 	if (!hotel) {
@@ -113,7 +114,7 @@ const HotelItem = memo<HotelItemProps>(({ index, style, data }) => {
 	};
 
 	const getPassionIcon = (passion: string) => {
-		const iconMap: Record<string, React.ComponentType<any>> = {
+		const iconMap: Record<string, LucideIcon> = {
 			adventure: Camera,
 			wellness: Sparkles,
 			luxury: Star,
@@ -238,10 +239,7 @@ const HotelItem = memo<HotelItemProps>(({ index, style, data }) => {
 							{/* Amenities */}
 							<div className="flex flex-wrap gap-3 mb-4">
 								{hotel.amenities.slice(0, 4).map((amenity, index) => {
-									const amenityIcons: Record<
-										string,
-										React.ComponentType<any>
-									> = {
+									const amenityIcons: Record<string, LucideIcon> = {
 										WiFi: Wifi,
 										Parking: Car,
 										Restaurant: Coffee,

@@ -1,5 +1,5 @@
 import { EditorSettings } from '../types';
-import * as monaco from 'monaco-editor';
+import type * as Monaco from 'monaco-editor';
 import { logger } from '../services/Logger';
 
 // A subset of VS Code theme format
@@ -23,7 +23,8 @@ export const loadCustomTheme = async (themeName: string, themeJson: string) => {
     const themeData = JSON.parse(themeJson) as VSCodeTheme;
     
     // Map VS Code theme to Monaco theme
-    const rules: monaco.editor.ITokenThemeRule[] = [];
+    const monaco = await import('monaco-editor');
+    const rules: Monaco.editor.ITokenThemeRule[] = [];
     
     if (themeData.tokenColors) {
       themeData.tokenColors.forEach((tc) => {

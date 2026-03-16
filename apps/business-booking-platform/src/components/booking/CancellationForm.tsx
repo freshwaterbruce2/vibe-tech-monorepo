@@ -11,7 +11,13 @@ import {
 } from 'lucide-react';
 import React from 'react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { PaymentService } from '../../services/payment';
+
+interface CancellationPolicy {
+	type?: string;
+	description?: string;
+}
 
 interface CancellationFormProps {
 	booking: {
@@ -25,7 +31,7 @@ interface CancellationFormProps {
 		currency: string;
 		isCancellable: boolean;
 		cancellationDeadline?: Date;
-		cancellationPolicy: any;
+		cancellationPolicy: CancellationPolicy;
 	};
 	paymentDetails?: {
 		paymentIntentId: string;
@@ -89,7 +95,7 @@ export const CancellationForm: React.FC<CancellationFormProps> = ({
 
 	const handleConfirmCancellation = async () => {
 		if (!cancellationReason.trim()) {
-			alert('Please provide a reason for cancellation');
+			toast.error('Please provide a reason for cancellation');
 			return;
 		}
 
@@ -97,7 +103,12 @@ export const CancellationForm: React.FC<CancellationFormProps> = ({
 			setIsProcessing(true);
 			await onCancel(cancellationReason, refundAmount);
 		} catch (error) {
-			console.error('Cancellation failed:', error);
+			toast.error('Cancellation failed', {
+				description:
+					error instanceof Error
+						? error.message
+						: 'Something went wrong while cancelling this booking.',
+			});
 		} finally {
 			setIsProcessing(false);
 		}

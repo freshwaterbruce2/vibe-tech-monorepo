@@ -1,4 +1,3 @@
-import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
@@ -8,13 +7,13 @@ import './styles/responsive.css'
 // import PwaWrapper from "./components/pwa/PwaWrapper";
 
 // Initialize Sentry error monitoring asynchronously to reduce initial bundle
-const initializeSentry = async () => {
+const loadAndInitSentry = async () => {
   const { initializeSentry } = await import('./lib/sentry');
   await initializeSentry();
 };
 
 // Initialize Sentry in the background
-initializeSentry().catch(console.error);
+loadAndInitSentry().catch(console.error);
 
 const rootElement = document.getElementById('root')!
 

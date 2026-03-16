@@ -1,12 +1,13 @@
+/* eslint-disable react-refresh/only-export-components */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, RenderOptions } from '@testing-library/react'
-import React, { ReactElement } from 'react'
+import { type ReactElement, type ReactNode } from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { UserProvider } from '../contexts/UserContext'
 import { DoorSchedule } from '../types/shipping'
 
 // Create a custom render function that includes providers
-const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
+const AllTheProviders = ({ children }: { children: ReactNode }) => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -80,7 +81,7 @@ export const mockLocalStorage = () => {
 
 // Mock IndexedDB for tests
 export const mockIndexedDB = () => {
-  const databases: Record<string, any> = {}
+  const _databases: Record<string, any> = {}
 
   return {
     open: vi.fn().mockImplementation((_name: string) => {

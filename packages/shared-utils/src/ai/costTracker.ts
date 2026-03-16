@@ -152,8 +152,8 @@ export class CostTracker {
   getTodaysCost(): number {
     const todayStart = new Date().setHours(0, 0, 0, 0);
     return this.entries
-      .filter(e => e.timestamp >= todayStart)
-      .reduce((sum, e) => sum + e.cost, 0);
+      .filter((entry) => entry.timestamp >= todayStart)
+      .reduce((sum, entry) => sum + entry.cost, 0);
   }
 
   /**
@@ -162,8 +162,8 @@ export class CostTracker {
   getLastHourCost(): number {
     const oneHourAgo = Date.now() - 60 * 60 * 1000;
     return this.entries
-      .filter(e => e.timestamp >= oneHourAgo)
-      .reduce((sum, e) => sum + e.cost, 0);
+      .filter((entry) => entry.timestamp >= oneHourAgo)
+      .reduce((sum, entry) => sum + entry.cost, 0);
   }
 
   /**
@@ -174,8 +174,8 @@ export class CostTracker {
     const end = endDate.getTime();
 
     return this.entries
-      .filter(e => e.timestamp >= start && e.timestamp <= end)
-      .reduce((sum, e) => sum + e.cost, 0);
+      .filter((entry) => entry.timestamp >= start && entry.timestamp <= end)
+      .reduce((sum, entry) => sum + entry.cost, 0);
   }
 
   /**
@@ -186,7 +186,7 @@ export class CostTracker {
     const dayEnd = new Date(date).setHours(23, 59, 59, 999);
 
     const dayEntries = this.entries.filter(
-      e => e.timestamp >= dayStart && e.timestamp <= dayEnd
+      (entry) => entry.timestamp >= dayStart && entry.timestamp <= dayEnd
     );
 
     const modelBreakdown: Record<string, { cost: number; requests: number }> = {};
@@ -198,16 +198,19 @@ export class CostTracker {
       totalCost += entry.cost;
       totalTokens += entry.inputTokens + entry.outputTokens;
 
-      if (!modelBreakdown[entry.model]) {
-        modelBreakdown[entry.model] = { cost: 0, requests: 0 };
-      }
+      const breakdown = (modelBreakdown[entry.model] ??= {
+        cost: 0,
+        requests: 0,
+      });
 
-      modelBreakdown[entry.model]!.cost += entry.cost;
-      modelBreakdown[entry.model]!.requests += 1;
+      breakdown.cost += entry.cost;
+      breakdown.requests += 1;
     }
 
+    const [summaryDate = date.toISOString()] = date.toISOString().split('T');
+
     return {
-      date: date.toISOString().split('T')[0]!,
+      date: summaryDate,
       totalCost,
       totalTokens,
       requestCount: dayEntries.length,
@@ -292,7 +295,7 @@ export class CostTracker {
    * Get entries for a specific model
    */
   getEntriesForModel(model: string): CostEntry[] {
-    return this.entries.filter(e => e.model.includes(model));
+    return this.entries.filter((entry) => entry.model.includes(model));
   }
 
   /**
@@ -308,9 +311,9 @@ export class CostTracker {
    */
   exportToCSV(): string {
     const header = 'Timestamp,Model,Input Tokens,Output Tokens,Cost USD\n';
-    const rows = this.entries.map(e => {
-      const date = new Date(e.timestamp).toISOString();
-      return `${date},${e.model},${e.inputTokens},${e.outputTokens},${e.cost.toFixed(6)}`;
+    const rows = this.entries.map((entry) => {
+      const date = new Date(entry.timestamp).toISOString();
+      return `${date},${entry.model},${entry.inputTokens},${entry.outputTokens},${entry.cost.toFixed(6)}`;
     });
 
     return header + rows.join('\n');

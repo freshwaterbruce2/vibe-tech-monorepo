@@ -1,4 +1,3 @@
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@vibetech/ui";
 import { Badge } from "@vibetech/ui";
 import { Mic, Zap, Package, Truck } from "lucide-react";

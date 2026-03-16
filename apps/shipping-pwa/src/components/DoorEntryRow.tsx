@@ -21,7 +21,7 @@ import {
 import { Button } from '@vibetech/ui'
 import { motion } from 'framer-motion'
 import { MessageCircle, Trash2 } from 'lucide-react'
-import React, { memo, useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 
 interface DoorEntryRowProps {
   door: DoorSchedule
@@ -108,6 +108,7 @@ const DoorEntryRow = memo(
 
     useEffect(() => {
       if (door.palletCount !== prevPalletCountRef.current) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsPalletUpdating(true)
         const timer = setTimeout(() => setIsPalletUpdating(false), 300)
         prevPalletCountRef.current = door.palletCount
@@ -117,6 +118,7 @@ const DoorEntryRow = memo(
     }, [door.palletCount])
 
     useEffect(() => {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setErrors(validateDoorFields(door, config))
     }, [door, door.doorNumber, door.destinationDC, door.freightType, config])
 

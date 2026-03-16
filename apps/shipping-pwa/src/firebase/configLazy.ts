@@ -44,7 +44,7 @@ async function initializeFirebaseApp() {
 
   try {
     firebaseApp = initializeApp(firebaseConfig);
-    console.log('Firebase app initialized successfully');
+    console.warn('Firebase app initialized successfully');
     return firebaseApp;
   } catch (error) {
     console.error('Firebase initialization failed:', error);
@@ -74,7 +74,7 @@ export async function getFirestore() {
   if (import.meta.env.VITE_FIREBASE_USE_EMULATOR === 'true' && import.meta.env.MODE === 'development') {
     try {
       connectFirestoreEmulator(db, 'localhost', 8080);
-      console.log('Connected to Firestore emulator');
+      console.warn('Connected to Firestore emulator');
     } catch (error) {
       console.warn('Failed to connect to Firestore emulator:', error);
     }
@@ -95,7 +95,7 @@ export async function getAnalytics() {
 
       if (await isSupported()) {
         analytics = getAnalytics(firebaseApp);
-        console.log('Firebase Analytics initialized');
+        console.warn('Firebase Analytics initialized');
       } else {
         console.warn('Firebase Analytics not supported in this environment');
       }

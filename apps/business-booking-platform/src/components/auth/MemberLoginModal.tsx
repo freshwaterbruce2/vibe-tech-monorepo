@@ -54,12 +54,9 @@ return null;
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
-		// Handle login/signup
-		if (import.meta.env.DEV) {
-			console.log(isSignUp ? 'Sign up' : 'Sign in', { email, password, name });
-		}
+		const action = isSignUp ? 'Account created successfully!' : 'Signed in successfully!';
 		toast.success(
-			isSignUp ? 'Account created successfully!' : 'Signed in successfully!',
+			action,
 		);
 		onClose();
 	};

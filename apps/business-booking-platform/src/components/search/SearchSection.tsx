@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface SearchSectionProps {
-	onSearch?: (searchData: any) => void;
+	onSearch?: (searchData: Record<string, never>) => void;
 	isLoading?: boolean;
 	className?: string;
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@vibetech/ui";
 import { Button } from "@vibetech/ui";
 import { Input } from "@vibetech/ui";
@@ -10,7 +10,7 @@ import { Plus, X, Save, RotateCcw } from 'lucide-react';
 import { useWarehouseConfig, WarehouseConfig } from '@/config/warehouse';
 import { toast } from 'sonner';
 
-const WarehouseSetup: React.FC = () => {
+const WarehouseSetup = () => {
   const { config, updateConfig, resetConfig } = useWarehouseConfig();
   const [formData, setFormData] = useState<WarehouseConfig>(config);
   const [newDC, setNewDC] = useState('');

@@ -9,7 +9,7 @@ import {
 
 // Test shipment store
 export const testShipmentStore = () => {
-  console.log('Testing Shipment Store...')
+  console.warn('Testing Shipment Store...')
 
   const store = useShipmentStore.getState()
 
@@ -26,22 +26,22 @@ export const testShipmentStore = () => {
 
   const doorSchedules = useShipmentStore.getState().doorSchedules
   const scheduleId = doorSchedules[doorSchedules.length - 1]?.id ?? ''
-  console.log('✅ Door schedule added:', scheduleId)
+  console.warn('✅ Door schedule added:', scheduleId)
 
   // Test updating the schedule
   store.updateDoorSchedule(scheduleId, { palletCount: 15 })
-  console.log('✅ Door schedule updated')
+  console.warn('✅ Door schedule updated')
 
   // Test stats
   const stats = store.stats
-  console.log('✅ Stats:', stats)
+  console.warn('✅ Stats:', stats)
 
   return scheduleId
 }
 
 // Test notification store
 export const testNotificationStore = () => {
-  console.log('Testing Notification Store...')
+  console.warn('Testing Notification Store...')
 
   const store = useNotificationStore.getState()
 
@@ -60,7 +60,7 @@ export const testNotificationStore = () => {
     'This is a test error notification'
   )
 
-  console.log('✅ Notifications added:', {
+  console.warn('✅ Notifications added:', {
     infoId,
     successId,
     warningId,
@@ -69,18 +69,18 @@ export const testNotificationStore = () => {
 
   // Test unread count
   const unreadCount = store.unreadCount
-  console.log('✅ Unread count:', unreadCount)
+  console.warn('✅ Unread count:', unreadCount)
 
   // Test mark as read
   store.markAsRead(infoId)
-  console.log('✅ Notification marked as read')
+  console.warn('✅ Notification marked as read')
 
   return { infoId, successId, warningId, errorId }
 }
 
 // Test analytics store
 export const testAnalyticsStore = () => {
-  console.log('Testing Analytics Store...')
+  console.warn('Testing Analytics Store...')
 
   const store = useAnalyticsStore.getState()
 
@@ -89,13 +89,13 @@ export const testAnalyticsStore = () => {
   const navigationId = store.trackNavigation('/test', '/test2')
   const errorId = store.trackError(new Error('Test error'))
 
-  console.log('✅ Events tracked:', { clickId, navigationId, errorId })
+  console.warn('✅ Events tracked:', { clickId, navigationId, errorId })
 
   // Test tracking metrics
   const loadTimeId = store.trackLoadTime('test-page', 1500)
   const responseTimeId = store.trackResponseTime('test-api', 200)
 
-  console.log('✅ Metrics tracked:', { loadTimeId, responseTimeId })
+  console.warn('✅ Metrics tracked:', { loadTimeId, responseTimeId })
 
   // Test session
   const sessionId = store.startSession('test-user', {
@@ -105,39 +105,39 @@ export const testAnalyticsStore = () => {
     screenSize: '1920x1080',
   })
 
-  console.log('✅ Session started:', sessionId)
+  console.warn('✅ Session started:', sessionId)
 
   return { clickId, navigationId, errorId, sessionId }
 }
 
 // Test user store
 export const testUserStore = () => {
-  console.log('Testing User Store...')
+  console.warn('Testing User Store...')
 
   const store = useUserStore.getState()
 
   // Test current user
   const currentUser = store.currentUser
-  console.log('✅ Current user:', currentUser?.displayName)
+  console.warn('✅ Current user:', currentUser?.displayName)
 
   // Test updating settings
   store.updateSettings({
     interactionMode: 'swipe',
     voiceRecognitionEnabled: false,
   })
-  console.log('✅ Settings updated')
+  console.warn('✅ Settings updated')
 
   // Test permissions
   const canCreate = store.hasPermission('canCreateShipments')
   const canDelete = store.hasPermission('canDeleteShipments')
-  console.log('✅ Permissions:', { canCreate, canDelete })
+  console.warn('✅ Permissions:', { canCreate, canDelete })
 
   return currentUser?.id
 }
 
 // Test map store
 export const testMapStore = () => {
-  console.log('Testing Map Store...')
+  console.warn('Testing Map Store...')
 
   const store = useMapStore.getState()
 
@@ -154,7 +154,7 @@ export const testMapStore = () => {
     isActive: true,
   })
 
-  console.log('✅ Location added:', locationId)
+  console.warn('✅ Location added:', locationId)
 
   // Test adding tracking point
   const trackingId = store.addTrackingPoint({
@@ -166,7 +166,7 @@ export const testMapStore = () => {
     notes: 'Test tracking point',
   })
 
-  console.log('✅ Tracking point added:', trackingId)
+  console.warn('✅ Tracking point added:', trackingId)
 
   // Test distance calculation
   const distance = store.calculateDistance(
@@ -174,32 +174,32 @@ export const testMapStore = () => {
     { latitude: 39.74, longitude: -104.99 }
   )
 
-  console.log('✅ Distance calculated:', Math.round(distance), 'meters')
+  console.warn('✅ Distance calculated:', Math.round(distance), 'meters')
 
   return { locationId, trackingId }
 }
 
 // Run all tests
 export const runAllStoreTests = () => {
-  console.log('🧪 Running Store Tests...\n')
+  console.warn('🧪 Running Store Tests...\n')
 
   try {
     const shipmentResults = testShipmentStore()
-    console.log('')
+    console.warn('')
 
     const notificationResults = testNotificationStore()
-    console.log('')
+    console.warn('')
 
     const analyticsResults = testAnalyticsStore()
-    console.log('')
+    console.warn('')
 
     const userResults = testUserStore()
-    console.log('')
+    console.warn('')
 
     const mapResults = testMapStore()
-    console.log('')
+    console.warn('')
 
-    console.log('🎉 All store tests completed successfully!')
+    console.warn('🎉 All store tests completed successfully!')
 
     return {
       shipment: shipmentResults,
@@ -216,7 +216,7 @@ export const runAllStoreTests = () => {
 
 // Performance test
 export const testStorePerformance = () => {
-  console.log('⚡ Running Performance Tests...\n')
+  console.warn('⚡ Running Performance Tests...\n')
 
   const start = performance.now()
 
@@ -237,7 +237,7 @@ export const testStorePerformance = () => {
   }
 
   const addTime = performance.now() - start
-  console.log(`✅ Added 100 schedules in ${addTime.toFixed(2)}ms`)
+  console.warn(`✅ Added 100 schedules in ${addTime.toFixed(2)}ms`)
 
   // Test bulk notifications
   const notificationStore = useNotificationStore.getState()
@@ -248,7 +248,7 @@ export const testStorePerformance = () => {
   }
 
   const notificationTime = performance.now() - notificationStart
-  console.log(`✅ Added 50 notifications in ${notificationTime.toFixed(2)}ms`)
+  console.warn(`✅ Added 50 notifications in ${notificationTime.toFixed(2)}ms`)
 
   // Test analytics bulk events
   const analyticsStore = useAnalyticsStore.getState()
@@ -259,10 +259,10 @@ export const testStorePerformance = () => {
   }
 
   const analyticsTime = performance.now() - analyticsStart
-  console.log(`✅ Tracked 200 events in ${analyticsTime.toFixed(2)}ms`)
+  console.warn(`✅ Tracked 200 events in ${analyticsTime.toFixed(2)}ms`)
 
   const totalTime = performance.now() - start
-  console.log(`\n⚡ Total performance test time: ${totalTime.toFixed(2)}ms`)
+  console.warn(`\n⚡ Total performance test time: ${totalTime.toFixed(2)}ms`)
 
   return {
     addSchedulesTime: addTime,

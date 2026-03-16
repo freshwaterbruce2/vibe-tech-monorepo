@@ -1,4 +1,3 @@
-import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@vibetech/ui";
 import { Badge } from "@vibetech/ui";
 import { Button } from "@vibetech/ui";
@@ -91,16 +90,6 @@ const Dashboard = () => {
       priority: "High"
     }
   ];
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Delivered": return "bg-green-500";
-      case "In Transit": return "bg-blue-500";
-      case "Loading": return "bg-yellow-500";
-      case "Delayed": return "bg-red-500";
-      default: return "bg-gray-500";
-    }
-  };
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {

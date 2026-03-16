@@ -1,6 +1,8 @@
 // UI Components
 export * from './components/badge'
+export * from './components/badge-variants'
 export * from './components/button'
+export * from './components/button-variants'
 export * from './components/card'
 export * from './components/dialog'
 export * from './components/input'

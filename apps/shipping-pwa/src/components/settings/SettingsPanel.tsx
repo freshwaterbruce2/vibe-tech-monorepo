@@ -1,4 +1,3 @@
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@vibetech/ui";
 import { Settings } from "lucide-react";
 import { Button } from "@vibetech/ui";
@@ -9,7 +8,7 @@ import InteractionSettings from "./InteractionSettings";
 import VoiceSettings from "./VoiceSettings";
 
 const SettingsPanel = () => {
-  const { settings, updateSetting } = useUserSettings();
+  const { settings: _settings, updateSetting } = useUserSettings();
 
   const resetAllSettings = () => {
     updateSetting("interactionMode", "tap");

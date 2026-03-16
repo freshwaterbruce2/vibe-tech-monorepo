@@ -11,6 +11,22 @@ export interface InputProps
 	hint?: string;
 }
 
+function getDescribedBy(
+	inputId: string,
+	error?: string,
+	hint?: string,
+) {
+	if (error) {
+		return `${inputId}-error`;
+	}
+
+	if (hint) {
+		return `${inputId}-hint`;
+	}
+
+	return undefined;
+}
+
 export const inputVariants = {
 	base: 'flex w-full rounded-md border bg-background text-foreground px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
 	variants: {
@@ -46,6 +62,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 		const generatedId = useId();
 		const inputId = id || generatedId;
 		const inputName = name || inputId;
+		const describedBy = getDescribedBy(inputId, error, hint);
 
 		if (label) {
 			return (
@@ -70,9 +87,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 						)}
 						ref={ref}
 						aria-invalid={!!error}
-						aria-describedby={
-							error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined
-						}
+						aria-describedby={describedBy}
 						{...props}
 					/>
 					{error && (
@@ -104,9 +119,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 					)}
 					ref={ref}
 					aria-invalid={!!error}
-					aria-describedby={
-						error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined
-					}
+					aria-describedby={describedBy}
 					{...props}
 				/>
 				{error && (

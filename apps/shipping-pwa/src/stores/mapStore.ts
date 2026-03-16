@@ -345,7 +345,7 @@ export const useMapStore = create<MapStore>()(
             get().settings.geofenceNotifications
           ) {
             // Handle geofence events (could trigger notifications)
-            console.log('Geofence events:', geofenceEvents)
+            console.warn('Geofence events:', geofenceEvents)
           }
         },
 

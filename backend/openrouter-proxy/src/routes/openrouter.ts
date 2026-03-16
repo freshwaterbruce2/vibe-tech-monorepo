@@ -7,6 +7,20 @@ const router = express.Router();
 
 const OPENROUTER_API_BASE = 'https://openrouter.ai/api/v1';
 
+interface UsagePayload {
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return 'Unknown error';
+}
+
 // Chat completion endpoint (supports streaming)
 router.post('/chat', async (req, res, next) => {
   try {
@@ -67,11 +81,15 @@ router.post('/chat', async (req, res, next) => {
             if (data === '[DONE]') {
               res.write('data: [DONE]\n\n');
               // Track usage for streaming
-              trackUsage({
+              void trackUsage({
                 model,
                 tokens: totalTokens,
                 cost: calculateCost(model, { total_tokens: totalTokens }),
                 timestamp: new Date().toISOString(),
+              }).catch((usageError: unknown) => {
+                logger.error('Failed to track streaming usage', {
+                  error: getErrorMessage(usageError),
+                });
               });
               res.end();
               return;
@@ -82,7 +100,7 @@ router.post('/chat', async (req, res, next) => {
                 totalTokens = parsed.usage.total_tokens;
               }
               res.write(`data: ${data}\n\n`);
-            } catch (_e) {
+            } catch {
               // Skip malformed JSON
             }
           }
@@ -125,10 +143,12 @@ router.post('/chat', async (req, res, next) => {
     });
 
     res.json(response.data);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const responseData = axios.isAxiosError(error) ? error.response?.data : undefined;
+
     logger.error('OpenRouter API error', {
-      error: error.message,
-      response: error.response?.data,
+      error: getErrorMessage(error),
+      response: responseData,
     });
     next(error);
   }
@@ -169,7 +189,7 @@ router.get('/usage', async (req, res) => {
 });
 
 // Helper: Calculate cost based on model and usage
-function calculateCost(model: string, usage: any): number {
+function calculateCost(model: string, usage?: UsagePayload): number {
   if (!usage) return 0;
 
   // NOTE: Pricing estimates for 2026 models (per 1M tokens)

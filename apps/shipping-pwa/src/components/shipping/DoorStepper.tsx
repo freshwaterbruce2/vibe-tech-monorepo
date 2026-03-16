@@ -1,4 +1,3 @@
-import React from "react";
 import { Button } from "@vibetech/ui";
 import { Plus, Minus } from "lucide-react";
 

@@ -14,7 +14,7 @@ export function initializePerformanceMonitoring() {
   window.addEventListener('load', () => {
     setTimeout(() => {
       const report = pwaMetrics.generateReport()
-      console.log('Performance metrics:', report)
+      console.warn('Performance metrics:', report)
 
       // Send to analytics if needed
       if (window.gtag) {
