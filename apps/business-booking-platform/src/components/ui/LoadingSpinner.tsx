@@ -35,6 +35,12 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 		lg: 'w-8 h-8',
 		xl: 'w-12 h-12',
 	};
+	const dotSizeClassBySize = {
+		sm: 'w-2 h-2',
+		md: 'w-3 h-3',
+		lg: 'w-4 h-4',
+		xl: 'w-5 h-5',
+	};
 
 	if (variant === 'dots') {
 		return (
@@ -44,13 +50,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 						key={i}
 						className={cn(
 							'bg-primary-600 rounded-full animate-bounce',
-							size === 'sm'
-								? 'w-2 h-2'
-								: size === 'md'
-									? 'w-3 h-3'
-									: size === 'lg'
-										? 'w-4 h-4'
-										: 'w-5 h-5',
+							dotSizeClassBySize[size],
 						)}
 						style={{
 							animationDelay: `${i * 0.1}s`,

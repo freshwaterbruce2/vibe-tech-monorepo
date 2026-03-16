@@ -11,6 +11,14 @@ interface AuthModalProps {
 	onSuccess?: () => void;
 }
 
+function getSubmitLabel(isLoading: boolean, authMode: 'login' | 'register') {
+	if (isLoading) {
+		return 'Loading...';
+	}
+
+	return authMode === 'login' ? 'Sign In' : 'Create Account';
+}
+
 export function AuthModal({
 	isOpen,
 	onClose,
@@ -25,6 +33,7 @@ export function AuthModal({
 	const [lastName, setLastName] = useState('');
 	const [isLoading, setIsLoading] = useState(false);
 	const { login, register } = useAuth();
+	const submitLabel = getSubmitLabel(isLoading, authMode);
 
 	if (!isOpen) {
 return null;
@@ -131,11 +140,7 @@ return null;
 						disabled={isLoading}
 						className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
 					>
-						{isLoading
-							? 'Loading...'
-							: authMode === 'login'
-								? 'Sign In'
-								: 'Create Account'}
+						{submitLabel}
 					</button>
 				</form>
 

@@ -12,7 +12,7 @@ interface PageAnalyticsOptions {
 	trackScrollDepth?: boolean;
 	trackTimeOnPage?: boolean;
 	trackInteractions?: boolean;
-	customProperties?: Record<string, any>;
+	customProperties?: Record<string, unknown>;
 }
 
 export function usePageAnalytics(
@@ -139,15 +139,17 @@ export function usePageAnalytics(
 		};
 	}, [
 		location.pathname,
+		location.search,
 		pageName,
 		trackScrollDepth,
 		trackTimeOnPage,
 		trackInteractions,
+		customProperties,
 	]);
 
 	// Return analytics functions for manual tracking
 	return {
-		trackEvent: (eventName: string, properties?: Record<string, any>) => {
+		trackEvent: (eventName: string, properties?: Record<string, unknown>) => {
 			analytics.track(eventName, {
 				page: pageName,
 				timeOnPage: Date.now() - startTime.current,
@@ -157,7 +159,7 @@ export function usePageAnalytics(
 		trackConversion: (
 			step: string,
 			value?: number,
-			metadata?: Record<string, any>,
+			metadata?: Record<string, unknown>,
 		) => {
 			analytics.conversion({
 				step,

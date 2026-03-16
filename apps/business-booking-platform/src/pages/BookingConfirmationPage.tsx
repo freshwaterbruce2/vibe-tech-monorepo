@@ -1,6 +1,5 @@
 import { AlertTriangle, Home, Loader2, Mail, Phone } from 'lucide-react';
-import React from 'react';
-import { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { BookingService } from '@/domain/booking';
@@ -35,22 +34,19 @@ export const BookingConfirmationPage: React.FC = () => {
 	const navigate = useNavigate();
 
 	const [booking, setBooking] = useState<BookingDetails | null>(null);
-	const [paymentIntent, setPaymentIntent] = useState<any>(null);
+	const [paymentIntent, setPaymentIntent] = useState<{
+		id: string;
+		status: string;
+		amount: number;
+		currency: string;
+		created: number;
+		payment_method: { card: { brand: string; last4: string } };
+	} | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string>('');
 
 	// Get payment intent from location state or URL params
 	const paymentIntentFromState = location.state?.paymentIntent;
-
-	useEffect(() => {
-		if (!bookingId) {
-			setError('Booking ID is required');
-			setIsLoading(false);
-			return;
-		}
-
-		loadBookingConfirmation();
-	}, [bookingId]);
 
 	interface ApiBooking {
 		id: string;
@@ -72,7 +68,7 @@ export const BookingConfirmationPage: React.FC = () => {
 		paymentStatus?: string;
 	}
 
-	const loadBookingConfirmation = async (): Promise<void> => {
+	const loadBookingConfirmation = useCallback(async (): Promise<void> => {
 		try {
 			setIsLoading(true);
 			setError('');
@@ -181,7 +177,17 @@ export const BookingConfirmationPage: React.FC = () => {
 		} finally {
 			setIsLoading(false);
 		}
-	};
+	}, [bookingId, navigate, paymentIntentFromState]);
+
+	useEffect(() => {
+		if (!bookingId) {
+			setError('Booking ID is required');
+			setIsLoading(false);
+			return;
+		}
+
+		void loadBookingConfirmation();
+	}, [bookingId, loadBookingConfirmation]);
 
 	const handleClose = () => {
 		navigate('/bookings');

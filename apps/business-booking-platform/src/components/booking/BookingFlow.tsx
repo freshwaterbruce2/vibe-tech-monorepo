@@ -5,6 +5,7 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	CreditCard,
+	type LucideIcon,
 	User,
 } from 'lucide-react';
 import { useEffect } from 'react';
@@ -74,7 +75,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
 		id: BookingStep;
 		title: string;
 		description: string;
-		icon: any;
+		icon: LucideIcon;
 	}[] = [
 		{
 			id: 'room-selection',
@@ -282,6 +283,17 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
 
 	const renderStepIndicator = () => {
 		const currentIndex = steps.findIndex((s) => s.id === currentStep);
+		const getStepClasses = (isActive: boolean, isCompleted: boolean) => {
+			if (isActive) {
+				return 'border-primary-600 bg-primary-600 text-white shadow-lg scale-110';
+			}
+
+			if (isCompleted) {
+				return 'border-green-600 bg-green-600 text-white';
+			}
+
+			return 'border-gray-300 bg-white text-gray-400';
+		};
 
 		return (
 			<div className="flex items-center justify-between mb-8">
@@ -295,11 +307,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
 							<div
 								className={cn(
 									'flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-300',
-									isActive
-										? 'border-primary-600 bg-primary-600 text-white shadow-lg scale-110'
-										: isCompleted
-											? 'border-green-600 bg-green-600 text-white'
-											: 'border-gray-300 bg-white text-gray-400',
+									getStepClasses(isActive, isCompleted),
 								)}
 							>
 								{isCompleted ? (

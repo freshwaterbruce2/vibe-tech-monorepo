@@ -1,5 +1,6 @@
-﻿import { Mic, Search, Sparkles } from 'lucide-react';
+import { Mic, Search, Sparkles } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { aiService } from '@/services/aiService';
 import { useSearchStore } from '@/store/searchStore';
 import { cn } from '@/utils/cn';
@@ -11,6 +12,45 @@ interface NaturalLanguageInputProps {
 	placeholder?: string;
 	size?: 'sm' | 'md' | 'lg';
 }
+
+interface SpeechRecognitionResultAlternative {
+	transcript: string;
+}
+
+interface SpeechRecognitionResult {
+	0: SpeechRecognitionResultAlternative;
+	length: number;
+}
+
+interface SpeechRecognitionResultList {
+	0: SpeechRecognitionResult;
+	length: number;
+}
+
+interface SpeechRecognitionEvent {
+	results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionInstance {
+	continuous: boolean;
+	interimResults: boolean;
+	lang: string;
+	onstart: (() => void) | null;
+	onresult: ((event: SpeechRecognitionEvent) => void) | null;
+	onerror: (() => void) | null;
+	onend: (() => void) | null;
+	start: () => void;
+}
+
+interface SpeechRecognitionConstructor {
+	new (): SpeechRecognitionInstance;
+}
+
+const iconSizeClasses = {
+	sm: 'h-4 w-4',
+	md: 'h-5 w-5',
+	lg: 'h-6 w-6',
+} as const;
 
 export function NaturalLanguageInput({
 	className,
@@ -40,7 +80,6 @@ export function NaturalLanguageInput({
 				await aiService.processNaturalLanguage(naturalLanguageQuery);
 			setAiProcessedQuery(processedQuery);
 
-			// Update search parameters based on AI processing
 			if (processedQuery.extractedDetails.dates) {
 				setDateRange(
 					processedQuery.extractedDetails.dates.checkIn,
@@ -64,11 +103,13 @@ export function NaturalLanguageInput({
 					],
 				});
 			}
-
-			// Trigger search
-			// This would normally navigate to search results or trigger search
 		} catch (error) {
-			console.error('Error processing natural language query:', error);
+			toast.error('Unable to process your request', {
+				description:
+					error instanceof Error
+						? error.message
+						: 'Please try a different search phrase.',
+			});
 		} finally {
 			setIsProcessing(false);
 		}
@@ -79,12 +120,17 @@ export function NaturalLanguageInput({
 			!('webkitSpeechRecognition' in window) &&
 			!('SpeechRecognition' in window)
 		) {
-			alert('Speech recognition not supported in your browser');
+			toast.error('Speech recognition is not supported in your browser.');
 			return;
 		}
 
 		const SpeechRecognition =
-			window.webkitSpeechRecognition || window.SpeechRecognition;
+			window.webkitSpeechRecognition ?? window.SpeechRecognition;
+		if (!SpeechRecognition) {
+			toast.error('Speech recognition is not supported in your browser.');
+			return;
+		}
+
 		const recognition = new SpeechRecognition();
 
 		recognition.continuous = false;
@@ -95,7 +141,7 @@ export function NaturalLanguageInput({
 			setIsListening(true);
 		};
 
-		recognition.onresult = (event: any) => {
+		recognition.onresult = (event: SpeechRecognitionEvent) => {
 			const { transcript } = event.results[0][0];
 			setNaturalLanguageQuery(transcript);
 			setIsListening(false);
@@ -125,7 +171,7 @@ export function NaturalLanguageInput({
 					<Sparkles
 						className={cn(
 							'transition-colors',
-							size === 'sm' ? 'h-4 w-4' : size === 'md' ? 'h-5 w-5' : 'h-6 w-6',
+							iconSizeClasses[size],
 							isProcessing && 'text-primary-500 animate-pulse',
 						)}
 					/>
@@ -139,7 +185,7 @@ export function NaturalLanguageInput({
 						'pl-12 pr-24 glass-morphism border-white/30 placeholder:text-gray-400',
 						sizeClasses[size],
 					)}
-					onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+					onKeyDown={(e) => e.key === 'Enter' && void handleSearch()}
 				/>
 
 				<div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-1">
@@ -159,7 +205,7 @@ export function NaturalLanguageInput({
 
 					<Button
 						type="button"
-						onClick={handleSearch}
+						onClick={() => void handleSearch()}
 						disabled={!naturalLanguageQuery.trim() || isProcessing}
 						loading={isProcessing}
 						size={size === 'lg' ? 'md' : 'sm'}
@@ -170,7 +216,6 @@ export function NaturalLanguageInput({
 				</div>
 			</div>
 
-			{/* AI Processing Indicator */}
 			{isProcessing && (
 				<div className="absolute top-full mt-2 left-0 right-0">
 					<div className="bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg p-3">
@@ -185,10 +230,9 @@ export function NaturalLanguageInput({
 	);
 }
 
-// Extend Window interface for speech recognition
 declare global {
 	interface Window {
-		webkitSpeechRecognition: any;
-		SpeechRecognition: any;
+		webkitSpeechRecognition?: SpeechRecognitionConstructor;
+		SpeechRecognition?: SpeechRecognitionConstructor;
 	}
 }

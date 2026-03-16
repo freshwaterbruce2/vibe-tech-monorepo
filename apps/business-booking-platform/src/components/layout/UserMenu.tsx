@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { AuthModal } from '../auth/AuthModal';
 import { Button } from '../ui/Button';
@@ -32,6 +33,11 @@ export function UserMenu() {
 
 	const handleAuthSuccess = () => {
 		setShowAuthModal(false);
+	};
+
+	const showComingSoon = (feature: string) => {
+		toast.info(`${feature} is coming soon.`);
+		setShowDropdown(false);
 	};
 
 	const handleLogout = () => {
@@ -138,7 +144,7 @@ export function UserMenu() {
 
 							<button
 								className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-								onClick={() => console.log('Favorites clicked')}
+								onClick={() => showComingSoon('Favorites')}
 							>
 								<Heart className="h-4 w-4 mr-3 text-gray-400" />
 								Favorites
@@ -146,7 +152,7 @@ export function UserMenu() {
 
 							<button
 								className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-								onClick={() => console.log('Rewards clicked')}
+								onClick={() => showComingSoon('Rewards Program')}
 							>
 								<Award className="h-4 w-4 mr-3 text-gray-400" />
 								Rewards Program
@@ -154,7 +160,7 @@ export function UserMenu() {
 
 							<button
 								className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-								onClick={() => console.log('Settings clicked')}
+								onClick={() => showComingSoon('Settings')}
 							>
 								<Settings className="h-4 w-4 mr-3 text-gray-400" />
 								Settings

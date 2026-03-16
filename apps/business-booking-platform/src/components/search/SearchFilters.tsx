@@ -20,7 +20,10 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
 	const { filters, setFilters } = useSearchStore();
 	const [sortBy, setSortBy] = useState('relevance');
 
-	const handleFilterChange = (key: keyof FilterOptions, value: any) => {
+	const handleFilterChange = <K extends keyof FilterOptions>(
+		key: K,
+		value: FilterOptions[K],
+	) => {
 		setFilters({ [key]: value });
 	};
 

@@ -1,6 +1,7 @@
 import { Award, Clock, MapPin, Play, Shield, Star, Users } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { NaturalLanguageInput } from '@/components/search/NaturalLanguageInput';
 import { useHotelSearch } from '@/hooks/useHotelSearch';
 import { useSearchStore } from '@/store/searchStore';
@@ -42,7 +43,7 @@ export function Hero() {
 			logger.warn('Search attempted without destination', {
 				component: 'Hero',
 			});
-			alert('Please enter a destination to search for hotels.');
+			toast.error('Please enter a destination to search for hotels.');
 		}
 	};
 	return (
