@@ -205,11 +205,14 @@ return b.rating - a.rating;
 									<button
 										key={category.id}
 										onClick={() => setSelectedCategory(category.id)}
-										className={`flex items-center gap-2 px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
+										className={[
+											'flex items-center gap-2 px-4 py-2',
+											'rounded-lg whitespace-nowrap',
+											'transition-colors',
 											selectedCategory === category.id
 												? 'bg-blue-600 text-white'
-												: 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-										}`}
+												: 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+										].join(' ')}
 									>
 										<Icon className="h-4 w-4" />
 										<span className="text-sm font-medium">

@@ -159,7 +159,8 @@ return true;
 		const demoOutcome = this.getDemoPaymentOutcome(request);
 
 		if (demoOutcome.success) {
-			const demoPaymentId = `demo_payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+			const randomId = Math.random().toString(36).substr(2, 9);
+			const demoPaymentId = `demo_payment_${Date.now()}_${randomId}`;
 			const receiptUrl = `https://demo.vibe-hotels.com/receipt/${demoPaymentId}`;
 
 			logger.info('Demo payment completed successfully', {

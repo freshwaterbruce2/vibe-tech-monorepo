@@ -1,29 +1,39 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Advanced Lazy Loading Utility
  * Provides intelligent component lazy loading with preloading strategies
  */
 
-import React, { type ComponentType, lazy, Suspense } from 'react';
+import {
+	type ComponentType,
+	lazy,
+	Suspense,
+	useEffect,
+	useRef,
+	useState,
+} from 'react';
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { logger } from './logger';
 
 interface LazyLoadOptions {
-	fallback?: React.ComponentType;
+	fallback?: ComponentType;
 	preload?: boolean;
 	loadingMessage?: string;
 	errorBoundary?: boolean;
 }
 
 interface LazyComponentProps {
-	component: ComponentType<any>;
-	fallback?: React.ComponentType;
+	component: ComponentType;
+	fallback?: ComponentType;
 	loadingMessage?: string;
 }
 
 /**
  * Enhanced lazy loading with preloading support
  */
-export function createLazyComponent<T extends ComponentType<any>>(
+export function createLazyComponent<
+	T extends ComponentType<Record<string, unknown>>,
+>(
 	importFn: () => Promise<{ default: T }>,
 	options: LazyLoadOptions = {},
 ) {
@@ -42,6 +52,7 @@ export function createLazyComponent<T extends ComponentType<any>>(
 		}, 100);
 	}
 
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const WrappedComponent = (props: any) => (
 		<Suspense
 			fallback={
@@ -69,16 +80,16 @@ export function createLazyComponent<T extends ComponentType<any>>(
 /**
  * Intersection Observer-based lazy loading for components
  */
-export const LazyIntersectionComponent: React.FC<LazyComponentProps> = ({
-	component: Component,
+export const LazyIntersectionComponent = ({
+	component: LazyComp,
 	fallback: Fallback,
 	loadingMessage: _loadingMessage = 'Loading component...',
-}) => {
-	const [isVisible, setIsVisible] = React.useState(false);
-	const [hasLoaded, setHasLoaded] = React.useState(false);
-	const containerRef = React.useRef<HTMLDivElement>(null);
+}: LazyComponentProps) => {
+	const [isVisible, setIsVisible] = useState(false);
+	const [hasLoaded, setHasLoaded] = useState(false);
+	const containerRef = useRef<HTMLDivElement>(null);
 
-	React.useEffect(() => {
+	useEffect(() => {
 		if (!containerRef.current || hasLoaded) {
 return;
 }
@@ -93,7 +104,7 @@ return;
 
 					logger.debug('Lazy component loaded via intersection', {
 						component: 'LazyIntersectionComponent',
-						componentName: Component.name || 'Anonymous',
+						componentName: LazyComp.name || 'Anonymous',
 					});
 				}
 			},
@@ -105,17 +116,15 @@ return;
 
 		observer.observe(containerRef.current);
 		return () => observer.disconnect();
-	}, [Component.name, hasLoaded]);
+	}, [LazyComp.name, hasLoaded]);
 
 	return (
 		<div ref={containerRef} className="min-h-[50px]">
-			{isVisible ? (
-				<Component />
-			) : Fallback ? (
-				<Fallback />
-			) : (
+			{isVisible && <LazyComp />}
+			{!isVisible && Fallback && <Fallback />}
+			{!isVisible && !Fallback && (
 				<div className="flex items-center justify-center py-8">
-					<div className="animate-pulse bg-gray-200 rounded-lg w-full h-32"></div>
+					<div className="animate-pulse bg-gray-200 rounded-lg w-full h-32" />
 				</div>
 			)}
 		</div>
@@ -155,6 +164,7 @@ export const preloadCriticalComponents = () => {
  * Route-based code splitting helper
  */
 export const createLazyRoute = (
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	importFn: () => Promise<{ default: ComponentType<any> }>,
 	routeName: string,
 ) => {

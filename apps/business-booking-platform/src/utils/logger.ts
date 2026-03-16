@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Production-safe logging utility
  * Automatically handles development vs production environments
@@ -15,7 +16,7 @@ interface LogContext {
 	action?: string;
 	userId?: string;
 	sessionId?: string;
-	[key: string]: any;
+	[key: string]: unknown;
 }
 
 class Logger {

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
 	createContext,
 	type ReactNode,
@@ -57,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			setUser(mockUser);
 			localStorage.setItem('user', JSON.stringify(mockUser));
 		} catch (error) {
-			console.error('Login failed:', error);
+		console.error('Login failed:', error);
 			throw error;
 		} finally {
 			setIsLoading(false);
@@ -88,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			setUser(mockUser);
 			localStorage.setItem('user', JSON.stringify(mockUser));
 		} catch (error) {
-			console.error('Registration failed:', error);
+		console.error('Registration failed:', error);
 			throw error;
 		} finally {
 			setIsLoading(false);

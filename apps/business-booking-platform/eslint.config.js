@@ -101,7 +101,14 @@ export default [
 			quotes: ["error", "single", { avoidEscape: true }],
 			semi: ["error", "always"],
 			"no-trailing-spaces": "error",
-			"max-len": ["warn", { code: 100, ignoreUrls: true, ignoreStrings: true }],
+			"max-len": ["warn", {
+				code: 100,
+				tabWidth: 1,
+				ignoreUrls: true,
+				ignoreStrings: true,
+				ignoreTemplateLiterals: true,
+				ignoreComments: true,
+			}],
 		},
 	},
 	{

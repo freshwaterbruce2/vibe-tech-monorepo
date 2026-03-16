@@ -269,10 +269,11 @@ export const PaymentConfirmation: React.FC<PaymentConfirmationProps> = ({
 			const blobUrl = URL.createObjectURL(blob);
 
 			// Navigate to the blob URL instead of using document.write
-			(printWindow as any).location.href = blobUrl;
+			const pw = printWindow as unknown as Window;
+			pw.location.href = blobUrl;
 
 			// Clean up and print when loaded
-			(printWindow as any).onload = () => {
+			pw.onload = () => {
 				try {
 					printWindow.focus();
 					printWindow.print();

@@ -1,5 +1,13 @@
-﻿import { AlertTriangle, Bug, Home, RefreshCw } from 'lucide-react';
-import React from 'react';
+﻿/* eslint-disable react-refresh/only-export-components */
+import { AlertTriangle, Bug, Home, RefreshCw } from 'lucide-react';
+import {
+	Component,
+	useCallback,
+	useState,
+	type ComponentType,
+	type ErrorInfo,
+	type ReactNode,
+} from 'react';
 import { Card } from '@/components/ui/Card';
 import { logger } from '@/utils/logger';
 import { Button } from './Button';
@@ -7,26 +15,26 @@ import { Button } from './Button';
 interface ErrorBoundaryState {
 	hasError: boolean;
 	error: Error | null;
-	errorInfo: React.ErrorInfo | null;
+	errorInfo: ErrorInfo | null;
 }
 
 interface ErrorBoundaryProps {
-	children: React.ReactNode;
-	fallback?: React.ComponentType<ErrorFallbackProps>;
-	onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
+	children: ReactNode;
+	fallback?: ComponentType<ErrorFallbackProps>;
+	onError?: (error: Error, errorInfo: ErrorInfo) => void;
 }
 
 interface ErrorFallbackProps {
 	error: Error;
 	resetError: () => void;
-	errorInfo?: React.ErrorInfo | null;
+	errorInfo?: ErrorInfo | null;
 }
 
-const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
+const DefaultErrorFallback = ({
 	error,
 	resetError,
 	errorInfo,
-}) => {
+}: ErrorFallbackProps) => {
 	const isDevelopment = process.env.NODE_ENV === 'development';
 
 	const handleReportError = () => {
@@ -148,7 +156,7 @@ const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({
 	);
 };
 
-export class ErrorBoundary extends React.Component<
+export class ErrorBoundary extends Component<
 	ErrorBoundaryProps,
 	ErrorBoundaryState
 > {
@@ -168,7 +176,7 @@ export class ErrorBoundary extends React.Component<
 		};
 	}
 
-	componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+	componentDidCatch(error: Error, errorInfo: ErrorInfo) {
 		this.setState({
 			error,
 			errorInfo,
@@ -223,13 +231,13 @@ export class ErrorBoundary extends React.Component<
 
 // Hook for handling async errors
 export const useErrorHandler = () => {
-	const [error, setError] = React.useState<Error | null>(null);
+	const [error, setError] = useState<Error | null>(null);
 
-	const resetError = React.useCallback(() => {
+	const resetError = useCallback(() => {
 		setError(null);
 	}, []);
 
-	const captureError = React.useCallback((error: Error | string) => {
+	const captureError = useCallback((error: Error | string) => {
 		const errorObj = typeof error === 'string' ? new Error(error) : error;
 		setError(errorObj);
 		logger.error('Async error captured by error handler hook', {
@@ -252,16 +260,17 @@ export const useErrorHandler = () => {
 
 // Higher-order component for wrapping components with error boundary
 export const withErrorBoundary = <P extends object>(
-	Component: React.ComponentType<P>,
-	fallback?: React.ComponentType<ErrorFallbackProps>,
+	WrappedComp: ComponentType<P>,
+	fallback?: ComponentType<ErrorFallbackProps>,
 ) => {
 	const WrappedComponent = (props: P) => (
 		<ErrorBoundary fallback={fallback}>
-			<Component {...props} />
+			<WrappedComp {...props} />
 		</ErrorBoundary>
 	);
 
-	WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
+	WrappedComponent.displayName =
+		`withErrorBoundary(${WrappedComp.displayName || WrappedComp.name})`;
 
 	return WrappedComponent;
 };

@@ -72,7 +72,7 @@ export interface HotelStore {
 	// State
 	selectedHotel: Hotel | null;
 	hotelDetails: Record<string, HotelDetails>;
-	availability: Record<string, any>;
+	availability: Record<string, unknown>;
 	cache: {
 		hotels: Record<string, Hotel>;
 		lastUpdated: Record<string, string>;
@@ -83,7 +83,7 @@ export interface HotelStore {
 	// Actions
 	setSelectedHotel: (hotel: Hotel | null) => void;
 	setHotelDetails: (hotelId: string, details: HotelDetails) => void;
-	setAvailability: (hotelId: string, availability: any) => void;
+	setAvailability: (hotelId: string, availability: unknown) => void;
 	setCachedHotel: (hotel: Hotel) => void;
 	setLoading: (hotelId: string, loading: boolean) => void;
 	setError: (hotelId: string, error: string | null) => void;

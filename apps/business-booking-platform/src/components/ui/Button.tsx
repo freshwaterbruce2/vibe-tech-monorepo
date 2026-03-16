@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
     Button as SharedButton,
     type ButtonProps as SharedButtonProps,

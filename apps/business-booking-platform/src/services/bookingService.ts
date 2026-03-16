@@ -137,9 +137,10 @@ class BookingService {
 				return booking;
 			}
 			throw new Error('Failed to create booking');
-		} catch (error: any) {
+		} catch (error) {
 			logger.error('Booking creation failed:', error);
-			const errorMessage = error.response?.data?.error || 'Booking failed';
+			const axiosErr = error as { response?: { data?: { error?: string } } };
+			const errorMessage = axiosErr.response?.data?.error || 'Booking failed';
 			toast.error(errorMessage);
 			throw new Error(errorMessage);
 		}
@@ -147,7 +148,7 @@ class BookingService {
 
 	async getUserBookings(userId: string, status?: string): Promise<Booking[]> {
 		try {
-			const params: any = {};
+			const params: Record<string, string> = {};
 			if (status) {
 params.status = status;
 }
@@ -277,7 +278,7 @@ params.status = status;
 				return true;
 			}
 			return false;
-		} catch (error: any) {
+		} catch (error) {
 			logger.error('Booking cancellation failed', {
 				component: 'BookingService',
 				method: 'cancelBooking',
@@ -285,8 +286,11 @@ params.status = status;
 				error: error instanceof Error ? error.message : 'Unknown error',
 			});
 
+			const axiosErr = error as {
+				response?: { data?: { message?: string } };
+			};
 			const errorMessage =
-				error.response?.data?.message || 'Failed to cancel booking';
+				axiosErr.response?.data?.message || 'Failed to cancel booking';
 			toast.error(errorMessage);
 			return false;
 		}

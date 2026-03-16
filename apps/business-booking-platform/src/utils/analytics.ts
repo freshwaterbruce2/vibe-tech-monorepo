@@ -7,7 +7,7 @@ import { logger } from './logger';
 
 export interface AnalyticsEvent {
 	name: string;
-	properties?: Record<string, any>;
+	properties?: Record<string, unknown>;
 	timestamp?: number;
 	userId?: string;
 	sessionId?: string;
@@ -18,14 +18,14 @@ export interface PerformanceMetric {
 	value: number;
 	unit: string;
 	timestamp: number;
-	metadata?: Record<string, any>;
+	metadata?: Record<string, unknown>;
 }
 
 export interface ConversionEvent {
 	step: string;
 	funnel: string;
 	value?: number;
-	metadata?: Record<string, any>;
+	metadata?: Record<string, unknown>;
 }
 
 class AnalyticsManager {
@@ -61,7 +61,7 @@ class AnalyticsManager {
 	/**
 	 * Track user events
 	 */
-	track(eventName: string, properties: Record<string, any> = {}): void {
+	track(eventName: string, properties: Record<string, unknown> = {}): void {
 		if (!this.isEnabled) {
 return;
 }
@@ -100,7 +100,7 @@ return;
 	/**
 	 * Track page views
 	 */
-	pageView(pageName: string, additionalProps: Record<string, any> = {}): void {
+	pageView(pageName: string, additionalProps: Record<string, unknown> = {}): void {
 		this.track('page_view', {
 			page: pageName,
 			title: document.title,
@@ -145,7 +145,7 @@ return;
 	interaction(
 		element: string,
 		action: string,
-		metadata: Record<string, any> = {},
+		metadata: Record<string, unknown> = {},
 	): void {
 		this.track('user_interaction', {
 			element,
@@ -160,7 +160,7 @@ return;
 	error(
 		errorName: string,
 		errorMessage: string,
-		metadata: Record<string, any> = {},
+		metadata: Record<string, unknown> = {},
 	): void {
 		this.track('error_occurred', {
 			errorName,
@@ -177,7 +177,7 @@ return;
 	business(
 		metricName: string,
 		value: number,
-		metadata: Record<string, any> = {},
+		metadata: Record<string, unknown> = {},
 	): void {
 		this.track('business_metric', {
 			metric: metricName,

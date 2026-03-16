@@ -112,7 +112,7 @@ class Phase2IntegrationManager {
 	/**
 	 * Get performance metrics from all systems
 	 */
-	getPerformanceMetrics(): Record<string, any> {
+	getPerformanceMetrics(): Record<string, unknown> {
 		return {
 			cache: this.config.cache.enabled ? advancedCache.getStatistics() : null,
 			websocket: this.config.websocket.enabled
@@ -329,11 +329,11 @@ return;
 
 			// Subscribe to real-time updates
 			websocketManager.subscribe('price_update', (message) => {
-				analytics.track('realtime_price_update', message.data);
+				analytics.track('realtime_price_update', message.data as Record<string, unknown>);
 			});
 
 			websocketManager.subscribe('availability_update', (message) => {
-				analytics.track('realtime_availability_update', message.data);
+				analytics.track('realtime_availability_update', message.data as Record<string, unknown>);
 			});
 
 			logger.debug('WebSocket system initialized', {

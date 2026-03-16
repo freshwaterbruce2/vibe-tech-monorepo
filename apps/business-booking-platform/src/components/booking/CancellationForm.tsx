@@ -374,7 +374,9 @@ export const CancellationForm: React.FC<CancellationFormProps> = ({
 								</p>
 								<p className="text-blue-700">
 									{hoursUntilDeadline > 0
-										? `You have ${hoursUntilDeadline} hours remaining for free cancellation`
+										? 'You have ' +
+											`${hoursUntilDeadline} hours` +
+											' remaining for free cancellation'
 										: `Deadline was ${format(cancellationDeadline, 'PPP')}`}
 								</p>
 							</div>

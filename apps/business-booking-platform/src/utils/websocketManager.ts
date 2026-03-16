@@ -8,7 +8,7 @@ import { logger } from './logger';
 
 export interface WebSocketMessage {
 	type: string;
-	data: any;
+	data: unknown;
 	timestamp: number;
 	id?: string;
 }
@@ -26,7 +26,7 @@ export interface RealTimeUpdate {
 	hotelId: string;
 	roomId?: string;
 	type: 'price' | 'availability' | 'promotion' | 'notification';
-	data: any;
+	data: unknown;
 	priority: 'low' | 'medium' | 'high' | 'urgent';
 }
 
@@ -130,7 +130,7 @@ class WebSocketManager {
 	 */
 	send(
 		type: string,
-		data: any,
+		data: unknown,
 		_priority: 'low' | 'medium' | 'high' = 'medium',
 	): void {
 		const message: WebSocketMessage = {
@@ -182,12 +182,13 @@ class WebSocketManager {
 			this.messageHandlers.set(messageType, []);
 		}
 
-		this.messageHandlers.get(messageType)!.push(handler);
+		const handlers = this.messageHandlers.get(messageType) as MessageHandler[];
+		handlers.push(handler);
 
 		logger.debug('Subscribed to WebSocket message type', {
 			component: 'WebSocketManager',
 			messageType,
-			handlerCount: this.messageHandlers.get(messageType)!.length,
+			handlerCount: handlers.length,
 		});
 
 		// Return unsubscribe function
@@ -350,7 +351,8 @@ class WebSocketManager {
 
 	private attemptReconnection(): void {
 		this.reconnectAttempts++;
-		const delay = this.reconnectDelay * 2 ** (this.reconnectAttempts - 1); // Exponential backoff
+		// Exponential backoff
+		const delay = this.reconnectDelay * 2 ** (this.reconnectAttempts - 1);
 
 		logger.info('Attempting WebSocket reconnection', {
 			component: 'WebSocketManager',

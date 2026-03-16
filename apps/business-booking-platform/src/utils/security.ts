@@ -41,7 +41,7 @@ export interface CSPDirectives {
 
 export interface SecurityViolation {
 	type: 'csp' | 'xss' | 'clickjacking' | 'mixed-content';
-	details: any;
+	details: unknown;
 	userAgent: string;
 	timestamp: number;
 	url: string;
@@ -102,7 +102,7 @@ class SecurityManager {
 		if (!this.nonceValue) {
 			this.generateNonce();
 		}
-		return this.nonceValue!;
+		return this.nonceValue as string;
 	}
 
 	/**
@@ -211,7 +211,7 @@ return true;
 	detectThreats(request: {
 		url: string;
 		headers: Record<string, string>;
-		body?: any;
+		body?: unknown;
 	}): string[] {
 		const threats: string[] = [];
 
@@ -433,7 +433,7 @@ return;
 				violation: violation.details,
 			});
 
-			analytics.track('csp_violation', violation.details);
+			analytics.track('csp_violation', violation.details as Record<string, unknown>);
 		});
 
 		// Listen for mixed content issues

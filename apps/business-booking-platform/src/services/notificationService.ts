@@ -50,7 +50,9 @@ class NotificationService {
 		hotelName: string,
 	) {
 		this.success('Booking Confirmed!', {
-			description: `Your booking at ${hotelName} has been confirmed. Confirmation #${confirmationNumber}`,
+			description:
+				`Your booking at ${hotelName} has been confirmed.` +
+				` Confirmation #${confirmationNumber}`,
 		});
 	}
 
