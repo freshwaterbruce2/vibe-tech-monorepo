@@ -1,13 +1,13 @@
 diff --git a/bin/nx.js b/bin/nx.js
-index 64d7279..80c87f8 100644
+index 64d7279..6b55cf2 100644
 --- a/bin/nx.js
 +++ b/bin/nx.js
-@@ -1,6 +1,13 @@
+@@ -1,6 +1,14 @@
  #!/usr/bin/env node
  "use strict";
  Object.defineProperty(exports, "__esModule", { value: true });
 +const events = require("node:events");
-+const listenerLimit = 64;
++const listenerLimit = 128;
 +if (events.defaultMaxListeners < listenerLimit) {
 +    events.defaultMaxListeners = listenerLimit;
 +}
