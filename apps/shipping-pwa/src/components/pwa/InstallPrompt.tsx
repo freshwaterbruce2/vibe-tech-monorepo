@@ -3,10 +3,10 @@ import { useMobile } from '@/hooks/useMobile'
 import { usePwaInstall } from '@/hooks/usePwaInstall'
 import { Button } from '@vibetech/ui'
 import { Download, Plus, Share, Smartphone } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
-const InstallPrompt: React.FC = () => {
+const InstallPrompt = () => {
   const { isInstallable, promptToInstall, isIOS } = usePwaInstall()
   const [dismissed, setDismissed] = useState<boolean>(false)
   const { isMobile } = useMobile()
@@ -60,6 +60,7 @@ const InstallPrompt: React.FC = () => {
       const hoursPassed =
         (now.getTime() - dismissedDate.getTime()) / (1000 * 60 * 60)
       if (hoursPassed < 24) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setDismissed(true)
       } else {
         window.electronAPI?.store.delete('installPromptDismissed')

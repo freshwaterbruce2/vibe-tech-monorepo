@@ -1,3 +1,4 @@
+import type { ErrorInfo } from 'react';
 import { toast } from 'sonner';
 import { captureError, addBreadcrumb, setContext, setTags } from '@/lib/sentry';
 
@@ -174,7 +175,7 @@ export async function handleAsyncError<T>(
  * Error boundary helper for React components
  */
 export function createErrorBoundaryHandler(componentName: string) {
-  return (error: Error, errorInfo: React.ErrorInfo) => {
+  return (error: Error, errorInfo: ErrorInfo) => {
     const appError = createAppError(
       ErrorType.UNKNOWN,
       `Component error in ${componentName}`,
@@ -327,7 +328,7 @@ function logToExternalService(error: AppError, context?: string): void {
       ],
     });
 
-    console.log(`Error logged to Sentry with event ID: ${eventId}`);
+    console.warn(`Error logged to Sentry with event ID: ${eventId}`);
   } catch (sentryError) {
     // Fallback logging if Sentry fails
     console.error('Failed to log error to Sentry:', sentryError);
@@ -368,7 +369,7 @@ export async function retryWithBackoff<T>(
       }
 
       const delay = baseDelay * Math.pow(2, attempt - 1);
-      console.log(`Retry attempt ${attempt}/${maxRetries} failed, retrying in ${delay}ms...`);
+      console.warn(`Retry attempt ${attempt}/${maxRetries} failed, retrying in ${delay}ms...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }

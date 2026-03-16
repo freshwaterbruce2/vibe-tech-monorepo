@@ -3,29 +3,29 @@ import { runAllStoreTests, testStorePerformance } from './storeTest';
 
 // This can be called from browser console or in a test environment
 export const runStoreTests = () => {
-  console.log('🚀 Starting Zustand Store Tests...\n');
+  console.warn('🚀 Starting Zustand Store Tests...\n');
 
   try {
     // Run basic functionality tests
     const testResults = runAllStoreTests();
-    console.log('\n✅ All stores are working correctly!');
+    console.warn('\n✅ All stores are working correctly!');
 
     // Run performance tests
-    console.log('\n⚡ Running performance tests...');
+    console.warn('\n⚡ Running performance tests...');
     const performanceResults = testStorePerformance();
 
-    console.log('\n🎯 Test Summary:');
-    console.log('================');
-    console.log('✅ Shipment Store: Working');
-    console.log('✅ Notification Store: Working');
-    console.log('✅ Analytics Store: Working');
-    console.log('✅ User Store: Working');
-    console.log('✅ Map Store: Working');
-    console.log('\n📊 Performance:');
-    console.log(`- Add 100 schedules: ${performanceResults.addSchedulesTime.toFixed(2)}ms`);
-    console.log(`- Add 50 notifications: ${performanceResults.notificationsTime.toFixed(2)}ms`);
-    console.log(`- Track 200 events: ${performanceResults.analyticsTime.toFixed(2)}ms`);
-    console.log(`- Total test time: ${performanceResults.totalTime.toFixed(2)}ms`);
+    console.warn('\n🎯 Test Summary:');
+    console.warn('================');
+    console.warn('✅ Shipment Store: Working');
+    console.warn('✅ Notification Store: Working');
+    console.warn('✅ Analytics Store: Working');
+    console.warn('✅ User Store: Working');
+    console.warn('✅ Map Store: Working');
+    console.warn('\n📊 Performance:');
+    console.warn(`- Add 100 schedules: ${performanceResults.addSchedulesTime.toFixed(2)}ms`);
+    console.warn(`- Add 50 notifications: ${performanceResults.notificationsTime.toFixed(2)}ms`);
+    console.warn(`- Track 200 events: ${performanceResults.analyticsTime.toFixed(2)}ms`);
+    console.warn(`- Total test time: ${performanceResults.totalTime.toFixed(2)}ms`);
 
     return {
       success: true,
@@ -44,7 +44,7 @@ export const runStoreTests = () => {
 
 // Manual test of store persistence
 export const testStorePersistence = () => {
-  console.log('💾 Testing store persistence...\n');
+  console.warn('💾 Testing store persistence...\n');
 
   // Import stores
   import('./index').then(({
@@ -55,7 +55,7 @@ export const testStorePersistence = () => {
 
     // Test shipment store persistence
     const shipmentStore = useShipmentStore.getState();
-    console.log('📦 Current shipments:', shipmentStore.doorSchedules.length);
+    console.warn('📦 Current shipments:', shipmentStore.doorSchedules.length);
 
     // Add a test shipment
     shipmentStore.addDoorSchedule({
@@ -68,31 +68,31 @@ export const testStorePersistence = () => {
       tcrPresent: true,
     });
 
-    console.log('✅ Added test shipment');
-    console.log('📦 New shipment count:', shipmentStore.doorSchedules.length);
+    console.warn('✅ Added test shipment');
+    console.warn('📦 New shipment count:', shipmentStore.doorSchedules.length);
 
     // Test notification store persistence
     const notificationStore = useNotificationStore.getState();
-    console.log('🔔 Current notifications:', notificationStore.notifications.length);
+    console.warn('🔔 Current notifications:', notificationStore.notifications.length);
 
     notificationStore.showInfo('Persistence Test', 'This notification tests persistence');
-    console.log('✅ Added test notification');
-    console.log('🔔 New notification count:', notificationStore.notifications.length);
+    console.warn('✅ Added test notification');
+    console.warn('🔔 New notification count:', notificationStore.notifications.length);
 
     // Test user store persistence
     const userStore = useUserStore.getState();
-    console.log('👤 Current user:', userStore.currentUser?.displayName);
+    console.warn('👤 Current user:', userStore.currentUser?.displayName);
 
     userStore.updateSettings({
       interactionMode: 'swipe',
       voiceRecognitionEnabled: false,
     });
 
-    console.log('✅ Updated user settings');
-    console.log('⚙️ Interaction mode:', userStore.settings.interactionMode);
+    console.warn('✅ Updated user settings');
+    console.warn('⚙️ Interaction mode:', userStore.settings.interactionMode);
 
-    console.log('\n💾 Persistence test completed!');
-    console.log('🔄 Refresh the page to verify data persists in localStorage');
+    console.warn('\n💾 Persistence test completed!');
+    console.warn('🔄 Refresh the page to verify data persists in localStorage');
   });
 };
 
@@ -100,5 +100,5 @@ export const testStorePersistence = () => {
 if (typeof window !== 'undefined') {
   (window as any).runStoreTests = runStoreTests;
   (window as any).testStorePersistence = testStorePersistence;
-  console.log('🧪 Store tests available as: window.runStoreTests() and window.testStorePersistence()');
+  console.warn('🧪 Store tests available as: window.runStoreTests() and window.testStorePersistence()');
 }

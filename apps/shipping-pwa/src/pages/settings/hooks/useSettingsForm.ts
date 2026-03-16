@@ -44,7 +44,7 @@ export function useSettingsForm() {
       toast.success('Settings saved successfully!', {
         description: 'Your warehouse configuration has been updated.'
       });
-    } catch (error) {
+    } catch {
       toast.error('Failed to save settings', {
         description: 'Please try again or contact support.'
       });
@@ -61,7 +61,7 @@ export function useSettingsForm() {
       toast.info('Settings reset to defaults', {
         description: 'All customizations have been removed.'
       });
-    } catch (error) {
+    } catch {
       toast.error('Failed to reset settings');
     }
   }, [resetConfig, config, applyTheme]);

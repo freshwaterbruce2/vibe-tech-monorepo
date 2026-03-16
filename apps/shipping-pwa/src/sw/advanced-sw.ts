@@ -480,7 +480,7 @@ self.addEventListener('activate', event => {
 
 // Smart prefetching based on usage patterns
 self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url)
+  const _url = new URL(event.request.url)
 
   // Track performance metrics
   performanceMetrics.networkRequests++
@@ -611,7 +611,7 @@ async function performSmartBackgroundSync(): Promise<void> {
     // Update performance metrics
     await updatePerformanceMetrics()
 
-    console.log('Smart background sync completed')
+    console.warn('Smart background sync completed')
   } catch (error) {
     console.error('Smart background sync failed:', error)
   }

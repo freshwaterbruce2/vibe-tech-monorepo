@@ -168,12 +168,12 @@ declare module 'firebase/auth' {
 declare module 'firebase/firestore' {
   export type DocumentData = Record<string, any>;
 
-  export interface DocumentReference<T = DocumentData> {
+  export interface DocumentReference<_T = DocumentData> {
     id: string;
     path: string;
   }
 
-  export interface QuerySnapshot<T = DocumentData> {
+  export interface QuerySnapshot<_T = DocumentData> {
     docs: any[];
     size: number;
     empty: boolean;

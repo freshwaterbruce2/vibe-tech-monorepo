@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -11,6 +11,7 @@ import { Button } from "@vibetech/ui";
 import { Mic, Volume2, Settings2, PlayCircle, CheckCircle2, Info } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+ 
 export const VoiceTutorial = () => {
   const [activeExample, setActiveExample] = useState<string | null>(null);
 

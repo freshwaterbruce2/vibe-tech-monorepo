@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Keyboard } from "lucide-react";
 import { useUserSettings } from "@/hooks/useUserSettings";
@@ -14,10 +14,10 @@ interface KeyboardShortcutsProps {
   onQuickAddDoor: () => void;
 }
 
-const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
+const KeyboardShortcuts = ({
   onAddDoor,
   onQuickAddDoor,
-}) => {
+}: KeyboardShortcutsProps) => {
   const { toast } = useToast();
   const { settings } = useUserSettings();
 
@@ -25,7 +25,7 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
   const enableActionButton = settings.enableActionButton !== false;
 
   useEffect(() => {
-    if (!enableActionButton) return;
+    if (!enableActionButton) return undefined;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't trigger shortcuts when user is typing in form fields

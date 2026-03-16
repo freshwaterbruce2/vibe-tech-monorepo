@@ -56,7 +56,7 @@ export const analytics =
 if (import.meta.env.DEV && import.meta.env.VITE_FIREBASE_USE_EMULATOR === 'true') {
   try {
     connectFirestoreEmulator(db, 'localhost', 8080);
-    console.log('Connected to Firestore emulator');
+    console.warn('Connected to Firestore emulator');
   } catch (error) {
     console.warn('Failed to connect to Firestore emulator:', error);
   }

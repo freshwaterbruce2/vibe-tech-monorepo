@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@vibetech/ui";
 import { Button } from "@vibetech/ui";
 import { Input } from "@vibetech/ui";
@@ -6,13 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Key, Building, Palette, MapPin } from 'lucide-react';
+import { Loader2, Key, Building, MapPin } from 'lucide-react';
 import { useTenantAuth } from '@/contexts/TenantAuthContext';
 import { tenantApi, CreateTenantRequest } from '@/services/tenantApiService';
-import { defaultWarehouseConfig, WarehouseConfig } from '@/config/warehouse';
+import { defaultWarehouseConfig } from '@/config/warehouse';
 import { toast } from 'sonner';
 
-export const TenantAuth: React.FC = () => {
+ 
+export const TenantAuth = () => {
   const { login, isLoading, error, clearError } = useTenantAuth();
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
 
@@ -45,7 +46,7 @@ export const TenantAuth: React.FC = () => {
 
   const [signupLoading, setSignupLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     clearError();
 
@@ -65,7 +66,7 @@ export const TenantAuth: React.FC = () => {
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
     clearError();
     setSignupLoading(true);
@@ -115,8 +116,8 @@ export const TenantAuth: React.FC = () => {
           toast.success('Account created and logged in successfully!');
         }
       }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create account';
+    } catch (_error) {
+      const errorMessage = _error instanceof Error ? _error.message : 'Failed to create account';
       toast.error(errorMessage);
     } finally {
       setSignupLoading(false);

@@ -1,6 +1,5 @@
-import React from "react";
 import { Button } from "@vibetech/ui";
-import { Plus, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { useUser } from "@/contexts/UserContext";
 import { toast } from "sonner";
@@ -23,10 +22,10 @@ interface QuickAddButtonProps {
   currentDoors: DoorSchedule[];
 }
 
-const QuickAddButton: React.FC<QuickAddButtonProps> = ({
+const QuickAddButton = ({
   onAddDoor,
   currentDoors,
-}) => {
+}: QuickAddButtonProps) => {
   const { settings } = useUserSettings();
   const { currentUser } = useUser();
 

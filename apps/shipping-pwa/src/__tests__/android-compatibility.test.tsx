@@ -205,7 +205,7 @@ describe('Android Compatibility Tests', () => {
       
       // Test localStorage operations
       localStorage.setItem('testData', JSON.stringify(testData));
-      const retrieved = localStorage.getItem('testData');
+      const _retrieved = localStorage.getItem('testData');
       
       expect(localStorage.setItem).toHaveBeenCalledWith('testData', JSON.stringify(testData));
       expect(localStorage.getItem).toHaveBeenCalledWith('testData');

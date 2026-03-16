@@ -18,7 +18,7 @@ import { toast } from 'sonner'
 
 const VoiceSettings = () => {
   const { settings, updateSetting } = useUserSettings()
-  const {} = useSpeechRecognition({ engine: 'browser' })
+  useSpeechRecognition({ engine: 'browser' })
   const [showAdvancedSettings, setShowAdvancedSettings] =
     useState<boolean>(false)
 

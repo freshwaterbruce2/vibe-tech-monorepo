@@ -223,7 +223,7 @@ const VoiceDoorControl = ({
       // --- Enhanced Parameter Parsing Logic for Warehouse Commands ---
       if (paramsArray && paramsArray.length > 0) {
         switch (commandName) {
-          case 'add specific door':
+          case 'add specific door': {
             // Enhanced door number parsing - prioritize speed
             const doorNum = paramsArray[0] || paramsArray[1] || paramsArray[2]
 
@@ -234,6 +234,7 @@ const VoiceDoorControl = ({
               console.warn(`Invalid door number format: ${doorNum}`)
             }
             break
+          }
 
           case 'add complete door':
             // Parse all parameters from complete command
@@ -294,7 +295,7 @@ const VoiceDoorControl = ({
               }
             }
             break
-          case 'add dc door':
+          case 'add dc door': {
             // Handle multiple capture groups for DC number
             const dcNum = paramsArray[0] || paramsArray[1]
             if (
@@ -306,6 +307,7 @@ const VoiceDoorControl = ({
               console.warn(`Invalid DC value: ${dcNum}`)
             }
             break
+          }
           case 'add status door': {
             // Enhanced status parsing with warehouse terminology
             const status = paramsArray[0]

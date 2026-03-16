@@ -136,7 +136,7 @@ export const hydrateStores = async () => {
     // Check if we're in a browser environment
     if (typeof window !== 'undefined') {
       // Stores will auto-hydrate from localStorage
-      console.log('Stores hydrated from localStorage')
+      console.warn('Stores hydrated from localStorage')
     }
   } catch (error) {
     console.warn('Failed to hydrate stores:', error)

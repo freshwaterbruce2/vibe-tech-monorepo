@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button } from "@vibetech/ui";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@vibetech/ui";
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -10,6 +10,7 @@ import { handleError, createAppError, ErrorType } from '@/utils/errorHandling';
  * Test component for verifying Sentry integration
  * This component should be removed in production
  */
+ 
 export function SentryTestComponent() {
   const [testResults, setTestResults] = useState<string[]>([]);
 
@@ -51,11 +52,11 @@ export function SentryTestComponent() {
     }
   };
 
-  const testErrorBoundaryCapture = () => {
+  const _testErrorBoundaryCapture = () => {
     try {
       // This will trigger the error boundary
       throw new Error('Test error to trigger ErrorBoundary');
-    } catch (_error) {
+    } catch {
       addResult(`❌ This should have triggered the error boundary`);
     }
   };

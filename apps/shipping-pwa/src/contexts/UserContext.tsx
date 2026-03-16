@@ -1,4 +1,5 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useState, useContext, useEffect, type ReactNode } from "react";
 
 interface User {
   id: string;
@@ -24,14 +25,15 @@ const UserContext = createContext<UserContextType>({
   updateUser: () => {},
 });
 
-export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
+export const UserProvider = ({
   children,
-}) => {
+}: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User>(defaultUser);
 
   useEffect(() => {
     const savedUser = window.electronAPI?.store.get("currentUser");
     if (savedUser) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentUser(JSON.parse(savedUser));
     }
   }, []);

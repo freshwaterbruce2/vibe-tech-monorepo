@@ -1,4 +1,3 @@
-import React from "react";
 import { TrailerStatus } from "@/types/shipping";
 import {
   Select,

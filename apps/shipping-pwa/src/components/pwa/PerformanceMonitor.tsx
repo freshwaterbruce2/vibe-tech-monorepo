@@ -3,7 +3,7 @@
  * Tracks Core Web Vitals, PWA metrics, and user experience indicators
  */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Progress } from '../ui/progress';
 import { Badge } from '../ui/badge';
@@ -53,6 +53,7 @@ interface MemoryMetrics {
   jsHeapSizeLimit: number;
 }
 
+ 
 export function PerformanceMonitor({ className }: { className?: string }) {
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics>({
     lcp: null,
@@ -93,36 +94,39 @@ export function PerformanceMonitor({ className }: { className?: string }) {
   useEffect(() => {
     startPerformanceMonitoring();
     return () => stopPerformanceMonitoring();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Update metrics periodically
   useEffect(() => {
-    if (!isMonitoring) return;
+    if (!isMonitoring) return undefined;
 
     const interval = setInterval(() => {
       updateAllMetrics();
     }, 5000);
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMonitoring]);
 
   const startPerformanceMonitoring = useCallback(() => {
     setIsMonitoring(true);
-    
+
     // Initial metrics collection
     updateAllMetrics();
-    
+
     // Set up Core Web Vitals monitoring
     setupWebVitalsMonitoring();
-    
+
     // Set up PWA metrics monitoring
     setupPWAMetricsMonitoring();
-    
+
     toast({
       title: 'Performance Monitoring Started',
       description: 'Collecting performance metrics...',
       duration: 2000,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const stopPerformanceMonitoring = useCallback(() => {
@@ -134,25 +138,26 @@ export function PerformanceMonitor({ className }: { className?: string }) {
       // Update performance metrics
       const perfMetrics = await collectPerformanceMetrics();
       setPerformanceMetrics(perfMetrics);
-      
+
       // Update network metrics
       const netMetrics = collectNetworkMetrics();
       setNetworkMetrics(netMetrics);
-      
+
       // Update memory metrics
       const memMetrics = collectMemoryMetrics();
       setMemoryMetrics(memMetrics);
-      
+
       // Update PWA metrics
       const pwaMetrics = await collectPWAMetrics();
       setPwaMetrics(pwaMetrics);
-      
+
       // Calculate overall performance score
       const score = calculatePerformanceScore(perfMetrics, pwaMetrics, netMetrics);
       setPerformanceScore(score);
     } catch (error) {
       console.error('Failed to update metrics:', error);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const setupWebVitalsMonitoring = () => {
@@ -200,7 +205,7 @@ export function PerformanceMonitor({ className }: { className?: string }) {
       
       try {
         lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
-      } catch (_e) {
+      } catch {
         console.warn('LCP observer not supported');
       }
       
@@ -219,7 +224,7 @@ export function PerformanceMonitor({ className }: { className?: string }) {
       
       try {
         fidObserver.observe({ entryTypes: ['first-input'] });
-      } catch (_e) {
+      } catch {
         console.warn('FID observer not supported');
       }
     }

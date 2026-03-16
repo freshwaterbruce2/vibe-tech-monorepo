@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@vibetech/ui";
 import { Button } from "@vibetech/ui";
 import { Badge } from "@vibetech/ui";
@@ -66,7 +66,8 @@ interface Metrics {
   };
 }
 
-export const AdminDashboard: React.FC = () => {
+ 
+export const AdminDashboard = () => {
   const { isAuthenticated, admin, logout } = useAdminAuth();
   const adminApi = useAdminApi();
 
@@ -77,7 +78,7 @@ export const AdminDashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [suspensionReason, setSuspensionReason] = useState('');
 
-  const loadDashboardData = React.useCallback(async () => {
+  const loadDashboardData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -94,9 +95,9 @@ export const AdminDashboard: React.FC = () => {
       if (metricsData.success) {
         setMetrics(metricsData.metrics);
       }
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load dashboard data');
+    } catch (_error) {
+      console.error('Failed to load dashboard data:', _error);
+      setError(_error instanceof Error ? _error.message : 'Failed to load dashboard data');
     } finally {
       setIsLoading(false);
     }
@@ -128,8 +129,8 @@ export const AdminDashboard: React.FC = () => {
       } else {
         toast.error(result.error ?? 'Failed to suspend tenant');
       }
-    } catch (error) {
-      console.error('Failed to suspend tenant:', error);
+    } catch (_error) {
+      console.error('Failed to suspend tenant:', _error);
       toast.error('Failed to suspend tenant');
     }
   };
@@ -144,8 +145,8 @@ export const AdminDashboard: React.FC = () => {
       } else {
         toast.error(result.error ?? 'Failed to reactivate tenant');
       }
-    } catch (error) {
-      console.error('Failed to reactivate tenant:', error);
+    } catch (_error) {
+      console.error('Failed to reactivate tenant:', _error);
       toast.error('Failed to reactivate tenant');
     }
   };

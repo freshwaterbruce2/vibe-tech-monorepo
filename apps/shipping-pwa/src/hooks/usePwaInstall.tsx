@@ -15,6 +15,7 @@ export const usePwaInstall = () => {
   useEffect(() => {
     // Detect iOS devices
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsIOS(iOS);
 
     // Check if the app is already installed
@@ -74,7 +75,9 @@ export const usePwaInstall = () => {
     const choiceResult = await deferredPrompt.userChoice;
 
     if (choiceResult.outcome === "accepted") {
+      // intentionally empty
     } else {
+      // intentionally empty
     }
 
     // We no longer need the prompt

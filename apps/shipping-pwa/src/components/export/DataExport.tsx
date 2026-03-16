@@ -10,7 +10,7 @@ interface DataExportProps {
   doors: DoorSchedule[];
 }
 
-const DataExport: React.FC<DataExportProps> = ({ doors }) => {
+const DataExport = ({ doors }: DataExportProps) => {
   const [isExporting, setIsExporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const { toast } = useToast();

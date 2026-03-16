@@ -1,11 +1,12 @@
+/* eslint-disable react-refresh/only-export-components */
 /// <reference types="jest" />
 
-import * as React from 'react';
+import { createElement, type ComponentType, type ReactNode } from 'react';
 
 const actual = jest.requireActual('framer-motion');
 
 // Create a custom component factory
-function custom(Component: string | React.ComponentType<any>) {
+function custom(Component: string | ComponentType<any>) {
   return (props: any) => {
     // Filter out motion-specific props, keeping ref
     const { ref, ...rest } = props;
@@ -15,7 +16,7 @@ function custom(Component: string | React.ComponentType<any>) {
     }, {});
 
     return typeof Component === 'string' ?
-      React.createElement(Component, { ...regularProps, ref }) :
+      createElement(Component, { ...regularProps, ref }) :
       <Component {...regularProps} ref={ref} />;
   };
 }
@@ -34,10 +35,10 @@ export const motion = new Proxy(custom, {
 });
 
 // Mock AnimatePresence
-export const AnimatePresence = ({ children }: { children: React.ReactNode }) => <>{children}</>;
+export const AnimatePresence = ({ children }: { children: ReactNode }) => <>{children}</>;
 
 // Mock component exports only
-export const LazyMotion = ({ children }: { children: React.ReactNode }) => <>{children}</>;
+export const LazyMotion = ({ children }: { children: ReactNode }) => <>{children}</>;
 export const m = motion;
 
 // Re-export constants to maintain API

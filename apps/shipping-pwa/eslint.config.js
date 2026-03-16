@@ -65,13 +65,9 @@ export default tseslint.config(
           varsIgnorePattern: '^_',
         },
       ],
-      // Legacy codebase — these rules have hundreds of pre-existing violations.
-      // Turning off to achieve --max-warnings 0 without bulk code changes.
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/no-unsafe-function-type': 'off',
-      'no-console': 'off',
-      'consistent-return': 'off',
 
       // General JavaScript/TypeScript rules
       'prefer-const': 'error',

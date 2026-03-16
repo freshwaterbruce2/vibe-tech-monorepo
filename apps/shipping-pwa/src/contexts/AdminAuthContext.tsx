@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { apiFetch } from '@/utils/api';
 
 interface AdminUser {
@@ -27,7 +28,7 @@ interface AdminAuthProviderProps {
   children: ReactNode;
 }
 
-export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }) => {
+export const AdminAuthProvider = ({ children }: AdminAuthProviderProps) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -49,8 +50,8 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
           setAdmin(JSON.parse(savedAdmin));
           setIsAuthenticated(true);
         }
-      } catch (error) {
-        console.error('Failed to initialize admin auth:', error);
+      } catch (_error) {
+        console.error('Failed to initialize admin auth:', _error);
         setError('Failed to initialize authentication');
         clearStoredAuth();
       } finally {
@@ -93,7 +94,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
         setAdmin(data.admin);
         setIsAuthenticated(true);
 
-        console.log('Admin successfully authenticated:', data.admin.username);
+        console.warn('Admin successfully authenticated:', data.admin.username);
         return true;
       } else {
         throw new Error(data.error ?? 'Login failed');
@@ -124,7 +125,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
       console.error('Logout API call failed:', error);
     } finally {
       clearStoredAuth();
-      console.log('Admin logged out');
+      console.warn('Admin logged out');
     }
   };
 

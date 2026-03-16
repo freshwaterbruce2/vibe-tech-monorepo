@@ -1,7 +1,8 @@
-import React, { lazy, Suspense, useEffect, useState } from 'react'
+/* eslint-disable react-refresh/only-export-components */
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 
 // PWA-specific loading states
-const PWALoader: React.FC<{ text?: string }> = ({ text = 'Loading...' }) => (
+const _PWALoader = ({ text = 'Loading...' }: { text?: string }) => (
   <div className="flex items-center justify-center min-h-[200px]">
     <div className="flex flex-col items-center space-y-3">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -10,7 +11,7 @@ const PWALoader: React.FC<{ text?: string }> = ({ text = 'Loading...' }) => (
   </div>
 )
 
-const FormLoader: React.FC = () => (
+const FormLoader = () => (
   <div className="space-y-4 animate-pulse">
     <div className="h-4 bg-gray-200 rounded w-1/4"></div>
     <div className="h-10 bg-gray-200 rounded"></div>
@@ -19,7 +20,7 @@ const FormLoader: React.FC = () => (
   </div>
 )
 
-const TableLoader: React.FC = () => (
+const TableLoader = () => (
   <div className="space-y-3 animate-pulse">
     <div className="h-12 bg-gray-200 rounded"></div>
     <div className="h-8 bg-gray-100 rounded"></div>
@@ -78,19 +79,19 @@ export const LazyVoiceCommandHelp = lazy(
 )
 
 // Component wrappers with PWA-specific loading states
-export const LazyFormWrapper: React.FC<{
-  children: React.ReactNode
+export const LazyFormWrapper = ({ children, className }: {
+  children: ReactNode
   className?: string
-}> = ({ children, className }) => (
+}) => (
   <Suspense fallback={<FormLoader />}>
     <div className={className}>{children}</div>
   </Suspense>
 )
 
-export const LazyTableWrapper: React.FC<{
-  children: React.ReactNode
+export const LazyTableWrapper = ({ children, className }: {
+  children: ReactNode
   className?: string
-}> = ({ children, className }) => (
+}) => (
   <Suspense fallback={<TableLoader />}>
     <div className={className}>{children}</div>
   </Suspense>
@@ -132,6 +133,7 @@ export const useLazyPWAData = <T,>(
       const cached = window.electronAPI?.store.get(cacheKey)
       if (cached) {
         try {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setData(JSON.parse(cached))
           return
         } catch {
@@ -189,7 +191,7 @@ export const usePWAIntersection = (
   const [isIntersecting, setIsIntersecting] = useState(false)
 
   useEffect(() => {
-    if (!ref) return
+    if (!ref) return undefined
 
     const observer = new IntersectionObserver(
       ([entry]: IntersectionObserverEntry[]) => {
@@ -252,10 +254,10 @@ export const usePWAUpdate = () => {
 }
 
 // PWA-specific error boundary for lazy components
-export const PWAErrorBoundary: React.FC<{
-  children: React.ReactNode
-  fallback?: React.ReactNode
-}> = ({ children, fallback }) => {
+export const PWAErrorBoundary = ({ children, fallback }: {
+  children: ReactNode
+  fallback?: ReactNode
+}) => {
   const [hasError, setHasError] = useState(false)
 
   useEffect(() => {

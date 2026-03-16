@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@vibetech/ui";
 import { Button } from "@vibetech/ui";
 import { Input } from "@vibetech/ui";
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from "@vibetech/ui";
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -34,9 +33,6 @@ import {
   Thermometer,
   Zap,
   Boxes,
-  Clock,
-  Truck,
-  MapPin,
   Plus,
   Trash2
 } from 'lucide-react';
@@ -85,7 +81,7 @@ const Settings = () => {
       toast.success('Settings saved successfully!', {
         description: 'Your warehouse configuration has been updated.'
       });
-    } catch (error) {
+    } catch {
       toast.error('Failed to save settings', {
         description: 'Please try again or contact support.'
       });
@@ -102,7 +98,7 @@ const Settings = () => {
       toast.info('Settings reset to defaults', {
         description: 'All customizations have been removed.'
       });
-    } catch (error) {
+    } catch {
       toast.error('Failed to reset settings');
     }
   };

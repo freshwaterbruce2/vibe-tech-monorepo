@@ -6,7 +6,7 @@ import { extractRecommendations, getFallbackRecommendations } from '../utils/ind
 const router = Router();
 
 // Health check endpoint
-router.get('/health', (req: Request, res: Response) => {
+router.get('/health', (_req: Request, res: Response) => {
   const health = healthService.getHealth();
   const circuitBreakerStatus = deepSeekService.getCircuitBreakerStatus();
 
@@ -19,7 +19,7 @@ router.get('/health', (req: Request, res: Response) => {
 });
 
 // Efficiency metrics endpoint
-router.get('/metrics', (req: Request, res: Response) => {
+router.get('/metrics', (_req: Request, res: Response) => {
   const health = healthService.getHealth();
 
   res.json({
@@ -67,7 +67,7 @@ router.post('/analyze', async (req: any, res: Response) => {
 
     const analysis = await deepSeekService.analyzeShipment(analysisData);
 
-    res.json({
+    return res.json({
       success: true,
       analysis,
       recommendations: extractRecommendations(analysis),
@@ -83,7 +83,7 @@ router.post('/analyze', async (req: any, res: Response) => {
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
 
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Analysis failed',
       message: errorMessage,
       fallbackRecommendations: getFallbackRecommendations(req.body),
@@ -93,11 +93,11 @@ router.post('/analyze', async (req: any, res: Response) => {
 });
 
 // Graceful shutdown endpoint
-router.post('/shutdown', (req: Request, res: Response) => {
+router.post('/shutdown', (_req: Request, res: Response) => {
   res.json({ message: 'Server shutting down gracefully...' });
 
   setTimeout(() => {
-    console.log('Server shutting down...');
+    console.warn('Server shutting down...');
     process.exit(0);
   }, 1000);
 });

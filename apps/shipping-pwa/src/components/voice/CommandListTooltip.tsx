@@ -1,10 +1,9 @@
-import React from "react";
-
 interface CommandListTooltipProps {
   isListening: boolean;
   commandList: string[];
 }
 
+ 
 export const CommandListTooltip = ({
   isListening,
   commandList,

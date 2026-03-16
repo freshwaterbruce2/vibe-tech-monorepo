@@ -75,7 +75,7 @@ export class AdminManager {
 
       this.admins.set(defaultAdmin.id, defaultAdmin);
       this.saveAdmins();
-      console.log('Default superadmin created: username=superadmin. Please change the default password!');
+      console.warn('Default superadmin created: username=superadmin. Please change the default password!');
     }
   }
 

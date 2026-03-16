@@ -139,7 +139,7 @@ const originalEnv = process.env['NODE_ENV'];
   });
 
   describe('Custom Error Fallback', () => {
-    const CustomFallback: React.FC<{ error?: Error; resetError?: () => void }> = ({ error, resetError }) => (
+    const CustomFallback = ({ error, resetError }: { error?: Error; resetError?: () => void }) => (
       <div role="alert">
         <h2>Custom Error UI</h2>
         <p>Error: {error?.message ?? 'Unknown error'}</p>

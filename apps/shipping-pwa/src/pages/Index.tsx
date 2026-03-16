@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import ShippingTable from "../components/ShippingTable";
 import PalletCounter from "../components/pallets/PalletCounter";
@@ -127,7 +127,7 @@ const IndexContent = ({
         <div className="container mx-auto px-4">
           <div className="mb-6">
             <AdvancedHybridInputBar
-              onSubmit={(cmd) => {
+              onSubmit={(_cmd) => {
                 // For now, just log the command. Replace with real logic as needed.
               }}
             />

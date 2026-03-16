@@ -7,7 +7,7 @@ import { getUsageMetrics } from '../utils/index.js';
 const router = Router();
 
 // Get available subscription plans
-router.get('/plans', (req: Request, res: Response) => {
+router.get('/plans', (_req: Request, res: Response) => {
   try {
     const plans = squarePaymentService.getSubscriptionPlans();
 
@@ -61,7 +61,7 @@ router.post('/checkout', async (req: any, res: Response) => {
     });
 
     if (result.success) {
-      res.json({
+      return res.json({
         success: true,
         checkoutUrl: result.checkoutUrl,
         plan: {
@@ -72,12 +72,12 @@ router.post('/checkout', async (req: any, res: Response) => {
         }
       });
     } else {
-      res.status(400).json({ success: false, error: result.error });
+      return res.status(400).json({ success: false, error: result.error });
     }
   } catch (error) {
     healthService.incrementError();
     console.error('Create checkout session error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to create checkout session',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -98,14 +98,14 @@ router.post('/webhook', async (req: Request, res: Response) => {
     const success = await squarePaymentService.handleWebhook(req.body);
 
     if (success) {
-      res.json({ success: true, message: 'Webhook processed successfully' });
+      return res.json({ success: true, message: 'Webhook processed successfully' });
     } else {
-      res.status(500).json({ error: 'Failed to process webhook' });
+      return res.status(500).json({ error: 'Failed to process webhook' });
     }
   } catch (error) {
     healthService.incrementError();
     console.error('Webhook processing error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to process webhook',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -132,7 +132,7 @@ router.get('/status', (req: any, res: Response) => {
       tenant.subscription.status !== 'active' ||
       new Date(tenant.subscription.expiresAt) < new Date();
 
-    res.json({
+    return res.json({
       success: true,
       subscription: tenant.subscription,
       usage,
@@ -154,7 +154,7 @@ router.get('/status', (req: any, res: Response) => {
   } catch (error) {
     healthService.incrementError();
     console.error('Get payment status error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to get payment status',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -194,7 +194,7 @@ router.get('/usage', (req: any, res: Response) => {
     const usageCharges = usage ? usage.doorsProcessed * perDoorRate : 0;
     const totalCharges = baseFee + usageCharges;
 
-    res.json({
+    return res.json({
       success: true,
       period: currentPeriod,
       usage: usage || {
@@ -220,7 +220,7 @@ router.get('/usage', (req: any, res: Response) => {
   } catch (error) {
     healthService.incrementError();
     console.error('Get usage metrics error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to get usage metrics',
       message: error instanceof Error ? error.message : 'Unknown error'
     });

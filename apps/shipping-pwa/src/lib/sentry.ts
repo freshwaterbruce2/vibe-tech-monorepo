@@ -1,3 +1,5 @@
+import type { ComponentType } from 'react';
+
 /**
  * Sentry configuration for error monitoring and performance tracking
  * Lazy loads Sentry only when needed to reduce initial bundle size
@@ -45,7 +47,7 @@ export async function initializeSentry(): Promise<void> {
     beforeSend(event, hint) {
       // Filter out development errors in production
       if (import.meta.env.MODE === 'development') {
-        console.log('Sentry event (dev mode):', event);
+        console.warn('Sentry event (dev mode):', event);
         return null; // Don't send events in development
       }
 
@@ -201,12 +203,12 @@ export async function startSpan<T>(
 /**
  * HOC to wrap components with Sentry error boundary
  */
-export async function withSentryErrorBoundary(component: React.ComponentType) {
+export async function withSentryErrorBoundary(component: ComponentType) {
   const Sentry = await import('@sentry/react');
-  const React = await import('react');
+  const ReactModule = await import('react');
   return Sentry.withErrorBoundary(component, {
     showDialog: false,
-    fallback: React.createElement('div', null, 'An error occurred. Please refresh the page.')
+    fallback: ReactModule.createElement('div', null, 'An error occurred. Please refresh the page.')
   });
 }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@vibetech/ui";
 import { Button } from "@vibetech/ui";
 import { toast } from "sonner";
@@ -282,7 +282,7 @@ const ShippingTable = () => {
         toast.error("Failed to save new door.");
       }
     }
-  }, [doorSchedules, settings, currentUser, addDoorWithData]);
+  }, [doorSchedules, settings, currentUser]);
 
   const updateDoorSchedule = useCallback(async (
     id: string,
@@ -397,7 +397,7 @@ const ShippingTable = () => {
       }
       setNewDoorNumber("");
       setNewPalletCount("");
-    } catch (_error) {
+    } catch {
       toast.error("Failed to save schedule");
     }
   };

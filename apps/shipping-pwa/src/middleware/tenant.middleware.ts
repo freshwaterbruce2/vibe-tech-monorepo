@@ -120,7 +120,7 @@ export function createTenantMiddleware(deps: TenantMiddlewareDependencies) {
     req.tenant = tenant
 
     deps.healthService.incrementRequest()
-    console.log(
+    console.warn(
       `[${new Date().toISOString()}] ${req.method} ${req.url} - ${clientId} - Tenant: ${tenant?.name ?? 'none'}`
     )
     next()

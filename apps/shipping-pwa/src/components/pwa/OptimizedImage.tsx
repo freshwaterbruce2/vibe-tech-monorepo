@@ -3,7 +3,7 @@
  * Features: Format detection, lazy loading, responsive images, error fallback
  */
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, type SyntheticEvent } from 'react';
 import { cn } from '@/lib/utils';
 
 interface OptimizedImageProps {
@@ -16,8 +16,8 @@ interface OptimizedImageProps {
   lazy?: boolean;
   responsive?: boolean;
   sizes?: string;
-  onLoad?: (event: React.SyntheticEvent<HTMLImageElement>) => void;
-  onError?: (event: React.SyntheticEvent<HTMLImageElement>) => void;
+  onLoad?: (event: SyntheticEvent<HTMLImageElement>) => void;
+  onError?: (event: SyntheticEvent<HTMLImageElement>) => void;
   fallbackSrc?: string;
   quality?: number;
 }
@@ -28,6 +28,7 @@ interface ImageFormats {
   original: string;
 }
 
+ 
 export function OptimizedImage({
   src,
   alt,
@@ -63,7 +64,7 @@ export function OptimizedImage({
 
   // Intersection Observer for lazy loading
   useEffect(() => {
-    if (!lazy || priority || isInView) return;
+    if (!lazy || priority || isInView) return undefined;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -100,7 +101,7 @@ export function OptimizedImage({
   }, [isInView, formats]);
 
   const handleLoad = useCallback(
-    (event: React.SyntheticEvent<HTMLImageElement>) => {
+    (event: SyntheticEvent<HTMLImageElement>) => {
       setIsLoaded(true);
       setHasError(false);
       onLoad?.(event);
@@ -109,7 +110,7 @@ export function OptimizedImage({
   );
 
   const handleError = useCallback(
-    (event: React.SyntheticEvent<HTMLImageElement>) => {
+    (event: SyntheticEvent<HTMLImageElement>) => {
       setHasError(true);
       
       // Try fallback formats
@@ -287,7 +288,6 @@ function generateImageFormats(
   } else {
     // For local images, try to find pre-generated variants
     const basePath = src.substring(0, src.lastIndexOf('.'));
-    const extension = src.substring(src.lastIndexOf('.'));
     
     if (supportedFormats.avif) {
       formats.avif = `${basePath}.avif`;

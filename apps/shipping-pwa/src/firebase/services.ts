@@ -390,7 +390,7 @@ export class FirebaseSyncService {
         )
       }
 
-      console.log('Local data successfully synced to Firebase')
+      console.warn('Local data successfully synced to Firebase')
     } catch (error) {
       console.error('Failed to sync local data to Firebase:', error)
       throw error
@@ -414,7 +414,7 @@ export class FirebaseSyncService {
       })
       window.electronAPI?.store.set('palletData', JSON.stringify(palletMap))
 
-      console.log('Firebase data successfully synced to local storage')
+      console.warn('Firebase data successfully synced to local storage')
     } catch (error) {
       console.error('Failed to sync Firebase data to local storage:', error)
       throw error

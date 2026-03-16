@@ -48,18 +48,20 @@ export function useVoiceCommand({
   // Enhanced error handling with recovery attempts
   useEffect(() => {
     if (!browserSupportsSpeechRecognition) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setErrorMessage("Speech recognition is not supported in this browser");
       toast.error("Speech recognition is not supported", {
         description: "Please try using a supported browser like Chrome",
         duration: 5000,
       });
-      return;
+      return undefined;
     }
 
-
+    // Copy ref value to local variable for use in cleanup
+    const timeoutRef = errorTimeoutRef.current;
     return () => {
-      if (errorTimeoutRef.current) {
-        clearTimeout(errorTimeoutRef.current);
+      if (timeoutRef) {
+        clearTimeout(timeoutRef);
       }
     };
   }, [browserSupportsSpeechRecognition, settings.voiceActivationMode]);
@@ -77,6 +79,7 @@ export function useVoiceCommand({
     for (const pattern of commandPatterns) {
       const match = command.match(pattern.regex);
       if (match) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsProcessingCommand(true);
         lastProcessedTranscript.current = transcript;
 
@@ -158,6 +161,7 @@ export function useVoiceCommand({
   useEffect(() => {
     if (!isListening) {
       lastProcessedTranscript.current = "";
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsProcessingCommand(false);
       resetTranscript();
       if (processingTimeoutRef.current) {
