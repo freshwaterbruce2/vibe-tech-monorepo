@@ -38,7 +38,7 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "eslint src --ext .ts",
+        "command": "eslint src --ext .ts --max-warnings 0",
         "cwd": "backend/openrouter-proxy"
       }
     },
@@ -46,6 +46,13 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "tsc --noEmit",
+        "cwd": "backend/openrouter-proxy"
+      }
+    },
+    "evaluate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx src/utils/eval.ts",
         "cwd": "backend/openrouter-proxy"
       }
     },

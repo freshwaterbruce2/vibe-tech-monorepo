@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -46,6 +46,19 @@ export interface OpenRouterClientOptions {
   retryDelay?: number;
 }
 
+export interface UsageStats {
+  total_requests: number;
+  total_tokens: number;
+  total_cost: number;
+  by_model: Record<string, number>;
+  period?: string;
+  timestamp?: string;
+}
+
+type RetryableConfig = InternalAxiosRequestConfig & {
+  _retryCount?: number;
+};
+
 export class OpenRouterClient {
   private client: AxiosInstance;
   private options: OpenRouterClientOptions;
@@ -68,9 +81,13 @@ export class OpenRouterClient {
     // Add retry logic if configured
     if (this.options.retries && this.options.retries > 0) {
       this.client.interceptors.response.use(
-        response => response,
-        async error => {
-          const config = error.config;
+        (response) => response,
+        async (error) => {
+          const config = error.config as RetryableConfig | undefined;
+          if (!config) {
+            return Promise.reject(error);
+          }
+
           config._retryCount = config._retryCount ?? 0;
 
           if (config._retryCount >= (this.options.retries ?? 0)) {
@@ -78,7 +95,7 @@ export class OpenRouterClient {
           }
 
           config._retryCount += 1;
-          await new Promise(resolve => setTimeout(resolve, this.options.retryDelay ?? 1000));
+          await new Promise((resolve) => setTimeout(resolve, this.options.retryDelay ?? 1000));
           return this.client.request(config);
         }
       );
@@ -100,8 +117,8 @@ export class OpenRouterClient {
     return response.data.data;
   }
 
-  async getUsage(period: string = '24h'): Promise<any> {
-    const response = await this.client.get(
+  async getUsage(period: string = '24h'): Promise<UsageStats> {
+    const response = await this.client.get<UsageStats>(
       `/api/openrouter/usage?period=${period}`
     );
     return response.data;

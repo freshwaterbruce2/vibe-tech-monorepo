@@ -2,4 +2,5 @@ node_modules
 dist
 .env
 *.log
+experiment_results.jsonl
 .DS_Store
