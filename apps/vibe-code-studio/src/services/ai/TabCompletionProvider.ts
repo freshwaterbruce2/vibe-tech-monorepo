@@ -1,15 +1,15 @@
-import * as monaco from 'monaco-editor';
+import type * as Monaco from 'monaco-editor';
 import type { UnifiedAIService } from './UnifiedAIService';
 
-export class TabCompletionProvider implements monaco.languages.InlineCompletionsProvider {
+export class TabCompletionProvider implements Monaco.languages.InlineCompletionsProvider {
   constructor(private readonly aiService: UnifiedAIService) {}
 
   async provideInlineCompletions(
-    model: monaco.editor.ITextModel,
-    position: monaco.Position,
-    _context: monaco.languages.InlineCompletionContext,
-    token: monaco.CancellationToken
-  ): Promise<monaco.languages.InlineCompletions | undefined> {
+    model: Monaco.editor.ITextModel,
+    position: Monaco.Position,
+    _context: Monaco.languages.InlineCompletionContext,
+    token: Monaco.CancellationToken
+  ): Promise<Monaco.languages.InlineCompletions | undefined> {
 
     // Quick validation
     if (token.isCancellationRequested) return undefined;
@@ -47,6 +47,7 @@ export class TabCompletionProvider implements monaco.languages.InlineCompletions
       if (!completion?.trim()) return undefined;
 
       // Return Result
+      const monaco = await import('monaco-editor');
       return {
         items: [{
           insertText: completion,
@@ -64,11 +65,11 @@ export class TabCompletionProvider implements monaco.languages.InlineCompletions
     }
   }
 
-  freeInlineCompletions(_completions: monaco.languages.InlineCompletions): void {
+  freeInlineCompletions(_completions: Monaco.languages.InlineCompletions): void {
     // No resource cleanup needed
   }
 
-  disposeInlineCompletions(completions: monaco.languages.InlineCompletions): void {
+  disposeInlineCompletions(completions: Monaco.languages.InlineCompletions): void {
       this.freeInlineCompletions(completions);
   }
 }

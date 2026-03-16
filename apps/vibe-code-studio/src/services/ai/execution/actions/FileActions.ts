@@ -207,7 +207,7 @@ export async function executeEditFile(
 
         // PHASE 7: Show diff and request approval before applying
         if (liveStream) {
-            const changes = liveStream.showDiffPreview(resolvedPath, oldContent, newContent);
+            const changes = await liveStream.showDiffPreview(resolvedPath, oldContent, newContent);
             const approved = await liveStream.requestApproval(resolvedPath, changes);
 
             if (!approved) {

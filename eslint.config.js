@@ -399,6 +399,7 @@ export default tseslint.config(
       'apps/memory-mcp/**/*.{ts,tsx}',
       'apps/vibe-shop/**/*.{ts,tsx}',
       'apps/mcp-codeberg/**/*.ts',
+      'apps/vibe-code-studio/**/*.{ts,tsx}',
     ],
     languageOptions: {
       parserOptions: {
@@ -414,6 +415,7 @@ export default tseslint.config(
           './apps/memory-mcp/tsconfig.lint.json',
           './apps/vibe-shop/tsconfig.lint.json',
           './apps/mcp-codeberg/tsconfig.lint.json',
+          './apps/vibe-code-studio/tsconfig.lint.json',
         ],
       },
     },

@@ -13,9 +13,7 @@ import { logger } from '../../services/Logger';
 const MonacoEditor = lazy(() =>
   // First, configure Monaco (if not already configured)
   import('../../utils/monacoConfig').then(({ configureMonaco }) => {
-    configureMonaco();
-    // Then, load the editor component
-    return import('@monaco-editor/react');
+    return configureMonaco().then(() => import('@monaco-editor/react'));
   }).then(module => {
     logger.info('[LazyMonaco] Monaco Editor loaded successfully');
     return { default: module.Editor };
@@ -119,7 +117,7 @@ export const LazyMonaco = (props: MonacoEditorProps) => {
 export const preloadMonaco = async () => {
   // Preload configuration first
   const { configureMonaco } = await import('../../utils/monacoConfig');
-  configureMonaco();
+  await configureMonaco();
   // Then preload the editor
   return import('@monaco-editor/react');
 };

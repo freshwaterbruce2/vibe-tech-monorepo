@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import styled from 'styled-components';
-import { vibeTheme } from '../../../styles/theme';
+
+import { vibeTheme } from '../../styles/theme';
 
 export const ComposerBackdrop = styled(motion.div)`
   position: fixed;
@@ -79,7 +80,7 @@ export const ActionButton = styled(motion.button)<{ $primary?: boolean }>`
   
   &:hover {
     background: ${props => props.$primary ? 
-      `${vibeTheme.colors.purple  }dd` : 
+      `${vibeTheme.colors.purple}dd` : 
       vibeTheme.colors.hover};
   }
   
