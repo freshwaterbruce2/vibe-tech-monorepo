@@ -87,6 +87,7 @@ return;
 			console.error('Invalid production application ID format');
 		}
 
+		// eslint-disable-next-line no-console
 		console.info(`Square ${environment} environment configured successfully`);
 	}
 
@@ -139,7 +140,7 @@ return true;
 	async validateSDK(): Promise<{ isLoaded: boolean; error?: string }> {
 		return new Promise((resolve) => {
 			// Check if Square object exists
-			if (typeof window !== 'undefined' && (window as any).Square) {
+			if (typeof window !== 'undefined' && (window as unknown as Record<string, unknown>).Square) {
 				resolve({ isLoaded: true });
 				return;
 			}
@@ -151,7 +152,7 @@ return true;
 			const checkSDK = () => {
 				attempts++;
 
-				if ((window as any).Square) {
+				if ((window as unknown as Record<string, unknown>).Square) {
 					resolve({ isLoaded: true });
 				} else if (attempts >= maxAttempts) {
 					resolve({

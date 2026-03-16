@@ -373,7 +373,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 												const today = new Date();
 												const friday = new Date(today);
 												friday.setDate(
-													today.getDate() + ((5 - today.getDay() + 7) % 7),
+													today.getDate() +
+														((5 - today.getDay() + 7) % 7),
 												);
 												const sunday = new Date(friday);
 												sunday.setDate(friday.getDate() + 2);

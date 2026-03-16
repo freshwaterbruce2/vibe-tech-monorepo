@@ -322,6 +322,7 @@ describe("HotelDetails Component", () => {
 				...mockHotel,
 				rooms: [
 					{
+						// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 						...mockHotel.rooms![0],
 						availability: false,
 					},

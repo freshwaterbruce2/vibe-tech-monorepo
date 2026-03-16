@@ -539,10 +539,17 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
 												<span>🛏️ {room.type}</span>
 											</div>
 											<div className="flex flex-wrap gap-2 mb-4">
-												{room.amenities?.slice(0, 4).map((amenity, index) => (
+												{room.amenities?.slice(0, 4).map(
+													(amenity, index) => (
 													<span
 														key={index}
-														className="px-3 py-1 bg-primary-100 dark:bg-primary-900/20 text-primary-800 dark:text-primary-300 text-sm rounded-full"
+														className={[
+														'px-3 py-1 bg-primary-100',
+														'dark:bg-primary-900/20',
+														'text-primary-800',
+														'dark:text-primary-300',
+														'text-sm rounded-full',
+													].join(' ')}
 													>
 														{amenity}
 													</span>

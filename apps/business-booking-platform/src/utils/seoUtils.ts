@@ -40,7 +40,7 @@ export interface TwitterCardData {
 export interface StructuredDataItem {
 	'@context': string;
 	'@type': string;
-	[key: string]: any;
+	[key: string]: unknown;
 }
 
 export interface HotelStructuredData {
@@ -111,7 +111,9 @@ class SEOManager {
 	 */
 	createHotelSEO(hotelData: HotelStructuredData): SEOData {
 		const title = `${hotelData.name} - Book Direct | Best Rates Guaranteed`;
-		const description = `Book ${hotelData.name} in ${hotelData.address.addressLocality}. ${hotelData.description.slice(0, 120)}...`;
+		const locality = hotelData.address.addressLocality;
+		const desc = hotelData.description.slice(0, 120);
+		const description = `Book ${hotelData.name} in ${locality}. ${desc}...`;
 
 		return {
 			title,

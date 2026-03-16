@@ -190,7 +190,11 @@ const PassionSection: React.FC<PassionSectionProps> = ({
 
 	return (
 		<section
-			className={`relative bg-gradient-to-br from-slate-50 via-white to-amber-50/30 py-20 overflow-hidden ${className}`}
+			className={[
+				'relative bg-gradient-to-br from-slate-50',
+				'via-white to-amber-50/30 py-20 overflow-hidden',
+				className,
+			].join(' ')}
 		>
 			{/* Elegant Background Pattern */}
 			<div className="absolute inset-0 opacity-30">
@@ -228,9 +232,9 @@ const PassionSection: React.FC<PassionSectionProps> = ({
 							<div
 								key={passion.id}
 								onClick={() => handlePassionClick(passion.id)}
-								className={`
-                  relative cursor-pointer rounded-2xl overflow-hidden transition-all duration-500 hover:scale-105 group h-96
-                  ${
+								className={`relative cursor-pointer rounded-2xl
+									overflow-hidden transition-all duration-500
+									hover:scale-105 group h-96 ${
 										isSelected
 											? 'shadow-luxury-xl transform scale-105 ring-2 ring-amber-300/50'
 											: 'shadow-luxury hover:shadow-luxury-lg'
@@ -289,11 +293,14 @@ const PassionSection: React.FC<PassionSectionProps> = ({
 									<div className="text-center">
 										{/* Professional Icon */}
 										<div
-											className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center transition-all duration-500 backdrop-blur-md ${
+											className={[
+												'w-16 h-16 mx-auto mb-4 rounded-full',
+												'flex items-center justify-center',
+												'transition-all duration-500 backdrop-blur-md',
 												isSelected
 													? 'bg-white/30 ring-2 ring-white/50'
-													: 'bg-white/20 group-hover:bg-white/30 ring-2 ring-white/30'
-											}`}
+													: 'bg-white/20 group-hover:bg-white/30 ring-2 ring-white/30',
+											].join(' ')}
 										>
 											<IconComponent className="w-8 h-8 transition-colors duration-500 text-white drop-shadow-lg" />
 										</div>
@@ -311,11 +318,14 @@ const PassionSection: React.FC<PassionSectionProps> = ({
 											{passion.keywords.slice(0, 3).map((keyword, index) => (
 												<span
 													key={index}
-													className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-500 backdrop-blur-md ${
+													className={[
+														'px-3 py-1.5 rounded-full text-xs',
+														'font-medium transition-all duration-500',
+														'backdrop-blur-md',
 														isSelected
 															? 'bg-white/30 text-white border border-white/50'
-															: 'bg-white/20 text-white border border-white/30 group-hover:bg-white/30'
-													}`}
+															: 'bg-white/20 text-white border border-white/30 group-hover:bg-white/30',
+													].join(' ')}
 												>
 													{keyword}
 												</span>
@@ -332,16 +342,24 @@ const PassionSection: React.FC<PassionSectionProps> = ({
 				</div>
 
 				{/* Action Buttons */}
-				<div className="bg-gradient-to-r from-white/80 via-white/90 to-white/80 backdrop-blur-sm rounded-3xl p-8 border border-white/50 shadow-luxury-lg">
+				<div
+					className={[
+						'bg-gradient-to-r from-white/80 via-white/90 to-white/80',
+						'backdrop-blur-sm rounded-3xl p-8',
+						'border border-white/50 shadow-luxury-lg',
+					].join(' ')}
+				>
 					<div className="flex flex-col items-center gap-6">
 						<div className="text-center">
 							<div className="flex items-center justify-center gap-3 mb-4">
 								<div
-									className={`w-3 h-3 rounded-full transition-colors duration-300 ${
+									className={[
+										'w-3 h-3 rounded-full',
+										'transition-colors duration-300',
 										localSelectedPassions.length > 0
 											? 'bg-slate-600'
-											: 'bg-slate-300'
-									}`}
+											: 'bg-slate-300',
+									].join(' ')}
 								/>
 								<p className="text-xl font-semibold text-slate-800">
 									<span className="text-2xl text-slate-700 font-bold">
@@ -351,11 +369,13 @@ const PassionSection: React.FC<PassionSectionProps> = ({
 									selected
 								</p>
 								<div
-									className={`w-3 h-3 rounded-full transition-colors duration-300 ${
+									className={[
+										'w-3 h-3 rounded-full',
+										'transition-colors duration-300',
 										localSelectedPassions.length > 0
 											? 'bg-slate-600'
-											: 'bg-slate-300'
-									}`}
+											: 'bg-slate-300',
+									].join(' ')}
 								/>
 							</div>
 							{localSelectedPassions.length > 0 && (
@@ -417,7 +437,13 @@ const PassionSection: React.FC<PassionSectionProps> = ({
 								return passion ? (
 									<span
 										key={passionId}
-										className={`inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r ${passion.color} shadow-luxury-sm hover:shadow-luxury transition-all duration-300`}
+										className={[
+											'inline-flex items-center px-4 py-2',
+											'rounded-xl text-sm font-semibold',
+											`bg-gradient-to-r ${passion.color}`,
+											'shadow-luxury-sm hover:shadow-luxury',
+											'transition-all duration-300',
+										].join(' ')}
 									>
 										<IconComponent className="w-4 h-4 mr-2" />
 										{passion.name}

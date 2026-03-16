@@ -174,7 +174,9 @@ const FeaturedDestinations: React.FC<FeaturedDestinationsProps> = ({
 													</span>
 												))}
 											{destination.popularAttractions.length > 2 && (
-												<span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+												<span
+													className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
+												>
 													+{destination.popularAttractions.length - 2} more
 												</span>
 											)}

@@ -397,6 +397,7 @@ export function useHotelSearch() {
 			setIsSearching(false);
 			setLoading(false);
 		}
+	// eslint-disable-next-line max-len
 	}, [guestCount.adults, guestCount.children, guestCount.rooms, query, selectedDateRange.checkIn, selectedDateRange.checkOut, setError, setLoading, setResults]);
 
 	useEffect(() => {

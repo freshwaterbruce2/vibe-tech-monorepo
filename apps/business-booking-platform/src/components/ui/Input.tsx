@@ -1,4 +1,5 @@
-﻿import type { InputHTMLAttributes } from 'react';
+﻿/* eslint-disable react-refresh/only-export-components */
+import type { InputHTMLAttributes } from 'react';
 import { forwardRef, useId } from 'react';
 import { cn } from '../../utils/cn';
 

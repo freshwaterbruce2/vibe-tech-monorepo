@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 export interface AppError {
 	message: string;
 	code?: string;
-	details?: any;
+	details?: unknown;
 	timestamp: Date;
 	severity: 'low' | 'medium' | 'high' | 'critical';
 }
@@ -97,15 +97,17 @@ const createAppError = (error: unknown, context?: string): AppError => {
 };
 
 const logError = (appError: AppError, context?: string) => {
-	const logLevel =
-		appError.severity === 'critical'
-			? 'error'
-			: appError.severity === 'high'
-				? 'error'
-				: appError.severity === 'medium'
-					? 'warn'
-					: 'info';
+	let logLevel: 'error' | 'warn' | 'info' = 'info';
+	if (
+		appError.severity === 'critical' ||
+		appError.severity === 'high'
+	) {
+		logLevel = 'error';
+	} else if (appError.severity === 'medium') {
+		logLevel = 'warn';
+	}
 
+	// eslint-disable-next-line no-console
 	console[logLevel]('Application Error:', {
 		message: appError.message,
 		code: appError.code,

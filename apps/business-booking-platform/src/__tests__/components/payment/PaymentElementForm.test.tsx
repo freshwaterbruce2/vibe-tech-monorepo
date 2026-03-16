@@ -515,6 +515,7 @@ describe("PaymentElementForm", () => {
 			unmount();
 
 			// Resolve promise after unmount
+			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 			resolvePayment!(mockPaymentIntent);
 
 			// Should not cause errors or state updates

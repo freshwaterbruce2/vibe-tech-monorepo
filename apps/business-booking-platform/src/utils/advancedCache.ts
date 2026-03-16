@@ -11,7 +11,7 @@ interface CacheEntry<T> {
 	ttl: number;
 	version: string;
 	tags: string[];
-	metadata?: Record<string, any>;
+	metadata?: Record<string, unknown>;
 }
 
 interface CacheOptions {
@@ -32,7 +32,7 @@ interface CacheStatistics {
 
 class AdvancedCacheManager {
 	private static instance: AdvancedCacheManager;
-	private memoryCache = new Map<string, CacheEntry<any>>();
+	private memoryCache = new Map<string, CacheEntry<unknown>>();
 	private statistics: CacheStatistics = {
 		hits: 0,
 		misses: 0,
@@ -145,7 +145,7 @@ class AdvancedCacheManager {
 
 			// Decompress if needed
 			if (entry.metadata?.compressed) {
-				data = await this.decompressData(data);
+				data = await this.decompressData(data as string);
 			}
 
 			logger.debug('Cache hit', {
@@ -155,7 +155,7 @@ class AdvancedCacheManager {
 				age: Date.now() - entry.timestamp,
 			});
 
-			return data;
+			return data as T;
 		}
 
 		// Cache miss - remove expired entry
@@ -178,7 +178,8 @@ class AdvancedCacheManager {
 			try {
 				const fallbackData = await fallback();
 				// Cache the fallback result
-				await this.set(key, fallbackData, { ttl: 10 * 60 * 1000 }); // 10 min TTL for fallback
+				// 10 min TTL for fallback
+				await this.set(key, fallbackData, { ttl: 10 * 60 * 1000 });
 				return fallbackData;
 			} catch (error) {
 				logger.warn('Cache fallback failed', {
@@ -264,11 +265,11 @@ class AdvancedCacheManager {
 		}
 	}
 
-	private isExpired(entry: CacheEntry<any>): boolean {
+	private isExpired(entry: CacheEntry<unknown>): boolean {
 		return Date.now() > entry.timestamp + entry.ttl;
 	}
 
-	private shouldCompress(data: any): boolean {
+	private shouldCompress(data: unknown): boolean {
 		const size = this.getDataSize(data);
 		return size > 1024; // Compress if larger than 1KB
 	}
@@ -278,11 +279,11 @@ class AdvancedCacheManager {
 		return JSON.stringify(data);
 	}
 
-	private async decompressData(compressedData: string): Promise<any> {
+	private async decompressData(compressedData: string): Promise<unknown> {
 		return JSON.parse(compressedData);
 	}
 
-	private getDataSize(data: any): number {
+	private getDataSize(data: unknown): number {
 		return JSON.stringify(data).length;
 	}
 
@@ -300,8 +301,8 @@ class AdvancedCacheManager {
 				medium: 1,
 				high: 2,
 			};
-			const aPriority = priorityOrder[a[1].metadata?.priority || 'medium'] ?? 1;
-			const bPriority = priorityOrder[b[1].metadata?.priority || 'medium'] ?? 1;
+			const aPriority = priorityOrder[(a[1].metadata?.priority || 'medium') as string] ?? 1;
+			const bPriority = priorityOrder[(b[1].metadata?.priority || 'medium') as string] ?? 1;
 
 			if (aPriority !== bPriority) {
 return aPriority - bPriority;
@@ -396,7 +397,7 @@ return aPriority - bPriority;
 
 	private async persistToStorage(
 		key: string,
-		entry: CacheEntry<any>,
+		entry: CacheEntry<unknown>,
 	): Promise<void> {
 		try {
 			// Store in localStorage as fallback (IndexedDB implementation would go here)
@@ -410,7 +411,7 @@ return aPriority - bPriority;
 		}
 	}
 
-	private async getFromStorage(key: string): Promise<CacheEntry<any> | null> {
+	private async getFromStorage(key: string): Promise<CacheEntry<unknown> | null> {
 		try {
 			const stored = localStorage.getItem(`cache_${key}`);
 			return stored ? JSON.parse(stored) : null;

@@ -1,3 +1,4 @@
+/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
 // Monitoring and Error Tracking Utilities
 
 // Error tracking configuration
@@ -363,16 +364,6 @@ export const trackApiResponseTime = (
 		timestamp: Date.now(),
 		tags: { endpoint },
 	});
-};
-
-// Error boundary helper - Moved to separate .tsx file for JSX support
-export const withErrorBoundary = <T extends React.ComponentType<any>>(
-	Component: T,
-	_fallback?: React.ComponentType<{ error: Error }>,
-): T => {
-	// This function needs to be in a .tsx file to use JSX
-	// For TypeScript compilation, just return the component
-	return Component;
 };
 
 export default monitoring;

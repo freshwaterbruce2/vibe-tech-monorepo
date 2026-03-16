@@ -637,6 +637,7 @@ describe("PaymentService Comprehensive Tests", () => {
 			});
 
 			const confirmResult = await PaymentService.confirmPaymentIntent(
+				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 				paymentResult.paymentId!,
 			);
 

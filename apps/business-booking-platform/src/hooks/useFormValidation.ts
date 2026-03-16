@@ -94,10 +94,11 @@ export type SearchFormData = z.infer<typeof searchSchema>;
 
 // Generic form validation hook
 export function useFormValidation<T extends FieldValues>(
-	schema: any, // Using any to bypass Zod 3.x type complexity with generics
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	schema: any,
 	options?: {
 		onSubmit?: (data: T) => Promise<void> | void;
-		onError?: (errors: any) => void;
+		onError?: (errors: unknown) => void;
 		showToastOnError?: boolean;
 		mode?: 'onChange' | 'onBlur' | 'onSubmit';
 	},
@@ -122,7 +123,7 @@ export function useFormValidation<T extends FieldValues>(
 						await onValidSubmit(data);
 					} catch (error) {
 						if (import.meta.env.DEV) {
-							console.error('Form submission error:', error);
+						console.error('Form submission error:', error);
 						}
 						if (options?.showToastOnError !== false) {
 							toast.error('Submission Failed', {
@@ -137,7 +138,8 @@ export function useFormValidation<T extends FieldValues>(
 				},
 				(errors) => {
 					if (import.meta.env.DEV) {
-						console.log('Form validation errors:', errors);
+						// eslint-disable-next-line no-console
+					console.log('Form validation errors:', errors);
 					}
 					if (options?.showToastOnError !== false) {
 						const firstError = Object.values(errors)[0]?.message;
@@ -189,7 +191,7 @@ export function useFormValidation<T extends FieldValues>(
 
 export function useGuestDetailsValidation(options?: {
 	onSubmit?: (data: GuestDetailsFormData) => Promise<void> | void;
-	onError?: (errors: any) => void;
+	onError?: (errors: unknown) => void;
 }) {
 	return useFormValidation(guestDetailsSchema, {
 		...options,
@@ -199,7 +201,7 @@ export function useGuestDetailsValidation(options?: {
 
 export function usePaymentValidation(options?: {
 	onSubmit?: (data: PaymentFormData) => Promise<void> | void;
-	onError?: (errors: any) => void;
+	onError?: (errors: unknown) => void;
 }) {
 	const form = useFormValidation(paymentSchema, {
 		...options,
@@ -239,7 +241,7 @@ export function usePaymentValidation(options?: {
 
 export function useSearchValidation(options?: {
 	onSubmit?: (data: SearchFormData) => Promise<void> | void;
-	onError?: (errors: any) => void;
+	onError?: (errors: unknown) => void;
 }) {
 	return useFormValidation(searchSchema, {
 		...options,
@@ -253,7 +255,9 @@ export function getValidationFeedback<T extends FieldValues>(
 	fieldName: Path<T>,
 ) {
 	const error = form.formState.errors[fieldName];
-	const isDirty = (form.formState.dirtyFields as any)[fieldName];
+	const isDirty = (
+		form.formState.dirtyFields as Record<string, boolean>
+	)[fieldName];
 	const isValid = !error && isDirty;
 
 	return {
@@ -265,6 +269,19 @@ export function getValidationFeedback<T extends FieldValues>(
 		'aria-invalid': !!error,
 		'aria-describedby': error ? `${String(fieldName)}-error` : undefined,
 	};
+}
+
+function getFieldClassName(validation: {
+	showError?: boolean;
+	showSuccess?: boolean;
+}): string {
+	if (validation.showError) {
+		return 'border-red-500 focus:border-red-500 focus:ring-red-500';
+	}
+	if (validation.showSuccess) {
+		return 'border-green-500 focus:border-green-500 focus:ring-green-500';
+	}
+	return '';
 }
 
 // Utility function for form field props
@@ -285,7 +302,7 @@ export function getFormFieldProps<T extends FieldValues>(
 		required: options?.required,
 		placeholder: options?.placeholder,
 		type: options?.type || 'text',
-		className: `${validation.showError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : validation.showSuccess ? 'border-green-500 focus:border-green-500 focus:ring-green-500' : ''}`,
+		className: getFieldClassName(validation),
 	};
 }
 

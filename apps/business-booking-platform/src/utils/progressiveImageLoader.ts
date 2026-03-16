@@ -66,15 +66,15 @@ class ProgressiveImageLoader {
 
 		// Return cached data if available
 		if (this.imageCache.has(cacheKey)) {
-			const cached = this.imageCache.get(cacheKey)!;
-			if (cached.loaded || cached.error) {
+			const cached = this.imageCache.get(cacheKey);
+			if (cached && (cached.loaded || cached.error)) {
 				return cached;
 			}
 		}
 
 		// Return existing promise if already loading
 		if (this.loadingQueue.has(cacheKey)) {
-			return this.loadingQueue.get(cacheKey)!;
+			return this.loadingQueue.get(cacheKey) as Promise<ProgressiveImageData>;
 		}
 
 		// Start loading
