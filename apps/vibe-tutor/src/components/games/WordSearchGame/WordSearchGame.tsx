@@ -54,19 +54,7 @@ const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) =>
     config,
   });
 
-  // Generate puzzle based on config
-  useEffect(() => {
-    if (!gameStarted) return;
-
-    const words = getRandomWords(subject, config.wordCount ?? 8, 'easy');
-    const wordSearch = generateWordSearch(words, config.gridSize ?? 12);
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- legitimate init: effect needs both state update and side effects (analytics, audio)
-    setPuzzle(wordSearch);
-    setStartTime(Date.now());
-
-    learningAnalytics.startSession('wordsearch', subject, config.difficulty);
-    initializeAudio();
-  }, [subject, config.gridSize, config.wordCount, config.difficulty, gameStarted]);
+  // Generate puzzle moved to startGame
 
   const handleFinish = useCallback(() => {
     if (!puzzle) return;
@@ -147,6 +135,14 @@ const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) =>
   const startGame = () => {
     setShowSettings(false);
     setGameStarted(true);
+
+    const words = getRandomWords(subject, config.wordCount ?? 8, 'easy');
+    const wordSearch = generateWordSearch(words, config.gridSize ?? 12);
+    setPuzzle(wordSearch);
+    setStartTime(Date.now());
+
+    learningAnalytics.startSession('wordsearch', subject, config.difficulty);
+    initializeAudio();
   };
 
   const closeTutorial = () => {
@@ -384,9 +380,9 @@ const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) =>
           {/* Progress bar */}
           <div className="mt-3">
             <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+              <style>{`.wordsearch-progress-fill { width: ${progressPercent}%; }`}</style>
               <div
-                className="h-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-500"
-                style={{ width: `${progressPercent}%` }}
+                className="h-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-500 wordsearch-progress-fill"
               />
             </div>
           </div>
