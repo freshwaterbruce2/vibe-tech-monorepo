@@ -1,6 +1,8 @@
+import confetti from 'canvas-confetti';
 import { ArrowLeft, Clock, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import * as SudokuModule from 'sudoku-umd';
+import { useGameAudio } from '../../hooks/useGameAudio';
 
 interface SudokuModuleType {
   generate?: () => string;
@@ -105,6 +107,7 @@ function createInitialSudokuState(): SudokuState {
 }
 
 const SudokuGame = ({ onComplete, onBack }: SudokuGameProps) => {
+  const { playSound } = useGameAudio();
   const [initialSudoku] = useState<SudokuState>(() => createInitialSudokuState());
   const [startTime] = useState(() => Date.now());
   const [currentTime, setCurrentTime] = useState(() => Date.now());
@@ -121,26 +124,31 @@ const SudokuGame = ({ onComplete, onBack }: SudokuGameProps) => {
 
   const handleCellClick = (index: number) => {
     if (puzzle[index] !== null) return; // Can't edit given numbers
+    playSound('pop');
     setSelectedCell(index);
   };
 
   const handleNumberInput = (num: number) => {
     if (selectedCell === null || puzzle[selectedCell] !== null) return;
+    playSound('pop');
     const newGrid = [...userGrid];
     newGrid[selectedCell] = num;
     setUserGrid(newGrid);
 
     // Check if puzzle is complete
     if (checkComplete(newGrid)) {
+      playSound('victory');
+      void confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
       const timeSpent = Math.floor((currentTime - startTime) / 1000);
       const score = Math.max(50, 100 - Math.floor(timeSpent / 30));
       const stars = score >= 90 ? 5 : score >= 75 ? 4 : score >= 60 ? 3 : score >= 40 ? 2 : 1;
-      setTimeout(() => onComplete(score, stars, timeSpent), 500);
+      setTimeout(() => onComplete(score, stars, timeSpent), 1500);
     }
   };
 
   const handleClear = () => {
     if (selectedCell === null || puzzle[selectedCell] !== null) return;
+    playSound('pop');
     const newGrid = [...userGrid];
     newGrid[selectedCell] = null;
     setUserGrid(newGrid);
@@ -151,6 +159,7 @@ const SudokuGame = ({ onComplete, onBack }: SudokuGameProps) => {
   };
 
   const handleReset = () => {
+    playSound('pop');
     setUserGrid([...puzzle]);
     setSelectedCell(null);
   };

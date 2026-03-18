@@ -30,9 +30,12 @@ const WordBuilderGame = lazy(async () => import('./WordBuilderGame'));
 const SudokuGame = lazy(async () => import('./SudokuGame'));
 const PatternQuestGame = lazy(async () => import('./PatternQuestGame'));
 const MusicNotesGame = lazy(async () => import('./MusicNotesGame'));
+const BossBattleGame = lazy(async () => import('./BossBattleGame'));
+const AvatarProfile = lazy(async () => import('../avatar/AvatarProfile'));
+const AvatarShop = lazy(async () => import('../avatar/AvatarShop'));
 
 /* ---------- Types ---------- */
-type Zone = 'chill' | 'focus' | 'challenge';
+type Zone = 'chill' | 'focus' | 'challenge' | 'rpg';
 type ZoneFilter = 'all' | Zone;
 
 interface GameDef {
@@ -61,9 +64,10 @@ const ZONE_CONFIG: Record<Zone, { emoji: string; label: string; desc: string; co
   chill: { emoji: '🧘', label: 'Chill Zone', desc: 'Calm & steady. No rush.', color: '#38bdf8' },
   focus: { emoji: '🎯', label: 'Focus Zone', desc: 'Build your skills!', color: '#22c55e' },
   challenge: { emoji: '🔥', label: 'Challenge Zone', desc: 'Push your brain!', color: '#f97316' },
+  rpg: { emoji: '⚔️', label: 'Boss Battles', desc: 'Use your avatar stats!', color: '#ef4444' },
 };
 
-const ZONE_ORDER: Zone[] = ['chill', 'focus', 'challenge'];
+const ZONE_ORDER: Zone[] = ['chill', 'focus', 'challenge', 'rpg'];
 
 /* ---------- Constants ---------- */
 const GAMES: GameDef[] = [
@@ -160,6 +164,37 @@ const GAMES: GameDef[] = [
     tokens: 20,
     minLevel: 2,
   },
+  // RPG Zone - Boss Battles
+  {
+    id: 'boss-math',
+    name: 'The Math Menace',
+    description: 'Defeat the math boss using your Avatar!',
+    icon: Flame,
+    color: '#ef4444',
+    zone: 'rpg',
+    tokens: 0,
+    minLevel: 1,
+  },
+  {
+    id: 'boss-science',
+    name: 'The Mad Scientist',
+    description: 'Test your science knowledge in battle!',
+    icon: Flame,
+    color: '#ef4444',
+    zone: 'rpg',
+    tokens: 0,
+    minLevel: 1,
+  },
+  {
+    id: 'boss-history',
+    name: 'The Time Bandit',
+    description: 'A historical showdown awaits!',
+    icon: Flame,
+    color: '#ef4444',
+    zone: 'rpg',
+    tokens: 0,
+    minLevel: 1,
+  },
 ];
 
 const XP_PER_GAME = 10;
@@ -199,6 +234,9 @@ const GAME_SUBJECT_MAP: Record<string, string> = {
   anagrams: 'English',
   crossword: 'English',
   sudoku: 'Math',
+  'boss-math': 'Math',
+  'boss-science': 'Science',
+  'boss-history': 'History',
 };
 
 function isToday(dateStr: string): boolean {
@@ -209,6 +247,7 @@ function isToday(dateStr: string): boolean {
 interface GamesHubProps {
   userTokens: number;
   onEarnTokens: (amount: number, reason?: string) => void;
+  onSpendTokens?: (amount: number, reason?: string) => boolean;
   onGameCompleted?: (gameId: string, score: number) => void;
   onClose: () => void;
 }
@@ -217,10 +256,12 @@ interface GamesHubProps {
 export default function GamesHub({
   userTokens,
   onEarnTokens,
+  onSpendTokens,
   onGameCompleted,
   onClose,
 }: GamesHubProps) {
   const [activeGame, setActiveGame] = useState<string | null>(null);
+  const [showAvatarScreen, setShowAvatarScreen] = useState<'profile' | 'shop' | null>(null);
   const [zoneFilter, setZoneFilter] = useState<ZoneFilter>('all');
   const [stats, setStats] = useState<HubStats>(loadStats);
   const [showChestAnimation, setShowChestAnimation] = useState(false);
@@ -253,7 +294,7 @@ export default function GamesHub({
   }, [zoneFilter]);
 
   const gamesByZone = useMemo(() => {
-    const map: Record<Zone, GameDef[]> = { chill: [], focus: [], challenge: [] };
+    const map: Record<Zone, GameDef[]> = { chill: [], focus: [], challenge: [], rpg: [] };
     for (const game of GAMES) {
       map[game.zone].push(game);
     }
@@ -402,6 +443,13 @@ export default function GamesHub({
           {activeGame === 'sudoku' && (
             <SudokuGame onComplete={groupAProps.onComplete} onBack={groupAProps.onBack} />
           )}
+          {activeGame.startsWith('boss-') && (
+            <BossBattleGame
+              subject={groupAProps.subject}
+              onComplete={groupAProps.onComplete}
+              onBack={groupAProps.onBack}
+            />
+          )}
           {/* Group B: onEarnTokens/onClose */}
           {activeGame === 'math' && <MathAdventureGame {...groupBProps} />}
           {activeGame === 'wordbuilder' && <WordBuilderGame {...groupBProps} />}
@@ -409,6 +457,35 @@ export default function GamesHub({
           {activeGame === 'musicnotes' && <MusicNotesGame {...groupBProps} />}
         </div>
       </Suspense>
+    );
+  }
+
+  if (showAvatarScreen === 'profile') {
+    return (
+      <div className="gh-hub" style={{ padding: '20px', overflowY: 'auto' }}>
+        <button onClick={() => setShowAvatarScreen(null)} className="gh-header-back" style={{ marginBottom: '20px' }}>
+          <ChevronLeft size={18} /> Back to Hub
+        </button>
+        <Suspense fallback={<div>Loading Profile...</div>}>
+          <AvatarProfile onOpenShop={() => setShowAvatarScreen('shop')} />
+        </Suspense>
+      </div>
+    );
+  }
+
+  if (showAvatarScreen === 'shop') {
+    return (
+      <div className="gh-hub" style={{ padding: '20px', overflowY: 'auto' }}>
+        <button onClick={() => setShowAvatarScreen('profile')} className="gh-header-back" style={{ marginBottom: '20px' }}>
+          <ChevronLeft size={18} /> Back to Profile
+        </button>
+        <Suspense fallback={<div>Loading Shop...</div>}>
+          <AvatarShop
+            userTokens={userTokens}
+            onSpendTokens={onSpendTokens ?? (() => false)}
+          />
+        </Suspense>
+      </div>
     );
   }
 
@@ -423,7 +500,13 @@ export default function GamesHub({
         <h2 className="gh-title">
           <Gamepad2 size={28} className="gh-title-icon" /> Games Hub
         </h2>
-        <div className="gh-header-spacer" />
+        <div className="gh-header-spacer" style={{ display: 'flex', justifyContent: 'flex-end', flex: 1 }}>
+          <button 
+            onClick={() => setShowAvatarScreen('profile')}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#3b82f6', color: 'white', padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
+            <Sparkles size={16} /> My Avatar
+          </button>
+        </div>
       </div>
 
       {/* Stats bar */}

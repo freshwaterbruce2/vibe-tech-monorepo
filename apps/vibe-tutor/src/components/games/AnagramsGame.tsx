@@ -1,5 +1,8 @@
+import { animated, useSpring } from '@react-spring/web';
+import confetti from 'canvas-confetti';
 import { ArrowLeft, CheckCircle, Clock, Lightbulb, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useGameAudio } from '../../hooks/useGameAudio';
 import type { AnagramChallenge } from '../../services/puzzleGenerator';
 import { calculateAnagramScore, generateAnagrams } from '../../services/puzzleGenerator';
 import { getAnagramWords } from '../../services/wordBanks';
@@ -13,6 +16,13 @@ interface AnagramsGameProps {
 const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
   const [startTime] = useState(() => Date.now());
   const [currentTime, setCurrentTime] = useState(() => Date.now());
+  const { playSound } = useGameAudio();
+
+  const [anagramProps, api] = useSpring(() => ({
+    from: { opacity: 0, y: 50 },
+    to: { opacity: 1, y: 0 },
+    config: { tension: 300, friction: 15 },
+  }));
   const anagrams = useMemo<AnagramChallenge[]>(() => {
     const words = getAnagramWords(subject, 10);
     return generateAnagrams(words);
@@ -36,6 +46,7 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
 
     if (userAnswer.toUpperCase() === currentAnagram.original) {
       // Correct!
+      playSound('success');
       setFeedback('correct');
       setSolved((prev) => new Set([...prev, currentIndex]));
 
@@ -45,8 +56,16 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
           setUserAnswer('');
           setShowHint(false);
           setFeedback(null);
+          api.start({ from: { opacity: 0, y: 50 }, to: { opacity: 1, y: 0 } });
         } else {
           // Game complete
+          playSound('victory');
+          void confetti({
+            particleCount: 200,
+            spread: 100,
+            origin: { y: 0.6 },
+            colors: ['#a855f7', '#3b82f6', '#ec4899'],
+          });
           const timeSpent = Math.floor((Date.now() - startTime) / 1000);
           const result = calculateAnagramScore(
             solved.size + 1,
@@ -59,16 +78,19 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
       }, 1000);
     } else {
       setFeedback('wrong');
+      playSound('error');
       setTimeout(() => setFeedback(null), 1000);
     }
   };
 
   const handleSkip = () => {
+    playSound('pop');
     if (currentIndex < anagrams.length - 1) {
       setCurrentIndex((i) => i + 1);
       setUserAnswer('');
       setShowHint(false);
       setFeedback(null);
+      api.start({ from: { opacity: 0, y: 50 }, to: { opacity: 1, y: 0 } });
     } else {
       // Finish game
       const timeSpent = Math.floor((Date.now() - startTime) / 1000);
@@ -78,6 +100,7 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
   };
 
   const handleHint = () => {
+    playSound('pop');
     setShowHint(true);
     setHintsUsed((h) => h + 1);
   };
@@ -151,17 +174,16 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
 
           {/* Scrambled Word */}
           <div className="mb-8 text-center">
-            <div className="inline-flex gap-2 mb-4">
+            <animated.div className="inline-flex gap-2 mb-4" style={anagramProps}>
               {currentAnagram.scrambled.split('').map((letter, i) => (
                 <div
                   key={i}
                   className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center bg-gradient-to-br from-cyan-600 to-blue-600 rounded-lg text-white text-2xl sm:text-3xl font-bold shadow-lg hover:scale-110 hover:-translate-y-1 transition-transform cursor-default"
-                  style={{ animationDelay: `${i * 0.05}s` }}
                 >
                   {letter}
                 </div>
               ))}
-            </div>
+            </animated.div>
             <p className="text-white/80 text-lg">Unscramble the letters!</p>
           </div>
 

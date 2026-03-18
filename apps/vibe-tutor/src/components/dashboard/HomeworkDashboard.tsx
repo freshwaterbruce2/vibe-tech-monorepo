@@ -63,7 +63,7 @@ const HomeworkDashboard = ({ items, onAdd, onToggleComplete, tokens }: HomeworkD
               Stay on top of your tasks
             </p>
           </div>
-          <div className="flex items-center gap-2 md:gap-4 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2 md:gap-4 w-full sm:w-auto">
             <div className="relative">
               <button
                 onClick={() => setIsNotifPanelOpen((prev) => !prev)}

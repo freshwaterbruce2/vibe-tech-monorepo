@@ -61,6 +61,7 @@ describe('HomeworkDashboard', () => {
     onAdd: vi.fn(),
     onToggleComplete: vi.fn(),
     points: 150,
+    tokens: 100,
   };
 
   beforeEach(() => {

@@ -1,5 +1,7 @@
+import confetti from 'canvas-confetti';
 import { BookOpen, Coins, RefreshCw, Sparkles, Star, Trophy } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { useGameAudio } from '../../hooks/useGameAudio';
 
 interface WordBuilderProps {
   onEarnTokens?: (amount: number) => void;
@@ -14,6 +16,7 @@ interface WordChallenge {
 }
 
 const WordBuilderGame = ({ onEarnTokens, onClose: _onClose }: WordBuilderProps) => {
+  const { playSound } = useGameAudio();
   const [score, setScore] = useState(0);
   const [currentChallenge, setCurrentChallenge] = useState<WordChallenge | null>(null);
   const [scrambledLetters, setScrambledLetters] = useState<string[]>([]);
@@ -92,6 +95,7 @@ const WordBuilderGame = ({ onEarnTokens, onClose: _onClose }: WordBuilderProps) 
   const handleLetterClick = (letter: string, index: number) => {
     if (usedIndices.has(index)) return;
 
+    playSound('pop');
     setSelectedLetters([...selectedLetters, letter]);
     setUsedIndices(new Set([...usedIndices, index]));
 
@@ -103,6 +107,7 @@ const WordBuilderGame = ({ onEarnTokens, onClose: _onClose }: WordBuilderProps) 
   };
 
   const handleSelectedLetterClick = (letterIndex: number) => {
+    playSound('pop');
     // Return letter to available pool
     const letterToReturn = selectedLetters[letterIndex];
     const newSelected = selectedLetters.filter((_, i) => i !== letterIndex);
@@ -142,15 +147,20 @@ const WordBuilderGame = ({ onEarnTokens, onClose: _onClose }: WordBuilderProps) 
 
       // Level up every 100 points
       if (score + points >= level * 100) {
+        playSound('victory');
+        void confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
         setLevel((prev) => prev + 1);
         setShowCelebration(true);
         setTimeout(() => setShowCelebration(false), 3000);
+      } else {
+        playSound('success');
       }
 
       setTimeout(() => {
         selectNewWord();
       }, 2000);
     } else {
+      playSound('error');
       setFeedback('❌ Not quite right, try again!');
       setStreak(0);
       setTimeout(() => setFeedback(''), 2000);

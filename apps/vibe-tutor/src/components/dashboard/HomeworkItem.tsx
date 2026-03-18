@@ -83,7 +83,7 @@ const HomeworkItem = ({ item, onToggleComplete, onBreakdownClick }: HomeworkItem
             )}
           </div>
           <h3
-            className={`text-lg font-semibold transition-all duration-300 ${
+            className={`text-lg font-semibold min-w-0 break-words transition-all duration-300 ${
               item.completed
                 ? 'line-through text-[var(--text-muted)]'
                 : 'text-[var(--text-primary)] group-hover:neon-text-primary'

@@ -369,6 +369,43 @@ export class DataStore {
     }
   }
 
+  // ========== Avatar State ==========
+
+  async getAvatarState(): Promise<import('../types').AvatarState | null> {
+    if (this.useSQLite) {
+      const db = databaseService.getConnection();
+      if (db) {
+        const result = await db.query(`SELECT value FROM user_settings WHERE key = 'avatarState'`);
+        if (result.values && result.values.length > 0) {
+          return JSON.parse(result.values[0].value) as import('../types').AvatarState;
+        }
+      }
+      return null;
+    } else {
+      return appStore.get<import('../types').AvatarState>('avatarState') ?? null;
+    }
+  }
+
+  async saveAvatarState(state: import('../types').AvatarState): Promise<void> {
+    if (this.useSQLite) {
+      const db = databaseService.getConnection();
+      if (db) {
+        await db.run(`
+          CREATE TABLE IF NOT EXISTS user_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT
+          )
+        `);
+        await db.run(`INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`, [
+          'avatarState',
+          JSON.stringify(state),
+        ]);
+      }
+    } else {
+      appStore.set('avatarState', JSON.stringify(state));
+    }
+  }
+
   // ========== Generic User Settings ==========
 
   async getUserSettings(key: string): Promise<string> {

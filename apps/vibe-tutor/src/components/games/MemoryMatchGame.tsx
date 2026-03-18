@@ -3,6 +3,10 @@ import { useEffect, useMemo, useState } from 'react';
 import type { MemoryCard } from '../../services/puzzleGenerator';
 import { calculateMemoryScore, generateMemoryCards } from '../../services/puzzleGenerator';
 import { getRandomWords } from '../../services/wordBanks';
+import { useGameAudio } from '../../hooks/useGameAudio';
+import confetti from 'canvas-confetti';
+import { useSpring, animated } from '@react-spring/web';
+import { memo, useCallback } from 'react';
 
 interface MemoryMatchGameProps {
   subject: string;
@@ -11,6 +15,7 @@ interface MemoryMatchGameProps {
 }
 
 const MemoryMatchGame = ({ subject, onComplete, onBack }: MemoryMatchGameProps) => {
+  const { playSound } = useGameAudio();
   const [startTime] = useState(() => Date.now());
   const [currentTime, setCurrentTime] = useState(() => Date.now());
   const [showTimer, setShowTimer] = useState(false);
@@ -41,9 +46,10 @@ const MemoryMatchGame = ({ subject, onComplete, onBack }: MemoryMatchGameProps) 
   const totalPairs = cards.length / 2;
   const matchedPairs = matched.size / 2;
 
-  const handleCardClick = (cardId: string) => {
+  const handleCardClick = useCallback((cardId: string) => {
     if (!canFlip || flipped.includes(cardId) || matched.has(cardId)) return;
 
+    playSound('pop');
     const newFlipped = [...flipped, cardId];
     setFlipped(newFlipped);
 
@@ -58,6 +64,7 @@ const MemoryMatchGame = ({ subject, onComplete, onBack }: MemoryMatchGameProps) 
 
       if (card1.pairId === card2.pairId) {
         // Match!
+        playSound('success');
         setLastMatchId(card1.pairId);
         setTimeout(() => setLastMatchId(null), 800);
 
@@ -66,23 +73,31 @@ const MemoryMatchGame = ({ subject, onComplete, onBack }: MemoryMatchGameProps) 
           setFlipped([]);
           setCanFlip(true);
 
-          // Check if game complete
-          if (matched.size + 2 === cards.length) {
-            const timeSpent = Math.floor((Date.now() - startTime) / 1000);
-            const result = calculateMemoryScore(cards.length / 2, moves + 1, timeSpent);
-            setFinalResult({ score: result.score, stars: result.stars, time: timeSpent });
-            setShowComplete(true);
-          }
-        }, 600);
-      } else {
-        // No match — gentle shake
-        setTimeout(() => {
+            // Check if game complete
+            if (matched.size + 2 === cards.length) {
+              const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+              const result = calculateMemoryScore(cards.length / 2, moves + 1, timeSpent);
+              setFinalResult({ score: result.score, stars: result.stars, time: timeSpent });
+              setShowComplete(true);
+              playSound('victory');
+              confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#8b5cf6', '#06b6d4', '#f59e0b', '#ec4899']
+              });
+            }
+          }, 600);
+        } else {
+          // No match — gentle shake
+          playSound('error');
+          setTimeout(() => {
           setFlipped([]);
           setCanFlip(true);
         }, 1000);
       }
     }
-  };
+  }, [canFlip, flipped, matched, playSound, cards, moves, startTime]);
 
   const handleFinish = () => {
     if (finalResult) {
@@ -152,56 +167,17 @@ const MemoryMatchGame = ({ subject, onComplete, onBack }: MemoryMatchGameProps) 
               const isFlipped = flipped.includes(card.id) || matched.has(card.id);
               const isMatched = matched.has(card.id);
               const justMatched = lastMatchId === card.pairId;
-
+              
               return (
-                <div
+                <MemoizedCardItem 
                   key={card.id}
-                  onClick={() => handleCardClick(card.id)}
-                  className={`aspect-square cursor-pointer [perspective:600px] ${
-                    isMatched && !justMatched
-                      ? 'opacity-30'
-                      : !canFlip && !isFlipped
-                        ? 'opacity-50'
-                        : 'hover:scale-105'
-                  } transition-all`}
-                  style={{ touchAction: 'manipulation' }}
-                >
-                  <div
-                    className={`relative w-full h-full transition-transform duration-500 [transform-style:preserve-3d] ${
-                      isFlipped ? '[transform:rotateY(180deg)]' : ''
-                    } ${justMatched ? 'animate-bounce' : ''}`}
-                  >
-                    {/* Card Back */}
-                    <div className="absolute inset-0 rounded-xl flex items-center justify-center shadow-lg border-4 bg-gradient-to-br from-purple-600 to-pink-600 border-purple-400 [backface-visibility:hidden]">
-                      <div className="text-white text-5xl sm:text-6xl font-bold drop-shadow-lg">
-                        ?
-                      </div>
-                    </div>
-
-                    {/* Card Front */}
-                    <div
-                      className={`absolute inset-0 rounded-xl flex items-center justify-center p-3 shadow-lg border-4 [backface-visibility:hidden] [transform:rotateY(180deg)] ${
-                        isMatched ? 'bg-green-400 border-green-600' : 'bg-white border-cyan-400'
-                      }`}
-                    >
-                      {justMatched && (
-                        <Sparkles
-                          size={20}
-                          className="absolute top-1 right-1 text-yellow-400 animate-ping"
-                        />
-                      )}
-                      <div
-                        className={`text-center break-words leading-tight ${
-                          card.type === 'word'
-                            ? 'text-purple-900 font-bold text-base sm:text-xl'
-                            : 'text-gray-800 text-xs sm:text-sm font-medium'
-                        }`}
-                      >
-                        {card.content}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  card={card}
+                  isFlipped={isFlipped}
+                  isMatched={isMatched}
+                  justMatched={justMatched}
+                  canFlip={canFlip}
+                  onClick={handleCardClick}
+                />
               );
             })}
           </div>
@@ -266,5 +242,68 @@ const MemoryMatchGame = ({ subject, onComplete, onBack }: MemoryMatchGameProps) 
     </div>
   );
 };
+
+// Extracted and Memoized Card Component integrated with React-Spring for tactile bouncy feedback
+const MemoizedCardItem = memo(({ 
+  card, isFlipped, isMatched, justMatched, canFlip, onClick 
+}: { 
+  card: MemoryCard; isFlipped: boolean; isMatched: boolean; justMatched: boolean; canFlip: boolean; onClick: (id: string) => void; 
+}) => {
+  const [{ scale }, api] = useSpring(() => ({ scale: 1, config: { mass: 1, tension: 400, friction: 20 } }));
+
+  return (
+    <animated.div
+      onClick={() => onClick(card.id)}
+      onMouseEnter={() => !isFlipped && canFlip && api.start({ scale: 1.05 })}
+      onMouseLeave={() => api.start({ scale: 1 })}
+      onMouseDown={() => canFlip && api.start({ scale: 0.95 })}
+      onMouseUp={() => canFlip && api.start({ scale: 1.05 })}
+      style={{ scale, touchAction: 'manipulation' }}
+      className={`aspect-square cursor-pointer [perspective:600px] ${
+        isMatched && !justMatched
+          ? 'opacity-30'
+          : !canFlip && !isFlipped
+            ? 'opacity-50'
+            : ''
+      } transition-opacity duration-300`}
+    >
+      <div
+        className={`relative w-full h-full transition-transform duration-[400ms] ease-out [transform-style:preserve-3d] ${
+          isFlipped ? '[transform:rotateY(180deg)]' : ''
+        } ${justMatched ? 'animate-bounce' : ''}`}
+      >
+        {/* Card Back */}
+        <div className="absolute inset-0 rounded-xl flex items-center justify-center shadow-lg border-4 bg-gradient-to-br from-purple-600 to-pink-600 border-purple-400 [backface-visibility:hidden]">
+          <div className="text-white text-5xl sm:text-6xl font-bold drop-shadow-lg">
+            ?
+          </div>
+        </div>
+
+        {/* Card Front */}
+        <div
+          className={`absolute inset-0 rounded-xl flex items-center justify-center p-3 shadow-lg border-4 [backface-visibility:hidden] [transform:rotateY(180deg)] ${
+            isMatched ? 'bg-green-400 border-green-600' : 'bg-white border-cyan-400'
+          }`}
+        >
+          {justMatched && (
+            <Sparkles
+              size={20}
+              className="absolute top-1 right-1 text-yellow-400 animate-ping"
+            />
+          )}
+          <div
+            className={`text-center break-words leading-tight ${
+              card.type === 'word'
+                ? 'text-purple-900 font-bold text-base sm:text-xl'
+                : 'text-gray-800 text-xs sm:text-sm font-medium'
+            }`}
+          >
+            {card.content}
+          </div>
+        </div>
+      </div>
+    </animated.div>
+  );
+});
 
 export default MemoryMatchGame;

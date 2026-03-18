@@ -1,5 +1,7 @@
+import confetti from 'canvas-confetti';
 import { ArrowLeft, CheckCircle, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useGameAudio } from '../../hooks/useGameAudio';
 import { getCrosswordWords } from '../../services/wordBanks';
 
 interface CrosswordGameProps {
@@ -16,9 +18,11 @@ interface CrosswordClue {
 }
 
 const CrosswordGame = ({ subject, onComplete, onBack }: CrosswordGameProps) => {
+  const { playSound } = useGameAudio();
   const [startTime] = useState(Date.now());
   const [clues, setClues] = useState<CrosswordClue[]>([]);
   const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [previousCorrectCount, setPreviousCorrectCount] = useState(0);
 
   useEffect(() => {
     // Generate simple crossword clues
@@ -32,7 +36,22 @@ const CrosswordGame = ({ subject, onComplete, onBack }: CrosswordGameProps) => {
     setClues(crosswordClues);
   }, [subject]);
 
+  useEffect(() => {
+    let currentCorrectCount = 0;
+    clues.forEach((clue) => {
+      if (answers[clue.number] === clue.word) {
+        currentCorrectCount++;
+      }
+    });
+
+    if (currentCorrectCount > previousCorrectCount) {
+      playSound('success');
+    }
+    setPreviousCorrectCount(currentCorrectCount);
+  }, [answers, clues, playSound, previousCorrectCount]);
+
   const handleAnswerChange = (number: number, value: string) => {
+    playSound('pop');
     setAnswers((prev) => ({
       ...prev,
       [number]: value.toUpperCase(),
@@ -52,6 +71,13 @@ const CrosswordGame = ({ subject, onComplete, onBack }: CrosswordGameProps) => {
     const score = Math.round(percentage);
     const stars =
       percentage >= 90 ? 5 : percentage >= 75 ? 4 : percentage >= 60 ? 3 : percentage >= 40 ? 2 : 1;
+
+    if (percentage === 100) {
+      void confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+      playSound('victory');
+    } else {
+      playSound('error');
+    }
 
     onComplete(score, stars, timeSpent);
   };

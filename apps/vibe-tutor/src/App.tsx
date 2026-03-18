@@ -330,7 +330,7 @@ const App = () => {
         case 'cards':
           // Worksheet system with three states: card selection, active worksheet, results
           return (
-            <RouteErrorBoundary routeName="Worksheet Practice">
+            <RouteErrorBoundary routeName="Realm Quests">
               {worksheetSession ? (
                 // Show results after completing worksheet
                 <WorksheetResults
@@ -365,6 +365,7 @@ const App = () => {
               <GamesHub
                 userTokens={userTokens}
                 onEarnTokens={handleEarnTokens}
+                onSpendTokens={handleSpendTokens}
                 onGameCompleted={(gameId, score) => {
                   void handleAchievementEvent({
                     type: 'GAME_COMPLETED',

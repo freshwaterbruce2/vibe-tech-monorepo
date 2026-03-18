@@ -1,12 +1,13 @@
 import { ArrowLeft, CheckCircle, Clock, Lightbulb, Pause, Play, Sparkles } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { updateGameStats } from '../../../services/gameAchievements';
-import { initializeAudio, playSound } from '../../../services/gameSounds';
 import { learningAnalytics } from '../../../services/learningAnalytics';
 import type { WordSearchGrid as WordSearchGridType } from '../../../services/puzzleGenerator';
 import { calculateWordSearchScore, generateWordSearch } from '../../../services/puzzleGenerator';
 import { getRandomWords } from '../../../services/wordBanks';
 import { appStore } from '../../../utils/electronStore';
+import { useGameAudio } from '../../../hooks/useGameAudio';
+import confetti from 'canvas-confetti';
 import GameSettings, {
   getSavedGameConfig,
   saveGameConfig,
@@ -24,6 +25,7 @@ interface WordSearchGameProps {
 }
 
 const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) => {
+  const { playSound } = useGameAudio();
   // Game configuration
   const [config, setConfig] = useState<GameConfig>(() => getSavedGameConfig('wordsearch'));
   const [showSettings, setShowSettings] = useState(true);
@@ -52,6 +54,7 @@ const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) =>
     setFoundWords,
     setCelebrate,
     config,
+    playSound,
   });
 
   // Generate puzzle moved to startGame
@@ -66,8 +69,15 @@ const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) =>
 
     saveGameConfig('wordsearch', config);
 
+    void confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#FFD700', '#FFA500', '#FF6347', '#00FF00', '#00FFFF'],
+    });
+
     if (config.soundEnabled) {
-      playSound('game-complete');
+      playSound('victory');
     }
 
     const completionRate = foundWords.size / puzzle.words.length;
@@ -84,7 +94,7 @@ const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) =>
     );
 
     onComplete(finalScore, baseResult.stars, timeSpent);
-  }, [puzzle, elapsedTime, foundWords.size, hintsUsed, config, subject, onComplete]);
+  }, [puzzle, elapsedTime, foundWords.size, hintsUsed, config, subject, onComplete, playSound]);
 
   // Timer effect
   useEffect(() => {
@@ -128,9 +138,9 @@ const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) =>
     setHintsUsed((h) => h + 1);
 
     if (config.soundEnabled) {
-      playSound('hint-used');
+      playSound('pop');
     }
-  }, [puzzle, foundWords, config.hintsEnabled, config.soundEnabled, revealedCells]);
+  }, [puzzle, foundWords, config.hintsEnabled, config.soundEnabled, revealedCells, playSound]);
 
   const startGame = () => {
     setShowSettings(false);
@@ -142,7 +152,6 @@ const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) =>
     setStartTime(Date.now());
 
     learningAnalytics.startSession('wordsearch', subject, config.difficulty);
-    initializeAudio();
   };
 
   const closeTutorial = () => {

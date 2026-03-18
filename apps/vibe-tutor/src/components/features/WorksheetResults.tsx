@@ -175,7 +175,7 @@ const WorksheetResults = ({
               className="w-full glass-button px-6 py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-2 hover:scale-105 transition-all"
             >
               <TrendingUp size={24} />
-              <span>Next Worksheet</span>
+              <span>Next Quest</span>
               <ArrowRight size={24} />
             </button>
 
@@ -193,7 +193,7 @@ const WorksheetResults = ({
                 className="glass-card px-4 py-3 rounded-xl font-medium flex items-center justify-center gap-2 hover:scale-105 transition-all"
               >
                 <Trophy size={20} />
-                <span>Back to Cards</span>
+                <span>Back to Realms</span>
               </button>
             </div>
           </div>

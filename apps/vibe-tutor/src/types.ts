@@ -410,3 +410,36 @@ export interface NotificationConfig {
   message: string;
   duration?: number;
 }
+
+// ========== Avatar RPG System ==========
+
+export type AvatarStat = 'mathPower' | 'sciencePower' | 'historyPower' | 'logicPower' | 'creativity';
+
+export interface ShopItem {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  type: 'hat' | 'shirt' | 'accessory';
+  statBoosts: Partial<Record<AvatarStat, number>>;
+  imageUrl: string;
+}
+
+export interface AvatarState {
+  equippedItems: {
+    hat?: string;
+    shirt?: string;
+    accessory?: string;
+  };
+  ownedItems: string[];
+}
+
+export interface BossDef {
+  id: string;
+  name: string;
+  hp: number;
+  maxHp: number;
+  subjectWeakness: AvatarStat;
+  imageUrl: string;
+}
+

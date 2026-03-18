@@ -1,5 +1,8 @@
+import { animated, useSpring } from '@react-spring/web';
+import confetti from 'canvas-confetti';
 import { Brain, Coins, Grid, HelpCircle, Star, Trophy } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { useGameAudio } from '../../hooks/useGameAudio';
 
 interface PatternQuestProps {
   onEarnTokens?: (amount: number) => void;
@@ -34,6 +37,13 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
   const [showCelebration, setShowCelebration] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [questsCompleted, setQuestsCompleted] = useState(0);
+  const { playSound } = useGameAudio();
+
+  const [patternProps, api] = useSpring(() => ({
+    from: { opacity: 0, scale: 0.8 },
+    to: { opacity: 1, scale: 1 },
+    config: { tension: 300, friction: 20 },
+  }));
 
   const shapes: Shape[] = ['■', '●', '▲', '★', '♦', '❤'];
   const colors: Color[] = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
@@ -258,7 +268,8 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
 
   useEffect(() => {
     setCurrentPattern(generatePattern());
-  }, [level, generatePattern]);
+    api.start({ from: { opacity: 0, scale: 0.8 }, to: { opacity: 1, scale: 1 } });
+  }, [level, generatePattern, api]);
 
   const handleAnswer = (selected: PatternElement) => {
     if (!currentPattern) return;
@@ -272,6 +283,7 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
 
     if (isCorrect) {
       // Correct answer
+      playSound('success');
       const points = 15 + currentPattern.difficulty * 5 + streak * 3;
       const tokens = Math.floor(points / 10);
 
@@ -288,6 +300,13 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
 
       // Level up every 5 patterns
       if (questsCompleted > 0 && (questsCompleted + 1) % 5 === 0) {
+        playSound('levelUp');
+        void confetti({
+          particleCount: 150,
+          spread: 80,
+          origin: { y: 0.6 },
+          colors: ['#14b8a6', '#3b82f6', '#8b5cf6'],
+        });
         setLevel((prev) => Math.min(prev + 1, worldNames.length));
         setShowCelebration(true);
         setTimeout(() => setShowCelebration(false), 3000);
@@ -295,11 +314,13 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
 
       setTimeout(() => {
         setCurrentPattern(generatePattern());
+        api.start({ from: { opacity: 0, scale: 0.8 }, to: { opacity: 1, scale: 1 } });
         setFeedback('');
         setShowHint(false);
       }, 2000);
     } else {
       // Wrong answer
+      playSound('error');
       setStreak(0);
       setFeedback('❌ Not quite! Look at the pattern again.');
       setTimeout(() => setFeedback(''), 2000);
@@ -371,7 +392,7 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
             </div>
 
             {/* Pattern Display */}
-            <div className="bg-gray-900/50 rounded-2xl p-8 mb-8">
+            <animated.div className="bg-gray-900/50 rounded-2xl p-8 mb-8" style={patternProps}>
               <div className="flex justify-center items-center gap-4 flex-wrap">
                 {currentPattern.sequence.map((element, index) => (
                   <div
@@ -384,7 +405,7 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
                 ))}
                 <div className="text-6xl text-gray-400 animate-pulse">?</div>
               </div>
-            </div>
+            </animated.div>
 
             {/* Hint Section */}
             {showHint && (
@@ -425,7 +446,10 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
             {/* Help Button */}
             <div className="flex justify-center">
               <button
-                onClick={() => setShowHint(true)}
+                onClick={() => {
+                  playSound('pop');
+                  setShowHint(true);
+                }}
                 disabled={showHint}
                 className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2
                   ${
@@ -454,8 +478,8 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
 
         {/* Streak Indicator */}
         {streak > 0 && (
-          <div className="mt-6 text-center">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-full font-bold">
+          <animated.div className="mt-6 text-center" style={patternProps}>
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-500 to-blue-500 text-white px-6 py-3 rounded-full font-bold shadow-lg shadow-teal-500/20">
               🔥 {streak} Pattern Streak!
               {streak >= 2 && (
                 <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">
@@ -463,7 +487,7 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
                 </span>
               )}
             </div>
-          </div>
+          </animated.div>
         )}
       </div>
     </div>

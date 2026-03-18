@@ -332,13 +332,13 @@ const RobuxRewardShop = ({ userTokens, onSpendTokens, onClose }: RobuxRewardShop
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6">
       {/* Header */}
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-8 mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-white flex items-center gap-3">
-              <ShoppingCart className="w-10 h-10" />
-              Robux Reward Shop
+            <h1 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-3">
+              <ShoppingCart className="w-8 h-8 md:w-10 md:h-10 shrink-0" />
+              <span className="truncate">Robux Reward Shop</span>
             </h1>
-            <p className="text-white/70 mt-2">Spend your hard-earned Robux on awesome rewards!</p>
+            <p className="text-white/70 mt-2 text-sm md:text-base">Spend your hard-earned Robux on awesome rewards!</p>
           </div>
 
           <div className="flex items-center gap-6">
@@ -435,7 +435,7 @@ const RobuxRewardShop = ({ userTokens, onSpendTokens, onClose }: RobuxRewardShop
                         <h3 className="text-xl font-bold text-white mb-2 text-center">
                           {item.name}
                         </h3>
-                        <p className="text-white/70 text-sm mb-4 text-center">{item.description}</p>
+                        <p className="text-white/70 text-sm mb-4 text-center break-words">{item.description}</p>
 
                         {/* Quantity for consumables */}
                         {item.maxQuantity && (
@@ -509,7 +509,7 @@ const RobuxRewardShop = ({ userTokens, onSpendTokens, onClose }: RobuxRewardShop
 
                   {/* Item Info */}
                   <h3 className="text-xl font-bold text-white mb-2 text-center">{item.name}</h3>
-                  <p className="text-white/70 text-sm mb-4 text-center">{item.description}</p>
+                  <p className="text-white/70 text-sm mb-4 text-center break-words">{item.description}</p>
 
                   {/* Price & Purchase Button */}
                   <div className="mt-auto">

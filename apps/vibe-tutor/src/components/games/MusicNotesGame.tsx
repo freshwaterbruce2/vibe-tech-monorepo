@@ -1,6 +1,8 @@
+import confetti from 'canvas-confetti';
 import { ArrowLeft, Music, Sparkles, Star, Trophy, Volume2, Zap } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useGameAudio } from '../../hooks/useGameAudio';
 import { playCorrect, playTone, playWrong } from './musicNotesAudio';
 import type { NoteData } from './musicNotesData';
 import { getTier, pick, shuffle } from './musicNotesData';
@@ -33,6 +35,7 @@ function buildQuestion(score: number): { note: NoteData; options: string[] } {
 
 /* ---------- Component ---------- */
 const MusicNotesGame = ({ onEarnTokens, onClose }: MusicNotesProps) => {
+  const { playSound } = useGameAudio();
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
@@ -74,6 +77,8 @@ const MusicNotesGame = ({ onEarnTokens, onClose }: MusicNotesProps) => {
         setCorrectAnswers((c) => c + 1);
         onEarnTokens?.(earned);
         if ((streak + 1) % 5 === 0) {
+          playSound('victory');
+          void confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
           setShowCelebration(true);
           setTimeout(() => setShowCelebration(false), 1500);
         }
@@ -84,12 +89,13 @@ const MusicNotesGame = ({ onEarnTokens, onClose }: MusicNotesProps) => {
 
       feedbackTimer.current = setTimeout(nextQuestion, correct ? 1000 : 1800);
     },
-    [feedback, currentNote, streak, nextQuestion, onEarnTokens],
+    [feedback, currentNote, streak, nextQuestion, onEarnTokens, playSound],
   );
 
   const handleHear = useCallback(() => {
+    playSound('pop');
     if (currentNote) playTone(currentNote.label, 0.5);
-  }, [currentNote]);
+  }, [currentNote, playSound]);
 
   useEffect(
     () => () => {

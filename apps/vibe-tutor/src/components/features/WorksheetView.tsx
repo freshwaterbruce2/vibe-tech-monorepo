@@ -120,7 +120,7 @@ const WorksheetView = ({ subject, difficulty, onComplete, onCancel }: WorksheetV
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-500 mx-auto mb-4"></div>
-          <p className="text-text-secondary">Loading worksheet...</p>
+          <p className="text-text-secondary">Loading quest...</p>
         </div>
       </div>
     );
@@ -133,7 +133,7 @@ const WorksheetView = ({ subject, difficulty, onComplete, onCancel }: WorksheetV
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500">
-              {subject} Worksheet
+              {subject} Quest
             </h1>
             <p className="text-text-secondary text-sm md:text-base">{difficulty} Level</p>
           </div>
@@ -342,7 +342,7 @@ const WorksheetView = ({ subject, difficulty, onComplete, onCancel }: WorksheetV
               onClick={handleNextQuestion}
               className="glass-button px-8 py-3 rounded-xl hover:scale-105 transition-all font-semibold flex items-center gap-2"
             >
-              <span>{isLastQuestion ? 'Finish Worksheet' : 'Next Question'}</span>
+              <span>{isLastQuestion ? 'Finish Quest' : 'Next Question'}</span>
               {isLastQuestion ? <Trophy size={20} /> : <ArrowRight size={20} />}
             </button>
           )}

@@ -37,7 +37,7 @@
     "android:open": "pnpm exec cap open android",
     "android:doctor": "pnpm exec cap doctor",
     "android:install": "adb install -r android/app/build/outputs/apk/debug/app-debug.apk",
-    "android:uninstall": "adb uninstall com.vibetech.tutor",
+    "android:uninstall": "adb uninstall com.vibetech.tutor || exit 0",
     "android:logs": "adb logcat | findstr /I capacitor",
     "android:full-build": "pnpm run build && pnpm exec cap sync android && cd android && .\\gradlew.bat clean assembleDebug",
     "android:full-release": "pnpm run build && pnpm exec cap sync android && pnpm run android:bundle:release:clean",

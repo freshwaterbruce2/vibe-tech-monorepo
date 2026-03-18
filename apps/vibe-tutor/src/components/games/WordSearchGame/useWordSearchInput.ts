@@ -1,5 +1,4 @@
 import React, { useCallback, useState } from 'react';
-import { playSound } from '../../../services/gameSounds';
 import type { WordSearchGrid } from '../../../services/puzzleGenerator';
 import { appStore } from '../../../utils/electronStore';
 
@@ -9,6 +8,7 @@ interface UseWordSearchInputProps {
   setFoundWords: React.Dispatch<React.SetStateAction<Set<string>>>;
   setCelebrate: React.Dispatch<React.SetStateAction<boolean>>;
   config: { soundEnabled?: boolean };
+  playSound: (type: 'success' | 'error' | 'pop' | 'victory' | 'levelUp') => void;
 }
 
 export function useWordSearchInput({
@@ -17,6 +17,7 @@ export function useWordSearchInput({
   setFoundWords,
   setCelebrate,
   config,
+  playSound,
 }: UseWordSearchInputProps) {
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
   const [selecting, setSelecting] = useState(false);
@@ -28,7 +29,10 @@ export function useWordSearchInput({
     setSelecting(true);
     setStartCell({ row, col });
     setSelectedCells(new Set([getCellKey(row, col)]));
-  }, []);
+    if (config.soundEnabled) {
+      playSound('pop');
+    }
+  }, [config.soundEnabled, playSound]);
 
   const handleCellMouseEnter = useCallback(
     (row: number, col: number) => {
@@ -109,7 +113,7 @@ export function useWordSearchInput({
             setTimeout(() => setCelebrate(false), 1000);
 
             if (config.soundEnabled) {
-              playSound('word-found');
+              playSound('success');
             }
 
             // Haptic feedback
@@ -138,10 +142,10 @@ export function useWordSearchInput({
     puzzle,
     startCell,
     selectedCells,
-    foundWords,
     setFoundWords,
     setCelebrate,
     config.soundEnabled,
+    playSound,
   ]);
 
   // Touch event handlers for mobile (A54 optimization)

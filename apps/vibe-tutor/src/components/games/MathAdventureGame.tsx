@@ -1,5 +1,7 @@
 import { Coins, Heart, Star, Trophy, Zap } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { useGameAudio } from '../../hooks/useGameAudio';
+import confetti from 'canvas-confetti';
 
 interface MathAdventureProps {
   onEarnTokens?: (amount: number) => void;
@@ -76,6 +78,7 @@ function createProblem(difficulty: Difficulty): Problem {
 }
 
 const MathAdventureGame = ({ onEarnTokens, onClose }: MathAdventureProps) => {
+  const { playSound } = useGameAudio();
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [lives, setLives] = useState(3);
@@ -98,11 +101,12 @@ const MathAdventureGame = ({ onEarnTokens, onClose }: MathAdventureProps) => {
     '🌟 Legend Arena',
   ];
 
-  const handleAnswer = (selectedAnswer: number) => {
+  const handleAnswer = useCallback((selectedAnswer: number) => {
     if (!currentProblem) return;
 
     if (selectedAnswer === currentProblem.answer) {
       // Correct answer
+      playSound('success');
       const points = difficulty === 'easy' ? 10 : difficulty === 'medium' ? 20 : 30;
       const tokens = Math.floor((points + streak * 5) / 10);
 
@@ -118,6 +122,13 @@ const MathAdventureGame = ({ onEarnTokens, onClose }: MathAdventureProps) => {
 
       // Level up every 5 correct answers
       if ((score + points) % 50 === 0) {
+        playSound('levelUp');
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#06b6d4', '#8b5cf6', '#f59e0b', '#ec4899']
+        });
         setLevel((prev) => Math.min(prev + 1, levelNames.length));
         setShowCelebration(true);
         setTimeout(() => setShowCelebration(false), 3000);
@@ -130,6 +141,7 @@ const MathAdventureGame = ({ onEarnTokens, onClose }: MathAdventureProps) => {
       }, 1500);
     } else {
       // Wrong answer
+      playSound('error');
       setLives((prev) => prev - 1);
       setStreak(0);
       setFeedback('💔 Try again! You can do it!');
@@ -142,7 +154,7 @@ const MathAdventureGame = ({ onEarnTokens, onClose }: MathAdventureProps) => {
         }, 3000);
       }
     }
-  };
+  }, [currentProblem, difficulty, lives, onClose, onEarnTokens, playSound, score, streak, totalTokensEarned, levelNames.length]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6">
@@ -166,7 +178,7 @@ const MathAdventureGame = ({ onEarnTokens, onClose }: MathAdventureProps) => {
         <div className="flex items-center gap-6 text-white">
           <div className="flex items-center gap-2">
             <Zap
-              className={`w-5 h-5 ${streak >= 3 ? 'text-orange-400 animate-pulse' : 'text-yellow-400'}`}
+              className={`w-5 h-5 ${streak >= 3 ? 'text-orange-400 animate-pulse drop-shadow-[0_0_8px_rgba(251,146,60,0.8)]' : 'text-yellow-400'}`}
             />
             <span>Streak: {streak}</span>
             {streak >= 2 && (

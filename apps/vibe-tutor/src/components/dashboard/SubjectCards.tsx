@@ -78,7 +78,7 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
   const [dailyChallenge] = useState(() => {
     const challenges = BLAKE_CONFIG.dailyChallenges;
     if (!challenges || challenges.length === 0) {
-      return { task: 'Complete any worksheet today!', reward: 10 };
+      return { task: 'Complete any quest today!', reward: 10 };
     }
     const dayIndex = Math.floor(Date.now() / 86_400_000) % challenges.length;
     return challenges[dayIndex]!;
@@ -99,16 +99,16 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
         <div className="flex items-center justify-center gap-3 mb-3">
           <Trophy size={40} className="text-yellow-500" />
           <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-orange-500">
-            Subject Worksheets
+            Learning Realms
           </h1>
           <Sparkles size={32} className="text-purple-500" />
         </div>
         <p className="text-gray-400 text-sm md:text-base">
-          🎮 Complete worksheets to earn stars, tokens, and level up! 🎮
+          🎮 Embark on daily quests to earn stars, tokens, and level up! 🎮
         </p>
 
         {/* Token Balance HUD */}
-        <div className="flex items-center justify-center gap-4 mt-4">
+        <div className="flex flex-wrap items-center justify-center gap-4 mt-4">
           <div className="glass-card px-4 py-2 rounded-full flex items-center gap-2">
             <span className="text-lg">🪙</span>
             <span className="font-bold text-yellow-400">{userTokens}</span>
@@ -192,7 +192,7 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
               {/* Stats */}
               <div className="space-y-1.5 mb-4 text-sm">
                 <div className="flex justify-between text-gray-400">
-                  <span>Worksheets</span>
+                  <span>Quests</span>
                   <span className="font-bold text-white">{progress.totalWorksheetsCompleted}</span>
                 </div>
                 <div className="flex justify-between text-gray-400">
@@ -234,7 +234,7 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
                 className={`w-full px-6 py-3.5 rounded-xl font-bold text-lg flex items-center justify-center gap-3 active:scale-95 transition-all bg-gradient-to-r ${config.color} shadow-lg hover:brightness-110 text-white touch-manipulation`}
               >
                 <PlayCircle size={24} />
-                <span>Let's Practice!</span>
+                <span>Enter Realm!</span>
               </button>
             </div>
           );
@@ -242,14 +242,14 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
       </div>
 
       {/* Real Daily Challenge Banner */}
-      <div className="mt-10 max-w-4xl mx-auto">
-        <div className="glass-card p-6 rounded-2xl border-2 border-yellow-500/30 bg-gradient-to-br from-yellow-500/10 to-orange-500/10">
-          <div className="flex items-center gap-4">
-            <div className="text-5xl">🎯</div>
-            <div className="flex-1">
-              <h3 className="text-xl font-bold text-yellow-400 mb-1">Daily Challenge</h3>
-              <p className="text-white text-sm md:text-base mb-3">{dailyChallenge.task}</p>
-              <div className="flex items-center gap-3">
+      <div className="mt-10 max-w-4xl mx-auto px-2 md:px-0">
+        <div className="glass-card p-4 md:p-6 rounded-2xl border-2 border-yellow-500/30 bg-gradient-to-br from-yellow-500/10 to-orange-500/10">
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="text-4xl md:text-5xl shrink-0">🎯</div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg md:text-xl font-bold text-yellow-400 mb-1 truncate">Daily Challenge</h3>
+              <p className="text-white text-xs md:text-base mb-3 break-words">{dailyChallenge.task}</p>
+              <div className="flex items-center gap-2 md:gap-3">
                 <div className="flex-1 h-2.5 bg-white/10 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full transition-all duration-500 progress-bar-fill"
@@ -282,19 +282,19 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
         <ul className="space-y-2 text-gray-400 text-sm">
           <li className="flex items-start gap-2">
             <Star className="text-yellow-500 flex-shrink-0 mt-0.5" size={16} />
-            <span>Complete 10-question worksheets to earn 1–5 stars based on your score</span>
+            <span>Complete 10-question quests to earn 1–5 stars based on your score</span>
           </li>
           <li className="flex items-start gap-2">
             <TrendingUp className="text-green-500 flex-shrink-0 mt-0.5" size={16} />
-            <span>Collect 5 stars to level up and unlock harder questions</span>
+            <span>Collect 5 stars to explore new zones and unlock harder challenges</span>
           </li>
           <li className="flex items-start gap-2">
             <Trophy className="text-purple-500 flex-shrink-0 mt-0.5" size={16} />
-            <span>Difficulty levels: Beginner → Intermediate → Advanced → Expert → Master</span>
+            <span>Difficulty tiers: Beginner → Intermediate → Advanced → Expert → Master</span>
           </li>
           <li className="flex items-start gap-2">
             <PlayCircle className="text-blue-500 flex-shrink-0 mt-0.5" size={16} />
-            <span>Practice makes perfect! Take as many worksheets as you want</span>
+            <span>Practice makes perfect! Embark on as many quests as you want</span>
           </li>
         </ul>
 

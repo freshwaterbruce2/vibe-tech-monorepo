@@ -39,7 +39,7 @@ const navItems = [
   },
   { view: 'tutor', icon: GraduationCap, label: 'Vibe Tutor', gradient: 'vibe-gradient-secondary' },
   { view: 'friend', icon: Heart, label: 'Vibe Buddy', gradient: 'vibe-gradient-accent' },
-  { view: 'cards', icon: Layers, label: 'Subject Cards', gradient: 'vibe-gradient-primary' },
+  { view: 'cards', icon: Layers, label: 'Learning Realms', gradient: 'vibe-gradient-primary' },
   {
     view: 'learning',
     icon: Gamepad2,
@@ -103,7 +103,7 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed = false, onToggle }: Sid
               onClick={onToggle}
               className={`glass-card border border-[var(--glass-border)] rounded-lg w-10 h-10 flex items-center justify-center hover:scale-105 transition-all duration-200 focus-glow ${isCollapsed ? 'absolute top-4 right-4' : ''}`}
               aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              aria-expanded={!isCollapsed ? 'true' : 'false'}
+              aria-expanded={!isCollapsed}
               title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               {isCollapsed ? (
@@ -203,7 +203,7 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed = false, onToggle }: Sid
                     gradientId={currentView === view ? 'vibe-gradient-mobile' : gradient}
                     className="mb-1"
                   />
-                  <span className="text-[10px] font-medium leading-tight text-center">{label}</span>
+                  <span className="text-[10px] font-medium leading-tight text-center break-words w-full truncate text-wrap">{label}</span>
                 </button>
               ))}
               {/* Parent Zone in More menu */}
@@ -223,7 +223,7 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed = false, onToggle }: Sid
                   }
                   className="mb-1"
                 />
-                <span className="text-[10px] font-medium leading-tight text-center">Parent</span>
+                <span className="text-[10px] font-medium leading-tight text-center break-words w-full truncate text-wrap">Parent</span>
               </button>
             </div>
           </div>
@@ -253,7 +253,7 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed = false, onToggle }: Sid
                 gradientId={currentView === view ? 'vibe-gradient-mobile' : gradient}
                 className="mb-0.5"
               />
-              <span className="text-[10px] font-medium leading-tight text-center">{label}</span>
+              <span className="text-[10px] font-medium leading-tight text-center break-words w-full truncate text-wrap">{label}</span>
             </button>
           ))}
           {/* More button */}
@@ -268,7 +268,7 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed = false, onToggle }: Sid
             title="More"
           >
             <Menu className="w-[22px] h-[22px] mb-0.5" />
-            <span className="text-[10px] font-medium leading-tight text-center">More</span>
+            <span className="text-[10px] font-medium leading-tight text-center break-words w-full truncate text-wrap">More</span>
           </button>
         </div>
       </nav>

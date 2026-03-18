@@ -61,21 +61,25 @@ export const TIERS: Tier[] = [
 ];
 
 export function pick<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
+  return arr[Math.floor(Math.random() * arr.length)] as T;
 }
 
 export function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+    const tempI = a[i] as T;
+    const tempJ = a[j] as T;
+    a[i] = tempJ;
+    a[j] = tempI;
   }
   return a;
 }
 
 export function getTier(score: number): Tier {
   for (let i = TIERS.length - 1; i >= 0; i--) {
-    if (score >= TIERS[i].threshold) return TIERS[i];
+    const tier = TIERS[i];
+    if (tier && score >= tier.threshold) return tier;
   }
-  return TIERS[0];
+  return TIERS[0] as Tier;
 }
