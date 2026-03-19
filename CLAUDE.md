@@ -18,6 +18,7 @@
 - When a fix attempt fails twice with the same approach, STOP and try a fundamentally different strategy.
 - For unfamiliar errors, search the codebase for prior solutions before attempting fixes.
 - When debugging, write a minimal reproduction first, then fix against that — don't scatter-shot across components.
+- For any non-trivial task, run `/explore <problem>` first. It does a read-only diagnosis and produces a plan. Implementation only starts after the plan is approved. This prevents the wrong-approach-first failure mode.
 
 ## Canonical Rules
 Detailed rules are in `.claude/rules/`. Key references:
