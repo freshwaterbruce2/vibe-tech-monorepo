@@ -140,7 +140,8 @@ Write-Host "  Log      : $LogFile"
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Quick summary from log
-$CommitCount = (Select-String -Path $LogFile -Pattern "auto-fix lint" -SimpleMatch).Count
+$CommitMatches = Select-String -Path $LogFile -Pattern "auto-fix lint" -SimpleMatch
+$CommitCount = if ($CommitMatches) { @($CommitMatches).Count } else { 0 }
 if ($CommitCount -gt 0) {
     Write-Host "  Commits made: $CommitCount"
 }

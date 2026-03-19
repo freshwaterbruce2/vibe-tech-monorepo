@@ -199,6 +199,7 @@
     }
   },
   "nxCloudId": "6977fcd7ceb01e5b11be2a95",
+  "tui": { "enabled": false },
 
   "release": {
     "projects": ["packages/*", "!vibe-python-shared"],
