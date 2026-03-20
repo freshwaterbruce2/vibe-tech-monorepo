@@ -68,6 +68,7 @@
         "skipTaskbar": false
       }
     ],
-    "macOSPrivateApi": false
+    "macOSPrivateApi": false,
+    "withGlobalTauri": true
   }
 }
