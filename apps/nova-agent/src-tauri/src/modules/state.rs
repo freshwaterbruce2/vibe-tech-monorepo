@@ -26,7 +26,9 @@ pub struct Config {
     pub deepcode_ipc_enabled: bool,
     pub trading_data_dir: String,
     pub trading_logs_dir: String,
+    #[allow(dead_code)]
     pub chroma_url: String,
+    pub lance_db_path: String,
     pub mobile_bridge_token: String,
 }
 
@@ -72,6 +74,8 @@ impl Config {
                 .unwrap_or_else(|_| "D:\\trading_logs".to_string()),
             chroma_url: env::var("CHROMA_URL")
                 .unwrap_or_else(|_| "http://localhost:8000".to_string()),
+            lance_db_path: env::var("LANCE_DB_PATH")
+                .unwrap_or_else(|_| "D:\\nova-agent-data\\lance-db".to_string()),
             mobile_bridge_token: env::var("MOBILE_BRIDGE_TOKEN").unwrap_or_else(|_| {
                 let token = uuid::Uuid::new_v4().to_string();
                 tracing::warn!(

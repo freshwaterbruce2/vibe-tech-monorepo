@@ -1,14 +1,29 @@
+use std::sync::Arc;
+
+use arrow_array::{FixedSizeListArray, Float32Array, RecordBatch, RecordBatchIterator, StringArray};
+use arrow_schema::{DataType, Field, Schema};
+use futures_util::TryStreamExt;
+#[allow(unused_imports)]
+use lancedb::query::{ExecutableQuery, QueryBase};
 use serde::{Deserialize, Serialize};
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, warn};
+
+use crate::modules::state::Config;
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+const EMBEDDING_DIM: i32 = 1536;
+const TABLE_NAME: &str = "nova_codebase";
+const EMBED_MODEL: &str = "openai/text-embedding-3-small";
+const MAX_CHUNK_CHARS: usize = 1_000;
+const MAX_FILE_BYTES: u64 = 500_000;
+
+/// Directories skipped during recursive indexing.
+const SKIP_DIRS: &[&str] = &["node_modules", ".git", "target", "dist", ".nx", ".cache"];
+
+// ─── Public types (must match RAGService.ts) ────────────────────────────────
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct RagDocument {
-    pub id: String,
-    pub content: String,
-    pub metadata: serde_json::Value,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub struct RagSearchResult {
     pub id: String,
     pub document: String,
@@ -16,230 +31,159 @@ pub struct RagSearchResult {
     pub metadata: serde_json::Value,
 }
 
-#[derive(Debug, Clone)]
-pub struct ChromaDBClient {
-    base_url: String,
-    collection_name: String,
+// ─── Schema ──────────────────────────────────────────────────────────────────
+
+fn rag_schema() -> Arc<Schema> {
+    Arc::new(Schema::new(vec![
+        Field::new("id", DataType::Utf8, false),
+        Field::new("file_path", DataType::Utf8, false),
+        Field::new("document", DataType::Utf8, false),
+        Field::new("metadata", DataType::Utf8, true),
+        Field::new(
+            "vector",
+            DataType::FixedSizeList(
+                Arc::new(Field::new("item", DataType::Float32, true)),
+                EMBEDDING_DIM,
+            ),
+            true,
+        ),
+    ]))
 }
 
-impl ChromaDBClient {
-    pub fn new(base_url: String, collection_name: String) -> Self {
-        Self {
-            base_url,
-            collection_name,
-        }
+// ─── Embedding ───────────────────────────────────────────────────────────────
+
+async fn embed(text: &str, api_key: &str) -> Result<Vec<f32>, String> {
+    let client = reqwest::Client::new();
+    let body = serde_json::json!({
+        "model": EMBED_MODEL,
+        "input": text,
+    });
+
+    let resp = client
+        .post("https://openrouter.ai/api/v1/embeddings")
+        .header("Authorization", format!("Bearer {api_key}"))
+        .header("Content-Type", "application/json")
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| format!("Embedding request failed: {e}"))?;
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let body_text = resp.text().await.unwrap_or_default();
+        return Err(format!("Embedding API error {status}: {body_text}"));
     }
 
-    /// Ensure the collection exists, create if not
-    pub async fn ensure_collection(&self) -> Result<(), String> {
-        let client = reqwest::Client::new();
-        let url = format!("{}/api/v1/collections", self.base_url);
+    let json: serde_json::Value = resp
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse embedding response: {e}"))?;
 
-        // Try to create collection (will fail if exists, which is OK)
-        let create_payload = serde_json::json!({
-            "name": self.collection_name,
-            "metadata": {
-                "description": "Nova Agent codebase semantic search"
-            }
-        });
+    let vector: Vec<f32> = json["data"][0]["embedding"]
+        .as_array()
+        .ok_or_else(|| "No embedding array in response".to_string())?
+        .iter()
+        .map(|v| v.as_f64().unwrap_or(0.0) as f32)
+        .collect();
 
-        match client.post(&url).json(&create_payload).send().await {
-            Ok(response) => {
-                if response.status().is_success() {
-                    info!("Created ChromaDB collection: {}", self.collection_name);
-                } else {
-                    debug!(
-                        "Collection may already exist (status: {})",
-                        response.status()
-                    );
-                }
-                Ok(())
-            }
-            Err(e) => Err(format!("Failed to ensure collection: {}", e)),
-        }
+    if vector.len() != EMBEDDING_DIM as usize {
+        return Err(format!(
+            "Unexpected embedding dimension: {} (expected {EMBEDDING_DIM})",
+            vector.len()
+        ));
     }
 
-    /// Add documents to the collection
-    pub async fn add_documents(&self, documents: Vec<RagDocument>) -> Result<(), String> {
-        if documents.is_empty() {
-            return Ok(());
-        }
-
-        let client = reqwest::Client::new();
-        let url = format!(
-            "{}/api/v1/collections/{}/add",
-            self.base_url, self.collection_name
-        );
-
-        let ids: Vec<String> = documents.iter().map(|d| d.id.clone()).collect();
-        let docs: Vec<String> = documents.iter().map(|d| d.content.clone()).collect();
-        let metadatas: Vec<serde_json::Value> =
-            documents.iter().map(|d| d.metadata.clone()).collect();
-
-        let payload = serde_json::json!({
-            "ids": ids,
-            "documents": docs,
-            "metadatas": metadatas
-        });
-
-        match client.post(&url).json(&payload).send().await {
-            Ok(response) => {
-                if response.status().is_success() {
-                    debug!("Added {} documents to ChromaDB", documents.len());
-                    Ok(())
-                } else {
-                    let status = response.status();
-                    let error_text = response.text().await.unwrap_or_default();
-                    Err(format!(
-                        "Failed to add documents (status {}): {}",
-                        status, error_text
-                    ))
-                }
-            }
-            Err(e) => Err(format!("Request failed: {}", e)),
-        }
-    }
-
-    /// Query for similar documents
-    pub async fn query(
-        &self,
-        query_texts: Vec<String>,
-        n_results: usize,
-    ) -> Result<Vec<RagSearchResult>, String> {
-        let client = reqwest::Client::new();
-        let url = format!(
-            "{}/api/v1/collections/{}/query",
-            self.base_url, self.collection_name
-        );
-
-        let payload = serde_json::json!({
-            "query_texts": query_texts,
-            "n_results": n_results
-        });
-
-        match client.post(&url).json(&payload).send().await {
-            Ok(response) => {
-                if !response.status().is_success() {
-                    let status = response.status();
-                    let error_text = response.text().await.unwrap_or_default();
-                    return Err(format!(
-                        "Query failed (status {}): {}",
-                        status, error_text
-                    ));
-                }
-
-                let data: serde_json::Value = response
-                    .json()
-                    .await
-                    .map_err(|e| format!("Failed to parse response: {}", e))?;
-
-                // ChromaDB returns: { ids: [[...]], documents: [[...]], distances: [[...]], metadatas: [[...]] }
-                let mut results = Vec::new();
-
-                if let Some(ids_outer) = data["ids"].as_array() {
-                    if let Some(ids) = ids_outer.get(0).and_then(|v| v.as_array()) {
-                        if let Some(docs_outer) = data["documents"].as_array() {
-                            if let Some(docs) = docs_outer.get(0).and_then(|v| v.as_array()) {
-                                let distances = data["distances"]
-                                    .get(0)
-                                    .and_then(|v| v.as_array())
-                                    .cloned()
-                                    .unwrap_or_default();
-                                let metadatas = data["metadatas"]
-                                    .get(0)
-                                    .and_then(|v| v.as_array())
-                                    .cloned()
-                                    .unwrap_or_default();
-
-                                for i in 0..ids.len() {
-                                    if let Some(id_str) = ids[i].as_str() {
-                                        if let Some(doc_str) = docs.get(i).and_then(|v| v.as_str()) {
-                                            let distance = distances
-                                                .get(i)
-                                                .and_then(|v| v.as_f64())
-                                                .unwrap_or(0.0)
-                                                as f32;
-                                            let metadata = metadatas
-                                                .get(i)
-                                                .cloned()
-                                                .unwrap_or(serde_json::json!({}));
-
-                                            results.push(RagSearchResult {
-                                                id: id_str.to_string(),
-                                                document: doc_str.to_string(),
-                                                distance,
-                                                metadata,
-                                            });
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Ok(results)
-            }
-            Err(e) => Err(format!("Query request failed: {}", e)),
-        }
-    }
-
-    /// Delete documents by IDs
-    #[allow(dead_code)]
-    pub async fn delete(&self, ids: Vec<String>) -> Result<(), String> {
-        let client = reqwest::Client::new();
-        let url = format!(
-            "{}/api/v1/collections/{}/delete",
-            self.base_url, self.collection_name
-        );
-
-        let payload = serde_json::json!({
-            "ids": ids
-        });
-
-        match client.post(&url).json(&payload).send().await {
-            Ok(response) => {
-                if response.status().is_success() {
-                    debug!("Deleted {} documents from ChromaDB", ids.len());
-                    Ok(())
-                } else {
-                    Err(format!("Failed to delete: status {}", response.status()))
-                }
-            }
-            Err(e) => Err(format!("Delete request failed: {}", e)),
-        }
-    }
+    Ok(vector)
 }
 
-/// Helper function to chunk text
-fn chunk_text(text: &str, chunk_size: usize) -> Vec<String> {
+// ─── Chunking ────────────────────────────────────────────────────────────────
+
+fn chunk_text(content: &str) -> Vec<String> {
+    if content.len() <= MAX_CHUNK_CHARS {
+        return vec![content.to_string()];
+    }
+
     let mut chunks = Vec::new();
-    let lines: Vec<&str> = text.lines().collect();
-    let mut current_chunk = String::new();
+    let mut current = String::new();
 
-    for line in lines {
-        if current_chunk.len() + line.len() > chunk_size && !current_chunk.is_empty() {
-            chunks.push(current_chunk.clone());
-            current_chunk.clear();
+    for line in content.lines() {
+        if !current.is_empty() && current.len() + line.len() + 1 > MAX_CHUNK_CHARS {
+            let trimmed = current.trim().to_string();
+            if !trimmed.is_empty() {
+                chunks.push(trimmed);
+            }
+            current.clear();
         }
-        current_chunk.push_str(line);
-        current_chunk.push('\n');
+        current.push_str(line);
+        current.push('\n');
     }
 
-    if !current_chunk.is_empty() {
-        chunks.push(current_chunk);
+    let trimmed = current.trim().to_string();
+    if !trimmed.is_empty() {
+        chunks.push(trimmed);
     }
 
     if chunks.is_empty() {
-        chunks.push(text.to_string());
+        chunks.push(content.chars().take(MAX_CHUNK_CHARS).collect());
     }
 
     chunks
 }
 
-// ======================
-// TAURI COMMANDS
-// ======================
+// ─── Arrow batch builder ─────────────────────────────────────────────────────
+
+fn build_batch(
+    schema: Arc<Schema>,
+    ids: Vec<String>,
+    file_paths: Vec<String>,
+    documents: Vec<String>,
+    metadatas: Vec<String>,
+    vectors: Vec<Vec<f32>>,
+) -> Result<RecordBatch, String> {
+    let flat: Vec<f32> = vectors.into_iter().flatten().collect();
+    let float_vals = Float32Array::from(flat);
+    let vector_col = FixedSizeListArray::try_new(
+        Arc::new(Field::new("item", DataType::Float32, true)),
+        EMBEDDING_DIM,
+        Arc::new(float_vals),
+        None,
+    )
+    .map_err(|e| format!("Failed to build vector column: {e}"))?;
+
+    RecordBatch::try_new(
+        schema,
+        vec![
+            Arc::new(StringArray::from(ids)),
+            Arc::new(StringArray::from(file_paths)),
+            Arc::new(StringArray::from(documents)),
+            Arc::new(StringArray::from(metadatas)),
+            Arc::new(vector_col),
+        ],
+    )
+    .map_err(|e| format!("Failed to build RecordBatch: {e}"))
+}
+
+// ─── LanceDB helpers ─────────────────────────────────────────────────────────
+
+async fn connect(path: &str) -> Result<lancedb::Connection, String> {
+    std::fs::create_dir_all(path)
+        .map_err(|e| format!("Failed to create LanceDB directory: {e}"))?;
+    lancedb::connect(path)
+        .execute()
+        .await
+        .map_err(|e| format!("Failed to connect to LanceDB: {e}"))
+}
+
+async fn table_exists(conn: &lancedb::Connection) -> Result<bool, String> {
+    let names = conn
+        .table_names()
+        .execute()
+        .await
+        .map_err(|e| format!("Failed to list tables: {e}"))?;
+    Ok(names.contains(&TABLE_NAME.to_string()))
+}
+
+// ─── Tauri Commands ──────────────────────────────────────────────────────────
 
 #[tauri::command]
 pub async fn rag_index_file(
@@ -247,56 +191,181 @@ pub async fn rag_index_file(
     content: String,
     metadata: serde_json::Value,
 ) -> Result<(), String> {
-    info!("Indexing file: {}", file_path);
+    info!("RAG: indexing {}", file_path);
 
-    let config = crate::modules::state::Config::from_env();
-    let client = ChromaDBClient::new(
-        config.chroma_url,
-        "nova_codebase".to_string(),
-    );
+    let config = Config::from_env();
+    let conn = connect(&config.lance_db_path).await?;
+    let schema = rag_schema();
 
-    // Ensure collection exists
-    client.ensure_collection().await?;
+    let chunks = chunk_text(&content);
+    debug!("RAG: split {} into {} chunks", file_path, chunks.len());
 
-    // Chunk the content
-    let chunks = chunk_text(&content, 500);
-    debug!("Split {} into {} chunks", file_path, chunks.len());
+    let mut ids: Vec<String> = Vec::new();
+    let mut fps: Vec<String> = Vec::new();
+    let mut docs: Vec<String> = Vec::new();
+    let mut metas: Vec<String> = Vec::new();
+    let mut vecs: Vec<Vec<f32>> = Vec::new();
 
-    // Create documents
-    let documents: Vec<RagDocument> = chunks
-        .iter()
-        .enumerate()
-        .map(|(i, chunk)| {
-            let mut doc_metadata = metadata.clone();
-            doc_metadata["file_path"] = serde_json::Value::String(file_path.clone());
-            doc_metadata["chunk_index"] = serde_json::Value::Number(i.into());
+    // Detect language from extension
+    let language = std::path::Path::new(&file_path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("unknown")
+        .to_string();
 
-            RagDocument {
-                id: format!("{}::{}", file_path, i),
-                content: chunk.clone(),
-                metadata: doc_metadata,
+    for (i, chunk) in chunks.iter().enumerate() {
+        match embed(chunk, &config.openrouter_api_key).await {
+            Ok(v) => {
+                let chunk_meta = {
+                    let mut m = metadata.clone();
+                    if let Some(obj) = m.as_object_mut() {
+                        obj.insert("file_path".to_string(), serde_json::json!(file_path));
+                        obj.insert("language".to_string(), serde_json::json!(language));
+                        obj.insert("chunk_index".to_string(), serde_json::json!(i));
+                    }
+                    m
+                };
+
+                ids.push(format!("{file_path}::{i}"));
+                fps.push(file_path.clone());
+                docs.push(chunk.clone());
+                metas.push(chunk_meta.to_string());
+                vecs.push(v);
             }
-        })
-        .collect();
+            Err(e) => {
+                warn!("RAG: skipping chunk {i} of {file_path}: {e}");
+            }
+        }
+    }
 
-    // Add to ChromaDB
-    client.add_documents(documents).await?;
-    info!("Successfully indexed {}", file_path);
+    if ids.is_empty() {
+        info!("RAG: no chunks embedded for {}", file_path);
+        return Ok(());
+    }
+
+    let batch = build_batch(schema.clone(), ids, fps, docs, metas, vecs)?;
+
+    if table_exists(&conn).await? {
+        let table = conn
+            .open_table(TABLE_NAME)
+            .execute()
+            .await
+            .map_err(|e| format!("Failed to open table: {e}"))?;
+
+        // Remove stale chunks for this file before re-indexing
+        let escaped = file_path.replace('\'', "''");
+        if let Err(e) = table
+            .delete(&format!("file_path = '{escaped}'"))
+            .await
+        {
+            warn!("RAG: failed to delete old chunks for {file_path}: {e}");
+        }
+
+        table
+            .add(RecordBatchIterator::new(vec![Ok(batch)], schema))
+            .execute()
+            .await
+            .map_err(|e| format!("Failed to add chunks: {e}"))?;
+    } else {
+        conn.create_table(
+            TABLE_NAME,
+            RecordBatchIterator::new(vec![Ok(batch)], schema),
+        )
+        .execute()
+        .await
+        .map_err(|e| format!("Failed to create table: {e}"))?;
+    }
+
+    info!("RAG: indexed {} ({} chunks)", file_path, chunks.len());
     Ok(())
 }
 
 #[tauri::command]
-pub async fn rag_search(query: String, top_k: usize) -> Result<Vec<RagSearchResult>, String> {
-    debug!("RAG search: '{}' (top_k: {})", query, top_k);
+pub async fn rag_search(
+    query: String,
+    top_k: usize,
+) -> Result<Vec<RagSearchResult>, String> {
+    debug!("RAG search: '{query}' (top_k={top_k})");
 
-    let config = crate::modules::state::Config::from_env();
-    let client = ChromaDBClient::new(
-        config.chroma_url,
-        "nova_codebase".to_string(),
-    );
+    let config = Config::from_env();
+    let conn = connect(&config.lance_db_path).await?;
 
-    let results = client.query(vec![query], top_k).await?;
-    info!("Found {} RAG results", results.len());
+    if !table_exists(&conn).await? {
+        return Ok(vec![]);
+    }
+
+    let query_vec = embed(&query, &config.openrouter_api_key).await?;
+
+    let table = conn
+        .open_table(TABLE_NAME)
+        .execute()
+        .await
+        .map_err(|e| format!("Failed to open table: {e}"))?;
+
+    let mut stream = table
+        .query()
+        .nearest_to(query_vec.as_slice())
+        .map_err(|e| format!("Failed to build vector query: {e}"))?
+        .column("vector")
+        .limit(top_k)
+        .execute()
+        .await
+        .map_err(|e| format!("Vector search failed: {e}"))?;
+
+    let mut results: Vec<RagSearchResult> = Vec::new();
+
+    while let Some(batch) = stream
+        .try_next()
+        .await
+        .map_err(|e| format!("Stream error: {e}"))?
+    {
+        let schema = batch.schema();
+
+        let id_idx = schema.index_of("id").unwrap_or(0);
+        let doc_idx = schema.index_of("document").unwrap_or(2);
+        let meta_idx = schema.index_of("metadata").unwrap_or(3);
+        let dist_idx = schema.index_of("_distance").ok();
+
+        let ids = batch
+            .column(id_idx)
+            .as_any()
+            .downcast_ref::<StringArray>();
+        let docs = batch
+            .column(doc_idx)
+            .as_any()
+            .downcast_ref::<StringArray>();
+        let metas = batch
+            .column(meta_idx)
+            .as_any()
+            .downcast_ref::<StringArray>();
+
+        if let (Some(ids_arr), Some(docs_arr)) = (ids, docs) {
+            for i in 0..batch.num_rows() {
+                let distance = dist_idx
+                    .and_then(|di| {
+                        batch
+                            .column(di)
+                            .as_any()
+                            .downcast_ref::<Float32Array>()
+                            .map(|a| a.value(i))
+                    })
+                    .unwrap_or(0.0);
+
+                let meta_str = metas.map(|m| m.value(i)).unwrap_or("{}");
+                let metadata: serde_json::Value =
+                    serde_json::from_str(meta_str).unwrap_or(serde_json::json!({}));
+
+                results.push(RagSearchResult {
+                    id: ids_arr.value(i).to_string(),
+                    document: docs_arr.value(i).to_string(),
+                    distance,
+                    metadata,
+                });
+            }
+        }
+    }
+
+    info!("RAG: found {} results for '{query}'", results.len());
     Ok(results)
 }
 
@@ -305,119 +374,112 @@ pub async fn rag_index_directory(
     dir_path: String,
     file_extensions: Vec<String>,
 ) -> Result<usize, String> {
-    info!("Indexing directory: {} (extensions: {:?})", dir_path, file_extensions);
-
-    let config = crate::modules::state::Config::from_env();
-    let client = ChromaDBClient::new(
-        config.chroma_url,
-        "nova_codebase".to_string(),
+    info!(
+        "RAG: indexing directory {} (extensions: {:?})",
+        dir_path, file_extensions
     );
 
-    client.ensure_collection().await?;
-
-    let mut indexed_count = 0;
-
-    // Walk directory
-    #[allow(dead_code)]
-    fn walk_dir(
-        path: &std::path::Path,
-        extensions: &[String],
-        count: &mut usize,
-    ) -> Result<Vec<std::path::PathBuf>, String> {
-        let mut files = Vec::new();
-
-        if !path.exists() {
-            return Err(format!("Path does not exist: {:?}", path));
-        }
-
-        if path.is_file() {
-            if let Some(ext) = path.extension() {
-                if extensions.contains(&ext.to_string_lossy().to_string()) {
-                    files.push(path.to_path_buf());
-                    *count += 1;
-                }
-            }
-            return Ok(files);
-        }
-
-        let entries = std::fs::read_dir(path)
-            .map_err(|e| format!("Failed to read directory {:?}: {}", path, e))?;
-
-        for entry in entries {
-            let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
-            let entry_path = entry.path();
-
-            if entry_path.is_dir() {
-                // Skip node_modules, .git, target, etc.
-                if let Some(dir_name) = entry_path.file_name() {
-                    let dir_str = dir_name.to_string_lossy();
-                    if dir_str == "node_modules"
-                        || dir_str == ".git"
-                        || dir_str == "target"
-                        || dir_str == "dist"
-                        || dir_str == ".nx"
-                    {
-                        continue;
-                    }
-                }
-                files.extend(walk_dir(&entry_path, extensions, count)?);
-            } else if let Some(ext) = entry_path.extension() {
-                if extensions.contains(&ext.to_string_lossy().to_string()) {
-                    files.push(entry_path);
-                    *count += 1;
-                }
-            }
-        }
-
-        Ok(files)
+    let root = std::path::Path::new(&dir_path);
+    if !root.exists() {
+        return Err(format!("Directory does not exist: {dir_path}"));
     }
 
-    let files = walk_dir(std::path::Path::new(&dir_path), &file_extensions, &mut indexed_count)?;
+    let files = collect_files(root, &file_extensions)?;
+    let total = files.len();
+    let mut indexed = 0usize;
 
-    // Index files in batches
-    for file_path in files {
-        if let Ok(content) = std::fs::read_to_string(&file_path) {
-            let metadata = serde_json::json!({
-                "language": file_path.extension().and_then(|s| s.to_str()).unwrap_or("unknown")
-            });
-
-            if let Err(e) = rag_index_file(
-                file_path.to_string_lossy().to_string(),
-                content,
-                metadata,
-            ).await {
-                error!("Failed to index {:?}: {}", file_path, e);
-                // Continue with other files
+    for path in files {
+        let file_meta = match std::fs::metadata(&path) {
+            Ok(m) => m,
+            Err(e) => {
+                warn!("RAG: skipping {:?}: {e}", path);
+                continue;
             }
+        };
+
+        if file_meta.len() > MAX_FILE_BYTES {
+            debug!("RAG: skipping large file {:?} ({} bytes)", path, file_meta.len());
+            continue;
+        }
+
+        let content = match std::fs::read_to_string(&path) {
+            Ok(c) => c,
+            Err(_) => continue, // binary file
+        };
+
+        let language = path
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("unknown")
+            .to_string();
+
+        let metadata = serde_json::json!({
+            "language": language,
+            "size": file_meta.len(),
+        });
+
+        match rag_index_file(path.to_string_lossy().to_string(), content, metadata).await {
+            Ok(_) => indexed += 1,
+            Err(e) => error!("RAG: failed to index {:?}: {e}", path),
         }
     }
 
-    info!("Indexed {} files from {}", indexed_count, dir_path);
-    Ok(indexed_count)
+    info!("RAG: indexed {indexed}/{total} files from {dir_path}");
+    Ok(indexed)
 }
 
 #[tauri::command]
 pub async fn rag_clear_index() -> Result<(), String> {
-    info!("Clearing RAG index");
+    info!("RAG: clearing index");
 
-    let config = crate::modules::state::Config::from_env();
-    let client = ChromaDBClient::new(
-        config.chroma_url.clone(),
-        "nova_codebase".to_string(),
-    );
+    let config = Config::from_env();
+    let conn = connect(&config.lance_db_path).await?;
 
-    // ChromaDB doesn't have a "clear all" endpoint, we'd need to delete the collection
-    // and recreate it
-    let http_client = reqwest::Client::new();
-    let delete_url = format!("{}/api/v1/collections/nova_codebase", config.chroma_url);
-
-    match http_client.delete(&delete_url).send().await {
-        Ok(_) => {
-            info!("Deleted collection");
-            // Recreate it
-            client.ensure_collection().await?;
-            Ok(())
-        }
-        Err(e) => Err(format!("Failed to clear index: {}", e)),
+    if table_exists(&conn).await? {
+        conn.drop_table(TABLE_NAME, &[])
+            .await
+            .map_err(|e| format!("Failed to drop table: {e}"))?;
+        info!("RAG: index cleared");
+    } else {
+        info!("RAG: nothing to clear (table did not exist)");
     }
+
+    Ok(())
+}
+
+// ─── Private helpers ─────────────────────────────────────────────────────────
+
+fn collect_files(
+    dir: &std::path::Path,
+    extensions: &[String],
+) -> Result<Vec<std::path::PathBuf>, String> {
+    let mut files = Vec::new();
+
+    let entries = std::fs::read_dir(dir)
+        .map_err(|e| format!("Failed to read directory {:?}: {e}", dir))?;
+
+    for entry in entries {
+        let entry = entry.map_err(|e| format!("Failed to read entry: {e}"))?;
+        let path = entry.path();
+
+        if path.is_dir() {
+            if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                if SKIP_DIRS.contains(&name) {
+                    continue;
+                }
+            }
+            files.extend(collect_files(&path, extensions)?);
+        } else if path.is_file() {
+            let ext = path
+                .extension()
+                .and_then(|e| e.to_str())
+                .unwrap_or("")
+                .to_string();
+            if extensions.is_empty() || extensions.contains(&ext) {
+                files.push(path);
+            }
+        }
+    }
+
+    Ok(files)
 }
