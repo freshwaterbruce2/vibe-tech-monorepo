@@ -1,175 +1,325 @@
-import { ArrowLeft, Clock, RotateCcw, Sparkles, Star, Zap } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { animated, useSpring } from '@react-spring/web';
+import confetti from 'canvas-confetti';
+import { ArrowLeft, Clock, Layers3, RotateCcw, Sparkles, Zap } from 'lucide-react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import type { MemoryCard } from '../../services/puzzleGenerator';
 import { calculateMemoryScore, generateMemoryCards } from '../../services/puzzleGenerator';
 import { getRandomWords } from '../../services/wordBanks';
 import { useGameAudio } from '../../hooks/useGameAudio';
-import confetti from 'canvas-confetti';
-import { useSpring, animated } from '@react-spring/web';
-import { memo, useCallback } from 'react';
+import { type GameDifficulty } from '../settings/GameSettings';
+import GameCompletionModal from './GameCompletionModal';
 
 interface MemoryMatchGameProps {
   subject: string;
   onComplete: (score: number, stars: number, timeSpent: number) => void;
   onBack: () => void;
+  initialDifficulty?: GameDifficulty;
 }
 
-const MemoryMatchGame = ({ subject, onComplete, onBack }: MemoryMatchGameProps) => {
+type MemoryDifficulty = GameDifficulty;
+
+interface MemoryDifficultyConfig {
+  pairCount: number;
+  scoreBonus: number;
+  label: string;
+  helper: string;
+  wordDifficulty?: 'easy' | 'medium' | 'hard';
+}
+
+interface FinalResult {
+  score: number;
+  stars: number;
+  time: number;
+  comboBonus: number;
+  difficultyBonus: number;
+}
+
+const MEMORY_DIFFICULTIES: Record<MemoryDifficulty, MemoryDifficultyConfig> = {
+  easy: {
+    pairCount: 6,
+    scoreBonus: 0,
+    label: 'Easy',
+    helper: 'Warm up with six quick word-clue pairs.',
+    wordDifficulty: 'easy',
+  },
+  medium: {
+    pairCount: 8,
+    scoreBonus: 10,
+    label: 'Medium',
+    helper: 'A longer board with tighter recall pressure.',
+    wordDifficulty: 'medium',
+  },
+  hard: {
+    pairCount: 10,
+    scoreBonus: 20,
+    label: 'Hard',
+    helper: 'Ten pairs and a bigger bonus if you stay sharp.',
+    wordDifficulty: 'hard',
+  },
+};
+
+function buildDeck(subject: string, difficulty: MemoryDifficulty): MemoryCard[] {
+  const config = MEMORY_DIFFICULTIES[difficulty];
+  const preferred = getRandomWords(subject, config.pairCount, config.wordDifficulty);
+  const words =
+    preferred.length >= config.pairCount ? preferred : getRandomWords(subject, config.pairCount);
+
+  return generateMemoryCards(words);
+}
+
+const MemoryMatchGame = ({ subject, onComplete, onBack, initialDifficulty }: MemoryMatchGameProps) => {
   const { playSound } = useGameAudio();
-  const [startTime] = useState(() => Date.now());
+  const [difficulty, setDifficulty] = useState<MemoryDifficulty>(initialDifficulty ?? 'medium');
+  const [roundSeed, setRoundSeed] = useState(0);
+  const [startTime, setStartTime] = useState(() => Date.now());
   const [currentTime, setCurrentTime] = useState(() => Date.now());
   const [showTimer, setShowTimer] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
-  const [finalResult, setFinalResult] = useState<{
-    score: number;
-    stars: number;
-    time: number;
-  } | null>(null);
+  const [finalResult, setFinalResult] = useState<FinalResult | null>(null);
   const [lastMatchId, setLastMatchId] = useState<string | null>(null);
-
-  const cards = useMemo<MemoryCard[]>(() => {
-    const words = getRandomWords(subject, 6);
-    return generateMemoryCards(words);
-  }, [subject]);
-
-  useEffect(() => {
-    if (!showTimer) return;
-    const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, [showTimer]);
-
   const [flipped, setFlipped] = useState<string[]>([]);
   const [matched, setMatched] = useState<Set<string>>(new Set());
   const [moves, setMoves] = useState(0);
   const [canFlip, setCanFlip] = useState(true);
+  const [currentCombo, setCurrentCombo] = useState(0);
+  const [bestCombo, setBestCombo] = useState(0);
 
+  useEffect(() => {
+    if (!initialDifficulty || initialDifficulty === difficulty) return;
+    setDifficulty(initialDifficulty);
+    setRoundSeed((seed) => seed + 1);
+  }, [initialDifficulty, difficulty]);
+
+  const cards = useMemo<MemoryCard[]>(() => buildDeck(subject, difficulty), [subject, difficulty, roundSeed]);
   const totalPairs = cards.length / 2;
   const matchedPairs = matched.size / 2;
+  const elapsedSeconds = globalThis.Math.floor((currentTime - startTime) / 1000);
 
-  const handleCardClick = useCallback((cardId: string) => {
-    if (!canFlip || flipped.includes(cardId) || matched.has(cardId)) return;
+  useEffect(() => {
+    setStartTime(Date.now());
+    setCurrentTime(Date.now());
+    setShowComplete(false);
+    setFinalResult(null);
+    setLastMatchId(null);
+    setFlipped([]);
+    setMatched(new Set());
+    setMoves(0);
+    setCanFlip(true);
+    setCurrentCombo(0);
+    setBestCombo(0);
+  }, [cards]);
 
-    playSound('pop');
-    const newFlipped = [...flipped, cardId];
-    setFlipped(newFlipped);
+  useEffect(() => {
+    if (!showTimer || showComplete) return;
+    const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [showComplete, showTimer]);
 
-    if (newFlipped.length === 2) {
-      setMoves((m) => m + 1);
+  const resetRound = useCallback((nextDifficulty?: MemoryDifficulty) => {
+    if (nextDifficulty) {
+      setDifficulty(nextDifficulty);
+    }
+    setRoundSeed((seed) => seed + 1);
+  }, []);
+
+  const handleDifficultyChange = useCallback(
+    (nextDifficulty: MemoryDifficulty) => {
+      if (nextDifficulty === difficulty) return;
+      resetRound(nextDifficulty);
+    },
+    [difficulty, resetRound],
+  );
+
+  const handleCardClick = useCallback(
+    (cardId: string) => {
+      if (!canFlip || flipped.includes(cardId) || matched.has(cardId)) return;
+
+      playSound('pop');
+      const newFlipped = [...flipped, cardId];
+      setFlipped(newFlipped);
+
+      if (newFlipped.length !== 2) return;
+
+      setMoves((count) => count + 1);
       setCanFlip(false);
 
-      const card1 = cards.find((c) => c.id === newFlipped[0]);
-      const card2 = cards.find((c) => c.id === newFlipped[1]);
+      const card1 = cards.find((card) => card.id === newFlipped[0]);
+      const card2 = cards.find((card) => card.id === newFlipped[1]);
 
-      if (!card1 || !card2) return;
+      if (!card1 || !card2) {
+        setFlipped([]);
+        setCanFlip(true);
+        return;
+      }
 
       if (card1.pairId === card2.pairId) {
-        // Match!
         playSound('success');
         setLastMatchId(card1.pairId);
+
+        const nextCombo = currentCombo + 1;
+        setCurrentCombo(nextCombo);
+        setBestCombo((combo) => globalThis.Math.max(combo, nextCombo));
+
         setTimeout(() => setLastMatchId(null), 800);
 
         setTimeout(() => {
-          setMatched((prev) => new Set([...prev, card1.id, card2.id]));
+          const updatedMatched = new Set([...matched, card1.id, card2.id]);
+          const completedBoard = updatedMatched.size === cards.length;
+
+          setMatched(updatedMatched);
           setFlipped([]);
           setCanFlip(true);
 
-            // Check if game complete
-            if (matched.size + 2 === cards.length) {
-              const timeSpent = Math.floor((Date.now() - startTime) / 1000);
-              const result = calculateMemoryScore(cards.length / 2, moves + 1, timeSpent);
-              setFinalResult({ score: result.score, stars: result.stars, time: timeSpent });
-              setShowComplete(true);
-              playSound('victory');
-              confetti({
-                particleCount: 150,
-                spread: 70,
-                origin: { y: 0.6 },
-                colors: ['#8b5cf6', '#06b6d4', '#f59e0b', '#ec4899']
-              });
-            }
-          }, 600);
-        } else {
-          // No match — gentle shake
-          playSound('error');
-          setTimeout(() => {
+          if (completedBoard) {
+            const timeSpent = globalThis.Math.floor((Date.now() - startTime) / 1000);
+            const baseResult = calculateMemoryScore(totalPairs, moves + 1, timeSpent);
+            const comboBonus = globalThis.Math.max(0, nextCombo - 1) * 5;
+            const difficultyBonus = MEMORY_DIFFICULTIES[difficulty].scoreBonus;
+
+            setFinalResult({
+              score: baseResult.score + comboBonus + difficultyBonus,
+              stars: baseResult.stars,
+              time: timeSpent,
+              comboBonus,
+              difficultyBonus,
+            });
+            setShowComplete(true);
+            playSound('victory');
+            void confetti({
+              particleCount: 150,
+              spread: 70,
+              origin: { y: 0.6 },
+              colors: ['#8b5cf6', '#06b6d4', '#f59e0b', '#ec4899'],
+            });
+          }
+        }, 600);
+      } else {
+        playSound('error');
+        setCurrentCombo(0);
+        setTimeout(() => {
           setFlipped([]);
           setCanFlip(true);
         }, 1000);
       }
-    }
-  }, [canFlip, flipped, matched, playSound, cards, moves, startTime]);
+    },
+    [canFlip, cards, currentCombo, difficulty, flipped, matched, moves, playSound, startTime, totalPairs],
+  );
 
   const handleFinish = () => {
-    if (finalResult) {
-      onComplete(finalResult.score, finalResult.stars, finalResult.time);
-    }
+    if (!finalResult) return;
+    onComplete(finalResult.score, finalResult.stars, finalResult.time);
   };
+
+  const currentDifficulty = MEMORY_DIFFICULTIES[difficulty];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6 pb-36 md:pb-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="glass-card p-4 mb-6 flex items-center justify-between">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
-          >
-            <ArrowLeft size={20} />
-            Back
-          </button>
-
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <Zap size={20} className="text-yellow-400" />
-              <span className="text-white font-medium">{moves} moves</span>
-            </div>
-            {/* Timer opt-in toggle */}
+      <div className="mx-auto max-w-6xl">
+        <div className="glass-card mb-6 p-4">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <button
-              onClick={() => setShowTimer((t) => !t)}
-              className={`flex items-center gap-2 px-3 py-1 rounded-lg transition-colors ${
-                showTimer ? 'bg-cyan-600/40 text-cyan-300' : 'bg-white/10 text-white/50'
-              }`}
-              aria-label={showTimer ? 'Hide timer' : 'Show timer'}
+              onClick={onBack}
+              className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 transition-colors hover:bg-purple-700"
             >
-              <Clock size={18} />
-              {showTimer && (
-                <span className="font-medium">{Math.floor((currentTime - startTime) / 1000)}s</span>
-              )}
+              <ArrowLeft size={20} />
+              Back
+            </button>
+
+            <div className="flex flex-wrap items-center gap-3 text-white">
+              <div className="flex items-center gap-2">
+                <Zap size={20} className="text-yellow-400" />
+                <span className="font-medium">{moves} moves</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Layers3 size={20} className="text-cyan-300" />
+                <span className="font-medium">
+                  {matchedPairs}/{totalPairs} pairs
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Sparkles size={18} className="text-pink-300" />
+                <span className="font-medium">Combo {currentCombo}x</span>
+              </div>
+              <button
+                onClick={() => setShowTimer((enabled) => !enabled)}
+                className={`flex items-center gap-2 rounded-lg px-3 py-1 transition-colors ${
+                  showTimer ? 'bg-cyan-600/40 text-cyan-300' : 'bg-white/10 text-white/60'
+                }`}
+                aria-label={showTimer ? 'Hide timer' : 'Show timer'}
+              >
+                <Clock size={18} />
+                {showTimer && <span className="font-medium">{elapsedSeconds}s</span>}
+              </button>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <h2 className="mb-2 text-3xl font-bold text-center neon-text-primary">
+              {subject} Memory Match
+            </h2>
+            <p className="text-center text-sm text-white/70">{currentDifficulty.helper}</p>
+          </div>
+
+          <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
+            {(Object.entries(MEMORY_DIFFICULTIES) as [MemoryDifficulty, MemoryDifficultyConfig][])
+              .map(([key, config]) => (
+                <button
+                  key={key}
+                  onClick={() => handleDifficultyChange(key)}
+                  className={`rounded-full border px-4 py-2 text-sm font-bold uppercase tracking-[0.12em] transition-colors ${
+                    difficulty === key
+                      ? 'border-cyan-300 bg-cyan-400/20 text-cyan-100'
+                      : 'border-white/10 bg-white/5 text-white/65 hover:border-cyan-400/40 hover:text-white'
+                  }`}
+                >
+                  {config.label} · {config.pairCount} pairs
+                </button>
+              ))}
+            <button
+              onClick={() => resetRound()}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold uppercase tracking-[0.12em] text-white/80 transition-colors hover:border-pink-300/40 hover:text-white"
+            >
+              <RotateCcw size={16} />
+              New Round
             </button>
           </div>
-        </div>
 
-        <div className="glass-card p-6">
-          <h2 className="text-3xl font-bold text-center mb-2 neon-text-primary">
-            {subject} Memory Match
-          </h2>
+          <div className="mb-6 grid gap-3 text-center text-sm text-white/80 sm:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3">
+              <div className="text-[11px] uppercase tracking-[0.14em] text-cyan-300">Best Combo</div>
+              <div className="mt-1 text-xl font-bold text-white">{bestCombo}x</div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3">
+              <div className="text-[11px] uppercase tracking-[0.14em] text-cyan-300">Difficulty Bonus</div>
+              <div className="mt-1 text-xl font-bold text-white">+{currentDifficulty.scoreBonus}</div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3">
+              <div className="text-[11px] uppercase tracking-[0.14em] text-cyan-300">Board Size</div>
+              <div className="mt-1 text-xl font-bold text-white">{cards.length} cards</div>
+            </div>
+          </div>
 
-          {/* Progress indicator */}
-          <div className="flex items-center justify-center gap-2 mb-6">
-            {Array.from({ length: totalPairs }).map((_, i) => (
+          <div className="mb-6 flex items-center justify-center gap-2">
+            {Array.from({ length: totalPairs }).map((_, index) => (
               <div
-                key={i}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  i < matchedPairs
-                    ? 'bg-emerald-400 scale-110 shadow-[0_0_8px_rgba(52,211,153,0.5)]'
+                key={index}
+                className={`h-3 w-3 rounded-full transition-all duration-300 ${
+                  index < matchedPairs
+                    ? 'scale-110 bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]'
                     : 'bg-white/20'
                 }`}
               />
             ))}
-            <span className="text-white/60 text-sm ml-2">
-              {matchedPairs}/{totalPairs}
-            </span>
           </div>
 
-          {/* Cards Grid */}
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+          <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5">
             {cards.map((card) => {
               const isFlipped = flipped.includes(card.id) || matched.has(card.id);
               const isMatched = matched.has(card.id);
               const justMatched = lastMatchId === card.pairId;
-              
+
               return (
-                <MemoizedCardItem 
+                <MemoizedCardItem
                   key={card.id}
                   card={card}
                   isFlipped={isFlipped}
@@ -182,128 +332,100 @@ const MemoryMatchGame = ({ subject, onComplete, onBack }: MemoryMatchGameProps) 
             })}
           </div>
 
-          <p className="text-center text-white/80 mt-6">Match words with their definitions!</p>
+          <p className="mt-6 text-center text-white/80">
+            Match each word with its clue. Consecutive matches build combo bonus score.
+          </p>
         </div>
       </div>
 
-      {/* Celebration overlay */}
-      {showComplete && finalResult && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 animate-[fadeIn_0.3s_ease]">
-          <div className="bg-gradient-to-br from-purple-900 to-blue-900 rounded-2xl p-8 max-w-sm w-full mx-4 text-center border border-purple-500/30 shadow-2xl animate-[scaleIn_0.3s_ease]">
-            <div className="text-5xl mb-3">🎉</div>
-            <h3 className="text-2xl font-bold text-white mb-2">Great Job!</h3>
-            <p className="text-white/70 mb-4">You matched all the pairs!</p>
-
-            {/* Stars */}
-            <div className="flex justify-center gap-1 mb-4">
-              {[1, 2, 3].map((s) => (
-                <Star
-                  key={s}
-                  size={32}
-                  className={`transition-all duration-500 ${
-                    s <= finalResult.stars
-                      ? 'text-yellow-400 fill-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.5)]'
-                      : 'text-white/20'
-                  }`}
-                  style={{ animationDelay: `${s * 0.15}s` }}
-                />
-              ))}
-            </div>
-
-            <div className="flex justify-center gap-6 mb-6 text-sm text-white/80">
-              <span>
-                Score: <strong className="text-white">{finalResult.score}</strong>
-              </span>
-              <span>
-                Moves: <strong className="text-white">{moves}</strong>
-              </span>
-              <span>
-                Time: <strong className="text-white">{finalResult.time}s</strong>
-              </span>
-            </div>
-
-            <div className="flex gap-3 justify-center">
-              <button
-                onClick={() => globalThis.location.reload()}
-                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors"
-              >
-                <RotateCcw size={16} /> Play Again
-              </button>
-              <button
-                onClick={handleFinish}
-                className="flex items-center gap-2 px-6 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-white font-medium transition-colors"
-              >
-                ✓ Finish
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <GameCompletionModal
+        open={showComplete && !!finalResult}
+        title="Great Job!"
+        subtitle={`${currentDifficulty.label} board complete with a ${bestCombo}x best combo streak.`}
+        stars={finalResult?.stars ?? 0}
+        stats={[
+          { label: 'Score', value: finalResult?.score ?? 0 },
+          { label: 'Time', value: `${finalResult?.time ?? 0}s` },
+          { label: 'Combo Bonus', value: `+${finalResult?.comboBonus ?? 0}` },
+          { label: 'Difficulty Bonus', value: `+${finalResult?.difficultyBonus ?? 0}` },
+        ]}
+        primaryLabel="Finish"
+        primaryAction={handleFinish}
+        secondaryLabel="Play Again"
+        secondaryAction={() => resetRound()}
+      />
     </div>
   );
 };
 
-// Extracted and Memoized Card Component integrated with React-Spring for tactile bouncy feedback
-const MemoizedCardItem = memo(({ 
-  card, isFlipped, isMatched, justMatched, canFlip, onClick 
-}: { 
-  card: MemoryCard; isFlipped: boolean; isMatched: boolean; justMatched: boolean; canFlip: boolean; onClick: (id: string) => void; 
-}) => {
-  const [{ scale }, api] = useSpring(() => ({ scale: 1, config: { mass: 1, tension: 400, friction: 20 } }));
+const MemoizedCardItem = memo(
+  ({
+    card,
+    isFlipped,
+    isMatched,
+    justMatched,
+    canFlip,
+    onClick,
+  }: {
+    card: MemoryCard;
+    isFlipped: boolean;
+    isMatched: boolean;
+    justMatched: boolean;
+    canFlip: boolean;
+    onClick: (id: string) => void;
+  }) => {
+    const [{ scale }, api] = useSpring(() => ({
+      scale: 1,
+      config: { mass: 1, tension: 400, friction: 20 },
+    }));
 
-  return (
-    <animated.div
-      onClick={() => onClick(card.id)}
-      onMouseEnter={() => !isFlipped && canFlip && api.start({ scale: 1.05 })}
-      onMouseLeave={() => api.start({ scale: 1 })}
-      onMouseDown={() => canFlip && api.start({ scale: 0.95 })}
-      onMouseUp={() => canFlip && api.start({ scale: 1.05 })}
-      style={{ scale, touchAction: 'manipulation' }}
-      className={`aspect-square cursor-pointer [perspective:600px] ${
-        isMatched && !justMatched
-          ? 'opacity-30'
-          : !canFlip && !isFlipped
-            ? 'opacity-50'
-            : ''
-      } transition-opacity duration-300`}
-    >
-      <div
-        className={`relative w-full h-full transition-transform duration-[400ms] ease-out [transform-style:preserve-3d] ${
-          isFlipped ? '[transform:rotateY(180deg)]' : ''
-        } ${justMatched ? 'animate-bounce' : ''}`}
+    return (
+      <animated.div
+        onClick={() => onClick(card.id)}
+        onMouseEnter={() => !isFlipped && canFlip && api.start({ scale: 1.05 })}
+        onMouseLeave={() => api.start({ scale: 1 })}
+        onMouseDown={() => canFlip && api.start({ scale: 0.95 })}
+        onMouseUp={() => canFlip && api.start({ scale: 1.05 })}
+        style={{ scale, touchAction: 'manipulation' }}
+        className={`aspect-square cursor-pointer [perspective:600px] ${
+          isMatched && !justMatched
+            ? 'opacity-30'
+            : !canFlip && !isFlipped
+              ? 'opacity-50'
+              : ''
+        } transition-opacity duration-300`}
       >
-        {/* Card Back */}
-        <div className="absolute inset-0 rounded-xl flex items-center justify-center shadow-lg border-4 bg-gradient-to-br from-purple-600 to-pink-600 border-purple-400 [backface-visibility:hidden]">
-          <div className="text-white text-5xl sm:text-6xl font-bold drop-shadow-lg">
-            ?
-          </div>
-        </div>
-
-        {/* Card Front */}
         <div
-          className={`absolute inset-0 rounded-xl flex items-center justify-center p-3 shadow-lg border-4 [backface-visibility:hidden] [transform:rotateY(180deg)] ${
-            isMatched ? 'bg-green-400 border-green-600' : 'bg-white border-cyan-400'
-          }`}
+          className={`relative h-full w-full [transform-style:preserve-3d] transition-transform duration-[400ms] ease-out ${
+            isFlipped ? '[transform:rotateY(180deg)]' : ''
+          } ${justMatched ? 'animate-bounce' : ''}`}
         >
-          {justMatched && (
-            <Sparkles
-              size={20}
-              className="absolute top-1 right-1 text-yellow-400 animate-ping"
-            />
-          )}
+          <div className="absolute inset-0 flex items-center justify-center rounded-xl border-4 border-purple-400 bg-gradient-to-br from-purple-600 to-pink-600 shadow-lg [backface-visibility:hidden]">
+            <div className="text-5xl font-bold text-white drop-shadow-lg sm:text-6xl">?</div>
+          </div>
+
           <div
-            className={`text-center break-words leading-tight ${
-              card.type === 'word'
-                ? 'text-purple-900 font-bold text-base sm:text-xl'
-                : 'text-gray-800 text-xs sm:text-sm font-medium'
+            className={`absolute inset-0 flex items-center justify-center rounded-xl border-4 p-3 shadow-lg [backface-visibility:hidden] [transform:rotateY(180deg)] ${
+              isMatched ? 'border-green-600 bg-green-400' : 'border-cyan-400 bg-white'
             }`}
           >
-            {card.content}
+            {justMatched && (
+              <Sparkles size={20} className="absolute right-1 top-1 animate-ping text-yellow-400" />
+            )}
+            <div
+              className={`break-words text-center leading-tight ${
+                card.type === 'word'
+                  ? 'text-base font-bold text-purple-900 sm:text-xl'
+                  : 'text-xs font-medium text-gray-800 sm:text-sm'
+              }`}
+            >
+              {card.content}
+            </div>
           </div>
         </div>
-      </div>
-    </animated.div>
-  );
-});
+      </animated.div>
+    );
+  },
+);
 
 export default MemoryMatchGame;

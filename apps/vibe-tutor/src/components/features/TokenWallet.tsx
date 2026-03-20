@@ -132,8 +132,10 @@ const TokenWallet = ({ onClose, onNavigate, compact = false }: TokenWalletProps)
 
             <div className="relative">
               {/* Coin icon with pulse */}
-              <div className="w-16 h-16 mx-auto mb-3 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg shadow-yellow-500/30 animate-pulse">
-                <Coins className="w-9 h-9 text-white drop-shadow-md" />
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 p-[2px] shadow-[0_0_30px_rgba(250,204,21,0.4)] group-hover:scale-110 transition-transform duration-500 shrink-0">
+                <div className="w-full h-full bg-[#1a1c23] rounded-2xl flex items-center justify-center">
+                  <Coins className="w-8 h-8 text-yellow-400" />
+                </div>
               </div>
 
               <p className="text-sm text-white/60 mb-1 font-medium tracking-wide uppercase">
@@ -141,9 +143,9 @@ const TokenWallet = ({ onClose, onNavigate, compact = false }: TokenWalletProps)
               </p>
 
               {/* Animated balance */}
-              <div className="text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-400 to-orange-400 mb-2 tabular-nums">
+              <span className="text-5xl sm:text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-yellow-300 via-yellow-400 to-orange-500 drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] tabular-nums tracking-tight">
                 {animatedBalance.toLocaleString()}
-              </div>
+              </span>
 
               <div className="flex items-center justify-center gap-1.5 text-yellow-400/80">
                 <Sparkles className="w-4 h-4" />

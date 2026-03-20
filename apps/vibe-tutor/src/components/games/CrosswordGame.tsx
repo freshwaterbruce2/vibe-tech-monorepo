@@ -3,6 +3,7 @@ import { ArrowLeft, CheckCircle, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useGameAudio } from '../../hooks/useGameAudio';
 import { getCrosswordWords } from '../../services/wordBanks';
+import GameCompletionModal from './GameCompletionModal';
 
 interface CrosswordGameProps {
   subject: string;
@@ -17,12 +18,24 @@ interface CrosswordClue {
   solved: boolean;
 }
 
+interface CrosswordFinalResult {
+  score: number;
+  stars: number;
+  time: number;
+  correct: number;
+  accuracy: number;
+}
+
 const CrosswordGame = ({ subject, onComplete, onBack }: CrosswordGameProps) => {
   const { playSound } = useGameAudio();
-  const [startTime] = useState(Date.now());
+  const [roundSeed, setRoundSeed] = useState(0);
+  const [startTime, setStartTime] = useState(() => Date.now());
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
   const [clues, setClues] = useState<CrosswordClue[]>([]);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [previousCorrectCount, setPreviousCorrectCount] = useState(0);
+  const [showComplete, setShowComplete] = useState(false);
+  const [finalResult, setFinalResult] = useState<CrosswordFinalResult | null>(null);
 
   useEffect(() => {
     // Generate simple crossword clues
@@ -34,7 +47,19 @@ const CrosswordGame = ({ subject, onComplete, onBack }: CrosswordGameProps) => {
       solved: false,
     }));
     setClues(crosswordClues);
-  }, [subject]);
+    setAnswers({});
+    setPreviousCorrectCount(0);
+    setShowComplete(false);
+    setFinalResult(null);
+    setStartTime(Date.now());
+    setCurrentTime(Date.now());
+  }, [subject, roundSeed]);
+
+  useEffect(() => {
+    if (showComplete) return;
+    const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [showComplete]);
 
   useEffect(() => {
     let currentCorrectCount = 0;
@@ -51,6 +76,7 @@ const CrosswordGame = ({ subject, onComplete, onBack }: CrosswordGameProps) => {
   }, [answers, clues, playSound, previousCorrectCount]);
 
   const handleAnswerChange = (number: number, value: string) => {
+    if (showComplete) return;
     playSound('pop');
     setAnswers((prev) => ({
       ...prev,
@@ -59,6 +85,7 @@ const CrosswordGame = ({ subject, onComplete, onBack }: CrosswordGameProps) => {
   };
 
   const handleSubmit = () => {
+    if (showComplete || clues.length === 0) return;
     let correct = 0;
     clues.forEach((clue) => {
       if (answers[clue.number] === clue.word) {
@@ -76,10 +103,26 @@ const CrosswordGame = ({ subject, onComplete, onBack }: CrosswordGameProps) => {
       void confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
       playSound('victory');
     } else {
-      playSound('error');
+      playSound(stars >= 3 ? 'success' : 'error');
     }
 
-    onComplete(score, stars, timeSpent);
+    setShowComplete(true);
+    setFinalResult({
+      score,
+      stars,
+      time: timeSpent,
+      correct,
+      accuracy: percentage,
+    });
+  };
+
+  const handleContinue = () => {
+    if (!finalResult) return;
+    onComplete(finalResult.score, finalResult.stars, finalResult.time);
+  };
+
+  const resetGame = () => {
+    setRoundSeed((seed) => seed + 1);
   };
 
   const checkAnswer = (number: number): boolean => {
@@ -110,7 +153,7 @@ const CrosswordGame = ({ subject, onComplete, onBack }: CrosswordGameProps) => {
             <div className="flex items-center gap-2">
               <Clock size={20} className="text-cyan-400" />
               <span className="text-white font-medium">
-                {Math.floor((Date.now() - startTime) / 1000)}s
+                {Math.floor((currentTime - startTime) / 1000)}s
               </span>
             </div>
           </div>
@@ -184,6 +227,23 @@ const CrosswordGame = ({ subject, onComplete, onBack }: CrosswordGameProps) => {
           </button>
         </div>
       </div>
+
+      <GameCompletionModal
+        open={showComplete && !!finalResult}
+        title="Crossword Complete"
+        subtitle={`You solved ${finalResult?.correct ?? 0} of ${clues.length} clues in ${finalResult?.time ?? 0}s.`}
+        stars={finalResult?.stars ?? 0}
+        stats={[
+          { label: 'Score', value: finalResult?.score ?? 0 },
+          { label: 'Accuracy', value: `${Math.round(finalResult?.accuracy ?? 0)}%` },
+          { label: 'Solved', value: `${finalResult?.correct ?? 0}/${clues.length}` },
+          { label: 'Time', value: `${finalResult?.time ?? 0}s` },
+        ]}
+        primaryLabel="Continue"
+        primaryAction={handleContinue}
+        secondaryLabel="Play Again"
+        secondaryAction={resetGame}
+      />
     </div>
   );
 };

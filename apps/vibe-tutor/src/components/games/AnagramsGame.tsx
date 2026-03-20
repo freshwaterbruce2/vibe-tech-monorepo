@@ -6,6 +6,7 @@ import { useGameAudio } from '../../hooks/useGameAudio';
 import type { AnagramChallenge } from '../../services/puzzleGenerator';
 import { calculateAnagramScore, generateAnagrams } from '../../services/puzzleGenerator';
 import { getAnagramWords } from '../../services/wordBanks';
+import GameCompletionModal from './GameCompletionModal';
 
 interface AnagramsGameProps {
   subject: string;
@@ -13,8 +14,17 @@ interface AnagramsGameProps {
   onBack: () => void;
 }
 
+interface AnagramFinalResult {
+  score: number;
+  stars: number;
+  time: number;
+  solved: number;
+  hintsUsed: number;
+}
+
 const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
-  const [startTime] = useState(() => Date.now());
+  const [roundSeed, setRoundSeed] = useState(0);
+  const [startTime, setStartTime] = useState(() => Date.now());
   const [currentTime, setCurrentTime] = useState(() => Date.now());
   const { playSound } = useGameAudio();
 
@@ -26,23 +36,76 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
   const anagrams = useMemo<AnagramChallenge[]>(() => {
     const words = getAnagramWords(subject, 10);
     return generateAnagrams(words);
-  }, [subject]);
+  }, [subject, roundSeed]);
 
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, []);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
   const [solved, setSolved] = useState<Set<number>>(new Set());
   const [hintsUsed, setHintsUsed] = useState(0);
   const [showHint, setShowHint] = useState(false);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
+  const [showComplete, setShowComplete] = useState(false);
+  const [finalResult, setFinalResult] = useState<AnagramFinalResult | null>(null);
+
+  useEffect(() => {
+    if (showComplete) return;
+    const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [showComplete]);
 
   const currentAnagram = anagrams[currentIndex];
 
+  useEffect(() => {
+    setCurrentIndex(0);
+    setUserAnswer('');
+    setSolved(new Set());
+    setHintsUsed(0);
+    setShowHint(false);
+    setFeedback(null);
+    setShowComplete(false);
+    setFinalResult(null);
+    setStartTime(Date.now());
+    setCurrentTime(Date.now());
+    api.start({ from: { opacity: 0, y: 50 }, to: { opacity: 1, y: 0 } });
+  }, [anagrams, api]);
+
+  const finalizeGame = (solvedCount: number, celebrate: boolean) => {
+    const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+    const result = calculateAnagramScore(solvedCount, anagrams.length, hintsUsed, timeSpent);
+
+    if (celebrate) {
+      playSound('victory');
+      void confetti({
+        particleCount: 200,
+        spread: 100,
+        origin: { y: 0.6 },
+        colors: ['#a855f7', '#3b82f6', '#ec4899'],
+      });
+    } else {
+      playSound(result.stars >= 3 ? 'success' : 'pop');
+    }
+
+    setShowComplete(true);
+    setFinalResult({
+      score: result.score,
+      stars: result.stars,
+      time: timeSpent,
+      solved: solvedCount,
+      hintsUsed,
+    });
+  };
+
+  const handleContinue = () => {
+    if (!finalResult) return;
+    onComplete(finalResult.score, finalResult.stars, finalResult.time);
+  };
+
+  const resetGame = () => {
+    setRoundSeed((seed) => seed + 1);
+  };
+
   const handleSubmit = () => {
-    if (!currentAnagram || !userAnswer.trim()) return;
+    if (!currentAnagram || !userAnswer.trim() || showComplete) return;
 
     if (userAnswer.toUpperCase() === currentAnagram.original) {
       // Correct!
@@ -58,22 +121,7 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
           setFeedback(null);
           api.start({ from: { opacity: 0, y: 50 }, to: { opacity: 1, y: 0 } });
         } else {
-          // Game complete
-          playSound('victory');
-          void confetti({
-            particleCount: 200,
-            spread: 100,
-            origin: { y: 0.6 },
-            colors: ['#a855f7', '#3b82f6', '#ec4899'],
-          });
-          const timeSpent = Math.floor((Date.now() - startTime) / 1000);
-          const result = calculateAnagramScore(
-            solved.size + 1,
-            anagrams.length,
-            hintsUsed,
-            timeSpent,
-          );
-          onComplete(result.score, result.stars, timeSpent);
+          finalizeGame(solved.size + 1, true);
         }
       }, 1000);
     } else {
@@ -84,6 +132,7 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
   };
 
   const handleSkip = () => {
+    if (showComplete) return;
     playSound('pop');
     if (currentIndex < anagrams.length - 1) {
       setCurrentIndex((i) => i + 1);
@@ -92,14 +141,12 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
       setFeedback(null);
       api.start({ from: { opacity: 0, y: 50 }, to: { opacity: 1, y: 0 } });
     } else {
-      // Finish game
-      const timeSpent = Math.floor((Date.now() - startTime) / 1000);
-      const result = calculateAnagramScore(solved.size, anagrams.length, hintsUsed, timeSpent);
-      onComplete(result.score, result.stars, timeSpent);
+      finalizeGame(solved.size, false);
     }
   };
 
   const handleHint = () => {
+    if (showComplete) return;
     playSound('pop');
     setShowHint(true);
     setHintsUsed((h) => h + 1);
@@ -281,6 +328,23 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
           animation: shake 0.5s;
         }
       `}</style>
+
+      <GameCompletionModal
+        open={showComplete && !!finalResult}
+        title="Round Complete"
+        subtitle={`You solved ${finalResult?.solved ?? 0} of ${anagrams.length} anagrams in ${finalResult?.time ?? 0}s.`}
+        stars={finalResult?.stars ?? 0}
+        stats={[
+          { label: 'Score', value: finalResult?.score ?? 0 },
+          { label: 'Solved', value: `${finalResult?.solved ?? 0}/${anagrams.length}` },
+          { label: 'Time', value: `${finalResult?.time ?? 0}s` },
+          { label: 'Hints Used', value: finalResult?.hintsUsed ?? 0 },
+        ]}
+        primaryLabel="Continue"
+        primaryAction={handleContinue}
+        secondaryLabel="Play Again"
+        secondaryAction={resetGame}
+      />
     </div>
   );
 };

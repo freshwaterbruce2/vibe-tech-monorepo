@@ -1,5 +1,6 @@
 import { FlameIcon } from '../components/ui/icons/FlameIcon';
 import { TrophyIcon } from '../components/ui/icons/TrophyIcon';
+import type { NormalizedGameCompletion, WorksheetCompletionPayload } from './gameProgression';
 import type { Achievement, FocusSession, HomeworkItem } from '../types';
 import { dataStore } from './dataStore';
 
@@ -7,12 +8,11 @@ export type AchievementEvent =
   | { type: 'TASK_COMPLETED' }
   | { type: 'HOMEWORK_UPDATE'; payload: { items: HomeworkItem[] } }
   | { type: 'FOCUS_SESSION_COMPLETED'; payload: { duration: number } }
-  | { type: 'GAME_COMPLETED'; payload: { game: string; score: number } }
-  | { type: 'WORKSHEET_COMPLETED'; payload: { subject: string; score: number } }
+  | { type: 'GAME_COMPLETED'; payload: NormalizedGameCompletion }
+  | { type: 'WORKSHEET_COMPLETED'; payload: WorksheetCompletionPayload }
   | { type: 'SHOP_PURCHASE' };
 
-// Achievement bonus points mapping
-export const ACHIEVEMENT_POINTS: Record<string, number> = {
+export const ACHIEVEMENT_TOKEN_REWARDS: Record<string, number> = {
   FIRST_TASK: 25,
   FIVE_TASKS: 50,
   TEN_TASKS: 100,
@@ -28,6 +28,150 @@ export const ACHIEVEMENT_POINTS: Record<string, number> = {
   PATTERN_PRO: 50,
   BIG_SPENDER: 20,
 };
+
+export const ACHIEVEMENT_POINTS = ACHIEVEMENT_TOKEN_REWARDS;
+
+interface HomeworkStats {
+  completedTasks?: number;
+  worksheetStats?: Record<string, number>;
+  [key: string]: unknown;
+}
+
+interface FocusStats {
+  completedSessions?: number;
+  totalMinutes?: number;
+  [key: string]: unknown;
+}
+
+interface PersistedGameStats {
+  gamesPlayed?: number;
+  shopPurchases?: number;
+  scores?: Record<string, number>;
+  counts?: Record<string, number>;
+  [key: string]: unknown;
+}
+
+function parseStoredObject(value: unknown): Record<string, unknown> {
+  if (!value) {
+    return {};
+  }
+
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return typeof parsed === 'object' && parsed !== null ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  return typeof value === 'object' && value !== null ? value as Record<string, unknown> : {};
+}
+
+function parseNumberRecord(value: unknown): Record<string, number> {
+  if (!value || typeof value !== 'object') {
+    return {};
+  }
+
+  return Object.entries(value as Record<string, unknown>).reduce<Record<string, number>>(
+    (acc, [key, current]) => {
+      if (typeof current === 'number' && Number.isFinite(current) && current >= 0) {
+        acc[key] = current;
+      }
+      return acc;
+    },
+    {},
+  );
+}
+
+function parseGameStats(value: unknown): PersistedGameStats {
+  const stored = parseStoredObject(value);
+
+  return {
+    ...stored,
+    gamesPlayed:
+      typeof stored.gamesPlayed === 'number' && Number.isFinite(stored.gamesPlayed)
+        ? stored.gamesPlayed
+        : 0,
+    shopPurchases:
+      typeof stored.shopPurchases === 'number' && Number.isFinite(stored.shopPurchases)
+        ? stored.shopPurchases
+        : 0,
+    scores: parseNumberRecord(stored.scores),
+    counts: parseNumberRecord(stored.counts),
+  };
+}
+
+function parseHomeworkStats(value: unknown): HomeworkStats {
+  const stored = parseStoredObject(value);
+
+  return {
+    ...stored,
+    completedTasks:
+      typeof stored.completedTasks === 'number' && Number.isFinite(stored.completedTasks)
+        ? stored.completedTasks
+        : 0,
+    worksheetStats: parseNumberRecord(stored.worksheetStats),
+  };
+}
+
+function parseFocusStats(value: unknown): FocusStats {
+  const stored = parseStoredObject(value);
+
+  return {
+    ...stored,
+    completedSessions:
+      typeof stored.completedSessions === 'number' && Number.isFinite(stored.completedSessions)
+        ? stored.completedSessions
+        : 0,
+    totalMinutes:
+      typeof stored.totalMinutes === 'number' && Number.isFinite(stored.totalMinutes)
+        ? stored.totalMinutes
+        : 0,
+  };
+}
+
+function getGameScore(stats: PersistedGameStats, key: string): number {
+  const nested = stats.scores?.[key];
+  if (typeof nested === 'number') {
+    return nested;
+  }
+
+  const legacy = stats[key];
+  return typeof legacy === 'number' && Number.isFinite(legacy) ? legacy : 0;
+}
+
+function getGameCount(stats: PersistedGameStats, key: string): number {
+  const nested = stats.counts?.[key];
+  if (typeof nested === 'number') {
+    return nested;
+  }
+
+  const legacy = stats[key];
+  return typeof legacy === 'number' && Number.isFinite(legacy) ? legacy : 0;
+}
+
+function setGameProgress(
+  stats: PersistedGameStats,
+  key: string,
+  score: number,
+): PersistedGameStats {
+  const scores = {
+    ...(stats.scores ?? {}),
+    [key]: getGameScore(stats, key) + score,
+  };
+  const counts = {
+    ...(stats.counts ?? {}),
+    [key]: getGameCount(stats, key) + 1,
+  };
+
+  return {
+    ...stats,
+    gamesPlayed: (stats.gamesPlayed ?? 0) + 1,
+    scores,
+    counts,
+  };
+}
 
 let achievements: Achievement[] = [
   // Homework Achievements
@@ -181,13 +325,20 @@ export const getAchievements = async (): Promise<Achievement[]> => {
   // Update progress before returning
   const homeworkStatsJson = await dataStore.getUserSettings('homeworkStats');
   const focusStatsJson = await dataStore.getUserSettings('focusStats');
+  const gameStatsJson = await dataStore.getUserSettings('gameStats');
 
-  const homeworkStats = homeworkStatsJson ? JSON.parse(homeworkStatsJson) : {};
-  const focusStats = focusStatsJson ? JSON.parse(focusStatsJson) : {};
+  const homeworkStats = parseHomeworkStats(homeworkStatsJson);
+  const focusStats = parseFocusStats(focusStatsJson);
+  const gameStats = parseGameStats(gameStatsJson);
 
   const completedTasks = homeworkStats.completedTasks ?? 0;
   const completedSessions = focusStats.completedSessions ?? 0;
   const totalMinutes = focusStats.totalMinutes ?? 0;
+  const gamesPlayed = gameStats.gamesPlayed ?? 0;
+  const mathAdventureScore = getGameScore(gameStats, 'mathAdventure');
+  const wordBuilderScore = getGameScore(gameStats, 'wordBuilder');
+  const patternQuestCount = getGameCount(gameStats, 'patternQuest');
+  const shopPurchases = gameStats.shopPurchases ?? 0;
 
   return achievements.map((ach) => {
     if (ach.id.includes('TASKS')) {
@@ -198,6 +349,21 @@ export const getAchievements = async (): Promise<Achievement[]> => {
     }
     if (ach.id === 'FOCUS_MARATHON') {
       return { ...ach, progress: Math.min(totalMinutes, ach.goal ?? 0) };
+    }
+    if (ach.id === 'FIRST_GAME') {
+      return { ...ach, progress: Math.min(gamesPlayed, ach.goal ?? 0) };
+    }
+    if (ach.id === 'MATH_MASTER') {
+      return { ...ach, progress: Math.min(mathAdventureScore, ach.goal ?? 0) };
+    }
+    if (ach.id === 'WORD_WIZARD') {
+      return { ...ach, progress: Math.min(wordBuilderScore, ach.goal ?? 0) };
+    }
+    if (ach.id === 'PATTERN_PRO') {
+      return { ...ach, progress: Math.min(patternQuestCount, ach.goal ?? 0) };
+    }
+    if (ach.id === 'BIG_SPENDER') {
+      return { ...ach, progress: Math.min(shopPurchases, ach.goal ?? 0) };
     }
     return ach;
   });
@@ -267,6 +433,7 @@ const calculateFocusStreak = async (): Promise<number> => {
 export interface AchievementUnlockResult {
   achievements: Achievement[];
   newlyUnlocked: Achievement[];
+  totalBonusTokens: number;
   totalBonusPoints: number;
 }
 
@@ -277,8 +444,8 @@ export const checkAndUnlockAchievements = async (
   const homeworkStatsJson = await dataStore.getUserSettings('homeworkStats');
   const focusStatsJson = await dataStore.getUserSettings('focusStats');
 
-  const homeworkStats = homeworkStatsJson ? JSON.parse(homeworkStatsJson) : {};
-  const focusStats = focusStatsJson ? JSON.parse(focusStatsJson) : {};
+  const homeworkStats = parseHomeworkStats(homeworkStatsJson);
+  const focusStats = parseFocusStats(focusStatsJson);
 
   if (event.type === 'TASK_COMPLETED') {
     homeworkStats.completedTasks = (homeworkStats.completedTasks ?? 0) + 1;
@@ -295,18 +462,19 @@ export const checkAndUnlockAchievements = async (
     await dataStore.saveUserSettings('homeworkStats', JSON.stringify(homeworkStats));
   }
 
-  // Game stats tracking
   const gameStatsJson = await dataStore.getUserSettings('gameStats');
-  const gameStats = gameStatsJson ? JSON.parse(gameStatsJson) : {};
+  let gameStats = parseGameStats(gameStatsJson);
 
   if (event.type === 'GAME_COMPLETED') {
-    gameStats.gamesPlayed = (gameStats.gamesPlayed ?? 0) + 1;
-    gameStats[event.payload.game] = (gameStats[event.payload.game] ?? 0) + event.payload.score;
+    gameStats = setGameProgress(gameStats, event.payload.achievementKey, event.payload.score);
     await dataStore.saveUserSettings('gameStats', JSON.stringify(gameStats));
   }
 
   if (event.type === 'WORKSHEET_COMPLETED') {
     homeworkStats.completedTasks = (homeworkStats.completedTasks ?? 0) + 1;
+    const worksheetStats = { ...(homeworkStats.worksheetStats ?? {}) };
+    worksheetStats[event.payload.subject] = (worksheetStats[event.payload.subject] ?? 0) + 1;
+    homeworkStats.worksheetStats = worksheetStats;
     await dataStore.saveUserSettings('homeworkStats', JSON.stringify(homeworkStats));
   }
 
@@ -324,7 +492,7 @@ export const checkAndUnlockAchievements = async (
   const focusStreak = await calculateFocusStreak();
 
   const newlyUnlocked: Achievement[] = [];
-  let totalBonusPoints = 0;
+  let totalBonusTokens = 0;
 
   achievements.forEach((ach) => {
     if (ach.unlocked) return;
@@ -347,15 +515,21 @@ export const checkAndUnlockAchievements = async (
     // Game achievements
     const gamesPlayed = gameStats.gamesPlayed ?? 0;
     if (ach.id === 'FIRST_GAME' && gamesPlayed >= 1) conditionMet = true;
-    if (ach.id === 'MATH_MASTER' && (gameStats.mathAdventure ?? 0) >= 500) conditionMet = true;
-    if (ach.id === 'WORD_WIZARD' && (gameStats.wordBuilder ?? 0) >= 50) conditionMet = true;
-    if (ach.id === 'PATTERN_PRO' && (gameStats.patternQuest ?? 0) >= 30) conditionMet = true;
+    if (ach.id === 'MATH_MASTER' && getGameScore(gameStats, 'mathAdventure') >= 500) {
+      conditionMet = true;
+    }
+    if (ach.id === 'WORD_WIZARD' && getGameScore(gameStats, 'wordBuilder') >= 50) {
+      conditionMet = true;
+    }
+    if (ach.id === 'PATTERN_PRO' && getGameCount(gameStats, 'patternQuest') >= 30) {
+      conditionMet = true;
+    }
     if (ach.id === 'BIG_SPENDER' && (gameStats.shopPurchases ?? 0) >= 1) conditionMet = true;
 
     if (conditionMet) {
       ach.unlocked = true;
       newlyUnlocked.push(ach);
-      totalBonusPoints += ACHIEVEMENT_POINTS[ach.id] ?? 0;
+      totalBonusTokens += ACHIEVEMENT_TOKEN_REWARDS[ach.id] ?? 0;
     }
   });
 
@@ -364,6 +538,7 @@ export const checkAndUnlockAchievements = async (
   return {
     achievements: await getAchievements(),
     newlyUnlocked,
-    totalBonusPoints,
+    totalBonusTokens,
+    totalBonusPoints: totalBonusTokens,
   };
 };

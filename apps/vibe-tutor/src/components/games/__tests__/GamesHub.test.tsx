@@ -44,9 +44,9 @@ vi.mock('../SudokuGame', () => ({ default: () => <div data-testid="sudoku-game" 
 vi.mock('../PatternQuestGame', () => ({ default: () => <div data-testid="pattern-game" /> }));
 vi.mock('../MusicNotesGame', () => ({ default: () => <div data-testid="musicnotes-game" /> }));
 
-import GamesHub from '../GamesHub';
+import BrainGymHub from '../BrainGymHub';
 
-describe('GamesHub', () => {
+describe('BrainGymHub', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     mocks.storeSet.mockReset();
@@ -65,14 +65,14 @@ describe('GamesHub', () => {
 
   it('calls onClose when hub back button is clicked', () => {
     const onClose = vi.fn();
-    render(<GamesHub userTokens={100} onEarnTokens={vi.fn()} onClose={onClose} />);
+    render(<BrainGymHub userTokens={100} onEarnTokens={vi.fn()} onClose={onClose} />);
 
     fireEvent.click(screen.getByRole('button', { name: /^back$/i }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('shows Pattern Quest as locked at level 0', () => {
-    render(<GamesHub userTokens={0} onEarnTokens={vi.fn()} onClose={vi.fn()} />);
+    render(<BrainGymHub userTokens={0} onEarnTokens={vi.fn()} onClose={vi.fn()} />);
 
     const lockedButton = screen.getByRole('button', { name: /pattern quest.*unlock at level 2/i });
     expect(lockedButton).toBeDisabled();
@@ -89,15 +89,22 @@ describe('GamesHub', () => {
       xp: 220,
     });
 
-    render(<GamesHub userTokens={40} onEarnTokens={vi.fn()} onClose={vi.fn()} />);
+    render(<BrainGymHub userTokens={40} onEarnTokens={vi.fn()} onClose={vi.fn()} />);
 
     const unlockedButton = screen.getByRole('button', { name: /play pattern quest/i });
     expect(unlockedButton).toBeEnabled();
   });
 
+  it('shows a featured drill recommendation in the hub', () => {
+    render(<BrainGymHub userTokens={12} onEarnTokens={vi.fn()} onClose={vi.fn()} />);
+
+    expect(screen.getByText(/featured drill/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /launch memory match/i })).toBeInTheDocument();
+  });
+
   it('awards completion rewards and returns to hub after group A game complete', async () => {
     const onEarnTokens = vi.fn();
-    render(<GamesHub userTokens={0} onEarnTokens={onEarnTokens} onClose={vi.fn()} />);
+    render(<BrainGymHub userTokens={0} onEarnTokens={onEarnTokens} onClose={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('button', { name: /play memory match/i }));
     await act(async () => {
@@ -112,11 +119,20 @@ describe('GamesHub', () => {
       vi.advanceTimersByTime(1500);
     });
 
-    expect(screen.getByText(/games hub/i)).toBeInTheDocument();
+    expect(screen.getByText(/brain gym/i)).toBeInTheDocument();
     expect(mocks.storeSet).toHaveBeenCalledWith(
       'gamesHub_stats',
       expect.objectContaining({
         chestProgress: 1,
+        gameStats: expect.objectContaining({
+          memory: expect.objectContaining({
+            bestScore: 100,
+            bestStars: 3,
+            lastTokens: 35,
+            plays: 1,
+            totalTokens: 35,
+          }),
+        }),
         gamesPlayed: 1,
         level: 0,
         xp: 10,

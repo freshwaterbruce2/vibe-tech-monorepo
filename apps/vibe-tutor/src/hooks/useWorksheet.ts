@@ -136,8 +136,8 @@ function worksheetReducer(state: WorksheetState, action: WorksheetAction): Works
 // ============================================================================
 
 export interface UseWorksheetOptions {
-  /** Callback when points should be awarded (stars earned from worksheet) */
-  onAwardPoints?: (points: number) => void;
+  /** Callback when tokens should be awarded (stars earned from worksheet) */
+  onAwardTokens?: (tokens: number) => void;
   /** Callback when an achievement event should be triggered */
   onAchievementEvent?: (event: AchievementEvent) => void;
 }
@@ -147,7 +147,7 @@ export interface UseWorksheetOptions {
 // ============================================================================
 
 export function useWorksheet(options: UseWorksheetOptions = {}) {
-  const { onAwardPoints, onAchievementEvent } = options;
+  const { onAwardTokens, onAchievementEvent } = options;
   const [state, dispatch] = useReducer(worksheetReducer, initialState);
 
   // Load progress when subject changes
@@ -192,7 +192,7 @@ export function useWorksheet(options: UseWorksheetOptions = {}) {
   }, []);
 
   /**
-   * Complete a worksheet session, process progression, and award points
+   * Complete a worksheet session, process progression, and award tokens
    */
   const completeWorksheetSession = useCallback(
     async (session: WorksheetSession) => {
@@ -209,20 +209,27 @@ export function useWorksheet(options: UseWorksheetOptions = {}) {
           },
         });
 
-        // Award points (1 point per star earned)
-        if (onAwardPoints && session.starsEarned) {
-          onAwardPoints(session.starsEarned);
+        const earnedTokens = session.starsEarned ?? 0;
+        if (onAwardTokens && earnedTokens > 0) {
+          onAwardTokens(earnedTokens);
         }
 
-        // Trigger achievement event for high-scoring worksheets
-        if (onAchievementEvent && session.starsEarned && session.starsEarned >= 3) {
-          onAchievementEvent({ type: 'TASK_COMPLETED' });
+        if (onAchievementEvent) {
+          onAchievementEvent({
+            type: 'WORKSHEET_COMPLETED',
+            payload: {
+              subject: session.subject,
+              score: session.score ?? 0,
+              starsEarned: session.starsEarned ?? 0,
+              tokensEarned: earnedTokens,
+            },
+          });
         }
       } catch (error) {
         console.error('[useWorksheet] Failed to complete worksheet:', error);
       }
     },
-    [onAwardPoints, onAchievementEvent]
+    [onAchievementEvent, onAwardTokens]
   );
 
   /**

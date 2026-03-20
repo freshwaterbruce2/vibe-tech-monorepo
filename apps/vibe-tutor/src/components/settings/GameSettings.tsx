@@ -22,6 +22,7 @@ export interface GameConfig {
   gridSize?: number;
   wordCount?: number;
   timeLimit?: number;
+  hintPenalty?: number;
 }
 
 interface GameSettingsProps {
@@ -40,6 +41,7 @@ const DIFFICULTY_INFO = {
     gridSize: 8,
     wordCount: 5,
     timeLimit: 300, // 5 minutes
+    hintPenalty: 6,
   },
   medium: {
     label: 'Medium',
@@ -50,6 +52,7 @@ const DIFFICULTY_INFO = {
     gridSize: 12,
     wordCount: 8,
     timeLimit: 480, // 8 minutes
+    hintPenalty: 10,
   },
   hard: {
     label: 'Hard',
@@ -60,8 +63,39 @@ const DIFFICULTY_INFO = {
     gridSize: 15,
     wordCount: 12,
     timeLimit: 600, // 10 minutes
+    hintPenalty: 15,
   },
 };
+
+export const GAME_DIFFICULTY_SETTINGS = DIFFICULTY_INFO;
+
+export function getDifficultyConfig(difficulty: GameDifficulty): Pick<
+  GameConfig,
+  'gridSize' | 'wordCount' | 'timeLimit' | 'hintPenalty'
+> {
+  const info = DIFFICULTY_INFO[difficulty];
+  return {
+    gridSize: info.gridSize,
+    wordCount: info.wordCount,
+    timeLimit: info.timeLimit,
+    hintPenalty: info.hintPenalty,
+  };
+}
+
+export function getDifficultyHintPenalty(difficulty: GameDifficulty): number {
+  return DIFFICULTY_INFO[difficulty].hintPenalty;
+}
+
+export function getDifficultyDefaults(difficulty: GameDifficulty): GameConfig {
+  return {
+    difficulty,
+    timerMode: 'relaxed',
+    hintsEnabled: true,
+    soundEnabled: true,
+    highContrast: false,
+    ...getDifficultyConfig(difficulty),
+  };
+}
 
 const GameSettings = ({ config, onChange, gameType: _gameType }: GameSettingsProps) => {
   const [showSettings, setShowSettings] = useState(false);
@@ -74,6 +108,7 @@ const GameSettings = ({ config, onChange, gameType: _gameType }: GameSettingsPro
       gridSize: difficultyInfo.gridSize,
       wordCount: difficultyInfo.wordCount,
       timeLimit: difficultyInfo.timeLimit,
+      hintPenalty: difficultyInfo.hintPenalty,
     });
   };
 
@@ -211,7 +246,9 @@ const GameSettings = ({ config, onChange, gameType: _gameType }: GameSettingsPro
                   </span>
                 </div>
                 <span className="text-xs text-gray-400">
-                  {config.hintsEnabled ? '10 points each' : 'Challenge mode'}
+                  {config.hintsEnabled
+                    ? `${config.hintPenalty ?? getDifficultyHintPenalty(config.difficulty)} points each`
+                    : 'Challenge mode'}
                 </span>
               </div>
             </button>
@@ -295,6 +332,7 @@ export const DEFAULT_GAME_CONFIG: GameConfig = {
   timerMode: 'relaxed',
   hintsEnabled: true,
   soundEnabled: true,
+  hintPenalty: getDifficultyHintPenalty('medium'),
   gridSize: 12,
   wordCount: 8,
   timeLimit: 480,
@@ -306,7 +344,13 @@ export function getSavedGameConfig(gameType: string): GameConfig {
   try {
     const saved = appStore.get<Partial<GameConfig>>(`game-config-${gameType}`);
     if (saved) {
-      return { ...DEFAULT_GAME_CONFIG, ...saved };
+      return {
+        ...DEFAULT_GAME_CONFIG,
+        ...saved,
+        hintPenalty:
+          saved.hintPenalty ??
+          getDifficultyHintPenalty((saved.difficulty ?? DEFAULT_GAME_CONFIG.difficulty)),
+      };
     }
   } catch {
     // Invalid data, use defaults
@@ -318,7 +362,7 @@ export function getSavedGameConfig(gameType: string): GameConfig {
 // eslint-disable-next-line react-refresh/only-export-components
 export function saveGameConfig(gameType: string, config: GameConfig): void {
   try {
-    appStore.set(`game-config-${gameType}`, JSON.stringify(config));
+    appStore.set(`game-config-${gameType}`, config);
   } catch (error) {
     console.warn('Failed to save game config:', error);
   }

@@ -93,26 +93,26 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
   }, [allProgress]);
 
   return (
-    <div className="min-h-screen p-4 md:p-8 pb-36 md:pb-8">
+    <div className="min-h-screen p-4 md:p-8 pb-36 md:pb-8 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-yellow-900/20 via-[#0a0f1c] to-[#0a0f1c]">
       {/* Header — Gaming Style */}
-      <div className="text-center mb-8">
-        <div className="flex items-center justify-center gap-3 mb-3">
-          <Trophy size={40} className="text-yellow-500" />
-          <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-orange-500">
+      <div className="text-center mb-8 md:mb-12">
+        <div className="flex flex-wrap items-center justify-center gap-3 mb-4">
+          <Trophy size={40} className="text-yellow-500 animate-bounce" />
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 drop-shadow-lg tracking-wide">
             Learning Realms
           </h1>
-          <Sparkles size={32} className="text-purple-500" />
+          <Sparkles size={32} className="text-purple-500 animate-pulse" />
         </div>
-        <p className="text-gray-400 text-sm md:text-base">
-          🎮 Embark on daily quests to earn stars, tokens, and level up! 🎮
+        <p className="text-gray-300 font-medium text-base md:text-lg px-4">
+          Embark on epic quests to earn stars, collect tokens, and level up! 🚀
         </p>
 
         {/* Token Balance HUD */}
-        <div className="flex flex-wrap items-center justify-center gap-4 mt-4">
-          <div className="glass-card px-4 py-2 rounded-full flex items-center gap-2">
-            <span className="text-lg">🪙</span>
-            <span className="font-bold text-yellow-400">{userTokens}</span>
-            <span className="text-xs text-gray-400">tokens</span>
+        <div className="flex flex-wrap items-center justify-center gap-4 mt-6">
+          <div className="glass-card px-5 py-2.5 rounded-full flex items-center gap-2 border-[1px] border-yellow-500/30 shadow-[0_0_15px_rgba(234,179,8,0.2)]">
+            <span className="text-2xl animate-pulse">🪙</span>
+            <span className="font-black text-xl text-yellow-400 tracking-wider">{userTokens}</span>
+            <span className="text-sm font-bold tracking-widest uppercase text-gray-400">Tokens</span>
           </div>
           {todayEarnings > 0 && (
             <div className="glass-card px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs">
@@ -140,14 +140,14 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
           return (
             <div
               key={subject}
-              className={`relative group glass-card p-6 rounded-2xl border-2 border-[var(--glass-border)] hover:border-yellow-500/50 transition-all duration-300 hover:shadow-lg hover:shadow-yellow-500/10 ${config.bgColor}`}
+              className={`relative group glass-card p-6 md:p-8 rounded-3xl border-2 border-[var(--glass-border)] hover:border-yellow-500/70 transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_10px_40px_-10px_rgba(234,179,8,0.3)] ${config.bgColor}`}
             >
               {/* Subject Icon & Name */}
-              <div className="text-center mb-4">
+              <div className="text-center mb-5">
                 <div
-                  className={`inline-flex p-4 rounded-full bg-gradient-to-br ${config.color} mb-3 shadow-lg`}
+                  className={`inline-flex p-5 rounded-3xl bg-gradient-to-br ${config.color} mb-4 shadow-xl group-hover:scale-110 transition-transform duration-300 group-hover:rotate-3`}
                 >
-                  <Icon size={40} className="text-white" />
+                  <Icon size={48} className="text-white drop-shadow-md" />
                 </div>
                 <h3
                   className={`text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r ${config.color}`}
@@ -183,6 +183,7 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
                   <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                     <div
                       className={`h-full bg-gradient-to-r ${config.color} transition-all duration-500 progress-bar-fill`}
+                      // eslint-disable-next-line react/forbid-dom-props
                       style={{ '--bar-width': `${progressPct}%` } as React.CSSProperties}
                     />
                   </div>
@@ -231,10 +232,10 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
               {/* Start Worksheet Button */}
               <button
                 onClick={() => onStartWorksheet(subject)}
-                className={`w-full px-6 py-3.5 rounded-xl font-bold text-lg flex items-center justify-center gap-3 active:scale-95 transition-all bg-gradient-to-r ${config.color} shadow-lg hover:brightness-110 text-white touch-manipulation`}
+                className={`w-full px-6 py-4 rounded-2xl font-black text-xl flex items-center justify-center gap-3 active:scale-95 transition-all bg-gradient-to-r ${config.color} shadow-lg hover:shadow-xl hover:brightness-110 text-white touch-manipulation group-hover:animate-pulse`}
               >
-                <PlayCircle size={24} />
-                <span>Enter Realm!</span>
+                <PlayCircle size={28} className="drop-shadow-sm" />
+                <span className="tracking-wide text-shadow-sm">Enter Realm!</span>
               </button>
             </div>
           );
@@ -253,6 +254,7 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
                 <div className="flex-1 h-2.5 bg-white/10 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full transition-all duration-500 progress-bar-fill"
+                    // eslint-disable-next-line react/forbid-dom-props
                     style={
                       {
                         '--bar-width': `${Math.min((todayWorksheets / 3) * 100, 100)}%`,

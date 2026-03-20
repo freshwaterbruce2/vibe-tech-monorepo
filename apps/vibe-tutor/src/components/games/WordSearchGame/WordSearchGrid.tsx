@@ -8,6 +8,7 @@ interface WordSearchGridProps {
   selectedCells: Set<string>;
   revealedCells: Set<string>;
   isPaused: boolean;
+  isInteractionLocked: boolean;
   highContrast?: boolean;
   onPauseToggle: () => void;
   onCellMouseDown: (row: number, col: number) => void;
@@ -87,6 +88,7 @@ const WordSearchGrid = ({
   selectedCells,
   revealedCells,
   isPaused,
+  isInteractionLocked,
   highContrast = false,
   onPauseToggle,
   onCellMouseDown,
@@ -124,7 +126,7 @@ const WordSearchGrid = ({
         )}
 
         <div
-          className={`inline-grid gap-0 transition-all ${isPaused ? 'blur-xl' : ''}`}
+          className={`inline-grid gap-0 transition-all ${isInteractionLocked ? 'blur-xl' : ''} ${isInteractionLocked ? 'pointer-events-none' : ''}`}
           style={{
             gridTemplateColumns: `repeat(${puzzle.grid[0]?.length ?? 0}, minmax(0, 1fr))`,
             maxWidth: '100%',

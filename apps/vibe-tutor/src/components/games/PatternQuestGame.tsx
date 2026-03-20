@@ -25,6 +25,8 @@ interface Pattern {
   options: PatternElement[];
   type: PatternType;
   difficulty: number;
+  isBossRound: boolean;
+  prompt: string;
 }
 
 const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps) => {
@@ -126,6 +128,8 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
       options: options.sort(() => Math.random() - 0.5),
       type: 'color',
       difficulty,
+      isBossRound: false,
+      prompt: 'Follow the color cycle and choose the next one.',
     };
   };
 
@@ -176,6 +180,8 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
       options: options.sort(() => Math.random() - 0.5),
       type: 'shape',
       difficulty,
+      isBossRound: false,
+      prompt: 'Track the symbol pattern and pick what comes next.',
     };
   };
 
@@ -245,13 +251,70 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
       options: options.sort(() => Math.random() - 0.5),
       type: 'number',
       difficulty,
+      isBossRound: false,
+      prompt: 'Find the next number in the sequence.',
+    };
+  };
+
+  const generateMixedPattern = (difficulty: number, isBossRound: boolean): Pattern => {
+    const sequenceLength = Math.min(4 + difficulty, 8);
+    const shapeCycle = shapes.slice(0, Math.min(2 + difficulty, shapes.length));
+    const colorCycle = colors.slice(0, Math.min(2 + difficulty, colors.length));
+
+    const sequence: PatternElement[] = Array.from({ length: sequenceLength }, (_, index) => ({
+      shape: shapeCycle[index % shapeCycle.length] ?? shapes[0]!,
+      color: colorCycle[(index + (difficulty >= 4 ? 1 : 0)) % colorCycle.length] ?? colors[0]!,
+    }));
+
+    const answer: PatternElement = {
+      shape: shapeCycle[sequenceLength % shapeCycle.length] ?? shapes[0]!,
+      color:
+        colorCycle[(sequenceLength + (difficulty >= 4 ? 1 : 0)) % colorCycle.length] ??
+        colors[0]!,
+    };
+
+    const options = [answer];
+    const optionCount = isBossRound ? 6 : 4;
+    while (options.length < optionCount) {
+      const wrongOption: PatternElement = {
+        shape: shapeCycle[Math.floor(Math.random() * shapeCycle.length)] ?? shapes[0]!,
+        color: colorCycle[Math.floor(Math.random() * colorCycle.length)] ?? colors[0]!,
+      };
+      if (
+        !options.some(
+          (option) => option.shape === wrongOption.shape && option.color === wrongOption.color,
+        )
+      ) {
+        options.push(wrongOption);
+      }
+    }
+
+    return {
+      sequence,
+      answer,
+      options: options.sort(() => Math.random() - 0.5),
+      type: 'mixed',
+      difficulty,
+      isBossRound,
+      prompt: isBossRound
+        ? 'Boss round: track shape and color at the same time.'
+        : 'Watch how both shape and color evolve together.',
     };
   };
 
   const generatePattern = useCallback((): Pattern => {
-    const types: PatternType[] = level <= 2 ? ['color', 'shape'] : ['color', 'shape', 'number'];
+    const nextQuestNumber = questsCompleted + 1;
+    const isBossRound = nextQuestNumber % 5 === 0;
+    const baseDifficulty = Math.min(Math.floor(level / 2) + 1, 5);
+    const difficulty = isBossRound ? Math.min(baseDifficulty + 1, 5) : baseDifficulty;
+
+    if (isBossRound) {
+      return generateMixedPattern(difficulty, true);
+    }
+
+    const types: PatternType[] =
+      level <= 2 ? ['color', 'shape'] : level <= 4 ? ['color', 'shape', 'number'] : ['color', 'shape', 'number', 'mixed'];
     const type = types[Math.floor(Math.random() * types.length)];
-    const difficulty = Math.min(Math.floor(level / 2) + 1, 5);
 
     switch (type) {
       case 'color':
@@ -260,11 +323,13 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
         return generateShapePattern(difficulty);
       case 'number':
         return generateNumberPattern(difficulty);
+      case 'mixed':
+        return generateMixedPattern(difficulty, false);
       default:
         return generateColorPattern(difficulty);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- helper functions are pure and use only local constants
-  }, [level]);
+  }, [level, questsCompleted]);
 
   useEffect(() => {
     setCurrentPattern(generatePattern());
@@ -279,13 +344,17 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
         ? selected.number === currentPattern.answer.number
         : currentPattern.type === 'color'
           ? selected.color === currentPattern.answer.color
+          : currentPattern.type === 'mixed'
+            ? selected.shape === currentPattern.answer.shape &&
+              selected.color === currentPattern.answer.color
           : selected.shape === currentPattern.answer.shape;
 
     if (isCorrect) {
       // Correct answer
       playSound('success');
-      const points = 15 + currentPattern.difficulty * 5 + streak * 3;
-      const tokens = Math.floor(points / 10);
+      const bossBonus = currentPattern.isBossRound ? 20 : 0;
+      const points = 15 + currentPattern.difficulty * 5 + streak * 3 + bossBonus;
+      const tokens = Math.max(1, Math.floor(points / 10));
 
       setScore((prev) => prev + points);
       setStreak((prev) => prev + 1);
@@ -296,7 +365,11 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
         onEarnTokens(tokens);
       }
 
-      setFeedback('🎉 Perfect! Pattern completed!');
+      setFeedback(
+        currentPattern.isBossRound
+          ? `🏆 Boss cleared! +${tokens} tokens`
+          : `🎉 Perfect! +${tokens} tokens`,
+      );
 
       // Level up every 5 patterns
       if (questsCompleted > 0 && (questsCompleted + 1) % 5 === 0) {
@@ -345,6 +418,10 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
         return diff > 0
           ? `The numbers are increasing by ${diff}`
           : 'Look at how the numbers change!';
+      case 'mixed':
+        return currentPattern.isBossRound
+          ? 'Boss clue: both the symbol and the color are moving in their own loops.'
+          : 'Track two rules at once: shape order and color order.';
       default:
         return 'Study the pattern carefully!';
     }
@@ -362,6 +439,12 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
           <p className="text-sm opacity-80">
             World {level}: {worldNames[level - 1]}
           </p>
+          {currentPattern?.isBossRound && (
+            <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-yellow-300/40 bg-yellow-500/15 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-yellow-200">
+              <Trophy className="w-4 h-4" />
+              Boss Round
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-6 text-white">
@@ -387,8 +470,9 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
             {/* Pattern Type Badge */}
             <div className="text-center mb-6">
               <span className="bg-gradient-to-r from-teal-500 to-blue-500 text-white px-6 py-2 rounded-full text-sm font-bold uppercase">
-                {currentPattern.type} Pattern - Level {currentPattern.difficulty}
+                {currentPattern.isBossRound ? 'Boss Pattern' : `${currentPattern.type} Pattern`} - Level {currentPattern.difficulty}
               </span>
+              <p className="mt-3 text-sm text-cyan-100/80">{currentPattern.prompt}</p>
             </div>
 
             {/* Pattern Display */}
@@ -418,7 +502,7 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
             {feedback && (
               <div
                 className={`text-center text-2xl font-bold mb-6 animate-bounce ${
-                  feedback.includes('Perfect') ? 'text-green-400' : 'text-red-400'
+                  feedback.includes('❌') ? 'text-red-400' : 'text-green-400'
                 }`}
               >
                 {feedback}
@@ -426,7 +510,11 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
             )}
 
             {/* Answer Options */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div
+              className={`grid gap-4 mb-6 ${
+                currentPattern.options.length > 4 ? 'grid-cols-2 md:grid-cols-3' : 'grid-cols-2 md:grid-cols-4'
+              }`}
+            >
               {currentPattern.options.map((option, index) => (
                 <button
                   key={index}
@@ -436,12 +524,27 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
                            shadow-lg hover:shadow-2xl flex items-center justify-center"
                   disabled={!!feedback}
                 >
-                  <span className={`text-5xl ${getColorClass(option.color)}`}>
-                    {option.number ?? option.shape}
-                  </span>
+                  {currentPattern.type === 'mixed' && option.number === undefined ? (
+                    <span className="inline-flex flex-col items-center gap-2">
+                      <span className={`text-5xl ${getColorClass(option.color)}`}>{option.shape}</span>
+                      <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/70">
+                        {option.color}
+                      </span>
+                    </span>
+                  ) : (
+                    <span className={`text-5xl ${getColorClass(option.color)}`}>
+                      {option.number ?? option.shape}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
+
+            {currentPattern.type === 'mixed' && (
+              <div className="mb-6 rounded-xl border border-cyan-400/20 bg-cyan-500/10 p-4 text-center text-sm text-cyan-100/85">
+                Mixed patterns are unlocked in higher worlds. The right answer must satisfy both the color rule and the shape rule.
+              </div>
+            )}
 
             {/* Help Button */}
             <div className="flex justify-center">

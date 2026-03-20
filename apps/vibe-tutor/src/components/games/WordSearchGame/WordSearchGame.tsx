@@ -10,10 +10,12 @@ import { useGameAudio } from '../../../hooks/useGameAudio';
 import confetti from 'canvas-confetti';
 import GameSettings, {
   getSavedGameConfig,
+  getDifficultyHintPenalty,
   saveGameConfig,
   type GameConfig,
 } from '../../settings/GameSettings';
 import CelebrationEffect from '../../ui/CelebrationEffect';
+import GameCompletionModal from '../GameCompletionModal';
 import WordSearchGrid from './WordSearchGrid';
 import WordSearchWordList from './WordSearchWordList';
 import { useWordSearchInput } from './useWordSearchInput';
@@ -22,12 +24,24 @@ interface WordSearchGameProps {
   subject: string;
   onComplete: (score: number, stars: number, timeSpent: number) => void;
   onBack: () => void;
+  initialConfig?: Partial<GameConfig>;
 }
 
-const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) => {
+interface WordSearchFinalResult {
+  score: number;
+  stars: number;
+  accuracy: number;
+  hintsPenalty: number;
+  time: number;
+}
+
+const WordSearchGame = ({ subject, onComplete, onBack, initialConfig = {} }: WordSearchGameProps) => {
   const { playSound } = useGameAudio();
   // Game configuration
-  const [config, setConfig] = useState<GameConfig>(() => getSavedGameConfig('wordsearch'));
+  const [config, setConfig] = useState<GameConfig>(() => ({
+    ...getSavedGameConfig('wordsearch'),
+    ...initialConfig,
+  }));
   const [showSettings, setShowSettings] = useState(true);
   const [gameStarted, setGameStarted] = useState(false);
 
@@ -43,9 +57,15 @@ const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) =>
   const [hintsUsed, setHintsUsed] = useState(0);
   const [revealedCells, setRevealedCells] = useState<Set<string>>(new Set());
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
+  const [showComplete, setShowComplete] = useState(false);
+  const [finalResult, setFinalResult] = useState<WordSearchFinalResult | null>(null);
   const [showTutorial, setShowTutorial] = useState(() => {
     return !appStore.get('wordsearch-tutorial-seen');
   });
+  const [isCompleting, setIsCompleting] = useState(false);
+
+  const hintPenalty = config.hintPenalty ?? getDifficultyHintPenalty(config.difficulty || 'medium');
+  const isBoardBlocked = isPaused || showComplete;
 
   // Input handling (mouse + touch)
   const input = useWordSearchInput({
@@ -54,18 +74,28 @@ const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) =>
     setFoundWords,
     setCelebrate,
     config,
+    isActive: gameStarted && !isBoardBlocked,
     playSound,
   });
 
   // Generate puzzle moved to startGame
 
   const handleFinish = useCallback(() => {
-    if (!puzzle) return;
+    if (isCompleting || !puzzle) return;
     const timeSpent = elapsedTime;
-
     const baseResult = calculateWordSearchScore(foundWords.size, puzzle.words.length, timeSpent);
-    const hintPenalty = hintsUsed * 50;
-    const finalScore = Math.max(0, baseResult.score - hintPenalty);
+    const finalPenalty = hintsUsed * hintPenalty;
+    const finalScore = Math.max(0, baseResult.score - finalPenalty);
+
+    setIsCompleting(true);
+    setShowComplete(true);
+    setFinalResult({
+      score: finalScore,
+      stars: baseResult.stars,
+      accuracy: baseResult.accuracy,
+      hintsPenalty: finalPenalty,
+      time: timeSpent,
+    });
 
     saveGameConfig('wordsearch', config);
 
@@ -92,9 +122,39 @@ const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) =>
       subject,
       hintsUsed,
     );
+  }, [
+    config,
+    elapsedTime,
+    foundWords.size,
+    hintPenalty,
+    hintsUsed,
+    isCompleting,
+    playSound,
+    puzzle,
+    subject,
+  ]);
 
-    onComplete(finalScore, baseResult.stars, timeSpent);
-  }, [puzzle, elapsedTime, foundWords.size, hintsUsed, config, subject, onComplete, playSound]);
+  const handleContinue = useCallback(() => {
+    if (!finalResult) return;
+    onComplete(finalResult.score, finalResult.stars, finalResult.time);
+  }, [finalResult, onComplete]);
+
+  const resetGame = useCallback(() => {
+    setShowComplete(false);
+    setFinalResult(null);
+    setIsCompleting(false);
+    setIsPaused(false);
+    setFoundWords(new Set());
+    setHintsUsed(0);
+    setRevealedCells(new Set());
+    setElapsedTime(0);
+
+    const words = getRandomWords(subject, config.wordCount ?? 8, config.difficulty);
+    const wordSearch = generateWordSearch(words, config.gridSize ?? 12);
+    setPuzzle(wordSearch);
+    setStartTime(Date.now());
+    learningAnalytics.startSession('wordsearch', subject, config.difficulty);
+  }, [config, config.difficulty, config.gridSize, config.wordCount, subject]);
 
   // Timer effect
   useEffect(() => {
@@ -104,15 +164,30 @@ const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) =>
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       setElapsedTime(elapsed);
 
-      if (config.timerMode === 'timed' && config.timeLimit && elapsed >= config.timeLimit) {
+      if (
+        !isCompleting &&
+        config.timerMode === 'timed' &&
+        config.timeLimit &&
+        elapsed >= config.timeLimit
+      ) {
         handleFinish();
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [gameStarted, isPaused, startTime, config.timerMode, config.timeLimit, handleFinish]);
+  }, [gameStarted, isPaused, isCompleting, startTime, config.timerMode, config.timeLimit, handleFinish]);
 
-  const handlePauseToggle = () => setIsPaused(!isPaused);
+  useEffect(() => {
+    if (!gameStarted || !puzzle || showComplete || isCompleting) return;
+    if (foundWords.size >= puzzle.words.length && puzzle.words.length > 0) {
+      handleFinish();
+    }
+  }, [foundWords.size, gameStarted, handleFinish, isCompleting, puzzle, showComplete]);
+
+  const handlePauseToggle = () => {
+    if (showComplete) return;
+    setIsPaused((current) => !current);
+  };
 
   const handleBackClick = () => {
     // If game hasn't started or no words found, quit instantly
@@ -142,17 +217,11 @@ const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) =>
     }
   }, [puzzle, foundWords, config.hintsEnabled, config.soundEnabled, revealedCells, playSound]);
 
-  const startGame = () => {
+  const startGame = useCallback(() => {
     setShowSettings(false);
     setGameStarted(true);
-
-    const words = getRandomWords(subject, config.wordCount ?? 8, 'easy');
-    const wordSearch = generateWordSearch(words, config.gridSize ?? 12);
-    setPuzzle(wordSearch);
-    setStartTime(Date.now());
-
-    learningAnalytics.startSession('wordsearch', subject, config.difficulty);
-  };
+    resetGame();
+  }, [resetGame]);
 
   const closeTutorial = () => {
     setShowTutorial(false);
@@ -277,7 +346,7 @@ const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) =>
                 emoji="💡"
                 color="yellow"
                 title="Need Help?"
-                desc="Use the hint button to reveal the first letter of a word (costs 10 points)"
+                desc={`Use the hint button to reveal the first letter of a word (costs ${hintPenalty} points)`}
               />
               <TutorialStep
                 emoji="🎯"
@@ -322,27 +391,28 @@ const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) =>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="glass-card p-4 mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <button
-              onClick={handleBackClick}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
-            >
-              <ArrowLeft size={20} /> Back
-            </button>
-            <div className="flex items-center gap-3">
+           <div className="flex items-center justify-between mb-3">
               <button
-                onClick={handlePauseToggle}
-                className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors"
-                title={isPaused ? 'Resume' : 'Pause'}
+                onClick={handleBackClick}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
               >
-                {isPaused ? <Play size={20} /> : <Pause size={20} />}
+                <ArrowLeft size={20} /> Back
               </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handlePauseToggle}
+                  disabled={showComplete}
+                  className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg transition-colors"
+                  title={showComplete ? 'Session complete' : isPaused ? 'Resume' : 'Pause'}
+                >
+                  {isPaused ? <Play size={20} /> : <Pause size={20} />}
+                </button>
               {config.hintsEnabled && (
                 <button
                   onClick={handleUseHint}
-                  disabled={wordsRemaining === 0}
+                  disabled={wordsRemaining === 0 || showComplete}
                   className="flex items-center gap-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg transition-colors"
-                  title="Reveal first letter (10 points)"
+                  title={`Reveal first letter (${hintPenalty} points)`}
                 >
                   <Lightbulb size={20} />
                   <span className="hidden sm:inline">Hint</span>
@@ -381,7 +451,9 @@ const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) =>
             {hintsUsed > 0 && (
               <div className="flex items-center gap-2">
                 <Lightbulb size={16} className="text-yellow-400" />
-                <span className="text-sm text-gray-400">-{hintsUsed * 10} pts (hints)</span>
+                <span className="text-sm text-gray-400">
+                  -{hintsUsed * hintPenalty} pts (hints)
+                </span>
               </div>
             )}
           </div>
@@ -405,6 +477,7 @@ const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) =>
             selectedCells={input.selectedCells}
             revealedCells={revealedCells}
             isPaused={isPaused}
+            isInteractionLocked={isBoardBlocked}
             highContrast={config.highContrast}
             onPauseToggle={handlePauseToggle}
             onCellMouseDown={input.handleCellMouseDown}
@@ -420,7 +493,8 @@ const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) =>
           <WordSearchWordList
             words={puzzle.words}
             foundWords={foundWords}
-            onFinish={handleFinish}
+            onFinish={showComplete ? handleContinue : handleFinish}
+            isCompleted={showComplete}
           />
         </div>
       </div>
@@ -451,7 +525,23 @@ const WordSearchGame = ({ subject, onComplete, onBack }: WordSearchGameProps) =>
             </div>
           </div>
         </div>
-      )}
+        )}
+      <GameCompletionModal
+        open={showComplete && !!finalResult}
+        title="Session Complete"
+        subtitle={`You found ${foundWords.size} of ${puzzle.words.length} words in ${finalResult?.time ?? 0}s.`}
+        stars={finalResult?.stars ?? 0}
+        stats={[
+          { label: 'Score', value: finalResult?.score ?? 0 },
+          { label: 'Accuracy', value: `${Math.round(finalResult?.accuracy ?? 0)}%` },
+          { label: 'Time', value: `${finalResult?.time ?? 0}s` },
+          { label: 'Hint Penalty', value: `-${finalResult?.hintsPenalty ?? 0}` },
+        ]}
+        primaryLabel="Continue"
+        primaryAction={handleContinue}
+        secondaryLabel="Play Again"
+        secondaryAction={resetGame}
+      />
     </div>
   );
 };
@@ -468,13 +558,35 @@ function TutorialStep({
   title: string;
   desc: string;
 }) {
+  const style = {
+    cyan: {
+      background: 'bg-cyan-500/10',
+      border: 'border-cyan-500/30',
+      text: 'text-cyan-400',
+    },
+    green: {
+      background: 'bg-green-500/10',
+      border: 'border-green-500/30',
+      text: 'text-green-400',
+    },
+    yellow: {
+      background: 'bg-yellow-500/10',
+      border: 'border-yellow-500/30',
+      text: 'text-yellow-400',
+    },
+    purple: {
+      background: 'bg-purple-500/10',
+      border: 'border-purple-500/30',
+      text: 'text-purple-400',
+    },
+  } as const;
+  const theme = style[color as keyof typeof style] ?? style.cyan;
+
   return (
-    <div
-      className={`flex items-start gap-4 p-4 bg-${color}-500/10 border border-${color}-500/30 rounded-lg`}
-    >
+    <div className={`flex items-start gap-4 p-4 ${theme.background} border ${theme.border} rounded-lg`}>
       <span className="text-3xl">{emoji}</span>
       <div>
-        <div className={`font-bold text-${color}-400 mb-1`}>{title}</div>
+        <div className={`font-bold ${theme.text} mb-1`}>{title}</div>
         <div className="text-sm text-gray-300">{desc}</div>
       </div>
     </div>

@@ -65,7 +65,7 @@ export { default as SocialSkillsTips } from './features/SocialSkillsTips';
 export { default as TokenWallet } from './features/TokenWallet';
 export { default as VisualTimer } from './features/VisualTimer';
 export { default as WorksheetPractice } from './features/WorksheetPractice';
-export { default as GamesHub } from './games/GamesHub';
+export { default as BrainGymHub } from './games/BrainGymHub';
 
 // Settings components
 export { default as DataManagement } from './settings/DataManagement';

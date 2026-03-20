@@ -8,6 +8,7 @@ interface UseWordSearchInputProps {
   setFoundWords: React.Dispatch<React.SetStateAction<Set<string>>>;
   setCelebrate: React.Dispatch<React.SetStateAction<boolean>>;
   config: { soundEnabled?: boolean };
+  isActive: boolean;
   playSound: (type: 'success' | 'error' | 'pop' | 'victory' | 'levelUp') => void;
 }
 
@@ -17,6 +18,7 @@ export function useWordSearchInput({
   setFoundWords,
   setCelebrate,
   config,
+  isActive,
   playSound,
 }: UseWordSearchInputProps) {
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
@@ -26,17 +28,18 @@ export function useWordSearchInput({
   const getCellKey = (row: number, col: number) => `${row}-${col}`;
 
   const handleCellMouseDown = useCallback((row: number, col: number) => {
+    if (!isActive || !puzzle) return;
     setSelecting(true);
     setStartCell({ row, col });
     setSelectedCells(new Set([getCellKey(row, col)]));
     if (config.soundEnabled) {
       playSound('pop');
     }
-  }, [config.soundEnabled, playSound]);
+  }, [config.soundEnabled, getCellKey, isActive, playSound, puzzle]);
 
   const handleCellMouseEnter = useCallback(
     (row: number, col: number) => {
-      if (!selecting || !startCell || !puzzle) return;
+      if (!isActive || !selecting || !startCell || !puzzle) return;
 
       const newSelected = new Set<string>();
       const rowDiff = row - startCell.row;
@@ -57,10 +60,17 @@ export function useWordSearchInput({
 
       setSelectedCells(newSelected);
     },
-    [selecting, startCell, puzzle],
+    [isActive, selecting, startCell, puzzle],
   );
 
   const handleCellMouseUp = useCallback(() => {
+    if (!isActive) {
+      setSelecting(false);
+      setSelectedCells(new Set());
+      setStartCell(null);
+      return;
+    }
+
     try {
       if (!puzzle || !startCell || selectedCells.size === 0) {
         setSelecting(false);
@@ -139,6 +149,7 @@ export function useWordSearchInput({
       setStartCell(null);
     }
   }, [
+    isActive,
     puzzle,
     startCell,
     selectedCells,
@@ -151,6 +162,7 @@ export function useWordSearchInput({
   // Touch event handlers for mobile (A54 optimization)
   const handleTouchStart = useCallback(
     (row: number, col: number) => {
+      if (!isActive) return;
       try {
         handleCellMouseDown(row, col);
       } catch (error) {
@@ -162,7 +174,7 @@ export function useWordSearchInput({
 
   const handleTouchMove = useCallback(
     (e: React.TouchEvent) => {
-      if (!selecting || !puzzle) return;
+      if (!isActive || !selecting || !puzzle) return;
 
       try {
         e.preventDefault();
@@ -190,7 +202,7 @@ export function useWordSearchInput({
         setSelecting(false);
       }
     },
-    [selecting, puzzle, handleCellMouseEnter],
+    [isActive, selecting, puzzle, handleCellMouseEnter],
   );
 
   const handleTouchEnd = useCallback(() => {

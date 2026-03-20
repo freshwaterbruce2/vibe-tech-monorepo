@@ -5,7 +5,6 @@ import {
   ChevronUp,
   Coins,
   Eye,
-  Gamepad2,
   GraduationCap,
   Heart,
   Layers,
@@ -40,14 +39,8 @@ const navItems = [
   { view: 'tutor', icon: GraduationCap, label: 'Vibe Tutor', gradient: 'vibe-gradient-secondary' },
   { view: 'friend', icon: Heart, label: 'Vibe Buddy', gradient: 'vibe-gradient-accent' },
   { view: 'cards', icon: Layers, label: 'Learning Realms', gradient: 'vibe-gradient-primary' },
-  {
-    view: 'learning',
-    icon: Gamepad2,
-    label: '🎮 Learning Games',
-    gradient: 'vibe-gradient-accent',
-  },
   { view: 'shop', icon: Coins, label: '🛒 Reward Shop', gradient: 'vibe-gradient-secondary' },
-  { view: 'games', icon: Brain, label: 'Brain Games', gradient: 'vibe-gradient-accent' },
+  { view: 'games', icon: Brain, label: 'Brain Gym', gradient: 'vibe-gradient-accent' },
   { view: 'schedules', icon: Calendar, label: 'Schedules', gradient: 'vibe-gradient-primary' },
   { view: 'tokens', icon: Coins, label: 'Tokens', gradient: 'vibe-gradient-accent' },
   {

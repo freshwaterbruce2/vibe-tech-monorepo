@@ -9,10 +9,12 @@ interface WordSearchWordListProps {
   words: WordEntry[];
   foundWords: Set<string>;
   onFinish: () => void;
+  isCompleted: boolean;
 }
 
-const WordSearchWordList = ({ words, foundWords, onFinish }: WordSearchWordListProps) => {
+const WordSearchWordList = ({ words, foundWords, onFinish, isCompleted }: WordSearchWordListProps) => {
   const allFound = foundWords.size === words.length;
+  const actionLabel = isCompleted ? 'Continue' : 'Finish Game';
 
   return (
     <div className="glass-card p-6">
@@ -46,18 +48,20 @@ const WordSearchWordList = ({ words, foundWords, onFinish }: WordSearchWordListP
         })}
       </div>
 
-      {allFound && (
-        <div className="mt-4 p-4 bg-green-500/20 border-2 border-green-500/50 rounded-xl text-center animate-bounce">
-          <p className="text-green-400 font-bold text-lg">🎉 All words found!</p>
-          <p className="text-sm text-gray-300 mt-1">Tap Finish to see your score!</p>
-        </div>
-      )}
+        {allFound && (
+          <div className="mt-4 p-4 bg-green-500/20 border-2 border-green-500/50 rounded-xl text-center animate-bounce">
+            <p className="text-green-400 font-bold text-lg">🎉 All words found!</p>
+            <p className="text-sm text-gray-300 mt-1">
+              {isCompleted ? 'Tap Continue to submit your score' : 'Tap Finish to review results'}
+            </p>
+          </div>
+        )}
 
       <button
         onClick={onFinish}
         className="w-full mt-6 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-lg font-bold text-white transition-all transform hover:scale-105"
       >
-        Finish Game
+        {actionLabel}
       </button>
     </div>
   );

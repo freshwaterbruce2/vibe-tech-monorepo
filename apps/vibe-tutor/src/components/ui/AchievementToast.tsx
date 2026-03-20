@@ -4,7 +4,7 @@ import type { Achievement } from '../../types';
 
 interface AchievementToastProps {
   achievement: Achievement | null;
-  bonusPoints: number;
+  bonusTokens: number;
   onClose: () => void;
 }
 
@@ -15,7 +15,7 @@ interface ConfettiPiece {
   backgroundColor: string;
 }
 
-const AchievementToast = ({ achievement, bonusPoints, onClose }: AchievementToastProps) => {
+const AchievementToast = ({ achievement, bonusTokens, onClose }: AchievementToastProps) => {
   const [confetti, setConfetti] = useState<ConfettiPiece[]>([]);
   const Icon = achievement?.icon ?? Trophy;
 
@@ -90,10 +90,10 @@ const AchievementToast = ({ achievement, bonusPoints, onClose }: AchievementToas
             <div className="text-sm font-semibold text-yellow-900 mb-1">Achievement Unlocked!</div>
             <div className="text-xl font-bold text-yellow-950">{achievement.name}</div>
             <div className="text-sm text-yellow-800 mt-1">{achievement.description}</div>
-            {bonusPoints > 0 && (
+            {bonusTokens > 0 && (
               <div className="text-lg font-bold text-yellow-950 mt-2 flex items-center gap-1">
-                <span>+{bonusPoints}</span>
-                <span className="text-sm">points</span>
+                <span>+{bonusTokens}</span>
+                <span className="text-sm">tokens</span>
               </div>
             )}
           </div>

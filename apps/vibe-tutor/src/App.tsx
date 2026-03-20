@@ -20,24 +20,27 @@ import { sendMessageToBuddy } from './services/buddyService';
 import { dataStore } from './services/dataStore';
 import { sendMessageToTutor } from './services/tutorService';
 import { triggerVibration } from './services/uiService';
-import type { MusicPlaylist, ParsedHomework, View } from './types';
+import type { MusicPlaylist, ParsedHomework, View, SubjectType } from './types';
 // Custom hooks extracted from App.tsx
 import { useAchievements } from './hooks/useAchievements';
 import { useHomework } from './hooks/useHomework';
 import { useRewards } from './hooks/useRewards';
+import { createGameCompletionPayload, type GameCompletionDetails } from './services/gameProgression';
 import { useTokenEconomy } from './hooks/useTokenEconomy';
 import { useWorksheet } from './hooks/useWorksheet';
 
 // Static imports — core views needed at first paint
 import HomeworkDashboard from './components/dashboard/HomeworkDashboard';
 import SubjectCards from './components/dashboard/SubjectCards';
+import { TokenEarnAnimation } from './components/features/TokenEarnAnimation';
 import ChatWindow from './components/features/ChatWindow';
 import FocusTimer from './components/features/FocusTimer';
 
-// Lazy-loaded secondary views — split into separate chunks
+// Lazy load heavy views
 const MusicLibrary = lazy(async () => import('./components/features/MusicLibrary'));
 const RobuxRewardShop = lazy(async () => import('./components/features/RobuxRewardShop'));
-const GamesHub = lazy(async () => import('./components/games/GamesHub'));
+const BrainGymHub = lazy(async () => import('./components/games/BrainGymHub'));
+const RealmView = lazy(async () => import('./components/realms/RealmView'));
 const ParentDashboard = lazy(async () => import('./components/dashboard/ParentDashboard'));
 const WorksheetResults = lazy(async () => import('./components/features/WorksheetResults'));
 const WorksheetView = lazy(async () => import('./components/features/WorksheetView'));
@@ -45,6 +48,7 @@ const SensorySettings = lazy(async () => import('./components/settings/SensorySe
 const AchievementCenter = lazy(async () => import('./components/ui/AchievementCenter'));
 const TokenWallet = lazy(async () => import('./components/features/TokenWallet'));
 const ParentRulesPage = lazy(async () => import('./components/settings/ParentRulesPage'));
+const SchedulesHub = lazy(async () => import('./components/schedules/SchedulesHub'));
 
 // Loading fallback for lazy-loaded views
 const ViewLoadingFallback = () => (
@@ -58,6 +62,10 @@ const App = () => {
   const mobileContentRef = useRef<HTMLDivElement>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [playlists, setPlaylists] = useState<MusicPlaylist[]>([]);
+  const [selectedRealmSubject, setSelectedRealmSubject] = useState<SubjectType | null>(null);
+  // Animation triggers
+  const [tokenEarnAmount, setTokenEarnAmount] = useState(0);
+  const [tokenEarnTrigger, setTokenEarnTrigger] = useState(0);
 
   // React 19 concurrent feature for non-blocking state updates
   const [_isPending, startTransition] = useTransition();
@@ -72,21 +80,36 @@ const App = () => {
   } = useHomework();
 
   const {
-    achievements,
-    newlyUnlocked,
-    bonusPoints,
-    handleAchievementEvent,
-    awardPoints: _awardPoints,
-    clearNotification,
-  } = useAchievements();
-
-  const {
     userTokens,
     earnTokens,
     spendTokens,
     hasTokens: _hasTokens,
     setTokens: _setTokens,
   } = useTokenEconomy();
+
+  // Token management wrappers (canonical ledger is handled inside useTokenEconomy)
+  const handleEarnTokens = useCallback((amount: number, reason: string = 'Earned tokens') => {
+    earnTokens(amount, reason);
+    setTokenEarnAmount(amount);
+    setTokenEarnTrigger(prev => prev + 1);
+  }, [earnTokens]);
+
+  const handleSpendTokens = useCallback(
+    (amount: number, reason: string = 'Spent tokens') => {
+      return spendTokens(amount, reason);
+    },
+    [spendTokens],
+  );
+
+  const {
+    achievements,
+    newlyUnlocked,
+    bonusTokens,
+    handleAchievementEvent,
+    clearNotification,
+  } = useAchievements({
+    onAwardTokens: handleEarnTokens,
+  });
 
   const { rewards, claimedRewards, claimReward, handleRewardApproval, updateRewards } =
     useRewards();
@@ -105,7 +128,7 @@ const App = () => {
     tryAgain: handleWorksheetTryAgain,
     continueToSubjects: handleWorksheetContinue,
   } = useWorksheet({
-    onAwardPoints: (amount: number) => handleEarnTokens(amount, 'Worksheet completion'),
+    onAwardTokens: (amount: number) => handleEarnTokens(amount, 'Worksheet completion'),
     onAchievementEvent: (event) => {
       void handleAchievementEvent(event);
     },
@@ -157,23 +180,24 @@ const App = () => {
   }, []);
 
   // Reset scroll position when navigating between views
+  const [prevView, setPrevView] = useState<View>(view);
+  if (view !== prevView) {
+    setPrevView(view);
+    setSelectedRealmSubject(null);
+  }
+
   useEffect(() => {
     mobileContentRef.current?.scrollTo({ top: 0 });
   }, [view]);
 
-  // Token management wrappers (canonical ledger is handled inside useTokenEconomy)
-  const handleEarnTokens = useCallback(
-    (amount: number, reason: string = 'Earned tokens') => {
-      earnTokens(amount, reason);
+  const handleGameCompleted = useCallback(
+    (gameId: string, score: number, details: GameCompletionDetails) => {
+      void handleAchievementEvent({
+        type: 'GAME_COMPLETED',
+        payload: createGameCompletionPayload(gameId, score, details),
+      });
     },
-    [earnTokens],
-  );
-
-  const handleSpendTokens = useCallback(
-    (amount: number, reason: string = 'Spent tokens') => {
-      return spendTokens(amount, reason);
-    },
-    [spendTokens],
+    [handleAchievementEvent],
   );
 
   // Wrap hook handlers with additional logic
@@ -211,11 +235,12 @@ const App = () => {
       const cost = claimReward(rewardId, tokenBalance);
       if (cost > 0) {
         handleSpendTokens(cost, 'Reward claimed');
+        void handleAchievementEvent({ type: 'SHOP_PURCHASE' });
         return true;
       }
       return false;
     },
-    [claimReward, userTokens, handleSpendTokens],
+    [claimReward, handleAchievementEvent, handleSpendTokens, userTokens],
   );
 
   const handleRewardApprovalWrapper = useCallback(
@@ -281,6 +306,15 @@ const App = () => {
                 onClaimReward={handleClaimReward}
                 claimedRewards={claimedRewards}
                 userTokens={userTokens}
+              />
+            </RouteErrorBoundary>
+          );
+        case 'schedules':
+          return (
+            <RouteErrorBoundary routeName="Schedules Hub">
+              <SchedulesHub
+                onEarnTokens={handleEarnTokens}
+                onClose={() => setView('dashboard')}
               />
             </RouteErrorBoundary>
           );
@@ -352,26 +386,28 @@ const App = () => {
                   }}
                   onCancel={handleWorksheetCancel}
                 />
-              ) : (
+              ) : !selectedRealmSubject ? (
                 // Show subject cards (main menu)
-                <SubjectCards onStartWorksheet={handleStartWorksheet} userTokens={userTokens} />
+                <SubjectCards onStartWorksheet={(subject) => setSelectedRealmSubject(subject)} userTokens={userTokens} />
+              ) : (
+                <RealmView
+                  subject={selectedRealmSubject}
+                  onStartWorksheet={(s) => handleStartWorksheet(s)}
+                  onBack={() => setSelectedRealmSubject(null)}
+                  onEarnTokens={handleEarnTokens}
+                  onGameCompleted={handleGameCompleted}
+                />
               )}
             </RouteErrorBoundary>
           );
         case 'games':
-        case 'learning':
           return (
-            <RouteErrorBoundary routeName="Games Hub">
-              <GamesHub
+            <RouteErrorBoundary routeName="Brain Gym">
+              <BrainGymHub
                 userTokens={userTokens}
                 onEarnTokens={handleEarnTokens}
                 onSpendTokens={handleSpendTokens}
-                onGameCompleted={(gameId, score) => {
-                  void handleAchievementEvent({
-                    type: 'GAME_COMPLETED',
-                    payload: { game: gameId, score },
-                  });
-                }}
+                onGameCompleted={handleGameCompleted}
                 onClose={() => setView('dashboard')}
               />
             </RouteErrorBoundary>
@@ -388,6 +424,9 @@ const App = () => {
               <RobuxRewardShop
                 userTokens={userTokens}
                 onSpendTokens={handleSpendTokens}
+                onPurchaseComplete={() => {
+                  void handleAchievementEvent({ type: 'SHOP_PURCHASE' });
+                }}
                 onClose={() => setView('dashboard')}
               />
             </RouteErrorBoundary>
@@ -436,16 +475,17 @@ const App = () => {
     worksheetLeveledUp,
     worksheetNewDifficulty,
     worksheetStarsToNextLevel,
-    handleWorksheetTryAgain,
-    handleWorksheetContinue,
     worksheetSubject,
     worksheetProgress,
     handleWorksheetComplete,
     handleWorksheetCancel,
     handleStartWorksheet,
+    handleWorksheetTryAgain,
+    handleWorksheetContinue,
     userTokens,
     handleEarnTokens,
     handleSpendTokens,
+    selectedRealmSubject,
   ]);
 
   const toggleNav = useCallback(() => {
@@ -453,7 +493,11 @@ const App = () => {
   }, [setIsNavCollapsed]);
 
   return (
-    <div className="h-screen w-screen bg-background-main text-text-primary flex font-sans overflow-hidden">
+    <div className="flex h-screen bg-[var(--background)] text-[var(--text-primary)] overflow-hidden font-outfit relative">
+      <TokenEarnAnimation amount={tokenEarnAmount} triggerId={tokenEarnTrigger} />
+      
+      {/* Dynamic Background */}
+      <div className="absolute inset-0 pointer-events-none z-0"></div>
       <Sidebar
         currentView={view}
         onNavigate={setView}
@@ -501,7 +545,7 @@ const App = () => {
       </main>
       <AchievementToast
         achievement={newlyUnlocked}
-        bonusPoints={bonusPoints}
+        bonusTokens={bonusTokens}
         onClose={clearNotification}
       />
     </div>

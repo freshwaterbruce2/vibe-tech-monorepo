@@ -1,8 +1,9 @@
 import confetti from 'canvas-confetti';
-import { ArrowLeft, Clock, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Clock, Lightbulb, RotateCcw, TriangleAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import * as SudokuModule from 'sudoku-umd';
 import { useGameAudio } from '../../hooks/useGameAudio';
+import GameCompletionModal from './GameCompletionModal';
 
 interface SudokuModuleType {
   generate?: () => string;
@@ -27,6 +28,15 @@ interface SudokuState {
   solution: (number | null)[];
   userGrid: (number | null)[];
   isLoading: boolean;
+}
+
+interface SudokuFinalResult {
+  score: number;
+  stars: number;
+  time: number;
+  filled: number;
+  mistakes: number;
+  hintPenalty: number;
 }
 
 function parseBoardString(board: string): (number | null)[] | null {
@@ -108,50 +118,123 @@ function createInitialSudokuState(): SudokuState {
 
 const SudokuGame = ({ onComplete, onBack }: SudokuGameProps) => {
   const { playSound } = useGameAudio();
-  const [initialSudoku] = useState<SudokuState>(() => createInitialSudokuState());
-  const [startTime] = useState(() => Date.now());
+  const [sudokuState, setSudokuState] = useState<SudokuState>(() => createInitialSudokuState());
+  const [startTime, setStartTime] = useState(() => Date.now());
   const [currentTime, setCurrentTime] = useState(() => Date.now());
-  const [puzzle] = useState<(number | null)[]>(initialSudoku.puzzle);
+  const { puzzle, solution, isLoading } = sudokuState;
+  const [userGrid, setUserGrid] = useState<(number | null)[]>(() => sudokuState.userGrid);
+  const [selectedCell, setSelectedCell] = useState<number | null>(null);
+  const [mistakes, setMistakes] = useState(0);
+  const [hintsUsed, setHintsUsed] = useState(0);
+  const [mistakeCells, setMistakeCells] = useState<Set<number>>(new Set());
+  const [showComplete, setShowComplete] = useState(false);
+  const [finalResult, setFinalResult] = useState<SudokuFinalResult | null>(null);
 
   useEffect(() => {
+    if (showComplete) return;
     const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
     return () => clearInterval(timer);
-  }, []);
-  const [solution] = useState<(number | null)[]>(initialSudoku.solution);
-  const [userGrid, setUserGrid] = useState<(number | null)[]>(initialSudoku.userGrid);
-  const [selectedCell, setSelectedCell] = useState<number | null>(null);
-  const [isLoading] = useState(initialSudoku.isLoading);
+  }, [showComplete]);
+
+  const editableCellCount = puzzle.filter((cell) => cell === null).length;
+
+  const startNewGame = () => {
+    const nextState = createInitialSudokuState();
+    setSudokuState(nextState);
+    setUserGrid(nextState.userGrid);
+    setSelectedCell(null);
+    setMistakes(0);
+    setHintsUsed(0);
+    setMistakeCells(new Set());
+    setShowComplete(false);
+    setFinalResult(null);
+    setStartTime(Date.now());
+    setCurrentTime(Date.now());
+  };
+
+  const finishGame = (grid: (number | null)[], nextMistakes: number, nextHintsUsed: number) => {
+    if (!checkComplete(grid) || showComplete) return;
+
+    playSound('victory');
+    void confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+    const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+    const score = Math.max(
+      35,
+      100 - Math.floor(timeSpent / 30) - nextMistakes * 5 - nextHintsUsed * 8,
+    );
+    const stars = score >= 92 ? 5 : score >= 80 ? 4 : score >= 65 ? 3 : score >= 50 ? 2 : 1;
+    setShowComplete(true);
+    setFinalResult({
+      score,
+      stars,
+      time: timeSpent,
+      filled: editableCellCount,
+      mistakes: nextMistakes,
+      hintPenalty: nextHintsUsed * 8,
+    });
+  };
 
   const handleCellClick = (index: number) => {
+    if (showComplete) return;
     if (puzzle[index] !== null) return; // Can't edit given numbers
     playSound('pop');
     setSelectedCell(index);
   };
 
   const handleNumberInput = (num: number) => {
+    if (showComplete) return;
     if (selectedCell === null || puzzle[selectedCell] !== null) return;
-    playSound('pop');
     const newGrid = [...userGrid];
     newGrid[selectedCell] = num;
-    setUserGrid(newGrid);
+    const isCorrect = solution[selectedCell] === num;
+    const nextMistakes = isCorrect ? mistakes : mistakes + 1;
 
-    // Check if puzzle is complete
-    if (checkComplete(newGrid)) {
-      playSound('victory');
-      void confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-      const timeSpent = Math.floor((currentTime - startTime) / 1000);
-      const score = Math.max(50, 100 - Math.floor(timeSpent / 30));
-      const stars = score >= 90 ? 5 : score >= 75 ? 4 : score >= 60 ? 3 : score >= 40 ? 2 : 1;
-      setTimeout(() => onComplete(score, stars, timeSpent), 1500);
+    if (isCorrect) {
+      playSound('pop');
+    } else {
+      playSound('error');
+      setMistakes(nextMistakes);
     }
+
+    setMistakeCells((prev) => {
+      const next = new Set(prev);
+      if (isCorrect) next.delete(selectedCell);
+      else next.add(selectedCell);
+      return next;
+    });
+    setUserGrid(newGrid);
+    finishGame(newGrid, nextMistakes, hintsUsed);
   };
 
   const handleClear = () => {
+    if (showComplete) return;
     if (selectedCell === null || puzzle[selectedCell] !== null) return;
     playSound('pop');
     const newGrid = [...userGrid];
     newGrid[selectedCell] = null;
     setUserGrid(newGrid);
+    setMistakeCells((prev) => {
+      const next = new Set(prev);
+      next.delete(selectedCell);
+      return next;
+    });
+  };
+
+  const handleHint = () => {
+    if (showComplete) return;
+    if (selectedCell === null || puzzle[selectedCell] !== null || solution[selectedCell] === null) return;
+    playSound('success');
+    const newGrid = [...userGrid];
+    newGrid[selectedCell] = solution[selectedCell];
+    const nextHints = hintsUsed + 1;
+    setHintsUsed(nextHints);
+    setUserGrid(newGrid);
+    setMistakeCells((prev) => {
+      const next = new Set(prev);
+      next.delete(selectedCell);
+      return next;
+    });
+    finishGame(newGrid, mistakes, nextHints);
   };
 
   const checkComplete = (grid: (number | null)[]) => {
@@ -159,9 +242,18 @@ const SudokuGame = ({ onComplete, onBack }: SudokuGameProps) => {
   };
 
   const handleReset = () => {
+    if (showComplete) return;
     playSound('pop');
     setUserGrid([...puzzle]);
     setSelectedCell(null);
+    setMistakes(0);
+    setHintsUsed(0);
+    setMistakeCells(new Set());
+  };
+
+  const handleContinue = () => {
+    if (!finalResult) return;
+    onComplete(finalResult.score, finalResult.stars, finalResult.time);
   };
 
   if (isLoading || puzzle.length === 0) {
@@ -188,7 +280,15 @@ const SudokuGame = ({ onComplete, onBack }: SudokuGameProps) => {
           <div className="flex items-center gap-4">
             <div className="text-white/80 text-sm">
               {userGrid.filter((c, i) => c !== null && puzzle[i] === null).length}/
-              {puzzle.filter((c) => c === null).length} filled
+              {editableCellCount} filled
+            </div>
+            <div className="flex items-center gap-2 text-sm text-red-300">
+              <TriangleAlert size={18} />
+              <span>{mistakes} mistakes</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-yellow-300">
+              <Lightbulb size={18} />
+              <span>{hintsUsed} hints</span>
             </div>
             <button
               onClick={handleReset}
@@ -208,6 +308,22 @@ const SudokuGame = ({ onComplete, onBack }: SudokuGameProps) => {
 
         <div className="glass-card p-6">
           <h2 className="text-3xl font-bold text-center mb-6 neon-text-primary">Sudoku</h2>
+          <div className="mb-6 grid gap-3 text-center text-sm text-white/80 sm:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3">
+              <div className="text-[11px] uppercase tracking-[0.14em] text-cyan-300">Grid Progress</div>
+              <div className="mt-1 text-xl font-bold text-white">
+                {userGrid.filter((c, i) => c !== null && puzzle[i] === null).length}/{editableCellCount}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3">
+              <div className="text-[11px] uppercase tracking-[0.14em] text-cyan-300">Mistake Pressure</div>
+              <div className="mt-1 text-xl font-bold text-white">{mistakes}</div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-slate-950/30 px-4 py-3">
+              <div className="text-[11px] uppercase tracking-[0.14em] text-cyan-300">Hint Penalty</div>
+              <div className="mt-1 text-xl font-bold text-white">-{hintsUsed * 8}</div>
+            </div>
+          </div>
 
           {/* Sudoku Grid */}
           <div className="inline-block mx-auto bg-white p-2 rounded-lg">
@@ -220,6 +336,7 @@ const SudokuGame = ({ onComplete, onBack }: SudokuGameProps) => {
                 const selectedCol = selectedCell !== null ? selectedCell % 9 : -1;
                 const isHighlighted = row === selectedRow || col === selectedCol;
                 const isSelected = selectedCell === index;
+                const isMistake = !isGiven && mistakeCells.has(index);
                 const showThickBorder = {
                   right: col === 2 || col === 5,
                   bottom: row === 2 || row === 5,
@@ -238,13 +355,21 @@ const SudokuGame = ({ onComplete, onBack }: SudokuGameProps) => {
                     } ${showThickBorder.top ? 'border-t-2 border-t-black' : ''} ${
                       isGiven
                         ? 'bg-gray-200 font-bold'
+                        : isMistake
+                          ? 'bg-red-100'
                         : isHighlighted
                           ? 'bg-blue-50'
                           : 'bg-white hover:bg-blue-50'
                     } ${isSelected ? 'ring-2 ring-blue-500 bg-blue-100' : ''}`}
                   >
                     {cell !== null && (
-                      <span className={isGiven ? 'text-black' : 'text-blue-600'}>{cell}</span>
+                      <span
+                        className={
+                          isGiven ? 'text-black' : isMistake ? 'text-red-600 font-bold' : 'text-blue-600'
+                        }
+                      >
+                        {cell}
+                      </span>
                     )}
                   </div>
                 );
@@ -264,6 +389,14 @@ const SudokuGame = ({ onComplete, onBack }: SudokuGameProps) => {
               </button>
             ))}
             <button
+              onClick={handleHint}
+              disabled={selectedCell === null || puzzle[selectedCell] !== null}
+              className="w-auto px-4 h-12 bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-bold text-white transition-all transform hover:scale-110 inline-flex items-center gap-2"
+            >
+              <Lightbulb size={18} />
+              Hint
+            </button>
+            <button
               onClick={handleClear}
               className="w-12 h-12 bg-red-600 hover:bg-red-700 rounded-lg font-bold text-white transition-all transform hover:scale-110"
             >
@@ -272,10 +405,27 @@ const SudokuGame = ({ onComplete, onBack }: SudokuGameProps) => {
           </div>
 
           <p className="text-center text-white/80 mt-6">
-            Fill the grid so each row, column, and 3x3 box contains 1-9
+            Fill the grid so each row, column, and 3x3 box contains 1-9. Hints and mistakes lower your final score.
           </p>
         </div>
       </div>
+
+      <GameCompletionModal
+        open={showComplete && !!finalResult}
+        title="Sudoku Complete"
+        subtitle={`You cleared the full grid in ${finalResult?.time ?? 0}s with ${finalResult?.mistakes ?? 0} mistakes.`}
+        stars={finalResult?.stars ?? 0}
+        stats={[
+          { label: 'Score', value: finalResult?.score ?? 0 },
+          { label: 'Filled', value: `${finalResult?.filled ?? 0}/${editableCellCount}` },
+          { label: 'Mistakes', value: finalResult?.mistakes ?? 0 },
+          { label: 'Hint Penalty', value: `-${finalResult?.hintPenalty ?? 0}` },
+        ]}
+        primaryLabel="Continue"
+        primaryAction={handleContinue}
+        secondaryLabel="Play Again"
+        secondaryAction={startNewGame}
+      />
     </div>
   );
 };

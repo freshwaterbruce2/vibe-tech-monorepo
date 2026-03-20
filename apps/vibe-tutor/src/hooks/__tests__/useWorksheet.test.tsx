@@ -100,20 +100,20 @@ describe('useWorksheet', () => {
     expect(result.current.worksheetStarsToNextLevel).toBe(5);
   });
 
-  it('should call onAwardPoints when stars are earned', async () => {
-    const onAwardPoints = vi.fn();
+  it('should call onAwardTokens when stars are earned', async () => {
+    const onAwardTokens = vi.fn();
 
-    const { result } = renderHook(() => useWorksheet({ onAwardPoints }));
+    const { result } = renderHook(() => useWorksheet({ onAwardTokens }));
     const session = makeSession({ starsEarned: 4 });
 
     await act(async () => {
       await result.current.completeWorksheetSession(session);
     });
 
-    expect(onAwardPoints).toHaveBeenCalledWith(4);
+    expect(onAwardTokens).toHaveBeenCalledWith(4);
   });
 
-  it('should call onAchievementEvent for high-scoring worksheets (3+ stars)', async () => {
+  it('should call onAchievementEvent with worksheet completion details', async () => {
     const onAchievementEvent = vi.fn();
 
     const { result } = renderHook(() => useWorksheet({ onAchievementEvent }));
@@ -123,10 +123,18 @@ describe('useWorksheet', () => {
       await result.current.completeWorksheetSession(session);
     });
 
-    expect(onAchievementEvent).toHaveBeenCalledWith({ type: 'TASK_COMPLETED' });
+    expect(onAchievementEvent).toHaveBeenCalledWith({
+      type: 'WORKSHEET_COMPLETED',
+      payload: {
+        subject: 'Math',
+        score: 80,
+        starsEarned: 3,
+        tokensEarned: 3,
+      },
+    });
   });
 
-  it('should NOT call onAchievementEvent for low-scoring worksheets (< 3 stars)', async () => {
+  it('should still call onAchievementEvent for low-scoring worksheets', async () => {
     const onAchievementEvent = vi.fn();
 
     const { result } = renderHook(() => useWorksheet({ onAchievementEvent }));
@@ -136,7 +144,15 @@ describe('useWorksheet', () => {
       await result.current.completeWorksheetSession(session);
     });
 
-    expect(onAchievementEvent).not.toHaveBeenCalled();
+    expect(onAchievementEvent).toHaveBeenCalledWith({
+      type: 'WORKSHEET_COMPLETED',
+      payload: {
+        subject: 'Math',
+        score: 80,
+        starsEarned: 2,
+        tokensEarned: 2,
+      },
+    });
   });
 
   it('should cancel the worksheet', async () => {

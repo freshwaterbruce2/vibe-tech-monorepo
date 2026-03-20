@@ -18,6 +18,7 @@ import { appStore } from '../../utils/electronStore';
 interface RobuxRewardShopProps {
   userTokens: number;
   onSpendTokens: (amount: number, reason?: string) => void;
+  onPurchaseComplete?: () => void;
   onClose?: () => void;
 }
 
@@ -40,7 +41,12 @@ interface Purchase {
   cost: number;
 }
 
-const RobuxRewardShop = ({ userTokens, onSpendTokens, onClose }: RobuxRewardShopProps) => {
+const RobuxRewardShop = ({
+  userTokens,
+  onSpendTokens,
+  onPurchaseComplete,
+  onClose,
+}: RobuxRewardShopProps) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [purchaseHistory, setPurchaseHistory] = useState<Purchase[]>(() => {
     const savedHistory = appStore.get<Purchase[]>('robuxShop_purchases');
@@ -51,7 +57,7 @@ const RobuxRewardShop = ({ userTokens, onSpendTokens, onClose }: RobuxRewardShop
     return savedOwned ? new Set(savedOwned) : new Set();
   });
   const [showPurchaseAnimation, setShowPurchaseAnimation] = useState(false);
-  const [lastPurchasedItem, setLastPurchasedItem] = useState<string | null>(null);
+  const [lastPurchasedItem, setLastPurchasedItem] = useState<ShopItem | null>(null);
   const [activeAvatar, setActiveAvatar] = useState<string>(() => {
     return appStore.get<string>('active_avatar') ?? '';
   });
@@ -276,6 +282,7 @@ const RobuxRewardShop = ({ userTokens, onSpendTokens, onClose }: RobuxRewardShop
 
     // Process purchase
     onSpendTokens(item.cost, `Shop purchase: ${item.name}`);
+    onPurchaseComplete?.();
 
     // Record purchase
     const newPurchase: Purchase = {
@@ -296,7 +303,7 @@ const RobuxRewardShop = ({ userTokens, onSpendTokens, onClose }: RobuxRewardShop
     }
 
     // Show purchase animation
-    setLastPurchasedItem(item.name);
+    setLastPurchasedItem(item);
     setShowPurchaseAnimation(true);
     setTimeout(() => setShowPurchaseAnimation(false), 3000);
 
@@ -341,14 +348,14 @@ const RobuxRewardShop = ({ userTokens, onSpendTokens, onClose }: RobuxRewardShop
             <p className="text-white/70 mt-2 text-sm md:text-base">Spend your hard-earned Robux on awesome rewards!</p>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex flex-col sm:flex-row w-full md:w-auto items-stretch sm:items-center gap-4">
             {/* Balance Display */}
-            <div className="bg-gray-800/50 backdrop-blur rounded-2xl px-8 py-4">
-              <div className="flex items-center gap-3">
-                <Coins className="w-8 h-8 text-yellow-400" />
+            <div className="bg-gray-800/50 backdrop-blur rounded-2xl px-6 py-4 flex-1">
+              <div className="flex items-center justify-center sm:justify-start gap-3">
+                <Coins className="w-8 h-8 text-yellow-400 shrink-0" />
                 <div className="text-white">
                   <div className="text-sm opacity-70">Your Balance</div>
-                  <div className="text-3xl font-bold">{userTokens} Robux</div>
+                  <div className="text-2xl sm:text-3xl font-bold">{userTokens} Robux</div>
                 </div>
               </div>
             </div>
@@ -357,7 +364,7 @@ const RobuxRewardShop = ({ userTokens, onSpendTokens, onClose }: RobuxRewardShop
             {onClose && (
               <button
                 onClick={onClose}
-                className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-xl font-bold transition-all"
+                className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-4 sm:py-3 rounded-xl font-bold transition-all w-full sm:w-auto shrink-0"
               >
                 Close Shop
               </button>
@@ -366,18 +373,18 @@ const RobuxRewardShop = ({ userTokens, onSpendTokens, onClose }: RobuxRewardShop
         </div>
 
         {/* Category Filters */}
-        <div className="flex gap-4 mb-8 flex-wrap">
+        <div className="flex gap-3 mb-8 overflow-x-auto pb-4 hide-scrollbar snap-x">
           {categories.map((category) => (
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
-              className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${
+              className={`px-5 py-2.5 rounded-full font-bold transition-all whitespace-nowrap shadow-sm snap-start shrink-0 flex items-center gap-2 ${
                 selectedCategory === category.id
-                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white scale-105'
-                  : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700'
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)] scale-105'
+                  : 'bg-gray-800/50 text-gray-300 border border-gray-700 hover:bg-gray-700 border border-gray-700'
               }`}
             >
-              {category.icon}
+              <div className="shrink-0">{category.icon}</div>
               {category.name}
             </button>
           ))}
@@ -538,7 +545,7 @@ const RobuxRewardShop = ({ userTokens, onSpendTokens, onClose }: RobuxRewardShop
                           Need {item.cost - userTokens} more
                         </>
                       ) : item.maxQuantity && purchaseCount >= item.maxQuantity ? (
-                        <>Max Purchased</>
+                        <>Max Redeemed</>
                       ) : (
                         <>Purchase</>
                       )}
@@ -551,11 +558,16 @@ const RobuxRewardShop = ({ userTokens, onSpendTokens, onClose }: RobuxRewardShop
         )}
 
         {/* Purchase Animation */}
-        {showPurchaseAnimation && (
-          <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-            <div className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-8 py-6 rounded-3xl shadow-2xl animate-bounce">
-              <div className="text-3xl font-bold mb-2">🎉 Purchase Successful!</div>
-              <div className="text-xl">You bought: {lastPurchasedItem}</div>
+        {showPurchaseAnimation && lastPurchasedItem && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none p-4">
+            <div className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-8 py-6 rounded-3xl shadow-2xl animate-bounce max-w-sm w-full text-center">
+              <div className="text-3xl font-bold mb-2">🎉 Success!</div>
+              <div className="text-xl">Got: {lastPurchasedItem.name}</div>
+              {lastPurchasedItem.category === 'real-rewards' && (
+                <div className="mt-3 text-sm bg-black/20 rounded-lg p-2 text-green-100 font-medium">
+                  Parent has been notified! ✉️
+                </div>
+              )}
             </div>
           </div>
         )}
