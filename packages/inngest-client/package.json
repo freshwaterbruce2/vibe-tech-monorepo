@@ -1,0 +1,38 @@
+{
+  "name": "@vibetech/inngest-client",
+  "version": "1.0.0",
+  "description": "Shared Inngest client and event types for VibeTech monorepo",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "lint": "eslint . --max-warnings 0"
+  },
+  "keywords": [
+    "inngest",
+    "events",
+    "workflows"
+  ],
+  "author": "Vibetech",
+  "license": "MIT",
+  "dependencies": {
+    "inngest": "^3.52.7"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.0",
+    "typescript": "5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
