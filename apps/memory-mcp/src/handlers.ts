@@ -987,6 +987,30 @@ export async function handleToolCall(
         }
       }
 
+      case 'memory_rag_trigger_index': {
+        try {
+          const { ragTriggerIndex } = await getRagBridge();
+          const result = await ragTriggerIndex();
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(
+                  { error: (error as Error).message, status: 'rag_init_failed' },
+                  null,
+                  2,
+                ),
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+
       // ── Hierarchical Summarization & Memory Decay ──────────────
       case 'memory_summarize_session': {
         const { summarizer } = summarizationDeps;

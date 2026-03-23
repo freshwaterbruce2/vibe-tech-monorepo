@@ -47,7 +47,7 @@ export class EmbeddingService {
   async init(): Promise<void> {
     try {
       // Lightweight connectivity check — no billable embedding call
-      const response = await fetch(`${this.endpoint}/api/v1/models`, {
+      const response = await fetch(`${this.endpoint}/health`, {
         method: 'GET',
         signal: AbortSignal.timeout(3000),
       });

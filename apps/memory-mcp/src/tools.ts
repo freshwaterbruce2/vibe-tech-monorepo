@@ -632,6 +632,15 @@ export const tools: Tool[] = [
       required: ['filePaths'],
     },
   },
+  {
+    name: 'memory_rag_trigger_index',
+    description:
+      'Trigger an immediate background RAG index pass. Returns immediately; check memory_rag_index_status for progress. Use when the index is empty or to force a refresh after many file changes.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
   // Hierarchical Summarization & Memory Decay
   {
     name: 'memory_summarize_session',

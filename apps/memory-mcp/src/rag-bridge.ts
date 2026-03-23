@@ -55,7 +55,9 @@ function getConfig(): RAGConfig {
     chunkOverlapTokens: 64,
     cacheTtlMs: 60 * 60 * 1000,
     autoIndexIntervalMs: 15 * 60 * 1000,
-    indexPaths: ['apps/', 'packages/', 'backend/'],
+    indexPaths: process.env.RAG_INDEX_PATHS
+      ? process.env.RAG_INDEX_PATHS.split(',').map((p) => p.trim())
+      : ['apps/', 'packages/', 'backend/'],
     excludePatterns: [
       '**/node_modules/**',
       '**/dist/**',
@@ -86,6 +88,9 @@ async function ensureInitialized(): Promise<void> {
     reranker = new RAGReranker();
     cache = new RAGCache(config);
 
+    // Start background auto-indexing (runs every autoIndexIntervalMs = 15 min)
+    indexer.startAutoIndex();
+
     initialized = true;
     console.error('[RAG Bridge] Pipeline initialized successfully');
   } catch (error) {
@@ -93,6 +98,30 @@ async function ensureInitialized(): Promise<void> {
     console.error('[RAG Bridge] Init failed:', initError);
     throw error;
   }
+}
+
+/**
+ * Trigger an immediate background index pass (fire-and-forget).
+ * Returns immediately; the result is logged when the index completes.
+ */
+export async function ragTriggerIndex(): Promise<{ started: boolean; message: string }> {
+  await ensureInitialized();
+
+  const state = indexer!.getState();
+  if (state.isRunning) {
+    return { started: false, message: 'Index already running' };
+  }
+
+  // Fire-and-forget — do not await
+  indexer!.index().then((result) => {
+    console.error(
+      `[RAG Bridge] Index complete: ${result.filesProcessed} files, ${result.chunksCreated} chunks, ${result.errors.length} errors`,
+    );
+  }).catch((err: Error) => {
+    console.error('[RAG Bridge] Index error:', err.message);
+  });
+
+  return { started: true, message: 'Indexing started in background — check memory_rag_index_status for progress' };
 }
 
 /**
