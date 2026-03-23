@@ -174,6 +174,39 @@ router.get('/models', async (req, res, next) => {
   }
 });
 
+// Embeddings endpoint — used by EmbeddingService and RAGEmbedder
+router.post('/embeddings', async (req, res, next) => {
+  try {
+    const { model, input } = req.body;
+
+    if (!model || !input) {
+      return res.status(400).json({ error: 'Missing required fields: model and input' });
+    }
+
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      throw new Error('OPENROUTER_API_KEY not configured');
+    }
+
+    const response = await axios.post(
+      `${OPENROUTER_API_BASE}/embeddings`,
+      { model, input },
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://vibetech.local',
+          'X-Title': 'VibeTech OpenRouter Proxy',
+        },
+      },
+    );
+
+    res.json(response.data);
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Get usage statistics (2026 Enhanced)
 router.get('/usage', async (req, res) => {
   const { period = '24' } = req.query;

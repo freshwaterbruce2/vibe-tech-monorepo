@@ -58,6 +58,55 @@ try {
     # Display simple welcome (no hanging operations)
     Display-SimpleWelcome -GitContext $GitContext
 
+    # Phase 6: Memory injection from Memory MCP (port 3200)
+    $EnableMemoryInjection = $true
+    if ($EnableMemoryInjection) {
+        try {
+            $MemoryBridgeUrl = "http://localhost:3200"
+
+            # Get memory context (recent work, patterns)
+            $ContextBody = '{"method":"tools/call","params":{"name":"memory_get_context","arguments":{}}}'
+            $ContextResp = Invoke-RestMethod -Uri $MemoryBridgeUrl -Method POST -Body $ContextBody -ContentType 'application/json' -TimeoutSec $TIMEOUT_SECONDS 2>$null
+
+            # Get task suggestions
+            $TaskBody = '{"method":"tools/call","params":{"name":"memory_suggest_task","arguments":{"limit":3}}}'
+            $TaskResp = Invoke-RestMethod -Uri $MemoryBridgeUrl -Method POST -Body $TaskBody -ContentType 'application/json' -TimeoutSec $TIMEOUT_SECONDS 2>$null
+
+            if (-not $Silent) {
+                if ($ContextResp -or $TaskResp) {
+                    Write-Host "MEMORY CONTEXT" -ForegroundColor Magenta
+
+                    if ($ContextResp.result.content) {
+                        $CtxData = $ContextResp.result.content[0].text | ConvertFrom-Json -ErrorAction SilentlyContinue
+                        if ($CtxData.name) {
+                            Write-Host "  Last project: $($CtxData.name)" -ForegroundColor White
+                        }
+                        if ($CtxData.currentTask) {
+                            Write-Host "  Last task: $($CtxData.currentTask)" -ForegroundColor White
+                        }
+                        if ($CtxData.recentFiles -and $CtxData.recentFiles.Count -gt 0) {
+                            Write-Host "  Recent files: $($CtxData.recentFiles[0..1] -join ', ')" -ForegroundColor DarkGray
+                        }
+                    }
+
+                    if ($TaskResp.result.content) {
+                        $TaskData = $TaskResp.result.content[0].text | ConvertFrom-Json -ErrorAction SilentlyContinue
+                        if ($TaskData.suggestions -and $TaskData.suggestions.Count -gt 0) {
+                            Write-Host "  Suggested next:" -ForegroundColor White
+                            foreach ($sug in $TaskData.suggestions) {
+                                Write-Host "    - $($sug.task)" -ForegroundColor DarkGray
+                            }
+                        }
+                    }
+
+                    Write-Host ""
+                }
+            }
+        } catch {
+            # Memory MCP unavailable — degrade gracefully, session starts normally
+        }
+    }
+
     # Save session context to D:\logs\claude-sessions\
     try {
         $SessionDir = "D:\logs\claude-sessions"

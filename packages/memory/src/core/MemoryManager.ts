@@ -75,6 +75,7 @@ export class MemoryManager {
         provider: this.embeddingService.getProvider(),
         dimension: this.embeddingService.getDimension(),
         cache: this.embeddingService.getCacheStats(),
+        dimensionMismatch: this.embeddingService.hasDimensionMismatch(),
       },
       vectorExtension: this.dbManager.isVectorExtensionLoaded(),
       decay: this.decay ? this.decay.getStats(this.dbManager.getDb()) : undefined,

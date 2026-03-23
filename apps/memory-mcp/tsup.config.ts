@@ -11,5 +11,5 @@ export default defineConfig({
   treeshake: true,
   target: 'node22',
   outDir: 'dist',
-  external: ['@vibetech/memory'],
+  external: ['@vibetech/memory', 'better-sqlite3', '@lancedb/lancedb'],
 });

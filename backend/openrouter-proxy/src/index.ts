@@ -71,6 +71,8 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/api/openrouter', openRouterRouter);
+// Also mount at /api/v1 for OpenAI-compatible clients (EmbeddingService, RAGEmbedder)
+app.use('/api/v1', openRouterRouter);
 
 // Error handling
 app.use(errorHandler);

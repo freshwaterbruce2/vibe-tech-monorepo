@@ -7,6 +7,8 @@ export { EmbeddingService } from './embeddings/EmbeddingService.js';
 export { EpisodicStore } from './stores/EpisodicStore.js';
 export { ProceduralStore } from './stores/ProceduralStore.js';
 export { SemanticStore } from './stores/SemanticStore.js';
+export { WorkingMemory } from './stores/WorkingMemory.js';
+export type { WorkingMemoryConfig, WorkingMemoryItem } from './stores/WorkingMemory.js';
 
 // Hook exports
 export { AutoCapture } from './hooks/AutoCapture.js';
@@ -50,6 +52,24 @@ export { LearningBridge } from './integrations/LearningBridge.js';
 export type { AgentContext, SyncResult } from './integrations/LearningBridge.js';
 export { NovaMemory } from './integrations/NovaMemory.js';
 export type { FileReference, ProjectContext, TaskInfo } from './integrations/NovaMemory.js';
+
+// Router exports
+export { MemoryRouter } from './core/MemoryRouter.js';
+export type {
+  MemoryType,
+  RouteDecision,
+  UnifiedSearchResult,
+  MemoryRouterConfig,
+} from './core/MemoryRouter.js';
+
+// Unified search exports
+export { UnifiedSearch } from './search/UnifiedSearch.js';
+export type { RAGBridgeAdapter } from './search/UnifiedSearch.js';
+export type {
+  UnifiedSource,
+  UnifiedSearchOptions,
+  UnifiedSearchResult as UnifiedFanoutResult,
+} from './search/types.js';
 
 // Type exports
 export type {

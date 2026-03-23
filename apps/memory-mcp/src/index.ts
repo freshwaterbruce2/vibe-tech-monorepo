@@ -24,8 +24,9 @@ import { tools } from './tools.js';
 // Initialize memory manager
 const memoryManager = new MemoryManager({
   dbPath: process.env.MEMORY_DB_PATH || 'D:\\databases\\memory.db',
-  embeddingModel: process.env.MEMORY_EMBEDDING_MODEL || 'nomic-embed-text',
-  embeddingDimension: parseInt(process.env.MEMORY_EMBEDDING_DIM || '768', 10),
+  embeddingModel: process.env.MEMORY_EMBEDDING_MODEL || 'text-embedding-3-small',
+  embeddingDimension: parseInt(process.env.MEMORY_EMBEDDING_DIM || '1536', 10),
+  embeddingEndpoint: process.env.MEMORY_EMBEDDING_ENDPOINT || 'http://localhost:3001',
   fallbackToTransformers: process.env.MEMORY_FALLBACK_TRANSFORMERS !== 'false',
   logLevel: (process.env.MEMORY_LOG_LEVEL as any) || 'info',
 });
@@ -137,6 +138,35 @@ async function main() {
       const decay = new MemoryDecay();
       summarizationDeps = { summarizer, decay, llm };
       console.error(`[memory-mcp] Summarizer + decay ready (LLM: ${llm ? 'yes' : 'extractive'})`);
+
+      // Phase 5: Auto-consolidation piggybacked on decay timer
+      if (decay && summarizer) {
+        const EPISODIC_THRESHOLD = 500;
+
+        decay.startScheduled(memoryManager.getDb(), (result: { archived: number; remaining: number }) => {
+          console.error(
+            `[memory-mcp] Decay run: archived ${result.archived}, remaining ${result.remaining}`,
+          );
+
+          // Auto-consolidate when episodic count exceeds threshold
+          try {
+            const currentStats = memoryManager.getStats();
+            if (currentStats.database.episodicCount > EPISODIC_THRESHOLD) {
+              summarizer.run(memoryManager.getDb()).then((consResult) => {
+                console.error(
+                  `[memory-mcp] Auto-consolidation: ${consResult.sessionsCreated} sessions, ${consResult.topicsCreated} topics`,
+                );
+              }).catch((consErr: unknown) => {
+                console.error('[memory-mcp] Auto-consolidation failed:', consErr);
+              });
+            }
+          } catch (consErr) {
+            console.error('[memory-mcp] Auto-consolidation failed:', consErr);
+          }
+        });
+
+        console.error(`[memory-mcp] Auto-consolidation enabled (threshold: ${EPISODIC_THRESHOLD} episodic)`);
+      }
     } catch (err) {
       console.error('[memory-mcp] Summarizer/decay init failed (non-fatal):', err);
     }

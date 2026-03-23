@@ -4,7 +4,6 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "lib": ["ES2022"],
-    "rootDir": "src",
     "outDir": "dist",
     "sourceMap": true,
     "strict": true,

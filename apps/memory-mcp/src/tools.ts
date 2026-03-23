@@ -577,6 +577,61 @@ export const tools: Tool[] = [
       properties: {},
     },
   },
+  // RAG Pipeline Integration (WS5)
+  {
+    name: 'memory_rag_search',
+    description:
+      'Search the codebase using the RAG pipeline (hybrid vector + full-text search with reranking). Returns relevant code chunks with scores.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: 'Natural language search query',
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum results (default: 5)',
+          default: 5,
+        },
+        fileTypes: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Filter by file extensions (e.g., [".ts", ".tsx"])',
+        },
+        pathPrefix: {
+          type: 'string',
+          description: 'Filter by path prefix (e.g., "apps/nova-agent/src")',
+        },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'memory_rag_index_status',
+    description:
+      'Get RAG index status: total files indexed, last index time, chunk count, and storage size.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
+  {
+    name: 'memory_rag_invalidate',
+    description:
+      'Invalidate RAG cache entries for specific file paths. Use after file edits to ensure fresh search results.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        filePaths: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'File paths to invalidate cache for',
+        },
+      },
+      required: ['filePaths'],
+    },
+  },
   // Hierarchical Summarization & Memory Decay
   {
     name: 'memory_summarize_session',
@@ -628,6 +683,36 @@ export const tools: Tool[] = [
           maximum: 1,
         },
       },
+    },
+  },
+
+  // Unified Search (Phase 3)
+  {
+    name: 'memory_search_unified',
+    description:
+      'Search across ALL memory systems (semantic, episodic, RAG codebase, learning) with a single query. Uses Reciprocal Rank Fusion to merge results from all sources. Best for broad context gathering.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: 'Search query text',
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of results to return (default: 10)',
+          default: 10,
+        },
+        sources: {
+          type: 'array',
+          items: {
+            type: 'string',
+            enum: ['semantic', 'episodic', 'rag', 'learning'],
+          },
+          description: 'Which sources to search (default: all)',
+        },
+      },
+      required: ['query'],
     },
   },
 ];

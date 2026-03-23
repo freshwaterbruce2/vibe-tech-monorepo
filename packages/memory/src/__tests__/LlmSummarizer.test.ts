@@ -6,7 +6,7 @@ import { LlmSummarizer, createLlmSummarizerFromEnv } from '../consolidation/LlmS
 function mockFetchSuccess(content: string) {
   return vi.fn().mockResolvedValue({
     ok: true,
-    json: () =>
+    json: async () =>
       Promise.resolve({
         choices: [{ message: { content } }],
       }),
@@ -18,7 +18,7 @@ function mockFetchFailure(status = 500) {
     ok: false,
     status,
     statusText: 'Internal Server Error',
-    json: () => Promise.resolve({}),
+    json: async () => Promise.resolve({}),
   }) as unknown as typeof globalThis.fetch;
 }
 
@@ -131,7 +131,7 @@ describe('LlmSummarizer', () => {
   it('should fallback when LLM returns empty content', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ choices: [{ message: { content: '' } }] }),
+      json: async () => Promise.resolve({ choices: [{ message: { content: '' } }] }),
     });
     const llm = new LlmSummarizer(config);
 

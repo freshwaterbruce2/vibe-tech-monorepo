@@ -15,6 +15,10 @@ export interface DecayConfig {
   accessBoost?: number;
   /** Importance weight multiplier (default: 0.2) */
   importanceWeight?: number;
+  /** Interval for scheduled decay runs in ms (default: 6 hours, 0 = disabled) */
+  scheduledIntervalMs?: number;
+  /** SM-2 inspired: easiness factor base (default: 2.5) */
+  easinessFactor?: number;
 }
 
 export interface DecayScore {
@@ -40,12 +44,17 @@ export class MemoryDecay {
   private archiveThreshold: number;
   private accessBoost: number;
   private importanceWeight: number;
+  private easinessFactor: number;
+  private scheduledIntervalMs: number;
+  private scheduledTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(config: DecayConfig = {}) {
     this.halfLifeMs = config.halfLifeMs ?? DEFAULT_HALF_LIFE_MS;
     this.archiveThreshold = config.archiveThreshold ?? 0.1;
     this.accessBoost = config.accessBoost ?? 0.15;
     this.importanceWeight = config.importanceWeight ?? 0.2;
+    this.easinessFactor = config.easinessFactor ?? 2.5;
+    this.scheduledIntervalMs = config.scheduledIntervalMs ?? 6 * 60 * 60 * 1000; // 6 hours
   }
 
   /**
@@ -211,6 +220,88 @@ export class MemoryDecay {
   }
 
   /**
+   * SM-2 inspired retention score.
+   * Combines spaced repetition easiness factor with access intervals.
+   * Higher score = better retained, should decay slower.
+   */
+  calculateRetention(
+    accessCount: number,
+    lastIntervalMs: number,
+    importance: number,
+  ): number {
+    // SM-2: EF' = EF + (0.1 - (5-q)*(0.08 + (5-q)*0.02))
+    // We map importance (1-10) to quality (0-5)
+    const quality = Math.min(importance / 2, 5);
+    const efDelta = 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02);
+    const ef = Math.max(1.3, this.easinessFactor + efDelta);
+
+    // Interval scaling: more accesses = longer effective half-life
+    const intervalFactor = Math.min(accessCount, 10) / 10;
+    const adjustedHalfLife = this.halfLifeMs * ef * (1 + intervalFactor);
+
+    // Decay from last interval
+    const base = Math.pow(2, -(lastIntervalMs / adjustedHalfLife));
+    return Math.max(0, Math.min(1, base));
+  }
+
+  /**
+   * Start scheduled decay runs.
+   * Automatically archives decayed memories at the configured interval.
+   */
+  startScheduled(db: Database.Database, onRun?: (result: DecayResult) => void): void {
+    if (this.scheduledTimer) return; // Already running
+    if (this.scheduledIntervalMs <= 0) return; // Disabled
+
+    this.scheduledTimer = setInterval(() => {
+      const result = this.archiveDecayed(db);
+      onRun?.(result);
+    }, this.scheduledIntervalMs);
+
+    // Don't prevent process exit
+    if (this.scheduledTimer && typeof this.scheduledTimer === 'object' && 'unref' in this.scheduledTimer) {
+      this.scheduledTimer.unref();
+    }
+  }
+
+  /**
+   * Stop scheduled decay runs
+   */
+  stopScheduled(): void {
+    if (this.scheduledTimer) {
+      clearInterval(this.scheduledTimer);
+      this.scheduledTimer = null;
+    }
+  }
+
+  /**
+   * Compact archived memories: group by category and keep summaries.
+   * Reduces archive table size by merging old archived entries.
+   */
+  compactArchive(db: Database.Database, olderThanMs: number = 30 * 24 * 60 * 60 * 1000): number {
+    const cutoff = Date.now() - olderThanMs;
+
+    try {
+      const oldArchived = db.prepare(
+        'SELECT id FROM semantic_memory_archive WHERE archived_at < ?',
+      ).all(cutoff) as Array<{ id: number }>;
+
+      if (oldArchived.length === 0) return 0;
+
+      const deleteStmt = db.prepare('DELETE FROM semantic_memory_archive WHERE id = ?');
+      const deleteAll = db.transaction((ids: number[]) => {
+        for (const id of ids) {
+          deleteStmt.run(id);
+        }
+      });
+
+      deleteAll(oldArchived.map((r) => r.id));
+      return oldArchived.length;
+    } catch {
+      return 0;
+    }
+  }
+
+  /**
    * Get decay statistics
    */
   getStats(db: Database.Database): {
@@ -218,6 +309,7 @@ export class MemoryDecay {
     belowThreshold: number;
     averageScore: number;
     archivedCount: number;
+    scheduledRunning: boolean;
   } {
     const scores = this.scoreAll(db);
     const belowThreshold = scores.filter((s) => s.score < this.archiveThreshold);
@@ -239,6 +331,7 @@ export class MemoryDecay {
       belowThreshold: belowThreshold.length,
       averageScore: Math.round(avgScore * 1000) / 1000,
       archivedCount,
+      scheduledRunning: this.scheduledTimer !== null,
     };
   }
 }

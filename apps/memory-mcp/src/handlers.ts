@@ -11,7 +11,26 @@ import type {
   MemoryManager,
   NovaMemory,
   PatternAnalyzer,
+  SearchResult,
+  SemanticMemory,
+  ProceduralMemory,
+  EpisodicMemory,
+  Suggestion,
 } from '@vibetech/memory';
+import { UnifiedSearch } from '@vibetech/memory';
+import type { UnifiedSource } from '@vibetech/memory';
+
+// Module-level lazy cache for rag-bridge (avoids repeated dynamic imports per call)
+let _ragBridgePromise: Promise<typeof import('./rag-bridge.js')> | null = null;
+function getRagBridge() {
+  if (!_ragBridgePromise) {
+    _ragBridgePromise = import('./rag-bridge.js').catch((err) => {
+      _ragBridgePromise = null; // retry on next call if it fails
+      throw err;
+    });
+  }
+  return _ragBridgePromise;
+}
 
 export interface SummarizationDeps {
   summarizer: HierarchicalSummarizer | null;
@@ -48,7 +67,7 @@ export async function handleToolCall(
               type: 'text',
               text: JSON.stringify(
                 {
-                  results: results.map((r) => ({
+                  results: results.map((r: SearchResult<SemanticMemory>) => ({
                     text: r.item.text,
                     category: r.item.category,
                     importance: r.item.importance,
@@ -75,7 +94,7 @@ export async function handleToolCall(
               type: 'text',
               text: JSON.stringify(
                 {
-                  results: results.map((r) => ({
+                  results: results.map((r: SearchResult<EpisodicMemory>) => ({
                     query: r.item.query,
                     response: r.item.response,
                     timestamp: new Date(r.item.timestamp).toISOString(),
@@ -102,7 +121,7 @@ export async function handleToolCall(
               type: 'text',
               text: JSON.stringify(
                 {
-                  memories: memories.map((m) => ({
+                  memories: memories.map((m: EpisodicMemory) => ({
                     query: m.query,
                     response: m.response,
                     timestamp: new Date(m.timestamp).toISOString(),
@@ -225,7 +244,7 @@ export async function handleToolCall(
               type: 'text',
               text: JSON.stringify(
                 {
-                  patterns: patterns.map((p) => ({
+                  patterns: patterns.map((p: ProceduralMemory) => ({
                     pattern: p.pattern,
                     context: p.context,
                     frequency: p.frequency,
@@ -285,7 +304,7 @@ export async function handleToolCall(
               text: JSON.stringify(
                 {
                   sessionId,
-                  memories: memories.map((m) => ({
+                  memories: memories.map((m: EpisodicMemory) => ({
                     query: m.query,
                     response: m.response,
                     timestamp: new Date(m.timestamp).toISOString(),
@@ -320,7 +339,7 @@ export async function handleToolCall(
         // Filter by query if provided
         const filtered = query
           ? memories.filter(
-              (m) =>
+              (m: EpisodicMemory) =>
                 m.query.toLowerCase().includes(query.toLowerCase()) ||
                 m.response.toLowerCase().includes(query.toLowerCase()),
             )
@@ -336,7 +355,7 @@ export async function handleToolCall(
                     start: new Date(startTime).toISOString(),
                     end: new Date(endTime).toISOString(),
                   },
-                  memories: filtered.map((m) => ({
+                  memories: filtered.map((m: EpisodicMemory) => ({
                     query: m.query,
                     response: m.response,
                     timestamp: new Date(m.timestamp).toISOString(),
@@ -376,7 +395,7 @@ export async function handleToolCall(
               type: 'text',
               text: JSON.stringify(
                 {
-                  suggestions: suggestions.map((s) => ({
+                  suggestions: suggestions.map((s: Suggestion) => ({
                     type: s.type,
                     title: s.title,
                     description: s.description,
@@ -537,7 +556,7 @@ export async function handleToolCall(
                 {
                   merged: result.merged,
                   preserved: result.preserved,
-                  deletions: result.deletions.map((d) => ({
+                  deletions: result.deletions.map((d: { deletedId: number; mergedIntoId: number; similarity: number; reason: string }) => ({
                     deletedId: d.deletedId,
                     mergedIntoId: d.mergedIntoId,
                     similarity: d.similarity.toFixed(3),
@@ -585,7 +604,7 @@ export async function handleToolCall(
                   currentMemories: result.preserved + result.merged,
                   afterMerge: result.preserved,
                   savings: result.merged,
-                  deletions: result.deletions.map((d) => ({
+                  deletions: result.deletions.map((d: { deletedId: number; mergedIntoId: number; similarity: number; reason: string }) => ({
                     deletedId: d.deletedId,
                     mergedIntoId: d.mergedIntoId,
                     similarity: d.similarity.toFixed(3),
@@ -887,6 +906,87 @@ export async function handleToolCall(
         };
       }
 
+      // ── RAG Pipeline Integration (WS5) ──────────────
+      case 'memory_rag_search': {
+        const { query, limit = 5, fileTypes, pathPrefix } = args as {
+          query: string;
+          limit?: number;
+          fileTypes?: string[];
+          pathPrefix?: string;
+        };
+
+        try {
+          const { ragSearch } = await getRagBridge();
+          const result = await ragSearch({ query, limit, fileTypes, pathPrefix });
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(
+                  { error: (error as Error).message, status: 'rag_init_failed' },
+                  null,
+                  2,
+                ),
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+
+      case 'memory_rag_index_status': {
+        try {
+          const { ragIndexStatus } = await getRagBridge();
+          const status = await ragIndexStatus();
+          return {
+            content: [{ type: 'text', text: JSON.stringify(status, null, 2) }],
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(
+                  { error: (error as Error).message, status: 'rag_init_failed' },
+                  null,
+                  2,
+                ),
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+
+      case 'memory_rag_invalidate': {
+        const { filePaths } = args as { filePaths: string[] };
+        try {
+          const { ragInvalidate } = await getRagBridge();
+          const result = await ragInvalidate(filePaths);
+          return {
+            content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(
+                  { error: (error as Error).message, status: 'rag_init_failed' },
+                  null,
+                  2,
+                ),
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+
       // ── Hierarchical Summarization & Memory Decay ──────────────
       case 'memory_summarize_session': {
         const { summarizer } = summarizationDeps;
@@ -971,6 +1071,72 @@ export async function handleToolCall(
             {
               type: 'text',
               text: JSON.stringify(stats, null, 2),
+            },
+          ],
+        };
+      }
+
+      case 'memory_search_unified': {
+        const { query, limit = 10, sources } = args as {
+          query: string;
+          limit?: number;
+          sources?: UnifiedSource[];
+        };
+
+        if (!query) {
+          return {
+            content: [{ type: 'text', text: JSON.stringify({ error: 'query is required' }) }],
+            isError: true,
+          };
+        }
+
+        // Lazy RAG adapter — wraps the existing rag-bridge for unified search
+        let ragAdapter = null;
+        try {
+          const { ragSearch } = await getRagBridge();
+          ragAdapter = {
+            search: async (p: { query: string; limit?: number }) => {
+              const res = await ragSearch({ query: p.query, limit: p.limit });
+              return {
+                results: res.results.map((r) => ({
+                  filePath: r.filePath,
+                  content: r.content,
+                  score: r.score,
+                  language: r.language,
+                })),
+              };
+            },
+          };
+        } catch {
+          // RAG bridge unavailable — unified search proceeds without RAG source
+        }
+
+        const unifiedSearch = new UnifiedSearch(memoryManager, ragAdapter, learningBridge);
+        const results = await unifiedSearch.search(query, {
+          limit,
+          sources: sources ?? undefined,
+        });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(
+                {
+                  query,
+                  resultCount: results.length,
+                  results: results.map((r) => ({
+                    text: r.text.slice(0, 500),
+                    score: r.score,
+                    source: r.source,
+                    sourceId: r.sourceId,
+                    metadata: r.metadata,
+                    timestamp: r.timestamp,
+                  })),
+                },
+                null,
+                2,
+              ),
             },
           ],
         };

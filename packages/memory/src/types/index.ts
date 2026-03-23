@@ -2,11 +2,13 @@
 export interface MemoryConfig {
   /** Database path (e.g., D:\databases\memory.db) */
   dbPath: string;
-  /** Embedding model name (default: nomic-embed-text) */
+  /** Embedding model name (default: text-embedding-3-small) */
   embeddingModel?: string;
-  /** Embedding dimension (default: 768 for nomic-embed-text) */
+  /** Embedding dimension (default: 1536 for text-embedding-3-small) */
   embeddingDimension?: number;
-  /** Fallback to Transformers.js if Ollama unavailable */
+  /** OpenRouter-compatible embedding endpoint (default: http://localhost:3001) */
+  embeddingEndpoint?: string;
+  /** Fallback to Transformers.js if OpenRouter unavailable */
   fallbackToTransformers?: boolean;
   /** Log level (default: 'info') */
   logLevel?: 'debug' | 'info' | 'warn' | 'error';
@@ -57,7 +59,7 @@ export interface SearchResult<T> {
 }
 
 // Embedding provider types
-export type EmbeddingProvider = 'ollama' | 'transformers';
+export type EmbeddingProvider = 'openrouter' | 'ollama' | 'transformers';
 
 // Database schemas
 export interface DatabaseSchema {

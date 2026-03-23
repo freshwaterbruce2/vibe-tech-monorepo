@@ -1,6 +1,5 @@
 import type Database from 'better-sqlite3';
 import { createHash } from 'node:crypto';
-import { Ollama } from 'ollama';
 import type { EmbeddingProvider, MemoryConfig } from '../types/index.js';
 
 interface TransformerPipelineResult {
@@ -12,13 +11,18 @@ type TransformerPipeline = (
   options: { pooling: string; normalize: boolean },
 ) => Promise<TransformerPipelineResult>;
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
+
 export class EmbeddingService {
   private provider: EmbeddingProvider;
-  private ollama: Ollama | null = null;
+  private endpoint: string;
   private model: string;
   private dimension: number;
+  private initDimension: number; // dimension at init time (for guard)
   private fallbackEnabled: boolean;
   private transformerPipeline: TransformerPipeline | null = null;
+  private _dimensionMismatch = false;
 
   // Two-tier cache: in-memory LRU + SQLite persistent
   private memCache = new Map<string, { embedding: number[]; timestamp: number }>();
@@ -29,48 +33,58 @@ export class EmbeddingService {
   private cacheMisses = 0;
 
   constructor(config: MemoryConfig) {
-    this.model = config.embeddingModel ?? 'nomic-embed-text';
-    this.dimension = config.embeddingDimension ?? 768; // nomic-embed-text default
+    this.model = config.embeddingModel ?? 'text-embedding-3-small';
+    this.dimension = config.embeddingDimension ?? 1536;
+    this.initDimension = this.dimension;
+    this.endpoint = config.embeddingEndpoint ?? 'http://localhost:3001';
     this.fallbackEnabled = config.fallbackToTransformers ?? true;
-    this.provider = 'ollama'; // Start with Ollama, fallback if needed
+    this.provider = 'openrouter';
   }
 
   /**
-   * Initialize embedding service (check Ollama availability)
+   * Initialize embedding service (check OpenRouter proxy availability)
    */
   async init(): Promise<void> {
     try {
-      this.ollama = new Ollama({ host: 'http://localhost:11434' });
+      // Lightweight connectivity check — no billable embedding call
+      const response = await fetch(`${this.endpoint}/api/v1/models`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(3000),
+      });
 
-      // Verify model is available
-      const models = await this.ollama.list();
-      const modelExists = models.models.some((m) => m.name.includes(this.model));
-
-      if (!modelExists) {
-        console.warn(
-          `Ollama model ${this.model} not found. Available models:`,
-          models.models.map((m) => m.name),
-        );
-        if (this.fallbackEnabled) {
-          console.error('Falling back to Transformers.js');
-          this.provider = 'transformers';
-          this.dimension = 384; // all-MiniLM-L6-v2 default
-        } else {
-          throw new Error(`Ollama model ${this.model} not available and fallback disabled`);
-        }
-      } else {
-        this.provider = 'ollama';
-        console.error(`Using Ollama with ${this.model} (${this.dimension}d embeddings)`);
+      if (!response.ok) {
+        throw new Error(`OpenRouter proxy returned ${response.status}`);
       }
+
+      this.provider = 'openrouter';
+      console.error(`Using OpenRouter with ${this.model} (${this.dimension}d embeddings)`);
     } catch (error) {
-      console.warn('Ollama not available:', error);
+      console.warn('[EmbeddingService] OpenRouter proxy not available:', error);
       if (this.fallbackEnabled) {
-        console.error('Falling back to Transformers.js');
-        this.provider = 'transformers';
-        this.dimension = 384;
+        this.activateTransformersFallback();
       } else {
-        throw new Error('Ollama unavailable and fallback disabled');
+        throw new Error('OpenRouter proxy unavailable and fallback disabled');
       }
+    }
+  }
+
+  /**
+   * Switch to Transformers.js 384d fallback and set dimension mismatch guard.
+   * Centralised to avoid duplicated state-transition logic.
+   */
+  private activateTransformersFallback(): void {
+    console.error('[EmbeddingService] Falling back to Transformers.js (384d, OFFLINE MODE)');
+    const previousDimension = this.dimension;
+    this.provider = 'transformers';
+    this.dimension = 384;
+    if (previousDimension !== 384) {
+      this._dimensionMismatch = true;
+      console.error(
+        `[EmbeddingService] WARNING: Dimension changed from ${previousDimension}d to 384d`,
+      );
+      console.error(
+        `[EmbeddingService] Existing ${previousDimension}d vectors will NOT be searchable`,
+      );
     }
   }
 
@@ -127,8 +141,8 @@ export class EmbeddingService {
     // Cache miss — compute embedding
     this.cacheMisses++;
     let embedding: number[];
-    if (this.provider === 'ollama') {
-      embedding = await this.embedWithOllama(text);
+    if (this.provider === 'openrouter') {
+      embedding = await this.embedWithOpenRouter(text);
     } else {
       embedding = await this.embedWithTransformers(text);
     }
@@ -185,37 +199,64 @@ export class EmbeddingService {
   }
 
   /**
-   * Generate embeddings using Ollama
+   * Generate embeddings using OpenRouter API via localhost:3001 proxy
+   * Reuses the batch/retry pattern from nova-agent RAGEmbedder
    */
-  private async embedWithOllama(text: string): Promise<number[]> {
-    if (!this.ollama) {
-      throw new Error('Ollama not initialized');
-    }
+  private async embedWithOpenRouter(text: string): Promise<number[]> {
+    let lastError: Error | null = null;
 
-    try {
-      const response = await this.ollama.embeddings({
-        model: this.model,
-        prompt: text,
-      });
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        const response = await fetch(`${this.endpoint}/api/v1/embeddings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: this.model,
+            input: [text],
+          }),
+        });
 
-      return response.embedding;
-    } catch (error) {
-      console.error('Ollama embedding failed:', error);
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Embedding API error ${response.status}: ${errorText}`);
+        }
 
-      // Fallback if enabled
-      if (this.fallbackEnabled) {
-        console.error('Falling back to Transformers.js');
-        this.provider = 'transformers';
-        this.dimension = 384;
-        return this.embedWithTransformers(text);
+        const data = (await response.json()) as {
+          data: Array<{ embedding: number[]; index: number }>;
+        };
+
+        const vec = data.data[0]?.embedding;
+        if (!vec || vec.length === 0) {
+          throw new Error('Empty embedding returned from API');
+        }
+
+        return vec;
+      } catch (error) {
+        lastError = error as Error;
+
+        if (attempt < MAX_RETRIES - 1) {
+          const delay = RETRY_DELAY_MS * Math.pow(2, attempt);
+          console.error(
+            `[EmbeddingService] Attempt ${attempt + 1} failed, retrying in ${delay}ms:`,
+            (error as Error).message,
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
       }
-
-      throw error;
     }
+
+    // All retries exhausted — try fallback
+    if (this.fallbackEnabled) {
+      console.error('[EmbeddingService] OpenRouter failed after retries, falling back to Transformers.js');
+      this.activateTransformersFallback();
+      return this.embedWithTransformers(text);
+    }
+
+    throw new Error(`Embedding API failed after ${MAX_RETRIES} retries: ${lastError?.message}`);
   }
 
   /**
-   * Generate embeddings using Transformers.js (fallback)
+   * Generate embeddings using Transformers.js (offline fallback)
    */
   private async embedWithTransformers(text: string): Promise<number[]> {
     try {
@@ -251,6 +292,21 @@ export class EmbeddingService {
    */
   getProvider(): EmbeddingProvider {
     return this.provider;
+  }
+
+  /**
+   * Check if dimension changed at runtime (guard for Phase 4)
+   * When true, existing vectors in the DB are incompatible with current embeddings.
+   */
+  hasDimensionMismatch(): boolean {
+    return this._dimensionMismatch;
+  }
+
+  /**
+   * Get the dimension that was configured at init time
+   */
+  getOriginalDimension(): number {
+    return this.initDimension;
   }
 
   /**

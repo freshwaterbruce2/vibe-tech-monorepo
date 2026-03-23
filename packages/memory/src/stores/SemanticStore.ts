@@ -92,8 +92,18 @@ export class SemanticStore {
    * Vector similarity search
    * C1-fix: Pre-filters with importance >= 1, caps scan at 1000 rows
    * L2-fix: Supports offset for pagination
+   * Phase 4: Dimension guard — returns empty when embedding provider changed dimensions
    */
   async search(queryText: string, limit = 5, offset = 0): Promise<SearchResult<SemanticMemory>[]> {
+    // Phase 4: Dimension guard — refuse to search with mismatched dimensions
+    if (this.embedder.hasDimensionMismatch()) {
+      console.error(
+        '[SemanticStore] DIMENSION_MISMATCH: Embedding provider changed dimensions. ' +
+        'Existing vectors are incompatible. Restore primary provider or run re-embedding migration.',
+      );
+      return [];
+    }
+
     const queryEmbedding = await this.embedder.embed(queryText);
 
     // Pre-filter: only non-trivial memories, capped scan
