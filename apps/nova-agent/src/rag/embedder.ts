@@ -7,8 +7,10 @@
 import type { EmbeddingBatchResult, EmbeddingResult, RAGConfig } from './types.js';
 
 const MAX_BATCH_SIZE = 20;
-const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 1000;
+const MAX_RETRIES = 5;
+const RETRY_DELAY_MS = 2000;
+const RATE_LIMIT_DELAY_MS = 10_000; // 429 back-off base
+const INTER_BATCH_DELAY_MS = 2000; // throttle between batches — 30 RPM to stay within OpenRouter limits
 
 export class RAGEmbedder {
   private endpoint: string;
@@ -77,6 +79,10 @@ export class RAGEmbedder {
       }
 
       this.totalCalls++;
+      // Throttle between batches to avoid rate-limit 429s
+      if (i + MAX_BATCH_SIZE < texts.length) {
+        await new Promise((resolve) => setTimeout(resolve, INTER_BATCH_DELAY_MS));
+      }
     }
 
     return {
@@ -132,10 +138,13 @@ export class RAGEmbedder {
         lastError = error as Error;
 
         if (attempt < MAX_RETRIES - 1) {
-          const delay = RETRY_DELAY_MS * Math.pow(2, attempt);
+          const is429 = lastError.message.includes('429');
+          const delay = is429
+            ? RATE_LIMIT_DELAY_MS * Math.pow(2, attempt) // 10s, 20s, 40s, 80s
+            : RETRY_DELAY_MS * Math.pow(2, attempt);     // 2s, 4s, 8s, 16s
           console.error(
-            `[RAGEmbedder] Attempt ${attempt + 1} failed, retrying in ${delay}ms:`,
-            (error as Error).message,
+            `[RAGEmbedder] Attempt ${attempt + 1} failed${is429 ? ' (rate-limit)' : ''}, retrying in ${delay}ms:`,
+            lastError.message,
           );
           await new Promise((resolve) => setTimeout(resolve, delay));
         }

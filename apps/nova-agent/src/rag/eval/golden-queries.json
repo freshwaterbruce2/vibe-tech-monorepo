@@ -1,0 +1,376 @@
+{
+  "version": 1,
+  "created": "2026-03-18",
+  "queries": [
+    {
+      "queryId": "cn-001",
+      "queryText": "RAGIndexer class implementation",
+      "category": "code-nav",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/indexer.ts": 3,
+        "apps/nova-agent/src/rag/types.ts": 2,
+        "apps/nova-agent/src/rag/index.ts": 1
+      },
+      "expectedTopResult": "apps/nova-agent/src/rag/indexer.ts"
+    },
+    {
+      "queryId": "cn-002",
+      "queryText": "RAGReranker reciprocal rank fusion",
+      "category": "code-nav",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/reranker.ts": 3,
+        "apps/nova-agent/src/rag/types.ts": 1
+      },
+      "expectedTopResult": "apps/nova-agent/src/rag/reranker.ts"
+    },
+    {
+      "queryId": "cn-003",
+      "queryText": "RAGChunker AST chunking with ts-morph",
+      "category": "code-nav",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/chunker.ts": 3,
+        "apps/nova-agent/src/rag/types.ts": 1
+      },
+      "expectedTopResult": "apps/nova-agent/src/rag/chunker.ts"
+    },
+    {
+      "queryId": "cn-004",
+      "queryText": "RAGEmbedder embedding API client",
+      "category": "code-nav",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/embedder.ts": 3,
+        "apps/nova-agent/src/rag/types.ts": 1
+      },
+      "expectedTopResult": "apps/nova-agent/src/rag/embedder.ts"
+    },
+    {
+      "queryId": "cn-005",
+      "queryText": "SQLite trading database connector",
+      "category": "code-nav",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/connectors/sqlite-trading.ts": 3,
+        "apps/nova-agent/src/rag/types.ts": 1
+      },
+      "expectedTopResult": "apps/nova-agent/src/rag/connectors/sqlite-trading.ts"
+    },
+    {
+      "queryId": "cn-006",
+      "queryText": "learning system database connector",
+      "category": "code-nav",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/connectors/sqlite-learning.ts": 3,
+        "apps/nova-agent/src/rag/types.ts": 1
+      },
+      "expectedTopResult": "apps/nova-agent/src/rag/connectors/sqlite-learning.ts"
+    },
+    {
+      "queryId": "cn-007",
+      "queryText": "RAGRetriever hybrid search vector and FTS",
+      "category": "code-nav",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/retriever.ts": 3,
+        "apps/nova-agent/src/rag/reranker.ts": 2,
+        "apps/nova-agent/src/rag/types.ts": 1
+      },
+      "expectedTopResult": "apps/nova-agent/src/rag/retriever.ts"
+    },
+    {
+      "queryId": "cn-008",
+      "queryText": "query cache SQLite TTL implementation",
+      "category": "code-nav",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/cache.ts": 3,
+        "apps/nova-agent/src/rag/types.ts": 1
+      },
+      "expectedTopResult": "apps/nova-agent/src/rag/cache.ts"
+    },
+    {
+      "queryId": "cn-009",
+      "queryText": "RAGConfig default configuration constants",
+      "category": "code-nav",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/types.ts": 3,
+        "apps/nova-agent/src/rag/indexer.ts": 1
+      },
+      "expectedTopResult": "apps/nova-agent/src/rag/types.ts"
+    },
+    {
+      "queryId": "cn-010",
+      "queryText": "RAGService frontend API",
+      "category": "code-nav",
+      "relevantDocs": {
+        "apps/nova-agent/src/services/RAGService.ts": 3,
+        "apps/nova-agent/src/rag/index.ts": 1
+      },
+      "expectedTopResult": "apps/nova-agent/src/services/RAGService.ts"
+    },
+    {
+      "queryId": "co-001",
+      "queryText": "how does the RAG pipeline index files incrementally",
+      "category": "concept",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/indexer.ts": 3,
+        "apps/nova-agent/src/rag/chunker.ts": 2,
+        "apps/nova-agent/src/rag/embedder.ts": 2,
+        "apps/nova-agent/src/rag/types.ts": 1
+      }
+    },
+    {
+      "queryId": "co-002",
+      "queryText": "how does hybrid search combine vector and full-text results",
+      "category": "concept",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/retriever.ts": 3,
+        "apps/nova-agent/src/rag/reranker.ts": 3,
+        "apps/nova-agent/src/rag/types.ts": 1
+      }
+    },
+    {
+      "queryId": "co-003",
+      "queryText": "how does the query cache invalidation work",
+      "category": "concept",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/cache.ts": 3,
+        "apps/nova-agent/src/rag/indexer.ts": 2
+      }
+    },
+    {
+      "queryId": "co-004",
+      "queryText": "how does AST-aware chunking extract TypeScript symbols",
+      "category": "concept",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/chunker.ts": 3,
+        "apps/nova-agent/src/rag/types.ts": 1
+      }
+    },
+    {
+      "queryId": "co-005",
+      "queryText": "how does change detection work for re-indexing",
+      "category": "concept",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/indexer.ts": 3,
+        "apps/nova-agent/src/rag/types.ts": 1
+      }
+    },
+    {
+      "queryId": "co-006",
+      "queryText": "how does the embedding batching and retry logic work",
+      "category": "concept",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/embedder.ts": 3,
+        "apps/nova-agent/src/rag/types.ts": 1
+      }
+    },
+    {
+      "queryId": "co-007",
+      "queryText": "how does reciprocal rank fusion scoring work",
+      "category": "concept",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/reranker.ts": 3,
+        "apps/nova-agent/src/rag/types.ts": 1
+      }
+    },
+    {
+      "queryId": "co-008",
+      "queryText": "how does cross-encoder reranking improve search quality",
+      "category": "concept",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/reranker.ts": 3
+      }
+    },
+    {
+      "queryId": "co-009",
+      "queryText": "how does the learning system connector query execution patterns",
+      "category": "concept",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/connectors/sqlite-learning.ts": 3,
+        "apps/nova-agent/src/rag/types.ts": 1
+      }
+    },
+    {
+      "queryId": "co-010",
+      "queryText": "how does the sliding window chunker handle oversized content",
+      "category": "concept",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/chunker.ts": 3
+      }
+    },
+    {
+      "queryId": "pa-001",
+      "queryText": "functions that write to LanceDB tables",
+      "category": "pattern",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/indexer.ts": 3
+      }
+    },
+    {
+      "queryId": "pa-002",
+      "queryText": "classes that use better-sqlite3 for caching",
+      "category": "pattern",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/cache.ts": 3,
+        "apps/nova-agent/src/rag/connectors/sqlite-trading.ts": 2,
+        "apps/nova-agent/src/rag/connectors/sqlite-learning.ts": 2
+      }
+    },
+    {
+      "queryId": "pa-003",
+      "queryText": "code that calls the OpenRouter embedding API",
+      "category": "pattern",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/embedder.ts": 3
+      }
+    },
+    {
+      "queryId": "pa-004",
+      "queryText": "functions that compute SHA-256 hashes",
+      "category": "pattern",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/indexer.ts": 3,
+        "apps/nova-agent/src/rag/cache.ts": 2
+      }
+    },
+    {
+      "queryId": "pa-005",
+      "queryText": "code using ts-morph for static analysis",
+      "category": "pattern",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/chunker.ts": 3
+      }
+    },
+    {
+      "queryId": "pa-006",
+      "queryText": "error handling with exponential backoff retry",
+      "category": "pattern",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/embedder.ts": 3
+      }
+    },
+    {
+      "queryId": "pa-007",
+      "queryText": "classes that implement search with result scoring",
+      "category": "pattern",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/retriever.ts": 3,
+        "apps/nova-agent/src/rag/reranker.ts": 3
+      }
+    },
+    {
+      "queryId": "pa-008",
+      "queryText": "functions that walk directories and discover files",
+      "category": "pattern",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/indexer.ts": 3
+      }
+    },
+    {
+      "queryId": "pa-009",
+      "queryText": "code that serializes and deserializes JSON to D drive",
+      "category": "pattern",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/indexer.ts": 3,
+        "apps/nova-agent/src/rag/cache.ts": 2
+      }
+    },
+    {
+      "queryId": "pa-010",
+      "queryText": "read-only database connections with WAL mode",
+      "category": "pattern",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/connectors/sqlite-trading.ts": 3,
+        "apps/nova-agent/src/rag/connectors/sqlite-learning.ts": 3,
+        "apps/nova-agent/src/rag/cache.ts": 2
+      }
+    },
+    {
+      "queryId": "do-001",
+      "queryText": "RAG pipeline configuration options and defaults",
+      "category": "docs",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/types.ts": 3,
+        "apps/nova-agent/docs/RAG_LANCEDB_IMPLEMENTATION_PLAN.md": 2
+      }
+    },
+    {
+      "queryId": "do-002",
+      "queryText": "LanceDB table schema for code chunks",
+      "category": "docs",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/indexer.ts": 3,
+        "apps/nova-agent/src/rag/types.ts": 2,
+        "apps/nova-agent/docs/RAG_LANCEDB_IMPLEMENTATION_PLAN.md": 2
+      }
+    },
+    {
+      "queryId": "do-003",
+      "queryText": "D drive storage paths for nova-agent data",
+      "category": "docs",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/types.ts": 3,
+        "apps/nova-agent/docs/RAG_LANCEDB_IMPLEMENTATION_PLAN.md": 2
+      }
+    },
+    {
+      "queryId": "do-004",
+      "queryText": "RAG implementation plan and build phases",
+      "category": "docs",
+      "relevantDocs": {
+        "apps/nova-agent/docs/RAG_LANCEDB_IMPLEMENTATION_PLAN.md": 3
+      }
+    },
+    {
+      "queryId": "do-005",
+      "queryText": "supported file types and extensions for indexing",
+      "category": "docs",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/indexer.ts": 3,
+        "apps/nova-agent/src/rag/types.ts": 2
+      }
+    },
+    {
+      "queryId": "do-006",
+      "queryText": "embedding model and vector dimensions",
+      "category": "docs",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/embedder.ts": 3,
+        "apps/nova-agent/src/rag/types.ts": 2,
+        "apps/nova-agent/docs/RAG_LANCEDB_IMPLEMENTATION_PLAN.md": 1
+      }
+    },
+    {
+      "queryId": "do-007",
+      "queryText": "chunk type taxonomy and classification",
+      "category": "docs",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/types.ts": 3,
+        "apps/nova-agent/src/rag/chunker.ts": 2
+      }
+    },
+    {
+      "queryId": "do-008",
+      "queryText": "SearchResult and SearchQuery interfaces",
+      "category": "docs",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/types.ts": 3
+      }
+    },
+    {
+      "queryId": "do-009",
+      "queryText": "cache TTL and eviction strategy",
+      "category": "docs",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/cache.ts": 3,
+        "apps/nova-agent/src/rag/types.ts": 2
+      }
+    },
+    {
+      "queryId": "do-010",
+      "queryText": "exclude patterns for indexing node_modules and dist",
+      "category": "docs",
+      "relevantDocs": {
+        "apps/nova-agent/src/rag/types.ts": 3,
+        "apps/nova-agent/src/rag/indexer.ts": 2
+      }
+    }
+  ]
+}
