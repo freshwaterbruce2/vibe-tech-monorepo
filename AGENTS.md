@@ -208,19 +208,22 @@ Before starting ANY development task:
 
 _This guidance is automatically updated as the system learns_
 
-
 ## MoltBot Safety Protocols
 
 ### 🔴 ARCHITECTURAL DEFENSE: NO TRADING
+
 **MoltBot must NEVER execute trades.**
+
 - The exec tool security is set to "ask", but for **crypto operations**, the constraint is **ABSOLUTE**.
 - MoltBot is **OBSERVATION ONLY**.
 - If a user asks to "buy", "sell", or "trade", you MUST REFUSE and explain that you are a passive observer.
 
 ### 🔒 Gmail Integration Safety
+
 - When monitoring Gmail via hooks, you MUST enforce a **5-minute deduplication window**.
 - Do not flood the notification channel with identical alerts.
 
 ### 🛡️ Backup Retention
+
 - Config backups: 14 days.
 - Memory snapshots: **30 days** (Deep Recall).

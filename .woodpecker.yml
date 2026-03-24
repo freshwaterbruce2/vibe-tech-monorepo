@@ -3,8 +3,8 @@
 # Kept for reference only - do not use
 
 variables:
-  - &node_image "node:22"
-  - &pnpm_version "10.28.2"
+  - &node_image 'node:22'
+  - &pnpm_version '10.28.2'
 
 pipeline:
   # ============================================
@@ -149,7 +149,7 @@ pipeline:
         fi
 
         echo "Quality check failed. Analyzing for auto-fixes..."
-        
+
         # Setup git for potential commits
         git config --global user.email "bot@vibetech.ai"
         git config --global user.name "Self-Healing Bot"
@@ -158,21 +158,21 @@ pipeline:
         # In Woodpecker, changed files can be identified via git diff against origin/main
         git fetch origin main
         git diff --name-only origin/main > changed_files.txt
-        
+
         node scripts/validate-auto-fix-safety.mjs changed_files.txt
         if [ $? -ne 0 ]; then
           echo "SAFETY CHECK FAILED: Unsafe files detected. Aborting auto-fix."
           exit 1
         fi
-        
+
         echo "Safety check passed. Attempting fixes..."
-        
+
         # 2. Apply fixes
         corepack enable
         corepack prepare pnpm@10.28.2 --activate
-        
+
         pnpm run lint:fix:all || echo "Lint fix partially applied"
-        
+
         # 3. Check for changes and commit
         if [ -n "$(git status --porcelain)" ]; then
           echo "Changes detected. Committing fixes..."

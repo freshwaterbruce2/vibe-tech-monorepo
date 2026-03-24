@@ -6,7 +6,6 @@ Last Updated: 2026-02-06
 System: Windows (Win32)
 Repository Root: C:\dev
 
-
 ---
 
 ## 1) Paths and data storage (non-negotiable)
@@ -76,7 +75,7 @@ AI tooling:
 
 - Primary tools: Gemini CLI + Gemini Code Assist.
 - Claude Code is deprecated for this workspace.
-- Prefer Gemini CLI commands in package.json scripts when available (gemini:*).
+- Prefer Gemini CLI commands in package.json scripts when available (gemini:\*).
 
 Git rules:
 
