@@ -11,6 +11,7 @@ action: block
 This monorepo uses **pnpm ONLY**, never npm or yarn.
 
 **Correct commands:**
+
 ```bash
 pnpm install              # NOT npm install
 pnpm add <package>        # NOT npm install <package>
@@ -23,6 +24,7 @@ pnpm add <package> --filter <project>
 ```
 
 **Why pnpm only:**
+
 - Workspace configuration in .npmrc
 - D:\pnpm-store setup
 - Nx integration optimized for pnpm

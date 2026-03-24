@@ -2,14 +2,15 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Send, Sparkles, GitBranch, Code, Clock } from 'lucide-react';
 
-import { vibeTheme } from '../../styles/theme';
-import { ComposerFile, ComposerWorkspaceContext } from './ComposerMode.types';
+import type { ComposerFile, ComposerWorkspaceContext } from './ComposerMode.types';
 import { 
   PromptSection, 
   ContextTags, 
   ContextTag, 
   PromptInput, 
-  ActionButton 
+  ActionButton,
+  PromptActions,
+  PromptShortcutHint
 } from './ComposerMode.styles';
 
 export interface ComposerPromptProps {
@@ -63,9 +64,8 @@ export const ComposerPrompt: React.FC<ComposerPromptProps> = ({
               onSendPrompt();
             }
           }}
-          style={{ minHeight: '80px' }}
         />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <PromptActions>
           <ActionButton
             $primary
             whileHover={{ scale: 1.05 }}
@@ -84,10 +84,10 @@ export const ComposerPrompt: React.FC<ComposerPromptProps> = ({
               <Send size={16} />
             )}
           </ActionButton>
-          <div style={{ fontSize: '11px', color: vibeTheme.colors.textMuted, textAlign: 'center' }}>
+          <PromptShortcutHint>
             Ctrl+Enter
-          </div>
-        </div>
+          </PromptShortcutHint>
+        </PromptActions>
       </PromptInput>
     </PromptSection>
   );

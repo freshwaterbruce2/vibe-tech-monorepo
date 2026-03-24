@@ -14,10 +14,12 @@ This skill uses a **hybrid authentication approach** that combines the best of b
 Playwright/Patchright has a known bug ([#36139](https://github.com/microsoft/playwright/issues/36139)) where **session cookies** (cookies without an `Expires` attribute) do not persist correctly when using `launch_persistent_context()` with `user_data_dir`.
 
 **What happens:**
+
 - ✅ Persistent cookies (with `Expires` date) → Saved correctly to browser profile
 - ❌ Session cookies (without `Expires`) → **Lost after browser restarts**
 
 **Impact:**
+
 - Some Google auth cookies are session cookies
 - Users experience random authentication failures
 - "Works on my machine" syndrome (depends on which cookies Google uses)
@@ -29,8 +31,8 @@ The **MCP Server** (TypeScript) can work around this by passing `storage_state` 
 ```typescript
 // TypeScript - works!
 const context = await chromium.launchPersistentContext(userDataDir, {
-  storageState: "state.json",  // ← Loads cookies including session cookies
-  channel: "chrome"
+  storageState: 'state.json', // ← Loads cookies including session cookies
+  channel: 'chrome',
 });
 ```
 
@@ -86,14 +88,14 @@ with open("state.json", 'r') as f:
 
 ## Benefits
 
-| Feature | Our Approach | Pure `user_data_dir` | Pure `storage_state` |
-|---------|--------------|----------------------|----------------------|
-| **Browser Fingerprint Consistency** | ✅ Same across restarts | ✅ Same | ❌ Changes each time |
-| **Session Cookie Persistence** | ✅ Manual injection | ❌ Lost (bug) | ✅ Native support |
-| **Persistent Cookie Persistence** | ✅ Automatic | ✅ Automatic | ✅ Native support |
-| **Google Trust** | ✅ High (same browser) | ✅ High | ❌ Low (new browser) |
-| **Cross-platform Reliability** | ✅ Chrome required | ⚠️ Chromium issues | ✅ Portable |
-| **Cache Performance** | ✅ Keeps cache | ✅ Keeps cache | ❌ No cache |
+| Feature                             | Our Approach            | Pure `user_data_dir` | Pure `storage_state` |
+| ----------------------------------- | ----------------------- | -------------------- | -------------------- |
+| **Browser Fingerprint Consistency** | ✅ Same across restarts | ✅ Same              | ❌ Changes each time |
+| **Session Cookie Persistence**      | ✅ Manual injection     | ❌ Lost (bug)        | ✅ Native support    |
+| **Persistent Cookie Persistence**   | ✅ Automatic            | ✅ Automatic         | ✅ Native support    |
+| **Google Trust**                    | ✅ High (same browser)  | ✅ High              | ❌ Low (new browser) |
+| **Cross-platform Reliability**      | ✅ Chrome required      | ⚠️ Chromium issues   | ✅ Portable          |
+| **Cache Performance**               | ✅ Keeps cache          | ✅ Keeps cache       | ❌ No cache          |
 
 ## File Structure
 
@@ -121,14 +123,17 @@ Even though we use `user_data_dir`, we **still need `state.json`** because:
 ## Code References
 
 **Setup:** `scripts/auth_manager.py:94-120`
+
 - Lines 100-113: Launch persistent context with `channel="chrome"`
 - Line 167: Save to `state.json` via `context.storage_state()`
 
 **Runtime:** `scripts/ask_question.py:77-118`
+
 - Lines 86-99: Launch persistent context
 - Lines 101-118: Manual cookie injection workaround
 
 **Validation:** `scripts/auth_manager.py:236-298`
+
 - Lines 262-275: Launch persistent context
 - Lines 277-287: Manual cookie injection for validation
 

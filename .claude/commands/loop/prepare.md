@@ -45,6 +45,7 @@ git log main..HEAD --oneline 2>/dev/null | wc -l
 ```
 
 If >= 10 commits ahead of main:
+
 1. Report: "You have N commits ahead of main. Merging first..."
 2. Execute incremental merge:
 

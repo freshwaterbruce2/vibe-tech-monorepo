@@ -5,26 +5,26 @@
 # Reference: VoltAgent/awesome-claude-code-subagents patterns
 
 version: 5.0
-phase: 5  # Phase 5: RAG/MCP/Monorepo specialists (Desktop, Web, Backend, Mobile complete)
+phase: 5 # Phase 5: RAG/MCP/Monorepo specialists (Desktop, Web, Backend, Mobile complete)
 
 # Global Settings
 defaults:
   context_budget:
-    main_agent: 100000      # Parent experts (full system context)
-    specialist_agent: 20000  # Project-specific agents
-    sub_agent: 5000         # Task-specific sub-agents (default)
+    main_agent: 100000 # Parent experts (full system context)
+    specialist_agent: 20000 # Project-specific agents
+    sub_agent: 5000 # Task-specific sub-agents (default)
 
   model_selection:
-    orchestrator: claude-opus-4-6       # Strategic decisions
-    specialist: claude-sonnet-4-6       # Balanced reasoning
-    sub_agent_fast: claude-haiku-4-5    # Fast, cheap, deterministic
-    sub_agent_balanced: claude-sonnet-4-6  # Requires reasoning
+    orchestrator: claude-opus-4-6 # Strategic decisions
+    specialist: claude-sonnet-4-6 # Balanced reasoning
+    sub_agent_fast: claude-haiku-4-5-20251001 # Fast, cheap, deterministic
+    sub_agent_balanced: claude-sonnet-4-6 # Requires reasoning
 
   execution:
-    parallel_limit: 3       # Max sub-agents running in parallel
-    timeout: 300000         # 5 minutes per sub-agent
-    cache_ttl: 300          # 5-minute cache for results
-    retry_limit: 2          # Retry failed sub-agents twice
+    parallel_limit: 3 # Max sub-agents running in parallel
+    timeout: 300000 # 5 minutes per sub-agent
+    cache_ttl: 300 # 5-minute cache for results
+    retry_limit: 2 # Retry failed sub-agents twice
 
 # =============================================================================
 # PHASE 1: DESKTOP APPS (COMPLETE)
@@ -34,7 +34,7 @@ sub_agents:
     enabled: true
     priority: high
     parent_agent: desktop-expert
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     context_limit: 3000
     timeout: 180000
     cache_enabled: true
@@ -123,8 +123,8 @@ sub_agents:
       - playwright.config.ts
       - jest.config.js
       - package.json (test scripts)
-      - "**/*.test.ts (file paths only)"
-      - "**/*.spec.ts (file paths only)"
+      - '**/*.test.ts (file paths only)'
+      - '**/*.spec.ts (file paths only)'
 
     test_selection:
       strategy: affected
@@ -151,7 +151,7 @@ sub_agents:
     enabled: true
     priority: medium
     parent_agent: desktop-expert
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     context_limit: 2000
     timeout: 120000
     cache_enabled: false
@@ -187,10 +187,10 @@ sub_agents:
         - .nx/cache
       logs:
         patterns:
-          - "*.log"
-          - "*_error.txt"
-          - "build_*.txt"
-          - "test_*.txt"
+          - '*.log'
+          - '*_error.txt'
+          - 'build_*.txt'
+          - 'test_*.txt'
         max_age_days: 7
         archive_to: D:\logs\archive
         compress: true
@@ -221,7 +221,7 @@ sub_agents:
     enabled: true
     priority: high
     parent_agent: desktop-expert
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     context_limit: 3500
     timeout: 300000
     cache_enabled: true
@@ -311,15 +311,15 @@ sub_agents:
       - context_isolation_required
       - whitelist_only_channels
 
-# =============================================================================
-# PHASE 2: WEB APPS (COMPLETE)
-# =============================================================================
+  # =============================================================================
+  # PHASE 2: WEB APPS (COMPLETE)
+  # =============================================================================
 
   vite-build-specialist:
     enabled: true
     priority: high
     parent_agent: webapp-expert
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     context_limit: 3500
     timeout: 300000
     cache_enabled: true
@@ -367,17 +367,17 @@ sub_agents:
       tree_shaking: true
       minify: esbuild
       source_maps: hidden
-      
+
     common_fixes:
-      - chunk_size_warning: "Increase manualChunks or use dynamic imports"
-      - hmr_not_working: "Check vite.config server.hmr settings"
-      - build_oom: "Add --max-old-space-size=4096 to NODE_OPTIONS"
+      - chunk_size_warning: 'Increase manualChunks or use dynamic imports'
+      - hmr_not_working: 'Check vite.config server.hmr settings'
+      - build_oom: 'Add --max-old-space-size=4096 to NODE_OPTIONS'
 
   react-component-specialist:
     enabled: true
     priority: high
     parent_agent: webapp-expert
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     context_limit: 3500
     timeout: 180000
     cache_enabled: true
@@ -433,7 +433,7 @@ sub_agents:
     enabled: true
     priority: medium
     parent_agent: webapp-expert
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     context_limit: 3000
     timeout: 180000
     cache_enabled: true
@@ -470,7 +470,7 @@ sub_agents:
       style: default
       base_color: neutral
       css_variables: true
-      
+
     tailwind_rules:
       - no_arbitrary_values_in_components
       - use_design_tokens
@@ -486,7 +486,7 @@ sub_agents:
     enabled: true
     priority: high
     parent_agent: webapp-expert
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     context_limit: 3500
     timeout: 600000
     cache_enabled: true
@@ -519,8 +519,8 @@ sub_agents:
       - vitest.setup.ts
       - playwright.config.ts
       - src/test/**/*.ts
-      - "**/*.test.tsx (paths only)"
-      - "**/*.spec.ts (paths only)"
+      - '**/*.test.tsx (paths only)'
+      - '**/*.spec.ts (paths only)'
 
     test_config:
       framework: vitest
@@ -548,7 +548,7 @@ sub_agents:
     enabled: true
     priority: medium
     parent_agent: webapp-expert
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     context_limit: 2000
     timeout: 120000
     cache_enabled: false
@@ -589,15 +589,15 @@ sub_agents:
         - node_modules
         - src
 
-# =============================================================================
-# PHASE 3: BACKEND (COMPLETE)
-# =============================================================================
+  # =============================================================================
+  # PHASE 3: BACKEND (COMPLETE)
+  # =============================================================================
 
   api-implementation-specialist:
     enabled: true
     priority: high
     parent_agent: backend-expert
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     context_limit: 3500
     timeout: 300000
     cache_enabled: true
@@ -810,16 +810,16 @@ sub_agents:
         - A10_ssrf
 
       authentication:
-        - password_hashing: "bcrypt or argon2id"
+        - password_hashing: 'bcrypt or argon2id'
         - jwt_secret_rotation: required
-        - session_management: "secure httpOnly cookies"
+        - session_management: 'secure httpOnly cookies'
         - mfa_support: recommended
-        - brute_force_protection: "rate limiting + lockout"
+        - brute_force_protection: 'rate limiting + lockout'
 
       authorization:
         - rbac_implementation: required
-        - permission_checks: "on every protected route"
-        - resource_ownership: "verify user owns resource"
+        - permission_checks: 'on every protected route'
+        - resource_ownership: 'verify user owns resource'
 
       input_validation:
         - sanitize_all_inputs: required
@@ -848,7 +848,7 @@ sub_agents:
     enabled: true
     priority: medium
     parent_agent: backend-expert
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     context_limit: 3500
     timeout: 300000
     cache_enabled: true
@@ -893,39 +893,39 @@ sub_agents:
 
     deployment_patterns:
       pm2:
-        - cluster_mode: "for multi-core"
+        - cluster_mode: 'for multi-core'
         - graceful_shutdown: required
         - log_rotation: required
-        - memory_limit: "per app setting"
-        - restart_policy: "on crash with backoff"
+        - memory_limit: 'per app setting'
+        - restart_policy: 'on crash with backoff'
         - watch_disabled_prod: required
 
       docker:
         - multi_stage_builds: required
         - non_root_user: required
         - healthcheck: required
-        - minimal_base_image: "node:20-alpine"
+        - minimal_base_image: 'node:20-alpine'
         - security_scanning: recommended
 
       health_checks:
-        - liveness_probe: "/health/live"
-        - readiness_probe: "/health/ready"
+        - liveness_probe: '/health/live'
+        - readiness_probe: '/health/ready'
         - database_connectivity: required
         - external_deps_check: recommended
 
       logging:
         - structured_json: required
         - correlation_ids: required
-        - log_levels: "configurable per env"
+        - log_levels: 'configurable per env'
         - pii_redaction: required
 
       zero_downtime:
         - rolling_updates: required
         - connection_draining: required
-        - graceful_shutdown_timeout: "30s"
+        - graceful_shutdown_timeout: '30s'
 
     windows_specific:
-      pm2_service: "pm2-installer for Windows Service"
+      pm2_service: 'pm2-installer for Windows Service'
       iis_integration: optional
       event_log: optional
 
@@ -933,7 +933,7 @@ sub_agents:
     enabled: true
     priority: high
     parent_agent: backend-expert
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     context_limit: 3500
     timeout: 600000
     cache_enabled: true
@@ -992,9 +992,9 @@ sub_agents:
       functions: 80
       lines: 80
 
-# =============================================================================
-# PHASE 4: MOBILE (ACTIVE)
-# =============================================================================
+  # =============================================================================
+  # PHASE 4: MOBILE (ACTIVE)
+  # =============================================================================
 
   capacitor-build-specialist:
     enabled: true
@@ -1049,48 +1049,48 @@ sub_agents:
 
     capacitor_patterns:
       configuration:
-        - server_url: "for live reload"
-        - webDir: "must match build output"
-        - plugins: "per-plugin config"
-        - android_ios: "platform-specific overrides"
+        - server_url: 'for live reload'
+        - webDir: 'must match build output'
+        - plugins: 'per-plugin config'
+        - android_ios: 'platform-specific overrides'
       plugins:
-        - "@capacitor/app"
-        - "@capacitor/haptics"
-        - "@capacitor/keyboard"
-        - "@capacitor/status-bar"
-        - "@capacitor/splash-screen"
-        - "@capacitor/http"
-        - "@capacitor/filesystem"
-        - "@capacitor/preferences"
-        - "@capacitor/push-notifications"
+        - '@capacitor/app'
+        - '@capacitor/haptics'
+        - '@capacitor/keyboard'
+        - '@capacitor/status-bar'
+        - '@capacitor/splash-screen'
+        - '@capacitor/http'
+        - '@capacitor/filesystem'
+        - '@capacitor/preferences'
+        - '@capacitor/push-notifications'
       native_bridge:
-        - custom_plugins: "TypeScript interface + native implementation"
-        - plugin_permissions: "AndroidManifest.xml + Info.plist"
-        - deep_linking: "App Links (Android) + Universal Links (iOS)"
+        - custom_plugins: 'TypeScript interface + native implementation'
+        - plugin_permissions: 'AndroidManifest.xml + Info.plist'
+        - deep_linking: 'App Links (Android) + Universal Links (iOS)'
 
     android_patterns:
       gradle:
         - minSdkVersion: 22
         - targetSdkVersion: 34
         - compileSdkVersion: 34
-        - versionCode: "ALWAYS increment for cache-bust"
+        - versionCode: 'ALWAYS increment for cache-bust'
       signing:
         - keystore_location: "D:\\secrets\\keystores (NEVER in repo)"
-        - release_signing: "signingConfigs.release"
-        - debug_signing: "auto-generated"
+        - release_signing: 'signingConfigs.release'
+        - debug_signing: 'auto-generated'
       proguard:
-        - rules: "proguard-rules.pro"
-        - enabled: "release builds only"
+        - rules: 'proguard-rules.pro'
+        - enabled: 'release builds only'
 
     ios_patterns:
-      note: "Full iOS builds require macOS"
+      note: 'Full iOS builds require macOS'
       cocoapods:
-        - pod_install: "after cap sync"
-        - pod_update: "for plugin updates"
+        - pod_install: 'after cap sync'
+        - pod_update: 'for plugin updates'
       xcode:
-        - schemes: "App, App-Debug"
-        - provisioning: "Automatic or Manual"
-        - capabilities: "Push, App Groups, etc."
+        - schemes: 'App, App-Debug'
+        - provisioning: 'Automatic or Manual'
+        - capabilities: 'Push, App Groups, etc.'
 
     safety:
       always_increment_versionCode: true
@@ -1102,7 +1102,7 @@ sub_agents:
     enabled: true
     priority: high
     parent_agent: mobile-expert
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     context_limit: 3500
     timeout: 240000
     cache_enabled: true
@@ -1136,43 +1136,43 @@ sub_agents:
 
     pwa_patterns:
       manifest:
-        - name: "full app name"
-        - short_name: "home screen"
-        - icons: "192x192, 512x512"
-        - theme_color: "matches design system"
-        - background_color: "splash screen"
-        - display: "standalone (app-like)"
-        - start_url: "/?source=pwa"
-        - scope: "/"
+        - name: 'full app name'
+        - short_name: 'home screen'
+        - icons: '192x192, 512x512'
+        - theme_color: 'matches design system'
+        - background_color: 'splash screen'
+        - display: 'standalone (app-like)'
+        - start_url: '/?source=pwa'
+        - scope: '/'
 
       service_worker_strategies:
         cache_first:
-          - "static assets (images, fonts)"
-          - "max age: 1 day to 30 days"
+          - 'static assets (images, fonts)'
+          - 'max age: 1 day to 30 days'
         network_first:
-          - "API calls"
-          - "timeout: 3 seconds"
-          - "fallback to cache"
+          - 'API calls'
+          - 'timeout: 3 seconds'
+          - 'fallback to cache'
         stale_while_revalidate:
-          - "HTML, CSS, JS"
-          - "fast + fresh when available"
+          - 'HTML, CSS, JS'
+          - 'fast + fresh when available'
         network_only:
-          - "auth endpoints"
-          - "sensitive data"
+          - 'auth endpoints'
+          - 'sensitive data'
 
       workbox_config:
-        - runtimeCaching: "per-route strategies"
-        - precaching: "critical assets"
-        - navigationPreload: "for faster navigation"
-        - cleanupOutdatedCaches: "remove old versions"
+        - runtimeCaching: 'per-route strategies'
+        - precaching: 'critical assets'
+        - navigationPreload: 'for faster navigation'
+        - cleanupOutdatedCaches: 'remove old versions'
 
       update_strategies:
         auto_update:
           - skipWaiting: true
           - clientsClaim: true
         prompt_update:
-          - "show update banner"
-          - "user clicks to reload"
+          - 'show update banner'
+          - 'user clicks to reload'
 
     lighthouse_targets:
       pwa_score: 100
@@ -1182,15 +1182,15 @@ sub_agents:
 
     safety:
       https_required: true
-      cache_versioning: "version-based cache names"
-      network_timeout: "3 seconds max"
-      sensitive_data: "NEVER cache auth tokens"
+      cache_versioning: 'version-based cache names'
+      network_timeout: '3 seconds max'
+      sensitive_data: 'NEVER cache auth tokens'
 
   mobile-ui-specialist:
     enabled: true
     priority: medium
     parent_agent: mobile-expert
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     context_limit: 3500
     timeout: 180000
     cache_enabled: true
@@ -1226,49 +1226,49 @@ sub_agents:
 
     mobile_ui_patterns:
       touch_targets:
-        - min_size: "44x44px (Apple) / 48x48dp (Android)"
-        - spacing: "8px minimum between targets"
-        - feedback: "visual + haptic"
+        - min_size: '44x44px (Apple) / 48x48dp (Android)'
+        - spacing: '8px minimum between targets'
+        - feedback: 'visual + haptic'
       gestures:
-        - swipe: "navigation, dismiss, delete"
-        - pull_to_refresh: "data refresh"
-        - pinch_zoom: "images, maps"
-        - long_press: "context menus"
+        - swipe: 'navigation, dismiss, delete'
+        - pull_to_refresh: 'data refresh'
+        - pinch_zoom: 'images, maps'
+        - long_press: 'context menus'
       navigation:
-        - bottom_nav: "primary navigation (max 5 items)"
-        - tab_bar: "section switching"
-        - hamburger: "secondary/settings (avoid on mobile)"
-        - back_button: "Android hardware + gestures"
+        - bottom_nav: 'primary navigation (max 5 items)'
+        - tab_bar: 'section switching'
+        - hamburger: 'secondary/settings (avoid on mobile)'
+        - back_button: 'Android hardware + gestures'
       safe_areas:
-        - notch: "env(safe-area-inset-top)"
-        - home_indicator: "env(safe-area-inset-bottom)"
-        - rounded_corners: "padding for corners"
+        - notch: 'env(safe-area-inset-top)'
+        - home_indicator: 'env(safe-area-inset-bottom)'
+        - rounded_corners: 'padding for corners'
 
     responsive_patterns:
       breakpoints:
-        - mobile: "<640px"
-        - tablet: "640px-1024px"
-        - desktop: ">1024px"
+        - mobile: '<640px'
+        - tablet: '640px-1024px'
+        - desktop: '>1024px'
       mobile_first: true
       touch_friendly: true
 
     accessibility:
-      font_size: "16px minimum"
-      contrast: "WCAG AA (4.5:1)"
-      touch_targets: "44x44 minimum"
-      focus_indicators: "visible on mobile"
+      font_size: '16px minimum'
+      contrast: 'WCAG AA (4.5:1)'
+      touch_targets: '44x44 minimum'
+      focus_indicators: 'visible on mobile'
 
     performance:
-      image_optimization: "srcset, lazy loading"
-      font_loading: "font-display: swap"
-      animation: "60fps, prefer transform/opacity"
-      scroll: "passive event listeners"
+      image_optimization: 'srcset, lazy loading'
+      font_loading: 'font-display: swap'
+      animation: '60fps, prefer transform/opacity'
+      scroll: 'passive event listeners'
 
   mobile-testing-specialist:
     enabled: true
     priority: high
     parent_agent: mobile-expert
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     context_limit: 3500
     timeout: 600000
     cache_enabled: true
@@ -1306,41 +1306,41 @@ sub_agents:
 
     testing_patterns:
       unit_tests:
-        - framework: "Vitest/Jest"
-        - mock_native: "mock @capacitor/* plugins"
-        - touch_events: "simulate touch interactions"
+        - framework: 'Vitest/Jest'
+        - mock_native: 'mock @capacitor/* plugins'
+        - touch_events: 'simulate touch interactions'
       e2e_tests:
-        - detox: "React Native / Capacitor"
-        - maestro: "declarative mobile testing"
-        - appium: "cross-platform automation"
+        - detox: 'React Native / Capacitor'
+        - maestro: 'declarative mobile testing'
+        - appium: 'cross-platform automation'
       device_testing:
-        - emulators: "Android Studio AVD"
-        - simulators: "Xcode (macOS only)"
-        - real_devices: "USB debugging / wireless"
-        - cloud_testing: "BrowserStack, Sauce Labs"
+        - emulators: 'Android Studio AVD'
+        - simulators: 'Xcode (macOS only)'
+        - real_devices: 'USB debugging / wireless'
+        - cloud_testing: 'BrowserStack, Sauce Labs'
 
     android_testing:
       adb_commands:
-        - install: "adb install app.apk"
-        - uninstall: "adb uninstall com.app.id"
-        - logcat: "adb logcat *:E"
-        - screenshot: "adb shell screencap"
+        - install: 'adb install app.apk'
+        - uninstall: 'adb uninstall com.app.id'
+        - logcat: 'adb logcat *:E'
+        - screenshot: 'adb shell screencap'
       emulator:
-        - cold_boot: "for clean state"
-        - snapshot: "for fast restart"
-        - network: "simulate 3G, offline"
+        - cold_boot: 'for clean state'
+        - snapshot: 'for fast restart'
+        - network: 'simulate 3G, offline'
 
     ios_testing:
-      note: "Requires macOS"
+      note: 'Requires macOS'
       simulator:
-        - boot: "xcrun simctl boot"
-        - install: "xcrun simctl install"
-        - deep_link: "xcrun simctl openurl"
+        - boot: 'xcrun simctl boot'
+        - install: 'xcrun simctl install'
+        - deep_link: 'xcrun simctl openurl'
 
     responsive_testing:
       chrome_devtools:
         - device_toolbar: true
-        - throttling: "slow 3G, fast 3G"
+        - throttling: 'slow 3G, fast 3G'
         - touch_simulation: true
       playwright:
         - mobile_viewports: true
@@ -1357,7 +1357,7 @@ sub_agents:
     enabled: true
     priority: high
     parent_agent: monorepo-expert
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     context_limit: 4000
     timeout: 300000
     cache_enabled: true
@@ -1401,7 +1401,7 @@ sub_agents:
       - workspace.json
       - package.json (nx config, scripts)
       - project.json (root-level only)
-      - ".nx/workspace-data/project-graph.json (structure only)"
+      - '.nx/workspace-data/project-graph.json (structure only)'
 
     context_excludes:
       - .nx/cache
@@ -1411,7 +1411,7 @@ sub_agents:
 
     workspace_operations:
       affected:
-        base_default: "HEAD~1"
+        base_default: 'HEAD~1'
         parallel: 3
         targets:
           - build
@@ -1419,8 +1419,8 @@ sub_agents:
           - lint
       cache:
         location: .nx/cache
-        remote: "Nx Cloud (if configured)"
-        clear_command: "pnpm nx reset"
+        remote: 'Nx Cloud (if configured)'
+        clear_command: 'pnpm nx reset'
       health_checks:
         - project_graph_integrity: true
         - circular_dependencies: detect
@@ -1428,7 +1428,7 @@ sub_agents:
         - missing_targets: report
         - dangling_projects: warn
       project_graph:
-        visualization: "pnpm nx graph"
+        visualization: 'pnpm nx graph'
         filter_by_project: true
         show_dependencies: true
         show_affected: true
@@ -1436,17 +1436,17 @@ sub_agents:
     performance:
       parallel_limit: 3
       skip_nx_cache: false
-      distribute_on_agents: false  # local only
+      distribute_on_agents: false # local only
 
     safety:
       never_run_nx_reset_without_confirmation: true
-      affected_default_base: "HEAD~1"
+      affected_default_base: 'HEAD~1'
       cache_clear_requires_confirmation: true
-      never_modify_nx_json_implicitDependencies: "without human review"
+      never_modify_nx_json_implicitDependencies: 'without human review'
 
-# =============================================================================
-# PHASE 6: CRYPTO TRADING (ACTIVE)
-# =============================================================================
+  # =============================================================================
+  # PHASE 6: CRYPTO TRADING (ACTIVE)
+  # =============================================================================
   trading-strategy-specialist:
     enabled: true
     priority: high
@@ -1487,23 +1487,23 @@ sub_agents:
 
     strategy_patterns:
       indicators:
-        - rsi: "14-period default, overbought 70 / oversold 30"
-        - macd: "12/26/9 default"
-        - bollinger: "20-period, 2 std dev"
-        - volume_profile: "confirm signals"
+        - rsi: '14-period default, overbought 70 / oversold 30'
+        - macd: '12/26/9 default'
+        - bollinger: '20-period, 2 std dev'
+        - volume_profile: 'confirm signals'
       risk_management:
-        - max_position_size: "2% of portfolio per trade"
-        - stop_loss: "required on every trade"
-        - take_profit: "min 2:1 risk/reward"
-        - max_drawdown: "10% portfolio halt"
+        - max_position_size: '2% of portfolio per trade'
+        - stop_loss: 'required on every trade'
+        - take_profit: 'min 2:1 risk/reward'
+        - max_drawdown: '10% portfolio halt'
       backtesting:
-        - walk_forward: "never curve-fit to full history"
-        - out_of_sample: "20% reserved"
-        - slippage_model: "realistic (0.1% default)"
+        - walk_forward: 'never curve-fit to full history'
+        - out_of_sample: '20% reserved'
+        - slippage_model: 'realistic (0.1% default)'
 
     safety:
       human_review_required: true
-      never_execute_live_trades: "this agent designs strategies only"
+      never_execute_live_trades: 'this agent designs strategies only'
       paper_trading_required_before_live: true
       no_strategy_changes_without_backtest: true
 
@@ -1544,33 +1544,33 @@ sub_agents:
       - apps/crypto-enhanced/src/exchange/
       - apps/crypto-enhanced/src/api/
       - apps/crypto-enhanced/src/circuit_breaker/
-      - "cache/nonce_state_primary.json (structure only, never values)"
+      - 'cache/nonce_state_primary.json (structure only, never values)'
       - apps/crypto-enhanced/config.py (read-only)
 
     context_excludes:
       - .env
-      - "*.key"
+      - '*.key'
       - secrets/
-      - "apps/crypto-enhanced/**/*.log"
+      - 'apps/crypto-enhanced/**/*.log'
 
     exchange_patterns:
       websocket:
-        - reconnect_backoff: "exponential, max 60s"
-        - heartbeat: "ping every 30s"
-        - message_queue: "buffer during reconnect"
-        - subscription_restore: "on reconnect"
+        - reconnect_backoff: 'exponential, max 60s'
+        - heartbeat: 'ping every 30s'
+        - message_queue: 'buffer during reconnect'
+        - subscription_restore: 'on reconnect'
       nonce_management:
-        - storage: "cache/nonce_state_primary.json"
-        - increment: "always monotonic"
+        - storage: 'cache/nonce_state_primary.json'
+        - increment: 'always monotonic'
         - sync_on_startup: true
-        - recovery: "read last known + buffer"
+        - recovery: 'read last known + buffer'
       circuit_breaker:
         - error_threshold: 5
         - timeout: 60
         - half_open_probe: true
-        - never_disable: "circuit breaker is a safety feature"
+        - never_disable: 'circuit breaker is a safety feature'
       rate_limiting:
-        - kraken_tier: "intermediate (20 req/min)"
+        - kraken_tier: 'intermediate (20 req/min)'
         - backoff_on_429: true
         - queue_requests: true
 
@@ -1586,7 +1586,7 @@ sub_agents:
     enabled: true
     priority: high
     parent_agent: crypto-expert
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     context_limit: 3500
     timeout: 600000
     cache_enabled: true
@@ -1619,33 +1619,33 @@ sub_agents:
 
     testing_patterns:
       paper_trading:
-        - mode: "always default for new strategies"
-        - capital: "virtual, never real"
-        - duration: "minimum 30 days before live"
+        - mode: 'always default for new strategies'
+        - capital: 'virtual, never real'
+        - duration: 'minimum 30 days before live'
       unit_tests:
-        - mock_exchange: "never test against live Kraken"
-        - mock_websocket: "fixture-based responses"
-        - nonce_mock: "sequential integer"
+        - mock_exchange: 'never test against live Kraken'
+        - mock_websocket: 'fixture-based responses'
+        - nonce_mock: 'sequential integer'
       safety_tests:
-        - circuit_breaker_triggers: "must pass before live"
-        - rate_limit_handling: "must not crash"
-        - reconnect_behavior: "must restore state"
-        - max_drawdown_halt: "must halt at 10%"
+        - circuit_breaker_triggers: 'must pass before live'
+        - rate_limit_handling: 'must not crash'
+        - reconnect_behavior: 'must restore state'
+        - max_drawdown_halt: 'must halt at 10%'
 
     safety:
       always_use_paper_trading_mode: true
       never_mock_circuit_breaker_off: true
       never_run_against_live_exchange_in_tests: true
 
-# =============================================================================
-# PHASE 5: RAG / MCP / MONOREPO SPECIALISTS (ACTIVE)
-# =============================================================================
+  # =============================================================================
+  # PHASE 5: RAG / MCP / MONOREPO SPECIALISTS (ACTIVE)
+  # =============================================================================
 
   desktop-mcp-specialist:
     enabled: true
     priority: high
     parent_agent: desktop-expert
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     context_limit: 3500
     timeout: 240000
     cache_enabled: true
@@ -1674,9 +1674,9 @@ sub_agents:
       - apps/mcp-skills-server/dist/index.js
 
     critical_rules:
-      - mcp_before_ipc: "Always validate MCP server connection BEFORE establishing IPC bridge"
-      - tool_registration_order: "Register MCP tools before renderer process starts"
-      - windows_path_escaping: "All paths in MCP config must use double backslashes"
+      - mcp_before_ipc: 'Always validate MCP server connection BEFORE establishing IPC bridge'
+      - tool_registration_order: 'Register MCP tools before renderer process starts'
+      - windows_path_escaping: 'All paths in MCP config must use double backslashes'
 
   desktop-rag-specialist:
     enabled: true
@@ -1715,9 +1715,9 @@ sub_agents:
       chunking:
         - chunk_size: 512
         - overlap: 64
-        - strategy: "recursive character splitter"
+        - strategy: 'recursive character splitter'
       embedding:
-        - provider: "local (transformers.js) or OpenAI"
+        - provider: 'local (transformers.js) or OpenAI'
         - dimensions: 1536
         - batch_size: 32
       retrieval:
@@ -1729,7 +1729,7 @@ sub_agents:
     enabled: true
     priority: high
     parent_agent: webapp-expert
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     context_limit: 3500
     timeout: 180000
     cache_enabled: true
@@ -1763,18 +1763,18 @@ sub_agents:
 
     state_patterns:
       client_state:
-        - zustand: "flat stores, devtools, persist middleware"
-        - jotai: "atomic state, derived atoms, async atoms"
-        - redux_toolkit: "slices, RTK Query, createEntityAdapter"
+        - zustand: 'flat stores, devtools, persist middleware'
+        - jotai: 'atomic state, derived atoms, async atoms'
+        - redux_toolkit: 'slices, RTK Query, createEntityAdapter'
       server_state:
-        - tanstack_query: "useQuery, useMutation, useInfiniteQuery"
-        - cache_time: "5 minutes default"
-        - stale_time: "1 minute default"
-        - optimistic_updates: "onMutate + onError rollback"
+        - tanstack_query: 'useQuery, useMutation, useInfiniteQuery'
+        - cache_time: '5 minutes default'
+        - stale_time: '1 minute default'
+        - optimistic_updates: 'onMutate + onError rollback'
       anti_patterns:
-        - prop_drilling_depth_3: "use global state instead"
-        - useEffect_for_fetching: "use TanStack Query"
-        - large_single_store: "split by domain"
+        - prop_drilling_depth_3: 'use global state instead'
+        - useEffect_for_fetching: 'use TanStack Query'
+        - large_single_store: 'split by domain'
 
   rag-pipeline-specialist:
     enabled: true
@@ -1812,27 +1812,27 @@ sub_agents:
 
     pipeline_stages:
       ingestion:
-        - document_loaders: "PDF, DOCX, Markdown, HTML, code"
-        - chunking: "recursive splitter, sentence splitter, token splitter"
-        - metadata_extraction: "title, author, source, timestamp"
+        - document_loaders: 'PDF, DOCX, Markdown, HTML, code'
+        - chunking: 'recursive splitter, sentence splitter, token splitter'
+        - metadata_extraction: 'title, author, source, timestamp'
       embedding:
         - batch_processing: true
         - progress_tracking: true
-        - error_handling: "skip-and-log bad documents"
+        - error_handling: 'skip-and-log bad documents'
       storage:
         - vector_db: "D:\\databases\\rag-vectors.db (SQLite + sqlite-vss)"
         - metadata_db: "D:\\databases\\rag-metadata.db"
       retrieval:
-        - similarity_search: "cosine or dot product"
-        - hybrid: "dense + sparse (BM25)"
-        - filtering: "metadata filters"
-        - reranking: "cross-encoder"
+        - similarity_search: 'cosine or dot product'
+        - hybrid: 'dense + sparse (BM25)'
+        - filtering: 'metadata filters'
+        - reranking: 'cross-encoder'
 
   mcp-server-specialist:
     enabled: true
     priority: high
     parent_agent: mcp-expert
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     context_limit: 3500
     timeout: 240000
     cache_enabled: true
@@ -1866,28 +1866,28 @@ sub_agents:
 
     mcp_patterns:
       tool_definition:
-        - schema: "Zod + zodToJsonSchema"
-        - input_validation: "required"
-        - error_responses: "structured MCP errors"
-        - description: "clear, concise, action-oriented"
+        - schema: 'Zod + zodToJsonSchema'
+        - input_validation: 'required'
+        - error_responses: 'structured MCP errors'
+        - description: 'clear, concise, action-oriented'
       resource_types:
-        - text: "documents, configs, logs"
-        - blob: "binary, images"
-        - uri_templates: "parameterized resources"
+        - text: 'documents, configs, logs'
+        - blob: 'binary, images'
+        - uri_templates: 'parameterized resources'
       transport:
-        - stdio: "for Claude Code / Claude Desktop"
-        - sse: "for web clients"
+        - stdio: 'for Claude Code / Claude Desktop'
+        - sse: 'for web clients'
 
     critical_rules:
-      - mcp_before_ipc: "Register all MCP tools before IPC channel setup"
-      - tool_idempotency: "Tools must be safe to call multiple times"
-      - no_blocking_calls: "Use async for all I/O in tool handlers"
+      - mcp_before_ipc: 'Register all MCP tools before IPC channel setup'
+      - tool_idempotency: 'Tools must be safe to call multiple times'
+      - no_blocking_calls: 'Use async for all I/O in tool handlers'
 
   mobile-performance-specialist:
     enabled: true
     priority: medium
     parent_agent: mobile-expert
-    model: claude-haiku-4-5
+    model: claude-haiku-4-5-20251001
     context_limit: 3500
     timeout: 240000
     cache_enabled: true
@@ -1924,19 +1924,19 @@ sub_agents:
 
     performance_patterns:
       bundle:
-        - code_splitting: "route-based + component-based"
-        - lazy_loading: "React.lazy + Suspense"
+        - code_splitting: 'route-based + component-based'
+        - lazy_loading: 'React.lazy + Suspense'
         - tree_shaking: true
-        - dynamic_imports: "for large non-critical modules"
+        - dynamic_imports: 'for large non-critical modules'
       runtime:
-        - virtualization: "react-window for long lists"
-        - memo: "React.memo for expensive components"
-        - debounce: "search inputs, scroll handlers"
-        - passive_listeners: "scroll, touch"
+        - virtualization: 'react-window for long lists'
+        - memo: 'React.memo for expensive components'
+        - debounce: 'search inputs, scroll handlers'
+        - passive_listeners: 'scroll, touch'
       startup:
-        - preload_critical: "above-fold resources"
-        - defer_analytics: "after TTI"
-        - minimize_main_thread: "offload to workers"
+        - preload_critical: 'above-fold resources'
+        - defer_analytics: 'after TTI'
+        - minimize_main_thread: 'offload to workers'
 
     lighthouse_targets:
       performance: 90
@@ -1951,134 +1951,134 @@ sub_agents:
 delegation:
   desktop-expert:
     rules:
-      - trigger: "lint OR quality OR typecheck OR format"
+      - trigger: 'lint OR quality OR typecheck OR format'
         delegate_to: desktop-quality-checker
         confidence: high
-      - trigger: "test OR coverage OR e2e OR playwright"
+      - trigger: 'test OR coverage OR e2e OR playwright'
         delegate_to: desktop-test-coordinator
         confidence: high
-      - trigger: "clean OR cleanup OR disk space"
+      - trigger: 'clean OR cleanup OR disk space'
         delegate_to: desktop-cleanup-specialist
         confidence: high
-      - trigger: "build OR package OR installer OR exe"
+      - trigger: 'build OR package OR installer OR exe'
         delegate_to: desktop-build-specialist
         confidence: high
-      - trigger: "ipc OR preload OR native OR contextBridge"
+      - trigger: 'ipc OR preload OR native OR contextBridge'
         delegate_to: desktop-integration-specialist
         confidence: high
-      - trigger: "mcp OR mcp server OR desktop-commander OR tool registration"
+      - trigger: 'mcp OR mcp server OR desktop-commander OR tool registration'
         delegate_to: desktop-mcp-specialist
         confidence: high
-      - trigger: "rag OR embeddings OR vector store OR semantic search"
+      - trigger: 'rag OR embeddings OR vector store OR semantic search'
         delegate_to: desktop-rag-specialist
         confidence: high
 
   webapp-expert:
     rules:
-      - trigger: "vite OR build error OR bundle OR chunk OR hmr"
+      - trigger: 'vite OR build error OR bundle OR chunk OR hmr'
         delegate_to: vite-build-specialist
         confidence: high
-      - trigger: "component OR hook OR useState OR react"
+      - trigger: 'component OR hook OR useState OR react'
         delegate_to: react-component-specialist
         confidence: high
-      - trigger: "shadcn OR tailwind OR styling OR theme OR ui"
+      - trigger: 'shadcn OR tailwind OR styling OR theme OR ui'
         delegate_to: ui-integration-specialist
         confidence: high
-      - trigger: "test OR vitest OR playwright OR coverage"
+      - trigger: 'test OR vitest OR playwright OR coverage'
         delegate_to: web-testing-specialist
         confidence: high
-      - trigger: "clean OR cleanup OR cache clear"
+      - trigger: 'clean OR cleanup OR cache clear'
         delegate_to: web-cleanup-specialist
         confidence: medium
-      - trigger: "state OR zustand OR jotai OR react query OR tanstack OR global state"
+      - trigger: 'state OR zustand OR jotai OR react query OR tanstack OR global state'
         delegate_to: web-state-specialist
         confidence: high
 
   backend-expert:
     rules:
-      - trigger: "api OR endpoint OR route OR controller OR middleware OR rest OR graphql"
+      - trigger: 'api OR endpoint OR route OR controller OR middleware OR rest OR graphql'
         delegate_to: api-implementation-specialist
         confidence: high
-      - trigger: "database OR db OR migration OR schema OR query OR orm OR prisma OR sqlite"
+      - trigger: 'database OR db OR migration OR schema OR query OR orm OR prisma OR sqlite'
         delegate_to: database-integration-specialist
         confidence: high
-      - trigger: "auth OR security OR jwt OR owasp OR validation OR sanitize OR password"
+      - trigger: 'auth OR security OR jwt OR owasp OR validation OR sanitize OR password'
         delegate_to: backend-security-specialist
         confidence: high
-      - trigger: "deploy OR pm2 OR docker OR health check OR production OR staging"
+      - trigger: 'deploy OR pm2 OR docker OR health check OR production OR staging'
         delegate_to: backend-deployment-specialist
         confidence: high
-      - trigger: "test OR jest OR vitest OR supertest OR coverage OR mock"
+      - trigger: 'test OR jest OR vitest OR supertest OR coverage OR mock'
         delegate_to: backend-testing-specialist
         confidence: high
 
   mobile-expert:
     rules:
-      - trigger: "capacitor OR android OR ios OR apk OR native build OR gradle"
+      - trigger: 'capacitor OR android OR ios OR apk OR native build OR gradle'
         delegate_to: capacitor-build-specialist
         confidence: high
-      - trigger: "pwa OR service worker OR offline OR manifest OR workbox"
+      - trigger: 'pwa OR service worker OR offline OR manifest OR workbox'
         delegate_to: pwa-specialist
         confidence: high
-      - trigger: "touch OR gesture OR swipe OR mobile ui OR responsive OR safe area"
+      - trigger: 'touch OR gesture OR swipe OR mobile ui OR responsive OR safe area'
         delegate_to: mobile-ui-specialist
         confidence: high
-      - trigger: "mobile test OR device test OR emulator OR adb OR appium"
+      - trigger: 'mobile test OR device test OR emulator OR adb OR appium'
         delegate_to: mobile-testing-specialist
         confidence: high
-      - trigger: "mobile performance OR lighthouse OR bundle size OR lazy load OR fps OR TTI"
+      - trigger: 'mobile performance OR lighthouse OR bundle size OR lazy load OR fps OR TTI'
         delegate_to: mobile-performance-specialist
         confidence: high
 
   rag-expert:
     rules:
-      - trigger: "rag OR retrieval OR embeddings OR vector OR chunking OR llamaindex OR langchain"
+      - trigger: 'rag OR retrieval OR embeddings OR vector OR chunking OR llamaindex OR langchain'
         delegate_to: rag-pipeline-specialist
         confidence: high
 
   mcp-expert:
     rules:
-      - trigger: "mcp server OR model context protocol OR tool definition OR mcp resource OR mcp builder"
+      - trigger: 'mcp server OR model context protocol OR tool definition OR mcp resource OR mcp builder'
         delegate_to: mcp-server-specialist
         confidence: high
 
   monorepo-expert:
     rules:
-      - trigger: "nx affected OR project graph OR workspace health OR nx cache OR run-many OR nx reset OR dependency graph OR circular dependencies"
+      - trigger: 'nx affected OR project graph OR workspace health OR nx cache OR run-many OR nx reset OR dependency graph OR circular dependencies'
         delegate_to: nx-workspace-specialist
         confidence: high
 
   crypto-expert:
     rules:
-      - trigger: "strategy OR algorithm OR backtest OR rsi OR macd OR position sizing OR risk management OR stop loss"
+      - trigger: 'strategy OR algorithm OR backtest OR rsi OR macd OR position sizing OR risk management OR stop loss'
         delegate_to: trading-strategy-specialist
         confidence: high
-      - trigger: "kraken OR websocket OR order OR nonce OR circuit breaker OR exchange OR rate limit"
+      - trigger: 'kraken OR websocket OR order OR nonce OR circuit breaker OR exchange OR rate limit'
         delegate_to: exchange-integration-specialist
         confidence: high
-      - trigger: "paper trading OR simulation OR crypto test OR mock orders OR safety test OR dry run"
+      - trigger: 'paper trading OR simulation OR crypto test OR mock orders OR safety test OR dry run'
         delegate_to: crypto-testing-specialist
         confidence: high
 
   escalation:
-    - condition: "complex refactoring (>5 files)"
+    - condition: 'complex refactoring (>5 files)'
       return_to: parent_agent
-      reason: "architectural_decision"
-    - condition: "security vulnerability detected"
+      reason: 'architectural_decision'
+    - condition: 'security vulnerability detected'
       return_to: parent_agent
-      reason: "security_review"
-    - condition: "sub-agent timeout or repeated failures"
+      reason: 'security_review'
+    - condition: 'sub-agent timeout or repeated failures'
       return_to: parent_agent
-      reason: "execution_failure"
-    - condition: "user confirmation needed"
+      reason: 'execution_failure'
+    - condition: 'user confirmation needed'
       return_to: parent_agent
-      reason: "user_confirmation"
-    - condition: "database migration with data loss risk"
+      reason: 'user_confirmation'
+    - condition: 'database migration with data loss risk'
       return_to: parent_agent
-      reason: "destructive_operation"
-    - condition: "native plugin requires security review"
+      reason: 'destructive_operation'
+    - condition: 'native plugin requires security review'
       return_to: parent_agent
-      reason: "native_security"
+      reason: 'native_security'
 
 # =============================================================================
 # PARALLEL EXECUTION
@@ -2135,7 +2135,7 @@ parallel_execution:
     # RAG - pipeline before desktop RAG integration
     - [rag-pipeline-specialist, desktop-rag-specialist]
     # Monorepo - cache must be cleared before running affected
-    - [nx-workspace-specialist, desktop-build-specialist]  # nx reset before rebuild
+    - [nx-workspace-specialist, desktop-build-specialist] # nx reset before rebuild
     # Crypto - exchange integration before testing, strategy before testing
     - [exchange-integration-specialist, crypto-testing-specialist]
     - [trading-strategy-specialist, crypto-testing-specialist]
@@ -2152,40 +2152,40 @@ caching:
 
   cache_keys:
     # Desktop
-    desktop-quality-checker: "quality:${project}:${files_hash}:${config_hash}"
-    desktop-test-coordinator: "test:${project}:${files_hash}:${test_config_hash}"
+    desktop-quality-checker: 'quality:${project}:${files_hash}:${config_hash}'
+    desktop-test-coordinator: 'test:${project}:${files_hash}:${test_config_hash}'
     desktop-cleanup-specialist: null
-    desktop-build-specialist: "build:${project}:${files_hash}:${config_hash}"
-    desktop-integration-specialist: "ipc:${project}:${files_hash}"
+    desktop-build-specialist: 'build:${project}:${files_hash}:${config_hash}'
+    desktop-integration-specialist: 'ipc:${project}:${files_hash}'
     # Web
-    vite-build-specialist: "vite:${project}:${files_hash}:${config_hash}"
-    react-component-specialist: "react:${project}:${component_hash}"
-    ui-integration-specialist: "ui:${project}:${styles_hash}"
-    web-testing-specialist: "webtest:${project}:${files_hash}:${test_config_hash}"
+    vite-build-specialist: 'vite:${project}:${files_hash}:${config_hash}'
+    react-component-specialist: 'react:${project}:${component_hash}'
+    ui-integration-specialist: 'ui:${project}:${styles_hash}'
+    web-testing-specialist: 'webtest:${project}:${files_hash}:${test_config_hash}'
     web-cleanup-specialist: null
     # Backend
-    api-implementation-specialist: "api:${project}:${routes_hash}:${config_hash}"
-    database-integration-specialist: "db:${project}:${schema_hash}:${migrations_hash}"
-    backend-security-specialist: "security:${project}:${files_hash}"
-    backend-deployment-specialist: "deploy:${project}:${config_hash}"
-    backend-testing-specialist: "backtest:${project}:${files_hash}:${test_config_hash}"
+    api-implementation-specialist: 'api:${project}:${routes_hash}:${config_hash}'
+    database-integration-specialist: 'db:${project}:${schema_hash}:${migrations_hash}'
+    backend-security-specialist: 'security:${project}:${files_hash}'
+    backend-deployment-specialist: 'deploy:${project}:${config_hash}'
+    backend-testing-specialist: 'backtest:${project}:${files_hash}:${test_config_hash}'
     # Mobile
-    capacitor-build-specialist: "cap:${project}:${files_hash}:${config_hash}"
-    pwa-specialist: "pwa:${project}:${manifest_hash}:${sw_hash}"
-    mobile-ui-specialist: "mobui:${project}:${component_hash}"
-    mobile-testing-specialist: "mobtest:${project}:${files_hash}:${test_config_hash}"
-    mobile-performance-specialist: "mobperf:${project}:${files_hash}:${build_hash}"
+    capacitor-build-specialist: 'cap:${project}:${files_hash}:${config_hash}'
+    pwa-specialist: 'pwa:${project}:${manifest_hash}:${sw_hash}'
+    mobile-ui-specialist: 'mobui:${project}:${component_hash}'
+    mobile-testing-specialist: 'mobtest:${project}:${files_hash}:${test_config_hash}'
+    mobile-performance-specialist: 'mobperf:${project}:${files_hash}:${build_hash}'
     # Phase 5 new agents
-    desktop-mcp-specialist: "deskmcp:${project}:${mcp_config_hash}"
-    desktop-rag-specialist: "deskrag:${project}:${rag_config_hash}:${files_hash}"
-    web-state-specialist: "webstate:${project}:${stores_hash}"
-    rag-pipeline-specialist: "ragpipe:${pipeline_config_hash}:${documents_hash}"
-    mcp-server-specialist: "mcpsvr:${project}:${tools_hash}:${config_hash}"
-    nx-workspace-specialist: "nxws:${workspace_hash}:${project_graph_hash}"
+    desktop-mcp-specialist: 'deskmcp:${project}:${mcp_config_hash}'
+    desktop-rag-specialist: 'deskrag:${project}:${rag_config_hash}:${files_hash}'
+    web-state-specialist: 'webstate:${project}:${stores_hash}'
+    rag-pipeline-specialist: 'ragpipe:${pipeline_config_hash}:${documents_hash}'
+    mcp-server-specialist: 'mcpsvr:${project}:${tools_hash}:${config_hash}'
+    nx-workspace-specialist: 'nxws:${workspace_hash}:${project_graph_hash}'
     # Phase 6 Crypto
-    trading-strategy-specialist: "strategy:${strategy_hash}:${config_hash}"
-    exchange-integration-specialist: "exchange:${project}:${api_config_hash}"
-    crypto-testing-specialist: "cryptest:${test_hash}:${strategy_hash}"
+    trading-strategy-specialist: 'strategy:${strategy_hash}:${config_hash}'
+    exchange-integration-specialist: 'exchange:${project}:${api_config_hash}'
+    crypto-testing-specialist: 'cryptest:${test_hash}:${strategy_hash}'
 
   invalidation:
     on_file_change: true
@@ -2201,7 +2201,7 @@ caching:
     # 4. rag-pipeline-specialist: always invalidate on document_hash change
     # 5. mcp-server-specialist: invalidate tool cache when MCP server restarts
     on_redis_key_pattern_change: true
-    redis_invalidation_strategy: "scan_and_del"
+    redis_invalidation_strategy: 'scan_and_del'
     redis_swap_pattern: true
 
 # =============================================================================
@@ -2302,8 +2302,8 @@ cost_optimization:
       - capacitor_builds
       - desktop_rag_integration
       - rag_pipeline_design
-      - trading_strategy_design  # financial logic - reasoning required
-      - exchange_integration     # security-sensitive - reasoning required
+      - trading_strategy_design # financial logic - reasoning required
+      - exchange_integration # security-sensitive - reasoning required
 
   targets:
     api_cost_reduction: 20
@@ -2330,94 +2330,94 @@ integration:
   sub_agent_outputs:
     # Desktop
     desktop-quality-checker:
-      success: "Quality checks passed - ${auto_fixes_applied} fixes applied"
-      failure: "Quality checks failed - ${errors_count} errors remaining"
+      success: 'Quality checks passed - ${auto_fixes_applied} fixes applied'
+      failure: 'Quality checks failed - ${errors_count} errors remaining'
     desktop-test-coordinator:
-      success: "Tests passed - ${coverage}% coverage (${tests_run} tests)"
-      failure: "Tests failed - ${failed_tests} failures"
+      success: 'Tests passed - ${coverage}% coverage (${tests_run} tests)'
+      failure: 'Tests failed - ${failed_tests} failures'
     desktop-cleanup-specialist:
-      success: "Cleanup completed - ${disk_space_recovered} recovered"
-      failure: "Cleanup failed - ${error_message}"
+      success: 'Cleanup completed - ${disk_space_recovered} recovered'
+      failure: 'Cleanup failed - ${error_message}'
     desktop-build-specialist:
-      success: "Build completed - ${output_path}"
-      failure: "Build failed - ${error_message}"
+      success: 'Build completed - ${output_path}'
+      failure: 'Build failed - ${error_message}'
     desktop-integration-specialist:
-      success: "IPC validated - ${channels_checked} channels secure"
-      failure: "IPC issues found - ${security_violations}"
+      success: 'IPC validated - ${channels_checked} channels secure'
+      failure: 'IPC issues found - ${security_violations}'
     # Web
     vite-build-specialist:
-      success: "Build completed - ${bundle_size} total"
-      failure: "Build failed - ${error_message}"
+      success: 'Build completed - ${bundle_size} total'
+      failure: 'Build failed - ${error_message}'
     react-component-specialist:
-      success: "Components analyzed - ${patterns_found} patterns, ${issues_fixed} fixed"
-      failure: "Component issues - ${anti_patterns_found} anti-patterns"
+      success: 'Components analyzed - ${patterns_found} patterns, ${issues_fixed} fixed'
+      failure: 'Component issues - ${anti_patterns_found} anti-patterns'
     ui-integration-specialist:
-      success: "UI validated - ${accessibility_score} a11y score"
-      failure: "UI issues - ${violations_count} violations"
+      success: 'UI validated - ${accessibility_score} a11y score'
+      failure: 'UI issues - ${violations_count} violations'
     web-testing-specialist:
-      success: "Tests passed - ${coverage}% coverage (${tests_run} tests)"
-      failure: "Tests failed - ${failed_tests} failures"
+      success: 'Tests passed - ${coverage}% coverage (${tests_run} tests)'
+      failure: 'Tests failed - ${failed_tests} failures'
     web-cleanup-specialist:
-      success: "Cleanup completed - ${disk_space_recovered} recovered"
-      failure: "Cleanup failed - ${error_message}"
+      success: 'Cleanup completed - ${disk_space_recovered} recovered'
+      failure: 'Cleanup failed - ${error_message}'
     # Backend
     api-implementation-specialist:
-      success: "API implemented - ${endpoints_count} endpoints, ${routes_validated} validated"
-      failure: "API issues - ${validation_errors} validation errors"
+      success: 'API implemented - ${endpoints_count} endpoints, ${routes_validated} validated'
+      failure: 'API issues - ${validation_errors} validation errors'
     database-integration-specialist:
-      success: "Database ready - ${migrations_applied} migrations, schema validated"
+      success: 'Database ready - ${migrations_applied} migrations, schema validated'
       failure: "Database issues - ${schema_errors} errors, check D:\\ storage policy"
     backend-security-specialist:
-      success: "Security audit passed - ${checks_passed}/${total_checks} OWASP checks"
-      failure: "Security issues - ${critical_count} critical, ${high_count} high severity"
+      success: 'Security audit passed - ${checks_passed}/${total_checks} OWASP checks'
+      failure: 'Security issues - ${critical_count} critical, ${high_count} high severity'
     backend-deployment-specialist:
-      success: "Deployment ready - health checks passing, PM2 configured"
-      failure: "Deployment issues - ${config_errors} configuration errors"
+      success: 'Deployment ready - health checks passing, PM2 configured'
+      failure: 'Deployment issues - ${config_errors} configuration errors'
     backend-testing-specialist:
-      success: "Tests passed - ${coverage}% coverage (${tests_run} tests)"
-      failure: "Tests failed - ${failed_tests} failures"
+      success: 'Tests passed - ${coverage}% coverage (${tests_run} tests)'
+      failure: 'Tests failed - ${failed_tests} failures'
     # Mobile
     capacitor-build-specialist:
-      success: "Mobile build complete - ${platform} APK/IPA at ${output_path}, versionCode ${version_code}"
-      failure: "Mobile build failed - ${error_message}"
+      success: 'Mobile build complete - ${platform} APK/IPA at ${output_path}, versionCode ${version_code}'
+      failure: 'Mobile build failed - ${error_message}'
     pwa-specialist:
-      success: "PWA configured - Lighthouse score ${pwa_score}, offline ${offline_status}"
-      failure: "PWA issues - ${issues_count} issues, ${missing_requirements}"
+      success: 'PWA configured - Lighthouse score ${pwa_score}, offline ${offline_status}'
+      failure: 'PWA issues - ${issues_count} issues, ${missing_requirements}'
     mobile-ui-specialist:
-      success: "Mobile UI validated - ${touch_targets_ok} touch targets, ${a11y_score} a11y"
-      failure: "Mobile UI issues - ${violations_count} violations"
+      success: 'Mobile UI validated - ${touch_targets_ok} touch targets, ${a11y_score} a11y'
+      failure: 'Mobile UI issues - ${violations_count} violations'
     mobile-testing-specialist:
-      success: "Mobile tests passed - ${tests_run} tests on ${devices_tested} devices"
-      failure: "Mobile tests failed - ${failed_tests} failures"
+      success: 'Mobile tests passed - ${tests_run} tests on ${devices_tested} devices'
+      failure: 'Mobile tests failed - ${failed_tests} failures'
     mobile-performance-specialist:
-      success: "Performance audit complete - Lighthouse ${perf_score}/100, bundle ${bundle_size}"
-      failure: "Performance issues - ${violations_count} issues, TTI ${tti}ms"
+      success: 'Performance audit complete - Lighthouse ${perf_score}/100, bundle ${bundle_size}'
+      failure: 'Performance issues - ${violations_count} issues, TTI ${tti}ms'
     # Phase 5 new agents
     desktop-mcp-specialist:
-      success: "MCP validated - ${tools_registered} tools registered, connection verified"
+      success: 'MCP validated - ${tools_registered} tools registered, connection verified'
       failure: "MCP setup failed - ${error_message}. Check C:\\dev\\.claude\\mcp-servers\\"
     desktop-rag-specialist:
-      success: "RAG pipeline ready - ${documents_indexed} docs indexed, ${retrieval_score} accuracy"
+      success: 'RAG pipeline ready - ${documents_indexed} docs indexed, ${retrieval_score} accuracy'
       failure: "RAG issues - ${error_message}. Check D:\\rag\\pipeline.config.json"
     web-state-specialist:
-      success: "State architecture validated - ${stores_analyzed} stores, ${anti_patterns_fixed} anti-patterns fixed"
-      failure: "State issues - ${violations_count} violations found"
+      success: 'State architecture validated - ${stores_analyzed} stores, ${anti_patterns_fixed} anti-patterns fixed'
+      failure: 'State issues - ${violations_count} violations found'
     rag-pipeline-specialist:
-      success: "Pipeline complete - ${documents_processed} docs, ${chunks_created} chunks, ${embeddings_generated} embeddings"
-      failure: "Pipeline failed at ${stage} - ${error_message}"
+      success: 'Pipeline complete - ${documents_processed} docs, ${chunks_created} chunks, ${embeddings_generated} embeddings'
+      failure: 'Pipeline failed at ${stage} - ${error_message}'
     mcp-server-specialist:
-      success: "MCP server built - ${tools_count} tools, ${resources_count} resources registered"
+      success: 'MCP server built - ${tools_count} tools, ${resources_count} resources registered'
       failure: "MCP server issues - ${error_message}. See C:\\dev\\.claude\\mcp-servers\\"
     nx-workspace-specialist:
-      success: "Workspace healthy - ${projects_count} projects, ${affected_count} affected, cache ${cache_status}"
-      failure: "Workspace issues - ${error_message}. Run: pnpm nx reset"
+      success: 'Workspace healthy - ${projects_count} projects, ${affected_count} affected, cache ${cache_status}'
+      failure: 'Workspace issues - ${error_message}. Run: pnpm nx reset'
     # Phase 6 Crypto
     trading-strategy-specialist:
-      success: "Strategy analyzed - ${signals_count} signals, Sharpe ${sharpe_ratio}, max drawdown ${max_drawdown}%"
-      failure: "Strategy issues - ${error_message}. HUMAN REVIEW REQUIRED before live use"
+      success: 'Strategy analyzed - ${signals_count} signals, Sharpe ${sharpe_ratio}, max drawdown ${max_drawdown}%'
+      failure: 'Strategy issues - ${error_message}. HUMAN REVIEW REQUIRED before live use'
     exchange-integration-specialist:
-      success: "Exchange integration validated - circuit breaker ${cb_status}, nonce ${nonce_status}, ${endpoints_tested} endpoints tested"
-      failure: "Exchange issues - ${error_message}. CHECK NONCE STATE before retrying"
+      success: 'Exchange integration validated - circuit breaker ${cb_status}, nonce ${nonce_status}, ${endpoints_tested} endpoints tested'
+      failure: 'Exchange issues - ${error_message}. CHECK NONCE STATE before retrying'
     crypto-testing-specialist:
-      success: "Crypto tests passed - ${tests_run} tests, paper trading ${paper_status}, safety checks ${safety_status}"
-      failure: "Crypto tests failed - ${failed_tests} failures. DO NOT GO LIVE until resolved"
+      success: 'Crypto tests passed - ${tests_run} tests, paper trading ${paper_status}, safety checks ${safety_status}'
+      failure: 'Crypto tests failed - ${failed_tests} failures. DO NOT GO LIVE until resolved'

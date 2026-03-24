@@ -1,7 +1,7 @@
 ---
 name: Skill Request
 about: Suggest a new skill for the collection
-title: "[REQ] "
+title: '[REQ] '
 labels: enhancement
 assignees: sickn33
 ---

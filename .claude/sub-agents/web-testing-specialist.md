@@ -1,7 +1,7 @@
 # Web Testing Specialist
 
 **Category:** Web Applications
-**Model:** Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
+**Model:** Claude Sonnet 4.5 (claude-sonnet-4-6)
 **Context Budget:** 4,000 tokens
 **Delegation Trigger:** Playwright tests, Vitest unit tests, coverage, E2E testing
 
@@ -468,5 +468,5 @@ Return to `webapp-expert` when:
 **Sources:**
 
 - [Claude Haiku 4.5](https://www.anthropic.com/claude/haiku)
-- [Introducing Claude Haiku 4.5](https://www.anthropic.com/news/claude-haiku-4-5)
+- [Introducing Claude Haiku 4.5](https://www.anthropic.com/news/claude-haiku-4-5-20251001)
 - [Models overview - Claude Docs](https://platform.claude.com/docs/en/about-claude/models/overview)

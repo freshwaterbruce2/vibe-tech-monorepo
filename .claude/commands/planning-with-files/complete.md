@@ -18,6 +18,7 @@ powershell -Command "Get-ChildItem -Path 'D:\planning-files' -Directory -Recurse
 ## Step 2: Read Current State
 
 Read the task_plan.md from the session directory to understand:
+
 - How many phases were completed
 - Which files were modified
 - Overall task status
@@ -25,6 +26,7 @@ Read the task_plan.md from the session directory to understand:
 ## Step 3: Update task_plan.md
 
 Change the status field:
+
 - `in_progress` -> `completed`
 
 Mark all phases as complete if applicable.
@@ -32,9 +34,11 @@ Mark all phases as complete if applicable.
 ## Step 4: Finalize progress.md
 
 Add final entry to the timeline:
+
 - `[TIMESTAMP]: Session completed`
 
 Add summary section with:
+
 - Total files modified
 - Total errors encountered
 - Total duration

@@ -39,6 +39,7 @@ These skills work with any AI coding assistant that supports the `SKILL.md` form
 ### Are these skills free to use?
 
 **Yes!** This repository is licensed under MIT License, which means:
+
 - ✅ Free for personal use
 - ✅ Free for commercial use
 - ✅ You can modify them
@@ -49,6 +50,7 @@ These skills work with any AI coding assistant that supports the `SKILL.md` form
 ### Do skills work offline?
 
 The skill files themselves are stored locally on your computer, but your AI assistant needs an internet connection to function. So:
+
 - ✅ Skills are local files
 - ❌ AI assistant needs internet
 
@@ -65,6 +67,7 @@ git clone https://github.com/sickn33/antigravity-awesome-skills.git .agent/skill
 ```
 
 **Tool-specific paths:**
+
 - Claude Code: `.claude/skills/` or `.agent/skills/`
 - Gemini CLI: `.gemini/skills/` or `.agent/skills/`
 - Cursor: `.cursor/skills/` or project root
@@ -78,6 +81,7 @@ git clone https://github.com/sickn33/antigravity-awesome-skills.git .agent/skill
 
 **Option 1: Global Installation** (recommended)
 Install once in your home directory, works for all projects:
+
 ```bash
 cd ~
 git clone https://github.com/sickn33/antigravity-awesome-skills.git .agent/skills
@@ -85,6 +89,7 @@ git clone https://github.com/sickn33/antigravity-awesome-skills.git .agent/skill
 
 **Option 2: Per-Project Installation**
 Install in each project directory:
+
 ```bash
 cd /path/to/your/project
 git clone https://github.com/sickn33/antigravity-awesome-skills.git .agent/skills
@@ -133,6 +138,7 @@ Use the `@` symbol followed by the skill name:
 ```
 
 **Examples:**
+
 ```
 @brainstorming help me design a todo app
 @stripe-integration add subscription billing
@@ -149,11 +155,13 @@ Some tools also support `/skill-name` syntax.
 Check the [Full Skill Registry](README.md#full-skill-registry-179179) organized by category
 
 **Method 2: Search by keyword**
+
 ```bash
 ls skills/ | grep "keyword"
 ```
 
 **Method 3: Ask your AI**
+
 ```
 What skills are available for [topic]?
 ```
@@ -179,16 +187,19 @@ What skills are available for [topic]?
 **Troubleshooting steps:**
 
 1. **Check installation path**
+
    ```bash
    ls .agent/skills/
    ```
 
 2. **Verify skill exists**
+
    ```bash
    ls .agent/skills/skill-name/
    ```
 
 3. **Check SKILL.md exists**
+
    ```bash
    cat .agent/skills/skill-name/SKILL.md
    ```
@@ -247,6 +258,7 @@ Check out [CONTRIBUTING.md](CONTRIBUTING.md) for step-by-step instructions.
 ### What makes a good skill?
 
 A good skill:
+
 - ✅ Solves a specific problem
 - ✅ Has clear, actionable instructions
 - ✅ Includes examples
@@ -260,11 +272,13 @@ See [SKILL_ANATOMY.md](docs/SKILL_ANATOMY.md) for details.
 ### How long does it take for my contribution to be reviewed?
 
 Review times vary, but typically:
+
 - **Simple fixes** (typos, docs): 1-3 days
 - **New skills**: 3-7 days
 - **Major changes**: 1-2 weeks
 
 You can speed this up by:
+
 - Following the contribution guidelines
 - Writing clear commit messages
 - Testing your changes
@@ -286,12 +300,14 @@ The AI primarily uses `SKILL.md`, while developers read `README.md`.
 ### Can I use scripts or code in my skill?
 
 **Yes!** Skills can include:
+
 - `scripts/` - Helper scripts
 - `examples/` - Example code
 - `templates/` - Code templates
 - `references/` - Documentation
 
 Reference them in your `SKILL.md`:
+
 ```markdown
 Run the setup script:
 \`\`\`bash
@@ -304,6 +320,7 @@ bash scripts/setup.sh
 ### What programming languages can skills cover?
 
 **Any language!** Current skills cover:
+
 - JavaScript/TypeScript
 - Python
 - Go
@@ -338,6 +355,7 @@ python3 scripts/validate_skills.py
 ```
 
 This checks:
+
 - ✅ SKILL.md exists
 - ✅ Frontmatter is valid
 - ✅ Name matches folder name
@@ -350,16 +368,19 @@ This checks:
 ### Which skills should I try first?
 
 **For beginners:**
+
 - `@brainstorming` - Design before coding
 - `@systematic-debugging` - Fix bugs methodically
 - `@git-pushing` - Commit with good messages
 
 **For developers:**
+
 - `@test-driven-development` - Write tests first
 - `@react-best-practices` - Modern React patterns
 - `@senior-fullstack` - Full-stack development
 
 **For security:**
+
 - `@ethical-hacking-methodology` - Security basics
 - `@burp-suite-testing` - Web app testing
 
@@ -377,6 +398,7 @@ This checks:
 6. **Iterate** - Improve based on feedback
 
 **Recommended skills to study:**
+
 - `skills/brainstorming/SKILL.md` - Clear structure
 - `skills/systematic-debugging/SKILL.md` - Comprehensive
 - `skills/git-pushing/SKILL.md` - Simple and focused
@@ -386,6 +408,7 @@ This checks:
 ### Are there any skills for learning AI/ML?
 
 **Yes!** Check out:
+
 - `@rag-engineer` - RAG systems
 - `@prompt-engineering` - Prompt design
 - `@langgraph` - Multi-agent systems
@@ -435,11 +458,13 @@ We'll update it quickly!
 ### Can I modify skills for my own use?
 
 **Yes!** The MIT License allows you to:
+
 - ✅ Modify skills for your needs
 - ✅ Create private versions
 - ✅ Customize for your team
 
 **To modify:**
+
 1. Copy the skill to a new location
 2. Edit the SKILL.md file
 3. Use your modified version
@@ -463,6 +488,7 @@ We'll update it quickly!
 - **Updates**: When best practices change
 
 **Stay updated:**
+
 ```bash
 cd .agent/skills
 git pull origin main
@@ -473,6 +499,7 @@ git pull origin main
 ### Who maintains this repository?
 
 This is a community-driven project with contributions from:
+
 - Original creators
 - Open source contributors
 - AI coding assistant users worldwide
@@ -504,6 +531,7 @@ See [Credits & Sources](README.md#credits--sources) for attribution.
 ### Can I use these skills commercially?
 
 **Yes!** The MIT License permits commercial use. You can:
+
 - ✅ Use in commercial projects
 - ✅ Use in client work
 - ✅ Include in paid products
@@ -523,6 +551,6 @@ See [Credits & Sources](README.md#credits--sources) for attribution.
 
 ---
 
-**Question not answered?** 
+**Question not answered?**
 
 [Open a discussion](https://github.com/sickn33/antigravity-awesome-skills/discussions) and we'll help you out! 🙌

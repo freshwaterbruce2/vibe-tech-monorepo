@@ -201,7 +201,7 @@ const GAMES: GameDef[] = [
     color: '#22d3ee',
     zone: 'challenge',
     tokens: 20,
-    minLevel: 1,
+    minLevel: 0,
     difficultyLabel: 'Scaling',
     focus: 'Mental math',
   },

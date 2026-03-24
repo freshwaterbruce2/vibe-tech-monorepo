@@ -11,12 +11,12 @@ category: infrastructure
 
 ## System Components
 
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| Memory Bank | `apps/memory-bank` | Session context, quick-access |
-| Learning DB | `D:\databases\learning_system.db` | Pattern storage |
-| Training Data | `D:\learning-system\` | Training results |
-| Agent Orchestrator | `apps/memory-bank/agent_orchestrator.py` | Agent selection |
+| Component          | Location                                 | Purpose                       |
+| ------------------ | ---------------------------------------- | ----------------------------- |
+| Memory Bank        | `apps/memory-bank`                       | Session context, quick-access |
+| Learning DB        | `D:\databases\learning_system.db`        | Pattern storage               |
+| Training Data      | `D:\learning-system\`                    | Training results              |
+| Agent Orchestrator | `apps/memory-bank/agent_orchestrator.py` | Agent selection               |
 
 ## Architecture
 
@@ -41,6 +41,7 @@ Learning System
 ## Key Patterns
 
 ### Memory Storage
+
 ```javascript
 // apps/memory-bank/memory_manager.js
 class MemoryManager {
@@ -50,7 +51,7 @@ class MemoryManager {
       data,
       metadata,
       timestamp: new Date().toISOString(),
-      type: metadata.type || 'general'
+      type: metadata.type || 'general',
     };
     // Store in SQLite + quick-access cache
   }
@@ -62,6 +63,7 @@ class MemoryManager {
 ```
 
 ### Pattern Learning
+
 ```python
 # Pattern structure
 pattern = {
@@ -76,6 +78,7 @@ pattern = {
 ```
 
 ### Agent Performance Tracking
+
 ```python
 # Track agent selection and outcomes
 def track_agent_performance(agent_name, task_type, success, duration):
@@ -87,6 +90,7 @@ def track_agent_performance(agent_name, task_type, success, duration):
 ```
 
 ### Context Retrieval
+
 ```javascript
 // Retrieve relevant context for current task
 async function getRelevantContext(prompt, project) {
@@ -94,12 +98,15 @@ async function getRelevantContext(prompt, project) {
   const session = await memory.retrieveData('last-session');
 
   // 2. Get project-specific patterns
-  const patterns = await db.query(`
+  const patterns = await db.query(
+    `
     SELECT * FROM patterns
     WHERE project = ? OR project = 'global'
     ORDER BY confidence DESC, times_used DESC
     LIMIT 10
-  `, [project]);
+  `,
+    [project],
+  );
 
   // 3. Get agent recommendations
   const agents = await orchestrator.recommend(prompt, project);
@@ -111,6 +118,7 @@ async function getRelevantContext(prompt, project) {
 ## Training Pipeline
 
 ### Pattern Extraction
+
 ```python
 # Extract patterns from successful interactions
 def extract_patterns(conversation):
@@ -127,6 +135,7 @@ def extract_patterns(conversation):
 ```
 
 ### Training Workflow
+
 ```bash
 # 1. Collect training data
 python collect_training_data.py --days 7
@@ -183,6 +192,7 @@ CREATE INDEX idx_agent_perf_agent ON agent_performance(agent);
 ## Integration with Hooks
 
 ### Session Start Hook
+
 ```powershell
 # Load context at session start
 $context = Get-RelevantContext -Project $project
@@ -190,6 +200,7 @@ Show-ContextSummary -Context $context
 ```
 
 ### Prompt Submit Hook
+
 ```powershell
 # Analyze prompt, recommend skills
 $analysis = Analyze-Prompt -Prompt $userPrompt

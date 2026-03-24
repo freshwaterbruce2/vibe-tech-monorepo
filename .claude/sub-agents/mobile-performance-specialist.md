@@ -1,7 +1,7 @@
 # Mobile Performance Specialist
 
 **Category:** Mobile Applications
-**Model:** Claude Haiku 4.5 (claude-haiku-4-5)
+**Model:** Claude Haiku 4.5 (claude-haiku-4-5-20251001)
 **Context Budget:** 3,000 tokens
 **Delegation Trigger:** lighthouse, bundle size, tti, fcp, performance, slow, laggy, jank, frame drop, load time, lcp, cls, capacitor performance
 

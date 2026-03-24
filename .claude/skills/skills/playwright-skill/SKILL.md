@@ -253,9 +253,7 @@ const TARGET_URL = 'http://localhost:3001'; // Auto-detected
   ];
 
   for (const viewport of viewports) {
-    console.log(
-      `Testing ${viewport.name} (${viewport.width}x${viewport.height})`,
-    );
+    console.log(`Testing ${viewport.name} (${viewport.width}x${viewport.height})`);
 
     await page.setViewportSize({
       width: viewport.width,

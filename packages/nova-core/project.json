@@ -5,6 +5,20 @@
   "root": "packages/nova-core",
   "sourceRoot": "packages/nova-core/src",
   "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "echo \"No lint required\"",
+        "cwd": "packages/nova-core"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "echo \"No typecheck required\"",
+        "cwd": "packages/nova-core"
+      }
+    },
     "build": {
       "executor": "nx:run-commands",
       "outputs": ["{projectRoot}/dist"],

@@ -10,12 +10,15 @@ lastReviewed: 2026-02-12
 # GEMINI.md — AVGE Dashboard
 
 ## Project Type
+
 Autonomous Video Generation Engine — agentic pipeline + C2 dashboard.
 
 ## Location
+
 `C:\dev\apps\avge-dashboard\`
 
 ## Tech Stack
+
 - **Framework**: Vite + React 19 + TypeScript
 - **State**: Zustand
 - **Styling**: Vanilla CSS (dark-mode, glassmorphism)
@@ -23,6 +26,7 @@ Autonomous Video Generation Engine — agentic pipeline + C2 dashboard.
 - **Database**: SQLite at `D:\avge\databases\avge.db`
 
 ## Key Commands
+
 ```bash
 pnpm dev       # Start dev server (Vite)
 pnpm build     # Production build
@@ -31,6 +35,7 @@ pnpm typecheck # tsc --noEmit
 ```
 
 ## Architecture
+
 ```
 src/
 ├── pipeline/          # BLAST framework modules
@@ -52,6 +57,7 @@ src/
 ```
 
 ## Data Paths
+
 - **Brain Context**: `D:\avge\brain.md`
 - **Source Material**: `D:\avge\raw_material\`
 - **Audio Assets**: `D:\avge\assets\audio\`
@@ -61,7 +67,9 @@ src/
 - **Database**: `D:\avge\databases\avge.db`
 
 ## Protocol Zebra
+
 This project is governed by Protocol Zebra. Four mandatory files at project root:
+
 - `task_plan.md` — Phase-by-phase checklist
 - `findings.md` — Research discoveries and constraints
 - `progress.md` — Real-time completion status
@@ -70,12 +78,14 @@ This project is governed by Protocol Zebra. Four mandatory files at project root
 **Rule**: The agent cannot modify source code without updating `task_plan.md` first.
 
 ## Critical Patterns
+
 - **BLAST Framework**: Blueprint → Link → Architect → Style → Trigger
 - **Source Grounding**: All LLM outputs verified against NotebookLM sources
 - **Local-First**: All data on D:\, no cloud storage for sensitive material
 - **5-Second Chunks**: Video rendered in segments for token-limit bypass
 
 ## Quality Checklist
+
 - [ ] Vite build succeeds
 - [ ] TypeScript compiles
 - [ ] Dark-mode renders correctly
@@ -83,5 +93,6 @@ This project is governed by Protocol Zebra. Four mandatory files at project root
 - [ ] Pipeline state persists to D:\avge\databases\
 
 ## Canonical References
+
 - AI notes: AI.md
 - Workspace rules: ../../docs/ai/WORKSPACE.md

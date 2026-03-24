@@ -9,8 +9,8 @@ Comprehensive evaluation framework for testing AI agents, with focus on behavior
 This directory contains automated testing tools for evaluating LLM agent behavior, compliance with behavioral contracts, and resistance to adversarial attacks.
 
 **Current Frameworks:**
-- Web Search Grounding Evaluation (80 tests)
-- No Duplicates Rule Enforcement (80 tests)
+- Web Search Grounding Evaluation (structured behavioral suite)
+- No Duplicates Rule Enforcement (structured behavioral suite)
 
 ---
 
@@ -372,21 +372,20 @@ Tests resistance to attack scenarios designed to bypass duplicate checks.
 **Framework:** ✅ Complete
 **Test Cases:** ✅ 80 tests defined (50 standard + 30 adversarial)
 **Test Runner:** ✅ PowerShell automation ready
-**API Integration:** ⚠️ Pending (currently simulation-based)
+**API Integration:** ✅ Engine-backed behavioral runner
 
 ### No Duplicates Rule Evaluation
 **Framework:** ✅ Complete
 **Test Cases:** ✅ 80 tests defined (50 standard + 30 adversarial)
 **Test Runner:** ✅ PowerShell automation ready
-**API Integration:** ⚠️ Pending (currently simulation-based)
+**API Integration:** ✅ Engine-backed behavioral runner
 
-### To Enable Real Testing
+### Runtime Mode
 
-**For Both Frameworks:**
-1. Integrate with Claude Code API
-2. Implement tool usage detection (WebSearch, Glob, Grep, Read, AskUserQuestion)
-3. Build response validators
-4. Add automated compliance tracking
+Both frameworks now run through `apps/agent-engine` as live behavioral suites. The
+PowerShell scripts are compatibility wrappers over the shared structured fixtures in
+`behavioral-suites.json`, and the engine scores structured execution traces instead of
+inspecting fixture text.
 
 ---
 
@@ -476,11 +475,12 @@ cd C:\dev\tests\agent-evaluation
 .\run-web-search-grounding-tests.ps1
 ```
 
-### Issue: Tests show as simulation only
+### Issue: Tests fail because provider access is unavailable
 
-**Explanation:** The framework is currently simulation-based. Tests show what *should* be checked but need API integration for real agent response validation.
+**Explanation:** The engine can run the behavioral lane with Anthropic when configured, or with
+the local scripted behavioral provider when the environment is intentionally offline-compatible.
 
-**Next Steps:** See "To Enable Real Testing" section above.
+**Next Steps:** Check `AGENT_ENGINE_BEHAVIORAL_PROVIDER` and `ANTHROPIC_API_KEY`.
 
 ---
 

@@ -24,6 +24,7 @@ If multiple sessions found, ask user which to recover.
 Read the entire task_plan.md file from the session directory.
 
 Extract and internalize:
+
 - Original objective
 - Current phase
 - Affected files list
@@ -35,6 +36,7 @@ Extract and internalize:
 Read the entire findings.md file.
 
 Extract and internalize:
+
 - Research discoveries
 - Existing patterns found
 - Dependencies identified
@@ -45,6 +47,7 @@ Extract and internalize:
 Read the entire progress.md file.
 
 Extract and internalize:
+
 - Timeline of actions taken
 - Test results
 - Errors encountered and resolutions
@@ -54,6 +57,7 @@ Extract and internalize:
 ## Step 5: Restore TodoWrite State
 
 Based on task_plan.md phases, recreate TodoWrite items:
+
 - Mark completed phases as done
 - Mark current phase as in_progress
 - Add remaining phases as pending
@@ -90,7 +94,8 @@ Ready to continue from where we left off.
 
 Ask user: "Would you like me to continue with the next step, or would you like to review the recovered context first?"
 
-**IMPORTANT:** 
+**IMPORTANT:**
+
 - Read ALL three files before proceeding
 - Verify understanding with user before continuing work
 - This is the primary mechanism for surviving context window resets

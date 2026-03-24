@@ -7,10 +7,10 @@ tools:
   - TodoWrite
 examples:
   - context: Slow builds despite caching
-    user: "Builds are slow even with Nx cache"
-    assistant: "Activating nx-cache-optimizer to analyze and improve cache performance..."
+    user: 'Builds are slow even with Nx cache'
+    assistant: 'Activating nx-cache-optimizer to analyze and improve cache performance...'
   - context: Low cache hit rate
-    user: "Why is the cache not being used?"
+    user: 'Why is the cache not being used?'
     assistant: "I'll use nx-cache-optimizer to diagnose cache issues..."
 ---
 
@@ -52,14 +52,7 @@ Optimize `nx.json` for better caching:
     "default": {
       "runner": "nx/tasks-runners/default",
       "options": {
-        "cacheableOperations": [
-          "build",
-          "test",
-          "lint",
-          "typecheck",
-          "quality",
-          "e2e"
-        ],
+        "cacheableOperations": ["build", "test", "lint", "typecheck", "quality", "e2e"],
         "parallel": 3,
         "maxParallel": 5,
         "cacheDirectory": ".nx/cache"
@@ -94,8 +87,8 @@ Optimize project inputs for better caching:
   "targets": {
     "build": {
       "inputs": [
-        "production",  // Source files
-        "^production"  // Dependencies' production files
+        "production", // Source files
+        "^production" // Dependencies' production files
       ],
       "outputs": ["{options.outputPath}"],
       "cache": true
@@ -207,9 +200,9 @@ CI/CD:
 
 ```typescript
 interface CacheMetrics {
-  hitRate: number;       // Target: 80%+
-  avgBuildTime: number;  // Target: <30s with cache
-  cacheSize: number;     // Target: <5 GB
+  hitRate: number; // Target: 80%+
+  avgBuildTime: number; // Target: <30s with cache
+  cacheSize: number; // Target: <5 GB
   invalidationRate: number; // Target: <20%
 }
 ```
@@ -219,10 +212,12 @@ interface CacheMetrics {
 ### Issue 1: Low Cache Hit Rate
 
 **Symptoms:**
+
 - Cache hit rate < 50%
 - Builds always rebuild even for unchanged code
 
 **Diagnosis:**
+
 ```bash
 # Check if inputs are too broad
 cat project.json | jq '.targets.build.inputs'
@@ -235,13 +230,14 @@ pnpm nx build <project> --skip-nx-cache
 ```
 
 **Fix:**
+
 ```json
 // project.json - Narrow inputs
 {
   "targets": {
     "build": {
       "inputs": [
-        "production",  // Instead of "default" which includes tests
+        "production", // Instead of "default" which includes tests
         "^production"
       ]
     }
@@ -262,10 +258,12 @@ pnpm nx build <project> --skip-nx-cache
 ### Issue 2: Cache Invalidated by Irrelevant Changes
 
 **Symptoms:**
+
 - Changing README invalidates build cache
 - Changing tests invalidates production build
 
 **Diagnosis:**
+
 ```bash
 # Check what files affect build
 cat project.json | jq '.targets.build.inputs'
@@ -273,20 +271,21 @@ cat project.json | jq '.targets.build.inputs'
 ```
 
 **Fix:**
+
 ```json
 // project.json - Use production input
 {
   "targets": {
     "build": {
       "inputs": [
-        "production",  // Excludes tests, docs, etc.
+        "production", // Excludes tests, docs, etc.
         "^production"
       ]
     },
     "test": {
       "inputs": [
-        "default",  // Tests can use broader input
-        "^production"  // But dependencies only need production
+        "default", // Tests can use broader input
+        "^production" // But dependencies only need production
       ]
     }
   }
@@ -296,10 +295,12 @@ cat project.json | jq '.targets.build.inputs'
 ### Issue 3: Non-Deterministic Builds
 
 **Symptoms:**
+
 - Identical source produces different output hashes
 - Cache never hits even for unchanged code
 
 **Diagnosis:**
+
 ```bash
 # Build twice, compare outputs
 pnpm nx build <project> --skip-nx-cache
@@ -313,11 +314,13 @@ diff -r dist-1 dist-2
 ```
 
 **Common Causes:**
+
 - Timestamps in output
 - Random IDs/hashes in build
 - Environment variables in output
 
 **Fix:**
+
 ```typescript
 // vite.config.ts - Deterministic builds
 export default defineConfig({
@@ -329,20 +332,22 @@ export default defineConfig({
         // No timestamps
         manualChunks: (id) => {
           // Deterministic chunking logic
-        }
-      }
-    }
-  }
+        },
+      },
+    },
+  },
 });
 ```
 
 ### Issue 4: Parallel Limit Too Low
 
 **Symptoms:**
+
 - Builds complete sequentially
 - CPU usage < 100% during builds
 
 **Diagnosis:**
+
 ```bash
 # Check parallel setting
 cat nx.json | jq '.tasksRunnerOptions.default.options.parallel'
@@ -354,13 +359,14 @@ pnpm nx affected -t build --parallel=3
 ```
 
 **Fix:**
+
 ```json
 // nx.json
 {
   "tasksRunnerOptions": {
     "default": {
       "options": {
-        "parallel": 5,  // Increased from 3
+        "parallel": 5, // Increased from 3
         "maxParallel": 8
       }
     }
@@ -371,10 +377,12 @@ pnpm nx affected -t build --parallel=3
 ### Issue 5: Cache Size Too Large
 
 **Symptoms:**
+
 - `.nx/cache` directory > 10 GB
 - Disk space running low
 
 **Diagnosis:**
+
 ```bash
 # Check cache size
 du -sh .nx/cache
@@ -384,6 +392,7 @@ find .nx/cache -type d | wc -l
 ```
 
 **Fix:**
+
 ```bash
 # Clear old cache entries
 pnpm nx reset
@@ -414,10 +423,7 @@ find .nx/cache -type d -mtime +30 -exec rm -rf {} \;  # Remove >30 days old
       "{projectRoot}/**/*.spec.ts",
       "{projectRoot}/tsconfig.spec.json"
     ],
-    "styles": [
-      "{projectRoot}/**/*.css",
-      "{projectRoot}/**/*.scss"
-    ]
+    "styles": ["{projectRoot}/**/*.css", "{projectRoot}/**/*.scss"]
   },
   "targets": {
     "build": { "inputs": ["production", "styles"] },
@@ -435,7 +441,7 @@ find .nx/cache -type d -mtime +30 -exec rm -rf {} \;  # Remove >30 days old
     "build": {
       "inputs": [
         "production",
-        "^production",  // Dependencies' production only
+        "^production", // Dependencies' production only
         "{workspaceRoot}/package.json"
       ]
     }

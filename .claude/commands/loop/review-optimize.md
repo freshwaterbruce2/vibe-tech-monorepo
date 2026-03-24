@@ -10,6 +10,7 @@ Reviews ONE Nx project per turn and appends findings to the review report. Makes
 ## CRITICAL: READ-ONLY
 
 This loop makes ZERO changes to the codebase:
+
 - NO file edits
 - NO git commits
 - NO git add/stage
@@ -120,6 +121,7 @@ grep -rn "http://" "C:/dev/$PROJECT_ROOT/src" --include="*.ts" --include="*.tsx"
 ### 3. Generate Report Entry
 
 Calculate a simple score:
+
 - **Complexity**: LOW (<10 files), MEDIUM (10-30), HIGH (>30)
 - **Anti-Patterns**: count of console.log + any + TODO + deep imports
 - **Security**: count of hardcoded keys + eval + innerHTML + HTTP URLs
@@ -144,10 +146,12 @@ Then a detailed section:
 **Complexity:** X files, largest: filename (N lines)
 
 ### Dependency Health
+
 - Outdated packages: N (M major updates)
 - [list top 3 outdated if any]
 
 ### Anti-Patterns Found
+
 - console.log: N occurrences
 - `any` types: N occurrences
 - TODO/FIXME: N occurrences
@@ -155,15 +159,18 @@ Then a detailed section:
 - Hardcoded paths: N occurrences
 
 ### Security Concerns
+
 - Hardcoded secrets: N
 - eval() usage: N
 - innerHTML/dangerouslySetInnerHTML: N
 - HTTP URLs: N
 
 ### Large Files (>300 lines)
+
 - [list files]
 
 ### Recommendations
+
 1. [Actionable recommendation based on findings]
 2. [Second recommendation if applicable]
 

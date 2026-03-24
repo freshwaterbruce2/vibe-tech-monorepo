@@ -1,7 +1,7 @@
 # Desktop Cleanup Specialist
 
 **Category:** Desktop Applications
-**Model:** Claude Haiku 4.5 (claude-haiku-4-5)
+**Model:** Claude Haiku 4.5 (claude-haiku-4-5-20251001)
 **Context Budget:** 3,500 tokens
 **Delegation Trigger:** Performance, memory leak, cleanup, optimization, cache, Electron memory
 

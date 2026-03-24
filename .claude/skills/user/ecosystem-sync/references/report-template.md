@@ -12,33 +12,33 @@ Use this format when presenting ecosystem sync findings to the user.
 
 ### Summary
 
-| Metric | Count |
-|--------|-------|
-| Components scanned | X |
-| 🔴 Breaking issues | X |
-| 🟡 Stale issues | X |
-| 🟢 Cosmetic issues | X |
-| ⚪ All clear | X |
+| Metric             | Count |
+| ------------------ | ----- |
+| Components scanned | X     |
+| 🔴 Breaking issues | X     |
+| 🟡 Stale issues    | X     |
+| 🟢 Cosmetic issues | X     |
+| ⚪ All clear       | X     |
 
 ---
 
 ### 🔴 Breaking (fix immediately)
 
-| ID | Component | File | Issue | Required Fix |
-|----|-----------|------|-------|-------------|
+| ID        | Component         | File        | Issue                      | Required Fix          |
+| --------- | ----------------- | ----------- | -------------------------- | --------------------- |
 | [rule-id] | [skill/agent/mcp] | [path:line] | [what changed in monorepo] | [exact change needed] |
 
 ### 🟡 Stale (fix this session)
 
-| ID | Component | File | Issue | Recommended Fix |
-|----|-----------|------|-------|----------------|
+| ID        | Component         | File        | Issue          | Recommended Fix    |
+| --------- | ----------------- | ----------- | -------------- | ------------------ |
 | [rule-id] | [skill/agent/mcp] | [path:line] | [what drifted] | [suggested change] |
 
 ### 🟢 Cosmetic (fix when convenient)
 
-| Component | Issue |
-|-----------|-------|
-| [name] | [minor inconsistency] |
+| Component | Issue                 |
+| --------- | --------------------- |
+| [name]    | [minor inconsistency] |
 
 ---
 
@@ -55,12 +55,14 @@ Priority-ordered list of fixes:
 ### ⚡ Quick Fixes (auto-applicable)
 
 These can be applied without review:
+
 - [ ] [fix description]
 - [ ] [fix description]
 
 ### 🔍 Manual Review Required
 
 These need human judgment:
+
 - [ ] [issue requiring decision]
 - [ ] [issue requiring decision]
 

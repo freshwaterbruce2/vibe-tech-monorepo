@@ -128,16 +128,19 @@ CREATE VIRTUAL TABLE agent_knowledge_fts USING fts5(
 ## Database Size & Maintenance
 
 **Expected Size**:
+
 - Fresh: ~100 KB (empty schema)
 - After 30 days: ~10-50 MB (with 10K executions)
 - After 1 year: ~500 MB (with 500K executions)
 
 **Maintenance Schedule**:
+
 - **Weekly**: `VACUUM;` to reclaim space
 - **Monthly**: Archive `agent_executions` older than 90 days to `agent_executions_archive`
 - **Quarterly**: Remove `agent_mistakes` with times_occurred = 1 and resolved = 1
 
 **Archival Query**:
+
 ```sql
 -- Archive old executions (keep last 90 days)
 INSERT INTO agent_executions_archive SELECT * FROM agent_executions
@@ -170,12 +173,14 @@ PRAGMA synchronous = NORMAL;  -- Faster writes, safe with WAL
 ## Backup Strategy
 
 **Automated Backups**:
+
 - **Location**: `D:\databases\backups\agent_learning_YYYY-MM-DD.db`
 - **Frequency**: Daily at 11:59 PM (via Task Scheduler)
 - **Retention**: 30 days
 - **Compression**: 7-Zip with 97% compression ratio
 
 **Manual Backup**:
+
 ```bash
 # PowerShell
 Copy-Item "D:\databases\agent_learning.db" "D:\databases\backups\agent_learning_$(Get-Date -Format 'yyyy-MM-dd').db"

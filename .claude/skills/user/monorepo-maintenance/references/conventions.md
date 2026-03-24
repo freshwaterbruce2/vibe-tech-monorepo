@@ -10,12 +10,12 @@ Core patterns for the @vibetech/workspace monorepo.
 
 ## Naming Conventions
 
-| Type | Convention | Example |
-|------|------------|---------|
-| Directories | kebab-case | `nova-agent`, `vibe-code-studio` |
-| React components | PascalCase | `UserProfile.tsx`, `DataTable.tsx` |
-| Utilities/hooks | camelCase | `useAuth.ts`, `formatDate.ts` |
-| Constants | SCREAMING_SNAKE | `API_BASE_URL`, `MAX_RETRIES` |
+| Type             | Convention      | Example                            |
+| ---------------- | --------------- | ---------------------------------- |
+| Directories      | kebab-case      | `nova-agent`, `vibe-code-studio`   |
+| React components | PascalCase      | `UserProfile.tsx`, `DataTable.tsx` |
+| Utilities/hooks  | camelCase       | `useAuth.ts`, `formatDate.ts`      |
+| Constants        | SCREAMING_SNAKE | `API_BASE_URL`, `MAX_RETRIES`      |
 
 ## File Limits
 

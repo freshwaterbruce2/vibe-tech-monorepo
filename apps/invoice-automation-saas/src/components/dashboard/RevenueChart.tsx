@@ -1,4 +1,3 @@
-import type React from 'react'
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import Card from '../common/Card'
 

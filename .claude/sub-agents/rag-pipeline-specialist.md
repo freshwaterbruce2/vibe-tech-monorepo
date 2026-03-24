@@ -235,7 +235,7 @@ class EmbeddingValidator {
       throw new Error(
         `Dimension mismatch: index uses ${this.indexedDim}-dim, ` +
           `query embedding is ${queryEmbedding.length}-dim. ` +
-          `Use the same model for indexing and querying.`
+          `Use the same model for indexing and querying.`,
       );
     }
   }

@@ -13,15 +13,15 @@ The monorepo is the **source of truth**. Skills, agents, MCP servers, and plugin
 
 ## Sync Targets
 
-| Component | Location | What Drifts |
-|-----------|----------|-------------|
-| **Skills** (user) | `C:\dev\.claude\skills\user\` | Paths, dependency versions, framework patterns, config baselines |
-| **Agent configs** | `C:\dev\.claude\sub-agents\config.yml` | Model versions, tool lists, trigger patterns, delegation rules |
-| **Agent delegation** | `C:\dev\.claude\agent-delegation.yaml` | Execution order, parallel groups |
-| **Agent registry** | `C:\dev\.claude\agents.json` | Agent count, categories, parent mappings |
-| **MCP servers** | `C:\dev\apps\` (desktop-commander-v3, mcp-gateway, mcp-codeberg, mcp-skills-server, memory-mcp) | SDK versions, tool schemas, env vars |
-| **MCP config** | `claude_desktop_config.json` / `.mcp.json` | Server entries, paths, args |
-| **CLAUDE.md** files | Per-app root in `C:\dev\apps\` | Project status, dependency lists, known issues |
+| Component            | Location                                                                                        | What Drifts                                                      |
+| -------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **Skills** (user)    | `C:\dev\.claude\skills\user\`                                                                   | Paths, dependency versions, framework patterns, config baselines |
+| **Agent configs**    | `C:\dev\.claude\sub-agents\config.yml`                                                          | Model versions, tool lists, trigger patterns, delegation rules   |
+| **Agent delegation** | `C:\dev\.claude\agent-delegation.yaml`                                                          | Execution order, parallel groups                                 |
+| **Agent registry**   | `C:\dev\.claude\agents.json`                                                                    | Agent count, categories, parent mappings                         |
+| **MCP servers**      | `C:\dev\apps\` (desktop-commander-v3, mcp-gateway, mcp-codeberg, mcp-skills-server, memory-mcp) | SDK versions, tool schemas, env vars                             |
+| **MCP config**       | `claude_desktop_config.json` / `.mcp.json`                                                      | Server entries, paths, args                                      |
+| **CLAUDE.md** files  | Per-app root in `C:\dev\apps\`                                                                  | Project status, dependency lists, known issues                   |
 
 ## Workflow
 
@@ -62,12 +62,12 @@ Compare each component against the monorepo's current state. Check for:
 
 For each item, classify as:
 
-| Severity | Meaning | Action |
-|----------|---------|--------|
-| 🔴 **Breaking** | Component will fail or give wrong output | Fix immediately |
-| 🟡 **Stale** | Component works but references outdated info | Fix this session |
-| 🟢 **Cosmetic** | Minor wording/naming inconsistency | Fix when convenient |
-| ⚪ **Info** | No drift detected, component is current | No action needed |
+| Severity        | Meaning                                      | Action              |
+| --------------- | -------------------------------------------- | ------------------- |
+| 🔴 **Breaking** | Component will fail or give wrong output     | Fix immediately     |
+| 🟡 **Stale**    | Component works but references outdated info | Fix this session    |
+| 🟢 **Cosmetic** | Minor wording/naming inconsistency           | Fix when convenient |
+| ⚪ **Info**     | No drift detected, component is current      | No action needed    |
 
 ### Phase 3: Sync Report
 
@@ -116,22 +116,26 @@ After user approval:
 Load `references/drift-rules.md` for the full rule set. Key rules:
 
 ### Path Validation
+
 - Every file path in a skill/agent config must resolve to an existing location
 - `C:\dev\apps\*`, `C:\dev\packages\*` — validate against actual directory listing
 - Skip paths inside fenced code blocks and known example/template paths
 
 ### Dependency Version Sync
+
 - Cross-reference versions mentioned in skills against `pnpm-lock.yaml` or root `package.json`
 - Key packages: `@modelcontextprotocol/sdk`, `react`, `typescript`, `nx`, `zod`, `electron`, `@anthropic-ai/sdk`
 - MCP server `package.json` versions must align with monorepo-wide standards
 
 ### Agent Config Validation
+
 - Agent count in `vibetech-agents` skill must match `agents.json` entries
 - Model IDs (e.g., `haiku-4`, `sonnet-4`) must be current, non-deprecated
 - Sequential/parallel execution groups must match actual dependency chains
 - Every agent must have a `description` field (was flagged as missing in past audits)
 
 ### MCP Server Health
+
 - SDK version should match latest stable (search web for `@modelcontextprotocol/sdk` latest)
 - Tool schemas must have `inputSchema` with proper `required` fields
 - Server entry in `claude_desktop_config.json` must point to valid executable path
@@ -141,29 +145,32 @@ Load `references/drift-rules.md` for the full rule set. Key rules:
 - **Desktop Extensions**: `.mcpb` format replaces `.dxt` — flag any `.dxt` references for update
 
 ### Supply Chain Security
+
 - After any dependency update, verify against known compromised versions
 - Nx 21.5.0 and 21.6.0 were compromised (S1ngularity attack) — never use these exact versions
 - Run `pnpm audit` as part of every maintenance cycle
 
 ### Skill Content Freshness
+
 - Framework patterns (React 19, TS 5.9) should reflect current monorepo versions
 - Config baselines in `monorepo-maintenance` must match actual root configs
 - Tracked project lists must reflect actual `apps/` and `libs/` directories
 
 ### CLAUDE.md Sync
+
 - Each app's CLAUDE.md should reflect its current `package.json` dependencies
 - Known issues should be cleared when resolved
 - Build commands should match current `project.json` targets
 
 ## Reference Files
 
-| File | When to Load |
-|------|-------------|
-| `references/component-registry.md` | Always — master inventory of all tracked components |
-| `references/drift-rules.md` | During Phase 2 — full detection rule definitions |
-| `references/report-template.md` | During Phase 3 — report formatting |
-| `references/sync-history.md` | During Phase 4 — append completed sync records |
-| `references/version-map.md` | When checking dependency versions — maps package → expected version |
+| File                               | When to Load                                                        |
+| ---------------------------------- | ------------------------------------------------------------------- |
+| `references/component-registry.md` | Always — master inventory of all tracked components                 |
+| `references/drift-rules.md`        | During Phase 2 — full detection rule definitions                    |
+| `references/report-template.md`    | During Phase 3 — report formatting                                  |
+| `references/sync-history.md`       | During Phase 4 — append completed sync records                      |
+| `references/version-map.md`        | When checking dependency versions — maps package → expected version |
 
 ## Integration with Other Skills
 

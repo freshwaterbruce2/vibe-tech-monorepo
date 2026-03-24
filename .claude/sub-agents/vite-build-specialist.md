@@ -1,7 +1,7 @@
 # Vite Build Specialist
 
 **Category:** Web Applications
-**Model:** Claude Haiku 4.5 (claude-haiku-4-5)
+**Model:** Claude Haiku 4.5 (claude-haiku-4-5-20251001)
 **Context Budget:** 3,000 tokens
 **Delegation Trigger:** Build optimization, Vite configuration, SSR, performance tuning
 

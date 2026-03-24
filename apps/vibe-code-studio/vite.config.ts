@@ -8,42 +8,10 @@ import viteCompression from 'vite-plugin-compression'
 const rendererPort = Number(process.env.VIBE_RENDERER_PORT ?? process.env.VITE_PORT ?? 5174)
 
 export default defineConfig({
-  // Electron: No base path needed (uses file:// protocol)
   // @monaco-editor/react handles workers automatically - NO plugin needed
   base: process.env.NODE_ENV === 'production' ? './' : '/',
 
   plugins: [
-    // Intercept 'electron' module at ALL levels:
-    // 1. resolveId: redirect bare 'electron' imports to our stub
-    // 2. load: catch any resolved path that points to electron
-    // 3. configureServer: middleware to intercept pre-bundled .vite/deps/electron.js
-    {
-      name: 'stub-electron',
-      enforce: 'pre',
-      resolveId(id: string) {
-        if (id === 'electron') {
-          return '\0virtual:electron-stub';
-        }
-      },
-      load(id: string) {
-        if (id === '\0virtual:electron-stub' || id.includes('node_modules/electron/') || id.includes('node_modules\\electron\\') || id.endsWith('/electron.js')) {
-          return 'export default {}; export const ipcRenderer = { invoke: async () => null, on: () => {}, send: () => {} }; const electron = { app: {}, dialog: {}, shell: {}, ipcRenderer: { invoke: async () => null, on: () => {}, send: () => {} } }; export { electron }; module.exports = electron;';
-        }
-      },
-      configureServer(server: any) {
-        server.middlewares.use((req: any, res: any, next: any) => {
-          if (req.url && req.url.includes('/electron.js')) {
-            const depPath = req.url.includes('.vite/deps/electron');
-            if (depPath) {
-              res.setHeader('Content-Type', 'application/javascript');
-              res.end('export default {};');
-              return;
-            }
-          }
-          next();
-        });
-      },
-    },
     react({
       // Optimize for React 19 with automatic JSX runtime
       jsxRuntime: 'automatic',
@@ -79,9 +47,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
-      // Stub 'electron' for browser/Tauri — prevents dev server crash from
-      // node_modules/electron/index.js trying to require('path')
-      'electron': resolve(__dirname, 'src/stubs/electron.ts'),
     },
   },
 
@@ -102,7 +67,6 @@ export default defineConfig({
     ],
 
     exclude: [
-      'electron',
       'monaco-editor',
       '@monaco-editor/react',
       'sql.js',
@@ -116,25 +80,6 @@ export default defineConfig({
       ...builtinModules.map(m => `node:${m}`)
     ],
 
-    // Stub 'electron' at the esbuild pre-bundler level — the Vite plugin
-    // pipeline doesn't intercept dep optimization (esbuild runs separately)
-    esbuildOptions: {
-      plugins: [
-        {
-          name: 'stub-electron',
-          setup(build) {
-            build.onResolve({ filter: /^electron$/ }, () => ({
-              path: 'electron',
-              namespace: 'stub-electron',
-            }));
-            build.onLoad({ filter: /.*/, namespace: 'stub-electron' }, () => ({
-              contents: 'module.exports = {};',
-              loader: 'js',
-            }));
-          },
-        },
-      ],
-    },
   },
 
   worker: {
@@ -177,9 +122,7 @@ export default defineConfig({
       },
 
       external: [
-        'electron',
         'sql.js',
-        'better-sqlite3',
         ...builtinModules,
         ...builtinModules.map(m => `node:${m}`)
       ],

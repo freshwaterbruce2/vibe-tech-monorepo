@@ -38,7 +38,9 @@ Building generators that go viral
 
 ### The Viral Generator Formula
 ```
+
 Input (minimal) → Magic (your algorithm) → Result (shareable)
+
 ```
 
 ### Input Design
@@ -74,8 +76,10 @@ Building personality quizzes that spread
 
 ### Quiz Structure
 ```
+
 5-10 questions → Weighted scoring → One of N results
-```
+
+````
 
 ### Question Design
 | Type | Engagement |
@@ -103,16 +107,18 @@ answers.forEach(answer => {
 
 const result = Object.entries(scores)
   .sort((a, b) => b[1] - a[1])[0][0];
-```
+````
 
 ### Result Page Elements
+
 - Big, bold result title
 - Flattering description
 - Shareable image/card
 - "Share your result" buttons
 - "See what friends got" CTA
 - Subtle retake option
-```
+
+````
 
 ### Name Generator Pattern
 
@@ -141,19 +147,22 @@ function generateName(input) {
 
   return `${firstNames[hash % firstNames.length]} ${lastNames[(hash >> 8) % lastNames.length]}`;
 }
-```
+````
 
 ### Making Results Feel Personal
+
 - Use their actual name in the result
 - Reference their input cleverly
 - Add a "meaning" or backstory
 - Include a visual representation
 
 ### Shareability Boosters
+
 - "Your [X] name is:" format
 - Certificate/badge design
 - Compare with friends feature
 - Daily/weekly changing results
+
 ```
 
 ## Anti-Patterns
@@ -197,3 +206,4 @@ Your branding subtle but present.
 ## Related Skills
 
 Works well with: `viral-hooks`, `landing-page-design`, `seo`, `frontend`
+```

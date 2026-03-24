@@ -10,13 +10,13 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## Project Context
 
-| Aspect | Details |
-|--------|---------|
-| **Location** | `C:\dev\apps\vibe-justice` |
-| **Framework** | Next.js 14 (App Router) |
-| **AI** | Claude API via Anthropic SDK |
-| **Database** | SQLite at `D:\databases\vibe_justice.db` |
-| **Styling** | Tailwind CSS, shadcn/ui |
+| Aspect        | Details                                  |
+| ------------- | ---------------------------------------- |
+| **Location**  | `C:\dev\apps\vibe-justice`               |
+| **Framework** | Next.js 14 (App Router)                  |
+| **AI**        | Claude API via Anthropic SDK             |
+| **Database**  | SQLite at `D:\databases\vibe_justice.db` |
+| **Styling**   | Tailwind CSS, shadcn/ui                  |
 
 ## Tech Stack
 
@@ -28,13 +28,13 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## Required Community Skills
 
-| Skill | Use Case |
-|-------|----------|
-| `nextjs-best-practices` | App Router patterns |
-| `typescript-expert` | Type safety |
-| `llm-app-patterns` | Claude API integration |
-| `react-patterns` | Component design |
-| `systematic-debugging` | Bug investigation |
+| Skill                   | Use Case               |
+| ----------------------- | ---------------------- |
+| `nextjs-best-practices` | App Router patterns    |
+| `typescript-expert`     | Type safety            |
+| `llm-app-patterns`      | Claude API integration |
+| `react-patterns`        | Component design       |
+| `systematic-debugging`  | Bug investigation      |
 
 ## Architecture
 
@@ -88,15 +88,17 @@ export async function analyzeCase(caseText: string): Promise<CaseAnalysis> {
   const response = await client.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 4096,
-    messages: [{
-      role: 'user',
-      content: `Analyze this legal case and provide:
+    messages: [
+      {
+        role: 'user',
+        content: `Analyze this legal case and provide:
 1. Key issues
 2. Relevant precedents
 3. Recommended actions
 
-Case: ${caseText}`
-    }],
+Case: ${caseText}`,
+      },
+    ],
   });
 
   return parseCaseAnalysis(response.content[0].text);

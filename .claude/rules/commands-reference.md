@@ -65,12 +65,14 @@ C:\dev\tools\port-manager\port.ps1 find 3000 3099
 ```
 
 **Add to PowerShell profile for global access:**
+
 ```powershell
 # Add this line to $PROFILE:
 function port { & 'C:\dev\tools\port-manager\port.ps1' @args }
 ```
 
 **Port Ranges:**
+
 - `3000-3099` - Backend API servers
 - `3100-3199` - MCP servers
 - `5173-5199` - Vite dev servers
@@ -248,6 +250,7 @@ cd C:\dev\tests\agent-evaluation
 - **adversarial** - Attack scenarios (ambiguity, hallucination, source manipulation)
 
 **Target Compliance:**
+
 - Standard Tests: ≥ 95% (48/50 passing)
 - Adversarial Resistance: ≥ 90% (27/30 passing)
 - Hallucination Rate: 0%
@@ -288,12 +291,14 @@ cd C:\dev\tests\agent-evaluation
 - **adversarial** - Attack scenarios (pressure, naming tricks, scope creep)
 
 **Target Compliance:**
+
 - Search Compliance: 100% (must search before every creation)
 - Duplicate Detection: ≥ 90%
 - User Consultation: ≥ 95% when unclear
 - Adversarial Resistance: ≥ 90%
 
 **See:**
+
 - `.claude/rules/web-search-grounding-evaluation-summary.md`
 - `.claude/rules/no-duplicates-evaluation-summary.md`
 

@@ -140,108 +140,108 @@ Successfully migrated the Vibe Tech monorepo from a hybrid npm/Bun setup to **pn
 
 2. **Tested Nx Integration**
 
-    ```bash
-    pnpm run quality      # ✅ Nx caching working
-    nx graph              # ✅ Project graph intact
-    ```
+   ```bash
+   pnpm run quality      # ✅ Nx caching working
+   nx graph              # ✅ Project graph intact
+   ```
 
 ### Phase 5: Git Workflow
 
 1. **Committed Migration**
 
-    ```bash
-    git add .
-    git commit -m "chore: Migrate package manager from npm/Bun to pnpm for 59.5% disk space savings"
-    # Commit: 203d57b8
-    ```
+   ```bash
+   git add .
+   git commit -m "chore: Migrate package manager from npm/Bun to pnpm for 59.5% disk space savings"
+   # Commit: 203d57b8
+   ```
 
 2. **Merged to Main**
 
-    ```bash
-    git checkout main
-    git merge migration/pnpm-workspace
-    git branch -d migration/pnpm-workspace
-    ```
+   ```bash
+   git checkout main
+   git merge migration/pnpm-workspace
+   git branch -d migration/pnpm-workspace
+   ```
 
 ### Phase 6: Documentation
 
 1. **Updated Critical CI/CD Workflows**
 
-    **File:** `.github/workflows/ci.yml`
+   **File:** `.github/workflows/ci.yml`
 
-    ```yaml
-    # Before
-    - uses: oven-sh/setup-bun@v1
-    - run: bun install --frozen-lockfile
+   ```yaml
+   # Before
+   - uses: oven-sh/setup-bun@v1
+   - run: bun install --frozen-lockfile
 
-    # After
-    - uses: pnpm/action-setup@v2
-      with:
-        version: 9.15.0
-    - uses: actions/setup-node@v4
-      with:
-        node-version: '22'
-        cache: 'pnpm'
-    - run: pnpm install --frozen-lockfile
-    ```
+   # After
+   - uses: pnpm/action-setup@v2
+     with:
+       version: 9.15.0
+   - uses: actions/setup-node@v4
+     with:
+       node-version: '22'
+       cache: 'pnpm'
+   - run: pnpm install --frozen-lockfile
+   ```
 
-    **File:** `.github/workflows/deploy.yml` (same updates)
+   **File:** `.github/workflows/deploy.yml` (same updates)
 
 2. **Updated Developer Documentation**
-    - `CLAUDE.md` - All npm commands → pnpm
-    - `README.md` - Installation and command reference
-    - `NX-QUICK-REFERENCE.md` - Quick reference card
+   - `CLAUDE.md` - All npm commands → pnpm
+   - `README.md` - Installation and command reference
+   - `NX-QUICK-REFERENCE.md` - Quick reference card
 
 3. **Committed Documentation**
 
-    ```bash
-    git commit -m "docs: Update documentation for pnpm migration"
-    # Commit: bba44a48
-    ```
+   ```bash
+   git commit -m "docs: Update documentation for pnpm migration"
+   # Commit: bba44a48
+   ```
 
 ### Phase 7: Cleanup and Quality
 
 1. **Fixed Remaining Documentation Issues**
 
-    ```bash
-    git commit -m "fix(docs): correct remaining npm test command to pnpm in README"
-    # Commit: 25033052
-    ```
+   ```bash
+   git commit -m "fix(docs): correct remaining npm test command to pnpm in README"
+   # Commit: 25033052
+   ```
 
 2. **Improved ESLint Configuration**
-    - Added `.venv*/**`, `supabase/**`, `desktop-commander-mcp/**` to ignores
-    - Fixed unused variable errors in crypto components
-    - Removed unused imports
+   - Added `.venv*/**`, `supabase/**`, `desktop-commander-mcp/**` to ignores
+   - Fixed unused variable errors in crypto components
+   - Removed unused imports
 
-    **Result:** 643 errors → 0 errors (109 warnings remain, all console.log in tests)
+   **Result:** 643 errors → 0 errors (109 warnings remain, all console.log in tests)
 
 3. **Removed Old Lock Files**
 
-    ```bash
-    git rm backend/package-lock.json bun.lockb
-    git rm projects/active/desktop-apps/deepcode-editor/package-lock.json
-    git rm projects/active/desktop-apps/taskmaster/package-lock.json
-    git rm projects/active/web-apps/digital-content-builder/package-lock.json
+   ```bash
+   git rm backend/package-lock.json bun.lockb
+   git rm projects/active/desktop-apps/deepcode-editor/package-lock.json
+   git rm projects/active/desktop-apps/taskmaster/package-lock.json
+   git rm projects/active/web-apps/digital-content-builder/package-lock.json
 
-    git commit -m "chore: remove old npm and bun lock files after pnpm migration"
-    # Commit: d4bc2220
-    # Deleted: 32,815 lines
-    ```
+   git commit -m "chore: remove old npm and bun lock files after pnpm migration"
+   # Commit: d4bc2220
+   # Deleted: 32,815 lines
+   ```
 
 ### Phase 8: Push to Production
 
 1. **Published to GitHub**
 
-    ```bash
-    git push origin main
-    # Pushed 6 commits
-    ```
+   ```bash
+   git push origin main
+   # Pushed 6 commits
+   ```
 
 2. **Cleanup Git Repository**
 
-    ```bash
-    git prune  # Removed unreachable objects
-    ```
+   ```bash
+   git prune  # Removed unreachable objects
+   ```
 
 ---
 

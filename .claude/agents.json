@@ -1,470 +1,409 @@
 {
-	"project_agents": {
-		"crypto-enhanced": "crypto-expert",
-		"nova-agent": "desktop-expert",
-		"vibe-code-studio": "desktop-expert",
-		"vibe-justice": "desktop-expert",
-		"desktop-commander-v3": "desktop-expert",
-		"advanced": "desktop-expert",
-		"vibe-agent": "desktop-expert",
-		"prompt-engineer": "desktop-expert",
-		"vibe-tutor": "mobile-expert",
-		"vibe-subscription-guard": "mobile-expert",
-		"nova-mobile-app": "mobile-expert",
-		"iconforge": "webapp-expert",
-		"business-booking-platform": "webapp-expert",
-		"digital-content-builder": "webapp-expert",
-		"shipping-pwa": "webapp-expert",
-		"vibe-tech-lovable": "webapp-expert",
-		"vibe-shop": "webapp-expert",
-		"invoice-automation-saas": "webapp-expert",
-		"symptom-tracker": "webapp-expert",
-		"monorepo-dashboard": "webapp-expert",
-		"n8n-automation": "webapp-expert",
-		"shared-web": "webapp-expert",
-		"augment-code": "webapp-expert",
-		"openrouter-proxy": "backend-expert",
-		"ipc-bridge": "backend-expert",
-		"search-service": "backend-expert",
-		"memory-bank": "backend-expert"
-	},
-	"agent_definitions": {
-		"crypto-expert": {
-			"display_name": "Crypto Trading Expert",
-			"file": "agents/crypto-expert.md",
-			"expertise": [
-				"Python",
-				"AsyncIO",
-				"Kraken API",
-				"WebSocket V2",
-				"Trading Algorithms",
-				"Performance Optimization",
-				"Memory Management",
-				"Circuit Breaker Pattern"
-			],
-			"primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Performance-First Design",
-			"description": "Expert in cryptocurrency trading systems with focus on performance optimization, memory management, and production reliability. Specializes in WebSocket V2 integration, circuit breaker patterns, data pruning strategies, and singleton instance management.",
-			"recent_achievements": [
-				"Implemented DataPruner for automatic 15-min cleanup cycles",
-				"Added ExposureCache with 5-second TTL for expensive calculations",
-				"Deployed CircuitBreaker pattern for API failure protection",
-				"Refactored trading engine with backward-compatible @property decorators",
-				"Achieved 74/74 test pass rate with comprehensive coverage"
-			],
-			"optimization_techniques": [
-				"Time-based data pruning",
-				"TTL caching for expensive operations",
-				"Circuit breaker for fault tolerance",
-				"Singleton instance management",
-				"Hourly memory monitoring"
-			],
-			"inherited_patterns": {
-				"from_agents": [
-					"auto_fixer_001",
-					"crypto-enhanced-trading",
-					"crypto_auto_fixer",
-					"enhanced_market_001"
-				],
-				"total_executions": 4362,
-				"proven_task_types": {
-					"auto_fix_cycle": {
-						"executions": 2954,
-						"success_rate": 1.0,
-						"avg_time": 0.17
-					},
-					"monitoring_cycle": {
-						"executions": 1276,
-						"success_rate": 1.0,
-						"avg_time": 0.17
-					},
-					"market_analysis": {
-						"executions": 128,
-						"success_rate": 1.0,
-						"avg_time": 0.17
-					}
-				},
-				"performance_targets": {
-					"success_rate": 0.9996,
-					"execution_time": 0.17
-				}
-			}
-		},
-		"webapp-expert": {
-			"display_name": "Web Application Expert",
-			"file": "agents/webapp-expert.md",
-			"expertise": ["React", "TypeScript", "Vite", "Tailwind CSS", "shadcn/ui"],
-			"primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Component Reusability",
-			"description": "Expert in modern web application development with React and TypeScript",
-			"inherited_patterns": {
-				"from_agents": ["auto_fixer_001"],
-				"total_executions": 2528,
-				"proven_task_types": {
-					"auto_fix_cycle": {
-						"executions": 2527,
-						"success_rate": 1.0,
-						"avg_time": 0.17
-					}
-				},
-				"performance_targets": {
-					"success_rate": 0.9996,
-					"execution_time": 0.17
-				}
-			}
-		},
-		"desktop-expert": {
-			"display_name": "Desktop Application Expert",
-			"file": "agents/desktop-expert.md",
-			"expertise": ["React", "TypeScript", "Tauri", "Electron"],
-			"primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Performance Optimization",
-			"description": "Expert in cross-platform desktop application development"
-		},
-		"mobile-expert": {
-			"display_name": "Mobile Application Expert",
-			"file": "agents/mobile-expert.md",
-			"expertise": ["Capacitor", "React Native", "PWA", "iOS", "Android"],
-			"primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Native Performance",
-			"description": "Expert in cross-platform mobile development with Capacitor and React Native"
-		},
-		"backend-expert": {
-			"display_name": "Backend API Expert",
-			"file": "agents/backend-expert.md",
-			"expertise": ["Node.js", "TypeScript", "Python", "REST API", "Databases"],
-			"primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Security",
-			"description": "Expert in backend API development, databases, and server-side architecture",
-			"inherited_patterns": {
-				"from_agents": ["auto_fixer_001"],
-				"total_executions": 2528,
-				"proven_task_types": {
-					"auto_fix_cycle": {
-						"executions": 2527,
-						"success_rate": 1.0,
-						"avg_time": 0.17
-					}
-				},
-				"performance_targets": {
-					"success_rate": 0.9996,
-					"execution_time": 0.17
-				}
-			}
-		},
-		"database-expert": {
-			"display_name": "Database & Infrastructure Expert",
-			"file": "agents/database-expert.md",
-			"expertise": [
-				"SQLite",
-				"PostgreSQL",
-				"migrations",
-				"path-policy",
-				"WAL-mode"
-			],
-			"primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & D:\\ Storage Policy",
-			"description": "Database optimization and infrastructure expert enforcing D:\\ storage policy"
-		},
-		"frontend-expert": {
-			"display_name": "Frontend UI/UX Expert",
-			"file": "agents/frontend-expert.md",
-			"expertise": [
-				"React 19",
-				"shadcn/ui",
-				"Tailwind",
-				"accessibility",
-				"design-systems"
-			],
-			"primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Component Reusability",
-			"description": "Frontend patterns and UI/UX specialist for all user-facing interfaces"
-		},
-		"api-expert": {
-			"display_name": "API Integration Expert",
-			"file": "agents/api-expert.md",
-			"expertise": [
-				"OpenRouter",
-				"DeepSeek",
-				"rate-limiting",
-				"error-handling",
-				"retry-logic"
-			],
-			"primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Secure API Integration",
-			"description": "External API integration and proxy specialist for AI services"
-		},
-		"learning-expert": {
-			"display_name": "Learning System Expert",
-			"file": "agents/learning-expert.md",
-			"expertise": [
-				"pattern-recognition",
-				"RAG",
-				"execution-tracking",
-				"mistake-prevention"
-			],
-			"primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Continuous Learning",
-			"description": "Learning system integration and pattern analysis from 59k+ executions"
-		},
-		"qa-expert": {
-			"display_name": "Testing & Quality Expert",
-			"file": "agents/qa-expert.md",
-			"expertise": ["Vitest", "pytest", "Playwright", "CI/CD", "coverage"],
-			"primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Quality Gates",
-			"description": "Testing, coverage, and quality automation specialist"
-		},
-		"ui-ux-expert": {
-			"display_name": "UI/UX Design Expert",
-			"file": "agents/ui-ux-expert.md",
-			"expertise": [
-				"design-systems",
-				"accessibility",
-				"WCAG",
-				"responsive-design"
-			],
-			"primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Accessibility First",
-			"description": "User experience and accessibility specialist for all interfaces"
-		},
-		"data-expert": {
-			"display_name": "Data Engineering Expert",
-			"file": "agents/data-expert.md",
-			"expertise": [
-				"ChromaDB",
-				"vector-databases",
-				"RAG",
-				"ETL",
-				"data-pipelines"
-			],
-			"primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Data Quality",
-			"description": "Data processing and vector database specialist for complex data workflows"
-		},
-		"react-component-specialist": {
-			"display_name": "React Component Specialist",
-			"file": "sub-agents/react-component-specialist.md",
-			"model": "claude-haiku-4-5",
-			"context_budget": 3500,
-			"parent_agent": "webapp-expert",
-			"expertise": [
-				"React 19",
-				"shadcn/ui",
-				"Tailwind CSS",
-				"component patterns"
-			],
-			"primary_directive": "Component reusability and React 19 patterns",
-			"description": "Specialized in React component development with shadcn/ui and modern patterns"
-		},
-		"state-management-specialist": {
-			"display_name": "State Management Specialist",
-			"file": "sub-agents/state-management-specialist.md",
-			"model": "claude-sonnet-4-5-20250929",
-			"context_budget": 4500,
-			"parent_agent": "webapp-expert",
-			"expertise": ["React Query", "Zustand", "Context API", "state patterns"],
-			"primary_directive": "Optimal state management architecture",
-			"description": "Expert in modern React state management patterns and data fetching"
-		},
-		"routing-navigation-specialist": {
-			"display_name": "Routing & Navigation Specialist",
-			"file": "sub-agents/routing-navigation-specialist.md",
-			"model": "claude-haiku-4-5",
-			"context_budget": 3500,
-			"parent_agent": "webapp-expert",
-			"expertise": ["React Router v7", "navigation patterns", "route guards"],
-			"primary_directive": "Type-safe routing and navigation",
-			"description": "Specialized in React Router v7 and client-side navigation"
-		},
-		"frontend-testing-specialist": {
-			"display_name": "Frontend Testing Specialist",
-			"file": "sub-agents/frontend-testing-specialist.md",
-			"model": "claude-haiku-4-5",
-			"context_budget": 3500,
-			"parent_agent": "webapp-expert",
-			"expertise": [
-				"Vitest",
-				"React Testing Library",
-				"Playwright",
-				"test patterns"
-			],
-			"primary_directive": "Comprehensive test coverage with modern tools",
-			"description": "Expert in frontend testing strategies and test automation"
-		},
-		"capacitor-integration-specialist": {
-			"display_name": "Capacitor Integration Specialist",
-			"file": "sub-agents/capacitor-integration-specialist.md",
-			"model": "claude-sonnet-4-5-20250929",
-			"context_budget": 4500,
-			"parent_agent": "mobile-expert",
-			"expertise": ["Capacitor 7", "native plugins", "platform APIs"],
-			"primary_directive": "Native feature integration with security",
-			"description": "Expert in Capacitor native plugin integration and platform APIs"
-		},
-		"mobile-ui-specialist": {
-			"display_name": "Mobile UI Specialist",
-			"file": "sub-agents/mobile-ui-specialist.md",
-			"model": "claude-haiku-4-5",
-			"context_budget": 3500,
-			"parent_agent": "mobile-expert",
-			"expertise": ["responsive design", "touch optimization", "mobile UX"],
-			"primary_directive": "Mobile-first UI/UX patterns",
-			"description": "Specialized in mobile-optimized UI components and touch interactions"
-		},
-		"pwa-optimization-specialist": {
-			"display_name": "PWA Optimization Specialist",
-			"file": "sub-agents/pwa-optimization-specialist.md",
-			"model": "claude-haiku-4-5",
-			"context_budget": 3500,
-			"parent_agent": "mobile-expert",
-			"expertise": ["service workers", "offline support", "caching strategies"],
-			"primary_directive": "Progressive Web App best practices",
-			"description": "Expert in PWA optimization, offline functionality, and caching"
-		},
-		"mobile-testing-specialist": {
-			"display_name": "Mobile Testing Specialist",
-			"file": "sub-agents/mobile-testing-specialist.md",
-			"model": "claude-haiku-4-5",
-			"context_budget": 3500,
-			"parent_agent": "mobile-expert",
-			"expertise": ["Appium", "device testing", "Android testing"],
-			"primary_directive": "Comprehensive mobile test coverage",
-			"description": "Specialized in mobile app testing on real devices and emulators"
-		},
-		"api-implementation-specialist": {
-			"display_name": "API Implementation Specialist",
-			"file": "sub-agents/api-implementation-specialist.md",
-			"model": "claude-haiku-4-5",
-			"context_budget": 3500,
-			"parent_agent": "backend-expert",
-			"expertise": ["Express", "Fastify", "REST API", "OpenAPI"],
-			"primary_directive": "RESTful API design and implementation",
-			"description": "Expert in API development with Express/Fastify and OpenAPI specs"
-		},
-		"database-integration-specialist": {
-			"display_name": "Database Integration Specialist",
-			"file": "sub-agents/database-integration-specialist.md",
-			"model": "claude-sonnet-4-5-20250929",
-			"context_budget": 4500,
-			"parent_agent": "backend-expert",
-			"expertise": ["SQLite", "Prisma", "query optimization", "migrations"],
-			"primary_directive": "Optimal database patterns and D:\\ policy",
-			"description": "Specialized in database design, migrations, and D:\\ storage policy"
-		},
-		"backend-deployment-specialist": {
-			"display_name": "Backend Deployment Specialist",
-			"file": "sub-agents/backend-deployment-specialist.md",
-			"model": "claude-haiku-4-5",
-			"context_budget": 3500,
-			"parent_agent": "backend-expert",
-			"expertise": [
-				"PM2",
-				"Windows Server",
-				"CI/CD",
-				"zero-downtime deployment"
-			],
-			"primary_directive": "Production deployment with PM2",
-			"description": "Expert in PM2 process management and Windows Server deployment"
-		},
-		"backend-security-specialist": {
-			"display_name": "Backend Security Specialist",
-			"file": "sub-agents/backend-security-specialist.md",
-			"model": "claude-sonnet-4-5-20250929",
-			"context_budget": 4500,
-			"parent_agent": "backend-expert",
-			"expertise": ["JWT", "bcrypt", "rate limiting", "OWASP Top 10"],
-			"primary_directive": "Security-first backend development",
-			"description": "Specialized in authentication, authorization, and security best practices"
-		},
-		"trading-strategy-specialist": {
-			"display_name": "Trading Strategy Specialist",
-			"file": "sub-agents/trading-strategy-specialist.md",
-			"model": "claude-sonnet-4-5-20250929",
-			"context_budget": 4500,
-			"parent_agent": "crypto-expert",
-			"expertise": [
-				"trading algorithms",
-				"technical indicators",
-				"risk management"
-			],
-			"primary_directive": "Strategy optimization with backtesting",
-			"description": "Expert in trading strategy development and performance analysis"
-		},
-		"exchange-integration-specialist": {
-			"display_name": "Exchange Integration Specialist",
-			"file": "sub-agents/exchange-integration-specialist.md",
-			"model": "claude-sonnet-4-5-20250929",
-			"context_budget": 5000,
-			"parent_agent": "crypto-expert",
-			"expertise": [
-				"Kraken API",
-				"WebSocket V2",
-				"nonce management",
-				"circuit breaker"
-			],
-			"primary_directive": "Financial safety with robust integration",
-			"description": "Specialized in Kraken API integration with critical safety mechanisms"
-		},
-		"crypto-testing-specialist": {
-			"display_name": "Crypto Testing Specialist",
-			"file": "sub-agents/crypto-testing-specialist.md",
-			"model": "claude-haiku-4-5",
-			"context_budget": 3500,
-			"parent_agent": "crypto-expert",
-			"expertise": [
-				"pytest",
-				"async testing",
-				"mocking strategies",
-				"coverage"
-			],
-			"primary_directive": "Comprehensive test coverage for financial code",
-			"description": "Expert in Python testing with 90%+ coverage targets"
-		},
-		"desktop-build-specialist": {
-			"display_name": "Desktop Build Specialist",
-			"file": "sub-agents/desktop-build-specialist.md",
-			"model": "claude-haiku-4-5",
-			"context_budget": 3500,
-			"parent_agent": "desktop-expert",
-			"expertise": ["Electron", "Tauri", "NSIS", "Windows installers"],
-			"primary_directive": "Optimized desktop builds and packaging",
-			"description": "Specialized in Electron/Tauri builds and Windows installer creation"
-		},
-		"desktop-integration-specialist": {
-			"display_name": "Desktop Integration Specialist",
-			"file": "sub-agents/desktop-integration-specialist.md",
-			"model": "claude-sonnet-4-5-20250929",
-			"context_budget": 4500,
-			"parent_agent": "desktop-expert",
-			"expertise": ["IPC", "contextBridge", "native APIs", "Tauri commands"],
-			"primary_directive": "Secure IPC and native integration",
-			"description": "Expert in IPC architecture and Windows native API access"
-		},
-		"desktop-cleanup-specialist": {
-			"display_name": "Desktop Cleanup Specialist",
-			"file": "sub-agents/desktop-cleanup-specialist.md",
-			"model": "claude-haiku-4-5",
-			"context_budget": 3500,
-			"parent_agent": "desktop-expert",
-			"expertise": ["memory management", "V8 optimization", "cache management"],
-			"primary_directive": "Performance and memory optimization",
-			"description": "Specialized in Electron performance tuning and memory leak detection"
-		}
-	},
-	"model_definitions": {
-		"claude-sonnet-4-5-20250929": {
-			"display_name": "Claude Sonnet 4.5",
-			"provider": "Anthropic",
-			"use_cases": [
-				"reasoning",
-				"architecture",
-				"security",
-				"complex decisions"
-			],
-			"context_window": 200000,
-			"description": "Sonnet 4.5 (January 2026) - for tasks requiring deep reasoning"
-		},
-		"claude-haiku-4-5": {
-			"display_name": "Claude Haiku 4.5",
-			"provider": "Anthropic",
-			"use_cases": ["deterministic", "patterns", "speed", "simple tasks"],
-			"context_window": 200000,
-			"description": "Haiku 4.5 (January 2026) - for fast, deterministic tasks"
-		}
-	},
-	"anti_duplication_settings": {
-		"enabled": true,
-		"scan_before_create": true,
-		"similarity_threshold": 0.7,
-		"auto_refactor_suggestions": true
-	}
+  "project_agents": {
+    "crypto-enhanced": "crypto-expert",
+    "nova-agent": "desktop-expert",
+    "vibe-code-studio": "desktop-expert",
+    "vibe-justice": "desktop-expert",
+    "desktop-commander-v3": "desktop-expert",
+    "advanced": "desktop-expert",
+    "vibe-agent": "desktop-expert",
+    "prompt-engineer": "desktop-expert",
+    "vibe-tutor": "mobile-expert",
+    "vibe-subscription-guard": "mobile-expert",
+    "nova-mobile-app": "mobile-expert",
+    "iconforge": "webapp-expert",
+    "business-booking-platform": "webapp-expert",
+    "digital-content-builder": "webapp-expert",
+    "shipping-pwa": "webapp-expert",
+    "vibe-tech-lovable": "webapp-expert",
+    "vibe-shop": "webapp-expert",
+    "invoice-automation-saas": "webapp-expert",
+    "symptom-tracker": "webapp-expert",
+    "monorepo-dashboard": "webapp-expert",
+    "n8n-automation": "webapp-expert",
+    "shared-web": "webapp-expert",
+    "augment-code": "webapp-expert",
+    "openrouter-proxy": "backend-expert",
+    "ipc-bridge": "backend-expert",
+    "search-service": "backend-expert",
+    "memory-bank": "backend-expert"
+  },
+  "agent_definitions": {
+    "crypto-expert": {
+      "display_name": "Crypto Trading Expert",
+      "file": "agents/crypto-expert.md",
+      "expertise": [
+        "Python",
+        "AsyncIO",
+        "Kraken API",
+        "WebSocket V2",
+        "Trading Algorithms",
+        "Performance Optimization",
+        "Memory Management",
+        "Circuit Breaker Pattern"
+      ],
+      "primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Performance-First Design",
+      "description": "Expert in cryptocurrency trading systems with focus on performance optimization, memory management, and production reliability. Specializes in WebSocket V2 integration, circuit breaker patterns, data pruning strategies, and singleton instance management.",
+      "recent_achievements": [
+        "Implemented DataPruner for automatic 15-min cleanup cycles",
+        "Added ExposureCache with 5-second TTL for expensive calculations",
+        "Deployed CircuitBreaker pattern for API failure protection",
+        "Refactored trading engine with backward-compatible @property decorators",
+        "Achieved 74/74 test pass rate with comprehensive coverage"
+      ],
+      "optimization_techniques": [
+        "Time-based data pruning",
+        "TTL caching for expensive operations",
+        "Circuit breaker for fault tolerance",
+        "Singleton instance management",
+        "Hourly memory monitoring"
+      ],
+      "inherited_patterns": {
+        "from_agents": [
+          "auto_fixer_001",
+          "crypto-enhanced-trading",
+          "crypto_auto_fixer",
+          "enhanced_market_001"
+        ],
+        "total_executions": 4362,
+        "proven_task_types": {
+          "auto_fix_cycle": {
+            "executions": 2954,
+            "success_rate": 1.0,
+            "avg_time": 0.17
+          },
+          "monitoring_cycle": {
+            "executions": 1276,
+            "success_rate": 1.0,
+            "avg_time": 0.17
+          },
+          "market_analysis": {
+            "executions": 128,
+            "success_rate": 1.0,
+            "avg_time": 0.17
+          }
+        },
+        "performance_targets": {
+          "success_rate": 0.9996,
+          "execution_time": 0.17
+        }
+      }
+    },
+    "webapp-expert": {
+      "display_name": "Web Application Expert",
+      "file": "agents/webapp-expert.md",
+      "expertise": ["React", "TypeScript", "Vite", "Tailwind CSS", "shadcn/ui"],
+      "primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Component Reusability",
+      "description": "Expert in modern web application development with React and TypeScript",
+      "inherited_patterns": {
+        "from_agents": ["auto_fixer_001"],
+        "total_executions": 2528,
+        "proven_task_types": {
+          "auto_fix_cycle": {
+            "executions": 2527,
+            "success_rate": 1.0,
+            "avg_time": 0.17
+          }
+        },
+        "performance_targets": {
+          "success_rate": 0.9996,
+          "execution_time": 0.17
+        }
+      }
+    },
+    "desktop-expert": {
+      "display_name": "Desktop Application Expert",
+      "file": "agents/desktop-expert.md",
+      "expertise": ["React", "TypeScript", "Tauri", "Electron"],
+      "primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Performance Optimization",
+      "description": "Expert in cross-platform desktop application development"
+    },
+    "mobile-expert": {
+      "display_name": "Mobile Application Expert",
+      "file": "agents/mobile-expert.md",
+      "expertise": ["Capacitor", "React Native", "PWA", "iOS", "Android"],
+      "primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Native Performance",
+      "description": "Expert in cross-platform mobile development with Capacitor and React Native"
+    },
+    "backend-expert": {
+      "display_name": "Backend API Expert",
+      "file": "agents/backend-expert.md",
+      "expertise": ["Node.js", "TypeScript", "Python", "REST API", "Databases"],
+      "primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Security",
+      "description": "Expert in backend API development, databases, and server-side architecture",
+      "inherited_patterns": {
+        "from_agents": ["auto_fixer_001"],
+        "total_executions": 2528,
+        "proven_task_types": {
+          "auto_fix_cycle": {
+            "executions": 2527,
+            "success_rate": 1.0,
+            "avg_time": 0.17
+          }
+        },
+        "performance_targets": {
+          "success_rate": 0.9996,
+          "execution_time": 0.17
+        }
+      }
+    },
+    "database-expert": {
+      "display_name": "Database & Infrastructure Expert",
+      "file": "agents/database-expert.md",
+      "expertise": ["SQLite", "PostgreSQL", "migrations", "path-policy", "WAL-mode"],
+      "primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & D:\\ Storage Policy",
+      "description": "Database optimization and infrastructure expert enforcing D:\\ storage policy"
+    },
+    "frontend-expert": {
+      "display_name": "Frontend UI/UX Expert",
+      "file": "agents/frontend-expert.md",
+      "expertise": ["React 19", "shadcn/ui", "Tailwind", "accessibility", "design-systems"],
+      "primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Component Reusability",
+      "description": "Frontend patterns and UI/UX specialist for all user-facing interfaces"
+    },
+    "api-expert": {
+      "display_name": "API Integration Expert",
+      "file": "agents/api-expert.md",
+      "expertise": ["OpenRouter", "DeepSeek", "rate-limiting", "error-handling", "retry-logic"],
+      "primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Secure API Integration",
+      "description": "External API integration and proxy specialist for AI services"
+    },
+    "learning-expert": {
+      "display_name": "Learning System Expert",
+      "file": "agents/learning-expert.md",
+      "expertise": ["pattern-recognition", "RAG", "execution-tracking", "mistake-prevention"],
+      "primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Continuous Learning",
+      "description": "Learning system integration and pattern analysis from 59k+ executions"
+    },
+    "qa-expert": {
+      "display_name": "Testing & Quality Expert",
+      "file": "agents/qa-expert.md",
+      "expertise": ["Vitest", "pytest", "Playwright", "CI/CD", "coverage"],
+      "primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Quality Gates",
+      "description": "Testing, coverage, and quality automation specialist"
+    },
+    "ui-ux-expert": {
+      "display_name": "UI/UX Design Expert",
+      "file": "agents/ui-ux-expert.md",
+      "expertise": ["design-systems", "accessibility", "WCAG", "responsive-design"],
+      "primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Accessibility First",
+      "description": "User experience and accessibility specialist for all interfaces"
+    },
+    "data-expert": {
+      "display_name": "Data Engineering Expert",
+      "file": "agents/data-expert.md",
+      "expertise": ["ChromaDB", "vector-databases", "RAG", "ETL", "data-pipelines"],
+      "primary_directive": "SHIP-IT PROTOCOL & Anti-Duplication & Data Quality",
+      "description": "Data processing and vector database specialist for complex data workflows"
+    },
+    "react-component-specialist": {
+      "display_name": "React Component Specialist",
+      "file": "sub-agents/react-component-specialist.md",
+      "model": "claude-haiku-4-5-20251001",
+      "context_budget": 3500,
+      "parent_agent": "webapp-expert",
+      "expertise": ["React 19", "shadcn/ui", "Tailwind CSS", "component patterns"],
+      "primary_directive": "Component reusability and React 19 patterns",
+      "description": "Specialized in React component development with shadcn/ui and modern patterns"
+    },
+    "state-management-specialist": {
+      "display_name": "State Management Specialist",
+      "file": "sub-agents/state-management-specialist.md",
+      "model": "claude-sonnet-4-6",
+      "context_budget": 4500,
+      "parent_agent": "webapp-expert",
+      "expertise": ["React Query", "Zustand", "Context API", "state patterns"],
+      "primary_directive": "Optimal state management architecture",
+      "description": "Expert in modern React state management patterns and data fetching"
+    },
+    "routing-navigation-specialist": {
+      "display_name": "Routing & Navigation Specialist",
+      "file": "sub-agents/routing-navigation-specialist.md",
+      "model": "claude-haiku-4-5-20251001",
+      "context_budget": 3500,
+      "parent_agent": "webapp-expert",
+      "expertise": ["React Router v7", "navigation patterns", "route guards"],
+      "primary_directive": "Type-safe routing and navigation",
+      "description": "Specialized in React Router v7 and client-side navigation"
+    },
+    "frontend-testing-specialist": {
+      "display_name": "Frontend Testing Specialist",
+      "file": "sub-agents/frontend-testing-specialist.md",
+      "model": "claude-haiku-4-5-20251001",
+      "context_budget": 3500,
+      "parent_agent": "webapp-expert",
+      "expertise": ["Vitest", "React Testing Library", "Playwright", "test patterns"],
+      "primary_directive": "Comprehensive test coverage with modern tools",
+      "description": "Expert in frontend testing strategies and test automation"
+    },
+    "capacitor-integration-specialist": {
+      "display_name": "Capacitor Integration Specialist",
+      "file": "sub-agents/capacitor-integration-specialist.md",
+      "model": "claude-sonnet-4-6",
+      "context_budget": 4500,
+      "parent_agent": "mobile-expert",
+      "expertise": ["Capacitor 7", "native plugins", "platform APIs"],
+      "primary_directive": "Native feature integration with security",
+      "description": "Expert in Capacitor native plugin integration and platform APIs"
+    },
+    "mobile-ui-specialist": {
+      "display_name": "Mobile UI Specialist",
+      "file": "sub-agents/mobile-ui-specialist.md",
+      "model": "claude-haiku-4-5-20251001",
+      "context_budget": 3500,
+      "parent_agent": "mobile-expert",
+      "expertise": ["responsive design", "touch optimization", "mobile UX"],
+      "primary_directive": "Mobile-first UI/UX patterns",
+      "description": "Specialized in mobile-optimized UI components and touch interactions"
+    },
+    "pwa-optimization-specialist": {
+      "display_name": "PWA Optimization Specialist",
+      "file": "sub-agents/pwa-optimization-specialist.md",
+      "model": "claude-haiku-4-5-20251001",
+      "context_budget": 3500,
+      "parent_agent": "mobile-expert",
+      "expertise": ["service workers", "offline support", "caching strategies"],
+      "primary_directive": "Progressive Web App best practices",
+      "description": "Expert in PWA optimization, offline functionality, and caching"
+    },
+    "mobile-testing-specialist": {
+      "display_name": "Mobile Testing Specialist",
+      "file": "sub-agents/mobile-testing-specialist.md",
+      "model": "claude-haiku-4-5-20251001",
+      "context_budget": 3500,
+      "parent_agent": "mobile-expert",
+      "expertise": ["Appium", "device testing", "Android testing"],
+      "primary_directive": "Comprehensive mobile test coverage",
+      "description": "Specialized in mobile app testing on real devices and emulators"
+    },
+    "api-implementation-specialist": {
+      "display_name": "API Implementation Specialist",
+      "file": "sub-agents/api-implementation-specialist.md",
+      "model": "claude-haiku-4-5-20251001",
+      "context_budget": 3500,
+      "parent_agent": "backend-expert",
+      "expertise": ["Express", "Fastify", "REST API", "OpenAPI"],
+      "primary_directive": "RESTful API design and implementation",
+      "description": "Expert in API development with Express/Fastify and OpenAPI specs"
+    },
+    "database-integration-specialist": {
+      "display_name": "Database Integration Specialist",
+      "file": "sub-agents/database-integration-specialist.md",
+      "model": "claude-sonnet-4-6",
+      "context_budget": 4500,
+      "parent_agent": "backend-expert",
+      "expertise": ["SQLite", "Prisma", "query optimization", "migrations"],
+      "primary_directive": "Optimal database patterns and D:\\ policy",
+      "description": "Specialized in database design, migrations, and D:\\ storage policy"
+    },
+    "backend-deployment-specialist": {
+      "display_name": "Backend Deployment Specialist",
+      "file": "sub-agents/backend-deployment-specialist.md",
+      "model": "claude-haiku-4-5-20251001",
+      "context_budget": 3500,
+      "parent_agent": "backend-expert",
+      "expertise": ["PM2", "Windows Server", "CI/CD", "zero-downtime deployment"],
+      "primary_directive": "Production deployment with PM2",
+      "description": "Expert in PM2 process management and Windows Server deployment"
+    },
+    "backend-security-specialist": {
+      "display_name": "Backend Security Specialist",
+      "file": "sub-agents/backend-security-specialist.md",
+      "model": "claude-sonnet-4-6",
+      "context_budget": 4500,
+      "parent_agent": "backend-expert",
+      "expertise": ["JWT", "bcrypt", "rate limiting", "OWASP Top 10"],
+      "primary_directive": "Security-first backend development",
+      "description": "Specialized in authentication, authorization, and security best practices"
+    },
+    "trading-strategy-specialist": {
+      "display_name": "Trading Strategy Specialist",
+      "file": "sub-agents/trading-strategy-specialist.md",
+      "model": "claude-sonnet-4-6",
+      "context_budget": 4500,
+      "parent_agent": "crypto-expert",
+      "expertise": ["trading algorithms", "technical indicators", "risk management"],
+      "primary_directive": "Strategy optimization with backtesting",
+      "description": "Expert in trading strategy development and performance analysis"
+    },
+    "exchange-integration-specialist": {
+      "display_name": "Exchange Integration Specialist",
+      "file": "sub-agents/exchange-integration-specialist.md",
+      "model": "claude-sonnet-4-6",
+      "context_budget": 5000,
+      "parent_agent": "crypto-expert",
+      "expertise": ["Kraken API", "WebSocket V2", "nonce management", "circuit breaker"],
+      "primary_directive": "Financial safety with robust integration",
+      "description": "Specialized in Kraken API integration with critical safety mechanisms"
+    },
+    "crypto-testing-specialist": {
+      "display_name": "Crypto Testing Specialist",
+      "file": "sub-agents/crypto-testing-specialist.md",
+      "model": "claude-haiku-4-5-20251001",
+      "context_budget": 3500,
+      "parent_agent": "crypto-expert",
+      "expertise": ["pytest", "async testing", "mocking strategies", "coverage"],
+      "primary_directive": "Comprehensive test coverage for financial code",
+      "description": "Expert in Python testing with 90%+ coverage targets"
+    },
+    "desktop-build-specialist": {
+      "display_name": "Desktop Build Specialist",
+      "file": "sub-agents/desktop-build-specialist.md",
+      "model": "claude-haiku-4-5-20251001",
+      "context_budget": 3500,
+      "parent_agent": "desktop-expert",
+      "expertise": ["Electron", "Tauri", "NSIS", "Windows installers"],
+      "primary_directive": "Optimized desktop builds and packaging",
+      "description": "Specialized in Electron/Tauri builds and Windows installer creation"
+    },
+    "desktop-integration-specialist": {
+      "display_name": "Desktop Integration Specialist",
+      "file": "sub-agents/desktop-integration-specialist.md",
+      "model": "claude-sonnet-4-6",
+      "context_budget": 4500,
+      "parent_agent": "desktop-expert",
+      "expertise": ["IPC", "contextBridge", "native APIs", "Tauri commands"],
+      "primary_directive": "Secure IPC and native integration",
+      "description": "Expert in IPC architecture and Windows native API access"
+    },
+    "desktop-cleanup-specialist": {
+      "display_name": "Desktop Cleanup Specialist",
+      "file": "sub-agents/desktop-cleanup-specialist.md",
+      "model": "claude-haiku-4-5-20251001",
+      "context_budget": 3500,
+      "parent_agent": "desktop-expert",
+      "expertise": ["memory management", "V8 optimization", "cache management"],
+      "primary_directive": "Performance and memory optimization",
+      "description": "Specialized in Electron performance tuning and memory leak detection"
+    }
+  },
+  "model_definitions": {
+    "claude-opus-4-6": {
+      "display_name": "Claude Opus 4.6",
+      "provider": "Anthropic",
+      "use_cases": ["planning", "architecture", "complex reasoning", "code generation"],
+      "context_window": 200000,
+      "description": "Opus 4.6 - most capable model for complex tasks"
+    },
+    "claude-sonnet-4-6": {
+      "display_name": "Claude Sonnet 4.6",
+      "provider": "Anthropic",
+      "use_cases": ["reasoning", "architecture", "security", "complex decisions"],
+      "context_window": 200000,
+      "description": "Sonnet 4.6 - balanced performance and reasoning"
+    },
+    "claude-haiku-4-5-20251001": {
+      "display_name": "Claude Haiku 4.5",
+      "provider": "Anthropic",
+      "use_cases": ["deterministic", "patterns", "speed", "simple tasks"],
+      "context_window": 200000,
+      "description": "Haiku 4.5 - fast, deterministic tasks"
+    }
+  },
+  "anti_duplication_settings": {
+    "enabled": true,
+    "scan_before_create": true,
+    "similarity_threshold": 0.7,
+    "auto_refactor_suggestions": true
+  }
 }

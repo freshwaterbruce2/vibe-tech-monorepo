@@ -4,6 +4,7 @@ import type {
   EvaluationResult,
   EvaluationReason,
   TargetingRule,
+  Variant,
 } from '@dev/feature-flags-core';
 import { isInPercentageRollout, assignVariant } from '@dev/feature-flags-core';
 import { FlagService } from './flag-service.js';
@@ -112,7 +113,7 @@ export class EvaluationService {
     if (flag.variants && flag.variants.length > 0) {
       const identifier = context.userId ?? context.sessionId ?? 'anonymous';
       const variantKey = assignVariant(identifier, flag.key, flag.variants);
-      const variant = flag.variants.find((v) => v.key === variantKey);
+      const variant = flag.variants.find((v: Variant) => v.key === variantKey);
 
       return {
         flagKey: flag.key,

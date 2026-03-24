@@ -120,7 +120,9 @@ export function ProjectConfig() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
               {sourceUrls.length === 0 && (
                 <div className="empty-state" style={{ padding: 'var(--space-4)', height: 'auto' }}>
-                  <span className="icon" style={{ fontSize: '1.5rem' }}>🔗</span>
+                  <span className="icon" style={{ fontSize: '1.5rem' }}>
+                    🔗
+                  </span>
                   <p style={{ fontSize: 'var(--text-xs)' }}>
                     No sources added yet. Paste 10+ YouTube URLs for competitive baseline.
                   </p>
@@ -132,14 +134,17 @@ export function ProjectConfig() {
                   <span style={{ flexShrink: 0, fontSize: 'var(--text-xs)' }}>
                     {url.includes('youtube.com') || url.includes('youtu.be') ? '🎬' : '🌐'}
                   </span>
-                  <span className="mono" style={{
-                    flex: 1,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    color: 'var(--text-secondary)',
-                    fontSize: '10px',
-                  }}>
+                  <span
+                    className="mono"
+                    style={{
+                      flex: 1,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      color: 'var(--text-secondary)',
+                      fontSize: '10px',
+                    }}
+                  >
                     {url}
                   </span>
                   <button
@@ -153,11 +158,14 @@ export function ProjectConfig() {
               ))}
             </div>
 
-            <div className="mono" style={{
-              fontSize: '9px',
-              color: 'var(--text-tertiary)',
-              textAlign: 'center',
-            }}>
+            <div
+              className="mono"
+              style={{
+                fontSize: '9px',
+                color: 'var(--text-tertiary)',
+                textAlign: 'center',
+              }}
+            >
               {sourceUrls.length} source{sourceUrls.length !== 1 ? 's' : ''} loaded
             </div>
           </div>
@@ -171,14 +179,25 @@ export function ProjectConfig() {
               </div>
               <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                 {brainStatus && (
-                  <span className="mono" style={{ fontSize: '9px', color: 'var(--accent-secondary)', opacity: 0.8 }}>
+                  <span
+                    className="mono"
+                    style={{ fontSize: '9px', color: 'var(--accent-secondary)', opacity: 0.8 }}
+                  >
                     {brainStatus}
                   </span>
                 )}
-                <button className="tab-btn" onClick={loadBrain} disabled={brainLoading || isRunning}>
+                <button
+                  className="tab-btn"
+                  onClick={loadBrain}
+                  disabled={brainLoading || isRunning}
+                >
                   Load
                 </button>
-                <button className="tab-btn" onClick={saveBrain} disabled={brainLoading || isRunning || !brainContext.trim()}>
+                <button
+                  className="tab-btn"
+                  onClick={saveBrain}
+                  disabled={brainLoading || isRunning || !brainContext.trim()}
+                >
                   Save
                 </button>
               </div>

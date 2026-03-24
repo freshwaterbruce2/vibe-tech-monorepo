@@ -1,7 +1,7 @@
 # Crypto Testing Specialist
 
 **Category:** Crypto Trading
-**Model:** Claude Haiku 4.5 (claude-haiku-4-5)
+**Model:** Claude Haiku 4.5 (claude-haiku-4-5-20251001)
 **Context Budget:** 3,500 tokens
 **Delegation Trigger:** pytest, testing, coverage, mock, unittest, async test
 

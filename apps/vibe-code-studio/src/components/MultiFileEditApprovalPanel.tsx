@@ -301,8 +301,8 @@ export const MultiFileEditApprovalPanel = ({
 
   const calculateDiffStats = (change: FileChange) => {
     const lines = change.diff?.split('\n') ?? [];
-    const added = lines.filter(l => l.startsWith('+')).length;
-    const removed = lines.filter(l => l.startsWith('-')).length;
+    const added = lines.filter((l: string) => l.startsWith('+')).length;
+    const removed = lines.filter((l: string) => l.startsWith('-')).length;
     return { added, removed };
   };
 

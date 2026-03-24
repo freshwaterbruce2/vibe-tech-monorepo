@@ -1,4 +1,3 @@
-import type React from "react";
 import Navigation from "../components/common/Navigation";
 import Features from "../components/landing/Features";
 import Hero from "../components/landing/Hero";

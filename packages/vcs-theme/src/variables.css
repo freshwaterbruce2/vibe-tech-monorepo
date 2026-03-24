@@ -1,0 +1,87 @@
+/* Vibe Code Studio — CSS Custom Properties v1.0.0 */
+/* Usage: @import '@vibetech/vcs-theme/css'; */
+
+:root {
+  /* Backgrounds */
+  --vcs-bg-primary: #0B0E1A;
+  --vcs-bg-secondary: #0F1225;
+  --vcs-bg-tertiary: #141832;
+  --vcs-bg-elevated: #1A1F3A;
+  --vcs-bg-surface: #1E2444;
+  --vcs-bg-overlay: #232A50;
+
+  /* Accent */
+  --vcs-accent-cyan: #00D4FF;
+  --vcs-accent-cyan-hover: #00BFEE;
+  --vcs-accent-cyan-muted: rgba(0, 212, 255, 0.15);
+  --vcs-accent-purple: #8B5CF6;
+  --vcs-accent-purple-hover: #7C3AED;
+  --vcs-accent-purple-muted: rgba(139, 92, 246, 0.15);
+
+  /* Text */
+  --vcs-text-primary: #E2E8F0;
+  --vcs-text-secondary: #8892B0;
+  --vcs-text-muted: #4A5568;
+  --vcs-text-inverse: #0B0E1A;
+  --vcs-text-link: #00D4FF;
+
+  /* Semantic */
+  --vcs-success: #22C55E;
+  --vcs-success-muted: rgba(34, 197, 94, 0.15);
+  --vcs-warning: #F59E0B;
+  --vcs-warning-muted: rgba(245, 158, 11, 0.15);
+  --vcs-error: #EF4444;
+  --vcs-error-muted: rgba(239, 68, 68, 0.15);
+  --vcs-info: #3B82F6;
+  --vcs-info-muted: rgba(59, 130, 246, 0.15);
+
+  /* Borders */
+  --vcs-border: #1E2A4A;
+  --vcs-border-subtle: #162038;
+  --vcs-border-strong: #2A3558;
+  --vcs-border-accent: #00D4FF;
+
+  /* Input */
+  --vcs-input-bg: #0D1129;
+  --vcs-input-border: #1E2A4A;
+  --vcs-input-focus: #00D4FF;
+  --vcs-input-placeholder: #4A5568;
+
+  /* Syntax */
+  --vcs-syn-keyword: #C792EA;
+  --vcs-syn-string: #C3E88D;
+  --vcs-syn-number: #F78C6C;
+  --vcs-syn-function: #82AAFF;
+  --vcs-syn-comment: #546E7A;
+  --vcs-syn-variable: #E2E8F0;
+  --vcs-syn-type: #FFCB6B;
+  --vcs-syn-operator: #89DDFF;
+  --vcs-syn-tag: #F07178;
+
+  /* Typography */
+  --vcs-font-ui: 'Inter', 'Segoe UI', -apple-system, sans-serif;
+  --vcs-font-code: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+  /* Spacing */
+  --vcs-space-xs: 4px;
+  --vcs-space-sm: 8px;
+  --vcs-space-md: 12px;
+  --vcs-space-lg: 16px;
+  --vcs-space-xl: 24px;
+  --vcs-space-2xl: 32px;
+  --vcs-space-3xl: 48px;
+
+  /* Border Radius */
+  --vcs-radius-sm: 4px;
+  --vcs-radius-md: 6px;
+  --vcs-radius-lg: 8px;
+  --vcs-radius-xl: 12px;
+  --vcs-radius-full: 9999px;
+
+  /* Shadows */
+  --vcs-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --vcs-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --vcs-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --vcs-shadow-glow: 0 0 12px rgba(0, 212, 255, 0.3);
+  --vcs-shadow-glow-purple: 0 0 12px rgba(139, 92, 246, 0.3);
+}

@@ -15,6 +15,7 @@ reason about next action, execute action, repeat. This loop integrates
 vision models with action execution through an iterative pipeline.
 
 Key components:
+
 1. PERCEPTION: Screenshot captures current screen state
 2. REASONING: Vision-language model analyzes and plans
 3. ACTION: Execute mouse/keyboard operations
@@ -22,7 +23,6 @@ Key components:
 
 Critical insight: Vision agents are completely still during "thinking"
 phase (1-5 seconds), creating a detectable pause pattern.
-
 
 **When to use**: ['Building any computer use agent from scratch', 'Integrating vision models with desktop control', 'Understanding agent behavior patterns']
 
@@ -91,6 +91,7 @@ Never give agents direct access to your main system - the security
 risks are too high. Use Docker containers with virtual desktops.
 
 Key isolation requirements:
+
 1. NETWORK: Restrict to necessary endpoints only
 2. FILESYSTEM: Read-only or scoped to temp directories
 3. CREDENTIALS: No access to host credentials
@@ -99,7 +100,6 @@ Key isolation requirements:
 
 The goal is "blast radius minimization" - if the agent goes wrong,
 damage is contained to the sandbox.
-
 
 **When to use**: ['Deploying any computer use agent', 'Testing agent behavior safely', 'Running untrusted automation tasks']
 
@@ -216,6 +216,7 @@ Claude 3.5 Sonnet was the first frontier model to offer computer use.
 Claude Opus 4.5 is now the "best model in the world for computer use."
 
 Key capabilities:
+
 - screenshot: Capture current screen state
 - mouse: Click, move, drag operations
 - keyboard: Type text, press keys
@@ -223,12 +224,12 @@ Key capabilities:
 - text_editor: View and edit files
 
 Tool versions:
+
 - computer_20251124 (Opus 4.5): Adds zoom action for detailed inspection
 - computer_20250124 (All other models): Standard capabilities
 
 Critical limitation: "Some UI elements (like dropdowns and scrollbars)
 might be tricky for Claude to manipulate" - Anthropic docs
-
 
 **When to use**: ['Building production computer use agents', 'Need highest quality vision understanding', 'Full desktop control (not just browser)']
 
@@ -299,17 +300,17 @@ class AnthropicComputerUse:
             subprocess.run(["scrot", "/tmp/screenshot.png"])
 
             with open("/tmp/screenshot.png", "rb") as f:
-            
+
 ```
 
 ## ⚠️ Sharp Edges
 
-| Issue | Severity | Solution |
-|-------|----------|----------|
+| Issue | Severity | Solution                                       |
+| ----- | -------- | ---------------------------------------------- |
 | Issue | critical | ## Defense in depth - no single solution works |
-| Issue | medium | ## Add human-like variance to actions |
-| Issue | high | ## Use keyboard alternatives when possible |
-| Issue | medium | ## Accept the tradeoff |
-| Issue | high | ## Implement context management |
-| Issue | high | ## Monitor and limit costs |
-| Issue | critical | ## ALWAYS use sandboxing |
+| Issue | medium   | ## Add human-like variance to actions          |
+| Issue | high     | ## Use keyboard alternatives when possible     |
+| Issue | medium   | ## Accept the tradeoff                         |
+| Issue | high     | ## Implement context management                |
+| Issue | high     | ## Monitor and limit costs                     |
+| Issue | critical | ## ALWAYS use sandboxing                       |

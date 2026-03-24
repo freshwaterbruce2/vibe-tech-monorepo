@@ -98,27 +98,30 @@ export function ChatPanel() {
         <span className="panel-title">💬 Intel Chat</span>
         <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
           {activeProject?.notebookId && (
-            <span className="mono" style={{ fontSize: '9px', color: 'var(--accent-success)', opacity: 0.7 }}>
+            <span
+              className="mono"
+              style={{ fontSize: '9px', color: 'var(--accent-success)', opacity: 0.7 }}
+            >
               ● linked
             </span>
           )}
-          <button
-            className="tab-btn"
-            onClick={() => useAVGEStore.getState().clearChat()}
-          >
+          <button className="tab-btn" onClick={() => useAVGEStore.getState().clearChat()}>
             Clear
           </button>
         </div>
       </div>
 
       <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', padding: 0 }}>
-        <div className="chat-messages" style={{ flex: 1, overflowY: 'auto', padding: 'var(--space-3)' }}>
+        <div
+          className="chat-messages"
+          style={{ flex: 1, overflowY: 'auto', padding: 'var(--space-3)' }}
+        >
           {messages.length === 0 && (
             <div className="empty-state">
               <span className="icon">🧠</span>
               <p style={{ fontSize: 'var(--text-sm)', maxWidth: '220px', lineHeight: 1.5 }}>
-                Ask questions against your intelligence library.
-                Source-grounded responses via NotebookLM.
+                Ask questions against your intelligence library. Source-grounded responses via
+                NotebookLM.
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 {SUGGESTIONS.map((s) => (
@@ -127,8 +130,8 @@ export function ChatPanel() {
                     className="suggestion"
                     role="button"
                     tabIndex={0}
-                    onClick={() => sendQuery(s)}
-                    onKeyDown={(e) => e.key === 'Enter' && sendQuery(s)}
+                    onClick={async () => sendQuery(s)}
+                    onKeyDown={async (e) => e.key === 'Enter' && sendQuery(s)}
                     style={{ cursor: 'pointer' }}
                   >
                     "{s}"
@@ -142,11 +145,13 @@ export function ChatPanel() {
             <div key={msg.id} className={`chat-message ${msg.role}`}>
               <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
               {msg.sources && msg.sources.length > 0 && (
-                <div style={{
-                  marginTop: 'var(--space-1)',
-                  fontSize: '10px',
-                  color: 'var(--text-tertiary)',
-                }}>
+                <div
+                  style={{
+                    marginTop: 'var(--space-1)',
+                    fontSize: '10px',
+                    color: 'var(--text-tertiary)',
+                  }}
+                >
                   📎 {msg.sources.join(', ')}
                 </div>
               )}
@@ -178,7 +183,7 @@ export function ChatPanel() {
         />
         <button
           className="btn btn-primary"
-          onClick={() => sendQuery(input)}
+          onClick={async () => sendQuery(input)}
           disabled={chatLoading || !input.trim()}
           style={{ flexShrink: 0, fontSize: 'var(--text-xs)' }}
         >

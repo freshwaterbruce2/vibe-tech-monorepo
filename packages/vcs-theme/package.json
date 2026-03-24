@@ -1,0 +1,28 @@
+{
+  "name": "@vibetech/vcs-theme",
+  "version": "1.0.0",
+  "description": "Vibe Code Studio design tokens — colors, typography, spacing, shadows, components",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./css": "./dist/variables.css",
+    "./tokens": "./src/tokens.ts"
+  },
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch"
+  },
+  "peerDependencies": {},
+  "devDependencies": {
+    "tsup": "^8.4.0",
+    "typescript": "~5.9.0"
+  },
+  "license": "MIT"
+}

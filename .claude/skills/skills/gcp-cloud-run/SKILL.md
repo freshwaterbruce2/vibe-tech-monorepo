@@ -1,6 +1,6 @@
 ---
 name: gcp-cloud-run
-description: "Specialized skill for building production-ready serverless applications on GCP. Covers Cloud Run services (containerized), Cloud Run Functions (event-driven), cold start optimization, and event-driven architecture with Pub/Sub."
+description: 'Specialized skill for building production-ready serverless applications on GCP. Covers Cloud Run services (containerized), Cloud Run Functions (event-driven), cold start optimization, and event-driven architecture with Pub/Sub.'
 source: vibeship-spawner-skills (Apache 2.0)
 ---
 
@@ -14,7 +14,7 @@ Containerized web service on Cloud Run
 
 **When to use**: ['Web applications and APIs', 'Need any runtime or library', 'Complex services with multiple endpoints', 'Stateless containerized workloads']
 
-```javascript
+````javascript
 ```dockerfile
 # Dockerfile - Multi-stage build for smaller image
 FROM node:20-slim AS builder
@@ -38,7 +38,7 @@ EXPOSE 8080
 USER node
 
 CMD ["node", "src/index.js"]
-```
+````
 
 ```javascript
 // src/index.js
@@ -104,7 +104,6 @@ steps:
       - '--cpu=1'
       - '--min-instances=1'
       - '--max-instances=100'
-     
 ```
 
 ### Cloud Run Functions Pattern
@@ -113,7 +112,7 @@ Event-driven functions (formerly Cloud Functions)
 
 **When to use**: ['Simple event handlers', 'Pub/Sub message processing', 'Cloud Storage triggers', 'HTTP webhooks']
 
-```javascript
+````javascript
 ```javascript
 // HTTP Function
 // index.js
@@ -123,7 +122,7 @@ functions.http('helloHttp', (req, res) => {
   const name = req.query.name || req.body.name || 'World';
   res.send(`Hello, ${name}!`);
 });
-```
+````
 
 ```javascript
 // Pub/Sub Function
@@ -132,9 +131,7 @@ const functions = require('@google-cloud/functions-framework');
 functions.cloudEvent('processPubSub', (cloudEvent) => {
   // Decode Pub/Sub message
   const message = cloudEvent.data.message;
-  const data = message.data
-    ? JSON.parse(Buffer.from(message.data, 'base64').toString())
-    : {};
+  const data = message.data ? JSON.parse(Buffer.from(message.data, 'base64').toString()) : {};
 
   console.log('Received message:', data);
 
@@ -184,7 +181,8 @@ gcloud functions deploy process-uploads \
   --trigger-event-filters="bucket=my-bucket" \
   --region us-central1
 ```
-```
+
+````
 
 ### Cold Start Optimization Pattern
 
@@ -199,7 +197,7 @@ Minimize cold start latency for Cloud Run
 gcloud run deploy my-service \
   --cpu-boost \
   --region us-central1
-```
+````
 
 ## 2. Set Minimum Instances
 
@@ -256,6 +254,7 @@ gcloud run deploy my-service \
   --cpu 2 \
   --region us-central1
 ```
+
 ```
 
 ## Anti-Patterns
@@ -286,3 +285,4 @@ requests. Background tasks will be extremely slow or stall.
 | Issue | high | ## Enable startup CPU boost |
 | Issue | medium | ## Explicitly set execution environment |
 | Issue | medium | ## Set consistent timeouts |
+```

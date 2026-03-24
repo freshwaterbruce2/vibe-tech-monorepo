@@ -9,22 +9,26 @@
 You don't need to be an expert! Here are ways anyone can help:
 
 ### 1. Improve Documentation (Easiest!)
+
 - Fix typos or grammar
 - Make explanations clearer
 - Add examples to existing skills
 - Translate documentation to other languages
 
 ### 2. Report Issues
+
 - Found something confusing? Tell us!
 - Skill not working? Let us know!
 - Have suggestions? We want to hear them!
 
 ### 3. Create New Skills
+
 - Share your expertise as a skill
 - Fill gaps in the current collection
 - Improve existing skills
 
 ### 4. Test and Validate
+
 - Try skills and report what works/doesn't work
 - Test on different AI tools
 - Suggest improvements
@@ -71,6 +75,7 @@ git push origin improve-docs
 ### What Makes a Good Skill?
 
 A skill should:
+
 - ✅ Solve a specific problem
 - ✅ Be reusable across projects
 - ✅ Have clear instructions
@@ -81,11 +86,13 @@ A skill should:
 #### Step 1: Choose Your Skill Topic
 
 Ask yourself:
+
 - What am I good at?
 - What do I wish my AI assistant knew better?
 - What task do I do repeatedly?
 
 **Examples:**
+
 - "I'm good at Docker, let me create a Docker skill"
 - "I wish AI understood Tailwind better"
 - "I keep setting up the same testing patterns"
@@ -111,7 +118,7 @@ Every skill needs this basic structure:
 ```markdown
 ---
 name: my-awesome-skill
-description: "Brief one-line description of what this skill does"
+description: 'Brief one-line description of what this skill does'
 ---
 
 # Skill Title
@@ -129,22 +136,27 @@ Explain what this skill does and when to use it.
 ## How It Works
 
 ### Step 1: [First Step]
+
 Explain what to do first...
 
 ### Step 2: [Second Step]
+
 Explain the next step...
 
 ### Step 3: [Final Step]
+
 Explain how to finish...
 
 ## Examples
 
 ### Example 1: [Common Use Case]
+
 \`\`\`
 Show example code or commands here
 \`\`\`
 
 ### Example 2: [Another Use Case]
+
 \`\`\`
 More examples...
 \`\`\`
@@ -170,11 +182,13 @@ More examples...
 #### Step 4: Test Your Skill
 
 1. **Copy it to your AI tool's skills directory:**
+
    ```bash
    cp -r skills/my-awesome-skill ~/.agent/skills/
    ```
 
 2. **Try using it:**
+
    ```
    @my-awesome-skill help me with [task]
    ```
@@ -190,6 +204,7 @@ python3 scripts/validate_skills.py
 ```
 
 This checks:
+
 - ✅ SKILL.md exists
 - ✅ Frontmatter is correct
 - ✅ Name matches folder name
@@ -219,7 +234,7 @@ Save time! Copy this template:
 ```markdown
 ---
 name: your-skill-name
-description: "One sentence describing what this skill does and when to use it"
+description: 'One sentence describing what this skill does and when to use it'
 ---
 
 # Your Skill Name
@@ -237,25 +252,31 @@ description: "One sentence describing what this skill does and when to use it"
 ## Core Concepts
 
 ### Concept 1
+
 [Explain key concept]
 
 ### Concept 2
+
 [Explain another key concept]
 
 ## Step-by-Step Guide
 
 ### 1. [First Step Name]
+
 [Detailed instructions]
 
 ### 2. [Second Step Name]
+
 [Detailed instructions]
 
 ### 3. [Third Step Name]
+
 [Detailed instructions]
 
 ## Examples
 
 ### Example 1: [Use Case Name]
+
 \`\`\`language
 // Example code here
 \`\`\`
@@ -263,6 +284,7 @@ description: "One sentence describing what this skill does and when to use it"
 **Explanation:** [What this example demonstrates]
 
 ### Example 2: [Another Use Case]
+
 \`\`\`language
 // More example code
 \`\`\`
@@ -279,10 +301,12 @@ description: "One sentence describing what this skill does and when to use it"
 ## Troubleshooting
 
 ### Problem: [Common Issue]
+
 **Symptoms:** [How you know this is the problem]
 **Solution:** [How to fix it]
 
 ### Problem: [Another Issue]
+
 **Symptoms:** [How you know this is the problem]
 **Solution:** [How to fix it]
 
@@ -348,6 +372,7 @@ Use these prefixes:
 - `chore:` - Maintenance tasks
 
 **Examples:**
+
 ```
 feat: add kubernetes-deployment skill
 docs: improve getting started guide
@@ -360,14 +385,17 @@ docs: add examples to react-best-practices
 ## Learning Resources
 
 ### New to Git/GitHub?
+
 - [GitHub's Hello World Guide](https://guides.github.com/activities/hello-world/)
 - [Git Basics](https://git-scm.com/book/en/v2/Getting-Started-Git-Basics)
 
 ### New to Markdown?
+
 - [Markdown Guide](https://www.markdownguide.org/basic-syntax/)
 - [GitHub Markdown](https://guides.github.com/features/mastering-markdown/)
 
 ### New to Open Source?
+
 - [First Contributions](https://github.com/firstcontributions/first-contributions)
 - [How to Contribute to Open Source](https://opensource.guide/how-to-contribute/)
 

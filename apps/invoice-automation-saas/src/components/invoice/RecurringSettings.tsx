@@ -1,4 +1,3 @@
-import type React from "react";
 import Card from "../common/Card";
 import Input from "../common/Input";
 

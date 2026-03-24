@@ -6,11 +6,11 @@
  */
 
 import {
-    nlmAddText,
-    nlmAddUrl,
-    nlmCreateNotebook,
-    nlmDescribe,
-    nlmQuery,
+  nlmAddText,
+  nlmAddUrl,
+  nlmCreateNotebook,
+  nlmDescribe,
+  nlmQuery,
 } from '../services/mcp-bridge';
 import type { NotebookProject, SourceItem, SourceType } from '../types';
 
@@ -49,19 +49,15 @@ export async function createNotebook(title: string): Promise<NotebookCreateResul
  * Batch-ingest YouTube URLs and web pages as notebook sources.
  * Processes sequentially to respect MCP rate limits.
  */
-export async function ingestURLs(
-  notebookId: string,
-  urls: string[],
-): Promise<SourceItem[]> {
+export async function ingestURLs(notebookId: string, urls: string[]): Promise<SourceItem[]> {
   console.log(`[Notebook] Ingesting ${urls.length} URLs into notebook ${notebookId}`);
 
   const sources: SourceItem[] = [];
 
   for (let i = 0; i < urls.length; i++) {
     const url = urls[i];
-    const type: SourceType = (url.includes('youtube.com') || url.includes('youtu.be'))
-      ? 'youtube_url'
-      : 'website_url';
+    const type: SourceType =
+      url.includes('youtube.com') || url.includes('youtu.be') ? 'youtube_url' : 'website_url';
 
     console.log(`[Notebook] Ingesting (${i + 1}/${urls.length}): ${url}`);
     const result = await nlmAddUrl(notebookId, url);
@@ -77,7 +73,7 @@ export async function ingestURLs(
 
     // Small delay between ingestions to avoid rate limiting
     if (i < urls.length - 1) {
-      await new Promise(r => setTimeout(r, 1500));
+      await new Promise((r) => setTimeout(r, 1500));
     }
   }
 

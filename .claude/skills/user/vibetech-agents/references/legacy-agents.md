@@ -13,20 +13,20 @@ These configs live on disk at `C:\dev\.claude\` and may be used when working in 
 
 Located in `C:\dev\.claude\agents\`:
 
-| Agent | Category | Expertise |
-|-------|----------|-----------|
-| `desktop-expert` | Desktop | Electron, Tauri, IPC |
-| `webapp-expert` | Web | React, Vite, Tailwind, shadcn/ui |
-| `backend-expert` | Backend | Express, REST API, SQLite |
-| `mobile-expert` | Mobile | Capacitor, PWA, responsive |
-| `crypto-expert` | Trading | Python, Kraken API, WebSocket |
-| `database-expert` | Infra | SQLite, migrations, D:\ policy |
-| `frontend-expert` | UI | React 19, accessibility, design systems |
-| `api-expert` | Integration | OpenRouter, DeepSeek, rate limiting |
-| `learning-expert` | ML | Pattern recognition, RAG, execution tracking |
-| `qa-expert` | Testing | Vitest, Playwright, coverage |
-| `ui-ux-expert` | Design | WCAG, responsive, design systems |
-| `data-expert` | Data | ChromaDB, vector DBs, ETL |
+| Agent             | Category    | Expertise                                    |
+| ----------------- | ----------- | -------------------------------------------- |
+| `desktop-expert`  | Desktop     | Electron, Tauri, IPC                         |
+| `webapp-expert`   | Web         | React, Vite, Tailwind, shadcn/ui             |
+| `backend-expert`  | Backend     | Express, REST API, SQLite                    |
+| `mobile-expert`   | Mobile      | Capacitor, PWA, responsive                   |
+| `crypto-expert`   | Trading     | Python, Kraken API, WebSocket                |
+| `database-expert` | Infra       | SQLite, migrations, D:\ policy               |
+| `frontend-expert` | UI          | React 19, accessibility, design systems      |
+| `api-expert`      | Integration | OpenRouter, DeepSeek, rate limiting          |
+| `learning-expert` | ML          | Pattern recognition, RAG, execution tracking |
+| `qa-expert`       | Testing     | Vitest, Playwright, coverage                 |
+| `ui-ux-expert`    | Design      | WCAG, responsive, design systems             |
+| `data-expert`     | Data        | ChromaDB, vector DBs, ETL                    |
 
 ## Sub-Agents (30)
 
@@ -40,6 +40,7 @@ Defined in `C:\dev\.claude\agents.json` under `project_agents`. Maps each app to
 ## Delegation Rules
 
 Defined in `C:\dev\.claude\agent-delegation.yaml`. Key rules:
+
 - Security specialist runs before deployment specialist
 - Quality check before testing
 - Build before test

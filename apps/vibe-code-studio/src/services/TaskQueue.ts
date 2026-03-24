@@ -7,6 +7,7 @@ import type {
     TaskExecutor,
     TaskFilter,
     TaskNotification,
+    TaskProgress,
     TaskQueueOptions,
     TaskStats,
     TaskType
@@ -379,7 +380,7 @@ export class TaskQueue {
     });
 
     try {
-      const result = await executor.execute(task, (progress) => {
+      const result = await executor.execute(task, (progress: TaskProgress) => {
         task.progress = progress;
         this.notify({
           taskId: task.id,

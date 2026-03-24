@@ -11,14 +11,14 @@ category: app-type
 
 ## Applies To
 
-| Project | Type |
-|---------|------|
-| `apps/vibe-justice` | Next.js + AI |
-| `apps/invoice-automation-saas` | Next.js SaaS |
-| `apps/vibe-shop` | E-commerce |
-| `apps/digital-content-builder` | Content platform |
-| `apps/business-booking-platform` | Booking system |
-| `apps/monorepo-dashboard` | Internal dashboard |
+| Project                          | Type               |
+| -------------------------------- | ------------------ |
+| `apps/vibe-justice`              | Next.js + AI       |
+| `apps/invoice-automation-saas`   | Next.js SaaS       |
+| `apps/vibe-shop`                 | E-commerce         |
+| `apps/digital-content-builder`   | Content platform   |
+| `apps/business-booking-platform` | Booking system     |
+| `apps/monorepo-dashboard`        | Internal dashboard |
 
 ## Tech Stack
 
@@ -65,6 +65,7 @@ apps/{webapp}/
 ## Critical Patterns
 
 ### Server Components (Default)
+
 ```typescript
 // app/dashboard/page.tsx - Server Component by default
 export default async function DashboardPage() {
@@ -74,6 +75,7 @@ export default async function DashboardPage() {
 ```
 
 ### Client Components (When Needed)
+
 ```typescript
 'use client';
 // Only for: useState, useEffect, event handlers, browser APIs
@@ -85,6 +87,7 @@ export function InteractiveWidget() {
 ```
 
 ### Server Actions
+
 ```typescript
 'use server';
 import { revalidatePath } from 'next/cache';
@@ -97,11 +100,12 @@ export async function createItem(formData: FormData) {
 ```
 
 ### Data Fetching with React Query
+
 ```typescript
 export function useItems() {
   return useQuery({
     queryKey: ['items'],
-    queryFn: () => fetch('/api/items').then(r => r.json()),
+    queryFn: () => fetch('/api/items').then((r) => r.json()),
     staleTime: 5 * 60 * 1000,
   });
 }

@@ -10,14 +10,14 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## Project Context
 
-| Aspect | Details |
-|--------|---------|
-| **Location** | `C:\dev\apps\nova-mobile-app` |
-| **Framework** | React Native + Expo |
-| **Navigation** | React Navigation v6 |
-| **State** | Zustand + React Query |
-| **Styling** | NativeWind (Tailwind) |
-| **Backend** | Nova Agent API |
+| Aspect         | Details                       |
+| -------------- | ----------------------------- |
+| **Location**   | `C:\dev\apps\nova-mobile-app` |
+| **Framework**  | React Native + Expo           |
+| **Navigation** | React Navigation v6           |
+| **State**      | Zustand + React Query         |
+| **Styling**    | NativeWind (Tailwind)         |
+| **Backend**    | Nova Agent API                |
 
 ## Tech Stack
 
@@ -30,13 +30,13 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## Required Community Skills
 
-| Skill | Use Case |
-|-------|----------|
-| `react-patterns` | Component design, hooks |
-| `typescript-expert` | Type safety |
-| `testing-patterns` | Unit/integration tests |
-| `systematic-debugging` | Bug investigation |
-| `mobile-design` | UI/UX patterns |
+| Skill                  | Use Case                |
+| ---------------------- | ----------------------- |
+| `react-patterns`       | Component design, hooks |
+| `typescript-expert`    | Type safety             |
+| `testing-patterns`     | Unit/integration tests  |
+| `systematic-debugging` | Bug investigation       |
+| `mobile-design`        | UI/UX patterns          |
 
 ## Architecture
 

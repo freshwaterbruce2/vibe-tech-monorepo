@@ -1,15 +1,15 @@
 {
-	"mcpServers": {
-		"build-history-tracker": {
-			"command": "npx",
-			"args": [
-				"-y",
-				"@modelcontextprotocol/server-sqlite",
-				"D:\\databases\\monorepo-automation.db"
-			],
-			"env": {
-				"DATABASE_PATH": "D:\\databases\\monorepo-automation.db"
-			}
-		}
-	}
+  "mcpServers": {
+    "build-history-tracker": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sqlite",
+        "D:\\databases\\monorepo-automation.db"
+      ],
+      "env": {
+        "DATABASE_PATH": "D:\\databases\\monorepo-automation.db"
+      }
+    }
+  }
 }

@@ -3,7 +3,7 @@ name: Broken Authentication Testing
 description: This skill should be used when the user asks to "test for broken authentication vulnerabilities", "assess session management security", "perform credential stuffing tests", "evaluate password policies", "test for session fixation", or "identify authentication bypass flaws". It provides comprehensive techniques for identifying authentication and session management weaknesses in web applications.
 metadata:
   author: zebbern
-  version: "1.1"
+  version: '1.1'
 ---
 
 # Broken Authentication Testing
@@ -15,18 +15,21 @@ Identify and exploit authentication and session management vulnerabilities in we
 ## Prerequisites
 
 ### Required Knowledge
+
 - HTTP protocol and session mechanisms
 - Authentication types (SFA, 2FA, MFA)
 - Cookie and token handling
 - Common authentication frameworks
 
 ### Required Tools
+
 - Burp Suite Professional or Community
 - Hydra or similar brute-force tools
 - Custom wordlists for credential testing
 - Browser developer tools
 
 ### Required Access
+
 - Target application URL
 - Test account credentials
 - Written authorization for testing
@@ -93,13 +96,16 @@ Test for username enumeration vulnerabilities:
 ```
 
 # Password reset
+
 "Email sent if account exists" (secure)
 "No account with that email" (leaks info)
 
 # API responses
+
 {"error": "user_not_found"}
 {"error": "invalid_password"}
-```
+
+````
 
 ### Phase 4: Brute Force Testing
 
@@ -118,7 +124,7 @@ hydra -l admin -P /usr/share/wordlists/rockyou.txt \
 4. Load wordlist
 5. Start attack
 6. Analyze response lengths/codes
-```
+````
 
 Check for protections:
 
@@ -317,16 +323,16 @@ email=victim@email.com
 
 ### Common Vulnerability Types
 
-| Vulnerability | Risk | Test Method |
-|--------------|------|-------------|
-| Weak passwords | High | Policy testing, dictionary attack |
-| No lockout | High | Brute force testing |
-| Username enumeration | Medium | Differential response analysis |
-| Session fixation | High | Pre/post-login session comparison |
-| Weak session tokens | High | Entropy analysis |
-| No session timeout | Medium | Long-duration session testing |
-| Insecure password reset | High | Token analysis, workflow bypass |
-| MFA bypass | Critical | Direct access, response manipulation |
+| Vulnerability           | Risk     | Test Method                          |
+| ----------------------- | -------- | ------------------------------------ |
+| Weak passwords          | High     | Policy testing, dictionary attack    |
+| No lockout              | High     | Brute force testing                  |
+| Username enumeration    | Medium   | Differential response analysis       |
+| Session fixation        | High     | Pre/post-login session comparison    |
+| Weak session tokens     | High     | Entropy analysis                     |
+| No session timeout      | Medium   | Long-duration session testing        |
+| Insecure password reset | High     | Token analysis, workflow bypass      |
+| MFA bypass              | Critical | Direct access, response manipulation |
 
 ### Credential Testing Payloads
 
@@ -356,14 +362,14 @@ admin123
 
 ### Session Cookie Flags
 
-| Flag | Purpose | Vulnerability if Missing |
-|------|---------|------------------------|
-| HttpOnly | Prevent JS access | XSS can steal session |
-| Secure | HTTPS only | Sent over HTTP |
-| SameSite | CSRF protection | Cross-site requests allowed |
-| Path | URL scope | Broader exposure |
-| Domain | Domain scope | Subdomain access |
-| Expires | Lifetime | Persistent sessions |
+| Flag     | Purpose           | Vulnerability if Missing    |
+| -------- | ----------------- | --------------------------- |
+| HttpOnly | Prevent JS access | XSS can steal session       |
+| Secure   | HTTPS only        | Sent over HTTP              |
+| SameSite | CSRF protection   | Cross-site requests allowed |
+| Path     | URL scope         | Broader exposure            |
+| Domain   | Domain scope      | Subdomain access            |
+| Expires  | Lifetime          | Persistent sessions         |
 
 ### Rate Limiting Bypass Headers
 
@@ -379,18 +385,21 @@ True-Client-IP: 127.0.0.1
 ## Constraints and Limitations
 
 ### Legal Requirements
+
 - Only test with explicit written authorization
 - Avoid testing with real breached credentials
 - Do not access actual user accounts
 - Document all testing activities
 
 ### Technical Limitations
+
 - CAPTCHA may prevent automated testing
 - Rate limiting affects brute force timing
 - MFA significantly increases attack difficulty
 - Some vulnerabilities require victim interaction
 
 ### Scope Considerations
+
 - Test accounts may behave differently than production
 - Some features may be disabled in test environments
 - Third-party authentication may be out of scope
@@ -468,9 +477,9 @@ https://target.com/reset?token=a1b2c3d4e5f6&email=admin@example.com
 
 ## Troubleshooting
 
-| Issue | Solutions |
-|-------|-----------|
-| Brute force too slow | Identify rate limit scope; IP rotation; add delays; use targeted wordlists |
-| Session analysis inconclusive | Collect 1000+ tokens; use statistical tools; check for timestamps; compare accounts |
-| MFA cannot be bypassed | Document as secure; test backup/recovery mechanisms; check MFA fatigue; verify enrollment |
-| Account lockout prevents testing | Request multiple test accounts; test threshold first; use slower timing |
+| Issue                            | Solutions                                                                                 |
+| -------------------------------- | ----------------------------------------------------------------------------------------- |
+| Brute force too slow             | Identify rate limit scope; IP rotation; add delays; use targeted wordlists                |
+| Session analysis inconclusive    | Collect 1000+ tokens; use statistical tools; check for timestamps; compare accounts       |
+| MFA cannot be bypassed           | Document as secure; test backup/recovery mechanisms; check MFA fatigue; verify enrollment |
+| Account lockout prevents testing | Request multiple test accounts; test threshold first; use slower timing                   |

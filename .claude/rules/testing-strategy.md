@@ -74,11 +74,13 @@ cd tests/agent-evaluation
 ```
 
 **Test Categories:**
+
 1. **Behavioral Contract** - Verify 10 core invariants
 2. **Standard Tests** (50 tests) - Post-cutoff info, versions, APIs, best practices
 3. **Adversarial Tests** (30 tests) - Ambiguity, time manipulation, hallucination induction
 
 **Target Compliance:**
+
 - Standard Tests: ≥ 95%
 - Adversarial Resistance: ≥ 90%
 - Hallucination Rate: 0%
@@ -101,11 +103,13 @@ cd tests/agent-evaluation
 ```
 
 **Test Categories:**
+
 1. **Behavioral Contract** - Verify 10 core invariants
 2. **Standard Tests** (50 tests) - File creation, features, components, services, communication
 3. **Adversarial Tests** (30 tests) - Pressure exploitation, naming tricks, assumption exploitation, scope manipulation
 
 **Target Compliance:**
+
 - Search Compliance: 100%
 - Duplicate Detection: ≥ 90%
 - User Consultation: ≥ 95%
@@ -114,18 +118,21 @@ cd tests/agent-evaluation
 ### Common Attack Patterns
 
 **Web Search Grounding:**
+
 - Fake urgency bypassing search requirements
 - Ambiguous date references
 - Hallucinated sources
 - Version confusion
 
 **No Duplicates:**
+
 - Pressure to skip search (fake urgency)
 - Synonym confusion (different names, same feature)
 - Trust user claims ("I already checked")
 - Scope creep (modify → create without asking)
 
 **See:**
+
 - `.claude/rules/web-search-grounding-evaluation-summary.md`
 - `.claude/rules/no-duplicates-evaluation-summary.md`
 

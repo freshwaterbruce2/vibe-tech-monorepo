@@ -305,7 +305,7 @@ export const TaskMonitorPanel = ({
                           {task.result.logs && task.result.logs.length > 0 && (
                             <LogsContainer>
                               <LogsTitle>Logs:</LogsTitle>
-                              {task.result.logs.map((log, i) => (
+                              {task.result.logs.map((log: string, i: number) => (
                                 <LogLine key={i}>{log}</LogLine>
                               ))}
                             </LogsContainer>

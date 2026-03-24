@@ -10,6 +10,7 @@ Initialize a new planning-with-files session with persistent markdown files.
 ## Step 1: Gather Session Information
 
 Ask the user:
+
 1. **Project name** (or use 'workspace' for monorepo-level tasks)
 2. **Task objective** (what they want to accomplish)
 
@@ -43,10 +44,10 @@ Copy all three template files to the new session directory:
 powershell -Command "Copy-Item 'D:\planning-files\_templates\*.md' 'D:\planning-files\PROJECT\SESSION_ID\'"
 ```
 
-
 ## Step 5: Initialize task_plan.md
 
 Read the template and replace placeholders:
+
 - {{SESSION_ID}} -> actual session ID
 - {{PROJECT}} -> project name
 - {{TIMESTAMP}} -> current timestamp
@@ -89,6 +90,7 @@ To restore context later: /planning-with-files:recover
 =====================================
 ```
 
-**IMPORTANT:** 
+**IMPORTANT:**
+
 - Create TodoWrite items for each phase
 - Announce: "I am using the planning-with-files skill for persistent context"

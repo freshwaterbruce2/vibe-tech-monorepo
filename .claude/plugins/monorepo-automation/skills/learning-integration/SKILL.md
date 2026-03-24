@@ -110,6 +110,7 @@ INSERT INTO agent_mistakes (
 ### Tables
 
 **agent_executions** - Complete tool usage history
+
 - `agent_name` - Which agent executed
 - `tool_name` - Which tool was used (Bash, Read, Write, etc.)
 - `context` - What task was being performed
@@ -120,6 +121,7 @@ INSERT INTO agent_mistakes (
 - `error_message` - Failure details
 
 **task_patterns** - High-level task execution strategies
+
 - `pattern_name` - Descriptive name
 - `task_type` - Category (quality-check, mobile-build, etc.)
 - `approach_description` - How to execute successfully
@@ -127,6 +129,7 @@ INSERT INTO agent_mistakes (
 - `last_used` - Timestamp of last successful use
 
 **code_patterns** - Reusable code snippets with metrics
+
 - `pattern_name` - Descriptive name
 - `language` - bash, typescript, python, powershell
 - `code_snippet` - Actual code to execute
@@ -134,6 +137,7 @@ INSERT INTO agent_mistakes (
 - `success_rate` - Proven if >= 0.8
 
 **agent_mistakes** - Error tracking and prevention
+
 - `context` - What was being attempted
 - `mistake_description` - What went wrong
 - `prevention_strategy` - How to avoid in future
@@ -141,6 +145,7 @@ INSERT INTO agent_mistakes (
 - `identified_at` - When first detected
 
 **agent_knowledge** - Curated knowledge base (for RAG)
+
 - `knowledge_id` - Unique identifier
 - `title` - Knowledge entry title
 - `content` - Detailed explanation
@@ -192,7 +197,7 @@ await logExecution({
   tool_name: 'bash',
   context: 'quality check before commit',
   success: result.exitCode === 0,
-  execution_time_ms: result.duration
+  execution_time_ms: result.duration,
 });
 
 // 6. Contribute knowledge if successful
@@ -205,7 +210,7 @@ if (result.exitCode !== 0) {
   await recordMistake({
     context: 'quality check',
     mistake: result.error,
-    prevention: 'Run tests with --runInBand to avoid race conditions'
+    prevention: 'Run tests with --runInBand to avoid race conditions',
   });
 }
 ```

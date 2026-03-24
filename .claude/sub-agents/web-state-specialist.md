@@ -1,7 +1,7 @@
 # Web State Specialist
 
 **Category:** Web Applications
-**Model:** Claude Haiku 4.5 (claude-haiku-4-5)
+**Model:** Claude Haiku 4.5 (claude-haiku-4-5-20251001)
 **Context Budget:** 3,000 tokens
 **Delegation Trigger:** state, zustand, jotai, tanstack query, redux, context, store, cache invalidation, stale data, optimistic update
 
@@ -175,7 +175,9 @@ Data stale after mutation?
 // ❌ WRONG — server data in Zustand
 const useStore = create<State>((set) => ({
   invoices: [], // Server data! Belongs in TanStack Query
-  fetchInvoices: async () => { /* ... */ }
+  fetchInvoices: async () => {
+    /* ... */
+  },
 }));
 
 // ✅ CORRECT — server data in TanStack Query

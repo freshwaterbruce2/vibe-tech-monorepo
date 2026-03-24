@@ -51,11 +51,30 @@ function Get-ReferenceCount {
         return @($result).Count
     }
 
-    return @(
-        Get-ChildItem -Path $workspaceRoot -Recurse -File -ErrorAction SilentlyContinue |
-            Where-Object { $_.Extension -in @('.ps1', '.psm1', '.ts', '.tsx', '.js', '.mjs', '.md', '.json') } |
-            Select-String -SimpleMatch $Literal
-    ).Count
+    $git = Get-Command git -ErrorAction SilentlyContinue
+    if ($git) {
+        $origPwd = (Get-Location).Path
+        Set-Location $workspaceRoot
+        $raw = & $git.Source grep -n -I -F $Literal 2>$null
+        Set-Location $origPwd
+
+        if (-not $raw) { return 0 }
+        
+        $lines = if ($raw -is [System.Array]) { $raw } else { @($raw) }
+        $count = 0
+        foreach ($line in $lines) {
+            $parsed = [regex]::Match($line, '^(?<file>.+?):(?<line>\d+):(?<match>.*)$')
+            if ($parsed.Success) {
+                $filePath = Join-Path $workspaceRoot $parsed.Groups['file'].Value
+                if ($filePath -notlike "*.md" -and $filePath -notlike "*\scripts\*" -and $filePath -notlike "*\tools\*") {
+                    $count++
+                }
+            }
+        }
+        return $count
+    }
+
+    throw "Neither rg nor git grep are available. Searching falls back to slow mechanism. Install ripgrep or use git bash."
 }
 
 Write-Host "Learning System Validation" -ForegroundColor Cyan
@@ -71,12 +90,12 @@ foreach ($path in @(
     Test-RequiredPath -Path $path.Path -Label $path.Label
 }
 
-Write-Host "`n[2/5] Checking runtime databases..." -ForegroundColor Yellow
+Write-Host "`n[2/5] Checking runtime databases (D:\databases)..." -ForegroundColor Yellow
 foreach ($path in @(
-        @{ Path = 'D:\learning-system\agent_learning.db'; Label = 'learning-system agent DB' },
-        @{ Path = 'D:\learning-system\learning.db'; Label = 'learning.db' },
-        @{ Path = 'D:\learning-system\monitoring.db'; Label = 'monitoring.db' },
-        @{ Path = 'D:\learning-system\events.db'; Label = 'events.db' }
+        @{ Path = 'D:\databases\agent_learning.db'; Label = 'learning-system agent DB' },
+        @{ Path = 'D:\databases\learning.db'; Label = 'learning.db' },
+        @{ Path = 'D:\databases\monitoring.db'; Label = 'monitoring.db' },
+        @{ Path = 'D:\databases\events.db'; Label = 'events.db' }
     )) {
     Test-RequiredPath -Path $path.Path -Label $path.Label
 }
@@ -110,11 +129,11 @@ Write-Host "`n[5/5] Checking split authority..." -ForegroundColor Yellow
 $learningDbRefs = Get-ReferenceCount -Literal 'D:\learning-system\agent_learning.db'
 $databaseDbRefs = Get-ReferenceCount -Literal 'D:\databases\agent_learning.db'
 
-if ($learningDbRefs -gt 0 -and $databaseDbRefs -gt 0) {
-    Add-Warning "Both D:\learning-system\agent_learning.db ($learningDbRefs refs) and D:\databases\agent_learning.db ($databaseDbRefs refs) are referenced in the workspace."
-    Write-Host "  WARN Split authority for agent_learning.db ($learningDbRefs vs $databaseDbRefs refs)" -ForegroundColor Yellow
+if ($learningDbRefs -gt 0) {
+    Add-Warning "Deprecated references to D:\learning-system\agent_learning.db exist ($learningDbRefs refs). Update these to D:\databases\agent_learning.db."
+    Write-Host "  WARN Split authority: found $learningDbRefs references to deprecated learning-system path." -ForegroundColor Yellow
 } else {
-    Write-Host '  OK  No split authority detected for agent_learning.db references' -ForegroundColor Green
+    Write-Host '  OK  No deprecated split authority references detected for agent_learning.db' -ForegroundColor Green
 }
 
 $rootDocFiles = Get-ChildItem -Path $learningRoot -File -ErrorAction SilentlyContinue

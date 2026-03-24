@@ -82,7 +82,7 @@ describe('useBundleSizes', () => {
 
   it('should return loading state initially', () => {
     ;(global.fetch as any).mockImplementation(
-      () => new Promise(() => {}) // Never resolves
+      async () => new Promise(() => {}) // Never resolves
     )
 
     const { result } = renderHook(() => useBundleSizes(), {

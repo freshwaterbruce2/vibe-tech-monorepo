@@ -10,14 +10,14 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## Project Context
 
-| Aspect | Details |
-|--------|---------|
-| **Location** | `C:\dev\apps\nova-agent` |
-| **Framework** | Tauri 2.x (Rust backend) + React (frontend) |
-| **Language** | TypeScript (frontend), Rust (backend) |
-| **Build** | Vite for frontend, Cargo for Rust |
-| **Package Manager** | pnpm |
-| **Database** | SQLite |
+| Aspect              | Details                                     |
+| ------------------- | ------------------------------------------- |
+| **Location**        | `C:\dev\apps\nova-agent`                    |
+| **Framework**       | Tauri 2.x (Rust backend) + React (frontend) |
+| **Language**        | TypeScript (frontend), Rust (backend)       |
+| **Build**           | Vite for frontend, Cargo for Rust           |
+| **Package Manager** | pnpm                                        |
+| **Database**        | SQLite                                      |
 
 ## Tech Stack
 
@@ -30,13 +30,13 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## Required Community Skills
 
-| Skill | Use Case |
-|-------|----------|
-| `typescript-expert` | Type errors, complex types |
-| `react-patterns` | Component design, hooks |
-| `systematic-debugging` | Bug investigation |
-| `test-driven-development` | Feature implementation |
-| `performance-profiling` | Memory/render optimization |
+| Skill                     | Use Case                   |
+| ------------------------- | -------------------------- |
+| `typescript-expert`       | Type errors, complex types |
+| `react-patterns`          | Component design, hooks    |
+| `systematic-debugging`    | Bug investigation          |
+| `test-driven-development` | Feature implementation     |
+| `performance-profiling`   | Memory/render optimization |
 
 ## Architecture
 

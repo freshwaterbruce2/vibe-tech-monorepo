@@ -1,4 +1,3 @@
-import type React from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import Button from './Button'

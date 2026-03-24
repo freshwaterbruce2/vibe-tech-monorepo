@@ -2,7 +2,7 @@
  * Composer Mode - Multi-file editing interface inspired by Cursor's Composer
  */
 import React, { useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import {
   Check,
   ChevronDown,
@@ -16,9 +16,7 @@ import {
 
 import type { UnifiedAIService } from '../../services/ai/UnifiedAIService';
 import { logger } from '../../services/Logger';
-import { vibeTheme } from '../../styles/theme';
-
-import { ComposerFile, ComposerWorkspaceContext } from './ComposerMode.types';
+import type { ComposerFile, ComposerWorkspaceContext } from './ComposerMode.types';
 import { 
   ComposerBackdrop,
   ComposerContainer,
@@ -27,7 +25,8 @@ import {
   ComposerActions,
   ActionButton,
   ComposerBody,
-  StatusBar
+  StatusBar,
+  ComposerTitleWarning
 } from './ComposerMode.styles';
 import { ComposerFileList } from './ComposerFileList';
 import { ComposerEditor } from './ComposerEditor';
@@ -243,9 +242,9 @@ Please provide the updated code for each file in separate code blocks with the l
                 <Layers />
                 <h2>Composer Mode</h2>
                 {dirtyFileCount > 0 && (
-                  <span style={{ color: vibeTheme.colors.warning, fontSize: '14px' }}>
+                  <ComposerTitleWarning>
                     {dirtyFileCount} file{dirtyFileCount > 1 ? 's' : ''} modified
-                  </span>
+                  </ComposerTitleWarning>
                 )}
               </ComposerTitle>
               <ComposerActions>

@@ -129,7 +129,7 @@ antigravity-awesome-skills/
 
 ## Skill File Anatomy (Visual)
 
-```
+````
 ┌─────────────────────────────────────────────────────────┐
 │ SKILL.md                                                │
 ├─────────────────────────────────────────────────────────┤
@@ -167,13 +167,14 @@ antigravity-awesome-skills/
 │  └───────────────────────────────────────────────┘     │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
-```
+````
 
 ---
 
 ## Installation (Visual Steps)
 
 ### Step 1: Clone the Repository
+
 ```
 ┌─────────────────────────────────────────┐
 │ Terminal                                │
@@ -188,6 +189,7 @@ antigravity-awesome-skills/
 ```
 
 ### Step 2: Verify Installation
+
 ```
 ┌─────────────────────────────────────────┐
 │ File Explorer                           │
@@ -202,6 +204,7 @@ antigravity-awesome-skills/
 ```
 
 ### Step 3: Use a Skill
+
 ```
 ┌─────────────────────────────────────────┐
 │ AI Assistant Chat                       │
@@ -271,16 +274,19 @@ antigravity-awesome-skills/
 ## Finding Skills (Visual Guide)
 
 ### Method 1: Browse by Category
+
 ```
 README.md → Scroll to "Full Skill Registry" → Find category → Pick skill
 ```
 
 ### Method 2: Search by Keyword
+
 ```
 Terminal → ls skills/ | grep "keyword" → See matching skills
 ```
 
 ### Method 3: Use the Index
+
 ```
 Open skills_index.json → Search for keyword → Find skill path
 ```
@@ -465,19 +471,19 @@ START HERE
 Day 1: Install skills
   │
   └─→ "Wow, @brainstorming helped me design my app!"
-  
+
 Day 3: Use 5 different skills
   │
   └─→ "These skills save me so much time!"
-  
+
 Week 1: Create first skill
   │
   └─→ "I shared my expertise as a skill!"
-  
+
 Week 2: Skill gets merged
   │
   └─→ "My skill is helping others! 🎉"
-  
+
 Month 1: Regular contributor
   │
   └─→ "I've contributed 5 skills and improved docs!"
@@ -497,6 +503,7 @@ Month 1: Regular contributor
 ---
 
 **Visual learner?** This guide should help! Still have questions? Check out:
+
 - [GETTING_STARTED.md](../GETTING_STARTED.md) - Text-based intro
 - [SKILL_ANATOMY.md](SKILL_ANATOMY.md) - Detailed breakdown
 - [CONTRIBUTING.md](../CONTRIBUTING.md) - How to contribute

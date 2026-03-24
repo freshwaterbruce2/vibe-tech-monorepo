@@ -10,14 +10,14 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## Project Context
 
-| Aspect | Details |
-|--------|---------|
-| **Location** | `C:\dev\apps\crypto-enhanced` |
-| **Language** | Python 3.11+ with asyncio |
-| **Exchanges** | Binance, Kraken, Coinbase |
-| **Database** | SQLite at `D:\databases\crypto_enhanced.db` |
-| **Logs** | `D:\logs\crypto\` |
-| **Config** | Environment-based, NO hardcoded secrets |
+| Aspect        | Details                                     |
+| ------------- | ------------------------------------------- |
+| **Location**  | `C:\dev\apps\crypto-enhanced`               |
+| **Language**  | Python 3.11+ with asyncio                   |
+| **Exchanges** | Binance, Kraken, Coinbase                   |
+| **Database**  | SQLite at `D:\databases\crypto_enhanced.db` |
+| **Logs**      | `D:\logs\crypto\`                           |
+| **Config**    | Environment-based, NO hardcoded secrets     |
 
 ## Tech Stack
 
@@ -31,13 +31,13 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 When working on this project, automatically invoke:
 
-| Skill | Use Case |
-|-------|----------|
-| `systematic-debugging` | ANY bug or unexpected behavior |
-| `test-driven-development` | ALL new features |
-| `verification-before-completion` | Before ANY commit |
-| `python-patterns` | Python best practices |
-| `clean-code` | Code quality |
+| Skill                            | Use Case                       |
+| -------------------------------- | ------------------------------ |
+| `systematic-debugging`           | ANY bug or unexpected behavior |
+| `test-driven-development`        | ALL new features               |
+| `verification-before-completion` | Before ANY commit              |
+| `python-patterns`                | Python best practices          |
+| `clean-code`                     | Code quality                   |
 
 ## Development Workflow
 

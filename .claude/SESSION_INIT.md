@@ -14,6 +14,7 @@ Get-Content C:\dev\DEV_CONTEXT.md -ErrorAction SilentlyContinue
 ```
 
 **Tool Calls Required:**
+
 1. `desktop-commander:dc_read_file` → `C:\dev\DEV_CONTEXT.md`
 2. `serena:activate_project` → Activate relevant project based on user query
 
@@ -23,17 +24,17 @@ Get-Content C:\dev\DEV_CONTEXT.md -ErrorAction SilentlyContinue
 
 Map the user's request to ONE of these categories:
 
-| Category | Trigger Keywords | Tools to Load |
-|----------|------------------|---------------|
-| **Code/Build** | build, fix, test, error, nx | serena, nx-mcp, Context7 |
-| **File Ops** | file, create, move, backup | desktop-commander |
-| **Browser** | browse, scrape, test site | playwright, Claude in Chrome |
-| **Desktop** | window, click, automate | Windows-MCP, desktop-commander |
-| **Docs** | document, pdf, word, excel | PDF Tools, docx/xlsx skills |
-| **AI/Agents** | agent, delegate, multi-agent | vibetech-agents skill |
-| **Database** | sql, query, db, migrate | serena (for code), d1_database_query |
-| **Frontend** | ui, react, component, style | frontend-design skill |
-| **Maintenance** | update, deps, cleanup | monorepo-maintenance skill |
+| Category        | Trigger Keywords             | Tools to Load                        |
+| --------------- | ---------------------------- | ------------------------------------ |
+| **Code/Build**  | build, fix, test, error, nx  | serena, nx-mcp, Context7             |
+| **File Ops**    | file, create, move, backup   | desktop-commander                    |
+| **Browser**     | browse, scrape, test site    | playwright, Claude in Chrome         |
+| **Desktop**     | window, click, automate      | Windows-MCP, desktop-commander       |
+| **Docs**        | document, pdf, word, excel   | PDF Tools, docx/xlsx skills          |
+| **AI/Agents**   | agent, delegate, multi-agent | vibetech-agents skill                |
+| **Database**    | sql, query, db, migrate      | serena (for code), d1_database_query |
+| **Frontend**    | ui, react, component, style  | frontend-design skill                |
+| **Maintenance** | update, deps, cleanup        | monorepo-maintenance skill           |
 
 ---
 
@@ -42,24 +43,28 @@ Map the user's request to ONE of these categories:
 **ALWAYS call `skills:get_skill` for the matched category!**
 
 ### Code/Build Tasks:
+
 ```
 skills:get_skill("typescript-expert")
-skills:get_skill("react-patterns")  
+skills:get_skill("react-patterns")
 skills:get_skill("testing-patterns")
 ```
 
 ### Desktop Automation:
+
 ```
 skills:get_skill("powershell-windows")
 skills:get_skill("browser-automation")
 ```
 
 ### Document Creation:
+
 ```
 skills:get_skill("docx") OR skills:get_skill("pdf") OR skills:get_skill("pptx")
 ```
 
 ### Agent Tasks:
+
 ```
 skills:get_skill("vibetech-agents")  # CUSTOM - Bruce's 19-agent system
 skills:get_skill("dispatching-parallel-agents")
@@ -70,11 +75,13 @@ skills:get_skill("dispatching-parallel-agents")
 ## Step 4: Check for Specialist Agents
 
 Read the agent manifest:
+
 ```
 desktop-commander:dc_read_file → C:\dev\.claude\agents.json
 ```
 
 If task matches a specialist, consider delegation:
+
 - `backend-expert.md` → API, database, auth
 - `frontend-expert.md` → UI, React, components
 - `desktop-expert.md` → Electron, Tauri builds
@@ -87,11 +94,11 @@ If task matches a specialist, consider delegation:
 
 Before starting work, confirm these tools respond:
 
-| Tool | Check Command | If Fails |
-|------|---------------|----------|
-| desktop-commander | `dc_get_system_info` | Core tool, must work |
-| serena | `list_memories` | Activate project first |
-| nx-mcp | `nx_available_plugins` | For monorepo tasks |
+| Tool              | Check Command          | If Fails               |
+| ----------------- | ---------------------- | ---------------------- |
+| desktop-commander | `dc_get_system_info`   | Core tool, must work   |
+| serena            | `list_memories`        | Activate project first |
+| nx-mcp            | `nx_available_plugins` | For monorepo tasks     |
 
 ---
 
@@ -100,6 +107,7 @@ Before starting work, confirm these tools respond:
 **User says:** "Fix the TypeScript error in nova-agent"
 
 **Agent should:**
+
 1. ✅ Read `C:\dev\DEV_CONTEXT.md`
 2. ✅ Identify: Code/Build task
 3. ✅ Load skills: `typescript-expert`, `testing-patterns`
@@ -115,16 +123,17 @@ Before starting work, confirm these tools respond:
 ❌ Skip skill loading because "I know TypeScript"  
 ❌ Ignore the agent system entirely  
 ❌ Only use tools when explicitly asked  
-❌ Forget about the learning system at `D:\learning-system`  
+❌ Forget about the learning system at `D:\learning-system`
 
 ---
 
 ## Session Metrics (Optional)
 
 Track tool usage per session:
-- Skills loaded: ___
-- MCP tools used: ___
-- Agents consulted: ___
-- Files created/modified: ___
+
+- Skills loaded: \_\_\_
+- MCP tools used: \_\_\_
+- Agents consulted: \_\_\_
+- Files created/modified: \_\_\_
 
 Report at session end to `D:\learning-system\sessions\`

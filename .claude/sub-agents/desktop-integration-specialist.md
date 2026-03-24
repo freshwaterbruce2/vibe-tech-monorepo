@@ -1,7 +1,7 @@
 # Desktop Integration Specialist
 
 **Category:** Desktop Applications
-**Model:** Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
+**Model:** Claude Sonnet 4.5 (claude-sonnet-4-6)
 **Context Budget:** 4,500 tokens
 **Delegation Trigger:** IPC, native API, system integration, contextBridge, Tauri commands
 

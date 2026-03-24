@@ -713,7 +713,7 @@ generate_dashboard() {
         }
         function renderAgent(agent) {
             const modelClass = getModelClass(agent.model);
-            const modelName = agent.model || 'Sonnet 4.5';
+            const modelName = agent.model || 'Sonnet 4.6';
             const agentType = agent.agent_type || 'general-purpose';
             const status = agent.status === 'completed' ? 'completed' : 'active';
             const currentTask = agent.current_task || (agent.tasks_completed && agent.tasks_completed.length > 0

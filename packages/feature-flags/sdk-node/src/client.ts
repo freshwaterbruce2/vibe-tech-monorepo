@@ -8,6 +8,7 @@ import type {
   BulkFlagResponse,
   FlagEvaluationResponse,
   Logger,
+  Variant,
 } from '@dev/feature-flags-core';
 import { isInPercentageRollout, assignVariant } from '@dev/feature-flags-core';
 import WebSocket from 'ws';
@@ -42,7 +43,7 @@ export class FeatureFlagClient {
       enableLocalCache: config.enableLocalCache ?? true,
       cacheMaxAge: config.cacheMaxAge ?? 300_000, // 5 minutes
       onKillSwitch: config.onKillSwitch ?? (() => {}),
-      onError: config.onError ?? ((err) => this.logger.error('Feature flag error:', err)),
+      onError: config.onError ?? ((err: Error) => this.logger.error('Feature flag error:', err)),
       logger: this.logger,
     };
 
@@ -193,7 +194,7 @@ export class FeatureFlagClient {
     if (flag.variants && flag.variants.length > 0) {
       const identifier = context.userId ?? context.sessionId ?? 'anonymous';
       const variantKey = assignVariant(identifier, flagKey, flag.variants);
-      const variant = flag.variants.find(v => v.key === variantKey);
+      const variant = flag.variants.find((v: Variant) => v.key === variantKey);
 
       return {
         flagKey,
@@ -453,10 +454,10 @@ export class FeatureFlagClient {
 
   private createDefaultLogger(): Logger {
     return {
-      debug: (msg, ...args) => console.debug(`[FF] ${msg}`, ...args),
-      info: (msg, ...args) => console.info(`[FF] ${msg}`, ...args),
-      warn: (msg, ...args) => console.warn(`[FF] ${msg}`, ...args),
-      error: (msg, ...args) => console.error(`[FF] ${msg}`, ...args),
+      debug: (msg: string, ...args: unknown[]) => console.debug(`[FF] ${msg}`, ...args),
+      info: (msg: string, ...args: unknown[]) => console.info(`[FF] ${msg}`, ...args),
+      warn: (msg: string, ...args: unknown[]) => console.warn(`[FF] ${msg}`, ...args),
+      error: (msg: string, ...args: unknown[]) => console.error(`[FF] ${msg}`, ...args),
     };
   }
 }

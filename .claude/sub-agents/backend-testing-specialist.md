@@ -1,7 +1,7 @@
 # Backend Testing Specialist
 
 **Category:** Backend Services
-**Model:** Claude Haiku 4.5 (claude-haiku-4-5)
+**Model:** Claude Haiku 4.5 (claude-haiku-4-5-20251001)
 **Context Budget:** 3,500 tokens
 **Delegation Trigger:** test, jest, vitest, supertest, mock, stub, fixture, coverage, unit test, integration test, api test
 
@@ -109,6 +109,7 @@ Implement? (y/n)
 ### 3. Implementation
 
 Write test files following:
+
 - One describe block per module/route
 - One it() per behavior (not per function)
 - afterEach cleanup to reset mocks

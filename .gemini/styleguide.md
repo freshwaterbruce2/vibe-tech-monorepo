@@ -3,6 +3,7 @@
 ## MANDATORY RULES
 
 Read `.claude/rules/` for complete guidelines:
+
 - `typescript-patterns.md` - React 19 + TypeScript 5.9
 - `no-duplicates.md` - Anti-duplication (CRITICAL)
 - `paths-policy.md` - C:\ vs D:\ storage
@@ -13,6 +14,7 @@ Read `.claude/rules/` for complete guidelines:
 ## React 19 + TypeScript 5.9
 
 ### Correct Pattern
+
 ```typescript
 // ✅ CORRECT: Named imports, typed props
 import { useState, useEffect, type ReactNode } from 'react';
@@ -28,6 +30,7 @@ const Component = ({ children }: Props) => {
 ```
 
 ### Wrong Patterns
+
 ```typescript
 // ❌ WRONG: Default React import (unused)
 import React from 'react';
@@ -49,12 +52,13 @@ const handler = (e: React.MouseEvent) => {};
 - **Data**: `D:\learning-system\`, `D:\data\` - NEVER in C:\dev
 
 ### Example Database Path
+
 ```typescript
 // ✅ CORRECT
 const DB_PATH = process.env.DATABASE_PATH || 'D:\\databases\\app.db';
 
 // ❌ WRONG
-const DB_PATH = './data/app.db';  // DON'T put in C:\dev
+const DB_PATH = './data/app.db'; // DON'T put in C:\dev
 ```
 
 ## Package Manager
@@ -81,13 +85,13 @@ yarn add <package>
 ## Tech Stack (February 2026)
 
 | Technology | Version |
-|------------|---------|
-| React | 19.2.3 |
-| TypeScript | 5.9.3 |
-| Vite | 7.1.9 |
-| Node.js | 22.x |
-| pnpm | 10.28.1 |
-| Nx | 22.3.3 |
+| ---------- | ------- |
+| React      | 19.2.3  |
+| TypeScript | 5.9.3   |
+| Vite       | 7.1.9   |
+| Node.js    | 22.x    |
+| pnpm       | 10.28.1 |
+| Nx         | 22.3.3  |
 
 ## File Organization
 
@@ -120,6 +124,7 @@ D:\
 ## Code Quality Standards
 
 ### Import Organization
+
 ```typescript
 // 1. External dependencies
 import { useState, useEffect } from 'react';
@@ -135,6 +140,7 @@ import { utils } from './utils';
 ```
 
 ### Component Structure
+
 ```typescript
 // 1. Props interface
 interface ComponentProps {
@@ -191,6 +197,7 @@ git commit -m "docs: update API documentation"
 ## Security Rules
 
 **NEVER commit**:
+
 - API keys, tokens, secrets
 - `.env` files
 - Database files
@@ -198,6 +205,7 @@ git commit -m "docs: update API documentation"
 - `**/*.key`, `**/*.pem`
 
 **ALWAYS**:
+
 - Use environment variables for secrets
 - Validate user input
 - Sanitize database queries

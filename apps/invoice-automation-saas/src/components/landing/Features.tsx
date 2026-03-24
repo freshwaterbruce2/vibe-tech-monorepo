@@ -1,5 +1,4 @@
 import { CalendarClock, CreditCard, FileText, ShieldCheck } from "lucide-react";
-import type React from "react";
 import Card from "../common/Card";
 
 const features = [

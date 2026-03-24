@@ -38,10 +38,14 @@ const DEFAULT_VISUAL_CONFIG: VisualConfig = {
 
 /** Style presets that enhance prompts for different visual moods */
 export const STYLE_PRESETS = {
-  cinematic: 'cinematic lighting, dramatic atmosphere, film grain, wide angle lens, professional color grading, 8K',
-  photorealistic: 'photorealistic, ultra HD, professional photography, natural lighting, sharp focus, DSLR',
-  illustrative: 'digital illustration, clean lines, vibrant colors, professional vector art, flat design',
-  abstract: 'abstract art, flowing shapes, gradient colors, modern design, minimalist composition, geometric',
+  cinematic:
+    'cinematic lighting, dramatic atmosphere, film grain, wide angle lens, professional color grading, 8K',
+  photorealistic:
+    'photorealistic, ultra HD, professional photography, natural lighting, sharp focus, DSLR',
+  illustrative:
+    'digital illustration, clean lines, vibrant colors, professional vector art, flat design',
+  abstract:
+    'abstract art, flowing shapes, gradient colors, modern design, minimalist composition, geometric',
 } as const;
 
 /**
@@ -73,7 +77,7 @@ export async function generateVisual(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Key ${apiKey}`,
+        Authorization: `Key ${apiKey}`,
       },
       body: JSON.stringify({
         prompt: enhancedPrompt,
@@ -130,7 +134,7 @@ export async function generateAllVisuals(
     // Rate limit: 10 req/min on free tier → 6s between calls
     if (i < segments.length - 1) {
       console.log(`[Visuals] Rate limiting... (${i + 1}/${segments.length})`);
-      await new Promise(r => setTimeout(r, 6500));
+      await new Promise((r) => setTimeout(r, 6500));
     }
   }
 

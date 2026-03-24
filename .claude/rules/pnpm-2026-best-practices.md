@@ -162,11 +162,11 @@ pl <project>              # List deps
 
 ## Package Manager Coexistence
 
-| Tool | Purpose | Status |
-|------|---------|--------|
-| **pnpm** | Monorepo development (primary) | ✅ Active |
-| **npm** | Global packages, legacy tools | ✅ Available |
-| **npx** | Execute packages (Antigravity IDE) | ✅ Works |
+| Tool     | Purpose                            | Status       |
+| -------- | ---------------------------------- | ------------ |
+| **pnpm** | Monorepo development (primary)     | ✅ Active    |
+| **npm**  | Global packages, legacy tools      | ✅ Available |
+| **npx**  | Execute packages (Antigravity IDE) | ✅ Works     |
 
 **Antigravity IDE:** Uses npx - fully compatible, no changes needed.
 
@@ -175,11 +175,13 @@ pl <project>              # List deps
 ## Performance Improvements
 
 ### Before (Hoisted Mode)
+
 - Install time: ~5-10 minutes (full monorepo)
 - Disk usage: High (duplicates)
 - Scope: Entire workspace
 
 ### After (Isolated Mode)
+
 - Install time: ~30-60 seconds (single project)
 - Disk usage: Optimized (dedupe + isolation)
 - Scope: Only affected project
@@ -204,7 +206,8 @@ store-dir=D:\pnpm-store
 
 ## Project List
 
-### Apps (apps/*)
+### Apps (apps/\*)
+
 - vibe-tutor
 - nova-agent
 - crypto-enhanced
@@ -215,12 +218,14 @@ store-dir=D:\pnpm-store
 - shipping-pwa
 - iconforge
 
-### Packages (packages/*)
+### Packages (packages/\*)
+
 - shared-components
 - ui-components
 - feature-flags
 
-### Backend (backend/*)
+### Backend (backend/\*)
+
 - vibe-tech-backend
 - openrouter-proxy
 
@@ -233,6 +238,7 @@ store-dir=D:\pnpm-store
 **Cause:** Missing `--filter` flag
 
 **Solution:**
+
 ```powershell
 # Use --filter
 pnpm install --filter <project>
@@ -243,6 +249,7 @@ pnpm install --filter <project>
 **Cause:** Binary not in PATH
 
 **Solution:**
+
 ```powershell
 # Use pnpm exec
 pnpm --filter <project> exec <command>
@@ -255,6 +262,7 @@ pnpm --filter <project> exec <command>
 **Cause:** Workspace protocol not enabled
 
 **Solution:** Already configured in `.npmrc`:
+
 ```ini
 save-workspace-protocol=true
 prefer-workspace-packages=true
@@ -315,6 +323,7 @@ pnpm update <package> --filter <project>
 ### 4. Use Workspace References
 
 In `package.json`:
+
 ```json
 {
   "dependencies": {
@@ -340,6 +349,7 @@ In `package.json`:
 ## Sources (2026 Research)
 
 Based on:
+
 1. pnpm official docs (2026)
 2. Windows 11 monorepo best practices
 3. Nx + pnpm integration guide

@@ -8,10 +8,10 @@ tools:
   - TodoWrite
 examples:
   - context: User wants to update dependencies
-    user: "Update dependencies across the monorepo"
-    assistant: "Activating dependency-update-coordinator for safe one-at-a-time updates..."
+    user: 'Update dependencies across the monorepo'
+    assistant: 'Activating dependency-update-coordinator for safe one-at-a-time updates...'
   - context: Security vulnerability detected
-    user: "Update packages with security vulnerabilities"
+    user: 'Update packages with security vulnerabilities'
     assistant: "I'll coordinate security updates using the dependency-update-coordinator..."
 ---
 

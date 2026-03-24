@@ -1,9 +1,8 @@
 import React from 'react';
 import { Code, Plus, FileText } from 'lucide-react';
 
-import { vibeTheme } from '../../styles/theme';
-import { ComposerFile, ComposerWorkspaceContext } from './ComposerMode.types';
-import { FileList, FileListHeader, ActionButton, FileItem } from './ComposerMode.styles';
+import type { ComposerFile, ComposerWorkspaceContext } from './ComposerMode.types';
+import { FileList, FileListHeader, ActionButton, FileItem, ActionButtonGroup, FileNewBadge } from './ComposerMode.styles';
 
 export interface ComposerFileListProps {
   files: ComposerFile[];
@@ -26,7 +25,7 @@ export const ComposerFileList: React.FC<ComposerFileListProps> = ({
     <FileList>
       <FileListHeader>
         <h3>FILES ({files.length})</h3>
-        <div style={{ display: 'flex', gap: '4px' }}>
+        <ActionButtonGroup>
           {workspaceContext?.openFiles && workspaceContext.openFiles.length > 0 && (
             <ActionButton 
               onClick={onLoadWorkspaceFiles}
@@ -38,7 +37,7 @@ export const ComposerFileList: React.FC<ComposerFileListProps> = ({
           <ActionButton onClick={onAddFile} title="Add new file">
             <Plus size={16} />
           </ActionButton>
-        </div>
+        </ActionButtonGroup>
       </FileListHeader>
       {files.map(file => (
         <FileItem
@@ -53,7 +52,7 @@ export const ComposerFileList: React.FC<ComposerFileListProps> = ({
           <div className="file-status">
             {file.isDirty && <div className="dot" />}
             {file.isNew && (
-              <span style={{ fontSize: '11px', color: vibeTheme.colors.success }}>NEW</span>
+              <FileNewBadge>NEW</FileNewBadge>
             )}
           </div>
         </FileItem>

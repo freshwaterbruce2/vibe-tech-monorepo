@@ -11,7 +11,7 @@ examples:
     user: "git commit -m 'feat: add feature'"
     assistant: "Before committing, I'll run the pre-commit quality gate to ensure all checks pass..."
   - context: User asks to verify code quality
-    user: "Can you check if my changes are ready to commit?"
+    user: 'Can you check if my changes are ready to commit?'
     assistant: "I'll activate the pre-commit-quality-gate agent to run quality checks on your changes..."
 ---
 
@@ -37,6 +37,7 @@ C:\dev\scripts\auto-quality-check.ps1 -TriggerType "pre-commit" -QuickMode
 ```
 
 **Checks performed:**
+
 - ✅ **Linting** - ESLint for TypeScript/JavaScript
 - ✅ **Type checking** - TypeScript compiler validation
 - ✅ **Testing** - Unit tests for affected projects
@@ -69,12 +70,14 @@ pnpm nx format:write --projects=<affected-projects>
 ### 4. Blocking Logic
 
 **BLOCK commits when:**
+
 - TypeScript errors exist (Priority 1)
 - Tests fail on affected projects
 - Build fails
 - Linting errors with `--max-warnings 0`
 
 **WARN but allow when:**
+
 - Only formatting issues (can auto-fix)
 - Documentation TODOs
 - Minor linting warnings
@@ -82,10 +85,12 @@ pnpm nx format:write --projects=<affected-projects>
 ### 5. Integration with Existing Hooks
 
 This agent is called by the existing pre-commit hook at:
+
 - `.git/hooks/pre-commit` (PowerShell hook)
 - `.claude/hooks/user-prompt-submit.ps1` (Hookify rules)
 
 **Hookify rules:**
+
 - `warn-console-log.local.md` - Warns about console.log
 - `block-npm-yarn.local.md` - Enforces pnpm usage
 
@@ -162,18 +167,21 @@ Status Levels:
 ## Error Classification
 
 **Priority 1 (CRITICAL - BLOCK):**
+
 - TypeScript errors
 - Test failures
 - Build failures
 - Missing dependencies
 
 **Priority 2 (HIGH - WARN):**
+
 - ESLint errors
 - React.FC usage (anti-pattern)
 - Unused imports
 - console.log in production code
 
 **Priority 3 (MEDIUM - AUTO-FIX):**
+
 - Formatting issues
 - Import ordering
 - Trailing whitespace

@@ -5,48 +5,48 @@ Status: ACTIVE
 
 ## Canonical Server List
 
-| Server | Command | Purpose |
-|--------|---------|---------|
-| `desktop-commander` | `node apps/desktop-commander-v3/dist/mcp.js` | Windows automation |
-| `filesystem` | `npx @modelcontextprotocol/server-filesystem` | File access (C:\dev, D:\) |
-| `codeberg` | `node apps/mcp-codeberg/dist/index.js` | GitHub API integration |
-| `nx-mcp` | `npx nx-mcp@latest` | Nx workspace management |
-| `sqlite` | `npx @modelcontextprotocol/server-sqlite` | Main DB (D:\databases\database.db) |
-| `sqlite-trading` | `npx @modelcontextprotocol/server-sqlite` | Trading DB (D:\databases\trading.db) |
-| `skills` | `node apps/mcp-skills-server/dist/index.js` | Agent skills system |
-| `playwright` | `npx @playwright/mcp@latest` | Browser automation |
-| `chrome-devtools` | `npx chrome-devtools-mcp@latest` | Advanced browser debugging & performance |
-| `youtube` | `npx @anaisbetts/mcp-youtube` | YouTube subtitles (Claude Code only) |
-| `notebooklm` | `python -m notebooklm_mcp_server` | NotebookLM (Claude Code only) |
+| Server              | Command                                       | Purpose                                  |
+| ------------------- | --------------------------------------------- | ---------------------------------------- |
+| `desktop-commander` | `node apps/desktop-commander-v3/dist/mcp.js`  | Windows automation                       |
+| `filesystem`        | `npx @modelcontextprotocol/server-filesystem` | File access (C:\dev, D:\)                |
+| `codeberg`          | `node apps/mcp-codeberg/dist/index.js`        | GitHub API integration                   |
+| `nx-mcp`            | `npx nx-mcp@latest`                           | Nx workspace management                  |
+| `sqlite`            | `npx @modelcontextprotocol/server-sqlite`     | Main DB (D:\databases\database.db)       |
+| `sqlite-trading`    | `npx @modelcontextprotocol/server-sqlite`     | Trading DB (D:\databases\trading.db)     |
+| `skills`            | `node apps/mcp-skills-server/dist/index.js`   | Agent skills system                      |
+| `playwright`        | `npx @playwright/mcp@latest`                  | Browser automation                       |
+| `chrome-devtools`   | `npx chrome-devtools-mcp@latest`              | Advanced browser debugging & performance |
+| `youtube`           | `npx @anaisbetts/mcp-youtube`                 | YouTube subtitles (Claude Code only)     |
+| `notebooklm`        | `python -m notebooklm_mcp_server`             | NotebookLM (Claude Code only)            |
 
 ## Configuration Files by Editor/IDE
 
 ### Server Matrix
 
-| Server | Claude Code | Claude Desktop | VS Code | Gemini CLI | Codex CLI |
-|--------|:-:|:-:|:-:|:-:|:-:|
-| desktop-commander | Y | Y | Y | Y | Y |
-| filesystem | Y | Y | Y | Y | Y |
-| codeberg | Y | Y | Y | Y | Y |
-| nx-mcp | Y | Y | Y | Y | Y |
-| sqlite | Y | Y | Y | Y | Y |
-| sqlite-trading | Y | Y | Y | Y | Y |
-| skills | Y | Y | Y | Y | Y |
-| playwright | Y | Y | Y | Y | Y |
-| chrome-devtools | Y | - | - | - | - |
-| youtube | Y | - | - | - | - |
-| notebooklm | Y | - | - | - | - |
+| Server            | Claude Code | Claude Desktop | VS Code | Gemini CLI | Codex CLI |
+| ----------------- | :---------: | :------------: | :-----: | :--------: | :-------: |
+| desktop-commander |      Y      |       Y        |    Y    |     Y      |     Y     |
+| filesystem        |      Y      |       Y        |    Y    |     Y      |     Y     |
+| codeberg          |      Y      |       Y        |    Y    |     Y      |     Y     |
+| nx-mcp            |      Y      |       Y        |    Y    |     Y      |     Y     |
+| sqlite            |      Y      |       Y        |    Y    |     Y      |     Y     |
+| sqlite-trading    |      Y      |       Y        |    Y    |     Y      |     Y     |
+| skills            |      Y      |       Y        |    Y    |     Y      |     Y     |
+| playwright        |      Y      |       Y        |    Y    |     Y      |     Y     |
+| chrome-devtools   |      Y      |       -        |    -    |     -      |     -     |
+| youtube           |      Y      |       -        |    -    |     -      |     -     |
+| notebooklm        |      Y      |       -        |    -    |     -      |     -     |
 
 ### Config File Locations & Formats
 
-| Editor | Config File | Format |
-|--------|------------|--------|
-| **Claude Code** | `C:\dev\.mcp.json` | JSON, `"mcpServers"` key, `"type": "stdio"` |
-| **Claude Desktop** | `%APPDATA%\Claude\claude_desktop_config.json` | JSON, `"mcpServers"` key, NO `"type"` field |
-| **VS Code** | `C:\dev\.vscode\mcp.json` | JSON, `"servers"` key, `"type": "stdio"` |
-| **Gemini CLI** | `C:\dev\.gemini\settings.json` | JSON, `"mcpServers"` inside settings, `"trust": true` |
-| **Codex CLI (user)** | `~\.codex\config.toml` | TOML, `[mcp_servers.<name>]` sections |
-| **Codex CLI (project)** | `C:\dev\.codex\config.toml` | TOML, `[mcp_servers.<name>]` sections |
+| Editor                  | Config File                                   | Format                                                |
+| ----------------------- | --------------------------------------------- | ----------------------------------------------------- |
+| **Claude Code**         | `C:\dev\.mcp.json`                            | JSON, `"mcpServers"` key, `"type": "stdio"`           |
+| **Claude Desktop**      | `%APPDATA%\Claude\claude_desktop_config.json` | JSON, `"mcpServers"` key, NO `"type"` field           |
+| **VS Code**             | `C:\dev\.vscode\mcp.json`                     | JSON, `"servers"` key, `"type": "stdio"`              |
+| **Gemini CLI**          | `C:\dev\.gemini\settings.json`                | JSON, `"mcpServers"` inside settings, `"trust": true` |
+| **Codex CLI (user)**    | `~\.codex\config.toml`                        | TOML, `[mcp_servers.<name>]` sections                 |
+| **Codex CLI (project)** | `C:\dev\.codex\config.toml`                   | TOML, `[mcp_servers.<name>]` sections                 |
 
 ### Format Notes
 
@@ -103,6 +103,7 @@ node -e "JSON.parse(require('fs').readFileSync('C:/dev/.vscode/mcp.json','utf8')
 **Symptom:** MCP tools not appearing
 
 **Solution:**
+
 - Validate JSON/TOML syntax in config file
 - Verify dist files exist (rebuild if needed)
 - Check Node.js version compatibility (requires Node 20+)
@@ -112,6 +113,7 @@ node -e "JSON.parse(require('fs').readFileSync('C:/dev/.vscode/mcp.json','utf8')
 **Symptom:** Operations fail after 60 seconds
 
 **Solution:**
+
 - Claude Desktop has hard 60s timeout (not configurable)
 - Use streaming/progressive results for large operations
 

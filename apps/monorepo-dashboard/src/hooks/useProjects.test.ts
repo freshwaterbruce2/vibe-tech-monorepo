@@ -84,10 +84,10 @@ describe('useProjects', () => {
 
   it('should handle loading state', () => {
     vi.mocked(nxService.getWorkspaceProjects).mockImplementation(
-      () => new Promise(() => {})
+      async () => new Promise(() => {})
     )
     vi.mocked(nxService.getAffectedProjects).mockImplementation(
-      () => new Promise(() => {})
+      async () => new Promise(() => {})
     )
 
     const { result } = renderHook(() => useProjects(), {

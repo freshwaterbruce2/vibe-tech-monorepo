@@ -52,16 +52,16 @@ Detect when user starts/stops speaking
 
 ## ⚠️ Sharp Edges
 
-| Issue | Severity | Solution |
-|-------|----------|----------|
+| Issue | Severity | Solution                                         |
+| ----- | -------- | ------------------------------------------------ |
 | Issue | critical | # Measure and budget latency for each component: |
-| Issue | high | # Target jitter metrics: |
-| Issue | high | # Use semantic VAD: |
-| Issue | high | # Implement barge-in detection: |
-| Issue | medium | # Constrain response length in prompts: |
-| Issue | medium | # Prompt for spoken format: |
-| Issue | medium | # Implement noise handling: |
-| Issue | medium | # Mitigate STT errors: |
+| Issue | high     | # Target jitter metrics:                         |
+| Issue | high     | # Use semantic VAD:                              |
+| Issue | high     | # Implement barge-in detection:                  |
+| Issue | medium   | # Constrain response length in prompts:          |
+| Issue | medium   | # Prompt for spoken format:                      |
+| Issue | medium   | # Implement noise handling:                      |
+| Issue | medium   | # Mitigate STT errors:                           |
 
 ## Related Skills
 

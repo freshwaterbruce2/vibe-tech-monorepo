@@ -17,7 +17,7 @@
         "keyword": "productivity app",
         "search_volume": 38000,
         "competition_level": "high",
-        "relevance_score": 0.90,
+        "relevance_score": 0.9,
         "difficulty_score": 68.2,
         "potential_score": 75.1,
         "recommendation": "High priority - target immediately"
@@ -75,14 +75,7 @@
   },
   "competitor_insights": {
     "competitors_analyzed": 4,
-    "common_keywords": [
-      "task",
-      "todo",
-      "list",
-      "productivity",
-      "organize",
-      "manage"
-    ],
+    "common_keywords": ["task", "todo", "list", "productivity", "organize", "manage"],
     "keyword_gaps": [
       {
         "keyword": "ai prioritization",
@@ -156,11 +149,7 @@
   "aso_health_estimate": {
     "current_score": "N/A (pre-launch)",
     "potential_score_with_optimizations": "75-80/100",
-    "key_strengths": [
-      "Unique AI differentiation",
-      "Clear target audience",
-      "Strong feature set"
-    ],
+    "key_strengths": ["Unique AI differentiation", "Clear target audience", "Strong feature set"],
     "areas_to_develop": [
       "Build rating volume post-launch",
       "Monitor and respond to reviews",

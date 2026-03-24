@@ -8,10 +8,10 @@ tools:
   - TodoWrite
 examples:
   - context: User wants to validate TypeScript across all projects
-    user: "Check TypeScript types across the monorepo"
-    assistant: "Activating cross-project-type-checker to validate types..."
+    user: 'Check TypeScript types across the monorepo'
+    assistant: 'Activating cross-project-type-checker to validate types...'
   - context: Shared package type changes
-    user: "I updated types in shared-config, verify everything still compiles"
+    user: 'I updated types in shared-config, verify everything still compiles'
     assistant: "I'll run cross-project type checking to ensure all consuming projects are still valid..."
 ---
 
@@ -60,18 +60,21 @@ pnpm nx run-many -t typecheck \
 Classify TypeScript errors by severity:
 
 **Priority 1 (CRITICAL - MUST FIX):**
+
 - Type mismatch in function signatures
 - Missing required properties
 - Incompatible generic constraints
 - Module resolution failures
 
 **Priority 2 (HIGH - SHOULD FIX):**
+
 - `any` type usage (violates strict mode)
 - Unused variables/parameters
 - Implicit `any` from missing types
 - Type assertions that might be unsafe
 
 **Priority 3 (MEDIUM - CAN AUTO-FIX):**
+
 - Missing type annotations (can infer)
 - Unused imports
 - Formatting issues in type definitions
@@ -219,22 +222,26 @@ pnpm nx build shared-config
 ### When Shared Types Change
 
 1. **Identify consumers**
+
    ```bash
    pnpm nx graph --focus=shared-types
    ```
 
 2. **Build shared package first**
+
    ```bash
    pnpm nx build shared-types
    ```
 
 3. **Validate all consumers**
+
    ```bash
    pnpm nx run-many -t typecheck \
      --projects=$(pnpm nx print-affected --target=typecheck --select=projects)
    ```
 
 4. **Report breaking changes**
+
    ```
    ⚠️ Type changes in shared-types affect 8 projects:
    - nova-agent
@@ -434,11 +441,13 @@ pnpm nx affected -t typecheck --skip-nx-cache
 ### Issue: "Cannot find module" errors
 
 **Causes:**
+
 - Package not built yet
 - tsconfig paths not configured
 - Missing in package.json dependencies
 
 **Solutions:**
+
 ```bash
 # Build shared packages first
 pnpm nx build shared-config shared-types shared-ui
@@ -453,6 +462,7 @@ grep "shared-config" apps/*/package.json
 ### Issue: Circular type dependencies
 
 **Detection:**
+
 ```bash
 # Nx will show circular dependency errors
 pnpm nx graph
@@ -460,6 +470,7 @@ pnpm nx graph
 ```
 
 **Resolution:**
+
 - Move shared types to a common package
 - Use type-only imports to break cycles
 - Refactor type dependencies
@@ -467,11 +478,13 @@ pnpm nx graph
 ### Issue: Type errors only in CI
 
 **Causes:**
+
 - Nx cache differences
 - Different TypeScript version
 - Build artifacts not committed
 
 **Solutions:**
+
 ```bash
 # Clear cache and rebuild
 pnpm nx reset

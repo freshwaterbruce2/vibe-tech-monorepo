@@ -16,6 +16,7 @@ A context engineering methodology that treats **filesystem as persistent memory*
 ## When to Use
 
 Use this skill when:
+
 - Task involves modifying 3+ files
 - Task spans multiple sessions
 - Task is marked as NEW_FEATURE, BREAKING_CHANGE, or HIGH complexity
@@ -25,9 +26,11 @@ Use this skill when:
 ## The Three Files
 
 ### 1. task_plan.md
+
 **Purpose:** Track phases, objectives, and affected files
 
 Contains:
+
 - Session metadata (ID, project, timestamp)
 - Task objective (original request)
 - Phase checklist (Research -> Implementation -> Testing -> Documentation)
@@ -35,9 +38,11 @@ Contains:
 - Risk assessment and rollback plan
 
 ### 2. findings.md
+
 **Purpose:** Store research discoveries and decisions
 
 Contains:
+
 - Research summary table (topic, source, findings)
 - Existing patterns found in codebase
 - Similar implementations identified
@@ -45,9 +50,11 @@ Contains:
 - Key decisions with rationale
 
 ### 3. progress.md
+
 **Purpose:** Session log with test results and errors
 
 Contains:
+
 - Timeline with timestamped entries
 - Actions completed table
 - Test results table
@@ -106,11 +113,13 @@ If context is lost mid-task:
 ## Integration with Existing Tools
 
 ### TodoWrite Integration
+
 - Create TodoWrite items from task_plan.md phases
 - Mark todos complete as phases complete
 - Keep files and todos synchronized
 
 ### Dashboard Metrics
+
 - Sessions tracked in D:\databases\dashboard.db
 - Metrics visible at /api/planning/metrics
 - Trial comparison at /api/planning/comparison
@@ -136,6 +145,7 @@ If context is lost mid-task:
 ## Metrics Tracked
 
 During the 1-month trial:
+
 - Task completion rate
 - Goal adherence rate
 - Context recovery success

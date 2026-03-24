@@ -1,7 +1,7 @@
 # Database Integration Specialist
 
 **Category:** Backend Services
-**Model:** Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
+**Model:** Claude Sonnet 4.5 (claude-sonnet-4-6)
 **Context Budget:** 4,500 tokens
 **Delegation Trigger:** Database design, ORM, migrations, queries, optimization
 

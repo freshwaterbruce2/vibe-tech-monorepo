@@ -7,11 +7,11 @@ tools:
   - TodoWrite
 examples:
   - context: User wants to run tests efficiently
-    user: "Run tests on what I changed"
+    user: 'Run tests on what I changed'
     assistant: "I'll use the affected-projects-tester agent to run tests only on affected projects..."
   - context: Pre-commit testing
-    user: "Test my changes before committing"
-    assistant: "Activating affected-projects-tester to run targeted tests..."
+    user: 'Test my changes before committing'
+    assistant: 'Activating affected-projects-tester to run targeted tests...'
 ---
 
 # Affected Projects Tester Agent
@@ -170,47 +170,57 @@ pnpm nx affected -t test --coverage --coverageReporters=html,lcov
 ## Test Types by Project
 
 ### Frontend Apps (React)
+
 - **Unit tests**: Vitest with React Testing Library
 - **E2E tests**: Playwright
 - **Coverage target**: 80%+
 
 **Example projects:**
+
 - nova-agent
 - vibe-code-studio
 - digital-content-builder
 
 ### Desktop Apps (Electron/Tauri)
+
 - **Unit tests**: Vitest
 - **E2E tests**: Playwright (Electron), Manual (Tauri)
 - **Integration tests**: IPC handlers
 
 **Example projects:**
+
 - vibe-code-studio (Electron)
 - nova-agent (Tauri)
 
 ### Mobile Apps (Capacitor)
+
 - **Unit tests**: Vitest
 - **E2E tests**: Playwright (web view)
 - **Native tests**: Android instrumented tests
 
 **Example project:**
+
 - vibe-tutor
 
 ### Backend Services (Node.js)
+
 - **Unit tests**: Vitest
 - **Integration tests**: Supertest for API endpoints
 - **Contract tests**: API schema validation
 
 **Example projects:**
+
 - backend/openrouter-proxy
 - apps/vibe-justice/backend
 
 ### Python Projects
+
 - **Unit tests**: pytest
 - **Integration tests**: pytest with fixtures
 - **Coverage target**: 85%+
 
 **Example project:**
+
 - apps/crypto-enhanced (trading system)
 
 ## Coverage Thresholds
@@ -221,20 +231,20 @@ const coverageThresholds = {
     statements: 80,
     branches: 75,
     functions: 80,
-    lines: 80
+    lines: 80,
   },
   backend: {
     statements: 85,
     branches: 80,
     functions: 85,
-    lines: 85
+    lines: 85,
   },
   python: {
     statements: 85,
     branches: 80,
     functions: 85,
-    lines: 85
-  }
+    lines: 85,
+  },
 };
 ```
 
@@ -249,6 +259,7 @@ const coverageThresholds = {
    - Environment issue
 
 2. **Provide debugging guidance**
+
    ```
    ❌ Test failure in apps/nova-agent/src/hooks/useAIChat.test.ts
 

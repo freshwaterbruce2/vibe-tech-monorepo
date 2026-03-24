@@ -1,9 +1,12 @@
 $ErrorActionPreference = 'Stop'
 
+$projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+
 $candidates = @(
   (Join-Path $env:LOCALAPPDATA 'Programs\vibe-code-studio\Vibe Code Studio.exe'),
-  (Join-Path (Get-Location).Path 'dist-electron\win-unpacked\Vibe Code Studio.exe'),
-  (Join-Path $env:LOCALAPPDATA 'Programs\Vibe Code Studio\Vibe Code Studio.exe')
+  (Join-Path $env:LOCALAPPDATA 'Programs\Vibe Code Studio\Vibe Code Studio.exe'),
+  (Join-Path $projectRoot 'src-tauri\target\release\Vibe Code Studio.exe'),
+  (Join-Path $projectRoot 'src-tauri\target\release\vibe-code-studio.exe')
 )
 
 $exe = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
@@ -15,7 +18,7 @@ if (-not $exe) {
 Write-Host "Verifying executable: $exe"
 
 $proc = Start-Process -FilePath $exe -PassThru
-Start-Sleep -Seconds 3
+Start-Sleep -Seconds 5
 
 if ($proc.HasExited) {
   if ($proc.ExitCode -eq 0) {

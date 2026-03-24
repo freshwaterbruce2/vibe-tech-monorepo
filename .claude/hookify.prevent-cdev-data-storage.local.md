@@ -14,6 +14,7 @@ action: block
 **ALL databases and logs must be stored on D:\ drive, NEVER in C:\dev**
 
 **Correct locations:**
+
 ```
 ❌ C:\dev\database.db
 ✅ D:\databases\database.db
@@ -26,12 +27,14 @@ action: block
 ```
 
 **Why this matters:**
+
 - Separation of code vs data
 - Faster builds (no large files in workspace)
 - Prevents accidental commits of sensitive data
 - D:\ has dedicated snapshot/backup system
 
 **How to fix:**
+
 1. Move file to D:\ drive
 2. Update code to use environment variables:
    ```typescript

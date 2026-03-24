@@ -7,7 +7,12 @@ const MOCK_TREE: IntelligenceItem[] = [
     path: 'D:\\avge\\raw_material',
     type: 'directory',
     children: [
-      { name: 'transcripts', path: 'D:\\avge\\raw_material\\transcripts', type: 'directory', children: [] },
+      {
+        name: 'transcripts',
+        path: 'D:\\avge\\raw_material\\transcripts',
+        type: 'directory',
+        children: [],
+      },
       { name: 'pdfs', path: 'D:\\avge\\raw_material\\pdfs', type: 'directory', children: [] },
       { name: 'urls.json', path: 'D:\\avge\\raw_material\\urls.json', type: 'file', size: 0 },
     ],
@@ -25,7 +30,12 @@ const MOCK_TREE: IntelligenceItem[] = [
     children: [
       { name: 'audio', path: 'D:\\avge\\assets\\audio', type: 'directory', children: [] },
       { name: 'visuals', path: 'D:\\avge\\assets\\visuals', type: 'directory', children: [] },
-      { name: 'video_final', path: 'D:\\avge\\assets\\video_final', type: 'directory', children: [] },
+      {
+        name: 'video_final',
+        path: 'D:\\avge\\assets\\video_final',
+        type: 'directory',
+        children: [],
+      },
     ],
   },
   {
@@ -75,17 +85,21 @@ function FileTreeNode({ item, depth = 0 }: { item: IntelligenceItem; depth?: num
         <span className="icon">{getIcon(item)}</span>
         <span style={{ flex: 1, fontSize: 'var(--text-xs)' }}>{item.name}</span>
         {item.type === 'file' && item.size !== undefined && (
-          <span className="mono" style={{
-            fontSize: '9px',
-            color: 'var(--text-tertiary)',
-          }}>
+          <span
+            className="mono"
+            style={{
+              fontSize: '9px',
+              color: 'var(--text-tertiary)',
+            }}
+          >
             {formatSize(item.size)}
           </span>
         )}
       </div>
-      {item.type === 'directory' && item.children?.map((child) => (
-        <FileTreeNode key={child.path} item={child} depth={depth + 1} />
-      ))}
+      {item.type === 'directory' &&
+        item.children?.map((child) => (
+          <FileTreeNode key={child.path} item={child} depth={depth + 1} />
+        ))}
     </>
   );
 }
@@ -98,10 +112,13 @@ export function IntelligenceBrowser() {
     <div className="glass-panel panel">
       <div className="panel-header">
         <span className="panel-title">📚 Intelligence</span>
-        <span className="mono" style={{
-          fontSize: '9px',
-          color: 'var(--text-tertiary)',
-        }}>
+        <span
+          className="mono"
+          style={{
+            fontSize: '9px',
+            color: 'var(--text-tertiary)',
+          }}
+        >
           D:\avge\
         </span>
       </div>
@@ -117,7 +134,8 @@ export function IntelligenceBrowser() {
           <div className="empty-state">
             <span className="icon">📭</span>
             <p style={{ fontSize: 'var(--text-sm)' }}>
-              No sources ingested yet.<br />
+              No sources ingested yet.
+              <br />
               Add URLs or transcripts to get started.
             </p>
           </div>

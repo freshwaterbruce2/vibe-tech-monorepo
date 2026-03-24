@@ -39,10 +39,19 @@ export async function installTauriShim(): Promise<void> {
       return _store;
     }
 
+  const homeDirectory = await pathMod.homeDir();
+  const platformInfo = {
+    os: navigator.platform.includes('Win') ? 'win32' : navigator.platform.includes('Mac') ? 'darwin' : 'linux',
+    arch: 'x64',
+    version: '1.0.0-tauri',
+    homedir: homeDirectory,
+    pathSeparator: navigator.platform.includes('Win') ? '\\' : '/',
+  };
+
   const shim = {
     isElectron: true, // Must be true so existing Electron checks use the shim
     isTauri: true,
-    platform: navigator.platform,
+    platform: platformInfo,
 
     // --- Store ---
     store: {
@@ -139,9 +148,9 @@ export async function installTauriShim(): Promise<void> {
       async getPlatform() {
         return {
           success: true,
-          platform: navigator.platform.includes('Win') ? 'win32' : navigator.platform.includes('Mac') ? 'darwin' : 'linux',
-          arch: 'x64',
-          version: '1.0.0-tauri',
+          platform: platformInfo.os,
+          arch: platformInfo.arch,
+          version: platformInfo.version,
           electron: '0',
           node: '0',
         };
@@ -293,6 +302,15 @@ export async function installTauriShim(): Promise<void> {
       close() { /* handled by Tauri window decorations */ },
       async isMaximized() { return false; },
     },
+  };
+
+  (shim as any).ipc = {
+    send(_channel: string, _data?: any) { /* no-op */ },
+    invoke: shim.ipcRenderer.invoke,
+    on(_channel: string, _listener: any) {
+      return () => {};
+    },
+    removeAllListeners(_channel: string) { /* no-op */ },
   };
 
   (window as any).electron = shim;

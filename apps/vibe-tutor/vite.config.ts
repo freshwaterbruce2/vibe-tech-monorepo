@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
     ] as unknown[],
     base: mode === 'development' ? '/' : './',
     build: {
-      minify: 'terser',
+      minify: 'esbuild',
       sourcemap: false,
       rollupOptions: {
         output: {

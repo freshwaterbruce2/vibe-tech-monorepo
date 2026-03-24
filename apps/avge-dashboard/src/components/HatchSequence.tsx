@@ -45,15 +45,35 @@ const BOOT_LINES = [
 type Phase = 'boot' | 'title' | 'niche' | 'voice' | 'pacing' | 'audience' | 'confirm' | 'launch';
 
 const VOICE_OPTIONS: { value: HatchResult['voice']; label: string; desc: string }[] = [
-  { value: 'authoritative', label: '📊 Authoritative', desc: 'Data-driven, expert tone — "Here\'s what the research shows..."' },
-  { value: 'conversational', label: '💬 Conversational', desc: 'Friendly, relatable — "Let me break this down for you..."' },
-  { value: 'provocative', label: '🔥 Provocative', desc: 'Bold, challenging — "Everything you\'ve been told is wrong."' },
-  { value: 'storyteller', label: '📖 Storyteller', desc: 'Narrative-driven — "Three months ago, something changed..."' },
+  {
+    value: 'authoritative',
+    label: '📊 Authoritative',
+    desc: 'Data-driven, expert tone — "Here\'s what the research shows..."',
+  },
+  {
+    value: 'conversational',
+    label: '💬 Conversational',
+    desc: 'Friendly, relatable — "Let me break this down for you..."',
+  },
+  {
+    value: 'provocative',
+    label: '🔥 Provocative',
+    desc: 'Bold, challenging — "Everything you\'ve been told is wrong."',
+  },
+  {
+    value: 'storyteller',
+    label: '📖 Storyteller',
+    desc: 'Narrative-driven — "Three months ago, something changed..."',
+  },
 ];
 
 const PACING_OPTIONS: { value: HatchResult['pacing']; label: string; desc: string }[] = [
   { value: 'rapid', label: '⚡ Rapid', desc: '120+ WPM — fast cuts, high energy, TikTok-style' },
-  { value: 'measured', label: '🎯 Measured', desc: '100 WPM — balanced, professional, essay-style' },
+  {
+    value: 'measured',
+    label: '🎯 Measured',
+    desc: '100 WPM — balanced, professional, essay-style',
+  },
   { value: 'dramatic', label: '🎭 Dramatic', desc: '80 WPM — slow builds, pauses, cinematic feel' },
 ];
 
@@ -87,10 +107,13 @@ export function HatchSequence({ projectTitle, onComplete, onCancel }: HatchConfi
       setTimeout(() => setPhase('title'), 800);
       return;
     }
-    const timer = setTimeout(() => {
-      setDisplayedLines((prev) => [...prev, BOOT_LINES[bootIndex]]);
-      setBootIndex((i) => i + 1);
-    }, bootIndex === 0 ? 600 : 120 + Math.random() * 180);
+    const timer = setTimeout(
+      () => {
+        setDisplayedLines((prev) => [...prev, BOOT_LINES[bootIndex]]);
+        setBootIndex((i) => i + 1);
+      },
+      bootIndex === 0 ? 600 : 120 + Math.random() * 180,
+    );
     return () => clearTimeout(timer);
   }, [phase, bootIndex]);
 
@@ -168,9 +191,7 @@ export function HatchSequence({ projectTitle, onComplete, onCancel }: HatchConfi
     <div className="hatch-overlay">
       <div className="hatch-terminal" ref={containerRef}>
         {/* ASCII Header */}
-        {phase === 'boot' && (
-          <pre className="hatch-ascii">{ASCII_LOGO}</pre>
-        )}
+        {phase === 'boot' && <pre className="hatch-ascii">{ASCII_LOGO}</pre>}
 
         {/* Boot log lines */}
         {displayedLines.map((line, i) => (
@@ -192,7 +213,8 @@ export function HatchSequence({ projectTitle, onComplete, onCancel }: HatchConfi
         {phase !== 'boot' && phase !== 'launch' && (
           <div className="hatch-active">
             <div className="hatch-question">
-              {typewriterText}{!typewriterDone && <span className="hatch-cursor">{cursor}</span>}
+              {typewriterText}
+              {!typewriterDone && <span className="hatch-cursor">{cursor}</span>}
             </div>
 
             {typewriterDone && phase === 'title' && (
@@ -231,7 +253,12 @@ export function HatchSequence({ projectTitle, onComplete, onCancel }: HatchConfi
                     className={`hatch-option ${voice === opt.value ? 'selected' : ''}`}
                     onClick={() => {
                       setVoice(opt.value);
-                      setDisplayedLines((prev) => [...prev, `> ${typewriterText}`, `  → ${opt.label}`, '']);
+                      setDisplayedLines((prev) => [
+                        ...prev,
+                        `> ${typewriterText}`,
+                        `  → ${opt.label}`,
+                        '',
+                      ]);
                       setPhase('pacing');
                     }}
                   >
@@ -250,7 +277,12 @@ export function HatchSequence({ projectTitle, onComplete, onCancel }: HatchConfi
                     className={`hatch-option ${pacing === opt.value ? 'selected' : ''}`}
                     onClick={() => {
                       setPacing(opt.value);
-                      setDisplayedLines((prev) => [...prev, `> ${typewriterText}`, `  → ${opt.label}`, '']);
+                      setDisplayedLines((prev) => [
+                        ...prev,
+                        `> ${typewriterText}`,
+                        `  → ${opt.label}`,
+                        '',
+                      ]);
                       setPhase('audience');
                     }}
                   >
@@ -278,13 +310,25 @@ export function HatchSequence({ projectTitle, onComplete, onCancel }: HatchConfi
             {typewriterDone && phase === 'confirm' && (
               <div className="hatch-confirm">
                 <div className="hatch-summary">
-                  <div><span className="hatch-tag">[TITLE]</span> {title}</div>
-                  <div><span className="hatch-tag">[NICHE]</span> {niche}</div>
-                  <div><span className="hatch-tag">[VOICE]</span> {voice}</div>
-                  <div><span className="hatch-tag">[PACING]</span> {pacing}</div>
-                  <div><span className="hatch-tag">[AUDIENCE]</span> {audience}</div>
+                  <div>
+                    <span className="hatch-tag">[TITLE]</span> {title}
+                  </div>
+                  <div>
+                    <span className="hatch-tag">[NICHE]</span> {niche}
+                  </div>
+                  <div>
+                    <span className="hatch-tag">[VOICE]</span> {voice}
+                  </div>
+                  <div>
+                    <span className="hatch-tag">[PACING]</span> {pacing}
+                  </div>
+                  <div>
+                    <span className="hatch-tag">[AUDIENCE]</span> {audience}
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-3)' }}>
+                <div
+                  style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-3)' }}
+                >
                   <button className="btn-launch" onClick={() => advance('launch')}>
                     ▶ DEPLOY
                   </button>
@@ -301,7 +345,8 @@ export function HatchSequence({ projectTitle, onComplete, onCancel }: HatchConfi
         {phase === 'launch' && (
           <div className="hatch-launch">
             <div className="hatch-question">
-              {typewriterText}{!typewriterDone && <span className="hatch-cursor">{cursor}</span>}
+              {typewriterText}
+              {!typewriterDone && <span className="hatch-cursor">{cursor}</span>}
             </div>
             <div className="hatch-progress-bar">
               <div className="hatch-progress-fill" />

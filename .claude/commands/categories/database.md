@@ -11,23 +11,25 @@ category: infrastructure
 
 ## Database Locations
 
-| Database | Location | Used By |
-|----------|----------|---------|
-| `crypto_enhanced.db` | `D:\databases\` | Crypto trading |
-| `vibe_justice.db` | `D:\databases\` | Vibe Justice |
-| `memory_bank.db` | `D:\databases\` | Memory system |
+| Database             | Location        | Used By         |
+| -------------------- | --------------- | --------------- |
+| `crypto_enhanced.db` | `D:\databases\` | Crypto trading  |
+| `vibe_justice.db`    | `D:\databases\` | Vibe Justice    |
+| `memory_bank.db`     | `D:\databases\` | Memory system   |
 | `learning_system.db` | `D:\databases\` | Learning system |
-| `nova_agent.db` | `D:\databases\` | Nova Agent |
-| PostgreSQL | Vercel/Neon | SaaS apps |
+| `nova_agent.db`      | `D:\databases\` | Nova Agent      |
+| PostgreSQL           | Vercel/Neon     | SaaS apps       |
 
 ## Tech Stack
 
 ### SQLite (Local/Desktop)
+
 - **Driver**: better-sqlite3 (Node.js), rusqlite (Rust)
 - **ORM**: Prisma, Drizzle, or raw SQL
 - **Location**: `D:\databases\`
 
 ### PostgreSQL (Cloud/SaaS)
+
 - **Hosting**: Neon, Vercel Postgres, Supabase
 - **ORM**: Prisma
 - **Migrations**: Prisma Migrate
@@ -50,6 +52,7 @@ sqlite3 D:/databases/app.db "SELECT * FROM table LIMIT 10"
 ## Prisma Patterns
 
 ### Schema Design
+
 ```prisma
 // prisma/schema.prisma
 datasource db {
@@ -86,15 +89,18 @@ model Post {
 ```
 
 ### Query Patterns
+
 ```typescript
 // lib/prisma.ts
 import { PrismaClient } from '@prisma/client';
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
-export const prisma = globalForPrisma.prisma || new PrismaClient({
-  log: process.env.NODE_ENV === 'development' ? ['query'] : [],
-});
+export const prisma =
+  globalForPrisma.prisma ||
+  new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['query'] : [],
+  });
 
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
@@ -102,16 +108,17 @@ if (process.env.NODE_ENV !== 'production') {
 ```
 
 ### Efficient Queries
+
 ```typescript
 // ✅ Good - Select only needed fields
 const users = await prisma.user.findMany({
-  select: { id: true, name: true, email: true }
+  select: { id: true, name: true, email: true },
 });
 
 // ✅ Good - Include relations in one query
 const userWithPosts = await prisma.user.findUnique({
   where: { id },
-  include: { posts: { take: 10, orderBy: { createdAt: 'desc' } } }
+  include: { posts: { take: 10, orderBy: { createdAt: 'desc' } } },
 });
 
 // ❌ Bad - N+1 query problem
@@ -124,6 +131,7 @@ for (const user of users) {
 ## SQLite Direct Access
 
 ### Python (for crypto-enhanced)
+
 ```python
 import sqlite3
 from contextlib import contextmanager
@@ -145,11 +153,12 @@ with get_db() as db:
 ```
 
 ### Node.js (better-sqlite3)
+
 ```typescript
 import Database from 'better-sqlite3';
 
 const db = new Database('D:/databases/app.db');
-db.pragma('journal_mode = WAL');  // Better performance
+db.pragma('journal_mode = WAL'); // Better performance
 
 // Prepared statement (safe from injection)
 const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
@@ -168,6 +177,7 @@ insertMany(items);
 ## Migration Best Practices
 
 ### Prisma Migration
+
 ```bash
 # Development - iterate freely
 pnpm db:push
@@ -180,6 +190,7 @@ npx prisma migrate status
 ```
 
 ### Manual Migration (SQLite)
+
 ```sql
 -- migrations/001_add_role.sql
 ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user';
@@ -189,6 +200,7 @@ CREATE INDEX idx_users_role ON users(role);
 ## Performance Optimization
 
 ### Indexing
+
 ```prisma
 model Post {
   id        String @id
@@ -202,6 +214,7 @@ model Post {
 ```
 
 ### Query Analysis
+
 ```sql
 -- SQLite
 EXPLAIN QUERY PLAN SELECT * FROM posts WHERE author_id = ? ORDER BY created_at DESC;
@@ -210,6 +223,7 @@ EXPLAIN QUERY PLAN SELECT * FROM posts WHERE author_id = ? ORDER BY created_at D
 ```
 
 ### Connection Pooling
+
 ```typescript
 // For serverless (Vercel, etc.)
 import { Pool } from '@neondatabase/serverless';
@@ -230,12 +244,14 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 ## Common Issues
 
 ### SQLite Locked
+
 ```typescript
 // Enable WAL mode
 db.pragma('journal_mode = WAL');
 ```
 
 ### Prisma Connection Issues
+
 ```bash
 # Regenerate client
 npx prisma generate

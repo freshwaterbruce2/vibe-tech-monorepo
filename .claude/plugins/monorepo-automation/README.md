@@ -9,21 +9,25 @@ This plugin provides intelligent automation across your entire monorepo (52+ pro
 ## Features
 
 ### 🛡️ Quality & Testing (3 Agents)
+
 - **pre-commit-quality-gate** - Blocks commits with quality issues
 - **affected-projects-tester** - Tests only what changed (Nx-powered)
 - **cross-project-type-checker** - TypeScript validation across projects
 
 ### 🔧 Maintenance (3 Agents)
+
 - **dependency-update-coordinator** - Safe one-at-a-time updates with testing
 - **documentation-sync-agent** - Keeps docs in sync with code
 - **dead-code-detector** - Finds unused exports and components
 
 ### 📊 Project Management (3 Agents)
+
 - **nx-cache-optimizer** - Analyzes and optimizes cache performance
 - **workspace-health-monitor** - Monitors monorepo health metrics
 - **release-notes-generator** - Generates changelogs from commits
 
 ### 🚀 Build & Deploy (3 Agents)
+
 - **mobile-deployment-agent** - Android/iOS builds (Capacitor)
 - **desktop-release-agent** - Electron/Tauri packaging
 - **backend-deployment-orchestrator** - Backend service deployments
@@ -31,6 +35,7 @@ This plugin provides intelligent automation across your entire monorepo (52+ pro
 ## Installation
 
 This plugin is already installed at:
+
 ```
 C:\dev\.claude\plugins\monorepo-automation\
 ```
@@ -76,6 +81,7 @@ Agents automatically trigger on relevant events:
 ### Manual Invocation
 
 Ask Claude directly:
+
 - "Run quality checks on affected projects"
 - "Update dependencies safely"
 - "Deploy vibe-tutor to Android"
@@ -94,6 +100,7 @@ Ask Claude directly:
 ## Build History Tracking
 
 The plugin includes an MCP server that tracks:
+
 - Build history (success/failure, duration)
 - Test results (per project, per run)
 - Deployment records (environment, status)
@@ -114,6 +121,7 @@ If you prefer manual-only agent invocation, disable hooks:
 ### Customize Agent Behavior
 
 Edit agent files in `agents/` directory to adjust:
+
 - Triggering conditions
 - Tool permissions
 - System prompts
@@ -180,6 +188,7 @@ MIT License - Part of VibeTech monorepo
 ## Support
 
 For issues or questions:
+
 - Check agent SKILL.md files for detailed guidance
 - Review scripts in `scripts/` for implementation details
 - Consult workspace CLAUDE.md for monorepo conventions

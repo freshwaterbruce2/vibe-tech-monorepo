@@ -3,16 +3,19 @@ Submit all changed code files for async batch review using the Anthropic Batch A
 ## Steps
 
 1. Navigate to the API tools directory:
+
    ```
    cd C:\dev\tools\anthropic-api
    ```
 
 2. Install dependencies if not already installed:
+
    ```
    pnpm install
    ```
 
 3. Run the batch review against the specified base branch (default: main):
+
    ```
    pnpm tsx src/batch-review.ts $ARGUMENTS
    ```

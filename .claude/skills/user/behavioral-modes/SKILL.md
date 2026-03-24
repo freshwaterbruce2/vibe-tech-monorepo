@@ -14,6 +14,7 @@ Adaptive operating modes that optimize AI behavior for specific task types. Each
 **Trigger:** "what if", "ideas", "options", "approaches", "architecture decision", "how should we"
 
 **Behavior:**
+
 - Ask clarifying questions before making assumptions
 - Present 3+ alternatives with tradeoffs (pros/cons per option)
 - Think divergently — explore unconventional solutions
@@ -30,6 +31,7 @@ Adaptive operating modes that optimize AI behavior for specific task types. Each
 **Trigger:** "build", "create", "add", "implement", "write the code", "make it"
 
 **Behavior:**
+
 - Read ALL referenced files and context BEFORE writing code
 - Output complete, production-ready code — no stubs or TODOs
 - Include error handling and edge cases
@@ -42,6 +44,7 @@ Adaptive operating modes that optimize AI behavior for specific task types. Each
 **Format:** Code block(s), then 1-2 sentence summary. Nothing else.
 
 **Anti-patterns to avoid:**
+
 - Long explanations of what the code does
 - Checkbox-style "✓ Created file1, ✓ Created file2" lists
 - Suggesting unrelated improvements or new features
@@ -53,6 +56,7 @@ Adaptive operating modes that optimize AI behavior for specific task types. Each
 **Trigger:** "not working", "error", "bug", "crash", "fails", "broken", "undefined", "null reference"
 
 **Behavior:**
+
 - If error message/logs not provided, ask for them immediately
 - Think systematically: trace data flow, check logs, reproduce mentally
 - Form hypothesis → identify root cause → provide fix
@@ -62,6 +66,7 @@ Adaptive operating modes that optimize AI behavior for specific task types. Each
 - For Electron/Tauri: check IPC boundaries, preload context isolation
 
 **Format:**
+
 ```
 🔍 Symptom: [observable behavior]
 🎯 Root cause: [why it happens]
@@ -76,6 +81,7 @@ Adaptive operating modes that optimize AI behavior for specific task types. Each
 **Trigger:** "review", "check", "audit", "look at this", "what do you think of this code"
 
 **Behavior:**
+
 - Be thorough but constructive — acknowledge what's done well
 - Categorize findings by severity: 🔴 Critical → 🟠 Improvement → 🟢 Good
 - Explain the "why" behind each suggestion
@@ -84,6 +90,7 @@ Adaptive operating modes that optimize AI behavior for specific task types. Each
 - For Vibe-Tech: verify D:\ policy, file size limits, naming conventions
 
 **Format:**
+
 ```
 ## Review: [file/feature]
 ### 🔴 Critical — [issue + fix]
@@ -98,6 +105,7 @@ Adaptive operating modes that optimize AI behavior for specific task types. Each
 **Trigger:** "explain", "how does", "learn", "teach me", "what is", "why does"
 
 **Behavior:**
+
 - Start with a simple analogy or one-sentence explanation
 - Progress from fundamentals to technical depth
 - Use concrete code examples with inline comments
@@ -113,6 +121,7 @@ Adaptive operating modes that optimize AI behavior for specific task types. Each
 **Trigger:** "deploy", "release", "production", "ship it", "build exe", "package", "installer"
 
 **Behavior:**
+
 - Stability over features — reject scope creep
 - Audit for: missing error handling, exposed secrets, console.logs, dev-only code
 - Verify environment configs (electron-builder, tauri.conf.json, capacitor.config.ts)
@@ -129,6 +138,7 @@ Adaptive operating modes that optimize AI behavior for specific task types. Each
 **Trigger:** "investigate", "map out", "what's the state of", "dependency graph", "analyze the codebase"
 
 **Behavior:**
+
 - Deep-dive code reading — trace imports, map dependencies
 - Socratic questioning: surface assumptions, identify unknowns
 - Output a discovery report: what exists, what's connected, what's risky
@@ -143,15 +153,15 @@ Adaptive operating modes that optimize AI behavior for specific task types. Each
 
 Auto-detect the appropriate mode from the user's message. If ambiguous, default to IMPLEMENT for action-oriented requests or BRAINSTORM for open-ended questions.
 
-| Signal | Mode |
-|--------|------|
+| Signal                                      | Mode       |
+| ------------------------------------------- | ---------- |
 | "what if", "ideas", "options", "approaches" | BRAINSTORM |
-| "build", "create", "add", "implement" | IMPLEMENT |
-| "error", "bug", "crash", "not working" | DEBUG |
-| "review", "check", "audit" | REVIEW |
-| "explain", "how does", "teach", "learn" | TEACH |
-| "deploy", "ship", "release", "production" | SHIP |
-| "investigate", "map out", "analyze" | EXPLORE |
+| "build", "create", "add", "implement"       | IMPLEMENT  |
+| "error", "bug", "crash", "not working"      | DEBUG      |
+| "review", "check", "audit"                  | REVIEW     |
+| "explain", "how does", "teach", "learn"     | TEACH      |
+| "deploy", "ship", "release", "production"   | SHIP       |
+| "investigate", "map out", "analyze"         | EXPLORE    |
 
 ## Manual Switching
 

@@ -49,22 +49,14 @@ function App() {
       <main className="app-main">
         <TodoForm onAddTodo={addTodo} />
 
-        {error && (
-          <div className="error-message">
-            {error}
-          </div>
-        )}
+        {error && <div className="error-message">{error}</div>}
 
         {loading ? (
           <div className="loading">Loading todos...</div>
         ) : todos.length === 0 ? (
           <EmptyState />
         ) : (
-          <TodoList
-            todos={todos}
-            onToggle={toggleTodo}
-            onDelete={handleDeleteClick}
-          />
+          <TodoList todos={todos} onToggle={toggleTodo} onDelete={handleDeleteClick} />
         )}
       </main>
 

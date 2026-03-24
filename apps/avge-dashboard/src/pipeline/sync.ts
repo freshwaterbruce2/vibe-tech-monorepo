@@ -14,10 +14,7 @@ const VIDEO_FINAL_DIR = 'D:\\avge\\assets\\video_final';
 /**
  * Split a full script into 5-second segments.
  */
-export function splitIntoChunks(
-  fullText: string,
-  totalDurationSeconds: number,
-): ScriptSegment[] {
+export function splitIntoChunks(fullText: string, totalDurationSeconds: number): ScriptSegment[] {
   const words = fullText.split(/\s+/);
   const wordsPerSecond = words.length / totalDurationSeconds;
   const wordsPerChunk = Math.ceil(wordsPerSecond * CHUNK_DURATION_SECONDS);
@@ -79,7 +76,7 @@ export function syncTableToCSV(syncTable: SyncEntry[]): string {
     'Audio File',
   ];
 
-  const rows = syncTable.map(entry => [
+  const rows = syncTable.map((entry) => [
     entry.segmentIndex.toString(),
     entry.startSeconds.toFixed(1),
     entry.endSeconds.toFixed(1),
@@ -89,7 +86,7 @@ export function syncTableToCSV(syncTable: SyncEntry[]): string {
     entry.audioPath,
   ]);
 
-  return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  return [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
 }
 
 /**
@@ -109,7 +106,7 @@ function deriveVisualPrompt(text: string): string {
   const keywords = text
     .replace(/[^\w\s]/g, '')
     .split(/\s+/)
-    .filter(w => w.length > 4)
+    .filter((w) => w.length > 4)
     .slice(0, 5);
 
   if (keywords.length === 0) return 'Abstract professional background';

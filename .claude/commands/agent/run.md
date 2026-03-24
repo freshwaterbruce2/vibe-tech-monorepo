@@ -8,16 +8,19 @@ Run an Agent SDK agent from the agent-sdk-workspace.
 ## Steps
 
 1. Navigate to the agent workspace:
+
    ```
    cd C:\dev\apps\agent-sdk-workspace
    ```
 
 2. Install dependencies if not already installed:
+
    ```
    pnpm install
    ```
 
 3. Run the specified agent:
+
    ```
    pnpm tsx src/agents/$ARGUMENTS.ts
    ```
@@ -27,6 +30,7 @@ Run an Agent SDK agent from the agent-sdk-workspace.
 ## Arguments
 
 Pass the agent name and optional arguments:
+
 - `code-reviewer [base-branch]` - Review code vs a branch (default: main)
 - `quality-gate [project|affected]` - Run quality checks (default: affected)
 

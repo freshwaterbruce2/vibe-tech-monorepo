@@ -56,6 +56,7 @@ ls -la C:/dev/lint-report.json C:/dev/lint_*.txt C:/dev/graph.json 2>/dev/null
 ```
 
 For each file found:
+
 1. Check if it's tracked by git: `git ls-files --error-unmatch FILE 2>/dev/null`
 2. If tracked: `git rm FILE`
 3. If untracked: just delete it (won't need a commit)
@@ -137,6 +138,7 @@ find C:/dev/tmp/ -type f -mtime +7 2>/dev/null | head -20
 ```
 
 For each file:
+
 1. Check if tracked: `git ls-files --error-unmatch FILE 2>/dev/null`
 2. If tracked and older than 7 days: `git rm FILE`
 3. If untracked and older than 7 days: delete it
@@ -194,6 +196,7 @@ Commit only if `.git/worktrees/` changed (unlikely to need commit for this).
 ### 3. Stage and Commit
 
 After each phase, stage relevant files and commit. If pre-commit fails:
+
 - Unstage: `git restore --staged .`
 - Log failure
 - Increment failure counter
@@ -202,6 +205,7 @@ After each phase, stage relevant files and commit. If pre-commit fails:
 ### 4. Update State
 
 Write updated state to `D:/logs/loop-sessions/YYYYMMDD/cleanup-state.json`:
+
 - Increment `currentPhase`
 - Update `commitCount`
 - Add phase number to `completedPhases`
@@ -215,6 +219,7 @@ echo "[$(date -Iseconds)] [cleanup-hygiene] Phase N: DESCRIPTION, commit: YES/NO
 ## File Scope Rules
 
 Loop 2 (this loop) ONLY touches:
+
 - Root debug/output files (`*_output.txt`, `*_build.txt`, etc.)
 - `docs/archive/`, `docs/deprecated/`
 - `tmp/` directory
@@ -223,6 +228,7 @@ Loop 2 (this loop) ONLY touches:
 - Git worktree metadata
 
 NEVER touch:
+
 - `apps/*/src/**` or `packages/*/src/**` (that's Loop 1's domain)
 - Any source code file
 - Database files on D:\

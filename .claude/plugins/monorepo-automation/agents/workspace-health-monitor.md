@@ -8,10 +8,10 @@ tools:
   - TodoWrite
 examples:
   - context: User wants health overview
-    user: "How healthy is the monorepo?"
-    assistant: "Activating workspace-health-monitor to assess overall health..."
+    user: 'How healthy is the monorepo?'
+    assistant: 'Activating workspace-health-monitor to assess overall health...'
   - context: Regular health check
-    user: "Run daily health check"
+    user: 'Run daily health check'
     assistant: "I'll generate the workspace health report..."
 ---
 
@@ -33,28 +33,27 @@ Calculate composite health score from multiple metrics:
 
 ```typescript
 interface HealthScore {
-  overall: number;       // 0-100
-  quality: number;       // Code quality (lint, typecheck)
-  testing: number;       // Test coverage and pass rate
-  performance: number;   // Build times, cache hit rate
-  maintenance: number;   // Dead code, outdated deps
+  overall: number; // 0-100
+  quality: number; // Code quality (lint, typecheck)
+  testing: number; // Test coverage and pass rate
+  performance: number; // Build times, cache hit rate
+  maintenance: number; // Dead code, outdated deps
   documentation: number; // Doc coverage and freshness
 }
 
 function calculateHealth(metrics: Metrics): HealthScore {
   return {
-    overall: (
+    overall:
       metrics.quality * 0.3 +
       metrics.testing * 0.3 +
       metrics.performance * 0.2 +
       metrics.maintenance * 0.1 +
-      metrics.documentation * 0.1
-    ),
+      metrics.documentation * 0.1,
     quality: metrics.quality,
     testing: metrics.testing,
     performance: metrics.performance,
     maintenance: metrics.maintenance,
-    documentation: metrics.documentation
+    documentation: metrics.documentation,
   };
 }
 ```
@@ -224,6 +223,7 @@ function calculateQualityScore(metrics: QualityMetrics): number {
 ```
 
 **Scoring:**
+
 - 100: All checks pass, 0 warnings
 - 90-99: All checks pass, < 10 warnings
 - 70-89: All checks pass, < 50 warnings
@@ -237,11 +237,12 @@ function calculateTestingScore(metrics: TestMetrics): number {
   const coverageScore = metrics.coveragePercent;
   const passRateScore = (metrics.passingTests / metrics.totalTests) * 100;
 
-  return (coverageScore * 0.5) + (passRateScore * 0.5);
+  return coverageScore * 0.5 + passRateScore * 0.5;
 }
 ```
 
 **Scoring:**
+
 - 100: 100% coverage, all tests pass
 - 90-99: 90%+ coverage, all tests pass
 - 80-89: 80%+ coverage, all tests pass
@@ -269,6 +270,7 @@ function calculatePerformanceScore(metrics: PerfMetrics): number {
 ```
 
 **Scoring:**
+
 - 100: Fast builds (< 30s), high cache hit (> 90%)
 - 90-99: Fast builds, good cache hit (> 80%)
 - 70-89: Medium builds, acceptable cache hit
@@ -299,6 +301,7 @@ function calculateMaintenanceScore(metrics: MaintenanceMetrics): number {
 ```
 
 **Scoring:**
+
 - 100: Up-to-date deps, minimal tech debt, no dead code
 - 90-99: Few outdated deps, low tech debt
 - 70-89: Some outdated deps, moderate tech debt

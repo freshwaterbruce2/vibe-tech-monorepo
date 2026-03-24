@@ -80,6 +80,7 @@ pnpm nx reset          # Clear cache
 ## Cross-Project Dependencies
 
 ### Importing Shared Packages
+
 ```typescript
 // In apps/nova-agent/src/...
 import { Button } from '@monorepo/ui';
@@ -88,6 +89,7 @@ import type { User } from '@monorepo/nova-types';
 ```
 
 ### Package.json Dependencies
+
 ```json
 {
   "dependencies": {
@@ -98,6 +100,7 @@ import type { User } from '@monorepo/nova-types';
 ```
 
 ### TypeScript Path Mapping
+
 ```json
 // tsconfig.base.json
 {
@@ -113,6 +116,7 @@ import type { User } from '@monorepo/nova-types';
 ## Project Detection
 
 Projects are detected from file paths:
+
 - `apps/{name}/...` → app project
 - `packages/{name}/...` → shared package
 - `backend/{name}/...` → backend service
@@ -120,6 +124,7 @@ Projects are detected from file paths:
 ## Standard Project Structure
 
 ### TypeScript App/Package
+
 ```
 {app-or-package}/
 ├── src/
@@ -133,6 +138,7 @@ Projects are detected from file paths:
 ```
 
 ### Python App
+
 ```
 {python-app}/
 ├── src/
@@ -161,21 +167,21 @@ pnpm nx affected -t lint,typecheck,test
 
 ## File Conventions
 
-| File | Purpose |
-|------|---------|
-| `CLAUDE.md` | Claude Code instructions (thin pointer) |
-| `AI.md` | Extended AI notes |
-| `GEMINI.md` | GeminiCli instructions |
-| `project.json` | Nx project config |
-| `tsconfig.json` | TypeScript config |
+| File            | Purpose                                 |
+| --------------- | --------------------------------------- |
+| `CLAUDE.md`     | Claude Code instructions (thin pointer) |
+| `AI.md`         | Extended AI notes                       |
+| `GEMINI.md`     | GeminiCli instructions                  |
+| `project.json`  | Nx project config                       |
+| `tsconfig.json` | TypeScript config                       |
 
 ## Environment Variables
 
-| Variable | Location | Purpose |
-|----------|----------|---------|
-| `DATABASE_URL` | `.env` | Database connection |
-| `API_KEY` | `.env` | API credentials |
-| Secrets | NEVER in code | Use env vars |
+| Variable       | Location      | Purpose             |
+| -------------- | ------------- | ------------------- |
+| `DATABASE_URL` | `.env`        | Database connection |
+| `API_KEY`      | `.env`        | API credentials     |
+| Secrets        | NEVER in code | Use env vars        |
 
 ## Branch Strategy
 
@@ -189,6 +195,7 @@ main              # Production
 ## Common Operations
 
 ### Add New App
+
 ```bash
 pnpm nx g @nx/react:app my-new-app
 # or
@@ -196,11 +203,13 @@ pnpm nx g @nx/next:app my-next-app
 ```
 
 ### Add New Package
+
 ```bash
 pnpm nx g @nx/js:lib my-shared-lib
 ```
 
 ### Update Dependencies
+
 ```bash
 pnpm update -r           # Update all
 pnpm nx migrate latest   # Nx updates
@@ -218,14 +227,17 @@ pnpm nx migrate latest   # Nx updates
 ## Performance Tips
 
 ### Build Caching
+
 Nx caches build outputs. Don't clear cache unless necessary.
 
 ### Parallel Execution
+
 ```bash
 pnpm nx run-many -t build --parallel=5
 ```
 
 ### Affected Commands
+
 Always prefer `affected:*` commands in CI.
 
 ## Emergency Commands

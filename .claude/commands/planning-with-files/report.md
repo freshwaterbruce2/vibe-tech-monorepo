@@ -100,7 +100,7 @@ Most Common Project: [PROJECT]
 Optionally save to file:
 
 ```bash
-powershell -Command "Get-Date -Format 'yyyy-MM-dd'" 
+powershell -Command "Get-Date -Format 'yyyy-MM-dd'"
 ```
 
 Save report to: `D:\planning-files\_metrics\report-[DATE].md`

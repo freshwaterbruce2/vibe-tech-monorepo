@@ -20,10 +20,10 @@
 <!-- Temporary notes, partial thoughts, useful commands to remember -->
 
 - [2026-01-22] **Autofixer Optimization**:
-    - Removed Claude SDK dependency.
-    - Implemented line-by-line parsing (O(N)) for large logs (3MB+).
-    - Added Tier 1 (Regex) rules: `prefer-nullish-coalescing`, `prefer-optional-chain`, `no-unused-vars`.
-    - **Result**: Fixed ~1120 lint errors across the workspace.
+  - Removed Claude SDK dependency.
+  - Implemented line-by-line parsing (O(N)) for large logs (3MB+).
+  - Added Tier 1 (Regex) rules: `prefer-nullish-coalescing`, `prefer-optional-chain`, `no-unused-vars`.
+  - **Result**: Fixed ~1120 lint errors across the workspace.
 - [2026-01-19] Refactored `admin_scripts\Run-DatabaseBackup.ps1` to use valid backend.
 - [2026-01-19] Found `apps/vibe-tutor/src` empty of entry points.
 

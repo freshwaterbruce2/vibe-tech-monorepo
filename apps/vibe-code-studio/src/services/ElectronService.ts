@@ -9,92 +9,18 @@ import type { OpenDialogOptions, SaveDialogOptions } from '@tauri-apps/plugin-di
 import { exists, mkdir, readDir, readTextFile, remove, rename, stat, writeTextFile } from '@tauri-apps/plugin-fs';
 import { logger } from '../services/Logger';
 
-// Types matching preload.cjs exposed API
-interface ElectronFS {
-  readFile: (filePath: string) => Promise<{ success: boolean; content?: string; error?: string }>;
-  writeFile: (filePath: string, content: string) => Promise<{ success: boolean; error?: string }>;
-  readDir: (dirPath: string) => Promise<{ success: boolean; items?: Array<{ name: string; path: string; isDirectory: boolean; isFile: boolean }>; error?: string }>;
-  createDir: (dirPath: string) => Promise<{ success: boolean; error?: string }>;
-  remove: (targetPath: string) => Promise<{ success: boolean; error?: string }>;
-  rename: (oldPath: string, newPath: string) => Promise<{ success: boolean; error?: string }>;
-  exists: (targetPath: string) => Promise<{ success: boolean; exists: boolean }>;
-  stat: (targetPath: string) => Promise<{ success: boolean; stats?: { size: number; isFile: boolean; isDirectory: boolean; created: Date; modified: Date }; error?: string }>;
-}
-
-interface ElectronDialog {
-  openFile: (options?: any) => Promise<{ success: boolean; canceled: boolean; filePaths: string[] }>;
-  openFolder: (options?: any) => Promise<{ success: boolean; canceled: boolean; filePaths: string[] }>;
-  saveFile: (options?: any) => Promise<{ success: boolean; canceled: boolean; filePath?: string }>;
-}
-
-interface ElectronShell {
-  execute: (command: string, cwd?: string) => Promise<{ success: boolean; stdout: string; stderr: string; code: number }>;
-  openExternal: (url: string) => Promise<{ success: boolean; error?: string }>;
-}
-
-interface ElectronApp {
-  getPath: (name: string) => Promise<{ success: boolean; path?: string; error?: string }>;
-  getPlatform: () => Promise<{ success: boolean; platform: string; arch: string; version: string; electron: string; node: string }>;
-  restart: () => void;
-}
-
-interface ElectronWindow {
-  minimize: () => void;
-  maximize: () => void;
-  close: () => void;
-  isMaximized: () => Promise<boolean>;
-}
-
-interface ElectronDB {
-  initialize: () => Promise<{ success: boolean; error?: string }>;
-  execute: (sql: string, params?: any[]) => Promise<{ success: boolean; data?: any; error?: string }>;
-  query: (sql: string, params?: any[]) => Promise<{ success: boolean; rows?: any[]; data?: any[]; lastID?: number; error?: string }>;
-  close: () => Promise<{ success: boolean; error?: string }>;
-  getPatterns: () => Promise<{ success: boolean; patterns?: any[]; error?: string }>;
-}
-
-interface WindowElectron {
-  fs: ElectronFS;
-  dialog: ElectronDialog;
-  shell: ElectronShell;
-  app: ElectronApp;
-  window?: ElectronWindow;
-  db?: ElectronDB;
-  store?: {
-    get: (key: string) => Promise<any>;
-    set: (key: string, value: string) => Promise<any>;
-    delete: (key: string) => Promise<any>;
-  };
-  apex?: {
-    get: (key: string) => Promise<any>;
-    set: (key: string, value: string) => Promise<any>;
-    delete: (key: string) => Promise<any>;
-    initSemanticIndex: (path: string) => Promise<any>;
-    updateSemanticIndex: (path: string, files: string[]) => Promise<any>;
-    semanticSearch: (query: string, topK?: number) => Promise<any>;
-    [key: string]: any;
-  };
-  platform: string;
-  isElectron: boolean;
-}
-
-declare global {
-  interface Window {
-    electron?: WindowElectron;
-    __ELECTRON__?: boolean;
-  }
-}
-
-// Service to handle Electron API integration
+// Service to handle Native API integration
 export class ElectronService {
-  private electron: WindowElectron | undefined;
+  private get electron(): Window['electron'] | undefined {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
 
-  constructor() {
-    this.electron = window.electron;
+    return window.electron;
   }
 
   isElectron(): boolean {
-    return !!window.electron?.isElectron || !!window.__ELECTRON__;
+    return !!this.electron?.isElectron || (typeof window !== 'undefined' && !!window.__ELECTRON__);
   }
 
   isTauri(): boolean {
@@ -102,7 +28,12 @@ export class ElectronService {
   }
 
   get platform(): string {
-    return this.electron?.platform ?? 'web';
+    const platform = this.electron?.platform;
+    if (typeof platform === 'string') {
+      return platform;
+    }
+
+    return platform?.os ?? (this.isTauri() ? 'tauri' : 'web');
   }
 
   // File System Operations (matches preload.cjs)
@@ -523,12 +454,21 @@ export class ElectronService {
    * Generic IPC invoke method for Electron IPC
    */
   async invoke(channel: string, ...args: any[]): Promise<any> {
-    if (!this.electron) {
+    const electron = this.electron;
+    if (!electron) {
       throw new Error('Electron API not available - invoke method only works in Electron');
     }
 
-    if ((this.electron as any).invoke) {
-      return (this.electron as any).invoke(channel, ...args);
+    if (typeof electron.invoke === 'function') {
+      return electron.invoke(channel, ...args);
+    }
+
+    if (electron.ipc?.invoke) {
+      return electron.ipc.invoke(channel, ...args);
+    }
+
+    if (electron.ipcRenderer?.invoke) {
+      return electron.ipcRenderer.invoke(channel, ...args);
     }
 
     throw new Error(`IPC invoke not available for channel: ${channel}`);

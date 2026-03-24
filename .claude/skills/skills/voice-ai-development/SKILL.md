@@ -1,6 +1,6 @@
 ---
 name: voice-ai-development
-description: "Expert in building voice AI applications - from real-time voice agents to voice-enabled apps. Covers OpenAI Realtime API, Vapi for voice agents, Deepgram for transcription, ElevenLabs for synthesis, LiveKit for real-time infrastructure, and WebRTC fundamentals. Knows how to build low-latency, production-ready voice experiences. Use when: voice ai, voice agent, speech to text, text to speech, realtime voice."
+description: 'Expert in building voice AI applications - from real-time voice agents to voice-enabled apps. Covers OpenAI Realtime API, Vapi for voice agents, Deepgram for transcription, ElevenLabs for synthesis, LiveKit for real-time infrastructure, and WebRTC fundamentals. Knows how to build low-latency, production-ready voice experiences. Use when: voice ai, voice agent, speech to text, text to speech, realtime voice.'
 source: vibeship-spawner-skills (Apache 2.0)
 ---
 
@@ -263,10 +263,11 @@ User perceives as slow.
 Loses conversation flow.
 
 **Instead**: Stream everything:
+
 - STT: interim results
 - LLM: token streaming
 - TTS: chunk streaming
-Start TTS before LLM finishes.
+  Start TTS before LLM finishes.
 
 ### ❌ Ignoring Interruptions
 
@@ -286,6 +287,7 @@ Single point of failure.
 Harder to optimize.
 
 **Instead**: Mix best providers:
+
 - Deepgram for STT (speed + accuracy)
 - ElevenLabs for TTS (voice quality)
 - OpenAI/Anthropic for LLM

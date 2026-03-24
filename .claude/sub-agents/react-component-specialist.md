@@ -1,7 +1,7 @@
 # React Component Specialist
 
 **Category:** Web Applications
-**Model:** Claude 3.5 Sonnet (claude-sonnet-4-5-20250929)
+**Model:** Claude 3.5 Sonnet (claude-sonnet-4-6)
 **Context Budget:** 5,000 tokens
 **Delegation Trigger:** Component architecture, React hooks, state management, performance
 

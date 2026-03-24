@@ -7,7 +7,5 @@
   "launch": "pnpm dev",
   "port": null,
   "type": "web",
-  "features": [
-    "vtde-autodiscovered"
-  ]
+  "features": ["vtde-autodiscovered"]
 }

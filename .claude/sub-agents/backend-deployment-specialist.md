@@ -1,7 +1,7 @@
 # Backend Deployment Specialist
 
 **Category:** Backend Services
-**Model:** Claude Haiku 4.5 (claude-haiku-4-5)
+**Model:** Claude Haiku 4.5 (claude-haiku-4-5-20251001)
 **Context Budget:** 3,500 tokens
 **Delegation Trigger:** PM2, deployment, production, CI/CD, process management
 

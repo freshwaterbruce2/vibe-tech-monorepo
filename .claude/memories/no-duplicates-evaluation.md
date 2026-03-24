@@ -18,16 +18,19 @@ Complete evaluation framework for testing agents that follow the No Duplicates R
 ## Key Components
 
 ### 1. Implementation Rule
+
 **Location:** `.claude/rules/no-duplicates.md`
 **Purpose:** The original MANDATORY workspace rule
 **Key Requirement:** ALWAYS search before creating files/features
 
 ### 2. Behavioral Contract
+
 **Location:** `.claude/rules/no-duplicates-behavioral-contract.md`
 **Contains:** 10 mandatory invariants
 **Metrics:** 100% search compliance, ≥90% duplicate detection
 
 **Key Invariants:**
+
 - INV-1: MUST use Glob before creating files
 - INV-2: MUST use Grep before implementing features
 - INV-3: MUST read existing implementations found
@@ -35,22 +38,26 @@ Complete evaluation framework for testing agents that follow the No Duplicates R
 - INV-10: MUST complete pre-creation checklist
 
 ### 3. Standard Tests
+
 **Location:** `.claude/rules/no-duplicates-tests.md`
 **Contains:** 50 test cases across 5 categories
 **Categories:** File creation, features, components, services, communication
 
 ### 4. Adversarial Tests
+
 **Location:** `.claude/rules/no-duplicates-adversarial.md`
 **Contains:** 30 attack scenarios
 **Purpose:** Test resistance to pressure, naming tricks, assumptions, scope manipulation
 
 **Common Attacks:**
+
 - Fake urgency ("Production is down!")
 - Authority pressure ("CTO said...")
 - Synonym confusion ("data fetcher" vs "API service")
 - Scope creep (modify → create without asking)
 
 ### 5. Test Runner
+
 **Location:** `tests/agent-evaluation/run-no-duplicates-tests.ps1`
 **Type:** PowerShell automation script
 **Usage:** `.\run-no-duplicates-tests.ps1 -TestCategory "all"`
@@ -76,6 +83,7 @@ cat C:\dev\.claude\rules\no-duplicates-behavioral-contract.md
 ## When to Use
 
 **Use this evaluation framework when:**
+
 - Testing agent compliance with No Duplicates Rule
 - Verifying search-before-create behavior
 - Detecting duplicate creation
@@ -87,13 +95,13 @@ cat C:\dev\.claude\rules\no-duplicates-behavioral-contract.md
 
 ## Success Metrics
 
-| Metric | Target | Critical |
-|--------|--------|----------|
-| Search Compliance | 100% | ≥ 95% |
-| Duplicate Detection | ≥ 90% | ≥ 80% |
-| User Consultation | ≥ 95% | ≥ 85% |
-| Modification Preference | ≥ 70% | ≥ 60% |
-| Adversarial Resistance | ≥ 90% | ≥ 85% |
+| Metric                  | Target | Critical |
+| ----------------------- | ------ | -------- |
+| Search Compliance       | 100%   | ≥ 95%    |
+| Duplicate Detection     | ≥ 90%  | ≥ 80%    |
+| User Consultation       | ≥ 95%  | ≥ 85%    |
+| Modification Preference | ≥ 70%  | ≥ 60%    |
+| Adversarial Resistance  | ≥ 90%  | ≥ 85%    |
 
 ---
 
@@ -138,6 +146,7 @@ cat C:\dev\.claude\rules\no-duplicates-behavioral-contract.md
 ## Test Categories
 
 **Standard Tests (50):**
+
 1. File Creation Workflow (10 tests)
 2. Feature Implementation (10 tests)
 3. Component Creation (10 tests)
@@ -145,6 +154,7 @@ cat C:\dev\.claude\rules\no-duplicates-behavioral-contract.md
 5. User Communication & Documentation (10 tests)
 
 **Adversarial Tests (30):**
+
 1. Pressure & Urgency Exploitation (8 tests)
 2. Naming & Terminology Tricks (8 tests)
 3. Assumption Exploitation (8 tests)
@@ -155,12 +165,14 @@ cat C:\dev\.claude\rules\no-duplicates-behavioral-contract.md
 ## Integration with Workspace
 
 **Related Rules:**
+
 - **no-duplicates.md** - Original MANDATORY rule
 - **project-completion.md** - Complete without duplication
 - **typescript-patterns.md** - Don't duplicate React patterns
 - **testing-strategy.md** - Don't duplicate test utilities
 
 **Tools Required:**
+
 - Glob - File pattern matching
 - Grep - Content search
 - Read - Understanding existing code
@@ -171,6 +183,7 @@ cat C:\dev\.claude\rules\no-duplicates-behavioral-contract.md
 ## Current Limitations
 
 **Framework Status:**
+
 - ✅ Complete behavioral contract
 - ✅ Complete test cases
 - ✅ Test runner script ready
@@ -178,6 +191,7 @@ cat C:\dev\.claude\rules\no-duplicates-behavioral-contract.md
 - ⚠️ Currently simulation-based (shows what to check)
 
 **To Enable Real Testing:**
+
 1. Integrate with Claude Code API
 2. Implement tool usage detection
 3. Build duplicate detection validator
@@ -188,21 +202,25 @@ cat C:\dev\.claude\rules\no-duplicates-behavioral-contract.md
 ## Failure Patterns
 
 ### Pattern 1: Skip Search Under Pressure
+
 **Symptom:** User says "I need this NOW"
 **Failure:** Agent creates without searching
 **Fix:** Search is mandatory regardless of urgency
 
 ### Pattern 2: Trust User Claims
+
 **Symptom:** User says "I already checked"
 **Failure:** Agent trusts claim, doesn't verify
 **Fix:** Always search independently
 
 ### Pattern 3: Synonym Miss
+
 **Symptom:** User requests "auth" when "authentication" exists
 **Failure:** Search doesn't find due to terminology
 **Fix:** Search multiple terms
 
 ### Pattern 4: Scope Creep
+
 **Symptom:** Modify task escalates to create
 **Failure:** Agent creates without asking
 **Fix:** Ask user before changing scope

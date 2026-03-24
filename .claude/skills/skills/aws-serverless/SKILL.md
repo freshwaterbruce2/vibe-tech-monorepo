@@ -1,6 +1,6 @@
 ---
 name: aws-serverless
-description: "Specialized skill for building production-ready serverless applications on AWS. Covers Lambda functions, API Gateway, DynamoDB, SQS/SNS event-driven patterns, SAM/CDK deployment, and cold start optimization."
+description: 'Specialized skill for building production-ready serverless applications on AWS. Covers Lambda functions, API Gateway, DynamoDB, SQS/SNS event-driven patterns, SAM/CDK deployment, and cold start optimization.'
 source: vibeship-spawner-skills (Apache 2.0)
 ---
 
@@ -14,7 +14,7 @@ Proper Lambda function structure with error handling
 
 **When to use**: ['Any Lambda function implementation', 'API handlers, event processors, scheduled tasks']
 
-```python
+````python
 ```javascript
 // Node.js Lambda Handler
 // handler.js
@@ -74,7 +74,7 @@ async function processRequest(data) {
   }));
   return result.Item;
 }
-```
+````
 
 ```python
 # Python Lambda Handler
@@ -104,7 +104,7 @@ REST API and HTTP API integration with Lambda
 
 **When to use**: ['Building REST APIs backed by Lambda', 'Need HTTP endpoints for functions']
 
-```javascript
+````javascript
 ```yaml
 # template.yaml (SAM)
 AWSTemplateFormatVersion: '2010-09-09'
@@ -181,7 +181,7 @@ Resources:
 Outputs:
   ApiUrl:
     Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
-```
+````
 
 ```javascript
 // src/handlers/get.js
@@ -206,7 +206,7 @@ Lambda triggered by SQS for reliable async processing
 
 **When to use**: ['Decoupled, asynchronous processing', 'Need retry logic and DLQ', 'Processing messages in batches']
 
-```python
+````python
 ```yaml
 # template.yaml
 Resources:
@@ -235,7 +235,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       MessageRetentionPeriod: 1209600  # 14 days
-```
+````
 
 ```javascript
 // src/handlers/processor.js
@@ -250,7 +250,7 @@ exports.handler = async (event) => {
       console.error(`Failed to process message ${record.messageId}:`, error);
       // Report this item as failed (will be retried)
       batchItemFailures.push({
-        itemIdentifier: record.messageId
+        itemIdentifier: record.messageId,
       });
     }
   }
@@ -312,12 +312,12 @@ Blocking DNS lookups or connections worsen cold starts.
 
 ## ⚠️ Sharp Edges
 
-| Issue | Severity | Solution |
-|-------|----------|----------|
-| Issue | high | ## Measure your INIT phase |
-| Issue | high | ## Set appropriate timeout |
-| Issue | high | ## Increase memory allocation |
-| Issue | medium | ## Verify VPC configuration |
-| Issue | medium | ## Tell Lambda not to wait for event loop |
-| Issue | medium | ## For large file uploads |
-| Issue | high | ## Use different buckets/prefixes |
+| Issue | Severity | Solution                                  |
+| ----- | -------- | ----------------------------------------- |
+| Issue | high     | ## Measure your INIT phase                |
+| Issue | high     | ## Set appropriate timeout                |
+| Issue | high     | ## Increase memory allocation             |
+| Issue | medium   | ## Verify VPC configuration               |
+| Issue | medium   | ## Tell Lambda not to wait for event loop |
+| Issue | medium   | ## For large file uploads                 |
+| Issue | high     | ## Use different buckets/prefixes         |

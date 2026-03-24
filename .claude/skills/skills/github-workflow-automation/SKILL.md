@@ -1,6 +1,6 @@
 ---
 name: github-workflow-automation
-description: "Automate GitHub workflows with AI assistance. Includes PR reviews, issue triage, CI/CD integration, and Git operations. Use when automating GitHub workflows, setting up PR review automation, creating GitHub Actions, or triaging issues."
+description: 'Automate GitHub workflows with AI assistance. Includes PR reviews, issue triage, CI/CD integration, and Git operations. Use when automating GitHub workflows, setting up PR review automation, creating GitHub Actions, or triaging issues.'
 ---
 
 # 🔧 GitHub Workflow Automation
@@ -121,7 +121,7 @@ Brief description of what this PR does.
    // Current
    user.profile.name;
    // Suggested
-   user?.profile?.name ?? "Unknown";
+   user?.profile?.name ?? 'Unknown';
    ```
 ````
 
@@ -269,7 +269,7 @@ name: Manage Stale Issues
 
 on:
   schedule:
-    - cron: "0 0 * * *" # Daily
+    - cron: '0 0 * * *' # Daily
 
 jobs:
   stale:
@@ -293,10 +293,10 @@ jobs:
 
           days-before-stale: 60
           days-before-close: 14
-          stale-issue-label: "stale"
-          stale-pr-label: "stale"
-          exempt-issue-labels: "pinned,security,in-progress"
-          exempt-pr-labels: "pinned,security"
+          stale-issue-label: 'stale'
+          stale-pr-label: 'stale'
+          exempt-issue-labels: 'pinned,security,in-progress'
+          exempt-pr-labels: 'pinned,security'
 ```
 
 ---
@@ -452,7 +452,7 @@ on:
   workflow_dispatch:
     inputs:
       reason:
-        description: "Reason for rollback"
+        description: 'Reason for rollback'
         required: true
 
 jobs:
@@ -559,9 +559,7 @@ async function smartCherryPick(commitHash: string, targetBranch: string) {
   const commitInfo = await exec(`git show ${commitHash} --stat`);
 
   // Check for potential conflicts
-  const targetDiff = await exec(
-    `git diff ${targetBranch}...HEAD -- ${affectedFiles}`
-  );
+  const targetDiff = await exec(`git diff ${targetBranch}...HEAD -- ${affectedFiles}`);
 
   // AI analysis
   const analysis = await ai.analyze(`
@@ -577,9 +575,7 @@ async function smartCherryPick(commitHash: string, targetBranch: string) {
 
   if (analysis.willConflict) {
     // Create branch for manual resolution
-    await exec(
-      `git checkout -b cherry-pick-${commitHash.slice(0, 7)} ${targetBranch}`
-    );
+    await exec(`git checkout -b cherry-pick-${commitHash.slice(0, 7)} ${targetBranch}`);
     const result = await exec(`git cherry-pick ${commitHash}`, {
       allowFail: true,
     });

@@ -1,0 +1,74 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "agent-engine",
+  "projectType": "application",
+  "root": "apps/agent-engine",
+  "sourceRoot": "apps/agent-engine/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm dev",
+        "cwd": "apps/agent-engine"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "options": {
+        "command": "pnpm build",
+        "cwd": "apps/agent-engine"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "pnpm lint",
+        "cwd": "apps/agent-engine"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "pnpm typecheck",
+        "cwd": "apps/agent-engine"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "pnpm test",
+        "cwd": "apps/agent-engine"
+      }
+    },
+    "benchmark": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "pnpm benchmark",
+        "cwd": "apps/agent-engine"
+      }
+    },
+    "self-eval": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "pnpm self-eval",
+        "cwd": "apps/agent-engine"
+      }
+    },
+    "promote-candidate": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "pnpm promote-candidate",
+        "cwd": "apps/agent-engine"
+      }
+    }
+  },
+  "tags": ["type:tool", "scope:agent", "scope:workspace"]
+}

@@ -54,12 +54,12 @@ Do we have data?
 
 ### Skeleton vs Spinner
 
-| Use Skeleton When | Use Spinner When |
-|-------------------|------------------|
-| Known content shape | Unknown content shape |
-| List/card layouts | Modal actions |
-| Initial page load | Button submissions |
-| Content placeholders | Inline operations |
+| Use Skeleton When    | Use Spinner When      |
+| -------------------- | --------------------- |
+| Known content shape  | Unknown content shape |
+| List/card layouts    | Modal actions         |
+| Initial page load    | Button submissions    |
+| Content placeholders | Inline operations     |
 
 ## Error Handling Patterns
 
@@ -122,11 +122,7 @@ const ErrorState = ({ error, onRetry, title }: ErrorStateProps) => (
 ### Button Loading State
 
 ```tsx
-<Button
-  onClick={handleSubmit}
-  isLoading={isSubmitting}
-  disabled={!isValid || isSubmitting}
->
+<Button onClick={handleSubmit} isLoading={isSubmitting} disabled={!isValid || isSubmitting}>
   Submit
 </Button>
 ```
@@ -162,12 +158,7 @@ Every list/collection MUST have an empty state:
 return <FlatList data={items} />;
 
 // CORRECT - Explicit empty state
-return (
-  <FlatList
-    data={items}
-    ListEmptyComponent={<EmptyState />}
-  />
-);
+return <FlatList data={items} ListEmptyComponent={<EmptyState />} />;
 ```
 
 ### Contextual Empty States
@@ -252,7 +243,7 @@ try {
 onError: (error) => {
   console.error('operation failed:', error);
   toast.error({ title: 'Operation failed' });
-}
+};
 ```
 
 ### Button States
@@ -272,6 +263,7 @@ onError: (error) => {
 Before completing any UI component:
 
 **UI States:**
+
 - [ ] Error state handled and shown to user
 - [ ] Loading state shown only when no data exists
 - [ ] Empty state provided for collections
@@ -279,6 +271,7 @@ Before completing any UI component:
 - [ ] Buttons show loading indicator when appropriate
 
 **Data & Mutations:**
+
 - [ ] Mutations have onError handler
 - [ ] All user actions have feedback (toast/visual)
 

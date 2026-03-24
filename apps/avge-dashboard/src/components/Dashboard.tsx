@@ -53,7 +53,7 @@ export function Dashboard() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ path: 'brain.md' }),
     })
-      .then((r) => (r.ok ? r.json() : null))
+      .then(async (r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.content) {
           setBrainContext(data.content);

@@ -235,7 +235,7 @@ export const PromptInput = styled.div`
   
   textarea {
     flex: 1;
-    min-height: 60px;
+    min-height: 80px;
     max-height: 120px;
     padding: 12px 16px;
     background: ${vibeTheme.colors.secondary};
@@ -301,4 +301,47 @@ export const StatusBar = styled.div`
       height: 14px;
     }
   }
+`;
+
+export const ActionButtonGroup = styled.div`
+  display: flex;
+  gap: 4px;
+`;
+
+export const FileNewBadge = styled.span`
+  font-size: 11px;
+  color: ${vibeTheme.colors.success};
+`;
+
+export const EditorWarningText = styled.span`
+  color: ${vibeTheme.colors.warning};
+`;
+
+export const EditorWrapper = styled.div`
+  flex: 1;
+`;
+
+export const EmptyEditorState = styled.div`
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${vibeTheme.colors.textSecondary};
+`;
+
+export const PromptActions = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+export const PromptShortcutHint = styled.div`
+  font-size: 11px;
+  color: ${vibeTheme.colors.textMuted};
+  text-align: center;
+`;
+
+export const ComposerTitleWarning = styled.span`
+  color: ${vibeTheme.colors.warning};
+  font-size: 14px;
 `;

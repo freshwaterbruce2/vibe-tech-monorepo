@@ -5,9 +5,9 @@ Last updated: 2026-02-25
 
 ## Skills
 
-| Skill | Location | Key Dependencies | Last Verified |
-|-------|----------|-----------------|---------------|
-| ecosystem-sync | `C:\dev\.claude\skills\user\ecosystem-sync\` | All components below | 2026-02-25 |
+| Skill          | Location                                     | Key Dependencies     | Last Verified |
+| -------------- | -------------------------------------------- | -------------------- | ------------- |
+| ecosystem-sync | `C:\dev\.claude\skills\user\ecosystem-sync\` | All components below | 2026-02-25    |
 
 > **Note**: `monorepo-maintenance` and `vibetech-agents` are Claude.ai skills (in
 > user preferences / memory), not local skill directories. They don't have paths to scan.
@@ -16,13 +16,13 @@ Last updated: 2026-02-25
 
 ### Config Files
 
-| File | Path | Contains |
-|------|------|----------|
-| Agent registry | `C:\dev\.claude\agents.json` | Agent definitions, categories |
-| Agent delegation | `C:\dev\.claude\agent-delegation.yaml` | Execution order, parallelism |
-| Agent config | `C:\dev\.claude\sub-agents\config.yml` | Sub-agent configurations |
-| Agent rules | `C:\dev\.claude\AGENT_RULES.md` | Behavioral constraints |
-| Architecture | `C:\dev\.claude\COMPREHENSIVE_AGENT_ARCHITECTURE.md` | Full system design |
+| File             | Path                                                 | Contains                      |
+| ---------------- | ---------------------------------------------------- | ----------------------------- |
+| Agent registry   | `C:\dev\.claude\agents.json`                         | Agent definitions, categories |
+| Agent delegation | `C:\dev\.claude\agent-delegation.yaml`               | Execution order, parallelism  |
+| Agent config     | `C:\dev\.claude\sub-agents\config.yml`               | Sub-agent configurations      |
+| Agent rules      | `C:\dev\.claude\AGENT_RULES.md`                      | Behavioral constraints        |
+| Architecture     | `C:\dev\.claude\COMPREHENSIVE_AGENT_ARCHITECTURE.md` | Full system design            |
 
 ### Driftable Fields Per Agent
 
@@ -32,20 +32,20 @@ Last updated: 2026-02-25
 
 ## MCP Servers (under C:\dev\apps\)
 
-| Server | Location | Type |
-|--------|----------|------|
+| Server               | Location                            | Type               |
+| -------------------- | ----------------------------------- | ------------------ |
 | desktop-commander-v3 | `C:\dev\apps\desktop-commander-v3\` | Desktop automation |
-| mcp-gateway | `C:\dev\apps\mcp-gateway\` | Gateway/router |
-| mcp-codeberg | `C:\dev\apps\mcp-codeberg\` | GitHub integration |
-| mcp-skills-server | `C:\dev\apps\mcp-skills-server\` | Skills serving |
-| memory-mcp | `C:\dev\apps\memory-mcp\` | Memory/context |
+| mcp-gateway          | `C:\dev\apps\mcp-gateway\`          | Gateway/router     |
+| mcp-codeberg         | `C:\dev\apps\mcp-codeberg\`         | GitHub integration |
+| mcp-skills-server    | `C:\dev\apps\mcp-skills-server\`    | Skills serving     |
+| memory-mcp           | `C:\dev\apps\memory-mcp\`           | Memory/context     |
 
 ### MCP Config Locations
 
-| Config | Path | Format |
-|--------|------|--------|
-| Claude Desktop | `%APPDATA%\Claude\claude_desktop_config.json` | JSON |
-| Claude Code (project) | `C:\dev\.mcp.json` | JSON |
+| Config                | Path                                          | Format |
+| --------------------- | --------------------------------------------- | ------ |
+| Claude Desktop        | `%APPDATA%\Claude\claude_desktop_config.json` | JSON   |
+| Claude Code (project) | `C:\dev\.mcp.json`                            | JSON   |
 
 ### Driftable Fields Per MCP Server
 
@@ -58,17 +58,17 @@ Last updated: 2026-02-25
 
 ### With CLAUDE.md (9)
 
-| App | Path |
-|-----|------|
+| App                       | Path                                              |
+| ------------------------- | ------------------------------------------------- |
 | business-booking-platform | `C:\dev\apps\business-booking-platform\CLAUDE.md` |
-| crypto-enhanced | `C:\dev\apps\crypto-enhanced\CLAUDE.md` |
-| desktop-commander-v3 | `C:\dev\apps\desktop-commander-v3\CLAUDE.md` |
-| nova-agent | `C:\dev\apps\nova-agent\CLAUDE.md` |
-| shipping-pwa | `C:\dev\apps\shipping-pwa\CLAUDE.md` |
-| vibe-code-studio | `C:\dev\apps\vibe-code-studio\CLAUDE.md` |
-| vibe-justice | `C:\dev\apps\vibe-justice\CLAUDE.md` |
-| vibe-tech-lovable | `C:\dev\apps\vibe-tech-lovable\CLAUDE.md` |
-| vibe-tutor | `C:\dev\apps\vibe-tutor\CLAUDE.md` |
+| crypto-enhanced           | `C:\dev\apps\crypto-enhanced\CLAUDE.md`           |
+| desktop-commander-v3      | `C:\dev\apps\desktop-commander-v3\CLAUDE.md`      |
+| nova-agent                | `C:\dev\apps\nova-agent\CLAUDE.md`                |
+| shipping-pwa              | `C:\dev\apps\shipping-pwa\CLAUDE.md`              |
+| vibe-code-studio          | `C:\dev\apps\vibe-code-studio\CLAUDE.md`          |
+| vibe-justice              | `C:\dev\apps\vibe-justice\CLAUDE.md`              |
+| vibe-tech-lovable         | `C:\dev\apps\vibe-tech-lovable\CLAUDE.md`         |
+| vibe-tutor                | `C:\dev\apps\vibe-tutor\CLAUDE.md`                |
 
 ### Without CLAUDE.md (17)
 
@@ -87,18 +87,19 @@ vibetech-types
 
 ## Cross-Cutting Configs
 
-| Config | Path |
-|--------|------|
-| tsconfig.base.json | `C:\dev\tsconfig.base.json` |
-| nx.json | `C:\dev\nx.json` |
+| Config              | Path                         |
+| ------------------- | ---------------------------- |
+| tsconfig.base.json  | `C:\dev\tsconfig.base.json`  |
+| nx.json             | `C:\dev\nx.json`             |
 | pnpm-workspace.yaml | `C:\dev\pnpm-workspace.yaml` |
-| eslint.config.js | `C:\dev\eslint.config.js` |
-| package.json | `C:\dev\package.json` |
-| .mcp.json | `C:\dev\.mcp.json` |
+| eslint.config.js    | `C:\dev\eslint.config.js`    |
+| package.json        | `C:\dev\package.json`        |
+| .mcp.json           | `C:\dev\.mcp.json`           |
 
 ---
 
 **Maintenance**: Update this registry whenever:
+
 - A new app, MCP server, or package is added/removed
 - A component is renamed or relocated
 - An app gains or loses its CLAUDE.md

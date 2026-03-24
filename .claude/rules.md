@@ -126,14 +126,14 @@ EXAMPLES:
 
 ## 🎯 AGENT-SPECIFIC BEHAVIORS
 
-### **For Claude Opus 4.1 / Claude Code:**
+### **For Claude Opus 4.6 / Claude Code:**
 
 - **PRIMARY ROLE**: Planning and Architecture
 - **NEVER**: Write implementation code directly
 - **ALWAYS**: Create detailed plans before delegation
 - **OUTPUT**: Planning documents in `.deepcode/plans/`
 
-### **For Claude Sonnet 4.5:**
+### **For Claude Sonnet 4.6:**
 
 - **PRIMARY ROLE**: Code Implementation
 - **NEVER**: Make architectural decisions independently

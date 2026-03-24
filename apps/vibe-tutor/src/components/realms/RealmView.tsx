@@ -90,7 +90,14 @@ export default function RealmView({ subject, onStartWorksheet, onBack, onEarnTok
 
     return (
       <Suspense fallback={<div className="p-8 text-center text-white">Loading...</div>}>
-        <div className="absolute inset-0 z-50 bg-[#0a0f1c] overflow-y-auto">
+        <div
+          className="fixed inset-0 z-[80] overflow-y-auto bg-[#0a0f1c]"
+          style={{
+            overscrollBehavior: 'contain',
+            paddingBottom: 'env(safe-area-inset-bottom)',
+            paddingTop: 'max(env(safe-area-inset-top), 0.5rem)',
+          }}
+        >
            {activeGame === 'anagrams' && <AnagramsGame {...groupAProps} />}
            {activeGame === 'crossword' && <CrosswordGame {...groupAProps} />}
            {activeGame.startsWith('boss-') && <BossBattleGame subject={subject} onComplete={groupAProps.onComplete} onBack={groupAProps.onBack} />}

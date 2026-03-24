@@ -1,7 +1,7 @@
 # Web Cleanup Specialist
 
 **Category:** Web Applications
-**Model:** Claude Haiku 4.5 (claude-haiku-4-5)
+**Model:** Claude Haiku 4.5 (claude-haiku-4-5-20251001)
 **Context Budget:** 2,000 tokens
 **Delegation Trigger:** clean, cleanup, cache clear, disk space, unused files, dead code
 

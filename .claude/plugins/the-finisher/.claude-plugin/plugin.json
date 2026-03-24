@@ -1,18 +1,18 @@
 {
-	"name": "the-finisher",
-	"version": "0.1.0",
-	"description": "Autonomous project completion agent with system awareness - loops until projects reach production-ready status. Understands C:\\dev (code) + D:\\ (data/learning) architecture.",
-	"author": {
-		"name": "Bruce",
-		"email": "freshwaterbruce2@gmail.com"
-	},
-	"keywords": [
-		"automation",
-		"project-completion",
-		"quality-assurance",
-		"loop",
-		"autonomous",
-		"system-aware"
-	],
-	"license": "MIT"
+  "name": "the-finisher",
+  "version": "0.1.0",
+  "description": "Autonomous project completion agent with system awareness - loops until projects reach production-ready status. Understands C:\\dev (code) + D:\\ (data/learning) architecture.",
+  "author": {
+    "name": "Bruce",
+    "email": "freshwaterbruce2@gmail.com"
+  },
+  "keywords": [
+    "automation",
+    "project-completion",
+    "quality-assurance",
+    "loop",
+    "autonomous",
+    "system-aware"
+  ],
+  "license": "MIT"
 }

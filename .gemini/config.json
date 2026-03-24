@@ -48,11 +48,7 @@
     "smartImports": true
   },
   "workspace": {
-    "roots": [
-      "apps",
-      "packages",
-      "backend"
-    ],
+    "roots": ["apps", "packages", "backend"],
     "importantDirectories": [
       "apps/nova-agent",
       "apps/vibe-tutor",
@@ -66,14 +62,7 @@
     "tsconfig": "tsconfig.json"
   },
   "completion": {
-    "triggerCharacters": [
-      ".",
-      "(",
-      "{",
-      "[",
-      "<",
-      " "
-    ],
+    "triggerCharacters": [".", "(", "{", "[", "<", " "],
     "debounceMs": 150,
     "maxSuggestions": 3,
     "contextLines": 50

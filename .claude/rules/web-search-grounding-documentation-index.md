@@ -9,9 +9,11 @@ Last Updated: 2026-02-24
 ## Core Documentation Files
 
 ### 1. Implementation Rule
+
 **File:** `.claude/rules/web-search-grounding.md`
 **Purpose:** The actual rule agents should follow
 **Contains:**
+
 - When to use web search (MANDATORY scenarios)
 - Search query best practices
 - Source citation requirements
@@ -21,9 +23,11 @@ Last Updated: 2026-02-24
 ---
 
 ### 2. Behavioral Contract
+
 **File:** `.claude/rules/web-search-grounding-behavioral-contract.md`
 **Purpose:** Mandatory behavioral invariants
 **Contains:**
+
 - 10 core invariants (INV-1 through INV-10)
 - Measurement metrics (compliance, citation, hallucination rates)
 - Behavioral boundaries (MUST/SHOULD/MAY/MUST NOT)
@@ -31,6 +35,7 @@ Last Updated: 2026-02-24
 - Contract enforcement protocols
 
 **Key Invariants:**
+
 - INV-1: Post-cutoff information (must search)
 - INV-2: Version information (must search)
 - INV-3: API documentation (must search)
@@ -40,15 +45,18 @@ Last Updated: 2026-02-24
 ---
 
 ### 3. Standard Test Cases
+
 **File:** `.claude/rules/web-search-grounding-tests.md`
 **Purpose:** 50 test cases for normal behavior validation
 **Contains:**
+
 - 5 test categories (10 tests each)
 - Expected behaviors for each test
 - Pass/fail criteria
 - Test execution protocol
 
 **Categories:**
+
 1. Post-Cutoff Information (TEST-001 to TEST-010)
 2. Version Information (TEST-011 to TEST-020)
 3. API Documentation (TEST-021 to TEST-030)
@@ -60,15 +68,18 @@ Last Updated: 2026-02-24
 ---
 
 ### 4. Adversarial Test Cases
+
 **File:** `.claude/rules/web-search-grounding-adversarial.md`
 **Purpose:** 30 attack scenarios for adversarial testing
 **Contains:**
+
 - 4 attack categories
 - Red team attack vectors
 - Expected resistance behaviors
 - Severity levels for failures
 
 **Categories:**
+
 1. Ambiguity Exploitation (ADV-001 to ADV-010)
 2. Time Manipulation (ADV-011 to ADV-018)
 3. Source Manipulation (ADV-019 to ADV-024)
@@ -79,9 +90,11 @@ Last Updated: 2026-02-24
 ---
 
 ### 5. Evaluation Summary
+
 **File:** `.claude/rules/web-search-grounding-evaluation-summary.md`
 **Purpose:** Complete overview of evaluation system
 **Contains:**
+
 - Deliverables summary
 - Success metrics
 - Implementation roadmap
@@ -92,9 +105,11 @@ Last Updated: 2026-02-24
 ---
 
 ### 6. Test Runner Script
+
 **File:** `tests/agent-evaluation/run-web-search-grounding-tests.ps1`
 **Purpose:** Automated test execution
 **Contains:**
+
 - PowerShell test automation
 - Category filtering
 - Individual test selection
@@ -102,6 +117,7 @@ Last Updated: 2026-02-24
 - Multiple output formats
 
 **Usage:**
+
 ```powershell
 .\run-web-search-grounding-tests.ps1 -TestCategory "all"
 .\run-web-search-grounding-tests.ps1 -TestCategory "adversarial"
@@ -111,9 +127,11 @@ Last Updated: 2026-02-24
 ---
 
 ### 7. Test Directory README
+
 **File:** `tests/agent-evaluation/README.md`
 **Purpose:** Quick start guide for testing framework
 **Contains:**
+
 - Overview and quick start
 - Test category descriptions
 - Test runner usage examples
@@ -124,9 +142,11 @@ Last Updated: 2026-02-24
 ---
 
 ### 8. Memory File
+
 **File:** `.claude/memories/web-search-grounding-evaluation.md`
 **Purpose:** Persistent memory reference
 **Contains:**
+
 - System overview
 - Key components
 - Quick commands
@@ -141,16 +161,19 @@ Last Updated: 2026-02-24
 ### Workspace Documentation
 
 **AI.md** (Section 5: Agent rules)
+
 - Added agent evaluation reference
 - Linked to framework location
 - Documented compliance targets
 
 **testing-strategy.md** (Agent Evaluation Testing section)
+
 - Added agent testing overview
 - Test categories and commands
 - Compliance targets
 
 **commands-reference.md** (Agent Evaluation Testing section)
+
 - Added test runner commands
 - Category descriptions
 - Usage examples
@@ -181,6 +204,7 @@ C:\dev\
 ```
 
 **Legend:**
+
 - ⭐ New file created
 - ✏️ Existing file updated
 
@@ -262,6 +286,7 @@ For finding this documentation, use these search terms:
 **Status:** Production ready - framework complete
 
 **When to Update:**
+
 - New test cases added
 - Behavioral contract changes
 - Success metric adjustments
@@ -273,16 +298,19 @@ For finding this documentation, use these search terms:
 ## Related Systems
 
 **Agent Evaluation Skill:**
+
 - Skill name: `agent-evaluation`
 - Loaded via: `/agent-evaluation` command
 - Provides: Statistical testing, behavioral contracts, adversarial testing patterns
 
 **Testing Strategy:**
+
 - File: `.claude/rules/testing-strategy.md`
 - Contains: E2E, unit, coverage, pre-commit testing
 - Now includes: Agent evaluation section
 
 **Project Completion:**
+
 - File: `.claude/rules/project-completion.md`
 - Uses: Web search for 2026 best practices verification
 - References: Web search grounding rule
@@ -292,6 +320,7 @@ For finding this documentation, use these search terms:
 ## Version History
 
 **v1.0 (2026-02-24):**
+
 - Initial release
 - 10 behavioral invariants defined
 - 50 standard test cases

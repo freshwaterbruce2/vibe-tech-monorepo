@@ -8,10 +8,10 @@ tools:
   - TodoWrite
 examples:
   - context: User wants to clean up codebase
-    user: "Find unused code in the project"
-    assistant: "Activating dead-code-detector to find unreferenced exports and components..."
+    user: 'Find unused code in the project'
+    assistant: 'Activating dead-code-detector to find unreferenced exports and components...'
   - context: Bundle size too large
-    user: "Why is the bundle so large?"
+    user: 'Why is the bundle so large?'
     assistant: "I'll use dead-code-detector to find unused code that could be tree-shaken..."
 ---
 
@@ -271,12 +271,14 @@ depcruise src --output-type err-only
 ### Safe to Remove
 
 **Criteria:**
+
 - 0 imports across entire workspace
 - Not exported in public API (package.json `main` or `exports`)
 - Not used in tests (if analyzing production code)
 - Not referenced via string/dynamic import
 
 **Examples:**
+
 - Unused utility functions
 - Unreferenced components
 - Old migration scripts
@@ -286,12 +288,14 @@ depcruise src --output-type err-only
 ### Investigate Before Removing
 
 **Criteria:**
+
 - Low import count (1-2 imports)
 - Used only in tests
 - Exported but not documented
 - Recently added (< 7 days old)
 
 **Examples:**
+
 - Shared types (might be needed for future features)
 - Base classes (might be extended later)
 - Constants (might be used via dynamic access)
@@ -299,12 +303,14 @@ depcruise src --output-type err-only
 ### Never Remove
 
 **Criteria:**
+
 - Part of public API
 - Referenced in documentation
 - Required for type safety
 - Entry points (main, index)
 
 **Examples:**
+
 - Package exports in `packages/*/src/index.ts`
 - Type definitions in `packages/*/src/types.ts`
 - Configuration files
@@ -317,7 +323,7 @@ depcruise src --output-type err-only
 // Component registry with dynamic imports
 const components = {
   Button: () => import('./Button'),
-  Input: () => import('./Input')
+  Input: () => import('./Input'),
 };
 
 // Detector might flag Button/Input as unused
@@ -328,9 +334,7 @@ const components = {
 
 ```typescript
 // Route configuration
-const routes = [
-  { path: '/dashboard', component: 'Dashboard' }
-];
+const routes = [{ path: '/dashboard', component: 'Dashboard' }];
 
 // Dashboard component might appear unused
 // VERIFY: Check for string references to component names

@@ -3,6 +3,7 @@ import type {
   EvaluationResult,
   FeatureFlag,
   KillSwitchEvent,
+  Variant,
 } from '@dev/feature-flags-core';
 import { assignVariant, isInPercentageRollout } from '@dev/feature-flags-core';
 import {
@@ -170,7 +171,7 @@ export function FeatureFlagProvider({
       if (flag.variants && flag.variants.length > 0) {
         const identifier = context.userId ?? context.sessionId ?? 'anonymous';
         const variantKey = assignVariant(identifier, flagKey, flag.variants);
-        const variant = flag.variants.find((entry) => entry.key === variantKey);
+        const variant = flag.variants.find((entry: Variant) => entry.key === variantKey);
         return {
           flagKey,
           enabled: true,

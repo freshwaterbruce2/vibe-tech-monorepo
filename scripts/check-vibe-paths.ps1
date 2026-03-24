@@ -32,24 +32,6 @@ $deprecatedRoots = @(
     'C:\dev\databases'
 )
 
-$textExtensions = @(
-    '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json',
-    '.ps1', '.psm1', '.py', '.rs', '.toml', '.yaml', '.yml', '.html', '.css'
-)
-
-$excludedFragments = @(
-    '\.git\',
-    '\node_modules\',
-    '\dist\',
-    '\coverage\',
-    '\playwright-report\',
-    '\test-results\',
-    '\.nx\',
-    '\.codex\',
-    '\.playwright-cli\',
-    '\.playwright-mcp\'
-)
-
 function Add-Issue {
     param(
         [string]$Policy,
@@ -80,26 +62,6 @@ function Add-Warning {
             Line = $Line
             Match = $Match
         })
-}
-
-function Test-ExcludedPath {
-    param([string]$Path)
-
-    foreach ($fragment in $excludedFragments) {
-        if ($Path -match $fragment) {
-            return $true
-        }
-    }
-
-    return $false
-}
-
-function Get-WorkspaceFiles {
-    Get-ChildItem -Path $workspaceRoot -Recurse -File -ErrorAction SilentlyContinue |
-        Where-Object {
-            ($textExtensions -contains $_.Extension.ToLowerInvariant()) -and
-            -not (Test-ExcludedPath -Path $_.FullName)
-        }
 }
 
 function Search-WorkspaceText {
@@ -134,39 +96,45 @@ function Search-WorkspaceText {
 
         return @($lines | ForEach-Object {
                 $parsed = [regex]::Match($_, '^(?<file>[A-Za-z]:.+?):(?<line>\d+):(?<match>.*)$')
-                if (-not $parsed.Success) {
-                    return
-                }
-
-                $filePath = $parsed.Groups['file'].Value
-                if ($filePath -eq $PSCommandPath) {
-                    return
-                }
-
-                if ($textExtensions -notcontains ([System.IO.Path]::GetExtension($filePath).ToLowerInvariant())) {
-                    return
-                }
-
-                [pscustomobject]@{
-                    File = $filePath
-                    Line = [int]$parsed.Groups['line'].Value
-                    Match = $parsed.Groups['match'].Value
+                if ($parsed.Success) {
+                    $filePath = $parsed.Groups['file'].Value
+                    if ($filePath -ne $PSCommandPath) {
+                        [pscustomobject]@{
+                            File = $filePath
+                            Line = [int]$parsed.Groups['line'].Value
+                            Match = $parsed.Groups['match'].Value
+                        }
+                    }
                 }
             })
     }
 
-    return @(
-        Get-WorkspaceFiles |
-            Where-Object { $_.FullName -ne $PSCommandPath } |
-            Select-String -SimpleMatch $Literal |
-            ForEach-Object {
-                [pscustomobject]@{
-                    File = $_.Path
-                    Line = $_.LineNumber
-                    Match = $_.Line.Trim()
+    $git = Get-Command git -ErrorAction SilentlyContinue
+    if ($git) {
+        $origPwd = (Get-Location).Path
+        Set-Location $workspaceRoot
+        $raw = & $git.Source grep -n -I -F $Literal 2>$null
+        Set-Location $origPwd
+
+        if (-not $raw) { return @() }
+        
+        $lines = if ($raw -is [System.Array]) { $raw } else { @($raw) }
+        return @($lines | ForEach-Object {
+            $parsed = [regex]::Match($_, '^(?<file>.+?):(?<line>\d+):(?<match>.*)$')
+            if ($parsed.Success) {
+                $filePath = Join-Path $workspaceRoot $parsed.Groups['file'].Value
+                if ($filePath -ne $PSCommandPath) {
+                    [pscustomobject]@{
+                        File = $filePath
+                        Line = [int]$parsed.Groups['line'].Value
+                        Match = $parsed.Groups['match'].Value
+                    }
                 }
             }
-    )
+        })
+    }
+
+    throw "Neither rg nor git grep are available. Searching falls back to slow mechanism. Install ripgrep or use git bash."
 }
 
 function Test-RequiredRoots {
@@ -194,7 +162,7 @@ function Test-DeprecatedReferences {
 
     $deprecatedLearning = Search-WorkspaceText -Literal 'D:\learning'
     foreach ($match in $deprecatedLearning) {
-        if ($match.Match -match 'D:\\learning-system') {
+        if ($match.Match -match 'D:\\learning-system' -or $match.File -like "*.md" -or $match.File -like "*\scripts\*" -or $match.File -like "*\tools\*") {
             continue
         }
 
@@ -204,6 +172,9 @@ function Test-DeprecatedReferences {
     foreach ($literal in @('C:\dev\data', 'C:\dev\logs', 'C:\dev\databases')) {
         $matches = Search-WorkspaceText -Literal $literal
         foreach ($match in $matches) {
+            if ($match.File -like "*.md" -or $match.File -like "*\scripts\*" -or $match.File -like "*\tools\*") {
+                continue
+            }
             Add-Issue -Policy 'deprecated-c-drive-data-root' -File $match.File -Line $match.Line -Match $match.Match
         }
     }

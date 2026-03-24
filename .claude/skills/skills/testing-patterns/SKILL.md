@@ -8,18 +8,21 @@ description: Jest testing patterns, factory functions, mocking strategies, and T
 ## Testing Philosophy
 
 **Test-Driven Development (TDD):**
+
 - Write failing test FIRST
 - Implement minimal code to pass
 - Refactor after green
 - Never write production code without a failing test
 
 **Behavior-Driven Testing:**
+
 - Test behavior, not implementation
 - Focus on public APIs and business requirements
 - Avoid testing implementation details
 - Use descriptive test names that describe behavior
 
 **Factory Pattern:**
+
 - Create `getMockX(overrides?: Partial<X>)` functions
 - Provide sensible defaults
 - Allow overriding specific properties
@@ -44,6 +47,7 @@ export const renderWithTheme = (ui: React.ReactElement) => {
 ```
 
 **Usage:**
+
 ```typescript
 import { renderWithTheme } from 'utils/testUtils';
 import { screen } from '@testing-library/react-native';
@@ -135,9 +139,7 @@ jest.mock('./GetItems.generated', () => ({
   useGetItemsQuery: jest.fn(),
 }));
 
-const mockUseGetItemsQuery = jest.requireMock(
-  './GetItems.generated'
-).useGetItemsQuery as jest.Mock;
+const mockUseGetItemsQuery = jest.requireMock('./GetItems.generated').useGetItemsQuery as jest.Mock;
 
 // In test
 mockUseGetItemsQuery.mockReturnValue({

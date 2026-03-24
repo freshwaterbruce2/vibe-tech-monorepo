@@ -193,22 +193,20 @@ import {
   TextField,
   Checkbox,
   useApplyAttributeChange,
-} from "@shopify/ui-extensions-react/checkout";
+} from '@shopify/ui-extensions-react/checkout';
 
-export default reactExtension("purchase.checkout.block.render", () => (
-  <GiftMessage />
-));
+export default reactExtension('purchase.checkout.block.render', () => <GiftMessage />);
 
 function GiftMessage() {
   const [isGift, setIsGift] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState('');
   const applyAttributeChange = useApplyAttributeChange();
 
   useEffect(() => {
     if (isGift && message) {
       applyAttributeChange({
-        type: "updateAttribute",
-        key: "gift_message",
+        type: 'updateAttribute',
+        key: 'gift_message',
         value: message,
       });
     }
@@ -220,12 +218,7 @@ function GiftMessage() {
         This is a gift
       </Checkbox>
       {isGift && (
-        <TextField
-          label="Gift Message"
-          value={message}
-          onChange={setMessage}
-          multiline={3}
-        />
+        <TextField label="Gift Message" value={message} onChange={setMessage} multiline={3} />
       )}
     </BlockStack>
   );

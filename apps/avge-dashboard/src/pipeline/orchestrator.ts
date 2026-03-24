@@ -9,14 +9,14 @@
  */
 
 import type {
-    AudioAsset,
-    BlastStage,
-    GeneratedScript,
-    NotebookProject,
-    PipelineRun,
-    StageStatus,
-    SyncEntry,
-    VisualAsset
+  AudioAsset,
+  BlastStage,
+  GeneratedScript,
+  NotebookProject,
+  PipelineRun,
+  StageStatus,
+  SyncEntry,
+  VisualAsset,
 } from '../types';
 
 import { extract3MHooks } from './analysis';
@@ -62,7 +62,7 @@ function createInitialRun(projectId: string): PipelineRun {
   return {
     id: crypto.randomUUID(),
     projectId,
-    stages: BLAST_STAGES.map(s => ({
+    stages: BLAST_STAGES.map((s) => ({
       id: s.id,
       label: s.label,
       status: 'idle' as StageStatus,
@@ -73,10 +73,15 @@ function createInitialRun(projectId: string): PipelineRun {
   };
 }
 
-function updateStage(run: PipelineRun, stageId: BlastStage, status: StageStatus, error?: string): PipelineRun {
+function updateStage(
+  run: PipelineRun,
+  stageId: BlastStage,
+  status: StageStatus,
+  error?: string,
+): PipelineRun {
   return {
     ...run,
-    stages: run.stages.map(s =>
+    stages: run.stages.map((s) =>
       s.id === stageId
         ? {
             ...s,
@@ -85,7 +90,7 @@ function updateStage(run: PipelineRun, stageId: BlastStage, status: StageStatus,
             ...(status === 'success' || status === 'error' ? { completedAt: Date.now() } : {}),
             ...(error ? { error } : {}),
           }
-        : s
+        : s,
     ),
     currentStage: status === 'running' ? stageId : run.currentStage,
   };
@@ -230,7 +235,11 @@ async function executeStage(
 /**
  * Build the script generation prompt from hook analysis.
  */
-function buildScriptPrompt(hookAnalysis: { hooks: unknown[]; structures: unknown[]; anxietyPoints: unknown[] }): string {
+function buildScriptPrompt(hookAnalysis: {
+  hooks: unknown[];
+  structures: unknown[];
+  anxietyPoints: unknown[];
+}): string {
   return `Based on the source analysis, generate a compelling YouTube video script.
 
 Use these discovered patterns:

@@ -1,167 +1,106 @@
 # Vibe Code Studio - Agent Guidelines
 
-This file provides guidance for AI agents (Claude, GPT, etc.) working with the Vibe Code Studio codebase.
+This file provides guidance for AI agents working in `apps/vibe-code-studio`.
 
 ## Local + GitHub Workflow Rule
 
 - Treat the local working tree as the canonical source of truth.
 - Prefer local execution, local validation, and local artifacts over hosted workflows.
 - Prefer GitHub when remote hosting guidance is needed.
-- GitHub PR/Actions/`gh` flows are available when needed.
 
-## 🔑 Bruce's Configuration Rules
+## Bruce's Configuration Rules
 
-**CRITICAL**: Bruce uses **OpenRouter exclusively** for all AI models. Never suggest or configure direct provider API keys (DeepSeek, Anthropic, OpenAI, etc.).
+Bruce uses OpenRouter for day-to-day AI setup in this app. Do not document direct DeepSeek, Anthropic, or OpenAI keys as the primary workflow.
 
 ### OpenRouter-Only Setup
 
-- **Single API Key**: `VITE_OPENROUTER_API_KEY` only
-- **Proxy Required**: OpenRouter proxy must run on `http://localhost:3001`
-- **Default Model**: `deepseek-chat` (DeepSeek V3.2 - #1 for coding on OpenRouter, Jan 2026)
-- **All Providers**: OpenAI, Anthropic, Groq, Perplexity, Together, Ollama route through OpenRouter
-- **NO HuggingFace**: HuggingFace models have been removed from the registry
+- Primary key: `VITE_OPENROUTER_API_KEY`
+- Optional proxy: `VITE_OPENROUTER_PROXY_URL=http://localhost:3001`
+- Default model alias: `deepseek-chat` through OpenRouter
+- OpenAI, Anthropic, Groq, Perplexity, Together, and Ollama are routed through OpenRouter in Bruce's local setup
 
-See `BRUCE_OPENROUTER_CONFIG.md` for complete setup details.
+Current setup references:
+
+- `README.md`
+- `scripts/openrouter-proxy.js`
+- `scripts/verify-openrouter.ts`
 
 ## Architecture Overview
 
-Vibe Code Studio is an AI-powered code editor built as an Electron application with React frontend.
+Vibe Code Studio is a Tauri desktop application with a React frontend.
 
 ### Core Stack
 
-- **Frontend**: React 19 + TypeScript + styled-components
-- **Editor**: Monaco Editor (VS Code engine)
-- **Desktop**: Electron 39
-- **Build**: Vite + electron-vite
-- **AI**: OpenRouter (unified access to all models)
-- **Database**: better-sqlite3 (D:\ drive only)
+- Frontend: React 19 + TypeScript + styled-components
+- Editor: Monaco Editor
+- Desktop runtime: Tauri 2
+- Build tooling: Vite + Tauri CLI
+- AI: OpenRouter-backed provider layer
+- Database: SQLite on `D:\`
 
-### Key Services
+### Core Services
 
-#### AI Services
+- `src/services/ai/UnifiedAIService.ts` - main AI orchestration
+- `src/services/ai/AIProviderFactory.ts` - provider initialization and routing
+- `src/modules/core/hooks/useAppServices.ts` - service instantiation
+- `src/services/DatabaseService.ts` - database operations
 
-- **UnifiedAIService**: Main AI orchestrator (uses AIProviderFactory)
-- **AIProviderFactory**: Multi-provider management (OpenRouter, DeepSeek, Google, Local)
-- **TaskPlanner**: Breaks down user requests into executable steps
-- **ExecutionEngine**: Executes agent tasks with approval gates
-- **AutoFixService**: Automatic error detection and fixing
+## Preferred Commands
 
-#### Core Services
-
-- **FileSystemService**: File operations (browser and Electron)
-- **WorkspaceService**: Project indexing and analysis
-- **GitService**: Git integration
-- **DatabaseService**: SQLite database (D:\databases\vibe_apex.db)
-
-## Development Commands
+Run from the monorepo root:
 
 ```bash
-# Install dependencies
-pnpm install
-
-# Rebuild native modules (after Electron version change)
-pnpm run rebuild-deps
-
-# Development
-pnpm run dev              # Full dev environment
-pnpm run dev:web          # Web only (port 3001)
-
-# Build
-pnpm run build            # TypeScript + production bundle
-pnpm run package          # Create distributable
-
-# Quality
-pnpm run typecheck        # TypeScript checking
-pnpm run lint             # ESLint
-pnpm run test             # Vitest
+pnpm install --frozen-lockfile
+pnpm nx run vibe-code-studio:dev
+pnpm nx run vibe-code-studio:typecheck
+pnpm nx run vibe-code-studio:lint
+pnpm nx run vibe-code-studio:test
+pnpm nx run vibe-code-studio:build
+pnpm nx run vibe-code-studio:package
+pnpm nx run vibe-code-studio:verify-app-working
 ```
 
-## Critical File Locations
+## Windows Release Rules
 
-### AI Configuration
+- The Windows release path is Tauri-only.
+- Canonical installer artifacts live under `src-tauri/target/release/bundle/`.
+- Canonical installed executable path is `%LOCALAPPDATA%\Programs\vibe-code-studio\Vibe Code Studio.exe`.
+- Use fresh local Nx runs plus an installer smoke test as release evidence.
+- Do not rely on archived logs or historical delivery notes as proof that the current build is good.
 
-- `src/services/ai/UnifiedAIService.ts` - Main AI service
-- `src/services/ai/AIProviderFactory.ts` - Provider management
-- `src/services/ai/AIProviderInterface.ts` - Model registry
-- `src/app/hooks/useAppEffects.ts` - Provider initialization
+## Common Issues
 
-### Service Initialization
+### Provider not initialized
 
-- `src/modules/core/hooks/useAppServices.ts` - Service instantiation
-- `src/app/hooks/useAppState.ts` - App state management
+Cause:
+OpenRouter key or proxy configuration is missing.
 
-### Database
+Fix:
+- Verify `VITE_OPENROUTER_API_KEY`
+- If using a local proxy, verify `VITE_OPENROUTER_PROXY_URL`
+- Restart the app after updating credentials
 
-- `src/services/DatabaseService.ts` - Database operations
-- `electron/database-handler.ts` - Electron IPC for database
+### Windows package build fails
 
-## Common Issues & Solutions
+Cause:
+Rust, WebView2, or Windows build prerequisites are missing.
 
-### Issue: "Provider not initialized"
+Fix:
+- Re-check the Windows prerequisites in `README.md`
+- Rerun `pnpm nx run vibe-code-studio:package`
 
-**Cause**: Selected model's provider isn't configured
-**Solution**: 
+### `setTaskContext is not a function`
 
-1. Check OpenRouter proxy is running on port 3001
-2. Verify `VITE_OPENROUTER_API_KEY` in `.env`
-3. Restart the app
+Cause:
+`ExecutionEngine` was not instantiated correctly.
 
-### Issue: "better-sqlite3 MODULE_VERSION mismatch"
-
-**Cause**: Native module compiled for wrong Node.js version
-**Solution**: Run `pnpm run rebuild-deps`
-
-### Issue: "setTaskContext is not a function"
-
-**Cause**: ExecutionEngine not properly instantiated
-**Solution**: Check `useAppServices.ts` - should use `new ExecutionEngine(...)` not `{} as any`
-
-## Code Style Guidelines
-
-- **TypeScript**: Strict mode enabled
-- **Formatting**: Prettier (2-space indent, single quotes)
-- **Linting**: ESLint with React/TypeScript rules
-- **Naming**: 
-  - PascalCase for components/classes
-  - camelCase for functions/variables
-  - kebab-case for files/folders
-
-## Testing Requirements
-
-- **Minimum Coverage**: 50% overall
-- **Critical Paths**: 80% coverage
-- **New Features**: Must include tests
-- **Test Framework**: Vitest with jsdom
+Fix:
+- Check `src/modules/core/hooks/useAppServices.ts`
+- Use a real `new ExecutionEngine(...)`, never `{ } as any`
 
 ## Important Notes
 
-1. **Database Location**: ALL databases MUST be on D:\ drive (never C:\)
-2. **API Keys**: Only OpenRouter key needed (no direct provider keys)
-3. **Native Modules**: Rebuild after Electron version changes
-4. **Service Initialization**: Always use proper constructors (never `{} as any`)
-5. **Model Selection**: Default to `gpt-5` via OpenRouter
-
-## Agent Workflow
-
-When making changes:
-
-1. **Understand**: Use `codebase-retrieval` to find relevant code
-2. **Plan**: Use task management tools for complex work
-3. **Verify**: Check dependencies and imports before editing
-4. **Edit**: Use `str-replace-editor` (never recreate files)
-5. **Test**: Run `pnpm run typecheck` and `pnpm test`
-6. **Document**: Update this file if architecture changes
-
-## Resources
-
-- **Full Setup**: See `BRUCE_OPENROUTER_CONFIG.md`
-- **Build Guide**: See `BUILD_SUCCESS_REPORT.md`
-- **Architecture**: See `ARCHITECTURE.md`
-- **Claude Guide**: See `CLAUDE.md`
-
----
-
-**Last Updated**: January 2026
-**Maintained By**: Bruce + AI Agents
-**Status**: Production Ready ✅
-
+1. Keep persistent databases on `D:\`.
+2. Keep OpenRouter as the documented AI setup path.
+3. Preserve backwards compatibility where practical, but make Tauri the canonical desktop runtime.
+4. Use fresh validation before saying the app is ship-ready.

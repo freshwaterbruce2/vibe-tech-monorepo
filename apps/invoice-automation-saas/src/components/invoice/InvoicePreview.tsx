@@ -1,11 +1,10 @@
 import { format } from "date-fns";
-import type React from "react";
 import { useMemo } from "react";
 import type { InvoiceFormData } from "../../types/invoice";
 import Card from "../common/Card";
 
 interface InvoicePreviewProps {
-	form: InvoiceFormData;
+	form: Partial<InvoiceFormData>;
 	invoiceNumber?: string;
 	currency?: string;
 }

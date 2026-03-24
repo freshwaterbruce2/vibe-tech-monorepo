@@ -5,6 +5,7 @@ import {
   wrapInDelimiters,
   validateStreamChunk,
   costTracker,
+  type ValidationIssue,
 } from '@vibetech/shared-utils';
 
 const router = Router();
@@ -169,7 +170,7 @@ router.post('/', async (req: Request, res: Response) => {
         }
 
         // Log severe validation errors
-        const hasErrors = validation.issues.some((i) => i.severity === 'error');
+        const hasErrors = validation.issues.some((i: ValidationIssue) => i.severity === 'error');
         if (hasErrors) {
           console.error('[PromptOptimize] Harmful content detected:', validation.issues);
           // Still forward but use sanitized version

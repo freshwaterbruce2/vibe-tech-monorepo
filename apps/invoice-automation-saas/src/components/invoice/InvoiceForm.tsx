@@ -1,5 +1,4 @@
 import { Trash2 } from "lucide-react";
-import type React from "react";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import type { InvoiceFormData } from "../../types/invoice";
 import Button from "../common/Button";

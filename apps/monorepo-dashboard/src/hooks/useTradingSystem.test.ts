@@ -83,19 +83,19 @@ describe('useTradingSystem', () => {
   it('should return loading state initially', () => {
     // Mock never-resolving promises
     ;(tradingService.getBalance as any).mockImplementation(
-      () => new Promise(() => {})
+      async () => new Promise(() => {})
     )
     ;(tradingService.getOpenPositions as any).mockImplementation(
-      () => new Promise(() => {})
+      async () => new Promise(() => {})
     )
     ;(tradingService.getRecentTrades as any).mockImplementation(
-      () => new Promise(() => {})
+      async () => new Promise(() => {})
     )
     ;(tradingService.getPerformanceMetrics as any).mockImplementation(
-      () => new Promise(() => {})
+      async () => new Promise(() => {})
     )
     ;(tradingService.getSystemHealth as any).mockImplementation(
-      () => new Promise(() => {})
+      async () => new Promise(() => {})
     )
 
     const { result } = renderHook(() => useTradingSystem(), {

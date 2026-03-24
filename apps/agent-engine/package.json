@@ -1,0 +1,33 @@
+{
+  "name": "@vibetech/agent-engine",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local-first autonomous coding engine with gated self-improvement for the VibeTech Nx monorepo",
+  "type": "module",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx src/index.ts help",
+    "lint": "eslint src --ext .ts --max-warnings 0",
+    "typecheck": "node ../../node_modules/typescript/bin/tsc --noEmit -p tsconfig.json",
+    "test": "node ../../node_modules/vitest/vitest.mjs run --config vitest.config.ts",
+    "orchestrate": "tsx src/agents/monorepo-orchestrator.ts",
+    "orchestrator": "tsx src/agents/orchestrator.ts",
+    "code-reviewer": "tsx src/agents/code-reviewer.ts",
+    "quality-gate": "tsx src/agents/quality-gate.ts",
+    "task-runner": "tsx src/agents/task-runner.ts",
+    "benchmark": "tsx src/index.ts benchmark",
+    "self-eval": "tsx src/index.ts self-eval",
+    "behavioral-eval": "tsx src/index.ts behavioral-eval",
+    "promote-candidate": "tsx src/index.ts promote-candidate"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "tsx": "^4.20.5",
+    "typescript": "5.9.3",
+    "vitest": "^4.0.18"
+  }
+}

@@ -1,6 +1,6 @@
 ---
 name: context-window-management
-description: "Strategies for managing LLM context windows including summarization, trimming, routing, and avoiding context rot Use when: context window, token limit, context management, context engineering, long context."
+description: 'Strategies for managing LLM context windows including summarization, trimming, routing, and avoiding context rot Use when: context window, token limit, context management, context engineering, long context.'
 source: vibeship-spawner-skills (Apache 2.0)
 ---
 

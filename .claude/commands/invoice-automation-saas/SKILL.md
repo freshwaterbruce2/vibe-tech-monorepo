@@ -10,14 +10,14 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## Project Context
 
-| Aspect | Details |
-|--------|---------|
-| **Location** | `C:\dev\apps\invoice-automation-saas` |
-| **Framework** | Next.js 14 (App Router) |
-| **Database** | PostgreSQL via Prisma |
-| **Auth** | NextAuth.js / Clerk |
-| **Payments** | Stripe Subscriptions |
-| **Deployment** | Vercel |
+| Aspect         | Details                               |
+| -------------- | ------------------------------------- |
+| **Location**   | `C:\dev\apps\invoice-automation-saas` |
+| **Framework**  | Next.js 14 (App Router)               |
+| **Database**   | PostgreSQL via Prisma                 |
+| **Auth**       | NextAuth.js / Clerk                   |
+| **Payments**   | Stripe Subscriptions                  |
+| **Deployment** | Vercel                                |
 
 ## Tech Stack
 
@@ -31,14 +31,14 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## Required Community Skills
 
-| Skill | Use Case |
-|-------|----------|
-| `nextjs-best-practices` | App Router patterns |
-| `typescript-expert` | Type safety |
-| `prisma-expert` | Database operations |
-| `stripe-integration` | Payment flows |
-| `testing-patterns` | Test coverage |
-| `verification-before-completion` | Quality gates |
+| Skill                            | Use Case            |
+| -------------------------------- | ------------------- |
+| `nextjs-best-practices`          | App Router patterns |
+| `typescript-expert`              | Type safety         |
+| `prisma-expert`                  | Database operations |
+| `stripe-integration`             | Payment flows       |
+| `testing-patterns`               | Test coverage       |
+| `verification-before-completion` | Quality gates       |
 
 ## Architecture
 
@@ -149,11 +149,13 @@ import { z } from 'zod';
 
 const CreateInvoiceSchema = z.object({
   customerId: z.string(),
-  items: z.array(z.object({
-    description: z.string(),
-    quantity: z.number(),
-    unitPrice: z.number(),
-  })),
+  items: z.array(
+    z.object({
+      description: z.string(),
+      quantity: z.number(),
+      unitPrice: z.number(),
+    }),
+  ),
 });
 
 export async function createInvoice(data: z.infer<typeof CreateInvoiceSchema>) {

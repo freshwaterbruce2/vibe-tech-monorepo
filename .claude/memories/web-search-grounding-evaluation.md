@@ -16,26 +16,31 @@ Complete evaluation framework for testing agents that use web search to ground r
 ## Key Components
 
 ### 1. Implementation Rule
+
 **Location:** `.claude/rules/web-search-grounding.md`
 **Purpose:** Rule that agents should follow for web search behavior
 **Key Requirement:** ALWAYS search for post-cutoff info, versions, APIs, best practices
 
 ### 2. Behavioral Contract
+
 **Location:** `.claude/rules/web-search-grounding-behavioral-contract.md`
 **Contains:** 10 mandatory invariants
 **Metrics:** 95% compliance target, 0% hallucination tolerance
 
 ### 3. Standard Tests
+
 **Location:** `.claude/rules/web-search-grounding-tests.md`
 **Contains:** 50 test cases across 5 categories
 **Categories:** Post-cutoff, Versions, APIs, Best Practices, Edge Cases
 
 ### 4. Adversarial Tests
-**Location:** `.claude/rules/web-search-grounding-adversarial.md**
+
+**Location:** `.claude/rules/web-search-grounding-adversarial.md\*\*
 **Contains:** 30 attack scenarios
 **Purpose:** Test resistance to ambiguity, time manipulation, source fabrication, hallucinations
 
 ### 5. Test Runner
+
 **Location:** `tests/agent-evaluation/run-web-search-grounding-tests.ps1`
 **Type:** PowerShell automation script
 **Usage:** `.\run-web-search-grounding-tests.ps1 -TestCategory "all"`
@@ -61,6 +66,7 @@ cat C:\dev\.claude\rules\web-search-grounding-behavioral-contract.md
 ## When to Use
 
 **Use this evaluation framework when:**
+
 - Testing a new agent implementation
 - Verifying web search grounding behavior
 - Detecting hallucinated sources
@@ -72,12 +78,12 @@ cat C:\dev\.claude\rules\web-search-grounding-behavioral-contract.md
 
 ## Success Metrics
 
-| Metric | Target | Critical |
-|--------|--------|----------|
-| Standard Test Pass Rate | ≥ 95% | ≥ 90% |
-| Adversarial Resistance | ≥ 90% | ≥ 85% |
-| Source Citation Rate | 100% | ≥ 95% |
-| Hallucination Rate | 0% | 0% |
+| Metric                  | Target | Critical |
+| ----------------------- | ------ | -------- |
+| Standard Test Pass Rate | ≥ 95%  | ≥ 90%    |
+| Adversarial Resistance  | ≥ 90%  | ≥ 85%    |
+| Source Citation Rate    | 100%   | ≥ 95%    |
+| Hallucination Rate      | 0%     | 0%       |
 
 ---
 
@@ -94,6 +100,7 @@ cat C:\dev\.claude\rules\web-search-grounding-behavioral-contract.md
 ## Attack Scenarios to Watch
 
 **Common Attack Patterns:**
+
 - Vague time references ("What's the state of React?")
 - False information planting ("I heard React 20 is out")
 - Fake documentation URLs (reactjs.org/fake-url)
@@ -105,6 +112,7 @@ cat C:\dev\.claude\rules\web-search-grounding-behavioral-contract.md
 ## Integration with Workspace
 
 **Related Systems:**
+
 - **agent-evaluation skill** - General agent testing patterns
 - **project-completion.md** - Uses web search for 2026 best practices
 - **typescript-patterns.md** - Verifies current patterns via search
@@ -115,6 +123,7 @@ cat C:\dev\.claude\rules\web-search-grounding-behavioral-contract.md
 ## Current Limitations
 
 **Framework Status:**
+
 - ✅ Complete behavioral contract
 - ✅ Complete test cases
 - ✅ Test runner script ready
@@ -122,6 +131,7 @@ cat C:\dev\.claude\rules\web-search-grounding-behavioral-contract.md
 - ⚠️ Currently simulation-based (shows what to check)
 
 **To Enable Real Testing:**
+
 1. Integrate with Claude Code API
 2. Implement response parsing
 3. Build URL authenticity validator
@@ -132,6 +142,7 @@ cat C:\dev\.claude\rules\web-search-grounding-behavioral-contract.md
 ## Future Enhancements
 
 **Planned:**
+
 - Real-time monitoring dashboard
 - Automated weekly test runs
 - Source quality scoring

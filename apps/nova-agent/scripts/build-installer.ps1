@@ -130,7 +130,7 @@ function Run-Tests {
     
     # Run frontend tests
     Write-ColorOutput "  Running frontend tests..." "Gray"
-    pnpm test:unit
+    pnpm test
     if ($LASTEXITCODE -ne 0) {
         Write-ColorOutput "⚠️  Frontend tests failed" "Yellow"
         $response = Read-Host "Continue anyway? (yes/no)"

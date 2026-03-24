@@ -9,7 +9,7 @@
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node scripts/run-electron-vite-dev.cjs",
+        "command": "pnpm run tauri:dev",
         "cwd": "apps/vibe-code-studio"
       }
     },
@@ -29,7 +29,7 @@
     },
     "build": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist", "{projectRoot}/dist-electron"],
+      "outputs": ["{projectRoot}/dist"],
       "cache": true,
       "options": {
         "command": "pnpm run build",
@@ -44,7 +44,7 @@
     },
     "package": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist-electron"],
+      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
       "cache": false,
       "options": {
         "command": "pnpm run package",
@@ -53,25 +53,25 @@
     },
     "electron-build": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist-electron"],
+      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
       "cache": false,
       "options": {
-        "command": "pnpm run electron:build",
+        "command": "pnpm run package",
         "cwd": "apps/vibe-code-studio"
       }
     },
     "electron-build-win": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist-electron"],
+      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
       "cache": false,
       "options": {
-        "command": "pnpm run electron:build:win",
+        "command": "pnpm run release:build:win",
         "cwd": "apps/vibe-code-studio"
       }
     },
     "release-build": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist-electron"],
+      "outputs": ["{projectRoot}/dist"],
       "cache": false,
       "options": {
         "command": "pnpm run release:build",
@@ -80,7 +80,7 @@
     },
     "release-build-win": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist-electron"],
+      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
       "cache": false,
       "options": {
         "command": "pnpm run release:build:win",
@@ -89,7 +89,7 @@
     },
     "release-build-mac": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist-electron"],
+      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
       "cache": false,
       "options": {
         "command": "pnpm run release:build:mac",
@@ -98,7 +98,7 @@
     },
     "release-build-linux": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist-electron"],
+      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
       "cache": false,
       "options": {
         "command": "pnpm run release:build:linux",
@@ -107,7 +107,7 @@
     },
     "release-dist": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist-electron"],
+      "outputs": ["{projectRoot}/dist"],
       "cache": false,
       "options": {
         "command": "pnpm run release:dist",
@@ -116,10 +116,10 @@
     },
     "package-win-local": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist-electron"],
+      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
       "cache": false,
       "options": {
-        "command": "pnpm run prepare-native-modules && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" pnpm exec electron-vite build && pnpm exec electron-builder --win --publish never",
+        "command": "pnpm run prepare-native-modules && pnpm run package",
         "cwd": "apps/vibe-code-studio"
       }
     },
@@ -164,7 +164,7 @@
     "test": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm run test:electron",
+        "command": "pnpm run test",
         "cwd": "apps/vibe-code-studio"
       },
       "cache": true
@@ -187,7 +187,7 @@
     "clean": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node -e \"const fs=require('fs'); const paths=['dist','dist-electron','build','.tsbuildinfo','.tsbuildinfo.node']; for (const p of paths) { try { fs.rmSync(p,{recursive:true,force:true}); } catch {} }\"",
+        "command": "node -e \"const fs=require('fs'); const paths=['dist','dist-electron','build','src-tauri/target','.tsbuildinfo','.tsbuildinfo.node']; for (const p of paths) { try { fs.rmSync(p,{recursive:true,force:true}); } catch {} }\"",
         "cwd": "apps/vibe-code-studio"
       }
     }

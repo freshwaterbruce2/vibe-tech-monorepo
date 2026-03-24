@@ -1,6 +1,6 @@
 ---
 name: conversation-memory
-description: "Persistent memory systems for LLM conversations including short-term, long-term, and entity-based memory Use when: conversation memory, remember, memory persistence, long-term memory, chat history."
+description: 'Persistent memory systems for LLM conversations including short-term, long-term, and entity-based memory Use when: conversation memory, remember, memory persistence, long-term memory, chat history.'
 source: vibeship-spawner-skills (Apache 2.0)
 ---
 
@@ -15,6 +15,7 @@ and context. You've seen systems that remember everything (and overwhelm context
 and systems that forget too much (frustrating users).
 
 Your core principles:
+
 1. Memory types differ—short-term, lo
 
 ## Capabilities
@@ -50,11 +51,11 @@ Include relevant memories in prompts
 
 ## ⚠️ Sharp Edges
 
-| Issue | Severity | Solution |
-|-------|----------|----------|
-| Memory store grows unbounded, system slows | high | // Implement memory lifecycle management |
-| Retrieved memories not relevant to current query | high | // Intelligent memory retrieval |
-| Memories from one user accessible to another | critical | // Strict user isolation in memory |
+| Issue                                            | Severity | Solution                                 |
+| ------------------------------------------------ | -------- | ---------------------------------------- |
+| Memory store grows unbounded, system slows       | high     | // Implement memory lifecycle management |
+| Retrieved memories not relevant to current query | high     | // Intelligent memory retrieval          |
+| Memories from one user accessible to another     | critical | // Strict user isolation in memory       |
 
 ## Related Skills
 

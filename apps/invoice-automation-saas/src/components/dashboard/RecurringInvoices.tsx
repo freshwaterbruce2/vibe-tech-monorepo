@@ -1,6 +1,5 @@
 import { format } from "date-fns";
 import { CalendarClock } from "lucide-react";
-import type React from "react";
 import type { Invoice } from "../../types/invoice";
 import Card from "../common/Card";
 

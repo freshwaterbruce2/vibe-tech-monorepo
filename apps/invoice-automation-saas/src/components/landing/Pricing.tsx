@@ -1,5 +1,4 @@
 import { Check } from "lucide-react";
-import type React from "react";
 import { Link } from "react-router-dom";
 import Button from "../common/Button";
 import Card from "../common/Card";

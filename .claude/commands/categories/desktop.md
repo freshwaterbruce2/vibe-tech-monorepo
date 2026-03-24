@@ -11,21 +11,23 @@ category: app-type
 
 ## Applies To
 
-| Project | Framework |
-|---------|-----------|
-| `apps/vibe-code-studio` | Electron |
-| `apps/nova-agent` | Tauri 2.x |
-| `apps/desktop-commander-v3` | Electron |
+| Project                     | Framework |
+| --------------------------- | --------- |
+| `apps/vibe-code-studio`     | Electron  |
+| `apps/nova-agent`           | Tauri 2.x |
+| `apps/desktop-commander-v3` | Electron  |
 
 ## Tech Stacks
 
 ### Electron Apps
+
 - **Main Process**: Node.js, TypeScript
 - **Renderer**: React, TypeScript, Vite
 - **IPC**: contextBridge, ipcMain/ipcRenderer
 - **Packaging**: electron-builder
 
 ### Tauri Apps
+
 - **Backend**: Rust
 - **Frontend**: React, TypeScript, Vite
 - **IPC**: Tauri commands, invoke()
@@ -49,6 +51,7 @@ cargo check        # Check Rust (in src-tauri/)
 ## Architecture Pattern
 
 ### Electron
+
 ```
 apps/{electron-app}/
 ├── src/
@@ -67,6 +70,7 @@ apps/{electron-app}/
 ```
 
 ### Tauri
+
 ```
 apps/{tauri-app}/
 ├── src/                    # Frontend (React)
@@ -84,14 +88,14 @@ apps/{tauri-app}/
 ## Critical Patterns
 
 ### Electron IPC (Type-Safe)
+
 ```typescript
 // preload/index.ts
 import { contextBridge, ipcRenderer } from 'electron';
 
 contextBridge.exposeInMainWorld('api', {
   readFile: (path: string) => ipcRenderer.invoke('file:read', path),
-  writeFile: (path: string, content: string) =>
-    ipcRenderer.invoke('file:write', { path, content }),
+  writeFile: (path: string, content: string) => ipcRenderer.invoke('file:write', { path, content }),
 });
 
 // main/ipc/handlers.ts
@@ -104,6 +108,7 @@ const content = await window.api.readFile('/path/to/file');
 ```
 
 ### Tauri Commands
+
 ```rust
 // src-tauri/src/main.rs
 #[tauri::command]
@@ -128,6 +133,7 @@ const content = await invoke<string>('read_file', { path: '/file' });
 ## Security Rules
 
 ### Electron
+
 - ALWAYS enable `contextIsolation: true`
 - ALWAYS use preload scripts
 - NEVER disable `nodeIntegration`
@@ -135,6 +141,7 @@ const content = await invoke<string>('read_file', { path: '/file' });
 - Sanitize all file paths
 
 ### Tauri
+
 - Use Tauri's capability system
 - Validate all command inputs in Rust
 - Don't expose unnecessary APIs
@@ -153,11 +160,13 @@ const content = await invoke<string>('read_file', { path: '/file' });
 ## Common Issues
 
 ### Memory Leaks
+
 - Remove event listeners on cleanup
 - Use WeakMap for caches
 - Profile with DevTools Memory tab
 
 ### Build Failures
+
 ```bash
 # Clean rebuild
 pnpm clean

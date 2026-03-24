@@ -20,6 +20,36 @@ function Write-ColorOutput {
     }
 }
 
+function Get-LatestInstallerPath {
+    param([string]$SearchRoot = $PSScriptRoot)
+
+    $searchPaths = @(
+        (Join-Path $SearchRoot "installers"),
+        (Join-Path $SearchRoot "src-tauri\target\release\bundle\msi"),
+        (Join-Path $SearchRoot "src-tauri\target\release\bundle\nsis"),
+        $SearchRoot
+    )
+
+    foreach ($path in $searchPaths) {
+        if (-not (Test-Path $path)) {
+            continue
+        }
+
+        $installer = Get-ChildItem -Path $path -File -ErrorAction SilentlyContinue |
+            Where-Object {
+                $_.Extension -ieq ".msi" -or ($_.Extension -ieq ".exe" -and $_.Name -match "-setup$")
+            } |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
+
+        if ($installer) {
+            return $installer.FullName
+        }
+    }
+
+    return $null
+}
+
 function Test-Administrator {
     $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = New-Object Security.Principal.WindowsPrincipal($currentUser)
@@ -54,23 +84,20 @@ function Install-NovaAgent {
     
     # Find installer if not specified
     if (-not $InstallerPath) {
-        $possiblePaths = @(
-            ".\src-tauri\target\release\bundle\msi\NOVA Agent_1.0.10_x64_en-US.msi",
-            ".\src-tauri\target\release\bundle\nsis\NOVA Agent_1.0.10_x64-setup.exe",
-            ".\NOVA Agent.msi",
-            ".\NOVA Agent.exe"
-        )
-        
-        foreach ($path in $possiblePaths) {
-            if (Test-Path $path) {
-                $InstallerPath = $path
-                Write-ColorOutput "  Found installer: $InstallerPath" "Gray"
-                break
-            }
-        }
+        $InstallerPath = Get-LatestInstallerPath
         
         if (-not $InstallerPath) {
             throw "Installer not found. Please build the installer first or specify path with -InstallerPath"
+        }
+
+        Write-ColorOutput "  Found installer: $InstallerPath" "Gray"
+    }
+
+    if (Test-Path $InstallerPath -PathType Container) {
+        $resolvedInstaller = Get-LatestInstallerPath -SearchRoot $InstallerPath
+        if ($resolvedInstaller) {
+            $InstallerPath = $resolvedInstaller
+            Write-ColorOutput "  Found installer in directory: $InstallerPath" "Gray"
         }
     }
     
@@ -145,9 +172,13 @@ function Set-AutoStart {
 
     Write-ColorOutput "`n🚀 Configuring auto-start..." "Yellow"
 
-    $exePath = "$InstallPath\NOVA Agent.exe"
-    if (-not (Test-Path $exePath)) {
-        Write-ColorOutput "  ⚠️  Executable not found at: $exePath" "Yellow"
+    $exePath = Get-ChildItem -Path $InstallPath -File -Filter "*.exe" -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -notmatch 'uninstall' } |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
+
+    if (-not $exePath) {
+        Write-ColorOutput "  ⚠️  Executable not found in: $InstallPath" "Yellow"
         Write-ColorOutput "  Auto-start not configured" "Yellow"
         return
     }
@@ -155,7 +186,7 @@ function Set-AutoStart {
     # Call the auto-start setup script
     $setupScript = Join-Path $PSScriptRoot "setup-autostart.ps1"
     if (Test-Path $setupScript) {
-        & $setupScript -Enable -ExecutablePath $exePath
+        & $setupScript -Enable -ExecutablePath $exePath.FullName
     }
     else {
         Write-ColorOutput "  ⚠️  Auto-start script not found" "Yellow"

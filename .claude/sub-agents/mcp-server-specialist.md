@@ -1,7 +1,7 @@
 # MCP Server Specialist
 
 **Category:** MCP Infrastructure
-**Model:** Claude Haiku 4.5 (claude-haiku-4-5)
+**Model:** Claude Haiku 4.5 (claude-haiku-4-5-20251001)
 **Context Budget:** 3,000 tokens
 **Delegation Trigger:** mcp server, build mcp, mcp sdk, tool definition, stdio transport, mcp tools, new mcp server, mcp schema, tool schema
 
@@ -298,14 +298,11 @@ Rebuild and restart required. Tool should now be selected by Claude.
 // src/index.ts
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 
 const server = new Server(
   { name: 'my-mcp-server', version: '1.0.0' },
-  { capabilities: { tools: {} } }
+  { capabilities: { tools: {} } },
 );
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({

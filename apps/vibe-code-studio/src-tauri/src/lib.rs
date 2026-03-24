@@ -10,6 +10,9 @@ mod pty;
 
 use commands::greet;
 
+use tauri::Manager;
+use window_vibrancy::{apply_mica, apply_blur};
+
 /// Configure and run the Tauri application.
 ///
 /// Plugins registered:
@@ -23,6 +26,18 @@ pub fn run() {
         .manage(pty::PtyState::default())
         .manage(db::DbState {
             conn: std::sync::Mutex::new(None),
+        })
+        .setup(|app| {
+            let window = app.get_webview_window("main").unwrap();
+            
+            #[cfg(target_os = "windows")]
+            {
+                // Try applying Mica, fallback to Blur if unsupported
+                let _ = apply_mica(&window, None)
+                    .or_else(|_| apply_blur(&window, Some((18, 18, 18, 125))));
+            }
+
+            Ok(())
         })
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())

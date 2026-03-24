@@ -120,7 +120,7 @@ Cross-cutting specialist for external API integrations with focus on OpenRouter,
 // services/openrouter.ts
 const OPENROUTER_CONFIG = {
   baseURL: 'https://openrouter.ai/api/v1',
-  primaryModel: 'anthropic/claude-sonnet-4-5-20250929',
+  primaryModel: 'anthropic/claude-sonnet-4-6',
   fallbackModel: 'deepseek/deepseek-r1-0528',
   timeout: 30000,
 };

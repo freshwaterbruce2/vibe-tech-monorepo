@@ -1,7 +1,7 @@
 # Mobile UI Specialist
 
 **Category:** Mobile Applications
-**Model:** Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
+**Model:** Claude Sonnet 4.5 (claude-sonnet-4-6)
 **Context Budget:** 4,500 tokens
 **Delegation Trigger:** Touch interactions, responsive design, mobile gestures, viewport optimization
 

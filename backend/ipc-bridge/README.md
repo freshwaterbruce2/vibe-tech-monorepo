@@ -1,189 +1,84 @@
 # IPC Bridge
 
-WebSocket bridge for real-time communication between NOVA Agent and Deepcode Editor.
+IPC Bridge is the local WebSocket and health endpoint bridge shared by NOVA Agent and Vibe Code Studio. The production contract is a Windows-managed background process with canonical `/healthz`, `/readyz`, and `/metrics` endpoints plus compatibility aliases for `/health` and `/status`.
 
-## Features
+## Runtime contract
 
-- **WebSocket Server** - Real-time bidirectional communication
-- **Message Broadcasting** - Route messages between clients
-- **Command Routing** - @nova and @vibe command support
-- **Health Monitoring** - HTTP endpoints for liveness/readiness
-- **Connection Stats** - Track connections and message flow
-
-## Quick Start
-
-```powershell
-# Start the bridge
-node src/server.js
-
-# Or with custom port
-PORT=5005 node src/server.js
-```
-
-## Endpoints
-
-### WebSocket
-
-- `ws://localhost:5004` - WebSocket connection
-
-### Health Checks
-
-- `GET /healthz` - Liveness probe (always returns 200 if server is running)
-- `GET /readyz` - Readiness probe (returns 503 if server not ready)
-- `GET /metrics` - Prometheus-style metrics
-
-## Message Format
-
-All messages must follow this schema:
-
-```json
-{
-  "type": "string",
-  "source": "nova" | "vibe",
-  "timestamp": 1234567890,
-  "messageId": "uuid",
-  "payload": {}
-}
-```
-
-## Example Usage
-
-### Connect from Client
-
-```javascript
-const ws = new WebSocket('ws://localhost:5004');
-
-ws.on('open', () => {
-  ws.send(JSON.stringify({
-    type: 'greeting',
-    source: 'nova',
-    timestamp: Date.now(),
-    messageId: crypto.randomUUID(),
-    payload: { message: 'Hello from NOVA' }
-  }));
-});
-```
-
-### Health Check
-
-```powershell
-curl http://localhost:5004/healthz
-curl http://localhost:5004/readyz
-curl http://localhost:5004/metrics
-```
-
-## Architecture
-
-```
-┌─────────────┐         ┌──────────────┐         ┌─────────────────┐
-│ NOVA Agent  │ ◄─────► │  IPC Bridge  │ ◄─────► │ Deepcode Editor │
-└─────────────┘   WS    └──────────────┘   WS    └─────────────────┘
-                         Port 5004
-
-                         HTTP Endpoints:
-                         /healthz  (liveness)
-                         /readyz   (readiness)
-                         /metrics  (stats)
-```
-
-## Message Types
-
-- `connected` - Connection established
-- `greeting` - Client greeting
-- `command_request` - @nova or @vibe command
-- `command_result` - Command execution result
-- `bridge_stats` - Connection statistics
-- Custom types supported
-
-## Configuration
-
-Environment variables:
-
-- `PORT` - Server port (default: 5004)
-
-## Monitoring
-
-### Liveness Probe
-
-Checks if the server process is running.
-
-```bash
-curl http://localhost:5004/healthz
-```
-
-### Readiness Probe
-
-Checks if the server is ready to accept connections.
-
-```bash
-curl http://localhost:5004/readyz
-```
-
-Returns:
-
-- **200 OK** - Server is ready
-- **503 Service Unavailable** - Server not ready
-
-### Metrics
-
-```bash
-curl http://localhost:5004/metrics
-```
-
-Returns connection counts, message stats, and uptime.
+- WebSocket endpoint: `ws://localhost:5004`
+- Health endpoints:
+  - `GET /healthz`
+  - `GET /health`
+  - `GET /readyz`
+  - `GET /status`
+  - `GET /metrics`
+- Auth:
+  - Canonical secret: `BRIDGE_SECRET`
+  - Compatibility fallback: `IPC_BRIDGE_SECRET`
+  - Accepted transport: `Authorization: Bearer <secret>`, `x-bridge-secret`, or `?token=<secret>`
 
 ## Development
 
-```powershell
-# Install dependencies
-npm install
+From the monorepo root:
 
-# Start development server
-npm run dev
-
-# Run with watch mode
-npm run dev
+```bash
+pnpm nx run ipc-bridge:typecheck
+pnpm nx run ipc-bridge:lint
+pnpm nx run ipc-bridge:test
+pnpm nx run ipc-bridge:build
+pnpm nx run ipc-bridge:start
 ```
 
-## Testing
+Local package scripts are also available inside `backend/ipc-bridge`:
 
-E2E tests are located in `../../tests/e2e/ipc-bridge.spec.ts`.
-
-```powershell
-cd ../../tests/e2e
-pnpm test
+```bash
+pnpm run dev
+pnpm run build
+pnpm run test
 ```
 
-## Troubleshooting
-
-### Port already in use
-
-```powershell
-# Find process using port 5004
-Get-NetTCPConnection -LocalPort 5004 | Select-Object OwningProcess
-Get-Process -Id <PID> | Stop-Process -Force
-```
-
-### Connection refused
-
-Check if server is running:
+## Health checks
 
 ```powershell
 curl http://localhost:5004/healthz
+curl http://localhost:5004/health
+curl http://localhost:5004/readyz
+curl http://localhost:5004/status
+curl http://localhost:5004/metrics
 ```
 
-### Server not ready
+## Windows service operation
 
-Check readiness:
+The supported Windows service host is NSSM. Build the bridge first, then install it as a managed background service:
 
 ```powershell
-curl http://localhost:5004/readyz
+pnpm run build
+pnpm run service:install -BridgeSecret 'replace-me'
 ```
 
-If returns 503, the server exists but isn't listening yet.
+The install script configures:
 
-## Related
+- Auto-start on boot
+- Restart on process exit
+- Dedicated stdout/stderr logs under `backend/ipc-bridge/logs/`
+- `PORT` and `BRIDGE_SECRET` environment variables for the service process
 
-- [IPC Contracts](../../packages/shared-ipc/) - Message schemas
-- [Health Documentation](../../docs/READINESS_CHECK_FIX.md) - Health check details
-- [E2E Tests](../../tests/e2e/) - Integration tests
+To remove the service:
+
+```powershell
+pnpm run service:remove
+```
+
+If `nssm.exe` is not on `PATH`, pass `-NssmPath` to the install/remove scripts.
+
+## Validation
+
+Do not rely on historical notes. Use a fresh run:
+
+```bash
+pnpm nx run ipc-bridge:typecheck
+pnpm nx run ipc-bridge:lint
+pnpm nx run ipc-bridge:test
+pnpm nx run ipc-bridge:build
+```
+
+Then verify the live process responds on `/healthz`, `/readyz`, `/metrics`, and that authorized WebSocket clients can connect with `BRIDGE_SECRET`.

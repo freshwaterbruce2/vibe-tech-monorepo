@@ -12,7 +12,10 @@ import { useAVGEStore } from '../stores/avge-store';
 
 /* ── Option Maps ── */
 
-const VOICE_OPTIONS: Record<string, { label: string; choices: { value: string; label: string; desc: string }[] }> = {
+const VOICE_OPTIONS: Record<
+  string,
+  { label: string; choices: { value: string; label: string; desc: string }[] }
+> = {
   formality: {
     label: 'Formality',
     choices: [
@@ -51,7 +54,11 @@ const VOICE_OPTIONS: Record<string, { label: string; choices: { value: string; l
 
 const TYPOGRAPHY_OPTIONS = [
   { value: 'modern-sans', label: 'Modern Sans', desc: 'Inter, Outfit — clean tech' },
-  { value: 'editorial-serif', label: 'Editorial Serif', desc: 'Playfair, Merriweather — authority' },
+  {
+    value: 'editorial-serif',
+    label: 'Editorial Serif',
+    desc: 'Playfair, Merriweather — authority',
+  },
   { value: 'display-bold', label: 'Display Bold', desc: 'Oswald, Impact — maximum contrast' },
   { value: 'mono-terminal', label: 'Mono Terminal', desc: 'JetBrains Mono — hacker aesthetic' },
 ];
@@ -76,20 +83,29 @@ export function PersonalityConfig() {
   const [tab, setTab] = useState<'voice' | 'visual'>('voice');
   const [colorInput, setColorInput] = useState('');
 
-  const addColor = useCallback((field: 'primaryColors' | 'accentColors') => {
-    const hex = colorInput.trim();
-    if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;
-    const current = visualIdentity[field];
-    if (!current.includes(hex)) {
-      setVisualIdentity({ [field]: [...current, hex] });
-      addLogEntry('info', `Added ${field === 'primaryColors' ? 'primary' : 'accent'} color: ${hex}`);
-    }
-    setColorInput('');
-  }, [colorInput, visualIdentity, setVisualIdentity, addLogEntry]);
+  const addColor = useCallback(
+    (field: 'primaryColors' | 'accentColors') => {
+      const hex = colorInput.trim();
+      if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;
+      const current = visualIdentity[field];
+      if (!current.includes(hex)) {
+        setVisualIdentity({ [field]: [...current, hex] });
+        addLogEntry(
+          'info',
+          `Added ${field === 'primaryColors' ? 'primary' : 'accent'} color: ${hex}`,
+        );
+      }
+      setColorInput('');
+    },
+    [colorInput, visualIdentity, setVisualIdentity, addLogEntry],
+  );
 
-  const removeColor = useCallback((field: 'primaryColors' | 'accentColors', hex: string) => {
-    setVisualIdentity({ [field]: visualIdentity[field].filter((c) => c !== hex) });
-  }, [visualIdentity, setVisualIdentity]);
+  const removeColor = useCallback(
+    (field: 'primaryColors' | 'accentColors', hex: string) => {
+      setVisualIdentity({ [field]: visualIdentity[field].filter((c) => c !== hex) });
+    },
+    [visualIdentity, setVisualIdentity],
+  );
 
   return (
     <div className="glass-card" style={{ gridArea: 'personality' }}>
@@ -146,8 +162,12 @@ export function PersonalityConfig() {
           {/* Voice Preview */}
           <div className="personality-preview">
             <span className="personality-label">Active Voice</span>
-            <div className="mono" style={{ fontSize: '10px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-              {voiceConfig.formality} · {voiceConfig.emotion} · {voiceConfig.pacing} · {voiceConfig.perspective}
+            <div
+              className="mono"
+              style={{ fontSize: '10px', color: 'var(--text-secondary)', lineHeight: 1.6 }}
+            >
+              {voiceConfig.formality} · {voiceConfig.emotion} · {voiceConfig.pacing} ·{' '}
+              {voiceConfig.perspective}
             </div>
           </div>
         </div>
@@ -201,8 +221,12 @@ export function PersonalityConfig() {
                 maxLength={7}
                 style={{ flex: 1 }}
               />
-              <button className="tab-btn" onClick={() => addColor('primaryColors')}>1°</button>
-              <button className="tab-btn" onClick={() => addColor('accentColors')}>Acc</button>
+              <button className="tab-btn" onClick={() => addColor('primaryColors')}>
+                1°
+              </button>
+              <button className="tab-btn" onClick={() => addColor('accentColors')}>
+                Acc
+              </button>
             </div>
           </div>
 

@@ -98,6 +98,11 @@ Object.defineProperty(window, 'electron', {
       once: vi.fn(),
       removeAllListeners: vi.fn(),
     },
+    ipcRenderer: {
+      invoke: vi.fn().mockResolvedValue(null),
+      on: vi.fn(),
+      removeListener: vi.fn(),
+    },
     nova: {
       sendCommand: vi.fn().mockResolvedValue({ success: true }),
       notifyFileOpened: vi.fn().mockResolvedValue({ success: true }),

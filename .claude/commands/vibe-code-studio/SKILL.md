@@ -10,13 +10,13 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## Project Context
 
-| Aspect | Details |
-|--------|---------|
-| **Location** | `C:\dev\apps\vibe-code-studio` |
-| **Framework** | Electron + React + TypeScript |
-| **Build** | Vite for renderer, esbuild for main |
-| **Packaging** | electron-builder |
-| **Package Manager** | pnpm |
+| Aspect              | Details                             |
+| ------------------- | ----------------------------------- |
+| **Location**        | `C:\dev\apps\vibe-code-studio`      |
+| **Framework**       | Electron + React + TypeScript       |
+| **Build**           | Vite for renderer, esbuild for main |
+| **Packaging**       | electron-builder                    |
+| **Package Manager** | pnpm                                |
 
 ## Tech Stack
 
@@ -29,13 +29,13 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 
 ## Required Community Skills
 
-| Skill | Use Case |
-|-------|----------|
-| `typescript-expert` | Type errors, build issues |
-| `react-patterns` | UI component design |
-| `systematic-debugging` | ANY bug investigation |
-| `test-driven-development` | Feature implementation |
-| `performance-profiling` | Memory leaks, slow renders |
+| Skill                     | Use Case                   |
+| ------------------------- | -------------------------- |
+| `typescript-expert`       | Type errors, build issues  |
+| `react-patterns`          | UI component design        |
+| `systematic-debugging`    | ANY bug investigation      |
+| `test-driven-development` | Feature implementation     |
+| `performance-profiling`   | Memory leaks, slow renders |
 
 ## Architecture
 
@@ -113,7 +113,7 @@ contextBridge.exposeInMainWorld('api', {
       return ipcRenderer.invoke(channel, data);
     }
     throw new Error(`Invalid channel: ${channel}`);
-  }
+  },
 });
 ```
 

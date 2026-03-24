@@ -1,6 +1,6 @@
 ---
 name: telegram-mini-app
-description: "Expert in building Telegram Mini Apps (TWA) - web apps that run inside Telegram with native-like experience. Covers the TON ecosystem, Telegram Web App API, payments, user authentication, and building viral mini apps that monetize. Use when: telegram mini app, TWA, telegram web app, TON app, mini app."
+description: 'Expert in building Telegram Mini Apps (TWA) - web apps that run inside Telegram with native-like experience. Covers the TON ecosystem, Telegram Web App API, payments, user authentication, and building viral mini apps that monetize. Use when: telegram mini app, TWA, telegram web app, TON app, mini app.'
 source: vibeship-spawner-skills (Apache 2.0)
 ---
 
@@ -32,7 +32,7 @@ Getting started with Telegram Mini Apps
 
 **When to use**: When starting a new Mini App
 
-```javascript
+````javascript
 ## Mini App Setup
 
 ### Basic Structure
@@ -55,9 +55,10 @@ Getting started with Telegram Mini Apps
   </script>
 </body>
 </html>
-```
+````
 
 ### React Setup
+
 ```jsx
 // hooks/useTelegram.js
 export function useTelegram() {
@@ -87,19 +88,19 @@ function App() {
 ```
 
 ### Bot Integration
+
 ```javascript
 // Bot sends Mini App
 bot.command('app', (ctx) => {
   ctx.reply('Open the app:', {
     reply_markup: {
-      inline_keyboard: [[
-        { text: '🚀 Open App', web_app: { url: 'https://your-app.com' } }
-      ]]
-    }
+      inline_keyboard: [[{ text: '🚀 Open App', web_app: { url: 'https://your-app.com' } }]],
+    },
   });
 });
 ```
-```
+
+````
 
 ### TON Connect Integration
 
@@ -113,9 +114,10 @@ Wallet connection for TON blockchain
 ### Setup
 ```bash
 npm install @tonconnect/ui-react
-```
+````
 
 ### React Integration
+
 ```jsx
 import { TonConnectUIProvider, TonConnectButton } from '@tonconnect/ui-react';
 
@@ -130,13 +132,12 @@ function App() {
 
 // Use in components
 function WalletSection() {
-  return (
-    <TonConnectButton />
-  );
+  return <TonConnectButton />;
 }
 ```
 
 ### Manifest File
+
 ```json
 {
   "url": "https://your-app.com",
@@ -146,6 +147,7 @@ function WalletSection() {
 ```
 
 ### Send TON Transaction
+
 ```jsx
 import { useTonConnectUI } from '@tonconnect/ui-react';
 
@@ -155,10 +157,12 @@ function PaymentButton({ amount, to }) {
   const handlePay = async () => {
     const transaction = {
       validUntil: Math.floor(Date.now() / 1000) + 60,
-      messages: [{
-        address: to,
-        amount: (amount * 1e9).toString(), // TON to nanoton
-      }]
+      messages: [
+        {
+          address: to,
+          amount: (amount * 1e9).toString(), // TON to nanoton
+        },
+      ],
     };
 
     await tonConnectUI.sendTransaction(transaction);
@@ -167,7 +171,8 @@ function PaymentButton({ amount, to }) {
   return <button onClick={handlePay}>Pay {amount} TON</button>;
 }
 ```
-```
+
+````
 
 ### Mini App Monetization
 
@@ -200,9 +205,10 @@ bot.command('premium', (ctx) => {
     prices: [{ label: 'Premium', amount: 100 }], // 100 Stars
   });
 });
-```
+````
 
 ### Viral Mechanics
+
 ```jsx
 // Referral system
 function ReferralShare() {
@@ -211,7 +217,7 @@ function ReferralShare() {
 
   const share = () => {
     tg.openTelegramLink(
-      `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=Check this out!`
+      `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=Check this out!`,
     );
   };
 
@@ -220,11 +226,13 @@ function ReferralShare() {
 ```
 
 ### Gamification for Retention
+
 - Daily rewards
 - Streak bonuses
 - Leaderboards
 - Achievement badges
 - Referral bonuses
+
 ```
 
 ## Anti-Patterns
@@ -277,3 +285,4 @@ Optimistic updates.
 ## Related Skills
 
 Works well with: `telegram-bot-builder`, `frontend`, `blockchain-defi`, `viral-generator-builder`
+```

@@ -11,10 +11,10 @@ category: app-type
 
 ## Applies To
 
-| Project | Type |
-|---------|------|
-| `apps/shipping-pwa` | Shipping tracker PWA |
-| Any webapp with PWA features | Offline/installable |
+| Project                      | Type                 |
+| ---------------------------- | -------------------- |
+| `apps/shipping-pwa`          | Shipping tracker PWA |
+| Any webapp with PWA features | Offline/installable  |
 
 ## Tech Stack
 
@@ -56,6 +56,7 @@ apps/{pwa}/
 ## Critical Patterns
 
 ### Web App Manifest
+
 ```json
 // public/manifest.json
 {
@@ -74,6 +75,7 @@ apps/{pwa}/
 ```
 
 ### Service Worker Registration
+
 ```typescript
 // lib/sw-register.ts
 export async function registerSW() {
@@ -89,6 +91,7 @@ export async function registerSW() {
 ```
 
 ### IndexedDB with Dexie
+
 ```typescript
 // lib/db.ts
 import Dexie, { Table } from 'dexie';
@@ -107,7 +110,7 @@ class ShippingDB extends Dexie {
   constructor() {
     super('ShippingDB');
     this.version(1).stores({
-      shipments: 'id, trackingNumber, synced'
+      shipments: 'id, trackingNumber, synced',
     });
   }
 }
@@ -116,6 +119,7 @@ export const db = new ShippingDB();
 ```
 
 ### Offline-First Data Pattern
+
 ```typescript
 // hooks/useShipments.ts
 export function useShipments() {
@@ -133,7 +137,7 @@ export function useShipments() {
   }, [isOnline]);
 
   async function syncWithServer() {
-    const serverData = await fetch('/api/shipments').then(r => r.json());
+    const serverData = await fetch('/api/shipments').then((r) => r.json());
     await db.shipments.bulkPut(serverData);
     setShipments(serverData);
   }
@@ -143,6 +147,7 @@ export function useShipments() {
 ```
 
 ### Background Sync
+
 ```typescript
 // lib/sync.ts
 export async function queueSync(action: SyncAction) {
@@ -165,19 +170,20 @@ self.addEventListener('sync', (event) => {
 ```
 
 ### Push Notifications
+
 ```typescript
 // lib/push.ts
 export async function subscribeToPush() {
   const reg = await navigator.serviceWorker.ready;
   const sub = await reg.pushManager.subscribe({
     userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
   });
 
   // Send subscription to server
   await fetch('/api/push/subscribe', {
     method: 'POST',
-    body: JSON.stringify(sub)
+    body: JSON.stringify(sub),
   });
 }
 ```
@@ -205,12 +211,14 @@ npx lighthouse http://localhost:3000 --view
 ## Common Issues
 
 ### SW Not Updating
+
 ```typescript
 // Force update in development
 self.skipWaiting();
 ```
 
 ### Cache Conflicts
+
 ```bash
 # Clear all caches
 # DevTools > Application > Clear storage

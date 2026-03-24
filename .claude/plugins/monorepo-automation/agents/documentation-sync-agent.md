@@ -10,10 +10,10 @@ tools:
   - TodoWrite
 examples:
   - context: API signature changed
-    user: "I updated the AIService interface"
-    assistant: "Activating documentation-sync-agent to update related documentation..."
+    user: 'I updated the AIService interface'
+    assistant: 'Activating documentation-sync-agent to update related documentation...'
   - context: Component props changed
-    user: "Added new prop to Button component"
+    user: 'Added new prop to Button component'
     assistant: "I'll check if Button is documented and update the docs..."
 ---
 
@@ -147,7 +147,7 @@ markdown-link-check README.md
 
 ## Commands You Can Execute
 
-```bash
+````bash
 # Find documentation files
 find . -name "*.md" | grep -v node_modules
 
@@ -164,13 +164,14 @@ git diff HEAD~1 src/services/AIService.ts | grep -A 10 "interface"
 
 # Validate TypeScript in markdown
 # Extract ```typescript blocks and validate them
-```
+````
 
 ## Documentation Patterns
 
 ### Pattern 1: API Documentation in CLAUDE.md
 
 **Before (code change):**
+
 ```typescript
 // Old interface
 interface AIService {
@@ -179,6 +180,7 @@ interface AIService {
 ```
 
 **Documentation to update:**
+
 ```markdown
 ## AIService
 
@@ -187,12 +189,14 @@ interface AIService {
 Sends a chat message to the AI service.
 
 Parameters:
+
 - `message` (string): The message to send
 
 Returns: Promise resolving to AI response string
 ```
 
 **After (code change):**
+
 ```typescript
 // New interface
 interface AIService {
@@ -212,6 +216,7 @@ interface AIResponse {
 ```
 
 **Updated documentation:**
+
 ```markdown
 ## AIService
 
@@ -220,12 +225,14 @@ interface AIResponse {
 Sends a chat message to the AI service with optional configuration.
 
 Parameters:
+
 - `message` (string): The message to send
 - `options` (ChatOptions, optional): Configuration options
   - `model` (string, optional): AI model to use (default: 'gpt-4')
   - `temperature` (number, optional): Response creativity (0-1, default: 0.7)
 
 Returns: Promise resolving to AIResponse object
+
 - `text` (string): The AI response text
 - `model` (string): Model that generated the response
 - `usage` (object): Token usage information
@@ -234,6 +241,7 @@ Returns: Promise resolving to AIResponse object
 ### Pattern 2: Component Props in FEATURE_SPECS
 
 **Before (code change):**
+
 ```typescript
 // Old props
 interface ButtonProps {
@@ -242,14 +250,17 @@ interface ButtonProps {
 ```
 
 **Documentation:**
+
 ```markdown
 ## Button Component
 
 ### Props
+
 - `label` (string): Button text
 ```
 
 **After (code change):**
+
 ```typescript
 // New props
 interface ButtonProps {
@@ -261,10 +272,12 @@ interface ButtonProps {
 ```
 
 **Updated documentation:**
+
 ```markdown
 ## Button Component
 
 ### Props
+
 - `label` (string, required): Button text
 - `variant` ('primary' | 'secondary' | 'danger', optional): Visual style (default: 'primary')
 - `size` ('sm' | 'md' | 'lg', optional): Button size (default: 'md')
@@ -274,6 +287,7 @@ interface ButtonProps {
 ### Pattern 3: Feature Implementation in FEATURE_SPECS
 
 **When feature is implemented:**
+
 ```markdown
 # ERROR_AUTOFIX_SPEC.md
 
@@ -287,9 +301,11 @@ Implementation: apps/vibe-code-studio/src/services/AutoFixService.ts
 Automatically fixes TypeScript errors using AI.
 
 Parameters:
+
 - `errors` (TypeScriptError[]): Array of errors to fix
 
 Returns:
+
 - `fixed` (number): Number of errors fixed
 - `failed` (number): Number of errors that couldn't be fixed
 - `changes` (FileChange[]): List of code changes made
@@ -300,16 +316,19 @@ Returns:
 ### Primary Documentation Files
 
 **Project Root:**
+
 - `CLAUDE.md` - Main project guidelines and API docs
 - `README.md` - Project overview and usage
 - `CHANGELOG.md` - Version history
 - `CONTRIBUTING.md` - Development guidelines
 
 **Feature Specs:**
+
 - `FEATURE_SPECS/*.md` - Detailed feature documentation
 - `FEATURE_SPECS/API_REFERENCE.md` - API reference docs
 
 **Project-Specific:**
+
 - `apps/*/CLAUDE.md` - App-specific guidelines
 - `apps/*/README.md` - App-specific documentation
 - `packages/*/README.md` - Package documentation
@@ -317,10 +336,12 @@ Returns:
 ### Auto-Generated Documentation
 
 **TypeDoc:**
+
 - `docs/api/` - Generated from TSDoc comments
 - Update TSDoc comments in code, regenerate docs
 
 **OpenAPI:**
+
 - `docs/openapi.yaml` - Generated from backend routes
 - Update route decorators, regenerate spec
 
@@ -329,6 +350,7 @@ Returns:
 ### When to Update Docs
 
 **ALWAYS update when:**
+
 - Public interface changes (interface, type, class)
 - Component props change
 - Function signatures change
@@ -337,12 +359,14 @@ Returns:
 - Environment variables change
 
 **CONSIDER updating when:**
+
 - Internal implementation changes significantly
 - Performance characteristics change
 - New feature added
 - Bug fix changes behavior
 
 **DON'T update when:**
+
 - Internal refactoring with no external impact
 - Code formatting/style changes
 - Test code changes
@@ -356,13 +380,17 @@ This agent is triggered by the PostToolUse hook:
 
 ```json
 {
-  "PostToolUse": [{
-    "matcher": "Write|Edit",
-    "hooks": [{
-      "type": "prompt",
-      "prompt": "After code changes, trigger documentation-sync-agent to check if API signatures changed and update relevant docs."
-    }]
-  }]
+  "PostToolUse": [
+    {
+      "matcher": "Write|Edit",
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "After code changes, trigger documentation-sync-agent to check if API signatures changed and update relevant docs."
+        }
+      ]
+    }
+  ]
 }
 ```
 
@@ -435,11 +463,7 @@ All documentation matches current code.
 
 ```typescript
 // Automatically update function signatures in docs
-function updateSignature(
-  docs: string,
-  oldSig: string,
-  newSig: string
-): string {
+function updateSignature(docs: string, oldSig: string, newSig: string): string {
   // Find signature in docs
   const regex = new RegExp(`\`\`\`typescript\\s*${escapeRegex(oldSig)}`, 'g');
 
@@ -452,16 +476,12 @@ function updateSignature(
 
 ```typescript
 // Automatically update parameter lists
-function updateParams(
-  docs: string,
-  oldParams: Parameter[],
-  newParams: Parameter[]
-): string {
+function updateParams(docs: string, oldParams: Parameter[], newParams: Parameter[]): string {
   // Compare parameters
-  const added = newParams.filter(p => !oldParams.find(o => o.name === p.name));
-  const removed = oldParams.filter(p => !newParams.find(n => n.name === p.name));
-  const changed = newParams.filter(p => {
-    const old = oldParams.find(o => o.name === p.name);
+  const added = newParams.filter((p) => !oldParams.find((o) => o.name === p.name));
+  const removed = oldParams.filter((p) => !newParams.find((n) => n.name === p.name));
+  const changed = newParams.filter((p) => {
+    const old = oldParams.find((o) => o.name === p.name);
     return old && old.type !== p.type;
   });
 
@@ -474,13 +494,13 @@ function updateParams(
 
 ### Code Examples in Docs
 
-```bash
+````bash
 # Extract TypeScript code blocks
 grep -Pzo '```typescript.*?```' README.md
 
 # Validate each block
 pnpm tsc --noEmit extracted-code.ts
-```
+````
 
 ### Link Validation
 

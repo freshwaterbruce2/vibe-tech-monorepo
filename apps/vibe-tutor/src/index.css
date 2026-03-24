@@ -171,23 +171,29 @@
 
 /* Active game wrapper */
 .gh-active-game {
-  height: 100%;
-  position: relative;
+  position: fixed;
+  inset: 0;
+  z-index: 80;
   background: radial-gradient(circle at center, #061121 0%, #020617 100%);
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-top: max(env(safe-area-inset-top), 0.5rem);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* Back button (in-game) */
 .gh-back-btn {
   position: absolute;
-  top: 0.75rem;
+  top: calc(env(safe-area-inset-top) + 0.75rem);
   left: 0.75rem;
   z-index: 10;
   background: rgba(15, 23, 42, 0.8);
   border: 1px solid rgba(6, 182, 212, 0.4);
   border-radius: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  min-height: 48px;
+  padding: 0.6rem 0.9rem;
   color: #06b6d4;
   cursor: pointer;
   display: flex;

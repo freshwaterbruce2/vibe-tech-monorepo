@@ -1,7 +1,7 @@
 # Desktop MCP Specialist
 
 **Category:** Desktop Applications
-**Model:** Claude Haiku 4.5 (claude-haiku-4-5)
+**Model:** Claude Haiku 4.5 (claude-haiku-4-5-20251001)
 **Context Budget:** 2,500 tokens
 **Delegation Trigger:** mcp server, mcp config, ipc bridge, mcp validation, tool registration, desktop-commander, mcp tools not appearing
 

@@ -20,9 +20,12 @@ const DEFAULT_IPC_URL = 'ws://localhost:5004';
 /** Locate the Antigravity MCP config file */
 function findMcpConfigPath(): string {
     const paths = [
+        process.env.MCP_CONFIG_PATH,
+        join(process.cwd(), '.mcp.json'),
+        join(process.cwd(), '..', '..', '.mcp.json'),
         join(homedir(), '.gemini', 'antigravity', 'mcp_config.json'),
         join(homedir(), '.config', 'antigravity', 'mcp_config.json'),
-    ];
+    ].filter((path): path is string => Boolean(path));
     for (const p of paths) {
         if (existsSync(p)) return p;
     }

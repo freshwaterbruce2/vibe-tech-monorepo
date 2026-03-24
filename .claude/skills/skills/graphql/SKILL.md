@@ -1,6 +1,6 @@
 ---
 name: graphql
-description: "GraphQL gives clients exactly the data they need - no more, no less. One endpoint, typed schema, introspection. But the flexibility that makes it powerful also makes it dangerous. Without proper controls, clients can craft queries that bring down your server.  This skill covers schema design, resolvers, DataLoader for N+1 prevention, federation for microservices, and client integration with Apollo/urql. Key insight: GraphQL is a contract. The schema is the API documentation. Design it carefully."
+description: 'GraphQL gives clients exactly the data they need - no more, no less. One endpoint, typed schema, introspection. But the flexibility that makes it powerful also makes it dangerous. Without proper controls, clients can craft queries that bring down your server.  This skill covers schema design, resolvers, DataLoader for N+1 prevention, federation for microservices, and client integration with Apollo/urql. Key insight: GraphQL is a contract. The schema is the API documentation. Design it carefully.'
 source: vibeship-spawner-skills (Apache 2.0)
 ---
 
@@ -52,16 +52,16 @@ Normalized cache with type policies
 
 ## ⚠️ Sharp Edges
 
-| Issue | Severity | Solution |
-|-------|----------|----------|
-| Each resolver makes separate database queries | critical | # USE DATALOADER |
-| Deeply nested queries can DoS your server | critical | # LIMIT QUERY DEPTH AND COMPLEXITY |
-| Introspection enabled in production exposes your schema | high | # DISABLE INTROSPECTION IN PRODUCTION |
-| Authorization only in schema directives, not resolvers | high | # AUTHORIZE IN RESOLVERS |
-| Authorization on queries but not on fields | high | # FIELD-LEVEL AUTHORIZATION |
-| Non-null field failure nullifies entire parent | medium | # DESIGN NULLABILITY INTENTIONALLY |
-| Expensive queries treated same as cheap ones | medium | # QUERY COST ANALYSIS |
-| Subscriptions not properly cleaned up | medium | # PROPER SUBSCRIPTION CLEANUP |
+| Issue                                                   | Severity | Solution                              |
+| ------------------------------------------------------- | -------- | ------------------------------------- |
+| Each resolver makes separate database queries           | critical | # USE DATALOADER                      |
+| Deeply nested queries can DoS your server               | critical | # LIMIT QUERY DEPTH AND COMPLEXITY    |
+| Introspection enabled in production exposes your schema | high     | # DISABLE INTROSPECTION IN PRODUCTION |
+| Authorization only in schema directives, not resolvers  | high     | # AUTHORIZE IN RESOLVERS              |
+| Authorization on queries but not on fields              | high     | # FIELD-LEVEL AUTHORIZATION           |
+| Non-null field failure nullifies entire parent          | medium   | # DESIGN NULLABILITY INTENTIONALLY    |
+| Expensive queries treated same as cheap ones            | medium   | # QUERY COST ANALYSIS                 |
+| Subscriptions not properly cleaned up                   | medium   | # PROPER SUBSCRIPTION CLEANUP         |
 
 ## Related Skills
 

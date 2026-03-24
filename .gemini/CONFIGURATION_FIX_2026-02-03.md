@@ -11,6 +11,7 @@
 ### 1. ✅ Session Retention Period Format Error
 
 **Error:**
+
 ```
 Session cleanup disabled: Error: Invalid retention period format: 172800
 Expected format: <number><unit> where unit is h, d, w, or m
@@ -19,6 +20,7 @@ Expected format: <number><unit> where unit is h, d, w, or m
 **Root Cause:** Missing `period` field in `sessionRetention` configuration
 
 **Fix Applied:**
+
 ```json
 "sessionRetention": {
   "enabled": true,
@@ -33,6 +35,7 @@ Expected format: <number><unit> where unit is h, d, w, or m
 ### 2. ✅ MCP Prompt Name Conflict
 
 **Warning:**
+
 ```
 Prompt with name "mcp-demo" is already registered. Renaming to "sqlite_mcp-demo"
 ```
@@ -40,6 +43,7 @@ Prompt with name "mcp-demo" is already registered. Renaming to "sqlite_mcp-demo"
 **Root Cause:** Both SQLite MCP servers had identical names causing prompt registration conflicts
 
 **Fix Applied:**
+
 - Renamed `"sqlite"` → `"sqlite-main"` for clarity
 - Added explicit `"disabled": false` flags for better control
 - Maintained separate sqlite-trading instance
@@ -51,6 +55,7 @@ Prompt with name "mcp-demo" is already registered. Renaming to "sqlite_mcp-demo"
 ### 3. ✅ ImportProcessor Parsing Warnings
 
 **Warning:**
+
 ```
 [ERROR] [ImportProcessor] Could not find child token in parent raw content
 ```
@@ -70,6 +75,7 @@ Prompt with name "mcp-demo" is already registered. Renaming to "sqlite_mcp-demo"
 ### Key Changes:
 
 1. **Session Management:**
+
    ```json
    "sessionRetention": {
      "enabled": true,
@@ -78,6 +84,7 @@ Prompt with name "mcp-demo" is already registered. Renaming to "sqlite_mcp-demo"
    ```
 
 2. **MCP Server Names:**
+
    ```json
    "sqlite-main": {      // RENAMED from "sqlite"
      "type": "stdio",
@@ -129,6 +136,7 @@ Hello. I am initialized and ready to work in `C:\dev`.
 ```
 
 **No more errors about:**
+
 - ❌ Invalid retention period format
 - ❌ Duplicate prompt names (sqlite renaming)
 - ❌ npm install/reinstall messages
@@ -138,11 +146,13 @@ Hello. I am initialized and ready to work in `C:\dev`.
 ## Performance Improvements
 
 ### Before Fix:
+
 - ⏱️ 10-30 seconds per command (reinstalling)
 - ⚠️ Session cleanup errors
 - ⚠️ MCP prompt conflicts
 
 ### After Fix:
+
 - ⚡ < 1 second per command (global cache)
 - ✅ Sessions properly cleaned after 48h
 - ✅ Clean MCP server initialization
@@ -240,16 +250,19 @@ gemini /mcp status
 ## Summary
 
 **Fixed Issues:**
+
 1. ✅ Session retention period format (added "48h")
 2. ✅ MCP prompt name conflicts (renamed sqlite → sqlite-main)
 3. ✅ Added explicit server control flags
 
 **Performance:**
+
 - ⚡ Instant commands (global install)
 - ✅ Clean initialization
 - ✅ No configuration errors
 
 **Next Steps:**
+
 - Monitor for any new warnings
 - Update to Gemini CLI 0.26+ when released
 - Consider adding more MCP servers as needed

@@ -1,7 +1,7 @@
 # Trading Strategy Specialist
 
 **Category:** Crypto Trading
-**Model:** Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
+**Model:** Claude Sonnet 4.5 (claude-sonnet-4-6)
 **Context Budget:** 4,500 tokens
 **Delegation Trigger:** Trading strategies, signals, risk management, backtesting, performance analysis
 

@@ -7,14 +7,14 @@
 
 import { create } from 'zustand';
 import type {
-    BlastStage,
-    BrainConfig,
-    ChatMessage,
-    GeneratedScript,
-    IntelligenceItem,
-    NotebookProject,
-    PipelineRun,
-    SyncEntry,
+  BlastStage,
+  BrainConfig,
+  ChatMessage,
+  GeneratedScript,
+  IntelligenceItem,
+  NotebookProject,
+  PipelineRun,
+  SyncEntry,
 } from '../types';
 
 export type VoiceConfig = BrainConfig['voice'];
@@ -116,9 +116,10 @@ export const useAVGEStore = create<AVGEStore>((set) => ({
 
   /* ── Pipeline Logs ── */
   logEntries: [],
-  addLogEntry: (level, message) => set((s) => ({
-    logEntries: [...s.logEntries, { time: timeStamp(), level, message }].slice(-200),
-  })),
+  addLogEntry: (level, message) =>
+    set((s) => ({
+      logEntries: [...s.logEntries, { time: timeStamp(), level, message }].slice(-200),
+    })),
   clearLogs: () => set({ logEntries: [] }),
 
   /* ── Project ── */
@@ -128,12 +129,14 @@ export const useAVGEStore = create<AVGEStore>((set) => ({
 
   setActiveProject: (project) => set({ activeProject: project }),
   setSourceUrls: (urls) => set({ sourceUrls: urls }),
-  addSourceUrl: (url) => set((s) => ({
-    sourceUrls: s.sourceUrls.includes(url) ? s.sourceUrls : [...s.sourceUrls, url],
-  })),
-  removeSourceUrl: (url) => set((s) => ({
-    sourceUrls: s.sourceUrls.filter((u) => u !== url),
-  })),
+  addSourceUrl: (url) =>
+    set((s) => ({
+      sourceUrls: s.sourceUrls.includes(url) ? s.sourceUrls : [...s.sourceUrls, url],
+    })),
+  removeSourceUrl: (url) =>
+    set((s) => ({
+      sourceUrls: s.sourceUrls.filter((u) => u !== url),
+    })),
   setBrainContext: (context) => set({ brainContext: context }),
 
   /* ── Script & Assets ── */
@@ -148,9 +151,10 @@ export const useAVGEStore = create<AVGEStore>((set) => ({
   chatLoading: false,
   chatConversationId: null,
 
-  addChatMessage: (message) => set((s) => ({
-    chatMessages: [...s.chatMessages, message],
-  })),
+  addChatMessage: (message) =>
+    set((s) => ({
+      chatMessages: [...s.chatMessages, message],
+    })),
   setChatLoading: (loading) => set({ chatLoading: loading }),
   setChatConversationId: (id) => set({ chatConversationId: id }),
   clearChat: () => set({ chatMessages: [], chatConversationId: null }),
@@ -167,12 +171,23 @@ export const useAVGEStore = create<AVGEStore>((set) => ({
   setSelectedFile: (file) => set({ selectedFile: file }),
 
   /* ── Personality ── */
-  voiceConfig: { formality: 'casual', pacing: 'steady', emotion: 'energetic', perspective: 'first-person' },
-  visualIdentity: { primaryColors: ['#6366f1'], accentColors: ['#22d3ee'], typography: 'modern-sans', thumbnailStyle: 'cinematic' },
+  voiceConfig: {
+    formality: 'casual',
+    pacing: 'steady',
+    emotion: 'energetic',
+    perspective: 'first-person',
+  },
+  visualIdentity: {
+    primaryColors: ['#6366f1'],
+    accentColors: ['#22d3ee'],
+    typography: 'modern-sans',
+    thumbnailStyle: 'cinematic',
+  },
   projectName: '',
 
   setVoiceConfig: (config) => set((s) => ({ voiceConfig: { ...s.voiceConfig, ...config } })),
-  setVisualIdentity: (config) => set((s) => ({ visualIdentity: { ...s.visualIdentity, ...config } })),
+  setVisualIdentity: (config) =>
+    set((s) => ({ visualIdentity: { ...s.visualIdentity, ...config } })),
   setProjectName: (name) => set({ projectName: name }),
 
   /* ── UI ── */

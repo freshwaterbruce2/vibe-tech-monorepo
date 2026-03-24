@@ -1,11 +1,44 @@
 import type { IPCMessage } from '@vibetech/shared-ipc';
-import { createServer, type Server } from 'http';
+import { createServer, type IncomingMessage, type Server } from 'http';
+import { pathToFileURL } from 'node:url';
 import { WebSocket, WebSocketServer } from 'ws';
 import { CommandRouter, type ConnectedClient } from './commandRouter.js';
 import { createHealthHandler, createMetricsHandler, createReadinessHandler } from './health.js';
 
-const PORT = parseInt(process.env.PORT ?? '5004', 10);
-const BRIDGE_SECRET = process.env.BRIDGE_SECRET ?? process.env.IPC_BRIDGE_SECRET;
+const DEFAULT_PORT = parseInt(process.env.PORT ?? '5004', 10);
+
+function resolveRequestPath(req: IncomingMessage): string {
+  try {
+    return new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`).pathname;
+  } catch {
+    return '/';
+  }
+}
+
+function extractBridgeToken(req: IncomingMessage): string | null {
+  const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
+  const queryToken = url.searchParams.get('token');
+  const authHeader = Array.isArray(req.headers.authorization)
+    ? req.headers.authorization[0]
+    : req.headers.authorization;
+  const bridgeHeader = Array.isArray(req.headers['x-bridge-secret'])
+    ? req.headers['x-bridge-secret'][0]
+    : req.headers['x-bridge-secret'];
+
+  if (queryToken) {
+    return queryToken;
+  }
+
+  if (typeof bridgeHeader === 'string' && bridgeHeader.trim().length > 0) {
+    return bridgeHeader.trim();
+  }
+
+  if (typeof authHeader === 'string' && authHeader.trim().length > 0) {
+    return authHeader.replace(/^Bearer\s+/i, '').trim();
+  }
+
+  return null;
+}
 
 interface MessageLogEntry {
   timestamp: number;
@@ -22,12 +55,14 @@ interface BridgeStats {
   clientDisconnections: number;
 }
 
-class IPCBridgeServer {
+export class IPCBridgeServer {
   port: number;
+  bridgeSecret: string | undefined;
   wss: WebSocketServer | null = null;
   httpServer: Server | null = null;
   clients = new Map<string, ConnectedClient>();
   messageLog: MessageLogEntry[] = [];
+  statsInterval: NodeJS.Timeout | null = null;
   stats: BridgeStats = {
     totalMessages: 0,
     messagesByType: {},
@@ -36,37 +71,23 @@ class IPCBridgeServer {
   };
   commandRouter = new CommandRouter();
 
-  constructor(port: number) {
+  constructor(
+    port: number,
+    bridgeSecret = process.env.BRIDGE_SECRET ?? process.env.IPC_BRIDGE_SECRET,
+  ) {
     this.port = port;
+    this.bridgeSecret = bridgeSecret;
   }
 
-  start() {
+  async start(): Promise<number> {
     this.httpServer = createServer((req, res) => {
-      const wss = this.wss;
-      if (!wss) {
-        res.writeHead(503, { 'Content-Type': 'text/plain' });
-        res.end('Service Unavailable: WebSocket server not initialized');
-        return;
-      }
-
-      if (req.url === '/healthz') {
-        createHealthHandler(wss)(req, res);
-      } else if (req.url === '/readyz') {
-        createReadinessHandler(wss)(req, res);
-      } else if (req.url === '/metrics') {
-        createMetricsHandler(wss, this.stats)(req, res);
-      } else {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end(
-          'Not Found\n\nAvailable endpoints:\n- /healthz\n- /readyz\n- /metrics\n- ws://localhost:5004 (WebSocket)\n',
-        );
-      }
+      this.handleHttpRequest(req, res);
     });
 
     this.wss = new WebSocketServer({ server: this.httpServer });
 
-    console.log(`\n\uD83D\uDEA7 IPC Bridge Server starting on port ${this.port}...`);
-    if (BRIDGE_SECRET) {
+    console.log(`\n🚧 IPC Bridge Server starting on port ${this.port}...`);
+    if (this.bridgeSecret) {
       console.log('🔒 Auth enabled: BRIDGE_SECRET is set.');
     } else {
       console.warn('⚠️  Auth disabled: BRIDGE_SECRET is not set. ANYONE CAN CONNECT.');
@@ -76,22 +97,16 @@ class IPCBridgeServer {
       const clientId = `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const clientIp = req.socket.remoteAddress;
 
-      // AUTHENTICATION CHECK
-      if (BRIDGE_SECRET) {
-        const url = new URL(req.url ?? '', `http://${req.headers.host}`);
-        const token = url.searchParams.get('token') ?? req.headers['authorization'];
-
-        // Simple check: support "Bearer <token>" or just "<token>"
-        const cleanToken = token?.replace('Bearer ', '');
-
-        if (cleanToken !== BRIDGE_SECRET) {
-          console.warn(`\n\u{1F6AB} Rejected unauthorized connection from ${clientIp}`);
+      if (this.bridgeSecret) {
+        const token = extractBridgeToken(req);
+        if (token !== this.bridgeSecret) {
+          console.warn(`\n🚫 Rejected unauthorized connection from ${clientIp}`);
           ws.close(1008, 'Unauthorized');
           return;
         }
       }
 
-      console.log(`\n\u2705 New connection: ${clientId} from ${clientIp}`);
+      console.log(`\n✅ New connection: ${clientId} from ${clientIp}`);
       this.stats.clientConnections++;
 
       this.clients.set(clientId, {
@@ -115,7 +130,7 @@ class IPCBridgeServer {
       });
 
       ws.on('close', () => {
-        console.log(`\n\u274C Client disconnected: ${clientId}`);
+        console.log(`\n❌ Client disconnected: ${clientId}`);
         this.stats.clientDisconnections++;
         this.clients.delete(clientId);
         this.broadcastStats();
@@ -128,18 +143,105 @@ class IPCBridgeServer {
       this.sendStats(clientId);
     });
 
-    this.httpServer.listen(this.port, () => {
-      console.log(`\n✅ IPC Bridge Server listening on ws://localhost:${this.port}`);
-      console.log(`\n\uD83D\uCCA8 Health endpoints:`);
-      console.log(`   - http://localhost:${this.port}/healthz (liveness)`);
-      console.log(`   - http://localhost:${this.port}/readyz (readiness)`);
-      console.log(`   - http://localhost:${this.port}/metrics (metrics)`);
-      console.log(`\nReady to bridge NOVA Agent ↔ Vibe Code Studio\n`);
+    await new Promise<void>((resolve) => {
+      this.httpServer!.listen(this.port, resolve);
     });
 
-    setInterval(() => {
+    const address = this.httpServer.address();
+    if (address && typeof address === 'object') {
+      this.port = address.port;
+    }
+
+    console.log(`\n✅ IPC Bridge Server listening on ws://localhost:${this.port}`);
+    console.log('\n📨 Health endpoints:');
+    console.log(`   - http://localhost:${this.port}/healthz (liveness)`);
+    console.log(`   - http://localhost:${this.port}/health (compat alias)`);
+    console.log(`   - http://localhost:${this.port}/readyz (readiness)`);
+    console.log(`   - http://localhost:${this.port}/status (compat alias)`);
+    console.log(`   - http://localhost:${this.port}/metrics (metrics)`);
+    console.log('\nReady to bridge NOVA Agent ↔ Vibe Code Studio\n');
+
+    this.statsInterval = setInterval(() => {
       this.broadcastStats();
     }, 30000);
+
+    return this.port;
+  }
+
+  async stop(): Promise<void> {
+    if (this.statsInterval) {
+      clearInterval(this.statsInterval);
+      this.statsInterval = null;
+    }
+
+    const wss = this.wss;
+    const httpServer = this.httpServer;
+    this.wss = null;
+    this.httpServer = null;
+
+    if (wss) {
+      for (const client of wss.clients) {
+        try {
+          client.close(1001, 'Server shutdown');
+        } catch {}
+      }
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      const closeHttp = () => {
+        if (!httpServer) {
+          resolve();
+          return;
+        }
+
+        httpServer.close((error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          resolve();
+        });
+      };
+
+      if (!wss) {
+        closeHttp();
+        return;
+      }
+
+      wss.close(() => {
+        closeHttp();
+      });
+    });
+  }
+
+  private handleHttpRequest(req: IncomingMessage, res: import('http').ServerResponse) {
+    const wss = this.wss;
+    if (!wss) {
+      res.writeHead(503, { 'Content-Type': 'text/plain' });
+      res.end('Service Unavailable: WebSocket server not initialized');
+      return;
+    }
+
+    const path = resolveRequestPath(req);
+    if (path === '/healthz' || path === '/health') {
+      createHealthHandler(wss)(req, res);
+      return;
+    }
+
+    if (path === '/readyz' || path === '/status') {
+      createReadinessHandler(wss)(req, res);
+      return;
+    }
+
+    if (path === '/metrics') {
+      createMetricsHandler(wss, this.stats)(req, res);
+      return;
+    }
+
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end(
+      `Not Found\n\nAvailable endpoints:\n- /healthz\n- /health\n- /readyz\n- /status\n- /metrics\n- ws://localhost:${this.port} (WebSocket)\n`,
+    );
   }
 
   handleMessage(clientId: string, data: string) {
@@ -190,7 +292,10 @@ class IPCBridgeServer {
       console.log(`\n📨 [${message.source}] ${message.type} → broadcasting to other clients`);
       this.broadcast(message, clientId);
     } catch (error: unknown) {
-      console.error(`\n❌ Failed to parse message from ${clientId}:`, error instanceof Error ? error.message : error);
+      console.error(
+        `\n❌ Failed to parse message from ${clientId}:`,
+        error instanceof Error ? error.message : error,
+      );
     }
   }
 
@@ -228,7 +333,10 @@ class IPCBridgeServer {
           client.ws.send(JSON.stringify(message));
           sentCount++;
         } catch (error: unknown) {
-          console.error(`\n⚠️  Failed to send to ${clientId}:`, error instanceof Error ? error.message : error);
+          console.error(
+            `\n⚠️  Failed to send to ${clientId}:`,
+            error instanceof Error ? error.message : error,
+          );
         }
       }
     }
@@ -250,8 +358,10 @@ class IPCBridgeServer {
       if (client.ws.readyState === WebSocket.OPEN) {
         try {
           client.ws.send(JSON.stringify(statsMessage));
-        } catch (e) {
-          console.error(`Failed to send stats to client: ${e instanceof Error ? e.message : e}`);
+        } catch (error: unknown) {
+          console.error(
+            `Failed to send stats to client: ${error instanceof Error ? error.message : error}`,
+          );
         }
       }
     }
@@ -270,8 +380,10 @@ class IPCBridgeServer {
     };
     try {
       client.ws.send(JSON.stringify(statsMessage));
-    } catch (e) {
-      console.error(`Failed to send stats to ${clientId}: ${e instanceof Error ? e.message : e}`);
+    } catch (error: unknown) {
+      console.error(
+        `Failed to send stats to ${clientId}: ${error instanceof Error ? error.message : error}`,
+      );
     }
   }
 
@@ -303,13 +415,11 @@ class IPCBridgeServer {
 
   async handleCommandRequest(clientId: string, message: IPCMessage) {
     const payload = message.payload as Record<string, unknown>;
-    console.log(
-      `\n\ud83d\udcaf Command request from ${clientId}: ${String(payload?.text ?? '')}`,
-    );
+    console.log(`\n💯 Command request from ${clientId}: ${String(payload?.text ?? '')}`);
     try {
       const parsedCommand = this.commandRouter.parseCommand(message);
       if (!parsedCommand) return;
-      console.log(`   \u2192 Routing to ${parsedCommand.target}: ${parsedCommand.command}`);
+      console.log(`   → Routing to ${parsedCommand.target}: ${parsedCommand.command}`);
       const routeResult = await this.commandRouter.routeCommand(
         parsedCommand,
         this.clients,
@@ -323,10 +433,10 @@ class IPCBridgeServer {
         routeResult.result,
         null,
       );
-      console.log(`   \u2714 Command completed successfully`);
+      console.log('   ✔ Command completed successfully');
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`   \u2718 Command failed: ${errorMessage}`);
+      console.error(`   ✘ Command failed: ${errorMessage}`);
       this.commandRouter.sendCommandResponse(
         this.clients,
         clientId,
@@ -339,26 +449,30 @@ class IPCBridgeServer {
   }
 
   handleCommandResult(clientId: string, message: IPCMessage) {
-    console.log(`\n\ud83d\udce6 Command result from ${clientId}`);
+    console.log(`\n📦 Command result from ${clientId}`);
     const handled = this.commandRouter.handleCommandResponse(message);
-    if (handled) console.log(`   \u2714 Response delivered to waiting command`);
+    if (handled) console.log('   ✔ Response delivered to waiting command');
   }
 }
 
-const server = new IPCBridgeServer(PORT);
-server.start();
+const isEntrypoint = process.argv[1]
+  ? import.meta.url === pathToFileURL(process.argv[1]).href
+  : false;
 
-const shutdown = () => {
-  console.log('\n\n\uD83D\uDEAA Shutting down IPC Bridge Server...');
-  if (server.wss) {
-    server.wss.close(() => {
-      if (server.httpServer) server.httpServer.close(() => process.exit(0));
-      else process.exit(0);
+if (isEntrypoint) {
+  const server = new IPCBridgeServer(DEFAULT_PORT);
+  void server.start().catch((error) => {
+    console.error('\n❌ Failed to start IPC Bridge Server:', error);
+    process.exit(1);
+  });
+
+  const shutdown = () => {
+    console.log('\n\n🚪 Shutting down IPC Bridge Server...');
+    void server.stop().finally(() => {
+      process.exit(0);
     });
-  } else {
-    process.exit(0);
-  }
-};
+  };
 
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+}

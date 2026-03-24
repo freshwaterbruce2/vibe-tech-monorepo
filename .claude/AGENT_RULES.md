@@ -17,8 +17,8 @@ cat MONOREPO_RULES.md
 
 ### 2. **VERIFY YOUR ROLE**
 
-- **Claude Opus 4.1 / Claude Code**: You handle PLANNING ONLY
-- **Claude Sonnet 4.5**: You handle CODING ONLY
+- **Claude Opus 4.6 / Claude Code**: You handle PLANNING ONLY
+- **Claude Sonnet 4.6**: You handle CODING ONLY
 - **Other Models**: Follow task-specific instructions
 
 ---
@@ -35,7 +35,7 @@ Before touching ANY code:
 
 ### **STEP 2: PLANNING (Opus/Claude Code Only)**
 
-If you are Opus 4.1 or Claude Code and planning is needed:
+If you are Opus 4.6 or Claude Code and planning is needed:
 
 ```yaml
 Create Plan:
@@ -49,9 +49,9 @@ Create Plan:
       - Testing approach
 ```
 
-### **STEP 3: EXECUTION (Sonnet 4.5 Only)**
+### **STEP 3: EXECUTION (Sonnet 4.6 Only)**
 
-If you are Sonnet 4.5:
+If you are Sonnet 4.6:
 
 1. **WAIT for approved plan** from Opus/Claude Code
 2. **FOLLOW plan exactly** - no deviations
@@ -132,14 +132,14 @@ EXAMPLES:
 
 ## 🎯 AGENT-SPECIFIC BEHAVIORS
 
-### **For Claude Opus 4.1 / Claude Code:**
+### **For Claude Opus 4.6 / Claude Code:**
 
 - **PRIMARY ROLE**: Planning and Architecture
 - **NEVER**: Write implementation code directly
 - **ALWAYS**: Create detailed plans before delegation
 - **OUTPUT**: Planning documents in `.deepcode/plans/`
 
-### **For Claude Sonnet 4.5:**
+### **For Claude Sonnet 4.6:**
 
 - **PRIMARY ROLE**: Code Implementation
 - **NEVER**: Make architectural decisions independently

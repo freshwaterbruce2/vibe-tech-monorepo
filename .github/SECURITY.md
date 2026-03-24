@@ -2,11 +2,11 @@
 
 ## Supported Versions
 
-| Version | Supported |
-| ------- | --------- |
-| main    | Yes       |
-| develop | Yes       |
-| feature/* | No (development only) |
+| Version    | Supported             |
+| ---------- | --------------------- |
+| main       | Yes                   |
+| develop    | Yes                   |
+| feature/\* | No (development only) |
 
 ## Reporting a Vulnerability
 

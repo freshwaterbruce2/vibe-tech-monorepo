@@ -8,7 +8,7 @@
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm run dev || tsx watch src/index.ts || echo 'Dev not configured'",
+        "command": "pnpm run dev",
         "cwd": "backend/ipc-bridge"
       }
     },
@@ -17,14 +17,38 @@
       "outputs": ["{projectRoot}/dist"],
       "cache": true,
       "options": {
-        "command": "pnpm run build || tsc || echo 'Build not configured'",
+        "command": "pnpm run build",
         "cwd": "backend/ipc-bridge"
       }
     },
     "start": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm run start || node dist/index.js || echo 'Start not configured'",
+        "command": "pnpm run start",
+        "cwd": "backend/ipc-bridge"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "pnpm run typecheck",
+        "cwd": "backend/ipc-bridge"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "pnpm run lint",
+        "cwd": "backend/ipc-bridge"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "pnpm run test",
         "cwd": "backend/ipc-bridge"
       }
     }

@@ -3,7 +3,7 @@ name: Linux Production Shell Scripts
 description: This skill should be used when the user asks to "create bash scripts", "automate Linux tasks", "monitor system resources", "backup files", "manage users", or "write production shell scripts". It provides ready-to-use shell script templates for system administration.
 metadata:
   author: zebbern
-  version: "1.1"
+  version: '1.1'
 ---
 
 # Linux Production Shell Scripts
@@ -15,11 +15,13 @@ Provide production-ready shell script templates for common Linux system administ
 ## Prerequisites
 
 ### Required Environment
+
 - Linux/Unix system (bash shell)
 - Appropriate permissions for tasks
 - Required utilities installed (rsync, openssl, etc.)
 
 ### Required Knowledge
+
 - Basic bash scripting
 - Linux file system structure
 - System administration concepts
@@ -36,6 +38,7 @@ Provide production-ready shell script templates for common Linux system administ
 ### Phase 1: File Backup Scripts
 
 **Basic Directory Backup**
+
 ```bash
 #!/bin/bash
 backup_dir="/path/to/backup"
@@ -47,6 +50,7 @@ echo "Backup completed: backup_$(date +%Y%m%d_%H%M%S).tar.gz"
 ```
 
 **Remote Server Backup**
+
 ```bash
 #!/bin/bash
 source_dir="/path/to/source"
@@ -58,6 +62,7 @@ echo "Files backed up to remote server."
 ```
 
 **Backup Rotation Script**
+
 ```bash
 #!/bin/bash
 backup_dir="/path/to/backups"
@@ -73,6 +78,7 @@ echo "Backup rotation completed."
 ```
 
 **Database Backup Script**
+
 ```bash
 #!/bin/bash
 database_name="your_database"
@@ -89,6 +95,7 @@ echo "Database backup created: $output_file.gz"
 ### Phase 2: System Monitoring Scripts
 
 **CPU Usage Monitor**
+
 ```bash
 #!/bin/bash
 threshold=90
@@ -104,6 +111,7 @@ fi
 ```
 
 **Disk Space Monitor**
+
 ```bash
 #!/bin/bash
 threshold=90
@@ -119,6 +127,7 @@ fi
 ```
 
 **CPU Usage Logger**
+
 ```bash
 #!/bin/bash
 output_file="cpu_usage_log.txt"
@@ -131,6 +140,7 @@ echo "CPU usage logged."
 ```
 
 **System Health Check**
+
 ```bash
 #!/bin/bash
 output_file="system_health_check.txt"
@@ -162,6 +172,7 @@ echo "System health check saved to $output_file"
 ### Phase 3: User Management Scripts
 
 **User Account Creation**
+
 ```bash
 #!/bin/bash
 username="newuser"
@@ -172,13 +183,14 @@ if id "$username" &>/dev/null; then
 else
     useradd -m -s /bin/bash "$username"
     echo "User $username created."
-    
+
     # Set password interactively
     passwd "$username"
 fi
 ```
 
 **Password Expiry Checker**
+
 ```bash
 #!/bin/bash
 output_file="password_expiry_report.txt"
@@ -200,6 +212,7 @@ echo "Password expiry report saved to $output_file"
 ### Phase 4: Security Scripts
 
 **Password Generator**
+
 ```bash
 #!/bin/bash
 length=${1:-16}
@@ -210,6 +223,7 @@ echo "Generated password: $password"
 ```
 
 **File Encryption Script**
+
 ```bash
 #!/bin/bash
 file="$1"
@@ -235,6 +249,7 @@ fi
 ### Phase 5: Log Analysis Scripts
 
 **Error Log Extractor**
+
 ```bash
 #!/bin/bash
 logfile="${1:-/var/log/syslog}"
@@ -247,6 +262,7 @@ echo "Total errors found: $(wc -l < "$output_file")"
 ```
 
 **Web Server Log Analyzer**
+
 ```bash
 #!/bin/bash
 log_file="${1:-/var/log/apache2/access.log}"
@@ -267,6 +283,7 @@ awk '{print $9}' "$log_file" | sort | uniq -c | sort -rn
 ### Phase 6: Network Scripts
 
 **Network Connectivity Checker**
+
 ```bash
 #!/bin/bash
 hosts=("8.8.8.8" "1.1.1.1" "google.com")
@@ -284,6 +301,7 @@ done
 ```
 
 **Website Uptime Checker**
+
 ```bash
 #!/bin/bash
 websites=("https://google.com" "https://github.com")
@@ -301,6 +319,7 @@ done
 ```
 
 **Network Interface Info**
+
 ```bash
 #!/bin/bash
 interface="${1:-eth0}"
@@ -316,6 +335,7 @@ ip route | grep "$interface"
 ### Phase 7: Automation Scripts
 
 **Automated Package Installation**
+
 ```bash
 #!/bin/bash
 packages=("vim" "htop" "curl" "wget" "git")
@@ -335,6 +355,7 @@ echo "Package installation completed."
 ```
 
 **Task Scheduler (Cron Setup)**
+
 ```bash
 #!/bin/bash
 scheduled_task="/path/to/your_script.sh"
@@ -346,6 +367,7 @@ echo "Task scheduled: $schedule_time $scheduled_task"
 ```
 
 **Service Restart Script**
+
 ```bash
 #!/bin/bash
 service_name="${1:-apache2}"
@@ -365,6 +387,7 @@ fi
 ### Phase 8: File Operations
 
 **Directory Synchronization**
+
 ```bash
 #!/bin/bash
 source_dir="/path/to/source"
@@ -376,6 +399,7 @@ echo "Directories synchronized successfully."
 ```
 
 **Data Cleanup Script**
+
 ```bash
 #!/bin/bash
 directory="${1:-/tmp}"
@@ -389,6 +413,7 @@ echo "Cleanup completed."
 ```
 
 **Folder Size Checker**
+
 ```bash
 #!/bin/bash
 folder_path="${1:-.}"
@@ -406,6 +431,7 @@ du -sh "$folder_path"
 ### Phase 9: System Information
 
 **System Info Collector**
+
 ```bash
 #!/bin/bash
 output_file="system_info_$(hostname)_$(date +%Y%m%d).txt"
@@ -440,6 +466,7 @@ echo "System info saved to $output_file"
 ### Phase 10: Git and Development
 
 **Git Repository Updater**
+
 ```bash
 #!/bin/bash
 git_repos=("/path/to/repo1" "/path/to/repo2")
@@ -460,6 +487,7 @@ echo "All repositories updated."
 ```
 
 **Remote Script Execution**
+
 ```bash
 #!/bin/bash
 remote_server="${1:-user@remote-server}"
@@ -474,25 +502,26 @@ echo "Remote script executed on $remote_server"
 
 ### Common Script Patterns
 
-| Pattern | Purpose |
-|---------|---------|
-| `#!/bin/bash` | Shebang for bash |
-| `$(date +%Y%m%d)` | Date formatting |
-| `$((expression))` | Arithmetic |
-| `${var:-default}` | Default value |
-| `"$@"` | All arguments |
+| Pattern           | Purpose          |
+| ----------------- | ---------------- |
+| `#!/bin/bash`     | Shebang for bash |
+| `$(date +%Y%m%d)` | Date formatting  |
+| `$((expression))` | Arithmetic       |
+| `${var:-default}` | Default value    |
+| `"$@"`            | All arguments    |
 
 ### Useful Commands
 
-| Command | Purpose |
-|---------|---------|
-| `chmod +x script.sh` | Make executable |
-| `./script.sh` | Run script |
-| `nohup ./script.sh &` | Run in background |
-| `crontab -e` | Edit cron jobs |
-| `source script.sh` | Run in current shell |
+| Command               | Purpose              |
+| --------------------- | -------------------- |
+| `chmod +x script.sh`  | Make executable      |
+| `./script.sh`         | Run script           |
+| `nohup ./script.sh &` | Run in background    |
+| `crontab -e`          | Edit cron jobs       |
+| `source script.sh`    | Run in current shell |
 
 ### Cron Format
+
 Minute(0-59) Hour(0-23) Day(1-31) Month(1-12) Weekday(0-7, 0/7=Sun)
 
 ## Constraints and Limitations

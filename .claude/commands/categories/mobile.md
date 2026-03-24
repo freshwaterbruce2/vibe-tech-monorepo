@@ -11,10 +11,10 @@ category: app-type
 
 ## Applies To
 
-| Project | Framework |
-|---------|-----------|
-| `apps/nova-mobile-app` | React Native + Expo |
-| `apps/vibe-tutor` | Capacitor (if mobile) |
+| Project                | Framework             |
+| ---------------------- | --------------------- |
+| `apps/nova-mobile-app` | React Native + Expo   |
+| `apps/vibe-tutor`      | Capacitor (if mobile) |
 
 ## Tech Stack
 
@@ -67,6 +67,7 @@ apps/{mobile-app}/
 ## Critical Patterns
 
 ### Navigation Type Safety
+
 ```typescript
 // navigation/types.ts
 export type RootStackParamList = {
@@ -83,6 +84,7 @@ declare global {
 ```
 
 ### Screen Component
+
 ```typescript
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 
@@ -103,6 +105,7 @@ export function ProfileScreen({ route, navigation }: Props) {
 ```
 
 ### Data Fetching
+
 ```typescript
 export function useUser(userId: string) {
   return useQuery({
@@ -114,6 +117,7 @@ export function useUser(userId: string) {
 ```
 
 ### Secure Storage
+
 ```typescript
 import * as SecureStore from 'expo-secure-store';
 
@@ -129,6 +133,7 @@ export async function getToken() {
 ## Performance Rules
 
 ### Lists
+
 ```typescript
 // ✅ Good - FlatList for long lists
 <FlatList
@@ -144,6 +149,7 @@ export async function getToken() {
 ```
 
 ### Memoization
+
 ```typescript
 // Memoize expensive components
 const MemoizedCard = React.memo(ItemCard);
@@ -169,11 +175,13 @@ const handlePress = useCallback(() => {
 ## Common Issues
 
 ### Metro Bundler
+
 ```bash
 pnpm start --clear  # Clear cache
 ```
 
 ### Native Modules
+
 ```bash
 cd ios && pod install && cd ..
 pnpm android --clean

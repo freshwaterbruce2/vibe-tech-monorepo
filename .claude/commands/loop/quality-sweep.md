@@ -48,6 +48,7 @@ npx nx show projects 2>/dev/null | sort
 Pick the project at `projectIndex` from the sorted list. Skip projects in `processedProjects` or `failedProjects`. If all processed, STOP.
 
 Skip these projects entirely:
+
 - `crypto-enhanced`
 - Any project name containing `e2e` or `storybook`
 
@@ -60,6 +61,7 @@ pnpm nx lint PROJECT_NAME --fix 2>&1 | tail -40
 Record the output. If lint passes cleanly, move to step 4.
 
 If lint errors remain after `--fix`, read ONLY the files with errors. Apply fixes using the Edit tool:
+
 - Fix unused imports: remove them
 - Fix missing return types: add explicit types
 - Fix `any` types: replace with proper types where obvious
@@ -76,6 +78,7 @@ pnpm nx typecheck PROJECT_NAME 2>&1 | tail -40
 If typecheck passes, move to step 5.
 
 If typecheck errors exist:
+
 - Read the erroring files
 - Fix obvious type errors (missing properties, wrong types, import issues)
 - Do NOT attempt complex refactors
@@ -115,12 +118,14 @@ EOF
 ### 6. Handle Pre-Commit Result
 
 If commit succeeds:
+
 - Reset `consecutivePrecommitFailures` to 0
 - Increment `commitCount`
 - Add project to `processedProjects`
 - Log success
 
 If pre-commit hook fails:
+
 - Increment `consecutivePrecommitFailures`
 - Unstage all changes: `git restore --staged .`
 - Add project to `failedProjects`
@@ -143,6 +148,7 @@ If merge fails, log the error but continue on the loop branch. Do NOT force anyt
 ### 8. Update State
 
 Write updated state back to `D:/logs/loop-sessions/YYYYMMDD/quality-sweep-state.json`:
+
 - Increment `projectIndex`
 - Update `commitCount`
 - Update `processedProjects` or `failedProjects`
@@ -159,12 +165,14 @@ echo "[$(date -Iseconds)] [quality-sweep] [PROJECT_NAME] lint: N errors fixed, t
 ## File Scope Rules
 
 Loop 1 (this loop) ONLY touches source code:
+
 - `apps/*/src/**`
 - `packages/*/src/**`
 - `packages/*/index.ts`
 - `apps/*/tsconfig*.json` (only to fix lint scope issues)
 
 NEVER touch:
+
 - Root config files (nx.json, package.json, .gitignore)
 - `docs/`, `tmp/`, `scripts/`
 - Build artifacts, test fixtures
@@ -173,6 +181,7 @@ NEVER touch:
 ## Recovery
 
 If something goes wrong:
+
 1. Check D:\logs\loop-sessions\YYYYMMDD\loop.log
 2. `git log --oneline -20` to see what was committed
 3. `git revert HEAD~N..HEAD` to undo N commits

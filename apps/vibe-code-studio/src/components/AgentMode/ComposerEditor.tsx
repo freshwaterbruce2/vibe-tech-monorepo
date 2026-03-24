@@ -2,14 +2,16 @@ import React from 'react';
 import { Editor as MonacoEditor } from '@monaco-editor/react';
 import { X } from 'lucide-react';
 
-import { vibeTheme } from '../../styles/theme';
-import { ComposerFile } from './ComposerMode.types';
+import type { ComposerFile } from './ComposerMode.types';
 import { 
   EditorSection, 
   EditorHeader, 
   ActionButton, 
   EditorContainer, 
-  EditorToolbar 
+  EditorToolbar,
+  EditorWarningText,
+  EditorWrapper,
+  EmptyEditorState
 } from './ComposerMode.styles';
 
 export interface ComposerEditorProps {
@@ -46,7 +48,7 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                 {selectedFile.isDirty && (
                   <>
                     <span>•</span>
-                    <span style={{ color: vibeTheme.colors.warning }}>Modified</span>
+                    <EditorWarningText>Modified</EditorWarningText>
                   </>
                 )}
               </div>
@@ -56,7 +58,7 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                 </ActionButton>
               </div>
             </EditorToolbar>
-            <div style={{ flex: 1 }}>
+            <EditorWrapper>
               <MonacoEditor
                 language={selectedFile.language}
                 value={selectedFile.content}
@@ -76,19 +78,13 @@ export const ComposerEditor: React.FC<ComposerEditorProps> = ({
                   insertSpaces: true,
                 }}
               />
-            </div>
+            </EditorWrapper>
           </EditorContainer>
         </>
       ) : (
-        <div style={{ 
-          flex: 1, 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center',
-          color: vibeTheme.colors.textSecondary
-        }}>
+        <EmptyEditorState>
           Select a file or add a new one to begin editing
-        </div>
+        </EmptyEditorState>
       )}
     </EditorSection>
   );

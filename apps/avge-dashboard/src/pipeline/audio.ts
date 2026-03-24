@@ -147,7 +147,7 @@ export async function synthesizeSegments(
     });
 
     // Rate limit: ~300 req/min for TTS, add small delay
-    await new Promise(r => setTimeout(r, 200));
+    await new Promise((r) => setTimeout(r, 200));
   }
 
   return assets;

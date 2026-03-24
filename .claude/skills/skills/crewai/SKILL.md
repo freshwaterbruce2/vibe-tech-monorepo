@@ -1,6 +1,6 @@
 ---
 name: crewai
-description: "Expert in CrewAI - the leading role-based multi-agent framework used by 60% of Fortune 500 companies. Covers agent design with roles and goals, task definition, crew orchestration, process types (sequential, hierarchical, parallel), memory systems, and flows for complex workflows. Essential for building collaborative AI agent teams. Use when: crewai, multi-agent team, agent roles, crew of agents, role-based agents."
+description: 'Expert in CrewAI - the leading role-based multi-agent framework used by 60% of Fortune 500 companies. Covers agent design with roles and goals, task definition, crew orchestration, process types (sequential, hierarchical, parallel), memory systems, and flows for complex workflows. Essential for building collaborative AI agent teams. Use when: crewai, multi-agent team, agent roles, crew of agents, role-based agents.'
 source: vibeship-spawner-skills (Apache 2.0)
 ---
 
@@ -204,9 +204,10 @@ Overlapping responsibilities.
 Poor task delegation.
 
 **Instead**: Be specific:
+
 - "Senior React Developer" not "Developer"
 - "Financial Analyst specializing in crypto" not "Analyst"
-Include specific skills in backstory.
+  Include specific skills in backstory.
 
 ### ❌ Missing Expected Outputs
 
@@ -216,10 +217,11 @@ Hard to chain tasks.
 
 **Instead**: Always specify expected_output:
 expected_output: |
-  A JSON object with:
-  - summary: string (100 words max)
-  - key_points: list of strings
-  - confidence: float 0-1
+A JSON object with:
+
+- summary: string (100 words max)
+- key_points: list of strings
+- confidence: float 0-1
 
 ### ❌ Too Many Agents
 

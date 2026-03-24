@@ -15,7 +15,6 @@ Execute:
 powershell -Command "Get-ChildItem -Path 'D:\planning-files' -Directory -Recurse -Depth 2 | Where-Object { $_.Name -match '^\d{8}-\d{6}$' } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName"
 ```
 
-
 Store this path as the active session directory.
 
 ## Step 2: Read task_plan.md
@@ -23,6 +22,7 @@ Store this path as the active session directory.
 Read the task_plan.md file from the session directory.
 
 Extract and display:
+
 - Session ID
 - Project name
 - Status (in_progress/completed/blocked)
@@ -34,6 +34,7 @@ Extract and display:
 Read the progress.md file from the session directory.
 
 Extract and display:
+
 - Last timeline entry
 - Recent actions completed (last 5)
 - Any errors encountered
@@ -45,7 +46,6 @@ Execute:
 ```bash
 powershell -Command "Invoke-RestMethod -Uri 'http://localhost:3100/api/planning/sessions/active' -Method GET -ErrorAction SilentlyContinue | ConvertTo-Json -Depth 3"
 ```
-
 
 ## Step 5: Present Status Summary
 

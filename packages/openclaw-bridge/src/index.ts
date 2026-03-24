@@ -137,7 +137,7 @@ export class OpenClawBridge extends EventEmitter {
     }
 
     /** Connect to the IPC Bridge */
-    connect(): Promise<void> {
+    async connect(): Promise<void> {
         return new Promise((resolve, reject) => {
             this.log(`Connecting to ${this.url}...`);
             this.ws = new WebSocket(this.url);
@@ -348,7 +348,7 @@ export class OpenClawBridge extends EventEmitter {
         }));
     }
 
-    private waitForResponse(correlationId: string, timeoutMs: number): Promise<unknown> {
+    private async waitForResponse(correlationId: string, timeoutMs: number): Promise<unknown> {
         return new Promise((resolve, reject) => {
             const timer = setTimeout(() => {
                 this.pending.delete(correlationId);

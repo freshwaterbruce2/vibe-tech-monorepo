@@ -53,16 +53,16 @@ Use Stripe test mode with real test cards for all development
 
 ## ⚠️ Sharp Edges
 
-| Issue | Severity | Solution |
-|-------|----------|----------|
-| Not verifying webhook signatures | critical | # Always verify signatures: |
-| JSON middleware parsing body before webhook can verify | critical | # Next.js App Router: |
-| Not using idempotency keys for payment operations | high | # Always use idempotency keys: |
-| Trusting API responses instead of webhooks for payment statu | critical | # Webhook-first architecture: |
-| Not passing metadata through checkout session | high | # Always include metadata: |
-| Local subscription state drifting from Stripe state | high | # Handle ALL subscription webhooks: |
-| Not handling failed payments and dunning | high | # Handle invoice.payment_failed: |
-| Different code paths or behavior between test and live mode | high | # Separate all keys: |
+| Issue                                                        | Severity | Solution                            |
+| ------------------------------------------------------------ | -------- | ----------------------------------- |
+| Not verifying webhook signatures                             | critical | # Always verify signatures:         |
+| JSON middleware parsing body before webhook can verify       | critical | # Next.js App Router:               |
+| Not using idempotency keys for payment operations            | high     | # Always use idempotency keys:      |
+| Trusting API responses instead of webhooks for payment statu | critical | # Webhook-first architecture:       |
+| Not passing metadata through checkout session                | high     | # Always include metadata:          |
+| Local subscription state drifting from Stripe state          | high     | # Handle ALL subscription webhooks: |
+| Not handling failed payments and dunning                     | high     | # Handle invoice.payment_failed:    |
+| Different code paths or behavior between test and live mode  | high     | # Separate all keys:                |
 
 ## Related Skills
 

@@ -78,6 +78,13 @@ describe('BrainGymHub', () => {
     expect(lockedButton).toBeDisabled();
   });
 
+  it('keeps Math Adventure available at level 0', () => {
+    render(<BrainGymHub userTokens={0} onEarnTokens={vi.fn()} onClose={vi.fn()} />);
+
+    const mathAdventureButton = screen.getByRole('button', { name: /play math adventure/i });
+    expect(mathAdventureButton).toBeEnabled();
+  });
+
   it('unlocks Pattern Quest when saved level is 2 or higher', () => {
     mocks.storeGet.mockReturnValue({
       chestProgress: 0,

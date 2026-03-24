@@ -1,7 +1,7 @@
 # Nx Workspace Specialist
 
 **Category:** Monorepo Infrastructure
-**Model:** Claude Haiku 4.5 (claude-haiku-4-5)
+**Model:** Claude Haiku 4.5 (claude-haiku-4-5-20251001)
 **Context Budget:** 3,000 tokens
 **Delegation Trigger:** nx, affected, project graph, cache, workspace health, nx commands, nx reset, task runner
 

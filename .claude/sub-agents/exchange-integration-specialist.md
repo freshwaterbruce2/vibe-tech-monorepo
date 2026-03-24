@@ -1,7 +1,7 @@
 # Exchange Integration Specialist
 
 **Category:** Crypto Trading
-**Model:** Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
+**Model:** Claude Sonnet 4.5 (claude-sonnet-4-6)
 **Context Budget:** 5,000 tokens
 **Delegation Trigger:** Kraken API, WebSocket, authentication, nonce, API errors, rate limiting
 
