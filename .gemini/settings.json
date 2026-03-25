@@ -6,16 +6,19 @@
       "maxAge": "48h"
     },
     "enablePromptCompletion": true,
-    "defaultApprovalMode": "auto_edit"
+    "defaultApprovalMode": "auto_edit",
+    "maxAttempts": 10
   },
   "ui": {
     "showLineNumbers": true,
     "showModelInfoInChat": true,
     "showCitations": true,
-    "showMemoryUsage": true
+    "showMemoryUsage": true,
+    "inlineThinkingMode": "off"
   },
   "model": {
-    "name": "gemini-2.5-pro"
+    "name": "gemini-3.1-pro",
+    "compressionThreshold": 0.9
   },
   "generationConfig": {
     "thinkingLevel": "HIGH",
@@ -55,7 +58,10 @@
       "enabled": true
     },
     "toolApprovalPolicy": "auto",
-    "allowedPaths": ["C:\\dev", "D:\\"]
+    "allowedPaths": ["C:\\dev", "D:\\"],
+    "enableConseca": true,
+    "autoAddToPolicyByDefault": true,
+    "enablePermanentToolApproval": true
   },
   "mcpServers": {
     "nx-mcp": {
@@ -69,7 +75,7 @@
     },
     "filesystem": {
       "type": "stdio",
-      "command": "C:\\Users\\fresh_zxae3v6\\AppData\\Roaming\\npm\\npx.ps1",
+      "command": "C:\\Users\\fresh_zxae3v6\\AppData\\Roaming\\fnm\\aliases\\default\\npx.cmd",
       "args": [
         "-y",
         "@modelcontextprotocol/server-filesystem",
@@ -86,12 +92,6 @@
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/.local/bin/uvx.exe",
       "args": ["mcp-server-sqlite", "--db-path", "D:/databases/database.db"],
-      "trust": true
-    },
-    "sqlite-trading": {
-      "type": "stdio",
-      "command": "C:/Users/fresh_zxae3v6/.local/bin/uvx.exe",
-      "args": ["mcp-server-sqlite", "--db-path", "D:/databases/trading.db"],
       "trust": true
     },
     "desktop-commander": {
@@ -123,7 +123,8 @@
     "skills": true,
     "plan": true,
     "directWebFetch": true,
-    "modelSteering": true
+    "modelSteering": true,
+    "topicUpdateNarration": true
   },
   "advanced": {
     "autoConfigureMemory": true,

@@ -45,11 +45,6 @@
       "command": "C:/Users/fresh_zxae3v6/.local/bin/uvx.exe",
       "args": ["mcp-server-sqlite", "--db-path", "D:/databases/database.db"]
     },
-    "sqlite-trading": {
-      "type": "stdio",
-      "command": "C:/Users/fresh_zxae3v6/.local/bin/uvx.exe",
-      "args": ["mcp-server-sqlite", "--db-path", "D:/databases/trading.db"]
-    },
     "skills": {
       "type": "stdio",
       "command": "node",
