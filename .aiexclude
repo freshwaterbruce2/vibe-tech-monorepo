@@ -34,7 +34,8 @@ build/
 out/
 .nx/
 target/
-**/target/
+**/target/**
+**/.cargo/**
 .turbo/
 .angular/
 storybook-static/
