@@ -1,6 +1,6 @@
 # MCP Server Configuration & Troubleshooting
 
-Last Updated: 2026-02-08
+Last Updated: 2026-03-25
 Status: ACTIVE
 
 ## Canonical Server List
@@ -12,7 +12,6 @@ Status: ACTIVE
 | `codeberg`          | `node apps/mcp-codeberg/dist/index.js`        | GitHub API integration                   |
 | `nx-mcp`            | `npx nx-mcp@latest`                           | Nx workspace management                  |
 | `sqlite`            | `npx @modelcontextprotocol/server-sqlite`     | Main DB (D:\databases\database.db)       |
-| `sqlite-trading`    | `npx @modelcontextprotocol/server-sqlite`     | Trading DB (D:\databases\trading.db)     |
 | `skills`            | `node apps/mcp-skills-server/dist/index.js`   | Agent skills system                      |
 | `playwright`        | `npx @playwright/mcp@latest`                  | Browser automation                       |
 | `chrome-devtools`   | `npx chrome-devtools-mcp@latest`              | Advanced browser debugging & performance |
@@ -30,7 +29,6 @@ Status: ACTIVE
 | codeberg          |      Y      |       Y        |    Y    |     Y      |     Y     |
 | nx-mcp            |      Y      |       Y        |    Y    |     Y      |     Y     |
 | sqlite            |      Y      |       Y        |    Y    |     Y      |     Y     |
-| sqlite-trading    |      Y      |       Y        |    Y    |     Y      |     Y     |
 | skills            |      Y      |       Y        |    Y    |     Y      |     Y     |
 | playwright        |      Y      |       Y        |    Y    |     Y      |     Y     |
 | chrome-devtools   |      Y      |       -        |    -    |     -      |     -     |
@@ -89,7 +87,6 @@ Test-Path C:\dev\apps\desktop-commander-v3\dist\mcp.js
 
 # Verify databases exist
 Test-Path D:\databases\database.db
-Test-Path D:\databases\trading.db
 
 # Validate JSON configs
 node -e "JSON.parse(require('fs').readFileSync('C:/dev/.mcp.json','utf8')); console.log('OK')"
