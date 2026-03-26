@@ -29,18 +29,18 @@
     />
     <style>
       :root {
-        /* Vibe Tutor neon palette */
-        --background-main: #06131f;
-        --background-card: #0d1e2f;
-        --background-surface: #14304a;
+        /* Vibe Tutor neon palette — purple/pink glassmorphism */
+        --background-main: #0c0618;
+        --background-card: #160d2a;
+        --background-surface: #1e1040;
         --background: var(--background-main);
-        --glass-surface: rgba(34, 211, 238, 0.12);
-        --glass-border: rgba(34, 211, 238, 0.26);
+        --glass-surface: rgba(168, 85, 247, 0.12);
+        --glass-border: rgba(168, 85, 247, 0.28);
 
         /* Primary accents */
-        --primary-accent: #22d3ee; /* Neon cyan */
-        --secondary-accent: #7cff8b; /* Neon lime */
-        --tertiary-accent: #ff5fd2; /* Hot pink */
+        --primary-accent: #a855f7; /* Neon purple */
+        --secondary-accent: #ec4899; /* Hot pink */
+        --tertiary-accent: #ff5fd2; /* Magenta */
         --quaternary-accent: #fbbf24; /* Solar amber */
 
         /* Text Colors */
@@ -50,16 +50,16 @@
         --text-glow: #ffffff;
 
         /* Border & Effects */
-        --border-color: rgba(34, 211, 238, 0.22);
-        --border-hover: rgba(124, 255, 139, 0.45);
-        --shadow-glow: 0 16px 42px rgba(6, 19, 31, 0.42);
+        --border-color: rgba(168, 85, 247, 0.24);
+        --border-hover: rgba(236, 72, 153, 0.50);
+        --shadow-glow: 0 16px 42px rgba(12, 6, 24, 0.52);
 
         /* Gradients */
         --gradient-primary: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
         --gradient-surface: linear-gradient(
           135deg,
-          rgba(34, 211, 238, 0.14),
-          rgba(255, 95, 210, 0.08)
+          rgba(168, 85, 247, 0.14),
+          rgba(236, 72, 153, 0.08)
         );
         --gradient-glow: linear-gradient(135deg, var(--primary-accent), var(--tertiary-accent));
 
@@ -74,7 +74,7 @@
           0 0 10px var(--tertiary-accent), 0 0 20px var(--tertiary-accent),
           0 0 36px rgba(255, 95, 210, 0.55);
         --neon-glow-soft:
-          0 0 18px rgba(34, 211, 238, 0.32), 0 0 34px rgba(255, 95, 210, 0.18);
+          0 0 18px rgba(168, 85, 247, 0.35), 0 0 34px rgba(236, 72, 153, 0.22);
 
         /* Animation Timings */
         --transition-fast: 0.15s ease-out;
@@ -86,10 +86,10 @@
         background-color: var(--background-main);
         color: var(--text-primary);
         background-image:
-          radial-gradient(circle at 18% 18%, rgba(34, 211, 238, 0.24) 0%, transparent 46%),
-          radial-gradient(circle at 82% 24%, rgba(124, 255, 139, 0.18) 0%, transparent 42%),
+          radial-gradient(circle at 18% 18%, rgba(168, 85, 247, 0.28) 0%, transparent 46%),
+          radial-gradient(circle at 82% 24%, rgba(236, 72, 153, 0.20) 0%, transparent 42%),
           radial-gradient(circle at 62% 78%, rgba(255, 95, 210, 0.18) 0%, transparent 44%),
-          linear-gradient(180deg, rgba(6, 19, 31, 0.84) 0%, rgba(6, 19, 31, 1) 100%);
+          linear-gradient(180deg, rgba(12, 6, 24, 0.88) 0%, rgba(12, 6, 24, 1) 100%);
         background-size:
           100% 100%,
           100% 100%,
@@ -112,7 +112,7 @@
       }
 
       .glass-card:hover {
-        background: rgba(34, 211, 238, 0.16);
+        background: rgba(168, 85, 247, 0.18);
         border-color: var(--border-hover);
         box-shadow: var(--neon-glow-soft);
         transform: translateY(-2px) scale(1.01);
