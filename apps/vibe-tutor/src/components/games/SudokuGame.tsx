@@ -225,7 +225,7 @@ const SudokuGame = ({ onComplete, onBack }: SudokuGameProps) => {
     if (selectedCell === null || puzzle[selectedCell] !== null || solution[selectedCell] === null) return;
     playSound('success');
     const newGrid = [...userGrid];
-    newGrid[selectedCell] = solution[selectedCell];
+    newGrid[selectedCell] = solution[selectedCell] ?? null;
     const nextHints = hintsUsed + 1;
     setHintsUsed(nextHints);
     setUserGrid(newGrid);

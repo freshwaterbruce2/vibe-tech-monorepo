@@ -24,7 +24,7 @@ import {
 } from '../../services/gameProgression';
 import { TOKEN_REWARDS } from '../../services/tokenService';
 import { appStore } from '../../utils/electronStore';
-import { getDifficultyDefaults, type GameConfig, type GameDifficulty } from '../settings/GameSettings';
+import { getDifficultyDefaults, type GameConfig, type GameDifficulty } from '../settings/gameSettingsConfig';
 
 /* ---------- Lazy game imports ---------- */
 const MemoryMatchGame = lazy(async () => import('./MemoryMatchGame'));
@@ -1081,6 +1081,7 @@ export default function BrainGymHub({
                             </p>
                           )}
 
+                          {target && (
                           <div className="gh-target-block mt-3">
                             <div className="gh-target-header">
                               <span className="gh-target-label">{target.label}</span>
@@ -1094,6 +1095,7 @@ export default function BrainGymHub({
                               />
                             </div>
                           </div>
+                          )}
 
                           <div className="gh-token-reward">
                             <Zap size={14} className="gh-token-icon" />

@@ -6,7 +6,7 @@ import type { MemoryCard } from '../../services/puzzleGenerator';
 import { calculateMemoryScore, generateMemoryCards } from '../../services/puzzleGenerator';
 import { getRandomWords } from '../../services/wordBanks';
 import { useGameAudio } from '../../hooks/useGameAudio';
-import { type GameDifficulty } from '../settings/GameSettings';
+import { type GameDifficulty } from '../settings/gameSettingsConfig';
 import GameCompletionModal from './GameCompletionModal';
 
 interface MemoryMatchGameProps {

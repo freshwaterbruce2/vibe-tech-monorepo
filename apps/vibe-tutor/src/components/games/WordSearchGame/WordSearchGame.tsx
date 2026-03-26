@@ -8,12 +8,13 @@ import { getRandomWords } from '../../../services/wordBanks';
 import { appStore } from '../../../utils/electronStore';
 import { useGameAudio } from '../../../hooks/useGameAudio';
 import confetti from 'canvas-confetti';
-import GameSettings, {
+import GameSettings from '../../settings/GameSettings';
+import {
   getSavedGameConfig,
   getDifficultyHintPenalty,
   saveGameConfig,
   type GameConfig,
-} from '../../settings/GameSettings';
+} from '../../settings/gameSettingsConfig';
 import CelebrationEffect from '../../ui/CelebrationEffect';
 import GameCompletionModal from '../GameCompletionModal';
 import WordSearchGrid from './WordSearchGrid';
