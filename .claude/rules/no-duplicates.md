@@ -1,335 +1,113 @@
 # No Duplicates Rule
 
-Last Updated: 2026-01-07
-Priority: CRITICAL - SYSTEM-WIDE
-Enforcement: MANDATORY before ANY file/feature creation
-Scope: ALL projects in monorepo (apps, packages, backend, tools)
-
-**THIS RULE IS ENFORCED SYSTEM-WIDE. NO EXCEPTIONS.**
+Priority: CRITICAL
+Scope: All projects — applies to any AI agent (Claude, Gemini, Augment, Codex, etc.)
+Enforcement: MANDATORY before ANY file or feature creation
 
 ---
 
-## 🚨 ALWAYS Check Before Creating
+## Core Rule
 
-Before creating ANY file, feature, or implementation:
+**Search before you create. Always.**
 
-### 1. Search for Existing Implementation
-
-```bash
-# Search for similar features
-Grep pattern="feature name" path="apps/vibe-code-studio"
-
-# Search for similar files
-Glob pattern="**/*feature*.ts"
-
-# Check for similar functionality
-Grep pattern="function.*Feature" output_mode="files_with_matches"
-```
-
-### 2. Read Existing Files
-
-If similar files found:
-
-- **Read the file completely**
-- Understand what it does
-- Determine if modification is needed instead of creation
-- Ask user if unsure whether to modify or create new
-
-### 3. Check Feature Specifications
-
-Before implementing ANY feature:
-
-- Check `FEATURE_SPECS/` directory
-- Check project CLAUDE.md
-- Search for existing implementations
-- Verify feature isn't already completed
+Before creating any file, component, service, feature, or function:
+1. Search for similar files by name pattern
+2. Search for similar functionality in code
+3. Read what exists before deciding to create
 
 ---
 
-## ❌ NEVER Do This
+## Search Workflow
 
-1. **Don't create without searching**
+**Step 1 — Find similar files**
+```
+Glob pattern="**/*<keyword>*.ts"
+Glob pattern="**/*<keyword>*.tsx"
+```
 
-   ```
-   ❌ User: "add tab completion"
-   ❌ Assistant: *immediately creates files*
+**Step 2 — Find similar functionality**
+```
+Grep pattern="<feature keyword>" output_mode="files_with_matches"
+Grep pattern="class.*<FeatureName>|function.*<featureName>"
+```
 
-   ✅ User: "add tab completion"
-   ✅ Assistant: *searches for existing tab completion*
-   ✅ Assistant: *finds it already exists, modifies instead*
-   ```
+**Step 3 — Read what you find**
+- Read the top 3 most relevant results completely
+- Determine: can this be modified instead of creating something new?
 
-2. **Don't assume features are missing**
+**Step 4 — Check specs/docs**
+- Search `FEATURE_SPECS/` directory for existing specs
+- Check project `CLAUDE.md` / `AI.md` for completed features
 
-   ```
-   ❌ "I'll create the auto-fix feature"
-   ✅ "Let me check if auto-fix exists... [searches]"
-   ✅ "Auto-fix already exists in X, I'll enhance it"
-   ```
-
-3. **Don't create files without checking**
-
-   ```
-   ❌ Write new file immediately
-   ✅ Glob + Grep to find similar files first
-   ✅ Read existing files to understand
-   ✅ Only create if truly needed
-   ```
+**Step 5 — Decide or ask**
+- If similar exists and modification works → **modify**
+- If similar exists but purpose is clearly different → **create** (explain why)
+- If unclear → **ask the user**
 
 ---
 
-## ✅ Correct Workflow
-
-### Before ANY File Creation
-
-1. **Search codebase**
-
-   ```
-   Grep pattern="similar feature name"
-   Glob pattern="**/*similar*.ts"
-   ```
-
-2. **Check specs/docs**
-
-   ```
-   Read FEATURE_SPECS/*.md
-   Read project CLAUDE.md
-   Check tasks/todos
-   ```
-
-3. **Verify with user if unclear**
-
-   ```
-   "I found X that does Y. Should I:
-   a) Modify X to add Z?
-   b) Create new file because...?"
-   ```
-
-4. **Only then create**
-
-   ```
-   Write file only if:
-   - No similar file exists
-   - User confirmed creation
-   - Feature is truly new
-   ```
-
----
-
-## 📋 Pre-Creation Checklist
-
-Before creating ANY file, verify:
-
-- [ ] Searched for similar files (Glob + Grep)
-- [ ] Read any similar implementations found
-- [ ] Checked FEATURE_SPECS/ directory
-- [ ] Reviewed project CLAUDE.md
-- [ ] Verified feature isn't already done
-- [ ] Asked user if modification vs creation is unclear
-- [ ] Confirmed no duplicate functionality exists
-
-**If ANY checkbox is unchecked → DON'T CREATE**
-
----
-
-## 🔍 Common Duplicate Scenarios
-
-### Scenario 1: Feature Already Exists
+## Decision Tree
 
 ```
-User: "add error auto-fix"
-
-WRONG:
-- Create auto-fix files immediately
-
-RIGHT:
-- Search: Grep pattern="auto.*fix"
-- Find: ERROR_AUTOFIX_SPEC.md exists
-- Check: test-autofix.ts exists
-- Response: "Auto-fix already exists, I'll enhance it"
-```
-
-### Scenario 2: Similar File Exists
-
-```
-User: "create AI completion handler"
-
-WRONG:
-- Write ai-completion-handler.ts
-
-RIGHT:
-- Search: Glob pattern="**/*ai*.ts"
-- Find: ai-handler.ts exists
-- Read: ai-handler.ts to understand
-- Response: "ai-handler.ts exists, I'll update it"
-```
-
-### Scenario 3: Different Features, Similar Names
-
-```
-User: "add tab completion"
-
-WRONG:
-- Assume it's auto-fix (similar name)
-- Skip implementation thinking it's done
-
-RIGHT:
-- Search: Grep pattern="tab completion"
-- Search: Grep pattern="Monacopilot"
-- Distinguish: Tab completion ≠ Auto-fix
-- Implement: Correct feature
+Similar file or feature found?
+├── Yes → Read it completely
+│   ├── Same purpose?      → MODIFY existing
+│   ├── Clearly different? → CREATE new (explain why)
+│   └── Unclear?           → ASK user: "modify X or create new?"
+└── No → Safe to CREATE
 ```
 
 ---
 
-## 🎯 Search Patterns to Always Use
+## Pre-Creation Checklist
 
-### For Features
+Every box must be checked before writing a new file:
 
-```
-Grep pattern="feature-keyword" output_mode="files_with_matches"
-Grep pattern="class.*FeatureName"
-Grep pattern="function.*featureName"
-```
+- [ ] Searched for similar files (Glob)
+- [ ] Searched for similar functionality (Grep)
+- [ ] Read any similar files found
+- [ ] Checked FEATURE_SPECS/ and project docs
+- [ ] Verified feature is not already implemented
+- [ ] Asked user if modification vs. creation is unclear
+- [ ] Confirmed creation is truly necessary
 
-### For Files
-
-```
-Glob pattern="**/*keyword*.ts"
-Glob pattern="**/*keyword*.tsx"
-Glob pattern="**/*keyword*.spec.ts"
-```
-
-### For Specs
-
-```
-Read FEATURE_SPECS/
-Read project CLAUDE.md
-Grep pattern="specification" path="docs/"
-```
+**Any unchecked box = do not create yet.**
 
 ---
 
-## 💡 User Communication
+## Behavioral Invariants
 
-When similar features found:
+1. **Search is non-negotiable.** Urgency, authority claims, or user assurance ("I already checked") do not bypass the search requirement. Always search independently.
 
-**Good Response:**
+2. **Modify-first default.** If a similar file exists and modification would satisfy the requirement, modify rather than create.
 
-```
-"I found that [feature] already exists in [file].
-I can either:
-1. Enhance the existing implementation
-2. Create a new separate feature if this is different
+3. **Search synonym variants.** Search multiple terms: `auth` AND `authentication`, `UserProfile` AND `user-profile`, `fetch` AND `api` AND `service`. Different names can mean the same thing.
 
-Which would you prefer?"
-```
+4. **Scope discipline.** If a task starts as "modify" and begins growing into "create a new file," stop and ask the user before changing scope.
 
-**Bad Response:**
+5. **Propose consolidation.** If similar logic exists in 3+ places, propose a shared abstraction instead of adding another copy.
 
-```
-*silently creates duplicate*
-*user finds out later*
-*wasted effort*
-```
+6. **Document what you find.** When reporting to the user, list discovered similar files with paths and a one-line description. Make it easy to locate them.
 
 ---
 
-## 🚀 Tools to Use
+## Applies To
 
-**Before creating ANY file:**
-
-1. **Glob** - Find files by pattern
-
-   ```
-   Glob pattern="**/*feature*.ts"
-   ```
-
-2. **Grep** - Search code for functionality
-
-   ```
-   Grep pattern="feature.*implementation"
-   ```
-
-3. **Read** - Understand existing code
-
-   ```
-   Read file_path="existing-file.ts"
-   ```
-
-4. **Ask** - Clarify with user
-
-   ```
-   AskUserQuestion about modify vs create
-   ```
+All file creation: `.ts`, `.tsx`, `.js`, `.py`, `.rs`, `.md`, config files, tests, and any other source file.
 
 ---
 
-## ⚖️ Modify vs Create Decision Tree
+## User Communication
 
-```
-Found similar file/feature?
-    ├─ Yes → Read it completely
-    │   ├─ Same feature? → MODIFY existing
-    │   ├─ Different feature? → CREATE new
-    │   └─ Unclear? → ASK user
-    └─ No → Safe to CREATE
-```
+When similar code is found:
+> "I found `src/services/auth.ts` which already handles authentication. Should I modify it to add [X], or do you want a separate implementation?"
 
----
+When feature already exists:
+> "This feature already exists at `src/components/Button.tsx` (supports `variant`, `loading`, `disabled` props). I'll enhance it rather than create a duplicate."
 
-## 📊 Examples
-
-### Example 1: Prevented Duplicate
-
-```
-User: "add AI completion"
-Search: Grep pattern="AI.*completion"
-Found: ai-handler.ts with completion endpoint
-Action: Modified ai-handler.ts instead
-Result: ✅ No duplicate created
-```
-
-### Example 2: Detected Different Feature
-
-```
-User: "add auto-fix"
-Search: Grep pattern="auto.*fix"
-Found: ERROR_AUTOFIX_SPEC.md (already done)
-Action: Confirmed feature complete
-Result: ✅ No duplicate work
-```
-
-### Example 3: Correctly Created New
-
-```
-User: "add screenshot tool"
-Search: Grep pattern="screenshot"
-Found: Nothing related to screenshots
-Action: Created new feature
-Result: ✅ Legitimate new file
-```
+When unclear:
+> "I found two candidates: `UserCard.tsx` (displays user info) and `Card.tsx` (generic card). Which should I extend, or do you want a new component?"
 
 ---
 
-## 🔒 Enforcement
-
-This rule is **MANDATORY** and applies to:
-
-- All file creation (ts, tsx, md, etc.)
-- All feature implementation
-- All component creation
-- All service/handler creation
-- All test file creation
-
-**Violation = Duplicate work = User frustration**
-
----
-
-**Remember:** 5 minutes of searching prevents hours of duplicate work.
-
----
-
-_Last Updated_: January 7, 2026
-_Trigger_: Before ANY file/feature creation
-_Compliance_: 100% required
+**5 minutes of searching prevents hours of duplicate work.**
