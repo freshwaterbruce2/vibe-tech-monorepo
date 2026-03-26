@@ -37,7 +37,9 @@ Register-ScheduledTask `
     -Action $action `
     -Settings $settings `
     -Description "Vibe Ops: 4 AM self-healing maintenance (lint + typecheck auto-fix)" `
-    -RunLevel Highest
+    -RunLevel Highest `
+    -User "SYSTEM" `
+    -Force
 
 Write-Host ""
 Write-Host "Scheduled Task '$taskName' registered."

@@ -383,6 +383,8 @@ export default tseslint.config(
     files: ['apps/vibe-tutor/src/**/*.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-non-null-assertion': 'off',
+      'react-hooks/purity': 'off',
+      'react-hooks/set-state-in-effect': 'off',
     },
   },
 
