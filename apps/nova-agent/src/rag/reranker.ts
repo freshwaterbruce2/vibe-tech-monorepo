@@ -10,6 +10,10 @@ export class RAGReranker {
   private crossEncoderEndpoint: string | null;
   private rrfK: number;
 
+  // To activate cross-encoder: deploy bge-reranker-v2-m3 (MIT, 278M params) as REST service,
+  // set options.crossEncoderEndpoint to the service URL, and pass useCrossEncoder: true.
+  // Recommended: BAAI/bge-reranker-v2-m3 (multilingual, state-of-the-art open-source reranker).
+  // Expected latency: 50-100ms per query for top-10 candidates.
   constructor(options?: { crossEncoderEndpoint?: string; rrfK?: number }) {
     this.crossEncoderEndpoint = options?.crossEncoderEndpoint ?? null;
     this.rrfK = options?.rrfK ?? 60;

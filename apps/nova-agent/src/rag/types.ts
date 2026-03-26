@@ -208,6 +208,12 @@ export interface RAGConfig {
   indexPaths: string[];
   /** Glob patterns to exclude */
   excludePatterns: string[];
+  /** Phase 5: candidate pool size before reranking (default: 50, up from 20) */
+  searchPoolSize: number;
+  /** Phase 5: enable HyDE (Hypothetical Document Embedding) query expansion */
+  hydeEnabled: boolean;
+  /** Phase 5: model to use for HyDE hypothesis generation */
+  hydeModel: string;
 }
 
 export const DEFAULT_RAG_CONFIG: RAGConfig = {
@@ -233,4 +239,7 @@ export const DEFAULT_RAG_CONFIG: RAGConfig = {
     '**/target/**',
     '**/.git/**',
   ],
+  searchPoolSize: 50,   // Phase 5: two-stage retrieval (top 50 → rerank to N)
+  hydeEnabled: false,   // Phase 5: off by default; enable per-query when needed
+  hydeModel: 'openai/gpt-4o-mini', // Phase 5: cheap, fast hypothesis generation
 };

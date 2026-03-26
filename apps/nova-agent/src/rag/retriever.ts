@@ -13,22 +13,51 @@ const DEFAULT_LIMIT = 5;
 export class RAGRetriever {
   private embedder: RAGEmbedder;
   private searchPoolSize: number;
+  private hydeEnabled: boolean;
+  private hydeModel: string;
+  private hydeEndpoint: string;
 
-  constructor(config: Pick<RAGConfig, 'embeddingEndpoint' | 'embeddingModel'> & { searchPoolSize?: number }) {
+  constructor(
+    config: Pick<RAGConfig, 'embeddingEndpoint' | 'embeddingModel'> & {
+      searchPoolSize?: number;
+      hydeEnabled?: boolean;
+      hydeModel?: string;
+    },
+  ) {
     this.embedder = new RAGEmbedder(config);
-    this.searchPoolSize = config.searchPoolSize ?? 20;
+    this.searchPoolSize = config.searchPoolSize ?? 50; // Phase 5: two-stage pool (up from 20)
+    this.hydeEnabled = config.hydeEnabled ?? false;
+    this.hydeModel = config.hydeModel ?? 'openai/gpt-4o-mini';
+    this.hydeEndpoint = config.embeddingEndpoint; // same proxy host
   }
 
   /**
-   * Perform hybrid search: vector + FTS, return merged candidates for reranking
+   * Perform hybrid search: vector + FTS, return merged candidates for reranking.
+   * Phase 5: if hydeEnabled, expands query with a hypothetical document and averages
+   * the two embeddings before the vector search for improved recall on vague queries.
    */
   async search(table: Table, query: SearchQuery): Promise<RerankCandidate[]> {
     const limit = query.limit ?? DEFAULT_LIMIT;
     const poolSize = Math.max(this.searchPoolSize, limit * 4);
 
-    // Run vector and FTS searches in parallel
+    // Phase 5: HyDE query expansion — average query vector + hypothetical doc vector
+    let precomputedVector: number[] | undefined;
+    if (this.hydeEnabled) {
+      try {
+        const hypothetical = await this.expandQueryHyDE(query.text);
+        const [origEmb, hydeEmb] = await Promise.all([
+          this.embedder.embed(query.text),
+          this.embedder.embed(hypothetical),
+        ]);
+        precomputedVector = origEmb.vector.map((v, i) => (v + (hydeEmb.vector[i] ?? 0)) / 2);
+      } catch {
+        // HyDE failure is non-fatal — fall through to standard vector search
+      }
+    }
+
+    // Run vector and FTS searches in parallel (FTS always uses original text)
     const [vectorResults, ftsResults] = await Promise.all([
-      this.vectorSearch(table, query.text, poolSize),
+      this.vectorSearch(table, query.text, poolSize, precomputedVector),
       this.ftsSearch(table, query.text, poolSize),
     ]);
 
@@ -90,12 +119,50 @@ export class RAGRetriever {
 
   // ─── Private ────────────────────────────────────────────────────────────
 
-  private async vectorSearch(table: Table, queryText: string, limit: number): Promise<any[]> {
+  /**
+   * Phase 5: Generate a hypothetical document that would answer the query.
+   * The hypothetical doc embedding is averaged with the query embedding for
+   * better recall on queries whose phrasing doesn't match document phrasing.
+   */
+  private async expandQueryHyDE(query: string): Promise<string> {
+    const response = await fetch(`${this.hydeEndpoint}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: this.hydeModel,
+        max_tokens: 256,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You are a code search assistant. Write a brief, realistic code snippet or function that directly implements or answers the user query. Output only the code, no explanations.',
+          },
+          { role: 'user', content: query },
+        ],
+      }),
+      signal: AbortSignal.timeout(5000),
+    });
+
+    if (!response.ok) throw new Error(`HyDE request failed: ${response.status}`);
+
+    const data = (await response.json()) as {
+      choices: Array<{ message: { content: string } }>;
+    };
+    return data.choices[0]?.message?.content ?? query;
+  }
+
+  private async vectorSearch(
+    table: Table,
+    queryText: string,
+    limit: number,
+    precomputedVector?: number[],
+  ): Promise<any[]> {
     try {
-      const embedding = await this.embedder.embed(queryText);
+      const vector =
+        precomputedVector ?? (await this.embedder.embed(queryText)).vector;
 
       const results = await table
-        .search(embedding.vector)
+        .search(vector)
         .limit(limit)
         .toArray();
 
