@@ -47,7 +47,7 @@ const CelebrationEffect = ({
             x: Math.random() * 100 - 50,
             y: Math.random() * 100 - 50,
             rotation: Math.random() * 360,
-            color: ['#22D3EE', '#38BDF8', '#FF5FD2', '#7CFF8B', '#FBBF24'][
+            color: ['#22D3EE', '#38BDF8', '#FF5FD2', '#ec4899', '#FBBF24'][
               Math.floor(Math.random() * 5)
             ]!,
           }));

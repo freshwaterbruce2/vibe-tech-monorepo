@@ -145,7 +145,7 @@ const CrosswordGame = ({ subject, onComplete, onBack }: CrosswordGameProps) => {
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <CheckCircle size={20} className="text-green-400" />
+              <CheckCircle size={20} className="text-fuchsia-400" />
               <span className="text-white font-medium">
                 {clues.filter((c) => checkAnswer(c.number)).length}/{clues.length}
               </span>
@@ -176,7 +176,7 @@ const CrosswordGame = ({ subject, onComplete, onBack }: CrosswordGameProps) => {
                 <div
                   key={clue.number}
                   className={`p-4 rounded-lg transition-all duration-300 ${
-                    isCorrect ? 'bg-green-800/20 border border-green-500/30' : 'bg-purple-800/30'
+                    isCorrect ? 'bg-violet-800/20 border border-violet-500/30' : 'bg-purple-800/30'
                   }`}
                 >
                   <div className="flex items-start gap-4">
@@ -194,14 +194,14 @@ const CrosswordGame = ({ subject, onComplete, onBack }: CrosswordGameProps) => {
                           maxLength={clue.word.length}
                           className={`flex-1 px-4 py-2 bg-white/10 border-2 rounded-lg text-white font-mono uppercase placeholder-white/50 focus:outline-none focus:ring-2 transition-all ${
                             hasAnswer && isCorrect
-                              ? 'border-green-500 focus:ring-green-500'
+                              ? 'border-fuchsia-500 focus:ring-fuchsia-500'
                               : hasAnswer
                                 ? 'border-red-500 focus:ring-red-500'
                                 : 'border-purple-500 focus:ring-cyan-500'
                           }`}
                         />
                         {hasAnswer && isCorrect && (
-                          <CheckCircle size={24} className="text-green-400" />
+                          <CheckCircle size={24} className="text-fuchsia-400" />
                         )}
                       </div>
                       <div className="mt-2 text-sm text-white/60">
@@ -221,7 +221,7 @@ const CrosswordGame = ({ subject, onComplete, onBack }: CrosswordGameProps) => {
 
           <button
             onClick={handleSubmit}
-            className="w-full mt-8 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-lg font-bold text-white text-xl transition-all transform hover:scale-105"
+            className="w-full mt-8 px-6 py-3 bg-gradient-to-r from-violet-600 to-violet-600 hover:from-violet-700 hover:to-violet-700 rounded-lg font-bold text-white text-xl transition-all transform hover:scale-105"
           >
             Check Answers
           </button>

@@ -157,7 +157,7 @@ const RobuxRewardShop = ({
       cost: 180,
       category: 'perks',
       icon: <Music className="w-8 h-8" />,
-      color: 'from-green-400 to-blue-500',
+      color: 'from-fuchsia-400 to-blue-500',
     },
     {
       id: 'perk-themes',
@@ -226,7 +226,7 @@ const RobuxRewardShop = ({
       cost: 500,
       category: 'real-rewards',
       icon: <span className="text-3xl">🧱</span>,
-      color: 'from-emerald-500 to-teal-600',
+      color: 'from-violet-500 to-purple-600',
       maxQuantity: 1,
     },
     {
@@ -236,7 +236,7 @@ const RobuxRewardShop = ({
       cost: 900,
       category: 'real-rewards',
       icon: <span className="text-3xl">🏗️</span>,
-      color: 'from-teal-500 to-cyan-600',
+      color: 'from-purple-500 to-purple-600',
       maxQuantity: 1,
     },
     {
@@ -415,7 +415,7 @@ const RobuxRewardShop = ({
                         className={`relative bg-gray-800/50 backdrop-blur rounded-3xl p-6 border-2 ${
                           isEquipped
                             ? 'border-yellow-400/70 shadow-[0_0_20px_rgba(250,204,21,0.2)]'
-                            : 'border-green-500/50'
+                            : 'border-fuchsia-500/50'
                         } transition-all duration-300`}
                       >
                         {/* Badge */}
@@ -425,7 +425,7 @@ const RobuxRewardShop = ({
                             Active
                           </div>
                         ) : (
-                          <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1">
+                          <div className="absolute top-4 right-4 bg-fuchsia-500 text-white px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1">
                             <Check className="w-4 h-4" />
                             Owned
                           </div>
@@ -486,7 +486,7 @@ const RobuxRewardShop = ({
                   className={`relative bg-gray-800/50 backdrop-blur rounded-3xl p-6 border-2
                     ${
                       isOwned && !item.maxQuantity
-                        ? 'border-green-500/50'
+                        ? 'border-fuchsia-500/50'
                         : canPurchase
                           ? 'border-purple-500/50 hover:border-purple-400'
                           : 'border-gray-700 opacity-60'
@@ -494,7 +494,7 @@ const RobuxRewardShop = ({
                 >
                   {/* Owned Badge */}
                   {isOwned && !item.maxQuantity && (
-                    <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1">
+                    <div className="absolute top-4 right-4 bg-fuchsia-500 text-white px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1">
                       <Check className="w-4 h-4" />
                       Owned
                     </div>
@@ -531,7 +531,7 @@ const RobuxRewardShop = ({
                       className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2
                         ${
                           canPurchase
-                            ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white hover:scale-105'
+                            ? 'bg-gradient-to-r from-fuchsia-500 to-blue-500 text-white hover:scale-105'
                             : isOwned && !item.maxQuantity
                               ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
                               : 'bg-gray-700 text-gray-500 cursor-not-allowed'
@@ -560,11 +560,11 @@ const RobuxRewardShop = ({
         {/* Purchase Animation */}
         {showPurchaseAnimation && lastPurchasedItem && (
           <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none p-4">
-            <div className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-8 py-6 rounded-3xl shadow-2xl animate-bounce max-w-sm w-full text-center">
+            <div className="bg-gradient-to-r from-fuchsia-500 to-blue-500 text-white px-8 py-6 rounded-3xl shadow-2xl animate-bounce max-w-sm w-full text-center">
               <div className="text-3xl font-bold mb-2">🎉 Success!</div>
               <div className="text-xl">Got: {lastPurchasedItem.name}</div>
               {lastPurchasedItem.category === 'real-rewards' && (
-                <div className="mt-3 text-sm bg-black/20 rounded-lg p-2 text-green-100 font-medium">
+                <div className="mt-3 text-sm bg-black/20 rounded-lg p-2 text-fuchsia-100 font-medium">
                   Parent has been notified! ✉️
                 </div>
               )}

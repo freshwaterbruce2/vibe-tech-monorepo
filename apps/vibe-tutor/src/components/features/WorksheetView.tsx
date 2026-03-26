@@ -196,7 +196,7 @@ const WorksheetView = ({ subject, difficulty, onComplete, onCancel }: WorksheetV
                     disabled={showFeedback}
                     className={`w-full p-4 rounded-xl border-2 text-left transition-all duration-300 ${
                       showAsCorrect
-                        ? 'border-green-500 bg-green-500/20'
+                        ? 'border-fuchsia-500 bg-fuchsia-500/20'
                         : showAsWrong
                           ? 'border-red-500 bg-red-500/20'
                           : isSelected
@@ -211,7 +211,7 @@ const WorksheetView = ({ subject, difficulty, onComplete, onCancel }: WorksheetV
                         </span>
                         <span className="text-base md:text-lg">{option}</span>
                       </span>
-                      {showAsCorrect && <CheckCircle className="text-green-500" size={24} />}
+                      {showAsCorrect && <CheckCircle className="text-fuchsia-500" size={24} />}
                       {showAsWrong && <XCircle className="text-red-500" size={24} />}
                     </div>
                   </button>
@@ -236,7 +236,7 @@ const WorksheetView = ({ subject, difficulty, onComplete, onCancel }: WorksheetV
                     disabled={showFeedback}
                     className={`flex-1 max-w-[200px] p-6 rounded-xl border-2 text-center text-xl font-bold transition-all duration-300 ${
                       showAsCorrect
-                        ? 'border-green-500 bg-green-500/20'
+                        ? 'border-fuchsia-500 bg-fuchsia-500/20'
                         : showAsWrong
                           ? 'border-red-500 bg-red-500/20'
                           : isSelected
@@ -246,7 +246,7 @@ const WorksheetView = ({ subject, difficulty, onComplete, onCancel }: WorksheetV
                   >
                     <div className="flex items-center justify-center gap-2">
                       <span>{option}</span>
-                      {showAsCorrect && <CheckCircle className="text-green-500" size={24} />}
+                      {showAsCorrect && <CheckCircle className="text-fuchsia-500" size={24} />}
                       {showAsWrong && <XCircle className="text-red-500" size={24} />}
                     </div>
                   </button>
@@ -277,7 +277,7 @@ const WorksheetView = ({ subject, difficulty, onComplete, onCancel }: WorksheetV
                 autoComplete="off"
                 className={`w-full px-6 py-4 bg-white/5 border-2 rounded-xl text-white text-center text-2xl placeholder-gray-500 focus:outline-none transition-all ${
                   showFeedback && isCorrect
-                    ? 'border-green-500 bg-green-500/10'
+                    ? 'border-fuchsia-500 bg-fuchsia-500/10'
                     : showFeedback && !isCorrect
                       ? 'border-red-500 bg-red-500/10'
                       : 'border-[var(--glass-border)] focus:border-purple-500'
@@ -286,7 +286,7 @@ const WorksheetView = ({ subject, difficulty, onComplete, onCancel }: WorksheetV
               {showFeedback && !isCorrect && (
                 <p className="text-center text-sm text-gray-400 mt-2">
                   Correct answer:{' '}
-                  <span className="text-green-400 font-bold">
+                  <span className="text-fuchsia-400 font-bold">
                     {String(currentQuestion!.correctAnswer)}
                   </span>
                 </p>
@@ -297,16 +297,16 @@ const WorksheetView = ({ subject, difficulty, onComplete, onCancel }: WorksheetV
           {/* Feedback Section */}
           {showFeedback && (
             <div
-              className={`mt-6 p-4 rounded-xl ${isCorrect ? 'bg-green-500/10 border-2 border-green-500' : 'bg-red-500/10 border-2 border-red-500'}`}
+              className={`mt-6 p-4 rounded-xl ${isCorrect ? 'bg-fuchsia-500/10 border-2 border-fuchsia-500' : 'bg-red-500/10 border-2 border-red-500'}`}
             >
               <div className="flex items-start gap-3">
                 {isCorrect ? (
-                  <CheckCircle className="text-green-500 flex-shrink-0" size={24} />
+                  <CheckCircle className="text-fuchsia-500 flex-shrink-0" size={24} />
                 ) : (
                   <XCircle className="text-red-500 flex-shrink-0" size={24} />
                 )}
                 <div>
-                  <p className={`font-bold mb-1 ${isCorrect ? 'text-green-400' : 'text-red-400'}`}>
+                  <p className={`font-bold mb-1 ${isCorrect ? 'text-fuchsia-400' : 'text-red-400'}`}>
                     {isCorrect ? 'Correct!' : 'Incorrect'}
                   </p>
                   {currentQuestion!.explanation && (

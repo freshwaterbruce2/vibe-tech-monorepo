@@ -40,10 +40,10 @@ const getNotificationStyle = (
     case 'success':
       return {
         icon: CheckCircle,
-        gradient: 'from-green-500 via-emerald-500 to-teal-500',
-        borderColor: 'border-green-400/50',
-        iconColor: 'text-green-300',
-        bgColor: 'bg-green-500/10',
+        gradient: 'from-fuchsia-500 via-violet-500 to-purple-500',
+        borderColor: 'border-fuchsia-400/50',
+        iconColor: 'text-fuchsia-300',
+        bgColor: 'bg-fuchsia-500/10',
       };
     case 'info':
       return {

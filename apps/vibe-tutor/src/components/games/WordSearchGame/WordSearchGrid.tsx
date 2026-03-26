@@ -71,12 +71,12 @@ function getCellClassName(
   highContrast: boolean
 ): string {
   if (highContrast) {
-    if (isFound) return 'bg-green-600 text-white border-green-400 animate-pulse-once';
+    if (isFound) return 'bg-violet-600 text-white border-violet-400 animate-pulse-once';
     if (isRevealed) return 'bg-yellow-600 text-black border-yellow-400 animate-bounce';
     if (isSelected) return 'bg-cyan-600 text-white border-cyan-400 scale-110 shadow-2xl';
     return 'bg-gray-900 text-white border-gray-600 hover:bg-gray-800';
   }
-  if (isFound) return 'bg-green-500/30 text-green-300 border-green-500/50 animate-pulse-once';
+  if (isFound) return 'bg-fuchsia-500/30 text-fuchsia-300 border-fuchsia-500/50 animate-pulse-once';
   if (isRevealed) return 'bg-yellow-500/30 text-yellow-300 border-yellow-500/50 animate-bounce';
   if (isSelected) return 'bg-cyan-500 text-white scale-110 shadow-lg';
   return 'bg-purple-900/30 text-white hover:bg-purple-700/50 active:scale-95';
@@ -117,7 +117,7 @@ const WordSearchGrid = ({
               <p className="text-gray-300 mb-4">Grid hidden to prevent cheating</p>
               <button
                 onClick={onPauseToggle}
-                className="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-bold text-white"
+                className="px-6 py-3 bg-violet-600 hover:bg-violet-700 rounded-lg font-bold text-white"
               >
                 Resume Game
               </button>

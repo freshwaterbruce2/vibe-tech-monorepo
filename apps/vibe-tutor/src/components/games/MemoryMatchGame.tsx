@@ -204,7 +204,7 @@ const MemoryMatchGame = ({ subject, onComplete, onBack, initialDifficulty }: Mem
               particleCount: 150,
               spread: 70,
               origin: { y: 0.6 },
-              colors: ['#22d3ee', '#7cff8b', '#fbbf24', '#ff5fd2'],
+              colors: ['#22d3ee', '#ec4899', '#fbbf24', '#ff5fd2'],
             });
           }
         }, 600);
@@ -320,7 +320,7 @@ const MemoryMatchGame = ({ subject, onComplete, onBack, initialDifficulty }: Mem
                 key={index}
                 className={`h-3 w-3 rounded-full transition-all duration-300 ${
                   index < matchedPairs
-                    ? 'scale-110 bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]'
+                    ? 'scale-110 bg-violet-400 shadow-[0_0_8px_rgba(167,139,250,0.5)]'
                     : 'bg-white/20'
                 }`}
               />
@@ -421,7 +421,7 @@ const MemoizedCardItem = memo(
 
           <div
             className={`absolute inset-0 flex items-center justify-center rounded-xl border-4 p-3 shadow-lg [backface-visibility:hidden] [transform:rotateY(180deg)] ${
-              isMatched ? 'border-green-600 bg-green-400' : 'border-cyan-400 bg-white'
+              isMatched ? 'border-violet-600 bg-violet-400' : 'border-cyan-400 bg-white'
             }`}
           >
             {justMatched && (

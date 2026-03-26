@@ -15,7 +15,7 @@ export const GradientDefs: FC = () => (
       {/* Primary gradient: Cyan to lime to pink */}
       <linearGradient id="vibe-gradient-primary" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="#22D3EE" />
-        <stop offset="52%" stopColor="#7CFF8B" />
+        <stop offset="52%" stopColor="#ec4899" />
         <stop offset="100%" stopColor="#FF5FD2" />
       </linearGradient>
 
@@ -27,21 +27,21 @@ export const GradientDefs: FC = () => (
 
       {/* Accent gradient: Lime to cyan */}
       <linearGradient id="vibe-gradient-accent" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#7CFF8B" />
+        <stop offset="0%" stopColor="#ec4899" />
         <stop offset="100%" stopColor="#22D3EE" />
       </linearGradient>
 
       {/* Radial glow gradient */}
       <radialGradient id="vibe-gradient-glow" cx="50%" cy="50%" r="50%">
         <stop offset="0%" stopColor="#22D3EE" stopOpacity="0.82" />
-        <stop offset="50%" stopColor="#7CFF8B" stopOpacity="0.38" />
+        <stop offset="50%" stopColor="#ec4899" stopOpacity="0.38" />
         <stop offset="100%" stopColor="#FF5FD2" stopOpacity="0.1" />
       </radialGradient>
 
       {/* Mobile-optimized gradient with higher contrast */}
       <linearGradient id="vibe-gradient-mobile" x1="0%" y1="0%" x2="100%" y2="100%">
         <stop offset="0%" stopColor="#6EE7F9" />
-        <stop offset="50%" stopColor="#7CFF8B" />
+        <stop offset="50%" stopColor="#ec4899" />
         <stop offset="100%" stopColor="#FF82DD" />
       </linearGradient>
     </defs>

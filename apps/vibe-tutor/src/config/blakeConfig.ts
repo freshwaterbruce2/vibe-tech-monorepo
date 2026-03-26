@@ -82,7 +82,7 @@ export const BLAKE_CONFIG = {
   // Personal Info
   userName: 'Blake',
   avatar: '🎮', // Gaming avatar
-  favoriteColor: '#00FF00', // Roblox green
+  favoriteColor: '#a855f7', // Purple theme
   theme: 'roblox-gaming',
 
   // API Configuration - USE PROXY for mobile/browser!

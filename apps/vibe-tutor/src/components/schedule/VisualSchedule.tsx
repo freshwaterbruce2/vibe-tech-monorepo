@@ -157,9 +157,9 @@ const VisualSchedule = ({ type, onStepComplete, onEditSchedule }: VisualSchedule
 
       {/* Completion Message */}
       {stats.completed === stats.total && stats.total > 0 && (
-        <div className="glass-card p-4 bg-gradient-to-r from-green-600/20 to-emerald-600/20 border border-green-500/30">
+        <div className="glass-card p-4 bg-gradient-to-r from-violet-600/20 to-violet-600/20 border border-fuchsia-500/30">
           <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-8 h-8 text-green-400" />
+            <CheckCircle2 className="w-8 h-8 text-fuchsia-400" />
             <div>
               <h3 className="font-bold text-white">All done!</h3>
               <p className="text-sm text-white/70">Great job completing your {type} routine 🎉</p>

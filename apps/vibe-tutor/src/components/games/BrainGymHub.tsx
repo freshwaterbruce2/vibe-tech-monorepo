@@ -786,8 +786,8 @@ export default function BrainGymHub({
           <span className="gh-stat-label">Neural Link</span>
         </div>
         {/* Chest */}
-        <div className="gh-stat-box" style={{ '--stat-accent': '#7cff8b' } as React.CSSProperties}>
-          <Gift size={18} color="#7cff8b" />
+        <div className="gh-stat-box" style={{ '--stat-accent': '#ec4899' } as React.CSSProperties}>
+          <Gift size={18} color="#ec4899" />
           <span className="gh-stat-value">{stats.chestProgress}/5</span>
           <span className="gh-stat-label">Data Cache</span>
         </div>
@@ -896,9 +896,9 @@ export default function BrainGymHub({
             </button>
 
             <div className="gh-featured-panel">
-              <div className="gh-stat-box" style={{ '--stat-accent': '#7cff8b' } as React.CSSProperties}>
+              <div className="gh-stat-box" style={{ '--stat-accent': '#ec4899' } as React.CSSProperties}>
                 <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-slate-400">
-                  <Target size={12} color="#7cff8b" />
+                  <Target size={12} color="#ec4899" />
                   Daily Goal
                 </div>
                 <span className="gh-stat-value">

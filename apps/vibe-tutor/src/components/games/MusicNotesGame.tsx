@@ -113,8 +113,8 @@ const MusicNotesGame = ({ onEarnTokens, onClose }: MusicNotesProps) => {
     let color = '#e2e8f0';
     if (feedback && isCorrect) {
       bg = 'rgba(34,197,94,0.2)';
-      border = '2px solid #22c55e';
-      color = '#22c55e';
+      border = '2px solid #c084fc';
+      color = '#c084fc';
     } else if (feedback && isChosen && !isCorrect) {
       bg = 'rgba(239,68,68,0.15)';
       border = '2px solid #ef4444';
@@ -162,7 +162,7 @@ const MusicNotesGame = ({ onEarnTokens, onClose }: MusicNotesProps) => {
       <div style={{ width: '100%', maxWidth: 400, display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
         {[
           { val: totalTokens, lbl: 'Tokens', color: '#f59e0b', Icon: Zap },
-          { val: score, lbl: 'Score', color: '#22c55e', Icon: Star },
+          { val: score, lbl: 'Score', color: '#c084fc', Icon: Star },
           { val: streak, lbl: 'Streak', color: streak >= 3 ? '#f97316' : '#94a3b8', Icon: null },
           { val: bestStreak, lbl: 'Best', color: CYAN, Icon: Trophy },
         ].map(({ val, lbl, color, Icon }) => (
@@ -223,7 +223,7 @@ const MusicNotesGame = ({ onEarnTokens, onClose }: MusicNotesProps) => {
       {/* Feedback */}
       <div style={{
         marginTop: 12, fontSize: 15, fontWeight: 600, textAlign: 'center', minHeight: 24,
-        color: feedback === 'correct' ? '#4ade80' : '#f87171',
+        color: feedback === 'correct' ? '#e879f9' : '#f87171',
       }}>
         {feedback === 'correct' &&
           `✓ ${currentNote.label} — Nice!${streak >= 3 ? ` 🔥 ${streak} streak!` : ''}`}

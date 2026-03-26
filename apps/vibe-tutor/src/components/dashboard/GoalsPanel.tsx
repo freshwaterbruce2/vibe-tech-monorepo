@@ -234,7 +234,7 @@ const GoalsPanel = ({ homeworkItems, tokens }: GoalsPanelProps) => {
                 <div className="flex items-center gap-2">
                   <Icon
                     size={18}
-                    className={goal.completed ? 'text-green-400' : 'text-[var(--primary-accent)]'}
+                    className={goal.completed ? 'text-fuchsia-400' : 'text-[var(--primary-accent)]'}
                   />
                   <span className="font-semibold text-sm">
                     {getCategoryLabel(goal.category, goal.type)}
@@ -250,7 +250,7 @@ const GoalsPanel = ({ homeworkItems, tokens }: GoalsPanelProps) => {
                     / {goal.target} {getCategoryUnit(goal.category)}
                   </span>
                 </span>
-                {goal.completed && <CheckCircle2 size={20} className="text-green-400" />}
+                {goal.completed && <CheckCircle2 size={20} className="text-fuchsia-400" />}
               </div>
 
               {/* Progress Bar */}
@@ -258,7 +258,7 @@ const GoalsPanel = ({ homeworkItems, tokens }: GoalsPanelProps) => {
                 <div
                   className={`h-full transition-all duration-500 ${
                     goal.completed
-                      ? 'bg-green-500'
+                      ? 'bg-fuchsia-500'
                       : 'bg-gradient-to-r from-[var(--primary-accent)] to-[var(--secondary-accent)]'
                   }`}
                   style={{ width: `${progress}%` }}

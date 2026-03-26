@@ -97,11 +97,11 @@ const WorksheetPractice = ({
             <span className="text-gray-400">
               Question {currentIndex + 1} of {questions.length}
             </span>
-            <span className="text-green-400">{correctCount} correct</span>
+            <span className="text-fuchsia-400">{correctCount} correct</span>
           </div>
           <div className="h-3 bg-white/10 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-300"
+              className="h-full bg-gradient-to-r from-fuchsia-500 to-violet-500 transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -138,7 +138,7 @@ const WorksheetPractice = ({
               disabled={feedback !== null}
               className={`w-full px-6 py-4 bg-white/5 border-2 rounded-xl text-white text-center text-2xl placeholder-gray-500 focus:outline-none transition-all ${
                 feedback === 'correct'
-                  ? 'border-green-500 bg-green-500/10'
+                  ? 'border-fuchsia-500 bg-fuchsia-500/10'
                   : feedback === 'incorrect'
                     ? 'border-red-500 bg-red-500/10'
                     : 'border-white/10 focus:border-purple-500'
@@ -147,8 +147,8 @@ const WorksheetPractice = ({
 
             {/* Feedback */}
             {feedback === 'correct' && (
-              <div className="mt-4 p-4 bg-green-500/20 border border-green-500/50 rounded-lg text-center animate-bounce">
-                <p className="text-green-400 font-bold text-lg">✓ Correct! Great job! 🎉</p>
+              <div className="mt-4 p-4 bg-fuchsia-500/20 border border-fuchsia-500/50 rounded-lg text-center animate-bounce">
+                <p className="text-fuchsia-400 font-bold text-lg">✓ Correct! Great job! 🎉</p>
               </div>
             )}
             {feedback === 'incorrect' && (
@@ -208,7 +208,7 @@ const WorksheetPractice = ({
               setFeedback(null);
               setShowHint(false);
             }}
-            className="flex-1 py-3 bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 text-green-300 rounded-xl transition-all"
+            className="flex-1 py-3 bg-fuchsia-500/20 hover:bg-fuchsia-500/30 border border-fuchsia-500/50 text-fuchsia-300 rounded-xl transition-all"
           >
             Next Question →
           </button>

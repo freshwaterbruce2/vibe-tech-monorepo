@@ -71,7 +71,7 @@ export const VisualTimer = ({
     } else if (timeRemaining <= warningThreshold) {
       return 'text-yellow-400';
     }
-    return 'text-green-400';
+    return 'text-fuchsia-400';
   };
 
   // Calculate progress bar color
@@ -81,7 +81,7 @@ export const VisualTimer = ({
     } else if (timeRemaining <= warningThreshold) {
       return 'bg-yellow-500';
     }
-    return 'bg-green-500';
+    return 'bg-fuchsia-500';
   };
 
   // Calculate progress percentage
@@ -233,7 +233,7 @@ export const VisualTimer = ({
         {!isRunning && timeRemaining === duration && (
           <button
             onClick={start}
-            className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-all flex items-center gap-2"
+            className="px-6 py-3 bg-fuchsia-500 hover:bg-violet-600 text-white font-semibold rounded-xl transition-all flex items-center gap-2"
           >
             <Play className="w-5 h-5" />
             Start
@@ -253,7 +253,7 @@ export const VisualTimer = ({
         {isPaused && (
           <button
             onClick={start}
-            className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl transition-all flex items-center gap-2"
+            className="px-6 py-3 bg-fuchsia-500 hover:bg-violet-600 text-white font-semibold rounded-xl transition-all flex items-center gap-2"
           >
             <Play className="w-5 h-5" />
             Resume
@@ -286,8 +286,8 @@ export const VisualTimer = ({
 
       {/* Status Messages */}
       {timeRemaining === 0 && (
-        <div className="text-center p-3 bg-green-500/20 border border-green-500/40 rounded-xl">
-          <p className="text-green-300 font-semibold">⏰ Time's up! Great job!</p>
+        <div className="text-center p-3 bg-fuchsia-500/20 border border-fuchsia-500/40 rounded-xl">
+          <p className="text-fuchsia-300 font-semibold">⏰ Time's up! Great job!</p>
         </div>
       )}
 

@@ -237,7 +237,7 @@ const WordBuilderGame = ({ onEarnTokens, onClose: _onClose }: WordBuilderProps) 
                     <button
                       key={index}
                       onClick={() => handleSelectedLetterClick(index)}
-                      className="bg-gradient-to-r from-green-500 to-blue-500 text-white text-3xl font-bold
+                      className="bg-gradient-to-r from-fuchsia-500 to-blue-500 text-white text-3xl font-bold
                                w-16 h-16 rounded-xl hover:scale-110 transition-transform cursor-pointer
                                shadow-lg hover:shadow-2xl"
                     >
@@ -253,7 +253,7 @@ const WordBuilderGame = ({ onEarnTokens, onClose: _onClose }: WordBuilderProps) 
               <div
                 className={`text-center text-2xl font-bold mb-6 animate-pulse ${
                   feedback.includes('Awesome')
-                    ? 'text-green-400'
+                    ? 'text-fuchsia-400'
                     : feedback.includes('Hint')
                       ? 'text-yellow-400'
                       : 'text-red-400'
@@ -336,7 +336,7 @@ const WordBuilderGame = ({ onEarnTokens, onClose: _onClose }: WordBuilderProps) 
           </div>
           <div className="bg-gray-700 rounded-full h-4 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-green-400 to-blue-500 h-full transition-all duration-500"
+              className="bg-gradient-to-r from-fuchsia-400 to-blue-500 h-full transition-all duration-500"
               style={{ width: `${Math.min(score % 100, 100)}%` }}
             />
           </div>

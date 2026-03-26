@@ -114,7 +114,7 @@ const TokenWallet = ({ onClose, onNavigate, compact = false }: TokenWalletProps)
             {onNavigate && (
               <button
                 onClick={() => onNavigate('shop')}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-lg transition-all text-white font-medium shadow-lg shadow-green-500/20"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-fuchsia-500 to-violet-600 hover:from-fuchsia-600 hover:to-violet-700 rounded-lg transition-all text-white font-medium shadow-lg shadow-fuchsia-500/20"
               >
                 <ShoppingBag size={18} /> Shop
               </button>
@@ -161,10 +161,10 @@ const TokenWallet = ({ onClose, onNavigate, compact = false }: TokenWalletProps)
         {/* Today's Stats */}
         <div className="grid grid-cols-2 gap-3">
           <StatCard
-            icon={<TrendingUp className="w-5 h-5 text-green-400" />}
+            icon={<TrendingUp className="w-5 h-5 text-fuchsia-400" />}
             label="Earned Today"
             value={`+${todayEarnings}`}
-            color="green"
+            color="fuchsia"
           />
           <StatCard
             icon={<TrendingDown className="w-5 h-5 text-red-400" />}
@@ -198,7 +198,7 @@ const TokenWallet = ({ onClose, onNavigate, compact = false }: TokenWalletProps)
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${
                     filter === f
                       ? f === 'earn'
-                        ? 'bg-green-600 text-white shadow-lg shadow-green-500/20'
+                        ? 'bg-violet-600 text-white shadow-lg shadow-fuchsia-500/20'
                         : f === 'spend'
                           ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
                           : 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
@@ -235,10 +235,10 @@ const TokenWallet = ({ onClose, onNavigate, compact = false }: TokenWalletProps)
         {onNavigate && (
           <button
             onClick={() => onNavigate('shop')}
-            className="w-full glass-card p-4 flex items-center justify-center gap-3 bg-gradient-to-r from-green-600/20 to-emerald-600/20 border border-green-500/30 hover:border-green-400/50 transition-all active:scale-[0.98] group"
+            className="w-full glass-card p-4 flex items-center justify-center gap-3 bg-gradient-to-r from-violet-600/20 to-violet-600/20 border border-fuchsia-500/30 hover:border-fuchsia-400/50 transition-all active:scale-[0.98] group"
           >
-            <ShoppingBag className="w-6 h-6 text-green-400 group-hover:scale-110 transition-transform" />
-            <span className="text-lg font-bold text-green-400">Visit the Reward Shop</span>
+            <ShoppingBag className="w-6 h-6 text-fuchsia-400 group-hover:scale-110 transition-transform" />
+            <span className="text-lg font-bold text-fuchsia-400">Visit the Reward Shop</span>
             <span className="text-white/50 text-sm ml-1">Spend your tokens!</span>
           </button>
         )}
@@ -258,16 +258,16 @@ function StatCard({
   icon: React.ReactNode;
   label: string;
   value: string;
-  color: 'green' | 'red' | 'cyan' | 'purple';
+  color: 'fuchsia' | 'red' | 'cyan' | 'purple';
 }) {
   const borderMap = {
-    green: 'border-green-500/20 bg-green-600/10',
+    fuchsia: 'border-fuchsia-500/20 bg-violet-600/10',
     red: 'border-red-500/20 bg-red-600/10',
     cyan: 'border-cyan-500/20 bg-cyan-600/10',
     purple: 'border-purple-500/20 bg-purple-600/10',
   };
   const textMap = {
-    green: 'text-green-400',
+    fuchsia: 'text-fuchsia-400',
     red: 'text-red-400',
     cyan: 'text-cyan-400',
     purple: 'text-purple-400',
@@ -299,18 +299,18 @@ function TransactionRow({
     <div
       className={`rounded-xl p-3.5 flex items-center gap-3 transition-colors ${
         isEarn
-          ? 'bg-green-500/5 border border-green-500/10 hover:bg-green-500/10'
+          ? 'bg-fuchsia-500/5 border border-fuchsia-500/10 hover:bg-fuchsia-500/10'
           : 'bg-red-500/5 border border-red-500/10 hover:bg-red-500/10'
       }`}
     >
       {/* Icon */}
       <div
         className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
-          isEarn ? 'bg-green-500/20' : 'bg-red-500/20'
+          isEarn ? 'bg-fuchsia-500/20' : 'bg-red-500/20'
         }`}
       >
         {isEarn ? (
-          <TrendingUp className="w-4 h-4 text-green-400" />
+          <TrendingUp className="w-4 h-4 text-fuchsia-400" />
         ) : (
           <TrendingDown className="w-4 h-4 text-red-400" />
         )}
@@ -325,7 +325,7 @@ function TransactionRow({
       </div>
 
       {/* Amount */}
-      <div className={`text-lg font-bold shrink-0 ${isEarn ? 'text-green-400' : 'text-red-400'}`}>
+      <div className={`text-lg font-bold shrink-0 ${isEarn ? 'text-fuchsia-400' : 'text-red-400'}`}>
         {isEarn ? '+' : '-'}
         {transaction.amount}
       </div>

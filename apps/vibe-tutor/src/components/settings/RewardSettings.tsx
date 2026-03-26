@@ -77,7 +77,7 @@ const RewardSettings = ({ rewards, onUpdateRewards, claimedRewards, onApproval }
                                 </div>
                                 <div className="flex gap-3">
                                     <button onClick={() => onApproval(reward.id, false)} className="px-4 py-2 font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700">Deny</button>
-                                    <button onClick={() => onApproval(reward.id, true)} className="px-4 py-2 font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700">Approve</button>
+                                    <button onClick={() => onApproval(reward.id, true)} className="px-4 py-2 font-semibold text-white bg-violet-600 rounded-lg hover:bg-violet-700">Approve</button>
                                 </div>
                             </div>
                         ))}

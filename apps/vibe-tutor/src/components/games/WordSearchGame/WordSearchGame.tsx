@@ -104,7 +104,7 @@ const WordSearchGame = ({ subject, onComplete, onBack, initialConfig = {} }: Wor
       particleCount: 150,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#22d3ee', '#7cff8b', '#fbbf24', '#ff5fd2'],
+      colors: ['#22d3ee', '#ec4899', '#fbbf24', '#ff5fd2'],
     });
 
     if (config.soundEnabled) {
@@ -260,7 +260,7 @@ const WordSearchGame = ({ subject, onComplete, onBack, initialConfig = {} }: Wor
                   </button>
                   <button
                     onClick={startGame}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-lg font-bold text-white transition-all transform hover:scale-105"
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 rounded-lg font-bold text-white transition-all transform hover:scale-105"
                   >
                     Start Game
                   </button>
@@ -339,9 +339,9 @@ const WordSearchGame = ({ subject, onComplete, onBack, initialConfig = {} }: Wor
               />
               <TutorialStep
                 emoji="✨"
-                color="green"
-                title="Words Highlight Green"
-                desc="When you find a word, it turns green and you get points!"
+                color="fuchsia"
+                title="Words Highlight Purple"
+                desc="When you find a word, it turns purple and you get points!"
               />
               <TutorialStep
                 emoji="💡"
@@ -426,7 +426,7 @@ const WordSearchGame = ({ subject, onComplete, onBack, initialConfig = {} }: Wor
           {/* Stats row */}
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-2">
-              <CheckCircle size={20} className="text-green-400" />
+              <CheckCircle size={20} className="text-fuchsia-400" />
               <span className="text-white font-medium">
                 {foundWords.size}/{puzzle.words.length} words
               </span>
@@ -464,7 +464,7 @@ const WordSearchGame = ({ subject, onComplete, onBack, initialConfig = {} }: Wor
             <div className="h-2 bg-white/10 rounded-full overflow-hidden">
               <style>{`.wordsearch-progress-fill { width: ${progressPercent}%; }`}</style>
               <div
-                className="h-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-500 wordsearch-progress-fill"
+                className="h-full bg-gradient-to-r from-violet-500 to-purple-500 transition-all duration-500 wordsearch-progress-fill"
               />
             </div>
           </div>
@@ -506,7 +506,7 @@ const WordSearchGame = ({ subject, onComplete, onBack, initialConfig = {} }: Wor
           <div className="glass-card p-6 max-w-sm w-full border border-red-500/40 animate-[fadeIn_0.2s_ease-out]">
             <h3 className="text-xl font-bold text-white mb-2">Quit Game?</h3>
             <p className="text-gray-300 mb-1">
-              You've found <span className="text-green-400 font-bold">{foundWords.size}</span> of{' '}
+              You've found <span className="text-fuchsia-400 font-bold">{foundWords.size}</span> of{' '}
               <span className="text-cyan-400 font-bold">{puzzle.words.length}</span> words.
             </p>
             <p className="text-gray-400 text-sm mb-6">Your progress will be lost.</p>
@@ -565,10 +565,10 @@ function TutorialStep({
       border: 'border-cyan-500/30',
       text: 'text-cyan-400',
     },
-    green: {
-      background: 'bg-green-500/10',
-      border: 'border-green-500/30',
-      text: 'text-green-400',
+    fuchsia: {
+      background: 'bg-fuchsia-500/10',
+      border: 'border-fuchsia-500/30',
+      text: 'text-fuchsia-400',
     },
     yellow: {
       background: 'bg-yellow-500/10',

@@ -102,7 +102,7 @@ export default function AvatarShop({ userTokens, onSpendTokens }: AvatarShopProp
               key={item.id}
               style={{
                 background: '#0f172a',
-                border: isEquipped ? '2px solid #10b981' : '1px solid #334155',
+                border: isEquipped ? '2px solid #a855f7' : '1px solid #334155',
                 borderRadius: '12px',
                 padding: '16px',
                 display: 'flex',
@@ -118,7 +118,7 @@ export default function AvatarShop({ userTokens, onSpendTokens }: AvatarShopProp
                   </div>
                 )}
                 {isOwned && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10b981' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#a855f7' }}>
                     <Check size={16} />
                     <span style={{ fontWeight: 'bold', fontSize: '12px', textTransform: 'uppercase' }}>Owned</span>
                   </div>
@@ -141,9 +141,9 @@ export default function AvatarShop({ userTokens, onSpendTokens }: AvatarShopProp
                 <button
                   disabled
                   style={{
-                    background: '#10b98122',
-                    color: '#10b981',
-                    border: '1px solid #10b981',
+                    background: '#a855f722',
+                    color: '#a855f7',
+                    border: '1px solid #a855f7',
                     padding: '8px',
                     borderRadius: '8px',
                     fontWeight: 'bold',

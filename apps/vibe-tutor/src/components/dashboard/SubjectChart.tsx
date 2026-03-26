@@ -21,8 +21,8 @@ const SubjectChart = ({ items }: SubjectChartProps) => {
       'Science': '#38BDF8',
       'English': '#FF5FD2',
       'History': '#FBBF24',
-      'Language': '#7CFF8B',
-      'Language Arts': '#7CFF8B',
+      'Language': '#a855f7',
+      'Language Arts': '#a855f7',
       'Bible': '#FCD34D',
       'Other': '#94A3B8'
     };

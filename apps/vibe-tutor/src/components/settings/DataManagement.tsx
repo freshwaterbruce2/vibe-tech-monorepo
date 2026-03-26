@@ -167,7 +167,7 @@ const DataManagement = () => {
             <button onClick={handleExport} className="px-5 py-3 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
                 Export Data
             </button>
-            <button onClick={handleImportClick} className="px-5 py-3 font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors">
+            <button onClick={handleImportClick} className="px-5 py-3 font-semibold text-white bg-violet-600 rounded-lg hover:bg-violet-700 transition-colors">
                 Import Data
             </button>
             <input type="file" accept=".json" ref={fileInputRef} onChange={handleFileChange} className="hidden" />

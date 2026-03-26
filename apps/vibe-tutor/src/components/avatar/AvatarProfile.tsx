@@ -228,7 +228,7 @@ export default function AvatarProfile({ onOpenShop }: AvatarProfileProps) {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Icon size={18} color={isBoosted ? '#10b981' : '#64748b'} />
+                    <Icon size={18} color={isBoosted ? '#a855f7' : '#64748b'} />
                     <span style={{ color: isBoosted ? 'white' : '#cbd5e1' }}>
                       {STAT_LABELS[stat]}
                     </span>
@@ -236,8 +236,8 @@ export default function AvatarProfile({ onOpenShop }: AvatarProfileProps) {
                   <div
                     style={{
                       fontWeight: 'bold',
-                      color: isBoosted ? '#10b981' : 'white',
-                      backgroundColor: isBoosted ? '#10b98122' : 'transparent',
+                      color: isBoosted ? '#a855f7' : 'white',
+                      backgroundColor: isBoosted ? '#a855f722' : 'transparent',
                       padding: '4px 8px',
                       borderRadius: '4px',
                     }}

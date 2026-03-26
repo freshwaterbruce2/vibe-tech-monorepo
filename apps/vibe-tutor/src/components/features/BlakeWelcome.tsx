@@ -66,7 +66,7 @@ export const BlakeWelcome = ({ points, streak, onClose }: BlakeWelcomeProps) => 
           </div>
 
           <div className="bg-black/30 rounded-lg p-4 text-center">
-            <div className="text-3xl font-bold text-green-400">🎯 {pointsToNext}</div>
+            <div className="text-3xl font-bold text-fuchsia-400">🎯 {pointsToNext}</div>
             <div className="text-sm text-white/80">To Next Reward</div>
           </div>
         </div>
@@ -79,7 +79,7 @@ export const BlakeWelcome = ({ points, streak, onClose }: BlakeWelcomeProps) => 
                 <div className="text-lg font-bold text-yellow-400">⚡ Daily Challenge</div>
                 <div className="text-white">{dailyChallenge.task}</div>
               </div>
-              <div className="text-2xl font-bold text-green-400">+{dailyChallenge.reward} pts</div>
+              <div className="text-2xl font-bold text-fuchsia-400">+{dailyChallenge.reward} pts</div>
             </div>
           </div>
         )}
@@ -107,7 +107,7 @@ export const BlakeWelcome = ({ points, streak, onClose }: BlakeWelcomeProps) => 
             {/* Progress Bar */}
             <div className="mt-3 bg-black/30 rounded-full h-4 overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-green-400 to-cyan-400 transition-all duration-500"
+                className="h-full bg-gradient-to-r from-fuchsia-400 to-purple-400 transition-all duration-500"
                 style={{
                   width: `${Math.min(100, ((points % 100) / nextReward.pointsRequired) * 100)}%`,
                 }}

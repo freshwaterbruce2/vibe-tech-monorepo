@@ -23,7 +23,7 @@ interface SubjectCardsProps {
 
 const CARD_CONFIG: Record<SubjectType, { icon: typeof Zap; color: string; bgColor: string }> = {
   Math: { icon: Zap, color: 'from-yellow-500 to-orange-500', bgColor: 'bg-yellow-500/10' },
-  Science: { icon: Atom, color: 'from-green-500 to-emerald-500', bgColor: 'bg-green-500/10' },
+  Science: { icon: Atom, color: 'from-fuchsia-500 to-violet-500', bgColor: 'bg-fuchsia-500/10' },
   History: { icon: Clock, color: 'from-purple-500 to-pink-500', bgColor: 'bg-purple-500/10' },
   Bible: { icon: Heart, color: 'from-pink-500 to-rose-500', bgColor: 'bg-pink-500/10' },
   'Language Arts': {
@@ -116,8 +116,8 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
           </div>
           {todayEarnings > 0 && (
             <div className="glass-card px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs">
-              <TrendingUp size={14} className="text-green-400" />
-              <span className="text-green-400 font-medium">+{todayEarnings} today</span>
+              <TrendingUp size={14} className="text-fuchsia-400" />
+              <span className="text-fuchsia-400 font-medium">+{todayEarnings} today</span>
             </div>
           )}
         </div>
@@ -266,7 +266,7 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
               </div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-400">+{dailyChallenge.reward}</div>
+              <div className="text-2xl font-bold text-fuchsia-400">+{dailyChallenge.reward}</div>
               <div className="text-xs text-gray-400">tokens</div>
             </div>
           </div>
@@ -285,7 +285,7 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
             <span>Complete 10-question quests to earn 1–5 stars based on your score</span>
           </li>
           <li className="flex items-start gap-2">
-            <TrendingUp className="text-green-500 flex-shrink-0 mt-0.5" size={16} />
+            <TrendingUp className="text-fuchsia-500 flex-shrink-0 mt-0.5" size={16} />
             <span>Collect 5 stars to explore new zones and unlock harder challenges</span>
           </li>
           <li className="flex items-start gap-2">

@@ -11,7 +11,7 @@ interface PatternQuestProps {
 
 type PatternType = 'color' | 'shape' | 'number' | 'mixed';
 type Shape = '■' | '●' | '▲' | '★' | '♦' | '❤';
-type Color = 'red' | 'blue' | 'green' | 'yellow' | 'purple' | 'orange';
+type Color = 'red' | 'blue' | 'fuchsia' | 'yellow' | 'purple' | 'orange';
 
 interface PatternElement {
   shape: Shape;
@@ -48,7 +48,7 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
   }));
 
   const shapes: Shape[] = ['■', '●', '▲', '★', '♦', '❤'];
-  const colors: Color[] = ['red', 'blue', 'green', 'yellow', 'purple', 'orange'];
+  const colors: Color[] = ['red', 'blue', 'fuchsia', 'yellow', 'purple', 'orange'];
 
   // Roblox-themed world names
   const worldNames = [
@@ -66,7 +66,7 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
     const colorMap = {
       red: 'text-red-500',
       blue: 'text-blue-500',
-      green: 'text-green-500',
+      fuchsia: 'text-fuchsia-500',
       yellow: 'text-yellow-400',
       purple: 'text-purple-500',
       orange: 'text-orange-500',
@@ -378,7 +378,7 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
           particleCount: 150,
           spread: 80,
           origin: { y: 0.6 },
-          colors: ['#22d3ee', '#7cff8b', '#ff5fd2'],
+          colors: ['#22d3ee', '#ec4899', '#ff5fd2'],
         });
         setLevel((prev) => Math.min(prev + 1, worldNames.length));
         setShowCelebration(true);
@@ -428,7 +428,7 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-900 via-blue-900 to-purple-900 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="text-white">
@@ -466,10 +466,10 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
       {/* Game Area */}
       <div className="max-w-5xl mx-auto">
         {currentPattern && (
-          <div className="bg-gray-800/50 backdrop-blur-lg rounded-3xl p-8 border-2 border-teal-500/50">
+          <div className="bg-gray-800/50 backdrop-blur-lg rounded-3xl p-8 border-2 border-purple-500/50">
             {/* Pattern Type Badge */}
             <div className="text-center mb-6">
-              <span className="bg-gradient-to-r from-teal-500 to-blue-500 text-white px-6 py-2 rounded-full text-sm font-bold uppercase">
+              <span className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-6 py-2 rounded-full text-sm font-bold uppercase">
                 {currentPattern.isBossRound ? 'Boss Pattern' : `${currentPattern.type} Pattern`} - Level {currentPattern.difficulty}
               </span>
               <p className="mt-3 text-sm text-cyan-100/80">{currentPattern.prompt}</p>
@@ -502,7 +502,7 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
             {feedback && (
               <div
                 className={`text-center text-2xl font-bold mb-6 animate-bounce ${
-                  feedback.includes('❌') ? 'text-red-400' : 'text-green-400'
+                  feedback.includes('❌') ? 'text-red-400' : 'text-fuchsia-400'
                 }`}
               >
                 {feedback}
@@ -582,7 +582,7 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
         {/* Streak Indicator */}
         {streak > 0 && (
           <animated.div className="mt-6 text-center" style={patternProps}>
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-teal-500 to-blue-500 text-white px-6 py-3 rounded-full font-bold shadow-lg shadow-teal-500/20">
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white px-6 py-3 rounded-full font-bold shadow-lg shadow-purple-500/20">
               🔥 {streak} Pattern Streak!
               {streak >= 2 && (
                 <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">

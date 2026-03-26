@@ -62,7 +62,7 @@ export const StepCard = ({
     <div
       className={`glass-card p-4 transition-all ${
         isActive ? 'ring-2 ring-cyan-500' : ''
-      } ${isCompleted ? 'bg-green-600/10' : ''}`}
+      } ${isCompleted ? 'bg-violet-600/10' : ''}`}
     >
       <div className="flex items-start gap-3">
         {/* Checkbox */}
@@ -71,7 +71,7 @@ export const StepCard = ({
           className="flex-shrink-0 mt-1 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded-full"
         >
           {isCompleted ? (
-            <CheckCircle2 className="w-6 h-6 text-green-400" />
+            <CheckCircle2 className="w-6 h-6 text-fuchsia-400" />
           ) : (
             <Circle className="w-6 h-6 text-white/40 hover:text-white/70 transition-colors" />
           )}
@@ -83,7 +83,7 @@ export const StepCard = ({
             <div className="flex-1">
               <h4
                 className={`font-semibold ${
-                  isCompleted ? 'text-green-300 line-through' : 'text-white'
+                  isCompleted ? 'text-fuchsia-300 line-through' : 'text-white'
                 }`}
               >
                 {stepNumber}. {step.title}

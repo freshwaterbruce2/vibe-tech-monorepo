@@ -90,8 +90,8 @@ const StreakTracker = ({ items }: StreakTrackerProps) => {
       </div>
 
       {currentStreak >= 3 && (
-        <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
-          <p className="text-sm text-green-400 text-center">
+        <div className="mt-4 p-3 bg-fuchsia-500/10 border border-fuchsia-500/30 rounded-lg">
+          <p className="text-sm text-fuchsia-400 text-center">
             🔥 {currentStreak} days strong! You're building great habits!
           </p>
         </div>

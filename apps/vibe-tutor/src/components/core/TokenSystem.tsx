@@ -174,7 +174,7 @@ export const TokenSystem = ({ currentTokens, onTokensUpdate }: TokenSystemProps)
       {recentEarnings.map((amount, index) => (
         <animated.div
           key={index}
-          className="recent-earning absolute text-3xl font-bold text-green-400"
+          className="recent-earning absolute text-3xl font-bold text-fuchsia-400"
           style={{
             animation: 'floatUp 3s ease-out',
             right: '50%',
@@ -204,7 +204,7 @@ export const TokenSystem = ({ currentTokens, onTokensUpdate }: TokenSystemProps)
           {/* Progress Bar */}
           <div className="w-full bg-gray-700 rounded-full h-4 overflow-hidden">
             <animated.div
-              className="h-full bg-gradient-to-r from-green-400 to-cyan-400"
+              className="h-full bg-gradient-to-r from-fuchsia-400 to-cyan-400"
               style={{
                 width: `${progress}%`,
                 transition: 'width 0.5s ease-out',
@@ -237,7 +237,7 @@ export const TokenSystem = ({ currentTokens, onTokensUpdate }: TokenSystemProps)
                   key={reward.id}
                   className={`reward-card p-4 rounded-lg transition-all ${
                     canAfford
-                      ? 'bg-green-900/50 border-2 border-green-400 hover:scale-105 cursor-pointer'
+                      ? 'bg-violet-900/50 border-2 border-violet-400 hover:scale-105 cursor-pointer'
                       : isNext
                         ? 'bg-gray-800/50 border-2 border-yellow-400'
                         : 'bg-gray-900/50 opacity-50'
@@ -248,13 +248,13 @@ export const TokenSystem = ({ currentTokens, onTokensUpdate }: TokenSystemProps)
                   <div className="text-xs text-gray-400 mb-2">{reward.description}</div>
                   <div
                     className={`text-center font-bold ${
-                      canAfford ? 'text-green-400' : 'text-gray-500'
+                      canAfford ? 'text-fuchsia-400' : 'text-gray-500'
                     }`}
                   >
                     💎 {reward.pointsRequired}
                   </div>
                   {canAfford && (
-                    <button className="w-full mt-2 py-1 px-2 bg-green-600 hover:bg-green-500 rounded text-xs font-bold">
+                    <button className="w-full mt-2 py-1 px-2 bg-violet-600 hover:bg-violet-500 rounded text-xs font-bold">
                       CLAIM!
                     </button>
                   )}
@@ -274,7 +274,7 @@ export const TokenSystem = ({ currentTokens, onTokensUpdate }: TokenSystemProps)
         <div className="space-y-1 text-xs">
           <div className="flex justify-between">
             <span>Perfect Score</span>
-            <span className="text-green-400">2.0x</span>
+            <span className="text-fuchsia-400">2.0x</span>
           </div>
           <div className="flex justify-between">
             <span>Good Work</span>

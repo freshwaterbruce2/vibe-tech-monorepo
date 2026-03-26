@@ -52,7 +52,7 @@ export const Celebration = ({ type, points, message, onComplete }: CelebrationPr
         fireConfetti({ particleCount: 50, spread: 60 });
         break;
       case 'pointGain':
-        fireConfetti({ particleCount: 30, spread: 40, colors: ['#22D3EE', '#7CFF8B'] });
+        fireConfetti({ particleCount: 30, spread: 40, colors: ['#22D3EE', '#ec4899'] });
         break;
       case 'levelUp':
         fireLevelUpAnimation();
@@ -144,7 +144,7 @@ function fireConfetti(options: confetti.Options = {}) {
     particleCount: 100,
     spread: 70,
     origin: { y: 0.6 },
-    colors: ['#22D3EE', '#38BDF8', '#FF5FD2', '#FBBF24', '#7CFF8B'],
+    colors: ['#22D3EE', '#38BDF8', '#FF5FD2', '#FBBF24', '#ec4899'],
   };
 
   void confetti({

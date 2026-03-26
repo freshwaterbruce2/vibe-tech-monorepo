@@ -155,11 +155,11 @@ export default function BossBattleGame({ subject, onComplete, onBack }: BossBatt
     return (
       <div style={{ textAlign: 'center', color: 'white', padding: '40px' }}>
         <h1 style={{ fontSize: '64px', margin: 0 }}>🏆</h1>
-        <h2 style={{ color: '#10b981' }}>Boss Defeated!</h2>
+        <h2 style={{ color: '#a855f7' }}>Boss Defeated!</h2>
         <p>Your powerful gear helped you vanquish the boss. You earned massive rewards!</p>
         <button 
           onClick={() => finishGame(true)}
-          style={{ background: '#10b981', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '8px', fontSize: '18px', cursor: 'pointer', marginTop: '20px' }}>
+          style={{ background: '#a855f7', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '8px', fontSize: '18px', cursor: 'pointer', marginTop: '20px' }}>
           Claim Victory
         </button>
       </div>
@@ -267,7 +267,7 @@ export default function BossBattleGame({ subject, onComplete, onBack }: BossBatt
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             <Heart size={16} color="#ef4444" fill="#ef4444" />
             <div style={{ flexGrow: 1, background: '#000', height: '14px', borderRadius: '7px', overflow: 'hidden' }}>
-              <div style={{ width: `${(playerHp / PLAYER_MAX_HP) * 100}%`, height: '100%', background: '#22c55e', transition: 'width 0.3s' }} />
+              <div style={{ width: `${(playerHp / PLAYER_MAX_HP) * 100}%`, height: '100%', background: '#c084fc', transition: 'width 0.3s' }} />
             </div>
           </div>
           <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8', textAlign: 'right' }}>HP: {playerHp} / {PLAYER_MAX_HP}</p>

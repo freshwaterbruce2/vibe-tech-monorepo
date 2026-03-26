@@ -100,7 +100,7 @@ const FocusTimer = ({ onSessionComplete }: FocusTimerProps) => {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background-main via-background-main to-surface-dark">
       <div className="glass-card p-8 text-center space-y-6 max-w-md w-full">
         <div className="flex items-center justify-center gap-3">
-          <Clock size={32} className={mode === 'focus' ? 'text-blue-400' : 'text-green-400'} />
+          <Clock size={32} className={mode === 'focus' ? 'text-blue-400' : 'text-fuchsia-400'} />
           <h2 className="text-2xl font-bold">{mode === 'focus' ? 'Focus Time' : 'Break Time'}</h2>
         </div>
 

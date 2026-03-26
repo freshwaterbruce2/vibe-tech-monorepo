@@ -123,7 +123,7 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
             onClick={() => setActiveTab('chores')}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${
               activeTab === 'chores'
-                ? 'bg-[#7cff8b] text-slate-950 shadow-[var(--neon-glow-secondary)]'
+                ? 'bg-[#ec4899] text-slate-950 shadow-[var(--neon-glow-secondary)]'
                 : 'glass-card text-[var(--text-secondary)] hover:text-white'
             }`}
           >
@@ -244,7 +244,7 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
                     value={newChore}
                     onChange={(e) => setNewChore(e.target.value)}
                     placeholder="E.g., Clean my room, Walk the dog..."
-                    className="w-full bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[#7cff8b]"
+                    className="w-full bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[#ec4899]"
                   />
                 </div>
                 <div className="w-full md:w-auto">
@@ -256,13 +256,13 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
                       min="1"
                       value={newChoreReward}
                       onChange={(e) => setNewChoreReward(parseInt(e.target.value) || 0)}
-                      className="w-full md:w-28 bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg pl-9 pr-3 py-2 text-white outline-none focus:border-[#7cff8b]"
+                      className="w-full md:w-28 bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg pl-9 pr-3 py-2 text-white outline-none focus:border-[#ec4899]"
                     />
                   </div>
                 </div>
                 <button
                   onClick={handleAddChore}
-                  className="bg-[#7cff8b] text-slate-950 px-6 py-2.5 md:py-2 rounded-lg hover:brightness-110 transition-all font-semibold w-full md:w-auto"
+                  className="bg-[#ec4899] text-slate-950 px-6 py-2.5 md:py-2 rounded-lg hover:brightness-110 transition-all font-semibold w-full md:w-auto"
                 >
                   Add Chore
                 </button>
@@ -273,13 +273,13 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
                   <div
                     key={chore.id}
                     className={`glass-card p-4 rounded-xl border flex items-center justify-between group transition-all ${
-                      chore.completed ? 'border-[#7cff8b]/50 bg-[#7cff8b]/8' : 'border-[var(--glass-border)]'
+                      chore.completed ? 'border-[#ec4899]/50 bg-[#ec4899]/8' : 'border-[var(--glass-border)]'
                     }`}
                   >
                     <div className="flex items-center gap-4 flex-1">
                       <button onClick={() => handleToggleChore(chore.id, chore.completed)}>
                         {chore.completed ? (
-                          <CheckCircle2 className="w-6 h-6 text-[#7cff8b]" />
+                          <CheckCircle2 className="w-6 h-6 text-[#ec4899]" />
                         ) : (
                           <Circle className="w-6 h-6 text-[var(--text-secondary)]" />
                         )}

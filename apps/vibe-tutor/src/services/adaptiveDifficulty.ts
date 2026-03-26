@@ -240,7 +240,7 @@ export function getDifficultyIndex(difficulty: DifficultyLevel): number {
  */
 export function getDifficultyColor(difficulty: DifficultyLevel): string {
   const colors = {
-    easy: 'text-green-400',
+    easy: 'text-fuchsia-400',
     medium: 'text-yellow-400',
     hard: 'text-orange-400',
     expert: 'text-red-400',
@@ -253,7 +253,7 @@ export function getDifficultyColor(difficulty: DifficultyLevel): string {
  */
 export function getDifficultyBadgeStyle(difficulty: DifficultyLevel): string {
   const styles = {
-    easy: 'bg-green-500/20 border-green-500/40 text-green-300',
+    easy: 'bg-fuchsia-500/20 border-fuchsia-500/40 text-fuchsia-300',
     medium: 'bg-yellow-500/20 border-yellow-500/40 text-yellow-300',
     hard: 'bg-orange-500/20 border-orange-500/40 text-orange-300',
     expert: 'bg-red-500/20 border-red-500/40 text-red-300',

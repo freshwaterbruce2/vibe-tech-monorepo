@@ -227,7 +227,7 @@ export const SmartSchedule = ({
         position: fixed;
         bottom: 20px;
         right: 20px;
-        background: linear-gradient(135deg, #10B981, #059669);
+        background: linear-gradient(135deg, #9333ea, #a855f7);
         color: white;
         padding: 15px 20px;
         border-radius: 10px;
@@ -330,7 +330,7 @@ export const SmartSchedule = ({
   const getActivityColor = (type: string) => {
     const colors = {
       homework: 'bg-blue-900/50 border-blue-400',
-      break: 'bg-green-900/50 border-green-400',
+      break: 'bg-fuchsia-900/50 border-fuchsia-400',
       gaming: 'bg-purple-900/50 border-purple-400',
       focus: 'bg-yellow-900/50 border-yellow-400',
       meal: 'bg-orange-900/50 border-orange-400',
@@ -373,7 +373,7 @@ export const SmartSchedule = ({
           <button
             onClick={() => setAutoMode(!autoMode)}
             className={`px-4 py-2 rounded-lg font-bold transition-all ${
-              autoMode ? 'bg-green-600 text-white' : 'bg-gray-600 text-gray-300'
+              autoMode ? 'bg-violet-600 text-white' : 'bg-gray-600 text-gray-300'
             }`}
           >
             {autoMode ? '🤖 Auto' : '👤 Manual'}
@@ -383,8 +383,8 @@ export const SmartSchedule = ({
 
       {/* Current & Next Activity */}
       <div className="current-next grid grid-cols-2 gap-4 mb-6">
-        <div className="current-activity p-4 bg-green-900/30 border-2 border-green-400 rounded-lg">
-          <div className="text-sm text-green-400 mb-1">Now</div>
+        <div className="current-activity p-4 bg-fuchsia-900/30 border-2 border-fuchsia-400 rounded-lg">
+          <div className="text-sm text-fuchsia-400 mb-1">Now</div>
           {currentActivity ? (
             <>
               <div className="text-xl font-bold text-white">{currentActivity.title}</div>
@@ -443,7 +443,7 @@ export const SmartSchedule = ({
               key={item.id}
               className={`schedule-item flex items-center space-x-4 p-3 rounded-lg border-2 transition-all ${
                 item.completed
-                  ? 'bg-green-900/20 border-green-600 opacity-50'
+                  ? 'bg-violet-900/20 border-violet-600 opacity-50'
                   : isCurrent
                     ? 'bg-yellow-900/30 border-yellow-400 scale-105'
                     : getActivityColor(item.type)
@@ -476,7 +476,7 @@ export const SmartSchedule = ({
                 </button>
               )}
 
-              {item.completed && <div className="text-green-400 text-2xl">✅</div>}
+              {item.completed && <div className="text-fuchsia-400 text-2xl">✅</div>}
             </div>
           );
         })}

@@ -412,7 +412,7 @@ export default function MathAdventureGame({ onClose, onEarnTokens }: MathAdventu
           awardTokens(result.tokenDelta);
           if (allowConfetti && result.state.streak > 0 && result.state.streak % 5 === 0) {
             void confetti({
-              colors: ['#38bdf8', '#facc15', '#22c55e'],
+              colors: ['#38bdf8', '#facc15', '#c084fc'],
               origin: { x: 0.55, y: 0.3 },
               particleCount: 70,
               spread: 55,

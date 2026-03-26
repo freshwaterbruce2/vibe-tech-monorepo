@@ -37,9 +37,9 @@ const QuickStats = ({ items }: QuickStatsProps) => {
       icon: CheckCircle2,
       label: 'Completed Today',
       value: completedToday,
-      color: 'text-green-400',
-      bgColor: 'bg-green-500/10',
-      borderColor: 'border-green-500/30'
+      color: 'text-fuchsia-400',
+      bgColor: 'bg-fuchsia-500/10',
+      borderColor: 'border-fuchsia-500/30'
     },
     {
       icon: Clock,

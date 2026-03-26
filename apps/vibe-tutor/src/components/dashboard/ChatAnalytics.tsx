@@ -21,7 +21,7 @@ interface AnalyticsSnapshot {
 }
 
 const trendConfig = {
-  improving: { label: 'Improving 🚀', color: 'text-green-400' },
+  improving: { label: 'Improving 🚀', color: 'text-fuchsia-400' },
   stable: { label: 'Steady ✊', color: 'text-yellow-400' },
   declining: { label: 'Needs Attention ⚠️', color: 'text-red-400' },
 } as const;

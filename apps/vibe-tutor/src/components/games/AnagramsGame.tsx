@@ -87,7 +87,7 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
         particleCount: 200,
         spread: 100,
         origin: { y: 0.6 },
-        colors: ['#22d3ee', '#7cff8b', '#ff5fd2'],
+        colors: ['#22d3ee', '#ec4899', '#ff5fd2'],
       });
     } else {
       void playSound(result.stars >= 3 ? 'success' : 'pop');
@@ -183,7 +183,7 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
 
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
-              <CheckCircle size={20} className="text-green-400" />
+              <CheckCircle size={20} className="text-fuchsia-400" />
               <span className="text-white font-medium">
                 {solved.size}/{anagrams.length}
               </span>
@@ -217,7 +217,7 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
                   key={i}
                   className={`w-3 h-3 rounded-full transition-all duration-300 ${
                     solved.has(i)
-                      ? 'bg-green-400 scale-110'
+                      ? 'bg-fuchsia-400 scale-110'
                       : i === currentIndex
                         ? 'bg-cyan-400 animate-pulse'
                         : 'bg-white/20'
@@ -275,7 +275,7 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
               placeholder="Type your answer..."
               className={`w-full px-6 py-4 bg-white/10 border-2 rounded-lg text-white text-xl font-bold text-center placeholder-white/50 focus:outline-none focus:ring-2 transition-all ${
                 feedback === 'correct'
-                  ? 'border-green-500 focus:ring-green-500'
+                  ? 'border-fuchsia-500 focus:ring-fuchsia-500'
                   : feedback === 'wrong'
                     ? 'border-red-500 focus:ring-red-500 shake'
                     : 'border-purple-500 focus:ring-cyan-500'
@@ -284,7 +284,7 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
             />
 
             {feedback === 'correct' && (
-              <div className="mt-2 flex items-center justify-center gap-2 text-green-400">
+              <div className="mt-2 flex items-center justify-center gap-2 text-fuchsia-400">
                 <CheckCircle size={20} />
                 <span className="font-bold">Correct!</span>
               </div>
@@ -312,7 +312,7 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
             </button>
             <button
               onClick={handleSubmit}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-lg font-bold transition-all transform hover:scale-105"
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-violet-600 to-violet-600 hover:from-violet-700 hover:to-violet-700 rounded-lg font-bold transition-all transform hover:scale-105"
             >
               Submit
             </button>

@@ -19,9 +19,9 @@ export const DIFFICULTY_INFO = {
   easy: {
     label: 'Easy',
     description: 'Smaller grid, fewer words',
-    color: 'from-green-500 to-emerald-500',
-    bgColor: 'bg-green-500/10',
-    borderColor: 'border-green-500/50',
+    color: 'from-violet-500 to-purple-500',
+    bgColor: 'bg-violet-500/10',
+    borderColor: 'border-violet-500/50',
     gridSize: 8,
     wordCount: 5,
     timeLimit: 300,

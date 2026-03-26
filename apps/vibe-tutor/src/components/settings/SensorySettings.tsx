@@ -36,7 +36,7 @@ function Toggle({
       aria-label={label}
       onClick={onToggle}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-        enabled ? 'bg-emerald-500' : 'bg-gray-600'
+        enabled ? 'bg-violet-500' : 'bg-gray-600'
       }`}
     >
       <span
@@ -69,7 +69,7 @@ function SegmentedControl<T extends string>({
           onClick={() => onChange(opt.value)}
           className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
             opt.value === value
-              ? 'bg-emerald-500/80 text-white shadow-sm'
+              ? 'bg-violet-500/80 text-white shadow-sm'
               : 'text-gray-400 hover:text-white hover:bg-white/5'
           }`}
         >
@@ -106,7 +106,7 @@ const SensorySettings = () => {
       {/* Header — no animations on the sensory page */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Eye className="w-6 h-6 text-emerald-400" />
+          <Eye className="w-6 h-6 text-violet-400" />
           <div>
             <h2 className="text-xl font-semibold text-white">Sensory Settings</h2>
             <p className="text-sm text-gray-400">Customize the experience for comfort</p>
@@ -230,7 +230,7 @@ const SensorySettings = () => {
       {/* Live Preview */}
       <div className="glass-card p-5 rounded-xl space-y-3">
         <div className="flex items-center gap-2">
-          <Smartphone className="w-4 h-4 text-emerald-400" />
+          <Smartphone className="w-4 h-4 text-violet-400" />
           <h3 className="font-medium text-white">Live Preview</h3>
         </div>
         <div className="bg-black/20 rounded-lg p-4 space-y-2 border border-white/5">
@@ -240,7 +240,7 @@ const SensorySettings = () => {
             above. Try changing each setting to see the effect here.
           </p>
           <div className="flex gap-2 pt-1">
-            <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded text-xs">
+            <span className="px-2 py-0.5 bg-violet-500/20 text-violet-400 rounded text-xs">
               {prefs.fontSize}
             </span>
             <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-400 rounded text-xs">

@@ -117,7 +117,7 @@ function RewardCard({
         <p className="text-sm text-teal-400 font-semibold">{reward.cost} Tokens</p>
       </div>
       {justClaimed ? (
-        <div className="flex items-center gap-1.5 text-green-400 font-semibold text-sm">
+        <div className="flex items-center gap-1.5 text-fuchsia-400 font-semibold text-sm">
           <CheckCircle2 className="w-5 h-5" /> Claimed!
         </div>
       ) : (
