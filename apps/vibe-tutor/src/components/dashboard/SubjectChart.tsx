@@ -17,14 +17,14 @@ const SubjectChart = ({ items }: SubjectChartProps) => {
 
     const total = activeItems.length || 1;
     const colors = {
-      'Math': '#8B5CF6',
-      'Science': '#06B6D4',
-      'English': '#EC4899',
-      'History': '#F59E0B',
-      'Language': '#10B981',
-      'Language Arts': '#10B981',
+      'Math': '#22D3EE',
+      'Science': '#38BDF8',
+      'English': '#FF5FD2',
+      'History': '#FBBF24',
+      'Language': '#7CFF8B',
+      'Language Arts': '#7CFF8B',
       'Bible': '#FCD34D',
-      'Other': '#6B7280'
+      'Other': '#94A3B8'
     };
 
     return Object.entries(counts).map(([subject, count]) => ({
@@ -39,7 +39,7 @@ const SubjectChart = ({ items }: SubjectChartProps) => {
     return (
       <div className="glass-card p-6 rounded-2xl border border-white/10">
         <div className="flex items-center gap-3 mb-4">
-          <PieChart className="w-5 h-5 text-purple-400" />
+          <PieChart className="w-5 h-5 text-cyan-300" />
           <h3 className="text-lg font-semibold text-white">Subject Distribution</h3>
         </div>
         <div className="text-center py-8 text-gray-400">
@@ -52,7 +52,7 @@ const SubjectChart = ({ items }: SubjectChartProps) => {
   return (
     <div className="glass-card p-6 rounded-2xl border border-white/10">
       <div className="flex items-center gap-3 mb-6">
-        <PieChart className="w-5 h-5 text-purple-400" />
+        <PieChart className="w-5 h-5 text-cyan-300" />
         <h3 className="text-lg font-semibold text-white">Subject Distribution</h3>
       </div>
 

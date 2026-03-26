@@ -102,15 +102,15 @@
 
 /* Gradient icon glow effects */
 .gradient-icon-glow {
-  filter: drop-shadow(0 0 3px rgba(139, 92, 246, 0.3));
+  filter: drop-shadow(0 0 6px var(--primary-accent));
 }
 
 .gradient-icon-glow-solid {
-  filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.4));
+  filter: drop-shadow(0 0 8px var(--tertiary-accent));
 }
 
 .gradient-icon-glow-mobile {
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+  filter: drop-shadow(0 0 4px var(--primary-accent));
 }
 
 /* ---- GradientIcon: SVG gradient defs container ---- */
@@ -159,7 +159,7 @@
 }
 
 .gh-fallback-icon {
-  color: #6366f1;
+  color: var(--primary-accent);
   margin-bottom: 1rem;
   animation: spin 2s linear infinite;
 }
@@ -273,8 +273,8 @@
 }
 
 .gh-title-icon {
-  color: #06b6d4;
-  filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.8));
+  color: var(--primary-accent);
+  filter: drop-shadow(0 0 10px var(--primary-accent));
 }
 
 .gh-subtitle {
@@ -288,7 +288,7 @@
 }
 
 .gh-title-icon {
-  color: #6366f1;
+  color: var(--primary-accent);
 }
 
 .gh-header-spacer {

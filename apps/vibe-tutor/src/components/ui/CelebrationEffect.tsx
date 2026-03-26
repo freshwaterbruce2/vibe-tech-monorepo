@@ -47,7 +47,7 @@ const CelebrationEffect = ({
             x: Math.random() * 100 - 50,
             y: Math.random() * 100 - 50,
             rotation: Math.random() * 360,
-            color: ['#8B5CF6', '#06B6D4', '#EC4899', '#10B981', '#F59E0B'][
+            color: ['#22D3EE', '#38BDF8', '#FF5FD2', '#7CFF8B', '#FBBF24'][
               Math.floor(Math.random() * 5)
             ]!,
           }));
@@ -90,7 +90,7 @@ const CelebrationEffect = ({
       {type === 'sparkle' && <div className="text-6xl animate-bounce">✨</div>}
 
       {type === 'pulse' && (
-        <div className="absolute inset-0 bg-green-500/20 animate-ping rounded-full" />
+        <div className="absolute inset-0 rounded-full bg-cyan-400/20 animate-ping" />
       )}
     </div>
   );

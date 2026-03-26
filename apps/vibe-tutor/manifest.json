@@ -4,13 +4,13 @@
   "description": "An AI-powered homework manager and tutor from Vibe-Tech AI.",
   "icons": [
     {
-      "src": "/launcher-icon-192.svg",
+      "src": "/icon-192.svg",
       "type": "image/svg+xml",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "/launcher-icon-512.svg",
+      "src": "/icon-512.svg",
       "type": "image/svg+xml",
       "sizes": "512x512",
       "purpose": "any maskable"
@@ -31,7 +31,7 @@
   "start_url": "/index.html",
   "display": "standalone",
   "scope": "/",
-  "theme_color": "#10121A",
-  "background_color": "#10121A",
+  "theme_color": "#06131F",
+  "background_color": "#06131F",
   "orientation": "portrait"
 }

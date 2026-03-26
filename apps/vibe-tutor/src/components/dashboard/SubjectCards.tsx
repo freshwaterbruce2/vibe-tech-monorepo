@@ -183,7 +183,6 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
                   <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                     <div
                       className={`h-full bg-gradient-to-r ${config.color} transition-all duration-500 progress-bar-fill`}
-                      // eslint-disable-next-line react/forbid-dom-props
                       style={{ '--bar-width': `${progressPct}%` } as React.CSSProperties}
                     />
                   </div>
@@ -254,7 +253,6 @@ const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
                 <div className="flex-1 h-2.5 bg-white/10 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full transition-all duration-500 progress-bar-fill"
-                    // eslint-disable-next-line react/forbid-dom-props
                     style={
                       {
                         '--bar-width': `${Math.min((todayWorksheets / 3) * 100, 100)}%`,

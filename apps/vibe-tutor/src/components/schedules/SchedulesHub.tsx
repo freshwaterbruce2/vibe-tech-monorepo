@@ -123,7 +123,7 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
             onClick={() => setActiveTab('chores')}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${
               activeTab === 'chores'
-                ? 'bg-[#10b981] text-white shadow-[var(--neon-glow-secondary)]'
+                ? 'bg-[#7cff8b] text-slate-950 shadow-[var(--neon-glow-secondary)]'
                 : 'glass-card text-[var(--text-secondary)] hover:text-white'
             }`}
           >
@@ -134,7 +134,7 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
             onClick={() => setActiveTab('goals')}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${
               activeTab === 'goals'
-                ? 'bg-[#8b5cf6] text-white shadow-[var(--neon-glow-accent)]'
+                ? 'bg-[#ff5fd2] text-slate-950 shadow-[var(--neon-glow-accent)]'
                 : 'glass-card text-[var(--text-secondary)] hover:text-white'
             }`}
           >
@@ -244,7 +244,7 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
                     value={newChore}
                     onChange={(e) => setNewChore(e.target.value)}
                     placeholder="E.g., Clean my room, Walk the dog..."
-                    className="w-full bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[#10b981]"
+                    className="w-full bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[#7cff8b]"
                   />
                 </div>
                 <div className="w-full md:w-auto">
@@ -256,13 +256,13 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
                       min="1"
                       value={newChoreReward}
                       onChange={(e) => setNewChoreReward(parseInt(e.target.value) || 0)}
-                      className="w-full md:w-28 bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg pl-9 pr-3 py-2 text-white outline-none focus:border-[#10b981]"
+                      className="w-full md:w-28 bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg pl-9 pr-3 py-2 text-white outline-none focus:border-[#7cff8b]"
                     />
                   </div>
                 </div>
                 <button
                   onClick={handleAddChore}
-                  className="bg-[#10b981] text-white px-6 py-2.5 md:py-2 rounded-lg hover:brightness-110 transition-all font-semibold w-full md:w-auto"
+                  className="bg-[#7cff8b] text-slate-950 px-6 py-2.5 md:py-2 rounded-lg hover:brightness-110 transition-all font-semibold w-full md:w-auto"
                 >
                   Add Chore
                 </button>
@@ -273,13 +273,13 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
                   <div
                     key={chore.id}
                     className={`glass-card p-4 rounded-xl border flex items-center justify-between group transition-all ${
-                      chore.completed ? 'border-[#10b981]/50 bg-[#10b981]/5' : 'border-[var(--glass-border)]'
+                      chore.completed ? 'border-[#7cff8b]/50 bg-[#7cff8b]/8' : 'border-[var(--glass-border)]'
                     }`}
                   >
                     <div className="flex items-center gap-4 flex-1">
                       <button onClick={() => handleToggleChore(chore.id, chore.completed)}>
                         {chore.completed ? (
-                          <CheckCircle2 className="w-6 h-6 text-[#10b981]" />
+                          <CheckCircle2 className="w-6 h-6 text-[#7cff8b]" />
                         ) : (
                           <Circle className="w-6 h-6 text-[var(--text-secondary)]" />
                         )}
@@ -320,7 +320,7 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
                     value={newGoal}
                     onChange={(e) => setNewGoal(e.target.value)}
                     placeholder="E.g., Read 10 books this year..."
-                    className="w-full bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[#8b5cf6]"
+                    className="w-full bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[#ff5fd2]"
                   />
                 </div>
                 <div className="w-full md:w-auto">
@@ -328,7 +328,7 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
                   <select
                     value={newGoalType}
                     onChange={(e) => setNewGoalType(e.target.value as 'short-term' | 'long-term')}
-                    className="w-full md:w-auto bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg px-3 py-2.5 text-white outline-none focus:border-[#8b5cf6]"
+                    className="w-full md:w-auto bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg px-3 py-2.5 text-white outline-none focus:border-[#ff5fd2]"
                   >
                     <option value="short-term">Short-term</option>
                     <option value="long-term">Long-term</option>
@@ -336,7 +336,7 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
                 </div>
                 <button
                   onClick={handleAddGoal}
-                  className="bg-[#8b5cf6] text-white px-6 py-2.5 md:py-2 rounded-lg hover:brightness-110 transition-all font-semibold w-full md:w-auto"
+                  className="bg-[#ff5fd2] text-slate-950 px-6 py-2.5 md:py-2 rounded-lg hover:brightness-110 transition-all font-semibold w-full md:w-auto"
                 >
                   Set Goal
                 </button>
@@ -383,10 +383,10 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
 
 function GoalCard({ goal, toggleGoal, removeGoal }: { goal: GoalItem; toggleGoal: (id: string) => void; removeGoal: (id: string) => void }) {
   return (
-    <div className={`glass-card p-4 rounded-xl border flex gap-3 group transition-all ${goal.completed ? 'border-[#8b5cf6]/50 bg-[#8b5cf6]/5' : 'border-[var(--glass-border)]'}`}>
+    <div className={`glass-card p-4 rounded-xl border flex gap-3 group transition-all ${goal.completed ? 'border-[#ff5fd2]/50 bg-[#ff5fd2]/8' : 'border-[var(--glass-border)]'}`}>
       <button onClick={() => toggleGoal(goal.id)} className="mt-0.5 shrink-0">
         {goal.completed ? (
-          <CheckCircle2 className="w-5 h-5 text-[#8b5cf6]" />
+          <CheckCircle2 className="w-5 h-5 text-[#ff5fd2]" />
         ) : (
           <Circle className="w-5 h-5 text-[var(--text-secondary)]" />
         )}

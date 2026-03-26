@@ -9,7 +9,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: './tests/setup.ts',
+    setupFiles: ['./tests/setup-env.ts', './tests/setup.ts'],
     exclude: ['**/node_modules/**', '**/*.spec.ts'],
     include: ['**/*.test.{ts,tsx}'],
     coverage: {

@@ -22,7 +22,7 @@ export default function AvatarShop({ userTokens, onSpendTokens }: AvatarShopProp
         setAvatarState(state);
       }
     }
-    load();
+    void load();
   }, [userTokens]); // re-load if tokens change as a side effect (or just init)
 
   const handleBuy = async (item: ShopItem) => {
@@ -154,7 +154,7 @@ export default function AvatarShop({ userTokens, onSpendTokens }: AvatarShopProp
                 </button>
               ) : isOwned ? (
                 <button
-                  onClick={() => handleEquip(item)}
+                  onClick={() => void handleEquip(item)}
                   style={{
                     background: '#3b82f6',
                     color: 'white',
@@ -169,7 +169,7 @@ export default function AvatarShop({ userTokens, onSpendTokens }: AvatarShopProp
                 </button>
               ) : (
                 <button
-                  onClick={() => handleBuy(item)}
+                  onClick={() => void handleBuy(item)}
                   disabled={!canAfford}
                   style={{
                     background: canAfford ? '#f59e0b' : '#334155',

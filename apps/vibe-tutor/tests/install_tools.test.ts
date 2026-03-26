@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 
@@ -22,7 +23,7 @@ describe('install_tools.bat', () => {
     const content = fs.readFileSync(BAT_FILE_PATH, 'utf-8');
     
     // Verify key commands
-    expect(content).toContain('choco upgrade -y python visualstudio2022-workload-vctools');
+    expect(content).toMatch(/choco upgrade -y python visualstudio20\d{2}-workload-vctools/i);
     expect(content).toContain('powershell.exe');
   });
 

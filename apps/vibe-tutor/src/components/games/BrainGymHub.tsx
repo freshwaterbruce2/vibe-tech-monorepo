@@ -110,7 +110,7 @@ const WORDSEARCH_RECOMMENDATION = {
 
 /* ---------- Zone definitions ---------- */
 const ZONE_CONFIG: Record<Zone, { emoji: string; label: string; desc: string; color: string }> = {
-  chill: { emoji: '🧘', label: 'Chill Zone', desc: 'Calm & steady. No rush.', color: '#06b6d4' },
+  chill: { emoji: '🧘', label: 'Chill Zone', desc: 'Calm & steady. No rush.', color: '#22d3ee' },
   focus: { emoji: '🎯', label: 'Focus Zone', desc: 'Build your skills!', color: '#22d3ee' },
   challenge: { emoji: '⚡', label: 'Challenge Zone', desc: 'Push your limits!', color: '#67e8f9' },
 };
@@ -125,7 +125,7 @@ const GAMES: GameDef[] = [
     name: 'Memory Match',
     description: 'Find matching pairs!',
     icon: Grid3X3,
-    color: '#06b6d4',
+    color: '#22d3ee',
     zone: 'chill',
     tokens: 10,
     minLevel: 0,
@@ -755,7 +755,7 @@ export default function BrainGymHub({
           <div className="gh-header-spacer flex justify-end flex-1">
             <button 
               onClick={() => setShowAvatarScreen('profile')}
-              className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg border-none cursor-pointer font-bold hover:bg-blue-600 transition-colors">
+              className="flex items-center gap-2 rounded-lg border-none bg-cyan-400 px-4 py-2 font-bold text-slate-950 cursor-pointer transition-colors hover:bg-cyan-300">
               <Sparkles size={16} /> My Avatar
             </button>
           </div>
@@ -779,15 +779,15 @@ export default function BrainGymHub({
         {/* Streak */}
         <div
           className="gh-stat-box"
-          style={{ '--stat-accent': streakActive ? '#06b6d4' : '#475569' } as React.CSSProperties}
+          style={{ '--stat-accent': streakActive ? '#22d3ee' : '#475569' } as React.CSSProperties}
         >
-          <Flame size={18} color={streakActive ? '#06b6d4' : '#475569'} />
+          <Flame size={18} color={streakActive ? '#22d3ee' : '#475569'} />
           <span className="gh-stat-value">{stats.streak}</span>
           <span className="gh-stat-label">Neural Link</span>
         </div>
         {/* Chest */}
-        <div className="gh-stat-box" style={{ '--stat-accent': '#10b981' } as React.CSSProperties}>
-          <Gift size={18} color="#10b981" />
+        <div className="gh-stat-box" style={{ '--stat-accent': '#7cff8b' } as React.CSSProperties}>
+          <Gift size={18} color="#7cff8b" />
           <span className="gh-stat-value">{stats.chestProgress}/5</span>
           <span className="gh-stat-label">Data Cache</span>
         </div>
@@ -896,9 +896,9 @@ export default function BrainGymHub({
             </button>
 
             <div className="gh-featured-panel">
-              <div className="gh-stat-box" style={{ '--stat-accent': '#10b981' } as React.CSSProperties}>
+              <div className="gh-stat-box" style={{ '--stat-accent': '#7cff8b' } as React.CSSProperties}>
                 <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-slate-400">
-                  <Target size={12} color="#10b981" />
+                  <Target size={12} color="#7cff8b" />
                   Daily Goal
                 </div>
                 <span className="gh-stat-value">

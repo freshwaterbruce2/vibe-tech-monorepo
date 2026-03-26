@@ -39,8 +39,8 @@ const PLAYER_MAX_HP = 100;
 export default function BossBattleGame({ subject, onComplete, onBack }: BossBattleProps) {
   const [gameState, setGameState] = useState<'intro' | 'playing' | 'victory' | 'defeat'>('intro');
   const [playerHp, setPlayerHp] = useState(PLAYER_MAX_HP);
-  const bossDef = BOSS_CONFIG[subject] || BOSS_CONFIG['General']!;
-  const [bossHp, setBossHp] = useState(bossDef?.maxHp || 100);
+  const bossDef = BOSS_CONFIG[subject] ?? BOSS_CONFIG.General;
+  const [bossHp, setBossHp] = useState(bossDef.maxHp);
   const [avatarStats, setAvatarStats] = useState<Record<AvatarStat, number>>({
     mathPower: 1, sciencePower: 1, historyPower: 1, logicPower: 1, creativity: 1
   });
@@ -80,12 +80,10 @@ export default function BossBattleGame({ subject, onComplete, onBack }: BossBatt
     else if (subject === 'History') rawQ = Object.values(HISTORY_QUESTIONS).flat() as Question[];
     else rawQ = Object.values(MATH_QUESTIONS).flat() as Question[]; // fallback
 
-    // shuffle
-    // eslint-disable-next-line
     return [...rawQ].sort(() => 0.5 - Math.random()).slice(0, 10);
   }, [subject]);
 
-  const damageMultiplier = avatarStats[bossDef.subjectWeakness] || 1;
+  const damageMultiplier = avatarStats[bossDef.subjectWeakness] ?? 1;
 
   const handleStart = () => {
     setGameState('playing');

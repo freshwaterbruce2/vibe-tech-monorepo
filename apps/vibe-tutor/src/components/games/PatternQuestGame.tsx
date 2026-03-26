@@ -333,7 +333,7 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
 
   useEffect(() => {
     setCurrentPattern(generatePattern());
-    api.start({ from: { opacity: 0, scale: 0.8 }, to: { opacity: 1, scale: 1 } });
+    void api.start({ from: { opacity: 0, scale: 0.8 }, to: { opacity: 1, scale: 1 } });
   }, [level, generatePattern, api]);
 
   const handleAnswer = (selected: PatternElement) => {
@@ -351,7 +351,7 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
 
     if (isCorrect) {
       // Correct answer
-      playSound('success');
+      void playSound('success');
       const bossBonus = currentPattern.isBossRound ? 20 : 0;
       const points = 15 + currentPattern.difficulty * 5 + streak * 3 + bossBonus;
       const tokens = Math.max(1, Math.floor(points / 10));
@@ -373,12 +373,12 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
 
       // Level up every 5 patterns
       if (questsCompleted > 0 && (questsCompleted + 1) % 5 === 0) {
-        playSound('levelUp');
+        void playSound('levelUp');
         void confetti({
           particleCount: 150,
           spread: 80,
           origin: { y: 0.6 },
-          colors: ['#14b8a6', '#3b82f6', '#8b5cf6'],
+          colors: ['#22d3ee', '#7cff8b', '#ff5fd2'],
         });
         setLevel((prev) => Math.min(prev + 1, worldNames.length));
         setShowCelebration(true);
@@ -387,13 +387,13 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
 
       setTimeout(() => {
         setCurrentPattern(generatePattern());
-        api.start({ from: { opacity: 0, scale: 0.8 }, to: { opacity: 1, scale: 1 } });
+        void api.start({ from: { opacity: 0, scale: 0.8 }, to: { opacity: 1, scale: 1 } });
         setFeedback('');
         setShowHint(false);
       }, 2000);
     } else {
       // Wrong answer
-      playSound('error');
+      void playSound('error');
       setStreak(0);
       setFeedback('❌ Not quite! Look at the pattern again.');
       setTimeout(() => setFeedback(''), 2000);
@@ -550,7 +550,7 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
             <div className="flex justify-center">
               <button
                 onClick={() => {
-                  playSound('pop');
+                  void playSound('pop');
                   setShowHint(true);
                 }}
                 disabled={showHint}

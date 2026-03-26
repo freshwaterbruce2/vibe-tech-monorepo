@@ -58,13 +58,25 @@ const MEMORY_DIFFICULTIES: Record<MemoryDifficulty, MemoryDifficultyConfig> = {
   },
 };
 
-function buildDeck(subject: string, difficulty: MemoryDifficulty): MemoryCard[] {
+function buildDeck(
+  subject: string,
+  difficulty: MemoryDifficulty,
+  roundSeed: number,
+): MemoryCard[] {
   const config = MEMORY_DIFFICULTIES[difficulty];
   const preferred = getRandomWords(subject, config.pairCount, config.wordDifficulty);
   const words =
     preferred.length >= config.pairCount ? preferred : getRandomWords(subject, config.pairCount);
 
-  return generateMemoryCards(words);
+  if (words.length === 0) {
+    return [];
+  }
+
+  const rotation = roundSeed % words.length;
+  const reshuffledWords =
+    rotation === 0 ? words : [...words.slice(rotation), ...words.slice(0, rotation)];
+
+  return generateMemoryCards(reshuffledWords);
 }
 
 const MemoryMatchGame = ({ subject, onComplete, onBack, initialDifficulty }: MemoryMatchGameProps) => {
@@ -90,7 +102,10 @@ const MemoryMatchGame = ({ subject, onComplete, onBack, initialDifficulty }: Mem
     setRoundSeed((seed) => seed + 1);
   }, [initialDifficulty, difficulty]);
 
-  const cards = useMemo<MemoryCard[]>(() => buildDeck(subject, difficulty), [subject, difficulty, roundSeed]);
+  const cards = useMemo<MemoryCard[]>(
+    () => buildDeck(subject, difficulty, roundSeed),
+    [subject, difficulty, roundSeed],
+  );
   const totalPairs = cards.length / 2;
   const matchedPairs = matched.size / 2;
   const elapsedSeconds = globalThis.Math.floor((currentTime - startTime) / 1000);
@@ -134,7 +149,7 @@ const MemoryMatchGame = ({ subject, onComplete, onBack, initialDifficulty }: Mem
     (cardId: string) => {
       if (!canFlip || flipped.includes(cardId) || matched.has(cardId)) return;
 
-      playSound('pop');
+      void playSound('pop');
       const newFlipped = [...flipped, cardId];
       setFlipped(newFlipped);
 
@@ -153,7 +168,7 @@ const MemoryMatchGame = ({ subject, onComplete, onBack, initialDifficulty }: Mem
       }
 
       if (card1.pairId === card2.pairId) {
-        playSound('success');
+        void playSound('success');
         setLastMatchId(card1.pairId);
 
         const nextCombo = currentCombo + 1;
@@ -184,17 +199,17 @@ const MemoryMatchGame = ({ subject, onComplete, onBack, initialDifficulty }: Mem
               difficultyBonus,
             });
             setShowComplete(true);
-            playSound('victory');
+            void playSound('victory');
             void confetti({
               particleCount: 150,
               spread: 70,
               origin: { y: 0.6 },
-              colors: ['#8b5cf6', '#06b6d4', '#f59e0b', '#ec4899'],
+              colors: ['#22d3ee', '#7cff8b', '#fbbf24', '#ff5fd2'],
             });
           }
         }, 600);
       } else {
-        playSound('error');
+        void playSound('error');
         setCurrentCombo(0);
         setTimeout(() => {
           setFlipped([]);

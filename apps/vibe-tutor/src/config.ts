@@ -25,7 +25,7 @@ const isNativeCapacitor =
       )));
 
 // ============== URL CONFIGURATION ==============
-// Production: Render.com
+// Production: Google Cloud Run
 const PRODUCTION_BACKEND_URL = 'https://vibe-tutor-api-711105902979.us-east4.run.app';
 const allowNativeLocalApi = import.meta.env.VITE_ALLOW_NATIVE_LOCAL_API === 'true';
 const runtimeApiUrl =
@@ -68,7 +68,7 @@ function detectBackendURL(): string {
 
   // Local browser/electron development — always use local backend.
   // Native Capacitor release builds also run at localhost, so exclude those.
-  if (import.meta.env.DEV && isDevelopment && !isNativeCapacitor) {
+  if (isDevelopment && !isNativeCapacitor) {
     return USB_DEBUG_URL;
   }
 

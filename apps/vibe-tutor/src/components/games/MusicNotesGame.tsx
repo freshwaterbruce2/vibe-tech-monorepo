@@ -14,10 +14,10 @@ interface MusicNotesProps {
   onClose?: () => void;
 }
 
-/* ---------- Accent colors (cyan to match hub card #06b6d4) ---------- */
-const CYAN = '#06b6d4';
-const CYAN_DIM = 'rgba(6,182,212,0.2)';
-const CYAN_BORDER = 'rgba(6,182,212,0.3)';
+/* ---------- Accent colors (bright neon cyan to match the refreshed hub) ---------- */
+const CYAN = '#22d3ee';
+const CYAN_DIM = 'rgba(34,211,238,0.2)';
+const CYAN_BORDER = 'rgba(34,211,238,0.32)';
 
 function buildQuestion(score: number): { note: NoteData; options: string[] } {
   const tier = getTier(score);

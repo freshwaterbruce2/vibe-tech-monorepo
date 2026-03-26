@@ -105,8 +105,10 @@ describe('BrainGymHub', () => {
   it('shows a featured drill recommendation in the hub', () => {
     render(<BrainGymHub userTokens={12} onEarnTokens={vi.fn()} onClose={vi.fn()} />);
 
-    expect(screen.getByText(/featured drill/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /launch memory match/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /featured drill/i })).toBeInTheDocument();
+    expect(
+      screen.getByText(/recommended next run based on your recent brain gym data/i),
+    ).toBeInTheDocument();
   });
 
   it('awards completion rewards and returns to hub after group A game complete', async () => {
@@ -126,7 +128,7 @@ describe('BrainGymHub', () => {
       vi.advanceTimersByTime(1500);
     });
 
-    expect(screen.getByText(/brain gym/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /brain gym/i })).toBeInTheDocument();
     expect(mocks.storeSet).toHaveBeenCalledWith(
       'gamesHub_stats',
       expect.objectContaining({

@@ -52,7 +52,7 @@ export const Celebration = ({ type, points, message, onComplete }: CelebrationPr
         fireConfetti({ particleCount: 50, spread: 60 });
         break;
       case 'pointGain':
-        fireConfetti({ particleCount: 30, spread: 40, colors: ['#8B5CF6', '#06B6D4'] });
+        fireConfetti({ particleCount: 30, spread: 40, colors: ['#22D3EE', '#7CFF8B'] });
         break;
       case 'levelUp':
         fireLevelUpAnimation();
@@ -103,7 +103,7 @@ export const Celebration = ({ type, points, message, onComplete }: CelebrationPr
           <div className="text-center">
             <div className="text-6xl mb-4 animate-spin">🌟</div>
             <h2 className="text-3xl font-bold neon-text-primary">+{points}</h2>
-            <p className="text-lg mt-2 text-purple-400">Points Earned!</p>
+            <p className="text-lg mt-2 text-cyan-300">Points Earned!</p>
           </div>
         )}
 
@@ -144,7 +144,7 @@ function fireConfetti(options: confetti.Options = {}) {
     particleCount: 100,
     spread: 70,
     origin: { y: 0.6 },
-    colors: ['#8B5CF6', '#06B6D4', '#EC4899', '#F59E0B', '#10B981'],
+    colors: ['#22D3EE', '#38BDF8', '#FF5FD2', '#FBBF24', '#7CFF8B'],
   };
 
   void confetti({

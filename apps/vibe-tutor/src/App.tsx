@@ -3,7 +3,6 @@ import {
   Suspense,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
   useTransition,
@@ -261,7 +260,7 @@ const App = () => {
     setPlaylists((prev) => prev.filter((p) => p.id !== id));
   }, []);
 
-  const renderView = useMemo(() => {
+  const renderView = () => {
     const currentViewComponent = () => {
       switch (view) {
         case 'dashboard':
@@ -456,44 +455,14 @@ const App = () => {
         <Suspense fallback={<ViewLoadingFallback />}>{currentViewComponent()}</Suspense>
       </ErrorBoundary>
     );
-  }, [
-    view,
-    homeworkItems,
-    handleAddHomework,
-    handleToggleComplete,
-    achievements,
-    rewards,
-    handleClaimReward,
-    claimedRewards,
-    handleRewardApprovalWrapper,
-    updateRewards,
-    playlists,
-    handleAddPlaylist,
-    handleRemovePlaylist,
-    handleAchievementEvent,
-    worksheetSession,
-    worksheetLeveledUp,
-    worksheetNewDifficulty,
-    worksheetStarsToNextLevel,
-    worksheetSubject,
-    worksheetProgress,
-    handleWorksheetComplete,
-    handleWorksheetCancel,
-    handleStartWorksheet,
-    handleWorksheetTryAgain,
-    handleWorksheetContinue,
-    userTokens,
-    handleEarnTokens,
-    handleSpendTokens,
-    selectedRealmSubject,
-  ]);
+  };
 
   const toggleNav = useCallback(() => {
     setIsNavCollapsed((prev) => !prev);
   }, [setIsNavCollapsed]);
 
   return (
-    <div className="flex h-screen bg-[var(--background)] text-[var(--text-primary)] overflow-hidden font-outfit relative">
+    <div className="relative flex h-screen overflow-hidden bg-[var(--background-main)] text-[var(--text-primary)]">
       <TokenEarnAnimation amount={tokenEarnAmount} triggerId={tokenEarnTrigger} />
       
       {/* Dynamic Background */}
@@ -520,8 +489,8 @@ const App = () => {
               <ErrorBoundary>
                 <div className="h-full overflow-hidden">
                   <ChatWindow
-                    title="Interrogator"
-                    description="Ask questions. Get clear answers."
+                    title="Vibe Tutor"
+                    description="Get help with homework, concepts, and study plans."
                     onSendMessage={sendMessageToTutor}
                     type="tutor"
                   />
@@ -530,7 +499,7 @@ const App = () => {
             }
             right={
               <div className="h-full overflow-y-auto">
-                {renderView}
+                {renderView()}
                 {!isOnline && <OfflineIndicator />}
               </div>
             }
@@ -539,7 +508,7 @@ const App = () => {
 
         {/* Mobile: Full-screen dashboard */}
         <div ref={mobileContentRef} className="md:hidden h-full overflow-y-auto pb-24">
-          {renderView}
+          {renderView()}
           {!isOnline && <OfflineIndicator />}
         </div>
       </main>

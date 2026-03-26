@@ -103,7 +103,7 @@ const WordSearchGame = ({ subject, onComplete, onBack, initialConfig = {} }: Wor
       particleCount: 150,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#FFD700', '#FFA500', '#FF6347', '#00FF00', '#00FFFF'],
+      colors: ['#22d3ee', '#7cff8b', '#fbbf24', '#ff5fd2'],
     });
 
     if (config.soundEnabled) {
@@ -154,7 +154,7 @@ const WordSearchGame = ({ subject, onComplete, onBack, initialConfig = {} }: Wor
     setPuzzle(wordSearch);
     setStartTime(Date.now());
     learningAnalytics.startSession('wordsearch', subject, config.difficulty);
-  }, [config, config.difficulty, config.gridSize, config.wordCount, subject]);
+  }, [config, subject]);
 
   // Timer effect
   useEffect(() => {

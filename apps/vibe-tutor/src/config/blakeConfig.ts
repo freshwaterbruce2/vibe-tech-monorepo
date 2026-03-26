@@ -22,7 +22,6 @@ const isNativeCapacitor =
 // Native Capacitor release builds run on localhost, so only treat localhost as dev
 // when we're not on native mobile.
 const isLocalDev =
-  import.meta.env.DEV &&
   typeof window !== 'undefined' &&
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') &&
   !isNativeCapacitor;
@@ -30,7 +29,7 @@ const isLocalDev =
 const allowNativeLocalApi = import.meta.env.VITE_ALLOW_NATIVE_LOCAL_API === 'true';
 
 const LOCAL_API_ENDPOINT = 'http://localhost:3001';
-const PRODUCTION_API_ENDPOINT = 'https://vibe-tutor-api.onrender.com';
+const PRODUCTION_API_ENDPOINT = 'https://vibe-tutor-api-711105902979.us-east4.run.app';
 
 const runtimeApiEndpoint =
   typeof window !== 'undefined'
@@ -65,7 +64,7 @@ const sanitizeEndpoint = (endpoint: string): string => {
     return PRODUCTION_API_ENDPOINT;
   }
 
-  if (isLocalhostEndpoint(trimmed) && !import.meta.env.DEV && !allowNativeLocalApi) {
+  if (isLocalhostEndpoint(trimmed) && !isLocalDev && !allowNativeLocalApi) {
     console.warn(
       `[BLAKE_CONFIG] Refusing localhost endpoint in non-dev build (${trimmed}); using production backend.`,
     );

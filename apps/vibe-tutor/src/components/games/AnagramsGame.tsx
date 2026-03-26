@@ -35,7 +35,15 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
   }));
   const anagrams = useMemo<AnagramChallenge[]>(() => {
     const words = getAnagramWords(subject, 10);
-    return generateAnagrams(words);
+    if (words.length === 0) {
+      return [];
+    }
+
+    const rotation = roundSeed % words.length;
+    const reshuffledWords =
+      rotation === 0 ? words : [...words.slice(rotation), ...words.slice(0, rotation)];
+
+    return generateAnagrams(reshuffledWords);
   }, [subject, roundSeed]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -66,7 +74,7 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
     setFinalResult(null);
     setStartTime(Date.now());
     setCurrentTime(Date.now());
-    api.start({ from: { opacity: 0, y: 50 }, to: { opacity: 1, y: 0 } });
+    void api.start({ from: { opacity: 0, y: 50 }, to: { opacity: 1, y: 0 } });
   }, [anagrams, api]);
 
   const finalizeGame = (solvedCount: number, celebrate: boolean) => {
@@ -74,15 +82,15 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
     const result = calculateAnagramScore(solvedCount, anagrams.length, hintsUsed, timeSpent);
 
     if (celebrate) {
-      playSound('victory');
+      void playSound('victory');
       void confetti({
         particleCount: 200,
         spread: 100,
         origin: { y: 0.6 },
-        colors: ['#a855f7', '#3b82f6', '#ec4899'],
+        colors: ['#22d3ee', '#7cff8b', '#ff5fd2'],
       });
     } else {
-      playSound(result.stars >= 3 ? 'success' : 'pop');
+      void playSound(result.stars >= 3 ? 'success' : 'pop');
     }
 
     setShowComplete(true);
@@ -109,7 +117,7 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
 
     if (userAnswer.toUpperCase() === currentAnagram.original) {
       // Correct!
-      playSound('success');
+      void playSound('success');
       setFeedback('correct');
       setSolved((prev) => new Set([...prev, currentIndex]));
 
@@ -119,27 +127,27 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
           setUserAnswer('');
           setShowHint(false);
           setFeedback(null);
-          api.start({ from: { opacity: 0, y: 50 }, to: { opacity: 1, y: 0 } });
+          void api.start({ from: { opacity: 0, y: 50 }, to: { opacity: 1, y: 0 } });
         } else {
           finalizeGame(solved.size + 1, true);
         }
       }, 1000);
     } else {
       setFeedback('wrong');
-      playSound('error');
+      void playSound('error');
       setTimeout(() => setFeedback(null), 1000);
     }
   };
 
   const handleSkip = () => {
     if (showComplete) return;
-    playSound('pop');
+    void playSound('pop');
     if (currentIndex < anagrams.length - 1) {
       setCurrentIndex((i) => i + 1);
       setUserAnswer('');
       setShowHint(false);
       setFeedback(null);
-      api.start({ from: { opacity: 0, y: 50 }, to: { opacity: 1, y: 0 } });
+      void api.start({ from: { opacity: 0, y: 50 }, to: { opacity: 1, y: 0 } });
     } else {
       finalizeGame(solved.size, false);
     }
@@ -147,7 +155,7 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
 
   const handleHint = () => {
     if (showComplete) return;
-    playSound('pop');
+    void playSound('pop');
     setShowHint(true);
     setHintsUsed((h) => h + 1);
   };

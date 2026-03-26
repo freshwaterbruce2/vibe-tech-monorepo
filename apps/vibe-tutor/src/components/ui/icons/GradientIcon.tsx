@@ -8,41 +8,41 @@ interface GradientIconProps {
   gradientId?: string;
 }
 
-// Gradient definitions for Vibe-Tech theme
+// Gradient definitions for the shared Vibe Tutor neon theme
 export const GradientDefs: FC = () => (
   <svg width="0" height="0" className="gradient-defs-svg">
     <defs>
-      {/* Primary gradient: Purple to Cyan */}
+      {/* Primary gradient: Cyan to lime to pink */}
       <linearGradient id="vibe-gradient-primary" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#8B5CF6" />
-        <stop offset="50%" stopColor="#06B6D4" />
-        <stop offset="100%" stopColor="#22D3EE" />
+        <stop offset="0%" stopColor="#22D3EE" />
+        <stop offset="52%" stopColor="#7CFF8B" />
+        <stop offset="100%" stopColor="#FF5FD2" />
       </linearGradient>
 
-      {/* Secondary gradient: Purple to Pink */}
+      {/* Secondary gradient: Cyan to hot pink */}
       <linearGradient id="vibe-gradient-secondary" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#8B5CF6" />
-        <stop offset="100%" stopColor="#EC4899" />
+        <stop offset="0%" stopColor="#22D3EE" />
+        <stop offset="100%" stopColor="#FF5FD2" />
       </linearGradient>
 
-      {/* Accent gradient: Cyan to Purple */}
+      {/* Accent gradient: Lime to cyan */}
       <linearGradient id="vibe-gradient-accent" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#06B6D4" />
-        <stop offset="100%" stopColor="#8B5CF6" />
+        <stop offset="0%" stopColor="#7CFF8B" />
+        <stop offset="100%" stopColor="#22D3EE" />
       </linearGradient>
 
       {/* Radial glow gradient */}
       <radialGradient id="vibe-gradient-glow" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.8" />
-        <stop offset="50%" stopColor="#06B6D4" stopOpacity="0.4" />
-        <stop offset="100%" stopColor="#EC4899" stopOpacity="0.1" />
+        <stop offset="0%" stopColor="#22D3EE" stopOpacity="0.82" />
+        <stop offset="50%" stopColor="#7CFF8B" stopOpacity="0.38" />
+        <stop offset="100%" stopColor="#FF5FD2" stopOpacity="0.1" />
       </radialGradient>
 
       {/* Mobile-optimized gradient with higher contrast */}
       <linearGradient id="vibe-gradient-mobile" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#A78BFA" />
-        <stop offset="50%" stopColor="#22D3EE" />
-        <stop offset="100%" stopColor="#F472B6" />
+        <stop offset="0%" stopColor="#6EE7F9" />
+        <stop offset="50%" stopColor="#7CFF8B" />
+        <stop offset="100%" stopColor="#FF82DD" />
       </linearGradient>
     </defs>
   </svg>

@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const PRODUCTION_URL = 'https://vibe-tutor-api-711105902979.us-east4.run.app';
+
 // Helper to create full Location object from partial
 const createLocation = (partial: Partial<Location> = {}): Location =>
   ({
@@ -82,7 +84,7 @@ describe('config.ts', () => {
       });
 
       const config = await import('./config');
-      expect(config.API_CONFIG.baseURL).toBe('https://vibe-tutor-api.onrender.com');
+      expect(config.API_CONFIG.baseURL).toBe(PRODUCTION_URL);
     });
 
     it('should detect Capacitor by protocol', async () => {
@@ -95,7 +97,7 @@ describe('config.ts', () => {
 
       const config = await import('./config');
       // Capacitor release builds should use production backend by default
-      expect(config.API_CONFIG.baseURL).toBe('https://vibe-tutor-api.onrender.com');
+      expect(config.API_CONFIG.baseURL).toBe(PRODUCTION_URL);
     });
 
     it('should detect Capacitor by ionic protocol', async () => {
@@ -107,7 +109,7 @@ describe('config.ts', () => {
       });
 
       const config = await import('./config');
-      expect(config.API_CONFIG.baseURL).toBe('https://vibe-tutor-api.onrender.com');
+      expect(config.API_CONFIG.baseURL).toBe(PRODUCTION_URL);
     });
 
     it('should detect Capacitor by global object', async () => {
@@ -170,7 +172,7 @@ describe('config.ts', () => {
       });
 
       const config = await import('./config');
-      expect(config.API_CONFIG.baseURL).toBe('https://vibe-tutor-api.onrender.com');
+      expect(config.API_CONFIG.baseURL).toBe(PRODUCTION_URL);
     });
 
     it('should use USB debug URL for local development', async () => {
@@ -208,7 +210,7 @@ describe('config.ts', () => {
 
       const config = await import('./config');
       // Production Capacitor defaults to production backend unless VITE_USB_DEBUG=true
-      expect(config.API_CONFIG.baseURL).toBe('https://vibe-tutor-api.onrender.com');
+      expect(config.API_CONFIG.baseURL).toBe(PRODUCTION_URL);
     });
 
     it('should log environment detection info', async () => {

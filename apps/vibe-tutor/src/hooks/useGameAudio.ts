@@ -9,7 +9,15 @@ export function useGameAudio() {
     // Initialize lazily to respect browser auto-play policies
     const initAudio = () => {
       if (!audioContext.current) {
-        audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const AudioContextClass =
+          window.AudioContext ??
+          (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+
+        if (!AudioContextClass) {
+          return;
+        }
+
+        audioContext.current = new AudioContextClass();
       }
     };
     
@@ -27,7 +35,7 @@ export function useGameAudio() {
     if (!audioContext.current) return;
     try {
       if (audioContext.current.state === 'suspended') {
-        audioContext.current.resume();
+        void audioContext.current.resume().catch(() => {});
       }
       
       const oscillator = audioContext.current.createOscillator();

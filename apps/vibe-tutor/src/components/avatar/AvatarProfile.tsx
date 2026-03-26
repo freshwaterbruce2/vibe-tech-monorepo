@@ -1,10 +1,10 @@
-import { Zap, Sparkles, BookOpen, Brain, Activity } from 'lucide-react';
+import { Zap, Sparkles, BookOpen, Brain, Activity, type LucideProps } from 'lucide-react';
 import React, { useEffect, useState, useMemo } from 'react';
 import { type AvatarState, type AvatarStat, type ShopItem } from '../../types';
 import { dataStore } from '../../services/dataStore';
 import { SHOP_ITEMS } from '../../services/avatarShopData';
 
-const STAT_ICONS: Record<AvatarStat, React.ComponentType<any>> = {
+const STAT_ICONS: Record<AvatarStat, React.ComponentType<LucideProps>> = {
   mathPower: CalculatorIcon,
   sciencePower: Zap,
   historyPower: BookOpen,
@@ -127,7 +127,7 @@ export default function AvatarProfile({ onOpenShop }: AvatarProfileProps) {
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Activity size={28} color="#8b5cf6" style={{ marginRight: '12px' }} />
+          <Activity size={28} color="#22d3ee" style={{ marginRight: '12px' }} />
           <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold' }}>Avatar Profile</h2>
         </div>
         {onOpenShop && (
