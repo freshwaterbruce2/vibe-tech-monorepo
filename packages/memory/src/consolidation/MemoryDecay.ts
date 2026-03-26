@@ -7,11 +7,15 @@
 import type Database from 'better-sqlite3';
 
 export interface DecayConfig {
-  /** Half-life in milliseconds (default: 7 days) */
+  /** Half-life in milliseconds — kept for backward compat; overridden by episodic/semantic specific values */
   halfLifeMs?: number;
+  /** Episodic memory half-life (default: 5 days — faster decay for transient events) */
+  episodicHalfLifeMs?: number;
+  /** Semantic memory half-life (default: 11 days — slower decay for long-term knowledge) */
+  semanticHalfLifeMs?: number;
   /** Minimum score before archival (default: 0.1) */
   archiveThreshold?: number;
-  /** Boost factor per access (default: 0.15) */
+  /** Boost factor per access (default: 0.1, linear with cap 0.5) */
   accessBoost?: number;
   /** Importance weight multiplier (default: 0.2) */
   importanceWeight?: number;
@@ -37,10 +41,12 @@ export interface DecayResult {
   scores: DecayScore[];
 }
 
-const DEFAULT_HALF_LIFE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const DEFAULT_EPISODIC_HALF_LIFE_MS = 5 * 24 * 60 * 60 * 1000; // 5 days (FadeMem dual-layer)
+const DEFAULT_SEMANTIC_HALF_LIFE_MS = 11 * 24 * 60 * 60 * 1000; // 11 days (FadeMem dual-layer)
 
 export class MemoryDecay {
-  private halfLifeMs: number;
+  readonly episodicHalfLifeMs: number;
+  readonly semanticHalfLifeMs: number;
   private archiveThreshold: number;
   private accessBoost: number;
   private importanceWeight: number;
@@ -49,9 +55,13 @@ export class MemoryDecay {
   private scheduledTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(config: DecayConfig = {}) {
-    this.halfLifeMs = config.halfLifeMs ?? DEFAULT_HALF_LIFE_MS;
+    // Support legacy halfLifeMs as override for both; otherwise use dual-layer defaults
+    this.episodicHalfLifeMs =
+      config.episodicHalfLifeMs ?? config.halfLifeMs ?? DEFAULT_EPISODIC_HALF_LIFE_MS;
+    this.semanticHalfLifeMs =
+      config.semanticHalfLifeMs ?? config.halfLifeMs ?? DEFAULT_SEMANTIC_HALF_LIFE_MS;
     this.archiveThreshold = config.archiveThreshold ?? 0.1;
-    this.accessBoost = config.accessBoost ?? 0.15;
+    this.accessBoost = config.accessBoost ?? 0.1; // linear, not sqrt
     this.importanceWeight = config.importanceWeight ?? 0.2;
     this.easinessFactor = config.easinessFactor ?? 2.5;
     this.scheduledIntervalMs = config.scheduledIntervalMs ?? 6 * 60 * 60 * 1000; // 6 hours
@@ -61,18 +71,25 @@ export class MemoryDecay {
    * Calculate decay score for a single memory.
    * Score range: 0.0 (completely decayed) to 1.0+ (very active/important)
    *
-   * Formula:
-   *   base = 2^(-age / halfLife)
-   *   boost = accessCount * accessBoost
+   * Formula (Phase 4 — FadeMem dual-layer):
+   *   base  = 2^(-ageMs / effectiveHalfLife)
+   *   boost = min(accessCount * 0.1, 0.5)   // linear with cap (replaces sqrt)
    *   importanceBonus = (importance / 10) * importanceWeight
    *   score = base + boost + importanceBonus
+   *
+   * @param effectiveHalfLifeMs - caller-computed half-life (may include context multiplier)
    */
-  calculateScore(ageMs: number, accessCount: number, importance: number): number {
-    // Exponential decay: halves every halfLifeMs
-    const base = Math.pow(2, -(ageMs / this.halfLifeMs));
+  calculateScore(
+    ageMs: number,
+    accessCount: number,
+    importance: number,
+    effectiveHalfLifeMs = this.semanticHalfLifeMs,
+  ): number {
+    // Exponential decay: halves every effectiveHalfLifeMs
+    const base = Math.pow(2, -(ageMs / effectiveHalfLifeMs));
 
-    // Access frequency boost (diminishing returns via sqrt)
-    const boost = Math.sqrt(accessCount) * this.accessBoost;
+    // Linear access boost with cap (replaces sqrt — avoids runaway scores on heavily accessed memories)
+    const boost = Math.min(accessCount * this.accessBoost, 0.5);
 
     // Importance bonus (normalized 0-10 → 0-1, then weighted)
     const importanceBonus = (Math.min(importance, 10) / 10) * this.importanceWeight;
@@ -81,15 +98,36 @@ export class MemoryDecay {
   }
 
   /**
-   * Score all semantic memories and return sorted by decay score
+   * Phase 4: Context-aware decay multiplier.
+   * Memories matching the active project decay slower (half-life extended).
    */
-  scoreAll(db: Database.Database): DecayScore[] {
+  getContextMultiplier(
+    category: string | null,
+    metadataJson: string | null,
+    activeProjectName?: string,
+  ): number {
+    if (!activeProjectName) return 1.0;
+    if (category === activeProjectName) return 1.5;
+    try {
+      const meta: Record<string, unknown> = metadataJson ? JSON.parse(metadataJson) : {};
+      if (meta['project'] === activeProjectName) return 1.3;
+    } catch {
+      /* non-critical */
+    }
+    return 1.0;
+  }
+
+  /**
+   * Score all semantic memories and return sorted by decay score.
+   * Phase 4: applies dual-layer half-lives and context-aware multiplier.
+   */
+  scoreAll(db: Database.Database, activeProjectName?: string): DecayScore[] {
     const now = Date.now();
 
     const rows = db
       .prepare(
         `
-      SELECT id, text, category, importance, created,
+      SELECT id, text, category, importance, created, metadata,
              COALESCE(last_accessed, created) as last_accessed,
              COALESCE(access_count, 0) as access_count
       FROM semantic_memory
@@ -104,11 +142,18 @@ export class MemoryDecay {
       created: number;
       last_accessed: number;
       access_count: number;
+      metadata: string | null;
     }>;
 
     const scores: DecayScore[] = rows.map((row) => {
       const ageMs = now - row.last_accessed;
-      const score = this.calculateScore(ageMs, row.access_count, row.importance);
+      const contextMultiplier = this.getContextMultiplier(
+        row.category,
+        row.metadata,
+        activeProjectName,
+      );
+      const effectiveHalfLife = this.semanticHalfLifeMs * contextMultiplier;
+      const score = this.calculateScore(ageMs, row.access_count, row.importance, effectiveHalfLife);
 
       return {
         id: row.id,
@@ -148,7 +193,7 @@ export class MemoryDecay {
       )
     `);
 
-    const allScores = this.scoreAll(db);
+    const allScores = this.scoreAll(db, undefined);
     const belowThreshold = allScores.filter((s) => s.score < this.archiveThreshold);
 
     if (!dryRun && belowThreshold.length > 0) {
@@ -237,7 +282,7 @@ export class MemoryDecay {
 
     // Interval scaling: more accesses = longer effective half-life
     const intervalFactor = Math.min(accessCount, 10) / 10;
-    const adjustedHalfLife = this.halfLifeMs * ef * (1 + intervalFactor);
+    const adjustedHalfLife = this.semanticHalfLifeMs * ef * (1 + intervalFactor);
 
     // Decay from last interval
     const base = Math.pow(2, -(lastIntervalMs / adjustedHalfLife));
@@ -302,36 +347,59 @@ export class MemoryDecay {
   }
 
   /**
-   * Get decay statistics
+   * Get decay statistics.
+   * Phase 4: accepts activeProjectName to apply context multiplier in scoring;
+   * reports episodic and semantic archive counts separately.
    */
-  getStats(db: Database.Database): {
+  getStats(
+    db: Database.Database,
+    activeProjectName?: string,
+  ): {
     total: number;
     belowThreshold: number;
     averageScore: number;
     archivedCount: number;
+    semanticArchivedCount: number;
+    episodicCount: number;
     scheduledRunning: boolean;
+    episodicHalfLifeDays: number;
+    semanticHalfLifeDays: number;
   } {
-    const scores = this.scoreAll(db);
+    const scores = this.scoreAll(db, activeProjectName);
     const belowThreshold = scores.filter((s) => s.score < this.archiveThreshold);
     const avgScore =
       scores.length > 0 ? scores.reduce((sum, s) => sum + s.score, 0) / scores.length : 0;
 
-    let archivedCount = 0;
+    let semanticArchivedCount = 0;
     try {
       const row = db.prepare('SELECT COUNT(*) as count FROM semantic_memory_archive').get() as
         | { count: number }
         | undefined;
-      archivedCount = row?.count ?? 0;
+      semanticArchivedCount = row?.count ?? 0;
     } catch {
       // Archive table might not exist yet
+    }
+
+    let episodicCount = 0;
+    try {
+      const row = db.prepare('SELECT COUNT(*) as count FROM episodic_memory').get() as
+        | { count: number }
+        | undefined;
+      episodicCount = row?.count ?? 0;
+    } catch {
+      /* non-critical */
     }
 
     return {
       total: scores.length,
       belowThreshold: belowThreshold.length,
       averageScore: Math.round(avgScore * 1000) / 1000,
-      archivedCount,
+      archivedCount: semanticArchivedCount,
+      semanticArchivedCount,
+      episodicCount,
       scheduledRunning: this.scheduledTimer !== null,
+      episodicHalfLifeDays: Math.round(this.episodicHalfLifeMs / (24 * 3600 * 1000) * 10) / 10,
+      semanticHalfLifeDays: Math.round(this.semanticHalfLifeMs / (24 * 3600 * 1000) * 10) / 10,
     };
   }
 }

@@ -8,6 +8,52 @@ import { SemanticStore } from '../stores/SemanticStore.js';
 import type { MemoryConfig } from '../types/index.js';
 
 /**
+ * Circular-buffer latency tracker per tool name (Phase 1).
+ * Stores up to maxEntries per tool; exposes p50/p95/p99.
+ */
+export class LatencyTracker {
+  private readonly maxEntries: number;
+  private readonly buckets = new Map<string, number[]>();
+
+  constructor(maxEntries = 1000) {
+    this.maxEntries = maxEntries;
+  }
+
+  record(toolName: string, elapsedMs: number): void {
+    let buf = this.buckets.get(toolName);
+    if (!buf) {
+      buf = [];
+      this.buckets.set(toolName, buf);
+    }
+    buf.push(elapsedMs);
+    if (buf.length > this.maxEntries) {
+      buf.shift(); // evict oldest
+    }
+  }
+
+  getStats(
+    toolName: string,
+  ): { p50: number; p95: number; p99: number; count: number } | null {
+    const buf = this.buckets.get(toolName);
+    if (!buf || buf.length === 0) return null;
+
+    const sorted = [...buf].sort((a, b) => a - b);
+    const idx = (pct: number) => Math.max(0, Math.ceil((pct / 100) * sorted.length) - 1);
+
+    return {
+      p50: sorted[idx(50)]!,
+      p95: sorted[idx(95)]!,
+      p99: sorted[idx(99)]!,
+      count: sorted.length,
+    };
+  }
+
+  getToolNames(): string[] {
+    return Array.from(this.buckets.keys());
+  }
+}
+
+/**
  * Central memory system manager
  * Coordinates episodic, semantic, and procedural stores
  */
@@ -19,6 +65,7 @@ export class MemoryManager {
   public semantic!: SemanticStore;
   public procedural!: ProceduralStore;
   public decay!: MemoryDecay;
+  public latency: LatencyTracker = new LatencyTracker();
 
   /**
    * Expose underlying database for consumers that need direct SQL access
@@ -69,6 +116,30 @@ export class MemoryManager {
   getStats() {
     const dbStats = this.dbManager.getStats();
 
+    // Count semantic rows whose stored embedding_model differs from current model (Phase 2)
+    let staleDimensionCount = 0;
+    try {
+      const currentModel = this.embeddingService.getModel();
+      const row = this.dbManager
+        .getDb()
+        .prepare(
+          `SELECT COUNT(*) as cnt FROM semantic_memory
+           WHERE embedding_model IS NOT NULL AND embedding_model != ?`,
+        )
+        .get(currentModel) as { cnt: number };
+      staleDimensionCount = row.cnt;
+    } catch {
+      /* non-critical — column may not exist on old DBs */
+    }
+
+    // Collect latency snapshots for tracked tools (Phase 1)
+    const latencyStats: Record<string, { p50: number; p95: number; p99: number; count: number }> =
+      {};
+    for (const toolName of this.latency.getToolNames()) {
+      const s = this.latency.getStats(toolName);
+      if (s) latencyStats[toolName] = s;
+    }
+
     return {
       database: dbStats,
       embedding: {
@@ -76,9 +147,12 @@ export class MemoryManager {
         dimension: this.embeddingService.getDimension(),
         cache: this.embeddingService.getCacheStats(),
         dimensionMismatch: this.embeddingService.hasDimensionMismatch(),
+        modelVersion: this.embeddingService.getModel(),
+        staleDimensionCount,
       },
       vectorExtension: this.dbManager.isVectorExtensionLoaded(),
       decay: this.decay ? this.decay.getStats(this.dbManager.getDb()) : undefined,
+      latency: latencyStats,
     };
   }
 

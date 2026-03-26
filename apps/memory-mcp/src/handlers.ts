@@ -59,7 +59,9 @@ export async function handleToolCall(
     switch (name) {
       case 'memory_search_semantic': {
         const { query, limit = 5 } = args as { query: string; limit?: number };
+        const _t0Semantic = Date.now();
         const results = await memoryManager.semantic.search(query, limit);
+        memoryManager.latency.record('memory_search_semantic', Date.now() - _t0Semantic);
 
         return {
           content: [
@@ -264,6 +266,33 @@ export async function handleToolCall(
         const health = await memoryManager.healthCheck();
         const stats = memoryManager.getStats();
 
+        // Build latency snapshot (Phase 1)
+        const latencyStats: Record<string, { p50: number; p95: number; p99: number; count: number }> = {};
+        for (const toolName of memoryManager.latency.getToolNames()) {
+          const snap = memoryManager.latency.getStats(toolName);
+          if (snap) latencyStats[toolName] = snap;
+        }
+
+        // Drift warnings (Phase 2)
+        const warnings: string[] = [];
+        if (
+          stats.database.normStdDev != null &&
+          stats.database.avgNorm != null &&
+          stats.database.avgNorm > 0
+        ) {
+          const cv = stats.database.normStdDev / stats.database.avgNorm;
+          if (cv > 0.15) {
+            warnings.push(
+              `avg norm deviation ${(cv * 100).toFixed(1)}% — possible model mismatch`,
+            );
+          }
+        }
+        if (stats.embedding.staleDimensionCount && stats.embedding.staleDimensionCount > 0) {
+          warnings.push(
+            `${stats.embedding.staleDimensionCount} semantic memories use a different embedding model and will be skipped during search`,
+          );
+        }
+
         return {
           content: [
             {
@@ -283,7 +312,16 @@ export async function handleToolCall(
                     healthy: health.embedding,
                     provider: stats.embedding.provider,
                     dimension: stats.embedding.dimension,
+                    modelVersion: stats.embedding.modelVersion ?? null,
+                    avgNorm: stats.database.avgNorm ?? null,
+                    normStdDev: stats.database.normStdDev ?? null,
+                    staleDimensionCount: stats.embedding.staleDimensionCount ?? 0,
                   },
+                  latency: latencyStats,
+                  retrieval: {
+                    cacheHitRate: null, // populated by cache layer when available
+                  },
+                  warnings,
                 },
                 null,
                 2,
@@ -610,6 +648,42 @@ export async function handleToolCall(
                     similarity: d.similarity.toFixed(3),
                     reason: d.reason,
                   })),
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      }
+
+      case 'memory_conflict_check': {
+        const { text, category } = args as { text: string; category?: string };
+        if (!text) {
+          return {
+            content: [{ type: 'text', text: JSON.stringify({ error: 'text is required' }) }],
+            isError: true,
+          };
+        }
+
+        const conflictResult = await memoryManager.semantic.findConflictsForText(text, 0.85, 5);
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(
+                {
+                  input: { text: text.slice(0, 200), category },
+                  maxSimilarity: conflictResult.maxSimilarity,
+                  recommendation: conflictResult.recommendation,
+                  conflicts: conflictResult.conflicts.map((c) => ({
+                    id: c.id,
+                    text: c.text.slice(0, 300),
+                    similarity: Number(c.similarity.toFixed(4)),
+                    category: c.category,
+                  })),
+                  conflictCount: conflictResult.conflicts.length,
                 },
                 null,
                 2,
@@ -1088,7 +1162,10 @@ export async function handleToolCall(
         }
 
         const db = memoryManager.getDb();
-        const stats = decay.getStats(db);
+        const activeProjectName = novaMemory
+          ? (await novaMemory.getContext())?.name
+          : undefined;
+        const stats = decay.getStats(db, activeProjectName);
 
         return {
           content: [
@@ -1136,10 +1213,12 @@ export async function handleToolCall(
         }
 
         const unifiedSearch = new UnifiedSearch(memoryManager, ragAdapter, learningBridge);
+        const _t0Unified = Date.now();
         const results = await unifiedSearch.search(query, {
           limit,
           sources: sources ?? undefined,
         });
+        memoryManager.latency.record('memory_search_unified', Date.now() - _t0Unified);
 
         return {
           content: [

@@ -35,19 +35,21 @@ export class UnifiedSearch {
     );
 
     // Fan out to all enabled sources in parallel
+    // Phase 5: fetch 3× candidates per source before RRF merge for better fusion quality
+    const fanout = limit * 3;
     const promises: Array<Promise<UnifiedSearchResult[]>> = [];
 
     if (sources.has('semantic')) {
-      promises.push(this.searchSemantic(query, limit));
+      promises.push(this.searchSemantic(query, fanout));
     }
     if (sources.has('episodic')) {
-      promises.push(this.searchEpisodic(query, limit, options?.timeRange));
+      promises.push(this.searchEpisodic(query, fanout, options?.timeRange));
     }
     if (sources.has('rag') && this.ragBridge) {
-      promises.push(this.searchRAG(query, limit));
+      promises.push(this.searchRAG(query, fanout));
     }
     if (sources.has('learning') && this.learningBridge) {
-      promises.push(this.searchLearning(query, limit));
+      promises.push(this.searchLearning(query, fanout));
     }
 
     const allResults = (await Promise.allSettled(promises))

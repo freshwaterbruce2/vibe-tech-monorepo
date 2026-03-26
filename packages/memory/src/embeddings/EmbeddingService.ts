@@ -330,6 +330,11 @@ export class EmbeddingService {
     return this.dimension;
   }
 
+  /** Get the current embedding model name */
+  getModel(): string {
+    return this.model;
+  }
+
   /**
    * Calculate cosine similarity between two embeddings
    */

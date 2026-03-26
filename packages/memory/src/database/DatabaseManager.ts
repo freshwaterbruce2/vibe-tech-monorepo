@@ -236,6 +236,16 @@ export class DatabaseManager {
         }
         this.db!.exec('UPDATE semantic_memory SET created_at = created WHERE created_at IS NULL');
       },
+      // Migration 2: Add embedding_model column to semantic_memory (Phase 2 — embedding versioning)
+      () => {
+        try {
+          this.db!.exec(
+            `ALTER TABLE semantic_memory ADD COLUMN embedding_model TEXT DEFAULT 'text-embedding-3-small'`,
+          );
+        } catch {
+          /* column already exists */
+        }
+      },
     ];
 
     for (let i = currentVersion; i < migrations.length; i++) {
@@ -291,6 +301,9 @@ export class DatabaseManager {
     semanticCount: number;
     proceduralCount: number;
     dbSizeBytes: number;
+    embeddingModelName: string | null;
+    avgNorm: number | null;
+    normStdDev: number | null;
   } {
     if (!this.db) throw new Error('Database not initialized');
 
@@ -306,11 +319,61 @@ export class DatabaseManager {
 
     const dbSizeBytes = fs.existsSync(this.dbPath) ? fs.statSync(this.dbPath).size : 0;
 
+    // Embedding model name from most recent row (Phase 2)
+    let embeddingModelName: string | null = null;
+    try {
+      const modelRow = this.db
+        .prepare(
+          'SELECT embedding_model FROM semantic_memory WHERE embedding_model IS NOT NULL ORDER BY id DESC LIMIT 1',
+        )
+        .get() as { embedding_model: string } | undefined;
+      embeddingModelName = modelRow?.embedding_model ?? null;
+    } catch {
+      /* embedding_model column may not exist on old DBs */
+    }
+
+    // Average L2 norm + stddev across last 100 embedded rows (Phase 1 — drift detection)
+    let avgNorm: number | null = null;
+    let normStdDev: number | null = null;
+    try {
+      const embRows = this.db
+        .prepare(
+          'SELECT embedding FROM semantic_memory WHERE embedding IS NOT NULL ORDER BY id DESC LIMIT 100',
+        )
+        .all() as { embedding: Buffer }[];
+
+      if (embRows.length > 0) {
+        const norms = embRows.map((row) => {
+          const vec = new Float32Array(
+            row.embedding.buffer,
+            row.embedding.byteOffset,
+            row.embedding.byteLength / 4,
+          );
+          let sum = 0;
+          for (let i = 0; i < vec.length; i++) {
+            const v = vec[i] ?? 0;
+            sum += v * v;
+          }
+          return Math.sqrt(sum);
+        });
+
+        const mean = norms.reduce((a, b) => a + b, 0) / norms.length;
+        const variance = norms.reduce((s, n) => s + (n - mean) ** 2, 0) / norms.length;
+        avgNorm = Math.round(mean * 1000) / 1000;
+        normStdDev = Math.round(Math.sqrt(variance) * 1000) / 1000;
+      }
+    } catch {
+      /* non-critical — embedding BLOB deserialization failure */
+    }
+
     return {
       episodicCount: episodicCount.count,
       semanticCount: semanticCount.count,
       proceduralCount: proceduralCount.count,
       dbSizeBytes,
+      embeddingModelName,
+      avgNorm,
+      normStdDev,
     };
   }
 }

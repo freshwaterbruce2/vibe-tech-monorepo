@@ -13,6 +13,14 @@ interface SemanticRow {
   last_accessed: number | null;
   access_count: number;
   metadata: string | null;
+  embedding_model: string | null;
+}
+
+interface ConflictHit {
+  id: number;
+  text: string;
+  similarity: number;
+  category: string | null;
 }
 
 export class SemanticStore {
@@ -29,13 +37,24 @@ export class SemanticStore {
   ): Promise<number> {
     // Generate embedding
     const embedding = await this.embedder.embed(memory.text);
+    const embeddingModel = this.embedder.getModel();
+
+    // Phase 3: conflict pre-check — enrich metadata with similar existing memories
+    const conflicts = this.findConflicts(embedding, 0.85, 3);
+    const enrichedMetadata: Record<string, unknown> = { ...(memory.metadata ?? {}) };
+    if (conflicts.length > 0) {
+      enrichedMetadata['potentialConflicts'] = conflicts.map((c) => ({
+        id: c.id,
+        similarity: c.similarity,
+      }));
+    }
 
     // Serialize embedding as BLOB (Float32Array)
     const embeddingBlob = Buffer.from(new Float32Array(embedding).buffer);
 
     const stmt = this.db.prepare(`
-      INSERT INTO semantic_memory (text, embedding, category, importance, created, access_count, metadata)
-      VALUES (?, ?, ?, ?, ?, 0, ?)
+      INSERT INTO semantic_memory (text, embedding, category, importance, created, access_count, metadata, embedding_model)
+      VALUES (?, ?, ?, ?, ?, 0, ?, ?)
     `);
 
     const result = stmt.run(
@@ -44,7 +63,8 @@ export class SemanticStore {
       memory.category ?? null,
       memory.importance ?? 5,
       Date.now(),
-      memory.metadata ? JSON.stringify(memory.metadata) : null,
+      JSON.stringify(enrichedMetadata),
+      embeddingModel,
     );
 
     return result.lastInsertRowid as number;
@@ -64,9 +84,10 @@ export class SemanticStore {
     }
 
     // Batch insert in transaction
+    const embeddingModel = this.embedder.getModel();
     const stmt = this.db.prepare(`
-      INSERT INTO semantic_memory (text, embedding, category, importance, created, access_count, metadata)
-      VALUES (?, ?, ?, ?, ?, 0, ?)
+      INSERT INTO semantic_memory (text, embedding, category, importance, created, access_count, metadata, embedding_model)
+      VALUES (?, ?, ?, ?, ?, 0, ?, ?)
     `);
 
     const ids: number[] = [];
@@ -79,6 +100,7 @@ export class SemanticStore {
           memory.importance ?? 5,
           Date.now(),
           memory.metadata ? JSON.stringify(memory.metadata) : null,
+          embeddingModel,
         );
         ids.push(result.lastInsertRowid as number);
       }
@@ -105,18 +127,27 @@ export class SemanticStore {
     }
 
     const queryEmbedding = await this.embedder.embed(queryText);
+    const currentModel = this.embedder.getModel();
 
     // Pre-filter: only non-trivial memories, capped scan
     const scanLimit = Math.max(limit * 20, 1000);
     const stmt = this.db.prepare(`
-      SELECT id, text, embedding, category, importance, created, last_accessed, access_count, metadata
+      SELECT id, text, embedding, category, importance, created, last_accessed, access_count, metadata, embedding_model
       FROM semantic_memory
       WHERE importance >= 1 AND length(embedding) > 0
       ORDER BY importance DESC
       LIMIT ?
     `);
 
-    const rows = stmt.all(scanLimit) as SemanticRow[];
+    const allRows = stmt.all(scanLimit) as SemanticRow[];
+
+    // Phase 2: skip rows embedded with a different model (incompatible vector space)
+    const rows = allRows.filter((row) => {
+      if (row.embedding_model && row.embedding_model !== currentModel) {
+        return false;
+      }
+      return true;
+    });
 
     const results: SearchResult<SemanticMemory>[] = rows.map((row) => {
       const embedding = deserializeEmbedding(row.embedding);
@@ -196,6 +227,70 @@ export class SemanticStore {
 
     const result = stmt.run(importanceThreshold, accessThreshold);
     return result.changes;
+  }
+
+  /**
+   * Phase 3: Find existing memories with cosine similarity above threshold.
+   * Used internally during add() and externally via findConflictsForText().
+   * Returns up to `limit` hits sorted by descending similarity.
+   */
+  private findConflicts(
+    embedding: number[],
+    threshold = 0.85,
+    limit = 3,
+  ): ConflictHit[] {
+    try {
+      const rows = this.db
+        .prepare(
+          `SELECT id, text, embedding, category FROM semantic_memory
+           WHERE length(embedding) > 0
+           ORDER BY importance DESC LIMIT 1000`,
+        )
+        .all() as Array<{ id: number; text: string; embedding: Buffer; category: string | null }>;
+
+      const hits: ConflictHit[] = [];
+      for (const row of rows) {
+        const vec = deserializeEmbedding(row.embedding);
+        const sim = cosineSimilarity(embedding, vec);
+        if (sim >= threshold) {
+          hits.push({ id: row.id, text: row.text, similarity: sim, category: row.category });
+        }
+      }
+
+      hits.sort((a, b) => b.similarity - a.similarity);
+      return hits.slice(0, limit);
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Phase 3: Public API — embed text and return conflict hits with recommendation.
+   * Used by the memory_conflict_check MCP handler.
+   */
+  async findConflictsForText(
+    text: string,
+    threshold = 0.85,
+    limit = 5,
+  ): Promise<{
+    conflicts: ConflictHit[];
+    recommendation: 'store' | 'merge' | 'review';
+    maxSimilarity: number;
+  }> {
+    const embedding = await this.embedder.embed(text);
+    const conflicts = this.findConflicts(embedding, threshold, limit);
+    const maxSimilarity = conflicts[0]?.similarity ?? 0;
+
+    let recommendation: 'store' | 'merge' | 'review';
+    if (maxSimilarity < 0.85) {
+      recommendation = 'store';
+    } else if (maxSimilarity >= 0.92) {
+      recommendation = 'merge';
+    } else {
+      recommendation = 'review';
+    }
+
+    return { conflicts, recommendation, maxSimilarity };
   }
 
   /**

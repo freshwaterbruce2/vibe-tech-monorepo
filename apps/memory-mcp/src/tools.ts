@@ -695,6 +695,27 @@ export const tools: Tool[] = [
     },
   },
 
+  // Conflict Detection (Phase 3)
+  {
+    name: 'memory_conflict_check',
+    description:
+      'Check for semantic conflicts before storing a new memory. Returns similar existing memories and a recommendation: "store" (no conflict), "merge" (near-duplicate ≥0.92), or "review" (potential conflict 0.85–0.92).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        text: {
+          type: 'string',
+          description: 'Text to check for conflicts against existing semantic memories',
+        },
+        category: {
+          type: 'string',
+          description: 'Optional category to filter search scope',
+        },
+      },
+      required: ['text'],
+    },
+  },
+
   // Unified Search (Phase 3)
   {
     name: 'memory_search_unified',
