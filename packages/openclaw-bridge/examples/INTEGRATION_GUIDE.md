@@ -29,7 +29,7 @@ The OpenClaw Bridge enables OpenClaw to interact with VibeTech's MCP (Model Cont
 - Access the filesystem (read, write, search files)
 - Query GitHub repositories
 - Execute desktop commands (via Desktop Commander)
-- Call any MCP server in the Antigravity ecosystem
+- Call any MCP server in the Gateway ecosystem
 
 **Architecture:**
 
@@ -203,7 +203,7 @@ Extensions add persistent commands to OpenClaw.
 {
   "name": "vibetech-bridge",
   "version": "2.0.0",
-  "description": "VibeTech Antigravity MCP Bridge",
+  "description": "VibeTech Gateway MCP Bridge",
   "author": "VibeTech",
   "entry": "index.js",
   "commands": [
@@ -879,4 +879,4 @@ logger.error('Tool failed', { error: err.message, stack: err.stack });
 
 ---
 
-**Integration Complete!** 🎊 OpenClaw can now access all MCP servers in the Antigravity ecosystem.
+**Integration Complete!** 🎊 OpenClaw can now access all MCP servers in the Gateway ecosystem.

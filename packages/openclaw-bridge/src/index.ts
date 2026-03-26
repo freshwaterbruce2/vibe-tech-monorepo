@@ -3,7 +3,7 @@ import { EventEmitter } from 'node:events';
 import { WebSocket } from 'ws';
 
 const SOURCE = 'openclaw' as const;
-const VERSION = '2.0.0'; // Updated for OpenClaw 2026.2.19-2 compatibility
+const VERSION = '2.0.0'; // Bridge client version for current OpenClaw gateway releases
 
 export interface BridgeOptions {
     url?: string;
@@ -63,11 +63,11 @@ function makeId(prefix: string): string {
 }
 
 /**
- * OpenClaw IPC Bridge Client (v2.0 - 2026).
+ * OpenClaw IPC Bridge Client (v2.0).
  * Connects to the IPC Bridge as 'openclaw' and provides
- * methods to dispatch tasks/tool calls to Antigravity.
+ * methods to dispatch tasks and tool calls through the gateway bridge.
  *
- * Compatible with OpenClaw 2026.2.19-2 and later.
+ * Compatible with current OpenClaw gateway-centric releases.
  *
  * Features:
  * - Auto-reconnection with exponential backoff
@@ -147,7 +147,13 @@ export class OpenClawBridge extends EventEmitter {
                 this.reconnectAttempts = 0; // Reset on successful connection
                 this.log('WebSocket connected, sending identify message...');
 
-                this.ws!.send(JSON.stringify({
+                const ws = this.ws;
+                if (!ws) {
+                    reject(new Error('WebSocket disconnected before identify'));
+                    return;
+                }
+
+                ws.send(JSON.stringify({
                     messageId: makeId('msg'),
                     type: 'identify',
                     timestamp: Date.now(),
@@ -156,7 +162,7 @@ export class OpenClawBridge extends EventEmitter {
                     payload: {
                         clientType: SOURCE,
                         capabilities: ['task_dispatch', 'tool_call', 'streaming'],
-                        openclawVersion: '2026.2.19-2',
+                        openclawVersion: 'gateway-current',
                     },
                 }));
 
@@ -220,7 +226,7 @@ export class OpenClawBridge extends EventEmitter {
         }, delay);
     }
 
-    /** Dispatch a multi-step task to Antigravity */
+    /** Dispatch a multi-step task to Gateway */
     async dispatchTask(opts: DispatchOptions): Promise<TaskResult> {
         const taskId = opts.taskId ?? makeId('task');
         const correlationId = makeId('corr');
@@ -238,7 +244,7 @@ export class OpenClawBridge extends EventEmitter {
         return this.waitForResponse(correlationId, timeout) as Promise<TaskResult>;
     }
 
-    /** Call a single MCP tool on Antigravity */
+    /** Call a single MCP tool on Gateway */
     async callTool(opts: ToolCallOptions): Promise<ToolResult> {
         const callId = opts.callId ?? makeId('call');
         const correlationId = makeId('corr');
@@ -266,9 +272,9 @@ export class OpenClawBridge extends EventEmitter {
         }
 
         // Reject all pending requests
-        for (const [id, p] of this.pending) {
-            clearTimeout(p.timer);
-            p.reject(new Error('Client disconnected'));
+        for (const pending of this.pending.values()) {
+            clearTimeout(pending.timer);
+            pending.reject(new Error('Client disconnected'));
         }
         this.pending.clear();
 
@@ -341,7 +347,7 @@ export class OpenClawBridge extends EventEmitter {
             type,
             timestamp: Date.now(),
             source: SOURCE,
-            target: 'antigravity',
+            target: 'gateway',
             version: VERSION,
             correlationId,
             payload,
@@ -364,8 +370,11 @@ export class OpenClawBridge extends EventEmitter {
         const correlationId = msg.correlationId as string | undefined;
 
         // Route responses to pending promises
-        if (correlationId && this.pending.has(correlationId)) {
-            const pending = this.pending.get(correlationId)!;
+        if (correlationId) {
+            const pending = this.pending.get(correlationId);
+            if (!pending) {
+                return;
+            }
             clearTimeout(pending.timer);
             this.pending.delete(correlationId);
             pending.resolve(msg.payload);

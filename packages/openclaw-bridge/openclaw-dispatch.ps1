@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-    OpenClaw → Antigravity Dispatcher CLI
+    OpenClaw → Gateway Dispatcher CLI
 
 .DESCRIPTION
     Wrapper script to run openclaw-dispatch from anywhere

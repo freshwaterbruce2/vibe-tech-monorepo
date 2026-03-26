@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * CLI for dispatching tasks from OpenClaw to Antigravity via IPC Bridge.
+ * CLI for dispatching tasks from OpenClaw to Gateway via IPC Bridge.
  *
  * Usage:
  *   openclaw-dispatch call <server> <tool> [--args '{"key":"value"}']
@@ -20,7 +20,7 @@ function getFlag(name: string): string | undefined {
 async function main() {
     // Show help without connecting if no command or help requested
     if (!command || command === 'help' || command === '--help' || command === '-h') {
-        console.log('OpenClaw → Antigravity Dispatcher');
+        console.log('OpenClaw → Gateway Dispatcher');
         console.log('');
         console.log('Commands:');
         console.log('  call <server> <tool> [--args \'{"key":"val"}\']  Call a single MCP tool');

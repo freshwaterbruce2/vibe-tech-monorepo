@@ -2,7 +2,7 @@
   "name": "@vibetech/openclaw-bridge",
   "version": "2.0.0",
   "type": "module",
-  "description": "OpenClaw IPC client — dispatches tasks to Antigravity MCP servers via IPC Bridge (compatible with OpenClaw 2026.2.19-2)",
+  "description": "OpenClaw gateway bridge client for dispatching tasks to MCP servers via IPC Bridge (compatible with current OpenClaw gateway releases)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -17,7 +17,8 @@
     "mcp",
     "ipc",
     "bridge",
-    "antigravity",
+    "gateway",
+    "openclaw-gateway",
     "ai-assistant",
     "websocket"
   ],

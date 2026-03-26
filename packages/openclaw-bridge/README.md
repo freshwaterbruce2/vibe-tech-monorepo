@@ -1,29 +1,29 @@
 # @vibetech/openclaw-bridge
 
-OpenClaw IPC Bridge Client for dispatching tasks to Antigravity MCP servers.
+OpenClaw IPC Bridge Client for dispatching tasks to MCP servers through the gateway bridge.
 
 **Version:** 2.0.0
-**Compatible with:** [OpenClaw 2026.2.19-2](https://github.com/openclaw/openclaw/releases/tag/v2026.2.19-2)
+**Compatible with:** current [OpenClaw](https://github.com/openclaw/openclaw) gateway-centric releases
 
 ---
 
 ## Overview
 
-This package provides a WebSocket-based IPC client that connects OpenClaw (your personal AI assistant) to the VibeTech Antigravity MCP server ecosystem. It enables OpenClaw to dispatch tasks, call MCP tools, and interact with the monorepo's AI infrastructure.
+This package provides a WebSocket-based IPC client that connects OpenClaw (your personal AI assistant) to the VibeTech MCP server ecosystem through the gateway bridge. It enables OpenClaw to dispatch tasks, call MCP tools, and interact with the monorepo's AI infrastructure.
 
 ### What is OpenClaw?
 
-[OpenClaw](https://github.com/openclaw/openclaw) is a personal AI assistant you run on your own devices that integrates with messaging platforms like WhatsApp, Telegram, Slack, Discord, and more. The latest version (2026.2.19-2) includes:
+[OpenClaw](https://github.com/openclaw/openclaw) is a personal AI assistant you run on your own devices that integrates with messaging platforms like WhatsApp, Telegram, Slack, Discord, and more. Current gateway-centric releases continue to emphasize:
 
 - Multi-platform messaging support
-- Code safety scanner
-- Support for Opus 4.6, GPT-5.3-Codex
-- Security enhancements (path containment, realpath checks)
+- Code safety scanning
+- Tool and gateway routing improvements
+- Security-focused path handling
 - Configuration refresh without restart
 
 **Sources:**
 - [OpenClaw Releases](https://github.com/openclaw/openclaw/releases)
-- [OpenClaw v2026.2.6 Release Notes](https://cybersecuritynews.com/openclaw-v2026-2-6-released/)
+- [OpenClaw Repository](https://github.com/openclaw/openclaw)
 
 ---
 
@@ -269,7 +269,7 @@ Full-featured extension with 4 commands.
                                                     │
                                                     ▼
                                             ┌───────────────┐
-                                            │  Antigravity  │
+                                            │ Gateway-routed│
                                             │ MCP Servers   │
                                             └───────────────┘
                                                     │
@@ -286,7 +286,7 @@ Full-featured extension with 4 commands.
 1. OpenClaw receives user message/command
 2. OpenClaw hook/extension uses `@vibetech/openclaw-bridge`
 3. Bridge sends IPC message to IPC Bridge server (port 5004)
-4. IPC Bridge routes to appropriate Antigravity MCP server
+4. IPC Bridge routes to the appropriate gateway-backed MCP server
 5. MCP server executes tool and returns result
 6. Bridge receives result and resolves promise
 7. OpenClaw processes result and responds to user
@@ -381,7 +381,7 @@ MIT
 
 ### v2.0.0 (2026-02-19)
 
-- 🎉 **BREAKING:** Updated for OpenClaw 2026.2.19-2 compatibility
+- 🎉 **BREAKING:** Updated for current OpenClaw gateway-centric compatibility
 - ✨ Added auto-reconnection with exponential backoff
 - ✨ Added health check endpoint
 - ✨ Added connection state tracking
