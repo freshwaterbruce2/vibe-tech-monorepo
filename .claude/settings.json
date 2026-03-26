@@ -86,7 +86,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "powershell -NoProfile -File C:\\dev\\.claude\\hooks\\log-bash-command.ps1",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File C:\\dev\\.claude\\hooks\\log-bash-command.ps1",
             "timeout": 5
           }
         ]
@@ -98,7 +98,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_response.filePath // .tool_input.file_path' | { read -r f; npx prettier --write \"$f\" --ignore-unknown; } 2>/dev/null || true",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File C:\\dev\\.claude\\hooks\\eslint-autofix.ps1",
             "timeout": 15
           }
         ]
@@ -108,7 +108,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.file_path // .tool_response.filePath // empty' | { read -r f; case \"$f\" in *.ts|*.tsx) npx.cmd tsc --noEmit --pretty 2>&1 | head -20 ;; esac; } || true",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File C:\\dev\\.claude\\hooks\\typescript-check.ps1",
             "timeout": 30
           }
         ]
