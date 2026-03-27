@@ -42,7 +42,7 @@ export async function orchestrateMonorepo(
   while (pending.length > 0 && iterations < MAX_REACT_ITERATIONS) {
     iterations++;
     const batch = pending.splice(0, MAX_PARALLEL);
-    const settled = await Promise.allSettled(batch.map(({ task }) => executor.runTask(task)));
+    const settled = await Promise.allSettled(batch.map(async ({ task }) => executor.runTask(task)));
     const retryNeeded: RoutedTask[] = [];
 
     settled.forEach((outcome, i) => {

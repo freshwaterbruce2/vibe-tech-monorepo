@@ -14,6 +14,7 @@ export interface RAGIndexSummary {
   durationMs: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- Inngest requires a type alias (not interface) to satisfy NormalizedEventSchemas index signature constraint
 export type Events = {
   /**
    * Request a full or incremental RAG index run.

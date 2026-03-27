@@ -143,8 +143,10 @@ export class IPCBridgeServer {
       this.sendStats(clientId);
     });
 
+    const httpServer = this.httpServer;
+    if (!httpServer) throw new Error('HTTP server not initialized');
     await new Promise<void>((resolve) => {
-      this.httpServer!.listen(this.port, resolve);
+      httpServer.listen(this.port, resolve);
     });
 
     const address = this.httpServer.address();

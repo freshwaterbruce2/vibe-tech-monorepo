@@ -25,7 +25,7 @@ export async function trackUsage(record: UsageRecord): Promise<void> {
     try {
       const content = await fs.readFile(USAGE_DB_PATH, 'utf-8');
       data = JSON.parse(content);
-    } catch (_error) {
+    } catch {
       // File doesn't exist yet, use empty data
     }
 
@@ -46,7 +46,14 @@ export async function trackUsage(record: UsageRecord): Promise<void> {
   }
 }
 
-export async function getUsageStats(periodHours: number = 24): Promise<any> {
+interface UsageStats {
+  total_requests: number;
+  total_tokens: number;
+  total_cost: number;
+  by_model: Record<string, number>;
+}
+
+export async function getUsageStats(periodHours: number = 24): Promise<UsageStats> {
   try {
     const content = await fs.readFile(USAGE_DB_PATH, 'utf-8');
     const data: UsageData = JSON.parse(content);
@@ -67,7 +74,7 @@ export async function getUsageStats(periodHours: number = 24): Promise<any> {
         return acc;
       }, {} as Record<string, number>)
     };
-  } catch (_error) {
+  } catch {
     return {
       total_requests: 0,
       total_tokens: 0,

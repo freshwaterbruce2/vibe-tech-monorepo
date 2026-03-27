@@ -445,6 +445,18 @@ export default tseslint.config(
     },
   },
 
+  // ipc-bridge: tests are outside the build tsconfig (src/**/* only), use lint tsconfig
+  {
+    files: ['backend/ipc-bridge/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        projectService: false,
+        project: ['./backend/ipc-bridge/tsconfig.lint.json'],
+      },
+    },
+  },
+
   // Archived agent-sdk-workspace — explicit tsconfig needed since projectService
   // doesn't auto-discover tsconfigs outside the monorepo root's project list.
   {

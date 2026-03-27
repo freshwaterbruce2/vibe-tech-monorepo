@@ -62,7 +62,7 @@ export class WorktreeService {
     if (branchName) {
       try {
         gitBranchDelete(branchName);
-      } catch (e) {
+      } catch {
         // Ignore branch deletion failures if it was already deleted or doesn't exist
       }
     }
