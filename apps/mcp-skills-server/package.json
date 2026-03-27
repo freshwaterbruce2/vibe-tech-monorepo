@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.0",
-    "glob": "^13.0.1",
+    "glob": "^13.0.6",
     "gray-matter": "^4.0.3",
     "zod": "^3.25.0"
   },

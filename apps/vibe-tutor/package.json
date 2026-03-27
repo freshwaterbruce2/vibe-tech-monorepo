@@ -44,13 +44,13 @@
     "android:deploy": "pnpm run android:full-build && pnpm run android:uninstall && pnpm run android:install"
   },
   "dependencies": {
-    "@capacitor-community/sqlite": "^8.0.0",
-    "@capacitor/android": "^8.0.2",
-    "@capacitor/cli": "^8.0.2",
-    "@capacitor/core": "^8.0.2",
-    "@capacitor/file-transfer": "^2.0.3",
-    "@capacitor/filesystem": "^8.1.0",
-    "@google/genai": "^1.39.0",
+    "@capacitor-community/sqlite": "^8.0.1",
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/cli": "^8.3.0",
+    "@capacitor/core": "^8.3.0",
+    "@capacitor/file-transfer": "^2.0.4",
+    "@capacitor/filesystem": "^8.1.2",
+    "@google/genai": "^1.46.0",
     "@jaredreisinger/react-crossword": "^5.2.0",
     "@mediagrid/capacitor-native-audio": "^3.0.0",
     "@react-spring/web": "^10.0.3",
@@ -72,9 +72,9 @@
     "sudoku-umd": "^1.0.1"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.1",
-    "@tailwindcss/postcss": "^4.1.18",
-    "@tailwindcss/vite": "^4.1.18",
+    "@playwright/test": "^1.58.2",
+    "@tailwindcss/postcss": "^4.2.2",
+    "@tailwindcss/vite": "^4.2.2",
     "@testing-library/react": "^16.3.2",
     "@testing-library/react-hooks": "^8.0.1",
     "@types/canvas-confetti": "^1.9.0",
