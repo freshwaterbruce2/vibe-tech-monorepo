@@ -350,9 +350,11 @@ const EmptyText = styled.div`
 
 export interface WorkspaceTemplatesPanelProps {
   onClose: () => void;
+  onSuccess?: (title: string, message: string) => void;
+  onError?: (title: string, message: string) => void;
 }
 
-export const WorkspaceTemplatesPanel = ({ onClose }: WorkspaceTemplatesPanelProps) => {
+export const WorkspaceTemplatesPanel = ({ onClose, onSuccess, onError }: WorkspaceTemplatesPanelProps) => {
   const [templateService] = useState(() => new WorkspaceTemplateService());
   const [templates, setTemplates] = useState<ProjectTemplate[]>([]);
   const [filteredTemplates, setFilteredTemplates] = useState<ProjectTemplate[]>([]);
@@ -424,11 +426,21 @@ export const WorkspaceTemplatesPanel = ({ onClose }: WorkspaceTemplatesPanelProp
       setSelectedTemplate(null);
       onClose();
 
-      // TODO: Show success notification with next steps
-      alert(`Project generated successfully!\n\nNext steps:\n${result.nextSteps.join('\n')}`);
+      const nextStepsText = result.nextSteps
+        .map((step: string, i: number) => `${i + 1}. ${step}`)
+        .join('\n');
+      if (onSuccess) {
+        onSuccess(
+          'Project Created',
+          `"${projectName}" generated successfully.\n\nNext steps:\n${nextStepsText}`
+        );
+      }
     } catch (error) {
       logger.error('[WorkspaceTemplates] Failed to generate project:', error);
-      alert('Failed to generate project. Check console for details.');
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      if (onError) {
+        onError('Project Generation Failed', `Could not generate "${projectName}": ${message}`);
+      }
     } finally {
       setIsGenerating(false);
     }

@@ -3,17 +3,320 @@ import type { FileSystemItem } from '../types';
 
 import { ElectronService } from './ElectronService';
 
+/** Tracks the modification status of a file in the workspace */
+export type FileStatus = 'modified' | 'new' | 'deleted' | 'renamed' | 'untracked' | 'unchanged';
+
+/** A file entry with its status metadata */
+export interface TrackedFile {
+  path: string;
+  status: FileStatus;
+  originalPath?: string; // For renamed files
+  lastModified: number;  // Epoch timestamp
+}
+
+/** Result of a content search match */
+export interface ContentSearchResult {
+  path: string;
+  line: number;
+  column: number;
+  lineContent: string;
+  matchLength: number;
+}
+
+const STORAGE_KEY_FILES = 'vcs-fs-files';
+const STORAGE_KEY_RECENT = 'vcs-fs-recent';
+const STORAGE_KEY_TRACKED = 'vcs-fs-tracked';
+const MAX_RECENT_FILES = 20;
+
 export class FileSystemService {
   private files: Map<string, string> = new Map();
   private electronService: ElectronService;
   private isElectron: boolean;
+  private recentFiles: string[] = [];
+  private trackedFiles: Map<string, TrackedFile> = new Map();
 
   constructor() {
     this.electronService = new ElectronService();
     this.isElectron = this.electronService.isElectron();
-    if (!this.isElectron) {
+    this.restoreFromStorage();
+    if (!this.isElectron && this.files.size === 0) {
       this.initializeDemoFiles();
+      this.persistToStorage();
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Persistence with localStorage
+  // ---------------------------------------------------------------------------
+
+  /** Save file tree, recent files, and tracked file metadata to localStorage */
+  private persistToStorage(): void {
+    try {
+      const filesData: Record<string, string> = {};
+      for (const [key, value] of this.files) {
+        filesData[key] = value;
+      }
+      localStorage.setItem(STORAGE_KEY_FILES, JSON.stringify(filesData));
+      localStorage.setItem(STORAGE_KEY_RECENT, JSON.stringify(this.recentFiles));
+
+      const trackedData: Record<string, TrackedFile> = {};
+      for (const [key, value] of this.trackedFiles) {
+        trackedData[key] = value;
+      }
+      localStorage.setItem(STORAGE_KEY_TRACKED, JSON.stringify(trackedData));
+    } catch (error) {
+      logger.warn('[FileSystemService] Failed to persist state to localStorage:', error);
+    }
+  }
+
+  /** Restore file tree, recent files, and tracked file metadata from localStorage */
+  private restoreFromStorage(): void {
+    try {
+      const filesJson = localStorage.getItem(STORAGE_KEY_FILES);
+      if (filesJson) {
+        const filesData = JSON.parse(filesJson) as Record<string, string>;
+        for (const [key, value] of Object.entries(filesData)) {
+          this.files.set(key, value);
+        }
+      }
+
+      const recentJson = localStorage.getItem(STORAGE_KEY_RECENT);
+      if (recentJson) {
+        this.recentFiles = JSON.parse(recentJson) as string[];
+      }
+
+      const trackedJson = localStorage.getItem(STORAGE_KEY_TRACKED);
+      if (trackedJson) {
+        const trackedData = JSON.parse(trackedJson) as Record<string, TrackedFile>;
+        for (const [key, value] of Object.entries(trackedData)) {
+          this.trackedFiles.set(key, value);
+        }
+      }
+
+      if (this.files.size > 0) {
+        logger.debug(`[FileSystemService] Restored ${this.files.size} files, ${this.recentFiles.length} recent, ${this.trackedFiles.size} tracked from localStorage`);
+      }
+    } catch (error) {
+      logger.warn('[FileSystemService] Failed to restore state from localStorage:', error);
+    }
+  }
+
+  /** Record a file access in the recent files list */
+  private recordRecentFile(path: string): void {
+    this.recentFiles = [
+      path,
+      ...this.recentFiles.filter((p) => p !== path),
+    ].slice(0, MAX_RECENT_FILES);
+    this.persistToStorage();
+  }
+
+  /** Get the list of recently accessed files (most recent first) */
+  getRecentFiles(): string[] {
+    return [...this.recentFiles];
+  }
+
+  /** Clear all persisted state from localStorage */
+  clearPersistedState(): void {
+    try {
+      localStorage.removeItem(STORAGE_KEY_FILES);
+      localStorage.removeItem(STORAGE_KEY_RECENT);
+      localStorage.removeItem(STORAGE_KEY_TRACKED);
+      logger.debug('[FileSystemService] Cleared persisted state');
+    } catch (error) {
+      logger.warn('[FileSystemService] Failed to clear persisted state:', error);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Filtering by status
+  // ---------------------------------------------------------------------------
+
+  /** Track a file with a given status */
+  trackFile(path: string, status: FileStatus, originalPath?: string): void {
+    this.trackedFiles.set(path, {
+      path,
+      status,
+      originalPath,
+      lastModified: Date.now(),
+    });
+    this.persistToStorage();
+  }
+
+  /** Remove tracking for a file */
+  untrackFile(path: string): void {
+    this.trackedFiles.delete(path);
+    this.persistToStorage();
+  }
+
+  /** Get the tracked status of a single file */
+  getFileStatus(path: string): FileStatus {
+    return this.trackedFiles.get(path)?.status ?? 'unchanged';
+  }
+
+  /** Filter tracked files by one or more statuses */
+  filterByStatus(...statuses: FileStatus[]): TrackedFile[] {
+    const statusSet = new Set(statuses);
+    const results: TrackedFile[] = [];
+    for (const tracked of this.trackedFiles.values()) {
+      if (statusSet.has(tracked.status)) {
+        results.push({ ...tracked });
+      }
+    }
+    return results;
+  }
+
+  /** Get all tracked files regardless of status */
+  getTrackedFiles(): TrackedFile[] {
+    return Array.from(this.trackedFiles.values()).map((t) => ({ ...t }));
+  }
+
+  // ---------------------------------------------------------------------------
+  // Search functionality
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Search for files by name (case-insensitive substring match).
+   * Searches both in-memory files and, when in Electron mode, delegates
+   * to the directory listing for the given root path.
+   */
+  async searchFilesByName(query: string, rootPath?: string): Promise<FileSystemItem[]> {
+    const lowerQuery = query.toLowerCase();
+    const results: FileSystemItem[] = [];
+
+    // Search in-memory files first (demo / web mode)
+    for (const [filePath] of this.files) {
+      const name = this.basename(filePath);
+      if (name.toLowerCase().includes(lowerQuery)) {
+        results.push({
+          name,
+          path: filePath,
+          type: 'file' as const,
+          size: this.files.get(filePath)?.length ?? 0,
+          modified: new Date(),
+        });
+      }
+    }
+
+    // In Electron mode, also walk the provided root directory
+    if (this.isElectron && rootPath) {
+      try {
+        const electronResults = await this.searchDirectoryByName(rootPath, lowerQuery, 5);
+        results.push(...electronResults);
+      } catch (error) {
+        logger.warn('[FileSystemService] Electron directory search failed:', error);
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Recursively search a directory tree for files matching a name query.
+   * Limits recursion depth to avoid traversing very deep trees.
+   */
+  private async searchDirectoryByName(
+    dirPath: string,
+    lowerQuery: string,
+    maxDepth: number,
+  ): Promise<FileSystemItem[]> {
+    if (maxDepth <= 0) return [];
+
+    const results: FileSystemItem[] = [];
+    try {
+      const entries = await this.listDirectory(dirPath);
+      for (const entry of entries) {
+        if (entry.name.toLowerCase().includes(lowerQuery)) {
+          results.push(entry);
+        }
+        if (entry.type === 'directory') {
+          const childResults = await this.searchDirectoryByName(
+            entry.path,
+            lowerQuery,
+            maxDepth - 1,
+          );
+          results.push(...childResults);
+        }
+      }
+    } catch (error) {
+      logger.debug(`[FileSystemService] Could not search directory ${dirPath}:`, error);
+    }
+    return results;
+  }
+
+  /**
+   * Search file contents for a text string (case-insensitive).
+   * Returns matching lines with their line/column numbers.
+   * Only searches in-memory files in web mode; in Electron mode also reads
+   * files from the provided root path.
+   */
+  async searchFileContents(
+    query: string,
+    rootPath?: string,
+  ): Promise<ContentSearchResult[]> {
+    const lowerQuery = query.toLowerCase();
+    const results: ContentSearchResult[] = [];
+
+    // Search in-memory files
+    for (const [filePath, content] of this.files) {
+      const matches = this.findContentMatches(filePath, content, lowerQuery, query.length);
+      results.push(...matches);
+    }
+
+    // In Electron mode, also search files from rootPath
+    if (this.isElectron && rootPath) {
+      try {
+        const fileItems = await this.searchDirectoryByName(rootPath, '', 3);
+        for (const item of fileItems) {
+          if (item.type !== 'file') continue;
+          // Skip files we already searched in-memory
+          if (this.files.has(item.path)) continue;
+          try {
+            const content = await this.readFile(item.path);
+            const matches = this.findContentMatches(item.path, content, lowerQuery, query.length);
+            results.push(...matches);
+          } catch {
+            // Skip unreadable files
+          }
+        }
+      } catch (error) {
+        logger.warn('[FileSystemService] Electron content search failed:', error);
+      }
+    }
+
+    return results;
+  }
+
+  /** Find all occurrences of a query string within file content */
+  private findContentMatches(
+    filePath: string,
+    content: string,
+    lowerQuery: string,
+    matchLength: number,
+  ): ContentSearchResult[] {
+    const results: ContentSearchResult[] = [];
+    const lines = content.split('\n');
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i] ?? '';
+      const lowerLine = line.toLowerCase();
+      let searchFrom = 0;
+
+      while (searchFrom < lowerLine.length) {
+        const col = lowerLine.indexOf(lowerQuery, searchFrom);
+        if (col === -1) break;
+
+        results.push({
+          path: filePath,
+          line: i + 1,
+          column: col + 1,
+          lineContent: line,
+          matchLength,
+        });
+        searchFrom = col + 1;
+      }
+    }
+
+    return results;
   }
 
   private initializeDemoFiles() {
@@ -58,9 +361,38 @@ class TodoApp {
   }
 }
 
-// TODO: Add persistence with localStorage
-// TODO: Add filtering by status
-// TODO: Add search functionality
+// Persistence: save/load todos from localStorage
+  save() {
+    localStorage.setItem('todos', JSON.stringify(this.todos));
+    localStorage.setItem('nextId', String(this.nextId));
+  }
+
+  load() {
+    try {
+      const saved = localStorage.getItem('todos');
+      if (saved) {
+        this.todos = JSON.parse(saved);
+        this.nextId = parseInt(localStorage.getItem('nextId') || '1', 10);
+      }
+    } catch (e) {
+      console.error('Failed to load todos:', e);
+    }
+  }
+
+  // Filter todos by completion status: 'all' | 'active' | 'completed'
+  filterByStatus(status) {
+    if (status === 'active') return this.todos.filter(t => !t.completed);
+    if (status === 'completed') return this.todos.filter(t => t.completed);
+    return this.todos;
+  }
+
+  // Search todos by text (case-insensitive)
+  search(query) {
+    if (!query || !query.trim()) return this.todos;
+    const lower = query.toLowerCase();
+    return this.todos.filter(t => t.text.toLowerCase().includes(lower));
+  }
+}
 
 module.exports = TodoApp;`);
 
@@ -284,6 +616,7 @@ module.exports = {
   async readFile(path: string): Promise<string> {
     // Handle virtual demo:// paths in-memory (must be checked BEFORE Electron check)
     if (this.isVirtualPath(path)) {
+      this.recordRecentFile(path);
       return this.files.get(path) ?? '';
     }
 
@@ -291,6 +624,7 @@ module.exports = {
       // Use Electron filesystem API
       try {
         const content = await this.electronService.readFile(path);
+        this.recordRecentFile(path);
         return content || '';
       } catch (error) {
         logger.error('Electron readFile error:', error);
@@ -299,13 +633,18 @@ module.exports = {
     }
 
     // Fallback to in-memory storage for web
+    this.recordRecentFile(path);
     return this.files.get(path) ?? '';
   }
 
   async writeFile(path: string, content: string): Promise<void> {
     // Handle virtual demo:// paths in-memory (MUST be checked BEFORE Electron)
     if (this.isVirtualPath(path)) {
+      const isNew = !this.files.has(path);
       this.files.set(path, content);
+      this.trackFile(path, isNew ? 'new' : 'modified');
+      this.recordRecentFile(path);
+      this.persistToStorage();
       return;
     }
 
@@ -334,7 +673,11 @@ module.exports = {
     }
 
     // Fallback to in-memory storage for web
+    const isNew = !this.files.has(path);
     this.files.set(path, content);
+    this.trackFile(path, isNew ? 'new' : 'modified');
+    this.recordRecentFile(path);
+    this.persistToStorage();
   }
 
   async createFile(path: string, content: string = ''): Promise<void> {
@@ -344,6 +687,9 @@ module.exports = {
         throw new Error(`File already exists: ${path}`);
       }
       this.files.set(path, content);
+      this.trackFile(path, 'new');
+      this.recordRecentFile(path);
+      this.persistToStorage();
       return;
     }
 
@@ -352,6 +698,9 @@ module.exports = {
       throw new Error(`File already exists: ${path}`);
     }
     this.files.set(path, content);
+    this.trackFile(path, 'new');
+    this.recordRecentFile(path);
+    this.persistToStorage();
   }
 
   async deleteFile(path: string): Promise<void> {
@@ -361,6 +710,8 @@ module.exports = {
         throw new Error(`File not found: ${path}`);
       }
       this.files.delete(path);
+      this.trackFile(path, 'deleted');
+      this.persistToStorage();
       return;
     }
 
@@ -369,6 +720,8 @@ module.exports = {
       throw new Error(`File not found: ${path}`);
     }
     this.files.delete(path);
+    this.trackFile(path, 'deleted');
+    this.persistToStorage();
   }
 
   async createDirectory(path: string): Promise<void> {

@@ -329,6 +329,7 @@ export function AppLayout(props: AppLayoutProps) {
             onDeleteFile={handleDeleteFile}
             onOpenFolder={handleOpenFolderDialog}
             onShowSettings={() => setSettingsOpen(true)}
+            onError={showError}
           />
         )}
 

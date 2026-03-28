@@ -18,11 +18,11 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import React, { useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import styled from 'styled-components';
 
 import { logger } from '../services/Logger';
-import type { DiffAnalysis, FileDiff } from '../services/GitDiffService';
+import type { ConflictResolution as ConflictResolutionType, DiffAnalysis, DiffHunk, FileDiff } from '../services/GitDiffService';
 import { GitDiffService } from '../services/GitDiffService';
 import type { UnifiedAIService } from '../services/ai/UnifiedAIService';
 import { vibeTheme } from '../styles/theme';
@@ -319,6 +319,65 @@ const ResolutionButton = styled.button<{ $variant?: 'primary' | 'secondary' }>`
   }
 `;
 
+const ManualEditArea = styled.textarea`
+  width: 100%;
+  min-height: 120px;
+  margin-top: ${vibeTheme.spacing.sm};
+  padding: ${vibeTheme.spacing.sm};
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: ${vibeTheme.borderRadius.medium};
+  color: ${vibeTheme.colors.text};
+  font-family: ${vibeTheme.typography.fontFamily.mono};
+  font-size: ${vibeTheme.typography.fontSize.sm};
+  resize: vertical;
+  line-height: 1.5;
+
+  &:focus {
+    outline: none;
+    border-color: rgba(139, 92, 246, 0.6);
+  }
+`;
+
+const AISuggestionBox = styled.div`
+  margin-top: ${vibeTheme.spacing.sm};
+  padding: ${vibeTheme.spacing.sm};
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: ${vibeTheme.borderRadius.medium};
+`;
+
+const AISuggestionText = styled.div`
+  font-size: ${vibeTheme.typography.fontSize.sm};
+  color: ${vibeTheme.colors.textSecondary};
+  line-height: 1.5;
+  margin-bottom: ${vibeTheme.spacing.xs};
+`;
+
+const AISuggestionPreview = styled.pre`
+  margin: ${vibeTheme.spacing.xs} 0;
+  padding: ${vibeTheme.spacing.sm};
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: ${vibeTheme.borderRadius.small};
+  font-family: ${vibeTheme.typography.fontFamily.mono};
+  font-size: ${vibeTheme.typography.fontSize.xs};
+  color: ${vibeTheme.colors.text};
+  overflow-x: auto;
+  white-space: pre-wrap;
+`;
+
+const ResolvedBanner = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${vibeTheme.spacing.xs};
+  padding: ${vibeTheme.spacing.sm} ${vibeTheme.spacing.md};
+  background: rgba(16, 185, 129, 0.1);
+  border-top: 1px solid rgba(16, 185, 129, 0.2);
+  font-size: ${vibeTheme.typography.fontSize.sm};
+  color: #10b981;
+  font-weight: ${vibeTheme.typography.fontWeight.medium};
+`;
+
 const LoadingState = styled.div`
   display: flex;
   flex-direction: column;
@@ -347,14 +406,28 @@ export interface GitDiffViewerProps {
   onClose: () => void;
 }
 
+interface FileConflictState {
+  showManualEdit: boolean;
+  manualContent: string;
+  aiSuggestion: {
+    resolution: ConflictResolutionType['resolution'];
+    explanation: string;
+    preview: string;
+  } | null;
+  isLoadingAI: boolean;
+  resolved: boolean;
+  resolvedWith: string;
+}
+
 export const GitDiffViewer = ({ aiService, diffText, onClose }: GitDiffViewerProps) => {
   const [diffService] = useState(() => new GitDiffService(aiService));
   const [analysis, setAnalysis] = useState<DiffAnalysis | null>(null);
   const [expandedFiles, setExpandedFiles] = useState<Set<string>>(new Set());
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [conflictStates, setConflictStates] = useState<Record<string, FileConflictState>>({});
 
   // Parse and analyze diff on mount
-  React.useEffect(() => {
+  useEffect(() => {
     const analyzeDiff = async () => {
       setIsAnalyzing(true);
 
@@ -400,9 +473,135 @@ export const GitDiffViewer = ({ aiService, diffText, onClose }: GitDiffViewerPro
     }
   };
 
-  const handleConflictResolution = async (file: FileDiff, resolution: 'ours' | 'theirs') => {
+  const getConflictState = (fileId: string): FileConflictState => {
+    return conflictStates[fileId] ?? {
+      showManualEdit: false,
+      manualContent: '',
+      aiSuggestion: null,
+      isLoadingAI: false,
+      resolved: false,
+      resolvedWith: '',
+    };
+  };
+
+  const updateConflictState = (fileId: string, update: Partial<FileConflictState>) => {
+    setConflictStates(prev => ({
+      ...prev,
+      [fileId]: { ...getConflictState(fileId), ...update },
+    }));
+  };
+
+  /**
+   * Extract the initial conflict content (both sides) for manual editing.
+   */
+  const extractConflictContent = (file: FileDiff): string => {
+    const lines: string[] = [];
+    for (const hunk of file.hunks) {
+      for (const line of hunk.lines) {
+        if (line.type === 'conflict-ours' || line.type === 'conflict-theirs' || line.type === 'conflict-marker') {
+          lines.push(line.content);
+        }
+      }
+    }
+    return lines.join('\n');
+  };
+
+  /**
+   * Find the first hunk that contains conflict markers.
+   */
+  const findConflictHunk = (file: FileDiff): DiffHunk | undefined => {
+    return file.hunks.find(hunk =>
+      hunk.lines.some(line => line.type === 'conflict-marker' || line.type === 'conflict-ours' || line.type === 'conflict-theirs')
+    );
+  };
+
+  const handleConflictResolution = async (file: FileDiff, resolution: 'ours' | 'theirs' | 'custom') => {
     logger.info('[GitDiffViewer] Resolving conflict:', file.filePath, resolution);
-    // TODO: Implement conflict resolution
+
+    const state = getConflictState(file.id);
+
+    const conflictResolution: ConflictResolutionType = {
+      conflictId: file.id,
+      resolution,
+      customContent: resolution === 'custom' ? state.manualContent : undefined,
+    };
+
+    const resolvedContent = diffService.applyConflictResolution(file, conflictResolution);
+
+    logger.info('[GitDiffViewer] Conflict resolved:', {
+      filePath: file.filePath,
+      resolution,
+      contentLength: resolvedContent.length,
+    });
+
+    const labelMap: Record<string, string> = {
+      ours: 'Accept Ours',
+      theirs: 'Accept Theirs',
+      custom: 'Manual Edit',
+    };
+
+    updateConflictState(file.id, {
+      resolved: true,
+      resolvedWith: labelMap[resolution] ?? resolution,
+      showManualEdit: false,
+    });
+  };
+
+  const handleAISuggestion = async (file: FileDiff) => {
+    const conflictHunk = findConflictHunk(file);
+    if (!conflictHunk) {
+      logger.warn('[GitDiffViewer] No conflict hunk found for AI suggestion');
+      return;
+    }
+
+    updateConflictState(file.id, { isLoadingAI: true });
+
+    try {
+      const suggestion = await diffService.suggestConflictResolution(file, conflictHunk);
+
+      updateConflictState(file.id, {
+        aiSuggestion: suggestion,
+        isLoadingAI: false,
+      });
+    } catch (error) {
+      logger.error('[GitDiffViewer] AI suggestion failed:', error);
+      updateConflictState(file.id, { isLoadingAI: false });
+    }
+  };
+
+  const handleApplyAISuggestion = async (file: FileDiff) => {
+    const state = getConflictState(file.id);
+    if (!state.aiSuggestion) return;
+
+    const resolution = state.aiSuggestion.resolution;
+    const conflictResolution: ConflictResolutionType = {
+      conflictId: file.id,
+      resolution,
+      customContent: state.aiSuggestion.preview || undefined,
+      explanation: state.aiSuggestion.explanation,
+    };
+
+    diffService.applyConflictResolution(file, conflictResolution);
+
+    updateConflictState(file.id, {
+      resolved: true,
+      resolvedWith: `AI (${resolution})`,
+      showManualEdit: false,
+    });
+  };
+
+  const handleToggleManualEdit = (file: FileDiff) => {
+    const state = getConflictState(file.id);
+    if (!state.showManualEdit) {
+      // Pre-populate the textarea with the conflict content
+      const content = extractConflictContent(file);
+      updateConflictState(file.id, {
+        showManualEdit: true,
+        manualContent: content,
+      });
+    } else {
+      updateConflictState(file.id, { showManualEdit: false });
+    }
   };
 
   if (isAnalyzing) {
@@ -531,43 +730,116 @@ export const GitDiffViewer = ({ aiService, diffText, onClose }: GitDiffViewerPro
                     {file.hunks.map(hunk => (
                       <div key={hunk.id}>
                         {hunk.lines.map((line, index) => (
-                          <React.Fragment key={index}>
+                          <Fragment key={index}>
                             {line.type === 'conflict-marker' ? (
                               <ConflictMarker>{line.content}</ConflictMarker>
                             ) : (
                               <DiffLine $type={line.type}>{line.content}</DiffLine>
                             )}
-                          </React.Fragment>
+                          </Fragment>
                         ))}
                       </div>
                     ))}
                   </DiffContent>
 
-                  {file.hasConflicts && (
-                    <ConflictResolution>
-                      <ResolutionTitle>
-                        <GitMerge size={16} />
-                        Resolve Conflict
-                      </ResolutionTitle>
-                      <ResolutionButtons>
-                        <ResolutionButton $variant="secondary" onClick={async () => handleConflictResolution(file, 'ours')}>
-                          <Check size={14} />
-                          Accept Ours
-                        </ResolutionButton>
-                        <ResolutionButton
-                          $variant="secondary"
-                          onClick={async () => handleConflictResolution(file, 'theirs')}
-                        >
-                          <Check size={14} />
-                          Accept Theirs
-                        </ResolutionButton>
-                        <ResolutionButton $variant="primary">
-                          <Sparkles size={14} />
-                          AI Suggestion
-                        </ResolutionButton>
-                      </ResolutionButtons>
-                    </ConflictResolution>
-                  )}
+                  {file.hasConflicts && (() => {
+                    const cState = getConflictState(file.id);
+
+                    if (cState.resolved) {
+                      return (
+                        <ResolvedBanner>
+                          <Check size={16} />
+                          Conflict resolved: {cState.resolvedWith}
+                        </ResolvedBanner>
+                      );
+                    }
+
+                    return (
+                      <ConflictResolution>
+                        <ResolutionTitle>
+                          <GitMerge size={16} />
+                          Resolve Conflict
+                        </ResolutionTitle>
+                        <ResolutionButtons>
+                          <ResolutionButton
+                            $variant="secondary"
+                            onClick={() => handleConflictResolution(file, 'ours')}
+                          >
+                            <Check size={14} />
+                            Accept Ours
+                          </ResolutionButton>
+                          <ResolutionButton
+                            $variant="secondary"
+                            onClick={() => handleConflictResolution(file, 'theirs')}
+                          >
+                            <Check size={14} />
+                            Accept Theirs
+                          </ResolutionButton>
+                          <ResolutionButton
+                            $variant="secondary"
+                            onClick={() => handleToggleManualEdit(file)}
+                          >
+                            <FileCode size={14} />
+                            {cState.showManualEdit ? 'Cancel Edit' : 'Manual Edit'}
+                          </ResolutionButton>
+                          <ResolutionButton
+                            $variant="primary"
+                            disabled={cState.isLoadingAI}
+                            onClick={() => handleAISuggestion(file)}
+                          >
+                            {cState.isLoadingAI ? (
+                              <Loader2 size={14} />
+                            ) : (
+                              <Sparkles size={14} />
+                            )}
+                            {cState.isLoadingAI ? 'Analyzing...' : 'AI Suggestion'}
+                          </ResolutionButton>
+                        </ResolutionButtons>
+
+                        {cState.showManualEdit && (
+                          <>
+                            <ManualEditArea
+                              value={cState.manualContent}
+                              onChange={e => updateConflictState(file.id, { manualContent: e.target.value })}
+                              placeholder="Edit the conflicting code here, then click Apply..."
+                              spellCheck={false}
+                            />
+                            <ResolutionButtons>
+                              <ResolutionButton
+                                $variant="primary"
+                                onClick={() => handleConflictResolution(file, 'custom')}
+                                disabled={!cState.manualContent.trim()}
+                              >
+                                <Check size={14} />
+                                Apply Manual Resolution
+                              </ResolutionButton>
+                            </ResolutionButtons>
+                          </>
+                        )}
+
+                        {cState.aiSuggestion && (
+                          <AISuggestionBox>
+                            <AISuggestionText>
+                              <strong>AI recommends: </strong>
+                              {cState.aiSuggestion.explanation}
+                            </AISuggestionText>
+                            {cState.aiSuggestion.preview && (
+                              <AISuggestionPreview>{cState.aiSuggestion.preview}</AISuggestionPreview>
+                            )}
+                            <ResolutionButtons>
+                              <ResolutionButton
+                                $variant="primary"
+                                onClick={() => handleApplyAISuggestion(file)}
+                              >
+                                <Check size={14} />
+                                Apply AI Suggestion
+                              </ResolutionButton>
+                            </ResolutionButtons>
+                          </AISuggestionBox>
+                        )}
+                      </ConflictResolution>
+                    );
+                  })()}
                 </FileContent>
               </FileCard>
             );

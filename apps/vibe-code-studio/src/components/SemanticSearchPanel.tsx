@@ -5,10 +5,11 @@
 
 import { motion } from 'framer-motion';
 import { Brain, ChevronRight, Code2, FileCode, Loader2, Search, Sparkles, X, Zap } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import styled from 'styled-components';
 
 import { logger } from '../services/Logger';
+import { FileSystemService } from '../services/FileSystemService';
 import type { SearchMetadata, SearchQuery, SearchResult } from '../services/SemanticSearchService';
 import { SemanticSearchService } from '../services/SemanticSearchService';
 import type { UnifiedAIService } from '../services/ai/UnifiedAIService';
@@ -311,14 +312,19 @@ export interface SemanticSearchPanelProps {
   aiService: UnifiedAIService;
   onClose: () => void;
   onResultClick?: (result: SearchResult) => void;
+  /** Workspace root path to index. Falls back to 'demo://workspace' for web mode. */
+  workspaceRoot?: string | null;
 }
 
-export const SemanticSearchPanel = ({ aiService, onClose, onResultClick }: SemanticSearchPanelProps) => {
-  const [searchService] = useState(() => new SemanticSearchService(aiService));
+export const SemanticSearchPanel = ({ aiService, onClose, onResultClick, workspaceRoot }: SemanticSearchPanelProps) => {
+  const fsServiceRef = useRef(new FileSystemService());
+  const [searchService] = useState(() => new SemanticSearchService(aiService, fsServiceRef.current));
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [metadata, setMetadata] = useState<SearchMetadata | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [isIndexing, setIsIndexing] = useState(false);
+  const [indexedCount, setIndexedCount] = useState(0);
   const [hasSearched, setHasSearched] = useState(false);
 
   const exampleQueries = [
@@ -329,7 +335,7 @@ export const SemanticSearchPanel = ({ aiService, onClose, onResultClick }: Seman
     'show React components',
   ];
 
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     if (!query.trim() || isSearching) {
       return;
     }
@@ -359,9 +365,9 @@ export const SemanticSearchPanel = ({ aiService, onClose, onResultClick }: Seman
     } finally {
       setIsSearching(false);
     }
-  };
+  }, [query, isSearching, searchService]);
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyPress = (e: KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSearch();
@@ -370,41 +376,59 @@ export const SemanticSearchPanel = ({ aiService, onClose, onResultClick }: Seman
 
   const handleExampleClick = (example: string) => {
     setQuery(example);
-    // Trigger search after short delay to show query update
-    setTimeout(async () => handleSearch(), 100);
   };
+
+  // Trigger search when query is set via example click
+  const prevQueryRef = useRef(query);
+  useEffect(() => {
+    if (query !== prevQueryRef.current && query.trim() && exampleQueries.includes(query)) {
+      prevQueryRef.current = query;
+      handleSearch();
+    } else {
+      prevQueryRef.current = query;
+    }
+    // exampleQueries is stable (inline array recreated each render but values are constant)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, handleSearch]);
 
   const handleResultClick = (result: SearchResult) => {
     logger.info('[SemanticSearchPanel] Result clicked:', result.filePath);
     onResultClick?.(result);
   };
 
-  // Auto-index files on mount (mock implementation)
+  // Index workspace files on mount or when workspaceRoot changes
   useEffect(() => {
-    // TODO: Integrate with workspace file system
-    // For now, add some example files for testing
-    searchService.addFile(
-      'src/services/AuthService.ts',
-      `
-export class AuthService {
-  async login(email: string, password: string) {
-    // Authentication logic
-    const user = await this.validateCredentials(email, password);
-    return this.generateToken(user);
-  }
+    let cancelled = false;
 
-  private async validateCredentials(email: string, password: string) {
-    // Validate user credentials
-    return await db.users.findOne({ email, password });
-  }
-}
-      `,
-      'typescript'
-    );
+    const indexWorkspace = async () => {
+      const root = workspaceRoot ?? 'demo://workspace';
 
-    const indexStats = searchService.getIndexStats();
-    logger.info('[SemanticSearchPanel] Index loaded:', indexStats);
-  }, [searchService]);
+      setIsIndexing(true);
+      logger.info('[SemanticSearchPanel] Indexing workspace:', root);
+
+      try {
+        const count = await searchService.indexFilesFromWorkspace(root, 500);
+
+        if (!cancelled) {
+          setIndexedCount(count);
+          const indexStats = searchService.getIndexStats();
+          logger.info('[SemanticSearchPanel] Index complete:', indexStats);
+        }
+      } catch (error) {
+        logger.error('[SemanticSearchPanel] Indexing failed:', error);
+      } finally {
+        if (!cancelled) {
+          setIsIndexing(false);
+        }
+      }
+    };
+
+    indexWorkspace();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [workspaceRoot, searchService]);
 
   return (
     <Container>
@@ -454,6 +478,24 @@ export class AuthService {
       </SearchContainer>
 
       <Content>
+        {isIndexing && (
+          <MetadataBar>
+            <MetadataItem>
+              <Loader2 size={12} />
+              Indexing workspace files...
+            </MetadataItem>
+          </MetadataBar>
+        )}
+
+        {!isIndexing && indexedCount > 0 && !metadata && (
+          <MetadataBar>
+            <MetadataItem>
+              <FileCode size={12} />
+              {indexedCount} files indexed
+            </MetadataItem>
+          </MetadataBar>
+        )}
+
         {metadata && (
           <MetadataBar>
             <MetadataItem>

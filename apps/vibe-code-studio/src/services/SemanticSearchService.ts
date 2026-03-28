@@ -11,6 +11,7 @@
 
 import { logger } from './Logger';
 import type { UnifiedAIService } from './ai/UnifiedAIService';
+import { FileSystemService } from './FileSystemService';
 
 export interface SearchQuery {
   query: string;
@@ -60,12 +61,44 @@ interface FileContent {
   language: string;
 }
 
+/** File extensions that map to searchable language identifiers */
+const EXTENSION_LANGUAGE_MAP: Record<string, string> = {
+  '.ts': 'typescript',
+  '.tsx': 'typescript',
+  '.js': 'javascript',
+  '.jsx': 'javascript',
+  '.py': 'python',
+  '.rs': 'rust',
+  '.go': 'go',
+  '.json': 'json',
+  '.css': 'css',
+  '.scss': 'scss',
+  '.html': 'html',
+  '.md': 'markdown',
+  '.yaml': 'yaml',
+  '.yml': 'yaml',
+  '.toml': 'toml',
+  '.sql': 'sql',
+  '.sh': 'shell',
+  '.ps1': 'powershell',
+};
+
+/** Directories that should always be excluded from indexing */
+const DEFAULT_EXCLUDE_DIRS = new Set([
+  'node_modules', '.git', 'dist', 'build', '.nx', '.cache',
+  'coverage', '.next', '.turbo', '__pycache__', '.venv',
+  'vendor', 'target', '.output',
+]);
+
 export class SemanticSearchService {
   private aiService: UnifiedAIService;
   private fileCache: Map<string, FileContent> = new Map();
+  private fsService: FileSystemService;
+  private indexing = false;
 
-  constructor(aiService: UnifiedAIService) {
+  constructor(aiService: UnifiedAIService, fsService?: FileSystemService) {
     this.aiService = aiService;
+    this.fsService = fsService ?? new FileSystemService();
   }
 
   /**
@@ -183,19 +216,145 @@ export class SemanticSearchService {
   }
 
   /**
-   * Get list of files to search based on filters
+   * Get list of files to search based on filters.
+   * Returns cached files filtered by the provided criteria.
+   * Call indexFilesFromWorkspace() first to populate the cache from disk.
    */
-  private async getFilesToSearch(_filters?: SearchFilters): Promise<FileContent[]> {
-    // TODO: Integrate with Monaco workspace or file system
-    // For now, return cached files or mock data
+  private async getFilesToSearch(filters?: SearchFilters): Promise<FileContent[]> {
+    let files = Array.from(this.fileCache.values());
 
-    // In real implementation, this would:
-    // 1. Use Monaco's file system API
-    // 2. Scan workspace directories
-    // 3. Apply filters (file types, directories, exclude patterns)
-    // 4. Cache file contents
+    if (!filters) {
+      return files;
+    }
 
-    return Array.from(this.fileCache.values());
+    // Filter by file type (extension without dot)
+    if (filters.fileTypes && filters.fileTypes.length > 0) {
+      const allowed = new Set(filters.fileTypes.map(t => t.toLowerCase()));
+      files = files.filter(f => allowed.has(f.language));
+    }
+
+    // Filter by directory prefixes
+    if (filters.directories && filters.directories.length > 0) {
+      const dirs = filters.directories.map(d => d.replace(/\\/g, '/'));
+      files = files.filter(f => {
+        const normalizedPath = f.path.replace(/\\/g, '/');
+        return dirs.some(d => normalizedPath.includes(d));
+      });
+    }
+
+    // Exclude patterns
+    if (filters.excludePatterns && filters.excludePatterns.length > 0) {
+      files = files.filter(f => {
+        const normalizedPath = f.path.replace(/\\/g, '/').toLowerCase();
+        return !filters.excludePatterns!.some(p => normalizedPath.includes(p.toLowerCase()));
+      });
+    }
+
+    return files;
+  }
+
+  /**
+   * Recursively index files from a workspace directory into the search cache.
+   * Walks the directory tree via FileSystemService, reads each file, and
+   * stores it in the in-memory cache for keyword / semantic search.
+   *
+   * @param rootPath  Workspace root (e.g. "demo://workspace" or "C:/dev/apps/myapp")
+   * @param maxFiles  Safety cap to prevent runaway indexing (default 500)
+   * @returns Number of files indexed
+   */
+  async indexFilesFromWorkspace(
+    rootPath: string,
+    maxFiles: number = 500,
+  ): Promise<number> {
+    if (this.indexing) {
+      logger.warn('[SemanticSearch] Indexing already in progress, skipping');
+      return 0;
+    }
+
+    this.indexing = true;
+    let indexed = 0;
+
+    try {
+      logger.info('[SemanticSearch] Starting file-system indexing from:', rootPath);
+
+      const dirsToVisit: string[] = [rootPath];
+
+      while (dirsToVisit.length > 0 && indexed < maxFiles) {
+        const currentDir = dirsToVisit.shift()!;
+        let entries;
+
+        try {
+          entries = await this.fsService.listDirectory(currentDir);
+        } catch (error) {
+          logger.debug('[SemanticSearch] Could not list directory:', currentDir, error);
+          continue;
+        }
+
+        for (const entry of entries) {
+          if (indexed >= maxFiles) break;
+
+          if (entry.type === 'directory') {
+            const dirName = entry.name.toLowerCase();
+            if (!DEFAULT_EXCLUDE_DIRS.has(dirName)) {
+              dirsToVisit.push(entry.path);
+            }
+            continue;
+          }
+
+          // Determine language from file extension
+          const dotIndex = entry.name.lastIndexOf('.');
+          const ext = dotIndex > 0 ? entry.name.slice(dotIndex).toLowerCase() : '';
+          const language = EXTENSION_LANGUAGE_MAP[ext];
+
+          if (!language) {
+            // Skip binary / unsupported files
+            continue;
+          }
+
+          // Skip files that are already cached and haven't changed
+          if (this.fileCache.has(entry.path)) {
+            indexed++;
+            continue;
+          }
+
+          try {
+            const content = await this.fsService.readFile(entry.path);
+
+            // Skip very large files (>100 KB) to keep search fast
+            if (content.length > 100_000) {
+              logger.debug('[SemanticSearch] Skipping large file:', entry.path, `(${content.length} bytes)`);
+              continue;
+            }
+
+            this.fileCache.set(entry.path, {
+              path: entry.path,
+              content,
+              language,
+            });
+            indexed++;
+          } catch (error) {
+            logger.debug('[SemanticSearch] Could not read file:', entry.path, error);
+          }
+        }
+      }
+
+      logger.info('[SemanticSearch] File-system indexing complete:', {
+        rootPath,
+        filesIndexed: indexed,
+        totalCached: this.fileCache.size,
+      });
+
+      return indexed;
+    } finally {
+      this.indexing = false;
+    }
+  }
+
+  /**
+   * Whether an indexing operation is currently running
+   */
+  get isIndexing(): boolean {
+    return this.indexing;
   }
 
   /**

@@ -14,6 +14,7 @@ import { logger } from './services/Logger';
 
 import { installTauriShim } from './services/tauriShim';
 
+import './styles/loading.css';
 import './index.css';
 import './styles/live-editor-stream.css'; // PHASE 7: Live editor streaming styles
 

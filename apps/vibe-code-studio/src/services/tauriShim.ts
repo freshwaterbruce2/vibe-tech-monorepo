@@ -263,44 +263,92 @@ export async function installTauriShim(): Promise<void> {
       },
     },
 
-    // --- Apex (Semantic Search — stubbed, not yet ported) ---
+    // --- Apex (Semantic Search) ---
+    // Semantic search is handled by the memory MCP server and RAG pipeline.
+    // These stubs satisfy the window.electron.apex API contract; consumers
+    // should migrate to the MCP-based semantic search for real results.
     apex: {
       async get(_key: string) { return undefined; },
       async set(_key: string, _value: string) { return { success: true }; },
       async delete(_key: string) { return { success: true }; },
-      async initSemanticIndex(_path: string) { return { success: false, error: 'Not available in Tauri yet' }; },
-      async updateSemanticIndex(_path: string, _files: string[]) { return { success: false }; },
+      async initSemanticIndex(_path: string) {
+        console.info('[TauriShim] apex.initSemanticIndex is a no-op — use MCP semantic search');
+        return { success: false, error: 'Semantic search available via MCP memory server' };
+      },
+      async updateSemanticIndex(_path: string, _files: string[]) {
+        return { success: false };
+      },
       async semanticSearch(_query: string, _topK?: number) { return []; },
       async getStatus() { return { initialized: false, indexedFiles: 0 }; },
       async queryVector(_query: string, _maxResults?: number) { return []; },
-      async indexWorkspace(_path: string) { return { success: false, error: 'Not available in Tauri yet' }; },
+      async indexWorkspace(_path: string) {
+        return { success: false, error: 'Semantic search available via MCP memory server' };
+      },
     },
 
-    // --- ipcRenderer (legacy stub for db:savePattern etc.) ---
+    // --- ipcRenderer (legacy Electron IPC bridge) ---
+    // Routes known IPC channels to their Tauri command equivalents.
+    // Unknown channels log a warning and return null gracefully.
     ipcRenderer: {
       async invoke(channel: string, ...args: any[]) {
         const { invoke } = await import('@tauri-apps/api/core');
-        // Route known channels to Tauri commands
-        if (channel === 'db:savePattern') {
-          const data = args[0] ?? {};
-          return await invoke('db_save_pattern', { pattern: data.pattern ?? '', tags: data.tags });
+        switch (channel) {
+          case 'db:savePattern': {
+            const data = args[0] ?? {};
+            return await invoke('db_save_pattern', { pattern: data.pattern ?? '', tags: data.tags });
+          }
+          case 'db:query':
+            return await invoke('db_execute_query', { sql: args[0], queryParams: args[1] });
+          case 'db:getPatterns':
+            return await invoke('db_get_patterns', { limit: args[0] ?? 100 });
+          default:
+            console.warn(`[TauriShim] Unhandled ipcRenderer.invoke channel: ${channel}`);
+            return null;
         }
-        if (channel === 'db:query') {
-          return await invoke('db_execute_query', { sql: args[0], queryParams: args[1] });
-        }
-        console.warn(`[TauriShim] Unhandled ipcRenderer.invoke channel: ${channel}`);
-        return null;
       },
-      on(_channel: string, _listener: any) { /* no-op */ },
+      on(_channel: string, _listener: any) { /* no-op — Tauri uses event system */ },
       removeListener(_channel: string, _listener: any) { /* no-op */ },
     },
 
-    // --- Window (stubbed — Tauri handles these natively) ---
+    // --- Window (delegates to Tauri window API) ---
     window: {
-      minimize() { /* handled by Tauri window decorations */ },
-      maximize() { /* handled by Tauri window decorations */ },
-      close() { /* handled by Tauri window decorations */ },
-      async isMaximized() { return false; },
+      async minimize() {
+        try {
+          const { getCurrentWindow } = await import('@tauri-apps/api/window');
+          await getCurrentWindow().minimize();
+        } catch {
+          // Fallback: native decorations handle this
+        }
+      },
+      async maximize() {
+        try {
+          const { getCurrentWindow } = await import('@tauri-apps/api/window');
+          const win = getCurrentWindow();
+          if (await win.isMaximized()) {
+            await win.unmaximize();
+          } else {
+            await win.maximize();
+          }
+        } catch {
+          // Fallback: native decorations handle this
+        }
+      },
+      async close() {
+        try {
+          const { getCurrentWindow } = await import('@tauri-apps/api/window');
+          await getCurrentWindow().close();
+        } catch {
+          // Fallback: native decorations handle this
+        }
+      },
+      async isMaximized() {
+        try {
+          const { getCurrentWindow } = await import('@tauri-apps/api/window');
+          return await getCurrentWindow().isMaximized();
+        } catch {
+          return false;
+        }
+      },
     },
   };
 

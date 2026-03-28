@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 
 import type { UnifiedAIService } from '../../services/ai/UnifiedAIService';
+import { ElectronService } from '../../services/ElectronService';
 import { logger } from '../../services/Logger';
 import type { ComposerFile, ComposerWorkspaceContext } from './ComposerMode.types';
 import { 
@@ -74,22 +75,36 @@ export const ComposerMode = ({
     setSelectedFileId(newFile.id);
   };
 
-  const handleLoadWorkspaceFiles = () => {
+  const handleLoadWorkspaceFiles = async () => {
     if (!workspaceContext?.openFiles) {return;}
-    
-    const workspaceFiles = workspaceContext.openFiles.slice(0, 5).map(filePath => ({
-      id: filePath,
-      path: filePath.split('/').pop() ?? filePath,
-      content: `// Content from ${filePath}\n// This is a placeholder - in a real implementation,\n// this would load the actual file content`,
-      originalContent: `// Content from ${filePath}\n// This is a placeholder - in a real implementation,\n// this would load the actual file content`,
-      language: getLanguageFromPath(filePath),
-      isDirty: false,
-      isNew: false,
-    }));
-    
-    setFiles([...files, ...workspaceFiles]);
-    if (workspaceFiles.length > 0) {
-      setSelectedFileId(workspaceFiles[0]?.id ?? null);
+
+    const electronService = new ElectronService();
+    const filePaths = workspaceContext.openFiles.slice(0, 5);
+
+    const loadedFiles = await Promise.all(
+      filePaths.map(async (filePath): Promise<ComposerFile> => {
+        let content = '';
+        try {
+          content = await electronService.readFile(filePath);
+        } catch (error) {
+          logger.warn(`[ComposerMode] Failed to read file "${filePath}":`, error);
+          content = `// Failed to load content from ${filePath}\n// Error: ${error instanceof Error ? error.message : 'Unknown error'}`;
+        }
+        return {
+          id: filePath,
+          path: filePath.split('/').pop() ?? filePath,
+          content,
+          originalContent: content,
+          language: getLanguageFromPath(filePath),
+          isDirty: false,
+          isNew: false,
+        };
+      })
+    );
+
+    setFiles([...files, ...loadedFiles]);
+    if (loadedFiles.length > 0) {
+      setSelectedFileId(loadedFiles[0]?.id ?? null);
     }
   };
 

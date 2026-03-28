@@ -243,6 +243,8 @@ interface SidebarProps {
   onOpenFolder?: () => void;
   /** Settings handler - required for core UI functionality */
   onShowSettings: () => void;
+  /** Optional error handler for surfacing errors to the notification system */
+  onError?: (title: string, message: string) => void;
 }
 
 const Sidebar = ({
@@ -254,6 +256,7 @@ const Sidebar = ({
   onDeleteFile,
   onOpenFolder,
   onShowSettings,
+  onError,
 }: SidebarProps) => {
   const [fileTree, setFileTree] = useState<FileSystemItem[]>([]);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
@@ -389,7 +392,10 @@ const Sidebar = ({
       }
     } catch (error) {
       logger.error('Failed to delete file:', error);
-      // TODO: Show error toast/notification
+      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+      if (onError) {
+        onError('Delete Failed', `Could not delete "${deleteDialog.fileName}": ${message}`);
+      }
     } finally {
       setDeleteDialog({ isOpen: false, fileName: '', filePath: '' });
     }

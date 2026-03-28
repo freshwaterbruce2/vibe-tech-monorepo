@@ -237,10 +237,8 @@ export class CodeExecutor {
           return this.validateBashSyntax(code);
         
         default:
-          return {
-            valid: false,
-            errors: [`Syntax validation not implemented for language: ${language}`]
-          };
+          // For unsupported languages, skip syntax validation and allow execution
+          return { valid: true, errors: [] };
       }
     } catch (error) {
       return {
@@ -440,6 +438,43 @@ export class CodeExecutor {
     }
   }
 
+  // Syntax validation helpers
+  private checkMatchedDelimiters(code: string): string[] {
+    const errors: string[] = [];
+    const stack: { char: string; line: number }[] = [];
+    const pairs: Record<string, string> = { '(': ')', '[': ']', '{': '}' };
+    const closers: Record<string, string> = { ')': '(', ']': '[', '}': '{' };
+
+    // Strip string literals and comments to avoid false positives
+    const stripped = code
+      .replace(/\/\/.*$/gm, '')                    // single-line comments
+      .replace(/\/\*[\s\S]*?\*\//g, '')            // multi-line comments
+      .replace(/#.*$/gm, '')                       // Python comments
+      .replace(/"(?:[^"\\]|\\.)*"/g, '""')         // double-quoted strings
+      .replace(/'(?:[^'\\]|\\.)*'/g, "''")         // single-quoted strings
+      .replace(/`(?:[^`\\]|\\.)*`/g, '``');        // template literals
+
+    const lines = stripped.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      for (const ch of lines[i] ?? '') {
+        if (ch in pairs) {
+          stack.push({ char: ch, line: i + 1 });
+        } else if (ch in closers) {
+          const last = stack.pop();
+          if (!last || last.char !== closers[ch]) {
+            errors.push(`Line ${i + 1}: Unmatched '${ch}'`);
+          }
+        }
+      }
+    }
+
+    for (const unmatched of stack) {
+      errors.push(`Line ${unmatched.line}: Unmatched '${unmatched.char}'`);
+    }
+
+    return errors;
+  }
+
   // Syntax validation methods
   private validateJavaScriptSyntax(code: string): { valid: boolean; errors: string[] } {
     try {
@@ -455,47 +490,111 @@ export class CodeExecutor {
   }
 
   private validateTypeScriptSyntax(code: string): { valid: boolean; errors: string[] } {
-    // Basic TypeScript validation - in a real implementation,
-    // you would use the TypeScript compiler API
-    try {
-      // For now, just check for basic syntax issues
-      if (code.includes('interface') || code.includes('type ') || code.includes(': ')) {
-        // Basic TypeScript pattern detected
-        return { valid: true, errors: [] };
-      }
-      
-      // Fall back to JavaScript validation
-      return this.validateJavaScriptSyntax(code);
-    } catch (error) {
-      return {
-        valid: false,
-        errors: [error instanceof Error ? error.message : 'TypeScript syntax error']
-      };
+    const errors: string[] = [];
+
+    // Check for unmatched brackets, braces, and parentheses
+    const bracketErrors = this.checkMatchedDelimiters(code);
+    if (bracketErrors.length > 0) {
+      errors.push(...bracketErrors);
     }
+
+    // Check for unmatched template literals
+    const backtickCount = (code.match(/(?<!\\)`/g) ?? []).length;
+    if (backtickCount % 2 !== 0) {
+      errors.push('Unmatched template literal backtick');
+    }
+
+    // Check for common TypeScript syntax mistakes
+    if (/^\s*import\s+[^'"]+$/.test(code) && !code.includes('from')) {
+      errors.push('Incomplete import statement — missing "from" clause');
+    }
+
+    // Detect arrow functions missing body
+    if (/=>\s*$/.test(code.trimEnd())) {
+      errors.push('Arrow function missing body');
+    }
+
+    // If no TS-specific errors found, strip type annotations and validate as JS
+    if (errors.length === 0) {
+      const stripped = code
+        .replace(/:\s*[\w<>\[\]|&,\s]+(?=[=;,)\]}])/g, '')   // strip type annotations
+        .replace(/\binterface\s+\w+[\s\S]*?(?=\n\})\n\}/g, '') // strip interfaces
+        .replace(/\btype\s+\w+\s*=\s*[^;]+;/g, '')             // strip type aliases
+        .replace(/<[\w,\s]+>/g, '');                             // strip generics
+      try {
+        new Function(stripped);
+      } catch {
+        // If stripping types still fails, that's expected for TS-only constructs
+        // Only flag it if there are no TS keywords at all
+        const hasTypeScriptConstructs = /\b(interface|type|enum|namespace|declare|as|implements|readonly)\b/.test(code);
+        if (!hasTypeScriptConstructs) {
+          errors.push('TypeScript code contains JavaScript syntax errors');
+        }
+      }
+    }
+
+    return { valid: errors.length === 0, errors };
   }
 
   private async validatePythonSyntax(code: string): Promise<{ valid: boolean; errors: string[] }> {
-    // Basic Python syntax validation
-    // In a real implementation, you would use Python's ast module or a parser
-    const pythonSyntaxIssues: string[] = [];
-    
-    // Check for basic indentation issues
+    const errors: string[] = [];
     const lines = code.split('\n');
-    let expectedIndent = 0;
-    
+
+    // Track indentation consistency (spaces vs tabs)
+    let usesSpaces = false;
+    let usesTabs = false;
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      if (!line || line.trim() === '') {continue;}
+      if (!line || line.trim() === '' || line.trim().startsWith('#')) {continue;}
 
-      const _indent = line.length - line.trimStart().length;
-      
-      // Basic indentation check
-      if (line.trimEnd().endsWith(':')) {
-        expectedIndent += 4;
+      const leadingWhitespace = line.match(/^(\s*)/)?.[1] ?? '';
+      if (leadingWhitespace.includes(' ') && leadingWhitespace.length > 0) usesSpaces = true;
+      if (leadingWhitespace.includes('\t')) usesTabs = true;
+
+      const trimmed = line.trim();
+
+      // Check for block openers that need a colon
+      if (/^(def|class|if|elif|else|for|while|try|except|finally|with|async\s+(def|for|with))\b/.test(trimmed)) {
+        // Allow multi-line statements (ending with \) and decorators
+        if (!trimmed.endsWith(':') && !trimmed.endsWith('\\') && !trimmed.endsWith(',')) {
+          // Look ahead for continuation lines
+          let continued = false;
+          for (let j = i + 1; j < lines.length && j <= i + 5; j++) {
+            const nextLine = lines[j]?.trim();
+            if (!nextLine || nextLine === '') continue;
+            if (nextLine.endsWith(':')) { continued = true; break; }
+            if (!nextLine.endsWith('\\') && !nextLine.endsWith(',')) break;
+          }
+          if (!continued) {
+            errors.push(`Line ${i + 1}: Block statement may be missing trailing colon (:)`);
+          }
+        }
       }
     }
-    
-    return { valid: pythonSyntaxIssues.length === 0, errors: pythonSyntaxIssues };
+
+    // Mixed indentation
+    if (usesSpaces && usesTabs) {
+      errors.push('Mixed spaces and tabs used for indentation');
+    }
+
+    // Check for unmatched brackets/parens
+    const bracketErrors = this.checkMatchedDelimiters(code);
+    if (bracketErrors.length > 0) {
+      errors.push(...bracketErrors);
+    }
+
+    // Check for unmatched triple-quoted strings
+    const tripleDouble = (code.match(/"""/g) ?? []).length;
+    const tripleSingle = (code.match(/'''/g) ?? []).length;
+    if (tripleDouble % 2 !== 0) {
+      errors.push('Unmatched triple-double-quote string (""")');
+    }
+    if (tripleSingle % 2 !== 0) {
+      errors.push("Unmatched triple-single-quote string (''')");
+    }
+
+    return { valid: errors.length === 0, errors };
   }
 
   private validateBashSyntax(code: string): { valid: boolean; errors: string[] } {

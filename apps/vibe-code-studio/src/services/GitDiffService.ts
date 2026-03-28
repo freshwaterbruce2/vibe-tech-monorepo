@@ -556,13 +556,142 @@ Format as JSON:
   }
 
   /**
-   * Apply conflict resolution
+   * Apply conflict resolution to file content that contains conflict markers.
+   * Returns the resolved file content with conflict markers removed.
    */
   applyConflictResolution(file: FileDiff, resolution: ConflictResolution): string {
-    // TODO: Implement conflict resolution application
-    // This would modify the file content based on the resolution choice
-    logger.info('[GitDiff] Applying conflict resolution:', resolution);
+    logger.info('[GitDiff] Applying conflict resolution:', {
+      filePath: file.filePath,
+      resolution: resolution.resolution,
+    });
 
-    return ''; // Return resolved file content
+    // Reconstruct file content from all hunks
+    const rawContent = this.reconstructFileContent(file);
+
+    // If custom resolution with provided content, return it directly
+    if (resolution.resolution === 'custom' && resolution.customContent !== undefined) {
+      return resolution.customContent;
+    }
+
+    // Process the content, resolving each conflict block
+    return this.resolveConflictMarkers(rawContent, resolution.resolution);
+  }
+
+  /**
+   * Reconstruct the full file content from diff hunks.
+   * Extracts only the "new side" lines (additions + context) to represent the working copy.
+   */
+  private reconstructFileContent(file: FileDiff): string {
+    const lines: string[] = [];
+
+    for (const hunk of file.hunks) {
+      for (const line of hunk.lines) {
+        // Include context lines, additions, conflict markers, and conflict content
+        if (line.type !== 'deletion') {
+          lines.push(line.content);
+        }
+      }
+    }
+
+    return lines.join('\n');
+  }
+
+  /**
+   * Resolve conflict markers in file content based on the chosen strategy.
+   *
+   * Conflict format:
+   *   <<<<<<< HEAD
+   *   (ours content)
+   *   =======
+   *   (theirs content)
+   *   >>>>>>> branch-name
+   */
+  private resolveConflictMarkers(
+    content: string,
+    strategy: ConflictResolution['resolution']
+  ): string {
+    const lines = content.split('\n');
+    const resolved: string[] = [];
+
+    let inConflict = false;
+    let inOurs = false;
+    let inTheirs = false;
+    let oursLines: string[] = [];
+    let theirsLines: string[] = [];
+
+    for (const line of lines) {
+      // Detect conflict start
+      if (line.match(/^<{7}\s/)) {
+        inConflict = true;
+        inOurs = true;
+        inTheirs = false;
+        oursLines = [];
+        theirsLines = [];
+        continue;
+      }
+
+      // Detect separator between ours and theirs
+      if (inConflict && line.match(/^={7}$/)) {
+        inOurs = false;
+        inTheirs = true;
+        continue;
+      }
+
+      // Detect conflict end
+      if (inConflict && line.match(/^>{7}\s/)) {
+        // Resolve this conflict block based on strategy
+        const resolvedBlock = this.resolveConflictBlock(oursLines, theirsLines, strategy);
+        resolved.push(...resolvedBlock);
+
+        inConflict = false;
+        inOurs = false;
+        inTheirs = false;
+        oursLines = [];
+        theirsLines = [];
+        continue;
+      }
+
+      // Collect lines inside a conflict
+      if (inConflict) {
+        if (inOurs) {
+          oursLines.push(line);
+        } else if (inTheirs) {
+          theirsLines.push(line);
+        }
+        continue;
+      }
+
+      // Normal line outside of conflict
+      resolved.push(line);
+    }
+
+    return resolved.join('\n');
+  }
+
+  /**
+   * Resolve a single conflict block by choosing ours, theirs, both, or neither.
+   */
+  private resolveConflictBlock(
+    oursLines: string[],
+    theirsLines: string[],
+    strategy: ConflictResolution['resolution']
+  ): string[] {
+    switch (strategy) {
+      case 'ours':
+        return oursLines;
+      case 'theirs':
+        return theirsLines;
+      case 'both':
+        // Keep both: ours first, then theirs
+        return [...oursLines, ...theirsLines];
+      case 'neither':
+        // Discard both sides
+        return [];
+      case 'custom':
+        // Custom without content falls back to ours (custom content handled earlier)
+        return oursLines;
+      default:
+        return oursLines;
+    }
   }
 }

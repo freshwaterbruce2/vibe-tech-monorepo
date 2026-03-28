@@ -97,7 +97,6 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: process.env.NODE_ENV === 'development',
-
     chunkSizeWarningLimit: 1000,
 
     minify: 'terser',
@@ -129,8 +128,8 @@ export default defineConfig({
 
       output: {
         assetFileNames: (assetInfo) => {
-          const info = assetInfo.name.split('.')
-          const ext = info[info.length - 1]
+          const name = assetInfo.name ?? assetInfo.names?.[0] ?? ''
+          const ext = name.split('.').pop() ?? ''
           if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext)) {
             return `assets/images/[name]-[hash][extname]`
           } else if (/woff|woff2|eot|ttf|otf/i.test(ext)) {
@@ -142,46 +141,27 @@ export default defineConfig({
         chunkFileNames: 'assets/js/[name]-[hash].js',
         entryFileNames: 'assets/js/[name]-[hash].js',
 
-        manualChunks: {
-          'react-vendor': [
-            'react',
-            'react-dom',
-            'react-router-dom',
-            'react-error-boundary'
-          ],
-
-          'ui-vendor': [
-            'styled-components',
-            'framer-motion',
-            'lucide-react'
-          ],
-
-          'state': [
-            'zustand',
-            'immer'
-          ],
-
-          'monaco': [
-            'monaco-editor'
-          ],
-
-          'ai-utils': [
-            'eventsource-parser',
-            'isomorphic-dompurify'
-          ]
+        manualChunks(id) {
+          if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/') || id.includes('node_modules/react-router-dom') || id.includes('node_modules/react-error-boundary')) {
+            return 'react-vendor';
+          }
+          if (id.includes('node_modules/styled-components') || id.includes('node_modules/framer-motion') || id.includes('node_modules/lucide-react')) {
+            return 'ui-vendor';
+          }
+          if (id.includes('node_modules/zustand') || id.includes('node_modules/immer')) {
+            return 'state';
+          }
+          if (id.includes('node_modules/monaco-editor')) {
+            return 'monaco';
+          }
+          if (id.includes('node_modules/eventsource-parser') || id.includes('node_modules/isomorphic-dompurify')) {
+            return 'ai-utils';
+          }
         }
       },
 
-      treeshake: {
-        // Monaco's standalone editor bootstraps critical services through
-        // side-effect-only imports. Stripping those imports breaks model
-        // creation in production with missing service registrations.
-        moduleSideEffects: (id) =>
-          id.includes('node_modules/monaco-editor/')
-          || id.includes('node_modules\\monaco-editor\\'),
-        propertyReadSideEffects: false,
-        tryCatchDeoptimization: false
-      }
+      // Rolldown handles treeshaking automatically; Monaco side-effects
+      // are preserved by default in Vite 8.
     },
 
     cssCodeSplit: true,
