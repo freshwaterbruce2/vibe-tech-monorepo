@@ -64,7 +64,6 @@ export class AgentReliabilityManager extends EventEmitter {
     halfOpenTime?: Date;
   }> = new Map();
   private reliabilityMetrics: Map<string, ReliabilityMetrics> = new Map();
-  private startTime = Date.now();
 
   // Health check configuration
   private readonly HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
@@ -526,8 +525,6 @@ export class AgentReliabilityManager extends EventEmitter {
   }
 
   private calculateReliabilityMetrics(): void {
-    const _uptime = (Date.now() - this.startTime) / (1000 * 60 * 60); // hours
-
     for (const [agentId, metrics] of this.reliabilityMetrics.entries()) {
       const history = this.failureHistory.get(agentId) ?? [];
       
@@ -645,6 +642,5 @@ export class AgentReliabilityManager extends EventEmitter {
     this.failureHistory.clear();
     this.circuitBreakers.clear();
     this.reliabilityMetrics.clear();
-    this.startTime = Date.now();
   }
 }

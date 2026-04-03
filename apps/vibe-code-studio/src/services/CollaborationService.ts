@@ -23,7 +23,6 @@ class CollaborationService {
   private ydoc: Y.Doc | null = null;
   private provider: WebsocketProvider | null = null;
   private roomId: string | null = null;
-  private userName: string | null = null;
   private listeners = new Map<CollabEvent, Set<CollabEventHandler>>();
   private _status: 'disconnected' | 'connecting' | 'connected' = 'disconnected';
 
@@ -48,8 +47,6 @@ class CollaborationService {
     this._status = 'connecting';
     this.emit('status-change', this._status);
     this.roomId = roomId;
-    this.userName = userName;
-
     this.ydoc = new Y.Doc();
     this.provider = new WebsocketProvider(serverUrl, roomId, this.ydoc);
 
@@ -97,7 +94,6 @@ class CollaborationService {
       this.ydoc = null;
     }
     this.roomId = null;
-    this.userName = null;
     this._status = 'disconnected';
     this.emit('status-change', this._status);
     logger.info('[Collab] Left room');

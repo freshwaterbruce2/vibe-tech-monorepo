@@ -21,7 +21,6 @@ export function calculateStepConfidence(
     step: AgentStep,
     strategyMemoryMatch: boolean | any
 ): StepConfidence {
-    const _hasMatch = typeof strategyMemoryMatch === 'boolean' ? strategyMemoryMatch : !!strategyMemoryMatch;
     let score = 50; // Baseline confidence
     const factors: ConfidenceFactor[] = [];
 

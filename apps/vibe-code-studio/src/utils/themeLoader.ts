@@ -1,4 +1,3 @@
-import { EditorSettings } from '../types';
 import type * as Monaco from 'monaco-editor';
 import { logger } from '../services/Logger';
 

@@ -9,8 +9,7 @@ import type {
 import {
     MODEL_REGISTRY
 } from './AIProviderInterface';
-import type { IAIService, AICompletionRequest} from '../../types/ai';
-import { ChatMessage as _ChatMessage } from '../../types/ai';
+import type { AICompletionRequest, IAIService } from '../../types/ai';
 import { OpenRouterService } from './providers/OpenRouterService';
 import { MoonshotService } from './providers/MoonshotService';
 import { DeepSeekService } from './providers/DeepSeekService';
@@ -19,16 +18,12 @@ import { GoogleGenerativeAIService } from './providers/GoogleGenerativeAIService
 export class ServiceAdapter implements IAIProvider {
     private service: IAIService;
     private providerType: AIProvider;
-    private _config?: AIProviderConfig;
-
     constructor(service: IAIService, providerType: AIProvider) {
         this.service = service;
         this.providerType = providerType;
     }
 
     async initialize(config: AIProviderConfig): Promise<void> {
-        this._config = config;
-
         // Recreate the service with the API key from config
         // Services are created without config in the factory, so we must inject the key here
         if (config.apiKey) {
@@ -82,14 +77,6 @@ export class ServiceAdapter implements IAIProvider {
         if (!this.service.stream) {
             throw new Error('Streaming not supported by this service');
         }
-
-        const _request: AICompletionRequest = {
-            messages: options.messages,
-            model: model,
-            temperature: options.temperature,
-            maxTokens: options.maxTokens,
-            stream: true,
-        };
 
         // Note: IAIService.stream signature: stream(messages: ChatMessage[], options?: AIChatOptions)
         // options in AIChatOptions has model, temperature, maxTokens

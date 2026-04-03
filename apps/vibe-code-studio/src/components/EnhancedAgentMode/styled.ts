@@ -2,7 +2,7 @@
  * EnhancedAgentMode Styled Components
  * All styled components for the Enhanced Agent Mode UI
  */
-import { motion, type HTMLMotionProps } from 'framer-motion';
+import { motion } from 'framer-motion';
 import styled from 'styled-components';
 
 import { vibeTheme } from '../../styles/theme';

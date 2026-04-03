@@ -1,7 +1,7 @@
 /**
  * Composer Mode - Multi-file editing interface inspired by Cursor's Composer
  */
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import {
   Check,

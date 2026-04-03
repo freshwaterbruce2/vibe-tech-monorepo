@@ -2,7 +2,7 @@
  * ModelSelectorPanel Component
  * Visual interface for model selection and cost tracking
  */
-import React from 'react';
+
 import { Award, ChevronDown, ChevronUp, DollarSign, TrendingUp, X, Zap } from 'lucide-react';
 
 import {

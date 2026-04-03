@@ -11,7 +11,7 @@ import {
   Settings,
   TrendingUp,
 } from 'lucide-react';
-import React, { startTransition, useCallback, useEffect, useState } from 'react';
+import { startTransition, useCallback, useEffect, useState } from 'react';
 
 import { AIProviderFactory, type ProviderStatus as ProviderStatusType } from '../../services/ai/AIProviderFactory';
 import {

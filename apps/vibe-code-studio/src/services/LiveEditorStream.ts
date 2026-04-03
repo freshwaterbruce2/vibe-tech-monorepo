@@ -206,7 +206,7 @@ export class LiveEditorStream {
    * ```
    */
   async showDiffPreview(
-    filePath: string,
+    _filePath: string,
     oldContent: string,
     newContent: string
   ): Promise<DiffChange[]> {

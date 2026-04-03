@@ -36,10 +36,8 @@ export interface ImageToCodeResult {
 
 export class ImageToCodeService {
   private anthropic: Anthropic;
-  private apiKey: string;
 
   constructor(apiKey: string) {
-    this.apiKey = apiKey;
     this.anthropic = new Anthropic({
       apiKey,
     });
@@ -274,94 +272,6 @@ Provide the improved code. ONLY code, no explanations.`,
     // Future implementation should use IPC to request screenshots from main process
     logger.debug('[ImageToCode] Screenshot rendering disabled in production (requires main process IPC)');
     return '';
-  }
-
-  /**
-   * Create standalone HTML preview from component code
-   */
-  private createPreviewHTML(code: string, framework: string): string {
-    if (framework === 'react') {
-      return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script crossorigin src="https://unpkg.com/react@19/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@19/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { margin: 0; padding: 20px; font-family: system-ui; }
-  </style>
-</head>
-<body>
-  <div id="root"></div>
-  <script type="text/babel">
-    ${code}
-
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    // Assume the component is the default export or last declaration
-    const App = ${this.extractComponentName(code) ?? 'Component'};
-    root.render(<App />);
-  </script>
-</body>
-</html>`;
-    } else if (framework === 'vue') {
-      return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { margin: 0; padding: 20px; font-family: system-ui; }
-  </style>
-</head>
-<body>
-  <div id="app"></div>
-  <script>
-    ${code}
-
-    const app = Vue.createApp(App);
-    app.mount('#app');
-  </script>
-</body>
-</html>`;
-    } else {
-      // Plain HTML
-      return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { margin: 0; padding: 20px; font-family: system-ui; }
-  </style>
-</head>
-<body>
-  ${code}
-</body>
-</html>`;
-    }
-  }
-
-  /**
-   * Extract component name from React code
-   */
-  private extractComponentName(code: string): string | null {
-    // Try to find function/const component declaration
-    const functionMatch = code.match(/function\s+([A-Z]\w*)/);
-    if (functionMatch) {return functionMatch[1] ?? null;}
-
-    const constMatch = code.match(/const\s+([A-Z]\w*)\s*=/);
-    if (constMatch) {return constMatch[1] ?? null;}
-
-    const exportMatch = code.match(/export\s+(?:default\s+)?(?:function|const)\s+([A-Z]\w*)/);
-    if (exportMatch) {return exportMatch[1] ?? null;}
-
-    return null;
   }
 
   /**

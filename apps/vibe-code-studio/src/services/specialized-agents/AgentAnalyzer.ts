@@ -1,4 +1,3 @@
-import { logger } from '../../utils/logger';
 import type { AgentContext, BaseSpecializedAgent } from './BaseSpecializedAgent';
 
 export class AgentAnalyzer {

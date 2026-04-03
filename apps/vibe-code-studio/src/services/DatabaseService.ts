@@ -27,7 +27,7 @@ const getDatabasePath = (): string => {
   // Detect Electron environment - use unified hub DB
   if (typeof window !== 'undefined' && (window as any).electron?.isElectron) {
     // Always use D:\databases\database.db for unified integration
-    const centralized = 'D:\\databases\\database.db';
+    const centralized = import.meta.env.VITE_DATABASE_PATH || 'D:\\databases\\database.db';
     logger.debug(`[DatabaseService] Using unified hub DB at ${centralized}`);
     return centralized;
   }

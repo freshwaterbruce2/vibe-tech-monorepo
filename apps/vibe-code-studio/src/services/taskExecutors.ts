@@ -208,7 +208,7 @@ export const gitOperationExecutor: TaskExecutor = {
  */
 export const buildExecutor: TaskExecutor = {
   async execute(
-    task: BackgroundTask,
+    _task: BackgroundTask,
     onProgress: (progress: TaskProgress) => void
   ): Promise<TaskResult> {
     try {

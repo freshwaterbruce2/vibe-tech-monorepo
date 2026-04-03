@@ -106,7 +106,6 @@ export class WorkspaceTemplateService {
       // Generate files
       for (const file of template.files) {
         const filePath = file.path.replace('{{projectName}}', projectName);
-        const content = file.content.replace(/{{projectName}}/g, projectName);
 
         // Create file (you'd implement actual file writing here)
         logger.debug('[WorkspaceTemplates] Generating file:', filePath);

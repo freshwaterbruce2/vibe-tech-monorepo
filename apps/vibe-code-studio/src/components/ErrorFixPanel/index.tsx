@@ -2,7 +2,7 @@
  * ErrorFixPanel Component
  * Display detected errors and AI-generated fix suggestions
  */
-import React from 'react';
+
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, CheckCircle2, ChevronDown, ChevronRight, Info, X } from 'lucide-react';
 

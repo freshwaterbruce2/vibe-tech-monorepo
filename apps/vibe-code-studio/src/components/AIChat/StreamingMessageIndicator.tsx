@@ -12,7 +12,7 @@
 
 import { motion } from 'framer-motion';
 import { Bot, DollarSign, Hash, Zap } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styled, { keyframes } from 'styled-components';
 
 import { vibeTheme } from '../../styles/theme';
@@ -21,11 +21,6 @@ import { vibeTheme } from '../../styles/theme';
 const spin = keyframes`
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
-`;
-
-const _pulse = keyframes`
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
 `;
 
 const dots = keyframes`

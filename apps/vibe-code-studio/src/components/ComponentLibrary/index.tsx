@@ -13,8 +13,6 @@ import {
     Search,
     Star,
 } from 'lucide-react';
-import React from 'react';
-
 import {
     CategorySection,
     CategoryTitle,

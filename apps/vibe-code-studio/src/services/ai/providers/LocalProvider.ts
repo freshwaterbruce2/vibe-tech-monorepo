@@ -17,12 +17,10 @@ import { logger } from '../../Logger';
  * Default: Falls back to OpenRouter proxy at localhost:3001 if no local server configured
  */
 export class LocalProvider implements IAIProvider {
-  private _config: AIProviderConfig | null = null;
   // Use OpenRouter proxy as fallback instead of non-existent local server
   private baseUrl: string = import.meta.env?.['VITE_OPENROUTER_PROXY_URL'] ?? 'http://localhost:3001';
 
   async initialize(config: AIProviderConfig): Promise<void> {
-    this._config = config;
     if (config.baseUrl) {
       this.baseUrl = config.baseUrl;
     }

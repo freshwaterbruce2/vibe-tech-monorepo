@@ -148,6 +148,51 @@ export class FileSystemService {
     this.persistToStorage();
   }
 
+  private getDescendantPrefix(path: string): string {
+    return path.endsWith('/') ? path : `${path}/`;
+  }
+
+  private remapNestedPath(path: string, oldPath: string, newPath: string): string {
+    if (path === oldPath) {
+      return newPath;
+    }
+
+    const oldPrefix = this.getDescendantPrefix(oldPath);
+    if (!path.startsWith(oldPrefix)) {
+      return path;
+    }
+
+    return `${newPath}${path.slice(oldPath.length)}`;
+  }
+
+  private getNestedFileEntries(path: string): Array<[string, string]> {
+    const prefix = this.getDescendantPrefix(path);
+    return Array.from(this.files.entries()).filter(([filePath]) => filePath.startsWith(prefix));
+  }
+
+  private hasInMemoryPath(path: string): boolean {
+    return this.files.has(path) || this.getNestedFileEntries(path).length > 0;
+  }
+
+  private remapInMemoryReferences(oldPath: string, newPath: string): void {
+    const remappedTrackedFiles = new Map<string, TrackedFile>();
+    this.trackedFiles.forEach((tracked, trackedPath) => {
+      const nextPath = this.remapNestedPath(trackedPath, oldPath, newPath);
+      remappedTrackedFiles.set(nextPath, {
+        ...tracked,
+        path: nextPath,
+        originalPath: tracked.originalPath
+          ? this.remapNestedPath(tracked.originalPath, oldPath, newPath)
+          : tracked.originalPath,
+      });
+    });
+    this.trackedFiles = remappedTrackedFiles;
+
+    this.recentFiles = this.recentFiles.map((recentPath) =>
+      this.remapNestedPath(recentPath, oldPath, newPath)
+    );
+  }
+
   /** Get the tracked status of a single file */
   getFileStatus(path: string): FileStatus {
     return this.trackedFiles.get(path)?.status ?? 'unchanged';
@@ -681,6 +726,25 @@ module.exports = {
   }
 
   async createFile(path: string, content: string = ''): Promise<void> {
+    if (this.isElectron) {
+      if (await this.electronService.exists(path)) {
+        throw new Error(`File already exists: ${path}`);
+      }
+      await this.writeFile(path, content);
+      this.trackFile(path, 'new');
+      return;
+    }
+
+    if (this.electronService.isElectron()) {
+      if (await this.electronService.exists(path)) {
+        throw new Error(`File already exists: ${path}`);
+      }
+      await this.electronService.writeFile(path, content);
+      this.trackFile(path, 'new');
+      this.recordRecentFile(path);
+      return;
+    }
+
     // Handle virtual demo:// paths in-memory
     if (this.isVirtualPath(path)) {
       if (this.files.has(path)) {
@@ -704,6 +768,27 @@ module.exports = {
   }
 
   async deleteFile(path: string): Promise<void> {
+    if (this.isElectron) {
+      try {
+        await this.electronService.remove(path);
+        this.files.delete(path);
+        this.trackFile(path, 'deleted');
+        this.persistToStorage();
+        return;
+      } catch (error) {
+        logger.error('[FileSystemService] Tauri deleteFile error:', error);
+        throw error;
+      }
+    }
+
+    if (this.electronService.isElectron()) {
+      await this.electronService.remove(path);
+      this.files.delete(path);
+      this.trackFile(path, 'deleted');
+      this.persistToStorage();
+      return;
+    }
+
     // Handle virtual demo:// paths in-memory
     if (this.isVirtualPath(path)) {
       if (!this.files.has(path)) {
@@ -721,6 +806,68 @@ module.exports = {
     }
     this.files.delete(path);
     this.trackFile(path, 'deleted');
+    this.persistToStorage();
+  }
+
+  async rename(oldPath: string, newPath: string): Promise<void> {
+    if (oldPath === newPath) {
+      return;
+    }
+
+    if (this.isElectron) {
+      try {
+        await this.electronService.rename(oldPath, newPath);
+        if (this.files.has(oldPath)) {
+          const content = this.files.get(oldPath) ?? '';
+          this.files.delete(oldPath);
+          this.files.set(newPath, content);
+        }
+        this.untrackFile(oldPath);
+        this.trackFile(newPath, 'renamed', oldPath);
+        this.recordRecentFile(newPath);
+        return;
+      } catch (error) {
+        logger.error('[FileSystemService] Tauri rename error:', error);
+        throw error;
+      }
+    }
+
+    if (this.electronService.isElectron()) {
+      await this.electronService.rename(oldPath, newPath);
+      if (this.files.has(oldPath)) {
+        const content = this.files.get(oldPath) ?? '';
+        this.files.delete(oldPath);
+        this.files.set(newPath, content);
+      }
+      this.untrackFile(oldPath);
+      this.trackFile(newPath, 'renamed', oldPath);
+      this.recordRecentFile(newPath);
+      return;
+    }
+
+    const existing = this.files.get(oldPath);
+    const descendantEntries = this.getNestedFileEntries(oldPath);
+    if (existing === undefined && descendantEntries.length === 0) {
+      throw new Error(`File not found: ${oldPath}`);
+    }
+    if (this.hasInMemoryPath(newPath)) {
+      throw new Error(`File already exists: ${newPath}`);
+    }
+
+    if (existing !== undefined) {
+      this.files.delete(oldPath);
+      this.files.set(newPath, existing);
+    }
+
+    descendantEntries.forEach(([filePath, content]) => {
+      this.files.delete(filePath);
+      this.files.set(this.remapNestedPath(filePath, oldPath, newPath), content);
+    });
+
+    this.remapInMemoryReferences(oldPath, newPath);
+    this.untrackFile(oldPath);
+    this.trackFile(newPath, 'renamed', oldPath);
+    this.recordRecentFile(newPath);
     this.persistToStorage();
   }
 
@@ -819,7 +966,7 @@ module.exports = {
   async exists(path: string): Promise<boolean> {
     // Handle virtual demo:// paths in-memory
     if (this.isVirtualPath(path)) {
-      return this.files.has(path);
+      return this.hasInMemoryPath(path);
     }
 
     if (this.isElectron) {
@@ -840,14 +987,13 @@ module.exports = {
       }
     }
 
-    return this.files.has(path);
+    return this.hasInMemoryPath(path);
   }
 
   async isDirectory(path: string): Promise<boolean> {
     // Handle virtual demo:// paths in-memory
     if (this.isVirtualPath(path)) {
-      // Demo workspace path without extension is a directory
-      return path === 'demo://workspace';
+      return !this.files.has(path) && this.hasInMemoryPath(path);
     }
 
     if (this.isElectron) {
@@ -857,6 +1003,10 @@ module.exports = {
       } catch {
         return false;
       }
+    }
+
+    if (this.hasInMemoryPath(path)) {
+      return !this.files.has(path);
     }
 
     // Simple check for demo purposes in web mode

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { memo, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   Command,
@@ -461,4 +461,4 @@ width = "220px"
   );
 };
 
-export default TitleBar;
+export default memo(TitleBar);

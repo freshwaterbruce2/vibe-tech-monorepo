@@ -5,7 +5,6 @@
  */
 
 import { logger } from '../services/Logger';
-import { FileSystemItem } from '../types';
 
 const DB_NAME = 'VibeCodeStudioFileSystem';
 const DB_VERSION = 1;

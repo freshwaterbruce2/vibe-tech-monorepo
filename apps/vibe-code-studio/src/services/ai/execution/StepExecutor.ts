@@ -114,7 +114,6 @@ export async function executeStepWithRetry(
 
             // Execute with ReAct pattern (Thought-Action-Observation-Reflection)
             let result: StepResult;
-            let _reActCycleData: any = null;
 
             if (enableReAct && taskState.task) {
                 logger.debug('[StepExecutor] 🔄 Using ReAct pattern for step execution');
@@ -128,8 +127,6 @@ export async function executeStepWithRetry(
                         return await executeAction(action.type, action.params as Record<string, unknown>, context, actionRegistry);
                     }
                 );
-
-                _reActCycleData = reActCycle;
 
                 // Use the result from the ReAct cycle
                 result = {

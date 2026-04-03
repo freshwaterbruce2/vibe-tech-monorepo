@@ -181,6 +181,21 @@ export const ModeDescription = styled(motion.div)`
   }
 `;
 
+export const AgentEmptyState = styled(motion.div)`
+  padding: ${vibeTheme.spacing.md};
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: ${vibeTheme.borderRadius.medium};
+  background: rgba(139, 92, 246, 0.08);
+  color: ${vibeTheme.colors.textSecondary};
+  line-height: 1.6;
+
+  strong {
+    color: ${vibeTheme.colors.text};
+    display: block;
+    margin-bottom: ${vibeTheme.spacing.xs};
+  }
+`;
+
 export const CloseButton = styled(motion.button)`
   background: transparent;
   border: none;
@@ -563,6 +578,77 @@ export const TaskProgressFill = styled(motion.div) <{ $progress: number }>`
   background: ${vibeTheme.gradients.primary};
   width: ${props => props.$progress}%;
   transition: width 0.3s ease;
+`;
+
+export const AgentStatusCard = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${vibeTheme.spacing.xs};
+  padding: ${vibeTheme.spacing.sm};
+  border-radius: ${vibeTheme.borderRadius.small};
+  background: rgba(15, 23, 42, 0.35);
+  border: 1px solid rgba(139, 92, 246, 0.18);
+`;
+
+export const AgentStatusHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: ${vibeTheme.spacing.sm};
+`;
+
+export const AgentStatusBadge = styled.span<{ $phase: 'planning' | 'executing' | 'awaiting_approval' | 'completed' | 'failed' }>`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: ${vibeTheme.borderRadius.full};
+  font-size: ${vibeTheme.typography.fontSize.xs};
+  font-weight: ${vibeTheme.typography.fontWeight.semibold};
+  text-transform: uppercase;
+  letter-spacing: ${vibeTheme.typography.letterSpacing.wider};
+  background: ${(props) => {
+    switch (props.$phase) {
+      case 'planning':
+        return 'rgba(59, 130, 246, 0.18)';
+      case 'executing':
+        return 'rgba(139, 92, 246, 0.18)';
+      case 'awaiting_approval':
+        return 'rgba(251, 191, 36, 0.18)';
+      case 'completed':
+        return 'rgba(34, 197, 94, 0.18)';
+      case 'failed':
+        return 'rgba(239, 68, 68, 0.18)';
+    }
+  }};
+  color: ${(props) => {
+    switch (props.$phase) {
+      case 'planning':
+        return vibeTheme.colors.info;
+      case 'executing':
+        return vibeTheme.colors.purple;
+      case 'awaiting_approval':
+        return vibeTheme.colors.warning;
+      case 'completed':
+        return vibeTheme.colors.success;
+      case 'failed':
+        return vibeTheme.colors.error;
+    }
+  }};
+`;
+
+export const AgentStatusText = styled.div`
+  font-size: ${vibeTheme.typography.fontSize.sm};
+  color: ${vibeTheme.colors.text};
+  line-height: 1.5;
+`;
+
+export const AgentWarningList = styled.ul`
+  margin: 0;
+  padding-left: ${vibeTheme.spacing[4]};
+  color: ${vibeTheme.colors.warning};
+  font-size: ${vibeTheme.typography.fontSize.xs};
+  line-height: 1.5;
 `;
 
 // ============================================================================

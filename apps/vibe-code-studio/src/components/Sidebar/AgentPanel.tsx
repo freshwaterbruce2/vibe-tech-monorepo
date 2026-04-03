@@ -1,5 +1,5 @@
 import { Bot, Settings2 } from 'lucide-react';
-import React from 'react';
+
 import type { StatusType } from '../shared/StatusIcon';
 import { StatusIcon } from '../shared/StatusIcon';
 import { CollapsibleSection } from './CollapsibleSection';

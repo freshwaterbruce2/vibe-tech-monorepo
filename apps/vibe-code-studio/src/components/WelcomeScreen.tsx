@@ -8,7 +8,7 @@ import {
     Sparkles,
     Terminal,
 } from 'lucide-react';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import styled, { keyframes } from 'styled-components';
 
 import { logger } from '../services/Logger';

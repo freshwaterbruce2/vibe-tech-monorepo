@@ -3,7 +3,7 @@
  * 
  * Provides UI for resuming previously interrupted Agent Mode tasks
  */
-import React, { useEffect,useState } from 'react';
+import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 import type { ExecutionEngine } from '../services/ai/ExecutionEngine';

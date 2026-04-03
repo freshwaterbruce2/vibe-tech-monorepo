@@ -72,7 +72,6 @@ export interface MessagePart {
 
 export function parseMessageSafely(content: string): MessagePart[] {
   const parts: MessagePart[] = [];
-  const remaining = content;
   
   // Process code blocks first
   const codeBlockRegex = /```(\w+)?\n([\s\S]*?)\n```/g;
@@ -111,7 +110,6 @@ export function parseMessageSafely(content: string): MessagePart[] {
 
 function parseInlineElements(text: string): MessagePart[] {
   const parts: MessagePart[] = [];
-  const remaining = text;
 
   // Split by inline code first
   const codeRegex = /`([^`]+)`/g;
@@ -146,10 +144,7 @@ function parseInlineElements(text: string): MessagePart[] {
 function parseTextFormatting(text: string): MessagePart[] {
   const parts: MessagePart[] = [];
   
-  // Handle bold and italic formatting
-  const boldRegex = /\*\*(.*?)\*\*/g;
-  const italicRegex = /\*(.*?)\*/g;
-  
+  // Handle bold and italic formatting (TODO: parse recursively)
   // For simplicity, just return as text for now
   // In a full implementation, you'd parse these recursively
   if (text.trim()) {

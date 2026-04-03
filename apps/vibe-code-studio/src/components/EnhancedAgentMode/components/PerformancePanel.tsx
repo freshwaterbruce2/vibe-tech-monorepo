@@ -1,5 +1,5 @@
 import { Activity, BarChart3, Clock, Eye, TrendingUp } from 'lucide-react';
-import React from 'react';
+
 import { PerformanceMetric } from '../styled';
 import { CollapsibleSection } from './CollapsibleSection';
 

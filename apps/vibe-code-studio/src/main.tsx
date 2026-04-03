@@ -1,4 +1,5 @@
 import { loader } from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 // Import Monaco workers using Vite's ?worker syntax (2025 best practice)
@@ -10,8 +11,6 @@ import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 
 import App from './App';
 import { ProductionErrorBoundary } from './components/ErrorBoundary/ProductionErrorBoundary';
-import { logger } from './services/Logger';
-
 import { installTauriShim } from './services/tauriShim';
 
 import './styles/loading.css';
@@ -37,19 +36,8 @@ self.MonacoEnvironment = {
   }
 };
 
-// Configure Monaco Editor to lazily load from local files instead of CDN (required for Tauri/Electron)
-// Uses dynamic import to defer loading the ~3.7MB Monaco core until the editor is actually needed
-loader.config({
-  'vs/nls': { availableLanguages: { '*': '' } },
-});
-
-// Override the default loader to use our local Monaco build instead of CDN
-loader.init().then(monaco => {
-  logger.debug('✅ Monaco Editor loaded and ready');
-  return monaco;
-}).catch(err => {
-  logger.error('❌ Monaco Editor failed to load:', err);
-});
+// Use the locally bundled Monaco instead of CDN (required for Tauri — CSP blocks CDN scripts)
+loader.config({ monaco });
 
 // Use production error boundary (no dynamic imports to avoid blocking)
 const ErrorBoundary = ProductionErrorBoundary;
@@ -67,9 +55,9 @@ if (!root) {
 const shimWithTimeout = Promise.race([
   installTauriShim(),
   new Promise<void>((resolve) => setTimeout(() => {
-    console.warn('[TauriShim] Installation timed out after 3s — rendering without shim');
+    console.warn('[TauriShim] Installation timed out after 10s — rendering without shim');
     resolve();
-  }, 3000)),
+  }, 10000)),
 ]);
 
 shimWithTimeout.then(() => {
@@ -80,6 +68,7 @@ shimWithTimeout.then(() => {
       </ErrorBoundary>
     </StrictMode>
   );
+  (window as any).__APP_MOUNTED__ = true;
 }).catch((err) => {
   console.error('[TauriShim] Fatal error:', err);
   ReactDOM.createRoot(root).render(
@@ -89,4 +78,5 @@ shimWithTimeout.then(() => {
       </ErrorBoundary>
     </StrictMode>
   );
+  (window as any).__APP_MOUNTED__ = true;
 });

@@ -3,7 +3,7 @@
  */
 
 import { Brain, Code, Globe, Zap } from 'lucide-react';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { logger } from '../../services/Logger';
 import type { AIProviderFactory } from '../../services/ai/AIProviderFactory';
 import type { AIModel} from '../../services/ai/AIProviderInterface';

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Activity, AlertCircle, CheckCircle, GitBranch, ImageIcon, Layers, MessageCircle, Package, Sidebar, Sparkles, Terminal, Zap } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 import { useGit } from '../hooks/useGit';
@@ -340,4 +340,4 @@ const StatusBar = ({
   );
 };
 
-export default StatusBar;
+export default memo(StatusBar);

@@ -1,11 +1,11 @@
-import { FeatureFlagClient } from '@dev/feature-flags-sdk-node';
+import { FeatureFlagClient } from '@vibetech/feature-flags-sdk-node';
 
 /**
  * Feature Flag Service for Vibe Code Studio
  * Manages feature toggles and kill switches for the editor
  */
 class FeatureFlagService {
-  private client: FeatureFlagClient | null = null;
+  private client: InstanceType<typeof FeatureFlagClient> | null = null;
   private isInitialized = false;
 
   /**
@@ -22,7 +22,7 @@ class FeatureFlagService {
       serverUrl: 'http://localhost:3100',
       environment: process.env.NODE_ENV === 'production' ? 'prod' : 'dev',
       enableWebSocket: true, // Real-time updates
-      onKillSwitch: (event) => {
+      onKillSwitch: (event: { flagKey: string }) => {
         console.warn('⚠️ Kill switch triggered:', event.flagKey);
         // Handle kill switches (e.g., disable AI features)
       },

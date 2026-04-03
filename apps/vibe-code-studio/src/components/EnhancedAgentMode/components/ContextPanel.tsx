@@ -1,5 +1,5 @@
 import { FileText } from 'lucide-react';
-import React from 'react';
+
 import { ContextInfo } from '../styled';
 import { CollapsibleSection } from './CollapsibleSection';
 

@@ -3,8 +3,6 @@
  * Visual editor for .deepcoderules files with Monaco, templates, preview, and testing
  */
 import { motion } from 'framer-motion';
-import React from 'react';
-
 import {
   Container,
   EditorArea,

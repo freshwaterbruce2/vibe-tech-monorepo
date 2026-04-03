@@ -1,5 +1,5 @@
 import { Activity, Clock, TrendingUp, Users } from 'lucide-react';
-import React from 'react';
+
 import { AgentCard } from '../styled';
 import { CollapsibleSection } from './CollapsibleSection';
 

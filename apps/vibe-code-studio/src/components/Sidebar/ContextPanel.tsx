@@ -1,5 +1,5 @@
 import { Database, FileCode, Plus, RefreshCw } from 'lucide-react';
-import React from 'react';
+
 import { CollapsibleSection } from './CollapsibleSection';
 
 interface ContextItem {

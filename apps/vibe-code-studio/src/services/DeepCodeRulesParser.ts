@@ -246,13 +246,10 @@ export class DeepCodeRulesParser {
       const rules: any = { version: '1.0' };
       const lines = content.split('\n');
       let currentSection: any = rules;
-      let indent = 0;
 
       lines.forEach((line) => {
         const trimmed = line.trim();
         if (!trimmed || trimmed.startsWith('#')) {return;}
-
-        const currentIndent = line.search(/\S/);
 
         if (trimmed.includes(':')) {
           const [key, ...valueParts] = trimmed.split(':');
@@ -268,7 +265,6 @@ export class DeepCodeRulesParser {
             // New section
             currentSection[keyTrimmed] = {};
             currentSection = currentSection[keyTrimmed] as Record<string, unknown>;
-            indent = currentIndent;
           }
         }
       });

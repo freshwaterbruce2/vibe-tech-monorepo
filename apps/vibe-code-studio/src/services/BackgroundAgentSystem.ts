@@ -270,7 +270,7 @@ export class BackgroundAgentSystem extends EventEmitter {
         onTaskComplete: (_completedTask) => {
           logger.debug(`[BackgroundAgent] Task completed successfully`);
         },
-        onTaskError: (failedTask, error) => {
+        onTaskError: (_failedTask, error) => {
           logger.error(`[BackgroundAgent] Task error:`, error);
         }
       };

@@ -16,12 +16,10 @@ import { FrameworkDetector } from './FrameworkDetector';
 import type { LoggerFunction, TestRunnerOptions } from './types';
 
 export class TestGenerator {
-  private readonly workspaceRoot: string;
   private readonly logger: LoggerFunction;
   private readonly frameworkDetector: FrameworkDetector;
 
   constructor(workspaceRoot: string, logger: LoggerFunction) {
-    this.workspaceRoot = workspaceRoot;
     this.logger = logger;
     this.frameworkDetector = new FrameworkDetector(workspaceRoot, logger);
   }
@@ -44,7 +42,6 @@ export class TestGenerator {
 
       const ext = getExtname(filename);
       const baseName = getBasename(filename, ext);
-      const isTypeScript = ext === '.ts' || ext === '.tsx';
       const isReact = ext === '.jsx' || ext === '.tsx';
 
       let template = '';

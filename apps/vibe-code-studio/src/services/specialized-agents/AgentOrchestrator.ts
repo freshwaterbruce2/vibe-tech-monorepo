@@ -70,7 +70,6 @@ export interface OrchestratorResponse {
 export class AgentOrchestrator {
   private agents: Map<string, BaseSpecializedAgent> = new Map();
   private activeTasks: Map<string, CoordinatedTask> = new Map();
-  private taskQueue: OrchestratorTask[] = [];
   private performanceHistory: Array<{
     timestamp: Date;
     taskType: string;
@@ -311,8 +310,6 @@ export class AgentOrchestrator {
     context: AgentContext,
     strategy: string
   ): Promise<Record<string, AgentResponse>> {
-    const responses: Record<string, AgentResponse> = {};
-
     switch (strategy) {
       case 'sequential':
         return this.executeSequential(agentKeys, request, context);
@@ -501,7 +498,7 @@ export class AgentOrchestrator {
    * Synthesize multiple agent responses into coherent output
    */
   private synthesizeResponse(
-    request: string,
+    _request: string,
     agentResponses: Record<string, AgentResponse>,
     coordination: any
   ): { content: string; recommendations: string[] } {

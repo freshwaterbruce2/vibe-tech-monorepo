@@ -13,9 +13,6 @@ import {
   Square,
   Zap,
 } from 'lucide-react';
-import styled from 'styled-components';
-
-import { vibeTheme } from '../../styles/theme';
 
 interface AgentModeProps {
   isOpen: boolean;

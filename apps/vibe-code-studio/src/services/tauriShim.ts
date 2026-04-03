@@ -229,7 +229,7 @@ export async function installTauriShim(): Promise<void> {
         try {
           const { stat: st } = await import('@tauri-apps/plugin-fs');
           const info = await st(targetPath);
-          return { success: true, stats: { size: info.size, isFile: info.isFile, isDirectory: info.isDirectory, created: new Date(), modified: new Date() } };
+          return { success: true, stats: { size: info.size, isFile: info.isFile, isDirectory: info.isDirectory, created: info.birthtime ?? new Date(), modified: info.mtime ?? new Date() } };
         } catch (err) {
           return { success: false, error: String(err) };
         }

@@ -29,10 +29,6 @@ export class TabCompletionProvider implements Monaco.languages.InlineCompletions
     });
 
     // Construct Prompt for Continuation
-    const systemPrompt = `You are a high-performance code completion engine.
-    Complete the code at the cursor position.
-    Return ONLY the code to complete. NO markdown. NO explanation.`;
-
     const userPrompt = `Context:\n${textUntilPosition}<CURSOR>${textAfterPosition}\n\nProvide the code to fill <CURSOR>:`;
 
     try {

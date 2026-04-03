@@ -3,7 +3,6 @@
  * Displays while Monaco Editor is being lazy-loaded
  * Provides visual feedback and maintains layout stability
  */
-import React from 'react';
 import styled, { keyframes } from 'styled-components';
 import { Code2, Loader2 } from 'lucide-react';
 import { vibeTheme } from '../../styles/theme';

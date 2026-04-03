@@ -111,10 +111,6 @@ export class DeepSeekService implements IAIService {
     return map[model.toLowerCase()] ?? model;
   }
 
-  private isReasoningModel(model: string): boolean {
-    return model.includes('reasoner') || model.includes('r1');
-  }
-
   async complete(request: AICompletionRequest): Promise<AICompletionResponse> {
     if (!this.apiKey) {
       throw new Error('DeepSeek API key not configured. Set VITE_DEEPSEEK_API_KEY in .env');

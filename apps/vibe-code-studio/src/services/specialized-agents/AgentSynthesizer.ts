@@ -7,7 +7,7 @@ export class AgentSynthesizer {
    * Synthesize multiple agent responses into coherent output
    */
   synthesizeResponse(
-    request: string,
+    _request: string,
     agentResponses: Record<string, AgentResponse>,
     coordination: any
   ): { content: string; recommendations: string[] } {

@@ -430,7 +430,7 @@ export abstract class BaseSpecializedAgent {
   /**
    * Generic suggestions based on agent capabilities
    */
-  private getGenericSuggestions(request: string, context: AgentContext): string[] {
+  private getGenericSuggestions(_request: string, context: AgentContext): string[] {
     const suggestions: string[] = [];
     
     if (this.capabilities.includes(AgentCapability.CODE_REVIEW)) {

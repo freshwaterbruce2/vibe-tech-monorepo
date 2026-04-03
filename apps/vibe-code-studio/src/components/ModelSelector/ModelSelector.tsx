@@ -1,7 +1,7 @@
 /**
  * Model Selector - UI component for selecting AI models and providers
  */
-import React, { useEffect, useRef,useState } from 'react';
+import { useEffect, useRef,useState } from 'react';
 import { Check,ChevronDown, DollarSign, Sparkles, Zap } from 'lucide-react';
 import styled from 'styled-components';
 

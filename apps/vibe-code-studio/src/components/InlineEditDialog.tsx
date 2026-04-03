@@ -2,7 +2,7 @@
  * InlineEditDialog - Cmd+K inline code editing
  * Shows input for AI instruction, generates modified code, displays diff
  */
-import React, { useEffect, useRef,useState } from 'react';
+import { useEffect, useRef,useState } from 'react';
 import { AnimatePresence,motion } from 'framer-motion';
 import { ArrowRight,Check, Loader2, Wand2, X } from 'lucide-react';
 import styled from 'styled-components';
@@ -123,25 +123,6 @@ const DiffContent = styled.pre`
   word-wrap: break-word;
   line-height: 1.6;
   color: ${vibeTheme.colors.text};
-`;
-
-const _DiffLine = styled.div<{ $type?: 'add' | 'remove' }>`
-  padding: 2px 8px;
-  background: ${props =>
-    props.$type === 'add' ? 'rgba(34, 197, 94, 0.1)' :
-    props.$type === 'remove' ? 'rgba(239, 68, 68, 0.1)' :
-    'transparent'
-  };
-  color: ${props =>
-    props.$type === 'add' ? '#22c55e' :
-    props.$type === 'remove' ? '#ef4444' :
-    vibeTheme.colors.text
-  };
-  border-left: 3px solid ${props =>
-    props.$type === 'add' ? '#22c55e' :
-    props.$type === 'remove' ? '#ef4444' :
-    'transparent'
-  };
 `;
 
 const LoadingState = styled.div`

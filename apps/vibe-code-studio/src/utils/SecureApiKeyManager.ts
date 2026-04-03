@@ -354,39 +354,6 @@ export class SecureApiKeyManager {
     }
   }
 
-  private async getOrCreateEncryptionKeyAsync(): Promise<string> {
-    const keyName = 'deepcode_encryption_key';
-    let key = null;
-
-    // Try Electron storage first
-    if (this.isElectron && this.electronStorage) {
-      const result = await this.electronStorage.get(keyName);
-      if (result.success && result.value) {
-        key = result.value;
-      }
-    }
-
-    // Fallback to localStorage
-    if (!key) {
-      key = this.storage.getItem(keyName);
-    }
-
-    if (!key) {
-      // Generate a new encryption key
-      key = CryptoJS.lib.WordArray.random(256/8).toString();
-
-      // Save to Electron storage if available
-      if (this.isElectron && this.electronStorage) {
-        await this.electronStorage.set(keyName, key);
-      }
-
-      // Also save to localStorage
-      this.storage.setItem(keyName, key);
-    }
-
-    return key;
-  }
-
   private getOrCreateEncryptionKey(): string {
     const keyName = 'deepcode_encryption_key';
     let key = this.storage.getItem(keyName);
@@ -482,19 +449,6 @@ export class SecureApiKeyManager {
   private async testDeepSeekKey(key: string): Promise<boolean> {
     try {
       const response = await fetch('https://api.deepseek.com/v1/models', {
-        headers: {
-          'Authorization': `Bearer ${key}`
-        }
-      });
-      return response.ok;
-    } catch {
-      return false;
-    }
-  }
-
-  private async testOpenAIKey(key: string): Promise<boolean> {
-    try {
-      const response = await fetch('https://api.openai.com/v1/models', {
         headers: {
           'Authorization': `Bearer ${key}`
         }

@@ -84,6 +84,8 @@ export function useCustomInstructions({
     rules,
     activeTab,
     setActiveTab,
+    isEditing,
+    setIsEditing,
     selectedTemplate,
     setSelectedTemplate,
     updateRules,

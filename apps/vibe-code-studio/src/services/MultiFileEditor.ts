@@ -10,19 +10,16 @@ import type {
 import { logger } from '../services/Logger';
 
 import type { UnifiedAIService } from './ai/UnifiedAIService';
-import { DependencyAnalyzer } from './DependencyAnalyzer';
 import type { FileSystemService } from './FileSystemService';
 
 export class MultiFileEditor {
   private aiService: UnifiedAIService;
   private fsService: FileSystemService;
-  private dependencyAnalyzer: DependencyAnalyzer;
   private backupMap: Map<string, string> = new Map();
 
   constructor(aiService: UnifiedAIService, fsService: FileSystemService) {
     this.aiService = aiService;
     this.fsService = fsService;
-    this.dependencyAnalyzer = new DependencyAnalyzer();
   }
 
   /**

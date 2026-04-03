@@ -2,7 +2,6 @@
  * TaskStatusIcon Component
  * Displays status icon for tasks based on their current state
  */
-import React from 'react';
 import { TaskStatus } from '@vibetech/types/tasks';
 import {
   AlertCircle,

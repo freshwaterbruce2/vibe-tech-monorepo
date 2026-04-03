@@ -40,14 +40,12 @@ export class CompletionAnalytics {
   private eventQueue: CompletionEvent[] = [];
   private batchTimer: NodeJS.Timeout | null = null;
   private sessionId: string;
-  private _sessionStartTime: number;
   private completionMap: Map<string, CompletionEvent> = new Map(); // Track shown completions
 
   constructor(config: Partial<AnalyticsConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.storage = new AnalyticsStorage();
     this.sessionId = uuidv4();
-    this._sessionStartTime = Date.now();
 
     // Start batch write timer
     if (this.config.enabled) {

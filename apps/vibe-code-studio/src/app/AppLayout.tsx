@@ -4,7 +4,7 @@
  */
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { lazy, Suspense, useMemo, type MutableRefObject } from 'react';
+import { lazy, Suspense, useMemo, useState, type MutableRefObject } from 'react';
 import styled from 'styled-components';
 
 // Eagerly loaded core components (always visible)
@@ -32,6 +32,12 @@ const VisualEditor = lazy(() => import('../components/VisualEditor').then(m => (
 const WelcomeScreen = lazy(() => import('../components/WelcomeScreen'));
 
 import { logger } from '../services/Logger';
+import type { BackgroundAgentSystem } from '../services/BackgroundAgentSystem';
+import type { FileSystemService } from '../services/FileSystemService';
+import type { LiveEditorStream } from '../services/LiveEditorStream';
+import type { ExecutionEngine } from '../services/ai/ExecutionEngine';
+import type { TaskPlanner } from '../services/ai/TaskPlanner';
+import type { UnifiedAIService } from '../services/ai/UnifiedAIService';
 import type { AIModel, AIProvider } from '../services/ai/AIProviderInterface';
 import type { SearchScope } from '../components/GlobalSearch/types';
 import type { AIMessage, EditorFile } from '../types';
@@ -62,12 +68,12 @@ const EditorSection = styled.div`
 
 export interface AppLayoutProps {
   // Services
-  aiService: any;
-  fileSystemService: any;
-  taskPlanner: any;
-  liveStream: any;
-  executionEngine: any;
-  backgroundAgentSystem: any;
+  aiService: UnifiedAIService;
+  fileSystemService: FileSystemService;
+  taskPlanner: TaskPlanner;
+  liveStream: LiveEditorStream;
+  executionEngine: ExecutionEngine;
+  backgroundAgentSystem: BackgroundAgentSystem;
 
   // File state
   currentFile: EditorFile | null;
@@ -133,6 +139,9 @@ export interface AppLayoutProps {
   handleFileChange: (content: string) => void;
   handleSaveFile: () => Promise<void>;
   handleDeleteFile: (filePath: string) => Promise<void>;
+  handleCreateWorkspaceFile: (filePath: string) => Promise<void>;
+  handleCreateWorkspaceFolder: (folderPath: string) => Promise<void>;
+  handleRenameWorkspacePath: (oldPath: string, newPath: string) => Promise<void>;
   handleNewFile: () => void;
   handleOpenFolderDialog: () => Promise<void>;
   handleCloseFolder: () => void;
@@ -229,8 +238,8 @@ export function AppLayout(props: AppLayoutProps) {
     errorFixPanelOpen,
     fixLoading,
     fixError,
-    currentModel,
-    // currentProvider,
+    currentModel: _currentModel,
+    // currentProvider:
     deepseekApiKey,
     notifications,
     commands,
@@ -241,6 +250,9 @@ export function AppLayout(props: AppLayoutProps) {
     handleFileChange,
     handleSaveFile,
     handleDeleteFile,
+    handleCreateWorkspaceFile,
+    handleCreateWorkspaceFolder,
+    handleRenameWorkspacePath,
     handleNewFile,
     handleOpenFolderDialog,
     handleCloseFolder,
@@ -287,6 +299,7 @@ export function AppLayout(props: AppLayoutProps) {
     removeNotification,
     updateEditorSettings,
   } = props;
+  const [workspaceRefreshKey, setWorkspaceRefreshKey] = useState(0);
 
   // Memoize workspaceContext to prevent unnecessary re-renders of AIChat
   const memoizedWorkspaceContext = useMemo(
@@ -327,9 +340,13 @@ export function AppLayout(props: AppLayoutProps) {
             aiChatOpen={aiChatOpen}
             fileSystemService={fileSystemService}
             onDeleteFile={handleDeleteFile}
+            onCreateFile={handleCreateWorkspaceFile}
+            onCreateFolder={handleCreateWorkspaceFolder}
+            onRenamePath={handleRenameWorkspacePath}
             onOpenFolder={handleOpenFolderDialog}
             onShowSettings={() => setSettingsOpen(true)}
             onError={showError}
+            refreshKey={workspaceRefreshKey}
           />
         )}
 
@@ -392,6 +409,7 @@ export function AppLayout(props: AppLayoutProps) {
               onUpdateMessage={updateAiMessage}
               onFileChanged={(filePath, action) => {
                 logger.debug('[App] Agent file changed:', filePath, action);
+                setWorkspaceRefreshKey((current) => current + 1);
                 if (action === 'created' || action === 'modified') {
                   handleOpenFile(filePath);
                 }

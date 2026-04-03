@@ -1,5 +1,3 @@
-import { UnifiedAIService } from '../ai/UnifiedAIService';
-
 export interface FileNode {
   path: string;
   name: string;
@@ -25,16 +23,9 @@ export interface IFileSystem {
 export class CodebaseAnalyzer {
   private static instance: CodebaseAnalyzer;
   private fileIndex: Map<string, FileNode> = new Map();
-  private isIndexing: boolean = false;
-  private aiService: UnifiedAIService;
-
-  // Ignore list to prevent token waste
-  private IGNORED_DIRS = ['node_modules', '.git', 'dist', 'build', 'coverage', '.vscode'];
   private ALLOWED_EXTS = ['.ts', '.tsx', '.js', '.jsx', '.css', '.json', '.py', '.md'];
 
-  private constructor() {
-    this.aiService = UnifiedAIService.getInstance();
-  }
+  private constructor() {}
 
   public static getInstance(): CodebaseAnalyzer {
     if (!CodebaseAnalyzer.instance) {

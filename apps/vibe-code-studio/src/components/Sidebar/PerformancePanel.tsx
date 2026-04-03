@@ -1,5 +1,4 @@
 import { Activity, Cpu, Zap } from 'lucide-react';
-import React from 'react';
 import { CollapsibleSection } from './CollapsibleSection';
 
 interface Metrics {

@@ -1,17 +1,21 @@
 import { motion } from 'framer-motion';
 import {
-    ChevronDown,
-    ChevronRight,
-    ClipboardCopy,
-    File,
-    Folder,
-    FolderOpen,
-    Search,
-    Settings,
-    Trash2,
-    Zap,
+  ChevronDown,
+  ChevronRight,
+  ClipboardCopy,
+  File,
+  FilePlus2,
+  Folder,
+  FolderOpen,
+  FolderPlus,
+  Pencil,
+  RefreshCw,
+  Search,
+  Settings,
+  Trash2,
+  Zap,
 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { memo, useCallback, useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 import type { FileSystemService } from '../services/FileSystemService';
@@ -19,7 +23,8 @@ import { logger } from '../services/Logger';
 import { vibeTheme } from '../styles/theme';
 import type { FileSystemItem } from '../types';
 
-import type { ContextMenuItem} from './ui/context-menu';
+import { InputDialog } from './InputDialog';
+import type { ContextMenuItem } from './ui/context-menu';
 import { ContextMenu, useContextMenu } from './ui/context-menu';
 import { Dialog } from './ui/dialog';
 import { IconButton } from './ui/icon-button';
@@ -38,7 +43,6 @@ const SidebarSection = styled.div`
   flex: 1;
   overflow-y: auto;
 
-  /* Modern scrollbar */
   &::-webkit-scrollbar {
     width: 6px;
   }
@@ -60,7 +64,9 @@ const SidebarSection = styled.div`
 const SectionHeader = styled.div`
   display: flex;
   align-items: center;
-  padding: ${vibeTheme.spacing[4]} ${vibeTheme.spacing[4]};
+  justify-content: space-between;
+  gap: ${vibeTheme.spacing[2]};
+  padding: ${vibeTheme.spacing[4]};
   background: ${vibeTheme.colors.primary};
   border-bottom: 1px solid rgba(139, 92, 246, 0.1);
   font-size: ${vibeTheme.typography.fontSize.xs};
@@ -68,6 +74,12 @@ const SectionHeader = styled.div`
   color: ${vibeTheme.colors.textSecondary};
   text-transform: uppercase;
   letter-spacing: ${vibeTheme.typography.letterSpacing.wider};
+`;
+
+const SectionHeaderTitle = styled.div`
+  display: flex;
+  align-items: center;
+  min-width: 0;
 
   svg {
     margin-right: ${vibeTheme.spacing[2]};
@@ -77,80 +89,21 @@ const SectionHeader = styled.div`
   }
 `;
 
-const FileExplorer = styled.div`
-  padding: ${vibeTheme.spacing[2]} 0;
-`;
-
-const FileItem = styled(motion.div) <{ level: number; selected?: boolean }>`
-  display: flex;
-  align-items: center;
-  padding: ${vibeTheme.spacing[2]} ${vibeTheme.spacing[3]} ${vibeTheme.spacing[2]}
-    ${(props) => 12 + props.level * 16}px;
-  cursor: pointer;
-  font-size: ${vibeTheme.typography.fontSize.sm};
-  color: ${(props) => (props.selected ? vibeTheme.colors.text : vibeTheme.colors.textSecondary)};
-  background: ${(props) =>
-    props.selected ? vibeTheme.colors.hover : 'transparent'};
-  border-radius: ${vibeTheme.borderRadius.sm};
-  margin: 1px ${vibeTheme.spacing[2]};
-  transition: ${vibeTheme.animation.transition.all};
-  position: relative;
-
-  ${(props) =>
-    props.selected &&
-    `
-    background: ${vibeTheme.colors.hoverStrong};
-    box-shadow: ${vibeTheme.shadows.xs};
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 2px;
-      background: ${vibeTheme.colors.cyan};
-      border-radius: 0 ${vibeTheme.borderRadius.xs} ${vibeTheme.borderRadius.xs} 0;
-    }
-  `}
-
-  &:hover {
-    background: ${(props) =>
-    props.selected ? vibeTheme.colors.active : vibeTheme.colors.hover};
-    color: ${vibeTheme.colors.text};
-  }
-`;
-
-const FileIcon = styled.div<{ type: 'file' | 'directory'; $expanded?: boolean }>`
-  margin-right: ${vibeTheme.spacing[2]};
+const SectionHeaderActions = styled.div`
   display: flex;
   align-items: center;
   gap: ${vibeTheme.spacing[1]};
-  color: ${(props) => {
-    if (props.type === 'directory') {
-      return vibeTheme.colors.cyan;
-    }
-    return vibeTheme.colors.textSecondary;
-  }};
-  transition: ${vibeTheme.animation.transition.colors};
-
-  svg {
-    width: 16px;
-    height: 16px;
-  }
-`;
-
-const FileName = styled.span`
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: ${vibeTheme.typography.fontWeight.normal};
 `;
 
 const SearchContainer = styled.div`
   padding: ${vibeTheme.spacing[3]};
   border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+`;
+
+const SearchRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${vibeTheme.spacing[2]};
 `;
 
 const SearchInput = styled.input`
@@ -182,12 +135,76 @@ const SearchInput = styled.input`
   }
 `;
 
-const ActionButtons = styled.div`
+const SearchActions = styled.div`
   display: flex;
-  gap: ${vibeTheme.spacing[2]};
-  padding: ${vibeTheme.spacing[3]};
-  border-top: 1px solid rgba(139, 92, 246, 0.1);
-  background: ${vibeTheme.colors.primary};
+  align-items: center;
+  gap: ${vibeTheme.spacing[1]};
+  flex-shrink: 0;
+`;
+
+const FileExplorer = styled.div`
+  padding: ${vibeTheme.spacing[2]} 0;
+`;
+
+const FileItem = styled(motion.div)<{ level: number; selected?: boolean }>`
+  display: flex;
+  align-items: center;
+  padding: ${vibeTheme.spacing[2]} ${vibeTheme.spacing[3]} ${vibeTheme.spacing[2]}
+    ${(props) => 12 + props.level * 16}px;
+  cursor: pointer;
+  font-size: ${vibeTheme.typography.fontSize.sm};
+  color: ${(props) => (props.selected ? vibeTheme.colors.text : vibeTheme.colors.textSecondary)};
+  background: ${(props) => (props.selected ? vibeTheme.colors.hover : 'transparent')};
+  border-radius: ${vibeTheme.borderRadius.sm};
+  margin: 1px ${vibeTheme.spacing[2]};
+  transition: ${vibeTheme.animation.transition.all};
+  position: relative;
+
+  ${(props) =>
+    props.selected &&
+    `
+    background: ${vibeTheme.colors.hoverStrong};
+    box-shadow: ${vibeTheme.shadows.xs};
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: ${vibeTheme.colors.cyan};
+      border-radius: 0 ${vibeTheme.borderRadius.xs} ${vibeTheme.borderRadius.xs} 0;
+    }
+  `}
+
+  &:hover {
+    background: ${(props) =>
+      props.selected ? vibeTheme.colors.active : vibeTheme.colors.hover};
+    color: ${vibeTheme.colors.text};
+  }
+`;
+
+const FileIcon = styled.div<{ type: 'file' | 'directory'; $expanded?: boolean }>`
+  margin-right: ${vibeTheme.spacing[2]};
+  display: flex;
+  align-items: center;
+  gap: ${vibeTheme.spacing[1]};
+  color: ${(props) => (props.type === 'directory' ? vibeTheme.colors.cyan : vibeTheme.colors.textSecondary)};
+  transition: ${vibeTheme.animation.transition.colors};
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+`;
+
+const FileName = styled.span`
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: ${vibeTheme.typography.fontWeight.normal};
 `;
 
 const EmptyState = styled.div`
@@ -233,6 +250,26 @@ const OpenFolderButton = styled(motion.button)`
   }
 `;
 
+const ActionButtons = styled.div`
+  display: flex;
+  gap: ${vibeTheme.spacing[2]};
+  padding: ${vibeTheme.spacing[3]};
+  border-top: 1px solid rgba(139, 92, 246, 0.1);
+  background: ${vibeTheme.colors.primary};
+`;
+
+type DialogMode = 'create-file' | 'create-folder' | 'rename';
+
+interface ActionDialogState {
+  isOpen: boolean;
+  mode: DialogMode;
+  title: string;
+  placeholder: string;
+  defaultValue: string;
+  targetPath: string;
+  targetType: 'file' | 'directory';
+}
+
 interface SidebarProps {
   workspaceFolder: string | null;
   onOpenFile: (path: string) => void;
@@ -240,11 +277,36 @@ interface SidebarProps {
   aiChatOpen: boolean;
   fileSystemService?: FileSystemService;
   onDeleteFile?: (path: string) => Promise<void>;
+  onCreateFile?: (path: string) => Promise<void>;
+  onCreateFolder?: (path: string) => Promise<void>;
+  onRenamePath?: (oldPath: string, newPath: string) => Promise<void>;
   onOpenFolder?: () => void;
-  /** Settings handler - required for core UI functionality */
   onShowSettings: () => void;
-  /** Optional error handler for surfacing errors to the notification system */
   onError?: (title: string, message: string) => void;
+  refreshKey?: number;
+}
+
+const CLOSED_ACTION_DIALOG: ActionDialogState = {
+  isOpen: false,
+  mode: 'create-file',
+  title: '',
+  placeholder: '',
+  defaultValue: '',
+  targetPath: '',
+  targetType: 'directory',
+};
+
+function remapPath(path: string, oldPath: string, newPath: string): string {
+  if (path === oldPath) {
+    return newPath;
+  }
+
+  const prefix = `${oldPath}/`;
+  if (path.startsWith(prefix)) {
+    return `${newPath}${path.slice(oldPath.length)}`;
+  }
+
+  return path;
 }
 
 const Sidebar = ({
@@ -254,16 +316,20 @@ const Sidebar = ({
   aiChatOpen,
   fileSystemService,
   onDeleteFile,
+  onCreateFile,
+  onCreateFolder,
+  onRenamePath,
   onOpenFolder,
   onShowSettings,
   onError,
+  refreshKey = 0,
 }: SidebarProps) => {
   const [fileTree, setFileTree] = useState<FileSystemItem[]>([]);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
-
-  // Context menu and dialog state
+  const [folderChildren, setFolderChildren] = useState<Map<string, FileSystemItem[]>>(new Map());
+  const [actionDialog, setActionDialog] = useState<ActionDialogState>(CLOSED_ACTION_DIALOG);
   const { contextMenu, showContextMenu, hideContextMenu } = useContextMenu();
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
@@ -275,70 +341,253 @@ const Sidebar = ({
     filePath: '',
   });
 
-  // Store loaded children for each folder (lazy loading)
-  const [folderChildren, setFolderChildren] = useState<Map<string, FileSystemItem[]>>(new Map());
+  const showOperationError = useCallback((title: string, error: unknown) => {
+    const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+    logger.error(`[Sidebar] ${title}:`, error);
+    onError?.(title, message);
+  }, [onError]);
 
-  useEffect(() => {
-    if (workspaceFolder && fileSystemService) {
-      loadFileTree();
+  const loadFolder = useCallback(async (path: string): Promise<FileSystemItem[]> => {
+    if (!fileSystemService) {
+      return [];
     }
-  }, [workspaceFolder, fileSystemService]);
 
-  const loadFileTree = async () => {
+    const children = await fileSystemService.listDirectory(path);
+    return children.sort((left, right) => {
+      if (left.type !== right.type) {
+        return left.type === 'directory' ? -1 : 1;
+      }
+      return left.name.localeCompare(right.name);
+    });
+  }, [fileSystemService]);
+
+  const loadFileTree = useCallback(async (expandedFoldersToRefresh?: Set<string>) => {
     if (!workspaceFolder || !fileSystemService) {
+      setFileTree([]);
+      setFolderChildren(new Map());
       return;
     }
 
     try {
-      const files = await fileSystemService.listDirectory(workspaceFolder);
+      const files = await loadFolder(workspaceFolder);
       setFileTree(files);
-      // No expanded folders by default for the demo files
+
+      const expandedPaths = Array.from(expandedFoldersToRefresh ?? expandedFolders);
+      if (expandedPaths.length === 0) {
+        setFolderChildren(new Map());
+        return;
+      }
+
+      const refreshedChildren = await Promise.all(
+        expandedPaths.map(async (path) => {
+          try {
+            return [path, await loadFolder(path)] as const;
+          } catch (error) {
+            logger.warn('[Sidebar] Failed to refresh expanded folder:', path, error);
+            return [path, [] as FileSystemItem[]] as const;
+          }
+        })
+      );
+
+      setFolderChildren(new Map(refreshedChildren));
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      // These errors are expected and should be suppressed
       if (errorMsg.includes('ENOENT') || errorMsg.includes('No workspace folder approved yet')) {
         logger.debug('Workspace not ready:', errorMsg);
       } else {
         logger.error('Failed to load file tree:', error);
       }
-      // Fallback to empty tree
       setFileTree([]);
+      setFolderChildren(new Map());
     }
-  };
+  }, [workspaceFolder, fileSystemService, loadFolder, expandedFolders]);
+
+  useEffect(() => {
+    if (workspaceFolder && fileSystemService) {
+      void loadFileTree();
+    }
+  }, [workspaceFolder, fileSystemService, refreshKey, loadFileTree]);
 
   const toggleFolder = async (path: string) => {
     const isCurrentlyExpanded = expandedFolders.has(path);
 
-    // Toggle expansion state
     setExpandedFolders((prev) => {
-      const newSet = new Set(prev);
+      const next = new Set(prev);
       if (isCurrentlyExpanded) {
-        newSet.delete(path);
+        next.delete(path);
       } else {
-        newSet.add(path);
+        next.add(path);
       }
-      return newSet;
+      return next;
     });
 
-    // Load children if expanding and not already loaded
-    if (!isCurrentlyExpanded && !folderChildren.has(path) && fileSystemService) {
+    if (!isCurrentlyExpanded && !folderChildren.has(path)) {
       try {
-        logger.debug('[Sidebar] Loading children for folder:', path);
-        const children = await fileSystemService.listDirectory(path);
-        logger.debug('[Sidebar] Loaded', children.length, 'items');
+        const children = await loadFolder(path);
         setFolderChildren((prev) => new Map(prev).set(path, children));
       } catch (error) {
-        logger.error('[Sidebar] Failed to load folder children:', error);
+        showOperationError('Load Folder Failed', error);
       }
     }
   };
 
   const handleFileClick = (item: FileSystemItem) => {
     if (item.type === 'directory') {
-      toggleFolder(item.path);
-    } else {
-      setSelectedFile(item.path);
-      onOpenFile(item.path);
+      void toggleFolder(item.path);
+      return;
+    }
+
+    setSelectedFile(item.path);
+    onOpenFile(item.path);
+  };
+
+  const openCreateDialog = (mode: 'create-file' | 'create-folder', targetPath: string, targetType: 'file' | 'directory') => {
+    setActionDialog({
+      isOpen: true,
+      mode,
+      title: mode === 'create-file' ? 'Create File' : 'Create Folder',
+      placeholder: mode === 'create-file' ? 'Enter a file name' : 'Enter a folder name',
+      defaultValue: '',
+      targetPath,
+      targetType,
+    });
+  };
+
+  const openRenameDialog = (item: FileSystemItem) => {
+    setActionDialog({
+      isOpen: true,
+      mode: 'rename',
+      title: `Rename ${item.type === 'directory' ? 'Folder' : 'File'}`,
+      placeholder: item.type === 'directory' ? 'Enter a new folder name' : 'Enter a new file name',
+      defaultValue: item.name,
+      targetPath: item.path,
+      targetType: item.type,
+    });
+  };
+
+  const getTargetDirectory = (targetPath: string, targetType: 'file' | 'directory'): string => {
+    if (!fileSystemService) {
+      return workspaceFolder ?? '';
+    }
+
+    if (!targetPath) {
+      return workspaceFolder ?? '';
+    }
+
+    return targetType === 'directory'
+      ? targetPath
+      : fileSystemService.dirname(targetPath);
+  };
+
+  const validateName = (value: string): string | null => {
+    if (value.includes('/') || value.includes('\\')) {
+      return 'Use a single file or folder name';
+    }
+    return null;
+  };
+
+  const handleActionDialogConfirm = async (value: string) => {
+    if (!fileSystemService) {
+      return;
+    }
+
+    const directory = getTargetDirectory(actionDialog.targetPath, actionDialog.targetType);
+    const nextPath = actionDialog.mode === 'rename'
+      ? fileSystemService.joinPath(fileSystemService.dirname(actionDialog.targetPath), value)
+      : fileSystemService.joinPath(directory, value);
+
+    try {
+      if (actionDialog.mode === 'create-file') {
+        if (await fileSystemService.exists(nextPath)) {
+          throw new Error(`A file or folder named "${value}" already exists here`);
+        }
+        if (onCreateFile) {
+          await onCreateFile(nextPath);
+        } else {
+          await fileSystemService.createFile(nextPath, '');
+          onOpenFile(nextPath);
+        }
+      } else if (actionDialog.mode === 'create-folder') {
+        if (await fileSystemService.exists(nextPath)) {
+          throw new Error(`A file or folder named "${value}" already exists here`);
+        }
+        if (onCreateFolder) {
+          await onCreateFolder(nextPath);
+        } else {
+          await fileSystemService.createDirectory(nextPath);
+        }
+        const nextExpandedFolders = new Set(expandedFolders).add(nextPath);
+        setExpandedFolders(nextExpandedFolders);
+        await loadFileTree(nextExpandedFolders);
+        setActionDialog(CLOSED_ACTION_DIALOG);
+        return;
+      } else {
+        if (nextPath !== actionDialog.targetPath) {
+          if (await fileSystemService.exists(nextPath)) {
+            throw new Error(`A file or folder named "${value}" already exists here`);
+          }
+          if (onRenamePath) {
+            await onRenamePath(actionDialog.targetPath, nextPath);
+          } else {
+            await fileSystemService.rename(actionDialog.targetPath, nextPath);
+          }
+          if (selectedFile) {
+            const remappedSelection = remapPath(selectedFile, actionDialog.targetPath, nextPath);
+            if (remappedSelection !== selectedFile) {
+              setSelectedFile(remappedSelection);
+            }
+          }
+          const nextExpandedFolders = new Set<string>();
+          expandedFolders.forEach((path) => {
+            nextExpandedFolders.add(remapPath(path, actionDialog.targetPath, nextPath));
+          });
+          setExpandedFolders(nextExpandedFolders);
+          await loadFileTree(nextExpandedFolders);
+          setActionDialog(CLOSED_ACTION_DIALOG);
+          return;
+        }
+      }
+
+      setActionDialog(CLOSED_ACTION_DIALOG);
+      await loadFileTree();
+    } catch (error) {
+      showOperationError(
+        actionDialog.mode === 'rename' ? 'Rename Failed' : 'Create Failed',
+        error
+      );
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!onDeleteFile) {
+      return;
+    }
+
+    try {
+      await onDeleteFile(deleteDialog.filePath);
+      if (
+        selectedFile === deleteDialog.filePath ||
+        selectedFile?.startsWith(`${deleteDialog.filePath}/`)
+      ) {
+        setSelectedFile(null);
+      }
+      const nextExpandedFolders = new Set<string>();
+      expandedFolders.forEach((path) => {
+        if (path !== deleteDialog.filePath && !path.startsWith(`${deleteDialog.filePath}/`)) {
+          nextExpandedFolders.add(path);
+        }
+      });
+      setExpandedFolders(nextExpandedFolders);
+      await loadFileTree(nextExpandedFolders);
+    } catch (error) {
+      showOperationError(
+        'Delete Failed',
+        error instanceof Error
+          ? new Error(`Could not delete "${deleteDialog.fileName}": ${error.message}`)
+          : error
+      );
+    } finally {
+      setDeleteDialog({ isOpen: false, fileName: '', filePath: '' });
     }
   };
 
@@ -346,8 +595,7 @@ const Sidebar = ({
     e.preventDefault();
     e.stopPropagation();
 
-    logger.debug('Right-click detected on file:', item.name, 'path:', item.path);
-
+    const createTargetType = item.type === 'directory' ? 'directory' : 'file';
     const contextMenuItems: ContextMenuItem[] = [
       {
         id: 'copy-path',
@@ -355,17 +603,45 @@ const Sidebar = ({
         icon: <ClipboardCopy size={16} />,
         onClick: () => {
           navigator.clipboard.writeText(item.path);
-          logger.debug('Copied path:', item.path);
         },
       },
       { id: 'divider-1', label: '', divider: true },
+      {
+        id: 'new-file',
+        label: 'New File Here',
+        icon: <FilePlus2 size={16} />,
+        disabled: !fileSystemService,
+        onClick: () => openCreateDialog('create-file', item.path, createTargetType),
+      },
+      {
+        id: 'new-folder',
+        label: 'New Folder Here',
+        icon: <FolderPlus size={16} />,
+        disabled: !fileSystemService,
+        onClick: () => openCreateDialog('create-folder', item.path, createTargetType),
+      },
+      {
+        id: 'rename',
+        label: 'Rename',
+        icon: <Pencil size={16} />,
+        disabled: !fileSystemService,
+        onClick: () => openRenameDialog(item),
+      },
+      {
+        id: 'refresh',
+        label: 'Refresh Explorer',
+        icon: <RefreshCw size={16} />,
+        onClick: () => {
+          void loadFileTree();
+        },
+      },
+      { id: 'divider-2', label: '', divider: true },
       {
         id: 'delete',
         label: `Delete ${item.type === 'directory' ? 'Folder' : 'File'}`,
         icon: <Trash2 size={16} />,
         danger: true,
         onClick: () => {
-          logger.debug('Delete clicked for:', item.name);
           setDeleteDialog({
             isOpen: true,
             fileName: item.name,
@@ -375,44 +651,22 @@ const Sidebar = ({
       },
     ];
 
-    logger.debug('Showing context menu with', contextMenuItems.length, 'items');
     showContextMenu(e, contextMenuItems);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!onDeleteFile) {return;}
-
-    try {
-      await onDeleteFile(deleteDialog.filePath);
-      // Reload file tree after successful deletion
-      await loadFileTree();
-      // Close the file if it was open
-      if (selectedFile === deleteDialog.filePath) {
-        setSelectedFile(null);
-      }
-    } catch (error) {
-      logger.error('Failed to delete file:', error);
-      const message = error instanceof Error ? error.message : 'An unexpected error occurred';
-      if (onError) {
-        onError('Delete Failed', `Could not delete "${deleteDialog.fileName}": ${message}`);
-      }
-    } finally {
-      setDeleteDialog({ isOpen: false, fileName: '', filePath: '' });
-    }
   };
 
   const renderFileTree = (items: FileSystemItem[], level = 0): React.ReactNode => {
     return items
       .filter(
-        item => searchTerm === '' || item.name.toLowerCase().includes(searchTerm.toLowerCase())
+        (item) => searchTerm === '' || item.name.toLowerCase().includes(searchTerm.toLowerCase())
       )
-      .map(item => (
+      .map((item) => (
         <div key={item.path}>
           <FileItem
             level={level}
             selected={selectedFile === item.path}
+            aria-selected={selectedFile === item.path}
             onClick={() => handleFileClick(item)}
-            onContextMenu={e => handleFileContextMenu(e, item)}
+            onContextMenu={(e) => handleFileContextMenu(e, item)}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
@@ -441,29 +695,70 @@ const Sidebar = ({
   };
 
   const handleOpenFolder = () => {
-    // Use the provided onOpenFolder callback from App.tsx which will trigger the file picker dialog
-    if (onOpenFolder) {
-      onOpenFolder();
-    }
+    onOpenFolder?.();
   };
 
   return (
     <SidebarContainer role="complementary" aria-label="Sidebar navigation">
       <SidebarSection>
         <SectionHeader>
-          <FolderOpen size={14} style={{ marginRight: 8 }} />
-          Explorer
+          <SectionHeaderTitle>
+            <FolderOpen size={14} />
+            Explorer
+          </SectionHeaderTitle>
+          <SectionHeaderActions>
+            <IconButton
+              variant="ghost"
+              size="xs"
+              icon={<FilePlus2 size={14} />}
+              aria-label="New File"
+              onClick={() => workspaceFolder && openCreateDialog('create-file', workspaceFolder, 'directory')}
+              disabled={!workspaceFolder || !fileSystemService}
+            />
+            <IconButton
+              variant="ghost"
+              size="xs"
+              icon={<FolderPlus size={14} />}
+              aria-label="New Folder"
+              onClick={() => workspaceFolder && openCreateDialog('create-folder', workspaceFolder, 'directory')}
+              disabled={!workspaceFolder || !fileSystemService}
+            />
+            <IconButton
+              variant="ghost"
+              size="xs"
+              icon={<RefreshCw size={14} />}
+              aria-label="Refresh Explorer"
+              onClick={() => {
+                void loadFileTree();
+              }}
+              disabled={!workspaceFolder || !fileSystemService}
+            />
+          </SectionHeaderActions>
         </SectionHeader>
 
         {workspaceFolder || fileTree.length > 0 ? (
           <>
             <SearchContainer>
-              <SearchInput
-                type="text"
-                placeholder="Search files..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
+              <SearchRow>
+                <SearchInput
+                  type="text"
+                  placeholder="Search files..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <SearchActions>
+                  <IconButton
+                    variant="ghost"
+                    size="sm"
+                    icon={<Search size={16} />}
+                    aria-label="Focus Search"
+                    onClick={() => {
+                      const input = document.querySelector<HTMLInputElement>('input[placeholder="Search files..."]');
+                      input?.focus();
+                    }}
+                  />
+                </SearchActions>
+              </SearchRow>
             </SearchContainer>
 
             <FileExplorer>{renderFileTree(fileTree)}</FileExplorer>
@@ -485,7 +780,6 @@ const Sidebar = ({
 
       <ActionButtons>
         <IconButton variant="ghost" size="md" icon={<Search size={18} />} aria-label="Search" />
-
         <IconButton
           variant={aiChatOpen ? 'primary' : 'ghost'}
           size="md"
@@ -493,7 +787,6 @@ const Sidebar = ({
           aria-label="AI Assistant"
           onClick={onToggleAIChat}
         />
-
         <IconButton
           variant="ghost"
           size="md"
@@ -515,7 +808,7 @@ const Sidebar = ({
       <Dialog
         isOpen={deleteDialog.isOpen}
         onClose={() => setDeleteDialog({ isOpen: false, fileName: '', filePath: '' })}
-        title="Delete File"
+        title={deleteDialog.fileName ? `Delete ${deleteDialog.fileName}` : 'Delete Item'}
         message={`Are you sure you want to delete "${deleteDialog.fileName}"? This action cannot be undone.`}
         variant="danger"
         confirmLabel="Delete"
@@ -523,8 +816,20 @@ const Sidebar = ({
         onConfirm={handleDeleteConfirm}
         showCancel
       />
+
+      <InputDialog
+        isOpen={actionDialog.isOpen}
+        title={actionDialog.title}
+        placeholder={actionDialog.placeholder}
+        defaultValue={actionDialog.defaultValue}
+        validate={validateName}
+        onConfirm={(value) => {
+          void handleActionDialogConfirm(value);
+        }}
+        onCancel={() => setActionDialog(CLOSED_ACTION_DIALOG)}
+      />
     </SidebarContainer>
   );
 };
 
-export default Sidebar;
+export default memo(Sidebar);

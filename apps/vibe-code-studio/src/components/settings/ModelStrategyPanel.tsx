@@ -4,7 +4,7 @@
  * DeepSeek is the primary AI with optional Anthropic models
  */
 
-import React from 'react';
+
 import { Brain, Scale, Target, Zap } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';

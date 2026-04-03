@@ -324,16 +324,6 @@ export class AIProviderFactory {
   }
 
   /**
-   * Check if latest OpenAI models are configured
-   */
-  private _hasLatestOpenAIModels(): boolean {
-    // Check if any ChatGPT 5.1 models are in the registry
-    return Object.keys(MODEL_REGISTRY).some(id =>
-      id.includes('chatgpt-5') || id.includes('codex-max')
-    );
-  }
-
-  /**
    * Get usage statistics for a provider
    */
   async getProviderUsageStats(provider: AIProvider): Promise<{

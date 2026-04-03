@@ -19,13 +19,11 @@ export interface AutoFixCodeActionProviderConfig {
 
 export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionProvider {
   private autoFixService: AutoFixService;
-  private errorDetector: ErrorDetector;
   private onFixApplied?: (fixTitle: string) => void;
   private onFixFailed?: (error: Error) => void;
 
   constructor(config: AutoFixCodeActionProviderConfig) {
     this.autoFixService = config.autoFixService;
-    this.errorDetector = config.errorDetector;
     this.onFixApplied = config.onFixApplied;
     this.onFixFailed = config.onFixFailed;
   }
@@ -36,7 +34,7 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
    */
   async provideCodeActions(
     model: Monaco.editor.ITextModel,
-    range: Monaco.Range,
+    _range: Monaco.Range,
     context: Monaco.languages.CodeActionContext,
     _token: Monaco.CancellationToken
   ): Promise<Monaco.languages.CodeActionList | undefined> {
