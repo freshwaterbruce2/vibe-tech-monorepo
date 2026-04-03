@@ -5,7 +5,7 @@ export const getIntelligencePath = () => {
   let userDataPath: string;
   try {
     // Use eval to prevent static analyzers (like Vite's esbuild) from seeing this as a dependency
-    const electronApp = eval("require('electron')").app;
+    const electronApp = (0, eval)("require('electron')").app;
     userDataPath = electronApp.getPath('userData');
   } catch {
     // Fallback for non-electron environments or before app is ready
@@ -35,7 +35,7 @@ export const getStoragePath = (subDir: string) => {
 
   let userDataPath: string;
   try {
-    const electronApp = eval("require('electron')").app;
+    const electronApp = (0, eval)("require('electron')").app;
     userDataPath = electronApp.getPath('userData');
   } catch {
     userDataPath = path.join(process.cwd(), 'userData');

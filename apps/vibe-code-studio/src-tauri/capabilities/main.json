@@ -25,10 +25,14 @@
     {
       "identifier": "fs:scope",
       "allow": [
+        { "path": "$DOCUMENT/**" },
         { "path": "$HOME/**" },
         { "path": "$APPDATA/**" },
-        { "path": "C:\\**" },
-        { "path": "D:\\**" }
+        { "path": "C:\\dev\\**" },
+        { "path": "D:\\databases\\**" },
+        { "path": "D:\\logs\\**" },
+        { "path": "D:\\data\\**" },
+        { "path": "D:\\learning-system\\**" }
       ]
     },
     "store:default",

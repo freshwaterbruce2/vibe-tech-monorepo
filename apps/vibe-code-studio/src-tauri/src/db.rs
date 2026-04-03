@@ -109,7 +109,7 @@ pub fn db_save_pattern(
     let guard = state.conn.lock().map_err(|e| e.to_string())?;
     let conn = guard.as_ref().ok_or("DB not initialized")?;
 
-    let hash = format!("{:x}", md5_hash(&pattern));
+    let hash = format!("{:x}", fnv1a_hash(&pattern));
     let _tags = tags.unwrap_or_default();
 
     conn.execute(
@@ -178,8 +178,8 @@ pub fn db_execute_query(
     }
 }
 
-/// Simple hash for pattern dedup (no crypto needed)
-fn md5_hash(input: &str) -> u64 {
+/// FNV-1a hash for pattern deduplication
+fn fnv1a_hash(input: &str) -> u64 {
     let mut hash: u64 = 0xcbf29ce484222325;
     for byte in input.bytes() {
         hash ^= byte as u64;

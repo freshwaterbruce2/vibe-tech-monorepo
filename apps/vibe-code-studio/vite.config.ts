@@ -7,21 +7,22 @@ import viteCompression from 'vite-plugin-compression'
 
 const rendererPort = Number(process.env.VIBE_RENDERER_PORT ?? process.env.VITE_PORT ?? 5174)
 
-export default defineConfig({
+const nodeBuiltins = [
+  'fs', 'path', 'os', 'crypto', 'http', 'https', 'net', 'tls',
+  'stream', 'zlib', 'url', 'util', 'events', 'buffer', 'child_process',
+  'dns', 'dgram', 'cluster', 'module', 'readline', 'vm', 'assert',
+  'constants', 'querystring', 'string_decoder', 'punycode', 'tty',
+  'worker_threads', 'perf_hooks', 'async_hooks',
+  ...builtinModules,
+  ...builtinModules.map(m => `node:${m}`),
+]
+
+export default defineConfig(({ mode }) => ({
   // @monaco-editor/react handles workers automatically - NO plugin needed
-  base: process.env.NODE_ENV === 'production' ? './' : '/',
+  base: mode === 'production' ? './' : '/',
 
   plugins: [
-    react({
-      // Optimize for React 19 with automatic JSX runtime
-      jsxRuntime: 'automatic',
-      // Babel optimizations
-      babel: {
-        plugins: [
-          // Future: React Compiler will go here when stable
-        ]
-      }
-    }),
+    react(),
 
     // @monaco-editor/react handles Monaco workers internally - no plugin needed
 
@@ -36,6 +37,15 @@ export default defineConfig({
       ext: '.br'
     }),
 
+    // Strip crossorigin from module scripts — Tauri's custom protocol may not serve CORS headers
+    {
+      name: 'strip-crossorigin',
+      enforce: 'post' as const,
+      transformIndexHtml(html: string) {
+        return html.replace(/ crossorigin/g, '')
+      },
+    },
+
     process.env.ANALYZE && visualizer({
       filename: './dist/stats.html',
       open: true,
@@ -47,12 +57,25 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
+      // Stub Node.js builtins that crypto-js and other deps try to import
+      'fs': resolve(__dirname, 'src/shims/empty-module.ts'),
+      'path': resolve(__dirname, 'src/shims/empty-module.ts'),
+      'os': resolve(__dirname, 'src/shims/empty-module.ts'),
+      'crypto': resolve(__dirname, 'src/shims/empty-module.ts'),
+      'http': resolve(__dirname, 'src/shims/empty-module.ts'),
+      'https': resolve(__dirname, 'src/shims/empty-module.ts'),
+      'stream': resolve(__dirname, 'src/shims/empty-module.ts'),
+      'zlib': resolve(__dirname, 'src/shims/empty-module.ts'),
+      'net': resolve(__dirname, 'src/shims/empty-module.ts'),
+      'tls': resolve(__dirname, 'src/shims/empty-module.ts'),
+      'child_process': resolve(__dirname, 'src/shims/empty-module.ts'),
     },
   },
 
   envPrefix: ['VITE_', 'KIMI_'],
 
   define: {
+    'process.env.NODE_ENV': JSON.stringify(mode),
     'process.env': '{}',
   },
 
@@ -96,35 +119,16 @@ export default defineConfig({
 
   build: {
     outDir: 'dist',
-    sourcemap: process.env.NODE_ENV === 'development',
-    chunkSizeWarningLimit: 1000,
+    sourcemap: mode === 'development',
+    chunkSizeWarningLimit: 5000,
 
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: process.env.NODE_ENV === 'production',
-        drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info'],
-        passes: 2
-      },
-      mangle: {
-        safari10: true
-      },
-      format: {
-        comments: false
-      }
-    },
+    minify: true,
 
     rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html'),
-      },
-
-      external: [
-        'sql.js',
-        ...builtinModules,
-        ...builtinModules.map(m => `node:${m}`)
-      ],
+      // Node builtins are stubbed via resolve.alias.
+      // Do NOT list them in external — that bypasses the stubs and leaves bare
+      // "import 'fs'" in the bundle, which crashes in Tauri's webview.
+      external: ['sql.js'],
 
       output: {
         assetFileNames: (assetInfo) => {
@@ -159,9 +163,6 @@ export default defineConfig({
           }
         }
       },
-
-      // Rolldown handles treeshaking automatically; Monaco side-effects
-      // are preserved by default in Vite 8.
     },
 
     cssCodeSplit: true,
@@ -191,7 +192,7 @@ export default defineConfig({
     warmup: {
       clientFiles: [
         './src/App.tsx',
-        './src/components/Editor.tsx',
+        './src/components/Editor/index.ts',
         './src/stores/useEditorStore.ts'
       ]
     }
@@ -202,7 +203,7 @@ export default defineConfig({
 
     target: 'es2022',
 
-    keepNames: process.env.NODE_ENV === 'development',
+    keepNames: mode === 'development',
 
     legalComments: 'none'
   },
@@ -211,4 +212,4 @@ export default defineConfig({
     port: 3002,
     strictPort: true
   }
-});
+}));
