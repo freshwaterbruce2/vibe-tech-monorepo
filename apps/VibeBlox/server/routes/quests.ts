@@ -45,7 +45,11 @@ app.get("/", async (c: Context) => {
  */
 app.get("/:id", async (c: Context) => {
 	try {
-		const id = parseInt(c.req.param("id"));
+		const idParam = c.req.param("id");
+		if (!idParam) {
+			return c.json({ success: false, error: "Quest ID is required" }, 400);
+		}
+		const id = parseInt(idParam);
 		const stmt = db.prepare("SELECT * FROM quests WHERE id = ?");
 		const quest = stmt.get(id) as Quest | undefined;
 
@@ -188,7 +192,11 @@ app.get("/pending", async (c: Context) => {
 app.post("/:id/approve", async (c: Context) => {
 	try {
 		const user = c.get("user") as JWTPayload;
-		const completionId = parseInt(c.req.param("id"));
+		const completionIdParam = c.req.param("id");
+		if (!completionIdParam) {
+			return c.json({ success: false, error: "Completion ID is required" }, 400);
+		}
+		const completionId = parseInt(completionIdParam);
 		const body = await c.req.json<{ approved: boolean; notes?: string }>();
 
 		// Only parents can approve

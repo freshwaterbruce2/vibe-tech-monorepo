@@ -43,7 +43,11 @@ app.get("/", async (c: Context) => {
  */
 app.get("/:id", async (c: Context) => {
 	try {
-		const id = parseInt(c.req.param("id"));
+		const idParam = c.req.param("id");
+		if (!idParam) {
+			return c.json({ success: false, error: "Reward ID is required" }, 400);
+		}
+		const id = parseInt(idParam);
 		const stmt = db.prepare("SELECT * FROM rewards WHERE id = ?");
 		const reward = stmt.get(id) as Reward | undefined;
 
@@ -185,7 +189,11 @@ app.get("/pending", async (c: Context) => {
 app.post("/:id/approve", async (c: Context) => {
 	try {
 		const user = c.get("user") as JWTPayload;
-		const purchaseId = parseInt(c.req.param("id"));
+		const purchaseIdParam = c.req.param("id");
+		if (!purchaseIdParam) {
+			return c.json({ success: false, error: "Purchase ID is required" }, 400);
+		}
+		const purchaseId = parseInt(purchaseIdParam);
 		const body = await c.req.json<{ approved: boolean; notes?: string }>();
 
 		// Only parents can approve
@@ -299,7 +307,11 @@ app.post("/:id/approve", async (c: Context) => {
 app.post("/:id/fulfill", async (c: Context) => {
 	try {
 		const user = c.get("user") as JWTPayload;
-		const purchaseId = parseInt(c.req.param("id"));
+		const purchaseIdParam = c.req.param("id");
+		if (!purchaseIdParam) {
+			return c.json({ success: false, error: "Purchase ID is required" }, 400);
+		}
+		const purchaseId = parseInt(purchaseIdParam);
 
 		// Only parents can fulfill
 		if (user.role !== "parent") {

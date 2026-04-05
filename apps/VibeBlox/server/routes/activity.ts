@@ -84,7 +84,11 @@ app.get("/recent", async (c: Context) => {
 app.delete("/:id", async (c: Context) => {
 	try {
 		const user = c.get("user") as JWTPayload;
-		const activityId = parseInt(c.req.param("id"));
+		const idParam = c.req.param("id");
+		if (!idParam) {
+			return c.json({ success: false, error: "Activity ID is required" }, 400);
+		}
+		const activityId = parseInt(idParam);
 
 		const stmt = db.prepare(`
       DELETE FROM activity_feed

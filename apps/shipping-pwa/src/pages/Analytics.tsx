@@ -126,7 +126,7 @@ const Analytics = () => {
     },
   ]
 
-  const formatTooltipValue = (value: any, name?: string) => {
+  const formatTooltipValue = (value: any, name?: string | number) => {
     if (name === 'onTime' || name === 'efficiency' || name === 'satisfaction') {
       return [
         `${value}%`,

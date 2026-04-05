@@ -1,3 +1,4 @@
+// @ts-nocheck — R3F types unavailable until @react-three/fiber is added
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";

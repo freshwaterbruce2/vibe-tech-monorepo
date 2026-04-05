@@ -107,6 +107,11 @@
             "type": "command",
             "command": "powershell -NoProfile -ExecutionPolicy Bypass -File C:\\dev\\.claude\\hooks\\log-bash-command.ps1",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File C:\\dev\\.claude\\hooks\\clear-git-lock.ps1",
+            "timeout": 3
           }
         ]
       }
