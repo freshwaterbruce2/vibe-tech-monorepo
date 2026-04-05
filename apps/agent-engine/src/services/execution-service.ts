@@ -1,4 +1,7 @@
 import { randomUUID } from 'crypto';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { join } from 'path';
+import { PATHS } from '../config.js';
 import { readTextFile } from '../tools/file-tools.js';
 import { gitChangedFiles, gitDiff } from '../tools/git-tools.js';
 import { DEFAULT_POLICY_BUNDLE } from '../policy/default-policy.js';
@@ -17,10 +20,14 @@ import type {
 import { BenchmarkService } from './benchmark-service.js';
 import { CandidateRepository } from './candidate-repository.js';
 import { EvaluationService } from './evaluation-service.js';
-import { MemoryClient } from './memory-client.js';
+import { MemoryClient, type AgentLearningContext } from './memory-client.js';
 import { PromotionService } from './promotion-service.js';
 import { RunTraceRepository } from './run-trace-repository.js';
 import { WorktreeService } from './worktree-service.js';
+
+const LEARNING_AGENT_ID = 'agent-engine';
+const LEARNING_SYNC_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+const LEARNING_SYNC_STATE_FILE = 'learning-sync-state.json';
 
 interface TaskExecutionContext {
   toolTraces: ToolTrace[];
@@ -77,14 +84,23 @@ export class ExecutionService {
     };
 
     try {
+      // Fire periodic learning sync if stale (>1h since last). Fire-and-forget; do not block.
+      void this.maybeTriggerLearningSync();
+
       const antiPatterns = this.memoryClient.getRecent({ tag: 'anti-pattern', limit: 5 });
+
+      // Pull per-agent learning context (past executions, patterns, mistakes) from memory-mcp.
+      // Null-safe: if bridge is unavailable, we fall back to anti-patterns only.
+      const learningContext = await this.memoryClient
+        .getAgentLearningContext(LEARNING_AGENT_ID, 10)
+        .catch(() => null);
 
       const plan = await this.runRole(
         trace,
         'planner',
         `Task:\n${JSON.stringify(task, null, 2)}\n\nRecent anti-patterns:\n${
           antiPatterns.map((record) => `- ${record.title}: ${record.text}`).join('\n') || '- none'
-        }`,
+        }\n\nAgent learning context:\n${this.formatLearningContext(learningContext)}`,
       );
 
       const executionContext = this.executeTaskLocally(task);
@@ -500,6 +516,72 @@ export class ExecutionService {
       `Self-improver: ${workflowState.selfImprovement}`,
       `Supervisor: ${workflowState.supervisorDecision}`,
     ].join('\n\n');
+  }
+
+  /**
+   * Trigger a learning sync if the last sync was more than LEARNING_SYNC_INTERVAL_MS ago.
+   * Fire-and-forget: never throws, never blocks. Persists last-sync epoch to disk.
+   */
+  private async maybeTriggerLearningSync(): Promise<void> {
+    try {
+      const statePath = join(PATHS.memoryDir, LEARNING_SYNC_STATE_FILE);
+      mkdirSync(PATHS.memoryDir, { recursive: true });
+
+      let lastSyncMs = 0;
+      if (existsSync(statePath)) {
+        try {
+          const raw = JSON.parse(readFileSync(statePath, 'utf-8')) as { lastSyncMs?: number };
+          lastSyncMs = typeof raw.lastSyncMs === 'number' ? raw.lastSyncMs : 0;
+        } catch {
+          lastSyncMs = 0;
+        }
+      }
+
+      const now = Date.now();
+      if (now - lastSyncMs < LEARNING_SYNC_INTERVAL_MS) {
+        return;
+      }
+
+      const result = await this.memoryClient.syncFromLearning(lastSyncMs || undefined);
+      if (result) {
+        writeFileSync(
+          statePath,
+          JSON.stringify({ lastSyncMs: now, lastResult: result }, null, 2),
+          'utf-8',
+        );
+      }
+    } catch {
+      // never let sync failures affect task execution
+    }
+  }
+
+  private formatLearningContext(ctx: AgentLearningContext | null): string {
+    if (!ctx) {
+      return '- unavailable';
+    }
+    const lines: string[] = [];
+    lines.push(
+      `Stats: ${ctx.stats.totalExecutions} runs, ${(ctx.stats.successRate * 100).toFixed(0)}% success, avg ${Math.round(ctx.stats.avgExecutionTime)}ms`,
+    );
+    if (ctx.knownMistakes.length > 0) {
+      lines.push('Known mistakes to avoid:');
+      for (const m of ctx.knownMistakes.slice(0, 5)) {
+        lines.push(`  - [${m.severity}] ${m.type}: ${m.description}`);
+      }
+    }
+    if (ctx.knownPatterns.length > 0) {
+      lines.push('Known success patterns:');
+      for (const p of ctx.knownPatterns.slice(0, 5)) {
+        lines.push(`  - ${p.type} (conf=${p.confidence.toFixed(2)}): ${p.description}`);
+      }
+    }
+    if (ctx.recentExecutions.length > 0) {
+      lines.push('Recent executions:');
+      for (const e of ctx.recentExecutions.slice(0, 5)) {
+        lines.push(`  - ${e.success ? 'OK' : 'FAIL'} ${e.taskType}: ${e.description}`);
+      }
+    }
+    return lines.join('\n') || '- empty';
   }
 
   private hasBlockingFailures(trace: RunTrace): boolean {

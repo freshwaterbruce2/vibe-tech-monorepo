@@ -7,6 +7,41 @@ interface HttpToolResult {
   content?: Array<{ type: string; text?: string }>;
 }
 
+export interface AgentLearningContext {
+  agent: string;
+  recentExecutions: Array<{
+    taskType: string;
+    description: string;
+    success: boolean;
+    executionTime: number;
+    timestamp: string;
+  }>;
+  knownPatterns: Array<{
+    type: string;
+    description: string;
+    confidence: number;
+    frequency: number;
+  }>;
+  knownMistakes: Array<{
+    type: string;
+    description: string;
+    severity: string;
+    remediation?: string;
+  }>;
+  stats: {
+    totalExecutions: number;
+    successRate: number;
+    avgExecutionTime: number;
+  };
+}
+
+export interface LearningSyncResult {
+  executionsIngested: number;
+  patternsIngested: number;
+  mistakesIngested: number;
+  errors: string[];
+}
+
 function safeJsonParse<T>(value: string, fallback: T): T {
   try {
     return JSON.parse(value) as T;
@@ -148,6 +183,70 @@ export class MemoryClient {
 
   private saveAll(records: StoredMemoryRecord[]): void {
     writeFileSync(this.storagePath, JSON.stringify(records, null, 2), 'utf-8');
+  }
+
+  /**
+   * Fetch per-agent learning context (recent executions, known patterns, mistakes)
+   * from the memory-mcp LearningBridge. Returns null on failure.
+   */
+  public async getAgentLearningContext(
+    agentId: string,
+    limit = 10,
+  ): Promise<AgentLearningContext | null> {
+    const result = await this.callRemoteTool('memory_learning_agent_context', { agentId, limit });
+    if (!result) {
+      return null;
+    }
+    return safeJsonParse<AgentLearningContext | null>(result, null);
+  }
+
+  /**
+   * Trigger a sync from the learning DB into semantic memory. Returns null on failure.
+   * @param sinceTimestamp optional ms-epoch to sync from
+   */
+  public async syncFromLearning(sinceTimestamp?: number): Promise<LearningSyncResult | null> {
+    const args: Record<string, unknown> = {};
+    if (typeof sinceTimestamp === 'number') {
+      args.since = sinceTimestamp;
+    }
+    const result = await this.callRemoteTool('memory_learning_sync', args);
+    if (!result) {
+      return null;
+    }
+    return safeJsonParse<LearningSyncResult | null>(result, null);
+  }
+
+  /**
+   * Generic JSON-RPC tool caller for memory-mcp. Returns raw text of first text-content block,
+   * or null on any failure (network, non-OK, no content).
+   */
+  private async callRemoteTool(
+    toolName: string,
+    args: Record<string, unknown>,
+  ): Promise<string | null> {
+    if (!this.baseUrl) {
+      return null;
+    }
+    try {
+      const response = await fetch(this.baseUrl, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: `${Date.now()}`,
+          method: 'tools/call',
+          params: { name: toolName, arguments: args },
+        }),
+      });
+      if (!response.ok) {
+        return null;
+      }
+      const body = (await response.json()) as { result?: HttpToolResult };
+      const textBlock = body.result?.content?.find((entry) => entry.type === 'text');
+      return textBlock?.text ?? null;
+    } catch {
+      return null;
+    }
   }
 
   private async tryRemoteWrite(record: MemoryRecord): Promise<boolean> {
