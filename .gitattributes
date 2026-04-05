@@ -1,1 +1,39 @@
+# Windows 11-only monorepo — default to CRLF per platform-requirements.md
+* text=auto eol=crlf
+
+# Unix shell scripts — must stay LF
+*.sh     text eol=lf
+*.bash   text eol=lf
+
+# Force LF for files that Unix tooling runs (docker, ci images)
+Dockerfile         text eol=lf
+*.dockerfile       text eol=lf
+.dockerignore      text eol=lf
+
+# Binary — do not touch
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.ico     binary
+*.webp    binary
+*.woff    binary
+*.woff2   binary
+*.ttf     binary
+*.otf     binary
+*.eot     binary
+*.pdf     binary
+*.zip     binary
+*.gz      binary
+*.tar     binary
+*.7z      binary
+*.db      binary
+*.sqlite  binary
+*.sqlite3 binary
+*.exe     binary
+*.dll     binary
+*.node    binary
+*.wasm    binary
+
+# LFS
 *.MOV filter=lfs diff=lfs merge=lfs -text
