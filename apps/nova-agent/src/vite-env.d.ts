@@ -1,5 +1,4 @@
 /// <reference types="vite/client" />
-/// <reference types="@react-three/fiber" />
 
 interface ImportMetaEnv {
 	readonly VITE_SUPABASE_URL: string;

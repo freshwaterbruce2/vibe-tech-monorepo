@@ -50,6 +50,8 @@ export class RAGIndexer {
   private fileHashes: Map<string, FileHash> = new Map();
   private isRunning = false;
   private intervalHandle: ReturnType<typeof setInterval> | null = null;
+  private lastFullIndexTime: number | null = null;
+  private lastIncrementalIndexTime: number | null = null;
 
   constructor(config: RAGConfig) {
     this.config = config;
@@ -257,6 +259,14 @@ export class RAGIndexer {
       }
 
       this.log(`Index complete: ${result.filesProcessed} files, ${result.chunksCreated} chunks`);
+
+      // Track index timestamps
+      const now = Date.now();
+      if (options.full) {
+        this.lastFullIndexTime = now;
+      } else {
+        this.lastIncrementalIndexTime = now;
+      }
     } catch (error) {
       result.errors.push({
         filePath: '',
@@ -325,8 +335,8 @@ export class RAGIndexer {
     return {
       totalFiles: this.fileHashes.size,
       totalChunks,
-      lastFullIndex: null, // TODO: track this
-      lastIncrementalIndex: null,
+      lastFullIndex: this.lastFullIndexTime,
+      lastIncrementalIndex: this.lastIncrementalIndexTime,
       pendingFiles: changedFiles.length,
       isRunning: this.isRunning,
     };

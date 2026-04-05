@@ -212,6 +212,10 @@ export class RAGRetriever {
 
     return filtered;
   }
+
+  getEmbedderStats(): { totalCalls: number; totalTokens: number } {
+    return this.embedder.getStats();
+  }
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────

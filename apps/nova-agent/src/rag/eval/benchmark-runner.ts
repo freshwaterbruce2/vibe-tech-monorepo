@@ -156,7 +156,7 @@ async function evaluateConfig(
       meanLatencyMs,
       p95LatencyMs: p95Latency(latencies),
       embeddingCalls: queries.length, // 1 embed per query
-      embeddingTokens: 0, // TODO: track from embedder stats
+      embeddingTokens: retriever.getEmbedderStats().totalTokens,
     },
   };
 

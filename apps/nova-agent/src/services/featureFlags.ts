@@ -9,7 +9,6 @@ interface IFeatureFlagClient {
 
 /**
  * Local implementation of feature flag client
- * TODO: Replace with actual SDK when available
  */
 class FeatureFlagClient implements IFeatureFlagClient {
   private serverUrl: string;

@@ -150,7 +150,6 @@ export default defineConfig(({ mode }) => ({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           ui: ['@radix-ui/react-dialog', '@radix-ui/react-toast', '@radix-ui/react-tabs'],
-          three: ['three', '@react-three/fiber', '@react-three/drei'],
           router: ['react-router-dom'],
           forms: ['react-hook-form', 'zod', '@hookform/resolvers'],
           charts: ['recharts'],
