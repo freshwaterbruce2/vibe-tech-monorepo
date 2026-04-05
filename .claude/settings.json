@@ -114,6 +114,16 @@
             "timeout": 3
           }
         ]
+      },
+      {
+        "matcher": "mcp__plugin_serena_serena__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File C:\\dev\\.claude\\hooks\\clear-git-lock.ps1",
+            "timeout": 3
+          }
+        ]
       }
     ],
     "PostToolUse": [

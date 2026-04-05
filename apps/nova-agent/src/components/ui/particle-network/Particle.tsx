@@ -1,8 +1,15 @@
-// @ts-nocheck — R3F types unavailable until @react-three/fiber is added
+import type { ThreeElements } from "@react-three/fiber";
 import { useFrame } from "@react-three/fiber";
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import * as THREE from "three";
 import type { ParticleProps } from "./types";
+
+declare module "react/jsx-runtime" {
+	// eslint-disable-next-line @typescript-eslint/no-namespace
+	namespace JSX {
+		interface IntrinsicElements extends ThreeElements {}
+	}
+}
 
 const Particle = forwardRef<THREE.Mesh, ParticleProps>(
 	({ position, color, speed }, ref) => {

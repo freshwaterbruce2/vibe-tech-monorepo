@@ -1,6 +1,8 @@
 # Forgejo Actions CI for pnpm monorepo (Codeberg)
 # Mirrors .github/workflows/ci.yml for Codeberg hosting
 # Forgejo Actions uses GitHub Actions-compatible syntax
+# Note: uses ubuntu-latest (Codeberg has no Windows runners);
+#       quality/build steps are platform-agnostic so this is fine.
 
 name: CI
 
@@ -10,13 +12,16 @@ on:
   pull_request:
     branches: [main, develop]
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
   NODE_VERSION: '22'
-  PNPM_VERSION: '10.32.1'
+  PNPM_VERSION: '10.33.0'
 
 jobs:
   quality:
@@ -39,11 +44,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Sync audit
+        run: pnpm run ci:sync
+
       - name: Lint (affected)
         run: pnpm run ci:lint || pnpm run ci:lint:all
 
       - name: Typecheck (affected)
         run: pnpm run ci:typecheck || pnpm run ci:typecheck:all
+
+      - name: Test (affected)
+        run: pnpm run ci:test || pnpm run ci:test:all
 
   build:
     name: Build

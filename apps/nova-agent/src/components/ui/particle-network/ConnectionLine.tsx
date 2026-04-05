@@ -1,8 +1,15 @@
-// @ts-nocheck — R3F types unavailable until @react-three/fiber is added
+import type { ThreeElements } from "@react-three/fiber";
 import { useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { ConnectionLineProps } from "./types";
+
+declare module "react/jsx-runtime" {
+	// eslint-disable-next-line @typescript-eslint/no-namespace
+	namespace JSX {
+		interface IntrinsicElements extends ThreeElements {}
+	}
+}
 
 const ConnectionLine = ({
 	startPos,

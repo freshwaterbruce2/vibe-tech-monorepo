@@ -1,8 +1,15 @@
-// @ts-nocheck — R3F types unavailable until @react-three/fiber is added
+import type { ThreeElements } from "@react-three/fiber";
 import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { Text } from "@react-three/drei";
+
+declare module "react/jsx-runtime" {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements extends ThreeElements {}
+  }
+}
 
 interface RAGVisualizationProps {
   results: Array<{ 

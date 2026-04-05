@@ -2,7 +2,7 @@
 
 ## Nx Caching & Affected Builds
 
-Nx 21.6.3 provides intelligent caching — repeated builds are 80-90% faster. Always prefer affected commands:
+Nx 22.5.0 provides intelligent caching — repeated builds are 80-90% faster. Always prefer affected commands:
 
 ```bash
 pnpm run quality:affected   # lint + typecheck + build only changed projects

@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS agent_mistakes (
   platform TEXT CHECK(platform IN ('desktop', 'web', 'mobile', 'python', 'general')) DEFAULT 'general'
 );
 
--- Agent knowledge table
+-- Agent knowledge table (consolidated from agent_learning.db + nova_shared.db)
 CREATE TABLE IF NOT EXISTS agent_knowledge (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   knowledge_type TEXT NOT NULL,
@@ -31,6 +31,12 @@ CREATE TABLE IF NOT EXISTS agent_knowledge (
   success_rate_improvement REAL,
   confidence_level REAL,
   tags TEXT,
+  agent_id INTEGER,
+  description TEXT,
+  source_execution_id INTEGER,
+  applicable_contexts TEXT,
+  usage_count INTEGER DEFAULT 0,
+  effectiveness_score REAL,
   app_source TEXT CHECK(app_source IN ('nova', 'vibe')) DEFAULT 'nova',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
