@@ -161,12 +161,6 @@
     "release:version": "npx nx release version",
     "cleanup:pnpm": "powershell -ExecutionPolicy Bypass -File scripts\\pnpm-cleanup.ps1",
     "cleanup:pnpm:dry": "powershell -ExecutionPolicy Bypass -File scripts\\pnpm-cleanup.ps1 -DryRun",
-    "gemini:check": "gemini check",
-    "gemini:analyze": "gemini analyze --workspace",
-    "gemini:test": "gemini test --all",
-    "gemini:status": "gemini auth status && gemini /ide status",
-    "gemini:config": "gemini config show",
-    "gemini:cache:clear": "gemini cache clear",
     "cleanup": "powershell -ExecutionPolicy Bypass -File scripts\\cleanup-processes.ps1",
     "cleanup:dry": "powershell -ExecutionPolicy Bypass -File scripts\\cleanup-processes.ps1 -DryRun",
     "cleanup:all": "powershell -ExecutionPolicy Bypass -File scripts\\cleanup-processes.ps1 -All",
@@ -207,7 +201,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
-    "@tanstack/react-query": "^5.91.0",
+    "@tanstack/react-query": "^5.95.2",
     "@tauri-apps/plugin-dialog": "^2.6.0",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/addon-search": "^0.16.0",
@@ -226,9 +220,9 @@
     "react-dom": "19.2.4",
     "react-helmet-async": "^2.0.5",
     "react-hook-form": "^7.71.2",
-    "react-resizable-panels": "^4.7.3",
+    "react-resizable-panels": "^4.7.6",
     "react-router-dom": "^7.13.1",
-    "recharts": "^3.8.0",
+    "recharts": "^3.8.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7",
@@ -244,7 +238,7 @@
     "@nx/js": "22.5.0",
     "@nx/react": "22.5.0",
     "@playwright/test": "^1.58.2",
-    "@rollup/rollup-win32-x64-msvc": "4.57.1",
+    "@rollup/rollup-win32-x64-msvc": "4.59.0",
     "@swc-node/register": "1.11.1",
     "@swc/core": "1.15.21",
     "@tailwindcss/postcss": "^4.2.2",
@@ -261,7 +255,6 @@
     "autoprefixer": "^10.4.27",
     "better-sqlite3": "12.6.2",
     "depcheck": "^1.4.7",
-    "electron": "40.1.0",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
@@ -276,18 +269,13 @@
     "tailwindcss": "4.1.18",
     "terser": "^5.46.1",
     "typescript": "5.9.3",
-    "typescript-eslint": "^8.57.1",
+    "typescript-eslint": "^8.57.2",
     "vite": "^7.3.1",
-    "vitest": "^4.1.0"
-  },
-  "directories": {
-    "doc": "docs"
+    "vitest": "^4.1.2"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/freshwaterbruce2/Monorepo.git"
+    "url": "https://codeberg.org/freshwaterbruce2/Monorepo.git"
   },
-  "keywords": [],
-  "author": "",
   "license": "ISC"
 }

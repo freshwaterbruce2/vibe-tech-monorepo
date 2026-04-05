@@ -1,5 +1,5 @@
 {
-  "name": "@dev/feature-flags-core",
+  "name": "@vibetech/feature-flags-core",
   "version": "0.1.0",
   "description": "Core types and utilities for feature flags system",
   "main": "dist/index.js",

@@ -1,5 +1,5 @@
 {
-	"name": "@dev/feature-flags",
+	"name": "@vibetech/feature-flags",
 	"version": "0.1.0",
 	"private": true,
 	"description": "Feature flags system for the monorepo",
@@ -13,8 +13,8 @@
 	"scripts": {
 		"build": "pnpm -r build",
 		"dev": "pnpm -r --parallel dev",
-		"lint": "pnpm --filter @dev/feature-flags-core lint && pnpm --filter @dev/feature-flags-sdk-node lint && pnpm --filter @dev/feature-flags-sdk-react lint && pnpm --filter @dev/feature-flags-server lint && pnpm --filter @dev/feature-flags-dashboard lint",
+		"lint": "pnpm --filter @vibetech/feature-flags-core lint && pnpm --filter @vibetech/feature-flags-sdk-node lint && pnpm --filter @vibetech/feature-flags-sdk-react lint && pnpm --filter @vibetech/feature-flags-server lint && pnpm --filter @vibetech/feature-flags-dashboard lint",
 		"test": "pnpm -r test",
-		"typecheck": "pnpm --filter @dev/feature-flags-core typecheck && pnpm --filter @dev/feature-flags-sdk-node typecheck && pnpm --filter @dev/feature-flags-sdk-react typecheck && pnpm --filter @dev/feature-flags-server typecheck && pnpm --filter @dev/feature-flags-dashboard typecheck"
+		"typecheck": "pnpm --filter @vibetech/feature-flags-core typecheck && pnpm --filter @vibetech/feature-flags-sdk-node typecheck && pnpm --filter @vibetech/feature-flags-sdk-react typecheck && pnpm --filter @vibetech/feature-flags-server typecheck && pnpm --filter @vibetech/feature-flags-dashboard typecheck"
 	}
 }
