@@ -39,6 +39,7 @@ class Config:
                 self.max_positions = risk.get("max_positions", 3)
                 self.max_risk_score = risk.get("max_risk_score", 0.8)
                 self.min_balance_required = risk.get("min_balance_required", 15)
+                self.max_daily_loss_usd = risk.get("max_daily_loss_usd", 12)
 
                 # Enhanced Risk Manager parameters (ATR-based dynamic sizing)
                 enhanced = risk.get("enhanced", {})
@@ -67,10 +68,20 @@ class Config:
                 self.monitoring_interval = monitoring.get("monitoring_interval", 60)
                 self.min_balance_alert = monitoring.get("min_balance_alert", 50)
 
+                # Load per-strategy configuration
+                self.strategies = config_data.get("strategies", {})
+
                 # Load websocket settings
                 ws = config_data.get("websocket", {})
                 self.ws_reconnect_interval = ws.get("reconnect_interval", 5)
                 self.ws_heartbeat_interval = ws.get("heartbeat_interval", 30)
+                self.enable_dead_man_switch = ws.get("enable_dead_man_switch", True)
+                self.dead_man_switch_timeout_seconds = ws.get(
+                    "dead_man_switch_timeout_seconds", 60
+                )
+                self.dead_man_switch_refresh_seconds = ws.get(
+                    "dead_man_switch_refresh_seconds", 20
+                )
 
                 # Load XLM-specific settings
                 xlm = config_data.get("xlm_specific", {})
@@ -150,6 +161,7 @@ class Config:
         self.max_risk_score = float(os.getenv("MAX_RISK_SCORE", "0.6"))
         self.min_balance_alert = float(os.getenv("MIN_BALANCE_ALERT", "50"))
         self.min_balance_required = float(os.getenv("MIN_BALANCE_REQUIRED", "15"))
+        self.max_daily_loss_usd = float(os.getenv("MAX_DAILY_LOSS_USD", "12"))
 
         # Enhanced Risk Manager parameters
         self.use_enhanced_risk = os.getenv("USE_ENHANCED_RISK", "true").lower() == "true"
@@ -178,6 +190,15 @@ class Config:
         # WebSocket Configuration
         self.ws_reconnect_interval = int(os.getenv("WS_RECONNECT_INTERVAL", "5"))
         self.ws_heartbeat_interval = int(os.getenv("WS_HEARTBEAT_INTERVAL", "30"))
+        self.enable_dead_man_switch = (
+            os.getenv("ENABLE_DEAD_MAN_SWITCH", "true").lower() == "true"
+        )
+        self.dead_man_switch_timeout_seconds = int(
+            os.getenv("DEAD_MAN_SWITCH_TIMEOUT_SECONDS", "60")
+        )
+        self.dead_man_switch_refresh_seconds = int(
+            os.getenv("DEAD_MAN_SWITCH_REFRESH_SECONDS", "20")
+        )
 
         # Order Configuration
         self.default_order_type = os.getenv("DEFAULT_ORDER_TYPE", "limit")
@@ -187,6 +208,7 @@ class Config:
         monitoring_env = os.getenv("ENABLE_MONITORING", "true").lower()
         self.enable_monitoring = monitoring_env == "true"
         self.monitoring_interval = int(os.getenv("MONITORING_INTERVAL", "60"))
+        self.strategies = {}
 
     def validate(self) -> bool:
         """Validate configuration"""

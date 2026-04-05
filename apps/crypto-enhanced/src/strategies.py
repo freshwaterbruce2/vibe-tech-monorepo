@@ -40,7 +40,7 @@ class Strategy(ABC):
         self.config = config
         self.name = name
         self.enabled = True
-        self.last_trade_time = None
+        self.last_trade_time: Optional[datetime] = None
         self.trades_today = 0
         self.daily_pnl = 0.0
         self.max_daily_trades = 10  # Conservative limit for small account
@@ -79,8 +79,8 @@ class Strategy(ABC):
         if len(prices) < period + 1:
             return None
 
-        gains = []
-        losses = []
+        gains: List[float] = []
+        losses: List[float] = []
 
         for i in range(1, len(prices)):
             change = prices[i] - prices[i-1]
@@ -129,6 +129,9 @@ class Strategy(ABC):
     def can_trade(self) -> bool:
         """Check if strategy can trade based on limits"""
         if not self.enabled:
+            return False
+
+        if getattr(self.engine, "trading_halted", False):
             return False
 
         # Check daily trade limit
@@ -217,7 +220,8 @@ class RSIMeanReversionStrategy(Strategy):
         
         # Load optimization parameters from config
         strategy_config = getattr(config, 'strategies', {}).get('mean_reversion', {})
-        
+        self.enabled = strategy_config.get('enabled', True)
+
         self.rsi_period = 14
         self.rsi_oversold = strategy_config.get('rsi_oversold', 35)
         self.rsi_overbought = strategy_config.get('rsi_overbought', 65)
@@ -275,7 +279,8 @@ class RSIMeanReversionStrategy(Strategy):
                     return None
                 
                 # Check if this trade would exceed max accumulation
-                estimated_xlm = self.position_size_usd / current_price
+                position_size_usd = self.position_size_usd
+                estimated_xlm = position_size_usd / current_price
                 if self.accumulated_xlm + estimated_xlm > self.max_accumulation:
                     # Adjust position size to not exceed limit
                     remaining_capacity = self.max_accumulation - self.accumulated_xlm
@@ -283,11 +288,12 @@ class RSIMeanReversionStrategy(Strategy):
                     if adjusted_size_usd < 1.0:  # Don't place trades under $1
                         logger.warning(f"{self.name}: Remaining capacity too small (${adjusted_size_usd:.2f})")
                         return None
-                    logger.info(f"{self.name}: Adjusted position size from ${self.position_size_usd:.2f} to ${adjusted_size_usd:.2f} to respect accumulation limit")
-                    self.position_size_usd = adjusted_size_usd
-                
+                    logger.info(f"{self.name}: Adjusted position size from ${position_size_usd:.2f} to ${adjusted_size_usd:.2f} to respect accumulation limit")
+                    position_size_usd = adjusted_size_usd
+                    estimated_xlm = position_size_usd / current_price
+
                 logger.info(f"{self.name}: RSI oversold signal - RSI={rsi:.2f}, Price=${current_price:.4f}, Accumulated={self.accumulated_xlm:.2f} XLM")
-                result = await self.place_trade("buy", self.position_size_usd, "limit", current_price * 1.001)
+                result = await self.place_trade("buy", position_size_usd, "limit", current_price * 1.001)
                 
                 # Update accumulation tracking if trade was placed
                 if result:
@@ -332,6 +338,7 @@ class RangeTradingStrategy(Strategy):
         
         # Load optimization parameters
         strategy_config = getattr(config, 'strategies', {}).get('range_trading', {})
+        self.enabled = strategy_config.get('enabled', True)
         
         self.support_level = 0.345  # Buy near support
         self.resistance_level = 0.395  # Sell near resistance
@@ -376,18 +383,20 @@ class RangeTradingStrategy(Strategy):
                     logger.warning(f"{self.name}: Max accumulation reached ({self.accumulated_xlm:.2f} XLM)")
                     return None
                 
-                estimated_xlm = self.position_size_usd / current_price
+                position_size_usd = self.position_size_usd
+                estimated_xlm = position_size_usd / current_price
                 if self.accumulated_xlm + estimated_xlm > self.max_accumulation:
                     remaining_capacity = self.max_accumulation - self.accumulated_xlm
                     adjusted_size_usd = remaining_capacity * current_price
                     if adjusted_size_usd < 1.0:
                         logger.warning(f"{self.name}: Remaining capacity too small (${adjusted_size_usd:.2f})")
                         return None
-                    logger.info(f"{self.name}: Adjusted position size from ${self.position_size_usd:.2f} to ${adjusted_size_usd:.2f}")
-                    self.position_size_usd = adjusted_size_usd
-                
+                    logger.info(f"{self.name}: Adjusted position size from ${position_size_usd:.2f} to ${adjusted_size_usd:.2f}")
+                    position_size_usd = adjusted_size_usd
+                    estimated_xlm = position_size_usd / current_price
+
                 logger.info(f"{self.name}: Range buy signal - Price ${current_price:.4f} near support ${self.support_level:.4f}, Accumulated={self.accumulated_xlm:.2f} XLM")
-                result = await self.place_trade("buy", self.position_size_usd, "limit", current_price * 1.0005)
+                result = await self.place_trade("buy", position_size_usd, "limit", current_price * 1.0005)
                 
                 if result:
                     self.accumulated_xlm += estimated_xlm
@@ -431,11 +440,15 @@ class MicroScalpingStrategy(Strategy):
 
     def __init__(self, engine, config):
         super().__init__(engine, config, "MicroScalping")
-        self.target_profit_percent = 0.008  # 0.8% target profit
-        self.max_loss_percent = 0.004  # 0.4% max loss
-        self.position_size_usd = 8.5  # Ensures minimum 20 XLM at current prices
-        self.min_spread_percent = 0.001  # Minimum 0.1% spread to trade
-        self.max_trades_per_hour = 3  # Conservative rate
+        strategy_config = getattr(config, 'strategies', {}).get('micro_scalping', {})
+        self.enabled = strategy_config.get('enabled', True)
+        self.target_profit_percent = strategy_config.get('target_profit_percent', 0.008)
+        self.max_loss_percent = strategy_config.get('max_loss_percent', 0.004)
+        self.position_size_usd = strategy_config.get('position_size_usd', 8.5)
+        self.min_spread_percent = strategy_config.get('min_spread_percent', 0.001)
+        self.max_trades_per_hour = strategy_config.get('max_trades_per_hour', 3)
+        self.max_daily_trades = strategy_config.get('max_daily_trades', self.max_daily_trades)
+        self.enable_above_usd_balance = strategy_config.get('enable_above_usd_balance', 50)
         self.last_hour_trades = []
 
     async def evaluate(self) -> Optional[Dict]:
@@ -527,11 +540,7 @@ class StrategyManager:
     def initialize_strategies(self):
         """Initialize all strategies"""
         try:
-            # Only enable strategies suitable for small balance
-            strategies = [
-                RSIMeanReversionStrategy(self.engine, self.config),
-                RangeTradingStrategy(self.engine, self.config),
-            ]
+            strategies = []
 
             # CRITICAL: Use real-time WebSocket V2 balance (not estimated)
             # Priority: 1. usd_balance (extracted) 2. balance dict 3. fallback
@@ -551,10 +560,23 @@ class StrategyManager:
             else:
                 logger.info(f"Using real-time WebSocket balance: ${usd_balance:.2f}")
 
-            if usd_balance > 50:  # Only scalp with larger balance
-                strategies.append(MicroScalpingStrategy(self.engine, self.config))
-            else:
-                logger.info(f"Skipping micro scalping - balance ${usd_balance:.2f} below $50 threshold")
+            micro_scalping = MicroScalpingStrategy(self.engine, self.config)
+            if micro_scalping.enabled:
+                if usd_balance >= micro_scalping.enable_above_usd_balance:
+                    strategies.append(micro_scalping)
+                else:
+                    logger.info(
+                        f"Skipping micro scalping - balance ${usd_balance:.2f} below "
+                        f"${micro_scalping.enable_above_usd_balance:.2f} threshold"
+                    )
+
+            mean_reversion = RSIMeanReversionStrategy(self.engine, self.config)
+            if mean_reversion.enabled:
+                strategies.append(mean_reversion)
+
+            range_trading = RangeTradingStrategy(self.engine, self.config)
+            if range_trading.enabled:
+                strategies.append(range_trading)
 
             self.strategies = strategies
             logger.info(f"Initialized {len(self.strategies)} trading strategies: {[s.name for s in self.strategies]}")

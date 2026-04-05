@@ -3,14 +3,14 @@ Kraken API Client with full REST API support
 Handles authentication, rate limiting, and error recovery
 """
 
+import base64
 import asyncio
 import hashlib
 import hmac
-import base64
 import time
 import urllib.parse
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Optional
 import aiohttp
 import logging
 from datetime import datetime
@@ -86,7 +86,7 @@ class KrakenClient:
         )
         self._connected = False
         # Cache for ticker data to reduce API calls
-        self._ticker_cache = {}
+        self._ticker_cache: dict[str, tuple[dict[str, Any], datetime]] = {}
         self._cache_ttl = 15  # Cache TTL in seconds
         logger.info(f"Kraken client initialized with circuit breaker protection ({self.key_label} API key)")
 
@@ -120,7 +120,7 @@ class KrakenClient:
         """Generate unique nonce for API calls"""
         return self.nonce_manager.get_nonce()
 
-    def _sign_request(self, urlpath: str, data: Dict[str, Any]) -> str:
+    def _sign_request(self, urlpath: str, data: dict[str, Any]) -> str:
         """Sign request for private endpoints"""
         postdata = urllib.parse.urlencode(data)
         encoded = (str(data['nonce']) + postdata).encode()
@@ -147,21 +147,29 @@ class KrakenClient:
         self,
         endpoint: str,
         private: bool = False,
-        data: Optional[Dict] = None
-    ) -> Dict:
+        data: Optional[dict[str, Any]] = None
+    ) -> dict[str, Any]:
         """Unified API request with circuit breaker protection"""
-        async def api_call():
+        async def api_call() -> dict[str, Any]:
             return await self._execute_request(endpoint, private, data)
         
         # Circuit breaker protects against cascading failures
         return await self.circuit_breaker.call(api_call)
 
-    async def _execute_request(self, endpoint: str, private: bool = False, data: Optional[Dict] = None, retry_count: int = 0) -> Dict:
+    async def _execute_request(
+        self,
+        endpoint: str,
+        private: bool = False,
+        data: Optional[dict[str, Any]] = None,
+        retry_count: int = 0,
+    ) -> dict[str, Any]:
         """Execute API request with retry logic"""
         MAX_RETRIES = 5
 
         if not self.session:
             await self.connect()
+        session = self.session
+        assert session is not None
 
         await self.rate_limiter.acquire()
 
@@ -187,7 +195,9 @@ class KrakenClient:
 
         try:
             timeout = aiohttp.ClientTimeout(total=30)
-            async with self.session.request(method, url, data=data, headers=headers, timeout=timeout) as response:
+            async with session.request(
+                method, url, data=data, headers=headers, timeout=timeout
+            ) as response:
                 result = await response.json()
 
                 if result.get('error'):
@@ -244,11 +254,11 @@ class KrakenClient:
     # Removed _resilient_request - now using unified _request with circuit breaker
 
     # Public endpoints
-    async def get_system_status(self) -> Dict:
+    async def get_system_status(self) -> dict[str, Any]:
         """Get Kraken system status"""
         return await self._request('public/SystemStatus')
 
-    async def get_ticker(self, pair: str) -> Dict:
+    async def get_ticker(self, pair: str) -> dict[str, Any]:
         """Get ticker information with caching"""
         # Check cache first
         cache_key = f'ticker_{pair}'
@@ -268,44 +278,44 @@ class KrakenClient:
 
         return data
 
-    async def get_ohlc(self, pair: str, interval: int = 60) -> Dict:
+    async def get_ohlc(self, pair: str, interval: int = 60) -> dict[str, Any]:
         """Get OHLC data"""
         return await self._request('public/OHLC', data={'pair': pair, 'interval': interval})
 
-    async def get_order_book(self, pair: str, count: int = 100) -> Dict:
+    async def get_order_book(self, pair: str, count: int = 100) -> dict[str, Any]:
         """Get order book"""
         return await self._request('public/Depth', data={'pair': pair, 'count': count})
 
-    async def get_recent_trades(self, pair: str) -> Dict:
+    async def get_recent_trades(self, pair: str) -> dict[str, Any]:
         """Get recent trades"""
         return await self._request('public/Trades', data={'pair': pair})
 
-    async def get_asset_pairs(self) -> Dict:
+    async def get_asset_pairs(self) -> dict[str, Any]:
         """Get tradeable asset pairs"""
         return await self._request('public/AssetPairs')
 
     # Private endpoints
-    async def get_account_balance(self) -> Dict:
+    async def get_account_balance(self) -> dict[str, Any]:
         """Get account balance with enhanced resilience"""
         return await self._request('private/Balance', private=True)
 
-    async def get_trade_balance(self, asset: str = 'USD') -> Dict:
+    async def get_trade_balance(self, asset: str = 'USD') -> dict[str, Any]:
         """Get trade balance"""
         return await self._request('private/TradeBalance', private=True, data={'asset': asset})
 
-    async def get_open_orders(self) -> Dict:
+    async def get_open_orders(self) -> dict[str, Any]:
         """Get open orders with enhanced resilience"""
         return await self._request('private/OpenOrders', private=True)
 
-    async def get_closed_orders(self) -> Dict:
+    async def get_closed_orders(self) -> dict[str, Any]:
         """Get closed orders"""
         return await self._request('private/ClosedOrders', private=True)
 
-    async def get_trades_history(self) -> Dict:
+    async def get_trades_history(self) -> dict[str, Any]:
         """Get trades history"""
         return await self._request('private/TradesHistory', private=True)
 
-    async def get_open_positions(self) -> Dict:
+    async def get_open_positions(self) -> dict[str, Any]:
         """Get open positions"""
         return await self._request('private/OpenPositions', private=True)
 
@@ -315,10 +325,10 @@ class KrakenClient:
         type: str,
         ordertype: str,
         price: Optional[str] = None,
-        volume: str = None,
+        volume: Optional[str] = None,
         leverage: Optional[str] = None,
         validate: bool = False
-    ) -> Dict:
+    ) -> dict[str, Any]:
         """Place new order"""
         data = {
             'pair': pair,
@@ -339,15 +349,24 @@ class KrakenClient:
         logger.info(f"Placing {type} order: {pair} volume={volume} price={'market' if not price else '[SET]'}")
         return await self._request('private/AddOrder', private=True, data=data)
 
-    async def cancel_order(self, txid: str) -> Dict:
+    async def cancel_order(self, txid: str) -> dict[str, Any]:
         """Cancel open order"""
         return await self._request('private/CancelOrder', private=True, data={'txid': txid})
 
-    async def cancel_all_orders(self) -> Dict:
+    async def cancel_all_orders(self) -> dict[str, Any]:
         """Cancel all open orders"""
         return await self._request('private/CancelAll', private=True)
 
-    async def get_websocket_token(self) -> Dict:
+    async def cancel_all_orders_after(self, timeout_seconds: int) -> dict[str, Any]:
+        """Reset or disable Kraken's dead-man-switch order timer."""
+        timeout_seconds = max(0, int(timeout_seconds))
+        return await self._request(
+            'private/CancelAllOrdersAfter',
+            private=True,
+            data={'timeout': timeout_seconds},
+        )
+
+    async def get_websocket_token(self) -> dict[str, Any]:
         """Get WebSocket authentication token for private feeds"""
         return await self._request('private/GetWebSocketsToken', private=True)
 
@@ -358,7 +377,7 @@ class RateLimiter:
     def __init__(self, max_calls: int = 3, period: int = 3):
         self.max_calls = max_calls
         self.period = period
-        self.calls = []
+        self.calls: list[float] = []
         self.lock = asyncio.Lock()
 
     async def acquire(self):

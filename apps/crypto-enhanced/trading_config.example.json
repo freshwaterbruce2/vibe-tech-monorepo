@@ -6,6 +6,7 @@
 		"max_positions": 1,
 		"max_risk_score": 0.6,
 		"min_balance_required": 15,
+		"max_daily_loss_usd": 12,
 		"enhanced": {
 			"enabled": true,
 			"base_kelly_fraction": 0.02,
@@ -32,7 +33,10 @@
 	},
 	"websocket": {
 		"reconnect_interval": 5,
-		"heartbeat_interval": 30
+		"heartbeat_interval": 30,
+		"enable_dead_man_switch": true,
+		"dead_man_switch_timeout_seconds": 60,
+		"dead_man_switch_refresh_seconds": 20
 	},
 	"xlm_specific": {
 		"min_order_size": 20,
@@ -44,7 +48,7 @@
 	},
 	"strategies": {
 		"mean_reversion": {
-			"enabled": true,
+			"enabled": false,
 			"rsi_oversold": 35,
 			"rsi_overbought": 65,
 			"min_profit_target": 0.004,
@@ -53,8 +57,18 @@
 			"entry_levels": 3
 		},
 		"range_trading": {
-			"enabled": true,
+			"enabled": false,
 			"max_position_accumulation_xlm": 40
+		},
+		"micro_scalping": {
+			"enabled": true,
+			"target_profit_percent": 0.008,
+			"max_loss_percent": 0.004,
+			"position_size_usd": 8.5,
+			"min_spread_percent": 0.001,
+			"max_trades_per_hour": 3,
+			"max_daily_trades": 12,
+			"enable_above_usd_balance": 50
 		}
 	}
 }

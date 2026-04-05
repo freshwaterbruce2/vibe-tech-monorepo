@@ -8,21 +8,21 @@
 		"lint": {
 			"executor": "nx:run-commands",
 			"options": {
-				"command": "echo 'lint not applicable: python trading app'",
+				"command": ".venv\\Scripts\\python.exe -m pylint src scripts start_live_trading.py run_tests.py test_credentials.py test_env_keys.py test_nonce_fix.py test_reversal_theory.py",
 				"cwd": "apps/crypto-enhanced"
 			}
 		},
 		"typecheck": {
 			"executor": "nx:run-commands",
 			"options": {
-				"command": "echo 'typecheck not applicable: python trading app'",
+				"command": ".venv\\Scripts\\python.exe -m mypy --config-file mypy.ini",
 				"cwd": "apps/crypto-enhanced"
 			}
 		},
 		"install": {
 			"executor": "nx:run-commands",
 			"options": {
-				"command": "python -m venv .venv && .venv\\Scripts\\pip install -r requirements.txt",
+				"command": "powershell -NoProfile -Command \"if (Get-Command py -ErrorAction SilentlyContinue) { py -3 -m venv .venv } elseif (Get-Command python -ErrorAction SilentlyContinue) { python -m venv .venv } else { throw 'Python launcher not found on PATH' }; .\\.venv\\Scripts\\python.exe -m pip install -r requirements.txt\"",
 				"cwd": "apps/crypto-enhanced"
 			}
 		},

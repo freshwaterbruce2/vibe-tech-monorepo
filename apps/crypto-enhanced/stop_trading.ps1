@@ -116,7 +116,7 @@ if ($remainingProcesses) {
 # Step 4: Cleanup lock files
 Write-Host "`n[STEP 4] Cleaning up lock files..." -ForegroundColor Yellow
 $lockFiles = @(
-    "C:\dev\projects\crypto-enhanced\*.lock*",
+    "C:\dev\apps\crypto-enhanced\*.lock*",
     "$env:TEMP\*trading*.lock*",
     "$env:TEMP\*trading*.pid*",
     "$env:TEMP\*kraken*.lock*"
@@ -147,6 +147,6 @@ Write-Host "  - All trading processes stopped" -ForegroundColor Green
 Write-Host "  - Lock files cleaned" -ForegroundColor Green
 Write-Host "  - System ready for restart" -ForegroundColor Green
 Write-Host ""
-Write-Host "To view session logs: Get-Content trading_new.log -Tail 50" -ForegroundColor Yellow
+Write-Host "To view session logs: Get-Content logs\trading_new.log -Tail 50" -ForegroundColor Yellow
 Write-Host "To restart: .\launch_trading.ps1" -ForegroundColor Yellow
 Write-Host "========================================" -ForegroundColor Cyan

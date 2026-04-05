@@ -73,10 +73,10 @@ class InstanceLockFixed:
         self.pid_file_path = temp_dir / f"{self.full_lock_id}.pid"
 
         # Lock components
-        self.file_lock = None
-        self.legacy_lock_handle = None
-        self.mutex_handle = None
-        self.port_lock = None
+        self.file_lock: Optional[Any] = None
+        self.legacy_lock_handle: Optional[Any] = None
+        self.mutex_handle: Optional[Any] = None
+        self.port_lock: Optional[socket.socket] = None
         self.lock_port = 47777  # Fixed port for all instances
 
         # Enhanced process tracking

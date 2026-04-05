@@ -10,7 +10,7 @@
 
 ```powershell
 # Quick status check (add this to a PowerShell script)
-$logPath = "C:\dev\projects\crypto-enhanced\trading_new.log"
+$logPath = "C:\dev\apps\crypto-enhanced\logs\trading_new.log"
 Write-Host "=== TRADING BOT QUICK STATUS ===" -ForegroundColor Cyan
 Write-Host "Last 5 log entries:" -ForegroundColor Yellow
 Get-Content $logPath -Tail 5

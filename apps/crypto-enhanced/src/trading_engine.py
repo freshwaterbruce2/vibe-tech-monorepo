@@ -116,8 +116,8 @@ class ExposureCache:
     """
 
     def __init__(self, ttl_seconds: int = 5):
-        self._total_exposure_cache = None
-        self._total_exposure_timestamp = None
+        self._total_exposure_cache: Optional[Decimal] = None
+        self._total_exposure_timestamp: Optional[datetime] = None
         self._ttl = ttl_seconds
 
     def get_total_exposure(self, positions: Dict, calculate_func: Callable) -> Decimal:
@@ -143,6 +143,7 @@ class ExposureCache:
             self._total_exposure_cache = calculate_func(positions)
             self._total_exposure_timestamp = now
 
+        assert self._total_exposure_cache is not None
         return self._total_exposure_cache
 
     def invalidate(self):
@@ -241,6 +242,10 @@ class TradingEngine:
         self.strategies = []
         self.risk_manager = RiskManager(config)
         self.last_xlm_trade_time = None
+        self.trading_halted = False
+        self.trading_halt_reason = ""
+        self.session_start_equity = None
+        self._disconnect_orders_cancelled = False
 
         # Optimization components
         self.data_pruner = DataPruner(max_trades=100, max_tickers=50, ttl_hours=24)
@@ -316,6 +321,8 @@ class TradingEngine:
 
                 # Check balance status
                 await self._monitor_balance()
+                await self._monitor_session_loss_limit()
+                await self._guard_pending_orders_on_disconnect()
 
                 # Run strategies (uses WebSocket data)
                 await self._run_strategies()
@@ -431,7 +438,7 @@ class TradingEngine:
     async def _run_strategies(self):
         """Run all active strategies"""
         # Skip if no strategies are configured
-        if not self.strategies:
+        if self.trading_halted or not self.strategies:
             return
 
         # Use strategy manager if available
@@ -612,26 +619,19 @@ class TradingEngine:
         """Monitor account balance and pause trading if too low"""
         balance = self.market_data.get("balance", {})
         usd_balance = float(balance.get("ZUSD", balance.get("USD", 0)))
+        self._capture_session_baseline()
 
         # Critical: Stop trading if below minimum
         min_required = self.config.min_balance_required
         if usd_balance > 0 and usd_balance < min_required:
-            logger.critical(
-                f"CRITICAL: Balance ${usd_balance:.2f} below minimum ${min_required}"
+            await self._halt_trading(
+                (
+                    f"Balance ${usd_balance:.2f} fell below minimum "
+                    f"${min_required:.2f}"
+                ),
+                close_positions=True,
+                cancel_orders=True,
             )
-            logger.critical("Trading suspended due to insufficient funds")
-
-            # Close all positions to preserve capital
-            if self.open_positions:
-                logger.warning("Closing all positions due to low balance")
-                # OPTIMIZED: Use copy() to avoid modification during iteration
-                for position_id in list(self.open_positions.keys()):
-                    await self.close_position(
-                        position_id, reason="Low balance protection"
-                    )
-
-            # Clear strategies to stop new trades
-            self.strategies = []
             return
 
         # Warning: Alert if balance is low
@@ -653,6 +653,107 @@ class TradingEngine:
                             f"Balance ${usd_balance:.2f} may be insufficient "
                             f"for XLM minimum order (${min_order_cost:.2f})"
                         )
+
+    def _capture_session_baseline(self):
+        """Record session starting equity once balance data is available."""
+        if self.session_start_equity is not None:
+            return
+
+        total_portfolio_usd = float(
+            self.get_capital_summary().get("total_portfolio_usd", 0)
+        )
+        if total_portfolio_usd > 0:
+            self.session_start_equity = total_portfolio_usd
+            logger.info(
+                "Session equity baseline captured at $%.2f",
+                self.session_start_equity,
+            )
+
+    async def _monitor_session_loss_limit(self):
+        """Halt trading if the session loses more than the configured guardrail."""
+        if self.trading_halted:
+            return
+
+        max_daily_loss_usd = float(getattr(self.config, "max_daily_loss_usd", 0))
+        if max_daily_loss_usd <= 0:
+            return
+
+        self._capture_session_baseline()
+        if self.session_start_equity is None:
+            return
+
+        current_equity = float(
+            self.get_capital_summary().get("total_portfolio_usd", 0)
+        )
+        if current_equity <= 0:
+            return
+
+        session_loss = self.session_start_equity - current_equity
+        if session_loss >= max_daily_loss_usd:
+            await self._halt_trading(
+                (
+                    f"Session loss ${session_loss:.2f} reached the "
+                    f"${max_daily_loss_usd:.2f} limit"
+                ),
+                close_positions=True,
+                cancel_orders=True,
+            )
+
+    async def _guard_pending_orders_on_disconnect(self):
+        """Fail closed if the private trading channel drops while orders are working."""
+        if getattr(self.websocket, "private_ws", None):
+            self._disconnect_orders_cancelled = False
+            return
+
+        if not self.pending_orders or self._disconnect_orders_cancelled:
+            return
+
+        logger.critical(
+            "Private WebSocket disconnected with %s pending order(s); cancelling all",
+            len(self.pending_orders),
+        )
+        try:
+            await self.cancel_all_orders()
+            self._disconnect_orders_cancelled = True
+        except Exception as e:
+            logger.error(f"Failed to cancel pending orders after disconnect: {e}")
+
+    async def _halt_trading(
+        self,
+        reason: str,
+        close_positions: bool = False,
+        cancel_orders: bool = True,
+    ):
+        """Halt new strategy entries and optionally flatten/cancel the session."""
+        if self.trading_halted:
+            return
+
+        self.trading_halted = True
+        self.trading_halt_reason = reason
+        logger.critical("TRADING HALTED: %s", reason)
+
+        if hasattr(self, "strategy_manager"):
+            self.strategy_manager.enabled = False
+
+        for strategy in self.strategies:
+            strategy.enabled = False
+
+        await self.db.log_event(
+            "trading_halted",
+            reason,
+            severity="CRITICAL",
+            metadata={
+                "close_positions": close_positions,
+                "cancel_orders": cancel_orders,
+            },
+        )
+
+        if cancel_orders and self.pending_orders:
+            await self.cancel_all_orders()
+
+        if close_positions and self.open_positions:
+            for position_id in list(self.open_positions.keys()):
+                await self.close_position(position_id, reason=reason)
 
     def _get_xlm_price(self) -> Optional[float]:
         """Get current XLM price from market data"""
@@ -1054,9 +1155,9 @@ class TradingEngine:
         rest_method: Callable,
         method_name: str,
         ws_args: tuple = (),
-        ws_kwargs: dict = None,
+        ws_kwargs: Optional[Dict[Any, Any]] = None,
         rest_args: tuple = (),
-        rest_kwargs: dict = None,
+        rest_kwargs: Optional[Dict[Any, Any]] = None,
     ) -> Dict:
         """
         DRY pattern for WebSocket operations with REST API fallback

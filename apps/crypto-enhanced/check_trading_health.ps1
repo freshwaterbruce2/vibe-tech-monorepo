@@ -44,8 +44,12 @@ function Get-TradingProcesses {
 }
 
 function Check-NonceErrors {
-    $logFile = "C:\dev\projects\crypto-enhanced\trading_new.log"
-    if (-not (Test-Path $logFile)) {
+    $logCandidates = @(
+        "C:\dev\apps\crypto-enhanced\logs\trading_new.log",
+        "C:\dev\apps\crypto-enhanced\trading_new.log"
+    )
+    $logFile = $logCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if (-not $logFile) {
         return @{HasErrors = $false; Count = 0}
     }
 

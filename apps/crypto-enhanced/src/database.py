@@ -66,10 +66,21 @@ class Database:
                 await self._create_tables()
                 logger.info(f"Database initialized at {self.db_path}")
 
+    async def _get_connection(self) -> aiosqlite.Connection:
+        """Return an initialized database connection."""
+        if not await self.is_connected():
+            await self.initialize()
+
+        assert self.conn is not None
+        return self.conn
+
     async def _create_tables(self):
         """Create database tables"""
+        assert self.conn is not None
+        conn = self.conn
+
         # Orders table
-        await self.conn.execute("""
+        await conn.execute("""
             CREATE TABLE IF NOT EXISTS orders (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 order_id TEXT UNIQUE,
@@ -86,7 +97,7 @@ class Database:
         """)
 
         # Trades table
-        await self.conn.execute("""
+        await conn.execute("""
             CREATE TABLE IF NOT EXISTS trades (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 trade_id TEXT UNIQUE,
@@ -102,7 +113,7 @@ class Database:
         """)
 
         # Positions table
-        await self.conn.execute("""
+        await conn.execute("""
             CREATE TABLE IF NOT EXISTS positions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 position_id TEXT UNIQUE,
@@ -121,7 +132,7 @@ class Database:
         """)
 
         # Market data table
-        await self.conn.execute("""
+        await conn.execute("""
             CREATE TABLE IF NOT EXISTS market_data (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 pair TEXT NOT NULL,
@@ -138,7 +149,7 @@ class Database:
         """)
 
         # Performance metrics table
-        await self.conn.execute("""
+        await conn.execute("""
             CREATE TABLE IF NOT EXISTS performance (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -154,7 +165,7 @@ class Database:
         """)
 
         # System events table
-        await self.conn.execute("""
+        await conn.execute("""
             CREATE TABLE IF NOT EXISTS events (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -166,7 +177,7 @@ class Database:
         """)
 
         # Executions table for WebSocket execution data
-        await self.conn.execute("""
+        await conn.execute("""
             CREATE TABLE IF NOT EXISTS executions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 order_id TEXT,
@@ -190,7 +201,7 @@ class Database:
         """)
 
         # Balance history table for tracking balance changes
-        await self.conn.execute("""
+        await conn.execute("""
             CREATE TABLE IF NOT EXISTS balance_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 usd_balance REAL,
@@ -200,7 +211,7 @@ class Database:
             )
         """)
 
-        await self.conn.commit()
+        await conn.commit()
 
     async def close(self):
         """Close database connection"""
@@ -227,9 +238,9 @@ class Database:
     # Order methods
     async def log_order(self, order_data: Dict):
         """Log order to database - supports both WebSocket V2 and REST API formats"""
-        if not await self.is_connected():
-            await self.initialize()
         try:
+            conn = await self._get_connection()
+
             # Handle both WebSocket V2 format and REST API format
             # WebSocket V2: {symbol, side, order_type, volume, price, order_id, ...}
             # REST API: {txid, descr: {pair, type, ordertype}, vol, price, ...}
@@ -264,7 +275,7 @@ class Database:
             # Extract status
             status = order_data.get('status') or 'new'
 
-            await self.conn.execute("""
+            await conn.execute("""
                 INSERT INTO orders (order_id, pair, side, order_type, volume, price, status, metadata)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (
@@ -277,13 +288,14 @@ class Database:
                 status,
                 json.dumps(order_data)
             ))
-            await self.conn.commit()
+            await conn.commit()
         except Exception as e:
             logger.error(f"Failed to log order: {e}")
 
     async def get_orders(self, limit: int = 100) -> List[Dict]:
         """Get recent orders"""
-        cursor = await self.conn.execute("""
+        conn = await self._get_connection()
+        cursor = await conn.execute("""
             SELECT * FROM orders
             ORDER BY created_at DESC
             LIMIT ?
@@ -297,10 +309,9 @@ class Database:
     # Trade methods
     async def log_trade(self, trade_data: Dict):
         """Log trade to database"""
-        if not await self.is_connected():
-            await self.initialize()
         try:
-            await self.conn.execute("""
+            conn = await self._get_connection()
+            await conn.execute("""
                 INSERT INTO trades (trade_id, order_id, pair, side, price, volume, fee, executed_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (
@@ -313,21 +324,22 @@ class Database:
                 trade_data.get('fee'),
                 normalize_timestamp(trade_data.get('time'))
             ))
-            await self.conn.commit()
+            await conn.commit()
         except Exception as e:
             logger.error(f"Failed to log trade: {e}")
 
     async def get_trades(self, pair: Optional[str] = None, limit: int = 100) -> List[Dict]:
         """Get recent trades"""
+        conn = await self._get_connection()
         if pair:
-            cursor = await self.conn.execute("""
+            cursor = await conn.execute("""
                 SELECT * FROM trades
                 WHERE pair = ?
                 ORDER BY executed_at DESC
                 LIMIT ?
             """, (pair, limit))
         else:
-            cursor = await self.conn.execute("""
+            cursor = await conn.execute("""
                 SELECT * FROM trades
                 ORDER BY executed_at DESC
                 LIMIT ?
@@ -341,10 +353,9 @@ class Database:
     # Position methods
     async def log_position(self, position_data: Dict):
         """Log position to database"""
-        if not await self.is_connected():
-            await self.initialize()
         try:
-            await self.conn.execute("""
+            conn = await self._get_connection()
+            await conn.execute("""
                 INSERT INTO positions (position_id, pair, side, entry_price, volume, stop_loss, take_profit, status, metadata)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
@@ -358,32 +369,32 @@ class Database:
                 position_data.get('status', 'open'),
                 json.dumps(position_data)
             ))
-            await self.conn.commit()
+            await conn.commit()
         except Exception as e:
             logger.error(f"Failed to log position: {e}")
 
     async def update_position(self, position_id: str, updates: Dict):
         """Update position"""
         try:
+            conn = await self._get_connection()
             set_clause = ", ".join(f"{k} = ?" for k in updates.keys())
             values = list(updates.values()) + [position_id]
 
-            await self.conn.execute(f"""
+            await conn.execute(f"""
                 UPDATE positions
                 SET {set_clause}, updated_at = CURRENT_TIMESTAMP
                 WHERE position_id = ?
             """, values)
-            await self.conn.commit()
+            await conn.commit()
         except Exception as e:
             logger.error(f"Failed to update position: {e}")
 
     # Market data methods
     async def log_market_data(self, pair: str, data: Dict):
         """Log market data"""
-        if not await self.is_connected():
-            await self.initialize()
         try:
-            await self.conn.execute("""
+            conn = await self._get_connection()
+            await conn.execute("""
                 INSERT INTO market_data (pair, timestamp, open, high, low, close, volume, bid, ask)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
@@ -397,17 +408,16 @@ class Database:
                 data.get('bid'),
                 data.get('ask')
             ))
-            await self.conn.commit()
+            await conn.commit()
         except Exception as e:
             logger.error(f"Failed to log market data: {e}")
 
     # Performance methods
     async def log_performance(self, metrics: Dict):
         """Log performance metrics"""
-        if not await self.is_connected():
-            await self.initialize()
         try:
-            await self.conn.execute("""
+            conn = await self._get_connection()
+            await conn.execute("""
                 INSERT INTO performance (total_pnl, win_rate, sharpe_ratio, max_drawdown, total_trades, winning_trades, losing_trades, metadata)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (
@@ -420,13 +430,14 @@ class Database:
                 metrics.get('losing_trades'),
                 json.dumps(metrics)
             ))
-            await self.conn.commit()
+            await conn.commit()
         except Exception as e:
             logger.error(f"Failed to log performance: {e}")
 
     async def get_performance_metrics(self) -> Dict:
         """Get latest performance metrics"""
-        cursor = await self.conn.execute("""
+        conn = await self._get_connection()
+        cursor = await conn.execute("""
             SELECT * FROM performance
             ORDER BY timestamp DESC
             LIMIT 1
@@ -441,10 +452,9 @@ class Database:
     # Event methods
     async def log_event(self, event_type: str, message: str, severity: str = "INFO", metadata: Optional[Dict] = None):
         """Log system event"""
-        if not await self.is_connected():
-            await self.initialize()
         try:
-            await self.conn.execute("""
+            conn = await self._get_connection()
+            await conn.execute("""
                 INSERT INTO events (event_type, severity, message, metadata)
                 VALUES (?, ?, ?, ?)
             """, (
@@ -453,21 +463,22 @@ class Database:
                 message,
                 json.dumps(metadata) if metadata else None
             ))
-            await self.conn.commit()
+            await conn.commit()
         except Exception as e:
             logger.error(f"Failed to log event: {e}")
 
     async def get_events(self, event_type: Optional[str] = None, limit: int = 100) -> List[Dict]:
         """Get recent events"""
+        conn = await self._get_connection()
         if event_type:
-            cursor = await self.conn.execute("""
+            cursor = await conn.execute("""
                 SELECT * FROM events
                 WHERE event_type = ?
                 ORDER BY timestamp DESC
                 LIMIT ?
             """, (event_type, limit))
         else:
-            cursor = await self.conn.execute("""
+            cursor = await conn.execute("""
                 SELECT * FROM events
                 ORDER BY timestamp DESC
                 LIMIT ?
@@ -481,10 +492,9 @@ class Database:
     # Execution methods
     async def log_execution(self, execution_data: Dict):
         """Log execution data from WebSocket"""
-        if not await self.is_connected():
-            await self.initialize()
         try:
-            await self.conn.execute("""
+            conn = await self._get_connection()
+            await conn.execute("""
                 INSERT INTO executions (
                     order_id, exec_id, exec_type, trade_id, symbol, side,
                     last_qty, last_price, liquidity_ind, cost, order_userref,
@@ -509,26 +519,26 @@ class Database:
                 normalize_timestamp(execution_data.get('timestamp')),
                 json.dumps(execution_data)
             ))
-            await self.conn.commit()
+            await conn.commit()
         except Exception as e:
             logger.error(f"Failed to log execution: {e}")
 
     async def log_balance(self, usd_balance: float, xlm_balance: float, source: str = "websocket"):
         """Log balance update"""
-        if not await self.is_connected():
-            await self.initialize()
         try:
-            await self.conn.execute("""
+            conn = await self._get_connection()
+            await conn.execute("""
                 INSERT INTO balance_history (usd_balance, xlm_balance, source)
                 VALUES (?, ?, ?)
             """, (usd_balance, xlm_balance, source))
-            await self.conn.commit()
+            await conn.commit()
         except Exception as e:
             logger.error(f"Failed to log balance: {e}")
 
     async def get_recent_executions(self, limit: int = 100) -> List[Dict]:
         """Get recent execution data"""
-        cursor = await self.conn.execute("""
+        conn = await self._get_connection()
+        cursor = await conn.execute("""
             SELECT * FROM executions
             ORDER BY created_at DESC
             LIMIT ?
@@ -542,12 +552,13 @@ class Database:
     async def get_daily_pnl(self) -> float:
         """Calculate daily P&L from closed positions today"""
         try:
+            conn = await self._get_connection()
             # Get today's date at midnight
             today_start = datetime.now().replace(
                 hour=0, minute=0, second=0, microsecond=0
             ).isoformat()
 
-            cursor = await self.conn.execute("""
+            cursor = await conn.execute("""
                 SELECT COALESCE(SUM(pnl), 0) as daily_pnl
                 FROM positions
                 WHERE status = 'closed'

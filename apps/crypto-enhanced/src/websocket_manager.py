@@ -13,6 +13,8 @@ from datetime import datetime
 from timestamp_utils import TimestampUtils, normalize as normalize_timestamp
 from errors_simple import WebSocketError, log_error
 
+logger = logging.getLogger(__name__)
+
 # Import learning system integration for error prevention
 try:
     from learning_integration import (
@@ -22,8 +24,6 @@ try:
 except ImportError:
     PREVENTION_AVAILABLE = False
     logger.warning("Learning system not available - validation disabled")
-
-logger = logging.getLogger(__name__)
 
 
 class WebSocketManager:
@@ -46,6 +46,7 @@ class WebSocketManager:
         self.ws_token = None
         self.ws_token_timestamp = None  # Track when token was created
         self.token_refresh_task = None  # Background token refresh task
+        self.dead_man_switch_task = None
         self._private_channel_failed = False  # Track if private channels are unavailable
 
         # WebSocket V2 2025 compliance
@@ -126,7 +127,16 @@ class WebSocketManager:
         
         if self.token_refresh_task and not self.token_refresh_task.done():
             tasks_to_cancel.append(self.token_refresh_task)
-        
+
+        if self.dead_man_switch_task and not self.dead_man_switch_task.done():
+            tasks_to_cancel.append(self.dead_man_switch_task)
+
+        if self.config.enable_dead_man_switch and self.kraken:
+            try:
+                await self._set_dead_man_switch_timeout(0)
+            except Exception as e:
+                logger.warning(f"Failed to disable dead-man switch during shutdown: {e}")
+
         # Cancel all tasks
         for task in tasks_to_cancel:
             task.cancel()
@@ -349,6 +359,17 @@ class WebSocketManager:
                     self._token_refresh_monitor()
                 )
 
+                if (
+                    self.config.enable_dead_man_switch
+                    and (
+                        not self.dead_man_switch_task
+                        or self.dead_man_switch_task.done()
+                    )
+                ):
+                    self.dead_man_switch_task = asyncio.create_task(
+                        self._dead_man_switch_monitor()
+                    )
+
             except Exception as e:
                 logger.error(f"Failed to get WebSocket token: {e}")
                 logger.warning("Will continue with public data only - trading may be limited")
@@ -423,6 +444,37 @@ class WebSocketManager:
         except Exception as e:
             logger.error(f"Failed to refresh WebSocket token: {e}")
             # Don't clear the current token if refresh fails - keep the connection alive
+
+    async def _set_dead_man_switch_timeout(self, timeout_seconds: int):
+        """Arm or disable Kraken's dead-man switch timer."""
+        if not self.kraken:
+            return
+
+        timeout_seconds = max(0, int(timeout_seconds))
+        await self.kraken.cancel_all_orders_after(timeout_seconds)
+        if timeout_seconds == 0:
+            logger.info("Dead-man switch disabled")
+        else:
+            logger.info("Dead-man switch armed for %ss", timeout_seconds)
+
+    async def _dead_man_switch_monitor(self):
+        """Keep Kraken's dead-man switch armed while private trading channels are healthy."""
+        refresh_seconds = max(5, int(self.config.dead_man_switch_refresh_seconds))
+        timeout_seconds = max(
+            refresh_seconds + 5,
+            int(self.config.dead_man_switch_timeout_seconds),
+        )
+
+        while self.running and self.config.enable_dead_man_switch:
+            try:
+                if self.private_ws and self.ws_token:
+                    await self._set_dead_man_switch_timeout(timeout_seconds)
+                await asyncio.sleep(refresh_seconds)
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Dead-man switch refresh failed: {e}", exc_info=True)
+                await asyncio.sleep(refresh_seconds)
 
     async def _subscribe_public_channels(self):
         """Subscribe to public channels with detailed logging"""
@@ -526,6 +578,9 @@ class WebSocketManager:
     async def _handle_heartbeat(self, data: Dict, is_private: bool):
         """Handle heartbeat message"""
         ws = self.private_ws if is_private else self.public_ws
+        if ws is None:
+            logger.warning("Heartbeat received without an active websocket")
+            return
         pong = {"method": "pong"}
         await ws.send(json.dumps(pong))
 
