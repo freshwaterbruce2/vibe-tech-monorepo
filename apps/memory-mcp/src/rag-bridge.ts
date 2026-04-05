@@ -55,6 +55,9 @@ function getConfig(): RAGConfig {
     chunkOverlapTokens: 64,
     cacheTtlMs: 60 * 60 * 1000,
     autoIndexIntervalMs: 15 * 60 * 1000,
+    searchPoolSize: 5,
+    hydeEnabled: false,
+    hydeModel: 'gpt-3.5-turbo',
     indexPaths: process.env.RAG_INDEX_PATHS
       ? process.env.RAG_INDEX_PATHS.split(',').map((p) => p.trim())
       : ['apps/', 'packages/', 'backend/'],
