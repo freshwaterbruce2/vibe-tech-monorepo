@@ -88,43 +88,8 @@ try {
     $LogEntry = "[$Timestamp] [POST-TOOL] Tool: $toolName | Status: $statusText | Duration: $executionTime`s | Session: $sessionId | Project: $project"
     Add-Content -Path $LogFile -Value $LogEntry -ErrorAction SilentlyContinue
 
-    # Write to learning database via Python (non-blocking, fire-and-forget)
-    if ($executionTime -ne $null) {
-        $pythonScript = @"
-import sys
-import json
-sys.path.insert(0, r'$LearningSystemPath')
-from learning_engine import SimpleLearningEngine
-
-try:
-    engine = SimpleLearningEngine()
-    engine.learn_from_execution(
-        agent_name='claude-code',
-        task_type='$taskType',
-        success=$($success.ToString().ToLower()),
-        tools_used=['$toolName'],
-        execution_time=$executionTime,
-        error_message=$(if ($errorMessage) { "'$($errorMessage -replace "'", "\'")'" } else { "None" }),
-        project=$(if ($project) { "'$project'" } else { "None" })
-    )
-except Exception as e:
-    # Silent failure - don't block hook
-    pass
-"@
-
-        # Execute Python asynchronously (don't wait for completion)
-        $pythonScriptPath = Join-Path $env:TEMP "learning_hook_$((Get-Date).Ticks).py"
-        $pythonScript | Out-File -FilePath $pythonScriptPath -Encoding UTF8 -Force
-
-        Start-Process -FilePath $PythonExe -ArgumentList $pythonScriptPath -WindowStyle Hidden -NoNewWindow -ErrorAction SilentlyContinue
-
-        # Cleanup temp script after 5 seconds (background job)
-        Start-Job -ScriptBlock {
-            param($path)
-            Start-Sleep -Seconds 5
-            Remove-Item -Path $path -Force -ErrorAction SilentlyContinue
-        } -ArgumentList $pythonScriptPath | Out-Null
-    }
+    # Note: Per-tool learning DB writes superseded by record-agent-execution.ps1
+    # (PostToolUse hook matching Agent tool). See .claude/hooks/record-agent-execution.ps1
 
 } catch {
     # Log parsing error but don't block cleanup

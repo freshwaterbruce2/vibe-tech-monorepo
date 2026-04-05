@@ -99,51 +99,13 @@
     "puppeteer"
   ],
   "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File C:\\dev\\.claude\\hooks\\log-bash-command.ps1",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File C:\\dev\\.claude\\hooks\\clear-git-lock.ps1",
-            "timeout": 3
-          }
-        ]
-      },
-      {
-        "matcher": "mcp__plugin_serena_serena__.*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File C:\\dev\\.claude\\hooks\\clear-git-lock.ps1",
-            "timeout": 3
-          }
-        ]
-      }
-    ],
     "PostToolUse": [
       {
-        "matcher": "Write|Edit",
+        "matcher": "Agent",
         "hooks": [
           {
             "type": "command",
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File C:\\dev\\.claude\\hooks\\eslint-autofix.ps1",
-            "timeout": 15
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File C:\\dev\\.claude\\hooks\\typescript-check.ps1",
-            "timeout": 30
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/record-agent-execution.ps1"
           }
         ]
       }
