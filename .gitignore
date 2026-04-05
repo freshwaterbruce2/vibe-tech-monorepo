@@ -62,7 +62,6 @@ npm-shrinkwrap.json
 .codex-home/
 .agent/
 .agents/
-.codeberg/
 .git-archive-*/
 .codex-readiness-integration-test/
 .playwright-cli/
@@ -117,6 +116,7 @@ node_modules/.vite/
 # Test coverage
 coverage/
 *.lcov
+*.coverage
 .nyc_output
 
 # Temporary files
@@ -220,7 +220,6 @@ apps/nova-agent/src-tauri/tauri.conf.backup.json
 
 # Deprecated file backups
 *.deprecated
-projects/active/desktop-apps/nova-agent-snapshots/archived-2025-10-04/web/styles/vibetech-theme.css
 
 # Playwright
 /playwright-report/
@@ -283,4 +282,13 @@ apps/vibe-justice/dist_v6/
 
 # Electron build output
 apps/vibe-tutor/release/
+
+# Archive (moved to D:\archive)
+archive/
+
+# Crypto-enhanced temp files
+apps/crypto-enhanced/tmp-*
+
+# Stale project directories
+projects/
 
