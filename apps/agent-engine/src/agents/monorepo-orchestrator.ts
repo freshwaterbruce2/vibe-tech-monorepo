@@ -21,6 +21,25 @@ export interface OrchestrationResult {
   summary: string;
 }
 
+async function fetchLearningContext(memory: MemoryClient): Promise<string> {
+  try {
+    const patterns = memory.search('success pattern', { kind: 'semantic', limit: 5 });
+    const mistakes = memory.search('agent mistake', { kind: 'semantic', limit: 5 });
+    const lines: string[] = [];
+    if (patterns.length > 0) {
+      lines.push('Known success patterns:');
+      for (const p of patterns) lines.push(`  - ${p.title}: ${p.text.slice(0, 120)}`);
+    }
+    if (mistakes.length > 0) {
+      lines.push('Known mistakes to avoid:');
+      for (const m of mistakes) lines.push(`  - ${m.title}: ${m.text.slice(0, 120)}`);
+    }
+    return lines.join('\n');
+  } catch {
+    return '';
+  }
+}
+
 export async function orchestrateMonorepo(
   goal: string,
   affectedProjects?: string[],
@@ -30,6 +49,12 @@ export async function orchestrateMonorepo(
   const memory = new MemoryClient();
   const executor = new ExecutionService(provider);
   const { tasks } = router.route(goal, affectedProjects);
+
+  // Inject learning context for better decision-making
+  const learningContext = await fetchLearningContext(memory);
+  if (learningContext) {
+    console.error(`[orchestrator] Learning context loaded (${learningContext.length} chars)`);
+  }
 
   if (tasks.length === 0) {
     return buildResult(goal, 0, []);
@@ -91,12 +116,13 @@ export async function orchestrateMonorepo(
   await memory.add({
     kind: 'episodic',
     title: `Monorepo orchestration: ${goal.slice(0, 80)}`,
-    text: `${succeeded.length}/${projectResults.length} projects succeeded in ${iterations} iterations.`,
+    text: `${succeeded.length}/${projectResults.length} projects succeeded in ${iterations} iterations.${learningContext ? '\n\nLearning context was applied.' : ''}`,
     tags: ['orchestration'],
     metadata: {
       goal,
       iterations,
       failedProjects: failed.map((r) => r.project),
+      learningContextApplied: Boolean(learningContext),
     },
   });
 

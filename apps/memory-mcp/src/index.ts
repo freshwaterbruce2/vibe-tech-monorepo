@@ -122,7 +122,7 @@ async function main() {
 
     // Initialize learning bridge (L4: uses env var for DB path)
     try {
-      const learningDbPath = process.env.LEARNING_DB_PATH ?? 'D:\\databases\\nova_shared.db';
+      const learningDbPath = process.env.LEARNING_DB_PATH ?? 'D:\\databases\\agent_learning.db';
       learningBridge = new LearningBridge(memoryManager, learningDbPath);
       console.error(`[memory-mcp] Learning bridge connected: ${learningDbPath}`);
     } catch (err) {
@@ -140,6 +140,7 @@ async function main() {
       console.error(`[memory-mcp] Summarizer + decay ready (LLM: ${llm ? 'yes' : 'extractive'})`);
 
       // Phase 5: Auto-consolidation piggybacked on decay timer
+      // Phase 6: Periodic learning sync piggybacked on the same timer
       if (decay && summarizer) {
         const EPISODIC_THRESHOLD = 500;
 
@@ -163,9 +164,26 @@ async function main() {
           } catch (consErr) {
             console.error('[memory-mcp] Auto-consolidation failed:', consErr);
           }
+
+          // Periodic learning sync — ingest new learning data each decay cycle
+          if (learningBridge) {
+            learningBridge.syncFromLearningSystem().then((syncResult) => {
+              const total = syncResult.executionsIngested + syncResult.patternsIngested + syncResult.mistakesIngested;
+              if (total > 0) {
+                console.error(
+                  `[memory-mcp] Learning sync: ${syncResult.executionsIngested} executions, ${syncResult.patternsIngested} patterns, ${syncResult.mistakesIngested} mistakes`,
+                );
+              }
+            }).catch((syncErr: unknown) => {
+              console.error('[memory-mcp] Learning sync failed:', syncErr);
+            });
+          }
         });
 
         console.error(`[memory-mcp] Auto-consolidation enabled (threshold: ${EPISODIC_THRESHOLD} episodic)`);
+        if (learningBridge) {
+          console.error('[memory-mcp] Periodic learning sync enabled (runs on decay timer)');
+        }
       }
     } catch (err) {
       console.error('[memory-mcp] Summarizer/decay init failed (non-fatal):', err);

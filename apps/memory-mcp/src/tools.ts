@@ -577,6 +577,77 @@ export const tools: Tool[] = [
       properties: {},
     },
   },
+  {
+    name: 'memory_learning_write_pattern',
+    description:
+      'Write a discovered success pattern back to the learning database. Upserts by type+description.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        type: {
+          type: 'string',
+          description: 'Pattern type/category (e.g., "lint-fix", "dependency-resolution")',
+        },
+        description: {
+          type: 'string',
+          description: 'Human-readable description of the successful pattern/approach',
+        },
+        confidence: {
+          type: 'number',
+          description: 'Confidence score 0.0-1.0 (default: 0.7)',
+          default: 0.7,
+        },
+        metadata: {
+          type: 'object',
+          description: 'Optional metadata (project, tools used, etc.)',
+        },
+      },
+      required: ['type', 'description'],
+    },
+  },
+  {
+    name: 'memory_learning_record_execution',
+    description:
+      'Record an agent execution in the learning database for tracking performance over time.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        agentId: {
+          type: 'string',
+          description: 'Agent identifier (e.g., "monorepo-orchestrator", "claude-code")',
+        },
+        taskType: {
+          type: 'string',
+          description: 'Type of task performed (e.g., "lint-fix", "feature-implementation")',
+        },
+        projectName: {
+          type: 'string',
+          description: 'Project name if applicable',
+        },
+        toolsUsed: {
+          type: 'string',
+          description: 'Comma-separated list of tools used',
+        },
+        success: {
+          type: 'boolean',
+          description: 'Whether the execution succeeded',
+        },
+        executionTimeMs: {
+          type: 'number',
+          description: 'Execution time in milliseconds',
+        },
+        errorMessage: {
+          type: 'string',
+          description: 'Error message if failed',
+        },
+        context: {
+          type: 'string',
+          description: 'Brief description of what was done',
+        },
+      },
+      required: ['agentId', 'taskType', 'success'],
+    },
+  },
   // RAG Pipeline Integration (WS5)
   {
     name: 'memory_rag_search',

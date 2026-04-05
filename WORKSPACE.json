@@ -258,11 +258,6 @@
         "priority": "high",
         "description": "Nova database layer"
       },
-      "db-learning": {
-        "status": "production",
-        "priority": "critical",
-        "description": "Learning system database"
-      },
       "db-app": {
         "status": "production",
         "priority": "medium",

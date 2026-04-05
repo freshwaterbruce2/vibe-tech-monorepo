@@ -61,6 +61,41 @@ export async function handleLearning(
       return { content: [{ type: 'text', text: JSON.stringify(health, null, 2) }] };
     }
 
+    case 'memory_learning_write_pattern': {
+      if (!learningBridge) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: 'Learning bridge not available' }) }], isError: true };
+      }
+      const { type: patternType, description: patternDesc, confidence = 0.7, metadata: patternMeta } = args as {
+        type: string; description: string; confidence?: number; metadata?: Record<string, unknown>;
+      };
+      if (!patternType || !patternDesc) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: 'type and description are required' }) }], isError: true };
+      }
+      const written = learningBridge.writeBackPattern({
+        type: patternType,
+        description: patternDesc,
+        confidence,
+        metadata: patternMeta,
+      });
+      return { content: [{ type: 'text', text: JSON.stringify({ success: written, patternType, confidence }) }] };
+    }
+
+    case 'memory_learning_record_execution': {
+      if (!learningBridge) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: 'Learning bridge not available' }) }], isError: true };
+      }
+      const execArgs = args as {
+        agentId: string; projectName?: string; taskType: string;
+        toolsUsed?: string; success: boolean; executionTimeMs?: number;
+        errorMessage?: string; context?: string;
+      };
+      if (!execArgs.agentId || !execArgs.taskType) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: 'agentId and taskType are required' }) }], isError: true };
+      }
+      const recorded = learningBridge.recordExecution(execArgs);
+      return { content: [{ type: 'text', text: JSON.stringify({ success: recorded, agentId: execArgs.agentId, taskType: execArgs.taskType }) }] };
+    }
+
     // ── RAG Pipeline ──────────────
     case 'memory_rag_search': {
       const { query, limit = 5, fileTypes, pathPrefix } = args as {
