@@ -1,6 +1,5 @@
 interface Window {
   // Custom Vibe Tutor globals
-  addBlakeTokens?: (amount: number, reason: string) => void;
   __JAMENDO_CLIENT_ID__?: string;
 
   // Experimental Web Speech API

@@ -139,12 +139,12 @@ export default function BossBattleGame({ subject, onComplete, onBack }: BossBatt
         <p>Your {bossDef.subjectWeakness.replace('Power', '')} multiplier is <strong>x{damageMultiplier}</strong> based on your gear.</p>
         <button 
           onClick={handleStart}
-          style={{ background: '#ef4444', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '8px', fontSize: '18px', cursor: 'pointer', marginTop: '20px' }}>
+          style={{ background: 'var(--error-accent)', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '8px', fontSize: '18px', cursor: 'pointer', marginTop: '20px' }}>
           Engage in Battle!
         </button>
         <button 
           onClick={onBack}
-          style={{ background: 'transparent', color: '#94a3b8', border: '1px solid #94a3b8', padding: '12px 24px', borderRadius: '8px', fontSize: '18px', cursor: 'pointer', marginTop: '20px', marginLeft: '12px' }}>
+          style={{ background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--text-secondary)', padding: '12px 24px', borderRadius: '8px', fontSize: '18px', cursor: 'pointer', marginTop: '20px', marginLeft: '12px' }}>
           Flee
         </button>
       </div>
@@ -170,11 +170,11 @@ export default function BossBattleGame({ subject, onComplete, onBack }: BossBatt
     return (
       <div style={{ textAlign: 'center', color: 'white', padding: '40px' }}>
         <h1 style={{ fontSize: '64px', margin: 0 }}>💀</h1>
-        <h2 style={{ color: '#ef4444' }}>You were defeated...</h2>
+        <h2 style={{ color: 'var(--error-accent)' }}>You were defeated...</h2>
         <p>Buy better gear in the Avatar Shop to increase your damage multiplier!</p>
         <button 
           onClick={() => finishGame(false)}
-          style={{ background: '#ef4444', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '8px', fontSize: '18px', cursor: 'pointer', marginTop: '20px' }}>
+          style={{ background: 'var(--error-accent)', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '8px', fontSize: '18px', cursor: 'pointer', marginTop: '20px' }}>
           Retreat
         </button>
       </div>
@@ -188,21 +188,21 @@ export default function BossBattleGame({ subject, onComplete, onBack }: BossBatt
       {/* Left Column: Combat UI & Question */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Boss Display */}
-        <div style={{ background: '#450a0a', padding: '20px', borderRadius: '16px', textAlign: 'center', border: '2px solid #ef4444' }}>
+        <div style={{ background: '#450a0a', padding: '20px', borderRadius: '16px', textAlign: 'center', border: '2px solid var(--error-accent)' }}>
           <div style={{ fontSize: '64px', marginBottom: '10px' }}>{bossDef.imageUrl}</div>
           <h3 style={{ margin: 0, color: '#fca5a5' }}>{bossDef.name}</h3>
           
           <div style={{ background: '#000', margin: '16px auto', width: '80%', height: '20px', borderRadius: '10px', overflow: 'hidden' }}>
-            <div style={{ width: `${(bossHp / bossDef.maxHp) * 100}%`, height: '100%', background: '#ef4444', transition: 'width 0.3s' }} />
+            <div style={{ width: `${(bossHp / bossDef.maxHp) * 100}%`, height: '100%', background: 'var(--error-accent)', transition: 'width 0.3s' }} />
           </div>
           <p style={{ margin: 0, fontSize: '14px' }}>HP: {bossHp} / {bossDef.maxHp}</p>
         </div>
 
         {/* Question Panel */}
-        <div style={{ background: '#1e293b', padding: '24px', borderRadius: '16px' }}>
+        <div style={{ background: 'var(--background-surface)', padding: '24px', borderRadius: '16px' }}>
           {currentQ ? (
             <>
-              <h4 style={{ color: '#94a3b8', margin: '0 0 12px 0' }}>Question {currentQIndex + 1}</h4>
+              <h4 style={{ color: 'var(--text-secondary)', margin: '0 0 12px 0' }}>Question {currentQIndex + 1}</h4>
               <p style={{ fontSize: '18px', marginBottom: '24px' }}>{currentQ.question}</p>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -210,7 +210,7 @@ export default function BossBattleGame({ subject, onComplete, onBack }: BossBatt
                   <button 
                     key={idx}
                     onClick={() => handleAnswer(idx)}
-                    style={{ background: '#334155', color: 'white', padding: '12px', border: '1px solid #475569', borderRadius: '8px', cursor: 'pointer', textAlign: 'left' }}
+                    style={{ background: 'var(--text-placeholder)', color: 'white', padding: '12px', border: '1px solid var(--text-tertiary)', borderRadius: '8px', cursor: 'pointer', textAlign: 'left' }}
                   >
                     {opt}
                   </button>
@@ -220,7 +220,7 @@ export default function BossBattleGame({ subject, onComplete, onBack }: BossBatt
                   <button 
                     key={opt}
                     onClick={() => handleAnswer(opt)}
-                    style={{ background: '#334155', color: 'white', padding: '12px', border: '1px solid #475569', borderRadius: '8px', cursor: 'pointer' }}
+                    style={{ background: 'var(--text-placeholder)', color: 'white', padding: '12px', border: '1px solid var(--text-tertiary)', borderRadius: '8px', cursor: 'pointer'}}
                   >
                     {opt}
                   </button>
@@ -232,14 +232,14 @@ export default function BossBattleGame({ subject, onComplete, onBack }: BossBatt
                       type="text" 
                       id="fill-ans"
                       placeholder="Type answer..." 
-                      style={{ flexGrow: 1, background: '#0f172a', border: '1px solid #475569', color: 'white', padding: '12px', borderRadius: '8px' }}
+                      style={{ flexGrow: 1, background: 'var(--background-card)', border: '1px solid var(--text-tertiary)', color: 'white', padding: '12px', borderRadius: '8px' }}
                     />
                     <button 
                       onClick={() => {
                         const val = (document.getElementById('fill-ans') as HTMLInputElement).value;
                         if(val) handleAnswer(val);
                       }}
-                      style={{ background: '#3b82f6', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+                      style={{ background: 'var(--primary-accent)', color: 'white', padding: '12px 24px', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
                     >
                       Attack!
                     </button>
@@ -256,7 +256,7 @@ export default function BossBattleGame({ subject, onComplete, onBack }: BossBatt
       {/* Right Column: Player Stats & Combat Log */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Player Plate */}
-        <div style={{ background: '#0f172a', padding: '16px', borderRadius: '16px', border: '2px solid #3b82f6' }}>
+        <div style={{ background: 'var(--background-card)', padding: '16px', borderRadius: '16px', border: '2px solid var(--primary-accent)' }}>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px' }}>
             <div style={{ background: '#1e3a8a', padding: '8px', borderRadius: '50%' }}>
               <Shield size={24} color="#60a5fa" />
@@ -265,15 +265,15 @@ export default function BossBattleGame({ subject, onComplete, onBack }: BossBatt
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <Heart size={16} color="#ef4444" fill="#ef4444" />
+            <Heart size={16} color="var(--error-accent)" fill="var(--error-accent)" />
             <div style={{ flexGrow: 1, background: '#000', height: '14px', borderRadius: '7px', overflow: 'hidden' }}>
               <div style={{ width: `${(playerHp / PLAYER_MAX_HP) * 100}%`, height: '100%', background: '#c084fc', transition: 'width 0.3s' }} />
             </div>
           </div>
-          <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8', textAlign: 'right' }}>HP: {playerHp} / {PLAYER_MAX_HP}</p>
+          <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'right' }}>HP: {playerHp} / {PLAYER_MAX_HP}</p>
           
-          <div style={{ marginTop: '16px', padding: '8px', background: '#1e293b', borderRadius: '8px' }}>
-            <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#94a3b8' }}>DAMAGE MULTIPLIER</p>
+          <div style={{ marginTop: '16px', padding: '8px', background: 'var(--background-surface)', borderRadius: '8px' }}>
+            <p style={{ margin: '0 0 4px 0', fontSize: '12px', color: 'var(--text-secondary)' }}>DAMAGE MULTIPLIER</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#fcd34d' }}>
               <Zap size={16} fill="#fcd34d" />
               <strong>x{damageMultiplier}.0</strong>
@@ -282,8 +282,8 @@ export default function BossBattleGame({ subject, onComplete, onBack }: BossBatt
         </div>
 
         {/* Combat Log */}
-        <div style={{ background: '#0f172a', padding: '16px', borderRadius: '16px', flexGrow: 1 }}>
-          <h4 style={{ margin: '0 0 12px 0', color: '#94a3b8' }}>Battle Log</h4>
+        <div style={{ background: 'var(--background-card)', padding: '16px', borderRadius: '16px', flexGrow: 1 }}>
+          <h4 style={{ margin: '0 0 12px 0', color: 'var(--text-secondary)' }}>Battle Log</h4>
           <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {combatLog.map((log, i) => (
               <div key={i} style={{ color: i === 0 ? 'white' : '#64748b' }}>

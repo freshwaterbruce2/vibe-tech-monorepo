@@ -262,4 +262,55 @@ export async function breakDownTask(task: string): Promise<string[]> {
   }
 }
 
+/**
+ * Generate an ADHD-optimized afternoon schedule suggestion.
+ * Returns an array of time-block objects; falls back to [] on parse error.
+ */
+export async function generateScheduleSuggestion(context: {
+  peakHours: number[];
+  energyLevel: 1 | 2 | 3;
+  homeworkTitles: string[];
+}): Promise<Array<{ time: string; activity: string; durationMinutes: number; type: string }>> {
+  const { peakHours, energyLevel, homeworkTitles } = context;
+  const energyLabel = energyLevel === 1 ? 'low' : energyLevel === 2 ? 'medium' : 'high';
+  const peakLabel = peakHours.map((h) => `${h % 12 || 12}${h < 12 ? 'AM' : 'PM'}`).join(', ');
+  const homeworkList = homeworkTitles.length > 0 ? homeworkTitles.join(', ') : 'general study';
+
+  try {
+    const response = await openRouterClient.chat({
+      model: MODELS.PRIMARY_PAID,
+      messages: [
+        {
+          role: 'system',
+          content: `You are a smart schedule builder for a child with ADHD. Create a 3–6 hour after-school schedule.
+Rules:
+- Schedule hard homework during peak hours: ${peakLabel}
+- Always add a 10-minute break after any homework block
+- Max 2 hours total homework time
+- Energy is ${energyLabel}: low=start easy tasks, high=tackle hard tasks first
+- End with a fun reward (Roblox or gaming, 30 min)
+- Return ONLY a JSON array, no prose or markdown:
+[{"time":"4:00 PM","activity":"Math homework","durationMinutes":30,"type":"homework"},...]
+Valid types: homework, break, chore, fun, meal`,
+        },
+        {
+          role: 'user',
+          content: `Build my schedule. Homework: ${homeworkList}. Energy: ${energyLabel}. My best hours: ${peakLabel}.`,
+        },
+      ],
+      temperature: 0.6,
+      max_tokens: 700,
+    });
+
+    const content = response.choices[0]?.message?.content ?? '[]';
+    const jsonMatch = content.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) return [];
+    const parsed: unknown = JSON.parse(jsonMatch[0]);
+    return Array.isArray(parsed) ? (parsed as Array<{ time: string; activity: string; durationMinutes: number; type: string }>) : [];
+  } catch (error) {
+    console.error('[OpenRouter] Schedule suggestion error:', error);
+    return [];
+  }
+}
+
 export type Message = ChatMessage;

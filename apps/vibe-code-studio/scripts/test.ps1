@@ -19,42 +19,51 @@ param(
     [switch]$Coverage
 )
 
-Write-Host "🧪 Running tests..." -ForegroundColor Cyan
+$environmentScript = Join-Path $PSScriptRoot '..\..\..\scripts\Initialize-DevProcessEnvironment.ps1'
+. $environmentScript
+$null = Initialize-DevProcessEnvironment
+Push-Location (Join-Path $PSScriptRoot '..')
 
-# Run unit tests
-if ($Coverage) {
-    Write-Host "📊 Running tests with coverage..." -ForegroundColor Yellow
-    pnpm test --coverage
-} else {
-    pnpm test
-}
+try {
+    Write-Host "🧪 Running tests..." -ForegroundColor Cyan
 
-$unitTestsExitCode = $LASTEXITCODE
-
-# Run E2E tests if requested
-if ($E2E) {
-    Write-Host "`n🎭 Running E2E tests..." -ForegroundColor Yellow
-    pnpm playwright test
-    $e2eTestsExitCode = $LASTEXITCODE
-}
-
-# Summary
-Write-Host "`n📋 Test Summary:" -ForegroundColor Cyan
-if ($unitTestsExitCode -eq 0) {
-    Write-Host "  ✅ Unit tests passed" -ForegroundColor Green
-} else {
-    Write-Host "  ❌ Unit tests failed" -ForegroundColor Red
-}
-
-if ($E2E) {
-    if ($e2eTestsExitCode -eq 0) {
-        Write-Host "  ✅ E2E tests passed" -ForegroundColor Green
+    # Run unit tests
+    if ($Coverage) {
+        Write-Host "📊 Running tests with coverage..." -ForegroundColor Yellow
+        pnpm test --coverage
     } else {
-        Write-Host "  ❌ E2E tests failed" -ForegroundColor Red
+        pnpm test
     }
-}
 
-# Exit with failure if any tests failed
-if ($unitTestsExitCode -ne 0 -or ($E2E -and $e2eTestsExitCode -ne 0)) {
-    exit 1
+    $unitTestsExitCode = $LASTEXITCODE
+
+    # Run E2E tests if requested
+    if ($E2E) {
+        Write-Host "`n🎭 Running E2E tests..." -ForegroundColor Yellow
+        pnpm playwright test
+        $e2eTestsExitCode = $LASTEXITCODE
+    }
+
+    # Summary
+    Write-Host "`n📋 Test Summary:" -ForegroundColor Cyan
+    if ($unitTestsExitCode -eq 0) {
+        Write-Host "  ✅ Unit tests passed" -ForegroundColor Green
+    } else {
+        Write-Host "  ❌ Unit tests failed" -ForegroundColor Red
+    }
+
+    if ($E2E) {
+        if ($e2eTestsExitCode -eq 0) {
+            Write-Host "  ✅ E2E tests passed" -ForegroundColor Green
+        } else {
+            Write-Host "  ❌ E2E tests failed" -ForegroundColor Red
+        }
+    }
+
+    # Exit with failure if any tests failed
+    if ($unitTestsExitCode -ne 0 -or ($E2E -and $e2eTestsExitCode -ne 0)) {
+        exit 1
+    }
+} finally {
+    Pop-Location
 }

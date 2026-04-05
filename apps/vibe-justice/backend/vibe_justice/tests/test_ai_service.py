@@ -125,6 +125,25 @@ class TestAIService:
 
         assert "Error" in result
 
+    @patch('vibe_justice.services.ai_service.requests.post')
+    def test_generate_response_normalizes_kimi_alias_for_moonshot(self, mock_post):
+        """Direct Moonshot calls should use the provider's native model identifier."""
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "choices": [{"message": {"content": "Moonshot response"}}]
+        }
+        mock_response.raise_for_status = MagicMock()
+        mock_post.return_value = mock_response
+
+        with patch.dict('os.environ', {'MOONSHOT_API_KEY': 'test-moonshot-key'}, clear=False):
+            service = AIService()
+            result = service.generate_response("Hello there", use_reasoning=False)
+
+        assert result == "Moonshot response"
+        call_args = mock_post.call_args
+        assert call_args.args[0] == "https://api.moonshot.ai/v1/chat/completions"
+        assert call_args.kwargs['json']['model'] == 'moonshot-v1-32k'
+
     def test_generate_rag_response_returns_error_without_api_key(self, ai_service_no_key):
         """generate_rag_response should return error when API key not configured"""
         result = ai_service_no_key.generate_rag_response(

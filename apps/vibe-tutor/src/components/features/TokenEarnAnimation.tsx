@@ -39,12 +39,12 @@ export function TokenEarnAnimation({ amount, triggerId, onComplete }: TokenEarnA
     <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
       <animated.div
         style={props}
-        className="flex items-center gap-3 bg-[var(--background-card)]/90 backdrop-blur-md px-6 py-4 rounded-full border-2 border-yellow-500/50 shadow-[0_0_40px_rgba(250,204,21,0.6)]"
+        className="flex items-center gap-3 bg-[var(--background-card)]/90 backdrop-blur-md px-6 py-4 rounded-full border-2 border-[var(--token-color)]/50 shadow-[0_0_40px_rgba(168,85,247,0.6)]"
       >
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-600 flex items-center justify-center shadow-inner">
-          <Coins className="w-8 h-8 text-yellow-900" />
+        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--token-color)] to-[var(--quaternary-accent)] flex items-center justify-center shadow-inner">
+          <Coins className="w-8 h-8 text-[var(--background-main)]" />
         </div>
-        <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-200 to-yellow-500 drop-shadow-md">
+        <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-[var(--token-color)] to-[var(--quaternary-accent)] drop-shadow-md">
           +{amount}
         </span>
       </animated.div>

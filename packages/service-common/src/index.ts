@@ -1,4 +1,4 @@
-// @dev/service-common - Shared utilities for microservices
+// @vibetech/service-common - Shared utilities for microservices
 
 // DeepSeek AI Client
 export { 

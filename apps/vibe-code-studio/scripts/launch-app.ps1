@@ -9,7 +9,16 @@ Write-Host "   - First launch: 2-3 seconds" -ForegroundColor Gray
 Write-Host "   - Subsequent: 1-2 seconds" -ForegroundColor Gray
 Write-Host ""
 
-$appPath = "C:\dev\apps\vibe-code-studio\release-builds\win-unpacked\Vibe Code Studio.exe"
+$projectRoot = Split-Path -Parent $PSScriptRoot
+$candidates = @(
+    (Join-Path $env:LOCALAPPDATA 'Programs\vibe-code-studio\Vibe Code Studio.exe'),
+    (Join-Path $env:LOCALAPPDATA 'Programs\Vibe Code Studio\Vibe Code Studio.exe'),
+    (Join-Path $projectRoot 'src-tauri\target\release\Vibe Code Studio.exe'),
+    (Join-Path $projectRoot 'src-tauri\target\release\vibe-code-studio.exe'),
+    (Join-Path $projectRoot 'src-tauri\target\debug\deps\vibe_code_studio.exe')
+)
+
+$appPath = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 
 if (Test-Path $appPath) {
     $startTime = Get-Date
@@ -24,11 +33,11 @@ if (Test-Path $appPath) {
     Write-Host "If Windows SmartScreen appears:" -ForegroundColor Yellow
     Write-Host "   Click 'More info' then 'Run anyway'" -ForegroundColor Gray
 } else {
-    Write-Host "Application not found at:" -ForegroundColor Red
-    Write-Host "   $appPath" -ForegroundColor Gray
+    Write-Host "Application not found. Checked:" -ForegroundColor Red
+    $candidates | ForEach-Object { Write-Host "   $_" -ForegroundColor Gray }
     Write-Host ""
     Write-Host "Run this first:" -ForegroundColor Yellow
     Write-Host "   cd C:\dev\apps\vibe-code-studio" -ForegroundColor Gray
-    Write-Host "   pnpm run build" -ForegroundColor Gray
-    Write-Host "   npx electron-builder --dir" -ForegroundColor Gray
+    Write-Host "   pnpm run tauri:dev" -ForegroundColor Gray
+    Write-Host "   or pnpm run tauri:build" -ForegroundColor Gray
 }

@@ -10,4 +10,4 @@ export type {
   FeatureFlagClientConfig,
   Environment,
   Variant,
-} from '@dev/feature-flags-core';
+} from '@vibetech/feature-flags-core';

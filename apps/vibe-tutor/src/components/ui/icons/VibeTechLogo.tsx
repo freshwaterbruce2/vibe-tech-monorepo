@@ -13,7 +13,7 @@ export const VibeTechLogo: FC<SVGProps<SVGSVGElement>> = ({ className, ...props 
     >
       <defs>
         <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#22D3EE" />
+          <stop offset="0%" stopColor="var(--success-accent)" />
           <stop offset="50%" stopColor="#ec4899" />
           <stop offset="100%" stopColor="#FF5FD2" />
         </linearGradient>

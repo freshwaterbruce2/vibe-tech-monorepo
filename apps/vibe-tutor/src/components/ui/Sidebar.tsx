@@ -52,6 +52,7 @@ const navItems = [
   { view: 'music', icon: Music2, label: 'Music', gradient: 'vibe-gradient-accent' },
   { view: 'sensory', icon: Eye, label: 'Sensory', gradient: 'vibe-gradient-primary' },
   { view: 'focus', icon: Timer, label: 'Focus', gradient: 'vibe-gradient-secondary' },
+  { view: 'wellness', icon: Heart, label: 'Wellness', gradient: 'vibe-gradient-accent' },
 ] as const;
 
 /** The 5 primary tabs shown in the mobile bottom nav */
@@ -117,6 +118,7 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed = false, onToggle }: Sid
                     : 'glass-card hover:glass-card text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:scale-105 focus-glow'
                 }`}
                 title={isCollapsed ? label : undefined}
+                aria-label={isCollapsed ? label : undefined}
               >
                 <GradientIcon
                   Icon={Icon}
@@ -140,6 +142,7 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed = false, onToggle }: Sid
                   : 'glass-card hover:glass-card text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:scale-105 focus-glow'
               }`}
               title={isCollapsed ? 'Parent Zone' : undefined}
+              aria-label={isCollapsed ? 'Parent Zone' : undefined}
             >
               <GradientIcon
                 Icon={Lock}

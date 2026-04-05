@@ -1,4 +1,4 @@
-import type { FeatureFlag, KillSwitchEvent, KillSwitchPriority } from '@dev/feature-flags-core';
+import type { FeatureFlag, KillSwitchEvent, KillSwitchPriority } from '@vibetech/feature-flags-core';
 import { SQLiteStorage } from '../storage/sqlite.js';
 import { FlagService } from './flag-service.js';
 

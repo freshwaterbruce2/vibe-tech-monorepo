@@ -5,6 +5,16 @@ import type { HomeworkItem, ParsedHomework } from '../types';
 // Simple ID generator
 const generateId = () => `id_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+function mergeHomeworkItems(currentItems: HomeworkItem[], loadedItems: HomeworkItem[]) {
+  if (currentItems.length === 0) {
+    return loadedItems;
+  }
+
+  const currentIds = new Set(currentItems.map((item) => item.id));
+  const persistedOnlyItems = loadedItems.filter((item) => !currentIds.has(item.id));
+  return [...persistedOnlyItems, ...currentItems];
+}
+
 /**
  * Custom hook for managing homework items
  * Handles CRUD operations and persistence
@@ -14,22 +24,41 @@ export const useHomework = () => {
 
   // Load homework items from dataStore on mount
   useEffect(() => {
+    let isCancelled = false;
+
     const loadHomework = async () => {
       try {
+        await dataStore.initialize();
         const items = await dataStore.getHomeworkItems();
-        setHomeworkItems(items);
+        if (!isCancelled) {
+          setHomeworkItems((currentItems) => mergeHomeworkItems(currentItems, items));
+        }
       } catch (error) {
         console.error('[useHomework] Failed to load homework items:', error);
       }
     };
+
     void loadHomework();
+
+    return () => {
+      isCancelled = true;
+    };
   }, []);
 
   // Persist homework items to dataStore whenever they change
   useEffect(() => {
-    if (homeworkItems.length > 0) {
-      dataStore.saveHomeworkItems(homeworkItems).catch(console.error);
-    }
+    if (homeworkItems.length === 0) return;
+
+    const persistHomework = async () => {
+      try {
+        await dataStore.initialize();
+        await dataStore.saveHomeworkItems(homeworkItems);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    void persistHomework();
   }, [homeworkItems]);
 
   /**

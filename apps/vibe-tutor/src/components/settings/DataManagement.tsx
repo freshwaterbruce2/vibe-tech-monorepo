@@ -3,7 +3,7 @@ import { dataStore } from '../../services/dataStore';
 
 const DataManagement = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [_isPending, startTransition] = useTransition();
+    const [, startTransition] = useTransition();
 
     const handleExport = () => {
         startTransition(async () => {

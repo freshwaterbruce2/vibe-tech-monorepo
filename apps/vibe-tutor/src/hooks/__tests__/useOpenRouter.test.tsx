@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ChatResponse } from '../../services/openrouter';
 import { useOpenRouter, useOpenRouterQuestion } from '../useOpenRouter';
 
 // Mock openrouter service
@@ -20,7 +21,7 @@ describe('useOpenRouter', () => {
     vi.clearAllMocks();
     mockedChat.mockResolvedValue({
       choices: [{ message: { content: 'Hello from AI' } }],
-    } as any);
+    } as unknown as ChatResponse);
     // Ensure navigator.onLine returns true by default
     Object.defineProperty(navigator, 'onLine', { value: true, writable: true, configurable: true });
   });
@@ -161,7 +162,7 @@ describe('useOpenRouter', () => {
   it('should handle missing response content gracefully', async () => {
     mockedChat.mockResolvedValue({
       choices: [{ message: {} }],
-    } as any);
+    } as unknown as ChatResponse);
 
     const { result } = renderHook(() => useOpenRouter());
 
@@ -178,7 +179,7 @@ describe('useOpenRouterQuestion', () => {
     vi.clearAllMocks();
     mockedChat.mockResolvedValue({
       choices: [{ message: { content: 'The answer is 4' } }],
-    } as any);
+    } as unknown as ChatResponse);
     Object.defineProperty(navigator, 'onLine', { value: true, writable: true, configurable: true });
   });
 

@@ -99,7 +99,7 @@ export const BlakeWelcome = ({ points, streak, onClose }: BlakeWelcomeProps) => 
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-cyan-400">{pointsToNext} pts</div>
+                <div className="text-2xl font-bold text-[var(--success-accent)]">{pointsToNext} pts</div>
                 <div className="text-sm text-white/60">to go!</div>
               </div>
             </div>

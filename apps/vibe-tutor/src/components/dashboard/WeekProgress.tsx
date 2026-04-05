@@ -9,7 +9,7 @@ interface WeekProgressProps {
 
 const WeekProgress = ({ homeworkItems }: WeekProgressProps) => {
   const [focusSessions, setFocusSessions] = useState<FocusSession[]>([]);
-  const [_isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   // Load focus sessions from dataStore
   useEffect(() => {

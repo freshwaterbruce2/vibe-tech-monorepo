@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { LearningRecommendationResult, UserStats } from '../../services/appIntegration';
 import { useDatabase } from '../useDatabase';
 
 // Mock appIntegration
@@ -34,7 +35,7 @@ describe('useDatabase', () => {
     mocked.isDatabaseAvailable.mockReturnValue(true);
     mocked.getDatabaseStatus.mockReturnValue('Connected');
     mocked.getHomeworkItems.mockResolvedValue([]);
-    mocked.getUserStats.mockResolvedValue(null as any);
+    mocked.getUserStats.mockResolvedValue(null as unknown as UserStats);
   });
 
   it('should start with initializing status', () => {
@@ -68,7 +69,7 @@ describe('useDatabase', () => {
 
   it('should load user stats on init', async () => {
     const stats = { totalSessions: 5, totalTime: 120 };
-    mocked.getUserStats.mockResolvedValue(stats as any);
+    mocked.getUserStats.mockResolvedValue(stats as unknown as UserStats);
 
     const { result } = renderHook(() => useDatabase());
 
@@ -170,7 +171,7 @@ describe('useDatabase', () => {
   });
 
   it('should get recommendations', async () => {
-    mocked.getLearningRecommendations.mockResolvedValue(['Try harder problems'] as any);
+    mocked.getLearningRecommendations.mockResolvedValue(['Try harder problems'] as unknown as LearningRecommendationResult);
 
     const { result } = renderHook(() => useDatabase());
 
@@ -178,7 +179,7 @@ describe('useDatabase', () => {
       expect(result.current.status.isInitializing).toBe(false);
     });
 
-    let recs: any;
+    let recs: unknown;
     await act(async () => {
       recs = await result.current.getRecommendations();
     });
@@ -187,7 +188,7 @@ describe('useDatabase', () => {
   });
 
   it('should export data', async () => {
-    mocked.exportData.mockResolvedValue('{"data":true}' as any);
+    mocked.exportData.mockResolvedValue('{"data":true}');
 
     const { result } = renderHook(() => useDatabase());
 
@@ -195,7 +196,7 @@ describe('useDatabase', () => {
       expect(result.current.status.isInitializing).toBe(false);
     });
 
-    let data: any;
+    let data: unknown;
     await act(async () => {
       data = await result.current.exportData();
     });

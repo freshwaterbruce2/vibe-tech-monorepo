@@ -115,6 +115,8 @@ function LegalAssistantView() {
             <h1 className="text-xl font-bold">Legal Assistant</h1>
           </div>
           <select
+            id="domain-select"
+            name="domain"
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
             className="bg-blue-800/50 text-white px-3 py-1 rounded border border-blue-700/50 text-sm"
@@ -202,12 +204,14 @@ function LegalAssistantView() {
             </div>
             <div className="flex space-x-2">
               <input
+                id="chat-input"
+                name="message"
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                 placeholder="Type your legal question..."
-                className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-neon-mint/50"
+                className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-neon-mint/50"
                 disabled={loading}
               />
               <button
@@ -226,10 +230,12 @@ function LegalAssistantView() {
           <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800">
             <h2 className="text-lg font-semibold mb-4 text-white">Document Analysis</h2>
             <textarea
+              id="analysis-input"
+              name="analysisText"
               value={analysisText}
               onChange={(e) => setAnalysisText(e.target.value)}
               placeholder="Paste your legal document here for analysis..."
-              className="w-full h-48 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-neon-mint/50"
+              className="w-full h-48 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-neon-mint/50"
               disabled={loading}
             />
             <button
@@ -255,6 +261,8 @@ function LegalAssistantView() {
             <div className="mb-4">
               <label className="block text-sm font-medium mb-2 text-gray-300">Document Type</label>
               <select
+                id="template-type"
+                name="templateType"
                 value={templateType}
                 onChange={(e) => setTemplateType(e.target.value)}
                 className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-neon-mint/50"
@@ -266,10 +274,12 @@ function LegalAssistantView() {
               </select>
             </div>
             <textarea
+              id="case-details"
+              name="caseDetails"
               value={caseDetails}
               onChange={(e) => setCaseDetails(e.target.value)}
               placeholder="Describe your case details, facts, and what you want to achieve..."
-              className="w-full h-48 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-neon-mint/50"
+              className="w-full h-48 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-neon-mint/50"
               disabled={loading}
             />
             <button

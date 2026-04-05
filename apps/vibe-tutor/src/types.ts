@@ -37,7 +37,8 @@ export type View =
   | 'tokens'
   | 'parent-rules'
   | 'learning'
-  | 'shop';
+  | 'shop'
+  | 'wellness';
 
 export interface Achievement {
   id: string;

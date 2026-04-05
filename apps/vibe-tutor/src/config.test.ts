@@ -15,23 +15,23 @@ const createLocation = (partial: Partial<Location> = {}): Location =>
     origin: 'http://localhost',
     port: '',
     ancestorOrigins: {} as DOMStringList,
-    assign: vi.fn() as any,
-    reload: vi.fn() as any,
-    replace: vi.fn() as any,
+    assign: vi.fn() as Location['assign'],
+    reload: vi.fn() as Location['reload'],
+    replace: vi.fn() as Location['replace'],
     toString: () => 'http://localhost/',
     ...partial,
   }) as Location;
 
 // Mock window object for different environments
-const mockWindow = (overrides?: { location?: Partial<Location>; [key: string]: any }) => {
-  (global as any).window = {
+const mockWindow = (overrides?: { location?: Partial<Location>; [key: string]: unknown }) => {
+  (global as unknown as Record<string, unknown>).window = {
     location: createLocation(overrides?.location),
     ...overrides,
   };
 };
 
 const clearWindow = () => {
-  delete (global as any).window;
+  delete (global as unknown as Record<string, unknown>).window;
 };
 
 describe('config.ts', () => {
@@ -118,7 +118,7 @@ describe('config.ts', () => {
           protocol: 'http:',
           hostname: 'localhost',
         },
-        Capacitor: {} as any,
+        Capacitor: {},
       });
 
       const config = await import('./config');
@@ -190,7 +190,7 @@ describe('config.ts', () => {
 
   describe('edge cases', () => {
     it('should handle missing location object', async () => {
-      mockWindow({ location: undefined as any });
+      mockWindow({ location: undefined as unknown as Partial<Location> });
 
       // KNOWN ISSUE: config.ts doesn't gracefully handle undefined location
       // This would crash in real scenario, but we test the actual behavior
@@ -205,7 +205,7 @@ describe('config.ts', () => {
           protocol: 'capacitor:',
           hostname: '',
         },
-        Capacitor: {} as any,
+        Capacitor: {},
       });
 
       const config = await import('./config');

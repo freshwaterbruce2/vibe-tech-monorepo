@@ -41,30 +41,30 @@ function AchievementBadge({ achievement }: { achievement: Achievement }) {
     <div
       className={`relative rounded-2xl p-5 transition-all duration-300 border ${
         unlocked
-          ? 'bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-yellow-500/40 shadow-lg shadow-yellow-900/20'
+          ? 'bg-gradient-to-br from-[var(--token-color)]/10 to-[var(--quaternary-accent)]/10 border-[var(--token-color)]/40 shadow-lg shadow-[var(--token-color)]/20'
           : 'bg-slate-800/40 border-slate-700/40 opacity-75'
       }`}
     >
       {/* Unlocked glow */}
       {unlocked && (
         <div className="absolute -top-1 -right-1">
-          <CheckCircle2 className="w-6 h-6 text-yellow-400 drop-shadow-lg" />
+          <CheckCircle2 className="w-6 h-6 text-[var(--token-color)] drop-shadow-lg" />
         </div>
       )}
       <div className="flex items-start gap-4">
         <div
           className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 ${
             unlocked
-              ? 'bg-gradient-to-br from-yellow-400/30 to-orange-400/30 shadow-inner'
+              ? 'bg-gradient-to-br from-[var(--token-color)]/30 to-[var(--quaternary-accent)]/30 shadow-inner'
               : 'bg-slate-700/60'
           }`}
         >
-          <Icon className={`w-7 h-7 ${unlocked ? 'text-yellow-400' : 'text-slate-500'}`} />
+          <Icon className={`w-7 h-7 ${unlocked ? 'text-[var(--token-color)]' : 'text-slate-500'}`} />
         </div>
         <div className="min-w-0 flex-1">
           <h3
             className={`font-bold text-base leading-tight ${
-              unlocked ? 'text-yellow-300' : 'text-slate-300'
+              unlocked ? 'text-[var(--token-color)]' : 'text-slate-300'
             }`}
           >
             {name}
@@ -83,7 +83,7 @@ function AchievementBadge({ achievement }: { achievement: Achievement }) {
           </div>
           <div className="w-full bg-slate-700/60 rounded-full h-2">
             <div
-              className="bg-gradient-to-r from-yellow-500 to-orange-500 h-2 rounded-full transition-all duration-500"
+              className="bg-gradient-to-r from-[var(--token-color)] to-[var(--quaternary-accent)] h-2 rounded-full transition-all duration-500"
               style={{ width: `${pct}%` }}
             ></div>
           </div>
@@ -111,10 +111,10 @@ function RewardCard({
   };
 
   return (
-    <div className="rounded-2xl p-5 bg-slate-800/40 border border-slate-700/40 flex items-center justify-between transition-all duration-300 hover:border-teal-500/40">
+    <div className="rounded-2xl p-5 bg-slate-800/40 border border-slate-700/40 flex items-center justify-between transition-all duration-300 hover:border-[var(--success-accent)]/40">
       <div>
         <h3 className="text-lg font-bold text-slate-200">{reward.name}</h3>
-        <p className="text-sm text-teal-400 font-semibold">{reward.cost} Tokens</p>
+        <p className="text-sm text-[var(--success-accent)] font-semibold">{reward.cost} Tokens</p>
       </div>
       {justClaimed ? (
         <div className="flex items-center gap-1.5 text-fuchsia-400 font-semibold text-sm">
@@ -124,7 +124,7 @@ function RewardCard({
         <button
           onClick={handleClaim}
           disabled={!canClaim}
-          className="px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-teal-500 to-cyan-500 text-white hover:shadow-lg hover:shadow-teal-500/20"
+          className="px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white hover:shadow-lg hover:shadow-purple-500/20"
         >
           Claim
         </button>
@@ -183,20 +183,20 @@ const AchievementCenter = ({
             </button>
           )}
           <div className="flex items-center gap-2 text-slate-400 text-sm">
-            <Star className="w-4 h-4 text-yellow-400" />
+            <Star className="w-4 h-4 text-[var(--token-color)]" />
             {unlockedAchievements.length}/{achievements.length} unlocked
           </div>
         </div>
 
         {/* Points hero */}
-        <div className="text-center py-5 px-4 rounded-2xl bg-gradient-to-br from-yellow-500/10 via-orange-500/10 to-amber-500/10 border border-yellow-500/20">
+        <div className="text-center py-5 px-4 rounded-2xl bg-gradient-to-br from-[var(--token-color)]/10 via-[var(--quaternary-accent)]/10 to-[var(--token-color)]/10 border border-[var(--token-color)]/20">
           <div className="flex items-center justify-center gap-3 mb-2">
-            <Trophy className="w-10 h-10 text-yellow-400 animate-pulse" />
-            <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-400 tabular-nums">
+            <Trophy className="w-10 h-10 text-[var(--token-color)] animate-pulse" />
+            <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[var(--token-color)] via-[var(--quaternary-accent)] to-[var(--token-color)] tabular-nums">
               {animatedPoints}
             </span>
           </div>
-          <p className="text-yellow-300/70 text-sm font-medium flex items-center justify-center gap-1.5">
+          <p className="text-[var(--token-color)]/70 text-sm font-medium flex items-center justify-center gap-1.5">
             <Sparkles className="w-4 h-4" /> Vibe Tokens <Sparkles className="w-4 h-4" />
           </p>
           <p className="text-slate-400 text-sm mt-2">{motivationalMsg}</p>
@@ -210,7 +210,7 @@ const AchievementCenter = ({
               onClick={() => setActiveTab(key)}
               className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-all duration-200 ${
                 activeTab === key
-                  ? 'bg-gradient-to-r from-yellow-500/20 to-orange-500/20 text-yellow-300 border border-yellow-500/30'
+                  ? 'bg-gradient-to-r from-[var(--token-color)]/20 to-[var(--quaternary-accent)]/20 text-[var(--token-color)] border border-[var(--token-color)]/30'
                   : 'bg-slate-800/40 text-slate-400 border border-slate-700/30 hover:text-slate-200'
               }`}
             >
@@ -219,7 +219,7 @@ const AchievementCenter = ({
               <span
                 className={`text-xs px-1.5 py-0.5 rounded-full ${
                   activeTab === key
-                    ? 'bg-yellow-500/20 text-yellow-300'
+                    ? 'bg-[var(--token-color)]/20 text-[var(--token-color)]'
                     : 'bg-slate-700/60 text-slate-500'
                 }`}
               >
@@ -237,7 +237,7 @@ const AchievementCenter = ({
             {/* Unlocked */}
             {unlockedAchievements.length > 0 && (
               <div className="mb-8">
-                <h2 className="flex items-center gap-2 text-lg font-bold text-yellow-300 mb-4">
+                <h2 className="flex items-center gap-2 text-lg font-bold text-[var(--token-color)] mb-4">
                   <CheckCircle2 className="w-5 h-5" /> Unlocked
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -283,7 +283,7 @@ const AchievementCenter = ({
             {/* Available */}
             {availableRewards.length > 0 ? (
               <div>
-                <h2 className="flex items-center gap-2 text-lg font-bold text-teal-300 mb-4">
+                <h2 className="flex items-center gap-2 text-lg font-bold text-[var(--success-accent)] mb-4">
                   <Gift className="w-5 h-5" /> Available Rewards
                 </h2>
                 <div className="space-y-3">

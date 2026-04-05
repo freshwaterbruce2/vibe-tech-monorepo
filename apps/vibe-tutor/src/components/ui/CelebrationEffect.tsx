@@ -25,7 +25,7 @@ const CelebrationEffect = ({
     { id: number; x: number; y: number; rotation: number; color: string }[]
   >([]);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [_isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   useEffect(() => {
     if (trigger && !isAnimating) {

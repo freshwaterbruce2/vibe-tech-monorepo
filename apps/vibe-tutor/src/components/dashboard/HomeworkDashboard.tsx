@@ -69,6 +69,7 @@ const HomeworkDashboard = ({ items, onAdd, onToggleComplete, tokens }: HomeworkD
                 onClick={() => setIsNotifPanelOpen((prev) => !prev)}
                 className="glass-card p-3 md:p-3 min-h-[48px] min-w-[48px] rounded-xl hover:scale-110 transition-all duration-300 group relative overflow-hidden focus-glow flex items-center justify-center"
                 style={{ touchAction: 'manipulation' }}
+                aria-label="Notifications"
               >
                 <GradientIcon Icon={Bell} size={24} gradientId="vibe-gradient-accent" />
                 {upcomingItems.length > 0 && (
@@ -150,7 +151,7 @@ const HomeworkDashboard = ({ items, onAdd, onToggleComplete, tokens }: HomeworkD
           ) : (
             <div className="glass-card text-center py-16 rounded-2xl border-2 border-dashed border-[var(--glass-border)] bg-gradient-to-br from-[var(--glass-surface)] to-transparent">
               <div className="space-y-4">
-                <div className="text-6xl">🎉</div>
+                <div className="text-6xl" aria-hidden="true">🎉</div>
                 <p className="text-xl font-semibold neon-text-primary">No active assignments!</p>
                 <p className="text-[var(--text-secondary)]">You're all caught up. Great job!</p>
               </div>

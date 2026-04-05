@@ -67,7 +67,7 @@ describe('useTokenEconomy', () => {
   beforeEach(() => {
     tokenMockState.balance = 0;
     vi.clearAllMocks();
-    mockedDataStore.getUserSettings.mockResolvedValue(0 as any);
+    mockedDataStore.getUserSettings.mockResolvedValue(0 as unknown as string);
     mockedDataStore.saveUserSettings.mockResolvedValue(undefined);
   });
 
@@ -77,7 +77,7 @@ describe('useTokenEconomy', () => {
   });
 
   it('should load tokens from dataStore on mount', async () => {
-    mockedDataStore.getUserSettings.mockResolvedValue(42 as any);
+    mockedDataStore.getUserSettings.mockResolvedValue(42 as unknown as string);
 
     const { result } = renderHook(() => useTokenEconomy());
 
@@ -87,7 +87,7 @@ describe('useTokenEconomy', () => {
   });
 
   it('should handle string token values from storage', async () => {
-    mockedDataStore.getUserSettings.mockResolvedValue('15' as any);
+    mockedDataStore.getUserSettings.mockResolvedValue('15');
 
     const { result } = renderHook(() => useTokenEconomy());
 

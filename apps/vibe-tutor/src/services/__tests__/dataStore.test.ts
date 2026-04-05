@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Achievement, ChatMessage, FocusSession, HomeworkItem, SensoryPreferences } from '../../types';
 
 // In-memory store that mimics the real appStore behavior (JSON round-trip)
 const memStore = new Map<string, string>();
@@ -77,7 +78,7 @@ describe('dataStore (web/localStorage path)', () => {
         { id: '1', title: 'Math HW', completed: false },
         { id: '2', title: 'Reading', completed: true },
       ];
-      await dataStore.saveHomeworkItems(testItems as any);
+      await dataStore.saveHomeworkItems(testItems as unknown as HomeworkItem[]);
       const items = await dataStore.getHomeworkItems();
       expect(items).toHaveLength(2);
       expect(items[0]!.title).toBe('Math HW');
@@ -128,7 +129,7 @@ describe('dataStore (web/localStorage path)', () => {
 
     it('saves and retrieves achievements', async () => {
       const testAchievements = [{ id: 'TEST_1', name: 'Test', unlocked: true }];
-      await dataStore.saveAchievements(testAchievements as any);
+      await dataStore.saveAchievements(testAchievements as unknown as Achievement[]);
       const result = await dataStore.getAchievements();
       expect(result).toHaveLength(1);
       expect(result[0]!.id).toBe('TEST_1');
@@ -152,7 +153,7 @@ describe('dataStore (web/localStorage path)', () => {
 
     it('saves a focus session and retrieves it', async () => {
       const session = { id: 's1', duration: 25, points: 50, completedAt: Date.now() };
-      await dataStore.saveFocusSession(session as any);
+      await dataStore.saveFocusSession(session as unknown as FocusSession);
       const sessions = await dataStore.getFocusSessions();
       expect(sessions.length).toBeGreaterThanOrEqual(1);
     });
@@ -170,14 +171,14 @@ describe('dataStore (web/localStorage path)', () => {
         { role: 'user', content: 'Hello' },
         { role: 'assistant', content: 'Hi!' },
       ];
-      await dataStore.saveChatHistory('tutor', messages as any);
+      await dataStore.saveChatHistory('tutor', messages as unknown as ChatMessage[]);
       const result = await dataStore.getChatHistory('tutor');
       expect(result).toHaveLength(2);
     });
 
     it('keeps tutor and friend histories separate', async () => {
-      await dataStore.saveChatHistory('tutor', [{ role: 'user', content: 'Tutor' }] as any);
-      await dataStore.saveChatHistory('friend', [{ role: 'user', content: 'Friend' }] as any);
+      await dataStore.saveChatHistory('tutor', [{ role: 'user', content: 'Tutor' }] as unknown as ChatMessage[]);
+      await dataStore.saveChatHistory('friend', [{ role: 'user', content: 'Friend' }] as unknown as ChatMessage[]);
 
       const tutor = await dataStore.getChatHistory('tutor');
       const friend = await dataStore.getChatHistory('friend');
@@ -205,7 +206,7 @@ describe('dataStore (web/localStorage path)', () => {
 
     it('saves and retrieves sensory preferences', async () => {
       const prefs = { reduceMotion: true, highContrast: false, fontSize: 'large' };
-      await dataStore.saveSensoryPreferences(prefs as any);
+      await dataStore.saveSensoryPreferences(prefs as unknown as SensoryPreferences);
       const result = await dataStore.getSensoryPreferences();
       expect(result).toEqual(prefs);
     });

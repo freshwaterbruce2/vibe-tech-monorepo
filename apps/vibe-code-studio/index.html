@@ -9,21 +9,8 @@
   <meta name="description"
     content="Vibe Code Studio is a next-generation AI-powered code editor designed for modern development workflows." />
 
-  <!-- Content Security Policy -->
-  <meta http-equiv="Content-Security-Policy" content="
-      default-src 'self';
-      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.tailwindcss.com;
-      style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com;
-      img-src 'self' data: blob: https:;
-      font-src 'self' data: https://r2cdn.perplexity.ai;
-      connect-src 'self' http://localhost:3000 http://localhost:3001 http://localhost:3100 http://localhost:4000 http://localhost:5174 http://localhost:8000 ws://localhost:5174 http://ipc.localhost https://ipc.localhost ipc: https://api.deepseek.com https://api.openai.com https://api.anthropic.com https://api.groq.com https://api.github.com https://openrouter.ai https://generativelanguage.googleapis.com wss: ws: tauri:;
-      media-src 'self' blob:;
-      worker-src 'self' blob: data:;
-      child-src 'self' blob:;
-      object-src 'none';
-      base-uri 'self';
-      form-action 'self';
-    ">
+  <!-- CSP is managed by Tauri in production (tauri.conf.json) -->
+  <!-- Only apply HTML CSP in web-only mode (dev server) -->
   <style>
     body{margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Roboto',sans-serif;background:#1e1e1e;color:#d4d4d4;overflow:hidden}
     #root{height:100vh;width:100vw}
@@ -43,6 +30,35 @@
       <div class="loading-spinner"></div>
     </div>
   </div>
+  <script>
+    window.__BOOT_ERRORS__=[];
+    function showBootError(msg){
+      window.__BOOT_ERRORS__.push(msg);
+      var el=document.querySelector('.loading-text');
+      if(el){el.style.color='#ff6b6b';el.style.opacity='1';el.textContent='Startup Error: '+msg.split('\n')[0];}
+      var spinner=document.querySelector('.loading-spinner');
+      if(spinner)spinner.style.display='none';
+      var ls=document.querySelector('.loading-screen');
+      if(ls&&!document.getElementById('boot-error-details')){
+        var pre=document.createElement('pre');
+        pre.id='boot-error-details';
+        pre.style.cssText='color:#ff6b6b;font-size:0.75rem;max-width:80vw;max-height:40vh;overflow:auto;margin:1rem auto;text-align:left;padding:1rem;background:rgba(0,0,0,0.3);border-radius:8px;white-space:pre-wrap;word-break:break-all;';
+        pre.textContent=window.__BOOT_ERRORS__.join('\n\n');
+        ls.appendChild(pre);
+      }
+    }
+    window.onerror=function(msg,src,line,col,err){
+      showBootError(msg+(src?' at '+src+':'+line+':'+col:'')+(err&&err.stack?'\n'+err.stack:''));
+    };
+    window.addEventListener('unhandledrejection',function(e){
+      showBootError('Unhandled rejection: '+(e.reason&&e.reason.stack||e.reason||'unknown'));
+    });
+    setTimeout(function(){
+      if(!window.__APP_MOUNTED__){
+        showBootError('App failed to mount within 15s. The JavaScript bundle may have failed to load.');
+      }
+    },15000);
+  </script>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 

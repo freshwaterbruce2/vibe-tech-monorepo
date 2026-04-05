@@ -1,20 +1,5 @@
 {
+  "extends": "./tsconfig.base.json",
   "include": [],
-  "references": [],
-  "compilerOptions": {
-    "baseUrl": ".",
-    "strict": true,
-    "noImplicitAny": true,
-    "noUnusedParameters": true,
-    "skipLibCheck": true,
-    "allowJs": true,
-    "noUnusedLocals": true,
-    "strictNullChecks": true,
-    "moduleResolution": "node10",
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true
-  }
+  "references": []
 }

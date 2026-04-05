@@ -49,7 +49,7 @@ const TaskBreakdown = ({ taskTitle, subject }: TaskBreakdownProps) => {
         </div>
       )}
       
-      {error && <p className="text-red-400">{error}</p>}
+      {error && <p className="text-[var(--error-accent)]">{error}</p>}
       
       {!isLoading && !error && (
         <ul className="space-y-3">

@@ -1,6 +1,7 @@
-import { Clock, GripVertical, Plus, Save, Trash2, X } from 'lucide-react';
+import { Clock, GripVertical, Loader2, Plus, Save, Sparkles, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { createSchedule, deleteSchedule, updateSchedule } from '../../services/scheduleService';
+import { breakDownTask } from '../../services/openrouter';
 import type { CreateSchedulePayload, DailySchedule, ScheduleStep, ScheduleType } from '../../types/schedule';
 
 interface ScheduleEditorProps {
@@ -29,6 +30,29 @@ const ScheduleEditor = ({
     })) ?? []
   );
   const [saving, setSaving] = useState(false);
+  const [aiLoadingSteps, setAiLoadingSteps] = useState(false);
+
+  const handleAiSteps = async () => {
+    if (!title.trim()) {
+      alert('Enter a schedule title first so the AI knows what steps to suggest.');
+      return;
+    }
+    setAiLoadingSteps(true);
+    try {
+      const aiSteps = await breakDownTask(title);
+      const newSteps = aiSteps.map((stepTitle, i) => ({
+        id: `step_${Date.now()}_${i}`,
+        title: stepTitle,
+        description: '',
+        estimatedMinutes: 10,
+        microsteps: [] as string[],
+        order: steps.length + i,
+      }));
+      setSteps((prev) => [...prev, ...newSteps]);
+    } finally {
+      setAiLoadingSteps(false);
+    }
+  };
 
   const addStep = () => {
     const newStep: Omit<ScheduleStep, 'status' | 'completedAt'> = {
@@ -159,7 +183,7 @@ const ScheduleEditor = ({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6">
+    <div className="min-h-screen bg-[var(--background-main)] p-6">
       <div className="max-w-4xl mx-auto">
         <div className="glass-card p-6">
           {/* Header */}
@@ -201,15 +225,28 @@ const ScheduleEditor = ({
 
           {/* Steps */}
           <div className="space-y-4 mb-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
               <h3 className="text-lg font-bold text-white">Steps</h3>
-              <button
-                onClick={addStep}
-                className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-cyan-600 to-purple-600 rounded-lg text-sm font-semibold hover:scale-105 transition-transform"
-              >
-                <Plus className="w-4 h-4" />
-                Add Step
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { void handleAiSteps(); }}
+                  disabled={aiLoadingSteps || saving}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-[var(--primary-accent)] to-[var(--secondary-accent)] rounded-lg text-sm font-semibold hover:brightness-110 disabled:opacity-60 transition-all"
+                >
+                  {aiLoadingSteps ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Thinking…</>
+                  ) : (
+                    <><Sparkles className="w-4 h-4" /> AI Steps</>
+                  )}
+                </button>
+                <button
+                  onClick={addStep}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-[var(--success-accent)] to-[var(--primary-accent)] rounded-lg text-sm font-semibold hover:scale-105 transition-transform"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Step
+                </button>
+              </div>
             </div>
 
             {steps.length === 0 ? (

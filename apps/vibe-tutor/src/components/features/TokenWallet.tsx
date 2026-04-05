@@ -86,7 +86,7 @@ const TokenWallet = ({ onClose, onNavigate, compact = false }: TokenWalletProps)
 
   if (compact) {
     return (
-      <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-lg">
+      <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[var(--token-color)] to-[var(--quaternary-accent)] rounded-lg">
         <Coins className="w-5 h-5 text-white" />
         <span className="font-bold text-white text-lg">{balance.toLocaleString()}</span>
       </div>
@@ -94,7 +94,7 @@ const TokenWallet = ({ onClose, onNavigate, compact = false }: TokenWalletProps)
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-4 pb-36 md:pb-8">
+    <div className="min-h-screen bg-[var(--background-main)] p-4 pb-36 md:pb-8">
       <div className="max-w-2xl mx-auto space-y-5">
         {/* Header */}
         <div className="glass-card p-4">
@@ -108,13 +108,13 @@ const TokenWallet = ({ onClose, onNavigate, compact = false }: TokenWalletProps)
               </button>
             )}
             <div className="flex items-center gap-2">
-              <Coins className="w-6 h-6 text-yellow-400" />
+              <Coins className="w-6 h-6 text-[var(--token-color)]" />
               <h1 className="text-xl font-bold text-white">Token Wallet</h1>
             </div>
             {onNavigate && (
               <button
                 onClick={() => onNavigate('shop')}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-fuchsia-500 to-violet-600 hover:from-fuchsia-600 hover:to-violet-700 rounded-lg transition-all text-white font-medium shadow-lg shadow-fuchsia-500/20"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[var(--secondary-accent)] to-[var(--primary-accent)] hover:brightness-110 rounded-lg transition-all text-white font-medium shadow-lg shadow-[var(--secondary-accent)]/20"
               >
                 <ShoppingBag size={18} /> Shop
               </button>
@@ -125,16 +125,16 @@ const TokenWallet = ({ onClose, onNavigate, compact = false }: TokenWalletProps)
         {/* Balance Hero Card */}
         <div className="glass-card overflow-hidden">
           {/* Decorative top border */}
-          <div className="h-1 bg-gradient-to-r from-yellow-400 via-orange-400 to-yellow-400" />
+          <div className="h-1 bg-gradient-to-r from-[var(--token-color)] via-[var(--quaternary-accent)] to-[var(--token-color)]" />
           <div className="p-6 text-center relative">
             {/* Background accent */}
-            <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 via-transparent to-orange-500/10 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-br from-[var(--token-color)]/10 via-transparent to-[var(--quaternary-accent)]/10 pointer-events-none" />
 
             <div className="relative">
               {/* Coin icon with pulse */}
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 p-[2px] shadow-[0_0_30px_rgba(250,204,21,0.4)] group-hover:scale-110 transition-transform duration-500 shrink-0">
-                <div className="w-full h-full bg-[#1a1c23] rounded-2xl flex items-center justify-center">
-                  <Coins className="w-8 h-8 text-yellow-400" />
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--token-color)] to-[var(--quaternary-accent)] p-[2px] shadow-[0_0_30px_rgba(251,191,36,0.4)] group-hover:scale-110 transition-transform duration-500 shrink-0">
+                <div className="w-full h-full bg-[var(--background-card)] rounded-2xl flex items-center justify-center">
+                  <Coins className="w-8 h-8 text-[var(--token-color)]" />
                 </div>
               </div>
 
@@ -143,11 +143,11 @@ const TokenWallet = ({ onClose, onNavigate, compact = false }: TokenWalletProps)
               </p>
 
               {/* Animated balance */}
-              <span className="text-5xl sm:text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-yellow-300 via-yellow-400 to-orange-500 drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] tabular-nums tracking-tight">
+              <span className="text-5xl sm:text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-br from-[var(--token-color)] via-[var(--token-color)] to-[var(--quaternary-accent)] drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] tabular-nums tracking-tight">
                 {animatedBalance.toLocaleString()}
               </span>
 
-              <div className="flex items-center justify-center gap-1.5 text-yellow-400/80">
+              <div className="flex items-center justify-center gap-1.5 text-[var(--token-color)]/80">
                 <Sparkles className="w-4 h-4" />
                 <span className="text-sm font-semibold">Vibe Tokens</span>
               </div>
@@ -161,25 +161,25 @@ const TokenWallet = ({ onClose, onNavigate, compact = false }: TokenWalletProps)
         {/* Today's Stats */}
         <div className="grid grid-cols-2 gap-3">
           <StatCard
-            icon={<TrendingUp className="w-5 h-5 text-fuchsia-400" />}
+            icon={<TrendingUp className="w-5 h-5 text-[var(--secondary-accent)]" />}
             label="Earned Today"
             value={`+${todayEarnings}`}
             color="fuchsia"
           />
           <StatCard
-            icon={<TrendingDown className="w-5 h-5 text-red-400" />}
+            icon={<TrendingDown className="w-5 h-5 text-[var(--error-accent)]" />}
             label="Spent Today"
             value={`-${todaySpending}`}
             color="red"
           />
           <StatCard
-            icon={<Award className="w-5 h-5 text-cyan-400" />}
+            icon={<Award className="w-5 h-5 text-[var(--success-accent)]" />}
             label="All-Time Earned"
             value={stats.totalEarned.toLocaleString()}
             color="cyan"
           />
           <StatCard
-            icon={<Zap className="w-5 h-5 text-purple-400" />}
+            icon={<Zap className="w-5 h-5 text-[var(--primary-accent)]" />}
             label="All-Time Spent"
             value={stats.totalSpent.toLocaleString()}
             color="purple"
@@ -198,10 +198,10 @@ const TokenWallet = ({ onClose, onNavigate, compact = false }: TokenWalletProps)
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-all ${
                     filter === f
                       ? f === 'earn'
-                        ? 'bg-violet-600 text-white shadow-lg shadow-fuchsia-500/20'
+                        ? 'bg-violet-600 text-white shadow-lg shadow-[var(--secondary-accent)]/20'
                         : f === 'spend'
-                          ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
-                          : 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
+                          ? 'bg-red-600 text-white shadow-lg shadow-[var(--error-accent)]/20'
+                          : 'bg-purple-600 text-white shadow-lg shadow-[var(--primary-accent)]/20'
                       : 'bg-white/10 text-white/70 hover:bg-white/20'
                   }`}
                 >
@@ -235,10 +235,10 @@ const TokenWallet = ({ onClose, onNavigate, compact = false }: TokenWalletProps)
         {onNavigate && (
           <button
             onClick={() => onNavigate('shop')}
-            className="w-full glass-card p-4 flex items-center justify-center gap-3 bg-gradient-to-r from-violet-600/20 to-violet-600/20 border border-fuchsia-500/30 hover:border-fuchsia-400/50 transition-all active:scale-[0.98] group"
+            className="w-full glass-card p-4 flex items-center justify-center gap-3 bg-gradient-to-r from-violet-600/20 to-violet-600/20 border border-[var(--secondary-accent)]/30 hover:border-[var(--secondary-accent)]/50 transition-all active:scale-[0.98] group"
           >
-            <ShoppingBag className="w-6 h-6 text-fuchsia-400 group-hover:scale-110 transition-transform" />
-            <span className="text-lg font-bold text-fuchsia-400">Visit the Reward Shop</span>
+            <ShoppingBag className="w-6 h-6 text-[var(--secondary-accent)] group-hover:scale-110 transition-transform" />
+            <span className="text-lg font-bold text-[var(--secondary-accent)]">Visit the Reward Shop</span>
             <span className="text-white/50 text-sm ml-1">Spend your tokens!</span>
           </button>
         )}
@@ -261,16 +261,16 @@ function StatCard({
   color: 'fuchsia' | 'red' | 'cyan' | 'purple';
 }) {
   const borderMap = {
-    fuchsia: 'border-fuchsia-500/20 bg-violet-600/10',
-    red: 'border-red-500/20 bg-red-600/10',
-    cyan: 'border-cyan-500/20 bg-cyan-600/10',
-    purple: 'border-purple-500/20 bg-purple-600/10',
+    fuchsia: 'border-[var(--secondary-accent)]/20 bg-[var(--secondary-accent)]/10',
+    red: 'border-[var(--error-accent)]/20 bg-[var(--error-accent)]/10',
+    cyan: 'border-[var(--success-accent)]/20 bg-[var(--success-accent)]/10',
+    purple: 'border-[var(--primary-accent)]/20 bg-[var(--primary-accent)]/10',
   };
   const textMap = {
-    fuchsia: 'text-fuchsia-400',
-    red: 'text-red-400',
-    cyan: 'text-cyan-400',
-    purple: 'text-purple-400',
+    fuchsia: 'text-[var(--secondary-accent)]',
+    red: 'text-[var(--error-accent)]',
+    cyan: 'text-[var(--success-accent)]',
+    purple: 'text-[var(--primary-accent)]',
   };
 
   return (
@@ -299,20 +299,20 @@ function TransactionRow({
     <div
       className={`rounded-xl p-3.5 flex items-center gap-3 transition-colors ${
         isEarn
-          ? 'bg-fuchsia-500/5 border border-fuchsia-500/10 hover:bg-fuchsia-500/10'
-          : 'bg-red-500/5 border border-red-500/10 hover:bg-red-500/10'
+          ? 'bg-[var(--secondary-accent)]/5 border border-[var(--secondary-accent)]/10 hover:bg-[var(--secondary-accent)]/10'
+          : 'bg-[var(--error-accent)]/5 border border-[var(--error-accent)]/10 hover:bg-[var(--error-accent)]/10'
       }`}
     >
       {/* Icon */}
       <div
         className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
-          isEarn ? 'bg-fuchsia-500/20' : 'bg-red-500/20'
+          isEarn ? 'bg-[var(--secondary-accent)]/20' : 'bg-[var(--error-accent)]/20'
         }`}
       >
         {isEarn ? (
-          <TrendingUp className="w-4 h-4 text-fuchsia-400" />
+          <TrendingUp className="w-4 h-4 text-[var(--secondary-accent)]" />
         ) : (
-          <TrendingDown className="w-4 h-4 text-red-400" />
+          <TrendingDown className="w-4 h-4 text-[var(--error-accent)]" />
         )}
       </div>
 
@@ -325,7 +325,7 @@ function TransactionRow({
       </div>
 
       {/* Amount */}
-      <div className={`text-lg font-bold shrink-0 ${isEarn ? 'text-fuchsia-400' : 'text-red-400'}`}>
+      <div className={`text-lg font-bold shrink-0 ${isEarn ? 'text-[var(--secondary-accent)]' : 'text-[var(--error-accent)]'}`}>
         {isEarn ? '+' : '-'}
         {transaction.amount}
       </div>

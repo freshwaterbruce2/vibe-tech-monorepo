@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SubjectType, WorksheetSession } from '../../types';
+import type { SubjectProgress, SubjectType, WorksheetSession } from '../../types';
 import { useWorksheet } from '../useWorksheet';
 
 // Mock progressionService
@@ -34,7 +34,7 @@ const makeSession = (overrides: Partial<WorksheetSession> = {}): WorksheetSessio
 describe('useWorksheet', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedGetProgress.mockResolvedValue(null as any);
+    mockedGetProgress.mockResolvedValue(null as unknown as SubjectProgress);
     mockedComplete.mockResolvedValue({
       leveledUp: false,
       newDifficulty: undefined,
@@ -156,7 +156,7 @@ describe('useWorksheet', () => {
   });
 
   it('should cancel the worksheet', async () => {
-    mockedGetProgress.mockResolvedValue(null as any);
+    mockedGetProgress.mockResolvedValue(null as unknown as SubjectProgress);
 
     const { result } = renderHook(() => useWorksheet());
 

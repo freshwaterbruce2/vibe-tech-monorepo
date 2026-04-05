@@ -1,0 +1,5 @@
+{
+  "name": "mcp-rag-server",
+  "type": "mcp-server",
+  "description": "MCP server exposing Nova-Agent RAG pipeline (search, index, DB queries) to Claude Desktop/Code"
+}

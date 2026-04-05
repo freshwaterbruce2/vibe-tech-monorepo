@@ -119,7 +119,7 @@ export default function AvatarProfile({ onOpenShop }: AvatarProfileProps) {
     <div
       style={{
         padding: '24px',
-        background: '#1e293b',
+        background: 'var(--background-surface)',
         borderRadius: '16px',
         color: 'white',
         boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
@@ -127,7 +127,7 @@ export default function AvatarProfile({ onOpenShop }: AvatarProfileProps) {
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Activity size={28} color="#22d3ee" style={{ marginRight: '12px' }} />
+          <Activity size={28} color="var(--success-accent)" style={{ marginRight: '12px' }} />
           <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold' }}>Avatar Profile</h2>
         </div>
         {onOpenShop && (
@@ -141,8 +141,8 @@ export default function AvatarProfile({ onOpenShop }: AvatarProfileProps) {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
         {/* Equipped Items */}
-        <div style={{ background: '#0f172a', padding: '16px', borderRadius: '12px' }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', color: '#94a3b8' }}>
+        <div style={{ background: 'var(--background-card)', padding: '16px', borderRadius: '12px' }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', color: 'var(--text-secondary)' }}>
             Equipped Gear
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -157,10 +157,10 @@ export default function AvatarProfile({ onOpenShop }: AvatarProfileProps) {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    background: '#1e293b',
+                    background: 'var(--background-surface)',
                     padding: '12px',
                     borderRadius: '8px',
-                    border: '1px solid #334155',
+                    border: '1px solid var(--text-placeholder)',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -168,7 +168,7 @@ export default function AvatarProfile({ onOpenShop }: AvatarProfileProps) {
                       style={{
                         width: '40px',
                         height: '40px',
-                        background: '#334155',
+                        background: 'var(--text-placeholder)',
                         borderRadius: '8px',
                         display: 'flex',
                         alignItems: 'center',
@@ -179,7 +179,7 @@ export default function AvatarProfile({ onOpenShop }: AvatarProfileProps) {
                       {item ? item.imageUrl : '❌'}
                     </div>
                     <div>
-                      <div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
                         {type}
                       </div>
                       <div style={{ fontWeight: '500' }}>{item ? item.name : 'Empty Slot'}</div>
@@ -190,8 +190,8 @@ export default function AvatarProfile({ onOpenShop }: AvatarProfileProps) {
                       onClick={() => void handleUnequip(type)}
                       style={{
                         background: 'transparent',
-                        border: '1px solid #ef4444',
-                        color: '#ef4444',
+                        border: '1px solid var(--error-accent)',
+                        color: 'var(--error-accent)',
                         padding: '4px 8px',
                         borderRadius: '4px',
                         cursor: 'pointer',
@@ -208,8 +208,8 @@ export default function AvatarProfile({ onOpenShop }: AvatarProfileProps) {
         </div>
 
         {/* Stats */}
-        <div style={{ background: '#0f172a', padding: '16px', borderRadius: '12px' }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', color: '#94a3b8' }}>Battle Stats</h3>
+        <div style={{ background: 'var(--background-card)', padding: '16px', borderRadius: '12px' }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', color: 'var(--text-secondary)' }}>Battle Stats</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {(Object.keys(STAT_LABELS) as AvatarStat[]).map((stat) => {
               const Icon = STAT_ICONS[stat];
@@ -224,12 +224,12 @@ export default function AvatarProfile({ onOpenShop }: AvatarProfileProps) {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '8px 0',
-                    borderBottom: '1px solid #1e293b',
+                    borderBottom: '1px solid var(--background-surface)',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Icon size={18} color={isBoosted ? '#a855f7' : '#64748b'} />
-                    <span style={{ color: isBoosted ? 'white' : '#cbd5e1' }}>
+                    <Icon size={18} color={isBoosted ? '#a855f7' : 'var(--text-muted)'} />
+                    <span style={{ color: isBoosted ? 'white' : 'var(--text-secondary)' }}>
                       {STAT_LABELS[stat]}
                     </span>
                   </div>

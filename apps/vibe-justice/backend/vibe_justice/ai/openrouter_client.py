@@ -38,16 +38,16 @@ class OpenRouterClient:
         self.timeout = float(os.getenv("OPENROUTER_TIMEOUT_SECONDS", "60"))
         self.max_retries = int(os.getenv("OPENROUTER_MAX_RETRIES", "2"))
 
-        # Model selection (best models for legal work as of Jan 2026)
-        # FREE reasoning model for complex legal analysis
+        # Model selection (March 2026)
+        # Gemini 3.1 Pro for complex legal reasoning (via OpenRouter)
         self.reasoning_model = os.getenv(
             "OPENROUTER_REASONING_MODEL",
-            "deepseek/deepseek-r1-0528:free"
+            "google/gemini-3.1-pro-preview"
         )
-        # Ultra-cheap chat model for simple queries
+        # Kimi K2.5 for fast chat queries (via OpenRouter)
         self.chat_model = os.getenv(
             "OPENROUTER_CHAT_MODEL",
-            "deepseek/deepseek-chat"
+            "moonshotai/kimi-k2.5"
         )
 
     def _get_headers(self) -> dict:

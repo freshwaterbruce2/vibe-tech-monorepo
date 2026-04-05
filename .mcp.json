@@ -79,6 +79,14 @@
       "env": {
         "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS": "1"
       }
+    },
+    "rag": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["C:/dev/apps/mcp-rag-server/dist/index.js"],
+      "env": {
+        "NODE_ENV": "production"
+      }
     }
   }
 }

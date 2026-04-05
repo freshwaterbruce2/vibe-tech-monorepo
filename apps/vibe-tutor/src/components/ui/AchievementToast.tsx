@@ -29,7 +29,7 @@ const AchievementToast = ({ achievement, bonusTokens, onClose }: AchievementToas
       id: i,
       left: `${Math.random() * 100}%`,
       animationDelay: `${Math.random() * 0.5}s`,
-      backgroundColor: ['#FFD700', '#FFA500', '#FF69B4', '#00CED1'][Math.floor(Math.random() * 4)]!,
+      backgroundColor: ['#fbbf24', '#a855f7', '#ec4899', '#22d3ee'][Math.floor(Math.random() * 4)]!,
     }));
     const confettiTimer = setTimeout(() => {
       setConfetti(pieces);
@@ -47,8 +47,8 @@ const AchievementToast = ({ achievement, bonusTokens, onClose }: AchievementToas
   }
 
   return (
-    <div className="fixed top-4 right-4 z-50 animate-slide-in">
-      <div className="glass-card p-4 border-2 border-yellow-400/50 bg-gradient-to-r from-yellow-500/20 to-purple-500/20 shadow-[0_0_20px_rgba(255,215,0,0.3)] relative overflow-hidden">
+    <div className="fixed top-4 right-4 z-50 animate-slide-in" role="alert" aria-live="assertive" aria-atomic="true">
+      <div className="glass-card p-4 border-2 border-[var(--token-color)]/50 bg-gradient-to-r from-[var(--token-color)]/20 to-[var(--primary-accent)]/20 shadow-[0_0_20px_rgba(168,85,247,0.3)] relative overflow-hidden">
         {/* Confetti Effect */}
         <div className="absolute inset-0 pointer-events-none">
           {confetti.map((piece) => (
@@ -67,7 +67,8 @@ const AchievementToast = ({ achievement, bonusTokens, onClose }: AchievementToas
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-2 right-2 text-yellow-900 hover:text-yellow-950 transition-colors"
+          className="absolute top-2 right-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+          aria-label="Close achievement notification"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
@@ -81,17 +82,17 @@ const AchievementToast = ({ achievement, bonusTokens, onClose }: AchievementToas
 
         <div className="flex items-center gap-4">
           {/* Achievement Icon */}
-          <div className="w-16 h-16 rounded-full bg-yellow-400/30 flex items-center justify-center flex-shrink-0 animate-bounce-slow">
-            <Icon className="w-10 h-10 text-yellow-900" />
+          <div className="w-16 h-16 rounded-full bg-[var(--token-color)]/30 flex items-center justify-center flex-shrink-0 animate-bounce-slow">
+            <Icon className="w-10 h-10 text-[var(--background-main)]" aria-hidden="true" />
           </div>
 
           {/* Achievement Info */}
           <div className="flex-1">
-            <div className="text-sm font-semibold text-yellow-900 mb-1">Achievement Unlocked!</div>
-            <div className="text-xl font-bold text-yellow-950">{achievement.name}</div>
-            <div className="text-sm text-yellow-800 mt-1">{achievement.description}</div>
+            <div className="text-sm font-semibold text-[var(--text-primary)] mb-1">Achievement Unlocked!</div>
+            <div className="text-xl font-bold text-[var(--text-primary)]">{achievement.name}</div>
+            <div className="text-sm text-[var(--text-secondary)] mt-1">{achievement.description}</div>
             {bonusTokens > 0 && (
-              <div className="text-lg font-bold text-yellow-950 mt-2 flex items-center gap-1">
+              <div className="text-lg font-bold text-[var(--token-color)] mt-2 flex items-center gap-1">
                 <span>+{bonusTokens}</span>
                 <span className="text-sm">tokens</span>
               </div>

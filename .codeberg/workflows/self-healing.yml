@@ -1,0 +1,87 @@
+# DEPRECATED: Self-Healing CI Pipeline (migrated to GitHub Actions)
+# See: .github/workflows/ci.yml for active CI pipeline
+# Kept for reference only - do not use
+
+when:
+  branch: main
+  event: push
+
+steps:
+  # Step 1: Quality Gates — lint + typecheck
+  quality-gates:
+    image: node:22-slim
+    commands:
+      - corepack enable && corepack prepare pnpm@latest --activate
+      - pnpm install --frozen-lockfile
+      - echo "=== Running Lint ==="
+      - pnpm nx affected -t lint --base=HEAD~1 2>&1 | tee /tmp/lint.log || true
+      - echo "=== Running Typecheck ==="
+      - pnpm nx affected -t typecheck --base=HEAD~1 2>&1 | tee /tmp/typecheck.log || true
+      # Capture exit codes
+      - |
+        LINT_EXIT=$(pnpm nx affected -t lint --base=HEAD~1 > /dev/null 2>&1; echo $?)
+        TC_EXIT=$(pnpm nx affected -t typecheck --base=HEAD~1 > /dev/null 2>&1; echo $?)
+        if [ "$LINT_EXIT" -ne 0 ] || [ "$TC_EXIT" -ne 0 ]; then
+          echo "QUALITY_FAILED=true" >> /tmp/build_env
+          exit 0  # Don't fail — let self-heal step handle it
+        fi
+        echo "QUALITY_FAILED=false" >> /tmp/build_env
+
+  # Step 2: Self-Heal — auto-fix lint and type errors
+  self-heal:
+    image: python:3.11-slim
+    commands:
+      - pip install pyyaml --quiet
+      - |
+        if [ -f /tmp/build_env ] && grep -q "QUALITY_FAILED=true" /tmp/build_env; then
+          echo "=== Self-Healing: Analyzing failures ==="
+          python -m tools.self-healing.orchestrator --auto-apply --json > /tmp/heal_report_path.txt 2>&1
+          HEAL_EXIT=$?
+          echo "Orchestrator exit: $HEAL_EXIT"
+
+          # Collect changed files for safety check
+          git diff --name-only > /tmp/changed_files.txt
+          cat /tmp/changed_files.txt
+        else
+          echo "Quality gates passed — no healing needed."
+        fi
+    when:
+      - status: [success]
+
+  # Step 3: Safety Validation — block if healer touched protected paths
+  safety-validate:
+    image: node:22-slim
+    commands:
+      - |
+        if [ -f /tmp/changed_files.txt ] && [ -s /tmp/changed_files.txt ]; then
+          echo "=== Validating safety gates ==="
+          corepack enable && corepack prepare pnpm@latest --activate
+          npm install minimatch yaml --no-save --quiet
+          node scripts/validate-auto-fix-safety.mjs /tmp/changed_files.txt
+          SAFETY_EXIT=$?
+          if [ "$SAFETY_EXIT" -ne 0 ]; then
+            echo "SAFETY CHECK FAILED — aborting pipeline."
+            exit 1
+          fi
+        else
+          echo "No files changed — safety check skipped."
+        fi
+    when:
+      - status: [success]
+
+  # Step 4: Commit auto-fixes back (skips CI to prevent loops)
+  commit-fixes:
+    image: node:22-slim
+    commands:
+      - |
+        if [ -f /tmp/changed_files.txt ] && [ -s /tmp/changed_files.txt ]; then
+          git config user.name "Vibe Bot"
+          git config user.email "bot@vibe-tech.dev"
+          git add -A
+          git commit -m "chore: self-healing auto-fix [skip ci]" || echo "Nothing to commit"
+          git push origin main
+        else
+          echo "No auto-fixes to commit."
+        fi
+    when:
+      - status: [success]

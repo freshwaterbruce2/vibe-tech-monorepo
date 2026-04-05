@@ -279,10 +279,10 @@ export function useAppInit(props: {
 
     // Check for updates
     autoUpdater.checkForUpdates().then((updateInfo) => {
-      if (updateInfo?.mandatory) {
+      if (updateInfo) {
         showWarning(
           'Update Available',
-          `Version ${updateInfo.version} is available. This is a mandatory update.`
+          `Version ${updateInfo.version} is available. Restart to apply.`
         );
       }
     });

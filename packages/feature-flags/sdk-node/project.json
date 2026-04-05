@@ -1,0 +1,44 @@
+{
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "name": "@vibetech/feature-flags-sdk-node",
+  "projectType": "library",
+  "root": "packages/feature-flags/sdk-node",
+  "sourceRoot": "packages/feature-flags/sdk-node/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "dependsOn": ["^build"],
+      "options": {
+        "command": "pnpm build",
+        "cwd": "packages/feature-flags/sdk-node"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "pnpm lint",
+        "cwd": "packages/feature-flags/sdk-node"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "pnpm typecheck",
+        "cwd": "packages/feature-flags/sdk-node"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "pnpm test",
+        "cwd": "packages/feature-flags/sdk-node"
+      }
+    }
+  },
+  "tags": ["type:library", "scope:feature-flags"]
+}

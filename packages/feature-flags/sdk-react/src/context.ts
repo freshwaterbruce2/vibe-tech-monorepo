@@ -4,7 +4,7 @@ import type {
   EvaluationResult,
   FeatureFlag,
   KillSwitchEvent,
-} from '@dev/feature-flags-core';
+} from '@vibetech/feature-flags-core';
 import { createContext } from 'react';
 import type { ReactNode } from 'react';
 

@@ -1,6 +1,6 @@
 {
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "name": "@dev/feature-flags-sdk-react",
+  "name": "@vibetech/feature-flags-sdk-react",
   "projectType": "library",
   "root": "packages/feature-flags/sdk-react",
   "sourceRoot": "packages/feature-flags/sdk-react/src",

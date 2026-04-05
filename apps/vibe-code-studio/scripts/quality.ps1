@@ -15,51 +15,60 @@ param(
     [switch]$Fix
 )
 
-Write-Host "🔍 Running quality checks..." -ForegroundColor Cyan
+$environmentScript = Join-Path $PSScriptRoot '..\..\..\scripts\Initialize-DevProcessEnvironment.ps1'
+. $environmentScript
+$null = Initialize-DevProcessEnvironment
+Push-Location (Join-Path $PSScriptRoot '..')
 
-$allPassed = $true
+try {
+    Write-Host "🔍 Running quality checks..." -ForegroundColor Cyan
 
-# TypeScript check
-Write-Host "`n📝 TypeScript Check..." -ForegroundColor Yellow
-pnpm typecheck
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ TypeScript errors found" -ForegroundColor Red
-    $allPassed = $false
-} else {
-    Write-Host "✅ TypeScript check passed" -ForegroundColor Green
-}
+    $allPassed = $true
 
-# Linting
-Write-Host "`n🧹 ESLint Check..." -ForegroundColor Yellow
-if ($Fix) {
-    pnpm lint --fix
-} else {
-    pnpm lint
-}
+    # TypeScript check
+    Write-Host "`n📝 TypeScript Check..." -ForegroundColor Yellow
+    pnpm typecheck
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "❌ TypeScript errors found" -ForegroundColor Red
+        $allPassed = $false
+    } else {
+        Write-Host "✅ TypeScript check passed" -ForegroundColor Green
+    }
 
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Linting errors found" -ForegroundColor Red
-    $allPassed = $false
-} else {
-    Write-Host "✅ Linting passed" -ForegroundColor Green
-}
+    # Linting
+    Write-Host "`n🧹 ESLint Check..." -ForegroundColor Yellow
+    if ($Fix) {
+        pnpm lint --fix
+    } else {
+        pnpm lint
+    }
 
-# Unit tests
-Write-Host "`n🧪 Running Tests..." -ForegroundColor Yellow
-pnpm test --reporter=summary
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Tests failed" -ForegroundColor Red
-    $allPassed = $false
-} else {
-    Write-Host "✅ Tests passed" -ForegroundColor Green
-}
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "❌ Linting errors found" -ForegroundColor Red
+        $allPassed = $false
+    } else {
+        Write-Host "✅ Linting passed" -ForegroundColor Green
+    }
 
-# Summary
-Write-Host "`n" + ("=" * 50) -ForegroundColor Cyan
-if ($allPassed) {
-    Write-Host "✅ All quality checks passed!" -ForegroundColor Green
-    exit 0
-} else {
-    Write-Host "❌ Some quality checks failed" -ForegroundColor Red
-    exit 1
+    # Unit tests
+    Write-Host "`n🧪 Running Tests..." -ForegroundColor Yellow
+    pnpm test --reporter=summary
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "❌ Tests failed" -ForegroundColor Red
+        $allPassed = $false
+    } else {
+        Write-Host "✅ Tests passed" -ForegroundColor Green
+    }
+
+    # Summary
+    Write-Host "`n" + ("=" * 50) -ForegroundColor Cyan
+    if ($allPassed) {
+        Write-Host "✅ All quality checks passed!" -ForegroundColor Green
+        exit 0
+    } else {
+        Write-Host "❌ Some quality checks failed" -ForegroundColor Red
+        exit 1
+    }
+} finally {
+    Pop-Location
 }

@@ -69,7 +69,7 @@ async def execute_trade():
 
 ```bash
 cd apps/nova-agent
-pnpm add @dev/feature-flags-sdk-node
+pnpm add @vibetech/feature-flags-sdk-node
 ```
 
 ### 2. Integration Code
@@ -77,7 +77,7 @@ pnpm add @dev/feature-flags-sdk-node
 Create `src/services/feature-flags.ts`:
 
 ```typescript
-import { FeatureFlagClient } from '@dev/feature-flags-sdk-node';
+import { FeatureFlagClient } from '@vibetech/feature-flags-sdk-node';
 
 export const featureFlags = new FeatureFlagClient({
   serverUrl: 'http://localhost:3100',
@@ -121,7 +121,7 @@ async function main() {
 
 ```bash
 cd apps/vibe-code-studio
-pnpm add @dev/feature-flags-sdk-node
+pnpm add @vibetech/feature-flags-sdk-node
 ```
 
 ### 2. Integration Code
@@ -129,7 +129,7 @@ pnpm add @dev/feature-flags-sdk-node
 Create `src/features/featureFlags.ts`:
 
 ```typescript
-import { FeatureFlagClient } from '@dev/feature-flags-sdk-node';
+import { FeatureFlagClient } from '@vibetech/feature-flags-sdk-node';
 
 class FeatureFlagService {
   private client: FeatureFlagClient;
@@ -175,7 +175,7 @@ if (featureFlagService.isAIAutocompleteEnabled()) {
 ### 1. Add Dependency
 
 ```bash
-pnpm add @dev/feature-flags-sdk-react
+pnpm add @vibetech/feature-flags-sdk-react
 ```
 
 ### 2. Integration Code
@@ -183,7 +183,7 @@ pnpm add @dev/feature-flags-sdk-react
 Wrap your app with the provider:
 
 ```tsx
-import { FeatureFlagProvider } from '@dev/feature-flags-sdk-react';
+import { FeatureFlagProvider } from '@vibetech/feature-flags-sdk-react';
 
 function App() {
   return (
@@ -201,7 +201,7 @@ function App() {
 Use in components:
 
 ```tsx
-import { useFlag, FeatureGate } from '@dev/feature-flags-sdk-react';
+import { useFlag, FeatureGate } from '@vibetech/feature-flags-sdk-react';
 
 function MyComponent() {
   const showBetaFeature = useFlag('app.beta_ui');

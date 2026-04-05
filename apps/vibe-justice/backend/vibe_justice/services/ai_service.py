@@ -1,6 +1,6 @@
 """
 AI Service for Vibe-Justice Legal Research Assistant
-Uses OpenRouter API for multi-model AI access (2026 standards)
+Multi-provider AI: Kimi K2.5 (chat) + Gemini 3.1 Pro (reasoning)
 """
 
 import os
@@ -10,72 +10,154 @@ from typing import Optional, List, Dict, Any
 
 class AIService:
     """
-    OpenRouter AI service with multi-model support for legal research.
+    Multi-provider AI service for legal research.
 
-    Features (January 2026):
-    - Direct OpenRouter API integration
-    - Automatic model selection based on query complexity
-    - deepseek/deepseek-r1-0528:free: FREE reasoning for complex legal analysis
-    - deepseek/deepseek-chat: Ultra-cheap chat ($0.0003/$0.0012 per 1M tokens)
-    - Usage tracking via HTTP-Referer and X-Title headers
+    Models (March 2026):
+    - Kimi K2.5 via Moonshot API: Fast chat for simple queries ($0.60/$2.50 per 1M tokens)
+    - Gemini 3.1 Pro via Google API: Deep reasoning for complex legal analysis
+    - OpenRouter fallback if neither direct API key is set
     """
 
     def __init__(self):
-        # API Configurations
-        self.openrouter_key = os.getenv("OPENROUTER_API_KEY")
+        # API Keys
         self.moonshot_key = os.getenv("MOONSHOT_API_KEY")
-        
-        self.openrouter_base = os.getenv("OPENROUTER_API_BASE", "https://openrouter.ai/api/v1")
+        self.google_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+        self.openrouter_key = os.getenv("OPENROUTER_API_KEY")
+
+        # API Base URLs
         self.moonshot_base = os.getenv("MOONSHOT_API_BASE", "https://api.moonshot.ai/v1")
+        self.gemini_base = os.getenv("GEMINI_API_BASE", "https://generativelanguage.googleapis.com/v1beta")
+        self.openrouter_base = os.getenv("OPENROUTER_API_BASE", "https://openrouter.ai/api/v1")
 
         # Optional: Usage tracking (OpenRouter)
         self.site_url = os.getenv("OPENROUTER_SITE_URL", "")
         self.site_name = os.getenv("OPENROUTER_SITE_NAME", "Vibe-Justice")
 
-        # Model selection
+        # Model selection — Kimi K2.5 for chat, Gemini 3.1 Pro for reasoning
         self.reasoning_model = os.getenv(
-            "OPENROUTER_REASONING_MODEL",
-            "deepseek/deepseek-r1-0528:free"
+            "REASONING_MODEL",
+            "gemini-3.1-pro-preview" if self.google_key else "deepseek/deepseek-r1-0528:free"
         )
         self.chat_model = os.getenv(
-            "OPENROUTER_CHAT_MODEL",
-            "moonshotai/kimi-k2.5" if self.moonshot_key else "deepseek/deepseek-chat"
+            "CHAT_MODEL",
+            "kimi-k2.5" if self.moonshot_key else "deepseek/deepseek-chat"
         )
 
-    def _get_api_config(self, model: str) -> tuple[str, dict]:
-        """Get the appropriate API endpoint and headers based on the model."""
-        if "moonshot" in model.lower() or "kimi" in model.lower():
-            if not self.moonshot_key:
-                raise ValueError("MOONSHOT_API_KEY is required for Moonshot/Kimi models")
-            
-            # Map common OpenRouter names to direct Moonshot names if needed
-            if model == "moonshotai/kimi-k2.5":
-                model = "moonshot-v1-32k" # Fallback mapping or use actual kimi-k2.5 if available
-                
-            headers = {
-                "Authorization": f"Bearer {self.moonshot_key}",
-                "Content-Type": "application/json"
-            }
-            return f"{self.moonshot_base}/chat/completions", headers
-            
+    def _is_gemini(self, model: str) -> bool:
+        return "gemini" in model.lower()
+
+    def _is_moonshot(self, model: str) -> bool:
+        return "kimi" in model.lower() or "moonshot" in model.lower()
+
+    def _normalize_moonshot_model(self, model: str) -> str:
+        """Map OpenRouter-style Kimi aliases to Moonshot's native model IDs."""
+        normalized = model.strip().lower()
+        model_aliases = {
+            "kimi-k2.5": "moonshot-v1-32k",
+            "moonshotai/kimi-k2.5": "moonshot-v1-32k",
+        }
+        return model_aliases.get(normalized, model)
+
+    def _call_model(
+        self,
+        model: str,
+        system_prompt: str,
+        user_message: str,
+        temperature: float = 0.3,
+        max_tokens: int = 4000,
+        timeout: int = 60,
+    ) -> str:
+        """
+        Unified model caller that routes to the correct provider API.
+        Handles Gemini (Google), Kimi (Moonshot), and OpenRouter formats.
+        """
+        if self._is_gemini(model):
+            return self._call_gemini(model, system_prompt, user_message, temperature, max_tokens, timeout)
+        elif self._is_moonshot(model):
+            model = self._normalize_moonshot_model(model)
+            return self._call_openai_compat(
+                endpoint=f"{self.moonshot_base}/chat/completions",
+                headers={"Authorization": f"Bearer {self.moonshot_key}", "Content-Type": "application/json"},
+                model=model,
+                system_prompt=system_prompt,
+                user_message=user_message,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                timeout=timeout,
+            )
         else:
-            if not self.openrouter_key:
-                raise ValueError("OPENROUTER_API_KEY is required for OpenRouter models")
-                
-            headers = {
-                "Authorization": f"Bearer {self.openrouter_key}",
-                "Content-Type": "application/json"
-            }
+            # OpenRouter fallback
+            headers = {"Authorization": f"Bearer {self.openrouter_key}", "Content-Type": "application/json"}
             if self.site_url:
                 headers["HTTP-Referer"] = self.site_url
             if self.site_name:
                 headers["X-Title"] = self.site_name
-                
-            return f"{self.openrouter_base}/chat/completions", headers
+            return self._call_openai_compat(
+                endpoint=f"{self.openrouter_base}/chat/completions",
+                headers=headers,
+                model=model,
+                system_prompt=system_prompt,
+                user_message=user_message,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                timeout=timeout,
+            )
+
+    def _call_openai_compat(
+        self, endpoint: str, headers: dict, model: str,
+        system_prompt: str, user_message: str,
+        temperature: float, max_tokens: int, timeout: int,
+    ) -> str:
+        """Call an OpenAI-compatible API (Moonshot, OpenRouter, etc.)."""
+        response = requests.post(
+            endpoint,
+            json={
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message},
+                ],
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            },
+            headers=headers,
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"]
+
+    def _call_gemini(
+        self, model: str, system_prompt: str, user_message: str,
+        temperature: float, max_tokens: int, timeout: int,
+    ) -> str:
+        """Call Google Gemini API (different request/response format)."""
+        url = f"{self.gemini_base}/models/{model}:generateContent"
+        response = requests.post(
+            url,
+            params={"key": self.google_key},
+            json={
+                "systemInstruction": {"parts": [{"text": system_prompt}]},
+                "contents": [{"role": "user", "parts": [{"text": user_message}]}],
+                "generationConfig": {
+                    "temperature": temperature,
+                    "maxOutputTokens": max_tokens,
+                },
+            },
+            headers={"Content-Type": "application/json"},
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        return response.json()["candidates"][0]["content"]["parts"][0]["text"]
 
     def _get_headers(self) -> Dict[str, str]:
-        """Get default OpenRouter API headers with optional tracking (Legacy compat)."""
-        _, headers = self._get_api_config(self.chat_model)
+        """Get default API headers (Legacy compat)."""
+        if self._is_moonshot(self.chat_model):
+            return {"Authorization": f"Bearer {self.moonshot_key}", "Content-Type": "application/json"}
+        headers = {"Authorization": f"Bearer {self.openrouter_key}", "Content-Type": "application/json"}
+        if self.site_url:
+            headers["HTTP-Referer"] = self.site_url
+        if self.site_name:
+            headers["X-Title"] = self.site_name
         return headers
 
     def is_complex_legal_query(self, query: str) -> bool:
@@ -145,7 +227,7 @@ class AIService:
         use_reasoning: Optional[bool] = None
     ) -> str:
         """
-        Generate AI response with automatic model selection via OpenRouter proxy.
+        Generate AI response with automatic model selection.
 
         Args:
             message: User's question or prompt
@@ -156,48 +238,25 @@ class AIService:
             AI response text
         """
         try:
-            # Auto-select model based on query complexity
             if use_reasoning is None:
                 use_reasoning = self.is_complex_legal_query(message)
 
             model = self.reasoning_model if use_reasoning else self.chat_model
+            provider = "Gemini" if self._is_gemini(model) else "Kimi" if self._is_moonshot(model) else "OpenRouter"
+            print(f"Using model: {model} via {provider} (reasoning={'ON' if use_reasoning else 'OFF'})")
 
-            print(f"Using model: {model} via OpenRouter proxy (reasoning={'ON' if use_reasoning else 'OFF'})")
-
-            system_prompt = self.get_system_prompt(domain)
-
-            # Get dynamic endpoint and headers
-            endpoint, headers = self._get_api_config(model)
-
-            # Map OpenRouter alias to actual Moonshot model if needed before the call
-            actual_model = model
-            if actual_model == "moonshotai/kimi-k2.5":
-                actual_model = "moonshot-v1-32k"
-
-            # Call API
-            response = requests.post(
-                endpoint,
-                json={
-                    "model": actual_model,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": message}
-                    ],
-                    "temperature": 0.3,
-                    "max_tokens": 4000
-                },
-                headers=headers,
-                timeout=60
+            return self._call_model(
+                model=model,
+                system_prompt=self.get_system_prompt(domain),
+                user_message=message,
+                temperature=0.3,
+                max_tokens=4000,
+                timeout=60,
             )
 
-            response.raise_for_status()
-            data = response.json()
-
-            return data["choices"][0]["message"]["content"]
-
         except requests.exceptions.RequestException as e:
-            print(f"Error calling OpenRouter API: {e}")
-            return f"Error: Unable to connect to OpenRouter. Check OPENROUTER_API_KEY configuration."
+            print(f"Error calling AI API: {e}")
+            return f"Error: Unable to connect to AI service. Check API key configuration."
         except Exception as e:
             print(f"Error in generate_response: {e}")
             return f"Error: {str(e)}"
@@ -209,10 +268,7 @@ class AIService:
         use_reasoning: Optional[bool] = None
     ) -> Dict[str, str]:
         """
-        Generate AI response (non-streaming for now - proxy streaming support TBD).
-
-        Note: Streaming support requires SSE (Server-Sent Events) setup with the proxy.
-        For now, returns complete response with reasoning content if available.
+        Generate AI response with reasoning/answer split.
 
         Args:
             message: User's question or prompt
@@ -223,64 +279,30 @@ class AIService:
             Dict with 'reasoning' and 'answer' keys
         """
         try:
-            # Auto-select model based on query complexity
             if use_reasoning is None:
                 use_reasoning = self.is_complex_legal_query(message)
 
             model = self.reasoning_model if use_reasoning else self.chat_model
+            provider = "Gemini" if self._is_gemini(model) else "Kimi" if self._is_moonshot(model) else "OpenRouter"
+            print(f"Using model: {model} via {provider} (reasoning={'ON' if use_reasoning else 'OFF'})")
 
-            print(f"Using model: {model} via OpenRouter proxy (reasoning={'ON' if use_reasoning else 'OFF'})")
-
-            system_prompt = self.get_system_prompt(domain)
-
-            # Get dynamic endpoint and headers
-            endpoint, headers = self._get_api_config(model)
-
-            # Map OpenRouter alias to actual Moonshot model if needed before the call
-            actual_model = model
-            if actual_model == "moonshotai/kimi-k2.5":
-                actual_model = "moonshot-v1-32k"
-
-            # Call API
-            response = requests.post(
-                endpoint,
-                json={
-                    "model": actual_model,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": message}
-                    ],
-                    "temperature": 0.7,
-                    "max_tokens": 12000  # Higher for reasoning models
-                },
-                headers=headers,
-                timeout=120  # Longer timeout for reasoning
+            answer = self._call_model(
+                model=model,
+                system_prompt=self.get_system_prompt(domain),
+                user_message=message,
+                temperature=0.7,
+                max_tokens=12000,
+                timeout=120,
             )
 
-            response.raise_for_status()
-            data = response.json()
-
-            # Extract answer content
-            answer = data["choices"][0]["message"]["content"]
-
-            # TODO: Add streaming support via SSE for real-time reasoning display
-            return {
-                "reasoning": "",  # Reasoning embedded in answer for now
-                "answer": answer
-            }
+            return {"reasoning": "", "answer": answer}
 
         except requests.exceptions.RequestException as e:
-            print(f"Error calling OpenRouter API: {e}")
-            return {
-                "reasoning": "",
-                "answer": f"Error: Unable to connect to OpenRouter. Check OPENROUTER_API_KEY configuration."
-            }
+            print(f"Error calling AI API: {e}")
+            return {"reasoning": "", "answer": f"Error: Unable to connect to AI service. Check API key configuration."}
         except Exception as e:
             print(f"Error in generate_response_streaming: {e}")
-            return {
-                "reasoning": "",
-                "answer": f"Error: {str(e)}"
-            }
+            return {"reasoning": "", "answer": f"Error: {str(e)}"}
 
     def generate_rag_response(
         self,
@@ -290,7 +312,7 @@ class AIService:
         use_reasoning: Optional[bool] = None
     ) -> str:
         """
-        Generate RAG (Retrieval-Augmented Generation) response with legal context via OpenRouter proxy.
+        Generate RAG response with legal context.
 
         Args:
             query: User's question
@@ -302,21 +324,16 @@ class AIService:
             AI response incorporating context
         """
         try:
-            # Auto-select model based on query complexity
             if use_reasoning is None:
                 use_reasoning = self.is_complex_legal_query(query)
 
             model = self.reasoning_model if use_reasoning else self.chat_model
 
-            system_prompt = self.get_system_prompt(domain)
-
-            # Format context chunks
             context_text = "\n\n".join([
                 f"[Context {i+1}]: {chunk}"
                 for i, chunk in enumerate(context_chunks)
             ])
 
-            # Augmented message with context
             augmented_message = (
                 f"Using the following legal context, provide a thorough analysis.\n\n"
                 f"LEGAL CONTEXT:\n{context_text}\n\n"
@@ -324,38 +341,18 @@ class AIService:
                 f"Please reason through this step-by-step, considering all legal implications."
             )
 
-            # Get dynamic endpoint and headers
-            endpoint, headers = self._get_api_config(model)
-
-            # Map OpenRouter alias to actual Moonshot model if needed before the call
-            actual_model = model
-            if actual_model == "moonshotai/kimi-k2.5":
-                actual_model = "moonshot-v1-32k"
-
-            # Call API
-            response = requests.post(
-                endpoint,
-                json={
-                    "model": actual_model,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": augmented_message}
-                    ],
-                    "temperature": 0.3,
-                    "max_tokens": 8000
-                },
-                headers=headers,
-                timeout=120
+            return self._call_model(
+                model=model,
+                system_prompt=self.get_system_prompt(domain),
+                user_message=augmented_message,
+                temperature=0.3,
+                max_tokens=8000,
+                timeout=120,
             )
 
-            response.raise_for_status()
-            data = response.json()
-
-            return data["choices"][0]["message"]["content"]
-
         except requests.exceptions.RequestException as e:
-            print(f"Error calling OpenRouter API: {e}")
-            return f"Error: Unable to connect to OpenRouter. Check OPENROUTER_API_KEY configuration."
+            print(f"Error calling AI API: {e}")
+            return f"Error: Unable to connect to AI service. Check API key configuration."
         except Exception as e:
             print(f"Error in generate_rag_response: {e}")
             return f"Error: {str(e)}"
@@ -368,10 +365,7 @@ class AIService:
         use_reasoning: Optional[bool] = None
     ) -> Dict[str, str]:
         """
-        Generate RAG response (non-streaming for now - proxy streaming support TBD).
-
-        Note: Streaming support requires SSE (Server-Sent Events) setup with the proxy.
-        For now, returns complete response with reasoning content if available.
+        Generate RAG response with reasoning/answer split.
 
         Args:
             query: User's question
@@ -383,23 +377,18 @@ class AIService:
             Dict with 'reasoning' and 'answer' keys
         """
         try:
-            # Auto-select model based on query complexity
             if use_reasoning is None:
                 use_reasoning = self.is_complex_legal_query(query)
 
             model = self.reasoning_model if use_reasoning else self.chat_model
+            provider = "Gemini" if self._is_gemini(model) else "Kimi" if self._is_moonshot(model) else "OpenRouter"
+            print(f"RAG with model: {model} via {provider} (reasoning={'ON' if use_reasoning else 'OFF'})")
 
-            print(f"RAG with model: {model} via OpenRouter proxy (reasoning={'ON' if use_reasoning else 'OFF'})")
-
-            system_prompt = self.get_system_prompt(domain)
-
-            # Format context chunks
             context_text = "\n\n".join([
                 f"[Context {i+1}]: {chunk}"
                 for i, chunk in enumerate(context_chunks)
             ])
 
-            # Augmented message with context
             augmented_message = (
                 f"Using the following legal context, provide a thorough analysis.\n\n"
                 f"LEGAL CONTEXT:\n{context_text}\n\n"
@@ -407,54 +396,23 @@ class AIService:
                 f"Please reason through this step-by-step, considering all legal implications."
             )
 
-            # Get dynamic endpoint and headers
-            endpoint, headers = self._get_api_config(model)
-
-            # Map OpenRouter alias to actual Moonshot model if needed before the call
-            actual_model = model
-            if actual_model == "moonshotai/kimi-k2.5":
-                actual_model = "moonshot-v1-32k"
-
-            # Call API
-            response = requests.post(
-                endpoint,
-                json={
-                    "model": actual_model,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": augmented_message}
-                    ],
-                    "temperature": 0.7,
-                    "max_tokens": 12000
-                },
-                headers=headers,
-                timeout=120
+            answer = self._call_model(
+                model=model,
+                system_prompt=self.get_system_prompt(domain),
+                user_message=augmented_message,
+                temperature=0.7,
+                max_tokens=12000,
+                timeout=120,
             )
 
-            response.raise_for_status()
-            data = response.json()
-
-            # Extract answer content
-            answer = data["choices"][0]["message"]["content"]
-
-            # TODO: Add streaming support via SSE for real-time reasoning display
-            return {
-                "reasoning": "",  # Reasoning embedded in answer for now
-                "answer": answer
-            }
+            return {"reasoning": "", "answer": answer}
 
         except requests.exceptions.RequestException as e:
-            print(f"Error calling OpenRouter API: {e}")
-            return {
-                "reasoning": "",
-                "answer": f"Error: Unable to connect to OpenRouter. Check OPENROUTER_API_KEY configuration."
-            }
+            print(f"Error calling AI API: {e}")
+            return {"reasoning": "", "answer": f"Error: Unable to connect to AI service. Check API key configuration."}
         except Exception as e:
             print(f"Error in generate_rag_response_streaming: {e}")
-            return {
-                "reasoning": "",
-                "answer": f"Error: {str(e)}"
-            }
+            return {"reasoning": "", "answer": f"Error: {str(e)}"}
 
 
 # Singleton instance

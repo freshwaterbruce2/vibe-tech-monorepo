@@ -3,8 +3,9 @@
  * Tests backup, validation, rollback, and multi-platform behavior
  */
 
+import type { SQLiteDBConnection } from '@capacitor-community/sqlite';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Reward } from '../../types';
+import type { Achievement, LocalTrack, Reward } from '../../types';
 import { appStore } from '../../utils/electronStore';
 import { databaseService } from '../databaseService';
 import { MigrationService } from '../migrationService';
@@ -38,7 +39,7 @@ describe('MigrationService - Integration Tests', () => {
       id: 'hw1',
       subject: 'Math',
       title: 'Algebra homework',
-      dueDate: (Date.now() + 86400000) as any,
+      dueDate: (Date.now() + 86400000) as unknown as string,
       completed: false,
       priority: 'high',
     },
@@ -46,7 +47,7 @@ describe('MigrationService - Integration Tests', () => {
       id: 'hw2',
       subject: 'Science',
       title: 'Lab report',
-      dueDate: (Date.now() + 172800000) as any,
+      dueDate: (Date.now() + 172800000) as unknown as string,
       completed: true,
       priority: 'medium',
       completedDate: Date.now() - 3600000,
@@ -58,7 +59,7 @@ describe('MigrationService - Integration Tests', () => {
       id: 'ach1',
       title: 'First Steps',
       description: 'Complete your first task',
-      icon: '🌟' as any,
+      icon: '🌟' as unknown as Achievement['icon'],
       unlocked: true,
       progress: 1,
       progressGoal: 1,
@@ -68,7 +69,7 @@ describe('MigrationService - Integration Tests', () => {
       id: 'ach2',
       title: 'Study Streak',
       description: 'Study 7 days in a row',
-      icon: '🔥' as any,
+      icon: '🔥' as unknown as Achievement['icon'],
       unlocked: false,
       progress: 3,
       progressGoal: 7,
@@ -98,8 +99,8 @@ describe('MigrationService - Integration Tests', () => {
       id: 'pl1',
       name: 'Focus Music',
       tracks: [
-        { id: 't1', title: 'Calm Piano', artist: 'Artist 1', duration: 240 } as any,
-        { id: 't2', title: 'Study Beats', artist: 'Artist 2', duration: 180 } as any,
+        { id: 't1', title: 'Calm Piano', artist: 'Artist 1', duration: 240 } as unknown as LocalTrack,
+        { id: 't2', title: 'Study Beats', artist: 'Artist 2', duration: 180 } as unknown as LocalTrack,
       ],
     },
   ];
@@ -120,7 +121,7 @@ describe('MigrationService - Integration Tests', () => {
     });
 
     // Mock database connection
-    vi.mocked(databaseService.getConnection).mockReturnValue(mockDatabase as any);
+    vi.mocked(databaseService.getConnection).mockReturnValue(mockDatabase as unknown as SQLiteDBConnection);
     vi.mocked(databaseService.initialize).mockResolvedValue(undefined);
   });
 
@@ -353,12 +354,12 @@ describe('MigrationService - Integration Tests', () => {
       // Migration calls getConnection() 6 times (homework, achievements, rewards, playlists, userProgress, learningData)
       // Then validation calls it once more - that's when it should return null
       vi.mocked(databaseService.getConnection)
-        .mockReturnValueOnce(mockDatabase as any) // migrateHomeworkItems
-        .mockReturnValueOnce(mockDatabase as any) // migrateAchievements
-        .mockReturnValueOnce(mockDatabase as any) // migrateRewards
-        .mockReturnValueOnce(mockDatabase as any) // migrateMusicPlaylists
-        .mockReturnValueOnce(mockDatabase as any) // migrateUserProgress
-        .mockReturnValueOnce(mockDatabase as any) // migrateLearningData
+        .mockReturnValueOnce(mockDatabase as unknown as SQLiteDBConnection) // migrateHomeworkItems
+        .mockReturnValueOnce(mockDatabase as unknown as SQLiteDBConnection) // migrateAchievements
+        .mockReturnValueOnce(mockDatabase as unknown as SQLiteDBConnection) // migrateRewards
+        .mockReturnValueOnce(mockDatabase as unknown as SQLiteDBConnection) // migrateMusicPlaylists
+        .mockReturnValueOnce(mockDatabase as unknown as SQLiteDBConnection) // migrateUserProgress
+        .mockReturnValueOnce(mockDatabase as unknown as SQLiteDBConnection) // migrateLearningData
         .mockReturnValue(null); // validateMigration (connection lost!)
 
       // Mock database method so migration steps can proceed
@@ -551,8 +552,8 @@ describe('MigrationService - Integration Tests', () => {
       const claimedRewards = [
         {
           ...mockRewards[0],
-          claimedAt: (Date.now() - 86400000) as any,
-          claimedDate: Date.now() as any,
+          claimedAt: (Date.now() - 86400000) as unknown as string,
+          claimedDate: Date.now(),
         },
       ];
 

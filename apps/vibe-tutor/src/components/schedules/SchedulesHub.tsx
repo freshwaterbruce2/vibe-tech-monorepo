@@ -1,17 +1,24 @@
 import {
   Calendar,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
+  ChevronUp,
   Circle,
   Clock,
   Coins,
   ListTodo,
+  Loader2,
   Plus,
+  Sparkles,
   Target,
   Trash2,
+  TriangleAlert,
 } from 'lucide-react';
-import { useState } from 'react';
-import { useSchedules, type ScheduleItem, type GoalItem } from '../../hooks/useSchedules';
+import { memo, useState } from 'react';
+import { useScheduleIntelligence, type ScheduleSuggestion } from '../../hooks/useScheduleIntelligence';
+import { useSchedules, type GoalItem, type ScheduleItem } from '../../hooks/useSchedules';
+import { ScheduleInsightsCard } from './ScheduleInsightsCard';
 
 interface SchedulesHubProps {
   onEarnTokens: (amount: number, reason: string) => void;
@@ -30,10 +37,16 @@ const SCHEDULE_TYPES: { id: ScheduleType; label: string; icon: typeof Clock }[] 
   { id: 'nighttime', label: 'Nighttime', icon: Clock },
 ];
 
-export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProps) {
+const SchedulesHub = memo(function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProps) {
   const [activeTab, setActiveTab] = useState<Tab>('schedules');
   const [activeScheduleType, setActiveScheduleType] = useState<ScheduleType>('daytime');
   const schedules = useSchedules();
+  const intelligence = useScheduleIntelligence();
+
+  // AI schedule state
+  const [energyLevel, setEnergyLevel] = useState<1 | 2 | 3>(2);
+  const [aiSuggestions, setAiSuggestions] = useState<ScheduleSuggestion[]>([]);
+  const [showAiPreview, setShowAiPreview] = useState(false);
 
   // Local state for inputs
   const [newScheduleAcitivity, setNewScheduleActivity] = useState('');
@@ -72,6 +85,36 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
     if (!currentlyCompleted && earned > 0) {
       onEarnTokens(earned, 'Chore completed');
     }
+  };
+
+  const handleGenerateSchedule = async () => {
+    const homeworkTitles = schedules.goals
+      .filter((g) => !g.completed && g.type === 'short-term')
+      .map((g) => g.title)
+      .slice(0, 5);
+    const suggestions = await intelligence.generateSchedule(energyLevel, homeworkTitles);
+    setAiSuggestions(suggestions);
+    setShowAiPreview(suggestions.length > 0);
+  };
+
+  const handleAddAllSuggestions = () => {
+    for (const s of aiSuggestions) {
+      // Parse "4:00 PM" → time "04:00", meridian "PM"
+      const match = s.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+      if (match) {
+        const hour = match[3].toUpperCase() === 'PM' && parseInt(match[1]) !== 12
+          ? String(parseInt(match[1]) + 12).padStart(2, '0')
+          : match[1].padStart(2, '0');
+        schedules.addScheduleItem({
+          activity: s.activity,
+          time: `${hour}:${match[2]}`,
+          meridian: match[3].toUpperCase() as 'AM' | 'PM',
+          type: activeScheduleType,
+        });
+      }
+    }
+    setShowAiPreview(false);
+    setAiSuggestions([]);
   };
 
   const handleAddGoal = () => {
@@ -123,7 +166,7 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
             onClick={() => setActiveTab('chores')}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${
               activeTab === 'chores'
-                ? 'bg-[#ec4899] text-slate-950 shadow-[var(--neon-glow-secondary)]'
+                ? 'bg-[var(--secondary-accent)] text-slate-950 shadow-[var(--neon-glow-secondary)]'
                 : 'glass-card text-[var(--text-secondary)] hover:text-white'
             }`}
           >
@@ -134,7 +177,7 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
             onClick={() => setActiveTab('goals')}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${
               activeTab === 'goals'
-                ? 'bg-[#ff5fd2] text-slate-950 shadow-[var(--neon-glow-accent)]'
+                ? 'bg-[var(--tertiary-accent)] text-slate-950 shadow-[var(--neon-glow-accent)]'
                 : 'glass-card text-[var(--text-secondary)] hover:text-white'
             }`}
           >
@@ -148,6 +191,81 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
         <div className="max-w-4xl mx-auto">
           {activeTab === 'schedules' && (
             <div className="space-y-6 animate-[fadeIn_0.3s_ease-out]">
+              {/* Insights card — shown once user has enough data */}
+              {intelligence.hasEnoughData && (
+                <ScheduleInsightsCard
+                  peakHours={intelligence.peakHours}
+                  weeklyStats={intelligence.weeklyStats}
+                  streak={intelligence.streak}
+                />
+              )}
+
+              {/* Energy selector + AI Schedule button */}
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-sm text-[var(--text-secondary)] font-medium">Energy:</span>
+                {([1, 2, 3] as const).map((lvl) => (
+                  <button
+                    key={lvl}
+                    onClick={() => setEnergyLevel(lvl)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all border ${
+                      energyLevel === lvl
+                        ? 'bg-[var(--primary-accent)]/20 border-[var(--primary-accent)] text-[var(--primary-accent)]'
+                        : 'border-[var(--glass-border)] text-[var(--text-secondary)] hover:bg-[var(--glass-border)]'
+                    }`}
+                  >
+                    {lvl === 1 ? '🪫 Low' : lvl === 2 ? '😊 Medium' : '⚡ High'}
+                  </button>
+                ))}
+                <button
+                  onClick={() => { void handleGenerateSchedule(); }}
+                  disabled={intelligence.isGenerating}
+                  className="ml-auto flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-[var(--primary-accent)] to-[var(--secondary-accent)] text-white hover:brightness-110 disabled:opacity-60 transition-all"
+                >
+                  {intelligence.isGenerating ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
+                  ) : (
+                    <><Sparkles className="w-4 h-4" /> AI Schedule</>
+                  )}
+                </button>
+              </div>
+
+              {/* AI suggestions preview */}
+              {showAiPreview && aiSuggestions.length > 0 && (
+                <div className="glass-card rounded-xl border border-[var(--primary-accent)]/40 overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 bg-[var(--primary-accent)]/10 border-b border-[var(--primary-accent)]/20">
+                    <span className="font-semibold text-[var(--primary-accent)] flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" /> Suggested Schedule
+                    </span>
+                    <button onClick={() => setShowAiPreview(!showAiPreview)} className="text-[var(--text-secondary)] hover:text-white transition-colors">
+                      {showAiPreview ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  <div className="p-4 space-y-2">
+                    {aiSuggestions.map((s, i) => (
+                      <div key={i} className="flex items-center gap-3 text-sm">
+                        <span className="text-[var(--primary-accent)] font-mono w-20 shrink-0">{s.time}</span>
+                        <span className="text-white flex-1">{s.activity}</span>
+                        <span className="text-[var(--text-secondary)] shrink-0">{s.durationMinutes}m</span>
+                      </div>
+                    ))}
+                    <div className="flex gap-3 pt-3 border-t border-[var(--glass-border)]">
+                      <button
+                        onClick={handleAddAllSuggestions}
+                        className="flex-1 py-2 rounded-lg font-semibold bg-gradient-to-r from-[var(--primary-accent)] to-[var(--secondary-accent)] text-white text-sm hover:brightness-110 transition-all"
+                      >
+                        Add All
+                      </button>
+                      <button
+                        onClick={() => { setShowAiPreview(false); setAiSuggestions([]); }}
+                        className="flex-1 py-2 rounded-lg font-semibold bg-[var(--glass-border)] text-[var(--text-secondary)] text-sm hover:text-white transition-all"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Type Selector */}
               <div className="flex flex-wrap gap-2">
                 {SCHEDULE_TYPES.map((t) => (
@@ -204,27 +322,40 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
 
               {/* Schedule List */}
               <div className="space-y-3">
-                {schedules.items
-                  .filter((item) => item.type === activeScheduleType)
-                  .map((item) => (
-                    <div
-                      key={item.id}
-                      className="glass-card p-4 rounded-xl border border-[var(--glass-border)] flex items-center justify-between group"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="bg-[var(--background-main)] px-3 py-1.5 rounded-lg border border-[var(--glass-border)] text-sm font-mono text-[var(--primary-accent)]">
-                          {item.time} {item.meridian}
-                        </div>
-                        <span className="text-white text-lg">{item.activity}</span>
-                      </div>
-                      <button
-                        onClick={() => schedules.removeScheduleItem(item.id)}
-                        className="text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-red-400/20 rounded-lg"
+                {(() => {
+                  const filtered = schedules.items.filter((item) => item.type === activeScheduleType);
+                  const timeKeys = filtered.map((i) => `${i.time}-${i.meridian}`);
+                  const conflictKeys = new Set(
+                    timeKeys.filter((k, _, arr) => arr.filter((x) => x === k).length > 1)
+                  );
+                  return filtered.map((item) => {
+                    const isConflict = conflictKeys.has(`${item.time}-${item.meridian}`);
+                    return (
+                      <div
+                        key={item.id}
+                        className={`glass-card p-4 rounded-xl border flex items-center justify-between group ${
+                          isConflict ? 'border-[var(--token-color)]/60' : 'border-[var(--glass-border)]'
+                        }`}
                       >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </div>
-                  ))}
+                        <div className="flex items-center gap-4">
+                          <div className="bg-[var(--background-main)] px-3 py-1.5 rounded-lg border border-[var(--glass-border)] text-sm font-mono text-[var(--primary-accent)] flex items-center gap-1.5">
+                            {isConflict && (
+                              <TriangleAlert className="w-3.5 h-3.5 text-[var(--token-color)]" aria-label="Time conflict" />
+                            )}
+                            {item.time} {item.meridian}
+                          </div>
+                          <span className="text-white text-lg">{item.activity}</span>
+                        </div>
+                        <button
+                          onClick={() => schedules.removeScheduleItem(item.id)}
+                          className="text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-red-400/20 rounded-lg"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    );
+                  });
+                })()}
                 {schedules.items.filter((item) => item.type === activeScheduleType).length === 0 && (
                   <div className="text-center p-8 text-[var(--text-secondary)] border border-dashed border-[var(--glass-border)] rounded-xl">
                     No items in this schedule yet. Add one above!
@@ -244,7 +375,7 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
                     value={newChore}
                     onChange={(e) => setNewChore(e.target.value)}
                     placeholder="E.g., Clean my room, Walk the dog..."
-                    className="w-full bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[#ec4899]"
+                    className="w-full bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[var(--secondary-accent)]"
                   />
                 </div>
                 <div className="w-full md:w-auto">
@@ -256,13 +387,13 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
                       min="1"
                       value={newChoreReward}
                       onChange={(e) => setNewChoreReward(parseInt(e.target.value) || 0)}
-                      className="w-full md:w-28 bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg pl-9 pr-3 py-2 text-white outline-none focus:border-[#ec4899]"
+                      className="w-full md:w-28 bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg pl-9 pr-3 py-2 text-white outline-none focus:border-[var(--secondary-accent)]"
                     />
                   </div>
                 </div>
                 <button
                   onClick={handleAddChore}
-                  className="bg-[#ec4899] text-slate-950 px-6 py-2.5 md:py-2 rounded-lg hover:brightness-110 transition-all font-semibold w-full md:w-auto"
+                  className="bg-[var(--secondary-accent)] text-slate-950 px-6 py-2.5 md:py-2 rounded-lg hover:brightness-110 transition-all font-semibold w-full md:w-auto"
                 >
                   Add Chore
                 </button>
@@ -273,13 +404,13 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
                   <div
                     key={chore.id}
                     className={`glass-card p-4 rounded-xl border flex items-center justify-between group transition-all ${
-                      chore.completed ? 'border-[#ec4899]/50 bg-[#ec4899]/8' : 'border-[var(--glass-border)]'
+                      chore.completed ? 'border-[var(--secondary-accent)]/50 bg-[var(--secondary-accent)]/8' : 'border-[var(--glass-border)]'
                     }`}
                   >
                     <div className="flex items-center gap-4 flex-1">
                       <button onClick={() => handleToggleChore(chore.id, chore.completed)}>
                         {chore.completed ? (
-                          <CheckCircle2 className="w-6 h-6 text-[#ec4899]" />
+                          <CheckCircle2 className="w-6 h-6 text-[var(--secondary-accent)]" />
                         ) : (
                           <Circle className="w-6 h-6 text-[var(--text-secondary)]" />
                         )}
@@ -320,7 +451,7 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
                     value={newGoal}
                     onChange={(e) => setNewGoal(e.target.value)}
                     placeholder="E.g., Read 10 books this year..."
-                    className="w-full bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[#ff5fd2]"
+                    className="w-full bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[var(--tertiary-accent)]"
                   />
                 </div>
                 <div className="w-full md:w-auto">
@@ -328,7 +459,7 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
                   <select
                     value={newGoalType}
                     onChange={(e) => setNewGoalType(e.target.value as 'short-term' | 'long-term')}
-                    className="w-full md:w-auto bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg px-3 py-2.5 text-white outline-none focus:border-[#ff5fd2]"
+                    className="w-full md:w-auto bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg px-3 py-2.5 text-white outline-none focus:border-[var(--tertiary-accent)]"
                   >
                     <option value="short-term">Short-term</option>
                     <option value="long-term">Long-term</option>
@@ -336,7 +467,7 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
                 </div>
                 <button
                   onClick={handleAddGoal}
-                  className="bg-[#ff5fd2] text-slate-950 px-6 py-2.5 md:py-2 rounded-lg hover:brightness-110 transition-all font-semibold w-full md:w-auto"
+                  className="bg-[var(--tertiary-accent)] text-slate-950 px-6 py-2.5 md:py-2 rounded-lg hover:brightness-110 transition-all font-semibold w-full md:w-auto"
                 >
                   Set Goal
                 </button>
@@ -379,14 +510,16 @@ export default function SchedulesHub({ onEarnTokens, onClose }: SchedulesHubProp
       </div>
     </div>
   );
-}
+});
+
+export default SchedulesHub;
 
 function GoalCard({ goal, toggleGoal, removeGoal }: { goal: GoalItem; toggleGoal: (id: string) => void; removeGoal: (id: string) => void }) {
   return (
-    <div className={`glass-card p-4 rounded-xl border flex gap-3 group transition-all ${goal.completed ? 'border-[#ff5fd2]/50 bg-[#ff5fd2]/8' : 'border-[var(--glass-border)]'}`}>
+    <div className={`glass-card p-4 rounded-xl border flex gap-3 group transition-all ${goal.completed ? 'border-[var(--tertiary-accent)]/50 bg-[var(--tertiary-accent)]/8' : 'border-[var(--glass-border)]'}`}>
       <button onClick={() => toggleGoal(goal.id)} className="mt-0.5 shrink-0">
         {goal.completed ? (
-          <CheckCircle2 className="w-5 h-5 text-[#ff5fd2]" />
+          <CheckCircle2 className="w-5 h-5 text-[var(--tertiary-accent)]" />
         ) : (
           <Circle className="w-5 h-5 text-[var(--text-secondary)]" />
         )}

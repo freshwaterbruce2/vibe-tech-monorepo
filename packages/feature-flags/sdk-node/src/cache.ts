@@ -1,4 +1,4 @@
-import type { FeatureFlag } from '@dev/feature-flags-core';
+import type { FeatureFlag } from '@vibetech/feature-flags-core';
 
 interface CacheEntry {
   flag: FeatureFlag;

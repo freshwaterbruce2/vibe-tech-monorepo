@@ -12,7 +12,7 @@ const ProgressReports = ({ items }: ProgressReportsProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [studentPoints, setStudentPoints] = useState(0);
   const [focusSessions, setFocusSessions] = useState(0);
-  const [_isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   // Load student points and focus sessions from dataStore
   useEffect(() => {

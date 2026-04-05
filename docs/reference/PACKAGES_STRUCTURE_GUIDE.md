@@ -58,8 +58,8 @@ packages:
 
 **@dev/** → Development/Internal Tools
 
-- @dev/feature-flags (feature flag system)
-- @dev/feature-flags-core (core types/utils)
+- @vibetech/feature-flags (feature flag system)
+- @vibetech/feature-flags-core (core types/utils)
 - @dev/service-common (service utilities)
 
 ### Naming Pattern
@@ -110,7 +110,7 @@ packages:
 
 ```json
 {
-  "name": "@dev/feature-flags-core",
+  "name": "@vibetech/feature-flags-core",
   "version": "0.1.0",
   "description": "Core types and utilities for feature flags system",
   "main": "dist/index.js",
@@ -598,7 +598,7 @@ MIT
 | @nova/core | @nova | tsc | Subpath | @nova/types, @nova/database, zod | ESM |
 | @vibetech/ui | @vibetech | tsc | Subpath | @radix-ui/*, tailwind-merge | ESM+React |
 | @vibetech/shared-ipc | @vibetech | tsc | Root | uuid, zod, ws | ESM |
-| @dev/feature-flags-core | @dev | tsup | Root | murmurhash | CJS+ESM |
+| @vibetech/feature-flags-core | @dev | tsup | Root | murmurhash | CJS+ESM |
 | @vibetech/logger | @vibetech | tsc | Root | @vibetech/shared-config | ESM |
 | @vibetech/hooks | @vibetech | tsc | Subpath | react (peer) | ESM |
 

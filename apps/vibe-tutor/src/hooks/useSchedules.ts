@@ -14,6 +14,7 @@ export interface ChoreItem {
   task: string;
   completed: boolean;
   rewardTokens: number;
+  completedAt?: number;
 }
 
 export interface GoalItem {
@@ -22,6 +23,29 @@ export interface GoalItem {
   type: 'short-term' | 'long-term';
   completed: boolean;
   dueDate?: string;
+  completedAt?: number;
+}
+
+/** Returns completion counts keyed by hour-of-day (0–23). */
+export function getCompletionPatterns(
+  chores: ChoreItem[],
+  goals: GoalItem[]
+): Record<number, { completions: number }> {
+  const patterns: Record<number, { completions: number }> = {};
+
+  const add = (ts: number) => {
+    const hour = new Date(ts).getHours();
+    patterns[hour] = { completions: (patterns[hour]?.completions ?? 0) + 1 };
+  };
+
+  for (const c of chores) {
+    if (c.completed && c.completedAt) add(c.completedAt);
+  }
+  for (const g of goals) {
+    if (g.completed && g.completedAt) add(g.completedAt);
+  }
+
+  return patterns;
 }
 
 interface SchedulesData {
@@ -92,7 +116,11 @@ export function useSchedules() {
       const updatedChores = prev.chores.map((c) => {
         if (c.id === id) {
           if (!c.completed) earnedTokens = c.rewardTokens; // earn when checking
-          return { ...c, completed: !c.completed };
+          return {
+            ...c,
+            completed: !c.completed,
+            completedAt: !c.completed ? Date.now() : undefined,
+          };
         }
         return c;
       });
@@ -118,7 +146,11 @@ export function useSchedules() {
   const toggleGoal = useCallback((id: string) => {
     setData((prev) => ({
       ...prev,
-      goals: prev.goals.map((g) => (g.id === id ? { ...g, completed: !g.completed } : g)),
+      goals: prev.goals.map((g) =>
+        g.id === id
+          ? { ...g, completed: !g.completed, completedAt: !g.completed ? Date.now() : undefined }
+          : g
+      ),
     }));
   }, []);
 

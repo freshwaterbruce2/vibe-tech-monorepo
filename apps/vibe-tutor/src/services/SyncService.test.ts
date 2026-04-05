@@ -43,7 +43,7 @@ const mocks = vi.hoisted(() => {
       run: vi.fn(async () => Promise.resolve({ changes: { changes: 1 } })),
       query: vi.fn(async () => Promise.resolve({ values: [] })),
       close: vi.fn(async () => Promise.resolve()),
-    }) as any;
+    }) as Record<string, ReturnType<typeof vi.fn>>;
 
   const createMockSQLiteConnection = () =>
     ({
@@ -51,7 +51,7 @@ const mocks = vi.hoisted(() => {
       isConnection: vi.fn(async () => Promise.resolve({ result: false })),
       retrieveConnection: vi.fn(async () => Promise.resolve(createMockDB())),
       createConnection: vi.fn(async () => Promise.resolve(createMockDB())),
-    }) as any;
+    }) as Record<string, ReturnType<typeof vi.fn>>;
 
   return { createMockDB, createMockSQLiteConnection };
 });
@@ -60,10 +60,10 @@ const { createMockDB, createMockSQLiteConnection } = mocks;
 
 vi.mock('@capacitor-community/sqlite', () => {
   const MockSQLiteConnection = class {
-    checkConnectionsConsistency: any;
-    isConnection: any;
-    retrieveConnection: any;
-    createConnection: any;
+    checkConnectionsConsistency: ReturnType<typeof vi.fn>;
+    isConnection: ReturnType<typeof vi.fn>;
+    retrieveConnection: ReturnType<typeof vi.fn>;
+    createConnection: ReturnType<typeof vi.fn>;
 
     constructor() {
       const mock = mocks.createMockSQLiteConnection();
@@ -81,13 +81,13 @@ vi.mock('@capacitor-community/sqlite', () => {
 });
 
 describe('SyncService.ts', () => {
-  let originalWindow: any;
+  let originalWindow: typeof globalThis;
 
   beforeEach(async () => {
     vi.resetModules();
     originalWindow = globalThis;
     // Clear any device ID override
-    delete (globalThis as any).__DEVICE_ID__;
+    delete (globalThis as unknown as Record<string, unknown>).__DEVICE_ID__;
     vi.clearAllMocks();
 
     // Re-establish default filesystem mock behavior after clearing
@@ -119,8 +119,8 @@ describe('SyncService.ts', () => {
         }),
       );
 
-      (syncService as any).db = mockDB;
-      (syncService as any).initialized = true;
+      (syncService as unknown as Record<string, unknown>).db = mockDB;
+      (syncService as unknown as Record<string, unknown>).initialized = true;
 
       const result = await syncService.exportForHub();
       expect(result.exportedCount).toBe(1);
@@ -128,7 +128,7 @@ describe('SyncService.ts', () => {
     });
 
     it('should use custom device ID from global override', async () => {
-      (globalThis as any).__DEVICE_ID__ = 'custom_device_123';
+      (globalThis as unknown as Record<string, unknown>).__DEVICE_ID__ = 'custom_device_123';
 
       const { syncService } = await import('./SyncService');
 
@@ -141,15 +141,15 @@ describe('SyncService.ts', () => {
         }),
       );
 
-      (syncService as any).db = mockDB;
-      (syncService as any).initialized = true;
+      (syncService as unknown as Record<string, unknown>).db = mockDB;
+      (syncService as unknown as Record<string, unknown>).initialized = true;
 
       const result = await syncService.exportForHub();
       expect(result.exportedCount).toBe(1);
     });
 
     it('should trim whitespace from device ID override', async () => {
-      (globalThis as any).__DEVICE_ID__ = '  spaces_around  ';
+      (globalThis as unknown as Record<string, unknown>).__DEVICE_ID__ = '  spaces_around  ';
 
       const { syncService } = await import('./SyncService');
 
@@ -162,15 +162,15 @@ describe('SyncService.ts', () => {
         }),
       );
 
-      (syncService as any).db = mockDB;
-      (syncService as any).initialized = true;
+      (syncService as unknown as Record<string, unknown>).db = mockDB;
+      (syncService as unknown as Record<string, unknown>).initialized = true;
 
       const result = await syncService.exportForHub();
       expect(result.exportedCount).toBe(1);
     });
 
     it('should ignore empty string device ID override', async () => {
-      (globalThis as any).__DEVICE_ID__ = '   ';
+      (globalThis as unknown as Record<string, unknown>).__DEVICE_ID__ = '   ';
 
       const { syncService } = await import('./SyncService');
 
@@ -183,8 +183,8 @@ describe('SyncService.ts', () => {
         }),
       );
 
-      (syncService as any).db = mockDB;
-      (syncService as any).initialized = true;
+      (syncService as unknown as Record<string, unknown>).db = mockDB;
+      (syncService as unknown as Record<string, unknown>).initialized = true;
 
       const result = await syncService.exportForHub();
       expect(result.exportedCount).toBe(1);
@@ -198,8 +198,8 @@ describe('SyncService.ts', () => {
       const { syncService } = await import('./SyncService');
 
       const mockDB = createMockDB();
-      (syncService as any).db = mockDB;
-      (syncService as any).initialized = true;
+      (syncService as unknown as Record<string, unknown>).db = mockDB;
+      (syncService as unknown as Record<string, unknown>).initialized = true;
 
       const event = await syncService.logEvent('Test summary', ['tag1']);
       expect(event.id).toMatch(/^mem_\d+_[a-z0-9]+$/);
@@ -209,8 +209,8 @@ describe('SyncService.ts', () => {
       const { syncService } = await import('./SyncService');
 
       const mockDB = createMockDB();
-      (syncService as any).db = mockDB;
-      (syncService as any).initialized = true;
+      (syncService as unknown as Record<string, unknown>).db = mockDB;
+      (syncService as unknown as Record<string, unknown>).initialized = true;
 
       const event1 = await syncService.logEvent('Test 1', []);
       const event2 = await syncService.logEvent('Test 2', []);
@@ -242,13 +242,13 @@ describe('SyncService.ts', () => {
         const { syncService } = await import('./SyncService');
 
         // Reset initialization state
-        (syncService as any).initialized = false;
-        (syncService as any).db = null;
+        (syncService as unknown as Record<string, unknown>).initialized = false;
+        (syncService as unknown as Record<string, unknown>).db = null;
 
         await syncService.logEvent('Test', []);
 
         // Verify database operations were called
-        const mockDB = (syncService as any).db;
+        const mockDB = (syncService as unknown as Record<string, unknown>).db;
         expect(mockDB).toBeDefined();
         expect(mockDB.open).toHaveBeenCalled();
         expect(mockDB.execute).toHaveBeenCalledWith('PRAGMA journal_mode=WAL;');
@@ -262,14 +262,14 @@ describe('SyncService.ts', () => {
         const { syncService } = await import('./SyncService');
 
         // Reset initialization state
-        (syncService as any).initialized = false;
-        (syncService as any).db = null;
+        (syncService as unknown as Record<string, unknown>).initialized = false;
+        (syncService as unknown as Record<string, unknown>).db = null;
 
         await syncService.logEvent('Test 1', []);
-        const mockDB1 = (syncService as any).db;
+        const mockDB1 = (syncService as unknown as Record<string, unknown>).db;
 
         await syncService.logEvent('Test 2', []);
-        const mockDB2 = (syncService as any).db;
+        const mockDB2 = (syncService as unknown as Record<string, unknown>).db;
 
         expect(mockDB1).toBe(mockDB2);
         expect(mockDB1.open).toHaveBeenCalledTimes(1); // Only once
@@ -282,12 +282,12 @@ describe('SyncService.ts', () => {
         const { syncService } = await import('./SyncService');
 
         // Reset initialization state
-        (syncService as any).initialized = false;
-        (syncService as any).db = null;
+        (syncService as unknown as Record<string, unknown>).initialized = false;
+        (syncService as unknown as Record<string, unknown>).db = null;
 
         await syncService.logEvent('Test', []);
 
-        const mockDB = (syncService as any).db;
+        const mockDB = (syncService as unknown as Record<string, unknown>).db;
         expect(mockDB.execute).toHaveBeenCalledWith(
           expect.stringContaining('CREATE TABLE IF NOT EXISTS local_memories'),
         );
@@ -327,8 +327,8 @@ describe('SyncService.ts', () => {
         const { syncService } = await import('./SyncService');
 
         const mockDB = createMockDB();
-        (syncService as any).db = mockDB;
-        (syncService as any).initialized = true;
+        (syncService as unknown as Record<string, unknown>).db = mockDB;
+        (syncService as unknown as Record<string, unknown>).initialized = true;
 
         const event = await syncService.logEvent('Completed homework', ['homework', 'math']);
 
@@ -355,8 +355,8 @@ describe('SyncService.ts', () => {
         const { syncService } = await import('./SyncService');
 
         const mockDB = createMockDB();
-        (syncService as any).db = mockDB;
-        (syncService as any).initialized = true;
+        (syncService as unknown as Record<string, unknown>).db = mockDB;
+        (syncService as unknown as Record<string, unknown>).initialized = true;
 
         await expect(syncService.logEvent('', ['tag'])).rejects.toThrow(
           'logEvent(summary, tags) requires a non-empty summary',
@@ -370,10 +370,10 @@ describe('SyncService.ts', () => {
         const { syncService } = await import('./SyncService');
 
         const mockDB = createMockDB();
-        (syncService as any).db = mockDB;
-        (syncService as any).initialized = true;
+        (syncService as unknown as Record<string, unknown>).db = mockDB;
+        (syncService as unknown as Record<string, unknown>).initialized = true;
 
-        const event = await syncService.logEvent('Test', ['tag1', '', null as any, 'tag2']);
+        const event = await syncService.logEvent('Test', ['tag1', '', null as unknown as string, 'tag2']);
 
         // Actual behavior: String(null) = 'null', so it's included
         // This documents the current behavior - could be improved to filter falsy values
@@ -384,10 +384,10 @@ describe('SyncService.ts', () => {
         const { syncService } = await import('./SyncService');
 
         const mockDB = createMockDB();
-        (syncService as any).db = mockDB;
-        (syncService as any).initialized = true;
+        (syncService as unknown as Record<string, unknown>).db = mockDB;
+        (syncService as unknown as Record<string, unknown>).initialized = true;
 
-        const event = await syncService.logEvent('Test', null as any);
+        const event = await syncService.logEvent('Test', null as unknown as string[]);
 
         expect(event.tags).toEqual([]);
       });
@@ -397,8 +397,8 @@ describe('SyncService.ts', () => {
 
         const mockDB = createMockDB();
         mockDB.run = vi.fn(async () => Promise.reject(new Error('UNIQUE constraint failed')));
-        (syncService as any).db = mockDB;
-        (syncService as any).initialized = true;
+        (syncService as unknown as Record<string, unknown>).db = mockDB;
+        (syncService as unknown as Record<string, unknown>).initialized = true;
 
         await expect(syncService.logEvent('Test', [])).rejects.toThrow('UNIQUE constraint failed');
       });
@@ -426,8 +426,8 @@ describe('SyncService.ts', () => {
           }),
         );
 
-        (syncService as any).db = mockDB;
-        (syncService as any).initialized = true;
+        (syncService as unknown as Record<string, unknown>).db = mockDB;
+        (syncService as unknown as Record<string, unknown>).initialized = true;
 
         const result = await syncService.exportForHub();
 
@@ -455,8 +455,8 @@ describe('SyncService.ts', () => {
         const mockDB = createMockDB();
         mockDB.query = vi.fn(async () => Promise.resolve({ values: [] }));
 
-        (syncService as any).db = mockDB;
-        (syncService as any).initialized = true;
+        (syncService as unknown as Record<string, unknown>).db = mockDB;
+        (syncService as unknown as Record<string, unknown>).initialized = true;
 
         await expect(syncService.exportForHub()).rejects.toThrow('No unsynced events to export');
       });
@@ -475,8 +475,8 @@ describe('SyncService.ts', () => {
           }),
         );
 
-        (syncService as any).db = mockDB;
-        (syncService as any).initialized = true;
+        (syncService as unknown as Record<string, unknown>).db = mockDB;
+        (syncService as unknown as Record<string, unknown>).initialized = true;
 
         await syncService.exportForHub();
 
@@ -515,8 +515,8 @@ describe('SyncService.ts', () => {
           }),
         );
 
-        (syncService as any).db = mockDB;
-        (syncService as any).initialized = true;
+        (syncService as unknown as Record<string, unknown>).db = mockDB;
+        (syncService as unknown as Record<string, unknown>).initialized = true;
 
         const result = await syncService.exportForHub();
 
@@ -541,8 +541,8 @@ describe('SyncService.ts', () => {
           }),
         );
 
-        (syncService as any).db = mockDB;
-        (syncService as any).initialized = true;
+        (syncService as unknown as Record<string, unknown>).db = mockDB;
+        (syncService as unknown as Record<string, unknown>).initialized = true;
 
         const result = await syncService.exportForHub();
 
@@ -565,8 +565,8 @@ describe('SyncService.ts', () => {
           }),
         );
 
-        (syncService as any).db = mockDB;
-        (syncService as any).initialized = true;
+        (syncService as unknown as Record<string, unknown>).db = mockDB;
+        (syncService as unknown as Record<string, unknown>).initialized = true;
 
         await expect(syncService.exportForHub()).rejects.toThrow('Failed to write export file');
       });
@@ -586,8 +586,8 @@ describe('SyncService.ts', () => {
           }),
         );
 
-        (syncService as any).db = mockDB;
-        (syncService as any).initialized = true;
+        (syncService as unknown as Record<string, unknown>).db = mockDB;
+        (syncService as unknown as Record<string, unknown>).initialized = true;
 
         await syncService.exportForHub();
 
@@ -607,8 +607,8 @@ describe('SyncService.ts', () => {
           }),
         );
 
-        (syncService as any).db = mockDB;
-        (syncService as any).initialized = true;
+        (syncService as unknown as Record<string, unknown>).db = mockDB;
+        (syncService as unknown as Record<string, unknown>).initialized = true;
 
         await syncService.exportForHub();
 
@@ -635,8 +635,8 @@ describe('SyncService.ts', () => {
           }),
         );
 
-        (syncService as any).db = mockDB;
-        (syncService as any).initialized = true;
+        (syncService as unknown as Record<string, unknown>).db = mockDB;
+        (syncService as unknown as Record<string, unknown>).initialized = true;
 
         const result = await syncService.exportForHub();
 
@@ -671,8 +671,8 @@ describe('SyncService.ts', () => {
           }),
         );
 
-        (syncService as any).db = mockDB;
-        (syncService as any).initialized = true;
+        (syncService as unknown as Record<string, unknown>).db = mockDB;
+        (syncService as unknown as Record<string, unknown>).initialized = true;
 
         await syncService.exportForHub();
 
@@ -687,10 +687,10 @@ describe('SyncService.ts', () => {
 
         // Call internal markExported with empty array
         const mockDB = createMockDB();
-        (syncService as any).db = mockDB;
-        (syncService as any).initialized = true;
+        (syncService as unknown as Record<string, unknown>).db = mockDB;
+        (syncService as unknown as Record<string, unknown>).initialized = true;
 
-        await (syncService as any).markExported([]);
+        await (syncService as unknown as Record<string, unknown>).markExported([]);
 
         // Should not call database (early return)
         expect(mockDB.run).not.toHaveBeenCalledWith(
@@ -714,8 +714,8 @@ describe('SyncService.ts', () => {
         // Simulate update failure on markExported call
         mockDB.run = vi.fn(async () => Promise.reject(new Error('Database locked')));
 
-        (syncService as any).db = mockDB;
-        (syncService as any).initialized = true;
+        (syncService as unknown as Record<string, unknown>).db = mockDB;
+        (syncService as unknown as Record<string, unknown>).initialized = true;
 
         // Catch the error internally or test that it rejects
         await expect(syncService.exportForHub()).rejects.toThrow('Database locked');
@@ -739,8 +739,8 @@ describe('SyncService.ts', () => {
           values: [], // All exported
         });
 
-      (syncService as any).db = mockDB;
-      (syncService as any).initialized = true;
+      (syncService as unknown as Record<string, unknown>).db = mockDB;
+      (syncService as unknown as Record<string, unknown>).initialized = true;
 
       const result1 = await syncService.exportForHub();
       expect(result1.exportedCount).toBe(1);
@@ -758,8 +758,8 @@ describe('SyncService.ts', () => {
         }),
       );
 
-      (syncService as any).db = mockDB;
-      (syncService as any).initialized = true;
+      (syncService as unknown as Record<string, unknown>).db = mockDB;
+      (syncService as unknown as Record<string, unknown>).initialized = true;
 
       const result = await syncService.exportForHub();
 
@@ -770,8 +770,8 @@ describe('SyncService.ts', () => {
     it('should handle database not connected errors', async () => {
       const { syncService } = await import('./SyncService');
 
-      (syncService as any).db = null;
-      (syncService as any).initialized = false;
+      (syncService as unknown as Record<string, unknown>).db = null;
+      (syncService as unknown as Record<string, unknown>).initialized = false;
 
       // Force web platform to skip initialization
       const { Capacitor } = await import('@capacitor/core');
@@ -786,8 +786,8 @@ describe('SyncService.ts', () => {
       const { syncService } = await import('./SyncService');
 
       const mockDB = createMockDB();
-      (syncService as any).db = mockDB;
-      (syncService as any).initialized = true;
+      (syncService as unknown as Record<string, unknown>).db = mockDB;
+      (syncService as unknown as Record<string, unknown>).initialized = true;
 
       const event = await syncService.logEvent('Test', ['tag']);
 

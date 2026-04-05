@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, CheckCircle, Trophy, XCircle } from 'lucide-react';
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { generateWorksheet } from '../../services/worksheetGenerator';
 import type {
   DifficultyLevel,
@@ -15,7 +15,7 @@ interface WorksheetViewProps {
   onCancel: () => void;
 }
 
-const WorksheetView = ({ subject, difficulty, onComplete, onCancel }: WorksheetViewProps) => {
+const WorksheetView = memo(function WorksheetView({ subject, difficulty, onComplete, onCancel }: WorksheetViewProps) {
   const [questions] = useState<WorksheetQuestion[]>(() => generateWorksheet(subject, difficulty));
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<(string | number | null)[]>(() =>
@@ -350,6 +350,6 @@ const WorksheetView = ({ subject, difficulty, onComplete, onCancel }: WorksheetV
       </div>
     </div>
   );
-};
+});
 
 export default WorksheetView;

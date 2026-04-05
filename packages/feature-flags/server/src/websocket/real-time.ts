@@ -1,6 +1,6 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import type { Server } from 'http';
-import type { FeatureFlag, KillSwitchEvent, WSMessage } from '@dev/feature-flags-core';
+import type { FeatureFlag, KillSwitchEvent, WSMessage } from '@vibetech/feature-flags-core';
 
 interface ConnectedClient {
   ws: WebSocket;

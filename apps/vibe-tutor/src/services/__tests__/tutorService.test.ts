@@ -9,6 +9,14 @@ vi.mock('../secureClient', () => ({
   createChatCompletion: vi.fn(),
 }));
 
+vi.mock('../personalizationService', () => ({
+  personalization: {
+    selectStyle: vi.fn().mockReturnValue('step-by-step'),
+    getStylePrompt: vi.fn().mockReturnValue(''),
+    recordFeedback: vi.fn(),
+  },
+}));
+
 vi.mock('../usageMonitor', () => ({
   usageMonitor: {
     canMakeRequest: vi.fn(),
@@ -152,16 +160,16 @@ describe('tutorService', () => {
       expect(secondCallArgs).toBeDefined();
       const messages = secondCallArgs?.[0] ?? [];
 
-      // Check the LAST 4 messages in history (to handle accumulated history from other tests)
-      const lastFour = messages.slice(-4);
-
-      expect(lastFour[0]).toEqual({ role: 'user', content: 'First question' });
-      expect(lastFour[1]).toEqual({ role: 'assistant', content: 'First response' });
-      expect(lastFour[2]).toEqual({ role: 'user', content: 'Second question' });
-      // Last message is the pending assistant response (not yet added)
-
-      // Verify system prompt is first in overall history
+      // Verify system prompt is first (now includes style prompt suffix)
       expect(messages[0]?.role).toBe('system');
+
+      // Find conversation messages (skip system prompt at index 0)
+      const conversationMessages = messages.slice(1);
+      const lastThree = conversationMessages.slice(-3);
+
+      expect(lastThree[0]).toEqual({ role: 'user', content: 'First question' });
+      expect(lastThree[1]).toEqual({ role: 'assistant', content: 'First response' });
+      expect(lastThree[2]).toEqual({ role: 'user', content: 'Second question' });
     });
 
     it('handles multiple consecutive messages correctly', async () => {

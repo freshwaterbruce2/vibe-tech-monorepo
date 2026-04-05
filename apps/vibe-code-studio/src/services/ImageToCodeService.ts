@@ -257,21 +257,79 @@ Provide the improved code. ONLY code, no explanations.`,
   }
 
   /**
-   * Render code and capture screenshot using Puppeteer
-   * Integrates with Puppeteer MCP server for screenshot comparison
-   *
-   * NOTE: Screenshot rendering is disabled in Electron renderer for security.
-   * TODO: Move to main process via IPC for proper Puppeteer integration.
+   * Render code as HTML and capture a screenshot via Tauri IPC.
+   * Uses a headless Chromium browser (Edge/Chrome) on the host system.
+   * Returns base64-encoded PNG, or empty string if unavailable.
    */
   private async renderAndScreenshot(
-    _code: string,
-    _framework: string
+    code: string,
+    framework: string
   ): Promise<string> {
-    // DISABLED: Puppeteer should not be used in renderer process
-    // Puppeteer requires Node.js APIs and causes bundling issues in Electron
-    // Future implementation should use IPC to request screenshots from main process
-    logger.debug('[ImageToCode] Screenshot rendering disabled in production (requires main process IPC)');
-    return '';
+    // Only available in Tauri runtime
+    if (typeof window === 'undefined' || !('__TAURI_INTERNALS__' in window)) {
+      logger.debug('[ImageToCode] Screenshot rendering unavailable (not in Tauri)');
+      return '';
+    }
+
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+
+      // Wrap the generated code in a self-contained HTML document
+      const html = this.wrapCodeAsHtml(code, framework);
+
+      const base64: string = await invoke('render_html_screenshot', {
+        html,
+        width: 1280,
+        height: 720,
+      });
+
+      logger.debug('[ImageToCode] Screenshot captured via Tauri IPC, size:', base64.length);
+      return base64;
+    } catch (error) {
+      logger.warn('[ImageToCode] Screenshot capture failed:', String(error));
+      return '';
+    }
+  }
+
+  /**
+   * Wrap generated component code in a standalone HTML page for rendering.
+   */
+  private wrapCodeAsHtml(code: string, framework: string): string {
+    if (framework === 'html' || code.trim().startsWith('<!DOCTYPE') || code.trim().startsWith('<html')) {
+      return code;
+    }
+
+    // For React/Vue, wrap in minimal HTML that renders the raw markup
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>body { margin: 0; font-family: system-ui, -apple-system, sans-serif; }</style>
+</head>
+<body>
+${this.extractJsxMarkup(code)}
+</body>
+</html>`;
+  }
+
+  /**
+   * Extract the JSX return markup from a React component for static preview.
+   * Falls back to rendering the raw code inside a container.
+   */
+  private extractJsxMarkup(code: string): string {
+    // Try to extract JSX between return ( ... )
+    const returnMatch = code.match(/return\s*\(\s*([\s\S]*?)\s*\)\s*;?\s*}/);
+    if (returnMatch) {
+      // Strip React-specific attributes (className→class, onClick→removed, etc.)
+      return returnMatch[1]!
+        .replace(/className=/g, 'class=')
+        .replace(/\s+on[A-Z]\w+={[^}]*}/g, '')
+        .replace(/{\/\*.*?\*\/}/g, '');
+    }
+    // Fallback: wrap raw code in a container
+    return `<div style="padding:16px">${code}</div>`;
   }
 
   /**

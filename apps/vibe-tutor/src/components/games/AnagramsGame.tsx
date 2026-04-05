@@ -1,7 +1,7 @@
 import { animated, useSpring } from '@react-spring/web';
 import confetti from 'canvas-confetti';
 import { ArrowLeft, CheckCircle, Clock, Lightbulb, XCircle } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { useGameAudio } from '../../hooks/useGameAudio';
 import type { AnagramChallenge } from '../../services/puzzleGenerator';
 import { calculateAnagramScore, generateAnagrams } from '../../services/puzzleGenerator';
@@ -22,7 +22,7 @@ interface AnagramFinalResult {
   hintsUsed: number;
 }
 
-const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
+const AnagramsGame = memo(function AnagramsGame({ subject, onComplete, onBack }: AnagramsGameProps) {
   const [roundSeed, setRoundSeed] = useState(0);
   const [startTime, setStartTime] = useState(() => Date.now());
   const [currentTime, setCurrentTime] = useState(() => Date.now());
@@ -355,6 +355,6 @@ const AnagramsGame = ({ subject, onComplete, onBack }: AnagramsGameProps) => {
       />
     </div>
   );
-};
+});
 
 export default AnagramsGame;

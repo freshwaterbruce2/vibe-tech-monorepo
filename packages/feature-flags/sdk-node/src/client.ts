@@ -9,8 +9,8 @@ import type {
   FlagEvaluationResponse,
   Logger,
   Variant,
-} from '@dev/feature-flags-core';
-import { isInPercentageRollout, assignVariant } from '@dev/feature-flags-core';
+} from '@vibetech/feature-flags-core';
+import { isInPercentageRollout, assignVariant } from '@vibetech/feature-flags-core';
 import WebSocket from 'ws';
 import { FlagCache } from './cache';
 

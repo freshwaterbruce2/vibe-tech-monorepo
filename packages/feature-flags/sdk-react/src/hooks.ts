@@ -1,4 +1,4 @@
-import type { EvaluationResult } from '@dev/feature-flags-core';
+import type { EvaluationResult } from '@vibetech/feature-flags-core';
 import { useContext } from 'react';
 import { FeatureFlagContext, type FeatureFlagContextValue } from './context';
 

@@ -117,8 +117,8 @@ const MusicNotesGame = ({ onEarnTokens, onClose }: MusicNotesProps) => {
       color = '#c084fc';
     } else if (feedback && isChosen && !isCorrect) {
       bg = 'rgba(239,68,68,0.15)';
-      border = '2px solid #ef4444';
-      color = '#ef4444';
+      border = '2px solid var(--error-accent)';
+      color = 'var(--error-accent)';
     }
     return {
       background: bg, border, color, borderRadius: 12,
@@ -132,7 +132,7 @@ const MusicNotesGame = ({ onEarnTokens, onClose }: MusicNotesProps) => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0f172a 0%, #164e63 100%)',
+      background: 'linear-gradient(135deg, var(--background-card) 0%, #164e63 100%)',
       color: '#e2e8f0', fontFamily: 'system-ui, sans-serif',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       padding: 16, position: 'relative', overflow: 'hidden',
@@ -145,7 +145,7 @@ const MusicNotesGame = ({ onEarnTokens, onClose }: MusicNotesProps) => {
         <button
           onClick={onClose}
           style={{
-            background: 'rgba(255,255,255,0.08)', border: 'none', color: '#94a3b8',
+            background: 'rgba(255,255,255,0.08)', border: 'none', color: 'var(--text-secondary)',
             borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontSize: 14,
             display: 'flex', alignItems: 'center', gap: 4,
           }}
@@ -161,9 +161,9 @@ const MusicNotesGame = ({ onEarnTokens, onClose }: MusicNotesProps) => {
       {/* Stats */}
       <div style={{ width: '100%', maxWidth: 400, display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
         {[
-          { val: totalTokens, lbl: 'Tokens', color: '#f59e0b', Icon: Zap },
+          { val: totalTokens, lbl: 'Tokens', color: 'var(--token-color)', Icon: Zap },
           { val: score, lbl: 'Score', color: '#c084fc', Icon: Star },
-          { val: streak, lbl: 'Streak', color: streak >= 3 ? '#f97316' : '#94a3b8', Icon: null },
+          { val: streak, lbl: 'Streak', color: streak >= 3 ? '#f97316' : 'var(--text-secondary)', Icon: null },
           { val: bestStreak, lbl: 'Best', color: CYAN, Icon: Trophy },
         ].map(({ val, lbl, color, Icon }) => (
           <div key={lbl} style={{
@@ -231,7 +231,7 @@ const MusicNotesGame = ({ onEarnTokens, onClose }: MusicNotesProps) => {
       </div>
 
       {/* Answered count */}
-      <div style={{ marginTop: 6, fontSize: 12, color: '#475569', textAlign: 'center' }}>
+      <div style={{ marginTop: 6, fontSize: 12, color: 'var(--text-tertiary)', textAlign: 'center' }}>
         {questionsAnswered} answered ·{' '}
         {questionsAnswered > 0
           ? globalThis.Math.round((correctAnswers / questionsAnswered) * 100)
@@ -252,8 +252,8 @@ const MusicNotesGame = ({ onEarnTokens, onClose }: MusicNotesProps) => {
             border: `2px solid ${CYAN_BORDER}`,
           }}>
             <div style={{ fontSize: 40, marginBottom: 8 }}>🔥</div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: '#f59e0b' }}>{streak} Streak!</div>
-            <div style={{ fontSize: 14, color: '#94a3b8', marginTop: 4 }}>Keep it going!</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--token-color)' }}>{streak} Streak!</div>
+            <div style={{ fontSize: 14, color: 'var(--text-secondary)', marginTop: 4 }}>Keep it going!</div>
           </div>
         </div>
       )}

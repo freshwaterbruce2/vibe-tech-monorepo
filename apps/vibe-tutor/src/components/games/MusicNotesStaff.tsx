@@ -23,9 +23,9 @@ interface StaffSVGProps {
 export default function StaffSVG({ note, feedback: fb }: StaffSVGProps) {
   const y = posToY(note.staffPos);
   const needsLedger = note.staffPos <= 0;
-  const noteColor = fb === 'correct' ? '#c084fc' : fb === 'wrong' ? '#ef4444' : '#e2e8f0';
+  const noteColor = fb === 'correct' ? '#c084fc' : fb === 'wrong' ? 'var(--error-accent)' : '#e2e8f0';
   const noteGlow =
-    fb === 'correct' ? '#c084fc44' : fb === 'wrong' ? '#ef444444' : 'transparent';
+    fb === 'correct' ? '#c084fc44' : fb === 'wrong' ? 'rgba(239, 68, 68, 0.27)' : 'transparent';
 
   return (
     <svg width={STAFF_W} height={STAFF_H} viewBox={`0 0 ${STAFF_W} ${STAFF_H}`}>
@@ -37,7 +37,7 @@ export default function StaffSVG({ note, feedback: fb }: StaffSVGProps) {
           y1={TOP_LINE_Y + i * LINE_GAP}
           x2={STAFF_W - 20}
           y2={TOP_LINE_Y + i * LINE_GAP}
-          stroke="#475569"
+          stroke="var(--text-tertiary)"
           strokeWidth={1.5}
         />
       ))}
@@ -47,7 +47,7 @@ export default function StaffSVG({ note, feedback: fb }: StaffSVGProps) {
         x={38}
         y={TOP_LINE_Y + 3.2 * LINE_GAP}
         fontSize={52}
-        fill="#94a3b8"
+        fill="var(--text-secondary)"
         fontFamily="serif"
         style={{ userSelect: 'none' }}
       >
@@ -61,7 +61,7 @@ export default function StaffSVG({ note, feedback: fb }: StaffSVGProps) {
           y1={y}
           x2={NOTE_X + 16}
           y2={y}
-          stroke="#475569"
+          stroke="var(--text-tertiary)"
           strokeWidth={1.5}
         />
       )}
@@ -97,7 +97,7 @@ export default function StaffSVG({ note, feedback: fb }: StaffSVGProps) {
           x={NOTE_X - 22}
           y={y + 5}
           fontSize={16}
-          fill="#f59e0b"
+          fill="var(--token-color)"
           fontWeight="bold"
           fontFamily="serif"
         >

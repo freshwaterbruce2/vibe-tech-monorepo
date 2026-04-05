@@ -1,8 +1,8 @@
 {
 	"compilerOptions": {
 		// Language and Environment
-		"target": "ES2020",
-		"lib": ["ES2020", "DOM", "DOM.Iterable"],
+		"target": "ES2022",
+		"lib": ["ES2022", "DOM", "DOM.Iterable"],
 		"jsx": "react-jsx",
 		"module": "ESNext",
 		"moduleResolution": "bundler",
@@ -26,9 +26,8 @@
 		"baseUrl": ".",
 		"paths": {
 			"@/*": ["./src/*"],
-			"@vibetech/*": ["./packages/*/src"],
-			"@nova/*": ["./packages/*/src"],
-			"@dev/*": ["./packages/*/src", "./packages/feature-flags/*/src"]
+			"@vibetech/*": ["./packages/*/src", "./packages/feature-flags/*/src"],
+			"@nova/*": ["./packages/*/src"]
 		},
 		"resolveJsonModule": true,
 		"allowJs": true,
@@ -40,8 +39,6 @@
 		"sourceMap": true,
 		"outDir": "./dist",
 		"removeComments": false,
-		"importHelpers": true,
-		"downlevelIteration": true,
 
 		// Interop Constraints
 		"esModuleInterop": true,

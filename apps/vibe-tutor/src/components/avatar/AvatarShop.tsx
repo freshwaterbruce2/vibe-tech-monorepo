@@ -58,7 +58,7 @@ export default function AvatarShop({ userTokens, onSpendTokens }: AvatarShopProp
     <div
       style={{
         padding: '24px',
-        background: '#1e293b',
+        background: 'var(--background-surface)',
         borderRadius: '16px',
         color: 'white',
         boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
@@ -73,20 +73,20 @@ export default function AvatarShop({ userTokens, onSpendTokens }: AvatarShopProp
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Store size={28} color="#3b82f6" style={{ marginRight: '12px' }} />
+          <Store size={28} color="var(--success-accent)" style={{ marginRight: '12px' }} />
           <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold' }}>Avatar Shop</h2>
         </div>
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            background: '#0f172a',
+            background: 'var(--background-card)',
             padding: '8px 16px',
             borderRadius: '24px',
             gap: '8px',
           }}
         >
-          <Star size={18} color="#f59e0b" fill="#f59e0b" />
+          <Star size={18} color="var(--token-color)" fill="var(--token-color)" />
           <span style={{ fontWeight: 'bold', fontSize: '18px' }}>{userTokens}</span>
         </div>
       </div>
@@ -101,8 +101,8 @@ export default function AvatarShop({ userTokens, onSpendTokens }: AvatarShopProp
             <div
               key={item.id}
               style={{
-                background: '#0f172a',
-                border: isEquipped ? '2px solid #a855f7' : '1px solid #334155',
+                background: 'var(--background-card)',
+                border: isEquipped ? '2px solid var(--primary-accent)' : '1px solid var(--text-placeholder)',
                 borderRadius: '12px',
                 padding: '16px',
                 display: 'flex',
@@ -112,13 +112,13 @@ export default function AvatarShop({ userTokens, onSpendTokens }: AvatarShopProp
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                 <div style={{ fontSize: '40px' }}>{item.imageUrl}</div>
                 {!isOwned && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: canAfford ? '#f59e0b' : '#ef4444' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: canAfford ? 'var(--token-color)' : 'var(--error-accent)' }}>
                     <Star size={14} />
                     <span style={{ fontWeight: 'bold' }}>{item.cost}</span>
                   </div>
                 )}
                 {isOwned && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#a855f7' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--primary-accent)' }}>
                     <Check size={16} />
                     <span style={{ fontWeight: 'bold', fontSize: '12px', textTransform: 'uppercase' }}>Owned</span>
                   </div>
@@ -126,12 +126,12 @@ export default function AvatarShop({ userTokens, onSpendTokens }: AvatarShopProp
               </div>
 
               <h3 style={{ margin: '0 0 4px 0', fontSize: '16px' }}>{item.name}</h3>
-              <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: '#94a3b8', flexGrow: 1 }}>{item.description}</p>
+              <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: 'var(--text-secondary)', flexGrow: 1 }}>{item.description}</p>
               
               {/* Stat boosts display */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '16px' }}>
                 {Object.entries(item.statBoosts).map(([stat, val]) => (
-                  <span key={stat} style={{ background: '#1e293b', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', color: '#cbd5e1' }}>
+                  <span key={stat} style={{ background: 'var(--background-surface)', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', color: 'var(--text-secondary)' }}>
                     +{val} {stat.replace('Power', '')}
                   </span>
                 ))}
@@ -141,9 +141,9 @@ export default function AvatarShop({ userTokens, onSpendTokens }: AvatarShopProp
                 <button
                   disabled
                   style={{
-                    background: '#a855f722',
-                    color: '#a855f7',
-                    border: '1px solid #a855f7',
+                    background: 'var(--glass-surface)',
+                    color: 'var(--primary-accent)',
+                    border: '1px solid var(--primary-accent)',
                     padding: '8px',
                     borderRadius: '8px',
                     fontWeight: 'bold',
@@ -156,7 +156,7 @@ export default function AvatarShop({ userTokens, onSpendTokens }: AvatarShopProp
                 <button
                   onClick={() => void handleEquip(item)}
                   style={{
-                    background: '#3b82f6',
+                    background: 'var(--success-accent)',
                     color: 'white',
                     border: 'none',
                     padding: '8px',
@@ -172,8 +172,8 @@ export default function AvatarShop({ userTokens, onSpendTokens }: AvatarShopProp
                   onClick={() => void handleBuy(item)}
                   disabled={!canAfford}
                   style={{
-                    background: canAfford ? '#f59e0b' : '#334155',
-                    color: canAfford ? 'white' : '#94a3b8',
+                    background: canAfford ? 'var(--token-color)' : 'var(--text-placeholder)',
+                    color: canAfford ? 'white' : 'var(--text-secondary)',
                     border: 'none',
                     padding: '8px',
                     borderRadius: '8px',

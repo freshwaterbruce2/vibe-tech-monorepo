@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Achievement } from '../../types';
 import { useAchievements } from '../useAchievements';
 
 vi.mock('../../services/dataStore', () => ({
@@ -51,7 +52,7 @@ describe('useAchievements', () => {
     const mockAchievements = [
       { id: 'a1', name: 'First Steps', description: '', unlocked: false, icon: () => null },
     ];
-    mockedDataStore.getAchievements.mockResolvedValue(mockAchievements as any);
+    mockedDataStore.getAchievements.mockResolvedValue(mockAchievements as Achievement[]);
 
     const { result } = renderHook(() => useAchievements());
 
@@ -72,10 +73,10 @@ describe('useAchievements', () => {
     };
     const onAwardTokens = vi.fn();
 
-    mockedDataStore.getAchievements.mockResolvedValue([fakeAchievement as any]);
+    mockedDataStore.getAchievements.mockResolvedValue([fakeAchievement as Achievement]);
     mockedCheck.mockResolvedValue({
-      achievements: [fakeAchievement as any],
-      newlyUnlocked: [fakeAchievement as any],
+      achievements: [fakeAchievement as Achievement],
+      newlyUnlocked: [fakeAchievement as Achievement],
       totalBonusTokens: 10,
       totalBonusPoints: 10,
     });
@@ -106,8 +107,8 @@ describe('useAchievements', () => {
       icon: () => null,
     };
     mockedCheck.mockResolvedValue({
-      achievements: [fakeAchievement as any],
-      newlyUnlocked: [fakeAchievement as any],
+      achievements: [fakeAchievement as Achievement],
+      newlyUnlocked: [fakeAchievement as Achievement],
       totalBonusTokens: 5,
       totalBonusPoints: 5,
     });
@@ -134,7 +135,7 @@ describe('useAchievements', () => {
   it('should handle achievement event with no unlocks', async () => {
     mockedCheck.mockResolvedValue({
       achievements: [
-        { id: 'a1', name: 'X', description: '', unlocked: false, icon: () => null } as any,
+        { id: 'a1', name: 'X', description: '', unlocked: false, icon: () => null } as Achievement,
       ],
       newlyUnlocked: [],
       totalBonusTokens: 0,
@@ -160,8 +161,8 @@ describe('useAchievements', () => {
       icon: () => null,
     };
     mockedCheck.mockResolvedValue({
-      achievements: [fakeAchievement as any],
-      newlyUnlocked: [fakeAchievement as any],
+      achievements: [fakeAchievement as Achievement],
+      newlyUnlocked: [fakeAchievement as Achievement],
       totalBonusTokens: 3,
       totalBonusPoints: 3,
     });

@@ -7,6 +7,7 @@
 mod commands;
 mod db;
 mod pty;
+mod screenshot;
 
 use commands::greet;
 
@@ -43,6 +44,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             greet,
             pty::pty_spawn,
@@ -51,7 +53,8 @@ pub fn run() {
             pty::pty_dispose,
             db::db_get_patterns,
             db::db_save_pattern,
-            db::db_execute_query
+            db::db_execute_query,
+            screenshot::render_html_screenshot
         ])
         .run(tauri::generate_context!())
         .expect("error while running Vibe Code Studio");

@@ -16,6 +16,8 @@
       }
     }
   ],
+  "parallel": 3,
+  "cacheDirectory": ".nx/cache",
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "production": [
@@ -63,7 +65,7 @@
         "{projectRoot}/vite.config.ts",
         "{projectRoot}/public/**"
       ],
-      "outputs": ["{projectRoot}/dist/**", "{projectRoot}/build/**", "{projectRoot}/.next/**"],
+      "outputs": ["{projectRoot}/dist/**", "{projectRoot}/build/**"],
       "cache": true
     },
     "build:production": {
@@ -178,29 +180,8 @@
   "affected": {
     "defaultBase": "main"
   },
-  "tasksRunnerOptions": {
-    "default": {
-      "runner": "nx/tasks-runners/default",
-      "options": {
-        "cacheableOperations": [
-          "build",
-          "test",
-          "lint",
-          "typecheck",
-          "quality",
-          "test:unit",
-          "test:coverage",
-          "crypto:test",
-          "crypto:coverage"
-        ],
-        "parallel": 3,
-        "cacheDirectory": ".nx/cache"
-      }
-    }
-  },
   "nxCloudId": "6977fcd7ceb01e5b11be2a95",
   "tui": { "enabled": false },
-
   "release": {
     "projects": ["packages/*", "!vibe-python-shared"],
     "projectsRelationship": "independent",
@@ -209,5 +190,4 @@
       "specifierSource": "prompt"
     }
   }
-
 }

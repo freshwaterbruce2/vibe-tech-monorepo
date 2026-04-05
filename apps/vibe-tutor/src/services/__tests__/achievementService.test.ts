@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { HomeworkItem } from '../../types';
 
 // Mock dataStore BEFORE importing achievementService (it auto-loads on import)
 vi.mock('../dataStore', () => ({
@@ -29,7 +30,7 @@ describe('achievementService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(dataStore.getAchievements).mockResolvedValue([]);
-    vi.mocked(dataStore.getUserSettings).mockResolvedValue(null as any);
+    vi.mocked(dataStore.getUserSettings).mockResolvedValue(null as unknown as string);
     vi.mocked(dataStore.saveUserSettings).mockResolvedValue(undefined);
     vi.mocked(dataStore.saveAchievements).mockResolvedValue(undefined);
     vi.mocked(dataStore.getFocusSessions).mockResolvedValue([]);
@@ -52,7 +53,7 @@ describe('achievementService', () => {
       vi.mocked(dataStore.getUserSettings).mockImplementation(async (key: string) => {
         if (key === 'homeworkStats') return JSON.stringify({ completedTasks: 3 });
         if (key === 'focusStats') return JSON.stringify({ completedSessions: 2, totalMinutes: 45 });
-        return null as any;
+        return null as unknown as string;
       });
 
       const achievements = await getAchievements();
@@ -122,7 +123,7 @@ describe('achievementService', () => {
         { id: '1', completed: true, completedDate: today },
         { id: '2', completed: true, completedDate: today - oneDay },
         { id: '3', completed: true, completedDate: today - 2 * oneDay },
-      ] as any[];
+      ] as unknown as HomeworkItem[];
 
       const result = await checkAndUnlockAchievements({
         type: 'HOMEWORK_UPDATE',

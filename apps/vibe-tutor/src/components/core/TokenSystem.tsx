@@ -1,7 +1,7 @@
 import { BLAKE_CONFIG } from '@/config';
 import { animated, config, useSpring } from '@react-spring/web';
 import confetti from 'canvas-confetti';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 interface TokenSystemProps {
   currentTokens: number;
@@ -26,11 +26,11 @@ export const TokenSystem = ({ currentTokens, onTokensUpdate }: TokenSystemProps)
 
   // Pulse animation for token display
   const pulseAnimation = useSpring({
-    from: { scale: 1, glow: '0 0 10px rgba(0, 255, 0, 0.5)' },
+    from: { scale: 1, glow: '0 0 10px rgba(168, 85, 247, 0.5)' },
     to: async (next) => {
       while (true) {
-        await next({ scale: 1.05, glow: '0 0 20px rgba(0, 255, 0, 0.8)' });
-        await next({ scale: 1, glow: '0 0 10px rgba(0, 255, 0, 0.5)' });
+        await next({ scale: 1.05, glow: '0 0 20px rgba(168, 85, 247, 0.8)' });
+        await next({ scale: 1, glow: '0 0 10px rgba(168, 85, 247, 0.5)' });
       }
     },
     config: config.slow,
@@ -61,7 +61,7 @@ export const TokenSystem = ({ currentTokens, onTokensUpdate }: TokenSystemProps)
           particleCount: amount,
           spread: 70,
           origin: { y: 0.6 },
-          colors: ['#00FF00', '#FFD700', '#FF0000'],
+          colors: ['#a855f7', '#fbbf24', '#ec4899'],
         });
       }
 
@@ -93,14 +93,14 @@ export const TokenSystem = ({ currentTokens, onTokensUpdate }: TokenSystemProps)
         angle: 60,
         spread: 55,
         origin: { x: 0 },
-        colors: ['#FFD700'],
+        colors: ['#fbbf24'],
       });
               void confetti({
         particleCount: 5,
         angle: 120,
         spread: 55,
         origin: { x: 1 },
-        colors: ['#FFD700'],
+        colors: ['#fbbf24'],
       });
 
       if (Date.now() < end) {
@@ -118,13 +118,13 @@ export const TokenSystem = ({ currentTokens, onTokensUpdate }: TokenSystemProps)
         position: fixed;
         top: 100px;
         right: 20px;
-        background: linear-gradient(135deg, #00FF00, #00AA00);
+        background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
         color: white;
         padding: 15px 25px;
         border-radius: 10px;
         font-size: 20px;
         font-weight: bold;
-        box-shadow: 0 10px 30px rgba(0, 255, 0, 0.5);
+        box-shadow: 0 10px 30px rgba(168, 85, 247, 0.5);
         animation: slideInRight 0.5s ease-out;
         z-index: 9999;
       ">
@@ -140,12 +140,6 @@ export const TokenSystem = ({ currentTokens, onTokensUpdate }: TokenSystemProps)
     }, 2500);
   };
 
-  // Simulate earning tokens (for testing)
-  useEffect(() => {
-    // Example: Add tokens every time Blake completes something
-    window.addBlakeTokens = addTokens;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <div className="token-system glass-card p-6">
@@ -160,7 +154,7 @@ export const TokenSystem = ({ currentTokens, onTokensUpdate }: TokenSystemProps)
         <div
           className="text-6xl font-bold mb-2"
           style={{
-            background: 'linear-gradient(135deg, #00FF00, #FFD700)',
+            background: 'linear-gradient(135deg, var(--primary-accent), var(--token-color))',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
           }}
@@ -198,13 +192,13 @@ export const TokenSystem = ({ currentTokens, onTokensUpdate }: TokenSystemProps)
                 </div>
               </div>
             </div>
-            <div className="text-xl font-bold text-cyan-400">{Math.round(progress)}%</div>
+            <div className="text-xl font-bold text-[var(--success-accent)]">{Math.round(progress)}%</div>
           </div>
 
           {/* Progress Bar */}
           <div className="w-full bg-gray-700 rounded-full h-4 overflow-hidden">
             <animated.div
-              className="h-full bg-gradient-to-r from-fuchsia-400 to-cyan-400"
+              className="h-full bg-gradient-to-r from-[var(--secondary-accent)] to-[var(--primary-accent)]"
               style={{
                 width: `${progress}%`,
                 transition: 'width 0.5s ease-out',

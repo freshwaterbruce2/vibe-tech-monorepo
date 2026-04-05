@@ -73,7 +73,7 @@ if await client.is_enabled("trading.new_strategy", user_id="account123"):
 ### NOVA Agent / DeepCode Editor (TypeScript)
 
 ```typescript
-import { FeatureFlagClient } from '@dev/feature-flags-sdk-node';
+import { FeatureFlagClient } from '@vibetech/feature-flags-sdk-node';
 
 const flags = new FeatureFlagClient({
   serverUrl: 'http://localhost:3100',
@@ -107,7 +107,7 @@ import {
   useFlag, 
   useVariant,
   FeatureGate 
-} from '@dev/feature-flags-sdk-react';
+} from '@vibetech/feature-flags-sdk-react';
 
 // In your app root
 function App() {

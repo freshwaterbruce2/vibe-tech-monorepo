@@ -15,7 +15,71 @@ export interface GatewayConfig {
     mcpServers: Record<string, McpServerConfig>;
 }
 
+interface ResolveServerCommandOptions {
+    platform?: NodeJS.Platform;
+    nodeExecutable?: string;
+    pythonLauncherPath?: string;
+    pathExists?: (path: string) => boolean;
+}
+
 const DEFAULT_IPC_URL = 'ws://localhost:5004';
+const WINDOWS_PYTHON_LAUNCHER = 'C:\\Windows\\py.exe';
+
+function getNodeExecutable(): string {
+    return (
+        process.env.MCP_GATEWAY_NODE_PATH ??
+        process.env.GRAVITY_CLAW_NODE_PATH ??
+        process.env.npm_node_execpath ??
+        process.execPath
+    );
+}
+
+function shouldPrependWindowsPythonVersionArg(args: string[]): boolean {
+    const firstArg = args[0]?.trim().toLowerCase();
+    return !firstArg || !/^-3(?:\.\d+)?$/.test(firstArg);
+}
+
+export function resolveServerCommand(
+    server: McpServerConfig,
+    options: ResolveServerCommandOptions = {}
+): McpServerConfig {
+    const platform = options.platform ?? process.platform;
+    const pathExists = options.pathExists ?? existsSync;
+    const command = server.command.trim();
+    const normalized = command.toLowerCase();
+
+    if (platform === 'win32' && (normalized === 'node' || normalized === 'node.exe')) {
+        return {
+            ...server,
+            command: options.nodeExecutable ?? getNodeExecutable(),
+        };
+    }
+
+    if (platform === 'win32' && (normalized === 'python' || normalized === 'python.exe')) {
+        const pythonLauncher =
+            options.pythonLauncherPath ??
+            process.env.MCP_GATEWAY_PYTHON_PATH ??
+            process.env.PYTHON ??
+            WINDOWS_PYTHON_LAUNCHER;
+
+        if (!pathExists(pythonLauncher)) {
+            return server;
+        }
+
+        const args = pythonLauncher.toLowerCase().endsWith('py.exe') &&
+            shouldPrependWindowsPythonVersionArg(server.args)
+            ? ['-3', ...server.args]
+            : server.args;
+
+        return {
+            ...server,
+            command: pythonLauncher,
+            args,
+        };
+    }
+
+    return server;
+}
 
 /** Locate the Antigravity MCP config file */
 function findMcpConfigPath(): string {
@@ -44,11 +108,11 @@ export function loadConfig(): GatewayConfig {
     for (const [name, def] of Object.entries(mcpBlock)) {
         const d = def as Record<string, unknown>;
         if (typeof d.command !== 'string') continue;
-        servers[name] = {
+        servers[name] = resolveServerCommand({
             command: d.command,
             args: Array.isArray(d.args) ? (d.args as string[]) : [],
             env: (d.env as Record<string, string>) ?? {},
-        };
+        });
     }
 
     return {

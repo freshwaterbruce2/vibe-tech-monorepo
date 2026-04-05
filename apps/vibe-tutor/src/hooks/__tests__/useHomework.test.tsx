@@ -5,6 +5,7 @@ import { useHomework } from '../useHomework';
 // Mock dataStore
 vi.mock('../../services/dataStore', () => ({
   dataStore: {
+    initialize: vi.fn().mockResolvedValue(undefined),
     getHomeworkItems: vi.fn().mockResolvedValue([]),
     saveHomeworkItems: vi.fn().mockResolvedValue(undefined),
   },
@@ -17,6 +18,7 @@ const mockedDataStore = vi.mocked(dataStore);
 describe('useHomework', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockedDataStore.initialize.mockResolvedValue(undefined);
     mockedDataStore.getHomeworkItems.mockResolvedValue([]);
     mockedDataStore.saveHomeworkItems.mockResolvedValue(undefined);
   });
@@ -38,6 +40,36 @@ describe('useHomework', () => {
     await vi.waitFor(() => {
       expect(result.current.homeworkItems).toEqual(storedItems);
     });
+  });
+
+  it('waits for dataStore initialization before loading homework items', async () => {
+    const storedItems = [
+      { id: '1', subject: 'Math', title: 'Fractions', dueDate: '2026-03-01', completed: false },
+    ];
+    let resolveInitialize!: () => void;
+
+    mockedDataStore.initialize.mockImplementation(
+      async () =>
+        new Promise<void>((resolve) => {
+          resolveInitialize = resolve;
+        }),
+    );
+    mockedDataStore.getHomeworkItems.mockResolvedValue(storedItems);
+
+    const { result } = renderHook(() => useHomework());
+
+    expect(mockedDataStore.getHomeworkItems).not.toHaveBeenCalled();
+
+    resolveInitialize();
+
+    await vi.waitFor(() => {
+      expect(result.current.homeworkItems).toEqual(storedItems);
+    });
+
+    expect(mockedDataStore.initialize).toHaveBeenCalled();
+    expect(mockedDataStore.initialize.mock.invocationCallOrder[0]).toBeLessThan(
+      mockedDataStore.getHomeworkItems.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY,
+    );
   });
 
   it('should add a homework item', async () => {
@@ -156,5 +188,61 @@ describe('useHomework', () => {
     await vi.waitFor(() => {
       expect(mockedDataStore.saveHomeworkItems).toHaveBeenCalled();
     });
+  });
+
+  it('waits for dataStore initialization before persisting homework items', async () => {
+    let resolveInitialize!: () => void;
+
+    mockedDataStore.initialize.mockImplementation(
+      async () =>
+        new Promise<void>((resolve) => {
+          resolveInitialize = resolve;
+        }),
+    );
+
+    const { result } = renderHook(() => useHomework());
+
+    act(() => {
+      result.current.addHomework({ subject: 'Science', title: 'Atoms', dueDate: '2026-04-15' });
+    });
+
+    expect(mockedDataStore.saveHomeworkItems).not.toHaveBeenCalled();
+
+    resolveInitialize();
+
+    await vi.waitFor(() => {
+      expect(mockedDataStore.saveHomeworkItems).toHaveBeenCalledTimes(1);
+    });
+
+    expect(mockedDataStore.initialize).toHaveBeenCalled();
+  });
+
+  it('preserves homework added before initialization finishes', async () => {
+    let resolveInitialize!: () => void;
+
+    mockedDataStore.initialize.mockImplementation(
+      async () =>
+        new Promise<void>((resolve) => {
+          resolveInitialize = resolve;
+        }),
+    );
+    mockedDataStore.getHomeworkItems.mockResolvedValue([]);
+
+    const { result } = renderHook(() => useHomework());
+
+    act(() => {
+      result.current.addHomework({ subject: 'Science', title: 'Atoms', dueDate: '2026-04-15' });
+    });
+
+    expect(result.current.homeworkItems).toHaveLength(1);
+
+    resolveInitialize();
+
+    await vi.waitFor(() => {
+      expect(mockedDataStore.saveHomeworkItems).toHaveBeenCalledTimes(1);
+    });
+
+    expect(result.current.homeworkItems).toHaveLength(1);
+    expect(result.current.homeworkItems[0]!.title).toBe('Atoms');
   });
 });

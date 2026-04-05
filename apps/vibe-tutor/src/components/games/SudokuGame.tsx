@@ -1,6 +1,6 @@
 import confetti from 'canvas-confetti';
 import { ArrowLeft, Clock, Lightbulb, RotateCcw, TriangleAlert } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import * as SudokuModule from 'sudoku-umd';
 import { useGameAudio } from '../../hooks/useGameAudio';
 import GameCompletionModal from './GameCompletionModal';
@@ -116,7 +116,7 @@ function createInitialSudokuState(): SudokuState {
   }
 }
 
-const SudokuGame = ({ onComplete, onBack }: SudokuGameProps) => {
+const SudokuGame = memo(function SudokuGame({ onComplete, onBack }: SudokuGameProps) {
   const { playSound } = useGameAudio();
   const [sudokuState, setSudokuState] = useState<SudokuState>(() => createInitialSudokuState());
   const [startTime, setStartTime] = useState(() => Date.now());
@@ -136,9 +136,12 @@ const SudokuGame = ({ onComplete, onBack }: SudokuGameProps) => {
     return () => clearInterval(timer);
   }, [showComplete]);
 
-  const editableCellCount = puzzle.filter((cell) => cell === null).length;
+  const editableCellCount = useMemo(
+    () => puzzle.filter((cell) => cell === null).length,
+    [puzzle],
+  );
 
-  const startNewGame = () => {
+  const startNewGame = useCallback(() => {
     const nextState = createInitialSudokuState();
     setSudokuState(nextState);
     setUserGrid(nextState.userGrid);
@@ -150,63 +153,79 @@ const SudokuGame = ({ onComplete, onBack }: SudokuGameProps) => {
     setFinalResult(null);
     setStartTime(Date.now());
     setCurrentTime(Date.now());
-  };
+  }, []);
 
-  const finishGame = (grid: (number | null)[], nextMistakes: number, nextHintsUsed: number) => {
-    if (!checkComplete(grid) || showComplete) return;
+  const checkComplete = useCallback(
+    (grid: (number | null)[]) => {
+      return grid.every((cell, i) => cell !== null && cell === solution[i]);
+    },
+    [solution],
+  );
 
-    playSound('victory');
-    void confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-    const timeSpent = Math.floor((Date.now() - startTime) / 1000);
-    const score = Math.max(
-      35,
-      100 - Math.floor(timeSpent / 30) - nextMistakes * 5 - nextHintsUsed * 8,
-    );
-    const stars = score >= 92 ? 5 : score >= 80 ? 4 : score >= 65 ? 3 : score >= 50 ? 2 : 1;
-    setShowComplete(true);
-    setFinalResult({
-      score,
-      stars,
-      time: timeSpent,
-      filled: editableCellCount,
-      mistakes: nextMistakes,
-      hintPenalty: nextHintsUsed * 8,
-    });
-  };
+  const finishGame = useCallback(
+    (grid: (number | null)[], nextMistakes: number, nextHintsUsed: number) => {
+      if (!checkComplete(grid) || showComplete) return;
 
-  const handleCellClick = (index: number) => {
-    if (showComplete) return;
-    if (puzzle[index] !== null) return; // Can't edit given numbers
-    playSound('pop');
-    setSelectedCell(index);
-  };
+      playSound('victory');
+      void confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+      const timeSpent = Math.floor((Date.now() - startTime) / 1000);
+      const score = Math.max(
+        35,
+        100 - Math.floor(timeSpent / 30) - nextMistakes * 5 - nextHintsUsed * 8,
+      );
+      const stars = score >= 92 ? 5 : score >= 80 ? 4 : score >= 65 ? 3 : score >= 50 ? 2 : 1;
+      setShowComplete(true);
+      setFinalResult({
+        score,
+        stars,
+        time: timeSpent,
+        filled: editableCellCount,
+        mistakes: nextMistakes,
+        hintPenalty: nextHintsUsed * 8,
+      });
+    },
+    [checkComplete, editableCellCount, playSound, showComplete, startTime],
+  );
 
-  const handleNumberInput = (num: number) => {
-    if (showComplete) return;
-    if (selectedCell === null || puzzle[selectedCell] !== null) return;
-    const newGrid = [...userGrid];
-    newGrid[selectedCell] = num;
-    const isCorrect = solution[selectedCell] === num;
-    const nextMistakes = isCorrect ? mistakes : mistakes + 1;
-
-    if (isCorrect) {
+  const handleCellClick = useCallback(
+    (index: number) => {
+      if (showComplete) return;
+      if (puzzle[index] !== null) return; // Can't edit given numbers
       playSound('pop');
-    } else {
-      playSound('error');
-      setMistakes(nextMistakes);
-    }
+      setSelectedCell(index);
+    },
+    [showComplete, puzzle, playSound],
+  );
 
-    setMistakeCells((prev) => {
-      const next = new Set(prev);
-      if (isCorrect) next.delete(selectedCell);
-      else next.add(selectedCell);
-      return next;
-    });
-    setUserGrid(newGrid);
-    finishGame(newGrid, nextMistakes, hintsUsed);
-  };
+  const handleNumberInput = useCallback(
+    (num: number) => {
+      if (showComplete) return;
+      if (selectedCell === null || puzzle[selectedCell] !== null) return;
+      const newGrid = [...userGrid];
+      newGrid[selectedCell] = num;
+      const isCorrect = solution[selectedCell] === num;
+      const nextMistakes = isCorrect ? mistakes : mistakes + 1;
 
-  const handleClear = () => {
+      if (isCorrect) {
+        playSound('pop');
+      } else {
+        playSound('error');
+        setMistakes(nextMistakes);
+      }
+
+      setMistakeCells((prev) => {
+        const next = new Set(prev);
+        if (isCorrect) next.delete(selectedCell);
+        else next.add(selectedCell);
+        return next;
+      });
+      setUserGrid(newGrid);
+      finishGame(newGrid, nextMistakes, hintsUsed);
+    },
+    [showComplete, selectedCell, puzzle, userGrid, solution, mistakes, playSound, finishGame, hintsUsed],
+  );
+
+  const handleClear = useCallback(() => {
     if (showComplete) return;
     if (selectedCell === null || puzzle[selectedCell] !== null) return;
     playSound('pop');
@@ -218,9 +237,9 @@ const SudokuGame = ({ onComplete, onBack }: SudokuGameProps) => {
       next.delete(selectedCell);
       return next;
     });
-  };
+  }, [showComplete, selectedCell, puzzle, playSound, userGrid]);
 
-  const handleHint = () => {
+  const handleHint = useCallback(() => {
     if (showComplete) return;
     if (selectedCell === null || puzzle[selectedCell] !== null || solution[selectedCell] === null) return;
     playSound('success');
@@ -235,13 +254,9 @@ const SudokuGame = ({ onComplete, onBack }: SudokuGameProps) => {
       return next;
     });
     finishGame(newGrid, mistakes, nextHints);
-  };
+  }, [showComplete, selectedCell, puzzle, solution, playSound, userGrid, hintsUsed, finishGame, mistakes]);
 
-  const checkComplete = (grid: (number | null)[]) => {
-    return grid.every((cell, i) => cell !== null && cell === solution[i]);
-  };
-
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     if (showComplete) return;
     playSound('pop');
     setUserGrid([...puzzle]);
@@ -249,12 +264,12 @@ const SudokuGame = ({ onComplete, onBack }: SudokuGameProps) => {
     setMistakes(0);
     setHintsUsed(0);
     setMistakeCells(new Set());
-  };
+  }, [showComplete, playSound, puzzle]);
 
-  const handleContinue = () => {
+  const handleContinue = useCallback(() => {
     if (!finalResult) return;
     onComplete(finalResult.score, finalResult.stars, finalResult.time);
-  };
+  }, [finalResult, onComplete]);
 
   if (isLoading || puzzle.length === 0) {
     return (
@@ -428,6 +443,6 @@ const SudokuGame = ({ onComplete, onBack }: SudokuGameProps) => {
       />
     </div>
   );
-};
+});
 
 export default SudokuGame;

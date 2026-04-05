@@ -165,7 +165,7 @@
 }
 
 .gh-fallback-text {
-  color: #94a3b8;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
@@ -250,7 +250,7 @@
 .gh-header-back {
   background: none;
   border: none;
-  color: #94a3b8;
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -305,7 +305,7 @@
 
 .gh-stat-box {
   background: rgba(12, 6, 24, 0.7);
-  border: 1px solid var(--stat-accent, rgba(168, 85, 247, 0.35));
+  border: 1px solid var(--stat-accent, var(--glass-border));
   border-radius: 0.5rem;
   padding: 0.75rem;
   display: flex;
@@ -329,7 +329,7 @@
   font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #94a3b8;
+  color: var(--text-secondary);
 }
 
 /* XP progress */
@@ -407,16 +407,16 @@
 }
 
 .gh-filter-btn--active {
-  border: 1px solid var(--filter-accent, #a855f7);
+  border: 1px solid var(--filter-accent, var(--primary-accent));
   background: rgba(168, 85, 247, 0.18);
   color: #fff;
   box-shadow: 0 0 10px rgba(168, 85, 247, 0.25);
 }
 
 .gh-filter-btn--inactive {
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  border: 1px solid var(--border-subtle);
   background: rgba(12, 6, 24, 0.6);
-  color: #94a3b8;
+  color: var(--text-secondary);
 }
 .gh-filter-btn--inactive:hover {
   background: rgba(20, 10, 40, 0.8);
@@ -432,7 +432,7 @@
 
 .gh-zone-section {
   background: rgba(12, 6, 24, 0.6);
-  border: 1px solid rgba(148, 163, 184, 0.1);
+  border: 1px solid var(--border-subtle);
   border-radius: 0.5rem;
   padding: 1.25rem;
   border-left: 4px solid var(--zone-color);
@@ -470,7 +470,7 @@
 .gh-zone-desc {
   margin: 0;
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--text-secondary);
   font-family: monospace;
 }
 
@@ -494,7 +494,7 @@
 /* Game card */
 .gh-game-card {
   background: rgba(20, 10, 40, 0.5);
-  border: 1px solid rgba(148, 163, 184, 0.1);
+  border: 1px solid var(--border-subtle);
   border-radius: 0.5rem;
   padding: 1rem;
   text-align: left;
@@ -563,12 +563,12 @@
 }
 
 .gh-token-icon {
-  color: #f59e0b;
+  color: var(--token-color);
 }
 
 .gh-token-text {
   font-size: 0.75rem;
-  color: #f59e0b;
+  color: var(--token-color);
   font-weight: 600;
 }
 
@@ -585,7 +585,7 @@
 .gh-featured-reason {
   margin: 0.75rem 0;
   font-size: 0.82rem;
-  color: #cbd5e1;
+  color: var(--text-secondary);
   line-height: 1.45;
 }
 
@@ -600,9 +600,9 @@
   font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #cbd5e1;
+  color: var(--text-secondary);
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(148, 163, 184, 0.15);
+  border: 1px solid var(--border-subtle);
   border-radius: 999px;
   padding: 0.3rem 0.65rem;
 }
@@ -635,7 +635,7 @@
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #67e8f9;
+  color: var(--success-accent);
 }
 
 .gh-target-value {
@@ -648,7 +648,7 @@
   margin: 0.35rem 0 0.55rem;
   font-size: 0.75rem;
   line-height: 1.4;
-  color: #94a3b8;
+  color: var(--text-secondary);
 }
 
 .gh-target-track {
@@ -657,7 +657,7 @@
   overflow: hidden;
   border-radius: 999px;
   background: rgba(20, 10, 40, 0.95);
-  border: 1px solid rgba(148, 163, 184, 0.14);
+  border: 1px solid var(--border-subtle);
 }
 
 .gh-target-fill {

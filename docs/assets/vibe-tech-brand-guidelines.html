@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vibe-Tech Brand Guidelines</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --vt-primary: #7C3AED;
+  --vt-primary-light: #9333EA;
+  --vt-secondary: #3B82F6;
+  --vt-accent-cyan: #00FFFF;
+  --vt-accent-purple: #B933FF;
+  --vt-accent-pink: #FF00AA;
+  --vt-accent-teal: #00FFCC;
+  --vt-bg-start: #07090f;
+  --vt-bg-mid: #0D0D1A;
+  --vt-bg-end: #12141c;
+  --vt-surface: rgba(18, 20, 28, 0.6);
+  --vt-surface-hover: rgba(30, 31, 46, 0.65);
+  --vt-glass-border: rgba(255, 255, 255, 0.08);
+  --vt-text: #f0f4f8;
+  --vt-text-secondary: #9CA3AF;
+  --vt-text-muted: #6B7280;
+  --vt-success: #22C55E;
+  --vt-warning: #EAB308;
+  --vt-error: #EF4444;
+  --font-heading: 'Montserrat', 'Outfit', sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--vt-bg-start); color: var(--vt-text); font-family: var(--font-body); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+::selection { background: rgba(124, 58, 237, 0.3); color: #fff; }
+
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(7, 9, 15, 0.85); backdrop-filter: blur(16px) saturate(1.2); border-bottom: 1px solid var(--vt-glass-border); padding: 0.75rem 2rem; display: flex; align-items: center; gap: 2rem; }
+nav .nav-brand { font-family: var(--font-heading); font-weight: 700; font-size: 1.1rem; background: linear-gradient(135deg, var(--vt-accent-cyan), var(--vt-accent-purple)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; white-space: nowrap; }
+nav .nav-links { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+nav .nav-links a { color: var(--vt-text-secondary); text-decoration: none; font-size: 0.8rem; font-weight: 500; padding: 0.4rem 0.75rem; border-radius: 9999px; transition: all 0.2s; }
+nav .nav-links a:hover, nav .nav-links a.active { color: var(--vt-text); background: rgba(255,255,255,0.05); }
+
+main { padding-top: 4rem; }
+section { padding: 4rem 2rem; max-width: 1200px; margin: 0 auto; }
+section + section { border-top: 1px solid var(--vt-glass-border); }
+h1 { font-family: var(--font-heading); font-size: 3rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 1rem; }
+h2 { font-family: var(--font-heading); font-size: 1.75rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 1.5rem; color: var(--vt-text); }
+h3 { font-family: var(--font-heading); font-weight: 600; margin-bottom: 0.75rem; color: var(--vt-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.8rem; }
+p { color: var(--vt-text-secondary); max-width: 680px; margin-bottom: 1rem; }
+.subtitle { font-size: 1.15rem; color: var(--vt-text-secondary); max-width: 600px; margin-bottom: 2.5rem; }
+
+.hero { min-height: 70vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; position: relative; overflow: hidden; }
+.hero::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(ellipse at 50% 50%, rgba(124,58,237,0.08) 0%, transparent 60%), radial-gradient(ellipse at 30% 70%, rgba(0,255,255,0.04) 0%, transparent 50%); pointer-events: none; }
+.hero-logo { width: 200px; height: 200px; object-fit: contain; margin-bottom: 2rem; filter: drop-shadow(0 0 30px rgba(124,58,237,0.3)); border-radius: 24px; }
+.hero h1 { font-size: 3.5rem; background: linear-gradient(135deg, var(--vt-text) 0%, var(--vt-accent-cyan) 50%, var(--vt-accent-purple) 100%); background-size: 200% 200%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: gradientShift 8s ease infinite; }
+@keyframes gradientShift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+.hero .version-badge { display: inline-block; background: var(--vt-surface); border: 1px solid var(--vt-glass-border); border-radius: 9999px; padding: 0.35rem 1rem; font-size: 0.8rem; color: var(--vt-text-secondary); font-family: var(--font-mono); margin-top: 1.5rem; }
+
+.color-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem; }
+.color-card { background: var(--vt-surface); border: 1px solid var(--vt-glass-border); border-radius: 1rem; overflow: hidden; transition: all 0.2s; cursor: pointer; }
+.color-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.15); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+.color-swatch { height: 100px; position: relative; display: flex; align-items: center; justify-content: center; }
+.color-swatch .copy-label { opacity: 0; font-family: var(--font-mono); font-size: 0.75rem; background: rgba(0,0,0,0.6); padding: 0.25rem 0.5rem; border-radius: 0.25rem; transition: opacity 0.2s; }
+.color-card:hover .copy-label { opacity: 1; }
+.color-info { padding: 0.85rem 1rem; }
+.color-name { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.25rem; }
+.color-hex { font-family: var(--font-mono); font-size: 0.8rem; color: var(--vt-text-secondary); }
+.color-var { font-family: var(--font-mono); font-size: 0.7rem; color: var(--vt-text-muted); margin-top: 0.15rem; }
+
+.toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--vt-primary); color: white; padding: 0.6rem 1.5rem; border-radius: 9999px; font-size: 0.85rem; font-weight: 500; opacity: 0; transition: all 0.3s ease; z-index: 1000; pointer-events: none; }
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+.gradient-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem; }
+.gradient-card { border-radius: 1rem; height: 120px; display: flex; flex-direction: column; justify-content: flex-end; padding: 1rem; position: relative; overflow: hidden; border: 1px solid var(--vt-glass-border); cursor: pointer; transition: transform 0.2s; }
+.gradient-card:hover { transform: translateY(-2px); }
+.gradient-card .gradient-label { font-weight: 600; font-size: 0.9rem; text-shadow: 0 1px 4px rgba(0,0,0,0.5); }
+.gradient-card .gradient-css { font-family: var(--font-mono); font-size: 0.7rem; color: rgba(255,255,255,0.7); margin-top: 0.25rem; text-shadow: 0 1px 4px rgba(0,0,0,0.5); }
+
+.type-sample { background: var(--vt-surface); border: 1px solid var(--vt-glass-border); border-radius: 1rem; padding: 2rem; margin-bottom: 1.25rem; }
+.type-sample .meta { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+.type-sample .meta span { font-family: var(--font-mono); font-size: 0.7rem; color: var(--vt-text-muted); background: rgba(255,255,255,0.04); padding: 0.2rem 0.6rem; border-radius: 0.25rem; }
+
+.effects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem; }
+.effect-card { padding: 1.5rem; border-radius: 1rem; min-height: 160px; display: flex; flex-direction: column; justify-content: space-between; }
+.effect-card .effect-name { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem; }
+.effect-card .effect-css { font-family: var(--font-mono); font-size: 0.7rem; color: var(--vt-text-muted); background: rgba(0,0,0,0.3); padding: 0.5rem 0.75rem; border-radius: 0.5rem; white-space: pre-wrap; word-break: break-all; margin-top: auto; }
+
+.glass-primary { background: rgba(18, 20, 28, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 24px rgba(0,0,0,0.4); }
+.glass-card-demo { background: rgba(30, 31, 46, 0.5); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+.glass-nav-demo { background: rgba(7, 9, 15, 0.85); backdrop-filter: blur(16px) saturate(1.2); border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 4px 30px rgba(0,0,0,0.4); }
+.glow-demo-primary { background: var(--vt-surface); border: 1px solid rgba(124,58,237,0.3); box-shadow: 0 0 20px rgba(124,58,237,0.4); }
+.glow-demo-cyan { background: var(--vt-surface); border: 1px solid rgba(0,255,255,0.2); box-shadow: 0 0 20px rgba(0,255,255,0.3); }
+.glow-demo-pink { background: var(--vt-surface); border: 1px solid rgba(255,0,170,0.2); box-shadow: 0 0 20px rgba(255,0,170,0.3); }
+
+.button-row { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; margin-bottom: 1.5rem; }
+.btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.65rem 1.5rem; border-radius: 0.75rem; font-size: 0.9rem; font-weight: 500; font-family: var(--font-body); cursor: pointer; transition: all 0.2s; border: none; text-decoration: none; }
+.btn-primary { background: linear-gradient(135deg, #7C3AED, #9333EA); color: white; }
+.btn-primary:hover { box-shadow: 0 0 20px rgba(124,58,237,0.4); transform: translateY(-1px); }
+.btn-secondary { background: #3B82F6; color: white; }
+.btn-secondary:hover { box-shadow: 0 0 20px rgba(59,130,246,0.3); transform: translateY(-1px); }
+.btn-outline { background: transparent; color: var(--vt-text); border: 1px solid rgba(255,255,255,0.1); }
+.btn-outline:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); }
+.btn-ghost { background: transparent; color: var(--vt-text-secondary); }
+.btn-ghost:hover { color: var(--vt-text); background: rgba(255,255,255,0.05); }
+.btn-neon { background: transparent; color: var(--vt-accent-cyan); border: 1px solid rgba(0,255,255,0.3); text-shadow: 0 0 10px rgba(0,255,255,0.3); }
+.btn-neon:hover { box-shadow: 0 0 15px rgba(0,255,255,0.3); border-color: rgba(0,255,255,0.5); }
+
+.tab-demo-row { display: flex; gap: 0.25rem; background: var(--vt-surface); border: 1px solid var(--vt-glass-border); border-radius: 9999px; padding: 0.25rem; width: fit-content; margin-bottom: 1.5rem; }
+.tab-pill { padding: 0.45rem 1rem; border-radius: 9999px; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s; border: none; font-family: var(--font-body); }
+.tab-active { background: #3B82F6; color: white; }
+.tab-inactive { background: transparent; color: var(--vt-text-secondary); }
+.tab-inactive:hover { color: var(--vt-text); background: rgba(255,255,255,0.05); }
+
+.do-dont-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 2.5rem; }
+@media (max-width: 768px) { .do-dont-grid { grid-template-columns: 1fr; } }
+.do-card, .dont-card { border-radius: 1rem; padding: 1.5rem; border: 1px solid; }
+.do-card { background: rgba(34,197,94,0.05); border-color: rgba(34,197,94,0.2); }
+.dont-card { background: rgba(239,68,68,0.05); border-color: rgba(239,68,68,0.2); }
+.do-card h4, .dont-card h4 { font-family: var(--font-heading); font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; }
+.do-card h4 { color: var(--vt-success); }
+.dont-card h4 { color: var(--vt-error); }
+.do-card ul, .dont-card ul { list-style: none; padding: 0; }
+.do-card li, .dont-card li { padding: 0.3rem 0; font-size: 0.85rem; color: var(--vt-text-secondary); padding-left: 1.25rem; position: relative; }
+.do-card li::before { content: '\2713'; position: absolute; left: 0; color: var(--vt-success); font-weight: 700; }
+.dont-card li::before { content: '\2715'; position: absolute; left: 0; color: var(--vt-error); font-weight: 700; }
+
+.radius-row { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 2.5rem; }
+.radius-item { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+.radius-box { width: 80px; height: 80px; background: var(--vt-surface); border: 2px solid var(--vt-primary); }
+.spacing-label { font-family: var(--font-mono); font-size: 0.7rem; color: var(--vt-text-muted); }
+
+.token-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 2.5rem; }
+.token-table th { text-align: left; padding: 0.75rem 1rem; border-bottom: 1px solid var(--vt-glass-border); font-family: var(--font-mono); font-weight: 600; font-size: 0.75rem; color: var(--vt-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.token-table td { padding: 0.6rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.03); vertical-align: middle; }
+.token-table tr:hover { background: rgba(255,255,255,0.02); }
+.token-table .swatch-mini { display: inline-block; width: 16px; height: 16px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); vertical-align: middle; margin-right: 0.5rem; }
+.token-table code { font-family: var(--font-mono); font-size: 0.8rem; color: var(--vt-accent-cyan); background: rgba(0,255,255,0.05); padding: 0.15rem 0.4rem; border-radius: 0.25rem; }
+
+footer { text-align: center; padding: 3rem 2rem; border-top: 1px solid var(--vt-glass-border); color: var(--vt-text-muted); font-size: 0.8rem; }
+footer .footer-brand { font-family: var(--font-heading); font-weight: 700; font-size: 1rem; background: linear-gradient(135deg, var(--vt-accent-cyan), var(--vt-accent-purple)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; }
+@media (max-width: 768px) { h1 { font-size: 2rem; } .hero h1 { font-size: 2.5rem; } section { padding: 2.5rem 1.25rem; } nav { padding: 0.5rem 1rem; gap: 1rem; } .color-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } }
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-brand">VIBE-TECH</div>
+  <div class="nav-links">
+    <a href="#colors" class="active">Colors</a>
+    <a href="#gradients">Gradients</a>
+    <a href="#typography">Typography</a>
+    <a href="#effects">Effects</a>
+    <a href="#components">Components</a>
+    <a href="#guidelines">Guidelines</a>
+    <a href="#tokens">Tokens</a>
+  </div>
+</nav>
+<main>
+
+<section class="hero" id="top">
+  <img src="VIBE-TECH-Logo.png" alt="Vibe-Tech Logo" class="hero-logo">
+  <h1>Brand Guidelines</h1>
+  <p class="subtitle">The official design system and visual identity for Vibe-Tech — a modern, approachable, neon-infused brand built for the future of AI-powered development.</p>
+  <span class="version-badge">v1.0 — March 2026</span>
+</section>
+
+<section id="colors">
+  <h2>Color Palette</h2>
+  <h3>Primary &amp; Secondary</h3>
+  <div class="color-grid">
+    <div class="color-card" onclick="copyColor('#7C3AED')"><div class="color-swatch" style="background:#7C3AED"><span class="copy-label">Click to copy</span></div><div class="color-info"><div class="color-name">Primary — Electric Violet</div><div class="color-hex">#7C3AED</div><div class="color-var">--vt-primary</div></div></div>
+    <div class="color-card" onclick="copyColor('#9333EA')"><div class="color-swatch" style="background:#9333EA"><span class="copy-label">Click to copy</span></div><div class="color-info"><div class="color-name">Primary Light</div><div class="color-hex">#9333EA</div><div class="color-var">--vt-primary-light</div></div></div>
+    <div class="color-card" onclick="copyColor('#3B82F6')"><div class="color-swatch" style="background:#3B82F6"><span class="copy-label">Click to copy</span></div><div class="color-info"><div class="color-name">Secondary — Blue</div><div class="color-hex">#3B82F6</div><div class="color-var">--vt-secondary</div></div></div>
+  </div>
+
+  <h3>Neon Accents</h3>
+  <div class="color-grid">
+    <div class="color-card" onclick="copyColor('#00FFFF')"><div class="color-swatch" style="background:#00FFFF"><span class="copy-label" style="color:#000">Click to copy</span></div><div class="color-info"><div class="color-name">Cyan</div><div class="color-hex">#00FFFF</div><div class="color-var">--c-cyan</div></div></div>
+    <div class="color-card" onclick="copyColor('#B933FF')"><div class="color-swatch" style="background:#B933FF"><span class="copy-label">Click to copy</span></div><div class="color-info"><div class="color-name">Purple</div><div class="color-hex">#B933FF</div><div class="color-var">--c-purple</div></div></div>
+    <div class="color-card" onclick="copyColor('#FF00AA')"><div class="color-swatch" style="background:#FF00AA"><span class="copy-label">Click to copy</span></div><div class="color-info"><div class="color-name">Pink</div><div class="color-hex">#FF00AA</div><div class="color-var">--c-pink</div></div></div>
+    <div class="color-card" onclick="copyColor('#00FFCC')"><div class="color-swatch" style="background:#00FFCC"><span class="copy-label" style="color:#000">Click to copy</span></div><div class="color-info"><div class="color-name">Teal</div><div class="color-hex">#00FFCC</div><div class="color-var">--c-teal</div></div></div>
+  </div>
+
+  <h3>Backgrounds</h3>
+  <div class="color-grid">
+    <div class="color-card" onclick="copyColor('#07090f')"><div class="color-swatch" style="background:#07090f;border-bottom:1px solid rgba(255,255,255,0.06)"><span class="copy-label">Click to copy</span></div><div class="color-info"><div class="color-name">BG Start (Darkest)</div><div class="color-hex">#07090F</div><div class="color-var">--bg-start</div></div></div>
+    <div class="color-card" onclick="copyColor('#0D0D1A')"><div class="color-swatch" style="background:#0D0D1A;border-bottom:1px solid rgba(255,255,255,0.06)"><span class="copy-label">Click to copy</span></div><div class="color-info"><div class="color-name">BG Mid</div><div class="color-hex">#0D0D1A</div><div class="color-var">--bg-mid</div></div></div>
+    <div class="color-card" onclick="copyColor('#12141c')"><div class="color-swatch" style="background:#12141c;border-bottom:1px solid rgba(255,255,255,0.06)"><span class="copy-label">Click to copy</span></div><div class="color-info"><div class="color-name">BG End (Surface)</div><div class="color-hex">#12141C</div><div class="color-var">--bg-end</div></div></div>
+  </div>
+
+  <h3>Text</h3>
+  <div class="color-grid">
+    <div class="color-card" onclick="copyColor('#f0f4f8')"><div class="color-swatch" style="background:#f0f4f8"><span class="copy-label" style="color:#000">Click to copy</span></div><div class="color-info"><div class="color-name">Primary Text</div><div class="color-hex">#F0F4F8</div><div class="color-var">--vt-text</div></div></div>
+    <div class="color-card" onclick="copyColor('#9CA3AF')"><div class="color-swatch" style="background:#9CA3AF"><span class="copy-label" style="color:#000">Click to copy</span></div><div class="color-info"><div class="color-name">Secondary Text</div><div class="color-hex">#9CA3AF</div><div class="color-var">--vt-text-secondary</div></div></div>
+    <div class="color-card" onclick="copyColor('#6B7280')"><div class="color-swatch" style="background:#6B7280"><span class="copy-label">Click to copy</span></div><div class="color-info"><div class="color-name">Muted Text</div><div class="color-hex">#6B7280</div><div class="color-var">--vt-text-muted</div></div></div>
+  </div>
+
+  <h3>Semantic</h3>
+  <div class="color-grid">
+    <div class="color-card" onclick="copyColor('#22C55E')"><div class="color-swatch" style="background:#22C55E"><span class="copy-label">Click to copy</span></div><div class="color-info"><div class="color-name">Success</div><div class="color-hex">#22C55E</div><div class="color-var">--vt-success</div></div></div>
+    <div class="color-card" onclick="copyColor('#EAB308')"><div class="color-swatch" style="background:#EAB308"><span class="copy-label" style="color:#000">Click to copy</span></div><div class="color-info"><div class="color-name">Warning</div><div class="color-hex">#EAB308</div><div class="color-var">--vt-warning</div></div></div>
+    <div class="color-card" onclick="copyColor('#EF4444')"><div class="color-swatch" style="background:#EF4444"><span class="copy-label">Click to copy</span></div><div class="color-info"><div class="color-name">Error</div><div class="color-hex">#EF4444</div><div class="color-var">--vt-error</div></div></div>
+  </div>
+</section>
+
+<section id="gradients">
+  <h2>Gradients</h2>
+  <p class="subtitle">Signature gradients that define the Vibe-Tech visual language. Use sparingly for hero areas, buttons, and accent elements.</p>
+  <div class="gradient-row">
+    <div class="gradient-card" style="background:linear-gradient(135deg, #7C3AED, #9333EA)" onclick="copyColor('linear-gradient(135deg, #7C3AED, #9333EA)')"><div class="gradient-label">Primary Button</div><div class="gradient-css">135deg, #7C3AED -> #9333EA</div></div>
+    <div class="gradient-card" style="background:linear-gradient(90deg, #00FFFF, #B933FF, #FF00AA)" onclick="copyColor('linear-gradient(90deg, #00FFFF, #B933FF, #FF00AA)')"><div class="gradient-label">Accent Sweep</div><div class="gradient-css">90deg, Cyan -> Purple -> Pink</div></div>
+    <div class="gradient-card" style="background:linear-gradient(135deg, #080810, #0D0D1A, #111125)" onclick="copyColor('linear-gradient(135deg, #080810, #0D0D1A, #111125)')"><div class="gradient-label">Background Dark</div><div class="gradient-css">135deg, #080810 -> #0D0D1A -> #111125</div></div>
+    <div class="gradient-card" style="background:radial-gradient(ellipse at 50% 0%, #0D0D1A, #07090f, #12141c)" onclick="copyColor('radial-gradient(ellipse at 50% 0%, var(--bg-mid), var(--bg-start), var(--bg-end))')"><div class="gradient-label">Radial Background</div><div class="gradient-css">radial, bg-mid -> bg-start -> bg-end</div></div>
+    <div class="gradient-card" style="background:linear-gradient(135deg, rgba(124,58,237,0.2), rgba(0,255,255,0.1))" onclick="copyColor('linear-gradient(135deg, rgba(124,58,237,0.2), rgba(0,255,255,0.1))')"><div class="gradient-label">Subtle Glow Overlay</div><div class="gradient-css">Purple -> Cyan (low opacity)</div></div>
+    <div class="gradient-card" style="background:linear-gradient(135deg, #f0f4f8, #00FFFF 50%, #B933FF)" onclick="copyColor('linear-gradient(135deg, #f0f4f8, #00FFFF, #B933FF)')"><div class="gradient-label">Gradient Text</div><div class="gradient-css">For text: White -> Cyan -> Purple</div></div>
+  </div>
+</section>
+
+<section id="typography">
+  <h2>Typography</h2>
+  <p class="subtitle">Three typeface families form the typographic backbone: Montserrat for impact, Inter for readability, JetBrains Mono for code.</p>
+  <div class="type-sample">
+    <div class="meta"><span>Montserrat</span><span>var(--font-heading)</span><span>Headings, display text, nav brand</span></div>
+    <div style="font-family:var(--font-heading);font-size:2.5rem;font-weight:800;letter-spacing:-0.02em;margin-bottom:0.5rem">The Future of Development</div>
+    <div style="font-family:var(--font-heading);font-size:1.75rem;font-weight:700;letter-spacing:-0.01em;margin-bottom:0.5rem">AI-Powered Workspace</div>
+    <div style="font-family:var(--font-heading);font-size:1.15rem;font-weight:600">Build. Ship. Iterate.</div>
+  </div>
+  <div class="type-sample">
+    <div class="meta"><span>Inter</span><span>var(--font-body)</span><span>Body text, UI labels, descriptions</span></div>
+    <div style="font-family:var(--font-body);font-size:1rem;line-height:1.7;margin-bottom:0.75rem;max-width:600px">Vibe-Tech is a modern development platform that brings AI-powered tools directly into your workflow. Built with TypeScript, React 19, and a neon glassmorphism design language that's as functional as it is striking.</div>
+    <div style="font-family:var(--font-body);font-size:0.875rem;color:var(--vt-text-secondary)">Inter Variable — Weights 300-800 — Optimized for screens at all sizes</div>
+  </div>
+  <div class="type-sample">
+    <div class="meta"><span>JetBrains Mono</span><span>var(--font-mono)</span><span>Code, data, tokens, technical values</span></div>
+    <div style="font-family:var(--font-mono);font-size:0.95rem;line-height:1.6;color:var(--vt-accent-cyan)">const vibetech = createWorkspace({<br>&nbsp;&nbsp;apps: 28,<br>&nbsp;&nbsp;packages: 26,<br>&nbsp;&nbsp;theme: 'neon-glassmorphism'<br>});</div>
+  </div>
+  <h3 style="margin-top:2rem">Type Scale</h3>
+  <div class="type-sample">
+    <div style="font-family:var(--font-heading);font-size:3rem;font-weight:800;letter-spacing:-0.02em;line-height:1.1;margin-bottom:1rem">Display — 3rem / 800</div>
+    <div style="font-family:var(--font-heading);font-size:2rem;font-weight:700;letter-spacing:-0.01em;line-height:1.2;margin-bottom:0.75rem">H1 — 2rem / 700</div>
+    <div style="font-family:var(--font-heading);font-size:1.5rem;font-weight:600;letter-spacing:-0.01em;line-height:1.25;margin-bottom:0.75rem">H2 — 1.5rem / 600</div>
+    <div style="font-family:var(--font-heading);font-size:1.15rem;font-weight:600;line-height:1.3;margin-bottom:0.75rem">H3 — 1.15rem / 600</div>
+    <div style="font-family:var(--font-body);font-size:1rem;line-height:1.6;margin-bottom:0.5rem">Body — 1rem / 400</div>
+    <div style="font-family:var(--font-body);font-size:0.875rem;line-height:1.5;color:var(--vt-text-secondary);margin-bottom:0.5rem">Small — 0.875rem / 500</div>
+    <div style="font-family:var(--font-mono);font-size:0.8rem;line-height:1.4;color:var(--vt-accent-cyan)">Mono — 0.8rem / 400</div>
+  </div>
+</section>
+
+<section id="effects">
+  <h2>Glass &amp; Effects</h2>
+  <p class="subtitle">Vibe-Tech uses a neon glassmorphism design language. Frosted glass surfaces with subtle neon accents create depth without overwhelming the content.</p>
+  <h3>Glass Surfaces</h3>
+  <div class="effects-grid">
+    <div class="effect-card glass-primary"><div><div class="effect-name">Glass Primary</div><p style="font-size:0.85rem;color:var(--vt-text-secondary);margin:0">Default panel background. Use for cards, modals, and content areas.</p></div><div class="effect-css">background: rgba(18, 20, 28, 0.6);
+backdrop-filter: blur(12px);
+border: 1px solid rgba(255,255,255, 0.08);</div></div>
+    <div class="effect-card glass-card-demo"><div><div class="effect-name">Glass Card</div><p style="font-size:0.85rem;color:var(--vt-text-secondary);margin:0">Subtle, professional cards with hover states.</p></div><div class="effect-css">background: rgba(30, 31, 46, 0.5);
+backdrop-filter: blur(8px);
+border: 1px solid rgba(255,255,255, 0.06);</div></div>
+    <div class="effect-card glass-nav-demo"><div><div class="effect-name">Glass Navigation</div><p style="font-size:0.85rem;color:var(--vt-text-secondary);margin:0">Heavier blur for fixed nav bars and headers.</p></div><div class="effect-css">background: rgba(7, 9, 15, 0.85);
+backdrop-filter: blur(16px) saturate(1.2);
+border-bottom: 1px solid rgba(255,255,255, 0.06);</div></div>
+  </div>
+  <h3>Neon Glows</h3>
+  <div class="effects-grid">
+    <div class="effect-card glow-demo-primary"><div><div class="effect-name" style="color:var(--vt-primary)">Primary Glow</div><p style="font-size:0.85rem;color:var(--vt-text-secondary);margin:0">For primary actions and focus states.</p></div><div class="effect-css">box-shadow: 0 0 20px rgba(124, 58, 237, 0.4);</div></div>
+    <div class="effect-card glow-demo-cyan"><div><div class="effect-name" style="color:var(--vt-accent-cyan)">Cyan Glow</div><p style="font-size:0.85rem;color:var(--vt-text-secondary);margin:0">For accent highlights and active states.</p></div><div class="effect-css">box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);</div></div>
+    <div class="effect-card glow-demo-pink"><div><div class="effect-name" style="color:var(--vt-accent-pink)">Pink Glow</div><p style="font-size:0.85rem;color:var(--vt-text-secondary);margin:0">For warnings, alerts, or creative accent moments.</p></div><div class="effect-css">box-shadow: 0 0 20px rgba(255, 0, 170, 0.3);</div></div>
+  </div>
+</section>
+
+<section id="components">
+  <h2>Components</h2>
+  <p class="subtitle">Core UI components following the Vibe-Tech design language.</p>
+  <h3>Buttons</h3>
+  <div class="button-row">
+    <button class="btn btn-primary">Primary</button>
+    <button class="btn btn-secondary">Secondary</button>
+    <button class="btn btn-outline">Outline</button>
+    <button class="btn btn-ghost">Ghost</button>
+    <button class="btn btn-neon">Neon</button>
+  </div>
+  <h3 style="margin-top:2rem">Tab Pills</h3>
+  <div class="tab-demo-row">
+    <button class="tab-pill tab-active">All</button>
+    <button class="tab-pill tab-inactive">Apps</button>
+    <button class="tab-pill tab-inactive">Packages</button>
+    <button class="tab-pill tab-inactive">Agents</button>
+  </div>
+  <h3 style="margin-top:2rem">Status Indicators</h3>
+  <div style="display:flex;gap:2rem;align-items:center;margin-bottom:2rem">
+    <div style="display:flex;align-items:center;gap:0.5rem"><div style="width:8px;height:8px;border-radius:50%;background:#22C55E;box-shadow:0 0 8px rgba(34,197,94,0.6)"></div><span style="font-size:0.85rem;color:var(--vt-text-secondary)">Active</span></div>
+    <div style="display:flex;align-items:center;gap:0.5rem"><div style="width:8px;height:8px;border-radius:50%;background:#EAB308;box-shadow:0 0 8px rgba(234,179,8,0.6)"></div><span style="font-size:0.85rem;color:var(--vt-text-secondary)">Warning</span></div>
+    <div style="display:flex;align-items:center;gap:0.5rem"><div style="width:8px;height:8px;border-radius:50%;background:#EF4444;box-shadow:0 0 8px rgba(239,68,68,0.6)"></div><span style="font-size:0.85rem;color:var(--vt-text-secondary)">Error</span></div>
+  </div>
+  <h3>Border Radius</h3>
+  <div class="radius-row">
+    <div class="radius-item"><div class="radius-box" style="border-radius:0.5rem"></div><span class="spacing-label">sm — 0.5rem</span></div>
+    <div class="radius-item"><div class="radius-box" style="border-radius:0.75rem"></div><span class="spacing-label">md — 0.75rem</span></div>
+    <div class="radius-item"><div class="radius-box" style="border-radius:1rem"></div><span class="spacing-label">lg — 1rem</span></div>
+    <div class="radius-item"><div class="radius-box" style="border-radius:1.5rem"></div><span class="spacing-label">xl — 1.5rem</span></div>
+    <div class="radius-item"><div class="radius-box" style="border-radius:9999px"></div><span class="spacing-label">pill — 9999px</span></div>
+  </div>
+</section>
+
+<section id="guidelines">
+  <h2>Usage Guidelines</h2>
+  <h3>Logo Usage</h3>
+  <div class="do-dont-grid">
+    <div class="do-card"><h4>Do</h4><ul><li>Use the logo on dark backgrounds (#07090F-#12141C)</li><li>Maintain clear space equal to the logo's height on all sides</li><li>Use the full-color version as the default</li><li>Apply a subtle purple glow for hero placements</li></ul></div>
+    <div class="dont-card"><h4>Don't</h4><ul><li>Place on light/white backgrounds without a dark container</li><li>Stretch, rotate, or apply non-brand filters</li><li>Reduce below 32px in any dimension</li><li>Add drop shadows or outlines not in the brand palette</li></ul></div>
+  </div>
+  <h3>Color Usage</h3>
+  <div class="do-dont-grid">
+    <div class="do-card"><h4>Do</h4><ul><li>Use Electric Violet (#7C3AED) for primary actions and focus rings</li><li>Use Cyan (#00FFFF) sparingly for accent highlights and links</li><li>Keep neon colors at low opacity (0.1-0.4) for glows and borders</li><li>Pair neon accents with dark, desaturated backgrounds</li></ul></div>
+    <div class="dont-card"><h4>Don't</h4><ul><li>Use neon colors as large solid fills (overwhelming)</li><li>Mix more than 2 neon accents in a single component</li><li>Use pure black (#000000) — always use the dark slate palette</li><li>Place light text on neon backgrounds without contrast check</li></ul></div>
+  </div>
+  <h3>Typography</h3>
+  <div class="do-dont-grid">
+    <div class="do-card"><h4>Do</h4><ul><li>Use Montserrat for headings and display text only</li><li>Use Inter for all body copy, labels, and descriptions</li><li>Use JetBrains Mono for code, tokens, and technical values</li><li>Maintain heading hierarchy (Display -> H1 -> H2 -> H3)</li></ul></div>
+    <div class="dont-card"><h4>Don't</h4><ul><li>Use Montserrat for body text or long paragraphs</li><li>Mix more than 2 font weights in a single component</li><li>Use font sizes below 12px for any readable content</li><li>Apply gradient text to body copy (headings only)</li></ul></div>
+  </div>
+  <h3>Glass &amp; Effects</h3>
+  <div class="do-dont-grid">
+    <div class="do-card"><h4>Do</h4><ul><li>Layer glass surfaces to create depth hierarchy</li><li>Use blur(12px) for standard panels, blur(16px) for nav</li><li>Keep glass borders at 0.06-0.10 white opacity</li><li>Apply neon glows to interactive elements on hover/focus</li></ul></div>
+    <div class="dont-card"><h4>Don't</h4><ul><li>Stack more than 3 glass layers (performance + readability)</li><li>Use glass on light backgrounds (needs dark to work)</li><li>Apply constant glow animations to non-interactive elements</li><li>Use blur values above 20px (diminishing returns)</li></ul></div>
+  </div>
+</section>
+
+<section id="tokens">
+  <h2>Design Tokens</h2>
+  <p class="subtitle">Copy-paste ready CSS custom properties. These are the canonical token names used across the monorepo.</p>
+  <h3>Colors</h3>
+  <table class="token-table">
+    <thead><tr><th>Token</th><th>Value</th><th>Usage</th></tr></thead>
+    <tbody>
+      <tr><td><code>--vt-primary</code></td><td><span class="swatch-mini" style="background:#7C3AED"></span>#7C3AED</td><td>Primary actions, focus rings, brand identity</td></tr>
+      <tr><td><code>--vt-primary-light</code></td><td><span class="swatch-mini" style="background:#9333EA"></span>#9333EA</td><td>Button gradients, hover states</td></tr>
+      <tr><td><code>--vt-secondary</code></td><td><span class="swatch-mini" style="background:#3B82F6"></span>#3B82F6</td><td>Active tabs, secondary actions, links</td></tr>
+      <tr><td><code>--c-cyan</code></td><td><span class="swatch-mini" style="background:#00FFFF"></span>#00FFFF</td><td>Accent highlights, neon glows</td></tr>
+      <tr><td><code>--c-purple</code></td><td><span class="swatch-mini" style="background:#B933FF"></span>#B933FF</td><td>Gradient midpoints, secondary neon</td></tr>
+      <tr><td><code>--c-pink</code></td><td><span class="swatch-mini" style="background:#FF00AA"></span>#FF00AA</td><td>Gradient endpoints, creative accents</td></tr>
+      <tr><td><code>--c-teal</code></td><td><span class="swatch-mini" style="background:#00FFCC"></span>#00FFCC</td><td>Success-adjacent accents, alt neon</td></tr>
+      <tr><td><code>--bg-start</code></td><td><span class="swatch-mini" style="background:#07090f"></span>#07090F</td><td>Body background, darkest surface</td></tr>
+      <tr><td><code>--bg-mid</code></td><td><span class="swatch-mini" style="background:#0D0D1A"></span>#0D0D1A</td><td>Gradient midpoint</td></tr>
+      <tr><td><code>--bg-end</code></td><td><span class="swatch-mini" style="background:#12141c"></span>#12141C</td><td>Card backgrounds, lighter surface</td></tr>
+      <tr><td><code>--vt-text</code></td><td><span class="swatch-mini" style="background:#f0f4f8"></span>#F0F4F8</td><td>Primary text on dark</td></tr>
+      <tr><td><code>--vt-text-secondary</code></td><td><span class="swatch-mini" style="background:#9CA3AF"></span>#9CA3AF</td><td>Secondary text, descriptions</td></tr>
+      <tr><td><code>--vt-text-muted</code></td><td><span class="swatch-mini" style="background:#6B7280"></span>#6B7280</td><td>Muted labels, metadata</td></tr>
+    </tbody>
+  </table>
+  <h3>Typography</h3>
+  <table class="token-table">
+    <thead><tr><th>Token</th><th>Value</th><th>Usage</th></tr></thead>
+    <tbody>
+      <tr><td><code>--font-heading</code></td><td>Montserrat, Outfit, sans-serif</td><td>Headings, display, nav brand</td></tr>
+      <tr><td><code>--font-body</code></td><td>Inter, system-ui, sans-serif</td><td>Body text, UI labels</td></tr>
+      <tr><td><code>--font-mono</code></td><td>JetBrains Mono, SF Mono, monospace</td><td>Code, tokens, technical</td></tr>
+    </tbody>
+  </table>
+  <h3>Surfaces</h3>
+  <table class="token-table">
+    <thead><tr><th>Token</th><th>Value</th><th>Usage</th></tr></thead>
+    <tbody>
+      <tr><td><code>--glass-bg</code></td><td>rgba(18, 20, 28, 0.6)</td><td>Standard glass panel fill</td></tr>
+      <tr><td><code>--glass-border</code></td><td>rgba(255, 255, 255, 0.08)</td><td>Subtle glass borders</td></tr>
+      <tr><td><code>--radius-sm</code></td><td>0.5rem</td><td>Small elements, badges</td></tr>
+      <tr><td><code>--radius-md</code></td><td>0.75rem</td><td>Buttons, inputs</td></tr>
+      <tr><td><code>--radius-lg</code></td><td>1rem</td><td>Cards, panels (default)</td></tr>
+      <tr><td><code>--radius-xl</code></td><td>1.5rem</td><td>Large cards, modals</td></tr>
+    </tbody>
+  </table>
+</section>
+
+</main>
+<footer>
+  <div class="footer-brand">VIBE-TECH</div>
+  <p>Brand Guidelines v1.0 — March 2026</p>
+  <p style="margin-top:0.5rem">Built by Bruce Freshwater</p>
+</footer>
+<div class="toast" id="toast">Copied!</div>
+<script>
+function copyColor(value) {
+  navigator.clipboard.writeText(value).then(() => {
+    const toast = document.getElementById('toast');
+    toast.textContent = 'Copied: ' + value;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 1800);
+  });
+}
+document.querySelectorAll('nav a').forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(link.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+    link.classList.add('active');
+  });
+});
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('nav a');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(section => { const top = section.offsetTop - 100; if (scrollY >= top) current = section.getAttribute('id'); });
+  navLinks.forEach(link => { link.classList.remove('active'); if (link.getAttribute('href') === '#' + current) link.classList.add('active'); });
+});
+</script>
+</body>
+</html>

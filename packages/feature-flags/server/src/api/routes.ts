@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import type { EvaluationContext, Environment } from '@dev/feature-flags-core';
+import type { EvaluationContext, Environment } from '@vibetech/feature-flags-core';
 import { FlagService } from '../services/flag-service.js';
 import { EvaluationService } from '../services/evaluation.js';
 import { KillSwitchService } from '../services/kill-switch.js';

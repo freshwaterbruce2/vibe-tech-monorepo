@@ -46,6 +46,7 @@ export class PerformanceOptimizationService {
   private observers: PerformanceObserver[] = [];
   private frameCount = 0;
   private lastFrameTime = 0;
+  private memoryIntervalId: ReturnType<typeof setInterval> | null = null;
 
   /**
    * Initialize performance monitoring
@@ -82,7 +83,7 @@ export class PerformanceOptimizationService {
    */
   private monitorMemory(): void {
     if ('memory' in performance) {
-      setInterval(() => {
+      this.memoryIntervalId = setInterval(() => {
         const memory = (performance as unknown as PerformanceExtended).memory;
         if (memory) {
           this.metrics.memoryUsage = memory.usedJSHeapSize / 1048576; // Convert to MB
@@ -113,14 +114,19 @@ export class PerformanceOptimizationService {
   }
 
   /**
-   * Monitor network requests
+   * Monitor network requests via PerformanceObserver (no fetch override)
    */
   private monitorNetwork(): void {
-    const originalFetch = window.fetch;
-    window.fetch = async (...args) => {
-      this.metrics.networkRequests++;
-      return originalFetch.apply(window, args);
-    };
+    if (!('PerformanceObserver' in window)) return;
+    try {
+      const resourceObserver = new PerformanceObserver((list) => {
+        this.metrics.networkRequests += list.getEntries().length;
+      });
+      resourceObserver.observe({ type: 'resource', buffered: true });
+      this.observers.push(resourceObserver);
+    } catch {
+      // resource observer not supported
+    }
   }
 
   /**
@@ -177,7 +183,7 @@ export class PerformanceOptimizationService {
   /**
    * Analyze performance and provide suggestions
    */
-  analyzePerfomance(): OptimizationSuggestion[] {
+  analyzePerformance(): OptimizationSuggestion[] {
     const suggestions: OptimizationSuggestion[] = [];
 
     // Check memory usage
@@ -256,30 +262,24 @@ export class PerformanceOptimizationService {
   }
 
   /**
-   * Implement caching strategy
+   * Cached fetch — use this instead of window.cachedFetch.
+   * Call via performanceService.cachedFetch(url, options).
    */
-  setupCaching(): void {
-    // Cache API responses
-    const cache = new Map<string, { data: unknown; timestamp: number }>();
-    const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  private readonly _fetchCache = new Map<string, { data: unknown; timestamp: number }>();
+  private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-    window.cachedFetch = async (url: string, options?: RequestInit) => {
-      const cacheKey = `${url}_${JSON.stringify(options)}`;
-      const cached = cache.get(cacheKey);
+  async cachedFetch(url: string, options?: RequestInit): Promise<Response> {
+    const cacheKey = `${url}_${JSON.stringify(options)}`;
+    const cached = this._fetchCache.get(cacheKey);
 
-      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-        this.metrics.cacheHits++;
-        return Promise.resolve(cached.data as Response);
-      }
+    if (cached && Date.now() - cached.timestamp < PerformanceOptimizationService.CACHE_DURATION) {
+      this.metrics.cacheHits++;
+      return Promise.resolve(cached.data as Response);
+    }
 
-      this.metrics.cacheMisses++;
-      const response = await fetch(url, options);
-
-      // We can't easily cache the Response object directly for cloning efficiently without reading it.
-      // But preserving original behavior:
-
-      return response;
-    };
+    this.metrics.cacheMisses++;
+    const response = await fetch(url, options);
+    return response;
   }
 
   /**
@@ -316,11 +316,15 @@ export class PerformanceOptimizationService {
   }
 
   /**
-   * Cleanup observers
+   * Cleanup observers and intervals
    */
   cleanup(): void {
     this.observers.forEach((observer) => observer.disconnect());
     this.observers = [];
+    if (this.memoryIntervalId !== null) {
+      clearInterval(this.memoryIntervalId);
+      this.memoryIntervalId = null;
+    }
   }
 
   /**
@@ -328,7 +332,7 @@ export class PerformanceOptimizationService {
    */
   generateReport(): string {
     const metrics = this.getMetrics();
-    const suggestions = this.analyzePerfomance();
+    const suggestions = this.analyzePerformance();
 
     const report = `
 === Vibe Tutor Performance Report ===
@@ -361,9 +365,3 @@ Generated: ${new Date().toISOString()}
 // Export singleton instance
 export const performanceService = new PerformanceOptimizationService();
 
-// Extend Window interface
-declare global {
-  interface Window {
-    cachedFetch: (url: string, options?: RequestInit) => Promise<Response>;
-  }
-}

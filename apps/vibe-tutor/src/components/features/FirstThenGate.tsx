@@ -117,25 +117,25 @@ const FirstThenGate = ({
 
         {/* Message */}
         <p className="text-lg text-white/80 mb-6">
-          Complete <span className="font-bold text-cyan-400">{stepsRemaining} more routine step{stepsRemaining !== 1 ? 's' : ''}</span> to unlock Brain Games.
+          Complete <span className="font-bold text-[var(--success-accent)]">{stepsRemaining} more routine step{stepsRemaining !== 1 ? 's' : ''}</span> to unlock Brain Games.
         </p>
 
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex justify-between text-sm mb-2">
             <span className="text-white/70">Progress</span>
-            <span className="text-cyan-400 font-semibold">{totalCompleted}/{minimumStepsRequired} steps</span>
+            <span className="text-[var(--success-accent)] font-semibold">{totalCompleted}/{minimumStepsRequired} steps</span>
           </div>
           <div className="h-3 bg-white/10 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-all duration-500"
+              className="h-full bg-gradient-to-r from-[var(--success-accent)] to-purple-500 transition-all duration-500"
               style={{ width: `${Math.min((totalCompleted / minimumStepsRequired) * 100, 100)}%` }}
             />
           </div>
         </div>
 
         {/* Encouragement */}
-        <div className="glass-card p-4 bg-gradient-to-r from-cyan-600/20 to-purple-600/20 border border-cyan-500/30 mb-6">
+        <div className="glass-card p-4 bg-gradient-to-r from-purple-600/20 to-purple-600/20 border border-purple-500/30 mb-6">
           <div className="flex items-start gap-3">
             <Sparkles className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-1" />
             <div className="text-left">
@@ -154,7 +154,7 @@ const FirstThenGate = ({
               // Navigate to schedules (parent component should handle this)
               window.dispatchEvent(new CustomEvent('navigate-to-schedule', { detail: { type: currentSchedule.type } }));
             }}
-            className="flex items-center gap-2 mx-auto px-6 py-3 bg-gradient-to-r from-cyan-600 to-purple-600 rounded-lg font-bold text-lg hover:scale-105 transition-transform"
+            className="flex items-center gap-2 mx-auto px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 rounded-lg font-bold text-lg hover:scale-105 transition-transform"
           >
             Go to {currentSchedule.type === 'morning' ? 'Morning' : 'Evening'} Routine
             <ArrowRight className="w-5 h-5" />

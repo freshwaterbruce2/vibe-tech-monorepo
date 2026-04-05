@@ -48,6 +48,12 @@
   "plugins": {
     "shell": {
       "open": true
+    },
+    "updater": {
+      "endpoints": [
+        "https://github.com/freshwaterbruce2/Monorepo/releases/latest/download/latest.json"
+      ],
+      "pubkey": ""
     }
   }
 }

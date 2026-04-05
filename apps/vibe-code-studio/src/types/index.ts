@@ -28,6 +28,15 @@ export interface AIMessage {
     task: AgentTask;
     currentStep?: AgentStep;
     pendingApproval?: ApprovalRequest;
+    phase?:
+    | 'planning'
+    | 'executing'
+    | 'awaiting_approval'
+    | 'completed'
+    | 'failed';
+    statusMessage?: string;
+    warnings?: string[];
+    lastError?: string;
   };
 }
 

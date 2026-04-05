@@ -48,11 +48,12 @@ const AchievementCenter = lazy(async () => import('./components/ui/AchievementCe
 const TokenWallet = lazy(async () => import('./components/features/TokenWallet'));
 const ParentRulesPage = lazy(async () => import('./components/settings/ParentRulesPage'));
 const SchedulesHub = lazy(async () => import('./components/schedules/SchedulesHub'));
+const WellnessHub = lazy(async () => import('./components/features/WellnessHub'));
 
 // Loading fallback for lazy-loaded views
 const ViewLoadingFallback = () => (
   <div className="flex items-center justify-center min-h-[200px]">
-    <div className="w-8 h-8 border-3 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+    <div className="w-8 h-8 border-3 border-purple-400 border-t-transparent rounded-full animate-spin" />
   </div>
 );
 
@@ -67,23 +68,19 @@ const App = () => {
   const [tokenEarnTrigger, setTokenEarnTrigger] = useState(0);
 
   // React 19 concurrent feature for non-blocking state updates
-  const [_isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   // Custom hooks for state management
   const {
     homeworkItems,
     addHomework,
     toggleComplete,
-    deleteHomework: _deleteHomework,
-    updateHomework: _updateHomework,
   } = useHomework();
 
   const {
     userTokens,
     earnTokens,
     spendTokens,
-    hasTokens: _hasTokens,
-    setTokens: _setTokens,
   } = useTokenEconomy();
 
   // Token management wrappers (canonical ledger is handled inside useTokenEconomy)
@@ -261,7 +258,7 @@ const App = () => {
   }, []);
 
   const renderView = () => {
-    const currentViewComponent = () => {
+    const viewContent = (() => {
       switch (view) {
         case 'dashboard':
           return (
@@ -436,6 +433,12 @@ const App = () => {
               <ParentRulesPage onClose={() => setView('parent')} />
             </RouteErrorBoundary>
           );
+        case 'wellness':
+          return (
+            <RouteErrorBoundary routeName="Wellness Hub">
+              <WellnessHub />
+            </RouteErrorBoundary>
+          );
         default:
           return (
             <RouteErrorBoundary routeName="Dashboard (Default)">
@@ -448,25 +451,22 @@ const App = () => {
             </RouteErrorBoundary>
           );
       }
-    };
+    })();
 
     return (
       <ErrorBoundary>
-        <Suspense fallback={<ViewLoadingFallback />}>{currentViewComponent()}</Suspense>
+        <Suspense fallback={<ViewLoadingFallback />}>{viewContent}</Suspense>
       </ErrorBoundary>
     );
   };
 
   const toggleNav = useCallback(() => {
     setIsNavCollapsed((prev) => !prev);
-  }, [setIsNavCollapsed]);
+  }, []);
 
   return (
     <div className="relative flex h-screen overflow-hidden bg-[var(--background-main)] text-[var(--text-primary)]">
       <TokenEarnAnimation amount={tokenEarnAmount} triggerId={tokenEarnTrigger} />
-      
-      {/* Dynamic Background */}
-      <div className="absolute inset-0 pointer-events-none z-0"></div>
       <Sidebar
         currentView={view}
         onNavigate={setView}

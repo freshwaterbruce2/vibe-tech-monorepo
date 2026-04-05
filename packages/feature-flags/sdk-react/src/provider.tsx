@@ -4,8 +4,8 @@ import type {
   FeatureFlag,
   KillSwitchEvent,
   Variant,
-} from '@dev/feature-flags-core';
-import { assignVariant, isInPercentageRollout } from '@dev/feature-flags-core';
+} from '@vibetech/feature-flags-core';
+import { assignVariant, isInPercentageRollout } from '@vibetech/feature-flags-core';
 import {
   useCallback,
   useEffect,

@@ -102,16 +102,9 @@ export function useFormValidation<T extends FieldValues>(
 		showToastOnError?: boolean;
 		mode?: 'onChange' | 'onBlur' | 'onSubmit';
 	},
-): UseFormReturn<T> & {
-	submitWithValidation: (
-		onValidSubmit: (data: T) => Promise<void> | void,
-	) => (e?: React.BaseSyntheticEvent) => Promise<void>;
-	validateField: (fieldName: Path<T>) => Promise<boolean>;
-	getFieldError: (fieldName: Path<T>) => string | undefined;
-	hasError: (fieldName: Path<T>) => boolean;
-} {
+) {
 	const form = useForm<T>({
-		resolver: zodResolver(schema),
+		resolver: zodResolver(schema) as any,
 		mode: options?.mode || 'onBlur',
 	});
 
@@ -120,7 +113,7 @@ export function useFormValidation<T extends FieldValues>(
 			form.handleSubmit(
 				async (data) => {
 					try {
-						await onValidSubmit(data);
+						await onValidSubmit(data as T);
 					} catch (error) {
 						if (import.meta.env.DEV) {
 						console.error('Form submission error:', error);

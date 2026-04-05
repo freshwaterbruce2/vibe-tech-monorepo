@@ -5,8 +5,8 @@ import type {
   EvaluationReason,
   TargetingRule,
   Variant,
-} from '@dev/feature-flags-core';
-import { isInPercentageRollout, assignVariant } from '@dev/feature-flags-core';
+} from '@vibetech/feature-flags-core';
+import { isInPercentageRollout, assignVariant } from '@vibetech/feature-flags-core';
 import { FlagService } from './flag-service.js';
 
 export class EvaluationService {

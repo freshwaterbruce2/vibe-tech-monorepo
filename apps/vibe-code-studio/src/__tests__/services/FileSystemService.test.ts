@@ -5,6 +5,7 @@ describe('FileSystemService', () => {
   let service: FileSystemService;
 
   beforeEach(() => {
+    localStorage.clear();
     service = new FileSystemService();
   });
 
@@ -16,6 +17,24 @@ describe('FileSystemService', () => {
 
     it('should write file', async () => {
       await expect(service.writeFile('test.txt', 'Hello World')).resolves.not.toThrow();
+    });
+
+    it('should rename a file in web mode', async () => {
+      await service.createFile('old-name.txt', 'Hello World');
+      await service.rename('old-name.txt', 'new-name.txt');
+
+      await expect(service.readFile('new-name.txt')).resolves.toBe('Hello World');
+      await expect(service.exists('old-name.txt')).resolves.toBe(false);
+    });
+
+    it('should rename nested files when a folder is renamed in web mode', async () => {
+      await service.createFile('/workspace/src/index.ts', 'export const value = 1;');
+      await service.rename('/workspace/src', '/workspace/source');
+
+      await expect(service.readFile('/workspace/source/index.ts')).resolves.toBe(
+        'export const value = 1;'
+      );
+      await expect(service.exists('/workspace/src/index.ts')).resolves.toBe(false);
     });
 
     it('should get file info', async () => {

@@ -1,29 +1,30 @@
 /**
- * Auto-update service for keeping the application up to date
+ * Auto-update service using tauri-plugin-updater.
+ *
+ * Checks GitHub Releases for new versions and installs them in-place.
+ * Silently no-ops in non-Tauri environments (web, dev server).
  */
 import { logger } from '../services/Logger';
-import type { } from '../types/electron.d';
-
-import { telemetry } from './TelemetryService';
 
 interface UpdateInfo {
   version: string;
-  releaseDate: string;
-  releaseNotes: string;
-  downloadUrl: string;
-  mandatory: boolean;
+  date: string | null;
+  body: string | null;
 }
 
 export class AutoUpdateService {
   private static instance: AutoUpdateService;
-  private checkInterval: number = 3600000; // 1 hour
   private enabled: boolean;
   private currentVersion: string;
-  private updateCheckTimer?: NodeJS.Timeout | undefined;
+  private checkInterval = 3_600_000; // 1 hour
+  private updateCheckTimer?: ReturnType<typeof setInterval> | undefined;
+  private isTauri: boolean;
 
   private constructor() {
-    this.enabled = false; // Disabled - no update server configured
-    this.currentVersion = import.meta.env['VITE_APP_VERSION'] ?? '1.0.0';
+    this.isTauri =
+      typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+    this.enabled = this.isTauri; // auto-enable in Tauri builds
+    this.currentVersion = import.meta.env['VITE_APP_VERSION'] ?? '1.1.0';
 
     if (this.enabled) {
       this.startUpdateCheck();
@@ -38,133 +39,80 @@ export class AutoUpdateService {
   }
 
   /**
-   * Check for updates
+   * Check for updates via tauri-plugin-updater.
+   * Returns update info if a newer version is available, null otherwise.
    */
   async checkForUpdates(): Promise<UpdateInfo | null> {
-    if (!this.enabled) {
-      return null;
-    }
+    if (!this.enabled || !this.isTauri) return null;
 
     try {
-      telemetry.trackEvent('update_check_started');
+      const { check } = await import('@tauri-apps/plugin-updater');
+      const update = await check();
 
-      const response = await fetch(`${import.meta.env['VITE_UPDATE_SERVER_URL']}/check`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          currentVersion: this.currentVersion,
-          platform: this.getPlatform(),
-          arch: this.getArchitecture(),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Update check failed: ${response.statusText}`);
+      if (update) {
+        logger.info(
+          `[AutoUpdate] Update available: v${update.version} (current: ${this.currentVersion})`
+        );
+        return {
+          version: update.version,
+          date: update.date ?? null,
+          body: update.body ?? null,
+        };
       }
 
-      const updateInfo: UpdateInfo = await response.json();
-
-      if (this.isNewerVersion(updateInfo.version)) {
-        telemetry.trackEvent('update_available', {
-          newVersion: updateInfo.version,
-          currentVersion: this.currentVersion,
-        });
-        return updateInfo;
-      }
-
-      telemetry.trackEvent('update_check_completed', { upToDate: true });
+      logger.debug('[AutoUpdate] Up to date');
       return null;
     } catch (error) {
-      telemetry.trackError(error as Error, {
-        context: 'update_check',
-        currentVersion: this.currentVersion,
-      });
-      logger.error('Update check failed:', error);
+      logger.error('[AutoUpdate] Check failed:', String(error));
       return null;
     }
   }
 
   /**
-   * Download and install update
+   * Download and install the available update, then prompt for restart.
    */
-  async downloadAndInstallUpdate(updateInfo: UpdateInfo): Promise<void> {
-    if (!window.electron) {
-      logger.warn('Updates only available in Electron app');
-      return;
-    }
+  async downloadAndInstall(): Promise<void> {
+    if (!this.isTauri) return;
 
     try {
-      telemetry.trackEvent('update_download_started', { version: updateInfo.version });
+      const { check } = await import('@tauri-apps/plugin-updater');
+      const update = await check();
 
-      // In Electron, we would need to implement auto-updater functionality
-      // For now, open the download URL in the browser
-      await window.electron.shell.openExternal(updateInfo.downloadUrl);
+      if (!update) {
+        logger.info('[AutoUpdate] No update available');
+        return;
+      }
 
-      telemetry.trackEvent('update_download_initiated', { version: updateInfo.version });
+      logger.info(`[AutoUpdate] Downloading v${update.version}...`);
+      await update.downloadAndInstall();
 
-      // Show user instructions
-      await (window.electron.dialog as any).showMessage({
-        type: 'info',
-        title: 'Update Available',
-        message: `Version ${updateInfo.version} is available`,
-        detail:
-          'The download has been started in your browser. Please install the update manually.',
-      });
-    } catch (error) {
-      telemetry.trackError(
-        error as Error,
-        {
-          context: 'update_download',
-          version: updateInfo.version,
-        },
-        'high'
+      // Prompt user to restart
+      const { ask } = await import('@tauri-apps/plugin-dialog');
+      const shouldRestart = await ask(
+        `Version ${update.version} has been installed. Restart now to apply the update?`,
+        { title: 'Update Installed', kind: 'info' }
       );
+
+      if (shouldRestart) {
+        const { relaunch } = await import('@tauri-apps/plugin-process');
+        await relaunch();
+      }
+    } catch (error) {
+      logger.error('[AutoUpdate] Download/install failed:', String(error));
       throw error;
     }
   }
 
-  /**
-   * Schedule application restart
-   */
-  private async scheduleRestart(): Promise<void> {
-    if (!window.electron) {
-      return;
-    }
-
-    // Show notification to user
-    const result = await (window.electron.dialog as any).showMessage({
-      type: 'question',
-      title: 'Restart Required',
-      message: 'Update downloaded successfully. Restart now to apply the update?',
-      buttons: ['Restart Now', 'Later'],
-    });
-
-    if (result.response === 0) {
-      telemetry.trackEvent('update_restart_accepted');
-      await window.electron.app.restart();
-    } else {
-      telemetry.trackEvent('update_restart_deferred');
-      // Remind user later
-      setTimeout(async () => this.scheduleRestart(), 3600000); // 1 hour
-    }
-  }
-
-  /**
-   * Start periodic update checks
-   */
+  /** Start periodic update checks (initial check after 30 s). */
   private startUpdateCheck(): void {
-    // Initial check after 30 seconds
-    setTimeout(async () => this.checkForUpdates(), 30000);
-
-    // Periodic checks
-    this.updateCheckTimer = setInterval(async () => this.checkForUpdates(), this.checkInterval);
+    setTimeout(() => this.checkForUpdates(), 30_000);
+    this.updateCheckTimer = setInterval(
+      () => this.checkForUpdates(),
+      this.checkInterval
+    );
   }
 
-  /**
-   * Stop update checks
-   */
+  /** Stop periodic update checks. */
   stopUpdateCheck(): void {
     if (this.updateCheckTimer) {
       clearInterval(this.updateCheckTimer);
@@ -172,94 +120,15 @@ export class AutoUpdateService {
     }
   }
 
-  /**
-   * Compare version strings
-   */
-  private isNewerVersion(newVersion: string): boolean {
-    const current = this.parseVersion(this.currentVersion);
-    const newer = this.parseVersion(newVersion);
-
-    if (newer.major > current.major) {
-      return true;
-    }
-    if (newer.major < current.major) {
-      return false;
-    }
-
-    if (newer.minor > current.minor) {
-      return true;
-    }
-    if (newer.minor < current.minor) {
-      return false;
-    }
-
-    return newer.patch > current.patch;
-  }
-
-  /**
-   * Parse version string
-   */
-  private parseVersion(version: string): { major: number; minor: number; patch: number } {
-    const [major = 0, minor = 0, patch = 0] = version.split('.').map((v) => parseInt(v, 10));
-
-    return { major, minor, patch };
-  }
-
-  /**
-   * Get current platform
-   */
-  private getPlatform(): string {
-    const electron = window.electron;
-    // Strict null check verification
-    if (electron?.platform) {
-      const platform = electron.platform;
-      if (typeof platform === 'object' && platform !== null) {
-        return (platform as any).os;
-      }
-      return platform as string;
-    }
-
-    const platform = navigator.platform.toLowerCase();
-    if (platform.includes('win')) {
-      return 'win32';
-    }
-    if (platform.includes('mac')) {
-      return 'darwin';
-    }
-    return 'linux';
-  }
-
-  private getArchitecture(): string {
-    const electron = window.electron;
-    if (electron?.platform) {
-        const platform = electron.platform;
-        if (typeof platform === 'object' && platform !== null) {
-            return (platform as any).arch;
-        }
-    }
-
-    // Best guess from user agent
-    return navigator.userAgent.includes('x64') ? 'x64' : 'x86';
-  }
-
-  /**
-   * Get current version
-   */
   getCurrentVersion(): string {
     return this.currentVersion;
   }
 
-  /**
-   * Enable auto-updates
-   */
   enable(): void {
     this.enabled = true;
     this.startUpdateCheck();
   }
 
-  /**
-   * Disable auto-updates
-   */
   disable(): void {
     this.enabled = false;
     this.stopUpdateCheck();

@@ -30,6 +30,12 @@ import { useWorkspace } from './hooks/useWorkspace';
 // App-specific hooks and components
 import { AppLayout } from './app/AppLayout';
 import {
+    AppExtrasContext,
+    ServicesContext,
+    UIPanelContext,
+    WorkspaceContext,
+} from './app/contexts';
+import {
     useAIProviderInit,
     useApiKeyLoader,
     useAppInit,
@@ -482,119 +488,65 @@ function App() {
       onReset={() => globalThis.location.reload()}
     >
       <Router>
-        <AppLayout
-          // Services
-          aiService={aiService}
-          fileSystemService={fileSystemService}
-          taskPlanner={taskPlanner}
-          liveStream={liveStream}
-          executionEngine={executionEngine}
-          backgroundAgentSystem={backgroundAgentSystem}
-          // File state
-          currentFile={currentFile}
-          openFiles={openFiles}
-          workspaceFolder={workspaceFolder}
-          // Workspace
-          workspaceContext={workspaceContext}
-          isIndexing={isIndexing}
-          indexingProgress={indexingProgress}
-          getFileContext={getFileContext}
-          // AI Chat
-          aiMessages={aiMessages}
-          // Editor settings
-          editorSettings={editorSettings}
-          sidebarOpen={sidebarOpen}
-          // UI State
-          settingsOpen={settingsOpen}
-          aiChatOpen={aiChatOpen}
-          gitPanelOpen={appState.gitPanelOpen}
-          globalSearchOpen={appState.globalSearchOpen}
-          keyboardShortcutsOpen={appState.keyboardShortcutsOpen}
-          backgroundPanelOpen={appState.backgroundPanelOpen}
-          commandPaletteOpen={commandPaletteOpen}
-          previewOpen={appState.previewOpen}
-          terminalOpen={appState.terminalOpen}
-          activeVisualPanel={appState.activeVisualPanel}
-          chatMode={appState.chatMode}
-          // Multi-file edit
-          multiFileEditPlan={appState.multiFileEditPlan}
-          multiFileChanges={appState.multiFileChanges}
-          multiFileApprovalOpen={appState.multiFileApprovalOpen}
-          // Error fix
-          currentError={appState.currentError}
-          currentFix={appState.currentFix}
-          errorFixPanelOpen={appState.errorFixPanelOpen}
-          fixLoading={appState.fixLoading}
-          fixError={appState.fixError}
-          // AI Provider
-          currentModel={appState.currentModel}
-          currentProvider={appState.currentProvider}
-          deepseekApiKey={appState.deepseekApiKey}
-          // Notifications
-          notifications={notifications}
-          commands={commands}
-          // Refs
-          editorRef={appState.editorRef}
-          autoFixServiceRef={appState.autoFixServiceRef}
-          // Handlers
-          handleOpenFile={handleOpenFile}
-          handleCloseFile={handleCloseFile}
-          handleFileChange={handleFileChange}
-          handleSaveFile={handleSaveFile}
-          handleDeleteFile={handleDeleteFile}
-          handleCreateWorkspaceFile={handleCreateWorkspaceFile}
-          handleCreateWorkspaceFolder={handleCreateWorkspaceFolder}
-          handleRenameWorkspacePath={handleRenameWorkspacePath}
-          handleNewFile={handleNewFile}
-          handleOpenFolderDialog={handleOpenFolderDialog}
-          handleCloseFolder={handleCloseFolder}
-          handleOpenFolder={handleOpenFolder}
-          handleCreateFile={handleCreateFile}
-          handleSaveAll={handleSaveAll}
-          handleEditorMount={handlers.handleEditorMount}
-          handleApplyFix={handlers.handleApplyFix}
-          handleInsertCode={handlers.handleInsertCode}
-          handleOpenFileFromSearch={handlers.handleOpenFileFromSearch}
-          handleReplaceInFile={handlers.handleReplaceInFile}
-          handleSearchInFiles={handlers.handleSearchInFiles}
-          handleToggleScreenshotPanel={handlers.handleToggleScreenshotPanel}
-          handleToggleComponentLibrary={handlers.handleToggleComponentLibrary}
-          handleToggleVisualEditor={handlers.handleToggleVisualEditor}
-          handleApplyMultiFileChanges={handlers.handleApplyMultiFileChanges}
-          handleRejectMultiFileChanges={handlers.handleRejectMultiFileChanges}
-          handleAIMessage={handleAIMessage}
-          handleModelChange={handlers.handleModelChange}
-          handleProviderChange={handlers.handleProviderChange}
-          handleMultiFileEditDetected={handlers.handleMultiFileEditDetected}
-          addAiMessage={addAiMessage}
-          updateAiMessage={updateAiMessage}
-          setCurrentFile={setCurrentFile}
-          // UI setters
-          setSettingsOpen={setSettingsOpen}
-          setAiChatOpen={setAiChatOpen}
-          setSidebarOpen={setSidebarOpen}
-          setGlobalSearchOpen={appState.setGlobalSearchOpen}
-          setKeyboardShortcutsOpen={appState.setKeyboardShortcutsOpen}
-          setBackgroundPanelOpen={appState.setBackgroundPanelOpen}
-          setCommandPaletteOpen={setCommandPaletteOpen}
-          setPreviewOpen={appState.setPreviewOpen}
-          setTerminalOpen={appState.setTerminalOpen}
-          setActiveVisualPanel={appState.setActiveVisualPanel}
-          setChatMode={appState.setChatMode}
-          // Error fix setters
-          setErrorFixPanelOpen={appState.setErrorFixPanelOpen}
-          setCurrentError={appState.setCurrentError}
-          setCurrentFix={appState.setCurrentFix}
-          setFixLoading={appState.setFixLoading}
-          setFixError={appState.setFixError}
-          // Notifications
-          showSuccess={showSuccess}
-          showError={showError}
-          showWarning={showWarning}
-          removeNotification={removeNotification}
-          // Settings
-          updateEditorSettings={updateEditorSettings}
-        />
+        <ServicesContext.Provider value={{
+          aiService, fileSystemService, taskPlanner, liveStream, executionEngine, backgroundAgentSystem,
+        }}>
+        <UIPanelContext.Provider value={{
+          settingsOpen, setSettingsOpen,
+          aiChatOpen, setAiChatOpen,
+          gitPanelOpen: appState.gitPanelOpen,
+          globalSearchOpen: appState.globalSearchOpen, setGlobalSearchOpen: appState.setGlobalSearchOpen,
+          keyboardShortcutsOpen: appState.keyboardShortcutsOpen, setKeyboardShortcutsOpen: appState.setKeyboardShortcutsOpen,
+          backgroundPanelOpen: appState.backgroundPanelOpen, setBackgroundPanelOpen: appState.setBackgroundPanelOpen,
+          commandPaletteOpen, setCommandPaletteOpen,
+          previewOpen: appState.previewOpen, setPreviewOpen: appState.setPreviewOpen,
+          terminalOpen: appState.terminalOpen, setTerminalOpen: appState.setTerminalOpen,
+          sidebarOpen, setSidebarOpen,
+          activeVisualPanel: appState.activeVisualPanel, setActiveVisualPanel: appState.setActiveVisualPanel,
+          chatMode: appState.chatMode, setChatMode: appState.setChatMode,
+          errorFixPanelOpen: appState.errorFixPanelOpen, setErrorFixPanelOpen: appState.setErrorFixPanelOpen,
+        }}>
+        <WorkspaceContext.Provider value={{
+          currentFile, openFiles, workspaceFolder,
+          workspaceContext, isIndexing, indexingProgress, getFileContext,
+          editorSettings, updateEditorSettings, setCurrentFile,
+          handleOpenFile, handleCloseFile, handleFileChange, handleSaveFile,
+          handleDeleteFile, handleCreateWorkspaceFile, handleCreateWorkspaceFolder,
+          handleRenameWorkspacePath, handleNewFile, handleOpenFolderDialog,
+          handleCloseFolder, handleOpenFolder, handleCreateFile, handleSaveAll,
+          handleEditorMount: handlers.handleEditorMount, editorRef: appState.editorRef,
+          handleOpenFileFromSearch: handlers.handleOpenFileFromSearch,
+          handleReplaceInFile: handlers.handleReplaceInFile,
+          handleSearchInFiles: handlers.handleSearchInFiles,
+        }}>
+        <AppExtrasContext.Provider value={{
+          aiMessages, handleAIMessage, addAiMessage, updateAiMessage,
+          handleModelChange: handlers.handleModelChange,
+          handleProviderChange: handlers.handleProviderChange,
+          handleMultiFileEditDetected: handlers.handleMultiFileEditDetected,
+          currentModel: appState.currentModel, currentProvider: appState.currentProvider,
+          deepseekApiKey: appState.deepseekApiKey,
+          currentError: appState.currentError, currentFix: appState.currentFix,
+          fixLoading: appState.fixLoading, fixError: appState.fixError,
+          setCurrentError: appState.setCurrentError, setCurrentFix: appState.setCurrentFix,
+          setFixLoading: appState.setFixLoading, setFixError: appState.setFixError,
+          handleApplyFix: handlers.handleApplyFix, autoFixServiceRef: appState.autoFixServiceRef,
+          multiFileEditPlan: appState.multiFileEditPlan, multiFileChanges: appState.multiFileChanges,
+          multiFileApprovalOpen: appState.multiFileApprovalOpen,
+          handleApplyMultiFileChanges: handlers.handleApplyMultiFileChanges,
+          handleRejectMultiFileChanges: handlers.handleRejectMultiFileChanges,
+          notifications, showSuccess, showError, showWarning, removeNotification,
+          commands,
+          handleToggleScreenshotPanel: handlers.handleToggleScreenshotPanel,
+          handleToggleComponentLibrary: handlers.handleToggleComponentLibrary,
+          handleToggleVisualEditor: handlers.handleToggleVisualEditor,
+          handleInsertCode: handlers.handleInsertCode,
+        }}>
+          <AppLayout />
+        </AppExtrasContext.Provider>
+        </WorkspaceContext.Provider>
+        </UIPanelContext.Provider>
+        </ServicesContext.Provider>
       </Router>
 
       {/* Input Dialogs */}

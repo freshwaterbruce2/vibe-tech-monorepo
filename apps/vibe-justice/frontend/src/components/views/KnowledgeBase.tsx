@@ -80,7 +80,16 @@ export function KnowledgeBase() {
     setError(null)
     try {
       const response = await api.get('/api/knowledge/status')
-      setStatus(response.data)
+      const data = response.data
+      setStatus({
+        totalDocuments: data.total_documents ?? data.totalDocuments ?? 0,
+        domains: (data.domains ?? []).map((d: Record<string, unknown>) => ({
+          domain: d.domain as string,
+          count: (d.document_count ?? d.count ?? 0) as number,
+          lastUpdated: d.lastUpdated as string | undefined,
+        })),
+        recentAdditions: data.recentAdditions ?? data.recent_additions ?? [],
+      })
     } catch (err) {
       console.error('Failed to fetch knowledge base status:', err)
       // Create mock data for development/demo

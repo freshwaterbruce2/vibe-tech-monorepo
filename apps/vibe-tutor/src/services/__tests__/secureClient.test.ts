@@ -72,8 +72,8 @@ describe('SecureAPIClient', () => {
       value: true,
     });
     // Reset secureClient instance state (clear any previous session)
-    (secureClient as any).sessionToken = null;
-    (secureClient as any).tokenExpiry = 0;
+    (secureClient as unknown as Record<string, unknown>).sessionToken = null;
+    (secureClient as unknown as Record<string, unknown>).tokenExpiry = 0;
     // Default: No stored session (returns null)
     vi.mocked(sessionStore.get).mockReturnValue(null);
   });

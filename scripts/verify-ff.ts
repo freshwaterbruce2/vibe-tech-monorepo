@@ -27,7 +27,7 @@ async function main() {
   } catch (error: any) {
     console.error("❌ Verification Failed:", error.message);
     if (error.code === 'ECONNREFUSED') {
-        console.log("Server is not running. Start the server via 'pnpm --filter @dev/feature-flags-server start'.");
+        console.log("Server is not running. Start the server via 'pnpm --filter @vibetech/feature-flags-server start'.");
     }
     process.exit(1);
   }

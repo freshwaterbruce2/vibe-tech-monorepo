@@ -20,7 +20,7 @@
 | `@vibetech/vibetech-hooks`    | React apps                                               |
 | `@vibetech/vibetech-shared`   | Multiple apps                                            |
 | `@vibetech/vibetech-types`    | Multiple apps                                            |
-| `@dev/feature-flags-sdk-node` | `vibe-code-studio`, `nova-agent`, `crypto-enhanced`      |
+| `@vibetech/feature-flags-sdk-node` | `vibe-code-studio`, `nova-agent`, `crypto-enhanced`      |
 
 ## Impact Radius Guide
 
@@ -50,11 +50,11 @@ nova-agent
   └─ @vibetech/nova-types
   └─ @vibetech/nova-database
   └─ @vibetech/shared-ipc
-  └─ @dev/feature-flags-sdk-node
+  └─ @vibetech/feature-flags-sdk-node
 
 vibe-code-studio
   └─ @vibetech/shared-ipc
-  └─ @dev/feature-flags-sdk-node
+  └─ @vibetech/feature-flags-sdk-node
 
 ipc-bridge (backend)
   └─ @vibetech/shared-ipc

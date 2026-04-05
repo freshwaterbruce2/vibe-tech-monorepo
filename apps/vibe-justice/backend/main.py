@@ -1,7 +1,7 @@
 """
 Vibe-Justice Backend Server
 FastAPI application for South Carolina legal research assistant
-Now powered by DeepSeek R1 reasoning model
+Powered by Kimi K2.5 + Gemini 3.1 Pro
 """
 
 import os
@@ -27,7 +27,7 @@ load_dotenv()
 # Create FastAPI app
 app = FastAPI(
     title="Vibe-Justice Backend",
-    description="SC Legal Research Assistant with DeepSeek R1",
+    description="SC Legal Research Assistant — Kimi K2.5 + Gemini 3.1 Pro",
     version="2.0.0",
 )
 

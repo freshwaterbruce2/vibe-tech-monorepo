@@ -1,8 +1,13 @@
 import { AI_TUTOR_PROMPT } from '../constants';
 import type { ChatMessage } from '../types';
 import { learningAnalytics } from './learningAnalytics';
+import { personalization } from './personalizationService';
 import { createChatCompletion, type DeepSeekMessage } from './secureClient';
 import { usageMonitor } from './usageMonitor';
+
+/** Patterns that indicate the student wants re-explanation (signals unsuccessful interaction) */
+const RE_EXPLAIN_PATTERNS =
+  /\b(don'?t understand|confused|not clear|explain again|what do you mean|huh\?|lost me|try again|simpler|can you re-?explain)\b/i;
 
 // Maximum conversation history size to prevent memory bloat
 // Keeps system message + last MAX_HISTORY_SIZE messages
@@ -64,7 +69,18 @@ export const sendMessageToTutor = async (message: string): Promise<string> => {
       return canRequest.reason ?? 'Usage limit reached. Please try again later.';
     }
 
+    // Select learning style via epsilon-greedy bandit
+    const style = personalization.selectStyle();
+    const stylePrompt = personalization.getStylePrompt(style);
+
+    // Record user message in history (without the style prompt so history stays clean)
     addToHistory('user', message);
+
+    // Build messages for this request: inject style into a fresh system entry
+    const messagesWithStyle: DeepSeekMessage[] = [
+      { role: 'system', content: AI_TUTOR_PROMPT + '\n' + stylePrompt },
+      ...tutorHistory.slice(1), // skip original system message; keep conversation history
+    ];
 
     const fallbackResponses = [
       "I'm experiencing some technical difficulties right now. Let me try to help you again.",
@@ -74,7 +90,7 @@ export const sendMessageToTutor = async (message: string): Promise<string> => {
     ];
 
     const startTime = Date.now();
-    const response = await createChatCompletion(tutorHistory, {
+    const response = await createChatCompletion(messagesWithStyle, {
       model: 'deepseek-chat',
       temperature: 0.7,
       top_p: 0.95,
@@ -88,7 +104,10 @@ export const sendMessageToTutor = async (message: string): Promise<string> => {
 
     // Log AI call for analytics
     if (response && assistantMessage) {
-      const inputTokens = tutorHistory.reduce((acc, msg) => acc + (msg.content?.length ?? 0), 0);
+      const inputTokens = messagesWithStyle.reduce(
+        (acc, msg) => acc + (msg.content?.length ?? 0),
+        0,
+      );
       void learningAnalytics.logAICall(
         'deepseek-chat',
         inputTokens,
@@ -98,6 +117,11 @@ export const sendMessageToTutor = async (message: string): Promise<string> => {
     }
 
     addToHistory('assistant', assistantMessage);
+
+    // Record outcome: student asking for re-explanation signals the style didn't land
+    const success = !RE_EXPLAIN_PATTERNS.test(message);
+    const timeSpent = (Date.now() - startTime) / 1000;
+    personalization.recordFeedback(success, timeSpent);
 
     // Record successful request
     usageMonitor.recordRequest();

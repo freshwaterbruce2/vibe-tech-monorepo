@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import type { FeatureFlag } from '@dev/feature-flags-core';
+import type { FeatureFlag } from '@vibetech/feature-flags-core';
 
 const DEFAULT_DB_PATH = process.env.FF_DB_PATH ?? 'D:/databases/feature_flags.db';
 

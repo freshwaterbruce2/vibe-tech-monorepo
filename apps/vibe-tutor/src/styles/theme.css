@@ -1,0 +1,325 @@
+:root {
+  /* Vibe Tutor neon palette — purple/pink glassmorphism */
+  --background-main: #0c0618;
+  --background-card: #160d2a;
+  --background-surface: #1e1040;
+  --background: var(--background-main);
+  --glass-surface: rgba(168, 85, 247, 0.12);
+  --glass-border: rgba(168, 85, 247, 0.28);
+
+  /* Primary accents */
+  --primary-accent: #a855f7; /* Neon purple */
+  --secondary-accent: #ec4899; /* Hot pink */
+  --tertiary-accent: #ff5fd2; /* Magenta */
+  --quaternary-accent: #fbbf24; /* Solar amber */
+
+  /* Text Colors */
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #64748b;
+  --text-glow: #ffffff;
+
+  /* Border & Effects */
+  --border-color: rgba(168, 85, 247, 0.24);
+  --border-hover: rgba(236, 72, 153, 0.50);
+  --shadow-glow: 0 16px 42px rgba(12, 6, 24, 0.52);
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
+  --gradient-surface: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.14),
+    rgba(236, 72, 153, 0.08)
+  );
+  --gradient-glow: linear-gradient(135deg, var(--primary-accent), var(--tertiary-accent));
+
+  /* Neon effects */
+  --neon-glow-primary:
+    0 0 10px var(--primary-accent), 0 0 20px var(--primary-accent),
+    0 0 40px var(--primary-accent), 0 0 60px var(--primary-accent);
+  --neon-glow-secondary:
+    0 0 10px var(--secondary-accent), 0 0 20px var(--secondary-accent),
+    0 0 40px var(--secondary-accent);
+  --neon-glow-accent:
+    0 0 10px var(--tertiary-accent), 0 0 20px var(--tertiary-accent),
+    0 0 36px rgba(255, 95, 210, 0.55);
+  --neon-glow-soft:
+    0 0 18px rgba(168, 85, 247, 0.35), 0 0 34px rgba(236, 72, 153, 0.22);
+
+  /* Semantic state colors */
+  --error-accent: #ef4444;
+  --error-surface: rgba(239, 68, 68, 0.12);
+  --success-accent: #22d3ee;
+  --success-surface: rgba(34, 211, 238, 0.12);
+
+  /* Token economy */
+  --token-color: #fbbf24;
+  --token-surface: rgba(251, 191, 36, 0.15);
+
+  /* Extended text grays */
+  --text-tertiary: #475569;
+  --text-placeholder: #334155;
+
+  /* Extended borders */
+  --border-subtle: rgba(148, 163, 184, 0.12);
+  --border-secondary: rgba(148, 163, 184, 0.24);
+
+  /* Animation Timings */
+  --transition-fast: 0.15s ease-out;
+  --transition-normal: 0.3s ease-out;
+  --transition-slow: 0.5s ease-out;
+}
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--background-main);
+  color: var(--text-primary);
+  background-image:
+    radial-gradient(circle at 18% 18%, rgba(168, 85, 247, 0.28) 0%, transparent 46%),
+    radial-gradient(circle at 82% 24%, rgba(236, 72, 153, 0.20) 0%, transparent 42%),
+    radial-gradient(circle at 62% 78%, rgba(255, 95, 210, 0.18) 0%, transparent 44%),
+    linear-gradient(180deg, rgba(12, 6, 24, 0.88) 0%, rgba(12, 6, 24, 1) 100%);
+  background-size:
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    100% 100%;
+  background-attachment: fixed;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism Classes */
+.glass-card {
+  background: var(--glass-surface);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-glow);
+  transition: all var(--transition-normal);
+}
+
+.glass-card:hover {
+  background: rgba(168, 85, 247, 0.18);
+  border-color: var(--border-hover);
+  box-shadow: var(--neon-glow-soft);
+  transform: translateY(-2px) scale(1.01);
+}
+
+.glass-button {
+  background: var(--gradient-primary);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left var(--transition-slow);
+}
+
+.glass-button:hover::before {
+  left: 100%;
+}
+
+.glass-button:hover {
+  box-shadow: var(--neon-glow-primary);
+  transform: translateY(-1px);
+}
+
+/* Neon Text Effects */
+.neon-text-primary {
+  color: var(--text-glow);
+  text-shadow: var(--neon-glow-primary);
+  transition: all var(--transition-normal);
+}
+
+.neon-text-secondary {
+  color: var(--text-glow);
+  text-shadow: var(--neon-glow-secondary);
+  transition: all var(--transition-normal);
+}
+
+.glow-on-hover:hover {
+  text-shadow: var(--neon-glow-soft);
+  color: var(--text-glow);
+}
+
+/* Animation Classes */
+.pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes pulseGlow {
+  from {
+    box-shadow: var(--shadow-glow);
+  }
+  to {
+    box-shadow: var(--neon-glow-primary);
+  }
+}
+
+.float-animation {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Word Hunt Animations */
+.animate-pulse-once {
+  animation: pulseOnce 0.6s ease-out;
+}
+
+@keyframes pulseOnce {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+@keyframes confetti-fall {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(0) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(300px) rotate(720deg);
+  }
+}
+
+.animate-confetti {
+  will-change: transform, opacity;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Icon Animations - Gen Z 2025 */
+.icon-pulse {
+  animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 8px var(--primary-accent));
+  }
+  50% {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 16px var(--primary-accent));
+  }
+}
+
+.icon-bounce {
+  animation: iconBounce 1s ease-in-out infinite;
+}
+
+@keyframes iconBounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.icon-spin {
+  animation: iconSpin 3s linear infinite;
+}
+
+@keyframes iconSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Enhanced Button Interactions */
+.glass-button:active {
+  transform: scale(0.95);
+}
+
+/* Improved Focus States */
+.focus-glow:focus-visible {
+  outline: none;
+  box-shadow: var(--neon-glow-primary);
+  border-color: var(--primary-accent);
+}
+
+/* Enhanced Scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 15, 35, 0.8);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--gradient-primary);
+  border-radius: 10px;
+  border: 2px solid rgba(15, 15, 35, 0.8);
+  box-shadow: var(--shadow-glow);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gradient-glow);
+  box-shadow: var(--neon-glow-soft);
+}
+
+/* Safe Area Insets for Notched Phones */
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Touch Device Optimizations */
+* {
+  -webkit-tap-highlight-color: rgba(168, 85, 247, 0.24);
+  touch-action: manipulation;
+}
+
+button,
+a {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Touch scrolling is natively smooth in all modern browsers */
+
+body {
+  overscroll-behavior-y: contain;
+}

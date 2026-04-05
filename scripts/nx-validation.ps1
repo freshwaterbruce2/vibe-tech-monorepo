@@ -1,6 +1,9 @@
 $ErrorActionPreference = 'Continue'
 Set-Location C:\dev
 
+. (Join-Path $PSScriptRoot 'Initialize-DevProcessEnvironment.ps1')
+$null = Initialize-DevProcessEnvironment
+
 Write-Host "`n--- BUILD ---"
 pnpm nx run agent-engine:build
 

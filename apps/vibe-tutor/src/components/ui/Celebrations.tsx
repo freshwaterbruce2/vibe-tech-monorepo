@@ -19,7 +19,7 @@ interface CelebrationProps {
 export const Celebration = ({ type, points, message, onComplete }: CelebrationProps) => {
   const [animationEnabled, setAnimationEnabled] = React.useState(true);
   const [visible, setVisible] = React.useState(true);
-  const [_isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   // Load sensory preferences from dataStore
   useEffect(() => {
@@ -95,7 +95,7 @@ export const Celebration = ({ type, points, message, onComplete }: CelebrationPr
           <div className="text-center">
             <div className="text-6xl mb-4 animate-bounce">✓</div>
             <h2 className="text-2xl font-bold neon-text-primary">Task Complete!</h2>
-            {points && <p className="text-lg mt-2 text-cyan-400">+{points} points</p>}
+            {points && <p className="text-lg mt-2 text-[var(--success-accent)]">+{points} points</p>}
           </div>
         )}
 
@@ -103,7 +103,7 @@ export const Celebration = ({ type, points, message, onComplete }: CelebrationPr
           <div className="text-center">
             <div className="text-6xl mb-4 animate-spin">🌟</div>
             <h2 className="text-3xl font-bold neon-text-primary">+{points}</h2>
-            <p className="text-lg mt-2 text-cyan-300">Points Earned!</p>
+            <p className="text-lg mt-2 text-[var(--success-accent)]">Points Earned!</p>
           </div>
         )}
 
