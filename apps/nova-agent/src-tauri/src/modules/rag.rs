@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use arrow_array::{FixedSizeListArray, Float32Array, RecordBatch, RecordBatchIterator, StringArray};
+use arrow_array::{FixedSizeListArray, Float32Array, RecordBatch, StringArray};
 use arrow_schema::{DataType, Field, Schema};
 use futures_util::TryStreamExt;
 #[allow(unused_imports)]
@@ -262,18 +262,15 @@ pub async fn rag_index_file(
         }
 
         table
-            .add(RecordBatchIterator::new(vec![Ok(batch)], schema))
+            .add(vec![batch])
             .execute()
             .await
             .map_err(|e| format!("Failed to add chunks: {e}"))?;
     } else {
-        conn.create_table(
-            TABLE_NAME,
-            RecordBatchIterator::new(vec![Ok(batch)], schema),
-        )
-        .execute()
-        .await
-        .map_err(|e| format!("Failed to create table: {e}"))?;
+        conn.create_table(TABLE_NAME, vec![batch])
+            .execute()
+            .await
+            .map_err(|e| format!("Failed to create table: {e}"))?;
     }
 
     info!("RAG: indexed {} ({} chunks)", file_path, chunks.len());
