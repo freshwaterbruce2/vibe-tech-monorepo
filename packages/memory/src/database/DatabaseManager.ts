@@ -2,7 +2,10 @@ import Database from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
 import * as sqliteVec from 'sqlite-vec';
+import { createLogger } from '@vibetech/logger';
 import type { MemoryConfig } from '../types/index.js';
+
+const logger = createLogger('DatabaseManager');
 
 export class DatabaseManager {
   private db: Database.Database | null = null;
@@ -52,10 +55,10 @@ export class DatabaseManager {
       // Use sqlite-vec's load() API for proper cross-platform loading
       sqliteVec.load(this.db);
       this.vectorExtensionLoaded = true;
-      console.error('sqlite-vec extension loaded successfully');
+      logger.info('sqlite-vec extension loaded successfully');
     } catch {
       this.vectorExtensionLoaded = false;
-      console.warn('sqlite-vec extension not available, vector search will use in-memory fallback');
+      logger.warn('sqlite-vec extension not available, vector search will use in-memory fallback');
     }
   }
 

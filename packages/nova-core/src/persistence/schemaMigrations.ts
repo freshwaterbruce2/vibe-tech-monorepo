@@ -1,4 +1,7 @@
 import type Database from 'better-sqlite3';
+import { createLogger } from '@vibetech/logger';
+
+const logger = createLogger('schemaMigrations');
 
 export interface SchemaMigration {
     id: number;
@@ -96,9 +99,9 @@ export function runSchemaMigrations(db: Database.Database): void {
     }
 
     if (appliedCount === 0) {
-        console.log('DatabaseManager: Schema already up to date');
+        logger.debug('DatabaseManager: Schema already up to date');
         return;
     }
 
-    console.log(`DatabaseManager: Applied ${appliedCount} schema migration${appliedCount === 1 ? '' : 's'}`);
+    logger.info(`DatabaseManager: Applied ${appliedCount} schema migration${appliedCount === 1 ? '' : 's'}`);
 }

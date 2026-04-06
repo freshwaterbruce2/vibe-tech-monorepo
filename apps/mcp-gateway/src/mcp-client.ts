@@ -1,6 +1,9 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { createLogger } from '@vibetech/logger';
 import type { McpServerConfig } from './config.js';
+
+const logger = createLogger('McpClientManager');
 
 /**
  * Manages MCP client connections to tool servers.
@@ -39,7 +42,7 @@ export class McpClientManager {
 
         await client.connect(transport);
         this.clients.set(serverName, client);
-        console.log(`[mcp-client] Connected to MCP server: ${serverName}`);
+        logger.info(`Connected to MCP server: ${serverName}`);
         return client;
     }
 
@@ -54,11 +57,11 @@ export class McpClientManager {
             const client = await this.getClient(serverName);
             const result = await client.callTool({ name: toolName, arguments: args });
             const elapsed = Math.round(performance.now() - startMs);
-            console.log(`[mcp-client] ${serverName}.${toolName} completed in ${elapsed}ms`);
+            logger.info(`${serverName}.${toolName} completed in ${elapsed}ms`);
             return { success: true, data: result };
         } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            console.error(`[mcp-client] ${serverName}.${toolName} failed: ${message}`);
+            logger.error(`${serverName}.${toolName} failed: ${message}`);
             return { success: false, error: message };
         }
     }
@@ -75,7 +78,7 @@ export class McpClientManager {
         for (const [name, client] of this.clients) {
             try {
                 await client.close();
-                console.log(`[mcp-client] Disconnected from: ${name}`);
+                logger.info(`Disconnected from: ${name}`);
             } catch {
                 // Best effort cleanup
             }

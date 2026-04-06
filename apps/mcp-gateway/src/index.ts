@@ -1,9 +1,12 @@
 import { IPCMessageType } from '@vibetech/shared-ipc';
 import { WebSocket } from 'ws';
+import { createLogger } from '@vibetech/logger';
 import { listServers, loadConfig } from './config.js';
 import { startHttpApi } from './http-api.js';
 import { McpClientManager } from './mcp-client.js';
 import { TaskHandler } from './task-handler.js';
+
+const logger = createLogger('McpGateway');
 
 const SOURCE = 'antigravity' as const;
 const VERSION = '1.0.0';
@@ -31,12 +34,12 @@ function createMessage(
 }
 
 async function main() {
-    console.log('[mcp-gateway] Starting MCP Gateway...');
+    logger.info('Starting MCP Gateway...');
 
     // Load config
     const config = loadConfig();
     const servers = listServers(config);
-    console.log(`[mcp-gateway] Loaded ${servers.length} MCP server configs: ${servers.join(', ')}`);
+    logger.info(`Loaded ${servers.length} MCP server configs: ${servers.join(', ')}`);
 
     // Initialize MCP client manager, task handler, and HTTP API
     const mcpClient = new McpClientManager(config.mcpServers);
@@ -44,11 +47,11 @@ async function main() {
     const httpServer = startHttpApi(mcpClient, config);
 
     function connect() {
-        console.log(`[mcp-gateway] Connecting to IPC Bridge at ${config.ipcBridgeUrl}...`);
+        logger.info(`Connecting to IPC Bridge at ${config.ipcBridgeUrl}...`);
         const ws = new WebSocket(config.ipcBridgeUrl);
 
         ws.on('open', () => {
-            console.log('[mcp-gateway] Connected to IPC Bridge');
+            logger.info('Connected to IPC Bridge');
             reconnectAttempts = 0;
 
             // Identify ourselves
@@ -66,7 +69,7 @@ async function main() {
             try {
                 msg = JSON.parse(raw.toString());
             } catch {
-                console.error('[mcp-gateway] Invalid JSON received');
+                logger.error('Invalid JSON received');
                 return;
             }
 
@@ -76,7 +79,7 @@ async function main() {
 
             switch (type) {
                 case IPCMessageType.AGENT_TASK_DISPATCH: {
-                    console.log(`[mcp-gateway] Received AGENT_TASK_DISPATCH: ${(payload as { taskId: string }).taskId}`);
+                    logger.info(`Received AGENT_TASK_DISPATCH: ${(payload as { taskId: string }).taskId}`);
                     try {
                         const result = await taskHandler.handleTaskDispatch(
                             payload as Parameters<typeof taskHandler.handleTaskDispatch>[0]
@@ -109,7 +112,7 @@ async function main() {
                 }
 
                 case IPCMessageType.MCP_TOOL_CALL: {
-                    console.log(`[mcp-gateway] Received MCP_TOOL_CALL: ${(payload as { server: string; tool: string }).server}.${(payload as { server: string; tool: string }).tool}`);
+                    logger.info(`Received MCP_TOOL_CALL: ${(payload as { server: string; tool: string }).server}.${(payload as { server: string; tool: string }).tool}`);
                     try {
                         const result = await taskHandler.handleToolCall(
                             payload as Parameters<typeof taskHandler.handleToolCall>[0]
@@ -153,25 +156,25 @@ async function main() {
         });
 
         ws.on('close', (code) => {
-            console.log(`[mcp-gateway] Disconnected from IPC Bridge (code: ${code})`);
+            logger.info(`Disconnected from IPC Bridge (code: ${code})`);
             scheduleReconnect();
         });
 
         ws.on('error', (err) => {
-            console.error(`[mcp-gateway] WebSocket error: ${err.message}`);
+            logger.error(`WebSocket error: ${err.message}`);
         });
     }
 
     function scheduleReconnect() {
         reconnectAttempts++;
         const delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), MAX_RECONNECT_DELAY);
-        console.log(`[mcp-gateway] Reconnecting in ${delay}ms (attempt ${reconnectAttempts})...`);
+        logger.info(`Reconnecting in ${delay}ms (attempt ${reconnectAttempts})...`);
         setTimeout(connect, delay);
     }
 
     // Graceful shutdown
     async function shutdown() {
-        console.log('[mcp-gateway] Shutting down...');
+        logger.info('Shutting down...');
         httpServer.close();
         await mcpClient.shutdown();
         process.exit(0);
@@ -185,6 +188,6 @@ async function main() {
 }
 
 main().catch((err) => {
-    console.error('[mcp-gateway] Fatal error:', err);
+    logger.error('Fatal error', undefined, err instanceof Error ? err : new Error(String(err)));
     process.exit(1);
 });

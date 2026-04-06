@@ -6,7 +6,10 @@
  */
 
 import Database from 'better-sqlite3';
+import { createLogger } from '@vibetech/logger';
 import type { MemoryManager } from '../core/MemoryManager.js';
+
+const logger = createLogger('LearningBridge');
 
 /** Raw row from agent_executions table (agent_learning.db schema) */
 interface ExecutionRow {
@@ -571,7 +574,7 @@ export class LearningBridge {
       }
       return true;
     } catch (err) {
-      console.error('[LearningBridge] writeBackPattern failed:', err);
+      logger.error('[LearningBridge] writeBackPattern failed:', undefined, err instanceof Error ? err : new Error(String(err)));
       return false;
     }
   }
@@ -610,7 +613,7 @@ export class LearningBridge {
       );
       return true;
     } catch (err) {
-      console.error('[LearningBridge] recordExecution failed:', err);
+      logger.error('[LearningBridge] recordExecution failed:', undefined, err instanceof Error ? err : new Error(String(err)));
       return false;
     }
   }

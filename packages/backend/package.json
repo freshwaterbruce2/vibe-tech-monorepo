@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@vibetech/logger": "workspace:^1.0.0",
     "@vibetech/shared-ipc": "workspace:^1.0.0",
     "@vibetech/shared-logic": "workspace:^0.0.1",
     "@vibetech/shared-utils": "workspace:^1.0.0",

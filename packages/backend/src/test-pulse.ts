@@ -1,19 +1,22 @@
 import { EmbeddingService } from './services/EmbeddingService.js';
 import { VectorStore } from './services/VectorStore.js';
+import { createLogger } from '@vibetech/logger';
+
+const logger = createLogger('test-pulse');
 
 async function runPulse() {
-  console.log('--- SYSTEM PULSE STARTED ---');
+  logger.info('--- SYSTEM PULSE STARTED ---');
 
   try {
     // 1. Initialize Services
-    console.log('Initializing Embedding Service...');
+    logger.info('Initializing Embedding Service...');
     const embeddingService = new EmbeddingService();
     await embeddingService.init();
-    console.log('Embedding Service: READY');
+    logger.info('Embedding Service: READY');
 
-    console.log('Initializing Vector Store...');
+    logger.info('Initializing Vector Store...');
     const vectorStore = new VectorStore();
-    console.log('Vector Store: READY');
+    logger.info('Vector Store: READY');
 
     // 2. Add Test Logic Pattern (if needed, just to ensure we have data to find)
     const testPattern = {
@@ -29,39 +32,38 @@ async function runPulse() {
     // We'll try to add it. If it's a new DB it will be added.
     // If we want to be pure, we might just search, but to be sure we get a hit:
     const id = await vectorStore.addPattern(testPattern, patternEmbedding);
-    console.log(`Inserted test pattern with ID: ${id}`);
+    logger.info(`Inserted test pattern with ID: ${id}`);
 
     // 3. Perform Search (The Test Case)
     const query = 'Ensure all database calls use WAL mode for high concurrency.';
-    console.log(`\nQuerying: "${query}"`);
+    logger.info(`Querying: "${query}"`);
 
     const queryEmbedding = await embeddingService.generate(query);
     const results = vectorStore.search(queryEmbedding, 3);
 
-    console.log('\n--- SEARCH RESULTS ---');
+    logger.info('--- SEARCH RESULTS ---');
     if (results.length === 0) {
-      console.warn('No matches found.');
+      logger.warn('No matches found.');
     } else {
       for (const result of results) {
         const pattern = vectorStore.getPatternById(result.strategy_id);
         if (pattern) {
-          console.log(`[Score: ${result.score.toFixed(4)}] ID: ${pattern.id}`);
-          console.log(`Rule: ${pattern.logic_rule}`);
-          console.log(`Tags: ${pattern.tags.join(', ')}`);
-          console.log('---');
+          logger.info(`[Score: ${result.score.toFixed(4)}] ID: ${pattern.id}`);
+          logger.info(`Rule: ${pattern.logic_rule}`);
+          logger.info(`Tags: ${pattern.tags.join(', ')}`);
+          logger.debug('---');
         }
       }
     }
 
-    console.log('\n--- SYSTEM PULSE COMPLETED: GREEN ---');
+    logger.info('--- SYSTEM PULSE COMPLETED: GREEN ---');
   } catch (error) {
-    console.error('\n!!! SYSTEM PULSE FAILED !!!');
-    console.error(error);
+    logger.error('!!! SYSTEM PULSE FAILED !!!', undefined, error instanceof Error ? error : new Error(String(error)));
     process.exit(1);
   }
 }
 
 runPulse().catch((error) => {
-  console.error('Fatal error running pulse:', error);
+  logger.error('Fatal error running pulse:', undefined, error instanceof Error ? error : new Error(String(error)));
   process.exit(1);
 });

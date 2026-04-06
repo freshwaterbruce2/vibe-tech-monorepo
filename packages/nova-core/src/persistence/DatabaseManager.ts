@@ -1,7 +1,10 @@
 import Database from 'better-sqlite3';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { createLogger } from '@vibetech/logger';
 import * as schemaMigrations from './schemaMigrations.js';
+
+const logger = createLogger('DatabaseManager');
 
 /**
  * DatabaseManager - Singleton manager for Nova's persistent storage
@@ -27,8 +30,8 @@ export class DatabaseManager {
             this.dbDir = '';
             this.dbPath = ':memory:';
         } else {
-            this.dbDir = path.dirname(options.dbPath ?? 'D:\\databases\\nova_memory.db');
-            this.dbPath = options.dbPath ?? path.join(this.dbDir, 'nova_memory.db');
+            this.dbDir = path.dirname(options.dbPath ?? (process.env.DATABASE_PATH ?? 'D:\\databases\\nova_memory.db'));
+            this.dbPath = options.dbPath ?? (process.env.DATABASE_PATH ?? path.join(this.dbDir, 'nova_memory.db'));
         }
     }
 
@@ -42,20 +45,20 @@ export class DatabaseManager {
      */
     public initialize(): void {
         if (this.db) {
-            console.log('DatabaseManager: Already initialized');
+            logger.debug('DatabaseManager: Already initialized');
             return;
         }
 
         if (!this.inMemory && this.dbDir && !fs.existsSync(this.dbDir)) {
             fs.mkdirSync(this.dbDir, { recursive: true });
-            console.log(`DatabaseManager: Created directory ${this.dbDir}`);
+            logger.info(`DatabaseManager: Created directory ${this.dbDir}`);
         }
 
         this.db = new Database(this.dbPath);
         if (!this.inMemory) {
             this.db.pragma('journal_mode = WAL');
         }
-        console.log(`DatabaseManager: Connected to ${this.dbPath}${this.inMemory ? ' (in-memory)' : ' with WAL mode'}`);
+        logger.info(`DatabaseManager: Connected to ${this.dbPath}${this.inMemory ? ' (in-memory)' : ' with WAL mode'}`);
 
         schemaMigrations.runSchemaMigrations(this.db);
     }
@@ -71,7 +74,7 @@ export class DatabaseManager {
         if (this.db) {
             this.db.close();
             this.db = null;
-            console.log('DatabaseManager: Connection closed');
+            logger.info('DatabaseManager: Connection closed');
         }
     }
 

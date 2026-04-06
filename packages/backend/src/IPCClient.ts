@@ -1,5 +1,8 @@
 import { IPCMessage, type AppSource } from '@vibetech/shared-ipc';
 import WebSocket from 'ws';
+import { createLogger } from '@vibetech/logger';
+
+const logger = createLogger('IPCClient');
 
 export class IPCClient {
   private ws: WebSocket | null = null;
@@ -17,11 +20,11 @@ export class IPCClient {
   }
 
   public connect(): void {
-    console.log(`Connecting to IPC Bridge at ${this.url}...`);
+    logger.info(`Connecting to IPC Bridge at ${this.url}...`);
     this.ws = new WebSocket(this.url);
 
     this.ws.on('open', () => {
-      console.log('Connected to IPC Bridge');
+      logger.info('Connected to IPC Bridge');
       this.reconnectAttempts = 0;
     });
 
@@ -30,19 +33,19 @@ export class IPCClient {
         const message: IPCMessage = JSON.parse(data.toString());
         void this.messageHandler(message);
       } catch (error) {
-        console.error('Failed to parse IPC message', error);
+        logger.error('Failed to parse IPC message', undefined, error instanceof Error ? error : new Error(String(error)));
       }
     });
 
     this.ws.on('close', () => {
-      console.log('Disconnected from IPC Bridge');
+      logger.info('Disconnected from IPC Bridge');
       if (this.shouldReconnect) {
         this.scheduleReconnect();
       }
     });
 
     this.ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
+      logger.error('WebSocket error:', undefined, error instanceof Error ? error : new Error(String(error)));
     });
   }
 
@@ -51,18 +54,18 @@ export class IPCClient {
       const msgWithSource = { ...message, source: this.source };
       this.ws.send(JSON.stringify(msgWithSource));
     } else {
-      console.warn('Cannot send message: Disconnected');
+      logger.warn('Cannot send message: Disconnected');
     }
   }
 
   private scheduleReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('Max reconnect attempts reached. Exiting.');
+      logger.error('Max reconnect attempts reached. Exiting.');
       process.exit(1);
     }
 
     const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
-    console.log(`Reconnecting in ${delay}ms...`);
+    logger.info(`Reconnecting in ${delay}ms...`);
 
     setTimeout(() => {
       this.reconnectAttempts++;

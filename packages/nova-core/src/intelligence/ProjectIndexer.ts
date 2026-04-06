@@ -1,7 +1,10 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { createLogger } from '@vibetech/logger';
 import { DatabaseManager } from '../persistence/DatabaseManager.js';
+
+const logger = createLogger('ProjectIndexer');
 
 export class ProjectIndexer {
     private ignoreList = ['node_modules', '.git', '_archived', 'dist', 'build', '.venv', '.pnpm'];
@@ -14,12 +17,12 @@ export class ProjectIndexer {
     /**
      * Performs a recursive crawl of C:\dev to build Nova's world-view.
      */
-    public async indexWorkspace(rootPath: string = 'C:\\dev'): Promise<void> {
-        console.log(`[Indexer] Starting full crawl of ${rootPath}...`);
+    public async indexWorkspace(rootPath: string = process.env.WORKSPACE_ROOT ?? 'C:\\dev'): Promise<void> {
+        logger.info(`[Indexer] Starting full crawl of ${rootPath}...`);
         this.db.initialize();
 
         const files = await this.recursiveScan(rootPath);
-        console.log(`[Indexer] Found ${files.length} files. Processing...`);
+        logger.info(`[Indexer] Found ${files.length} files. Processing...`);
 
         const dbConn = this.db.getConnection();
         const insertFile = dbConn.prepare(`
@@ -59,11 +62,11 @@ export class ProjectIndexer {
 
             processed += validData.length;
             if (processed % 100 === 0) {
-                console.log(`[Indexer] Indexed ${processed}/${files.length} files...`);
+                logger.debug(`[Indexer] Indexed ${processed}/${files.length} files...`);
             }
         }
 
-        console.log(`[Indexer] Complete. Indexed ${processed} files.`);
+        logger.info(`[Indexer] Complete. Indexed ${processed} files.`);
     }
 
     /**
@@ -98,20 +101,20 @@ export class ProjectIndexer {
                     size_bytes: stats.size
                 });
 
-                console.log(`[Indexer] Updated: ${filePath}`);
+                logger.debug(`[Indexer] Updated: ${filePath}`);
 
             } catch (e: unknown) {
                 const err = e as NodeJS.ErrnoException;
                 if (err.code === 'ENOENT') {
                     const stmt = dbConn.prepare('DELETE FROM project_files WHERE file_path = ?');
                     stmt.run(filePath);
-                    console.log(`[Indexer] Removed: ${filePath}`);
+                    logger.debug(`[Indexer] Removed: ${filePath}`);
                 } else {
-                    console.error(`[Indexer] Error updating ${filePath}:`, e);
+                    logger.error(`[Indexer] Error updating ${filePath}`, { filePath }, e instanceof Error ? e : undefined);
                 }
             }
         } catch (err) {
-            console.error(`[Indexer] DB Error updating ${filePath}:`, err);
+            logger.error(`[Indexer] DB Error updating ${filePath}`, { filePath }, err instanceof Error ? err : undefined);
         }
     }
 

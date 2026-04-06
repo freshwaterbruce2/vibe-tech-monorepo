@@ -3,14 +3,12 @@
  * Merges similar semantic memories to reduce redundancy
  */
 
+import { createLogger } from '@vibetech/logger';
 import type { MemoryManager } from '../core/MemoryManager.js';
 import type { SemanticMemory } from '../types/index.js';
 import { cosineSimilarity, deserializeEmbedding } from '../utils/math.js';
 
-const log = {
-  warn: (msg: string) => console.warn(`[MemoryConsolidator] ${msg}`),
-  info: (msg: string) => console.error(`[MemoryConsolidator] ${msg}`),
-};
+const logger = createLogger('MemoryConsolidator');
 
 export interface ConsolidationResult {
   merged: number;
@@ -96,12 +94,12 @@ export class MemoryConsolidator {
       try {
         const embeddingBuf = m.embedding as Buffer;
         if (!embeddingBuf || embeddingBuf.byteLength < 4) {
-          log.warn(`Skipping memory ${m.id} - empty or invalid embedding BLOB`);
+          logger.warn(`Skipping memory ${m.id} - empty or invalid embedding BLOB`);
           continue;
         }
         const parsedEmbedding = deserializeEmbedding(embeddingBuf);
         if (parsedEmbedding.length === 0) {
-          log.warn(`Skipping memory ${m.id} - zero-length embedding`);
+          logger.warn(`Skipping memory ${m.id} - zero-length embedding`);
           continue;
         }
         parsedMemories.push({
@@ -116,7 +114,7 @@ export class MemoryConsolidator {
           metadata: m.metadata ? JSON.parse(m.metadata) : undefined,
         });
       } catch (error) {
-        log.warn(`Skipping memory ${m.id} - embedding deserialization failed: ${error}`);
+        logger.warn(`Skipping memory ${m.id} - embedding deserialization failed: ${error}`);
         continue;
       }
     }
@@ -222,7 +220,7 @@ export class MemoryConsolidator {
           Date.now(),
         );
 
-        log.info(`Merged memory ${remove.id} into ${keep.id} (${(similarity * 100).toFixed(1)}%)`);
+        logger.info(`Merged memory ${remove.id} into ${keep.id} (${(similarity * 100).toFixed(1)}%)`);
       }
 
       result.merged++;

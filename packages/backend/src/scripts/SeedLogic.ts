@@ -1,5 +1,8 @@
 import { VectorStore } from '../services/VectorStore.js';
 import { EmbeddingService } from '../services/EmbeddingService.js';
+import { createLogger } from '@vibetech/logger';
+
+const logger = createLogger('SeedLogic');
 
 const CORE_RULES = [
   "Use WAL mode for all SQLite connections on the D: drive to enable concurrency.",
@@ -13,7 +16,7 @@ async function seed() {
   const embedder = new EmbeddingService();
   await embedder.init();
 
-  console.log("🚀 Seeding Justice Rules to D:/vibe-tech/...");
+  logger.info('Seeding Justice Rules to D:/vibe-tech/...');
 
   for (const rule of CORE_RULES) {
     const vector = await embedder.generate(rule);
@@ -27,8 +30,11 @@ async function seed() {
     };
 
     const id = await store.addPattern(pattern, vector); 
-    console.log(`✅ Indexed (ID: ${id}): "${rule.substring(0, 30)}..."`);
+    logger.info(`Indexed (ID: ${id}): "${rule.substring(0, 30)}..."`);
   }
 }
 
-seed().catch(console.error);
+seed().catch((error) => {
+  logger.error('Fatal error running seed:', undefined, error instanceof Error ? error : new Error(String(error)));
+  process.exit(1);
+});

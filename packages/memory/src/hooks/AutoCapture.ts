@@ -3,7 +3,10 @@
  * Hooks into session lifecycle to auto-record episodic memories
  */
 
+import { createLogger } from '@vibetech/logger';
 import type { MemoryManager } from '../core/MemoryManager.js';
+
+const logger = createLogger('AutoCapture');
 
 export interface CaptureConfig {
   /** Capture session start/end events */
@@ -57,7 +60,7 @@ export class AutoCapture {
       },
     });
 
-    console.error(`[AutoCapture] Session ${this.sessionId} started`);
+    logger.info(`Session ${this.sessionId} started`);
   }
 
   /**
@@ -82,7 +85,7 @@ export class AutoCapture {
       },
     });
 
-    console.error(`[AutoCapture] Session ${this.sessionId} ended (${durationMin}m)`);
+    logger.info(`Session ${this.sessionId} ended (${durationMin}m)`);
   }
 
   /**
@@ -174,7 +177,7 @@ export class AutoCapture {
   /**
    * Capture tool/command usage
    */
-  async captureToolUse(toolName: string, args: any, result: 'success' | 'failure', metadata?: Record<string, any>): Promise<void> {
+  async captureToolUse(toolName: string, args: unknown, result: 'success' | 'failure', metadata?: Record<string, unknown>): Promise<void> {
     const query = `Tool used: ${toolName}`;
     const response = `${result === 'success' ? 'Successfully' : 'Failed to'} execute ${toolName}`;
 

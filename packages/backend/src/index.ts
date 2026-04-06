@@ -2,6 +2,9 @@ import { IPCClient } from './IPCClient.js';
 import { VectorStore } from './services/VectorStore.js';
 import { EmbeddingService } from './services/EmbeddingService.js';
 import { IPCMessageType, type CommandResultPayload } from '@vibetech/shared-ipc';
+import { createLogger } from '@vibetech/logger';
+
+const logger = createLogger('index');
 
 const vectorStore = new VectorStore();
 const embeddingService = new EmbeddingService();
@@ -9,7 +12,7 @@ const SOURCE = 'vibe' as const;
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('📦 Closing D:/ drive database...');
+  logger.info('Closing D:/ drive database...');
   vectorStore.close();
   process.exit(0);
 });
@@ -25,7 +28,7 @@ const client = new IPCClient(SOURCE, 'ws://localhost:5004', async (message) => {
   }
 
   try {
-    console.log(`Executing brainscan:search for query: ${payload.text.substring(0, 50)}...`);
+    logger.debug(`Executing brainscan:search for query: ${payload.text.substring(0, 50)}...`);
     const text = payload.text;
     const metadata = message.metadata ?? {};
 
@@ -69,7 +72,7 @@ const client = new IPCClient(SOURCE, 'ws://localhost:5004', async (message) => {
       version: '1.0.0',
     });
   } catch (error) {
-    console.error('Error executing brainscan:search:', error);
+    logger.error('Error executing brainscan:search:', undefined, error instanceof Error ? error : new Error(String(error)));
 
     const errorPayload: CommandResultPayload = {
       commandId: payload.commandId,
@@ -88,5 +91,5 @@ const client = new IPCClient(SOURCE, 'ws://localhost:5004', async (message) => {
   }
 });
 
-console.log('Starting Backend Brain Service...');
+logger.info('Starting Backend Brain Service...');
 client.connect();

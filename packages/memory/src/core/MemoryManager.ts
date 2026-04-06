@@ -1,4 +1,5 @@
 import type Database from 'better-sqlite3';
+import { createLogger } from '@vibetech/logger';
 import { MemoryDecay } from '../consolidation/MemoryDecay.js';
 import { DatabaseManager } from '../database/DatabaseManager.js';
 import { EmbeddingService } from '../embeddings/EmbeddingService.js';
@@ -57,6 +58,8 @@ export class LatencyTracker {
  * Central memory system manager
  * Coordinates episodic, semantic, and procedural stores
  */
+const logger = createLogger('MemoryManager');
+
 export class MemoryManager {
   private dbManager: DatabaseManager;
   private embeddingService: EmbeddingService;
@@ -101,11 +104,11 @@ export class MemoryManager {
     this.procedural = new ProceduralStore(db);
     this.decay = new MemoryDecay();
 
-    console.error('Memory system initialized');
-    console.error(`- Database: ${this.config.dbPath}`);
-    console.error(`- Embedding provider: ${this.embeddingService.getProvider()}`);
-    console.error(`- Embedding dimension: ${this.embeddingService.getDimension()}d`);
-    console.error(
+    logger.info('Memory system initialized');
+    logger.info(`- Database: ${this.config.dbPath}`);
+    logger.info(`- Embedding provider: ${this.embeddingService.getProvider()}`);
+    logger.info(`- Embedding dimension: ${this.embeddingService.getDimension()}d`);
+    logger.info(
       `- Vector extension: ${this.dbManager.isVectorExtensionLoaded() ? 'loaded' : 'fallback'}`,
     );
   }

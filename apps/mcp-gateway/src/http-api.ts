@@ -1,6 +1,9 @@
 import { createServer, IncomingMessage, ServerResponse } from 'node:http';
+import { createLogger } from '@vibetech/logger';
 import type { GatewayConfig } from './config.js';
 import type { McpClientManager } from './mcp-client.js';
+
+const logger = createLogger('HttpApi');
 
 interface CallBody {
     server: string;
@@ -125,13 +128,13 @@ export function startHttpApi(
             json(res, 404, { error: `Not found: ${req.method} ${path}` });
         } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            console.error(`[http-api] Error handling ${req.method} ${path}: ${message}`);
+            logger.error(`Error handling ${req.method} ${path}: ${message}`);
             json(res, 500, { error: message });
         }
     }
 
     server.listen(port, () => {
-        console.log(`[http-api] HTTP API listening on http://localhost:${port}`);
+        logger.info(`HTTP API listening on http://localhost:${port}`);
     });
 
     return server;

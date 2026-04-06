@@ -1,5 +1,8 @@
 import chokidar, { type FSWatcher } from 'chokidar';
+import { createLogger } from '@vibetech/logger';
 import { ProjectIndexer } from './ProjectIndexer.js';
+
+const logger = createLogger('AutoUpdateSentinel');
 
 export class AutoUpdateSentinel {
     private watcher: FSWatcher | null = null;
@@ -13,7 +16,7 @@ export class AutoUpdateSentinel {
      * Watches C:\dev for real-time changes.
      * Optimized for Windows 11 performance.
      */
-    public start(watchPath: string = 'C:\\dev'): void {
+    public start(watchPath: string = process.env.WORKSPACE_ROOT ?? 'C:\\dev'): void {
         this.watcher = chokidar.watch(watchPath, {
             ignored: [
                 /^\./,
@@ -40,7 +43,7 @@ export class AutoUpdateSentinel {
                 void this.handleEvent('deleted', filePath);
             });
 
-        console.log(`[Sentinel] Mission Control is now monitoring: ${watchPath}`);
+        logger.info(`[Sentinel] Mission Control is now monitoring: ${watchPath}`);
     }
 
     public stop(): void {
@@ -48,9 +51,9 @@ export class AutoUpdateSentinel {
             const watcher = this.watcher;
             this.watcher = null;
             void watcher.close().catch((error: unknown) => {
-                console.error('[Sentinel] Error while stopping watcher:', error);
+                logger.error('[Sentinel] Error while stopping watcher', undefined, error instanceof Error ? error : undefined);
             });
-            console.log('[Sentinel] Stopped monitoring');
+            logger.info('[Sentinel] Stopped monitoring');
         }
     }
 
@@ -66,7 +69,7 @@ export class AutoUpdateSentinel {
     }
 
     private async handleEvent(type: string, filePath: string): Promise<void> {
-        console.log(`[Sentinel] File ${type}: ${filePath}`);
+        logger.debug(`[Sentinel] File ${type}: ${filePath}`);
         
         if (this.shouldIgnore(filePath)) {
             return;

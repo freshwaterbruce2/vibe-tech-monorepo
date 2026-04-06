@@ -15,6 +15,9 @@
 import Database from 'better-sqlite3';
 import { existsSync, statSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
+import { createLogger } from '@vibetech/logger';
+
+const logger = createLogger('AgentLearningRAG');
 
 interface QueryPatternsOptions {
   agentName?: string;
@@ -78,7 +81,7 @@ interface CountRow {
 
 export class AgentLearningRAG {
   private db: Database.Database;
-  private readonly DB_PATH = 'D:\\databases\\nova_shared.db';
+  private readonly DB_PATH = process.env.NOVA_SHARED_DB_PATH ?? 'D:\\databases\\nova_shared.db';
 
   constructor(dbPath?: string) {
     const path = dbPath ?? this.DB_PATH;
@@ -357,34 +360,34 @@ if (isMainModule()) {
   void (async () => {
     const rag = new AgentLearningRAG();
 
-    console.log('=== Database Health ===');
+    logger.info('=== Database Health ===');
     const health = await rag.getHealthMetrics();
-    console.log(JSON.stringify(health, null, 2));
+    logger.info(JSON.stringify(health, null, 2));
 
-    console.log('\n=== Success Patterns (webapp-expert) ===');
+    logger.info('\n=== Success Patterns (webapp-expert) ===');
     const patterns = await rag.queryPatterns({
       taskType: 'auto_fix_cycle',
       limit: 5,
       minConfidence: 0.8,
     });
-    console.log(JSON.stringify(patterns, null, 2));
+    logger.info(JSON.stringify(patterns, null, 2));
 
-    console.log('\n=== Failure Patterns ===');
+    logger.info('\n=== Failure Patterns ===');
     const failures = await rag.queryFailures({ limit: 5 });
-    console.log(JSON.stringify(failures, null, 2));
+    logger.info(JSON.stringify(failures, null, 2));
 
-    console.log('\n=== Code Patterns (TypeScript) ===');
+    logger.info('\n=== Code Patterns (TypeScript) ===');
     const code = await rag.queryCodePatterns({
       language: 'typescript',
       limit: 3,
     });
-    console.log(JSON.stringify(code, null, 2));
+    logger.info(JSON.stringify(code, null, 2));
 
-    console.log('\n=== Execution Stats (Last 30 days) ===');
+    logger.info('\n=== Execution Stats (Last 30 days) ===');
     const stats = await rag.getExecutionStats({
       days: 30,
     });
-    console.log(JSON.stringify(stats, null, 2));
+    logger.info(JSON.stringify(stats, null, 2));
 
     rag.close();
   })();

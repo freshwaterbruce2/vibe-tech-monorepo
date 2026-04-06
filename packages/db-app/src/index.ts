@@ -24,7 +24,7 @@ export class AppDatabase {
 
         this.db = new Database(dbPath, {
             readonly: config.readOnly ?? false,
-            verbose: config.verbose ? console.log : undefined,
+            verbose: config.verbose ? (msg: unknown) => process.stdout.write(`[db-app] ${String(msg)}\n`) : undefined,
         });
 
         this.initializeDatabase();

@@ -3,7 +3,10 @@ import type {
     AgentTaskDispatchPayload,
     McpToolCallPayload,
 } from '@vibetech/shared-ipc';
+import { createLogger } from '@vibetech/logger';
 import type { McpClientManager } from './mcp-client.js';
+
+const logger = createLogger('TaskHandler');
 
 /**
  * Processes incoming agent tasks by executing MCP tool calls
@@ -29,8 +32,8 @@ export class TaskHandler {
         const results: AgentStepResult[] = [];
         let hasFailures = false;
 
-        console.log(
-            `[task-handler] Dispatching task ${payload.taskId}: "${payload.description}" (${payload.steps.length} steps)`
+        logger.info(
+            `Dispatching task ${payload.taskId}: "${payload.description}" (${payload.steps.length} steps)`
         );
 
         for (let i = 0; i < payload.steps.length; i++) {
@@ -71,8 +74,8 @@ export class TaskHandler {
         const allFailed = results.every((r) => !r.success);
         const status = allFailed ? 'failed' : hasFailures ? 'partial' : 'success';
 
-        console.log(
-            `[task-handler] Task ${payload.taskId} ${status} in ${durationMs}ms (${results.filter((r) => r.success).length}/${results.length} steps ok)`
+        logger.info(
+            `Task ${payload.taskId} ${status} in ${durationMs}ms (${results.filter((r) => r.success).length}/${results.length} steps ok)`
         );
 
         return { status, results, durationMs };
@@ -89,8 +92,8 @@ export class TaskHandler {
     }> {
         const startMs = performance.now();
 
-        console.log(
-            `[task-handler] Tool call ${payload.callId}: ${payload.server}.${payload.tool}`
+        logger.info(
+            `Tool call ${payload.callId}: ${payload.server}.${payload.tool}`
         );
 
         const result = await this.mcpClient.callTool(

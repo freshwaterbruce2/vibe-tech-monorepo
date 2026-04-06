@@ -1,6 +1,9 @@
 import type Database from 'better-sqlite3';
 import { createHash } from 'node:crypto';
+import { createLogger } from '@vibetech/logger';
 import type { EmbeddingProvider, MemoryConfig } from '../types/index.js';
+
+const logger = createLogger('EmbeddingService');
 
 interface TransformerPipelineResult {
   data: ArrayLike<number>;
@@ -57,9 +60,9 @@ export class EmbeddingService {
       }
 
       this.provider = 'openrouter';
-      console.error(`Using OpenRouter with ${this.model} (${this.dimension}d embeddings)`);
+      logger.info(`Using OpenRouter with ${this.model} (${this.dimension}d embeddings)`);
     } catch (error) {
-      console.warn('[EmbeddingService] OpenRouter proxy not available:', error);
+      logger.warn('[EmbeddingService] OpenRouter proxy not available:', { error: String(error) });
       if (this.fallbackEnabled) {
         this.activateTransformersFallback();
       } else {
@@ -73,16 +76,16 @@ export class EmbeddingService {
    * Centralised to avoid duplicated state-transition logic.
    */
   private activateTransformersFallback(): void {
-    console.error('[EmbeddingService] Falling back to Transformers.js (384d, OFFLINE MODE)');
+    logger.warn('[EmbeddingService] Falling back to Transformers.js (384d, OFFLINE MODE)');
     const previousDimension = this.dimension;
     this.provider = 'transformers';
     this.dimension = 384;
     if (previousDimension !== 384) {
       this._dimensionMismatch = true;
-      console.error(
+      logger.warn(
         `[EmbeddingService] WARNING: Dimension changed from ${previousDimension}d to 384d`,
       );
-      console.error(
+      logger.warn(
         `[EmbeddingService] Existing ${previousDimension}d vectors will NOT be searchable`,
       );
     }
@@ -236,9 +239,8 @@ export class EmbeddingService {
 
         if (attempt < MAX_RETRIES - 1) {
           const delay = RETRY_DELAY_MS * Math.pow(2, attempt);
-          console.error(
-            `[EmbeddingService] Attempt ${attempt + 1} failed, retrying in ${delay}ms:`,
-            (error as Error).message,
+          logger.debug(
+            `[EmbeddingService] Attempt ${attempt + 1} failed, retrying in ${delay}ms: ${(error as Error).message}`,
           );
           await new Promise((resolve) => setTimeout(resolve, delay));
         }
@@ -247,7 +249,7 @@ export class EmbeddingService {
 
     // All retries exhausted — try fallback
     if (this.fallbackEnabled) {
-      console.error('[EmbeddingService] OpenRouter failed after retries, falling back to Transformers.js');
+      logger.warn('[EmbeddingService] OpenRouter failed after retries, falling back to Transformers.js');
       this.activateTransformersFallback();
       return this.embedWithTransformers(text);
     }
@@ -282,7 +284,7 @@ export class EmbeddingService {
       // Convert Tensor to array
       return Array.from(output.data);
     } catch (error) {
-      console.error('Transformers.js embedding failed:', error);
+      logger.error('Transformers.js embedding failed:', undefined, error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }
