@@ -8,13 +8,15 @@
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist",
+    "rootDir": "src",
+    "paths": {},
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*", "vitest.config.ts"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"],
   "extends": "../../tsconfig.base.json"
 }

@@ -1,7 +1,10 @@
 import type Database from 'better-sqlite3';
+import { createLogger } from '@vibetech/logger';
 import type { EmbeddingService } from '../embeddings/EmbeddingService.js';
 import type { SearchResult, SemanticMemory } from '../types/index.js';
 import { cosineSimilarity, deserializeEmbedding } from '../utils/math.js';
+
+const logger = createLogger('SemanticStore');
 
 interface SemanticRow {
   id: number;
@@ -119,7 +122,7 @@ export class SemanticStore {
   async search(queryText: string, limit = 5, offset = 0): Promise<SearchResult<SemanticMemory>[]> {
     // Phase 4: Dimension guard — refuse to search with mismatched dimensions
     if (this.embedder.hasDimensionMismatch()) {
-      console.error(
+      logger.error(
         '[SemanticStore] DIMENSION_MISMATCH: Embedding provider changed dimensions. ' +
         'Existing vectors are incompatible. Restore primary provider or run re-embedding migration.',
       );

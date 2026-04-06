@@ -5,14 +5,14 @@ declare const envSchema: z.ZodObject<{
     LEARNING_SYSTEM_DIR: z.ZodDefault<z.ZodString>;
     IPC_WS_URL: z.ZodDefault<z.ZodString>;
     NODE_ENV: z.ZodDefault<z.ZodEnum<{
-        test: "test";
         development: "development";
         production: "production";
+        test: "test";
     }>>;
     APP_ENV: z.ZodDefault<z.ZodEnum<{
-        test: "test";
         development: "development";
         production: "production";
+        test: "test";
     }>>;
     LOG_LEVEL: z.ZodDefault<z.ZodEnum<{
         error: "error";
@@ -28,8 +28,8 @@ export declare const env: {
     LEARNING_DB_PATH: string;
     LEARNING_SYSTEM_DIR: string;
     IPC_WS_URL: string;
-    NODE_ENV: "test" | "development" | "production";
-    APP_ENV: "test" | "development" | "production";
+    NODE_ENV: "development" | "production" | "test";
+    APP_ENV: "development" | "production" | "test";
     LOG_LEVEL: "error" | "warn" | "info" | "debug";
 };
 export declare const getDatabasePath: (type: "app" | "learning") => string;
