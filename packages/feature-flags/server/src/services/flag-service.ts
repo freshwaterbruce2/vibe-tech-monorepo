@@ -1,5 +1,6 @@
 import type { FeatureFlag } from '@vibetech/feature-flags-core';
 import { SQLiteStorage } from '../storage/sqlite.js';
+import type { AuditLogRow } from '../storage/sqlite.js';
 
 export class FlagService {
   private storage: SQLiteStorage;
@@ -63,7 +64,7 @@ export class FlagService {
     return flag;
   }
 
-  getAuditLog(flagId?: string, limit = 100): any[] {
+  getAuditLog(flagId?: string, limit = 100): AuditLogRow[] {
     return this.storage.getAuditLog(flagId, limit);
   }
 

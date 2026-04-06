@@ -1,6 +1,9 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import type { Server } from 'http';
 import type { FeatureFlag, KillSwitchEvent, WSMessage } from '@vibetech/feature-flags-core';
+import { createLogger } from '@vibetech/logger';
+
+const logger = createLogger('RealTimeService');
 
 interface ConnectedClient {
   ws: WebSocket;
@@ -35,24 +38,24 @@ export class RealTimeService {
         lastPing: new Date(),
       });
 
-      console.log(`[WS] Client connected: ${clientId} (env: ${environment}, app: ${appName})`);
+      logger.info(`[WS] Client connected: ${clientId} (env: ${environment}, app: ${appName})`);
 
       ws.on('message', (data) => {
         try {
           const message = JSON.parse(data.toString());
           this.handleMessage(clientId, message);
         } catch (error) {
-          console.error('[WS] Failed to parse message:', error);
+          logger.error('[WS] Failed to parse message:', {}, error instanceof Error ? error : new Error(String(error)));
         }
       });
 
       ws.on('close', () => {
         this.clients.delete(clientId);
-        console.log(`[WS] Client disconnected: ${clientId}`);
+        logger.info(`[WS] Client disconnected: ${clientId}`);
       });
 
       ws.on('error', (error) => {
-        console.error(`[WS] Client error (${clientId}):`, error);
+        logger.error(`[WS] Client error (${clientId}):`, {}, error instanceof Error ? error : new Error(String(error)));
         this.clients.delete(clientId);
       });
 
@@ -65,7 +68,7 @@ export class RealTimeService {
     });
   }
 
-  private handleMessage(clientId: string, message: any): void {
+  private handleMessage(clientId: string, message: Record<string, unknown>): void {
     const client = this.clients.get(clientId);
     if (!client) return;
 
@@ -75,11 +78,11 @@ export class RealTimeService {
         break;
       case 'subscribe':
         // Update client environment/app if provided
-        if (message.environment) client.environment = message.environment;
-        if (message.appName) client.appName = message.appName;
+        if (typeof message.environment === 'string') client.environment = message.environment;
+        if (typeof message.appName === 'string') client.appName = message.appName;
         break;
       default:
-        console.log(`[WS] Unknown message type: ${message.type}`);
+        logger.debug(`[WS] Unknown message type: ${String(message.type)}`);
     }
   }
 
@@ -108,7 +111,7 @@ export class RealTimeService {
       this.broadcast(message);
     }
 
-    console.log(`[WS] Kill switch broadcast: ${event.flagKey} (${event.action})`);
+    logger.info(`[WS] Kill switch broadcast: ${event.flagKey} (${event.action})`);
   }
 
   broadcastBulkUpdate(flags: FeatureFlag[]): void {
@@ -154,7 +157,7 @@ export class RealTimeService {
         // Disconnect clients that haven't responded in 60 seconds
         const timeSinceLastPing = now.getTime() - client.lastPing.getTime();
         if (timeSinceLastPing > 60000) {
-          console.log(`[WS] Client ${clientId} timed out, disconnecting`);
+          logger.debug(`[WS] Client ${clientId} timed out, disconnecting`);
           client.ws.terminate();
           this.clients.delete(clientId);
           continue;
@@ -167,7 +170,7 @@ export class RealTimeService {
     }, 30000);
   }
 
-  getConnectedClients(): { count: number; clients: any[] } {
+  getConnectedClients(): { count: number; clients: { id: string; environment: string | undefined; appName: string | undefined; connectedAt: string; lastPing: string }[] } {
     const clients = Array.from(this.clients.entries()).map(([id, client]) => ({
       id,
       environment: client.environment,

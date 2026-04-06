@@ -3,6 +3,35 @@ import type { FeatureFlag } from '@vibetech/feature-flags-core';
 
 const DEFAULT_DB_PATH = process.env.FF_DB_PATH ?? 'D:/databases/feature_flags.db';
 
+interface FlagRow {
+  id: string;
+  key: string;
+  name: string;
+  description: string | null;
+  type: string;
+  enabled: number;
+  environments: string;
+  rules: string;
+  kill_switch: string | null;
+  variants: string | null;
+  tags: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+}
+
+export interface AuditLogRow {
+  id: number;
+  flag_id: string;
+  flag_key: string;
+  action: string;
+  old_value: string | null;
+  new_value: string | null;
+  changed_by: string;
+  changed_at: string;
+  reason: string | null;
+}
+
 export class SQLiteStorage {
   private db: Database.Database;
 
@@ -52,32 +81,32 @@ export class SQLiteStorage {
   }
 
   getAllFlags(): FeatureFlag[] {
-    const rows = this.db.prepare('SELECT * FROM feature_flags ORDER BY key').all();
-    return rows.map((row: any) => this.rowToFlag(row));
+    const rows = this.db.prepare('SELECT * FROM feature_flags ORDER BY key').all() as FlagRow[];
+    return rows.map((row) => this.rowToFlag(row));
   }
 
   getFlagByKey(key: string): FeatureFlag | null {
     const row = this.db.prepare('SELECT * FROM feature_flags WHERE key = ?').get(key);
-    return row ? this.rowToFlag(row as any) : null;
+    return row ? this.rowToFlag(row as FlagRow) : null;
   }
 
   getFlagById(id: string): FeatureFlag | null {
     const row = this.db.prepare('SELECT * FROM feature_flags WHERE id = ?').get(id);
-    return row ? this.rowToFlag(row as any) : null;
+    return row ? this.rowToFlag(row as FlagRow) : null;
   }
 
   getKillSwitches(): FeatureFlag[] {
     const rows = this.db.prepare(
       "SELECT * FROM feature_flags WHERE type = 'kill_switch'"
-    ).all();
-    return rows.map((row: any) => this.rowToFlag(row));
+    ).all() as FlagRow[];
+    return rows.map((row) => this.rowToFlag(row));
   }
 
   getActiveKillSwitches(): FeatureFlag[] {
     const rows = this.db.prepare(
       "SELECT * FROM feature_flags WHERE type = 'kill_switch' AND enabled = 1"
-    ).all();
-    return rows.map((row: any) => this.rowToFlag(row));
+    ).all() as FlagRow[];
+    return rows.map((row) => this.rowToFlag(row));
   }
 
   createFlag(flag: FeatureFlag): FeatureFlag {
@@ -117,7 +146,7 @@ export class SQLiteStorage {
     if (!existing) return null;
 
     const fields: string[] = [];
-    const values: any[] = [];
+    const values: (string | number | null)[] = [];
 
     if (updates.name !== undefined) {
       fields.push('name = ?');
@@ -178,23 +207,23 @@ export class SQLiteStorage {
     return this.updateFlag(id, { enabled }, changedBy);
   }
 
-  getAuditLog(flagId?: string, limit = 100): any[] {
+  getAuditLog(flagId?: string, limit = 100): AuditLogRow[] {
     if (flagId) {
       return this.db.prepare(
         'SELECT * FROM flag_audit_log WHERE flag_id = ? ORDER BY changed_at DESC LIMIT ?'
-      ).all(flagId, limit);
+      ).all(flagId, limit) as AuditLogRow[];
     }
     return this.db.prepare(
       'SELECT * FROM flag_audit_log ORDER BY changed_at DESC LIMIT ?'
-    ).all(limit);
+    ).all(limit) as AuditLogRow[];
   }
 
   private logAudit(
     flagId: string,
     flagKey: string,
     action: string,
-    oldValue: any,
-    newValue: any,
+    oldValue: FeatureFlag | null,
+    newValue: FeatureFlag | null,
     changedBy: string,
     reason?: string
   ): void {
@@ -212,13 +241,13 @@ export class SQLiteStorage {
     );
   }
 
-  private rowToFlag(row: any): FeatureFlag {
+  private rowToFlag(row: FlagRow): FeatureFlag {
     return {
       id: row.id,
       key: row.key,
       name: row.name,
       description: row.description ?? '',
-      type: row.type,
+      type: row.type as import('@vibetech/feature-flags-core').FlagType,
       enabled: row.enabled === 1,
       environments: JSON.parse(row.environments ?? '{}'),
       rules: JSON.parse(row.rules ?? '[]'),
@@ -227,7 +256,7 @@ export class SQLiteStorage {
       tags: JSON.parse(row.tags ?? '[]'),
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-      createdBy: row.created_by,
+      createdBy: row.created_by ?? '',
     };
   }
 

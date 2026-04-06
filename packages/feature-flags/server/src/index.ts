@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { createServer } from 'http';
+import { createLogger } from '@vibetech/logger';
 
 import { SQLiteStorage } from './storage/sqlite.js';
 import { FlagService } from './services/flag-service.js';
@@ -10,6 +11,8 @@ import { EvaluationService } from './services/evaluation.js';
 import { KillSwitchService } from './services/kill-switch.js';
 import { RealTimeService } from './websocket/real-time.js';
 import { createRoutes } from './api/routes.js';
+
+const logger = createLogger('FeatureFlagServer');
 
 export interface ServerConfig {
   port?: number;
@@ -66,13 +69,13 @@ export class FeatureFlagServer {
   private setupEventListeners(): void {
     // Broadcast flag changes via WebSocket
     this.flagService.setChangeListener((flag, action) => {
-      console.log(`[Flag] ${action}: ${flag.key}`);
+      logger.info(`[Flag] ${action}: ${flag.key}`);
       this.realTimeService.broadcastFlagUpdate(flag);
     });
 
     // Broadcast kill switch events via WebSocket
     this.killSwitchService.setKillSwitchListener((event) => {
-      console.log(`[KillSwitch] ${event.action}: ${event.flagKey}`);
+      logger.info(`[KillSwitch] ${event.action}: ${event.flagKey}`);
       this.realTimeService.broadcastKillSwitch(event);
     });
   }
@@ -94,7 +97,7 @@ export class FeatureFlagServer {
       windowMs: this.config.rateLimit.windowMs,
       max: this.config.rateLimit.max,
       message: { error: 'Too many requests, please try again later' },
-    }) as any);
+    }));
 
     // Body parsing
     this.app.use(express.json({ limit: '1mb' }));
@@ -133,10 +136,10 @@ export class FeatureFlagServer {
   async start(): Promise<void> {
     return new Promise((resolve) => {
       this.server.listen(this.config.port, () => {
-        console.log(`Feature Flags Server running on port ${this.config.port}`);
-        console.log(`  REST API: http://localhost:${this.config.port}/api`);
-        console.log(`  WebSocket: ws://localhost:${this.config.port}/ws/flags`);
-        console.log(`  Database: ${this.config.dbPath}`);
+        logger.info(`Feature Flags Server running on port ${this.config.port}`);
+        logger.info(`  REST API: http://localhost:${this.config.port}/api`);
+        logger.info(`  WebSocket: ws://localhost:${this.config.port}/ws/flags`);
+        logger.info(`  Database: ${this.config.dbPath}`);
         resolve();
       });
     });
@@ -147,7 +150,7 @@ export class FeatureFlagServer {
       this.realTimeService.close();
       this.storage.close();
       this.server.close(() => {
-        console.log('Feature Flags Server stopped');
+        logger.info('Feature Flags Server stopped');
         resolve();
       });
     });
@@ -187,13 +190,13 @@ if (isMainModule) {
   const server = new FeatureFlagServer();
 
   server.start().catch((error) => {
-    console.error('Failed to start server:', error);
+    logger.error('Failed to start server:', {}, error instanceof Error ? error : new Error(String(error)));
     process.exit(1);
   });
 
   // Graceful shutdown
   process.on('SIGINT', async () => {
-    console.log('\nShutting down...');
+    logger.info('Shutting down...');
     await server.stop();
     process.exit(0);
   });

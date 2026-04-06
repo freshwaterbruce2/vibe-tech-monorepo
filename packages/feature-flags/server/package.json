@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@vibetech/feature-flags-core": "workspace:^0.1.0",
+    "@vibetech/logger": "workspace:^1.0.0",
     "better-sqlite3": "12.6.2",
     "cors": "^2.8.6",
     "express": "^5.2.1",

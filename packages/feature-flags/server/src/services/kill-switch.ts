@@ -1,6 +1,9 @@
 import type { FeatureFlag, KillSwitchEvent, KillSwitchPriority } from '@vibetech/feature-flags-core';
 import { SQLiteStorage } from '../storage/sqlite.js';
 import { FlagService } from './flag-service.js';
+import { createLogger } from '@vibetech/logger';
+
+const logger = createLogger('KillSwitchService');
 
 export class KillSwitchService {
   private storage: SQLiteStorage;
@@ -59,8 +62,8 @@ export class KillSwitchService {
 
       // Webhook notification if configured
       if (flag.killSwitch?.notifyOnTrigger && flag.killSwitch?.webhookUrl) {
-        this.sendWebhook(flag.killSwitch.webhookUrl, event).catch((err) => {
-          console.error('Failed to send kill switch webhook:', err);
+        this.sendWebhook(flag.killSwitch.webhookUrl, event).catch((err: unknown) => {
+          logger.error('Failed to send kill switch webhook:', {}, err instanceof Error ? err : new Error(String(err)));
         });
       }
 
@@ -120,7 +123,7 @@ export class KillSwitchService {
         }),
       });
     } catch (error) {
-      console.error('Webhook failed:', error);
+      logger.error('Webhook failed:', {}, error instanceof Error ? error : new Error(String(error)));
     }
   }
 }

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import type { EvaluationContext, Environment } from '@vibetech/feature-flags-core';
+import type { EvaluationContext, Environment, FeatureFlag, EvaluationResult } from '@vibetech/feature-flags-core';
 import { FlagService } from '../services/flag-service.js';
 import { EvaluationService } from '../services/evaluation.js';
 import { KillSwitchService } from '../services/kill-switch.js';
@@ -136,7 +136,7 @@ export function createRoutes(
         variants: result.data.variants ?? [],
         tags: result.data.tags ?? [],
         createdBy: userId,
-      } as any);
+      } as Omit<FeatureFlag, 'id' | 'createdAt' | 'updatedAt'>);
 
       return res.status(201).json(flag);
     } catch (_error) {
@@ -160,7 +160,7 @@ export function createRoutes(
       const userId = getUserId(req);
       const updated = flagService.updateFlag(
         id,
-        result.data as any,
+        result.data as Partial<FeatureFlag>,
         userId
       );
 
@@ -260,7 +260,7 @@ export function createRoutes(
       }
 
       const { flagKeys, context } = result.data;
-      let flags: Record<string, any>;
+      let flags: Record<string, EvaluationResult>;
 
       if (flagKeys && flagKeys.length > 0) {
         flags = evaluationService.evaluateMultiple(flagKeys, context as EvaluationContext);

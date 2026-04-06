@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { KillSwitchConfig, TargetingRule, Variant } from '@vibetech/feature-flags-core';
 
 const API_URL = 'http://localhost:3100/api';
 
@@ -10,9 +11,9 @@ export interface FeatureFlag {
   type: 'boolean' | 'percentage' | 'variant' | 'kill_switch';
   enabled: boolean;
   environments: Record<string, boolean>;
-  rules: any[];
-  killSwitch?: any;
-  variants: any[];
+  rules: TargetingRule[];
+  killSwitch?: KillSwitchConfig;
+  variants?: Variant[];
   tags: string[];
   createdAt: string;
   updatedAt: string;
