@@ -3,7 +3,7 @@
  * Handles all API requests with authentication
  */
 
-import type { UserStats } from '../types';
+import type { Activity, Purchase, Quest, Reward, User, UserAchievement, UserStats } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3003';
 
@@ -64,7 +64,7 @@ export const questApi = {
   /**
    * Get all active quests
    */
-  async getQuests(): Promise<{ success: boolean; quests: any[]; total: number }> {
+  async getQuests(): Promise<{ success: boolean; quests: Quest[]; total: number }> {
     return apiFetch('/api/quests');
   },
 
@@ -94,7 +94,7 @@ export const rewardApi = {
   /**
    * Get all active rewards
    */
-  async getRewards(): Promise<{ success: boolean; rewards: any[]; total: number }> {
+  async getRewards(): Promise<{ success: boolean; rewards: Reward[]; total: number }> {
     return apiFetch('/api/rewards');
   },
 
@@ -104,7 +104,7 @@ export const rewardApi = {
   async purchaseReward(reward_id: number): Promise<{
     success: boolean;
     message: string;
-    purchase: any;
+    purchase: Purchase;
   }> {
     return apiFetch('/api/rewards/purchase', {
       method: 'POST',
@@ -120,7 +120,7 @@ export const achievementApi = {
   /**
    * Get unlocked achievements
    */
-  async getAchievements(): Promise<{ success: boolean; achievements: any[] }> {
+  async getAchievements(): Promise<{ success: boolean; achievements: UserAchievement[] }> {
     return apiFetch('/api/achievements');
   },
 };
@@ -132,7 +132,7 @@ export const activityApi = {
   /**
    * Get activity feed
    */
-  async getActivity(): Promise<{ success: boolean; activity: any[] }> {
+  async getActivity(): Promise<{ success: boolean; activity: Activity[] }> {
     return apiFetch('/api/activity');
   },
 };
@@ -144,7 +144,7 @@ export const authApi = {
   /**
    * Get current user from token
    */
-  async getMe(): Promise<{ user: any }> {
+  async getMe(): Promise<{ user: User }> {
     return apiFetch('/api/auth/me');
   },
 };

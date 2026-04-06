@@ -4,7 +4,7 @@ export interface ServiceType {
   name: string;
   description: string;
   icon: {
-    type: any;
+    type: string;
     props: {
       className: string;
     }

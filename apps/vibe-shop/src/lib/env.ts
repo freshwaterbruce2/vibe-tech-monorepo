@@ -40,7 +40,7 @@ function validateEnv(): Env {
 
   if (!parsed.success) {
     const errors = parsed.error.issues.map(
-      (err: any) => `  - ${err.path.join('.')}: ${err.message}`,
+      (err: { path: PropertyKey[]; message: string }) => `  - ${err.path.join('.')}: ${err.message}`,
     );
 
     console.error('❌ Invalid environment variables:\n' + errors.join('\n'));

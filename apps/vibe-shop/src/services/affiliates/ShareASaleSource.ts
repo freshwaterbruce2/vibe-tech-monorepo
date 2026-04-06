@@ -63,7 +63,7 @@ export class ShareASaleSource implements ProductSource {
           const data = JSON.parse(text);
           if (!data || !data.products) return [];
 
-          return data.products.map((item: any) => this.mapToProduct(item)).filter(Boolean);
+          return data.products.map((item: unknown) => this.mapToProduct(item)).filter(Boolean);
       } catch (e) {
           console.warn('ShareASale returned non-JSON response. XML parsing not yet implemented.');
           console.debug('Response start:', text.substring(0, 100));
@@ -82,22 +82,33 @@ export class ShareASaleSource implements ProductSource {
     return createHash('sha256').update(data).digest('hex');
   }
 
-  private mapToProduct(item: any): Partial<Product> | null {
+  private mapToProduct(item: unknown): Partial<Product> | null {
     // Map ShareASale fields to our Product interface
-    if (!item.productId || !item.name) return null;
+    const p = item as {
+      productId?: string;
+      name?: string;
+      description?: string;
+      price?: string;
+      image?: string;
+      thumbnail?: string;
+      link?: string;
+      merchant?: string;
+      commission?: string;
+    };
+    if (!p.productId || !p.name) return null;
 
     return {
-      externalId: item.productId,
+      externalId: p.productId,
       network: 'shareasale',
-      name: item.name,
-      description: item.description || '',
-      price: parseFloat(item.price || '0'),
+      name: p.name,
+      description: p.description || '',
+      price: parseFloat(p.price || '0'),
       currency: 'USD', // Default
-      imageUrl: item.image || item.thumbnail || '',
-      affiliateLink: item.link || '',
-      merchantName: item.merchant || 'Unknown',
+      imageUrl: p.image || p.thumbnail || '',
+      affiliateLink: p.link || '',
+      merchantName: p.merchant || 'Unknown',
       isActive: true,
-      commissionRate: parseFloat(item.commission || '0')
+      commissionRate: parseFloat(p.commission || '0')
     };
   }
 

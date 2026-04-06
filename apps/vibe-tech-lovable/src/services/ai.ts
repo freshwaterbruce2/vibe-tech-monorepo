@@ -51,11 +51,11 @@ export class AIService {
         content: data.choices[0]?.message?.content ?? '// No code generated'
       };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('AI Generation Error:', error);
       return {
         content: '',
-        error: error.message ?? 'Failed to generate code'
+        error: (error as Error).message ?? 'Failed to generate code'
       };
     }
   }

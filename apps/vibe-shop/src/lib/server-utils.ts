@@ -115,7 +115,7 @@ async function fetchTrendingKeywords(category: string): Promise<string[]> {
 
     const keywords = data.shopping_results
       ?.slice(0, 5)
-      .map((item: any) => item.title) ?? [];
+      .map((item: unknown) => (item as { title: string }).title) ?? [];
 
     return keywords;
   } catch (error) {

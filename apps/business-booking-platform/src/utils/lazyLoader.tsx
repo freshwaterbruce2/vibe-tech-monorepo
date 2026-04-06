@@ -52,8 +52,7 @@ export function createLazyComponent<
 		}, 100);
 	}
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const WrappedComponent = (props: any) => (
+	const WrappedComponent = (props: Record<string, unknown>) => (
 		<Suspense
 			fallback={
 				options.fallback ? (
@@ -70,7 +69,8 @@ export function createLazyComponent<
 				)
 			}
 		>
-			<LazyComponent {...props} />
+			{/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+			<LazyComponent {...(props as any)} />
 		</Suspense>
 	);
 

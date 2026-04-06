@@ -4,6 +4,7 @@ import type { FieldValues, Path, UseFormReturn } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import type { ZodType } from 'zod';
 
 // Common validation schemas
 export const commonSchemas = {
@@ -94,8 +95,7 @@ export type SearchFormData = z.infer<typeof searchSchema>;
 
 // Generic form validation hook
 export function useFormValidation<T extends FieldValues>(
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	schema: any,
+	schema: ZodType<T, FieldValues>,
 	options?: {
 		onSubmit?: (data: T) => Promise<void> | void;
 		onError?: (errors: unknown) => void;

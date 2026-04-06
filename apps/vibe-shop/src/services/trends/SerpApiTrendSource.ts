@@ -57,13 +57,16 @@ export class SerpApiTrendSource implements TrendSource {
           return [];
       }
 
-      return data.daily_searches.map((item: any) => ({
-        keyword: item.query,
-        trendScore: this.parseTraffic(item.traffic),
-        categoryId: null, // We'd need to map this if provided
-        discoveredAt: new Date(),
-        lastChecked: new Date(),
-      }));
+      return data.daily_searches.map((item: unknown) => {
+        const s = item as { query: string; traffic: string };
+        return {
+          keyword: s.query,
+          trendScore: this.parseTraffic(s.traffic),
+          categoryId: null, // We'd need to map this if provided
+          discoveredAt: new Date(),
+          lastChecked: new Date(),
+        };
+      });
 
     } catch (error) {
       console.error('Failed to fetch trends from SerpApi:', error);
