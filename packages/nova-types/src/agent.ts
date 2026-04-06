@@ -4,6 +4,9 @@ export interface AgentState {
 	memory_count: number;
 	capabilities: string[];
 	current_project: string | null;
+	ipc_connected: boolean;
+	active_model: string;
+	chat_history: ChatMessage[];
 }
 
 export interface ChatMessage {

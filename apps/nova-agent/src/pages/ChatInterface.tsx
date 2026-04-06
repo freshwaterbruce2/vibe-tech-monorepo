@@ -35,8 +35,15 @@ const ChatInterface = () => {
 
 	// Full conversation history for gravity-claw (stateless API — we send it each time)
 	const gcHistoryRef = useRef<GCMessage[]>([]);
-	// Monotonic counter for streaming message keys (avoids Date.now() collisions)
+	// Monotonic timestamp: Date.now() + sub-ms counter to guarantee uniqueness
 	const msgCounterRef = useRef(0);
+	const nextTimestamp = () => {
+		const ts = Date.now();
+		// If wall-clock hasn't advanced, bump the counter to stay unique
+		if (ts <= msgCounterRef.current) return ++msgCounterRef.current;
+		msgCounterRef.current = ts;
+		return ts;
+	};
 
 	const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -51,7 +58,7 @@ const ChatInterface = () => {
 		async (text: string) => {
 			if (!text.trim() || isLoading) return;
 
-			const userMsg: ChatMessage = { role: "user", content: text, timestamp: Date.now() };
+			const userMsg: ChatMessage = { role: "user", content: text, timestamp: nextTimestamp() };
 			setMessages((prev) => [...prev, userMsg]);
 			setIsLoading(true);
 
@@ -64,7 +71,7 @@ const ChatInterface = () => {
 						{ role: "user", content: text },
 					];
 
-					const streamKey = ++msgCounterRef.current;
+					const streamKey = nextTimestamp();
 					setMessages((prev) => [
 						...prev,
 						{ role: "assistant", content: "", timestamp: streamKey },
@@ -90,7 +97,7 @@ const ChatInterface = () => {
 					responseText = await AgentService.chat(text);
 					setMessages((prev) => [
 						...prev,
-						{ role: "assistant", content: responseText, timestamp: Date.now() },
+						{ role: "assistant", content: responseText, timestamp: nextTimestamp() },
 					]);
 					gcHistoryRef.current = [
 						...gcHistoryRef.current,
@@ -111,7 +118,7 @@ const ChatInterface = () => {
 					{
 						role: "system",
 						content: `Error: ${err instanceof Error ? err.message : String(err)}`,
-						timestamp: Date.now(),
+						timestamp: nextTimestamp(),
 					},
 				]);
 			} finally {
@@ -142,7 +149,7 @@ const ChatInterface = () => {
 		const greeting: ChatMessage = {
 			role: "assistant",
 			content: "Hello! I'm NOVA, your Neural Omnipresent Virtual Assistant. How can I help you today?",
-			timestamp: ++msgCounterRef.current,
+			timestamp: nextTimestamp(),
 		};
 		setMessages([greeting]);
 		gcHistoryRef.current = [{ role: "assistant", content: greeting.content }];
@@ -158,43 +165,47 @@ const ChatInterface = () => {
 	}, [gravityClawMode]);
 
 	// Poll for tasks awaiting approval — 5s when tasks exist, 15s when idle,
-	// pauses entirely when the tab is hidden (Page Visibility API)
+	// pauses entirely when the tab is hidden (Page Visibility API).
+	// Uses setTimeout chains to prevent overlapping polls.
 	useEffect(() => {
-		let intervalId: ReturnType<typeof setInterval> | null = null;
-		let currentDelay = 15_000;
+		let timerId: ReturnType<typeof setTimeout> | null = null;
+		let cancelled = false;
 
-		const poll = async () => {
+		const schedule = (delay: number) => {
+			if (cancelled || document.hidden) return;
+			timerId = setTimeout(() => void tick(), delay);
+		};
+
+		const tick = async () => {
+			if (cancelled) return;
+			let nextDelay = 15_000;
 			try {
 				const tasks = await AgentService.getPendingTasks();
-				setPendingTasks(tasks);
-
-				// Tighten polling when tasks are waiting, relax when empty
-				const nextDelay = tasks.length > 0 ? 5_000 : 15_000;
-				if (nextDelay !== currentDelay) {
-					currentDelay = nextDelay;
-					if (intervalId) clearInterval(intervalId);
-					intervalId = setInterval(() => void poll(), currentDelay);
+				if (!cancelled) {
+					setPendingTasks(tasks);
+					nextDelay = tasks.length > 0 ? 5_000 : 15_000;
 				}
 			} catch {
 				// non-fatal — panel simply stays hidden on error
 			}
+			schedule(nextDelay);
 		};
 
 		const handleVisibility = () => {
 			if (document.hidden) {
-				if (intervalId) { clearInterval(intervalId); intervalId = null; }
+				if (timerId) { clearTimeout(timerId); timerId = null; }
 			} else {
-				void poll();
-				intervalId = setInterval(() => void poll(), currentDelay);
+				// Resume immediately on tab focus
+				void tick();
 			}
 		};
 
-		void poll();
-		intervalId = setInterval(() => void poll(), currentDelay);
+		void tick();
 		document.addEventListener("visibilitychange", handleVisibility);
 
 		return () => {
-			if (intervalId) clearInterval(intervalId);
+			cancelled = true;
+			if (timerId) clearTimeout(timerId);
 			document.removeEventListener("visibilitychange", handleVisibility);
 		};
 	}, []);
@@ -228,7 +239,7 @@ const ChatInterface = () => {
 			{
 				role: "assistant",
 				content: `📸 Screenshot Analysis:\n\n${analysis}\n\nImage: ${imagePath}`,
-				timestamp: Date.now(),
+				timestamp: nextTimestamp(),
 			},
 		]);
 	};

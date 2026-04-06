@@ -114,7 +114,8 @@ impl Default for AgentState {
             ],
             current_project: None,
             ipc_connected: false,
-            active_model: "kimi-k2.5".to_string(),
+            active_model: std::env::var("NOVA_DEFAULT_MODEL")
+                .unwrap_or_else(|_| "kimi-k2.5".to_string()),
             chat_history: vec![],
         }
     }

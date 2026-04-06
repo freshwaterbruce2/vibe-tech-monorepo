@@ -172,21 +172,21 @@ impl TaskExecutor {
             .min(MAX_EXECUTION_DURATION_MINUTES)
             .max(1);
 
+        if requires_approval && !approved_for_execution {
+            let db_guard = db.lock().await;
+            if let Some(service) = db_guard.as_ref() {
+                let _ = service.update_task_status(&task.id, "awaiting_approval");
+            }
+            info!("Task {} moved to awaiting_approval", task.id);
+            return Ok(());
+        }
+
         if !auto_execute {
             let db_guard = db.lock().await;
             if let Some(service) = db_guard.as_ref() {
                 let _ = service.update_task_status(&task.id, "queued");
             }
             debug!("Skipping task {} because auto_execute is disabled", task.id);
-            return Ok(());
-        }
-
-        if requires_approval || !approved_for_execution {
-            let db_guard = db.lock().await;
-            if let Some(service) = db_guard.as_ref() {
-                let _ = service.update_task_status(&task.id, "awaiting_approval");
-            }
-            info!("Task {} moved to awaiting_approval", task.id);
             return Ok(());
         }
 
@@ -328,13 +328,16 @@ impl TaskExecutor {
         let system_prompt = prompts::require_system_prompt("nova-core-v1");
 
         // Execute task using LLM with tool calling
+        let task_model = std::env::var("NOVA_DEFAULT_MODEL")
+            .unwrap_or_else(|_| "kimi-k2.5".to_string());
+
         match tokio::time::timeout(
             Duration::from_secs(max_duration_minutes * 60),
             llm::dispatch_model_request(
                 &execution_prompt,
                 vec![],
                 &system_prompt,
-                "kimi-k2.5",
+                &task_model,
                 config,
                 db,
             ),
