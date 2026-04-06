@@ -1,7 +1,7 @@
 {
   "$schema": "./port-registry.schema.json",
   "description": "VibeTech Monorepo Port Registry - Single source of truth for port assignments",
-  "lastUpdated": "2026-01-29",
+  "lastUpdated": "2026-04-06",
   "ranges": {
     "vite-dev": { "start": 5173, "end": 5199, "description": "Vite dev servers" },
     "backends": { "start": 3000, "end": 3099, "description": "Backend API servers" },
@@ -34,6 +34,9 @@
       "description": "Crypto Trading API (FastAPI)"
     },
     "8765": { "app": "memory-bank", "type": "backend", "description": "Memory Bank WebSocket" },
-    "9001": { "app": "ai-backend", "type": "backend", "description": "AI/LLM Backend Proxy" }
+    "9001": { "app": "ai-backend", "type": "backend", "description": "AI/LLM Backend Proxy" },
+    "3200": { "app": "memory-http", "type": "backend", "description": "Memory MCP HTTP bridge" },
+    "5004": { "app": "ipc-bridge", "type": "backend", "description": "OpenClaw IPC WebSocket bridge" },
+    "5187": { "app": "gravity-claw", "type": "vite", "description": "GravityClaw AI agent server" }
   }
 }
