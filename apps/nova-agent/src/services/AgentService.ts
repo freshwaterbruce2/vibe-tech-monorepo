@@ -4,6 +4,16 @@ import type { AgentState, WebSearchResult } from "../types/agent";
 
 type IpcMessage = Record<string, unknown>;
 
+/** A task waiting for human approval before the executor runs it. */
+export interface PendingTask {
+	id: string;
+	title: string;
+	status: string;
+	created_at: number;
+	updated_at: number;
+	metadata: string | null;
+}
+
 export class AgentService {
 	private readonly __instanceMarker = true;
 
@@ -164,6 +174,42 @@ export class AgentService {
 			});
 		} catch (error) {
 			console.error("Failed to execute code:", error);
+			throw error;
+		}
+	}
+
+	static async getPendingTasks(): Promise<PendingTask[]> {
+		try {
+			return await invoke<PendingTask[]>("get_tasks", {
+				statusFilter: "awaiting_approval",
+				limit: 20,
+			});
+		} catch (error) {
+			console.error("Failed to get pending tasks:", error);
+			throw error;
+		}
+	}
+
+	static async approveTask(taskId: string): Promise<void> {
+		try {
+			await invoke("update_task_status", {
+				taskId,
+				newStatus: "pending",
+			});
+		} catch (error) {
+			console.error("Failed to approve task:", error);
+			throw error;
+		}
+	}
+
+	static async rejectTask(taskId: string): Promise<void> {
+		try {
+			await invoke("update_task_status", {
+				taskId,
+				newStatus: "rejected",
+			});
+		} catch (error) {
+			console.error("Failed to reject task:", error);
 			throw error;
 		}
 	}

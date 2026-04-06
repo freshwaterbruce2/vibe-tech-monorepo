@@ -18,6 +18,7 @@ const MAX_DESCRIPTION_BYTES: usize = 16_384;
 const MAX_QUERY_BYTES: usize = 1_024;
 const MAX_TASK_DURATION_MINUTES: u64 = 240;
 const MAX_TITLE_BYTES: usize = 256;
+const MAX_HISTORY_MESSAGES: usize = 40;
 
 #[derive(Debug, Deserialize)]
 struct ExecuteCodeArgs {
@@ -788,7 +789,12 @@ async fn call_openai_compatible(
                 if !tool_calls.is_empty() {
                     info!("🔧 Executing {} tool call(s)...", tool_calls.len());
                     for tool_call in tool_calls {
-                        let result = execute_tool_call(tool_call, db.clone()).await;
+                        let result = tokio::time::timeout(
+                            std::time::Duration::from_secs(30),
+                            execute_tool_call(tool_call, db.clone()),
+                        )
+                        .await
+                        .unwrap_or_else(|_| format!("Tool '{}' timed out after 30s", tool_call.function.name));
 
                         messages.push(ChatMessage {
                             role: "tool".to_string(),
@@ -1057,6 +1063,12 @@ pub async fn chat_with_agent(
                     name: None,
                     reasoning_content: None,
                 });
+            }
+
+            // Keep last 40 messages to prevent unbounded memory growth (~20 turns)
+            if agent_state.chat_history.len() > MAX_HISTORY_MESSAGES {
+                let drain_count = agent_state.chat_history.len() - MAX_HISTORY_MESSAGES;
+                agent_state.chat_history.drain(0..drain_count);
             }
 
             // Legacy support
