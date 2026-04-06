@@ -9,8 +9,11 @@
  * - Provides connection status updates
  */
 
+import { createLogger } from '@vibetech/logger';
 import { IPCMessage } from './schemas.js';
 import { IPCMessageQueue } from './queue.js';
+
+const logger = createLogger('OfflineHandler');
 
 export interface OfflineHandlerOptions {
   reconnectIntervalMs?: number;
@@ -68,7 +71,7 @@ export class OfflineHandler {
         this.websocket = new WebSocket(url);
 
         this.websocket.onopen = () => {
-          console.log('[OfflineHandler] Connected to IPC bridge');
+          logger.info('Connected to IPC bridge');
           this.isConnected = true;
           this.reconnectAttempts = 0;
 
@@ -83,12 +86,12 @@ export class OfflineHandler {
         };
 
         this.websocket.onclose = () => {
-          console.log('[OfflineHandler] Disconnected from IPC bridge');
+          logger.info('Disconnected from IPC bridge');
           this.handleDisconnection();
         };
 
         this.websocket.onerror = (error) => {
-          console.error('[OfflineHandler] WebSocket error:', error);
+          logger.error('WebSocket error', undefined, error instanceof Error ? error : new Error(String(error)));
           reject(error);
         };
       } catch (error) {
@@ -117,7 +120,7 @@ export class OfflineHandler {
    */
   private scheduleReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('[OfflineHandler] Max reconnection attempts reached');
+      logger.error('Max reconnection attempts reached');
       return;
     }
 
@@ -128,7 +131,7 @@ export class OfflineHandler {
     const delay = this.calculateReconnectDelay(this.reconnectAttempts);
     this.reconnectAttempts++;
 
-    console.log(`[OfflineHandler] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+    logger.info('Reconnecting', { delayMs: delay, attempt: this.reconnectAttempts, maxAttempts: this.maxReconnectAttempts });
 
     if (this.onReconnecting) {
       this.onReconnecting(this.reconnectAttempts, this.maxReconnectAttempts);
@@ -137,7 +140,7 @@ export class OfflineHandler {
     this.reconnectTimer = setTimeout(() => {
       if (this.websocketUrl) {
         this.connect(this.websocketUrl).catch(err => {
-          console.error('[OfflineHandler] Reconnection failed:', err);
+          logger.error('Reconnection failed', undefined, err instanceof Error ? err : new Error(String(err)));
           this.scheduleReconnect();
         });
       }
@@ -279,7 +282,7 @@ export class OfflineHandler {
   reconnect(): void {
     if (this.websocketUrl) {
       this.connect(this.websocketUrl).catch(err => {
-        console.error('[OfflineHandler] Manual reconnect failed:', err);
+        logger.error('Manual reconnect failed', undefined, err instanceof Error ? err : new Error(String(err)));
       });
     }
   }

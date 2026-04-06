@@ -5,8 +5,11 @@
  * Uses WebSocket on port 5004 for bidirectional messaging
  */
 
+import { createLogger } from '@vibetech/logger';
 import type { IPCMessage, IPCMessageType } from './messages';
 import { isValidIPCMessage } from './messages';
+
+const logger = createLogger('WebSocketBridge');
 
 export type MessageHandler = (message: IPCMessage) => void | Promise<void>;
 
@@ -23,7 +26,7 @@ export class WebSocketBridge {
   private handlers = new Map<IPCMessageType, Set<MessageHandler>>();
   private globalHandlers = new Set<MessageHandler>();
   private reconnectAttempts = 0;
-  private reconnectTimer: any = null;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private connected = false;
   private appSource: 'nova' | 'vibe';
 
@@ -47,13 +50,13 @@ export class WebSocketBridge {
 
     return new Promise((resolve, reject) => {
       const url = `ws://${this.config.host}:${this.config.port}`;
-      console.log(`[WebSocketBridge] Connecting to ${url}...`);
+      logger.info(`Connecting to ${url}...`);
 
       try {
         this.ws = new WebSocket(url);
 
         this.ws.onopen = () => {
-          console.log('[WebSocketBridge] Connected');
+          logger.info('Connected');
           this.connected = true;
           this.reconnectAttempts = 0;
           resolve();
@@ -64,19 +67,19 @@ export class WebSocketBridge {
         };
 
         this.ws.onerror = (error) => {
-          console.error('[WebSocketBridge] Error:', error);
+          logger.error('WebSocket error', undefined, error instanceof Error ? error : new Error(String(error)));
           if (!this.connected) {
             reject(error);
           }
         };
 
         this.ws.onclose = () => {
-          console.log('[WebSocketBridge] Disconnected');
+          logger.info('Disconnected');
           this.connected = false;
           this.attemptReconnect();
         };
       } catch (error) {
-        console.error('[WebSocketBridge] Connection failed:', error);
+        logger.error('Connection failed', undefined, error instanceof Error ? error : new Error(String(error)));
         reject(error);
       }
     });
@@ -111,7 +114,7 @@ export class WebSocketBridge {
    */
   send(message: IPCMessage): void {
     if (!this.isConnected()) {
-      console.warn('[WebSocketBridge] Not connected, message not sent:', message.type);
+      logger.warn('Not connected, message not sent', { type: message.type });
       return;
     }
 
@@ -119,7 +122,7 @@ export class WebSocketBridge {
       const json = JSON.stringify(message);
       this.ws!.send(json);
     } catch (error) {
-      console.error('[WebSocketBridge] Failed to send message:', error);
+      logger.error('Failed to send message', undefined, error instanceof Error ? error : new Error(String(error)));
     }
   }
 
@@ -162,7 +165,7 @@ export class WebSocketBridge {
       const message = JSON.parse(data);
 
       if (!isValidIPCMessage(message)) {
-        console.warn('[WebSocketBridge] Invalid message received:', message);
+        logger.warn('Invalid message received', { message });
         return;
       }
 
@@ -171,7 +174,7 @@ export class WebSocketBridge {
         return;
       }
 
-      console.log(`[WebSocketBridge] Received ${message.type} from ${message.source}`);
+      logger.debug(`Received ${message.type} from ${message.source}`);
 
       // Call type-specific handlers
       const typeHandlers = this.handlers.get(message.type);
@@ -180,7 +183,7 @@ export class WebSocketBridge {
           try {
             await handler(message);
           } catch (error) {
-            console.error(`[WebSocketBridge] Handler error for ${message.type}:`, error);
+            logger.error(`Handler error for ${message.type}`, undefined, error instanceof Error ? error : new Error(String(error)));
           }
         }
       }
@@ -190,11 +193,11 @@ export class WebSocketBridge {
         try {
           await handler(message);
         } catch (error) {
-          console.error('[WebSocketBridge] Global handler error:', error);
+          logger.error('Global handler error', undefined, error instanceof Error ? error : new Error(String(error)));
         }
       }
     } catch (error) {
-      console.error('[WebSocketBridge] Failed to parse message:', error);
+      logger.error('Failed to parse message', undefined, error instanceof Error ? error : new Error(String(error)));
     }
   }
 
@@ -203,18 +206,18 @@ export class WebSocketBridge {
    */
   private attemptReconnect(): void {
     if (this.reconnectAttempts >= this.config.maxReconnectAttempts) {
-      console.error('[WebSocketBridge] Max reconnect attempts reached');
+      logger.error('Max reconnect attempts reached');
       return;
     }
 
     this.reconnectAttempts++;
-    console.log(
-      `[WebSocketBridge] Reconnecting in ${this.config.reconnectInterval}ms (attempt ${this.reconnectAttempts}/${this.config.maxReconnectAttempts})`
+    logger.info(
+      `Reconnecting in ${this.config.reconnectInterval}ms (attempt ${this.reconnectAttempts}/${this.config.maxReconnectAttempts})`
     );
 
     this.reconnectTimer = setTimeout(() => {
       this.connect().catch((error) => {
-        console.error('[WebSocketBridge] Reconnection failed:', error);
+        logger.error('Reconnection failed', undefined, error instanceof Error ? error : new Error(String(error)));
       });
     }, this.config.reconnectInterval);
   }

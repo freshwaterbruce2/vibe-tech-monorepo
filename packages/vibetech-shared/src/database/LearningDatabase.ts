@@ -8,6 +8,19 @@
 import type { LearningMistake, KnowledgeEntry } from '../types';
 import type { MistakeFilter, KnowledgeFilter, SnippetFilter } from './schemas';
 
+/** Mirrors the `code_snippets` table in the learning database schema. */
+export interface CodeSnippet {
+  id?: number;
+  title: string;
+  language: string;
+  code: string;
+  description?: string;
+  tags?: string;
+  created_at?: number;
+  used_count?: number;
+  app_source?: 'nova' | 'vibe';
+}
+
 export interface LearningDatabaseInterface {
   /**
    * Get mistakes with optional filtering
@@ -42,12 +55,12 @@ export interface LearningDatabaseInterface {
   /**
    * Get code snippets with optional filtering
    */
-  getSnippets(filter?: SnippetFilter): Promise<any[]>;
+  getSnippets(filter?: SnippetFilter): Promise<CodeSnippet[]>;
 
   /**
    * Add a new code snippet
    */
-  addSnippet(snippet: any): Promise<number>;
+  addSnippet(snippet: CodeSnippet): Promise<number>;
 }
 
 /**
@@ -67,8 +80,8 @@ export abstract class LearningDatabase implements LearningDatabaseInterface {
   abstract searchSimilarMistakes(keyword: string): Promise<LearningMistake[]>;
   abstract getKnowledge(filter?: KnowledgeFilter): Promise<KnowledgeEntry[]>;
   abstract addKnowledge(knowledge: Omit<KnowledgeEntry, 'id' | 'created_at' | 'updated_at'>): Promise<number>;
-  abstract getSnippets(filter?: SnippetFilter): Promise<any[]>;
-  abstract addSnippet(snippet: any): Promise<number>;
+  abstract getSnippets(filter?: SnippetFilter): Promise<CodeSnippet[]>;
+  abstract addSnippet(snippet: CodeSnippet): Promise<number>;
 
   /**
    * Get database path

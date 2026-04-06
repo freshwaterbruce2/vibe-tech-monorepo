@@ -101,10 +101,10 @@ export async function callPythonModule<T = any>(
                     result: parsed as T,
                     durationMs: Date.now() - startedAt,
                 });
-            } catch (error: any) {
+            } catch (error: unknown) {
                 resolve({
                     success: false,
-                    error: `Invalid JSON from python module: ${error.message}`,
+                    error: `Invalid JSON from python module: ${error instanceof Error ? error.message : String(error)}`,
                     stderr,
                     durationMs: Date.now() - startedAt,
                 });

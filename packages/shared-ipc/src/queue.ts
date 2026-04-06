@@ -9,8 +9,11 @@
  * - Automatic cleanup of old messages
  */
 
+import { createLogger } from '@vibetech/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { IPCMessage, ipcMessageSchema } from './schemas.js';
+
+const logger = createLogger('IPCMessageQueue');
 
 export interface QueuedMessage {
   id: string;
@@ -313,7 +316,7 @@ export class IPCMessageQueue {
       };
       localStorage.setItem(this.PERSISTENCE_KEY, JSON.stringify(state));
     } catch (error) {
-      console.error('Failed to persist message queue:', error);
+      logger.error('Failed to persist message queue', undefined, error instanceof Error ? error : new Error(String(error)));
     }
   }
 
@@ -332,7 +335,7 @@ export class IPCMessageQueue {
       this.deadLetterQueue = state.deadLetterQueue ?? [];
       this.stats = state.stats ?? { succeeded: 0, failed: 0 };
     } catch (error) {
-      console.error('Failed to load persisted message queue:', error);
+      logger.error('Failed to load persisted message queue', undefined, error instanceof Error ? error : new Error(String(error)));
     }
   }
 

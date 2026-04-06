@@ -27,6 +27,7 @@
   "author": "VibeTech",
   "license": "MIT",
   "dependencies": {
+    "@vibetech/logger": "workspace:^1.0.0",
     "uuid": "^13.0.0",
     "zod": "^4.3.6"
   },

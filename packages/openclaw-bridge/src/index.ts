@@ -1,6 +1,9 @@
 import { IPCMessageType } from '@vibetech/shared-ipc';
+import { createLogger } from '@vibetech/logger';
 import { EventEmitter } from 'node:events';
 import { WebSocket } from 'ws';
+
+const logger = createLogger('OpenClawBridge');
 
 const SOURCE = 'openclaw' as const;
 const VERSION = '2.0.0'; // Bridge client version for current OpenClaw gateway releases
@@ -125,15 +128,15 @@ export class OpenClawBridge extends EventEmitter {
     }
 
     /** Enable/disable debug logging */
-    private log(...args: unknown[]): void {
+    private log(message: string, context?: Record<string, unknown>): void {
         if (this.options.debug) {
-            console.log('[OpenClawBridge]', ...args);
+            logger.debug(message, context);
         }
     }
 
     /** Log errors (always shown) */
-    private logError(...args: unknown[]): void {
-        console.error('[OpenClawBridge ERROR]', ...args);
+    private logError(message: string, context?: Record<string, unknown>): void {
+        logger.error(message, context);
     }
 
     /** Connect to the IPC Bridge */
@@ -176,7 +179,7 @@ export class OpenClawBridge extends EventEmitter {
                     const msg = JSON.parse(raw.toString());
                     this.handleMessage(msg);
                 } catch (err) {
-                    this.logError('Malformed message:', err);
+                    this.logError('Malformed message', { error: String(err) });
                 }
             });
 
@@ -192,7 +195,7 @@ export class OpenClawBridge extends EventEmitter {
             });
 
             this.ws.on('error', (err) => {
-                this.logError('WebSocket error:', err.message);
+                this.logError('WebSocket error', { error: err.message });
                 if (!this.connected) {
                     reject(err);
                 }
@@ -207,7 +210,7 @@ export class OpenClawBridge extends EventEmitter {
 
         const maxAttempts = this.options.maxReconnectAttempts;
         if (maxAttempts > 0 && this.reconnectAttempts >= maxAttempts) {
-            this.logError(`Max reconnect attempts (${maxAttempts}) reached. Giving up.`);
+            this.logError(`Max reconnect attempts (${maxAttempts}) reached. Giving up.`, { maxAttempts });
             this.emit('reconnect_failed');
             return;
         }
@@ -221,7 +224,7 @@ export class OpenClawBridge extends EventEmitter {
         this.reconnectTimer = setTimeout(() => {
             this.reconnectTimer = null;
             this.connect().catch((err) => {
-                this.logError('Reconnect failed:', err.message);
+                this.logError('Reconnect failed', { error: (err as Error).message });
             });
         }, delay);
     }

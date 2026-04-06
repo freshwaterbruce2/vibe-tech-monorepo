@@ -4,7 +4,7 @@
  * Utility for building consistent AI prompts across applications
  */
 
-import type { AgentContext } from '../types';
+import type { AgentContext, LearningMistake, KnowledgeEntry } from '../types';
 
 export class PromptBuilder {
   private sections: string[] = [];
@@ -59,7 +59,7 @@ export class PromptBuilder {
   /**
    * Add learning context (past mistakes and knowledge)
    */
-  addLearningContext(mistakes: any[], knowledge: any[]): this {
+  addLearningContext(mistakes: LearningMistake[], knowledge: KnowledgeEntry[]): this {
     const parts: string[] = ['## Learning Context'];
 
     if (mistakes.length > 0) {

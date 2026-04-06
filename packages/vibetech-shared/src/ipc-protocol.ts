@@ -56,7 +56,7 @@ export interface FileClosePayload {
 export interface LearningDataPayload {
   type: 'mistake' | 'knowledge' | 'insight';
   id: string;
-  data: any; // Flexible structure for different learning types
+  data: Record<string, unknown>; // Flexible structure for different learning types
   timestamp: number;
 }
 
@@ -112,14 +112,14 @@ export interface NotificationAction {
 
 export interface CommandPayload {
   command: string;
-  args?: Record<string, any>;
+  args?: Record<string, unknown>;
   timeout?: number; // milliseconds
 }
 
 export interface CommandResultPayload {
   command: string;
   success: boolean;
-  result?: any;
+  result?: unknown;
   error?: string;
   executionTime: number; // milliseconds
 }
@@ -193,15 +193,15 @@ function generateMessageId(source: AppSource): string {
 /**
  * Validate IPC message structure
  */
-export function isValidIPCMessage(message: any): message is IPCMessage {
+export function isValidIPCMessage(message: unknown): message is IPCMessage {
+  if (typeof message !== 'object' || message === null) return false;
+  const m = message as Record<string, unknown>;
   return (
-    typeof message === 'object' &&
-    message !== null &&
-    typeof message.type === 'string' &&
-    message.payload !== undefined &&
-    typeof message.timestamp === 'number' &&
-    (message.source === 'nova' || message.source === 'vibe') &&
-    typeof message.messageId === 'string'
+    typeof m['type'] === 'string' &&
+    m['payload'] !== undefined &&
+    typeof m['timestamp'] === 'number' &&
+    (m['source'] === 'nova' || m['source'] === 'vibe') &&
+    typeof m['messageId'] === 'string'
   );
 }
 

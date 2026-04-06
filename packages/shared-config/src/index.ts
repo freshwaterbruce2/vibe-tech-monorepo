@@ -24,7 +24,7 @@ const parseEnv = (): EnvConfig => {
     try {
         return envSchema.parse(process.env);
     } catch (error) {
-        console.error('Environment validation failed:', error);
+        process.stderr.write(`[shared-config] Environment validation failed: ${String(error)}\n`);
         // Return defaults if validation fails
         return envSchema.parse({});
     }

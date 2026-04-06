@@ -7,7 +7,10 @@
  *   openclaw-dispatch task <description> --steps '[{"server":"s","tool":"t","args":{}}]'
  *   openclaw-dispatch ping
  */
+import { createLogger } from '@vibetech/logger';
 import { OpenClawBridge } from './index.js';
+
+const logger = createLogger('openclaw-dispatch');
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -20,19 +23,19 @@ function getFlag(name: string): string | undefined {
 async function main() {
     // Show help without connecting if no command or help requested
     if (!command || command === 'help' || command === '--help' || command === '-h') {
-        console.log('OpenClaw → Gateway Dispatcher');
-        console.log('');
-        console.log('Commands:');
-        console.log('  call <server> <tool> [--args \'{"key":"val"}\']  Call a single MCP tool');
-        console.log('  task "<description>" --steps \'[...]\'           Dispatch multi-step task');
-        console.log('  ping                                           Test the bridge');
-        console.log('');
-        console.log('Environment:');
-        console.log('  IPC_BRIDGE_URL   WebSocket URL (default: ws://localhost:5004)');
-        console.log('');
-        console.log('Examples:');
-        console.log('  openclaw-dispatch ping');
-        console.log('  openclaw-dispatch call filesystem read_file --args \'{"path":"./README.md"}\'');
+        logger.info('OpenClaw → Gateway Dispatcher');
+        logger.info('');
+        logger.info('Commands:');
+        logger.info('  call <server> <tool> [--args \'{"key":"val"}\']  Call a single MCP tool');
+        logger.info('  task "<description>" --steps \'[...]\'           Dispatch multi-step task');
+        logger.info('  ping                                           Test the bridge');
+        logger.info('');
+        logger.info('Environment:');
+        logger.info('  IPC_BRIDGE_URL   WebSocket URL (default: ws://localhost:5004)');
+        logger.info('');
+        logger.info('Examples:');
+        logger.info('  openclaw-dispatch ping');
+        logger.info('  openclaw-dispatch call filesystem read_file --args \'{"path":"./README.md"}\'');
         return;
     }
 
@@ -41,7 +44,7 @@ async function main() {
     );
 
     await bridge.connect();
-    console.log('✅ Connected to IPC Bridge as openclaw');
+    logger.info('Connected to IPC Bridge as openclaw');
 
     try {
         switch (command) {
@@ -49,14 +52,14 @@ async function main() {
                 const server = args[1];
                 const tool = args[2];
                 if (!server || !tool) {
-                    console.error('Usage: openclaw-dispatch call <server> <tool> [--args \'{"key":"value"}\']');
+                    logger.error('Usage: openclaw-dispatch call <server> <tool> [--args \'{"key":"value"}\']');
                     process.exit(1);
                 }
                 const toolArgs = JSON.parse(getFlag('args') ?? '{}');
-                console.log(`📡 Calling ${server}.${tool}...`);
+                logger.info(`Calling ${server}.${tool}...`);
                 const result = await bridge.callTool({ server, tool, args: toolArgs });
-                console.log(`${result.success ? '✅' : '❌'} Result (${result.durationMs}ms):`);
-                console.log(JSON.stringify(result.data ?? result.error, null, 2));
+                logger.info(`Result (${result.durationMs}ms)`, { success: result.success });
+                logger.info(JSON.stringify(result.data ?? result.error, null, 2));
                 break;
             }
 
@@ -64,22 +67,22 @@ async function main() {
                 const description = args[1];
                 const stepsJson = getFlag('steps');
                 if (!description || !stepsJson) {
-                    console.error('Usage: openclaw-dispatch task "<description>" --steps \'[...]\'');
+                    logger.error('Usage: openclaw-dispatch task "<description>" --steps \'[...]\'');
                     process.exit(1);
                 }
                 const steps = JSON.parse(stepsJson);
-                console.log(`📋 Dispatching task: "${description}" (${steps.length} steps)...`);
+                logger.info(`Dispatching task: "${description}" (${steps.length} steps)...`);
                 const result = await bridge.dispatchTask({ description, steps });
-                console.log(`${result.status === 'success' ? '✅' : '⚠️'} Task ${result.status} (${result.durationMs}ms)`);
+                logger.info(`Task ${result.status} (${result.durationMs}ms)`, { status: result.status });
                 for (const r of result.results) {
-                    console.log(`  Step ${r.stepIndex}: ${r.success ? '✅' : '❌'} (${r.durationMs}ms)`);
-                    if (r.error) console.log(`    Error: ${r.error}`);
+                    logger.info(`Step ${r.stepIndex}: ${r.success ? 'ok' : 'failed'} (${r.durationMs}ms)`);
+                    if (r.error) logger.error(`Step ${r.stepIndex} error: ${r.error}`);
                 }
                 break;
             }
 
             case 'ping': {
-                console.log('🏓 Sending ping via sequential-thinking...');
+                logger.info('Sending ping via sequential-thinking...');
                 const result = await bridge.callTool({
                     server: 'sequential-thinking',
                     tool: 'sequentialthinking',
@@ -90,13 +93,13 @@ async function main() {
                         totalThoughts: 1,
                     },
                 });
-                console.log(`${result.success ? '✅ Pong!' : '❌ Failed'} (${result.durationMs}ms)`);
+                logger.info(`${result.success ? 'Pong!' : 'Failed'} (${result.durationMs}ms)`, { success: result.success });
                 break;
             }
 
             default:
-                console.error(`Unknown command: ${command}`);
-                console.error('Run without arguments to see available commands');
+                logger.error(`Unknown command: ${command}`);
+                logger.error('Run without arguments to see available commands');
                 process.exit(1);
         }
     } finally {
@@ -105,6 +108,6 @@ async function main() {
 }
 
 main().catch((err) => {
-    console.error('❌ Error:', err.message);
+    logger.error('Fatal error', { error: (err as Error).message });
     process.exit(1);
 });

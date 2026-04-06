@@ -44,14 +44,14 @@ export interface ActivitySyncPayload {
   events: {
     type: string;
     timestamp: number;
-    data?: any;
+    data?: unknown;
   }[];
 }
 
 export interface LearningUpdatePayload {
-  mistakes?: any[];
-  knowledge?: any[];
-  patterns?: any[];
+  mistakes?: Record<string, unknown>[];
+  knowledge?: Record<string, unknown>[];
+  patterns?: Record<string, unknown>[];
 }
 
 export interface ProjectSwitchPayload {
@@ -87,14 +87,14 @@ export function createIPCMessage<T = any>(
 /**
  * Validate an IPC message
  */
-export function isValidIPCMessage(message: any): message is IPCMessage {
+export function isValidIPCMessage(message: unknown): message is IPCMessage {
+  if (typeof message !== 'object' || message === null) return false;
+  const m = message as Record<string, unknown>;
   return (
-    typeof message === 'object' &&
-    message !== null &&
-    typeof message.type === 'string' &&
-    message.payload !== undefined &&
-    typeof message.timestamp === 'number' &&
-    (message.source === 'nova' || message.source === 'vibe') &&
-    typeof message.messageId === 'string'
+    typeof m['type'] === 'string' &&
+    m['payload'] !== undefined &&
+    typeof m['timestamp'] === 'number' &&
+    (m['source'] === 'nova' || m['source'] === 'vibe') &&
+    typeof m['messageId'] === 'string'
   );
 }
