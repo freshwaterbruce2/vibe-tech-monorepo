@@ -69,5 +69,5 @@ app.get('/health', (_req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Prompt Engineer API running on http://localhost:${PORT}`);
+  process.stdout.write(`Prompt Engineer API running on http://localhost:${PORT}\n`);
 });

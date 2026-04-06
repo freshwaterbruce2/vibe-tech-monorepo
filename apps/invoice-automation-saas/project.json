@@ -60,7 +60,7 @@
 		"lint": {
 			"executor": "nx:run-commands",
 			"options": {
-				"command": "eslint src",
+				"command": "node ../../node_modules/eslint/bin/eslint.js src --max-warnings 0",
 				"cwd": "apps/invoice-automation-saas"
 			},
 			"cache": true

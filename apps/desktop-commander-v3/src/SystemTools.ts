@@ -254,11 +254,12 @@ export async function runPowerShell(
 			success: true,
 			exitCode: 0,
 		};
-	} catch (error: any) {
+	} catch (error: unknown) {
+		const err = error as { stderr?: string; stdout?: string; message?: string; code?: number };
 		return {
-			output: error.stderr || error.stdout || error.message || "Unknown error",
+			output: err.stderr || err.stdout || err.message || "Unknown error",
 			success: false,
-			exitCode: error.code || 1,
+			exitCode: err.code || 1,
 		};
 	}
 }
@@ -296,11 +297,12 @@ export async function runCmd(
 			success: true,
 			exitCode: 0,
 		};
-	} catch (error: any) {
+	} catch (error: unknown) {
+		const err = error as { stderr?: string; stdout?: string; message?: string; code?: number };
 		return {
-			output: error.stderr || error.stdout || error.message || "Unknown error",
+			output: err.stderr || err.stdout || err.message || "Unknown error",
 			success: false,
-			exitCode: error.code || 1,
+			exitCode: err.code || 1,
 		};
 	}
 }
