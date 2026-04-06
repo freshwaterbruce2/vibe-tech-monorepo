@@ -8,10 +8,14 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from "@/hooks/use-toast";
 import { useGravityClaw, type GCMessage } from "@/hooks/useGravityClaw";
 import { useVoice } from "@/hooks/useVoice";
 import { AgentService, type PendingTask } from "@/services/AgentService";
 import type { AgentState, ChatMessage } from "@/types/agent";
+
+const CHAT_STORAGE_KEY = "nova-chat-messages";
+const MAX_PERSISTED_MESSAGES = 50;
 
 // Strips markdown syntax so TTS reads naturally
 function toSpokenText(md: string): string {
@@ -146,6 +150,25 @@ const ChatInterface = () => {
 	// ── Lifecycle ─────────────────────────────────────────────────────────────
 	useEffect(() => {
 		void loadAgentStatus();
+
+		// Restore persisted chat messages from localStorage
+		try {
+			const saved = localStorage.getItem(CHAT_STORAGE_KEY);
+			if (saved) {
+				const parsed: ChatMessage[] = JSON.parse(saved);
+				if (Array.isArray(parsed) && parsed.length > 0) {
+					setMessages(parsed);
+					// Rebuild gcHistoryRef from saved messages
+					gcHistoryRef.current = parsed
+						.filter((m) => m.role === "user" || m.role === "assistant")
+						.map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+					return;
+				}
+			}
+		} catch {
+			// Corrupted storage — fall through to greeting
+		}
+
 		const greeting: ChatMessage = {
 			role: "assistant",
 			content: "Hello! I'm NOVA, your Neural Omnipresent Virtual Assistant. How can I help you today?",
@@ -157,6 +180,17 @@ const ChatInterface = () => {
 
 	useEffect(() => {
 		scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+	}, [messages]);
+
+	// Persist messages to localStorage (capped at last 50)
+	useEffect(() => {
+		if (messages.length === 0) return;
+		try {
+			const toSave = messages.slice(-MAX_PERSISTED_MESSAGES);
+			localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(toSave));
+		} catch {
+			// Storage full or unavailable — non-fatal
+		}
 	}, [messages]);
 
 	// Reset gc history when switching modes so context stays clean
@@ -248,8 +282,10 @@ const ChatInterface = () => {
 		try {
 			await AgentService.approveTask(taskId);
 			setPendingTasks((prev) => prev.filter((t) => t.id !== taskId));
+			toast({ title: "Task approved", description: "The task has been approved successfully." });
 		} catch (err) {
 			console.error("Failed to approve task:", err);
+			toast({ title: "Failed to approve task", description: String(err), variant: "destructive" });
 		}
 	};
 
@@ -257,8 +293,10 @@ const ChatInterface = () => {
 		try {
 			await AgentService.rejectTask(taskId);
 			setPendingTasks((prev) => prev.filter((t) => t.id !== taskId));
+			toast({ title: "Task rejected", description: "The task has been rejected." });
 		} catch (err) {
 			console.error("Failed to reject task:", err);
+			toast({ title: "Failed to reject task", description: String(err), variant: "destructive" });
 		}
 	};
 

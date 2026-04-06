@@ -46,7 +46,7 @@
       "csp": {
         "default-src": "'self' data:",
         "img-src": "'self' data: https: asset: http://asset.localhost",
-        "connect-src": "'self' ipc: http://ipc.localhost https: http://127.0.0.1:3000 http://localhost:3000 http://127.0.0.1:5173 http://localhost:5173 ws://127.0.0.1:5004 ws://localhost:5004",
+        "connect-src": "'self' ipc: http://ipc.localhost http://localhost:5173 http://127.0.0.1:5173 ws://localhost:5004 ws://127.0.0.1:5004 http://localhost:5187 http://localhost:3001 http://localhost:3200 http://localhost:9001 http://localhost:8001 http://localhost:11434 https://openrouter.ai https://api.moonshot.ai https://api.deepseek.com https://api.groq.com",
         "script-src": "'self' 'unsafe-inline'",
         "style-src": "'self' 'unsafe-inline'",
         "font-src": "'self' data:"

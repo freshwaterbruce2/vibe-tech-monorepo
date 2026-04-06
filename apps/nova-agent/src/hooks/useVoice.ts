@@ -29,14 +29,27 @@ interface UseVoiceOptions {
   lang?: string;
 }
 
+const TRANSIENT_ERRORS = new Set(['network', 'audio-capture']);
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 500;
+
 export function useVoice({ onTranscript, lang = 'en-US' }: UseVoiceOptions = {}) {
   const [state, setState] = useState<VoiceState>('idle');
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const synthRef = useRef(window.speechSynthesis);
+  const retryCountRef = useRef(0);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Keep onTranscript in a ref so startListening never captures a stale closure
   const onTranscriptRef = useRef(onTranscript);
   useEffect(() => { onTranscriptRef.current = onTranscript; }, [onTranscript]);
+
+  // Clean up pending retry timer on unmount
+  useEffect(() => {
+    return () => {
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    };
+  }, []);
 
   const cancelSpeech = useCallback(() => {
     synthRef.current.cancel();
@@ -57,6 +70,11 @@ export function useVoice({ onTranscript, lang = 'en-US' }: UseVoiceOptions = {})
   }, [lang]);
 
   const stopListening = useCallback(() => {
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+    retryCountRef.current = 0;
     recognitionRef.current?.stop();
     recognitionRef.current = null;
     setState('idle');
@@ -85,6 +103,7 @@ export function useVoice({ onTranscript, lang = 'en-US' }: UseVoiceOptions = {})
     recognition.onstart = () => setState('listening');
 
     recognition.onresult = (event) => {
+      retryCountRef.current = 0; // reset on successful recognition
       const transcript = event.results[0]?.[0]?.transcript?.trim();
       if (transcript) {
         setState('processing');
@@ -93,9 +112,24 @@ export function useVoice({ onTranscript, lang = 'en-US' }: UseVoiceOptions = {})
     };
 
     recognition.onerror = (event) => {
+      if (TRANSIENT_ERRORS.has(event.error) && retryCountRef.current < MAX_RETRIES) {
+        retryCountRef.current += 1;
+        console.warn(
+          `[useVoice] Transient error "${event.error}", retry ${retryCountRef.current}/${MAX_RETRIES}`
+        );
+        // Schedule retry after delay; startListening will create a fresh instance
+        retryTimerRef.current = setTimeout(() => {
+          retryTimerRef.current = null;
+          startListening();
+        }, RETRY_DELAY_MS);
+        return;
+      }
+
+      // Permanent error or retries exhausted
       if (event.error !== 'no-speech' && event.error !== 'aborted') {
         console.warn('[useVoice] Recognition error:', event.error);
       }
+      retryCountRef.current = 0;
       setState('idle');
     };
 

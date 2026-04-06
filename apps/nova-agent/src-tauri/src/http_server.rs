@@ -131,7 +131,8 @@ async fn chat_handler(
     // These would typically be derived from the payload or application state
     let history = vec![]; // Example: empty history
     let system_prompt = "You are a helpful assistant.".to_string(); // Example: default system prompt
-    let active_model = "default_model".to_string(); // Example: default model
+    let active_model = std::env::var("NOVA_DEFAULT_MODEL")
+        .unwrap_or_else(|_| "kimi-k2.5".to_string());
 
     match llm::dispatch_model_request(
         &payload.message,
