@@ -16,7 +16,7 @@
     "@modelcontextprotocol/sdk": "^1.27.0",
     "glob": "^13.0.6",
     "gray-matter": "^4.0.3",
-    "zod": "^3.25.0"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",

@@ -1,6 +1,0 @@
-
-> shipping-pwa@1.0.0 typecheck C:\dev\apps\shipping-pwa
-> tsc --noEmit
-
-src/App.tsx(54,13): error TS7030: Not all code paths return a value.
-ΓÇëELIFECYCLEΓÇë Command failed with exit code 1.
