@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core';
 import type {
   PaneLayout,
   PersistedTerminalLayout,
@@ -171,4 +172,20 @@ export function toPersistedLayoutState(layoutState: TerminalLayoutState): Persis
       title: tab.title,
     })),
   };
+}
+
+export async function invokeWithTimeout<T>(
+  cmd: string,
+  args?: Record<string, unknown>,
+  timeoutMs = 5000,
+): Promise<T> {
+  return Promise.race([
+    args !== undefined ? invoke<T>(cmd, args) : invoke<T>(cmd),
+    new Promise<T>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`IPC timeout: ${cmd} did not respond within ${timeoutMs}ms`)),
+        timeoutMs,
+      ),
+    ),
+  ]);
 }

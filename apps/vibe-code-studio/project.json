@@ -29,7 +29,9 @@
     },
     "build": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "cache": true,
       "options": {
         "command": "pnpm run build",
@@ -44,7 +46,9 @@
     },
     "package": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
+      "outputs": [
+        "{projectRoot}/src-tauri/target/release/bundle"
+      ],
       "cache": false,
       "options": {
         "command": "pnpm run package",
@@ -53,7 +57,9 @@
     },
     "electron-build": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
+      "outputs": [
+        "{projectRoot}/src-tauri/target/release/bundle"
+      ],
       "cache": false,
       "options": {
         "command": "pnpm run package",
@@ -62,7 +68,9 @@
     },
     "electron-build-win": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
+      "outputs": [
+        "{projectRoot}/src-tauri/target/release/bundle"
+      ],
       "cache": false,
       "options": {
         "command": "pnpm run release:build:win",
@@ -71,7 +79,9 @@
     },
     "release-build": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "cache": false,
       "options": {
         "command": "pnpm run release:build",
@@ -80,7 +90,9 @@
     },
     "release-build-win": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
+      "outputs": [
+        "{projectRoot}/src-tauri/target/release/bundle"
+      ],
       "cache": false,
       "options": {
         "command": "pnpm run release:build:win",
@@ -89,7 +101,9 @@
     },
     "release-build-mac": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
+      "outputs": [
+        "{projectRoot}/src-tauri/target/release/bundle"
+      ],
       "cache": false,
       "options": {
         "command": "pnpm run release:build:mac",
@@ -98,7 +112,9 @@
     },
     "release-build-linux": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
+      "outputs": [
+        "{projectRoot}/src-tauri/target/release/bundle"
+      ],
       "cache": false,
       "options": {
         "command": "pnpm run release:build:linux",
@@ -107,7 +123,9 @@
     },
     "release-dist": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "cache": false,
       "options": {
         "command": "pnpm run release:dist",
@@ -116,7 +134,9 @@
     },
     "package-win-local": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
+      "outputs": [
+        "{projectRoot}/src-tauri/target/release/bundle"
+      ],
       "cache": false,
       "options": {
         "command": "pnpm run prepare-native-modules && pnpm run package",
@@ -190,7 +210,11 @@
         "command": "node -e \"const fs=require('fs'); const paths=['dist','dist-electron','build','src-tauri/target','.tsbuildinfo','.tsbuildinfo.node']; for (const p of paths) { try { fs.rmSync(p,{recursive:true,force:true}); } catch {} }\"",
         "cwd": "apps/vibe-code-studio"
       }
-    }
+    },
+    "quality": {}
   },
-  "tags": ["type:desktop", "scope:vibe-code-studio"]
+  "tags": [
+    "type:desktop",
+    "scope:vibe-code-studio"
+  ]
 }

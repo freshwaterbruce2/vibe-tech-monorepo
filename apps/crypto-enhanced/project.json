@@ -1,53 +1,60 @@
 {
-	"name": "crypto-enhanced",
-	"$schema": "../../node_modules/nx/schemas/project-schema.json",
-	"sourceRoot": ".",
-	"projectType": "application",
-	"tags": ["scope:trading", "type:service", "language:python"],
-	"targets": {
-		"lint": {
-			"executor": "nx:run-commands",
-			"options": {
-				"command": ".venv\\Scripts\\python.exe -m pylint src scripts start_live_trading.py run_tests.py test_credentials.py test_env_keys.py test_nonce_fix.py test_reversal_theory.py --fail-under=7.0",
-				"cwd": "apps/crypto-enhanced"
-			}
-		},
-		"typecheck": {
-			"executor": "nx:run-commands",
-			"options": {
-				"command": ".venv\\Scripts\\python.exe -m mypy --config-file mypy.ini",
-				"cwd": "apps/crypto-enhanced"
-			}
-		},
-		"install": {
-			"executor": "nx:run-commands",
-			"options": {
-				"command": "powershell -NoProfile -Command \"if (Get-Command py -ErrorAction SilentlyContinue) { py -3 -m venv .venv } elseif (Get-Command python -ErrorAction SilentlyContinue) { python -m venv .venv } else { throw 'Python launcher not found on PATH' }; .\\.venv\\Scripts\\python.exe -m pip install -r requirements.txt\"",
-				"cwd": "apps/crypto-enhanced"
-			}
-		},
-		"start": {
-			"executor": "nx:run-commands",
-			"options": {
-				"command": ".venv\\Scripts\\python.exe start_live_trading.py",
-				"cwd": "apps/crypto-enhanced"
-			}
-		},
-		"test": {
-			"executor": "nx:run-commands",
-			"options": {
-				"command": ".venv\\Scripts\\python.exe run_tests.py",
-				"cwd": "apps/crypto-enhanced"
-			}
-		},
-		"build": {
-			"executor": "nx:run-commands",
-			"outputs": ["{projectRoot}/dist"],
-			"cache": true,
-			"options": {
-				"command": "echo 'build not applicable: python trading app'",
-				"cwd": "apps/crypto-enhanced"
-			}
-		}
-	}
+  "name": "crypto-enhanced",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": ".",
+  "projectType": "application",
+  "tags": [
+    "scope:trading",
+    "type:service",
+    "language:python"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": ".venv\\Scripts\\python.exe -m pylint src scripts start_live_trading.py run_tests.py test_credentials.py test_env_keys.py test_nonce_fix.py test_reversal_theory.py --fail-under=7.0",
+        "cwd": "apps/crypto-enhanced"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": ".venv\\Scripts\\python.exe -m mypy --config-file mypy.ini",
+        "cwd": "apps/crypto-enhanced"
+      }
+    },
+    "install": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "powershell -NoProfile -Command \"if (Get-Command py -ErrorAction SilentlyContinue) { py -3 -m venv .venv } elseif (Get-Command python -ErrorAction SilentlyContinue) { python -m venv .venv } else { throw 'Python launcher not found on PATH' }; .\\.venv\\Scripts\\python.exe -m pip install -r requirements.txt\"",
+        "cwd": "apps/crypto-enhanced"
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": ".venv\\Scripts\\python.exe start_live_trading.py",
+        "cwd": "apps/crypto-enhanced"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": ".venv\\Scripts\\python.exe run_tests.py",
+        "cwd": "apps/crypto-enhanced"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
+      "cache": true,
+      "options": {
+        "command": "echo 'build not applicable: python trading app'",
+        "cwd": "apps/crypto-enhanced"
+      }
+    },
+    "quality": {}
+  }
 }

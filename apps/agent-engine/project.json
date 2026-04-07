@@ -14,7 +14,9 @@
     },
     "build": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "cache": true,
       "options": {
         "command": "pnpm build",
@@ -68,7 +70,12 @@
         "command": "pnpm promote-candidate",
         "cwd": "apps/agent-engine"
       }
-    }
+    },
+    "quality": {}
   },
-  "tags": ["type:tool", "scope:agent", "scope:workspace"]
+  "tags": [
+    "type:tool",
+    "scope:agent",
+    "scope:workspace"
+  ]
 }

@@ -4,7 +4,14 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/vibe-tutor/src",
   "projectType": "application",
-  "tags": ["scope:mobile", "type:pwa", "platform:android", "language:typescript", "analytics", "filesystem"],
+  "tags": [
+    "scope:mobile",
+    "type:pwa",
+    "platform:android",
+    "language:typescript",
+    "analytics",
+    "filesystem"
+  ],
   "targets": {
     "dev": {
       "executor": "nx:run-script",
@@ -18,7 +25,9 @@
       "options": {
         "script": "build"
       },
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "cache": true
     },
     "test": {
@@ -33,7 +42,9 @@
       "options": {
         "script": "preview"
       },
-      "dependsOn": ["build"],
+      "dependsOn": [
+        "build"
+      ],
       "cache": false
     },
     "start": {
@@ -48,7 +59,9 @@
       "options": {
         "script": "android:sync"
       },
-      "dependsOn": ["build"],
+      "dependsOn": [
+        "build"
+      ],
       "cache": false
     },
     "android:build": {
@@ -56,7 +69,9 @@
       "options": {
         "script": "android:build"
       },
-      "outputs": ["{projectRoot}/android/app/build"],
+      "outputs": [
+        "{projectRoot}/android/app/build"
+      ],
       "cache": true
     },
     "android:build:clean": {
@@ -71,7 +86,9 @@
       "options": {
         "script": "android:bundle:release"
       },
-      "outputs": ["{projectRoot}/android/app/build/outputs/bundle/release"],
+      "outputs": [
+        "{projectRoot}/android/app/build/outputs/bundle/release"
+      ],
       "cache": false
     },
     "android:open": {
@@ -114,7 +131,9 @@
       "options": {
         "script": "android:full-build"
       },
-      "outputs": ["{projectRoot}/android/app/build"],
+      "outputs": [
+        "{projectRoot}/android/app/build"
+      ],
       "cache": false
     },
     "android:full-release": {
@@ -122,7 +141,9 @@
       "options": {
         "script": "android:full-release"
       },
-      "outputs": ["{projectRoot}/android/app/build/outputs/bundle/release"],
+      "outputs": [
+        "{projectRoot}/android/app/build/outputs/bundle/release"
+      ],
       "cache": false
     },
     "android:deploy": {
@@ -131,6 +152,19 @@
         "script": "android:deploy"
       },
       "cache": false
-    }
+    },
+    "lint": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "lint"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "typecheck"
+      }
+    },
+    "quality": {}
   }
 }

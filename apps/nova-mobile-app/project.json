@@ -32,7 +32,17 @@
         "command": "pnpm exec eslint src --ext .ts,.tsx",
         "cwd": "apps/nova-mobile-app"
       }
-    }
+    },
+    "build": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "build"
+      }
+    },
+    "quality": {}
   },
-  "tags": ["type:mobile", "scope:nova"]
+  "tags": [
+    "type:mobile",
+    "scope:nova"
+  ]
 }

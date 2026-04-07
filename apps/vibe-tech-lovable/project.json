@@ -13,7 +13,9 @@
     },
     "build": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
         "command": "pnpm run build",
         "cwd": "apps/vibe-tech-lovable"
@@ -21,7 +23,9 @@
     },
     "build:production": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
         "command": "pnpm run build:production",
         "cwd": "apps/vibe-tech-lovable"
@@ -29,7 +33,9 @@
     },
     "build:dev": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
         "command": "pnpm run build:dev",
         "cwd": "apps/vibe-tech-lovable"
@@ -58,7 +64,9 @@
     },
     "test": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/playwright-report"],
+      "outputs": [
+        "{projectRoot}/playwright-report"
+      ],
       "options": {
         "command": "pnpm run test",
         "cwd": "apps/vibe-tech-lovable"
@@ -87,7 +95,9 @@
     },
     "docker:build": {
       "executor": "nx:run-commands",
-      "dependsOn": ["build"],
+      "dependsOn": [
+        "build"
+      ],
       "options": {
         "command": "docker build -t ${DOCKER_REGISTRY:-docker.io/your-username}/vibe-tech-lovable:latest .",
         "cwd": "apps/vibe-tech-lovable"
@@ -95,7 +105,9 @@
     },
     "docker:push": {
       "executor": "nx:run-commands",
-      "dependsOn": ["docker:build"],
+      "dependsOn": [
+        "docker:build"
+      ],
       "options": {
         "command": "docker push ${DOCKER_REGISTRY:-docker.io/your-username}/vibe-tech-lovable:latest",
         "cwd": "apps/vibe-tech-lovable"
@@ -103,7 +115,9 @@
     },
     "k8s:deploy": {
       "executor": "nx:run-commands",
-      "dependsOn": ["docker:push"],
+      "dependsOn": [
+        "docker:push"
+      ],
       "options": {
         "commands": [
           "kubectl apply -f k8s/base/namespace.yaml",
@@ -125,7 +139,19 @@
         "command": "kubectl logs -f deployment/vibe-tech-lovable -n vibetech"
       },
       "cache": false
-    }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "apps/vibe-tech-lovable"
+      }
+    },
+    "quality": {}
   },
-  "tags": ["scope:web", "product:vibe-tech-lovable", "type:application"]
+  "tags": [
+    "scope:web",
+    "product:vibe-tech-lovable",
+    "type:application"
+  ]
 }

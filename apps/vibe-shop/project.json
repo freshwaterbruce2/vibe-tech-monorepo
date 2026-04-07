@@ -13,7 +13,9 @@
     },
     "build": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/.next"],
+      "outputs": [
+        "{projectRoot}/.next"
+      ],
       "options": {
         "command": "pnpm run build",
         "cwd": "apps/vibe-shop"
@@ -21,7 +23,9 @@
     },
     "start": {
       "executor": "nx:run-commands",
-      "dependsOn": ["build"],
+      "dependsOn": [
+        "build"
+      ],
       "options": {
         "command": "pnpm run start",
         "cwd": "apps/vibe-shop"
@@ -54,7 +58,20 @@
         "command": "npx prisma studio",
         "cwd": "apps/vibe-shop"
       }
-    }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "apps/vibe-shop"
+      }
+    },
+    "quality": {}
   },
-  "tags": ["scope:app", "type:web", "stack:nextjs", "stack:prisma"]
+  "tags": [
+    "scope:app",
+    "type:web",
+    "stack:nextjs",
+    "stack:prisma"
+  ]
 }

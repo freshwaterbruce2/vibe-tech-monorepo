@@ -1,55 +1,75 @@
 {
-	"$schema": "../../node_modules/nx/schemas/project-schema.json",
-	"name": "desktop-commander-v3",
-	"projectType": "application",
-	"sourceRoot": "apps/desktop-commander-v3/src",
-	"targets": {
-		"build": {
-			"executor": "nx:run-commands",
-			"outputs": ["{projectRoot}/dist"],
-			"options": {
-				"command": "pnpm run build",
-				"cwd": "apps/desktop-commander-v3"
-			}
-		},
-		"dev": {
-			"executor": "nx:run-commands",
-			"options": {
-				"command": "pnpm run dev",
-				"cwd": "apps/desktop-commander-v3"
-			}
-		},
-		"start": {
-			"executor": "nx:run-commands",
-			"dependsOn": ["build"],
-			"options": {
-				"command": "pnpm run start",
-				"cwd": "apps/desktop-commander-v3"
-			}
-		},
-		"start:mcp": {
-			"executor": "nx:run-commands",
-			"dependsOn": ["build"],
-			"options": {
-				"command": "pnpm run start:mcp",
-				"cwd": "apps/desktop-commander-v3"
-			}
-		},
-		"lint": {
-			"executor": "nx:run-commands",
-			"options": {
-				"command": "pnpm run lint",
-				"cwd": "apps/desktop-commander-v3"
-			}
-		},
-		"test": {
-			"executor": "nx:run-commands",
-			"outputs": ["{projectRoot}/coverage"],
-			"options": {
-				"command": "pnpm run test",
-				"cwd": "apps/desktop-commander-v3"
-			}
-		}
-	},
-	"tags": ["scope:mcp", "type:application", "platform:desktop"]
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "desktop-commander-v3",
+  "projectType": "application",
+  "sourceRoot": "apps/desktop-commander-v3/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "apps/desktop-commander-v3"
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "apps/desktop-commander-v3"
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "command": "pnpm run start",
+        "cwd": "apps/desktop-commander-v3"
+      }
+    },
+    "start:mcp": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "command": "pnpm run start:mcp",
+        "cwd": "apps/desktop-commander-v3"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run lint",
+        "cwd": "apps/desktop-commander-v3"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{projectRoot}/coverage"
+      ],
+      "options": {
+        "command": "pnpm run test",
+        "cwd": "apps/desktop-commander-v3"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "apps/desktop-commander-v3"
+      }
+    },
+    "quality": {}
+  },
+  "tags": [
+    "scope:mcp",
+    "type:application",
+    "platform:desktop"
+  ]
 }

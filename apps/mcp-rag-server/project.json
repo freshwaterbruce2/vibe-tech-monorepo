@@ -17,7 +17,9 @@
         "command": "node dist/index.js",
         "cwd": "apps/mcp-rag-server"
       },
-      "dependsOn": ["build"]
+      "dependsOn": [
+        "build"
+      ]
     },
     "dev": {
       "executor": "nx:run-commands",
@@ -32,7 +34,18 @@
         "command": "pnpm typecheck",
         "cwd": "apps/mcp-rag-server"
       }
-    }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec eslint src --ext .ts --max-warnings 0",
+        "cwd": "apps/mcp-rag-server"
+      }
+    },
+    "quality": {}
   },
-  "tags": ["type:mcp", "scope:agent"]
+  "tags": [
+    "type:mcp",
+    "scope:agent"
+  ]
 }

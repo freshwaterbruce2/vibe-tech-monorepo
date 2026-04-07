@@ -7,13 +7,33 @@
   "targets": {
     "build": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "cache": true,
       "options": {
         "command": "tsc",
         "cwd": "packages/db-app"
       }
-    }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec eslint src --ext .ts,.tsx --max-warnings 0",
+        "cwd": "packages/db-app"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "packages/db-app"
+      }
+    },
+    "quality": {}
   },
-  "tags": ["type:library", "scope:database"]
+  "tags": [
+    "type:library",
+    "scope:database"
+  ]
 }

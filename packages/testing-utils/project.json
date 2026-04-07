@@ -6,12 +6,16 @@
   "targets": {
     "build": {
       "executor": "@nx/js:tsc",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "outputPath": "packages/testing-utils/dist",
         "main": "packages/testing-utils/src/index.ts",
         "tsConfig": "packages/testing-utils/tsconfig.json",
-        "assets": ["packages/testing-utils/*.md"]
+        "assets": [
+          "packages/testing-utils/*.md"
+        ]
       }
     },
     "typecheck": {
@@ -23,12 +27,25 @@
     },
     "test": {
       "executor": "@nx/vite:test",
-      "outputs": ["{workspaceRoot}/coverage/packages/testing-utils"],
+      "outputs": [
+        "{workspaceRoot}/coverage/packages/testing-utils"
+      ],
       "options": {
         "passWithNoTests": true,
         "reportsDirectory": "../../coverage/packages/testing-utils"
       }
-    }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec eslint src --ext .ts,.tsx --max-warnings 0",
+        "cwd": "packages/testing-utils"
+      }
+    },
+    "quality": {}
   },
-  "tags": ["type:library", "scope:testing"]
+  "tags": [
+    "type:library",
+    "scope:testing"
+  ]
 }

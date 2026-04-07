@@ -1,11 +1,10 @@
-import { invoke } from '@tauri-apps/api/core';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import { FitAddon } from '@xterm/addon-fit';
 import { Terminal as XTerm } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
 import { useCallback, useEffect, useRef } from 'react';
 import type { PtyExitEvent, PtyOutputEvent, SessionStatus, TerminalSessionPaneProps } from './types';
-import { getErrorMessage, getStatusLabel, INITIAL_MESSAGE, TERMINAL_THEME } from './utils';
+import { getErrorMessage, getStatusLabel, INITIAL_MESSAGE, invokeWithTimeout, TERMINAL_THEME } from './utils';
 
 export function TerminalSessionPane({
   active,
@@ -74,7 +73,7 @@ export function TerminalSessionPane({
       return;
     }
 
-    await invoke('write_pty', { data: text, pty_id: ptyId });
+    await invokeWithTimeout('write_pty', { data: text, pty_id: ptyId });
     reportMeta('ready', `Pasted ${text.length} character${text.length === 1 ? '' : 's'}.`);
   }, [reportMeta]);
 
@@ -94,7 +93,7 @@ export function TerminalSessionPane({
     }
 
     fitAddon.fit();
-    await invoke('resize_pty', {
+    await invokeWithTimeout('resize_pty', {
       cols: term.cols,
       pty_id: ptyId,
       rows: term.rows,
@@ -122,6 +121,27 @@ export function TerminalSessionPane({
 
     term.loadAddon(fitAddon);
     term.open(terminalRef.current);
+
+    // Load WebLinks addon
+    void (async () => {
+      try {
+        const { WebLinksAddon } = await import('@xterm/addon-web-links');
+        const webLinks = new WebLinksAddon();
+        term.loadAddon(webLinks);
+      } catch {
+        // WebLinks unavailable, silently skip
+      }
+
+      // Load WebGL addon with canvas fallback
+      try {
+        const { WebglAddon } = await import('@xterm/addon-webgl');
+        const webgl = new WebglAddon();
+        term.loadAddon(webgl);
+      } catch {
+        // WebGL unavailable, canvas renderer used (no user notification needed)
+      }
+    })();
+
     term.focus();
 
     xtermRef.current = term;
@@ -150,9 +170,9 @@ export function TerminalSessionPane({
 
     async function startSession() {
       try {
-        const id = await invoke<number>('spawn_pty');
+        const id = await invokeWithTimeout<number>('spawn_pty', undefined, 10000);
         if (!mounted) {
-          await invoke('close_pty', { pty_id: id }).catch(() => undefined);
+          await invokeWithTimeout('close_pty', { pty_id: id }).catch(() => undefined);
           return;
         }
 
@@ -160,7 +180,7 @@ export function TerminalSessionPane({
         reportMeta('starting', `Shell allocated. PTY ${id} is handshaking...`, id);
 
         term.onData((data) => {
-          void invoke('write_pty', { data, pty_id: id }).catch((error) => {
+          void invokeWithTimeout('write_pty', { data, pty_id: id }).catch((error) => {
             reportMeta('error', getErrorMessage(error, 'Failed to write to PTY.'), id);
           });
         });
@@ -185,7 +205,23 @@ export function TerminalSessionPane({
           if (event.payload.pty_id !== id) return;
           reportMeta('closed', `Shell exited: ${event.payload.reason}`, id);
           term.write(`\r\n\x1b[33mShell exited: ${event.payload.reason}\x1b[0m\r\n`);
-          term.write(`\r\n\x1b[36mRight-click → "Restart Pane" to relaunch the shell.\x1b[0m\r\n`);
+          term.write(`\r\n\x1b[36mRestarting shell in 3 seconds... (right-click → Restart Pane to cancel)\x1b[0m\r\n`);
+
+          let countdown = 3;
+          const timer = setInterval(() => {
+            if (!mounted) {
+              clearInterval(timer);
+              return;
+            }
+            countdown -= 1;
+            if (countdown <= 0) {
+              clearInterval(timer);
+              if (mounted) {
+                term.write(`\r\n\x1b[36mRestarting...\x1b[0m\r\n`);
+                void startSession();
+              }
+            }
+          }, 1000);
         });
 
         unlistenFns.push(unlistenOutput, unlistenExit);
@@ -208,7 +244,7 @@ export function TerminalSessionPane({
       const ptyId = ptyIdRef.current;
       ptyIdRef.current = null;
       if (ptyId !== null) {
-        void invoke('close_pty', { pty_id: ptyId }).catch(() => undefined);
+        void invokeWithTimeout('close_pty', { pty_id: ptyId }).catch(() => undefined);
       }
       fitAddonRef.current = null;
       xtermRef.current = null;

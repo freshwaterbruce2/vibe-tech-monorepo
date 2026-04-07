@@ -3,7 +3,12 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "packages/openrouter-client/src",
   "projectType": "library",
-  "tags": ["package", "shared", "openrouter", "client"],
+  "tags": [
+    "package",
+    "shared",
+    "openrouter",
+    "client"
+  ],
   "targets": {
     "build": {
       "executor": "nx:run-commands",
@@ -11,7 +16,9 @@
         "command": "tsc",
         "cwd": "packages/openrouter-client"
       },
-      "outputs": ["{projectRoot}/dist"]
+      "outputs": [
+        "{projectRoot}/dist"
+      ]
     },
     "test": {
       "executor": "nx:run-commands",
@@ -40,6 +47,7 @@
         "command": "pnpm install",
         "cwd": "packages/openrouter-client"
       }
-    }
+    },
+    "quality": {}
   }
 }

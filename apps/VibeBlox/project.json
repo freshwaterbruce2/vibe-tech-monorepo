@@ -1,93 +1,133 @@
 {
-	"name": "vibeblox",
-	"$schema": "../../node_modules/nx/schemas/project-schema.json",
-	"projectType": "application",
-	"sourceRoot": "apps/vibeblox/src",
-	"tags": ["type:app", "platform:web", "scope:vibeblox"],
-	"targets": {
-		"dev": {
-			"executor": "nx:run-commands",
-			"options": {
-				"commands": ["pnpm --filter @vibetech/vibeblox dev"],
-				"cwd": "apps/vibeblox"
-			}
-		},
-		"build": {
-			"executor": "nx:run-commands",
-			"dependsOn": ["^build"],
-			"inputs": ["production", "^production"],
-			"outputs": ["{projectRoot}/dist"],
-			"options": {
-				"commands": ["pnpm --filter @vibetech/vibeblox build"],
-				"cwd": "apps/vibeblox"
-			},
-			"configurations": {
-				"production": {
-					"optimization": true,
-					"sourceMap": false
-				}
-			}
-		},
-		"preview": {
-			"executor": "nx:run-commands",
-			"dependsOn": ["build"],
-			"options": {
-				"commands": ["pnpm --filter @vibetech/vibeblox preview"],
-				"cwd": "apps/vibeblox"
-			}
-		},
-		"lint": {
-			"executor": "nx:run-commands",
-			"inputs": ["default", "{projectRoot}/**/*.{ts,tsx}"],
-			"outputs": [],
-			"options": {
-				"command": "powershell -Command \"$env:ESLINT_USE_FLAT_CONFIG='false'; node ..\\\\..\\\\node_modules\\\\eslint\\\\bin\\\\eslint.js . --ext ts,tsx --report-unused-disable-directives\"",
-				"cwd": "apps/VibeBlox"
-			}
-		},
-		"typecheck": {
-			"executor": "nx:run-commands",
-			"inputs": ["default", "{projectRoot}/**/*.{ts,tsx}"],
-			"outputs": [],
-			"options": {
-				"commands": ["pnpm --filter @vibetech/vibeblox typecheck"],
-				"cwd": "apps/vibeblox"
-			}
-		},
-		"test": {
-			"executor": "nx:run-commands",
-			"inputs": [
-				"default",
-				"{projectRoot}/**/*.{ts,tsx}",
-				"{projectRoot}/**/*.test.{ts,tsx}"
-			],
-			"outputs": ["{projectRoot}/coverage"],
-			"options": {
-				"commands": ["pnpm --filter @vibetech/vibeblox test"],
-				"cwd": "apps/vibeblox"
-			}
-		},
-		"server": {
-			"executor": "nx:run-commands",
-			"options": {
-				"commands": ["pnpm --filter @vibetech/vibeblox server"],
-				"cwd": "apps/vibeblox"
-			}
-		},
-		"db:migrate": {
-			"executor": "nx:run-commands",
-			"options": {
-				"commands": ["pnpm --filter @vibetech/vibeblox db:migrate"],
-				"cwd": "apps/vibeblox"
-			}
-		},
-		"db:seed": {
-			"executor": "nx:run-commands",
-			"dependsOn": ["db:migrate"],
-			"options": {
-				"commands": ["pnpm --filter @vibetech/vibeblox db:seed"],
-				"cwd": "apps/vibeblox"
-			}
-		}
-	}
+  "name": "vibeblox",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/vibeblox/src",
+  "tags": [
+    "type:app",
+    "platform:web",
+    "scope:vibeblox"
+  ],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "pnpm --filter @vibetech/vibeblox dev"
+        ],
+        "cwd": "apps/vibeblox"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "production",
+        "^production"
+      ],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
+      "options": {
+        "commands": [
+          "pnpm --filter @vibetech/vibeblox build"
+        ],
+        "cwd": "apps/vibeblox"
+      },
+      "configurations": {
+        "production": {
+          "optimization": true,
+          "sourceMap": false
+        }
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "commands": [
+          "pnpm --filter @vibetech/vibeblox preview"
+        ],
+        "cwd": "apps/vibeblox"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "default",
+        "{projectRoot}/**/*.{ts,tsx}"
+      ],
+      "outputs": [],
+      "options": {
+        "command": "powershell -Command \"$env:ESLINT_USE_FLAT_CONFIG='false'; node ..\\\\..\\\\node_modules\\\\eslint\\\\bin\\\\eslint.js . --ext ts,tsx --report-unused-disable-directives\"",
+        "cwd": "apps/VibeBlox"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "default",
+        "{projectRoot}/**/*.{ts,tsx}"
+      ],
+      "outputs": [],
+      "options": {
+        "commands": [
+          "pnpm --filter @vibetech/vibeblox typecheck"
+        ],
+        "cwd": "apps/vibeblox"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "default",
+        "{projectRoot}/**/*.{ts,tsx}",
+        "{projectRoot}/**/*.test.{ts,tsx}"
+      ],
+      "outputs": [
+        "{projectRoot}/coverage"
+      ],
+      "options": {
+        "commands": [
+          "pnpm --filter @vibetech/vibeblox test"
+        ],
+        "cwd": "apps/vibeblox"
+      }
+    },
+    "server": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "pnpm --filter @vibetech/vibeblox server"
+        ],
+        "cwd": "apps/vibeblox"
+      }
+    },
+    "db:migrate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "pnpm --filter @vibetech/vibeblox db:migrate"
+        ],
+        "cwd": "apps/vibeblox"
+      }
+    },
+    "db:seed": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "db:migrate"
+      ],
+      "options": {
+        "commands": [
+          "pnpm --filter @vibetech/vibeblox db:seed"
+        ],
+        "cwd": "apps/vibeblox"
+      }
+    },
+    "quality": {}
+  }
 }

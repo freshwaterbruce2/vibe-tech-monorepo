@@ -212,16 +212,25 @@ export function Terminal({ onClose }: { onClose: () => void }) {
   const openContextMenu = useCallback(
     (event: React.MouseEvent<HTMLElement>, tabId: number, paneId: number | null) => {
       event.preventDefault();
-      const targetPaneId = paneId ?? layoutState.tabs.find((tab) => tab.id === tabId)?.activePaneId ?? null;
+      const targetPaneId =
+        paneId ?? layoutState.tabs.find((tab) => tab.id === tabId)?.activePaneId ?? null;
       if (targetPaneId !== null) {
         activatePane(tabId, targetPaneId);
       }
-      setContextMenu({
-        paneId: targetPaneId,
-        tabId,
-        x: Math.min(event.clientX, window.innerWidth - 220),
-        y: Math.min(event.clientY, window.innerHeight - 280),
-      });
+      // Set initial position; will be adjusted after render
+      setContextMenu({ paneId: targetPaneId, tabId, x: event.clientX, y: event.clientY });
+
+      // After the menu renders, clamp to viewport using actual size
+      const cx = event.clientX;
+      const cy = event.clientY;
+      setTimeout(() => {
+        const menu = contextMenuRef.current;
+        if (!menu) return;
+        const { width, height } = menu.getBoundingClientRect();
+        const x = Math.max(8, Math.min(cx, window.innerWidth - width - 8));
+        const y = Math.max(8, Math.min(cy, window.innerHeight - height - 8));
+        setContextMenu((prev) => (prev ? { ...prev, x, y } : prev));
+      }, 0);
     },
     [activatePane, layoutState.tabs],
   );

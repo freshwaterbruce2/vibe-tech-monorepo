@@ -1,64 +1,70 @@
 {
-	"$schema": "../../node_modules/nx/schemas/project-schema.json",
-	"name": "business-booking-platform",
-	"projectType": "application",
-	"root": "apps/business-booking-platform",
-	"sourceRoot": "apps/business-booking-platform/src",
-	"implicitDependencies": [],
-	"targets": {
-		"dev": {
-			"executor": "nx:run-commands",
-			"options": {
-				"command": "vite",
-				"cwd": "apps/business-booking-platform"
-			}
-		},
-		"build": {
-			"executor": "nx:run-commands",
-			"outputs": ["{projectRoot}/dist"],
-			"cache": true,
-			"options": {
-				"command": "vite build",
-				"cwd": "apps/business-booking-platform"
-			},
-			"configurations": {
-				"production": {
-					"command": "NODE_ENV=production vite build",
-					"cwd": "apps/business-booking-platform"
-				}
-			}
-		},
-		"preview": {
-			"executor": "nx:run-commands",
-			"options": {
-				"command": "vite preview",
-				"cwd": "apps/business-booking-platform"
-			}
-		},
-		"lint": {
-			"executor": "nx:run-commands",
-			"options": {
-				"command": "node ../../node_modules/eslint/bin/eslint.js src",
-				"cwd": "apps/business-booking-platform"
-			},
-			"cache": true
-		},
-		"typecheck": {
-			"executor": "nx:run-commands",
-			"options": {
-				"command": "tsc --noEmit",
-				"cwd": "apps/business-booking-platform"
-			},
-			"cache": true
-		},
-		"test": {
-			"executor": "nx:run-commands",
-			"options": {
-				"command": "vitest",
-				"cwd": "apps/business-booking-platform"
-			},
-			"cache": true
-		}
-	},
-	"tags": ["type:web", "scope:business-booking"]
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "business-booking-platform",
+  "projectType": "application",
+  "root": "apps/business-booking-platform",
+  "sourceRoot": "apps/business-booking-platform/src",
+  "implicitDependencies": [],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vite",
+        "cwd": "apps/business-booking-platform"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
+      "cache": true,
+      "options": {
+        "command": "vite build",
+        "cwd": "apps/business-booking-platform"
+      },
+      "configurations": {
+        "production": {
+          "command": "NODE_ENV=production vite build",
+          "cwd": "apps/business-booking-platform"
+        }
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vite preview",
+        "cwd": "apps/business-booking-platform"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../node_modules/eslint/bin/eslint.js src",
+        "cwd": "apps/business-booking-platform"
+      },
+      "cache": true
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "apps/business-booking-platform"
+      },
+      "cache": true
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest",
+        "cwd": "apps/business-booking-platform"
+      },
+      "cache": true
+    },
+    "quality": {}
+  },
+  "tags": [
+    "type:web",
+    "scope:business-booking"
+  ]
 }

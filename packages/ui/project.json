@@ -15,13 +15,26 @@
     },
     "build": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "cache": true,
       "options": {
         "command": "tsc",
         "cwd": "packages/ui"
       }
-    }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "packages/ui"
+      }
+    },
+    "quality": {}
   },
-  "tags": ["type:library", "scope:ui"]
+  "tags": [
+    "type:library",
+    "scope:ui"
+  ]
 }

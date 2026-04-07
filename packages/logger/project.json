@@ -7,7 +7,9 @@
   "targets": {
     "build": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "cache": true,
       "options": {
         "command": "tsc",
@@ -21,7 +23,25 @@
         "command": "vitest run",
         "cwd": "packages/logger"
       }
-    }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec eslint src --ext .ts,.tsx --max-warnings 0",
+        "cwd": "packages/logger"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "packages/logger"
+      }
+    },
+    "quality": {}
   },
-  "tags": ["type:library", "scope:logger"]
+  "tags": [
+    "type:library",
+    "scope:logger"
+  ]
 }

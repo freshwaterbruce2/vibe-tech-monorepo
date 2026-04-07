@@ -17,7 +17,9 @@
         "command": "node dist/index.js",
         "cwd": "apps/mcp-skills-server"
       },
-      "dependsOn": ["build"]
+      "dependsOn": [
+        "build"
+      ]
     },
     "dev": {
       "executor": "nx:run-commands",
@@ -25,7 +27,25 @@
         "command": "pnpm dev",
         "cwd": "apps/mcp-skills-server"
       }
-    }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec eslint src --ext .ts,.tsx --max-warnings 0",
+        "cwd": "apps/mcp-skills-server"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "apps/mcp-skills-server"
+      }
+    },
+    "quality": {}
   },
-  "tags": ["type:mcp", "scope:agent"]
+  "tags": [
+    "type:mcp",
+    "scope:agent"
+  ]
 }
