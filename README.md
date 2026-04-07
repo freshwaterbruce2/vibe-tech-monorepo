@@ -1,109 +1,155 @@
-# Vibe Tech - Multi-Project Monorepo
+# VibeTech Monorepo
 
-A high-performance monorepo containing multiple applications, shared libraries, and tooling across web, desktop, mobile, and backend services.
+Multi-project monorepo spanning desktop, web, mobile, and infrastructure applications with shared packages.
 
-## 🗂️ Path Architecture
+## Prerequisites
 
-This project uses a clear separation between code and data:
+- **Node.js** 22+
+- **pnpm** 10.33+ (`corepack enable && corepack prepare pnpm@latest`)
+- **Windows 11** (primary development platform)
+- **Rust toolchain** (MSVC) -- required for Tauri apps (nova-agent, vtde)
+- **Python 3.11+** -- required for crypto-enhanced only
+- **Visual Studio Build Tools 2022** -- native module compilation
 
-- **Code**: `C:\dev` (all source code, version controlled)
-- **Data**: `D:\` (databases, logs, datasets, learning systems)
-- **See [AI.md](./AI.md), [docs/reference/PATH_CHANGE_RULES.md](./docs/reference/PATH_CHANGE_RULES.md), and [docs/reference/SYSTEM_SURFACES.md](./docs/reference/SYSTEM_SURFACES.md) for details.**
-
-## 📊 Project Status
-
-- **Overall Health**: 98.0/100 ✅ (Grade A+ Production Ready)
-- **Last Updated**: February 6, 2026
-- **Current Phase**: Active Innovation & Standardization
-- **AI-Powered CI**: GitHub Actions + Nx affected pipelines ✨
-
-| Category      | Status         | Score   | Notes                                         |
-| ------------- | -------------- | ------- | --------------------------------------------- |
-| Architecture  | ✅ Excellent   | 98/100  | Standardized on Nx 22.4.5 and React 19.2.4.   |
-| Security      | ✅ Protected   | 98/100  | Vibe Justice Remediation Complete.            |
-| Type Safety   | ✅ Enforced    | 100/100 | TypeScript 5.9.3 Strict Mode everywhere.      |
-| Code Quality  | ✅ Strong      | 95/100  | Ralph Methodology & "One Tool" Fixers active. |
-| Testing       | ✅ Robust      | 90/100  | Playwright E2E & Vitest fully integrated.     |
-| Documentation | ✅ Exceptional | 95/100  | Comprehensive KIs and automated docs.         |
-| CI/CD         | ✅ AI-Enhanced | 99/100  | Self-Healing CI with automated fixes.         |
-
-## 🚀 Getting Started
-
-This project requires **Node.js 22+** and **pnpm 10.28.2+**.
-
-### 1. Setup
+## Quick Start
 
 ```bash
-# Clone the repository
 git clone https://github.com/freshwaterbruce2/Monorepo.git vibetech
 cd vibetech
-
-# Install dependencies (pnpm is required)
 pnpm install
+pnpm nx dev <project-name>   # e.g. pnpm nx dev nova-agent
 ```
 
-### 2. Development
+## Applications
+
+### Desktop
+
+| App | Description | Tech | Status |
+|-----|-------------|------|--------|
+| nova-agent | AI desktop assistant with RAG pipeline | Tauri, React, Rust, LanceDB | Active |
+| vtde | VibeTech Desktop Environment | Tauri, React | Active |
+| vibe-code-studio | AI-powered code editor | Electron, Tauri, React | Maintained |
+| gravity-claw | Arcade claw machine game | Electron, React | Maintained |
+| clawdbot-desktop | Desktop automation bot | Electron | Experimental |
+
+### Web
+
+| App | Description | Tech | Status |
+|-----|-------------|------|--------|
+| vibe-shop | E-commerce platform | React, Vite | Active |
+| vibe-justice | Legal AI platform | React, Python FastAPI | Maintained |
+| business-booking-platform | Hotel booking with AI search | React, Vite | Maintained |
+| invoice-automation-saas | SaaS invoice automation | React, Vite | Maintained |
+| vibe-tech-lovable | Landing page / marketing site | React, Vite | Maintained |
+| monorepo-dashboard | Workspace health dashboard | React, Vite | Active |
+| VibeBlox | Token incentive system for kids | React, Hono | Experimental |
+| avge-dashboard | Aviation dashboard | React | Experimental |
+| prompt-engineer | Prompt testing workbench | React, Vite | Experimental |
+
+### Mobile
+
+| App | Description | Tech | Status |
+|-----|-------------|------|--------|
+| vibe-tutor | Learning app for kids | Capacitor, React | Active |
+| shipping-pwa | Shipping tracker PWA | Capacitor, React | Maintained |
+| nova-mobile-app | Nova Agent mobile companion | React Native | Experimental |
+
+### MCP Servers
+
+| App | Description | Status |
+|-----|-------------|--------|
+| memory-mcp | Exposes memory system to Claude Code | Active |
+| mcp-skills-server | Agent skills system for any LLM | Active |
+| mcp-gateway | Bridges OpenClaw to MCP servers via IPC | Active |
+| mcp-rag-server | Nova-Agent RAG pipeline for Claude | Active |
+| desktop-commander-v3 | Unrestricted terminal access for AI agents | Active |
+| mcp-codeberg | Codeberg API (deprecated, migrated to GitHub) | Deprecated |
+
+### Infrastructure
+
+| App | Description | Status |
+|-----|-------------|--------|
+| agent-engine | Autonomous coding engine with gated self-improvement | Active |
+| crypto-enhanced | Crypto trading system (Python) | Active |
+| ai-youtube-pipeline | YouTube content pipeline | Experimental |
+| symptom-tracker | Health symptom tracker | Experimental |
+| vibe-booking-backend | Booking platform backend | Maintained |
+
+## Shared Packages (25 total)
+
+Key packages by dependents. Full list in `packages/`.
+
+| Package | Purpose | Dependents |
+|---------|---------|------------|
+| vibetech-shared | Core shared utilities and types | 15 |
+| shared-utils | Helper functions and common logic | 7 |
+| shared-ipc | Inter-process communication protocol | 6 |
+| logger | Structured logging | 6 |
+| ui | Shared React component library (shadcn/ui) | 6 |
+| openrouter-client | OpenRouter API client | 4 |
+| shared-config | Shared ESLint, TS, Vite configs | 3 |
+| memory | Unified memory system (semantic, episodic, RAG) | 2 |
+| feature-flags | Self-hosted feature flag service | 1 |
+| nova-core | Nova Agent intelligence layer | -- |
+| mcp-core | MCP protocol utilities | 1 |
+| testing-utils | Test helpers and fixtures | 1 |
+
+## Common Commands
+
+### Per-project (preferred)
 
 ```bash
-# Start the development server for the main app
-pnpm run dev
-
-# Run a legacy app-specific flow
-pnpm run dev:gravity-claw
-
-# Or run a specific Nx project target
-pnpm nx run <project>:dev
+pnpm nx dev <project>        # Start dev server
+pnpm nx build <project>      # Production build
+pnpm nx test <project>       # Run tests
+pnpm nx lint <project>       # Lint
 ```
 
-## 🛠️ Available Commands
+### Monorepo-wide
 
-We use `pnpm nx` as the standard invocation pattern.
-
-| Command                     | Description                                             |
-| --------------------------- | ------------------------------------------------------- |
-| `pnpm run dev`              | Starts the default Nx development target (`vtde:dev`).  |
-| `pnpm nx run-many -t build` | Builds all projects.                                    |
-| `pnpm run test`             | Runs Nx test targets across projects.                   |
-| `pnpm run sync:audit`       | Runs monorepo synchronization policy checks.            |
-| `pnpm run workspace:inventory` | Generates a non-blocking Nx-aware workspace review report. |
-| `pnpm run workspace:cleanup:dry` | Lists repo-root and generated cleanup candidates without deleting them. |
-| `pnpm run databases:health` | Reports database topology, duplicate names, and WAL growth. |
-| `pnpm run memory:health` | Checks `memory.db` and its WAL/SHM sidecars. |
-| `pnpm run workspace:health` | Runs the safe-stabilization review suite across paths, Nx, databases, and learning state. |
-| `pnpm run quality`          | Runs full quality suite (lint, test, build, typecheck). |
-| `pnpm run monorepo:health`  | Runs workspace health checks.                           |
-| `pnpm run workspace:clean`  | Deep clean of node_modules and caches.                  |
-
-## 📂 Monorepo Structure
-
-```text
-vibetech/
-├── 📂 apps/                    # Applications (52+ projects)
-│   ├── ⚖️ vibe-justice/        # Legal AI Platform (React + Python FastAPI)
-│   ├── 💻 vibe-code-studio/    # Desktop IDE (Electron)
-│   ├── 📱 vibe-tutor/          # Mobile Learning App (Capacitor)
-│   ├── 🐍 crypto-enhanced/     # Crypto Trading System (Python)
-│   ├── 🎨 iconforge/           # Icon Management
-│   └── [48+ more apps]
-├── 📂 packages/                # Shared libraries
-│   ├── ⚙️ eslint-config-custom
-│   └── 🎨 ui-library
-├── 📂 backend/                 # Backend services
-├── 📂 tools/                   # Development tools
-└── 📄 nx.json                  # Nx workspace config
+```bash
+pnpm run quality             # Lint + typecheck + build (all projects)
+pnpm run quality:affected    # Same, but only changed projects (faster)
+pnpm run lint                # ESLint across all projects
+pnpm run typecheck           # TypeScript check across all projects
+pnpm run test                # Run all tests
+pnpm run test:unit           # Vitest unit tests
+pnpm run test:e2e            # Playwright E2E tests
+pnpm nx graph                # Visualize project dependency graph
 ```
 
-## 💻 Technology Stack
+### Adding dependencies
 
-- **Monorepo**: Nx 22.4.5+ with intelligent caching
-- **Frontend**: React 19.2.4, TypeScript 5.9.3, Tailwind CSS v4
-- **Desktop**: Electron (Vibe Code Studio), Tauri (Nova Agent)
-- **Mobile**: Capacitor (Vibe Tutor)
-- **Backend**: Node.js 22+, Python 3.11+, FastAPI
-- **Testing**: Vitest, Playwright, pytest
-- **Package Manager**: pnpm 10.28.2+
-- **Version Control**: GitHub (Git)
+```bash
+pnpm add <pkg> --filter <project>      # Add to a specific project
+pnpm add -D <pkg> --filter <project>   # Add as devDependency
+```
 
-## 📄 License
+Never run bare `pnpm install` from inside a project directory. Always use `--filter` from the workspace root.
 
-This project is licensed under the MIT License.
+## Architecture
+
+Source code lives on `C:\dev`. All runtime data (databases, logs, learning system) lives on `D:\`. See `docs/PATHS_POLICY.md` and `AI.md` for the full policy.
+
+```
+C:\dev\              source code (git-tracked)
+D:\databases\        SQLite databases
+D:\logs\             application logs
+D:\data\             datasets
+D:\learning-system\  AI learning data
+```
+
+## CI/CD
+
+GitHub Actions runs on every push and PR. The pipeline uses Nx affected commands to only lint, typecheck, test, and build what changed. Pre-commit hooks enforce file size limits, secret scanning, and formatting locally.
+
+## Further Reading
+
+- `AI.md` -- workspace rules for AI agents
+- `docs/PORTS.md` -- port registry
+- `docs/WORKSPACE_STRUCTURE.md` -- detailed project structure
+- `.claude/rules/` -- development policies (git workflow, testing, TypeScript patterns)
+
+## License
+
+ISC

@@ -31,7 +31,7 @@ concurrency:
 
 env:
   NODE_VERSION: '22'
-  PNPM_VERSION: '10.32.1'
+  PNPM_VERSION: '10.33.0'
 
 jobs:
   # ============================================
@@ -57,18 +57,26 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Nx cache
+        uses: actions/cache@v4
+        with:
+          path: .nx/cache
+          key: nx-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            nx-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+            nx-${{ runner.os }}-
+
       - name: Sync audit
         run: pnpm run ci:sync
 
       - name: Lint (affected)
-        run: pnpm run ci:lint || pnpm run ci:lint:all
+        run: pnpm run ci:lint
 
       - name: Typecheck (affected)
-        run: pnpm run ci:typecheck || pnpm run ci:typecheck:all
+        run: pnpm run ci:typecheck
 
       - name: Test (affected)
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/feature/')
-        run: pnpm run ci:test || pnpm run ci:test:all
+        run: pnpm run ci:test
 
   # ============================================
   # BUILD (main and develop only)
@@ -96,71 +104,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build (affected)
-        run: pnpm run ci:build || pnpm run ci:build:all
-
-  # ============================================
-  # TYPECHECK QUARANTINE (non-blocking)
-  # ============================================
-  typecheck-quarantine:
-    name: Typecheck Quarantine
-    runs-on: windows-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-
-      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Typecheck quarantined projects
-        run: pnpm run typecheck:quarantine || echo "Quarantine typecheck has known failures"
-
-  # ============================================
-  # PR CHECKS (invoice-automation-saas)
-  # ============================================
-  invoice-pr-checks:
-    name: Invoice Automation PR Checks
-    runs-on: windows-latest
-    if: github.event_name == 'pull_request'
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-        with:
-          fetch-depth: 0
-
-      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Typecheck
-        run: pnpm nx run invoice-automation-saas:typecheck
-
-      - name: Build
-        run: pnpm nx run invoice-automation-saas:build
-
-      - name: Lint
-        continue-on-error: true
-        run: pnpm nx run invoice-automation-saas:lint
-
-      - name: Test
-        continue-on-error: true
-        run: pnpm nx run invoice-automation-saas:test -- --run
+        run: pnpm run ci:build
 
   # ============================================
   # CHANGESET STATUS CHECK (PRs only)
