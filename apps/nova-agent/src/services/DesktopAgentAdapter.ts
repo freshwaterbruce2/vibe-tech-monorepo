@@ -1,7 +1,6 @@
 
-import { BaseAgentAdapter } from '@nova/core/abstraction/AgentAdapter';
-import type { ProjectInfo } from '@nova/core/abstraction/AgentAdapter';
-import type { AgentState, WebSearchResult } from '@nova/types';
+import { BaseAgentAdapter } from '@vibetech/vibetech-shared';
+import type { ProjectInfo, AgentState, WebSearchResult } from '@vibetech/vibetech-shared';
 import { AgentService } from './AgentService';
 
 export class DesktopAgentAdapter extends BaseAgentAdapter {

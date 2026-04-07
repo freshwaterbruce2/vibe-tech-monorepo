@@ -21,9 +21,9 @@
       "@vibetech/shared-utils": ["../../packages/shared-utils/src/index.ts"],
       "@vibetech/ui": ["../../packages/ui/src/index.ts"],
       "@vibetech/openrouter-client": ["../../packages/openrouter-client/src/index.ts"],
-      "@nova/types": ["../../packages/nova-types/src/index.ts"],
-      "@nova/core": ["../../packages/nova-core/src/index.ts"],
-      "@nova/core/*": ["../../packages/nova-core/src/*"]
+      "@vibetech/vibetech-shared": ["../../packages/vibetech-shared/src/index.ts"],
+      "@vibetech/shared-config": ["../../packages/shared-config/src/index.ts"],
+      "@vibetech/logger": ["../../packages/logger/src/index.ts"]
     }
   },
   "include": ["src"],
