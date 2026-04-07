@@ -207,6 +207,16 @@
   white-space: nowrap;
 }
 
+.vtde-terminal__tab-rename {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  outline: 1px solid rgba(56, 189, 248, 0.5);
+  padding: 0 4px;
+  width: 80px;
+}
+
 .vtde-terminal__tab-count {
   min-width: 18px;
   padding: 0 6px;

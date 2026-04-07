@@ -8,7 +8,7 @@
  *   rag_index_run       — Trigger an incremental (or full) re-index
  *   rag_invalidate      — Force re-index of specific paths
  *   db_query_trading    — Read-only SQL against D:\databases\trading.db
- *   db_query_learning   — Read-only SQL against D:\databases\nova_shared.db
+ *   db_query_learning   — Read-only SQL against D:\databases\agent_learning.db
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -219,7 +219,7 @@ server.registerTool(
   'db_query_learning',
   {
     title: 'Query Learning Database',
-    description: 'Run a read-only SQL SELECT against D:\\databases\\nova_shared.db. Contains agent execution history, success/failure patterns, learning data.',
+    description: 'Run a read-only SQL SELECT against D:\\databases\\agent_learning.db. Contains agent execution history, success/failure patterns, learning data.',
     inputSchema: z.object({
       sql: z.string().describe('SQL SELECT query to execute'),
       limit: z.number().int().min(1).max(500).default(50).describe('Max rows to return (auto-injected if missing)'),

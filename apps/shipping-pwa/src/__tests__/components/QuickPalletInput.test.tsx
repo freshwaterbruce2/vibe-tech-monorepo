@@ -3,8 +3,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import QuickPalletInput from '@/components/pallets/QuickPalletInput';
 
 // Mock the component to avoid the useState issue during tests
-vi.mock('@/components/pallets/QuickPalletInput', () => {
-  return function MockedQuickPalletInput({
+vi.mock('@/components/pallets/QuickPalletInput', () => ({
+  default: function MockedQuickPalletInput({
     currentCount,
     onUpdate,
     onClose
@@ -23,8 +23,8 @@ vi.mock('@/components/pallets/QuickPalletInput', () => {
         <button onClick={() => onUpdate(currentCount)}>OK</button>
       </div>
     );
-  };
-});
+  },
+}));
 
 describe('QuickPalletInput Component', () => {
   it('renders correctly', () => {

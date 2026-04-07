@@ -5,6 +5,14 @@
   "root": "packages/ui",
   "sourceRoot": "packages/ui/src",
   "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "node ../../node_modules/eslint/bin/eslint.js src --max-warnings 0",
+        "cwd": "packages/ui"
+      }
+    },
     "build": {
       "executor": "nx:run-commands",
       "outputs": ["{projectRoot}/dist"],

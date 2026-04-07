@@ -9,9 +9,9 @@ vi.mock('../useSpeechRecognition');
 vi.mock('../useUserSettings');
 vi.mock('sonner');
 
-const mockUseSpeechRecognition = useSpeechRecognition as jest.MockedFunction<typeof useSpeechRecognition>;
-const mockUseUserSettings = useUserSettings as jest.MockedFunction<typeof useUserSettings>;
-const mockToast = toast as jest.Mocked<typeof toast>;
+const mockUseSpeechRecognition = vi.mocked(useSpeechRecognition);
+const mockUseUserSettings = vi.mocked(useUserSettings);
+const mockToast = vi.mocked(toast);
 
 describe('useVoiceCommand', () => {
   const mockOnCommandRecognized = vi.fn();
@@ -85,7 +85,7 @@ describe('useVoiceCommand', () => {
         cancel: vi.fn(),
         pause: vi.fn(),
         resume: vi.fn(),
-        getVoices: jest.fn(() => []),
+        getVoices: vi.fn(() => []),
       },
     });
   });
@@ -328,7 +328,7 @@ describe('useVoiceCommand', () => {
 
   describe('Error Handling', () => {
     it('handles command execution errors gracefully', () => {
-      const errorOnCommandRecognized = jest.fn(() => {
+      const errorOnCommandRecognized = vi.fn(() => {
         throw new Error('Command execution failed');
       });
 

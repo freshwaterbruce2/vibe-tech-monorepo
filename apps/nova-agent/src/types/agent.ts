@@ -1,1 +1,1 @@
-export type { AgentState, ChatMessage, WebSearchResult } from '@vibetech/vibetech-shared';
+export type { AgentState, ChatMessage, WebSearchResult } from '@vibetech/shared';

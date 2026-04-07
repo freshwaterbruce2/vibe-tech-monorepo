@@ -167,7 +167,9 @@ export function TerminalSessionPane({
 
         if (terminalRef.current) {
           const observer = new ResizeObserver(() => {
+            if (!mounted) return;
             void resizeTerminal().catch((error) => {
+              if (!mounted) return;
               reportMeta('error', getErrorMessage(error, 'Failed to resize PTY.'), id);
             });
           });
@@ -183,6 +185,7 @@ export function TerminalSessionPane({
           if (event.payload.pty_id !== id) return;
           reportMeta('closed', `Shell exited: ${event.payload.reason}`, id);
           term.write(`\r\n\x1b[33mShell exited: ${event.payload.reason}\x1b[0m\r\n`);
+          term.write(`\r\n\x1b[36mRight-click → "Restart Pane" to relaunch the shell.\x1b[0m\r\n`);
         });
 
         unlistenFns.push(unlistenOutput, unlistenExit);

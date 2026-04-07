@@ -12,11 +12,11 @@
 const mockLocalStorage = (() => {
   let store: Record<string, string> = {};
   return {
-    getItem: jest.fn((key: string) => store[key] || null),
-    setItem: jest.fn((key: string, value: string) => {
+    getItem: vi.fn((key: string) => store[key] || null),
+    setItem: vi.fn((key: string, value: string) => {
       store[key] = value.toString();
     }),
-    clear: jest.fn(() => {
+    clear: vi.fn(() => {
       store = {};
     }),
   };
@@ -28,17 +28,17 @@ Object.defineProperty(window, "localStorage", {
 
 // Mock IndexedDB
 const mockIndexedDB = {
-  open: jest.fn(() => ({
+  open: vi.fn(() => ({
     onupgradeneeded: null,
-    onsuccess: jest.fn((event) => {
+    onsuccess: vi.fn((event) => {
       event.target.result = {
-        transaction: jest.fn(() => ({
-          objectStore: jest.fn(() => ({
+        transaction: vi.fn(() => ({
+          objectStore: vi.fn(() => ({
             put: vi.fn(),
           })),
         })),
         objectStoreNames: {
-          contains: jest.fn(() => true),
+          contains: vi.fn(() => true),
         },
         createObjectStore: vi.fn(),
       };

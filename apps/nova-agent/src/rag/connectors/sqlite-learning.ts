@@ -1,6 +1,6 @@
 /**
  * Learning System Connector
- * Read-only wrapper around the learning database (D:\databases\nova_shared.db).
+ * Read-only wrapper around the learning database (D:\databases\agent_learning.db).
  * Provides access to 59k+ execution patterns, success/failure tracking.
  */
 
@@ -8,7 +8,7 @@ import { existsSync } from 'node:fs';
 import Database from 'better-sqlite3';
 import type { ConnectorQuery, DatabaseSchema } from '../types.js';
 
-const DEFAULT_DB_PATH = 'D:\\databases\\nova_shared.db';
+const DEFAULT_DB_PATH = 'D:\\databases\\agent_learning.db';
 
 export interface SuccessPattern {
   id: number;

@@ -6,7 +6,7 @@ import { DoorSchedule } from '@/types/shipping';
 
 vi.mock('file-saver');
 
-const mockedSaveAs = saveAs as jest.MockedFunction<typeof saveAs>;
+const mockedSaveAs = vi.mocked(saveAs);
 
 describe('Data Export', () => {
   const mockDoors: DoorSchedule[] = [

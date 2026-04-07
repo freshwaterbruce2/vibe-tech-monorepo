@@ -19,7 +19,7 @@ export function MemoryVisualizer() {
     listDatabases()
       .then((dbs) => {
         const memDb = dbs.find(
-          (d) => d.includes('nova_shared.db') || d.includes('learning.db') || d.includes('memory'),
+          (d) => d.includes('agent_learning.db') || d.includes('memory.db') || d.includes('learning'),
         );
         if (memDb) setDbPath(memDb);
       })
@@ -28,7 +28,7 @@ export function MemoryVisualizer() {
 
   const handleSearch = async () => {
     if (!dbPath) {
-      setError('No memory database found (e.g. nova_shared.db or learning.db).');
+      setError('No memory database found (e.g. agent_learning.db or memory.db).');
       return;
     }
 

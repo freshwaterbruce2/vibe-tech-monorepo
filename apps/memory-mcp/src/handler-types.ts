@@ -19,9 +19,7 @@ export interface SummarizationDeps {
   llm: LlmSummarizer | null;
 }
 
-export interface HandlerArgs {
-  [key: string]: unknown;
-}
+export type HandlerArgs = Record<string, unknown>;
 
 export interface ConsolidationDeletion {
   deletedId: number;

@@ -15,8 +15,9 @@ export class EmbeddingService {
 
   async generate(text: string): Promise<Float32Array> {
     if (!this.extractor) await this.init();
+    const extractor = this.extractor as FeatureExtractionPipeline;
 
-    const output = await this.extractor!(text, {
+    const output = await extractor(text, {
       pooling: 'mean', 
       normalize: true 
     });

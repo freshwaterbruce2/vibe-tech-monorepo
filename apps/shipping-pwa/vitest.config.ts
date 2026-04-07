@@ -8,6 +8,16 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/setupTests.ts'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    exclude: [
+      'node_modules/**',
+      'dist/**',
+      'tests/e2e/**',
+      'tests/integration/**',
+      'tests/performance/**',
+      'tests/mobile/**',
+      'tests/security/**',
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
@@ -32,7 +42,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
+      '@': path.resolve(__dirname, './src'),
+      '@vibetech/ui': path.resolve(__dirname, '../../packages/ui/src/index.ts'),
+      '@vibetech/shared-utils': path.resolve(__dirname, '../../packages/shared-utils/src/index.ts'),
     }
   }
 });

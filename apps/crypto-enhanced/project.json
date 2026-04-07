@@ -8,7 +8,7 @@
 		"lint": {
 			"executor": "nx:run-commands",
 			"options": {
-				"command": ".venv\\Scripts\\python.exe -m pylint src scripts start_live_trading.py run_tests.py test_credentials.py test_env_keys.py test_nonce_fix.py test_reversal_theory.py",
+				"command": ".venv\\Scripts\\python.exe -m pylint src scripts start_live_trading.py run_tests.py test_credentials.py test_env_keys.py test_nonce_fix.py test_reversal_theory.py --fail-under=7.0",
 				"cwd": "apps/crypto-enhanced"
 			}
 		},

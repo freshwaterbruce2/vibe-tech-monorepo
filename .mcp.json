@@ -59,7 +59,7 @@
         "MEMORY_EMBEDDING_MODEL": "text-embedding-3-small",
         "MEMORY_EMBEDDING_DIM": "1536",
         "MEMORY_EMBEDDING_ENDPOINT": "http://localhost:3001",
-        "LEARNING_DB_PATH": "D:/databases/nova_shared.db"
+        "LEARNING_DB_PATH": "D:/databases/agent_learning.db"
       }
     },
     "youtube": {

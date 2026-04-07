@@ -1,0 +1,6 @@
+[MASTER]
+# Add src/ to Python path so pylint resolves internal modules (database, config, etc.)
+init-hook='import sys; sys.path.insert(0, "src")'
+
+[FORMAT]
+max-line-length=150

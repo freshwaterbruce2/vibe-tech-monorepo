@@ -11,6 +11,8 @@ export function Terminal({ onClose }: { onClose: () => void }) {
     buildPaneMetaState(loadLayoutState()),
   );
   const [sessionCommand, setSessionCommand] = useState<SessionCommand | null>(null);
+  const [renamingTabId, setRenamingTabId] = useState<number | null>(null);
+  const [renameInput, setRenameInput] = useState('');
 
   const activeTab =
     layoutState.tabs.find((tab) => tab.id === layoutState.activeTabId) ?? layoutState.tabs[0] ?? null;
@@ -19,8 +21,12 @@ export function Terminal({ onClose }: { onClose: () => void }) {
   const activeMeta = activePane ? paneMeta[activePane.id] ?? createStartingMeta() : createStartingMeta();
 
   useEffect(() => {
-    // eslint-disable-next-line electron-security/no-localstorage-electron
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(toPersistedLayoutState(layoutState)));
+    try {
+      // eslint-disable-next-line electron-security/no-localstorage-electron
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(toPersistedLayoutState(layoutState)));
+    } catch {
+      // QuotaExceededError - layout won't persist but app continues
+    }
   }, [layoutState]);
 
   const activatePane = useCallback((tabId: number, paneId: number) => {
@@ -228,6 +234,31 @@ export function Terminal({ onClose }: { onClose: () => void }) {
     });
   }, []);
 
+  const startRenameTab = useCallback((tabId: number, currentTitle: string) => {
+    setRenamingTabId(tabId);
+    setRenameInput(currentTitle);
+  }, []);
+
+  const finishRenameTab = useCallback(() => {
+    if (renamingTabId === null) return;
+    const newTitle = renameInput.trim();
+    if (newTitle) {
+      setLayoutState((current) => ({
+        ...current,
+        tabs: current.tabs.map((tab) =>
+          tab.id === renamingTabId ? { ...tab, title: newTitle } : tab,
+        ),
+      }));
+    }
+    setRenamingTabId(null);
+    setRenameInput('');
+  }, [renamingTabId, renameInput]);
+
+  const cancelRenameTab = useCallback(() => {
+    setRenamingTabId(null);
+    setRenameInput('');
+  }, []);
+
   useEffect(() => {
     function handlePointer(event: PointerEvent) {
       if (contextMenuRef.current?.contains(event.target as Node)) return;
@@ -283,6 +314,7 @@ export function Terminal({ onClose }: { onClose: () => void }) {
     contextMenu && contextPaneId !== null
       ? [
           { label: 'New Tab', onSelect: createTab },
+          { label: 'Rename Tab', onSelect: () => { const tab = layoutState.tabs.find(t => t.id === contextMenu.tabId); if (tab) startRenameTab(contextMenu.tabId, tab.title); } },
           { label: 'Split Right', onSelect: () => splitPane(contextMenu.tabId, contextPaneId, 'vertical') },
           { label: 'Split Down', onSelect: () => splitPane(contextMenu.tabId, contextPaneId, 'horizontal') },
           { label: 'Restart Pane', onSelect: () => restartPane(contextMenu.tabId, contextPaneId) },
@@ -365,7 +397,31 @@ export function Terminal({ onClose }: { onClose: () => void }) {
                 title={meta?.message ?? tab.title}
               >
                 <span className={`vtde-terminal__tab-dot vtde-terminal__tab-dot--${meta?.status ?? 'starting'}`} />
-                <span className="vtde-terminal__tab-label">{tab.title}</span>
+                {renamingTabId === tab.id ? (
+                  <input
+                    autoFocus
+                    className="vtde-terminal__tab-rename"
+                    value={renameInput}
+                    onChange={(e) => setRenameInput(e.target.value)}
+                    onBlur={finishRenameTab}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') finishRenameTab();
+                      if (e.key === 'Escape') cancelRenameTab();
+                      e.stopPropagation();
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <span
+                    className="vtde-terminal__tab-label"
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      startRenameTab(tab.id, tab.title);
+                    }}
+                  >
+                    {tab.title}
+                  </span>
+                )}
                 {tab.panes.length > 1 && <span className="vtde-terminal__tab-count">{tab.panes.length}</span>}
               </button>
               <button

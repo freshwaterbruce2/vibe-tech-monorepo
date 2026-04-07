@@ -163,14 +163,16 @@ describe('VoiceCommandButton', () => {
       const { rerender } = render(
         <VoiceCommandButton isListening={false} onToggle={mockOnToggle} />
       );
-      
-      // Should show Mic icon when not listening
-      expect(screen.getByRole('button')).toContainHTML('Mic');
+
+      // Should show Mic icon (lucide renders SVG with class "lucide-mic")
+      const button = screen.getByRole('button');
+      expect(button.querySelector('.lucide-mic')).toBeInTheDocument();
 
       rerender(<VoiceCommandButton isListening={true} onToggle={mockOnToggle} />);
-      
+
       // Should show MicOff icon when listening
-      expect(screen.getByRole('button')).toContainHTML('MicOff');
+      const listeningButton = screen.getByRole('button');
+      expect(listeningButton.querySelector('.lucide-mic-off')).toBeInTheDocument();
     });
 
     it('shows pulsing animation when listening', () => {
@@ -194,24 +196,13 @@ describe('VoiceCommandButton', () => {
     });
   });
 
-  describe('Console Logging', () => {
-    it('logs interaction details on click', () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation();
-      
+  describe('Click Behavior', () => {
+    it('calls onToggle when button is clicked', () => {
       render(<VoiceCommandButton isListening={false} onToggle={mockOnToggle} />);
-      
+
       fireEvent.click(screen.getByRole('button'));
-      
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'VoiceCommandButton clicked!',
-        expect.objectContaining({
-          isListening: false,
-          isMobile: false,
-          isIOS: false,
-        })
-      );
-      
-      consoleSpy.mockRestore();
+
+      expect(mockOnToggle).toHaveBeenCalledTimes(1);
     });
   });
 });
