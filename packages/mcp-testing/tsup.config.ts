@@ -7,7 +7,7 @@ export default defineConfig({
     'helpers/index': 'src/helpers/index.ts',
   },
   format: ['cjs', 'esm'],
-  dts: false,  // Skip DTS for now
+  dts: true,
   clean: true,
   sourcemap: true,
   splitting: false,
