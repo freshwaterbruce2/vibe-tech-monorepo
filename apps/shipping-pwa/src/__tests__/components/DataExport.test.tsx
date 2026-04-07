@@ -4,7 +4,9 @@ import { format } from 'date-fns';
 import DataExport from '../../components/export/DataExport';
 import { DoorSchedule } from '@/types/shipping';
 
-vi.mock('file-saver');
+vi.mock('file-saver', () => ({
+  saveAs: vi.fn(),
+}));
 
 const mockedSaveAs = vi.mocked(saveAs);
 

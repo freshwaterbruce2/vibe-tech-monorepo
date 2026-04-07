@@ -1,6 +1,41 @@
 import { configure } from '@testing-library/dom'
 import '@testing-library/jest-dom'
 import { vi } from 'vitest'
+import { createElement, forwardRef } from 'react'
+import type { ReactNode } from 'react'
+
+// Mock @vibetech/ui - this package is a workspace dependency that may not be linked
+// Provide lightweight implementations of all exports used by components
+vi.mock('@vibetech/ui', () => {
+  const cn = (...args: unknown[]) =>
+    args
+      .flat()
+      .filter((x) => typeof x === 'string' && x.trim())
+      .join(' ')
+
+  const makeComponent = (tag: string, displayName: string) => {
+    const Comp = forwardRef<HTMLElement, Record<string, unknown>>(
+      ({ children, className, ...props }, ref) =>
+        createElement(tag, { ...props, className, ref }, children as ReactNode)
+    )
+    Comp.displayName = displayName
+    return Comp
+  }
+
+  return {
+    cn,
+    Button: makeComponent('button', 'Button'),
+    Card: makeComponent('div', 'Card'),
+    CardContent: makeComponent('div', 'CardContent'),
+    CardDescription: makeComponent('p', 'CardDescription'),
+    CardHeader: makeComponent('div', 'CardHeader'),
+    CardTitle: makeComponent('h3', 'CardTitle'),
+    Badge: makeComponent('span', 'Badge'),
+    Input: makeComponent('input', 'Input'),
+    useToast: () => ({ toast: vi.fn() }),
+    toast: vi.fn(),
+  }
+})
 
 // Mock SpeechSynthesisUtterance for tests
 Object.defineProperty(window, 'SpeechSynthesisUtterance', {

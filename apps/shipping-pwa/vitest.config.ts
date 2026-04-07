@@ -43,8 +43,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@vibetech/ui': path.resolve(__dirname, '../../packages/ui/src/index.ts'),
-      '@vibetech/shared-utils': path.resolve(__dirname, '../../packages/shared-utils/src/index.ts'),
     }
   }
 });

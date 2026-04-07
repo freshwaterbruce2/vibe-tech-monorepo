@@ -188,7 +188,7 @@ describe('useVoiceCommand', () => {
       expect(mockOnCommandRecognized).toHaveBeenCalledWith('set door number', ['342']);
     });
 
-    it('ignores low confidence results', () => {
+    it('processes commands regardless of confidence (confidence filtering is consumer responsibility)', () => {
       renderHook(() =>
         useVoiceCommand({
           commandPatterns: defaultCommandPatterns,
@@ -196,12 +196,12 @@ describe('useVoiceCommand', () => {
         })
       );
 
-      // Simulate low confidence result
+      // Simulate low confidence result -- the hook still processes it
       mockUseSpeechRecognition.mockReturnValue({
         ...defaultSpeechRecognitionReturn,
         transcript: 'add door',
         isFinal: true,
-        confidence: 0.3, // Below typical threshold
+        confidence: 0.3,
       });
 
       const { rerender } = renderHook(() =>
@@ -213,7 +213,9 @@ describe('useVoiceCommand', () => {
 
       rerender();
 
-      expect(mockOnCommandRecognized).not.toHaveBeenCalled();
+      // The hook processes all final transcripts -- confidence filtering
+      // is the responsibility of the consumer via onCommandRecognized
+      expect(mockOnCommandRecognized).toHaveBeenCalledWith('add door', []);
     });
 
     it('prevents duplicate command processing', () => {
