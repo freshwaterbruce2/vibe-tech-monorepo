@@ -104,6 +104,7 @@ export function useFormValidation<T extends FieldValues>(
 	},
 ) {
 	const form = useForm<T>({
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		resolver: zodResolver(schema) as any,
 		mode: options?.mode || 'onBlur',
 	});

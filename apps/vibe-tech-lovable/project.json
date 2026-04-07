@@ -38,7 +38,7 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm run lint",
+        "command": "node ../../node_modules/eslint/bin/eslint.js . --ignore-pattern dist --ignore-pattern dev-dist --ignore-pattern backend --ignore-pattern tests --ignore-pattern '*.cjs'",
         "cwd": "apps/vibe-tech-lovable"
       }
     },

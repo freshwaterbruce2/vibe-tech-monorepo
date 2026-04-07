@@ -41,8 +41,8 @@
 			"inputs": ["default", "{projectRoot}/**/*.{ts,tsx}"],
 			"outputs": [],
 			"options": {
-				"commands": ["pnpm --filter @vibetech/vibeblox lint"],
-				"cwd": "apps/vibeblox"
+				"command": "powershell -Command \"$env:ESLINT_USE_FLAT_CONFIG='false'; node ..\\\\..\\\\node_modules\\\\eslint\\\\bin\\\\eslint.js . --ext ts,tsx --report-unused-disable-directives\"",
+				"cwd": "apps/VibeBlox"
 			}
 		},
 		"typecheck": {
