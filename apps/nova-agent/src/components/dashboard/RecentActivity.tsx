@@ -6,9 +6,10 @@ import {
 	MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { Activity as ActivityRecord } from "@/hooks/useNovaData";
 
 interface RecentActivityProps {
-	activities: any[];
+	activities: ActivityRecord[];
 	formatRelativeTime: (timestamp: number) => string;
 }
 

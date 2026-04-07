@@ -56,7 +56,7 @@ export const NotificationsProvider = ({
 
 		try {
 			const parsedNotifications = JSON.parse(storedNotifications);
-			return parsedNotifications.map((notification: any) => ({
+			return parsedNotifications.map((notification: Omit<Notification, 'timestamp'> & { timestamp: string }) => ({
 				...notification,
 				timestamp: new Date(notification.timestamp),
 			})) as Notification[];

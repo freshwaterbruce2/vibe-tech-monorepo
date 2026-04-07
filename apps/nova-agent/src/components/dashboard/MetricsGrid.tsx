@@ -1,3 +1,4 @@
+import type { Variants } from "framer-motion";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -12,7 +13,7 @@ interface SystemMetric {
 
 interface MetricsGridProps {
 	metrics: SystemMetric[];
-	itemVariants: any;
+	itemVariants: Variants;
 }
 
 export const MetricsGrid = ({ metrics, itemVariants }: MetricsGridProps) => {

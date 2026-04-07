@@ -240,7 +240,7 @@ export interface OpenRouterServiceError {
 	code?: string;
 
 	/** Additional error details */
-	details?: any;
+	details?: Record<string, unknown>;
 
 	/** Stack trace (in development) */
 	stack?: string;

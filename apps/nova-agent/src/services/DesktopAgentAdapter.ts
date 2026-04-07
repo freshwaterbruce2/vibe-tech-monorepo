@@ -33,7 +33,7 @@ export class DesktopAgentAdapter extends BaseAgentAdapter {
         return AgentService.getProjectState(projectPath);
     }
 
-    async sendIpcMessage(message: any): Promise<void> {
+    async sendIpcMessage(message: Record<string, unknown>): Promise<void> {
         return AgentService.sendIpcMessage(message);
     }
 }

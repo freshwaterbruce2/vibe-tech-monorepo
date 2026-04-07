@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import type { AgentStatus, SystemContext } from "@/hooks/useNovaData";
 import { CreateTaskDialog } from "./CreateTaskDialog";
 
 interface ProjectState {
@@ -26,8 +27,8 @@ interface ProjectState {
 interface QuickActionsProps {
 	handleQuickAction: (action: string) => void;
 	refresh: () => void;
-	context: any;
-	agentStatus: any;
+	context: SystemContext | null;
+	agentStatus: AgentStatus | null;
 	projectState: ProjectState | null;
 	handleNextStep: (step: string) => void;
 }

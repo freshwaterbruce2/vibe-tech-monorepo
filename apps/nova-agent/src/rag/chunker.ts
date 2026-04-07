@@ -285,7 +285,7 @@ function extractSymbolName(node: Node): string | null {
     // Extract variable name(s) from the declaration
     const declarations = (node as any).getDeclarationList?.()?.getDeclarations?.();
     if (declarations?.length > 0) {
-      return declarations.map((d: any) => d.getName?.()).filter(Boolean).join(', ');
+      return declarations.map((d: { getName?: () => string }) => d.getName?.()).filter(Boolean).join(', ');
     }
   }
 

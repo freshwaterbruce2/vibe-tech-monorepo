@@ -145,7 +145,7 @@ export interface MarketplaceEvent {
 	type: MarketplaceEventType;
 	extensionId?: string;
 	timestamp: number;
-	data?: any;
+	data?: Record<string, unknown>;
 }
 
 export type MarketplaceEventHandler = (event: MarketplaceEvent) => void;

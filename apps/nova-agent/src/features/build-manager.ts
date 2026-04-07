@@ -25,8 +25,8 @@ export class BuildManager {
 					{ cwd: resolvedCwd, timeout: 120000 },
 				);
 				return stdout;
-			} catch (e: any) {
-				return `Build failed: ${e.message}`;
+			} catch (e: unknown) {
+				return `Build failed: ${(e as Error).message}`;
 			}
 		}
 		return "Unknown project type, cannot build.";

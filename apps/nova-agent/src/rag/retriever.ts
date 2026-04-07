@@ -220,17 +220,17 @@ export class RAGRetriever {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function rowToChunk(row: any): Chunk {
+function rowToChunk(row: Record<string, unknown>): Chunk {
   return {
-    id: row.id,
-    filePath: row.filePath,
-    content: row.content,
-    type: row.type,
-    startLine: row.startLine,
-    endLine: row.endLine,
-    symbolName: row.symbolName || undefined,
-    language: row.language,
-    tokenCount: row.tokenCount,
-    createdAt: row.createdAt,
+    id: row.id as string,
+    filePath: row.filePath as string,
+    content: row.content as string,
+    type: row.type as Chunk['type'],
+    startLine: row.startLine as number,
+    endLine: row.endLine as number,
+    symbolName: (row.symbolName as string | undefined) || undefined,
+    language: row.language as Chunk['language'],
+    tokenCount: row.tokenCount as number,
+    createdAt: row.createdAt as number,
   };
 }
