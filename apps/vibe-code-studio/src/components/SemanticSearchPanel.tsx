@@ -388,7 +388,7 @@ export const SemanticSearchPanel = ({ aiService, onClose, onResultClick, workspa
       prevQueryRef.current = query;
     }
     // exampleQueries is stable (inline array recreated each render but values are constant)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [query, handleSearch]);
 
   const handleResultClick = (result: SearchResult) => {

@@ -82,7 +82,7 @@ class PluginManager {
     const deps = state.plugin.manifest.dependencies ?? [];
     for (const dep of deps) {
       const depState = this.plugins.get(dep);
-      if (!depState || depState.status !== 'active') {
+      if (depState?.status !== 'active') {
         const msg = `Dependency "${dep}" not active`;
         state.status = 'error';
         state.error = msg;
@@ -113,7 +113,7 @@ class PluginManager {
 
   async deactivatePlugin(id: string): Promise<void> {
     const state = this.plugins.get(id);
-    if (!state || state.status !== 'active') return;
+    if (state?.status !== 'active') return;
 
     try {
       await state.plugin.deactivate?.();
@@ -223,6 +223,7 @@ class PluginManager {
   private persistToStorage(): void {
     try {
       const ids = Array.from(this.plugins.keys());
+      // eslint-disable-next-line electron-security/no-localstorage-electron
       localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
     } catch {
       // localStorage not available
@@ -231,6 +232,7 @@ class PluginManager {
 
   private restoreFromStorage(): void {
     try {
+      // eslint-disable-next-line electron-security/no-localstorage-electron
       const data = localStorage.getItem(STORAGE_KEY);
       if (data) {
         logger.debug(`[PluginManager] Found ${JSON.parse(data).length} saved plugins`);

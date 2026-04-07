@@ -1,3 +1,5 @@
+_archive
+_archive/**
 .pytest_cache
 .pytest_cache/**
 .codex/**

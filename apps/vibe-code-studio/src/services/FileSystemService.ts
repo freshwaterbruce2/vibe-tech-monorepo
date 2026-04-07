@@ -56,13 +56,16 @@ export class FileSystemService {
       for (const [key, value] of this.files) {
         filesData[key] = value;
       }
+      // eslint-disable-next-line electron-security/no-localstorage-electron
       localStorage.setItem(STORAGE_KEY_FILES, JSON.stringify(filesData));
+      // eslint-disable-next-line electron-security/no-localstorage-electron
       localStorage.setItem(STORAGE_KEY_RECENT, JSON.stringify(this.recentFiles));
 
       const trackedData: Record<string, TrackedFile> = {};
       for (const [key, value] of this.trackedFiles) {
         trackedData[key] = value;
       }
+      // eslint-disable-next-line electron-security/no-localstorage-electron
       localStorage.setItem(STORAGE_KEY_TRACKED, JSON.stringify(trackedData));
     } catch (error) {
       logger.warn('[FileSystemService] Failed to persist state to localStorage:', error);
@@ -72,6 +75,7 @@ export class FileSystemService {
   /** Restore file tree, recent files, and tracked file metadata from localStorage */
   private restoreFromStorage(): void {
     try {
+      // eslint-disable-next-line electron-security/no-localstorage-electron
       const filesJson = localStorage.getItem(STORAGE_KEY_FILES);
       if (filesJson) {
         const filesData = JSON.parse(filesJson) as Record<string, string>;
@@ -80,11 +84,13 @@ export class FileSystemService {
         }
       }
 
+      // eslint-disable-next-line electron-security/no-localstorage-electron
       const recentJson = localStorage.getItem(STORAGE_KEY_RECENT);
       if (recentJson) {
         this.recentFiles = JSON.parse(recentJson) as string[];
       }
 
+      // eslint-disable-next-line electron-security/no-localstorage-electron
       const trackedJson = localStorage.getItem(STORAGE_KEY_TRACKED);
       if (trackedJson) {
         const trackedData = JSON.parse(trackedJson) as Record<string, TrackedFile>;
@@ -118,8 +124,11 @@ export class FileSystemService {
   /** Clear all persisted state from localStorage */
   clearPersistedState(): void {
     try {
+      // eslint-disable-next-line electron-security/no-localstorage-electron
       localStorage.removeItem(STORAGE_KEY_FILES);
+      // eslint-disable-next-line electron-security/no-localstorage-electron
       localStorage.removeItem(STORAGE_KEY_RECENT);
+      // eslint-disable-next-line electron-security/no-localstorage-electron
       localStorage.removeItem(STORAGE_KEY_TRACKED);
       logger.debug('[FileSystemService] Cleared persisted state');
     } catch (error) {

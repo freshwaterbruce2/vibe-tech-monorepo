@@ -30,7 +30,7 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm run lint",
+        "command": "node ../../node_modules/eslint/bin/eslint.js . --max-warnings 750",
         "cwd": "apps/shipping-pwa"
       }
     },

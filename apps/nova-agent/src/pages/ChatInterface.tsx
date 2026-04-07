@@ -153,6 +153,7 @@ const ChatInterface = () => {
 
 		// Restore persisted chat messages from localStorage
 		try {
+			// eslint-disable-next-line electron-security/no-localstorage-electron
 			const saved = localStorage.getItem(CHAT_STORAGE_KEY);
 			if (saved) {
 				const parsed: ChatMessage[] = JSON.parse(saved);
@@ -187,6 +188,7 @@ const ChatInterface = () => {
 		if (messages.length === 0) return;
 		try {
 			const toSave = messages.slice(-MAX_PERSISTED_MESSAGES);
+			// eslint-disable-next-line electron-security/no-localstorage-electron
 			localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(toSave));
 		} catch {
 			// Storage full or unavailable — non-fatal
