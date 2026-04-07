@@ -20,3 +20,6 @@ export * from './path-registry';
 
 // AI Safety Utilities
 export * from './ai';
+
+// Logic types (merged from @vibetech/shared-logic)
+export type { LogicPattern, ThoughtBlock, VectorSearchResult } from './logic-types';

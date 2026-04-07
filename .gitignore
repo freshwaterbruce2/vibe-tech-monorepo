@@ -296,3 +296,4 @@ projects/
 # Scratch dirs in apps
 **/.antigravity/
 **/tests_sandbox/
+_archive/

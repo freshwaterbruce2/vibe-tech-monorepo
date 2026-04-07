@@ -1,5 +1,5 @@
 // packages/backend/src/services/VectorStore.ts
-import { type LogicPattern, type VectorSearchResult } from '@vibetech/shared-logic';
+import { type LogicPattern, type VectorSearchResult } from '@vibetech/shared-utils';
 import { getIntelligencePath } from '@vibetech/shared-utils';
 import { env } from '@xenova/transformers';
 import Database from 'better-sqlite3';
