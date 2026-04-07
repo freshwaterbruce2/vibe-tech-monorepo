@@ -8,8 +8,18 @@ name: CI
 on:
   push:
     branches: [main, develop, 'feature/*']
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '*.txt'
   pull_request:
     branches: [main, develop]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '*.txt'
 
 # Least-privilege: default to read-only for all jobs
 permissions:
