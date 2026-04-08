@@ -135,7 +135,7 @@ export function MemoryPanel({ onClose }: { onClose: () => void }) {
             <span className="heal-stat-label">Decayed</span>
           </div>
           <div className="heal-stat-card" style={{ borderTopColor: '#6366f1' }}>
-            <span className="heal-stat-value">{stats.avg_score.toFixed(1)}</span>
+            <span className="heal-stat-value">{(stats.avg_score ?? 0).toFixed(1)}</span>
             <span className="heal-stat-label">Avg Score</span>
           </div>
         </div>
@@ -176,3 +176,4 @@ export function MemoryPanel({ onClose }: { onClose: () => void }) {
     </div>
   );
 }
+

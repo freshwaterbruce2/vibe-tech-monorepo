@@ -4,7 +4,6 @@
 
 - [ ] **VTDE — Ship beta** - Tauri 2.0 desktop environment, terminal widget, draggable windows, healing dashboard. Control Plane Polish done 2026-02-23.
 - [ ] **Vibe Tutor — Release** - Play Store audit passed, ESLint zero warnings. Final ship.
-- [ ] **Gravity Claw** - Active development — server/src/index.ts split (1233→324 lines, 10 modules), Settings.tsx split (718→241 lines, 8 components). Both typechecks clean.
 
 ## Waiting On
 
@@ -19,6 +18,8 @@
 
 ## Done
 
+- [x] ~~Gravity Claw — v1 shipped: Gemini/Kimi routing, MCP tool dispatch, Telegram bridge, SSE streaming, task CRUD, settings UI. All files under limit, typechecks clean.~~ (2026-04-08)
+
 - [x] ~~Gravity Claw — file size refactor: index.ts + Settings.tsx split, all files under limit, typecheck clean~~ (2026-04-07)
 
 - [x] ~~Tech debt blitz — R3F types, barrel exports, DB consolidation, Codeberg CI restored~~ (2026-04-05)
@@ -30,4 +31,7 @@
 - [x] ~~Nova Mobile full revival — 4 screens, HTTP bridge, 12/12 tests~~ (2026-02-16)
 - [x] ~~Vibe Tutor ESLint cleanup + Play Store audit~~ (2026-02-15)
 - [x] ~~Dependency drift fix — all packages aligned~~ (2026-02-15)
+
+
+
 

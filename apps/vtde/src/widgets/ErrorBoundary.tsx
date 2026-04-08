@@ -2,6 +2,7 @@ import { Component, ErrorInfo, ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
+  label?: string;
 }
 
 interface State {
@@ -20,7 +21,8 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error in WindowFrame:', error, errorInfo);
+    const label = (this.props as Props).label ?? 'Unknown';
+    console.error(`[ErrorBoundary] ${label}:`, error.message, errorInfo.componentStack);
   }
 
   public render(): ReactNode {

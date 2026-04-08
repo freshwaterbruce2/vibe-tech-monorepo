@@ -77,7 +77,7 @@ class Logger {
     }
 
     // Output as JSON for structured logging
-    console.log(JSON.stringify(entry));
+    process.stderr.write(JSON.stringify(entry) + `\n`);
   }
 
   public error(message: string, context?: Record<string, unknown>, error?: Error): void {
@@ -102,3 +102,4 @@ export const createLogger = (service: string): Logger => {
 };
 
 export default Logger;
+
