@@ -303,3 +303,12 @@ vitest.config.d.ts
 vitest.config.d.ts.map
 vitest.config.js
 vitest.config.js.map
+
+# Debug output patterns
+*_output.txt
+*_build.txt
+*_results.txt
+status.err
+
+# Rust build cache
+.cargo/
