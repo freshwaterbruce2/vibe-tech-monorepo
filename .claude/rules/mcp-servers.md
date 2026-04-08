@@ -1,6 +1,6 @@
 # MCP Server Configuration & Troubleshooting
 
-Last Updated: 2026-03-25
+Last Updated: 2026-04-08
 
 ## Canonical Server List
 
@@ -16,6 +16,9 @@ Last Updated: 2026-03-25
 | `chrome-devtools` | `npx chrome-devtools-mcp@latest` | Browser debugging (Claude Code only) |
 | `youtube` | `npx @anaisbetts/mcp-youtube` | YouTube subtitles (Claude Code only) |
 | `notebooklm` | `python -m notebooklm_mcp_server` | NotebookLM (Claude Code only) |
+| `memory` | `node apps/memory-mcp/dist/index.js` | Long-term memory, embeddings, learning |
+| `rag` | `node apps/mcp-rag-server/dist/index.js` | Hybrid vector + FTS search over monorepo |
+| `workspace` | `node apps/workspace-mcp-server/dist/index.js` | Config registry: env vars, ports, MCP servers, databases |
 
 ## Config File Locations
 
@@ -30,8 +33,11 @@ Last Updated: 2026-03-25
 ## Rebuild Custom Servers
 
 ```powershell
-pnpm --filter mcp-codeberg build        # C:\dev\apps\mcp-codeberg
-pnpm --filter mcp-skills-server build   # C:\dev\apps\mcp-skills-server
+pnpm --filter mcp-codeberg build          # C:\dev\apps\mcp-codeberg
+pnpm --filter mcp-skills-server build     # C:\dev\apps\mcp-skills-server
+pnpm --filter memory-mcp build            # C:\dev\apps\memory-mcp
+pnpm --filter mcp-rag-server build        # C:\dev\apps\mcp-rag-server
+pnpm --filter workspace-mcp-server build  # C:\dev\apps\workspace-mcp-server
 ```
 
 ## Common Issues

@@ -87,6 +87,14 @@
       "env": {
         "NODE_ENV": "production"
       }
+    },
+    "workspace": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["C:/dev/apps/workspace-mcp-server/dist/index.js"],
+      "env": {
+        "WORKSPACE_ROOT": "C:/dev"
+      }
     }
   }
 }

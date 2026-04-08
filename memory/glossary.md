@@ -16,6 +16,7 @@
 | Finisher Mode | Dev philosophy: fix crashes, ship existing work, no new features |
 | Quality pipeline | `pnpm run quality` — lint + typecheck + build |
 | Ghost dirs | Empty/orphaned directories left after app deletions |
+| RTO | Unknown — appeared in Apr 6 Family calendar event "Look at RTO's". Ask Bruce. |
 
 ## AI Models
 
@@ -33,7 +34,7 @@
 | ClawdBot | Desktop automation app (Electron, nut-tree-fork) |
 | VibeBlox | Gamified token economy (Hono, SQLite) |
 | OpenClaw | Integration bridge package |
-| Gravity Claw | New app in development |
+| Gravity Claw | v1 shipped 2026-04-08. Gemini/Kimi routing, MCP dispatch, Telegram bridge, SSE streaming. |
 
 ## Tools
 
