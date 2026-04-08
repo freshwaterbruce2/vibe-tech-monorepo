@@ -297,3 +297,9 @@ projects/
 **/.antigravity/
 **/tests_sandbox/
 _archive/
+
+# TypeScript build artifacts from config files
+vitest.config.d.ts
+vitest.config.d.ts.map
+vitest.config.js
+vitest.config.js.map
