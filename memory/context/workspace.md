@@ -28,11 +28,12 @@ Bruce Freshwater — solo Windows 11 developer. No team. Ships everything himsel
 - Search before creating (no-duplicates rule)
 - Complete features to 100% before starting new ones (Finisher Mode)
 
-## Current Focus (as of 2026-04-05)
-1. VTDE — beta ship
-2. Memory System — integration
-3. Nova Mobile App — stabilization
-4. Vibe Tutor — Play Store release
+## Current Focus (as of 2026-04-07)
+1. Gravity Claw — active development (file refactor done, feature work next)
+2. VTDE — beta ship
+3. Vibe Tutor — Play Store release
+4. Nova Mobile App — stabilization
 
 ## Specialist Agent System
 19 agents configured in .claude/agents.json — crypto-expert, webapp-expert, desktop-expert, mobile-expert, backend-expert, devops-expert, plus 11 sub-specialists.
+
