@@ -290,9 +290,6 @@ archive/
 # Crypto-enhanced temp files
 apps/crypto-enhanced/tmp-*
 
-# Stale project directories
-projects/
-
 
 # Scratch dirs in apps
 **/.antigravity/
