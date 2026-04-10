@@ -86,7 +86,7 @@ export class CommandExecutor {
 			return { cpu, mem, os };
 		});
 		this.register("dc_list_processes", "process-manager", async (args) => {
-			const limit = Number(args.limit ?? args.arg0) ?? 50;
+			const limit = Number(args.limit ?? args.arg0 ?? 50);
 			const processes = await si.processes();
 			return processes.list
 				.slice(0, Math.min(200, limit))
@@ -359,8 +359,18 @@ export class CommandExecutor {
 		}
 
 		logger.info(`Executing: ${commandName} (Role: ${handler.role})`);
+
+		// Permission check: if the caller specifies allowedRoles, the handler's role must be included.
+		// Callers that omit context are trusted (backward-compatible default-allow).
+		if (request.context !== undefined) {
+			const { allowedRoles } = request.context as { allowedRoles?: string[] };
+			if (Array.isArray(allowedRoles) && !allowedRoles.includes(handler.role)) {
+				logger.warn(`Permission denied: '${commandName}' requires role '${handler.role}', allowed: [${allowedRoles.join(", ")}]`);
+				throw new Error(`Permission denied: role '${handler.role}' is not in allowedRoles`);
+			}
+		}
+
 		try {
-			// TODO: Check permissions based on request.context
 			return await handler.execute(parsedArgs);
 		} catch (error) {
 			logger.error(`Error in ${commandName}:`, error);

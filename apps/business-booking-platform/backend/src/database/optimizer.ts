@@ -1,7 +1,7 @@
-import { and, asc, desc, eq, gte, ilike, lte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, gte, ilike, lt, lte, ne, notInArray, sql } from 'drizzle-orm';
 import { logger } from '../utils/logger';
 import { getDb } from './index';
-import { hotelSearch, hotels, rooms, searchAnalytics } from './schema';
+import { bookings, hotelSearch, hotels, rooms, searchAnalytics } from './schema';
 
 /**
  * Database Optimizer Service
@@ -273,8 +273,19 @@ export class HotelSearchOptimizer {
 		children = 0,
 	) {
 		const startTime = Date.now();
-		// TODO: Implement date range filtering with bookings check
-		// checkIn and checkOut will be used when booking conflicts are checked
+
+		// Subquery: room IDs that have active (non-cancelled) bookings overlapping the requested dates.
+		// Overlap condition: booking.checkIn < requested checkOut AND booking.checkOut > requested checkIn
+		const conflictingRoomIds = this.db
+			.select({ roomId: bookings.roomId })
+			.from(bookings)
+			.where(
+				and(
+					lt(bookings.checkIn, checkOut),
+					gt(bookings.checkOut, checkIn),
+					ne(bookings.status, 'cancelled'),
+				),
+			);
 
 		const availableRooms = await this.db
 			.select({
@@ -293,6 +304,7 @@ export class HotelSearchOptimizer {
 					eq(rooms.hotelId, hotelId),
 					eq(rooms.isActive, true),
 					gte(rooms.maxOccupancy, adults + children),
+					notInArray(rooms.id, conflictingRoomIds),
 				),
 			);
 

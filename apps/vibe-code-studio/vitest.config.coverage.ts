@@ -30,6 +30,12 @@ export default defineConfig({
       reporter: ['text', 'json-summary'],
       reportsDirectory: 'coverage-report',
       reportOnFailure: true,
+      thresholds: {
+        lines: 60,
+        functions: 60,
+        branches: 60,
+        statements: 60,
+      },
       exclude: [
         'node_modules/',
         'src/__tests__/',

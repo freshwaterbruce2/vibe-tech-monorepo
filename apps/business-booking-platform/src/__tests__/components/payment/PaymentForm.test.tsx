@@ -1,34 +1,41 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PaymentForm } from "@/components/payment/PaymentForm";
 import { testUtils } from "../../setup";
 
-// Mock Stripe React components
-const mockStripeElement = {
-	mount: vi.fn(),
-	unmount: vi.fn(),
-	destroy: vi.fn(),
-	update: vi.fn(),
-	on: vi.fn(),
-	off: vi.fn(),
-	blur: vi.fn(),
-	clear: vi.fn(),
-	focus: vi.fn(),
-};
-
-const mockElements = {
-	create: vi.fn(() => mockStripeElement),
-	getElement: vi.fn(() => mockStripeElement),
-};
-
-const mockStripe = {
-	elements: vi.fn(() => mockElements),
-	confirmPayment: vi.fn(),
-	confirmSetup: vi.fn(),
-	createPaymentMethod: vi.fn(),
-	retrievePaymentIntent: vi.fn(),
-};
+// Hoist mock objects so they are available inside vi.mock factory closures,
+// which are executed before module-level variable initialisation.
+const { mockStripeElement, mockElements, mockStripe, paymentMockState } =
+	vi.hoisted(() => {
+		const mockStripeElement = {
+			mount: vi.fn(),
+			unmount: vi.fn(),
+			destroy: vi.fn(),
+			update: vi.fn(),
+			on: vi.fn(),
+			off: vi.fn(),
+			blur: vi.fn(),
+			clear: vi.fn(),
+			focus: vi.fn(),
+		};
+		const mockElements = {
+			create: vi.fn(() => mockStripeElement),
+			getElement: vi.fn(() => mockStripeElement),
+		};
+		const mockStripe = {
+			elements: vi.fn(() => mockElements),
+			confirmPayment: vi.fn(),
+			confirmSetup: vi.fn(),
+			createPaymentMethod: vi.fn(),
+			retrievePaymentIntent: vi.fn(),
+		};
+		// Mutable holder so individual tests can swap out stripePromise via
+		// paymentMockState.stripePromise = <custom promise>.
+		const paymentMockState = {
+			stripePromise: Promise.resolve(mockStripe) as Promise<typeof mockStripe | null>,
+		};
+		return { mockStripeElement, mockElements, mockStripe, paymentMockState };
+	});
 
 // Mock Stripe React components
 vi.mock("@stripe/react-stripe-js", () => ({
@@ -37,28 +44,6 @@ vi.mock("@stripe/react-stripe-js", () => ({
 	),
 	useStripe: () => mockStripe,
 	useElements: () => mockElements,
-}));
-
-// Mock PaymentElementForm component
-vi.mock("@/components/payment/PaymentElementForm", () => ({
-	PaymentElementForm: ({ onSuccess, onError, bookingId, amount }: any) => (
-		<div data-testid="payment-element-form">
-			<button
-				onClick={() => onSuccess(testUtils.mockPaymentIntent)}
-				data-testid="mock-success-payment"
-			>
-				Mock Success Payment
-			</button>
-			<button
-				onClick={() => onError("Mock payment error")}
-				data-testid="mock-error-payment"
-			>
-				Mock Error Payment
-			</button>
-			<div>Booking ID: {bookingId}</div>
-			<div>Amount: ${amount}</div>
-		</div>
-	),
 }));
 
 // Mock PaymentSummary component
@@ -73,11 +58,15 @@ vi.mock("@/components/payment/PaymentSummary", () => ({
 	),
 }));
 
-// Mock stripePromise
-const mockStripePromise = Promise.resolve(mockStripe);
-vi.mock("@/services/payment", () => ({
-	stripePromise: mockStripePromise,
-}));
+// Mock stripePromise via a getter so individual tests can change
+// paymentMockState.stripePromise without needing require().
+vi.mock("@/services/payment", () =>
+	Object.defineProperty({}, "stripePromise", {
+		get: () => paymentMockState.stripePromise,
+		enumerable: true,
+		configurable: true,
+	}),
+);
 
 describe("PaymentForm", () => {
 	const defaultProps = {
@@ -111,6 +100,10 @@ describe("PaymentForm", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockStripe.elements.mockReturnValue(mockElements);
+		// Reset stripePromise to default resolved value between tests.
+		paymentMockState.stripePromise = Promise.resolve(
+			mockStripe,
+		) as unknown as Promise<typeof mockStripe | null>;
 	});
 
 	describe("Loading State", () => {
@@ -120,8 +113,8 @@ describe("PaymentForm", () => {
 				setTimeout(() => resolve(mockStripe), 100),
 			);
 
-			vi.mocked(require("@/services/payment")).stripePromise =
-				delayedStripePromise;
+			paymentMockState.stripePromise =
+				delayedStripePromise as unknown as Promise<typeof mockStripe | null>;
 
 			render(<PaymentForm {...defaultProps} />);
 
@@ -147,8 +140,9 @@ describe("PaymentForm", () => {
 			const failedStripePromise = Promise.reject(
 				new Error("Failed to load Stripe"),
 			);
-			vi.mocked(require("@/services/payment")).stripePromise =
-				failedStripePromise;
+			failedStripePromise.catch(() => {}); // prevent unhandledRejection
+			paymentMockState.stripePromise =
+				failedStripePromise as unknown as Promise<typeof mockStripe | null>;
 
 			render(<PaymentForm {...defaultProps} />);
 
@@ -162,8 +156,7 @@ describe("PaymentForm", () => {
 
 		it("should show error when Stripe is not properly configured", async () => {
 			const nullStripePromise = Promise.resolve(null);
-			vi.mocked(require("@/services/payment")).stripePromise =
-				nullStripePromise;
+			paymentMockState.stripePromise = nullStripePromise;
 
 			render(<PaymentForm {...defaultProps} />);
 
@@ -175,55 +168,24 @@ describe("PaymentForm", () => {
 			});
 		});
 
-		it("should call onError when payment form encounters an error", async () => {
-			const user = userEvent.setup();
+		it("should show payment pending notice after Stripe loads", async () => {
 			render(<PaymentForm {...defaultProps} />);
 
 			await waitFor(() => {
-				expect(screen.getByTestId("payment-element-form")).toBeInTheDocument();
+				expect(screen.getByText("Payment integration pending")).toBeInTheDocument();
 			});
-
-			const errorButton = screen.getByTestId("mock-error-payment");
-			await user.click(errorButton);
-
-			expect(defaultProps.onError).toHaveBeenCalledWith("Mock payment error");
 		});
 	});
 
 	describe("Successful Payment Flow", () => {
-		it("should render payment form when Stripe loads successfully", async () => {
+		it("should render layout when Stripe loads successfully", async () => {
 			render(<PaymentForm {...defaultProps} />);
 
 			await waitFor(() => {
 				expect(screen.getByTestId("stripe-elements")).toBeInTheDocument();
-				expect(screen.getByTestId("payment-element-form")).toBeInTheDocument();
+				expect(screen.getByText("Payment integration pending")).toBeInTheDocument();
 				expect(screen.getByTestId("payment-summary")).toBeInTheDocument();
 			});
-		});
-
-		it("should display payment form with correct props", async () => {
-			render(<PaymentForm {...defaultProps} />);
-
-			await waitFor(() => {
-				expect(screen.getByText("Booking ID: booking-123")).toBeInTheDocument();
-				expect(screen.getByText("Amount: $50000")).toBeInTheDocument();
-			});
-		});
-
-		it("should call onSuccess when payment succeeds", async () => {
-			const user = userEvent.setup();
-			render(<PaymentForm {...defaultProps} />);
-
-			await waitFor(() => {
-				expect(screen.getByTestId("payment-element-form")).toBeInTheDocument();
-			});
-
-			const successButton = screen.getByTestId("mock-success-payment");
-			await user.click(successButton);
-
-			expect(defaultProps.onSuccess).toHaveBeenCalledWith(
-				testUtils.mockPaymentIntent,
-			);
 		});
 	});
 
@@ -348,12 +310,12 @@ describe("PaymentForm", () => {
 			});
 		});
 
-		it("should pass correct props to PaymentElementForm", async () => {
+		it("should show payment pending notice in Stripe Elements", async () => {
 			render(<PaymentForm {...defaultProps} />);
 
 			await waitFor(() => {
-				expect(screen.getByText("Booking ID: booking-123")).toBeInTheDocument();
-				expect(screen.getByText("Amount: $50000")).toBeInTheDocument();
+				expect(screen.getByText("Payment integration pending")).toBeInTheDocument();
+				expect(screen.getByText("Square payment processing will be added here.")).toBeInTheDocument();
 			});
 		});
 	});
@@ -387,8 +349,9 @@ describe("PaymentForm", () => {
 
 		it("should provide clear error messages", async () => {
 			const failedStripePromise = Promise.reject(new Error("Network error"));
-			vi.mocked(require("@/services/payment")).stripePromise =
-				failedStripePromise;
+			failedStripePromise.catch(() => {}); // prevent unhandledRejection
+			paymentMockState.stripePromise =
+				failedStripePromise as unknown as Promise<typeof mockStripe | null>;
 
 			render(<PaymentForm {...defaultProps} />);
 
