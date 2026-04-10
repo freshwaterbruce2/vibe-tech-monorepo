@@ -386,8 +386,7 @@ usersRouter.get('/dashboard', async (req, res) => {
 					totalSpent: parseFloat(stats?.totalSpent || '0'),
 					statusBreakdown: statusCounts.reduce(
 						(acc, item) => {
-							// @ts-ignore - status type mismatch in reduce
-							acc[item.status] = item.count;
+							acc[String(item.status)] = item.count;
 							return acc;
 						},
 						{} as Record<string, number>,

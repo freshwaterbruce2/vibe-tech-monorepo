@@ -10,10 +10,14 @@ import { useOptimize } from '@/hooks/useOptimize';
 import type { AIModel, HistoryItem, PromptMode } from '@/types';
 import { Loader2, Sparkles, Star, Wand2, Wifi, WifiOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { ReflectionApp } from '@/modes/reflection/ReflectionApp';
+
+type AppTab = 'prompt' | 'reflect';
 
 type ConnectionStatus = 'checking' | 'connected' | 'disconnected' | 'error';
 
 function App() {
+  const [activeTab, setActiveTab] = useLocalStorage<AppTab>('pe-tab', 'prompt');
   const [model, setModel] = useLocalStorage<AIModel>('pe-model', 'claude-sonnet-4-5');
   const [mode, setMode] = useLocalStorage<PromptMode>('pe-mode', 'edit');
   const [extendedThinking, setExtendedThinking] = useLocalStorage('pe-thinking', false);
@@ -124,7 +128,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen gradient-mesh relative overflow-hidden">
+    <div className="min-h-screen gradient-mesh relative overflow-hidden flex flex-col">
       {/* Animated grid pattern */}
       <div
         className="fixed inset-0 pointer-events-none opacity-[0.015]"
@@ -191,6 +195,31 @@ function App() {
               </span>
             </p>
           </div>
+
+          {/* Tab switcher */}
+          <div className="flex items-center gap-1 ml-6 p-1 rounded-xl bg-white/40 border border-white/30">
+            <button
+              onClick={() => setActiveTab('prompt')}
+              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                activeTab === 'prompt'
+                  ? 'bg-white shadow text-violet-700'
+                  : 'text-muted-foreground hover:text-violet-600'
+              }`}
+            >
+              Prompt Engineer
+            </button>
+            <button
+              onClick={() => setActiveTab('reflect')}
+              className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                activeTab === 'reflect'
+                  ? 'bg-white shadow text-violet-700'
+                  : 'text-muted-foreground hover:text-violet-600'
+              }`}
+            >
+              ⟳ Reflect
+            </button>
+          </div>
+
           <div className="ml-auto hidden md:flex items-center gap-3">
             {/* Connection Status Indicator */}
             <div
@@ -227,7 +256,14 @@ function App() {
         </div>
       </header>
 
-      <main className="relative container mx-auto px-6 py-8">
+      {/* Reflection tab — full-height, outside main container */}
+      {activeTab === 'reflect' && (
+        <div style={{ flex: 1, overflow: 'hidden' }}>
+          <ReflectionApp />
+        </div>
+      )}
+
+      <main className="relative container mx-auto px-6 py-8" style={{ display: activeTab === 'prompt' ? undefined : 'none' }}>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main editor panel */}
           <div className="lg:col-span-3 space-y-6">

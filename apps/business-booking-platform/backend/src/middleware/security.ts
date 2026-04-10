@@ -336,22 +336,25 @@ export const verifyWebhookSignature = (
 /**
  * Session security middleware
  */
+type SessionCookie = {
+	secure?: boolean;
+	httpOnly?: boolean;
+	sameSite?: 'strict' | 'lax' | 'none';
+	maxAge?: number;
+};
+
 export const sessionSecurity = (
 	req: Request,
 	res: Response,
 	next: NextFunction,
 ) => {
-	// Set secure session cookies
-	// @ts-ignore - session property is added by express-session but not in base Request type
-	if (req.session) {
-		// @ts-ignore
-		req.session.cookie.secure = config.environment === 'production';
-		// @ts-ignore
-		req.session.cookie.httpOnly = true;
-		// @ts-ignore
-		req.session.cookie.sameSite = 'strict';
-		// @ts-ignore
-		req.session.cookie.maxAge = 24 * 60 * 60 * 1000; // 24 hours
+	// Set secure session cookies (express-session augments req at runtime)
+	const reqWithSession = req as Request & { session?: { cookie: SessionCookie } };
+	if (reqWithSession.session) {
+		reqWithSession.session.cookie.secure = config.environment === 'production';
+		reqWithSession.session.cookie.httpOnly = true;
+		reqWithSession.session.cookie.sameSite = 'strict';
+		reqWithSession.session.cookie.maxAge = 24 * 60 * 60 * 1000; // 24 hours
 	}
 
 	next();

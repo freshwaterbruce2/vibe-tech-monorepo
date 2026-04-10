@@ -362,6 +362,5 @@ export const subscribeToFileChanges = (
 
 // DevTools actions
 if (import.meta.env.DEV) {
-  // @ts-expect-error - Exposing store for dev tools
-  window.editorStore = useEditorStore;
+  (window as Window & { editorStore?: typeof useEditorStore }).editorStore = useEditorStore;
 }

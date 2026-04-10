@@ -269,10 +269,8 @@ export class RefundService {
 				.insert(refundRequests)
 				.values({
 					bookingId: refundRequest.bookingId,
-					// @ts-ignore - payments might not be on bookingData
 					paymentId: (bookingData as any).payments?.[0]?.id || '', // Assuming first payment
 					requestedBy: refundRequest.requestedBy,
-					// @ts-ignore - refundAmount might not be on refundCalculation
 					amount: (refundCalculation as any).refundAmount?.toString() || '0',
 					reason: refundRequest.reason,
 					status: 'pending',

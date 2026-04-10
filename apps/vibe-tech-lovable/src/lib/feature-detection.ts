@@ -5,18 +5,15 @@
 // Helper to safely check if a browser feature exists
 export const featureExists = (featureName: string): boolean => {
   try {
-    // Check for features in different potential locations
+    const w = window as Record<string, unknown>;
+    const n = navigator as Record<string, unknown>;
+    const d = document as Record<string, unknown>;
     return !!(
-      // @ts-expect-error - Using dynamic access for feature detection
-      (
-        (window[featureName] ?? false) ||
-        // @ts-expect-error - Using dynamic access for feature detection
-        navigator[featureName] ||
-        // @ts-expect-error - Using dynamic access for feature detection
-        document[featureName] ||
-        // For CSS features
-        (CSS?.supports && CSS.supports(featureName))
-      )
+      (w[featureName] ?? false) ||
+      n[featureName] ||
+      d[featureName] ||
+      // For CSS features
+      (CSS?.supports && CSS.supports(featureName))
     );
   } catch (e) {
     console.warn(`Feature detection for ${featureName} failed:`, e);

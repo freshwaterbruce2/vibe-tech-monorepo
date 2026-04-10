@@ -12,6 +12,10 @@ export default defineConfig({
 	server: {
 		port: 5173,
 		proxy: {
+			"/api/reflect": {
+				target: "http://localhost:3085",
+				changeOrigin: true,
+			},
 			"/api": {
 				target: "http://localhost:9001",
 				changeOrigin: true,
