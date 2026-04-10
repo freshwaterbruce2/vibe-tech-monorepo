@@ -1,7 +1,7 @@
 /**
  * DatabaseService - Centralized database integration
  *
- * Integrates DeepCode Editor with the centralized D:\\databases\\database.db
+ * Integrates Vibe Code Studio with the centralized D:\\databases\\database.db
  * following monorepo best practices.
  *
  * Features:
@@ -246,8 +246,9 @@ export class DatabaseService {
     let stored = '[]';
     if (typeof window !== 'undefined' && window.electron?.store) {
       stored = await window.electron.store.get(key) ?? '[]';
-    } else if (typeof localStorage !== 'undefined') {
-      stored = window.electronAPI.store.get(key) ?? '[]';
+    } else {
+      // eslint-disable-next-line electron-security/no-localstorage-electron
+      stored = localStorage.getItem(key) ?? '[]';
     }
     const msgs: ChatMessage[] = JSON.parse(stored);
     const newMsg: ChatMessage = {
@@ -264,8 +265,9 @@ export class DatabaseService {
 
     if (typeof window !== 'undefined' && window.electron?.store) {
       await window.electron.store.set(key, JSON.stringify(msgs));
-    } else if (typeof localStorage !== 'undefined') {
-      window.electronAPI.store.set(key, JSON.stringify(msgs));
+    } else {
+      // eslint-disable-next-line electron-security/no-localstorage-electron
+      localStorage.setItem(key, JSON.stringify(msgs));
     }
     return newMsg.id!;
   }
@@ -275,8 +277,9 @@ export class DatabaseService {
     let stored = '[]';
     if (typeof window !== 'undefined' && window.electron?.store) {
       stored = await window.electron.store.get(key) ?? '[]';
-    } else if (typeof localStorage !== 'undefined') {
-      stored = window.electronAPI.store.get(key) ?? '[]';
+    } else {
+      // eslint-disable-next-line electron-security/no-localstorage-electron
+      stored = localStorage.getItem(key) ?? '[]';
     }
     const msgs: ChatMessage[] = JSON.parse(stored);
     return msgs.slice(offset, offset + limit);
@@ -320,8 +323,9 @@ export class DatabaseService {
       const base64 = btoa(String.fromCharCode(...data));
       if (typeof window !== 'undefined' && window.electron?.store) {
         await window.electron.store.set('deepcode_database_blob', base64);
-      } else if (typeof localStorage !== 'undefined') {
-        window.electronAPI.store.set('deepcode_database_blob', base64);
+      } else {
+        // eslint-disable-next-line electron-security/no-localstorage-electron
+        localStorage.setItem('deepcode_database_blob', base64);
       }
     } catch (e) {
       logger.error('[DatabaseService] saveToLocalStorage failed', e);
@@ -343,10 +347,8 @@ export class DatabaseService {
       if (typeof window !== 'undefined' && window.electron?.store) {
         return await window.electron.store.get(`${STORAGE_FALLBACK_PREFIX}setting_${key}`) ?? null;
       }
-      if (typeof localStorage !== 'undefined') {
-        return window.electronAPI.store.get(`${STORAGE_FALLBACK_PREFIX}setting_${key}`);
-      }
-      return null;
+      // eslint-disable-next-line electron-security/no-localstorage-electron
+      return localStorage.getItem(`${STORAGE_FALLBACK_PREFIX}setting_${key}`);
     }
 
     try {
@@ -366,10 +368,8 @@ export class DatabaseService {
       if (typeof window !== 'undefined' && window.electron?.store) {
         return await window.electron.store.get(`${STORAGE_FALLBACK_PREFIX}setting_${key}`) ?? null;
       }
-      if (typeof localStorage !== 'undefined') {
-        return window.electronAPI.store.get(`${STORAGE_FALLBACK_PREFIX}setting_${key}`);
-      }
-      return null;
+      // eslint-disable-next-line electron-security/no-localstorage-electron
+      return localStorage.getItem(`${STORAGE_FALLBACK_PREFIX}setting_${key}`);
     }
   }
 
@@ -383,10 +383,12 @@ export class DatabaseService {
         existing = JSON.parse(stored);
         existing.push({ eventType, data, timestamp: new Date().toISOString() });
         await window.electron.store.set(key, JSON.stringify(existing));
-      } else if (typeof localStorage !== 'undefined') {
-        existing = JSON.parse(window.electronAPI.store.get(key) ?? '[]');
+      } else {
+        // eslint-disable-next-line electron-security/no-localstorage-electron
+        existing = JSON.parse(localStorage.getItem(key) ?? '[]');
         existing.push({ eventType, data, timestamp: new Date().toISOString() });
-        window.electronAPI.store.set(key, JSON.stringify(existing));
+        // eslint-disable-next-line electron-security/no-localstorage-electron
+        localStorage.setItem(key, JSON.stringify(existing));
       }
       return;
     }
@@ -414,8 +416,9 @@ export class DatabaseService {
 
       if (typeof window !== 'undefined' && window.electron?.store) {
         legacy = await window.electron.store.get(legacyKey) ?? null;
-      } else if (typeof localStorage !== 'undefined') {
-        legacy = window.electronAPI.store.get(legacyKey);
+      } else {
+        // eslint-disable-next-line electron-security/no-localstorage-electron
+        legacy = localStorage.getItem(legacyKey);
       }
 
       if (!legacy) {
@@ -468,8 +471,9 @@ export class DatabaseService {
 
         if (typeof window !== 'undefined' && window.electron?.store) {
           await window.electron.store.delete(legacyKey);
-        } else if (typeof localStorage !== 'undefined') {
-          window.electronAPI.store.delete(legacyKey);
+        } else {
+          // eslint-disable-next-line electron-security/no-localstorage-electron
+          localStorage.removeItem(legacyKey);
         }
         return { migrated };
       }

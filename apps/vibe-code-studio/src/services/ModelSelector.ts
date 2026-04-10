@@ -2,7 +2,7 @@
  * Model Selector Service
  *
  * Intelligent model selection based on task type (Cursor-style)
- * - Chat/Completion: Fast, cost-effective (deepseek/deepseek-v3.2)
+ * - Chat/Completion: Fast, cost-effective (moonshot/kimi-2.5-pro)
  * - Agent/Reasoning: Best coding accuracy (openai/gpt-5.2-codex)
  */
 
@@ -20,7 +20,7 @@ export class ModelSelector {
       case 'chat':
       case 'completion':
         // Fast, general-purpose interactions
-        return 'deepseek/deepseek-v3.2';
+        return 'moonshot/kimi-2.5-pro';
 
       case 'agent':
       case 'reasoning':
@@ -30,7 +30,7 @@ export class ModelSelector {
         return 'openai/gpt-5.2-codex';
 
       default:
-        return 'deepseek/deepseek-v3.2';
+        return 'moonshot/kimi-2.5-pro';
     }
   }
 
@@ -39,7 +39,7 @@ export class ModelSelector {
    */
   getModelDescription(modelId: string): string {
     switch (modelId) {
-      case 'deepseek/deepseek-v3.2':
+      case 'moonshot/kimi-2.5-pro':
         return 'Fast, low-cost general model with strong coding performance';
       case 'openai/gpt-5.2-codex':
         return 'Best-in-class coding model for complex reasoning and reviews';
@@ -71,7 +71,7 @@ export class ModelSelector {
       lowerDesc.includes(keyword)
     );
 
-    return needsReasoning ? 'openai/gpt-5.2-codex' : 'deepseek/deepseek-v3.2';
+    return needsReasoning ? 'openai/gpt-5.2-codex' : 'moonshot/kimi-2.5-pro';
   }
 }
 

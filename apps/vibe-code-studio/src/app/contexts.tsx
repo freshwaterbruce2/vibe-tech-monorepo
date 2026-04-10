@@ -11,6 +11,8 @@
 
 import { createContext, useContext, type MutableRefObject } from 'react';
 import type { BackgroundAgentSystem } from '../services/BackgroundAgentSystem';
+import type { AgentOrchestrator } from '../services/specialized-agents/AgentOrchestrator';
+import type { AgentPerformanceOptimizer } from '../services/AgentPerformanceOptimizer';
 import type { AutoFixService, FixSuggestion, GeneratedFix } from '../services/AutoFixService';
 import type { DetectedError } from '../services/ErrorDetector';
 import type { FileSystemService } from '../services/FileSystemService';
@@ -36,6 +38,8 @@ export interface ServicesContextValue {
   liveStream: LiveEditorStream;
   executionEngine: ExecutionEngine;
   backgroundAgentSystem: BackgroundAgentSystem;
+  orchestrator: AgentOrchestrator;
+  performanceOptimizer: AgentPerformanceOptimizer;
 }
 
 export const ServicesContext = createContext<ServicesContextValue | null>(null);
@@ -76,6 +80,8 @@ export interface UIPanelContextValue {
   setChatMode: (mode: ChatMode) => void;
   errorFixPanelOpen: boolean;
   setErrorFixPanelOpen: (open: boolean) => void;
+  agentModeOpen: boolean;
+  setAgentModeOpen: (open: boolean) => void;
 }
 
 export const UIPanelContext = createContext<UIPanelContextValue | null>(null);
@@ -168,7 +174,7 @@ export interface AppExtrasContextValue {
   handleMultiFileEditDetected?: (plan: MultiFileEditPlan, changes: FileChange[]) => void;
   currentModel: string;
   currentProvider: string;
-  deepseekApiKey: string;
+  openrouterApiKey: string;
 
   // Error fix
   currentError: DetectedError | null;

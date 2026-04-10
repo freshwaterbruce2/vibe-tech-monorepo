@@ -154,7 +154,7 @@ export class MCPService extends EventEmitter {
       });
 
       const client = new Client({
-        name: 'deepcode-editor',
+        name: 'vibe-code-studio',
         version: '1.0.0'
       }, {
         capabilities: {}

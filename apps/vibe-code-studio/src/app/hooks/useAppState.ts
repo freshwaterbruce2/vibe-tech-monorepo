@@ -57,6 +57,8 @@ export interface UseAppStateReturn {
   setCurrentFix: (fix: GeneratedFix | null) => void;
   errorFixPanelOpen: boolean;
   setErrorFixPanelOpen: (open: boolean) => void;
+  agentModeOpen: boolean;
+  setAgentModeOpen: (open: boolean) => void;
   fixLoading: boolean;
   setFixLoading: (loading: boolean) => void;
   fixError: string;
@@ -67,8 +69,8 @@ export interface UseAppStateReturn {
   setCurrentModel: (model: string) => void;
   currentProvider: string;
   setCurrentProvider: (provider: string) => void;
-  deepseekApiKey: string;
-  setDeepseekApiKey: (key: string) => void;
+  openrouterApiKey: string;
+  setOpenrouterApiKey: (key: string) => void;
 
   // Refs
   editorRef: MutableRefObject<any>;
@@ -100,6 +102,7 @@ export function useAppState(): UseAppStateReturn {
   const [backgroundPanelOpen, setBackgroundPanelOpen] = useState(false);
   const [activeVisualPanel, setActiveVisualPanel] = useState<VisualPanelState>('none');
   const [terminalOpen, setTerminalOpen] = useState(false);
+  const [agentModeOpen, setAgentModeOpen] = useState(false);
 
   // Multi-file edit
   const [multiFileEditPlan, setMultiFileEditPlan] = useState<MultiFileEditPlan | null>(null);
@@ -114,9 +117,9 @@ export function useAppState(): UseAppStateReturn {
   const [fixError, setFixError] = useState<string>('');
 
   // AI Provider state
-  const [currentModel, setCurrentModel] = useState('deepseek/deepseek-v3.2'); // Default to DeepSeek V3.2 via OpenRouter
+  const [currentModel, setCurrentModel] = useState('moonshot/kimi-2.5-pro');
   const [currentProvider, setCurrentProvider] = useState('openrouter'); // Use OpenRouter as default (routes all providers)
-  const [deepseekApiKey, setDeepseekApiKey] = useState<string>('');
+  const [openrouterApiKey, setOpenrouterApiKey] = useState<string>('');
 
   // Refs for Monaco editor and auto-fix
   const editorRef = useRef<any>(null);
@@ -157,7 +160,7 @@ export function useAppState(): UseAppStateReturn {
   const aiProviderState: AIProviderState = {
     currentModel,
     currentProvider,
-    deepseekApiKey,
+    openrouterApiKey,
   };
 
   return {
@@ -179,6 +182,8 @@ export function useAppState(): UseAppStateReturn {
     setActiveVisualPanel,
     terminalOpen,
     setTerminalOpen,
+    agentModeOpen,
+    setAgentModeOpen,
     multiFileEditPlan,
     setMultiFileEditPlan,
     multiFileChanges,
@@ -199,8 +204,8 @@ export function useAppState(): UseAppStateReturn {
     setCurrentModel,
     currentProvider,
     setCurrentProvider,
-    deepseekApiKey,
-    setDeepseekApiKey,
+    openrouterApiKey,
+    setOpenrouterApiKey,
     editorRef,
     errorDetectorRef,
     autoFixServiceRef,

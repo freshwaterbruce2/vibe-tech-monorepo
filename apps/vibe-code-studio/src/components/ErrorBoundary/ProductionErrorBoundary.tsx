@@ -208,7 +208,7 @@ Please describe what you were doing when this error occurred:
           <ErrorTitle>Oops! Something went wrong</ErrorTitle>
 
           <ErrorMessage>
-            We&apos;re sorry, but DeepCode Editor encountered an unexpected error. The error has
+            We&apos;re sorry, but Vibe Code Studio encountered an unexpected error. The error has
             been automatically reported to help us fix it.
           </ErrorMessage>
 

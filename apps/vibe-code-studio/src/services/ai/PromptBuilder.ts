@@ -60,7 +60,7 @@ Do not skip steps. Your reasoning should be visible and structured.
     // Optimize prompt based on model
     if (model === 'deepseek/deepseek-v3.2') {
       return this.getTreeOfThoughtPrompt(
-        `You are DeepSeek Coder, an elite programming AI in DeepCode Editor. You specialize in generating high-performance, secure, and idiomatic code.`
+        `You are an elite programming AI in Vibe Code Studio. You specialize in generating high-performance, secure, and idiomatic code.`
       ) + `
 Your specialized capabilities:
 - Advanced code generation with best practices
@@ -80,7 +80,7 @@ Coding guidelines:
     } else if (model === 'openai/gpt-5.2-codex') {
       // High-end coding models benefit from explicit structured reasoning
       return this.getTreeOfThoughtPrompt(
-        `You are GPT-5.2 Codex in DeepCode Editor. You provide deep, multi-step reasoning for complex programming problems.`
+        `You are GPT-5.2 Codex in Vibe Code Studio. You provide deep, multi-step reasoning for complex programming problems.`
       ) + `
 Your approach:
 - Break down complex problems step-by-step
@@ -99,7 +99,7 @@ When solving problems:
 
     // Default prompt for general models
     return this.getTreeOfThoughtPrompt(
-      `You are an expert programming assistant built into DeepCode Editor. You help developers write, understand, and improve code using advanced reasoning.`
+      `You are an expert programming assistant built into Vibe Code Studio. You help developers write, understand, and improve code using advanced reasoning.`
     ) + `
 Your capabilities:
 - Code completion and generation

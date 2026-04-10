@@ -209,7 +209,9 @@ const PerformanceMonitor: React.FC = () => {
     if ((window.electron as any)?.ipc) {
       const tracePath = await (window.electron as any).ipc.invoke('performance:stop-recording');
       setIsRecording(false);
-      console.log('Performance trace saved:', tracePath);
+      if (tracePath) {
+        // Trace saved to disk — no UI needed beyond the recording state change
+      }
     }
   }, []);
 

@@ -5,7 +5,7 @@ import { visualizer } from 'rollup-plugin-visualizer'
 import { defineConfig } from 'vite'
 import viteCompression from 'vite-plugin-compression'
 
-const rendererPort = Number(process.env.VIBE_RENDERER_PORT ?? process.env.VITE_PORT ?? 5174)
+const rendererPort = Number(process.env.VIBE_RENDERER_PORT ?? process.env.VITE_PORT ?? 3001)
 
 const nodeBuiltins = [
   'fs', 'path', 'os', 'crypto', 'http', 'https', 'net', 'tls',
@@ -107,9 +107,6 @@ export default defineConfig(({ mode }) => ({
 
   worker: {
     format: 'es',
-    plugins: () => [
-      react()
-    ],
     rollupOptions: {
       output: {
         entryFileNames: 'assets/[name]-[hash].js',

@@ -136,8 +136,9 @@ export class TaskPersistence {
 
     if (typeof window !== 'undefined' && window.electron?.store) {
       await window.electron.store.set(TaskPersistence.TASK_STORAGE_KEY, JSON.stringify(updatedTasks));
-    } else if (typeof localStorage !== 'undefined') {
-      window.electronAPI.store.set(TaskPersistence.TASK_STORAGE_KEY, JSON.stringify(updatedTasks));
+    } else {
+      // eslint-disable-next-line electron-security/no-localstorage-electron
+      localStorage.setItem(TaskPersistence.TASK_STORAGE_KEY, JSON.stringify(updatedTasks));
     }
   }
 
@@ -145,8 +146,9 @@ export class TaskPersistence {
     let stored: string | null = null;
     if (typeof window !== 'undefined' && window.electron?.store) {
       stored = await window.electron.store.get(TaskPersistence.TASK_STORAGE_KEY) ?? null;
-    } else if (typeof localStorage !== 'undefined') {
-      stored = window.electronAPI.store.get(TaskPersistence.TASK_STORAGE_KEY);
+    } else {
+      // eslint-disable-next-line electron-security/no-localstorage-electron
+      stored = localStorage.getItem(TaskPersistence.TASK_STORAGE_KEY);
     }
 
     if (!stored) {return [];}
@@ -161,8 +163,9 @@ export class TaskPersistence {
   private async saveAllToLocalStorage(tasks: PersistedTask[]): Promise<void> {
     if (typeof window !== 'undefined' && window.electron?.store) {
       await window.electron.store.set(TaskPersistence.TASK_STORAGE_KEY, JSON.stringify(tasks));
-    } else if (typeof localStorage !== 'undefined') {
-      window.electronAPI.store.set(TaskPersistence.TASK_STORAGE_KEY, JSON.stringify(tasks));
+    } else {
+      // eslint-disable-next-line electron-security/no-localstorage-electron
+      localStorage.setItem(TaskPersistence.TASK_STORAGE_KEY, JSON.stringify(tasks));
     }
   }
 

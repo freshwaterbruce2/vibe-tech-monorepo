@@ -42,8 +42,9 @@ export class WorkspaceManager {
       let current: string | null = null;
       if (typeof window !== 'undefined' && window.electron?.store) {
         current = await window.electron.store.get(STORAGE_CURRENT) ?? null;
-      } else if (typeof localStorage !== 'undefined') {
-        current = window.electronAPI.store.get(STORAGE_CURRENT);
+      } else {
+        // eslint-disable-next-line electron-security/no-localstorage-electron
+        current = localStorage.getItem(STORAGE_CURRENT);
       }
 
       if (current) {
@@ -56,8 +57,9 @@ export class WorkspaceManager {
           logger.warn('[WorkspaceManager] Clearing invalid workspace path:', current);
           if (typeof window !== 'undefined' && window.electron?.store) {
             await window.electron.store.delete(STORAGE_CURRENT);
-          } else if (typeof localStorage !== 'undefined') {
-            window.electronAPI.store.delete(STORAGE_CURRENT);
+          } else {
+            // eslint-disable-next-line electron-security/no-localstorage-electron
+            localStorage.removeItem(STORAGE_CURRENT);
           }
         }
       }
@@ -66,8 +68,9 @@ export class WorkspaceManager {
       let recent: string | null = null;
       if (typeof window !== 'undefined' && window.electron?.store) {
         recent = await window.electron.store.get(STORAGE_RECENT) ?? null;
-      } else if (typeof localStorage !== 'undefined') {
-        recent = window.electronAPI.store.get(STORAGE_RECENT);
+      } else {
+        // eslint-disable-next-line electron-security/no-localstorage-electron
+        recent = localStorage.getItem(STORAGE_RECENT);
       }
 
       if (recent) {
@@ -95,21 +98,24 @@ export class WorkspaceManager {
       if (this.currentWorkspace) {
         if (store) {
           await store.set(STORAGE_CURRENT, this.currentWorkspace);
-        } else if (typeof localStorage !== 'undefined') {
-          window.electronAPI.store.set(STORAGE_CURRENT, this.currentWorkspace);
+        } else {
+          // eslint-disable-next-line electron-security/no-localstorage-electron
+          localStorage.setItem(STORAGE_CURRENT, this.currentWorkspace);
         }
       } else {
         if (store) {
            await store.delete(STORAGE_CURRENT);
-        } else if (typeof localStorage !== 'undefined') {
-          window.electronAPI.store.delete(STORAGE_CURRENT);
+        } else {
+          // eslint-disable-next-line electron-security/no-localstorage-electron
+          localStorage.removeItem(STORAGE_CURRENT);
         }
       }
 
       if (store) {
         await store.set(STORAGE_RECENT, JSON.stringify(this.recentWorkspaces));
-      } else if (typeof localStorage !== 'undefined') {
-         window.electronAPI.store.set(STORAGE_RECENT, JSON.stringify(this.recentWorkspaces));
+      } else {
+        // eslint-disable-next-line electron-security/no-localstorage-electron
+        localStorage.setItem(STORAGE_RECENT, JSON.stringify(this.recentWorkspaces));
       }
     } catch (error) {
       logger.error('[WorkspaceManager] Failed to save to storage:', error);

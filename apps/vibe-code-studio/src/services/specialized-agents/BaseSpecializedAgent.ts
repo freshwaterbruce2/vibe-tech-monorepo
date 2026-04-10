@@ -3,7 +3,7 @@
  * Provides common functionality, standardized interfaces, and learning capabilities
  */
 import { logger } from '../../utils/logger';
-import type { DeepSeekService } from '../DeepSeekService';
+import { unifiedAI, type UnifiedAIService } from '../ai/UnifiedAIService';
 
 export enum AgentCapability {
   CODE_ANALYSIS = 'code_analysis',
@@ -121,7 +121,7 @@ export interface LearningPattern {
  * Enhanced base class for specialized agents with learning capabilities
  */
 export abstract class BaseSpecializedAgent {
-  protected deepSeekService: DeepSeekService;
+  protected aiService: UnifiedAIService;
   protected memory: AgentMemory[] = [];
   protected learningPatterns: Map<string, LearningPattern> = new Map();
   protected performanceMetrics: PerformanceMetrics[] = [];
@@ -129,10 +129,9 @@ export abstract class BaseSpecializedAgent {
   
   constructor(
     protected name: string,
-    protected capabilities: AgentCapability[],
-    deepSeekService: DeepSeekService
+    protected capabilities: AgentCapability[]
   ) {
-    this.deepSeekService = deepSeekService;
+    this.aiService = unifiedAI;
     this.loadMemoryFromStorage();
   }
 
@@ -168,15 +167,13 @@ export abstract class BaseSpecializedAgent {
       }
 
       // Process with AI service
-      const aiResponse = await this.deepSeekService.sendMessage(
-        prompt,
-        {
-          currentFile: enhancedContext.currentFile ? {
-            path: enhancedContext.currentFile,
-            content: ''
-          } : undefined
-        }
-      );
+      const aiResponse = await this.aiService.sendContextualMessage({
+        userQuery: prompt,
+        currentFile: enhancedContext.currentFile ? {
+          path: enhancedContext.currentFile,
+          content: ''
+        } : undefined,
+      });
 
       // Analyze and enhance response
       const response = this.analyzeResponse(aiResponse.content, enhancedContext);

@@ -175,7 +175,7 @@ export class DeepCodeRulesParser {
   getDefaultRules(): DeepCodeRules {
     return {
       version: '1.0',
-      description: 'Default DeepCode rules',
+      description: 'Default Vibe Code Studio rules',
       global: {
         style: {
           indentation: 'spaces',

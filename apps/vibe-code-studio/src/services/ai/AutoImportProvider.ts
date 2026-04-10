@@ -30,7 +30,7 @@ export class AutoImportProvider {
         ],
         {
           temperature: 0.1,
-          model: 'deepseek/deepseek-v3.2'
+          model: 'moonshot/kimi-2.5-pro'
         }
       );
 

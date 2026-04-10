@@ -2,7 +2,7 @@
  * Error Boundary Components
  * 
  * This module provides both legacy class-based and modern function-based
- * error boundary implementations for the DeepCode Editor.
+ * error boundary implementations for Vibe Code Studio.
  * 
  * Migration Path:
  * 1. The legacy ErrorBoundary class is kept for compatibility

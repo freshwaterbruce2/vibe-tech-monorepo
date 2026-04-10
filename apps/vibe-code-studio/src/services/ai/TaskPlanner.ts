@@ -111,7 +111,7 @@ export class TaskPlanner {
                 exports: {},
                 symbols: {},
                 lastIndexed: new Date(),
-                summary: 'DeepCode Editor workspace',
+                summary: 'Vibe Code Studio workspace',
             },
             currentFile: currentFileObject ?? (context.currentFile ? {
                 path: context.currentFile,

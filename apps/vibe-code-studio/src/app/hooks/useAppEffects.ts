@@ -21,7 +21,7 @@ export interface UseAppEffectsProps {
 
   // State setters
   setDbStatus: (status: DbStatus) => void;
-  setDeepseekApiKey: (key: string) => void;
+  setOpenrouterApiKey: (key: string) => void;
 
   // Handlers
   handleOpenFolder: (folderPath: string) => Promise<void>;
@@ -79,7 +79,7 @@ export function useAIProviderInit() {
           configs.set(p, {
             provider: p,
             apiKey: openRouterKey,
-            model: 'deepseek/deepseek-v3.2',
+            model: 'moonshot/kimi-2.5-pro',
           });
         });
       }
@@ -154,7 +154,7 @@ export function useAIProviderInit() {
             AIProvider.OLLAMA,
           ];
           for (const p of providers) {
-            await initProviderWithKey(factory, p, apiKey, 'deepseek/deepseek-v3.2');
+            await initProviderWithKey(factory, p, apiKey, 'moonshot/kimi-2.5-pro');
           }
         } else if (provider === 'moonshot') {
           await initProviderWithKey(factory, AIProvider.MOONSHOT, apiKey, 'moonshot/kimi-2.5-pro');
@@ -337,24 +337,24 @@ export function useAppInit(props: {
  * Hook for loading API key on mount
  */
 export function useApiKeyLoader(props: {
-  setDeepseekApiKey: (key: string) => void;
+  setOpenrouterApiKey: (key: string) => void;
 }) {
-  const { setDeepseekApiKey } = props;
+  const { setOpenrouterApiKey } = props;
 
   useEffect(() => {
     const loadApiKey = async () => {
       try {
         const keyManager = SecureApiKeyManager.getInstance(logger);
-        const key = await keyManager.getApiKey('deepseek');
+        const key = await keyManager.getApiKey('openrouter');
         if (key) {
-          setDeepseekApiKey(key);
+          setOpenrouterApiKey(key);
         }
       } catch (error) {
-        logger.error('Failed to load DeepSeek API key:', error);
+        logger.error('Failed to load OpenRouter API key:', error);
       }
     };
     loadApiKey();
-  }, [setDeepseekApiKey]);
+  }, [setOpenrouterApiKey]);
 }
 
 /**
@@ -426,7 +426,7 @@ export function useAppEffects(props: UseAppEffectsProps) {
     showWarning,
     showError,
     setDbStatus,
-    setDeepseekApiKey,
+    setOpenrouterApiKey,
     handleOpenFolder,
     handleOpenFile,
   } = props;
@@ -434,5 +434,5 @@ export function useAppEffects(props: UseAppEffectsProps) {
   useAIProviderInit();
   useDatabaseInit({ setDbStatus, showWarning, showError });
   useAppInit({ showWarning, handleOpenFolder, handleOpenFile });
-  useApiKeyLoader({ setDeepseekApiKey });
+  useApiKeyLoader({ setOpenrouterApiKey });
 }

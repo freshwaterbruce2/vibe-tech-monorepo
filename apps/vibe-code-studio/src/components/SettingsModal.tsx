@@ -244,7 +244,7 @@ const SettingsModal: React.FC = () => {
                     <SettingRow>
                         <Label>AI Model</Label>
                         <Select
-                            value={settings.aiModel ?? 'deepseek/deepseek-v3.2'}
+                            value={settings.aiModel ?? 'moonshot/kimi-2.5-pro'}
                             onChange={(e) => handleChange('aiModel', e.target.value)}
                             style={{ width: '200px' }}
                         >

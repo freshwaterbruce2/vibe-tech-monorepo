@@ -1,13 +1,11 @@
 /**
  * Frontend Engineer Agent - UI/UX and client-side development specialist
  */
-import type { DeepSeekService } from '../DeepSeekService';
-
 import type { AgentContext, AgentResponse, CodeChange } from './BaseSpecializedAgent';
 import { AgentCapability, BaseSpecializedAgent } from './BaseSpecializedAgent';
 
 export class FrontendEngineerAgent extends BaseSpecializedAgent {
-  constructor(deepSeekService: DeepSeekService) {
+  constructor() {
     super('Frontend Engineer Agent', [
       AgentCapability.UI_DESIGN,
       AgentCapability.CODE_GENERATION,
@@ -16,7 +14,7 @@ export class FrontendEngineerAgent extends BaseSpecializedAgent {
       AgentCapability.PERFORMANCE_PROFILING,
       AgentCapability.SEO,
       AgentCapability.INTERNATIONALIZATION
-    ], deepSeekService);
+    ]);
   }
 
   getRole(): string {

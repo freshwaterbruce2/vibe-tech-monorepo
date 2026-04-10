@@ -1,16 +1,14 @@
 /**
  * ImageToCodeService - Screenshot to Code Converter
  *
- * Converts UI screenshots/mockups to clean React code using Claude Vision API.
+ * Converts UI screenshots/mockups to clean React code using Claude Vision via OpenRouter.
  * Implements iterative refinement for high-quality results.
  *
  * Based on 2025 best practices:
- * - Claude Sonnet 3.7: 70.31% accuracy (best for screenshot-to-code)
+ * - Claude Sonnet 4.6: vision-capable, accessed via OpenRouter
  * - Iterative refinement: 2-3 passes for accuracy
  * - Puppeteer MCP integration for screenshot comparison
  */
-import Anthropic from '@anthropic-ai/sdk';
-
 import { logger } from '../services/Logger';
 
 export interface ImageToCodeOptions {
@@ -34,19 +32,20 @@ export interface ImageToCodeResult {
   improvements?: string[];
 }
 
+const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
+const VISION_MODEL = 'anthropic/claude-sonnet-4.6';
+
 export class ImageToCodeService {
-  private anthropic: Anthropic;
+  private apiKey: string;
 
   constructor(apiKey: string) {
-    this.anthropic = new Anthropic({
-      apiKey,
-    });
+    this.apiKey = apiKey;
   }
 
   /**
    * Convert a screenshot/mockup image to clean code
    *
-   * @param imageData - Base64 encoded image or Buffer
+   * @param imageData - Base64 encoded image (with or without data URL prefix)
    * @param options - Conversion options
    * @returns Generated code with metadata
    */
@@ -71,7 +70,7 @@ export class ImageToCodeService {
     logger.debug('[ImageToCode] Starting conversion...', { framework, styling });
 
     // Step 1: Initial code generation from image
-    const firstPass = await this.generateInitialCode(
+    let code = await this.generateInitialCode(
       imageData,
       framework,
       styling,
@@ -79,7 +78,6 @@ export class ImageToCodeService {
       responsive
     );
 
-    let code = this.extractCode(firstPass);
     let iterations = 1;
     const improvements: string[] = [];
 
@@ -105,20 +103,16 @@ export class ImageToCodeService {
         styling
       );
 
-      const extractedRefinedCode = this.extractCode({ content: [{ text: refinedCode }] });
-
       // Check if code converged (no changes)
-      if (extractedRefinedCode === code || extractedRefinedCode.length < 50) {
+      if (refinedCode === code || refinedCode.length < 50) {
         logger.debug('[ImageToCode] Converged after', iterations, 'iterations');
         break;
       }
 
       improvements.push(`Iteration ${iterations}: Improved layout accuracy, spacing, and colors`);
-      code = extractedRefinedCode;
+      code = refinedCode;
       iterations++;
     }
-
-    logger.debug('[ImageToCode] Refinement complete. Total iterations:', iterations);
 
     return {
       code,
@@ -130,7 +124,35 @@ export class ImageToCodeService {
   }
 
   /**
-   * Generate initial code from screenshot using Claude Vision
+   * Call OpenRouter chat completions API with vision support
+   */
+  private async callOpenRouter(messages: object[]): Promise<string> {
+    const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://vibe-code-studio.local',
+        'X-Title': 'Vibe Code Studio',
+      },
+      body: JSON.stringify({
+        model: VISION_MODEL,
+        max_tokens: 8192,
+        messages,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`OpenRouter API error ${response.status}: ${error}`);
+    }
+
+    const data = await response.json() as { choices: Array<{ message: { content: string } }> };
+    return data.choices[0]?.message?.content ?? '';
+  }
+
+  /**
+   * Generate initial code from screenshot using Claude Vision via OpenRouter
    */
   private async generateInitialCode(
     imageData: string,
@@ -138,7 +160,7 @@ export class ImageToCodeService {
     styling: string,
     includeComponents: boolean,
     responsive: boolean
-  ): Promise<any> {
+  ): Promise<string> {
     const componentLibrary = includeComponents
       ? framework === 'react'
         ? '\n- Use shadcn/ui components where appropriate (Button, Card, Input, etc.)'
@@ -164,32 +186,23 @@ ${stylingInstructions}${componentLibrary}${responsiveNote}
 
 Please provide ONLY the code, no explanations. Use proper syntax highlighting.`;
 
-    try {
-      const response = await this.anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514', // Latest Claude Sonnet
-        max_tokens: 8192,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'image',
-                source: {
-                  type: 'base64',
-                  media_type: this.detectImageType(imageData),
-                  data: imageData.replace(/^data:image\/\w+;base64,/, ''),
-                },
-              },
-              {
-                type: 'text',
-                text: prompt,
-              },
-            ],
-          },
-        ],
-      });
+    const mediaType = this.detectImageType(imageData);
+    const base64Data = imageData.replace(/^data:image\/\w+;base64,/, '');
 
-      return response;
+    try {
+      const text = await this.callOpenRouter([
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image_url',
+              image_url: { url: `data:${mediaType};base64,${base64Data}` },
+            },
+            { type: 'text', text: prompt },
+          ],
+        },
+      ]);
+      return this.extractCode(text);
     } catch (error: any) {
       logger.error('[ImageToCode] Error generating code:', error.message);
       throw new Error(`Failed to generate code: ${error.message}`);
@@ -207,32 +220,24 @@ Please provide ONLY the code, no explanations. Use proper syntax highlighting.`;
     framework: string,
     _styling: string
   ): Promise<string> {
-    const response = await this.anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 8192,
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: 'image/png',
-                data: originalImage.replace(/^data:image\/\w+;base64,/, ''),
-              },
-            },
-            {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: 'image/png',
-                data: renderedImage.replace(/^data:image\/\w+;base64,/, ''),
-              },
-            },
-            {
-              type: 'text',
-              text: `Compare the original design (first image) with the rendered result (second image).
+    const originalBase64 = originalImage.replace(/^data:image\/\w+;base64,/, '');
+    const renderedBase64 = renderedImage.replace(/^data:image\/\w+;base64,/, '');
+
+    const text = await this.callOpenRouter([
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'image_url',
+            image_url: { url: `data:image/png;base64,${originalBase64}` },
+          },
+          {
+            type: 'image_url',
+            image_url: { url: `data:image/png;base64,${renderedBase64}` },
+          },
+          {
+            type: 'text',
+            text: `Compare the original design (first image) with the rendered result (second image).
 
 Improve the code to match the original more closely. Focus on:
 - Layout accuracy (positioning, alignment, spacing)
@@ -247,13 +252,12 @@ ${currentCode}
 \`\`\`
 
 Provide the improved code. ONLY code, no explanations.`,
-            },
-          ],
-        },
-      ],
-    });
+          },
+        ],
+      },
+    ]);
 
-    return this.extractCode(response);
+    return this.extractCode(text);
   }
 
   /**
@@ -333,22 +337,16 @@ ${this.extractJsxMarkup(code)}
   }
 
   /**
-   * Extract code from Claude's response
+   * Extract code from a text response (strips markdown code fences)
    */
-  private extractCode(response: any): string {
-    const content = response.content[0].text;
-
+  private extractCode(text: string): string {
     // Try to extract code from markdown code blocks
     const codeBlockRegex = /```(?:tsx?|jsx?|html|vue)\n([\s\S]+?)\n```/;
-    const match = content.match(codeBlockRegex);
-
+    const match = text.match(codeBlockRegex);
     if (match) {
-      return match[1].trim();
+      return match[1]!.trim();
     }
-
-    // If no code block found, return entire content
-    // (Claude might return code without markdown formatting)
-    return content.trim();
+    return text.trim();
   }
 
   /**
@@ -376,11 +374,9 @@ ${this.extractJsxMarkup(code)}
     if (imageData.startsWith('data:image/')) {
       const match = imageData.match(/^data:(image\/\w+);base64,/);
       if (match) {
-        return match[1] as any;
+        return match[1] as 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif';
       }
     }
-
-    // Default to PNG
     return 'image/png';
   }
 

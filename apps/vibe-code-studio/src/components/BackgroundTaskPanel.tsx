@@ -320,7 +320,9 @@ const FilterBar = styled.div`
   flex-wrap: wrap;
 `;
 
-const FilterButton = styled.button<{ active?: boolean }>`
+const FilterButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'active',
+})<{ active?: boolean }>`
   padding: 6px 12px;
   border: 1px solid ${props => props.active ? '#3b82f6' : '#444'};
   background: ${props => props.active ? '#3b82f633' : 'transparent'};

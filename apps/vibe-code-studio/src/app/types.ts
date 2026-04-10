@@ -52,7 +52,7 @@ export interface ErrorFixState {
 export interface AIProviderState {
   currentModel: string;
   currentProvider: string;
-  deepseekApiKey: string;
+  openrouterApiKey: string;
 }
 
 // Combined app state for hooks

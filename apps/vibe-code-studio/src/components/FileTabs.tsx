@@ -31,7 +31,9 @@ const TabsContainer = styled.div`
   }
 `;
 
-const Tab = styled(motion.div)<{ active: boolean }>`
+const Tab = styled(motion.div).withConfig({
+  shouldForwardProp: (prop) => prop !== 'active',
+})<{ active: boolean }>`
   display: flex;
   align-items: center;
   padding: ${vibeTheme.spacing[2]} ${vibeTheme.spacing[4]};

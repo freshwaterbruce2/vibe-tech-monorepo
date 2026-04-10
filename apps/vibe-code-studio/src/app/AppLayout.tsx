@@ -18,6 +18,7 @@ import StatusBar from '../components/StatusBar';
 import TitleBar from '../components/TitleBar';
 
 // Lazy-loaded conditional components (only loaded when their panel is opened)
+const EnhancedAgentMode = lazy(() => import('../components/EnhancedAgentMode/EnhancedAgentMode'));
 const BackgroundTaskPanel = lazy(() => import('../components/BackgroundTaskPanel').then(m => ({ default: m.BackgroundTaskPanel })));
 const ComponentLibrary = lazy(() => import('../components/ComponentLibrary').then(m => ({ default: m.ComponentLibrary })));
 const EditorStreamPanel = lazy(() => import('../components/EditorStreamPanel').then(m => ({ default: m.EditorStreamPanel })));
@@ -211,14 +212,16 @@ export function AppLayout() {
         currentFile={ws.currentFile}
         aiChatOpen={ui.aiChatOpen}
         backgroundPanelOpen={ui.backgroundPanelOpen}
+        sidebarOpen={ui.sidebarOpen}
+        activeVisualPanel={ui.activeVisualPanel}
+        terminalOpen={ui.terminalOpen}
+        agentModeOpen={ui.agentModeOpen}
+        currentModel={extras.currentModel}
         onToggleSidebar={() => ui.setSidebarOpen(!ui.sidebarOpen)}
         onToggleAIChat={() => ui.setAiChatOpen(!ui.aiChatOpen)}
         onToggleBackgroundPanel={() => ui.setBackgroundPanelOpen(!ui.backgroundPanelOpen)}
-        onOpenAgentMode={() => {
-          if (!ui.aiChatOpen) ui.setAiChatOpen(true);
-          ui.setChatMode('agent');
-        }}
-        onOpenTerminal={() => {/* Terminal disabled */}}
+        onOpenAgentMode={() => ui.setAgentModeOpen(true)}
+        onOpenTerminal={() => ui.setTerminalOpen(!ui.terminalOpen)}
         onToggleScreenshot={extras.handleToggleScreenshotPanel}
         onToggleLibrary={extras.handleToggleComponentLibrary}
         onToggleVisualEditor={extras.handleToggleVisualEditor}
@@ -351,7 +354,7 @@ export function AppLayout() {
             }}
           >
             <ScreenshotToCodePanel
-              apiKey={extras.deepseekApiKey}
+              apiKey={extras.openrouterApiKey}
               onInsertCode={extras.handleInsertCode}
             />
           </motion.div>
@@ -422,6 +425,26 @@ export function AppLayout() {
       <Suspense fallback={null}>
         <PerformanceMonitor />
       </Suspense>
+
+      {ui.agentModeOpen && (
+        <Suspense fallback={null}>
+          <EnhancedAgentMode
+            isOpen={ui.agentModeOpen}
+            onClose={() => ui.setAgentModeOpen(false)}
+            onComplete={() => {
+              ui.setAgentModeOpen(false);
+              extras.showSuccess('Agent Task Complete', 'Multi-agent task completed successfully');
+            }}
+            orchestrator={services.orchestrator}
+            performanceOptimizer={services.performanceOptimizer}
+            workspaceContext={ws.workspaceFolder ? {
+              workspaceFolder: ws.workspaceFolder,
+              currentFile: ws.currentFile?.path,
+              openFiles: ws.openFiles.map((f) => f.path),
+            } : undefined}
+          />
+        </Suspense>
+      )}
     </AppContainer>
   );
 }

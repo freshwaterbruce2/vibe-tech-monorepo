@@ -105,6 +105,8 @@ export interface EditorSettings {
   aiAutoComplete: boolean;
   aiSuggestions: boolean;
   aiModel?:
+  // Moonshot (primary)
+  | 'moonshot/kimi-2.5-pro'
   // Free (OpenRouter)
   | 'liquid/lfm-2.5-1.2b-thinking:free'
   | 'liquid/lfm-2.5-1.2b-instruct:free'
@@ -114,10 +116,12 @@ export interface EditorSettings {
   // Mid cost (OpenRouter)
   | 'deepseek/deepseek-chat'
   | 'anthropic/claude-sonnet-4.5'
+  | 'anthropic/claude-sonnet-4.6'
   // High cost (OpenRouter)
   | 'openai/gpt-5.2-codex'
   | 'openai/gpt-5.2'
   | 'anthropic/claude-opus-4.5'
+  | 'anthropic/claude-opus-4.6'
   // Local fallback
   | 'local/vibe-completion';
   showReasoningProcess?: boolean;

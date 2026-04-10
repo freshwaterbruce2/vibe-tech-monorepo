@@ -350,7 +350,7 @@ export const aiCompletionExecutor: TaskExecutor = {
         success: true,
         data: {
           completion: '// AI-generated code here',
-          model: 'deepseek-coder',
+          model: 'moonshot/kimi-2.5-pro',
           tokens: Math.floor(Math.random() * 1000),
         },
         logs: [`Generated completion for context: ${context.substring(0, 50)}...`],

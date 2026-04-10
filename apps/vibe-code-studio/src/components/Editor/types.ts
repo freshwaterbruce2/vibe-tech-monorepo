@@ -6,7 +6,6 @@ import type { editor } from 'monaco-editor';
 import type * as Monaco from 'monaco-editor';
 
 import type { UnifiedAIService } from '../../services/ai/UnifiedAIService';
-import type { DeepSeekService } from '../../services/DeepSeekService';
 import type { EditorFile, EditorSettings, WorkspaceContext } from '../../types';
 
 export interface EditorProps {
@@ -16,7 +15,6 @@ export interface EditorProps {
   onCloseFile: (path: string) => void;
   onSaveFile: () => void;
   onFileSelect: (file: EditorFile) => void;
-  deepSeekService?: DeepSeekService;
   aiService?: UnifiedAIService;
   workspaceContext?: WorkspaceContext;
   getFileContext?: (file: EditorFile) => unknown[];

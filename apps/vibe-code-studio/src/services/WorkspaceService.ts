@@ -498,7 +498,7 @@ export class WorkspaceService {
     if (path.includes('package.json')) {
       return JSON.stringify(
         {
-          name: 'deepcode-editor',
+          name: 'vibe-code-studio',
           version: '1.0.0',
           main: 'src/index.ts',
           dependencies: {
@@ -513,7 +513,7 @@ export class WorkspaceService {
     }
 
     if (path.includes('README.md')) {
-      return '# DeepCode Editor\n\nAI-powered code editor with DeepSeek integration.';
+      return '# Vibe Code Studio\n\nAI-powered code editor.';
     }
 
     return `// Mock content for ${path}`;

@@ -1,15 +1,13 @@
 import { Editor as MonacoEditor } from '@monaco-editor/react';
-import { motion } from 'framer-motion';
 import type * as Monaco from 'monaco-editor';
 import type { editor } from 'monaco-editor';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
-import styled, { keyframes } from 'styled-components';
+import styled from 'styled-components';
 
 import { useEditorActions } from '../hooks/useEditorActions';
 import { useEditorSetup } from '../hooks/useEditorSetup';
 import { useInlineEdit } from '../hooks/useInlineEdit';
-import type { DeepSeekService } from '../services/DeepSeekService';
 import { logger } from '../services/Logger';
 import type { UnifiedAIService } from '../services/ai/UnifiedAIService';
 import { vibeTheme } from '../styles/theme';
@@ -21,11 +19,6 @@ import FileTabs from './FileTabs';
 import type { FindOptions } from './FindReplace';
 import FindReplace from './FindReplace';
 import PrefetchIndicator from './PrefetchIndicator';
-
-const pulse = keyframes`
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-`;
 
 const EditorContainer = styled.div`
   display: flex;
@@ -78,25 +71,6 @@ const MonacoContainer = styled.div`
   }
 `;
 
-const StatusOverlay = styled(motion.div) <{ visible: boolean }>`
-  position: absolute;
-  top: ${vibeTheme.spacing.md};
-  right: ${vibeTheme.spacing.md};
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.9) 0%, rgba(0, 212, 255, 0.8) 100%);
-  color: ${vibeTheme.colors.text};
-  padding: ${vibeTheme.spacing.sm} ${vibeTheme.spacing.md};
-  border-radius: ${vibeTheme.borderRadius.medium};
-  font-size: ${vibeTheme.typography.fontSize.xs};
-  font-weight: ${vibeTheme.typography.fontWeight.medium};
-  opacity: ${(props) => (props.visible ? 1 : 0)};
-  transition: all ${vibeTheme.animation.duration.normal} ease;
-  z-index: 1000;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(139, 92, 246, 0.3);
-  box-shadow: ${vibeTheme.shadows.medium}, 0 0 20px rgba(139, 92, 246, 0.4);
-  animation: ${(props) => (props.visible ? pulse : 'none')} 2s infinite;
-`;
-
 const NoFilePlaceholder = styled.div`
   display: flex;
   flex-direction: column;
@@ -124,7 +98,6 @@ interface EditorProps {
   onCloseFile: (path: string) => void;
   onSaveFile: () => void;
   onFileSelect: (file: EditorFile) => void;
-  deepSeekService?: DeepSeekService; // Optional - legacy completion provider
   aiService?: UnifiedAIService; // Primary AI service for inline completions
   workspaceContext?: WorkspaceContext;
   getFileContext?: ((file: EditorFile) => any[]) | undefined;
@@ -142,7 +115,6 @@ const Editor = ({
   onCloseFile,
   onSaveFile,
   onFileSelect,
-  deepSeekService,
   aiService: _aiService,
   workspaceContext: _workspaceContext,
   getFileContext: _getFileContext,
@@ -150,10 +122,8 @@ const Editor = ({
   liveStream,
   onEditorMount,
   modelStrategy = 'fast',
-  currentAIModel = 'deepseek/deepseek-v3.2',
+  currentAIModel = 'moonshot/kimi-2.5-pro',
 }: EditorProps) => {
-  const [aiSuggestion] = useState('');
-  const [showAiStatus] = useState(false);
   const [findReplaceOpen, setFindReplaceOpen] = useState(false);
   const [findMatches, setFindMatches] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
   const decorationsRef = useRef<string[]>([]);
@@ -164,7 +134,7 @@ const Editor = ({
   const [completionStats] = useState({ totalSuggestions: 0, accepted: 0, rejected: 0, avgLatency: 0 });
 
   // Week 4: Prefetch tracking state (kept for compatibility)
-  const [showPrefetchIndicator] = useState(true);
+  const [showPrefetchIndicator] = useState(false);
   const [prefetchStats] = useState({
     cacheSize: 0,
     queueSize: 0,
@@ -180,7 +150,7 @@ const Editor = ({
   const [inlineEditPos, setInlineEditPos] = useState({ top: 0, left: 0 });
 
   // Hook for editor setup and reference
-  const { editorRef, handleEditorDidMount } = useEditorSetup(file, deepSeekService, onEditorMount, liveStream);
+  const { editorRef, handleEditorDidMount } = useEditorSetup(file, undefined, onEditorMount, liveStream);
 
   // Hook for inline AI editing
   const { startInlineEdit: _startInlineEdit } = useInlineEdit(editorRef);
@@ -290,7 +260,7 @@ const Editor = ({
     // Legacy tracking placeholder
   }, []);
 
-  const handleFind = (query: string, options: FindOptions) => {
+  const handleFind = useCallback((query: string, options: FindOptions) => {
     if (!editorRef.current) {return;}
     const model = editorRef.current.getModel();
     if (!model) {return;}
@@ -325,7 +295,7 @@ const Editor = ({
         editorRef.current.setSelection(firstMatch.range);
       }
     }
-  };
+  }, [clearFindDecorations]);
 
   const handleReplace = (query: string, replacement: string, options: FindOptions) => {
     if (!editorRef.current) {return;}
@@ -443,10 +413,6 @@ const Editor = ({
           </NoFilePlaceholder>
         )}
 
-        <StatusOverlay visible={showAiStatus} initial={{ opacity: 0, scale: 0.8, y: -10 }} animate={{ opacity: showAiStatus ? 1 : 0, scale: showAiStatus ? 1 : 0.8, y: showAiStatus ? 0 : -10 }} transition={{ duration: 0.3, ease: 'easeOut' }}>
-          {aiSuggestion}
-        </StatusOverlay>
-
         <FindReplace
           isOpen={findReplaceOpen}
           onClose={() => {
@@ -464,7 +430,7 @@ const Editor = ({
 
         {/* Completion Indicator */}
         <CompletionIndicator
-          isActive={true}
+          isActive={hasActiveCompletion}
           model={currentAIModel}
           strategy={modelStrategy}
           hasCompletion={hasActiveCompletion}

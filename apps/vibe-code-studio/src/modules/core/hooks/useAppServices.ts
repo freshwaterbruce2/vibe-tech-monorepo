@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { unifiedAI } from '../../../services/ai/UnifiedAIService';
+import { logger } from '../../../services/Logger';
 import { FileSystemService } from '../../../services/FileSystemService';
 import { WorkspaceService } from '../../../services/WorkspaceService';
 import { GitService } from '../../../services/GitService';
@@ -7,6 +8,8 @@ import { TaskPlanner } from '../../../services/ai/TaskPlanner';
 import { ExecutionEngine } from '../../../services/ai/ExecutionEngine';
 import { liveEditorStream } from '../../../services/LiveEditorStream';
 import type { BackgroundAgentSystem } from '../../../services/BackgroundAgentSystem';
+import { AgentOrchestrator } from '../../../services/specialized-agents/AgentOrchestrator';
+import { AgentPerformanceOptimizer } from '../../../services/AgentPerformanceOptimizer';
 
 const multiFileEditor: Record<string, never> = {};
 const backgroundAgentSystem = {
@@ -50,12 +53,23 @@ export function useAppServices() {
     executionEngineRef.current = new ExecutionEngine(fileSystemService, unifiedAI, workspaceService, gitService);
   }
 
+  // Multi-agent orchestrator — agents use UnifiedAIService internally
+  const orchestratorRef = useRef<AgentOrchestrator | null>(null);
+  if (!orchestratorRef.current) {
+    orchestratorRef.current = new AgentOrchestrator();
+  }
+
+  const performanceOptimizerRef = useRef<AgentPerformanceOptimizer | null>(null);
+  if (!performanceOptimizerRef.current) {
+    performanceOptimizerRef.current = new AgentPerformanceOptimizer();
+  }
+
   useEffect(() => {
     const initServices = async () => {
       try {
         await unifiedAI.initialize();
         setIsAIReady(true);
-        console.log('Vibe AI Services Initialized');
+        logger.info('Vibe AI Services Initialized');
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to initialize AI services';
         setServiceError(message);
@@ -66,22 +80,18 @@ export function useAppServices() {
     initServices();
   }, []);
 
-  // Return structure matching what consumers expect, but backed by new logic where applicable
   return {
     isAIReady,
     serviceError,
-    // Expose the unified service
     aiService: unifiedAI,
-
-    // Real service instances
     fileSystemService,
     workspaceService,
     gitService,
     taskPlanner: taskPlannerRef.current!,
     executionEngine: executionEngineRef.current!,
     liveStream: liveEditorStream,
-
-    // Mock services expected by App.tsx (to be implemented later)
+    orchestrator: orchestratorRef.current!,
+    performanceOptimizer: performanceOptimizerRef.current!,
     multiFileEditor,
     backgroundAgentSystem,
   };

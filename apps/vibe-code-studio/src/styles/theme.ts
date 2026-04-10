@@ -68,7 +68,7 @@ export const vibeTheme = {
   },
   
   gradients: {
-    // Primary gradients - signature DeepCode style
+    // Primary gradients - signature Vibe Code Studio style
     primary: 'linear-gradient(135deg, #8b5cf6 0%, #00d4ff 100%)',
     primarySubtle: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(0, 212, 255, 0.1) 100%)',
     secondary: 'linear-gradient(135deg, #a855f7 0%, #4ecdc4 100%)',

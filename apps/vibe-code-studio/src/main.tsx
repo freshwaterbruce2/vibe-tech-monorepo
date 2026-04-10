@@ -51,14 +51,17 @@ if (!root) {
 
 // Install Tauri shim before rendering (polyfills window.electron in Tauri mode)
 // Must complete before render because many components access window.electron synchronously.
-// 3-second timeout prevents the app from hanging forever if a plugin import fails.
+// 10-second timeout prevents the app from hanging forever if a plugin import fails.
+let shimTimeoutId: ReturnType<typeof setTimeout>;
 const shimWithTimeout = Promise.race([
   installTauriShim(),
-  new Promise<void>((resolve) => setTimeout(() => {
-    console.warn('[TauriShim] Installation timed out after 10s — rendering without shim');
-    resolve();
-  }, 10000)),
-]);
+  new Promise<void>((resolve) => {
+    shimTimeoutId = setTimeout(() => {
+      console.warn('[TauriShim] Installation timed out after 10s — rendering without shim');
+      resolve();
+    }, 10000);
+  }),
+]).finally(() => clearTimeout(shimTimeoutId));
 
 shimWithTimeout.then(() => {
   ReactDOM.createRoot(root).render(

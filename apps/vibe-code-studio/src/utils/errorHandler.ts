@@ -73,7 +73,7 @@ export function handleApiError(error: unknown): ErrorInfo {
     switch (status) {
       case 401:
         return {
-          message: 'Invalid API key. Please check your DeepSeek API key in settings.',
+          message: 'Invalid API key. Please check your API key in settings.',
           code: ErrorCodes.AUTH_ERROR,
           details: data,
           timestamp,

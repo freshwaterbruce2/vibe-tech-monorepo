@@ -1,9 +1,48 @@
-import { startTransition, useCallback, useState } from 'react';
+import { startTransition, useCallback, useEffect, useState } from 'react';
 
 import { MultiFileEditDetector } from '../services/ai/MultiFileEditDetector';
 import type { UnifiedAIService } from '../services/ai/UnifiedAIService';
 import { logger } from '../services/Logger';
 import type { AIContextRequest, AIMessage, EditorFile, WorkspaceContext } from '../types';
+import type { FileChange, MultiFileEditPlan } from '../types/multifile';
+
+const CHAT_STORAGE_KEY = 'vibe-code-studio:chat-messages';
+const MAX_PERSISTED_MESSAGES = 100;
+
+const WELCOME_MESSAGE: AIMessage = {
+  id: 'welcome',
+  role: 'assistant',
+  content: `Welcome to Vibe Code Studio! 🚀
+
+I'm your AI coding assistant. I can help you with:
+
+• **Code completion** — Smart suggestions as you type
+• **Code generation** — Write functions, classes, and more
+• **Code explanation** — Understand complex code
+• **Debugging** — Find and fix issues
+• **Refactoring** — Improve code structure
+
+Try asking me something like:
+- "Write a React component for a login form"
+- "Explain this function"
+- "Help me debug this error"
+
+Let's build something amazing together!`,
+  timestamp: new Date(),
+};
+
+function loadPersistedMessages(): AIMessage[] {
+  try {
+    // Synchronous context — electron-store is async so localStorage is the only option here
+    // eslint-disable-next-line electron-security/no-localstorage-electron
+    const raw = localStorage.getItem(CHAT_STORAGE_KEY);
+    if (!raw) return [WELCOME_MESSAGE];
+    const parsed = JSON.parse(raw) as Array<AIMessage & { timestamp: string }>;
+    return parsed.map((m) => ({ ...m, timestamp: new Date(m.timestamp) }));
+  } catch {
+    return [WELCOME_MESSAGE];
+  }
+}
 
 export interface UseAIChatReturn {
   aiMessages: AIMessage[];
@@ -21,7 +60,7 @@ export interface UseAIChatProps {
   currentFile?: EditorFile | null | undefined;
   workspaceContext?: WorkspaceContext | undefined;
   onError?: ((error: Error) => void) | undefined;
-  onMultiFileEditDetected?: ((plan: any, changes: any[]) => void) | undefined;
+  onMultiFileEditDetected?: ((plan: MultiFileEditPlan, changes: FileChange[]) => void) | undefined;
   openFiles?: EditorFile[];
   workspaceFolder?: string | null;
   sidebarOpen?: boolean;
@@ -39,29 +78,7 @@ export function useAIChat({
   sidebarOpen = true,
   previewOpen = false,
 }: UseAIChatProps): UseAIChatReturn {
-  const [aiMessages, setAiMessages] = useState<AIMessage[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: `Welcome to DeepCode Editor! 🚀
-
-I'm your AI coding assistant. I can help you with:
-
-• **Code completion** - Smart suggestions as you type
-• **Code generation** - Write functions, classes, and more
-• **Code explanation** - Understand complex code
-• **Debugging** - Find and fix issues
-• **Refactoring** - Improve code structure
-
-Try asking me something like:
-- "Write a React component for a login form"
-- "Explain this function"
-- "Help me debug this error"
-
-Let's build something amazing together!`,
-      timestamp: new Date(),
-    },
-  ]);
+  const [aiMessages, setAiMessages] = useState<AIMessage[]>(loadPersistedMessages);
   const [aiChatOpen, setAiChatOpen] = useState(false);
   const [isAiResponding, setIsAiResponding] = useState(false);
 
@@ -89,8 +106,29 @@ Let's build something amazing together!`,
   }, []);
 
   const clearAiMessages = useCallback(() => {
-    setAiMessages([]);
+    setAiMessages([WELCOME_MESSAGE]);
+    if (window.electron?.store) {
+      void window.electron.store.delete(CHAT_STORAGE_KEY);
+    } else {
+      // eslint-disable-next-line electron-security/no-localstorage-electron
+      localStorage.removeItem(CHAT_STORAGE_KEY);
+    }
   }, []);
+
+  // Persist messages on every change — use electron-store in Electron, localStorage as web fallback
+  useEffect(() => {
+    try {
+      const json = JSON.stringify(aiMessages.slice(-MAX_PERSISTED_MESSAGES));
+      if (window.electron?.store) {
+        void window.electron.store.set(CHAT_STORAGE_KEY, json);
+      } else {
+        // eslint-disable-next-line electron-security/no-localstorage-electron
+        localStorage.setItem(CHAT_STORAGE_KEY, json);
+      }
+    } catch {
+      // ignore quota / store errors
+    }
+  }, [aiMessages]);
 
   const handleSendMessage = useCallback(
     async (message: string, contextRequest?: Partial<AIContextRequest>) => {

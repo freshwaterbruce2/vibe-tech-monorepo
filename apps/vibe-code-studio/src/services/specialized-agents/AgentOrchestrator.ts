@@ -3,7 +3,6 @@
  * Manages multiple specialized agents and coordinates their collaboration
  */
 import { logger } from '../../utils/logger';
-import type { DeepSeekService } from '../DeepSeekService';
 
 import { BackendEngineerAgent } from './BackendEngineerAgent';
 import type { AgentCapability,AgentContext, AgentResponse, BaseSpecializedAgent } from './BaseSpecializedAgent';
@@ -78,7 +77,7 @@ export class AgentOrchestrator {
     success: boolean;
   }> = [];
 
-  constructor(private deepSeekService: DeepSeekService) {
+  constructor() {
     this.initializeAgents();
   }
 
@@ -97,7 +96,7 @@ export class AgentOrchestrator {
 
     agentConfigs.forEach(({ key, AgentClass }) => {
       try {
-        const agent = new AgentClass(this.deepSeekService);
+        const agent = new AgentClass();
         this.agents.set(key, agent);
         logger.info(`Initialized agent: ${key}`);
       } catch (error) {

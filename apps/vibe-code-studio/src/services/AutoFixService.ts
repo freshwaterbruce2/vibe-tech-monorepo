@@ -145,7 +145,7 @@ export class AutoFixService {
 
     let response: string;
     try {
-      this.aiService.setModel?.('moonshotai/kimi-k2:free');
+      this.aiService.setModel?.('moonshot/kimi-2.5-pro');
 
       const aiResponse = await this.aiService.sendContextualMessage({
         userQuery: prompt,

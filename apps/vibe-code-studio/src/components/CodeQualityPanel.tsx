@@ -289,7 +289,9 @@ const ViewToggle = styled.div`
   padding: 2px;
 `;
 
-const ViewButton = styled.button<{ active: boolean }>`
+const ViewButton = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'active',
+})<{ active: boolean }>`
   display: flex;
   align-items: center;
   gap: 6px;

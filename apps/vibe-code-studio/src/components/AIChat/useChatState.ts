@@ -38,7 +38,7 @@ interface UseChatStateReturn {
     handleResizeStart: (e: MouseEvent) => void;
 }
 
-const CHAT_WIDTH_KEY = 'deepcode-chat-width';
+const CHAT_WIDTH_KEY = 'vibe-code-studio-chat-width';
 
 export function useChatState(options: UseChatStateOptions = {}): UseChatStateReturn {
     const { messages = [] } = options;

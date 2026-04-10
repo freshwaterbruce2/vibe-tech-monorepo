@@ -75,7 +75,7 @@ export class DeepSeekStreamingClient extends BaseStreamingClient {
           Authorization: `Bearer ${this.provider.apiKey}`,
         },
         body: JSON.stringify({
-          model: this.provider.models[0] ?? 'deepseek/deepseek-v3.2',
+          model: this.provider.models[0] ?? 'moonshot/kimi-2.5-pro',
           messages,
           stream: true,
           temperature: 0.7,
@@ -324,7 +324,7 @@ export class AIProviderFactory {
   private static getAvailableModels(provider: string): string[] {
     const models: Record<string, string[]> = {
       openrouter: [
-        'deepseek/deepseek-v3.2',
+        'moonshot/kimi-2.5-pro',
         'openai/gpt-5.2-codex',
         'anthropic/claude-sonnet-4.5',
         'liquid/lfm-2.5-1.2b-thinking:free',

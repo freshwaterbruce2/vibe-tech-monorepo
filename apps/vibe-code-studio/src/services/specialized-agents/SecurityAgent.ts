@@ -2,7 +2,6 @@
  * Security Agent - Specialized in security analysis and vulnerability detection
  */
 import { logger } from '../../utils/logger';
-import type { DeepSeekService } from '../DeepSeekService';
 
 import type { AgentContext, AgentResponse} from './BaseSpecializedAgent';
 import { AgentCapability,BaseSpecializedAgent } from './BaseSpecializedAgent';
@@ -46,7 +45,7 @@ export interface SecurityScan {
 }
 
 export class SecurityAgent extends BaseSpecializedAgent {
-  constructor(deepSeekService: DeepSeekService) {
+  constructor() {
     super(
       'SecurityAgent',
       [
@@ -57,8 +56,7 @@ export class SecurityAgent extends BaseSpecializedAgent {
         AgentCapability.DATA_VALIDATION,
         AgentCapability.AUTHENTICATION,
         AgentCapability.CODE_REVIEW
-      ],
-      deepSeekService
+      ]
     );
   }
 

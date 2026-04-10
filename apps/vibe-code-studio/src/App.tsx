@@ -91,6 +91,8 @@ function App() {
     liveStream,
     executionEngine,
     backgroundAgentSystem,
+    orchestrator,
+    performanceOptimizer,
   } = useAppServices();
 
   // Notifications
@@ -464,7 +466,7 @@ function App() {
   useAIProviderInit();
   useDatabaseInit({ setDbStatus: appState.setDbStatus, showWarning, showError });
   useAppInit({ showWarning, handleOpenFolder, handleOpenFile });
-  useApiKeyLoader({ setDeepseekApiKey: appState.setDeepseekApiKey });
+  useApiKeyLoader({ setOpenrouterApiKey: appState.setOpenrouterApiKey });
   useKeyboardShortcuts({
     setGlobalSearchOpen: appState.setGlobalSearchOpen,
     setAiChatOpen,
@@ -490,6 +492,7 @@ function App() {
       <Router>
         <ServicesContext.Provider value={{
           aiService, fileSystemService, taskPlanner, liveStream, executionEngine, backgroundAgentSystem,
+          orchestrator, performanceOptimizer,
         }}>
         <UIPanelContext.Provider value={{
           settingsOpen, setSettingsOpen,
@@ -505,6 +508,7 @@ function App() {
           activeVisualPanel: appState.activeVisualPanel, setActiveVisualPanel: appState.setActiveVisualPanel,
           chatMode: appState.chatMode, setChatMode: appState.setChatMode,
           errorFixPanelOpen: appState.errorFixPanelOpen, setErrorFixPanelOpen: appState.setErrorFixPanelOpen,
+          agentModeOpen: appState.agentModeOpen, setAgentModeOpen: appState.setAgentModeOpen,
         }}>
         <WorkspaceContext.Provider value={{
           currentFile, openFiles, workspaceFolder,
@@ -525,7 +529,7 @@ function App() {
           handleProviderChange: handlers.handleProviderChange,
           handleMultiFileEditDetected: handlers.handleMultiFileEditDetected,
           currentModel: appState.currentModel, currentProvider: appState.currentProvider,
-          deepseekApiKey: appState.deepseekApiKey,
+          openrouterApiKey: appState.openrouterApiKey,
           currentError: appState.currentError, currentFix: appState.currentFix,
           fixLoading: appState.fixLoading, fixError: appState.fixError,
           setCurrentError: appState.setCurrentError, setCurrentFix: appState.setCurrentFix,

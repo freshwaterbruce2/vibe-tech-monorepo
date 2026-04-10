@@ -5,7 +5,7 @@ import { immer } from 'zustand/middleware/immer';
 import type { EditorFile, EditorSettings, WorkspaceContext } from '../types';
 
 /**
- * Modern Zustand Store for DeepCode Editor - 2025 Patterns
+ * Modern Zustand Store for Vibe Code Studio - 2025 Patterns
  *
  * Features:
  * - TypeScript first with proper inference
@@ -98,7 +98,7 @@ const defaultSettings: EditorSettings = {
   autoSave: true,
   aiAutoComplete: true,
   aiSuggestions: true,
-  aiModel: 'deepseek/deepseek-v3.2',
+  aiModel: 'moonshot/kimi-2.5-pro',
   showReasoningProcess: false,
 };
 
@@ -310,7 +310,7 @@ export const useEditorStore = create<EditorState>()(
         }))
       ),
       {
-        name: 'deepcode-editor-store',
+        name: 'vibe-code-studio-editor-store',
         partialize: (state) => ({
           recentFiles: state.recentFiles,
           settings: state.settings,
@@ -320,7 +320,7 @@ export const useEditorStore = create<EditorState>()(
       }
     ),
     {
-      name: 'DeepCode Editor Store',
+      name: 'Vibe Code Studio Editor Store',
     }
   )
 );

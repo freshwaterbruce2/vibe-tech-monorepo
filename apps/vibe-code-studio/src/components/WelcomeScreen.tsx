@@ -192,6 +192,15 @@ const FeatureDescription = styled.p`
   margin: 0;
 `;
 
+const SectionTitle = styled.h2`
+  font-size: ${vibeTheme.typography.fontSize.lg};
+  font-weight: ${vibeTheme.typography.fontWeight.semibold};
+  color: ${vibeTheme.colors.textSecondary};
+  margin: 0 0 ${vibeTheme.spacing.md} 0;
+  text-transform: uppercase;
+  letter-spacing: ${vibeTheme.typography.letterSpacing.wide};
+`;
+
 const LoadingIndicator = styled.div`
   display: flex;
   flex-direction: column;
@@ -372,7 +381,7 @@ export const WelcomeScreen = ({
 
         {/* Quick Start actions */}
         <div>
-          <h2>Quick Start</h2>
+          <SectionTitle>Quick Start</SectionTitle>
           <div style={{ display: 'flex', gap: vibeTheme.spacing.md, flexWrap: 'wrap' }}>
             <Button
               variant="outline"
@@ -416,15 +425,9 @@ export const WelcomeScreen = ({
             <Button
               variant="outline"
               icon={<GitBranch />}
-              onClick={() => {
-                try {
-                  onOpenFolder('/demo/project');
-                } catch (error) {
-                  logger.error('Error handling Clone Repo action:', error);
-                }
-              }}
+              onClick={handleOpenFolder}
             >
-              Clone Repo
+              Open Repo
             </Button>
           </div>
         </div>

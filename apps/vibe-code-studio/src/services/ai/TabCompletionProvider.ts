@@ -34,7 +34,7 @@ export class TabCompletionProvider implements Monaco.languages.InlineCompletions
     try {
       // Request Completion
       const completion = await this.aiService.generateText(userPrompt, {
-        model: 'deepseek/deepseek-v3.2',
+        model: 'moonshot/kimi-2.5-pro',
         temperature: 0.1, // Low temp for precision
         maxTokens: 50,    // Keep it short for inline completion
         signal: token as unknown as AbortSignal // Pass cancellation token

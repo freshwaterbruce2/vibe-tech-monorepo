@@ -27,7 +27,7 @@ export function copyToClipboard(text: string): void {
   navigator.clipboard.writeText(text);
 }
 
-export function MessageItem({ message, showReasoningProcess, renderAgentTask, onCopy }: MessageItemProps) {
+export function MessageItem({ message, showReasoningProcess, renderAgentTask, onCopy, onFeedback }: MessageItemProps) {
   const role = message.role === 'system' ? 'assistant' : message.role;
 
   return (
@@ -58,12 +58,22 @@ export function MessageItem({ message, showReasoningProcess, renderAgentTask, on
           >
             <Copy size={12} />
           </ActionButton>
-          {message.role === 'assistant' && (
+          {message.role === 'assistant' && onFeedback && (
             <>
-              <ActionButton title="Good response" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <ActionButton
+                title="Good response"
+                onClick={() => onFeedback(message.id, 'positive')}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
                 <ThumbsUp size={12} />
               </ActionButton>
-              <ActionButton title="Poor response" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <ActionButton
+                title="Poor response"
+                onClick={() => onFeedback(message.id, 'negative')}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
                 <ThumbsDown size={12} />
               </ActionButton>
             </>

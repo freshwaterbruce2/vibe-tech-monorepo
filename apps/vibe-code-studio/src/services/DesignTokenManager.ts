@@ -301,7 +301,8 @@ export class DesignTokenManager {
       if (window.electron?.store) {
         await window.electron.store.set(key, JSON.stringify(this.tokens));
       } else {
-        window.electronAPI.store.set(key, JSON.stringify(this.tokens));
+        // eslint-disable-next-line electron-security/no-localstorage-electron
+        localStorage.setItem(key, JSON.stringify(this.tokens));
       }
     }
   }
@@ -312,7 +313,8 @@ export class DesignTokenManager {
       if (window.electron?.store) {
         stored = await window.electron.store.get(key) ?? null;
       } else {
-        stored = window.electronAPI.store.get(key);
+        // eslint-disable-next-line electron-security/no-localstorage-electron
+        stored = localStorage.getItem(key);
       }
 
       if (stored) {

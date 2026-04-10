@@ -33,10 +33,7 @@ export const EnhancedAgentMode: React.FC = () => {
 
   // Function to handle the AI's replacement (Simple replacement for now)
   const handleApplyEdit = (newCode: string) => {
-    console.log('Replacing:', selectedCode, 'With:', newCode);
-    // Note: Replacing text in a raw window.getSelection() is complex.
-    // Ideally, this callback connects to your Monaco/Editor "applyEdit" method.
-    // For now, we just log it or copy to clipboard to verify flow.
+    // Copy to clipboard as a fallback until Monaco editor integration is wired up
     navigator.clipboard.writeText(newCode);
     alert('Code copied to clipboard! (Integration with specific editor engine needed for auto-replace)');
     closeWidget();
@@ -102,7 +99,6 @@ export const EnhancedAgentMode: React.FC = () => {
       }]);
 
     } catch (err) {
-      console.error(err);
       setLogs(prev => [...prev, {
         id: Date.now().toString(),
         timestamp: new Date(),
@@ -137,8 +133,8 @@ export const EnhancedAgentMode: React.FC = () => {
             />
             <ContextPanel
               items={MOCK_CONTEXT}
-              onToggleItem={(id) => console.log('Toggle', id)}
-              onRefresh={() => console.log('Refresh Context')}
+              onToggleItem={(_id) => { /* context item toggling not yet implemented */ }}
+              onRefresh={() => { /* context refresh not yet implemented */ }}
             />
             <PerformancePanel
               metrics={{ tokensUsed: 1250, tokensPerSec: 45, latencyMs: 320, costEstimate: 0.02 }}

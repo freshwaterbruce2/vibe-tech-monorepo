@@ -231,67 +231,67 @@ const TitleBar = ({
     {
       id: 'file',
       label: 'File',
-      icon: <FileText size={ 16} />,
-    submenu: [
-      {
-        id: 'file-new',
-        label: 'New File',
-        icon: <FileText size={ 16} />,
-      shortcut: 'Ctrl+N',
-      onClick: onNewFile,
+      icon: <FileText size={16} />,
+      submenu: [
+        {
+          id: 'file-new',
+          label: 'New File',
+          icon: <FileText size={16} />,
+          shortcut: 'Ctrl+N',
+          onClick: onNewFile,
         },
-  {
-    id: 'file-open',
-    label: 'Open Folder',
-    icon: <FolderOpen size={ 16 } />,
-shortcut: 'Ctrl+O',
-  onClick: onOpenFolder,
+        {
+          id: 'file-open',
+          label: 'Open Folder',
+          icon: <FolderOpen size={16} />,
+          shortcut: 'Ctrl+O',
+          onClick: onOpenFolder,
         },
-{ id: 'divider-1', label: '', divider: true },
-{
-  id: 'file-save-all',
-    label: 'Save All',
-      shortcut: 'Ctrl+Shift+S',
-        onClick: onSaveAll,
+        { id: 'divider-1', label: '', divider: true },
+        {
+          id: 'file-save-all',
+          label: 'Save All',
+          shortcut: 'Ctrl+Shift+S',
+          onClick: onSaveAll,
         },
-{ id: 'divider-2', label: '', divider: true },
-{
-  id: 'file-close-folder',
-    label: 'Close Folder',
-      onClick: onCloseFolder,
+        { id: 'divider-2', label: '', divider: true },
+        {
+          id: 'file-close-folder',
+          label: 'Close Folder',
+          onClick: onCloseFolder,
         },
       ],
     },
-{
-  id: 'edit',
-    label: 'Edit',
+    {
+      id: 'edit',
+      label: 'Edit',
       submenu: [
         {
           id: 'edit-find',
           label: 'Find',
-          icon: <Search size={ 16} />,
-        shortcut: 'Ctrl+F',
-        onClick: () => logger.debug('Find'),
+          icon: <Search size={16} />,
+          shortcut: 'Ctrl+F',
+          onClick: () => logger.debug('Find'),
         },
-{
-  id: 'edit-replace',
-    label: 'Replace',
-      shortcut: 'Ctrl+H',
-        onClick: () => logger.debug('Replace'),
+        {
+          id: 'edit-replace',
+          label: 'Replace',
+          shortcut: 'Ctrl+H',
+          onClick: () => logger.debug('Replace'),
         },
-{ id: 'divider-3', label: '', divider: true },
-{
-  id: 'edit-preferences',
-    label: 'Preferences',
-      icon: <Settings size={ 16 } />,
-  shortcut: 'Ctrl+,',
-    onClick: onSettingsClick,
+        { id: 'divider-3', label: '', divider: true },
+        {
+          id: 'edit-preferences',
+          label: 'Preferences',
+          icon: <Settings size={16} />,
+          shortcut: 'Ctrl+,',
+          onClick: onSettingsClick,
         },
       ],
     },
-{
-  id: 'view',
-    label: 'View',
+    {
+      id: 'view',
+      label: 'View',
       submenu: [
         {
           id: 'view-sidebar',
@@ -308,156 +308,146 @@ shortcut: 'Ctrl+O',
         {
           id: 'view-preview',
           label: 'Toggle Preview Panel',
-          icon: <Eye size={ 16} />,
-        shortcut: 'Ctrl+Shift+V',
-        onClick: onTogglePreview,
+          icon: <Eye size={16} />,
+          shortcut: 'Ctrl+Shift+V',
+          onClick: onTogglePreview,
         },
-{
-  id: 'view-screenshot-to-code',
-    label: 'Screenshot to Code',
-      icon: <Image size={ 16 } />,
-  shortcut: 'Ctrl+Shift+I',
-    onClick: onScreenshotToCode,
+        {
+          id: 'view-screenshot-to-code',
+          label: 'Screenshot to Code',
+          icon: <Image size={16} />,
+          shortcut: 'Ctrl+Shift+I',
+          onClick: onScreenshotToCode,
         },
-{
-  id: 'view-background-tasks',
-    label: 'Background Tasks',
-      icon: <ListTodo size={ 16 } />,
-  shortcut: 'Ctrl+Shift+T',
-    onClick: onToggleBackgroundPanel,
+        {
+          id: 'view-background-tasks',
+          label: 'Background Tasks',
+          icon: <ListTodo size={16} />,
+          shortcut: 'Ctrl+Shift+T',
+          onClick: onToggleBackgroundPanel,
         },
-{ id: 'divider-4', label: '', divider: true },
-{
-  id: 'view-zoom-in',
-    label: 'Zoom In',
-      icon: <ZoomIn size={ 16 } />,
-  shortcut: 'Ctrl++',
-    onClick: () => logger.debug('Zoom In'),
+        { id: 'divider-4', label: '', divider: true },
+        {
+          id: 'view-zoom-in',
+          label: 'Zoom In',
+          icon: <ZoomIn size={16} />,
+          shortcut: 'Ctrl++',
+          onClick: () => logger.debug('Zoom In'),
         },
-{
-  id: 'view-zoom-out',
-    label: 'Zoom Out',
-      icon: <ZoomOut size={ 16 } />,
-  shortcut: 'Ctrl+-',
-    onClick: () => logger.debug('Zoom Out'),
+        {
+          id: 'view-zoom-out',
+          label: 'Zoom Out',
+          icon: <ZoomOut size={16} />,
+          shortcut: 'Ctrl+-',
+          onClick: () => logger.debug('Zoom Out'),
         },
       ],
     },
-{
-  id: 'help',
-    label: 'Help',
-      icon: <HelpCircle size={ 16 } />,
-  submenu: [
     {
-      id: 'help-docs',
-      label: 'Documentation',
-      onClick: () => window.open('https://vibecodestudio.dev/docs', '_blank'),
-    },
-    { id: 'divider-5', label: '', divider: true },
-    {
-      id: 'help-about',
-      label: 'About Vibe Code Studio',
-      icon: <Info size={ 16} />,
-    onClick: () => logger.debug('About'),
+      id: 'help',
+      label: 'Help',
+      icon: <HelpCircle size={16} />,
+      submenu: [
+        {
+          id: 'help-docs',
+          label: 'Documentation',
+          onClick: () => window.open('https://vibecodestudio.dev/docs', '_blank'),
+        },
+        { id: 'divider-5', label: '', divider: true },
+        {
+          id: 'help-about',
+          label: 'About Vibe Code Studio',
+          icon: <Info size={16} />,
+          onClick: () => logger.debug('About'),
         },
       ],
     },
   ];
 
-const handleSettingsClick = () => {
-  if (onSettingsClick) {
-    onSettingsClick();
-  }
-};
+  const handleSettingsClick = () => {
+    if (onSettingsClick) {
+      onSettingsClick();
+    }
+  };
 
-const handleMinimize = async () => {
-  if (electronService.isElectron()) {
-    await electronService.minimizeWindow();
-  } else {
-    // Web fallback - minimize to taskbar not possible in browser
-  }
-};
+  const handleMinimize = async () => {
+    if (electronService.isElectron()) {
+      await electronService.minimizeWindow();
+    }
+  };
 
-const handleMaximize = async () => {
-  if (electronService.isElectron()) {
-    await electronService.maximizeWindow();
-  } else {
-    // Web fallback - toggle fullscreen
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
+  const handleMaximize = async () => {
+    if (electronService.isElectron()) {
+      await electronService.maximizeWindow();
     } else {
-      document.exitFullscreen();
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
     }
-  }
-};
+  };
 
-const handleClose = async () => {
-  if (electronService.isElectron()) {
-    await electronService.closeWindow();
-  } else {
-    // Web fallback - confirm before closing tab
-    if (window.confirm('Are you sure you want to close Vibe Code Studio?')) {
-      window.close();
+  const handleClose = async () => {
+    if (electronService.isElectron()) {
+      await electronService.closeWindow();
+    } else {
+      if (window.confirm('Are you sure you want to close Vibe Code Studio?')) {
+        window.close();
+      }
     }
-  }
-};
+  };
 
-return (
-  <TitleBarContainer>
-  <LeftSection>
-  <DropdownMenu
-          items= { menuItems }
-trigger = {
-            < MenuButton >
-  <Menu />
-  </MenuButton>
-          }
-align = "left"
-width = "220px"
-  />
-  <Logo>
-  <AppTitle>Vibe Code Studio </AppTitle>
-    </Logo>
-    </LeftSection>
+  return (
+    <TitleBarContainer>
+      <LeftSection>
+        <DropdownMenu
+          items={menuItems}
+          trigger={<MenuButton><Menu /></MenuButton>}
+          align="left"
+          width="220px"
+        />
+        <Logo>
+          <AppTitle>Vibe Code Studio</AppTitle>
+        </Logo>
+      </LeftSection>
 
-    < CenterSection >
-    <StatusIndicator>
-    <StatusDot $status="online" />
-      <span>DeepSeek AI Ready </span>
-        < Command size = { 12} />
-          </StatusIndicator>
-{ children }
-</CenterSection>
+      <CenterSection>
+        <StatusIndicator>
+          <StatusDot $status="online" />
+          <span>Vibe Code Studio</span>
+          <Command size={12} />
+        </StatusIndicator>
+        {children}
+      </CenterSection>
 
-  <RightSection>
-{
-  onTogglePreview && (
-    <ActionButton
-            onClick={ onTogglePreview }
-  title = "Toggle Preview Panel (Ctrl+Shift+V)"
-  style = {{
-    background: previewOpen ? 'rgba(139, 92, 246, 0.2)' : 'transparent',
-      color: previewOpen ? vibeTheme.colors.purple : vibeTheme.colors.textSecondary,
-            }
-}
+      <RightSection>
+        {onTogglePreview && (
+          <ActionButton
+            onClick={onTogglePreview}
+            title="Toggle Preview Panel (Ctrl+Shift+V)"
+            style={{
+              background: previewOpen ? 'rgba(139, 92, 246, 0.2)' : 'transparent',
+              color: previewOpen ? vibeTheme.colors.purple : vibeTheme.colors.textSecondary,
+            }}
           >
-  <Eye />
-  </ActionButton>
+            <Eye />
+          </ActionButton>
         )}
-<ActionButton onClick={ handleSettingsClick } title = "Settings" >
-  <Settings />
-  </ActionButton>
-  < ActionButton onClick = { handleMinimize } >
-    <Minimize2 />
-    </ActionButton>
-    < ActionButton onClick = { handleMaximize } >
-      <Square />
-      </ActionButton>
-      < ActionButton $variant = "danger" onClick = { handleClose } >
-        <X />
+        <ActionButton onClick={handleSettingsClick} title="Settings">
+          <Settings />
         </ActionButton>
-        </RightSection>
-        </TitleBarContainer>
+        <ActionButton onClick={handleMinimize}>
+          <Minimize2 />
+        </ActionButton>
+        <ActionButton onClick={handleMaximize}>
+          <Square />
+        </ActionButton>
+        <ActionButton $variant="danger" onClick={handleClose}>
+          <X />
+        </ActionButton>
+      </RightSection>
+    </TitleBarContainer>
   );
 };
 

@@ -101,6 +101,11 @@ interface StatusBarProps {
   currentFile: EditorFile | null;
   aiChatOpen: boolean;
   backgroundPanelOpen?: boolean;
+  sidebarOpen?: boolean;
+  activeVisualPanel?: string;
+  terminalOpen?: boolean;
+  agentModeOpen?: boolean;
+  currentModel?: string;
   onToggleSidebar: () => void;
   onToggleAIChat: () => void;
   onToggleBackgroundPanel?: () => void;
@@ -115,6 +120,11 @@ const StatusBar = ({
   currentFile,
   aiChatOpen,
   backgroundPanelOpen,
+  sidebarOpen = true,
+  activeVisualPanel = 'none',
+  terminalOpen = false,
+  agentModeOpen = false,
+  currentModel,
   onToggleSidebar,
   onToggleAIChat,
   onToggleBackgroundPanel,
@@ -126,18 +136,17 @@ const StatusBar = ({
 }: StatusBarProps) => {
   const { isGitRepo, status, branches } = useGit();
 
-  // Simple demo mode toggle using localStorage
-  // Simple demo mode toggle using localStorage
   const [isDemoMode, setIsDemoMode] = useState(false);
 
   useEffect(() => {
     const loadDemoMode = async () => {
-        if (typeof window !== 'undefined' && window.electron?.store) {
-            const val = await window.electron.store.get('forceDemoMode');
-            setIsDemoMode(String(val) === 'true');
-        } else if (typeof localStorage !== 'undefined') {
-            setIsDemoMode(String(window.electronAPI.store.get('forceDemoMode')) === 'true');
-        }
+      if (window.electron?.store) {
+        const val = await window.electron.store.get('forceDemoMode');
+        setIsDemoMode(String(val) === 'true');
+      } else {
+        // eslint-disable-next-line electron-security/no-localstorage-electron
+        setIsDemoMode(localStorage.getItem('forceDemoMode') === 'true');
+      }
     };
     loadDemoMode();
   }, []);
@@ -145,13 +154,21 @@ const StatusBar = ({
   const toggleDemoMode = async () => {
     const newValue = !isDemoMode;
     setIsDemoMode(newValue);
-    if (typeof window !== 'undefined' && window.electron?.store) {
+    if (window.electron?.store) {
       await window.electron.store.set('forceDemoMode', String(newValue));
-    } else if (typeof localStorage !== 'undefined') {
-      window.electronAPI.store.set('forceDemoMode', String(newValue));
+    } else {
+      // eslint-disable-next-line electron-security/no-localstorage-electron
+      localStorage.setItem('forceDemoMode', String(newValue));
     }
-    window.location.reload(); // Reload to reinitialize AI services
+    window.location.reload();
   };
+
+  // Format model name for compact display (e.g. "moonshot/kimi-2.5-pro" → "Kimi 2.5 Pro")
+  const modelLabel = (() => {
+    if (!currentModel) return 'AI Ready';
+    const name = currentModel.split('/').pop() ?? currentModel;
+    return name.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  })();
 
   const getFileInfo = () => {
     if (!currentFile) {
@@ -221,14 +238,14 @@ const StatusBar = ({
       <RightSection>
         <StatusItem whileHover={{ scale: 1.05, y: -1 }} whileTap={{ scale: 0.95 }}>
           <Zap size={14} />
-          DeepSeek AI Ready
+          {modelLabel}
         </StatusItem>
 
         <Separator />
 
         {onToggleScreenshot && (
           <ToggleButton
-            active={false}
+            active={activeVisualPanel === 'screenshot'}
             onClick={onToggleScreenshot}
             title="Screenshot to Code"
             whileHover={{ scale: 1.05, y: -1 }}
@@ -241,7 +258,7 @@ const StatusBar = ({
 
         {onToggleLibrary && (
           <ToggleButton
-            active={false}
+            active={activeVisualPanel === 'library'}
             onClick={onToggleLibrary}
             title="Component Library"
             whileHover={{ scale: 1.05, y: -1 }}
@@ -254,7 +271,7 @@ const StatusBar = ({
 
         {onToggleVisualEditor && (
           <ToggleButton
-            active={false}
+            active={activeVisualPanel === 'visual'}
             onClick={onToggleVisualEditor}
             title="Visual Editor"
             whileHover={{ scale: 1.05, y: -1 }}
@@ -267,7 +284,7 @@ const StatusBar = ({
 
         {onOpenAgentMode && (
           <ToggleButton
-            active={false}
+            active={agentModeOpen}
             onClick={onOpenAgentMode}
             title="Open Agent Mode"
             whileHover={{ scale: 1.05, y: -1 }}
@@ -280,7 +297,7 @@ const StatusBar = ({
 
         {onOpenTerminal && (
           <ToggleButton
-            active={false}
+            active={terminalOpen}
             onClick={onOpenTerminal}
             title="Open Terminal"
             whileHover={{ scale: 1.05, y: -1 }}
@@ -316,7 +333,7 @@ const StatusBar = ({
         </ToggleButton>
 
         <ToggleButton
-          active={true}
+          active={sidebarOpen}
           onClick={onToggleSidebar}
           title="Toggle Sidebar"
           whileHover={{ scale: 1.05, y: -1 }}

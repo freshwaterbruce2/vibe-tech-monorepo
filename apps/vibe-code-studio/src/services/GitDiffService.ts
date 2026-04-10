@@ -322,7 +322,7 @@ export class GitDiffService {
             content: prompt,
           },
         ],
-        model: 'deepseek/deepseek-v3.2',
+        model: 'moonshot/kimi-2.5-pro',
         temperature: 0.5,
         maxTokens: 500,
       });
@@ -444,7 +444,7 @@ Focus on the semantic meaning, not line-by-line details.
           content: prompt,
         },
       ],
-      model: 'deepseek/deepseek-v3.2',
+      model: 'moonshot/kimi-2.5-pro',
       temperature: 0.5,
       maxTokens: 100,
     });
@@ -478,7 +478,7 @@ Focus on the semantic meaning, not line-by-line details.
             content: prompt,
           },
         ],
-        model: 'deepseek/deepseek-v3.2',
+        model: 'moonshot/kimi-2.5-pro',
         temperature: 0.3, // Low temperature for consistent suggestions
         maxTokens: 300,
       });

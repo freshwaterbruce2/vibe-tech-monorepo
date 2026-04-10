@@ -258,7 +258,7 @@ export class OpenRouterService implements IAIService {
     const url = this.useProxy
       ? `${this.baseUrl}/api/openrouter/chat`
       : `${this.baseUrl}/chat/completions`;
-    const modelInput = request.model ?? 'deepseek/deepseek-v3.2';
+    const modelInput = request.model ?? 'moonshot/kimi-2.5-pro';
     const model = this.resolveModel(modelInput);
 
     // OpenRouter specific: mapping 'maxTokens' to 'max_tokens' is standard
@@ -312,7 +312,7 @@ export class OpenRouterService implements IAIService {
     const url = this.useProxy
       ? `${this.baseUrl}/api/openrouter/chat`
       : `${this.baseUrl}/chat/completions`;
-    const modelInput = options?.model ?? 'deepseek/deepseek-v3.2';
+    const modelInput = options?.model ?? 'moonshot/kimi-2.5-pro';
     const model = this.resolveModel(modelInput);
     const body = {
       model,

@@ -50,6 +50,7 @@ export interface MessageItemProps {
     message: AIMessage;
     showReasoningProcess: boolean;
     onCopy: (text: string) => void;
+    onFeedback?: (messageId: string, feedback: 'positive' | 'negative') => void;
     renderAgentTask: (message: AIMessage) => ReactNode;
 }
 

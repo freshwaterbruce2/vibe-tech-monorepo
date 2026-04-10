@@ -101,9 +101,9 @@ export const ModelComparison = ({ currentModel }: ModelComparisonProps) => {
   // Featured models - Updated January 31, 2026
   const models = [
     {
-      id: 'moonshotai/kimi-k2:free',
-      title: 'Kimi K2',
-      subtitle: 'Free Tier (Best Free)',
+      id: 'moonshot/kimi-2.5-pro',
+      title: 'Kimi 2.5 Pro',
+      subtitle: 'Primary Model',
       icon: <MessageSquare />,
       color: 'rgba(34, 197, 94, 0.8)',
       features: [

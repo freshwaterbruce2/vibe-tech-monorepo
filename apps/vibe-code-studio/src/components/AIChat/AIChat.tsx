@@ -29,7 +29,7 @@ const MODE_QUICK_ACTIONS: Record<ChatMode, string[]> = {
 };
 
 const AIChat = ({
-  messages, onSendMessage, onClose, showReasoningProcess = false, currentModel: _currentModel = 'deepseek/deepseek-v3.2',
+  messages, onSendMessage, onClose, showReasoningProcess = false, currentModel: _currentModel = 'moonshot/kimi-2.5-pro',
   mode: externalMode, onModeChange, taskPlanner, executionEngine, workspaceContext,
   onAddMessage, onUpdateMessage, onFileChanged, onTaskComplete, onTaskError, onApprovalRequired,
   onMultiFileEditDetected: _onMultiFileEditDetected,
@@ -374,10 +374,10 @@ const AIChat = ({
     }
   }, [taskPlanner, executionEngine, workspaceContext, onAddMessage, getAgentPreflightError, updateAgentMessage, onFileChanged, onApprovalRequired, onTaskComplete, onTaskError]);
 
-  const handleSend = useCallback(async () => {
-    if (!input.trim()) { return; }
-    const messageText = input.trim();
-    setInput('');
+  const handleSend = useCallback(async (overrideText?: string) => {
+    const messageText = (overrideText ?? input).trim();
+    if (!messageText) { return; }
+    if (!overrideText) setInput('');
     setIsTyping(true);
     try {
       if (mode === 'agent') {
@@ -386,16 +386,13 @@ const AIChat = ({
         await onSendMessage(messageText);
       }
     } catch (error) {
-      // Handle send errors gracefully - don't crash the component
       console.error('[AIChat] Failed to send message:', error);
-      if (onAddMessage) {
-        onAddMessage({
-          id: Date.now().toString() + '-error',
-          role: 'assistant',
-          content: `⚠️ Error: ${error instanceof Error ? error.message : String(error)}`,
-          timestamp: new Date()
-        });
-      }
+      onAddMessage?.({
+        id: Date.now().toString() + '-error',
+        role: 'assistant',
+        content: `⚠️ Error: ${error instanceof Error ? error.message : String(error)}`,
+        timestamp: new Date(),
+      });
     } finally {
       setIsTyping(false);
     }
@@ -406,9 +403,8 @@ const AIChat = ({
   }, [handleSend]);
 
   const handleQuickAction = useCallback((action: string) => {
-    setInput(action);
-    inputRef.current?.focus();
-  }, []);
+    void handleSend(action);
+  }, [handleSend]);
 
   const renderAgentTask = useCallback((message: AIMessage) => {
     if (!message.agentTask) { return null; }
@@ -494,11 +490,12 @@ const AIChat = ({
             showReasoningProcess={showReasoningProcess}
             renderAgentTask={renderAgentTask}
             onCopy={(text) => {
-              if (navigator?.clipboard?.writeText) {
-                navigator.clipboard.writeText(text).catch((err) => {
-                  logger.warn('Failed to copy message', err);
-                });
-              }
+              navigator?.clipboard?.writeText(text).catch((err) => {
+                logger.warn('Failed to copy message', err);
+              });
+            }}
+            onFeedback={(messageId, feedback) => {
+              logger.info('[AIChat] Feedback:', messageId, feedback);
             }}
           />
         ))}
@@ -516,7 +513,7 @@ const AIChat = ({
           <TextInput ref={inputRef} id="ai-chat-input" name="aiChatMessage" data-testid="chat-input"
             value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress}
             placeholder={mode === 'agent' ? agentPlaceholder : 'Ask AI about your code...'} disabled={isTyping} />
-          <SendButton onClick={handleSend} disabled={!input.trim() || isTyping} title="Send message (Enter)"
+          <SendButton onClick={() => handleSend()} disabled={!input.trim() || isTyping} title="Send message (Enter)"
             whileHover={!isTyping && input.trim() ? { scale: 1.05 } : {}}
             whileTap={!isTyping && input.trim() ? { scale: 0.95 } : {}}>
             <Send size={16} />

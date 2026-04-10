@@ -116,7 +116,7 @@ export async function installTauriShim(): Promise<void> {
     shell: {
       async execute(command: string, cwd?: string) {
         try {
-          const result = await shellMod.Command.create('exec-cmd', ['-c', command], { cwd }).execute();
+          const result = await shellMod.Command.create('exec-cmd', ['/C', command], { cwd }).execute();
           return { success: true, stdout: result.stdout, stderr: result.stderr, code: result.code ?? 0 };
         } catch (err) {
           return { success: false, stdout: '', stderr: String(err), code: 1 };

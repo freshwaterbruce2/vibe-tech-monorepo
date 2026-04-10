@@ -3,7 +3,6 @@ import styled from 'styled-components';
 import Editor from '../components/Editor';
 import Settings from '../components/Settings';
 import Sidebar from '../components/Sidebar';
-import { DeepSeekService as _DeepSeekService } from '../services/DeepSeekService';
 import { useEditorStore } from '../stores/useEditorStore';
 import { vibeTheme } from '../styles/theme';
 

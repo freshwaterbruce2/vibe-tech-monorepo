@@ -484,8 +484,9 @@ export class TaskQueue {
 
       if (typeof window !== 'undefined' && window.electron?.store) {
         await window.electron.store.set('deepcode_task_queue', JSON.stringify(state));
-      } else if (typeof localStorage !== 'undefined') {
-        window.electronAPI.store.set('deepcode_task_queue', JSON.stringify(state));
+      } else {
+        // eslint-disable-next-line electron-security/no-localstorage-electron
+        localStorage.setItem('deepcode_task_queue', JSON.stringify(state));
       }
     } catch (error) {
       logger.error('Failed to persist task queue state:', error);
@@ -497,8 +498,9 @@ export class TaskQueue {
       let stored: string | null = null;
       if (typeof window !== 'undefined' && window.electron?.store) {
         stored = await window.electron.store.get('deepcode_task_queue') ?? null;
-      } else if (typeof localStorage !== 'undefined') {
-        stored = window.electronAPI.store.get('deepcode_task_queue');
+      } else {
+        // eslint-disable-next-line electron-security/no-localstorage-electron
+        stored = localStorage.getItem('deepcode_task_queue');
       }
 
       if (!stored) { return; }

@@ -139,9 +139,7 @@ export function EnhancedAgentMode({
                 logs={logs}
                 formatTimestamp={formatTimestamp}
                 height={400}
-                onLogClick={(log) => {
-                  console.log('Log clicked:', log);
-                }}
+                onLogClick={(_log) => { /* log detail view not yet implemented */ }}
               />
               <div ref={logEndRef} />
             </TaskSection>

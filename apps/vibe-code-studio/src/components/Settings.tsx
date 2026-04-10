@@ -372,7 +372,7 @@ export const Settings = ({
                   id="ai-model-select"
                   name="aiModel"
                   aria-label="AI model selection"
-                  value={localSettings.aiModel ?? 'deepseek/deepseek-v3.2'}
+                  value={localSettings.aiModel ?? 'moonshot/kimi-2.5-pro'}
                   onChange={(e) => updateSetting('aiModel', e.target.value as EditorSettings['aiModel'])}
                 >
                   {/* Dynamically map the latest models from the registry */}
