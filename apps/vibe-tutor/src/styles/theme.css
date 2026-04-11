@@ -1,17 +1,18 @@
 :root {
-  /* Vibe Tutor neon palette — purple/pink glassmorphism */
-  --background-main: #0c0618;
-  --background-card: #160d2a;
-  --background-surface: #1e1040;
+  /* Vibe Horizon — deep navy / sky-blue / violet / orange (2026) */
+  --background-main: #07091E;
+  --background-card: #0E1235;
+  --background-surface: #151C4A;
   --background: var(--background-main);
-  --glass-surface: rgba(168, 85, 247, 0.12);
-  --glass-border: rgba(168, 85, 247, 0.28);
+  --glass-surface: rgba(139, 92, 246, 0.10);
+  --glass-border: rgba(56, 189, 248, 0.22);
 
   /* Primary accents */
-  --primary-accent: #a855f7; /* Neon purple */
-  --secondary-accent: #ec4899; /* Hot pink */
-  --tertiary-accent: #ff5fd2; /* Magenta */
-  --quaternary-accent: #fbbf24; /* Solar amber */
+  --primary-accent: #8B5CF6;    /* Violet */
+  --secondary-accent: #38BDF8;  /* Sky blue */
+  --tertiary-accent: #F97316;   /* Orange */
+  --quaternary-accent: #FBBF24; /* Solar amber */
+  --energy-accent: #84CC16;     /* Electric lime — achievement bursts */
 
   /* Text Colors */
   --text-primary: #f8fafc;
@@ -20,16 +21,16 @@
   --text-glow: #ffffff;
 
   /* Border & Effects */
-  --border-color: rgba(168, 85, 247, 0.24);
-  --border-hover: rgba(236, 72, 153, 0.50);
-  --shadow-glow: 0 16px 42px rgba(12, 6, 24, 0.52);
+  --border-color: rgba(56, 189, 248, 0.20);
+  --border-hover: rgba(249, 115, 22, 0.50);
+  --shadow-glow: 0 16px 42px rgba(7, 9, 30, 0.60);
 
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
   --gradient-surface: linear-gradient(
     135deg,
-    rgba(168, 85, 247, 0.14),
-    rgba(236, 72, 153, 0.08)
+    rgba(139, 92, 246, 0.12),
+    rgba(56, 189, 248, 0.07)
   );
   --gradient-glow: linear-gradient(135deg, var(--primary-accent), var(--tertiary-accent));
 
@@ -42,15 +43,15 @@
     0 0 40px var(--secondary-accent);
   --neon-glow-accent:
     0 0 10px var(--tertiary-accent), 0 0 20px var(--tertiary-accent),
-    0 0 36px rgba(255, 95, 210, 0.55);
+    0 0 36px rgba(249, 115, 22, 0.55);
   --neon-glow-soft:
-    0 0 18px rgba(168, 85, 247, 0.35), 0 0 34px rgba(236, 72, 153, 0.22);
+    0 0 18px rgba(139, 92, 246, 0.35), 0 0 34px rgba(56, 189, 248, 0.22);
 
   /* Semantic state colors */
   --error-accent: #ef4444;
   --error-surface: rgba(239, 68, 68, 0.12);
-  --success-accent: #22d3ee;
-  --success-surface: rgba(34, 211, 238, 0.12);
+  --success-accent: #4ADE80;
+  --success-surface: rgba(74, 222, 128, 0.12);
 
   /* Token economy */
   --token-color: #fbbf24;
@@ -74,10 +75,10 @@ body {
   background-color: var(--background-main);
   color: var(--text-primary);
   background-image:
-    radial-gradient(circle at 18% 18%, rgba(168, 85, 247, 0.28) 0%, transparent 46%),
-    radial-gradient(circle at 82% 24%, rgba(236, 72, 153, 0.20) 0%, transparent 42%),
-    radial-gradient(circle at 62% 78%, rgba(255, 95, 210, 0.18) 0%, transparent 44%),
-    linear-gradient(180deg, rgba(12, 6, 24, 0.88) 0%, rgba(12, 6, 24, 1) 100%);
+    radial-gradient(circle at 18% 18%, rgba(139, 92, 246, 0.28) 0%, transparent 46%),
+    radial-gradient(circle at 82% 24%, rgba(56, 189, 248, 0.18) 0%, transparent 42%),
+    radial-gradient(circle at 62% 78%, rgba(249, 115, 22, 0.14) 0%, transparent 44%),
+    linear-gradient(180deg, rgba(7, 9, 30, 0.88) 0%, rgba(7, 9, 30, 1) 100%);
   background-size:
     100% 100%,
     100% 100%,
@@ -100,7 +101,7 @@ body {
 }
 
 .glass-card:hover {
-  background: rgba(168, 85, 247, 0.18);
+  background: rgba(139, 92, 246, 0.16);
   border-color: var(--border-hover);
   box-shadow: var(--neon-glow-soft);
   transform: translateY(-2px) scale(1.01);
@@ -224,7 +225,7 @@ body {
   }
 }
 
-/* Icon Animations - Gen Z 2025 */
+/* Icon Animations */
 .icon-pulse {
   animation: iconPulse 2s ease-in-out infinite;
 }
@@ -285,13 +286,13 @@ body {
   width: 12px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(15, 15, 35, 0.8);
+  background: rgba(7, 9, 30, 0.8);
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--gradient-primary);
   border-radius: 10px;
-  border: 2px solid rgba(15, 15, 35, 0.8);
+  border: 2px solid rgba(7, 9, 30, 0.8);
   box-shadow: var(--shadow-glow);
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -307,7 +308,7 @@ body {
 
 /* Touch Device Optimizations */
 * {
-  -webkit-tap-highlight-color: rgba(168, 85, 247, 0.24);
+  -webkit-tap-highlight-color: rgba(56, 189, 248, 0.20);
   touch-action: manipulation;
 }
 
