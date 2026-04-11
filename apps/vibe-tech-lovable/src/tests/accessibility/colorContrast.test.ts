@@ -53,9 +53,9 @@ function getContrastRatio(color1: string, color2: string): number {
 describe('Color contrast tests', () => {
   // Define our colors from the new tokens
   const colors = {
-    cyan: '#00F0FF',       // --c-cyan
-    purple: '#8A00C4',     // --c-purple
-    darkBg: '#0B0B17',     // --bg-start
+    cyan: '#00FFFF',       // --c-cyan (tokens.css)
+    purple: '#B933FF',     // --c-purple (tokens.css)
+    darkBg: '#05050E',     // --bg-start (theme-variables.css)
     white: '#FFFFFF',      // For text
   };
   
