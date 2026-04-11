@@ -58,6 +58,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 			loading,
 			children,
 			disabled,
+			type = 'button',
 			...props
 		},
 		ref,
@@ -65,6 +66,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 		return (
 			<SharedButton
 				ref={ref}
+				type={type}
 				variant="default"
 				size={sizeMap[size] ?? 'default'}
 				isLoading={loading}

@@ -317,9 +317,10 @@ export const CancellationForm: React.FC<CancellationFormProps> = ({
 					<h2 className="text-xl font-semibold text-white">Cancel Booking</h2>
 					<button
 						onClick={onClose}
+						aria-label="Close"
 						className="text-white hover:text-red-200 transition-colors"
 					>
-						<X className="h-6 w-6" />
+						<X className="h-6 w-6" aria-hidden="true" />
 					</button>
 				</div>
 			</div>
@@ -448,10 +449,12 @@ export const CancellationForm: React.FC<CancellationFormProps> = ({
 
 				{/* Reason Input */}
 				<div className="mb-6">
-					<label className="block text-sm font-medium text-gray-700 mb-2">
+					<label htmlFor="cancellation-reason" className="block text-sm font-medium text-gray-700 mb-2">
 						Reason for Cancellation (Optional)
 					</label>
 					<select
+						id="cancellation-reason"
+						aria-label="Reason for Cancellation (Optional)"
 						value={cancellationReason}
 						onChange={(e) => setCancellationReason(e.target.value)}
 						className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"

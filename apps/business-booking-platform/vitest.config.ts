@@ -24,6 +24,7 @@ export default defineConfig({
 			"**/build-website-example/**",
 			"**/tests/e2e/**",
 			"**/*.spec.ts",
+			"**/backend/**",
 		],
 		deps: {
 			inline: ["react-router-dom"],

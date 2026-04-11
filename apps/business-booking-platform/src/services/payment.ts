@@ -4,7 +4,21 @@ import { logger } from '@/utils/logger';
 // NOTE: Legacy Stripe intent logic removed; focusing on Square & PayPal unified flows.
 const API_BASE_URL =
 	import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
-// Stripe removed for current scope; reintroduce when provider abstraction in place.
+
+// Stripe publishable key — used for Elements initialisation when Stripe provider is active.
+// Kept here for provider-abstraction readiness; Square is the primary payment path.
+const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
+
+/**
+ * Lazily loads Stripe.js and resolves with the Stripe instance.
+ * Resolves to null when the publishable key is not configured.
+ */
+export const stripePromise: Promise<import('@stripe/stripe-js').Stripe | null> =
+	stripePublishableKey
+		? import('@stripe/stripe-js').then(({ loadStripe }) =>
+				loadStripe(stripePublishableKey),
+		  )
+		: Promise.resolve(null);
 
 // API client with authentication
 const apiClient = axios.create({
@@ -126,6 +140,14 @@ export interface BookingPayments {
 
 // Removed SetupIntent for Stripe.
 
+/** Internal marker for business-logic errors that should be propagated as-is */
+class PaymentBusinessError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'PaymentBusinessError';
+	}
+}
+
 export class PaymentService {
 	/**
 	 * Create a payment intent for a booking (legacy method for test compatibility)
@@ -136,16 +158,31 @@ export class PaymentService {
 		currency?: string;
 		metadata?: Record<string, string>;
 	}): Promise<{ clientSecret: string; id: string }> {
-		// Legacy compatibility method - redirect to Square payment
-		const squareResult = await PaymentService.createSquarePayment({
-			...payload,
-			sourceId: 'mock-source-id', // For test compatibility
-		});
+		try {
+			// Legacy compatibility method - redirect to Square payment
+			const squareResult = await PaymentService.createSquarePayment({
+				...payload,
+				sourceId: 'mock-source-id', // For test compatibility
+			});
 
-		return {
-			clientSecret: 'pi_mock_client_secret',
-			id: squareResult.paymentId || 'pi_mock_id',
-		};
+			if (!squareResult.success) {
+				throw new PaymentBusinessError(squareResult.message || 'Payment creation failed');
+			}
+
+			return {
+				clientSecret: 'pi_mock_client_secret',
+				id: squareResult.id || squareResult.paymentId || 'pi_mock_id',
+			};
+		} catch (error) {
+			console.error('Failed to create Square payment:', error);
+			if (error instanceof PaymentBusinessError) {
+				throw error;
+			}
+			if (axios.isAxiosError(error) && error.response) {
+				throw new Error(error.response.data.message || 'Payment creation failed');
+			}
+			throw new Error('Network error occurred');
+		}
 	}
 
 	/**
@@ -162,7 +199,7 @@ export class PaymentService {
 			const candidate = { provider: 'square', currency: 'USD', ...payload };
 			// Validate required fields
 			if (!candidate.bookingId || !candidate.sourceId || !candidate.amount) {
-				throw new Error(
+				throw new PaymentBusinessError(
 					'Missing required payment fields: bookingId, sourceId, amount',
 				);
 			}
@@ -180,8 +217,11 @@ export class PaymentService {
 				currency: payload.currency || 'USD',
 				error: error instanceof Error ? error.message : 'Unknown error',
 			});
+			if (error instanceof PaymentBusinessError) {
+				throw error;
+			}
 			if (axios.isAxiosError(error) && error.response) {
-				throw new Error(error.response.data.message || 'Square payment failed');
+				throw new PaymentBusinessError(error.response.data.message || 'Square payment failed');
 			}
 			throw new Error('Network error occurred');
 		}
@@ -206,7 +246,10 @@ export class PaymentService {
 			});
 
 			if (!response.data.success) {
-				throw new Error(response.data.message || 'Payment confirmation failed');
+				const msg = response.data.success === false
+					? (response.data.message || 'Payment confirmation failed')
+					: 'Payment confirmation failed';
+				throw new PaymentBusinessError(msg);
 			}
 
 			return response.data.data;
@@ -217,6 +260,9 @@ export class PaymentService {
 				paymentIntentId,
 				error: error instanceof Error ? error.message : 'Unknown error',
 			});
+			if (error instanceof PaymentBusinessError) {
+				throw error;
+			}
 			if (axios.isAxiosError(error) && error.response) {
 				throw new Error(
 					error.response.data.message || 'Payment confirmation failed',
@@ -238,7 +284,7 @@ export class PaymentService {
 			);
 
 			if (!response.data.success) {
-				throw new Error(
+				throw new PaymentBusinessError(
 					response.data.message || 'Failed to get payment status',
 				);
 			}
@@ -251,6 +297,9 @@ export class PaymentService {
 				paymentIntentId,
 				error: error instanceof Error ? error.message : 'Unknown error',
 			});
+			if (error instanceof PaymentBusinessError) {
+				throw error;
+			}
 			if (axios.isAxiosError(error) && error.response) {
 				throw new Error(
 					error.response.data.message || 'Failed to retrieve payment status',
@@ -268,7 +317,7 @@ export class PaymentService {
 			const response = await apiClient.get(`/payments/booking/${bookingId}`);
 
 			if (!response.data.success) {
-				throw new Error(
+				throw new PaymentBusinessError(
 					response.data.message || 'Failed to get booking payments',
 				);
 			}
@@ -281,6 +330,9 @@ export class PaymentService {
 				bookingId,
 				error: error instanceof Error ? error.message : 'Unknown error',
 			});
+			if (error instanceof PaymentBusinessError) {
+				throw error;
+			}
 			if (axios.isAxiosError(error) && error.response) {
 				throw new Error(
 					error.response.data.message || 'Failed to retrieve booking payments',
@@ -309,10 +361,14 @@ export class PaymentService {
 			};
 
 			if (!refundData.paymentId || !refundData.amount) {
-				throw new Error('Missing required refund fields: paymentId, amount');
+				throw new PaymentBusinessError('Missing required refund fields: paymentId, amount');
 			}
 			const response = await apiClient.post('/payments/refund', refundData);
-			return response.data;
+			const refundResult = response.data as RefundResponse;
+			if (!refundResult.success) {
+				throw new PaymentBusinessError(refundResult.message || 'Refund request failed');
+			}
+			return refundResult;
 		} catch (error) {
 			logger.error('Refund creation failed', {
 				component: 'PaymentService',
@@ -321,6 +377,9 @@ export class PaymentService {
 				reason: request.reason,
 				error: error instanceof Error ? error.message : 'Unknown error',
 			});
+			if (error instanceof PaymentBusinessError) {
+				throw error;
+			}
 			if (axios.isAxiosError(error) && error.response) {
 				throw new Error(error.response.data.message || 'Refund request failed');
 			}
@@ -357,7 +416,7 @@ export class PaymentService {
 			const response = await apiClient.get(`/payments/history?${params}`);
 
 			if (!response.data.success) {
-				throw new Error(
+				throw new PaymentBusinessError(
 					response.data.message || 'Failed to get payment history',
 				);
 			}
@@ -372,6 +431,9 @@ export class PaymentService {
 				status,
 				error: error instanceof Error ? error.message : 'Unknown error',
 			});
+			if (error instanceof PaymentBusinessError) {
+				throw error;
+			}
 			if (axios.isAxiosError(error) && error.response) {
 				throw new Error(
 					error.response.data.message || 'Failed to retrieve payment history',
@@ -393,7 +455,7 @@ export class PaymentService {
 			});
 
 			if (!response.data.success) {
-				throw new Error(
+				throw new PaymentBusinessError(
 					response.data.message || 'Setup intent creation failed',
 				);
 			}
@@ -405,6 +467,9 @@ export class PaymentService {
 				method: 'createSetupIntent',
 				error: error instanceof Error ? error.message : 'Unknown error',
 			});
+			if (error instanceof PaymentBusinessError) {
+				throw error;
+			}
 			if (axios.isAxiosError(error) && error.response) {
 				throw new Error(
 					error.response.data.message || 'Setup intent creation failed',
@@ -440,15 +505,16 @@ export class PaymentService {
 	 * Get payment method icon based on brand
 	 */
 	static getPaymentMethodIcon(brand: string): string {
+		const cardIcon = String.fromCodePoint(0x1F4B3); // 💳
 		const icons: Record<string, string> = {
-			visa: 'ðŸ’³',
-			mastercard: 'ðŸ’³',
-			amex: 'ðŸ’³',
-			discover: 'ðŸ’³',
-			diners: 'ðŸ’³',
-			jcb: 'ðŸ’³',
-			unionpay: 'ðŸ’³',
-			unknown: 'ðŸ’³',
+			visa: cardIcon,
+			mastercard: cardIcon,
+			amex: cardIcon,
+			discover: cardIcon,
+			diners: cardIcon,
+			jcb: cardIcon,
+			unionpay: cardIcon,
+			unknown: cardIcon,
 		};
 
 		const icon = icons[brand.toLowerCase() as keyof typeof icons];

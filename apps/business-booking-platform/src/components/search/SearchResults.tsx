@@ -143,7 +143,7 @@ const SearchResults: React.FC<SearchResultsProps> = ({
 					<span className="text-sm text-gray-600 dark:text-gray-400">
 						Sort by:
 					</span>
-					<select className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+					<select aria-label="Sort hotels" className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
 						<option value="relevance">Relevance</option>
 						<option value="price-low">Price: Low to High</option>
 						<option value="price-high">Price: High to Low</option>
@@ -242,24 +242,26 @@ const SearchResults: React.FC<SearchResultsProps> = ({
 										<Button
 											variant="secondary"
 											size="icon"
+											aria-label="Save hotel"
 											className="w-8 h-8 bg-white/90 hover:bg-white text-gray-700"
 											onClick={(e) => {
 												e.stopPropagation();
 												// Handle save/favorite
 											}}
 										>
-											<Heart className="w-4 h-4" />
+											<Heart className="w-4 h-4" aria-hidden="true" />
 										</Button>
 										<Button
 											variant="secondary"
 											size="icon"
+											aria-label="Share hotel"
 											className="w-8 h-8 bg-white/90 hover:bg-white text-gray-700"
 											onClick={(e) => {
 												e.stopPropagation();
 												// Handle share
 											}}
 										>
-											<Share2 className="w-4 h-4" />
+											<Share2 className="w-4 h-4" aria-hidden="true" />
 										</Button>
 									</div>
 								</div>
@@ -417,12 +419,12 @@ const SearchResults: React.FC<SearchResultsProps> = ({
 												{/* Secondary Actions - Hidden on mobile, visible on tablet+ */}
 												<div className="hidden sm:flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
 													{hotel.virtualTourUrl && (
-														<button className="hover:text-primary-600 transition-colors flex items-center gap-1">
+														<button type="button" className="hover:text-primary-600 transition-colors flex items-center gap-1">
 															<Camera className="w-4 h-4" />
 															Virtual Tour
 														</button>
 													)}
-													<button className="hover:text-primary-600 transition-colors">
+													<button type="button" className="hover:text-primary-600 transition-colors">
 														View on Map
 													</button>
 												</div>

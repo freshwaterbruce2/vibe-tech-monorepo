@@ -2,11 +2,30 @@ import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PaymentService } from "@/domain/payments";
 
-vi.mock("axios");
-const mockedAxios = axios as unknown as { post: any; get: any; create: any };
+// Use vi.hoisted so the mock factory can reference these before module imports run
+const { mockAxiosClient } = vi.hoisted(() => {
+	const client = {
+		post: vi.fn(),
+		get: vi.fn(),
+		put: vi.fn(),
+		delete: vi.fn(),
+		interceptors: {
+			request: { use: vi.fn(), eject: vi.fn() },
+			response: { use: vi.fn(), eject: vi.fn() },
+		},
+	};
+	return { mockAxiosClient: client };
+});
 
-// Minimal mock for axios.create returning axios itself
-(mockedAxios.create as any) = () => mockedAxios;
+vi.mock("axios", () => ({
+	default: {
+		create: vi.fn(() => mockAxiosClient),
+		post: vi.fn(),
+		get: vi.fn(),
+		isAxiosError: vi.fn(),
+	},
+}));
+const mockedAxios = mockAxiosClient;
 
 describe("PaymentService (Square)", () => {
 	beforeEach(() => {

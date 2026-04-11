@@ -311,7 +311,7 @@ const BookingFlow: React.FC<BookingFlowProps> = ({
 								)}
 							>
 								{isCompleted ? (
-									<Check className="w-6 h-6" />
+									<Check className="w-6 h-6" data-testid="check-icon" />
 								) : (
 									<IconComponent className="w-6 h-6" />
 								)}

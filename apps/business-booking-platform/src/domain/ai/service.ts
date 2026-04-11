@@ -13,6 +13,9 @@ class AIService {
 					userAgent: navigator.userAgent,
 				},
 			});
+			if (!response.data || !response.data.processedQuery) {
+				throw new Error('Invalid API response: no data received');
+			}
 			return response.data.processedQuery;
 		} catch (error) {
 			console.error('Error processing natural language query:', error);
@@ -31,6 +34,9 @@ class AIService {
 				`${this.baseURL}/ai/recommendations`,
 				context,
 			);
+			if (response.data === undefined || response.data === null) {
+				throw new Error('Invalid API response: no data received');
+			}
 			return response.data;
 		} catch (error) {
 			console.error('Error getting AI recommendations:', error);

@@ -1,5 +1,9 @@
 import axios from "axios";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// Stub VITE_API_URL before importing aiService so the baseURL resolves to '/api'
+vi.stubEnv("VITE_API_URL", "");
+
 import { aiService } from "@/services/aiService";
 import type { ProcessedQuery } from "@/types/api";
 
@@ -438,7 +442,8 @@ describe("AIService", () => {
 
 	describe("Service Integration", () => {
 		it("should use consistent API base URL across methods", async () => {
-			mockedAxios.post.mockResolvedValue({ data: {} });
+			// Include processedQuery so processNaturalLanguage validation passes
+			mockedAxios.post.mockResolvedValue({ data: { processedQuery: {}, result: "ok" } });
 
 			await aiService.processNaturalLanguage("test");
 			await aiService.getRecommendations({});
@@ -454,7 +459,8 @@ describe("AIService", () => {
 			mockedAxios.post.mockImplementation((url: string) => {
 				return new Promise((resolve) => {
 					setTimeout(() => {
-						resolve({ data: { result: `response for ${url}` } });
+						// Include processedQuery so processNaturalLanguage validation passes
+						resolve({ data: { processedQuery: { intent: "search" }, result: `response for ${url}` } });
 					}, Math.random() * 100);
 				});
 			});

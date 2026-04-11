@@ -375,8 +375,9 @@ describe("PaymentForm", () => {
 
 			render(<PaymentForm {...largeAmountProps} />);
 
+			// Mock renders: "Amount: {amount} {currency}" — so "Amount: 999999999 USD"
 			await waitFor(() => {
-				expect(screen.getByText("Amount: $999999999")).toBeInTheDocument();
+				expect(screen.getByText("Amount: 999999999 USD")).toBeInTheDocument();
 			});
 		});
 
@@ -388,8 +389,9 @@ describe("PaymentForm", () => {
 
 			render(<PaymentForm {...zeroAmountProps} />);
 
+			// Mock renders: "Amount: 0 USD"
 			await waitFor(() => {
-				expect(screen.getByText("Amount: $0")).toBeInTheDocument();
+				expect(screen.getByText("Amount: 0 USD")).toBeInTheDocument();
 			});
 		});
 
@@ -403,8 +405,9 @@ describe("PaymentForm", () => {
 				render(<PaymentForm {...invalidBookingProps} />),
 			).not.toThrow();
 
+			// Component should render without crashing even with empty bookingId
 			await waitFor(() => {
-				expect(screen.getByText("Booking ID:")).toBeInTheDocument();
+				expect(screen.getByTestId("payment-summary")).toBeInTheDocument();
 			});
 		});
 

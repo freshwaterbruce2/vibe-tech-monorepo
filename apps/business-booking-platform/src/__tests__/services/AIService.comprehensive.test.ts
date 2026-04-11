@@ -8,6 +8,10 @@ import {
 	MockedFunction,
 	vi,
 } from "vitest";
+
+// Stub VITE_API_URL before importing aiService so the baseURL resolves to '/api'
+vi.stubEnv("VITE_API_URL", "");
+
 import { aiService } from "@/domain/ai";
 import type { ProcessedQuery } from "@/types/api";
 
@@ -268,7 +272,7 @@ describe("AIService Comprehensive Tests", () => {
 
 			const result = await aiService.getRecommendations(minimalContext);
 
-			expect(result.personalizedTips).toContain("Consider adding preferences");
+			expect(result.personalizedTips).toContain("Consider adding preferences for better recommendations");
 		});
 
 		it("should handle budget-conscious recommendations", async () => {
