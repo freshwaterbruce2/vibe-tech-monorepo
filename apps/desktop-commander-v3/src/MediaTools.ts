@@ -53,6 +53,7 @@ async function resolveFfmpeg(): Promise<string> {
 function ensureOutputPath(
 	outputPath?: string,
 	directory?: string,
+	filename?: string,
 	defaultPrefix = "capture",
 	defaultExt = "mp4",
 ): string {
@@ -60,10 +61,15 @@ function ensureOutputPath(
 	validatePath(dir, "write");
 	fs.mkdirSync(dir, { recursive: true });
 
-	const filename = outputPath
-		? path.basename(outputPath)
-		: `${defaultPrefix}-${new Date().toISOString().replace(/[:.]/g, "-")}.${defaultExt}`;
-	const resolved = outputPath ?? path.join(dir, filename);
+	let resolvedName: string;
+	if (outputPath) {
+		resolvedName = path.basename(outputPath);
+	} else if (filename) {
+		resolvedName = filename.includes(".") ? filename : `${filename}.${defaultExt}`;
+	} else {
+		resolvedName = `${defaultPrefix}-${new Date().toISOString().replace(/[:.]/g, "-")}.${defaultExt}`;
+	}
+	const resolved = outputPath ?? path.join(dir, resolvedName);
 	validatePath(resolved, "write");
 	return resolved;
 }
@@ -123,7 +129,8 @@ export async function recordScreen(options: {
 	const outputPath = ensureOutputPath(
 		options.outputPath,
 		options.directory,
-		options.filename ?? "screen-record",
+		options.filename,
+		"screen-record",
 		"mp4",
 	);
 
@@ -154,8 +161,12 @@ export async function captureCamera(options: {
 	outputPath?: string;
 }): Promise<string> {
 	const ffmpegPath = await resolveFfmpeg();
-	const devices = await listCameras();
-	const deviceName = options.device ?? devices[0]?.name;
+
+	let deviceName = options.device;
+	if (!deviceName) {
+		const devices = await listCameras();
+		deviceName = devices[0]?.name;
+	}
 
 	if (!deviceName) {
 		throw new Error("No camera device found. Provide a device name.");
@@ -167,7 +178,8 @@ export async function captureCamera(options: {
 	const outputPath = ensureOutputPath(
 		options.outputPath,
 		options.directory,
-		options.filename ?? (isVideo ? "camera-record" : "camera-shot"),
+		options.filename,
+		isVideo ? "camera-record" : "camera-shot",
 		isVideo ? "mp4" : "png",
 	);
 

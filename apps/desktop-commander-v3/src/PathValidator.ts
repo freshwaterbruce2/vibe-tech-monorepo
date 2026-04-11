@@ -47,20 +47,40 @@ const ALLOWED_PATHS: AllowedPath[] = [
 ];
 
 /**
- * Normalize a path to lowercase with consistent separators
+ * Patterns that are always blocked regardless of allowed-path membership
+ */
+const BLOCKED_PATTERNS = ["node_modules", ".git", "dist"];
+
+/**
+ * Check if a path contains a blocked pattern segment
+ */
+export function isPathBlocked(inputPath: string): boolean {
+	const normalized = inputPath.replace(/\//g, "\\");
+	return BLOCKED_PATTERNS.some((pattern) =>
+		normalized.split("\\").includes(pattern),
+	);
+}
+
+/**
+ * Normalize a path with consistent separators (case preserved)
  */
 export function normalizePath(inputPath: string): string {
-	// Resolve to absolute path
-	const resolved = path.resolve(inputPath);
-	// Normalize slashes and lowercase for Windows comparison
-	return resolved.toLowerCase().replace(/\//g, "\\");
+	// Resolve to absolute path (preserves case for display)
+	return path.resolve(inputPath).replace(/\//g, "\\");
+}
+
+/**
+ * Lowercase helper used only for allow-list comparisons
+ */
+function normalizeForComparison(inputPath: string): string {
+	return normalizePath(inputPath).toLowerCase();
 }
 
 /**
  * Check if a path is under an allowed directory
  */
 function findAllowedPath(inputPath: string): AllowedPath | null {
-	const normalized = normalizePath(inputPath);
+	const normalized = normalizeForComparison(inputPath);
 
 	for (const allowed of ALLOWED_PATHS) {
 		// Check if the normalized path starts with the allowed path
@@ -123,6 +143,12 @@ export function getPathType(inputPath: string): PathType {
  */
 export function validatePath(inputPath: string, mode: PathMode): string {
 	const normalized = normalizePath(inputPath);
+
+	if (isPathBlocked(inputPath)) {
+		throw new Error(
+			`Access denied: ${inputPath} contains a blocked path segment (${BLOCKED_PATTERNS.join(", ")}).`,
+		);
+	}
 
 	if (!isPathAllowed(inputPath, mode)) {
 		const pathType = getPathType(inputPath);

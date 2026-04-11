@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Create mock for execFileAsync
+// Create mock for execFileAsync (replaces promisify(execFile) in source)
 const mockExecFileAsync = vi.fn();
 
 // Mock the modules
@@ -141,29 +141,19 @@ describe("MediaTools", () => {
 		});
 
 		it("should support custom FPS", async () => {
-			vi.mocked(execFile).mockImplementation(
-				(file: any, args: any, options: any, callback: any) => {
-					callback(null, { stdout: "", stderr: "" });
-					return {} as any;
-				},
-			);
+			mockExecFileAsync.mockResolvedValue({ stdout: "", stderr: "" });
 
 			await Media.recordScreen({
 				durationSeconds: 10,
 				fps: 30,
 			});
 
-			const callArgs = vi.mocked(execFile).mock.calls[0][1] as string[];
+			const callArgs = mockExecFileAsync.mock.calls[0][1] as string[];
 			expect(callArgs).toContain("30");
 		});
 
 		it("should clamp FPS to valid range", async () => {
-			vi.mocked(execFile).mockImplementation(
-				(file: any, args: any, options: any, callback: any) => {
-					callback(null, { stdout: "", stderr: "" });
-					return {} as any;
-				},
-			);
+			mockExecFileAsync.mockResolvedValue({ stdout: "", stderr: "" });
 
 			// Test upper bound
 			await Media.recordScreen({
@@ -171,10 +161,11 @@ describe("MediaTools", () => {
 				fps: 100,
 			});
 
-			let callArgs = vi.mocked(execFile).mock.calls[0][1] as string[];
+			let callArgs = mockExecFileAsync.mock.calls[0][1] as string[];
 			expect(callArgs).toContain("60"); // Max FPS
 
 			vi.clearAllMocks();
+			mockExecFileAsync.mockResolvedValue({ stdout: "", stderr: "" });
 
 			// Test lower bound
 			await Media.recordScreen({
@@ -182,17 +173,12 @@ describe("MediaTools", () => {
 				fps: -5,
 			});
 
-			callArgs = vi.mocked(execFile).mock.calls[0][1] as string[];
+			callArgs = mockExecFileAsync.mock.calls[0][1] as string[];
 			expect(callArgs).toContain("1"); // Min FPS
 		});
 
 		it("should support custom directory and filename", async () => {
-			vi.mocked(execFile).mockImplementation(
-				(file: any, args: any, options: any, callback: any) => {
-					callback(null, { stdout: "", stderr: "" });
-					return {} as any;
-				},
-			);
+			mockExecFileAsync.mockResolvedValue({ stdout: "", stderr: "" });
 
 			const result = await Media.recordScreen({
 				durationSeconds: 10,
@@ -204,12 +190,7 @@ describe("MediaTools", () => {
 		});
 
 		it("should support custom output path", async () => {
-			vi.mocked(execFile).mockImplementation(
-				(file: any, args: any, options: any, callback: any) => {
-					callback(null, { stdout: "", stderr: "" });
-					return {} as any;
-				},
-			);
+			mockExecFileAsync.mockResolvedValue({ stdout: "", stderr: "" });
 
 			const customPath = "D:\\custom\\path\\recording.mp4";
 			const result = await Media.recordScreen({
@@ -222,12 +203,7 @@ describe("MediaTools", () => {
 
 		it("should throw error if ffmpeg not found", async () => {
 			vi.mocked(fs.existsSync).mockReturnValue(false);
-			vi.mocked(execFile).mockImplementation(
-				(file: any, args: any, options: any, callback: any) => {
-					callback(new Error("Command not found"), null as any);
-					return {} as any;
-				},
-			);
+			mockExecFileAsync.mockRejectedValue(new Error("Command not found"));
 
 			await expect(
 				Media.recordScreen({ durationSeconds: 10 }),
@@ -243,92 +219,59 @@ describe("MediaTools", () => {
 
 		it("should capture photo from camera (no duration)", async () => {
 			// Mock listCameras
-			vi.mocked(execFile).mockImplementationOnce(
-				(file: any, args: any, options: any, callback: any) => {
-					callback(null, {
-						stdout: JSON.stringify({
-							FriendlyName: "Test Camera",
-							InstanceId: "USB\\VID_1234",
-						}),
-						stderr: "",
-					});
-					return {} as any;
-				},
-			);
-
+			mockExecFileAsync.mockResolvedValueOnce({
+				stdout: JSON.stringify({
+					FriendlyName: "Test Camera",
+					InstanceId: "USB\\VID_1234",
+				}),
+				stderr: "",
+			});
 			// Mock ffmpeg capture
-			vi.mocked(execFile).mockImplementationOnce(
-				(file: any, args: any, options: any, callback: any) => {
-					callback(null, { stdout: "", stderr: "" });
-					return {} as any;
-				},
-			);
+			mockExecFileAsync.mockResolvedValueOnce({ stdout: "", stderr: "" });
 
 			const result = await Media.captureCamera({});
 
 			expect(result).toMatch(/D:\\recordings\\camera-shot-.*\.png/);
-			expect(execFile).toHaveBeenCalledTimes(2); // listCameras + ffmpeg
+			expect(mockExecFileAsync).toHaveBeenCalledTimes(2); // listCameras + ffmpeg
 		});
 
 		it("should record video from camera (with duration)", async () => {
 			// Mock listCameras
-			vi.mocked(execFile).mockImplementationOnce(
-				(file: any, args: any, options: any, callback: any) => {
-					callback(null, {
-						stdout: JSON.stringify({
-							FriendlyName: "Test Camera",
-							InstanceId: "USB\\VID_1234",
-						}),
-						stderr: "",
-					});
-					return {} as any;
-				},
-			);
-
+			mockExecFileAsync.mockResolvedValueOnce({
+				stdout: JSON.stringify({
+					FriendlyName: "Test Camera",
+					InstanceId: "USB\\VID_1234",
+				}),
+				stderr: "",
+			});
 			// Mock ffmpeg capture
-			vi.mocked(execFile).mockImplementationOnce(
-				(file: any, args: any, options: any, callback: any) => {
-					const callArgs = args as string[];
-					expect(callArgs).toContain("-t");
-					expect(callArgs).toContain("10");
-					callback(null, { stdout: "", stderr: "" });
-					return {} as any;
-				},
-			);
+			mockExecFileAsync.mockResolvedValueOnce({ stdout: "", stderr: "" });
 
 			const result = await Media.captureCamera({
 				durationSeconds: 10,
 			});
 
 			expect(result).toMatch(/D:\\recordings\\camera-record-.*\.mp4/);
+			const callArgs = mockExecFileAsync.mock.calls[1][1] as string[];
+			expect(callArgs).toContain("-t");
+			expect(callArgs).toContain("10");
 		});
 
 		it("should use specified camera device", async () => {
-			// No listCameras call needed when device specified
-			vi.mocked(execFile).mockImplementation(
-				(file: any, args: any, options: any, callback: any) => {
-					const callArgs = args as string[];
-					expect(callArgs).toContain("video=Specific Camera");
-					callback(null, { stdout: "", stderr: "" });
-					return {} as any;
-				},
-			);
+			mockExecFileAsync.mockResolvedValue({ stdout: "", stderr: "" });
 
 			await Media.captureCamera({
 				device: "Specific Camera",
 			});
 
-			expect(execFile).toHaveBeenCalledTimes(1); // Only ffmpeg, no listCameras
+			expect(mockExecFileAsync).toHaveBeenCalledTimes(1); // Only ffmpeg, no listCameras
+			const callArgs = mockExecFileAsync.mock.calls[0][1] as string[];
+			expect(callArgs).toContain("video=Specific Camera");
 		});
 
 		it("should throw error if no camera found", async () => {
 			// Mock listCameras returning empty
-			vi.mocked(execFile).mockImplementationOnce(
-				(file: any, args: any, options: any, callback: any) => {
-					callback(null, { stdout: "", stderr: "" });
-					return {} as any;
-				},
-			);
+			mockExecFileAsync.mockResolvedValueOnce({ stdout: "", stderr: "" });
 
 			await expect(Media.captureCamera({})).rejects.toThrow(
 				"No camera device found",
@@ -336,31 +279,19 @@ describe("MediaTools", () => {
 		});
 
 		it("should escape device name for ffmpeg", async () => {
-			vi.mocked(execFile).mockImplementation(
-				(file: any, args: any, options: any, callback: any) => {
-					const callArgs = args as string[];
-					// Check that quotes are removed
-					const deviceArg = callArgs.find((arg) =>
-						arg.startsWith("video="),
-					);
-					expect(deviceArg).not.toContain('"');
-					callback(null, { stdout: "", stderr: "" });
-					return {} as any;
-				},
-			);
+			mockExecFileAsync.mockResolvedValue({ stdout: "", stderr: "" });
 
 			await Media.captureCamera({
 				device: 'Camera "with" quotes',
 			});
+
+			const callArgs = mockExecFileAsync.mock.calls[0][1] as string[];
+			const deviceArg = callArgs.find((arg) => arg.startsWith("video="));
+			expect(deviceArg).not.toContain('"');
 		});
 
 		it("should support custom directory and filename", async () => {
-			vi.mocked(execFile).mockImplementation(
-				(file: any, args: any, options: any, callback: any) => {
-					callback(null, { stdout: "", stderr: "" });
-					return {} as any;
-				},
-			);
+			mockExecFileAsync.mockResolvedValue({ stdout: "", stderr: "" });
 
 			const result = await Media.captureCamera({
 				device: "Test Camera",

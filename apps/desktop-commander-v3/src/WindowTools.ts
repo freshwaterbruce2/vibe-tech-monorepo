@@ -42,7 +42,15 @@ Get-Process | Where-Object {$_.MainWindowTitle -ne ""} | ForEach-Object {
 
 		const parsed = JSON.parse(stdout);
 		// Handle single result (not an array)
-		return Array.isArray(parsed) ? parsed : [parsed];
+		const items = Array.isArray(parsed) ? parsed : [parsed];
+		return items.map(
+			(w: Record<string, unknown>): WindowInfo => ({
+				processId: (w.ProcessId ?? w.processId) as number,
+				processName: (w.ProcessName ?? w.processName) as string,
+				title: (w.Title ?? w.title) as string,
+				handle: (w.Handle ?? w.handle) as string,
+			}),
+		);
 	} catch (error) {
 		throw new Error(
 			`Failed to list windows: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -92,7 +100,13 @@ $process = Get-Process -Id $processId -ErrorAction SilentlyContinue
 			return null;
 		}
 
-		return JSON.parse(stdout);
+		const w: Record<string, unknown> = JSON.parse(stdout);
+		return {
+			processId: (w.ProcessId ?? w.processId) as number,
+			processName: (w.ProcessName ?? w.processName) as string,
+			title: (w.Title ?? w.title) as string,
+			handle: (w.Handle ?? w.handle) as string,
+		};
 	} catch {
 		return null;
 	}

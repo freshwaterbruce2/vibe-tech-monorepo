@@ -47,16 +47,16 @@ export interface DiskInfo {
  */
 export async function setVolume(action: "up" | "down" | "mute"): Promise<void> {
 	// Volume key codes: VOLUME_UP=0xAF, VOLUME_DOWN=0xAE, VOLUME_MUTE=0xAD
-	let vkCode: number;
+	let vkCode: string;
 	switch (action) {
 		case "up":
-			vkCode = 0xaf;
+			vkCode = "0xAF";
 			break;
 		case "down":
-			vkCode = 0xae;
+			vkCode = "0xAE";
 			break;
 		case "mute":
-			vkCode = 0xad;
+			vkCode = "0xAD";
 			break;
 		default:
 			throw new Error(`Unknown volume action: ${action}`);
@@ -221,11 +221,22 @@ export async function getEnvironmentVariables(
 	return result;
 }
 
+// Deny-list for dangerous PowerShell patterns
+const BLOCKED_POWERSHELL_PATTERNS: RegExp[] = [
+	/Remove-Item.*-Force/i,
+	/Format-Volume/i,
+	/Clear-Disk/i,
+	/rm\s+-rf/i,
+	/Stop-Computer/i,
+	/Restart-Computer/i,
+	/Invoke-Expression/i,
+	/\biex\b/i,
+	/DownloadString/i,
+	/WebClient/i,
+];
+
 /**
- * Run a PowerShell command (unrestricted for AI agent use)
- *
- * SECURITY WARNING: This function executes arbitrary PowerShell commands.
- * Only use with trusted AI agents in controlled environments.
+ * Run a PowerShell command (deny-list restricted).
  *
  * @param command - PowerShell command to execute
  * @param timeout - Max execution time in milliseconds (default: 60000ms)
@@ -239,11 +250,69 @@ export async function runPowerShell(
 		throw new Error("Command cannot be empty");
 	}
 
+	for (const pattern of BLOCKED_POWERSHELL_PATTERNS) {
+		if (pattern.test(command)) {
+			throw new Error(`Command not allowed: ${command}`);
+		}
+	}
+
 	try {
 		const { stdout, stderr } = await execAsync(
 			`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${command.replaceAll('"', '\\"')}"`,
 			{
 				maxBuffer: 50 * 1024 * 1024, // 50MB buffer for large outputs
+				timeout,
+				windowsHide: true,
+			},
+		);
+
+		return {
+			output: stdout || stderr,
+			success: true,
+			exitCode: 0,
+		};
+	} catch (error: unknown) {
+		const err = error as { stderr?: string; stdout?: string; message?: string; code?: number };
+		return {
+			output: err.stderr || err.stdout || err.message || "Unknown error",
+			success: false,
+			exitCode: err.code || 1,
+		};
+	}
+}
+
+/**
+ * Run an unrestricted PowerShell command.
+ * Requires DC_ALLOW_UNSAFE_POWERSHELL=1 environment variable.
+ *
+ * SECURITY WARNING: This function executes arbitrary PowerShell commands.
+ * Only use with trusted AI agents in controlled environments.
+ *
+ * @param command - PowerShell command to execute
+ * @param options - Execution options
+ * @returns Object containing output and success status
+ */
+export async function runPowerShellUnsafe(
+	command: string,
+	options: { timeoutMs?: number } = {},
+): Promise<{ output: string; success: boolean; exitCode?: number }> {
+	if (!process.env.DC_ALLOW_UNSAFE_POWERSHELL) {
+		throw new Error(
+			"Unsafe PowerShell is disabled. Set DC_ALLOW_UNSAFE_POWERSHELL=1 to enable.",
+		);
+	}
+
+	if (!command || command.trim().length === 0) {
+		throw new Error("Command cannot be empty");
+	}
+
+	const timeout = options.timeoutMs ?? 60000;
+
+	try {
+		const { stdout, stderr } = await execAsync(
+			`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${command.replaceAll('"', '\\"')}"`,
+			{
+				maxBuffer: 50 * 1024 * 1024,
 				timeout,
 				windowsHide: true,
 			},

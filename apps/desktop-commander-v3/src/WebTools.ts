@@ -104,25 +104,40 @@ async function requestUrl(
 				const chunks: Buffer[] = [];
 				let received = 0;
 				let truncated = false;
+				let settled = false;
+
+				const settle = (result: FetchResult) => {
+					if (!settled) {
+						settled = true;
+						resolve(result);
+					}
+				};
 
 				res.on("data", (chunk: Buffer) => {
 					received += chunk.length;
 					if (received > maxBytes) {
 						truncated = true;
 						res.destroy();
+						settle({
+							ok: status >= 200 && status < 300,
+							status,
+							statusText,
+							headers: res.headers,
+							body: Buffer.concat(chunks).toString("utf-8"),
+							truncated,
+						});
 						return;
 					}
 					chunks.push(chunk);
 				});
 
 				res.on("end", () => {
-					const body = Buffer.concat(chunks).toString("utf-8");
-					resolve({
+					settle({
 						ok: status >= 200 && status < 300,
 						status,
 						statusText,
 						headers: res.headers,
-						body,
+						body: Buffer.concat(chunks).toString("utf-8"),
 						truncated,
 					});
 				});

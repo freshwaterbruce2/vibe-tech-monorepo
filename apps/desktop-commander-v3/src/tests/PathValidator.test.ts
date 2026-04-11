@@ -128,9 +128,10 @@ describe("PathValidator", () => {
 	});
 
 	describe("normalizePath", () => {
-		it("should normalize paths to lowercase with backslashes", () => {
-			const result = normalizePath("C:\\Dev\\Test");
-			expect(result).toBe(result.toLowerCase());
+		it("should normalize path separators to backslashes (case preserved)", () => {
+			const result = normalizePath("C:/Dev/Test");
+			expect(result).not.toContain("/");
+			expect(result).toContain("\\");
 		});
 	});
 

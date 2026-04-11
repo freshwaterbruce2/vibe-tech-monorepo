@@ -9,6 +9,7 @@ import {
 	isDirectory,
 	isFile,
 	normalizePath,
+	pathExists,
 	validatePath,
 } from "./PathValidator.js";
 
@@ -339,6 +340,171 @@ export async function deleteFile(
 	} else {
 		await fs.promises.unlink(filePath);
 	}
+}
+
+export interface BatchReadResult {
+	path: string;
+	content?: string;
+	error?: string;
+}
+
+export interface BatchWriteResult {
+	path: string;
+	written: boolean;
+	error?: string;
+}
+
+export interface EditSpec {
+	path: string;
+	mode: "literal" | "regex";
+	needle: string;
+	replacement: string;
+	allowMultiple?: boolean;
+}
+
+export interface EditResult {
+	path: string;
+	changes: number;
+}
+
+export interface ApplyEditsResult {
+	results: EditResult[];
+	dryRun: boolean;
+}
+
+/**
+ * Read multiple files, returning content or error per file.
+ */
+export async function readFiles(
+	filePaths: string[],
+	options: { maxBytes?: number } = {},
+): Promise<BatchReadResult[]> {
+	return Promise.all(
+		filePaths.map(async (filePath): Promise<BatchReadResult> => {
+			try {
+				validatePath(filePath, "read");
+				if (!(await isFile(filePath))) {
+					return { path: filePath, error: "Not a file or does not exist" };
+				}
+				if (options.maxBytes !== undefined) {
+					const stats = await fs.promises.stat(filePath);
+					if (stats.size > options.maxBytes) {
+						return {
+							path: filePath,
+							error: `File size ${stats.size} exceeds maxBytes ${options.maxBytes}`,
+						};
+					}
+				}
+				const content = await fs.promises.readFile(filePath, "utf-8");
+				return { path: filePath, content: String(content) };
+			} catch (err) {
+				return {
+					path: filePath,
+					error: err instanceof Error ? err.message : String(err),
+				};
+			}
+		}),
+	);
+}
+
+/**
+ * Write multiple files, optionally atomically (rollback on failure).
+ */
+export async function writeFiles(
+	files: Array<{ path: string; content: string }>,
+	options: { atomic?: boolean } = {},
+): Promise<BatchWriteResult[]> {
+	if (options.atomic) {
+		// Back up originals then write; rollback on any failure
+		const backups: Array<{ path: string; content: string | null }> = [];
+		for (const file of files) {
+			validatePath(file.path, "write");
+			const exists = await pathExists(file.path);
+			const original = exists
+				? String(await fs.promises.readFile(file.path, "utf-8"))
+				: null;
+			backups.push({ path: file.path, content: original });
+		}
+		try {
+			for (const file of files) {
+				await fs.promises.mkdir(path.dirname(file.path), { recursive: true });
+				await fs.promises.writeFile(file.path, file.content, "utf-8");
+			}
+		} catch (err) {
+			// Rollback
+			for (const backup of backups) {
+				if (backup.content !== null) {
+					await fs.promises.writeFile(backup.path, backup.content, "utf-8");
+				}
+			}
+			throw err;
+		}
+		return files.map((f) => ({ path: f.path, written: true }));
+	}
+
+	return Promise.all(
+		files.map(async (file): Promise<BatchWriteResult> => {
+			try {
+				validatePath(file.path, "write");
+				await fs.promises.mkdir(path.dirname(file.path), { recursive: true });
+				await fs.promises.writeFile(file.path, file.content, "utf-8");
+				return { path: file.path, written: true };
+			} catch (err) {
+				return {
+					path: file.path,
+					written: false,
+					error: err instanceof Error ? err.message : String(err),
+				};
+			}
+		}),
+	);
+}
+
+/**
+ * Apply text edits (literal or regex) to files, with optional dry-run mode.
+ */
+export async function applyEdits(
+	edits: EditSpec[],
+	options: { dryRun?: boolean } = {},
+): Promise<ApplyEditsResult> {
+	const results: EditResult[] = [];
+	for (const edit of edits) {
+		validatePath(edit.path, "write");
+		const raw = await fs.promises.readFile(edit.path, "utf-8");
+		const content = String(raw);
+		let updated = content;
+		let changes = 0;
+
+		if (edit.mode === "literal") {
+			const idx = content.indexOf(edit.needle);
+			if (idx === -1) {
+				throw new Error(
+					`Needle not found in ${edit.path}: "${edit.needle}"`,
+				);
+			}
+			updated = content.replace(
+				edit.allowMultiple
+					? new RegExp(edit.needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g")
+					: edit.needle,
+				edit.replacement,
+			);
+			changes = (content.match(
+				new RegExp(edit.needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
+			) ?? []).length;
+		} else {
+			const flags = edit.allowMultiple ? "g" : "";
+			const re = new RegExp(edit.needle, flags);
+			const matches = content.match(new RegExp(edit.needle, "g")) ?? [];
+			changes = matches.length;
+			updated = content.replace(re, edit.replacement);
+		}
+
+		if (!options.dryRun) {
+			await fs.promises.writeFile(edit.path, updated, "utf-8");
+		}
+		results.push({ path: edit.path, changes });
+	}
+	return { results, dryRun: options.dryRun ?? false };
 }
 
 /**

@@ -10,8 +10,27 @@ import * as PathValidator from "../PathValidator";
 import * as Screenshot from "../ScreenshotTools";
 
 // Mock dependencies
-vi.mock("child_process");
-vi.mock("fs");
+vi.mock("child_process", () => ({
+	exec: vi.fn((cmd: string, options: any, callback: any) => {
+		if (typeof callback === "function") {
+			callback(null, { stdout: "", stderr: "" });
+		}
+		return {} as any;
+	}),
+	default: {
+		exec: vi.fn((cmd: string, options: any, callback: any) => {
+			if (typeof callback === "function") {
+				callback(null, { stdout: "", stderr: "" });
+			}
+			return {} as any;
+		}),
+	},
+}));
+vi.mock("fs", () => {
+	const mkdirMock = vi.fn().mockResolvedValue(undefined);
+	const fsMock = { promises: { mkdir: mkdirMock } };
+	return { default: fsMock, ...fsMock };
+});
 vi.mock("../PathValidator", async () => {
 	const actual = await vi.importActual("../PathValidator");
 	return {

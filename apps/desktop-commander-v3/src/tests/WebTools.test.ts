@@ -195,6 +195,7 @@ describe("WebTools", () => {
 					expect(timeout).toBe(30000);
 				}),
 				end: vi.fn(),
+				destroy: vi.fn(),
 			};
 
 			vi.mocked(https.request).mockImplementation(() => {

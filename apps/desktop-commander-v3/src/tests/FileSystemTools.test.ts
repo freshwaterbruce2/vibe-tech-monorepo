@@ -3,12 +3,12 @@
  * Comprehensive test suite for file system operations
  */
 
-import * as fs from "fs/promises";
+import fs from "fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as FileSystem from "../FileSystemTools";
 import * as PathValidator from "../PathValidator";
 
-// Mock PathValidator only (use spies for fs.promises)
+// Mock PathValidator
 vi.mock("../PathValidator", async () => {
 	const actual = await vi.importActual("../PathValidator");
 	return {
@@ -24,12 +24,12 @@ describe("FileSystemTools", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 
-		// Spy on fs.promises methods
-		vi.spyOn(fs, "readFile").mockResolvedValue(Buffer.from("file contents"));
-		vi.spyOn(fs, "writeFile").mockResolvedValue(undefined);
-		vi.spyOn(fs, "readdir").mockResolvedValue([]);
-		vi.spyOn(fs, "mkdir").mockResolvedValue(undefined);
-		vi.spyOn(fs, "stat").mockResolvedValue({
+		// Spy on fs.promises methods (CommonJS object — spyOn works fine)
+		vi.spyOn(fs.promises, "readFile").mockResolvedValue(Buffer.from("file contents") as any);
+		vi.spyOn(fs.promises, "writeFile").mockResolvedValue(undefined);
+		vi.spyOn(fs.promises, "readdir").mockResolvedValue([] as any);
+		vi.spyOn(fs.promises, "mkdir").mockResolvedValue(undefined);
+		vi.spyOn(fs.promises, "stat").mockResolvedValue({
 			isFile: () => true,
 			isDirectory: () => false,
 			size: 100,
@@ -38,11 +38,11 @@ describe("FileSystemTools", () => {
 			atime: new Date(),
 			mode: 0o644,
 		} as any);
-		vi.spyOn(fs, "appendFile").mockResolvedValue(undefined);
-		vi.spyOn(fs, "rename").mockResolvedValue(undefined);
-		vi.spyOn(fs, "copyFile").mockResolvedValue(undefined);
-		vi.spyOn(fs, "rm").mockResolvedValue(undefined);
-		vi.spyOn(fs, "unlink").mockResolvedValue(undefined);
+		vi.spyOn(fs.promises, "appendFile").mockResolvedValue(undefined);
+		vi.spyOn(fs.promises, "rename").mockResolvedValue(undefined);
+		vi.spyOn(fs.promises, "copyFile").mockResolvedValue(undefined);
+		vi.spyOn(fs.promises, "rm").mockResolvedValue(undefined);
+		vi.spyOn(fs.promises, "unlink").mockResolvedValue(undefined);
 
 		// Default PathValidator mocks
 		vi.mocked(PathValidator.validatePath).mockReturnValue("C:\\dev\\test.txt");

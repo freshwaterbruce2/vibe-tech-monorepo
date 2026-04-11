@@ -7,8 +7,11 @@ import * as child_process from "child_process";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as Clipboard from "../ClipboardTools";
 
-// Mock dependencies
-vi.mock("child_process");
+// Factory mock: exec gets a plain vi.fn() with no util.promisify.custom,
+// so promisify uses the standard (err, result) callback convention.
+vi.mock("child_process", () => ({
+	exec: vi.fn(),
+}));
 
 describe("ClipboardTools", () => {
 	beforeEach(() => {
