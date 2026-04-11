@@ -45,8 +45,10 @@ const WorksheetPractice = ({
   const currentQuestion = questions[currentIndex];
   const progress = ((currentIndex + 1) / questions.length) * 100;
 
+  if (!currentQuestion) return null;
+
   const handleSubmit = () => {
-    const isCorrect = userAnswer.trim().toLowerCase() === currentQuestion!.answer.toLowerCase();
+    const isCorrect = userAnswer.trim().toLowerCase() === currentQuestion.answer.toLowerCase();
 
     setFeedback(isCorrect ? 'correct' : 'incorrect');
     if (isCorrect) setCorrectCount((prev) => prev + 1);
@@ -119,7 +121,7 @@ const WorksheetPractice = ({
               </span>
             </div>
             <p className="text-xl text-white text-center leading-relaxed">
-              {currentQuestion!.question}
+              {currentQuestion.question}
             </p>
           </div>
 
@@ -154,18 +156,18 @@ const WorksheetPractice = ({
             {feedback === 'incorrect' && (
               <div className="mt-4 p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-center">
                 <p className="text-red-400 font-bold">
-                  ✗ Not quite. The answer was: {currentQuestion!.answer}
+                  ✗ Not quite. The answer was: {currentQuestion.answer}
                 </p>
               </div>
             )}
           </div>
 
           {/* Hint Button */}
-          {!feedback && currentQuestion!.hint && (
+          {!feedback && currentQuestion.hint && (
             <div className="text-center">
               {showHint ? (
                 <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                  <p className="text-blue-300 text-sm">💡 Hint: {currentQuestion!.hint}</p>
+                  <p className="text-blue-300 text-sm">💡 Hint: {currentQuestion.hint}</p>
                 </div>
               ) : (
                 <button

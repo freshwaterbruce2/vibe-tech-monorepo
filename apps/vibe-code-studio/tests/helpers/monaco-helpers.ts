@@ -9,7 +9,7 @@ import type * as monaco from 'monaco-editor';
 declare global {
   interface Window {
     monaco: typeof monaco;
-    consoleHistory?: string[];
+    consoleHistory: string[];
   }
 }
 
@@ -152,17 +152,17 @@ export async function setupConsoleCapture(page: Page): Promise<void> {
     const originalError = console.error;
 
     console.log = function(...args) {
-      window.consoleHistory!.push('[LOG] ' + args.join(' '));
+      window.consoleHistory.push('[LOG] ' + args.join(' '));
       originalLog.apply(console, args);
     };
 
     console.warn = function(...args) {
-      window.consoleHistory!.push('[WARN] ' + args.join(' '));
+      window.consoleHistory.push('[WARN] ' + args.join(' '));
       originalWarn.apply(console, args);
     };
 
     console.error = function(...args) {
-      window.consoleHistory!.push('[ERROR] ' + args.join(' '));
+      window.consoleHistory.push('[ERROR] ' + args.join(' '));
       originalError.apply(console, args);
     };
   });
