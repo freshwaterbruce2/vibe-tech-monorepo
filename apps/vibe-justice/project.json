@@ -1,0 +1,8 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "vibe-justice",
+  "projectType": "application",
+  "root": "apps/vibe-justice",
+  "targets": {},
+  "tags": ["scope:frontend", "scope:backend", "type:app", "language:typescript"]
+}

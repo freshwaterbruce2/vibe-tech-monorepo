@@ -1,0 +1,47 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "vtde",
+  "projectType": "application",
+  "root": "apps/vtde",
+  "sourceRoot": "apps/vtde/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-script",
+      "options": { "script": "dev" },
+      "cache": false
+    },
+    "build": {
+      "executor": "nx:run-script",
+      "options": { "script": "build" },
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true
+    },
+    "lint": {
+      "executor": "nx:run-script",
+      "options": { "script": "lint" },
+      "cache": true
+    },
+    "test": {
+      "executor": "nx:run-script",
+      "options": { "script": "test" },
+      "cache": true
+    },
+    "typecheck": {
+      "executor": "nx:run-script",
+      "options": { "script": "typecheck" },
+      "cache": true
+    },
+    "tauri:dev": {
+      "executor": "nx:run-script",
+      "options": { "script": "tauri:dev" },
+      "cache": false
+    },
+    "tauri:build": {
+      "executor": "nx:run-script",
+      "options": { "script": "tauri:build" },
+      "outputs": ["{projectRoot}/src-tauri/target"],
+      "cache": true
+    }
+  },
+  "tags": ["scope:frontend", "type:app", "language:typescript"]
+}

@@ -1,0 +1,8 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "clawdbot-desktop",
+  "projectType": "application",
+  "root": "apps/clawdbot-desktop",
+  "targets": {},
+  "tags": ["scope:frontend", "type:app", "language:typescript"]
+}

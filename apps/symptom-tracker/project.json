@@ -1,0 +1,8 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "symptom-tracker",
+  "projectType": "application",
+  "root": "apps/symptom-tracker",
+  "targets": {},
+  "tags": ["scope:frontend", "type:app", "language:typescript"]
+}
