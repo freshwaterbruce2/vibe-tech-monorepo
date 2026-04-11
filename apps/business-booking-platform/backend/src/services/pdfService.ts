@@ -1,5 +1,5 @@
-// @ts-ignore - types might not be available
 import puppeteer from 'puppeteer';
+import type { Browser } from 'puppeteer';
 import { logger } from '../utils/logger.js';
 
 interface BookingReceiptData {
@@ -31,9 +31,9 @@ interface RefundReceiptData {
 }
 
 class PDFService {
-	private browser: puppeteer.Browser | null = null;
+	private browser: Browser | null = null;
 
-	private async getBrowser(): Promise<puppeteer.Browser> {
+	private async getBrowser(): Promise<Browser> {
 		if (!this.browser) {
 			this.browser = await puppeteer.launch({
 				headless: true,

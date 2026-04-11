@@ -2,6 +2,17 @@ import type Database from "better-sqlite3";
 import crypto from "crypto";
 import type { FastifyInstance } from "fastify";
 import { events } from "../events.js";
+import type {
+	AuthenticatedRequest,
+	ClientRow,
+	CreateInvoiceBody,
+	IdParams,
+	InvoiceIdRow,
+	InvoiceItemRow,
+	InvoiceRow,
+	OwnershipRow,
+	PatchInvoiceStatusBody,
+} from "./types.js";
 
 const nowIso = () => new Date().toISOString();
 const dateOnly = (value: Date) => value.toISOString().slice(0, 10);
@@ -10,17 +21,17 @@ const normalizeEmail = (email: string) => email.trim().toLowerCase();
 const toInvoiceApi = (db: Database, invoiceId: string) => {
 	const invoice = db
 		.prepare("select * from invoices where id = ?")
-		.get(invoiceId) as any;
+		.get(invoiceId) as InvoiceRow | undefined;
 	if (!invoice) return null;
 
 	const client = db
 		.prepare("select * from clients where id = ?")
-		.get(invoice.client_id) as any;
+		.get(invoice.client_id) as ClientRow;
 	const items = db
 		.prepare(
 			"select * from invoice_items where invoice_id = ? order by created_at asc",
 		)
-		.all(invoiceId) as any[];
+		.all(invoiceId) as InvoiceItemRow[];
 
 	return {
 		id: invoice.id,
@@ -61,14 +72,14 @@ const toInvoiceApi = (db: Database, invoiceId: string) => {
 
 export const registerInvoiceRoutes = (app: FastifyInstance, db: Database) => {
 	app.get("/api/invoices", async (req, reply) => {
-		const userId = (req as any).authUserId as string | undefined;
+		const userId = (req as AuthenticatedRequest).authUserId;
 		if (!userId) return reply.code(401).send({ error: "Unauthorized" });
 
 		const invoiceIds = db
 			.prepare(
 				"select id from invoices where user_id = ? order by updated_at desc",
 			)
-			.all(userId) as any[];
+			.all(userId) as InvoiceIdRow[];
 
 		return {
 			invoices: invoiceIds
@@ -78,13 +89,13 @@ export const registerInvoiceRoutes = (app: FastifyInstance, db: Database) => {
 	});
 
 	app.get("/api/invoices/:id", async (req, reply) => {
-		const userId = (req as any).authUserId as string | undefined;
+		const userId = (req as AuthenticatedRequest).authUserId;
 		if (!userId) return reply.code(401).send({ error: "Unauthorized" });
 
-		const id = (req.params as any).id as string;
+		const id = (req.params as IdParams).id;
 		const row = db
 			.prepare("select user_id from invoices where id = ?")
-			.get(id) as any;
+			.get(id) as OwnershipRow | undefined;
 		if (!row) return reply.code(404).send({ error: "Not found" });
 		if (row.user_id !== userId)
 			return reply.code(403).send({ error: "Forbidden" });
@@ -93,10 +104,10 @@ export const registerInvoiceRoutes = (app: FastifyInstance, db: Database) => {
 	});
 
 	app.post("/api/invoices", async (req, reply) => {
-		const userId = (req as any).authUserId as string | undefined;
+		const userId = (req as AuthenticatedRequest).authUserId;
 		if (!userId) return reply.code(401).send({ error: "Unauthorized" });
 
-		const body = (req.body ?? {}) as any;
+		const body = (req.body ?? {}) as CreateInvoiceBody;
 		const invoiceNumber = String(body.invoiceNumber ?? "");
 		const issueDate = String(body.issueDate ?? "");
 		const dueDate = String(body.dueDate ?? "");
@@ -127,7 +138,7 @@ export const registerInvoiceRoutes = (app: FastifyInstance, db: Database) => {
 		const clientRow =
 			(db
 				.prepare("select * from clients where user_id = ? and email = ?")
-				.get(userId, clientEmail) as any) ?? null;
+				.get(userId, clientEmail) as ClientRow | null) ?? null;
 
 		const clientId = clientRow?.id ?? crypto.randomUUID();
 		if (!clientRow) {
@@ -189,10 +200,10 @@ export const registerInvoiceRoutes = (app: FastifyInstance, db: Database) => {
 			).run(
 				crypto.randomUUID(),
 				invoiceId,
-				String(item.description ?? ""),
-				Number(item.quantity ?? 0),
-				Number(item.price ?? 0),
-				Number(item.total ?? 0),
+				String((item as Record<string, unknown>).description ?? ""),
+				Number((item as Record<string, unknown>).quantity ?? 0),
+				Number((item as Record<string, unknown>).price ?? 0),
+				Number((item as Record<string, unknown>).total ?? 0),
 				nowIso(),
 			);
 		}
@@ -202,11 +213,11 @@ export const registerInvoiceRoutes = (app: FastifyInstance, db: Database) => {
 	});
 
 	app.patch("/api/invoices/:id/status", async (req, reply) => {
-		const userId = (req as any).authUserId as string | undefined;
+		const userId = (req as AuthenticatedRequest).authUserId;
 		if (!userId) return reply.code(401).send({ error: "Unauthorized" });
 
-		const id = (req.params as any).id as string;
-		const body = (req.body ?? {}) as any;
+		const id = (req.params as IdParams).id;
+		const body = (req.body ?? {}) as PatchInvoiceStatusBody;
 		const status = String(body.status ?? "");
 		if (!["draft", "sent", "paid", "overdue"].includes(status)) {
 			return reply.code(400).send({ error: "Invalid status" });
@@ -214,7 +225,7 @@ export const registerInvoiceRoutes = (app: FastifyInstance, db: Database) => {
 
 		const row = db
 			.prepare("select user_id from invoices where id = ?")
-			.get(id) as any;
+			.get(id) as OwnershipRow | undefined;
 		if (!row) return reply.code(404).send({ error: "Not found" });
 		if (row.user_id !== userId)
 			return reply.code(403).send({ error: "Forbidden" });

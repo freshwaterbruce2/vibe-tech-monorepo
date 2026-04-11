@@ -1,4 +1,4 @@
-/* eslint-disable no-console, @typescript-eslint/no-explicit-any */
+/* eslint-disable no-console */
 // Monitoring and Error Tracking Utilities
 
 // Error tracking configuration
@@ -21,9 +21,25 @@ interface PerformanceMetric {
 interface BusinessMetric {
 	event: string;
 	value?: number;
-	properties?: Record<string, any>;
+	properties?: Record<string, unknown>;
 	userId?: string;
 	timestamp: number;
+}
+
+// Runtime globals injected by Google Analytics and Sentry scripts.
+// These are not present in the standard lib.dom types.
+interface WindowWithTracking extends Window {
+	dataLayer: unknown[];
+	gtag: (...args: unknown[]) => void;
+	Sentry: {
+		captureException: (error: Error, context?: { extra?: Record<string, unknown> }) => void;
+		setUser: (user: { id: string; [key: string]: unknown } | null) => void;
+	};
+}
+
+/** Typed accessor for the tracking-extended window object. */
+function trackingWindow(): WindowWithTracking {
+	return window as unknown as WindowWithTracking;
 }
 
 class MonitoringService {
@@ -83,11 +99,12 @@ class MonitoringService {
 		document.head.appendChild(script);
 
 		// Initialize gtag
-		(window as any).dataLayer = (window as any).dataLayer || [];
+		const win = trackingWindow();
+		win.dataLayer = win.dataLayer || [];
 		function gtag(...args: unknown[]) {
-			(window as any).dataLayer.push(args);
+			win.dataLayer.push(args);
 		}
-		(window as any).gtag = gtag;
+		win.gtag = gtag;
 
 		gtag('js', new Date());
 		gtag('config', measurementId, {
@@ -97,7 +114,7 @@ class MonitoringService {
 	}
 
 	// Track errors
-	captureError(error: Error, context?: Record<string, any>) {
+	captureError(error: Error, context?: Record<string, unknown>) {
 		if (!this.isEnabled) {
 			return;
 		}
@@ -105,8 +122,8 @@ class MonitoringService {
 		console.error('Error captured:', error, context);
 
 		// Send to Sentry if available
-		if (typeof window !== 'undefined' && (window as any).Sentry) {
-			(window as any).Sentry.captureException(error, { extra: context });
+		if (typeof window !== 'undefined' && 'Sentry' in window) {
+			trackingWindow().Sentry.captureException(error, { extra: context });
 		}
 
 		// Send to custom error tracking endpoint
@@ -122,8 +139,8 @@ class MonitoringService {
 		console.log('Performance metric:', metric);
 
 		// Send to analytics
-		if (typeof window !== 'undefined' && (window as any).gtag) {
-			(window as any).gtag('event', 'performance_metric', {
+		if (typeof window !== 'undefined' && 'gtag' in window) {
+			trackingWindow().gtag('event', 'performance_metric', {
 				custom_metric_name: metric.name,
 				custom_metric_value: metric.value,
 				...metric.tags,
@@ -143,8 +160,8 @@ class MonitoringService {
 		console.log('Business event:', metric);
 
 		// Send to Google Analytics
-		if (typeof window !== 'undefined' && (window as any).gtag) {
-			(window as any).gtag('event', metric.event, {
+		if (typeof window !== 'undefined' && 'gtag' in window) {
+			trackingWindow().gtag('event', metric.event, {
 				event_category: 'business',
 				value: metric.value,
 				custom_properties: JSON.stringify(metric.properties),
@@ -162,8 +179,8 @@ class MonitoringService {
 			return;
 		}
 
-		if (typeof window !== 'undefined' && (window as any).gtag) {
-			(window as any).gtag('config', import.meta.env.VITE_GOOGLE_ANALYTICS_ID, {
+		if (typeof window !== 'undefined' && 'gtag' in window) {
+			trackingWindow().gtag('config', import.meta.env.VITE_GOOGLE_ANALYTICS_ID, {
 				page_path: path,
 				page_title: title || document.title,
 			});
@@ -171,13 +188,13 @@ class MonitoringService {
 	}
 
 	// Track user events
-	trackUserEvent(event: string, properties?: Record<string, any>) {
+	trackUserEvent(event: string, properties?: Record<string, unknown>) {
 		if (!this.isEnabled) {
 			return;
 		}
 
-		if (typeof window !== 'undefined' && (window as any).gtag) {
-			(window as any).gtag('event', event, {
+		if (typeof window !== 'undefined' && 'gtag' in window) {
+			trackingWindow().gtag('event', event, {
 				event_category: 'user_interaction',
 				...properties,
 			});
@@ -187,7 +204,7 @@ class MonitoringService {
 	// Send error to custom endpoint
 	private async sendToErrorEndpoint(
 		error: Error,
-		context?: Record<string, any>,
+		context?: Record<string, unknown>,
 	) {
 		try {
 			const apiUrl = import.meta.env.VITE_API_URL;
@@ -249,15 +266,15 @@ class MonitoringService {
 	}
 
 	// Set user context for tracking
-	setUser(userId: string, properties?: Record<string, any>) {
+	setUser(userId: string, properties?: Record<string, unknown>) {
 		this.config.userId = userId;
 
-		if (typeof window !== 'undefined' && (window as any).Sentry) {
-			(window as any).Sentry.setUser({ id: userId, ...properties });
+		if (typeof window !== 'undefined' && 'Sentry' in window) {
+			trackingWindow().Sentry.setUser({ id: userId, ...properties });
 		}
 
-		if (typeof window !== 'undefined' && (window as any).gtag) {
-			(window as any).gtag('config', import.meta.env.VITE_GOOGLE_ANALYTICS_ID, {
+		if (typeof window !== 'undefined' && 'gtag' in window) {
+			trackingWindow().gtag('config', import.meta.env.VITE_GOOGLE_ANALYTICS_ID, {
 				user_id: userId,
 			});
 		}
@@ -267,8 +284,8 @@ class MonitoringService {
 	clearUser() {
 		this.config.userId = undefined;
 
-		if (typeof window !== 'undefined' && (window as any).Sentry) {
-			(window as any).Sentry.setUser(null);
+		if (typeof window !== 'undefined' && 'Sentry' in window) {
+			trackingWindow().Sentry.setUser(null);
 		}
 	}
 }

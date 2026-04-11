@@ -1,17 +1,28 @@
+import type Database from 'better-sqlite3'
 import crypto from 'crypto'
 import type { FastifyInstance } from 'fastify'
+import type {
+  AuthenticatedRequest,
+  ClientRow,
+  CreateClientBody,
+  IdParams,
+  IdRow,
+  InvoiceCountRow,
+  OwnershipRow,
+  PatchClientBody,
+} from './types.js'
 
 const nowIso = () => new Date().toISOString()
 const normalizeEmail = (email: string) => email.trim().toLowerCase()
 
 export const registerClientRoutes = (app: FastifyInstance, db: Database) => {
   app.get('/api/clients', async (req, reply) => {
-    const userId = (req as any).authUserId as string | undefined
+    const userId = (req as AuthenticatedRequest).authUserId
     if (!userId) return reply.code(401).send({ error: 'Unauthorized' })
 
     const rows = db
       .prepare('select * from clients where user_id = ? order by updated_at desc')
-      .all(userId) as any[]
+      .all(userId) as ClientRow[]
 
     return {
       clients: rows.map((c) => ({
@@ -28,10 +39,10 @@ export const registerClientRoutes = (app: FastifyInstance, db: Database) => {
   })
 
   app.post('/api/clients', async (req, reply) => {
-    const userId = (req as any).authUserId as string | undefined
+    const userId = (req as AuthenticatedRequest).authUserId
     if (!userId) return reply.code(401).send({ error: 'Unauthorized' })
 
-    const body = (req.body ?? {}) as any
+    const body = (req.body ?? {}) as CreateClientBody
     const name = String(body.name ?? '').trim()
     const email = normalizeEmail(String(body.email ?? ''))
 
@@ -40,7 +51,7 @@ export const registerClientRoutes = (app: FastifyInstance, db: Database) => {
 
     const existing = db
       .prepare('select id from clients where user_id = ? and email = ?')
-      .get(userId, email) as any
+      .get(userId, email) as IdRow | undefined
     if (existing) return reply.code(409).send({ error: 'Client with this email already exists' })
 
     const id = crypto.randomUUID()
@@ -59,7 +70,7 @@ export const registerClientRoutes = (app: FastifyInstance, db: Database) => {
       now
     )
 
-    const row = db.prepare('select * from clients where id = ?').get(id) as any
+    const row = db.prepare('select * from clients where id = ?').get(id) as ClientRow
     return {
       client: {
         id: row.id,
@@ -75,15 +86,15 @@ export const registerClientRoutes = (app: FastifyInstance, db: Database) => {
   })
 
   app.patch('/api/clients/:id', async (req, reply) => {
-    const userId = (req as any).authUserId as string | undefined
+    const userId = (req as AuthenticatedRequest).authUserId
     if (!userId) return reply.code(401).send({ error: 'Unauthorized' })
 
-    const id = (req.params as any).id as string
-    const row = db.prepare('select user_id from clients where id = ?').get(id) as any
+    const id = (req.params as IdParams).id
+    const row = db.prepare('select user_id from clients where id = ?').get(id) as OwnershipRow | undefined
     if (!row) return reply.code(404).send({ error: 'Not found' })
     if (row.user_id !== userId) return reply.code(403).send({ error: 'Forbidden' })
 
-    const body = (req.body ?? {}) as any
+    const body = (req.body ?? {}) as PatchClientBody
     db.prepare(
       'update clients set name = coalesce(?, name), email = coalesce(?, email), phone = coalesce(?, phone), company = coalesce(?, company), address = coalesce(?, address), updated_at = ? where id = ?'
     ).run(
@@ -96,7 +107,7 @@ export const registerClientRoutes = (app: FastifyInstance, db: Database) => {
       id
     )
 
-    const updated = db.prepare('select * from clients where id = ?').get(id) as any
+    const updated = db.prepare('select * from clients where id = ?').get(id) as ClientRow
     return {
       client: {
         id: updated.id,
@@ -112,17 +123,17 @@ export const registerClientRoutes = (app: FastifyInstance, db: Database) => {
   })
 
   app.delete('/api/clients/:id', async (req, reply) => {
-    const userId = (req as any).authUserId as string | undefined
+    const userId = (req as AuthenticatedRequest).authUserId
     if (!userId) return reply.code(401).send({ error: 'Unauthorized' })
 
-    const id = (req.params as any).id as string
-    const row = db.prepare('select user_id from clients where id = ?').get(id) as any
+    const id = (req.params as IdParams).id
+    const row = db.prepare('select user_id from clients where id = ?').get(id) as OwnershipRow | undefined
     if (!row) return reply.code(404).send({ error: 'Not found' })
     if (row.user_id !== userId) return reply.code(403).send({ error: 'Forbidden' })
 
     const invoiceCount = db
       .prepare('select count(*) as cnt from invoices where client_id = ?')
-      .get(id) as any
+      .get(id) as InvoiceCountRow
     if (invoiceCount.cnt > 0) {
       return reply.code(409).send({
         error: `Cannot delete client — ${invoiceCount.cnt} invoice(s) are linked to this client`,

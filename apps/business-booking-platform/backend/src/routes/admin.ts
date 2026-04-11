@@ -15,6 +15,26 @@ import { logger } from '../utils/logger';
 
 export const adminRouter = Router();
 
+/**
+ * Serialise dashboard metrics to CSV format for revenue report exports.
+ */
+function generateRevenueCSV(data: Record<string, unknown>): string {
+	const rows: string[] = [];
+	const flatten = (obj: Record<string, unknown>, prefix = ''): void => {
+		for (const [key, value] of Object.entries(obj)) {
+			const fullKey = prefix ? `${prefix}.${key}` : key;
+			if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+				flatten(value as Record<string, unknown>, fullKey);
+			} else {
+				rows.push(`${fullKey},${JSON.stringify(value ?? '')}`);
+			}
+		}
+	};
+	rows.push('metric,value');
+	flatten(data);
+	return rows.join('\n');
+}
+
 // Middleware to check admin access
 const requireAdmin = (req: Request, res: Response, next: any) => {
 	if (req.user?.role !== 'admin') {
@@ -678,8 +698,7 @@ adminRouter.get(
 
 			if (format === 'csv') {
 				// Generate CSV content
-				// @ts-ignore - generateRevenueCSV is not defined on this
-				const csvContent = this.generateRevenueCSV(reportData);
+				const csvContent = generateRevenueCSV(reportData as Record<string, unknown>);
 
 				res.setHeader('Content-Type', 'text/csv');
 				res.setHeader(
