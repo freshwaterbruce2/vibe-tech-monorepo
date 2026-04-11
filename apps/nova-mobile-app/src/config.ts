@@ -21,7 +21,15 @@ export const config = {
   WS_URL: __DEV__ ? 'ws://localhost:3000' : 'wss://api.nova-ai.com',
 
   // Authentication
-  BRIDGE_TOKEN: process.env.EXPO_PUBLIC_BRIDGE_TOKEN || 'nova_default_secret_token_change_me',
+  // ⚠️ WARNING: Set EXPO_PUBLIC_BRIDGE_TOKEN in your .env — the fallback is for dev only.
+  // Production builds will throw if the env var is missing.
+  BRIDGE_TOKEN: (() => {
+    const token = process.env.EXPO_PUBLIC_BRIDGE_TOKEN;
+    if (!token && !__DEV__) {
+      throw new Error('EXPO_PUBLIC_BRIDGE_TOKEN is required in production builds');
+    }
+    return token || 'nova_default_secret_token_change_me';
+  })(),
 
   // Timeouts
   API_TIMEOUT: 30_000,

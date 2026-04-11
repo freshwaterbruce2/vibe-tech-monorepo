@@ -1,8 +1,6 @@
 import * as Haptics from 'expo-haptics';
-import { Send } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Animated,
   FlatList,
   KeyboardAvoidingView,
@@ -10,10 +8,9 @@ import {
   SafeAreaView,
   StyleSheet,
   Text,
-  TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
+import { ChatInputBar } from '../components/ChatInputBar';
 import { MessageBubble } from '../components/MessageBubble';
 import { TypingIndicator } from '../components/TypingIndicator';
 import { config } from '../config';
@@ -24,7 +21,6 @@ import { useConnectionStore } from '../stores/connectionStore';
 import { useOfflineQueueStore } from '../stores/offlineQueueStore';
 
 export function ChatScreen() {
-  const [inputText, setInputText] = useState('');
   const flatListRef = useRef<FlatList>(null);
   const [dotOpacity] = useState(() => new Animated.Value(1));
 
@@ -122,32 +118,33 @@ export function ChatScreen() {
     void flush();
   }, [adapter, addMessage, dequeue, isOnline, queue, updateMessageStatus]);
 
-  const sendMessage = useCallback(async () => {
-    const text = inputText.trim();
-    if (!text || isLoading) return;
+  const sendMessage = useCallback(
+    (text: string) => {
+      if (!text || isLoading) return;
 
-    const newId = Date.now().toString();
-    const userMsg: ChatMessage = {
-      id: newId,
-      role: 'user',
-      content: text,
-      timestamp: new Date().toISOString(),
-      status: 'sending',
-    };
+      const newId = Date.now().toString();
+      const userMsg: ChatMessage = {
+        id: newId,
+        role: 'user',
+        content: text,
+        timestamp: new Date().toISOString(),
+        status: 'sending',
+      };
 
-    addMessage(userMsg);
-    setInputText('');
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      addMessage(userMsg);
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    // If offline, queue the message
-    if (!isOnline || !adapter) {
-      updateMessageStatus(newId, 'queued');
-      enqueue({ id: newId, content: text, timestamp: new Date().toISOString() });
-      return;
-    }
+      // If offline, queue the message
+      if (!isOnline || !adapter) {
+        updateMessageStatus(newId, 'queued');
+        enqueue({ id: newId, content: text, timestamp: new Date().toISOString() });
+        return;
+      }
 
-    void executeSend(text, newId);
-  }, [adapter, addMessage, enqueue, executeSend, inputText, isLoading, isOnline, updateMessageStatus]);
+      void executeSend(text, newId);
+    },
+    [adapter, addMessage, enqueue, executeSend, isLoading, isOnline, updateMessageStatus],
+  );
 
   const retryMessage = useCallback(
     (item: ChatMessage) => {
@@ -214,31 +211,7 @@ export function ChatScreen() {
           ListFooterComponent={isLoading ? <TypingIndicator /> : null}
         />
 
-        {/* Input bar */}
-        <View style={styles.inputBar}>
-          <TextInput
-            style={styles.input}
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder={isOnline ? 'Message NOVA\u2026' : 'Offline \u2022 Messages will queue'}
-            placeholderTextColor={config.THEME.TEXT_MUTED}
-            multiline
-            maxLength={5000}
-            onSubmitEditing={() => void sendMessage()}
-            returnKeyType="send"
-          />
-          <TouchableOpacity
-            style={[styles.sendBtn, (!inputText.trim() || isLoading) && styles.sendBtnDisabled]}
-            onPress={() => void sendMessage()}
-            disabled={isLoading || !inputText.trim()}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Send size={20} color="#fff" />
-            )}
-          </TouchableOpacity>
-        </View>
+        <ChatInputBar isOnline={isOnline} isLoading={isLoading} onSend={sendMessage} />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -270,34 +243,5 @@ const styles = StyleSheet.create({
   dotOffline: { backgroundColor: T.STATUS_OFFLINE },
   chatArea: { flex: 1 },
   messageList: { padding: 16, paddingBottom: 8 },
-  inputBar: {
-    flexDirection: 'row',
-    padding: 12,
-    backgroundColor: T.SURFACE,
-    borderTopWidth: 1,
-    borderTopColor: T.BORDER,
-    alignItems: 'flex-end',
-    gap: 8,
-  },
-  input: {
-    flex: 1,
-    backgroundColor: T.SURFACE_ELEVATED,
-    color: T.TEXT_PRIMARY,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 22,
-    fontSize: 15,
-    maxHeight: 100,
-    borderWidth: 1,
-    borderColor: T.BORDER,
-  },
-  sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: T.ACCENT_CYAN,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sendBtnDisabled: { opacity: 0.4 },
+
 });
