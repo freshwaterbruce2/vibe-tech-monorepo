@@ -1,4 +1,4 @@
-import { AnthropicProvider } from '../providers/anthropic-provider.js';
+import { MoonshotProvider } from '../providers/moonshot-provider.js';
 import { ExecutionService } from '../services/execution-service.js';
 import { gitChangedFiles, gitDiff } from '../tools/git-tools.js';
 import { readTextFile } from '../tools/file-tools.js';
@@ -19,7 +19,7 @@ export async function runCodeReviewer(baseBranch = 'main'): Promise<void> {
     .map((file) => `## ${file}\n\`\`\`\n${readTextFile(file)}\n\`\`\``)
     .join('\n\n');
 
-  const service = new ExecutionService(new AnthropicProvider());
+  const service = new ExecutionService(new MoonshotProvider());
   const findings = await service.reviewChangedCode(diff, fileContents);
 
   console.log(`Review findings for ${changedFiles.length} changed file(s):\n`);

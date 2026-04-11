@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { AnthropicProvider } from './providers/anthropic-provider.js';
+import { MoonshotProvider } from './providers/moonshot-provider.js';
 import { BenchmarkService } from './services/benchmark-service.js';
 import { EvaluationService } from './services/evaluation-service.js';
 import { ExecutionService } from './services/execution-service.js';
@@ -191,7 +191,7 @@ async function runTask(title: string, objective: string): Promise<void> {
     acceptanceCriteria: ['Run trace persisted', 'Plan generated'],
   };
 
-  const service = new ExecutionService(new AnthropicProvider());
+  const service = new ExecutionService(new MoonshotProvider());
   const result = await service.runTask(task);
   console.log(JSON.stringify(result.trace, null, 2));
 }

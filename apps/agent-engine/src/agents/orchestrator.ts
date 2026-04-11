@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { AnthropicProvider } from '../providers/anthropic-provider.js';
+import { MoonshotProvider } from '../providers/moonshot-provider.js';
 import { ExecutionService } from '../services/execution-service.js';
 import type { TaskSpec } from '../types.js';
 
@@ -12,7 +12,7 @@ export async function runOrchestrator(title: string, objective: string): Promise
     acceptanceCriteria: ['Task trace stored', 'Plan generated', 'No safety boundary crossed'],
   };
 
-  const service = new ExecutionService(new AnthropicProvider());
+  const service = new ExecutionService(new MoonshotProvider());
   const result = await service.runTask(task);
 
   console.log(JSON.stringify(result.trace, null, 2));

@@ -21,7 +21,6 @@
     "promote-candidate": "tsx src/index.ts promote-candidate"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

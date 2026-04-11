@@ -2,7 +2,7 @@ import type { PolicyBundle } from '../types.js';
 
 export const DEFAULT_POLICY_BUNDLE: PolicyBundle = {
   name: 'agent-engine-v1',
-  runtimeProvider: 'anthropic',
+  runtimeProvider: 'moonshot',
   roles: {
     planner:
       'Decompose the task into a safe local-monorepo execution plan. Prefer modifying existing code and name affected Nx projects explicitly.',

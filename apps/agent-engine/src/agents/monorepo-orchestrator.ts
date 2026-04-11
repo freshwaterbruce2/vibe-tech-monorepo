@@ -1,4 +1,4 @@
-import { AnthropicProvider } from '../providers/anthropic-provider.js';
+import { MoonshotProvider } from '../providers/moonshot-provider.js';
 import { ExecutionService } from '../services/execution-service.js';
 import { MemoryClient } from '../services/memory-client.js';
 import { MonorepoTaskRouter, type RoutedTask } from '../services/monorepo-task-router.js';
@@ -43,7 +43,7 @@ async function fetchLearningContext(memory: MemoryClient): Promise<string> {
 export async function orchestrateMonorepo(
   goal: string,
   affectedProjects?: string[],
-  provider: LlmProvider = new AnthropicProvider(),
+  provider: LlmProvider = new MoonshotProvider(),
 ): Promise<OrchestrationResult> {
   const router = new MonorepoTaskRouter();
   const memory = new MemoryClient();

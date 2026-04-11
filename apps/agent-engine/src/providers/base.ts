@@ -1,6 +1,6 @@
 import { CONFIG } from '../config.js';
 import type { BehavioralProviderMode, LlmProvider } from '../types.js';
-import { AnthropicProvider } from './anthropic-provider.js';
+import { MoonshotProvider } from './moonshot-provider.js';
 import { ScriptedBehavioralProvider } from './scripted-behavioral-provider.js';
 
 export function ensureProvider<T>(value: T | undefined, message: string): T {
@@ -17,11 +17,11 @@ export function createBehavioralProvider(
     return new ScriptedBehavioralProvider();
   }
 
-  if (mode === 'anthropic') {
-    return new AnthropicProvider();
+  if (mode === 'moonshot') {
+    return new MoonshotProvider();
   }
 
-  return CONFIG.ANTHROPIC_API_KEY ? new AnthropicProvider() : new ScriptedBehavioralProvider();
+  return CONFIG.KIMI_API_KEY ? new MoonshotProvider() : new ScriptedBehavioralProvider();
 }
 
 export type { LlmProvider };

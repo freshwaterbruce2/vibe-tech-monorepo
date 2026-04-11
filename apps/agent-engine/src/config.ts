@@ -2,9 +2,9 @@ import { resolve } from 'path';
 import { z } from 'zod';
 
 const configSchema = z.object({
-  AGENT_ENGINE_MODEL: z.string().default('claude-sonnet-4-5-20250929'),
-  ANTHROPIC_API_KEY: z.string().optional(),
-  AGENT_ENGINE_BEHAVIORAL_PROVIDER: z.enum(['auto', 'anthropic', 'scripted']).default('auto'),
+  AGENT_ENGINE_MODEL: z.string().default('kimi-k2.5'),
+  KIMI_API_KEY: z.string().optional(),
+  AGENT_ENGINE_BEHAVIORAL_PROVIDER: z.enum(['auto', 'moonshot', 'scripted']).default('auto'),
   WORKSPACE_ROOT: z.string().default('C:\\dev'),
   AGENT_ENGINE_OUTPUT_ROOT: z.string().default('D:\\learning-system\\agent-engine'),
   MEMORY_MCP_HTTP_URL: z.string().default('http://127.0.0.1:3200'),
@@ -27,8 +27,8 @@ export const PATHS = {
   rollbackDir: resolve(CONFIG.AGENT_ENGINE_OUTPUT_ROOT, 'rollbacks'),
 };
 
-export function assertAnthropicConfigured(): void {
-  if (!CONFIG.ANTHROPIC_API_KEY) {
-    throw new Error('ANTHROPIC_API_KEY is required for provider-backed agent execution.');
+export function assertKimiConfigured(): void {
+  if (!CONFIG.KIMI_API_KEY) {
+    throw new Error('KIMI_API_KEY is required for provider-backed agent execution.');
   }
 }
