@@ -98,14 +98,14 @@ export const StepCardView = ({
                     <StepTitle>{step.title}</StepTitle>
                     <StepDescription>{step.description}</StepDescription>
 
-                    {hasConfidence && (
+                    {hasConfidence && enhancedStep.confidence && (
                         <div style={{ marginTop: '8px', marginBottom: '8px' }}>
-                            <ConfidenceBadge $riskLevel={enhancedStep.confidence!.riskLevel}>
-                                {enhancedStep.confidence!.riskLevel === 'low' && '✓'}
-                                {enhancedStep.confidence!.riskLevel === 'medium' && '⚠'}
-                                {enhancedStep.confidence!.riskLevel === 'high' && '⚠'}
-                                {Math.round(enhancedStep.confidence!.score)}% confidence
-                                {enhancedStep.confidence!.memoryBacked && ' • Memory-backed'}
+                            <ConfidenceBadge $riskLevel={enhancedStep.confidence.riskLevel}>
+                                {enhancedStep.confidence.riskLevel === 'low' && '✓'}
+                                {enhancedStep.confidence.riskLevel === 'medium' && '⚠'}
+                                {enhancedStep.confidence.riskLevel === 'high' && '⚠'}
+                                {Math.round(enhancedStep.confidence.score)}% confidence
+                                {enhancedStep.confidence.memoryBacked && ' • Memory-backed'}
                             </ConfidenceBadge>
                         </div>
                     )}
@@ -137,12 +137,12 @@ export const StepCardView = ({
                 </StepContent>
             </StepHeader>
 
-            {hasConfidence && enhancedStep.confidence!.factors.length > 0 && (
+            {hasConfidence && enhancedStep.confidence && enhancedStep.confidence.factors.length > 0 && (
                 <ConfidenceFactors>
                     <div style={{ fontWeight: 600, fontSize: '12px', marginBottom: '8px', color: vibeTheme.colors.purple }}>
                         Confidence Factors
                     </div>
-                    {enhancedStep.confidence!.factors.map((factor, idx) => (
+                    {enhancedStep.confidence.factors.map((factor, idx) => (
                         <FactorItem key={idx} $positive={factor.impact > 0}>
                             <span className="factor-icon">
                                 {factor.impact > 0 ? '+' : ''}
@@ -156,12 +156,12 @@ export const StepCardView = ({
                 </ConfidenceFactors>
             )}
 
-            {hasFallbacks && (
+            {hasFallbacks && enhancedStep.fallbackPlans && (
                 <FallbackIndicator>
                     <div style={{ fontWeight: 600, fontSize: '12px', marginBottom: '8px', color: vibeTheme.colors.cyan }}>
-                        {enhancedStep.fallbackPlans!.length} Fallback Plan{enhancedStep.fallbackPlans!.length > 1 ? 's' : ''} Available
+                        {enhancedStep.fallbackPlans.length} Fallback Plan{enhancedStep.fallbackPlans.length > 1 ? 's' : ''} Available
                     </div>
-                    {enhancedStep.fallbackPlans!.map((fallback, idx) => (
+                    {enhancedStep.fallbackPlans.map((fallback, idx) => (
                         <FallbackItem key={fallback.id}>
                             <div className="fallback-number">{idx + 1}</div>
                             <div className="fallback-content">

@@ -27,6 +27,7 @@ const WorksheetView = memo(function WorksheetView({ subject, difficulty, onCompl
   const [startTime] = useState<number>(() => Date.now());
 
   const currentQuestion = questions[currentQuestionIndex];
+  if (!currentQuestion) return null;
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
 
@@ -42,10 +43,10 @@ const WorksheetView = memo(function WorksheetView({ subject, difficulty, onCompl
 
     // Case-insensitive comparison for fill-blank text answers
     const correct =
-      currentQuestion!.type === 'fill-blank'
+      currentQuestion.type === 'fill-blank'
         ? String(selectedAnswer).trim().toLowerCase() ===
-          String(currentQuestion!.correctAnswer).trim().toLowerCase()
-        : selectedAnswer === currentQuestion!.correctAnswer;
+          String(currentQuestion.correctAnswer).trim().toLowerCase()
+        : selectedAnswer === currentQuestion.correctAnswer;
     setIsCorrect(correct);
     setShowFeedback(true);
 
@@ -85,7 +86,7 @@ const WorksheetView = memo(function WorksheetView({ subject, difficulty, onCompl
     // Calculate score
     let correctCount = 0;
     answers.forEach((answer, index) => {
-      if (answer === questions[index]!.correctAnswer) {
+      if (answer === questions[index]?.correctAnswer) {
         correctCount = correctCount + 1;
       }
     });
@@ -171,21 +172,21 @@ const WorksheetView = memo(function WorksheetView({ subject, difficulty, onCompl
               {currentQuestionIndex + 1}
             </div>
             <div className="text-xs text-text-secondary">
-              {currentQuestion!.type.replace('-', ' ')}
+              {currentQuestion.type.replace('-', ' ')}
             </div>
           </div>
 
           {/* Question Text */}
           <h2 className="text-xl md:text-2xl font-semibold mb-6 text-text-primary">
-            {currentQuestion!.question}
+            {currentQuestion.question}
           </h2>
 
           {/* Multiple Choice Options */}
-          {currentQuestion!.type === 'multiple-choice' && currentQuestion!.options && (
+          {currentQuestion.type === 'multiple-choice' && currentQuestion.options && (
             <div className="space-y-3">
-              {currentQuestion!.options.map((option, index) => {
+              {currentQuestion.options.map((option, index) => {
                 const isSelected = selectedAnswer === index;
-                const isCorrectAnswer = index === currentQuestion!.correctAnswer;
+                const isCorrectAnswer = index === currentQuestion.correctAnswer;
                 const showAsCorrect = showFeedback && isCorrectAnswer;
                 const showAsWrong = showFeedback && isSelected && !isCorrect;
 
@@ -221,11 +222,11 @@ const WorksheetView = memo(function WorksheetView({ subject, difficulty, onCompl
           )}
 
           {/* True/False Options */}
-          {currentQuestion!.type === 'true-false' && currentQuestion!.options && (
+          {currentQuestion.type === 'true-false' && currentQuestion.options && (
             <div className="flex gap-4 justify-center">
-              {currentQuestion!.options.map((option, index) => {
+              {currentQuestion.options.map((option, index) => {
                 const isSelected = selectedAnswer === index;
-                const isCorrectAnswer = index === currentQuestion!.correctAnswer;
+                const isCorrectAnswer = index === currentQuestion.correctAnswer;
                 const showAsCorrect = showFeedback && isCorrectAnswer;
                 const showAsWrong = showFeedback && isSelected && !isCorrect;
 
@@ -256,7 +257,7 @@ const WorksheetView = memo(function WorksheetView({ subject, difficulty, onCompl
           )}
 
           {/* Fill-in-the-Blank Input */}
-          {currentQuestion!.type === 'fill-blank' && (
+          {currentQuestion.type === 'fill-blank' && (
             <div>
               <input
                 type="text"
@@ -287,7 +288,7 @@ const WorksheetView = memo(function WorksheetView({ subject, difficulty, onCompl
                 <p className="text-center text-sm text-gray-400 mt-2">
                   Correct answer:{' '}
                   <span className="text-fuchsia-400 font-bold">
-                    {String(currentQuestion!.correctAnswer)}
+                    {String(currentQuestion.correctAnswer)}
                   </span>
                 </p>
               )}
@@ -309,8 +310,8 @@ const WorksheetView = memo(function WorksheetView({ subject, difficulty, onCompl
                   <p className={`font-bold mb-1 ${isCorrect ? 'text-fuchsia-400' : 'text-red-400'}`}>
                     {isCorrect ? 'Correct!' : 'Incorrect'}
                   </p>
-                  {currentQuestion!.explanation && (
-                    <p className="text-sm text-text-secondary">{currentQuestion!.explanation}</p>
+                  {currentQuestion.explanation && (
+                    <p className="text-sm text-text-secondary">{currentQuestion.explanation}</p>
                   )}
                 </div>
               </div>
