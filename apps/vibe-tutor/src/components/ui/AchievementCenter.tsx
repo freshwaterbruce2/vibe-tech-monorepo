@@ -1,5 +1,6 @@
 import { ArrowLeft, CheckCircle2, Gift, Lock, Sparkles, Star, Target, Trophy } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
+import { useCountUp } from '../../hooks/useCountUp';
 import type { Achievement, ClaimedReward, Reward } from '../../types';
 
 interface AchievementCenterProps {
@@ -9,27 +10,6 @@ interface AchievementCenterProps {
   userTokens: number;
   onClaimReward: (rewardId: string) => boolean;
   onClose?: () => void;
-}
-
-/* ─── Animated count-up hook ─── */
-function useCountUp(target: number, durationMs = 800) {
-  const [value, setValue] = useState(0);
-  const animRef = useRef<number>(0);
-
-  useEffect(() => {
-    const start = performance.now();
-    const animate = (now: number) => {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / durationMs, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setValue(Math.round(eased * target));
-      if (progress < 1) animRef.current = requestAnimationFrame(animate);
-    };
-    animRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animRef.current);
-  }, [target, durationMs]);
-
-  return value;
 }
 
 /* ─── Badge sub-component ─── */
@@ -117,14 +97,14 @@ function RewardCard({
         <p className="text-sm text-[var(--success-accent)] font-semibold">{reward.cost} Tokens</p>
       </div>
       {justClaimed ? (
-        <div className="flex items-center gap-1.5 text-fuchsia-400 font-semibold text-sm">
+        <div className="flex items-center gap-1.5 text-violet-400 font-semibold text-sm">
           <CheckCircle2 className="w-5 h-5" /> Claimed!
         </div>
       ) : (
         <button
           onClick={handleClaim}
           disabled={!canClaim}
-          className="px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white hover:shadow-lg hover:shadow-purple-500/20"
+          className="px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-purple-500 to-violet-500 text-white hover:shadow-lg hover:shadow-purple-500/20"
         >
           Claim
         </button>

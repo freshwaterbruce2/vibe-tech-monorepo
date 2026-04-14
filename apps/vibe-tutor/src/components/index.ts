@@ -23,7 +23,6 @@ export * from './settings';
 
 // UI components (legacy re-exports for backwards compatibility)
 export { default as AchievementCenter } from './ui/AchievementCenter';
-export { default as AchievementPopup } from './ui/AchievementPopup';
 export { default as AchievementToast } from './ui/AchievementToast';
 export { default as CelebrationEffect } from './ui/CelebrationEffect';
 export { default as Celebrations } from './ui/Celebrations';
@@ -77,4 +76,3 @@ export { default as SensorySettings } from './settings/SensorySettings';
 
 // Root-level components (moved to core)
 export { default as SecurePinLock } from './core/SecurePinLock';
-export { default as TokenSystem } from './core/TokenSystem';

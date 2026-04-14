@@ -8,7 +8,8 @@ import {
   TrendingUp,
   Zap,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
+import { useCountUp } from '../../hooks/useCountUp';
 import {
   getRecentTransactions,
   getTodayEarnings,
@@ -23,30 +24,6 @@ interface TokenWalletProps {
   onClose?: () => void;
   onNavigate?: (view: View) => void;
   compact?: boolean;
-}
-
-/** Animates a number counting up from 0 to target */
-function useCountUp(target: number, durationMs = 800) {
-  const [value, setValue] = useState(0);
-  const animRef = useRef<number>(0);
-
-  useEffect(() => {
-    const start = performance.now();
-    const animate = (now: number) => {
-      const elapsed = now - start;
-      const progress = Math.min(elapsed / durationMs, 1);
-      // Ease-out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setValue(Math.round(target * eased));
-      if (progress < 1) animRef.current = requestAnimationFrame(animate);
-    };
-    animRef.current = requestAnimationFrame(animate);
-    return () => {
-      if (animRef.current) cancelAnimationFrame(animRef.current);
-    };
-  }, [target, durationMs]);
-
-  return value;
 }
 
 const TokenWallet = ({ onClose, onNavigate, compact = false }: TokenWalletProps) => {

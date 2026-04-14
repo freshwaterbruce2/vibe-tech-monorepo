@@ -1,7 +1,7 @@
 import { animated, useSpring } from '@react-spring/web';
 import confetti from 'canvas-confetti';
-import React, { useEffect, useTransition } from 'react';
-import { dataStore } from '../../services/dataStore';
+import React, { useEffect } from 'react';
+import { useSensoryPreferences } from '../../hooks/useSensoryPreferences';
 import { playSoundEffect } from '../../services/soundEffects';
 
 interface CelebrationProps {
@@ -17,24 +17,8 @@ interface CelebrationProps {
  * Respects sensory settings for animation control
  */
 export const Celebration = ({ type, points, message, onComplete }: CelebrationProps) => {
-  const [animationEnabled, setAnimationEnabled] = React.useState(true);
+  const { animationEnabled } = useSensoryPreferences();
   const [visible, setVisible] = React.useState(true);
-  const [, startTransition] = useTransition();
-
-  // Load sensory preferences from dataStore
-  useEffect(() => {
-    startTransition(async () => {
-      try {
-        const prefs = await dataStore.getSensoryPreferences();
-        if (prefs) {
-          const { animationSpeed } = prefs;
-          setAnimationEnabled(animationSpeed !== 'none');
-        }
-      } catch (error) {
-        console.error('Could not load animation preferences:', error);
-      }
-    });
-  }, []);
 
   // Trigger celebration effects
   useEffect(() => {
@@ -52,7 +36,7 @@ export const Celebration = ({ type, points, message, onComplete }: CelebrationPr
         fireConfetti({ particleCount: 50, spread: 60 });
         break;
       case 'pointGain':
-        fireConfetti({ particleCount: 30, spread: 40, colors: ['#22D3EE', '#ec4899'] });
+        fireConfetti({ particleCount: 30, spread: 40, colors: ['#22D3EE', '#F97316'] });
         break;
       case 'levelUp':
         fireLevelUpAnimation();
@@ -112,7 +96,7 @@ export const Celebration = ({ type, points, message, onComplete }: CelebrationPr
             <div className="text-6xl mb-4 animate-bounce">🎉</div>
             <h2 className="text-2xl font-bold neon-text-primary">Level Up!</h2>
             {/* eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- empty message needs fallback */}
-            <p className="text-lg mt-2 text-pink-400">{message || "You're on fire! 🔥"}</p>
+            <p className="text-lg mt-2 text-sky-400">{message || "You're on fire! 🔥"}</p>
           </div>
         )}
 
@@ -144,7 +128,7 @@ function fireConfetti(options: confetti.Options = {}) {
     particleCount: 100,
     spread: 70,
     origin: { y: 0.6 },
-    colors: ['#22D3EE', '#38BDF8', '#FF5FD2', '#FBBF24', '#ec4899'],
+    colors: ['#22D3EE', '#38BDF8', '#84CC16', '#FBBF24', '#F97316'],
   };
 
   void confetti({

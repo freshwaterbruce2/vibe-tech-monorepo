@@ -1,6 +1,5 @@
 // UI components for vibe-tutor
 export { default as AchievementCenter } from './AchievementCenter';
-export { default as AchievementPopup } from './AchievementPopup';
 export { default as AchievementToast } from './AchievementToast';
 export { default as CelebrationEffect } from './CelebrationEffect';
 export { default as Celebrations } from './Celebrations';
