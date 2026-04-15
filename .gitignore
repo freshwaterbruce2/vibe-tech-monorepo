@@ -56,6 +56,8 @@ npm-shrinkwrap.json
 # Local Claude settings (machine-specific)
 .claude/settings.local.json
 **/.claude/settings.local.json
+.claude/worktrees/
+**/.claude/worktrees/
 
 # Local editor/AI assistant tooling
 .codex/
