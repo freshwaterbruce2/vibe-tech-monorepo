@@ -1,5 +1,6 @@
 import type { IAIService } from '../types/ai';
 import { FileSystemService } from './FileSystemService';
+import { logger } from './Logger';
 import type { ArchitectureAnalyzer } from './analysis/ArchitectureAnalyzer';
 import type { DebtAnalyzer } from './analysis/DebtAnalyzer';
 import type { PatternAnalyzer } from './analysis/PatternAnalyzer';
@@ -29,7 +30,7 @@ export class CodebaseAnalyzer {
    * Analyze a specific file using all analyzers
    */
   async analyzeFile(content: string, filename: string): Promise<AnalysisResult> {
-    console.log(`Analyzing ${filename}...`);
+    logger.debug(`Analyzing ${filename}...`);
 
     const [patterns, debt, architecture] = await Promise.all([
       this.patternAnalyzer.analyze(content),
@@ -101,7 +102,7 @@ export class CodebaseAnalyzer {
 
       return context;
     } catch (error) {
-      console.error('RAG retrieval failed:', error);
+      logger.error('RAG retrieval failed:', error);
       return '';
     }
   }

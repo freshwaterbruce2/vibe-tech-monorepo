@@ -12,6 +12,7 @@ import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 import App from './App';
 import { ProductionErrorBoundary } from './components/ErrorBoundary/ProductionErrorBoundary';
 import { installTauriShim } from './services/tauriShim';
+import { logger } from './services/Logger';
 
 import './styles/loading.css';
 import './index.css';
@@ -57,7 +58,7 @@ const shimWithTimeout = Promise.race([
   installTauriShim(),
   new Promise<void>((resolve) => {
     shimTimeoutId = setTimeout(() => {
-      console.warn('[TauriShim] Installation timed out after 10s — rendering without shim');
+      logger.warn('[TauriShim] Installation timed out after 10s — rendering without shim');
       resolve();
     }, 10000);
   }),
@@ -73,7 +74,7 @@ shimWithTimeout.then(() => {
   );
   (window as any).__APP_MOUNTED__ = true;
 }).catch((err) => {
-  console.error('[TauriShim] Fatal error:', err);
+  logger.error('[TauriShim] Fatal error:', err);
   ReactDOM.createRoot(root).render(
     <StrictMode>
       <ErrorBoundary>

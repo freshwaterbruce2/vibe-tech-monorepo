@@ -6,6 +6,7 @@
 import { AlertCircle, Bug, RefreshCw, Send } from 'lucide-react';
 import { Component, useState, type ComponentType, type ErrorInfo, type ReactElement, type ReactNode } from 'react';
 import styled from 'styled-components';
+import { logger } from '../../../services/Logger';
 
 /** Props for the ErrorBoundary component */
 export interface ErrorBoundaryProps {
@@ -184,7 +185,7 @@ function DefaultErrorFallback({
       await sendReport();
       setReportSent(true);
     } catch (err) {
-      console.error('Failed to send error report:', err);
+      logger.error('Failed to send error report:', err);
     } finally {
       setReportSending(false);
     }
@@ -278,7 +279,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Log error to console in development
     if (process.env['NODE_ENV'] === 'development') {
-      console.error('ErrorBoundary caught an error:', error, errorInfo);
+      logger.error('ErrorBoundary caught an error:', error, errorInfo);
     }
 
     // Update state with error info
@@ -351,7 +352,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
       this.setState({ reportSent: true });
     } catch (err) {
-      console.error('Failed to send error report:', err);
+      logger.error('Failed to send error report:', err);
       throw err;
     } finally {
       this.setState({ reportSending: false });

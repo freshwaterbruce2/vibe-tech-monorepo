@@ -95,7 +95,7 @@ const AIChat = ({
     };
     const handleResizeEnd = () => {
       setIsResizing(false);
-      window.electron?.store?.set('aiChatWidth', width.toString()).catch(console.error);
+      window.electron?.store?.set('aiChatWidth', width.toString()).catch((e) => logger.error('Failed to save chat width', e));
     };
     document.addEventListener('mousemove', handleResizeMove);
     document.addEventListener('mouseup', handleResizeEnd);
@@ -107,7 +107,7 @@ const AIChat = ({
 
   useEffect(() => {
     if (!isResizing && window.electron?.store) {
-        window.electron.store.set('aiChatWidth', width.toString()).catch(console.error);
+        window.electron.store.set('aiChatWidth', width.toString()).catch((e) => logger.error('Failed to save chat width', e));
     }
   }, [width, isResizing]);
 
@@ -386,7 +386,7 @@ const AIChat = ({
         await onSendMessage(messageText);
       }
     } catch (error) {
-      console.error('[AIChat] Failed to send message:', error);
+      logger.error('[AIChat] Failed to send message:', error);
       onAddMessage?.({
         id: Date.now().toString() + '-error',
         role: 'assistant',

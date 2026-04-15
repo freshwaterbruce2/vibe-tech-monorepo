@@ -73,7 +73,7 @@ export function useAppServices() {
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to initialize AI services';
         setServiceError(message);
-        console.error('AI Init Failed', err);
+        logger.error('AI Init Failed', err);
       }
     };
 

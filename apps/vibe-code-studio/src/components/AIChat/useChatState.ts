@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 
 import type { AIMessage } from '../../types';
+import { logger } from '../../services/Logger';
 
 import type { ChatMode } from './types';
 import { DEFAULT_WIDTH, MAX_WIDTH, MIN_WIDTH } from './types';
@@ -67,7 +68,7 @@ export function useChatState(options: UseChatStateOptions = {}): UseChatStateRet
                     }
                 }
             } catch (error) {
-                console.error('Failed to load chat width', error);
+                logger.error('Failed to load chat width', error);
             }
         };
         loadWidth();
@@ -103,7 +104,7 @@ export function useChatState(options: UseChatStateOptions = {}): UseChatStateRet
             setIsResizing(false);
             if (window.electron?.store) {
                 window.electron.store.set(CHAT_WIDTH_KEY, String(width))
-                    .catch(err => console.error('Failed to save chat width', err));
+                    .catch(err => logger.error('Failed to save chat width', err));
             }
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
@@ -117,7 +118,7 @@ export function useChatState(options: UseChatStateOptions = {}): UseChatStateRet
     useEffect(() => {
         if (!isResizing && window.electron?.store) {
             window.electron.store.set(CHAT_WIDTH_KEY, String(width))
-                .catch(err => console.error('Failed to save chat width', err));
+                .catch(err => logger.error('Failed to save chat width', err));
         }
     }, [width, isResizing]);
 

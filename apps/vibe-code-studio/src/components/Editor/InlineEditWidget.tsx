@@ -1,6 +1,7 @@
 import { Check, RefreshCw, Sparkles, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { inlineEditService, DiffResult } from '../../services/ai/InlineEditService';
+import { logger } from '../../services/Logger';
 import { DiffView } from './DiffView';
 
 interface InlineEditWidgetProps {
@@ -49,7 +50,7 @@ export const InlineEditWidget = ({
       setGeneratedCode(response.modifiedCode);
       setDiffs(response.diff);
     } catch (err) {
-      console.error('Inline Edit Failed:', err);
+      logger.error('Inline Edit Failed:', err);
       setError('Failed to generate edit');
     } finally {
       setIsThinking(false);

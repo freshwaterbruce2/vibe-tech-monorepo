@@ -1,5 +1,6 @@
 import type * as Monaco from 'monaco-editor';
 import type { UnifiedAIService } from './UnifiedAIService';
+import { logger } from '../Logger';
 
 export class AutoImportProvider {
   constructor(private readonly aiService: UnifiedAIService) {}
@@ -55,7 +56,7 @@ export class AutoImportProvider {
       }));
 
     } catch (error) {
-      console.warn('AutoImportProvider: Failed to resolve imports', error);
+      logger.warn('AutoImportProvider: Failed to resolve imports', error);
       return [];
     }
   }

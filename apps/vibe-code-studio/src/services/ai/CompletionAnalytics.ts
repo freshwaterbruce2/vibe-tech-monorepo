@@ -53,7 +53,7 @@ export class CompletionAnalytics {
     }
 
     // Auto-prune on init
-    this.storage.pruneOldData(this.config).catch(console.error);
+    this.storage.pruneOldData(this.config).catch((e) => logger.error('Failed to prune old analytics data', e));
 
     if (this.config.debug) {
       logger.debug('📊 CompletionAnalytics initialized:', this.sessionId);

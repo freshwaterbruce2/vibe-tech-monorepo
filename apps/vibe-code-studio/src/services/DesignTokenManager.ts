@@ -49,6 +49,8 @@ export interface DesignTokens {
 
 export type ExportFormat = 'css' | 'tailwind' | 'javascript' | 'typescript' | 'scss';
 
+import { logger } from './Logger';
+
 export class DesignTokenManager {
   private tokens: DesignTokens;
 
@@ -321,7 +323,7 @@ export class DesignTokenManager {
         try {
           return DesignTokenManager.fromJSON(stored);
         } catch (e) {
-          console.error('Failed to parse stored tokens:', e);
+          logger.error('Failed to parse stored tokens:', e);
         }
       }
     }

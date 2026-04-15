@@ -1,4 +1,5 @@
 import { FeatureFlagClient } from '@vibetech/feature-flags-sdk-node';
+import { logger } from './Logger';
 
 /**
  * Feature Flag Service for Vibe Code Studio
@@ -14,7 +15,7 @@ class FeatureFlagService {
    */
   async initialize(): Promise<void> {
     if (this.isInitialized) {
-      console.warn('Feature flags already initialized');
+      logger.warn('Feature flags already initialized');
       return;
     }
 
@@ -23,14 +24,14 @@ class FeatureFlagService {
       environment: process.env.NODE_ENV === 'production' ? 'prod' : 'dev',
       enableWebSocket: true, // Real-time updates
       onKillSwitch: (event: { flagKey: string }) => {
-        console.warn('⚠️ Kill switch triggered:', event.flagKey);
+        logger.warn('Kill switch triggered:', event.flagKey);
         // Handle kill switches (e.g., disable AI features)
       },
     });
 
     await this.client.initialize();
     this.isInitialized = true;
-    console.log('✅ Feature flags initialized for Vibe Code Studio');
+    logger.info('Feature flags initialized for Vibe Code Studio');
   }
 
   /**

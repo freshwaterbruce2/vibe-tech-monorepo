@@ -102,7 +102,7 @@ export class TaskHistoryService {
 
       request.onsuccess = () => {
         // Clean up old entries if history exceeds max size
-        this.cleanupOldEntries().catch(console.error);
+        this.cleanupOldEntries().catch((e) => logger.error('Failed to cleanup old task history entries', e));
         resolve();
       };
 

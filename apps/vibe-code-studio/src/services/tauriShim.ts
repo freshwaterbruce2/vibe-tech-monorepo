@@ -9,6 +9,8 @@
  * Call `installTauriShim()` once at app startup (main.tsx / App.tsx).
  */
 
+import { logger } from './Logger';
+
 let installed = false;
 
 export async function installTauriShim(): Promise<void> {
@@ -272,7 +274,7 @@ export async function installTauriShim(): Promise<void> {
       async set(_key: string, _value: string) { return { success: true }; },
       async delete(_key: string) { return { success: true }; },
       async initSemanticIndex(_path: string) {
-        console.info('[TauriShim] apex.initSemanticIndex is a no-op — use MCP semantic search');
+        logger.info('[TauriShim] apex.initSemanticIndex is a no-op — use MCP semantic search');
         return { success: false, error: 'Semantic search available via MCP memory server' };
       },
       async updateSemanticIndex(_path: string, _files: string[]) {
@@ -302,7 +304,7 @@ export async function installTauriShim(): Promise<void> {
           case 'db:getPatterns':
             return await invoke('db_get_patterns', { limit: args[0] ?? 100 });
           default:
-            console.warn(`[TauriShim] Unhandled ipcRenderer.invoke channel: ${channel}`);
+            logger.warn(`[TauriShim] Unhandled ipcRenderer.invoke channel: ${channel}`);
             return null;
         }
       },
@@ -364,6 +366,6 @@ export async function installTauriShim(): Promise<void> {
   (window as any).electron = shim;
   installed = true;
   } catch (err) {
-    console.error('[TauriShim] Failed to initialize — app will render without shim:', err);
+    logger.error('[TauriShim] Failed to initialize — app will render without shim:', err);
   }
 }

@@ -1,4 +1,5 @@
 import { unifiedAI } from './UnifiedAIService';
+import { logger } from '../Logger';
 
 interface CompletionContext {
   prefix: string; // Code before cursor
@@ -53,7 +54,7 @@ export class TabCompletionService {
         }
       } catch (err) {
         // Silent fail for autocomplete - don't annoy user
-        console.debug('Autocomplete failed', err);
+        logger.debug('Autocomplete failed', err);
         callback(null);
       } finally {
         this.isRequesting = false;
