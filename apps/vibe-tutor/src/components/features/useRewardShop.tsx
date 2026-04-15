@@ -62,7 +62,7 @@ export function useRewardShop({ userTokens, onSpendTokens, onPurchaseComplete }:
       cost: 150,
       category: 'avatars',
       icon: <span className="text-3xl">😎</span>,
-      color: 'from-purple-500 to-pink-500',
+      color: 'from-purple-500 to-sky-500',
     },
     {
       id: 'avatar-ninja',
@@ -138,7 +138,7 @@ export function useRewardShop({ userTokens, onSpendTokens, onPurchaseComplete }:
       cost: 180,
       category: 'perks',
       icon: <Music className="w-8 h-8" />,
-      color: 'from-fuchsia-400 to-blue-500',
+      color: 'from-violet-400 to-blue-500',
     },
     {
       id: 'perk-themes',
@@ -147,7 +147,7 @@ export function useRewardShop({ userTokens, onSpendTokens, onPurchaseComplete }:
       cost: 150,
       category: 'perks',
       icon: <span className="text-3xl">🎨</span>,
-      color: 'from-pink-400 to-purple-500',
+      color: 'from-sky-400 to-purple-500',
     },
     {
       id: 'perk-badges',
@@ -177,7 +177,7 @@ export function useRewardShop({ userTokens, onSpendTokens, onPurchaseComplete }:
       cost: 400,
       category: 'real-rewards',
       icon: <span className="text-3xl">🎬</span>,
-      color: 'from-red-500 to-pink-500',
+      color: 'from-red-500 to-sky-500',
       maxQuantity: 1,
     },
     {
@@ -187,7 +187,7 @@ export function useRewardShop({ userTokens, onSpendTokens, onPurchaseComplete }:
       cost: 200,
       category: 'real-rewards',
       icon: <span className="text-3xl">🍦</span>,
-      color: 'from-pink-400 to-yellow-400',
+      color: 'from-sky-400 to-yellow-400',
       maxQuantity: 3,
     },
     {

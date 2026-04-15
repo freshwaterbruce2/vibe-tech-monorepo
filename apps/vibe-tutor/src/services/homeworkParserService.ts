@@ -2,6 +2,7 @@ import { createChatCompletion } from './secureClient';
 
 import type { ParsedHomework } from '../types';
 import { learningAnalytics } from './learningAnalytics';
+import { logger } from '../utils/logger';
 
 
 
@@ -66,14 +67,14 @@ export const parseHomeworkFromVoice = async (transcript: string): Promise<Parsed
                     dueDate: parsed.dueDate ?? '',
                 };
             } catch (parseError) {
-                console.error("Failed to parse homework response:", parseError);
+                logger.error("Failed to parse homework response:", parseError);
                 // Fallback: try to extract info manually
                 return null;
             }
         }
         return null;
     } catch (error) {
-        console.error("Error parsing homework with DeepSeek:", error);
+        logger.error("Error parsing homework with DeepSeek:", error);
         return null;
     }
 };

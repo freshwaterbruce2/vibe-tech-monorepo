@@ -3,6 +3,7 @@ import type { ChatMessage } from '../types';
 import { learningAnalytics } from './learningAnalytics';
 import { createChatCompletion, type DeepSeekMessage } from './secureClient';
 import { usageMonitor } from './usageMonitor';
+import { logger } from '../utils/logger';
 
 // Maximum conversation history size to prevent memory bloat
 // Keeps system message + last MAX_HISTORY_SIZE messages
@@ -100,7 +101,7 @@ export const sendMessageToBuddy = async (
 
     return assistantMessage;
   } catch (error) {
-    console.error('Error sending message to buddy:', error);
+    logger.error('Error sending message to buddy:', error);
     return "Sorry, I'm having a little trouble connecting right now. Let's talk later.";
   }
 };
@@ -133,7 +134,7 @@ export const getMoodAnalysis = async (mood: string, note?: string): Promise<stri
 
     return response ?? "It's okay to feel your feelings. Be kind to yourself today.";
   } catch (error) {
-    console.error('Error getting mood analysis:', error);
+    logger.error('Error getting mood analysis:', error);
     return "It's okay to feel your feelings. Be kind to yourself today.";
   }
 };

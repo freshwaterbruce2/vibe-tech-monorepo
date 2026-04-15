@@ -47,7 +47,7 @@ function DashboardSection({
         <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${accent}`}>
           <Icon className="w-5 h-5 text-white" />
         </div>
-        <h2 className="text-lg font-bold text-slate-200">{title}</h2>
+        <h2 className="min-w-0 truncate text-lg font-bold text-slate-200">{title}</h2>
       </div>
       <div className="p-6">{children}</div>
     </section>
@@ -124,14 +124,14 @@ const ParentDashboard = ({
   const pendingRewards = claimedRewards.length;
 
   return (
-    <div className="h-full flex flex-col overflow-hidden animate-fade-in">
+    <div className="h-full flex flex-col overflow-x-hidden min-w-0 animate-fade-in">
       {/* ─── Header ─── */}
       <div className="shrink-0 px-5 pt-5 pb-4 bg-gradient-to-b from-slate-900/80 to-transparent">
-        <div className="flex items-center justify-between mb-5">
-          <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400">
+        <div className="flex flex-wrap items-center gap-2 mb-5">
+          <h1 className="min-w-0 flex-1 truncate text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400">
             Parent Dashboard
           </h1>
-          <div className="flex items-center gap-2">
+          <div className="shrink-0 flex items-center gap-2">
             {onNavigate && (
               <button
                 onClick={() => onNavigate('parent-rules')}
@@ -150,7 +150,7 @@ const ParentDashboard = ({
         </div>
 
         {/* Quick stats */}
-        <div className="grid grid-cols-3 gap-3 mb-2">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-2">
           <div className="rounded-xl py-3 px-4 bg-gradient-to-br from-teal-500/10 to-teal-500/5 border border-teal-500/20 text-center">
             <p className="text-2xl font-black text-teal-400 tabular-nums">{completedTasks}</p>
             <p className="text-xs text-slate-400 font-medium mt-0.5">Tasks Done</p>
@@ -203,7 +203,7 @@ const ParentDashboard = ({
         <DashboardSection
           icon={Gift}
           title="Reward Settings"
-          accent="bg-gradient-to-br from-pink-500 to-rose-500"
+          accent="bg-gradient-to-br from-sky-500 to-rose-500"
         >
           <RewardSettings
             rewards={rewards}

@@ -1,5 +1,6 @@
 import { useReducer, useEffect, useCallback } from 'react';
 import type { SetStateAction } from 'react';
+import { logger } from '../utils/logger';
 import { dataStore } from '../services/dataStore';
 import type { Reward, ClaimedReward } from '../types';
 
@@ -73,7 +74,7 @@ export const useRewards = () => {
           payload: { rewards: loadedRewards, claimedRewards: loadedClaimed },
         });
       } catch (error) {
-        console.error('[useRewards] Failed to load data:', error);
+        logger.error('[useRewards] Failed to load data:', error);
       }
     };
     void loadData();
@@ -81,7 +82,7 @@ export const useRewards = () => {
 
   // Persist rewards to dataStore whenever they change
   useEffect(() => {
-    dataStore.saveRewards(state.rewards).catch(console.error);
+    dataStore.saveRewards(state.rewards).catch((e) => logger.error(e));
   }, [state.rewards]);
 
   /**
@@ -91,7 +92,7 @@ export const useRewards = () => {
   const claimReward = (rewardId: string, currentPoints: number): number => {
     const reward = state.rewards.find((r) => r.id === rewardId);
     if (!reward) {
-      console.error('[useRewards] Reward not found:', rewardId);
+      logger.error('[useRewards] Reward not found:', rewardId);
       return 0;
     }
 
@@ -114,7 +115,7 @@ export const useRewards = () => {
   const handleRewardApproval = (claimedRewardId: string, isApproved: boolean): number => {
     const rewardToHandle = state.claimedRewards.find((r) => r.id === claimedRewardId);
     if (!rewardToHandle) {
-      console.error('[useRewards] Claimed reward not found:', claimedRewardId);
+      logger.error('[useRewards] Claimed reward not found:', claimedRewardId);
       return 0;
     }
 

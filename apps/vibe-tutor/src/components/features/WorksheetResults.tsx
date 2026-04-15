@@ -56,7 +56,7 @@ const WorksheetResults = ({
   // Performance message based on score
   const getPerformanceMessage = () => {
     if (score >= 90) return { text: 'Outstanding!', emoji: '🎉', color: 'text-yellow-400' };
-    if (score >= 80) return { text: 'Great Job!', emoji: '⭐', color: 'text-fuchsia-400' };
+    if (score >= 80) return { text: 'Great Job!', emoji: '⭐', color: 'text-violet-400' };
     if (score >= 70) return { text: 'Good Work!', emoji: '👍', color: 'text-blue-400' };
     if (score >= 60) return { text: 'Nice Try!', emoji: '💪', color: 'text-purple-400' };
     if (score >= 50) return { text: 'Keep Practicing!', emoji: '📚', color: 'text-orange-400' };
@@ -100,7 +100,7 @@ const WorksheetResults = ({
 
           {/* Score Display */}
           <div className="text-center py-6">
-            <div className="text-7xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500 mb-2">
+            <div className="text-7xl md:text-8xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-sky-500 mb-2">
               {score}%
             </div>
             <p className="text-text-secondary">

@@ -17,7 +17,7 @@ export default function MathAdventureGame(props: MathAdventureProps) {
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--text-secondary)]">Math Runner</p>
-                <h2 className="bg-gradient-to-r from-[#a78bfa] via-[#22d3ee] to-[#f472b6] bg-clip-text text-2xl font-black tracking-tight text-transparent md:text-3xl">
+                <h2 className="bg-gradient-to-r from-[#a78bfa] via-[#22d3ee] to-[#38bdf8] bg-clip-text text-2xl font-black tracking-tight text-transparent md:text-3xl">
                   Charge the lane. Spend it on motion.
                 </h2>
               </div>
@@ -90,7 +90,7 @@ export default function MathAdventureGame(props: MathAdventureProps) {
                 onPointerCancel={g.clearPlayfieldGesture} onPointerDown={g.handlePlayfieldPointerDown} onPointerUp={g.handlePlayfieldPointerUp}
                 style={{ touchAction: 'none' }}>
                 {[0, 1, 2, 3].map((lane) => (
-                  <div key={lane} className="absolute left-0 right-0 border-t border-dashed border-fuchsia-200/10" style={{ top: laneTop(lane as LaneIndex) }} />
+                  <div key={lane} className="absolute left-0 right-0 border-t border-dashed border-violet-200/10" style={{ top: laneTop(lane as LaneIndex) }} />
                 ))}
 
                 <div className="pointer-events-none absolute left-2 right-2 z-0 h-14 rounded-[20px] border border-cyan-300/15 bg-cyan-300/8 shadow-[0_0_0_1px_rgba(34,211,238,0.08)] transition sm:h-16"
@@ -104,15 +104,15 @@ export default function MathAdventureGame(props: MathAdventureProps) {
                   if (enc.kind === 'math') {
                     return (
                       <div key={enc.id} className="absolute bottom-6 w-[156px] sm:w-[168px] xl:bottom-10 xl:w-[180px]" style={{ left }}>
-                        <div className="mb-3 rounded-2xl border border-fuchsia-300/20 bg-slate-950/88 px-3 py-2 text-center shadow-lg shadow-fuchsia-950/25">
-                          <div className="text-[11px] uppercase tracking-[0.25em] text-fuchsia-200/65">Math Gate</div>
+                        <div className="mb-3 rounded-2xl border border-violet-300/20 bg-slate-950/88 px-3 py-2 text-center shadow-lg shadow-violet-950/25">
+                          <div className="text-[11px] uppercase tracking-[0.25em] text-violet-200/65">Math Gate</div>
                           <div className="mt-1 text-xl font-black sm:text-2xl">{enc.problem.prompt}</div>
                         </div>
                         <div className="relative h-[300px]">
                           {enc.problem.answerChoices.map((choice, lane) => (
                             <button type="button" key={`${enc.id}-${lane}`}
                               className={`absolute left-0 right-0 flex h-12 items-center justify-between rounded-2xl border px-3 font-black transition sm:h-14 sm:px-4 ${
-                                g.playerLane === lane ? 'border-fuchsia-200/70 bg-gradient-to-r from-violet-500/25 via-cyan-400/20 to-fuchsia-500/25 text-white shadow-[0_0_0_1px_rgba(192,132,252,0.35)]' : 'border-white/10 bg-slate-900/80 text-slate-100 hover:border-fuchsia-200/35'
+                                g.playerLane === lane ? 'border-violet-200/70 bg-gradient-to-r from-violet-500/25 via-cyan-400/20 to-violet-500/25 text-white shadow-[0_0_0_1px_rgba(192,132,252,0.35)]' : 'border-white/10 bg-slate-900/80 text-slate-100 hover:border-violet-200/35'
                               }`}
                               style={{ top: laneTop(lane as LaneIndex) }}
                               onClick={() => g.selectLane(lane as LaneIndex)}>
@@ -136,13 +136,13 @@ export default function MathAdventureGame(props: MathAdventureProps) {
                           </div>
                         </div>
                       ) : (
-                        <div className="rounded-[24px] border border-fuchsia-200/25 bg-gradient-to-b from-slate-950/92 via-fuchsia-950/40 to-slate-900/88 px-3 py-3 shadow-[0_18px_35px_-20px_rgba(244,114,182,0.72)]">
+                        <div className="rounded-[24px] border border-violet-200/25 bg-gradient-to-b from-slate-950/92 via-violet-950/40 to-slate-900/88 px-3 py-3 shadow-[0_18px_35px_-20px_rgba(244,114,182,0.72)]">
                           <div className="flex h-16 items-stretch justify-between gap-2">
-                            <div className="w-4 rounded-full bg-gradient-to-b from-fuchsia-300/95 via-fuchsia-500/70 to-violet-500/80 shadow-[0_0_20px_rgba(244,114,182,0.45)]" />
-                            <div className="flex-1 rounded-[18px] border border-fuchsia-300/35 bg-[linear-gradient(90deg,rgba(244,114,182,0.08),rgba(255,255,255,0.02),rgba(244,114,182,0.08))]" />
-                            <div className="w-4 rounded-full bg-gradient-to-b from-fuchsia-300/95 via-fuchsia-500/70 to-violet-500/80 shadow-[0_0_20px_rgba(244,114,182,0.45)]" />
+                            <div className="w-4 rounded-full bg-gradient-to-b from-violet-300/95 via-violet-500/70 to-violet-500/80 shadow-[0_0_20px_rgba(244,114,182,0.45)]" />
+                            <div className="flex-1 rounded-[18px] border border-violet-300/35 bg-[linear-gradient(90deg,rgba(244,114,182,0.08),rgba(255,255,255,0.02),rgba(244,114,182,0.08))]" />
+                            <div className="w-4 rounded-full bg-gradient-to-b from-violet-300/95 via-violet-500/70 to-violet-500/80 shadow-[0_0_20px_rgba(244,114,182,0.45)]" />
                           </div>
-                          <div className="mt-2 h-1.5 rounded-full bg-gradient-to-r from-fuchsia-400/20 via-fuchsia-200/70 to-fuchsia-400/20" />
+                          <div className="mt-2 h-1.5 rounded-full bg-gradient-to-r from-violet-400/20 via-violet-200/70 to-violet-400/20" />
                         </div>
                       )}
                     </div>
@@ -158,7 +158,7 @@ export default function MathAdventureGame(props: MathAdventureProps) {
                   <div className="relative">
                     <div className={`absolute left-3 top-16 h-4 w-16 rounded-full bg-violet-400/30 blur-md ${g.activeAction?.type === 'dash' ? 'scale-125' : ''}`} />
                     <div className={`relative flex h-14 w-16 items-center justify-center rounded-[22px] border text-white shadow-[0_15px_40px_-22px_rgba(139,92,246,0.95)] ${
-                      g.activeAction?.type === 'dash' ? 'border-fuchsia-300/70 bg-gradient-to-r from-fuchsia-500/80 to-violet-400/75'
+                      g.activeAction?.type === 'dash' ? 'border-violet-300/70 bg-gradient-to-r from-violet-500/80 to-violet-400/75'
                         : g.activeAction?.type === 'jump' ? 'border-cyan-300/70 bg-gradient-to-r from-cyan-500/80 to-violet-400/75'
                         : 'border-violet-300/70 bg-gradient-to-r from-violet-500/85 to-cyan-400/70'
                     }`}>
@@ -181,7 +181,7 @@ export default function MathAdventureGame(props: MathAdventureProps) {
                         <div className="rounded-2xl border border-white/8 bg-white/5 p-3"><div className="text-xs uppercase tracking-[0.24em] text-slate-400">Best Streak</div><div className="mt-1 text-2xl font-black">{g.runnerState.streak}</div></div>
                       </div>
                       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                        <button onClick={g.resetRun} className="min-h-[56px] flex-1 rounded-full bg-gradient-to-r from-[#a78bfa] via-[#22d3ee] to-[#f472b6] px-4 py-3 font-black text-slate-950 transition hover:brightness-110">Run Again</button>
+                        <button onClick={g.resetRun} className="min-h-[56px] flex-1 rounded-full bg-gradient-to-r from-[#a78bfa] via-[#22d3ee] to-[#38bdf8] px-4 py-3 font-black text-slate-950 transition hover:brightness-110">Run Again</button>
                         <button onClick={g.onClose} className="glass-card min-h-[56px] flex-1 rounded-full border border-[var(--glass-border)] px-4 py-3 font-semibold text-white transition hover:bg-white/10">Collect Rewards</button>
                       </div>
                     </div>

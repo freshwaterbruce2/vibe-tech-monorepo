@@ -1,4 +1,5 @@
 import { useEffect, useState, useTransition } from 'react';
+import { logger } from '../utils/logger';
 import { dataStore } from '../services/dataStore';
 
 interface SensoryPreferences {
@@ -18,7 +19,7 @@ export function useSensoryPreferences(): SensoryPreferences {
           setAnimationEnabled(prefs.animationSpeed !== 'none');
         }
       } catch (error) {
-        console.error('Could not load sensory preferences:', error);
+        logger.error('Could not load sensory preferences:', error);
       }
     });
   }, []);

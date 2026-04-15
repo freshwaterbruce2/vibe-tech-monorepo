@@ -27,6 +27,7 @@ import { useRewards } from './hooks/useRewards';
 import { createGameCompletionPayload, type GameCompletionDetails } from './services/gameProgression';
 import { useTokenEconomy } from './hooks/useTokenEconomy';
 import { useWorksheet } from './hooks/useWorksheet';
+import { logger } from './utils/logger';
 
 // Static imports — core views needed at first paint
 import HomeworkDashboard from './components/dashboard/HomeworkDashboard';
@@ -53,7 +54,7 @@ const WellnessHub = lazy(async () => import('./components/features/WellnessHub')
 // Loading fallback for lazy-loaded views
 const ViewLoadingFallback = () => (
   <div className="flex items-center justify-center min-h-[200px]">
-    <div className="w-8 h-8 border-3 border-purple-400 border-t-transparent rounded-full animate-spin" />
+    <div className="w-8 h-8 border-3 border-violet-400 border-t-transparent rounded-full animate-spin" />
   </div>
 );
 
@@ -136,7 +137,7 @@ const App = () => {
   useEffect(() => {
     const initializeData = async () => {
       try {
-        console.debug('[v1.5.0] Initializing SQLite database...');
+        logger.debug('[v1.5.0] Initializing SQLite database...');
         await dataStore.initialize(); // Auto-migrates from localStorage if needed
         await appIntegration.initialize();
 
@@ -148,9 +149,9 @@ const App = () => {
           setPlaylists(plsts);
         });
 
-        console.debug('[v1.5.0] Database initialized successfully. Data loaded from SQLite.');
+        logger.debug('[v1.5.0] Database initialized successfully. Data loaded from SQLite.');
       } catch (error) {
-        console.error('[v1.5.0] Database initialization failed, using fallback:', error);
+        logger.error('[v1.5.0] Database initialization failed, using fallback:', error);
         // dataStore automatically falls back to localStorage on errors
       }
     };
@@ -159,7 +160,7 @@ const App = () => {
 
   // Save playlists to dataStore (other data saved by custom hooks)
   useEffect(() => {
-    dataStore.saveMusicPlaylists(playlists).catch(console.error);
+    dataStore.saveMusicPlaylists(playlists).catch((err) => logger.error(err));
   }, [playlists]);
 
   useEffect(() => {

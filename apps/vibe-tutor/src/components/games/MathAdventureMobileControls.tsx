@@ -31,7 +31,7 @@ export default function MathAdventureMobileControls({
                 ? `${actionVerb(upcomingObstacle.requiredAction)} ready`
                 : 'Tap the answer rail or field to steer'}
           </span>
-          <span className="font-semibold text-[#f472b6]">
+          <span className="font-semibold text-[#38bdf8]">
             {upcomingMathGate ? `Lane ${LANE_LABELS[playerLane]}` : `Boost ${boostCharges}`}
           </span>
         </div>
@@ -44,7 +44,7 @@ export default function MathAdventureMobileControls({
                   onClick={() => selectLane(lane as LaneIndex)}
                   className={`min-h-[60px] rounded-[20px] border px-2 py-2 text-center transition active:scale-95 ${
                     isSelected
-                      ? 'border-cyan-200/55 bg-gradient-to-br from-[#22d3ee] via-[#a78bfa] to-[#f472b6] text-slate-950 shadow-[0_14px_30px_-20px_rgba(34,211,238,0.95)]'
+                      ? 'border-cyan-200/55 bg-gradient-to-br from-[#22d3ee] via-[#a78bfa] to-[#38bdf8] text-slate-950 shadow-[0_14px_30px_-20px_rgba(34,211,238,0.95)]'
                       : 'glass-card border border-[var(--glass-border)] text-white'
                   }`}>
                   <span className={`block text-[10px] font-semibold uppercase tracking-[0.24em] ${isSelected ? 'text-slate-900/70' : 'text-[var(--text-secondary)]'}`}>
@@ -73,7 +73,7 @@ export default function MathAdventureMobileControls({
             <button onClick={() => triggerAction('dash')}
               className={`min-h-[58px] rounded-[20px] border px-4 py-2.5 text-left transition active:scale-95 ${
                 hasBoostCharge
-                  ? 'border-fuchsia-200/35 bg-gradient-to-r from-[#f472b6] to-[#a78bfa] text-slate-950'
+                  ? 'border-violet-200/35 bg-gradient-to-r from-[#38bdf8] to-[#a78bfa] text-slate-950'
                   : 'glass-card border border-[var(--glass-border)] text-white/70'
               }`}>
               <div className="flex items-center justify-between">

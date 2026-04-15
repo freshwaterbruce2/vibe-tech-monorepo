@@ -33,7 +33,7 @@ export default function MathAdventureSidebar({
         </div>
       </div>
 
-      <div className="rounded-[24px] border border-[var(--glass-border)] bg-gradient-to-br from-violet-500/10 via-cyan-500/8 to-fuchsia-500/12 p-4">
+      <div className="rounded-[24px] border border-[var(--glass-border)] bg-gradient-to-br from-violet-500/10 via-cyan-500/8 to-violet-500/12 p-4">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[var(--text-secondary)]">Controls</p>
         <div className="mt-3 grid gap-3 text-sm text-slate-200">
           <div className="glass-card rounded-2xl border border-[var(--glass-border)] p-3">
@@ -77,7 +77,7 @@ export default function MathAdventureSidebar({
           Jump
         </button>
         <button onClick={() => triggerAction('dash')}
-          className="rounded-full bg-gradient-to-r from-[#f472b6] to-[#a78bfa] px-4 py-3 font-black text-slate-950 transition hover:brightness-110">
+          className="rounded-full bg-gradient-to-r from-[#38bdf8] to-[#a78bfa] px-4 py-3 font-black text-slate-950 transition hover:brightness-110">
           Dash
         </button>
       </div>

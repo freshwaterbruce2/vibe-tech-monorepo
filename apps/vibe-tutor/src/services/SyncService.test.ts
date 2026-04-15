@@ -67,10 +67,10 @@ vi.mock('@capacitor-community/sqlite', () => {
 
     constructor() {
       const mock = mocks.createMockSQLiteConnection();
-      this.checkConnectionsConsistency = mock.checkConnectionsConsistency;
-      this.isConnection = mock.isConnection;
-      this.retrieveConnection = mock.retrieveConnection;
-      this.createConnection = mock.createConnection;
+      this.checkConnectionsConsistency = mock.checkConnectionsConsistency!;
+      this.isConnection = mock.isConnection!;
+      this.retrieveConnection = mock.retrieveConnection!;
+      this.createConnection = mock.createConnection!;
     }
   };
 
@@ -248,7 +248,7 @@ describe('SyncService.ts', () => {
         await syncService.logEvent('Test', []);
 
         // Verify database operations were called
-        const mockDB = (syncService as unknown as Record<string, unknown>).db;
+        const mockDB = (syncService as unknown as Record<string, Record<string, ReturnType<typeof vi.fn>>>).db!;
         expect(mockDB).toBeDefined();
         expect(mockDB.open).toHaveBeenCalled();
         expect(mockDB.execute).toHaveBeenCalledWith('PRAGMA journal_mode=WAL;');
@@ -266,10 +266,10 @@ describe('SyncService.ts', () => {
         (syncService as unknown as Record<string, unknown>).db = null;
 
         await syncService.logEvent('Test 1', []);
-        const mockDB1 = (syncService as unknown as Record<string, unknown>).db;
+        const mockDB1 = (syncService as unknown as Record<string, Record<string, ReturnType<typeof vi.fn>>>).db!;
 
         await syncService.logEvent('Test 2', []);
-        const mockDB2 = (syncService as unknown as Record<string, unknown>).db;
+        const mockDB2 = (syncService as unknown as Record<string, Record<string, ReturnType<typeof vi.fn>>>).db;
 
         expect(mockDB1).toBe(mockDB2);
         expect(mockDB1.open).toHaveBeenCalledTimes(1); // Only once
@@ -287,7 +287,7 @@ describe('SyncService.ts', () => {
 
         await syncService.logEvent('Test', []);
 
-        const mockDB = (syncService as unknown as Record<string, unknown>).db;
+        const mockDB = (syncService as unknown as Record<string, Record<string, ReturnType<typeof vi.fn>>>).db!;
         expect(mockDB.execute).toHaveBeenCalledWith(
           expect.stringContaining('CREATE TABLE IF NOT EXISTS local_memories'),
         );
@@ -690,7 +690,7 @@ describe('SyncService.ts', () => {
         (syncService as unknown as Record<string, unknown>).db = mockDB;
         (syncService as unknown as Record<string, unknown>).initialized = true;
 
-        await (syncService as unknown as Record<string, unknown>).markExported([]);
+        await (syncService as unknown as Record<string, ((ids: string[]) => Promise<void>) | undefined>).markExported!([]);
 
         // Should not call database (early return)
         expect(mockDB.run).not.toHaveBeenCalledWith(

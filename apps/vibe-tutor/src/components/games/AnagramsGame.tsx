@@ -87,7 +87,7 @@ const AnagramsGame = memo(function AnagramsGame({ subject, onComplete, onBack }:
         particleCount: 200,
         spread: 100,
         origin: { y: 0.6 },
-        colors: ['#22d3ee', '#ec4899', '#ff5fd2'],
+        colors: ['#22d3ee', '#38BDF8', '#F97316'],
       });
     } else {
       void playSound(result.stars >= 3 ? 'success' : 'pop');
@@ -162,14 +162,14 @@ const AnagramsGame = memo(function AnagramsGame({ subject, onComplete, onBack }:
 
   if (!currentAnagram) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-violet-900 via-blue-900 to-sky-900 p-6 flex items-center justify-center">
         <div className="text-white text-xl">Loading anagrams...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6 pb-36 md:pb-8">
+    <div className="min-h-screen bg-gradient-to-br from-violet-900 via-blue-900 to-sky-900 p-6 pb-36 md:pb-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="glass-card p-4 mb-6 flex items-center justify-between">
@@ -183,7 +183,7 @@ const AnagramsGame = memo(function AnagramsGame({ subject, onComplete, onBack }:
 
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
-              <CheckCircle size={20} className="text-fuchsia-400" />
+              <CheckCircle size={20} className="text-sky-400" />
               <span className="text-white font-medium">
                 {solved.size}/{anagrams.length}
               </span>
@@ -217,7 +217,7 @@ const AnagramsGame = memo(function AnagramsGame({ subject, onComplete, onBack }:
                   key={i}
                   className={`w-3 h-3 rounded-full transition-all duration-300 ${
                     solved.has(i)
-                      ? 'bg-fuchsia-400 scale-110'
+                      ? 'bg-sky-400 scale-110'
                       : i === currentIndex
                         ? 'bg-cyan-400 animate-pulse'
                         : 'bg-white/20'
@@ -275,7 +275,7 @@ const AnagramsGame = memo(function AnagramsGame({ subject, onComplete, onBack }:
               placeholder="Type your answer..."
               className={`w-full px-6 py-4 bg-white/10 border-2 rounded-lg text-white text-xl font-bold text-center placeholder-white/50 focus:outline-none focus:ring-2 transition-all ${
                 feedback === 'correct'
-                  ? 'border-fuchsia-500 focus:ring-fuchsia-500'
+                  ? 'border-sky-500 focus:ring-sky-500'
                   : feedback === 'wrong'
                     ? 'border-red-500 focus:ring-red-500 shake'
                     : 'border-purple-500 focus:ring-cyan-500'
@@ -284,7 +284,7 @@ const AnagramsGame = memo(function AnagramsGame({ subject, onComplete, onBack }:
             />
 
             {feedback === 'correct' && (
-              <div className="mt-2 flex items-center justify-center gap-2 text-fuchsia-400">
+              <div className="mt-2 flex items-center justify-center gap-2 text-sky-400">
                 <CheckCircle size={20} />
                 <span className="font-bold">Correct!</span>
               </div>

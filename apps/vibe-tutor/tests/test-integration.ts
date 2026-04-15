@@ -307,7 +307,7 @@ async function runIntegrationTests() {
     console.log('✅ Performance report generated');
     console.log('   Report length:', report.length, 'characters');
 
-    const suggestions = performanceService.analyzePerfomance();
+    const suggestions = performanceService.analyzePerformance();
     console.log('   Optimization suggestions:', suggestions.length);
 
     testsPassed++;

@@ -72,7 +72,7 @@ const RobuxRewardShop = ({
               onClick={() => setSelectedCategory(category.id)}
               className={`px-5 py-2.5 rounded-full font-bold transition-all whitespace-nowrap shadow-sm snap-start shrink-0 flex items-center gap-2 ${
                 selectedCategory === category.id
-                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)] scale-105'
+                  ? 'bg-gradient-to-r from-purple-500 to-sky-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)] scale-105'
                   : 'bg-gray-800/50 text-gray-300 border border-gray-700 hover:bg-gray-700 border border-gray-700'
               }`}
             >
@@ -150,7 +150,7 @@ const RobuxRewardShop = ({
                             className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
                               isEquipped
                                 ? 'bg-[var(--token-color)]/20 border border-[var(--token-color)]/50 text-[var(--token-color)] hover:bg-[var(--token-color)]/30'
-                                : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:scale-105'
+                                : 'bg-gradient-to-r from-purple-500 to-sky-500 text-white hover:scale-105'
                             }`}
                           >
                             {isEquipped ? 'Unequip' : 'Equip Avatar'}

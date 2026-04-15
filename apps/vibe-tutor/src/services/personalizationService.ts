@@ -5,6 +5,7 @@
  */
 
 import { dataStore } from './dataStore';
+import { logger } from '../utils/logger';
 
 export type LearningStyle =
   | 'step-by-step' // Sequential, detailed breakdown
@@ -79,7 +80,7 @@ class PersonalizationService {
 
   constructor() {
     this.profile = { ...DEFAULT_PROFILE };
-    this.loadProfile().catch((e) => console.error('Failed to load personalization profile:', e));
+    this.loadProfile().catch((e) => logger.error('Failed to load personalization profile:', e));
   }
 
   private async loadProfile(): Promise<void> {
@@ -95,7 +96,7 @@ class PersonalizationService {
         };
       }
     } catch (error) {
-      console.warn('Failed to load personalization profile from dataStore:', error);
+      logger.warn('Failed to load personalization profile from dataStore:', error);
       this.profile = { ...DEFAULT_PROFILE };
     }
   }
@@ -104,7 +105,7 @@ class PersonalizationService {
     try {
       await dataStore.saveUserSettings(STORAGE_KEY, JSON.stringify(this.profile));
     } catch (error) {
-      console.error('Failed to save personalization profile to dataStore:', error);
+      logger.error('Failed to save personalization profile to dataStore:', error);
     }
   }
 
@@ -189,7 +190,7 @@ class PersonalizationService {
     // Decay epsilon over time (more exploitation as we learn)
     this.profile.epsilon = Math.max(0.05, 0.15 * Math.exp(-this.profile.totalInteractions / 50));
 
-    this.saveProfile().catch((e) => console.error('Failed to save profile after feedback:', e));
+    this.saveProfile().catch((e) => logger.error('Failed to save profile after feedback:', e));
   }
 
   /**
@@ -255,7 +256,7 @@ EXPLANATION STYLE: Concise & Direct
    */
   reset(): void {
     this.profile = { ...DEFAULT_PROFILE };
-    this.saveProfile().catch((e) => console.error('Failed to save reset profile:', e));
+    this.saveProfile().catch((e) => logger.error('Failed to save reset profile:', e));
   }
 
   /**

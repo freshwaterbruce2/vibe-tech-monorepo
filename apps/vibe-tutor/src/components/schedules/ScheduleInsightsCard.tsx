@@ -15,7 +15,7 @@ function formatHour(h: number): string {
 export function ScheduleInsightsCard({ peakHours, weeklyStats, streak }: ScheduleInsightsCardProps) {
   const peakLabel =
     peakHours.length >= 2
-      ? `${formatHour(peakHours[0])}–${formatHour(peakHours[peakHours.length - 1])}`
+      ? `${formatHour(peakHours[0] ?? 0)}–${formatHour(peakHours[peakHours.length - 1] ?? 0)}`
       : formatHour(peakHours[0] ?? 16);
 
   return (

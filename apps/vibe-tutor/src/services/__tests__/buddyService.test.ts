@@ -192,7 +192,7 @@ describe('buddyService', () => {
 
       await sendMessageToBuddy('Test message');
 
-      expect(consoleSpy).toHaveBeenCalledWith('Error sending message to buddy:', testError);
+      expect(consoleSpy).toHaveBeenCalledWith('[ERROR] Error sending message to buddy:', testError);
 
       consoleSpy.mockRestore();
     });
@@ -348,7 +348,7 @@ describe('buddyService', () => {
 
       await getMoodAnalysis('anxious');
 
-      expect(consoleSpy).toHaveBeenCalledWith('Error getting mood analysis:', testError);
+      expect(consoleSpy).toHaveBeenCalledWith('[ERROR] Error getting mood analysis:', testError);
 
       consoleSpy.mockRestore();
     });

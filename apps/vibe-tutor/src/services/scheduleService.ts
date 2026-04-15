@@ -11,6 +11,7 @@ import type {
   UpdateSchedulePayload,
 } from '../types/schedule';
 import { dataStore } from './dataStore';
+import { logger } from '../utils/logger';
 
 const SCHEDULES_KEY = 'vibetutor_schedules';
 const PROGRESS_KEY = 'vibetutor_schedule_progress';
@@ -21,7 +22,7 @@ async function getSchedulesFromStorage(): Promise<DailySchedule[]> {
     const stored = await dataStore.getUserSettings(SCHEDULES_KEY);
     return stored ? (typeof stored === 'string' ? JSON.parse(stored) : stored) : [];
   } catch (error) {
-    console.error('Failed to load schedules from dataStore:', error);
+    logger.error('Failed to load schedules from dataStore:', error);
     return [];
   }
 }
@@ -30,7 +31,7 @@ async function saveSchedulesToStorage(schedules: DailySchedule[]): Promise<void>
   try {
     await dataStore.saveUserSettings(SCHEDULES_KEY, JSON.stringify(schedules));
   } catch (error) {
-    console.error('Failed to save schedules to dataStore:', error);
+    logger.error('Failed to save schedules to dataStore:', error);
   }
 }
 
@@ -39,7 +40,7 @@ async function getProgressFromStorage(): Promise<ScheduleProgress[]> {
     const stored = await dataStore.getUserSettings(PROGRESS_KEY);
     return stored ? (typeof stored === 'string' ? JSON.parse(stored) : stored) : [];
   } catch (error) {
-    console.error('Failed to load progress from dataStore:', error);
+    logger.error('Failed to load progress from dataStore:', error);
     return [];
   }
 }
@@ -48,7 +49,7 @@ async function saveProgressToStorage(progress: ScheduleProgress[]): Promise<void
   try {
     await dataStore.saveUserSettings(PROGRESS_KEY, JSON.stringify(progress));
   } catch (error) {
-    console.error('Failed to save progress to dataStore:', error);
+    logger.error('Failed to save progress to dataStore:', error);
   }
 }
 

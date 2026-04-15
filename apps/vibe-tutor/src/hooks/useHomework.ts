@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '../utils/logger';
 import { dataStore } from '../services/dataStore';
 import type { HomeworkItem, ParsedHomework } from '../types';
 
@@ -34,7 +35,7 @@ export const useHomework = () => {
           setHomeworkItems((currentItems) => mergeHomeworkItems(currentItems, items));
         }
       } catch (error) {
-        console.error('[useHomework] Failed to load homework items:', error);
+        logger.error('[useHomework] Failed to load homework items:', error);
       }
     };
 
@@ -54,7 +55,7 @@ export const useHomework = () => {
         await dataStore.initialize();
         await dataStore.saveHomeworkItems(homeworkItems);
       } catch (error) {
-        console.error(error);
+        logger.error(`[useHomework] Failed to save homework items: ${error instanceof Error ? error.message : String(error)}`);
       }
     };
 

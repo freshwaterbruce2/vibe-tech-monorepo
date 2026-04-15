@@ -1,4 +1,5 @@
 import { appStore } from '../utils/electronStore';
+import { logger } from '../utils/logger';
 
 /**
  * Adaptive Audio Engine
@@ -99,7 +100,7 @@ class AdaptiveAudioEngine {
         this.state.currentScene = (settings.lastScene as typeof this.state.currentScene) ?? 'off';
       }
     } catch (error) {
-      console.warn('Failed to load audio settings:', error);
+      logger.warn('Failed to load audio settings:', error);
     }
   }
 
@@ -113,7 +114,7 @@ class AdaptiveAudioEngine {
         }),
       );
     } catch (error) {
-      console.error('Failed to save audio settings:', error);
+      logger.error('Failed to save audio settings:', error);
     }
   }
 
@@ -138,7 +139,7 @@ class AdaptiveAudioEngine {
           audio.addEventListener(
             'error',
             () => {
-              console.warn(`Failed to preload ${track.name}`);
+              logger.warn(`Failed to preload ${track.name}`);
               resolve();
             },
             { once: true },
@@ -172,7 +173,7 @@ class AdaptiveAudioEngine {
     // Select a track from the scene
     const sceneTracks = ADAPTIVE_TRACKS.filter((t) => t.scene === scene);
     if (sceneTracks.length === 0) {
-      console.warn(`No tracks found for scene: ${scene}`);
+      logger.warn(`No tracks found for scene: ${scene}`);
       return;
     }
 
@@ -182,7 +183,7 @@ class AdaptiveAudioEngine {
     const audio = this.state.preloadedTracks.get(track.id);
 
     if (!audio) {
-      console.warn(`Track not preloaded: ${track.id}`);
+      logger.warn(`Track not preloaded: ${track.id}`);
       return;
     }
 
@@ -374,7 +375,7 @@ class AdaptiveAudioEngine {
         return { soundEnabled: prefs.soundEnabled !== false };
       }
     } catch (error) {
-      console.warn('Failed to load sensory preferences:', error);
+      logger.warn('Failed to load sensory preferences:', error);
     }
     return { soundEnabled: true };
   }

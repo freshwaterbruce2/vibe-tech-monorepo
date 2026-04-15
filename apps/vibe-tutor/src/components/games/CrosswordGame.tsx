@@ -131,7 +131,7 @@ const CrosswordGame = ({ subject, onComplete, onBack }: CrosswordGameProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6 pb-36 md:pb-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-sky-900 p-6 pb-36 md:pb-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="glass-card p-4 mb-6 flex items-center justify-between">
@@ -145,7 +145,7 @@ const CrosswordGame = ({ subject, onComplete, onBack }: CrosswordGameProps) => {
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <CheckCircle size={20} className="text-fuchsia-400" />
+              <CheckCircle size={20} className="text-violet-400" />
               <span className="text-white font-medium">
                 {clues.filter((c) => checkAnswer(c.number)).length}/{clues.length}
               </span>
@@ -194,14 +194,14 @@ const CrosswordGame = ({ subject, onComplete, onBack }: CrosswordGameProps) => {
                           maxLength={clue.word.length}
                           className={`flex-1 px-4 py-2 bg-white/10 border-2 rounded-lg text-white font-mono uppercase placeholder-white/50 focus:outline-none focus:ring-2 transition-all ${
                             hasAnswer && isCorrect
-                              ? 'border-fuchsia-500 focus:ring-fuchsia-500'
+                              ? 'border-violet-500 focus:ring-violet-500'
                               : hasAnswer
                                 ? 'border-red-500 focus:ring-red-500'
                                 : 'border-purple-500 focus:ring-cyan-500'
                           }`}
                         />
                         {hasAnswer && isCorrect && (
-                          <CheckCircle size={24} className="text-fuchsia-400" />
+                          <CheckCircle size={24} className="text-violet-400" />
                         )}
                       </div>
                       <div className="mt-2 text-sm text-white/60">

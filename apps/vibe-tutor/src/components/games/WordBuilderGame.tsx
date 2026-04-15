@@ -180,7 +180,7 @@ const WordBuilderGame = ({ onEarnTokens, onClose: _onClose }: WordBuilderProps) 
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-sky-900 p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="text-white">
@@ -237,7 +237,7 @@ const WordBuilderGame = ({ onEarnTokens, onClose: _onClose }: WordBuilderProps) 
                     <button
                       key={index}
                       onClick={() => handleSelectedLetterClick(index)}
-                      className="bg-gradient-to-r from-fuchsia-500 to-blue-500 text-white text-3xl font-bold
+                      className="bg-gradient-to-r from-violet-500 to-blue-500 text-white text-3xl font-bold
                                w-16 h-16 rounded-xl hover:scale-110 transition-transform cursor-pointer
                                shadow-lg hover:shadow-2xl"
                     >
@@ -253,7 +253,7 @@ const WordBuilderGame = ({ onEarnTokens, onClose: _onClose }: WordBuilderProps) 
               <div
                 className={`text-center text-2xl font-bold mb-6 animate-pulse ${
                   feedback.includes('Awesome')
-                    ? 'text-fuchsia-400'
+                    ? 'text-violet-400'
                     : feedback.includes('Hint')
                       ? 'text-yellow-400'
                       : 'text-red-400'
@@ -274,7 +274,7 @@ const WordBuilderGame = ({ onEarnTokens, onClose: _onClose }: WordBuilderProps) 
                     ${
                       usedIndices.has(index)
                         ? 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-50'
-                        : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:scale-110 shadow-lg hover:shadow-2xl cursor-pointer'
+                        : 'bg-gradient-to-r from-purple-600 to-sky-600 text-white hover:scale-110 shadow-lg hover:shadow-2xl cursor-pointer'
                     }`}
                 >
                   {letter}
@@ -336,7 +336,7 @@ const WordBuilderGame = ({ onEarnTokens, onClose: _onClose }: WordBuilderProps) 
           </div>
           <div className="bg-gray-700 rounded-full h-4 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-fuchsia-400 to-blue-500 h-full transition-all duration-500"
+              className="bg-gradient-to-r from-violet-400 to-blue-500 h-full transition-all duration-500"
               style={{ width: `${Math.min(score % 100, 100)}%` }}
             />
           </div>

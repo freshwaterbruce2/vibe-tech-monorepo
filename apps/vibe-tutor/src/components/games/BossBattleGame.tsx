@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Shield, Zap, Heart } from 'lucide-react';
 import { type BossDef, type AvatarStat } from '../../types';
 import { dataStore } from '../../services/dataStore';
@@ -133,8 +133,8 @@ export default function BossBattleGame({ subject, onComplete, onBack }: BossBatt
 
   if (gameState === 'intro') {
     return (
-      <div style={{ textAlign: 'center', color: 'white', padding: '40px' }}>
-        <h1 style={{ fontSize: '48px', margin: 0 }}>{bossDef.imageUrl}</h1>
+      <div style={{ textAlign: 'center', color: 'white', padding: 'clamp(16px, 5vw, 40px)' }}>
+        <h1 style={{ fontSize: 'clamp(24px, 6vw, 48px)', margin: 0 }}>{bossDef.imageUrl}</h1>
         <h2>{bossDef.name} Approaches!</h2>
         <p>Your {bossDef.subjectWeakness.replace('Power', '')} multiplier is <strong>x{damageMultiplier}</strong> based on your gear.</p>
         <button 
@@ -153,8 +153,8 @@ export default function BossBattleGame({ subject, onComplete, onBack }: BossBatt
 
   if (gameState === 'victory') {
     return (
-      <div style={{ textAlign: 'center', color: 'white', padding: '40px' }}>
-        <h1 style={{ fontSize: '64px', margin: 0 }}>🏆</h1>
+      <div style={{ textAlign: 'center', color: 'white', padding: 'clamp(16px, 5vw, 40px)' }}>
+        <h1 style={{ fontSize: 'clamp(28px, 8vw, 64px)', margin: 0 }}>🏆</h1>
         <h2 style={{ color: '#a855f7' }}>Boss Defeated!</h2>
         <p>Your powerful gear helped you vanquish the boss. You earned massive rewards!</p>
         <button 
@@ -168,8 +168,8 @@ export default function BossBattleGame({ subject, onComplete, onBack }: BossBatt
 
   if (gameState === 'defeat') {
     return (
-      <div style={{ textAlign: 'center', color: 'white', padding: '40px' }}>
-        <h1 style={{ fontSize: '64px', margin: 0 }}>💀</h1>
+      <div style={{ textAlign: 'center', color: 'white', padding: 'clamp(16px, 5vw, 40px)' }}>
+        <h1 style={{ fontSize: 'clamp(28px, 8vw, 64px)', margin: 0 }}>💀</h1>
         <h2 style={{ color: 'var(--error-accent)' }}>You were defeated...</h2>
         <p>Buy better gear in the Avatar Shop to increase your damage multiplier!</p>
         <button 
@@ -183,7 +183,7 @@ export default function BossBattleGame({ subject, onComplete, onBack }: BossBatt
 
   // Playing State
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 250px', gap: '24px', color: 'white', padding: '20px 0' }}>
+    <div style={{ display: 'grid', gap: '24px', color: 'white', padding: '20px 0' }} className="boss-battle-grid">
       
       {/* Left Column: Combat UI & Question */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>

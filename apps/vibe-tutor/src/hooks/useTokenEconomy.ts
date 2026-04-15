@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { logger } from '../utils/logger';
 import { dataStore } from '../services/dataStore';
 import {
   earnTokens as earnTokensInLedger,
@@ -38,7 +39,7 @@ export const useTokenEconomy = () => {
           setIsInitialized(true);
         }
       } catch (error) {
-        console.error('[useTokenEconomy] Failed to initialize token ledger:', error);
+        logger.error('[useTokenEconomy] Failed to initialize token ledger:', error);
         if (mounted) {
           setIsInitialized(true);
         }
@@ -58,13 +59,13 @@ export const useTokenEconomy = () => {
       return;
     }
 
-    dataStore.saveUserSettings('userTokens', String(userTokens)).catch(console.error);
+    dataStore.saveUserSettings('userTokens', String(userTokens)).catch((err) => logger.error('Failed to persist token balance:', err));
   }, [isInitialized, userTokens]);
 
   const earnTokens = useCallback(
     (amount: number, reason = 'Earned tokens'): void => {
       if (amount <= 0) {
-        console.warn('[useTokenEconomy] Cannot earn negative or zero tokens');
+        logger.warn('[useTokenEconomy] Cannot earn negative or zero tokens');
         return;
       }
 
@@ -77,13 +78,13 @@ export const useTokenEconomy = () => {
   const spendTokens = useCallback(
     (amount: number, reason = 'Spent tokens'): boolean => {
       if (amount <= 0) {
-        console.warn('[useTokenEconomy] Cannot spend negative or zero tokens');
+        logger.warn('[useTokenEconomy] Cannot spend negative or zero tokens');
         return false;
       }
 
       const transaction = spendTokensInLedger(amount, reason);
       if (!transaction) {
-        console.warn('[useTokenEconomy] Insufficient tokens');
+        logger.warn('[useTokenEconomy] Insufficient tokens');
         return false;
       }
 
@@ -103,7 +104,7 @@ export const useTokenEconomy = () => {
   const setTokens = useCallback(
     (amount: number, reason = 'Manual token adjustment'): void => {
       if (amount < 0) {
-        console.warn('[useTokenEconomy] Cannot set negative tokens');
+        logger.warn('[useTokenEconomy] Cannot set negative tokens');
         return;
       }
 
