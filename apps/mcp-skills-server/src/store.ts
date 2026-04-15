@@ -6,7 +6,7 @@ import type { Skill, SkillMeta, SkillSearchResult } from './types.js';
 /** Skill source directories */
 const SKILL_SOURCES = [
   { path: 'C:\\dev\\.agent\\skills', source: 'monorepo' as const },
-  { path: 'C:\\dev\\antigravity-awesome-skills\\skills', source: 'community' as const },
+  { path: 'C:\\dev\\.claude\\skills', source: 'community' as const },
 ];
 
 /** Cached skill index */
