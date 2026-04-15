@@ -11,7 +11,7 @@
  * File length optimized (~360 LOC) ✅
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 
 // Core Module
@@ -476,6 +476,104 @@ function App() {
     terminalOpen: appState.terminalOpen,
   });
 
+  // Memoize context values to prevent unnecessary re-renders of consumers
+  const servicesContextValue = useMemo(() => ({
+    aiService, fileSystemService, taskPlanner, liveStream, executionEngine, backgroundAgentSystem,
+    orchestrator, performanceOptimizer,
+  }), [aiService, fileSystemService, taskPlanner, liveStream, executionEngine, backgroundAgentSystem,
+    orchestrator, performanceOptimizer]);
+
+  const uiPanelContextValue = useMemo(() => ({
+    settingsOpen, setSettingsOpen,
+    aiChatOpen, setAiChatOpen,
+    gitPanelOpen: appState.gitPanelOpen,
+    globalSearchOpen: appState.globalSearchOpen, setGlobalSearchOpen: appState.setGlobalSearchOpen,
+    keyboardShortcutsOpen: appState.keyboardShortcutsOpen, setKeyboardShortcutsOpen: appState.setKeyboardShortcutsOpen,
+    backgroundPanelOpen: appState.backgroundPanelOpen, setBackgroundPanelOpen: appState.setBackgroundPanelOpen,
+    commandPaletteOpen, setCommandPaletteOpen,
+    previewOpen: appState.previewOpen, setPreviewOpen: appState.setPreviewOpen,
+    terminalOpen: appState.terminalOpen, setTerminalOpen: appState.setTerminalOpen,
+    sidebarOpen, setSidebarOpen,
+    activeVisualPanel: appState.activeVisualPanel, setActiveVisualPanel: appState.setActiveVisualPanel,
+    chatMode: appState.chatMode, setChatMode: appState.setChatMode,
+    errorFixPanelOpen: appState.errorFixPanelOpen, setErrorFixPanelOpen: appState.setErrorFixPanelOpen,
+    agentModeOpen: appState.agentModeOpen, setAgentModeOpen: appState.setAgentModeOpen,
+  }), [
+    settingsOpen, setSettingsOpen, aiChatOpen, setAiChatOpen,
+    appState.gitPanelOpen, appState.globalSearchOpen, appState.setGlobalSearchOpen,
+    appState.keyboardShortcutsOpen, appState.setKeyboardShortcutsOpen,
+    appState.backgroundPanelOpen, appState.setBackgroundPanelOpen,
+    commandPaletteOpen, setCommandPaletteOpen,
+    appState.previewOpen, appState.setPreviewOpen,
+    appState.terminalOpen, appState.setTerminalOpen,
+    sidebarOpen, setSidebarOpen,
+    appState.activeVisualPanel, appState.setActiveVisualPanel,
+    appState.chatMode, appState.setChatMode,
+    appState.errorFixPanelOpen, appState.setErrorFixPanelOpen,
+    appState.agentModeOpen, appState.setAgentModeOpen,
+  ]);
+
+  const workspaceContextValue = useMemo(() => ({
+    currentFile, openFiles, workspaceFolder,
+    workspaceContext, isIndexing, indexingProgress, getFileContext,
+    editorSettings, updateEditorSettings, setCurrentFile,
+    handleOpenFile, handleCloseFile, handleFileChange, handleSaveFile,
+    handleDeleteFile, handleCreateWorkspaceFile, handleCreateWorkspaceFolder,
+    handleRenameWorkspacePath, handleNewFile, handleOpenFolderDialog,
+    handleCloseFolder, handleOpenFolder, handleCreateFile, handleSaveAll,
+    handleEditorMount: handlers.handleEditorMount, editorRef: appState.editorRef,
+    handleOpenFileFromSearch: handlers.handleOpenFileFromSearch,
+    handleReplaceInFile: handlers.handleReplaceInFile,
+    handleSearchInFiles: handlers.handleSearchInFiles,
+  }), [
+    currentFile, openFiles, workspaceFolder,
+    workspaceContext, isIndexing, indexingProgress, getFileContext,
+    editorSettings, updateEditorSettings, setCurrentFile,
+    handleOpenFile, handleCloseFile, handleFileChange, handleSaveFile,
+    handleDeleteFile, handleCreateWorkspaceFile, handleCreateWorkspaceFolder,
+    handleRenameWorkspacePath, handleNewFile, handleOpenFolderDialog,
+    handleCloseFolder, handleOpenFolder, handleCreateFile, handleSaveAll,
+    handlers.handleEditorMount, appState.editorRef,
+    handlers.handleOpenFileFromSearch, handlers.handleReplaceInFile, handlers.handleSearchInFiles,
+  ]);
+
+  const appExtrasContextValue = useMemo(() => ({
+    aiMessages, handleAIMessage, addAiMessage, updateAiMessage,
+    handleModelChange: handlers.handleModelChange,
+    handleProviderChange: handlers.handleProviderChange,
+    handleMultiFileEditDetected: handlers.handleMultiFileEditDetected,
+    currentModel: appState.currentModel, currentProvider: appState.currentProvider,
+    openrouterApiKey: appState.openrouterApiKey,
+    currentError: appState.currentError, currentFix: appState.currentFix,
+    fixLoading: appState.fixLoading, fixError: appState.fixError,
+    setCurrentError: appState.setCurrentError, setCurrentFix: appState.setCurrentFix,
+    setFixLoading: appState.setFixLoading, setFixError: appState.setFixError,
+    handleApplyFix: handlers.handleApplyFix, autoFixServiceRef: appState.autoFixServiceRef,
+    multiFileEditPlan: appState.multiFileEditPlan, multiFileChanges: appState.multiFileChanges,
+    multiFileApprovalOpen: appState.multiFileApprovalOpen,
+    handleApplyMultiFileChanges: handlers.handleApplyMultiFileChanges,
+    handleRejectMultiFileChanges: handlers.handleRejectMultiFileChanges,
+    notifications, showSuccess, showError, showWarning, removeNotification,
+    commands,
+    handleToggleScreenshotPanel: handlers.handleToggleScreenshotPanel,
+    handleToggleComponentLibrary: handlers.handleToggleComponentLibrary,
+    handleToggleVisualEditor: handlers.handleToggleVisualEditor,
+    handleInsertCode: handlers.handleInsertCode,
+  }), [
+    aiMessages, handleAIMessage, addAiMessage, updateAiMessage,
+    handlers.handleModelChange, handlers.handleProviderChange, handlers.handleMultiFileEditDetected,
+    appState.currentModel, appState.currentProvider, appState.openrouterApiKey,
+    appState.currentError, appState.currentFix, appState.fixLoading, appState.fixError,
+    appState.setCurrentError, appState.setCurrentFix, appState.setFixLoading, appState.setFixError,
+    handlers.handleApplyFix, appState.autoFixServiceRef,
+    appState.multiFileEditPlan, appState.multiFileChanges, appState.multiFileApprovalOpen,
+    handlers.handleApplyMultiFileChanges, handlers.handleRejectMultiFileChanges,
+    notifications, showSuccess, showError, showWarning, removeNotification,
+    commands,
+    handlers.handleToggleScreenshotPanel, handlers.handleToggleComponentLibrary,
+    handlers.handleToggleVisualEditor, handlers.handleInsertCode,
+  ]);
+
   // Loading screen
   if (appState.isLoading) {
     return <LoadingScreen />;
@@ -490,62 +588,10 @@ function App() {
       onReset={() => globalThis.location.reload()}
     >
       <Router>
-        <ServicesContext.Provider value={{
-          aiService, fileSystemService, taskPlanner, liveStream, executionEngine, backgroundAgentSystem,
-          orchestrator, performanceOptimizer,
-        }}>
-        <UIPanelContext.Provider value={{
-          settingsOpen, setSettingsOpen,
-          aiChatOpen, setAiChatOpen,
-          gitPanelOpen: appState.gitPanelOpen,
-          globalSearchOpen: appState.globalSearchOpen, setGlobalSearchOpen: appState.setGlobalSearchOpen,
-          keyboardShortcutsOpen: appState.keyboardShortcutsOpen, setKeyboardShortcutsOpen: appState.setKeyboardShortcutsOpen,
-          backgroundPanelOpen: appState.backgroundPanelOpen, setBackgroundPanelOpen: appState.setBackgroundPanelOpen,
-          commandPaletteOpen, setCommandPaletteOpen,
-          previewOpen: appState.previewOpen, setPreviewOpen: appState.setPreviewOpen,
-          terminalOpen: appState.terminalOpen, setTerminalOpen: appState.setTerminalOpen,
-          sidebarOpen, setSidebarOpen,
-          activeVisualPanel: appState.activeVisualPanel, setActiveVisualPanel: appState.setActiveVisualPanel,
-          chatMode: appState.chatMode, setChatMode: appState.setChatMode,
-          errorFixPanelOpen: appState.errorFixPanelOpen, setErrorFixPanelOpen: appState.setErrorFixPanelOpen,
-          agentModeOpen: appState.agentModeOpen, setAgentModeOpen: appState.setAgentModeOpen,
-        }}>
-        <WorkspaceContext.Provider value={{
-          currentFile, openFiles, workspaceFolder,
-          workspaceContext, isIndexing, indexingProgress, getFileContext,
-          editorSettings, updateEditorSettings, setCurrentFile,
-          handleOpenFile, handleCloseFile, handleFileChange, handleSaveFile,
-          handleDeleteFile, handleCreateWorkspaceFile, handleCreateWorkspaceFolder,
-          handleRenameWorkspacePath, handleNewFile, handleOpenFolderDialog,
-          handleCloseFolder, handleOpenFolder, handleCreateFile, handleSaveAll,
-          handleEditorMount: handlers.handleEditorMount, editorRef: appState.editorRef,
-          handleOpenFileFromSearch: handlers.handleOpenFileFromSearch,
-          handleReplaceInFile: handlers.handleReplaceInFile,
-          handleSearchInFiles: handlers.handleSearchInFiles,
-        }}>
-        <AppExtrasContext.Provider value={{
-          aiMessages, handleAIMessage, addAiMessage, updateAiMessage,
-          handleModelChange: handlers.handleModelChange,
-          handleProviderChange: handlers.handleProviderChange,
-          handleMultiFileEditDetected: handlers.handleMultiFileEditDetected,
-          currentModel: appState.currentModel, currentProvider: appState.currentProvider,
-          openrouterApiKey: appState.openrouterApiKey,
-          currentError: appState.currentError, currentFix: appState.currentFix,
-          fixLoading: appState.fixLoading, fixError: appState.fixError,
-          setCurrentError: appState.setCurrentError, setCurrentFix: appState.setCurrentFix,
-          setFixLoading: appState.setFixLoading, setFixError: appState.setFixError,
-          handleApplyFix: handlers.handleApplyFix, autoFixServiceRef: appState.autoFixServiceRef,
-          multiFileEditPlan: appState.multiFileEditPlan, multiFileChanges: appState.multiFileChanges,
-          multiFileApprovalOpen: appState.multiFileApprovalOpen,
-          handleApplyMultiFileChanges: handlers.handleApplyMultiFileChanges,
-          handleRejectMultiFileChanges: handlers.handleRejectMultiFileChanges,
-          notifications, showSuccess, showError, showWarning, removeNotification,
-          commands,
-          handleToggleScreenshotPanel: handlers.handleToggleScreenshotPanel,
-          handleToggleComponentLibrary: handlers.handleToggleComponentLibrary,
-          handleToggleVisualEditor: handlers.handleToggleVisualEditor,
-          handleInsertCode: handlers.handleInsertCode,
-        }}>
+        <ServicesContext.Provider value={servicesContextValue}>
+        <UIPanelContext.Provider value={uiPanelContextValue}>
+        <WorkspaceContext.Provider value={workspaceContextValue}>
+        <AppExtrasContext.Provider value={appExtrasContextValue}>
           <AppLayout />
         </AppExtrasContext.Provider>
         </WorkspaceContext.Provider>
