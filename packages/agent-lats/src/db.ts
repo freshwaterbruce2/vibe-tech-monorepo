@@ -87,6 +87,74 @@ function ensureSchema(db: Database.Database): void {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
     CREATE INDEX IF NOT EXISTS idx_prefs_task ON preference_pairs(task_type, confidence DESC);
+
+    -- Phase 3: Skill Evolution Archive
+    CREATE TABLE IF NOT EXISTS skill_variants (
+      id TEXT PRIMARY KEY,
+      skill_name TEXT NOT NULL,
+      skill_path TEXT NOT NULL,
+      version INTEGER NOT NULL DEFAULT 1,
+      parent_id TEXT,
+      mutation_type TEXT NOT NULL DEFAULT 'original',
+      content TEXT NOT NULL,
+      benchmark_score REAL,
+      benchmark_breakdown TEXT,
+      is_deployed INTEGER NOT NULL DEFAULT 0,
+      was_promoted INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      benchmarked_at TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_skill_variants_name ON skill_variants(skill_name, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_skill_variants_deployed ON skill_variants(skill_name, is_deployed);
+
+    CREATE TABLE IF NOT EXISTS agent_mistakes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      mistake_type TEXT NOT NULL DEFAULT 'general',
+      mistake_category TEXT NOT NULL DEFAULT 'planning',
+      description TEXT NOT NULL,
+      root_cause_analysis TEXT,
+      context_when_occurred TEXT,
+      impact_severity TEXT NOT NULL DEFAULT 'medium',
+      prevention_strategy TEXT,
+      identified_at TEXT NOT NULL DEFAULT (datetime('now')),
+      resolved INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS idx_mistakes_resolved ON agent_mistakes(resolved, identified_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_mistakes_category ON agent_mistakes(mistake_category, resolved);
+
+    -- Phase 4: Pipeline Evolution
+    CREATE TABLE IF NOT EXISTS pipeline_runs (
+      id TEXT PRIMARY KEY,
+      pipeline_name TEXT NOT NULL,
+      ordering TEXT NOT NULL,
+      success INTEGER,
+      failed_at_stage TEXT,
+      total_stages INTEGER NOT NULL DEFAULT 8,
+      completed_stages INTEGER NOT NULL DEFAULT 0,
+      duration_ms INTEGER,
+      notes TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      completed_at TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_pipeline_runs_name ON pipeline_runs(pipeline_name, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_pipeline_runs_success ON pipeline_runs(pipeline_name, success);
+
+    CREATE TABLE IF NOT EXISTS pipeline_stage_results (
+      id TEXT PRIMARY KEY,
+      run_id TEXT NOT NULL,
+      stage_name TEXT NOT NULL,
+      position INTEGER NOT NULL,
+      success INTEGER,
+      duration_ms INTEGER,
+      input_critique_score REAL,
+      output_critique_score REAL,
+      error_message TEXT,
+      blame_score REAL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (run_id) REFERENCES pipeline_runs(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_stage_results_run ON pipeline_stage_results(run_id);
+    CREATE INDEX IF NOT EXISTS idx_stage_results_stage ON pipeline_stage_results(stage_name, success);
   `);
 }
 

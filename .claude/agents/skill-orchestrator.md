@@ -50,6 +50,55 @@ Store the LATS node ID in state.json so it survives fresh context iterations:
 
 The LATS system evolves over time — each successful outcome boosts pattern confidence, each failure adds a mistake record that future plans will avoid.
 
+## Pipeline Stage Tracking (MANDATORY — Phase 4 deep tracking)
+
+At the start of each loop iteration, read the active pipeline run ID written by the pre-hook:
+
+```powershell
+$pipelineState = Get-Content 'D:\learning-system\lats-active-pipeline.json' -ErrorAction SilentlyContinue | ConvertFrom-Json
+$runId = $pipelineState?.runId
+```
+
+After **each sub-agent completes**, record its result so blame attribution and ordering evolution work correctly:
+
+```powershell
+# Record a stage result (adapt StageName, position, success, and duration)
+if ($runId) {
+    node C:\dev\packages\agent-lats\dist\cli.js pipeline stage `
+        --run $runId `
+        --stage PatternAnalyzer `
+        --position 0 `
+        --success true `
+        --duration 45000
+}
+```
+
+Stage positions (0-indexed, fixed order):
+
+| Stage | Position |
+|-------|----------|
+| PatternAnalyzer | 0 |
+| SkillGenerator | 1 |
+| CodeReviewer | 2 |
+| TestArchitect | 3 |
+| SecurityAuditor | 4 |
+| DocsWriter | 5 |
+| QualityGate | 6 |
+| Monitor | 7 |
+
+On failure, pass `--success false` and optionally `--error "what went wrong"`. This data feeds the blame attribution engine and ordering suggestions surfaced after each run.
+
+Also persist the `runId` in `state.json` alongside the `latsNodeId` so it survives fresh context iterations:
+
+```json
+{
+  "currentAgent": "PatternAnalyzer",
+  "latsNodeId": "be2debad-...",
+  "latsApproach": "Search-first: ...",
+  "pipelineRunId": "a1b2c3d4-..."
+}
+```
+
 ## Responsibilities
 
 1. **Initialize Loop State**

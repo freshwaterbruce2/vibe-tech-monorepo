@@ -99,6 +99,17 @@
     "puppeteer"
   ],
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/lats-pipeline-start.ps1"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Agent",
@@ -110,6 +121,10 @@
           {
             "type": "command",
             "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/lats-backpropagate.ps1"
+          },
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/lats-pipeline-finish.ps1"
           }
         ]
       },
@@ -119,6 +134,10 @@
           {
             "type": "command",
             "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/lats-self-critique.ps1"
+          },
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/lats-skill-evolve.ps1"
           }
         ]
       }
