@@ -17,7 +17,8 @@ export class AutoUpdateService {
   private enabled: boolean;
   private currentVersion: string;
   private checkInterval = 3_600_000; // 1 hour
-  private updateCheckTimer?: ReturnType<typeof setInterval> | undefined;
+  private updateCheckTimer?: ReturnType<typeof setInterval>;
+  private initialCheckTimer?: ReturnType<typeof setTimeout>;
   private isTauri: boolean;
 
   private constructor() {
@@ -105,15 +106,22 @@ export class AutoUpdateService {
 
   /** Start periodic update checks (initial check after 30 s). */
   private startUpdateCheck(): void {
-    setTimeout(() => this.checkForUpdates(), 30_000);
+    this.initialCheckTimer = setTimeout(() => {
+      this.initialCheckTimer = undefined;
+      void this.checkForUpdates();
+    }, 30_000);
     this.updateCheckTimer = setInterval(
-      () => this.checkForUpdates(),
+      () => void this.checkForUpdates(),
       this.checkInterval
     );
   }
 
   /** Stop periodic update checks. */
   stopUpdateCheck(): void {
+    if (this.initialCheckTimer) {
+      clearTimeout(this.initialCheckTimer);
+      this.initialCheckTimer = undefined;
+    }
     if (this.updateCheckTimer) {
       clearInterval(this.updateCheckTimer);
       this.updateCheckTimer = undefined;

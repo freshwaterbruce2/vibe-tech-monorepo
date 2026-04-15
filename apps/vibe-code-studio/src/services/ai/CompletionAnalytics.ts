@@ -40,7 +40,8 @@ export class CompletionAnalytics {
   private eventQueue: CompletionEvent[] = [];
   private batchTimer: NodeJS.Timeout | null = null;
   private sessionId: string;
-  private completionMap: Map<string, CompletionEvent> = new Map(); // Track shown completions
+  private completionMap: Map<string, CompletionEvent> = new Map();
+  private dismissTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
 
   constructor(config: Partial<AnalyticsConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -92,11 +93,21 @@ export class CompletionAnalytics {
     this.queueEvent(event);
 
     // Auto-dismiss after 10 seconds if not accepted/rejected
-    setTimeout(() => {
+    const dismissTimer = setTimeout(() => {
+      this.dismissTimers.delete(completionId);
       if (this.completionMap.has(completionId)) {
         this.trackCompletionIgnored(completionId);
       }
     }, 10000);
+    this.dismissTimers.set(completionId, dismissTimer);
+  }
+
+  private cancelDismissTimer(completionId: string): void {
+    const timer = this.dismissTimers.get(completionId);
+    if (timer !== undefined) {
+      clearTimeout(timer);
+      this.dismissTimers.delete(completionId);
+    }
   }
 
   /**
@@ -110,6 +121,8 @@ export class CompletionAnalytics {
       logger.warn('Acceptance tracked for unknown completion:', completionId);
       return;
     }
+
+    this.cancelDismissTimer(completionId);
 
     const event: CompletionEvent = {
       ...shownEvent,
@@ -136,6 +149,8 @@ export class CompletionAnalytics {
     const shownEvent = this.completionMap.get(completionId);
     if (!shownEvent) {return;}
 
+    this.cancelDismissTimer(completionId);
+
     const event: CompletionEvent = {
       ...shownEvent,
       id: uuidv4(),
@@ -155,6 +170,8 @@ export class CompletionAnalytics {
 
     const shownEvent = this.completionMap.get(completionId);
     if (!shownEvent) {return;}
+
+    this.cancelDismissTimer(completionId);
 
     const event: CompletionEvent = {
       ...shownEvent,

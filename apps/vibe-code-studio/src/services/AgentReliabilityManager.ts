@@ -70,6 +70,7 @@ export class AgentReliabilityManager extends EventEmitter {
   private readonly CIRCUIT_BREAKER_THRESHOLD = 5;
   private readonly CIRCUIT_BREAKER_TIMEOUT = 60000; // 1 minute
   private readonly MAX_CONSECUTIVE_FAILURES = 3;
+  private healthInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     super();
@@ -498,7 +499,7 @@ export class AgentReliabilityManager extends EventEmitter {
    * Health monitoring
    */
   private startHealthMonitoring(): void {
-    setInterval(() => {
+    this.healthInterval = setInterval(() => {
       this.performHealthChecks();
       this.calculateReliabilityMetrics();
       this.cleanupOldData();
@@ -642,5 +643,13 @@ export class AgentReliabilityManager extends EventEmitter {
     this.failureHistory.clear();
     this.circuitBreakers.clear();
     this.reliabilityMetrics.clear();
+  }
+
+  destroy(): void {
+    if (this.healthInterval) {
+      clearInterval(this.healthInterval);
+      this.healthInterval = null;
+    }
+    this.reset();
   }
 }
