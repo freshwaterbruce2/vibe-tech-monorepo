@@ -24,11 +24,9 @@ cd C:\dev\scripts\version-control
 .\Restore-Snapshot.ps1 -SnapshotId "20260116-143000"
 .\Restore-Snapshot.ps1 -Tag "v1.0.0"
 
-# Check status
-.\Repository-Status.ps1
-
-# Cleanup old snapshots
-.\Cleanup-OldSnapshots.ps1 -OlderThanDays 90
+# Cleanup (use Quick-Cleanup for weekly, Emergency-Cleanup for deep)
+.\tools\scripts\Quick-Cleanup.ps1
+.\tools\scripts\Emergency-Cleanup.ps1
 ```
 
 ## Tags

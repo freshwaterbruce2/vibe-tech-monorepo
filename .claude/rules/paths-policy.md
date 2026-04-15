@@ -35,7 +35,7 @@ LOGS_PATH=D:\logs\myapp
 Get-ChildItem -Path "C:\dev" -Recurse -Include *.db,*.sqlite -ErrorAction SilentlyContinue
 
 # Run official validation
-.\check-vibe-paths.ps1
+.\scripts\check-vibe-paths.ps1
 ```
 
 See `.claude/rules/database-storage.md` for connection code examples and WAL mode setup.
