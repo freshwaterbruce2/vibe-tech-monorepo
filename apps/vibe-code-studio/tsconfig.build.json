@@ -4,11 +4,9 @@
     /* Production Build Configuration - 2025 Optimized */
     "noEmit": false,
     "outDir": "./dist",
-    "rootDir": "./src",
 
     /* Advanced Production Optimizations */
     "removeComments": true,
-    "preserveConstEnums": false,
     "inlineSourceMap": false,
     "sourceMap": false,
     "declaration": true,
@@ -22,10 +20,6 @@
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": false,
     "verbatimModuleSyntax": false,
-
-    /* Tree Shaking Optimization */
-    "importsNotUsedAsValues": "remove",
-    "preserveValueImports": false,
 
     /* Strict Production Checks */
     "strict": true,
@@ -41,12 +35,9 @@
     /* Code Quality Enforcement */
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "exactOptionalPropertyTypes": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true,
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
 
@@ -110,7 +101,6 @@
     "src/setupTests.ts",
     "electron/**/*",
     "**/*.config.{js,ts}",
-    "**/*.d.ts",
     "vite.config*.ts",
     "vitest.config.ts",
     "commitlint.config.js",

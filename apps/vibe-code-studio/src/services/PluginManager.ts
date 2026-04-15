@@ -2,19 +2,19 @@ import type { ReactNode } from 'react';
 import type { IPlugin, PluginContext, PluginManifest, PluginState } from '../types/plugin';
 import { logger } from './Logger';
 
-interface RegisteredCommand {
+export interface RegisteredCommand {
   id: string;
   pluginId: string;
   callback: () => void;
 }
 
-interface RegisteredView {
+export interface RegisteredView {
   id: string;
   pluginId: string;
   component: ReactNode;
 }
 
-interface RegisteredSidebarItem {
+export interface RegisteredSidebarItem {
   id: string;
   pluginId: string;
   icon: ReactNode;
