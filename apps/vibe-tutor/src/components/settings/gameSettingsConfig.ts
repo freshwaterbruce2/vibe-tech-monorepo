@@ -1,4 +1,5 @@
 import { appStore } from '../../utils/electronStore';
+import { logger } from '../../utils/logger';
 
 export type GameDifficulty = 'easy' | 'medium' | 'hard';
 export type TimerMode = 'timed' | 'relaxed';
@@ -113,6 +114,6 @@ export function saveGameConfig(gameType: string, config: GameConfig): void {
   try {
     appStore.set(`game-config-${gameType}`, config);
   } catch (error) {
-    console.warn('Failed to save game config:', error);
+    logger.warn(`Failed to save game config: ${error instanceof Error ? error.message : String(error)}`);
   }
 }

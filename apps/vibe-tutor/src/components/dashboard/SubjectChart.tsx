@@ -19,7 +19,7 @@ const SubjectChart = ({ items }: SubjectChartProps) => {
     const colors = {
       'Math': 'var(--success-accent)',
       'Science': '#38BDF8',
-      'English': '#FF5FD2',
+      'English': '#38BDF8',
       'History': '#FBBF24',
       'Language': '#a855f7',
       'Language Arts': '#a855f7',

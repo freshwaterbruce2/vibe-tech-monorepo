@@ -79,7 +79,7 @@ const ScreenTimeSettings = () => {
   const getProgressColor = (percentage: number): string => {
     if (percentage >= 90) return 'bg-red-500';
     if (percentage >= 75) return 'bg-yellow-500';
-    return 'bg-fuchsia-500';
+    return 'bg-violet-500';
   };
 
   return (

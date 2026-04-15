@@ -2,6 +2,7 @@ import { CheckCircle2, Target, TrendingUp, Trophy } from 'lucide-react';
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { dataStore } from '../../services/dataStore';
 import type { FocusSession, Goal, HomeworkItem } from '../../types';
+import { logger } from '../../utils/logger';
 
 interface GoalsPanelProps {
   homeworkItems: HomeworkItem[];
@@ -96,7 +97,7 @@ const GoalsPanel = ({ homeworkItems, tokens }: GoalsPanelProps) => {
           setFocusSessions(sessions);
         });
       } catch (error) {
-        console.error('[GoalsPanel] Failed to load data:', error);
+        logger.error('[GoalsPanel] Failed to load data:', error);
       }
     };
     void loadData();
@@ -157,7 +158,7 @@ const GoalsPanel = ({ homeworkItems, tokens }: GoalsPanelProps) => {
   useEffect(() => {
     if (updatedGoals.length > 0) {
       dataStore.saveUserSettings('user-goals', JSON.stringify(updatedGoals)).catch((error) => {
-        console.error('[GoalsPanel] Failed to save goals:', error);
+        logger.error('[GoalsPanel] Failed to save goals:', error);
       });
     }
   }, [updatedGoals]);
@@ -234,7 +235,7 @@ const GoalsPanel = ({ homeworkItems, tokens }: GoalsPanelProps) => {
                 <div className="flex items-center gap-2">
                   <Icon
                     size={18}
-                    className={goal.completed ? 'text-fuchsia-400' : 'text-[var(--primary-accent)]'}
+                    className={goal.completed ? 'text-violet-400' : 'text-[var(--primary-accent)]'}
                   />
                   <span className="font-semibold text-sm">
                     {getCategoryLabel(goal.category, goal.type)}
@@ -250,7 +251,7 @@ const GoalsPanel = ({ homeworkItems, tokens }: GoalsPanelProps) => {
                     / {goal.target} {getCategoryUnit(goal.category)}
                   </span>
                 </span>
-                {goal.completed && <CheckCircle2 size={20} className="text-fuchsia-400" />}
+                {goal.completed && <CheckCircle2 size={20} className="text-violet-400" />}
               </div>
 
               {/* Progress Bar */}
@@ -258,7 +259,7 @@ const GoalsPanel = ({ homeworkItems, tokens }: GoalsPanelProps) => {
                 <div
                   className={`h-full transition-all duration-500 ${
                     goal.completed
-                      ? 'bg-fuchsia-500'
+                      ? 'bg-violet-500'
                       : 'bg-gradient-to-r from-[var(--primary-accent)] to-[var(--secondary-accent)]'
                   }`}
                   style={{ width: `${progress}%` }}

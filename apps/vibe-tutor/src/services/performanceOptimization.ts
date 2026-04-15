@@ -3,6 +3,8 @@
  * Monitors and optimizes app performance, memory usage, and bundle size
  */
 
+import { logger } from '../utils/logger';
+
 export interface PerformanceMetrics {
   loadTime: number;
   memoryUsage: number;
@@ -139,7 +141,7 @@ export class PerformanceOptimizationService {
         const longTaskObserver = new PerformanceObserver((list) => {
           for (const entry of list.getEntries()) {
             if (entry.duration > 50) {
-              console.warn('Long task detected:', {
+              logger.warn('Long task detected:', {
                 duration: entry.duration,
                 name: entry.name,
               });
@@ -160,7 +162,7 @@ export class PerformanceOptimizationService {
             if ('value' in entry) {
               const shift = entry as unknown as LayoutShift;
               if (shift.value > 0.1) {
-                console.warn('Layout shift detected:', shift.value);
+                logger.warn('Layout shift detected:', shift.value);
               }
             }
           }

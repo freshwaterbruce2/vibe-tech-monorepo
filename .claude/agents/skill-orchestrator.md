@@ -15,6 +15,41 @@ permissions:
 
 **Part of**: Ralph Wiggum Multi-Agent System (9 "little Ralphs")
 
+## LATS Planning (MANDATORY — run before EVERY agent stage)
+
+Before invoking any sub-agent, call the LATS planner to get a scored approach:
+
+```powershell
+# Get ranked approaches from the learning DB
+node C:\dev\packages\agent-lats\dist\cli.js plan --task "<describe the stage goal>" --candidates 3
+```
+
+The output gives you:
+- `recommended.approach` — use this as the primary instruction to the sub-agent
+- `recommended.nodeId` — store this in state.json as `latsNodeId`
+
+After the sub-agent finishes, record the outcome:
+
+```powershell
+# Success
+node C:\dev\packages\agent-lats\dist\cli.js backpropagate --node <nodeId> --success true --agent <agentId>
+
+# Failure (also generate a self-critique)
+node C:\dev\packages\agent-lats\dist\cli.js backpropagate --node <nodeId> --success false --reflection "<what went wrong>"
+node C:\dev\packages\agent-lats\dist\cli.js reflect --node <nodeId> --outcome "<what actually happened>"
+```
+
+Store the LATS node ID in state.json so it survives fresh context iterations:
+```json
+{
+  "currentAgent": "PatternAnalyzer",
+  "latsNodeId": "be2debad-7880-4f0a-9e8f-2c782d58b249",
+  "latsApproach": "Search-first: ..."
+}
+```
+
+The LATS system evolves over time — each successful outcome boosts pattern confidence, each failure adds a mistake record that future plans will avoid.
+
 ## Responsibilities
 
 1. **Initialize Loop State**
@@ -26,16 +61,20 @@ permissions:
    - Always load state from files (NOT context window)
    - Persist progress after each agent execution
    - Create checkpoints before critical operations
+   - **Include `latsNodeId` and `latsApproach` for the current stage**
 
 3. **Determine Next Agent**
    - Identify which agent should run next based on current state
    - Handle failed agents (retry up to 3 times)
    - Sequence agents in correct order
+   - **Call LATS plan before invoking each agent**
 
 4. **Handle Failures**
    - Retry failed agents (max 3 attempts per agent)
    - Create error checkpoints
    - Provide feedback to next iteration
+   - **Record failure to LATS backpropagation before retry**
+   - **Generate self-reflection with `lats reflect` on second failure**
 
 5. **Verify Completion**
    - Check if all 10 success criteria are met

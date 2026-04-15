@@ -102,13 +102,16 @@ const SchedulesHub = memo(function SchedulesHub({ onEarnTokens, onClose }: Sched
       // Parse "4:00 PM" → time "04:00", meridian "PM"
       const match = s.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
       if (match) {
-        const hour = match[3].toUpperCase() === 'PM' && parseInt(match[1]) !== 12
-          ? String(parseInt(match[1]) + 12).padStart(2, '0')
-          : match[1].padStart(2, '0');
+        const hourStr = match[1] ?? '0';
+        const minuteStr = match[2] ?? '00';
+        const meridianStr = match[3] ?? 'AM';
+        const hour = meridianStr.toUpperCase() === 'PM' && parseInt(hourStr) !== 12
+          ? String(parseInt(hourStr) + 12).padStart(2, '0')
+          : hourStr.padStart(2, '0');
         schedules.addScheduleItem({
           activity: s.activity,
-          time: `${hour}:${match[2]}`,
-          meridian: match[3].toUpperCase() as 'AM' | 'PM',
+          time: `${hour}:${minuteStr}`,
+          meridian: meridianStr.toUpperCase() as 'AM' | 'PM',
           type: activeScheduleType,
         });
       }
@@ -289,6 +292,8 @@ const SchedulesHub = memo(function SchedulesHub({ onEarnTokens, onClose }: Sched
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Activity</label>
                   <input
                     type="text"
+                    id="schedule-activity"
+                    name="schedule-activity"
                     value={newScheduleAcitivity}
                     onChange={(e) => setNewScheduleActivity(e.target.value)}
                     placeholder="E.g., Morning reading, Breakfast..."
@@ -298,11 +303,15 @@ const SchedulesHub = memo(function SchedulesHub({ onEarnTokens, onClose }: Sched
                 <div className="flex border border-[var(--glass-border)] rounded-lg overflow-hidden bg-[var(--background-card)] w-full md:w-auto">
                   <input
                     type="time"
+                    id="schedule-time"
+                    name="schedule-time"
                     value={newScheduleTime}
                     onChange={(e) => setNewScheduleTime(e.target.value)}
                     className="bg-transparent text-white px-3 py-2 outline-none w-full md:w-auto"
                   />
                   <select
+                    id="schedule-meridian"
+                    name="schedule-meridian"
                     value={newScheduleMeridian}
                     onChange={(e) => setNewScheduleMeridian(e.target.value as 'AM' | 'PM')}
                     className="bg-[var(--glass-border)] text-white px-3 py-2 outline-none border-l border-[var(--glass-border)]"
@@ -372,6 +381,8 @@ const SchedulesHub = memo(function SchedulesHub({ onEarnTokens, onClose }: Sched
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">New Chore</label>
                   <input
                     type="text"
+                    id="chore-name"
+                    name="chore-name"
                     value={newChore}
                     onChange={(e) => setNewChore(e.target.value)}
                     placeholder="E.g., Clean my room, Walk the dog..."
@@ -384,6 +395,8 @@ const SchedulesHub = memo(function SchedulesHub({ onEarnTokens, onClose }: Sched
                     <Coins className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-yellow-400" />
                     <input
                       type="number"
+                      id="chore-reward"
+                      name="chore-reward"
                       min="1"
                       value={newChoreReward}
                       onChange={(e) => setNewChoreReward(parseInt(e.target.value) || 0)}
@@ -448,6 +461,8 @@ const SchedulesHub = memo(function SchedulesHub({ onEarnTokens, onClose }: Sched
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">New Goal</label>
                   <input
                     type="text"
+                    id="goal-text"
+                    name="goal-text"
                     value={newGoal}
                     onChange={(e) => setNewGoal(e.target.value)}
                     placeholder="E.g., Read 10 books this year..."
@@ -457,6 +472,8 @@ const SchedulesHub = memo(function SchedulesHub({ onEarnTokens, onClose }: Sched
                 <div className="w-full md:w-auto">
                   <label className="block text-sm text-[var(--text-secondary)] mb-1">Type</label>
                   <select
+                    id="goal-type"
+                    name="goal-type"
                     value={newGoalType}
                     onChange={(e) => setNewGoalType(e.target.value as 'short-term' | 'long-term')}
                     className="w-full md:w-auto bg-[var(--background-card)] border border-[var(--glass-border)] rounded-lg px-3 py-2.5 text-white outline-none focus:border-[var(--tertiary-accent)]"

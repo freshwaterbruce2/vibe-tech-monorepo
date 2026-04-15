@@ -27,7 +27,7 @@ const WordSearchWordList = ({ words, foundWords, onFinish, isCompleted }: WordSe
               key={w.word}
               className={`p-3 rounded-lg transition-all duration-300 ${
                 isFound
-                  ? 'bg-fuchsia-500/20 border-2 border-fuchsia-500/50 text-fuchsia-300'
+                  ? 'bg-violet-500/20 border-2 border-violet-500/50 text-violet-300'
                   : 'bg-purple-800/50 text-white border border-purple-500/30'
               }`}
             >
@@ -36,11 +36,11 @@ const WordSearchWordList = ({ words, foundWords, onFinish, isCompleted }: WordSe
                   <span className="relative inline-block">
                     {w.word}
                     {isFound && (
-                      <span className="absolute left-0 top-1/2 h-[2px] bg-fuchsia-400 rounded-full animate-strikethrough" />
+                      <span className="absolute left-0 top-1/2 h-[2px] bg-violet-400 rounded-full animate-strikethrough" />
                     )}
                   </span>
                 </div>
-                {isFound && <CheckCircle className="w-5 h-5 text-fuchsia-400 animate-bounce" />}
+                {isFound && <CheckCircle className="w-5 h-5 text-violet-400 animate-bounce" />}
               </div>
               {w.clue && <div className="text-sm opacity-80 mt-1">{w.clue}</div>}
             </div>
@@ -49,8 +49,8 @@ const WordSearchWordList = ({ words, foundWords, onFinish, isCompleted }: WordSe
       </div>
 
         {allFound && (
-          <div className="mt-4 p-4 bg-fuchsia-500/20 border-2 border-fuchsia-500/50 rounded-xl text-center animate-bounce">
-            <p className="text-fuchsia-400 font-bold text-lg">🎉 All words found!</p>
+          <div className="mt-4 p-4 bg-violet-500/20 border-2 border-violet-500/50 rounded-xl text-center animate-bounce">
+            <p className="text-violet-400 font-bold text-lg">🎉 All words found!</p>
             <p className="text-sm text-gray-300 mt-1">
               {isCompleted ? 'Tap Continue to submit your score' : 'Tap Finish to review results'}
             </p>

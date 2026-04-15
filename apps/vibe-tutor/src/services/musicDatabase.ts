@@ -1,4 +1,5 @@
-import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
+﻿import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
+import { logger } from '../utils/logger';
 
 export interface MusicTrackDB {
   id: string;
@@ -60,9 +61,8 @@ class MusicDatabase {
         'CREATE INDEX IF NOT EXISTS idx_lastPlayed ON music_tracks(lastPlayedAt)',
       );
 
-      console.debug('[MusicDB] Connected to unified database');
     } catch (err) {
-      console.warn('[MusicDB] Fallback to in-app DB:', err);
+      logger.warn('[MusicDB] Fallback to in-app DB:', err);
       // Fallback: Create in-app DB
       this.db = await this.sqlite.createConnection('music_local', false, 'no-encryption', 1, false);
       await this.db?.open();

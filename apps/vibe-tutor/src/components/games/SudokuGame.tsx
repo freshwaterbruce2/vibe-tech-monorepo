@@ -4,6 +4,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import * as SudokuModule from 'sudoku-umd';
 import { useGameAudio } from '../../hooks/useGameAudio';
 import GameCompletionModal from './GameCompletionModal';
+import { logger } from '../../utils/logger';
 
 interface SudokuModuleType {
   generate?: () => string;
@@ -93,7 +94,7 @@ function createInitialSudokuState(): SudokuState {
     }
 
     if (!makepuzzle || !solvepuzzle) {
-      console.error('Sudoku functions not available');
+      logger.error('Sudoku functions not available');
       return createEmptySudokuState();
     }
 
@@ -111,7 +112,7 @@ function createInitialSudokuState(): SudokuState {
 
     return { puzzle, solution, userGrid: [...puzzle], isLoading: false };
   } catch (error) {
-    console.error('Failed to generate Sudoku:', error);
+    logger.error('Failed to generate Sudoku:', error);
     return createEmptySudokuState();
   }
 }
@@ -273,14 +274,14 @@ const SudokuGame = memo(function SudokuGame({ onComplete, onBack }: SudokuGamePr
 
   if (isLoading || puzzle.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-sky-900 p-6 flex items-center justify-center">
         <div className="text-white text-xl">Generating Sudoku puzzle...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6 pb-36 md:pb-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-sky-900 p-6 pb-36 md:pb-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="glass-card p-4 mb-6 flex items-center justify-between">
@@ -398,7 +399,7 @@ const SudokuGame = memo(function SudokuGame({ onComplete, onBack }: SudokuGamePr
               <button
                 key={num}
                 onClick={() => handleNumberInput(num)}
-                className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg font-bold text-white text-xl transition-all transform hover:scale-110"
+                className="w-12 h-12 bg-gradient-to-br from-purple-600 to-sky-600 hover:from-purple-700 hover:to-sky-700 rounded-lg font-bold text-white text-xl transition-all transform hover:scale-110"
               >
                 {num}
               </button>

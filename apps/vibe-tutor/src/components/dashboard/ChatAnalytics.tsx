@@ -2,6 +2,7 @@ import { Activity, BookOpen, Brain, MessageSquare, TrendingUp } from 'lucide-rea
 import React, { useEffect, useState, useTransition } from 'react';
 import { dataStore } from '../../services/dataStore';
 import { learningAnalytics } from '../../services/learningAnalytics';
+import { logger } from '../../utils/logger';
 
 interface AnalyticsSnapshot {
   tutorMessageCount: number;
@@ -21,7 +22,7 @@ interface AnalyticsSnapshot {
 }
 
 const trendConfig = {
-  improving: { label: 'Improving 🚀', color: 'text-fuchsia-400' },
+  improving: { label: 'Improving 🚀', color: 'text-violet-400' },
   stable: { label: 'Steady ✊', color: 'text-yellow-400' },
   declining: { label: 'Needs Attention ⚠️', color: 'text-red-400' },
 } as const;
@@ -58,7 +59,7 @@ const ChatAnalytics = () => {
           });
         });
       } catch (error) {
-        console.error('[ChatAnalytics] Failed to load:', error);
+        logger.error('[ChatAnalytics] Failed to load:', error);
       } finally {
         setIsLoading(false);
       }

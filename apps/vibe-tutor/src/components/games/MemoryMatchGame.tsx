@@ -204,7 +204,7 @@ const MemoryMatchGame = ({ subject, onComplete, onBack, initialDifficulty }: Mem
               particleCount: 150,
               spread: 70,
               origin: { y: 0.6 },
-              colors: ['#22d3ee', '#ec4899', '#fbbf24', '#ff5fd2'],
+              colors: ['#22d3ee', '#38BDF8', '#fbbf24', '#F97316'],
             });
           }
         }, 600);
@@ -228,7 +228,7 @@ const MemoryMatchGame = ({ subject, onComplete, onBack, initialDifficulty }: Mem
   const currentDifficulty = MEMORY_DIFFICULTIES[difficulty];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6 pb-36 md:pb-8">
+    <div className="min-h-screen bg-gradient-to-br from-violet-900 via-blue-900 to-sky-900 p-6 pb-36 md:pb-8">
       <div className="mx-auto max-w-6xl">
         <div className="glass-card mb-6 p-4">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -252,7 +252,7 @@ const MemoryMatchGame = ({ subject, onComplete, onBack, initialDifficulty }: Mem
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <Sparkles size={18} className="text-pink-300" />
+                <Sparkles size={18} className="text-sky-300" />
                 <span className="font-medium">Combo {currentCombo}x</span>
               </div>
               <button
@@ -292,7 +292,7 @@ const MemoryMatchGame = ({ subject, onComplete, onBack, initialDifficulty }: Mem
               ))}
             <button
               onClick={() => resetRound()}
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold uppercase tracking-[0.12em] text-white/80 transition-colors hover:border-pink-300/40 hover:text-white"
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold uppercase tracking-[0.12em] text-white/80 transition-colors hover:border-sky-300/40 hover:text-white"
             >
               <RotateCcw size={16} />
               New Round
@@ -415,7 +415,7 @@ const MemoizedCardItem = memo(
             isFlipped ? '[transform:rotateY(180deg)]' : ''
           } ${justMatched ? 'animate-bounce' : ''}`}
         >
-          <div className="absolute inset-0 flex items-center justify-center rounded-xl border-4 border-purple-400 bg-gradient-to-br from-purple-600 to-pink-600 shadow-lg [backface-visibility:hidden]">
+          <div className="absolute inset-0 flex items-center justify-center rounded-xl border-4 border-violet-400 bg-gradient-to-br from-violet-600 to-sky-600 shadow-lg [backface-visibility:hidden]">
             <div className="text-5xl font-bold text-white drop-shadow-lg sm:text-6xl">?</div>
           </div>
 

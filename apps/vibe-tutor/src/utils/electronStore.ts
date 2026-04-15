@@ -4,15 +4,25 @@
  * Uses window.electronAPI.store (IPC bridge) when in Electron context,
  * falls back to localStorage for web/PWA/Capacitor contexts.
  *
- * NOTE: After electronInit.ts runs, window.electronAPI is ALWAYS defined
- * with either real Electron IPC or localStorage fallback.
- *
  * @module utils/electronStore
- * @description 2026 Best Practice - Type-safe storage with graceful fallback
  */
+import { logger } from './logger';
 
-// Ensure electronInit has run
-import './electronInit';
+// Provide a localStorage-backed stub when Electron IPC is not available
+// (web, PWA, Capacitor). This ensures window.electronAPI is always defined.
+if (typeof window !== 'undefined' && !window.electronAPI) {
+  (window as Window & typeof globalThis & { electronAPI: unknown }).electronAPI = {
+    isElectron: false,
+    store: {
+      get: (key: string) => localStorage.getItem(key),
+      set: (key: string, value: unknown) => localStorage.setItem(key, String(value)),
+      delete: (key: string) => localStorage.removeItem(key),
+      clear: () => localStorage.clear(),
+    },
+    selectImportFile: () => Promise.resolve(null),
+    ingestAndroidExport: () => Promise.resolve({ inserted: 0, skipped: 0, total: 0 }),
+  };
+}
 
 export interface AppStore {
   get<T = string>(key: string): T | null;
@@ -44,7 +54,7 @@ export const appStore: AppStore = {
         return value as unknown as T;
       }
     } catch (error) {
-      console.error(`[AppStore] Failed to get '${key}':`, error);
+      logger.error(`[AppStore] Failed to get '${key}':`, error);
       return null;
     }
   },
@@ -54,7 +64,7 @@ export const appStore: AppStore = {
       const serialized = typeof value === 'string' ? value : JSON.stringify(value);
       window.electronAPI.store.set(key, serialized);
     } catch (error) {
-      console.error(`[AppStore] Failed to set '${key}':`, error);
+      logger.error(`[AppStore] Failed to set '${key}':`, error);
     }
   },
 
@@ -62,7 +72,7 @@ export const appStore: AppStore = {
     try {
       window.electronAPI.store.delete(key);
     } catch (error) {
-      console.error(`[AppStore] Failed to remove '${key}':`, error);
+      logger.error(`[AppStore] Failed to remove '${key}':`, error);
     }
   },
 
@@ -101,7 +111,7 @@ export const sessionStore: AppStore = {
         return value as unknown as T;
       }
     } catch (error) {
-      console.error(`[SessionStore] Failed to get '${key}':`, error);
+      logger.error(`[SessionStore] Failed to get '${key}':`, error);
       return null;
     }
   },
@@ -118,7 +128,7 @@ export const sessionStore: AppStore = {
       // eslint-disable-next-line electron-security/no-localstorage-electron -- Safe: only used in non-Electron contexts
       sessionStorage.setItem(key, serialized);
     } catch (error) {
-      console.error(`[SessionStore] Failed to set '${key}':`, error);
+      logger.error(`[SessionStore] Failed to set '${key}':`, error);
     }
   },
 
@@ -132,7 +142,7 @@ export const sessionStore: AppStore = {
       // eslint-disable-next-line electron-security/no-localstorage-electron -- Safe: only used in non-Electron contexts
       sessionStorage.removeItem(key);
     } catch (error) {
-      console.error(`[SessionStore] Failed to remove '${key}':`, error);
+      logger.error(`[SessionStore] Failed to remove '${key}':`, error);
     }
   },
 

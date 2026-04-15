@@ -7,6 +7,7 @@ import { databaseService } from './databaseService';
 import type { HomeworkItem, Achievement, Reward, MusicPlaylist, ClaimedReward } from '../types';
 
 import { appStore } from '../utils/electronStore';
+import { logger } from '../utils/logger';
 
 export class MigrationService {
   private migrationComplete = false;
@@ -52,8 +53,6 @@ export class MigrationService {
    * CRITICAL: This must succeed before migration proceeds
    */
   private async createBackup(): Promise<void> {
-    console.debug('[Migration] Creating backup of localStorage data...');
-
     const backup: Record<string, string> = {
       timestamp: new Date().toISOString(),
       homeworkItems: this.toStoredString(appStore.get('homeworkItems'), '[]'),
@@ -74,9 +73,8 @@ export class MigrationService {
 
     try {
       appStore.set(this.backupKey, JSON.stringify(backup));
-      console.debug('[Migration] Backup created successfully at:', this.backupKey);
     } catch (error) {
-      console.error('[Migration] CRITICAL: Backup creation failed!', error);
+      logger.error('[Migration] CRITICAL: Backup creation failed!', error);
       throw new Error('Failed to create backup. Migration aborted for safety.');
     }
   }
@@ -85,8 +83,6 @@ export class MigrationService {
    * Restore data from backup (rollback capability)
    */
   async restoreFromBackup(): Promise<void> {
-    console.debug('[Migration] Attempting to restore from backup...');
-
     const backupData = appStore.get(this.backupKey);
     if (!backupData) {
       throw new Error('No backup found. Cannot restore.');
@@ -108,11 +104,8 @@ export class MigrationService {
           appStore.set(key, value);
         }
       });
-
-      console.debug('[Migration] Data restored from backup successfully');
-      console.debug('[Migration] Backup timestamp:', backup.timestamp ?? 'unknown');
     } catch (error) {
-      console.error('[Migration] Failed to restore from backup:', error);
+      logger.error('[Migration] Failed to restore from backup:', error);
       throw error;
     }
   }
@@ -133,45 +126,33 @@ export class MigrationService {
       try {
         // STEP 1: Create backup (CRITICAL - must succeed)
         await this.createBackup();
-        console.debug('[Migration] ✓ Backup complete');
 
         // STEP 2: Initialize database
         await databaseService.initialize();
-        console.debug('[Migration] ✓ Database initialized');
 
         // STEP 3: Migrate each data type
         await this.migrateHomeworkItems();
-        console.debug('[Migration] ✓ Homework items migrated');
 
         await this.migrateAchievements();
-        console.debug('[Migration] ✓ Achievements migrated');
 
         await this.migrateRewards();
-        console.debug('[Migration] ✓ Rewards migrated');
 
         await this.migrateMusicPlaylists();
-        console.debug('[Migration] ✓ Music playlists migrated');
 
         await this.migrateUserProgress();
-        console.debug('[Migration] ✓ User progress migrated');
 
         await this.migrateLearningData();
-        console.debug('[Migration] ✓ Learning data migrated');
 
         // STEP 4: Validate migration
         await this.validateMigration();
-        console.debug('[Migration] ✓ Validation passed');
 
         // STEP 5: Mark migration as complete
         this.migrationComplete = true;
         appStore.set('vibe_tutor_migration_complete', 'true');
-
-        console.debug('[Migration] ✓✓✓ Migration completed successfully!');
-        console.debug('[Migration] Backup retained at key:', this.backupKey);
       } catch (error) {
-        console.error('[Migration] FAILED:', error);
-        console.error('[Migration] Your data is safe in the backup.');
-        console.error('[Migration] To restore, call: migrationService.restoreFromBackup()');
+        logger.error('[Migration] FAILED:', error);
+        logger.error('[Migration] Your data is safe in the backup.');
+        logger.error('[Migration] To restore, call: migrationService.restoreFromBackup()');
         throw error;
       }
     })().finally(() => {
@@ -198,7 +179,6 @@ export class MigrationService {
       }
     }
 
-    console.debug('[Migration] Validation: Data integrity confirmed');
   }
 
   /**

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Learning Analytics Service for Vibe Tutor
  * Tracks, analyzes, and stores learning patterns on D: drive
  * Provides adaptive difficulty and personalized recommendations
@@ -9,6 +9,7 @@ import { CapacitorHttp } from '@capacitor/core';
 import { databaseService } from './databaseService';
 
 import { appStore } from '../utils/electronStore';
+import { logger } from '../utils/logger';
 
 // Learning analytics data path on D: drive
 const ANALYTICS_PATH = 'D:\\learning-system\\vibe-tutor';
@@ -63,9 +64,8 @@ export class LearningAnalyticsService {
       // Load existing analytics data
       await this.loadAnalyticsData();
 
-      console.debug('Learning analytics initialized at', ANALYTICS_PATH);
     } catch (error) {
-      console.error('Failed to initialize learning analytics:', error);
+      logger.error('Failed to initialize learning analytics:', error);
     }
   }
 
@@ -75,7 +75,6 @@ export class LearningAnalyticsService {
   private async ensureAnalyticsDirectory(): Promise<void> {
     // In a real implementation, we'd use Node.js fs module
     // For browser environment, we'll store in database
-    console.debug('Analytics directory checked:', ANALYTICS_PATH);
   }
 
   /**
@@ -141,7 +140,7 @@ export class LearningAnalyticsService {
         data: { event, data },
       });
     } catch (error) {
-      console.error('[Analytics] Failed to log event to backend:', error);
+      logger.error('[Analytics] Failed to log event to backend:', error);
     }
   }
 
@@ -241,7 +240,7 @@ export class LearningAnalyticsService {
         appStore.set(`analytics_${metrics.sessionId}`, JSON.stringify(analyticsData));
       }
     } catch (error) {
-      console.error('Failed to save analytics to file:', error);
+      logger.error('Failed to save analytics to file:', error);
     }
   }
 

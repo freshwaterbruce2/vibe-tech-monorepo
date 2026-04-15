@@ -125,21 +125,21 @@ export default function AvatarProfile({ onOpenShop }: AvatarProfileProps) {
         boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Activity size={28} color="var(--success-accent)" style={{ marginRight: '12px' }} />
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+          <Activity size={28} color="var(--success-accent)" style={{ marginRight: '12px', flexShrink: 0 }} />
           <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold' }}>Avatar Profile</h2>
         </div>
         {onOpenShop && (
-          <button 
-           onClick={onOpenShop}
-           style={{ background: '#3b82f6', color: 'white', padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            onClick={onOpenShop}
+            style={{ background: '#3b82f6', color: 'white', padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             <Sparkles size={16} /> Open Shop
           </button>
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {/* Equipped Items */}
         <div style={{ background: 'var(--background-card)', padding: '16px', borderRadius: '12px' }}>
           <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', color: 'var(--text-secondary)' }}>
@@ -223,6 +223,8 @@ export default function AvatarProfile({ onOpenShop }: AvatarProfileProps) {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '6px',
                     padding: '8px 0',
                     borderBottom: '1px solid var(--background-surface)',
                   }}

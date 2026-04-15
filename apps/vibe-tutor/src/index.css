@@ -1,5 +1,5 @@
 /* OpenDyslexic Font for accessibility - must come before @tailwind */
-@import url('https://fonts.googleapis.com/css2?family=OpenDyslexic:wght@400;700&display=swap');
+@import url('https://fonts.cdnfonts.com/css/opendyslexic');
 
 @import 'tailwindcss';
 
@@ -672,6 +672,24 @@
 @media (max-width: 768px) {
   .gh-featured-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Boss Battle Game: responsive two-column layout */
+.boss-battle-grid {
+  grid-template-columns: minmax(300px, 1fr) 250px;
+}
+
+@media (max-width: 639px) {
+  .boss-battle-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* GamesHub stats grid: collapse to 2 columns on very small screens */
+@media (max-width: 480px) {
+  .gh-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 

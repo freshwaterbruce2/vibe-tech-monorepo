@@ -27,8 +27,6 @@ Last Updated: 2026-04-08
 | Claude Code | `C:\dev\.mcp.json` | `"mcpServers"` key, `"type": "stdio"` |
 | Claude Desktop | `%APPDATA%\Claude\claude_desktop_config.json` | `"mcpServers"` key, NO `"type"` field |
 | VS Code | `C:\dev\.vscode\mcp.json` | `"servers"` key (not `"mcpServers"`) |
-| Gemini CLI | `C:\dev\.gemini\settings.json` | `"trust": true` per server; use `uvx` for sqlite |
-| Codex CLI | `C:\dev\.codex\config.toml` | TOML `[mcp_servers.<name>]` sections |
 
 ## Rebuild Custom Servers
 

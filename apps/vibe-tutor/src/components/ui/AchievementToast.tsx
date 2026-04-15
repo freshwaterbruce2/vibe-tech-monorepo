@@ -29,7 +29,7 @@ const AchievementToast = ({ achievement, bonusTokens, onClose }: AchievementToas
       id: i,
       left: `${Math.random() * 100}%`,
       animationDelay: `${Math.random() * 0.5}s`,
-      backgroundColor: ['#fbbf24', '#a855f7', '#ec4899', '#22d3ee'][Math.floor(Math.random() * 4)]!,
+      backgroundColor: ['#fbbf24', '#a855f7', '#F97316', '#22d3ee'][Math.floor(Math.random() * 4)]!,
     }));
     const confettiTimer = setTimeout(() => {
       setConfetti(pieces);

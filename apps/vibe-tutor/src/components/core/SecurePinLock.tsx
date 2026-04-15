@@ -6,23 +6,41 @@ interface PinLockProps {
   onUnlock: () => void;
 }
 
-// Secure PIN hashing using Web Crypto API
-async function hashPin(pin: string, salt: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(pin + salt);
-
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-
-  return hashHex;
+// Generate a cryptographically random 16-byte hex salt
+function generateSalt(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
-// Generate random salt
-function generateSalt(): string {
-  const array = new Uint8Array(16);
-  crypto.getRandomValues(array);
-  return Array.from(array)
+// PBKDF2 PIN hash — 310,000 iterations, SHA-256, 32-byte output
+// NOTE: Hashes generated here are not backward-compatible with the old SHA-256(pin+salt) format.
+// On first launch after this upgrade, users with an existing PIN must reset it.
+async function hashPin(pin: string, salt: string): Promise<string> {
+  const enc = new TextEncoder();
+
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(pin),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits'],
+  );
+
+  const derivedBits = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: enc.encode(salt),
+      iterations: 310_000,
+      hash: 'SHA-256',
+    },
+    keyMaterial,
+    256,
+  );
+
+  return Array.from(new Uint8Array(derivedBits))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
 }
@@ -33,10 +51,24 @@ function getInitialLockoutState(): {
   lockoutEndTime: number;
   lockoutRemaining: number;
   shouldClearExpiredLockout: boolean;
+  attempts: number;
 } {
+  // Migrate legacy SHA-256 hashes: if a hash exists but was set before PBKDF2
+  // was introduced, clear it and force re-setup rather than silently failing.
+  const pinHashVersion = appStore.get('parentPinHashVersion');
+  if (appStore.get('parentPinHash') && pinHashVersion !== 'pbkdf2') {
+    appStore.delete('parentPinHash');
+    appStore.delete('parentPinSalt');
+    appStore.delete('parentPinHashVersion');
+    appStore.delete('parentPinAttempts');
+    appStore.delete('parentPinLockout');
+  }
+
   const storedHash = appStore.get('parentPinHash');
   const storedSalt = appStore.get('parentPinSalt');
   const lockoutEnd = appStore.get('parentPinLockout');
+  const storedAttempts = appStore.get('parentPinAttempts');
+  const attempts = storedAttempts ? (Number.parseInt(storedAttempts, 10) || 0) : 0;
 
   const isSetupMode = !storedHash || !storedSalt;
   if (!lockoutEnd) {
@@ -46,6 +78,7 @@ function getInitialLockoutState(): {
       lockoutEndTime: 0,
       lockoutRemaining: 0,
       shouldClearExpiredLockout: false,
+      attempts,
     };
   }
 
@@ -58,6 +91,7 @@ function getInitialLockoutState(): {
       lockoutEndTime: endTime,
       lockoutRemaining: Math.max(0, endTime - now),
       shouldClearExpiredLockout: false,
+      attempts,
     };
   }
 
@@ -67,6 +101,7 @@ function getInitialLockoutState(): {
     lockoutEndTime: 0,
     lockoutRemaining: 0,
     shouldClearExpiredLockout: true,
+    attempts: 0,
   };
 }
 
@@ -76,7 +111,7 @@ const SecurePinLock = ({ onUnlock }: PinLockProps) => {
   const [confirmPin, setConfirmPin] = useState('');
   const [error, setError] = useState('');
   const [isSetupMode] = useState(initialLockoutState.isSetupMode);
-  const [attempts, setAttempts] = useState(0);
+  const [attempts, setAttempts] = useState(initialLockoutState.attempts);
   const [lockout, setLockout] = useState(initialLockoutState.lockout);
   const [lockoutEndTime, setLockoutEndTime] = useState(initialLockoutState.lockoutEndTime);
   const [lockoutRemaining, setLockoutRemaining] = useState(initialLockoutState.lockoutRemaining);
@@ -100,6 +135,7 @@ const SecurePinLock = ({ onUnlock }: PinLockProps) => {
           setAttempts(0);
           setError('');
           appStore.delete('parentPinLockout');
+          appStore.delete('parentPinAttempts');
         }
       }, 1000);
 
@@ -141,9 +177,10 @@ const SecurePinLock = ({ onUnlock }: PinLockProps) => {
     const salt = generateSalt();
     const hashedPin = await hashPin(pin, salt);
 
-    // Store hashed PIN and salt
+    // Store hashed PIN, salt, and hash version
     appStore.set('parentPinHash', hashedPin);
     appStore.set('parentPinSalt', salt);
+    appStore.set('parentPinHashVersion', 'pbkdf2');
 
     // Clear PIN from memory immediately
     setPin('');
@@ -172,10 +209,12 @@ const SecurePinLock = ({ onUnlock }: PinLockProps) => {
 
     if (enteredHash === storedHash) {
       setAttempts(0);
+      appStore.delete('parentPinAttempts');
       onUnlock();
     } else {
       const newAttempts = attempts + 1;
       setAttempts(newAttempts);
+      appStore.set('parentPinAttempts', String(newAttempts));
 
       if (newAttempts >= 3) {
         // Progressive lockout: 30s, 5min, 15min, 1hr
@@ -220,6 +259,8 @@ const SecurePinLock = ({ onUnlock }: PinLockProps) => {
           <form onSubmit={(e) => { void handleSetupSubmit(e); }}>
             <input
               type="password"
+              id="pin-entry"
+              name="pin-entry"
               placeholder="Enter PIN"
               value={pin}
               onChange={handlePinChange}
@@ -230,6 +271,8 @@ const SecurePinLock = ({ onUnlock }: PinLockProps) => {
             />
             <input
               type="password"
+              id="pin-confirm"
+              name="pin-confirm"
               placeholder="Confirm PIN"
               value={confirmPin}
               onChange={handleConfirmPinChange}
@@ -267,6 +310,8 @@ const SecurePinLock = ({ onUnlock }: PinLockProps) => {
         <form onSubmit={(e) => { void handleLoginSubmit(e); }}>
           <input
             type="password"
+            id="current-pin"
+            name="current-pin"
             value={pin}
             onChange={handlePinChange}
             maxLength={6}

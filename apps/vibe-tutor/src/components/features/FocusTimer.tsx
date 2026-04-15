@@ -2,30 +2,30 @@ import { Clock, Pause, Play, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { triggerVibration } from '../../services/uiService';
 import type { FocusSession } from '../../types';
+import { useCountdownTimer } from '../../hooks/useCountdownTimer';
 import ProgressBar from '../ui/ProgressBar';
 
 import { appStore } from '../../utils/electronStore';
+import { logger } from '../../utils/logger';
 
 interface FocusTimerProps {
   onSessionComplete?: (minutes: number) => void;
 }
 
 const FocusTimer = ({ onSessionComplete }: FocusTimerProps) => {
-  const [minutes, setMinutes] = useState(25);
-  const [seconds, setSeconds] = useState(0);
-  const [isActive, setIsActive] = useState(false);
   const [mode, setMode] = useState<'focus' | 'break'>('focus');
   const audioRef = useRef<HTMLAudioElement>(null);
+  // Ref breaks the circular dep: handleComplete needs reset, reset comes from the hook
+  // that takes handleComplete as onComplete. The ref is synced after the hook call.
+  const resetTimerRef = useRef<(newDuration?: number) => void>(() => {});
 
   const handleComplete = useCallback(() => {
-    setIsActive(false);
-
     // Get sensory preferences
     const sensoryPrefs = appStore.get<Record<string, unknown>>('sensory-prefs') ?? {};
 
     // Play sound if enabled
     if (sensoryPrefs.soundEnabled !== false && audioRef.current) {
-      audioRef.current.play().catch(console.error);
+      audioRef.current.play().catch((err) => logger.error('Audio play failed:', err));
     }
 
     // Vibrate if enabled
@@ -58,49 +58,30 @@ const FocusTimer = ({ onSessionComplete }: FocusTimerProps) => {
 
       // Switch to break
       setMode('break');
-      setMinutes(5);
+      resetTimerRef.current(5 * 60);
     } else {
       // Switch back to focus
       setMode('focus');
-      setMinutes(25);
+      resetTimerRef.current(25 * 60);
     }
-
-    setSeconds(0);
   }, [mode, onSessionComplete]);
 
-  useEffect(() => {
-    let interval: number;
+  const totalSeconds = mode === 'focus' ? 25 * 60 : 5 * 60;
+  const { timeRemaining, isRunning, start, pause, reset } = useCountdownTimer({
+    initialSeconds: totalSeconds,
+    onComplete: handleComplete,
+  });
 
-    if (isActive && (minutes > 0 || seconds > 0)) {
-      interval = window.setInterval(() => {
-        if (seconds === 0) {
-          if (minutes === 0) {
-            handleComplete();
-          } else {
-            setMinutes((m) => m - 1);
-            setSeconds(59);
-          }
-        } else {
-          setSeconds((s) => s - 1);
-        }
-      }, 1000);
-    }
+  useEffect(() => { resetTimerRef.current = reset; }, [reset]);
 
-    return () => clearInterval(interval);
-  }, [isActive, minutes, seconds, handleComplete]);
-
-  const toggle = () => setIsActive(!isActive);
-  const reset = () => {
-    setIsActive(false);
-    setMinutes(mode === 'focus' ? 25 : 5);
-    setSeconds(0);
-  };
+  const minutes = Math.floor(timeRemaining / 60);
+  const seconds = timeRemaining % 60;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background-main via-background-main to-surface-dark">
       <div className="glass-card p-8 text-center space-y-6 max-w-md w-full">
         <div className="flex items-center justify-center gap-3">
-          <Clock size={32} className={mode === 'focus' ? 'text-blue-400' : 'text-fuchsia-400'} />
+          <Clock size={32} className={mode === 'focus' ? 'text-blue-400' : 'text-violet-400'} />
           <h2 className="text-2xl font-bold">{mode === 'focus' ? 'Focus Time' : 'Break Time'}</h2>
         </div>
 
@@ -112,14 +93,14 @@ const FocusTimer = ({ onSessionComplete }: FocusTimerProps) => {
         {/* Controls */}
         <div className="flex gap-4 justify-center">
           <button
-            onClick={toggle}
+            onClick={() => isRunning ? pause() : start()}
             className="p-4 bg-[var(--primary-accent)] hover:bg-[var(--primary-accent)]/80 rounded-full transition-all hover:scale-110"
-            aria-label={isActive ? 'Pause timer' : 'Start timer'}
+            aria-label={isRunning ? 'Pause timer' : 'Start timer'}
           >
-            {isActive ? <Pause size={28} /> : <Play size={28} />}
+            {isRunning ? <Pause size={28} /> : <Play size={28} />}
           </button>
           <button
-            onClick={reset}
+            onClick={() => reset()}
             className="p-4 bg-surface-lighter hover:bg-surface-light rounded-full transition-all hover:scale-110"
             aria-label="Reset timer"
           >
@@ -129,10 +110,7 @@ const FocusTimer = ({ onSessionComplete }: FocusTimerProps) => {
 
         {/* Progress Bar */}
         <ProgressBar
-          percent={
-            (((mode === 'focus' ? 25 : 5) - minutes - seconds / 60) / (mode === 'focus' ? 25 : 5)) *
-            100
-          }
+          percent={(totalSeconds - timeRemaining) / totalSeconds * 100}
           barClassName="bg-gradient-to-r from-blue-500 to-purple-500"
           label={`${mode === 'focus' ? 'Focus' : 'Break'} session progress`}
         />

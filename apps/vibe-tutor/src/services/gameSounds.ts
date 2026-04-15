@@ -1,4 +1,5 @@
 import { appStore } from '../utils/electronStore';
+import { logger } from '../utils/logger';
 
 /**
  * Game Sound Effects System
@@ -63,7 +64,7 @@ function playTone(frequency: number, duration: number, type: OscillatorType = 's
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + duration / 1000);
   } catch (error) {
-    console.warn('Audio playback failed:', error);
+    logger.warn('Audio playback failed:', error);
   }
 }
 
@@ -157,6 +158,6 @@ export function initializeAudio(): void {
       void ctx.resume();
     }
   } catch (error) {
-    console.warn('Audio initialization failed:', error);
+    logger.warn('Audio initialization failed:', error);
   }
 }

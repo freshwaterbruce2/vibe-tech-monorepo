@@ -185,14 +185,14 @@ const GameSettings = ({ config, onChange, gameType: _gameType }: GameSettingsPro
               onClick={toggleSound}
               className={`w-full p-3 rounded-lg border-2 transition-all ${
                 config.soundEnabled
-                  ? 'border-pink-500/50 bg-pink-500/10'
+                  ? 'border-sky-500/50 bg-sky-500/10'
                   : 'border-gray-500/50 bg-gray-500/10'
               }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {config.soundEnabled ? (
-                    <Volume2 size={20} className="text-pink-400" />
+                    <Volume2 size={20} className="text-sky-400" />
                   ) : (
                     <VolumeX size={20} className="text-gray-400" />
                   )}
@@ -237,7 +237,7 @@ const GameSettings = ({ config, onChange, gameType: _gameType }: GameSettingsPro
           {/* Close Button */}
           <button
             onClick={() => setShowSettings(false)}
-            className="w-full mt-6 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg font-bold text-white transition-all"
+            className="w-full mt-6 px-4 py-2 bg-gradient-to-r from-purple-600 to-sky-600 hover:from-purple-700 hover:to-sky-700 rounded-lg font-bold text-white transition-all"
           >
             Start Game
           </button>

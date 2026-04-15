@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from 'react';
+import { logger } from '../../../utils/logger';
 import type { WordSearchGrid } from '../../../services/puzzleGenerator';
 import { appStore } from '../../../utils/electronStore';
 
@@ -133,16 +134,16 @@ export function useWordSearchInput({
                 navigator.vibrate([50, 30, 50]);
               }
             } catch (e) {
-              console.debug('Vibration not supported:', e);
+              logger.debug('Vibration not supported:', e);
             }
           } catch (error) {
-            console.error('Error updating foundWords:', error);
+            logger.error('Error updating foundWords:', error);
             return;
           }
         }
       }
     } catch (error) {
-      console.error('Error in handleCellMouseUp:', error);
+      logger.error('Error in handleCellMouseUp:', error);
     } finally {
       setSelecting(false);
       setSelectedCells(new Set());
@@ -166,7 +167,7 @@ export function useWordSearchInput({
       try {
         handleCellMouseDown(row, col);
       } catch (error) {
-        console.error('Touch start error:', error);
+        logger.error('Touch start error:', error);
       }
     },
     [handleCellMouseDown],
@@ -198,7 +199,7 @@ export function useWordSearchInput({
           }
         }
       } catch (error) {
-        console.error('Touch move error:', error);
+        logger.error('Touch move error:', error);
         setSelecting(false);
       }
     },
@@ -209,7 +210,7 @@ export function useWordSearchInput({
     try {
       handleCellMouseUp();
     } catch (error) {
-      console.error('Touch end error:', error);
+      logger.error('Touch end error:', error);
       setSelecting(false);
       setSelectedCells(new Set());
       setStartCell(null);

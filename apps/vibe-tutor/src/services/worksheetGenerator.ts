@@ -18,6 +18,7 @@ import {
   isValidDifficulty,
   isValidSubject,
 } from './questionBanks/types';
+import { logger } from '../utils/logger';
 
 /**
  * Fisher-Yates (Knuth) shuffle algorithm - O(n) unbiased random shuffle
@@ -58,12 +59,12 @@ export function generateWorksheet(
 
   // Validate inputs with type guards
   if (!isValidSubject(subject)) {
-    console.error(`[worksheetGenerator] Invalid subject: "${subject}"`);
+    logger.error(`[worksheetGenerator] Invalid subject: "${subject}"`);
     return [];
   }
 
   if (!isValidDifficulty(difficulty)) {
-    console.error(`[worksheetGenerator] Invalid difficulty: "${difficulty}"`);
+    logger.error(`[worksheetGenerator] Invalid difficulty: "${difficulty}"`);
     return [];
   }
 
@@ -71,7 +72,7 @@ export function generateWorksheet(
   const questions = subjectBank?.[difficulty];
 
   if (!questions || questions.length === 0) {
-    console.error(`[worksheetGenerator] No questions found for ${subject} at ${difficulty} level`);
+    logger.error(`[worksheetGenerator] No questions found for ${subject} at ${difficulty} level`);
     return [];
   }
 

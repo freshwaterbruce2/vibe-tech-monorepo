@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core';
+import { logger } from '../utils/logger';
 
 /**
  * Blake's Personalized Configuration
@@ -58,14 +59,14 @@ const sanitizeEndpoint = (endpoint: string): string => {
   }
 
   if (isLocalhostEndpoint(trimmed) && isNativeCapacitor && !allowNativeLocalApi) {
-    console.warn(
+    logger.warn(
       `[BLAKE_CONFIG] Refusing localhost endpoint on native app (${trimmed}); using production backend.`,
     );
     return PRODUCTION_API_ENDPOINT;
   }
 
   if (isLocalhostEndpoint(trimmed) && !isLocalDev && !allowNativeLocalApi) {
-    console.warn(
+    logger.warn(
       `[BLAKE_CONFIG] Refusing localhost endpoint in non-dev build (${trimmed}); using production backend.`,
     );
     return PRODUCTION_API_ENDPOINT;
@@ -342,7 +343,7 @@ export const getWelcomeMessage = (): string => {
   const greetings = {
     morning: [
       'Good morning Blake! Ready to dominate today? 🎮',
-      "Morning legend! Let's get this bread! 🍞",
+      "Morning legend Blake! Let's get this bread! 🍞",
       'Rise and grind, Blake! Time to level up! ⬆️',
     ],
     afternoon: [

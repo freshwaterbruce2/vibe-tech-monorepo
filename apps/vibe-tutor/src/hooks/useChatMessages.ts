@@ -1,4 +1,5 @@
 import { syncService } from '@/services';
+import { logger } from '../utils/logger';
 import { useEffect, useRef, useState, useTransition } from 'react';
 import { hydrateBuddyHistory } from '../services/buddyService';
 import { dataStore } from '../services/dataStore';
@@ -53,11 +54,11 @@ export function useChatMessages({ title, type, onSendMessage }: UseChatMessagesP
     setInput('');
     setMessages([]);
     messagesRef.current = [];
-    console.debug(`[ChatWindow] Loading chat history for type="${type}"`);
+    logger.debug(`[ChatWindow] Loading chat history for type="${type}"`);
     startTransition(async () => {
       try {
         const savedMessages = await dataStore.getChatHistory(type);
-        console.debug(
+        logger.debug(
           `[ChatWindow] Received ${savedMessages?.length ?? 0} messages for type="${type}"`,
         );
         // Only apply if type hasn't changed again while loading
@@ -73,7 +74,7 @@ export function useChatMessages({ title, type, onSendMessage }: UseChatMessagesP
           }
         }
       } catch (error) {
-        console.error('Failed to load chat history:', error);
+        logger.error('Failed to load chat history:', error);
       } finally {
         if (requestEpochRef.current === epoch) {
           isLoadingRef.current = false;
@@ -103,11 +104,11 @@ export function useChatMessages({ title, type, onSendMessage }: UseChatMessagesP
             await syncService.logEvent(summary, ['chat', 'session_end', 'android_client']);
           } catch (error) {
             // Never block navigation if SQLite/filesystem is unavailable.
-            console.warn('SyncService.logEvent failed (non-fatal):', error);
+            logger.warn('SyncService.logEvent failed (non-fatal):', error);
           }
         })();
       } catch (error) {
-        console.warn('ChatWindow memory capture failed (non-fatal):', error);
+        logger.warn('ChatWindow memory capture failed (non-fatal):', error);
       }
     };
   }, [title]);
@@ -118,23 +119,23 @@ export function useChatMessages({ title, type, onSendMessage }: UseChatMessagesP
   useEffect(() => {
     // Skip saving when we're in the middle of loading history for a new type
     if (isLoadingRef.current) {
-      console.debug(`[ChatWindow] Skipping save — type switch in progress (type="${type}")`);
+      logger.debug(`[ChatWindow] Skipping save — type switch in progress (type="${type}")`);
       return;
     }
     if (messages.length > 0) {
-      console.debug(`[ChatWindow] Saving ${messages.length} messages for type="${type}"`);
+      logger.debug(`[ChatWindow] Saving ${messages.length} messages for type="${type}"`);
       startTransition(async () => {
         try {
           // Double-check type hasn't changed since this effect was queued
           if (typeRef.current === type) {
             await dataStore.saveChatHistory(type, messages);
           } else {
-            console.debug(
+            logger.debug(
               `[ChatWindow] Aborted save — type mismatch: ref="${typeRef.current}" vs effect="${type}"`,
             );
           }
         } catch (error) {
-          console.error('Failed to save chat history:', error);
+          logger.error('Failed to save chat history:', error);
         }
       });
     }
@@ -179,7 +180,7 @@ export function useChatMessages({ title, type, onSendMessage }: UseChatMessagesP
       if (requestEpochRef.current !== requestEpoch || typeRef.current !== requestType) {
         return;
       }
-      console.error('Chat error:', error);
+      logger.error('Chat error:', error);
 
       const errorMessages = [
         "I'm having trouble connecting right now. Please try again in a moment.",

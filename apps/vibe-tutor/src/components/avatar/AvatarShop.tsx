@@ -91,7 +91,7 @@ export default function AvatarShop({ userTokens, onSpendTokens }: AvatarShopProp
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(220px, 100%), 1fr))', gap: '16px' }}>
         {SHOP_ITEMS.map((item) => {
           const isOwned = avatarState.ownedItems.includes(item.id);
           const isEquipped = avatarState.equippedItems[item.type] === item.id;

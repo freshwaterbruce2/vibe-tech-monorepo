@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { logger } from '../../../../utils/logger';
 import { audioStream, type RadioStatus } from '../../../../services/audioStreamService';
 import { mediaSession } from '../../../../services/mediaSessionService';
 import type { LocalTrack } from '../../../../types';
@@ -78,7 +79,7 @@ export function useRadioStreaming(): UseRadioStreamingReturn {
         await audioStream.play(station);
       }
     } catch (err: unknown) {
-      console.error('Radio playback failed:', err);
+      logger.error('Radio playback failed:', err);
       const message =
         err instanceof Error
           ? err.message
@@ -91,7 +92,7 @@ export function useRadioStreaming(): UseRadioStreamingReturn {
     try {
       await audioStream.stop();
     } catch (err: unknown) {
-      console.error('Radio stop failed:', err);
+      logger.error('Radio stop failed:', err);
     }
   };
 

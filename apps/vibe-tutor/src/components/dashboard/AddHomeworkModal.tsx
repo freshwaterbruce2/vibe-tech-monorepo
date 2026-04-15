@@ -3,6 +3,7 @@ import { parseHomeworkFromVoice } from '../../services/homeworkParserService';
 import type { ParsedHomework } from '../../types';
 import { appStore } from '../../utils/electronStore';
 import { MicrophoneIcon } from '../ui/icons/MicrophoneIcon';
+import { logger } from '../../utils/logger';
 
 interface AddHomeworkModalProps {
   onClose: () => void;
@@ -50,7 +51,7 @@ const AddHomeworkModal = ({ onClose, onAdd }: AddHomeworkModalProps) => {
     recognition.onresult = (event: SpeechRecognitionEvent) => {
       const result = event.results[0]?.[0];
       if (!result) {
-        console.warn('Speech recognition returned empty result');
+        logger.warn('Speech recognition returned empty result');
         return;
       }
       const transcript = result.transcript;
@@ -64,7 +65,7 @@ const AddHomeworkModal = ({ onClose, onAdd }: AddHomeworkModalProps) => {
             setDueDate(parsed.dueDate ?? '');
           }
         })
-        .catch((err) => console.error('Homework parsing failed:', err))
+        .catch((err) => logger.error('Homework parsing failed:', err))
         .finally(() => setIsParsing(false));
     };
     recognition.onspeechend = () => {
@@ -72,7 +73,7 @@ const AddHomeworkModal = ({ onClose, onAdd }: AddHomeworkModalProps) => {
       setIsListening(false);
     };
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      console.error('Speech recognition error:', event.error);
+      logger.error('Speech recognition error:', event.error);
       setIsListening(false);
     };
   }, []);
@@ -100,7 +101,7 @@ const AddHomeworkModal = ({ onClose, onAdd }: AddHomeworkModalProps) => {
         recognition.start();
         setIsListening(true);
       } catch (error) {
-        console.error('Failed to start speech recognition:', error);
+        logger.error('Failed to start speech recognition:', error);
         setIsListening(false);
       }
     }
@@ -126,6 +127,8 @@ const AddHomeworkModal = ({ onClose, onAdd }: AddHomeworkModalProps) => {
           <div className="space-y-4">
             <input
               type="text"
+              id="hw-subject"
+              name="hw-subject"
               placeholder="Subject (e.g., Math)"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
@@ -135,6 +138,8 @@ const AddHomeworkModal = ({ onClose, onAdd }: AddHomeworkModalProps) => {
             />
             <input
               type="text"
+              id="hw-title"
+              name="hw-title"
               placeholder="Title (e.g., Complete worksheet)"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -144,6 +149,8 @@ const AddHomeworkModal = ({ onClose, onAdd }: AddHomeworkModalProps) => {
             />
             <input
               type="date"
+              id="hw-due-date"
+              name="hw-due-date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
               className="w-full p-3 bg-slate-800/50 border border-slate-700 rounded-lg text-text-primary text-base focus:ring-2 focus:ring-[var(--primary-accent)] focus:border-transparent outline-none"

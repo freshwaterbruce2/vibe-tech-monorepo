@@ -1,12 +1,19 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChatMessage } from '../../../types';
 import ChatWindow from '../ChatWindow';
+import { secureClient } from '../../../services/secureClient';
 
 // Mock scrollIntoView (not available in jsdom)
 Element.prototype.scrollIntoView = vi.fn();
 
 // Mock dependencies
+vi.mock('../../../services/secureClient', () => ({
+  secureClient: {
+    healthCheck: vi.fn().mockResolvedValue(true),
+  },
+}));
+
 vi.mock('@/services', () => ({
   syncService: {
     logEvent: vi.fn().mockResolvedValue(undefined),
@@ -45,6 +52,7 @@ describe('ChatWindow', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockOnSendMessage.mockResolvedValue('This is a test response from AI');
+    vi.mocked(secureClient.healthCheck).mockResolvedValue(true);
   });
 
   afterEach(() => {
@@ -489,6 +497,90 @@ describe('ChatWindow', () => {
           minute: '2-digit',
         });
         expect(screen.getByText(time)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Connection Status', () => {
+    it('starts in "checking" state with amber pulsing dot', () => {
+      // Make healthCheck never resolve so we stay in checking state
+      vi.mocked(secureClient.healthCheck).mockImplementation(async () => new Promise(() => {}));
+
+      render(<ChatWindow {...defaultProps} />);
+
+      const statusEl = screen.getByRole('status');
+      expect(statusEl).toHaveAttribute('aria-label', 'Checking AI connection');
+    });
+
+    it('shows green dot when healthCheck resolves true', async () => {
+      vi.mocked(secureClient.healthCheck).mockResolvedValue(true);
+
+      render(<ChatWindow {...defaultProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'AI Tutor connected');
+      });
+    });
+
+    it('shows red dot and offline banner when healthCheck resolves false', async () => {
+      vi.mocked(secureClient.healthCheck).mockResolvedValue(false);
+
+      render(<ChatWindow {...defaultProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'AI Tutor offline');
+      });
+      // Offline banner should appear
+      expect(screen.getByText(/AI Tutor is offline/i)).toBeInTheDocument();
+    });
+
+    it('shows offline banner when healthCheck throws', async () => {
+      vi.mocked(secureClient.healthCheck).mockRejectedValue(new Error('Network error'));
+
+      render(<ChatWindow {...defaultProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'AI Tutor offline');
+      });
+    });
+
+    it('shows offline banner when healthCheck times out (3s)', async () => {
+      vi.useFakeTimers();
+      vi.mocked(secureClient.healthCheck).mockImplementation(async () => new Promise(() => {})); // never resolves
+
+      render(<ChatWindow {...defaultProps} />);
+
+      // Advance past 3-second timeout — flushes the setTimeout in Promise.race
+      await act(async () => {
+        vi.advanceTimersByTime(3100);
+      });
+
+      // Restore real timers BEFORE waitFor (waitFor uses setTimeout internally)
+      vi.useRealTimers();
+
+      await waitFor(() => {
+        expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'AI Tutor offline');
+      });
+    });
+
+    it('dismisses offline banner when close button is clicked', async () => {
+      vi.mocked(secureClient.healthCheck).mockResolvedValue(false);
+
+      render(<ChatWindow {...defaultProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'AI Tutor offline');
+      });
+
+      // Banner should be visible
+      expect(screen.getByText(/AI Tutor is offline/i)).toBeInTheDocument();
+
+      // Click the dismiss button on the banner
+      fireEvent.click(screen.getByRole('button', { name: /dismiss offline warning/i }));
+
+      // Banner disappears; status dot still shows offline (connection unchanged)
+      await waitFor(() => {
+        expect(screen.queryByText(/AI Tutor is offline/i)).not.toBeInTheDocument();
       });
     });
   });

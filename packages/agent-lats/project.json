@@ -1,0 +1,30 @@
+{
+  "name": "agent-lats",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/agent-lats/src",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:util", "domain:agents"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/agent-lats",
+        "main": "packages/agent-lats/src/index.ts",
+        "tsConfig": "packages/agent-lats/tsconfig.json"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["packages/agent-lats/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "options": {
+        "configFile": "packages/agent-lats/vite.config.ts"
+      }
+    }
+  }
+}

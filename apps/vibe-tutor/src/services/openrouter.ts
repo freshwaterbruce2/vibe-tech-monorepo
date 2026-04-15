@@ -1,10 +1,11 @@
-// OpenRouter client integration for vibe-tutor (MOBILE-OPTIMIZED)
+﻿// OpenRouter client integration for vibe-tutor (MOBILE-OPTIMIZED)
 // UPDATED: January 10, 2026 - Fixed to use backend proxy
 // Uses CapacitorHttp for Android compatibility
 
 import { BLAKE_CONFIG } from '@/config';
 import { sessionStore } from '@/utils/electronStore';
 import { CapacitorHttp } from '@capacitor/core';
+import { logger } from '@/utils/logger';
 
 // Type definitions
 export interface ChatMessage {
@@ -84,7 +85,6 @@ class OpenRouterClient {
   constructor(options?: { timeout?: number; retries?: number }) {
     this.timeout = options?.timeout ?? 30000;
     this.retries = options?.retries ?? 3;
-    console.debug('[OpenRouter] Initialized with backend:', BLAKE_CONFIG.apiEndpoint);
   }
 
   async chat(request: ChatRequest): Promise<ChatResponse> {
@@ -143,7 +143,7 @@ class OpenRouterClient {
           request.model !== MODELS.FALLBACK_FREE
         ) {
           forceFreeFallback = true;
-          console.warn('[OpenRouter] Retrying with free fallback model');
+          logger.warn('[OpenRouter] Retrying with free fallback model');
           continue;
         }
 
@@ -190,7 +190,7 @@ export async function getHomeworkHelp(subject: string, question: string): Promis
 
     return response.choices[0]?.message?.content ?? 'Sorry, I could not process your request.';
   } catch (error) {
-    console.error('[OpenRouter] Homework help error:', error);
+    logger.error('[OpenRouter] Homework help error:', error);
     return navigator.onLine
       ? "I'm having trouble connecting right now. Please try again."
       : "I'm offline. Please check your internet connection.";
@@ -225,7 +225,7 @@ export async function parseHomeworkInput(input: string): Promise<{
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     return jsonMatch ? JSON.parse(jsonMatch[0]) : {};
   } catch (error) {
-    console.error('[OpenRouter] Parse error:', error);
+    logger.error('[OpenRouter] Parse error:', error);
     return {};
   }
 }
@@ -257,7 +257,7 @@ export async function breakDownTask(task: string): Promise<string[]> {
 
     return steps.length > 0 ? steps : ['Start the task', 'Work through it', 'Review your work'];
   } catch (error) {
-    console.error('[OpenRouter] Break down error:', error);
+    logger.error('[OpenRouter] Break down error:', error);
     return ['Start the task', 'Work through it', 'Review your work'];
   }
 }
@@ -308,7 +308,7 @@ Valid types: homework, break, chore, fun, meal`,
     const parsed: unknown = JSON.parse(jsonMatch[0]);
     return Array.isArray(parsed) ? (parsed as Array<{ time: string; activity: string; durationMinutes: number; type: string }>) : [];
   } catch (error) {
-    console.error('[OpenRouter] Schedule suggestion error:', error);
+    logger.error('[OpenRouter] Schedule suggestion error:', error);
     return [];
   }
 }

@@ -32,7 +32,7 @@ const WordSearchGame = ({ subject, onComplete, onBack, initialConfig = {} }: Wor
       // Show settings screen
       if (showSettings) {
         return (
-          <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6 flex items-center justify-center">
+          <div className="min-h-screen bg-gradient-to-br from-violet-900 via-blue-900 to-sky-900 p-6 flex items-center justify-center">
             <div className="max-w-2xl w-full">
               <div className="glass-card p-8 border border-purple-500/50">
                 <div className="text-center mb-8">
@@ -68,7 +68,7 @@ const WordSearchGame = ({ subject, onComplete, onBack, initialConfig = {} }: Wor
       }
     }
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-violet-900 via-blue-900 to-sky-900 p-6 flex items-center justify-center">
         <div className="text-white text-xl">Generating puzzle...</div>
       </div>
     );
@@ -77,7 +77,7 @@ const WordSearchGame = ({ subject, onComplete, onBack, initialConfig = {} }: Wor
   // Validate puzzle grid
   if (!puzzle.grid || !Array.isArray(puzzle.grid) || puzzle.grid.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-violet-900 via-blue-900 to-sky-900 p-6 flex items-center justify-center">
         <div className="text-center">
           <div className="text-white text-xl mb-4">Error loading puzzle</div>
           <button
@@ -101,7 +101,7 @@ const WordSearchGame = ({ subject, onComplete, onBack, initialConfig = {} }: Wor
   );
   if (invalidWords.length > 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-violet-900 via-blue-900 to-sky-900 p-6 flex items-center justify-center">
         <div className="text-center">
           <div className="text-white text-xl mb-4">Error: Some words have invalid positions</div>
           <button
@@ -118,7 +118,7 @@ const WordSearchGame = ({ subject, onComplete, onBack, initialConfig = {} }: Wor
   // Tutorial
   if (showTutorial && gameStarted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-violet-900 via-blue-900 to-sky-900 p-6 flex items-center justify-center">
         <div className="max-w-2xl w-full">
           <div className="glass-card p-8 border border-cyan-500/50">
             <div className="text-center mb-6">
@@ -135,7 +135,7 @@ const WordSearchGame = ({ subject, onComplete, onBack, initialConfig = {} }: Wor
               />
               <TutorialStep
                 emoji="✨"
-                color="fuchsia"
+                color="sky"
                 title="Words Highlight Purple"
                 desc="When you find a word, it turns purple and you get points!"
               />
@@ -183,7 +183,7 @@ const WordSearchGame = ({ subject, onComplete, onBack, initialConfig = {} }: Wor
   const progressPercent = (foundWords.size / puzzle.words.length) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-pink-900 p-6 pb-36 md:pb-8">
+    <div className="min-h-screen bg-gradient-to-br from-violet-900 via-blue-900 to-sky-900 p-6 pb-36 md:pb-8">
       <CelebrationEffect trigger={celebrate} type="confetti" duration={1000} />
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -222,7 +222,7 @@ const WordSearchGame = ({ subject, onComplete, onBack, initialConfig = {} }: Wor
           {/* Stats row */}
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-2">
-              <CheckCircle size={20} className="text-fuchsia-400" />
+              <CheckCircle size={20} className="text-sky-400" />
               <span className="text-white font-medium">
                 {foundWords.size}/{puzzle.words.length} words
               </span>
@@ -302,7 +302,7 @@ const WordSearchGame = ({ subject, onComplete, onBack, initialConfig = {} }: Wor
           <div className="glass-card p-6 max-w-sm w-full border border-red-500/40 animate-[fadeIn_0.2s_ease-out]">
             <h3 className="text-xl font-bold text-white mb-2">Quit Game?</h3>
             <p className="text-gray-300 mb-1">
-              You've found <span className="text-fuchsia-400 font-bold">{foundWords.size}</span> of{' '}
+              You've found <span className="text-sky-400 font-bold">{foundWords.size}</span> of{' '}
               <span className="text-cyan-400 font-bold">{puzzle.words.length}</span> words.
             </p>
             <p className="text-gray-400 text-sm mb-6">Your progress will be lost.</p>
@@ -361,10 +361,10 @@ function TutorialStep({
       border: 'border-cyan-500/30',
       text: 'text-cyan-400',
     },
-    fuchsia: {
-      background: 'bg-fuchsia-500/10',
-      border: 'border-fuchsia-500/30',
-      text: 'text-fuchsia-400',
+    sky: {
+      background: 'bg-sky-500/10',
+      border: 'border-sky-500/30',
+      text: 'text-sky-400',
     },
     yellow: {
       background: 'bg-yellow-500/10',

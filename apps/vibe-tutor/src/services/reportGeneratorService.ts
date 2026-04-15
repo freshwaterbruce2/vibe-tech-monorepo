@@ -1,5 +1,6 @@
 import { createChatCompletion } from './secureClient';
 import type { HomeworkItem } from '../types';
+import { logger } from '../utils/logger';
 
 export const generateProgressReport = async (
     items: HomeworkItem[], 
@@ -46,7 +47,7 @@ export const generateProgressReport = async (
         });
         return response ?? "Could not generate a report at this time. Please check the raw data for progress.";
     } catch (error) {
-        console.error("Error generating progress report:", error);
+        logger.error("Error generating progress report:", error);
         return "Could not generate a report at this time. Please check the raw data for progress.";
     }
 };

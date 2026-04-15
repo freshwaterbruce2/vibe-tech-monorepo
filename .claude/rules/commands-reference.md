@@ -60,8 +60,8 @@ Port ranges: `3000-3099` backend, `3100-3199` MCP, `5173-5199` Vite, `8000-8999`
 ## Cleanup
 
 ```powershell
-.\tools\cleanup-scripts\Quick-Cleanup-Execute.ps1 -DryRun 0   # Weekly
-.\tools\cleanup-scripts\Execute-Deep-Cleanup.ps1 -RemoveNodeModules 1  # Monthly
+.\tools\scripts\Quick-Cleanup.ps1          # Weekly cleanup
+.\tools\scripts\Emergency-Cleanup.ps1     # Deep cleanup (removes node_modules etc.)
 ```
 
 ## Custom Slash Commands (`.claude/commands/`)

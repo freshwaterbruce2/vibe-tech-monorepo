@@ -1,4 +1,5 @@
 import { useReducer, useEffect, useCallback, useMemo } from 'react';
+import { logger } from '../utils/logger';
 import { getSubjectProgress, completeWorksheet } from '../services/progressionService';
 import type { AchievementEvent } from '../services/achievementService';
 import type {
@@ -163,7 +164,7 @@ export function useWorksheet(options: UseWorksheetOptions = {}) {
             dispatch({ type: 'SET_PROGRESS', payload: { progress } });
           }
         } catch (error) {
-          console.error('[useWorksheet] Failed to load worksheet progress:', error);
+          logger.error('[useWorksheet] Failed to load worksheet progress:', error);
           if (isMounted) {
             dispatch({ type: 'SET_PROGRESS', payload: { progress: null } });
           }
@@ -226,7 +227,7 @@ export function useWorksheet(options: UseWorksheetOptions = {}) {
           });
         }
       } catch (error) {
-        console.error('[useWorksheet] Failed to complete worksheet:', error);
+        logger.error('[useWorksheet] Failed to complete worksheet:', error);
       }
     },
     [onAchievementEvent, onAwardTokens]

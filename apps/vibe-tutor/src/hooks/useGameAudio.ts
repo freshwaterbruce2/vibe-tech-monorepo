@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { logger } from '../utils/logger';
 
 type SoundType = 'pop' | 'success' | 'error' | 'victory' | 'levelUp';
 
@@ -53,7 +54,7 @@ export function useGameAudio() {
       oscillator.start();
       oscillator.stop(audioContext.current.currentTime + duration);
     } catch (e) {
-      console.warn('Audio play failed', e);
+      logger.warn('Audio play failed', e);
     }
   }, []);
 

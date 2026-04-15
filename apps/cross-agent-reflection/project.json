@@ -1,0 +1,58 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "cross-agent-reflection",
+  "projectType": "application",
+  "sourceRoot": "apps/cross-agent-reflection/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "apps/cross-agent-reflection"
+      }
+    },
+    "dev:client": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev:client",
+        "cwd": "apps/cross-agent-reflection"
+      }
+    },
+    "dev:server": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev:server",
+        "cwd": "apps/cross-agent-reflection"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "apps/cross-agent-reflection"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run typecheck",
+        "cwd": "apps/cross-agent-reflection"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run lint",
+        "cwd": "apps/cross-agent-reflection"
+      }
+    }
+  },
+  "tags": [
+    "scope:app",
+    "type:web",
+    "stack:vite",
+    "stack:react",
+    "stack:express"
+  ]
+}

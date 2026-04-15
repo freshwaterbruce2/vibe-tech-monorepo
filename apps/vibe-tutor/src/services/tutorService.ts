@@ -4,6 +4,7 @@ import { learningAnalytics } from './learningAnalytics';
 import { personalization } from './personalizationService';
 import { createChatCompletion, type DeepSeekMessage } from './secureClient';
 import { usageMonitor } from './usageMonitor';
+import { logger } from '../utils/logger';
 
 /** Patterns that indicate the student wants re-explanation (signals unsuccessful interaction) */
 const RE_EXPLAIN_PATTERNS =
@@ -128,7 +129,7 @@ export const sendMessageToTutor = async (message: string): Promise<string> => {
 
     return assistantMessage;
   } catch (error) {
-    console.error('Error in sendMessageToTutor:', error);
+    logger.error('Error in sendMessageToTutor:', error);
     return "I'm having some technical difficulties right now. Please try again in a moment.";
   }
 };

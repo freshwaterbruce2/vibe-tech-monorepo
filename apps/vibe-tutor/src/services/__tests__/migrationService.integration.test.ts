@@ -463,10 +463,10 @@ describe('MigrationService - Integration Tests', () => {
 
       await expect(service.performMigration()).rejects.toThrow();
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[Migration] FAILED:', expect.any(Error));
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[Migration] Your data is safe in the backup.');
+      expect(consoleErrorSpy).toHaveBeenCalledWith('[ERROR] [Migration] FAILED:', expect.any(Error));
+      expect(consoleErrorSpy).toHaveBeenCalledWith('[ERROR] [Migration] Your data is safe in the backup.');
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        '[Migration] To restore, call: migrationService.restoreFromBackup()',
+        '[ERROR] [Migration] To restore, call: migrationService.restoreFromBackup()',
       );
 
       consoleErrorSpy.mockRestore();

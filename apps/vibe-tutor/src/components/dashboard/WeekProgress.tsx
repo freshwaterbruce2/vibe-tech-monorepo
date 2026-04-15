@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect, useTransition } from 'react';
 import { TrendingUp } from 'lucide-react';
 import type { HomeworkItem, FocusSession } from '../../types';
 import { dataStore } from '../../services/dataStore';
+import { logger } from '../../utils/logger';
 
 interface WeekProgressProps {
   homeworkItems: HomeworkItem[];
@@ -19,7 +20,7 @@ const WeekProgress = ({ homeworkItems }: WeekProgressProps) => {
         const sessions = await dataStore.getFocusSessions();
         startTransition(() => setFocusSessions(sessions));
       } catch (error) {
-        console.error('[WeekProgress] Failed to load sessions:', error);
+        logger.error('[WeekProgress] Failed to load sessions:', error);
       }
     };
     void loadSessions();

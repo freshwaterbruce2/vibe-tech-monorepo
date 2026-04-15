@@ -99,7 +99,7 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
             {feedback && (
               <div
                 className={`text-center text-2xl font-bold mb-6 animate-bounce ${
-                  feedback.includes('❌') ? 'text-red-400' : 'text-fuchsia-400'
+                  feedback.includes('❌') ? 'text-red-400' : 'text-violet-400'
                 }`}
               >
                 {feedback}

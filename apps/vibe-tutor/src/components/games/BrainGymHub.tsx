@@ -151,8 +151,8 @@ export default function BrainGymHub(props: BrainGymHubProps) {
             <span className="gh-stat-value">{stats.streak}</span>
             <span className="gh-stat-label">Neural Link</span>
           </div>
-          <div className="gh-stat-box" style={{ '--stat-accent': '#ec4899' } as React.CSSProperties}>
-            <Gift size={18} color="#ec4899" />
+          <div className="gh-stat-box" style={{ '--stat-accent': '#38BDF8' } as React.CSSProperties}>
+            <Gift size={18} color="#38BDF8" />
             <span className="gh-stat-value">{stats.chestProgress}/5</span>
             <span className="gh-stat-label">Data Cache</span>
           </div>
@@ -206,8 +206,8 @@ export default function BrainGymHub(props: BrainGymHubProps) {
                 </div>
               </button>
               <div className="gh-featured-panel">
-                <div className="gh-stat-box" style={{ '--stat-accent': '#ec4899' } as React.CSSProperties}>
-                  <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-slate-400"><Target size={12} color="#ec4899" />Daily Goal</div>
+                <div className="gh-stat-box" style={{ '--stat-accent': '#38BDF8' } as React.CSSProperties}>
+                  <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-slate-400"><Target size={12} color="#38BDF8" />Daily Goal</div>
                   <span className="gh-stat-value">{dailyGoalProgress}/{DAILY_GOAL_TARGET}</span>
                   <span className="gh-stat-label">{stats.dailyGoalCompletedOn === todayKey ? `Completed +${DAILY_GOAL_BONUS}` : `${DAILY_GOAL_TARGET - globalThis.Math.min(dailyGoalProgress, DAILY_GOAL_TARGET)} runs left`}</span>
                   <div className="gh-target-track mt-2 w-full"><div className="gh-target-fill" style={{ '--target-pct': `${dailyGoalPct}%` } as React.CSSProperties} /></div>

@@ -1,4 +1,5 @@
-import { appStore } from '../utils/electronStore';
+﻿import { appStore } from '../utils/electronStore';
+import { logger } from '../utils/logger';
 
 /**
  * Daily Affirmations System
@@ -257,9 +258,8 @@ export function saveDailyEntry(entry: DailyAffirmationEntry): void {
     const limited = existing.slice(-90);
 
     appStore.set('daily_affirmations', JSON.stringify(limited));
-    console.debug('[Affirmations] Saved daily entry');
   } catch (error) {
-    console.error('[Affirmations] Failed to save entry:', error);
+    logger.error('[Affirmations] Failed to save entry:', error);
   }
 }
 
@@ -271,7 +271,7 @@ export function getAffirmationHistory(): DailyAffirmationEntry[] {
     const saved = appStore.get<DailyAffirmationEntry[]>('daily_affirmations');
     return saved ?? [];
   } catch (error) {
-    console.warn('[Affirmations] Failed to load history:', error);
+    logger.warn('[Affirmations] Failed to load history:', error);
     return [];
   }
 }
