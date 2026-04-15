@@ -15,6 +15,7 @@
  */
 
 import type { LocalTrack } from '../types';
+import { logger } from '../utils/logger';
 
 class MediaSessionService {
   private isSupported: boolean;
@@ -24,9 +25,8 @@ class MediaSessionService {
     this.isSupported = 'mediaSession' in navigator;
 
     if (this.isSupported) {
-      console.debug('✅ Media Session API supported - lock screen controls enabled');
     } else {
-      console.warn('⚠️ Media Session API not supported on this browser');
+      logger.warn('⚠️ Media Session API not supported on this browser');
     }
   }
 
@@ -67,9 +67,8 @@ class MediaSessionService {
         ]
       });
 
-      console.debug('🎵 Media Session metadata updated:', track.name);
     } catch (error) {
-      console.error('❌ Failed to update Media Session metadata:', error);
+      logger.error('❌ Failed to update Media Session metadata:', error);
     }
   }
 
@@ -133,9 +132,8 @@ class MediaSessionService {
         navigator.mediaSession.setActionHandler('seekforward', handlers.seekforward);
       }
 
-      console.debug('✅ Media Session action handlers registered');
     } catch (error) {
-      console.error('❌ Failed to register Media Session handlers:', error);
+      logger.error('❌ Failed to register Media Session handlers:', error);
     }
   }
 
@@ -152,9 +150,8 @@ class MediaSessionService {
 
     try {
       navigator.mediaSession.playbackState = state;
-      console.debug('▶️ Media Session playback state:', state);
     } catch (error) {
-      console.error('❌ Failed to update Media Session playback state:', error);
+      logger.error('❌ Failed to update Media Session playback state:', error);
     }
   }
 
@@ -188,12 +185,10 @@ class MediaSessionService {
       // Only log occasionally (every 5 seconds) to avoid spam
       const now = Date.now();
       if (now - this.lastPositionUpdate > 5000) {
-        console.debug(`⏱️ Position: ${position.toFixed(1)}s / ${duration.toFixed(1)}s`);
         this.lastPositionUpdate = now;
       }
     } catch (error) {
       // Silently fail - position updates are not critical
-      console.debug('Position state update failed:', error);
     }
   }
 
@@ -206,9 +201,8 @@ class MediaSessionService {
     try {
       navigator.mediaSession.metadata = null;
       navigator.mediaSession.playbackState = 'none';
-      console.debug('🧹 Media Session cleared');
     } catch (error) {
-      console.error('❌ Failed to clear Media Session:', error);
+      logger.error('❌ Failed to clear Media Session:', error);
     }
   }
 

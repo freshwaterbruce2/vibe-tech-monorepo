@@ -5,6 +5,7 @@
  * Handles game sessions, progress tracking, and user preferences.
  */
 
+import { logger } from '../utils/logger';
 import { BLAKE_CONFIG } from '@/config';
 
 // Extend Window interface to include custom properties
@@ -84,7 +85,7 @@ async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
 
     return await response.json();
   } catch (error) {
-    console.error('[API Client] Error:', error);
+    logger.error('[API Client] Error:', error);
     throw error;
   }
 }
@@ -176,7 +177,7 @@ export async function safeApiCall<T>(apiCall: () => Promise<T>, fallback: T): Pr
   try {
     return await apiCall();
   } catch (error) {
-    console.warn('[API Client] API call failed, using fallback:', error);
+    logger.warn('[API Client] API call failed, using fallback:', error);
     return fallback;
   }
 }

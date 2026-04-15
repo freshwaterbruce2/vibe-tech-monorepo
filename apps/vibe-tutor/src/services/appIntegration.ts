@@ -1,8 +1,9 @@
-/**
+﻿/**
  * App Integration Service
  * Connects database and learning analytics to the main application
  */
 
+import { logger } from '../utils/logger';
 import type { Achievement, HomeworkItem, MusicPlaylist, Reward } from '../types';
 import { databaseService } from './databaseService';
 import { learningAnalytics } from './learningAnalytics';
@@ -70,7 +71,7 @@ export class AppIntegrationService {
       try {
         return await databaseService.getHomeworkItems();
       } catch (error) {
-        console.error('Database error, falling back to localStorage:', error);
+        logger.error('Database error, falling back to localStorage:', error);
       }
     }
 
@@ -99,7 +100,7 @@ export class AppIntegrationService {
       try {
         await databaseService.saveHomeworkItem(item);
       } catch (error) {
-        console.error('Failed to save to database:', error);
+        logger.error('Failed to save to database:', error);
       }
     }
   }
@@ -121,7 +122,7 @@ export class AppIntegrationService {
           await db.run('DELETE FROM homework_items WHERE id = ?', [id]);
         }
       } catch (error) {
-        console.error('Failed to delete from database:', error);
+        logger.error('Failed to delete from database:', error);
       }
     }
   }
@@ -186,7 +187,7 @@ export class AppIntegrationService {
           achievement.progress ?? 0,
         );
       } catch (error) {
-        console.error('Failed to track achievement:', error);
+        logger.error('Failed to track achievement:', error);
       }
     }
   }
@@ -234,7 +235,7 @@ export class AppIntegrationService {
         }
       }
     } catch (error) {
-      console.error('Failed to get user stats:', error);
+      logger.error('Failed to get user stats:', error);
     }
 
     return stats;
@@ -288,9 +289,8 @@ export class AppIntegrationService {
         appStore.set('studentPoints', data.points);
       }
 
-      console.debug('Data imported successfully');
     } catch (error) {
-      console.error('Failed to import data:', error);
+      logger.error('Failed to import data:', error);
       throw error;
     }
   }

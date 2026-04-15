@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { appStore } from '../utils/electronStore';
 
 /**
@@ -37,7 +38,7 @@ class FeatureFlagService {
         return { ...DEFAULT_FLAGS, ...saved };
       }
     } catch (error) {
-      console.warn('Failed to load feature flags:', error);
+      logger.warn('Failed to load feature flags:', error);
     }
     return { ...DEFAULT_FLAGS };
   }
@@ -46,7 +47,7 @@ class FeatureFlagService {
     try {
       appStore.set(STORAGE_KEY, JSON.stringify(this.flags));
     } catch (error) {
-      console.error('Failed to save feature flags:', error);
+      logger.error('Failed to save feature flags:', error);
     }
   }
 

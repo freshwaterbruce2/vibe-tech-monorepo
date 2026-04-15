@@ -1,9 +1,10 @@
-/**
+﻿/**
  * Assistant Client Service - FIXED January 2026
  * Mobile-first chat using CapacitorHttp for Android reliability
  * NOW INCLUDES SESSION TOKEN MANAGEMENT (was missing - caused 401 errors)
  */
 
+import { logger } from '../utils/logger';
 import { BLAKE_CONFIG } from '@/config';
 import { sessionStore } from '@/utils/electronStore';
 import { CapacitorHttp } from '@capacitor/core';
@@ -51,7 +52,6 @@ let currentSystemPrompt = DEFAULT_SYSTEM_PROMPT;
  */
 async function initSession(): Promise<void> {
   try {
-    console.debug('[AssistantClient] Initializing session...');
     const response = await CapacitorHttp.post({
       url: `${BLAKE_CONFIG.apiEndpoint}${BLAKE_CONFIG.endpoints.session}`,
       headers: {
@@ -72,9 +72,8 @@ async function initSession(): Promise<void> {
       sessionStore.set('assistant_session', sessionToken);
     }
     sessionStore.set('assistant_expiry', String(tokenExpiry));
-    console.debug('[AssistantClient] Session initialized successfully');
   } catch (error) {
-    console.error('[AssistantClient] Session init failed:', error);
+    logger.error('[AssistantClient] Session init failed:', error);
     throw error;
   }
 }
@@ -91,7 +90,6 @@ async function ensureValidSession(): Promise<void> {
     if (storedToken && storedExpiry && Date.now() < Number(storedExpiry)) {
       sessionToken = storedToken;
       tokenExpiry = Number(storedExpiry);
-      console.debug('[AssistantClient] Restored session from storage');
     } else {
       await initSession();
     }
@@ -107,7 +105,7 @@ function getChatHistory(): ChatMessage[] {
         : stored
       : [{ role: 'system', content: currentSystemPrompt, timestamp: Date.now() }];
   } catch (error) {
-    console.error('[AssistantClient] Failed to load chat history:', error);
+    logger.error('[AssistantClient] Failed to load chat history:', error);
     return [{ role: 'system', content: currentSystemPrompt, timestamp: Date.now() }];
   }
 }
@@ -120,7 +118,7 @@ function saveChatHistory(history: ChatMessage[]): void {
     const toSave = systemMsg ? [systemMsg, ...recentMessages] : recentMessages;
     appStore?.set(CHAT_HISTORY_KEY, JSON.stringify(toSave));
   } catch (error) {
-    console.error('[AssistantClient] Failed to save chat history:', error);
+    logger.error('[AssistantClient] Failed to save chat history:', error);
   }
 }
 
@@ -135,7 +133,6 @@ async function sendToBackend(userMessage: string): Promise<string> {
   messages.push({ role: 'user', content: userMessage });
 
   const url = `${BLAKE_CONFIG.apiEndpoint}${BLAKE_CONFIG.endpoints.chat}`;
-  console.debug('[AssistantClient] Sending to:', url);
 
   const maxRetries = 3;
   let forceFreeFallback = false;
@@ -156,11 +153,9 @@ async function sendToBackend(userMessage: string): Promise<string> {
         readTimeout: 30000,
       });
 
-      console.debug('[AssistantClient] Response status:', response.status);
 
       // Handle session expiry
       if (response.status === 401) {
-        console.debug('[AssistantClient] Session expired, refreshing...');
         await initSession();
         continue;
       }
@@ -176,7 +171,7 @@ async function sendToBackend(userMessage: string): Promise<string> {
 
       if ((response.status === 402 || response.status === 503) && !forceFreeFallback) {
         forceFreeFallback = true;
-        console.warn('[AssistantClient] Paid model unavailable, retrying with free fallback');
+        logger.warn('[AssistantClient] Paid model unavailable, retrying with free fallback');
         continue;
       }
 
@@ -193,7 +188,7 @@ async function sendToBackend(userMessage: string): Promise<string> {
       );
       /* eslint-enable @typescript-eslint/prefer-nullish-coalescing */
     } catch (error) {
-      console.error(`[AssistantClient] Attempt ${attempt} failed:`, error);
+      logger.error(`[AssistantClient] Attempt ${attempt} failed:`, error);
 
       if (attempt < maxRetries) {
         const backoff = Math.min(Math.pow(2, attempt - 1) * 1000, 10000);

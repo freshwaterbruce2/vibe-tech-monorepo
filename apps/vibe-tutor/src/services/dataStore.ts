@@ -4,6 +4,7 @@
  * Ensures MCP Learning Dashboard queries show correct real-time data
  */
 
+import { logger } from '../utils/logger';
 import { Capacitor } from '@capacitor/core';
 import type {
   Achievement,
@@ -43,23 +44,18 @@ export class DataStore {
     this.initializePromise = (async () => {
       try {
         if (this.useSQLite) {
-          console.debug('Initializing SQLite database at D:\\databases\\vibe-tutor.db');
           await databaseService.initialize();
 
           // Check if migration is needed
           const migrated = await migrationService.isMigrationComplete();
           if (!migrated) {
-            console.debug('Performing one-time migration from localStorage to SQLite...');
             await migrationService.performMigration();
-            console.debug('Migration complete. All data now in D:\\databases\\vibe-tutor.db');
           }
-        } else {
-          console.debug('Using localStorage (web platform)');
         }
 
         this.initialized = true;
       } catch (error) {
-        console.error('Failed to initialize data store:', error);
+        logger.error('Failed to initialize data store:', error);
         // Fallback to localStorage
         this.useSQLite = false;
         this.initialized = true;
@@ -447,9 +443,6 @@ export class DataStore {
 
   async getChatHistory(type: 'tutor' | 'friend'): Promise<ChatMessage[]> {
     const key = `chat-history-${type}`;
-    console.debug(
-      `[DataStore] getChatHistory called with type="${type}", key="${key}", useSQLite=${this.useSQLite}`,
-    );
 
     if (this.useSQLite) {
       const db = databaseService.getConnection();
@@ -458,28 +451,18 @@ export class DataStore {
         const result = await db.query(`SELECT value FROM user_settings WHERE key = ?`, [key]);
         if (result.values && result.values.length > 0) {
           const messages = JSON.parse(result.values[0].value) as ChatMessage[];
-          console.debug(
-            `[DataStore] Loaded ${messages.length} messages from SQLite for key="${key}"`,
-          );
           return messages;
         }
       }
-      console.debug(`[DataStore] No messages found in SQLite for key="${key}"`);
       return [];
     } else {
       const messages = appStore.get<ChatMessage[]>(key) ?? [];
-      console.debug(
-        `[DataStore] Loaded ${messages.length} messages from localStorage for key="${key}"`,
-      );
       return messages;
     }
   }
 
   async saveChatHistory(type: 'tutor' | 'friend', messages: ChatMessage[]): Promise<void> {
     const key = `chat-history-${type}`;
-    console.debug(
-      `[DataStore] saveChatHistory called with type="${type}", key="${key}", messages.length=${messages.length}, useSQLite=${this.useSQLite}`,
-    );
 
     if (this.useSQLite) {
       const db = databaseService.getConnection();
@@ -494,11 +477,9 @@ export class DataStore {
           key,
           JSON.stringify(messages),
         ]);
-        console.debug(`[DataStore] Saved ${messages.length} messages to SQLite for key="${key}"`);
       }
     } else {
       appStore.set(key, JSON.stringify(messages));
-      console.debug(`[DataStore] Saved ${messages.length} messages to localStorage for key="${key}"`);
     }
   }
 

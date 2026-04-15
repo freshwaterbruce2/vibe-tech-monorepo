@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 import { sessionStore } from '../utils/electronStore';
 import { createChatCompletion } from './secureClient';
 
@@ -10,7 +11,7 @@ export const breakDownTask = async (taskTitle: string, subject: string): Promise
       return cached;
     }
   } catch (e) {
-    console.error('Error reading from sessionStore', e);
+    logger.error('Error reading from sessionStore', e);
   }
 
   const fallbackSteps = [
@@ -51,18 +52,18 @@ export const breakDownTask = async (taskTitle: string, subject: string): Promise
           try {
             sessionStore.set(cacheKey, steps);
           } catch (e) {
-            console.error('Error writing to sessionStore', e);
+            logger.error('Error writing to sessionStore', e);
           }
         }
         return steps;
       } catch (parseError) {
-        console.error('Error parsing JSON response:', parseError);
+        logger.error('Error parsing JSON response:', parseError);
         return fallbackSteps;
       }
     }
     return fallbackSteps;
   } catch (error) {
-    console.error('Error breaking down task with DeepSeek:', error);
+    logger.error('Error breaking down task with DeepSeek:', error);
     return fallbackSteps;
   }
 };

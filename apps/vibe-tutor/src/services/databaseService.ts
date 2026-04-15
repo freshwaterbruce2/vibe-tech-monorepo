@@ -1,9 +1,10 @@
-/**
+﻿/**
  * Database Service for Vibe Tutor
  * Manages SQLite database on D: drive for persistent data storage
  * Uses @capacitor-community/sqlite for cross-platform support
  */
 
+import { logger } from '../utils/logger';
 import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
 import { Capacitor } from '@capacitor/core';
 
@@ -82,19 +83,17 @@ export class DatabaseService {
           const status = integrity.values?.[0]?.['integrity_check'];
 
           if (status !== 'ok') {
-            console.error('[Database] CORRUPTION DETECTED:', status);
+            logger.error('[Database] CORRUPTION DETECTED:', status);
             throw new Error('Database integrity check failed');
           }
-          console.debug('[Database] Integrity check passed.');
         } catch (e) {
-          console.warn('[Database] Corruption detected or check failed. Initiating restore...', e);
+          logger.warn('[Database] Corruption detected or check failed. Initiating restore...', e);
           // Close and delete corrupt DB
           await this.db.close();
           await this.sqlite.closeConnection(DATABASE_NAME, false);
           // Note: CapacitorSQLite deleteConnection might be needed here, or file deletion
 
           // Restore from migration backup
-          console.debug('[Database] Restoring from local backup...');
           await migrationService.restoreFromBackup();
 
           // Re-open (migration/restore puts data in appStore/localStorage, migrationService.performMigration will re-populate DB)
@@ -107,15 +106,14 @@ export class DatabaseService {
         await this.createTables();
 
         this.initialized = true;
-        console.debug('Database initialized successfully');
       } catch (error) {
         this.initialized = false;
-        console.error('Failed to initialize database:', error);
+        logger.error('Failed to initialize database:', error);
         // Last resort: Restore backup if init completely fails
         try {
           await migrationService.restoreFromBackup();
         } catch (restoreErr) {
-          console.error('Fatal: Restore failed', restoreErr);
+          logger.error('Fatal: Restore failed', restoreErr);
         }
         throw error;
       }
@@ -341,9 +339,8 @@ export class DatabaseService {
       }
 
       // Migrate other data...
-      console.debug('Data migration completed successfully');
     } catch (error) {
-      console.error('Migration failed:', error);
+      logger.error('Migration failed:', error);
       throw error;
     }
   }
