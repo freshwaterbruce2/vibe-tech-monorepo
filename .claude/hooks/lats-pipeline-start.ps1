@@ -29,9 +29,10 @@ try {
     $CLI     = 'node'
     $CLIPath = 'C:\dev\packages\agent-lats\dist\cli.js'
 
-    # Derive pipeline name
+    # Derive pipeline name — colon-syntax only ("pipeline:name") to avoid
+    # matching "pipeline for ..." in natural-language task descriptions.
     $pipelineName = 'ralph-wiggum'
-    if ($combined -match 'pipeline[:\s]+(\w[\w\-]*)') { $pipelineName = $matches[1] }
+    if ($combined -match 'pipeline:(\w[\w\-]*)') { $pipelineName = $matches[1] }
 
     $task = if ($description) { $description } else { 'Skill generation pipeline' }
 
