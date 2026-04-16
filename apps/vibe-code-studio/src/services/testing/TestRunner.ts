@@ -383,7 +383,7 @@ export class TestRunner {
 
       const options: TestRunnerOptions = {
         coverage: true,
-        testFramework: framework.name as any
+        testFramework: framework.name as TestRunnerOptions['testFramework']
       };
 
       let result: TestSuite;

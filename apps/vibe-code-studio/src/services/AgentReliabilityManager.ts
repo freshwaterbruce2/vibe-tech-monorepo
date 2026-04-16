@@ -28,7 +28,7 @@ export interface HealthIssue {
 
 export interface RecoveryStrategy {
   type: 'retry' | 'circuit_breaker' | 'fallback' | 'restart' | 'load_balance';
-  condition: (error: Error, context: any) => boolean;
+  condition: (error: Error, context: AgentContext) => boolean;
   execute: (agent: BaseSpecializedAgent, request: string, context: AgentContext) => Promise<AgentResponse>;
   maxAttempts: number;
   backoffMs: number;
@@ -53,7 +53,7 @@ export class AgentReliabilityManager extends EventEmitter {
   private failureHistory: Map<string, Array<{
     timestamp: Date;
     error: string;
-    context: any;
+    context: AgentContext;
     recovered: boolean;
     recoveryTime?: number;
   }>> = new Map();
@@ -260,7 +260,7 @@ export class AgentReliabilityManager extends EventEmitter {
   /**
    * Record failed agent execution
    */
-  private recordFailure(agentId: string, error: Error, context: any, _responseTime: number): void {
+  private recordFailure(agentId: string, error: Error, context: AgentContext, _responseTime: number): void {
     const metrics = this.getOrCreateMetrics(agentId);
     metrics.totalRequests++;
     metrics.failedRequests++;

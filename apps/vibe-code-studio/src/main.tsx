@@ -72,7 +72,7 @@ shimWithTimeout.then(() => {
       </ErrorBoundary>
     </StrictMode>
   );
-  (window as any).__APP_MOUNTED__ = true;
+  (window as unknown as Record<string, unknown>).__APP_MOUNTED__ = true;
 }).catch((err) => {
   logger.error('[TauriShim] Fatal error:', err);
   ReactDOM.createRoot(root).render(
@@ -82,5 +82,5 @@ shimWithTimeout.then(() => {
       </ErrorBoundary>
     </StrictMode>
   );
-  (window as any).__APP_MOUNTED__ = true;
+  (window as unknown as Record<string, unknown>).__APP_MOUNTED__ = true;
 });

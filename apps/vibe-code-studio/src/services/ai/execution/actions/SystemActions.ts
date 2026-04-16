@@ -22,8 +22,8 @@ export async function executeRunCommand(
         const command = String(params['command']);
 
         // Prefer Electron shell IPC when available
-        if (typeof window !== 'undefined' && (window as any).electron?.shell?.execute) {
-            const result = await (window as any).electron.shell.execute(command, params['cwd'] as string | undefined);
+        if (typeof window !== 'undefined' && window.electron?.shell?.execute) {
+            const result = await window.electron.shell.execute(command, params['cwd'] as string | undefined);
             if (result?.success) {
                 return {
                     success: true,

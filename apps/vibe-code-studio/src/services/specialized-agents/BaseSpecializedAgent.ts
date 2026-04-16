@@ -54,7 +54,7 @@ export interface AgentContext {
   gitBranch?: string;
   projectType?: string;
   dependencies?: string[];
-  userPreferences?: Record<string, any>;
+  userPreferences?: Record<string, unknown>;
   sessionHistory?: AgentMemory[];
   relatedFiles?: string[];
   codebaseMetrics?: CodebaseMetrics;
@@ -125,7 +125,7 @@ export abstract class BaseSpecializedAgent {
   protected memory: AgentMemory[] = [];
   protected learningPatterns: Map<string, LearningPattern> = new Map();
   protected performanceMetrics: PerformanceMetrics[] = [];
-  protected contextCache: Map<string, any> = new Map();
+  protected contextCache: Map<string, AgentResponse & { _cacheTime?: number }> = new Map();
   
   constructor(
     protected name: string,
@@ -414,7 +414,7 @@ export abstract class BaseSpecializedAgent {
   private generateFallbackResponse(
     request: string,
     context: AgentContext,
-    error: any
+    error: unknown
   ): AgentResponse {
     return {
       content: `I apologize, but I encountered an issue processing your request. Based on my specialization in ${this.getSpecialization()}, I can suggest some general approaches that might help.`,
@@ -466,9 +466,9 @@ export abstract class BaseSpecializedAgent {
     return `${request.substring(0, 200)}_${contextKey}`.replace(/\s+/g, '_');
   }
 
-  private isCacheValid(cachedResponse: any): boolean {
+  private isCacheValid(cachedResponse: AgentResponse & { _cacheTime?: number }): boolean {
     // Simple time-based cache validation (5 minutes)
-    return cachedResponse._cacheTime && 
+    return !!cachedResponse._cacheTime &&
            (Date.now() - cachedResponse._cacheTime) < 5 * 60 * 1000;
   }
 

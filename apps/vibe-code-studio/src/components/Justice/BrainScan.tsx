@@ -23,7 +23,7 @@ export const BrainScan: React.FC = () => {
     try {
       if (window.electron?.db) {
           const data = await window.electron.db.getPatterns();
-          setPatterns(((data as any)?.patterns ?? []) as Pattern[]);
+          setPatterns(((data as Record<string, unknown>)?.patterns as Pattern[] | undefined ?? []));
       }
     } catch (err) {
       logger.error("Failed to sync with Brain:", err);
@@ -98,7 +98,7 @@ export const BrainScan: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {patterns.map((p, idx) => {
             const confidence = p.success_rate ?? p.confidence ?? 0;
-            const content = p.pattern_data ?? (p as any).pattern ?? 'Unknown Pattern';
+            const content = p.pattern_data ?? (p as unknown as Record<string, unknown>).pattern as string | undefined ?? 'Unknown Pattern';
 
             return (
               <div key={p.id || idx} className="group relative bg-slate-800 border border-slate-700 rounded-xl p-4 hover:border-cyan-500/50 transition-all duration-300">

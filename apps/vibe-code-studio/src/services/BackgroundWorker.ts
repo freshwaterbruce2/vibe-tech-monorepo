@@ -8,13 +8,13 @@ import { logger } from '../services/Logger';
 
 export interface WorkerMessage {
   type: 'execute' | 'progress' | 'result' | 'error' | 'terminate';
-  payload?: any;
+  payload?: unknown;
 }
 
 export interface WorkerTask {
   id: string;
   type: string;
-  data: any;
+  data: unknown;
 }
 
 export class BackgroundWorker {
@@ -35,9 +35,9 @@ export class BackgroundWorker {
   /**
    * Execute a task in the background worker
    */
-  async execute<_T = any>(
+  async execute<_T = unknown>(
     taskType: string,
-    data: any,
+    data: unknown,
     onProgress?: (progress: TaskProgress) => void
   ): Promise<TaskResult> {
     if (this.isTerminated) {
@@ -52,7 +52,7 @@ export class BackgroundWorker {
         switch (message.type) {
           case 'progress':
             if (onProgress && message.payload) {
-              onProgress(message.payload);
+              onProgress(message.payload as TaskProgress);
             }
             break;
 
@@ -68,7 +68,7 @@ export class BackgroundWorker {
             this.messageHandlers.delete(taskId);
             resolve({
               success: false,
-              error: message.payload ?? 'Unknown worker error',
+              error: typeof message.payload === 'string' ? message.payload : 'Unknown worker error',
             });
             break;
         }
@@ -118,8 +118,9 @@ export class BackgroundWorker {
       const message = event.data;
 
       // Find handler by task ID (if available)
-      if (message.payload?.id) {
-        const handler = this.messageHandlers.get(message.payload.id);
+      const payloadWithId = message.payload as Record<string, unknown> | undefined;
+      if (payloadWithId?.['id']) {
+        const handler = this.messageHandlers.get(payloadWithId['id'] as string);
         if (handler) {
           handler(message);
         }
@@ -170,9 +171,9 @@ export class BackgroundWorkerPool {
   /**
    * Execute a task using an available worker from the pool
    */
-  async execute<T = any>(
+  async execute<T = unknown>(
     taskType: string,
-    data: any,
+    data: unknown,
     onProgress?: (progress: TaskProgress) => void
   ): Promise<TaskResult> {
     const worker = await this.getAvailableWorker();

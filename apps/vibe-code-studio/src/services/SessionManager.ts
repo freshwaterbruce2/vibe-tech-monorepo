@@ -10,7 +10,7 @@ interface AgentTask {
 
 interface AgentResult {
   success: boolean;
-  data?: any;
+  data?: Record<string, unknown>;
   error?: string;
 }
 
@@ -34,7 +34,7 @@ export interface AgentSession {
     output: number;
   };
   cost: number;
-  state: Record<string, any>;
+  state: Record<string, unknown>;
 }
 
 export interface SessionCheckpoint {
@@ -94,7 +94,7 @@ export class SessionManager {
     return agentSession;
   }
 
-  updateAgentState(sessionId: string, agentId: string, state: Record<string, any>) {
+  updateAgentState(sessionId: string, agentId: string, state: Record<string, unknown>) {
     const session = this.sessions.get(sessionId);
     if (!session) {
       return;

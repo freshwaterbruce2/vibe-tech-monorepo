@@ -115,8 +115,21 @@ function extractJsonFromResponse(aiResponse: string): string | null {
 /**
  * Builds AgentTask from parsed JSON
  */
+type ParsedTaskJson = {
+    title?: string;
+    description?: string;
+    steps: Array<{
+        order?: number;
+        title: string;
+        description: string;
+        action: { type: string; params?: Record<string, unknown> };
+        requiresApproval?: boolean;
+        maxRetries?: number;
+    }>;
+};
+
 function buildTaskFromParsed(
-    parsed: any,
+    parsed: ParsedTaskJson,
     userRequest: string,
     options?: TaskPlanRequest['options']
 ): AgentTask {
@@ -124,7 +137,7 @@ function buildTaskFromParsed(
     const taskId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Build steps
-    const steps: AgentStep[] = parsed.steps.map((step: any, index: number) => {
+    const steps: AgentStep[] = parsed.steps.map((step, index: number) => {
         const action = validateAction(step.action);
         // Always check shouldRequireApproval - it overrides AI's decision for destructive actions
         const systemRequiresApproval = shouldRequireApproval(action, options);
@@ -191,8 +204,8 @@ function createFallbackTask(userRequest: string): AgentTask {
 /**
  * Validates and sanitizes action parameters
  */
-export function validateAction(action: any): StepAction {
-    if (!VALID_ACTION_TYPES.includes(action.type)) {
+export function validateAction(action: { type: string; params?: Record<string, unknown> }): StepAction {
+    if (!VALID_ACTION_TYPES.includes(action.type as ActionType)) {
         throw new Error(`Invalid action type: ${action.type}`);
     }
 

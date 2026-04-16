@@ -5,6 +5,7 @@
 
 import type { FileChange, MultiFileEditPlan } from '@vibetech/types/multifile';
 import { useRef, useState, type MutableRefObject } from 'react';
+import type { editor as MonacoEditor } from 'monaco-editor';
 import type { AutoFixService, GeneratedFix } from '../../services/AutoFixService';
 import type { DetectedError, ErrorDetector } from '../../services/ErrorDetector';
 import type {
@@ -73,11 +74,11 @@ export interface UseAppStateReturn {
   setOpenrouterApiKey: (key: string) => void;
 
   // Refs
-  editorRef: MutableRefObject<any>;
+  editorRef: MutableRefObject<MonacoEditor.IStandaloneCodeEditor | null>;
   errorDetectorRef: MutableRefObject<ErrorDetector | null>;
   autoFixServiceRef: MutableRefObject<AutoFixService | null>;
-  codeActionProviderRef: MutableRefObject<any>;
-  tabCompletionProviderRef: MutableRefObject<any>;
+  codeActionProviderRef: MutableRefObject<{ dispose: () => void } | null>;
+  tabCompletionProviderRef: MutableRefObject<{ dispose: () => void } | null>;
 
   // Computed state objects
   uiState: AppUIState;
@@ -122,11 +123,11 @@ export function useAppState(): UseAppStateReturn {
   const [openrouterApiKey, setOpenrouterApiKey] = useState<string>('');
 
   // Refs for Monaco editor and auto-fix
-  const editorRef = useRef<any>(null);
+  const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
   const errorDetectorRef = useRef<ErrorDetector | null>(null);
   const autoFixServiceRef = useRef<AutoFixService | null>(null);
-  const codeActionProviderRef = useRef<any>(null);
-  const tabCompletionProviderRef = useRef<any>(null);
+  const codeActionProviderRef = useRef<{ dispose: () => void } | null>(null);
+  const tabCompletionProviderRef = useRef<{ dispose: () => void } | null>(null);
 
   // Computed state objects for props
   const uiState: AppUIState = {

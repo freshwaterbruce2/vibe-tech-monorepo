@@ -215,14 +215,15 @@ const ModelSelector = ({ currentModel, onModelChange }: ModelSelectorProps) => {
   const currentModelInfo = MODEL_REGISTRY[currentModel as keyof typeof MODEL_REGISTRY] as AIModel | undefined;
   const currentProviderName = currentModelInfo ? getProviderName(currentModelInfo.provider) : 'Unknown';
 
-  const groupedModels = Object.entries(MODEL_REGISTRY).reduce((acc: Record<string, any[]>, [id, model]) => {
+  type ModelWithId = AIModel & { modelId: string };
+  const groupedModels = Object.entries(MODEL_REGISTRY).reduce((acc: Record<string, ModelWithId[]>, [id, model]) => {
     const provider = model.provider as string;
     if (!acc[provider]) {
       acc[provider] = [];
     }
     acc[provider].push({ ...model, modelId: id });
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {} as Record<string, ModelWithId[]>);
 
   const getCostIndicator = (model: AIModel) => {
     if (!model.costPerMillionInput && !model.costPerMillionOutput) {return '$';}

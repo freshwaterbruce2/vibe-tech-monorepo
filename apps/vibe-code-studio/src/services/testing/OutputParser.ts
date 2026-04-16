@@ -85,25 +85,38 @@ export class OutputParser {
   /**
    * Parse Jest/Vitest JSON output
    */
-  private parseJestVitestJson(result: any): { tests: TestResult[]; coverage?: CoverageInfo } {
+  private parseJestVitestJson(result: Record<string, unknown>): { tests: TestResult[]; coverage?: CoverageInfo } {
     const tests: TestResult[] = [];
     let coverage: CoverageInfo | undefined;
 
+    type AssertionResult = {
+      status?: string;
+      fullName?: string;
+      title?: string;
+      failureMessages?: string[];
+      duration?: number;
+      location?: { line?: number; column?: number };
+    };
+    type JestTestResult = {
+      name?: string;
+      assertionResults?: AssertionResult[];
+    };
+
     // Handle Jest format
-    if (result.testResults) {
-      for (const testResult of result.testResults) {
+    if (result['testResults']) {
+      for (const testResult of result['testResults'] as JestTestResult[]) {
         const file = testResult.name;
 
         for (const assertionResult of testResult.assertionResults ?? []) {
           tests.push({
             passed: assertionResult.status === 'passed',
-            testName: assertionResult.fullName ?? assertionResult.title,
+            testName: assertionResult.fullName ?? assertionResult.title ?? '',
             output: assertionResult.failureMessages?.join('\n') ?? '',
             error: assertionResult.status === 'failed' ?
               assertionResult.failureMessages?.join('\n') : undefined,
             duration: assertionResult.duration ?? 0,
             location: {
-              file,
+              file: file ?? '',
               line: assertionResult.location?.line,
               column: assertionResult.location?.column
             }
@@ -112,16 +125,21 @@ export class OutputParser {
       }
 
       // Parse coverage if available
-      if (result.coverageMap) {
-        coverage = this.parseCoverage(result.coverageMap);
+      if (result['coverageMap']) {
+        coverage = this.parseCoverage(result['coverageMap'] as Record<string, unknown>);
       }
     }
 
+    type VitestSuiteResult = {
+      file?: string;
+      tasks?: Record<string, unknown>[];
+    };
+
     // Handle Vitest format
-    if (result.results) {
-      for (const suiteResult of result.results) {
+    if (result['results']) {
+      for (const suiteResult of result['results'] as VitestSuiteResult[]) {
         const { file } = suiteResult;
-        this.extractVitestTests(suiteResult.tasks ?? [], file, tests);
+        this.extractVitestTests(suiteResult.tasks ?? [], file ?? '', tests);
       }
     }
 
@@ -131,24 +149,25 @@ export class OutputParser {
   /**
    * Extract tests from Vitest task structure
    */
-  private extractVitestTests(tasks: any[], file: string, tests: TestResult[]): void {
+  private extractVitestTests(tasks: Record<string, unknown>[], file: string, tests: TestResult[]): void {
     for (const task of tasks) {
-      if (task.type === 'test') {
+      const taskResult = task['result'] as { state?: string; error?: { message?: string }; duration?: number } | undefined;
+      const taskLocation = task['location'] as { line?: number; column?: number } | undefined;
+      if (task['type'] === 'test') {
         tests.push({
-          passed: task.result?.state === 'pass',
-          testName: task.name,
-          output: task.result?.error?.message ?? '',
-          error: task.result?.state === 'fail' ?
-            task.result?.error?.message : undefined,
-          duration: task.result?.duration ?? 0,
+          passed: taskResult?.state === 'pass',
+          testName: task['name'] as string,
+          output: taskResult?.error?.message ?? '',
+          error: taskResult?.state === 'fail' ? taskResult?.error?.message : undefined,
+          duration: taskResult?.duration ?? 0,
           location: {
             file,
-            line: task.location?.line,
-            column: task.location?.column
+            line: taskLocation?.line,
+            column: taskLocation?.column
           }
         });
-      } else if (task.tasks) {
-        this.extractVitestTests(task.tasks, file, tests);
+      } else if (task['tasks']) {
+        this.extractVitestTests(task['tasks'] as Record<string, unknown>[], file, tests);
       }
     }
   }
@@ -235,20 +254,26 @@ export class OutputParser {
   /**
    * Parse coverage data from Istanbul format
    */
-  parseCoverage(coverageMap: any): CoverageInfo {
+  parseCoverage(coverageMap: Record<string, unknown>): CoverageInfo {
     const files: CoverageFileInfo[] = [];
     let totalLines = 0, coveredLines = 0;
     let totalFunctions = 0, coveredFunctions = 0;
     let totalBranches = 0, coveredBranches = 0;
     let totalStatements = 0, coveredStatements = 0;
 
+    type IstanbulFileCoverage = {
+      s?: Record<string, number>;
+      f?: Record<string, number>;
+      b?: Record<string, number[]>;
+    };
+
     for (const [filePath, fileCoverage] of Object.entries(coverageMap ?? {})) {
-      const fc = fileCoverage as any;
+      const fc = fileCoverage as IstanbulFileCoverage;
 
       if (fc.s && fc.f && fc.b) {
-        const linesCov = Object.values(fc.s as Record<string, number>);
-        const funcsCov = Object.values(fc.f as Record<string, number>);
-        const branchesCov = Object.values(fc.b as Record<string, number[]>).flat();
+        const linesCov = Object.values(fc.s);
+        const funcsCov = Object.values(fc.f);
+        const branchesCov = Object.values(fc.b).flat();
 
         const fileCoveredLines = linesCov.filter(v => v > 0).length;
         const fileTotalLines = linesCov.length;

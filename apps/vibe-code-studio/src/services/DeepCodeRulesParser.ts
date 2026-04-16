@@ -147,7 +147,10 @@ export class DeepCodeRulesParser {
 
       // Merge global rules (deep merge)
       if (rules.global) {
-        merged.global = this.deepMerge(merged.global ?? {}, rules.global);
+        merged.global = this.deepMerge(
+          (merged.global ?? {}) as unknown as Record<string, unknown>,
+          rules.global as unknown as Record<string, unknown>
+        ) as unknown as typeof merged.global;
       }
 
       // Append patterns
@@ -222,7 +225,7 @@ export class DeepCodeRulesParser {
    */
   serialize(rules: DeepCodeRules): string {
     // Simple YAML serializer (in production, use a library like js-yaml)
-    return this.toYAML(rules, 0);
+    return this.toYAML(rules as unknown as Record<string, unknown>, 0);
   }
 
   // --- Private Methods ---
@@ -243,9 +246,9 @@ export class DeepCodeRulesParser {
       }
 
       // Basic YAML parsing (simplified)
-      const rules: any = { version: '1.0' };
+      const rules: Record<string, unknown> = { version: '1.0' };
       const lines = content.split('\n');
-      let currentSection: any = rules;
+      let currentSection: Record<string, unknown> = rules;
 
       lines.forEach((line) => {
         const trimmed = line.trim();
@@ -263,19 +266,20 @@ export class DeepCodeRulesParser {
             currentSection[keyTrimmed] = this.parseValue(value);
           } else {
             // New section
-            currentSection[keyTrimmed] = {};
-            currentSection = currentSection[keyTrimmed] as Record<string, unknown>;
+            const newSection: Record<string, unknown> = {};
+            currentSection[keyTrimmed] = newSection;
+            currentSection = newSection;
           }
         }
       });
 
-      return rules as DeepCodeRules;
+      return rules as unknown as DeepCodeRules;
     } catch (error) {
       throw new Error(`YAML parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  private parseValue(value: string): any {
+  private parseValue(value: string): string | number | boolean | string[] {
     // Remove quotes
     const cleaned = value.replace(/^['"]|['"]$/g, '');
 
@@ -301,7 +305,7 @@ export class DeepCodeRulesParser {
   /**
    * Simple YAML serializer
    */
-  private toYAML(obj: any, indent: number): string {
+  private toYAML(obj: Record<string, unknown>, indent: number): string {
     const spaces = ' '.repeat(indent);
     let yaml = '';
 
@@ -310,13 +314,13 @@ export class DeepCodeRulesParser {
 
       if (typeof value === 'object' && !Array.isArray(value)) {
         yaml += `${spaces}${key}:\n`;
-        yaml += this.toYAML(value, indent + 2);
+        yaml += this.toYAML(value as Record<string, unknown>, indent + 2);
       } else if (Array.isArray(value)) {
         yaml += `${spaces}${key}:\n`;
-        value.forEach((item) => {
-          if (typeof item === 'object') {
+        value.forEach((item: unknown) => {
+          if (typeof item === 'object' && item !== null) {
             yaml += `${spaces}  -\n`;
-            yaml += this.toYAML(item, indent + 4);
+            yaml += this.toYAML(item as Record<string, unknown>, indent + 4);
           } else {
             yaml += `${spaces}  - ${item}\n`;
           }
@@ -333,12 +337,15 @@ export class DeepCodeRulesParser {
   /**
    * Deep merge two objects
    */
-  private deepMerge(target: any, source: any): any {
-    const output = { ...target };
+  private deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
+    const output: Record<string, unknown> = { ...target };
 
     Object.keys(source).forEach((key) => {
       if (source[key] instanceof Object && key in target) {
-        output[key] = this.deepMerge(target[key], source[key]);
+        output[key] = this.deepMerge(
+          target[key] as Record<string, unknown>,
+          source[key] as Record<string, unknown>
+        );
       } else {
         output[key] = source[key];
       }

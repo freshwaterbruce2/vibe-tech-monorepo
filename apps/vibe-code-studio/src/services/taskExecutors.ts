@@ -107,13 +107,14 @@ export const multiFileEditExecutor: TaskExecutor = {
     onProgress: (progress: TaskProgress) => void
   ): Promise<TaskResult> {
     try {
-      const changes = (task.metadata?.['changes'] as any[]) || [];
+      const changes = (task.metadata?.['changes'] as Array<{ path: string }>) || [];
       const total = changes.length;
       const appliedFiles: string[] = [];
       const failedFiles: string[] = [];
 
       for (let i = 0; i < total; i++) {
         const change = changes[i];
+        if (!change) continue;
 
         // Simulate file modification
         await new Promise((resolve) => setTimeout(resolve, 200));

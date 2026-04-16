@@ -4,11 +4,14 @@
  */
 import { logger } from '../services/Logger';
 import type {
+  CodingConventions,
   DeepCodeRules,
   GlobalRules,
+  NamingConventions,
   PatternRules,
   ResolvedRules,
   RuleContext,
+  StylePreferences,
 } from '../types/customInstructions';
 
 import { DeepCodeRulesParser } from './DeepCodeRulesParser';
@@ -284,7 +287,7 @@ export class CustomRulesEngine {
     // Merge pattern rules with base rules
     const finalRules: DeepCodeRules = {
       ...baseRules,
-      global: (this.parser['deepMerge'] as any)(
+      global: (this.parser['deepMerge'] as (...args: unknown[]) => GlobalRules)(
         baseRules.global ?? {},
         ...matchedRules
       ),
@@ -353,7 +356,7 @@ export class CustomRulesEngine {
   /**
    * Generate style instructions for AI
    */
-  private generateStyleInstructions(style: any): string {
+  private generateStyleInstructions(style: StylePreferences): string {
     let instructions = '\n\nStyle Preferences:\n';
 
     if (style.indentation) {
@@ -378,7 +381,7 @@ export class CustomRulesEngine {
   /**
    * Generate naming convention instructions
    */
-  private generateNamingInstructions(naming: any): string {
+  private generateNamingInstructions(naming: NamingConventions): string {
     let instructions = '\n\nNaming Conventions:\n';
 
     if (naming.variables) {instructions += `- Variables: ${naming.variables}\n`;}
@@ -392,7 +395,7 @@ export class CustomRulesEngine {
   /**
    * Generate coding convention instructions
    */
-  private generateConventionInstructions(conventions: any): string {
+  private generateConventionInstructions(conventions: CodingConventions): string {
     let instructions = '\n\nCoding Conventions:\n';
 
     if (conventions.errorHandling) {

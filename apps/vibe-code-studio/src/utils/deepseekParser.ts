@@ -74,12 +74,19 @@ export function parseDeepSeekStream(fullText: string): ParsedResponse {
  * @param chunk - The streaming chunk from OpenRouter
  * @returns Parsed reasoning and content
  */
-export function parseOpenRouterChunk(chunk: any): ParsedResponse {
+interface OpenRouterChunk {
+  choices?: Array<{
+    reasoning_details?: string | unknown;
+    delta?: { content?: string };
+  }>;
+}
+
+export function parseOpenRouterChunk(chunk: OpenRouterChunk): ParsedResponse {
   // 1. Check for OpenRouter's reasoning_details field
-  const reasoningField = chunk.choices?.[0]?.reasoning_details || null;
+  const reasoningField = chunk.choices?.[0]?.reasoning_details ?? null;
 
   // 2. Get main content
-  const content = chunk.choices?.[0]?.delta?.content || "";
+  const content = chunk.choices?.[0]?.delta?.content ?? "";
 
   // 3. If OpenRouter provides structured reasoning, use it
   if (reasoningField) {

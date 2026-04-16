@@ -34,6 +34,7 @@ import {
     extractWarnings,
     generateFallbackPlans,
     parseTaskPlan,
+    type StepConfidence,
     validateTask,
 } from './planning';
 import { StrategyMemory } from './StrategyMemory';
@@ -219,7 +220,7 @@ export class TaskPlanner {
     /**
      * Generate fallback plans for a step
      */
-    async generateFallbackPlans(step: AgentStep, confidence: any) {
+    async generateFallbackPlans(step: AgentStep, confidence: StepConfidence) {
         return generateFallbackPlans(step, confidence);
     }
 }

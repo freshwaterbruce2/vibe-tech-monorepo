@@ -617,15 +617,15 @@ export class CodeExecutor {
   }
 
   // Execution methods
-  private async executeViaElectron(type: string, payload: any): Promise<ExecutionResult> {
+  private async executeViaElectron(type: string, payload: unknown): Promise<ExecutionResult> {
     try {
       const result = await this.electronService.invoke('code-execute', {
         type,
         payload,
         securityPolicy: this.securityPolicy
       });
-      
-      return result ?? {
+
+      return (result as ExecutionResult | null) ?? {
         success: false,
         output: '',
         error: 'No response from Electron main process',
@@ -669,10 +669,10 @@ export class CodeExecutor {
       // Create a sandboxed execution context
       const sandbox = {
         console: {
-          log: (...args: any[]) => args.join(' '),
-          error: (...args: any[]) => args.join(' '),
-          warn: (...args: any[]) => args.join(' '),
-          info: (...args: any[]) => args.join(' ')
+          log: (...args: unknown[]) => args.join(' '),
+          error: (...args: unknown[]) => args.join(' '),
+          warn: (...args: unknown[]) => args.join(' '),
+          info: (...args: unknown[]) => args.join(' ')
         },
         setTimeout: undefined,
         setInterval: undefined,
@@ -684,7 +684,7 @@ export class CodeExecutor {
       };
 
       // Create execution function with timeout
-      const executeWithTimeout = async (code: string, timeout: number): Promise<any> => {
+      const executeWithTimeout = async (code: string, timeout: number): Promise<unknown> => {
         return new Promise((resolve, reject) => {
           const timer = setTimeout(() => {
             reject(new Error(`Execution timed out after ${timeout}ms`));

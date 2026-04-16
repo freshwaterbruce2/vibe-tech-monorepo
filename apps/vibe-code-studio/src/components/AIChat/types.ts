@@ -5,6 +5,8 @@
 import type { FileChange, MultiFileEditPlan } from '@vibetech/types/multifile';
 import type { ReactElement, ReactNode } from 'react';
 import type { AIMessage, AgentStep, AgentTask, ApprovalRequest, StepStatus } from '../../types';
+import type { TaskPlanner } from '../../services/ai/TaskPlanner';
+import type { ExecutionEngine } from '../../services/ai/ExecutionEngine';
 
 export type ChatMode = 'chat' | 'agent';
 
@@ -24,8 +26,8 @@ export interface AIChatProps {
     mode?: ChatMode;
     onModeChange?: (mode: ChatMode) => void;
     // Agent mode integration
-    taskPlanner?: any; // TaskPlanner instance
-    executionEngine?: any; // ExecutionEngine instance
+    taskPlanner?: TaskPlanner;
+    executionEngine?: ExecutionEngine;
     workspaceContext?: WorkspaceContext;
     // Message management for Agent Mode
     onAddMessage?: (message: AIMessage) => void;

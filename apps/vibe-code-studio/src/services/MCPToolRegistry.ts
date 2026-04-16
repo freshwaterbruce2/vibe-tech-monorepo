@@ -184,8 +184,8 @@ export class MCPToolRegistry {
   async executeTool(
     agentId: string,
     toolId: string,
-    parameters: Record<string, any>
-  ): Promise<any> {
+    parameters: Record<string, unknown>
+  ): Promise<{ success: boolean; result: string }> {
     if (!this.canAgentUseTool(agentId, toolId)) {
       throw new Error(`Agent ${agentId} cannot use tool ${toolId}`);
     }
@@ -207,7 +207,7 @@ export class MCPToolRegistry {
     return { success: true, result: 'Mock result' };
   }
 
-  private validateParameters(tool: MCPTool, parameters: Record<string, any>) {
+  private validateParameters(tool: MCPTool, parameters: Record<string, unknown>) {
     for (const param of tool.parameters) {
       if (param.required && !(param.name in parameters)) {
         throw new Error(`Missing required parameter: ${param.name}`);
@@ -226,7 +226,7 @@ export class MCPToolRegistry {
     }
   }
 
-  private logUsage(agentId: string, toolId: string, parameters: Record<string, any>) {
+  private logUsage(agentId: string, toolId: string, parameters: Record<string, unknown>) {
     this.toolUsageLog.push({
       timestamp: new Date(),
       agentId,
@@ -274,6 +274,6 @@ interface ToolUsageEntry {
   timestamp: Date;
   agentId: string;
   toolId: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   success: boolean;
 }

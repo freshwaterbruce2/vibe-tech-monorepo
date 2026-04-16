@@ -16,7 +16,7 @@ export interface OrchestratorTask {
   id: string;
   title?: string;
   description: string;
-  context?: any;
+  context?: AgentContext;
   priority?: 'low' | 'medium' | 'high' | 'critical';
   deadline?: Date;
   requiredCapabilities?: AgentCapability[];
@@ -499,7 +499,7 @@ export class AgentOrchestrator {
   private synthesizeResponse(
     _request: string,
     agentResponses: Record<string, AgentResponse>,
-    coordination: any
+    coordination: { strategy: string; reasoning: string; confidence: number; parallelism: number }
   ): { content: string; recommendations: string[] } {
     const agentKeys = Object.keys(agentResponses);
     
@@ -697,7 +697,7 @@ export class AgentOrchestrator {
         name: agent.getName(),
         role: agent.getRole(),
         capabilities: agent.getCapabilities(),
-        specialization: (agent as any).getSpecialization?.() ?? 'General',
+        specialization: (agent as BaseSpecializedAgent & { getSpecialization?: () => string }).getSpecialization?.() ?? 'General',
         performance: {
           avgResponseTime: stats.avgProcessingTime,
           successRate: stats.avgConfidence,
@@ -735,7 +735,7 @@ export class AgentOrchestrator {
   async coordinateTask(task: {
     id?: string;
     description: string;
-    context?: any;
+    context?: AgentContext;
   }): Promise<CoordinatedTask> {
     const taskId = task.id ?? this.generateTaskId();
     

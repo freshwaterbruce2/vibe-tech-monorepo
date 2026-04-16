@@ -6,6 +6,7 @@ import type * as Monaco from 'monaco-editor';
 
 import { logger } from '../services/Logger';
 
+import type { UnifiedAIService } from './ai/UnifiedAIService';
 import { ModelRegistry } from './ModelRegistry';
 
 export interface DetectedError {
@@ -55,7 +56,7 @@ export class AutoFixService {
   private modelRegistry: ModelRegistry;
   private config: AutoFixConfig;
 
-  constructor(private aiService: any, config?: AutoFixConfig) {
+  constructor(private aiService: UnifiedAIService, config?: AutoFixConfig) {
     if (!aiService) {
       throw new Error('AI service is required');
     }

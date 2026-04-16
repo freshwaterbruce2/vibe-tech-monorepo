@@ -82,11 +82,28 @@ export interface StrategyMemoryRecord {
   created_at?: Date;
 }
 
+// Electron IPC proxy shape (async, used in renderer)
+export interface ElectronDbProxy {
+  initialize: () => Promise<{ success: boolean; error?: string }>;
+  query: (sql: string, params?: unknown[]) => Promise<{ success: boolean; data: unknown; error?: string }>;
+  close?: () => void;
+}
+
+// sql.js Database shape (sync, used in web mode)
+export interface SqlJsDb {
+  run: (sql: string, params?: unknown[]) => void;
+  exec: (sql: string, params?: unknown[]) => Array<{ values: unknown[] }>;
+  prepare: (sql: string) => { run: (...args: unknown[]) => void; get: (key: string) => { value?: string } | undefined };
+  export: () => Uint8Array;
+}
+
+type DatabaseHandle = ElectronDbProxy | SqlJsDb;
+
 // -----------------------------------------------------------------------------
 // DatabaseService Implementation
 // -----------------------------------------------------------------------------
 export class DatabaseService {
-  private db: any = null;
+  private db: DatabaseHandle | null = null;
   private isElectron: boolean = false;
   private useFallback: boolean = false;
   private initialized: boolean = false;
@@ -98,6 +115,16 @@ export class DatabaseService {
   /** Detect Electron runtime */
   private detectElectron(): boolean {
     return typeof window !== 'undefined' && !!window.electron?.isElectron;
+  }
+
+  /** Cast db to the Electron IPC proxy — only call when isElectron is true */
+  private get edb(): ElectronDbProxy {
+    return this.db as ElectronDbProxy;
+  }
+
+  /** Cast db to the sql.js handle — only call when !isElectron */
+  private get sdb(): SqlJsDb {
+    return this.db as SqlJsDb;
   }
 
   /** Public initializer */
@@ -161,7 +188,7 @@ export class DatabaseService {
       return;
     }
     try {
-      await runMigration(this.db, '001_initial_schema.sql');
+      await runMigration(this.sdb, '001_initial_schema.sql');
       logger.info('[DatabaseService] Schema initialized via migration');
     } catch (e) {
       logger.error('[DatabaseService] Schema migration failed', e);
@@ -192,11 +219,11 @@ export class DatabaseService {
     const ctx = context ? JSON.stringify(context) : null;
     try {
       if (this.isElectron) {
-        const result = await this.db.query(sql, [workspace, userMessage, aiResponse, model, tokens ?? null, ctx]);
+        const result = await this.edb.query(sql, [workspace, userMessage, aiResponse, model, tokens ?? null, ctx]);
         // result.data contains the RunResult object from better-sqlite3
-        return result.success ? (result.data.lastInsertRowid as number) : null;
+        return result.success ? (result.data as { lastInsertRowid: number }).lastInsertRowid : null;
       } else {
-        this.db.run(sql, [workspace, userMessage, aiResponse, model, tokens ?? null, ctx]);
+        this.sdb.run(sql, [workspace, userMessage, aiResponse, model, tokens ?? null, ctx]);
         await this.saveToLocalStorage();
         return 1;
       }
@@ -214,16 +241,16 @@ export class DatabaseService {
     const sql = `SELECT * FROM chat_messages WHERE workspace_path = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?`;
     try {
       if (this.isElectron) {
-        const result = await this.db.query(sql, [workspace, limit, offset]);
+        const result = await this.edb.query(sql, [workspace, limit, offset]);
         // result.data contains the array of rows
         if (result.success && Array.isArray(result.data)) {
-          return result.data.map((row: Record<string, unknown>) => this.parseChatMessage(row));
+          return (result.data as Record<string, unknown>[]).map((row) => this.parseChatMessage(row));
         }
         return [];
       } else {
-        const result = this.db.exec(sql, [workspace, limit, offset]);
+        const result = this.sdb.exec(sql, [workspace, limit, offset]);
         if (!result[0]) return [];
-        return result[0].values.map((row: unknown[]) => this.parseChatMessage(row));
+        return (result[0].values as unknown[][]).map((row) => this.parseChatMessage(row));
       }
     } catch (e) {
       logger.error('[DatabaseService] getChatHistory error', e);
@@ -317,9 +344,9 @@ export class DatabaseService {
   // Persistence for sql.js (optional)
   // -------------------------------------------------------------------------
   private async saveToLocalStorage(): Promise<void> {
-    if (this.isElectron || !this.db || typeof this.db.export !== 'function') return;
+    if (this.isElectron || !this.db) return;
     try {
-      const data = this.db.export();
+      const data = this.sdb.export();
       const base64 = btoa(String.fromCharCode(...data));
       if (typeof window !== 'undefined' && window.electron?.store) {
         await window.electron.store.set('deepcode_database_blob', base64);
@@ -353,14 +380,14 @@ export class DatabaseService {
 
     try {
       if (this.isElectron) {
-        const result = await this.db.query('SELECT value FROM settings WHERE key = ?', [key]);
+        const result = await this.edb.query('SELECT value FROM settings WHERE key = ?', [key]);
         // result.data contains the array of rows for SELECT queries
         if (result.success && Array.isArray(result.data) && result.data.length > 0) {
-          return result.data[0].value;
+          return (result.data[0] as { value?: string }).value ?? null;
         }
         return null;
       }
-      const stmt = this.db.prepare('SELECT value FROM settings WHERE key = ?');
+      const stmt = this.sdb.prepare('SELECT value FROM settings WHERE key = ?');
       const row = stmt.get(key) as { value?: string } | undefined;
       return row?.value ?? null;
     } catch (error) {
@@ -395,13 +422,13 @@ export class DatabaseService {
 
     try {
       if (this.isElectron) {
-        await this.db.query(
+        await this.edb.query(
           'INSERT INTO analytics_events (event_type, event_data, timestamp) VALUES (?, ?, ?)',
           [eventType, JSON.stringify(data || {}), new Date().toISOString()]
         );
         return;
       }
-      const stmt = this.db.prepare('INSERT INTO analytics_events (event_type, event_data, timestamp) VALUES (?, ?, ?)');
+      const stmt = this.sdb.prepare('INSERT INTO analytics_events (event_type, event_data, timestamp) VALUES (?, ?, ?)');
       stmt.run(eventType, JSON.stringify(data || {}), new Date().toISOString());
     } catch (error) {
       logger.warn('[DatabaseService] logEvent failed, ignoring', error);
@@ -433,7 +460,7 @@ export class DatabaseService {
           // Electron: use IPC query method
           for (const entry of parsed) {
             try {
-              await this.db.query(
+              await this.edb.query(
                 'INSERT INTO strategy_memory (pattern_hash, pattern_data, success_rate, usage_count, created_at) VALUES (?, ?, ?, ?, ?)',
                 [
                   entry['pattern_hash'] ?? '',
@@ -450,7 +477,7 @@ export class DatabaseService {
           }
         } else {
           // sql.js: use prepare/run pattern
-          const stmt = this.db.prepare(
+          const stmt = this.sdb.prepare(
             'INSERT INTO strategy_memory (pattern_hash, pattern_data, success_rate, usage_count, created_at) VALUES (?, ?, ?, ?, ?)'
           );
           parsed.forEach((entry: Record<string, unknown>) => {
@@ -488,8 +515,8 @@ export class DatabaseService {
   // Cleanup
   // -------------------------------------------------------------------------
   async close(): Promise<void> {
-    if (this.db && this.isElectron && typeof this.db.close === 'function') {
-      this.db.close();
+    if (this.db && this.isElectron && this.edb.close) {
+      this.edb.close();
       logger.debug('[DatabaseService] Database connection closed');
     }
   }

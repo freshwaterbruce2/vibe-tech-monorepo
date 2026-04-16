@@ -366,21 +366,21 @@ export const CustomInstructionsPanel = ({
     </TabContent>
   );
 
-  const updateNestedValue = (path: string, value: any) => {
+  const updateNestedValue = (path: string, value: unknown) => {
     if (!rules) {return;}
 
     const parts = path.split('.');
     if (parts.length === 0) return;
-    
+
     const newRules = { ...rules };
-    let current: any = newRules;
+    let current: Record<string, unknown> = newRules as unknown as Record<string, unknown>;
 
     for (let i = 0; i < parts.length - 1; i++) {
       const key = parts[i]!;
       if (!current[key]) {
         current[key] = {};
       }
-      current = current[key];
+      current = current[key] as Record<string, unknown>;
     }
 
     current[parts[parts.length - 1]!] = value;

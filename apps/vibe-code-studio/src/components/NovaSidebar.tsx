@@ -3,24 +3,35 @@ import { Cpu, MousePointer2, Code2, Check, X, Terminal } from 'lucide-react';
 import { useIPC } from '../hooks/useIPC';
 import { IPCMessageType, type IPCMessage } from '@vibetech/shared-ipc';
 
+interface NovaIntent {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  action: 'insert' | 'action';
+  payload: unknown;
+}
+
 export const NovaSidebar = () => {
-  const [intents, setIntents] = useState<any[]>([]);
+  const [intents, setIntents] = useState<NovaIntent[]>([]);
 
   const handleIncomingMessage = useCallback((message: IPCMessage) => {
-    if (message.type === IPCMessageType.COMMAND_REQUEST || message.type === ('code_edit' as any)) {
+    const messageType = message.type as string;
+    if (message.type === IPCMessageType.COMMAND_REQUEST || messageType === 'code_edit') {
+      const payload = message.payload as Record<string, unknown>;
       // Create a unique ID if not present
-      const rawIntentId = (message.payload as any).id ?? message.messageId;
-      const intentId = rawIntentId ?? (() => {
+      const rawIntentId = payload['id'] ?? message.messageId;
+      const intentId = (rawIntentId as string | undefined) ?? (() => {
         const now = Date.now();
         return `intent_${now}`;
       })();
-      
-      const newIntent = {
+
+      const newIntent: NovaIntent = {
         id: intentId,
-        type: message.type,
-        title: (message.payload as any).title ?? (message.type === ('code_edit' as any) ? 'Code Edit' : 'Command Request'),
-        description: (message.payload as any).description ?? (message.payload as any).text ?? 'Nova wants to perform an action.',
-        action: message.type === ('code_edit' as any) ? 'insert' : 'action',
+        type: messageType,
+        title: (payload['title'] as string | undefined) ?? (messageType === 'code_edit' ? 'Code Edit' : 'Command Request'),
+        description: (payload['description'] as string | undefined) ?? (payload['text'] as string | undefined) ?? 'Nova wants to perform an action.',
+        action: messageType === 'code_edit' ? 'insert' : 'action',
         payload: message.payload
       };
 
@@ -34,7 +45,7 @@ export const NovaSidebar = () => {
 
   const { lastMessage, sendMessage } = useIPC({ onMessage: handleIncomingMessage });
 
-  const handleApprove = useCallback((intent: any) => {
+  const handleApprove = useCallback((intent: NovaIntent) => {
     // If it's a code edit, we might want to trigger the EditorService
     // For now, we send an ACK back to the source
     const now = Date.now();
@@ -120,7 +131,7 @@ export const NovaSidebar = () => {
           <Terminal size={10} /> CURRENT ACTIVITY
         </div>
         <div className="text-[11px] text-blue-300 truncate font-mono">
-          {(lastMessage?.payload as any)?.current_step ?? "Analyzing Monorepo Structure..."}
+          {((lastMessage?.payload as Record<string, unknown>)?.['current_step'] as string | undefined) ?? "Analyzing Monorepo Structure..."}
         </div>
       </div>
     </div>

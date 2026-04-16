@@ -362,8 +362,8 @@ export const ScreenshotToCodePanel = ({
         options
       );
       setResult(generatedResult);
-    } catch (err: any) {
-      setError(err.message ?? 'Failed to generate code');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to generate code');
     } finally {
       setIsGenerating(false);
     }
@@ -445,7 +445,7 @@ export const ScreenshotToCodePanel = ({
                 <Label>Framework</Label>
                 <Select
                   value={options.framework}
-                  onChange={(e) => setOptions({ ...options, framework: e.target.value as any })}
+                  onChange={(e) => setOptions({ ...options, framework: e.target.value as ImageToCodeOptions['framework'] })}
                 >
                   <option value="react">React</option>
                   <option value="html">HTML</option>
@@ -457,7 +457,7 @@ export const ScreenshotToCodePanel = ({
                 <Label>Styling</Label>
                 <Select
                   value={options.styling}
-                  onChange={(e) => setOptions({ ...options, styling: e.target.value as any })}
+                  onChange={(e) => setOptions({ ...options, styling: e.target.value as ImageToCodeOptions['styling'] })}
                 >
                   <option value="tailwind">Tailwind CSS</option>
                   <option value="css">CSS</option>

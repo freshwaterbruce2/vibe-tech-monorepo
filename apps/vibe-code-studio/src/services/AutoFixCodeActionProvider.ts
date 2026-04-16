@@ -7,7 +7,8 @@ import type * as Monaco from 'monaco-editor';
 
 import { logger } from '../services/Logger';
 
-import type { AutoFixService } from './AutoFixService';
+import type { AutoFixService, FixSuggestion } from './AutoFixService';
+import type { DetectedError } from './ErrorDetector';
 import type { ErrorDetector } from './ErrorDetector';
 
 export interface AutoFixCodeActionProviderConfig {
@@ -114,7 +115,9 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
    */
   registerCommandHandlers(editor: Monaco.editor.IStandaloneCodeEditor, monacoInstance: typeof Monaco) {
     // Handler for single fix
-    this.registerCommand(monacoInstance, 'autofix.fixWithAI', async (model: Monaco.editor.ITextModel, marker: Monaco.editor.IMarker) => {
+    this.registerCommand(monacoInstance, 'autofix.fixWithAI', async (...args: unknown[]) => {
+      const model = args[0] as Monaco.editor.ITextModel;
+      const marker = args[1] as Monaco.editor.IMarker;
       try {
         logger.debug('[CodeActionProvider] Fixing single error:', marker.message);
 
@@ -147,7 +150,9 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
     });
 
     // Handler for fix all
-    this.registerCommand(monacoInstance, 'autofix.fixAllWithAI', async (model: Monaco.editor.ITextModel, markers: Monaco.editor.IMarker[]) => {
+    this.registerCommand(monacoInstance, 'autofix.fixAllWithAI', async (...args: unknown[]) => {
+      const model = args[0] as Monaco.editor.ITextModel;
+      const markers = args[1] as Monaco.editor.IMarker[];
       try {
         logger.debug('[CodeActionProvider] Fixing multiple errors:', markers.length);
 
@@ -161,7 +166,7 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
             const fix = await this.autoFixService.generateFix(error, editor);
 
             if (fix.suggestions.length > 0) {
-              const suggestion = fix.suggestions[0];
+              const suggestion = fix.suggestions[0]!;
               this.applyFix(editor, model, suggestion);
               fixedCount++;
             }
@@ -195,13 +200,13 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
   private markerToDetectedError(
     marker: Monaco.editor.IMarker,
     model: Monaco.editor.ITextModel
-  ): any {
+  ): DetectedError {
     const severity = marker.severity >= 8 /* Monaco.MarkerSeverity.Error */ ? 'error' : 'warning';
     const type = marker.source === 'eslint' ? 'eslint' : 'typescript';
 
     // Extract error code
     const code = typeof marker.code === 'object' && marker.code !== null
-      ? (marker.code as any).value
+      ? (marker.code as { value: string }).value
       : marker.code;
 
     return {
@@ -223,7 +228,7 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
   private applyFix(
     editor: Monaco.editor.IStandaloneCodeEditor,
     model: Monaco.editor.ITextModel,
-    suggestion: any
+    suggestion: FixSuggestion
   ): void {
     // Create edit operation
     const edit: Monaco.editor.IIdentifiedSingleEditOperation = {
@@ -267,24 +272,33 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
   private registerCommand(
     monacoInstance: typeof Monaco,
     commandId: string,
-    handler: (...args: any[]) => void | Promise<void>
+    handler: (...args: unknown[]) => void | Promise<void>
   ): void {
     try {
+      const editorNs = monacoInstance.editor as unknown as Record<string, unknown>;
+
       // Try to dispose existing command first (in case of hot reload)
       try {
-        (monacoInstance.editor as any).getEditors()?.forEach((ed: any) => {
-          ed._actions?.forEach((action: any) => {
-            if (action.id === commandId) {
-              action.dispose?.();
-            }
+        const getEditors = editorNs['getEditors'];
+        if (typeof getEditors === 'function') {
+          (getEditors() as Array<Record<string, unknown>>)?.forEach((ed) => {
+            const actions = ed['_actions'] as Array<{ id: string; dispose?: () => void }> | undefined;
+            actions?.forEach((action) => {
+              if (action.id === commandId) {
+                action.dispose?.();
+              }
+            });
           });
-        });
+        }
       } catch (_e) {
         // Ignore disposal errors
       }
 
       // Register new command
-      (monacoInstance.editor as any).registerCommand?.(commandId, handler);
+      const registerCommand = editorNs['registerCommand'];
+      if (typeof registerCommand === 'function') {
+        (registerCommand as (id: string, h: typeof handler) => void)(commandId, handler);
+      }
       logger.debug('[CodeActionProvider] Registered command:', commandId);
     } catch (error) {
       logger.warn('[CodeActionProvider] Failed to register command:', commandId, error);

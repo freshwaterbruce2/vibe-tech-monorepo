@@ -11,7 +11,7 @@ export class AgentCircuitBreaker {
   private readonly CIRCUIT_BREAKER_THRESHOLD = 5;
   private readonly CIRCUIT_BREAKER_TIMEOUT = 60000; // 1 minute
 
-  constructor(private emitFunc: (event: string, data: any) => void) {}
+  constructor(private emitFunc: (event: string, data: Record<string, unknown>) => void) {}
 
   isCircuitBreakerOpen(agentId: string): boolean {
     const breaker = this.circuitBreakers.get(agentId);

@@ -100,9 +100,9 @@ interface EditorProps {
   onFileSelect: (file: EditorFile) => void;
   aiService?: UnifiedAIService; // Primary AI service for inline completions
   workspaceContext?: WorkspaceContext;
-  getFileContext?: ((file: EditorFile) => any[]) | undefined;
+  getFileContext?: ((file: EditorFile) => unknown[]) | undefined;
   settings?: EditorSettings | undefined;
-  liveStream?: any; // PHASE 7: LiveEditorStream instance for live code streaming
+  liveStream?: { setEditor?: (editor: editor.IStandaloneCodeEditor) => void }; // PHASE 7: LiveEditorStream instance for live code streaming
   onEditorMount?: (editor: editor.IStandaloneCodeEditor, monaco: typeof Monaco) => void; // Callback when editor mounts (for Auto-Fix)
   modelStrategy?: 'fast' | 'balanced' | 'accurate' | 'adaptive'; // Multi-model strategy
   currentAIModel?: string; // Current AI model being used

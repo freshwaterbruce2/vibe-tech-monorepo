@@ -8,7 +8,7 @@ interface InlineEditState {
   selectedCode: string;
 }
 
-export function useInlineEdit(containerRef: RefObject<any>) {
+export function useInlineEdit(containerRef: RefObject<unknown>) {
   const [state, setState] = useState<InlineEditState>({
     isOpen: false,
     position: null,

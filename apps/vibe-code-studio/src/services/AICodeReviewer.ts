@@ -236,7 +236,7 @@ Respond in JSON format with keys: summary, suggestions (array), strengths (array
         userQuery: prompt,
         relatedFiles: [],
         conversationHistory: [],
-        workspaceContext: undefined as any
+        workspaceContext: undefined
       });
       const parsed = JSON.parse(response.content);
       return parsed;

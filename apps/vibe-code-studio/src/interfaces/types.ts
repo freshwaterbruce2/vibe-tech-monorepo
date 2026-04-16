@@ -14,13 +14,13 @@ export interface Task {
 }
 
 export interface TaskContext {
-  workspaceContext?: any;
-  currentFile?: any;
+  workspaceContext?: unknown;
+  currentFile?: string;
 }
 
 export interface TaskResult {
   success: boolean;
-  data?: any;
+  data?: unknown;
   error?: string;
 }
 
@@ -33,7 +33,7 @@ export interface AgentContext {
   selectedText?: string;
   workspaceRoot?: string;
   projectContext?: string;
-  userPreferences?: Record<string, any>;
+  userPreferences?: Record<string, unknown>;
 }
 
 /**
@@ -43,7 +43,7 @@ export interface AgentResponse {
   content: string;
   confidence: number;
   suggestions?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**

@@ -4,7 +4,7 @@
 import { EventEmitter } from '../utils/EventEmitter';
 import { logger } from '../utils/logger';
 
-import type { AgentResponse, BaseSpecializedAgent, PerformanceMetrics } from './specialized-agents/BaseSpecializedAgent';
+import type { AgentContext, AgentResponse, BaseSpecializedAgent, PerformanceMetrics } from './specialized-agents/BaseSpecializedAgent';
 
 export interface PerformanceProfile {
   agentId: string;
@@ -41,7 +41,7 @@ export class AgentPerformanceOptimizer extends EventEmitter {
   private agentProfiles: Map<string, PerformanceProfile> = new Map();
   private requestQueue: Map<string, Array<{
     request: string;
-    context: any;
+    context: AgentContext;
     timestamp: Date;
     priority: number;
   }>> = new Map();
@@ -255,9 +255,9 @@ export class AgentPerformanceOptimizer extends EventEmitter {
    * Optimize agent request based on current performance profile
    */
   async optimizeRequest(
-    agentId: string, 
-    request: string, 
-    context: any,
+    agentId: string,
+    request: string,
+    context: AgentContext,
     agent: BaseSpecializedAgent
   ): Promise<AgentResponse> {
     const startTime = Date.now();
@@ -302,11 +302,11 @@ export class AgentPerformanceOptimizer extends EventEmitter {
   private async applyOptimizations(
     agentId: string,
     request: string,
-    context: any,
+    context: AgentContext,
     profile?: PerformanceProfile
-  ): Promise<{ request: string; context: any; fromCache: boolean }> {
+  ): Promise<{ request: string; context: AgentContext; fromCache: boolean }> {
     let optimizedRequest = request;
-    const optimizedContext = { ...context };
+    const optimizedContext: AgentContext = { ...context };
     let fromCache = false;
 
     // Cache optimization
@@ -327,8 +327,11 @@ export class AgentPerformanceOptimizer extends EventEmitter {
 
     // Context enrichment based on performance
     if (profile && profile.cacheHitRate > 0.7) {
-      // Add cache-friendly context
-      optimizedContext._cacheOptimized = true;
+      // Add cache-friendly context hint in user preferences
+      optimizedContext.userPreferences = {
+        ...optimizedContext.userPreferences,
+        _cacheOptimized: true
+      };
     }
 
     return { request: optimizedRequest, context: optimizedContext, fromCache };
@@ -340,7 +343,7 @@ export class AgentPerformanceOptimizer extends EventEmitter {
   private async executeWithMonitoring(
     agent: BaseSpecializedAgent,
     request: string,
-    context: any
+    context: AgentContext
   ): Promise<AgentResponse> {
     const memoryBefore = process.memoryUsage?.()?.heapUsed || 0;
     
@@ -378,7 +381,7 @@ export class AgentPerformanceOptimizer extends EventEmitter {
       agentId: string;
       agent: BaseSpecializedAgent;
       request: string;
-      context: any;
+      context: AgentContext;
     }>
   ): Promise<Map<string, AgentResponse>> {
     const results = new Map<string, AgentResponse>();
@@ -425,7 +428,7 @@ export class AgentPerformanceOptimizer extends EventEmitter {
   /**
    * Utility methods
    */
-  private generateCacheKey(agentId: string, request: string, context: any): string {
+  private generateCacheKey(agentId: string, request: string, context: AgentContext): string {
     const contextKey = [
       context.currentFile,
       context.selectedText?.substring(0, 100),

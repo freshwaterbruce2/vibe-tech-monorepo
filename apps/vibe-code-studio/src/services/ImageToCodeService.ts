@@ -203,9 +203,10 @@ Please provide ONLY the code, no explanations. Use proper syntax highlighting.`;
         },
       ]);
       return this.extractCode(text);
-    } catch (error: any) {
-      logger.error('[ImageToCode] Error generating code:', error.message);
-      throw new Error(`Failed to generate code: ${error.message}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logger.error('[ImageToCode] Error generating code:', message);
+      throw new Error(`Failed to generate code: ${message}`);
     }
   }
 

@@ -3,31 +3,37 @@
  * Simple implementation to replace Node.js 'events' module
  */
 
-type Listener = (...args: any[]) => void;
+/** Internal listener storage type. */
+type Listener = (...args: unknown[]) => void;
 
 export class EventEmitter {
   private events: Map<string, Listener[]> = new Map();
 
-  on(event: string, listener: Listener): this {
+  /**
+   * Register a typed listener. Generic overload allows passing callbacks with
+   * specific parameter types (e.g., `(task: BackgroundTask) => void`) without
+   * requiring the caller to manually cast to the internal Listener type.
+   */
+  on<T extends unknown[]>(event: string, listener: (...args: T) => void): this {
     if (!this.events.has(event)) {
       this.events.set(event, []);
     }
-    this.events.get(event)!.push(listener);
+    this.events.get(event)!.push(listener as unknown as Listener);
     return this;
   }
 
-  once(event: string, listener: Listener): this {
-    const onceWrapper = (...args: any[]) => {
-      this.off(event, onceWrapper);
-      listener(...args);
+  once<T extends unknown[]>(event: string, listener: (...args: T) => void): this {
+    const onceWrapper = (...args: unknown[]) => {
+      this.off(event, onceWrapper as unknown as (...args: T) => void);
+      (listener as Listener)(...args);
     };
     return this.on(event, onceWrapper);
   }
 
-  off(event: string, listener: Listener): this {
+  off<T extends unknown[]>(event: string, listener: (...args: T) => void): this {
     const listeners = this.events.get(event);
     if (listeners) {
-      const index = listeners.indexOf(listener);
+      const index = listeners.indexOf(listener as unknown as Listener);
       if (index !== -1) {
         listeners.splice(index, 1);
       }
@@ -38,7 +44,7 @@ export class EventEmitter {
     return this;
   }
 
-  emit(event: string, ...args: any[]): boolean {
+  emit(event: string, ...args: unknown[]): boolean {
     const listeners = this.events.get(event);
     if (listeners && listeners.length > 0) {
       listeners.forEach(listener => listener(...args));

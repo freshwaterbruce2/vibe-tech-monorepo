@@ -109,7 +109,7 @@ const ToggleSlider = styled.span`
   }
 `;
 
-const SettingsModal: React.FC = () => {
+const SettingsModal = () => {
     const settings = useEditorStore((state) => state.settings);
     const isOpen = useEditorStore((state) => state.settingsOpen);
     const { updateSettings, toggleSettings } = useEditorStore((state) => state.actions);
@@ -118,7 +118,7 @@ const SettingsModal: React.FC = () => {
         toggleSettings();
     };
 
-    const handleChange = (key: keyof typeof settings, value: any) => {
+    const handleChange = (key: keyof typeof settings, value: (typeof settings)[keyof typeof settings]) => {
         updateSettings({ [key]: value });
     };
 

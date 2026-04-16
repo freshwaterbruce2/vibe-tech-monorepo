@@ -115,7 +115,8 @@ export class MultiFileEditDetector {
         return { detected: false };
       }
 
-      const changes: FileChange[] = parsed.files.map((file: any) => ({
+      interface ParsedFile { path: string; content?: string; changeType?: string; reason?: string; }
+      const changes: FileChange[] = parsed.files.map((file: ParsedFile) => ({
         path: file.path,
         originalContent: '',
         newContent: file.content || '',

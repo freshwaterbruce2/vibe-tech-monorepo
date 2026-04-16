@@ -126,15 +126,16 @@ export class AIProviderFactory {
       }
 
       return providerInstance;
-    } catch (error: any) {
-      logger.error(`[AIProviderFactory] Failed to initialize ${provider}:`, error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      logger.error(`[AIProviderFactory] Failed to initialize ${provider}:`, message);
 
       // Update status with error
       this.providerStatus.set(provider, {
         provider,
         initialized: false,
         available: false,
-        error: error.message,
+        error: message,
       });
 
       throw error;

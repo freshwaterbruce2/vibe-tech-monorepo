@@ -5,7 +5,7 @@ import { WorkspaceService } from '../services/WorkspaceService';
 import type { ContextualFile, EditorFile, WorkspaceContext } from '../types';
 
 // Debounce utility function
-function debounce<T extends (...args: any[]) => any>(
+function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -34,7 +34,7 @@ export interface UseWorkspaceReturn {
   // Actions
   indexWorkspace: (rootPath: string) => Promise<WorkspaceContext | null>;
   getRelatedFiles: (filePath: string, maxResults?: number) => ContextualFile[];
-  searchFiles: (query: string, maxResults?: number) => any[];
+  searchFiles: (query: string, maxResults?: number) => unknown[];
   getFileContext: (file: EditorFile) => ContextualFile[];
   refreshIndex: () => Promise<void>;
   clearWorkspace: () => void;

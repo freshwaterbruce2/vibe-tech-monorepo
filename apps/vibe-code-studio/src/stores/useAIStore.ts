@@ -241,8 +241,9 @@ export const useAIStore = create<AIState>()(
           completionEnabled: state.completionEnabled,
           conversationHistory: state.conversationHistory,
         }),
-        merge: (persistedState: any, currentState: AIState) => {
-          const persistedModel = persistedState?.currentModel;
+        merge: (persistedState: unknown, currentState: AIState) => {
+          const typed = persistedState as Partial<AIState> | undefined;
+          const persistedModel = typed?.currentModel;
           const fallbackModel = currentState.currentModel || DEFAULT_MODEL;
           let resolvedModel = resolveModelId(persistedModel ?? fallbackModel);
 
@@ -255,7 +256,7 @@ export const useAIStore = create<AIState>()(
 
           return {
             ...currentState,
-            ...persistedState,
+            ...typed,
             currentModel: resolvedModel,
           };
         },

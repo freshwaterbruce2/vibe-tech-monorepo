@@ -28,10 +28,11 @@ export class TerminalService {
   private _isTauri: boolean;
 
   constructor() {
+    type ElectronWindow = Window & { electron?: unknown; __TAURI_INTERNALS__?: unknown };
     this.isElectron = typeof window !== 'undefined' &&
-      (window as any).electron !== undefined;
+      (window as ElectronWindow).electron !== undefined;
     this._isTauri = typeof window !== 'undefined' &&
-      (window as any).__TAURI_INTERNALS__ !== undefined;
+      (window as ElectronWindow).__TAURI_INTERNALS__ !== undefined;
   }
 
   /**
@@ -224,7 +225,7 @@ export class TerminalService {
 
     // Send resize signal if supported
     if (session.process.stdout && 'resize' in session.process.stdout) {
-      (session.process.stdout as any).resize({ columns: cols, rows });
+      (session.process.stdout as unknown as { resize: (opts: { columns: number; rows: number }) => void }).resize({ columns: cols, rows });
     }
   }
 

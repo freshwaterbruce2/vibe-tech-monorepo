@@ -209,7 +209,7 @@ Provide insights as a JSON array of strings.`;
         userQuery: prompt,
         relatedFiles: [],
         conversationHistory: [],
-        workspaceContext: undefined as any
+        workspaceContext: undefined
       });
 
       // Try to parse JSON response

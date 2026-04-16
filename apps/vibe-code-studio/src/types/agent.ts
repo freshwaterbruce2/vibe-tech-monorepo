@@ -145,7 +145,7 @@ export interface TaskPlanRequest {
     currentFile?: string;
     recentFiles?: string[];
   };
-  currentFileObject?: any; // Full EditorFile object with content for context
+  currentFileObject?: { path: string; content: string; language: string; [key: string]: unknown }; // Full EditorFile object with content for context
   options?: {
     maxSteps?: number;
     requireApprovalForAll?: boolean;

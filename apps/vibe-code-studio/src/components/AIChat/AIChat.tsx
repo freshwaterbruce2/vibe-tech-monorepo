@@ -228,8 +228,8 @@ const AIChat = ({
 
     try {
       const safeWorkspaceContext = workspaceContext!;
-      executionEngine.setTaskContext(userRequest, safeWorkspaceContext.workspaceRoot);
-      const planResponse = await taskPlanner.planTask({
+      executionEngine!.setTaskContext(userRequest, safeWorkspaceContext.workspaceRoot);
+      const planResponse = await taskPlanner!.planTask({
         userRequest, context: safeWorkspaceContext,
         options: { maxSteps: 10, requireApprovalForAll: false, allowDestructiveActions: true },
       });
@@ -357,7 +357,7 @@ const AIChat = ({
           onTaskError?.(task, error);
         },
       };
-      await executionEngine.executeTask(planResponse.task, callbacks);
+      await executionEngine!.executeTask(planResponse.task, callbacks);
     } catch (error) {
       logger.error('Agent task failed:', error);
       const message = error instanceof Error ? error.message : String(error);

@@ -69,7 +69,7 @@ export class TaskQueue {
       priority?: TaskPriority;
       cancelable?: boolean;
       pausable?: boolean;
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
     } = {}
   ): string {
     if (this.tasks.size >= this.options.maxQueueSize) {
@@ -427,8 +427,8 @@ export class TaskQueue {
         task.retryCount++;
         task.status = TaskStatus.QUEUED;
         // Reset timestamps for retry
-        (task as any).startedAt = undefined;
-        (task as any).completedAt = undefined;
+        (task as BackgroundTask & { startedAt?: Date }).startedAt = undefined;
+        (task as BackgroundTask & { completedAt?: Date }).completedAt = undefined;
 
         this.notify({
           taskId: task.id,
@@ -508,7 +508,7 @@ export class TaskQueue {
       const state = JSON.parse(stored);
 
       // Restore tasks
-      state.tasks?.forEach(([id, task]: [string, any]) => {
+      state.tasks?.forEach(([id, task]: [string, BackgroundTask]) => {
         // Convert date strings back to Date objects
         task.createdAt = new Date(task.createdAt);
         if (task.startedAt) { task.startedAt = new Date(task.startedAt); }
@@ -525,7 +525,7 @@ export class TaskQueue {
 
       // Restore history
       if (state.history) {
-        this.taskHistory = state.history.map((task: any) => ({
+        this.taskHistory = state.history.map((task: BackgroundTask) => ({
           ...task,
           createdAt: new Date(task.createdAt),
           startedAt: task.startedAt ? new Date(task.startedAt) : undefined,

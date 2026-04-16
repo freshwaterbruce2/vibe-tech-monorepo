@@ -41,7 +41,8 @@ export class AutoImportProvider {
 
       // Map to Monaco Code Actions
       const monaco = await import('monaco-editor');
-      return imports.map((imp: any) => ({
+      interface ImportSuggestion { symbol: string; module: string; }
+      return imports.map((imp: ImportSuggestion) => ({
         title: `Import ${imp.symbol} from ${imp.module}`,
         kind: 'quickfix',
         edit: {

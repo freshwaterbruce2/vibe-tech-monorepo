@@ -60,11 +60,11 @@ const EditorPage: React.FC = () => {
           onCloseFile={() => { }}
           onSaveFile={() => { }}
           onFileSelect={() => { }}
-          aiService={{} as any} // Mock for legacy page
+          aiService={undefined}
           workspaceContext={undefined}
           getFileContext={() => []}
           settings={settings}
-          liveStream={{} as any}
+          liveStream={undefined}
           onEditorMount={() => {}}
         />
       )}

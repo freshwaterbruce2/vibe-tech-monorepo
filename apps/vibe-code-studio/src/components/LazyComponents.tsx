@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, type ComponentType } from 'react';
 import { Loader2 } from 'lucide-react';
 import styled from 'styled-components';
 
@@ -59,7 +59,7 @@ export const LoadingFallback = ({
 
 // Higher-order component for lazy loading with custom fallback
 export function withLazyLoading(
-  importFn: () => Promise<any>,
+  importFn: () => Promise<Record<string, unknown>>,
   exportName?: string,
   fallbackMessage?: string
 ) {
@@ -69,21 +69,21 @@ export function withLazyLoading(
       if (exportName && exportName !== 'default') {
         // Check if the module has the named export
         if (exportName in module) {
-          return { default: module[exportName] };
+          return { default: module[exportName] as ComponentType };
         }
       }
 
       // If it's already a default export or module itself is the component
       if ('default' in module) {
-        return module;
+        return module as { default: ComponentType };
       }
 
       // Otherwise, assume the module itself is the component
-      return { default: module };
+      return { default: module as unknown as ComponentType };
     })
   );
 
-  const WrappedComponent = (props: any) => (
+  const WrappedComponent = (props: Record<string, unknown>) => (
     <Suspense fallback={<LoadingFallback message={fallbackMessage} />}>
       <LazyComponent {...props} />
     </Suspense>

@@ -16,7 +16,7 @@ export interface BackgroundTask {
   agentId: string;
   userRequest: string; // Original user request
   workspaceRoot: string; // Workspace root for the task
-  parameters: any;
+  parameters: Record<string, unknown>;
   status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
   result?: AgentTask; // Completed agent task
   error?: Error;
@@ -58,7 +58,7 @@ export class BackgroundAgentSystem extends EventEmitter {
     agentId: string,
     userRequest: string,
     workspaceRoot: string,
-    parameters: any = {},
+    parameters: Record<string, unknown> = {},
     options: BackgroundTaskOptions = {}
   ): string {
     const task: BackgroundTask = {
@@ -225,8 +225,8 @@ export class BackgroundAgentSystem extends EventEmitter {
         userRequest: task.userRequest,
         context: {
           workspaceRoot: task.workspaceRoot,
-          openFiles: task.parameters.files ?? [],
-          ...(task.parameters.context ?? {})
+          openFiles: (task.parameters.files as string[]) ?? [],
+          ...(task.parameters.context as Record<string, unknown> ?? {})
         }
       });
 

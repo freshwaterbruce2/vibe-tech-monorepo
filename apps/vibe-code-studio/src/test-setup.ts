@@ -75,8 +75,8 @@ beforeEach(() => {
   localStorageMock.clear();
 
   // Reset clipboard
-  (navigator.clipboard.writeText as any).mockClear();
-  (navigator.clipboard.readText as any).mockClear();
+  (navigator.clipboard.writeText as unknown as { mockClear: () => void }).mockClear();
+  (navigator.clipboard.readText as unknown as { mockClear: () => void }).mockClear();
 });
 
 afterEach(() => {

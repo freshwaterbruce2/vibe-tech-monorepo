@@ -25,7 +25,7 @@ export class AgentHealthMonitor extends EventEmitter {
   private healthStatuses: Map<string, AgentHealthStatus> = new Map();
   private readonly MAX_CONSECUTIVE_FAILURES = 3;
 
-  constructor(private emitFunc: (event: string, data: any) => void) {
+  constructor(private emitFunc: (event: string, data: Record<string, unknown>) => void) {
     super();
   }
 

@@ -4,7 +4,7 @@ import type { AgentCircuitBreaker } from './AgentCircuitBreaker';
 
 export interface RecoveryStrategy {
   type: 'retry' | 'circuit_breaker' | 'fallback' | 'restart' | 'load_balance';
-  condition: (error: Error, context: any) => boolean;
+  condition: (error: Error, context: Record<string, unknown>) => boolean;
   execute: (agent: BaseSpecializedAgent, request: string, context: AgentContext, cb?: AgentCircuitBreaker) => Promise<AgentResponse>;
   maxAttempts: number;
   backoffMs: number;

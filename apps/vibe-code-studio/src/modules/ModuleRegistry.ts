@@ -77,7 +77,7 @@ class ModuleRegistry {
   }
 
   setModuleInterface(name: keyof ModuleInterfaces, moduleInterface: unknown): void {
-    this.moduleInterfaces[name] = moduleInterface as any;
+    (this.moduleInterfaces as Record<string, unknown>)[name] = moduleInterface;
   }
 
   getModuleInterface<K extends keyof ModuleInterfaces>(name: K): ModuleInterfaces[K] {

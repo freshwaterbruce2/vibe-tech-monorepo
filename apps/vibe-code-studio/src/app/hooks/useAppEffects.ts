@@ -289,7 +289,7 @@ export function useAppInit(props: {
 
     // Demo mode: load demo workspace if no Electron
     // Use virtual demo path that FileSystemService handles in-memory
-    if (!(globalThis as any).electronAPI) {
+    if (!(globalThis as unknown as Record<string, unknown>).electronAPI) {
       const demoPath = 'demo://workspace';
       handlersRef.current.handleOpenFolder(demoPath);
       setTimeout(() => {
@@ -302,7 +302,9 @@ export function useAppInit(props: {
 
   // Separate effect for auto-open-folder listener (only runs once)
   useEffect(() => {
-    const electron = (globalThis as any).electron;
+    const electron = (globalThis as unknown as Record<string, unknown>).electron as
+      | { on?: (event: string, handler: (arg: string) => void) => void; removeListener?: (event: string, handler: (arg: string) => void) => void }
+      | undefined;
     if (!electron?.on || listenerRegisteredRef.current) {
       if (!electron?.on) {
         logger.warn('[App] electron.on not available - auto-open disabled');

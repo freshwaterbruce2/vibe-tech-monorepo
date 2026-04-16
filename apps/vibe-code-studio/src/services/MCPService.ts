@@ -26,7 +26,7 @@ const isDesktopEnvironment = (() => {
   // Browser definitely doesn't have Node.js APIs
   if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
     // Check for Electron
-    if ((window as any).electronAPI) {return true;}
+    if ((window as Window & { electronAPI?: unknown }).electronAPI) {return true;}
     if (window.electron?.isElectron) {return true;}
     // Pure browser
     return false;
@@ -58,7 +58,7 @@ interface ServerConnection {
   config: MCPServerConfig;
   client: MCPClient;
   transport: MCPTransport;
-  process: any; // ChildProcess type, but dynamic
+  process: { on: (event: string, handler: (...args: unknown[]) => void) => void; kill: () => void }; // ChildProcess-like, dynamically imported
   connected: boolean;
 }
 
@@ -284,7 +284,7 @@ export class MCPService extends EventEmitter {
 
       // Validate required parameters
       if (tool.inputSchema?.type === 'object') {
-        const required = (tool.inputSchema as any).required ?? [];
+        const required = (tool.inputSchema as { required?: string[] }).required ?? [];
         for (const param of required) {
           if (!(param in parameters)) {
             throw new Error(`Missing required parameter: ${param}`);

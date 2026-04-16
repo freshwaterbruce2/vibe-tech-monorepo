@@ -193,7 +193,17 @@ export class DesignTokenManager {
   }
 
   private exportToTailwind(): string {
-    const config: any = {
+    const config: {
+      theme: {
+        extend: {
+          colors: Record<string, string>;
+          fontSize: Record<string, [string, { lineHeight: string; fontWeight: string }]>;
+          spacing: Record<string, string>;
+          boxShadow: Record<string, string>;
+          borderRadius: Record<string, string>;
+        };
+      };
+    } = {
       theme: {
         extend: {
           colors: {},

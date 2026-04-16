@@ -72,11 +72,11 @@ export class TestDiscovery {
   /**
    * Import glob library dynamically
    */
-  private async importGlob(): Promise<any> {
+  private async importGlob(): Promise<(pattern: string, options: { cwd: string; absolute: boolean; ignore?: string[] }) => Promise<string[]>> {
     try {
       // Try to import glob dynamically
       const { glob } = await import('glob');
-      return glob;
+      return glob as unknown as (pattern: string, options: { cwd: string; absolute: boolean; ignore?: string[] }) => Promise<string[]>;
     } catch (_error) {
       // Fallback to a simple file finder
       return this.simpleGlob.bind(this);

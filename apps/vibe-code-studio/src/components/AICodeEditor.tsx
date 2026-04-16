@@ -232,7 +232,7 @@ export const AICodeEditor = ({
           ],
         };
       },
-    } as any);
+    } as unknown as Parameters<typeof monaco.languages.registerInlineCompletionsProvider>[1]);
 
     // Add keybindings
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, () => {

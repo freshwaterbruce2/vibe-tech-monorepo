@@ -253,7 +253,7 @@ export class ErrorDetector {
     const severity = this.monacoSeverityToString(marker.severity);
 
     const code = typeof marker.code === 'object' && marker.code !== null
-      ? (marker.code as any).value
+      ? (marker.code as { value: string | number }).value
       : marker.code;
 
     return {

@@ -44,7 +44,7 @@ export class ContextService {
     currentFile: EditorFile | null,
     openFiles: EditorFile[],
     workspaceContext?: WorkspaceContext,
-    getFileContext?: (file: EditorFile) => any[]
+    getFileContext?: (file: EditorFile) => Array<{ path: string; content: string; relevance: number; reason: string }>
   ): CodeContext {
     const context: CodeContext = {
       openFiles: [...openFiles],

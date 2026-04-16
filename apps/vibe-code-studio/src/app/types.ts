@@ -4,9 +4,13 @@
  */
 
 import type { FileChange, MultiFileEditPlan } from '@vibetech/types/multifile';
-import type { GeneratedFix } from '../services/AutoFixService';
+import type { editor as MonacoEditor } from 'monaco-editor';
+import type * as MonacoNS from 'monaco-editor';
+import type { GeneratedFix, FixSuggestion } from '../services/AutoFixService';
 import type { DetectedError } from '../services/ErrorDetector';
-import type { AIMessage, EditorFile } from '../types';
+import type { AIMessage, ContextualFile, EditorFile, EditorSettings, WorkspaceContext } from '../types';
+import type { AIModel } from '../services/ai/AIProviderInterface';
+import type { SearchOptions } from '../components/GlobalSearch/types';
 
 // Chat modes available in the application
 export type ChatMode = 'chat' | 'agent';
@@ -85,13 +89,13 @@ export interface AppHandlers {
   handleCloseFolder: () => void;
 
   // Editor
-  handleEditorMount: (editor: any, monaco: any) => void;
-  handleApplyFix: (suggestion: any) => void;
+  handleEditorMount: (editor: MonacoEditor.IStandaloneCodeEditor, monaco: typeof MonacoNS) => void;
+  handleApplyFix: (suggestion: FixSuggestion) => void;
   handleInsertCode: (code: string) => void;
 
   // Search
   handleOpenFileFromSearch: (file: string, line?: number, column?: number) => void;
-  handleReplaceInFile: (file: string, search: string, replace: string, options: any) => Promise<void>;
+  handleReplaceInFile: (file: string, search: string, replace: string, options: SearchOptions) => Promise<void>;
 
   // Visual panels
   handleToggleScreenshotPanel: () => void;
@@ -105,7 +109,7 @@ export interface AppHandlers {
   // AI/Model
   handleAIMessage: (message: string) => Promise<void>;
   handleAICommand: (command: string) => Promise<void>;
-  handleModelChange: (model: any) => Promise<void>;
+  handleModelChange: (model: AIModel) => Promise<void>;
   handleProviderChange: (provider: string) => Promise<void>;
 
   // AI Chat state
@@ -142,10 +146,10 @@ export interface AppHandlers {
   removeNotification: (id: string) => void;
 
   // Settings
-  updateEditorSettings: (settings: any) => void;
+  updateEditorSettings: (settings: EditorSettings) => void;
   setWorkspaceFolder: (folder: string | null) => void;
 
   // Workspace
-  indexWorkspace: (folder: string) => Promise<any>;
-  getFileContext: (file: EditorFile) => any[];
+  indexWorkspace: (folder: string) => Promise<WorkspaceContext | null>;
+  getFileContext: (file: EditorFile) => ContextualFile[];
 }
