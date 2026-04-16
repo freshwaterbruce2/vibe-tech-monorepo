@@ -238,11 +238,6 @@
         "priority": "high",
         "description": "IPC message schemas (Zod)"
       },
-      "nova-core": {
-        "status": "production",
-        "priority": "high",
-        "description": "Core Logic for Nova"
-      },
       "nova-types": {
         "status": "production",
         "priority": "high",
@@ -277,11 +272,6 @@
         "status": "production",
         "priority": "medium",
         "description": "Shared utilities"
-      },
-      "shared-logic": {
-        "status": "production",
-        "priority": "medium",
-        "description": "Shared business logic"
       },
       "testing-utils": {
         "status": "production",
