@@ -221,11 +221,6 @@
         "priority": "low",
         "description": "Desktop commander"
       },
-      "monorepo-dashboard": {
-        "status": "maintenance",
-        "priority": "low",
-        "description": "Monorepo dashboard"
-      },
       "symptom-tracker": {
         "status": "maintenance",
         "priority": "low",
