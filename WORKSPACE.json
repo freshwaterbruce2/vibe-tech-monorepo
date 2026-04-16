@@ -338,11 +338,6 @@
         "priority": "medium",
         "description": "Shared TypeScript types"
       },
-      "vibe-python-shared": {
-        "status": "production",
-        "priority": "medium",
-        "description": "Shared Python utilities"
-      },
       "memory": {
         "status": "development",
         "priority": "high",
