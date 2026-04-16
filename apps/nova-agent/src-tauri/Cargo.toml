@@ -75,7 +75,7 @@ custom-protocol = ["tauri/custom-protocol"]
 [profile.release]
 opt-level = "s"   # Optimize for size
 lto = false       # Disable LTO to reduce memory usage during build
-codegen-units = 16 # Multiple codegen units to reduce peak memory
+codegen-units = 1  # Single codegen unit — reduces peak LLVM memory (16 units = 16 parallel threads)
 strip = true      # Strip symbols
 panic = "abort"   # Smaller binaries
 
