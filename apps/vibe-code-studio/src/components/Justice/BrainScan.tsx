@@ -39,11 +39,17 @@ export const BrainScan: React.FC = () => {
   const handleSave = async () => {
     if (!newPattern.trim()) return;
     try {
-      // @ts-expect-error - legacy database API
-      await window.electron.ipcRenderer.invoke('db:savePattern', { pattern: newPattern, tags: 'user-override' });
+      const hash = btoa(unescape(encodeURIComponent(newPattern))).substring(0, 32);
+      const result = await window.electron?.db?.query(
+        'INSERT OR REPLACE INTO strategy_memory (pattern_hash, pattern_data, success_rate, usage_count, created_at) VALUES (?, ?, 1.0, 1, ?)',
+        [hash, newPattern, Date.now()]
+      );
+      if (result?.success === false) {
+        throw new Error(result.error ?? 'Failed to save pattern');
+      }
       setNewPattern('');
       setShowAddForm(false);
-      fetchMemory(); // Refresh list immediately
+      fetchMemory();
     } catch (err) {
       logger.error("Failed to save pattern:", err);
     }
