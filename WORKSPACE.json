@@ -131,11 +131,6 @@
         "priority": "high",
         "description": "Vibe-Tech Desktop Environment (Tauri 2.0) — terminal, draggable windows, memory integration, vibe-app.json protocol, healing dashboard"
       },
-      "clawdbot-desktop": {
-        "status": "development",
-        "priority": "medium",
-        "description": "Desktop automation (Electron, @nut-tree-fork)"
-      },
       "shipping-pwa": {
         "status": "development",
         "priority": "medium",
@@ -201,11 +196,6 @@
         "priority": "high",
         "description": "Memory system MCP server"
       },
-      "avge-dashboard": {
-        "status": "development",
-        "priority": "medium",
-        "description": "Autonomous Video Generation Engine dashboard (Vite, React)"
-      },
       "ai-youtube-pipeline": {
         "status": "development",
         "priority": "low",
@@ -220,11 +210,6 @@
         "status": "maintenance",
         "priority": "low",
         "description": "Desktop commander"
-      },
-      "symptom-tracker": {
-        "status": "maintenance",
-        "priority": "low",
-        "description": "Symptom tracking"
       },
       "gravity-claw": {
         "status": "development",

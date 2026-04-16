@@ -1,8 +1,0 @@
-{
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "name": "avge-dashboard",
-  "projectType": "application",
-  "root": "apps/avge-dashboard",
-  "targets": {},
-  "tags": ["scope:frontend", "type:app", "language:typescript"]
-}
