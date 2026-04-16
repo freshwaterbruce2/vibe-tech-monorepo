@@ -24,11 +24,16 @@ try {
     $CLI     = 'node'
     $CLIPath = 'C:\dev\packages\agent-lats\dist\cli.js'
 
-    # Infer success from tool result content
-    $toolResult = [string]($hookData.tool_result ?? $hookData.output ?? '')
-    $success    = $true
-    if ($toolResult -match '\b(error|fail(ed|ure)?|crash(ed)?|exception|abort)\b' -and
-        $toolResult -notmatch '\bsuccess\b') {
+    # Infer success from tool response content
+    $responseContent = ''
+    if ($hookData.tool_response) {
+        $responseContent = [string]($hookData.tool_response.content ?? $hookData.tool_response ?? '')
+    }
+    $success = $true
+    if ($hookData.tool_response.is_error -eq $true) { $success = $false }
+    elseif ($hookData.error) { $success = $false }
+    elseif ($responseContent -match '\b(error|fail(ed|ure)?|crash(ed)?|exception|abort)\b' -and
+            $responseContent -notmatch '\bsuccess\b') {
         $success = $false
     }
 
@@ -41,15 +46,15 @@ try {
     Write-Host "[LATS P4] Pipeline $runId finished (success=$successStr)"
 
     # Surface top ordering suggestion when we have enough history
-    $suggestJson = & $CLI $CLIPath pipeline suggest --pipeline ($state.pipelineName) --limit 1 --json 2>$null
+    $suggestJson = (& $CLI $CLIPath pipeline suggest --pipeline ($state.pipelineName) --limit 1 --json 2>$null) -join "`n"
     if ($suggestJson) {
         $suggestions = $suggestJson | ConvertFrom-Json -ErrorAction Stop
         if ($suggestions -and $suggestions.Count -gt 0) {
             $top   = $suggestions[0]
-            $delta = [math]::Round(([double]$top.predictedSuccessRate - [double]$top.baselineSuccessRate) * 100, 1)
+            $delta = [math]::Round([double]$top.delta * 100, 1)
             if ($delta -gt 0.5) {
-                $stages = $top.swappedStages -join ' ↔ '
-                Write-Host "[LATS P4] Suggestion: swap [$stages] → predicted +$delta% success rate"
+                $orderStr = ($top.ordering -join ' → ')
+                Write-Host "[LATS P4] Suggestion: try ordering [$orderStr] → expected +$delta% success rate"
             }
         }
     }

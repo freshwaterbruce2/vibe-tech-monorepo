@@ -67,7 +67,7 @@ WHERE static_score < 0.8 AND created_at > datetime('now', '-24 hours');
 
     Write-Host "[LATS P3] $count low-score critiques → evolving '$skillName' via '$mutationType'"
 
-    $resultJson = & $CLI $CLIPath skill mutate --name $skillName --type $mutationType --json 2>$null
+    $resultJson = (& $CLI $CLIPath skill mutate --name $skillName --type $mutationType --json 2>$null) -join "`n"
     if (-not $resultJson) {
         Write-Host "[LATS P3] Skipped — skill '$skillName' not found on disk"
         exit 0
@@ -79,7 +79,7 @@ WHERE static_score < 0.8 AND created_at > datetime('now', '-24 hours');
 
     if ($result.promoted -and $variantId) {
         & $CLI $CLIPath skill deploy --variant $variantId 2>$null | Out-Null
-        Write-Host "[LATS P3] Deployed '$skillName' v$($result.version) (delta=+$delta, score=$($result.mutantScore))"
+        Write-Host "[LATS P3] Deployed '$skillName' v$($result.mutated.version ?? $result.version) (delta=+$delta, score=$($result.mutatedScore))"
     } else {
         Write-Host "[LATS P3] Not promoted (delta=$delta) — keeping current '$skillName'"
     }

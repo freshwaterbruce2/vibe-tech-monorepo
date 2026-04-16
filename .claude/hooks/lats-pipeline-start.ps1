@@ -35,7 +35,7 @@ try {
 
     $task = if ($description) { $description } else { 'Skill generation pipeline' }
 
-    $resultJson = & $CLI $CLIPath pipeline start --pipeline $pipelineName --task $task --json 2>$null
+    $resultJson = (& $CLI $CLIPath pipeline start --pipeline $pipelineName --task $task --json 2>$null) -join "`n"
     if (-not $resultJson) { exit 0 }
 
     $result = $resultJson | ConvertFrom-Json -ErrorAction Stop
