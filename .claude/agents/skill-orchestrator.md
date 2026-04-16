@@ -20,8 +20,18 @@ permissions:
 Before invoking any sub-agent, call the LATS planner to get a scored approach:
 
 ```powershell
-# Get ranked approaches from the learning DB
-node C:\dev\packages\agent-lats\dist\cli.js plan --task "<describe the stage goal>" --candidates 3
+# Step 1: Get ranked approaches (outputs JSON with nodeId + approach)
+$planJson = (node C:\dev\packages\agent-lats\dist\cli.js plan --task "<describe the stage goal>" --candidates 3 --json) -join "`n"
+$plan = $planJson | ConvertFrom-Json
+$nodeId  = $plan.recommended.nodeId
+$approach = $plan.recommended.approach
+
+# Step 2: Register the active node BEFORE invoking the sub-agent.
+# This links subsequent file-level critiques (Phase 2 quality signal) to this node.
+pwsh -NoProfile -ExecutionPolicy Bypass -File C:\dev\.claude\hooks\lats-register-node.ps1 `
+    -NodeId $nodeId `
+    -Approach $approach `
+    -TaskDescription "<describe the stage goal>"
 ```
 
 The output gives you:
@@ -31,7 +41,8 @@ The output gives you:
 After the sub-agent finishes, record the outcome:
 
 ```powershell
-# Success
+# Success — the lats-backpropagate.ps1 PostToolUse hook does this automatically.
+# Only call manually if the hook is disabled or you need an explicit record:
 node C:\dev\packages\agent-lats\dist\cli.js backpropagate --node <nodeId> --success true --agent <agentId>
 
 # Failure (also generate a self-critique)
@@ -44,11 +55,12 @@ Store the LATS node ID in state.json so it survives fresh context iterations:
 {
   "currentAgent": "PatternAnalyzer",
   "latsNodeId": "be2debad-7880-4f0a-9e8f-2c782d58b249",
-  "latsApproach": "Search-first: ..."
+  "latsApproach": "Search-first: ...",
+  "pipelineRunId": "a1b2c3d4-..."
 }
 ```
 
-The LATS system evolves over time — each successful outcome boosts pattern confidence, each failure adds a mistake record that future plans will avoid.
+The LATS system evolves over time — each successful outcome boosts pattern confidence, each failure adds a mistake record that future plans will avoid. The Agent Q quality score (Phase 2) accumulates from per-file critiques, giving MCTS a richer 0.0–1.0 signal instead of binary success/fail.
 
 ## Pipeline Stage Tracking (MANDATORY — Phase 4 deep tracking)
 
@@ -302,8 +314,8 @@ Final Iteration:
 
 **Learning Database**:
 
-- Reads from D:\databases\nova_shared.db
-- Queries pattern data for skill candidates
+- Reads from `D:\databases\agent_learning.db` (canonical — nova_shared.db was deleted 2026-04-05)
+- Queries `success_patterns`, `agent_executions`, `mcts_nodes`, `self_critiques`, `agent_q_assessments`
 
 **Version Control**:
 

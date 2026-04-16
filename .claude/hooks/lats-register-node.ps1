@@ -1,4 +1,4 @@
-#!/usr/bin/env powershell
+#!/usr/bin/env pwsh
 # Helper: register an active LATS node before invoking a sub-agent.
 # The lats-backpropagate.ps1 hook reads this file after the Agent call completes.
 #

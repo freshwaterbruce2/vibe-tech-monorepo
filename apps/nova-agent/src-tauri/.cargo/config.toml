@@ -1,11 +1,14 @@
 [build]
-jobs = 2
+jobs = 1
 
 [target.x86_64-pc-windows-msvc]
 linker = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\link.exe"
 rustflags = ["-L", "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.44.35207\\lib\\x64"]
 
 [env]
+# Increase rustc thread stack size to prevent STATUS_STACK_BUFFER_OVERRUN
+# on large crates like DataFusion (deep macro/type recursion in release builds)
+RUST_MIN_STACK = "16777216"
 # Force cc crate to use VS 2022 BuildTools instead of VS 18 (2025)
 VCINSTALLDIR = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\"
 VCToolsVersion = "14.44.35207"
