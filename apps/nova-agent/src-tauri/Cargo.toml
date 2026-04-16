@@ -79,6 +79,22 @@ codegen-units = 1  # Single codegen unit — reduces peak LLVM memory (16 units 
 strip = true      # Strip symbols
 panic = "abort"   # Smaller binaries
 
+# All dependency crates: opt-level=0 + 256 codegen-units + sequential LLVM threads.
+#
+# Rationale (rust-lang/rust#70035, Tauri issue #13638):
+#  - opt-level=0  → ~40% less peak LLVM memory per crate vs opt-level=1
+#  - codegen-units=256 → each unit is 1/256 of total IR
+#  - -C threads=1 (in .cargo/config.toml rustflags) → LLVM processes those 256
+#    units ONE AT A TIME instead of N_CPU in parallel; peak RSS ≈ 1/256 of total
+#  - incremental=false → no incremental cache memory overhead
+#
+# Together these allow windows-rs 0.61 (37 Win32 features) and the full
+# datafusion/lance/arrow stack to compile on a memory-constrained machine.
+[profile.release.package."*"]
+opt-level = 0
+codegen-units = 256
+incremental = false
+
 [profile.dev]
 opt-level = 0
 debug = true
