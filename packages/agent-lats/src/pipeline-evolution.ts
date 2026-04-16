@@ -407,6 +407,8 @@ function singleSwapNeighbours(ordering: StageName[]): StageName[][] {
  * Compute the expected success rate for a given ordering based on historical
  * per-stage data. Uses a multiplicative model: P(pipeline) = ∏ P(stage_i).
  * Stages not yet seen use a neutral prior of 0.75.
+ * NOTE: success rate is commutative over stage ordering; use with
+ * predictExpectedStagesRun as a secondary metric for fail-fast ranking.
  */
 export function predictSuccessRate(
   ordering: StageName[],
@@ -424,9 +426,33 @@ export function predictSuccessRate(
 }
 
 /**
+ * Compute the expected number of stage executions before the pipeline
+ * either completes or fails. Lower = better fail-fast behaviour.
+ * E[stages_run] = Σ_i P(all stages 0..i-1 succeeded)
+ */
+export function predictExpectedStagesRun(
+  ordering: StageName[],
+  stats: StageStats[],
+): number {
+  const statMap = new Map(stats.map((s) => [s.stageName, s]));
+  const PRIOR = 0.75;
+  let cumulativeSuccess = 1.0;
+  let expected = 0;
+  for (const stage of ordering) {
+    expected += cumulativeSuccess;           // stage runs with this probability
+    const s = statMap.get(stage);
+    const rate = s && s.runs >= 3 ? s.successRate : PRIOR;
+    cumulativeSuccess *= rate;              // update probability of reaching next stage
+  }
+  return +expected.toFixed(4);
+}
+
+/**
  * Suggest improved orderings by exploring the single-swap neighbourhood of
  * the current best ordering. Returns up to `topN` suggestions sorted by
- * expected success rate.
+ * (success rate DESC, fail-fast efficiency DESC).
+ * Since success rate is order-invariant (commutative), fail-fast efficiency
+ * is the meaningful discriminator between equivalent orderings.
  */
 export function suggestOrderings(
   db: Database.Database,
@@ -434,7 +460,8 @@ export function suggestOrderings(
   topN = 3,
 ): OrderingSuggestion[] {
   const stats = getStageStats(db, pipelineName);
-  const baseline = predictSuccessRate(DEFAULT_ORDERING, stats);
+  const baselineRate = predictSuccessRate(DEFAULT_ORDERING, stats);
+  const baselineStages = predictExpectedStagesRun(DEFAULT_ORDERING, stats);
 
   const seen = new Set<string>();
   const candidates: OrderingSuggestion[] = [];
@@ -450,16 +477,38 @@ export function suggestOrderings(
         seen.add(key);
 
         const rate = predictSuccessRate(neighbour, stats);
-        const delta = rate - baseline;
+        const stagesRun = predictExpectedStagesRun(neighbour, stats);
+        const delta = rate - baselineRate;
+        const efficiencyGain = baselineStages - stagesRun; // positive = fewer stages wasted
+
+        // Find the stages that swapped vs DEFAULT_ORDERING
+        const swappedStages = neighbour
+          .filter((s, i) => s !== DEFAULT_ORDERING[i])
+          .slice(0, 2);
+        const swapDesc = swappedStages.length === 2
+          ? `swaps ${swappedStages[0]} ↔ ${swappedStages[1]}`
+          : 'reordering';
+
+        let rationale: string;
+        if (delta > 0.01) {
+          rationale = `Moves higher-confidence stages earlier; estimated +${(delta * 100).toFixed(1)}% pipeline success`;
+        } else if (delta < -0.01) {
+          rationale = `Moves lower-confidence stages earlier; avoid — ${(delta * 100).toFixed(1)}% estimated degradation`;
+        } else if (efficiencyGain > 0.05) {
+          rationale = `Fail-fast: ${swapDesc} — saves ~${efficiencyGain.toFixed(2)} stage executions per run (same success rate)`;
+        } else if (efficiencyGain < -0.05) {
+          rationale = `Fail-slow: ${swapDesc} — wastes ~${(-efficiencyGain).toFixed(2)} extra stage executions per run (avoid)`;
+        } else {
+          rationale = `Equivalent: ${swapDesc} — same success rate, minimal efficiency difference`;
+        }
+
         candidates.push({
           ordering: neighbour,
           expectedSuccessRate: rate,
-          delta,
-          rationale: delta > 0.01
-            ? `Moves higher-confidence stages earlier; estimated +${(delta * 100).toFixed(1)}% pipeline success`
-            : delta < -0.01
-            ? `Moves lower-confidence stages earlier; estimated ${(delta * 100).toFixed(1)}% pipeline success (avoid)`
-            : 'Neutral reordering — equivalent expected performance',
+          // Expose the larger of success-rate delta or fail-fast efficiency gain so the
+          // pipeline-finish hook (threshold: delta*100 > 0.5) fires on efficiency wins too.
+          delta: Math.abs(delta) > 0.01 ? delta : efficiencyGain,
+          rationale,
           violatesConstraints: false,
         });
         nextFrontier.push(neighbour);
@@ -468,8 +517,16 @@ export function suggestOrderings(
     frontier = nextFrontier;
   }
 
-  // Sort: best first, skip strictly worse orderings from top suggestions
-  candidates.sort((a, b) => b.expectedSuccessRate - a.expectedSuccessRate);
+  // Sort: success rate DESC, then fail-fast efficiency DESC (fewer expected stages = better)
+  const stagesMap = new Map(candidates.map((c) => [
+    c.ordering.join(','),
+    predictExpectedStagesRun(c.ordering, stats),
+  ]));
+  candidates.sort((a, b) => {
+    const rateDiff = b.expectedSuccessRate - a.expectedSuccessRate;
+    if (Math.abs(rateDiff) > 0.001) return rateDiff;
+    return (stagesMap.get(a.ordering.join(',')) ?? 0) - (stagesMap.get(b.ordering.join(',')) ?? 0);
+  });
   return candidates.slice(0, topN);
 }
 

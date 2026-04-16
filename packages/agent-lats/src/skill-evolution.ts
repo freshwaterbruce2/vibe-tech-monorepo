@@ -70,8 +70,10 @@ export interface EvolutionResult {
 // ---------------------------------------------------------------------------
 
 export function parseSkill(content: string): { frontmatter: string; body: string; name: string } {
-  const fmMatch = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-  if (!fmMatch) return { frontmatter: '', body: content, name: 'unknown' };
+  // Normalize Windows CRLF → LF so the regex works regardless of file line endings
+  const normalized = content.replace(/\r\n/g, '\n');
+  const fmMatch = normalized.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+  if (!fmMatch) return { frontmatter: '', body: normalized, name: 'unknown' };
   const frontmatter = fmMatch[1]!;
   const body = fmMatch[2]!;
   const nameMatch = frontmatter.match(/^name:\s*(.+)$/m);
@@ -158,12 +160,17 @@ function fetchDomainMistakes(db: Database.Database, skillName: string, limit = 5
     .prepare(
       `SELECT description, prevention_strategy FROM agent_mistakes
        WHERE (${like}) AND resolved = 0
-       ORDER BY id DESC LIMIT ?`,
+       GROUP BY substr(description, 1, 80)
+       ORDER BY MAX(id) DESC LIMIT ?`,
     )
     .all(...params, limit) as Array<{ description: string; prevention_strategy: string | null }>;
-  return rows.map(
-    (r) => `- ${r.description}${r.prevention_strategy ? ` → ${r.prevention_strategy}` : ''}`,
-  );
+  return rows.map((r) => {
+    const desc = r.description.substring(0, 100) + (r.description.length > 100 ? '…' : '');
+    const strategy = r.prevention_strategy
+      ? ` → ${r.prevention_strategy.substring(0, 80)}${r.prevention_strategy.length > 80 ? '…' : ''}`
+      : '';
+    return `- ${desc}${strategy}`;
+  });
 }
 
 /** Fetch common violation patterns from self_critiques */
@@ -358,7 +365,7 @@ export function snapshot(db: Database.Database, skillName: string): SkillVariant
   if (!existsSync(skillPath)) {
     throw new Error(`Skill not found: ${skillPath}`);
   }
-  const content = readFileSync(skillPath, 'utf-8');
+  const content = readFileSync(skillPath, 'utf-8').replace(/\r\n/g, '\n');
 
   // Check if content matches latest deployed variant
   const deployed = getDeployedVariant(db, skillName);
