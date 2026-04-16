@@ -1,7 +1,11 @@
-#!/usr/bin/env powershell
+#!/usr/bin/env pwsh
 # PostToolUse hook - records specialist agent (Agent tool) invocations to the learning DB
 # Fires on ANY PostToolUse; exits early if tool_name != "Agent"
 # Fire-and-forget: never blocks, never fails the tool call
+#
+# Also auto-records pipeline stage results when a ralph-wiggum pipeline run is active
+# (reads D:\learning-system\lats-active-pipeline.json written by lats-pipeline-start.ps1)
+# This means stage recording is automatic — the orchestrator agent doesn't have to do it manually.
 
 $ErrorActionPreference = 'SilentlyContinue'
 $inputJson = [Console]::In.ReadToEnd()
@@ -81,6 +85,46 @@ try {
             -ErrorAction SilentlyContinue | Out-Null
     } catch {
         # Silent - memory-mcp may not be running
+    }
+
+    # Auto-record pipeline stage result if a ralph-wiggum run is active.
+    # Maps subagent_type → (stageName, position) so the orchestrator doesn't
+    # have to call `pipeline stage` manually after every sub-agent.
+    $pipelineStateFile = 'D:\learning-system\lats-active-pipeline.json'
+    if (Test-Path $pipelineStateFile) {
+        $stageMap = @{
+            'skill-patternanalyzer' = @{ name = 'PatternAnalyzer'; pos = 0 }
+            'skill-skillgenerator'  = @{ name = 'SkillGenerator';  pos = 1 }
+            'skill-codereviewer'    = @{ name = 'CodeReviewer';    pos = 2 }
+            'skill-testarchitect'   = @{ name = 'TestArchitect';   pos = 3 }
+            'skill-securityauditor' = @{ name = 'SecurityAuditor'; pos = 4 }
+            'skill-docswriter'      = @{ name = 'DocsWriter';      pos = 5 }
+            'skill-qualitygate'     = @{ name = 'QualityGate';     pos = 6 }
+            'skill-monitor'         = @{ name = 'Monitor';         pos = 7 }
+        }
+        $stageInfo = $stageMap[$subagentType.ToLower()]
+        if ($stageInfo) {
+            try {
+                $ps = Get-Content $pipelineStateFile -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                $runId = $ps.runId
+                if ($runId) {
+                    $CLI = 'node'
+                    $CLIPath = 'C:\dev\packages\agent-lats\dist\cli.js'
+                    $successStr = if ($success) { 'true' } else { 'false' }
+                    $durationArg = if ($executionTimeMs) { $executionTimeMs } else { 0 }
+                    $stageArgs = @($CLIPath, 'pipeline', 'stage',
+                        '--run', $runId,
+                        '--stage', $stageInfo.name,
+                        '--position', $stageInfo.pos,
+                        '--success', $successStr,
+                        '--duration', $durationArg)
+                    if (-not $success -and $errorMessage) {
+                        $stageArgs += '--error', ($errorMessage.Substring(0, [Math]::Min(200, $errorMessage.Length)))
+                    }
+                    & $CLI @stageArgs 2>$null | Out-Null
+                }
+            } catch {}
+        }
     }
 
     # Debug log (writes to D:\logs)
