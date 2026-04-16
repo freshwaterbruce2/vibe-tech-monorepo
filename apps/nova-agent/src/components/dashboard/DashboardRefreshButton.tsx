@@ -29,7 +29,7 @@ const DashboardRefreshButton = ({ onRefresh }: DashboardRefreshButtonProps) => {
 		<Button
 			variant="outline"
 			size="sm"
-			onClick={handleRefresh}
+			onClick={() => { void handleRefresh(); }}
 			disabled={isRefreshing}
 			className="relative bg-aura-backgroundLight border-aura-neonBlue/30 hover:bg-aura-neonBlue/10"
 		>

@@ -71,7 +71,7 @@ export function DeepWorkDashboard() {
 					</div>
 					<p className="text-red-300 mb-4">{error}</p>
 					<button
-						onClick={async () => refetch()}
+						onClick={() => { void refetch(); }}
 						className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
 					>
 						Retry
@@ -107,7 +107,7 @@ export function DeepWorkDashboard() {
 						your deep work sessions.
 					</p>
 					<button
-						onClick={async () => refetch()}
+						onClick={() => { void refetch(); }}
 						className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
 					>
 						Check Again

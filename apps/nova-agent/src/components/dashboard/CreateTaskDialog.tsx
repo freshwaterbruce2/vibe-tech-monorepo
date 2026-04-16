@@ -101,7 +101,7 @@ export function CreateTaskDialog({
 				)}
 			</DialogTrigger>
 			<DialogContent className="sm:max-w-[425px]">
-				<form onSubmit={handleSubmit}>
+				<form onSubmit={(e) => { void handleSubmit(e); }}>
 					<DialogHeader>
 						<DialogTitle>Create Task</DialogTitle>
 						<DialogDescription>

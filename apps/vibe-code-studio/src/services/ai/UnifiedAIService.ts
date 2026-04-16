@@ -176,10 +176,10 @@ export class UnifiedAIService {
     maxTokens?: number;
     temperature?: number;
     // Extended context (optional, for compatibility)
-    workspaceContext?: any;
-    currentFile?: any;
-    relatedFiles?: any[];
-    conversationHistory?: any[];
+    workspaceContext?: object;
+    currentFile?: object;
+    relatedFiles?: object[];
+    conversationHistory?: object[];
   }): Promise<AICompletionResponse> {
     const messages: ChatMessage[] = [];
 
@@ -213,10 +213,10 @@ export class UnifiedAIService {
     maxTokens?: number;
     temperature?: number;
     // Extended context (optional, for compatibility)
-    workspaceContext?: any;
-    currentFile?: any;
-    relatedFiles?: any[];
-    conversationHistory?: any[];
+    workspaceContext?: object;
+    currentFile?: object;
+    relatedFiles?: object[];
+    conversationHistory?: object[];
   }): AsyncGenerator<string, void, unknown> {
     const messages: ChatMessage[] = [];
 

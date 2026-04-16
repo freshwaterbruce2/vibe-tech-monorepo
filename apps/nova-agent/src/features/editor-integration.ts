@@ -28,11 +28,11 @@ export class EditorIntegration {
 		try {
 			await execFileAsync("vibe", [target], { timeout: 15000 });
 			return `Opened ${filePath} in Vibe Code Studio`;
-		} catch (_e) {
+		} catch {
 			try {
 				await execFileAsync("code", ["-g", target], { timeout: 15000 });
 				return `Opened ${filePath} in VS Code`;
-			} catch (_e2) {
+			} catch {
 				return 'Could not open editor. Ensure "vibe" or "code" is in your PATH.';
 			}
 		}

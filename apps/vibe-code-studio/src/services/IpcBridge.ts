@@ -6,6 +6,7 @@ import {
     createTaskStoppedMessage,
     type FileChangedPayload,
     IPCMessageType,
+    type IPCMessage,
     type OpenFilePayload,
     type TaskActivityPayload,
     type TaskStartedPayload,
@@ -14,19 +15,19 @@ import {
 
 import { logger } from './Logger';
 
-type MessageHandler = (msg: any) => void;
+type MessageHandler = (msg: IPCMessage) => void;
 
 const SOURCE: AppSource = 'deepcode';
 const DEFAULT_TARGET: AppSource = 'nova';
 
 async function send(message: Record<string, unknown>) {
-    if (!(window as any).ipcBridge?.send) {
+    if (!window.electron?.ipcBridge?.send) {
         logger.warn('[IpcBridge] ipcBridge not available on window');
         return;
     }
 
     try {
-        await (window as any).ipcBridge.send(message);
+        await window.electron.ipcBridge.send(message);
     } catch (err) {
         logger.error('[IpcBridge] Failed to send message', err);
     }
@@ -111,27 +112,27 @@ export const IpcBridge = {
     },
 
     onMessage(handler: MessageHandler) {
-        if (!(window as any).ipcBridge?.onMessage) {
+        if (!window.electron?.ipcBridge?.onMessage) {
             logger.warn('[IpcBridge] ipcBridge.onMessage not available');
             return () => { };
         }
-        return (window as any).ipcBridge.onMessage(handler);
+        return window.electron.ipcBridge.onMessage(handler as (msg: Record<string, unknown>) => void);
     },
 
-    onStatusChange(handler: (status: any) => void) {
-        if (!(window as any).ipcBridge?.onStatusChange) {
+    onStatusChange(handler: (status: { connected: boolean }) => void) {
+        if (!window.electron?.ipcBridge?.onStatusChange) {
             logger.warn('[IpcBridge] ipcBridge.onStatusChange not available');
             return () => { };
         }
-        return (window as any).ipcBridge.onStatusChange(handler);
+        return window.electron.ipcBridge.onStatusChange(handler);
     },
 
-    async getStatus(): Promise<any> {
-        if (!(window as any).ipcBridge?.getStatus) {
+    async getStatus(): Promise<{ connected: boolean; error?: string }> {
+        if (!window.electron?.ipcBridge?.getStatus) {
             return { connected: false };
         }
         try {
-            return await (window as any).ipcBridge.getStatus();
+            return await window.electron.ipcBridge.getStatus() as { connected: boolean; error?: string };
         } catch (err) {
             logger.warn('[IpcBridge] getStatus failed', err);
             return { connected: false, error: String(err) };

@@ -121,7 +121,7 @@ export class TerminalService {
       this.terminals.delete(terminalId);
       if (this.activeTerminalId === terminalId) {
         const remaining = Array.from(this.terminals.keys());
-        this.activeTerminalId = remaining.length > 0 ? remaining[0]! : null;
+        this.activeTerminalId = remaining.length > 0 ? (remaining[0] ?? null) : null;
       }
     }
   }

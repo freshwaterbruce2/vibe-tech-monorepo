@@ -20,7 +20,9 @@ const AffiliateLink = ({
 }: AffiliateLinkProps) => {
   const handleClick = () => {
     // Track affiliate link clicks
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (typeof window !== 'undefined' && (window as any).gtag) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).gtag('event', 'affiliate_click', {
         event_category: 'affiliate',
         event_label: name,

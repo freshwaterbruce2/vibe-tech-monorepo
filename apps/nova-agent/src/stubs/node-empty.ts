@@ -13,7 +13,7 @@ export default {};
 // Named exports used by the leaking code
 export const join = (...args: string[]) => args.join("/");
 export const resolve = (...args: string[]) => args.join("/");
-export const basename = (p: string) => p.split("/").pop() || "";
+export const basename = (p: string) => p.split("/").pop() ?? "";
 export const dirname = (p: string) => p.split("/").slice(0, -1).join("/");
 export const existsSync = () => false;
 export const readFileSync = () => "";

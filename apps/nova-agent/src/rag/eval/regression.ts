@@ -92,7 +92,7 @@ async function main(): Promise<void> {
   let runId: string | undefined;
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--baseline') baselineName = args[++i]!;
+    if (args[i] === '--baseline') baselineName = args[++i] ?? baselineName;
     if (args[i] === '--run') runId = args[++i];
   }
 
@@ -108,7 +108,7 @@ async function main(): Promise<void> {
       console.error('No runs found. Run benchmark-runner first.');
       process.exit(1);
     }
-    current = loadRun(runs[0]!.runId);
+    current = loadRun(runs[0]?.runId ?? '');
   }
 
   const check = checkRegression(baseline, current);

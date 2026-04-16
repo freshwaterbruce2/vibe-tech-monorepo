@@ -11,7 +11,7 @@ export const useNotificationEffects = (
 	// Initial data load effect - only run once
 	useEffect(() => {
 		if (!dataLoadedRef.current) {
-			loadDashboardData();
+			void loadDashboardData();
 			dataLoadedRef.current = true;
 		}
 

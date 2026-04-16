@@ -80,9 +80,9 @@ export class ElectronService {
           isDirectory: entry.isDirectory,
           isFile: entry.isFile
         }));
-      } catch (e: any) {
+      } catch (e: unknown) {
         logger.error('[ElectronService] readDir failed (Tauri):', e);
-        throw new Error(e.message || String(e));
+        throw new Error(e instanceof Error ? e.message : String(e));
       }
     }
 
@@ -180,12 +180,13 @@ export class ElectronService {
   async stat(targetPath: string): Promise<{ size: number; isFile: boolean; isDirectory: boolean; birthtime?: Date; mtime?: Date }> {
     if (this.isTauri()) {
       const info = await stat(targetPath);
+      const infoRec = info as unknown as Record<string, unknown>;
       return {
         size: info.size,
         isFile: info.isFile,
         isDirectory: info.isDirectory,
-        birthtime: (info as any).createdAt || (info as any).birthtime || undefined,
-        mtime: (info as any).mtime || undefined,
+        birthtime: (infoRec['createdAt'] || infoRec['birthtime'] || undefined) as Date | undefined,
+        mtime: (infoRec['mtime'] || undefined) as Date | undefined,
       };
     }
 
@@ -208,7 +209,7 @@ export class ElectronService {
   }
 
   // Dialog Operations
-  async openFileDialog(options?: any): Promise<{ canceled: boolean; filePaths: string[] }> {
+  async openFileDialog(options?: Record<string, unknown>): Promise<{ canceled: boolean; filePaths: string[] }> {
     if (this.isTauri()) {
       const { open } = await import('@tauri-apps/plugin-dialog');
       const result = await open({
@@ -231,7 +232,7 @@ export class ElectronService {
     };
   }
 
-  async openFolderDialog(options?: any): Promise<{ canceled: boolean; filePaths: string[] }> {
+  async openFolderDialog(options?: Record<string, unknown>): Promise<{ canceled: boolean; filePaths: string[] }> {
     if (this.isTauri()) {
       const { open } = await import('@tauri-apps/plugin-dialog');
       const result = await open({
@@ -257,7 +258,7 @@ export class ElectronService {
     };
   }
 
-  async saveFileDialog(options?: any): Promise<{ canceled: boolean; filePath?: string }> {
+  async saveFileDialog(options?: Record<string, unknown>): Promise<{ canceled: boolean; filePath?: string }> {
     if (this.isTauri()) {
       const { save } = await import('@tauri-apps/plugin-dialog');
       const result = await save({
@@ -411,7 +412,7 @@ export class ElectronService {
   }
 
   // Store Operations (KV)
-  async storeGet(key: string): Promise<any> {
+  async storeGet(key: string): Promise<unknown> {
     if (this.isTauri()) {
       const { load } = await import('@tauri-apps/plugin-store');
       const store = await load('store.json');
@@ -453,7 +454,7 @@ export class ElectronService {
   /**
    * Generic IPC invoke method for Electron IPC
    */
-  async invoke(channel: string, ...args: any[]): Promise<any> {
+  async invoke(channel: string, ...args: unknown[]): Promise<unknown> {
     const electron = this.electron;
     if (!electron) {
       throw new Error('Electron API not available - invoke method only works in Electron');

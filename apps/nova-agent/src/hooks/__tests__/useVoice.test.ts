@@ -271,7 +271,7 @@ describe('useVoice', () => {
       const { result } = renderHook(() => useVoice());
 
       act(() => {
-        result.current.speak('New text');
+        void result.current.speak('New text');
       });
 
       // cancel is called before speak
@@ -335,7 +335,7 @@ describe('useVoice', () => {
       const { result } = renderHook(() => useVoice());
 
       act(() => {
-        result.current.speak('long text');
+        void result.current.speak('long text');
       });
 
       expect(result.current.state).toBe('speaking');

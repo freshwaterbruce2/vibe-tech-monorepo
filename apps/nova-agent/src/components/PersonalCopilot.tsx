@@ -39,7 +39,7 @@ interface IndexStats {
 export default function PersonalCopilot() {
 	const [stats, setStats] = useState<IndexStats | null>(null);
 	const [suggestions, setSuggestions] = useState<CodeSuggestion[]>([]);
-	const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+	const [_isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [searchResults, setSearchResults] = useState<CodePattern[]>([]);
 	const [isIndexing, setIsIndexing] = useState(false);

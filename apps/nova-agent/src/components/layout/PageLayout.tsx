@@ -98,7 +98,7 @@ const PageLayout = ({
 		? `${title} | Vibe Tech`
 		: "Vibe Tech | Creating innovative digital solutions";
 	const siteDescription =
-		description ||
+		description ??
 		"Creating innovative digital solutions with a focus on design and functionality";
 	const siteKeywords =
 		keywords ?? "vibe tech, web development, digital solutions, tech services";

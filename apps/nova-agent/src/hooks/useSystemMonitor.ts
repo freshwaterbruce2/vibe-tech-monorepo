@@ -29,21 +29,22 @@ export const useSystemMonitor = () => {
 	// Listen for IPC messages from the backend
 	useEffect(() => {
 		const unlisten = listen("ipc-message", (event) => {
-			const msg = event.payload as any;
+			const msg = event.payload as { type?: string; payload?: { result?: { cpu?: SystemInfo['cpu']; mem?: SystemInfo['mem']; os?: SystemInfo['os'] } } };
 
 			// Check if this is a command response from desktop-commander-v3
 			if (msg.type === "command_result" && msg.payload?.result?.cpu) {
 				// It seems we got a system info payload
+				const result = msg.payload.result;
 				setSystemInfo({
-					cpu: msg.payload.result.cpu,
-					mem: msg.payload.result.mem,
-					os: msg.payload.result.os,
+					cpu: result.cpu as SystemInfo['cpu'],
+					mem: result.mem as SystemInfo['mem'],
+					os: result.os as SystemInfo['os'],
 				});
 			}
 		});
 
 		return () => {
-			unlisten.then((f) => f());
+			void unlisten.then((f) => f());
 		};
 	}, []);
 

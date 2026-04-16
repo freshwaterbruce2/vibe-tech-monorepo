@@ -45,7 +45,7 @@ const AdminLogin = ({ onClose }: AdminLoginProps) => {
           variant: 'destructive',
         });
       }
-    } catch (_error) {
+    } catch {
       toast({
         title: 'Login Error',
         description: 'An error occurred during login.',
@@ -69,7 +69,7 @@ const AdminLogin = ({ onClose }: AdminLoginProps) => {
         </CardDescription>
       </CardHeader>
 
-      <form onSubmit={handleLogin}>
+      <form onSubmit={(e) => { void handleLogin(e); }}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="password" className="text-white">

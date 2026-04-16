@@ -134,12 +134,12 @@ describe('useGravityClaw', () => {
 
     const { result } = renderHook(() => useGravityClaw());
 
-    let error: Error | undefined;
+    let _error: Error | undefined;
     act(() => {
       result.current
         .sendMessage([{ role: 'user', content: 'hang' }])
         .catch((e: Error) => {
-          error = e;
+          _error = e;
         });
     });
 
@@ -166,7 +166,7 @@ describe('useGravityClaw', () => {
     const { result } = renderHook(() => useGravityClaw());
 
     await expect(
-      act(() =>
+      act(async () =>
         result.current.sendMessage([{ role: 'user', content: 'fail' }]),
       ),
     ).rejects.toThrow('HTTP 503');
@@ -182,7 +182,7 @@ describe('useGravityClaw', () => {
     const { result } = renderHook(() => useGravityClaw());
 
     await expect(
-      act(() =>
+      act(async () =>
         result.current.sendMessage([{ role: 'user', content: 'fail' }]),
       ),
     ).rejects.toThrow('Rate limit exceeded');
@@ -198,7 +198,7 @@ describe('useGravityClaw', () => {
     const { result } = renderHook(() => useGravityClaw());
 
     await expect(
-      act(() =>
+      act(async () =>
         result.current.sendMessage([{ role: 'user', content: 'nobody' }]),
       ),
     ).rejects.toThrow('No response body from GravityClaw');
@@ -237,6 +237,7 @@ describe('useGravityClaw', () => {
   it('aborts previous request when sendMessage is called again', async () => {
     let callCount = 0;
     (fetch as ReturnType<typeof vi.fn>).mockImplementation(
+      // eslint-disable-next-line @typescript-eslint/no-misused-promises
       async (_url: string, opts: RequestInit) => {
         callCount++;
         // First call hangs; second resolves normally
@@ -254,12 +255,12 @@ describe('useGravityClaw', () => {
     const { result } = renderHook(() => useGravityClaw());
 
     // Fire first request (will hang)
-    let firstError: Error | undefined;
+    let _firstError: Error | undefined;
     act(() => {
       result.current
         .sendMessage([{ role: 'user', content: 'first' }])
         .catch((e: Error) => {
-          firstError = e;
+          _firstError = e;
         });
     });
 

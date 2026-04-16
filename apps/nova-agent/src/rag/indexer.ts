@@ -182,8 +182,9 @@ export class RAGIndexer {
       for (let i = 0; i < allChunks.length; i++) {
         if (embeddings.failedIndices.includes(i)) continue;
 
-        const chunk = allChunks[i]!;
-        const vector = embeddings.results[i]!.vector;
+        const chunk = allChunks[i];
+        const vector = embeddings.results[i]?.vector;
+        if (!chunk || !vector) continue;
         if (vector.length === 0) continue;
 
         rows.push({
@@ -288,7 +289,7 @@ export class RAGIndexer {
     if (this.config.autoIndexIntervalMs <= 0) return;
     if (this.intervalHandle) return;
 
-    this.intervalHandle = setInterval(async () => {
+    this.intervalHandle = setInterval(() => { void (async () => {
       try {
         const result = await this.index();
         if (result.filesProcessed > 0) {
@@ -297,7 +298,7 @@ export class RAGIndexer {
       } catch (error) {
         this.log(`Auto-index error: ${(error as Error).message}`);
       }
-    }, this.config.autoIndexIntervalMs);
+    })(); }, this.config.autoIndexIntervalMs);
 
     this.log(`Auto-index started (every ${this.config.autoIndexIntervalMs / 1000}s)`);
   }

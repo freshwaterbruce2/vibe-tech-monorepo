@@ -22,7 +22,7 @@ const TodoItem = ({
 	todo,
 	onToggleComplete,
 	onDelete,
-	onEdit: onEdit,
+	onEdit: _onEdit,
 }: TodoItemProps) => {
 	const getTodoDueStatus = (dueDate?: Date) => {
 		if (!dueDate) return null;

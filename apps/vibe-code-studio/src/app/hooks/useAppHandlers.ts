@@ -14,16 +14,23 @@ import type { DetectedError } from '../../services/ErrorDetector';
 import { ErrorDetector } from '../../services/ErrorDetector';
 import { logger } from '../../services/Logger';
 import { SearchService } from '../../services/SearchService';
+import type { SearchOptions } from '../../services/SearchService';
 import type { AIModel } from '../../services/ai/AIProviderInterface';
+import type { UnifiedAIService } from '../../services/ai/UnifiedAIService';
+import type { FileSystemService } from '../../services/FileSystemService';
 import type { EditorFile } from '../../types';
 import type { VisualPanelState } from '../types';
 import { registerCompletion } from 'monacopilot';
+import type { editor as MonacoEditorNS } from 'monaco-editor';
+import type * as MonacoNS from 'monaco-editor';
+
+type ModelPromptsMap = Record<string, string>;
 
 export interface UseAppHandlersProps {
   // Services
-  aiService: any;
-  fileSystemService: any;
-  multiFileEditor: any;
+  aiService: UnifiedAIService;
+  fileSystemService: FileSystemService;
+  multiFileEditor: Record<string, unknown>;
 
   // File state
   currentFile: EditorFile | null;
@@ -33,11 +40,11 @@ export interface UseAppHandlersProps {
   workspaceFolder: string | null;
 
   // Refs
-  editorRef: MutableRefObject<any>;
+  editorRef: MutableRefObject<MonacoEditorNS.IStandaloneCodeEditor | null>;
   autoFixServiceRef: MutableRefObject<AutoFixService | null>;
   errorDetectorRef: MutableRefObject<ErrorDetector | null>;
-  codeActionProviderRef: MutableRefObject<any>;
-  tabCompletionProviderRef: MutableRefObject<any>;
+  codeActionProviderRef: MutableRefObject<{ dispose: () => void } | null>;
+  tabCompletionProviderRef: MutableRefObject<{ dispose: () => void } | null>;
 
   // State setters
   setCurrentError: (error: DetectedError | null) => void;
@@ -192,17 +199,19 @@ export function useAppHandlers(props: UseAppHandlersProps) {
   );
 
   // Handle editor mount - initialize error detection
-  const handleEditorMount = useCallback((editor: any, monaco: any) => {
+  const handleEditorMount = useCallback((editor: MonacoEditorNS.IStandaloneCodeEditor | unknown, monaco: typeof MonacoNS | unknown) => {
+    const typedEditor = editor as MonacoEditorNS.IStandaloneCodeEditor;
+    const typedMonaco = monaco as typeof MonacoNS;
     logger.debug('[AutoFix] Editor mounted, initializing error detection');
-    editorRef.current = editor;
+    editorRef.current = typedEditor;
 
     // Initialize AutoFixService
     autoFixServiceRef.current = new AutoFixService(aiService);
 
     // Initialize ErrorDetector
     errorDetectorRef.current = new ErrorDetector({
-      editor,
-      monaco,
+      editor: typedEditor,
+      monaco: typedMonaco,
       onError: (error: DetectedError) => {
         logger.debug('[AutoFix] Error detected:', error);
         setCurrentError(error);
@@ -211,7 +220,7 @@ export function useAppHandlers(props: UseAppHandlersProps) {
         setFixError('');
         setCurrentFix(null);
 
-        autoFixServiceRef.current?.generateFix(error, editor)
+        autoFixServiceRef.current?.generateFix(error, typedEditor)
           .then((fix) => {
             setCurrentFix(fix);
             setFixLoading(false);
@@ -240,14 +249,14 @@ export function useAppHandlers(props: UseAppHandlersProps) {
         onFixFailed: (error: Error) => showError('Fix Failed', error.message),
       });
 
-      const disposable = monaco.languages.registerCodeActionProvider('*', provider);
+      const disposable = typedMonaco.languages.registerCodeActionProvider('*', provider);
       codeActionProviderRef.current = disposable;
-      provider.registerCommandHandlers(editor, monaco);
+      provider.registerCommandHandlers(typedEditor, typedMonaco);
     }
 
     // Register Tab Completion Provider (inline completions via monacopilot)
     logger.debug('[TabCompletion] Registering inline completion provider (monacopilot)');
-    const completionRegistration = registerCompletion(monaco, editor, {
+    const completionRegistration = registerCompletion(typedMonaco, typedEditor, {
       language: currentFile?.language || 'typescript',
       requestHandler: async ({ body }) => {
         try {
@@ -332,12 +341,12 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     file: string,
     searchText: string,
     replaceText: string,
-    options: any
+    options: SearchOptions
   ) => {
     try {
       const result = await searchService.replaceInFile(
         file,
-        (searchService as any)['createSearchPattern'](searchText, options),
+        (searchService as unknown as { createSearchPattern: (s: string, o: SearchOptions) => RegExp }).createSearchPattern(searchText, options),
         replaceText,
         options
       );
@@ -361,7 +370,7 @@ export function useAppHandlers(props: UseAppHandlersProps) {
   const handleSearchInFiles = useCallback(async (
     searchText: string,
     files: string[],
-    options: any,
+    options: SearchOptions,
     scope: SearchScope = 'open-files'
   ) => {
     try {
@@ -424,8 +433,8 @@ export function useAppHandlers(props: UseAppHandlersProps) {
 
   // Multi-File Edit handlers
   const handleApplyMultiFileChanges = useCallback(async (selectedFiles: string[]) => {
-    const plan = (window as any).__multiFileEditPlan as MultiFileEditPlan | null;
-    const changes = (window as any).__multiFileChanges as FileChange[] || [];
+    const plan = (window as unknown as Record<string, unknown>)['__multiFileEditPlan'] as MultiFileEditPlan | null;
+    const changes = ((window as unknown as Record<string, unknown>)['__multiFileChanges'] as FileChange[] | undefined) ?? [];
 
     if (!plan) {
       logger.error('[MultiFileEdit] No plan available');
@@ -434,7 +443,9 @@ export function useAppHandlers(props: UseAppHandlersProps) {
 
     try {
       const selectedChanges = changes.filter(c => selectedFiles.includes(c.path));
-      const result = await multiFileEditor.applyChanges(selectedChanges);
+      const applyFn = (multiFileEditor as Record<string, unknown>)['applyChanges'] as ((c: FileChange[]) => Promise<{ success: boolean; appliedFiles: string[]; error?: string }>) | undefined;
+      if (!applyFn) throw new Error('multiFileEditor.applyChanges not available');
+      const result = await applyFn(selectedChanges);
 
       if (result.success) {
         showSuccess('Changes Applied', `Successfully applied changes to ${result.appliedFiles.length} file(s)`);
@@ -502,25 +513,25 @@ export function useAppHandlers(props: UseAppHandlersProps) {
 
     switch (command) {
       case 'explain':
-        prompt = (modelPrompts as any).explain.replace('${selectedCode}', selectedCode);
+        prompt = (modelPrompts as ModelPromptsMap)['explain']?.replace('${selectedCode}', selectedCode) ?? '';
         break;
       case 'generate-tests':
-        prompt = (modelPrompts as any)['generate-tests'].replace('${selectedCode}', selectedCode);
+        prompt = (modelPrompts as ModelPromptsMap)['generate-tests']?.replace('${selectedCode}', selectedCode) ?? '';
         break;
       case 'refactor':
-        prompt = (modelPrompts as any).refactor.replace('${selectedCode}', selectedCode);
+        prompt = (modelPrompts as ModelPromptsMap)['refactor']?.replace('${selectedCode}', selectedCode) ?? '';
         break;
       case 'fix-bugs':
-        prompt = (modelPrompts as any)['fix-bugs'].replace('${selectedCode}', selectedCode);
+        prompt = (modelPrompts as ModelPromptsMap)['fix-bugs']?.replace('${selectedCode}', selectedCode) ?? '';
         break;
       case 'optimize':
-        prompt = (modelPrompts as any).optimize.replace('${selectedCode}', selectedCode);
+        prompt = (modelPrompts as ModelPromptsMap)['optimize']?.replace('${selectedCode}', selectedCode) ?? '';
         break;
       case 'add-comments':
-        prompt = (modelPrompts as any)['add-comments'].replace('${selectedCode}', selectedCode);
+        prompt = (modelPrompts as ModelPromptsMap)['add-comments']?.replace('${selectedCode}', selectedCode) ?? '';
         break;
       case 'generate-component':
-        prompt = (modelPrompts as any)['generate-component'];
+        prompt = (modelPrompts as ModelPromptsMap)['generate-component'] ?? '';
         break;
       default:
         prompt = selectedCode;
@@ -531,7 +542,7 @@ export function useAppHandlers(props: UseAppHandlersProps) {
   }, [currentFile, aiChatOpen, setAiChatOpen, handleAIMessage, showSuccess, showWarning]);
 
   // Multi-File Edit Detection Handler
-  const handleMultiFileEditDetected = useCallback((plan: any, changes: any[]) => {
+  const handleMultiFileEditDetected = useCallback((plan: MultiFileEditPlan, changes: FileChange[]) => {
     logger.info('[App] Multi-file edit detected:', plan.description);
     setMultiFileEditPlan(plan);
     setMultiFileChanges(changes);

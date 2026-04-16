@@ -142,10 +142,10 @@ export function useCryptoTradingDashboard(
 	 * Initial load and auto-refresh
 	 */
 	useEffect(() => {
-		fetchDashboardData();
+		void fetchDashboardData();
 
 		if (autoRefresh && refreshInterval > 0) {
-			const interval = setInterval(fetchDashboardData, refreshInterval);
+			const interval = setInterval(() => { void fetchDashboardData(); }, refreshInterval);
 			return () => clearInterval(interval);
 		}
 		return undefined;

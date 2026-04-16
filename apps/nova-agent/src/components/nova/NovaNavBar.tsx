@@ -99,7 +99,7 @@ const NovaNavBar = () => {
                       e.currentTarget.style.background = 'transparent';
                     }
                   }}
-                  onClick={async () => navigate(item.path)}
+                  onClick={() => { void navigate(item.path); }}
                 >
                   {item.label}
                 </button>
@@ -139,7 +139,7 @@ const NovaNavBar = () => {
                   border: '1px solid rgba(255, 255, 255, 0.06)',
                   background: 'rgba(255, 255, 255, 0.03)',
                 }}
-                onClick={async () => navigate('/settings')}
+                onClick={() => { void navigate('/settings'); }}
               >
                 <Settings style={{ width: '18px', height: '18px' }} />
               </Button>
@@ -156,7 +156,7 @@ const NovaNavBar = () => {
                     border: '1px solid rgba(255, 255, 255, 0.06)',
                     background: 'rgba(255, 255, 255, 0.03)',
                   }}
-                  onClick={async () => { await logout(); navigate('/'); }}
+                  onClick={() => { void logout().then(() => { void navigate('/'); }); }}
                   title="Logout"
                 >
                   <LogOut style={{ width: '18px', height: '18px' }} />

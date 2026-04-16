@@ -78,7 +78,7 @@ const ResponsiveContainer = React.forwardRef<HTMLDivElement, ResponsiveContainer
       return '';
     };
 
-    const ComponentToRender = Component as any;
+    const ComponentToRender = Component as React.ElementType;
     return (
       <ComponentToRender
         ref={ref}

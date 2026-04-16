@@ -31,8 +31,8 @@ interface StoredApiKey {
 }
 
 interface ElectronStorageAPI {
-  get: (key: string) => Promise<{ success: boolean; value: any }>;
-  set: (key: string, value: any) => Promise<{ success: boolean }>;
+  get: (key: string) => Promise<{ success: boolean; value: unknown }>;
+  set: (key: string, value: unknown) => Promise<{ success: boolean }>;
   remove: (key: string) => Promise<{ success: boolean }>;
   keys: () => Promise<{ success: boolean; keys: string[] }>;
 }
@@ -46,9 +46,9 @@ export class SecureApiKeyManager {
 
   private constructor() {
     // Check if running in Electron
-    if (typeof window !== 'undefined' && (window as any).electron?.storage) {
+    if (typeof window !== 'undefined' && window.electron?.storage) {
       this.isElectron = true;
-      this.electronStorage = (window as any).electron.storage;
+      this.electronStorage = window.electron.storage as unknown as ElectronStorageAPI;
       logger.info('Using Electron secure storage for API keys');
     } else {
       logger.info('Using localStorage for API keys (browser mode)');
@@ -392,9 +392,9 @@ export class SecureApiKeyManager {
   private updateEnvironmentVariable(provider: string, key: string): void {
     // Update the environment variable for immediate use
     const envVarName = `VITE_${provider.toUpperCase()}_API_KEY`;
-    if (typeof window !== 'undefined' && (window as any).electronAPI) {
+    if (typeof window !== 'undefined' && window.electronAPI) {
       // In Electron, we can't directly set env vars, but we can store for the session
-      (window as any).electronAPI.setTempEnvVar(envVarName, key);
+      (window.electronAPI as unknown as Record<string, (a: string, b: string) => void>)['setTempEnvVar']?.(envVarName, key);
     }
   }
 
@@ -415,8 +415,8 @@ export class SecureApiKeyManager {
 
   private clearEnvironmentVariable(provider: string): void {
     const envVarName = `VITE_${provider.toUpperCase()}_API_KEY`;
-    if (typeof window !== 'undefined' && (window as any).electronAPI) {
-      (window as any).electronAPI.clearTempEnvVar(envVarName);
+    if (typeof window !== 'undefined' && window.electronAPI) {
+      (window.electronAPI as unknown as Record<string, (a: string) => void>)['clearTempEnvVar']?.(envVarName);
     }
   }
 

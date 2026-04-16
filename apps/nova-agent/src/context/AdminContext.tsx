@@ -39,7 +39,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
 			}
 		};
 
-		initStore();
+		void initStore();
 	}, []);
 
 	const login = async (password: string): Promise<boolean> => {
@@ -81,6 +81,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
 	);
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAdmin = (): AdminContextType => {
 	const context = useContext(AdminContext);
 	if (!context) {

@@ -8,7 +8,7 @@ const TradingTest = () => {
 				<div>
 					<h2 className="text-xl text-white">Testing API Connection:</h2>
 					<button
-						onClick={async () => {
+						onClick={() => { void (async () => {
 							try {
 								const response = await fetch(
 									"http://localhost:8001/api/health",
@@ -18,7 +18,7 @@ const TradingTest = () => {
 							} catch (error) {
 								alert(`Error: ${error}`);
 							}
-						}}
+						})(); }}
 						className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
 					>
 						Test API Health

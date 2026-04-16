@@ -163,7 +163,7 @@ export class AnalysisManager {
 
 	private getArtifactDirectory(): string {
 		return path.resolve(
-			process.env.NOVA_REVIEW_ARTIFACT_DIR || DEFAULT_REVIEW_ARTIFACT_DIR,
+			process.env.NOVA_REVIEW_ARTIFACT_DIR ?? DEFAULT_REVIEW_ARTIFACT_DIR,
 		);
 	}
 
@@ -340,14 +340,14 @@ export class AnalysisManager {
 			}>(packageJsonPath);
 
 			if (packageJson) {
-				dependencySummary.packageName = packageJson.name || null;
+				dependencySummary.packageName = packageJson.name ?? null;
 				dependencySummary.dependencyCount = Object.keys(
-					packageJson.dependencies || {},
+					packageJson.dependencies ?? {},
 				).length;
 				dependencySummary.devDependencyCount = Object.keys(
-					packageJson.devDependencies || {},
+					packageJson.devDependencies ?? {},
 				).length;
-				dependencySummary.scripts = Object.keys(packageJson.scripts || {}).slice(
+				dependencySummary.scripts = Object.keys(packageJson.scripts ?? {}).slice(
 					0,
 					10,
 				);
@@ -362,7 +362,7 @@ export class AnalysisManager {
 			const cargoText = fc.readFile(cargoTomlPath);
 			if (cargoText) {
 				const match = cargoText.match(/^\s*name\s*=\s*"([^"]+)"/m);
-				dependencySummary.cargoPackageName = match?.[1] || null;
+				dependencySummary.cargoPackageName = match?.[1] ?? null;
 				evidence.add(cargoTomlPath, "cargo manifest");
 			}
 		}
@@ -498,7 +498,7 @@ export class AnalysisManager {
 					? review.keyConfigFiles.join(", ")
 					: "none detected"
 			}`,
-			`- Dependency Summary: package=${review.dependencySummary.packageName || "n/a"}, deps=${review.dependencySummary.dependencyCount}, devDeps=${review.dependencySummary.devDependencyCount}, scripts=${review.dependencySummary.scripts.length}`,
+			`- Dependency Summary: package=${review.dependencySummary.packageName ?? "n/a"}, deps=${review.dependencySummary.dependencyCount}, devDeps=${review.dependencySummary.devDependencyCount}, scripts=${review.dependencySummary.scripts.length}`,
 			`- Top Risks: ${
 				review.topRisks.length > 0 ? review.topRisks.join(" | ") : "none"
 			}`,

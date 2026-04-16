@@ -9,6 +9,7 @@ export const FeatureFlagProvider = ({ children }: FeatureFlagProviderProps) => {
     return <>{children}</>;
 };
 
-export const useFeatureFlag = (flag: string) => {
+// eslint-disable-next-line react-refresh/only-export-components
+export const useFeatureFlag = (_flag: string) => {
     return true; // Default to true for now
 };

@@ -168,46 +168,46 @@ const PerformanceMonitor: React.FC = () => {
 
   useEffect(() => {
     // Listen for memory metrics from main process
-    const handleMemoryMetrics = (_: any, metrics: MemoryMetrics) => {
+    const handleMemoryMetrics = (_: unknown, metrics: MemoryMetrics) => {
       setMemoryMetrics(metrics);
     };
 
-    const handlePerformanceMetrics = (_: any, metrics: PerformanceMetrics) => {
+    const handlePerformanceMetrics = (_: unknown, metrics: PerformanceMetrics) => {
       setPerformanceMetrics(metrics);
     };
 
-    if ((window.electron as any)?.ipc) {
-      (window.electron as any).ipc.on('memory-metrics', handleMemoryMetrics);
-      (window.electron as any).ipc.on('performance:metrics', handlePerformanceMetrics);
+    if (window.electron?.ipc) {
+      window.electron.ipc.on('memory-metrics', handleMemoryMetrics as (...args: unknown[]) => void);
+      window.electron.ipc.on('performance:metrics', handlePerformanceMetrics as (...args: unknown[]) => void);
 
       // Request initial stats
-      (window.electron as any).ipc.invoke('memory:get-stats').then(setMemoryStats);
+      window.electron.ipc.invoke('memory:get-stats').then(setMemoryStats);
     }
 
     return () => {
-      if ((window.electron as any)?.ipc) {
-        (window.electron as any).ipc.removeAllListeners('memory-metrics');
-        (window.electron as any).ipc.removeAllListeners('performance:metrics');
+      if (window.electron?.ipc) {
+        window.electron.ipc.removeAllListeners?.('memory-metrics');
+        window.electron.ipc.removeAllListeners?.('performance:metrics');
       }
     };
   }, []);
 
   const handleForceGC = useCallback(() => {
-    if ((window.electron as any)?.ipc) {
-      (window.electron as any).ipc.invoke('memory:force-gc');
+    if (window.electron?.ipc) {
+      window.electron.ipc.invoke('memory:force-gc');
     }
   }, []);
 
   const handleStartRecording = useCallback(async () => {
-    if ((window.electron as any)?.ipc) {
-      await (window.electron as any).ipc.invoke('performance:start-recording');
+    if (window.electron?.ipc) {
+      await window.electron.ipc.invoke('performance:start-recording');
       setIsRecording(true);
     }
   }, []);
 
   const handleStopRecording = useCallback(async () => {
-    if ((window.electron as any)?.ipc) {
-      const tracePath = await (window.electron as any).ipc.invoke('performance:stop-recording');
+    if (window.electron?.ipc) {
+      const tracePath = await window.electron.ipc.invoke('performance:stop-recording');
       setIsRecording(false);
       if (tracePath) {
         // Trace saved to disk — no UI needed beyond the recording state change

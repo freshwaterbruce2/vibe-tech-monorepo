@@ -70,13 +70,13 @@ const Orchestrator = () => {
 								<Input
 									value={prompt}
 									onChange={(e) => setPrompt(e.target.value)}
-									onKeyDown={async (e) => e.key === "Enter" && handleExecute()}
+									onKeyDown={(e) => { if (e.key === "Enter") { void handleExecute(); } }}
 									placeholder="e.g., 'Open a browser and search for the latest Rust news'"
 									className="pr-12 bg-aura-darkBgLight/50 border-aura-accent/30 text-white placeholder:text-aura-textSecondary focus:border-aura-neonBlue focus:ring-1 focus:ring-aura-neonBlue"
 									disabled={isExecuting}
 								/>
 								<Button
-									onClick={handleExecute}
+									onClick={() => { void handleExecute(); }}
 									disabled={isExecuting || !prompt.trim()}
 									className="absolute right-1 top-1 h-8 w-8 p-0 bg-aura-neonBlue hover:bg-aura-neonBlue/80 text-aura-darkBg"
 								>

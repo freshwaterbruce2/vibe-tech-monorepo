@@ -13,7 +13,7 @@ import { RAGRetriever } from '../retriever.js';
 import { RAGReranker } from '../reranker.js';
 import { RAGIndexer } from '../indexer.js';
 import { DEFAULT_RAG_CONFIG } from '../types.js';
-import type { RAGConfig, SearchResult } from '../types.js';
+import type { RAGConfig } from '../types.js';
 import { loadGoldenQueries } from './golden-queries-loader.js';
 import { computeAllMetrics, aggregateMetrics, p95Latency } from './metrics.js';
 import { generateRunId, saveRun, saveBaseline, loadBaseline, saveSweepSummary } from './results-store.js';

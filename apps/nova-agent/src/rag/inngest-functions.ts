@@ -252,20 +252,20 @@ export const ragIndexPipeline = inngest.createFunction(
     const upsertResult = await step.run('upsert-to-lancedb', async () => {
       // Reassemble vectors from all batches
       const rows: LanceRow[] = [];
-      let globalIdx = 0;
 
       for (let batchIdx = 0; batchIdx < embeddingResults.length; batchIdx++) {
-        const batch = embeddingResults[batchIdx]!;
+        const batch = embeddingResults[batchIdx];
+        if (!batch) continue;
         const batchStart = batchIdx * EMBED_BATCH_SIZE;
 
         for (let localIdx = 0; localIdx < batch.vectors.length; localIdx++) {
-          const vector = batch.vectors[localIdx]!;
-          if (batch.failedIndices.includes(localIdx) || vector.length === 0) {
-            globalIdx++;
+          const vector = batch.vectors[localIdx];
+          if (!vector || batch.failedIndices.includes(localIdx) || vector.length === 0) {
             continue;
           }
 
-          const chunk = chunks[batchStart + localIdx]!;
+          const chunk = chunks[batchStart + localIdx];
+          if (!chunk) { continue; }
           rows.push({
             id: chunk.id,
             filePath: chunk.filePath,
@@ -279,7 +279,6 @@ export const ragIndexPipeline = inngest.createFunction(
             createdAt: chunk.createdAt,
             vector,
           });
-          globalIdx++;
         }
       }
 

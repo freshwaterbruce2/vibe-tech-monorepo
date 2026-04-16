@@ -145,7 +145,7 @@ export class RAGChunker {
       type: chunkType,
       startLine,
       endLine,
-      symbolName: symbolName || undefined,
+      symbolName: symbolName ?? undefined,
       imports: imports.length > 0 ? imports : undefined,
       language,
       tokenCount,
@@ -171,7 +171,7 @@ export class RAGChunker {
     language: Chunk['language'],
   ): Chunk[] {
     const chunks: Chunk[] = [];
-    const lines = content.split('\n');
+    const _lines = content.split('\n');
 
     const maxChars = this.maxTokens * CHARS_PER_TOKEN;
     const overlapChars = this.overlapTokens * CHARS_PER_TOKEN;
@@ -277,14 +277,14 @@ function extractSymbolName(node: Node): string | null {
     kind === SyntaxKind.EnumDeclaration
   ) {
     // These node types have a getName() method via their specific interfaces
-    const name = (node as any).getName?.();
+    const name = (node as { getName?: () => string }).getName?.();
     if (name) return name;
   }
 
   if (kind === SyntaxKind.VariableStatement) {
     // Extract variable name(s) from the declaration
-    const declarations = (node as any).getDeclarationList?.()?.getDeclarations?.();
-    if (declarations?.length > 0) {
+    const declarations = (node as { getDeclarationList?: () => { getDeclarations?: () => Array<{ getName?: () => string }> } }).getDeclarationList?.()?.getDeclarations?.();
+    if (declarations && declarations.length > 0) {
       return declarations.map((d: { getName?: () => string }) => d.getName?.()).filter(Boolean).join(', ');
     }
   }

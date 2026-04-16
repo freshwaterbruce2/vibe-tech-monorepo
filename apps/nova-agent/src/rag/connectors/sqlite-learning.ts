@@ -73,17 +73,17 @@ export class LearningConnector {
     ).all() as Array<{ name: string }>;
 
     return tables.map((t) => {
-      const columns = this.db!.prepare(`PRAGMA table_info('${t.name}')`).all() as Array<{
+      const columns = this.db?.prepare(`PRAGMA table_info('${t.name}')`).all() as Array<{
         name: string;
         type: string;
         notnull: number;
         pk: number;
-      }>;
+      }> ?? [];
 
       let rowCount = 0;
       try {
-        const row = this.db!.prepare(`SELECT COUNT(*) as count FROM "${t.name}"`).get() as { count: number };
-        rowCount = row.count;
+        const row = this.db?.prepare(`SELECT COUNT(*) as count FROM "${t.name}"`).get() as { count: number } | undefined;
+        rowCount = row?.count ?? 0;
       } catch { /* table might be empty or locked */ }
 
       return {

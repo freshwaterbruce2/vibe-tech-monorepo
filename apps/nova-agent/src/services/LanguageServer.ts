@@ -363,12 +363,12 @@ export class LanguageServer {
 	 * Publish diagnostics to callbacks
 	 */
 	private publishDiagnostics(uri: string): void {
-		setTimeout(async () => {
+		setTimeout(() => { void (async () => {
 			const diagnostics = await this.getDiagnostics({ uri });
 
 			for (const callback of this.diagnosticsCallbacks) {
 				callback({ uri, diagnostics });
 			}
-		}, 50);
+		})(); }, 50);
 	}
 }

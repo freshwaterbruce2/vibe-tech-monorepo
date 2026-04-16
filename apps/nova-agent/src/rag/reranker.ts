@@ -103,7 +103,7 @@ export class RAGReranker {
     scored.sort((a, b) => b.rrfScore - a.rrfScore);
 
     // Normalize scores to 0-1 range
-    const maxScore = scored.length > 0 ? scored[0]!.rrfScore : 1;
+    const maxScore = scored.length > 0 ? (scored[0]?.rrfScore ?? 1) : 1;
     return scored.map(({ rrfScore, ...rest }) => ({
       ...rest,
       score: maxScore > 0 ? rrfScore / maxScore : 0,

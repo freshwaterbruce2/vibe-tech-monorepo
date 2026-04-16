@@ -25,7 +25,7 @@ import { runMigration } from './migrationRunner';
 // -----------------------------------------------------------------------------
 const getDatabasePath = (): string => {
   // Detect Electron environment - use unified hub DB
-  if (typeof window !== 'undefined' && (window as any).electron?.isElectron) {
+  if (typeof window !== 'undefined' && window.electron?.isElectron) {
     // Always use D:\databases\database.db for unified integration
     const centralized = import.meta.env.VITE_DATABASE_PATH || 'D:\\databases\\database.db';
     logger.debug(`[DatabaseService] Using unified hub DB at ${centralized}`);
@@ -97,7 +97,7 @@ export class DatabaseService {
 
   /** Detect Electron runtime */
   private detectElectron(): boolean {
-    return typeof window !== 'undefined' && !!(window as any).electron?.isElectron;
+    return typeof window !== 'undefined' && !!window.electron?.isElectron;
   }
 
   /** Public initializer */
@@ -124,7 +124,7 @@ export class DatabaseService {
       // Electron – use IPC to access better-sqlite3 in main process
       // DO NOT import better-sqlite3 directly in renderer (causes "module is not defined")
       try {
-        const electron = (window as any).electron;
+        const electron = window.electron;
         if (electron?.db?.initialize) {
           const result = await electron.db.initialize();
           if (result.success) {
@@ -181,7 +181,7 @@ export class DatabaseService {
     aiResponse: string,
     model: string,
     tokens?: number,
-    context?: any
+    context?: Record<string, unknown>
   ): Promise<number | null> {
     if (this.useFallback) {
       return await this.saveChatMessageFallback(workspace, userMessage, aiResponse, model, tokens, context);
@@ -217,13 +217,13 @@ export class DatabaseService {
         const result = await this.db.query(sql, [workspace, limit, offset]);
         // result.data contains the array of rows
         if (result.success && Array.isArray(result.data)) {
-          return result.data.map((row: any) => this.parseChatMessage(row));
+          return result.data.map((row: Record<string, unknown>) => this.parseChatMessage(row));
         }
         return [];
       } else {
         const result = this.db.exec(sql, [workspace, limit, offset]);
         if (!result[0]) return [];
-        return result[0].values.map((row: any[]) => this.parseChatMessage(row));
+        return result[0].values.map((row: unknown[]) => this.parseChatMessage(row));
       }
     } catch (e) {
       logger.error('[DatabaseService] getChatHistory error', e);
@@ -240,7 +240,7 @@ export class DatabaseService {
     aiResponse: string,
     model: string,
     tokens?: number,
-    context?: any
+    context?: Record<string, unknown>
   ): Promise<number> {
     const key = `${STORAGE_FALLBACK_PREFIX}chat_${workspace}`;
     let stored = '[]';
@@ -288,28 +288,28 @@ export class DatabaseService {
   // -------------------------------------------------------------------------
   // Utility parsers
   // -------------------------------------------------------------------------
-  private parseChatMessage(row: any): ChatMessage {
+  private parseChatMessage(row: unknown[] | Record<string, unknown>): ChatMessage {
     if (Array.isArray(row)) {
       return {
-        id: row[0],
-        timestamp: new Date(row[1]),
-        workspace_path: row[2],
-        user_message: row[3],
-        ai_response: row[4],
-        model_used: row[5],
-        tokens_used: row[6] ?? null,
-        workspace_context: row[7] ? JSON.parse(row[7]) : null,
+        id: row[0] as number | undefined,
+        timestamp: new Date(row[1] as string),
+        workspace_path: row[2] as string,
+        user_message: row[3] as string,
+        ai_response: row[4] as string,
+        model_used: row[5] as string,
+        tokens_used: (row[6] as number | null | undefined) ?? null,
+        workspace_context: row[7] ? JSON.parse(row[7] as string) : null,
       };
     }
     return {
-      id: row.id,
-      timestamp: new Date(row.timestamp),
-      workspace_path: row.workspace_path,
-      user_message: row.user_message,
-      ai_response: row.ai_response,
-      model_used: row.model_used,
-      tokens_used: row.tokens_used ?? null,
-      workspace_context: row.workspace_context ? JSON.parse(row.workspace_context) : null,
+      id: row['id'] as number | undefined,
+      timestamp: new Date(row['timestamp'] as string),
+      workspace_path: row['workspace_path'] as string,
+      user_message: row['user_message'] as string,
+      ai_response: row['ai_response'] as string,
+      model_used: row['model_used'] as string,
+      tokens_used: (row['tokens_used'] as number | null | undefined) ?? null,
+      workspace_context: row['workspace_context'] ? JSON.parse(row['workspace_context'] as string) : null,
     };
   }
 
@@ -376,7 +376,7 @@ export class DatabaseService {
   async logEvent(eventType: string, data: Record<string, unknown>): Promise<void> {
     if (this.useFallback) {
       const key = `${STORAGE_FALLBACK_PREFIX}events`;
-      let existing: any[] = [];
+      let existing: Array<Record<string, unknown>> = [];
 
       if (typeof window !== 'undefined' && window.electron?.store) {
         const stored = await window.electron.store.get(key) ?? '[]';
@@ -453,7 +453,7 @@ export class DatabaseService {
           const stmt = this.db.prepare(
             'INSERT INTO strategy_memory (pattern_hash, pattern_data, success_rate, usage_count, created_at) VALUES (?, ?, ?, ?, ?)'
           );
-          parsed.forEach((entry: any) => {
+          parsed.forEach((entry: Record<string, unknown>) => {
             try {
               stmt.run(
                 entry.pattern_hash ?? '',

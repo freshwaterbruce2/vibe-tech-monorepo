@@ -85,7 +85,7 @@ export function useVoice({ onTranscript, lang = 'en-US' }: UseVoiceOptions = {})
     if (synthRef.current.speaking) synthRef.current.cancel();
 
     const w = window as unknown as Record<string, unknown>;
-    const SpeechRec = (w['SpeechRecognition'] || w['webkitSpeechRecognition']) as
+    const SpeechRec = (w['SpeechRecognition'] ?? w['webkitSpeechRecognition']) as
       | (new () => SpeechRecognitionInstance)
       | undefined;
 
@@ -144,7 +144,7 @@ export function useVoice({ onTranscript, lang = 'en-US' }: UseVoiceOptions = {})
 
   const isSupported =
     typeof window !== 'undefined' &&
-    !!((window as unknown as Record<string, unknown>)['SpeechRecognition'] ||
+    !!((window as unknown as Record<string, unknown>)['SpeechRecognition'] ??
       (window as unknown as Record<string, unknown>)['webkitSpeechRecognition']);
 
   return { state, startListening, stopListening, speak, cancelSpeech, isSupported };
