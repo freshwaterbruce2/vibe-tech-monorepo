@@ -122,6 +122,28 @@ function ensureSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_mistakes_resolved ON agent_mistakes(resolved, identified_at DESC);
     CREATE INDEX IF NOT EXISTS idx_mistakes_category ON agent_mistakes(mistake_category, resolved);
 
+    -- Phase 2: Agent Q Assessments
+    CREATE TABLE IF NOT EXISTS agent_q_assessments (
+      id TEXT PRIMARY KEY,
+      lats_node_id TEXT NOT NULL,
+      agent_id TEXT,
+      task_description TEXT NOT NULL,
+      files_critiqued INTEGER NOT NULL DEFAULT 0,
+      avg_file_quality REAL NOT NULL DEFAULT 0.5,
+      positive_files INTEGER NOT NULL DEFAULT 0,
+      negative_files INTEGER NOT NULL DEFAULT 0,
+      clean_files INTEGER NOT NULL DEFAULT 0,
+      quality_score REAL NOT NULL,
+      quality_band TEXT NOT NULL,
+      summary TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (lats_node_id) REFERENCES mcts_nodes(id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_aq_node ON agent_q_assessments(lats_node_id);
+    CREATE INDEX IF NOT EXISTS idx_aq_agent ON agent_q_assessments(agent_id, quality_score DESC);
+    CREATE INDEX IF NOT EXISTS idx_aq_task ON agent_q_assessments(task_description);
+    CREATE INDEX IF NOT EXISTS idx_aq_created ON agent_q_assessments(created_at DESC);
+
     -- Phase 4: Pipeline Evolution
     CREATE TABLE IF NOT EXISTS pipeline_runs (
       id TEXT PRIMARY KEY,

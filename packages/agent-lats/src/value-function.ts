@@ -47,17 +47,22 @@ export function ucb1Bonus(totalVisits: number, nodeVisits: number, c = UCB1_C): 
 /**
  * Compute the composite value score for a candidate approach.
  *
- * Weights:
- *   40% pattern similarity  — how well the pattern matches the task
- *   30% confidence score    — how proven this pattern is in the DB
- *   20% historical success  — actual success rate for similar executions
- *   10% UCB1 bonus          — exploration (increases as other nodes are visited)
+ * Weights (Phase 2 — includes Agent Q quality signal):
+ *   35% pattern similarity       — how well the pattern matches the task
+ *   25% confidence score         — how proven this pattern is in the DB
+ *   15% historical success rate  — binary success rate for similar executions
+ *   15% historical quality score — avg Agent Q 0.0–1.0 from past executions (Phase 2)
+ *   10% UCB1 bonus               — exploration (increases as other nodes are visited)
+ *
+ * When historicalQualityScore is not provided (Phase 1 fallback), it is
+ * approximated from historicalSuccessRate so the total is still 100%.
  */
 export function computeScore(opts: {
   taskTokens: Set<string>;
   pattern: SuccessPattern | null;
   approachSource: ApproachSource;
   historicalSuccessRate: number;
+  historicalQualityScore?: number; // Phase 2: avg Agent Q score for similar tasks
   totalTreeVisits: number;
   nodeVisits: number;
   explorationConstant?: number;
@@ -65,18 +70,29 @@ export function computeScore(opts: {
   const { taskTokens, pattern, approachSource, historicalSuccessRate, totalTreeVisits, nodeVisits } = opts;
   const c = opts.explorationConstant ?? UCB1_C;
 
+  // Use provided quality score, or fall back to success rate as proxy
+  const qualityScore = opts.historicalQualityScore ?? historicalSuccessRate;
+
   const similarity = pattern ? patternSimilarity(taskTokens, pattern) : sourceBaseSimilarity(approachSource);
-  const confidence = pattern ? pattern.confidenceScore : sourceBaseConfidence(approachSource);
-  const historical = historicalSuccessRate;
-  const bonus = ucb1Bonus(totalTreeVisits, nodeVisits, c);
+  const confidence  = pattern ? pattern.confidenceScore : sourceBaseConfidence(approachSource);
+  const historical  = historicalSuccessRate;
+  const bonus       = ucb1Bonus(totalTreeVisits, nodeVisits, c);
 
   const final =
-    0.4 * similarity +
-    0.3 * confidence +
-    0.2 * historical +
-    0.1 * Math.min(1, bonus);
+    0.35 * similarity +
+    0.25 * confidence +
+    0.15 * historical +
+    0.15 * qualityScore +
+    0.10 * Math.min(1, bonus);
 
-  return { patternSimilarity: similarity, confidenceScore: confidence, historicalSuccessRate: historical, ucb1Bonus: bonus, final };
+  return {
+    patternSimilarity: similarity,
+    confidenceScore: confidence,
+    historicalSuccessRate: historical,
+    historicalQualityScore: qualityScore,
+    ucb1Bonus: bonus,
+    final,
+  };
 }
 
 /**

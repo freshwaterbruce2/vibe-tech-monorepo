@@ -3,6 +3,7 @@ import type Database from 'better-sqlite3';
 import type { MCTSNode, SuccessPattern, PlanResult, RankedCandidate, LATSOptions, ApproachSource } from './types.js';
 import { loadSuccessPatterns, getHistoricalSuccessRate, getTreeVisitCount, insertNode } from './db.js';
 import { tokenise, computeScore, patternSimilarity } from './value-function.js';
+import { getAvgQualityForAgent } from './agent-q.js';
 
 const FIXED_APPROACHES: Array<{ source: ApproachSource; approach: string }> = [
   {
@@ -49,6 +50,7 @@ export function plan(db: Database.Database, taskDescription: string, opts: LATSO
   const patterns = loadSuccessPatterns(db, minConfidence);
   const taskKeywords = [...taskTokens];
   const historicalRate = getHistoricalSuccessRate(db, taskKeywords.slice(0, 5));
+  const historicalQuality = getAvgQualityForAgent(db, taskKeywords.slice(0, 5)); // Phase 2
   const totalVisits = getTreeVisitCount(db, treeId); // 0 on first visit
 
   // --- Expand: build candidate pool ---
@@ -92,6 +94,7 @@ export function plan(db: Database.Database, taskDescription: string, opts: LATSO
       pattern: c.pattern,
       approachSource: c.source,
       historicalSuccessRate: historicalRate,
+      historicalQualityScore: historicalQuality, // Phase 2
       totalTreeVisits: totalVisits,
       nodeVisits: 0,
       explorationConstant,
@@ -162,7 +165,7 @@ export function formatPlanForAgent(result: PlanResult): string {
     lines.push(
       `${i + 1}. [${c.approachSource}] score=${c.score.toFixed(3)} ` +
       `(sim=${bd.patternSimilarity.toFixed(2)} conf=${bd.confidenceScore.toFixed(2)} ` +
-      `hist=${bd.historicalSuccessRate.toFixed(2)})`,
+      `hist=${bd.historicalSuccessRate.toFixed(2)} qual=${bd.historicalQualityScore.toFixed(2)})`,
     );
     lines.push(`   node: ${c.nodeId}`);
     lines.push(`   ${c.approach.substring(0, 120)}...`);

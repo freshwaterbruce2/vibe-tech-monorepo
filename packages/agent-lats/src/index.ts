@@ -31,6 +31,15 @@ export { formatPlanForAgent } from './mcts.js';
 export { critiqueFile, generatePreferencePair } from './critique.js';
 export type { CritiqueResult, RubricResult } from './critique.js';
 export {
+  assessNodeFromCritiques,
+  storeAgentQAssessment,
+  updateNodeQualityScore,
+  getAvgQualityForAgent,
+  getRecentAssessments,
+  runAssessmentCycle,
+} from './agent-q.js';
+export type { AgentQAssessment } from './agent-q.js';
+export {
   snapshot,
   evolve,
   deployVariant,

@@ -15,6 +15,7 @@ import { getDb, closeDb, recordOutcome, storeCritique, storePreferencePair, gene
 import { plan, formatPlanForAgent } from './mcts.js';
 import { generateReflectionPrompt } from './reflect.js';
 import { critiqueFile } from './critique.js';
+import { runAssessmentCycle, getRecentAssessments } from './agent-q.js';
 import { snapshot, evolve, deployVariant, benchmark, diffVariants, getVariantHistory, getDeployedVariant } from './skill-evolution.js';
 import {
   startRun, recordStage, finishRun, getStageStats, suggestOrderings,
@@ -25,7 +26,7 @@ import type { StageName } from './pipeline-evolution.js';
 import type { LATSOptions } from './types.js';
 import type { MutationType } from './skill-evolution.js';
 
-type Command = 'plan' | 'backpropagate' | 'reflect' | 'stats' | 'critique' | 'pairs' | 'skill' | 'pipeline';
+type Command = 'plan' | 'backpropagate' | 'reflect' | 'stats' | 'critique' | 'pairs' | 'skill' | 'pipeline' | 'assess';
 
 interface ParsedArgs {
   command: Command;
@@ -62,16 +63,16 @@ function parseArgs(argv: string[]): ParsedArgs {
   const args = argv.slice(2);
   const command = args[0] as Command;
 
-  if (!['plan', 'backpropagate', 'reflect', 'stats', 'critique', 'pairs', 'skill', 'pipeline'].includes(command)) {
+  if (!['plan', 'backpropagate', 'reflect', 'stats', 'critique', 'pairs', 'skill', 'pipeline', 'assess'].includes(command)) {
     usage();
     process.exit(1);
   }
 
   const result: ParsedArgs = { command };
 
-  // For 'skill'/'pipeline', second positional arg is the subcommand
+  // For 'skill'/'pipeline'/'assess', second positional arg is the subcommand
   let startIdx = 1;
-  if ((command === 'skill' || command === 'pipeline') && args[1] && !args[1].startsWith('--')) {
+  if ((command === 'skill' || command === 'pipeline' || command === 'assess') && args[1] && !args[1].startsWith('--')) {
     result.subcommand = args[1];
     startIdx = 2;
   }
@@ -122,6 +123,7 @@ Commands:
   critique      Static rubric analysis of a modified TypeScript file
   pairs         List or auto-generate preference pairs from critique history
   stats         Show recent MCTS planning history
+  assess        Agent Q: aggregate critique scores into quality signal (Phase 2)
   skill         Manage skill evolution archive (snapshot/mutate/deploy)
 
 Options:
@@ -494,6 +496,80 @@ async function main(): Promise<void> {
             console.error(`Unknown skill subcommand: ${sub}`);
             console.error('Valid: snapshot|mutate|benchmark|archive|diff|deploy');
             process.exit(1);
+        }
+        break;
+      }
+
+      case 'assess': {
+        // lats assess --node <uuid>          — run Agent Q for a completed node
+        // lats assess stats [--agent <id>]   — show quality history
+        const sub = args.subcommand ?? (args.nodeId ? 'run' : 'stats');
+
+        if (sub === 'run') {
+          if (!args.nodeId) {
+            console.error('Error: --node <uuid> is required for `assess`');
+            process.exit(1);
+          }
+          const assessment = runAssessmentCycle(db, args.nodeId);
+          if (!assessment) {
+            const msg = `No self_critiques found for node ${args.nodeId}. ` +
+              'Run Edit/Write operations with the LATS node active so critiques are linked.';
+            if (args.json) {
+              console.log(JSON.stringify({ ok: false, reason: msg }));
+            } else {
+              console.log(`⚠ ${msg}`);
+            }
+            break;
+          }
+          if (args.json) {
+            console.log(JSON.stringify({
+              nodeId: args.nodeId,
+              filesCritiqued: assessment.filesCritiqued,
+              avgFileQuality: assessment.avgFileQuality,
+              qualityScore: assessment.qualityScore,
+              qualityBand: assessment.qualityBand,
+              summary: assessment.summary,
+            }));
+          } else {
+            const band = { excellent: '✦', good: '✓', acceptable: '~', poor: '✗' }[assessment.qualityBand];
+            console.log(`\n${band} Agent Q Assessment — node ${args.nodeId.substring(0, 8)}…`);
+            console.log(`  Quality score: ${assessment.qualityScore.toFixed(3)} [${assessment.qualityBand}]`);
+            console.log(`  Files critiqued: ${assessment.filesCritiqued}`);
+            console.log(`    avg static score: ${assessment.avgFileQuality.toFixed(3)}`);
+            console.log(`    positive: ${assessment.positiveFiles}/${assessment.filesCritiqued}`);
+            console.log(`    clean:    ${assessment.cleanFiles}/${assessment.filesCritiqued}`);
+            console.log(`  Stored to agent_q_assessments. MCTS node value updated.`);
+          }
+        } else {
+          // stats
+          const rows = getRecentAssessments(db, args.limit ?? 10, args.agent);
+          if (args.json) {
+            console.log(JSON.stringify(rows.map((r) => ({
+              nodeId: r.latsNodeId,
+              agent: r.agentId,
+              qualityScore: r.qualityScore,
+              qualityBand: r.qualityBand,
+              filesCritiqued: r.filesCritiqued,
+              summary: r.summary,
+              at: r.createdAt,
+            }))));
+          } else {
+            console.log(`\nAgent Q History (${rows.length} assessments):\n`);
+            if (rows.length === 0) {
+              console.log('  No assessments yet. Run `lats assess --node <uuid>` after an agent completes.');
+            } else {
+              const avgScore = rows.reduce((s, r) => s + r.qualityScore, 0) / rows.length;
+              console.log(`  Overall avg quality: ${avgScore.toFixed(3)}\n`);
+              for (const r of rows) {
+                const band = { excellent: '✦', good: '✓', acceptable: '~', poor: '✗' }[r.qualityBand] ?? '?';
+                console.log(`  ${band} [${r.qualityBand.padEnd(10)}] score=${r.qualityScore.toFixed(3)}` +
+                  (r.agentId ? `  agent=${r.agentId}` : ''));
+                console.log(`    task: ${r.taskDescription.substring(0, 70)}`);
+                console.log(`    files: ${r.filesCritiqued}  at: ${r.createdAt}`);
+                console.log();
+              }
+            }
+          }
         }
         break;
       }

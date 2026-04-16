@@ -64,11 +64,25 @@ try {
         }
     }
 
-    # Run CLI (fire-and-forget, 3s timeout)
+    # Run backpropagation CLI (fire-and-forget, 3s timeout)
     $proc = Start-Process -FilePath 'node' `
         -ArgumentList $latsArgs `
         -NoNewWindow -PassThru -ErrorAction SilentlyContinue
     if ($proc) { $proc.WaitForExit(3000) | Out-Null }
+
+    # Phase 2: Agent Q assessment — aggregate per-file critique scores into quality signal.
+    # Fires after backpropagation so the quality score overwrites the binary value in mcts_nodes.
+    $assessArgs = @('C:\dev\packages\agent-lats\dist\cli.js', 'assess', '--node', $nodeId, '--json')
+    $assessOutput = & node @assessArgs 2>$null
+    $qualityBand = ''
+    if ($assessOutput) {
+        try {
+            $assessResult = $assessOutput | ConvertFrom-Json -ErrorAction Stop
+            if ($assessResult.qualityScore) {
+                $qualityBand = " quality=$($assessResult.qualityScore.ToString('F3')) [$($assessResult.qualityBand)]"
+            }
+        } catch {}
+    }
 
     # Clean up the state file so next agent starts fresh
     Remove-Item $StateFile -Force -ErrorAction SilentlyContinue
@@ -76,8 +90,8 @@ try {
     # Log to learning system
     $logDir = 'D:\logs\learning-system'
     if (Test-Path $logDir) {
-        $logLine = "[{0}] lats-backpropagate node={1} success={2} agent={3} project={4}" -f `
-            (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $nodeId, $successStr, $agentId, $project
+        $logLine = "[{0}] lats-backpropagate node={1} success={2} agent={3} project={4}{5}" -f `
+            (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $nodeId, $successStr, $agentId, $project, $qualityBand
         Add-Content -Path "$logDir\lats-backpropagate.log" -Value $logLine -ErrorAction SilentlyContinue
     }
 

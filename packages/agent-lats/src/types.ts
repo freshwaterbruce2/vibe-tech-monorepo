@@ -50,17 +50,19 @@ export interface RankedCandidate {
 }
 
 export interface ScoreBreakdown {
-  patternSimilarity: number;    // 0-1: keyword match against success_patterns
-  confidenceScore: number;      // 0-1: pattern confidence from DB
-  historicalSuccessRate: number; // 0-1: success rate for similar tasks
-  ucb1Bonus: number;            // exploration bonus (0 on first visit)
-  final: number;                // weighted combination
+  patternSimilarity: number;       // 0-1: keyword match against success_patterns
+  confidenceScore: number;         // 0-1: pattern confidence from DB
+  historicalSuccessRate: number;   // 0-1: success rate for similar tasks
+  historicalQualityScore: number;  // 0-1: avg Agent Q quality from past executions (Phase 2)
+  ucb1Bonus: number;               // exploration bonus (0 on first visit)
+  final: number;                   // weighted combination
 }
 
 /** Outcome recorded after an approach is executed */
 export interface ExecutionOutcome {
   nodeId: string;
   success: boolean;
+  qualityScore?: number; // 0.0–1.0 from Agent Q assessment (Phase 2); overrides binary signal
   agentId?: string;
   projectName?: string;
   reflection?: string; // self-critique text if failed
