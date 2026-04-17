@@ -1,18 +1,18 @@
 import Redis from 'ioredis';
 import { logger } from '../utils/logger';
-import { type MockCacheService, mockCacheService } from './mockCacheService';
+import { type InMemoryCacheService, inMemoryCacheService } from './inMemoryCacheService';
 
 export class CacheService {
 	private redis: Redis | null = null;
-	private mockCache: MockCacheService | null = null;
+	private mockCache: InMemoryCacheService | null = null;
 	private defaultTTL: number;
 	private isRedisAvailable = false;
 
 	constructor() {
 		// Always use mock cache for local SQLite development
 		if (process.env.LOCAL_SQLITE === 'true') {
-			this.mockCache = mockCacheService;
-			logger.info('Using mock cache service for local development');
+			this.mockCache = inMemoryCacheService;
+			logger.info('Using in-memory cache service (LOCAL_SQLITE mode)');
 			this.defaultTTL = 3600;
 			return;
 		}
@@ -28,7 +28,7 @@ export class CacheService {
 					if (times > 3) {
 						logger.warn('Redis unavailable after 3 attempts, using mock cache');
 						this.isRedisAvailable = false;
-						this.mockCache = mockCacheService;
+						this.mockCache = inMemoryCacheService;
 						return null;
 					}
 					const delay = Math.min(times * 50, 2000);
@@ -47,12 +47,12 @@ export class CacheService {
 				logger.error('Redis error', { error });
 				this.isRedisAvailable = false;
 				if (!this.mockCache) {
-					this.mockCache = mockCacheService;
+					this.mockCache = inMemoryCacheService;
 				}
 			});
 		} catch (error) {
 			logger.warn('Redis initialization failed, using mock cache', { error });
-			this.mockCache = mockCacheService;
+			this.mockCache = inMemoryCacheService;
 		}
 
 		this.defaultTTL = parseInt(process.env.REDIS_TTL || '3600');

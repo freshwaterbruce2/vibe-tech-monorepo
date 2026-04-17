@@ -9,7 +9,6 @@ interface AnalyticsEvent {
 	value?: number;
 }
 
-// Mock analytics service - replace with real service (GA4, Mixpanel, etc.)
 class AnalyticsService {
 	private static instance: AnalyticsService;
 
@@ -20,39 +19,23 @@ class AnalyticsService {
 		return AnalyticsService.instance;
 	}
 
-	identify(userId: string, traits?: Record<string, any>) {
-		if (import.meta.env.DEV) {
-			console.log("[Analytics] Identify:", userId, traits);
-		}
-
-		// In production, send to analytics service
-		if (window.gtag) {
-			window.gtag("set", { user_id: userId });
+	identify(userId: string, traits?: Record<string, unknown>) {
+		if (typeof window.gtag !== "undefined") {
+			window.gtag("set", { user_id: userId, ...traits });
 		}
 	}
 
-	track(event: string, properties?: Record<string, any>) {
-		if (import.meta.env.DEV) {
-			console.log("[Analytics] Track:", event, properties);
-		}
-
-		// Send to Google Analytics
-		if (window.gtag) {
+	track(event: string, properties?: Record<string, unknown>) {
+		if (typeof window.gtag !== "undefined") {
 			window.gtag("event", event, properties);
 		}
-
-		// Send to Mixpanel
-		if (window.mixpanel) {
+		if (typeof window.mixpanel !== "undefined") {
 			window.mixpanel.track(event, properties);
 		}
 	}
 
-	page(name: string, properties?: Record<string, any>) {
-		if (import.meta.env.DEV) {
-			console.log("[Analytics] Page view:", name, properties);
-		}
-
-		if (window.gtag) {
+	page(name: string, properties?: Record<string, unknown>) {
+		if (typeof window.gtag !== "undefined") {
 			window.gtag("event", "page_view", {
 				page_title: name,
 				page_location: window.location.href,
@@ -65,7 +48,7 @@ class AnalyticsService {
 	revenue(
 		amount: number,
 		currency: string = "USD",
-		properties?: Record<string, any>,
+		properties?: Record<string, unknown>,
 	) {
 		this.track("Purchase", {
 			value: amount,
@@ -106,17 +89,17 @@ export const useAnalytics = () => {
 		});
 	}, []);
 
-	const trackInvoiceCreated = useCallback((invoice: any) => {
+	const trackInvoiceCreated = useCallback((invoice: Record<string, unknown>) => {
 		analytics.track("Invoice Created", {
 			invoice_id: invoice.id,
 			amount: invoice.total,
-			currency: invoice.currency || "USD",
-			recurring: invoice.recurring_config?.enabled || false,
+			currency: (invoice.currency as string) || "USD",
+			recurring: (invoice.recurring_config as Record<string, unknown>)?.enabled ?? false,
 		});
 	}, []);
 
-	const trackPaymentReceived = useCallback((payment: any) => {
-		analytics.revenue(payment.amount, payment.currency, {
+	const trackPaymentReceived = useCallback((payment: Record<string, unknown>) => {
+		analytics.revenue(payment.amount as number, payment.currency as string, {
 			payment_id: payment.id,
 			invoice_id: payment.invoice_id,
 			payment_method: payment.method,
@@ -124,7 +107,7 @@ export const useAnalytics = () => {
 	}, []);
 
 	const trackFeatureUsed = useCallback(
-		(feature: string, metadata?: Record<string, any>) => {
+		(feature: string, metadata?: Record<string, unknown>) => {
 			analytics.track("Feature Used", {
 				feature_name: feature,
 				...metadata,
@@ -152,9 +135,8 @@ export const initAnalytics = () => {
 		document.head.appendChild(script);
 
 		window.dataLayer = window.dataLayer || [];
-		window.gtag = function () {
-			// eslint-disable-next-line prefer-rest-params
-			window.dataLayer.push(arguments);
+		window.gtag = function (...args: unknown[]) {
+			window.dataLayer.push(args);
 		};
 		window.gtag("js", new Date());
 		window.gtag("config", import.meta.env.VITE_GA_TRACKING_ID);
@@ -176,8 +158,11 @@ export const initAnalytics = () => {
 // Type declarations
 declare global {
 	interface Window {
-		gtag: (...args: any[]) => void;
-		dataLayer: any[];
-		mixpanel: any;
+		gtag: (...args: unknown[]) => void;
+		dataLayer: unknown[];
+		mixpanel: {
+			track: (event: string, properties?: Record<string, unknown>) => void;
+			init: (token: string) => void;
+		};
 	}
 }

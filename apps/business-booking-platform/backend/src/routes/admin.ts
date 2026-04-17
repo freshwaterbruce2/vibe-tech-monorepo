@@ -4,10 +4,7 @@ import { getDb } from '../database';
 import { bookings, payments, users } from '../database/schema';
 import { CommissionService } from '../services/commission';
 
-// Use mock service for local development
-const stripeService = process.env.LOCAL_SQLITE
-	? require('../services/stripeMock').stripeService
-	: require('../services/stripe').stripeService;
+import { stripeService } from '../services/stripe';
 
 import { and, avg, count, desc, eq, gte, lte, sum } from 'drizzle-orm';
 import { validateRequest } from '../middleware/validateRequest';

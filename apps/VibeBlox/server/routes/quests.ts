@@ -438,4 +438,60 @@ app.get("/stats", async (c: Context) => {
 	}
 });
 
+/**
+ * GET /api/quests/admin/all
+ * Parent-only: fetch all quests regardless of active status
+ */
+app.get("/admin/all", async (c: Context) => {
+	try {
+		const user = c.get("user") as JWTPayload;
+		if (user.role !== "parent") {
+			return c.json({ success: false, error: "Unauthorized" }, 403);
+		}
+		const stmt = db.prepare(
+			"SELECT * FROM quests ORDER BY category, sort_order, name",
+		);
+		const quests = stmt.all() as Quest[];
+		return c.json({ success: true, quests, total: quests.length });
+	} catch (error) {
+		console.error("Error fetching all quests:", error);
+		return c.json({ success: false, error: "Failed to fetch quests" }, 500);
+	}
+});
+
+/**
+ * PATCH /api/quests/:id/toggle
+ * Parent-only: toggle a quest's is_active status
+ */
+app.patch("/:id/toggle", async (c: Context) => {
+	try {
+		const user = c.get("user") as JWTPayload;
+		if (user.role !== "parent") {
+			return c.json({ success: false, error: "Unauthorized" }, 403);
+		}
+		const idParam = c.req.param("id");
+		if (!idParam) {
+			return c.json({ success: false, error: "Quest ID is required" }, 400);
+		}
+		const id = parseInt(idParam);
+		const existing = db
+			.prepare("SELECT id, is_active FROM quests WHERE id = ?")
+			.get(id) as { id: number; is_active: number } | undefined;
+		if (!existing) {
+			return c.json({ success: false, error: "Quest not found" }, 404);
+		}
+		const newActive = existing.is_active === 1 ? 0 : 1;
+		db.prepare(
+			"UPDATE quests SET is_active = ?, updated_at = datetime('now') WHERE id = ?",
+		).run(newActive, id);
+		const updated = db
+			.prepare("SELECT * FROM quests WHERE id = ?")
+			.get(id) as Quest;
+		return c.json({ success: true, quest: updated });
+	} catch (error) {
+		console.error("Error toggling quest:", error);
+		return c.json({ success: false, error: "Failed to toggle quest" }, 500);
+	}
+});
+
 export default app;

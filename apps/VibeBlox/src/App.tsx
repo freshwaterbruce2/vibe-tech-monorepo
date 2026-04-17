@@ -8,6 +8,7 @@ import Quests from './app/routes/Quests';
 import Shop from './app/routes/Shop';
 import Award from './app/routes/admin/Award';
 import AdminDashboard from './app/routes/admin/Dashboard';
+import QuestsAdmin from './app/routes/admin/QuestsAdmin';
 import Reports from './app/routes/admin/Reports';
 import type { User } from './types';
 
@@ -92,6 +93,12 @@ function App() {
             path="/admin/award"
             element={
               user?.role === 'parent' ? <Award user={user} /> : <Navigate to="/" replace />
+            }
+          />
+          <Route
+            path="/admin/quests"
+            element={
+              user?.role === 'parent' ? <QuestsAdmin user={user} /> : <Navigate to="/" replace />
             }
           />
           <Route

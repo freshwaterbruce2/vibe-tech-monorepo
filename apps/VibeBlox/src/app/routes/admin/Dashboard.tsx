@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { User } from "../../../types";
 
 interface AdminDashboardProps {
@@ -35,6 +35,7 @@ interface PendingPurchase {
 }
 
 export default function AdminDashboard({ user }: AdminDashboardProps) {
+	const navigate = useNavigate();
 	const [pending, setPending] = useState<PendingQuest[]>([]);
 	const [pendingPurchases, setPendingPurchases] = useState<PendingPurchase[]>(
 		[],
@@ -562,7 +563,10 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 						</p>
 					</Link>
 
-					<button className="quest-card text-left">
+					<button
+						className="quest-card text-left"
+						onClick={() => navigate('/admin/quests')}
+					>
 						<div className="mb-2 text-4xl">⚙️</div>
 						<h3 className="mb-1 font-bold text-text-primary">Manage Quests</h3>
 						<p className="text-sm text-text-secondary">

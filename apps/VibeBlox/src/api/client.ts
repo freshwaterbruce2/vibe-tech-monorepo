@@ -85,6 +85,20 @@ export const questApi = {
       body: JSON.stringify({ quest_id, without_reminder, notes }),
     });
   },
+
+  /**
+   * Admin: get all quests including inactive (parent only)
+   */
+  async getAllQuests(): Promise<{ success: boolean; quests: Quest[]; total: number }> {
+    return apiFetch('/api/quests/admin/all');
+  },
+
+  /**
+   * Admin: toggle a quest's active status (parent only)
+   */
+  async toggleQuest(questId: number): Promise<{ success: boolean; quest: Quest }> {
+    return apiFetch(`/api/quests/${questId}/toggle`, { method: 'PATCH' });
+  },
 };
 
 /**
