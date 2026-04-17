@@ -23,15 +23,6 @@
         "D:/data"
       ]
     },
-    "codeberg": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["C:/dev/apps/mcp-codeberg/dist/index.js"],
-      "env": {
-        "CODEBERG_API_URL": "https://codeberg.org/api/v1",
-        "_NOTE": "Legacy Codeberg MCP - repo migrated to GitHub"
-      }
-    },
     "nx-mcp": {
       "type": "stdio",
       "command": "cmd",
