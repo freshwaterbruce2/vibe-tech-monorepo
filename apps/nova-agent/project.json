@@ -7,14 +7,14 @@
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm tauri dev",
+        "command": "node ../../node_modules/@tauri-apps/cli/tauri.js dev",
         "cwd": "apps/nova-agent"
       }
     },
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "pnpm tauri build",
+        "command": "node ../../node_modules/@tauri-apps/cli/tauri.js build",
         "cwd": "apps/nova-agent"
       },
       "outputs": [
