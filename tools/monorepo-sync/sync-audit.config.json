@@ -16,7 +16,6 @@
     "@vibetech/types":               ["test"],
     "@vibetech/ui":                  ["test"],
     "agent-lats":                    ["typecheck"],
-    "ai-youtube-pipeline":           ["lint", "typecheck", "test", "build"],
     "backend-prompt-engineer":       ["lint", "typecheck", "test"],
     "cross-agent-reflection":        ["test"],
     "dap-proxy":                     ["lint", "typecheck", "test"],
@@ -27,7 +26,6 @@
     "prompt-engineer-app":           ["test"],
     "symptom-tracker-api":           ["lint", "test"],
     "trendmart":                     ["test"],
-    "vibe-booking-backend":          ["lint", "typecheck", "test", "build"],
     "vibe-justice":                  ["lint", "typecheck", "test", "build"],
     "vibe-tech-lovable-backend":     ["lint", "typecheck", "test", "build"],
     "workflow-engine":               ["lint", "typecheck", "test"]
@@ -49,7 +47,6 @@
     "openrouter-proxy",
     "symptom-tracker-api",
     "trendmart",
-    "vibe-booking-backend",
     "legacy-booking-backend",
     "vibe-justice",
     "vibe-tech-backend",

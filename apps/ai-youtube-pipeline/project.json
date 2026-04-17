@@ -1,8 +1,0 @@
-{
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "name": "ai-youtube-pipeline",
-  "projectType": "application",
-  "root": "apps/ai-youtube-pipeline",
-  "targets": {},
-  "tags": ["scope:backend", "type:app", "language:typescript"]
-}

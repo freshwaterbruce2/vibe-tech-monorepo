@@ -1,8 +1,0 @@
-{
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "name": "vibe-booking-backend",
-  "projectType": "application",
-  "root": "apps/vibe-booking-backend",
-  "targets": {},
-  "tags": ["scope:backend", "type:app", "language:typescript"]
-}

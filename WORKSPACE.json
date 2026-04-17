@@ -161,11 +161,6 @@
         "priority": "low",
         "description": "E-commerce storefront (Next.js 16, Prisma, Neon — exception to no-Next rule)"
       },
-      "vibe-booking-backend": {
-        "status": "development",
-        "priority": "low",
-        "description": "Booking backend (Fastify, SQLite, Zod)"
-      },
       "crypto-enhanced": {
         "status": "storage",
         "priority": "low",
@@ -195,11 +190,6 @@
         "status": "development",
         "priority": "high",
         "description": "Memory system MCP server"
-      },
-      "ai-youtube-pipeline": {
-        "status": "development",
-        "priority": "low",
-        "description": "YouTube content pipeline"
       },
       "business-booking-platform": {
         "status": "development",
