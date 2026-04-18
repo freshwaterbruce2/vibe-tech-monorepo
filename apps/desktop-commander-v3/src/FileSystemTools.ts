@@ -482,21 +482,23 @@ export async function applyEdits(
 					`Needle not found in ${edit.path}: "${edit.needle}"`,
 				);
 			}
+			const escapedNeedle = edit.needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 			updated = content.replace(
 				edit.allowMultiple
-					? new RegExp(edit.needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g")
+					? new RegExp(escapedNeedle, "g")
 					: edit.needle,
 				edit.replacement,
 			);
-			changes = (content.match(
-				new RegExp(edit.needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
-			) ?? []).length;
+			changes = edit.allowMultiple
+				? (content.match(new RegExp(escapedNeedle, "g")) ?? []).length
+				: 1;
 		} else {
 			const flags = edit.allowMultiple ? "g" : "";
 			const re = new RegExp(edit.needle, flags);
-			const matches = content.match(new RegExp(edit.needle, "g")) ?? [];
-			changes = matches.length;
 			updated = content.replace(re, edit.replacement);
+			changes = edit.allowMultiple
+				? (content.match(new RegExp(edit.needle, "g")) ?? []).length
+				: (re.test(content) ? 1 : 0);
 		}
 
 		if (!options.dryRun) {

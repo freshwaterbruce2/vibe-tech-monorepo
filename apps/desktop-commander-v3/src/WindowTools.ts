@@ -45,7 +45,7 @@ Get-Process | Where-Object {$_.MainWindowTitle -ne ""} | ForEach-Object {
 		const items = Array.isArray(parsed) ? parsed : [parsed];
 		return items.map(
 			(w: Record<string, unknown>): WindowInfo => ({
-				processId: (w.ProcessId ?? w.processId) as number,
+				processId: Number(w.ProcessId ?? w.processId ?? 0),
 				processName: (w.ProcessName ?? w.processName) as string,
 				title: (w.Title ?? w.title) as string,
 				handle: (w.Handle ?? w.handle) as string,
