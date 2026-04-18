@@ -36,10 +36,18 @@ type JsonSchema = Record<string, unknown>;
 // Tool Definitions
 // ============================================================================
 
+type ToolAnnotations = {
+	readOnlyHint?: boolean;
+	destructiveHint?: boolean;
+	idempotentHint?: boolean;
+	openWorldHint?: boolean;
+};
+
 const tools: Array<{
 	name: string;
 	description: string;
 	inputSchema: JsonSchema;
+	annotations?: ToolAnnotations;
 }> = [
 	// ----------------------
 	// System Information
@@ -48,16 +56,19 @@ const tools: Array<{
 		name: "dc_get_cpu",
 		description: "Get current CPU load information",
 		inputSchema: { type: "object", properties: {} },
+		annotations: { readOnlyHint: true },
 	},
 	{
 		name: "dc_get_mem",
 		description: "Get current memory usage information",
 		inputSchema: { type: "object", properties: {} },
+		annotations: { readOnlyHint: true },
 	},
 	{
 		name: "dc_get_system_info",
 		description: "Get CPU, memory, and OS information",
 		inputSchema: { type: "object", properties: {} },
+		annotations: { readOnlyHint: true },
 	},
 	{
 		name: "dc_list_processes",
@@ -72,6 +83,7 @@ const tools: Array<{
 				},
 			},
 		},
+		annotations: { readOnlyHint: true },
 	},
 	{
 		name: "dc_open_url",
@@ -81,6 +93,7 @@ const tools: Array<{
 			properties: { url: { type: "string", description: "URL to open" } },
 			required: ["url"],
 		},
+		annotations: { openWorldHint: true },
 	},
 	{
 		name: "dc_get_allowed_paths",
@@ -103,6 +116,7 @@ Example output:
   { path: "C:\\Users\\fresh_zxae3v6\\OneDrive", read: true, write: false }
 ]`,
 		inputSchema: { type: "object", properties: {} },
+		annotations: { readOnlyHint: true },
 	},
 
 	// ----------------------
@@ -145,6 +159,7 @@ Examples:
 			},
 			required: ["path"],
 		},
+		annotations: { readOnlyHint: true },
 	},
 	{
 		name: "dc_write_file",
@@ -195,6 +210,7 @@ Examples:
 			},
 			required: ["path", "content"],
 		},
+		annotations: { idempotentHint: true },
 	},
 	{
 		name: "dc_list_directory",
@@ -237,6 +253,7 @@ Returns: [{ name, path, size, type, modified, isDirectory }]`,
 			},
 			required: ["path"],
 		},
+		annotations: { readOnlyHint: true },
 	},
 	{
 		name: "dc_search_files",
@@ -280,6 +297,7 @@ Returns: [{ path, name, size, modified }]`,
 			},
 			required: ["path", "pattern"],
 		},
+		annotations: { readOnlyHint: true },
 	},
 	{
 		name: "dc_search_content",
@@ -339,6 +357,7 @@ Returns: [{ file, line, lineNumber, match }]`,
 			},
 			required: ["path", "query"],
 		},
+		annotations: { readOnlyHint: true },
 	},
 	{
 		name: "dc_create_directory",
@@ -348,6 +367,7 @@ Returns: [{ file, line, lineNumber, match }]`,
 			properties: { path: { type: "string", description: "Directory path" } },
 			required: ["path"],
 		},
+		annotations: { idempotentHint: true },
 	},
 	{
 		name: "dc_move_file",
@@ -388,6 +408,7 @@ Returns: [{ file, line, lineNumber, match }]`,
 			},
 			required: ["path"],
 		},
+		annotations: { destructiveHint: true },
 	},
 	{
 		name: "dc_get_file_info",
@@ -399,6 +420,7 @@ Returns: [{ file, line, lineNumber, match }]`,
 			},
 			required: ["path"],
 		},
+		annotations: { readOnlyHint: true },
 	},
 	{
 		name: "dc_get_file_hash",
@@ -416,6 +438,7 @@ Returns: [{ file, line, lineNumber, match }]`,
 			},
 			required: ["path"],
 		},
+		annotations: { readOnlyHint: true },
 	},
 	{
 		name: "dc_get_acl",
@@ -430,6 +453,7 @@ Returns: [{ file, line, lineNumber, match }]`,
 			},
 			required: ["path"],
 		},
+		annotations: { readOnlyHint: true },
 	},
 	{
 		name: "dc_get_item_attributes",
@@ -445,11 +469,13 @@ Returns: [{ file, line, lineNumber, match }]`,
 			},
 			required: ["path"],
 		},
+		annotations: { readOnlyHint: true },
 	},
 	{
 		name: "dc_get_long_paths_status",
 		description: "Check whether Windows LongPathsEnabled is set (HKLM).",
 		inputSchema: { type: "object", properties: {} },
+		annotations: { readOnlyHint: true },
 	},
 	{
 		name: "dc_copy_directory_robocopy",
@@ -549,6 +575,7 @@ Returns: { copied, skipped, errors, exitCode, executionTime }`,
 		name: "dc_get_clipboard",
 		description: "Get clipboard text content",
 		inputSchema: { type: "object", properties: {} },
+		annotations: { readOnlyHint: true },
 	},
 	{
 		name: "dc_set_clipboard",
@@ -558,6 +585,7 @@ Returns: { copied, skipped, errors, exitCode, executionTime }`,
 			properties: { text: { type: "string", description: "Text to copy" } },
 			required: ["text"],
 		},
+		annotations: { idempotentHint: true },
 	},
 
 	// ----------------------
@@ -595,6 +623,28 @@ Returns: { saved: true, path: "D:\\screenshots\\..." }`,
 				},
 			},
 		},
+		annotations: { readOnlyHint: true },
+	},
+	{
+		name: "dc_screenshot_window",
+		description: `Take a screenshot of a specific window matched by title and save as PNG.
+
+Parameters:
+- title: Window title pattern (regex, case-insensitive)
+- filename: Custom filename without extension (optional, default: timestamp)
+- directory: Save directory (must be D:\\ drive, default: D:\\screenshots)
+
+Returns: { saved: true, path: "D:\\screenshots\\..." }`,
+		inputSchema: {
+			type: "object",
+			properties: {
+				title: { type: "string", description: "Window title pattern (regex)", minLength: 1 },
+				filename: { type: "string", description: "Custom filename without extension (optional)" },
+				directory: { type: "string", description: "Save directory (D:\\ drive, default: D:\\screenshots)", default: "D:\\screenshots" },
+			},
+			required: ["title"],
+		},
+		annotations: { readOnlyHint: true },
 	},
 
 	// ----------------------
@@ -604,11 +654,13 @@ Returns: { saved: true, path: "D:\\screenshots\\..." }`,
 		name: "dc_list_windows",
 		description: "List all open windows with titles",
 		inputSchema: { type: "object", properties: {} },
+		annotations: { readOnlyHint: true },
 	},
 	{
 		name: "dc_get_active_window",
 		description: "Get the currently focused window",
 		inputSchema: { type: "object", properties: {} },
+		annotations: { readOnlyHint: true },
 	},
 	{
 		name: "dc_window_action",
@@ -654,6 +706,34 @@ Returns: { success: true, window: "Window Title", action: "minimize" }`,
 		},
 	},
 	{
+		name: "dc_window_move",
+		description: "Move a window to an absolute screen position without resizing. Matches window by title regex.",
+		inputSchema: {
+			type: "object",
+			properties: {
+				title: { type: "string", description: "Window title pattern (regex, case-insensitive)", minLength: 1 },
+				x: { type: "number", description: "Screen X position (pixels)" },
+				y: { type: "number", description: "Screen Y position (pixels)" },
+			},
+			required: ["title", "x", "y"],
+		},
+		annotations: { idempotentHint: true },
+	},
+	{
+		name: "dc_window_resize",
+		description: "Resize a window without moving it. Matches window by title regex.",
+		inputSchema: {
+			type: "object",
+			properties: {
+				title: { type: "string", description: "Window title pattern (regex, case-insensitive)", minLength: 1 },
+				width: { type: "number", description: "New width in pixels", minimum: 1 },
+				height: { type: "number", description: "New height in pixels", minimum: 1 },
+			},
+			required: ["title", "width", "height"],
+		},
+		annotations: { idempotentHint: true },
+	},
+	{
 		name: "dc_launch_app",
 		description:
 			"Launch an allowed application (notepad, calc, explorer, chrome, edge, firefox, code, terminal)",
@@ -677,6 +757,7 @@ Returns: { success: true, window: "Window Title", action: "minimize" }`,
 			},
 			required: ["name"],
 		},
+		annotations: { destructiveHint: true },
 	},
 
 	// ----------------------
@@ -693,6 +774,7 @@ Returns: { success: true, window: "Window Title", action: "minimize" }`,
 			},
 			required: ["x", "y"],
 		},
+		annotations: { idempotentHint: true },
 	},
 	{
 		name: "dc_mouse_click",
@@ -719,6 +801,20 @@ Returns: { success: true, window: "Window Title", action: "minimize" }`,
 				direction: { type: "string", enum: ["up", "down"], default: "down" },
 			},
 			required: ["amount"],
+		},
+	},
+	{
+		name: "dc_mouse_drag",
+		description: "Drag from one screen position to another (press, move, release). Use for drag-and-drop operations.",
+		inputSchema: {
+			type: "object",
+			properties: {
+				fromX: { type: "number", description: "Start X coordinate" },
+				fromY: { type: "number", description: "Start Y coordinate" },
+				toX: { type: "number", description: "End X coordinate" },
+				toY: { type: "number", description: "End Y coordinate" },
+			},
+			required: ["fromX", "fromY", "toX", "toY"],
 		},
 	},
 	{
@@ -749,6 +845,18 @@ Returns: { success: true, window: "Window Title", action: "minimize" }`,
 	// System Controls
 	// ----------------------
 	{
+		name: "dc_notify",
+		description: "Show a Windows toast notification. Useful for alerting the user of task completion or status.",
+		inputSchema: {
+			type: "object",
+			properties: {
+				title: { type: "string", description: "Notification title", minLength: 1 },
+				message: { type: "string", description: "Notification body text", minLength: 1 },
+			},
+			required: ["title", "message"],
+		},
+	},
+	{
 		name: "dc_set_volume",
 		description: "Adjust system volume",
 		inputSchema: {
@@ -767,21 +875,25 @@ Returns: { success: true, window: "Window Title", action: "minimize" }`,
 			},
 			required: ["level"],
 		},
+		annotations: { idempotentHint: true },
 	},
 	{
 		name: "dc_get_battery",
 		description: "Get battery status",
 		inputSchema: { type: "object", properties: {} },
+		annotations: { readOnlyHint: true },
 	},
 	{
 		name: "dc_get_network",
 		description: "Get network interface information",
 		inputSchema: { type: "object", properties: {} },
+		annotations: { readOnlyHint: true },
 	},
 	{
 		name: "dc_get_disks",
 		description: "Get disk usage information",
 		inputSchema: { type: "object", properties: {} },
+		annotations: { readOnlyHint: true },
 	},
 	{
 		name: "dc_run_powershell",
@@ -820,6 +932,7 @@ Returns: { exitCode, stdout, stderr, executionTime }`,
 			},
 			required: ["command"],
 		},
+		annotations: { destructiveHint: true },
 	},
 	{
 		name: "dc_run_cmd",
@@ -853,6 +966,7 @@ Returns: { exitCode, stdout, stderr, executionTime }`,
 			},
 			required: ["command"],
 		},
+		annotations: { destructiveHint: true },
 	},
 
 	// ----------------------
@@ -876,6 +990,7 @@ Error Cases:
 - No cameras found → Returns empty array []
 - PowerShell execution failure → Returns error`,
 		inputSchema: { type: "object", properties: {} },
+		annotations: { readOnlyHint: true },
 	},
 	{
 		name: "dc_record_screen",
@@ -1061,6 +1176,7 @@ Error Cases:
 			},
 			required: ["url"],
 		},
+		annotations: { openWorldHint: true },
 	},
 	{
 		name: "dc_web_search",
@@ -1121,6 +1237,7 @@ Error Cases:
 			},
 			required: ["query"],
 		},
+		annotations: { openWorldHint: true },
 	},
 ];
 
@@ -1336,6 +1453,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				return asTextContent({ saved: true, path: screenshotPath });
 			}
 
+			case "dc_screenshot_window": {
+				const winShotPath = await Screenshot.screenshotWindow(
+					String(a.title),
+					a.filename ? String(a.filename) : undefined,
+					{ directory: a.directory ? String(a.directory) : undefined },
+				);
+				return asTextContent({ saved: true, path: winShotPath });
+			}
+
 			// Window Management
 			case "dc_list_windows":
 				return asTextContent(await Window.listWindows());
@@ -1366,6 +1492,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 					}),
 				);
 
+			case "dc_window_move":
+				return asTextContent(
+					await Window.windowMove(String(a.title), Number(a.x), Number(a.y)),
+				);
+
+			case "dc_window_resize":
+				return asTextContent(
+					await Window.windowResize(String(a.title), Number(a.width), Number(a.height)),
+				);
+
 			// Input Simulation
 			case "dc_mouse_move":
 				await Input.mouseMove(Number(a.x), Number(a.y));
@@ -1384,6 +1520,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				);
 				return asTextContent({ scrolled: true });
 
+			case "dc_mouse_drag":
+				await Input.mouseDrag(Number(a.fromX), Number(a.fromY), Number(a.toX), Number(a.toY));
+				return asTextContent({ dragged: true, from: { x: a.fromX, y: a.fromY }, to: { x: a.toX, y: a.toY } });
+
 			case "dc_keyboard_type":
 				await Input.keyboardType(String(a.text));
 				return asTextContent({ typed: true });
@@ -1393,6 +1533,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				return asTextContent({ sent: true, shortcut: a.shortcut });
 
 			// System Controls
+			case "dc_notify":
+				await System.showNotification(String(a.title), String(a.message));
+				return asTextContent({ notified: true });
+
 			case "dc_set_volume":
 				await System.setVolume(a.action as "up" | "down" | "mute");
 				return asTextContent({ volumeChanged: true, action: a.action });

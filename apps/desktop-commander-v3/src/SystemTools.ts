@@ -375,3 +375,28 @@ export async function runCmd(
 		};
 	}
 }
+
+/**
+ * Show a Windows toast notification.
+ */
+export async function showNotification(
+	title: string,
+	message: string,
+): Promise<void> {
+	const t = title.replace(/'/g, "''");
+	const m = message.replace(/'/g, "''");
+	const psScript = `
+[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
+[Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
+$xml = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02)
+$text = $xml.GetElementsByTagName('text')
+$text[0].AppendChild($xml.CreateTextNode('${t}')) | Out-Null
+$text[1].AppendChild($xml.CreateTextNode('${m}')) | Out-Null
+$toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
+[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('Desktop Commander').Show($toast)
+`;
+	await execAsync(
+		`powershell.exe -NoProfile -Command "${psScript.replace(/\n/g, " ")}"`,
+		{ maxBuffer: 1024 * 1024 },
+	);
+}

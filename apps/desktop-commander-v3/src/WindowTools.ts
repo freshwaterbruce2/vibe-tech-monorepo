@@ -208,6 +208,75 @@ if ($p) { [WinShow]::ShowWindow($p.MainWindowHandle, ${actionCode}) | Out-Null; 
 	}
 }
 
+/**
+ * Move a window to an absolute screen position without resizing.
+ */
+export async function windowMove(
+	titlePattern: string,
+	x: number,
+	y: number,
+): Promise<{ success: boolean; window?: string }> {
+	const escaped = titlePattern.replace(/"/g, '`"');
+	const psScript = `
+Add-Type @"
+using System; using System.Runtime.InteropServices;
+public class WinMove {
+    [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r);
+    [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr h, int x, int y, int w, int ht, bool r);
+    public struct RECT { public int L, T, R, B; }
+}
+"@
+$p = Get-Process | Where-Object {$_.MainWindowTitle -match "${escaped}"} | Select-Object -First 1
+if ($p) {
+    $r = New-Object WinMove+RECT
+    [WinMove]::GetWindowRect($p.MainWindowHandle, [ref]$r) | Out-Null
+    $w = $r.R - $r.L; $h = $r.B - $r.T
+    [WinMove]::MoveWindow($p.MainWindowHandle, ${Math.round(x)}, ${Math.round(y)}, $w, $h, $true) | Out-Null
+    Write-Output $p.MainWindowTitle
+} else { Write-Output "" }
+`;
+	const { stdout } = await execAsync(
+		`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psScript.replace(/\n/g, " ")}"`,
+		{ maxBuffer: 1024 * 1024 },
+	);
+	const windowTitle = stdout.trim();
+	return { success: windowTitle.length > 0, window: windowTitle || undefined };
+}
+
+/**
+ * Resize a window without moving it.
+ */
+export async function windowResize(
+	titlePattern: string,
+	width: number,
+	height: number,
+): Promise<{ success: boolean; window?: string }> {
+	const escaped = titlePattern.replace(/"/g, '`"');
+	const psScript = `
+Add-Type @"
+using System; using System.Runtime.InteropServices;
+public class WinResize {
+    [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r);
+    [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr h, int x, int y, int w, int ht, bool r);
+    public struct RECT { public int L, T, R, B; }
+}
+"@
+$p = Get-Process | Where-Object {$_.MainWindowTitle -match "${escaped}"} | Select-Object -First 1
+if ($p) {
+    $r = New-Object WinResize+RECT
+    [WinResize]::GetWindowRect($p.MainWindowHandle, [ref]$r) | Out-Null
+    [WinResize]::MoveWindow($p.MainWindowHandle, $r.L, $r.T, ${Math.round(width)}, ${Math.round(height)}, $true) | Out-Null
+    Write-Output $p.MainWindowTitle
+} else { Write-Output "" }
+`;
+	const { stdout } = await execAsync(
+		`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${psScript.replace(/\n/g, " ")}"`,
+		{ maxBuffer: 1024 * 1024 },
+	);
+	const windowTitle = stdout.trim();
+	return { success: windowTitle.length > 0, window: windowTitle || undefined };
+}
+
 // Allowed applications for launching (security allow-list)
 const ALLOWED_APPS: Record<string, string> = {
 	notepad: "notepad.exe",
