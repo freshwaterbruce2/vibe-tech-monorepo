@@ -86,6 +86,14 @@
       "env": {
         "WORKSPACE_ROOT": "C:/dev"
       }
+    },
+    "command-center": {
+      "type": "stdio",
+      "command": "node.exe",
+      "args": ["C:/dev/apps/vibetech-command-center/dist/mcp/server.js"],
+      "env": {
+        "NODE_ENV": "production"
+      }
     }
   }
 }

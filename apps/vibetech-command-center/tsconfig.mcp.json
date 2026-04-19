@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": true,
+    "target": "ES2022",
+    "isolatedModules": false,
+    "noEmit": false,
+    "types": ["node"]
+  },
+  "include": [
+    "src/mcp/**/*.ts",
+    "src/main/service-container.ts",
+    "src/main/services/**/*.ts",
+    "src/main/stream-bridge.ts",
+    "src/main/ws-hub.ts",
+    "src/shared/**/*.ts"
+  ],
+  "exclude": ["**/*.spec.ts", "**/*.spec.tsx", "src/main/services/**/*.spec.ts"]
+}

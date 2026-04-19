@@ -1,0 +1,37 @@
+{
+  "extends": "stylelint-config-standard",
+  "rules": {
+    "selector-class-pattern": null,
+    "no-descending-specificity": null,
+    "at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": [
+          "tailwind",
+          "apply",
+          "layer",
+          "variants",
+          "responsive",
+          "screen",
+          "theme",
+          "config",
+          "source"
+        ]
+      }
+    ],
+    "selector-pseudo-class-no-unknown": [
+      true,
+      { "ignorePseudoClasses": ["deep", "global"] }
+    ],
+    "no-empty-source": null,
+    "comment-empty-line-before": null,
+    "declaration-empty-line-before": null
+  },
+  "ignoreFiles": [
+    "dist/**",
+    "node_modules/**",
+    "coverage/**",
+    "src-tauri/target/**",
+    "tests_sandbox/**"
+  ]
+}

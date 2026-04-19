@@ -128,6 +128,29 @@ try {
         # Silently fail - session logging is non-critical
     }
 
+    # Phase 7 (2026-04-18): Craft daily-note awareness reminder
+    # Stdout lines are picked up by Claude Code's native SessionStart hook contract
+    # as system context. Terminal lines are visual confirmation for Bruce.
+    try {
+        $today = (Get-Date -Format 'yyyy-MM-dd')
+        $reminderLines = @(
+            "[CRAFT-DAILY-NOTE-CHECK]",
+            "Date: $today",
+            "Before responding to the user, fetch today's Craft daily note via the Craft MCP:",
+            "  - Tool: documents_list  (location='daily_notes', dailyNoteDateGte='$today', dailyNoteDateLte='$today')",
+            "  - If a doc exists, blocks_get the root and surface key items in 1-2 sentences.",
+            "  - If none exists, do not auto-create. Offer to run /craft:daily-log."
+        )
+        $reminderLines | ForEach-Object { Write-Output $_ }
+        if (-not $Silent) {
+            Write-Host "CRAFT" -ForegroundColor Green
+            Write-Host "  Will check today's daily note ($today)" -ForegroundColor DarkGray
+            Write-Host ""
+        }
+    } catch {
+        # Non-critical — session continues if Craft block fails
+    }
+
 } catch {
     if (-not $Silent) {
         Write-Host "Session start (non-critical error ignored)" -ForegroundColor Yellow

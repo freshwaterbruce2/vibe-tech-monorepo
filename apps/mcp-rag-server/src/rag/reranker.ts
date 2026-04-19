@@ -43,7 +43,8 @@ export class RAGReranker {
       return { chunk: c.chunk, score: rrfScore, vectorScore: c.vectorScore, ftsScore: c.ftsScore, source, rrfScore };
     });
     scored.sort((a, b) => b.rrfScore - a.rrfScore);
-    const maxScore = scored.length > 0 ? scored[0]!.rrfScore : 1;
+    const firstEntry = scored[0];
+    const maxScore = firstEntry !== undefined ? firstEntry.rrfScore : 1;
     return scored.map(({ rrfScore, ...rest }) => ({ ...rest, score: maxScore > 0 ? rrfScore / maxScore : 0 }));
   }
 

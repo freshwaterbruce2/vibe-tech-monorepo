@@ -24,7 +24,9 @@
     "src/**/*.tsx"
   ],
   "exclude": [
-    "node_modules",\r\n    "dist",\r\n    "src/__tests__"
+    "node_modules",
+    "dist",
+    "src/__tests__"
   ],
   "extends": "../../tsconfig.base.json"
 }

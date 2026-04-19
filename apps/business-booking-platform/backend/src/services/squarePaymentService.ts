@@ -76,10 +76,10 @@ export class SquarePaymentService {
 					: undefined,
 			};
 
-			const { result } =
+			const response =
 				await this.client.payments.create(createPaymentRequest);
 
-			if (result.payment) {
+			if (response.payment) {
 				// Store payment record in database
 				const db = await getDb();
 				await db.insert(payments).values({
@@ -88,31 +88,31 @@ export class SquarePaymentService {
 					amount: params.amount.toString(),
 					currency: params.currency || 'USD',
 					status:
-						result.payment.status === 'COMPLETED' ? 'succeeded' : 'pending',
+						response.payment.status === 'COMPLETED' ? 'succeeded' : 'pending',
 					method: 'card',
 					provider: 'square',
-					transactionId: result.payment.id,
-					referenceNumber: result.payment.orderId || undefined,
-					cardLast4: result.payment.cardDetails?.card?.last4,
-					cardBrand: result.payment.cardDetails?.card?.cardBrand,
+					transactionId: response.payment.id,
+					referenceNumber: response.payment.orderId ?? undefined,
+					cardLast4: response.payment.cardDetails?.card?.last4,
+					cardBrand: response.payment.cardDetails?.card?.cardBrand,
 					metadata: {
 						...params.metadata,
-						squarePaymentId: result.payment.id,
-						receiptUrl: result.payment.receiptUrl,
+						squarePaymentId: response.payment.id,
+						receiptUrl: response.payment.receiptUrl,
 					},
 				} as any); // cast to any to bypass potential numeric precision issues
 
 				logger.info('Square payment created successfully', {
-					paymentId: result.payment.id,
+					paymentId: response.payment.id,
 					bookingId: params.bookingId,
 					amount: params.amount,
-					status: result.payment.status,
+					status: response.payment.status,
 				});
 
 				return {
 					success: true,
-					paymentId: result.payment.id,
-					receiptUrl: result.payment.receiptUrl,
+					paymentId: response.payment.id,
+					receiptUrl: response.payment.receiptUrl,
 				};
 			} else {
 				logger.error('Square payment creation failed - no payment returned');
@@ -155,11 +155,11 @@ export class SquarePaymentService {
 		errorMessage?: string;
 	}> {
 		try {
-			const { result } = await this.client.payments.get(paymentId);
+			const response = await this.client.payments.get({ paymentId });
 
 			return {
 				success: true,
-				payment: result.payment,
+				payment: response.payment,
 			};
 		} catch (error) {
 			logger.error('Error fetching Square payment', { error, paymentId });
@@ -221,9 +221,9 @@ export class SquarePaymentService {
 				reason: params.reason || 'Vibe Booking cancellation',
 			};
 
-			const { result } = await this.client.refunds.refund(createRefundRequest);
+			const refundResponse = await this.client.refunds.refundPayment(createRefundRequest);
 
-			if (result.refund) {
+			if (refundResponse.refund) {
 				// Store refund record in database
 				const db = await getDb();
 				await db.insert(refunds).values({
@@ -232,14 +232,14 @@ export class SquarePaymentService {
 					amount: (Number(refundAmount.amount) / 100).toString(),
 					currency: refundAmount.currency,
 					status:
-						result.refund.status === 'COMPLETED' ? 'succeeded' : 'pending',
-					transactionId: result.refund.id,
+						refundResponse.refund.status === 'COMPLETED' ? 'succeeded' : 'pending',
+					transactionId: refundResponse.refund.id,
 					reason: params.reason || 'Vibe Booking cancellation',
-					metadata: { squareRefundId: result.refund.id },
+					metadata: { squareRefundId: refundResponse.refund.id },
 				} as any);
 
 				logger.info('Square refund created successfully', {
-					refundId: result.refund.id,
+					refundId: refundResponse.refund.id,
 					paymentId: params.paymentId,
 					bookingId: params.bookingId,
 					amount: Number(refundAmount.amount) / 100,
@@ -247,7 +247,7 @@ export class SquarePaymentService {
 
 				return {
 					success: true,
-					refundId: result.refund.id,
+					refundId: refundResponse.refund.id,
 				};
 			} else {
 				logger.error('Square refund creation failed - no refund returned');
@@ -304,33 +304,33 @@ export class SquarePaymentService {
 				},
 			};
 
-			const { result } = await this.client.cards.create(createCardRequest);
+			const cardResponse = await this.client.cards.create(createCardRequest);
 
-			if (result.card) {
+			if (cardResponse.card) {
 				// Store payment method in database
 				const db = await getDb();
 				await db.insert(paymentMethods).values({
 					userId: params.userId,
 					provider: 'square',
 					type: 'card',
-					token: result.card.id,
-					last4: result.card.last4 || '',
-					brand: result.card.cardBrand || '',
+					token: cardResponse.card.id,
+					last4: cardResponse.card.last4 ?? '',
+					brand: cardResponse.card.cardBrand ?? '',
 					metadata: {
-						squareCardId: result.card.id,
+						squareCardId: cardResponse.card.id,
 						customerId: params.customerId,
 					},
 				} as any);
 
 				logger.info('Square payment method saved successfully', {
-					cardId: result.card.id,
+					cardId: cardResponse.card.id,
 					userId: params.userId,
-					last4: result.card.last4,
+					last4: cardResponse.card.last4,
 				});
 
 				return {
 					success: true,
-					cardId: result.card.id,
+					cardId: cardResponse.card.id,
 				};
 			} else {
 				logger.error('Square card creation failed - no card returned');
@@ -385,19 +385,19 @@ export class SquarePaymentService {
 				phoneNumber: params.phoneNumber,
 			};
 
-			const { result } = await this.client.customers.create(
+			const customerResponse = await this.client.customers.create(
 				createCustomerRequest,
 			);
 
-			if (result.customer) {
+			if (customerResponse.customer) {
 				logger.info('Square customer created successfully', {
-					customerId: result.customer.id,
+					customerId: customerResponse.customer.id,
 					email: params.emailAddress,
 				});
 
 				return {
 					success: true,
-					customerId: result.customer.id,
+					customerId: customerResponse.customer.id,
 				};
 			} else {
 				logger.error('Square customer creation failed - no customer returned');

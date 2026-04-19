@@ -27,3 +27,4 @@ Detailed rules are in `.claude/rules/`. Key references:
 - No mock/placeholder code: `.claude/rules/no-mock-or-placeholder-code.md`
 - TypeScript patterns: `.claude/rules/typescript-patterns.md`
 - Testing strategy: `.claude/rules/testing-strategy.md`
+- Craft edit-review widget: `.claude/rules/craft-edit-review.md`
