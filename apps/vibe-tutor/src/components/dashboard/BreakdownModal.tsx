@@ -23,14 +23,19 @@ const BreakdownModal = ({ item, onClose }: BreakdownModalProps) => {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-lg flex items-center justify-center z-50 p-4">
+    <div
+      className="fixed inset-0 bg-slate-900/70 backdrop-blur-lg flex items-center justify-center z-50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="breakdown-modal-title"
+    >
       <div ref={modalRef} className="bg-background-surface border border-[var(--border-color)] rounded-2xl shadow-2xl shadow-black/50 p-8 w-full max-w-2xl transform transition-all animate-fade-in-up">
         <div className="flex justify-between items-start mb-4">
             <div>
-                 <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[var(--secondary-accent)] to-[var(--primary-accent)]">Task Breakdown</h2>
+                 <h2 id="breakdown-modal-title" className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[var(--secondary-accent)] to-[var(--primary-accent)]">Task Breakdown</h2>
                  <p className="text-text-secondary mt-1">AI-generated steps to tackle your assignment.</p>
             </div>
-            <button onClick={onClose} className="text-slate-500 hover:text-white">&times;</button>
+            <button type="button" onClick={onClose} aria-label="Close task breakdown" className="text-slate-500 hover:text-white text-2xl leading-none px-2">&times;</button>
         </div>
        
         <TaskBreakdown taskTitle={item.title} subject={item.subject} />

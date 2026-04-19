@@ -14,13 +14,17 @@ if (typeof window !== 'undefined' && !window.electronAPI) {
   (window as Window & typeof globalThis & { electronAPI: unknown }).electronAPI = {
     isElectron: false,
     store: {
+      // eslint-disable-next-line electron-security/no-localstorage-electron -- Safe: only used in non-Electron contexts (PWA/Capacitor)
       get: (key: string) => localStorage.getItem(key),
+      // eslint-disable-next-line electron-security/no-localstorage-electron -- Safe: only used in non-Electron contexts (PWA/Capacitor)
       set: (key: string, value: unknown) => localStorage.setItem(key, String(value)),
+      // eslint-disable-next-line electron-security/no-localstorage-electron -- Safe: only used in non-Electron contexts (PWA/Capacitor)
       delete: (key: string) => localStorage.removeItem(key),
+      // eslint-disable-next-line electron-security/no-localstorage-electron -- Safe: only used in non-Electron contexts (PWA/Capacitor)
       clear: () => localStorage.clear(),
     },
-    selectImportFile: () => Promise.resolve(null),
-    ingestAndroidExport: () => Promise.resolve({ inserted: 0, skipped: 0, total: 0 }),
+    selectImportFile: async () => Promise.resolve(null),
+    ingestAndroidExport: async () => Promise.resolve({ inserted: 0, skipped: 0, total: 0 }),
   };
 }
 
