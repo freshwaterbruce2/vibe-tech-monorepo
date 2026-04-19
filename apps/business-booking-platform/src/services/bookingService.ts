@@ -294,7 +294,9 @@ class BookingService {
 	): Promise<PaginatedBookings> {
 		try {
 			let url = `/api/bookings/user/${userId}?page=${page}&limit=${limit}`;
-			if (status) url += `&status=${status}`;
+			if (status) {
+url += `&status=${status}`;
+}
 
 			const response = await axios.get(url);
 
@@ -388,9 +390,15 @@ class BookingService {
 	): Promise<BookingHistoryResult> {
 		try {
 			const params = new URLSearchParams();
-			if (filters.startDate) params.append('startDate', filters.startDate);
-			if (filters.endDate) params.append('endDate', filters.endDate);
-			if (filters.status) params.append('status', filters.status);
+			if (filters.startDate) {
+params.append('startDate', filters.startDate);
+}
+			if (filters.endDate) {
+params.append('endDate', filters.endDate);
+}
+			if (filters.status) {
+params.append('status', filters.status);
+}
 
 			const url = `/api/bookings/user/${userId}/history?${params.toString()}`;
 			const response = await axios.get(url);

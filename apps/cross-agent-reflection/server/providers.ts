@@ -28,7 +28,7 @@ export function calcCost(
   model: string,
   usage: { prompt_tokens?: number; completion_tokens?: number },
 ): number {
-  const p = PRICING[model] ?? PRICING['kimi-k2.5']!;
+  const p = PRICING[model] ?? PRICING['kimi-k2.5'] ?? { input: 0.60 / 1_000_000, output: 2.50 / 1_000_000 };
   return (usage.prompt_tokens ?? 0) * p.input + (usage.completion_tokens ?? 0) * p.output;
 }
 

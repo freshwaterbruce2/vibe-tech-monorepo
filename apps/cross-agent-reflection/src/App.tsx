@@ -32,28 +32,23 @@ function useSplit(initial = 50) {
 export function App() {
   const { state, start, cancel } = useReflectionStream();
   const { pct, containerRef, dividerProps } = useSplit(50);
-  const [selectedPass, setSelectedPass] = useState(1);
+  // null = follow latest automatically; number = user has pinned a specific pass
+  const [userSelectedPass, setUserSelectedPass] = useState<number | null>(null);
   const [showDiff, setShowDiff] = useState(false);
 
   const { passes, status, totalCost, costLimit } = state;
 
-  // Always show latest pass in right pane, selected pass in left
+  // Derive the effective selected pass: user's choice or the latest available
   const latestPass = passes[passes.length - 1];
+  const selectedPass = userSelectedPass ?? latestPass?.pass ?? 1;
   const leftPass = passes.find(p => p.pass === selectedPass) ?? passes[0];
   const rightPass = latestPass?.pass !== leftPass?.pass ? latestPass : undefined;
 
   const handleSubmit = useCallback((task: string) => {
-    setSelectedPass(1);
+    setUserSelectedPass(null);
     setShowDiff(false);
-    start(task);
+    void start(task);
   }, [start]);
-
-  // Auto-advance selected pass
-  const prevPassCount = useRef(0);
-  if (passes.length > prevPassCount.current) {
-    prevPassCount.current = passes.length;
-    setSelectedPass(passes[passes.length - 1]?.pass ?? 1);
-  }
 
   const diffPasses = passes.filter(p => p.output.length > 0);
   const canShowDiff = diffPasses.length >= 2 && status !== 'running';
@@ -110,7 +105,7 @@ export function App() {
       <IterationTimeline
         passes={passes}
         status={status}
-        onSelectPass={setSelectedPass}
+        onSelectPass={setUserSelectedPass}
         selectedPass={selectedPass}
       />
 
@@ -161,14 +156,19 @@ export function App() {
       </div>
 
       {/* Diff view (post-completion) */}
-      {showDiff && diffPasses.length >= 2 && (
-        <DiffView
-          before={diffPasses[0]!.output}
-          after={diffPasses[diffPasses.length - 1]!.output}
-          beforeLabel={`Pass 1 (generator)`}
-          afterLabel={`Pass ${diffPasses[diffPasses.length - 1]!.pass} (final)`}
-        />
-      )}
+      {showDiff && diffPasses.length >= 2 && (() => {
+        const firstPass = diffPasses[0];
+        const lastPass = diffPasses[diffPasses.length - 1];
+        if (!firstPass || !lastPass) return null;
+        return (
+          <DiffView
+            before={firstPass.output}
+            after={lastPass.output}
+            beforeLabel="Pass 1 (generator)"
+            afterLabel={`Pass ${lastPass.pass} (final)`}
+          />
+        );
+      })()}
     </div>
   );
 }

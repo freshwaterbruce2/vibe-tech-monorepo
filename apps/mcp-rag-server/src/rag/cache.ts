@@ -24,7 +24,8 @@ export class RAGCache {
 
   get(queryText: string): SearchResult[] | null {
     const key = this.makeKey(queryText);
-    const row = this.db.prepare('SELECT results, created_at, ttl_ms FROM query_cache WHERE key = ?').get(key) as any;
+    const row = this.db.prepare('SELECT results, created_at, ttl_ms FROM query_cache WHERE key = ?').get(key) as
+      { results: string; created_at: number; ttl_ms: number } | undefined;
     if (!row) { this.misses++; return null; }
     if (Date.now() - row.created_at > row.ttl_ms) {
       this.db.prepare('DELETE FROM query_cache WHERE key = ?').run(key);
@@ -43,7 +44,8 @@ export class RAGCache {
   }
 
   invalidateByPaths(filePaths: string[]): number {
-    const allEntries = this.db.prepare('SELECT key, file_paths FROM query_cache WHERE file_paths IS NOT NULL').all() as any[];
+    const allEntries = this.db.prepare('SELECT key, file_paths FROM query_cache WHERE file_paths IS NOT NULL').all() as
+      { key: string; file_paths: string }[];
     const changedSet = new Set(filePaths);
     const keysToDelete = allEntries.filter((e) => {
       try { return (JSON.parse(e.file_paths) as string[]).some((p) => changedSet.has(p)); } catch { return false; }
@@ -62,7 +64,8 @@ export class RAGCache {
   }
 
   getStats(): CacheStats {
-    const row = this.db.prepare('SELECT COUNT(*) as total, MIN(created_at) as oldest, SUM(LENGTH(results)) as totalSize FROM query_cache').get() as any;
+    const row = this.db.prepare('SELECT COUNT(*) as total, MIN(created_at) as oldest, SUM(LENGTH(results)) as totalSize FROM query_cache').get() as
+      { total: number; oldest: number | null; totalSize: number | null };
     return { totalEntries: row.total, hits: this.hits, misses: this.misses, hitRate: this.hits + this.misses > 0 ? this.hits / (this.hits + this.misses) : 0, oldestEntry: row.oldest, totalSizeBytes: row.totalSize ?? 0 };
   }
 

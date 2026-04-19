@@ -40,7 +40,7 @@ export const config = {
 
   // App metadata
   APP_NAME: 'NOVA AI Assistant',
-  APP_VERSION: '2.0.0',
+  APP_VERSION: '1.0.0',
 
   // Feature flags
   FEATURES: {

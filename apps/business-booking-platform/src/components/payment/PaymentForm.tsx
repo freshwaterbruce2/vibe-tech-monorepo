@@ -40,13 +40,13 @@ interface PaymentFormProps {
 }
 
 export const PaymentForm: React.FC<PaymentFormProps> = ({
-	bookingId,
+	bookingId: _bookingId,
 	amount,
 	currency = 'USD',
-	onSuccess,
-	onError,
+	onSuccess: _onSuccess,
+	onError: _onError,
 	bookingDetails,
-	billingDetails,
+	billingDetails: _billingDetails,
 }) => {
 	const [isLoading, setIsLoading] = useState(true);
 	const [stripeError, setStripeError] = useState<string | null>(null);

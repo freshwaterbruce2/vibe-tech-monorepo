@@ -74,8 +74,8 @@ export function parseSkill(content: string): { frontmatter: string; body: string
   const normalized = content.replace(/\r\n/g, '\n');
   const fmMatch = normalized.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
   if (!fmMatch) return { frontmatter: '', body: normalized, name: 'unknown' };
-  const frontmatter = fmMatch[1]!;
-  const body = fmMatch[2]!;
+  const frontmatter = fmMatch[1] ?? '';
+  const body = fmMatch[2] ?? '';
   const nameMatch = frontmatter.match(/^name:\s*(.+)$/m);
   return { frontmatter, body, name: nameMatch?.[1]?.trim() ?? 'unknown' };
 }
@@ -93,7 +93,6 @@ const SPECIFIC_REFS = /`[^`]{3,60}`|C:\\|D:\\|\.ts|\.tsx|\.ps1|\.py|pnpm|npx|nod
 const CODE_BLOCK = /```/g;
 const SECTION_HEADER = /^#+\s/gm;
 const PROHIBITION = /\b(never|do not|don't|avoid|prohibited|banned|must not|should not)\b/gi;
-const BULLET_LINE = /^[\s]*[-*+]\s+(.+)$/gm;
 
 export function benchmark(content: string): BenchmarkBreakdown {
   const lines = content.split('\n');
@@ -121,7 +120,7 @@ export function benchmark(content: string): BenchmarkBreakdown {
   let m: RegExpExecArray | null;
   const bulletRe = /^[\s]*[-*+]\s+(.+)$/gm;
   bulletRe.lastIndex = 0;
-  while ((m = bulletRe.exec(content)) !== null) bullets.push(m[1]!);
+  while ((m = bulletRe.exec(content)) !== null) bullets.push(m[1] ?? '');
   const avgWords = bullets.length > 0
     ? bullets.reduce((s, b) => s + b.split(/\s+/).length, 0) / bullets.length
     : 20;
@@ -369,7 +368,7 @@ export function snapshot(db: Database.Database, skillName: string): SkillVariant
 
   // Check if content matches latest deployed variant
   const deployed = getDeployedVariant(db, skillName);
-  if (deployed && deployed.content === content) {
+  if (deployed?.content === content) {
     return deployed; // Already snapshotted
   }
 

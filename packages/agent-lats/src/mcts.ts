@@ -135,11 +135,14 @@ export function plan(db: Database.Database, taskDescription: string, opts: LATSO
   // --- Select: sort by score descending ---
   ranked.sort((a, b) => b.score - a.score);
 
+  const recommended = ranked[0];
+  if (!recommended) throw new Error('LATS planning produced no candidates — at least one approach is required');
+
   return {
     treeId,
     taskDescription,
     candidates: ranked,
-    recommended: ranked[0]!,
+    recommended,
     planningTimeMs: Date.now() - start,
   };
 }
@@ -160,7 +163,8 @@ export function formatPlanForAgent(result: PlanResult): string {
   ];
 
   for (let i = 0; i < result.candidates.length; i++) {
-    const c = result.candidates[i]!;
+    const c = result.candidates[i];
+    if (!c) continue;
     const bd = c.scoreBreakdown;
     lines.push(
       `${i + 1}. [${c.approachSource}] score=${c.score.toFixed(3)} ` +

@@ -1,196 +1,147 @@
 # NOVA Mobile App
 
-Cross-platform mobile application for NOVA AI Assistant built with React Native and Expo.
+Android companion for the NOVA AI Assistant desktop (nova-agent). Connects over HTTP to the desktop bridge on port 3000.
 
-## Features
-
-- 💬 Real-time chat with NOVA AI
-- 📱 Native iOS and Android support
-- 🌙 Dark mode interface
-- 🔒 Secure API communication
-- 📂 Project management
-- 🧠 Access to NOVA's memory system
-- 🎙️ Voice input support (coming soon)
+**Stack:** Expo SDK 54 · React Native 0.81.5 · React 19 · TypeScript 5.9.3 · Zustand
+**Platforms:** Android (primary), Web (Expo export for debugging). iOS build config exists but is not part of the current release target.
 
 ## Prerequisites
 
-- Node.js 18 or higher
-- npm or yarn
-- Expo Go app on your mobile device (for testing)
-- For iOS development: macOS with Xcode
-- For Android development: Android Studio
+- Node 22.x, pnpm 10.x (monorepo workspace is at `C:\dev`)
+- Android Studio + Android SDK Platform-Tools (`adb` must be on PATH)
+- `eas-cli` globally installed for cloud builds: `pnpm add -g eas-cli`
+- An Expo account linked to EAS (`eas login`)
+- Nova Desktop (`apps/nova-agent`) running on the same machine
 
-## Quick Start
+## Quick Start (Dev)
 
-1. **Install dependencies:**
+Run every command from `C:\dev` using pnpm workspace filters.
 
-```bash
-npm install
+```powershell
+# 1. Install dependencies for this app only
+pnpm install --filter nova-mobile-app
+
+# 2. Copy the env template and set the bridge token
+Copy-Item C:\dev\apps\nova-mobile-app\.env.example C:\dev\apps\nova-mobile-app\.env
+# then edit .env — EXPO_PUBLIC_BRIDGE_TOKEN must match the desktop
+
+# 3. Start the Nova Desktop bridge (separate terminal)
+pnpm --filter nova-agent start
+
+# 4. Start Expo on the mobile app
+pnpm --filter nova-mobile-app start
 ```
 
-1. **Configure API endpoint:**
+From the Expo dev menu press `a` for Android emulator, or scan the QR code with Expo Go on a physical device.
 
-Edit `src/config.ts` and update the `API_URL`:
+## Connecting a Physical Android Device
 
-- For iOS Simulator: Use `http://localhost:3000`
-- For Android Emulator: Use `http://10.0.2.2:3000`
-- For physical device: Use your computer's IP address (e.g., `http://192.168.1.100:3000`)
+The desktop bridge binds to `127.0.0.1:3000` only. Use ADB reverse to forward the loopback port to your phone:
 
-1. **Start the NOVA backend:**
-
-In the main nova-agent directory:
-
-```bash
-npm run dev:server
+```powershell
+pnpm --filter nova-mobile-app adb:reverse
 ```
 
-1. **Start the mobile app:**
+This runs `C:\dev\apps\nova-mobile-app\scripts\adb-reverse.ps1`, which calls `adb reverse tcp:3000 tcp:3000` and `adb reverse tcp:8081 tcp:8081` (Metro bundler). USB debugging must be enabled on the device.
 
-```bash
-npm start
+## API URL Resolution
+
+`src\config.ts` auto-detects the host:
+
+| Target | URL |
+|--------|-----|
+| Android emulator | `http://10.0.2.2:3000` (host loopback alias) |
+| iOS simulator / web | `http://localhost:3000` |
+| Physical device + `adb reverse` | `http://10.0.2.2:3000` (default) or `http://localhost:3000` via override |
+| Production build | `https://api.nova-ai.com` (placeholder host for future cloud bridge) |
+
+Set `EXPO_PUBLIC_OVERRIDE_API_URL` in `.env` to bypass auto-detection (e.g. LAN testing on a non-loopback IP — requires LAN-binding the desktop bridge with authentication).
+
+## Features
+
+- Real-time chat with Nova via REST/JSON
+- Memory search + browse
+- Biometric re-lock on app background (`expo-local-authentication`)
+- Voice input (`expo-speech` wired, feature-flagged in `src/config.ts`)
+- Push notifications (`expo-notifications`)
+- Offline queue + AsyncStorage persistence (Zustand)
+- Connection health banner with auto-reconnect
+
+## Development Commands
+
+```powershell
+pnpm --filter nova-mobile-app start             # Expo dev server
+pnpm --filter nova-mobile-app android           # Launch on Android target
+pnpm --filter nova-mobile-app test              # Vitest unit tests
+pnpm --filter nova-mobile-app test:integration  # Requires desktop running
+pnpm --filter nova-mobile-app typecheck         # tsc --noEmit
+pnpm --filter nova-mobile-app lint              # ESLint
+pnpm --filter nova-mobile-app build             # expo export --platform web
+pnpm --filter nova-mobile-app adb:reverse       # USB port forward helper
 ```
 
-This will open the Expo developer tools. You can then:
+## Production Build (Android, EAS Cloud)
 
-- Press `i` to open in iOS simulator
-- Press `a` to open in Android emulator
-- Scan the QR code with Expo Go app on your phone
+```powershell
+Set-Location C:\dev\apps\nova-mobile-app
 
-## Building for Production
+# APK for internal distribution (sideload on any device)
+pnpm exec eas build --platform android --profile preview
 
-### iOS Build
-
-1. **Configure Apple Developer account:**
-
-```bash
-eas build:configure
+# AAB for Play Store internal track
+pnpm exec eas build --platform android --profile production
+pnpm exec eas submit --platform android --profile production
 ```
 
-1. **Build for iOS:**
+Build profiles live in `eas.json`. The full release flow is scripted at `C:\dev\apps\nova-mobile-app\scripts\ship-v1.0.0.ps1` — read `RELEASE_NOTES_v1.0.0.md` before running.
 
-```bash
-eas build --platform ios
-```
-
-1. **Submit to App Store:**
-
-```bash
-eas submit --platform ios
-```
-
-### Android Build
-
-1. **Build APK:**
-
-```bash
-eas build --platform android --profile preview
-```
-
-1. **Build AAB for Play Store:**
-
-```bash
-eas build --platform android
-```
-
-1. **Submit to Play Store:**
-
-```bash
-eas submit --platform android
-```
-
-## Development
-
-### Project Structure
+## Project Structure
 
 ```
 nova-mobile-app/
-├── App.tsx              # Main app component
+├── App.tsx                     # Root component + ErrorBoundary + biometric lock gate
+├── index.ts                    # Entry point (console-patch before RN loads — see POST-MORTEM)
+├── app.json                    # Expo config (bundle id com.nova.assistant)
+├── eas.json                    # EAS build profiles
 ├── src/
-│   ├── components/      # Reusable components
-│   ├── screens/         # Screen components
-│   ├── services/        # API services
-│   ├── types/          # TypeScript types
-│   └── config.ts       # App configuration
-├── assets/             # Images and icons
-└── app.json           # Expo configuration
+│   ├── components/             # ChatInputBar, MemoryCard, MessageBubble, OfflineBanner, TypingIndicator
+│   ├── screens/                # Auth, Chat, Lock, Memory, Settings, Status
+│   ├── navigation/             # AppNavigator (bottom tabs + stack)
+│   ├── services/               # HttpAgentAdapter, pushNotificationService
+│   ├── stores/                 # Zustand: auth, chat, connection, offlineQueue
+│   ├── types/                  # Shared type contracts
+│   └── config.ts               # Platform-aware URL + feature flags + theme
+├── scripts/
+│   ├── adb-reverse.ps1         # USB Android port forward
+│   └── ship-v1.0.0.ps1         # Release playbook
+├── _backups/                   # Local zip snapshots (never committed)
+└── assets/                     # App icons + splash
 ```
-
-### Running on Device
-
-1. **Find your IP address:**
-   - Windows: `ipconfig`
-   - macOS/Linux: `ifconfig` or `ip addr`
-
-2. **Update config.ts with your IP:**
-
-```typescript
-API_URL: __DEV__ ? 'http://YOUR_IP:3000' : 'https://api.nova-ai.com',
-```
-
-1. **Ensure your device is on the same network**
-
-2. **Start the app and scan QR code**
-
-### Debugging
-
-- Shake device or press `Cmd+D` (iOS) / `Cmd+M` (Android) in simulator
-- Use React Native Debugger for advanced debugging
-- Check console logs in terminal
-
-## Customization
-
-### Theming
-
-Edit the theme colors in `src/config.ts`:
-
-```typescript
-THEME: {
-  PRIMARY_COLOR: '#007bff',
-  SECONDARY_COLOR: '#2d2d2d',
-  BACKGROUND_COLOR: '#1a1a1a',
-  TEXT_COLOR: '#ffffff',
-  BORDER_COLOR: '#404040',
-}
-```
-
-### Adding Features
-
-1. Create new screens in `src/screens/`
-2. Add navigation using React Navigation
-3. Extend the API service in `src/services/novaApi.ts`
-4. Update types in `src/types/`
 
 ## Troubleshooting
 
-### Connection Issues
+**Blank screen / ExceptionsManager error on launch.** Expo Go's new architecture can seal `console.error`. The fix (getter/setter accessors in `index.ts`) is already in place. See `POST-MORTEM-console-patch.md`.
 
-1. **"Network request failed"**
-   - Check if backend is running
-   - Verify API_URL is correct
-   - Ensure device is on same network
+**"Network request failed" on Android.** Desktop bridge isn't running, or `adb reverse` hasn't been set up. Run `pnpm --filter nova-agent start` and `pnpm --filter nova-mobile-app adb:reverse`.
 
-2. **Build failures**
-   - Clear cache: `expo start -c`
-   - Delete node_modules and reinstall
-   - Update Expo SDK if needed
+**Bridge token mismatch (401).** Confirm `EXPO_PUBLIC_BRIDGE_TOKEN` in `.env` matches the desktop token.
 
-### Platform-Specific Issues
+**TypeScript errors.** `pnpm --filter nova-mobile-app typecheck`.
 
-**iOS:**
+## Data & Security
 
-- Requires macOS for building
-- May need to configure signing certificates
+- Tokens stored in `expo-secure-store`, not `AsyncStorage`.
+- Desktop bridge is bound to `127.0.0.1:3000` by default; LAN access requires explicit un-gating + authentication in `apps/nova-agent/src-tauri/src/main.rs`.
+- No database in `C:\dev` — all app state lives on the device or in memory. Desktop-side data remains under `D:\databases\`.
 
-**Android:**
+## Related Docs
 
-- Enable USB debugging for device testing
-- May need to configure gradle settings
-
-## Resources
-
-- [Expo Documentation](https://docs.expo.dev)
-- [React Native Documentation](https://reactnative.dev)
-- [EAS Build Documentation](https://docs.expo.dev/build/introduction/)
+- `CLAUDE.md` — AI context (stack, entry point notes)
+- `STATUS.md` — project status + connection model
+- `TESTING.md` — manual + integration test checklist
+- `RELEASE_NOTES_v1.0.0.md` — first release
+- `SHIP_READY_REPORT.md` — pre-release audit
+- `POST-MORTEM-console-patch.md` — Hermes/JSI console-seal incident
 
 ## License
 

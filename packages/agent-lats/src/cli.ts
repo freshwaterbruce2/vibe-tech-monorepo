@@ -11,15 +11,15 @@
  *   lats stats [--limit 10]
  */
 
-import { getDb, closeDb, recordOutcome, storeCritique, storePreferencePair, generatePreferencePairsFromHistory } from './db.js';
+import { getDb, closeDb, recordOutcome, storeCritique, generatePreferencePairsFromHistory } from './db.js';
 import { plan, formatPlanForAgent } from './mcts.js';
 import { generateReflectionPrompt } from './reflect.js';
 import { critiqueFile } from './critique.js';
 import { runAssessmentCycle, getRecentAssessments } from './agent-q.js';
-import { snapshot, evolve, deployVariant, benchmark, diffVariants, getVariantHistory, getDeployedVariant } from './skill-evolution.js';
+import { snapshot, evolve, deployVariant, diffVariants, getVariantHistory, getDeployedVariant } from './skill-evolution.js';
 import {
   startRun, recordStage, finishRun, getStageStats, suggestOrderings,
-  getRunHistory, getRunStages, recomputeAllBlame,
+  getRunHistory, recomputeAllBlame,
   DEFAULT_ORDERING,
 } from './pipeline-evolution.js';
 import type { StageName } from './pipeline-evolution.js';
@@ -668,7 +668,8 @@ async function main(): Promise<void> {
                 console.log('  Run at least 5 pipeline iterations to build up statistics.');
               } else {
                 for (let i = 0; i < suggestions.length; i++) {
-                  const s = suggestions[i]!;
+                  const s = suggestions[i];
+                  if (!s) continue;
                   const deltaStr = s.delta >= 0 ? `+${(s.delta * 100).toFixed(1)}%` : `${(s.delta * 100).toFixed(1)}%`;
                   console.log(`  Option ${i + 1}: expected=${(s.expectedSuccessRate * 100).toFixed(1)}% (${deltaStr})`);
                   console.log(`    ${s.ordering.join(' → ')}`);

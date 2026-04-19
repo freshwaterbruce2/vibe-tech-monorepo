@@ -10,10 +10,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 import {
   KNOWN_DATABASES,
-  PORT_RANGES,
   DATA_PATHS,
-  isSensitive,
-  maskSecret,
 } from './constants.js';
 import {
   loadEnvFile,

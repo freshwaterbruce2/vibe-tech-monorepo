@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { Response } from 'express';
 import { sendEvent, closeSSE } from './events.js';
-import { streamGenerate, callCritic, calcCost, CRITIC_MODEL } from './providers.js';
+import { streamGenerate, callCritic } from './providers.js';
 
 // ── Guardrails ────────────────────────────────────────────────────────────────
 const MAX_REFLECTIONS = 3;
@@ -120,9 +120,11 @@ export async function runReflection(res: Response, task: string): Promise<void> 
     }
 
     // Parallel dual critics
+    const [personaA, personaB] = CRITIC_PERSONAS;
+    if (!personaA || !personaB) throw new Error('CRITIC_PERSONAS must have exactly 2 entries');
     const [resA, resB] = await Promise.all([
-      runCritic(res, task, currentOutput, pass, CRITIC_PERSONAS[0]!),
-      runCritic(res, task, currentOutput, pass, CRITIC_PERSONAS[1]!),
+      runCritic(res, task, currentOutput, pass, personaA),
+      runCritic(res, task, currentOutput, pass, personaB),
     ]);
     totalCost += resA.cost + resB.cost;
 

@@ -3,7 +3,7 @@
  * All reads are from the filesystem — no caching, always fresh.
  */
 
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
 import { resolve } from 'path';
 import { WORKSPACE_ROOT, ENV_FILE, MCP_CONFIG_FILE, PORT_REGISTRY_FILE } from './constants.js';
 import { isSensitive, maskSecret } from './constants.js';
@@ -156,7 +156,6 @@ export function listAppEnvFiles(): { app: string; path: string }[] {
 
   const results: { app: string; path: string }[] = [];
   try {
-    const { readdirSync } = require('fs');
     const dirs = readdirSync(appsDir, { withFileTypes: true });
     for (const d of dirs) {
       if (!d.isDirectory()) continue;
@@ -189,7 +188,6 @@ export function checkDatabases(
     let sizeMB: number | null = null;
     if (exists) {
       try {
-        const { statSync } = require('fs');
         const stat = statSync(db.path);
         sizeMB = Math.round((stat.size / (1024 * 1024)) * 100) / 100;
       } catch {

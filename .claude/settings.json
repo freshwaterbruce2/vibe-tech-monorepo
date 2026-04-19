@@ -108,6 +108,15 @@
             "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/lats-pipeline-start.ps1"
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/quality-risk-precheck.ps1"
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -138,6 +147,15 @@
           {
             "type": "command",
             "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/lats-skill-evolve.ps1"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__claude_ai_Craft__blocks_add|mcp__claude_ai_Craft__blocks_update|mcp__claude_ai_Craft__blocks_delete|mcp__claude_ai_Craft__blocks_move|mcp__claude_ai_Craft__collectionItems_add|mcp__claude_ai_Craft__collectionItems_update|mcp__claude_ai_Craft__collectionItems_delete",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/craft-edit-review-reminder.ps1"
           }
         ]
       }

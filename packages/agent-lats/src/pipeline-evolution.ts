@@ -283,14 +283,16 @@ export function computeBlameForRun(db: Database.Database, runId: string): void {
   const failIdx = results.findIndex((s) => s.success === false);
   if (failIdx === -1) return; // no clear failure (shouldn't happen)
 
-  const failing = results[failIdx]!;
+  const failing = results[failIdx];
+  if (!failing) return;
   let failBlame = 0.6;
   let upstreamBlame = 0.0;
   let upstreamId: string | null = null;
 
   // Check upstream quality
   if (failIdx > 0) {
-    const upstream = results[failIdx - 1]!;
+    const upstream = results[failIdx - 1];
+    if (!upstream) return;
     const upstreamScore = upstream.outputCritiqueScore;
     if (upstreamScore !== null && upstreamScore < 0.7) {
       // Low-quality output from upstream likely contributed
@@ -393,7 +395,9 @@ function singleSwapNeighbours(ordering: StageName[]): StageName[][] {
   for (let i = 0; i < ordering.length - 1; i++) {
     const candidate = [...ordering];
     // Swap positions i and i+1
-    [candidate[i], candidate[i + 1]] = [candidate[i + 1]!, candidate[i]!];
+    const tmp = candidate[i + 1] as StageName;
+    candidate[i + 1] = candidate[i] as StageName;
+    candidate[i] = tmp;
     if (isValidOrdering(candidate)) neighbours.push(candidate);
   }
   return neighbours;

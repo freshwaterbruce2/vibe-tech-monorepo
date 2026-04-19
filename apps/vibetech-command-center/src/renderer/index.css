@@ -1,7 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 @import "tailwindcss";
 
 @theme {
   --color-pulse-cyan: #00E5FF;
-  --font-family-sans: 'Space Grotesk', system-ui, sans-serif;
-  --font-family-mono: 'JetBrains Mono', monospace;
+  --color-pulse-cyan-50: #E6FBFF;
+  --color-pulse-cyan-100: #B8F4FF;
+  --color-pulse-cyan-200: #7AEAFF;
+  --color-pulse-cyan-300: #3DE0FF;
+  --color-pulse-cyan-400: #00E5FF;
+  --color-pulse-cyan-500: #00B8CC;
+  --color-pulse-cyan-600: #008A99;
+  --color-pulse-cyan-700: #005C66;
+  --color-pulse-cyan-800: #002E33;
+  --color-pulse-cyan-900: #001719;
+
+  --color-bg-base: #0A0E1A;
+  --color-bg-panel: #111827;
+  --color-bg-elev: #1F2937;
+  --color-bg-line: #374151;
+
+  --color-status-ok: #34D399;
+  --color-status-warn: #FBBF24;
+  --color-status-error: #F87171;
+  --color-status-off: #6B7280;
+
+  --font-sans: '"Space Grotesk"', system-ui, sans-serif;
+  --font-mono: '"JetBrains Mono"', Consolas, monospace;
+
+  --shadow-glow-cyan: 0 0 20px rgba(0, 229, 255, 0.15);
+  --shadow-glow-cyan-strong: 0 0 30px rgba(0, 229, 255, 0.3);
+}
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-bg-base text-slate-100 font-sans antialiased;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply bg-bg-panel border border-bg-line rounded-lg overflow-hidden;
+  }
+  .panel-header {
+    @apply px-4 py-3 border-b border-bg-line flex items-center justify-between bg-bg-elev;
+  }
+  .panel-title {
+    @apply text-sm font-semibold tracking-wide text-pulse-cyan uppercase;
+  }
+  .status-dot {
+    @apply w-2 h-2 rounded-full inline-block;
+  }
+  .btn {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium
+           border border-bg-line bg-bg-elev hover:bg-slate-700 transition-colors
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply border-pulse-cyan-700 text-pulse-cyan-300 hover:bg-pulse-cyan-800;
+  }
 }
