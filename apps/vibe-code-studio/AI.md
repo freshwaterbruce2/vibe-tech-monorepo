@@ -2,53 +2,45 @@
 type: ai-notes
 scope: project
 status: detailed
-lastReviewed: 2026-01-22
+lastReviewed: 2026-04-19
 ---
 
 # vibe-code-studio
 
-Electron-based AI code editor (React 19 + TypeScript) using `electron-vite` and `electron-builder`.
+Tauri 2-based AI code editor (React 19 + TypeScript) using `@tauri-apps/cli` and `vite`.
 
 - Workspace rules: ../../docs/ai/WORKSPACE.md
 - Monorepo entrypoint: ../../AI.md
-- Legacy reference: CLAUDE.legacy.2026-01-22.md
 
 ## Key commands (recommended)
 
 Prefer Nx targets from the repo root:
 
 ```bash
-pnpm nx run vibe-code-studio:dev
-pnpm nx run vibe-code-studio:build
-pnpm nx run vibe-code-studio:build --configuration=production
-pnpm nx run vibe-code-studio:package
+pnpm nx run vibe-code-studio:dev        # Tauri dev (requires Rust toolchain)
+pnpm nx run vibe-code-studio:dev:web    # Web-only preview on port 3001
+pnpm nx run vibe-code-studio:build      # Vite frontend build
+pnpm nx run vibe-code-studio:package    # Full Tauri build + installer
 pnpm nx run vibe-code-studio:lint
 pnpm nx run vibe-code-studio:test
-pnpm nx run vibe-code-studio:test:electron
 pnpm nx run vibe-code-studio:typecheck
-pnpm nx run vibe-code-studio:rebuild-deps
 ```
 
 Or run scripts directly inside `apps/vibe-code-studio/`:
 
 ```bash
-pnpm dev
+pnpm dev:web
 pnpm build
 pnpm test
-pnpm test:electron
 pnpm typecheck
 ```
 
-## Windows/native module notes
+## Windows/Tauri notes
 
-- `postinstall` runs `electron-builder install-app-deps`.
-- If you hit native module issues (e.g. `better-sqlite3`, `node-pty`), run `pnpm nx run vibe-code-studio:rebuild-deps`.
-- There are helper scripts like `verify-app-working.ps1`.
+- Requires Visual Studio Build Tools 2022 + Rust MSVC toolchain for native build.
+- Frontend: Vite on port 5174; Tauri config: `src-tauri/tauri.conf.json`.
+- Use `verify-app-working.ps1` to confirm the packaged app is functional.
 
-## Legacy docs
-
-Legacy docs (CLAUDE.legacy.2026-01-22.md, GEMINI.legacy.2026-01-22.md, WINDOWS_QUICKSTART.md) use npm and older standalone scripts.
-Translate npm -> pnpm and prefer Nx targets when following those references.
 
 ## Dev system hooks
 

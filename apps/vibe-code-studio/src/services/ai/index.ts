@@ -5,7 +5,6 @@ export { DeepSeekService } from './DeepSeekService';
 export { DemoResponseProvider } from './DemoResponseProvider';
 
 export { PromptBuilder } from './PromptBuilder';
-export { TabCompletionProvider } from './TabCompletionProvider';
 export { UnifiedAIService } from './UnifiedAIService';
 
 export type {

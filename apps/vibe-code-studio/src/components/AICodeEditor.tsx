@@ -1,11 +1,11 @@
 import type { OnMount } from '@monaco-editor/react';
 import MonacoEditor from '@monaco-editor/react';
 import { Bot, Code, Loader2, X, Zap } from 'lucide-react';
-import type { CancellationToken, editor as MonacoEditorType, Position, languages } from 'monaco-editor';
+import type { editor as MonacoEditorType } from 'monaco-editor';
 import { useCallback, useRef, useState } from 'react';
 import styled from 'styled-components';
 
-// import { useStreamingCompletion } from '../hooks/useStreamingAI';
+import { useStreamingCompletion } from '../hooks/useStreamingAI';
 import { vibeTheme } from '../styles/theme';
 
 /**
@@ -181,62 +181,15 @@ export const AICodeEditor = ({
   const [showCompletion, setShowCompletion] = useState(false);
   const [, setCursorPosition] = useState({ line: 1, column: 1 });
 
-  // const { completion, isCompleting, getCompletion, cancelCompletion } = useStreamingCompletion();
-  // Fallback implementation
-  const completion = '';
-  const isCompleting = false;
-  const getCompletion = async (_textBeforeCursor: string, _position: { line: number; column: number }, _language: string) => Promise.resolve('');
-  const cancelCompletion = () => {};
+  const { completion, isCompleting, getCompletion, cancelCompletion } = useStreamingCompletion();
 
   // Handle editor mount
   const handleEditorDidMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
 
-    // Register AI completion provider
-    monaco.languages.registerInlineCompletionsProvider(language, {
-      provideInlineCompletions: async (model: MonacoEditorType.ITextModel, position: Position, context: languages.InlineCompletionContext, _token: CancellationToken) => {
-        if (context.triggerKind !== monaco.languages.InlineCompletionTriggerKind.Explicit) {
-          return { items: [] };
-        }
-
-        // Get context around cursor
-        const textBeforeCursor = model.getValueInRange({
-          startLineNumber: Math.max(1, position.lineNumber - 10),
-          startColumn: 1,
-          endLineNumber: position.lineNumber,
-          endColumn: position.column,
-        });
-
-        // Show completion overlay
-        setShowCompletion(true);
-        setCursorPosition({ line: position.lineNumber, column: position.column });
-
-        // Get AI completion
-        await getCompletion(
-          textBeforeCursor,
-          { line: position.lineNumber, column: position.column },
-          language
-        );
-
-        return {
-          items: [
-            {
-              insertText: completion,
-              range: {
-                startLineNumber: position.lineNumber,
-                startColumn: position.column,
-                endLineNumber: position.lineNumber,
-                endColumn: position.column,
-              },
-            },
-          ],
-        };
-      },
-    } as unknown as Parameters<typeof monaco.languages.registerInlineCompletionsProvider>[1]);
-
-    // Add keybindings
+    // Ctrl+Space triggers the overlay-based AI completion panel
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, () => {
-      editor.trigger('ai-complete', 'editor.action.inlineSuggest.trigger', {});
+      triggerCompletion();
     });
 
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
