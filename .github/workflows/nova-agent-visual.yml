@@ -1,0 +1,105 @@
+# Nova Agent CSS + Visual Regression
+# Closes POST-MORTEM-2026-01-31.md action items P2 (CI pipeline).
+# Path-filtered: runs only when nova-agent styles, markup, or test config change.
+
+name: Nova Agent Visual
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/nova-agent/src/**/*.css'
+      - 'apps/nova-agent/src/**/*.tsx'
+      - 'apps/nova-agent/tailwind.config.js'
+      - 'apps/nova-agent/postcss.config.js'
+      - 'apps/nova-agent/e2e/**'
+      - 'apps/nova-agent/playwright.config.ts'
+      - 'apps/nova-agent/.stylelintrc.json'
+      - 'apps/nova-agent/package.json'
+      - '.github/workflows/nova-agent-visual.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'apps/nova-agent/src/**/*.css'
+      - 'apps/nova-agent/src/**/*.tsx'
+      - 'apps/nova-agent/tailwind.config.js'
+      - 'apps/nova-agent/postcss.config.js'
+      - 'apps/nova-agent/e2e/**'
+      - 'apps/nova-agent/playwright.config.ts'
+      - 'apps/nova-agent/.stylelintrc.json'
+      - 'apps/nova-agent/package.json'
+      - '.github/workflows/nova-agent-visual.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nova-agent-visual-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '10.33.0'
+
+jobs:
+  stylelint:
+    name: Stylelint (nova-agent)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter nova-agent
+
+      - name: Stylelint CSS
+        run: pnpm --filter nova-agent run lint:css
+
+  visual-regression:
+    name: Visual Regression (nova-agent)
+    runs-on: windows-latest
+    needs: stylelint
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter nova-agent
+
+      - name: Install Playwright Chromium
+        run: pnpm --filter nova-agent exec playwright install chromium --with-deps
+
+      - name: Run visual regression tests
+        run: pnpm --filter nova-agent run test:visual
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-agent-playwright-report
+          path: apps/nova-agent/playwright-report/
+          retention-days: 7
+
+      - name: Upload snapshot diffs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-agent-snapshot-diffs
+          path: apps/nova-agent/test-results/
+          retention-days: 7

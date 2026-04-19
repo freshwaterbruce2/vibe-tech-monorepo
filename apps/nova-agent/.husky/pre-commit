@@ -1,0 +1,21 @@
+# Nova Agent pre-commit hook (Husky 9.x)
+#
+# Activated by running `pnpm --filter nova-agent install` which triggers the
+# `prepare: "husky"` script. To point git at this hook directory for the
+# monorepo, from C:\dev run:
+#   git config core.hooksPath apps/nova-agent/.husky
+#
+# Runs (in order):
+#   1. lint-staged  — ESLint+Prettier on TS/TSX, Stylelint+Prettier on CSS,
+#                     vitest related tests for changed TS files.
+#   2. lint:css     — Belt-and-braces stylelint pass on all of src/**/*.css,
+#                     so the Jan 31 regression class (invalid responsive
+#                     selectors) cannot land even in unstaged helper files.
+#
+# Bypass for emergencies only (per .claude/rules/git-workflow.md):
+#   git commit --no-verify -m "emergency fix"
+
+cd apps/nova-agent || exit 0
+
+pnpm exec lint-staged || exit 1
+pnpm run lint:css || exit 1
