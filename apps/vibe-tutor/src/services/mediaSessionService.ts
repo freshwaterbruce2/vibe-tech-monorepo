@@ -187,7 +187,7 @@ class MediaSessionService {
       if (now - this.lastPositionUpdate > 5000) {
         this.lastPositionUpdate = now;
       }
-    } catch (error) {
+    } catch {
       // Silently fail - position updates are not critical
     }
   }

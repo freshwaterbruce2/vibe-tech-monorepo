@@ -33,10 +33,15 @@ const GameCompletionModal = ({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 animate-[fadeIn_0.3s_ease]">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 animate-[fadeIn_0.3s_ease]"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="game-completion-title"
+    >
       <div className="mx-4 w-full max-w-md rounded-2xl border border-purple-500/30 bg-gradient-to-br from-purple-900 to-blue-900 p-8 text-center shadow-2xl animate-[scaleIn_0.3s_ease]">
         <div className="mb-3 text-5xl" aria-hidden="true">{emoji}</div>
-        <h3 className="mb-2 text-2xl font-bold text-white">{title}</h3>
+        <h3 id="game-completion-title" className="mb-2 text-2xl font-bold text-white">{title}</h3>
         <p className="mb-5 text-sm text-white/70">{subtitle}</p>
 
         <div className="mb-4 flex justify-center gap-1">

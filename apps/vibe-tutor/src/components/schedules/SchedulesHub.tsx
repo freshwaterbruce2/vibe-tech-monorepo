@@ -307,14 +307,14 @@ const SchedulesHub = memo(function SchedulesHub({ onEarnTokens, onClose }: Sched
                     name="schedule-time"
                     value={newScheduleTime}
                     onChange={(e) => setNewScheduleTime(e.target.value)}
-                    className="bg-transparent text-white px-3 py-2 outline-none w-full md:w-auto"
+                    className="bg-transparent text-white px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--primary-accent)] focus:ring-inset w-full md:w-auto"
                   />
                   <select
                     id="schedule-meridian"
                     name="schedule-meridian"
                     value={newScheduleMeridian}
                     onChange={(e) => setNewScheduleMeridian(e.target.value as 'AM' | 'PM')}
-                    className="bg-[var(--glass-border)] text-white px-3 py-2 outline-none border-l border-[var(--glass-border)]"
+                    className="bg-[var(--glass-border)] text-white px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--primary-accent)] focus:ring-inset border-l border-[var(--glass-border)]"
                   >
                     <option value="AM">AM</option>
                     <option value="PM">PM</option>

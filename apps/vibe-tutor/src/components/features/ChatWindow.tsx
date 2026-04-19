@@ -401,7 +401,7 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
               }
             }}
             placeholder={`Message ${type === 'tutor' ? 'your AI Tutor' : 'your AI Buddy'}... (Enter to send, Shift+Enter for new line)`}
-            className="flex-1 bg-transparent px-4 py-3 text-text-primary outline-none placeholder-text-muted"
+            className="flex-1 bg-transparent px-4 py-3 text-text-primary outline-none focus:ring-2 focus:ring-[var(--primary-accent)] focus:ring-inset rounded placeholder-text-muted"
             disabled={isLoading}
             aria-label="Chat input"
           />
