@@ -137,7 +137,20 @@ jobs:
         run: git branch -f main origin/main
 
       - name: Check changesets
-        run: pnpm changeset status --verbose || echo "No changesets found"
+        # pnpm changeset status exits 1 when there are no changesets in the PR
+        # (a normal and allowed condition for changes that don't require a
+        # release note). pwsh's `$cmd || echo "..."` does NOT reset
+        # $LASTEXITCODE, so the previous form always failed the step.
+        # Explicitly swallow the exit-1 "no changesets" case here; any other
+        # exit code (config error, divergence failure, etc.) still propagates.
+        shell: pwsh
+        run: |
+          pnpm changeset status --verbose
+          if ($LASTEXITCODE -eq 1) {
+            Write-Host "No changesets found (allowed for non-release-worthy changes)."
+            exit 0
+          }
+          exit $LASTEXITCODE
 
   # ============================================
   # RELEASE AUTOMATION (main branch only)
