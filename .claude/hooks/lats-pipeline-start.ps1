@@ -15,6 +15,15 @@ try {
     $hookData = $inputJson | ConvertFrom-Json -ErrorAction Stop
     if ($hookData.tool_name -ne 'Agent') { exit 0 }
 
+    # Stash start time for every Agent call so record-agent-execution.ps1
+    # can compute execution_time_ms. Keyed by tool_use_id.
+    $timingDir = 'D:\temp\agent-timings'
+    if (-not (Test-Path $timingDir)) { New-Item -ItemType Directory -Path $timingDir -Force | Out-Null }
+    $tuid = [string]$hookData.tool_use_id
+    if ($tuid) {
+        [DateTime]::UtcNow.ToString('o') | Set-Content -Path (Join-Path $timingDir "$tuid.txt") -Encoding ASCII -ErrorAction SilentlyContinue
+    }
+
     $description = [string]($hookData.tool_input.description ?? '')
     $prompt      = [string]($hookData.tool_input.prompt ?? '')
     $subtype     = [string]($hookData.tool_input.subagent_type ?? '')

@@ -2,7 +2,7 @@
 
 ## Git Remote
 
-- **Remote:** `https://github.com/freshwaterbruce2/Monorepo.git` (private)
+- **Remote:** `https://github.com/freshwaterbruce2/vibe-tech-monorepo.git` (private)
 - **CI/CD:** GitHub Actions (`.github/workflows/`)
 - **Privacy:** 2FA enabled, fine-grained PATs, secret scanning on
 
