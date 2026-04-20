@@ -179,6 +179,7 @@
         "command": "pnpm run typecheck",
         "cwd": "apps/vibe-code-studio"
       },
+      "dependsOn": ["^build"],
       "cache": true
     },
     "test": {
