@@ -130,6 +130,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Ensure local main branch exists
+        # PR checkout leaves HEAD detached on the merge commit; `origin/main`
+        # is fetched but no local `main` branch is created. `@changesets/git`
+        # runs `git merge-base main HEAD`, which needs a local ref.
+        run: git branch -f main origin/main
+
       - name: Check changesets
         run: pnpm changeset status --verbose || echo "No changesets found"
 
