@@ -44,7 +44,12 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_store::Builder::default().build())
-        .plugin(tauri_plugin_updater::Builder::new().build())
+        // NOTE: tauri-plugin-updater is intentionally not registered.
+        // It will be re-enabled once release-artifact signing is configured
+        // (generate keys via `tauri signer generate`, populate
+        // plugins.updater.pubkey in tauri.conf.json, and wire signing into CI).
+        // Until then, keeping the plugin off ensures no unsigned update can
+        // be fetched or installed by `AutoUpdateService` at runtime.
         .invoke_handler(tauri::generate_handler![
             greet,
             pty::pty_spawn,
