@@ -125,12 +125,71 @@ pub fn db_save_pattern(
     Ok(serde_json::json!({ "success": true }))
 }
 
+/// Classification of a validated SQL statement.
+#[derive(Debug, PartialEq, Eq)]
+enum SqlKind {
+    Read,
+    Write,
+}
+
+/// Defense-in-depth validator for renderer-supplied SQL.
+///
+/// Rejects DDL (CREATE/DROP/ALTER), schema-manipulation statements
+/// (ATTACH/DETACH, PRAGMA, VACUUM, REINDEX), transaction controls, and
+/// multi-statement payloads. Allows only parameterised DML/DQL:
+/// SELECT, WITH, INSERT, UPDATE, DELETE.
+///
+/// Parameter bindings are still required — validation is on the statement
+/// shape, not on the data values. Consumers should continue to pass
+/// user-supplied values via `query_params` (rusqlite placeholders).
+fn validate_sql(sql: &str) -> Result<SqlKind, String> {
+    const MAX_SQL_BYTES: usize = 16 * 1024;
+
+    let trimmed = sql.trim();
+    if trimmed.is_empty() {
+        return Err("SQL statement is empty".into());
+    }
+    if trimmed.len() > MAX_SQL_BYTES {
+        return Err(format!(
+            "SQL statement exceeds {MAX_SQL_BYTES}-byte limit"
+        ));
+    }
+
+    // Reject statement chaining. A single trailing `;` is allowed.
+    // Note: a `;` inside a string literal will also be rejected here —
+    // that is intentional for defense-in-depth. Use parameter placeholders
+    // (`?`) for any user-supplied values that might contain `;`.
+    let no_trail = trimmed.strip_suffix(';').unwrap_or(trimmed);
+    if no_trail.contains(';') {
+        return Err("multiple statements are not allowed".into());
+    }
+
+    let verb = no_trail
+        .split_whitespace()
+        .next()
+        .unwrap_or("")
+        .to_ascii_uppercase();
+
+    match verb.as_str() {
+        "SELECT" | "WITH" => Ok(SqlKind::Read),
+        "INSERT" | "UPDATE" | "DELETE" => Ok(SqlKind::Write),
+        "ATTACH" | "DETACH" | "PRAGMA" | "VACUUM" | "CREATE" | "DROP"
+        | "ALTER" | "REINDEX" | "BEGIN" | "COMMIT" | "ROLLBACK"
+        | "SAVEPOINT" | "RELEASE" | "ANALYZE" => {
+            Err(format!("SQL verb not permitted via db_execute_query: {verb}"))
+        }
+        _ => Err(format!("unrecognised SQL verb: {verb}")),
+    }
+}
+
 #[tauri::command]
 pub fn db_execute_query(
     state: State<'_, DbState>,
     sql: String,
     query_params: Option<Vec<String>>,
 ) -> Result<serde_json::Value, String> {
+    let kind = validate_sql(&sql)?;
+
     ensure_connection(&state)?;
     let guard = state.conn.lock().map_err(|e| e.to_string())?;
     let conn = guard.as_ref().ok_or("DB not initialized")?;
@@ -139,7 +198,7 @@ pub fn db_execute_query(
     let param_refs: Vec<&dyn rusqlite::types::ToSql> =
         params_vec.iter().map(|s| s as &dyn rusqlite::types::ToSql).collect();
 
-    if sql.trim().to_lowercase().starts_with("select") {
+    if kind == SqlKind::Read {
         let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
         let col_count = stmt.column_count();
         let col_names: Vec<String> = (0..col_count)
@@ -195,4 +254,85 @@ fn base64_encode(data: &[u8]) -> String {
         write!(s, "{:02x}", byte).ok();
     }
     s
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn allows_select() {
+        assert_eq!(validate_sql("SELECT * FROM t").unwrap(), SqlKind::Read);
+        assert_eq!(validate_sql("select 1").unwrap(), SqlKind::Read);
+        assert_eq!(
+            validate_sql("  WITH x AS (SELECT 1) SELECT * FROM x").unwrap(),
+            SqlKind::Read,
+        );
+    }
+
+    #[test]
+    fn allows_dml() {
+        assert_eq!(
+            validate_sql("INSERT INTO t(a) VALUES (?)").unwrap(),
+            SqlKind::Write,
+        );
+        assert_eq!(
+            validate_sql("UPDATE t SET a=? WHERE id=?").unwrap(),
+            SqlKind::Write,
+        );
+        assert_eq!(
+            validate_sql("DELETE FROM t WHERE id=?").unwrap(),
+            SqlKind::Write,
+        );
+    }
+
+    #[test]
+    fn rejects_ddl_and_schema_verbs() {
+        for verb in [
+            "DROP TABLE t",
+            "CREATE TABLE t (id INT)",
+            "ALTER TABLE t ADD COLUMN c INT",
+            "ATTACH DATABASE 'x.db' AS x",
+            "DETACH DATABASE x",
+            "PRAGMA foreign_keys=ON",
+            "VACUUM",
+            "REINDEX",
+            "BEGIN TRANSACTION",
+            "COMMIT",
+            "ROLLBACK",
+        ] {
+            assert!(
+                validate_sql(verb).is_err(),
+                "should reject: {verb}"
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_multiple_statements() {
+        assert!(validate_sql("SELECT 1; DROP TABLE t").is_err());
+        assert!(validate_sql("INSERT INTO t VALUES (1); DELETE FROM t").is_err());
+    }
+
+    #[test]
+    fn allows_single_trailing_semicolon() {
+        assert_eq!(validate_sql("SELECT 1;").unwrap(), SqlKind::Read);
+    }
+
+    #[test]
+    fn rejects_empty_and_whitespace() {
+        assert!(validate_sql("").is_err());
+        assert!(validate_sql("   \t\n").is_err());
+    }
+
+    #[test]
+    fn rejects_oversize_statement() {
+        let big = "SELECT ".to_string() + &"a,".repeat(10_000);
+        assert!(validate_sql(&big).is_err());
+    }
+
+    #[test]
+    fn rejects_load_extension_pragma() {
+        assert!(validate_sql("PRAGMA load_extension('evil.dll')").is_err());
+    }
 }

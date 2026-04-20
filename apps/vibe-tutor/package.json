@@ -12,6 +12,7 @@
     "electron:start": "pnpm run electron:ensure-cjs && wait-on tcp:5173 dist-electron/main.js dist-electron/preload.js && cross-env NODE_ENV=development electron dist-electron/main.js",
     "dev:electron": "tsc -p tsconfig.electron.json -w",
     "dev": "concurrently \"vite\" \"wait-on tcp:5173 && pnpm run dev:electron\"",
+    "dev:api": "cmd /c \"set PORT=3002&& node render-backend/server.mjs\"",
     "dev:app": "concurrently -k -n dev,electron \"pnpm:dev\" \"pnpm:electron:start\"",
     "build:electron": "tsc -p tsconfig.electron.json",
     "dist": "pnpm run build && pnpm run build:electron && electron-builder",

@@ -115,6 +115,8 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
 
       - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
         with:
@@ -128,8 +130,27 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Ensure local main branch exists
+        # PR checkout leaves HEAD detached on the merge commit; `origin/main`
+        # is fetched but no local `main` branch is created. `@changesets/git`
+        # runs `git merge-base main HEAD`, which needs a local ref.
+        run: git branch -f main origin/main
+
       - name: Check changesets
-        run: pnpm changeset status --verbose || echo "No changesets found"
+        # pnpm changeset status exits 1 when there are no changesets in the PR
+        # (a normal and allowed condition for changes that don't require a
+        # release note). pwsh's `$cmd || echo "..."` does NOT reset
+        # $LASTEXITCODE, so the previous form always failed the step.
+        # Explicitly swallow the exit-1 "no changesets" case here; any other
+        # exit code (config error, divergence failure, etc.) still propagates.
+        shell: pwsh
+        run: |
+          pnpm changeset status --verbose
+          if ($LASTEXITCODE -eq 1) {
+            Write-Host "No changesets found (allowed for non-release-worthy changes)."
+            exit 0
+          }
+          exit $LASTEXITCODE
 
   # ============================================
   # RELEASE AUTOMATION (main branch only)

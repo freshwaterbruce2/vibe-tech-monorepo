@@ -24,7 +24,13 @@ export class AutoUpdateService {
   private constructor() {
     this.isTauri =
       typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
-    this.enabled = this.isTauri; // auto-enable in Tauri builds
+    // Auto-updates are disabled until release-artifact signing is configured.
+    // Re-enable by generating a key pair (`tauri signer generate`), setting
+    // `plugins.updater.pubkey` in `src-tauri/tauri.conf.json`, registering
+    // `tauri_plugin_updater` in `src-tauri/src/lib.rs`, restoring the
+    // `updater:*` permissions in `src-tauri/capabilities/main.json`, and
+    // flipping this flag back to `this.isTauri`.
+    this.enabled = false;
     this.currentVersion = import.meta.env['VITE_APP_VERSION'] ?? '1.1.0';
 
     if (this.enabled) {
