@@ -43,10 +43,24 @@ try {
         $errorMessage = $hookData.error
     }
 
-    # Duration (if provided by the hook)
+    # Duration: prefer hook-provided field, otherwise compute from PreToolUse stash.
     $executionTimeMs = $null
     if ($hookData.duration_ms) { $executionTimeMs = [int]$hookData.duration_ms }
     elseif ($hookData.duration) { $executionTimeMs = [int]($hookData.duration * 1000) }
+    else {
+        $tuid = [string]$hookData.tool_use_id
+        if ($tuid) {
+            $timingFile = Join-Path 'D:\temp\agent-timings' "$tuid.txt"
+            if (Test-Path $timingFile) {
+                try {
+                    $startIso = (Get-Content $timingFile -Raw -ErrorAction Stop).Trim()
+                    $startUtc = [DateTime]::Parse($startIso, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind)
+                    $executionTimeMs = [int]([DateTime]::UtcNow - $startUtc).TotalMilliseconds
+                } catch {}
+                Remove-Item -Path $timingFile -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
 
     # Infer project from cwd
     $project = $null
