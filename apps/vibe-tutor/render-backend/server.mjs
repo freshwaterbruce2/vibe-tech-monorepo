@@ -11,8 +11,28 @@ dotenv.config();
 
 const app = express();
 
-// Security headers (relaxed for API-only service)
-app.use(helmet({ contentSecurityPolicy: false }));
+// Content Security Policy — authoritative source for the vibe-tutor frontend.
+// The Cloud Run service that serves the PWA must apply this same policy as a
+// `Content-Security-Policy` response header. Kept here so a single commit
+// updates both the API and the frontend host.
+export const CSP_DIRECTIVES = {
+  defaultSrc: ["'self'"],
+  baseUri: ["'self'"],
+  formAction: ["'self'"],
+  objectSrc: ["'none'"],
+  scriptSrc: ["'self'", "'unsafe-inline'", "'wasm-unsafe-eval'", 'http://localhost:*'],
+  styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://fonts.cdnfonts.com'],
+  fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://fonts.cdnfonts.com', 'data:'],
+  imgSrc: ["'self'", 'data:', 'blob:', 'https:', 'http:'],
+  mediaSrc: ["'self'", 'blob:', 'data:', 'https:', 'http:'],
+  connectSrc: ["'self'", 'https:', 'http:', 'ws:', 'wss:', 'http://localhost:*', 'ws://localhost:*'],
+};
+
+app.use(
+  helmet({
+    contentSecurityPolicy: { useDefaults: false, directives: CSP_DIRECTIVES },
+  }),
+);
 const PORT = process.env.PORT || 3001;
 
 // ============== CONFIGURATION ==============

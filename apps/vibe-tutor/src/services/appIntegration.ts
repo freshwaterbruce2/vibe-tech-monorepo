@@ -3,6 +3,8 @@
  * Connects database and learning analytics to the main application
  */
 
+import { Capacitor } from '@capacitor/core';
+
 import { logger } from '../utils/logger';
 import type { Achievement, HomeworkItem, MusicPlaylist, Reward } from '../types';
 import { databaseService } from './databaseService';
@@ -39,22 +41,31 @@ export class AppIntegrationService {
 
     this.initializePromise = (async () => {
       try {
-        // Initialize database on D: drive
-        await databaseService.initialize();
-        this.dbAvailable = true;
+        // SQLite is only available on native platforms; on web the
+        // jeep-sqlite WASM loader can hang the init chain when Vite
+        // returns HTML for the .wasm request. Fall back to localStorage.
+        const platform = Capacitor.getPlatform();
+        const useSQLite = platform === 'android' || platform === 'windows';
 
-        // Perform data migration only once
-        const migrated = await migrationService.isMigrationComplete();
-        if (!migrated) {
-          await migrationService.performMigration();
+        if (useSQLite) {
+          await databaseService.initialize();
+          this.dbAvailable = true;
+
+          const migrated = await migrationService.isMigrationComplete();
+          if (!migrated) {
+            await migrationService.performMigration();
+          }
+        } else {
+          this.dbAvailable = false;
         }
 
-        // Initialize learning analytics
         await learningAnalytics.initialize();
 
         this.initialized = true;
-      } catch {
+      } catch (error) {
+        logger.error('[AppIntegration] Initialization failed; using localStorage fallback:', error);
         this.dbAvailable = false;
+        this.initialized = true;
       }
     })().finally(() => {
       this.initializePromise = null;
