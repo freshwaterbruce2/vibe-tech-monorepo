@@ -284,16 +284,7 @@ apps/*/build_v*/
 apps/vibe-justice/dist_v6/
 
 # Electron build output
-apps/*/release/
-
-# Coverage reports
-apps/*/coverage.json
-
-# SQLite DBs accidentally created in source tree (policy: D:\databases\)
-apps/*/backend/database/
-
-# Quality check output logs
-quality-check-results.txt
+apps/vibe-tutor/release/
 
 # Archive (moved to D:\archive)
 archive/
