@@ -1,0 +1,7 @@
+# Compiled output should never live in src/ — outDir is dist/
+# Prevents stale .js shadowing .ts when package is ESM (vitest resolver
+# picks .js over .ts on extensionless imports).
+src/**/*.js
+src/**/*.js.map
+src/**/*.d.ts
+src/**/*.d.ts.map
