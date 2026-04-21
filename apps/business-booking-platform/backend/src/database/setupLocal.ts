@@ -1,3 +1,4 @@
+import type Database from 'better-sqlite3';
 import { logger } from '../utils/logger';
 import {
     closeSqliteDatabase,
@@ -6,21 +7,14 @@ import {
     initializeSqliteDatabase,
 } from './sqlite';
 
-async function setupSqliteDatabase() {
-	try {
-		logger.info('Starting SQLite database setup...');
-
-		// Initialize the database connection
-		await initializeSqliteDatabase();
-
-		const sqlite = getSqliteConnection();
-		const _db = getSqliteDb();
-
-		// Create all tables by executing schema
-		logger.info('Creating database tables...');
-
-		// Create users table and related tables
-		sqlite.exec(`
+/**
+ * Create all tables and indexes on the given SQLite connection.
+ * Idempotent (uses CREATE TABLE IF NOT EXISTS / CREATE INDEX IF NOT EXISTS).
+ * Used by both the CLI setup script and the test harness.
+ */
+export function createSqliteTables(sqlite: Database.Database): void {
+	// Create users table and related tables
+	sqlite.exec(`
       CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
         email TEXT NOT NULL UNIQUE,
@@ -462,10 +456,24 @@ async function setupSqliteDatabase() {
 			'CREATE INDEX IF NOT EXISTS review_reports_status_idx ON review_reports(status)',
 		];
 
-		for (const indexSql of indexes) {
-			sqlite.exec(indexSql);
-		}
+	for (const indexSql of indexes) {
+		sqlite.exec(indexSql);
+	}
+}
 
+async function setupSqliteDatabase() {
+	try {
+		logger.info('Starting SQLite database setup...');
+
+		// Initialize the database connection
+		await initializeSqliteDatabase();
+
+		const sqlite = getSqliteConnection();
+		const _db = getSqliteDb();
+
+		// Create all tables by executing schema
+		logger.info('Creating database tables...');
+		createSqliteTables(sqlite);
 		logger.info('Database setup completed successfully!');
 
 		// Test the database

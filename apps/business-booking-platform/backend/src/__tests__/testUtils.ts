@@ -1,7 +1,12 @@
 import { eq } from "drizzle-orm";
 import express from "express";
+import { initializeDatabase } from "../database";
+import { createSqliteTables } from "../database/setupLocal";
 import * as schema from "../database/schema/sqlite";
-import { getSqliteDb, initializeSqliteDatabase } from "../database/sqlite";
+import {
+	getSqliteConnection,
+	getSqliteDb,
+} from "../database/sqlite";
 import { apiRouter } from "../routes";
 
 // Constants for seeding
@@ -24,11 +29,64 @@ function mockAuth(req: Request, _res: Response, next: NextFunction) {
 	next();
 }
 
+let schemaReady = false;
+
 export async function createTestApp() {
 	process.env.LOCAL_SQLITE = "true";
 	process.env.NODE_ENV = "test";
-	await initializeSqliteDatabase();
+	// initializeDatabase() routes to SQLite when LOCAL_SQLITE=true and also sets the
+	// internal `db` in database/index.ts so routes calling getDb() work in tests.
+	await initializeDatabase();
 	const db = getSqliteDb();
+	const sqlite = getSqliteConnection();
+
+	// Create all tables and indexes in the (in-memory) test DB exactly once per process.
+	// createSqliteTables uses IF NOT EXISTS so repeated calls are safe, but skip the work.
+	if (!schemaReady) {
+		// Disable FK checks during DDL + parent-row seeding so we don't need to
+		// fabricate every NOT NULL column on hotels/rooms. Production re-enables them.
+		sqlite.pragma("foreign_keys = OFF");
+		createSqliteTables(sqlite);
+
+		// Seed minimal parent rows referenced by the booking below.
+		sqlite
+			.prepare(
+				"INSERT OR IGNORE INTO users " +
+				"(id, email, password_hash, first_name, last_name) " +
+				"VALUES (?, ?, ?, ?, ?)",
+			)
+			.run(TEST_USER_ID, "test@example.com", "not-a-real-hash", "Test", "User");
+		sqlite
+			.prepare(
+				"INSERT OR IGNORE INTO hotels " +
+				"(id, name, slug, description, address, city, country, latitude, longitude, star_rating, price_min, price_max) " +
+				"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			)
+			.run(
+				"hotel-1",
+				"Test Hotel",
+				"test-hotel",
+				"Seed hotel for payments tests",
+				"123 Test St",
+				"Testville",
+				"US",
+				0,
+				0,
+				3,
+				100,
+				200,
+			);
+		sqlite
+			.prepare(
+				"INSERT OR IGNORE INTO rooms " +
+				"(id, hotel_id, name, type, max_occupancy, base_price) " +
+				"VALUES (?, ?, ?, ?, ?, ?)",
+			)
+			.run("room-1", "hotel-1", "Test Room", "standard", 2, 120);
+
+		sqlite.pragma("foreign_keys = ON");
+		schemaReady = true;
+	}
 
 	// Seed booking if missing
 	const existing = await db

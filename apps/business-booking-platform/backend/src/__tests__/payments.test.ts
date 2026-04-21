@@ -3,9 +3,8 @@ import request from "supertest"; // This line is already correct and imports 'su
 import { beforeAll, describe, expect, it } from "vitest";
 import * as schema from "../database/schema/sqlite";
 import { getSqliteDb } from "../database/sqlite";
-import { createTestApp } from "./testUtils";
+import { createTestApp, TEST_BOOKING_ID } from "./testUtils";
 
-const TEST_BOOKING_ID = 'test-booking-uuid';
 let app: any;
 
 beforeAll(async () => {

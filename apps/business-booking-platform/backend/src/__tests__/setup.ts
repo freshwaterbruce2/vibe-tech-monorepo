@@ -3,6 +3,9 @@ import { vi } from "vitest";
 // Mock environment variables for tests
 process.env.NODE_ENV = "test";
 process.env.LOCAL_SQLITE = "true";
+// Force in-memory SQLite for tests (never touch D:\databases\ or disk).
+// Must be set BEFORE src/config/sqlite.ts is imported (it reads DATABASE_URL at module load).
+process.env.DATABASE_URL = ":memory:";
 process.env.SMTP_HOST = "localhost";
 process.env.SMTP_PORT = "587";
 process.env.SMTP_USER = "test@example.com";
@@ -58,6 +61,43 @@ vi.mock("puppeteer", () => ({
 		}),
 	},
 }));
+
+// When running under LOCAL_SQLITE (tests), the production code imports the Postgres
+// schema from ../database/schema (pgTable/jsonb/numeric) but the live DB is SQLite.
+// Re-export the SQLite schema instead so Drizzle emits SQLite-compatible SQL.
+// Paths are relative to files under src/services (and src/routes which has same depth).
+vi.mock("../database/schema", async () => {
+	return await import("../database/schema/sqlite");
+});
+vi.mock("../../database/schema", async () => {
+	return await import("../../database/schema/sqlite");
+});
+
+// Mock JWT auth middleware so protected routes (mounted via apiRouter) pass through
+// using the test user attached by testUtils.mockAuth upstream. Each exported helper
+// is replaced with a pass-through that preserves (or sets) a default req.user.
+vi.mock("../middleware/authenticate", () => {
+	const TEST_USER_ID = "11111111-1111-4111-8111-111111111111";
+	const defaultUser = {
+		id: TEST_USER_ID,
+		email: "test@example.com",
+		firstName: "Test",
+		lastName: "User",
+		role: "user",
+		isAdmin: false,
+	};
+	const passthrough = (req: any, _res: any, next: any) => {
+		if (!req.user) req.user = defaultUser;
+		next();
+	};
+	return {
+		authenticate: passthrough,
+		optionalAuthenticate: passthrough,
+		requireAdmin: passthrough,
+		requireRole: () => passthrough,
+		createUserRateLimit: () => passthrough,
+	};
+});
 
 // Mock Square SDK (v44+ API: SquareClient / SquareEnvironment)
 vi.mock("square", () => {
