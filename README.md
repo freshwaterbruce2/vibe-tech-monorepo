@@ -29,7 +29,7 @@ pnpm nx dev <project-name>   # e.g. pnpm nx dev nova-agent
 | nova-agent | AI desktop assistant with RAG pipeline | Tauri, React, Rust, LanceDB | Active |
 | vtde | VibeTech Desktop Environment | Tauri, React | Active |
 | vibe-code-studio | AI-powered code editor | Electron, Tauri, React | Maintained |
-| gravity-claw | Arcade claw machine game | Electron, React | Maintained |
+| gravity-claw | AI agent orchestrator with tool routing and chat bridges | Electron, React, Hono | Maintained |
 | clawdbot-desktop | Desktop automation bot | Electron | Experimental |
 
 ### Web
