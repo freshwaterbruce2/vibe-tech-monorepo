@@ -83,6 +83,13 @@
       },
       "cache": true
     },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test:coverage",
+        "cwd": "apps/invoice-automation-saas"
+      }
+    },
     "quality": {}
   },
   "tags": [

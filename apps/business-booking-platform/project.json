@@ -61,6 +61,13 @@
       },
       "cache": true
     },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest --coverage",
+        "cwd": "apps/business-booking-platform"
+      }
+    },
     "quality": {}
   },
   "tags": [

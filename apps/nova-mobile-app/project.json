@@ -26,6 +26,13 @@
         "cwd": "apps/nova-mobile-app"
       }
     },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec vitest run --coverage",
+        "cwd": "apps/nova-mobile-app"
+      }
+    },
     "lint": {
       "executor": "nx:run-commands",
       "options": {

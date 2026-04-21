@@ -58,6 +58,13 @@
         "cwd": "apps/desktop-commander-v3"
       }
     },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run --coverage",
+        "cwd": "apps/desktop-commander-v3"
+      }
+    },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
