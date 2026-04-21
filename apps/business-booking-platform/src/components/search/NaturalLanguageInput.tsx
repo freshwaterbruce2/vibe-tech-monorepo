@@ -42,9 +42,7 @@ interface SpeechRecognitionInstance {
 	start: () => void;
 }
 
-interface SpeechRecognitionConstructor {
-	new (): SpeechRecognitionInstance;
-}
+type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
 
 const iconSizeClasses = {
 	sm: 'h-4 w-4',

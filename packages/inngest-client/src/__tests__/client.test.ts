@@ -31,6 +31,6 @@ describe('RAGIndexSummary shape', () => {
     };
     expect(summary.filesProcessed).toBe(100);
     expect(summary.errors).toHaveLength(1);
-    expect(summary.errors[0].filePath).toBe('/some/file.ts');
+    expect(summary.errors[0]?.filePath).toBe('/some/file.ts');
   });
 });

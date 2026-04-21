@@ -18,10 +18,10 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 
 // Type reference for Square SDK global types
-type SquareCard = {
+interface SquareCard {
 	attach(selector: string): Promise<void>;
 	tokenize(): Promise<{ status: string; token?: string; errors?: { message: string }[] }>;
-};
+}
 
 interface SquarePaymentFormProps {
 	bookingId: string;

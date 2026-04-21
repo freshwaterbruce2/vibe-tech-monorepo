@@ -14,14 +14,14 @@ const ADMIN_PASSWORD = "vibe2024admin"; // In production, this would be handled 
 export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isAdmin, setIsAdmin] = useState<boolean>(() => {
     // Check if admin session exists in localStorage
-    const adminSession = localStorage.getItem('vibetech_admin_session');
+    const adminSession = window.electronAPI.store.get('vibetech_admin_session');
     return adminSession === 'authenticated';
   });
 
   const login = (password: string): boolean => {
     if (password === ADMIN_PASSWORD) {
       setIsAdmin(true);
-      localStorage.setItem('vibetech_admin_session', 'authenticated');
+      window.electronAPI.store.set('vibetech_admin_session', 'authenticated');
       return true;
     }
     return false;
@@ -29,7 +29,7 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const logout = () => {
     setIsAdmin(false);
-    localStorage.removeItem('vibetech_admin_session');
+    window.electronAPI.store.delete('vibetech_admin_session');
   };
 
   const checkAdminStatus = (): boolean => {

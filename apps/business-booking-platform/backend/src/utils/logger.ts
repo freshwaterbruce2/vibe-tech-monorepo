@@ -83,12 +83,10 @@ export const logger = winston.createLogger({
 });
 
 // Minimal constructor signature for winston-transport-sentry-node (no published types).
-interface SentryTransportConstructor {
-	new (options: {
+type SentryTransportConstructor = new (options: {
 		sentry: { dsn: string; environment: string };
 		level: string;
-	}): winston.transport;
-}
+	}) => winston.transport;
 
 // Add Sentry transport in production (using dynamic import for ESM)
 if (config.monitoring.sentryDsn && config.environment === 'production') {

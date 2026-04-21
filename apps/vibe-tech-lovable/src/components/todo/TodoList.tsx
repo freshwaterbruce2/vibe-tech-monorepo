@@ -9,7 +9,7 @@ import { Todo } from "./types";
 
 const loadTodosFromStorage = (): Todo[] => {
   try {
-    const storedTodos = localStorage.getItem('vibetech-todos');
+    const storedTodos = window.electronAPI.store.get('vibetech-todos');
     if (storedTodos) {
       return JSON.parse(storedTodos);
     }
@@ -26,7 +26,7 @@ const TodoList = () => {
 
   // Save todos to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem('vibetech-todos', JSON.stringify(todos));
+    window.electronAPI.store.set('vibetech-todos', JSON.stringify(todos));
   }, [todos]);
 
   const handleCreateTodo = (newTodo: Omit<Todo, "id" | "created_at" | "updated_at">) => {

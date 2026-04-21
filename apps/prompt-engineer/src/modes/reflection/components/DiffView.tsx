@@ -5,11 +5,6 @@ interface Props {
   afterLabel: string;
 }
 
-// Simple word-level diff highlight — no external dep needed for a dev tool
-function tokenize(text: string): string[] {
-  return text.split(/(\s+)/);
-}
-
 export function DiffView({ before, after, beforeLabel, afterLabel }: Props) {
   if (!before || !after) return null;
 

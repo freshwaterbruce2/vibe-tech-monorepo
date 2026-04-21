@@ -36,12 +36,12 @@ type JsonSchema = Record<string, unknown>;
 // Tool Definitions
 // ============================================================================
 
-type ToolAnnotations = {
+interface ToolAnnotations {
 	readOnlyHint?: boolean;
 	destructiveHint?: boolean;
 	idempotentHint?: boolean;
 	openWorldHint?: boolean;
-};
+}
 
 const tools: Array<{
 	name: string;

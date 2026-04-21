@@ -33,7 +33,7 @@ export const useNotifications = () => {
 
 const loadNotificationsFromStorage = (): Notification[] => {
   try {
-    const storedNotifications = localStorage.getItem("notifications");
+    const storedNotifications = window.electronAPI.store.get("notifications");
     if (storedNotifications) {
       const parsedNotifications = JSON.parse(storedNotifications);
 
@@ -57,7 +57,7 @@ export const NotificationsProvider: React.FC<{ children: ReactNode }> = ({ child
 
   // Update localStorage whenever notifications change
   useEffect(() => {
-    localStorage.setItem("notifications", JSON.stringify(notifications));
+    window.electronAPI.store.set("notifications", JSON.stringify(notifications));
   }, [notifications]);
 
   // Add a new notification

@@ -336,12 +336,12 @@ export const verifyWebhookSignature = (
 /**
  * Session security middleware
  */
-type SessionCookie = {
+interface SessionCookie {
 	secure?: boolean;
 	httpOnly?: boolean;
 	sameSite?: 'strict' | 'lax' | 'none';
 	maxAge?: number;
-};
+}
 
 export const sessionSecurity = (
 	req: Request,
