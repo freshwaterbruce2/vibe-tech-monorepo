@@ -35,6 +35,13 @@
         "reportsDirectory": "../../coverage/packages/testing-utils"
       }
     },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run --coverage",
+        "cwd": "packages/testing-utils"
+      }
+    },
     "lint": {
       "executor": "nx:run-commands",
       "options": {

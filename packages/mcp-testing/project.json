@@ -29,6 +29,13 @@
         "cwd": "packages/mcp-testing"
       }
     },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm vitest run --coverage",
+        "cwd": "packages/mcp-testing"
+      }
+    },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
