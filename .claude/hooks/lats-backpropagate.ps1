@@ -28,9 +28,12 @@ try {
     if ($hookData.error) { $success = $false }
     $successStr = if ($success) { 'true' } else { 'false' }
 
-    # Extract agent details
+    # Extract agent details.
+    # Agent tool's subagent_type is optional; when omitted Claude Code routes
+    # to general-purpose. Mirror that default here so LATS and execution
+    # recording attribute the same invocation to the same agent ID.
     $agentId = $hookData.tool_input.subagent_type
-    if ([string]::IsNullOrWhiteSpace($agentId)) { $agentId = 'unknown-agent' }
+    if ([string]::IsNullOrWhiteSpace($agentId)) { $agentId = 'general-purpose' }
 
     $project = $null
     if ($hookData.cwd -match 'apps[\\/]([^\\/]+)') { $project = $matches[1] }

@@ -66,7 +66,7 @@ try {
 # Test 3: Verify database has recent data
 Write-Host "`n[3/5] Checking database for recent activity..." -ForegroundColor Yellow
 
-$DbPath = "D:\learning-system\agent_learning.db"
+$DbPath = "D:\databases\agent_learning.db"
 if (Test-Path $DbPath) {
     try {
         # Query for recent executions

@@ -56,9 +56,11 @@ try {
     $toolName = $hookData.tool_name
     if ($toolName -ne 'Agent') { exit 0 }
 
-    # Extract subagent details from tool_input
+    # Extract subagent details from tool_input.
+    # Agent tool's subagent_type is optional; when omitted Claude Code routes
+    # to general-purpose. Mirror that default so we don't invent a fake agent.
     $subagentType = $hookData.tool_input.subagent_type
-    if ([string]::IsNullOrWhiteSpace($subagentType)) { $subagentType = 'unknown-agent' }
+    if ([string]::IsNullOrWhiteSpace($subagentType)) { $subagentType = 'general-purpose' }
 
     $description = $hookData.tool_input.description
     if ([string]::IsNullOrWhiteSpace($description)) { $description = 'subagent-task' }

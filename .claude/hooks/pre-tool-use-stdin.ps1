@@ -78,6 +78,22 @@ try {
         Timestamp = $Timestamp
     }
 
+    # Stash start time for Agent tool calls so the PostToolUse hook can compute
+    # execution_time_ms when Claude Code does not provide duration in the payload.
+    # Each hook invocation is its own pwsh process, so $global:ToolStartTime is
+    # not visible across the pre/post boundary - we use a file keyed by tool_use_id.
+    if ($toolName -eq 'Agent') {
+        $tuid = $null
+        if ($hookData.tool_use_id) { $tuid = [string]$hookData.tool_use_id }
+        elseif ($hookData.toolUseId) { $tuid = [string]$hookData.toolUseId }
+        if ($tuid) {
+            $timingDir = 'D:\temp\agent-timings'
+            if (-not (Test-Path $timingDir)) { New-Item -ItemType Directory -Path $timingDir -Force | Out-Null }
+            $timingFile = Join-Path $timingDir "$tuid.txt"
+            [DateTime]::UtcNow.ToString('o', [System.Globalization.CultureInfo]::InvariantCulture) | Set-Content -Path $timingFile -Encoding UTF8 -ErrorAction SilentlyContinue
+        }
+    }
+
     # Log tool usage to file
     $LogEntry = "[$Timestamp] [PRE-TOOL] Tool: $toolName | Session: $sessionId | Project: $project | Task: $taskType"
     Add-Content -Path $LogFile -Value $LogEntry -ErrorAction SilentlyContinue
