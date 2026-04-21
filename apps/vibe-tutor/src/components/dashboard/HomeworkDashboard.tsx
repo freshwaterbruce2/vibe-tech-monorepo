@@ -1,5 +1,6 @@
 import { Bell, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { HomeworkItem, ParsedHomework } from '../../types';
 import { GradientIcon } from '../ui/icons/GradientIcon';
 import AddHomeworkModal from './AddHomeworkModal';
@@ -18,9 +19,16 @@ interface HomeworkDashboardProps {
   onAdd: (item: ParsedHomework) => void;
   onToggleComplete: (id: string) => void;
   tokens: number;
+  onboardingBanner?: ReactNode;
 }
 
-const HomeworkDashboard = ({ items, onAdd, onToggleComplete, tokens }: HomeworkDashboardProps) => {
+const HomeworkDashboard = ({
+  items,
+  onAdd,
+  onToggleComplete,
+  tokens,
+  onboardingBanner,
+}: HomeworkDashboardProps) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isNotifPanelOpen, setIsNotifPanelOpen] = useState(false);
   const [breakdownItem, setBreakdownItem] = useState<HomeworkItem | null>(null);
@@ -101,6 +109,8 @@ const HomeworkDashboard = ({ items, onAdd, onToggleComplete, tokens }: HomeworkD
       </header>
 
       <div className="flex-1 relative z-10 space-y-8">
+        {onboardingBanner}
+
         {/* Quick Stats Overview */}
         <QuickStats items={items} />
 

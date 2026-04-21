@@ -182,7 +182,7 @@ describe('ParentDashboard', () => {
 
     it('prevents double-clicking Sync Hub while syncing', async () => {
       const { syncService } = await import('@/services');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       let resolveExport!: (v: any) => void;
       vi.mocked(syncService.exportForHub).mockImplementation(
         async () => new Promise((resolve) => { resolveExport = resolve; }),

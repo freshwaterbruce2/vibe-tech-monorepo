@@ -38,7 +38,8 @@ export type View =
   | 'parent-rules'
   | 'learning'
   | 'shop'
-  | 'wellness';
+  | 'wellness'
+  | 'onboarding';
 
 export interface Achievement {
   id: string;
