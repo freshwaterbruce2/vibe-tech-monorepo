@@ -161,11 +161,7 @@ export class SecureApiKeyManager {
   public async storeApiKey(provider: string, key: string): Promise<boolean> {
     try {
       if (!this.validateApiKey(key, provider)) {
-        this.logger.warn(`[SecureApiKeyManager] Validation failed for ${provider}, trying permissive save`);
-        // Fall through to permissive save if basic checks pass
-        if (!key || key.trim().length < 10) {
-          throw new Error(`Invalid ${provider} API key format`);
-        }
+        throw new Error(`Invalid ${provider} API key format`);
       }
 
       let finalKey = key;

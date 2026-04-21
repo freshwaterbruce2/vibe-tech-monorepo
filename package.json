@@ -31,7 +31,8 @@
       "@conventional-changelog/git-client": "2.5.1",
       "diff": "8.0.3",
       "zod": "^4.3.6",
-      "protobufjs@>=7 <7.5.5": "^7.5.5"
+      "protobufjs@>=7 <7.5.5": "^7.5.5",
+      "minimatch": "^9.0.9"
     },
     "onlyBuiltDependencies": [
       "@firebase/util",
