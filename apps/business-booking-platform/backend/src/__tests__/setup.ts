@@ -9,6 +9,8 @@ process.env.SMTP_USER = "test@example.com";
 process.env.SMTP_PASS = "password";
 process.env.OPENAI_API_KEY = "test-key";
 process.env.JWT_SECRET = "test-jwt-secret-for-testing-purposes-only";
+process.env.STRIPE_SECRET_KEY = "sk_test_fake_for_unit_tests";
+process.env.SQUARE_ACCESS_TOKEN = "test-square-token";
 
 // Mock nodemailer
 vi.mock("nodemailer", () => ({
@@ -57,35 +59,55 @@ vi.mock("puppeteer", () => ({
 	},
 }));
 
-// Mock Square SDK
-vi.mock("square", () => ({
-	Client: vi.fn(() => ({
-		paymentsApi: {
-			createPayment: vi.fn().mockResolvedValue({
-				result: {
-					payment: {
-						id: "test-payment-id",
-						status: "COMPLETED",
+// Mock Square SDK (v44+ API: SquareClient / SquareEnvironment)
+vi.mock("square", () => {
+	class SquareClient {
+		payments = {
+			create: vi.fn().mockResolvedValue({
+				payment: {
+					id: "test-payment-id",
+					status: "COMPLETED",
+					orderId: "test-order-id",
+					receiptUrl: "https://squareup.com/receipt/test",
+					cardDetails: {
+						card: { last4: "1111", cardBrand: "VISA" },
 					},
+					amountMoney: { amount: 15000n, currency: "USD" },
 				},
 			}),
-		},
-		refundsApi: {
+			get: vi.fn().mockResolvedValue({
+				payment: {
+					id: "test-payment-id",
+					status: "COMPLETED",
+					amountMoney: { amount: 15000n, currency: "USD" },
+				},
+			}),
+		};
+		refunds = {
 			refundPayment: vi.fn().mockResolvedValue({
-				result: {
-					refund: {
-						id: "test-refund-id",
-						status: "PENDING",
-					},
-				},
+				refund: { id: "test-refund-id", status: "PENDING" },
 			}),
+		};
+		cards = {
+			create: vi.fn().mockResolvedValue({
+				card: { id: "test-card-id", last4: "1111", cardBrand: "VISA" },
+			}),
+		};
+		customers = {
+			create: vi.fn().mockResolvedValue({
+				customer: { id: "test-customer-id" },
+			}),
+		};
+		constructor(_opts?: unknown) {}
+	}
+	return {
+		SquareClient,
+		SquareEnvironment: {
+			Sandbox: "sandbox",
+			Production: "production",
 		},
-	})),
-	Environment: {
-		Sandbox: "sandbox",
-		Production: "production",
-	},
-}));
+	};
+});
 
 // Suppress console logs during tests unless needed
 if (process.env.VITEST_VERBOSE !== "true") {
