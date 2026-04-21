@@ -45,7 +45,7 @@ export class AutoCapture {
   /**
    * Capture session start
    */
-  async captureSessionStart(metadata?: Record<string, any>): Promise<void> {
+  async captureSessionStart(metadata?: Record<string, unknown>): Promise<void> {
     if (!this.config.captureSessionEvents) return;
 
     this.memory.episodic.add({
@@ -75,7 +75,7 @@ export class AutoCapture {
     this.memory.episodic.add({
       sourceId: this.config.sourceId,
       query: `Session ended: ${this.sessionId}`,
-      response: summary || `Session completed after ${durationMin} minutes`,
+      response: summary ?? `Session completed after ${durationMin} minutes`,
       timestamp: Date.now(),
       sessionId: this.sessionId,
       metadata: {
@@ -91,7 +91,7 @@ export class AutoCapture {
   /**
    * Capture user query and agent response
    */
-  async captureInteraction(query: string, response: string, metadata?: Record<string, any>): Promise<void> {
+  async captureInteraction(query: string, response: string, metadata?: Record<string, unknown>): Promise<void> {
     this.memory.episodic.add({
       sourceId: this.config.sourceId,
       query,
@@ -112,7 +112,7 @@ export class AutoCapture {
     if (!this.config.captureFileEdits) return;
 
     const query = `File ${changeType}: ${filePath}`;
-    const response = summary || `${changeType} operation on ${filePath}`;
+    const response = summary ?? `${changeType} operation on ${filePath}`;
 
     this.memory.episodic.add({
       sourceId: this.config.sourceId,
@@ -129,7 +129,7 @@ export class AutoCapture {
 
     // Also track as procedural pattern if it's a common operation
     if (changeType === 'edit') {
-      const fileExt = filePath.split('.').pop() || 'unknown';
+      const fileExt = filePath.split('.').pop() ?? 'unknown';
       this.memory.procedural.upsert({
         pattern: `edit_${fileExt}_file`,
         context: `Editing ${fileExt} files`,
@@ -147,7 +147,7 @@ export class AutoCapture {
     if (!this.config.captureGitCommits) return;
 
     const query = `Git commit: ${message}`;
-    const response = `Committed ${files.length} file(s) to ${branch || 'current branch'}`;
+    const response = `Committed ${files.length} file(s) to ${branch ?? 'current branch'}`;
 
     this.memory.episodic.add({
       sourceId: this.config.sourceId,

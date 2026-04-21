@@ -39,12 +39,23 @@ export class LatencyTracker {
     if (!buf || buf.length === 0) return null;
 
     const sorted = [...buf].sort((a, b) => a - b);
-    const idx = (pct: number) => Math.max(0, Math.ceil((pct / 100) * sorted.length) - 1);
+    const idx = (pct: number): number =>
+      Math.max(0, Math.ceil((pct / 100) * sorted.length) - 1);
+    // `sorted` is non-empty (buf.length === 0 guarded above) and `idx` is
+    // clamped into [0, sorted.length-1], so `at` never actually throws —
+    // but the narrower converts `number | undefined` → `number` without `!`.
+    const at = (pct: number): number => {
+      const v = sorted[idx(pct)];
+      if (v === undefined) {
+        throw new Error(`LatencyTracker.getStats: unexpected undefined at pct=${pct}`);
+      }
+      return v;
+    };
 
     return {
-      p50: sorted[idx(50)]!,
-      p95: sorted[idx(95)]!,
-      p99: sorted[idx(99)]!,
+      p50: at(50),
+      p95: at(95),
+      p99: at(99),
       count: sorted.length,
     };
   }

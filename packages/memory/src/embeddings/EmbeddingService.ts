@@ -275,7 +275,10 @@ export class EmbeddingService {
         );
       }
 
-      const pipeline = this.transformerPipeline!;
+      const pipeline = this.transformerPipeline;
+      if (!pipeline) {
+        throw new Error('Transformers.js pipeline failed to initialize');
+      }
       const output = await pipeline(text, {
         pooling: 'mean',
         normalize: true,

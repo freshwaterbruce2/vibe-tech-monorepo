@@ -114,7 +114,7 @@ export class GitMemory {
 
     return patterns.map(p => ({
       name: p.pattern.replace('git_workflow_', ''),
-      steps: (p.metadata?.steps as string[]) || [],
+      steps: (p.metadata?.steps as string[]) ?? [],
       frequency: p.frequency,
       successRate: p.successRate,
       avgDuration: p.metadata?.avgDuration as number | undefined,
@@ -140,7 +140,7 @@ export class GitMemory {
       const current = recentGit[i].query;
       const next = recentGit[i + 1].query;
       if (current.includes(currentCommand)) {
-        sequences.set(next, (sequences.get(next) || 0) + 1);
+        sequences.set(next, (sequences.get(next) ?? 0) + 1);
       }
     }
 
@@ -182,15 +182,15 @@ export class GitMemory {
     // Count by type
     const typesCounts: Record<string, number> = {};
     commits.forEach(c => {
-      const type = (c.metadata?.commitType as string) || 'other';
-      typesCounts[type] = (typesCounts[type] || 0) + 1;
+      const type = (c.metadata?.commitType as string) ?? 'other';
+      typesCounts[type] = (typesCounts[type] ?? 0) + 1;
     });
 
     // Count by branch
     const branchCounts = new Map<string, number>();
     commits.forEach(c => {
-      const branch = (c.metadata?.branch as string) || 'unknown';
-      branchCounts.set(branch, (branchCounts.get(branch) || 0) + 1);
+      const branch = (c.metadata?.branch as string) ?? 'unknown';
+      branchCounts.set(branch, (branchCounts.get(branch) ?? 0) + 1);
     });
 
     let mostActiveBranch = '';
@@ -206,7 +206,7 @@ export class GitMemory {
     const dayCounts = new Map<string, number>();
     commits.forEach(c => {
       const day = new Date(c.timestamp).toLocaleDateString('en-US', { weekday: 'long' });
-      dayCounts.set(day, (dayCounts.get(day) || 0) + 1);
+      dayCounts.set(day, (dayCounts.get(day) ?? 0) + 1);
     });
 
     let mostActiveDay = '';
@@ -219,7 +219,7 @@ export class GitMemory {
     });
 
     // Calculate average files per commit
-    const totalFiles = commits.reduce((sum, c) => sum + ((c.metadata?.filesChanged as number) || 0), 0);
+    const totalFiles = commits.reduce((sum, c) => sum + ((c.metadata?.filesChanged as number) ?? 0), 0);
     const avgFilesPerCommit = commits.length > 0 ? totalFiles / commits.length : 0;
 
     return {
@@ -245,12 +245,18 @@ export class GitMemory {
     return results
       .filter(r => r.item.metadata?.type === 'git_commit')
       .slice(0, limit)
-      .map(r => ({
-        hash: (r.item.metadata!.hash as string) || '',
-        message: r.item.response,
-        timestamp: r.item.timestamp,
-        branch: (r.item.metadata!.branch as string) || 'unknown',
-      }));
+      .map(r => {
+        const meta = r.item.metadata;
+        if (!meta) {
+          throw new Error('GitMemory.searchCommits: metadata lost after filter');
+        }
+        return {
+          hash: (meta.hash as string) ?? '',
+          message: r.item.response,
+          timestamp: r.item.timestamp,
+          branch: (meta.branch as string) ?? 'unknown',
+        };
+      });
   }
 
   /**
@@ -277,7 +283,7 @@ export class GitMemory {
       chore: 0,
     };
     if (commit.type) {
-      importance += typeImportance[commit.type] || 0;
+      importance += typeImportance[commit.type] ?? 0;
     }
 
     // Size-based importance

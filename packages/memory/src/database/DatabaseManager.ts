@@ -214,8 +214,11 @@ export class DatabaseManager {
    */
   private runMigrations(): void {
     if (!this.db) throw new Error('Database not initialized');
+    // Capture into a local so migration closures (below) get a narrowed
+    // non-nullable reference without needing `this.db!`.
+    const db = this.db;
 
-    this.db.exec(`
+    db.exec(`
       CREATE TABLE IF NOT EXISTS schema_version (
         version INTEGER PRIMARY KEY,
         applied_at INTEGER NOT NULL
@@ -224,7 +227,7 @@ export class DatabaseManager {
 
     const currentVersion =
       (
-        this.db.prepare('SELECT MAX(version) as v FROM schema_version').get() as {
+        db.prepare('SELECT MAX(version) as v FROM schema_version').get() as {
           v: number | null;
         }
       ).v ?? 0;
@@ -233,16 +236,16 @@ export class DatabaseManager {
       // Migration 1: Add created_at alias to semantic_memory (M5)
       () => {
         try {
-          this.db!.exec('ALTER TABLE semantic_memory ADD COLUMN created_at INTEGER');
+          db.exec('ALTER TABLE semantic_memory ADD COLUMN created_at INTEGER');
         } catch {
           /* column already exists */
         }
-        this.db!.exec('UPDATE semantic_memory SET created_at = created WHERE created_at IS NULL');
+        db.exec('UPDATE semantic_memory SET created_at = created WHERE created_at IS NULL');
       },
       // Migration 2: Add embedding_model column to semantic_memory (Phase 2 — embedding versioning)
       () => {
         try {
-          this.db!.exec(
+          db.exec(
             `ALTER TABLE semantic_memory ADD COLUMN embedding_model TEXT DEFAULT 'text-embedding-3-small'`,
           );
         } catch {
@@ -252,10 +255,13 @@ export class DatabaseManager {
     ];
 
     for (let i = currentVersion; i < migrations.length; i++) {
-      migrations[i]();
-      this.db
-        .prepare('INSERT INTO schema_version (version, applied_at) VALUES (?, ?)')
-        .run(i + 1, Date.now());
+      const migration = migrations[i];
+      if (!migration) continue; // unreachable: loop bound < migrations.length
+      migration();
+      db.prepare('INSERT INTO schema_version (version, applied_at) VALUES (?, ?)').run(
+        i + 1,
+        Date.now(),
+      );
     }
   }
 

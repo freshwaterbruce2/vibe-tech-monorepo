@@ -85,9 +85,11 @@ export class UnifiedSearch {
     for (const [, group] of bySource) {
       group.sort((a, b) => b.score - a.score);
       for (let i = 0; i < group.length; i++) {
-        const ranks = rankMap.get(group[i]!) ?? [];
+        const result = group[i];
+        if (!result) continue; // unreachable: bounded by group.length
+        const ranks = rankMap.get(result) ?? [];
         ranks.push(i + 1); // 1-based rank
-        rankMap.set(group[i]!, ranks);
+        rankMap.set(result, ranks);
       }
     }
 

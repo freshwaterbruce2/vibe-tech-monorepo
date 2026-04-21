@@ -125,9 +125,9 @@ export class CryptoMemory {
         name: p.pattern,
         description: p.context,
         winRate: p.successRate,
-        avgPnL: (p.metadata?.avgPnL as number) || 0,
+        avgPnL: (p.metadata?.avgPnL as number) ?? 0,
         occurrences: p.frequency,
-        lastSeen: p.lastUsed || Date.now(),
+        lastSeen: p.lastUsed ?? Date.now(),
       }));
   }
 
@@ -160,14 +160,22 @@ export class CryptoMemory {
     return recent
       .filter(m => m.metadata?.type === 'trade_decision')
       .slice(0, limit)
-      .map(m => ({
-        pair: m.metadata!.pair as string,
-        action: m.metadata!.action as string,
-        price: m.metadata!.price as number,
-        reason: m.response,
-        outcome: m.metadata!.outcome as string | undefined,
-        timestamp: m.timestamp,
-      }));
+      .map(m => {
+        // `metadata` was filtered to defined above, but TS doesn't carry that
+        // narrowing through .filter → .map, so capture + guard here.
+        const meta = m.metadata;
+        if (!meta) {
+          throw new Error('CryptoMemory.getRecentTrades: metadata lost after filter');
+        }
+        return {
+          pair: meta.pair as string,
+          action: meta.action as string,
+          price: meta.price as number,
+          reason: m.response,
+          outcome: meta.outcome as string | undefined,
+          timestamp: m.timestamp,
+        };
+      });
   }
 
   /**
@@ -192,10 +200,11 @@ export class CryptoMemory {
     // Find best/worst pairs
     const pairStats = new Map<string, { wins: number; losses: number }>();
     completedTrades.forEach(t => {
-      if (!pairStats.has(t.pair)) {
-        pairStats.set(t.pair, { wins: 0, losses: 0 });
+      let stats = pairStats.get(t.pair);
+      if (!stats) {
+        stats = { wins: 0, losses: 0 };
+        pairStats.set(t.pair, stats);
       }
-      const stats = pairStats.get(t.pair)!;
       if (t.outcome === 'profit') stats.wins++;
       else stats.losses++;
     });
@@ -221,7 +230,7 @@ export class CryptoMemory {
     const hourCounts = new Map<number, number>();
     trades.forEach(t => {
       const hour = new Date(t.timestamp).getHours();
-      hourCounts.set(hour, (hourCounts.get(hour) || 0) + 1);
+      hourCounts.set(hour, (hourCounts.get(hour) ?? 0) + 1);
     });
 
     let mostActiveHour = 0;
@@ -236,7 +245,10 @@ export class CryptoMemory {
     return {
       totalTrades: trades.length,
       winRate,
-      avgPnL: patterns.reduce((sum, p) => sum + p.avgPnL, 0) / (patterns.length || 1),
+      avgPnL:
+        patterns.length === 0
+          ? 0
+          : patterns.reduce((sum, p) => sum + p.avgPnL, 0) / patterns.length,
       bestPair,
       worstPair,
       mostActiveHour,
