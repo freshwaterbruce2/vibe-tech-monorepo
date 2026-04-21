@@ -109,13 +109,33 @@ if ($Fix -and -not $SkipLint) {
             "[autofix] targets ($($patterns.Count)):" | Out-File $autoFixLog -Encoding utf8
             $patterns | Out-File $autoFixLog -Append -Encoding utf8
             "" | Out-File $autoFixLog -Append -Encoding utf8
-            & node --max-old-space-size=8192 $eslintBin $patterns `
-                --fix `
-                --fix-type 'problem,suggestion,layout' `
-                --no-error-on-unmatched-pattern `
-                --quiet `
-                *>&1 | Tee-Object -FilePath $autoFixLog -Append
-            $autoFixExit = $LASTEXITCODE
+            # Chunk per-project. One ESLint run over 66 src trees with 8GB heap
+            # OOMs (exit 134). Per-project keeps each invocation under 1GB and
+            # --cache skips unchanged files on re-runs.
+            $cacheRoot = Join-Path $repo '.eslintcache'
+            if (-not (Test-Path $cacheRoot)) {
+                New-Item -Path $cacheRoot -ItemType Directory -Force | Out-Null
+            }
+            $chunkFailed = 0
+            $chunkIdx = 0
+            foreach ($srcPath in $patterns) {
+                $chunkIdx++
+                $cacheKey  = ($srcPath -replace '[:/\\]', '_')
+                $cacheFile = Join-Path $cacheRoot $cacheKey
+                "`n[autofix $chunkIdx/$($patterns.Count)] $srcPath" | Out-File $autoFixLog -Append -Encoding utf8
+                & node --max-old-space-size=4096 $eslintBin $srcPath `
+                    --fix `
+                    --fix-type 'problem,suggestion,layout' `
+                    --no-error-on-unmatched-pattern `
+                    --cache `
+                    --cache-location $cacheFile `
+                    --quiet `
+                    *>&1 | Tee-Object -FilePath $autoFixLog -Append
+                if ($LASTEXITCODE -ne 0) { $chunkFailed++ }
+            }
+            $autoFixExit = $chunkFailed
+            "`n[autofix] done — $chunkFailed/$($patterns.Count) chunks non-zero exit" |
+                Out-File $autoFixLog -Append -Encoding utf8
         } else {
             Write-Host "   no src/ paths resolved — nothing to auto-fix." -ForegroundColor DarkGray
         }

@@ -312,3 +312,7 @@ status.err
 
 # Rust build cache
 .cargo/
+
+# ESLint per-project cache shards (written by scripts/fix-all-quality.ps1)
+.eslintcache/
+.eslintcache
