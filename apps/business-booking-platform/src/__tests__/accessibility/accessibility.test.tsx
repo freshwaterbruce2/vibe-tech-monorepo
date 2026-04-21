@@ -1,6 +1,6 @@
-import { render } from "@testing-library/react";
+import { cleanup, render } from "@testing-library/react";
 import { axe, toHaveNoViolations } from "jest-axe";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { PaymentForm } from "@/components/payment/PaymentForm";
 import SearchResults from "@/components/search/SearchResults";
 import SearchSection from "@/components/search/SearchSection";
@@ -9,6 +9,30 @@ import { testUtils } from "../setup";
 
 // Extend Jest matchers
 expect.extend(toHaveNoViolations);
+
+// Serialize axe runs — axe-core is a global singleton and throws "Axe is already
+// running" if a prior run hasn't settled (e.g. when a test times out mid-run).
+// Also cleans up the DOM after every test so stale nodes don't leak into the
+// next axe invocation. See axe-core#3426.
+let pendingAxe: Promise<unknown> = Promise.resolve();
+const runAxe = (...args: Parameters<typeof axe>) => {
+	const next = pendingAxe.then(
+		() => axe(...args),
+		() => axe(...args),
+	);
+	pendingAxe = next.catch(() => undefined);
+	return next;
+};
+
+afterEach(async () => {
+	// Wait for any in-flight axe run to finish before tearing down the DOM.
+	try {
+		await pendingAxe;
+	} catch {
+		// Swallow — the test itself already asserted on this result.
+	}
+	cleanup();
+});
 
 // Mock stores and services
 vi.mock("@/store/searchStore");
@@ -53,7 +77,7 @@ describe("Accessibility Tests", () => {
 	describe("SearchSection Component", () => {
 		it("should not have accessibility violations", async () => {
 			const { container } = render(<SearchSection onSearch={vi.fn()} />);
-			const results = await axe(container);
+			const results = await runAxe(container);
 			expect(results).toHaveNoViolations();
 		});
 
@@ -74,7 +98,7 @@ describe("Accessibility Tests", () => {
 			const guestsLabel = container.querySelector('label[for="search-guests"]');
 			expect(guestsLabel).toHaveTextContent("Guests");
 
-			const results = await axe(container);
+			const results = await runAxe(container);
 			expect(results).toHaveNoViolations();
 		});
 
@@ -89,7 +113,7 @@ describe("Accessibility Tests", () => {
 				expect(element).not.toHaveAttribute("tabindex", "-1");
 			});
 
-			const results = await axe(container);
+			const results = await runAxe(container);
 			expect(results).toHaveNoViolations();
 		});
 
@@ -102,7 +126,7 @@ describe("Accessibility Tests", () => {
 			expect(button).toHaveAttribute("type", "button");
 			expect(button).toHaveTextContent("Search Hotels");
 
-			const results = await axe(container);
+			const results = await runAxe(container);
 			expect(results).toHaveNoViolations();
 		});
 
@@ -115,7 +139,7 @@ describe("Accessibility Tests", () => {
 			expect(button).toHaveAttribute("disabled");
 			expect(button).toHaveTextContent("Searching...");
 
-			const results = await axe(container);
+			const results = await runAxe(container);
 			expect(results).toHaveNoViolations();
 		});
 	});
@@ -131,7 +155,7 @@ describe("Accessibility Tests", () => {
 			});
 
 			const { container } = render(<SearchResults />);
-			const results = await axe(container);
+			const results = await runAxe(container);
 			expect(results).toHaveNoViolations();
 		});
 
@@ -152,7 +176,7 @@ describe("Accessibility Tests", () => {
 			const hotelHeadings = container.querySelectorAll("h4");
 			expect(hotelHeadings.length).toBeGreaterThan(0);
 
-			const results = await axe(container);
+			const results = await runAxe(container);
 			expect(results).toHaveNoViolations();
 		});
 
@@ -171,7 +195,7 @@ describe("Accessibility Tests", () => {
 				expect(img.getAttribute("alt")).not.toBe("");
 			});
 
-			const results = await axe(container);
+			const results = await runAxe(container);
 			expect(results).toHaveNoViolations();
 		});
 
@@ -188,7 +212,7 @@ describe("Accessibility Tests", () => {
 			const loadingText = container.querySelector("h3");
 			expect(loadingText).toHaveTextContent("Searching hotels...");
 
-			const results = await axe(container);
+			const results = await runAxe(container);
 			expect(results).toHaveNoViolations();
 		});
 
@@ -210,7 +234,7 @@ describe("Accessibility Tests", () => {
 				"Try adjusting your search criteria",
 			);
 
-			const results = await axe(container);
+			const results = await runAxe(container);
 			expect(results).toHaveNoViolations();
 		});
 
@@ -238,7 +262,7 @@ describe("Accessibility Tests", () => {
 				expect(select).toBeInTheDocument();
 			}
 
-			const results = await axe(container);
+			const results = await runAxe(container);
 			expect(results).toHaveNoViolations();
 		});
 
@@ -263,7 +287,7 @@ describe("Accessibility Tests", () => {
 				expect(nextButton).toHaveAttribute("type", "button");
 			}
 
-			const results = await axe(container);
+			const results = await runAxe(container);
 			expect(results).toHaveNoViolations();
 		});
 	});
@@ -291,7 +315,7 @@ describe("Accessibility Tests", () => {
 			// Wait for component to load
 			await new Promise((resolve) => setTimeout(resolve, 100));
 
-			const results = await axe(container);
+			const results = await runAxe(container);
 			expect(results).toHaveNoViolations();
 		});
 
@@ -312,7 +336,7 @@ describe("Accessibility Tests", () => {
 				expect(subHeading).toHaveTextContent("Payment Details");
 			}
 
-			const results = await axe(container);
+			const results = await runAxe(container);
 			expect(results).toHaveNoViolations();
 		});
 
@@ -328,7 +352,7 @@ describe("Accessibility Tests", () => {
 				expect(form).toBeInTheDocument();
 			}
 
-			const results = await axe(container);
+			const results = await runAxe(container);
 			expect(results).toHaveNoViolations();
 		});
 
@@ -339,7 +363,7 @@ describe("Accessibility Tests", () => {
 			await new Promise((resolve) => setTimeout(resolve, 100));
 
 			// Component should render in accessible state (loading or loaded)
-			const results = await axe(container);
+			const results = await runAxe(container);
 			expect(results).toHaveNoViolations();
 		});
 
@@ -350,7 +374,7 @@ describe("Accessibility Tests", () => {
 			await new Promise((resolve) => setTimeout(resolve, 100));
 
 			// Component should render in accessible state whether in error or loaded state
-			const results = await axe(container);
+			const results = await runAxe(container);
 			expect(results).toHaveNoViolations();
 		});
 	});
@@ -360,7 +384,7 @@ describe("Accessibility Tests", () => {
 			const { container } = render(<SearchSection onSearch={vi.fn()} />);
 
 			// Test with color-contrast rule
-			const results = await axe(container, {
+			const results = await runAxe(container, {
 				rules: {
 					"color-contrast": { enabled: true },
 				},
@@ -379,7 +403,7 @@ describe("Accessibility Tests", () => {
 
 			const { container } = render(<SearchResults />);
 
-			const results = await axe(container, {
+			const results = await runAxe(container, {
 				rules: {
 					"color-contrast": { enabled: true },
 				},
@@ -399,7 +423,7 @@ describe("Accessibility Tests", () => {
 			const { container } = render(<SearchResults />);
 
 			// Test that important information is not conveyed by color alone
-			const results = await axe(container, {
+			const results = await runAxe(container, {
 				rules: {
 					"color-contrast": { enabled: true },
 					"link-in-text-block": { enabled: true },
@@ -418,7 +442,7 @@ describe("Accessibility Tests", () => {
 			const button = container.querySelector("button");
 			expect(button).not.toHaveAttribute("aria-describedby", "");
 
-			const results = await axe(container, {
+			const results = await runAxe(container, {
 				rules: {
 					"aria-valid-attr": { enabled: true },
 					"aria-valid-attr-value": { enabled: true },
@@ -444,7 +468,7 @@ describe("Accessibility Tests", () => {
 				</main>,
 			);
 
-			const results = await axe(container, {
+			const results = await runAxe(container, {
 				rules: {
 					"landmark-one-main": { enabled: true },
 					region: { enabled: true },
@@ -465,7 +489,7 @@ describe("Accessibility Tests", () => {
 			const { container } = render(<SearchResults />);
 
 			// Check for proper heading structure for screen readers
-			const results = await axe(container, {
+			const results = await runAxe(container, {
 				rules: {
 					"heading-order": { enabled: true },
 					bypass: { enabled: true },
@@ -480,7 +504,7 @@ describe("Accessibility Tests", () => {
 		it("should maintain proper focus order in SearchSection", async () => {
 			const { container } = render(<SearchSection onSearch={vi.fn()} />);
 
-			const results = await axe(container, {
+			const results = await runAxe(container, {
 				rules: {
 					"focus-order-semantics": { enabled: true },
 					tabindex: { enabled: true },
@@ -493,7 +517,7 @@ describe("Accessibility Tests", () => {
 		it("should have visible focus indicators", async () => {
 			const { container } = render(<SearchSection onSearch={vi.fn()} />);
 
-			const results = await axe(container, {
+			const results = await runAxe(container, {
 				rules: {
 					"focus-order-semantics": { enabled: true },
 				},
@@ -512,7 +536,7 @@ describe("Accessibility Tests", () => {
 
 			const { container } = render(<SearchResults />);
 
-			const results = await axe(container, {
+			const results = await runAxe(container, {
 				rules: {
 					tabindex: { enabled: true },
 				},
@@ -533,7 +557,7 @@ describe("Accessibility Tests", () => {
 
 			const { container } = render(<SearchSection onSearch={vi.fn()} />);
 
-			const results = await axe(container, {
+			const results = await runAxe(container, {
 				rules: {
 					"target-size": { enabled: true }, // Touch targets should be large enough
 					"meta-viewport": { enabled: true },
@@ -561,19 +585,20 @@ describe("Accessibility Tests", () => {
 					value: width,
 				});
 
-				const { container } = render(<SearchResults />);
+				const { container, unmount } = render(<SearchResults />);
 
-				const results = await axe(container);
+				const results = await runAxe(container);
 				expect(results).toHaveNoViolations();
+				unmount();
 			}
-		});
+		}, 30000);
 	});
 
 	describe("Form Accessibility", () => {
 		it("should have proper form validation messages", async () => {
 			const { container } = render(<SearchSection onSearch={vi.fn()} />);
 
-			const results = await axe(container, {
+			const results = await runAxe(container, {
 				rules: {
 					label: { enabled: true },
 					"form-field-multiple-labels": { enabled: true },
@@ -587,7 +612,7 @@ describe("Accessibility Tests", () => {
 			// This would test error states when they exist
 			const { container } = render(<SearchSection onSearch={vi.fn()} />);
 
-			const results = await axe(container, {
+			const results = await runAxe(container, {
 				rules: {
 					"aria-valid-attr": { enabled: true },
 					"aria-valid-attr-value": { enabled: true },
@@ -625,7 +650,7 @@ describe("Accessibility Tests", () => {
 			);
 			expect(priceElements.length).toBeGreaterThan(0);
 
-			const results = await axe(container);
+			const results = await runAxe(container);
 			expect(results).toHaveNoViolations();
 		});
 
@@ -652,7 +677,7 @@ describe("Accessibility Tests", () => {
 				}
 			});
 
-			const results = await axe(container);
+			const results = await runAxe(container);
 			expect(results).toHaveNoViolations();
 		});
 	});
