@@ -60,7 +60,7 @@ apiRouter.get('/health', (req, res) => {
 });
 
 // 404 handler for API routes
-apiRouter.use('*', (req, res) => {
+apiRouter.use((req, res) => {
 	res.status(404).json({
 		error: 'Not Found',
 		message: 'The requested API endpoint does not exist',
