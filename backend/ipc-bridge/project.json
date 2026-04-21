@@ -51,13 +51,6 @@
         "command": "pnpm run test",
         "cwd": "backend/ipc-bridge"
       }
-    },
-    "test:coverage": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "vitest run --coverage",
-        "cwd": "backend/ipc-bridge"
-      }
     }
   },
   "tags": ["type:node", "scope:ipc-bridge"]
