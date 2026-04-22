@@ -132,25 +132,32 @@ describe('ErrorBoundary', () => {
   })
 
   it('sends errors to /api/client-errors in production mode', async () => {
-    process.env.NODE_ENV = 'production'
+    // Wave 2F: ErrorBoundary reads `import.meta.env.PROD` (Vite) rather than
+    // `process.env.NODE_ENV`. Use vi.stubEnv so the component sees PROD=true.
+    vi.stubEnv('PROD', true)
+    vi.stubEnv('DEV', false)
 
-    render(
-      <ErrorBoundary>
-        <ThrowError />
-      </ErrorBoundary>
-    )
-
-    // Wait for async error reporting
-    await vi.waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        '/api/client-errors',
-        expect.objectContaining({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: expect.stringContaining('Test error')
-        })
+    try {
+      render(
+        <ErrorBoundary>
+          <ThrowError />
+        </ErrorBoundary>
       )
-    })
+
+      // Wait for async error reporting
+      await vi.waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          '/api/client-errors',
+          expect.objectContaining({
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: expect.stringContaining('Test error')
+          })
+        )
+      })
+    } finally {
+      vi.unstubAllEnvs()
+    }
   })
 
   it('shows stack trace details in development mode', () => {

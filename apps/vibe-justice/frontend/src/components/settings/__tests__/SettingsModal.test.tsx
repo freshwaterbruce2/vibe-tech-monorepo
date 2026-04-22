@@ -3,26 +3,48 @@ import { render, screen } from '@/test/utils/test-utils'
 import userEvent from '@testing-library/user-event'
 import { SettingsModal } from '../SettingsModal'
 
-// Mock localStorage
+// Mock localStorage.
+//
+// Wave 1C: `SettingsModal`'s Clear Cache handler iterates
+// `Object.keys(localStorage)` and only removes keys prefixed with
+// `vibe-justice.` or `vibe_`. For that iteration to yield the stored keys
+// (rather than the mock's method names), we expose the store via a Proxy so
+// `Object.keys` returns the real entries while still supporting the
+// Storage-like method API.
 const localStorageMock = (() => {
-  let store: Record<string, string> = {}
+  const store: Record<string, string> = {}
 
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
-      store[key] = value.toString()
-    },
-    removeItem: (key: string) => {
+  const api = {
+    getItem: vi.fn((key: string) => (key in store ? store[key] : null)),
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = String(value)
+    }),
+    removeItem: vi.fn((key: string) => {
       delete store[key]
-    },
-    clear: () => {
-      store = {}
-    },
+    }),
+    clear: vi.fn(() => {
+      for (const k of Object.keys(store)) delete store[k]
+    }),
   }
+
+  return new Proxy(api, {
+    ownKeys: () => Object.keys(store),
+    getOwnPropertyDescriptor: (_target, prop) =>
+      typeof prop === 'string' && prop in store
+        ? { value: store[prop], enumerable: true, configurable: true, writable: true }
+        : undefined,
+    get: (target, prop: string) => {
+      if (prop in target) return (target as Record<string, unknown>)[prop]
+      if (prop in store) return store[prop]
+      return undefined
+    },
+  }) as typeof api
 })()
 
 Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
+  writable: true,
+  configurable: true,
 })
 
 // Mock window.location.reload
@@ -85,7 +107,11 @@ describe('SettingsModal', () => {
         />
       )
 
-      expect(screen.getByText('DeepSeek API Key')).toBeInTheDocument()
+      // Wave 1C removed the DeepSeek API Key input from SettingsModal for
+      // security reasons (keys live in backend .env only). Assert its absence
+      // alongside the sections that ARE still present.
+      expect(screen.queryByText('DeepSeek API Key')).not.toBeInTheDocument()
+      expect(screen.getByText('Backend Connection')).toBeInTheDocument()
       expect(screen.getByText('Local Inference URL (Ollama)')).toBeInTheDocument()
       expect(screen.getByText('Interface Mode')).toBeInTheDocument()
       expect(screen.getByText('Data Management')).toBeInTheDocument()
@@ -360,7 +386,14 @@ describe('SettingsModal', () => {
 
     it('clears localStorage and reloads when clear cache is clicked', async () => {
       const user = userEvent.setup()
-      const clearSpy = vi.spyOn(localStorageMock, 'clear')
+      const removeItemSpy = vi.spyOn(localStorageMock, 'removeItem')
+
+      // Seed the store with app-namespaced keys AND a 3rd-party key so we
+      // can verify scoped removal (Wave 1C: Clear Cache now only removes
+      // keys prefixed with `vibe-justice.` or `vibe_`, preserving others).
+      localStorageMock.setItem('vibe_ollama_url', 'http://localhost:11434')
+      localStorageMock.setItem('vibe-justice.session', 'abc')
+      localStorageMock.setItem('unrelated_key', 'keep-me')
 
       render(
         <SettingsModal
@@ -374,7 +407,11 @@ describe('SettingsModal', () => {
       const clearButton = screen.getByText('Clear Cache')
       await user.click(clearButton)
 
-      expect(clearSpy).toHaveBeenCalled()
+      // Both app-namespaced keys should have been removed.
+      expect(removeItemSpy).toHaveBeenCalledWith('vibe_ollama_url')
+      expect(removeItemSpy).toHaveBeenCalledWith('vibe-justice.session')
+      // Unrelated keys must NOT be touched.
+      expect(removeItemSpy).not.toHaveBeenCalledWith('unrelated_key')
       expect(window.location.reload).toHaveBeenCalled()
     })
   })
@@ -451,7 +488,7 @@ describe('SettingsModal', () => {
       expect(mockOnClose).toHaveBeenCalled()
     })
 
-    it('saves empty values to localStorage', async () => {
+    it('does NOT save an empty Ollama URL (fails Zod validation)', async () => {
       const user = userEvent.setup()
       const setItemSpy = vi.spyOn(localStorageMock, 'setItem')
 
@@ -472,9 +509,13 @@ describe('SettingsModal', () => {
       const saveButton = screen.getByText('Save Configuration')
       await user.click(saveButton)
 
-      // Wave 1C: API key is no longer stored in localStorage; only Ollama URL persists
-      expect(setItemSpy).toHaveBeenCalledWith('vibe_ollama_url', '')
-      expect(mockOnClose).toHaveBeenCalled()
+      // Wave 1C: Ollama URL is now schema-validated (must be a valid http(s)
+      // URL). An empty string fails validation, so nothing is persisted and
+      // the modal is NOT closed. This test documents that invariant.
+      expect(setItemSpy).not.toHaveBeenCalledWith('vibe_ollama_url', '')
+      expect(mockOnClose).not.toHaveBeenCalled()
+      // A validation error should surface for the user.
+      expect(ollamaInput).toHaveAttribute('aria-invalid', 'true')
     })
   })
 

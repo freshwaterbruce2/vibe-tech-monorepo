@@ -295,24 +295,25 @@ describe('BatchUpload', () => {
 
     it('shows progress during upload', async () => {
       const user = userEvent.setup({ delay: null })
-      const mockFetch = vi.mocked(global.fetch)
+      const mockPost = vi.mocked(httpClient.post)
 
-      mockFetch.mockImplementation(
+      // Hold the promise open so we can observe the progress UI while the
+      // "request" is in flight.
+      mockPost.mockImplementationOnce(
         () =>
           new Promise((resolve) =>
             setTimeout(
               () =>
                 resolve({
-                  ok: true,
-                  json: async () => ({
+                  data: {
                     total_files: 1,
                     successful_files: 1,
                     failed_files: 0,
                     total_processing_time: 1.0,
                     summary: { total_violations: 0, total_dates: 0, total_contradictions: 0 },
                     file_results: [],
-                  }),
-                } as Response),
+                  },
+                } as Awaited<ReturnType<typeof httpClient.post>>),
               3000
             )
           )
@@ -336,12 +337,12 @@ describe('BatchUpload', () => {
 
     it('handles upload errors', async () => {
       const user = userEvent.setup({ delay: null })
-      const mockFetch = vi.mocked(global.fetch)
+      const mockPost = vi.mocked(httpClient.post)
 
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        json: async () => ({ detail: 'Server error occurred' }),
-      } as Response)
+      // Wave 1C: failures now come back as rejected axios errors. The
+      // component surfaces `err.message` directly, so we throw an Error with
+      // the message we expect to see rendered.
+      mockPost.mockRejectedValueOnce(new Error('Server error occurred'))
 
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
@@ -364,7 +365,7 @@ describe('BatchUpload', () => {
 
     it('calls onUploadComplete callback', async () => {
       const user = userEvent.setup({ delay: null })
-      const mockFetch = vi.mocked(global.fetch)
+      const mockPost = vi.mocked(httpClient.post)
       const onUploadComplete = vi.fn()
 
       const mockResponse: BatchUploadResponse = {
@@ -376,10 +377,9 @@ describe('BatchUpload', () => {
         file_results: [],
       }
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      } as Response)
+      mockPost.mockResolvedValueOnce({
+        data: mockResponse,
+      } as Awaited<ReturnType<typeof httpClient.post>>)
 
       render(<BatchUpload onUploadComplete={onUploadComplete} />)
 
@@ -446,7 +446,7 @@ describe('BatchUpload', () => {
 
     it('displays failed file results', async () => {
       const user = userEvent.setup({ delay: null })
-      const mockFetch = vi.mocked(global.fetch)
+      const mockPost = vi.mocked(httpClient.post)
 
       const mockResponse: BatchUploadResponse = {
         total_files: 1,
@@ -464,10 +464,9 @@ describe('BatchUpload', () => {
         ],
       }
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      } as Response)
+      mockPost.mockResolvedValueOnce({
+        data: mockResponse,
+      } as Awaited<ReturnType<typeof httpClient.post>>)
 
       render(<BatchUpload />)
 
@@ -487,7 +486,7 @@ describe('BatchUpload', () => {
 
     it('shows retry button for failed files', async () => {
       const user = userEvent.setup({ delay: null })
-      const mockFetch = vi.mocked(global.fetch)
+      const mockPost = vi.mocked(httpClient.post)
 
       const mockResponse: BatchUploadResponse = {
         total_files: 2,
@@ -512,10 +511,9 @@ describe('BatchUpload', () => {
         ],
       }
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      } as Response)
+      mockPost.mockResolvedValueOnce({
+        data: mockResponse,
+      } as Awaited<ReturnType<typeof httpClient.post>>)
 
       render(<BatchUpload />)
 
@@ -537,7 +535,7 @@ describe('BatchUpload', () => {
 
     it('resets and allows uploading more documents', async () => {
       const user = userEvent.setup({ delay: null })
-      const mockFetch = vi.mocked(global.fetch)
+      const mockPost = vi.mocked(httpClient.post)
 
       const mockResponse: BatchUploadResponse = {
         total_files: 1,
@@ -548,10 +546,9 @@ describe('BatchUpload', () => {
         file_results: [],
       }
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      } as Response)
+      mockPost.mockResolvedValueOnce({
+        data: mockResponse,
+      } as Awaited<ReturnType<typeof httpClient.post>>)
 
       render(<BatchUpload />)
 
@@ -582,7 +579,7 @@ describe('BatchUpload', () => {
   describe('OCR Quality Display', () => {
     it('displays high OCR quality in green', async () => {
       const user = userEvent.setup({ delay: null })
-      const mockFetch = vi.mocked(global.fetch)
+      const mockPost = vi.mocked(httpClient.post)
 
       const mockResponse: BatchUploadResponse = {
         total_files: 1,
@@ -603,10 +600,9 @@ describe('BatchUpload', () => {
         ],
       }
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      } as Response)
+      mockPost.mockResolvedValueOnce({
+        data: mockResponse,
+      } as Awaited<ReturnType<typeof httpClient.post>>)
 
       render(<BatchUpload />)
 

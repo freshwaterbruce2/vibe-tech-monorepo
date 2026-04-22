@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@/test/utils/test-utils'
 import App from '../App'
-import axios from 'axios'
+import { httpClient } from '../services/httpClient'
 
-// Mock axios
-vi.mock('axios', () => ({
-  default: {
-    create: vi.fn(() => ({
-      post: vi.fn(),
-    })),
+// Wave 1C: App.tsx routes all network calls through the centralized axios
+// `httpClient`. Mock the client so tests exercise the real code path without
+// hitting the network and without needing to stub axios internals (interceptors etc).
+vi.mock('../services/httpClient', () => ({
+  httpClient: {
+    post: vi.fn(),
   },
 }))
 
@@ -16,9 +16,8 @@ describe('App', () => {
   let mockPost: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
-    mockPost = vi.fn()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    vi.mocked(axios.create).mockReturnValue({ post: mockPost } as any)
+    mockPost = vi.mocked(httpClient.post)
+    mockPost.mockReset()
 
     // Suppress console.error for cleaner test output
     vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -227,7 +226,9 @@ describe('App', () => {
     const input = screen.getByPlaceholderText(/Type your legal question/i)
 
     fireEvent.change(input, { target: { value: 'Enter key test' } })
-    fireEvent.keyPress(input, { key: 'Enter', code: 'Enter', charCode: 13 })
+    // App.tsx listens on `onKeyDown` (not the deprecated `onKeyPress`), so the
+    // test must dispatch a keydown event to trigger the submit handler.
+    fireEvent.keyDown(input, { key: 'Enter', code: 'Enter', charCode: 13 })
 
     await waitFor(() => {
       expect(screen.getByText('Enter key test')).toBeInTheDocument()

@@ -32,15 +32,20 @@ vi.mock('../../services/documentAnalysis', () => ({
   documentAnalysisApi: mockDocumentAnalysisApi,
 }));
 
-const mockAxiosPost = vi.fn();
-vi.mock('axios', () => ({
-  default: {
-    create: vi.fn(() => ({
-      get: vi.fn(),
-      post: mockAxiosPost,
-      put: vi.fn(),
-      delete: vi.fn(),
-    })),
+// Wave 1C: DocumentManager posts via the centralized axios `httpClient`.
+// Mock the client rather than axios itself so we don't have to reproduce
+// axios.create/interceptors internals. Using vi.hoisted so the mock post
+// reference is available inside the module factory (vi.mock is hoisted).
+const { mockHttpPost } = vi.hoisted(() => ({
+  mockHttpPost: vi.fn(),
+}));
+
+vi.mock('../../services/httpClient', () => ({
+  httpClient: {
+    get: vi.fn(),
+    post: mockHttpPost,
+    put: vi.fn(),
+    delete: vi.fn(),
   },
 }));
 
@@ -54,8 +59,8 @@ describe('DocumentManager', () => {
     // Default to web mode (isTauri returns false)
     mockIsTauri.mockReturnValue(false);
 
-    // Default axios mock response for file uploads
-    mockAxiosPost.mockResolvedValue({
+    // Default httpClient mock response for file uploads
+    mockHttpPost.mockResolvedValue({
       data: {
         success: true,
         documents: [{

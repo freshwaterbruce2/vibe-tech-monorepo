@@ -3,14 +3,22 @@ import { render, screen, waitFor } from '@/test/utils/test-utils'
 import userEvent from '@testing-library/user-event'
 import { PolicySearch } from '../PolicySearch'
 
-// Mock axios
-vi.mock('axios', () => {
-  const mockAxiosInstance = {
+// Wave 1C: PolicySearch posts via the centralized axios `httpClient` and
+// still uses `axios.isAxiosError` to classify errors. Mock the httpClient and
+// leave axios's real `isAxiosError` in place (it's a pure helper).
+vi.mock('../../services/httpClient', () => ({
+  httpClient: {
     post: vi.fn(),
-  }
+  },
+}))
+
+// Keep axios available for `isAxiosError`; override it per-test when needed.
+vi.mock('axios', async () => {
+  const actual = await vi.importActual<typeof import('axios')>('axios')
   return {
+    ...actual,
     default: {
-      create: vi.fn(() => mockAxiosInstance),
+      ...actual.default,
       isAxiosError: vi.fn((err) => err?.isAxiosError === true),
     },
     isAxiosError: vi.fn((err) => err?.isAxiosError === true),
@@ -18,8 +26,9 @@ vi.mock('axios', () => {
 })
 
 import axios from 'axios'
+import { httpClient } from '../../services/httpClient'
 
-const mockAxiosInstance = axios.create() as unknown as {
+const mockAxiosInstance = httpClient as unknown as {
   post: ReturnType<typeof vi.fn>
 }
 
