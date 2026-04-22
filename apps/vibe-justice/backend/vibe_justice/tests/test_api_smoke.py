@@ -2,6 +2,18 @@ import pytest
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 
+from main import app
+from vibe_justice.utils.auth import require_api_key
+
+
+@pytest.fixture(autouse=True)
+def _bypass_auth():
+    """Smoke tests exercise routing, not auth. Bypass require_api_key."""
+    app.dependency_overrides[require_api_key] = lambda: "test-api-key"
+    yield
+    app.dependency_overrides.pop(require_api_key, None)
+
+
 def test_chat_simple_empty(client):
     """Test /api/chat/simple with empty message (validation)"""
     resp = client.post("/api/chat/simple", json={"message": ""})

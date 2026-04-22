@@ -10,11 +10,17 @@ sys.path.insert(0, str(BACKEND_ROOT))
 from fastapi.testclient import TestClient
 from main import app
 from vibe_justice.services.ai_service import get_ai_service
+from vibe_justice.utils.auth import require_api_key
 
 
 @pytest.fixture
 def client():
-    return TestClient(app)
+    """TestClient with auth bypassed — these tests smoke-test routing, not auth."""
+    app.dependency_overrides[require_api_key] = lambda: "test-api-key"
+    try:
+        yield TestClient(app)
+    finally:
+        app.dependency_overrides.pop(require_api_key, None)
 
 
 @pytest.fixture

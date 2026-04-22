@@ -171,7 +171,7 @@ async def list_domain_documents(
                         id=filename,
                         filename=filename,
                         category=file_info.get("category", "unknown"),
-                        size_bytes=file_info.get("size", 0),
+                        size_bytes=file_info.get("size_bytes", 0),
                         index_status=index_status.get("status", "unknown"),
                         chunks=index_status.get("chunks", 0),
                         collections=collections,

@@ -33,12 +33,14 @@ class TestChatRouter:
 
     @pytest.fixture
     def client(self, mock_ai_service, mock_retrieval_service):
-        """Create test client with mocked services"""
+        """Create test client with mocked services and auth bypassed."""
         # Patch the module-level instances before importing the router
         with patch('vibe_justice.api.chat.ai_service', mock_ai_service):
             with patch('vibe_justice.api.chat.retrieval_service', mock_retrieval_service):
                 from vibe_justice.api.chat import router
+                from vibe_justice.utils.auth import require_api_key
                 test_app = FastAPI()
+                test_app.dependency_overrides[require_api_key] = lambda: "test-api-key"
                 test_app.include_router(router, prefix="/api/chat")
                 yield TestClient(test_app)
 

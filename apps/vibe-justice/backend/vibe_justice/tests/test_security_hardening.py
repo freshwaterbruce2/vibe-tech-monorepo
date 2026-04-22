@@ -46,9 +46,9 @@ def api_headers():
 
 def test_export_uses_list_args_not_shell_string():
     """open_in_explorer must call subprocess.Popen with a list, never an f-string."""
+    # tests/ -> vibe_justice/ (parents[1]) -> utils/export_engine.py
     src_path = (
         Path(__file__).resolve().parents[1]
-        / "vibe_justice"
         / "utils"
         / "export_engine.py"
     )

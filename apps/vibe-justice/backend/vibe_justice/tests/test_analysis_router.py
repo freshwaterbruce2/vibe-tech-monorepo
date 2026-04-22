@@ -20,10 +20,12 @@ class TestAnalysisRouter:
 
     @pytest.fixture
     def client(self, mock_analysis_service):
-        """Create test client with mocked services"""
+        """Create test client with mocked services and auth bypassed."""
         with patch('vibe_justice.api.analysis.analysis_service', mock_analysis_service):
             from vibe_justice.api.analysis import router
+            from vibe_justice.utils.auth import require_api_key
             test_app = FastAPI()
+            test_app.dependency_overrides[require_api_key] = lambda: "test-api-key"
             test_app.include_router(router, prefix="/api/analysis")
             yield TestClient(test_app)
 

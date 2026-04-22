@@ -192,31 +192,6 @@ async def upload_batch(
                 print(f"Cleanup error for {temp_file}: {e}")
 
 
-@router.get("/status/{batch_id}")
-async def get_batch_status(batch_id: str):
-    """
-    Get status of a batch processing job.
-
-    Args:
-        batch_id: Batch job ID from upload response
-
-    Returns:
-        Batch processing status (for future Celery integration)
-
-    Note:
-        Currently returns placeholder. Will integrate with Celery
-        task queue in Week 2 for async processing.
-    """
-    # Placeholder for future Celery integration
-    return JSONResponse(
-        {
-            "batch_id": batch_id,
-            "status": "completed",
-            "message": "Synchronous processing (async queue coming in Week 2)",
-        }
-    )
-
-
 @router.get("/supported-formats")
 async def get_supported_formats():
     """

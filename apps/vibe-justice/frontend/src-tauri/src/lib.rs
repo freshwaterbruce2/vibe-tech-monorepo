@@ -38,25 +38,6 @@ pub struct BackendStatus {
     uptime: Option<u64>,
 }
 
-/// BrainScan match result
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BrainScanMatch {
-    file: String,
-    line: u32,
-    content: String,
-    score: f64,
-}
-
-/// BrainScan search result
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BrainScanResult {
-    matches: Vec<BrainScanMatch>,
-    #[serde(rename = "totalMatches")]
-    total_matches: u32,
-    #[serde(rename = "searchTime")]
-    search_time: f64,
-}
-
 /// Start the Python FastAPI backend process
 /// In development: assumes backend runs separately on port 8000
 /// In production: spawns backend.exe from resources
@@ -223,29 +204,6 @@ fn settings_set(
     Ok(())
 }
 
-/// BrainScan search - searches for logic patterns
-#[tauri::command]
-async fn brainscan_search(
-    _snippet: String,
-    _metadata: Option<serde_json::Value>,
-) -> Result<BrainScanResult, String> {
-    // Mock implementation - in production, this would search D:\learning-system
-    // For now, return empty results since we don't have the actual search backend
-    let start = std::time::Instant::now();
-
-    // Simulate some search time
-    tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
-
-    let search_time = start.elapsed().as_secs_f64() * 1000.0;
-
-    // Return empty results for now - real implementation would search files
-    Ok(BrainScanResult {
-        matches: vec![],
-        total_matches: 0,
-        search_time,
-    })
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -266,7 +224,6 @@ pub fn run() {
             get_backend_status,
             settings_get,
             settings_set,
-            brainscan_search,
         ])
         .setup(|app| {
             // Auto-start backend on app launch
