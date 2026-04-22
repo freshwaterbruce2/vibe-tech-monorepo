@@ -192,10 +192,11 @@ async fn check_backend_health() -> Result<String, String> {
 #[tauri::command]
 fn get_backend_status(state: State<'_, AppState>) -> Result<BackendStatus, String> {
     let backend_state = state.backend.lock().map_err(|e| e.to_string())?;
+    let pid = backend_state.process.as_ref().map(|child| child.pid());
     Ok(BackendStatus {
         running: backend_state.is_running,
         port: 8000,
-        pid: None,
+        pid,
         uptime: None,
     })
 }
@@ -284,15 +285,28 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            if let tauri::WindowEvent::CloseRequested { .. } = event {
-                // Stop backend when window closes
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                // Prevent immediate close; stop backend synchronously before exiting
+                api.prevent_close();
                 let handle = window.app_handle().clone();
-                tauri::async_runtime::spawn(async move {
+                let window_clone = window.clone();
+                tauri::async_runtime::block_on(async move {
                     let state: State<AppState> = handle.state();
                     let _ = stop_backend(state).await;
                 });
+                // Now safe to close
+                let _ = window_clone.destroy();
             }
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            if let tauri::RunEvent::ExitRequested { .. } = event {
+                // Ensure backend is terminated on exit
+                let state: State<AppState> = app_handle.state();
+                tauri::async_runtime::block_on(async {
+                    let _ = stop_backend(state).await;
+                });
+            }
+        });
 }
