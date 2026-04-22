@@ -30,7 +30,7 @@
 		"@tauri-apps/plugin-fs": "^2.4.5",
 		"@tauri-apps/plugin-shell": "^2.3.5",
 		"@vibetech/shared-utils": "workspace:^1.0.0",
-		"axios": "^1.13.6",
+		"axios": "1.14.0",
 		"clsx": "^2.1.1",
 		"immer": "11.1.4",
 		"lucide-react": "0.577.0",
