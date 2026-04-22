@@ -1,0 +1,26 @@
+# Build outputs
+dist/
+build/
+.vite/
+
+# Tauri build artifacts
+src-tauri/target/
+src-tauri/gen/
+
+# Dependencies
+node_modules/
+
+# Coverage
+coverage/
+
+# Test artifacts
+.vitest/
+playwright-report/
+test-results/
+
+# IDE
+.vscode/
+.idea/
+
+# Other
+*.log
