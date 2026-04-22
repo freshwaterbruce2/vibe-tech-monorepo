@@ -2,13 +2,19 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor } from '@/test/utils/test-utils'
 import userEvent from '@testing-library/user-event'
 import { ExportButton } from '../ExportButton'
+import { httpClient } from '../../../services/httpClient'
+
+// Wave 1C: ExportButton no longer uses global fetch — it posts via httpClient
+// (axios). Mock the centralized client so tests exercise the real code path.
+vi.mock('../../../services/httpClient', () => ({
+  httpClient: {
+    post: vi.fn(),
+  },
+}))
 
 // Mock URL.createObjectURL and revokeObjectURL
 global.URL.createObjectURL = vi.fn(() => 'mock-url')
 global.URL.revokeObjectURL = vi.fn()
-
-// Mock fetch globally
-global.fetch = vi.fn()
 
 // Mock window.alert
 global.alert = vi.fn()
@@ -191,11 +197,10 @@ describe('ExportButton', () => {
   describe('Backend Export (DOCX)', () => {
     it('calls backend export API with caseId', async () => {
       const user = userEvent.setup()
-      const mockFetch = vi.mocked(global.fetch)
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ path: '/exports/case-123.docx' }),
-      } as Response)
+      const mockPost = vi.mocked(httpClient.post)
+      mockPost.mockResolvedValueOnce({
+        data: { path: '/exports/case-123.docx' },
+      } as Awaited<ReturnType<typeof httpClient.post>>)
 
       render(<ExportButton title="Report" data={{}} caseId="case-123" />)
 
@@ -203,9 +208,7 @@ describe('ExportButton', () => {
       await user.click(docxButton)
 
       await waitFor(() => {
-        expect(mockFetch).toHaveBeenCalledWith('http://localhost:8000/cases/export/case-123', {
-          method: 'POST',
-        })
+        expect(mockPost).toHaveBeenCalledWith('/cases/export/case-123')
       })
 
       expect(global.alert).toHaveBeenCalledWith(
@@ -220,28 +223,10 @@ describe('ExportButton', () => {
       expect(screen.queryByTitle('Generate Full Report (DOCX)')).not.toBeInTheDocument()
     })
 
-    it('handles backend export failure with error message', async () => {
-      const user = userEvent.setup()
-      const mockFetch = vi.mocked(global.fetch)
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        statusText: 'Not Found',
-      } as Response)
-
-      render(<ExportButton title="Report" data={{}} caseId="case-123" />)
-
-      const docxButton = screen.getByTitle('Generate Full Report (DOCX)')
-      await user.click(docxButton)
-
-      await waitFor(() => {
-        expect(global.alert).toHaveBeenCalledWith('Export Failed: Export failed: Not Found')
-      })
-    })
-
     it('handles network error during backend export', async () => {
       const user = userEvent.setup()
-      const mockFetch = vi.mocked(global.fetch)
-      mockFetch.mockRejectedValueOnce(new Error('Network error'))
+      const mockPost = vi.mocked(httpClient.post)
+      mockPost.mockRejectedValueOnce(new Error('Network error'))
 
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
@@ -260,8 +245,8 @@ describe('ExportButton', () => {
 
     it('handles unknown error type during backend export', async () => {
       const user = userEvent.setup()
-      const mockFetch = vi.mocked(global.fetch)
-      mockFetch.mockRejectedValueOnce('Unknown error')
+      const mockPost = vi.mocked(httpClient.post)
+      mockPost.mockRejectedValueOnce('Unknown error')
 
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
@@ -283,11 +268,10 @@ describe('ExportButton', () => {
   describe('Integration', () => {
     it('handles multiple exports in succession', async () => {
       const user = userEvent.setup()
-      const mockFetch = vi.mocked(global.fetch)
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: async () => ({ path: '/exports/test.docx' }),
-      } as Response)
+      const mockPost = vi.mocked(httpClient.post)
+      mockPost.mockResolvedValue({
+        data: { path: '/exports/test.docx' },
+      } as Awaited<ReturnType<typeof httpClient.post>>)
 
       render(<ExportButton title="Report" data={{ test: 'data' }} caseId="case-123" />)
 
@@ -311,7 +295,7 @@ describe('ExportButton', () => {
       await user.click(docxButton)
 
       await waitFor(() => {
-        expect(mockFetch).toHaveBeenCalled()
+        expect(mockPost).toHaveBeenCalled()
       })
     })
   })

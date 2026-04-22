@@ -127,7 +127,11 @@ describe('SettingsModal', () => {
   // ==================== API Key Input Tests ====================
 
   describe('API Key Input', () => {
-    it('renders API key input field', () => {
+    // Wave 1C removed the API key input from SettingsModal for security reasons
+    // (API keys are no longer persisted to localStorage). The tests below
+    // assert that the input and its associated copy are NOT rendered.
+
+    it('does not render an API key input field', () => {
       render(
         <SettingsModal
           isOpen={true}
@@ -137,13 +141,10 @@ describe('SettingsModal', () => {
         />
       )
 
-      const input = screen.getByPlaceholderText('sk-...')
-      expect(input).toBeInTheDocument()
-      expect(input).toHaveAttribute('type', 'password')
+      expect(screen.queryByPlaceholderText('sk-...')).not.toBeInTheDocument()
     })
 
-    it('updates API key input value', async () => {
-      const user = userEvent.setup()
+    it('does not display API key help text (removed in Wave 1C)', () => {
       render(
         <SettingsModal
           isOpen={true}
@@ -153,23 +154,7 @@ describe('SettingsModal', () => {
         />
       )
 
-      const input = screen.getByPlaceholderText('sk-...')
-      await user.type(input, 'sk-test-key-123')
-
-      expect(input).toHaveValue('sk-test-key-123')
-    })
-
-    it('displays API key help text', () => {
-      render(
-        <SettingsModal
-          isOpen={true}
-          onClose={mockOnClose}
-          showArchived={false}
-          onToggleArchived={mockOnToggleArchived}
-        />
-      )
-
-      expect(screen.getByText(/Required for Cloud inference/)).toBeInTheDocument()
+      expect(screen.queryByText(/Required for Cloud inference/)).not.toBeInTheDocument()
     })
   })
 
@@ -450,9 +435,8 @@ describe('SettingsModal', () => {
         />
       )
 
-      // Enter API key
-      const apiKeyInput = screen.getByPlaceholderText('sk-...')
-      await user.type(apiKeyInput, 'sk-new-key-456')
+      // Note: Wave 1C removed API key storage — API key is now held in-memory
+      // only; security tests cover that it is NOT persisted to localStorage.
 
       // Modify Ollama URL
       const ollamaInput = screen.getByDisplayValue('http://localhost:11434')
@@ -463,7 +447,6 @@ describe('SettingsModal', () => {
       const saveButton = screen.getByText('Save Configuration')
       await user.click(saveButton)
 
-      expect(setItemSpy).toHaveBeenCalledWith('vibe_api_key', 'sk-new-key-456')
       expect(setItemSpy).toHaveBeenCalledWith('vibe_ollama_url', 'http://custom:8080')
       expect(mockOnClose).toHaveBeenCalled()
     })
@@ -489,7 +472,7 @@ describe('SettingsModal', () => {
       const saveButton = screen.getByText('Save Configuration')
       await user.click(saveButton)
 
-      expect(setItemSpy).toHaveBeenCalledWith('vibe_api_key', '')
+      // Wave 1C: API key is no longer stored in localStorage; only Ollama URL persists
       expect(setItemSpy).toHaveBeenCalledWith('vibe_ollama_url', '')
       expect(mockOnClose).toHaveBeenCalled()
     })
@@ -525,9 +508,9 @@ describe('SettingsModal', () => {
       // Now visible
       expect(screen.getByText('System Configuration')).toBeInTheDocument()
 
-      // Configure settings
-      const apiKeyInput = screen.getByPlaceholderText('sk-...')
-      await user.type(apiKeyInput, 'sk-test')
+      // Note: Wave 1C removed the API key input from SettingsModal — API keys
+      // are no longer persisted to localStorage. Security tests cover that
+      // `vibe_api_key` is absent.
 
       // Toggle archived
       const toggleButton = screen
@@ -544,11 +527,11 @@ describe('SettingsModal', () => {
       await user.click(saveButton)
 
       expect(mockOnToggleArchived).toHaveBeenCalledWith(true)
-      expect(localStorageMock.getItem('vibe_api_key')).toBe('sk-test')
+      expect(localStorageMock.getItem('vibe_api_key')).toBeNull()
       expect(mockOnClose).toHaveBeenCalled()
     })
 
-    it('preserves input values when reopening modal', async () => {
+    it('preserves Ollama URL input value while modal remains open', async () => {
       const user = userEvent.setup()
       render(
         <SettingsModal
@@ -559,15 +542,13 @@ describe('SettingsModal', () => {
         />
       )
 
-      // Type in API key
-      const apiKeyInput = screen.getByPlaceholderText('sk-...')
-      await user.type(apiKeyInput, 'sk-persistent')
+      // Wave 1C removed the API key input; exercise the Ollama URL input
+      // instead to cover the "preserves typed value" behavior.
+      const ollamaInput = screen.getByDisplayValue('http://localhost:11434')
+      await user.clear(ollamaInput)
+      await user.type(ollamaInput, 'http://custom-host:11434')
 
-      // Note: The component doesn't persist state across unmounts
-      // Each render creates fresh state with default values
-      // This is expected behavior
-
-      expect(apiKeyInput).toHaveValue('sk-persistent')
+      expect(ollamaInput).toHaveValue('http://custom-host:11434')
     })
   })
 })

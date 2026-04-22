@@ -70,8 +70,9 @@ export function PolicySearch({ onDocumentAdded }: PolicySearchProps) {
     }
   }
 
-  const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
       handleSearch()
     }
   }
@@ -146,7 +147,7 @@ export function PolicySearch({ onDocumentAdded }: PolicySearchProps) {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyDown}
                 placeholder="Search for company policies, procedures, handbooks..."
                 className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-neon-mint/50"
                 disabled={loading}

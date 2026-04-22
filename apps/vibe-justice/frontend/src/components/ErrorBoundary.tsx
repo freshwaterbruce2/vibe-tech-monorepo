@@ -1,4 +1,5 @@
-import { Component, ErrorInfo, ReactNode } from 'react';
+import { Component } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RefreshCw, Home } from 'lucide-react';
 
 interface Props {
@@ -31,7 +32,7 @@ class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.error('ErrorBoundary caught:', error, errorInfo);
     }
 
@@ -41,7 +42,7 @@ class ErrorBoundary extends Component<Props, State> {
     }
 
     // Log to external service in production
-    if (process.env.NODE_ENV === 'production') {
+    if (import.meta.env.PROD) {
       this.logErrorToService(error, errorInfo);
     }
 
@@ -105,7 +106,7 @@ class ErrorBoundary extends Component<Props, State> {
               </div>
             </div>
 
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {import.meta.env.DEV && this.state.error && (
               <div className="mb-6 p-4 bg-red-50 rounded border border-red-200">
                 <h2 className="font-semibold text-red-900 mb-2">
                   Error Details (Development Only)

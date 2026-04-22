@@ -32,8 +32,8 @@ export default defineConfig({
   // Env variables starting with TAURI_ will be exposed to the frontend
   envPrefix: ['VITE_', 'TAURI_'],
   build: {
-    // Tauri uses Chromium on Windows and WebKit on macOS/Linux
-    target: process.env.TAURI_PLATFORM == 'windows' ? 'chrome105' : 'safari13',
+    // Windows 11 only (per platform rules) — Tauri Chromium on Windows
+    target: 'chrome105',
     // Don't minify for debug builds
     minify: !process.env.TAURI_DEBUG ? 'esbuild' : false,
     // Produce sourcemaps for debug builds

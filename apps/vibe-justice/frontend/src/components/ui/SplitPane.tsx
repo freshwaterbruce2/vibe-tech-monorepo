@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 
 interface SplitPaneProps {

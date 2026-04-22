@@ -5,7 +5,8 @@
  * Uses native HTML select for simplicity in testing environment.
  */
 
-import { forwardRef, type SelectHTMLAttributes, createContext, useContext } from 'react';
+import { forwardRef, createContext, useContext } from 'react';
+import type { ReactNode, SelectHTMLAttributes } from 'react';
 import { clsx } from 'clsx';
 
 interface SelectContextValue {
@@ -18,7 +19,7 @@ const SelectContext = createContext<SelectContextValue>({});
 export interface SelectProps {
   value?: string;
   onValueChange?: (value: string) => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export function Select({ value, onValueChange, children }: SelectProps) {
@@ -30,7 +31,7 @@ export function Select({ value, onValueChange, children }: SelectProps) {
 }
 
 export interface SelectTriggerProps extends SelectHTMLAttributes<HTMLSelectElement> {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export const SelectTrigger = forwardRef<HTMLSelectElement, SelectTriggerProps>(
@@ -66,7 +67,7 @@ export function SelectValue({ placeholder }: SelectValueProps) {
 }
 
 export interface SelectContentProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export function SelectContent({ children }: SelectContentProps) {
@@ -75,7 +76,7 @@ export function SelectContent({ children }: SelectContentProps) {
 
 export interface SelectItemProps extends SelectHTMLAttributes<HTMLOptionElement> {
   value: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export const SelectItem = forwardRef<HTMLOptionElement, SelectItemProps>(

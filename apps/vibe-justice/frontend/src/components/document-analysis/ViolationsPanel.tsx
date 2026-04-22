@@ -8,6 +8,7 @@
  */
 
 import { useState, useMemo } from 'react';
+import type { ElementType } from 'react';
 import { AlertCircle, AlertTriangle, Info, CheckCircle, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import type { Violation, ViolationSeverity } from '../../types/documentAnalysis';
 import { SEVERITY_COLORS } from '../../types/documentAnalysis';
@@ -17,7 +18,7 @@ interface ViolationsPanelProps {
   isLoading?: boolean;
 }
 
-const SEVERITY_ICONS: Record<ViolationSeverity, React.ElementType> = {
+const SEVERITY_ICONS: Record<ViolationSeverity, ElementType> = {
   CRITICAL: AlertCircle,
   HIGH: AlertTriangle,
   MEDIUM: Info,

@@ -3,13 +3,27 @@ import { render, screen, waitFor } from '@/test/utils/test-utils'
 import userEvent from '@testing-library/user-event'
 import { BatchUpload } from '../BatchUpload'
 import type { BatchUploadResponse } from '@/types/documentAnalysis'
+import { httpClient } from '../../../services/httpClient'
 
-// Mock fetch globally
+// Wave 1C: BatchUpload uses the centralized axios `httpClient`, not `fetch`.
+// Mock the client so tests exercise the real upload path.
+vi.mock('../../../services/httpClient', () => ({
+  httpClient: {
+    post: vi.fn(),
+  },
+}))
+
+// Mock fetch globally for any legacy test paths still using it
 global.fetch = vi.fn()
 
 describe('BatchUpload', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Default: simulate a network failure so tests that don't configure a
+    // response behave the same way they did when `global.fetch` was unmocked
+    // (i.e. the component hits its catch branch). Tests that need a specific
+    // successful response must override via `vi.mocked(httpClient.post).mockResolvedValueOnce(...)`.
+    vi.mocked(httpClient.post).mockRejectedValue(new Error('Upload failed'))
   })
 
   afterEach(() => {
@@ -272,82 +286,12 @@ describe('BatchUpload', () => {
       })
     })
 
-    it.skip('uploads files successfully', async () => {
-      const user = userEvent.setup({ delay: null })
-      const mockFetch = vi.mocked(global.fetch)
-
-      const mockResponse: BatchUploadResponse = {
-        total_files: 2,
-        successful_files: 2,
-        failed_files: 0,
-        total_processing_time: 5.2,
-        summary: {
-          total_violations: 3,
-          total_dates: 5,
-          total_contradictions: 1,
-        },
-        file_results: [
-          {
-            filename: 'test1.pdf',
-            success: true,
-            word_count: 150,
-            page_count: 2,
-            processing_time: 2.5,
-          },
-          {
-            filename: 'test2.pdf',
-            success: true,
-            word_count: 200,
-            page_count: 3,
-            processing_time: 2.7,
-          },
-        ],
-      }
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      } as Response)
-
-      render(<BatchUpload />)
-
-      const files = [
-        new File(['content1'], 'test1.pdf', { type: 'application/pdf' }),
-        new File(['content2'], 'test2.pdf', { type: 'application/pdf' }),
-      ]
-      const input = document.querySelector('input[type="file"]') as HTMLInputElement
-
-      await user.upload(input, files)
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'Upload 2 Files' })).toBeInTheDocument()
-      })
-
-      const uploadButton = screen.getByRole('button', { name: 'Upload 2 Files' })
-      await user.click(uploadButton)
-
-      // Show loading state
-      expect(screen.getByText('Uploading & Analyzing...')).toBeInTheDocument()
-
-      await waitFor(() => {
-        expect(mockFetch).toHaveBeenCalledWith(
-          'http://localhost:8000/api/batch/upload',
-          expect.objectContaining({
-            method: 'POST',
-          })
-        )
-      })
-
-      // Results should be displayed
-      await waitFor(() => {
-        expect(screen.getByText('Batch Processing Complete')).toBeInTheDocument()
-        expect(screen.getByText('2/2 Successful')).toBeInTheDocument()
-        expect(screen.getByText('5.2s')).toBeInTheDocument()
-        expect(screen.getByText('3')).toBeInTheDocument() // violations
-        expect(screen.getByText('5')).toBeInTheDocument() // dates
-        expect(screen.getByText('1')).toBeInTheDocument() // contradictions
-      })
-    })
+    // TODO: Re-enable once we have a stable way to assert numeric cells in the
+    // results grid. The UI renders the same digits ("3", "5", "1") in multiple
+    // cells (violations/dates/contradictions plus processing time subtotals),
+    // which makes `getByText` ambiguous. Needs role/testid-based queries in the
+    // component and/or scoped `within()` assertions per result card.
+    it.todo('uploads files successfully and displays aggregated summary counts')
 
     it('shows progress during upload', async () => {
       const user = userEvent.setup({ delay: null })
@@ -456,9 +400,9 @@ describe('BatchUpload', () => {
   // ==================== Results Display Tests ====================
 
   describe('Results Display', () => {
-    it.skip('displays successful file results', async () => {
+    it('displays successful file results', async () => {
       const user = userEvent.setup({ delay: null })
-      const mockFetch = vi.mocked(global.fetch)
+      const mockPost = vi.mocked(httpClient.post)
 
       const mockResponse: BatchUploadResponse = {
         total_files: 1,
@@ -479,10 +423,9 @@ describe('BatchUpload', () => {
         ],
       }
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      } as Response)
+      mockPost.mockResolvedValueOnce({
+        data: mockResponse,
+      } as Awaited<ReturnType<typeof httpClient.post>>)
 
       render(<BatchUpload />)
 
@@ -494,9 +437,10 @@ describe('BatchUpload', () => {
       const uploadButton = screen.getByRole('button', { name: 'Upload 1 File' })
       await user.click(uploadButton)
 
+      // Completion banner and per-file row render once the upload resolves
       await waitFor(() => {
-        expect(screen.getByText('File Processing Results')).toBeInTheDocument()
-        expect(screen.getByText('2.5s')).toBeInTheDocument()
+        expect(screen.getByText('Batch Processing Complete')).toBeInTheDocument()
+        expect(screen.getByText('success.pdf')).toBeInTheDocument()
       })
     })
 

@@ -37,6 +37,7 @@ function LegalAssistantView() {
   const [templateType, setTemplateType] = useState('appeal')
   const [caseDetails, setCaseDetails] = useState('')
   const [draftPath, setDraftPath] = useState('')
+  const [draftError, setDraftError] = useState('')
 
   const api = httpClient
 
@@ -85,6 +86,7 @@ function LegalAssistantView() {
   const generateDraft = async () => {
     if (!caseDetails.trim()) return
     setLoading(true)
+    setDraftError('')
     try {
       const response = await api.post('/api/drafting/generate', {
         template_type: templateType,
@@ -93,7 +95,8 @@ function LegalAssistantView() {
       })
       setDraftPath(response.data.file_path || response.data.filepath)
     } catch {
-      alert('Error generating draft. Please try again.')
+      setDraftError('Error generating draft. Please try again.')
+      setDraftPath('')
     } finally {
       setLoading(false)
     }
@@ -199,7 +202,12 @@ function LegalAssistantView() {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    sendMessage()
+                  }
+                }}
                 placeholder="Type your legal question..."
                 className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-neon-mint/50"
                 disabled={loading}
@@ -282,6 +290,14 @@ function LegalAssistantView() {
                     Draft saved to:{' '}
                     <code className="bg-green-900/30 px-2 py-1 rounded">{draftPath}</code>
                   </p>
+                </div>
+              </div>
+            )}
+            {draftError && (
+              <div className="mt-6 p-4 bg-red-900/20 border border-red-700/50 rounded-lg">
+                <div className="flex items-center space-x-2 text-red-400">
+                  <AlertCircle className="w-5 h-5" />
+                  <p>{draftError}</p>
                 </div>
               </div>
             )}

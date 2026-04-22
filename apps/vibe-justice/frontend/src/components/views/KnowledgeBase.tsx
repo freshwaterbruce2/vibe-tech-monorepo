@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, type ElementType } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   BookOpen,
   Search,
@@ -25,7 +26,7 @@ import { httpClient } from '../../services/httpClient'
 import { PolicySearch } from '../PolicySearch'
 
 // Domain configuration with icons and colors
-const DOMAIN_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string; bgColor: string }> = {
+const DOMAIN_CONFIG: Record<string, { label: string; icon: ElementType; color: string; bgColor: string }> = {
   sc_employment: { label: 'SC Employment Law', icon: Briefcase, color: 'text-blue-400', bgColor: 'bg-blue-500/20' },
   sc_unemployment: { label: 'SC Unemployment', icon: Users, color: 'text-cyan-400', bgColor: 'bg-cyan-500/20' },
   sc_family_law: { label: 'SC Family Law', icon: Users, color: 'text-pink-400', bgColor: 'bg-pink-500/20' },
@@ -61,101 +62,110 @@ interface KnowledgeStatus {
 }
 
 export function KnowledgeBase() {
-  const [status, setStatus] = useState<KnowledgeStatus | null>(null)
   const [selectedDomain, setSelectedDomain] = useState<string | null>(null)
-  const [documents, setDocuments] = useState<KnowledgeDocument[]>([])
   const [searchQuery, setSearchQuery] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [loadingDocuments, setLoadingDocuments] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
+  const [localError, setLocalError] = useState<string | null>(null)
   const [showPolicySearch, setShowPolicySearch] = useState(false)
 
-  const api = httpClient
+  const queryClient = useQueryClient()
 
   // Fetch knowledge base status
-  const fetchStatus = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const response = await api.get('/api/knowledge/status')
-      setStatus(response.data)
-    } catch (err) {
-      console.error('Failed to fetch knowledge base status:', err)
-      // Create mock data for development/demo
-      setStatus({
-        totalDocuments: 0,
-        domains: Object.keys(DOMAIN_CONFIG).map(domain => ({
-          domain,
-          count: 0
-        })),
-        recentAdditions: []
-      })
-      if (axios.isAxiosError(err) && err.response?.status === 404) {
-        setError('Knowledge base API not available. Showing empty state.')
-      } else {
-        setError('Failed to load knowledge base status.')
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [api])
+  const {
+    data: status,
+    isLoading: loading,
+    error: statusError,
+    refetch: refetchStatus,
+  } = useQuery<KnowledgeStatus, unknown>({
+    queryKey: ['knowledge', 'status'],
+    queryFn: async () => {
+      const response = await httpClient.get('/api/knowledge/status')
+      return response.data
+    },
+  })
 
   // Fetch documents for a domain
-  const fetchDomainDocuments = useCallback(async (domain: string) => {
-    setLoadingDocuments(true)
-    try {
-      const response = await api.get(`/api/knowledge/documents/${domain}`)
-      setDocuments(response.data.documents || [])
-    } catch (err) {
-      console.error('Failed to fetch documents:', err)
-      setDocuments([])
-    } finally {
-      setLoadingDocuments(false)
-    }
-  }, [api])
+  const { data: documentsData, isLoading: loadingDocuments } = useQuery<
+    { documents: KnowledgeDocument[] },
+    unknown
+  >({
+    queryKey: ['knowledge', 'documents', selectedDomain],
+    queryFn: async () => {
+      const response = await httpClient.get(`/api/knowledge/documents/${selectedDomain}`)
+      return { documents: response.data.documents || [] }
+    },
+    enabled: !!selectedDomain,
+  })
 
-  // Delete a document
-  const deleteDocument = async (id: string) => {
-    if (deletingIds.has(id)) return
+  const documents: KnowledgeDocument[] = useMemo(
+    () => documentsData?.documents ?? [],
+    [documentsData],
+  )
 
-    setDeletingIds(prev => new Set(prev).add(id))
-    try {
-      await api.delete(`/api/knowledge/documents/${id}`)
-      setDocuments(prev => prev.filter(doc => doc.id !== id))
-      // Refresh status to update counts
-      await fetchStatus()
-    } catch (err) {
+  // Delete a document (mutation)
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await httpClient.delete(`/api/knowledge/documents/${id}`)
+      return id
+    },
+    onSuccess: () => {
+      // Refresh status counts and current domain documents
+      queryClient.invalidateQueries({ queryKey: ['knowledge', 'status'] })
+      if (selectedDomain) {
+        queryClient.invalidateQueries({
+          queryKey: ['knowledge', 'documents', selectedDomain],
+        })
+      }
+    },
+    onError: (err) => {
       console.error('Failed to delete document:', err)
-      setError('Failed to delete document. Please try again.')
-    } finally {
-      setDeletingIds(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(id)
-        return newSet
-      })
-    }
+      setLocalError('Failed to delete document. Please try again.')
+    },
+  })
+
+  const deleteDocument = (id: string) => {
+    if (deleteMutation.isPending && deleteMutation.variables === id) return
+    deleteMutation.mutate(id)
   }
+
+  // Deletion-in-progress lookup (parity with previous deletingIds Set)
+  const deletingIds = useMemo(
+    () =>
+      deleteMutation.isPending && typeof deleteMutation.variables === 'string'
+        ? new Set<string>([deleteMutation.variables])
+        : new Set<string>(),
+    [deleteMutation.isPending, deleteMutation.variables],
+  )
 
   // Handle document added from PolicySearch
   const handleDocumentAdded = useCallback(() => {
-    fetchStatus()
+    queryClient.invalidateQueries({ queryKey: ['knowledge', 'status'] })
     if (selectedDomain) {
-      fetchDomainDocuments(selectedDomain)
+      queryClient.invalidateQueries({
+        queryKey: ['knowledge', 'documents', selectedDomain],
+      })
     }
-  }, [fetchStatus, fetchDomainDocuments, selectedDomain])
+  }, [queryClient, selectedDomain])
 
-  // Initial load
-  useEffect(() => {
-    fetchStatus()
-  }, [fetchStatus])
+  // Explicit refresh button behavior
+  const refreshStatus = () => {
+    setLocalError(null)
+    refetchStatus()
+  }
 
-  // Load documents when domain selected
-  useEffect(() => {
-    if (selectedDomain) {
-      fetchDomainDocuments(selectedDomain)
+  // Unified error banner message: prefer explicit local errors, then query errors.
+  // Backend unavailability is surfaced as an explicit banner (no mock data fabricated).
+  const errorMessage: string | null = useMemo(() => {
+    if (localError) return localError
+    if (statusError) {
+      if (axios.isAxiosError(statusError) && statusError.response?.status === 404) {
+        return 'Knowledge base API not available. Backend unavailable — counts below are unknown, not zero.'
+      }
+      return 'Failed to load knowledge base status. Backend unavailable.'
     }
-  }, [selectedDomain, fetchDomainDocuments])
+    return null
+  }, [localError, statusError])
+
+  const backendUnavailable = !loading && !status
 
   // Filter documents by search query
   const filteredDocuments = useMemo(() => {
@@ -226,7 +236,7 @@ export function KnowledgeBase() {
               Add Documents
             </button>
             <button
-              onClick={fetchStatus}
+              onClick={refreshStatus}
               disabled={loading}
               className="p-2 text-gray-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
               title="Refresh"
@@ -237,7 +247,7 @@ export function KnowledgeBase() {
         </div>
 
         {/* Stats Panel */}
-        {status && (
+        {status ? (
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
               <div className="flex items-center gap-2 text-gray-400 text-sm mb-1">
@@ -263,16 +273,45 @@ export function KnowledgeBase() {
               <p className="text-2xl font-bold text-purple-400">{status.recentAdditions.length}</p>
             </div>
           </div>
-        )}
+        ) : backendUnavailable ? (
+          // Backend unavailable: render unambiguous placeholders so the user
+          // cannot mistake "unknown" for "zero". No mock/fabricated data.
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700 opacity-60">
+              <div className="flex items-center gap-2 text-gray-400 text-sm mb-1">
+                <Database className="w-4 h-4" />
+                Total Documents
+              </div>
+              <p className="text-2xl font-bold text-gray-500" title="Backend unavailable">—</p>
+              <p className="text-xs text-gray-500">unavailable</p>
+            </div>
+            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700 opacity-60">
+              <div className="flex items-center gap-2 text-gray-400 text-sm mb-1">
+                <FileStack className="w-4 h-4" />
+                Active Domains
+              </div>
+              <p className="text-2xl font-bold text-gray-500" title="Backend unavailable">—</p>
+              <p className="text-xs text-gray-500">unavailable</p>
+            </div>
+            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700 opacity-60">
+              <div className="flex items-center gap-2 text-gray-400 text-sm mb-1">
+                <Calendar className="w-4 h-4" />
+                Recent Additions
+              </div>
+              <p className="text-2xl font-bold text-gray-500" title="Backend unavailable">—</p>
+              <p className="text-xs text-gray-500">unavailable</p>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {/* Error Banner */}
-      {error && (
+      {errorMessage && (
         <div className="mx-4 mt-4 p-3 bg-red-900/20 border border-red-700/50 rounded-lg flex items-center gap-3">
           <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-          <p className="text-red-300 text-sm">{error}</p>
+          <p className="text-red-300 text-sm">{errorMessage}</p>
           <button
-            onClick={() => setError(null)}
+            onClick={() => setLocalError(null)}
             className="ml-auto text-red-400 hover:text-red-300"
           >
             Dismiss
@@ -295,9 +334,12 @@ export function KnowledgeBase() {
             ) : (
               <div className="space-y-1">
                 {Object.entries(DOMAIN_CONFIG).map(([domain, config]) => {
-                  const count = domainStatsMap.get(domain) || 0
+                  const count = domainStatsMap.get(domain) ?? 0
                   const Icon = config.icon
                   const isSelected = selectedDomain === domain
+                  const countLabel = backendUnavailable
+                    ? 'count unavailable'
+                    : `${count} document${count !== 1 ? 's' : ''}`
 
                   return (
                     <button
@@ -317,7 +359,7 @@ export function KnowledgeBase() {
                           {config.label}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {count} document{count !== 1 ? 's' : ''}
+                          {countLabel}
                         </p>
                       </div>
                       <ChevronRight className={`w-4 h-4 text-gray-500 ${isSelected ? 'text-neon-mint' : ''}`} />

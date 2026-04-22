@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { Sidebar } from './Sidebar';
 

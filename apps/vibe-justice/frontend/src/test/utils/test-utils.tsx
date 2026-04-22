@@ -1,5 +1,6 @@
-import { render, RenderOptions, renderHook as rtlRenderHook } from '@testing-library/react'
-import { ReactElement } from 'react'
+import { render, renderHook as rtlRenderHook } from '@testing-library/react'
+import type { RenderOptions } from '@testing-library/react'
+import type { ReactElement, ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 // React 19: act is now exported from 'react' directly
 import { act } from 'react'
@@ -18,7 +19,7 @@ const createTestQueryClient = () =>
   })
 
 interface AllTheProvidersProps {
-  children: React.ReactNode
+  children: ReactNode
 }
 
 const AllTheProviders = ({ children }: AllTheProvidersProps) => {
