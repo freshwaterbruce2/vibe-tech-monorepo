@@ -42,6 +42,7 @@
     },
     "test:backend": {
       "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/backend/htmlcov"],
       "options": {
         "command": "python -m pytest vibe_justice/tests tests -v --tb=short",
         "cwd": "apps/vibe-justice/backend"
@@ -115,6 +116,14 @@
     "build:frontend": {
       "executor": "nx:run-commands",
       "outputs": ["{projectRoot}/frontend/dist"],
+      "inputs": [
+        "production",
+        "^production",
+        "{projectRoot}/frontend/src/**",
+        "{projectRoot}/frontend/vite.config.ts",
+        "{projectRoot}/frontend/index.html",
+        "{projectRoot}/frontend/package.json"
+      ],
       "options": {
         "command": "pnpm run build",
         "cwd": "apps/vibe-justice/frontend"
@@ -179,6 +188,31 @@
       "options": {
         "command": "python -m mypy vibe_justice --ignore-missing-imports",
         "cwd": "apps/vibe-justice/backend"
+      }
+    },
+    "backend:migrate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "python -m alembic upgrade head",
+        "cwd": "apps/vibe-justice/backend"
+      }
+    },
+    "backend:migrate:create": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "python -m alembic revision --autogenerate -m \"$MESSAGE\"",
+        "cwd": "apps/vibe-justice/backend"
+      }
+    },
+    "e2e": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{projectRoot}/frontend/playwright-report",
+        "{projectRoot}/frontend/test-results"
+      ],
+      "options": {
+        "command": "pnpm exec playwright test",
+        "cwd": "apps/vibe-justice/frontend"
       }
     }
   },
