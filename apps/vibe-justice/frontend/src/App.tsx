@@ -103,18 +103,24 @@ function LegalAssistantView() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-slate-950">
+    <div className="h-full flex flex-col bg-gradient-to-b from-slate-950 via-slate-950 to-vibe-void">
       {/* Header */}
-      <header className="bg-blue-900/50 text-white p-4 border-b border-blue-800/50">
+      <header className="relative text-white px-6 py-5 border-b border-white/10 bg-gradient-to-r from-slate-900/80 via-blue-950/40 to-slate-900/80 backdrop-blur-sm">
+        <div className="absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-neon-mint/30 to-transparent" />
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Scale className="w-6 h-6 text-neon-mint" />
-            <h1 className="text-xl font-bold">Legal Assistant</h1>
+            <div className="p-2 rounded-lg bg-neon-mint/10 border border-neon-mint/20 shadow-[0_0_20px_rgba(0,255,159,0.15)]">
+              <Scale className="w-5 h-5 text-neon-mint" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight">Legal Assistant</h1>
+              <p className="text-xs text-gray-400 font-mono">AI-powered legal research</p>
+            </div>
           </div>
           <select
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
-            className="bg-blue-800/50 text-white px-3 py-1 rounded border border-blue-700/50 text-sm"
+            className="bg-slate-900/80 text-white px-3 py-2 rounded-lg border border-white/10 text-sm hover:border-neon-mint/40 focus:border-neon-mint/60 focus:outline-none focus:ring-2 focus:ring-neon-mint/20 transition-colors cursor-pointer"
           >
             <optgroup label="South Carolina Law">
               <option value="sc_employment">SC Employment Law</option>
@@ -135,8 +141,8 @@ function LegalAssistantView() {
       </header>
 
       {/* Tabs */}
-      <div className="px-4 pt-4">
-        <div className="flex space-x-1 bg-slate-800/50 p-1 rounded-lg">
+      <div className="px-6 pt-5">
+        <div className="flex space-x-1 bg-slate-900/60 p-1 rounded-xl border border-white/5 backdrop-blur-sm">
           {[
             { id: 'chat', icon: Send, label: 'Chat' },
             { id: 'analyze', icon: FileText, label: 'Analyze' },
@@ -145,13 +151,13 @@ function LegalAssistantView() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 ${
+              className={`flex-1 py-2.5 px-4 rounded-lg transition-all flex items-center justify-center gap-2 text-sm font-medium ${
                 activeTab === tab.id
-                  ? 'bg-slate-700 text-white shadow'
-                  : 'text-gray-400 hover:text-white hover:bg-slate-800/50'
+                  ? 'bg-gradient-to-b from-slate-700/90 to-slate-800/90 text-white shadow-lg shadow-black/30 border border-neon-mint/20'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
               }`}
             >
-              <tab.icon className="w-4 h-4" />
+              <tab.icon className={`w-4 h-4 ${activeTab === tab.id ? 'text-neon-mint' : ''}`} />
               {tab.label}
             </button>
           ))}
@@ -159,17 +165,21 @@ function LegalAssistantView() {
       </div>
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto p-4">
+      <main className="flex-1 overflow-y-auto p-6">
         {activeTab === 'chat' && (
-          <div className="bg-slate-900/50 rounded-lg p-4 h-full flex flex-col border border-slate-800">
-            <div className="flex-1 overflow-y-auto mb-4 p-4 bg-slate-950/50 rounded border border-slate-800">
+          <div className="bg-slate-900/40 rounded-xl p-5 h-full flex flex-col border border-white/5 shadow-xl shadow-black/20 backdrop-blur-sm">
+            <div className="flex-1 overflow-y-auto mb-4 p-5 bg-gradient-to-b from-slate-950/60 to-vibe-void/60 rounded-lg border border-white/5">
               {messages.length === 0 && (
-                <div className="text-center text-gray-500 mt-8">
-                  <Scale className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p>Ask me anything about your legal situation.</p>
-                  <p className="text-sm mt-2">
-                    I specialize in SC unemployment claims, Walmart/Sedgwick issues, and general
-                    legal questions.
+                <div className="h-full flex flex-col items-center justify-center text-center">
+                  <div className="relative mb-5">
+                    <div className="absolute inset-0 bg-neon-mint/20 blur-2xl rounded-full" />
+                    <div className="relative p-5 rounded-2xl bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-neon-mint/20 shadow-[0_0_40px_rgba(0,255,159,0.15)]">
+                      <Scale className="w-12 h-12 text-neon-mint" />
+                    </div>
+                  </div>
+                  <p className="text-lg font-medium text-gray-200">Ask me anything about your legal situation</p>
+                  <p className="text-sm mt-2 text-gray-500 max-w-md">
+                    I specialize in SC unemployment claims, Walmart/Sedgwick issues, and general legal questions.
                   </p>
                 </div>
               )}
@@ -209,13 +219,13 @@ function LegalAssistantView() {
                   }
                 }}
                 placeholder="Type your legal question..."
-                className="flex-1 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-neon-mint/50"
+                className="flex-1 px-4 py-3 bg-slate-900/80 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon-mint/40 focus:ring-2 focus:ring-neon-mint/20 transition-colors"
                 disabled={loading}
               />
               <button
                 onClick={sendMessage}
                 disabled={loading}
-                className="px-6 py-2 bg-neon-mint text-slate-900 rounded-lg hover:bg-neon-mint/80 disabled:opacity-50 flex items-center space-x-2 font-medium"
+                className="px-6 py-3 bg-neon-mint text-slate-950 rounded-lg hover:bg-neon-mint/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold shadow-lg shadow-neon-mint/20 hover:shadow-neon-mint/40 transition-all"
               >
                 <Send className="w-4 h-4" />
                 <span>Send</span>
@@ -335,8 +345,8 @@ function App() {
       <DashboardLayout activeTab={activeTab} setActiveTab={setActiveTab}>
         <div className="h-full flex flex-col">
           {/* Quick access tabs bar */}
-          <div className="bg-slate-900 border-b border-slate-800 px-4 py-2">
-            <div className="flex items-center gap-2">
+          <div className="bg-gradient-to-b from-slate-900/95 to-slate-950/95 backdrop-blur-sm border-b border-white/5 px-4 py-2.5 shadow-lg shadow-black/20">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setActiveTab('investigation')}
                 className={`px-3 py-1.5 rounded-md text-sm flex items-center gap-2 transition-colors ${
