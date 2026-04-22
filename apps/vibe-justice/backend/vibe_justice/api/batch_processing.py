@@ -8,14 +8,20 @@ import tempfile
 from typing import List, Optional
 from pathlib import Path
 
-from fastapi import APIRouter, UploadFile, File, HTTPException, Form
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from vibe_justice.services.batch_processor_service import get_batch_processor
+from vibe_justice.utils.auth import require_api_key
+
+from main import limiter  # noqa: E402 — safe: main defines limiter before importing this
 
 
 router = APIRouter(prefix="/api/batch", tags=["batch"])
+
+# Auth gate for destructive POSTs (uploads); GETs (status, supported-formats) remain open.
+_auth = [Depends(require_api_key)]
 
 
 # Request/Response Models
@@ -52,8 +58,10 @@ ALLOWED_EXTENSIONS = {
 }
 
 
-@router.post("/upload", response_model=BatchUploadResponse)
+@router.post("/upload", response_model=BatchUploadResponse, dependencies=_auth)
+@limiter.limit("30/minute")
 async def upload_batch(
+    request: Request,
     files: List[UploadFile] = File(...),
     case_type: Optional[str] = Form("employment_law"),
     run_analysis: Optional[bool] = Form(True),

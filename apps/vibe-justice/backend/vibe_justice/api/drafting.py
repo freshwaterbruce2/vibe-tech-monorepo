@@ -2,11 +2,14 @@
 Document Drafting API endpoints
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from vibe_justice.services.drafting_service import DraftingService
+from vibe_justice.utils.auth import require_api_key
 
-router = APIRouter()
+from main import limiter  # noqa: E402 — safe: main defines limiter before importing this
+
+router = APIRouter(dependencies=[Depends(require_api_key)])
 drafting_service = DraftingService()
 
 
@@ -22,18 +25,19 @@ class DraftingResponse(BaseModel):
 
 
 @router.post("/generate", response_model=DraftingResponse)
-async def generate_draft(request: DraftingRequest):
+@limiter.limit("30/minute")
+async def generate_draft(request: Request, body: DraftingRequest):
     """
     Generates a legal document draft using DeepSeek R1.
     """
-    if not request.case_details:
+    if not body.case_details:
         raise HTTPException(status_code=400, detail="Case details cannot be empty")
 
     try:
         filepath = drafting_service.generate_document(
-            request.template_type,
-            request.case_details,
-            request.domain
+            body.template_type,
+            body.case_details,
+            body.domain
         )
         return DraftingResponse(
             filepath=filepath,

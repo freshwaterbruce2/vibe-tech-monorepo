@@ -5,12 +5,15 @@ Provides endpoints for searching company policies online and downloading
 documents to index into the knowledge base.
 """
 
+import ipaddress
 import logging
+import socket
 import tempfile
 from pathlib import Path
 from typing import List, Optional
+from urllib.parse import urlparse
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, HttpUrl
 
 from vibe_justice.services.evidence_service import EvidenceService
@@ -18,9 +21,58 @@ from vibe_justice.services.web_search_service import (
     WebSearchError,
     get_web_search_service,
 )
+from vibe_justice.utils.auth import require_api_key
+
+from main import limiter  # noqa: E402 — safe: main defines limiter before importing this
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+def _is_url_safe(url: str) -> bool:
+    """
+    SSRF guard for URLs accepted from user input.
+
+    Rejects:
+      - non-http/https schemes (file://, gopher://, ftp://, etc.)
+      - hostnames that resolve to RFC1918 / loopback / link-local /
+        IPv6 ULA / multicast / unspecified / reserved ranges.
+    """
+    try:
+        parsed = urlparse(url)
+    except Exception:
+        return False
+
+    if parsed.scheme not in ("http", "https"):
+        return False
+    if not parsed.hostname:
+        return False
+
+    hostname = parsed.hostname
+
+    # If hostname is already a literal IP, parse it directly; otherwise resolve.
+    try:
+        ip = ipaddress.ip_address(hostname)
+    except ValueError:
+        try:
+            resolved = socket.gethostbyname(hostname)
+            ip = ipaddress.ip_address(resolved)
+        except (socket.gaierror, ValueError):
+            # Can't resolve → treat as unsafe (fail closed)
+            return False
+
+    # Block any private / internal / reserved ranges.
+    if (
+        ip.is_private
+        or ip.is_loopback
+        or ip.is_link_local
+        or ip.is_multicast
+        or ip.is_reserved
+        or ip.is_unspecified
+    ):
+        return False
+
+    return True
 
 # Initialize services
 web_search_service = get_web_search_service()
@@ -82,8 +134,9 @@ class PolicyDownloadResponse(BaseModel):
 # ----- API Endpoints -----
 
 
-@router.post("/search", response_model=PolicySearchResponse)
-async def search_policies(request: PolicySearchRequest):
+@router.post("/search", response_model=PolicySearchResponse, dependencies=[Depends(require_api_key)])
+@limiter.limit("30/minute")
+async def search_policies(request: Request, body: PolicySearchRequest):
     """
     Search for company policies and legal documents online.
 
@@ -102,15 +155,15 @@ async def search_policies(request: PolicySearchRequest):
     """
     try:
         logger.info(
-            f"Searching policies: query='{request.query}', company={request.company}"
+            f"Searching policies: query='{body.query}', company={body.company}"
         )
 
         # Execute search
         results = web_search_service.search_policies(
-            query=request.query,
-            company=request.company,
-            policy_type=request.policy_type,
-            max_results=request.max_results,
+            query=body.query,
+            company=body.company,
+            policy_type=body.policy_type,
+            max_results=body.max_results,
         )
 
         # Convert to response model
@@ -126,7 +179,7 @@ async def search_policies(request: PolicySearchRequest):
 
         return PolicySearchResponse(
             results=result_items,
-            query=request.query,
+            query=body.query,
             total_results=len(result_items),
         )
 
@@ -138,8 +191,9 @@ async def search_policies(request: PolicySearchRequest):
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@router.post("/download", response_model=PolicyDownloadResponse)
-async def download_policy(request: PolicyDownloadRequest):
+@router.post("/download", response_model=PolicyDownloadResponse, dependencies=[Depends(require_api_key)])
+@limiter.limit("30/minute")
+async def download_policy(request: Request, body: PolicyDownloadRequest):
     """
     Download a policy document and index it into the knowledge base.
 
@@ -157,8 +211,13 @@ async def download_policy(request: PolicyDownloadRequest):
         HTTPException 500: Download or indexing error
     """
     try:
-        url_str = str(request.url)
-        logger.info(f"Downloading policy: url={url_str}, domain={request.domain}")
+        url_str = str(body.url)
+        logger.info(f"Downloading policy: url={url_str}, domain={body.domain}")
+
+        # SSRF guard — block file://, loopback, RFC1918, link-local, etc.
+        if not _is_url_safe(url_str):
+            logger.warning(f"Blocked unsafe URL: {url_str}")
+            raise HTTPException(status_code=400, detail="URL not allowed")
 
         # Download the document
         try:
@@ -174,7 +233,7 @@ async def download_policy(request: PolicyDownloadRequest):
         extension = _get_file_extension(url_str)
 
         # Create a safe filename from the title
-        safe_title = "".join(c if c.isalnum() or c in "._- " else "_" for c in request.title)
+        safe_title = "".join(c if c.isalnum() or c in "._- " else "_" for c in body.title)
         filename = f"{safe_title[:50]}{extension}"
 
         # Save to uploads directory
@@ -188,7 +247,7 @@ async def download_policy(request: PolicyDownloadRequest):
 
         # Index the document
         try:
-            index_result = evidence_service.index_file(filename, request.domain)
+            index_result = evidence_service.index_file(filename, body.domain)
             chunks_indexed = index_result.get("chunks_indexed", 0)
         except FileNotFoundError:
             raise HTTPException(status_code=500, detail="Failed to save document")

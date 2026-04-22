@@ -12,10 +12,10 @@ from vibe_justice.utils.paths import get_data_directory
 def open_in_explorer(file_path: str):
     """
     Opens Windows Explorer with the file selected.
-    Securely handles path separators.
+    Uses list-form args (shell=False) to prevent command injection.
     """
     clean_path = str(file_path).replace("/", "\\")
-    subprocess.Popen(f'explorer /select,"{clean_path}"')
+    subprocess.Popen(["explorer", f"/select,{clean_path}"], shell=False)
 
 
 def generate_case_export(case_id: str, data: dict, format: str = "docx") -> str:

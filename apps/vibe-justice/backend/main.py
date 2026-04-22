@@ -9,7 +9,18 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from vibe_justice.api import (
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+
+# Load environment variables BEFORE importing route modules (services read env at import)
+load_dotenv()
+
+# Rate limiter defined BEFORE api imports so route files can `from main import limiter`
+# without hitting a circular import (they are imported below, after `limiter` exists).
+limiter = Limiter(key_func=get_remote_address)
+
+from vibe_justice.api import (  # noqa: E402  — intentional: limiter must exist first
     analysis,
     batch_processing,
     cases,
@@ -21,9 +32,6 @@ from vibe_justice.api import (
     search,
 )
 
-# Load environment variables
-load_dotenv()
-
 # Create FastAPI app
 app = FastAPI(
     title="Vibe-Justice Backend",
@@ -31,24 +39,39 @@ app = FastAPI(
     version="2.0.0",
 )
 
-# Configure CORS for frontend
+# Wire limiter into app
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
+
+# Configure CORS — explicit allowlist; origins configurable in production
+_DEV_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175",  # Current frontend port
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+    "http://127.0.0.1:5175",
+    "tauri://localhost",  # Tauri desktop app
+    "https://tauri.localhost",  # Tauri HTTPS
+    "http://tauri.localhost",  # Tauri HTTP
+]
+
+_env_origins = os.getenv("VIBE_JUSTICE_ALLOWED_ORIGINS", "").strip()
+if _env_origins:
+    _allowed_origins = [o.strip() for o in _env_origins.split(",") if o.strip()]
+elif os.getenv("VIBE_JUSTICE_ENV", "development").lower() != "production":
+    _allowed_origins = _DEV_ORIGINS
+else:
+    # Production with no explicit allowlist: fail closed (no origins)
+    _allowed_origins = []
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:5175",  # Current frontend port
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:5174",
-        "http://127.0.0.1:5175",
-        "tauri://localhost",  # Tauri desktop app
-        "https://tauri.localhost",  # Tauri HTTPS
-        "http://tauri.localhost",  # Tauri HTTP
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_allowed_origins,
+    allow_credentials=False,  # No cookie auth; API uses X-API-Key header
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-API-Key"],
 )
 
 # Include API routers
@@ -107,4 +130,4 @@ if __name__ == "__main__":
 
     is_dev = os.getenv("VIBE_ENV", "development").lower() == "development"
     # Production safety: reload=False unless explicitly in dev mode
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=is_dev, debug=False)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=is_dev)

@@ -2,11 +2,14 @@
 Document Analysis API endpoints
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from vibe_justice.services.analysis_service import AnalysisService
+from vibe_justice.utils.auth import require_api_key
 
-router = APIRouter()
+from main import limiter  # noqa: E402 — safe: main defines limiter before importing this
+
+router = APIRouter(dependencies=[Depends(require_api_key)])
 analysis_service = AnalysisService()
 
 
@@ -20,17 +23,18 @@ class AnalysisResponse(BaseModel):
 
 
 @router.post("/run", response_model=AnalysisResponse)
-async def run_analysis(request: AnalysisRequest):
+@limiter.limit("30/minute")
+async def run_analysis(request: Request, body: AnalysisRequest):
     """
     Analyzes a document against legal frameworks using DeepSeek R1.
     """
-    if not request.document_text:
+    if not body.document_text:
         raise HTTPException(status_code=400, detail="Document text cannot be empty")
 
     try:
         result = analysis_service.analyze_document(
-            request.document_text,
-            request.domain
+            body.document_text,
+            body.domain
         )
         return AnalysisResponse(result=result)
     except Exception as e:

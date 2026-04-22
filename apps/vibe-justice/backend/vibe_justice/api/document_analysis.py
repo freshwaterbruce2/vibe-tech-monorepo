@@ -7,16 +7,22 @@ import os
 import tempfile
 from pathlib import Path
 from typing import List, Optional
-from fastapi import APIRouter, UploadFile, File, HTTPException, Form
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form, Request
 from pydantic import BaseModel
 
 from vibe_justice.services.document_processor_service import get_document_processor
 from vibe_justice.services.violation_detector_service import get_violation_detector
 from vibe_justice.services.date_extractor_service import get_date_extractor
 from vibe_justice.services.contradiction_detector_service import get_contradiction_detector
+from vibe_justice.utils.auth import require_api_key
+
+from main import limiter  # noqa: E402 — safe: main defines limiter before importing this
 
 
 router = APIRouter(prefix="/document-analysis", tags=["Document Analysis"])
+
+# Auth gate for all POST endpoints (LLM/destructive); /health remains open.
+_auth = [Depends(require_api_key)]
 
 
 # Request/Response Models
@@ -49,9 +55,11 @@ class CompleteAnalysisResponse(BaseModel):
     summary: dict
 
 
-@router.post("/upload", response_model=DocumentUploadResponse)
+@router.post("/upload", response_model=DocumentUploadResponse, dependencies=_auth)
+@limiter.limit("30/minute")
 async def upload_documents(
-    files: List[UploadFile] = File(...)
+    request: Request,
+    files: List[UploadFile] = File(...),
 ):
     """
     Upload and process documents (PDF, DOCX, TXT).
@@ -98,7 +106,7 @@ async def upload_documents(
         raise HTTPException(status_code=500, detail=f"Upload error: {str(e)}")
 
 
-@router.post("/analyze/violations", response_model=ViolationsResponse)
+@router.post("/analyze/violations", response_model=ViolationsResponse, dependencies=_auth)
 async def analyze_violations(
     documents: List[dict],
     case_type: str = "unemployment"
@@ -135,7 +143,7 @@ async def analyze_violations(
         raise HTTPException(status_code=500, detail=f"Violation analysis error: {str(e)}")
 
 
-@router.post("/analyze/dates", response_model=DatesResponse)
+@router.post("/analyze/dates", response_model=DatesResponse, dependencies=_auth)
 async def analyze_dates(
     documents: List[dict]
 ):
@@ -171,7 +179,7 @@ async def analyze_dates(
         raise HTTPException(status_code=500, detail=f"Date extraction error: {str(e)}")
 
 
-@router.post("/analyze/contradictions", response_model=ContradictionsResponse)
+@router.post("/analyze/contradictions", response_model=ContradictionsResponse, dependencies=_auth)
 async def analyze_contradictions(
     documents: List[dict]
 ):
@@ -206,7 +214,7 @@ async def analyze_contradictions(
         raise HTTPException(status_code=500, detail=f"Contradiction analysis error: {str(e)}")
 
 
-@router.post("/analyze/complete", response_model=CompleteAnalysisResponse)
+@router.post("/analyze/complete", response_model=CompleteAnalysisResponse, dependencies=_auth)
 async def complete_analysis(
     documents: List[dict],
     case_type: str = "unemployment"
