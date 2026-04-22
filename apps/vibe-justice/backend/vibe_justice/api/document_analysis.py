@@ -16,7 +16,7 @@ from vibe_justice.services.date_extractor_service import get_date_extractor
 from vibe_justice.services.contradiction_detector_service import get_contradiction_detector
 from vibe_justice.utils.auth import require_api_key
 
-from main import limiter  # noqa: E402 — safe: main defines limiter before importing this
+from vibe_justice.utils.rate_limit import limiter
 
 
 router = APIRouter(prefix="/document-analysis", tags=["Document Analysis"])

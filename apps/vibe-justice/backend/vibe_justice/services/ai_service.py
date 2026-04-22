@@ -47,11 +47,11 @@ class AIService:
         if "moonshot" in model.lower() or "kimi" in model.lower():
             if not self.moonshot_key:
                 raise ValueError("MOONSHOT_API_KEY is required for Moonshot/Kimi models")
-            
-            # Map common OpenRouter names to direct Moonshot names if needed
-            if model == "moonshotai/kimi-k2.5":
-                model = "moonshot-v1-32k" # Fallback mapping or use actual kimi-k2.5 if available
-                
+
+            # No alias remapping here — pass the configured model straight through.
+            # If the provider does not recognise the name it will 404 honestly and
+            # the caller's fallback chain can pick a different model.
+
             headers = {
                 "Authorization": f"Bearer {self.moonshot_key}",
                 "Content-Type": "application/json"
@@ -169,10 +169,10 @@ class AIService:
             # Get dynamic endpoint and headers
             endpoint, headers = self._get_api_config(model)
 
-            # Map OpenRouter alias to actual Moonshot model if needed before the call
+            # Pass the configured model straight through — no alias remapping.
+            # If the provider doesn't recognise it they will 404 and the
+            # ai/openrouter_client fallback chain handles recovery.
             actual_model = model
-            if actual_model == "moonshotai/kimi-k2.5":
-                actual_model = "moonshot-v1-32k"
 
             # Call API
             response = requests.post(
@@ -236,10 +236,10 @@ class AIService:
             # Get dynamic endpoint and headers
             endpoint, headers = self._get_api_config(model)
 
-            # Map OpenRouter alias to actual Moonshot model if needed before the call
+            # Pass the configured model straight through — no alias remapping.
+            # If the provider doesn't recognise it they will 404 and the
+            # ai/openrouter_client fallback chain handles recovery.
             actual_model = model
-            if actual_model == "moonshotai/kimi-k2.5":
-                actual_model = "moonshot-v1-32k"
 
             # Call API
             response = requests.post(
@@ -327,10 +327,10 @@ class AIService:
             # Get dynamic endpoint and headers
             endpoint, headers = self._get_api_config(model)
 
-            # Map OpenRouter alias to actual Moonshot model if needed before the call
+            # Pass the configured model straight through — no alias remapping.
+            # If the provider doesn't recognise it they will 404 and the
+            # ai/openrouter_client fallback chain handles recovery.
             actual_model = model
-            if actual_model == "moonshotai/kimi-k2.5":
-                actual_model = "moonshot-v1-32k"
 
             # Call API
             response = requests.post(
@@ -410,10 +410,10 @@ class AIService:
             # Get dynamic endpoint and headers
             endpoint, headers = self._get_api_config(model)
 
-            # Map OpenRouter alias to actual Moonshot model if needed before the call
+            # Pass the configured model straight through — no alias remapping.
+            # If the provider doesn't recognise it they will 404 and the
+            # ai/openrouter_client fallback chain handles recovery.
             actual_model = model
-            if actual_model == "moonshotai/kimi-k2.5":
-                actual_model = "moonshot-v1-32k"
 
             # Call API
             response = requests.post(

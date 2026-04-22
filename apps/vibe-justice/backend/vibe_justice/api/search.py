@@ -23,7 +23,7 @@ from vibe_justice.services.web_search_service import (
 )
 from vibe_justice.utils.auth import require_api_key
 
-from main import limiter  # noqa: E402 — safe: main defines limiter before importing this
+from vibe_justice.utils.rate_limit import limiter
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

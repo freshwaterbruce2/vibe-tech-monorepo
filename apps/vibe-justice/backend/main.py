@@ -9,18 +9,17 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 
 # Load environment variables BEFORE importing route modules (services read env at import)
 load_dotenv()
 
-# Rate limiter defined BEFORE api imports so route files can `from main import limiter`
-# without hitting a circular import (they are imported below, after `limiter` exists).
-limiter = Limiter(key_func=get_remote_address)
+# Rate limiter lives in its own module so route files can import it without
+# importing `main` (which would cause a circular import). See utils/rate_limit.py.
+from vibe_justice.utils.rate_limit import limiter
 
-from vibe_justice.api import (  # noqa: E402  — intentional: limiter must exist first
+from vibe_justice.api import (
     analysis,
     batch_processing,
     cases,

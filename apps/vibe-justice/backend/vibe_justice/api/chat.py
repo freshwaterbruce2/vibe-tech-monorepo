@@ -11,8 +11,7 @@ from vibe_justice.services.ai_service import get_ai_service
 from vibe_justice.services.retrieval_service import RetrievalService
 from vibe_justice.utils.auth import require_api_key
 
-# main defines `limiter` before importing this module, so this is safe.
-from main import limiter  # noqa: E402
+from vibe_justice.utils.rate_limit import limiter
 
 router = APIRouter(dependencies=[Depends(require_api_key)])
 ai_service = get_ai_service()

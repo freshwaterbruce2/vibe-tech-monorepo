@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from vibe_justice.services.batch_processor_service import get_batch_processor
 from vibe_justice.utils.auth import require_api_key
 
-from main import limiter  # noqa: E402 — safe: main defines limiter before importing this
+from vibe_justice.utils.rate_limit import limiter
 
 
 router = APIRouter(prefix="/api/batch", tags=["batch"])
@@ -123,22 +123,37 @@ async def upload_batch(
                     ),
                 )
 
-            # Read file content
-            content = await upload_file.read()
-
-            # Check file size
-            if len(content) > MAX_FILE_SIZE:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"File too large: {upload_file.filename} ({len(content) / 1024 / 1024:.1f} MB). Max 25 MB.",
-                )
-
-            # Save to temporary file for processing
+            # Stream the upload to disk in 1 MiB chunks, enforcing the size
+            # cap as we go. This avoids loading a 25 MB (or larger) file
+            # fully into memory before we check its size. A malicious client
+            # claiming a tiny Content-Length could otherwise OOM the worker.
             temp_file = tempfile.NamedTemporaryFile(
                 delete=False, suffix=file_ext, prefix="vibe_justice_"
             )
-            temp_file.write(content)
-            temp_file.close()
+            size = 0
+            try:
+                while True:
+                    chunk = await upload_file.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    size += len(chunk)
+                    if size > MAX_FILE_SIZE:
+                        temp_file.close()
+                        try:
+                            os.unlink(temp_file.name)
+                        except OSError:
+                            pass
+                        raise HTTPException(
+                            status_code=413,
+                            detail=(
+                                f"File too large: {upload_file.filename} "
+                                f"(>{MAX_FILE_SIZE / 1024 / 1024:.0f} MB). "
+                                f"Max {MAX_FILE_SIZE / 1024 / 1024:.0f} MB."
+                            ),
+                        )
+                    temp_file.write(chunk)
+            finally:
+                temp_file.close()
 
             temp_files.append(temp_file.name)
             validated_files.append(upload_file.filename)

@@ -6,11 +6,35 @@ Uses OpenRouter API for multi-model AI access (2026 standards)
 import os
 import random
 import time
+from typing import List
+
 import requests
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+def _build_fallback_chain(primary_env: str, default_primary: str) -> List[str]:
+    """Build an ordered model fallback chain.
+
+    Priority 1: ``<primary_env>`` (e.g. PRIMARY_CHAT_MODEL) if set.
+    Priority 2: the supplied default primary.
+    Always followed by a hardcoded rescue chain of known-good DeepSeek models.
+    Duplicates are removed while preserving order.
+    """
+    chain = [
+        os.getenv(primary_env, default_primary),
+        "deepseek/deepseek-chat-v3",
+        "deepseek/deepseek-r1",
+    ]
+    seen: set[str] = set()
+    ordered: List[str] = []
+    for model in chain:
+        if model and model not in seen:
+            seen.add(model)
+            ordered.append(model)
+    return ordered
 
 
 class OpenRouterClient:
@@ -69,10 +93,14 @@ class OpenRouterClient:
         """
         Execute reasoning-heavy legal research using OpenRouter with exponential backoff.
 
+        Iterates a model fallback chain: if the primary model returns 404 or
+        429, the next model in the chain is tried. Transient errors still
+        retry on the current model up to ``max_retries``.
+
         Args:
             jurisdiction: Legal jurisdiction (e.g., "South Carolina")
             goals: Research objectives
-            max_retries: Maximum retry attempts
+            max_retries: Maximum retry attempts per model
 
         Returns:
             Legal research analysis in Markdown format
@@ -90,48 +118,64 @@ class OpenRouterClient:
         4. Format the output in clean Markdown.
         """
 
-        attempt = 0
-        backoff = 2  # Start with 2 seconds
+        fallback_chain = _build_fallback_chain(
+            "PRIMARY_REASONING_MODEL", self.reasoning_model
+        )
+        last_error: str = "no attempts made"
 
-        while attempt < max_retries:
-            try:
-                response = requests.post(
-                    self.chat_endpoint,
-                    json={
-                        "model": self.reasoning_model,
-                        "messages": [
-                            {
-                                "role": "system",
-                                "content": "You are a professional paralegal assistant specializing in South Carolina and Federal law.",
-                            },
-                            {"role": "user", "content": prompt},
-                        ],
-                        "temperature": 0.7,
-                        "max_tokens": 12000
-                    },
-                    headers=self._get_headers(),
-                    timeout=self.timeout
-                )
+        for model in fallback_chain:
+            attempt = 0
+            backoff = 2  # Start with 2 seconds
+            while attempt < max_retries:
+                try:
+                    response = requests.post(
+                        self.chat_endpoint,
+                        json={
+                            "model": model,
+                            "messages": [
+                                {
+                                    "role": "system",
+                                    "content": "You are a professional paralegal assistant specializing in South Carolina and Federal law.",
+                                },
+                                {"role": "user", "content": prompt},
+                            ],
+                            "temperature": 0.7,
+                            "max_tokens": 12000,
+                        },
+                        headers=self._get_headers(),
+                        timeout=self.timeout,
+                    )
 
-                response.raise_for_status()
-                data = response.json()
-                analysis = data["choices"][0]["message"]["content"]
-                return analysis
+                    # On a 404 (unknown model) or 429 (quota), advance to the
+                    # next model in the fallback chain without retrying.
+                    if response.status_code in (404, 429):
+                        last_error = (
+                            f"model '{model}' returned HTTP {response.status_code}"
+                        )
+                        print(f"[AI FALLBACK] {last_error}; trying next model")
+                        break
 
-            except requests.exceptions.RequestException as e:
-                attempt += 1
-                if attempt >= max_retries:
-                    return f"AI Error after {max_retries} attempts: {str(e)}. Check OPENROUTER_API_KEY configuration."
+                    response.raise_for_status()
+                    data = response.json()
+                    return data["choices"][0]["message"]["content"]
 
-                print(
-                    f"[AI RETRY] Attempt {attempt} failed: {e}. Retrying in {backoff}s..."
-                )
-                time.sleep(backoff)
+                except requests.exceptions.RequestException as e:
+                    attempt += 1
+                    last_error = str(e)
+                    if attempt >= max_retries:
+                        break
+                    print(
+                        f"[AI RETRY] Attempt {attempt} on {model} failed: {e}. "
+                        f"Retrying in {backoff}s..."
+                    )
+                    time.sleep(backoff)
+                    backoff = (backoff * 2) + random.uniform(0, 1)
 
-                # Exponential backoff with jitter
-                backoff = (backoff * 2) + random.uniform(0, 1)
+                except Exception as e:
+                    # Non-HTTP errors (JSON decode, etc.) — abort all fallbacks.
+                    return f"AI Error: {str(e)}"
 
-            except Exception as e:
-                return f"AI Error: {str(e)}"
-
-        return "AI Error: Maximum retries exceeded."
+        return (
+            f"AI Error after exhausting fallback chain ({', '.join(fallback_chain)}): "
+            f"{last_error}. Check OPENROUTER_API_KEY configuration."
+        )

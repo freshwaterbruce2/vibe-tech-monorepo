@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
@@ -18,10 +19,72 @@ try:
 except Exception:  # pragma: no cover
     chromadb = None
 
+try:
+    import httpx  # type: ignore
+except Exception:  # pragma: no cover
+    httpx = None
+
 from vibe_justice.utils.domain import normalize_domain
 from vibe_justice.utils.paths import get_chroma_directory
 
 logger = logging.getLogger(__name__)
+
+
+# Remember once per process whether the proxy is unreachable so we only log
+# the degraded-mode warning a single time.
+_PROXY_FALLBACK_LOGGED = False
+
+
+def _get_embedding(text: str, dimensions: int = 1536) -> List[float]:
+    """Generate a real embedding via the local OpenRouter proxy.
+
+    Uses ``text-embedding-3-small`` (1536-d) which matches the monorepo's
+    memory / RAG stack. If the proxy is unreachable, logs a single WARN and
+    falls back to the deterministic hash embedding so retrieval degrades
+    gracefully instead of crashing.
+
+    Config:
+        OPENROUTER_PROXY_URL     (default: http://localhost:3001)
+        EMBEDDING_MODEL          (default: text-embedding-3-small)
+    """
+    global _PROXY_FALLBACK_LOGGED
+
+    if httpx is None:
+        if not _PROXY_FALLBACK_LOGGED:
+            logger.warning(
+                "httpx not installed; falling back to hash-based embeddings. "
+                "RAG quality will be severely degraded."
+            )
+            _PROXY_FALLBACK_LOGGED = True
+        return _hash_embedding(text, dimensions)
+
+    proxy_url = os.getenv("OPENROUTER_PROXY_URL", "http://localhost:3001").rstrip("/")
+    model = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+    endpoint = f"{proxy_url}/api/v1/embeddings"
+
+    try:
+        with httpx.Client(timeout=30.0) as client:
+            response = client.post(
+                endpoint,
+                json={"model": model, "input": text},
+            )
+            response.raise_for_status()
+            data = response.json()
+            embedding = data["data"][0]["embedding"]
+            if not isinstance(embedding, list) or not embedding:
+                raise ValueError("proxy returned empty embedding")
+            return embedding
+    except Exception as e:
+        if not _PROXY_FALLBACK_LOGGED:
+            logger.warning(
+                "Embedding proxy at %s unreachable (%s). Falling back to "
+                "hash-based embeddings; RAG quality will be severely "
+                "degraded until the proxy is restored.",
+                endpoint,
+                e,
+            )
+            _PROXY_FALLBACK_LOGGED = True
+        return _hash_embedding(text, dimensions)
 
 # Supported collection names mapping domain to collection
 DOMAIN_COLLECTIONS = {
@@ -227,8 +290,10 @@ class RetrievalService:
                 logger.debug(f"Collection {collection_name} is empty")
                 return []
 
-            # Generate query embedding
-            query_embedding = _hash_embedding(query)
+            # Generate query embedding via the OpenRouter proxy (1536-d
+            # text-embedding-3-small). Falls back to hash-based embeddings
+            # with a logged warning if the proxy is unreachable.
+            query_embedding = _get_embedding(query)
 
             # Query the collection
             response = collection.query(

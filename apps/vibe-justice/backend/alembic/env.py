@@ -1,3 +1,4 @@
+import os
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -19,6 +20,18 @@ if config.config_file_name is not None:
 # Import SQLModel for future database models
 from sqlmodel import SQLModel
 target_metadata = SQLModel.metadata
+
+
+# Populate sqlalchemy.url from the DATABASE_PATH env var (monorepo policy).
+# Accepts either a full sqlalchemy URL ("sqlite:///D:/databases/vibe.db") or a
+# raw filesystem path ("D:/databases/vibe.db"). alembic.ini intentionally ships
+# with a blank sqlalchemy.url so we fail fast if DATABASE_PATH is missing.
+_db_url = os.getenv("DATABASE_PATH")
+if _db_url:
+    if not _db_url.startswith("sqlite:"):
+        # Normalize Windows backslashes so SQLAlchemy accepts the URL.
+        _db_url = f"sqlite:///{_db_url.replace(chr(92), '/')}"
+    config.set_main_option("sqlalchemy.url", _db_url)
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

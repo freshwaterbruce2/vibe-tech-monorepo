@@ -5,12 +5,17 @@ from pathlib import Path
 
 
 def get_platform_data_root() -> Path:
-    """Get platform-specific data root directory (Strictly D: for data)"""
+    r"""Get platform-specific data root directory.
+
+    On Windows this returns ``D:\data\vibe-justice`` (the per-app data
+    namespace). ``D:\learning-system`` is reserved for the cross-agent
+    learning store and must not be used for per-app data.
+    """
     system = platform.system()
 
     if system == "Windows":
-        # Windows: Primary is strictly D:\learning-system
-        d_drive = Path("D:/learning-system")
+        # Windows: primary is D:\data\vibe-justice (per monorepo paths policy).
+        d_drive = Path("D:/data/vibe-justice")
         if d_drive.parent.exists():
             return d_drive
         # Fallback to User Profile ONLY if D: is missing
@@ -83,11 +88,25 @@ def get_database_directory() -> Path:
     Get SQLite database directory (Strictly D:\databases per monorepo rules).
 
     Environment Variables:
-        VIBE_JUSTICE_DB_DIR: Override database directory location
+        DATABASE_PATH: Full path to a specific DB file. When set, its parent
+                       directory is used. Highest priority (monorepo standard).
+        VIBE_JUSTICE_DB_DIR: Override database directory location.
 
     Returns:
         Path to database directory (D:\databases\vibe-justice on Windows)
     """
+    # Priority 1: DATABASE_PATH (monorepo-standard env var)
+    database_path = os.getenv("DATABASE_PATH")
+    if database_path:
+        # Accept either a sqlalchemy-style URL (sqlite:///...) or a raw path.
+        raw = database_path
+        if raw.startswith("sqlite:///"):
+            raw = raw[len("sqlite:///"):]
+        parent = Path(raw).parent
+        parent.mkdir(parents=True, exist_ok=True)
+        return parent
+
+    # Priority 2: legacy per-app override
     override = os.getenv("VIBE_JUSTICE_DB_DIR")
     if override:
         return Path(override)
@@ -111,12 +130,27 @@ def get_database_path(db_name: str = "vibe_justice.db") -> Path:
     """
     Get path to a specific SQLite database file.
 
+    If the ``DATABASE_PATH`` environment variable is set and points to a
+    file (not just a directory), it takes priority and is returned verbatim.
+    Otherwise the path is resolved under ``get_database_directory()``.
+
     Args:
         db_name: Database filename (default: vibe_justice.db)
 
     Returns:
         Full path to the database file
     """
+    database_path = os.getenv("DATABASE_PATH")
+    if database_path:
+        raw = database_path
+        if raw.startswith("sqlite:///"):
+            raw = raw[len("sqlite:///"):]
+        candidate = Path(raw)
+        # Treat entries that look like file paths (have a suffix) as complete.
+        if candidate.suffix:
+            candidate.parent.mkdir(parents=True, exist_ok=True)
+            return candidate
+
     return get_database_directory() / db_name
 
 

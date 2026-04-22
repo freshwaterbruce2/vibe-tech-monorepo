@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from vibe_justice.services.analysis_service import AnalysisService
 from vibe_justice.utils.auth import require_api_key
 
-from main import limiter  # noqa: E402 — safe: main defines limiter before importing this
+from vibe_justice.utils.rate_limit import limiter
 
 router = APIRouter(dependencies=[Depends(require_api_key)])
 analysis_service = AnalysisService()

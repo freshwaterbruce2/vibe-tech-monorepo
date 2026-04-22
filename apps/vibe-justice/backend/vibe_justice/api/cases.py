@@ -78,10 +78,10 @@ async def create_case(request: CaseCreateRequest):
             f.write(
                 f"[{timestamp}] [UI_SIGNAL] Received create request for: {request.name}\n"
             )
-        f.write(f"[{timestamp}] [SYSTEM] Workspace created at {case_root}\n")
-        f.write(
-            f"[{timestamp}] [AGENT] Autonomous research loop engaged for {request.jurisdiction}.\n"
-        )
+            f.write(f"[{timestamp}] [SYSTEM] Workspace created at {case_root}\n")
+            f.write(
+                f"[{timestamp}] [AGENT] Autonomous research loop engaged for {request.jurisdiction}.\n"
+            )
 
         return {"status": "success", "case_path": str(case_root)}
 

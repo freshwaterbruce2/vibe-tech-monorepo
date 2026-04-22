@@ -219,7 +219,11 @@ class WebSearchService:
             request_timeout = timeout or self.timeout
             logger.info(f"Downloading document: {url}")
 
-            with httpx.Client(timeout=request_timeout, follow_redirects=True) as client:
+            with httpx.Client(
+                timeout=request_timeout,
+                follow_redirects=True,
+                max_redirects=3,
+            ) as client:
                 response = client.get(url)
                 response.raise_for_status()
                 content = response.content

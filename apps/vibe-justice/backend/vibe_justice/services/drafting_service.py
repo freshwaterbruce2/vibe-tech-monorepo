@@ -2,15 +2,17 @@
 Document Drafting Service
 """
 
-from pathlib import Path
 from vibe_justice.services.ai_service import get_ai_service
+from vibe_justice.utils.paths import get_data_directory
 from vibe_justice.utils.timestamps import format_filename
 
 
 class DraftingService:
     def __init__(self):
         self.ai_service = get_ai_service()
-        self.output_dir = Path("D:/VibeJusticeData/drafts")
+        # Drafts live under the per-app data directory so they respect
+        # VIBE_JUSTICE_DATA_DIR overrides (tests + CI use tmp dirs).
+        self.output_dir = get_data_directory() / "drafts"
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def generate_document(self, template_type: str, case_details: str, domain: str) -> str:

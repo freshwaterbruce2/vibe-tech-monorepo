@@ -1,11 +1,29 @@
 import os
 import random
 import time
+from typing import List
+
 import requests
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+def _build_fallback_chain(default_primary: str) -> List[str]:
+    """Build the DeepSeek model fallback chain (primary, stable, reasoning)."""
+    chain = [
+        os.getenv("PRIMARY_CHAT_MODEL", default_primary),
+        "deepseek/deepseek-chat-v3",
+        "deepseek/deepseek-r1",
+    ]
+    seen: set[str] = set()
+    ordered: List[str] = []
+    for model in chain:
+        if model and model not in seen:
+            seen.add(model)
+            ordered.append(model)
+    return ordered
 
 
 class DeepSeekAssistant:
@@ -23,7 +41,10 @@ class DeepSeekAssistant:
 
     def perform_legal_research(self, jurisdiction, goals, max_retries=5):
         """
-        Executes a reasoning-heavy legal research prompt via OpenRouter proxy with exponential backoff.
+        Executes a reasoning-heavy legal research prompt via OpenRouter proxy
+        with exponential backoff and a model fallback chain. On HTTP 404
+        (unknown model) or 429 (quota/rate limit), advance to the next
+        model in the chain without retrying.
         """
         prompt = f"""
         ROLE: Senior Legal Research Assistant.
@@ -38,48 +59,59 @@ class DeepSeekAssistant:
         4. Format the output in clean Markdown.
         """
 
-        attempt = 0
-        backoff = 2  # Start with 2 seconds
+        fallback_chain = _build_fallback_chain(self.model)
+        last_error: str = "no attempts made"
 
-        while attempt < max_retries:
-            try:
-                response = requests.post(
-                    self.proxy_endpoint,
-                    json={
-                        "model": self.model,
-                        "messages": [
-                            {
-                                "role": "system",
-                                "content": "You are a professional paralegal assistant specializing in South Carolina and Federal law.",
-                            },
-                            {"role": "user", "content": prompt},
-                        ],
-                        "temperature": 0.7,
-                        "max_tokens": 12000
-                    },
-                    headers={"Content-Type": "application/json"},
-                    timeout=self.timeout
-                )
+        for model in fallback_chain:
+            attempt = 0
+            backoff = 2  # Start with 2 seconds
+            while attempt < max_retries:
+                try:
+                    response = requests.post(
+                        self.proxy_endpoint,
+                        json={
+                            "model": model,
+                            "messages": [
+                                {
+                                    "role": "system",
+                                    "content": "You are a professional paralegal assistant specializing in South Carolina and Federal law.",
+                                },
+                                {"role": "user", "content": prompt},
+                            ],
+                            "temperature": 0.7,
+                            "max_tokens": 12000,
+                        },
+                        headers={"Content-Type": "application/json"},
+                        timeout=self.timeout,
+                    )
 
-                response.raise_for_status()
-                data = response.json()
-                analysis = data["choices"][0]["message"]["content"]
-                return analysis
+                    if response.status_code in (404, 429):
+                        last_error = (
+                            f"model '{model}' returned HTTP {response.status_code}"
+                        )
+                        print(f"[AI FALLBACK] {last_error}; trying next model")
+                        break
 
-            except requests.exceptions.RequestException as e:
-                attempt += 1
-                if attempt >= max_retries:
-                    return f"AI Error after {max_retries} attempts: {str(e)}. Is the OpenRouter proxy running on localhost:3001?"
+                    response.raise_for_status()
+                    data = response.json()
+                    return data["choices"][0]["message"]["content"]
 
-                print(
-                    f"[AI RETRY] Attempt {attempt} failed: {e}. Retrying in {backoff}s..."
-                )
-                time.sleep(backoff)
+                except requests.exceptions.RequestException as e:
+                    attempt += 1
+                    last_error = str(e)
+                    if attempt >= max_retries:
+                        break
+                    print(
+                        f"[AI RETRY] Attempt {attempt} on {model} failed: {e}. "
+                        f"Retrying in {backoff}s..."
+                    )
+                    time.sleep(backoff)
+                    backoff = (backoff * 2) + random.uniform(0, 1)
 
-                # Exponential backoff with jitter
-                backoff = (backoff * 2) + random.uniform(0, 1)
+                except Exception as e:
+                    return f"AI Error: {str(e)}"
 
-            except Exception as e:
-                return f"AI Error: {str(e)}"
-
-        return "AI Error: Maximum retries exceeded."
+        return (
+            f"AI Error after exhausting fallback chain ({', '.join(fallback_chain)}): "
+            f"{last_error}. Is the OpenRouter proxy running on localhost:3001?"
+        )
