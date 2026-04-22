@@ -1,27 +1,55 @@
-# vibe-justice — AI Context
+---
+type: ai-entrypoint
+scope: project
+audience:
+  - claude-code
+status: active
+lastReviewed: 2026-04-21
+---
 
-## What this is
-AI-powered legal case analysis desktop app — Python FastAPI backend with AI document analysis, contradiction detection, and legal drafting, wrapped in a Tauri v2 frontend.
+# CLAUDE.md — Vibe-Justice
 
-## Stack
-- **Runtime**: Python 3.13 (backend) + Node.js 22 + Rust (Tauri frontend)
-- **Framework**: Python backend (FastAPI implied) + Tauri v2 + Vite + React 19 (frontend)
-- **Key deps**: openrouter_client (AI), alembic (DB migrations), evidence/ocr/drafting services; backend compiled to `.exe` via PyInstaller
+Tauri v2 desktop app for legal document analysis. React 19 + TypeScript frontend,
+FastAPI + Python 3.13 backend sidecar. Canonical workspace rules live in
+`../../docs/ai/WORKSPACE.md`.
 
-## Dev
-```bash
-# Backend (Python)
-cd apps/vibe-justice/backend && python -m vibe_justice  # run Python backend
+## Architecture
 
-# Frontend (Tauri)
-pnpm --filter vibe-justice-frontend dev    # Vite dev server
-pnpm --filter vibe-justice-frontend build  # tsc + vite build → dist/
-# tauri dev / tauri build run from frontend dir
-```
+- **Frontend** (`frontend/`) — Vite + React 19 + TypeScript. All network calls go
+  through `src/services/httpClient.ts` (adds auth headers, handles retries).
+- **Backend** (`backend/`) — FastAPI + SQLite. Rate-limited via `slowapi`
+  (`vibe_justice/utils/rate_limit.py`). Database path must come from the
+  `DATABASE_PATH` env var — never hardcoded.
+- **Tauri** — scoped capabilities in `frontend/src-tauri/capabilities/default.json`;
+  backend ships as a PyInstaller sidecar built by `build_v8_final.ps1`
+  (spec: `native.spec`).
 
-## Notes
-- Monorepo structure: `backend/` (Python) + `frontend/` (Tauri + React)
-- Backend compiled to `frontend/src-tauri/binaries/backend.exe` via PyInstaller for distribution
-- Python source is in `backend/vibe_justice/` (api/, services/, ai/, utils/) — source .py files may be compiled-only
-- Services: ai_service, analysis, drafting, evidence, ocr, violation_detector, web_search, retrieval
-- Build artifacts: `build_v6/`, `build_final/`, `dist_v6/` — do not edit these
+## Required env vars (backend)
+
+| Var | Purpose |
+|-----|---------|
+| `DATABASE_PATH` | SQLite path (`D:\databases\vibe_justice.db` in dev, `:memory:` in tests) |
+| `VIBE_JUSTICE_ENV` | `development` / `test` / `production` |
+| `VIBE_JUSTICE_ALLOWED_ORIGINS` | Comma-separated CORS allowlist |
+
+## Nx targets (see `project.json`)
+
+- `vibe-justice:lint` / `:typecheck` / `:test:frontend` / `:build:frontend`
+- `vibe-justice:test:backend` (pytest, coverage floor 60% — see `backend/pytest.ini`)
+- `vibe-justice:test:backend:coverage` (HTML coverage report)
+- `vibe-justice:backend:build` (PyInstaller via `build_v8_final.ps1`)
+- `vibe-justice:tauri:dev` / `:tauri:build`
+- `vibe-justice:e2e` (Playwright)
+- `vibe-justice:backend:migrate` / `:backend:migrate:create` (Alembic)
+
+## CI
+
+`.github/workflows/vibe-justice.yml` runs on changes to `apps/vibe-justice/**`:
+
+- **frontend job**: install → lint → typecheck → Vitest → build
+- **backend job**: pip install → pytest (coverage floor 60%)
+
+## Related docs
+
+- AI notes: `AI.md`
+- Legacy design docs: `docs/archive/` (historical; not binding)

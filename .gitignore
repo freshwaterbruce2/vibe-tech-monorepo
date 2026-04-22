@@ -280,14 +280,20 @@ apps/*/dev-dist/
 apps/*/build_final/
 apps/*/build_v*/
 
-# PyInstaller build output
+# vibe-justice build artifacts
+apps/vibe-justice/build_v6/
+apps/vibe-justice/build_final/
 apps/vibe-justice/dist_v6/
+apps/vibe-justice/frontend/src-tauri/binaries/*.exe
 
 # Electron build output
 apps/vibe-tutor/release/
 
 # Archive (moved to D:\archive)
 archive/
+# Allow intentionally archived vibe-justice docs
+!apps/vibe-justice/docs/archive/
+!apps/vibe-justice/docs/archive/**
 
 # Crypto-enhanced temp files
 apps/crypto-enhanced/tmp-*
