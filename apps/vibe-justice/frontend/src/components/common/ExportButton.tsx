@@ -1,5 +1,6 @@
 import { FileText } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { httpClient } from '../../services/httpClient';
 
 interface ExportButtonProps {
   title: string;
@@ -62,19 +63,11 @@ export function ExportButton({ title, data, filename = 'export', className, case
     }
 
     try {
-      // Assuming backend is at localhost:8000
-      const response = await fetch(`http://localhost:8000/cases/export/${caseId}`, {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        throw new Error(`Export failed: ${response.statusText}`);
-      }
-
-      const result = await response.json();
+      // Backend URL comes from httpClient (VITE_API_URL, defaults to localhost:8000).
+      const response = await httpClient.post<{ path: string }>(`/cases/export/${caseId}`);
 
       // Verification: Show simple alert with path
-      alert(`Export Successful!\n\nSaved to: ${result.path}`);
+      alert(`Export Successful!\n\nSaved to: ${response.data.path}`);
 
     } catch (error) {
       console.error('Export error:', error);

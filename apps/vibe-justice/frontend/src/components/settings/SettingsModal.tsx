@@ -1,19 +1,41 @@
 import { X } from 'lucide-react';
 import { useState } from 'react';
+import { z } from 'zod';
 import { cn } from '@/lib/utils';
 
 interface SettingsModalProps {
-  isOpen: boolean;
+  /** Preferred prop name */
+  open?: boolean;
+  /** Backward-compatible alias for `open` */
+  isOpen?: boolean;
   onClose: () => void;
-  showArchived: boolean;
-  onToggleArchived: (value: boolean) => void;
+  showArchived?: boolean;
+  onToggleArchived?: (value: boolean) => void;
 }
 
-export function SettingsModal({ isOpen, onClose, showArchived, onToggleArchived }: SettingsModalProps) {
-  const [apiKey, setApiKey] = useState(localStorage.getItem('vibe_api_key') || '');
-  const [ollamaUrl, setOllamaUrl] = useState(localStorage.getItem('vibe_ollama_url') || 'http://localhost:11434');
+const ollamaUrlSchema = z
+  .string()
+  .url()
+  .refine((u) => u.startsWith('http://') || u.startsWith('https://'), 'Must be http(s) URL');
 
-  if (!isOpen) return null;
+export function SettingsModal({ open, isOpen, onClose, showArchived = false, onToggleArchived }: SettingsModalProps) {
+  const modalOpen = open ?? isOpen ?? false;
+  const [ollamaUrl, setOllamaUrl] = useState(localStorage.getItem('vibe_ollama_url') || 'http://localhost:11434');
+  const [ollamaUrlError, setOllamaUrlError] = useState<string | null>(null);
+
+  if (!modalOpen) return null;
+
+  const validateOllamaUrl = (value: string): boolean => {
+    const result = ollamaUrlSchema.safeParse(value);
+    if (!result.success) {
+      setOllamaUrlError(result.error.issues[0]?.message ?? 'Invalid URL');
+      return false;
+    }
+    setOllamaUrlError(null);
+    return true;
+  };
+
+  const apiBaseUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -30,38 +52,49 @@ export function SettingsModal({ isOpen, onClose, showArchived, onToggleArchived 
         </div>
 
         <div className="space-y-6 overflow-y-auto max-h-[70vh] pr-2">
-          {/* API Key Section */}
-          <div className="space-y-2">
+          {/* Backend Connection Status (ConnectionStatus placeholder) */}
+          <div className="space-y-2" data-testid="connection-status">
             <label className="text-xs font-mono text-gray-400 uppercase tracking-wider">
-              DeepSeek API Key
+              Backend Connection
             </label>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="sk-..."
-              className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-neon-purple focus:outline-none focus:ring-1 focus:ring-neon-purple transition-all"
-            />
+            <div className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-sm text-gray-300 font-mono">
+              Using backend proxy at <span className="text-neon-mint">{apiBaseUrl}</span>
+            </div>
             <p className="text-[10px] text-gray-500">
-              Required for Cloud inference. Stored locally. Get key at <a href="https://openrouter.ai/" target="_blank" rel="noopener noreferrer" className="text-neon-purple hover:underline">openrouter.ai</a>.
+              API credentials live in backend <code className="text-neon-purple">.env</code> — never in the browser.
             </p>
           </div>
 
           {/* Ollama URL Section */}
           <div className="space-y-2">
-            <label className="text-xs font-mono text-gray-400 uppercase tracking-wider">
+            <label
+              htmlFor="settings-ollama-url"
+              className="text-xs font-mono text-gray-400 uppercase tracking-wider"
+            >
               Local Inference URL (Ollama)
             </label>
             <input
+              id="settings-ollama-url"
               type="text"
               value={ollamaUrl}
-              onChange={(e) => setOllamaUrl(e.target.value)}
+              onChange={(e) => {
+                setOllamaUrl(e.target.value);
+                if (ollamaUrlError) validateOllamaUrl(e.target.value);
+              }}
+              onBlur={(e) => validateOllamaUrl(e.target.value)}
               placeholder="http://localhost:11434"
+              aria-invalid={ollamaUrlError ? 'true' : 'false'}
               className="w-full bg-black/30 border border-white/10 rounded px-3 py-2 text-sm text-white focus:border-neon-purple focus:outline-none focus:ring-1 focus:ring-neon-purple transition-all"
             />
-            <p className="text-[10px] text-gray-500">
-              Default: http://localhost:11434
-            </p>
+            {ollamaUrlError ? (
+              <p className="text-[10px] text-alert-pink" role="alert">
+                {ollamaUrlError}
+              </p>
+            ) : (
+              <p className="text-[10px] text-gray-500">
+                Default: http://localhost:11434
+              </p>
+            )}
           </div>
 
           {/* Interface Mode */}
@@ -90,7 +123,7 @@ export function SettingsModal({ isOpen, onClose, showArchived, onToggleArchived 
                 <span className="text-[10px] text-gray-500">Include soft-deleted items in lists</span>
               </div>
               <button
-                onClick={() => onToggleArchived(!showArchived)}
+                onClick={() => onToggleArchived?.(!showArchived)}
                 className={cn(
                   "w-10 h-5 rounded-full relative transition-colors duration-200",
                   showArchived ? "bg-neon-mint" : "bg-white/10"
@@ -111,7 +144,11 @@ export function SettingsModal({ isOpen, onClose, showArchived, onToggleArchived 
               </div>
               <button
                 onClick={() => {
-                  localStorage.clear();
+                  // Scope cache clear to this app's namespaced keys only,
+                  // leaving other origins' data (e.g. 3rd-party widgets) intact.
+                  Object.keys(localStorage)
+                    .filter((k) => k.startsWith('vibe-justice.') || k.startsWith('vibe_'))
+                    .forEach((k) => localStorage.removeItem(k));
                   window.location.reload();
                 }}
                 className="px-3 py-1.5 text-xs text-alert-pink border border-alert-pink/30 hover:bg-alert-pink/10 rounded transition-colors"
@@ -131,8 +168,9 @@ export function SettingsModal({ isOpen, onClose, showArchived, onToggleArchived 
           </button>
           <button
             onClick={() => {
-              // Save logic here (e.g. localStorage)
-              localStorage.setItem('vibe_api_key', apiKey);
+              // SECURITY: API keys are NEVER stored in localStorage.
+              // They live only in the backend .env and are read server-side.
+              if (!validateOllamaUrl(ollamaUrl)) return;
               localStorage.setItem('vibe_ollama_url', ollamaUrl);
               onClose();
             }}

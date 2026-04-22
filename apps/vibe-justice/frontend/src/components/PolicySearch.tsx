@@ -1,4 +1,4 @@
-import { useState, useMemo, type KeyboardEvent } from 'react'
+import { useState, type KeyboardEvent } from 'react'
 import {
   Search,
   Download,
@@ -10,6 +10,7 @@ import {
   CheckCircle
 } from 'lucide-react'
 import axios from 'axios'
+import { httpClient } from '../services/httpClient'
 
 interface PolicySearchResult {
   id: string
@@ -35,9 +36,7 @@ export function PolicySearch({ onDocumentAdded }: PolicySearchProps) {
   const [downloadingIds, setDownloadingIds] = useState<Set<string>>(new Set())
   const [downloadedIds, setDownloadedIds] = useState<Set<string>>(new Set())
 
-  const api = useMemo(() => axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000'
-  }), [])
+  const api = httpClient
 
   const handleSearch = async () => {
     if (!query.trim()) return

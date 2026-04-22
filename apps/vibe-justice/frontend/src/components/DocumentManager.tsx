@@ -1,4 +1,3 @@
-import axios from 'axios'
 import {
   AlertCircle,
   CheckCircle,
@@ -17,8 +16,9 @@ import {
   Upload,
   XCircle,
 } from 'lucide-react'
-import { useMemo, useRef, useState, type ChangeEvent } from 'react'
+import { useRef, useState, type ChangeEvent } from 'react'
 import { documentAnalysisApi } from '../services/documentAnalysis'
+import { httpClient } from '../services/httpClient'
 import { isTauri, tauriAPI } from '../services/tauri'
 import type { CaseType, CompleteAnalysisResponse } from '../types/documentAnalysis'
 import {
@@ -54,13 +54,7 @@ export function DocumentManager() {
   const [exportError, setExportError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const api = useMemo(
-    () =>
-      axios.create({
-        baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
-      }),
-    []
-  )
+  const api = httpClient
 
   // Handle file upload from native file dialog (Tauri) or web input
   const handleUpload = async () => {

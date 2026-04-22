@@ -1,4 +1,3 @@
-import axios from 'axios'
 import {
   AlertCircle,
   Archive,
@@ -10,7 +9,7 @@ import {
   Scale,
   Send,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { DiagnosticsPanel } from './components/DiagnosticsPanel'
 import { DocumentManager } from './components/DocumentManager'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -18,6 +17,7 @@ import { DashboardLayout } from './components/layout/DashboardLayout'
 import { ColdCases } from './components/views/ColdCases'
 import { KnowledgeBase } from './components/views/KnowledgeBase'
 import { VibeDashboard } from './containers/VibeDashboard'
+import { httpClient } from './services/httpClient'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -38,13 +38,7 @@ function LegalAssistantView() {
   const [caseDetails, setCaseDetails] = useState('')
   const [draftPath, setDraftPath] = useState('')
 
-  const api = useMemo(
-    () =>
-      axios.create({
-        baseURL: import.meta.env.VITE_API_URL,
-      }),
-    []
-  )
+  const api = httpClient
 
   const sendMessage = async () => {
     if (!input.trim()) return

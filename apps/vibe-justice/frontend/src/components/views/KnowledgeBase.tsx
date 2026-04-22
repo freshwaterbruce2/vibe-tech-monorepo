@@ -21,6 +21,7 @@ import {
   Plus
 } from 'lucide-react'
 import axios from 'axios'
+import { httpClient } from '../../services/httpClient'
 import { PolicySearch } from '../PolicySearch'
 
 // Domain configuration with icons and colors
@@ -70,9 +71,7 @@ export function KnowledgeBase() {
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
   const [showPolicySearch, setShowPolicySearch] = useState(false)
 
-  const api = useMemo(() => axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000'
-  }), [])
+  const api = httpClient
 
   // Fetch knowledge base status
   const fetchStatus = useCallback(async () => {

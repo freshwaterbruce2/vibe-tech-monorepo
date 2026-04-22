@@ -1,4 +1,7 @@
-const API_BASE = 'http://localhost:8000/api';
+// Re-export the centralized axios instance so callers can switch progressively.
+export { httpClient } from './httpClient';
+
+const API_BASE = `${import.meta.env.VITE_API_URL ?? 'http://localhost:8000'}/api`;
 
 export interface ChatResponse {
   content: string;

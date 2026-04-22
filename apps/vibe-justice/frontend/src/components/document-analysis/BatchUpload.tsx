@@ -25,6 +25,7 @@ import type { BatchFileResult, BatchUploadResponse, CaseType } from '@/types/doc
 import { CASE_TYPE_LABELS } from '@/types/documentAnalysis'
 import { AlertCircle, CheckCircle, FileText, Image, Loader2, RefreshCw, Upload } from 'lucide-react'
 import { useCallback, useState, type ChangeEvent, type DragEvent } from 'react'
+import { httpClient } from '../../services/httpClient'
 
 interface BatchUploadProps {
   onUploadComplete?: (results: BatchUploadResponse) => void
@@ -109,22 +110,18 @@ export function BatchUpload({ onUploadComplete }: BatchUploadProps) {
         setUploadProgress((prev) => Math.min(prev + 10, 90))
       }, 500)
 
-      const response = await fetch('http://localhost:8000/api/batch/upload', {
-        method: 'POST',
-        body: formData,
+      // Use centralized httpClient; axios infers the multipart boundary from FormData
+      // when Content-Type is unset. Extend timeout to 2 min for OCR processing.
+      const response = await httpClient.post<BatchUploadResponse>('/api/batch/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 120_000,
       })
 
       clearInterval(progressInterval)
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.detail || 'Upload failed')
-      }
-
-      const data: BatchUploadResponse = await response.json()
       setUploadProgress(100)
-      setResults(data)
-      onUploadComplete?.(data)
+      setResults(response.data)
+      onUploadComplete?.(response.data)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
       console.error('Batch upload error:', err)
