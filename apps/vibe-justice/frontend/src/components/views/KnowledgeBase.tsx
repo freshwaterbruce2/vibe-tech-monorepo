@@ -262,7 +262,7 @@ export function KnowledgeBase() {
                 Active Domains
               </div>
               <p className="text-2xl font-bold text-blue-400">
-                {status.domains.filter(d => d.count > 0).length} / {status.domains.length}
+                {(status.domains?.filter(d => d.count > 0) ?? []).length} / {status.domains?.length ?? 0}
               </p>
             </div>
             <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700">
@@ -270,7 +270,7 @@ export function KnowledgeBase() {
                 <Calendar className="w-4 h-4" />
                 Recent Additions
               </div>
-              <p className="text-2xl font-bold text-purple-400">{status.recentAdditions.length}</p>
+              <p className="text-2xl font-bold text-purple-400">{status.recentAdditions?.length ?? 0}</p>
             </div>
           </div>
         ) : backendUnavailable ? (
@@ -521,7 +521,7 @@ export function KnowledgeBase() {
                 </div>
 
                 {/* Recent Additions */}
-                {status && status.recentAdditions.length > 0 && (
+                {status && (status.recentAdditions?.length ?? 0) > 0 && (
                   <div>
                     <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
                       Recently Added
