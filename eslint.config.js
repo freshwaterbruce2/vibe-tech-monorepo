@@ -402,6 +402,7 @@ export default tseslint.config(
       'apps/mcp-codeberg/**/*.ts',
       'apps/vibe-code-studio/**/*.{ts,tsx}',
       'apps/cross-agent-reflection/**/*.{ts,tsx}',
+      'packages/openrouter-client/**/*.ts',
     ],
     languageOptions: {
       parserOptions: {
@@ -418,6 +419,7 @@ export default tseslint.config(
           './apps/mcp-codeberg/tsconfig.lint.json',
           './apps/vibe-code-studio/tsconfig.lint.json',
           './apps/cross-agent-reflection/tsconfig.lint.json',
+          './packages/openrouter-client/tsconfig.lint.json',
         ],
       },
     },
