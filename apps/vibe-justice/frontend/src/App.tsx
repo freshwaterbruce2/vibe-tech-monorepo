@@ -235,41 +235,41 @@ function LegalAssistantView() {
         )}
 
         {activeTab === 'analyze' && (
-          <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800">
+          <div className="bg-slate-900/40 rounded-xl p-5 h-full flex flex-col border border-white/5 shadow-xl shadow-black/20 backdrop-blur-sm">
             <h2 className="text-lg font-semibold mb-4 text-white">Document Analysis</h2>
             <textarea
               value={analysisText}
               onChange={(e) => setAnalysisText(e.target.value)}
               placeholder="Paste your legal document here for analysis..."
-              className="w-full h-48 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-neon-mint/50"
+              className="w-full h-48 px-4 py-3 bg-slate-900/80 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon-mint/40 focus:ring-2 focus:ring-neon-mint/20 transition-colors resize-none"
               disabled={loading}
             />
             <button
               onClick={analyzeDocument}
               disabled={loading || !analysisText.trim()}
-              className="mt-4 px-6 py-2 bg-neon-mint text-slate-900 rounded-lg hover:bg-neon-mint/80 disabled:opacity-50 flex items-center space-x-2 font-medium"
+              className="mt-4 px-6 py-3 bg-neon-mint text-slate-950 rounded-lg hover:bg-neon-mint/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold shadow-lg shadow-neon-mint/20 hover:shadow-neon-mint/40 transition-all w-fit"
             >
               <FileText className="w-4 h-4" />
               <span>Analyze Document</span>
             </button>
             {analysisResult && (
-              <div className="mt-6 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-                <h3 className="font-semibold mb-2 text-neon-mint">Analysis Results:</h3>
-                <div className="whitespace-pre-wrap text-sm text-gray-300">{analysisResult}</div>
+              <div className="mt-6 p-5 bg-gradient-to-b from-slate-950/60 to-vibe-void/60 rounded-lg border border-white/5 flex-1 overflow-y-auto">
+                <h3 className="font-semibold mb-3 text-neon-mint text-sm uppercase tracking-wider">Analysis Results</h3>
+                <div className="whitespace-pre-wrap text-sm text-gray-300 leading-relaxed">{analysisResult}</div>
               </div>
             )}
           </div>
         )}
 
         {activeTab === 'draft' && (
-          <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800">
+          <div className="bg-slate-900/40 rounded-xl p-5 h-full flex flex-col border border-white/5 shadow-xl shadow-black/20 backdrop-blur-sm">
             <h2 className="text-lg font-semibold mb-4 text-white">Document Drafting</h2>
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2 text-gray-300">Document Type</label>
+              <label className="block text-sm font-medium mb-2 text-gray-400 uppercase tracking-wider">Document Type</label>
               <select
                 value={templateType}
                 onChange={(e) => setTemplateType(e.target.value)}
-                className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-neon-mint/50"
+                className="w-full px-4 py-2.5 bg-slate-900/80 border border-white/10 rounded-lg text-white focus:outline-none focus:border-neon-mint/40 focus:ring-2 focus:ring-neon-mint/20 transition-colors cursor-pointer"
               >
                 <option value="appeal">Appeal Letter</option>
                 <option value="complaint">Formal Complaint</option>
@@ -281,33 +281,33 @@ function LegalAssistantView() {
               value={caseDetails}
               onChange={(e) => setCaseDetails(e.target.value)}
               placeholder="Describe your case details, facts, and what you want to achieve..."
-              className="w-full h-48 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-neon-mint/50"
+              className="w-full h-48 px-4 py-3 bg-slate-900/80 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-neon-mint/40 focus:ring-2 focus:ring-neon-mint/20 transition-colors resize-none"
               disabled={loading}
             />
             <button
               onClick={generateDraft}
               disabled={loading || !caseDetails.trim()}
-              className="mt-4 px-6 py-2 bg-neon-mint text-slate-900 rounded-lg hover:bg-neon-mint/80 disabled:opacity-50 flex items-center space-x-2 font-medium"
+              className="mt-4 px-6 py-3 bg-neon-mint text-slate-950 rounded-lg hover:bg-neon-mint/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold shadow-lg shadow-neon-mint/20 hover:shadow-neon-mint/40 transition-all w-fit"
             >
               <Download className="w-4 h-4" />
               <span>Generate Draft</span>
             </button>
             {draftPath && (
-              <div className="mt-6 p-4 bg-green-900/20 border border-green-700/50 rounded-lg">
-                <div className="flex items-center space-x-2 text-green-400">
-                  <AlertCircle className="w-5 h-5" />
-                  <p>
+              <div className="mt-5 p-4 bg-green-950/40 border border-green-700/30 rounded-lg">
+                <div className="flex items-start gap-3 text-green-400">
+                  <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                  <p className="text-sm">
                     Draft saved to:{' '}
-                    <code className="bg-green-900/30 px-2 py-1 rounded">{draftPath}</code>
+                    <code className="bg-green-900/30 px-2 py-0.5 rounded font-mono text-xs">{draftPath}</code>
                   </p>
                 </div>
               </div>
             )}
             {draftError && (
-              <div className="mt-6 p-4 bg-red-900/20 border border-red-700/50 rounded-lg">
-                <div className="flex items-center space-x-2 text-red-400">
-                  <AlertCircle className="w-5 h-5" />
-                  <p>{draftError}</p>
+              <div className="mt-5 p-4 bg-red-950/40 border border-red-700/30 rounded-lg">
+                <div className="flex items-start gap-3 text-red-400">
+                  <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                  <p className="text-sm">{draftError}</p>
                 </div>
               </div>
             )}
