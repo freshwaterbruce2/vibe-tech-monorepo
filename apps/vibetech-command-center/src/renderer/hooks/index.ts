@@ -11,7 +11,7 @@ import type {
 export function useNxGraph(): UseQueryResult<NxGraph> {
   return useQuery({
     queryKey: ['nx', 'graph'],
-    queryFn: () => unwrap(window.commandCenter.nx.get()),
+    queryFn: async () => unwrap(window.commandCenter.nx.get()),
     staleTime: 30_000,
     refetchInterval: 60_000
   });
@@ -20,7 +20,7 @@ export function useNxGraph(): UseQueryResult<NxGraph> {
 export function useHealth(): UseQueryResult<ProbeResult[]> {
   return useQuery({
     queryKey: ['health', 'all'],
-    queryFn: () => unwrap(window.commandCenter.health.probeAll()),
+    queryFn: async () => unwrap(window.commandCenter.health.probeAll()),
     refetchInterval: 5_000
   });
 }
@@ -28,7 +28,7 @@ export function useHealth(): UseQueryResult<ProbeResult[]> {
 export function useDbMetrics(): UseQueryResult<DbMetric[]> {
   return useQuery({
     queryKey: ['db', 'metrics'],
-    queryFn: () => unwrap(window.commandCenter.db.collectAll()),
+    queryFn: async () => unwrap(window.commandCenter.db.collectAll()),
     refetchInterval: 30_000
   });
 }
@@ -36,7 +36,7 @@ export function useDbMetrics(): UseQueryResult<DbMetric[]> {
 export function useBackupList(limit = 20): UseQueryResult<BackupLogEntry[]> {
   return useQuery({
     queryKey: ['backups', 'recent', limit],
-    queryFn: () => unwrap(window.commandCenter.backup.list(limit)),
+    queryFn: async () => unwrap(window.commandCenter.backup.list(limit)),
     refetchInterval: 10_000
   });
 }
@@ -44,9 +44,25 @@ export function useBackupList(limit = 20): UseQueryResult<BackupLogEntry[]> {
 export function useProcessList(): UseQueryResult<ProcessHandle[]> {
   return useQuery({
     queryKey: ['processes', 'list'],
-    queryFn: () => unwrap(window.commandCenter.process.list()),
+    queryFn: async () => unwrap(window.commandCenter.process.list()),
     refetchInterval: 2_000
   });
+}
+
+export function useCurrentTime(refreshMs: number): number {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+    }, refreshMs);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [refreshMs]);
+
+  return now;
 }
 
 export function useStream<T = unknown>(topic: StreamTopic, handler: (payload: T) => void): void {

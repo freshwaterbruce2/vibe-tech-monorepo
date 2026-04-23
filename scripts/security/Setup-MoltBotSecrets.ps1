@@ -4,7 +4,7 @@
     Automated security fix for MoltBot exposed secrets
 
 .DESCRIPTION
-    Moves hardcoded tokens from clawdbot.json to environment variables
+    Moves hardcoded tokens from config.json to environment variables
     Creates backup before modifications
     Updates configuration to use ${ENV_VAR} syntax
     Verifies changes and restarts MoltBot
@@ -34,7 +34,7 @@ Write-Host "Moving secrets to environment variables"
 Write-Host ""
 
 # Configuration path
-$configPath = "C:\Users\fresh_zxae3v6\.clawdbot\clawdbot.json"
+$configPath = "C:\Users\fresh_zxae3v6\.clawdbot\config.json"
 
 if (-not (Test-Path $configPath)) {
     Write-Host "[ERROR] Configuration file not found: $configPath" -ForegroundColor Red

@@ -29,7 +29,7 @@
 
 param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet("All", "trading", "agent_learning", "learning", "logging_analytics", "monitoring", "events")]
+    [ValidateSet("All", "trading", "agent_learning", "memory", "nova_activity", "agent_tasks", "feature_flags", "database", "learning", "logging_analytics", "monitoring", "events")]
     [string]$DatabaseName,
 
     [switch]$SkipBackup = $false
@@ -38,11 +38,19 @@ param(
 # Database locations
 $databases = @{
     "trading" = "D:\databases\trading.db"
-    "agent_learning" = "D:\learning-system\agent_learning.db"
-    "learning" = "D:\learning-system\learning.db"
-    "logging_analytics" = "D:\learning-system\logging_analytics.db"
-    "monitoring" = "D:\learning-system\monitoring.db"
-    "events" = "D:\learning-system\events.db"
+    "agent_learning" = "D:\databases\agent_learning.db"
+    "memory" = "D:\databases\memory.db"
+    "nova_activity" = "D:\databases\nova_activity.db"
+    "agent_tasks" = "D:\databases\agent_tasks.db"
+    "feature_flags" = "D:\databases\feature_flags.db"
+    "database" = "D:\databases\database.db"
+}
+
+$retiredDatabases = @{
+    "learning" = "Retired placeholder. Do not recreate; remove stale references instead."
+    "logging_analytics" = "Retired learning-system database. Keep backup history only."
+    "monitoring" = "Retired database name. Reconcile consumers against D:\databases\DB_INVENTORY.md instead of reviving it."
+    "events" = "No live events database is currently inventoried. Do not recreate it from stale automation assumptions."
 }
 
 # Check if sqlite3 is available
@@ -56,6 +64,11 @@ if (-not $sqlite3) {
 Write-Host "=== MoltBot Database Optimization ===" -ForegroundColor Cyan
 Write-Host "Timestamp: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 Write-Host ""
+
+if ($DatabaseName -ne "All" -and $retiredDatabases.ContainsKey($DatabaseName)) {
+    Write-Host "[WARN] $DatabaseName is retired. $($retiredDatabases[$DatabaseName])" -ForegroundColor Yellow
+    exit 1
+}
 
 # Create backup unless skipped
 if (-not $SkipBackup) {

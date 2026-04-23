@@ -22,7 +22,7 @@ export function AgentConsole() {
       title={`Processes (${processes.filter((p) => p.status === 'running').length} running, ${processes.length} total)`}
       loading={isFetching}
       error={error instanceof Error ? error.message : null}
-      onRefresh={() => refetch()}
+      onRefresh={() => { void refetch(); }}
     >
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         <div className="lg:col-span-2 space-y-2 max-h-[60vh] overflow-auto">
@@ -36,7 +36,7 @@ export function AgentConsole() {
               proc={p}
               selected={p.id === selectedId}
               onSelect={() => setSelectedId(p.id)}
-              onKill={() => handleKill(p.id)}
+              onKill={() => { void handleKill(p.id); }}
             />
           ))}
         </div>

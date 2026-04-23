@@ -250,7 +250,7 @@ export function registerTools(c: ServiceContainer): McpTool[] {
 
         const graph = await c.nxGraph.getGraph();
         const app = graph.projects[appName];
-        if (!app || app.type !== 'app') {
+        if (app?.type !== 'app') {
           throw new Error(`not an app: ${appName}`);
         }
         const cwd = `C:\\dev\\${app.root.replace(/\//g, '\\')}`;

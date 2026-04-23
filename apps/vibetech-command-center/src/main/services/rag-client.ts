@@ -67,8 +67,13 @@ export class RagClient {
       }
     }
 
+    const client = this.client;
+    if (!client) {
+      return { ...baseline, latencyMs: Date.now() - start, source: 'unavailable', error: 'rag client unavailable' };
+    }
+
     try {
-      const response = await this.client!.callTool(
+      const response = await client.callTool(
         { name: 'rag_search', arguments: { query: query.query, topK: query.topK ?? 8, filter: query.filter } },
         undefined,
         { timeout: this.opts.requestTimeoutMs }

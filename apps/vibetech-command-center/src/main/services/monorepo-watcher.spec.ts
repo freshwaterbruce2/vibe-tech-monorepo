@@ -21,10 +21,10 @@ describe('MonorepoWatcher', () => {
     rmSync(tmpRoot, { recursive: true, force: true });
   });
 
-  const waitForReady = (w: MonorepoWatcher) =>
+  const waitForReady = async (w: MonorepoWatcher) =>
     new Promise<void>((resolve) => w.once('ready', resolve));
 
-  const waitForEvents = (w: MonorepoWatcher, timeoutMs = 2000) =>
+  const waitForEvents = async (w: MonorepoWatcher, timeoutMs = 2000) =>
     new Promise<FileEvent[]>((resolve, reject) => {
       const t = setTimeout(() => reject(new Error('timeout')), timeoutMs);
       w.once('events', (events: FileEvent[]) => {

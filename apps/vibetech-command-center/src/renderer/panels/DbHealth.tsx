@@ -16,7 +16,7 @@ export function DbHealth() {
       title={`Databases (${data?.length ?? 0})`}
       loading={isFetching}
       error={error instanceof Error ? error.message : null}
-      onRefresh={() => refetch()}
+      onRefresh={() => { void refetch(); }}
     >
       {isLoading ? (
         <div className="text-slate-500 text-sm">collecting metrics...</div>

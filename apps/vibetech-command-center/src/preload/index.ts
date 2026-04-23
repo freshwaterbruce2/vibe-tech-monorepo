@@ -7,11 +7,13 @@ const subscribers = new Map<StreamTopic, Set<(payload: unknown) => void>>();
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
 async function ensureWs(): Promise<void> {
-  if (ws && ws.readyState === WebSocket.OPEN) return;
-  if (ws && ws.readyState === WebSocket.CONNECTING) {
+  if (ws?.readyState === WebSocket.OPEN) return;
+  if (ws?.readyState === WebSocket.CONNECTING) {
+    const connectingSocket = ws;
+    if (!connectingSocket) return;
     await new Promise<void>((resolve) => {
       const t = setTimeout(resolve, 2000);
-      ws!.addEventListener('open', () => { clearTimeout(t); resolve(); }, { once: true });
+      connectingSocket.addEventListener('open', () => { clearTimeout(t); resolve(); }, { once: true });
     });
     return;
   }
@@ -32,15 +34,19 @@ async function ensureWs(): Promise<void> {
   ws.addEventListener('close', () => {
     ws = null;
     if (subscribers.size > 0 && !reconnectTimer) {
-      reconnectTimer = setTimeout(() => { reconnectTimer = null; ensureWs().catch(() => {}); }, 1500);
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        void ensureWs().catch(() => {});
+      }, 1500);
     }
   });
   ws.addEventListener('error', () => { /* close will fire */ });
 
+  const currentWs = ws;
   await new Promise<void>((resolve, reject) => {
     const t = setTimeout(() => reject(new Error('ws connect timeout')), 3000);
-    ws!.addEventListener('open', () => { clearTimeout(t); resolve(); }, { once: true });
-    ws!.addEventListener('error', () => { clearTimeout(t); reject(new Error('ws connect error')); }, { once: true });
+    currentWs.addEventListener('open', () => { clearTimeout(t); resolve(); }, { once: true });
+    currentWs.addEventListener('error', () => { clearTimeout(t); reject(new Error('ws connect error')); }, { once: true });
   });
 }
 
@@ -48,36 +54,36 @@ const api: CommandCenterAPI = {
   version: '0.1.0',
 
   nx: {
-    get: (force) => ipcRenderer.invoke(IPC_CHANNELS.NX_GET, force),
-    refresh: () => ipcRenderer.invoke(IPC_CHANNELS.NX_REFRESH)
+    get: async (force) => ipcRenderer.invoke(IPC_CHANNELS.NX_GET, force),
+    refresh: async () => ipcRenderer.invoke(IPC_CHANNELS.NX_REFRESH)
   },
   health: {
-    probeAll: () => ipcRenderer.invoke(IPC_CHANNELS.HEALTH_PROBE_ALL),
-    probeOne: (service) => ipcRenderer.invoke(IPC_CHANNELS.HEALTH_PROBE_ONE, service)
+    probeAll: async () => ipcRenderer.invoke(IPC_CHANNELS.HEALTH_PROBE_ALL),
+    probeOne: async (service) => ipcRenderer.invoke(IPC_CHANNELS.HEALTH_PROBE_ONE, service)
   },
   db: {
-    collectAll: () => ipcRenderer.invoke(IPC_CHANNELS.DB_COLLECT_ALL)
+    collectAll: async () => ipcRenderer.invoke(IPC_CHANNELS.DB_COLLECT_ALL)
   },
   backup: {
-    create: (req) => ipcRenderer.invoke(IPC_CHANNELS.BACKUP_CREATE, req),
-    list: (limit) => ipcRenderer.invoke(IPC_CHANNELS.BACKUP_LIST, limit)
+    create: async (req) => ipcRenderer.invoke(IPC_CHANNELS.BACKUP_CREATE, req),
+    list: async (limit) => ipcRenderer.invoke(IPC_CHANNELS.BACKUP_LIST, limit)
   },
   process: {
-    spawn: (spec) => ipcRenderer.invoke(IPC_CHANNELS.PROCESS_SPAWN, spec),
-    kill: (id) => ipcRenderer.invoke(IPC_CHANNELS.PROCESS_KILL, id),
-    list: () => ipcRenderer.invoke(IPC_CHANNELS.PROCESS_LIST)
+    spawn: async (spec) => ipcRenderer.invoke(IPC_CHANNELS.PROCESS_SPAWN, spec),
+    kill: async (id) => ipcRenderer.invoke(IPC_CHANNELS.PROCESS_KILL, id),
+    list: async () => ipcRenderer.invoke(IPC_CHANNELS.PROCESS_LIST)
   },
   claude: {
-    invoke: (inv) => ipcRenderer.invoke(IPC_CHANNELS.CLAUDE_INVOKE, inv)
+    invoke: async (inv) => ipcRenderer.invoke(IPC_CHANNELS.CLAUDE_INVOKE, inv)
   },
   rag: {
-    search: (q) => ipcRenderer.invoke(IPC_CHANNELS.RAG_SEARCH, q)
+    search: async (q) => ipcRenderer.invoke(IPC_CHANNELS.RAG_SEARCH, q)
   },
   fs: {
-    stat: (path) => ipcRenderer.invoke(IPC_CHANNELS.FS_STAT, path)
+    stat: async (path) => ipcRenderer.invoke(IPC_CHANNELS.FS_STAT, path)
   },
   meta: {
-    info: () => ipcRenderer.invoke(IPC_CHANNELS.META_INFO)
+    info: async () => ipcRenderer.invoke(IPC_CHANNELS.META_INFO)
   },
 
   stream: {
@@ -85,7 +91,7 @@ const api: CommandCenterAPI = {
       let set = subscribers.get(topic);
       if (!set) { set = new Set(); subscribers.set(topic, set); }
       set.add(handler);
-      ensureWs().catch(() => { /* renderer receives nothing until reconnect */ });
+      void ensureWs().catch(() => { /* renderer receives nothing until reconnect */ });
       return () => {
         const s = subscribers.get(topic);
         if (!s) return;

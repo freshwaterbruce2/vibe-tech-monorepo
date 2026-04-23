@@ -54,11 +54,12 @@ try {
 
     $databases = @(
         @{Source = "D:\databases\trading.db"; Name = "trading.db"},
-        @{Source = "D:\learning-system\agent_learning.db"; Name = "agent_learning.db"},
-        @{Source = "D:\learning-system\learning.db"; Name = "learning.db"},
-        @{Source = "D:\learning-system\logging_analytics.db"; Name = "logging_analytics.db"},
-        @{Source = "D:\learning-system\monitoring.db"; Name = "monitoring.db"},
-        @{Source = "D:\learning-system\events.db"; Name = "events.db"}
+        @{Source = "D:\databases\agent_learning.db"; Name = "agent_learning.db"},
+        @{Source = "D:\databases\memory.db"; Name = "memory.db"},
+        @{Source = "D:\databases\nova_activity.db"; Name = "nova_activity.db"},
+        @{Source = "D:\databases\agent_tasks.db"; Name = "agent_tasks.db"},
+        @{Source = "D:\databases\feature_flags.db"; Name = "feature_flags.db"},
+        @{Source = "D:\databases\database.db"; Name = "database.db"}
     )
 
     foreach ($db in $databases) {
@@ -76,7 +77,7 @@ try {
     New-Item -ItemType Directory -Path $configBackupDir -Force | Out-Null
 
     $configs = @(
-        @{Source = "C:\Users\fresh_zxae3v6\.clawdbot\clawdbot.json"; Name = "clawdbot.json"},
+        @{Source = "C:\Users\fresh_zxae3v6\.clawdbot\config.json"; Name = "config.json"},
         @{Source = "C:\Users\fresh_zxae3v6\.openclaw\cron\jobs.json"; Name = "jobs.json"}
     )
 
@@ -106,17 +107,21 @@ try {
     New-Item -ItemType Directory -Path $docsBackupDir -Force | Out-Null
 
     $docs = @(
-        "VIBE_ECOSYSTEM.md",
-        "AGENT_ROUTING.md",
-        "CRYPTO_MONITORING.md",
-        "HEARTBEAT.md",
-        "INTELLIGENCE_LAYER.md",
-        "PHASE_*_*.md"
+        @{Source = "D:\learning-system\README.md"; Name = "README.md"},
+        @{Source = "D:\learning-system\COMPLETE_GUIDE.md"; Name = "COMPLETE_GUIDE.md"},
+        @{Source = "D:\learning-system\DATABASE_INVENTORY.md"; Name = "DATABASE_INVENTORY.md"},
+        @{Source = "D:\learning-system\DOCUMENTATION_INDEX.md"; Name = "DOCUMENTATION_INDEX.md"},
+        @{Source = "D:\learning-system\enhanced_agent_guidelines.md"; Name = "enhanced_agent_guidelines.md"},
+        @{Source = "D:\databases\DB_INVENTORY.md"; Name = "DB_INVENTORY.md"}
     )
 
-    foreach ($docPattern in $docs) {
-        Get-ChildItem "C:\Users\fresh_zxae3v6\clawd" -Filter $docPattern -ErrorAction SilentlyContinue |
-            Copy-Item -Destination $docsBackupDir -ErrorAction SilentlyContinue
+    foreach ($doc in $docs) {
+        if (Test-Path $doc.Source) {
+            Copy-Item $doc.Source (Join-Path $docsBackupDir $doc.Name) -ErrorAction Stop
+            Write-Host "  [OK] $($doc.Name)" -ForegroundColor Green
+        } else {
+            Write-Host "  [WARN] $($doc.Name) not found" -ForegroundColor Yellow
+        }
     }
 
     $docCount = (Get-ChildItem $docsBackupDir -File).Count

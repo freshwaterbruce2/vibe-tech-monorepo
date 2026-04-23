@@ -42,10 +42,10 @@ export class HealthProbe {
   }
 
   async probeAll(): Promise<ProbeResult[]> {
-    return Promise.all(this.endpoints.map((e) => this.probeEndpoint(e)));
+    return Promise.all(this.endpoints.map(async (e) => this.probeEndpoint(e)));
   }
 
-  private probeEndpoint(ep: ServiceEndpoint): Promise<ProbeResult> {
+  private async probeEndpoint(ep: ServiceEndpoint): Promise<ProbeResult> {
     return new Promise((resolve) => {
       const start = Date.now();
       const socket = createConnection({ host: ep.host, port: ep.port });

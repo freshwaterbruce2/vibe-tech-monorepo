@@ -10,7 +10,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Paths
-$LearningDB = "D:\learning-system\agent_learning.db"
+$LearningDB = "D:\databases\agent_learning.db"
 $SkillsDir = "C:\dev\.agent\skills"
 
 Write-Host "Auto-Generated Skills Performance Monitor" -ForegroundColor Cyan

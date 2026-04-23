@@ -4,7 +4,7 @@
     Rollback MoltBot configuration to previous version
 
 .DESCRIPTION
-    Restores clawdbot.json and jobs.json from the most recent backup
+    Restores config.json and jobs.json from the most recent backup
     Creates a backup of current configuration before rollback
 
 .PARAMETER BackupFile
@@ -19,7 +19,7 @@
 
 .EXAMPLE
     .\Rollback-Configuration.ps1 -ConfigType ClawdBot
-    Rollback only clawdbot.json
+    Rollback only config.json
 
 .EXAMPLE
     .\Rollback-Configuration.ps1 -BackupFile "D:\backups\moltbot\20260202-020421.zip"
@@ -71,7 +71,7 @@ Write-Host ""
 
 # Configuration paths
 $configs = @{
-    "ClawdBot" = "C:\Users\fresh_zxae3v6\.clawdbot\clawdbot.json"
+    "ClawdBot" = "C:\Users\fresh_zxae3v6\.clawdbot\config.json"
     "CronJobs" = "C:\Users\fresh_zxae3v6\.openclaw\cron\jobs.json"
 }
 
