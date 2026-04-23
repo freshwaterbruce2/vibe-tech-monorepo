@@ -7,7 +7,7 @@ export interface OnboardingResult {
 }
 
 interface FirstRunOnboardingProps {
-  onComplete: (data: OnboardingResult) => void;
+  onComplete: (data: OnboardingResult) => void | Promise<void>;
 }
 
 const AVATARS = ['🐉', '🦊', '🐱', '🦄', '🚀', '🎮'];
@@ -17,25 +17,43 @@ const FirstRunOnboarding = ({ onComplete }: FirstRunOnboardingProps) => {
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [userType, setUserType] = useState<'kid' | 'parent' | null>(null);
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const handleFinish = () => {
-    if (userType && avatar) {
-      onComplete({ userType, avatar });
+  const handleFinish = async () => {
+    if (!userType || !avatar || isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      await onComplete({ userType, avatar });
+    } catch {
+      setSubmitError('We could not finish setup. Please try again.');
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="h-full flex flex-col items-center justify-center p-6 bg-[var(--background-main)]">
       <div className="w-full max-w-md glass-card rounded-2xl p-8 border border-[var(--glass-border)] space-y-6">
-        <div className="flex justify-center gap-2" aria-label="Onboarding progress">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className={`h-2 w-8 rounded-full transition-colors ${
-                i <= step ? 'bg-[var(--primary-accent)]' : 'bg-[var(--glass-border)]'
-              }`}
-            />
-          ))}
+        <div className="space-y-2">
+          <p className="text-center text-sm text-[var(--text-secondary)]" aria-live="polite">
+            Step {step + 1} of 3
+          </p>
+          <div className="flex justify-center gap-2" aria-label="Onboarding progress">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                aria-hidden="true"
+                className={`h-2 w-8 rounded-full transition-colors ${
+                  i <= step ? 'bg-[var(--primary-accent)]' : 'bg-[var(--glass-border)]'
+                }`}
+              />
+            ))}
+          </div>
         </div>
 
         {step === 0 && (
@@ -64,7 +82,7 @@ const FirstRunOnboarding = ({ onComplete }: FirstRunOnboardingProps) => {
                 }}
                 className="glass-card p-6 rounded-xl hover:scale-105 transition-transform border-2 border-transparent hover:border-[var(--primary-accent)] focus-glow"
               >
-                <div className="font-semibold">Just checking it out</div>
+                <div className="font-semibold">I&apos;m the parent</div>
               </button>
             </div>
           </div>
@@ -83,7 +101,6 @@ const FirstRunOnboarding = ({ onComplete }: FirstRunOnboardingProps) => {
                   type="button"
                   onClick={() => {
                     setAvatar(a);
-                    setStep(2);
                   }}
                   className={`glass-card p-4 rounded-xl text-5xl hover:scale-110 transition-transform border-2 focus-glow ${
                     avatar === a
@@ -95,6 +112,23 @@ const FirstRunOnboarding = ({ onComplete }: FirstRunOnboardingProps) => {
                   {a}
                 </button>
               ))}
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setStep(0)}
+                className="glass-card flex-1 py-3 rounded-xl font-semibold text-[var(--text-primary)] transition-transform hover:scale-[1.02] focus-glow"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep(2)}
+                disabled={!avatar}
+                className="glass-button flex-1 py-3 rounded-xl font-semibold text-white transition-transform hover:scale-[1.02] focus-glow disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+              >
+                Continue
+              </button>
             </div>
           </div>
         )}
@@ -110,13 +144,31 @@ const FirstRunOnboarding = ({ onComplete }: FirstRunOnboardingProps) => {
               <span className="font-bold neon-text-secondary">{WELCOME_TOKENS} tokens</span> to get
               started. Finish homework to earn more.
             </p>
-            <button
-              type="button"
-              onClick={handleFinish}
-              className="glass-button w-full py-4 rounded-xl font-semibold text-white hover:scale-105 transition-transform text-lg focus-glow"
-            >
-              Start Earning
-            </button>
+            {submitError && (
+              <p role="alert" className="text-sm text-[var(--error-accent,#f87171)]">
+                {submitError}
+              </p>
+            )}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                disabled={isSubmitting}
+                className="glass-card flex-1 py-4 rounded-xl font-semibold text-[var(--text-primary)] transition-transform hover:scale-[1.02] focus-glow disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void handleFinish();
+                }}
+                disabled={isSubmitting}
+                className="glass-button flex-1 py-4 rounded-xl font-semibold text-white hover:scale-105 transition-transform text-lg focus-glow disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+              >
+                {isSubmitting ? 'Saving...' : 'Start Earning'}
+              </button>
+            </div>
           </div>
         )}
       </div>

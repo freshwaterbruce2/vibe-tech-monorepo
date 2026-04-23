@@ -61,7 +61,7 @@ function Stars({
 
 const SubjectCards = ({ onStartWorksheet, userTokens }: SubjectCardsProps) => {
   const [allProgress, setAllProgress] = useState<Partial<Record<SubjectType, SubjectProgress>>>({});
-  const todayEarnings = useMemo(() => getTodayEarnings(), [userTokens]);
+  const todayEarnings = getTodayEarnings();
 
   useEffect(() => {
     const load = async () => {

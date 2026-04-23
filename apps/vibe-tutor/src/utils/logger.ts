@@ -24,7 +24,7 @@ export interface LogEntry {
 
 const STORE_KEY = 'appErrorLog';
 const BUFFER_SIZE = 50;
-const isDev = import.meta.env.DEV;
+const isDev = import.meta.env.DEV || import.meta.env.MODE === 'test';
 
 function persist(level: LogLevel, message: string, extra?: unknown): void {
   try {
