@@ -41,9 +41,7 @@ pnpm nx dev <project-name>   # e.g. pnpm nx dev nova-agent
 | business-booking-platform | Hotel booking with AI search | React, Vite | Maintained |
 | invoice-automation-saas | SaaS invoice automation | React, Vite | Maintained |
 | vibe-tech-lovable | Landing page / marketing site | React, Vite | Maintained |
-| monorepo-dashboard | Workspace health dashboard | React, Vite | Active |
 | VibeBlox | Token incentive system for kids | React, Hono | Experimental |
-| avge-dashboard | Aviation dashboard | React | Experimental |
 | prompt-engineer | Prompt testing workbench | React, Vite | Experimental |
 
 ### Mobile
@@ -63,7 +61,8 @@ pnpm nx dev <project-name>   # e.g. pnpm nx dev nova-agent
 | mcp-gateway | Bridges OpenClaw to MCP servers via IPC | Active |
 | mcp-rag-server | Nova-Agent RAG pipeline for Claude | Active |
 | desktop-commander-v3 | Unrestricted terminal access for AI agents | Active |
-| mcp-codeberg | Codeberg API (deprecated, migrated to GitHub) | Deprecated |
+| mcp-codeberg | Git operations MCP server (legacy name; GitHub-backed) | Maintained |
+| workspace-mcp-server | Workspace metadata and env MCP server | Active |
 
 ### Infrastructure
 
@@ -72,8 +71,8 @@ pnpm nx dev <project-name>   # e.g. pnpm nx dev nova-agent
 | agent-engine | Autonomous coding engine with gated self-improvement | Active |
 | crypto-enhanced | Crypto trading system (Python) | Active |
 | ai-youtube-pipeline | YouTube content pipeline | Experimental |
-| symptom-tracker | Health symptom tracker | Experimental |
-| vibe-booking-backend | Booking platform backend | Maintained |
+| symptom-tracker-api | Health symptom tracker API | Experimental |
+| legacy-booking-backend | Booking platform backend | Maintained |
 
 ## Shared Packages (25 total)
 
@@ -129,7 +128,7 @@ Never run bare `pnpm install` from inside a project directory. Always use `--fil
 
 ## Architecture
 
-Source code lives on `C:\dev`. All runtime data (databases, logs, learning system) lives on `D:\`. See `docs/PATHS_POLICY.md` and `AI.md` for the full policy.
+Source code lives on `C:\dev`. All runtime data (databases, logs, learning system) lives on `D:\`. See `AI.md` and `docs/WORKSPACE_STRUCTURE.md` for the workspace policy.
 
 ```
 C:\dev\              source code (git-tracked)

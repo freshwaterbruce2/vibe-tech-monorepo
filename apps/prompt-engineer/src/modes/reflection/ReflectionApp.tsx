@@ -55,7 +55,8 @@ export function ReflectionApp() {
   const { passes, status, totalCost, costLimit } = state;
 
   const latestPass = passes[passes.length - 1];
-  const leftPass = passes.find(p => p.pass === selectedPass) ?? passes[0];
+  const activePass = status === 'running' && latestPass ? latestPass.pass : selectedPass;
+  const leftPass = passes.find(p => p.pass === activePass) ?? passes[0];
   const rightPass = latestPass?.pass !== leftPass?.pass ? latestPass : undefined;
 
   const handleSubmit = useCallback((task: string) => {
@@ -63,12 +64,6 @@ export function ReflectionApp() {
     setShowDiff(false);
     start(task);
   }, [start]);
-
-  const prevPassCount = useRef(0);
-  if (passes.length > prevPassCount.current) {
-    prevPassCount.current = passes.length;
-    setSelectedPass(passes[passes.length - 1]?.pass ?? 1);
-  }
 
   const diffPasses = passes.filter(p => p.output.length > 0);
   const canShowDiff = diffPasses.length >= 2 && status !== 'running';
@@ -123,7 +118,7 @@ export function ReflectionApp() {
         passes={passes}
         status={status}
         onSelectPass={setSelectedPass}
-        selectedPass={selectedPass}
+        selectedPass={activePass}
       />
 
       {status === 'error' && state.errorMessage && (

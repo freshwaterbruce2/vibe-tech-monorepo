@@ -536,9 +536,10 @@ const unexpectedIsolated =
       })
     : [];
 
-const staleIsolatedAllowances = [...allowedIsolatedProjects].filter(
-  (project) => !isolatedProjects.includes(project),
-);
+const staleIsolatedAllowances =
+  graphSource === 'nx-graph'
+    ? [...allowedIsolatedProjects].filter((project) => !isolatedProjects.includes(project))
+    : [];
 
 const workspaceDrift = [];
 if (existsSync(workspaceStatePath)) {

@@ -6,6 +6,13 @@ global.fetch = vi.fn() as any;
 
 describe('SecureApiKeyManager', () => {
   let manager: SecureApiKeyManager;
+  let electronStore: Map<string, unknown>;
+  let mockElectronStorage: {
+    get: ReturnType<typeof vi.fn>;
+    set: ReturnType<typeof vi.fn>;
+    remove: ReturnType<typeof vi.fn>;
+    keys: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     // Reset localStorage
@@ -13,6 +20,35 @@ describe('SecureApiKeyManager', () => {
 
     // Reset fetch mock
     vi.clearAllMocks();
+
+    electronStore = new Map();
+    mockElectronStorage = {
+      get: vi.fn(async (key: string) => ({ success: true, value: electronStore.get(key) })),
+      set: vi.fn(async (key: string, value: unknown) => {
+        electronStore.set(key, value);
+        return { success: true };
+      }),
+      remove: vi.fn(async (key: string) => {
+        electronStore.delete(key);
+        return { success: true };
+      }),
+      keys: vi.fn(async () => ({ success: true, keys: Array.from(electronStore.keys()) })),
+    };
+
+    Object.defineProperty(window, 'electron', {
+      configurable: true,
+      value: { storage: mockElectronStorage },
+    });
+
+    Object.defineProperty(window, 'electronAPI', {
+      configurable: true,
+      value: {
+        setTempEnvVar: vi.fn(),
+        clearTempEnvVar: vi.fn(),
+      },
+    });
+
+    Reflect.set(SecureApiKeyManager, 'instance', undefined);
 
     // Get fresh instance
     manager = SecureApiKeyManager.getInstance();
@@ -107,9 +143,26 @@ describe('SecureApiKeyManager', () => {
 
       await manager.storeApiKey('OPENAI', validKey);
 
-      const storedData = localStorage.getItem('secure_api_key_openai');
+      expect(localStorage.getItem('secure_api_key_openai')).toBeNull();
+      const storedData = String(electronStore.get('secure_api_key_openai'));
       expect(storedData).toBeDefined();
       expect(storedData).not.toContain(validKey);
+    });
+
+    it('does not persist API keys without secure storage', async () => {
+      Reflect.set(SecureApiKeyManager, 'instance', undefined);
+      Object.defineProperty(window, 'electron', {
+        configurable: true,
+        value: undefined,
+      });
+
+      const browserManager = SecureApiKeyManager.getInstance();
+      const validKey = 'sk-' + 'a'.repeat(48);
+      const stored = await browserManager.storeApiKey('OPENAI', validKey);
+
+      expect(stored).toBe(false);
+      const storedData = localStorage.getItem('secure_api_key_openai');
+      expect(storedData).toBeNull();
     });
 
     it('returns null for non-existent keys', async () => {

@@ -83,7 +83,7 @@
 
     "approvalWorkflow": {
       "autoApprove": false,
-      "requiredApprovers": ["Claude Opus 4.6", "Claude Code"],
+      "requiredApprovers": ["Claude Opus 4.7", "Claude Code"],
       "implementers": ["Claude Sonnet 4.6"]
     }
   },
@@ -159,7 +159,7 @@
   "quickReference": {
     "simpleRule": "3+ files = Plan Required",
     "exceptions": "NONE - This is mandatory",
-    "planner": "Opus 4.6 or Claude Code ONLY",
+    "planner": "Opus 4.7 or Claude Code ONLY",
     "implementer": "Sonnet 4.6 ONLY",
     "fileLimit": "500 lines MAX per file"
   }

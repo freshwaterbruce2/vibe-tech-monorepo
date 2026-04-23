@@ -27,9 +27,9 @@
     "build": "tsc -p tsconfig.build.json",
     "dev": "tsc -p tsconfig.build.json --watch",
     "typecheck": "tsc --noEmit",
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage",
+    "test": "node ../../node_modules/vitest/vitest.mjs run",
+    "test:ui": "node ../../node_modules/vitest/vitest.mjs --ui",
+    "test:coverage": "node ../../node_modules/vitest/vitest.mjs run --coverage",
     "lint": "eslint . --max-warnings 0"
   },
   "keywords": [

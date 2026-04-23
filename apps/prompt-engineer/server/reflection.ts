@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { Response } from 'express';
 import { sendEvent, closeSSE } from './events.js';
-import { streamGenerate, callCritic, calcCost, CRITIC_MODEL } from './providers.js';
+import { streamGenerate, callCritic } from './providers.js';
 
 // ── Guardrails ────────────────────────────────────────────────────────────────
 const MAX_REFLECTIONS = 3;

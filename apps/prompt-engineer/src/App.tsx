@@ -47,21 +47,9 @@ function App() {
   // Sync API key to backend when it changes
   const handleApiKeyChange = async (newKey: string) => {
     setApiKey(newKey);
-    if (newKey) {
-      try {
-        await fetch('/api/settings/apikey', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ apiKey: newKey }),
-        });
-      } catch (err) {
-        console.error('Failed to sync API key:', err);
-      }
-    }
-    setTimeout(() => void checkConnection(), 500);
   };
 
-  // On mount, sync stored API key to backend
+  // Sync stored API key to backend and refresh connection status.
   useEffect(() => {
     const syncApiKey = async () => {
       if (apiKey) {
@@ -78,7 +66,7 @@ function App() {
       await checkConnection();
     };
     void syncApiKey();
-  }, []);
+  }, [apiKey]);
 
   // Load history from D:\data\prompt-engineer\history.json on mount
   useEffect(() => {

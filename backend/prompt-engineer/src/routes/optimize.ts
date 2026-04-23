@@ -183,8 +183,8 @@ router.post('/', async (req: Request, res: Response) => {
         // Extract token usage from SSE data if present
         const tokenMatch = chunk.match(/"usage":\s*\{[^}]*"prompt_tokens":\s*(\d+)[^}]*"completion_tokens":\s*(\d+)/);
         if (tokenMatch) {
-          totalInputTokens = parseInt(tokenMatch[1]!, 10);
-          totalOutputTokens = parseInt(tokenMatch[2]!, 10);
+          totalInputTokens = parseInt(tokenMatch[1] ?? '0', 10);
+          totalOutputTokens = parseInt(tokenMatch[2] ?? '0', 10);
         }
       }
     } finally {

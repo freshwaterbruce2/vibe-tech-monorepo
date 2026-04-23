@@ -4,6 +4,27 @@ import { z } from 'zod';
 // Load environment variables
 dotenv.config();
 
+const requireEnv = (name: string): string => {
+	const value = process.env[name]?.trim();
+	if (!value) {
+		throw new Error(`Missing required environment variable: ${name}`);
+	}
+	return value;
+};
+
+const databaseUrl = process.env.DATABASE_URL?.trim();
+const parsedDatabaseUrl =
+	databaseUrl && databaseUrl !== ':memory:' ? new URL(databaseUrl) : null;
+const databaseNameFromUrl = parsedDatabaseUrl?.pathname.replace(/^\/+/, '');
+const databasePassword =
+	process.env.DB_PASSWORD?.trim() ||
+	parsedDatabaseUrl?.password ||
+	undefined;
+
+if (!databasePassword) {
+	throw new Error('Missing required environment variable: DB_PASSWORD or DATABASE_URL');
+}
+
 // Configuration schema
 const configSchema = z.object({
 	environment: z.enum(['development', 'test', 'staging', 'production']),
@@ -108,12 +129,23 @@ const rawConfig = {
 		origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173'],
 	},
 	database: {
-		host: process.env.DB_HOST || 'localhost',
-		port: parseInt(process.env.DB_PORT || '5432', 10),
-		name: process.env.DB_NAME || 'hotelbooking',
-		user: process.env.DB_USER || 'postgres',
-		password: process.env.DB_PASSWORD || 'postgres',
-		ssl: process.env.DB_SSL === 'true',
+		host: process.env.DB_HOST || parsedDatabaseUrl?.hostname || 'localhost',
+		port: parseInt(
+			process.env.DB_PORT || parsedDatabaseUrl?.port || '5432',
+			10,
+		),
+		name:
+			process.env.DB_NAME ||
+			(databaseNameFromUrl ? decodeURIComponent(databaseNameFromUrl) : 'hotelbooking'),
+		user:
+			process.env.DB_USER ||
+			(parsedDatabaseUrl?.username
+				? decodeURIComponent(parsedDatabaseUrl.username)
+				: 'postgres'),
+		password: databasePassword,
+		ssl:
+			process.env.DB_SSL === 'true' ||
+			parsedDatabaseUrl?.searchParams.get('sslmode') === 'require',
 		poolSize: parseInt(process.env.DB_POOL_SIZE || '20', 10),
 	},
 	redis: {
@@ -124,17 +156,11 @@ const rawConfig = {
 		ttl: parseInt(process.env.REDIS_TTL || '3600', 10),
 	},
 	jwt: {
-		secret:
-			process.env.JWT_SECRET ||
-			'05ba3147e30cec7c5c469038478cc2c0d176ddb7a43645daf97d212d3ee0a136',
+		secret: requireEnv('JWT_SECRET'),
 		expiresIn: process.env.JWT_EXPIRES_IN || '1h',
-		refreshSecret:
-			process.env.JWT_REFRESH_SECRET ||
-			'8bb7206feb4e47b1caa68ec99ee5d7f22f41497b101b2d664ba1d21afedfafa3',
+		refreshSecret: requireEnv('JWT_REFRESH_SECRET'),
 		refreshExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
-		resetSecret:
-			process.env.JWT_RESET_SECRET ||
-			'4fc96a80eaeee74cdddbc0529ab3319174ff657eaa90c105b7e4d4bbb3fd4fce',
+		resetSecret: requireEnv('JWT_RESET_SECRET'),
 	},
 	openai: {
 		apiKey: process.env.OPENAI_API_KEY || '',
