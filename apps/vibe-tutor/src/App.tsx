@@ -19,7 +19,7 @@ import { sendMessageToBuddy } from './services/buddyService';
 import { dataStore } from './services/dataStore';
 import { sendMessageToTutor } from './services/tutorService';
 import { triggerVibration } from './services/uiService';
-import type { MusicPlaylist, ParsedHomework, View, SubjectType } from './types';
+import type { MusicPlaylist, OnboardingNavigationAction, ParsedHomework, View, SubjectType } from './types';
 // Custom hooks extracted from App.tsx
 import { useAchievements } from './hooks/useAchievements';
 import { useHomework } from './hooks/useHomework';
@@ -92,6 +92,9 @@ const App = () => {
   const [tokenEarnTrigger, setTokenEarnTrigger] = useState(0);
   const [onboardingFlags, setOnboardingFlags] =
     useState<OnboardingFlags>(INITIAL_ONBOARDING_FLAGS);
+  const [dashboardOnboardingAction, setDashboardOnboardingAction] =
+    useState<OnboardingNavigationAction | null>(null);
+  const [isCompletingOnboarding, setIsCompletingOnboarding] = useState(false);
 
   // React 19 concurrent feature for non-blocking state updates
   const [, startTransition] = useTransition();
@@ -125,18 +128,30 @@ const App = () => {
 
   const handleOnboardingComplete = useCallback(
     async (data: OnboardingResult) => {
-      await dataStore.saveUserSettings('onboarding_completed', 'true');
-      await dataStore.saveUserSettings('user_avatar', data.avatar);
-      await dataStore.saveUserSettings('user_type', data.userType);
-      setOnboardingFlags((prev) => ({
-        ...prev,
-        hasCompletedFirstRun: true,
-        userAvatar: data.avatar,
-      }));
-      handleEarnTokens(WELCOME_TOKENS, 'Welcome bonus');
-      setView('dashboard');
+      if (isCompletingOnboarding) {
+        return;
+      }
+
+      setIsCompletingOnboarding(true);
+
+      try {
+        await dataStore.saveUserSettings('onboarding_completed', 'true');
+        await dataStore.saveUserSettings('user_avatar', data.avatar);
+        await dataStore.saveUserSettings('user_type', data.userType);
+        setOnboardingFlags((prev) => ({
+          ...prev,
+          hasCompletedFirstRun: true,
+          userAvatar: data.avatar,
+        }));
+        handleEarnTokens(WELCOME_TOKENS, 'Welcome bonus');
+        setView('dashboard');
+      } catch (error) {
+        logger.error('[onboarding] Failed to complete onboarding:', error);
+        setIsCompletingOnboarding(false);
+        throw error;
+      }
     },
-    [handleEarnTokens],
+    [handleEarnTokens, isCompletingOnboarding],
   );
 
   const {
@@ -180,11 +195,18 @@ const App = () => {
       try {
         logger.debug('[v1.5.0] Initializing SQLite database...');
         await dataStore.initialize(); // Auto-migrates from localStorage if needed
+      } catch (error) {
+        logger.error('[v1.5.0] Database initialization failed, using fallback:', error);
+      }
+
+      try {
         await appIntegration.initialize();
+      } catch (error) {
+        logger.warn('[v1.5.0] App integration initialization failed (non-fatal):', error);
+      }
 
-        // Load playlists (other data loaded by custom hooks)
+      try {
         const plsts = await dataStore.getMusicPlaylists();
-
         const [completed, avatar, visitedShop, checklistDone] = await Promise.all([
           dataStore.getUserSettings('onboarding_completed'),
           dataStore.getUserSettings('user_avatar'),
@@ -210,8 +232,15 @@ const App = () => {
 
         logger.debug('[v1.5.0] Database initialized successfully. Data loaded from SQLite.');
       } catch (error) {
-        logger.error('[v1.5.0] Database initialization failed, using fallback:', error);
-        // dataStore automatically falls back to localStorage on errors
+        logger.error('[v1.5.0] Failed to load startup data, defaulting to onboarding:', error);
+        startTransition(() => {
+          setPlaylists([]);
+          setOnboardingFlags({
+            ...INITIAL_ONBOARDING_FLAGS,
+            loaded: true,
+          });
+          setView('onboarding');
+        });
       }
     };
     void initializeData();
@@ -359,6 +388,10 @@ const App = () => {
     const viewContent = (() => {
       const showChecklist =
         onboardingFlags.loaded && !onboardingFlags.checklistDone;
+      const handleChecklistNavigate = (nextView: View, action?: OnboardingNavigationAction) => {
+        setDashboardOnboardingAction(action ?? null);
+        setView(nextView);
+      };
       const onboardingBanner = showChecklist ? (
         <FirstWeekChecklist
           hasAvatar={onboardingFlags.userAvatar !== ''}
@@ -366,7 +399,7 @@ const App = () => {
           hasHomework={hasHomework}
           hasCompletedTask={hasCompletedTask}
           hasVisitedShop={onboardingFlags.hasVisitedShop}
-          onNavigate={setView}
+          onNavigate={handleChecklistNavigate}
         />
       ) : null;
 
@@ -390,6 +423,8 @@ const App = () => {
                 onToggleComplete={handleToggleComplete}
                 tokens={userTokens}
                 onboardingBanner={onboardingBanner}
+                onboardingAction={dashboardOnboardingAction}
+                onOnboardingActionHandled={() => setDashboardOnboardingAction(null)}
               />
             </RouteErrorBoundary>
           );
@@ -570,6 +605,8 @@ const App = () => {
                 onToggleComplete={handleToggleComplete}
                 tokens={userTokens}
                 onboardingBanner={onboardingBanner}
+                onboardingAction={dashboardOnboardingAction}
+                onOnboardingActionHandled={() => setDashboardOnboardingAction(null)}
               />
             </RouteErrorBoundary>
           );

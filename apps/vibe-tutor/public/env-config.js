@@ -13,13 +13,13 @@
  */
 
 (function configureEnv() {
-  var PRODUCTION_API_URL = 'https://vibe-tutor-api-960784183118.us-central1.run.app';
+  const PRODUCTION_API_URL = 'https://vibe-tutor-api-960784183118.us-central1.run.app';
   // render-backend dev server runs on 3002 to avoid conflict with the shared
   // openrouter-proxy on 3001 (used by vibe-code-studio, nova-agent, etc.).
-  var LOCAL_API_URL = 'http://localhost:3002';
+  const LOCAL_API_URL = 'http://localhost:3002';
 
-  var host = typeof window !== 'undefined' && window.location ? window.location.hostname : '';
-  var isLocalHost = host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
+  const host = typeof window !== 'undefined' && window.location ? window.location.hostname : '';
+  const isLocalHost = host === 'localhost' || host === '127.0.0.1' || host === '0.0.0.0';
 
   if (!window.__API_URL__) {
     window.__API_URL__ = isLocalHost ? LOCAL_API_URL : PRODUCTION_API_URL;
