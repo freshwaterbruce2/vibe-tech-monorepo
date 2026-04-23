@@ -134,6 +134,24 @@ describe('HomeworkDashboard', () => {
         expect(screen.queryByTestId('add-modal')).not.toBeInTheDocument();
       });
     });
+
+    it('opens add modal from onboarding action and clears the action once handled', async () => {
+      const onOnboardingActionHandled = vi.fn();
+
+      render(
+        <HomeworkDashboard
+          {...mockProps}
+          onboardingAction="open-add-homework"
+          onOnboardingActionHandled={onOnboardingActionHandled}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('add-modal')).toBeInTheDocument();
+      });
+
+      expect(onOnboardingActionHandled).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('Edge Cases', () => {
