@@ -31,11 +31,11 @@ interface UseRewardShopProps {
 export function useRewardShop({ userTokens, onSpendTokens, onPurchaseComplete }: UseRewardShopProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [purchaseHistory, setPurchaseHistory] = useState<Purchase[]>(() => {
-    const savedHistory = appStore.get<Purchase[]>('robuxShop_purchases');
+    const savedHistory = appStore.get<Purchase[]>('vibebuxShop_purchases');
     return savedHistory ?? [];
   });
   const [ownedItems, setOwnedItems] = useState<Set<string>>(() => {
-    const savedOwned = appStore.get<string[]>('robuxShop_owned');
+    const savedOwned = appStore.get<string[]>('vibebuxShop_owned');
     return savedOwned ? new Set(savedOwned) : new Set();
   });
   const [showPurchaseAnimation, setShowPurchaseAnimation] = useState(false);
@@ -113,8 +113,8 @@ export function useRewardShop({ userTokens, onSpendTokens, onPurchaseComplete }:
     },
     {
       id: 'pass-double-rewards',
-      name: 'Double Robux Rewards',
-      description: 'Earn 2x Robux from all activities!',
+      name: 'Double Vibebux Rewards',
+      description: 'Earn 2x Vibebux from all activities!',
       cost: 400,
       category: 'game-passes',
       icon: <span className="text-3xl">💎</span>,
@@ -274,13 +274,13 @@ export function useRewardShop({ userTokens, onSpendTokens, onPurchaseComplete }:
 
     const updatedHistory = [...purchaseHistory, newPurchase];
     setPurchaseHistory(updatedHistory);
-    appStore.set('robuxShop_purchases', JSON.stringify(updatedHistory));
+    appStore.set('vibebuxShop_purchases', JSON.stringify(updatedHistory));
 
     // Mark as owned (if not a consumable)
     if (!item.maxQuantity) {
       const updatedOwned = new Set([...ownedItems, item.id]);
       setOwnedItems(updatedOwned);
-      appStore.set('robuxShop_owned', JSON.stringify(Array.from(updatedOwned)));
+      appStore.set('vibebuxShop_owned', JSON.stringify(Array.from(updatedOwned)));
     }
 
     // Show purchase animation

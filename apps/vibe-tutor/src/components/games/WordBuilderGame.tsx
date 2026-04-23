@@ -33,7 +33,7 @@ const WordBuilderGame = ({ onEarnTokens, onClose: _onClose }: WordBuilderProps) 
   const wordCategories = {
     roblox: [
       { word: 'AVATAR', hint: 'Your character in the game', category: 'Roblox', points: 10 },
-      { word: 'ROBUX', hint: 'In-game currency', category: 'Roblox', points: 10 },
+      { word: 'VIBEBUX', hint: 'Vibe Tutor currency', category: 'VibeTutor', points: 10 },
       { word: 'BADGE', hint: 'Achievement reward', category: 'Roblox', points: 10 },
       { word: 'STUDIO', hint: 'Where you create games', category: 'Roblox', points: 15 },
       { word: 'OBBY', hint: 'Obstacle course game', category: 'Roblox', points: 10 },
@@ -188,7 +188,7 @@ const WordBuilderGame = ({ onEarnTokens, onClose: _onClose }: WordBuilderProps) 
             <BookOpen className="w-8 h-8" />
             Word Builder
           </h1>
-          <p className="text-sm opacity-80">Level {level} - Build words to earn Robux!</p>
+          <p className="text-sm opacity-80">Level {level} - Build words to earn Vibebux!</p>
         </div>
 
         <div className="flex items-center gap-6 text-white">
@@ -209,7 +209,7 @@ const WordBuilderGame = ({ onEarnTokens, onClose: _onClose }: WordBuilderProps) 
           </div>
           <div className="flex items-center gap-2">
             <Coins className="w-5 h-5 text-yellow-400" />
-            <span>{totalTokensEarned} Robux</span>
+            <span>{totalTokensEarned} Vibebux</span>
           </div>
         </div>
       </div>

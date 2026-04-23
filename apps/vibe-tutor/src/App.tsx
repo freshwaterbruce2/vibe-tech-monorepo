@@ -43,7 +43,7 @@ import FocusTimer from './components/features/FocusTimer';
 
 // Lazy load heavy views
 const MusicLibrary = lazy(async () => import('./components/features/MusicLibrary'));
-const RobuxRewardShop = lazy(async () => import('./components/features/RobuxRewardShop'));
+const VibebuxRewardShop = lazy(async () => import('./components/features/VibebuxRewardShop'));
 const BrainGymHub = lazy(async () => import('./components/games/BrainGymHub'));
 const RealmView = lazy(async () => import('./components/realms/RealmView'));
 const ParentDashboard = lazy(async () => import('./components/dashboard/ParentDashboard'));
@@ -574,7 +574,7 @@ const App = () => {
         case 'shop':
           return (
             <RouteErrorBoundary routeName="Reward Shop">
-              <RobuxRewardShop
+              <VibebuxRewardShop
                 userTokens={userTokens}
                 onSpendTokens={handleSpendTokens}
                 onPurchaseComplete={() => {

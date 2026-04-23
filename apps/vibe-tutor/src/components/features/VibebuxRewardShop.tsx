@@ -7,19 +7,19 @@ import {
 } from 'lucide-react';
 import { useRewardShop } from './useRewardShop';
 
-interface RobuxRewardShopProps {
+interface VibebuxRewardShopProps {
   userTokens: number;
   onSpendTokens: (amount: number, reason?: string) => void;
   onPurchaseComplete?: () => void;
   onClose?: () => void;
 }
 
-const RobuxRewardShop = ({
+const VibebuxRewardShop = ({
   userTokens,
   onSpendTokens,
   onPurchaseComplete,
   onClose,
-}: RobuxRewardShopProps) => {
+}: VibebuxRewardShopProps) => {
   const {
     selectedCategory, setSelectedCategory, ownedItems,
     showPurchaseAnimation, lastPurchasedItem, activeAvatar,
@@ -35,9 +35,9 @@ const RobuxRewardShop = ({
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-3">
               <ShoppingCart className="w-8 h-8 md:w-10 md:h-10 shrink-0" />
-              <span className="truncate">Robux Reward Shop</span>
+              <span className="truncate">Vibebux Reward Shop</span>
             </h1>
-            <p className="text-white/70 mt-2 text-sm md:text-base">Spend your hard-earned Robux on awesome rewards!</p>
+            <p className="text-white/70 mt-2 text-sm md:text-base">Spend your hard-earned Vibebux on awesome rewards!</p>
           </div>
 
           <div className="flex flex-col sm:flex-row w-full md:w-auto items-stretch sm:items-center gap-4">
@@ -47,7 +47,7 @@ const RobuxRewardShop = ({
                 <Coins className="w-8 h-8 text-[var(--token-color)] shrink-0" />
                 <div className="text-white">
                   <div className="text-sm opacity-70">Your Balance</div>
-                  <div className="text-2xl sm:text-3xl font-bold">{userTokens} Robux</div>
+                  <div className="text-2xl sm:text-3xl font-bold">{userTokens} Vibebux</div>
                 </div>
               </div>
             </div>
@@ -270,11 +270,11 @@ const RobuxRewardShop = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-white/80">
             <div>
               <p className="font-bold mb-1">📚 Study More</p>
-              <p className="text-sm">Complete homework and games to earn more Robux!</p>
+              <p className="text-sm">Complete homework and games to earn more Vibebux!</p>
             </div>
             <div>
               <p className="font-bold mb-1">🎯 Save Up</p>
-              <p className="text-sm">The best rewards cost more - save your Robux!</p>
+              <p className="text-sm">The best rewards cost more - save your Vibebux!</p>
             </div>
             <div>
               <p className="font-bold mb-1">🏆 Real Rewards</p>
@@ -289,4 +289,4 @@ const RobuxRewardShop = ({
   );
 };
 
-export default RobuxRewardShop;
+export default VibebuxRewardShop;

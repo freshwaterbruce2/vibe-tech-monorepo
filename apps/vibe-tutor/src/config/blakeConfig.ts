@@ -105,25 +105,25 @@ export const BLAKE_CONFIG = {
   // Rewards System (Roblox-themed)
   rewards: [
     {
-      id: 'robux-10',
-      name: '10 Robux',
+      id: 'vibebux-10',
+      name: '10 Vibebux',
       pointsRequired: 100,
       icon: '💎',
-      description: 'Earn 10 Robux for your Roblox account!',
+      description: 'Earn 10 Vibebux in Vibe Tutor!',
     },
     {
-      id: 'robux-25',
-      name: '25 Robux',
+      id: 'vibebux-25',
+      name: '25 Vibebux',
       pointsRequired: 250,
       icon: '💎',
-      description: 'Earn 25 Robux for your Roblox account!',
+      description: 'Earn 25 Vibebux in Vibe Tutor!',
     },
     {
-      id: 'robux-50',
-      name: '50 Robux',
+      id: 'vibebux-50',
+      name: '50 Vibebux',
       pointsRequired: 500,
       icon: '💎',
-      description: 'Earn 50 Robux for your Roblox account!',
+      description: 'Earn 50 Vibebux in Vibe Tutor!',
     },
     {
       id: 'gaming-time-30',
@@ -214,8 +214,8 @@ export const BLAKE_CONFIG = {
       pointsAwarded: 150,
     },
     {
-      id: 'robux-millionaire',
-      title: 'Robux Millionaire',
+      id: 'vibebux-millionaire',
+      title: 'Vibebux Millionaire',
       description: 'Earn 1000 total points',
       icon: '💰',
       pointsAwarded: 300,
@@ -310,7 +310,7 @@ export const BLAKE_CONFIG = {
 
   // Blake's Custom AI Buddy Personality
   aiBuddyPersonality: {
-    name: 'RoboX',
+    name: 'Vibebux',
     avatar: '🤖',
     personality: 'gaming-buddy',
     phrases: [
