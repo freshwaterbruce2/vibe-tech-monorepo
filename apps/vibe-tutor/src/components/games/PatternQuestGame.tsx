@@ -55,7 +55,7 @@ const PatternQuestGame = ({ onEarnTokens, onClose: _onClose }: PatternQuestProps
           </div>
           <div className="flex items-center gap-2">
             <Coins className="w-5 h-5 text-yellow-400" />
-            <span>{totalTokensEarned} Robux</span>
+            <span>{totalTokensEarned} Vibebux</span>
           </div>
         </div>
       </div>

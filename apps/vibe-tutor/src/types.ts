@@ -33,7 +33,6 @@ export type View =
   | 'cards'
   | 'games'
   | 'schedules'
-  | 'buddy'
   | 'tokens'
   | 'parent-rules'
   | 'learning'

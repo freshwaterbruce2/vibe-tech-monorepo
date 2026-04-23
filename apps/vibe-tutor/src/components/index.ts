@@ -49,7 +49,7 @@ export { default as ChatWindow } from './features/ChatWindow';
 export { default as FocusTimer } from './features/FocusTimer';
 export { default as LifeSkillsChecklist } from './features/LifeSkillsChecklist';
 export { MusicLibrary } from './features/MusicLibrary';
-export { default as RobuxRewardShop } from './features/RobuxRewardShop';
+export { default as VibebuxRewardShop } from './features/VibebuxRewardShop';
 export { default as SocialSkillsTips } from './features/SocialSkillsTips';
 export { default as TokenWallet } from './features/TokenWallet';
 export { default as BrainGymHub } from './games/BrainGymHub';
