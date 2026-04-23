@@ -1,4 +1,5 @@
 ﻿import axios from 'axios';
+import type { Stripe } from '@stripe/stripe-js';
 import { logger } from '@/utils/logger';
 
 // NOTE: Legacy Stripe intent logic removed; focusing on Square & PayPal unified flows.
@@ -13,7 +14,7 @@ const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
  * Lazily loads Stripe.js and resolves with the Stripe instance.
  * Resolves to null when the publishable key is not configured.
  */
-export const stripePromise: Promise<import('@stripe/stripe-js').Stripe | null> =
+export const stripePromise: Promise<Stripe | null> =
 	stripePublishableKey
 		? import('@stripe/stripe-js').then(({ loadStripe }) =>
 				loadStripe(stripePublishableKey),

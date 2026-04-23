@@ -84,10 +84,11 @@ const sqliteConfigSchema = z.object({
 	}),
 });
 
-// Use the DATABASE_URL from environment or fallback to local directory
+// Use DATABASE_PATH / DATABASE_URL from environment; default to D:\databases per paths policy
 const dbPath =
+	process.env.DATABASE_PATH ||
 	process.env.DATABASE_URL ||
-	path.join(process.cwd(), 'database', 'vibe-booking.db');
+	'D:\\databases\\vibe-booking.db';
 
 // Ensure the database directory exists
 const dbDir = path.dirname(dbPath);
