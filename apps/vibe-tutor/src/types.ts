@@ -41,6 +41,8 @@ export type View =
   | 'wellness'
   | 'onboarding';
 
+export type OnboardingNavigationAction = 'open-add-homework';
+
 export interface Achievement {
   id: string;
   name: string;

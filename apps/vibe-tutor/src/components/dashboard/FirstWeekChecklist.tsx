@@ -1,4 +1,4 @@
-import type { View } from '../../types';
+import type { OnboardingNavigationAction, View } from '../../types';
 
 interface FirstWeekChecklistProps {
   hasAvatar: boolean;
@@ -6,7 +6,7 @@ interface FirstWeekChecklistProps {
   hasHomework: boolean;
   hasCompletedTask: boolean;
   hasVisitedShop: boolean;
-  onNavigate: (view: View) => void;
+  onNavigate: (view: View, action?: OnboardingNavigationAction) => void;
 }
 
 interface ChecklistTask {
@@ -27,14 +27,31 @@ const FirstWeekChecklist = ({
 }: FirstWeekChecklistProps) => {
   const tasks: ChecklistTask[] = [
     { id: 'avatar', label: 'Create your avatar', done: hasAvatar },
-    { id: 'tokens', label: 'Earn welcome tokens', done: welcomeTokensEarned },
+    {
+      id: 'tokens',
+      label: 'Finish welcome setup',
+      done: welcomeTokensEarned,
+      action: !welcomeTokensEarned
+        ? { label: 'Finish setup', handler: () => onNavigate('onboarding') }
+        : undefined,
+    },
     {
       id: 'homework',
       label: 'Add your first homework',
       done: hasHomework,
-      hint: 'Use the Add button ↑',
+      action: !hasHomework
+        ? {
+            label: 'Add homework',
+            handler: () => onNavigate('dashboard', 'open-add-homework'),
+          }
+        : undefined,
     },
-    { id: 'complete', label: 'Complete a task', done: hasCompletedTask },
+    {
+      id: 'complete',
+      label: 'Complete a task',
+      done: hasCompletedTask,
+      action: !hasCompletedTask ? { label: 'Open tasks', handler: () => onNavigate('dashboard') } : undefined,
+    },
     {
       id: 'shop',
       label: 'Visit the reward shop',
