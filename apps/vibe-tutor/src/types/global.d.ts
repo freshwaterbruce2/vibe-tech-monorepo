@@ -1,6 +1,7 @@
 interface Window {
   // Custom Vibe Tutor globals
   __JAMENDO_CLIENT_ID__?: string;
+  __API_URL__?: string;
 
   // Experimental Web Speech API
   SpeechRecognition: typeof SpeechRecognition;
