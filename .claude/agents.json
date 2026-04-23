@@ -378,26 +378,33 @@
     }
   },
   "model_definitions": {
+    "claude-opus-4-7": {
+      "display_name": "Claude Opus 4.7",
+      "provider": "Anthropic",
+      "use_cases": ["orchestration", "planning", "architecture", "complex reasoning", "multi-step tasks"],
+      "context_window": 200000,
+      "description": "Opus 4.7 - best model for orchestration, planning, and complex monorepo work. Default for lead agent."
+    },
     "claude-opus-4-6": {
       "display_name": "Claude Opus 4.6",
       "provider": "Anthropic",
       "use_cases": ["planning", "architecture", "complex reasoning", "code generation"],
       "context_window": 200000,
-      "description": "Opus 4.6 - most capable model for complex tasks"
+      "description": "Opus 4.6 - prior generation, kept as fallback."
     },
     "claude-sonnet-4-6": {
       "display_name": "Claude Sonnet 4.6",
       "provider": "Anthropic",
-      "use_cases": ["reasoning", "architecture", "security", "complex decisions"],
+      "use_cases": ["implementation", "reasoning", "security", "complex decisions"],
       "context_window": 200000,
-      "description": "Sonnet 4.6 - balanced performance and reasoning"
+      "description": "Sonnet 4.6 - balanced implementer; default for specialists needing reasoning."
     },
     "claude-haiku-4-5-20251001": {
       "display_name": "Claude Haiku 4.5",
       "provider": "Anthropic",
       "use_cases": ["deterministic", "patterns", "speed", "simple tasks"],
       "context_window": 200000,
-      "description": "Haiku 4.5 - fast, deterministic tasks"
+      "description": "Haiku 4.5 - fast, deterministic tasks. Use for high-volume sub-agent work to save tokens."
     }
   },
   "anti_duplication_settings": {

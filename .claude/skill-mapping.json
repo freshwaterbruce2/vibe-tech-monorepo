@@ -56,6 +56,15 @@
         "systematic-debugging"
       ],
       "keywords": ["agent", "tauri", "rust", "language server", "rag", "workspace", "service"]
+    },
+    "mcp-rag-server": {
+      "community_skills": [
+        "mcp-builder",
+        "rag-engineer",
+        "typescript-expert",
+        "systematic-debugging"
+      ],
+      "keywords": ["mcp", "rag", "lancedb", "embedder", "chunker", "retriever", "indexer", "reranker", "sqlite-trading", "sqlite-learning"]
     }
   },
 

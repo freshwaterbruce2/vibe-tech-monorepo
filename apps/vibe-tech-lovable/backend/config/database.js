@@ -8,18 +8,15 @@ const fs = require('fs');
 
 function getDatabaseConfig() {
   const isProduction = process.env.NODE_ENV === 'production';
-  
-  let dbDir, dbPath;
-  
-  if (isProduction) {
-    // Production: Use container-friendly or app-relative path
-    dbDir = process.env.DATABASE_DIR || path.join(__dirname, '..', 'data');
-    dbPath = process.env.DATABASE_PATH || path.join(dbDir, 'vibetech.db');
-  } else {
-    // Development: Maintain backward compatibility with D: drive
-    dbDir = process.env.DATABASE_DIR || 'D:\\vibe-tech-data';
-    dbPath = process.env.DATABASE_PATH || path.join(dbDir, 'vibetech.db');
+  let dbDir = process.env.DATABASE_DIR;
+
+  if (!dbDir) {
+    dbDir = isProduction
+      ? path.join(__dirname, '..', 'data')
+      : 'D:\\databases\\vibe-tech-lovable';
   }
+
+  let dbPath = process.env.DATABASE_PATH || path.join(dbDir, 'vibetech.db');
   
   // Ensure directory exists
   try {
@@ -29,8 +26,7 @@ function getDatabaseConfig() {
     }
   } catch (error) {
     console.error(`✗ Failed to create database directory: ${dbDir}`, error);
-    // Fallback to current directory for production
-    if (isProduction) {
+    if (isProduction && !process.env.DATABASE_DIR && !process.env.DATABASE_PATH) {
       dbDir = path.join(process.cwd(), 'data');
       dbPath = path.join(dbDir, 'vibetech.db');
       fs.mkdirSync(dbDir, { recursive: true });

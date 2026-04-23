@@ -2,7 +2,7 @@
   "name": "vibeblox",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "sourceRoot": "apps/vibeblox/src",
+  "sourceRoot": "apps/VibeBlox/src",
   "tags": [
     "type:app",
     "platform:web",
@@ -15,7 +15,7 @@
         "commands": [
           "pnpm --filter @vibetech/vibeblox dev"
         ],
-        "cwd": "apps/vibeblox"
+        "cwd": "apps/VibeBlox"
       }
     },
     "build": {
@@ -34,7 +34,7 @@
         "commands": [
           "pnpm --filter @vibetech/vibeblox build"
         ],
-        "cwd": "apps/vibeblox"
+        "cwd": "apps/VibeBlox"
       },
       "configurations": {
         "production": {
@@ -52,7 +52,7 @@
         "commands": [
           "pnpm --filter @vibetech/vibeblox preview"
         ],
-        "cwd": "apps/vibeblox"
+        "cwd": "apps/VibeBlox"
       }
     },
     "lint": {
@@ -78,7 +78,7 @@
         "commands": [
           "pnpm --filter @vibetech/vibeblox typecheck"
         ],
-        "cwd": "apps/vibeblox"
+        "cwd": "apps/VibeBlox"
       }
     },
     "test": {
@@ -95,7 +95,7 @@
         "commands": [
           "pnpm --filter @vibetech/vibeblox test"
         ],
-        "cwd": "apps/vibeblox"
+        "cwd": "apps/VibeBlox"
       }
     },
     "server": {
@@ -104,7 +104,7 @@
         "commands": [
           "pnpm --filter @vibetech/vibeblox server"
         ],
-        "cwd": "apps/vibeblox"
+        "cwd": "apps/VibeBlox"
       }
     },
     "db:migrate": {
@@ -113,7 +113,7 @@
         "commands": [
           "pnpm --filter @vibetech/vibeblox db:migrate"
         ],
-        "cwd": "apps/vibeblox"
+        "cwd": "apps/VibeBlox"
       }
     },
     "db:seed": {
@@ -125,7 +125,7 @@
         "commands": [
           "pnpm --filter @vibetech/vibeblox db:seed"
         ],
-        "cwd": "apps/vibeblox"
+        "cwd": "apps/VibeBlox"
       }
     },
     "quality": {}

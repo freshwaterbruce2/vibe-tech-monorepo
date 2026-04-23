@@ -27,6 +27,7 @@
       "Bash(pnpm:*)",
       "Bash(pnpm run:*)",
       "Bash(pnpm nx:*)",
+      "Bash(pnpm --filter:*)",
       "Bash(npm run:*)",
       "Bash(npx nx:*)",
       "Bash(npx:*)",
@@ -40,8 +41,23 @@
       "Bash(git pull:*)",
       "Bash(python:*)",
       "Bash(powershell:*)",
+      "Bash(pwsh:*)",
+      "Bash(pwsh.exe:*)",
       "Bash(node:*)",
       "Bash(sqlite3:*)",
+      "Bash(Compress-Archive:*)",
+      "Bash(Expand-Archive:*)",
+      "Bash(Get-ChildItem:*)",
+      "Bash(Get-Content:*)",
+      "Bash(Test-Path:*)",
+      "Bash(New-Item:*)",
+      "Bash(Copy-Item:*)",
+      "Bash(Move-Item:*)",
+      "Bash(Select-String:*)",
+      "Bash(Select-Object:*)",
+      "Bash(Where-Object:*)",
+      "Bash(ForEach-Object:*)",
+      "Bash(Measure-Object:*)",
       "Bash(ls:*)",
       "Bash(cat:*)",
       "Bash(head:*)",
@@ -55,6 +71,9 @@
       "Bash(which:*)",
       "Bash(type:*)",
       "Bash(test:*)",
+      "Bash(grep:*)",
+      "Bash(findstr:*)",
+      "Bash(dir:*)",
       "Edit",
       "Write",
       "Read"
@@ -69,7 +88,15 @@
       "Read(./apps/crypto-enhanced/config.py)",
       "Bash(rm -rf:*)",
       "Bash(format:*)",
-      "Bash(diskpart:*)"
+      "Bash(diskpart:*)",
+      "Bash(npm install:*)",
+      "Bash(npm i:*)",
+      "Bash(npm ci:*)",
+      "Bash(npm update:*)",
+      "Bash(npm add:*)",
+      "Bash(yarn:*)",
+      "Bash(bun install:*)",
+      "Bash(bun add:*)"
     ],
     "ask": [
       "Bash(git commit:*)",
@@ -78,7 +105,8 @@
       "Bash(curl:*)",
       "Bash(wget:*)",
       "Bash(rm:*)",
-      "Bash(del:*)"
+      "Bash(del:*)",
+      "Bash(Remove-Item:*)"
     ],
     "defaultMode": "default",
     "additionalDirectories": [
@@ -92,7 +120,7 @@
       "D:/backups"
     ]
   },
-  "model": "claude-sonnet-4-6",
+  "model": "claude-opus-4-7",
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [],
   "disabledMcpjsonServers": [

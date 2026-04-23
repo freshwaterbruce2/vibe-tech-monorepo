@@ -130,7 +130,7 @@ Write-Host "  Report:     $OutputPath"
 if ($duplicateGroups.Count -gt 0) {
     Write-Host "`nPotential duplicate-name groups:" -ForegroundColor Yellow
     foreach ($group in $duplicateGroups) {
-        $members = ($group.members | ForEach-Object { $_.name }) -join ', '
+        $members = ($group.members | ForEach-Object { $_.relativePath }) -join ', '
         Write-Host "  $($group.normalizedName): $members" -ForegroundColor Yellow
     }
 }

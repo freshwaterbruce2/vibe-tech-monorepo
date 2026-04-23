@@ -364,25 +364,7 @@ const ApiKeySettings: React.FC = () => {
         return;
       }
 
-      let saved = false;
-      try {
-        saved = await keyManager.storeApiKey(provider, key);
-      } catch (storeErr) {
-        // If SecureApiKeyManager fails (e.g. CryptoJS issue), fall back to plain localStorage
-        logger.warn(`[ApiKeySettings] SecureApiKeyManager failed, using localStorage fallback:`, storeErr);
-        try {
-          const storageKey = `secure_api_key_${provider.toLowerCase()}`;
-          const storedData = JSON.stringify({
-            key: key, // stored in plain text as fallback
-            metadata: { provider: provider.toLowerCase(), isValid: true, lastValidated: new Date(), encrypted: false }
-          });
-          // eslint-disable-next-line electron-security/no-localstorage-electron
-          localStorage.setItem(storageKey, storedData);
-          saved = true;
-        } catch (lsErr) {
-          logger.error(`[ApiKeySettings] localStorage fallback also failed:`, lsErr);
-        }
-      }
+      const saved = await keyManager.storeApiKey(provider, key);
 
       if (saved) {
         setSuccesses(prev => ({ ...prev, [provider]: 'API key saved securely' }));
@@ -393,7 +375,10 @@ const ApiKeySettings: React.FC = () => {
         window.dispatchEvent(new CustomEvent('apiKeyUpdated', { detail: { provider } }));
         logger.debug(`[ApiKeySettings] Dispatched apiKeyUpdated event for ${provider}`);
       } else {
-        setErrors(prev => ({ ...prev, [provider]: 'Failed to save API key' }));
+        const message = keyManager.supportsPersistentStorage()
+          ? 'Failed to save API key'
+          : 'Secure storage is unavailable in this environment. API keys are not persisted.';
+        setErrors(prev => ({ ...prev, [provider]: message }));
       }
     } catch (error) {
       setErrors(prev => ({ ...prev, [provider]: error instanceof Error ? error.message : 'Failed to save API key' }));

@@ -26,7 +26,6 @@
     "prompt-engineer-app":           ["test"],
     "symptom-tracker-api":           ["lint", "test"],
     "trendmart":                     ["test"],
-    "vibe-justice":                  ["lint", "typecheck", "test", "build"],
     "vibe-tech-lovable-backend":     ["lint", "typecheck", "test", "build"],
     "workflow-engine":               ["lint", "typecheck", "test"]
   },

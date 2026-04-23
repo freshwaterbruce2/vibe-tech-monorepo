@@ -8,8 +8,7 @@ interface ElectronStoreAPI {
 }
 
 function getElectronAPI(): ElectronStoreAPI | undefined {
-  const win = window as any;
-  return win.electronAPI as ElectronStoreAPI | undefined;
+  return (window as Window & typeof globalThis & { electronAPI?: ElectronStoreAPI }).electronAPI;
 }
 
 export function useLocalStorage<T>(
@@ -19,7 +18,6 @@ export function useLocalStorage<T>(
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       const api = getElectronAPI();
-      // eslint-disable-next-line electron-security/no-localstorage-electron -- browser fallback
       const item = api ? api.store.getItem(key) : localStorage.getItem(key);
       return item ? JSON.parse(item) : initialValue;
     } catch {
@@ -30,20 +28,21 @@ export function useLocalStorage<T>(
   const setValue = useCallback(
     (value: T | ((val: T) => T)) => {
       try {
-        const valueToStore = value instanceof Function ? value(storedValue) : value;
-        setStoredValue(valueToStore);
-        const api = getElectronAPI();
-        if (api) {
-          api.store.setItem(key, JSON.stringify(valueToStore));
-        } else {
-          // eslint-disable-next-line electron-security/no-localstorage-electron -- browser fallback
-          localStorage.setItem(key, JSON.stringify(valueToStore));
-        }
+        setStoredValue((currentValue) => {
+          const valueToStore = value instanceof Function ? value(currentValue) : value;
+          const api = getElectronAPI();
+          if (api) {
+            api.store.setItem(key, JSON.stringify(valueToStore));
+          } else {
+            localStorage.setItem(key, JSON.stringify(valueToStore));
+          }
+          return valueToStore;
+        });
       } catch (error) {
         console.error('Error saving to localStorage:', error);
       }
     },
-    [key, storedValue],
+    [key],
   );
 
   useEffect(() => {

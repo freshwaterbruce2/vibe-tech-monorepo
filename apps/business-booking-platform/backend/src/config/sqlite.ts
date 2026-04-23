@@ -6,6 +6,14 @@ import { z } from 'zod';
 // Load environment variables
 dotenv.config();
 
+const requireEnv = (name: string): string => {
+	const value = process.env[name]?.trim();
+	if (!value) {
+		throw new Error(`Missing required environment variable: ${name}`);
+	}
+	return value;
+};
+
 // SQLite configuration schema
 const sqliteConfigSchema = z.object({
 	environment: z.enum(['development', 'test', 'staging', 'production']),
@@ -84,16 +92,19 @@ const sqliteConfigSchema = z.object({
 	}),
 });
 
-// Use DATABASE_PATH / DATABASE_URL from environment; default to D:\databases per paths policy
+// Use DATABASE_PATH for SQLite, with :memory: support for tests.
+const databaseUrl = process.env.DATABASE_URL?.trim();
 const dbPath =
 	process.env.DATABASE_PATH ||
-	process.env.DATABASE_URL ||
+	(databaseUrl === ':memory:' ? databaseUrl : undefined) ||
 	'D:\\databases\\vibe-booking.db';
 
 // Ensure the database directory exists
-const dbDir = path.dirname(dbPath);
-if (!fs.existsSync(dbDir)) {
-	fs.mkdirSync(dbDir, { recursive: true });
+if (dbPath !== ':memory:') {
+	const dbDir = path.dirname(dbPath);
+	if (!fs.existsSync(dbDir)) {
+		fs.mkdirSync(dbDir, { recursive: true });
+	}
 }
 
 // Build SQLite configuration object
@@ -122,17 +133,11 @@ const rawSqliteConfig = {
 		maxSize: parseInt(process.env.CACHE_MAX_SIZE || '1000', 10),
 	},
 	jwt: {
-		secret:
-			process.env.JWT_SECRET ||
-			'your-super-secret-jwt-key-change-this-in-production',
+		secret: requireEnv('JWT_SECRET'),
 		expiresIn: process.env.JWT_EXPIRES_IN || '1h',
-		refreshSecret:
-			process.env.JWT_REFRESH_SECRET ||
-			'your-super-secret-refresh-key-change-this-in-production',
+		refreshSecret: requireEnv('JWT_REFRESH_SECRET'),
 		refreshExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d',
-		resetSecret:
-			process.env.JWT_RESET_SECRET ||
-			'your-super-secret-reset-key-change-this-in-production',
+		resetSecret: requireEnv('JWT_RESET_SECRET'),
 	},
 	openai: {
 		apiKey: process.env.OPENAI_API_KEY || '',
