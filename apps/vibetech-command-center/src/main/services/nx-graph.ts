@@ -30,7 +30,7 @@ export class NxGraphService {
     return parsed;
   }
 
-  protected runNxGraph(): Promise<unknown> {
+  protected async runNxGraph(): Promise<unknown> {
     return new Promise((resolve, reject) => {
       const tmp = mkdtempSync(join(tmpdir(), 'cc-nx-'));
       const out = join(tmp, 'graph.json');

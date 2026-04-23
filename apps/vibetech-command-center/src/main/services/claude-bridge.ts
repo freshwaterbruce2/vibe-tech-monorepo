@@ -178,7 +178,7 @@ function resolveClaudeJs(): string {
     const src = readFileSync(claudeCmd, 'utf8');
     // The shim contains: node  "%~dp0\global\5\.pnpm\@anthropic-ai+claude-code@X.Y.Z\...cli.js"
     const m = src.match(/global[/\\]5[/\\]\.pnpm[/\\](@anthropic-ai\+claude-code@[^\\]+)[/\\].*?cli\.js/i);
-    if (m && m[1]) {
+    if (m?.[1]) {
       const resolved = join(localAppData, 'pnpm', 'global', '5', '.pnpm', m[1],
         'node_modules', '@anthropic-ai', 'claude-code', 'cli.js');
       if (existsSync(resolved)) return resolved;

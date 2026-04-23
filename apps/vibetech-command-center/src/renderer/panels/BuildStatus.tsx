@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, Circle, AlertCircle } from 'lucide-react';
 import { Panel, RelativeTime } from '@renderer/components/Panel';
 import { unwrap } from '@renderer/lib/ipc';
-import { useNxGraph } from '@renderer/hooks';
+import { useCurrentTime, useNxGraph } from '@renderer/hooks';
 import type { NxProject, FsStatResult } from '@shared/types';
 
 const STALE_BUILD_MS = 24 * 60 * 60 * 1000;
@@ -24,7 +24,7 @@ export function BuildStatus() {
       title={`Build Status (${apps.length} apps)`}
       loading={nx.isFetching}
       error={nx.error instanceof Error ? nx.error.message : null}
-      onRefresh={() => nx.refetch()}
+      onRefresh={() => { void nx.refetch(); }}
     >
       {apps.length === 0 ? (
         <div className="text-slate-500 text-sm">loading projects...</div>
@@ -52,10 +52,11 @@ export function BuildStatus() {
 
 function BuildRow({ app }: { app: NxProject }) {
   const distPath = `C:\\dev\\${app.root.replace(/\//g, '\\')}\\dist`;
+  const now = useCurrentTime(60_000);
 
   const { data, isLoading } = useQuery<FsStatResult>({
     queryKey: ['fs', 'stat', distPath],
-    queryFn: () => unwrap(window.commandCenter.fs.stat(distPath)),
+    queryFn: async () => unwrap(window.commandCenter.fs.stat(distPath)),
     staleTime: 30_000,
     refetchInterval: 60_000
   });
@@ -64,7 +65,7 @@ function BuildRow({ app }: { app: NxProject }) {
     if (isLoading) return 'loading';
     if (!data?.exists) return 'never';
     if (!data.mtimeMs) return 'never';
-    const age = Date.now() - data.mtimeMs;
+    const age = now - data.mtimeMs;
     if (age < FRESH_BUILD_MS) return 'fresh';
     if (age > STALE_BUILD_MS) return 'stale';
     return 'ok';

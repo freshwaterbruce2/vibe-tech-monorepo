@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import clsx from 'clsx';
 import { RefreshCw } from 'lucide-react';
+import { useCurrentTime } from '@renderer/hooks';
 
 export interface PanelProps {
   title: string;
@@ -49,7 +50,7 @@ export function Bytes({ n }: { n: number }) {
 }
 
 export function RelativeTime({ ts }: { ts: number }) {
-  const now = Date.now();
+  const now = useCurrentTime(1000);
   const diff = now - ts;
   const sec = Math.floor(diff / 1000);
   const min = Math.floor(sec / 60);

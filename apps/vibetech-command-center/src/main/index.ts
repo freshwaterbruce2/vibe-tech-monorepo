@@ -40,10 +40,10 @@ function createWindow(): void {
   });
 
   if (isDev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
+    void mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+    void mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
   }
 }
 
@@ -65,7 +65,7 @@ async function shutdown(): Promise<void> {
   if (container) { await disposeServiceContainer(container); container = null; }
 }
 
-app.whenReady().then(async () => {
+void app.whenReady().then(async () => {
   await bootstrap();
   createWindow();
   app.on('activate', () => {
@@ -76,11 +76,13 @@ app.whenReady().then(async () => {
 // Stay alive in the tray; tray menu has Quit
 app.on('window-all-closed', () => {});
 
-app.on('before-quit', async (event) => {
+app.on('before-quit', (event) => {
   isQuitting = true;
   if (container || hub) {
     event.preventDefault();
-    await shutdown();
-    app.exit(0);
+    void (async () => {
+      await shutdown();
+      app.exit(0);
+    })();
   }
 });

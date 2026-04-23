@@ -30,20 +30,20 @@ export function BackupLog() {
       title={`Recent Backups (${data?.length ?? 0})`}
       loading={isFetching}
       error={error instanceof Error ? error.message : null}
-      onRefresh={() => refetch()}
+      onRefresh={() => { void refetch(); }}
       actions={
         <div className="flex gap-2">
           <button
             className="btn btn-primary text-xs"
             disabled={busy}
-            onClick={() => handleQuickBackup('C:\\dev\\apps', 'all-apps')}
+            onClick={() => { void handleQuickBackup('C:\\dev\\apps', 'all-apps'); }}
           >
             <Archive size={12} /> Backup apps/
           </button>
           <button
             className="btn btn-primary text-xs"
             disabled={busy}
-            onClick={() => handleQuickBackup('C:\\dev\\packages', 'all-packages')}
+            onClick={() => { void handleQuickBackup('C:\\dev\\packages', 'all-packages'); }}
           >
             <Archive size={12} /> Backup packages/
           </button>

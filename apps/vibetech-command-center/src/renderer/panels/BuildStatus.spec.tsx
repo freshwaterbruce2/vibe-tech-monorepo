@@ -24,7 +24,7 @@ function setupBridge(
         refresh: vi.fn()
       },
       fs: {
-        stat: vi.fn().mockImplementation((p: string) => Promise.resolve({
+        stat: vi.fn().mockImplementation(async (p: string) => Promise.resolve({
           ok: true,
           data: {
             path: p,

@@ -9,6 +9,11 @@ $workspaceRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $tmpDir = Join-Path $workspaceRoot 'tmp'
 $databaseReportPath = Join-Path $tmpDir 'database-health-report.json'
 $auditReportPath = Join-Path $tmpDir 'monorepo-sync-audit-report.json'
+$environmentScript = Join-Path $PSScriptRoot 'Initialize-DevProcessEnvironment.ps1'
+
+. $environmentScript
+$null = Initialize-DevProcessEnvironment
+Set-Location $workspaceRoot
 
 function Invoke-Check {
     param(
@@ -69,6 +74,6 @@ foreach ($result in $results) {
 }
 Write-Host "  Report: $OutputPath"
 
-if (($results | Where-Object { -not $_.success }).Count -gt 0) {
+if (@($results | Where-Object { -not $_.success }).Count -gt 0) {
     exit 1
 }

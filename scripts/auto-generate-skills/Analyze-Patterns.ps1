@@ -15,7 +15,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Paths
-$LearningDB = "D:\learning-system\agent_learning.db"
+$LearningDB = "D:\databases\agent_learning.db"
 $OutputDir = "C:\dev\.agent\skills\auto-skill-creator\analysis"
 
 # Ensure output directory exists

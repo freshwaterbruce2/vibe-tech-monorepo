@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { Sparkles, Play, RotateCw } from 'lucide-react';
 import { Panel } from '@renderer/components/Panel';
 import { useNxGraph, useClaudeInvoke, useClaudeStream } from '@renderer/hooks';
@@ -68,7 +68,7 @@ export function ClaudeLauncher() {
   const completedRun = useUiStore((s) => s.claudeCompletedRun);
   const setCompletedRun = useUiStore((s) => s.setClaudeCompletedRun);
   const [selectedApp, setSelectedApp] = useState<string>('');
-  const [selectedTemplate, setSelectedTemplate] = useState<string>(TEMPLATES[0]!.id);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>(TEMPLATES[0]?.id ?? '');
   const [prompt, setPrompt] = useState('');
   const [promptDirty, setPromptDirty] = useState(false);
   const [activeInvocationId, setActiveInvocationId] = useState<string | null>(null);
@@ -82,16 +82,18 @@ export function ClaudeLauncher() {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [nx.data]);
 
-  const template = TEMPLATES.find((t) => t.id === selectedTemplate)!;
+  const template = TEMPLATES.find((t) => t.id === selectedTemplate) ?? TEMPLATES[0];
+  if (!template) {
+    throw new Error('ClaudeLauncher requires at least one task template.');
+  }
 
-  useEffect(() => {
-    if (!promptDirty && selectedApp) {
-      setPrompt(template.promptTemplate(selectedApp));
-    }
-  }, [selectedApp, selectedTemplate, template, promptDirty]);
+  const resolvedPrompt = !promptDirty && selectedApp
+    ? template.promptTemplate(selectedApp)
+    : prompt;
 
   const handleLaunch = (): void => {
-    if (!selectedApp || !prompt.trim()) return;
+    const promptToRun = resolvedPrompt.trim();
+    if (!selectedApp || !promptToRun) return;
     const app = apps.find((a) => a.name === selectedApp);
     if (!app) return;
     const cwd = `C:\\dev\\${app.root.replace(/\//g, '\\')}`;
@@ -102,7 +104,7 @@ export function ClaudeLauncher() {
 
     invoke.mutate({
       invocationId,
-      prompt,
+      prompt: promptToRun,
       cwd,
       allowedTools: template.allowedTools,
       permissionMode: template.permissionMode,
@@ -146,7 +148,7 @@ export function ClaudeLauncher() {
         <div className="lg:col-span-4 flex flex-col">
           <label className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Prompt</label>
           <textarea
-            value={prompt}
+            value={resolvedPrompt}
             onChange={(e) => { setPrompt(e.target.value); setPromptDirty(true); }}
             rows={12}
             placeholder="select an app to auto-fill from the template"
@@ -157,7 +159,7 @@ export function ClaudeLauncher() {
           <div className="flex items-center gap-2 mt-2">
             <button
               onClick={handleLaunch}
-              disabled={!selectedApp || !prompt.trim() || invoke.isPending}
+              disabled={!selectedApp || !resolvedPrompt.trim() || invoke.isPending}
               className="btn btn-primary"
             >
               {invoke.isPending

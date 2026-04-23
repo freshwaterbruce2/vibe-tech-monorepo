@@ -25,20 +25,26 @@ export function setupTray(container: ServiceContainer, getWindow: () => BrowserW
       { type: 'separator' },
       {
         label: 'Backup C:\\dev\\apps',
-        click: async () => {
-          await container.backup.createBackup({ sourcePath: 'C:\\dev\\apps', label: 'tray-quick' });
+        click: () => {
+          void container.backup
+            .createBackup({ sourcePath: 'C:\\dev\\apps', label: 'tray-quick' })
+            .catch((error) => console.error('tray backup failed for apps:', error));
         }
       },
       {
         label: 'Backup C:\\dev\\packages',
-        click: async () => {
-          await container.backup.createBackup({ sourcePath: 'C:\\dev\\packages', label: 'tray-quick' });
+        click: () => {
+          void container.backup
+            .createBackup({ sourcePath: 'C:\\dev\\packages', label: 'tray-quick' })
+            .catch((error) => console.error('tray backup failed for packages:', error));
         }
       },
       { type: 'separator' },
       { label: 'Quit', click: () => app.quit() }
     ]);
-    tray!.setContextMenu(menu);
+    if (tray) {
+      tray.setContextMenu(menu);
+    }
   };
 
   tray.on('click', () => {

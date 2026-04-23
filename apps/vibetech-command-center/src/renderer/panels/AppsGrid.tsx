@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { FolderOpen, Archive, Terminal } from 'lucide-react';
 import { Panel, StatusDot, RelativeTime } from '@renderer/components/Panel';
-import { useNxGraph, useHealth, useBackupList } from '@renderer/hooks';
+import { useNxGraph, useHealth, useBackupList, useCurrentTime } from '@renderer/hooks';
 import { useUiStore } from '@renderer/stores';
 import type { NxProject, ProbeResult } from '@shared/types';
 
@@ -48,7 +48,7 @@ export function AppsGrid() {
       title={`Apps (${apps.length})`}
       loading={nx.isFetching}
       error={nx.error instanceof Error ? nx.error.message : null}
-      onRefresh={() => nx.refetch()}
+      onRefresh={() => { void nx.refetch(); }}
     >
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {apps.map((app) => (
@@ -74,6 +74,7 @@ interface AppCardProps {
 
 function AppCard({ app, lastActivity, lastBackup }: AppCardProps) {
   const absPath = `C:\\dev\\${app.root.replace(/\//g, '\\')}`;
+  const now = useCurrentTime(60_000);
 
   const handleBackup = async (): Promise<void> => {
     const res = await window.commandCenter.backup.create({
@@ -107,7 +108,7 @@ function AppCard({ app, lastActivity, lastBackup }: AppCardProps) {
         <h3 className="font-semibold text-slate-100 font-mono text-sm truncate" title={app.name}>
           {app.name}
         </h3>
-        <StatusDot ok={lastActivity && Date.now() - lastActivity < 60_000 ? true : 'warn'} />
+        <StatusDot ok={lastActivity != null && now - lastActivity < 60_000 ? true : 'warn'} />
       </div>
 
       <div className="text-xs text-slate-500 font-mono mb-2 truncate" title={absPath}>
@@ -134,13 +135,25 @@ function AppCard({ app, lastActivity, lastBackup }: AppCardProps) {
       </div>
 
       <div className="flex gap-1">
-        <button onClick={handleBackup} className="btn btn-primary flex-1 text-[11px] py-1" title="Create zip backup">
+        <button
+          onClick={() => { void handleBackup(); }}
+          className="btn btn-primary flex-1 text-[11px] py-1"
+          title="Create zip backup"
+        >
           <Archive size={12} /> Backup
         </button>
-        <button onClick={handleOpenInExplorer} className="btn flex-1 text-[11px] py-1" title="Open in Explorer">
+        <button
+          onClick={() => { void handleOpenInExplorer(); }}
+          className="btn flex-1 text-[11px] py-1"
+          title="Open in Explorer"
+        >
           <FolderOpen size={12} />
         </button>
-        <button onClick={handleOpenTerminal} className="btn flex-1 text-[11px] py-1" title="Open Windows Terminal">
+        <button
+          onClick={() => { void handleOpenTerminal(); }}
+          className="btn flex-1 text-[11px] py-1"
+          title="Open Windows Terminal"
+        >
           <Terminal size={12} />
         </button>
       </div>

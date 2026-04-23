@@ -95,7 +95,7 @@ export function RagSearch() {
         </div>
       )}
 
-      {data && data.hits.length === 0 && !mutation.isPending && (
+      {data?.hits.length === 0 && !mutation.isPending && (
         <div className="text-slate-500 text-sm">{`no hits for "${submitted}"`}</div>
       )}
     </Panel>

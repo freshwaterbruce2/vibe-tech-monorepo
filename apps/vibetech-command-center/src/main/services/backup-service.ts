@@ -88,7 +88,7 @@ export class BackupService {
       .slice(0, limit);
   }
 
-  private runCompressArchive(source: string, zipPath: string): Promise<void> {
+  private async runCompressArchive(source: string, zipPath: string): Promise<void> {
     return new Promise((resolve, reject) => {
       // Argv-based, no shell interpolation. Paths passed via env vars — PowerShell 7 required.
       const args = [

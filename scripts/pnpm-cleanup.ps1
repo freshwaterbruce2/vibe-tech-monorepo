@@ -4,6 +4,10 @@
 param([switch]$DryRun)
 
 $RootDir = "C:\dev"
+$environmentScript = Join-Path $PSScriptRoot 'Initialize-DevProcessEnvironment.ps1'
+
+. $environmentScript
+$null = Initialize-DevProcessEnvironment
 
 Write-Host "=== pnpm Cleanup ===" -ForegroundColor Cyan
 

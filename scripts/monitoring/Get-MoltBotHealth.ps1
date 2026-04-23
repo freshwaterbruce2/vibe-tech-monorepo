@@ -208,7 +208,7 @@ function Test-LearningSystemHealth {
         LastExecution = $null
     }
 
-    $dbPath = "D:\learning-system\agent_learning.db"
+    $dbPath = "D:\databases\agent_learning.db"
     if (-not (Test-Path $dbPath)) {
         $health.Status = "Missing"
         $health.Issues += "Learning database not found"
@@ -219,11 +219,15 @@ function Test-LearningSystemHealth {
     if ($sqlite3) {
         try {
             # Check execution count
-            $count = & sqlite3 $dbPath "SELECT COUNT(*) FROM agent_executions;" 2>&1
+            $count = @(& sqlite3 $dbPath "SELECT COUNT(*) FROM agent_executions;" 2>$null) |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+                Select-Object -First 1
             $health.ExecutionCount = [int]$count
 
             # Check last execution
-            $lastExec = & sqlite3 $dbPath "SELECT MAX(executed_at) FROM agent_executions;" 2>&1
+            $lastExec = @(& sqlite3 $dbPath "SELECT MAX(started_at) FROM agent_executions;" 2>$null) |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+                Select-Object -First 1
             if ($lastExec) {
                 $health.LastExecution = [datetime]$lastExec
             }
@@ -262,6 +266,17 @@ function Test-ScheduledTaskHealth {
         Tasks = @()
     }
 
+    $scheduledTaskCommand = Get-Command Get-ScheduledTask -ErrorAction SilentlyContinue
+    if (-not $scheduledTaskCommand) {
+        Import-Module ScheduledTasks -ErrorAction SilentlyContinue
+        $scheduledTaskCommand = Get-Command Get-ScheduledTask -ErrorAction SilentlyContinue
+    }
+
+    if (-not $scheduledTaskCommand) {
+        $health.Issues += "ScheduledTasks cmdlets unavailable in the current PowerShell session"
+        return $health
+    }
+
     $taskNames = @(
         "MoltBot-DailyBackup",
         "MoltBot-WeeklyLogRotation",
@@ -272,7 +287,7 @@ function Test-ScheduledTaskHealth {
     $disabledTasks = @()
 
     foreach ($taskName in $taskNames) {
-        $task = Get-ScheduledTask -TaskName $taskName -TaskPath "\MoltBot\" -ErrorAction SilentlyContinue
+        $task = & $scheduledTaskCommand.Source -TaskName $taskName -TaskPath "\MoltBot\" -ErrorAction SilentlyContinue
 
         if (-not $task) {
             $missingTasks += $taskName
@@ -316,11 +331,12 @@ $healthResults = @{
 Write-Host "Databases:" -ForegroundColor Yellow
 $databases = @{
     "trading" = "D:\databases\trading.db"
-    "agent_learning" = "D:\learning-system\agent_learning.db"
-    "learning" = "D:\learning-system\learning.db"
-    "logging_analytics" = "D:\learning-system\logging_analytics.db"
-    "monitoring" = "D:\learning-system\monitoring.db"
-    "events" = "D:\learning-system\events.db"
+    "agent_learning" = "D:\databases\agent_learning.db"
+    "memory" = "D:\databases\memory.db"
+    "nova_activity" = "D:\databases\nova_activity.db"
+    "agent_tasks" = "D:\databases\agent_tasks.db"
+    "feature_flags" = "D:\databases\feature_flags.db"
+    "database" = "D:\databases\database.db"
 }
 
 foreach ($dbName in $databases.Keys) {
@@ -359,7 +375,7 @@ Write-Host ""
 # Check configuration
 Write-Host "Configuration:" -ForegroundColor Yellow
 $configs = @{
-    "clawdbot.json" = "C:\Users\fresh_zxae3v6\.clawdbot\clawdbot.json"
+    "config.json" = "C:\Users\fresh_zxae3v6\.clawdbot\config.json"
     "jobs.json" = "C:\Users\fresh_zxae3v6\.openclaw\cron\jobs.json"
 }
 

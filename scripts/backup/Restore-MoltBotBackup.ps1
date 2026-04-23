@@ -57,7 +57,7 @@ if (-not $SkipBackup) {
 
     if (Test-Path $safetyBackupScript) {
         try {
-            & $safetyBackupScript -Compress -Description "Pre-restore safety backup" | Out-Null
+            & $safetyBackupScript -Compress | Out-Null
             Write-Host "  [OK] Safety backup created" -ForegroundColor Green
         } catch {
             Write-Host "  [WARN] Safety backup failed: $($_.Exception.Message)" -ForegroundColor Yellow
@@ -128,12 +128,7 @@ if ($RestoreMode -eq "All" -or $RestoreMode -eq "Databases") {
     if (Test-Path $dbBackupDir) {
         $databases = Get-ChildItem $dbBackupDir -File
         foreach ($db in $databases) {
-            $targetPath = "D:\learning-system\$($db.Name)"
-
-            # Special case: trading.db goes to D:\databases\
-            if ($db.Name -eq "trading.db") {
-                $targetPath = "D:\databases\$($db.Name)"
-            }
+            $targetPath = "D:\databases\$($db.Name)"
 
             try {
                 # Ensure target directory exists
@@ -163,8 +158,8 @@ if ($RestoreMode -eq "All" -or $RestoreMode -eq "Configuration") {
     if (Test-Path $configBackupDir) {
         $configs = Get-ChildItem $configBackupDir -File
         foreach ($cfg in $configs) {
-            if ($cfg.Name -eq "clawdbot.json") {
-                $targetPath = "C:\Users\fresh_zxae3v6\.clawdbot\clawdbot.json"
+            if ($cfg.Name -eq "config.json") {
+                $targetPath = "C:\Users\fresh_zxae3v6\.clawdbot\config.json"
             } elseif ($cfg.Name -eq "jobs.json") {
                 $targetPath = "C:\Users\fresh_zxae3v6\.openclaw\cron\jobs.json"
             } else {
@@ -228,16 +223,20 @@ if ($RestoreMode -eq "All" -or $RestoreMode -eq "Documentation") {
 
     if (Test-Path $docsBackupDir) {
         $docs = Get-ChildItem $docsBackupDir -File
-        $targetDocsDir = "C:\Users\fresh_zxae3v6\clawd"
-
-        if (-not (Test-Path $targetDocsDir)) {
-            New-Item -ItemType Directory -Path $targetDocsDir -Force | Out-Null
-        }
 
         foreach ($doc in $docs) {
-            $targetPath = Join-Path $targetDocsDir $doc.Name
+            $targetPath = if ($doc.Name -eq "DB_INVENTORY.md") {
+                "D:\databases\DB_INVENTORY.md"
+            } else {
+                "D:\learning-system\$($doc.Name)"
+            }
 
             try {
+                $targetDir = Split-Path $targetPath -Parent
+                if (-not (Test-Path $targetDir)) {
+                    New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+                }
+
                 Copy-Item $doc.FullName $targetPath -Force -ErrorAction Stop
                 Write-Host "  [OK] $($doc.Name)" -ForegroundColor Green
                 $restoredCount++

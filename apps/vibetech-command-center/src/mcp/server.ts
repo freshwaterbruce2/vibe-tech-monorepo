@@ -65,12 +65,12 @@ async function main(): Promise<void> {
     try { await disposeServiceContainer(container); } catch {}
     process.exit(0);
   };
-  process.on('SIGINT', shutdown);
-  process.on('SIGTERM', shutdown);
-  process.on('beforeExit', shutdown);
+  process.on('SIGINT', () => { void shutdown(); });
+  process.on('SIGTERM', () => { void shutdown(); });
+  process.on('beforeExit', () => { void shutdown(); });
 }
 
-main().catch((err) => {
+void main().catch((err) => {
   process.stderr.write(`[mcp-command-center] fatal: ${err instanceof Error ? err.stack : String(err)}\n`);
   process.exit(1);
 });

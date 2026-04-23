@@ -2,7 +2,7 @@
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -18,13 +18,71 @@ const workspaceStatePath = resolve(workspaceRoot, 'WORKSPACE.json');
 const tmpDir = resolve(workspaceRoot, 'tmp');
 const graphPath = resolve(tmpDir, 'project-graph.sync-audit.json');
 const reportPath = resolve(tmpDir, 'monorepo-sync-audit-report.json');
+const nxCliPath = resolve(workspaceRoot, 'node_modules', 'nx', 'bin', 'nx.js');
+
+function prependPathEntries(currentPath, entries) {
+  const parts = (currentPath ?? '')
+    .split(';')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  const seen = new Set(parts.map((entry) => entry.toLowerCase()));
+  const nextEntries = [];
+
+  for (const entry of entries) {
+    if (!entry || !existsSync(entry)) {
+      continue;
+    }
+    const normalized = entry.toLowerCase();
+    if (seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
+    nextEntries.push(entry);
+  }
+
+  return [...nextEntries, ...parts].join(';');
+}
+
+function createChildEnv() {
+  const env = { ...process.env };
+  const systemRoot = env.SystemRoot?.trim() || 'C:\\Windows';
+  const localAppData =
+    env.LOCALAPPDATA?.trim() || (env.USERPROFILE ? join(env.USERPROFILE, 'AppData', 'Local') : '');
+  const pnpmHome = env.PNPM_HOME?.trim() || (localAppData ? join(localAppData, 'pnpm') : '');
+  const pathEntries = [
+    join(systemRoot, 'System32'),
+    join(systemRoot, 'System32', 'WindowsPowerShell', 'v1.0'),
+    pnpmHome,
+    dirname(process.execPath),
+  ];
+
+  env.SystemRoot = systemRoot;
+  env.WINDIR = env.WINDIR?.trim() || systemRoot;
+  env.ComSpec = env.ComSpec?.trim() || join(systemRoot, 'System32', 'cmd.exe');
+  env.PATHEXT =
+    env.PATHEXT?.trim() && env.PATHEXT !== '.CPL'
+      ? env.PATHEXT
+      : '.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.CPL';
+  env.PROCESSOR_ARCHITECTURE = env.PROCESSOR_ARCHITECTURE?.trim() || 'AMD64';
+  env.PNPM_HOME = pnpmHome || env.PNPM_HOME;
+  env.Path = prependPathEntries(env.Path ?? env.PATH ?? '', pathEntries);
+  env.PATH = env.Path;
+  env.NX_DAEMON = 'false';
+  env.NX_CACHE_PROJECT_GRAPH = 'false';
+  env.NX_ISOLATE_PLUGINS = 'false';
+  env.NX_NO_CLOUD = 'true';
+  env.NX_SKIP_REMOTE_CACHE = 'true';
+  return env;
+}
+
+const childEnv = createChildEnv();
 
 function run(command, args = [], options = {}) {
   try {
     const result = spawnSync(command, args, {
       cwd: workspaceRoot,
       encoding: 'utf8',
-      env: { ...process.env, NX_DAEMON: 'false' },
+      env: { ...childEnv, ...(options.env ?? {}) },
       stdio: 'pipe',
       shell: false,
       windowsHide: true,
@@ -373,7 +431,15 @@ let graphLoadWarning = null;
 let nodeMap = {};
 let dependencyMap = {};
 
-const graphCommand = run('pnpm', ['nx', 'graph', '--file', graphPath, '--open=false']);
+const graphCommand = existsSync(nxCliPath)
+  ? run(process.execPath, [nxCliPath, 'graph', '--file', graphPath, '--open=false'])
+  : {
+      ok: false,
+      stdout: '',
+      stderr: `Missing Nx CLI at ${nxCliPath}`,
+      code: 1,
+      error: null,
+    };
 if (graphCommand.ok && existsSync(graphPath)) {
   const graphJson = readJson(graphPath);
   nodeMap = graphJson?.graph?.nodes ?? {};

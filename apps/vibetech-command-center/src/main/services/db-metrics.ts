@@ -81,20 +81,20 @@ export class DbMetricsService {
       const walPath = `${target.path}-wal`;
       const walSizeBytes = existsSync(walPath) ? statSync(walPath).size : 0;
 
-      db = new Database(target.path, { readonly: true, fileMustExist: true });
-      db.pragma('query_only = ON');
+      const database = (db = new Database(target.path, { readonly: true, fileMustExist: true }));
+      database.pragma('query_only = ON');
 
-      const pageCount = (db.pragma('page_count', { simple: true }) as number) ?? 0;
-      const pageSize = (db.pragma('page_size', { simple: true }) as number) ?? 0;
-      const journalMode = String(db.pragma('journal_mode', { simple: true }) ?? 'unknown');
+      const pageCount = (database.pragma('page_count', { simple: true }) as number) ?? 0;
+      const pageSize = (database.pragma('page_size', { simple: true }) as number) ?? 0;
+      const journalMode = String(database.pragma('journal_mode', { simple: true }) ?? 'unknown');
 
-      const tableRows = db
+      const tableRows = database
         .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
         .all() as Array<{ name: string }>;
 
       const tables = tableRows.map((t) => {
         try {
-          const stmt = db!.prepare(`SELECT COUNT(*) as c FROM "${t.name.replace(/"/g, '""')}"`);
+          const stmt = database.prepare(`SELECT COUNT(*) as c FROM "${t.name.replace(/"/g, '""')}"`);
           const row = stmt.get() as { c: number };
           return { name: t.name, rowCount: row.c };
         } catch {

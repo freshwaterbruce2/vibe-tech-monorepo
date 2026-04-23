@@ -67,7 +67,7 @@ export class ProcessRunner extends EventEmitter {
       const status: ProcessStatus = t?.handle.status === 'killed' ? 'killed' : 'exited';
       this.updateStatus(id, status, code);
       if (tracked.timeoutTimer) clearTimeout(tracked.timeoutTimer);
-      this.emit('exit', { ...this.tracked.get(id)!.handle });
+      this.emit('exit', { ...tracked.handle });
     });
 
     return { ...handle };
@@ -75,7 +75,7 @@ export class ProcessRunner extends EventEmitter {
 
   kill(id: string, signal: NodeJS.Signals = 'SIGTERM'): boolean {
     const t = this.tracked.get(id);
-    if (!t || t.handle.status !== 'running') return false;
+    if (t?.handle.status !== 'running') return false;
     t.handle.status = 'killed';
     return t.proc.kill(signal);
   }
