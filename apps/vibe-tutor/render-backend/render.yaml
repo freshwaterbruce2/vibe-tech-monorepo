@@ -9,6 +9,8 @@ services:
     envVars:
       - key: GEMINI_API_KEY
         sync: false # Set manually in Render dashboard
+      - key: MOONSHOT_API_KEY
+        sync: false # Kimi AI — primary fallback (api.moonshot.cn)
       - key: OPENROUTER_API_KEY
         sync: false
       - key: NODE_ENV
