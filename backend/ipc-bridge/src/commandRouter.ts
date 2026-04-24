@@ -5,6 +5,7 @@ import { WebSocket } from 'ws';
 export interface ConnectedClient {
     ws: WebSocket;
     source: string | null;
+    connectedAt: number;
     lastSeen: number;
     messageCount: number;
 }
@@ -115,7 +116,7 @@ export class CommandRouter {
             throw new Error(`No ${target} clients connected`);
         }
 
-        const commandId = `cmd-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const commandId = `cmd-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
 
         const commandMessage = {
             type: 'command_execute' as const,
@@ -137,7 +138,7 @@ export class CommandRouter {
 
         const sent: string[] = [];
         for (const [clientId, client] of targetClients) {
-            if (client.ws.readyState === 1) {
+            if (client.ws.readyState === WebSocket.OPEN) {
                 try {
                     client.ws.send(JSON.stringify(commandMessage));
                     sent.push(clientId);
@@ -204,7 +205,7 @@ export class CommandRouter {
 
     sendCommandResponse(clients: Map<string, ConnectedClient>, originalSenderClientId: string, commandId: string, success: boolean, result: unknown, error: string | null) {
         const client = clients.get(originalSenderClientId);
-        if (client?.ws.readyState !== 1) {
+        if (client?.ws.readyState !== WebSocket.OPEN) {
             console.warn(`Cannot send response to disconnected client: ${originalSenderClientId}`);
             return;
         }

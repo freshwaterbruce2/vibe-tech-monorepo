@@ -2,7 +2,7 @@ import winston from 'winston';
 import path from 'path';
 import fs from 'fs';
 
-const LOG_PATH = process.env.LOG_PATH ?? 'D:\logs\openrouter-proxy';
+const LOG_PATH = process.env.LOG_PATH ?? 'D:\\logs\\openrouter-proxy';
 
 // Ensure log directory exists
 if (!fs.existsSync(LOG_PATH)) {

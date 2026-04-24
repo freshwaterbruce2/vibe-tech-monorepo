@@ -94,7 +94,7 @@ export class IPCBridgeServer {
     }
 
     this.wss.on('connection', (ws: WebSocket, req) => {
-      const clientId = `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const clientId = `client-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
       const clientIp = req.socket.remoteAddress;
 
       if (this.bridgeSecret) {
@@ -108,11 +108,13 @@ export class IPCBridgeServer {
 
       console.log(`\n✅ New connection: ${clientId} from ${clientIp}`);
       this.stats.clientConnections++;
+      const connectedAt = Date.now();
 
       this.clients.set(clientId, {
         ws,
         source: null,
-        lastSeen: Date.now(),
+        connectedAt,
+        lastSeen: connectedAt,
         messageCount: 0,
       });
 
@@ -396,7 +398,8 @@ export class IPCBridgeServer {
         id: clientId,
         source: client.source ?? 'unknown',
         messageCount: client.messageCount,
-        connected: Date.now() - (client.lastSeen - client.messageCount * 100),
+        connected: client.connectedAt,
+        lastSeen: client.lastSeen,
       });
     }
     return {
