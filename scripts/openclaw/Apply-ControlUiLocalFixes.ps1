@@ -239,14 +239,22 @@ function Get-Utf8Text {
     return [IO.File]::ReadAllText($Path, [Text.UTF8Encoding]::new($false))
 }
 
+function ConvertTo-NormalizedNewlines {
+    param([string]$Text)
+    return $Text -replace "`r`n", "`n" -replace "`r", "`n"
+}
+
 function Set-Utf8TextIfChanged {
     param(
         [string]$Path,
         [string]$Content
     )
 
-    if ((Test-Path -LiteralPath $Path -PathType Leaf) -and (Get-Utf8Text -Path $Path) -eq $Content) {
-        return $false
+    if (Test-Path -LiteralPath $Path -PathType Leaf) {
+        $current = Get-Utf8Text -Path $Path
+        if ((ConvertTo-NormalizedNewlines -Text $current) -eq (ConvertTo-NormalizedNewlines -Text $Content)) {
+            return $false
+        }
     }
 
     if ($VerifyOnly) {
