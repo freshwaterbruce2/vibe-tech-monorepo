@@ -151,6 +151,42 @@ try {
         # Non-critical — session continues if Craft block fails
     }
 
+    # Phase 8 (2026-04-24): Branch-hygiene + dirty-tree warnings
+    # Emits visible warnings when working tree state violates .claude/rules/automation-boundaries.md
+    # Also emits a stdout reminder for Claude to see the state.
+    try {
+        $protectedBranches = @('main', 'master', 'develop')
+        $onProtected = $protectedBranches -contains $GitContext.branch
+        $dirty = $GitContext.modified_files
+
+        if ($onProtected -or $dirty -gt 10) {
+            # Claude-visible stdout reminder
+            Write-Output "[BRANCH-HYGIENE-CHECK]"
+            Write-Output "Branch: $($GitContext.branch)  Modified: $dirty"
+            if ($onProtected) {
+                Write-Output "WARNING: Working directly on protected branch '$($GitContext.branch)'. Rule: feature branches only (.claude/rules/automation-boundaries.md). Before making any commit, create a feature branch: git checkout -b feat/<name> or fix/<name>."
+            }
+            if ($dirty -gt 10) {
+                Write-Output "WARNING: Working tree has $dirty uncommitted changes. Review with git diff before new work, then either commit a coherent slice on a feature branch, stash with a description, or explicitly discard only reviewed files."
+            }
+
+            # Terminal-visible warning for Bruce
+            if (-not $Silent) {
+                Write-Host "BRANCH HYGIENE" -ForegroundColor Yellow
+                if ($onProtected) {
+                    Write-Host "  On protected branch '$($GitContext.branch)'. Feature branches only (see .claude/rules/automation-boundaries.md)." -ForegroundColor Yellow
+                    Write-Host "  Before committing: git checkout -b feat/<name>" -ForegroundColor DarkGray
+                }
+                if ($dirty -gt 10) {
+                    Write-Host "  Dirty tree: $dirty uncommitted changes. Consider stash or triage." -ForegroundColor Yellow
+                }
+                Write-Host ""
+            }
+        }
+    } catch {
+        # Non-critical — session continues if git introspection fails
+    }
+
 } catch {
     if (-not $Silent) {
         Write-Host "Session start (non-critical error ignored)" -ForegroundColor Yellow
