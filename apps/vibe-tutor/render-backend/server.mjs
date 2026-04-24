@@ -53,7 +53,14 @@ Key behaviors:
 - Use emoji sparingly to keep things fun 🌟`,
 };
 
-// OpenRouter (Fallback provider)
+// Moonshot / Kimi AI (Fallback provider — OpenAI-compatible)
+const MOONSHOT_CONFIG = {
+  baseURL: 'https://api.moonshot.cn/v1',
+  model: 'moonshot-v1-8k',
+  timeout: 30000,
+};
+
+// OpenRouter (Secondary fallback)
 const OPENROUTER_CONFIG = {
   baseURL: 'https://openrouter.ai/api/v1',
   model: 'deepseek/deepseek-chat',
@@ -337,7 +344,38 @@ async function callGemini(messages) {
   return text;
 }
 
-// ============== OPENROUTER API (Fallback) ==============
+// ============== MOONSHOT / KIMI API (Primary fallback) ==============
+
+async function callMoonshot(messages) {
+  const apiKey = process.env.MOONSHOT_API_KEY;
+  if (!apiKey) throw new Error('MOONSHOT_API_KEY not configured');
+
+  const response = await fetch(`${MOONSHOT_CONFIG.baseURL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: MOONSHOT_CONFIG.model,
+      messages,
+      temperature: 0.7,
+      max_tokens: 2000,
+    }),
+    signal: AbortSignal.timeout(MOONSHOT_CONFIG.timeout),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`[Moonshot] Error ${response.status}:`, errorText);
+    throw new Error(`Moonshot API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content ?? '';
+}
+
+// ============== OPENROUTER API (Secondary fallback) ==============
 
 async function callOpenRouter(messages) {
   const apiKey = process.env.OPENROUTER_API_KEY;
@@ -371,18 +409,27 @@ async function callOpenRouter(messages) {
 
 // ============== UNIFIED CHAT ENDPOINT ==============
 
-/** Try Gemini first, fallback to OpenRouter */
+/** Try Gemini → Moonshot → OpenRouter */
 async function getAIResponse(messages) {
   // Try Gemini (primary)
   if (geminiClient) {
     try {
       return { text: await callGemini(messages), provider: 'gemini' };
     } catch (err) {
-      console.warn('[AI] Gemini failed, trying fallback:', err.message);
+      console.warn('[AI] Gemini failed, trying Moonshot:', err.message);
     }
   }
 
-  // Try OpenRouter (fallback)
+  // Try Moonshot / Kimi (first fallback)
+  if (process.env.MOONSHOT_API_KEY) {
+    try {
+      return { text: await callMoonshot(messages), provider: 'moonshot' };
+    } catch (err) {
+      console.warn('[AI] Moonshot failed, trying OpenRouter:', err.message);
+    }
+  }
+
+  // Try OpenRouter (second fallback)
   if (process.env.OPENROUTER_API_KEY) {
     try {
       return { text: await callOpenRouter(messages), provider: 'openrouter' };
@@ -605,11 +652,13 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     providers: {
       gemini: !!process.env.GEMINI_API_KEY,
+      moonshot: !!process.env.MOONSHOT_API_KEY,
       openrouter: !!process.env.OPENROUTER_API_KEY,
     },
     models: {
       primary: GEMINI_CONFIG.model,
-      fallback: OPENROUTER_CONFIG.model,
+      fallback1: MOONSHOT_CONFIG.model,
+      fallback2: OPENROUTER_CONFIG.model,
     },
   });
 });
@@ -636,12 +685,9 @@ app.get('/api/stats/:token', (req, res) => {
 app.listen(PORT, () => {
   /* eslint-disable no-console */
   console.log(`\n[OK] Vibe-Tutor API server running on port ${PORT}`);
-  console.log('[OK] Primary:', GEMINI_CONFIG.model, process.env.GEMINI_API_KEY ? '✓' : '✗');
-  console.log(
-    '[OK] Fallback:',
-    OPENROUTER_CONFIG.model,
-    process.env.OPENROUTER_API_KEY ? '✓' : '✗',
-  );
+  console.log('[OK] Primary: ', GEMINI_CONFIG.model, process.env.GEMINI_API_KEY ? '✓' : '✗');
+  console.log('[OK] Fallback1:', MOONSHOT_CONFIG.model, process.env.MOONSHOT_API_KEY ? '✓' : '✗');
+  console.log('[OK] Fallback2:', OPENROUTER_CONFIG.model, process.env.OPENROUTER_API_KEY ? '✓' : '✗');
   console.log('[OK] Rate limiting: 30/min | Content filtering: active\n');
   /* eslint-enable no-console */
 });
