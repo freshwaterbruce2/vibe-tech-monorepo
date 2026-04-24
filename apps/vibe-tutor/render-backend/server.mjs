@@ -347,8 +347,8 @@ async function callGemini(messages) {
 // ============== MOONSHOT / KIMI API (Primary fallback) ==============
 
 async function callMoonshot(messages) {
-  const apiKey = process.env.MOONSHOT_API_KEY;
-  if (!apiKey) throw new Error('MOONSHOT_API_KEY not configured');
+  const apiKey = process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY;
+  if (!apiKey) throw new Error('KIMI_API_KEY / MOONSHOT_API_KEY not configured');
 
   const response = await fetch(`${MOONSHOT_CONFIG.baseURL}/chat/completions`, {
     method: 'POST',
@@ -421,7 +421,7 @@ async function getAIResponse(messages) {
   }
 
   // Try Moonshot / Kimi (first fallback)
-  if (process.env.MOONSHOT_API_KEY) {
+  if (process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY) {
     try {
       return { text: await callMoonshot(messages), provider: 'moonshot' };
     } catch (err) {
@@ -652,7 +652,7 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     providers: {
       gemini: !!process.env.GEMINI_API_KEY,
-      moonshot: !!process.env.MOONSHOT_API_KEY,
+      moonshot: !!(process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY),
       openrouter: !!process.env.OPENROUTER_API_KEY,
     },
     models: {
@@ -686,7 +686,7 @@ app.listen(PORT, () => {
   /* eslint-disable no-console */
   console.log(`\n[OK] Vibe-Tutor API server running on port ${PORT}`);
   console.log('[OK] Primary: ', GEMINI_CONFIG.model, process.env.GEMINI_API_KEY ? '✓' : '✗');
-  console.log('[OK] Fallback1:', MOONSHOT_CONFIG.model, process.env.MOONSHOT_API_KEY ? '✓' : '✗');
+  console.log('[OK] Fallback1:', MOONSHOT_CONFIG.model, (process.env.KIMI_API_KEY || process.env.MOONSHOT_API_KEY) ? '✓' : '✗');
   console.log('[OK] Fallback2:', OPENROUTER_CONFIG.model, process.env.OPENROUTER_API_KEY ? '✓' : '✗');
   console.log('[OK] Rate limiting: 30/min | Content filtering: active\n');
   /* eslint-enable no-console */
