@@ -16,12 +16,15 @@ const apiFetch = async (path: string, init?: RequestInit) => {
 	});
 
 	if (!res.ok) {
-		const body = (await res.json().catch(() => null)) as any;
-		const message = body?.error || body?.message || res.statusText;
+		const body = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+		const message =
+			(typeof body?.error === 'string' ? body.error : undefined) ??
+			(typeof body?.message === 'string' ? body.message : undefined) ??
+			res.statusText;
 		throw new Error(message);
 	}
 
-	return (await res.json().catch(() => ({}))) as any;
+	return (await res.json().catch(() => ({}))) as Record<string, unknown>;
 };
 
 class AuthService {
@@ -30,7 +33,7 @@ class AuthService {
 			method: "POST",
 			body: JSON.stringify({ email, password, fullName }),
 		});
-		return { user: data.user as LocalUser, session: null as any };
+		return { user: data.user as LocalUser, session: null };
 	}
 
 	async signIn(email: string, password: string) {
@@ -38,7 +41,7 @@ class AuthService {
 			method: "POST",
 			body: JSON.stringify({ email, password }),
 		});
-		return { user: data.user as LocalUser, session: null as any };
+		return { user: data.user as LocalUser, session: null };
 	}
 
 	async signOut() {

@@ -50,7 +50,7 @@ export const AuthProvider = ({
 				setUser(user);
 				setLoading(false);
 			}
-		} catch (err: any) {
+		} catch (err) {
 			setLoading(false);
 			throw err;
 		}
@@ -63,7 +63,7 @@ export const AuthProvider = ({
 				setUser(user);
 				setLoading(false);
 			}
-		} catch (err: any) {
+		} catch (err) {
 			setLoading(false);
 			throw err;
 		}

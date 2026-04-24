@@ -24,8 +24,8 @@ const Signup = () => {
 			await signUp(email, password, fullName);
 			toast.success("Account created!");
 			navigate("/dashboard");
-		} catch (err: any) {
-			toast.error(err?.message ?? "Unable to sign up");
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : "Unable to sign up");
 		} finally {
 			setSubmitting(false);
 		}

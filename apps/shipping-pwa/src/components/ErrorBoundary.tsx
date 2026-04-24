@@ -107,7 +107,7 @@ class ErrorBoundary extends Component<Props, State> {
     window.location.href = '/';
   };
 
-  async render() {
+  render() {
     if (this.state.hasError) {
       // Custom fallback UI
       if (this.props.fallback) {

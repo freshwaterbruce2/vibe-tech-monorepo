@@ -73,7 +73,13 @@ const NovaDashboard = () => {
 		const timer = setTimeout(() => {
 			void AgentService.getProjectState(projectPath)
 				.then((state) => {
-					setProjectState(state as ProjectState);
+					if (
+						state &&
+						typeof state === 'object' &&
+						'current_phase' in state
+					) {
+						setProjectState(state as ProjectState);
+					}
 				})
 				.catch((error) => {
 					console.error("Failed to load project state", error);
