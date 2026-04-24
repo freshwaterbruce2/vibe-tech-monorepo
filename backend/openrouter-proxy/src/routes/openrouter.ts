@@ -70,6 +70,7 @@ router.post('/chat', async (req, res, next) => {
       );
 
       let totalTokens = 0;
+      let streamEnded = false;
       response.data.on('data', (chunk: Buffer) => {
         const lines = chunk
           .toString()
@@ -91,6 +92,7 @@ router.post('/chat', async (req, res, next) => {
                   error: getErrorMessage(usageError),
                 });
               });
+              streamEnded = true;
               res.end();
               return;
             }
@@ -108,6 +110,7 @@ router.post('/chat', async (req, res, next) => {
       });
 
       response.data.on('error', (error: Error) => {
+        if (streamEnded || res.writableEnded) return;
         logger.error('Streaming error', { error: error.message });
         res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
         res.end();

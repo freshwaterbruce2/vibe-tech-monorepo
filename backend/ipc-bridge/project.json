@@ -48,7 +48,7 @@
       "executor": "nx:run-commands",
       "cache": true,
       "options": {
-        "command": "pnpm run test",
+        "command": "node ../../node_modules/vitest/vitest.mjs run --config vitest.config.ts",
         "cwd": "backend/ipc-bridge"
       }
     }
