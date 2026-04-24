@@ -20,6 +20,15 @@ class NovaLearningBridge:
     def __init__(self):
         self.engine = SimpleLearningEngine()
 
+    def _unsupported(self, command: str, engine_method: str) -> dict:
+        return {
+            'success': False,
+            'error': (
+                f"{command} is not supported by the current lightweight learning "
+                f"engine because '{engine_method}' is unavailable"
+            )
+        }
+
     def log_execution(self, data: dict) -> dict:
         """
         Log an execution to the ML learning system
@@ -51,7 +60,7 @@ class NovaLearningBridge:
             }
         """
         try:
-            result = self.engine.learn_from_execution(
+            logged = self.engine.learn_from_execution(
                 agent_name=data.get('agent_name', 'nova-agent'),
                 task_type=data.get('task_type', 'unknown'),
                 success=data.get('success', True),
@@ -66,9 +75,13 @@ class NovaLearningBridge:
                 tools_sequence=data.get('tools_sequence'),
                 file_paths_modified=data.get('file_paths_modified')
             )
+            if logged is None:
+                logged = True
             return {
-                'success': True,
-                'data': result
+                'success': bool(logged),
+                'data': {
+                    'logged': bool(logged)
+                }
             }
         except Exception as e:
             return {
@@ -78,6 +91,8 @@ class NovaLearningBridge:
 
     def check_drift(self) -> dict:
         """Check for model drift"""
+        if not hasattr(self.engine, 'check_for_drift'):
+            return self._unsupported('check_drift', 'check_for_drift')
         try:
             drift = self.engine.check_for_drift()
             return {
@@ -92,6 +107,8 @@ class NovaLearningBridge:
 
     def get_storage_efficiency(self) -> dict:
         """Get active learning storage statistics"""
+        if not hasattr(self.engine, 'get_storage_efficiency'):
+            return self._unsupported('storage_efficiency', 'get_storage_efficiency')
         try:
             stats = self.engine.get_storage_efficiency()
             return {

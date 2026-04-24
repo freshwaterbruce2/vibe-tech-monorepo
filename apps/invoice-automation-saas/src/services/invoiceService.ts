@@ -35,11 +35,11 @@ const apiFetch = async (path: string, init?: RequestInit) => {
     credentials: 'include',
   })
   if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as any
-    const message = body?.error || body?.message || res.statusText
+    const body = (await res.json().catch(() => null)) as Record<string, unknown> | null
+    const message = (body?.error as string | undefined) || (body?.message as string | undefined) || res.statusText
     throw new Error(message)
   }
-  return (await res.json().catch(() => ({}))) as any
+  return (await res.json().catch(() => ({}))) as Record<string, unknown>
 }
 
 class InvoiceService {

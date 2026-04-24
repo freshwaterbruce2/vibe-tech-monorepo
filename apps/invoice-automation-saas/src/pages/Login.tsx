@@ -28,8 +28,8 @@ const Login = () => {
 			await signIn(email, password);
 			toast.success("Welcome back!");
 			navigate(redirectTo);
-		} catch (err: any) {
-			toast.error(err?.message ?? "Unable to sign in");
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : "Unable to sign in");
 		} finally {
 			setSubmitting(false);
 		}

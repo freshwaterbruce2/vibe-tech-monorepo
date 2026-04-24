@@ -22,6 +22,15 @@ interface SpeechRecognitionInstance {
   stop(): void;
 }
 
+type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
+
+declare global {
+  interface Window {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  }
+}
+
 interface UseVoiceOptions {
   /** Called when the user finishes speaking and a transcript is ready */
   onTranscript?: (text: string) => void;
@@ -84,10 +93,9 @@ export function useVoice({ onTranscript, lang = 'en-US' }: UseVoiceOptions = {})
     // Barge-in: cancel any in-progress TTS before listening
     if (synthRef.current.speaking) synthRef.current.cancel();
 
-    const w = window as unknown as Record<string, unknown>;
-    const SpeechRec = (w['SpeechRecognition'] ?? w['webkitSpeechRecognition']) as
-      | (new () => SpeechRecognitionInstance)
-      | undefined;
+    const SpeechRec =
+      (window.SpeechRecognition as (new () => SpeechRecognitionInstance) | undefined) ??
+      (window.webkitSpeechRecognition as (new () => SpeechRecognitionInstance) | undefined);
 
     if (!SpeechRec) {
       console.warn('[useVoice] Web Speech API not supported in this environment');
@@ -144,8 +152,7 @@ export function useVoice({ onTranscript, lang = 'en-US' }: UseVoiceOptions = {})
 
   const isSupported =
     typeof window !== 'undefined' &&
-    !!((window as unknown as Record<string, unknown>)['SpeechRecognition'] ??
-      (window as unknown as Record<string, unknown>)['webkitSpeechRecognition']);
+    !!(window.SpeechRecognition ?? window.webkitSpeechRecognition);
 
   return { state, startListening, stopListening, speak, cancelSpeech, isSupported };
 }

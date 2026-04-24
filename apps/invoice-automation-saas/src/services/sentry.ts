@@ -26,7 +26,7 @@ export const logErrorToSentry = (
 };
 
 // Log custom events
-export const logEvent = (message: string, extra?: Record<string, any>) => {
+export const logEvent = (message: string, extra?: Record<string, unknown>) => {
 	Sentry.captureMessage(message, {
 		level: "info",
 		extra,

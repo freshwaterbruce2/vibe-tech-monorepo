@@ -75,10 +75,9 @@ export function truncateToTokenLimit<T extends { role: string; content: string }
   let totalTokens = 0;
   const result: T[] = [];
 
-  // Always keep system message if requested
+  // Account for system message tokens if requested
   if (keepSystemMessage && messages[0]?.role === 'system') {
     const systemMsg = messages[0];
-    result.push(systemMsg);
     totalTokens += estimateTokens(systemMsg.content) + 2; // +2 for role
   }
 
@@ -97,8 +96,8 @@ export function truncateToTokenLimit<T extends { role: string; content: string }
     totalTokens += msgTokens;
   }
 
-  // Re-add system message at the beginning if it was kept
-  if (keepSystemMessage && messages[0]?.role === 'system' && result[0]?.role !== 'system') {
+  // Prepend system message at the beginning if it was kept
+  if (keepSystemMessage && messages[0]?.role === 'system') {
     result.unshift(messages[0]);
   }
 
