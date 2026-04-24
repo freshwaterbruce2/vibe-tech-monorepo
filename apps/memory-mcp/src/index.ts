@@ -21,14 +21,32 @@ import * as http from 'http';
 import { handleToolCall, type SummarizationDeps } from './handlers.js';
 import { tools } from './tools.js';
 
-// Initialize memory manager
+type EmbeddingProvider = 'openrouter' | 'ollama' | 'transformers';
+
+function parseEmbeddingProvider(value: string | undefined): EmbeddingProvider | undefined {
+  if (value === undefined || value.trim() === '') return undefined;
+  if (value === 'openrouter' || value === 'ollama' || value === 'transformers') {
+    return value;
+  }
+  throw new Error(
+    `Invalid MEMORY_EMBEDDING_PROVIDER '${value}'. Expected openrouter, ollama, or transformers.`,
+  );
+}
+
+// Initialize memory manager.
+// MEMORY_EMBEDDING_PROVIDER: 'openrouter' | 'ollama' | 'transformers'.
+// When set, model/dim/endpoint default to provider-appropriate values (see PROVIDER_DEFAULTS).
+const embeddingProvider = parseEmbeddingProvider(process.env.MEMORY_EMBEDDING_PROVIDER);
 const memoryManager = new MemoryManager({
   dbPath: process.env.MEMORY_DB_PATH || 'D:\\databases\\memory.db',
-  embeddingModel: process.env.MEMORY_EMBEDDING_MODEL || 'text-embedding-3-small',
-  embeddingDimension: parseInt(process.env.MEMORY_EMBEDDING_DIM || '1536', 10),
-  embeddingEndpoint: process.env.MEMORY_EMBEDDING_ENDPOINT || 'http://localhost:3001',
+  embeddingProvider,
+  embeddingModel: process.env.MEMORY_EMBEDDING_MODEL,
+  embeddingDimension: process.env.MEMORY_EMBEDDING_DIM
+    ? parseInt(process.env.MEMORY_EMBEDDING_DIM, 10)
+    : undefined,
+  embeddingEndpoint: process.env.MEMORY_EMBEDDING_ENDPOINT,
   fallbackToTransformers: process.env.MEMORY_FALLBACK_TRANSFORMERS !== 'false',
-  logLevel: (process.env.MEMORY_LOG_LEVEL as any) || 'info',
+  logLevel: (process.env.MEMORY_LOG_LEVEL as 'error' | 'warn' | 'info' | 'debug') || 'info',
 });
 
 // Initialize auto-capture
@@ -245,8 +263,12 @@ async function main() {
           const payload = JSON.parse(body);
           if (payload.method === 'tools/call') {
             const requestObj = {
+              method: 'tools/call' as const,
               params: payload.params,
-            } as any;
+            } as {
+              method: 'tools/call';
+              params: { name: string; arguments?: Record<string, unknown> };
+            };
 
             const result = await handleToolCall(
               requestObj,
@@ -273,10 +295,11 @@ async function main() {
             res.writeHead(400);
             res.end(JSON.stringify({ error: 'Unsupported method' }));
           }
-        } catch (err: any) {
+        } catch (err) {
           console.error('[memory-mcp] HTTP Error:', err);
+          const message = err instanceof Error ? err.message : 'Internal server error';
           res.writeHead(500);
-          res.end(JSON.stringify({ error: err.message }));
+          res.end(JSON.stringify({ error: message }));
         }
       });
     });

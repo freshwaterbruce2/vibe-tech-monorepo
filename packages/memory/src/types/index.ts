@@ -2,13 +2,15 @@
 export interface MemoryConfig {
   /** Database path (e.g., D:\databases\memory.db) */
   dbPath: string;
-  /** Embedding model name (default: text-embedding-3-small) */
+  /** Primary embedding provider (default: 'openrouter'). When set, init() will not silently switch providers. */
+  embeddingProvider?: EmbeddingProvider;
+  /** Embedding model name (default depends on provider: openrouter→text-embedding-3-small, ollama→nomic-embed-text) */
   embeddingModel?: string;
-  /** Embedding dimension (default: 1536 for text-embedding-3-small) */
+  /** Embedding dimension (default depends on provider: openrouter→1536, ollama→768, transformers→384) */
   embeddingDimension?: number;
-  /** OpenRouter-compatible embedding endpoint (default: http://localhost:3001) */
+  /** Embedding endpoint (default depends on provider: openrouter→http://localhost:3001, ollama→http://localhost:11434) */
   embeddingEndpoint?: string;
-  /** Fallback to Transformers.js if OpenRouter unavailable */
+  /** Fallback to Transformers.js if primary provider unavailable. Ignored when embeddingProvider is set explicitly. */
   fallbackToTransformers?: boolean;
   /** Log level (default: 'info') */
   logLevel?: 'debug' | 'info' | 'warn' | 'error';
