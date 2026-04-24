@@ -1,10 +1,73 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type {
+  CommitInfo,
   CryptoMemory,
   GitMemory,
   NovaMemory,
+  ProjectContext,
+  TradeDecision,
 } from '@vibetech/memory';
 import type { HandlerArgs } from './handler-types.js';
+
+function requiredString(args: HandlerArgs, key: string): string {
+  const value = args[key];
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new Error(`Missing or invalid string argument: ${key}`);
+  }
+  return value;
+}
+
+function requiredNumber(args: HandlerArgs, key: string): number {
+  const value = args[key];
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`Missing or invalid number argument: ${key}`);
+  }
+  return value;
+}
+
+function optionalNumber(args: HandlerArgs, key: string): number | undefined {
+  const value = args[key];
+  if (value === undefined) return undefined;
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`Invalid number argument: ${key}`);
+  }
+  return value;
+}
+
+function optionalString(args: HandlerArgs, key: string): string | undefined {
+  const value = args[key];
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string') {
+    throw new Error(`Invalid string argument: ${key}`);
+  }
+  return value;
+}
+
+function optionalStringArray(args: HandlerArgs, key: string): string[] {
+  const value = args[key];
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
+    throw new Error(`Invalid string array argument: ${key}`);
+  }
+  return value;
+}
+
+function tradeAction(args: HandlerArgs): TradeDecision['action'] {
+  const action = requiredString(args, 'action');
+  if (action !== 'buy' && action !== 'sell' && action !== 'hold') {
+    throw new Error("Invalid trade action: expected 'buy', 'sell', or 'hold'");
+  }
+  return action;
+}
+
+function tradeOutcome(args: HandlerArgs): TradeDecision['outcome'] {
+  const outcome = args.outcome;
+  if (outcome === undefined) return undefined;
+  if (outcome !== 'profit' && outcome !== 'loss' && outcome !== 'pending') {
+    throw new Error("Invalid trade outcome: expected 'profit', 'loss', or 'pending'");
+  }
+  return outcome;
+}
 
 /**
  * Integration handlers: crypto trading, git workflow, nova-agent context
@@ -22,11 +85,18 @@ export async function handleIntegrations(
       if (!cryptoMemory) {
         return { content: [{ type: 'text', text: JSON.stringify({ error: 'Crypto memory not available' }) }], isError: true };
       }
-      const { pair, action, price, amount, reason, confidence, outcome, pnl } = args as any;
-      const tradeId = await cryptoMemory.trackTrade({
-        pair, action, price, amount, reason, confidence,
-        timestamp: Date.now(), outcome, pnl,
-      });
+      const trade: TradeDecision = {
+        pair: requiredString(args, 'pair'),
+        action: tradeAction(args),
+        price: requiredNumber(args, 'price'),
+        amount: requiredNumber(args, 'amount'),
+        reason: requiredString(args, 'reason'),
+        confidence: requiredNumber(args, 'confidence'),
+        timestamp: Date.now(),
+        outcome: tradeOutcome(args),
+        pnl: optionalNumber(args, 'pnl'),
+      };
+      const tradeId = await cryptoMemory.trackTrade(trade);
       return {
         content: [{ type: 'text', text: JSON.stringify({ success: true, tradeId, message: 'Trade decision tracked' }) }],
       };
@@ -59,11 +129,17 @@ export async function handleIntegrations(
       if (!gitMemory) {
         return { content: [{ type: 'text', text: JSON.stringify({ error: 'Git memory not available' }) }], isError: true };
       }
-      const { hash, message, author, branch, filesChanged, additions, deletions } = args as any;
-      const commitId = await gitMemory.trackCommit({
-        hash, message, author, branch, filesChanged,
-        additions, deletions, timestamp: Date.now(),
-      });
+      const commit: CommitInfo = {
+        hash: requiredString(args, 'hash'),
+        message: requiredString(args, 'message'),
+        author: requiredString(args, 'author'),
+        branch: requiredString(args, 'branch'),
+        filesChanged: requiredNumber(args, 'filesChanged'),
+        additions: requiredNumber(args, 'additions'),
+        deletions: requiredNumber(args, 'deletions'),
+        timestamp: Date.now(),
+      };
+      const commitId = await gitMemory.trackCommit(commit);
       return {
         content: [{ type: 'text', text: JSON.stringify({ success: true, commitId, message: 'Commit tracked' }) }],
       };
@@ -93,11 +169,16 @@ export async function handleIntegrations(
       if (!novaMemory) {
         return { content: [{ type: 'text', text: JSON.stringify({ error: 'Nova memory not available' }) }], isError: true };
       }
-      const { name: ctxName, path, currentFile, currentTask, recentFiles, recentTasks } = args as any;
-      await novaMemory.setContext({
-        name: ctxName, path, currentFile, currentTask,
-        recentFiles, recentTasks, lastActive: Date.now(),
-      });
+      const context: ProjectContext = {
+        name: requiredString(args, 'name'),
+        path: requiredString(args, 'path'),
+        currentFile: optionalString(args, 'currentFile'),
+        currentTask: optionalString(args, 'currentTask'),
+        recentFiles: optionalStringArray(args, 'recentFiles'),
+        recentTasks: optionalStringArray(args, 'recentTasks'),
+        lastActive: Date.now(),
+      };
+      await novaMemory.setContext(context);
       return {
         content: [{ type: 'text', text: JSON.stringify({ success: true, message: 'Context saved' }) }],
       };

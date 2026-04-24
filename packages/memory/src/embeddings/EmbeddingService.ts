@@ -1,9 +1,16 @@
 import type Database from 'better-sqlite3';
 import { createHash } from 'node:crypto';
+import { Ollama } from 'ollama';
 import { createLogger } from '@vibetech/logger';
 import type { EmbeddingProvider, MemoryConfig } from '../types/index.js';
 
 const logger = createLogger('EmbeddingService');
+
+const PROVIDER_DEFAULTS: Record<EmbeddingProvider, { endpoint: string; model: string; dimension: number }> = {
+  openrouter: { endpoint: 'http://localhost:3001', model: 'text-embedding-3-small', dimension: 1536 },
+  ollama: { endpoint: 'http://localhost:11434', model: 'nomic-embed-text', dimension: 768 },
+  transformers: { endpoint: '', model: 'Xenova/all-MiniLM-L6-v2', dimension: 384 },
+};
 
 interface TransformerPipelineResult {
   data: ArrayLike<number>;
@@ -24,7 +31,9 @@ export class EmbeddingService {
   private dimension: number;
   private initDimension: number; // dimension at init time (for guard)
   private fallbackEnabled: boolean;
+  private explicitProvider: boolean; // user pinned a provider — never silently switch
   private transformerPipeline: TransformerPipeline | null = null;
+  private ollamaClient: Ollama | null = null;
   private _dimensionMismatch = false;
 
   // Two-tier cache: in-memory LRU + SQLite persistent
@@ -36,39 +45,74 @@ export class EmbeddingService {
   private cacheMisses = 0;
 
   constructor(config: MemoryConfig) {
-    this.model = config.embeddingModel ?? 'text-embedding-3-small';
-    this.dimension = config.embeddingDimension ?? 1536;
+    this.explicitProvider = config.embeddingProvider !== undefined;
+    this.provider = config.embeddingProvider ?? 'openrouter';
+    const defaults = PROVIDER_DEFAULTS[this.provider];
+    this.model = config.embeddingModel ?? defaults.model;
+    this.dimension = config.embeddingDimension ?? defaults.dimension;
+    this.endpoint = config.embeddingEndpoint ?? defaults.endpoint;
     this.initDimension = this.dimension;
-    this.endpoint = config.embeddingEndpoint ?? 'http://localhost:3001';
-    this.fallbackEnabled = config.fallbackToTransformers ?? true;
-    this.provider = 'openrouter';
+    // Explicit provider opts out of silent fallback — fail loud instead.
+    this.fallbackEnabled = this.explicitProvider ? false : (config.fallbackToTransformers ?? true);
   }
 
   /**
-   * Initialize embedding service (check OpenRouter proxy availability)
+   * Initialize embedding service: probe the configured provider's endpoint.
+   * If the user pinned a provider via config, refuse to silently switch.
    */
   async init(): Promise<void> {
+    if (this.provider === 'transformers') {
+      // Transformers loads lazily on first embed — nothing to probe.
+      logger.info(`Using Transformers.js with ${this.model} (${this.dimension}d, OFFLINE)`);
+      return;
+    }
+
     try {
-      // Lightweight connectivity check — no billable embedding call
+      await this.probeProvider();
+      logger.info(`Using ${this.provider} with ${this.model} (${this.dimension}d) at ${this.endpoint}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logger.warn(`[EmbeddingService] ${this.provider} not available: ${message}`);
+      if (this.explicitProvider) {
+        throw new Error(`Explicit provider '${this.provider}' unavailable at ${this.endpoint}: ${message}`);
+      }
+      if (this.fallbackEnabled) {
+        this.activateTransformersFallback();
+      } else {
+        throw new Error(`${this.provider} unavailable and fallback disabled`);
+      }
+    }
+  }
+
+  /** Probe the configured provider's health endpoint. Throws on failure. */
+  private async probeProvider(): Promise<void> {
+    if (this.provider === 'openrouter') {
       const response = await fetch(`${this.endpoint}/health`, {
         method: 'GET',
         signal: AbortSignal.timeout(3000),
       });
-
-      if (!response.ok) {
-        throw new Error(`OpenRouter proxy returned ${response.status}`);
-      }
-
-      this.provider = 'openrouter';
-      logger.info(`Using OpenRouter with ${this.model} (${this.dimension}d embeddings)`);
-    } catch (error) {
-      logger.warn('[EmbeddingService] OpenRouter proxy not available:', { error: String(error) });
-      if (this.fallbackEnabled) {
-        this.activateTransformersFallback();
-      } else {
-        throw new Error('OpenRouter proxy unavailable and fallback disabled');
-      }
+      if (!response.ok) throw new Error(`OpenRouter proxy returned ${response.status}`);
+      return;
     }
+    if (this.provider === 'ollama') {
+      // Ollama exposes /api/tags as a cheap connectivity check
+      const response = await fetch(`${this.endpoint}/api/tags`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(3000),
+      });
+      if (!response.ok) throw new Error(`Ollama returned ${response.status}`);
+      const data = (await response.json()) as { models?: Array<{ name: string }> };
+      const installed = data.models?.map((m) => m.name) ?? [];
+      const hasModel = installed.some((n) => n === this.model || n.startsWith(`${this.model}:`));
+      if (!hasModel) {
+        throw new Error(
+          `Ollama model '${this.model}' not installed (have: ${installed.join(', ') || 'none'}). Run: ollama pull ${this.model}`,
+        );
+      }
+      this.ollamaClient = new Ollama({ host: this.endpoint });
+      return;
+    }
+    throw new Error(`probeProvider: unsupported provider '${this.provider}'`);
   }
 
   /**
@@ -146,8 +190,15 @@ export class EmbeddingService {
     let embedding: number[];
     if (this.provider === 'openrouter') {
       embedding = await this.embedWithOpenRouter(text);
+    } else if (this.provider === 'ollama') {
+      embedding = await this.embedWithOllama(text);
     } else {
       embedding = await this.embedWithTransformers(text);
+    }
+    if (embedding.length !== this.dimension) {
+      throw new Error(
+        `Embedding dimension mismatch: provider ${this.provider} returned ${embedding.length}d, expected ${this.dimension}d`,
+      );
     }
 
     // Store in both caches
@@ -247,14 +298,46 @@ export class EmbeddingService {
       }
     }
 
-    // All retries exhausted — try fallback
-    if (this.fallbackEnabled) {
+    // All retries exhausted — try fallback (only if not pinned to a provider)
+    if (this.fallbackEnabled && !this.explicitProvider) {
       logger.warn('[EmbeddingService] OpenRouter failed after retries, falling back to Transformers.js');
       this.activateTransformersFallback();
       return this.embedWithTransformers(text);
     }
 
     throw new Error(`Embedding API failed after ${MAX_RETRIES} retries: ${lastError?.message}`);
+  }
+
+  /**
+   * Generate embeddings via local Ollama daemon.
+   * Uses the `ollama` npm client; assumes the model has been pulled via `ollama pull <model>`.
+   * No silent fallback — if Ollama fails, throw so the caller sees the real error.
+   */
+  private async embedWithOllama(text: string): Promise<number[]> {
+    if (!this.ollamaClient) {
+      this.ollamaClient = new Ollama({ host: this.endpoint });
+    }
+    let lastError: Error | null = null;
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        const response = await this.ollamaClient.embed({ model: this.model, input: text });
+        const vec = response.embeddings?.[0];
+        if (!vec || vec.length === 0) {
+          throw new Error(`Ollama returned empty embedding for model '${this.model}'`);
+        }
+        return vec;
+      } catch (error) {
+        lastError = error as Error;
+        if (attempt < MAX_RETRIES - 1) {
+          const delay = RETRY_DELAY_MS * Math.pow(2, attempt);
+          logger.debug(
+            `[EmbeddingService] Ollama attempt ${attempt + 1} failed, retrying in ${delay}ms: ${lastError.message}`,
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      }
+    }
+    throw new Error(`Ollama embedding failed after ${MAX_RETRIES} retries: ${lastError?.message}`);
   }
 
   /**

@@ -85,7 +85,7 @@ function mockResponse(body: unknown, status = 200): Response {
 function installProxyFetchMock(): void {
   vi.stubGlobal(
     'fetch',
-    vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    vi.fn(async (input: Parameters<typeof fetch>[0], init?: RequestInit): Promise<Response> => {
       const url = typeof input === 'string' ? input : input.toString();
       if (!url.startsWith(PROXY_ORIGIN)) {
         throw new Error(`Unexpected fetch to ${url} in memory integration test`);

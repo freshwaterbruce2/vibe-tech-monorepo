@@ -74,6 +74,7 @@ export type {
 // Type exports
 export type {
   EpisodicMemory,
+  EmbeddingProvider,
   MemoryConfig,
   ProceduralMemory,
   SearchResult,
