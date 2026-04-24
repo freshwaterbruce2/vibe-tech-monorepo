@@ -1,0 +1,27 @@
+#!/bin/sh
+# Protected-branch pre-commit hook.
+# Refuses direct commits to main/master/develop.
+# Emergency bypass (use sparingly): git commit --no-verify
+
+branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+
+case "$branch" in
+  main|master|develop)
+    echo ""
+    echo "REFUSE: direct commits to '$branch' are not allowed."
+    echo ""
+    echo "  Create a feature branch first:"
+    echo "    git checkout -b feat/<name>    # new feature"
+    echo "    git checkout -b fix/<name>     # bug fix"
+    echo "    git checkout -b chore/<name>   # tooling/docs"
+    echo ""
+    echo "  Then retry your commit on the feature branch."
+    echo ""
+    echo "  Emergency bypass (only if you know what you are doing):"
+    echo "    git commit --no-verify ..."
+    echo ""
+    exit 1
+    ;;
+esac
+
+exit 0
