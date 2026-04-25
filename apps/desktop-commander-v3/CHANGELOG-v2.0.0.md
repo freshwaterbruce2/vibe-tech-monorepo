@@ -244,7 +244,7 @@ Potential additions for v2.1+:
 ## 📞 Support
 
 - **Documentation:** See [README.md](./README.md) and [TERMINAL_ACCESS.md](./TERMINAL_ACCESS.md)
-- **Issues:** Report via [GitHub Issues](https://github.com/freshwaterbruce2/Monorepo/issues)
+- **Issues:** Report via [GitHub Issues](https://github.com/freshwaterbruce2/vibe-tech-monorepo/issues)
 - **Security:** Report security concerns privately
 
 ---

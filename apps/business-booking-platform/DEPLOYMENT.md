@@ -50,10 +50,10 @@
 
 #### Frontend Architecture
 
-- **React 18** + TypeScript + Vite
+- **React 19** + TypeScript + Vite
 - **Tailwind CSS** with custom luxury design system
 - **Zustand** for state management with persistence
-- **React Router v6** with lazy loading
+- **React Router v7** with lazy loading
 - **Axios** with timeout handling for resilient API calls
 
 #### Payment Integration
@@ -90,8 +90,9 @@
 
 #### Current Build Commands
 
-```bash
-npm run build    # Creates optimized dist/ directory (7-8s)
+```powershell
+cd C:\dev
+pnpm nx run business-booking-platform:build
 # Drag dist/ folder to Netlify dashboard for instant deployment
 ```
 

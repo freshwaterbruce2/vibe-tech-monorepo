@@ -22,7 +22,7 @@ database: "SQLite (D:\databases\database.db)"
 
 **Prerequisites:**
 
-- Node.js 22+ with pnpm 9.15.0
+- Node.js 22+ with pnpm 10.33.0
 - Python 3.11+ (for crypto trading)
 - Git with pre-commit hooks enabled
 
@@ -30,14 +30,14 @@ database: "SQLite (D:\databases\database.db)"
 
 ```bash
 pnpm install              # Install all workspace dependencies
-pnpm run setup:hooks      # Configure git hooks
+pnpm run workspace:health # Check workspace/tooling health
 ```
 
 **Running the App:**
 
 ```bash
-pnpm run dev:root         # Start main app (port 5173)
-pnpm run dev:all          # Start multiple projects in parallel
+pnpm run dev              # Start the configured default dev target
+pnpm run parallel:dev     # Start multiple projects in parallel
 ```
 
 ## 2. Key Commands
@@ -68,7 +68,7 @@ pnpm run dev:all          # Start multiple projects in parallel
 
 - `src/`: Main React application source
 - `projects/active/`: Active development projects
-- `projects/crypto-enhanced/`: Python trading system
+- `apps/crypto-enhanced/`: Python trading system
 - `.claude/`: Claude Code configuration and hooks
 - `nx.json`: Nx workspace configuration
 

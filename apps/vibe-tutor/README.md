@@ -26,12 +26,13 @@
 
 ## 🚀 Quick Start
 
-**Prerequisites:**  Node.js
+**Prerequisites:** Node.js 22+ and pnpm 10.33+ from the workspace root.
 
 1. **Install dependencies:**
 
-   ```bash
-   npm install
+   ```powershell
+   cd C:\dev
+   pnpm install
    ```
 
 2. **Set up environment:**
@@ -44,8 +45,8 @@
 
 3. **Run the app:**
 
-   ```bash
-   npm run dev
+   ```powershell
+   pnpm nx run vibe-tutor:dev
    ```
 
 4. **Open your browser:**
@@ -70,9 +71,7 @@ Turn your child's device into a **dedicated study device** by locking it to only
 1. **Fully Single App Kiosk** (Recommended) - Secure, purpose-built solution
 2. **Built-in App Pinning** (Simple) - Quick setup using Samsung's native features
 
-**Setup Instructions:** See **[KIOSK_MODE_SETUP.md](KIOSK_MODE_SETUP.md)** for detailed step-by-step guides.
-
-**For Parents:** See **[KIOSK_UNLOCK_GUIDE.md](KIOSK_UNLOCK_GUIDE.md)** for unlock procedures, maintenance, and troubleshooting.
+**Setup Instructions:** See **[docs/KIOSK_MODE_SETUP.md](docs/KIOSK_MODE_SETUP.md)** for detailed step-by-step guides.
 
 **Benefits:**
 
@@ -85,16 +84,16 @@ Turn your child's device into a **dedicated study device** by locking it to only
 
 For installing Vibe-Tutor as a native Android app, see:
 
-- **[ANDROID_INSTALL_INSTRUCTIONS.md](ANDROID_INSTALL_INSTRUCTIONS.md)** - Build and install APK
-- **[MOBILE-TROUBLESHOOTING.md](MOBILE-TROUBLESHOOTING.md)** - Common Android issues
-- **[VERSION.md](VERSION.md)** - Release history and version tracking
+- **[docs/ANDROID_INSTALL_INSTRUCTIONS.md](docs/ANDROID_INSTALL_INSTRUCTIONS.md)** - Build and install APK
+- **[docs/ANDROID_RELEASE_RUNBOOK.md](docs/ANDROID_RELEASE_RUNBOOK.md)** - Release build flow
+- **[docs/MOBILE-TROUBLESHOOTING.md](docs/MOBILE-TROUBLESHOOTING.md)** - Common Android issues
 
 ## 📚 Documentation
 
-- **[CLAUDE.md](CLAUDE.md)** - Development guidelines and architecture
-- **[GLASSMORPHISM_GUIDE.md](GLASSMORPHISM_GUIDE.md)** - UI design system
-- **[PARENT_GUIDE.md](PARENT_GUIDE.md)** - Guide for parents
-- **[TESTING_CHECKLIST.md](docs/TESTING_CHECKLIST.md)** - QA procedures
+- **[AI.md](AI.md)** - Development guidelines and architecture
+- **[CLAUDE.md](CLAUDE.md)** - Legacy development notes
+- **[docs/USER_MANUAL.md](docs/USER_MANUAL.md)** - User and parent-facing guide
+- **[docs/QA_TESTING_CHECKLIST.md](docs/QA_TESTING_CHECKLIST.md)** - QA procedures
 
 ## 🤝 Contributing
 
@@ -106,4 +105,5 @@ MIT License - See LICENSE file for details
 
 ## 🆘 Support
 
-For issues, questions, or feature requests, please open an issue on [GitHub](https://github.com/freshwaterbruce2/Monorepo/issues) or refer to the documentation files listed above.
+For issues, questions, or feature requests, use the current monorepo on GitHub:
+<https://github.com/freshwaterbruce2/vibe-tech-monorepo>.

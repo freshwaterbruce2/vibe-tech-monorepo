@@ -7,10 +7,10 @@ Navigate to the crypto trading system directory and run the performance monitori
 
 Steps:
 
-1. Change to crypto-enhanced directory: `cd C:\dev\projects\crypto-enhanced`
-2. Run the quick status dashboard: `python check_status.py`
-3. If user asks for detailed report, run: `python performance_monitor.py weekly`
-4. If user asks for validation status, run: `python performance_monitor.py monthly`
+1. Change to crypto-enhanced directory: `cd C:\dev\apps\crypto-enhanced`
+2. Run the quick status dashboard: `python scripts\check_status.py`
+3. If user asks for detailed report, run: `python scripts\performance_monitor.py weekly`
+4. If user asks for validation status, run: `python scripts\performance_monitor.py monthly`
 
 Display the output in a clean format and explain any key metrics:
 

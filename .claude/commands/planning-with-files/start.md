@@ -1,4 +1,4 @@
-﻿---
+---
 description: Initialize a new planning-with-files session for a complex task
 model: sonnet
 ---

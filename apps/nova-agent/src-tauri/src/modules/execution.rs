@@ -78,7 +78,10 @@ fn sanitize_code_payload(code: &str) -> Result<(), String> {
     }
 
     if code.len() > MAX_EXTENDED_CODE_BYTES {
-        return Err(format!("Code payload exceeds {} bytes", MAX_EXTENDED_CODE_BYTES));
+        return Err(format!(
+            "Code payload exceeds {} bytes",
+            MAX_EXTENDED_CODE_BYTES
+        ));
     }
 
     if code.contains('\u{0}') {
@@ -124,10 +127,7 @@ fn strip_control_chars(input: &str) -> String {
         .collect()
 }
 
-async fn run_command(
-    program: &str,
-    args: Vec<String>,
-) -> Result<std::process::Output, String> {
+async fn run_command(program: &str, args: Vec<String>) -> Result<std::process::Output, String> {
     let permit = execution_gate()
         .clone()
         .acquire_owned()
@@ -153,8 +153,14 @@ async fn run_command(
 }
 
 fn handle_output(output: std::process::Output) -> Result<String, String> {
-    let stdout = truncate_output(&strip_control_chars(&String::from_utf8_lossy(&output.stdout)), MAX_OUTPUT_BYTES);
-    let stderr = truncate_output(&strip_control_chars(&String::from_utf8_lossy(&output.stderr)), MAX_OUTPUT_BYTES);
+    let stdout = truncate_output(
+        &strip_control_chars(&String::from_utf8_lossy(&output.stdout)),
+        MAX_OUTPUT_BYTES,
+    );
+    let stderr = truncate_output(
+        &strip_control_chars(&String::from_utf8_lossy(&output.stderr)),
+        MAX_OUTPUT_BYTES,
+    );
 
     if output.status.success() {
         if !stderr.is_empty() {
@@ -163,7 +169,10 @@ fn handle_output(output: std::process::Output) -> Result<String, String> {
             Ok(stdout)
         }
     } else {
-        Err(format!("Execution failed:\nStdout: {}\nStderr: {}", stdout, stderr))
+        Err(format!(
+            "Execution failed:\nStdout: {}\nStderr: {}",
+            stdout, stderr
+        ))
     }
 }
 
@@ -178,7 +187,9 @@ pub async fn execute_code(
         .unwrap_or(false);
 
     if !enabled {
-        return Err("Code execution is disabled. Set NOVA_ENABLE_CODE_EXEC=true to enable.".to_string());
+        return Err(
+            "Code execution is disabled. Set NOVA_ENABLE_CODE_EXEC=true to enable.".to_string(),
+        );
     }
 
     let requires_approval = true;
@@ -223,12 +234,8 @@ mod tests {
     async fn execute_code_requires_explicit_approval() {
         std::env::set_var("NOVA_ENABLE_CODE_EXEC", "true");
 
-        let result = execute_code(
-            "python".to_string(),
-            "print('ok')".to_string(),
-            Some(false),
-        )
-        .await;
+        let result =
+            execute_code("python".to_string(), "print('ok')".to_string(), Some(false)).await;
 
         assert!(result.is_err());
         assert!(result

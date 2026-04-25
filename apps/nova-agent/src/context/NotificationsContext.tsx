@@ -1,11 +1,16 @@
+import { Store } from "@tauri-apps/plugin-store";
 import {
 	createContext,
 	type ReactNode,
 	useContext,
 	useEffect,
+	useRef,
 	useState,
 } from "react";
 import { toast } from "@/hooks/use-toast";
+
+const NOTIFICATIONS_STORE_PATH = "store.json";
+const NOTIFICATIONS_STORAGE_KEY = "notifications";
 
 export interface Notification {
 	id: string;
@@ -48,34 +53,69 @@ export const NotificationsProvider = ({
 }: {
 	children: ReactNode;
 }) => {
-	const [notifications, setNotifications] = useState<Notification[]>(() => {
-		// eslint-disable-next-line electron-security/no-localstorage-electron
-		const storedNotifications = localStorage.getItem("notifications");
-		if (!storedNotifications) {
-			return [];
-		}
+	const [notifications, setNotifications] = useState<Notification[]>([]);
+	const hasLoadedNotifications = useRef(false);
 
-		try {
-			const parsedNotifications = JSON.parse(storedNotifications);
-			return parsedNotifications.map((notification: Omit<Notification, 'timestamp'> & { timestamp: string }) => ({
-				...notification,
-				timestamp: new Date(notification.timestamp),
-			})) as Notification[];
-		} catch (error) {
-			console.error("Failed to parse notifications from localStorage:", error);
-			return [];
-		}
-	});
+	useEffect(() => {
+		let isCancelled = false;
+
+		const loadNotifications = async () => {
+			try {
+				const store = await Store.load(NOTIFICATIONS_STORE_PATH);
+				const storedNotifications = await store.get<string>(
+					NOTIFICATIONS_STORAGE_KEY,
+				);
+				if (!storedNotifications || isCancelled) {
+					return;
+				}
+
+				const parsedNotifications = JSON.parse(storedNotifications) as Array<
+					Omit<Notification, "timestamp"> & { timestamp: string }
+				>;
+				setNotifications(
+					parsedNotifications.map((notification) => ({
+						...notification,
+						timestamp: new Date(notification.timestamp),
+					})),
+				);
+			} catch (error) {
+				console.error("Failed to load notifications:", error);
+			} finally {
+				hasLoadedNotifications.current = true;
+			}
+		};
+
+		void loadNotifications();
+
+		return () => {
+			isCancelled = true;
+		};
+	}, []);
 
 	// Calculate unread count
 	const unreadCount = notifications.filter(
 		(notification) => !notification.read,
 	).length;
 
-	// Update localStorage whenever notifications change
 	useEffect(() => {
-		// eslint-disable-next-line electron-security/no-localstorage-electron
-		localStorage.setItem("notifications", JSON.stringify(notifications));
+		if (!hasLoadedNotifications.current) {
+			return;
+		}
+
+		const saveNotifications = async () => {
+			try {
+				const store = await Store.load(NOTIFICATIONS_STORE_PATH);
+				await store.set(
+					NOTIFICATIONS_STORAGE_KEY,
+					JSON.stringify(notifications),
+				);
+				await store.save();
+			} catch (error) {
+				console.error("Failed to save notifications:", error);
+			}
+		};
+
+		void saveNotifications();
 	}, [notifications]);
 
 	// Add a new notification

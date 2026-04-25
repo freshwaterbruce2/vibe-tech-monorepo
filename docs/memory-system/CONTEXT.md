@@ -5,6 +5,11 @@
 **Status**: PHASE 0 IN PROGRESS - AWAITING OLLAMA INSTALLATION
 **Current Phase**: Phase 0 (Prerequisites)
 
+> Current reality note (2026-04-25): this file is historical implementation
+> context. `D:\learning-system` is not dead storage, and
+> `D:\databases\agent_learning.db` is the active learning-system database.
+> Validate against `D:\databases\DB_INVENTORY.md` before archiving anything.
+
 ---
 
 ## Quick Reference

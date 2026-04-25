@@ -318,7 +318,7 @@ Quick-GitCommit -Message "feat: add new automation features"
 # Quick trading bot status check
 function Get-QuickBotStatus {
     # Get trading bot info
-    $dbPath = "C:\dev\projects\crypto-enhanced\trading.db"
+    $dbPath = "D:\databases\crypto-enhanced\trading.db"
     if (Test-Path $dbPath) {
         $dbInfo = Get-Item $dbPath
         $age = ((Get-Date) - $dbInfo.LastWriteTime).TotalMinutes
@@ -537,7 +537,7 @@ Click-AtPosition -X $pos.X -Y $pos.Y
 # Monitor and report on trading bot
 function Monitor-TradingBot {
     while ($true) {
-        $dbPath = "C:\dev\projects\crypto-enhanced\trading.db"
+        $dbPath = "D:\databases\crypto-enhanced\trading.db"
         
         if (Test-Path $dbPath) {
             $age = ((Get-Date) - (Get-Item $dbPath).LastWriteTime).TotalMinutes

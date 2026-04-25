@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use serde::{Deserialize, Serialize};
-use std::process::{Command, Stdio};
 use std::io::Write;
+use std::process::{Command, Stdio};
 use tracing::{debug, error};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -76,8 +76,7 @@ fn call_python_bridge(command: &str, data: Option<&str>) -> Result<MLResponse, S
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    serde_json::from_str(&stdout)
-        .map_err(|e| format!("Failed to parse ML bridge response: {}", e))
+    serde_json::from_str(&stdout).map_err(|e| format!("Failed to parse ML bridge response: {}", e))
 }
 
 /// Log execution to ML learning system (with active learning filtering)
@@ -105,7 +104,9 @@ pub async fn ml_check_drift() -> Result<serde_json::Value, String> {
             if response.success {
                 Ok(response.data.unwrap_or(serde_json::json!({})))
             } else {
-                Err(response.error.unwrap_or_else(|| "Unknown error".to_string()))
+                Err(response
+                    .error
+                    .unwrap_or_else(|| "Unknown error".to_string()))
             }
         }
         Err(e) => Err(e),
@@ -119,7 +120,9 @@ pub async fn ml_storage_efficiency() -> Result<serde_json::Value, String> {
             if response.success {
                 Ok(response.data.unwrap_or(serde_json::json!({})))
             } else {
-                Err(response.error.unwrap_or_else(|| "Unknown error".to_string()))
+                Err(response
+                    .error
+                    .unwrap_or_else(|| "Unknown error".to_string()))
             }
         }
         Err(e) => Err(e),

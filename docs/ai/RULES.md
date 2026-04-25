@@ -29,9 +29,11 @@
 
 ## Environment & Build Protocols
 
-- **Build Commands**: Always `cd` into the specific app directory first.
-  - Correct: `cd apps/nova-agent; pnpm build`
-  - Incorrect: `pnpm build` (from root)
+- **Build Commands**: Prefer Nx targets from the workspace root.
+  - Correct: `pnpm nx build nova-agent`
+  - Correct: `pnpm nx test vibe-tutor`
+  - Incorrect: `pnpm build` from the root; the root build script intentionally fails.
+  - App-local commands are allowed only when the project docs or `project.json` target requires them.
 - **Command chaining**: Use semicolons (`;`) not `&&` (PowerShell 7+).
 - **Mobile Debugging**: Use `adb reverse tcp:3001 tcp:3001` for Android <-> Localhost connection.
 - **Windows Compatibility**: Use proper path handling for Windows.

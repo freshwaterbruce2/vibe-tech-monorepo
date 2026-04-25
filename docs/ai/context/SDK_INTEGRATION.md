@@ -73,7 +73,7 @@ const agent = new Agent({
   apiKey: process.env.ANTHROPIC_API_KEY,
   settingSources: ['project'], // Load .claude/agents/ and CLAUDE.md
   subagent: 'crypto-expert', // Invoke specific agent
-  workingDirectory: './projects/crypto-enhanced',
+  workingDirectory: './apps/crypto-enhanced',
 });
 
 // Run agent on a task
@@ -94,7 +94,7 @@ agent = Agent(
     api_key=os.getenv("ANTHROPIC_API_KEY"),
     setting_sources=["project"],  # Load .claude/agents/ and CLAUDE.md
     subagent="crypto-expert",  # Invoke specific agent
-    working_directory="./projects/crypto-enhanced"
+    working_directory="./apps/crypto-enhanced"
 )
 
 # Run agent on a task
@@ -112,7 +112,7 @@ Our monorepo includes 6 specialist agents configured as Claude Code Subagents (M
 | Agent                              | ID               | Projects                                           | Model   | Tools                                                |
 | ---------------------------------- | ---------------- | -------------------------------------------------- | ------- | ---------------------------------------------------- |
 | **Crypto Trading Expert**          | `crypto-expert`  | crypto-enhanced                                    | sonnet  | Read, Write, Edit, Bash, Grep, Glob, Task            |
-| **Web Application Expert**         | `webapp-expert`  | digital-content-builder, business-booking-platform | inherit | Read, Write, Edit, Bash, Grep, Glob, Task, WebSearch |
+| **Web Application Expert**         | `webapp-expert`  | shipping-pwa, business-booking-platform            | inherit | Read, Write, Edit, Bash, Grep, Glob, Task, WebSearch |
 | **Mobile Application Expert**      | `mobile-expert`  | Vibe-Tutor, Vibe-Subscription-Guard                | inherit | Read, Write, Edit, Bash, Grep, Glob, Task, WebSearch |
 | **Desktop Application Expert**     | `desktop-expert` | taskmaster, deepcode-editor                        | inherit | Read, Write, Edit, Bash, Grep, Glob, Task, WebSearch |
 | **Backend API Expert**             | `backend-expert` | memory-bank                                        | inherit | Read, Write, Edit, Bash, Grep, Glob, Task, WebSearch |
@@ -279,7 +279,7 @@ Our system includes **enhanced auto-detection** via `.claude/agents.json`:
 {
   "project_agents": {
     "crypto-enhanced": "crypto-expert",
-    "digital-content-builder": "webapp-expert",
+    "shipping-pwa": "webapp-expert",
     "business-booking-platform": "webapp-expert",
     "Vibe-Tutor": "mobile-expert",
     "memory-bank": "backend-expert"

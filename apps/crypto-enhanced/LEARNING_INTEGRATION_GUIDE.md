@@ -8,7 +8,7 @@ The crypto-enhanced trading system now integrates with the monorepo's learning s
 
 ### 1. Learning Integration Module
 
-**File**: `learning_integration.py`
+**File**: `src/learning_integration.py`
 
 This module serves as the integration layer between the trading system and the learning utilities:
 
@@ -181,8 +181,8 @@ The system will:
 ### 1. Verify Learning System Available
 
 ```bash
-cd C:\dev\projects\crypto-enhanced
-python learning_integration.py
+cd C:\dev\apps\crypto-enhanced
+python src\learning_integration.py
 ```
 
 Expected output:
@@ -230,7 +230,7 @@ client = KrakenClient(config)
    - Added learning integration import (lines 21-28)
    - Added credential validation in `__init__()` (lines 63-69)
 
-3. **learning_integration.py** (NEW)
+3. **src/learning_integration.py**
    - Integration wrapper for learning utilities
    - Crypto-specific validators
    - Fallback handling
@@ -258,7 +258,7 @@ Potential additional integrations:
 
 For issues or questions about the learning integration:
 
-1. Check learning system status: `python learning_integration.py`
+1. Check learning system status: `python src\learning_integration.py`
 2. Review logs: `trading_new.log`
 3. Verify database: `D:\databases\database.db`
 4. Check learning data: `D:\learning-system\learning_insights.json`

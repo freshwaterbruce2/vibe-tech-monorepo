@@ -1,6 +1,34 @@
 {
-  "globs": ["**/*.md"],
-  "ignores": ["**/node_modules/**", "**/.git/**"],
+  "globs": [
+    "*.md",
+    "docs/**/*.md",
+    "apps/*/{README,AGENTS,DEPLOYMENT,DEPLOY_GUIDE,CREATE_REPO_GUIDE,PROJECT_GUIDE,USAGE,QUICK_REFERENCE}.md",
+    ".claude/commands/**/*.md",
+    "packages/*/README.md",
+    "backend/*/README.md",
+    "tools/*/README.md"
+  ],
+  "ignores": [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/.nx/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/coverage/**",
+    "**/coverage_html/**",
+    "**/htmlcov/**",
+    "**/playwright-report/**",
+    "**/test-results/**",
+    "**/.pytest_cache/**",
+    "**/.venv/**",
+    "_archive/**",
+    ".agent/**",
+    ".agents/**",
+    "apps/shipping-pwa/bmad-agent/**",
+    "apps/vibe-code-studio/native-modules/**",
+    "**/archive/**",
+    "**/CHANGELOG.md"
+  ],
   "config": {
     "extends": "./.markdownlint.json",
   },

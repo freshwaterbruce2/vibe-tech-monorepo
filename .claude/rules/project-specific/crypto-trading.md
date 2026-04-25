@@ -9,10 +9,11 @@ tags: #crypto #trading #python #kraken-api #websocket #financial-safety
 
 **This system trades with REAL MONEY**
 
-- Account Balance: ~$135 USD
+- Account Balance: verify from runtime before quoting values
 - Trading Pair: XLM/USD only
 - System Status: OPERATIONAL WITH MONITORING
-- **ALWAYS require explicit YES confirmation before live trading**
+- **Agents must not start, restart, or auto-confirm live trading**
+- **Human operators must still require explicit YES confirmation before live trading**
 
 ## Architecture
 
@@ -22,7 +23,7 @@ crypto-enhanced/
 │   ├── kraken_client.py          # REST API client with rate limiting
 │   ├── websocket_manager.py      # WebSocket V2 real-time data
 │   ├── trading_engine.py         # Strategy execution
-│   ├── database.py               # SQLite persistence (D:\databases\trading.db)
+│   ├── database.py               # SQLite persistence; resolve from .env / DB_PATH
 │   └── strategies.py             # Mean reversion, scalping, range trading
 │
 ├── Configuration (4 files)
@@ -68,14 +69,20 @@ MIN_ACCOUNT_BALANCE = 50.00      # Don't trade below $50
 
 **Status:**
 
-- Account Balance: ~$135 USD (verify with `python check_status.py`)
+- Account Balance: ~$135 USD (verify with `python scripts\check_status.py`)
 - Max Position: $10
 - Strategies: Mean Reversion, Range Trading, Scalping (all enabled)
-- Database: `D:\databases\trading.db`
+- Database: resolve from `.env` / `DB_PATH` before querying. On this machine,
+  the live override has pointed at `D:\databases\crypto-enhanced\trading.db`.
 
 ## Critical Safety Patterns
 
-### Pattern: Explicit Confirmation for Live Trading
+### Pattern: Agent Workflows Are Observation-Only
+
+Agent workflows may inspect status, run tests, read logs, and review code. They
+must not execute live-trading launchers or pipe confirmation into them.
+
+### Pattern: Explicit Confirmation for Human Live Trading
 
 **NEVER** start live trading without explicit user confirmation.
 
@@ -98,10 +105,11 @@ def start_live_trading():
     engine.start()  # Immediate execution is dangerous!
 ```
 
-**Bypass (Emergency/Automation Only):**
+**Do not bypass confirmation from agent automation:**
 
 ```bash
-echo YES | python start_live_trading.py
+# Forbidden in agent workflows
+# echo YES | python start_live_trading.py
 ```
 
 ### Pattern: Pre-commit Trading System Safety Check
@@ -246,7 +254,7 @@ class CircuitBreaker:
 from pathlib import Path
 import sqlite3
 
-DB_PATH = Path(os.getenv('DATABASE_PATH', r'D:\databases\trading.db'))
+DB_PATH = Path(os.getenv('DB_PATH') or os.getenv('DATABASE_PATH') or r'D:\databases\crypto-enhanced\trading.db')
 
 class Database:
     def __init__(self):
@@ -336,13 +344,13 @@ process.on('exit', () => db.close());
 
 ```bash
 # Quick status check
-python check_status.py
+python scripts\check_status.py
 
 # Weekly performance report
-python performance_monitor.py weekly
+python scripts\performance_monitor.py weekly
 
 # 30-day validation report (for capital scaling decision)
-python performance_monitor.py monthly
+python scripts\performance_monitor.py monthly
 ```
 
 ## Commands Reference
@@ -366,24 +374,18 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-### Docker Setup (Recommended)
+### Docker Setup
 
-```bash
-cd apps/crypto-enhanced
-cp .env.example .env       # Configure API keys
-docker-compose up -d       # Start in background
-docker-compose logs -f     # Follow logs
-docker-compose down        # Stop trading
-```
+Docker deployment is not currently validated: `docker-compose.yml` references a
+missing `Dockerfile` and does not use the live `.env` `DB_PATH`. Do not use
+Docker commands as current restart/start guidance.
 
 ### Live Trading
 
 ```bash
-# Requires manual YES confirmation (safety)
-python start_live_trading.py
-
-# Auto-confirm for automation (use with caution)
-echo YES | python start_live_trading.py
+# Human operator only after reviewing runtime state and risk controls.
+# Agents must not start, restart, or auto-confirm live trading.
+# python start_live_trading.py
 ```
 
 ### Testing & Development
@@ -498,5 +500,6 @@ The trading system has been successfully restored to full functionality:
 
 - **Project Root:** `C:\dev\apps\crypto-enhanced`
 - **Project CLAUDE.md:** `C:\dev\apps\crypto-enhanced\CLAUDE.md`
-- **Database:** `D:\databases\trading.db`
+- **Database:** resolve from `.env` / `DB_PATH`; do not hardcode a DB path for
+  live diagnostics.
 - **Logs:** `D:\logs\trading.log`, `D:\logs\trading_new.log`

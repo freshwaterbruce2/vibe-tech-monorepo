@@ -69,7 +69,8 @@ Process:
 1. Analyze the request and read relevant files first.
 2. Plan changes in small, targeted diffs.
 3. Implement using apply_patch.
-4. Verify with pnpm run quality or the relevant pnpm nx target.
+4. Verify with the narrowest relevant `pnpm nx <target> <project>` command.
+5. For repo-level confidence, run `pnpm run quality:affected` before full-workspace checks.
 
 AI tooling:
 
@@ -161,7 +162,6 @@ Canonical rules live here: C:\dev\AI.md
 Allowed lightweight pointers:
 
 - C:\dev\CLAUDE.md
-- C:\dev\GEMINI.md
 - docs/ai/WORKSPACE.md
 
 Project-specific overrides only when necessary:

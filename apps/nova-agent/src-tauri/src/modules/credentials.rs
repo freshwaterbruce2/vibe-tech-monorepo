@@ -54,8 +54,7 @@ impl CredentialStore {
     /// CredentialStore::set(keys::DEEPSEEK_API_KEY, "sk-1234...")?;
     /// ```
     pub fn set(key_name: &str, api_key: &str) -> Result<()> {
-        let entry = Entry::new(SERVICE_NAME, key_name)
-            .context("Failed to create keyring entry")?;
+        let entry = Entry::new(SERVICE_NAME, key_name).context("Failed to create keyring entry")?;
 
         entry
             .set_password(api_key)
@@ -86,18 +85,17 @@ impl CredentialStore {
     /// }
     /// ```
     pub fn get(key_name: &str) -> Result<Option<String>> {
-        let entry = Entry::new(SERVICE_NAME, key_name)
-            .context("Failed to create keyring entry")?;
+        let entry = Entry::new(SERVICE_NAME, key_name).context("Failed to create keyring entry")?;
 
         match entry.get_password() {
             Ok(password) => {
                 debug!("Retrieved credential: {}", key_name);
                 Ok(Some(password))
-            },
+            }
             Err(keyring::Error::NoEntry) => {
                 debug!("Credential not found (not yet stored): {}", key_name);
                 Ok(None)
-            },
+            }
             Err(e) => {
                 warn!("Failed to retrieve credential {}: {}", key_name, e);
                 Err(e).context(format!("Error accessing credential: {}", key_name))
@@ -115,18 +113,17 @@ impl CredentialStore {
     /// - Credential rotation
     /// - Security cleanup
     pub fn delete(key_name: &str) -> Result<()> {
-        let entry = Entry::new(SERVICE_NAME, key_name)
-            .context("Failed to create keyring entry")?;
+        let entry = Entry::new(SERVICE_NAME, key_name).context("Failed to create keyring entry")?;
 
         match entry.delete_password() {
             Ok(()) => {
                 info!("Deleted credential: {}", key_name);
                 Ok(())
-            },
+            }
             Err(keyring::Error::NoEntry) => {
                 debug!("Credential already deleted or never existed: {}", key_name);
-                Ok(())  // Idempotent: not an error if already gone
-            },
+                Ok(()) // Idempotent: not an error if already gone
+            }
             Err(e) => {
                 warn!("Failed to delete credential {}: {}", key_name, e);
                 Err(e).context(format!("Error deleting credential: {}", key_name))
@@ -167,7 +164,7 @@ impl CredentialStore {
     /// println!("Migration complete - manually delete .env for security");
     /// ```
     pub fn migrate_from_env() -> Result<()> {
-        dotenv::dotenv().ok();  // Load .env if exists
+        dotenv::dotenv().ok(); // Load .env if exists
 
         let migrations = vec![
             ("DEEPSEEK_API_KEY", keys::DEEPSEEK_API_KEY),
@@ -175,7 +172,7 @@ impl CredentialStore {
             ("OPENROUTER_API_KEY", keys::OPENROUTER_API_KEY),
             ("GOOGLE_API_KEY", keys::GOOGLE_API_KEY),
             ("KIMI_API_KEY", keys::KIMI_API_KEY),
-            ("VITE_KIMI_API_KEY", keys::KIMI_API_KEY),  // Also check VITE_ prefix
+            ("VITE_KIMI_API_KEY", keys::KIMI_API_KEY), // Also check VITE_ prefix
         ];
 
         let mut migrated_count = 0;
@@ -191,14 +188,20 @@ impl CredentialStore {
                     } else {
                         Self::set(key_name, &value)?;
                         migrated_count += 1;
-                        info!("Migrated {} from .env to Windows Credential Manager", key_name);
+                        info!(
+                            "Migrated {} from .env to Windows Credential Manager",
+                            key_name
+                        );
                     }
                 }
             }
         }
 
         if migrated_count > 0 {
-            info!("✅ Migration complete: {} credentials migrated, {} skipped", migrated_count, skipped_count);
+            info!(
+                "✅ Migration complete: {} credentials migrated, {} skipped",
+                migrated_count, skipped_count
+            );
             info!("⚠️  SECURITY: Manually delete .env file after verifying credentials work");
         } else if skipped_count > 0 {
             info!("All credentials already migrated ({})", skipped_count);
@@ -228,8 +231,8 @@ impl CredentialStore {
             Ok(value) if !value.is_empty() => {
                 debug!("Using fallback env var: {}", env_var);
                 Ok(Some(value))
-            },
-            _ => Ok(None)
+            }
+            _ => Ok(None),
         }
     }
 }
@@ -264,7 +267,7 @@ mod tests {
     #[test]
     fn test_exists() {
         let test_key = "test_exists_key";
-        let _ = CredentialStore::delete(test_key);  // Clean slate
+        let _ = CredentialStore::delete(test_key); // Clean slate
 
         // Should not exist initially
         assert!(!CredentialStore::exists(test_key).unwrap());
@@ -332,27 +335,27 @@ pub async fn save_api_keys(
 
     if let Some(key) = groq_key {
         if !key.trim().is_empty() {
-             CredentialStore::set(keys::GROQ_API_KEY, &key)
+            CredentialStore::set(keys::GROQ_API_KEY, &key)
                 .map_err(|e| format!("Failed to save Groq key: {}", e))?;
         }
     }
 
     if let Some(key) = openrouter_key {
-         if !key.trim().is_empty() {
+        if !key.trim().is_empty() {
             CredentialStore::set(keys::OPENROUTER_API_KEY, &key)
                 .map_err(|e| format!("Failed to save OpenRouter key: {}", e))?;
         }
     }
 
     if let Some(key) = google_key {
-         if !key.trim().is_empty() {
+        if !key.trim().is_empty() {
             CredentialStore::set(keys::GOOGLE_API_KEY, &key)
                 .map_err(|e| format!("Failed to save Google key: {}", e))?;
         }
     }
 
     if let Some(key) = kimi_key {
-         if !key.trim().is_empty() {
+        if !key.trim().is_empty() {
             CredentialStore::set(keys::KIMI_API_KEY, &key)
                 .map_err(|e| format!("Failed to save Kimi key: {}", e))?;
         }

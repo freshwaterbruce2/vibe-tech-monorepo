@@ -43,11 +43,11 @@ pnpm run dev                   # Root web app only (port 5173)
 ### 3. Check Trading Bot Status (if applicable)
 
 ```powershell
-cd projects\crypto-enhanced
+cd apps\crypto-enhanced
 .venv\Scripts\activate
 
 # Quick status check
-python simple_status.py
+python scripts\check_status.py
 
 # View recent trades
 sqlite3 trading.db "SELECT * FROM trades ORDER BY timestamp DESC LIMIT 10;"
@@ -83,14 +83,14 @@ git checkout -b feature/your-feature-name
 #### 3. Run Quality Checks
 
 ```powershell
-# Run all checks at once
-pnpm run quality
+# Run affected checks first
+pnpm run quality:affected
 
 # Or individually
 pnpm run lint              # ESLint
 pnpm run typecheck         # TypeScript
 pnpm run test:unit         # Vitest
-pnpm run build             # Production build
+pnpm nx build <project>    # Production build for one project
 ```
 
 #### 4. Fix Issues
@@ -124,11 +124,11 @@ git push origin feature/your-feature-name
 #### 1. Pre-Change Checklist
 
 ```powershell
-cd C:\dev\projects\crypto-enhanced
+cd C:\dev\apps\crypto-enhanced
 .venv\Scripts\activate
 
 # 1. Check bot status
-python simple_status.py
+python scripts\check_status.py
 
 # 2. Review recent activity
 Get-Content trading_new.log -Tail 100
@@ -179,11 +179,11 @@ pytest --cov=. --cov-report=html
 start htmlcov\index.html  # View coverage report
 ```
 
-#### 5. Test Manually (if safe)
+#### 5. Inspect Runtime State (Read-Only)
 
 ```powershell
-# If changes are read-only or safe:
-python start_live_trading.py
+# Agents must not start live trading. Use read-only checks only.
+python scripts\check_status.py
 
 # Watch logs in another terminal
 Get-Content trading_new.log -Tail 50 -Wait
@@ -200,7 +200,7 @@ Get-Content trading_new.log -Tail 50 -Wait
 cd C:\dev\backend
 
 # Install dependencies if needed
-ppnpm install
+pnpm install
 ```
 
 #### 2. Make Changes
@@ -216,10 +216,10 @@ ppnpm install
 
 ```powershell
 # Run backend tests
-ppnpm run test
+pnpm run test
 
 # Or start dev server and test manually
-ppnpm run dev  # Port 3000
+pnpm run dev  # Port 3000
 
 # Test endpoints with curl/Postman
 ```
@@ -227,13 +227,13 @@ ppnpm run dev  # Port 3000
 #### 4. Quality Checks
 
 ```powershell
-# If nx targets configured
-nx run backend:quality
+# If Nx targets are configured
+pnpm nx run backend:quality
 
 # Or manually
-ppnpm run lint
-ppnpm run typecheck
-ppnpm run build
+pnpm run lint
+pnpm run typecheck
+pnpm nx build <project>
 ```
 
 ---
@@ -278,7 +278,7 @@ pnpm run test:report
 ### Testing Trading Bot
 
 ```powershell
-cd projects\crypto-enhanced
+cd apps\crypto-enhanced
 .venv\Scripts\activate
 
 # Run all tests
@@ -348,7 +348,7 @@ pnpm --filter backend remove package-name
 #### Adding Dependencies
 
 ```powershell
-cd projects\crypto-enhanced
+cd apps\crypto-enhanced
 .venv\Scripts\activate
 
 # Install package
@@ -454,9 +454,9 @@ import pdb; pdb.set_trace()
 pip install ipdb
 import ipdb; ipdb.set_trace()
 
-# Run script
-python start_live_trading.py
-# Execution pauses at breakpoint
+# Debug read-only/status scripts only. Agents must not start live trading.
+python scripts\check_status.py
+# Execution pauses at breakpoint if one is set
 ```
 
 #### Log Analysis
@@ -484,7 +484,7 @@ Get-Content trading_new.log | Select-String "order_id.*ABC123"
 #### Interactive Queries
 
 ```powershell
-cd projects\crypto-enhanced
+cd apps\crypto-enhanced
 
 # Open database
 sqlite3 trading.db
@@ -595,40 +595,24 @@ git push origin main
 - [ ] Circuit breaker working
 - [ ] Emergency stop tested
 
-#### Starting for Production
+#### Production Readiness Checks
 
 ```powershell
-cd C:\dev\projects\crypto-enhanced
+cd C:\dev\apps\crypto-enhanced
 .venv\Scripts\activate
 
-# Verify everything
+# Verify without starting live trading
 python run_tests.py
-python simple_status.py
-
-# Start bot (will ask for confirmation)
-python start_live_trading.py
+python scripts\check_status.py
 
 # Monitor in separate terminal
 Get-Content trading_new.log -Tail 50 -Wait
 ```
 
-#### Setting Up as Windows Service (Optional)
+#### Live Trading Service
 
-```powershell
-# Using NSSM (Non-Sucking Service Manager)
-# Download from: https://nssm.cc/
-
-# Install as service
-nssm install TradingBot "C:\dev\projects\crypto-enhanced\.venv\Scripts\python.exe" "C:\dev\projects\crypto-enhanced\start_live_trading.py"
-
-# Configure
-nssm set TradingBot AppDirectory "C:\dev\projects\crypto-enhanced"
-nssm set TradingBot AppStdout "C:\dev\projects\crypto-enhanced\logs\service.log"
-nssm set TradingBot AppStderr "C:\dev\projects\crypto-enhanced\logs\service_error.log"
-
-# Start service
-nssm start TradingBot
-```
+Agents must not install, start, or restart a live trading service. A human operator
+must handle live buy/sell/trade operations and service control outside agent automation.
 
 ### Backend Deployment
 
@@ -638,7 +622,7 @@ nssm start TradingBot
 cd backend
 
 # Build
-ppnpm run build
+pnpm nx build <project>
 
 # Deploy (if CLI configured)
 railway up  # or
@@ -654,7 +638,7 @@ git push heroku main
 ```powershell
 # Clear node_modules and reinstall
 Remove-Item -Recurse -Force node_modules
-ppnpm install
+pnpm install
 
 # Clear Vite cache
 Remove-Item -Recurse -Force node_modules\.vite
@@ -689,7 +673,7 @@ pnpm run dev -- --port 3000
 ### Trading Bot Won't Start
 
 ```powershell
-cd projects\crypto-enhanced
+cd apps\crypto-enhanced
 .venv\Scripts\activate
 
 # Check for lock file
@@ -734,10 +718,10 @@ Remove-Item trading.db-shm, trading.db-wal -ErrorAction SilentlyContinue
 
 ```powershell
 # Check for security vulnerabilities
-npm audit
+pnpm audit
 
 # Fix auto-fixable issues
-npm audit fix
+pnpm audit
 
 # Check bundle size hasn't grown unexpectedly
 pnpm run analyze
@@ -746,11 +730,11 @@ pnpm run analyze
 #### Trading Bot
 
 ```powershell
-cd projects\crypto-enhanced
+cd apps\crypto-enhanced
 .venv\Scripts\activate
 
 # Check status
-python simple_status.py
+python scripts\check_status.py
 
 # Review yesterday's trades
 sqlite3 trading.db "SELECT * FROM trades WHERE date(timestamp) = date('now', '-1 day');"
@@ -775,7 +759,7 @@ git log --oneline --since='1 week ago'
 Get-PSDrive C | Select-Object Used,Free
 
 # Backup trading database
-copy projects\crypto-enhanced\trading.db "backups\trading_weekly_$(Get-Date -Format 'yyyyMMdd').db"
+copy D:\databases\trading.db "backups\trading_weekly_$(Get-Date -Format 'yyyyMMdd').db"
 ```
 
 ### Monthly Checks
@@ -786,14 +770,14 @@ pnpm outdated
 pip list --outdated
 
 # Audit security
-npm audit
+pnpm audit
 pip-audit  # pip install pip-audit
 
 # Review and archive old logs
-Compress-Archive -Path projects\crypto-enhanced\logs\* -DestinationPath "logs_archive_$(Get-Date -Format 'yyyyMM').zip"
+Compress-Archive -Path apps\crypto-enhanced\logs\* -DestinationPath "logs_archive_$(Get-Date -Format 'yyyyMM').zip"
 
 # Database maintenance
-sqlite3 projects\crypto-enhanced\trading.db "VACUUM;"
+sqlite3 D:\databases\trading.db "VACUUM;"
 ```
 
 ---
@@ -813,10 +797,10 @@ pnpm run quality
 pnpm run test:unit
 
 # Trading bot status
-cd projects\crypto-enhanced && .venv\Scripts\activate && python simple_status.py
+cd apps\crypto-enhanced && .venv\Scripts\activate && python scripts\check_status.py
 
 # View bot logs
-Get-Content projects\crypto-enhanced\trading_new.log -Tail 50 -Wait
+Get-Content apps\crypto-enhanced\trading_new.log -Tail 50 -Wait
 
 # Git status
 git status
@@ -831,15 +815,13 @@ git add . && git commit -m "message"
 ### Emergency Commands
 
 ```powershell
-# Stop trading bot
-cd projects\crypto-enhanced && .\stop_trading.ps1
+# Live trading service control is human-operator only.
+# Agents can collect status/log evidence but must not stop/start trading.
 
-# Kill all Python processes (nuclear option)
-taskkill /F /IM python.exe
+# Read process state
+Get-Process python -ErrorAction SilentlyContinue
 
-# Restore database backup
-cd projects\crypto-enhanced
-copy trading.db.backup trading.db
+# Restore actions are human-operator only and must use a verified backup plan.
 
 # Rollback git changes
 git reset --hard HEAD
@@ -879,7 +861,7 @@ git clean -fd
 
    ```powershell
    # In dedicated terminal
-   Get-Content projects\crypto-enhanced\trading_new.log -Tail 50 -Wait
+Get-Content apps\crypto-enhanced\trading_new.log -Tail 50 -Wait
    ```
 
 ---

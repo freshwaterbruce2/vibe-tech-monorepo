@@ -10,9 +10,9 @@ use tracing::{debug, error, info, warn};
 #[cfg(windows)]
 use windows::Win32::{
     Foundation::{CloseHandle, HWND},
-    UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowTextW, GetWindowThreadProcessId},
-    System::Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ},
     System::ProcessStatus::GetModuleBaseNameW,
+    System::Threading::{OpenProcess, PROCESS_QUERY_INFORMATION, PROCESS_VM_READ},
+    UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowTextW, GetWindowThreadProcessId},
 };
 
 /// Information about the currently active window
@@ -70,7 +70,8 @@ fn get_process_name(process_id: u32) -> Option<String> {
             PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
             false,
             process_id,
-        ).ok()?;
+        )
+        .ok()?;
 
         let mut name_buffer = [0u16; 260];
         let len = GetModuleBaseNameW(handle, None, &mut name_buffer);
@@ -152,9 +153,13 @@ impl ActivityMonitor {
 
             if let Some(window_info) = get_active_window() {
                 // Check if window changed
-                let window_changed = self.last_window.as_ref()
-                    .map(|last| last.process_name != window_info.process_name ||
-                               last.window_title != window_info.window_title)
+                let window_changed = self
+                    .last_window
+                    .as_ref()
+                    .map(|last| {
+                        last.process_name != window_info.process_name
+                            || last.window_title != window_info.window_title
+                    })
                     .unwrap_or(true);
 
                 if window_changed {
@@ -179,10 +184,11 @@ impl ActivityMonitor {
 
                 // Capture context snapshot every 10 minutes (600s)
                 if snapshot_counter >= 600 {
-                    let engine = crate::context_engine::ContextEngine::new(self.workspace_root.clone());
+                    let engine =
+                        crate::context_engine::ContextEngine::new(self.workspace_root.clone());
                     let snapshot = engine.get_snapshot();
                     if let Ok(json) = serde_json::to_string(&snapshot) {
-                         self.log_to_db("context_snapshot", &json).await;
+                        self.log_to_db("context_snapshot", &json).await;
                     }
                     snapshot_counter = 0;
                 }
@@ -204,10 +210,7 @@ impl ActivityMonitor {
 
             // Only log if focused for more than 5 seconds
             if duration_secs >= 5 {
-                debug!(
-                    "Focus ended: {} after {} seconds",
-                    app, duration_secs
-                );
+                debug!("Focus ended: {} after {} seconds", app, duration_secs);
 
                 // Check for deep work (15+ minutes on same app)
                 if duration_secs >= 900 {
@@ -237,15 +240,9 @@ impl ActivityMonitor {
         // Log the window change to database
         debug!(
             "Window focus: {} ({}) pid={}",
-            new_window.process_name,
-            new_window.window_title,
-            new_window.process_id
+            new_window.process_name, new_window.window_title, new_window.process_id
         );
-        let details = format!(
-            "{}|{}",
-            new_window.process_name,
-            new_window.window_title
-        );
+        let details = format!("{}|{}", new_window.process_name, new_window.window_title);
 
         self.log_to_db("window_focus", &details).await;
     }
@@ -253,15 +250,17 @@ impl ActivityMonitor {
     async fn log_periodic_activity(&self, window_info: &ActiveWindowInfo) {
         let details = format!(
             "periodic|{}|{}",
-            window_info.process_name,
-            window_info.window_title
+            window_info.process_name, window_info.window_title
         );
         self.log_to_db("activity_check", &details).await;
     }
 
     async fn log_deep_work_session(&self, app: &str, duration_secs: u64) {
         let minutes = duration_secs / 60;
-        info!("Deep work session detected: {} for {} minutes", app, minutes);
+        info!(
+            "Deep work session detected: {} for {} minutes",
+            app, minutes
+        );
 
         let details = format!("deep_work|{}|{}", app, minutes);
         self.log_to_db("deep_work", &details).await;
@@ -358,8 +357,10 @@ impl ActivityMonitor {
                         ),
                     );
                     let _ = service.end_deep_work_session(id, end_ts);
-                    let _ =
-                        service.log_activity("deep_work_session_end", &format!("id={}|end_ts={}", id, end_ts));
+                    let _ = service.log_activity(
+                        "deep_work_session_end",
+                        &format!("id={}|end_ts={}", id, end_ts),
+                    );
                 }
                 Err(e) => warn!("Failed to persist completed deep work session: {}", e),
             }
@@ -377,7 +378,10 @@ impl ActivityMonitor {
 }
 
 /// Spawn the activity monitor as a background task
-pub fn spawn_activity_monitor(db: Arc<AsyncMutex<Option<DatabaseService>>>, workspace_root: String) {
+pub fn spawn_activity_monitor(
+    db: Arc<AsyncMutex<Option<DatabaseService>>>,
+    workspace_root: String,
+) {
     tokio::spawn(async move {
         if db.lock().await.is_none() {
             error!("Activity monitor not started: database service unavailable");

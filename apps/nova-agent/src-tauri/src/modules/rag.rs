@@ -254,10 +254,7 @@ pub async fn rag_index_file(
 
         // Remove stale chunks for this file before re-indexing
         let escaped = file_path.replace('\'', "''");
-        if let Err(e) = table
-            .delete(&format!("file_path = '{escaped}'"))
-            .await
-        {
+        if let Err(e) = table.delete(&format!("file_path = '{escaped}'")).await {
             warn!("RAG: failed to delete old chunks for {file_path}: {e}");
         }
 
@@ -278,10 +275,7 @@ pub async fn rag_index_file(
 }
 
 #[tauri::command]
-pub async fn rag_search(
-    query: String,
-    top_k: usize,
-) -> Result<Vec<RagSearchResult>, String> {
+pub async fn rag_search(query: String, top_k: usize) -> Result<Vec<RagSearchResult>, String> {
     debug!("RAG search: '{query}' (top_k={top_k})");
 
     let config = Config::from_env();
@@ -323,14 +317,8 @@ pub async fn rag_search(
         let meta_idx = schema.index_of("metadata").unwrap_or(3);
         let dist_idx = schema.index_of("_distance").ok();
 
-        let ids = batch
-            .column(id_idx)
-            .as_any()
-            .downcast_ref::<StringArray>();
-        let docs = batch
-            .column(doc_idx)
-            .as_any()
-            .downcast_ref::<StringArray>();
+        let ids = batch.column(id_idx).as_any().downcast_ref::<StringArray>();
+        let docs = batch.column(doc_idx).as_any().downcast_ref::<StringArray>();
         let metas = batch
             .column(meta_idx)
             .as_any()
@@ -395,7 +383,11 @@ pub async fn rag_index_directory(
         };
 
         if file_meta.len() > MAX_FILE_BYTES {
-            debug!("RAG: skipping large file {:?} ({} bytes)", path, file_meta.len());
+            debug!(
+                "RAG: skipping large file {:?} ({} bytes)",
+                path,
+                file_meta.len()
+            );
             continue;
         }
 
@@ -452,8 +444,8 @@ fn collect_files(
 ) -> Result<Vec<std::path::PathBuf>, String> {
     let mut files = Vec::new();
 
-    let entries = std::fs::read_dir(dir)
-        .map_err(|e| format!("Failed to read directory {:?}: {e}", dir))?;
+    let entries =
+        std::fs::read_dir(dir).map_err(|e| format!("Failed to read directory {:?}: {e}", dir))?;
 
     for entry in entries {
         let entry = entry.map_err(|e| format!("Failed to read entry: {e}"))?;

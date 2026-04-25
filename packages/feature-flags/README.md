@@ -11,15 +11,19 @@ Self-hosted feature flag system for the monorepo, supporting:
 
 ### 1. Install Dependencies
 
-```bash
-cd packages/feature-flags
+```powershell
+cd C:\dev
 pnpm install
 ```
 
 ### 2. Build All Packages
 
-```bash
-pnpm build
+```powershell
+pnpm nx run @vibetech/feature-flags-core:build
+pnpm nx run @vibetech/feature-flags-sdk-node:build
+pnpm nx run @vibetech/feature-flags-sdk-react:build
+pnpm nx run @vibetech/feature-flags-server:build
+pnpm nx run @vibetech/feature-flags-dashboard:build
 ```
 
 ### 3. Python SDK (Trading Bot)
@@ -155,8 +159,8 @@ packages/feature-flags/
 ├── sdk-node/       # Node.js SDK (Electron, Tauri backend, services)
 ├── sdk-react/      # React SDK with hooks and components
 ├── sdk-python/     # Python SDK (trading bot)
-├── server/         # Feature flag service (TODO)
-└── dashboard/      # Admin UI (TODO)
+├── server/         # Feature flag service
+└── dashboard/      # Admin UI
 ```
 
 ## Initial Flags
@@ -171,6 +175,6 @@ The system comes with suggested starter flags:
 
 ## Next Steps
 
-1. **Server**: Implement the feature flag server with SQLite storage
-2. **Dashboard**: Build admin UI for flag management
-3. **Integration**: Wire up to existing apps
+1. **Server**: Run with `pnpm nx run @vibetech/feature-flags-server:dev`
+2. **Dashboard**: Run with `pnpm nx run @vibetech/feature-flags-dashboard:dev`
+3. **Integration**: Wire flags into existing apps and services

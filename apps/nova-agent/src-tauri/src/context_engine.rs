@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
-use std::path::Path;
-use std::process::Command;
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
+use std::path::Path;
+use std::process::Command;
 use tracing::{debug, info};
 
 const CREATE_NO_WINDOW: u32 = 0x08000000;
@@ -186,9 +186,10 @@ impl ContextEngine {
 
         // Get recently modified files from git
         let mut command = Command::new("git");
-        command.args(["diff", "--name-only", "HEAD~5", "HEAD"])
-               .current_dir(path);
-        
+        command
+            .args(["diff", "--name-only", "HEAD~5", "HEAD"])
+            .current_dir(path);
+
         #[cfg(target_os = "windows")]
         command.creation_flags(CREATE_NO_WINDOW);
 
@@ -248,8 +249,7 @@ impl ContextEngine {
             command.args(["/FO", "CSV", "/NH"]);
             command.creation_flags(CREATE_NO_WINDOW);
 
-            if let Ok(output) = command.output()
-            {
+            if let Ok(output) = command.output() {
                 if output.status.success() {
                     let stdout = String::from_utf8_lossy(&output.stdout);
                     let dev_tools = [
@@ -289,30 +289,30 @@ impl ContextEngine {
 
         // Get Branch
         let mut branch_cmd = Command::new("git");
-        branch_cmd.arg("rev-parse")
+        branch_cmd
+            .arg("rev-parse")
             .arg("--abbrev-ref")
             .arg("HEAD")
             .current_dir(path);
-        
+
         #[cfg(target_os = "windows")]
         branch_cmd.creation_flags(CREATE_NO_WINDOW);
 
-        let branch = branch_cmd.output()
-            .ok()
-            .and_then(|output| {
-                if output.status.success() {
-                    Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
-                } else {
-                    None
-                }
-            })?;
+        let branch = branch_cmd.output().ok().and_then(|output| {
+            if output.status.success() {
+                Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
+            } else {
+                None
+            }
+        })?;
 
         // Get Status (porcelain)
         let mut status_cmd = Command::new("git");
-        status_cmd.arg("status")
+        status_cmd
+            .arg("status")
             .arg("--porcelain")
             .current_dir(path);
-        
+
         #[cfg(target_os = "windows")]
         status_cmd.creation_flags(CREATE_NO_WINDOW);
 
@@ -354,9 +354,10 @@ impl ContextEngine {
     /// Get commits ahead/behind remote
     fn get_ahead_behind(&self, path: &Path) -> (u32, u32) {
         let mut command = Command::new("git");
-        command.args(["rev-list", "--left-right", "--count", "HEAD...@{upstream}"])
+        command
+            .args(["rev-list", "--left-right", "--count", "HEAD...@{upstream}"])
             .current_dir(path);
-        
+
         #[cfg(target_os = "windows")]
         command.creation_flags(CREATE_NO_WINDOW);
 

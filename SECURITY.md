@@ -9,8 +9,7 @@ This monorepo contains multiple projects with different version support:
 | Project | Version | Supported          |
 | ------- | ------- | ------------------ |
 | business-booking-platform | 2.0.x | :white_check_mark: |
-| digital-content-builder | 1.0.x | :white_check_mark: |
-| iconforge | 1.0.x | :white_check_mark: |
+| invoice-automation-saas | 0.1.x | :white_check_mark: |
 | shipping-pwa | 1.x.x | :white_check_mark: |
 | vibe-tech-lovable | 1.x.x | :white_check_mark: |
 
@@ -166,11 +165,11 @@ git commit --no-verify  # Only use for false positives, never for real secrets
 
 **Crypto Trading (crypto-enhanced):**
 
-- Kraken API keys in `projects/crypto-enhanced/.env`
+- Kraken API keys in `apps/crypto-enhanced/.env`
 - Require separate keys for read (monitoring) and write (trading)
 - Never use master API keys (generate sub-keys with limited permissions)
 
-**AI Services (nova-agent, deepcode-editor, digital-content-builder):**
+**AI Services (nova-agent, vibe-code-studio, shipping-pwa):**
 
 - DeepSeek API keys: `DEEPSEEK_API_KEY` in `.env`
 - OpenAI API keys: `OPENAI_API_KEY` in `.env`
@@ -216,19 +215,19 @@ For sensitive operations:
 - **Max Position Size:** $10 USD per trade (hardcoded safety limit)
 - **Max Total Exposure:** $10 USD (maximum 1 concurrent position)
 - **Trading Pair:** XLM/USD only (no unauthorized pairs)
-- **Account Balance:** ~$135 USD (verify with `python check_status.py`)
+- **Account Balance:** ~$135 USD (verify with `python scripts\check_status.py`)
 
 #### API Key Security
 
-- **Storage:** Stored in `projects/crypto-enhanced/.env` (never committed to git)
+- **Storage:** Stored in `apps/crypto-enhanced/.env` (never committed to git)
 - **Permissions:** Read-only keys recommended for monitoring, write-only for trading
 - **Rotation:** Rotate API keys every 90 days or if compromise suspected
 - **Environment:** Separate keys for development and production (never reuse)
 
 #### Monitoring Requirements
 
-- **Daily Health Checks:** Run `python check_status.py` to verify system health
-- **Weekly Performance:** Run `python performance_monitor.py weekly` for detailed metrics
+- **Daily Health Checks:** Run `python scripts\check_status.py` to verify system health
+- **Weekly Performance:** Run `python scripts\performance_monitor.py weekly` for detailed metrics
 - **Log Reviews:** Monitor `logs/trading.log` for errors and anomalies
 - **Pre-commit Validation:** Git hooks automatically check trading system health before commits
 
@@ -267,7 +266,7 @@ pkill -f start_live_trading.py  # Kill running process
 **Check Readiness:**
 
 ```bash
-python performance_monitor.py monthly  # Review 30-day validation report
+python scripts\performance_monitor.py monthly  # Review 30-day validation report
 ```
 
 **System Status Indicators:**
@@ -347,9 +346,11 @@ D:\
 
 ```powershell
 # Restrict database access to current user only
-icacls "D:\databases\trading.db" /inheritance:r
-icacls "D:\databases\trading.db" /grant:r "$env:USERNAME:(F)"
-icacls "D:\databases\trading.db" /remove "Users"
+$dbPath = (Select-String -Path apps\crypto-enhanced\.env -Pattern '^DB_PATH=' |
+    Select-Object -First 1).Line -replace '^DB_PATH=', ''
+icacls $dbPath /inheritance:r
+icacls $dbPath /grant:r "$env:USERNAME:(F)"
+icacls $dbPath /remove "Users"
 
 # Apply to all databases
 Get-ChildItem D:\databases\*.db | ForEach-Object {
@@ -362,7 +363,9 @@ Get-ChildItem D:\databases\*.db | ForEach-Object {
 **Verification:**
 
 ```powershell
-icacls "D:\databases\trading.db"  # Should show only your username with Full Control
+$dbPath = (Select-String -Path apps\crypto-enhanced\.env -Pattern '^DB_PATH=' |
+    Select-Object -First 1).Line -replace '^DB_PATH=', ''
+icacls $dbPath  # Should show only your username with Full Control
 ```
 
 #### Backup Strategy
@@ -379,7 +382,9 @@ icacls "D:\databases\trading.db"  # Should show only your username with Full Con
 
 ```powershell
 # Backup trading database
-Copy-Item "D:\databases\trading.db" "D:\databases\backups\trading_$(Get-Date -Format 'yyyyMMdd_HHmmss').db"
+$dbPath = (Select-String -Path apps\crypto-enhanced\.env -Pattern '^DB_PATH=' |
+    Select-Object -First 1).Line -replace '^DB_PATH=', ''
+Copy-Item $dbPath "D:\databases\backups\trading_$(Get-Date -Format 'yyyyMMdd_HHmmss').db"
 
 # Backup all databases
 Get-ChildItem D:\databases\*.db | ForEach-Object {
@@ -391,7 +396,9 @@ Get-ChildItem D:\databases\*.db | ForEach-Object {
 
 ```powershell
 # Restore from backup (stop application first!)
-Copy-Item "D:\databases\backups\trading_20251125.db" "D:\databases\trading.db" -Force
+$dbPath = (Select-String -Path apps\crypto-enhanced\.env -Pattern '^DB_PATH=' |
+    Select-Object -First 1).Line -replace '^DB_PATH=', ''
+Copy-Item "D:\databases\backups\trading_20251125.db" $dbPath -Force
 ```
 
 #### Encryption Considerations
@@ -431,7 +438,11 @@ Enable-BitLocker -MountPoint "D:" -EncryptionMethod Aes256 -UsedSpaceOnly
 
 ```typescript
 // Example: Secure database connection (TypeScript)
-const dbPath = process.env.DATABASE_PATH || 'D:\\databases\\database.db';
+const dbPath = process.env.DB_PATH || process.env.DATABASE_PATH;
+
+if (!dbPath) {
+  throw new Error('Database path must be provided by DB_PATH or DATABASE_PATH');
+}
 
 // Validate path is on D:\ drive
 if (!dbPath.startsWith('D:\\databases\\')) {
@@ -446,12 +457,14 @@ const db = new Database(dbPath, { readonly: true, fileMustExist: true });
 
 **Regular Validation:**
 
-```bash
+```powershell
 # SQLite integrity check
-sqlite3 D:\databases\trading.db "PRAGMA integrity_check;"
+$dbPath = (Select-String -Path apps\crypto-enhanced\.env -Pattern '^DB_PATH=' |
+    Select-Object -First 1).Line -replace '^DB_PATH=', ''
+sqlite3 $dbPath "PRAGMA integrity_check;"
 
 # Quick check (faster)
-sqlite3 D:\databases\trading.db "PRAGMA quick_check;"
+sqlite3 $dbPath "PRAGMA quick_check;"
 ```
 
 **Automated Monitoring:**
@@ -492,19 +505,21 @@ sqlite3 D:\databases\trading.db "PRAGMA quick_check;"
 
 **Migration Example:**
 
-```bash
+```powershell
 # 1. Backup
-cp D:\databases\trading.db D:\databases\backups\trading_pre_migration_$(date +%Y%m%d).db
+$dbPath = (Select-String -Path apps\crypto-enhanced\.env -Pattern '^DB_PATH=' |
+    Select-Object -First 1).Line -replace '^DB_PATH=', ''
+Copy-Item $dbPath "D:\databases\backups\trading_pre_migration_$(Get-Date -Format 'yyyyMMdd').db"
 
 # 2. Test on copy
-cp D:\databases\trading.db D:\databases\trading_test.db
+Copy-Item $dbPath D:\databases\trading_test.db
 sqlite3 D:\databases\trading_test.db < migration.sql
 
 # 3. Verify test
 sqlite3 D:\databases\trading_test.db "PRAGMA integrity_check;"
 
 # 4. Apply to production
-sqlite3 D:\databases\trading.db < migration.sql
+sqlite3 $dbPath < migration.sql
 ```
 
 #### Performance & Security Trade-offs
@@ -914,8 +929,8 @@ pnpm run crypto:test    # Crypto trading system tests
 
 **Trading System Monitoring:**
 
-- Daily automated health checks (`python check_status.py`)
-- Weekly performance reviews (`python performance_monitor.py weekly`)
+- Daily automated health checks (`python scripts\check_status.py`)
+- Weekly performance reviews (`python scripts\performance_monitor.py weekly`)
 - Real-time alerting on failed trades or errors
 - P&L tracking and anomaly detection
 

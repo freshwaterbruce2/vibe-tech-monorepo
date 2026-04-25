@@ -11,21 +11,22 @@ mod activity_monitor;
 mod context_engine;
 mod database;
 mod guidance_engine;
+mod http_server;
 mod modules;
 mod task_executor;
 mod websocket_client;
-mod http_server;
 
 use modules::{
-    db_handlers, execution, file_cleaner, filesystem, llm, memory, orchestrator, prediction_engine,
-    project, prompts, state::AgentState, state::AppState, state::Config, web, credentials, rag,
-    system_prompt, copilot, screenshot, scheduler, pattern_engine, calendar,
+    calendar, copilot, credentials, db_handlers, execution, file_cleaner, filesystem, llm, memory,
+    orchestrator, pattern_engine, prediction_engine, procedural_memory, project, prompts, rag,
+    scheduler, screenshot, state::AgentState, state::AppState, state::Config, system_prompt, web,
 };
 
 struct IpcSender(tokio::sync::mpsc::Sender<websocket_client::IpcMessage>);
 
 fn init_production_logging() -> Option<WorkerGuard> {
-    let log_dir = std::env::var("NOVA_LOG_DIR").unwrap_or_else(|_| "D:\\logs\\nova-agent".to_string());
+    let log_dir =
+        std::env::var("NOVA_LOG_DIR").unwrap_or_else(|_| "D:\\logs\\nova-agent".to_string());
     let log_dir_full = std::path::PathBuf::from(&log_dir);
 
     if !log_dir.to_uppercase().starts_with("D:\\") {
@@ -213,7 +214,9 @@ async fn main() {
     };
     let prediction_engine_state = Arc::new(std::sync::Mutex::new(prediction_engine));
     let guidance_engine_state = Arc::new(guidance_engine::GuidanceEngine::new());
-    let context_engine_state = Arc::new(std::sync::Mutex::new(context_engine::ContextEngine::new(config.workspace_root.clone())));
+    let context_engine_state = Arc::new(std::sync::Mutex::new(context_engine::ContextEngine::new(
+        config.workspace_root.clone(),
+    )));
 
     tauri::Builder::default()
         .manage(config.clone())
@@ -247,10 +250,8 @@ async fn main() {
             });
 
             // Start task executor background service
-            let executor = task_executor::TaskExecutor::new(
-                db_for_executor,
-                Arc::new(config.clone()),
-            );
+            let executor =
+                task_executor::TaskExecutor::new(db_for_executor, Arc::new(config.clone()));
             tauri::async_runtime::spawn(async move {
                 executor.start().await;
                 info!("Task executor started with approval-gated background processing");
@@ -265,7 +266,10 @@ async fn main() {
                             match &msg {
                                 websocket_client::IpcMessage::ActivitySync { payload } => {
                                     for activity in &payload.activities {
-                                        let _ = service.log_activity(&activity.activity_type, &activity.details);
+                                        let _ = service.log_activity(
+                                            &activity.activity_type,
+                                            &activity.details,
+                                        );
                                     }
                                 }
                                 websocket_client::IpcMessage::LearningSync { payload } => {
@@ -278,19 +282,29 @@ async fn main() {
                                     }
                                 }
                                 websocket_client::IpcMessage::TaskUpdate { payload } => {
-                                    let _ = service.log_activity("task_update", &format!("{}: {}", payload.task_id, payload.status));
+                                    let _ = service.log_activity(
+                                        "task_update",
+                                        &format!("{}: {}", payload.task_id, payload.status),
+                                    );
                                 }
                                 websocket_client::IpcMessage::FileOpen { payload } => {
                                     let _ = service.log_activity("file_open", &payload.path);
                                 }
                                 websocket_client::IpcMessage::GuidanceRequest { .. } => {
-                                    let _ = service.log_activity("guidance_request", "IPC guidance");
+                                    let _ =
+                                        service.log_activity("guidance_request", "IPC guidance");
                                 }
                                 websocket_client::IpcMessage::ContextUpdate { .. } => {
                                     let _ = service.log_activity("context_update", "IPC context");
                                 }
                                 websocket_client::IpcMessage::BridgeStatus { payload } => {
-                                    let _ = service.log_activity("bridge_status", &format!("client={} connected={}", payload.client_id, payload.connected));
+                                    let _ = service.log_activity(
+                                        "bridge_status",
+                                        &format!(
+                                            "client={} connected={}",
+                                            payload.client_id, payload.connected
+                                        ),
+                                    );
                                 }
                             }
                         }
@@ -332,6 +346,10 @@ async fn main() {
             memory::consolidate_memories,
             memory::prune_memories,
             memory::get_memory_overview,
+            // Procedural Memory
+            procedural_memory::recall_procedural,
+            procedural_memory::record_procedural,
+            procedural_memory::count_procedural_patterns,
             // Project
             project::create_project,
             project::get_available_templates,

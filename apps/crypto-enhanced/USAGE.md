@@ -1,8 +1,19 @@
 # Crypto Enhanced Trading System - Usage Guide
 
+Agent workflows are observation-only for live trading. Do not start, restart,
+or auto-confirm the bot from an automated assistant session.
+
 ## 🚀 QUICK START
 
-### 1. Launch Trading Bot (Recommended Method)
+### 1. Check Runtime Status
+
+```powershell
+python kraken_status.py
+python scripts\check_status.py
+python scripts\performance_monitor.py monthly
+```
+
+### 2. Launch Trading Bot (Human Operator Only)
 
 ```powershell
 .\launch_trading.ps1
@@ -16,7 +27,7 @@ This script will:
 - Launch single instance with lock enforcement
 - Verify successful startup
 
-### 2. Stop Trading Bot
+### 3. Stop Trading Bot
 
 ```powershell
 .\stop_trading.ps1
@@ -30,7 +41,7 @@ This script will:
 - Remove lock files
 - Show final status
 
-### 3. Monitor Trading Bot Health
+### 4. Monitor Trading Bot Health
 
 ```powershell
 # Single health check
@@ -52,11 +63,11 @@ This script will:
 
 ```powershell
 # ❌ WRONG - Can create duplicates
-python start_live_trading.py
-echo YES | python start_live_trading.py
+# python start_live_trading.py
+# echo YES | python start_live_trading.py
 ```
 
-**ALWAYS use the launcher:**
+**Human operators use the guarded launcher after reviewing runtime state:**
 
 ```powershell
 # ✅ CORRECT - Prevents duplicates
@@ -230,7 +241,7 @@ Get-Content .env | Select-String "NONCE_WINDOW"
 ### Quick Daily Dashboard
 
 ```bash
-python check_status.py
+python scripts\check_status.py
 ```
 
 **Shows:**
@@ -246,16 +257,16 @@ python check_status.py
 
 ```bash
 # Last 24 hours
-python performance_monitor.py daily
+python scripts\performance_monitor.py daily
 
 # Last 7 days
-python performance_monitor.py weekly
+python scripts\performance_monitor.py weekly
 
 # Last 30 days (validation report)
-python performance_monitor.py monthly
+python scripts\performance_monitor.py monthly
 
 # Save daily snapshot to JSON
-python performance_monitor.py snapshot
+python scripts\performance_monitor.py snapshot
 ```
 
 ### Setup Automated Monitoring (One-Time Setup)

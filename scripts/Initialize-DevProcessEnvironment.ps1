@@ -51,6 +51,10 @@ function Initialize-DevProcessEnvironment {
         $env:WINDIR = $env:SystemRoot
     }
 
+    if ([string]::IsNullOrWhiteSpace($env:SystemDrive)) {
+        $env:SystemDrive = Split-Path -Qualifier $env:SystemRoot
+    }
+
     if ([string]::IsNullOrWhiteSpace($env:ComSpec)) {
         $env:ComSpec = Join-Path $env:SystemRoot 'System32\cmd.exe'
     }
@@ -62,6 +66,11 @@ function Initialize-DevProcessEnvironment {
     if ([string]::IsNullOrWhiteSpace($env:PROCESSOR_ARCHITECTURE)) {
         $env:PROCESSOR_ARCHITECTURE = 'AMD64'
     }
+
+    # Avoid MSVC/Visual Studio telemetry helpers in headless build shells. On this
+    # machine vctip.exe can crash with a .NET application-error dialog during Rust builds.
+    $env:VSCMD_SKIP_SENDTELEMETRY = '1'
+    $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 
     Add-PathEntry (Join-Path $env:SystemRoot 'System32')
     Add-PathEntry (Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0')

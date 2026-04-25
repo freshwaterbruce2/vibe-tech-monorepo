@@ -9,7 +9,7 @@
 git add .
 git commit -m "feat: production-ready shipping PWA with voice commands"
 git branch -M main
-git remote add origin https://github.com/freshwaterbruce2/Monorepo.git
+git remote add origin https://github.com/freshwaterbruce2/vibe-tech-monorepo.git
 git push -u origin main
 ```
 
@@ -19,7 +19,7 @@ git push -u origin main
 2. Click "Add new site" → "Import an existing project"
 3. Connect your Git repository
 4. Settings auto-detected from `netlify.toml`:
-   - Build command: `npm run build`
+   - Build command: `pnpm nx build shipping-pwa`
    - Publish directory: `dist`
 5. Click "Deploy site"
 
@@ -68,9 +68,10 @@ vercel
 
 ```powershell
 # Ensure clean build before deployment
-npm run typecheck    # ✅ No TypeScript errors
-npm run build       # ✅ Builds successfully
-npm run preview     # Test locally on http://localhost:4173
+pnpm nx run shipping-pwa:typecheck
+pnpm nx run shipping-pwa:build
+cd C:\dev\apps\shipping-pwa
+pnpm run preview     # Test locally on http://localhost:4173
 ```
 
 ## Mobile App Distribution
@@ -78,7 +79,10 @@ npm run preview     # Test locally on http://localhost:4173
 ### Android (Google Play)
 
 ```powershell
-npm run build && npx cap sync android && npx cap open android
+cd C:\dev
+pnpm nx run shipping-pwa:build-mobile
+cd C:\dev\apps\shipping-pwa
+pnpm exec cap open android
 # Build signed APK/AAB in Android Studio
 # Upload to Google Play Console
 ```
@@ -86,7 +90,10 @@ npm run build && npx cap sync android && npx cap open android
 ### iOS (App Store)
 
 ```powershell
-npm run build && npx cap sync ios && npx cap open ios
+cd C:\dev
+pnpm nx run shipping-pwa:build-mobile
+cd C:\dev\apps\shipping-pwa
+pnpm exec cap open ios
 # Build archive in Xcode
 # Upload to App Store Connect
 ```

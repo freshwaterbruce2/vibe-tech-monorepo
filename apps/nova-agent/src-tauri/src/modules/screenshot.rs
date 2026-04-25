@@ -162,8 +162,8 @@ pub async fn list_screenshots() -> Result<Vec<ScreenshotFileInfo>, String> {
         let path = entry.path();
 
         if path.extension().and_then(|s| s.to_str()) == Some("png") {
-            let metadata = fs::metadata(&path)
-                .map_err(|e| format!("Failed to read file metadata: {}", e))?;
+            let metadata =
+                fs::metadata(&path).map_err(|e| format!("Failed to read file metadata: {}", e))?;
 
             let modified = metadata
                 .modified()

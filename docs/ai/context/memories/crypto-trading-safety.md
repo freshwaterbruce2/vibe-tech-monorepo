@@ -15,10 +15,10 @@ This system trades with REAL MONEY
 
 ## Safety Rules (MANDATORY)
 
-1. **ALWAYS require explicit YES confirmation**
-   - Never start live trading without user typing "YES"
-   - Use: `python start_live_trading.py` (prompts for YES)
-   - Emergency bypass: `echo YES | python start_live_trading.py`
+1. **Agents are observation-only**
+   - Do not start live trading, place orders, or bypass confirmations.
+   - Use read-only status, logs, and database checks for diagnostics.
+   - A human operator must handle any live buy, sell, or trade action outside agent automation.
 
 2. **Risk Parameters (DO NOT MODIFY WITHOUT APPROVAL)**
    - MAX_POSITION_SIZE: $10.00 (max per trade)
@@ -41,26 +41,31 @@ This system trades with REAL MONEY
 ## Critical Files
 
 - apps/crypto-enhanced/config.py - Risk parameters
-- D:\databases\trading.db - Trade history and positions
+- Resolve the runtime database from `apps/crypto-enhanced\.env` / `DB_PATH`
+  before querying. On this machine it has pointed at
+  `D:\databases\crypto-enhanced\trading.db`.
 - D:\logs\trading.log - System logs
 - apps/crypto-enhanced/nonce_state_primary.json - API sync
 
 ## Database Location
 
-MUST use D:\databases\trading.db (NEVER in C:\dev)
+Resolve the runtime database from `apps/crypto-enhanced\.env` / `DB_PATH`
+before querying. On this machine it has pointed at
+`D:\databases\crypto-enhanced\trading.db`. Never store trading databases under
+`C:\dev`.
 
 Example:
 
 ```python
-DB_PATH = Path(os.getenv('DATABASE_PATH', r'D:\databases\trading.db'))
+DB_PATH = Path(os.getenv('DB_PATH') or os.getenv('DATABASE_PATH') or r'D:\databases\crypto-enhanced\trading.db')
 ```
 
 ## Common Commands
 
 ```bash
-python check_status.py              # Daily dashboard
-python performance_monitor.py       # 30-day validation
-python start_live_trading.py        # Start trading (requires YES)
+python kraken_status.py             # Read-only Kraken account status
+python scripts/check_status.py      # Daily dashboard
+python scripts/performance_monitor.py monthly  # 30-day validation
 docker-compose logs -f              # Follow logs (Docker)
 ```
 

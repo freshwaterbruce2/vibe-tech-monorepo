@@ -3,6 +3,11 @@
 **Date**: 2026-02-12
 **Status**: IN PROGRESS
 
+> Current reality note (2026-04-25): do not run the archive steps in this guide
+> as written. `D:\learning-system\learning_engine.py` and
+> `D:\databases\agent_learning.db` are active surfaces. Check
+> `D:\databases\DB_INVENTORY.md` before moving Python files or databases.
+
 ---
 
 ## Current Status Summary

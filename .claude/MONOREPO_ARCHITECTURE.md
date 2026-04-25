@@ -1,5 +1,9 @@
 # Monorepo Architecture Overview
 
+> Current routing note (2026-04-25): this file is a historical snapshot. Use
+> `AGENTS.md`, `WORKSPACE.json`, `pnpm-workspace.yaml`, and each `project.json`
+> for current paths and commands. Agents are observation-only for crypto trading.
+
 ## 🏗️ High-Level Structure
 
 This is a **multi-domain monorepo** managed with pnpm workspaces and Nx, containing:
@@ -49,9 +53,9 @@ C:\dev\
 ### Technology Stack
 
 ```typescript
-├── React 19.2.0           # UI framework
-├── TypeScript 5.7+        # Type safety
-├── Vite 7.0              # Build tool & dev server
+├── React 19.2.4           # UI framework
+├── TypeScript 5.9.3       # Type safety
+├── Vite 7.3.1             # Build tool & dev server
 ├── shadcn/ui             # Component library (Radix UI primitives)
 ├── Tailwind CSS          # Styling
 ├── React Query           # Server state management
@@ -102,7 +106,7 @@ src/
 
 ```powershell
 pnpm run dev              # Dev server (localhost:5173)
-pnpm run build            # Production build
+pnpm nx build <project>   # Project production build
 pnpm run quality          # Lint + typecheck + test + build
 pnpm run test:unit        # Vitest unit tests
 pnpm run test                 # Playwright E2E tests
@@ -110,7 +114,7 @@ pnpm run test                 # Playwright E2E tests
 
 ## 🤖 2. Crypto Trading Bot (⚠️ LIVE SYSTEM)
 
-**Location**: `projects/crypto-enhanced/`
+**Location**: `apps/crypto-enhanced/`
 **Purpose**: Automated cryptocurrency trading on Kraken Exchange
 **Status**: **ACTIVELY TRADING WITH REAL MONEY**
 
@@ -209,16 +213,16 @@ CREATE TABLE trades (
 ### Commands
 
 ```powershell
-cd projects\crypto-enhanced
+cd apps\crypto-enhanced
 .venv\Scripts\activate       # Must activate venv first
 
 # Safe operations
-python simple_status.py      # Check bot status
+python scripts\check_status.py      # Check bot status
 python run_tests.py          # Run test suite
 sqlite3 trading.db "SELECT * FROM trades LIMIT 5;"  # Query DB
 
-# Live trading (CAUTION)
-python start_live_trading.py  # Interactive confirmation
+# Live trading is human-operator-only
+# python start_live_trading.py  # Interactive confirmation
 .\stop_trading.ps1           # Emergency stop
 
 # Logs
@@ -282,7 +286,7 @@ cd backend
 pnpm install              # Install dependencies
 pnpm run dev             # Start with nodemon (hot reload)
 pnpm run build           # Compile TypeScript
-npm start               # Run compiled code
+pnpm run start           # Run compiled code
 ```
 
 ## 📊 4. Data Pipeline
@@ -418,7 +422,7 @@ Data Pipeline
 .env                    # Supabase keys (root)
 .env.development        # Dev-specific config
 .env.production         # Production config
-projects/crypto-enhanced/.env  # ⚠️ Kraken API keys
+apps/crypto-enhanced/.env  # ⚠️ Kraken API keys
 backend/.env            # Backend secrets
 ```
 
@@ -432,7 +436,7 @@ VITE_SUPABASE_ANON_KEY=xxx
 # Trading bot .env (Kraken)
 KRAKEN_API_KEY=xxx        # ⚠️ NEVER commit
 KRAKEN_API_SECRET=xxx     # ⚠️ NEVER commit
-DATABASE_PATH=trading.db
+DB_PATH=D:\databases\crypto-enhanced\trading.db
 ```
 
 ## 📈 Performance Considerations
@@ -489,7 +493,7 @@ Backend: 85%+
 ### Web App
 
 - **Platforms**: Netlify, Vercel
-- **Build Command**: `pnpm run build:production`
+- **Build Command**: `pnpm run build:production` for the root Vite app, or `pnpm nx build <project>` for a workspace project
 - **Output**: `dist/` directory
 - **Config**: `netlify.toml`, `vercel.json`
 
@@ -511,15 +515,15 @@ Backend: 85%+
 
 ```powershell
 # Logs
-Get-Content projects\crypto-enhanced\trading_new.log -Tail 50 -Wait
+Get-Content apps\crypto-enhanced\trading_new.log -Tail 50 -Wait
 
 # Database queries
-sqlite3 projects\crypto-enhanced\trading.db
+sqlite3 apps\crypto-enhanced\trading.db
 
 # Health checks
-cd projects\crypto-enhanced
+cd apps\crypto-enhanced
 .venv\Scripts\activate
-python simple_status.py
+python scripts\check_status.py
 ```
 
 ### Web App

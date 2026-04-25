@@ -20,7 +20,7 @@
 ❌ `pnpm build` from repo root (ambiguous)
 ❌ Skipping `pnpm install` after git pull
 ❌ Ignoring NX cache issues
-✅ `cd apps/[name] && pnpm build`
+✅ `pnpm nx build <project>` from the repo root
 ✅ Run `pnpm install` first
 ✅ `npx nx reset` if cache problems
 
@@ -29,7 +29,7 @@
 ❌ Codeberg references (we use GitHub)
 ❌ Committing node_modules
 ❌ Large binary files in repo
-✅ GitHub: github.com/freshwaterbruce2/Monorepo
+✅ GitHub: github.com/freshwaterbruce2/vibe-tech-monorepo
 ✅ Use .gitignore properly
 
 ## AI Agent Behavior

@@ -1,5 +1,5 @@
-use scraper::{Html, Selector};
 use reqwest::{self, redirect::Policy};
+use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use tracing::{debug, info};
@@ -36,9 +36,7 @@ pub async fn web_search(query: String) -> Result<Vec<WebSearchResult>, String> {
 
     let mut endpoint = reqwest::Url::parse("https://html.duckduckgo.com/html/")
         .map_err(|e| format!("Failed to parse search URL: {}", e))?;
-    endpoint
-        .query_pairs_mut()
-        .append_pair("q", query);
+    endpoint.query_pairs_mut().append_pair("q", query);
 
     let response = client
         .get(endpoint)

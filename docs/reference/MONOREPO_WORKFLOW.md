@@ -1,12 +1,12 @@
 # Monorepo Git Workflow - C:\dev
 
-**2025 Best Practice: Incremental Merging for Nx + pnpm Monorepos**
+**2026 Best Practice: Incremental Merging for Nx + pnpm Monorepos**
 
 ## 📦 Monorepo Structure
 
 **C:\dev = ONE REPOSITORY with ALL projects inside**
 
-- **Repository**: `https://github.com/freshwaterbruce2/Monorepo.git`
+- **Repository**: `https://github.com/freshwaterbruce2/vibe-tech-monorepo.git`
 - **Strategy**: Monorepo (Google, Meta, Microsoft approach)
 - **Projects**: Web apps, desktop apps, mobile apps, Python services, shared packages
 - **Benefits**: Code sharing, unified tooling, Nx caching, atomic commits
@@ -108,8 +108,8 @@ Commit 21-30: Merge → 1-2 conflicts ✅
 
 ```bash
 # After each merge, Nx can accurately detect what changed
-pnpm nx affected:build
-pnpm nx affected:test
+pnpm nx affected -t build
+pnpm nx affected -t test
 ```
 
 ### 2. Smaller CI/CD Runs
@@ -191,9 +191,9 @@ chore(scope): update dependencies
 
 ```bash
 # Run quality checks on affected projects
-pnpm nx affected:lint
-pnpm nx affected:test
-pnpm nx affected:build
+pnpm nx affected -t lint
+pnpm nx affected -t test
+pnpm nx affected -t build
 ```
 
 ### After Each Merge
@@ -286,4 +286,5 @@ Set-Alias commits Show-CommitsAhead
 
 ## Last Updated
 
-2025-10-26 - Initial workflow documentation based on 2026 best practices
+2026-04-24 - Updated repository remote and current-year framing.
+2025-10-26 - Initial workflow documentation based on 2026 best practices.

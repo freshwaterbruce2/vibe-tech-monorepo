@@ -17,6 +17,6 @@ node apps/mcp-codeberg/dist/index.js  # run as MCP server
 
 ## Notes
 - **DEPRECATED** — description in package.json explicitly states this
-- Repo migrated to GitHub (`github.com/freshwaterbruce2/Monorepo`)
+- Repo migrated to GitHub (`github.com/freshwaterbruce2/vibe-tech-monorepo`)
 - Do not add new features; consider removing or replacing with `mcp-codeberg` → GitHub MCP
 - MCP config entry in `.mcp.json` uses `node apps/mcp-codeberg/dist/index.js`

@@ -1,12 +1,12 @@
-use crate::database::{DatabaseService, types::Task};
-use crate::modules::{llm, prompts};
+use crate::database::{types::Task, DatabaseService};
 use crate::modules::state::Config;
+use crate::modules::{llm, procedural_memory, prompts};
 use serde::Deserialize;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex as AsyncMutex;
 use tokio::time::sleep;
-use tracing::{info, warn, error, debug};
+use tracing::{debug, error, info, warn};
 
 const MAX_EXECUTION_DURATION_MINUTES: u64 = 240;
 
@@ -47,10 +47,7 @@ pub struct TaskExecutor {
 }
 
 impl TaskExecutor {
-    pub fn new(
-        db: Arc<AsyncMutex<Option<DatabaseService>>>,
-        config: Arc<Config>,
-    ) -> Self {
+    pub fn new(db: Arc<AsyncMutex<Option<DatabaseService>>>, config: Arc<Config>) -> Self {
         Self {
             db,
             config,
@@ -114,12 +111,14 @@ impl TaskExecutor {
         let service = db_guard.as_ref().ok_or("Database not available")?;
 
         // Get pending tasks (status = "pending" or "ready")
-        let tasks = service.get_tasks(Some("pending"), Some(5))
+        let tasks = service
+            .get_tasks(Some("pending"), Some(5))
             .map_err(|e| format!("Failed to fetch tasks: {}", e))?;
 
         if tasks.is_empty() {
             // Also check for "ready" status
-            let ready_tasks = service.get_tasks(Some("ready"), Some(5))
+            let ready_tasks = service
+                .get_tasks(Some("ready"), Some(5))
                 .map_err(|e| format!("Failed to fetch ready tasks: {}", e))?;
 
             if ready_tasks.is_empty() {
@@ -162,7 +161,10 @@ impl TaskExecutor {
             .description
             .clone()
             .unwrap_or_else(|| "No description provided".to_string());
-        let risk = metadata.risk.clone().unwrap_or_else(|| "medium".to_string());
+        let risk = metadata
+            .risk
+            .clone()
+            .unwrap_or_else(|| "medium".to_string());
         let auto_execute = metadata.auto_execute.unwrap_or(false);
         let requires_approval = metadata.requires_approval.unwrap_or(false);
         let approved_for_execution = metadata.approved_for_execution.unwrap_or(false);
@@ -196,8 +198,14 @@ impl TaskExecutor {
         let review_target_path = metadata.review_target_path.clone().unwrap_or_default();
         let review_artifact_path = metadata.review_artifact_path.clone();
         let review_evidence_count = metadata.review_evidence_count.unwrap_or(0);
-        let reviewed_at = metadata.reviewed_at.clone().unwrap_or_else(|| "unknown".to_string());
-        let review_version = metadata.review_version.clone().unwrap_or_else(|| "unknown".to_string());
+        let reviewed_at = metadata
+            .reviewed_at
+            .clone()
+            .unwrap_or_else(|| "unknown".to_string());
+        let review_version = metadata
+            .review_version
+            .clone()
+            .unwrap_or_else(|| "unknown".to_string());
 
         let review_gate_error = if !review_completed {
             Some(format!(
@@ -233,7 +241,9 @@ impl TaskExecutor {
                             "Task {} is blocked: review target mismatch. Metadata points to {}, artifact points to {}.",
                             task.id, review_target_path, review.reviewed_path
                         ))
-                    } else if review_evidence_count > 0 && review.evidence_count < review_evidence_count as usize {
+                    } else if review_evidence_count > 0
+                        && review.evidence_count < review_evidence_count as usize
+                    {
                         Some(format!(
                             "Task {} is blocked: review evidence count regressed from {} to {}.",
                             task.id, review_evidence_count, review.evidence_count
@@ -265,10 +275,22 @@ impl TaskExecutor {
         {
             let db_guard = db.lock().await;
             if let Some(service) = db_guard.as_ref() {
-                service.update_task_status(&task.id, "in_progress")
+                service
+                    .update_task_status(&task.id, "in_progress")
                     .map_err(|e| format!("Failed to update task status: {}", e))?;
             }
         }
+
+        // Recall similar past procedural patterns to inject as hints.
+        // Best-effort — never blocks the task on lookup failures.
+        let recall_patterns = procedural_memory::recall_for_task(
+            db,
+            &task.title,
+            &description,
+            procedural_memory::DEFAULT_RECALL_LIMIT,
+        )
+        .await;
+        let procedural_hints = procedural_memory::format_recall_for_prompt(&recall_patterns);
 
         // Build execution prompt
         let execution_prompt = format!(
@@ -323,13 +345,18 @@ impl TaskExecutor {
             reviewed_at,
             review_evidence_count,
         );
+        let execution_prompt = if procedural_hints.is_empty() {
+            execution_prompt
+        } else {
+            format!("{}{}", execution_prompt, procedural_hints)
+        };
 
         // Load system prompt for task execution
         let system_prompt = prompts::require_system_prompt("nova-core-v1");
 
         // Execute task using LLM with tool calling
-        let task_model = std::env::var("NOVA_DEFAULT_MODEL")
-            .unwrap_or_else(|_| "kimi-k2.5".to_string());
+        let task_model =
+            std::env::var("NOVA_DEFAULT_MODEL").unwrap_or_else(|_| "kimi-k2.5".to_string());
 
         match tokio::time::timeout(
             Duration::from_secs(max_duration_minutes * 60),
@@ -351,46 +378,71 @@ impl TaskExecutor {
                 // Update status to completed
                 let db_guard = db.lock().await;
                 if let Some(service) = db_guard.as_ref() {
-                    service.update_task_status(&task.id, "completed")
+                    service
+                        .update_task_status(&task.id, "completed")
                         .map_err(|e| format!("Failed to update task status: {}", e))?;
 
                     // Log completion to activity
                     let _ = service.log_activity(
                         "Task Completed",
-                        &format!("Task '{}' completed successfully", task.title)
+                        &format!("Task '{}' completed successfully", task.title),
                     );
 
                     // Log to learning system for pattern analysis
                     let _ = service.log_learning_event(
                         "autonomous_task_success",
                         &format!("Task: {} | Project: {}", task.title, project_path),
-                        &format!("Task completed successfully. Result length: {} chars", result.len())
+                        &format!(
+                            "Task completed successfully. Result length: {} chars",
+                            result.len()
+                        ),
                     );
                 }
+                drop(db_guard);
+                procedural_memory::record_task_outcome(
+                    db,
+                    &task.title,
+                    &description,
+                    &project_path,
+                    true,
+                    Some(&task_model),
+                )
+                .await;
                 Ok(())
-            },
+            }
             Ok(Err(e)) => {
                 error!("❌ Task failed: {} - Error: {}", task.id, e);
 
                 // Update status to failed
                 let db_guard = db.lock().await;
                 if let Some(service) = db_guard.as_ref() {
-                    service.update_task_status(&task.id, "failed")
+                    service
+                        .update_task_status(&task.id, "failed")
                         .map_err(|e| format!("Failed to update task status: {}", e))?;
 
                     // Log failure to activity
                     let _ = service.log_activity(
                         "Task Failed",
-                        &format!("Task '{}' failed: {}", task.title, e)
+                        &format!("Task '{}' failed: {}", task.title, e),
                     );
 
                     // Log to learning system for failure analysis
                     let _ = service.log_learning_event(
                         "autonomous_task_failure",
                         &format!("Task: {} | Project: {}", task.title, project_path),
-                        &format!("Task failed with error: {}", e)
+                        &format!("Task failed with error: {}", e),
                     );
                 }
+                drop(db_guard);
+                procedural_memory::record_task_outcome(
+                    db,
+                    &task.title,
+                    &description,
+                    &project_path,
+                    false,
+                    Some(&task_model),
+                )
+                .await;
                 Err(format!("Task execution failed: {}", e))
             }
             Err(_) => {
@@ -398,14 +450,31 @@ impl TaskExecutor {
 
                 let db_guard = db.lock().await;
                 if let Some(service) = db_guard.as_ref() {
-                    service.update_task_status(&task.id, "timed_out")
+                    service
+                        .update_task_status(&task.id, "timed_out")
                         .map_err(|e| format!("Failed to update task status: {}", e))?;
                     let _ = service.log_activity(
                         "Task Timed Out",
-                        &format!("Task '{}' exceeded {} minutes", task.title, max_duration_minutes)
+                        &format!(
+                            "Task '{}' exceeded {} minutes",
+                            task.title, max_duration_minutes
+                        ),
                     );
                 }
-                Err(format!("Task execution exceeded {} minutes", max_duration_minutes))
+                drop(db_guard);
+                procedural_memory::record_task_outcome(
+                    db,
+                    &task.title,
+                    &description,
+                    &project_path,
+                    false,
+                    Some(&task_model),
+                )
+                .await;
+                Err(format!(
+                    "Task execution exceeded {} minutes",
+                    max_duration_minutes
+                ))
             }
         }
     }

@@ -464,14 +464,18 @@ impl DeepCodeClient {
     async fn send_auth_message(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let session_id = format!("session-{}", uuid::Uuid::new_v4());
 
-        let auth_msg = self.token_manager
+        let auth_msg = self
+            .token_manager
             .create_auth_message(&self.client_id, &session_id)
             .map_err(|e| format!("Failed to create auth message: {}", e))?;
 
         if let Some(tx) = &mut self.tx {
             let json_str = serde_json::to_string(&auth_msg)?;
             tx.send(Message::Text(json_str)).await?;
-            info!("Sent JWT authentication message for client {}", self.client_id);
+            info!(
+                "Sent JWT authentication message for client {}",
+                self.client_id
+            );
         }
 
         Ok(())

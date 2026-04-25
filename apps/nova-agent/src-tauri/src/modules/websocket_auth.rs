@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+use anyhow::{Context, Result};
 /// WebSocket JWT Authentication Module (2026 Security Best Practice)
 ///
 /// Implements token-based authentication for WebSocket IPC following 2026 standards:
@@ -13,7 +14,6 @@
 use chrono::{Duration, Utc};
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
-use anyhow::{Context, Result};
 use tracing::{debug, info, warn};
 
 /// JWT claims structure for WebSocket authentication
@@ -63,7 +63,11 @@ pub enum AuthMessage {
     RefreshToken { refresh_token: String },
 
     #[serde(rename = "auth:response")]
-    Response { success: bool, message: String, new_token: Option<String> },
+    Response {
+        success: bool,
+        message: String,
+        new_token: Option<String>,
+    },
 }
 
 /// JWT token manager for WebSocket authentication
@@ -87,7 +91,7 @@ impl TokenManager {
     pub fn new() -> Self {
         Self::with_config(
             Self::generate_secret_key(),
-            Duration::hours(1),  // 1-hour validity (2026 best practice)
+            Duration::hours(1), // 1-hour validity (2026 best practice)
             "vibe-code-studio".to_string(),
         )
     }
@@ -146,7 +150,11 @@ impl TokenManager {
         )
         .context("Failed to generate JWT token")?;
 
-        debug!("Generated JWT token for client {} (expires in {} hours)", client_id, self.token_validity.num_hours());
+        debug!(
+            "Generated JWT token for client {} (expires in {} hours)",
+            client_id,
+            self.token_validity.num_hours()
+        );
         Ok(token)
     }
 
@@ -162,7 +170,7 @@ impl TokenManager {
     /// # Server-Side Usage
     /// This method is used on the server side (Vibe Code Studio) to validate
     /// incoming authentication messages from clients.
-    #[allow(dead_code)]  // Used server-side
+    #[allow(dead_code)] // Used server-side
     pub fn validate_token(&self, token: &str) -> Result<WebSocketClaims> {
         let mut validation = Validation::default();
         validation.set_audience(&[&self.audience]);
@@ -184,7 +192,7 @@ impl TokenManager {
     /// - Client checks token expiration before sending messages
     /// - If expires in < 10 minutes, request new token
     /// - Server issues new token via `auth:response` message
-    #[allow(dead_code)]  // Used for token refresh mechanism
+    #[allow(dead_code)] // Used for token refresh mechanism
     pub fn needs_refresh(&self, claims: &WebSocketClaims) -> bool {
         let now = Utc::now().timestamp() as usize;
         let time_until_expiry = claims.exp.saturating_sub(now);
@@ -213,8 +221,12 @@ impl TokenManager {
     }
 
     /// Create authentication response message (server-side)
-    #[allow(dead_code)]  // Used server-side
-    pub fn create_auth_response(success: bool, message: String, new_token: Option<String>) -> AuthMessage {
+    #[allow(dead_code)] // Used server-side
+    pub fn create_auth_response(
+        success: bool,
+        message: String,
+        new_token: Option<String>,
+    ) -> AuthMessage {
         AuthMessage::Response {
             success,
             message,
@@ -233,7 +245,7 @@ impl Default for TokenManager {
 ///
 /// Tracks authentication status per WebSocket connection
 #[derive(Debug, Clone)]
-#[allow(dead_code)]  // Reserved for future server-side validation
+#[allow(dead_code)] // Reserved for future server-side validation
 pub struct AuthState {
     pub authenticated: bool,
     pub client_id: Option<String>,
@@ -264,7 +276,7 @@ impl AuthState {
             let now = Utc::now().timestamp() as usize;
             now >= exp
         } else {
-            true  // No token = expired
+            true // No token = expired
         }
     }
 
@@ -324,7 +336,7 @@ mod tests {
     fn test_needs_refresh() {
         let manager = TokenManager::with_config(
             TokenManager::generate_secret_key(),
-            Duration::minutes(5),  // 5-minute token
+            Duration::minutes(5), // 5-minute token
             "test".to_string(),
         );
 

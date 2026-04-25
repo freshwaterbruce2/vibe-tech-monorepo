@@ -1,8 +1,8 @@
-# AGENTS.md - Nova Agent V1.0.0
+# AGENTS.md - Nova Agent
 
 > **Location:** `C:\dev\apps\nova-agent`
-> **Status:** Production Ready (V1.0.0)
-> **Knowledge Base:** `D:\databases\agent_learning.db` (400+ items)
+> **Status:** Active desktop app (`package.json` version 1.3.0)
+> **Knowledge Base:** `D:\databases\agent_learning.db`
 > **Identity:** Single-user (Bruce), Local-First, Persistent Context
 
 ---
@@ -60,13 +60,15 @@ D:\databases\             = STATE & MEMORY (Persistent)
 
 ```powershell
 # Run Dev
-pnpm tauri dev
+pnpm nx run nova-agent:dev
 
 # Build Release
-pnpm tauri build
+pnpm nx run nova-agent:build
 
-# Verify Health
-npm run health-check
+# Verify
+pnpm nx run nova-agent:test
+pnpm nx run nova-agent:test:rust
+pnpm nx run nova-agent:check:rust
 ```
 
 ---

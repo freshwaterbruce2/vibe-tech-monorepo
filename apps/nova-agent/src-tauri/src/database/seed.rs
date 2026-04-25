@@ -296,7 +296,8 @@ impl DatabaseService {
         self.create_focus_state_table()?;
         self.create_deep_work_sessions_table()?;
         self.create_learning_table()?;
-        
+        self.create_procedural_table()?;
+
         // Initialize memory tables (uses DatabaseError, convert to rusqlite error)
         if let Err(e) = self.init_memory_tables() {
             tracing::error!("Failed to initialize memory tables: {:?}", e);

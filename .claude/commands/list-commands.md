@@ -23,7 +23,7 @@ All custom slash commands for the C:\dev monorepo.
 |---------|-------------|
 | `/web:quality-check [fix]` | Full pipeline: lint + typecheck + build |
 | `/web:component-create <name> [category]` | Generate React component with TypeScript + shadcn/ui |
-| `/web:restart-server` | Restart the digital-content-builder Electron dev server |
+| `/web:restart-server` | Restart a selected workspace web dev server |
 | `/web:test-all` | Run all test suites |
 
 ## Nx Monorepo
@@ -47,13 +47,6 @@ All custom slash commands for the C:\dev monorepo.
 | `/crypto:position-check` | Analyze positions with risk metrics |
 | `/crypto:trading-status` | Check positions, orders, and health |
 | `/crypto:restart` | Safely restart the trading system |
-
-## Mobile (Vibe-Tutor / Capacitor)
-
-| Command | Description |
-|---------|-------------|
-| `/mobile:build-android [debug\|release]` | Build Android APK |
-| `/mobile:sync-capacitor [android\|ios\|both]` | Sync web assets to native |
 
 ## Development Utilities
 
@@ -136,7 +129,7 @@ All custom slash commands for the C:\dev monorepo.
 /explore why does nova-agent RAG return stale results
 
 # Fix a GitHub issue end-to-end
-/fix-bug https://github.com/freshwaterbruce2/Monorepo/issues/123
+/fix-bug https://github.com/freshwaterbruce2/vibe-tech-monorepo/issues/123
 
 # Fix lint errors in a specific project
 /fix-lint vibe-tutor

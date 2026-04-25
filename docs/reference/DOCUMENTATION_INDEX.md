@@ -278,7 +278,7 @@ Get-ChildItem C:\dev\apps -Recurse -Filter "PROJECT_GUIDE.md" | Select-Object Fu
 
 Projects that could still use guides:
 
-- digital-content-builder
+- shipping-pwa
 - iconforge
 - memory-bank
 - nova-mobile-app

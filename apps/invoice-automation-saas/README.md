@@ -1,9 +1,9 @@
 # InvoiceFlow - Modern Invoice Automation SaaS
 
 <p align="center">
-  <img src="https://img.shields.io/badge/React-18.0-blue" alt="React">
-  <img src="https://img.shields.io/badge/TypeScript-5.0-blue" alt="TypeScript">
-  <img src="https://img.shields.io/badge/Vite-5.0-purple" alt="Vite">
+  <img src="https://img.shields.io/badge/React-19.2-blue" alt="React">
+  <img src="https://img.shields.io/badge/TypeScript-5.9-blue" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Vite-7.3-purple" alt="Vite">
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License">
 </p>
 
@@ -38,8 +38,8 @@ A powerful invoice automation platform that helps businesses get paid 3x faster 
 
 ### Prerequisites
 
-- Node.js 18+
-- npm or yarn
+- Node.js 22+
+- pnpm 10.33+
 - SQLite database file on `D:\` (configured via `DATABASE_PATH`)
 - Stripe account (optional)
 - Sentry account (optional)
@@ -48,20 +48,20 @@ A powerful invoice automation platform that helps businesses get paid 3x faster 
 
 1. Clone the repository:
 
-```bash
-git clone https://github.com/yourusername/invoice-saas.git
-cd invoice-saas
+```powershell
+git clone https://github.com/freshwaterbruce2/vibe-tech-monorepo.git vibetech
+cd vibetech
 ```
 
 1. Install dependencies:
 
-```bash
-npm install
+```powershell
+pnpm install
 ```
 
 1. Copy environment variables:
 
-```bash
+```powershell
 cp .env.example .env.local
 ```
 
@@ -79,27 +79,27 @@ writing app data to `C:\`.
 
 1. Start the development server:
 
-```bash
-npm run dev
+```powershell
+pnpm nx run invoice-automation-saas:dev
 ```
 
 1. Start the API server (separate terminal):
 
-```bash
-npm run dev:api
+```powershell
+pnpm nx run invoice-automation-saas:api:dev
 ```
 
 ## Development
 
 ### Available Scripts
 
-- `npm run dev` - Start development server
-- `npm run dev:api` - Start local API server (Fastify + SQLite)
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
-- `npm test` - Run tests
-- `npm run test:coverage` - Run tests with coverage
+- `pnpm nx run invoice-automation-saas:dev` - Start development server
+- `pnpm nx run invoice-automation-saas:api:dev` - Start local API server
+- `pnpm nx run invoice-automation-saas:build` - Build for production
+- `pnpm nx run invoice-automation-saas:preview` - Preview production build
+- `pnpm nx run invoice-automation-saas:lint` - Run ESLint
+- `pnpm nx run invoice-automation-saas:test` - Run tests
+- `pnpm nx run invoice-automation-saas:test:coverage` - Run tests with coverage
 
 ### Git Hooks
 

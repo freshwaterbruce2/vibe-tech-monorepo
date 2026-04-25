@@ -311,11 +311,14 @@ python -m pytest tests/test_ohlc_timestamp_safety.py -v
 
 ### Live Testing
 
-1. **Start with enhanced mode ENABLED**:
+Live starts are human-operator-only. Agents may prepare the environment and run
+tests, but must not start or auto-confirm live trading.
+
+1. **Human operator: start with enhanced mode ENABLED**:
 
    ```bash
    export USE_ENHANCED_RISK=true
-   python start_live_trading.py
+   # python start_live_trading.py
    ```
 
    Check logs for:
@@ -329,7 +332,7 @@ python -m pytest tests/test_ohlc_timestamp_safety.py -v
 
    ```bash
    export USE_ENHANCED_RISK=false
-   python start_live_trading.py
+   # python start_live_trading.py
    ```
 
    Check logs for:

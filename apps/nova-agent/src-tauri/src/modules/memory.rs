@@ -63,7 +63,7 @@ pub struct Memory {
     pub memory_type: String,
     pub content: String,
     pub context: Option<String>,
-    pub importance: f32,        // 0.0 to 1.0
+    pub importance: f32, // 0.0 to 1.0
     pub access_count: u32,
     pub created_at: u64,
     pub last_accessed: u64,
@@ -111,10 +111,15 @@ impl MemoryService {
     }
 
     /// Search memories by text query
-    pub async fn search(&self, query: &str, limit: Option<u32>) -> Result<Vec<MemorySearchResult>, String> {
+    pub async fn search(
+        &self,
+        query: &str,
+        limit: Option<u32>,
+    ) -> Result<Vec<MemorySearchResult>, String> {
         let db_guard = self.db.lock().await;
         if let Some(service) = db_guard.as_ref() {
-            service.search_memories(query, limit.unwrap_or(10))
+            service
+                .search_memories(query, limit.unwrap_or(10))
                 .map_err(|e| e.to_string())
         } else {
             Err("Database service not available".to_string())
@@ -166,16 +171,16 @@ impl MemoryService {
 
 #[tauri::command]
 pub async fn search_memories(
-    query: String, 
+    query: String,
     limit: Option<u32>,
     db: State<'_, Arc<AsyncMutex<Option<DatabaseService>>>>,
     _state: State<'_, AppState>,
 ) -> Result<Vec<MemorySearchResult>, String> {
     debug!("Searching memories for: {}", query);
-    
+
     let service = MemoryService::new(Arc::clone(&db));
     let results = service.search(&query, limit).await?;
-    
+
     info!("Found {} memory results for: {}", results.len(), query);
     Ok(results)
 }
@@ -189,8 +194,8 @@ pub async fn store_memory(
     tags: Option<Vec<String>>,
     db: State<'_, Arc<AsyncMutex<Option<DatabaseService>>>>,
 ) -> Result<String, String> {
-    let memory_type = normalize_memory_type(&memory_type)
-        .ok_or_else(|| "Invalid memory type".to_string())?;
+    let memory_type =
+        normalize_memory_type(&memory_type).ok_or_else(|| "Invalid memory type".to_string())?;
 
     debug!(
         "Storing memory: {} ({})",
@@ -202,7 +207,7 @@ pub async fn store_memory(
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs();
-    
+
     let memory = Memory {
         id: uuid::Uuid::new_v4().to_string(),
         memory_type,
@@ -215,10 +220,10 @@ pub async fn store_memory(
         expires_at: None,
         tags: tags.unwrap_or_default(),
     };
-    
+
     let service = MemoryService::new(Arc::clone(&db));
     let id = service.store(memory).await?;
-    
+
     info!("Memory stored with id: {}", id);
     Ok(id)
 }
@@ -229,7 +234,7 @@ pub async fn get_memory(
     db: State<'_, Arc<AsyncMutex<Option<DatabaseService>>>>,
 ) -> Result<Option<Memory>, String> {
     debug!("Getting memory: {}", id);
-    
+
     let service = MemoryService::new(Arc::clone(&db));
     let memory = service.get(&id).await?;
     if memory.is_some() {
@@ -247,10 +252,11 @@ pub async fn get_memories_by_type(
     db: State<'_, Arc<AsyncMutex<Option<DatabaseService>>>>,
 ) -> Result<Vec<Memory>, String> {
     debug!("Getting memories by type: {}", memory_type);
-    
+
     let db_guard = db.lock().await;
     if let Some(service) = db_guard.as_ref() {
-        service.get_memories_by_type(&memory_type, limit.unwrap_or(20))
+        service
+            .get_memories_by_type(&memory_type, limit.unwrap_or(20))
             .map_err(|e| e.to_string())
     } else {
         Err("Database service not available".to_string())
@@ -262,10 +268,10 @@ pub async fn consolidate_memories(
     db: State<'_, Arc<AsyncMutex<Option<DatabaseService>>>>,
 ) -> Result<u32, String> {
     info!("Consolidating memories...");
-    
+
     let service = MemoryService::new(Arc::clone(&db));
     let count = service.consolidate().await?;
-    
+
     info!("Consolidated {} memories", count);
     Ok(count)
 }
@@ -275,10 +281,10 @@ pub async fn prune_memories(
     db: State<'_, Arc<AsyncMutex<Option<DatabaseService>>>>,
 ) -> Result<u32, String> {
     info!("Pruning expired memories...");
-    
+
     let service = MemoryService::new(Arc::clone(&db));
     let count = service.prune().await?;
-    
+
     info!("Pruned {} expired memories", count);
     Ok(count)
 }

@@ -18,7 +18,7 @@ You are working with a **production monorepo** containing:
 
 ### 1. **Trading Bot Safety** ⚠️
 
-The `projects/crypto-enhanced` directory contains a LIVE trading system currently trading XLM/USD with real money.
+The `apps/crypto-enhanced` directory contains a LIVE trading system currently trading XLM/USD with real money.
 
 **BEFORE any changes to trading bot:**
 
@@ -31,7 +31,7 @@ The `projects/crypto-enhanced` directory contains a LIVE trading system currentl
 **Emergency Stop:**
 
 ```powershell
-cd C:\dev\projects\crypto-enhanced
+cd C:\dev\apps\crypto-enhanced
 .\stop_trading.ps1
 ```
 
@@ -41,7 +41,7 @@ Your knowledge cutoff is January 2025. Always search when:
 
 - Implementing new features (check latest best practices)
 - Working with APIs (Kraken, Supabase, etc.)
-- Using frameworks (React 19.2, TypeScript 5.7+, Vite 7.0)
+- Using frameworks (React 19.2.4, TypeScript 5.9.3, Vite 7.3.1)
 - Investigating errors or deprecations
 
 ### 3. **Quality First**
@@ -53,7 +53,7 @@ NEVER skip quality checks before suggesting commits:
 pnpm run quality  # lint + typecheck + test:unit + build
 
 # Trading bot
-cd projects\crypto-enhanced
+cd apps\crypto-enhanced
 .venv\Scripts\activate
 python run_tests.py
 ```
@@ -80,7 +80,7 @@ C:\dev\
 ### For Web App Changes (Root Level)
 
 1. **Analyze**: Understand existing code, check dependencies
-2. **Research**: Search latest React 19.2/TypeScript 5.7+ patterns
+2. **Research**: Search latest React 19.2.4/TypeScript 5.9.3 patterns
 3. **Implement**: Make changes using current best practices
 4. **Test**: Run `pnpm run quality`
 5. **Verify**: Check that build succeeds
@@ -135,24 +135,24 @@ pnpm run test:unit        # Vitest unit tests
 pnpm run quality          # All checks at once
 
 # Build
-pnpm run build            # Production build
-pnpm run build:production # Optimized production build
+pnpm nx build <project>   # Project production build
+pnpm run build:production # Root Vite production build only
 ```
 
-### Trading Bot (projects/crypto-enhanced) ⚠️
+### Trading Bot (apps/crypto-enhanced) ⚠️
 
 ```powershell
-cd projects\crypto-enhanced
+cd apps\crypto-enhanced
 .venv\Scripts\activate   # Activate virtual environment
 
 # Check status (safe)
-python simple_status.py
+python scripts\check_status.py
 
 # Run tests (ALWAYS before changes)
 python run_tests.py
 
-# Start bot (CAUTION: real money)
-python start_live_trading.py
+# Human operator only: do not start live trading from an agent workflow
+# python start_live_trading.py
 
 # Stop bot
 .\stop_trading.ps1
@@ -191,7 +191,7 @@ Read these files in `.claude/` directory for detailed guidance:
 
 ### Ask First
 
-- ANY changes to `projects/crypto-enhanced/` (trading bot)
+- ANY changes to `apps/crypto-enhanced/` (trading bot)
 - Modifying package.json dependencies
 - Changing TypeScript/ESLint configurations
 - Deleting files or directories
@@ -252,10 +252,10 @@ Read these files in `.claude/` directory for detailed guidance:
 ### Trading Bot Health
 
 ```powershell
-cd projects\crypto-enhanced
+cd apps\crypto-enhanced
 
 # Quick status
-python simple_status.py
+python scripts\check_status.py
 
 # Database check
 sqlite3 trading.db "SELECT * FROM trades ORDER BY timestamp DESC LIMIT 5;"

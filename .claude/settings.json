@@ -121,8 +121,21 @@
     ]
   },
   "model": "claude-opus-4-7",
-  "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": [],
+  "enableAllProjectMcpServers": false,
+  "enabledMcpjsonServers": [
+    "desktop-commander",
+    "filesystem",
+    "nx-mcp",
+    "sqlite",
+    "skills",
+    "memory",
+    "youtube",
+    "notebooklm",
+    "chrome-devtools",
+    "rag",
+    "workspace",
+    "command-center"
+  ],
   "disabledMcpjsonServers": [
     "puppeteer"
   ],

@@ -34,10 +34,7 @@ pub fn contains_hallucination_indicators(text: &str) -> bool {
 }
 
 /// Validate response against tool calls
-pub fn validate_response(
-    response: &str,
-    tool_calls_made: usize,
-) -> Result<String, String> {
+pub fn validate_response(response: &str, tool_calls_made: usize) -> Result<String, String> {
     // If no hallucination indicators, response is safe
     if !contains_hallucination_indicators(response) {
         return Ok(response.to_string());

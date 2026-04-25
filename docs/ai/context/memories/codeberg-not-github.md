@@ -14,7 +14,7 @@
 - **Platform:** GitHub (github.com)
 - **Username:** freshwaterbruce2
 - **Repository:** Monorepo
-- **Remote URL:** `https://github.com/freshwaterbruce2/Monorepo.git`
+- **Remote URL:** `https://github.com/freshwaterbruce2/vibe-tech-monorepo.git`
 - **CI/CD:** GitHub Actions
 
 ---
@@ -25,7 +25,7 @@
 
 - "GitHub" for remote repository
 - "GitHub Actions" for CI/CD pipelines
-- "github.com/freshwaterbruce2/Monorepo" for repository URL
+- "github.com/freshwaterbruce2/vibe-tech-monorepo" for repository URL
 - ".github/workflows/" for CI configuration directory
 
 ### NEVER Use These Terms (for this project):
@@ -43,11 +43,11 @@
 ```bash
 # Correct remote (GitHub)
 git remote -v
-origin  https://github.com/freshwaterbruce2/Monorepo.git (fetch)
-origin  https://github.com/freshwaterbruce2/Monorepo.git (push)
+origin  https://github.com/freshwaterbruce2/vibe-tech-monorepo.git (fetch)
+origin  https://github.com/freshwaterbruce2/vibe-tech-monorepo.git (push)
 
 # If remote is wrong, fix it:
-git remote set-url origin https://github.com/freshwaterbruce2/Monorepo.git
+git remote set-url origin https://github.com/freshwaterbruce2/vibe-tech-monorepo.git
 ```
 
 ---

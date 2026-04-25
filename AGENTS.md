@@ -18,212 +18,134 @@
 - Prefer local workflows and local validation commands first.
 - Prefer GitHub workflows/remotes when repository hosting is relevant.
 
-# AGENTS.md - Learning System Integration
+## Workspace Snapshot
 
-**Add this section to all project AGENTS.md files**
+- Repository root: `C:\dev`.
+- Repository host: GitHub, `https://github.com/freshwaterbruce2/vibe-tech-monorepo.git`.
+- Package manager: `pnpm@10.33.0` only.
+- Node: `>=22.0.0`; current local toolchain is Node 22.x.
+- Build system: `nx@22.5.0` with apps in `apps/` and libraries in `packages/`.
+- Primary languages: TypeScript, JavaScript, Python, Rust, and React.
+- Shared runtime data, logs, databases, and learning artifacts live on `D:\`, not under `C:\dev`.
 
-## Data-Driven Development Guidelines
+Canonical workspace references:
 
-The learning system has analyzed **57,126 agent executions** and identified proven patterns for success. Follow these evidence-based guidelines:
+- `AI.md` - workspace rules and path policy.
+- `WORKSPACE.json` - current stack, project registry, and focus areas.
+- `docs/WORKSPACE_STRUCTURE.md` - source vs local-only storage policy.
+- `docs/ai/RULES.md` - detailed development and agent rules.
 
-### 🎯 Tool Selection Rules (Evidence-Based)
+## Current Layout
 
-#### ✅ HIGH-SUCCESS PATTERNS (Use These)
+- `apps/` - product apps, desktop apps, mobile apps, MCP servers, and infrastructure services.
+- `backend/` - backend services and service-specific packages.
+- `packages/` - shared libraries, UI, config, memory, MCP utilities, and feature flags.
+- `scripts/` - reusable Windows and workspace maintenance scripts.
+- `tests/` - cross-workspace tests and agent evaluation suites.
+- `tools/` - local automation and maintenance tools.
 
-Based on 100% success rates with thousands of executions:
+Do not treat nested app folders as separate git repos unless their own git root is
+verified. The root working tree is the default source of truth.
 
-**For File Operations**:
+## Common Commands
 
-- ✓ `Read + Edit + Bash` - 100% success in 4 uses
-- ✗ AVOID `Read + Write + Edit` - Only 14% success in 7 uses
+Run commands from `C:\dev` unless a project-specific document says otherwise.
 
-**Rationale**: Edit is more reliable than Write for existing files. Write creates conflicts.
-
-**For Monitoring/Analysis**:
-
-- ✓ `["system_monitor", "error_detector"]` - 20,702 successful uses
-- ✓ `["pattern_analyzer", "insight_generator"]` - 1,032 successful uses
-
-**For Data Processing**:
-
-- ✓ `["market_data_parser", "data_storage", "anomaly_detector"]` - 14,700 successful uses
-- ✓ `["data_analyzer", "statistical_analyzer", "model_updater"]` - 542 successful uses
-
-### ⚠️ Common Failure Prevention
-
-Based on analysis of 36 documented mistakes:
-
-#### Error Type: connection_fix_failure (15 occurrences)
-
-**Prevention**:
-
-```python
-# ALWAYS validate before fixing
-if not connection.is_healthy():
-    connection.reset()
-    if not connection.verify():
-        raise ConnectionError("Cannot establish healthy connection")
-
-# Then proceed with fix
-apply_fix()
+```powershell
+pnpm install
+pnpm exec nx show projects
+pnpm nx graph
+pnpm nx dev <project>
+pnpm nx build <project>
+pnpm nx lint <project>
+pnpm nx test <project>
+pnpm run lint
+pnpm run typecheck
+pnpm run test
+pnpm run quality:affected
+pnpm run workspace:health
+pnpm run paths:check
+pnpm run learning:validate
 ```
 
-#### Error Type: validation_failure (7 occurrences)
+The root `pnpm run build` script intentionally fails. Use `pnpm nx build <project>`
+or a project-specific build command instead.
 
-**Prevention**:
+If PowerShell cannot launch `node`, `pnpm`, `git`, `cmd.exe`, or `whoami.exe`, repair the process environment first:
 
-```python
-# ALWAYS validate inputs
-def process_data(data):
-    if not validate_schema(data):
-        raise ValidationError("Schema mismatch")
-
-    if not sanitize_input(data):
-        raise ValidationError("Invalid data format")
-
-    # Then proceed
-    return transform(data)
+```powershell
+. .\scripts\Initialize-DevProcessEnvironment.ps1
+Initialize-DevProcessEnvironment
 ```
 
-### 🚀 Performance Patterns (Data-Proven)
+## Development Rules
 
-#### Auto-Fix Cycle Pattern
+- Search before creating files, services, components, routes, scripts, or docs.
+- Prefer modifying the existing implementation over adding a parallel duplicate.
+- Use `git ls-files`, `rg`, `Get-ChildItem`, or `Select-String` to find existing patterns before editing.
+- Do not install new dependencies without discussion.
+- Keep changes scoped to the requested project and its direct shared dependencies.
+- Preserve backwards compatibility unless the user explicitly asks for a breaking change.
+- Use TypeScript types for TypeScript code and keep strict-mode assumptions intact.
+- Prefer async/await over raw promise chains.
+- Follow project-local patterns before introducing new abstractions.
+- Add or update tests when behavior changes.
+- Use `apply_patch` for manual edits.
 
-**Evidence**: 29,420 successful executions, 0.18s average
-**When to use**: Automated workflows, error recovery
-**Implementation**:
+## No Duplicates Rule
 
-```python
-while system.running:
-    errors = monitor.detect_errors()
-    if errors:
-        for error in errors:
-            fix = auto_fixer.generate_fix(error)
-            fix.apply()
-            verify.check_resolution(error)
-```
+Before creating anything new:
 
-#### Fast Data Processing Pattern
+1. Search for similar files and functionality.
+2. Read the existing implementation when a similar match exists.
+3. Modify existing code when it already owns the behavior.
+4. Create a new file only when the feature is truly new or the user confirms that a separate implementation is wanted.
 
-**Evidence**: 14,700 executions at 0.08s average
-**When to use**: Real-time data processing
-**Implementation**:
+This applies to source files, tests, docs, scripts, services, handlers, components, functions, and configuration.
 
-```python
-def fast_process(data_stream):
-    parsed = parser.parse(data_stream)  # Fast parsing
-    storage.batch_insert(parsed)         # Batch operations
-    anomalies = detector.scan(parsed)    # Parallel detection
-    return anomalies
-```
+## Validation Guidance
 
-### ⏱️ Performance Targets
+- Prefer Nx targets over direct tool commands for build, lint, test, typecheck, and e2e work.
+- For changed projects, prefer narrow validation first: `pnpm nx <target> <project>`.
+- For repo-level confidence, use `pnpm run quality:affected` before broad all-project runs.
+- For Python-only `apps/crypto-enhanced`, use that app's maintained runner instead of raw host `pytest` when available.
+- If validation is blocked by local toolchain state, record the exact command and error rather than reporting success.
 
-Based on successful execution times:
+## Learning System
 
-| Task Type      | Target Time | Current Best | Optimization Needed   |
-| -------------- | ----------- | ------------ | --------------------- |
-| Auto-fix cycle | < 0.2s      | 0.18s        | ✓ Achieved            |
-| Data analysis  | < 0.1s      | 0.08s        | ✓ Achieved            |
-| Monitoring     | < 0.2s      | 0.15s        | ✓ Achieved            |
-| API testing    | < 15s       | 28.5s        | ⚠️ Needs optimization |
-| Test coverage  | < 60s       | 120.3s       | ⚠️ Needs optimization |
+Current learning-system sources of truth:
 
-**If task exceeds target**:
+- Active learning database: `D:\databases\agent_learning.db`.
+- Canonical database inventory: `D:\databases\DB_INVENTORY.md`.
+- Learning-system guide: `D:\learning-system\enhanced_agent_guidelines.md`.
+- Learning-system workspace: `D:\learning-system`.
 
-1. Implement parallel processing
-2. Add caching layer
-3. Use async/await patterns
-4. Consider batch operations
+Before changing repair, maintenance, database, memory, or hook flows:
 
-### 📊 Success Metrics
+- Validate the current path against `D:\databases\DB_INVENTORY.md`.
+- Do not recreate retired databases to satisfy stale scripts.
+- Prefer updating existing maintenance scripts under `C:\dev\scripts`.
+- Treat `D:\learning-system` as local code/docs/artifact state, not as the home of live runtime databases.
 
-Based on top-performing agents:
+## Safety Protocols
 
-- **Minimum Success Rate**: 80%
-- **Target Success Rate**: 95%+
-- **Best Performers**: 100% (polyglot-code-translator, pattern-analyzer, code-guardian)
+MoltBot and crypto operations are observation-only unless the user gives explicit,
+task-specific authorization for non-trading maintenance. Never execute buy, sell,
+or trade actions.
 
-**If success rate < 80%**:
+When monitoring Gmail or hook-driven notifications, enforce a 5-minute deduplication
+window and avoid repeated identical alerts.
 
-1. Review tool combinations used
-2. Check against error prevention rules
-3. Apply proven success patterns
-4. Consult enhanced_agent_guidelines.md
-
-### 🔄 Continuous Improvement
-
-The system learns from every execution:
-
-1. **After each task**: Performance data recorded
-2. **Every 1,000 executions**: Patterns analyzed
-3. **Weekly**: Guidelines updated
-4. **Monthly**: Major optimizations applied
-
-**To contribute to learning**:
-
-- Document mistakes in agent_mistakes table
-- Record successful patterns
-- Note tool combinations that work
-- Track execution times
-
-### 📋 Pre-Implementation Checklist
-
-Before starting ANY development task:
-
-- [ ] Check `enhanced_agent_guidelines.md` for relevant patterns
-- [ ] Verify tool combination is in high-success list
-- [ ] Review error prevention rules for this task type
-- [ ] Set performance target based on benchmarks
-- [ ] Plan to record results for future learning
-
-### 🎓 Learning from Best Performers
-
-**Top Agent: polyglot-code-translator** (100% success, 26.6s avg)
-
-- Uses proven tool combinations
-- Implements comprehensive error handling
-- Follows established patterns
-- Maintains consistent performance
-
-**Replicate this by**:
-
-- Using tools from recommended list
-- Adding validation at every step
-- Implementing proven workflow patterns
-- Recording metrics for improvement
-
----
-
-## Integration Instructions
-
-1. **For New Projects**: Copy this section to project AGENTS.md
-2. **For Existing Projects**: Append this section
-3. **For Agents**: Consult before each task execution
-4. **For Developers**: Review monthly for updates
-
-**Data Source**: D:\databases\database.db (unified learning database)
-**Last Analysis**: 2025-10-06
-**Sample Size**: 57,126 executions, 36 mistakes
-
-_This guidance is automatically updated as the system learns_
-
-## MoltBot Safety Protocols
-
-### 🔴 ARCHITECTURAL DEFENSE: NO TRADING
-
-**MoltBot must NEVER execute trades.**
-
-- The exec tool security is set to "ask", but for **crypto operations**, the constraint is **ABSOLUTE**.
-- MoltBot is **OBSERVATION ONLY**.
-- If a user asks to "buy", "sell", or "trade", you MUST REFUSE and explain that you are a passive observer.
-
-### 🔒 Gmail Integration Safety
-
-- When monitoring Gmail via hooks, you MUST enforce a **5-minute deduplication window**.
-- Do not flood the notification channel with identical alerts.
-
-### 🛡️ Backup Retention
+Retention defaults:
 
 - Config backups: 14 days.
-- Memory snapshots: **30 days** (Deep Recall).
+- Memory snapshots: 30 days.
+
+## Documentation Maintenance
+
+When project reality changes, update this file together with the relevant source of truth:
+
+- Stack, commands, and project registry: `WORKSPACE.json` and `package.json`.
+- Path and storage policy: `AI.md` and `docs/WORKSPACE_STRUCTURE.md`.
+- Database ownership: `D:\databases\DB_INVENTORY.md`.
+- Learning-system workflow: `D:\learning-system\enhanced_agent_guidelines.md`.

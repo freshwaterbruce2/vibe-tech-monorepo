@@ -2,14 +2,16 @@
 
 **Type**: Python Trading System (AsyncIO + Kraken API)
 **Agent**: crypto-expert
-**Status**: Production (30-day monitoring active)
+**Status**: Active trading codebase; agents must use read-only checks unless a
+human operator explicitly takes over live operations.
 **Token Count**: ~700 tokens
 
 ---
 
 ## Overview
 
-Live cryptocurrency trading system with WebSocket V2 integration and financial safety checks.
+Cryptocurrency trading system with WebSocket V2 integration and financial
+safety checks. Treat live execution as human-operator-only.
 
 **Key Features**:
 
@@ -27,7 +29,8 @@ Live cryptocurrency trading system with WebSocket V2 integration and financial s
 **Language**: Python 3.11+
 **API**: Kraken REST API + WebSocket V2
 **Framework**: AsyncIO (asynchronous trading loop)
-**Database**: SQLite (`D:\databases\trading.db`)
+**Database**: SQLite; resolve from `.env` / `DB_PATH` before querying. On this
+machine the live override has pointed at `D:\databases\crypto-enhanced\trading.db`.
 **Logs**: `D:\logs\trading.log`, `D:\logs\trading_new.log`
 **Monitoring**: performance_monitor.py, check_status.py
 **Testing**: pytest, pytest-asyncio, pytest-cov
@@ -57,7 +60,13 @@ apps/crypto-enhanced/
 
 ## Critical Financial Safety Rules
 
-### 1. NEVER start trading without explicit YES confirmation
+### 1. Agents do not start live trading
+
+Use read-only health checks, tests, and code review in automated agent
+workflows. A human operator must decide whether to start or restart live
+trading.
+
+### 2. Live trading still requires explicit YES confirmation
 
 ```python
 # start_live_trading.py
@@ -66,7 +75,7 @@ if confirmation != "YES":
     sys.exit(1)
 ```
 
-### 2. ALWAYS use nanosecond nonces (NOT milliseconds)
+### 3. ALWAYS use nanosecond nonces (NOT milliseconds)
 
 ```python
 # CORRECT - Nanoseconds
@@ -76,7 +85,7 @@ nonce = int(time.time() * 1000000000)
 nonce = int(time.time() * 1000)
 ```
 
-### 3. ALWAYS stop after 5 consecutive failures
+### 4. ALWAYS stop after 5 consecutive failures
 
 ```python
 if consecutive_failures >= 5:
@@ -84,7 +93,7 @@ if consecutive_failures >= 5:
     await trading_engine.shutdown()
 ```
 
-### 4. NEVER commit when system unhealthy
+### 5. NEVER commit when system unhealthy
 
 ```powershell
 # Pre-commit hook checks:
@@ -93,11 +102,11 @@ if consecutive_failures >= 5:
 # - Open positions with P&L < -$5 (warns)
 ```
 
-### 5. ALWAYS store data on D:\ drive
+### 6. ALWAYS store data on D:\ drive
 
 ```python
 # CORRECT
-DB_PATH = r"D:\databases\trading.db"
+DB_PATH = r"D:\databases\crypto-enhanced\trading.db"
 LOG_PATH = r"D:\logs\trading.log"
 
 # WRONG (relative paths in C:\dev)
@@ -108,28 +117,24 @@ DB_PATH = "trading.db"
 
 ## Common Workflows
 
-### 1. Start Live Trading
+### 1. Check Runtime Status
 
 ```bash
-# RECOMMENDED: Docker deployment
 cd apps/crypto-enhanced
-docker-compose up -d
-
-# OR: Direct Python (requires manual YES)
-python start_live_trading.py
-
-# OR: Auto-confirm for automation
-echo YES | python start_live_trading.py
+python kraken_status.py
+python scripts/check_status.py
+python scripts/performance_monitor.py monthly
 ```
 
 ### 2. Check System Status
 
 ```bash
 # Quick dashboard
-python check_status.py
+python kraken_status.py
+python scripts/check_status.py
 
 # Detailed 30-day report
-python performance_monitor.py monthly
+python scripts/performance_monitor.py monthly
 
 # Check orders and positions
 python check_orders.py
@@ -152,7 +157,10 @@ pnpm nx test crypto-enhanced
 
 ## Database Schema
 
-**Path**: `D:\databases\trading.db`
+**Path**: resolve from `.env` / `DB_PATH` before querying. On this machine the
+live override has pointed at `D:\databases\crypto-enhanced\trading.db`; the
+top-level `D:\databases\trading.db` also exists as a minimal live inventory
+entry.
 
 **Tables**:
 
@@ -205,10 +213,10 @@ class WebSocketManager:
 
 ```bash
 # Check readiness daily
-python performance_monitor.py weekly
+python scripts\performance_monitor.py weekly
 
 # Final decision after 30 days
-python performance_monitor.py monthly
+python scripts\performance_monitor.py monthly
 ```
 
 **DO NOT add capital until system shows "READY TO SCALE"**
@@ -294,16 +302,6 @@ Before implementing features:
 
 ## Docker Deployment
 
-```bash
-# Build and start
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Check status
-docker-compose ps
-
-# Stop trading
-docker-compose down
-```
+Docker deployment is not currently validated: `docker-compose.yml` references a
+missing `Dockerfile` and does not use the live `.env` `DB_PATH`. Do not use
+Docker commands as current restart/start guidance.

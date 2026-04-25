@@ -5,7 +5,7 @@
 Your shipping PWA is committed and ready for GitHub deployment.
 
 **NOTE:** This project uses GitHub (github.com).
-The monorepo is at: `https://github.com/freshwaterbruce2/Monorepo.git`
+The monorepo is at: `https://github.com/freshwaterbruce2/vibe-tech-monorepo.git`
 
 ### Step 1: Create GitHub Repository (30 seconds)
 
@@ -20,7 +20,7 @@ The monorepo is at: `https://github.com/freshwaterbruce2/Monorepo.git`
 
 ```powershell
 # Push to GitHub:
-git remote add origin https://github.com/freshwaterbruce2/Monorepo.git
+git remote add origin https://github.com/freshwaterbruce2/vibe-tech-monorepo.git
 git branch -M main
 git push -u origin main
 ```
@@ -32,9 +32,9 @@ git push -u origin main
 3. **Connect**: your Git repository
 4. **Select**: shipping-pwa repository
 5. **Deploy settings** (auto-detected):
-   - Build command: `npm run build`
+   - Build command: `pnpm nx build shipping-pwa`
    - Publish directory: `dist`
-   - Node version: 18
+   - Node version: 22
 6. **Click**: "Deploy site"
 
 ### 🎉 RESULT

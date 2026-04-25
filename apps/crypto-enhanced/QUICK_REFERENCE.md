@@ -1,6 +1,9 @@
-# 🚀 Quick Reference Guide - Crypto Trading Bot
+# Quick Reference Guide - Crypto Trading Bot
 
-**Location:** `C:\dev\projects\crypto-enhanced`
+**Location:** `C:\dev\apps\crypto-enhanced`
+
+Agent workflows are observation-only for live trading. Use status and
+validation commands; a human operator must handle live start or restart.
 
 ---
 
@@ -10,30 +13,29 @@
 
 ```powershell
 # Navigate to project
-cd C:\dev\projects\crypto-enhanced
+cd C:\dev\apps\crypto-enhanced
 
 # Activate virtual environment
 .\.venv\Scripts\activate
 
 # Run validation (takes ~30 seconds)
-python startup_validator.py
+python scripts\startup_validator.py
 
 # Quick validation (takes ~5 seconds, skips network tests)
-python startup_validator.py --quick
+python scripts\startup_validator.py --quick
 ```
 
 **Expected Result:** `✓ ALL CHECKS PASSED` or `⚠ PASSED WITH WARNINGS`
 
 ---
 
-### 2. Start Trading Bot
+### 2. Runtime Status
 
 ```powershell
-# After validation passes
-python start_live_trading.py
-
-# Auto-confirm (skip interactive prompt)
-echo YES | python start_live_trading.py
+# Read-only status checks
+python kraken_status.py
+python scripts\check_status.py
+python scripts\performance_monitor.py monthly
 ```
 
 ---
@@ -103,8 +105,9 @@ Get-Content .\trading_new.log -Wait
 
 ### Quick Daily Dashboard
 
-```bash
-python check_status.py
+```powershell
+python kraken_status.py
+python scripts\check_status.py
 ```
 
 Shows:
@@ -117,18 +120,18 @@ Shows:
 
 ### Detailed Performance Reports
 
-```bash
+```powershell
 # Last 24 hours
-python performance_monitor.py daily
+python scripts\performance_monitor.py daily
 
 # Last 7 days
-python performance_monitor.py weekly
+python scripts\performance_monitor.py weekly
 
 # Last 30 days (validation report)
-python performance_monitor.py monthly
+python scripts\performance_monitor.py monthly
 
 # Save daily snapshot (JSON)
-python performance_monitor.py snapshot
+python scripts\performance_monitor.py snapshot
 ```
 
 ### Setup Automated Monitoring (One-Time)
@@ -167,25 +170,24 @@ Get-Process python | Stop-Process -Force
 
 ```powershell
 # Navigate to project
-cd C:\dev\projects\crypto-enhanced
+cd C:\dev\apps\crypto-enhanced
 
 # Activate environment
 .\.venv\Scripts\activate
 
 # Run pre-flight checks
-python startup_validator.py --quick
+python scripts\startup_validator.py --quick
 
-# Start trading
-python start_live_trading.py
+# Human operator only: live start command intentionally omitted
 
 # View logs in real-time
 Get-Content trading_new.log -Wait
 
 # Check performance (daily dashboard)
-python check_status.py
+python scripts\check_status.py
 
 # Weekly performance review
-python performance_monitor.py weekly
+python scripts\performance_monitor.py weekly
 
 # Emergency stop
 Get-Process python | Stop-Process -Force

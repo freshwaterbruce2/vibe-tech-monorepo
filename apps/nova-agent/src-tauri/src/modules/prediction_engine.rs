@@ -14,8 +14,8 @@ use tracing::{debug, info};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PredictionResult {
     pub estimated_duration: f64, // seconds
-    pub confidence: f64,          // 0.0 to 1.0
-    pub variance: f64,            // standard deviation
+    pub confidence: f64,         // 0.0 to 1.0
+    pub variance: f64,           // standard deviation
     pub sample_size: usize,
 }
 
@@ -30,8 +30,8 @@ pub struct ProductivityInsights {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TimeWindow {
-    pub start_hour: u8, // 0-23
-    pub end_hour: u8,   // 0-23
+    pub start_hour: u8,          // 0-23
+    pub end_hour: u8,            // 0-23
     pub productivity_score: f64, // 0.0 to 1.0
 }
 
@@ -76,8 +76,12 @@ impl PredictionEngine {
             .map_err(|e| format!("Failed to open learning database: {}", e))?;
 
         // Enable WAL mode for better concurrency (use query_row since PRAGMA returns result)
-        let _ = conn.query_row("PRAGMA journal_mode=WAL", [], |_| Ok::<(), rusqlite::Error>(()));
-        let _ = conn.query_row("PRAGMA busy_timeout=5000", [], |_| Ok::<(), rusqlite::Error>(()));
+        let _ = conn.query_row("PRAGMA journal_mode=WAL", [], |_| {
+            Ok::<(), rusqlite::Error>(())
+        });
+        let _ = conn.query_row("PRAGMA busy_timeout=5000", [], |_| {
+            Ok::<(), rusqlite::Error>(())
+        });
 
         let engine = Self {
             learning_db: Arc::new(Mutex::new(conn)),

@@ -1,22 +1,25 @@
 # Monorepo Architecture Overview
 
+> Current routing note (2026-04-25): this file is a broad architecture snapshot.
+> For exact commands and project names, prefer `AGENTS.md`, `WORKSPACE.json`,
+> `pnpm-workspace.yaml`, and `project.json` files.
+
 ## 🏗️ High-Level Structure
 
 This is a **multi-domain monorepo** managed with pnpm workspaces and Nx, containing:
 
 ```
 C:\dev\
-├── Root Web App          # React 19.2 + TypeScript + Vite (main application)
-├── projects/             # Sub-projects and specialized applications
+├── apps/                 # Product apps, desktop apps, mobile apps, MCP servers
 ├── backend/              # Node.js Express backend services
-├── data_pipeline/        # Python-based ETL workflows
 ├── packages/             # Shared libraries and utilities
+├── plugins/              # Local plugin/tooling packages
 └── scripts/              # PowerShell automation scripts
 ```
 
 ## 📦 Package Management
 
-**Primary**: pnpm v9.15.0
+**Primary**: pnpm 10.33.0
 
 - Efficient disk space usage (content-addressable storage)
 - Strict dependency resolution
@@ -29,16 +32,10 @@ C:\dev\
 - Dependency graph management
 - Affected project detection
 
-**Workspaces** (defined in package.json):
+**Workspaces** (defined in `pnpm-workspace.yaml`):
 
 ```json
-"workspaces": [
-  "backend",
-  "packages/*",
-  "projects/active/web-apps/*",
-  "projects/active/desktop-apps/*",
-  "projects/Vibe-Subscription-Guard"
-]
+["packages/*", "packages/feature-flags/*", "apps/*", "apps/**/backend", "apps/**/frontend", "backend/*"]
 ```
 
 ## 🌐 1. Root Web Application
@@ -49,9 +46,9 @@ C:\dev\
 ### Technology Stack
 
 ```typescript
-├── React 19.2.0           # UI framework
-├── TypeScript 5.7+        # Type safety
-├── Vite 7.0              # Build tool & dev server
+├── React 19.2.4           # UI framework
+├── TypeScript 5.9.3       # Type safety
+├── Vite 7.3.1             # Build tool & dev server
 ├── shadcn/ui             # Component library (Radix UI primitives)
 ├── Tailwind CSS          # Styling
 ├── React Query           # Server state management
@@ -101,18 +98,18 @@ src/
 ### Commands
 
 ```powershell
-pnpm run dev              # Dev server (localhost:5173)
-pnpm run build            # Production build
-pnpm run quality          # Lint + typecheck + test + build
+pnpm nx dev <project>     # Project dev server
+pnpm nx build <project>   # Project production build
+pnpm run quality:affected # Affected lint + typecheck + build
 pnpm run test:unit        # Vitest unit tests
-pnpm run test                 # Playwright E2E tests
+pnpm run test:e2e         # Playwright E2E tests
 ```
 
 ## 🤖 2. Crypto Trading Bot (⚠️ LIVE SYSTEM)
 
-**Location**: `projects/crypto-enhanced/`
+**Location**: `apps/crypto-enhanced/`
 **Purpose**: Automated cryptocurrency trading on Kraken Exchange
-**Status**: **ACTIVELY TRADING WITH REAL MONEY**
+**Status**: live-trading codebase; agents are observation-only
 
 ### Technology Stack
 
@@ -209,17 +206,15 @@ CREATE TABLE trades (
 ### Commands
 
 ```powershell
-cd projects\crypto-enhanced
+cd apps\crypto-enhanced
 .venv\Scripts\activate       # Must activate venv first
 
-# Safe operations
-python simple_status.py      # Check bot status
+# Safe read-only operations
+python scripts\check_status.py      # Check bot status
 python run_tests.py          # Run test suite
-sqlite3 trading.db "SELECT * FROM trades LIMIT 5;"  # Query DB
+sqlite3 D:\databases\trading.db "SELECT * FROM trades LIMIT 5;"  # Query DB
 
-# Live trading (CAUTION)
-python start_live_trading.py  # Interactive confirmation
-.\stop_trading.ps1           # Emergency stop
+# Live buy/sell/trade and service start/stop are human-operator only.
 
 # Logs
 Get-Content trading_new.log -Tail 50 -Wait  # Stream logs
@@ -281,8 +276,8 @@ backend/
 cd backend
 pnpm install              # Install dependencies
 pnpm run dev             # Start with nodemon (hot reload)
-pnpm run build           # Compile TypeScript
-npm start               # Run compiled code
+pnpm nx build <project>  # Compile/build a workspace project
+pnpm run start          # Run compiled code when the service exposes start
 ```
 
 ## 📊 4. Data Pipeline
@@ -418,7 +413,7 @@ Data Pipeline
 .env                    # Supabase keys (root)
 .env.development        # Dev-specific config
 .env.production         # Production config
-projects/crypto-enhanced/.env  # ⚠️ Kraken API keys
+apps/crypto-enhanced/.env  # Kraken API keys
 backend/.env            # Backend secrets
 ```
 
@@ -432,7 +427,7 @@ VITE_SUPABASE_ANON_KEY=xxx
 # Trading bot .env (Kraken)
 KRAKEN_API_KEY=xxx        # ⚠️ NEVER commit
 KRAKEN_API_SECRET=xxx     # ⚠️ NEVER commit
-DATABASE_PATH=trading.db
+DB_PATH=D:\databases\crypto-enhanced\trading.db
 ```
 
 ## 📈 Performance Considerations
@@ -489,7 +484,7 @@ Backend: 85%+
 ### Web App
 
 - **Platforms**: Netlify, Vercel
-- **Build Command**: `pnpm run build:production`
+- **Build Command**: `pnpm run build:production` for the root Vite app, or `pnpm nx build <project>` for a workspace project
 - **Output**: `dist/` directory
 - **Config**: `netlify.toml`, `vercel.json`
 
@@ -511,15 +506,15 @@ Backend: 85%+
 
 ```powershell
 # Logs
-Get-Content projects\crypto-enhanced\trading_new.log -Tail 50 -Wait
+Get-Content apps\crypto-enhanced\trading_new.log -Tail 50 -Wait
 
 # Database queries
-sqlite3 projects\crypto-enhanced\trading.db
+sqlite3 D:\databases\trading.db
 
 # Health checks
-cd projects\crypto-enhanced
+cd apps\crypto-enhanced
 .venv\Scripts\activate
-python simple_status.py
+python scripts\check_status.py
 ```
 
 ### Web App

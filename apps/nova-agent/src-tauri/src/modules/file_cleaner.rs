@@ -8,7 +8,8 @@ use tracing::{debug, info};
 use walkdir::{DirEntry, WalkDir};
 
 const DEFAULT_ALLOWED_ROOTS: [&str; 3] = ["D:\\logs", "D:\\data", "D:\\learning-system"];
-const DEFAULT_EXCLUDE_DIRS: [&str; 6] = [".git", "node_modules", "target", ".venv", "dist", "build"];
+const DEFAULT_EXCLUDE_DIRS: [&str; 6] =
+    [".git", "node_modules", "target", ".venv", "dist", "build"];
 const MAX_SAMPLE_PATHS: usize = 50;
 
 #[derive(Debug, Deserialize)]
@@ -140,7 +141,9 @@ fn run_clean(request: CleanRequest, allowlist: Vec<PathBuf>) -> Result<CleanResu
 
     let dry_run = request.dry_run.unwrap_or(true);
     let max_age = Duration::from_secs(request.max_age_days.saturating_mul(86400));
-    let max_delete_bytes = request.max_delete_mb.map(|mb| mb.saturating_mul(1024 * 1024));
+    let max_delete_bytes = request
+        .max_delete_mb
+        .map(|mb| mb.saturating_mul(1024 * 1024));
     let include_exts = build_extension_set(&request.include_extensions);
     let exclude_dirs = build_exclude_set(&request.exclude_dirs);
     let max_files = request.max_files.unwrap_or(5000);
