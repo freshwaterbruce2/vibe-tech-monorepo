@@ -59,14 +59,14 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "eslint \"src/**/*.{ts,tsx}\" --ignore-pattern \"src/**/*.test.ts\" --ignore-pattern \"src/**/*.test.tsx\" --ignore-pattern \"src/**/__tests__/**\" --ignore-pattern \"src/test/**\" --ignore-pattern \"src/tests/**\"",
+        "command": "node ../../node_modules/eslint/bin/eslint.js \"src/**/*.{ts,tsx}\" --ignore-pattern \"src/**/*.test.ts\" --ignore-pattern \"src/**/*.test.tsx\" --ignore-pattern \"src/**/__tests__/**\" --ignore-pattern \"src/test/**\" --ignore-pattern \"src/tests/**\"",
         "cwd": "apps/nova-agent"
       }
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc --noEmit",
+        "command": "node ../../node_modules/typescript/bin/tsc --noEmit",
         "cwd": "apps/nova-agent"
       }
     },

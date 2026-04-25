@@ -10,7 +10,7 @@ import { join, relative } from 'node:path';
 import { connect, type Connection, type Table } from '@lancedb/lancedb';
 import { RAGChunker } from './chunker.js';
 import { RAGEmbedder } from './embedder.js';
-import { discoverFiles, isExcluded } from './fileDiscovery.js';
+import { discoverFiles } from './fileDiscovery.js';
 import { loadFileHashes, saveFileHashes, isFileChanged } from './hashManager.js';
 import type {
   Chunk,
