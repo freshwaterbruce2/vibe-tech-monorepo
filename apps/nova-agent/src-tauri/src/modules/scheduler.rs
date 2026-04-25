@@ -26,8 +26,8 @@ pub enum ActivityType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserPreferences {
-    pub wake_time: String, // "07:00"
-    pub bed_time: String,  // "21:00"
+    pub wake_time: String,           // "07:00"
+    pub bed_time: String,            // "21:00"
     pub focus_duration_minutes: u32, // e.g., 25 for pomodoro
     pub break_duration_minutes: u32, // e.g., 5
     pub preferred_subjects: Vec<String>,
@@ -47,7 +47,10 @@ impl Scheduler {
     }
 
     /// Generates a daily schedule based on fixed constraints and goals
-    pub fn generate_daily_schedule(&mut self, date: DateTime<Utc>) -> Result<Vec<ScheduleBlock>, String> {
+    pub fn generate_daily_schedule(
+        &mut self,
+        date: DateTime<Utc>,
+    ) -> Result<Vec<ScheduleBlock>, String> {
         let mut daily_blocks = Vec::new();
 
         // 1. Add Fixed Blocks (Sleep, Meals, School)
@@ -64,7 +67,7 @@ impl Scheduler {
         for i in 0..daily_blocks.len() - 1 {
             let current = &daily_blocks[i];
             let next = &daily_blocks[i + 1];
-            
+
             if next.start_time > current.end_time {
                 gaps.push((current.end_time, next.start_time));
             }
@@ -75,7 +78,8 @@ impl Scheduler {
             let duration = end.signed_duration_since(start).num_minutes();
             if duration >= self.preferences.focus_duration_minutes as i64 {
                 // Insert a study block
-                let study_end = start + chrono::Duration::minutes(self.preferences.focus_duration_minutes as i64);
+                let study_end = start
+                    + chrono::Duration::minutes(self.preferences.focus_duration_minutes as i64);
                 daily_blocks.push(ScheduleBlock {
                     id: uuid::Uuid::new_v4().to_string(),
                     title: "Focus Time".to_string(),
@@ -85,14 +89,20 @@ impl Scheduler {
                     priority: 2,
                     is_fixed: false,
                 });
-                
+
                 // If enough time, add a break
                 if study_end < end {
-                     daily_blocks.push(ScheduleBlock {
+                    daily_blocks.push(ScheduleBlock {
                         id: uuid::Uuid::new_v4().to_string(),
                         title: "Break".to_string(),
                         start_time: study_end,
-                        end_time: std::cmp::min(study_end + chrono::Duration::minutes(self.preferences.break_duration_minutes as i64), end),
+                        end_time: std::cmp::min(
+                            study_end
+                                + chrono::Duration::minutes(
+                                    self.preferences.break_duration_minutes as i64,
+                                ),
+                            end,
+                        ),
                         activity_type: ActivityType::Break,
                         priority: 1,
                         is_fixed: false,
@@ -117,7 +127,7 @@ impl Scheduler {
 #[tauri::command]
 pub async fn generate_schedule(
     preferences: UserPreferences,
-    date_iso: String
+    date_iso: String,
 ) -> Result<Vec<ScheduleBlock>, String> {
     let date = DateTime::parse_from_rfc3339(&date_iso)
         .map_err(|e| e.to_string())?

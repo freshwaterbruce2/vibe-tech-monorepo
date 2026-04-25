@@ -58,7 +58,7 @@ Projects that are 50-70% complete:
 - `business-booking-platform`
 - `vibe-justice`
 - `iconforge`
-- `digital-content-builder`
+- `shipping-pwa`
 
 ### Tier 3: FREEZE
 

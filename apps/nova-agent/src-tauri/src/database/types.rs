@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::database::errors::DatabaseError;
+use serde::{Deserialize, Serialize};
 use std::thread;
 use std::time::Duration;
 use tracing::{debug, error, warn};

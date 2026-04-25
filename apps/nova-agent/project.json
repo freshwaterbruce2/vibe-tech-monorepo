@@ -35,8 +35,8 @@
     "build:rust": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cargo build --release",
-        "cwd": "apps/nova-agent/src-tauri"
+        "command": "node ../../scripts/invoke-nova-rust.mjs build-release",
+        "cwd": "apps/nova-agent"
       },
       "outputs": [
         "{projectRoot}/src-tauri/target/release"
@@ -45,15 +45,15 @@
     "check:rust": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cargo check",
-        "cwd": "apps/nova-agent/src-tauri"
+        "command": "node ../../scripts/invoke-nova-rust.mjs check",
+        "cwd": "apps/nova-agent"
       }
     },
     "test:rust": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cargo test",
-        "cwd": "apps/nova-agent/src-tauri"
+        "command": "node ../../scripts/invoke-nova-rust.mjs test",
+        "cwd": "apps/nova-agent"
       }
     },
     "lint": {

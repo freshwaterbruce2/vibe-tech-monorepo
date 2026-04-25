@@ -6,6 +6,11 @@
 **Author**: Claude Code (Opus 4.6)
 **Stakeholder**: Bruce (solo developer)
 
+> Current reality note (2026-04-25): this PRD is historical planning context.
+> `D:\learning-system\learning_engine.py` and `D:\databases\agent_learning.db`
+> are active surfaces. Do not archive or migrate them based on this document
+> without first checking `D:\databases\DB_INVENTORY.md`.
+
 ---
 
 ## 1. Executive Summary

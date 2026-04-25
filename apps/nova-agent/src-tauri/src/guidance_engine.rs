@@ -80,7 +80,7 @@ impl GuidanceEngine {
         engine.register_rule(Box::new(DeepWorkRule));
         engine.register_rule(Box::new(CommitHygieneRule));
         engine.register_rule(Box::new(ActivityPatternRule));
-        
+
         // Register Phase 1 enhanced rules (2026-01-16)
         engine.register_rule(Box::new(PerformanceRule));
         engine.register_rule(Box::new(SecurityRule));
@@ -577,10 +577,7 @@ impl GuidanceRule for PerformanceRule {
         let failed_tests: Vec<_> = input
             .learning_events
             .iter()
-            .filter(|e| {
-                e.event_type == "test_run"
-                    && e.outcome.as_deref() == Some("failure")
-            })
+            .filter(|e| e.event_type == "test_run" && e.outcome.as_deref() == Some("failure"))
             .collect();
 
         if failed_tests.len() > 2 {
@@ -609,7 +606,8 @@ impl GuidanceRule for PerformanceRule {
                 if a.activity_type != "script_execution" {
                     return false;
                 }
-                a.metadata.as_ref()
+                a.metadata
+                    .as_ref()
                     .and_then(|m| serde_json::from_str::<serde_json::Value>(m).ok())
                     .and_then(|v| v.get("duration_seconds").and_then(|d| d.as_u64()))
                     .map(|d| d > 60)
@@ -679,8 +677,16 @@ impl GuidanceRule for SecurityRule {
 
             // Check for common secret patterns in modified files
             let suspicious_patterns = vec![
-                "API_KEY", "SECRET_KEY", "PASSWORD", "TOKEN", "PRIVATE_KEY",
-                "api_key", "secret_key", "password", "token", "private_key",
+                "API_KEY",
+                "SECRET_KEY",
+                "PASSWORD",
+                "TOKEN",
+                "PRIVATE_KEY",
+                "api_key",
+                "secret_key",
+                "password",
+                "token",
+                "private_key",
             ];
 
             for file in &git.modified_files {
@@ -712,7 +718,8 @@ impl GuidanceRule for SecurityRule {
             .iter()
             .filter(|a| {
                 a.activity_type == "file_access"
-                    && a.metadata.as_ref()
+                    && a.metadata
+                        .as_ref()
                         .map(|m| m.ends_with(".db") || m.ends_with(".sqlite"))
                         .unwrap_or(false)
             })
@@ -780,7 +787,8 @@ impl GuidanceRule for DependencyRule {
                 category: GuidanceCategory::NextSteps,
                 priority: GuidancePriority::Medium,
                 title: "Dependency files modified".to_string(),
-                description: "Package files changed. Run `pnpm install` to update dependencies.".to_string(),
+                description: "Package files changed. Run `pnpm install` to update dependencies."
+                    .to_string(),
                 action: Some(GuidanceAction {
                     action_type: "run_command".to_string(),
                     payload: serde_json::json!({ "command": "pnpm install" }),
@@ -794,15 +802,15 @@ impl GuidanceRule for DependencyRule {
             .learning_events
             .iter()
             .filter(|e| {
-                e.event_type == "dependency_check"
-                    && e.outcome.as_deref() == Some("outdated")
+                e.event_type == "dependency_check" && e.outcome.as_deref() == Some("outdated")
             })
             .collect();
 
         if !outdated_deps.is_empty() {
             // Check severity from metadata
             let has_vulnerability = outdated_deps.iter().any(|e| {
-                e.metadata.as_ref()
+                e.metadata
+                    .as_ref()
                     .map(|m| m.contains("vulnerability") || m.contains("security"))
                     .unwrap_or(false)
             });
@@ -821,7 +829,11 @@ impl GuidanceRule for DependencyRule {
                 description: format!(
                     "{} packages are outdated{}. Run `pnpm update` to upgrade.",
                     outdated_deps.len(),
-                    if has_vulnerability { " (includes vulnerabilities)" } else { "" }
+                    if has_vulnerability {
+                        " (includes vulnerabilities)"
+                    } else {
+                        ""
+                    }
                 ),
                 action: Some(GuidanceAction {
                     action_type: "run_command".to_string(),
@@ -836,8 +848,7 @@ impl GuidanceRule for DependencyRule {
             .learning_events
             .iter()
             .filter(|e| {
-                e.event_type == "dependency_update"
-                    && e.outcome.as_deref() == Some("success")
+                e.event_type == "dependency_update" && e.outcome.as_deref() == Some("success")
             })
             .collect();
 
@@ -876,10 +887,7 @@ impl GuidanceRule for PredictiveRule {
         let completed_tasks: Vec<_> = input
             .learning_events
             .iter()
-            .filter(|e| {
-                e.event_type == "task_completed"
-                    && e.outcome.as_deref() == Some("success")
-            })
+            .filter(|e| e.event_type == "task_completed" && e.outcome.as_deref() == Some("success"))
             .collect();
 
         if completed_tasks.len() >= 5 {
@@ -953,7 +961,10 @@ impl GuidanceRule for PredictiveRule {
                 .filter(|e| {
                     parse_context_json(&e.context)
                         .and_then(|c| c.as_object().map(|o| o.to_owned()))
-                        .and_then(|obj| obj.get("complexity").and_then(|c| c.as_str().map(|s| s.to_string())))
+                        .and_then(|obj| {
+                            obj.get("complexity")
+                                .and_then(|c| c.as_str().map(|s| s.to_string()))
+                        })
                         .map(|c| c == "high")
                         .unwrap_or(false)
                 })
@@ -964,7 +975,10 @@ impl GuidanceRule for PredictiveRule {
                 .filter(|e| {
                     parse_context_json(&e.context)
                         .and_then(|c| c.as_object().map(|o| o.to_owned()))
-                        .and_then(|obj| obj.get("complexity").and_then(|c| c.as_str().map(|s| s.to_string())))
+                        .and_then(|obj| {
+                            obj.get("complexity")
+                                .and_then(|c| c.as_str().map(|s| s.to_string()))
+                        })
                         .map(|c| c == "low")
                         .unwrap_or(false)
                 })
@@ -1041,9 +1055,7 @@ fn timestamp_now() -> u64 {
 
 /// Helper to safely parse JSON context from learning events
 fn parse_context_json(context: &Option<String>) -> Option<serde_json::Value> {
-    context
-        .as_ref()
-        .and_then(|s| serde_json::from_str(s).ok())
+    context.as_ref().and_then(|s| serde_json::from_str(s).ok())
 }
 
 #[cfg(test)]

@@ -2,7 +2,7 @@
 
 # Jujutsu—a version control system
 
-<p><img title="jj logo" src="docs/images/jj-logo.svg" width="320" height="320"></p>
+<p><img title="jj logo" alt="Jujutsu logo" src="docs/images/jj-logo.svg" width="320" height="320"></p>
 
 [![Release](https://img.shields.io/github/v/release/martinvonz/jj)](https://github.com/jj-vcs/jj/releases)
 [![Release date](https://img.shields.io/github/release-date/martinvonz/jj)](https://github.com/jj-vcs/jj/releases)
@@ -215,7 +215,6 @@ Jujutsu is designed so that the underlying data and storage model is abstract.
 Today, only the Git backend is production-ready. The Git backend uses the
 [gitoxide](https://github.com/Byron/gitoxide) Rust library.
 
-[backends]: https://docs.jj-vcs.dev/latest/glossary#backend
 
 The Git backend is fully featured and maintained, and allows you to use Jujutsu
 with any Git remote. The commits you create will look like regular Git commits.
@@ -224,7 +223,7 @@ remote. You can always switch back to Git.
 
 Here is how you can explore a GitHub repository with `jj`.
 
-<img src="demos/git_compat.png" />
+<img alt="Jujutsu Git compatibility demo" src="demos/git_compat.png" />
 
 You can even have a [colocated local
 workspace](https://docs.jj-vcs.dev/latest/git-compatibility#colocated-jujutsugit-repos)
@@ -243,7 +242,7 @@ is a commit, commands work the same way on the working-copy commit as on any
 other commit, so you can set the commit message before you're done with the
 changes.
 
-<img src="demos/working_copy.png" />
+<img alt="Jujutsu working copy demo" src="demos/working_copy.png" />
 
 ### The repo is the source of truth
 
@@ -263,7 +262,7 @@ the repo state after the operation. This means that you can easily restore to
 an earlier repo state, simply undo your operations one-by-one or even _revert_ a
 particular operation which does not have to be the most recent one.
 
-<img src="demos/operation_log.png" />
+<img alt="Jujutsu operation log demo" src="demos/operation_log.png" />
 
 ### Conflicts can be recorded in commits
 
@@ -278,11 +277,11 @@ merge commits correctly (unlike both Git and Mercurial).
 
 Basic conflict resolution:
 
-<img src="demos/resolve_conflicts.png" />
+<img alt="Jujutsu conflict resolution demo" src="demos/resolve_conflicts.png" />
 
 Juggling conflicts:
 
-<img src="demos/juggle_conflicts.png" />
+<img alt="Jujutsu conflict juggling demo" src="demos/juggle_conflicts.png" />
 
 ### Automatic rebase
 

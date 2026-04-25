@@ -174,7 +174,7 @@
 
 1. **Region Role**
    - Check role="region" is set
-   - aria-label should read: "[Title]: [Value][Suffix]"
+   - aria-label should read: "\[Title\]: \[Value\]\[Suffix\]"
    - Example: "Health Score: 95%"
 
 2. **Screen Reader**

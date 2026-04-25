@@ -253,10 +253,10 @@ Stop-Process -Name python -Force
 # Wait 5 seconds
 Start-Sleep -Seconds 5
 
-# Restart
-cd C:\dev\projects\crypto-enhanced
+# Human operator only: restart after confirming account state and risk controls
+cd C:\dev\apps\crypto-enhanced
 .\.venv\Scripts\activate
-python start_live_trading.py
+# python start_live_trading.py
 ```
 
 ---

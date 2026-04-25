@@ -1,6 +1,6 @@
+use crate::modules::prompts;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use crate::modules::prompts;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentProfile {
@@ -27,27 +27,39 @@ impl AgentRegistry {
         let mut agents = HashMap::new();
 
         // 1. Nova (Default Generalist)
-        agents.insert("nova".to_string(), AgentProfile {
-            id: "nova".to_string(),
-            name: "NOVA".to_string(),
-            description: "Neural Omnipresent Virtual Assistant - General purpose AI".to_string(),
-            system_prompt_template: prompts::require_system_prompt("nova-core-v1"),
-            capabilities: vec!["general".to_string(), "memory".to_string(), "desktop_control".to_string()],
-            model_config: None, // Use defaults
-        });
+        agents.insert(
+            "nova".to_string(),
+            AgentProfile {
+                id: "nova".to_string(),
+                name: "NOVA".to_string(),
+                description: "Neural Omnipresent Virtual Assistant - General purpose AI"
+                    .to_string(),
+                system_prompt_template: prompts::require_system_prompt("nova-core-v1"),
+                capabilities: vec![
+                    "general".to_string(),
+                    "memory".to_string(),
+                    "desktop_control".to_string(),
+                ],
+                model_config: None, // Use defaults
+            },
+        );
 
         // 2. Architect (High-level Planner)
-        agents.insert("architect".to_string(), AgentProfile {
-            id: "architect".to_string(),
-            name: "System Architect".to_string(),
-            description: "Expert in system design, patterns, and high-level structure.".to_string(),
-            system_prompt_template: prompts::require_system_prompt("nova-architect-v1"),
-            capabilities: vec!["planning".to_string(), "design".to_string()],
-            model_config: Some(ModelConfig {
-                temperature: 0.7, // Higher creativity for design
-                max_tokens: 4096,
-            }),
-        });
+        agents.insert(
+            "architect".to_string(),
+            AgentProfile {
+                id: "architect".to_string(),
+                name: "System Architect".to_string(),
+                description: "Expert in system design, patterns, and high-level structure."
+                    .to_string(),
+                system_prompt_template: prompts::require_system_prompt("nova-architect-v1"),
+                capabilities: vec!["planning".to_string(), "design".to_string()],
+                model_config: Some(ModelConfig {
+                    temperature: 0.7, // Higher creativity for design
+                    max_tokens: 4096,
+                }),
+            },
+        );
 
         // 3. Coder (Implementation Specialist)
         agents.insert("coder".to_string(), AgentProfile {

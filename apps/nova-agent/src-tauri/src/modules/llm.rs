@@ -1,17 +1,17 @@
 use crate::database;
 use crate::modules::agents::AgentRegistry;
-use crate::modules::credentials::{CredentialStore, keys};
-use crate::modules::state::{AppState, Config, ChatMessage, ToolCall};
+use crate::modules::credentials::{keys, CredentialStore};
 use crate::modules::prompts;
+use crate::modules::state::{AppState, ChatMessage, Config, ToolCall};
 use crate::modules::system_prompt;
 use crate::modules::{execution, filesystem, ml_learning, path_policy, web};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tauri::State;
 use std::sync::Arc;
+use tauri::State;
 use tokio::sync::Mutex as AsyncMutex;
-use tracing::{debug, info, error};
+use tracing::{debug, error, info};
 
 const MAX_TOOL_ARG_BYTES: usize = 20_000;
 const MAX_DESCRIPTION_BYTES: usize = 16_384;
@@ -72,7 +72,10 @@ fn validate_tool_args(raw: &str) -> Result<serde_json::Value, String> {
     if raw.len() > MAX_TOOL_ARG_BYTES {
         return Err("Tool arguments payload is too large".to_string());
     }
-    if raw.chars().any(|c| c.is_control() && c != '\n' && c != '\r') {
+    if raw
+        .chars()
+        .any(|c| c.is_control() && c != '\n' && c != '\r')
+    {
         return Err("Tool arguments contain control characters".to_string());
     }
     serde_json::from_str(raw).map_err(|e| format!("Invalid tool args JSON: {}", e))
@@ -107,7 +110,11 @@ fn sanitize_description(text: &str) -> Result<(), String> {
     if text.is_empty() || text.len() > MAX_DESCRIPTION_BYTES {
         return Err("Description is invalid".to_string());
     }
-    if text.contains('\u{0}') || text.chars().any(|c| c.is_control() && c != '\n' && c != '\r' && c != '\t') {
+    if text.contains('\u{0}')
+        || text
+            .chars()
+            .any(|c| c.is_control() && c != '\n' && c != '\r' && c != '\t')
+    {
         return Err("Description contains invalid characters".to_string());
     }
     Ok(())
@@ -118,7 +125,11 @@ fn validate_search_query(query: &str) -> Result<(), String> {
     if trimmed.is_empty() || trimmed.len() > MAX_QUERY_BYTES {
         return Err("Search query is invalid".to_string());
     }
-    if trimmed.contains('\u{0}') || trimmed.chars().any(|c| c.is_control() && c != '\t' && c != '\n' && c != '\r') {
+    if trimmed.contains('\u{0}')
+        || trimmed
+            .chars()
+            .any(|c| c.is_control() && c != '\t' && c != '\n' && c != '\r')
+    {
         return Err("Search query contains invalid characters".to_string());
     }
     Ok(())
@@ -150,12 +161,10 @@ struct Function {
     parameters: serde_json::Value,
 }
 
-
-
 /// Kimi K2.5 thinking mode configuration
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct ThinkingConfig {
-    r#type: String,  // "enabled" or "disabled"
+    r#type: String, // "enabled" or "disabled"
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -171,7 +180,7 @@ struct ChatCompletionRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     stream: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    thinking: Option<ThinkingConfig>,  // Kimi K2.5 specific
+    thinking: Option<ThinkingConfig>, // Kimi K2.5 specific
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -346,7 +355,9 @@ fn parse_task_policy(payload: &CreateTaskArgs) -> (bool, String, u64, bool) {
         .min(MAX_TASK_DURATION_MINUTES)
         .max(1);
 
-    let requires_approval = payload.requires_approval.unwrap_or(risk == "high" || risk == "critical");
+    let requires_approval = payload
+        .requires_approval
+        .unwrap_or(risk == "high" || risk == "critical");
 
     (auto_execute, risk, max_duration_minutes, requires_approval)
 }
@@ -375,9 +386,13 @@ fn detect_generic_plan_flags(
         flags.push("placeholder_language".to_string());
     }
 
-    let missing_paths = crate::modules::project_review::collect_missing_path_references(description);
+    let missing_paths =
+        crate::modules::project_review::collect_missing_path_references(description);
     if !missing_paths.is_empty() {
-        flags.push(format!("references_missing_paths: {}", missing_paths.join(", ")));
+        flags.push(format!(
+            "references_missing_paths: {}",
+            missing_paths.join(", ")
+        ));
     }
 
     let normalized_project_path = project_path.to_lowercase();
@@ -421,7 +436,7 @@ async fn execute_tool_call(
                 Ok(res) => res,
                 Err(e) => format!("Error executing code: {}", e),
             }
-        },
+        }
         "read_file" => {
             let args = match parse_tool_args::<PathArg>(&tool_call.function.arguments) {
                 Ok(value) => value,
@@ -436,7 +451,7 @@ async fn execute_tool_call(
                 Ok(res) => res,
                 Err(e) => format!("Error reading file: {}", e),
             }
-        },
+        }
         "write_file" => {
             let args = match parse_tool_args::<WriteFileArgs>(&tool_call.function.arguments) {
                 Ok(value) => value,
@@ -457,10 +472,10 @@ async fn execute_tool_call(
                          Status: VERIFIED (file size confirmed)",
                         result.path, result.bytes_written, result.line_count
                     )
-                },
+                }
                 Err(e) => format!("❌ Error writing file: {}", e),
             }
-        },
+        }
         "list_directory" => {
             let args = match parse_tool_args::<PathArg>(&tool_call.function.arguments) {
                 Ok(value) => value,
@@ -475,7 +490,7 @@ async fn execute_tool_call(
                 Ok(res) => res,
                 Err(e) => format!("Error listing directory: {}", e),
             }
-        },
+        }
         "internet_search" => {
             let args = match parse_tool_args::<SearchArg>(&tool_call.function.arguments) {
                 Ok(value) => value,
@@ -490,13 +505,19 @@ async fn execute_tool_call(
                 Ok(results) => {
                     let mut summary = String::new();
                     for (i, res) in results.iter().take(3).enumerate() {
-                        summary.push_str(&format!("{}. {} ({})\n{}\n\n", i+1, res.title, res.link, res.snippet));
+                        summary.push_str(&format!(
+                            "{}. {} ({})\n{}\n\n",
+                            i + 1,
+                            res.title,
+                            res.link,
+                            res.snippet
+                        ));
                     }
                     summary
-                },
+                }
                 Err(e) => format!("Error searching web: {}", e),
             }
-        },
+        }
         "inspect_learning_system" => {
             let args = match parse_tool_args::<InspectActionArg>(&tool_call.function.arguments) {
                 Ok(value) => value,
@@ -504,22 +525,24 @@ async fn execute_tool_call(
             };
 
             match args.action.as_str() {
-                "check_drift" => {
-                    match ml_learning::check_ml_drift() {
-                        Ok(res) => format!("ML Drift Check: Success={}\nData: {:?}\nError: {:?}", res.success, res.data, res.error),
-                        Err(e) => format!("Error checking drift: {}", e),
-                    }
+                "check_drift" => match ml_learning::check_ml_drift() {
+                    Ok(res) => format!(
+                        "ML Drift Check: Success={}\nData: {:?}\nError: {:?}",
+                        res.success, res.data, res.error
+                    ),
+                    Err(e) => format!("Error checking drift: {}", e),
                 },
-                "storage_efficiency" => {
-                    match ml_learning::get_storage_efficiency() {
-                        Ok(res) => format!("Storage Efficiency: Success={}\nData: {:?}\nError: {:?}", res.success, res.data, res.error),
-                        Err(e) => format!("Error checking storage: {}", e),
-                    }
+                "storage_efficiency" => match ml_learning::get_storage_efficiency() {
+                    Ok(res) => format!(
+                        "Storage Efficiency: Success={}\nData: {:?}\nError: {:?}",
+                        res.success, res.data, res.error
+                    ),
+                    Err(e) => format!("Error checking storage: {}", e),
                 },
                 "recent_events" => {
                     let db_guard = db.lock().await;
                     if let Some(service) = db_guard.as_ref() {
-                         match service.get_learning_events(Some(5), None) {
+                        match service.get_learning_events(Some(5), None) {
                             Ok(events) => {
                                 let summary: Vec<_> = events.into_iter().map(|e| {
                                     serde_json::json!({
@@ -529,17 +552,18 @@ async fn execute_tool_call(
                                         "outcome": e.outcome,
                                     })
                                 }).collect();
-                                serde_json::to_string_pretty(&summary).unwrap_or_else(|e| format!("Error serializing: {}", e))
-                            },
+                                serde_json::to_string_pretty(&summary)
+                                    .unwrap_or_else(|e| format!("Error serializing: {}", e))
+                            }
                             Err(e) => format!("Error fetching events: {}", e),
-                         }
+                        }
                     } else {
                         "Database not available".to_string()
                     }
-                },
-                _ => format!("Unknown action: {}", args.action)
+                }
+                _ => format!("Unknown action: {}", args.action),
             }
-        },
+        }
         "create_task" => {
             let args = match parse_tool_args::<CreateTaskArgs>(&tool_call.function.arguments) {
                 Ok(value) => value,
@@ -561,7 +585,8 @@ async fn execute_tool_call(
             };
 
             if is_path_token_blocked(&project_path) {
-                return "❌ Error creating task: project_path contains traversal tokens".to_string();
+                return "❌ Error creating task: project_path contains traversal tokens"
+                    .to_string();
             }
 
             if let Err(e) = path_policy::validate_directory_path(&project_path) {
@@ -585,7 +610,8 @@ async fn execute_tool_call(
                 Err(e) => return format!("❌ Error creating task: {}", e),
             };
 
-            let generic_plan_flags = detect_generic_plan_flags(&description, &project_path, &review);
+            let generic_plan_flags =
+                detect_generic_plan_flags(&description, &project_path, &review);
             if !generic_plan_flags.is_empty() {
                 return format!(
                     "❌ Error creating task: task is not grounded in the reviewed project. Flags: {}",
@@ -593,7 +619,8 @@ async fn execute_tool_call(
                 );
             }
 
-            let (auto_execute, risk, max_duration_minutes, requires_approval) = parse_task_policy(&args);
+            let (auto_execute, risk, max_duration_minutes, requires_approval) =
+                parse_task_policy(&args);
             let approved_for_execution = auto_execute && !requires_approval;
             let mut tags = vec![
                 format!("project:{}", project_path),
@@ -669,7 +696,7 @@ async fn execute_tool_call(
                             auto_execute,
                             review.artifact_path
                         )
-                    },
+                    }
                     Err(e) => {
                         error!("❌ Failed to create task: {}", e);
                         format!("❌ Error creating task: {}", e)
@@ -679,7 +706,7 @@ async fn execute_tool_call(
                 "❌ Database not available - cannot create task".to_string()
             }
         }
-        _ => format!("Unknown tool: {}", tool_call.function.name)
+        _ => format!("Unknown tool: {}", tool_call.function.name),
     }
 }
 
@@ -698,19 +725,25 @@ async fn call_openai_compatible(
     db: Arc<AsyncMutex<Option<database::DatabaseService>>>,
 ) -> Result<String, String> {
     let client = reqwest::Client::new();
-    let tools = if supports_tools { Some(get_tools()) } else { None };
-    let tool_choice = if supports_tools { Some("auto".to_string()) } else { None };
+    let tools = if supports_tools {
+        Some(get_tools())
+    } else {
+        None
+    };
+    let tool_choice = if supports_tools {
+        Some("auto".to_string())
+    } else {
+        None
+    };
 
-    let mut messages = vec![
-        ChatMessage {
-            role: "system".to_string(),
-            content: Some(system_prompt.to_string()),
-            tool_calls: None,
-            tool_call_id: None,
-            name: None,
-            reasoning_content: None,
-        },
-    ];
+    let mut messages = vec![ChatMessage {
+        role: "system".to_string(),
+        content: Some(system_prompt.to_string()),
+        tool_calls: None,
+        tool_call_id: None,
+        name: None,
+        reasoning_content: None,
+    }];
 
     // Add history (previous conversation)
     // Filter out any assistant messages with empty content (no tool_calls)
@@ -734,7 +767,7 @@ async fn call_openai_compatible(
         reasoning_content: None,
     });
 
-    let max_iterations = 15;  // Increased for complex multi-tool tasks
+    let max_iterations = 15; // Increased for complex multi-tool tasks
 
     for _ in 0..max_iterations {
         // Kimi K2.5 Configuration:
@@ -746,12 +779,14 @@ async fn call_openai_compatible(
         let request = ChatCompletionRequest {
             model: model.to_string(),
             messages: messages.clone(),
-            temperature: 0.6,  // Instant mode for tool calling
+            temperature: 0.6, // Instant mode for tool calling
             max_tokens: 32768,
             tools: tools.clone(),
             tool_choice: tool_choice.clone(),
             stream: Some(false),
-            thinking: Some(ThinkingConfig { r#type: "disabled".to_string() }),
+            thinking: Some(ThinkingConfig {
+                r#type: "disabled".to_string(),
+            }),
         };
 
         // Treat `base_url` as an OpenAI-compatible API base (e.g. `.../v1` or `.../openai/v1`).
@@ -773,11 +808,17 @@ async fn call_openai_compatible(
 
         if !response.status().is_success() {
             let status = response.status();
-            let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Unknown error".to_string());
             return Err(format!("API error {}: {}", status, error_text));
         }
 
-        let data: ChatCompletionResponse = response.json().await.map_err(|e| format!("Failed to parse response: {}", e))?;
+        let data: ChatCompletionResponse = response
+            .json()
+            .await
+            .map_err(|e| format!("Failed to parse response: {}", e))?;
 
         if let Some(choice) = data.choices.first() {
             let message = &choice.message;
@@ -794,7 +835,9 @@ async fn call_openai_compatible(
                             execute_tool_call(tool_call, db.clone()),
                         )
                         .await
-                        .unwrap_or_else(|_| format!("Tool '{}' timed out after 30s", tool_call.function.name));
+                        .unwrap_or_else(|_| {
+                            format!("Tool '{}' timed out after 30s", tool_call.function.name)
+                        });
 
                         messages.push(ChatMessage {
                             role: "tool".to_string(),
@@ -871,8 +914,11 @@ fn resolve_provider(active_model: &str, config: &Config) -> Result<ProviderConfi
 
     // --- Ollama (local, no API key needed) ---
     if model_lower.starts_with("ollama:") || model_lower.starts_with("ollama/") {
-        let model = active_model.splitn(2, |c| c == ':' || c == '/').nth(1)
-            .unwrap_or("llama3.1").to_string();
+        let model = active_model
+            .splitn(2, |c| c == ':' || c == '/')
+            .nth(1)
+            .unwrap_or("llama3.1")
+            .to_string();
         let base_url = std::env::var("OLLAMA_BASE_URL")
             .unwrap_or_else(|_| "http://localhost:11434/v1".to_string());
         return Ok(ProviderConfig {
@@ -886,10 +932,19 @@ fn resolve_provider(active_model: &str, config: &Config) -> Result<ProviderConfi
 
     // --- OpenRouter ---
     if model_lower.starts_with("openrouter:") || model_lower.starts_with("openrouter/") {
-        let model = active_model.splitn(2, |c| c == ':' || c == '/').nth(1)
-            .unwrap_or("anthropic/claude-sonnet-4").to_string();
-        let api_key = get_api_key(keys::OPENROUTER_API_KEY, "OPENROUTER_API_KEY", &config.openrouter_api_key)
-            .ok_or_else(|| "OpenRouter API key not configured. Set OPENROUTER_API_KEY in Settings.".to_string())?;
+        let model = active_model
+            .splitn(2, |c| c == ':' || c == '/')
+            .nth(1)
+            .unwrap_or("anthropic/claude-sonnet-4")
+            .to_string();
+        let api_key = get_api_key(
+            keys::OPENROUTER_API_KEY,
+            "OPENROUTER_API_KEY",
+            &config.openrouter_api_key,
+        )
+        .ok_or_else(|| {
+            "OpenRouter API key not configured. Set OPENROUTER_API_KEY in Settings.".to_string()
+        })?;
         return Ok(ProviderConfig {
             api_key,
             base_url: "https://openrouter.ai/api/v1".to_string(),
@@ -907,7 +962,9 @@ fn resolve_provider(active_model: &str, config: &Config) -> Result<ProviderConfi
             active_model.to_string()
         };
         let api_key = get_api_key(keys::KIMI_API_KEY, "KIMI_API_KEY", &config.kimi_api_key)
-            .ok_or_else(|| "Kimi API key not configured. Set KIMI_API_KEY in Settings.".to_string())?;
+            .ok_or_else(|| {
+                "Kimi API key not configured. Set KIMI_API_KEY in Settings.".to_string()
+            })?;
         return Ok(ProviderConfig {
             api_key,
             base_url: "https://api.moonshot.ai/v1".to_string(),
@@ -920,8 +977,14 @@ fn resolve_provider(active_model: &str, config: &Config) -> Result<ProviderConfi
     // --- DeepSeek ---
     if model_lower.starts_with("deepseek") {
         let model = active_model.to_string();
-        let api_key = get_api_key(keys::DEEPSEEK_API_KEY, "DEEPSEEK_API_KEY", &config.deepseek_api_key)
-            .ok_or_else(|| "DeepSeek API key not configured. Set DEEPSEEK_API_KEY in Settings.".to_string())?;
+        let api_key = get_api_key(
+            keys::DEEPSEEK_API_KEY,
+            "DEEPSEEK_API_KEY",
+            &config.deepseek_api_key,
+        )
+        .ok_or_else(|| {
+            "DeepSeek API key not configured. Set DEEPSEEK_API_KEY in Settings.".to_string()
+        })?;
         return Ok(ProviderConfig {
             api_key,
             base_url: config.deepseek_base_url.clone(),
@@ -933,10 +996,15 @@ fn resolve_provider(active_model: &str, config: &Config) -> Result<ProviderConfi
 
     // --- Groq ---
     if model_lower.starts_with("groq:") || model_lower.starts_with("groq/") {
-        let model = active_model.splitn(2, |c| c == ':' || c == '/').nth(1)
-            .unwrap_or("llama-3.3-70b-versatile").to_string();
+        let model = active_model
+            .splitn(2, |c| c == ':' || c == '/')
+            .nth(1)
+            .unwrap_or("llama-3.3-70b-versatile")
+            .to_string();
         let api_key = get_api_key(keys::GROQ_API_KEY, "GROQ_API_KEY", &config.groq_api_key)
-            .ok_or_else(|| "Groq API key not configured. Set GROQ_API_KEY in Settings.".to_string())?;
+            .ok_or_else(|| {
+                "Groq API key not configured. Set GROQ_API_KEY in Settings.".to_string()
+            })?;
         return Ok(ProviderConfig {
             api_key,
             base_url: "https://api.groq.com/openai/v1".to_string(),
@@ -947,7 +1015,11 @@ fn resolve_provider(active_model: &str, config: &Config) -> Result<ProviderConfi
     }
 
     // --- Default fallback: try OpenRouter first (most flexible), then Kimi ---
-    if let Some(api_key) = get_api_key(keys::OPENROUTER_API_KEY, "OPENROUTER_API_KEY", &config.openrouter_api_key) {
+    if let Some(api_key) = get_api_key(
+        keys::OPENROUTER_API_KEY,
+        "OPENROUTER_API_KEY",
+        &config.openrouter_api_key,
+    ) {
         return Ok(ProviderConfig {
             api_key,
             base_url: "https://openrouter.ai/api/v1".to_string(),
@@ -967,7 +1039,10 @@ fn resolve_provider(active_model: &str, config: &Config) -> Result<ProviderConfi
         });
     }
 
-    Err("No LLM provider configured. Add an API key in Settings (OpenRouter recommended).".to_string())
+    Err(
+        "No LLM provider configured. Add an API key in Settings (OpenRouter recommended)."
+            .to_string(),
+    )
 }
 
 pub async fn dispatch_model_request(
@@ -980,9 +1055,14 @@ pub async fn dispatch_model_request(
 ) -> Result<String, String> {
     let provider = resolve_provider(active_model, config)?;
 
-    info!("LLM Provider: {} | Model: {} | Endpoint: {}",
-        provider.provider_name, provider.model, provider.base_url);
-    info!("API Key: {}...", &provider.api_key[..8.min(provider.api_key.len())]);
+    info!(
+        "LLM Provider: {} | Model: {} | Endpoint: {}",
+        provider.provider_name, provider.model, provider.base_url
+    );
+    info!(
+        "API Key: {}...",
+        &provider.api_key[..8.min(provider.api_key.len())]
+    );
 
     call_openai_compatible(
         &provider.api_key,
@@ -993,7 +1073,8 @@ pub async fn dispatch_model_request(
         system_prompt,
         provider.supports_tools,
         db.clone(),
-    ).await
+    )
+    .await
 }
 
 #[tauri::command]
@@ -1038,7 +1119,16 @@ pub async fn chat_with_agent(
     // Release lock before long-running async call
     drop(agent_state);
 
-    match dispatch_model_request(&message, history, &system_prompt, &active_model, &config, &db).await {
+    match dispatch_model_request(
+        &message,
+        history,
+        &system_prompt,
+        &active_model,
+        &config,
+        &db,
+    )
+    .await
+    {
         Ok(res) => {
             // Re-acquire lock to update history
             let mut agent_state = state.lock().await;
@@ -1076,21 +1166,18 @@ pub async fn chat_with_agent(
             Ok(res)
         }
         Err(e) => {
-             // Log failure to DB
-             let db_guard = db.lock().await;
-             if let Some(service) = db_guard.as_ref() {
-                 let _ = service.log_activity("System Error: Chat Failed", &e);
-             }
-             Err(format!("Chat Error: {}", e))
-        },
+            // Log failure to DB
+            let db_guard = db.lock().await;
+            if let Some(service) = db_guard.as_ref() {
+                let _ = service.log_activity("System Error: Chat Failed", &e);
+            }
+            Err(format!("Chat Error: {}", e))
+        }
     }
 }
 
 #[tauri::command]
-pub async fn set_active_model(
-    model: String,
-    state: State<'_, AppState>,
-) -> Result<(), String> {
+pub async fn set_active_model(model: String, state: State<'_, AppState>) -> Result<(), String> {
     let mut agent_state = state.lock().await;
     agent_state.active_model = model.clone();
     info!("Active model set to: {}", model);
@@ -1147,7 +1234,8 @@ mod tests {
             requires_approval: None,
         };
 
-        let (auto_execute, risk, max_duration_minutes, requires_approval) = parse_task_policy(&payload);
+        let (auto_execute, risk, max_duration_minutes, requires_approval) =
+            parse_task_policy(&payload);
 
         assert!(!auto_execute);
         assert_eq!(risk, "medium");
@@ -1168,7 +1256,8 @@ mod tests {
             requires_approval: None,
         };
 
-        let (auto_execute, risk, max_duration_minutes, requires_approval) = parse_task_policy(&payload);
+        let (auto_execute, risk, max_duration_minutes, requires_approval) =
+            parse_task_policy(&payload);
 
         assert!(auto_execute);
         assert_eq!(risk, "critical");
@@ -1196,7 +1285,8 @@ mod tests {
             &review,
         );
 
-        assert!(flags.iter().any(|flag| flag == "no_review_evidence_reference"));
+        assert!(flags
+            .iter()
+            .any(|flag| flag == "no_review_evidence_reference"));
     }
-
 }

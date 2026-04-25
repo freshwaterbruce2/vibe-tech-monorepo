@@ -14,6 +14,7 @@ pub mod orchestrator;
 pub mod path_policy;
 pub mod pattern_engine;
 pub mod prediction_engine;
+pub mod procedural_memory;
 pub mod project;
 pub mod project_review;
 pub mod prompts;

@@ -1,4 +1,4 @@
-﻿---
+---
 description: Show current planning session status and recent progress
 model: sonnet
 ---

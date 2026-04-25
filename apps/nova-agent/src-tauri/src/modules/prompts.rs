@@ -91,7 +91,10 @@ fn resolve_seed_dir() -> Option<PathBuf> {
     None
 }
 
-fn try_seed_prompt_from_seed_files(prompt_name: &str, target_conn: &Connection) -> Result<bool, String> {
+fn try_seed_prompt_from_seed_files(
+    prompt_name: &str,
+    target_conn: &Connection,
+) -> Result<bool, String> {
     let seed_dir = match resolve_seed_dir() {
         Some(dir) => dir,
         None => return Ok(false),
@@ -167,7 +170,10 @@ fn try_seed_prompt_from_seed_files(prompt_name: &str, target_conn: &Connection) 
         )
         .map_err(|e| format!("Prompt version pointer update failed: {}", e))?;
 
-    info!("Seeded missing prompt '{}' from {:?}", prompt_name, seed_path);
+    info!(
+        "Seeded missing prompt '{}' from {:?}",
+        prompt_name, seed_path
+    );
     Ok(true)
 }
 
@@ -269,60 +275,55 @@ fn try_seed_prompt_from_legacy(
         },
     );
 
-    let (
-        version_id,
-        version_prompt_id,
-        content,
-        dna,
-        metrics,
-        version_created_at,
-        created_by,
-    ) = match version_row {
-        Ok(row) => row,
-        Err(rusqlite::Error::QueryReturnedNoRows) => return Ok(false),
-        Err(e) => {
-            error!("Legacy prompt version lookup failed: {}", e);
-            return Ok(false);
-        }
-    };
+    let (version_id, version_prompt_id, content, dna, metrics, version_created_at, created_by) =
+        match version_row {
+            Ok(row) => row,
+            Err(rusqlite::Error::QueryReturnedNoRows) => return Ok(false),
+            Err(e) => {
+                error!("Legacy prompt version lookup failed: {}", e);
+                return Ok(false);
+            }
+        };
 
     ensure_prompt_tables(target_conn)?;
 
-    target_conn.execute(
-        "\
+    target_conn
+        .execute(
+            "\
         INSERT OR IGNORE INTO prompt_entities (\n\
             prompt_id, name, description, category, evolution_stage, current_version,\n\
             created_at, last_updated\n\
         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-        params![
-            prompt_id,
-            name,
-            description,
-            category,
-            evolution_stage,
-            current_version,
-            created_at,
-            last_updated,
-        ],
-    )
-    .map_err(|e| format!("Prompt entity seed failed: {}", e))?;
+            params![
+                prompt_id,
+                name,
+                description,
+                category,
+                evolution_stage,
+                current_version,
+                created_at,
+                last_updated,
+            ],
+        )
+        .map_err(|e| format!("Prompt entity seed failed: {}", e))?;
 
-    target_conn.execute(
-        "\
+    target_conn
+        .execute(
+            "\
         INSERT OR IGNORE INTO prompt_versions (\n\
             version_id, prompt_id, content, dna, metrics, created_at, created_by\n\
         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-        params![
-            version_id,
-            version_prompt_id,
-            content,
-            dna,
-            metrics,
-            version_created_at,
-            created_by,
-        ],
-    )
-    .map_err(|e| format!("Prompt version seed failed: {}", e))?;
+            params![
+                version_id,
+                version_prompt_id,
+                content,
+                dna,
+                metrics,
+                version_created_at,
+                created_by,
+            ],
+        )
+        .map_err(|e| format!("Prompt version seed failed: {}", e))?;
 
     target_conn
         .execute(
@@ -339,10 +340,10 @@ fn try_seed_prompt_from_legacy(
 }
 
 /// Fetches the active system prompt content for a given prompt name.
-/// 
+///
 /// # Arguments
 /// * `prompt_name` - The unique name of the prompt entity (e.g., "nova-core-v1")
-/// 
+///
 /// # Returns
 /// * `Result<String, String>` - The active prompt content or a failure reason.
 pub fn fetch_system_prompt(prompt_name: &str) -> std::result::Result<String, String> {
@@ -353,7 +354,10 @@ pub fn fetch_system_prompt(prompt_name: &str) -> std::result::Result<String, Str
                 .map_err(|e| format!("Failed to read prompt seed file {:?}: {}", seed_path, e))?;
             let trimmed = content.trim();
             if !trimmed.is_empty() {
-                info!("Loaded prompt '{}' directly from {:?}", prompt_name, seed_path);
+                info!(
+                    "Loaded prompt '{}' directly from {:?}",
+                    prompt_name, seed_path
+                );
                 return Ok(trimmed.to_string());
             }
         }
@@ -367,7 +371,7 @@ pub fn fetch_system_prompt(prompt_name: &str) -> std::result::Result<String, Str
                 error!("Failed to ensure prompt tables: {}", e);
                 return Err(e);
             }
-            
+
             match fetch_prompt_content(&conn, prompt_name) {
                 Ok(content) => {
                     info!("Successfully fetched active prompt for '{}'", prompt_name);
@@ -385,11 +389,17 @@ pub fn fetch_system_prompt(prompt_name: &str) -> std::result::Result<String, Str
                             )
                         })
                     } else {
-                        Err(format!("Prompt database missing required prompt '{}'", prompt_name))
+                        Err(format!(
+                            "Prompt database missing required prompt '{}'",
+                            prompt_name
+                        ))
                     }
                 }
                 Err(e) => {
-                    error!("Failed to fetch content for prompt '{}': {}", prompt_name, e);
+                    error!(
+                        "Failed to fetch content for prompt '{}': {}",
+                        prompt_name, e
+                    );
                     Err(format!("Prompt query failed for '{}': {}", prompt_name, e))
                 }
             }

@@ -362,9 +362,7 @@ pub async fn get_storage_health(
 ) -> Result<StorageHealth, String> {
     let db_initialized = db.lock().await.is_some();
     let database_path = config.database_path.clone();
-    let on_d_drive = database_path
-        .to_uppercase()
-        .starts_with("D:\\");
+    let on_d_drive = database_path.to_uppercase().starts_with("D:\\");
 
     let message = if !on_d_drive {
         "DATABASE_PATH must be on D: drive".to_string()
@@ -414,10 +412,13 @@ pub async fn create_task(
         if let Ok(existing_tasks) = service.get_tasks(None, Some(100)) {
             for task in &existing_tasks {
                 let title_similarity = calculate_similarity(&request.title, &task.title);
-                
+
                 // Title >80% = duplicate
                 if title_similarity > 0.8 {
-                    info!("Duplicate task detected: {} matches {}", request.title, task.title);
+                    info!(
+                        "Duplicate task detected: {} matches {}",
+                        request.title, task.title
+                    );
                     return Ok(CreateTaskResult {
                         task_id: task.id.clone(),
                         is_duplicate: true,
@@ -482,14 +483,14 @@ fn calculate_similarity(a: &str, b: &str) -> f32 {
     let b_lower = b.to_lowercase();
     let a_words: std::collections::HashSet<&str> = a_lower.split_whitespace().collect();
     let b_words: std::collections::HashSet<&str> = b_lower.split_whitespace().collect();
-    
+
     if a_words.is_empty() || b_words.is_empty() {
         return 0.0;
     }
-    
+
     let intersection = a_words.intersection(&b_words).count();
     let union = a_words.union(&b_words).count();
-    
+
     intersection as f32 / union as f32
 }
 
@@ -554,7 +555,7 @@ pub async fn get_deep_work_data(
                 if parts.len() >= 3 {
                     let app = parts[1].to_string();
                     let minutes = parts[2].parse::<u32>().unwrap_or(0);
-                    
+
                     total_minutes += minutes;
                     if minutes > longest_session {
                         longest_session = minutes;

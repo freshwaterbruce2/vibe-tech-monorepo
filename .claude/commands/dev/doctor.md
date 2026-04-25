@@ -189,7 +189,7 @@ if (Test-Path $tradingDb) {
     }
 
     # Check recent logs
-    $logPath = "C:\dev\projects\crypto-enhanced\logs\trading.log"
+    $logPath = "C:\dev\apps\crypto-enhanced\logs\trading.log"
     if (Test-Path $logPath) {
         Write-Host "📄 Recent log entries:" -ForegroundColor Cyan
         Get-Content $logPath -Tail 3 | ForEach-Object { Write-Host "   $_" -ForegroundColor Gray }
@@ -208,8 +208,8 @@ Write-Host "=== RECENT TEST RESULTS ===" -ForegroundColor Cyan
 Write-Host ""
 
 $testPaths = @(
-    "C:\dev\projects\active\desktop-apps\deepcode-editor\test_output.txt",
-    "C:\dev\projects\active\desktop-apps\deepcode-editor\PROJECT_STATUS.md",
+    "C:\dev\apps\vibe-code-studio\test_output.txt",
+    "C:\dev\apps\vibe-code-studio\PROJECT_STATUS.md",
     "C:\dev\test-results"
 )
 

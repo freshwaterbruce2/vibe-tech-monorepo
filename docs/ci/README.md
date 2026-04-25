@@ -10,10 +10,10 @@ This monorepo uses **GitHub Actions**. The source of truth is [`/.github/workflo
 | --- | --- |
 | `install` | Install dependencies with locked pnpm version |
 | `sync-audit` | Enforce monorepo synchronization policy checks |
-| `lint` | Nx affected lint checks (fallback: all projects) |
-| `typecheck` | Nx affected typecheck checks (fallback: all projects) |
-| `test` | Nx affected test checks (fallback: all projects) |
-| `build` | Nx affected build checks (fallback: all projects) |
+| `lint` | Nx affected lint checks |
+| `typecheck` | Nx affected typecheck checks |
+| `test` | Nx affected test checks |
+| `build` | Nx affected build checks |
 | `changeset-*` | Versioning and publish automation on `main` |
 
 ## Nx-Affected Strategy
@@ -27,7 +27,8 @@ pnpm nx affected -t test --base=origin/main --head=HEAD
 pnpm nx affected -t build --base=origin/main --head=HEAD
 ```
 
-If the base ref is unavailable in CI, the pipeline falls back to full `nx run-many --all`.
+The current workflow does not implement an automatic full-workspace fallback.
+Use the explicit `ci:*:all` or `*:all` scripts when a full sweep is required.
 
 ## Local CI Simulation
 

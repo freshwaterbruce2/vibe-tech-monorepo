@@ -175,11 +175,13 @@ To prevent future occurrences:
 
 ### [Date]: [Issue Title]
 
-**Symptoms**
--
+### Symptoms
 
-**Root Cause**
--
+- TBD
+
+### Root Cause
+
+- TBD
 
 **Time to Fix**:
 
@@ -187,17 +189,19 @@ To prevent future occurrences:
 - Implementation: X minutes
 - Total: X minutes
 
-**Solution**:
+### Solution
 
-```
+```text
 Code or commands
 ```
 
-**Search Queries That Worked**
--
+### Search Queries That Worked
 
-**Prevention**
--
+- TBD
+
+### Prevention
+
+- TBD
 
 ---
 

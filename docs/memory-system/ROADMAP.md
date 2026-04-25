@@ -5,6 +5,10 @@
 **Related**: PRD.md, ARCHITECTURE.md
 **Status**: READY FOR EXECUTION
 
+> Current reality note (2026-04-25): this roadmap is historical. Do not archive
+> `D:\learning-system` Python files or `D:\databases\agent_learning.db` from
+> these tasks without first checking `D:\databases\DB_INVENTORY.md`.
+
 ---
 
 ## Executive Summary

@@ -36,7 +36,7 @@ A professional hotel booking platform built with React, TypeScript, and AI-power
 - **Frontend**: React 19, TypeScript 5.9+, Vite 7
 - **Styling**: Tailwind CSS, Framer Motion
 - **State Management**: Zustand with persistence
-- **Routing**: React Router v6
+- **Routing**: React Router v7
 - **API**: Axios, React Query
 - **Testing**: Vitest, React Testing Library, Playwright
 - **Backend**: Express.js (legacy integration)
@@ -45,33 +45,29 @@ A professional hotel booking platform built with React, TypeScript, and AI-power
 
 ### Prerequisites
 
-- Node.js 18+
-- npm or yarn
+- Node.js 22+
+- pnpm 10.33+
 
 ### Installation
 
-```bash
+```powershell
 # Install dependencies
-npm install
+cd C:\dev
+pnpm install
 
 # Start development server
-npm run dev
-
-# Start backend server (for API integration)
-cd backend
-npm run dev
+pnpm nx run business-booking-platform:dev
 ```
 
 ### Available Scripts
 
-```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run preview      # Preview production build
-npm test             # Run unit tests
-npm run test:e2e     # Run E2E tests
-npm run lint         # Run ESLint
-npm run typecheck    # Run TypeScript checks
+```powershell
+pnpm nx run business-booking-platform:dev       # Start development server
+pnpm nx run business-booking-platform:build     # Build for production
+pnpm nx run business-booking-platform:preview   # Preview production build
+pnpm nx run business-booking-platform:test      # Run unit tests
+pnpm nx run business-booking-platform:lint      # Run ESLint
+pnpm nx run business-booking-platform:typecheck # Run TypeScript checks
 ```
 
 ## Project Structure
@@ -191,10 +187,12 @@ Each category features:
 
 ### Git Workflow
 
-```bash
+```powershell
 git checkout -b feature/your-feature
 # Make changes
-npm run lint && npm run typecheck && npm test
+pnpm nx run business-booking-platform:lint
+pnpm nx run business-booking-platform:typecheck
+pnpm nx run business-booking-platform:test
 git commit -m "feat: add your feature"
 git push origin feature/your-feature
 ```
@@ -212,8 +210,8 @@ git push origin feature/your-feature
 
 ### Deployment Steps
 
-```bash
-npm run build
+```powershell
+pnpm nx run business-booking-platform:build
 # Drag the dist/ folder to Netlify dashboard for instant deployment
 ```
 

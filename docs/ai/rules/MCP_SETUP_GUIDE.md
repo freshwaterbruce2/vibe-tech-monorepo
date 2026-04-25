@@ -169,7 +169,7 @@ Restart Claude Code completely to load the new token.
 
 **Current Configuration:**
 
-- Database: `C:/dev/projects/crypto-enhanced/trading.db` (SQLite)
+- Database: `C:/dev/apps/crypto-enhanced/trading.db` (SQLite)
 - Mode: Read-only (safe for production)
 
 **Status:** ✓ Ready to use (no additional setup)
@@ -214,7 +214,7 @@ Or add multiple databases by creating separate server entries:
   "args": [
     "-y",
     "@modelcontextprotocol/server-postgres",
-    "sqlite://C:/dev/projects/crypto-enhanced/trading.db"
+    "sqlite://C:/dev/apps/crypto-enhanced/trading.db"
   ]
 }
 ```
@@ -229,7 +229,7 @@ After completing setup, verify connections:
 2. Ask: "What MCP servers are connected?"
 3. Test each server:
    - **Nx**: "Show me the Nx project graph"
-   - **Filesystem**: "List files in C:\dev\projects\crypto-enhanced"
+   - **Filesystem**: "List files in C:\dev\apps\crypto-enhanced"
    - **Puppeteer**: "Navigate to <https://example.com> and take a screenshot"
    - **GitHub**: "Show me recent commits on this repository"
    - **PostgreSQL**: "Show tables in the trading database"
@@ -279,7 +279,7 @@ After completing setup, verify connections:
 
 **Solutions:**
 
-1. Verify database file exists: `Test-Path "C:/dev/projects/crypto-enhanced/trading.db"`
+1. Verify database file exists: `Test-Path "C:/dev/apps/crypto-enhanced/trading.db"`
 2. Check file permissions (read access required)
 3. For PostgreSQL, verify connection string format
 4. Test connection string with: `sqlite3 trading.db ".tables"` or `psql <connection_string>`

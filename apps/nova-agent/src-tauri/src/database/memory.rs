@@ -46,7 +46,7 @@ impl DatabaseService {
     /// Store a new memory
     pub fn store_memory(&self, memory: &Memory) -> Result<String, DatabaseError> {
         let tags_json = serde_json::to_string(&memory.tags).unwrap_or_else(|_| "[]".to_string());
-        
+
         self.learning_db.execute(
             "INSERT INTO memories (id, memory_type, content, context, importance, access_count, created_at, last_accessed, expires_at, tags)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
@@ -69,9 +69,13 @@ impl DatabaseService {
     }
 
     /// Search memories by text query (simple LIKE search)
-    pub fn search_memories(&self, query: &str, limit: u32) -> Result<Vec<MemorySearchResult>, DatabaseError> {
+    pub fn search_memories(
+        &self,
+        query: &str,
+        limit: u32,
+    ) -> Result<Vec<MemorySearchResult>, DatabaseError> {
         let search_pattern = format!("%{}%", query.to_lowercase());
-        
+
         let mut stmt = self.learning_db.prepare(
             "SELECT id, memory_type, content, context, importance, access_count, created_at, last_accessed, expires_at, tags
              FROM memories
@@ -83,7 +87,7 @@ impl DatabaseService {
         let results = stmt.query_map(params![search_pattern, limit], |row| {
             let tags_json: String = row.get(9)?;
             let tags: Vec<String> = serde_json::from_str(&tags_json).unwrap_or_default();
-            
+
             Ok(MemorySearchResult {
                 memory: Memory {
                     id: row.get(0)?,
@@ -120,7 +124,7 @@ impl DatabaseService {
         let result = stmt.query_row(params![id], |row| {
             let tags_json: String = row.get(9)?;
             let tags: Vec<String> = serde_json::from_str(&tags_json).unwrap_or_default();
-            
+
             Ok(Memory {
                 id: row.get(0)?,
                 memory_type: row.get(1)?,
@@ -143,7 +147,11 @@ impl DatabaseService {
     }
 
     /// Get memories by type
-    pub fn get_memories_by_type(&self, memory_type: &str, limit: u32) -> Result<Vec<Memory>, DatabaseError> {
+    pub fn get_memories_by_type(
+        &self,
+        memory_type: &str,
+        limit: u32,
+    ) -> Result<Vec<Memory>, DatabaseError> {
         let mut stmt = self.learning_db.prepare(
             "SELECT id, memory_type, content, context, importance, access_count, created_at, last_accessed, expires_at, tags
              FROM memories
@@ -155,7 +163,7 @@ impl DatabaseService {
         let results = stmt.query_map(params![memory_type, limit], |row| {
             let tags_json: String = row.get(9)?;
             let tags: Vec<String> = serde_json::from_str(&tags_json).unwrap_or_default();
-            
+
             Ok(Memory {
                 id: row.get(0)?,
                 memory_type: row.get(1)?,
@@ -199,10 +207,10 @@ impl DatabaseService {
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs();
-        
+
         // Archive memories older than 7 days with low importance and low access
         let seven_days_ago = now - (7 * 24 * 60 * 60);
-        
+
         let count = self.learning_db.execute(
             "UPDATE memories SET archived = 1 
              WHERE archived = 0 
@@ -234,11 +242,11 @@ impl DatabaseService {
 
     /// Count non-archived memories
     pub fn get_memory_count(&self) -> Result<u64, DatabaseError> {
-        let count: u64 = self
-            .learning_db
-            .query_row("SELECT COUNT(*) FROM memories WHERE archived = 0", [], |row| {
-                row.get(0)
-            })?;
+        let count: u64 = self.learning_db.query_row(
+            "SELECT COUNT(*) FROM memories WHERE archived = 0",
+            [],
+            |row| row.get(0),
+        )?;
         Ok(count)
     }
 

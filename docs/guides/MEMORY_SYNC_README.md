@@ -10,23 +10,23 @@ This system watches your active projects and automatically mirrors changes to `D
 
 ```powershell
 # Test configuration
-.\Test-MemorySync.ps1
+.\scripts\Test-MemorySync.ps1
 
 # Start memory sync (interactive)
-.\Start-MemorySync.ps1
+.\scripts\Start-MemorySync.ps1
 
 # Start in background
-.\Start-MemorySync.ps1 -Silent
+.\scripts\Start-MemorySync.ps1 -Silent
 
 # Add to Windows startup
-.\Start-MemorySync.ps1 -RunOnStartup -Silent
+.\scripts\Start-MemorySync.ps1 -RunOnStartup -Silent
 ```
 
 ## Monitored Projects
 
 1. **crypto-enhanced** - Python Kraken trading system
 2. **vibe-tech-lovable** - Portfolio website
-3. **digital-content-builder** - AI content generation
+3. **shipping-pwa** - Shipping workflow PWA
 4. **business-booking-platform** - Hotel booking system
 5. **vibe-tutor** - Mobile PWA for students
 6. **memory-bank** - Memory management system
@@ -72,7 +72,7 @@ D:\memory_bank\
 ├── projects\
 │   ├── crypto-enhanced\
 │   ├── vibe-tech-lovable\
-│   ├── digital-content-builder\
+│   ├── shipping-pwa\
 │   ├── business-booking-platform\
 │   ├── vibe-tutor\
 │   └── memory-bank\
@@ -199,10 +199,11 @@ Remove-Item "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\MemorySy
 
 ## Created Files
 
-- `C:\dev\memory_sync.yaml` - Configuration
-- `C:\dev\Start-MemorySync.ps1` - Launcher script
-- `C:\dev\memory_watcher.py` - Python watcher (auto-created)
-- `C:\dev\Test-MemorySync.ps1` - Test script
+- `C:\dev\scripts\Start-MemorySync.ps1` - Launcher script
+- `C:\dev\scripts\Test-MemorySync.ps1` - Test script
+- `C:\dev\scripts\python\memory_watcher.py` - Python watcher
+- Memory-sync configuration should stay under `scripts\` or `D:\`, not as
+  generated files in the repo root.
 - `D:\memory_bank\` - Centralized memory storage
 - `D:\logs\memory_sync.log` - Activity log
 

@@ -50,20 +50,17 @@ export function MyComponent() {
 
 ## Development
 
-```bash
-# Type check
-cd packages/ui
-bun run typecheck
-
-# Lint
-bun run lint
+```powershell
+cd C:\dev
+pnpm nx run @vibetech/ui:typecheck
+pnpm nx run @vibetech/ui:lint
 ```
 
 ## Adding New Components
 
 1. Create component file in `packages/ui/src/components/`
 2. Export from `packages/ui/src/index.ts`
-3. Run `bun install` from monorepo root
+3. Run `pnpm install` from the monorepo root if dependencies changed
 4. Import in your app
 
 ## Architecture
@@ -74,7 +71,7 @@ This package uses:
 - **Radix UI** primitives for accessibility
 - **class-variance-authority** for variant management
 - **Tailwind CSS** for styling
-- **React 18.3.1** as peer dependency
+- **React 18.3.1 or React 19** as peer dependency; the root workspace pins React 19.2.x
 
 ## Future Roadmap
 

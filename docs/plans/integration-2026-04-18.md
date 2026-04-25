@@ -5,6 +5,11 @@ Author: The Architect (system-design review for Bruce)
 Scope: C:\dev monorepo + D:\databases + D:\learning-system + D:\ memory sprawl
 Goal: Make the monorepo work *for itself* — writes from any app flow into memory, learning, and RAG; nightly self-analysis produces prioritized Finisher tasks without human glue.
 
+> Superseded safety note (2026-04-25): database cleanup guidance in this plan must
+> be rechecked against `D:\databases\DB_INVENTORY.md` before use. `database.db` is
+> currently an active Hub DB and must not be renamed without a coordinated fan-out
+> migration.
+
 ---
 
 ## 1. What's actually wired today
@@ -171,8 +176,8 @@ foreach ($v in $victims) {
   }
 }
 
-# Rename legacy
-Rename-Item D:\databases\database.db D:\databases\legacy_unified.db
+# Do not rename D:\databases\database.db unless DB_INVENTORY.md and all
+# consumers have been updated in the same coordinated migration.
 ```
 
 Also collapse the three backup roots (`D:\_backups`, `D:\archive`, `D:\Archives`) into one, and delete `D:\pnpm-store` (keep `pnpm-store-v2`).

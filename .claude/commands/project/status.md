@@ -31,7 +31,7 @@ Show TypeScript status (passing/failing).
 Execute this bash command to check crypto system:
 
 ```bash
-cd C:\dev\projects\crypto-enhanced && if [ -f trading.db ]; then sqlite3 trading.db "SELECT COUNT(*) FROM positions WHERE status='open';" 2>&1; else echo "Database not found"; fi
+cd C:\dev\apps\crypto-enhanced && if [ -f D:\databases\trading.db ]; then sqlite3 D:\databases\trading.db "SELECT COUNT(*) FROM positions WHERE status='open';" 2>&1; else echo "Database not found"; fi
 ```
 
 Present with header:

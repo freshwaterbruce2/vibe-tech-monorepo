@@ -61,7 +61,11 @@ fn parse_review_artifact_file(path: &Path) -> Result<ProjectReviewSummary, Strin
         artifact.artifact_path
     };
 
-    let evidence_paths = artifact.evidence.into_iter().map(|item| item.path).collect::<Vec<_>>();
+    let evidence_paths = artifact
+        .evidence
+        .into_iter()
+        .map(|item| item.path)
+        .collect::<Vec<_>>();
     let evidence_count = if artifact.evidence_count > 0 {
         artifact.evidence_count
     } else {
@@ -78,7 +82,9 @@ fn parse_review_artifact_file(path: &Path) -> Result<ProjectReviewSummary, Strin
     })
 }
 
-pub fn find_latest_review_for_project(project_path: &str) -> Result<Option<ProjectReviewSummary>, String> {
+pub fn find_latest_review_for_project(
+    project_path: &str,
+) -> Result<Option<ProjectReviewSummary>, String> {
     let review_dir = review_artifact_dir();
     if !review_dir.exists() {
         return Ok(None);
@@ -87,9 +93,13 @@ pub fn find_latest_review_for_project(project_path: &str) -> Result<Option<Proje
     let normalized_target = normalize_path(project_path);
     let mut best_match: Option<(std::time::SystemTime, ProjectReviewSummary)> = None;
 
-    for entry in fs::read_dir(&review_dir)
-        .map_err(|e| format!("Failed to read review artifact directory {}: {}", review_dir.display(), e))?
-    {
+    for entry in fs::read_dir(&review_dir).map_err(|e| {
+        format!(
+            "Failed to read review artifact directory {}: {}",
+            review_dir.display(),
+            e
+        )
+    })? {
         let entry = match entry {
             Ok(entry) => entry,
             Err(_) => continue,
@@ -128,7 +138,10 @@ pub fn validate_review_for_project(
     let review = if let Some(path) = artifact_path {
         let candidate = PathBuf::from(path);
         if !candidate.exists() {
-            return Err(format!("Review artifact is missing: {}", candidate.display()));
+            return Err(format!(
+                "Review artifact is missing: {}",
+                candidate.display()
+            ));
         }
         parse_review_artifact_file(&candidate)?
     } else {
@@ -155,7 +168,9 @@ pub fn collect_missing_path_references(text: &str) -> Vec<String> {
     let mut missing = Vec::new();
 
     for capture in path_regex.find_iter(text) {
-        let candidate = capture.as_str().trim_matches(|ch: char| ch == '"' || ch == '\'' || ch == ',' || ch == ')');
+        let candidate = capture
+            .as_str()
+            .trim_matches(|ch: char| ch == '"' || ch == '\'' || ch == ',' || ch == ')');
         if candidate.is_empty() {
             continue;
         }
@@ -224,6 +239,8 @@ mod tests {
         );
 
         assert!(!missing.is_empty());
-        assert!(missing.iter().any(|value| value.contains("architecture-improvement")));
+        assert!(missing
+            .iter()
+            .any(|value| value.contains("architecture-improvement")));
     }
 }

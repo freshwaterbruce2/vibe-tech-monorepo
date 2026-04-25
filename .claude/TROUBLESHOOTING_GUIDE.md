@@ -14,9 +14,9 @@ pnpm run dev  # Does dev server start?
 pnpm run quality  # Do quality checks pass?
 
 # Trading Bot Issues
-cd projects\crypto-enhanced
+cd apps\crypto-enhanced
 .venv\Scripts\activate
-python simple_status.py  # Is bot running?
+python scripts\check_status.py  # Is bot running?
 python run_tests.py  # Do tests pass?
 
 # Backend Issues
@@ -24,7 +24,7 @@ cd backend
 pnpm run dev  # Does server start?
 
 # Monorepo Issues
-ppnpm install  # Do dependencies install?
+pnpm install  # Do dependencies install?
 nx run-many -t build  # Do projects build?
 ```
 
@@ -79,7 +79,7 @@ Remove-Item -Recurse -Force node_modules
 Remove-Item pnpm-lock.yaml
 
 # Reinstall
-ppnpm install
+pnpm install
 
 # Restart dev server
 pnpm run dev
@@ -110,7 +110,7 @@ Get-ChildItem -Recurse -Filter "typescript" node_modules
 
 # If multiple found, clear and reinstall
 Remove-Item -Recurse -Force node_modules
-ppnpm install
+pnpm install
 ```
 
 **Solution 3** - Verify tsconfig.json:
@@ -130,7 +130,7 @@ ppnpm install
 
 ### Build Fails
 
-**Problem**: `pnpm run build` fails with errors
+**Problem**: `pnpm nx build <project>` fails with errors
 
 **Diagnosis**:
 
@@ -167,7 +167,7 @@ pnpm run test:unit:ui  # Interactive test runner
 ```powershell
 # Increase Node memory
 $env:NODE_OPTIONS="--max-old-space-size=4096"
-pnpm run build
+pnpm nx build <project>
 ```
 
 ### React Hydration Errors
@@ -247,7 +247,7 @@ export default {
 **Diagnosis**:
 
 ```powershell
-cd C:\dev\projects\crypto-enhanced
+cd C:\dev\apps\crypto-enhanced
 .venv\Scripts\activate
 
 # Check Python version
@@ -308,13 +308,13 @@ pip install -r requirements.txt
 **Solution 1** - Reset nonce state:
 
 ```powershell
-cd C:\dev\projects\crypto-enhanced
+cd C:\dev\apps\crypto-enhanced
 
 # Remove nonce state files
 Remove-Item nonce_state.json, nonce_state_primary.json -ErrorAction SilentlyContinue
 
-# Nonce will reinitialize on next start
-python start_live_trading.py
+# Nonce will reinitialize on next human-operator start
+# python start_live_trading.py
 ```
 
 **Solution 2** - Check system time:
@@ -420,8 +420,8 @@ sqlite3 trading.db "PRAGMA journal_mode=WAL;"
 # Remove lock files
 Remove-Item trading.db-shm, trading.db-wal -ErrorAction SilentlyContinue
 
-# Restart
-python start_live_trading.py
+# Human operator only: restart after validating runtime state
+# python start_live_trading.py
 ```
 
 **Solution 3** - Check for corruption:
@@ -472,7 +472,7 @@ breaker.reset()
 **Solution 2** - Check balance:
 
 ```powershell
-python simple_status.py
+python scripts\check_status.py
 # Verify balance > MIN_ORDER_SIZE (usually $1)
 ```
 
@@ -549,14 +549,14 @@ stats.print_stats(20)  # Top 20 time consumers
 
 ### pnpm Install Fails
 
-**Problem**: `ppnpm install` fails with errors
+**Problem**: `pnpm install` fails with errors
 
 **Solution 1** - Clear pnpm cache:
 
 ```powershell
 pnpm store prune
 Remove-Item pnpm-lock.yaml
-ppnpm install
+pnpm install
 ```
 
 **Solution 2** - Check Node.js version:
@@ -572,7 +572,7 @@ winget install -e --id OpenJS.NodeJS.LTS
 **Solution 3** - Use legacy peer deps:
 
 ```powershell
-ppnpm install --legacy-peer-deps
+pnpm install
 ```
 
 ### Nx Commands Not Working
@@ -707,7 +707,7 @@ pnpm run dev
 
 ```powershell
 # Trading bot
-cd projects\crypto-enhanced
+cd apps\crypto-enhanced
 python test_credentials.py
 
 # Check for common issues:
@@ -839,23 +839,23 @@ async def monitor_loop():
 # Nuclear option: Reset everything
 
 # 1. Backup important files
-copy projects\crypto-enhanced\trading.db trading.db.emergency.backup
+copy apps\crypto-enhanced\trading.db trading.db.emergency.backup
 copy .env .env.backup
 
 # 2. Clean everything
 Remove-Item -Recurse -Force node_modules, dist, .nx, coverage
-Remove-Item -Recurse -Force projects\crypto-enhanced\.venv, projects\crypto-enhanced\__pycache__
+Remove-Item -Recurse -Force apps\crypto-enhanced\.venv, apps\crypto-enhanced\__pycache__
 
 # 3. Reinstall
-ppnpm install
-cd projects\crypto-enhanced
+pnpm install
+cd apps\crypto-enhanced
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 
 # 4. Test
 pnpm run quality
-cd projects\crypto-enhanced && python run_tests.py
+cd apps\crypto-enhanced && python run_tests.py
 
 # 5. If still broken, git reset
 git status  # Review changes
@@ -869,7 +869,7 @@ git clean -fd  # Remove untracked files
 
 ```powershell
 # 1. STOP IMMEDIATELY
-cd projects\crypto-enhanced
+cd apps\crypto-enhanced
 .\stop_trading.ps1
 
 # 2. Kill all Python if unresponsive
@@ -920,8 +920,8 @@ pnpm run lint 2>&1
 ```powershell
 python --version
 pip list | Select-String "aiohttp|pydantic|asyncio"
-Get-Content projects\crypto-enhanced\trading_new.log -Tail 100
-sqlite3 projects\crypto-enhanced\trading.db ".schema"
+Get-Content apps\crypto-enhanced\trading_new.log -Tail 100
+sqlite3 apps\crypto-enhanced\trading.db ".schema"
 ```
 
 ### Log Analysis
@@ -952,7 +952,7 @@ Get-Content trading_new.log | Where-Object {
 
    ```powershell
    pnpm run quality
-   cd projects\crypto-enhanced && python run_tests.py
+   cd apps\crypto-enhanced && python run_tests.py
    ```
 
 2. **Keep dependencies updated** (but test thoroughly)
@@ -965,14 +965,14 @@ Get-Content trading_new.log | Where-Object {
 3. **Monitor logs regularly**
 
    ```powershell
-   Get-Content projects\crypto-enhanced\trading_new.log -Tail 20 -Wait
+   Get-Content apps\crypto-enhanced\trading_new.log -Tail 20 -Wait
    ```
 
 4. **Backup database frequently**
 
    ```powershell
    # Add to daily routine
-   copy projects\crypto-enhanced\trading.db "backups\trading_$(Get-Date -Format 'yyyyMMdd').db"
+   copy apps\crypto-enhanced\trading.db "backups\trading_$(Get-Date -Format 'yyyyMMdd').db"
    ```
 
 5. **Use version control properly**

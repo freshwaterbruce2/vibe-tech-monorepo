@@ -2,13 +2,13 @@
 
 Act as a Senior DevOps Engineer and Monorepo Architecture Expert. I need you to review, optimize, and update my current monorepo setup. 
 
-### Context
+## Context
 * **Monorepo Tool:** [e.g., Nx, Turborepo, Lerna]
 * **Package Manager:** [e.g., pnpm, yarn workspaces, npm]
 * **Tech Stack:** [e.g., React frontend, Node.js/Express backend, TypeScript]
 * **Current Pain Points:** [e.g., Slow CI build times, frequent dependency conflicts, outdated tooling]
 
-### Objectives
+## Objectives
 Please perform the following tasks sequentially:
 1. **Review (Configuration & Structure):** Analyze the root configuration files (e.g., `package.json`, workspace files, tooling configs). Identify any anti-patterns, circular dependencies, or misconfigurations.
 2. **Optimize (Performance):** Suggest specific improvements for build caching, task orchestration, and CI/CD pipeline execution times.

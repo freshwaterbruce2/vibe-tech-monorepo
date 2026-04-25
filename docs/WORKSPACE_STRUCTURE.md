@@ -9,7 +9,6 @@
 - `docs/`
 - `packages/`
 - `plugins/`
-- `projects/`
 - `scripts/`
 - `tests/`
 - `tools/`

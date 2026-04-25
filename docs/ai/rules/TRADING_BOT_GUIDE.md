@@ -6,9 +6,10 @@ This is a **LIVE CRYPTOCURRENCY TRADING SYSTEM** that trades with **REAL MONEY**
 
 **Current Status**:
 
-- **ACTIVELY TRADING**: XLM/USD pair
-- **Balance**: ~$98.82 USD
-- **Location**: `C:\dev\projects\crypto-enhanced\`
+- **Runtime state**: verify with local status scripts before quoting balance or open positions
+- **Location**: `C:\dev\apps\crypto-enhanced\`
+- **Agent policy**: observe, test, and review only. Do not start, restart, or
+  auto-confirm live trading from an agent workflow.
 
 **Any mistakes in this code can result in financial loss. Treat with extreme caution.**
 
@@ -21,9 +22,9 @@ This is a **LIVE CRYPTOCURRENCY TRADING SYSTEM** that trades with **REAL MONEY**
 1. **Understand Current State**
 
    ```powershell
-   cd C:\dev\projects\crypto-enhanced
+   cd C:\dev\apps\crypto-enhanced
    .venv\Scripts\activate
-   python simple_status.py  # Check if bot is running
+   python scripts\check_status.py  # Check if bot is running
    ```
 
 2. **Read Recent Logs**
@@ -35,7 +36,9 @@ This is a **LIVE CRYPTOCURRENCY TRADING SYSTEM** that trades with **REAL MONEY**
 3. **Check Database State**
 
    ```powershell
-   sqlite3 trading.db "SELECT * FROM trades WHERE status='OPEN';"
+   $dbPath = (Select-String -Path .env -Pattern '^DB_PATH=' -ErrorAction SilentlyContinue |
+     Select-Object -First 1).Line -replace '^DB_PATH=', ''
+   sqlite3 $dbPath "SELECT * FROM trades WHERE status='OPEN';"
    ```
 
 4. **Verify Risk Parameters**
@@ -549,7 +552,7 @@ async def test_transaction_rollback():
 
 ```powershell
 # Run tests
-cd C:\dev\projects\crypto-enhanced
+cd C:\dev\apps\crypto-enhanced
 .venv\Scripts\activate
 python run_tests.py
 
@@ -607,7 +610,7 @@ sqlite3 trading.db "SELECT * FROM metrics ORDER BY timestamp DESC LIMIT 1;"
 Get-Content trading_new.log | Select-String "ERROR" | Select-Object -Last 20
 
 # Verify balance
-python simple_status.py
+python scripts\check_status.py
 ```
 
 #### 5. Database Locked
@@ -625,7 +628,7 @@ sqlite3 trading.db "PRAGMA journal_mode=WAL;"
 
 ```powershell
 # Method 1: Graceful shutdown
-cd C:\dev\projects\crypto-enhanced
+cd C:\dev\apps\crypto-enhanced
 .\stop_trading.ps1
 
 # Method 2: Force kill (if unresponsive)

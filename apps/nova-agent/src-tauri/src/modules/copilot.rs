@@ -560,7 +560,6 @@ fn should_skip_directory(path: &str) -> bool {
         "jspm_packages",
         "vendor",
         "packages",
-
         // Build outputs
         "dist",
         "build",
@@ -571,7 +570,6 @@ fn should_skip_directory(path: &str) -> bool {
         "target",
         "bin",
         "obj",
-
         // Caches
         ".cache",
         ".parcel-cache",
@@ -580,53 +578,42 @@ fn should_skip_directory(path: &str) -> bool {
         ".vite",
         "coverage",
         ".nyc_output",
-
         // Version control
         ".git",
         ".svn",
         ".hg",
-
         // IDEs
         ".vscode",
         ".idea",
         ".vs",
-
         // OS
         ".DS_Store",
         "Thumbs.db",
-
         // Logs
         "logs",
         "*.log",
-
         // Temp
         "tmp",
         "temp",
         ".tmp",
-
         // Test coverage
         "htmlcov",
         ".pytest_cache",
         "__pycache__",
-
         // Rust specific
         "target/debug",
         "target/release",
-
         // Python specific
         ".venv",
         "venv",
         "env",
         ".env",
         "site-packages",
-
         // Ruby specific
         ".bundle",
-
         // Java specific
         ".gradle",
         ".m2",
-
         // .NET specific
         "packages",
         "TestResults",
@@ -739,8 +726,8 @@ fn extract_python_class_name(line: &str) -> Option<String> {
 // Tauri Commands
 // ==========================================
 
-use tauri::State;
 use std::sync::Arc;
+use tauri::State;
 use tokio::sync::Mutex as AsyncMutex;
 
 /// Index the codebase
@@ -756,7 +743,8 @@ pub async fn index_codebase_command(
     let db_service = db_guard.as_ref().ok_or("Database not initialized")?;
 
     // Initialize tables if needed
-    db_service.init_copilot_tables()
+    db_service
+        .init_copilot_tables()
         .map_err(|e| format!("Failed to init tables: {}", e))?;
 
     let count = index_codebase(db_service, &root_path, max_files.unwrap_or(1000))?;
@@ -775,11 +763,9 @@ pub async fn search_patterns(
     let db_guard = db.lock().await;
     let db_service = db_guard.as_ref().ok_or("Database not initialized")?;
 
-    let patterns = db_service.search_code_patterns(
-        &query,
-        language.as_deref(),
-        limit.unwrap_or(10),
-    ).map_err(|e| format!("Search failed: {}", e))?;
+    let patterns = db_service
+        .search_code_patterns(&query, language.as_deref(), limit.unwrap_or(10))
+        .map_err(|e| format!("Search failed: {}", e))?;
 
     Ok(patterns)
 }
@@ -792,7 +778,8 @@ pub async fn get_copilot_stats_command(
     let db_guard = db.lock().await;
     let db_service = db_guard.as_ref().ok_or("Database not initialized")?;
 
-    let stats = db_service.get_copilot_stats()
+    let stats = db_service
+        .get_copilot_stats()
         .map_err(|e| format!("Failed to get stats: {}", e))?;
 
     Ok(stats)
@@ -807,7 +794,8 @@ pub async fn use_pattern(
     let db_guard = db.lock().await;
     let db_service = db_guard.as_ref().ok_or("Database not initialized")?;
 
-    db_service.increment_pattern_usage(pattern_id)
+    db_service
+        .increment_pattern_usage(pattern_id)
         .map_err(|e| format!("Failed to update usage: {}", e))?;
 
     Ok("Pattern usage updated".to_string())
@@ -833,11 +821,9 @@ pub async fn get_suggestions(
     let mut all_suggestions = Vec::new();
 
     for keyword in keywords {
-        let patterns = db_service.search_code_patterns(
-            keyword,
-            language.as_deref(),
-            3,
-        ).map_err(|e| format!("Search failed: {}", e))?;
+        let patterns = db_service
+            .search_code_patterns(keyword, language.as_deref(), 3)
+            .map_err(|e| format!("Search failed: {}", e))?;
 
         for pattern in patterns {
             let relevance = calculate_relevance(&context, &pattern);

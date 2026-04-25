@@ -1,6 +1,6 @@
 # GitHub Repository Security Hardening Guide
 
-> **Repository**: github.com/freshwaterbruce2/Monorepo (private)
+> **Repository**: github.com/freshwaterbruce2/vibe-tech-monorepo (private)
 > **Created**: March 10, 2026
 > **Based on**: 2026 GitHub security best practices
 
@@ -12,10 +12,10 @@ This guide covers every setting to configure after creating the GitHub repo.
 
 ```powershell
 # If repo doesn't exist yet:
-gh repo create freshwaterbruce2/Monorepo --private --source=. --push
+gh repo create freshwaterbruce2/vibe-tech-monorepo --private --source=. --push
 
 # If repo exists, set remote and push:
-git remote set-url origin https://github.com/freshwaterbruce2/Monorepo.git
+git remote set-url origin https://github.com/freshwaterbruce2/vibe-tech-monorepo.git
 git push -u origin main
 ```
 

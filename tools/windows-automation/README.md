@@ -223,8 +223,9 @@ function Quick-DevSnapshot {
     $ram = [math]::Round((Get-Counter '\Memory\Available MBytes').CounterSamples.CookedValue, 0)
     
     # Check trading bot
-    $botStatus = if (Test-Path "C:\dev\projects\crypto-enhanced\trading.db") {
-        $age = ((Get-Date) - (Get-Item "C:\dev\projects\crypto-enhanced\trading.db").LastWriteTime).TotalMinutes
+    $dbPath = "D:\databases\crypto-enhanced\trading.db"
+    $botStatus = if (Test-Path $dbPath) {
+        $age = ((Get-Date) - (Get-Item $dbPath).LastWriteTime).TotalMinutes
         if ($age -lt 5) { "ACTIVE" } else { "IDLE" }
     } else { "STOPPED" }
     
@@ -420,7 +421,7 @@ Import-Module C:\dev\tools\windows-automation\WindowsAutomation.psm1
 ```json
 {
   "scripts": {
-    "build:notify": "npm run build && powershell -Command \"Import-Module C:/dev/tools/windows-automation/WindowsAutomation.psm1; Show-WindowsNotification -Title 'Build Complete' -Message 'Your build finished successfully'\""
+    "build:notify": "pnpm nx run <project>:build && powershell -Command \"Import-Module C:/dev/tools/windows-automation/WindowsAutomation.psm1; Show-WindowsNotification -Title 'Build Complete' -Message 'Your build finished successfully'\""
   }
 }
 ```
@@ -433,7 +434,7 @@ Import-Module C:\dev\tools\windows-automation\WindowsAutomation.psm1
 # Add to your trading bot startup
 function Start-TradingBotWithNotifications {
     # Start bot
-    python C:\dev\projects\crypto-enhanced\start_live_trading.py
+    python C:\dev\apps\crypto-enhanced\start_live_trading.py
     
     # Notify when started
     Show-WindowsNotification `
@@ -451,7 +452,7 @@ function Build-WithScreenshot {
     Capture-Screenshot -Path "C:\dev\builds\pre_build.png"
     
     # Run build
-    npm run build
+    pnpm nx run <project>:build
     
     # Take post-build screenshot
     Capture-Screenshot -Path "C:\dev\builds\post_build.png"

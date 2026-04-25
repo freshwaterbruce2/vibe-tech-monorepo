@@ -5,7 +5,7 @@ Multi-project monorepo spanning desktop, web, mobile, and infrastructure applica
 ## Prerequisites
 
 - **Node.js** 22+
-- **pnpm** 10.33+ (`corepack enable && corepack prepare pnpm@latest`)
+- **pnpm** 10.33+ (`corepack enable && corepack prepare pnpm@10.33.0 --activate`)
 - **Windows 11** (primary development platform)
 - **Rust toolchain** (MSVC) -- required for Tauri apps (nova-agent, vtde)
 - **Python 3.11+** -- required for crypto-enhanced only
@@ -14,7 +14,7 @@ Multi-project monorepo spanning desktop, web, mobile, and infrastructure applica
 ## Quick Start
 
 ```bash
-git clone https://github.com/freshwaterbruce2/Monorepo.git vibetech
+git clone https://github.com/freshwaterbruce2/vibe-tech-monorepo.git vibetech
 cd vibetech
 pnpm install
 pnpm nx dev <project-name>   # e.g. pnpm nx dev nova-agent
@@ -36,7 +36,7 @@ pnpm nx dev <project-name>   # e.g. pnpm nx dev nova-agent
 
 | App | Description | Tech | Status |
 |-----|-------------|------|--------|
-| vibe-shop | E-commerce platform | React, Vite | Active |
+| trendmart (`apps/vibe-shop`) | E-commerce platform | Next.js, Prisma | Active |
 | vibe-justice | Legal AI platform | React, Python FastAPI | Maintained |
 | business-booking-platform | Hotel booking with AI search | React, Vite | Maintained |
 | invoice-automation-saas | SaaS invoice automation | React, Vite | Maintained |
@@ -72,7 +72,7 @@ pnpm nx dev <project-name>   # e.g. pnpm nx dev nova-agent
 | crypto-enhanced | Crypto trading system (Python) | Active |
 | ai-youtube-pipeline | YouTube content pipeline | Experimental |
 | symptom-tracker-api | Health symptom tracker API | Experimental |
-| legacy-booking-backend | Booking platform backend | Maintained |
+| vibe-tech-backend | Shared backend server with local SQLite database | Maintained |
 
 ## Shared Packages (25 total)
 

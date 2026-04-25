@@ -58,10 +58,7 @@ fn has_traversal_pattern(raw: &str) -> bool {
 }
 
 fn is_within_root(path: &Path, root: &Path) -> bool {
-    let path_str = path
-        .to_string_lossy()
-        .replace('/', "\\")
-        .to_lowercase();
+    let path_str = path.to_string_lossy().replace('/', "\\").to_lowercase();
     let root_str = root
         .to_string_lossy()
         .replace('/', "\\")
@@ -87,7 +84,8 @@ fn validate_root_policy_input(raw: &str) -> Result<(), String> {
 
     if raw
         .chars()
-        .any(|c| c.is_control() && c != '\t' && c != '\n' && c != '\r') {
+        .any(|c| c.is_control() && c != '\t' && c != '\n' && c != '\r')
+    {
         return Err("Path contains control characters".to_string());
     }
 
@@ -113,7 +111,8 @@ pub fn load_allowed_roots() -> Vec<PathBuf> {
         }
     }
 
-    let workspace_root = env::var("WORKSPACE_ROOT").unwrap_or_else(|_| DEFAULT_WORKSPACE_ROOT.to_string());
+    let workspace_root =
+        env::var("WORKSPACE_ROOT").unwrap_or_else(|_| DEFAULT_WORKSPACE_ROOT.to_string());
     if let Some(root) = normalize_root(&workspace_root) {
         roots.push(root);
     }
@@ -146,10 +145,7 @@ fn validate_absolute_path(raw: &str) -> Result<PathBuf, String> {
 
 fn enforce_allowed_roots(path: &Path) -> Result<(), String> {
     let allowed_roots = load_allowed_roots();
-    if !allowed_roots
-        .iter()
-        .any(|root| is_within_root(path, root))
-    {
+    if !allowed_roots.iter().any(|root| is_within_root(path, root)) {
         return Err(format!(
             "Access denied: path '{}' is outside configured workspace roots",
             path.display()
@@ -180,15 +176,13 @@ pub fn validate_writable_path(raw: &str) -> Result<PathBuf, String> {
     enforce_allowed_roots(&path)?;
 
     if let Some(parent) = path.parent() {
-        let parent = parent
-            .canonicalize()
-            .map_err(|e| {
-                format!(
-                    "Failed to resolve parent path '{}': {}",
-                    parent.display(),
-                    e
-                )
-            })?;
+        let parent = parent.canonicalize().map_err(|e| {
+            format!(
+                "Failed to resolve parent path '{}': {}",
+                parent.display(),
+                e
+            )
+        })?;
 
         if !parent.exists() {
             return Err("Parent directory does not exist".to_string());
