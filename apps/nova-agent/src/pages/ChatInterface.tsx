@@ -10,10 +10,12 @@ import { useGravityClaw, type GCMessage } from "@/hooks/useGravityClaw";
 import { useVoice } from "@/hooks/useVoice";
 import { AgentService, type PendingTask } from "@/services/AgentService";
 import type { AgentState, ChatMessage } from "@/types/agent";
+import { Store } from "@tauri-apps/plugin-store";
 import { ChatSidebar } from "./chat/ChatSidebar";
 import { MessageList } from "./chat/MessageList";
 
 const CHAT_STORAGE_KEY = "nova-chat-messages";
+const CHAT_STORE_PATH = "store.json";
 const MAX_PERSISTED_MESSAGES = 50;
 
 /** Strips markdown syntax so TTS reads naturally */
@@ -125,37 +127,48 @@ const ChatInterface = () => {
 	// ── Lifecycle ─────────────────────────────────────────────────────────────
 	useEffect(() => {
 		void loadAgentStatus();
-		try {
-			const saved = localStorage.getItem(CHAT_STORAGE_KEY);
-			if (saved) {
-				const parsed: ChatMessage[] = JSON.parse(saved);
-				if (Array.isArray(parsed) && parsed.length > 0) {
-					setMessages(parsed);
-					gcHistoryRef.current = parsed
-						.filter((m) => m.role === "user" || m.role === "assistant")
-						.map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
-					return;
+		const loadMessages = async () => {
+			try {
+				const store = await Store.load(CHAT_STORE_PATH);
+				const saved = await store.get<string>(CHAT_STORAGE_KEY);
+				if (saved) {
+					const parsed: ChatMessage[] = JSON.parse(saved);
+					if (Array.isArray(parsed) && parsed.length > 0) {
+						setMessages(parsed);
+						gcHistoryRef.current = parsed
+							.filter((m) => m.role === "user" || m.role === "assistant")
+							.map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+						return;
+					}
 				}
-			}
-		} catch { /* corrupted storage */ }
+			} catch { /* corrupted storage */ }
 
-		const greeting: ChatMessage = {
-			role: "assistant",
-			content: "Hello! I'm NOVA, your Neural Omnipresent Virtual Assistant. How can I help you today?",
-			timestamp: nextTimestamp(),
+			const greeting: ChatMessage = {
+				role: "assistant",
+				content: "Hello! I'm NOVA, your Neural Omnipresent Virtual Assistant. How can I help you today?",
+				timestamp: nextTimestamp(),
+			};
+			setMessages([greeting]);
+			gcHistoryRef.current = [{ role: "assistant", content: greeting.content }];
 		};
-		setMessages([greeting]);
-		gcHistoryRef.current = [{ role: "assistant", content: greeting.content }];
+
+		void loadMessages();
 	}, []);
 
 	useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
 	useEffect(() => {
 		if (messages.length === 0) return;
-		try {
-			const toSave = messages.slice(-MAX_PERSISTED_MESSAGES);
-			localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(toSave));
-		} catch { /* non-fatal */ }
+		const saveMessages = async () => {
+			try {
+				const store = await Store.load(CHAT_STORE_PATH);
+				const toSave = messages.slice(-MAX_PERSISTED_MESSAGES);
+				await store.set(CHAT_STORAGE_KEY, JSON.stringify(toSave));
+				await store.save();
+			} catch { /* non-fatal */ }
+		};
+
+		void saveMessages();
 	}, [messages]);
 
 	useEffect(() => { gcHistoryRef.current = []; }, [gravityClawMode]);

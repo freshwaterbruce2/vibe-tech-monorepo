@@ -3,8 +3,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { useDbHealth } from '@/hooks/useNovaData';
 import { invoke } from '@tauri-apps/api/core';
+import { Store } from '@tauri-apps/plugin-store';
 import { Settings as SettingsIcon } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import AiModelsTab from './settings/AiModelsTab';
 import ApiKeysTab from './settings/ApiKeysTab';
@@ -12,16 +13,16 @@ import type { ApiKeyStatus } from './settings/ApiKeysTab';
 import GeneralTab from './settings/GeneralTab';
 import SystemHealthTab from './settings/SystemHealthTab';
 
+const SETTINGS_STORE_PATH = 'store.json';
+const SETTINGS_ACTIVE_TAB_KEY = 'settings-active-tab';
+
 const Settings = () => {
   const { isHealthy, lastCheck } = useDbHealth();
   const [activeModel, setActiveModel] = useState('llama-3.3-70b-versatile');
   const [groqKey, setGroqKey] = useState('');
+  const hasLoadedSettings = useRef(false);
 
-  // Tab state - persisted in localStorage
-  const [activeTab, setActiveTab] = useState(() => {
-    // eslint-disable-next-line electron-security/no-localstorage-electron
-    return localStorage.getItem('settings-active-tab') ?? 'ai';
-  });
+  const [activeTab, setActiveTab] = useState('ai');
 
   // API Key Management State
   const [apiKeyStatus, setApiKeyStatus] = useState<ApiKeyStatus | null>(null);
@@ -31,10 +32,44 @@ const Settings = () => {
   const [kimiKey, setKimiKey] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Persist active tab to localStorage
   useEffect(() => {
-    // eslint-disable-next-line electron-security/no-localstorage-electron
-    localStorage.setItem('settings-active-tab', activeTab);
+    let isCancelled = false;
+
+    const loadActiveTab = async () => {
+      try {
+        const store = await Store.load(SETTINGS_STORE_PATH);
+        const savedTab = await store.get<string>(SETTINGS_ACTIVE_TAB_KEY);
+        if (!isCancelled && savedTab) {
+          setActiveTab(savedTab);
+        }
+      } catch (error) {
+        console.error('Failed to load settings tab:', error);
+      } finally {
+        hasLoadedSettings.current = true;
+      }
+    };
+
+    void loadActiveTab();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedSettings.current) return;
+
+    const saveActiveTab = async () => {
+      try {
+        const store = await Store.load(SETTINGS_STORE_PATH);
+        await store.set(SETTINGS_ACTIVE_TAB_KEY, activeTab);
+        await store.save();
+      } catch (error) {
+        console.error('Failed to save settings tab:', error);
+      }
+    };
+
+    void saveActiveTab();
   }, [activeTab]);
 
   const handleModelChange = async (value: string) => {
