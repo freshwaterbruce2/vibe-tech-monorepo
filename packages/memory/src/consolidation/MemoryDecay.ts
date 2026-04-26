@@ -232,6 +232,86 @@ export class MemoryDecay {
   }
 
   /**
+   * Score all episodic memories. Simpler model than semantic: no accessCount
+   * or importance (episodic events are immutable history), just time-based
+   * exponential decay using the episodic half-life.
+   */
+  scoreEpisodic(db: Database.Database): DecayScore[] {
+    const now = Date.now();
+    const rows = db
+      .prepare(
+        `SELECT id, query, response, timestamp FROM episodic_memory ORDER BY timestamp ASC`,
+      )
+      .all() as Array<{ id: number; query: string; response: string; timestamp: number }>;
+
+    const scores: DecayScore[] = rows.map((row) => {
+      const ageMs = Math.max(0, now - row.timestamp);
+      const score = Math.pow(2, -(ageMs / this.episodicHalfLifeMs));
+      const text = `Q: ${row.query}\nA: ${row.response}`;
+      return {
+        id: row.id,
+        text,
+        score: Math.round(score * 1000) / 1000,
+        ageMs,
+        accessCount: 0,
+        importance: 0,
+        category: null,
+      };
+    });
+
+    scores.sort((a, b) => a.score - b.score);
+    return scores;
+  }
+
+  /**
+   * Archive (soft-delete) episodic memories below the decay threshold.
+   * Creates episodic_memory_archive on first run.
+   */
+  archiveDecayedEpisodic(db: Database.Database, dryRun = false): DecayResult {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS episodic_memory_archive (
+        id INTEGER PRIMARY KEY,
+        source_id TEXT,
+        timestamp INTEGER,
+        query TEXT,
+        response TEXT,
+        session_id TEXT,
+        metadata TEXT,
+        archived_at INTEGER NOT NULL,
+        decay_score REAL NOT NULL
+      )
+    `);
+
+    const allScores = this.scoreEpisodic(db);
+    const belowThreshold = allScores.filter((s) => s.score < this.archiveThreshold);
+
+    if (!dryRun && belowThreshold.length > 0) {
+      const archiveStmt = db.prepare(`
+        INSERT INTO episodic_memory_archive
+          (id, source_id, timestamp, query, response, session_id, metadata, archived_at, decay_score)
+        SELECT id, source_id, timestamp, query, response, session_id, metadata, ?, ?
+        FROM episodic_memory WHERE id = ?
+      `);
+      const deleteStmt = db.prepare('DELETE FROM episodic_memory WHERE id = ?');
+
+      const archiveAll = db.transaction((items: DecayScore[]) => {
+        const now = Date.now();
+        for (const item of items) {
+          archiveStmt.run(now, item.score, item.id);
+          deleteStmt.run(item.id);
+        }
+      });
+      archiveAll(belowThreshold);
+    }
+
+    return {
+      archived: belowThreshold.length,
+      remaining: allScores.length - belowThreshold.length,
+      scores: allScores,
+    };
+  }
+
+  /**
    * Restore a previously archived memory back to active
    */
   restoreFromArchive(db: Database.Database, id: number): boolean {
@@ -291,15 +371,18 @@ export class MemoryDecay {
 
   /**
    * Start scheduled decay runs.
-   * Automatically archives decayed memories at the configured interval.
+   * Archives decayed semantic AND episodic memories at the configured interval.
+   * onRun callback receives the SEMANTIC result for backward compat; full
+   * results (semantic + episodic counts) are reflected in getStats().
    */
   startScheduled(db: Database.Database, onRun?: (result: DecayResult) => void): void {
     if (this.scheduledTimer) return; // Already running
     if (this.scheduledIntervalMs <= 0) return; // Disabled
 
     this.scheduledTimer = setInterval(() => {
-      const result = this.archiveDecayed(db);
-      onRun?.(result);
+      const semanticResult = this.archiveDecayed(db);
+      this.archiveDecayedEpisodic(db);
+      onRun?.(semanticResult);
     }, this.scheduledIntervalMs);
 
     // Don't prevent process exit
