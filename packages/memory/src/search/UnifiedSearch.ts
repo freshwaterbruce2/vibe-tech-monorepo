@@ -21,6 +21,12 @@ export interface RAGBridgeAdapter {
 
 const RRF_K = 60;
 
+// Rough English/code token estimator. ~4 chars/token is the OpenAI/Anthropic
+// rule of thumb; precise tokenization would require a vendor tokenizer (tiktoken)
+// which isn't worth the dependency for a budget cap that's already a soft hint.
+const CHARS_PER_TOKEN = 4;
+const estimateTokens = (text: string): number => Math.ceil(text.length / CHARS_PER_TOKEN);
+
 export class UnifiedSearch {
   constructor(
     private manager: MemoryManager,
@@ -56,8 +62,15 @@ export class UnifiedSearch {
       .filter((p): p is PromiseFulfilledResult<UnifiedSearchResult[]> => p.status === 'fulfilled')
       .flatMap((p) => p.value);
 
+    // Token budget: if set, allocate per-source slices and trim each source's
+    // results in score order until its slice is full. Runs BEFORE RRF so that
+    // truncation respects the caller's intra-source ranking, not the fused one.
+    const budgeted = options?.tokenBudget
+      ? this.applyTokenBudget(allResults, options.tokenBudget, options.sourceWeights, sources)
+      : allResults;
+
     // RRF merge: rank results per-source, then fuse scores
-    const rrfScored = this.rrfFusion(allResults);
+    const rrfScored = this.rrfFusion(budgeted);
 
     // Deduplicate by content hash
     const seen = new Set<string>();
@@ -69,6 +82,53 @@ export class UnifiedSearch {
     });
 
     return deduped.slice(0, limit);
+  }
+
+  private applyTokenBudget(
+    results: UnifiedSearchResult[],
+    tokenBudget: number,
+    sourceWeights: Partial<Record<UnifiedSource, number>> | undefined,
+    enabledSources: Set<UnifiedSource>,
+  ): UnifiedSearchResult[] {
+    // Group by source
+    const bySource = new Map<UnifiedSource, UnifiedSearchResult[]>();
+    for (const r of results) {
+      const group = bySource.get(r.source) ?? [];
+      group.push(r);
+      bySource.set(r.source, group);
+    }
+
+    // Allocate budget proportionally across enabled sources that actually returned
+    // something. Sources that returned zero results don't get a budget slice
+    // (their share redistributes to active sources).
+    const activeSources = [...enabledSources].filter((s) => (bySource.get(s)?.length ?? 0) > 0);
+    if (activeSources.length === 0) return results;
+
+    const weightFor = (s: UnifiedSource): number => sourceWeights?.[s] ?? 1;
+    const totalWeight = activeSources.reduce((sum, s) => sum + weightFor(s), 0);
+
+    const kept: UnifiedSearchResult[] = [];
+    for (const source of activeSources) {
+      const slice = Math.floor(tokenBudget * (weightFor(source) / totalWeight));
+      if (slice <= 0) continue;
+      const sourceResults = (bySource.get(source) ?? [])
+        .slice()
+        .sort((a, b) => b.score - a.score);
+
+      let used = 0;
+      for (const r of sourceResults) {
+        const cost = estimateTokens(r.text);
+        if (used + cost > slice && kept.some((k) => k.source === source)) {
+          // Stop adding this source once its slice is exhausted (but always keep
+          // at least one result per active source so a tiny budget doesn't drop
+          // a whole source).
+          break;
+        }
+        kept.push(r);
+        used += cost;
+      }
+    }
+    return kept;
   }
 
   private rrfFusion(results: UnifiedSearchResult[]): UnifiedSearchResult[] {
