@@ -1,31 +1,18 @@
 /**
- * Anthropic-style Contextual Chunking
- *
- * Generates a 50-100 token explanatory prefix per chunk that situates it within
- * its source document. The prefix is prepended ONLY to the embedding input (and,
- * if added later, the FTS index) — `chunk.content` remains the raw source so
- * snippet/display code is unchanged.
- *
- * Reference: https://www.anthropic.com/news/contextual-retrieval (Sept 2024).
- * Anthropic reports a 35% reduction in top-20 retrieval failure when this
- * technique is combined with contextual BM25.
- *
- * Cost control:
- *   - Per-document prompt caching: the `<document>{...}</document>` block is
- *     identical across every chunk of the same file, so we mark it with
- *     `cache_control: { type: 'ephemeral' }` (Anthropic's prompt-caching API,
- *     also passed through by OpenRouter for Anthropic-family models). Cache
- *     reads cost ~10% of base input — see Anthropic's pricing docs.
- *   - The model is OpenRouter `anthropic/claude-3-haiku` by default — cheapest
- *     Anthropic model that supports caching.
- *   - Documents larger than `contextualChunkingMaxDocumentBytes` are
- *     head-truncated to keep cache writes bounded.
- *
- * NOTE on FTS: Anthropic's full pattern prepends the context to BOTH the
- * embedding text and the BM25/FTS index ("Contextual BM25"). Our LanceDB FTS
- * indexes the `content` column, which we deliberately keep raw for display.
- * That trade-off is intentional and documented in indexer.ts. A future change
- * could add a separate `embeddedText` column and rebuild FTS over it.
+ * Anthropic-style contextual chunking: per-chunk 50-100 token explanatory
+ * prefix prepended to the embedding input only (chunk.content stays raw for
+ * display); document block sent with cache_control: ephemeral so chunks 2..N
+ * of the same file replay from the prompt cache. Opt-in via
+ * RAGConfig.contextualChunkingEnabled (default false); existing indexed rows
+ * are unaffected, only files (re)indexed after enabling get a contextPrefix.
+ * Default model is anthropic/claude-haiku-4.5 (Haiku 3 retired 2026-04-19); at
+ * $1/MTok input, $0.10/MTok cache-read, full re-index of ~264K chunks costs
+ * roughly $5-15 USD assuming Anthropic's prompt-cache hit pattern (see
+ * https://openrouter.ai/anthropic/claude-haiku-4.5). FTS gap: Anthropic's full
+ * "Contextual BM25" also prepends the prefix to the keyword index; LanceDB FTS
+ * here indexes the raw `content` column, which is a deliberate display
+ * trade-off documented in indexer.ts. Reference:
+ * https://www.anthropic.com/news/contextual-retrieval
  */
 
 import type { Chunk, RAGConfig } from './types.js';
