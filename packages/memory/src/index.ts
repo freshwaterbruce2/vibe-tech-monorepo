@@ -49,7 +49,11 @@ export type { MarketAnalysis, TradeDecision, TradingPattern } from './integratio
 export { GitMemory } from './integrations/GitMemory.js';
 export type { CommitInfo, GitWorkflow } from './integrations/GitMemory.js';
 export { LearningBridge } from './integrations/LearningBridge.js';
-export type { AgentContext, SyncResult } from './integrations/LearningBridge.js';
+export type {
+  AgentContext,
+  ProceduralSearchResult,
+  SyncResult,
+} from './integrations/LearningBridge.js';
 export { NovaMemory } from './integrations/NovaMemory.js';
 export type { FileReference, ProjectContext, TaskInfo } from './integrations/NovaMemory.js';
 

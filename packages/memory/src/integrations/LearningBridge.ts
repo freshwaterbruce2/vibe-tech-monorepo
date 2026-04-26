@@ -8,6 +8,8 @@
 import Database from 'better-sqlite3';
 import { createLogger } from '@vibetech/logger';
 import type { MemoryManager } from '../core/MemoryManager.js';
+import type { EmbeddingService } from '../embeddings/EmbeddingService.js';
+import { cosineSimilarity } from '../utils/math.js';
 
 const logger = createLogger('LearningBridge');
 
@@ -84,7 +86,63 @@ export interface SyncResult {
   errors: string[];
 }
 
+/** Result from embedding-aware procedural pattern search */
+export interface ProceduralSearchResult {
+  id: string;
+  text: string;
+  patternType: string;
+  source: 'success_pattern' | 'code_pattern';
+  frequency: number;
+  successRate: number;
+  similarity: number;
+  /** Combined ranking score (cosine × success-weight × log-frequency) */
+  score: number;
+  lastUsed: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+/** Cached embedding payload stored inside the metadata JSON column */
+interface CachedEmbedding {
+  embedding_b64: string;
+  embedding_model: string;
+  embedding_dim: number;
+}
+
 const DEFAULT_LEARNING_DB = 'D:\\databases\\agent_learning.db';
+
+/** Decode a Base64 string into a number[] vector */
+function decodeEmbedding(b64: string): number[] {
+  const buf = Buffer.from(b64, 'base64');
+  return Array.from(new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4));
+}
+
+/** Encode a number[] vector as Base64 (Float32) for compact JSON storage */
+function encodeEmbedding(vec: number[]): string {
+  return Buffer.from(new Float32Array(vec).buffer).toString('base64');
+}
+
+/** Extract a cached embedding from metadata JSON, validating model + dimension */
+function readCachedEmbedding(
+  metadata: Record<string, unknown> | null,
+  expectedModel: string,
+  expectedDim: number,
+): number[] | null {
+  if (!metadata) return null;
+  const b64 = metadata['embedding_b64'];
+  const model = metadata['embedding_model'];
+  const dim = metadata['embedding_dim'];
+  if (typeof b64 !== 'string' || typeof model !== 'string' || typeof dim !== 'number') {
+    return null;
+  }
+  if (model !== expectedModel || dim !== expectedDim) return null;
+  try {
+    const vec = decodeEmbedding(b64);
+    if (vec.length !== expectedDim) return null;
+    return vec;
+  } catch {
+    return null;
+  }
+}
 
 export class LearningBridge {
   private learningDb: Database.Database | null = null;
@@ -93,7 +151,13 @@ export class LearningBridge {
   constructor(
     private memory: MemoryManager,
     private learningDbPath: string = DEFAULT_LEARNING_DB,
+    private embedder: EmbeddingService | null = null,
   ) {}
+
+  /** Inject or replace the embedder used for procedural search */
+  setEmbedder(embedder: EmbeddingService): void {
+    this.embedder = embedder;
+  }
 
   /** Open a read-only connection to the learning system database */
   private getDb(): Database.Database {
@@ -616,5 +680,262 @@ export class LearningBridge {
       logger.error('[LearningBridge] recordExecution failed:', undefined, err instanceof Error ? err : new Error(String(err)));
       return false;
     }
+  }
+
+  /**
+   * Embedding-aware procedural search across success_patterns and code_patterns.
+   *
+   * Strategy:
+   * 1. Embed the query once.
+   * 2. Pull a candidate window (5 × limit, capped) ordered by intrinsic priority
+   *    (confidence × frequency for success_patterns, usage_count for code_patterns).
+   *    This keeps work bounded — we never embed all 19,976+ patterns in one call.
+   * 3. For each candidate, decode a cached embedding from `metadata.embedding_b64`
+   *    if present and model+dim match. Otherwise embed the pattern text on the fly
+   *    and persist the embedding back into the metadata JSON for future calls.
+   * 4. Rank by combined score: cosine × success-weight × log-frequency.
+   *
+   * @throws if no embedder is configured (set one via constructor or setEmbedder)
+   */
+  async searchProceduralPatterns(
+    query: string,
+    limit = 10,
+  ): Promise<ProceduralSearchResult[]> {
+    if (!this.embedder) {
+      throw new Error(
+        'LearningBridge.searchProceduralPatterns requires an EmbeddingService. ' +
+          'Pass one via the constructor or call setEmbedder().',
+      );
+    }
+    const embedder = this.embedder;
+    const expectedModel = embedder.getModel();
+    const expectedDim = embedder.getDimension();
+
+    const queryVector = await embedder.embed(query);
+    if (queryVector.length !== expectedDim) {
+      throw new Error(
+        `Query embedding dimension ${queryVector.length} does not match embedder ${expectedDim}`,
+      );
+    }
+
+    // Cap candidate window — keep work bounded regardless of table size
+    const candidateWindow = Math.max(limit * 5, 25);
+
+    const successCandidates = this.fetchSuccessPatternCandidates(candidateWindow);
+    const codeCandidates = this.fetchCodePatternCandidates(candidateWindow);
+
+    const scored: ProceduralSearchResult[] = [];
+
+    for (const row of successCandidates) {
+      const text = `[${row.pattern_type}] ${row.description}`;
+      const meta = parseMetadataJson(row.metadata);
+      const embedding = await this.getOrComputeSuccessPatternEmbedding(
+        row.id,
+        text,
+        meta,
+        expectedModel,
+        expectedDim,
+      );
+      if (!embedding) continue;
+      const similarity = cosineSimilarity(queryVector, embedding);
+      // Combined score: cosine × success-weight × log-frequency.
+      // Favors patterns that are relevant AND historically successful AND frequently used.
+      const score =
+        similarity * (0.5 + 0.5 * row.confidence_score) * Math.log(1 + row.frequency);
+      scored.push({
+        id: `success:${row.id}`,
+        text,
+        patternType: row.pattern_type,
+        source: 'success_pattern',
+        frequency: row.frequency,
+        successRate: row.confidence_score,
+        similarity,
+        score,
+        lastUsed: row.last_used,
+        metadata: meta ?? undefined,
+      });
+    }
+
+    for (const row of codeCandidates) {
+      const text = `[${row.pattern_type}] ${row.name} (${row.language}): ${row.code_snippet}`;
+      const embedding = await this.getOrComputeCodePatternEmbedding(
+        row.id,
+        text,
+        row.cached_embedding,
+        expectedModel,
+        expectedDim,
+      );
+      if (!embedding) continue;
+      const similarity = cosineSimilarity(queryVector, embedding);
+      // code_patterns has no confidence column; treat usage_count as an implicit success signal
+      const usage = row.usage_count ?? 0;
+      const score = similarity * (0.5 + 0.5 * Math.min(1, usage / 10)) * Math.log(1 + usage);
+      scored.push({
+        id: `code:${row.id}`,
+        text,
+        patternType: row.pattern_type,
+        source: 'code_pattern',
+        frequency: usage,
+        successRate: Math.min(1, usage / 10),
+        similarity,
+        score,
+        lastUsed: row.last_used != null ? new Date(row.last_used).toISOString() : null,
+      });
+    }
+
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, limit);
+  }
+
+  /** Fetch candidate success patterns ordered by intrinsic priority */
+  private fetchSuccessPatternCandidates(window: number): PatternRow[] {
+    const db = this.getDb();
+    return db
+      .prepare(
+        `SELECT id, pattern_type, description, frequency, confidence_score,
+                created_at, last_used, metadata
+         FROM success_patterns
+         ORDER BY (confidence_score * (1 + frequency)) DESC
+         LIMIT ?`,
+      )
+      .all(window) as PatternRow[];
+  }
+
+  /** Fetch candidate code patterns; cached_embedding lives in the tags JSON column */
+  private fetchCodePatternCandidates(window: number): CodePatternRow[] {
+    const db = this.getDb();
+    // code_patterns has no `metadata` column — embeddings are stashed in `tags` JSON
+    return db
+      .prepare(
+        `SELECT id, pattern_type, name, code_snippet, file_path, language,
+                usage_count, last_used, tags
+         FROM code_patterns
+         ORDER BY usage_count DESC, last_used DESC
+         LIMIT ?`,
+      )
+      .all(window)
+      .map((r) => {
+        const row = r as Omit<CodePatternRow, 'cached_embedding'> & { tags: string | null };
+        return { ...row, cached_embedding: row.tags };
+      }) as CodePatternRow[];
+  }
+
+  /**
+   * Get embedding for a success_pattern row — from cached metadata or by computing now.
+   * Computed embeddings are persisted back into the metadata JSON for reuse.
+   */
+  private async getOrComputeSuccessPatternEmbedding(
+    id: number,
+    text: string,
+    metadata: Record<string, unknown> | null,
+    expectedModel: string,
+    expectedDim: number,
+  ): Promise<number[] | null> {
+    if (!this.embedder) return null;
+    const cached = readCachedEmbedding(metadata, expectedModel, expectedDim);
+    if (cached) return cached;
+
+    let embedding: number[];
+    try {
+      embedding = await this.embedder.embed(text);
+    } catch (err) {
+      logger.warn(
+        `[LearningBridge] embed failed for success_pattern ${id}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return null;
+    }
+
+    // Persist back: merge into metadata JSON (best-effort, non-fatal on failure)
+    try {
+      const merged: CachedEmbedding & Record<string, unknown> = {
+        ...(metadata ?? {}),
+        embedding_b64: encodeEmbedding(embedding),
+        embedding_model: expectedModel,
+        embedding_dim: expectedDim,
+      };
+      const db = this.getWritableDb();
+      db.prepare('UPDATE success_patterns SET metadata = ? WHERE id = ?').run(
+        JSON.stringify(merged),
+        id,
+      );
+    } catch (err) {
+      logger.warn(
+        `[LearningBridge] failed to persist embedding for success_pattern ${id}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+    return embedding;
+  }
+
+  /**
+   * Get embedding for a code_pattern row — code_patterns has no metadata column,
+   * so cached embeddings are stored inside the `tags` JSON column instead.
+   */
+  private async getOrComputeCodePatternEmbedding(
+    id: number,
+    text: string,
+    rawTags: string | null,
+    expectedModel: string,
+    expectedDim: number,
+  ): Promise<number[] | null> {
+    if (!this.embedder) return null;
+    const tagsObj = parseMetadataJson(rawTags);
+    const cached = readCachedEmbedding(tagsObj, expectedModel, expectedDim);
+    if (cached) return cached;
+
+    let embedding: number[];
+    try {
+      embedding = await this.embedder.embed(text);
+    } catch (err) {
+      logger.warn(
+        `[LearningBridge] embed failed for code_pattern ${id}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return null;
+    }
+
+    try {
+      const merged = {
+        ...(tagsObj ?? {}),
+        embedding_b64: encodeEmbedding(embedding),
+        embedding_model: expectedModel,
+        embedding_dim: expectedDim,
+      };
+      const db = this.getWritableDb();
+      db.prepare('UPDATE code_patterns SET tags = ? WHERE id = ?').run(
+        JSON.stringify(merged),
+        id,
+      );
+    } catch (err) {
+      logger.warn(
+        `[LearningBridge] failed to persist embedding for code_pattern ${id}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+    return embedding;
+  }
+}
+
+/** Internal: code_pattern row shape (cached_embedding aliases the tags column) */
+interface CodePatternRow {
+  id: number;
+  pattern_type: string;
+  name: string;
+  code_snippet: string;
+  file_path: string;
+  language: string;
+  usage_count: number | null;
+  last_used: number | null;
+  cached_embedding: string | null;
+}
+
+/** Safely parse a JSON metadata column; returns null on any failure */
+function parseMetadataJson(raw: string | null): Record<string, unknown> | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+    return null;
+  } catch {
+    return null;
   }
 }
