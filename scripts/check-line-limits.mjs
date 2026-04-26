@@ -6,15 +6,28 @@
  * Usage:
  *   node scripts/check-line-limits.mjs --staged --max 600
  *   node scripts/check-line-limits.mjs --all --max 600
+ *   node scripts/check-line-limits.mjs --all --include-untracked --max 500 --path apps/nova-agent/src-tauri/src --include-ext .rs
  */
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { resolve, sep } from 'node:path';
 
 const args = process.argv.slice(2);
 const mode = args.includes('--all') ? 'all' : 'staged';
 const maxIndex = args.findIndex((a) => a === '--max');
 const max = maxIndex !== -1 && args[maxIndex + 1] ? Number.parseInt(args[maxIndex + 1], 10) : 600;
+const pathIndex = args.findIndex((a) => a === '--path');
+const pathFilter = pathIndex !== -1 && args[pathIndex + 1] ? normalizePath(args[pathIndex + 1]) : null;
+const includeUntracked = args.includes('--include-untracked');
+const includeExtIndex = args.findIndex((a) => a === '--include-ext');
+const includeExts =
+  includeExtIndex !== -1 && args[includeExtIndex + 1]
+    ? args[includeExtIndex + 1]
+        .split(',')
+        .map((ext) => ext.trim().toLowerCase())
+        .filter(Boolean)
+        .map((ext) => (ext.startsWith('.') ? ext : `.${ext}`))
+    : [];
 
 if (!Number.isFinite(max) || max <= 0) {
   console.error('❌ Invalid max lines value.');
@@ -38,6 +51,10 @@ const allowedExt = new Set([
   '.cs',
 ]);
 
+for (const ext of includeExts) {
+  allowedExt.add(ext);
+}
+
 const ignoreFragments = [
   'node_modules',
   '.turbo',
@@ -52,10 +69,18 @@ const ignoreFragments = [
 function listFiles() {
   const cmd = mode === 'all' ? 'git ls-files' : 'git diff --cached --name-only --diff-filter=ACM';
   try {
-    return execSync(cmd, { encoding: 'utf8' })
+    const files = execSync(cmd, { encoding: 'utf8' })
       .split('\n')
       .map((s) => s.trim())
       .filter(Boolean);
+    if (includeUntracked) {
+      const untracked = execSync('git ls-files --others --exclude-standard', { encoding: 'utf8' })
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      return [...new Set([...files, ...untracked])];
+    }
+    return files;
   } catch (err) {
     console.error('❌ Failed to list files. Ensure git is available.', err?.message || err);
     process.exit(1);
@@ -72,7 +97,27 @@ function hasAllowedExt(file) {
   return allowedExt.has(file.slice(dot).toLowerCase());
 }
 
+function normalizePath(file) {
+  return file.replaceAll('\\', '/').replace(/\/+$/, '');
+}
+
+function isUnderPathFilter(file) {
+  if (!pathFilter) return true;
+
+  const normalized = normalizePath(file);
+  const resolvedFile = normalizePath(resolve(file).split(sep).join('/'));
+  const resolvedFilter = normalizePath(resolve(pathFilter).split(sep).join('/'));
+
+  return (
+    normalized === pathFilter ||
+    normalized.startsWith(`${pathFilter}/`) ||
+    resolvedFile === resolvedFilter ||
+    resolvedFile.startsWith(`${resolvedFilter}/`)
+  );
+}
+
 const files = listFiles()
+  .filter((file) => isUnderPathFilter(file))
   .filter((file) => hasAllowedExt(file))
   .filter((file) => !hasIgnoredPath(file));
 
