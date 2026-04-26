@@ -1,6 +1,6 @@
 # VibeTech Monorepo - Global Context
 
-**Last Updated**: 2026-01-15
+**Last Updated**: 2026-04-26
 **Token Count**: ~380 tokens
 
 ---
@@ -30,9 +30,10 @@ C:\dev (vibetech.git)
 
 - **Code**: `C:\dev\` (GitHub: vibetech.git)
 - **Databases**: `D:\databases\` (SQLite, PostgreSQL)
-- **Logs**: `D:\logs\`
-- **Learning System**: `D:\learning-system\` (59,014+ executions)
-- **Learning Database**: `D:\databases\nova_shared.db` (55 MB)
+- **Logs**: `D:\logs\`; hook fallback logs use `D:\logs\learning-system\`
+- **Learning System**: `D:\learning-system\` (runtime/docs/artifacts, not live DB root)
+- **Learning Database**: `D:\databases\agent_learning.db`
+- **Memory Database**: `D:\databases\memory.db`
 - **Version Control (D:\)**: `D:\repositories\vibetech\` (local snapshots, no GitHub corruption)
 
 ---
@@ -46,8 +47,8 @@ C:\dev (vibetech.git)
 **Databases**: SQLite (primary), PostgreSQL (production), ChromaDB (vectors)
 **Testing**: Vitest 2, pytest, Playwright
 **AI**: OpenRouter (Claude 4.5, DeepSeek R1), multi-model support
-**Package Manager**: pnpm 9.15.0
-**Build System**: Nx 21.6+ with caching
+**Package Manager**: pnpm 10.33.0
+**Build System**: Nx 22.5.0 with caching
 
 ---
 
@@ -66,9 +67,9 @@ C:\dev (vibetech.git)
 
 ## Learning System Integration
 
-**Database**: `D:\databases\nova_shared.db`
-**Executions**: 59,014 tool usage records
-**Tables**: agent_executions, success_patterns, failure_patterns, code_patterns
+**Database**: `D:\databases\agent_learning.db`
+**Memory DB**: `D:\databases\memory.db`
+**Tables**: agent_executions, success_patterns, agent_mistakes, code_patterns
 **Pattern Recognition**: Automated via hooks + pattern_analyzer.py
 **RAG Queries**: Top 5 patterns by confidence score (≥0.8)
 

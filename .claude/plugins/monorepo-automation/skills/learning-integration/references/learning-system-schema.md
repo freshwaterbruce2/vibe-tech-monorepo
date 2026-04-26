@@ -12,24 +12,25 @@ Tracks every tool execution for pattern analysis.
 
 ```sql
 CREATE TABLE agent_executions (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  agent_name TEXT NOT NULL,           -- e.g., 'pre-commit-quality-gate'
-  tool_name TEXT NOT NULL,            -- e.g., 'Bash', 'Read', 'Write', 'Grep'
-  context TEXT NOT NULL,              -- e.g., 'quality check before commit'
-  input_params TEXT,                  -- JSON of tool parameters
-  output_data TEXT,                   -- JSON of tool results
+  execution_id TEXT PRIMARY KEY,      -- Unique execution identifier
+  agent_id TEXT NOT NULL,             -- e.g., 'pre-commit-quality-gate'
+  task_type TEXT NOT NULL,            -- e.g., 'quality-check', 'documentation-sync'
+  tools_used TEXT,                    -- JSON array of tools used
   started_at DATETIME NOT NULL,       -- ISO 8601 timestamp
   completed_at DATETIME,              -- ISO 8601 timestamp
   success INTEGER NOT NULL DEFAULT 0, -- 1 = success, 0 = failure
   execution_time_ms INTEGER,          -- Performance metric
   error_message TEXT,                 -- Failure details if success = 0
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  metadata TEXT,                      -- JSON of tool results and other details
+  context TEXT,                       -- JSON task context
+  project_name TEXT                   -- Project or workspace name
 );
 
-CREATE INDEX idx_agent_executions_agent ON agent_executions(agent_name);
-CREATE INDEX idx_agent_executions_tool ON agent_executions(tool_name);
+CREATE INDEX idx_agent_executions_agent ON agent_executions(agent_id);
+CREATE INDEX idx_agent_executions_task_type ON agent_executions(task_type);
 CREATE INDEX idx_agent_executions_started ON agent_executions(started_at);
 CREATE INDEX idx_agent_executions_success ON agent_executions(success);
+CREATE INDEX idx_agent_executions_project ON agent_executions(project_name);
 ```
 
 ### task_patterns

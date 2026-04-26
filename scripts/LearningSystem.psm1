@@ -81,6 +81,8 @@ function Record-Learning {
     
     $toolsJson = ($Tools | ConvertTo-Json -Compress).Replace("'", "''")
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $createdAt = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+    $executionId = [guid]::NewGuid().ToString()
     
     if ($Type -eq 'mistake') {
         if (-not $WhatWentWrong -or -not $WhatShouldHappen) {
@@ -92,9 +94,14 @@ function Record-Learning {
         $safeShould = $WhatShouldHappen.Replace("'", "''")
         $safeTask = $TaskType.Replace("'", "''")
         
-        $query1 = "INSERT INTO agent_executions (agent_name, task_type, success, tools_used, error_message, timestamp) VALUES ('clawdbot', '$safeTask', 0, '$toolsJson', '$safeWrong', '$timestamp');"
-        $query2 = "INSERT INTO agent_mistakes (execution_id, mistake_type, what_went_wrong, what_should_happen, tools_involved, learned_fix, confidence, last_seen) SELECT last_insert_rowid(), '$safeTask', '$safeWrong', '$safeShould', '$toolsJson', '$safeShould', 0.8, '$timestamp';"
-        $query3 = "INSERT INTO learning_events (event_type, description, related_execution_id, timestamp) SELECT 'mistake_captured', 'Mistake: $safeWrong', (SELECT id FROM agent_executions ORDER BY id DESC LIMIT 1), '$timestamp';"
+        $query1 = "INSERT INTO agent_executions (execution_id, agent_id, task_type, tools_used, started_at, completed_at, success, execution_time_ms, error_message, metadata, context, project_name) VALUES ('$executionId', 'clawdbot', '$safeTask', '$toolsJson', '$timestamp', '$timestamp', 0, 0, '$safeWrong', '{}', '{}', 'unknown');"
+        $mistakeMetadata = (@{
+            execution_id = $executionId
+            task_type = $TaskType
+            tools = $Tools
+        } | ConvertTo-Json -Compress).Replace("'", "''")
+        $query2 = "INSERT INTO agent_mistakes (mistake_type, mistake_category, description, root_cause_analysis, context_when_occurred, impact_severity, prevention_strategy, identified_at, resolved) VALUES ('$safeTask', 'manual-capture', '$safeWrong', '$safeWrong', '$mistakeMetadata', 'medium', '$safeShould', '$timestamp', 0);"
+        $query3 = "INSERT INTO learning_events (title, description, outcome, app_source, created_at, metadata) VALUES ('mistake_captured', 'Mistake: $safeWrong', 'needs_prevention', 'LearningSystem.psm1', $createdAt, '$mistakeMetadata');"
         
         sqlite3.exe $Script:DbPath $query1
         sqlite3.exe $Script:DbPath $query2
@@ -111,15 +118,22 @@ function Record-Learning {
         }
         
         $execTime = if ($ExecutionTime) { $ExecutionTime } else { 0 }
+        $execTimeMs = [int][math]::Round($execTime * 1000)
         $proj = if ($Project) { $Project } else { 'unknown' }
         
         $safeApproach = $Approach.Replace("'", "''")
         $safeTask = $TaskType.Replace("'", "''")
         $safeProj = $proj.Replace("'", "''")
         
-        $query1 = "INSERT INTO agent_executions (agent_name, task_type, success, execution_time, tools_used, project, timestamp) VALUES ('clawdbot', '$safeTask', 1, $execTime, '$toolsJson', '$safeProj', '$timestamp');"
-        $query2 = "INSERT INTO agent_knowledge (task_type, tools, approach, execution_time, project, confidence, times_used, success_rate, last_used, created_at) VALUES ('$safeTask', '$toolsJson', '$safeApproach', $execTime, '$safeProj', 0.9, 1, 1.0, '$timestamp', '$timestamp');"
-        $query3 = "INSERT INTO learning_events (event_type, description, related_execution_id, timestamp) SELECT 'success_recorded', 'Success: $safeTask - $safeApproach', (SELECT id FROM agent_executions ORDER BY id DESC LIMIT 1), '$timestamp';"
+        $query1 = "INSERT INTO agent_executions (execution_id, agent_id, task_type, tools_used, started_at, completed_at, success, execution_time_ms, error_message, metadata, context, project_name) VALUES ('$executionId', 'clawdbot', '$safeTask', '$toolsJson', '$timestamp', '$timestamp', 1, $execTimeMs, NULL, '{}', '{}', '$safeProj');"
+        $knowledgeMetadata = (@{
+            execution_id = $executionId
+            project = $proj
+            tools = $Tools
+            execution_time_seconds = $execTime
+        } | ConvertTo-Json -Compress).Replace("'", "''")
+        $query2 = "INSERT INTO agent_knowledge (knowledge_type, title, content, applicable_tasks, success_rate_improvement, confidence_level, tags, description, applicable_contexts, usage_count, effectiveness_score, created_at, last_used) VALUES ('success_pattern', '$safeTask', '$safeApproach', '$safeTask', 1.0, 0.9, '$toolsJson', '$safeApproach', '$knowledgeMetadata', 1, 1.0, '$timestamp', '$timestamp');"
+        $query3 = "INSERT INTO learning_events (title, description, outcome, app_source, created_at, metadata) VALUES ('success_recorded', 'Success: $safeTask - $safeApproach', 'success', 'LearningSystem.psm1', $createdAt, '$knowledgeMetadata');"
         
         sqlite3.exe $Script:DbPath $query1
         sqlite3.exe $Script:DbPath $query2
@@ -159,10 +173,10 @@ function Get-LearningMistakes {
     }
     
     if ($Tool) {
-        $where += " AND e.tools_used LIKE '%$Tool%'"
+        $where += " AND m.context_when_occurred LIKE '%$Tool%'"
     }
     
-    $query = "SELECT m.id, m.mistake_type, m.what_went_wrong, m.what_should_happen, m.confidence, m.times_encountered, datetime(m.last_seen) as last_seen, e.tools_used FROM agent_mistakes m JOIN agent_executions e ON m.execution_id = e.id $where ORDER BY m.last_seen DESC LIMIT $Last;"
+    $query = "SELECT m.id, m.mistake_type, m.description as what_went_wrong, m.prevention_strategy as what_should_happen, m.impact_severity, m.identified_at as last_seen, m.context_when_occurred FROM agent_mistakes m $where ORDER BY m.identified_at DESC LIMIT $Last;"
     
     $results = sqlite3.exe $Script:DbPath -header -column $query
     
@@ -198,14 +212,14 @@ function Get-LearningSuccesses {
     $where = "WHERE 1=1"
     
     if ($TaskType) {
-        $where += " AND k.task_type LIKE '%$TaskType%'"
+        $where += " AND k.applicable_tasks LIKE '%$TaskType%'"
     }
     
     if ($Project) {
-        $where += " AND k.project LIKE '%$Project%'"
+        $where += " AND k.applicable_contexts LIKE '%$Project%'"
     }
     
-    $query = "SELECT k.id, k.task_type, k.approach, k.project, k.confidence, k.times_used, round(k.execution_time, 2) as exec_time_s, datetime(k.last_used) as last_used FROM agent_knowledge k $where ORDER BY k.last_used DESC LIMIT $Last;"
+    $query = "SELECT k.id, k.applicable_tasks as task_type, k.content as approach, k.confidence_level as confidence, k.usage_count as times_used, k.last_used FROM agent_knowledge k $where ORDER BY k.last_used DESC LIMIT $Last;"
     
     $results = sqlite3.exe $Script:DbPath -header -column $query
     
@@ -237,18 +251,18 @@ function Get-LearningRecommendations {
     )
     
     # Find similar successful patterns
-    $where = "WHERE k.task_type LIKE '%$TaskType%'"
+    $where = "WHERE k.applicable_tasks LIKE '%$TaskType%'"
     
     if ($Project) {
-        $where += " AND k.project = '$Project'"
+        $where += " AND k.applicable_contexts LIKE '%$Project%'"
     }
     
-    $query = "SELECT k.approach, k.tools, k.confidence, k.times_used, round(k.execution_time, 2) as est_time, k.project FROM agent_knowledge k $where ORDER BY k.confidence DESC, k.times_used DESC LIMIT 3;"
+    $query = "SELECT k.content as approach, k.tags as tools, k.confidence_level as confidence, k.usage_count as times_used, k.applicable_contexts as context FROM agent_knowledge k $where ORDER BY k.confidence_level DESC, k.usage_count DESC LIMIT 3;"
     
     $recommendations = sqlite3.exe $Script:DbPath -header -column $query
     
     # Find related mistakes to avoid
-    $mistakeQuery = "SELECT m.what_went_wrong, m.what_should_happen FROM agent_mistakes m JOIN agent_executions e ON m.execution_id = e.id WHERE m.mistake_type LIKE '%$TaskType%' ORDER BY m.confidence DESC LIMIT 3;"
+    $mistakeQuery = "SELECT m.description as what_went_wrong, m.prevention_strategy as what_should_happen FROM agent_mistakes m WHERE m.mistake_type LIKE '%$TaskType%' ORDER BY m.identified_at DESC LIMIT 3;"
     
     $mistakes = sqlite3.exe $Script:DbPath -header -column $mistakeQuery
     

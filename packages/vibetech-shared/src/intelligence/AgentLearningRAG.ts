@@ -1,8 +1,8 @@
 /**
  * AgentLearningRAG - Retrieval-Augmented Generation for Agent Learning
  *
- * Purpose: Query D:\databases\nova_shared.db for proven patterns and anti-patterns
- * Database: 59,014+ executions with success_patterns, failure_patterns, code_patterns
+ * Purpose: Query D:\databases\agent_learning.db for proven patterns and anti-patterns
+ * Database: agent executions with success_patterns, agent_mistakes, and code_patterns
  *
  * Query Strategy:
  * 1. Find proven patterns (confidence ≥0.8, top 5 by success count)
@@ -81,14 +81,19 @@ interface CountRow {
 
 export class AgentLearningRAG {
   private db: Database.Database;
-  private readonly DB_PATH = process.env.NOVA_SHARED_DB_PATH ?? 'D:\\databases\\nova_shared.db';
+  private readonly defaultDbPath =
+    process.env.LEARNING_DB_PATH ??
+    process.env.AGENT_LEARNING_DB_PATH ??
+    'D:\\databases\\agent_learning.db';
+  private readonly dbPath: string;
 
   constructor(dbPath?: string) {
-    const path = dbPath ?? this.DB_PATH;
+    const path = dbPath ?? this.defaultDbPath;
+    this.dbPath = path;
 
     if (!existsSync(path)) {
       throw new Error(
-        `Learning database not found: ${path}\nExpected nova_shared.db with 59k+ executions`
+        `Learning database not found: ${path}\nExpected agent_learning.db`
       );
     }
 
@@ -113,13 +118,13 @@ export class AgentLearningRAG {
     const params: Array<string | number> = [minConfidence];
 
     if (taskType) {
-      conditions.push('task_type = ?');
-      params.push(taskType);
+      conditions.push('(pattern_type = ? OR description LIKE ?)');
+      params.push(taskType, `%${taskType}%`);
     }
 
     if (projectName) {
-      conditions.push('(project_name = ? OR project_name IS NULL)');
-      params.push(projectName);
+      conditions.push('(metadata LIKE ? OR description LIKE ?)');
+      params.push(`%${projectName}%`, `%${projectName}%`);
     }
 
     // Note: agentName not in schema yet, filter by task_type as proxy
@@ -129,14 +134,14 @@ export class AgentLearningRAG {
 
     const query = `
       SELECT
-        pattern_hash,
-        task_type,
-        project_name,
-        tools_used,
-        approach,
-        success_count,
+        CAST(id AS TEXT) as pattern_hash,
+        pattern_type as task_type,
+        NULL as project_name,
+        metadata as tools_used,
+        description as approach,
+        frequency as success_count,
         confidence_score,
-        avg_execution_time,
+        NULL as avg_execution_time,
         last_used
       FROM success_patterns
       WHERE ${conditions.join(' AND ')}
@@ -160,14 +165,14 @@ export class AgentLearningRAG {
 
     let query = `
       SELECT
-        pattern_hash,
+        CAST(id AS TEXT) as pattern_hash,
         mistake_type,
         description,
-        root_cause,
+        root_cause_analysis as root_cause,
         prevention_strategy,
-        occurrence_count,
-        last_occurred
-      FROM failure_patterns
+        1 as occurrence_count,
+        identified_at as last_occurred
+      FROM agent_mistakes
     `;
 
     const params: Array<string | number> = [];
@@ -249,9 +254,7 @@ export class AgentLearningRAG {
   }> {
     const { taskType, days = 30 } = options;
 
-    const conditions: string[] = [
-      "executed_at > datetime('now', ? || ' days')",
-    ];
+    const conditions: string[] = ["started_at > datetime('now', ? || ' days')"];
     const params: Array<string | number> = [-days];
 
     if (taskType) {
@@ -262,8 +265,8 @@ export class AgentLearningRAG {
     const query = `
       SELECT
         COUNT(*) as total_executions,
-        AVG(execution_time_seconds) as avg_time,
-        SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) * 1.0 / COUNT(*) as success_rate
+        AVG(execution_time_ms) as avg_time,
+        AVG(CASE WHEN success = 1 THEN 1.0 ELSE 0.0 END) as success_rate
       FROM agent_executions
       WHERE ${conditions.join(' AND ')}
     `;
@@ -306,7 +309,7 @@ export class AgentLearningRAG {
    * Get database health metrics
    */
   async getHealthMetrics() {
-    const tables = ['agent_executions', 'success_patterns', 'failure_patterns', 'code_patterns'];
+    const tables = ['agent_executions', 'success_patterns', 'agent_mistakes', 'code_patterns'];
     const metrics: Record<string, number> = {};
 
     for (const table of tables) {
@@ -317,7 +320,7 @@ export class AgentLearningRAG {
     // Check for recent activity (last 24 hours)
     const recentActivity = this.db
       .prepare(
-        `SELECT COUNT(*) as count FROM agent_executions WHERE executed_at > datetime('now', '-1 day')`
+        `SELECT COUNT(*) as count FROM agent_executions WHERE started_at > datetime('now', '-1 day')`
       )
       .get() as CountRow;
 
@@ -334,7 +337,7 @@ export class AgentLearningRAG {
    */
   private getDbSizeMB(): number {
     try {
-      const stats = statSync(this.DB_PATH);
+      const stats = statSync(this.dbPath);
       return Number((stats.size / (1024 * 1024)).toFixed(2));
     } catch {
       return 0;

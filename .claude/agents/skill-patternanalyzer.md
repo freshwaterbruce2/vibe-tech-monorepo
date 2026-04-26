@@ -17,7 +17,7 @@ permissions:
 ## Responsibilities
 
 1. **Query Learning Database**
-   - Connect to `D:\databases\nova_shared.db`
+   - Connect to `D:\databases\agent_learning.db`
    - Find patterns with 80%+ success rate
    - Filter patterns with 15+ occurrences
    - Apply confidence scoring formula
@@ -54,13 +54,13 @@ permissions:
 
 ```sql
 SELECT
-    tool_name,
+    tools_used,
     COUNT(*) as usage_count,
     ROUND(AVG(CASE WHEN success = 1 THEN 1.0 ELSE 0.0 END) * 100, 2) as success_rate,
-    AVG(duration_ms) as avg_duration
+    AVG(execution_time_ms) as avg_duration_ms
 FROM agent_executions
-WHERE timestamp >= datetime('now', '-30 days')
-GROUP BY tool_name
+WHERE started_at >= datetime('now', '-30 days')
+GROUP BY tools_used
 HAVING usage_count >= 15 AND success_rate >= 80
 ORDER BY usage_count DESC, success_rate DESC;
 ```
@@ -85,15 +85,13 @@ ORDER BY frequency DESC, avg_success_rate DESC;
 
 ```sql
 SELECT
-    pattern_name,
+    name,
     usage_count,
-    success_rate,
     language,
-    description
+    pattern_type
 FROM code_patterns
 WHERE usage_count >= 15
-  AND success_rate >= 0.80
-ORDER BY usage_count DESC, success_rate DESC;
+ORDER BY usage_count DESC;
 ```
 
 ## Candidate Selection Logic
@@ -196,7 +194,7 @@ C:\dev\scripts\auto-generate-skills\Analyze-Patterns.ps1
 $state = Get-Content "D:\learning-system\skill-generation\state.json" | ConvertFrom-Json
 
 # Connect to learning database
-$db = "D:\databases\nova_shared.db"
+$db = "D:\databases\agent_learning.db"
 
 # Run queries
 $toolPatterns = sqlite3 $db $ToolUsageQuery
