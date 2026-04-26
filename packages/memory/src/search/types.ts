@@ -5,6 +5,8 @@ export interface UnifiedSearchOptions {
   sources?: UnifiedSource[];
   timeRange?: { start: number; end: number };
   category?: string;
+  /** Multiply each per-source score by 2^(-ageMs/halfLife) before RRF ranking. Default: true */
+  recencyBoost?: boolean;
 }
 
 export interface UnifiedSearchResult {
