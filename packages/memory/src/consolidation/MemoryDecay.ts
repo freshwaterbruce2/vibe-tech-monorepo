@@ -41,8 +41,8 @@ export interface DecayResult {
   scores: DecayScore[];
 }
 
-const DEFAULT_EPISODIC_HALF_LIFE_MS = 5 * 24 * 60 * 60 * 1000; // 5 days (FadeMem dual-layer)
-const DEFAULT_SEMANTIC_HALF_LIFE_MS = 11 * 24 * 60 * 60 * 1000; // 11 days (FadeMem dual-layer)
+export const DEFAULT_EPISODIC_HALF_LIFE_MS = 5 * 24 * 60 * 60 * 1000; // 5 days (FadeMem dual-layer)
+export const DEFAULT_SEMANTIC_HALF_LIFE_MS = 11 * 24 * 60 * 60 * 1000; // 11 days (FadeMem dual-layer)
 
 export class MemoryDecay {
   readonly episodicHalfLifeMs: number;
