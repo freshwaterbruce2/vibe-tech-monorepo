@@ -10,6 +10,7 @@ import { RAGIndexer } from '../../nova-agent/src/rag/indexer.js';
 import { RAGRetriever } from '../../nova-agent/src/rag/retriever.js';
 import { RAGReranker } from '../../nova-agent/src/rag/reranker.js';
 import { RAGCache } from '../../nova-agent/src/rag/cache.js';
+import { DEFAULT_RAG_CONFIG } from '../../nova-agent/src/rag/types.js';
 import type { RAGConfig, SearchResult } from '../../nova-agent/src/rag/types.js';
 
 export interface RAGSearchParams {
@@ -44,6 +45,7 @@ let initError: string | null = null;
 
 function getConfig(): RAGConfig {
   return {
+    ...DEFAULT_RAG_CONFIG,
     lanceDbPath: process.env.RAG_LANCE_DB_PATH ?? 'D:\\nova-agent-data\\lance-db',
     cachePath: process.env.RAG_CACHE_PATH ?? 'D:\\nova-agent-data\\cache\\query-cache.sqlite',
     hashIndexPath: process.env.RAG_HASH_INDEX_PATH ?? 'D:\\nova-agent-data\\indexes\\file-hashes.json',

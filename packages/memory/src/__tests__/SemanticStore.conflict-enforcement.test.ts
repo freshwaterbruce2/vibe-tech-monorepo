@@ -177,6 +177,43 @@ describe('SemanticStore conflict enforcement', () => {
     expect(meta?.mergedFrom?.[0]?.text).toBe('canonical rule (rephrased)');
   });
 
+  it('ignores same-dimension conflicts from a different embedding model', async () => {
+    embedder.model = 'fake-model-v1';
+    embedder.setVector('stored with v1', vectorOnAxis(0, 1));
+
+    const inserted = await store.add({ text: 'stored with v1', importance: 5 });
+    expect(inserted.status).toBe('inserted');
+
+    embedder.model = 'fake-model-v2';
+    embedder.setVector('same vector with v2', vectorOnAxis(0, 1));
+
+    const second = await store.add({ text: 'same vector with v2', importance: 5 });
+    expect(second.status).toBe('inserted');
+    expect(store.count()).toBe(2);
+  });
+
+  it('merges even when the existing row has malformed metadata', async () => {
+    embedder.setVector('legacy metadata row', vectorOnAxis(0, 1));
+    embedder.setVector('legacy metadata duplicate', vectorOnAxis(0, 1));
+
+    const inserted = await store.add({ text: 'legacy metadata row', importance: 5 });
+    expect(inserted.status).toBe('inserted');
+    const id = inserted.status === 'inserted' ? inserted.id : -1;
+
+    dbManager
+      .getDb()
+      .prepare('UPDATE semantic_memory SET metadata = ? WHERE id = ?')
+      .run('{bad json', id);
+
+    const merged = await store.add({ text: 'legacy metadata duplicate', importance: 6 });
+    expect(merged.status).toBe('merged');
+
+    const after = store.getById(id);
+    const meta = after?.metadata as { mergedFrom?: Array<{ text: string }> } | undefined;
+    expect(after?.importance).toBe(6);
+    expect(meta?.mergedFrom?.[0]?.text).toBe('legacy metadata duplicate');
+  });
+
   it('does not lower importance during a merge', async () => {
     embedder.setVector('high-importance rule', vectorOnAxis(0, 1));
     embedder.setVector('low-importance duplicate', vectorOnAxis(0, 1));
