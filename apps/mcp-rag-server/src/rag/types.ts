@@ -172,7 +172,8 @@ export const DEFAULT_RAG_CONFIG: RAGConfig = {
   hydeEnabled: false,
   hydeModel: 'openai/gpt-4o-mini',
   contextualChunkingEnabled: false,
-  contextualChunkingModel: 'anthropic/claude-3-haiku',
+  // claude-3-haiku retired 2026-04-19; Haiku 4.5 is current cheapest with cache.
+  contextualChunkingModel: 'anthropic/claude-haiku-4.5',
   contextualChunkingMaxTokens: 120,
   contextualChunkingMaxDocumentBytes: 60_000,
 };

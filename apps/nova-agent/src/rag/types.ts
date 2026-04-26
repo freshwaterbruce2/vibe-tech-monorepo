@@ -274,7 +274,9 @@ export const DEFAULT_RAG_CONFIG: RAGConfig = {
   hydeEnabled: false,   // Phase 5: off by default; enable per-query when needed
   hydeModel: 'openai/gpt-4o-mini', // Phase 5: cheap, fast hypothesis generation
   contextualChunkingEnabled: false,                       // opt-in; requires full re-index
-  contextualChunkingModel: 'anthropic/claude-3-haiku',    // ~$0.25/M input via OpenRouter
+  // claude-3-haiku retired 2026-04-19. Haiku 4.5: $1/M input, $0.10/M cache-read.
+  // https://openrouter.ai/anthropic/claude-haiku-4.5
+  contextualChunkingModel: 'anthropic/claude-haiku-4.5',
   contextualChunkingMaxTokens: 120,                       // ~50-100 tokens of prose + headroom
   contextualChunkingMaxDocumentBytes: 60_000,             // ~15K tokens of doc per cache write
 };
