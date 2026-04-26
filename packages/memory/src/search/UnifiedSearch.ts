@@ -4,6 +4,10 @@
  * merges results with Reciprocal Rank Fusion (RRF), deduplicates by content hash.
  */
 import { createHash } from 'node:crypto';
+import {
+  DEFAULT_EPISODIC_HALF_LIFE_MS,
+  DEFAULT_SEMANTIC_HALF_LIFE_MS,
+} from '../consolidation/MemoryDecay.js';
 import type { MemoryManager } from '../core/MemoryManager.js';
 import type { LearningBridge } from '../integrations/LearningBridge.js';
 import type { UnifiedSearchOptions, UnifiedSearchResult, UnifiedSource } from './types.js';
@@ -21,6 +25,25 @@ export interface RAGBridgeAdapter {
 
 const RRF_K = 60;
 
+// Per-source half-lives reused from MemoryDecay. Sources without a meaningful
+// timestamp (rag = file mtime is not freshness, learning/procedural = pattern stats)
+// get null, which keeps factor 1.0 and preserves prior ranking for those sources.
+const SOURCE_HALF_LIFE_MS: Record<UnifiedSource, number | null> = {
+  episodic: DEFAULT_EPISODIC_HALF_LIFE_MS,
+  semantic: DEFAULT_SEMANTIC_HALF_LIFE_MS,
+  procedural: null,
+  rag: null,
+  learning: null,
+};
+
+function recencyFactor(result: UnifiedSearchResult, now: number): number {
+  const halfLife = SOURCE_HALF_LIFE_MS[result.source];
+  if (halfLife === null || result.timestamp === undefined) return 1;
+  const ageMs = now - result.timestamp;
+  if (ageMs <= 0) return 1; // future or simultaneous timestamp: no decay
+  return Math.pow(2, -ageMs / halfLife);
+}
+
 export class UnifiedSearch {
   constructor(
     private manager: MemoryManager,
@@ -30,12 +53,13 @@ export class UnifiedSearch {
 
   async search(query: string, options?: UnifiedSearchOptions): Promise<UnifiedSearchResult[]> {
     const limit = options?.limit ?? 10;
+    const recencyBoostEnabled = options?.recencyBoost ?? true;
     const sources = new Set<UnifiedSource>(
       options?.sources ?? ['semantic', 'episodic', 'rag', 'learning'],
     );
 
     // Fan out to all enabled sources in parallel
-    // Phase 5: fetch 3× candidates per source before RRF merge for better fusion quality
+    // Phase 5: fetch 3x candidates per source before RRF merge for better fusion quality
     const fanout = limit * 3;
     const promises: Array<Promise<UnifiedSearchResult[]>> = [];
 
@@ -56,8 +80,13 @@ export class UnifiedSearch {
       .filter((p): p is PromiseFulfilledResult<UnifiedSearchResult[]> => p.status === 'fulfilled')
       .flatMap((p) => p.value);
 
+    // Phase 6: recency boost. Multiply each per-source score by 2^(-ageMs/halfLife)
+    // before RRF ranking, so fresher items get better in-source rank and fused position.
+    // Reuses MemoryDecay's half-life constants (5d episodic / 11d semantic).
+    const boosted = recencyBoostEnabled ? this.applyRecencyBoost(allResults) : allResults;
+
     // RRF merge: rank results per-source, then fuse scores
-    const rrfScored = this.rrfFusion(allResults);
+    const rrfScored = this.rrfFusion(boosted);
 
     // Deduplicate by content hash
     const seen = new Set<string>();
@@ -69,6 +98,11 @@ export class UnifiedSearch {
     });
 
     return deduped.slice(0, limit);
+  }
+
+  private applyRecencyBoost(results: UnifiedSearchResult[]): UnifiedSearchResult[] {
+    const now = Date.now();
+    return results.map((r) => ({ ...r, score: r.score * recencyFactor(r, now) }));
   }
 
   private rrfFusion(results: UnifiedSearchResult[]): UnifiedSearchResult[] {
