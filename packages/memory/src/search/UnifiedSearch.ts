@@ -31,7 +31,7 @@ export class UnifiedSearch {
   async search(query: string, options?: UnifiedSearchOptions): Promise<UnifiedSearchResult[]> {
     const limit = options?.limit ?? 10;
     const sources = new Set<UnifiedSource>(
-      options?.sources ?? ['semantic', 'episodic', 'rag', 'learning'],
+      options?.sources ?? ['semantic', 'episodic', 'procedural', 'rag', 'learning'],
     );
 
     // Fan out to all enabled sources in parallel
@@ -44,6 +44,9 @@ export class UnifiedSearch {
     }
     if (sources.has('episodic')) {
       promises.push(this.searchEpisodic(query, fanout, options?.timeRange));
+    }
+    if (sources.has('procedural') && this.learningBridge) {
+      promises.push(this.searchProcedural(query, fanout));
     }
     if (sources.has('rag') && this.ragBridge) {
       promises.push(this.searchRAG(query, fanout));
@@ -158,6 +161,30 @@ export class UnifiedSearch {
         metadata: { filePath: r.filePath, language: r.language },
       }));
     } catch {
+      return [];
+    }
+  }
+
+  private async searchProcedural(query: string, limit: number): Promise<UnifiedSearchResult[]> {
+    if (!this.learningBridge) return [];
+    try {
+      const hits = await this.learningBridge.searchProceduralPatterns(query, limit);
+      return hits.map((h) => ({
+        text: h.text,
+        score: h.score,
+        source: 'procedural' as const,
+        sourceId: h.id,
+        metadata: {
+          patternType: h.patternType,
+          patternSource: h.source,
+          frequency: h.frequency,
+          successRate: h.successRate,
+          similarity: h.similarity,
+          lastUsed: h.lastUsed,
+        },
+      }));
+    } catch {
+      // Embedder unavailable or query embed failed — degrade gracefully
       return [];
     }
   }
