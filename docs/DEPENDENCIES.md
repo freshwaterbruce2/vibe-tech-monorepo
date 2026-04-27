@@ -1,8 +1,10 @@
 # Workspace Dependency Graph
 
-> **Last Updated**: 2026-02-13
+> **Last Updated**: 2026-04-26
 >
 > Maps which apps consume which `@vibetech/*` and `@dev/*` workspace packages.
+>
+> **Note:** Some packages (e.g. `@vibetech/backend`, `@vibetech/db-app`, `@vibetech/mcp-testing`, `@vibetech/nova-database`, `@vibetech/service-common`, `@vibetech/vcs-theme`) currently have no `workspace:*` consumers. They are intentional standalone services, infrastructure-in-waiting, or path-imported modules — not dead code. See `tools/monorepo-sync/sync-audit.config.json` `allowedIsolatedProjects` for the canonical isolation list.
 
 ## Package → Consumers
 
