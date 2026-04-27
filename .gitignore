@@ -323,3 +323,7 @@ status.err
 # ESLint per-project cache shards (written by scripts/fix-all-quality.ps1)
 .eslintcache/
 .eslintcache
+
+# Ollama runtime state
+Ollama/db.sqlite-shm
+Ollama/db.sqlite-wal
