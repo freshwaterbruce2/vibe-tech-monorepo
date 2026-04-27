@@ -82,13 +82,6 @@ const apps = [
     description: 'Prompt optimization tool',
   },
   {
-    dir: 'mcp-codeberg',
-    displayName: 'GitHub MCP',
-    category: 'dev',
-    type: 'native',
-    description: 'Version control MCP server',
-  },
-  {
     dir: 'mcp-skills-server',
     displayName: 'Skills Server',
     category: 'dev',
@@ -115,6 +108,13 @@ const apps = [
     category: 'dev',
     type: 'web',
     description: 'Workspace visualization',
+  },
+  {
+    dir: 'chessmaster-academy',
+    displayName: 'Chessmaster Academy',
+    category: 'education',
+    type: 'web',
+    description: 'Chess lessons, puzzles, and AI tutor',
   },
   {
     dir: 'shipping-pwa',

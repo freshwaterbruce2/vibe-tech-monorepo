@@ -399,7 +399,6 @@ export default tseslint.config(
       'apps/desktop-commander-v3/**/*.{ts,tsx}',
       'apps/memory-mcp/**/*.{ts,tsx}',
       'apps/vibe-shop/**/*.{ts,tsx}',
-      'apps/mcp-codeberg/**/*.ts',
       'apps/vibe-code-studio/**/*.{ts,tsx}',
       'apps/cross-agent-reflection/**/*.{ts,tsx}',
       'packages/openrouter-client/**/*.ts',
@@ -416,7 +415,6 @@ export default tseslint.config(
           './apps/desktop-commander-v3/tsconfig.lint.json',
           './apps/memory-mcp/tsconfig.lint.json',
           './apps/vibe-shop/tsconfig.lint.json',
-          './apps/mcp-codeberg/tsconfig.lint.json',
           './apps/vibe-code-studio/tsconfig.lint.json',
           './apps/cross-agent-reflection/tsconfig.lint.json',
           './packages/openrouter-client/tsconfig.lint.json',
@@ -484,7 +482,6 @@ export default tseslint.config(
       'apps/business-booking-platform/backend/src/**/*.{ts,tsx}',
       'apps/shipping-pwa/src/**/*.{ts,tsx}',
       'apps/nova-mobile-app/src/**/*.{ts,tsx}',
-      'apps/mcp-codeberg/**/*.ts',
     ],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',

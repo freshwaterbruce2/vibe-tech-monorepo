@@ -146,6 +146,11 @@
         "priority": "medium",
         "description": "Vibe Tech landing page"
       },
+      "chessmaster-academy": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Chess lesson, puzzle, and AI tutor app (React + Vite + Capacitor)"
+      },
       "VibeBlox": {
         "status": "development",
         "priority": "medium",
@@ -170,11 +175,6 @@
         "status": "maintenance",
         "priority": "medium",
         "description": "Prompt Management System"
-      },
-      "mcp-codeberg": {
-        "status": "production",
-        "priority": "high",
-        "description": "Git operations MCP server"
       },
       "mcp-skills-server": {
         "status": "production",

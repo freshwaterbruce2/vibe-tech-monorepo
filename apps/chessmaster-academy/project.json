@@ -1,0 +1,59 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "chessmaster-academy",
+  "projectType": "application",
+  "sourceRoot": "apps/chessmaster-academy/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "apps/chessmaster-academy"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "apps/chessmaster-academy"
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run preview",
+        "cwd": "apps/chessmaster-academy"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run lint",
+        "cwd": "apps/chessmaster-academy"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run typecheck",
+        "cwd": "apps/chessmaster-academy"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test",
+        "cwd": "apps/chessmaster-academy"
+      }
+    },
+    "validate-lessons": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run validate:lessons",
+        "cwd": "apps/chessmaster-academy"
+      }
+    }
+  },
+  "tags": ["scope:web", "product:chessmaster-academy", "type:application"]
+}
