@@ -190,14 +190,6 @@
       },
       "cache": true
     },
-    "test:electron": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm run test:electron",
-        "cwd": "apps/vibe-code-studio"
-      },
-      "cache": true
-    },
     "rebuild-deps": {
       "executor": "nx:run-commands",
       "options": {
