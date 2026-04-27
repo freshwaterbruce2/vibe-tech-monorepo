@@ -14,12 +14,12 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json --incremental false",
+    "build": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json --incremental false",
     "dev": "tsup --watch",
     "test": "node ../../node_modules/vitest/vitest.mjs run",
     "test:watch": "node ../../node_modules/vitest/vitest.mjs",
     "test:coverage": "node ../../node_modules/vitest/vitest.mjs run --coverage",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "node ../../node_modules/typescript/bin/tsc --noEmit",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "clean": "rimraf dist"
