@@ -44,7 +44,6 @@
     "cross-agent-reflection",
     "dap-proxy",
     "lsp-proxy",
-    "mcp-codeberg",
     "mcp-rag-server",
     "mcp-skills-server",
     "nova-mobile-app",

@@ -367,7 +367,6 @@ const bridge = new OpenClawBridge({ debug: true });
 - `@vibetech/shared-ipc` - Shared IPC schemas and types
 - `backend/ipc-bridge` - IPC Bridge server (port 5004)
 - `apps/desktop-commander-v3` - MCP server example
-- `apps/mcp-codeberg` - GitHub MCP server
 
 ---
 

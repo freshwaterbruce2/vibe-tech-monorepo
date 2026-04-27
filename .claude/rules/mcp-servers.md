@@ -1,6 +1,6 @@
 # MCP Server Configuration & Troubleshooting
 
-Last Updated: 2026-04-08
+Last Updated: 2026-04-26
 
 ## Canonical Server List
 
@@ -8,7 +8,6 @@ Last Updated: 2026-04-08
 |--------|---------|---------|
 | `desktop-commander` | `node apps/desktop-commander-v3/dist/mcp.js` | Windows automation |
 | `filesystem` | `npx @modelcontextprotocol/server-filesystem` | File access (C:\dev, D:\) |
-| `codeberg` | `node apps/mcp-codeberg/dist/index.js` | GitHub API integration |
 | `nx-mcp` | `npx nx-mcp@latest` | Nx workspace management |
 | `sqlite` | `npx @modelcontextprotocol/server-sqlite` | Main DB (D:\databases\database.db) |
 | `skills` | `node apps/mcp-skills-server/dist/index.js` | Agent skills system |
@@ -31,7 +30,6 @@ Last Updated: 2026-04-08
 ## Rebuild Custom Servers
 
 ```powershell
-pnpm --filter mcp-codeberg build          # C:\dev\apps\mcp-codeberg
 pnpm --filter mcp-skills-server build     # C:\dev\apps\mcp-skills-server
 pnpm --filter memory-mcp build            # C:\dev\apps\memory-mcp
 pnpm --filter mcp-rag-server build        # C:\dev\apps\mcp-rag-server

@@ -158,6 +158,7 @@ nul
 # Project-specific (to review)
 DesktopCommanderMCP/
 /Vibe-Tutor/
+/space-agent/
 opcode/
 
 # Sensitive files - API keys and credentials
