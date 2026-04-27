@@ -24,7 +24,7 @@
 - Repository host: GitHub, `https://github.com/freshwaterbruce2/vibe-tech-monorepo.git`.
 - Package manager: `pnpm@10.33.0` only.
 - Node: `>=22.0.0`; current local toolchain is Node 22.x.
-- Build system: `nx@22.5.0` with apps in `apps/` and libraries in `packages/`.
+- Build system: `nx@22.6.5` with apps in `apps/` and libraries in `packages/`.
 - Primary languages: TypeScript, JavaScript, Python, Rust, and React.
 - Shared runtime data, logs, databases, and learning artifacts live on `D:\`, not under `C:\dev`.
 
