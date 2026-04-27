@@ -6,7 +6,7 @@
     "node": "22.x",
     "typescript": "5.9.3",
     "react": "19.2.4",
-    "buildSystem": "nx@22.5.0"
+    "buildSystem": "nx@22.6.5"
   },
   "versionControl": {
     "provider": "github",
