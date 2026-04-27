@@ -12,7 +12,7 @@
       ],
       "cache": true,
       "options": {
-        "command": "tsc -p tsconfig.build.json",
+        "command": "node ../../node_modules/typescript/bin/tsc -p tsconfig.build.json",
         "cwd": "packages/shared-utils"
       }
     },
@@ -28,7 +28,7 @@
       "executor": "nx:run-commands",
       "cache": true,
       "options": {
-        "command": "tsc --noEmit",
+        "command": "node ../../node_modules/typescript/bin/tsc --noEmit",
         "cwd": "packages/shared-utils"
       }
     },

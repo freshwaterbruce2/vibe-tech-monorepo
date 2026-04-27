@@ -69,6 +69,21 @@
         "cwd": "apps/vibe-shop"
       }
     },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test",
+        "cwd": "apps/vibe-shop"
+      }
+    },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/coverage"],
+      "options": {
+        "command": "pnpm run test:coverage",
+        "cwd": "apps/vibe-shop"
+      }
+    },
     "quality": {}
   },
   "tags": [

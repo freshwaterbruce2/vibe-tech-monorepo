@@ -27,7 +27,6 @@ function Get-McpType($cmd) {
         '*cloud-run-mcp*'         = 'cloudrun-mcp'
         '*firebase*mcp*'          = 'firebase-mcp'
         '*genkit*'                = 'genkit-mcp'
-        '*codeberg*'              = 'codeberg-mcp'
         '*sequential-thinking*'   = 'sequential-thinking'
         '*playwright*mcp*'        = 'playwright-mcp'
         '*desktop-commander*'     = 'desktop-commander'

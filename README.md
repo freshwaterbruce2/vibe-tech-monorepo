@@ -41,6 +41,7 @@ pnpm nx dev <project-name>   # e.g. pnpm nx dev nova-agent
 | business-booking-platform | Hotel booking with AI search | React, Vite | Maintained |
 | invoice-automation-saas | SaaS invoice automation | React, Vite | Maintained |
 | vibe-tech-lovable | Landing page / marketing site | React, Vite | Maintained |
+| chessmaster-academy | Chess lessons, puzzles, and AI tutor | React, Vite, Capacitor | Active |
 | VibeBlox | Token incentive system for kids | React, Hono | Experimental |
 | prompt-engineer | Prompt testing workbench | React, Vite | Experimental |
 
@@ -61,7 +62,6 @@ pnpm nx dev <project-name>   # e.g. pnpm nx dev nova-agent
 | mcp-gateway | Bridges OpenClaw to MCP servers via IPC | Active |
 | mcp-rag-server | Nova-Agent RAG pipeline for Claude | Active |
 | desktop-commander-v3 | Unrestricted terminal access for AI agents | Active |
-| mcp-codeberg | Git operations MCP server (legacy name; GitHub-backed) | Maintained |
 | workspace-mcp-server | Workspace metadata and env MCP server | Active |
 
 ### Infrastructure
