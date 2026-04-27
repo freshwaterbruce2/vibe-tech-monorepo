@@ -20,14 +20,14 @@
       ],
       "cache": true,
       "options": {
-        "command": "tsc",
+        "command": "node ../../node_modules/typescript/bin/tsc",
         "cwd": "packages/ui"
       }
     },
     "typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc --noEmit",
+        "command": "node ../../node_modules/typescript/bin/tsc --noEmit",
         "cwd": "packages/ui"
       }
     },
