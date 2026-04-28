@@ -1,0 +1,20 @@
+# Vibe Shop
+
+> Trend-driven affiliate product aggregator. Discovers products from multiple merchant networks, ranks them by a trending score, and redirects shoppers to the merchant for checkout. Built on Next.js 16 + Prisma 7 + Neon serverless Postgres.
+
+Vibe Shop is a discovery surface, not a first-party storefront. All purchases happen on the merchant's site after a 302 redirect from `/api/click/{productId}`. Click events are logged with hashed IPs for attribution; no PII or payment data is collected.
+
+## Public endpoints
+
+- [/.well-known/ai](/.well-known/ai): IETF AI Discovery document (v1.0) describing service capabilities and auth
+- [/api/click/{productId}](/api/click/): Logs a click and 302-redirects to the product's affiliate URL
+
+## Docs
+
+- [llms-full.txt](/llms-full.txt): Long-form catalog and architecture for AI agents
+- [README](https://github.com/freshwaterbruce2/vibe-tech-monorepo/blob/main/apps/vibe-shop/README.md): Project README in monorepo
+
+## Optional
+
+- AI product recommendations use Google Gemini (`@google/generative-ai`); requires `GOOGLE_API_KEY`
+- Database is Neon serverless Postgres via `@prisma/adapter-neon`; connection via `DATABASE_URL`
