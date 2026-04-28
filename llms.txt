@@ -1,0 +1,86 @@
+# VibeTech Monorepo
+
+> A multi-application monorepo (30+ apps, 25+ shared packages) coordinated via Nx 22.6 + pnpm 10.33. Spans AI agent infrastructure, developer tools, consumer apps, MCP servers, and a Python crypto trading system. Source code on `C:\dev`; all runtime data (databases, logs, learning system) on `D:\`. Windows 11 only.
+
+The monorepo is organized into three pillars: AI agent infrastructure (LATS planner, episodic + semantic + RAG memory, MCP server ecosystem), developer tools (Nova Agent, Vibe Code Studio, VTDE shell, Vibetech Command Center), and consumer/business apps (Vibe Tutor, Vibe Shop, Vibe Justice, business booking, invoice SaaS). Code is TypeScript-first with Python for crypto and Rust/MSVC for Tauri desktop apps.
+
+## Read first
+
+Files an agent should consult before doing any work in this repo.
+
+- [README.md](README.md): Top-level overview of every app and shared package, with status (active / maintained / experimental) and tech stack
+- [CLAUDE.md](CLAUDE.md): Session guardrails — build/install failure handling, lint/TS fixing rules, Windows environment specifics, approach strategy
+- [AI.md](AI.md): Workspace rules for AI agents (paths policy, anti-duplication directive)
+- [AGENTS.md](AGENTS.md): Repository host, package manager, Nx version, runtime data location, and language inventory
+- [SECURITY.md](SECURITY.md): Security policy for the monorepo
+
+## Coding rules
+
+Canonical rules live in `.claude/rules/`. These are mandatory; violations block commits.
+
+- [.claude/rules/paths-policy.md](.claude/rules/paths-policy.md): Code on `C:\dev`, all data on `D:\`. Never mix.
+- [.claude/rules/database-storage.md](.claude/rules/database-storage.md): All SQLite/LanceDB on `D:\databases\`; use env var `DATABASE_PATH`, never hardcode paths
+- [.claude/rules/no-duplicates.md](.claude/rules/no-duplicates.md): Search before creating any file or feature; modify-first default
+- [.claude/rules/no-mock-or-placeholder-code.md](.claude/rules/no-mock-or-placeholder-code.md): Mock/stub/TODO code is prohibited outside test files
+- [.claude/rules/typescript-patterns.md](.claude/rules/typescript-patterns.md): No `import React`; no `React.FC`; use `import type` for types
+- [.claude/rules/pnpm-2026-best-practices.md](.claude/rules/pnpm-2026-best-practices.md): Hoisted mode required (Tauri/Electron + native modules); always use `--filter` for single-project ops
+- [.claude/rules/git-workflow.md](.claude/rules/git-workflow.md): Branch before committing; merge to main every 10 commits; pre-commit hooks enforce 10 checks
+- [.claude/rules/testing-strategy.md](.claude/rules/testing-strategy.md): Vitest unit, Playwright E2E; 80% coverage target
+- [.claude/rules/platform-requirements.md](.claude/rules/platform-requirements.md): Windows 11 only; PowerShell 7+; backslash paths
+- [.claude/rules/web-search-grounding.md](.claude/rules/web-search-grounding.md): Web search required for versions, APIs, post-cutoff facts; cite sources
+- [.claude/rules/mcp-servers.md](.claude/rules/mcp-servers.md): Canonical MCP server list and config file locations
+
+## Workspace structure
+
+- [docs/WORKSPACE_STRUCTURE.md](docs/WORKSPACE_STRUCTURE.md): Detailed project layout
+- [docs/PORTS.md](docs/PORTS.md): Port registry (3000-3099 backend, 3100-3199 MCP, 5173-5199 Vite, 8000-8999 specialized)
+- [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md): Workspace dependency graph (which apps consume which `@vibetech/*` packages)
+- [WORKSPACE.json](WORKSPACE.json): Machine-readable app registry with status, priority, description
+
+## Common commands
+
+```bash
+pnpm nx dev <project>            # Start a project's dev server
+pnpm nx build <project>          # Build a project
+pnpm nx test <project>           # Run a project's tests
+pnpm run quality:affected        # Lint + typecheck + build only changed projects
+pnpm nx graph                    # Visualize project dependency graph
+pnpm add <pkg> --filter <project>  # Add dep to a specific project
+```
+
+Never run bare `pnpm install` from inside a project directory; use `--filter` from the root. Use `npx.cmd` (not `npx`) on Windows.
+
+## Architecture
+
+```
+C:\dev\               source code (Git)
+├── apps\             30+ applications (AI, MCP, web, mobile, desktop)
+├── packages\         25+ shared packages (memory, ui, mcp-core, types)
+├── backend\          standalone backend services
+├── docs\             workspace documentation
+└── .claude\rules\    canonical coding rules
+
+D:\databases\         SQLite + LanceDB (NEVER on C:\)
+D:\logs\              application logs
+D:\data\              datasets, ML data
+D:\learning-system\   AI learning artifacts
+```
+
+Three pillars:
+
+1. **AI agent infrastructure** — LATS/MCTS self-learning planner (`packages/agent-lats`), unified memory at `apps/memory-mcp` (semantic + episodic + RAG), MCP servers for skills, RAG, workspace metadata
+2. **Developer tools** — Nova Agent (Tauri), Vibe Code Studio (Tauri + Monaco), VTDE shell (Tauri), Vibetech Command Center (Electron)
+3. **Consumer / business apps** — Vibe Tutor (Capacitor PWA), Chessmaster Academy (Capacitor), Vibe Shop (Next.js + Neon Postgres), Vibe Justice (React + FastAPI), business booking, invoice SaaS, crypto-enhanced (Python)
+
+## Optional
+
+Less critical reading; consult only if relevant to the current task.
+
+- [docs/ai/RULES.md](docs/ai/RULES.md): Cross-tool AI rules
+- [docs/DATABASE_BACKUP_GUIDE.md](docs/DATABASE_BACKUP_GUIDE.md): SQLite backup procedures
+- [docs/troubleshooting](docs/troubleshooting): Common issues and fixes
+- [docs/ci](docs/ci): CI/CD setup notes
+- [docs/memory-system](docs/memory-system): Memory system architecture
+- [TASKS.md](TASKS.md): Current task tracking
+- [.claude/rules/ci-cd-nx.md](.claude/rules/ci-cd-nx.md): Nx caching, affected builds, self-healing CI rules
+- [.claude/rules/memory-system.md](.claude/rules/memory-system.md): Memory + specialist agents reference

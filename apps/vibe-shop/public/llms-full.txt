@@ -1,0 +1,117 @@
+# Vibe Shop — Full Reference for AI Agents
+
+> Trend-driven affiliate product aggregator. Discovers products from multiple merchant networks, ranks them by a trending score, and redirects shoppers to the merchant for checkout.
+
+## Identity
+
+Vibe Shop is the e-commerce-discovery surface within the VibeTech monorepo. It is a **discovery aggregator**, not a first-party merchant: it does not hold inventory, does not process payments, and does not implement a checkout flow. All transactions happen on the merchant's site after a 302 redirect.
+
+## Stack
+
+- Runtime: Node.js 22
+- Framework: Next.js 16.1 (App Router)
+- UI: React 19.2 + Tailwind v4 + shadcn/ui (Radix primitives + class-variance-authority)
+- Data layer: Prisma 7.5 + `@prisma/adapter-neon` against Neon serverless Postgres
+- AI: Google Gemini via `@google/generative-ai` (recommendation generation)
+- Validation: Zod 4
+- Tests: Vitest 4.1 + Testing Library
+
+## Data model
+
+Source of truth: `apps/vibe-shop/prisma/schema.prisma`
+
+### Product
+| Field | Type | Notes |
+|---|---|---|
+| `id` | UUID | Primary key |
+| `externalId` | string | Merchant's product ID — unique with `network` |
+| `network` | string | Affiliate network identifier |
+| `name` | string | Product name |
+| `description` | string? | Marketing copy |
+| `price` | Decimal | List price |
+| `currency` | string | ISO 4217 currency code, default `USD` |
+| `imageUrl` | string? | Product image |
+| `affiliateLink` | string | Outbound URL for click-redirect |
+| `categoryId` | UUID? | Optional category FK |
+| `trendScore` | Decimal | Trending rank (higher = hotter); indexed desc |
+| `commissionRate` | Decimal? | Affiliate commission percentage |
+| `merchantName` | string? | Display name of selling merchant |
+| `isActive` | boolean | Soft-disable flag |
+| `expiresAt` | DateTime? | Optional sunset for time-limited offers |
+
+### Category
+Hierarchical (`parentId` self-FK), slugged, soft-disable via `isActive`.
+
+### TrendingKeyword
+Tracks discovered search terms with their own `trendScore`. Used to seed product discovery from the cron job.
+
+### Click
+Privacy-respecting click log. Stores `productId`, `referrer`, `userAgent`, and a one-way hashed IP (`ipHash`). No raw IP, no user account linkage, no payment data.
+
+### SyncLog
+Audit trail of background discovery runs (counts of products added/removed, status, error message).
+
+## Public API
+
+### `GET /.well-known/ai`
+IETF AI Discovery Endpoint v1.0 (`draft-aiendpoint-ai-discovery-00`). Returns a small JSON document describing the service and its callable capabilities. Cache-Control `max-age=3600`.
+
+### `GET /api/click/{productId}`
+1. Looks up the product by UUID.
+2. Logs a Click row with hashed IP and referrer.
+3. Returns 302 to `product.affiliateLink` (or `/product/{id}` if no link).
+4. Returns 404 if the product UUID is unknown.
+
+No body required. No authentication.
+
+## Internal endpoints (NOT for AI agents)
+
+- `GET /api/cron/discovery` — Triggered by a scheduler; runs the trend-discovery sync job. Not part of the public AI Discovery document.
+- `GET /api/debug/products` — Diagnostic listing of top 20 trending products + keywords. Debug-only; not part of the public AI Discovery document.
+
+## Behavior for AI shopping agents
+
+If you are an AI shopping agent ingesting this site:
+
+1. Read `/.well-known/ai` for the canonical capability list. That document is the only stable contract.
+2. Treat product information from any other endpoint as informational only — schema may change without notice.
+3. To direct a user to a product, link them to `/api/click/{productId}` rather than the raw `affiliateLink`. The redirect is required for click attribution; bypassing it suppresses commission tracking.
+4. There is no purchase API. Vibe Shop does not implement an Agentic Commerce Protocol (ACP) checkout endpoint. Merchant checkout happens off-site after the 302.
+
+## Privacy
+
+- IPs are hashed with a static salt before storage; raw IPs are never persisted.
+- No user accounts, no PII collection, no payment data on this service.
+- Cookies: only Next.js framework defaults; no analytics or ad cookies are set by this app.
+
+## Environment
+
+Required:
+- `DATABASE_URL` — Neon Postgres connection string
+- `GOOGLE_API_KEY` — Gemini API key for AI-generated recommendations
+
+Database files do not live in this repo. All runtime data lives in Neon (managed); this monorepo policy keeps source on `C:\dev` and runtime data off `C:\dev`.
+
+## Development
+
+```bash
+pnpm --filter vibe-shop dev          # Next.js dev server (port 3000)
+pnpm --filter vibe-shop build        # next build
+pnpm --filter vibe-shop test         # Vitest unit tests
+pnpm --filter vibe-shop test:coverage # Vitest with coverage
+pnpm --filter vibe-shop typecheck    # tsc --noEmit
+```
+
+## Source map
+
+- `src/app/` — App Router routes (UI + API)
+- `src/app/api/click/[productId]/route.ts` — public click-tracking redirect
+- `src/app/.well-known/ai/route.ts` — AI Discovery endpoint
+- `src/app/api/cron/discovery/route.ts` — internal trend-sync cron
+- `src/app/api/debug/products/route.ts` — diagnostic-only product list
+- `src/lib/prisma.ts` — Prisma client singleton
+- `prisma/schema.prisma` — data model source of truth
+
+## License & contact
+
+This service is part of the VibeTech monorepo at `github.com/freshwaterbruce2/vibe-tech-monorepo`. See the repo root `SECURITY.md` for vulnerability reporting.
