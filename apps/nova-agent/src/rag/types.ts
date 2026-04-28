@@ -32,6 +32,16 @@ export interface Chunk {
   tokenCount: number;
   /** Timestamp when chunk was created */
   createdAt: number;
+  /**
+   * Optional Anthropic-style contextual prefix (50-100 tokens) that situates
+   * this chunk within its source document. When set, it is prepended to the
+   * embedding input but kept separate from `content` so display/snippet code
+   * still shows the real source.
+   * See: https://www.anthropic.com/news/contextual-retrieval
+   */
+  contextPrefix?: string;
+  /** True when this chunk was processed with contextual chunking (prefix generated). */
+  contextual?: boolean;
 }
 
 // ─── Embeddings ─────────────────────────────────────────────────────────────
@@ -214,6 +224,27 @@ export interface RAGConfig {
   hydeEnabled: boolean;
   /** Phase 5: model to use for HyDE hypothesis generation */
   hydeModel: string;
+  /**
+   * Anthropic-style contextual chunking. When true, the indexer asks a cheap
+   * LLM to generate a 50-100 token explanatory prefix per chunk and prepends
+   * it to the embedding input (display content is unchanged).
+   * Default: false. Enabling requires a full re-index to take effect.
+   * Reference: https://www.anthropic.com/news/contextual-retrieval
+   */
+  contextualChunkingEnabled: boolean;
+  /** Model used to generate the per-chunk contextual prefix. Cheap + fast preferred. */
+  contextualChunkingModel: string;
+  /**
+   * Maximum tokens for the generated contextual prefix.
+   * Anthropic recommends 50-100 tokens of context. We cap generation here.
+   */
+  contextualChunkingMaxTokens: number;
+  /**
+   * Maximum bytes of the source document sent in the prompt's cached prefix.
+   * Larger documents are head-truncated. Keeps prompt-cache writes bounded
+   * and avoids hitting the 200K context window for very large files.
+   */
+  contextualChunkingMaxDocumentBytes: number;
 }
 
 export const DEFAULT_RAG_CONFIG: RAGConfig = {
@@ -242,4 +273,10 @@ export const DEFAULT_RAG_CONFIG: RAGConfig = {
   searchPoolSize: 50,   // Phase 5: two-stage retrieval (top 50 → rerank to N)
   hydeEnabled: false,   // Phase 5: off by default; enable per-query when needed
   hydeModel: 'openai/gpt-4o-mini', // Phase 5: cheap, fast hypothesis generation
+  contextualChunkingEnabled: false,                       // opt-in; requires full re-index
+  // claude-3-haiku retired 2026-04-19. Haiku 4.5: $1/M input, $0.10/M cache-read.
+  // https://openrouter.ai/anthropic/claude-haiku-4.5
+  contextualChunkingModel: 'anthropic/claude-haiku-4.5',
+  contextualChunkingMaxTokens: 120,                       // ~50-100 tokens of prose + headroom
+  contextualChunkingMaxDocumentBytes: 60_000,             // ~15K tokens of doc per cache write
 };

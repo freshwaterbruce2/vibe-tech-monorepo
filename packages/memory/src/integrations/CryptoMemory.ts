@@ -96,7 +96,7 @@ export class CryptoMemory {
   async trackAnalysis(analysis: MarketAnalysis): Promise<number> {
     // Store as semantic memory if high confidence
     if (analysis.confidence >= 0.7) {
-      return await this.memory.semantic.add({
+      const result = await this.memory.semantic.add({
         text: `Market analysis for ${analysis.pair} (${analysis.timeframe}): ${analysis.sentiment} sentiment. Indicators: ${JSON.stringify(analysis.indicators)}`,
         category: 'market-analysis',
         importance: Math.round(analysis.confidence * 10),
@@ -108,6 +108,11 @@ export class CryptoMemory {
           timestamp: analysis.timestamp,
         },
       });
+      if (result.status === 'rejected_duplicate') {
+        return 0;
+      }
+
+      return result.status === 'inserted' ? result.id : result.existingId;
     }
 
     return 0;
