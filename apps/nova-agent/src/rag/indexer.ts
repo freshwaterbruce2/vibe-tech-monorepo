@@ -2,6 +2,24 @@
  * RAG Indexer
  * Walks the workspace, detects changed files via SHA-256 hashing,
  * chunks and embeds only changed files, writes to LanceDB.
+ *
+ * Opt-in: Anthropic-style contextual chunking (config.contextualChunkingEnabled).
+ * When enabled, each chunk is passed to {@link Contextualizer} which produces a
+ * 50-100 token explanatory prefix; that prefix is then prepended to the
+ * embedding input only (chunk.content stays raw for display/snippet use).
+ *
+ * Operational impact when enabled:
+ *   - Re-index cost (full): ~264K chunks * ~75 tokens prefix output +
+ *     per-chunk prompt = ~$3-8 with claude-3-haiku via OpenRouter, depending
+ *     on prompt cache hit rate. See contextualizer.ts header for the math.
+ *   - Existing indexed data is NOT affected. Only files (re)indexed after
+ *     enabling will store a contextPrefix. Mixing is supported.
+ *   - To enable: set RAGConfig.contextualChunkingEnabled = true (or override
+ *     via env in your bootstrap), then trigger a full re-index when ready.
+ *   - The prefix goes into the embedding ONLY. Anthropic's full pattern also
+ *     prepends it to the BM25/FTS index; LanceDB's FTS indexes the `content`
+ *     column which we keep raw, so FTS contextualization is a deliberate gap
+ *     (would require a new column + FTS rebuild).
  */
 
 import { createHash } from 'node:crypto';
@@ -10,6 +28,7 @@ import { join, relative } from 'node:path';
 import { connect, type Connection, type Table } from '@lancedb/lancedb';
 import { RAGChunker } from './chunker.js';
 import { RAGEmbedder } from './embedder.js';
+import { Contextualizer } from './contextualizer.js';
 import { discoverFiles } from './fileDiscovery.js';
 import { loadFileHashes, saveFileHashes, isFileChanged } from './hashManager.js';
 import type {
@@ -33,6 +52,10 @@ interface LanceRow {
   language: string;
   tokenCount: number;
   createdAt: number;
+  /** Anthropic-style contextual prefix (empty string if contextual chunking off). */
+  contextPrefix: string;
+  /** 1 if this row was generated with contextual chunking, 0 otherwise. */
+  contextual: number;
   vector: number[];
 }
 
@@ -40,6 +63,7 @@ export class RAGIndexer {
   private config: RAGConfig;
   private chunker: RAGChunker;
   private embedder: RAGEmbedder;
+  private contextualizer: Contextualizer | null;
   private db: Connection | null = null;
   private table: Table | null = null;
   private fileHashes: Map<string, FileHash> = new Map();
@@ -52,6 +76,9 @@ export class RAGIndexer {
     this.config = config;
     this.chunker = new RAGChunker(config);
     this.embedder = new RAGEmbedder(config);
+    this.contextualizer = config.contextualChunkingEnabled
+      ? new Contextualizer(config)
+      : null;
   }
 
   async init(): Promise<void> {
@@ -116,7 +143,15 @@ export class RAGIndexer {
         try {
           const content = readFileSync(filePath, 'utf-8');
           const relPath = relative(this.config.workspaceRoot, filePath).replace(/\\/g, '/');
-          const chunks = this.chunker.chunkFile(relPath, content);
+          let chunks = this.chunker.chunkFile(relPath, content);
+
+          // Opt-in: Anthropic contextual chunking. The full document is sent
+          // once per chunk in the prompt body but marked as ephemeral so the
+          // prompt cache returns it for chunks 2..N within the 5-minute TTL.
+          if (this.contextualizer && chunks.length > 0) {
+            chunks = await this.contextualizer.contextualizeFile(relPath, content, chunks);
+          }
+
           allChunks.push(...chunks);
 
           const hash = createHash('sha256').update(content).digest('hex');
@@ -137,7 +172,10 @@ export class RAGIndexer {
         return result;
       }
 
-      const texts = allChunks.map((c) => c.content);
+      // Build embedding inputs: when a chunk has a contextPrefix it is
+      // prepended (separated by a blank line). chunk.content stays raw so
+      // search results render the actual source.
+      const texts = allChunks.map((c) => Contextualizer.buildEmbeddingText(c));
       const embeddings = await this.embedder.embedBatch(texts);
       this.log(`Embedded ${texts.length} chunks (${embeddings.failedIndices.length} failures)`);
 
@@ -152,7 +190,10 @@ export class RAGIndexer {
           id: chunk.id, filePath: chunk.filePath, content: chunk.content,
           type: chunk.type, startLine: chunk.startLine, endLine: chunk.endLine,
           symbolName: chunk.symbolName ?? '', language: chunk.language,
-          tokenCount: chunk.tokenCount, createdAt: chunk.createdAt, vector,
+          tokenCount: chunk.tokenCount, createdAt: chunk.createdAt,
+          contextPrefix: chunk.contextPrefix ?? '',
+          contextual: chunk.contextual ? 1 : 0,
+          vector,
         });
       }
 

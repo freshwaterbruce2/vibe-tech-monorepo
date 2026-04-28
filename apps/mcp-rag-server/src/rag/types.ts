@@ -18,6 +18,15 @@ export interface Chunk {
   language: 'typescript' | 'javascript' | 'python' | 'markdown' | 'json' | 'other';
   tokenCount: number;
   createdAt: number;
+  /**
+   * Optional Anthropic-style contextual prefix (50-100 tokens) that situates
+   * this chunk within its source document. Prepended to embedding input only;
+   * `content` remains the raw source for display/snippet purposes.
+   * See: https://www.anthropic.com/news/contextual-retrieval
+   */
+  contextPrefix?: string;
+  /** True when this chunk was processed with contextual chunking. */
+  contextual?: boolean;
 }
 
 export interface EmbeddingResult {
@@ -135,6 +144,11 @@ export interface RAGConfig {
   searchPoolSize: number;
   hydeEnabled: boolean;
   hydeModel: string;
+  /** Opt-in Anthropic-style contextual chunking. Requires full re-index to take effect. */
+  contextualChunkingEnabled: boolean;
+  contextualChunkingModel: string;
+  contextualChunkingMaxTokens: number;
+  contextualChunkingMaxDocumentBytes: number;
 }
 
 export const DEFAULT_RAG_CONFIG: RAGConfig = {
@@ -157,4 +171,9 @@ export const DEFAULT_RAG_CONFIG: RAGConfig = {
   searchPoolSize: 50,
   hydeEnabled: false,
   hydeModel: 'openai/gpt-4o-mini',
+  contextualChunkingEnabled: false,
+  // claude-3-haiku retired 2026-04-19; Haiku 4.5 is current cheapest with cache.
+  contextualChunkingModel: 'anthropic/claude-haiku-4.5',
+  contextualChunkingMaxTokens: 120,
+  contextualChunkingMaxDocumentBytes: 60_000,
 };
