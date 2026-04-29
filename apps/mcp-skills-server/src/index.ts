@@ -264,7 +264,11 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     throw new Error(`Invalid skill URI: ${uri}`);
   }
 
-  const id = match[1]!;
+  const id = match[1];
+  if (!id) {
+    throw new Error(`Invalid skill URI: ${uri}`);
+  }
+
   const skill = await getSkill(id);
 
   if (!skill) {
