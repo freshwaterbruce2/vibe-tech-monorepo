@@ -20,7 +20,7 @@ DEFAULT_MESSAGE = "Say hello in one short sentence."
 
 def read_env_value(key: str) -> str | None:
     value = os.getenv(key)
-    if value:
+    if value is not None:
         return value
 
     env_file = Path(__file__).with_name(".env")
