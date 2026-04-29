@@ -120,6 +120,7 @@ describe('ParentDashboard', () => {
       expect(heading('Chat Analytics')).toBeInTheDocument();
       expect(heading('Screen Time')).toBeInTheDocument();
       expect(heading('Reward Settings')).toBeInTheDocument();
+      expect(heading('Wellness Insights')).toBeInTheDocument();
       expect(heading('Data Management')).toBeInTheDocument();
     });
   });
@@ -213,6 +214,17 @@ describe('ParentDashboard', () => {
       fireEvent.click(screen.getByRole('button', { name: /rules/i }));
 
       expect(onNavigate).toHaveBeenCalledWith('parent-rules');
+    });
+
+    it('navigates to wellness when Open Wellness Hub is clicked', async () => {
+      const onNavigate = vi.fn();
+      render(<ParentDashboard {...defaultProps} onNavigate={onNavigate} />);
+      fireEvent.click(screen.getByTestId('unlock-btn'));
+      await waitFor(() => screen.getByRole('button', { name: /open wellness hub/i }));
+
+      fireEvent.click(screen.getByRole('button', { name: /open wellness hub/i }));
+
+      expect(onNavigate).toHaveBeenCalledWith('wellness');
     });
 
     it('does not render Rules button when onNavigate is not provided', async () => {

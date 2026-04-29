@@ -1,4 +1,3 @@
-import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
@@ -8,7 +7,6 @@ import { defineConfig } from 'vite';
 export default defineConfig(({ mode }) => {
   return {
     plugins: [
-      tailwindcss(),
       react(),
       visualizer({
         open: false, // Don't auto-open in CI, but file will be generated

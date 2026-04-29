@@ -1,5 +1,6 @@
 import React from 'react';
 import { BookOpen, Bot, Gamepad2, LayoutDashboard, Puzzle, Settings } from 'lucide-react';
+import { PiecePreview } from '../lib/boardStyle';
 
 interface SidebarProps {
   currentView: string;
@@ -71,11 +72,12 @@ export function Sidebar({ currentView, setCurrentView, pieceSet, setPieceSet }: 
                 {pieceSet === set.id && (
                   <div className="absolute inset-0 bg-gradient-to-t from-indigo-500/20 to-transparent pointer-events-none" />
                 )}
-                <img 
-                  src={`https://lichess1.org/assets/piece/${set.id}/wN.svg`} 
-                  alt={set.name} 
-                  className={`w-8 h-8 mb-1 transition-all duration-300 ${pieceSet === set.id ? 'drop-shadow-[0_0_8px_rgba(255,255,255,0.4)] opacity-100 scale-110' : 'opacity-70 scale-95 group-hover:scale-100 group-hover:opacity-100'}`} 
-                />
+                <span
+                  aria-hidden="true"
+                  className={`mb-1 transition-all duration-300 ${pieceSet === set.id ? 'opacity-100 scale-110' : 'opacity-70 scale-95 group-hover:scale-100 group-hover:opacity-100'}`}
+                >
+                  <PiecePreview piece="wN" pieceSet={set.id} size={34} />
+                </span>
                 <span className={`text-[10px] font-extrabold uppercase tracking-widest mt-1 transition-colors ${pieceSet === set.id ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'}`}>
                   {set.name}
                 </span>

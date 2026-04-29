@@ -38,6 +38,6 @@ describe('FirstWeekChecklist', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /open tasks/i }));
 
-    expect(onNavigate).toHaveBeenCalledWith('dashboard');
+    expect(onNavigate).toHaveBeenCalledWith('dashboard', 'open-task-list');
   });
 });

@@ -1,8 +1,10 @@
 import { syncService } from '@/services';
 import {
+  ArrowRight,
   Clock,
   Database,
   Gift,
+  Heart,
   Lock,
   MessageSquare,
   Shield,
@@ -11,6 +13,8 @@ import {
 } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import type { ClaimedReward, HomeworkItem, Reward, View } from '../../types';
+import { getThoughtJournalStats } from '../../services/cbtThoughtReframing';
+import { getAffirmationStats } from '../../services/dailyAffirmations';
 import SecurePinLock from '../core/SecurePinLock';
 import DataManagement from '../settings/DataManagement';
 import RewardSettings from '../settings/RewardSettings';
@@ -122,6 +126,8 @@ const ParentDashboard = ({
 
   const completedTasks = items.filter((i) => i.completed).length;
   const pendingRewards = claimedRewards.length;
+  const affirmationStats = getAffirmationStats();
+  const thoughtStats = getThoughtJournalStats();
 
   return (
     <div className="h-full flex flex-col overflow-x-hidden min-w-0 animate-fade-in">
@@ -211,6 +217,47 @@ const ParentDashboard = ({
             claimedRewards={claimedRewards}
             onApproval={onApproval}
           />
+        </DashboardSection>
+
+        <DashboardSection
+          icon={Heart}
+          title="Wellness Insights"
+          accent="bg-gradient-to-br from-pink-500 to-violet-500"
+        >
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="rounded-xl px-3 py-2 bg-slate-900/50 border border-slate-700/40">
+                <p className="text-xs text-slate-400">Current Streak</p>
+                <p className="text-lg font-black text-pink-300">{affirmationStats.currentStreak} days</p>
+              </div>
+              <div className="rounded-xl px-3 py-2 bg-slate-900/50 border border-slate-700/40">
+                <p className="text-xs text-slate-400">Check-ins (7d)</p>
+                <p className="text-lg font-black text-violet-300">{affirmationStats.entriesThisWeek}</p>
+              </div>
+              <div className="rounded-xl px-3 py-2 bg-slate-900/50 border border-slate-700/40">
+                <p className="text-xs text-slate-400">Thought Entries</p>
+                <p className="text-lg font-black text-sky-300">{thoughtStats.totalEntries}</p>
+              </div>
+              <div className="rounded-xl px-3 py-2 bg-slate-900/50 border border-slate-700/40">
+                <p className="text-xs text-slate-400">Mood Trend</p>
+                <p className="text-lg font-black text-emerald-300 capitalize">{affirmationStats.moodTrend}</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl px-4 py-3 bg-slate-900/40 border border-slate-700/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <p className="text-sm text-slate-300">
+                Review the child&apos;s check-ins and thought journal activity to spot support moments early.
+              </p>
+              {onNavigate && (
+                <button
+                  onClick={() => onNavigate('wellness')}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-pink-500/15 border border-pink-400/30 text-pink-300 hover:bg-pink-500/25 transition-all duration-200 font-semibold text-sm"
+                >
+                  Open Wellness Hub <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
         </DashboardSection>
 
         <DashboardSection

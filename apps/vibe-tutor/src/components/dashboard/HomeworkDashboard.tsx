@@ -1,5 +1,5 @@
 import { Bell, Plus } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { HomeworkItem, ParsedHomework } from '../../types';
 import type { OnboardingNavigationAction } from '../../types';
@@ -37,6 +37,7 @@ const HomeworkDashboard = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isNotifPanelOpen, setIsNotifPanelOpen] = useState(false);
   const [breakdownItem, setBreakdownItem] = useState<HomeworkItem | null>(null);
+  const toDoSectionRef = useRef<HTMLElement | null>(null);
 
   const upcomingItems = useMemo(() => {
     // FIX: Use UTC dates for comparison to avoid timezone issues.
@@ -63,13 +64,22 @@ const HomeworkDashboard = ({
   };
 
   useEffect(() => {
-    if (onboardingAction !== 'open-add-homework') {
+    if (onboardingAction === 'open-add-homework') {
+      setIsAddModalOpen(true);
+      onOnboardingActionHandled?.();
       return;
     }
 
-    setIsAddModalOpen(true);
-    onOnboardingActionHandled?.();
-  }, [onOnboardingActionHandled, onboardingAction]);
+    if (onboardingAction === 'open-task-list') {
+      if (typeof toDoSectionRef.current?.scrollIntoView === 'function') {
+        toDoSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      if (activeItems.length > 0) {
+        setBreakdownItem(activeItems[0] ?? null);
+      }
+      onOnboardingActionHandled?.();
+    }
+  }, [activeItems, onOnboardingActionHandled, onboardingAction]);
 
   return (
     <div className="h-full flex flex-col p-4 md:p-8 overflow-y-auto relative">
@@ -143,7 +153,7 @@ const HomeworkDashboard = ({
         {/* Subject Distribution */}
         <SubjectChart items={items} />
 
-        <section className="space-y-6">
+        <section ref={toDoSectionRef} className="space-y-6" aria-label="Task list">
           <div className="flex items-center gap-4">
             <h2 className="text-2xl font-bold neon-text-secondary">To Do</h2>
             <div className="glass-card px-4 py-2 rounded-full">

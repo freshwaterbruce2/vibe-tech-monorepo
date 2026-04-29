@@ -67,6 +67,15 @@ function Initialize-DevProcessEnvironment {
         $env:PROCESSOR_ARCHITECTURE = 'AMD64'
     }
 
+    # Node warns when NO_COLOR and FORCE_COLOR coexist; clear NO_COLOR proactively.
+    if (-not [string]::IsNullOrWhiteSpace($env:NO_COLOR)) {
+        Remove-Item Env:NO_COLOR -ErrorAction SilentlyContinue
+    }
+    # Keep color enabled consistently for Nx/pnpm task subprocesses.
+    if ([string]::IsNullOrWhiteSpace($env:FORCE_COLOR) -or $env:FORCE_COLOR -eq '0') {
+        $env:FORCE_COLOR = '1'
+    }
+
     # Avoid MSVC/Visual Studio telemetry helpers in headless build shells. On this
     # machine vctip.exe can crash with a .NET application-error dialog during Rust builds.
     $env:VSCMD_SKIP_SENDTELEMETRY = '1'

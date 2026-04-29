@@ -26,6 +26,10 @@ export interface WellnessHubState {
   newThought: string;
   newEmotion: string;
   newIntensity: number;
+  isSavingToday: boolean;
+  isSubmittingThought: boolean;
+  canSaveToday: boolean;
+  canSubmitThought: boolean;
 
   // Actions
   setMood: (mood: DailyAffirmationEntry['mood']) => void;
@@ -36,6 +40,8 @@ export interface WellnessHubState {
   setNewThought: (v: string) => void;
   setNewEmotion: (v: string) => void;
   setNewIntensity: (v: number) => void;
+  toggleAddEntry: () => void;
+  cancelThoughtEntry: () => void;
   submitThoughtEntry: () => void;
 }
 
@@ -48,6 +54,12 @@ export function useWellnessHub(): WellnessHubState {
   );
   const [reflection, setReflection] = useState(todayEntry?.eveningReflection ?? '');
   const [savedToday, setSavedToday] = useState(Boolean(todayEntry));
+  const [savedMood, setSavedMood] = useState<DailyAffirmationEntry['mood'] | undefined>(
+    todayEntry?.mood,
+  );
+  const [savedReflection, setSavedReflection] = useState(todayEntry?.eveningReflection ?? '');
+  const [isSavingToday, setIsSavingToday] = useState(false);
+  const [isSubmittingThought, setIsSubmittingThought] = useState(false);
 
   const [recentEntries, setRecentEntries] = useState<ThoughtEntry[]>([]);
   const [showAddEntry, setShowAddEntry] = useState(false);
@@ -55,6 +67,10 @@ export function useWellnessHub(): WellnessHubState {
   const [newThought, setNewThought] = useState('');
   const [newEmotion, setNewEmotion] = useState('');
   const [newIntensity, setNewIntensity] = useState(5);
+  const hasReflection = reflection.trim().length > 0;
+  const canSaveToday = (Boolean(mood) || hasReflection) && (mood !== savedMood || reflection !== savedReflection);
+  const canSubmitThought =
+    newSituation.trim().length > 0 && newThought.trim().length > 0 && newEmotion.trim().length > 0;
 
   useEffect(() => {
     const history = getThoughtHistory();
@@ -62,6 +78,8 @@ export function useWellnessHub(): WellnessHubState {
   }, []);
 
   const saveTodayEntry = useCallback(() => {
+    if (isSavingToday || !canSaveToday) return;
+    setIsSavingToday(true);
     const today = new Date().toISOString().split('T')[0]!;
     const entry: DailyAffirmationEntry = {
       date: today,
@@ -70,22 +88,68 @@ export function useWellnessHub(): WellnessHubState {
       eveningReflection: reflection || undefined,
       timestamp: Date.now(),
     };
-    saveDailyEntry(entry);
-    setSavedToday(true);
-  }, [affirmation, mood, reflection]);
+    try {
+      saveDailyEntry(entry);
+      setSavedToday(true);
+      setSavedMood(mood);
+      setSavedReflection(reflection);
+    } finally {
+      setIsSavingToday(false);
+    }
+  }, [affirmation, canSaveToday, isSavingToday, mood, reflection]);
 
-  const submitThoughtEntry = useCallback(() => {
-    if (!newSituation.trim() || !newThought.trim() || !newEmotion.trim()) return;
-
-    const entry = createThoughtEntry(newSituation, newThought, newEmotion, newIntensity);
-    saveThoughtEntry(entry);
-    setRecentEntries((prev) => [entry, ...prev].slice(0, 5));
-    setShowAddEntry(false);
+  const resetThoughtDraft = useCallback(() => {
     setNewSituation('');
     setNewThought('');
     setNewEmotion('');
     setNewIntensity(5);
-  }, [newSituation, newThought, newEmotion, newIntensity]);
+  }, []);
+
+  const cancelThoughtEntry = useCallback(() => {
+    setShowAddEntry(false);
+    resetThoughtDraft();
+  }, [resetThoughtDraft]);
+
+  const toggleAddEntry = useCallback(() => {
+    setShowAddEntry((previousValue) => {
+      if (previousValue) {
+        resetThoughtDraft();
+      }
+
+      return !previousValue;
+    });
+  }, [resetThoughtDraft]);
+
+  const submitThoughtEntry = useCallback(() => {
+    if (isSubmittingThought || !canSubmitThought) return;
+
+    setIsSubmittingThought(true);
+
+    try {
+      const trimmedSituation = newSituation.trim();
+      const trimmedThought = newThought.trim();
+      const trimmedEmotion = newEmotion.trim();
+      const entry = createThoughtEntry(
+        trimmedSituation,
+        trimmedThought,
+        trimmedEmotion,
+        newIntensity,
+      );
+      saveThoughtEntry(entry);
+      setRecentEntries((prev) => [entry, ...prev].slice(0, 5));
+      cancelThoughtEntry();
+    } finally {
+      setIsSubmittingThought(false);
+    }
+  }, [
+    canSubmitThought,
+    cancelThoughtEntry,
+    isSubmittingThought,
+    newEmotion,
+    newIntensity,
+    newSituation,
+    newThought,
+  ]);
 
   return {
     affirmation,
@@ -98,6 +162,10 @@ export function useWellnessHub(): WellnessHubState {
     newThought,
     newEmotion,
     newIntensity,
+    isSavingToday,
+    isSubmittingThought,
+    canSaveToday,
+    canSubmitThought,
     setMood,
     setReflection,
     saveTodayEntry,
@@ -106,6 +174,8 @@ export function useWellnessHub(): WellnessHubState {
     setNewThought,
     setNewEmotion,
     setNewIntensity,
+    toggleAddEntry,
+    cancelThoughtEntry,
     submitThoughtEntry,
   };
 }
