@@ -52,7 +52,8 @@ function Set-JsonVersionField {
 
 function Set-CargoPackageVersion {
     param([string] $Path, [string] $NewVersion)
-    $lines = Get-Content -LiteralPath $Path -Encoding UTF8
+    # @( ) ensures an array: single-line files otherwise return a bare string (.Count unreliable in for-loop).
+    $lines = @(Get-Content -LiteralPath $Path -Encoding UTF8)
     $inPackage = $false
     $updated = $false
     for ($i = 0; $i -lt $lines.Count; $i++) {
