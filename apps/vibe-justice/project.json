@@ -108,7 +108,7 @@
     "smoke:chat": {
       "executor": "nx:run-commands",
       "options": {
-        "command": ".venv\\Scripts\\python.exe verify_local_routing.py",
+        "command": "python verify_local_routing.py",
         "cwd": "apps/vibe-justice/backend"
       }
     },

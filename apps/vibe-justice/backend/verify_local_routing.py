@@ -59,7 +59,11 @@ def request_json(path: str, *, method: str = "GET", body: dict | None = None) ->
     except HTTPError as error:
         return error.code, error.read().decode("utf-8", errors="replace")
     except URLError as error:
-        raise RuntimeError(f"Unable to reach backend at {BACKEND_URL}: {error.reason}") from error
+        url = f"{BACKEND_URL}{path}"
+        reason = getattr(error, "reason", error)
+        raise RuntimeError(
+            f"Unable to reach backend {method} {url!r}: reason={reason!r}; urlerror={error!r}"
+        ) from error
 
 
 def wait_for_health(timeout_seconds: int) -> None:

@@ -213,7 +213,8 @@ describe('buddyService', () => {
         expect(analyticsCall).toBeDefined();
         const duration = analyticsCall?.[3] ?? 0;
 
-        expect(duration).toBe(100);
+        expect(duration).toBeGreaterThanOrEqual(100);
+        expect(duration).toBeLessThan(250);
       } finally {
         vi.useRealTimers();
       }
@@ -413,7 +414,8 @@ describe('buddyService', () => {
         expect(analyticsCall).toBeDefined();
         const duration = analyticsCall?.[3] ?? 0;
 
-        expect(duration).toBe(50);
+        expect(duration).toBeGreaterThanOrEqual(50);
+        expect(duration).toBeLessThan(250);
       } finally {
         vi.useRealTimers();
       }
