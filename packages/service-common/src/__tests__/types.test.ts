@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { UserSchema, TradeSchema, BookingSchema, NotificationSchema } from '../types.js';
+import { UserSchema, TradeSchema, BookingSchema } from '../types.js';
 
 const baseUser = {
   id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
