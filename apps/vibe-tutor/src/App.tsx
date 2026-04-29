@@ -111,13 +111,6 @@ const App = () => {
     [handleEarnTokens, isCompletingOnboarding],
   );
 
-  const handleOnboardingCompleteEvent = useCallback(
-    (data: OnboardingResult) => {
-      void handleOnboardingComplete(data);
-    },
-    [handleOnboardingComplete],
-  );
-
   const {
     achievements,
     newlyUnlocked,
@@ -368,7 +361,7 @@ const App = () => {
       handleClaimReward={handleClaimReward}
       handleEarnTokens={handleEarnTokens}
       handleGameCompleted={handleGameCompleted}
-      handleOnboardingComplete={handleOnboardingCompleteEvent}
+      handleOnboardingComplete={handleOnboardingComplete}
       handleRemovePlaylist={handleRemovePlaylist}
       handleRewardApprovalWrapper={handleRewardApprovalWrapper}
       handleSpendTokens={handleSpendTokens}
