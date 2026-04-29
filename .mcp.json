@@ -23,14 +23,6 @@
         "D:/data"
       ]
     },
-    "nx-mcp": {
-      "type": "stdio",
-      "command": "cmd",
-      "args": ["/c", "npx.cmd", "-y", "nx-mcp@latest"],
-      "env": {
-        "NX_WORKSPACE_ROOT": "C:/dev"
-      }
-    },
     "sqlite": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/.local/bin/uvx.exe",

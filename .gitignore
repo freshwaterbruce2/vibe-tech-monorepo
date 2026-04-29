@@ -338,3 +338,5 @@ status.err
 # Ollama runtime state
 Ollama/db.sqlite-shm
 Ollama/db.sqlite-wal
+
+.claude/worktrees

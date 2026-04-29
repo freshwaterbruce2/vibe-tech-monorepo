@@ -40,6 +40,7 @@ export function PlayMode({ pieceSet }: { pieceSet: string }) {
 
   const customPieces = useMemo(() => piecesConfig(pieceSet), [pieceSet]);
   const game = useMemo(() => new Chess(fen), [fen]);
+  const coachHints = useMemo(() => (coachEnabled ? getCoachHints(fen) : []), [coachEnabled, fen]);
 
   const canHumanMove = mode === 'local' || game.turn() === humanColor;
   const boardOrientation = mode === 'ai' && humanColor === 'b' ? 'black' : 'white';
@@ -293,7 +294,7 @@ export function PlayMode({ pieceSet }: { pieceSet: string }) {
             enabled={coachEnabled}
             feedback={coachFeedback}
             hintLevel={hintLevel}
-            hints={getCoachHints(fen)}
+            hints={coachHints}
             onHint={cycleHint}
             onToggle={() => setCoachEnabled((enabled) => !enabled)}
           />
