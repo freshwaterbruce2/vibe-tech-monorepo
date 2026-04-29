@@ -23,6 +23,30 @@ import { migrationService } from './migrationService';
 
 import { appStore } from '../utils/electronStore';
 
+function stringifyUserSetting(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'boolean' || typeof value === 'number') return String(value);
+
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function getUserSettingFromStore(key: string): string {
+  try {
+    if (typeof window !== 'undefined' && window.electronAPI?.store?.get) {
+      return stringifyUserSetting(window.electronAPI.store.get(key));
+    }
+  } catch {
+    // Fall back to appStore below.
+  }
+
+  return stringifyUserSetting(appStore.get<unknown>(key));
+}
+
 export class DataStore {
   private initialized = false;
   private initializePromise: Promise<void> | null = null;
@@ -415,7 +439,7 @@ export class DataStore {
       }
       return '';
     } else {
-      return appStore.get(key) ?? '';
+      return getUserSettingFromStore(key);
     }
   }
 
