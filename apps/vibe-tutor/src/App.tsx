@@ -84,29 +84,30 @@ const App = () => {
   );
 
   const handleOnboardingComplete = useCallback(
-    async (data: OnboardingResult) => {
+    (data: OnboardingResult) => {
       if (isCompletingOnboarding) {
         return;
       }
 
       setIsCompletingOnboarding(true);
 
-      try {
-        await dataStore.saveUserSettings('onboarding_completed', 'true');
-        await dataStore.saveUserSettings('user_avatar', data.avatar);
-        await dataStore.saveUserSettings('user_type', data.userType);
-        setOnboardingFlags((prev) => ({
-          ...prev,
-          hasCompletedFirstRun: true,
-          userAvatar: data.avatar,
-        }));
-        handleEarnTokens(WELCOME_TOKENS, 'Welcome bonus');
-        setView('dashboard');
-      } catch (error) {
-        logger.error('[onboarding] Failed to complete onboarding:', error);
-        setIsCompletingOnboarding(false);
-        throw error;
-      }
+      void (async () => {
+        try {
+          await dataStore.saveUserSettings('onboarding_completed', 'true');
+          await dataStore.saveUserSettings('user_avatar', data.avatar);
+          await dataStore.saveUserSettings('user_type', data.userType);
+          setOnboardingFlags((prev) => ({
+            ...prev,
+            hasCompletedFirstRun: true,
+            userAvatar: data.avatar,
+          }));
+          handleEarnTokens(WELCOME_TOKENS, 'Welcome bonus');
+          setView('dashboard');
+        } catch (error) {
+          logger.error('[onboarding] Failed to complete onboarding:', error);
+          setIsCompletingOnboarding(false);
+        }
+      })();
     },
     [handleEarnTokens, isCompletingOnboarding],
   );
@@ -394,6 +395,7 @@ const App = () => {
   const toggleNav = useCallback(() => {
     setIsNavCollapsed((prev) => !prev);
   }, []);
+  const isOnboardingView = view === 'onboarding';
 
   return (
     <div className="relative flex h-screen overflow-hidden bg-[var(--background-main)] text-[var(--text-primary)]">
@@ -445,7 +447,10 @@ const App = () => {
         </div>
 
         {/* Mobile: Full-screen dashboard */}
-        <div ref={mobileContentRef} className="md:hidden h-full overflow-y-auto pb-24">
+        <div
+          ref={mobileContentRef}
+          className={`md:hidden h-full overflow-y-auto ${isOnboardingView ? 'pb-4' : 'pb-mobile-nav-safe'}`}
+        >
           {renderView()}
           {!isOnline && <OfflineIndicator />}
         </div>

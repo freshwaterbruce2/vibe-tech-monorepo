@@ -16,7 +16,7 @@ import {
   Trophy,
   X,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { View } from '../../types';
 import { GradientDefs, GradientIcon } from './icons/GradientIcon';
 import { VibeTechLogo } from './icons/VibeTechLogo';
@@ -63,6 +63,13 @@ const secondaryNavItems = navItems.filter((item) => !MOBILE_PRIMARY.includes(ite
 
 const Sidebar = ({ currentView, onNavigate, isCollapsed = false, onToggle }: SidebarProps) => {
   const [moreOpen, setMoreOpen] = useState(false);
+  const shouldHideMobileNav = currentView === 'onboarding';
+
+  useEffect(() => {
+    if (shouldHideMobileNav && moreOpen) {
+      setMoreOpen(false);
+    }
+  }, [moreOpen, shouldHideMobileNav]);
 
   const handleMoreNavigate = (view: View) => {
     onNavigate(view);
@@ -162,7 +169,7 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed = false, onToggle }: Sid
       </div>
 
       {/* Mobile "More" drawer — slides up from bottom nav */}
-      {moreOpen && (
+      {!shouldHideMobileNav && moreOpen && (
         <div className="md:hidden fixed inset-0 z-[70]">
           {/* Backdrop */}
           <div
@@ -175,7 +182,7 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed = false, onToggle }: Sid
               <h2 className="text-lg font-semibold text-[var(--text-primary)]">More</h2>
               <button
                 onClick={() => setMoreOpen(false)}
-                className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                className="min-h-[44px] min-w-[44px] p-2 rounded-lg hover:bg-white/10 transition-colors"
                 aria-label="Close menu"
                 title="Close menu"
               >
@@ -187,7 +194,7 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed = false, onToggle }: Sid
                 <button
                   key={view}
                   onClick={() => handleMoreNavigate(view as View)}
-                  className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 ${
+                  className={`flex flex-col items-center justify-center min-h-[64px] p-3 rounded-xl transition-all duration-200 touch-manipulation ${
                     currentView === view
                       ? 'bg-[var(--primary-accent)]/20 text-[var(--primary-accent)]'
                       : 'text-[var(--text-secondary)] hover:bg-white/5'
@@ -205,7 +212,7 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed = false, onToggle }: Sid
               {/* Parent Zone in More menu */}
               <button
                 onClick={() => handleMoreNavigate('parent')}
-                className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 ${
+                className={`flex flex-col items-center justify-center min-h-[64px] p-3 rounded-xl transition-all duration-200 touch-manipulation ${
                   currentView === 'parent'
                     ? 'bg-[var(--secondary-accent)]/20 text-[var(--secondary-accent)]'
                     : 'text-[var(--text-secondary)] hover:bg-white/5'
@@ -227,47 +234,49 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed = false, onToggle }: Sid
       )}
 
       {/* Mobile Bottom Navigation — 5 primary tabs + More */}
-      <nav
-        role="navigation"
-        aria-label="Mobile navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 glass-card border-t border-[var(--glass-border)] z-50 sidebar-safe-bottom"
-      >
-        <div className="max-w-lg mx-auto grid grid-cols-6 gap-0.5 px-2 pt-2 pb-1">
-          {primaryNavItems.map(({ view, icon: Icon, label, gradient }) => (
+      {!shouldHideMobileNav && (
+        <nav
+          role="navigation"
+          aria-label="Mobile navigation"
+          className="md:hidden fixed bottom-0 left-0 right-0 glass-card border-t border-[var(--glass-border)] z-50 sidebar-safe-bottom"
+        >
+          <div className="max-w-lg mx-auto grid grid-cols-6 gap-0.5 px-2 pt-2 pb-1">
+            {primaryNavItems.map(({ view, icon: Icon, label, gradient }) => (
+              <button
+                key={view}
+                onClick={() => onNavigate(view as View)}
+                className={`flex flex-col items-center justify-center min-h-[52px] px-1 py-1.5 rounded-lg transition-all duration-200 touch-manipulation ${
+                  currentView === view
+                    ? 'text-[var(--primary-accent)]'
+                    : 'text-[var(--text-secondary)]'
+                }`}
+              >
+                <GradientIcon
+                  Icon={Icon}
+                  size={22}
+                  gradientId={currentView === view ? 'vibe-gradient-mobile' : gradient}
+                  className="mb-0.5"
+                />
+                <span className="text-[10px] font-medium leading-tight text-center break-words w-full truncate text-wrap">{label}</span>
+              </button>
+            ))}
+            {/* More button */}
             <button
-              key={view}
-              onClick={() => onNavigate(view as View)}
+              onClick={() => setMoreOpen((prev) => !prev)}
               className={`flex flex-col items-center justify-center min-h-[52px] px-1 py-1.5 rounded-lg transition-all duration-200 touch-manipulation ${
-                currentView === view
+                moreOpen || (!MOBILE_PRIMARY.includes(currentView) && currentView !== 'parent')
                   ? 'text-[var(--primary-accent)]'
                   : 'text-[var(--text-secondary)]'
               }`}
+              aria-label="More navigation options"
+              title="More"
             >
-              <GradientIcon
-                Icon={Icon}
-                size={22}
-                gradientId={currentView === view ? 'vibe-gradient-mobile' : gradient}
-                className="mb-0.5"
-              />
-              <span className="text-[10px] font-medium leading-tight text-center break-words w-full truncate text-wrap">{label}</span>
+              <Menu className="w-[22px] h-[22px] mb-0.5" />
+              <span className="text-[10px] font-medium leading-tight text-center break-words w-full truncate text-wrap">More</span>
             </button>
-          ))}
-          {/* More button */}
-          <button
-            onClick={() => setMoreOpen((prev) => !prev)}
-            className={`flex flex-col items-center justify-center min-h-[52px] px-1 py-1.5 rounded-lg transition-all duration-200 touch-manipulation ${
-              moreOpen || (!MOBILE_PRIMARY.includes(currentView) && currentView !== 'parent')
-                ? 'text-[var(--primary-accent)]'
-                : 'text-[var(--text-secondary)]'
-            }`}
-            aria-label="More navigation options"
-            title="More"
-          >
-            <Menu className="w-[22px] h-[22px] mb-0.5" />
-            <span className="text-[10px] font-medium leading-tight text-center break-words w-full truncate text-wrap">More</span>
-          </button>
-        </div>
-      </nav>
+          </div>
+        </nav>
+      )}
     </>
   );
 };

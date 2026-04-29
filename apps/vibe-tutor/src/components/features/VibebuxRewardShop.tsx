@@ -3,7 +3,8 @@ import {
   Coins,
   Crown,
   Lock,
-  ShoppingCart,
+  Sparkles,
+  Store,
 } from 'lucide-react';
 import { useRewardShop } from './useRewardShop';
 
@@ -28,44 +29,64 @@ const VibebuxRewardShop = ({
   } = useRewardShop({ userTokens, onSpendTokens, onPurchaseComplete });
 
   return (
-    <div className="min-h-screen bg-[var(--background-main)] p-6">
+    <div className="min-h-full bg-[var(--background-main)] p-4 md:p-6">
       {/* Header */}
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-8 mb-8">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white flex items-center gap-3">
-              <ShoppingCart className="w-8 h-8 md:w-10 md:h-10 shrink-0" />
-              <span className="truncate">Vibebux Reward Shop</span>
-            </h1>
-            <p className="text-white/70 mt-2 text-sm md:text-base">Spend your hard-earned Vibebux on awesome rewards!</p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row w-full md:w-auto items-stretch sm:items-center gap-4">
-            {/* Balance Display */}
-            <div className="bg-gray-800/50 backdrop-blur rounded-2xl px-6 py-4 flex-1">
-              <div className="flex items-center justify-center sm:justify-start gap-3">
-                <Coins className="w-8 h-8 text-[var(--token-color)] shrink-0" />
-                <div className="text-white">
-                  <div className="text-sm opacity-70">Your Balance</div>
-                  <div className="text-2xl sm:text-3xl font-bold">{userTokens} Vibebux</div>
+        <div className="mb-6 rounded-3xl border border-[var(--glass-border)] bg-gradient-to-br from-violet-500/10 via-slate-900/40 to-sky-500/10 p-4 md:p-6">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 lg:gap-8">
+            <div className="min-w-0">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--secondary-accent)] to-[var(--primary-accent)] p-[2px] shrink-0">
+                  <div className="h-full w-full rounded-[14px] bg-[var(--background-card)] flex items-center justify-center">
+                    <Store className="w-6 h-6 text-[var(--token-color)]" />
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-secondary)] font-semibold">
+                    Vibebux Marketplace
+                  </p>
+                  <h1 className="text-2xl md:text-4xl font-black leading-tight text-transparent bg-clip-text bg-gradient-to-r from-[var(--token-color)] via-white to-[var(--secondary-accent)]">
+                    Vibebux Reward Shop
+                  </h1>
                 </div>
               </div>
+              <p className="mt-3 text-sm md:text-base text-[var(--text-secondary)] max-w-2xl">
+                Spend your hard-earned Vibebux on upgrades, perks, and real rewards approved by your parent.
+              </p>
             </div>
 
-            {/* Close Button */}
-            {onClose && (
-              <button
-                onClick={onClose}
-                className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-4 sm:py-3 rounded-xl font-bold transition-all w-full sm:w-auto shrink-0"
-              >
-                Close Shop
-              </button>
-            )}
+            <div className="flex flex-col sm:flex-row w-full lg:w-auto items-stretch sm:items-center gap-3">
+              {/* Balance Display */}
+              <div className="bg-gray-800/50 backdrop-blur rounded-2xl px-6 py-4 flex-1 border border-[var(--glass-border)]">
+                <div className="flex items-center justify-center sm:justify-start gap-3">
+                  <Coins className="w-8 h-8 text-[var(--token-color)] shrink-0" />
+                  <div className="text-white">
+                    <div className="text-xs uppercase tracking-wide opacity-70">Your Balance</div>
+                    <div className="text-2xl sm:text-3xl font-black tabular-nums">{userTokens} Vibebux</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Close Button */}
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  className="glass-button px-6 py-4 sm:py-3 rounded-xl font-bold transition-all w-full sm:w-auto shrink-0 text-white hover:scale-[1.02]"
+                >
+                  Close Shop
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[var(--glass-border)] bg-white/5 px-3 py-1.5 text-xs text-[var(--text-secondary)]">
+            <Sparkles className="w-3.5 h-3.5 text-[var(--token-color)]" />
+            Keep learning to earn more Vibebux.
           </div>
         </div>
 
         {/* Category Filters */}
-        <div className="flex gap-3 mb-8 overflow-x-auto pb-4 hide-scrollbar snap-x">
+        <div className="flex gap-3 mb-6 overflow-x-auto pb-4 hide-scrollbar snap-x">
           {categories.map((category) => (
             <button
               key={category.id}
@@ -251,7 +272,7 @@ const VibebuxRewardShop = ({
 
         {/* Purchase Animation */}
         {showPurchaseAnimation && lastPurchasedItem && (
-          <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none p-4">
+          <div className="fixed inset-0 flex items-center justify-center z-[60] pointer-events-none p-4">
             <div className="bg-gradient-to-r from-[var(--secondary-accent)] to-[var(--success-accent)] text-white px-8 py-6 rounded-3xl shadow-2xl animate-bounce max-w-sm w-full text-center">
               <div className="text-3xl font-bold mb-2">🎉 Success!</div>
               <div className="text-xl">Got: {lastPurchasedItem.name}</div>

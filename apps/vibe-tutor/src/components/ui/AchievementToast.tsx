@@ -47,7 +47,13 @@ const AchievementToast = ({ achievement, bonusTokens, onClose }: AchievementToas
   }
 
   return (
-    <div className="fixed top-4 right-4 z-50 animate-slide-in" role="alert" aria-live="assertive" aria-atomic="true">
+    <div
+      className="fixed right-4 z-[65] animate-slide-in"
+      style={{ top: 'max(env(safe-area-inset-top, 0px), 1rem)' }}
+      role="alert"
+      aria-live="assertive"
+      aria-atomic="true"
+    >
       <div className="glass-card p-4 border-2 border-[var(--token-color)]/50 bg-gradient-to-r from-[var(--token-color)]/20 to-[var(--primary-accent)]/20 shadow-[0_0_20px_rgba(168,85,247,0.3)] relative overflow-hidden">
         {/* Confetti Effect */}
         <div className="absolute inset-0 pointer-events-none">

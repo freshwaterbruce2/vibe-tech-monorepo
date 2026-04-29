@@ -1,7 +1,9 @@
 /* OpenDyslexic Font for accessibility - must come before @tailwind */
 @import url('https://fonts.cdnfonts.com/css/opendyslexic');
 
-@import 'tailwindcss';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 .dyslexia-font {
   font-family: 'OpenDyslexic', 'Comic Sans MS', sans-serif;
@@ -132,6 +134,10 @@
 /* ---- Sidebar: safe-area + touch-action utilities ---- */
 .sidebar-safe-bottom {
   padding-bottom: max(env(safe-area-inset-bottom, 8px), 8px);
+}
+
+.pb-mobile-nav-safe {
+  padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
 }
 
 .touch-manipulation {
