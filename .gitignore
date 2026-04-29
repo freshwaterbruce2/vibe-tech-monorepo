@@ -59,6 +59,12 @@ npm-shrinkwrap.json
 **/.claude/settings.local.json
 .claude/worktrees/
 **/.claude/worktrees/
+.claude/scratch/
+**/.claude/scratch/
+
+# OpenCode / local assistant tooling (machine-specific)
+.opencode/
+**/.opencode/
 
 # Local editor/AI assistant tooling
 .codex/
@@ -87,6 +93,7 @@ obj/
 target/
 apps/nova-agent/src-tauri/target/
 apps/*/src-tauri/target/
+apps/*/src-tauri/gen/
 
 # Electron/Tauri packaging outputs
 dist-electron/
