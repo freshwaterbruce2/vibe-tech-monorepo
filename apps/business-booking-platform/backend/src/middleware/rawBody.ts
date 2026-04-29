@@ -13,7 +13,7 @@ declare module 'express-serve-static-core' {
  */
 export const captureRawBody = (
 	req: Request,
-	res: Response,
+	_res: Response,
 	next: NextFunction,
 ): void => {
 	// Only capture raw body for webhook endpoints

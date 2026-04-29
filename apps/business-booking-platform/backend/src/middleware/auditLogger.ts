@@ -317,7 +317,8 @@ return body;
 
 		// For payment endpoints, be extra cautious
 		if (path.includes('/payment')) {
-			return { [Object.keys(sanitized)[0]]: '[PAYMENT_DATA_REDACTED]' };
+			const paymentDataKey = Object.keys(sanitized)[0] ?? 'paymentData';
+			return { [paymentDataKey]: '[PAYMENT_DATA_REDACTED]' };
 		}
 
 		return sanitized;
@@ -347,7 +348,7 @@ export const auditAuthEvent = (
 	eventType: AuditEventType,
 	riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'MEDIUM',
 ) => {
-	return async (req: Request, res: Response, next: NextFunction) => {
+	return async (req: Request, _res: Response, next: NextFunction) => {
 		// Log before processing
 		await AuditLogger.logEvent({
 			eventType,

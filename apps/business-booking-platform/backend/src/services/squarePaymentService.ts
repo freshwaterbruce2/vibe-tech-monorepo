@@ -2,7 +2,12 @@
 
 import crypto, { randomUUID } from 'crypto';
 import { eq } from 'drizzle-orm';
-import { SquareClient, SquareEnvironment } from 'square';
+import {
+	Currency,
+	SquareClient,
+	SquareEnvironment,
+	type Country,
+} from 'square';
 import { config } from '../config';
 import { getDb } from '../database';
 import { paymentMethods, payments, refunds } from '../database/schema';
@@ -51,7 +56,7 @@ export class SquarePaymentService {
 			const idempotencyKey = randomUUID();
 			const amountMoney = {
 				amount: BigInt(Math.round(params.amount * 100)), // Convert to cents
-				currency: params.currency || 'USD',
+				currency: (params.currency || Currency.Usd) as Currency,
 			};
 
 			const createPaymentRequest = {
@@ -71,7 +76,7 @@ export class SquarePaymentService {
 							administrativeDistrictLevel1:
 								params.billingAddress.administrativeDistrictLevel1,
 							postalCode: params.billingAddress.postalCode,
-							country: params.billingAddress.country || 'US',
+							country: (params.billingAddress.country || 'US') as Country,
 						}
 					: undefined,
 			};

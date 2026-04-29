@@ -1,7 +1,7 @@
 import pytest
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 # Add backend root to sys.path
 BACKEND_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -9,7 +9,6 @@ sys.path.insert(0, str(BACKEND_ROOT))
 
 from fastapi.testclient import TestClient
 from main import app
-from vibe_justice.services.ai_service import get_ai_service
 from vibe_justice.utils.auth import require_api_key
 
 
@@ -24,14 +23,16 @@ def client():
 
 
 @pytest.fixture
-def mock_ai_service(mocker):
-    mock_service = mocker.patch("vibe_justice.services.ai_service.get_ai_service")
+def mock_ai_service(monkeypatch):
     mock_instance = MagicMock()
     mock_instance.generate_response_streaming.return_value = {
         "answer": "Mocked response",
         "reasoning": "Mocked reasoning"
     }
-    mock_service.return_value = mock_instance
+    mock_instance.is_complex_legal_query.return_value = False
+    mock_instance.reasoning_model = "deepseek-reasoner"
+    mock_instance.chat_model = "deepseek-chat"
+    monkeypatch.setattr("vibe_justice.api.chat.ai_service", mock_instance)
     return mock_instance
 
 

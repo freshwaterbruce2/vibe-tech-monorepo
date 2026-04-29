@@ -48,25 +48,34 @@ describe("Square payment create + idempotency", () => {
 
 describe("PayPal simulated order + capture", () => {
 	it("creates an order then captures it updating payment status", async () => {
-		const orderRes = await request(app)
-			.post("/api/payments/paypal/order")
-			.send({ bookingId: TEST_BOOKING_ID, amount: 99, currency: "USD" });
-		expect(orderRes.status).toBe(200);
-		expect(orderRes.body.orderId).toBeTruthy();
-		const { orderId } = orderRes.body;
+		const originalSimulationFlag = process.env.PAYPAL_ENABLE_SIMULATED;
+		process.env.PAYPAL_ENABLE_SIMULATED = "true";
 
-		const captureRes = await request(app)
-			.post("/api/payments/paypal/capture")
-			.send({ orderId });
-		expect(captureRes.status).toBe(200);
-		expect(captureRes.body.success).toBe(true);
+		try {
+			const orderRes = await request(app)
+				.post("/api/payments/paypal/order")
+				.send({ bookingId: TEST_BOOKING_ID, amount: 99, currency: "USD" });
+			expect(orderRes.status).toBe(200);
+			expect(orderRes.body.orderId).toBeTruthy();
+			const { orderId } = orderRes.body;
 
-		const db = getSqliteDb();
-		const payment = await db
-			.select()
-			.from(schema.payments)
-			.where(eq(schema.payments.transactionId, orderId));
-		expect(payment[0].status).toBe("succeeded");
+			const captureRes = await request(app)
+				.post("/api/payments/paypal/capture")
+				.send({ orderId });
+			expect(captureRes.status).toBe(200);
+			expect(captureRes.body.success).toBe(true);
+
+			const db = getSqliteDb();
+			const payment = await db
+				.select()
+				.from(schema.payments)
+				.where(eq(schema.payments.transactionId, orderId));
+			const [capturedPayment] = payment;
+			expect(capturedPayment).toBeDefined();
+			expect(capturedPayment!.status).toBe("succeeded");
+		} finally {
+			process.env.PAYPAL_ENABLE_SIMULATED = originalSimulationFlag;
+		}
 	});
 });
 

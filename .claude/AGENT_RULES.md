@@ -39,7 +39,7 @@ If you are Opus 4.6 or Claude Code and planning is needed:
 
 ```yaml
 Create Plan:
-  - Location: .deepcode/plans/
+  - Location: ~/.gemini/antigravity/scratch/planning/
   - Format: PLAN_YYYY-MM-DD_HH-MM-SS.md
   - Contents:
       - Affected files list
@@ -137,7 +137,7 @@ EXAMPLES:
 - **PRIMARY ROLE**: Planning and Architecture
 - **NEVER**: Write implementation code directly
 - **ALWAYS**: Create detailed plans before delegation
-- **OUTPUT**: Planning documents in `.deepcode/plans/`
+- **OUTPUT**: Planning documents in `~/.gemini/antigravity/scratch/planning/`
 
 ### **For Claude Sonnet 4.6:**
 

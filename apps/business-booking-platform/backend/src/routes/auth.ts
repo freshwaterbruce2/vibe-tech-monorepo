@@ -5,7 +5,7 @@ import jwt, { type SignOptions } from 'jsonwebtoken';
 import { z } from 'zod';
 import { config } from '../config';
 import { getDb } from '../database';
-import { type NewUser, users } from '../database/schema';
+import { users } from '../database/schema';
 import { validateRequest } from '../middleware/validateRequest';
 import { emailService } from '../services/emailService.js';
 import { logger } from '../utils/logger';
@@ -51,7 +51,7 @@ const changePasswordSchema = z.object({
 // Helper functions
 const generateTokens = (user: any): { accessToken: string; refreshToken: string } => {
 	const accessTokenOptions: SignOptions = {
-		expiresIn: config.jwt.expiresIn,
+		expiresIn: config.jwt.expiresIn as SignOptions['expiresIn'],
 	};
 
 	const accessToken = jwt.sign(
@@ -67,7 +67,7 @@ const generateTokens = (user: any): { accessToken: string; refreshToken: string 
 	) as string;
 
 	const refreshTokenOptions: SignOptions = {
-		expiresIn: config.jwt.refreshExpiresIn,
+		expiresIn: config.jwt.refreshExpiresIn as SignOptions['expiresIn'],
 	};
 
 	const refreshToken = jwt.sign(
@@ -121,7 +121,7 @@ authRouter.post(
 			const hashedPassword = await hashPassword(password);
 
 			// Create user
-			const newUser: NewUser = {
+			const newUser: any = {
 				firstName,
 				lastName,
 				email: email.toLowerCase(),
@@ -136,7 +136,7 @@ authRouter.post(
 				},
 			};
 
-			const [createdUser] = await db.insert(users).values(newUser).returning({
+			const [createdUser] = await db.insert(users as any).values(newUser).returning({
 				id: users.id,
 				firstName: users.firstName,
 				lastName: users.lastName,
@@ -154,7 +154,7 @@ authRouter.post(
 				email: createdUser.email,
 			});
 
-			res.status(201).json({
+			return res.status(201).json({
 				success: true,
 				data: {
 					user: createdUser,
@@ -162,10 +162,9 @@ authRouter.post(
 					refreshToken,
 				},
 			});
-			return;
 		} catch (error) {
 			logger.error('User registration failed', { error, body: req.body });
-			res.status(500).json({
+			return res.status(500).json({
 				error: 'Registration Error',
 				message: 'Failed to create account. Please try again.',
 			});
@@ -244,7 +243,7 @@ authRouter.post('/login', validateRequest(loginSchema), async (req, res) => {
 			rememberMe,
 		});
 
-		res.json({
+		return res.json({
 			success: true,
 			data: {
 				user: userResponse,
@@ -252,10 +251,9 @@ authRouter.post('/login', validateRequest(loginSchema), async (req, res) => {
 				refreshToken,
 			},
 		});
-		return;
 	} catch (error) {
 		logger.error('User login failed', { error, body: req.body });
-		res.status(500).json({
+		return res.status(500).json({
 			error: 'Authentication Error',
 			message: 'Login failed. Please try again.',
 		});
@@ -317,7 +315,7 @@ authRouter.post(
 				emailVerified: user.emailVerified,
 			};
 
-			res.json({
+			return res.json({
 				success: true,
 				data: {
 					user: userResponse,
@@ -325,10 +323,9 @@ authRouter.post(
 					refreshToken: tokens.refreshToken,
 				},
 			});
-			return;
 		} catch (error) {
 			logger.error('Token refresh failed', { error });
-			res.status(500).json({
+			return res.status(500).json({
 				error: 'Authentication Error',
 				message: 'Failed to refresh token',
 			});
@@ -337,21 +334,20 @@ authRouter.post(
 );
 
 // POST /api/auth/logout - Logout user
-authRouter.post('/logout', async (req, res) => {
+authRouter.post('/logout', async (_req, res) => {
 	try {
 		// For JWT-based auth, logout is handled client-side by removing tokens
 		// If you want to invalidate tokens server-side, you could:
 		// 1. Maintain a blacklist of tokens
 		// 2. Increment user's tokenVersion to invalidate all refresh tokens
 
-		res.json({
+		return res.json({
 			success: true,
 			message: 'Logged out successfully',
 		});
-		return;
 	} catch (error) {
 		logger.error('Logout failed', { error });
-		res.status(500).json({
+		return res.status(500).json({
 			error: 'Logout Error',
 			message: 'Failed to logout',
 		});
@@ -383,14 +379,13 @@ authRouter.post('/logout-all', async (req, res) => {
 
 		logger.info('User logged out from all devices', { userId });
 
-		res.json({
+		return res.json({
 			success: true,
 			message: 'Logged out from all devices successfully',
 		});
-		return;
 	} catch (error) {
 		logger.error('Logout all failed', { error });
-		res.status(500).json({
+		return res.status(500).json({
 			error: 'Logout Error',
 			message: 'Failed to logout from all devices',
 		});
@@ -448,15 +443,14 @@ authRouter.post(
 				email: user.email,
 			});
 
-			res.json({
+			return res.json({
 				success: true,
 				message:
 					'If an account with that email exists, a password reset link has been sent',
 			});
-			return;
 		} catch (error) {
 			logger.error('Password reset request failed', { error });
-			res.status(500).json({
+			return res.status(500).json({
 				error: 'Reset Error',
 				message: 'Failed to process password reset request',
 			});
@@ -530,14 +524,13 @@ authRouter.post(
 				email: user.email,
 			});
 
-			res.json({
+			return res.json({
 				success: true,
 				message: 'Password reset successfully',
 			});
-			return;
 		} catch (error) {
 			logger.error('Password reset failed', { error });
-			res.status(500).json({
+			return res.status(500).json({
 				error: 'Reset Error',
 				message: 'Failed to reset password',
 			});
@@ -606,14 +599,13 @@ authRouter.post(
 				email: user.email,
 			});
 
-			res.json({
+			return res.json({
 				success: true,
 				message: 'Password changed successfully',
 			});
-			return;
 		} catch (error) {
 			logger.error('Password change failed', { error });
-			res.status(500).json({
+			return res.status(500).json({
 				error: 'Change Password Error',
 				message: 'Failed to change password',
 			});
@@ -653,23 +645,21 @@ authRouter.get('/me', async (req, res) => {
 			.limit(1);
 
 		if (!user) {
-			res.status(404).json({
+			return res.status(404).json({
 				error: 'User Error',
 				message: 'User not found',
 			});
-			return;
 		}
 
-		res.json({
+		return res.json({
 			success: true,
 			data: {
 				user,
 			},
 		});
-		return;
 	} catch (error) {
 		logger.error('Failed to get user info', { error });
-		res.status(500).json({
+		return res.status(500).json({
 			error: 'User Error',
 			message: 'Failed to get user information',
 		});

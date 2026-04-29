@@ -1,53 +1,26 @@
 import axios, { type AxiosInstance } from 'axios';
-import { z } from 'zod';
 import { config } from '../config';
 import { logger } from '../utils/logger';
 import { cacheService } from './cacheService';
-
-// LiteAPI response schemas (kept for reference, used as type contracts)
-const _LiteAPIHotelSchema = z.object({
-	id: z.string(),
-	name: z.string(),
-	address: z.string(),
-	city: z.string(),
-	country: z.string(),
-	latitude: z.number(),
-	longitude: z.number(),
-	starRating: z.number(),
-	description: z.string(),
-	images: z.array(
-		z.object({
-			url: z.string(),
-			caption: z.string().optional(),
-		}),
-	),
-	amenities: z.array(z.string()),
-	price: z.object({
-		amount: z.number(),
-		currency: z.string(),
-	}),
-});
-
-const _LiteAPIAvailabilitySchema = z.object({
-	hotelId: z.string(),
-	available: z.boolean(),
-	rooms: z.array(
-		z.object({
-			id: z.string(),
-			name: z.string(),
-			price: z.number(),
-			currency: z.string(),
-			available: z.number(),
-			maxOccupancy: z.number(),
-			amenities: z.array(z.string()),
-		}),
-	),
-});
 
 export class LiteAPIService {
 	private client: AxiosInstance;
 	private cachePrefix = 'liteapi:';
 	private cacheTTL = 300; // 5 minutes
+
+	private allowMockFallback(): boolean {
+		return (
+			process.env.NODE_ENV === 'test' ||
+			(process.env.NODE_ENV !== 'production' &&
+				process.env.LITEAPI_ENABLE_MOCK_FALLBACK === 'true')
+		);
+	}
+
+	private assertMockFallbackAllowed(message: string): void {
+		if (!this.allowMockFallback()) {
+			throw new Error(message);
+		}
+	}
 
 	constructor() {
 		this.client = axios.create({
@@ -112,7 +85,7 @@ export class LiteAPIService {
 			const cacheKey = `${this.cachePrefix}search:${JSON.stringify(params)}`;
 			const cached = await cacheService.get(cacheKey);
 			if (cached) {
-				return cached;
+				return cached as any[];
 			}
 
 			const response = await this.client.get('/hotels/search', {
@@ -137,10 +110,13 @@ export class LiteAPIService {
 
 			return hotels;
 		} catch (error) {
-			logger.error('Failed to search hotels - falling back to mock data', {
+			logger.error('Failed to search hotels', {
 				error,
 				params,
 			});
+			this.assertMockFallbackAllowed(
+				'LiteAPI hotel search failed and mock fallback is disabled',
+			);
 
 			// Fallback to mock hotel data when API fails
 			const mockHotels = [
@@ -238,14 +214,16 @@ export class LiteAPIService {
 			// Apply filters to mock data
 			let filteredHotels = mockHotels;
 
-			if (params.priceMin) {
+			const priceMin = params.priceMin;
+			if (priceMin !== undefined) {
 				filteredHotels = filteredHotels.filter(
-					(h) => h.price.amount >= params.priceMin,
+					(h) => h.price.amount >= priceMin,
 				);
 			}
-			if (params.priceMax) {
+			const priceMax = params.priceMax;
+			if (priceMax !== undefined) {
 				filteredHotels = filteredHotels.filter(
-					(h) => h.price.amount <= params.priceMax,
+					(h) => h.price.amount <= priceMax,
 				);
 			}
 			if (params.starRating && params.starRating.length > 0) {
@@ -277,10 +255,13 @@ export class LiteAPIService {
 
 			return hotel;
 		} catch (error) {
-			logger.error('Failed to get hotel details - returning mock data', {
+			logger.error('Failed to get hotel details', {
 				error,
 				hotelId,
 			});
+			this.assertMockFallbackAllowed(
+				'LiteAPI hotel details failed and mock fallback is disabled',
+			);
 
 			// Return mock hotel details when API fails
 			return {
@@ -501,10 +482,13 @@ export class LiteAPIService {
 
 			return response.data.data;
 		} catch (error) {
-			logger.error('Failed to check availability - returning mock data', {
+			logger.error('Failed to check availability', {
 				error,
 				params,
 			});
+			this.assertMockFallbackAllowed(
+				'LiteAPI availability failed and mock fallback is disabled',
+			);
 
 			// Return mock availability data when API fails
 			return {
@@ -688,8 +672,11 @@ export class LiteAPIService {
 			};
 		} catch (error) {
 			logger.error(
-				'Failed to create booking with API - returning mock booking',
+				'Failed to create booking with LiteAPI',
 				{ error, bookingData },
+			);
+			this.assertMockFallbackAllowed(
+				'LiteAPI booking failed and mock fallback is disabled',
 			);
 
 			// Return mock booking confirmation when API fails

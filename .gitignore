@@ -273,6 +273,7 @@ final_memo.md
 **/health_output.txt
 **/build_result.txt
 **/build_output*.txt
+**/test-results.json
 /tmp/nx-graph.json
 /tmp/project-graph*.json
 /tmp/*lint-report*.json
@@ -286,6 +287,8 @@ final_memo.md
 apps/ai-youtube-pipeline/output/
 tools/vibe-finisher/output/
 apps/*/dev-dist/
+apps/VibeBlox/package/client/
+apps/cross-agent-reflection/n/
 apps/*/build_final/
 apps/*/build_v*/
 

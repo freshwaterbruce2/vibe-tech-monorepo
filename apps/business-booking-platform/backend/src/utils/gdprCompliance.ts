@@ -1,12 +1,18 @@
-import { and, eq, gte, lte, sql } from 'drizzle-orm';
+import { and, eq, gte, sql } from 'drizzle-orm';
 import { getDb } from '../database';
 import {
 	auditLog,
-	dataAccessLogs,
 	userActivityLog,
 	users,
 } from '../database/schema';
 import { logger } from './logger';
+
+type DataAccessSummaryRow = {
+	access_type: string;
+	count: number | string | bigint;
+};
+
+type DataAccessDetailRow = Record<string, unknown>;
 
 /**
  * GDPR Compliance Utilities
@@ -346,17 +352,16 @@ export class GDPRCompliance {
 		try {
 			const db = getDb();
 
-			await db.insert(dataAccessLogs).values({
-				dataSubjectId,
-				accessedByUserId: accessedBy || dataSubjectId,
-				accessType,
-				dataType,
-				purpose,
-				ipAddress: 'system', // Would be actual IP in request context
-				legalBasis: 'GDPR_COMPLIANCE',
-				fieldsAccessed: [dataType],
-				metadata: { automated: true },
-			});
+			await db.execute(sql`
+				INSERT INTO data_access_logs (
+					data_subject_id, accessed_by_user_id, access_type, data_type,
+					purpose, ip_address, legal_basis, fields_accessed, metadata
+				) VALUES (
+					${dataSubjectId}, ${accessedBy || dataSubjectId}, ${accessType},
+					${dataType}, ${purpose}, 'system', 'GDPR_COMPLIANCE',
+					${JSON.stringify([dataType])}, ${JSON.stringify({ automated: true })}
+				)
+			`);
 		} catch (error) {
 			logger.error('Failed to log data access', { error });
 		}
@@ -376,36 +381,28 @@ export class GDPRCompliance {
 			const db = getDb();
 
 			// Get data access statistics
-			const accessStats = await db
-				.select({
-					accessType: dataAccessLogs.accessType,
-					count: sql<number>`count(*)`,
-				})
-				.from(dataAccessLogs)
-				.where(
-					and(
-						gte(dataAccessLogs.createdAt, startDate),
-						lte(dataAccessLogs.createdAt, endDate),
-					),
-				)
-				.groupBy(dataAccessLogs.accessType);
+			const accessStatsResult = await db.execute(sql`
+				SELECT access_type, count(*) AS count
+				FROM data_access_logs
+				WHERE created_at >= ${startDate} AND created_at <= ${endDate}
+				GROUP BY access_type
+			`);
+			const accessStats = (accessStatsResult.rows ?? []) as DataAccessSummaryRow[];
 
 			// Get detailed access logs for the period
-			const accessDetails = await db
-				.select()
-				.from(dataAccessLogs)
-				.where(
-					and(
-						gte(dataAccessLogs.createdAt, startDate),
-						lte(dataAccessLogs.createdAt, endDate),
-					),
-				)
-				.orderBy(dataAccessLogs.createdAt)
-				.limit(1000);
+			const accessDetailsResult = await db.execute(sql`
+				SELECT *
+				FROM data_access_logs
+				WHERE created_at >= ${startDate} AND created_at <= ${endDate}
+				ORDER BY created_at
+				LIMIT 1000
+			`);
+			const accessDetails = (accessDetailsResult.rows ??
+				[]) as DataAccessDetailRow[];
 
 			const summary = accessStats.reduce(
 				(acc, stat) => {
-					acc[stat.accessType] = stat.count;
+					acc[stat.access_type] = Number(stat.count);
 					return acc;
 				},
 				{} as Record<string, number>,

@@ -44,7 +44,7 @@
       "executor": "nx:run-commands",
       "outputs": ["{projectRoot}/backend/htmlcov"],
       "options": {
-        "command": "python -m pytest vibe_justice/tests tests -v --tb=short",
+        "command": ".\\.venv\\Scripts\\python.exe -m pytest vibe_justice/tests tests -v --tb=short",
         "cwd": "apps/vibe-justice/backend"
       }
     },
@@ -52,7 +52,7 @@
       "executor": "nx:run-commands",
       "outputs": ["{projectRoot}/backend/coverage"],
       "options": {
-        "command": "python -m pytest vibe_justice/tests tests -v --cov=vibe_justice --cov-report=html:coverage --cov-report=term",
+        "command": ".\\.venv\\Scripts\\python.exe -m pytest vibe_justice/tests tests -v --cov=vibe_justice --cov-report=html:coverage --cov-report=term",
         "cwd": "apps/vibe-justice/backend"
       }
     },
@@ -94,7 +94,7 @@
     "dev:backend": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "python -m uvicorn main:app --reload --reload-dir vibe_justice --host 127.0.0.1 --port 8000",
+        "command": ".\\.venv\\Scripts\\python.exe -m uvicorn main:app --reload --reload-dir vibe_justice --host 127.0.0.1 --port 8000",
         "cwd": "apps/vibe-justice/backend"
       }
     },
@@ -108,7 +108,7 @@
     "smoke:chat": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "python verify_local_routing.py",
+        "command": ".\\.venv\\Scripts\\python.exe verify_local_routing.py",
         "cwd": "apps/vibe-justice/backend"
       }
     },
@@ -186,35 +186,35 @@
     "backend:lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "python -m ruff check .",
+        "command": ".\\.venv\\Scripts\\python.exe -m ruff check .",
         "cwd": "apps/vibe-justice/backend"
       }
     },
     "backend:lint:fix": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "python -m ruff check . --fix",
+        "command": ".\\.venv\\Scripts\\python.exe -m ruff check . --fix",
         "cwd": "apps/vibe-justice/backend"
       }
     },
     "backend:typecheck": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "python -m mypy vibe_justice --ignore-missing-imports",
+        "command": ".\\.venv\\Scripts\\python.exe -m mypy vibe_justice --ignore-missing-imports",
         "cwd": "apps/vibe-justice/backend"
       }
     },
     "backend:migrate": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "python -m alembic upgrade head",
+        "command": ".\\.venv\\Scripts\\python.exe -m alembic upgrade head",
         "cwd": "apps/vibe-justice/backend"
       }
     },
     "backend:migrate:create": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "python -m alembic revision --autogenerate -m \"$MESSAGE\"",
+        "command": ".\\.venv\\Scripts\\python.exe -m alembic revision --autogenerate -m \"$MESSAGE\"",
         "cwd": "apps/vibe-justice/backend"
       }
     },

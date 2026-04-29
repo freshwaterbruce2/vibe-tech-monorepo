@@ -2,7 +2,7 @@
   "mcp": {
     "nx-mcp": {
       "type": "local",
-      "command": ["npx", "nx", "mcp"],
+      "command": ["cmd", "/c", "npx.cmd", "-y", "nx-mcp@latest"],
       "enabled": true
     }
   }

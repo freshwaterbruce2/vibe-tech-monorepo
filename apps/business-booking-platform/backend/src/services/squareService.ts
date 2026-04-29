@@ -18,7 +18,7 @@ export const processPayment = async (sourceId: string, amount: number) => {
 				currency: 'USD',
 			},
 		});
-		return response.result;
+		return response;
 	} catch (error) {
 		console.error('Payment Error:', error);
 		throw new Error('Payment failed');

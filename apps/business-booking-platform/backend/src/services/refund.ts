@@ -265,7 +265,7 @@ export class RefundService {
 
 			// Create refund request record in database
 			// const db = await getDb();
-			const _refundRequestRecord = await db
+			await db
 				.insert(refundRequests)
 				.values({
 					bookingId: refundRequest.bookingId,

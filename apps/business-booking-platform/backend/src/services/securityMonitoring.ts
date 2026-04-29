@@ -7,12 +7,23 @@ import {
 } from '../database/schema';
 import { logger } from '../utils/logger';
 
+type AlertThresholds = {
+	failed_login_attempts: number;
+	suspicious_ip_requests: number;
+	admin_access_attempts: number;
+	payment_failures: number;
+	unusual_user_activity: number;
+	sql_injection_attempts: number;
+	xss_attempts: number;
+	rate_limit_exceeded: number;
+};
+
 /**
  * Security Monitoring and Incident Response System
  */
 export class SecurityMonitoringService extends EventEmitter {
 	private static instance: SecurityMonitoringService;
-	private alertThresholds: Record<string, number>;
+	private alertThresholds: AlertThresholds;
 	private monitoringActive = false;
 	private incidentQueue: SecurityIncident[] = [];
 
@@ -138,7 +149,7 @@ export class SecurityMonitoringService extends EventEmitter {
 	 */
 	private async analyzeSecurityPatterns(): Promise<void> {
 		try {
-			const _db = getDb();
+			getDb();
 			const now = new Date();
 			const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
 			const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000);
@@ -571,7 +582,10 @@ export class SecurityMonitoringService extends EventEmitter {
 				date: yesterday.toISOString().split('T')[0],
 				summary: incidentSummary,
 				totalIncidents: incidentSummary.reduce(
-					(sum, item) => sum + item.count,
+					(
+						sum: number,
+						item: { count: number },
+					) => sum + item.count,
 					0,
 				),
 				generatedAt: new Date().toISOString(),

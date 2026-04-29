@@ -8,6 +8,9 @@ import { logger } from '../utils/logger';
 
 export const paymentsRouter = Router();
 
+type PaymentRecord = typeof payments.$inferSelect;
+type RefundRecord = typeof refunds.$inferSelect;
+
 import { paypalService } from '../services/paypalService';
 import { pdfService } from '../services/pdfService.js';
 // Square payment service (primary provider)
@@ -20,7 +23,7 @@ const createPaymentSchema = z.object({
 	bookingId: z.string().uuid(),
 	provider: z.string().optional().default('square'),
 	currency: z.string().optional().default('USD'),
-	metadata: z.record(z.string()).optional(),
+	metadata: z.record(z.string(), z.string()).optional(),
 	billingAddress: z
 		.object({
 			firstName: z.string().optional(),
@@ -51,6 +54,10 @@ const createPayPalOrderSchema = z.object({
 const capturePayPalOrderSchema = z.object({
 	orderId: z.string(),
 });
+
+const isSimulatedPayPalEnabled = (): boolean =>
+	process.env.NODE_ENV !== 'production' &&
+	process.env.PAYPAL_ENABLE_SIMULATED === 'true';
 
 // Removed Stripe-specific schemas (confirm intent, stats, setup intents)
 
@@ -203,13 +210,22 @@ paymentsRouter.post(
 
 /**
  * POST /api/payments/paypal/order
- * Create a (simulated) PayPal order
+ * Create a simulated PayPal order when explicitly enabled for local testing.
  */
 paymentsRouter.post(
 	'/paypal/order',
 	validateRequest(createPayPalOrderSchema),
 	async (req: Request, res: Response) => {
 		try {
+			if (!isSimulatedPayPalEnabled()) {
+				return res.status(501).json({
+					success: false,
+					error: 'PayPal provider is not configured',
+					message:
+						'Simulated PayPal is disabled. Set PAYPAL_ENABLE_SIMULATED=true outside production only for local testing.',
+				});
+			}
+
 			const { bookingId, amount, currency } = req.body;
 			const userId = req.user?.id;
 			const result = await paypalService.createOrder({
@@ -229,13 +245,22 @@ paymentsRouter.post(
 
 /**
  * POST /api/payments/paypal/capture
- * Capture a (simulated) PayPal order
+ * Capture a simulated PayPal order when explicitly enabled for local testing.
  */
 paymentsRouter.post(
 	'/paypal/capture',
 	validateRequest(capturePayPalOrderSchema),
 	async (req: Request, res: Response) => {
 		try {
+			if (!isSimulatedPayPalEnabled()) {
+				return res.status(501).json({
+					success: false,
+					error: 'PayPal provider is not configured',
+					message:
+						'Simulated PayPal is disabled. Set PAYPAL_ENABLE_SIMULATED=true outside production only for local testing.',
+				});
+			}
+
 			const { orderId } = req.body;
 			const result = await paypalService.captureOrder(orderId);
 			if (!result.success) {
@@ -258,7 +283,7 @@ paymentsRouter.get(
 	'/booking/:bookingId',
 	async (req: Request, res: Response) => {
 		try {
-			const { bookingId } = req.params;
+			const bookingId = req.params.bookingId as string;
 			const userId = req.user?.id;
 
 			// Verify booking access
@@ -288,14 +313,14 @@ paymentsRouter.get(
 			}
 
 			// Get payments for booking
-			const bookingPayments = await db
+			const bookingPayments: PaymentRecord[] = await db
 				.select()
 				.from(payments)
 				.where(eq(payments.bookingId, bookingId))
 				.orderBy(desc(payments.createdAt));
 
 			// Get refunds for booking
-			const bookingRefunds = await db
+			const bookingRefunds: RefundRecord[] = await db
 				.select()
 				.from(refunds)
 				.where(eq(refunds.bookingId, bookingId))
@@ -509,8 +534,9 @@ paymentsRouter.get(
 	'/:paymentId/receipt',
 	async (req: Request, res: Response) => {
 		try {
-			const { paymentId } = req.params;
+			const paymentId = req.params.paymentId as string;
 			const userId = req.user?.id;
+			const db = await getDb();
 
 			// Get payment details with booking information
 			const payment = await db
@@ -567,10 +593,10 @@ paymentsRouter.get(
 				'Content-Disposition',
 				`attachment; filename="receipt-${booking?.confirmationNumber || paymentId}.pdf"`,
 			);
-			res.send(pdfBuffer);
+			return res.send(pdfBuffer);
 		} catch (error) {
 			logger.error('Failed to generate PDF receipt:', error);
-			res.status(500).json({
+			return res.status(500).json({
 				error: 'Internal Server Error',
 				message: 'Failed to generate receipt',
 			});
@@ -595,11 +621,11 @@ paymentsRouter.get('/stats', async (req: Request, res: Response) => {
 		const last30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
 		// Total succeeded revenue
-		const allPayments = await db
+		const allPayments: PaymentRecord[] = await db
 			.select()
 			.from(payments)
 			.where(eq(payments.status, 'succeeded'));
-		const userFiltered = userId
+		const userFiltered: PaymentRecord[] = userId
 			? allPayments.filter((p) => p.userId === userId)
 			: allPayments;
 		const totalRevenue = userFiltered.reduce(

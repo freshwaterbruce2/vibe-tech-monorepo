@@ -13,7 +13,7 @@ const updateProfileSchema = z.object({
 	firstName: z.string().min(1).max(100).optional(),
 	lastName: z.string().min(1).max(100).optional(),
 	phone: z.string().min(5).max(20).optional(),
-	preferences: z.record(z.any()).optional(),
+	preferences: z.record(z.string(), z.any()).optional(),
 });
 
 const updatePreferencesSchema = z.object({
@@ -104,7 +104,7 @@ usersRouter.get('/profile', async (req, res) => {
 				),
 			); // Last year
 
-		res.json({
+		return res.json({
 			success: true,
 			data: {
 				user,
@@ -116,7 +116,7 @@ usersRouter.get('/profile', async (req, res) => {
 		});
 	} catch (error) {
 		logger.error('Failed to get user profile', { error, userId: req.user?.id });
-		res.status(500).json({
+		return res.status(500).json({
 			error: 'Profile Error',
 			message: 'Failed to get user profile',
 		});
@@ -202,7 +202,7 @@ usersRouter.put(
 				updates: Object.keys(updates),
 			});
 
-			res.json({
+			return res.json({
 				success: true,
 				data: {
 					user: updatedUser,
@@ -213,7 +213,7 @@ usersRouter.put(
 				error,
 				userId: req.user?.id,
 			});
-			res.status(500).json({
+			return res.status(500).json({
 				error: 'Update Error',
 				message: 'Failed to update profile',
 			});
@@ -280,7 +280,7 @@ usersRouter.put(
 				preferences: Object.keys(newPreferences),
 			});
 
-			res.json({
+			return res.json({
 				success: true,
 				data: {
 					preferences: updatedUser.preferences,
@@ -291,7 +291,7 @@ usersRouter.put(
 				error,
 				userId: req.user?.id,
 			});
-			res.status(500).json({
+			return res.status(500).json({
 				error: 'Preferences Error',
 				message: 'Failed to update preferences',
 			});
@@ -376,7 +376,7 @@ usersRouter.get('/dashboard', async (req, res) => {
 			.where(eq(bookings.userId, userId))
 			.groupBy(bookings.status);
 
-		res.json({
+		return res.json({
 			success: true,
 			data: {
 				upcomingBookings,
@@ -385,7 +385,10 @@ usersRouter.get('/dashboard', async (req, res) => {
 					totalBookings: stats?.totalBookings || 0,
 					totalSpent: parseFloat(stats?.totalSpent || '0'),
 					statusBreakdown: statusCounts.reduce(
-						(acc, item) => {
+						(
+							acc: Record<string, number>,
+							item: { status: string | null; count: number },
+						) => {
 							acc[String(item.status)] = item.count;
 							return acc;
 						},
@@ -399,7 +402,7 @@ usersRouter.get('/dashboard', async (req, res) => {
 			error,
 			userId: req.user?.id,
 		});
-		res.status(500).json({
+		return res.status(500).json({
 			error: 'Dashboard Error',
 			message: 'Failed to load dashboard data',
 		});
@@ -464,7 +467,7 @@ usersRouter.delete('/account', async (req, res) => {
 
 		logger.info('User account deleted', { userId });
 
-		res.json({
+		return res.json({
 			success: true,
 			message: 'Account deleted successfully',
 		});
@@ -473,7 +476,7 @@ usersRouter.delete('/account', async (req, res) => {
 			error,
 			userId: req.user?.id,
 		});
-		res.status(500).json({
+		return res.status(500).json({
 			error: 'Deletion Error',
 			message: 'Failed to delete account',
 		});
@@ -527,7 +530,7 @@ usersRouter.get('/export', async (req, res) => {
 				createdAt: userData.createdAt,
 				lastLoginAt: userData.lastLoginAt,
 			},
-			bookings: userBookings.map((booking) => ({
+			bookings: userBookings.map((booking: typeof bookings.$inferSelect) => ({
 				id: booking.id,
 				confirmationNumber: booking.confirmationNumber,
 				hotelId: booking.hotelId,
@@ -547,13 +550,13 @@ usersRouter.get('/export', async (req, res) => {
 
 		logger.info('User data exported', { userId });
 
-		res.json({
+		return res.json({
 			success: true,
 			data: exportData,
 		});
 	} catch (error) {
 		logger.error('Failed to export user data', { error, userId: req.user?.id });
-		res.status(500).json({
+		return res.status(500).json({
 			error: 'Export Error',
 			message: 'Failed to export user data',
 		});

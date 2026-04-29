@@ -316,7 +316,21 @@ function collectGeneratedArtifacts(dirtyByPath) {
 }
 
 function searchLiteral(literal) {
-  const rgCheck = run('rg', ['--version']);
+  let rgCommand = 'rg';
+  let rgCheck = run(rgCommand, ['--version']);
+  if (!rgCheck.ok) {
+    const whereRg = run('where.exe', ['rg']);
+    const candidate = whereRg.stdout
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .find((line) => line.toLowerCase().endsWith('rg.exe') && existsSync(line));
+
+    if (candidate) {
+      rgCommand = candidate;
+      rgCheck = run(rgCommand, ['--version']);
+    }
+  }
+
   if (!rgCheck.ok) {
     return {
       available: false,
@@ -325,7 +339,7 @@ function searchLiteral(literal) {
     };
   }
 
-  const search = run('rg', [
+  const search = run(rgCommand, [
     '-n',
     '--hidden',
     '-F',

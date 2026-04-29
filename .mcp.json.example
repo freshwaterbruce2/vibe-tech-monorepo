@@ -3,41 +3,34 @@
     "nx-mcp": {
       "type": "stdio",
       "command": "cmd",
-      "args": ["/c", "npx", "nx", "mcp"]
-    },
-    "filesystem": {
-      "command": "cmd",
-      "args": [
-        "/c",
-        "npx",
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        "C:\\dev",
-        "C:\\dev\\projects",
-        "D:\\"
-      ]
-    },
-    "puppeteer": {
-      "command": "cmd",
-      "args": ["/c", "npx", "-y", "@modelcontextprotocol/server-puppeteer"]
-    },
-    "codeberg": {
-      "command": "node",
-      "args": ["C:/dev/apps/mcp-codeberg/dist/index.js"],
+      "args": ["/c", "npx.cmd", "-y", "nx-mcp@latest"],
       "env": {
-        "CODEBERG_TOKEN": "YOUR_CODEBERG_ACCESS_TOKEN_HERE",
-        "_NOTE": "Legacy - repo migrated to GitHub. Consider replacing with GitHub MCP."
+        "NX_WORKSPACE_ROOT": "C:/dev"
       }
     },
-    "postgres": {
+    "filesystem": {
+      "type": "stdio",
       "command": "cmd",
       "args": [
         "/c",
-        "npx",
+        "npx.cmd",
         "-y",
-        "@modelcontextprotocol/server-postgres",
-        "sqlite://C:/dev/projects/crypto-enhanced/trading.db"
+        "@modelcontextprotocol/server-filesystem",
+        "C:/dev",
+        "D:/databases",
+        "D:/logs",
+        "D:/learning-system",
+        "D:/data"
       ]
+    },
+    "memory": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["C:/dev/apps/memory-mcp/dist/index.js"],
+      "env": {
+        "MEMORY_DB_PATH": "D:/databases/memory.db",
+        "LEARNING_DB_PATH": "D:/databases/agent_learning.db"
+      }
     }
   }
 }

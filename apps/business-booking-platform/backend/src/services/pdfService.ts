@@ -401,7 +401,7 @@ class PDFService {
 			logger.info(
 				`Generated booking receipt PDF for booking ${data.bookingId}`,
 			);
-			return pdfBuffer;
+			return Buffer.from(pdfBuffer);
 		} catch (error) {
 			await page.close();
 			logger.error('Failed to generate booking receipt PDF:', error);
@@ -430,7 +430,7 @@ class PDFService {
 
 			await page.close();
 			logger.info(`Generated refund receipt PDF for refund ${data.refundId}`);
-			return pdfBuffer;
+			return Buffer.from(pdfBuffer);
 		} catch (error) {
 			await page.close();
 			logger.error('Failed to generate refund receipt PDF:', error);

@@ -1,13 +1,18 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { justiceApi } from '../api'
 
 // Mock the global fetch
 const mockFetch = vi.fn()
 global.fetch = mockFetch as unknown as typeof fetch
+const apiBase = `${import.meta.env.VITE_API_URL ?? 'http://localhost:8000'}/api`
 
 describe('API Service', () => {
   beforeEach(() => {
     mockFetch.mockReset()
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
   })
 
   describe('uploadEvidence', () => {
@@ -20,8 +25,11 @@ describe('API Service', () => {
         json: async () => ({
           evidence_id: 'evidence-456',
           filename: 'evidence.pdf',
+          size_bytes: 16,
           status: 'uploaded',
-          case_id: caseId
+          category: caseId,
+          case_id: caseId,
+          message: 'Uploaded successfully'
         })
       })
 
@@ -30,6 +38,41 @@ describe('API Service', () => {
       expect(result.evidence_id).toBe('evidence-456')
       expect(result.filename).toBe('evidence.pdf')
       expect(result.status).toBe('uploaded')
+      expect(result.case_id).toBe(caseId)
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/evidence/upload'),
+        expect.objectContaining({ method: 'POST' })
+      )
+      const uploadBody = mockFetch.mock.calls[0]?.[1]?.body
+      expect(uploadBody).toBeInstanceOf(FormData)
+      expect((uploadBody as FormData).get('case_id')).toBe(caseId)
+    })
+
+    it('sends configured API key on protected fetch requests', async () => {
+      vi.stubEnv('VITE_VIBE_JUSTICE_API_KEY', 'test-api-key')
+      const mockFile = new File(['evidence content'], 'evidence.pdf', { type: 'application/pdf' })
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          evidence_id: 'evidence-456',
+          filename: 'evidence.pdf',
+          size_bytes: 16,
+          status: 'uploaded',
+          category: 'case-123',
+          case_id: 'case-123',
+          message: 'Uploaded successfully'
+        })
+      })
+
+      await justiceApi.uploadEvidence(mockFile, 'case-123')
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/evidence/upload'),
+        expect.objectContaining({
+          headers: { 'X-API-Key': 'test-api-key' },
+        })
+      )
     })
 
     it('handles file upload errors gracefully', async () => {
@@ -238,10 +281,10 @@ describe('API Service', () => {
       const result = await justiceApi.listCases()
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/cases/list?include_archived=false',
+        `${apiBase}/cases/list?include_archived=false`,
         expect.objectContaining({
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
+          headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
         })
       )
 
@@ -284,7 +327,7 @@ describe('API Service', () => {
       const result = await justiceApi.listCases(true)
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/cases/list?include_archived=true',
+        `${apiBase}/cases/list?include_archived=true`,
         expect.anything()
       )
 
@@ -351,10 +394,10 @@ describe('API Service', () => {
       const result = await justiceApi.archiveCase('case-001')
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/cases/archive/case-001',
+        `${apiBase}/cases/archive/case-001`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
         }
       )
 
@@ -371,7 +414,7 @@ describe('API Service', () => {
       await justiceApi.archiveCase('case/with/slashes')
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/cases/archive/case%2Fwith%2Fslashes',
+        `${apiBase}/cases/archive/case%2Fwith%2Fslashes`,
         expect.anything()
       )
     })
@@ -436,10 +479,10 @@ describe('API Service', () => {
       const result = await justiceApi.restoreCase('case-003')
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/cases/restore/case-003',
+        `${apiBase}/cases/restore/case-003`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
         }
       )
 
@@ -456,7 +499,7 @@ describe('API Service', () => {
       await justiceApi.restoreCase('case#123')
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'http://localhost:8000/api/cases/restore/case%23123',
+        `${apiBase}/cases/restore/case%23123`,
         expect.anything()
       )
     })

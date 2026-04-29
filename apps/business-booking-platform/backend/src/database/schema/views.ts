@@ -13,8 +13,8 @@ import { pgView } from 'drizzle-orm/pg-core';
  * Aggregates booking and revenue data by hotel for analytics
  */
 export const hotelPerformanceView = pgView('hotel_performance_view').as(
-	(qb) => {
-		return qb
+	(qb: any) => {
+		return (qb as any)
 			.select({
 				hotelId: sql`h.id`.as('hotel_id'),
 				hotelName: sql`h.name`.as('hotel_name'),
@@ -105,8 +105,8 @@ export const hotelPerformanceView = pgView('hotel_performance_view').as(
  * Daily booking metrics for time-series analysis
  */
 export const dailyBookingMetricsView = pgView('daily_booking_metrics_view').as(
-	(qb) => {
-		return qb
+	(qb: any) => {
+		return (qb as any)
 			.select({
 				date: sql`DATE(b.created_at)`.as('date'),
 
@@ -177,8 +177,8 @@ export const dailyBookingMetricsView = pgView('daily_booking_metrics_view').as(
  * Hotel search performance metrics
  */
 export const searchPerformanceView = pgView('search_performance_view').as(
-	(qb) => {
-		return qb
+	(qb: any) => {
+		return (qb as any)
 			.select({
 				date: sql`DATE(sa.created_at)`.as('date'),
 
@@ -243,8 +243,8 @@ export const searchPerformanceView = pgView('search_performance_view').as(
  * Revenue analytics by location and time
  */
 export const revenueAnalyticsView = pgView('revenue_analytics_view').as(
-	(qb) => {
-		return qb
+	(qb: any) => {
+		return (qb as any)
 			.select({
 				country: sql`h.country`.as('country'),
 				city: sql`h.city`.as('city'),

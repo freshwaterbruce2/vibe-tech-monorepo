@@ -126,10 +126,10 @@
         "priority": "high",
         "description": "Mobile Client for Nova (Expo 54, React Navigation, Zustand)"
       },
-      "vtde": {
+      "vibetech-command-center": {
         "status": "beta",
         "priority": "high",
-        "description": "Vibe-Tech Desktop Environment (Tauri 2.0) — terminal, draggable windows, memory integration, vibe-app.json protocol, healing dashboard"
+        "description": "Dashboard and diagnostics app for monorepo health, local services, RAG search, backups, and agent launch workflows"
       },
       "shipping-pwa": {
         "status": "development",
@@ -334,7 +334,7 @@
       "description": "Project completion tool"
     }
   },
-  "currentFocus": ["vtde", "memory-system", "nova-mobile-app", "vibe-tutor-release"],
+  "currentFocus": ["vibetech-command-center", "memory-system", "nova-mobile-app", "vibe-tutor-release"],
   "blockers": [],
   "rules": "./docs/ai/RULES.md",
   "paths": {

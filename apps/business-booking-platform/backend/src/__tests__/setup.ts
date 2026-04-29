@@ -70,7 +70,7 @@ vi.mock("../database/schema", async () => {
 	return await import("../database/schema/sqlite");
 });
 vi.mock("../../database/schema", async () => {
-	return await import("../../database/schema/sqlite");
+	return await import("../database/schema/sqlite");
 });
 
 // Mock JWT auth middleware so protected routes (mounted via apiRouter) pass through

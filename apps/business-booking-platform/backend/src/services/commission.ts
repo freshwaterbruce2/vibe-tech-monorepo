@@ -299,7 +299,7 @@ export class CommissionService {
 		_currency = 'USD',
 	) {
 		try {
-			const _db = await getDb();
+			await getDb();
 			const now = new Date();
 			const todayStart = new Date(now.setHours(0, 0, 0, 0));
 			const yesterdayStart = new Date(todayStart);
@@ -452,7 +452,8 @@ export class CommissionService {
 				);
 
 			const totalAmount = commissionList.reduce(
-				(sum, c) => sum + parseFloat(c.commissionAmount),
+				(sum: number, c: { commissionAmount: string }) =>
+					sum + parseFloat(c.commissionAmount),
 				0,
 			);
 			const commissionCount = commissionList.length;

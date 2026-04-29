@@ -3,8 +3,8 @@ import type { NextFunction, Request, Response } from 'express';
 import { logger } from '../utils/logger';
 
 export interface RequestWithId extends Request {
-	id: string;
-	startTime: number;
+	id?: string;
+	startTime?: number;
 }
 
 export const requestLogger = (
@@ -34,7 +34,7 @@ export const requestLogger = (
 	// Override res.json to log response data
 	const originalJson = res.json;
 	res.json = function (body: any) {
-		const duration = Date.now() - req.startTime;
+	const duration = Date.now() - (req.startTime ?? Date.now());
 
 		// Log response
 		logger.info('Outgoing response', {
@@ -52,7 +52,7 @@ export const requestLogger = (
 
 	// Log when request finishes
 	res.on('finish', () => {
-		const duration = Date.now() - req.startTime;
+		const duration = Date.now() - (req.startTime ?? Date.now());
 
 		logger.info('Request completed', {
 			requestId: req.id,

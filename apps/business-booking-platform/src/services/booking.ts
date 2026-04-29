@@ -91,18 +91,21 @@ export class BookingService {
 			return response.data.data.booking || response.data.data;
 		} catch (error) {
 			logger.warn(
-				'Booking creation failed, providing mock booking for seamless UX',
+				'Booking creation failed',
 				{
 					component: 'BookingService',
 					method: 'createBooking',
 					hotelId: params.hotelId,
 					error: error instanceof Error ? error.message : 'Unknown error',
-					fallbackStrategy: 'mock_booking',
+					mockFallbackEnabled: import.meta.env.VITE_ENABLE_MOCK_BOOKINGS === 'true',
 				},
 			);
 
-			// Return mock booking for development
-			if (axios.isAxiosError(error)) {
+			if (
+				axios.isAxiosError(error) &&
+				import.meta.env.DEV &&
+				import.meta.env.VITE_ENABLE_MOCK_BOOKINGS === 'true'
+			) {
 				const mockBooking: Booking = {
 					id: `MOCK-${Date.now()}`,
 					hotelId: params.hotelId,
@@ -135,6 +138,9 @@ export class BookingService {
 				localStorage.setItem('mockBookings', JSON.stringify(existingBookings));
 
 				return mockBooking;
+			}
+			if (axios.isAxiosError(error) && error.response) {
+				throw new Error(error.response.data.message || 'Booking creation failed');
 			}
 			throw new Error('Booking creation failed');
 		}

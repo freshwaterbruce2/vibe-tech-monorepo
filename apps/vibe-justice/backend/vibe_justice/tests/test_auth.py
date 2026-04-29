@@ -62,6 +62,15 @@ class TestRequireApiKey:
             assert exc_info.value.status_code == 401
             assert "invalid" in exc_info.value.detail.lower()
 
+    def test_origin_header_does_not_bypass_api_key(self):
+        """Origin is forgeable by non-browser clients and must not authenticate."""
+        server_key = "server-key-12345678901234567890"
+
+        with patch.dict(os.environ, {"VIBE_JUSTICE_API_KEY": server_key}):
+            with pytest.raises(HTTPException) as exc_info:
+                require_api_key(x_api_key=None)
+            assert exc_info.value.status_code == 401
+
     def test_timing_attack_resistant_comparison(self):
         """Comparison should use constant-time algorithm"""
         # This test verifies the secrets.compare_digest is being used

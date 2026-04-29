@@ -28,9 +28,12 @@ const SquareWebhookEventSchema = z.object({
 	data: z.object({
 		type: z.string(),
 		id: z.string(),
-		object: z.record(z.any()),
+		object: z.record(z.string(), z.any()),
 	}),
 });
+
+type WebhookProcessResult = { processed?: boolean } | undefined;
+type SquarePaymentObject = { status?: string };
 
 // Verify Square webhook signature
 function verifySquareWebhookSignature(
@@ -425,7 +428,7 @@ router.post('/square', async (req: Request, res: Response) => {
 		const [existingEvent] = await db
 			.select()
 			.from(auditLog)
-			.where(eq(auditLog.eventId, event.event_id))
+			.where(eq(auditLog.recordId, event.event_id))
 			.limit(1);
 
 		if (existingEvent) {
@@ -438,15 +441,16 @@ router.post('/square', async (req: Request, res: Response) => {
 			});
 		}
 
-		let result;
+		let result: WebhookProcessResult;
+		const payment = event.data.object.payment as SquarePaymentObject | undefined;
 
 		// Process event based on type
 		switch (event.type) {
 			case 'payment.created':
 			case 'payment.updated':
-				if (event.data.object.payment?.status === 'COMPLETED') {
+				if (payment?.status === 'COMPLETED') {
 					result = await handlePaymentCompleted(event.data);
-				} else if (event.data.object.payment?.status === 'FAILED') {
+				} else if (payment?.status === 'FAILED') {
 					result = await handlePaymentFailed(event.data);
 				}
 				break;
@@ -471,22 +475,22 @@ router.post('/square', async (req: Request, res: Response) => {
 
 		// Store event in database for audit trail
 		await db.insert(auditLog).values({
-			action: 'webhook_received',
-			entityType: 'webhook',
-			entityId: event.event_id,
-			eventId: event.event_id,
-			details: {
+			tableName: 'webhooks',
+			recordId: event.event_id,
+			operation: 'INSERT',
+			newData: {
 				type: event.type,
 				merchantId: event.merchant_id,
 				processed: result?.processed || false,
 				result,
 			},
+			metadata: { provider: 'square' },
 			ipAddress: req.ip,
 			userAgent: req.headers['user-agent'],
 		});
 
 		// Return success response
-		res.status(200).json({
+		return res.status(200).json({
 			success: true,
 			eventId: event.event_id,
 			processed: result?.processed || false,
@@ -495,7 +499,7 @@ router.post('/square', async (req: Request, res: Response) => {
 		console.error('Webhook processing error:', error);
 
 		// Log error but return 200 to prevent retries for malformed events
-		res.status(200).json({
+		return res.status(200).json({
 			success: false,
 			error: 'Event processing failed',
 		});
@@ -542,24 +546,24 @@ router.post('/paypal', async (req: Request, res: Response) => {
 
 		// Store event for audit
 		await db.insert(auditLog).values({
-			action: 'paypal_webhook_received',
-			entityType: 'webhook',
-			entityId: event.id || 'unknown',
-			eventId: event.id,
-			details: event,
+			tableName: 'webhooks',
+			recordId: event.id || 'unknown',
+			operation: 'INSERT',
+			newData: event,
+			metadata: { provider: 'paypal' },
 			ipAddress: req.ip,
 			userAgent: req.headers['user-agent'],
 		});
 
-		res.status(200).json({ success: true });
+		return res.status(200).json({ success: true });
 	} catch (error) {
 		logger.error('PayPal webhook error:', error);
-		res.status(200).json({ success: false });
+		return res.status(200).json({ success: false });
 	}
 });
 
 // Health check endpoint for webhook monitoring
-router.get('/health', (req: Request, res: Response) => {
+router.get('/health', (_req: Request, res: Response) => {
 	res.status(200).json({
 		status: 'ok',
 		timestamp: new Date().toISOString(),
