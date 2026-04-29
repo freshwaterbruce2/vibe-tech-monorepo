@@ -3,6 +3,16 @@ export { httpClient } from './httpClient';
 
 const API_BASE = `${import.meta.env.VITE_API_URL ?? 'http://localhost:8000'}/api`;
 
+const authHeaders = (): HeadersInit => {
+  const apiKey = import.meta.env.VITE_VIBE_JUSTICE_API_KEY;
+  return apiKey ? { 'X-API-Key': apiKey } : {};
+};
+
+const jsonHeaders = (): HeadersInit => ({
+  'Content-Type': 'application/json',
+  ...authHeaders(),
+});
+
 export interface ChatResponse {
   content: string;
   reasoning?: string;
@@ -22,18 +32,29 @@ export interface Case {
   archived_at: string | null;
 }
 
+export interface UploadEvidenceResponse {
+  evidence_id: string;
+  filename: string;
+  size_bytes: number;
+  status: 'uploaded';
+  category: string;
+  case_id: string | null;
+  message: string;
+}
+
 export const justiceApi = {
   /**
    * Uploads a file to the Vibe-Justice backend.
-   * Endpoint: POST /api/evidence
+   * Endpoint: POST /api/evidence/upload
    */
-  async uploadEvidence(file: File, caseId: string) {
+  async uploadEvidence(file: File, caseId: string): Promise<UploadEvidenceResponse> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('case_id', caseId);
 
-    const response = await fetch(`${API_BASE}/evidence`, {
+    const response = await fetch(`${API_BASE}/evidence/upload`, {
       method: 'POST',
+      headers: authHeaders(),
       body: formData,
     });
 
@@ -42,7 +63,7 @@ export const justiceApi = {
       throw new Error(`Upload failed: ${response.status} ${errorText}`);
     }
 
-    return response.json();
+    return response.json() as Promise<UploadEvidenceResponse>;
   },
 
   /**
@@ -52,7 +73,7 @@ export const justiceApi = {
   async runAnalysis(caseId: string, documentIds: string[] = []) {
     const response = await fetch(`${API_BASE}/analysis/run`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: jsonHeaders(),
       body: JSON.stringify({ 
         case_id: caseId, 
         document_ids: documentIds 
@@ -74,7 +95,7 @@ export const justiceApi = {
   async sendChat(message: string, options?: { domain?: string; use_reasoning?: boolean; model_type?: 'local' | 'cloud' }): Promise<ChatResponse> {
     const response = await fetch(`${API_BASE}/chat/simple`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: jsonHeaders(),
       body: JSON.stringify({
         message,
         domain: options?.domain ?? 'general',
@@ -98,7 +119,7 @@ export const justiceApi = {
   async listCases(includeArchived: boolean = false): Promise<Case[]> {
     const response = await fetch(`${API_BASE}/cases/list?include_archived=${includeArchived}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: jsonHeaders(),
     });
 
     if (!response.ok) {
@@ -116,7 +137,7 @@ export const justiceApi = {
   async archiveCase(caseId: string): Promise<{ status: string; message: string }> {
     const response = await fetch(`${API_BASE}/cases/archive/${encodeURIComponent(caseId)}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: jsonHeaders(),
     });
 
     if (!response.ok) {
@@ -134,7 +155,7 @@ export const justiceApi = {
   async restoreCase(caseId: string): Promise<{ status: string; message: string }> {
     const response = await fetch(`${API_BASE}/cases/restore/${encodeURIComponent(caseId)}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: jsonHeaders(),
     });
 
     if (!response.ok) {

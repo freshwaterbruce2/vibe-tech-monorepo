@@ -24,6 +24,16 @@ import type {
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const ANALYSIS_PREFIX = '/api/document-analysis';
 
+const authHeaders = (): HeadersInit => {
+  const apiKey = import.meta.env.VITE_VIBE_JUSTICE_API_KEY;
+  return apiKey ? { 'X-API-Key': apiKey } : {};
+};
+
+const jsonHeaders = (): HeadersInit => ({
+  'Content-Type': 'application/json',
+  ...authHeaders(),
+});
+
 /**
  * Custom error class for document analysis API errors
  */
@@ -106,6 +116,7 @@ export const documentAnalysisApi = {
 
     const response = await fetch(`${API_BASE}${ANALYSIS_PREFIX}/upload`, {
       method: 'POST',
+      headers: authHeaders(),
       body: formData,
     });
 
@@ -127,9 +138,7 @@ export const documentAnalysisApi = {
 
     const response = await fetch(`${API_BASE}${ANALYSIS_PREFIX}/analyze/violations`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: jsonHeaders(),
       body: JSON.stringify({
         documents: request.documents,
         case_type: request.case_type || 'unemployment',
@@ -152,9 +161,7 @@ export const documentAnalysisApi = {
 
     const response = await fetch(`${API_BASE}${ANALYSIS_PREFIX}/analyze/dates`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: jsonHeaders(),
       body: JSON.stringify({
         documents: request.documents,
       }),
@@ -180,9 +187,7 @@ export const documentAnalysisApi = {
 
     const response = await fetch(`${API_BASE}${ANALYSIS_PREFIX}/analyze/contradictions`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: jsonHeaders(),
       body: JSON.stringify({
         documents: request.documents,
       }),
@@ -206,9 +211,7 @@ export const documentAnalysisApi = {
 
     const response = await fetch(`${API_BASE}${ANALYSIS_PREFIX}/analyze/complete`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: jsonHeaders(),
       body: JSON.stringify({
         documents: request.documents,
         case_type: request.case_type || 'unemployment',

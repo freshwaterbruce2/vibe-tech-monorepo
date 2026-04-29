@@ -20,7 +20,7 @@ const parseQuerySchema = z.object({
 				})
 				.optional(),
 			previousSearches: z.array(z.string()).optional(),
-			userPreferences: z.record(z.any()).optional(),
+			userPreferences: z.record(z.string(), z.any()).optional(),
 		})
 		.optional(),
 });
@@ -43,7 +43,7 @@ const generateRecommendationsSchema = z.object({
 	userData: z.object({
 		previousBookings: z.array(z.any()).optional(),
 		searchHistory: z.array(z.string()).optional(),
-		preferences: z.record(z.any()).optional(),
+		preferences: z.record(z.string(), z.any()).optional(),
 		currentLocation: z
 			.object({
 				lat: z.number(),
@@ -214,7 +214,7 @@ aiRouter.post('/enhance-descriptions', async (req, res) => {
 		const enhancedHotels =
 			await aiSearchService.enhanceHotelDescriptions(hotels);
 
-		res.json({
+		return res.json({
 			success: true,
 			data: {
 				hotels: enhancedHotels,
@@ -223,7 +223,7 @@ aiRouter.post('/enhance-descriptions', async (req, res) => {
 		});
 	} catch (error) {
 		logger.error('AI description enhancement failed', { error });
-		res.status(500).json({
+		return res.status(500).json({
 			error: 'AI Error',
 			message: 'Failed to enhance hotel descriptions',
 		});
@@ -231,7 +231,7 @@ aiRouter.post('/enhance-descriptions', async (req, res) => {
 });
 
 // GET /api/ai/capabilities - Get AI service capabilities
-aiRouter.get('/capabilities', async (req, res) => {
+aiRouter.get('/capabilities', async (_req, res) => {
 	try {
 		const capabilities = {
 			naturalLanguageProcessing: {
@@ -354,7 +354,7 @@ aiRouter.post('/feedback', async (req, res) => {
 });
 
 // GET /api/ai/health - AI service health check
-aiRouter.get('/health', async (req, res) => {
+aiRouter.get('/health', async (_req, res) => {
 	try {
 		// Test AI service with a simple query
 		const testQuery = 'hotels in Paris';

@@ -16,7 +16,7 @@ These hooks ensure the memory system works AUTOMATICALLY in every Claude Code se
 
 - **Purpose**: Automatically saves session context periodically
 - **Runs**: After user prompts containing keywords or every 5 interactions
-- **Function**: Saves current task context to memory-bank
+- **Function**: Saves current task context to the configured learning/memory stores
 
 ### 3. hook-config.json
 
@@ -26,7 +26,7 @@ These hooks ensure the memory system works AUTOMATICALLY in every Claude Code se
 ## How It Works
 
 1. **Session Start**: When you start Claude Code, session-start.ps1 automatically runs
-2. **Memory Retrieval**: Previous session context is loaded from memory-bank
+2. **Memory Retrieval**: Previous session context is loaded from configured memory stores
 3. **Continuous Save**: Session context is saved periodically during conversation
 4. **No User Action**: Everything happens automatically - no commands needed!
 
@@ -43,8 +43,8 @@ powershell -Command "& 'C:\dev\.claude\hooks\session-start.ps1'"
 If memory isn't working automatically:
 
 1. Check hooks exist in `.claude/hooks/`
-2. Verify memory_cli.js is accessible
-3. Ensure settings.local.json has hooks configuration
+2. Verify `D:\databases\agent_learning.db` is accessible
+3. Ensure `settings.local.json` has hooks configuration
 4. Run `/auto-memory` command to test
 
 ## IMPORTANT

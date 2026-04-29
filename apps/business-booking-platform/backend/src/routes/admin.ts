@@ -1,4 +1,4 @@
-import { type Request, type Response, Router } from 'express';
+import { type NextFunction, type Request, type Response, Router } from 'express';
 import { z } from 'zod';
 import { getDb } from '../database';
 import { bookings, payments, users } from '../database/schema';
@@ -33,12 +33,13 @@ function generateRevenueCSV(data: Record<string, unknown>): string {
 }
 
 // Middleware to check admin access
-const requireAdmin = (req: Request, res: Response, next: any) => {
+const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
 	if (req.user?.role !== 'admin') {
-		return res.status(403).json({
+		res.status(403).json({
 			error: 'Access denied',
 			message: 'Admin access required',
 		});
+		return;
 	}
 	next();
 };
@@ -388,7 +389,7 @@ adminRouter.get('/payments', async (req: Request, res: Response) => {
 			.from(payments)
 			.where(conditions);
 
-		res.json({
+		return res.json({
 			success: true,
 			data: {
 				payments: paymentList,
@@ -418,7 +419,7 @@ adminRouter.get('/payments', async (req: Request, res: Response) => {
 			query: req.query,
 		});
 
-		res.status(500).json({
+		return res.status(500).json({
 			error: 'Failed to retrieve payments',
 			message:
 				error instanceof Error ? error.message : 'An unexpected error occurred',
@@ -480,7 +481,7 @@ adminRouter.post(
 				notes,
 			});
 
-			res.json({
+			return res.json({
 				success: true,
 				data: {
 					refund: {
@@ -500,7 +501,7 @@ adminRouter.post(
 				adminUserId: req.user?.id,
 			});
 
-			res.status(500).json({
+			return res.status(500).json({
 				error: 'Refund approval failed',
 				message:
 					error instanceof Error
@@ -598,11 +599,8 @@ adminRouter.get(
 	async (req: Request, res: Response) => {
 		try {
 			const { startDate, endDate, currency: _currency = 'USD' } = req.query;
-
-			const _start = startDate
-				? new Date(startDate as string)
-				: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-			const _end = endDate ? new Date(endDate as string) : new Date();
+			void startDate;
+			void endDate;
 
 			// This would typically involve more complex queries
 			// For now, returning mock data structure that would be populated with real queries
@@ -645,7 +643,7 @@ adminRouter.get(
 				},
 			};
 
-			res.json({
+			return res.json({
 				success: true,
 				data: topMetrics,
 			});
@@ -656,7 +654,7 @@ adminRouter.get(
 				query: req.query,
 			});
 
-			res.status(500).json({
+			return res.status(500).json({
 				error: 'Failed to retrieve top metrics',
 				message:
 					error instanceof Error
@@ -702,10 +700,10 @@ adminRouter.get(
 					'Content-Disposition',
 					`attachment; filename="revenue-report-${startDate}-${endDate}.csv"`,
 				);
-				res.send(csvContent);
+				return res.send(csvContent);
 			} else {
 				// Return JSON
-				res.json({
+				return res.json({
 					success: true,
 					data: reportData,
 				});
@@ -717,7 +715,7 @@ adminRouter.get(
 				query: req.query,
 			});
 
-			res.status(500).json({
+			return res.status(500).json({
 				error: 'Failed to export revenue report',
 				message:
 					error instanceof Error

@@ -67,6 +67,10 @@ const roomRatesSchema = z.object({
 	children: z.coerce.number().min(0).max(8).default(0),
 });
 
+type SearchHotelsInput = z.infer<typeof searchHotelsSchema>;
+type AvailabilityInput = z.infer<typeof availabilitySchema>;
+type RoomRatesInput = z.infer<typeof roomRatesSchema>;
+
 // Passion matching algorithm
 const calculatePassionScore = (hotel: any, passions: string[]): number => {
 	if (!passions || passions.length === 0) {
@@ -181,7 +185,7 @@ hotelsRouter.post(
 	validateRequest(searchHotelsSchema),
 	async (req, res) => {
 		try {
-			const params = req.body;
+			const params = req.body as SearchHotelsInput;
 			logger.info('Hotel search request', { params });
 
 			const searchParams = params;
@@ -292,11 +296,12 @@ searchParams.passions = aiParsed.passions;
 
 			// Apply passion-based scoring if passions are specified
 			let processedHotels = hotels;
-			if (searchParams.passions && searchParams.passions.length > 0) {
+			const passions = searchParams.passions ?? [];
+			if (passions.length > 0) {
 				processedHotels = hotels.map((hotel) => ({
 					...hotel,
-					passionScore: calculatePassionScore(hotel, searchParams.passions),
-					matchedPassions: searchParams.passions,
+					passionScore: calculatePassionScore(hotel, passions),
+					matchedPassions: passions,
 				}));
 
 				// Sort by passion score if applicable
@@ -349,7 +354,7 @@ searchParams.passions = aiParsed.passions;
 				}
 			}
 
-			res.json({
+			return res.json({
 				success: true,
 				data: {
 					hotels: processedHotels,
@@ -372,7 +377,7 @@ searchParams.passions = aiParsed.passions;
 			});
 		} catch (error) {
 			logger.error('Hotel search failed', { error, params: req.body });
-			res.status(500).json({
+			return res.status(500).json({
 				error: 'Search Error',
 				message: 'Failed to search hotels. Please try again.',
 			});
@@ -386,7 +391,7 @@ hotelsRouter.get(
 	validateRequest(hotelDetailsSchema, 'params'),
 	async (req, res) => {
 		try {
-			const { hotelId } = req.params;
+			const hotelId = req.params.hotelId as string;
 
 			// Try to get from cache first
 			const cacheKey = `hotel:details:${hotelId}`;
@@ -401,7 +406,7 @@ hotelsRouter.get(
 			// Cache the result
 			await cacheService.set(cacheKey, hotelDetails, 300); // 5 minutes
 
-			res.json({
+			return res.json({
 				success: true,
 				data: hotelDetails,
 			});
@@ -410,7 +415,7 @@ hotelsRouter.get(
 				error,
 				hotelId: req.params.hotelId,
 			});
-			res.status(500).json({
+			return res.status(500).json({
 				error: 'Fetch Error',
 				message: 'Failed to get hotel details. Please try again.',
 			});
@@ -424,8 +429,9 @@ hotelsRouter.get(
 	validateRequest(availabilitySchema, 'query'),
 	async (req, res) => {
 		try {
-			const { hotelId } = req.params;
-			const { checkIn, checkOut, adults, children, rooms } = req.query;
+			const hotelId = req.params.hotelId as string;
+			const { checkIn, checkOut, adults, children, rooms } =
+				req.query as unknown as AvailabilityInput;
 
 			const availability = await liteApiService.checkAvailability({
 				hotelId,
@@ -436,7 +442,7 @@ hotelsRouter.get(
 				rooms,
 			});
 
-			res.json({
+			return res.json({
 				success: true,
 				data: availability,
 			});
@@ -446,7 +452,7 @@ hotelsRouter.get(
 				params: req.params,
 				query: req.query,
 			});
-			res.status(500).json({
+			return res.status(500).json({
 				error: 'Availability Error',
 				message: 'Failed to check room availability. Please try again.',
 			});
@@ -460,8 +466,10 @@ hotelsRouter.get(
 	validateRequest(roomRatesSchema, 'query'),
 	async (req, res) => {
 		try {
-			const { hotelId, roomId } = req.params;
-			const { checkIn, checkOut, adults, children } = req.query;
+			const hotelId = req.params.hotelId as string;
+			const roomId = req.params.roomId as string;
+			const { checkIn, checkOut, adults, children } =
+				req.query as unknown as RoomRatesInput;
 
 			const rates = await liteApiService.getRoomRates({
 				hotelId,
@@ -472,7 +480,7 @@ hotelsRouter.get(
 				children,
 			});
 
-			res.json({
+			return res.json({
 				success: true,
 				data: rates,
 			});
@@ -482,7 +490,7 @@ hotelsRouter.get(
 				params: req.params,
 				query: req.query,
 			});
-			res.status(500).json({
+			return res.status(500).json({
 				error: 'Rates Error',
 				message: 'Failed to get room rates. Please try again.',
 			});
@@ -508,7 +516,7 @@ hotelsRouter.get('/search/suggestions', async (req, res) => {
 			popularDestinations: ['New York', 'Paris', 'London', 'Tokyo', 'Dubai'],
 		});
 
-		res.json({
+		return res.json({
 			success: true,
 			data: {
 				suggestions,
@@ -519,7 +527,7 @@ hotelsRouter.get('/search/suggestions', async (req, res) => {
 			error,
 			query: req.query,
 		});
-		res.json({
+		return res.json({
 			success: true,
 			data: {
 				suggestions: [],
@@ -529,7 +537,7 @@ hotelsRouter.get('/search/suggestions', async (req, res) => {
 });
 
 // GET /api/hotels/destinations/popular - Get popular destinations
-hotelsRouter.get('/destinations/popular', async (req, res) => {
+hotelsRouter.get('/destinations/popular', async (_req, res) => {
 	try {
 		// This could be enhanced to use real data from database
 		const popularDestinations = [
@@ -575,7 +583,7 @@ hotelsRouter.get('/destinations/popular', async (req, res) => {
 			},
 		];
 
-		res.json({
+		return res.json({
 			success: true,
 			data: {
 				destinations: popularDestinations,
@@ -583,7 +591,7 @@ hotelsRouter.get('/destinations/popular', async (req, res) => {
 		});
 	} catch (error) {
 		logger.error('Failed to get popular destinations', { error });
-		res.status(500).json({
+		return res.status(500).json({
 			error: 'Fetch Error',
 			message: 'Failed to get popular destinations.',
 		});
@@ -593,7 +601,7 @@ hotelsRouter.get('/destinations/popular', async (req, res) => {
 // POST /api/hotels/compare - Compare multiple hotels
 hotelsRouter.post('/compare', async (req, res) => {
 	try {
-		const { hotelIds } = req.body;
+		const { hotelIds } = req.body as { hotelIds?: string[] };
 
 		if (
 			!Array.isArray(hotelIds) ||
@@ -624,7 +632,7 @@ hotelsRouter.post('/compare', async (req, res) => {
 		// Filter out failed requests
 		const validHotels = hotelDetails.filter((hotel) => hotel !== null);
 
-		res.json({
+		return res.json({
 			success: true,
 			data: {
 				hotels: validHotels,
@@ -639,7 +647,7 @@ hotelsRouter.post('/compare', async (req, res) => {
 					},
 					commonAmenities:
 						validHotels.length > 0
-							? validHotels[0].amenities?.filter((amenity) =>
+							? (validHotels[0].amenities as string[] | undefined)?.filter((amenity) =>
 									validHotels.every((hotel) =>
 										hotel.amenities?.includes(amenity),
 									),
@@ -650,7 +658,7 @@ hotelsRouter.post('/compare', async (req, res) => {
 		});
 	} catch (error) {
 		logger.error('Failed to compare hotels', { error, body: req.body });
-		res.status(500).json({
+		return res.status(500).json({
 			error: 'Comparison Error',
 			message: 'Failed to compare hotels. Please try again.',
 		});

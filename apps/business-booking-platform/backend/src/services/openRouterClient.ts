@@ -164,7 +164,12 @@ export class OpenRouterClient {
       throw new Error('No choices in OpenRouter response');
     }
 
-    const {content} = response.choices[0].message;
+    const choice = response.choices[0];
+    if (!choice) {
+      throw new Error('No choices in OpenRouter response');
+    }
+
+    const {content} = choice.message;
     if (!content) {
       throw new Error('No content in OpenRouter response');
     }

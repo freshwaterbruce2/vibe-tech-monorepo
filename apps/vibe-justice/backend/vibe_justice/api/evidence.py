@@ -9,7 +9,7 @@ Supports:
 
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
@@ -28,8 +28,12 @@ class EvidenceFile(BaseModel):
 
 
 class UploadEvidenceResponse(BaseModel):
+    evidence_id: str
     filename: str
     size_bytes: int
+    status: str
+    category: str
+    case_id: Optional[str] = None
     message: str
 
 
@@ -53,12 +57,21 @@ async def list_evidence_files():
 
 
 @router.post("/upload", response_model=UploadEvidenceResponse, dependencies=[Depends(require_api_key)])
-async def upload_evidence(file: UploadFile = File(...), category: str = Form("other")):
+async def upload_evidence(
+    file: UploadFile = File(...),
+    category: str = Form("other"),
+    case_id: Optional[str] = Form(None),
+):
     try:
-        result = evidence_service.save_upload(file, category=category)
+        storage_category = category if category != "other" else case_id or "other"
+        result = evidence_service.save_upload(file, category=storage_category)
         return UploadEvidenceResponse(
+            evidence_id=result["filename"],
             filename=result["filename"],
             size_bytes=result["size_bytes"],
+            status="uploaded",
+            category=result.get("category", "other"),
+            case_id=case_id,
             message=f"Uploaded successfully ({result.get('category', 'other')})",
         )
     except ValueError as e:

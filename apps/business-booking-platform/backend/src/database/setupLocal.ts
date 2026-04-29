@@ -1,10 +1,9 @@
 import type Database from 'better-sqlite3';
 import { logger } from '../utils/logger';
 import {
-    closeSqliteDatabase,
-    getSqliteConnection,
-    getSqliteDb,
-    initializeSqliteDatabase,
+	closeSqliteDatabase,
+	getSqliteConnection,
+	initializeSqliteDatabase,
 } from './sqlite';
 
 /**
@@ -469,8 +468,6 @@ async function setupSqliteDatabase() {
 		await initializeSqliteDatabase();
 
 		const sqlite = getSqliteConnection();
-		const _db = getSqliteDb();
-
 		// Create all tables by executing schema
 		logger.info('Creating database tables...');
 		createSqliteTables(sqlite);

@@ -26,6 +26,7 @@ from vibe_justice.api import (
     chat,
     document_analysis,
     drafting,
+    evidence,
     forms,
     knowledge,
     search,
@@ -81,6 +82,7 @@ app.include_router(forms.router, prefix="/api/forms", tags=["forms"])
 app.include_router(search.router, prefix="/api/policy", tags=["policy"])
 app.include_router(knowledge.router, prefix="/api/knowledge", tags=["knowledge"])
 app.include_router(cases.router, prefix="/api", tags=["cases"])
+app.include_router(evidence.router, prefix="/api/evidence", tags=["evidence"])
 app.include_router(document_analysis.router, prefix="/api", tags=["document-analysis"])
 app.include_router(batch_processing.router)  # Prefix and tags already defined in router
 

@@ -125,7 +125,7 @@ export const authenticate = async (
 			isAdmin: user.role === 'admin' || user.role === 'super_admin',
 		};
 
-		next();
+		return next();
 	} catch (error) {
 		logger.error('Authentication middleware error', { error });
 		res.status(500).json({
@@ -256,7 +256,8 @@ export const createUserRateLimit = (maxRequests: number, windowMs: number) => {
 	const userRequests = new Map<string, { count: number; resetTime: number }>();
 
 	return (req: Request, res: Response, next: NextFunction) => {
-		const userId = req.user?.id || req.ip; // Fallback to IP for unauthenticated users
+		const userId =
+			req.user?.id || req.ip || req.socket.remoteAddress || 'unknown';
 		const now = Date.now();
 
 		let userData = userRequests.get(userId);
@@ -280,6 +281,6 @@ export const createUserRateLimit = (maxRequests: number, windowMs: number) => {
 		}
 
 		userData.count++;
-		next();
+		return next();
 	};
 };

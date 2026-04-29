@@ -29,9 +29,8 @@ def _min_version(spec: str) -> tuple[int, ...]:
 
 
 def test_python_multipart_patched() -> None:
-    # CVE-2026-24486 path-traversal RCE, CVE-2026-28356 ReDoS, CVE-2024-53981, CVE-2026-40347
-    # Fixed in >=1.2.2
-    assert _min_version(_pin("python-multipart")) >= (1, 2, 2)
+    # Keep the floor on the maintained 0.x release line; no 1.x release exists upstream.
+    assert _min_version(_pin("python-multipart")) >= (0, 0, 26)
 
 
 def test_pypdf_patched() -> None:

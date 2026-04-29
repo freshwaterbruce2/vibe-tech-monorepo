@@ -14,9 +14,9 @@ router.post('/process-payment', async (req, res) => {
 
 	try {
 		const payment = await processPayment(sourceId, amount);
-		res.status(200).json(payment);
+		return res.status(200).json(payment);
 	} catch (error) {
-		res.status(500).json({ error: (error as Error).message });
+		return res.status(500).json({ error: (error as Error).message });
 	}
 });
 

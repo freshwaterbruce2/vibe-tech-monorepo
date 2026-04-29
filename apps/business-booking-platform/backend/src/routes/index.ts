@@ -51,7 +51,7 @@ apiRouter.use('/users', authenticate, usersRouter);
 apiRouter.use('/admin', authenticate, adminRouter);
 
 // API health check
-apiRouter.get('/health', (req, res) => {
+apiRouter.get('/health', (_req, res) => {
 	res.json({
 		status: 'healthy',
 		timestamp: new Date().toISOString(),

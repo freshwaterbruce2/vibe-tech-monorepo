@@ -125,7 +125,7 @@ export const authRateLimit = rateLimit({
  */
 export const sanitizeInput = (
 	req: Request,
-	res: Response,
+	_res: Response,
 	next: NextFunction,
 ) => {
 	// Remove potentially dangerous characters from string inputs
@@ -174,7 +174,7 @@ return obj;
 		req.query = sanitizeObject(req.query);
 	}
 
-	next();
+	return next();
 };
 
 /**
@@ -213,7 +213,7 @@ export const auditLogger = (
 		return originalSend.call(this, body);
 	};
 
-	next();
+	return next();
 };
 
 /**
@@ -330,7 +330,7 @@ export const verifyWebhookSignature = (
 		// This middleware just ensures the signature header is present
 	}
 
-	next();
+	return next();
 };
 
 /**
@@ -345,7 +345,7 @@ interface SessionCookie {
 
 export const sessionSecurity = (
 	req: Request,
-	res: Response,
+	_res: Response,
 	next: NextFunction,
 ) => {
 	// Set secure session cookies (express-session augments req at runtime)

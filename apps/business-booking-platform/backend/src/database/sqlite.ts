@@ -52,7 +52,7 @@ export function getSqliteDb() {
 	return db;
 }
 
-export function getSqliteConnection() {
+export function getSqliteConnection(): Database.Database {
 	if (!sqlite) {
 		throw new Error(
 			'SQLite connection not initialized. Call initializeSqliteDatabase() first.',

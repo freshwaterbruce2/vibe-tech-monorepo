@@ -10,7 +10,6 @@ import { logger } from '../utils/logger';
 export class SecurityConfigValidator {
 	private static readonly MINIMUM_SECRET_LENGTH = 32;
 	private static readonly MINIMUM_SECRET_ENTROPY = 4.0; // bits per character
-	private static readonly PRODUCTION_ORIGINS = ['https://'];
 
 	/**
 	 * Validate all security configurations on startup
@@ -146,7 +145,8 @@ export class SecurityConfigValidator {
 		if (!config.stripe) {
 			issues.push('Stripe configuration is missing');
 		} else {
-			if (!config.stripe.secretKey || config.stripe.secretKey.length < 10) {
+			const stripeSecretKey = config.stripe.secretKey;
+			if (!stripeSecretKey || stripeSecretKey.length < 10) {
 				issues.push('Stripe secret key is missing or too short');
 			}
 
@@ -159,7 +159,7 @@ export class SecurityConfigValidator {
 
 			// Check for test keys in production
 			if (config.environment === 'production') {
-				if (config.stripe.secretKey.includes('sk_test_')) {
+				if (stripeSecretKey?.includes('sk_test_')) {
 					issues.push('Production environment using Stripe test keys');
 				}
 			}
@@ -317,7 +317,7 @@ export const runtimeSecurityChecks = (
 		});
 	}
 
-	next();
+	return next();
 };
 
 /**
@@ -366,7 +366,7 @@ export const validateApiKey = (keyName: string, required = true) => {
 			});
 		}
 
-		next();
+		return next();
 	};
 };
 

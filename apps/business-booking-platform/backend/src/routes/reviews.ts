@@ -2,7 +2,7 @@ import { and, avg, count, desc, eq } from 'drizzle-orm';
 import { Router } from 'express';
 import { z } from 'zod';
 import { getDb } from '../database';
-import { bookings, type NewReview, reviews, users } from '../database/schema';
+import { bookings, reviews, users } from '../database/schema';
 import { reviewVotes } from '../database/schema/reviewVotes';
 import { validateRequest } from '../middleware/validateRequest';
 import { logger } from '../utils/logger';
@@ -66,10 +66,11 @@ reviewsRouter.post(
 	validateRequest(createReviewSchema),
 	async (req, res) => {
 		try {
-			const userId = req.user?.id;
+			const authenticatedUser = req.user;
+			const userId = authenticatedUser?.id;
 			const reviewData = req.body;
 
-			if (!userId) {
+			if (!authenticatedUser || !userId) {
 				return res.status(401).json({
 					error: 'Authentication Error',
 					message: 'User must be authenticated to create reviews',
@@ -126,27 +127,22 @@ reviewsRouter.post(
 			}
 
 			// Create review
-			const newReview: NewReview = {
+			const newReview: any = {
 				userId,
 				bookingId: reviewData.bookingId,
 				hotelId: reviewData.hotelId,
 				overallRating: reviewData.overallRating,
 				title: reviewData.title,
-				content: reviewData.content,
-				// aspects: reviewData.aspects || {}, // aspects is not a column in reviews table
-				wouldRecommend: reviewData.wouldRecommend,
+				comment: reviewData.content,
 				tripType: reviewData.tripType,
-				photos: reviewData.photos,
-				isVerified: true, // Reviews from actual bookings are verified
+				images: reviewData.photos,
+				reviewerName: `${authenticatedUser.firstName} ${authenticatedUser.lastName}`,
+				reviewerEmail: authenticatedUser.email,
+				isVerifiedBooking: true, // Reviews from actual bookings are verified
 				status: 'published',
-				metadata: {
-					userAgent: req.get('User-Agent'),
-					ipAddress: req.ip,
-					stayDates: {
-						checkIn: booking.checkIn,
-						checkOut: booking.checkOut,
-					},
-				},
+				userAgent: req.get('User-Agent'),
+				ipAddress: req.ip,
+				stayDate: booking.checkIn,
 			};
 
 			const [createdReview] = await db
@@ -182,7 +178,7 @@ reviewsRouter.post(
 				overallRating: reviewData.overallRating,
 			});
 
-			res.status(201).json({
+			return res.status(201).json({
 				success: true,
 				data: {
 					review: reviewResponse,
@@ -190,7 +186,7 @@ reviewsRouter.post(
 			});
 		} catch (error) {
 			logger.error('Failed to create review', { error, body: req.body });
-			res.status(500).json({
+			return res.status(500).json({
 				error: 'Review Error',
 				message: 'Failed to create review. Please try again.',
 			});
@@ -325,7 +321,7 @@ reviewsRouter.get(
 // GET /api/reviews/:reviewId - Get specific review
 reviewsRouter.get('/:reviewId', async (req, res) => {
 	try {
-		const { reviewId } = req.params;
+		const reviewId = req.params.reviewId as string;
 
 		const db = getDb();
 
@@ -339,7 +335,7 @@ reviewsRouter.get('/:reviewId', async (req, res) => {
 			})
 			.from(reviews)
 			.leftJoin(users, eq(reviews.userId, users.id))
-			.where(eq(reviews.id, reviewId))
+			.where(eq((reviews as any).id, reviewId))
 			.limit(1);
 
 		if (!reviewData) {
@@ -349,7 +345,7 @@ reviewsRouter.get('/:reviewId', async (req, res) => {
 			});
 		}
 
-		res.json({
+		return res.json({
 			success: true,
 			data: {
 				review: {
@@ -363,7 +359,7 @@ reviewsRouter.get('/:reviewId', async (req, res) => {
 			error,
 			reviewId: req.params.reviewId,
 		});
-		res.status(500).json({
+		return res.status(500).json({
 			error: 'Fetch Error',
 			message: 'Failed to get review',
 		});
@@ -376,7 +372,7 @@ reviewsRouter.put(
 	validateRequest(updateReviewSchema),
 	async (req, res) => {
 		try {
-			const { reviewId } = req.params;
+			const reviewId = req.params.reviewId as string;
 			const userId = req.user?.id;
 			const updates = req.body;
 
@@ -393,7 +389,7 @@ reviewsRouter.put(
 			const [existingReview] = await db
 				.select()
 				.from(reviews)
-				.where(eq(reviews.id, reviewId))
+				.where(eq((reviews as any).id, reviewId))
 				.limit(1);
 
 			if (!existingReview) {
@@ -434,7 +430,7 @@ reviewsRouter.put(
 			}
 
 			if (updates.content !== undefined) {
-				updateData.content = updates.content;
+				updateData.comment = updates.content;
 			}
 
 			// aspects is not a column in reviews table
@@ -464,7 +460,7 @@ reviewsRouter.put(
 				updates: Object.keys(updates),
 			});
 
-			res.json({
+			return res.json({
 				success: true,
 				data: {
 					review: updatedReview,
@@ -475,7 +471,7 @@ reviewsRouter.put(
 				error,
 				reviewId: req.params.reviewId,
 			});
-			res.status(500).json({
+			return res.status(500).json({
 				error: 'Update Error',
 				message: 'Failed to update review',
 			});
@@ -486,7 +482,7 @@ reviewsRouter.put(
 // DELETE /api/reviews/:reviewId - Delete review
 reviewsRouter.delete('/:reviewId', async (req, res) => {
 	try {
-		const { reviewId } = req.params;
+		const reviewId = req.params.reviewId as string;
 		const userId = req.user?.id;
 
 		if (!userId) {
@@ -502,7 +498,7 @@ reviewsRouter.delete('/:reviewId', async (req, res) => {
 		const [existingReview] = await db
 			.select()
 			.from(reviews)
-			.where(eq(reviews.id, reviewId))
+			.where(eq((reviews as any).id, reviewId))
 			.limit(1);
 
 		if (!existingReview) {
@@ -527,7 +523,7 @@ reviewsRouter.delete('/:reviewId', async (req, res) => {
 				status: 'deleted',
 				updatedAt: new Date(),
 			})
-			.where(eq(reviews.id, reviewId));
+			.where(eq((reviews as any).id, reviewId));
 
 		logger.info('Review deleted', {
 			reviewId,
@@ -535,7 +531,7 @@ reviewsRouter.delete('/:reviewId', async (req, res) => {
 			deletedBy: req.user?.isAdmin ? 'admin' : 'user',
 		});
 
-		res.json({
+		return res.json({
 			success: true,
 			message: 'Review deleted successfully',
 		});
@@ -544,7 +540,7 @@ reviewsRouter.delete('/:reviewId', async (req, res) => {
 			error,
 			reviewId: req.params.reviewId,
 		});
-		res.status(500).json({
+		return res.status(500).json({
 			error: 'Delete Error',
 			message: 'Failed to delete review',
 		});
@@ -554,8 +550,15 @@ reviewsRouter.delete('/:reviewId', async (req, res) => {
 // POST /api/reviews/:reviewId/helpful - Mark review as helpful
 reviewsRouter.post('/:reviewId/helpful', async (req, res) => {
 	try {
-		const { reviewId } = req.params;
+		const reviewId = req.params.reviewId as string;
 		const userId = req.user?.id;
+
+		if (!userId) {
+			return res.status(401).json({
+				error: 'Authentication Error',
+				message: 'User must be authenticated to vote on reviews',
+			});
+		}
 
 		const db = getDb();
 
@@ -563,7 +566,7 @@ reviewsRouter.post('/:reviewId/helpful', async (req, res) => {
 		const [review] = await db
 			.select()
 			.from(reviews)
-			.where(eq(reviews.id, reviewId))
+			.where(eq((reviews as any).id, reviewId))
 			.limit(1);
 
 		if (!review) {
@@ -626,7 +629,7 @@ reviewsRouter.post('/:reviewId/helpful', async (req, res) => {
 			newHelpfulCount: updatedReview.helpfulCount,
 		});
 
-		res.json({
+		return res.json({
 			success: true,
 			data: {
 				helpfulCount: updatedReview.helpfulCount,
@@ -637,7 +640,7 @@ reviewsRouter.post('/:reviewId/helpful', async (req, res) => {
 			error,
 			reviewId: req.params.reviewId,
 		});
-		res.status(500).json({
+		return res.status(500).json({
 			error: 'Vote Error',
 			message: 'Failed to mark review as helpful',
 		});
@@ -647,7 +650,7 @@ reviewsRouter.post('/:reviewId/helpful', async (req, res) => {
 // GET /api/reviews/hotel/:hotelId/summary - Get hotel review summary
 reviewsRouter.get('/hotel/:hotelId/summary', async (req, res) => {
 	try {
-		const { hotelId } = req.params;
+		const hotelId = req.params.hotelId as string;
 
 		const db = getDb();
 
@@ -747,7 +750,9 @@ reviewsRouter.get('/hotel/:hotelId/summary', async (req, res) => {
 					totalReviews: overallStats?.totalReviews || 0,
 					ratingDistribution: Array.from({ length: 5 }, (_, i) => {
 						const rating = i + 1;
-						const found = ratingDistribution.find((r) => r.rating === rating);
+						const found = ratingDistribution.find(
+							(r: { rating: number; count: number }) => r.rating === rating,
+						);
 						return {
 							rating,
 							count: found?.count || 0,

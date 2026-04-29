@@ -3,16 +3,14 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { getDb } from '../database';
 import {
-    bookingAddons,
-    bookingGuests,
-    bookingStatusHistory,
-    bookings,
-    payments,
-    type NewBooking,
+	bookingAddons,
+	bookingGuests,
+	bookingStatusHistory,
+	bookings,
+	payments,
 } from '../database/schema';
 import { validateRequest } from '../middleware/validateRequest';
 import { liteApiService } from '../services/liteApiService';
-import { paymentService } from '../services/paymentService';
 import { logger } from '../utils/logger';
 
 export const bookingsRouter = Router();
@@ -39,7 +37,7 @@ const createBookingSchema = z.object({
 				firstName: z.string().min(1).max(100),
 				lastName: z.string().min(1).max(100),
 				age: z.number().min(0).max(120).optional(),
-				specialNeeds: z.record(z.any()).optional(),
+				specialNeeds: z.record(z.string(), z.any()).optional(),
 			}),
 		)
 		.optional(),
@@ -68,7 +66,7 @@ const createBookingSchema = z.object({
 
 const updateBookingSchema = z.object({
 	specialRequests: z.string().max(1000).optional(),
-	guestPreferences: z.record(z.any()).optional(),
+	guestPreferences: z.record(z.string(), z.any()).optional(),
 	status: z
 		.enum(['pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled'])
 		.optional(),
@@ -78,6 +76,10 @@ const cancelBookingSchema = z.object({
 	reason: z.string().min(1).max(500),
 	processRefund: z.boolean().default(true),
 });
+
+type CreateBookingInput = z.infer<typeof createBookingSchema>;
+type UpdateBookingInput = z.infer<typeof updateBookingSchema>;
+type CancelBookingInput = z.infer<typeof cancelBookingSchema>;
 
 const searchBookingsSchema = z.object({
 	status: z.string().optional(),
@@ -136,7 +138,7 @@ bookingsRouter.post(
 	validateRequest(createBookingSchema),
 	async (req, res) => {
 		try {
-			const bookingData = req.body;
+			const bookingData = req.body as CreateBookingInput;
 			const userId = req.user?.id; // From authentication middleware
 
 			logger.info('Creating new booking', { bookingData, userId });
@@ -188,12 +190,24 @@ bookingsRouter.post(
 				// Continue with booking - availability check failure shouldn't block booking
 			}
 
+			if (bookingData.paymentMethodId) {
+				logger.warn('Rejected legacy payment method on booking create', {
+					paymentMethodId: bookingData.paymentMethodId,
+				});
+				res.status(501).json({
+					error: 'Payment Provider Unsupported',
+					message:
+						'Legacy payment method IDs are disabled. Use the active Square payment flow before confirming a paid booking.',
+				});
+				return;
+			}
+
 			const db = getDb();
 			const confirmationNumber = generateConfirmationNumber();
 			const nights = calculateNights(bookingData.checkIn, bookingData.checkOut);
 
 			// Create booking record
-			const newBooking: NewBooking = {
+			const newBooking: any = {
 				confirmationNumber,
 				userId,
 				guestEmail: bookingData.guest.email,
@@ -226,7 +240,7 @@ bookingsRouter.post(
 			};
 
 			const [createdBooking] = await db
-				.insert(bookings)
+				.insert(bookings as any)
 				.values(newBooking)
 				.returning();
 
@@ -273,25 +287,6 @@ bookingsRouter.post(
 
 			// Create payment intent if payment method is provided
 			let paymentIntent = null;
-			if (bookingData.paymentMethodId) {
-				try {
-					paymentIntent = await paymentService.createPaymentIntent({
-						amount: bookingData.pricing.totalAmount,
-						currency: bookingData.pricing.currency,
-						bookingId: createdBooking.id,
-						userId,
-						metadata: {
-							confirmationNumber: createdBooking.confirmationNumber,
-							hotelId: bookingData.hotelId,
-						},
-					});
-				} catch (paymentError) {
-					logger.error('Failed to create payment intent', {
-						error: paymentError,
-					});
-					// Don't fail the booking creation, just note the payment issue
-				}
-			}
 
 			// Try to create booking with LiteAPI (if configured)
 			let liteApiBooking = null;
@@ -444,7 +439,7 @@ bookingsRouter.get(
 // GET /api/bookings/:bookingId - Get specific booking
 bookingsRouter.get('/:bookingId', async (req, res) => {
 	try {
-		const { bookingId } = req.params;
+		const bookingId = req.params.bookingId as string;
 		const userId = req.user?.id;
 
 		const db = getDb();
@@ -492,7 +487,7 @@ bookingsRouter.get('/:bookingId', async (req, res) => {
 			.where(eq(bookingStatusHistory.bookingId, bookingId))
 			.orderBy(desc(bookingStatusHistory.createdAt));
 
-		res.json({
+		return res.json({
 			success: true,
 			data: {
 				booking,
@@ -506,7 +501,7 @@ bookingsRouter.get('/:bookingId', async (req, res) => {
 			error,
 			bookingId: req.params.bookingId,
 		});
-		res.status(500).json({
+		return res.status(500).json({
 			error: 'Fetch Error',
 			message: 'Failed to get booking details.',
 		});
@@ -519,9 +514,9 @@ bookingsRouter.put(
 	validateRequest(updateBookingSchema),
 	async (req, res) => {
 		try {
-			const { bookingId } = req.params;
+			const bookingId = req.params.bookingId as string;
 			const userId = req.user?.id;
-			const updates = req.body;
+			const updates = req.body as UpdateBookingInput;
 
 			const db = getDb();
 
@@ -591,7 +586,7 @@ bookingsRouter.put(
 				.where(eq(bookings.id, bookingId))
 				.returning();
 
-			res.json({
+			return res.json({
 				success: true,
 				data: {
 					booking: updatedBooking,
@@ -602,7 +597,7 @@ bookingsRouter.put(
 				error,
 				bookingId: req.params.bookingId,
 			});
-			res.status(500).json({
+			return res.status(500).json({
 				error: 'Update Error',
 				message: 'Failed to update booking.',
 			});
@@ -616,8 +611,8 @@ bookingsRouter.post(
 	validateRequest(cancelBookingSchema),
 	async (req, res) => {
 		try {
-			const { bookingId } = req.params;
-			const { reason, processRefund } = req.body;
+			const bookingId = req.params.bookingId as string;
+			const { reason, processRefund } = req.body as CancelBookingInput;
 			const userId = req.user?.id;
 
 			const db = getDb();
@@ -716,29 +711,15 @@ bookingsRouter.post(
 			// Process refund if requested and booking was paid
 			let refund = null;
 			if (processRefund && booking.paymentStatus === 'completed') {
-				try {
-					// Find the payment record
-					const db = getDb();
-					const [payment] = await db
-						.select()
-						.from(payments)
-						.where(eq(payments.bookingId, bookingId))
-						.limit(1);
-
-					if (payment) {
-						refund = await paymentService.processRefund({
-							paymentId: payment.id,
-							reason: `Booking cancellation: ${reason}`,
-							processedBy: userId || 'system',
-						});
-					}
-				} catch (refundError) {
-					logger.error('Failed to process refund', { error: refundError });
-					// Don't fail the cancellation if refund fails
-				}
+				res.status(501).json({
+					error: 'Refund Provider Unsupported',
+					message:
+						'Automatic legacy refunds are disabled. Retry with processRefund=false after handling the refund through the active payment provider.',
+				});
+				return;
 			}
 
-			res.json({
+			return res.json({
 				success: true,
 				data: {
 					booking: cancelledBooking,
@@ -751,7 +732,7 @@ bookingsRouter.post(
 				error,
 				bookingId: req.params.bookingId,
 			});
-			res.status(500).json({
+			return res.status(500).json({
 				error: 'Cancellation Error',
 				message: 'Failed to cancel booking.',
 			});

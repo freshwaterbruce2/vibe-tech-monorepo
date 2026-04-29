@@ -90,7 +90,10 @@ type SentryTransportConstructor = new (options: {
 
 // Add Sentry transport in production (using dynamic import for ESM)
 if (config.monitoring.sentryDsn && config.environment === 'production') {
-	(import('winston-transport-sentry-node') as Promise<{ default: SentryTransportConstructor }>)
+	const sentryTransportModule = 'winston-transport-sentry-node';
+	(import(sentryTransportModule) as Promise<{
+		default: SentryTransportConstructor;
+	}>)
 		.then((module) => {
 			const Sentry = module.default;
 			logger.add(

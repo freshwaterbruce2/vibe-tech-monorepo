@@ -58,7 +58,7 @@ export class SquarePaymentManager {
 			// Process real Square payment
 			return this.processRealPayment(request);
 		} catch (error) {
-			logger.warn('Payment processing failed, falling back to demo mode', {
+			logger.warn('Payment processing failed', {
 				component: 'SquarePaymentManager',
 				method: 'processPayment',
 				bookingId: request.bookingId,
@@ -68,11 +68,22 @@ export class SquarePaymentManager {
 					error instanceof Error
 						? error.message
 						: 'Failed to finalize Square payment',
-				fallbackStrategy: 'demo_payment',
+				demoFallbackEnabled: this.shouldUseDemoMode(),
 			});
 
-			// Fallback to demo mode if real payment fails
-			return this.processDemoPayment(request);
+			if (this.shouldUseDemoMode()) {
+				return this.processDemoPayment(request);
+			}
+
+			return {
+				success: false,
+				paymentId: '',
+				errorMessage:
+					error instanceof Error
+						? error.message
+						: 'Failed to finalize Square payment',
+				isDemoPayment: false,
+			};
 		}
 	}
 
@@ -87,7 +98,7 @@ export class SquarePaymentManager {
 		const hasRealCredentials =
 			paymentConfig.isConfigured() && !this.isPlaceholderCredentials();
 
-		return enableMockPayments || !hasRealCredentials;
+		return import.meta.env.DEV && (enableMockPayments || !hasRealCredentials);
 	}
 
 	private isPlaceholderCredentials(): boolean {

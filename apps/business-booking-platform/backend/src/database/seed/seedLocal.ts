@@ -54,6 +54,7 @@ async function seedSqliteDatabase() {
 				phone: '+1-555-0102',
 			},
 		];
+		const primaryUser = users[1]!;
 
 		const insertUser = sqlite.prepare(`
       INSERT INTO users (
@@ -254,6 +255,8 @@ async function seedSqliteDatabase() {
 				}),
 			},
 		];
+		const grandPalaceHotel = hotels[0]!;
+		const seasideResort = hotels[1]!;
 
 		const insertHotel = sqlite.prepare(`
       INSERT INTO hotels (
@@ -308,7 +311,7 @@ async function seedSqliteDatabase() {
 			// Grand Palace Hotel rooms
 			{
 				id: crypto.randomUUID(),
-				hotelId: hotels[0].id,
+				hotelId: grandPalaceHotel.id,
 				externalId: 'room_001',
 				name: 'Executive Suite',
 				type: 'suite',
@@ -334,7 +337,7 @@ async function seedSqliteDatabase() {
 			},
 			{
 				id: crypto.randomUUID(),
-				hotelId: hotels[0].id,
+				hotelId: grandPalaceHotel.id,
 				externalId: 'room_002',
 				name: 'Deluxe King Room',
 				type: 'deluxe',
@@ -350,7 +353,7 @@ async function seedSqliteDatabase() {
 			// Seaside Resort rooms
 			{
 				id: crypto.randomUUID(),
-				hotelId: hotels[1].id,
+				hotelId: seasideResort.id,
 				externalId: 'room_003',
 				name: 'Ocean View Suite',
 				type: 'suite',
@@ -375,7 +378,7 @@ async function seedSqliteDatabase() {
 			},
 			{
 				id: crypto.randomUUID(),
-				hotelId: hotels[1].id,
+				hotelId: seasideResort.id,
 				externalId: 'room_004',
 				name: 'Standard Double Room',
 				type: 'standard',
@@ -417,6 +420,7 @@ async function seedSqliteDatabase() {
 				Math.floor(Date.now() / 1000),
 			);
 		}
+		const executiveSuite = rooms[0]!;
 
 		// Create sample bookings
 		logger.info('Seeding bookings...');
@@ -424,13 +428,13 @@ async function seedSqliteDatabase() {
 			{
 				id: crypto.randomUUID(),
 				confirmationNumber: `HB${Date.now().toString().slice(-8)}`,
-				userId: users[1].id,
-				guestEmail: users[1].email,
-				guestFirstName: users[1].firstName,
-				guestLastName: users[1].lastName,
-				guestPhone: users[1].phone,
-				hotelId: hotels[0].id,
-				roomId: rooms[0].id,
+				userId: primaryUser.id,
+				guestEmail: primaryUser.email,
+				guestFirstName: primaryUser.firstName,
+				guestLastName: primaryUser.lastName,
+				guestPhone: primaryUser.phone,
+				hotelId: grandPalaceHotel.id,
+				roomId: executiveSuite.id,
 				checkIn: Math.floor(new Date('2024-09-15').getTime() / 1000),
 				checkOut: Math.floor(new Date('2024-09-18').getTime() / 1000),
 				nights: 3,
@@ -488,8 +492,8 @@ async function seedSqliteDatabase() {
 		const payments = [
 			{
 				id: crypto.randomUUID(),
-				bookingId: bookings[0].id,
-				userId: users[1].id,
+				bookingId: bookings[0]!.id,
+				userId: primaryUser.id,
 				amount: 1888.85,
 				currency: 'USD',
 				status: 'succeeded',
@@ -538,11 +542,11 @@ async function seedSqliteDatabase() {
 		const reviews = [
 			{
 				id: crypto.randomUUID(),
-				hotelId: hotels[0].id,
-				userId: users[1].id,
-				bookingId: bookings[0].id,
-				reviewerName: `${users[1].firstName} ${users[1].lastName}`,
-				reviewerEmail: users[1].email,
+				hotelId: grandPalaceHotel.id,
+				userId: primaryUser.id,
+				bookingId: bookings[0]!.id,
+				reviewerName: `${primaryUser.firstName} ${primaryUser.lastName}`,
+				reviewerEmail: primaryUser.email,
 				isVerifiedBooking: 1,
 				overallRating: 5.0,
 				cleanliness: 5.0,

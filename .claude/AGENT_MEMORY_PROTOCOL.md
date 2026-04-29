@@ -22,8 +22,8 @@ This protocol defines the **mandatory memory behaviors** all agents must follow.
 | Layer               | Location                                             | Purpose                                                    | Access Method              |
 | ------------------- | ---------------------------------------------------- | ---------------------------------------------------------- | -------------------------- |
 | **Memory MCP**      | `apps/memory-mcp` → `~/.codex/memories/memory.db`    | Semantic + episodic + procedural memory with vector search | MCP tools (`memory_*`)     |
-| **Learning System** | `D:\learning-system` → `D:\databases\nova_shared.db` | 59k+ execution patterns, success/failure tracking          | SQL queries via sqlite MCP |
-| **Session Memory**  | `apps/memory-bank/quick-access/recent-tasks.json`    | Current session context, recent tasks                      | File read                  |
+| **Learning System** | `D:\learning-system` → `D:\databases\agent_learning.db` | Execution patterns, success/failure tracking               | SQL queries via sqlite MCP |
+| **Session Memory**  | `~/.codex/memories/` and configured MCP stores          | Current session context, recent tasks                      | Memory files and MCP tools |
 
 ### Memory MCP Tools
 

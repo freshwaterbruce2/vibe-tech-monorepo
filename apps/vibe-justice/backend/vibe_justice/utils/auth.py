@@ -18,18 +18,19 @@ def require_api_key(
             detail="Server authentication misconfigured (API key not set)",
         )
 
-    # Validate client provided a key
+    if x_api_key:
+        # SECURE: Timing-attack resistant comparison
+        if not secrets.compare_digest(x_api_key, expected):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Access denied: Invalid API key",
+            )
+
+        return x_api_key
+
+    # Validate client provided a key. Origin/CORS headers are not authentication.
     if not x_api_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required: X-API-Key header is missing",
         )
-
-    # SECURE: Timing-attack resistant comparison
-    if not secrets.compare_digest(x_api_key, expected):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Access denied: Invalid API key",
-        )
-
-    return x_api_key
