@@ -181,7 +181,9 @@
     "defaultBase": "main"
   },
   "nxCloudId": "6977fcd7ceb01e5b11be2a95",
-  "tui": { "enabled": false },
+  "tui": {
+    "enabled": false
+  },
   "release": {
     "projects": ["packages/*", "!vibe-python-shared"],
     "projectsRelationship": "independent",
@@ -189,5 +191,6 @@
       "currentVersionResolver": "disk",
       "specifierSource": "prompt"
     }
-  }
+  },
+  "analytics": true
 }

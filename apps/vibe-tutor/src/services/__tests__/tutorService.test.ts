@@ -203,19 +203,25 @@ describe('tutorService', () => {
     });
 
     it('tracks request duration for analytics', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockImplementation(
-        async () => new Promise((resolve) => setTimeout(() => resolve('Response'), 100)),
-      );
+      vi.useFakeTimers();
 
-      await sendMessageToTutor('Test message');
+      try {
+        vi.mocked(secureClient.createChatCompletion).mockImplementation(
+          async () => new Promise((resolve) => setTimeout(() => resolve('Response'), 100)),
+        );
 
-      const analyticsCall = vi.mocked(learningAnalytics.logAICall).mock.calls[0];
-      expect(analyticsCall).toBeDefined();
-      const duration = analyticsCall?.[3] ?? 0;
+        const messagePromise = sendMessageToTutor('Test message');
+        await vi.advanceTimersByTimeAsync(100);
+        await messagePromise;
 
-      // Duration should be at least 100ms (but less than 1 second for sanity)
-      expect(duration).toBeGreaterThanOrEqual(100);
-      expect(duration).toBeLessThan(1000);
+        const analyticsCall = vi.mocked(learningAnalytics.logAICall).mock.calls[0];
+        expect(analyticsCall).toBeDefined();
+        const duration = analyticsCall?.[3] ?? 0;
+
+        expect(duration).toBe(100);
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('includes assistant response in history even when AI call fails', async () => {

@@ -198,18 +198,25 @@ describe('buddyService', () => {
     });
 
     it('tracks request duration for analytics', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockImplementation(
-        async () => new Promise((resolve) => setTimeout(() => resolve('Response'), 100)),
-      );
+      vi.useFakeTimers();
 
-      await sendMessageToBuddy('Test message');
+      try {
+        vi.mocked(secureClient.createChatCompletion).mockImplementation(
+          async () => new Promise((resolve) => setTimeout(() => resolve('Response'), 100)),
+        );
 
-      const analyticsCall = vi.mocked(learningAnalytics.logAICall).mock.calls[0];
-      expect(analyticsCall).toBeDefined();
-      const duration = analyticsCall?.[3] ?? 0;
+        const messagePromise = sendMessageToBuddy('Test message');
+        await vi.advanceTimersByTimeAsync(100);
+        await messagePromise;
 
-      expect(duration).toBeGreaterThanOrEqual(100);
-      expect(duration).toBeLessThan(1000);
+        const analyticsCall = vi.mocked(learningAnalytics.logAICall).mock.calls[0];
+        expect(analyticsCall).toBeDefined();
+        const duration = analyticsCall?.[3] ?? 0;
+
+        expect(duration).toBe(100);
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('handles multiple consecutive messages correctly', async () => {
@@ -391,18 +398,25 @@ describe('buddyService', () => {
     });
 
     it('tracks request duration for mood analysis', async () => {
-      vi.mocked(secureClient.createChatCompletion).mockImplementation(
-        async () => new Promise((resolve) => setTimeout(() => resolve('Response'), 50)),
-      );
+      vi.useFakeTimers();
 
-      await getMoodAnalysis('happy');
+      try {
+        vi.mocked(secureClient.createChatCompletion).mockImplementation(
+          async () => new Promise((resolve) => setTimeout(() => resolve('Response'), 50)),
+        );
 
-      const analyticsCall = vi.mocked(learningAnalytics.logAICall).mock.calls[0];
-      expect(analyticsCall).toBeDefined();
-      const duration = analyticsCall?.[3] ?? 0;
+        const analysisPromise = getMoodAnalysis('happy');
+        await vi.advanceTimersByTimeAsync(50);
+        await analysisPromise;
 
-      expect(duration).toBeGreaterThanOrEqual(50);
-      expect(duration).toBeLessThan(500);
+        const analyticsCall = vi.mocked(learningAnalytics.logAICall).mock.calls[0];
+        expect(analyticsCall).toBeDefined();
+        const duration = analyticsCall?.[3] ?? 0;
+
+        expect(duration).toBe(50);
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it('does not call usage monitor for mood analysis', async () => {
