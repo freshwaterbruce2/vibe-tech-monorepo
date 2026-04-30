@@ -26,7 +26,8 @@
 
 ## Repo Rules
 
-- Do not use submodules for active monorepo projects.
+- Do not add new submodules for active monorepo projects. Existing nested repos must be
+  verified against `.gitmodules` and reported separately from the root working tree.
 - If a nested project has its own historical `.git` directory, archive that metadata and track the folder contents from the root repo instead.
 - Do not commit live databases, packaged binaries, or generated media.
 - Use `.env.example` or templates for configuration samples.

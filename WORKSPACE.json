@@ -6,7 +6,7 @@
     "node": "22.x",
     "typescript": "5.9.3",
     "react": "19.2.4",
-    "buildSystem": "nx@22.5.0"
+    "buildSystem": "nx@22.6.5"
   },
   "versionControl": {
     "provider": "github",
@@ -126,10 +126,10 @@
         "priority": "high",
         "description": "Mobile Client for Nova (Expo 54, React Navigation, Zustand)"
       },
-      "vtde": {
+      "vibetech-command-center": {
         "status": "beta",
         "priority": "high",
-        "description": "Vibe-Tech Desktop Environment (Tauri 2.0) — terminal, draggable windows, memory integration, vibe-app.json protocol, healing dashboard"
+        "description": "Dashboard and diagnostics app for monorepo health, local services, RAG search, backups, and agent launch workflows"
       },
       "shipping-pwa": {
         "status": "development",
@@ -145,6 +145,11 @@
         "status": "production",
         "priority": "medium",
         "description": "Vibe Tech landing page"
+      },
+      "chessmaster-academy": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Chess lesson, puzzle, and AI tutor app (React + Vite + Capacitor)"
       },
       "VibeBlox": {
         "status": "development",
@@ -171,11 +176,6 @@
         "priority": "medium",
         "description": "Prompt Management System"
       },
-      "mcp-codeberg": {
-        "status": "production",
-        "priority": "high",
-        "description": "Git operations MCP server"
-      },
       "mcp-skills-server": {
         "status": "production",
         "priority": "high",
@@ -191,10 +191,10 @@
         "priority": "high",
         "description": "Memory system MCP server"
       },
-      "business-booking-platform": {
-        "status": "development",
-        "priority": "low",
-        "description": "Booking platform"
+      "business-booking-platform-next": {
+        "status": "beta",
+        "priority": "medium",
+        "description": "Clean-break business booking funnel (React + Nx + Node API)"
       },
       "desktop-commander-v3": {
         "status": "maintenance",
@@ -334,7 +334,7 @@
       "description": "Project completion tool"
     }
   },
-  "currentFocus": ["vtde", "memory-system", "nova-mobile-app", "vibe-tutor-release"],
+  "currentFocus": ["vibetech-command-center", "memory-system", "nova-mobile-app", "vibe-tutor-release"],
   "blockers": [],
   "rules": "./docs/ai/RULES.md",
   "paths": {

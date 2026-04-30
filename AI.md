@@ -2,7 +2,7 @@
 
 Single source of truth for workspace behavior, paths, rules, workflow, and agents.
 
-Last Updated: 2026-02-06
+Last Updated: 2026-04-29
 System: Windows (Win32)
 Repository Root: C:\dev
 
@@ -74,9 +74,9 @@ Process:
 
 AI tooling:
 
-- Primary tools: Gemini CLI + Gemini Code Assist.
-- Claude Code is deprecated for this workspace.
-- Prefer Gemini CLI commands in package.json scripts when available (gemini:\*).
+- Primary interactive workflow: Codex CLI/local agent sessions in this repository.
+- Gemini Code Assist, Claude Code, OpenCode, and Copilot configs are maintained as optional client integrations.
+- Do not assume Cursor or Copilot are installed; prefer repo-local config and terminal validation first.
 
 Git rules:
 
@@ -123,7 +123,7 @@ Key locations:
 
 - Database: D:\databases\agent_learning.db
 - Logs: D:\learning-system\logs\tool-usage-YYYY-MM-DD.log
-- Hooks: C:\dev\.claude\hooks\pre-tool-use.ps1 and post-tool-use.ps1
+- Hooks: C:\dev\.claude\hooks\pre-tool-use-stdin.ps1 and post-tool-use-stdin.ps1
 
 Quick checks:
 

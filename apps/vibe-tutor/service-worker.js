@@ -1,13 +1,7 @@
-const CACHE_NAME = 'vibe-tutor-cache-v6'; // Tailwind v3 + CapacitorHttp - v1.0.5
+const CACHE_NAME = 'vibe-tutor-cache-v7'; // App shell assets only - no CDN framework cache
 const urlsToCache = [
   '/',
   '/index.html',
-  '/index.tsx',
-  'https://cdn.tailwindcss.com',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
-  'https://aistudiocdn.com/react@^19.1.1',
-  'https://aistudiocdn.com/react-dom@^19.1.1',
-  'https://aistudiocdn.com/@google/genai@^1.20.0'
 ];
 
 self.addEventListener('install', event => {

@@ -1,0 +1,135 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "chessmaster-academy",
+  "projectType": "application",
+  "sourceRoot": "apps/chessmaster-academy/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "apps/chessmaster-academy"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "apps/chessmaster-academy"
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run preview",
+        "cwd": "apps/chessmaster-academy"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run lint",
+        "cwd": "apps/chessmaster-academy"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run typecheck",
+        "cwd": "apps/chessmaster-academy"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test",
+        "cwd": "apps/chessmaster-academy"
+      }
+    },
+    "validate-lessons": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run validate:lessons",
+        "cwd": "apps/chessmaster-academy"
+      }
+    },
+    "validate-chess-ai": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run validate:chess-ai",
+        "cwd": "apps/chessmaster-academy"
+      }
+    },
+    "android:sync": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:sync"
+      },
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "android:build": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:build"
+      },
+      "outputs": ["{projectRoot}/android/app/build"],
+      "cache": true
+    },
+    "android:build:clean": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:build:clean"
+      },
+      "outputs": ["{projectRoot}/android/app/build"],
+      "cache": false
+    },
+    "android:bundle:release": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:bundle:release"
+      },
+      "outputs": ["{projectRoot}/android/app/build/outputs/bundle/release"],
+      "cache": false
+    },
+    "android:full-build": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:full-build"
+      },
+      "outputs": ["{projectRoot}/android/app/build/outputs/apk/debug"],
+      "cache": false
+    },
+    "android:full-release": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:full-release"
+      },
+      "outputs": ["{projectRoot}/android/app/build/outputs/bundle/release"],
+      "cache": false
+    },
+    "android:doctor": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:doctor"
+      },
+      "cache": false
+    },
+    "android:install": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:install"
+      },
+      "cache": false
+    },
+    "android:launch": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:launch"
+      },
+      "cache": false
+    }
+  },
+  "tags": ["scope:web", "product:chessmaster-academy", "type:application"]
+}

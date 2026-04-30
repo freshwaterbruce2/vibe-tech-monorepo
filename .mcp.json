@@ -13,7 +13,7 @@
       "command": "cmd",
       "args": [
         "/c",
-        "npx",
+        "npx.cmd",
         "-y",
         "@modelcontextprotocol/server-filesystem",
         "C:/dev",
@@ -22,14 +22,6 @@
         "D:/learning-system",
         "D:/data"
       ]
-    },
-    "nx-mcp": {
-      "type": "stdio",
-      "command": "cmd",
-      "args": ["/c", "npx", "-y", "nx-mcp@latest"],
-      "env": {
-        "NX_WORKSPACE_ROOT": "C:/dev"
-      }
     },
     "sqlite": {
       "type": "stdio",
@@ -56,7 +48,7 @@
     "youtube": {
       "type": "stdio",
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "@anaisbetts/mcp-youtube"]
+      "args": ["/c", "npx.cmd", "-y", "@anaisbetts/mcp-youtube"]
     },
     "notebooklm": {
       "type": "stdio",
@@ -66,7 +58,7 @@
     "chrome-devtools": {
       "type": "stdio",
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "chrome-devtools-mcp@latest", "--autoConnect"],
+      "args": ["/c", "npx.cmd", "-y", "chrome-devtools-mcp@latest", "--autoConnect"],
       "env": {
         "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS": "1"
       }

@@ -82,9 +82,37 @@ export async function handleCoreMemory(
         text: string; category?: string; importance?: number;
         metadata?: Record<string, unknown>;
       };
-      const id = await memoryManager.semantic.add({ text, category, importance, metadata });
+      const result = await memoryManager.semantic.add({ text, category, importance, metadata });
+      // Conflict enforcement: surface the discriminated status to the caller.
+      if (result.status === 'inserted') {
+        return {
+          content: [{ type: 'text', text: JSON.stringify({
+            success: true, status: 'inserted', id: result.id, message: 'Semantic memory stored',
+          }) }],
+        };
+      }
+      if (result.status === 'merged') {
+        return {
+          content: [{ type: 'text', text: JSON.stringify({
+            success: true, status: 'merged', id: result.existingId,
+            similarity: Number(result.similarity.toFixed(3)),
+            message: `Merged into existing memory ${result.existingId} (similarity ${result.similarity.toFixed(3)})`,
+          }) }],
+        };
+      }
+      // rejected_duplicate
       return {
-        content: [{ type: 'text', text: JSON.stringify({ success: true, id, message: 'Semantic memory stored' }) }],
+        content: [{ type: 'text', text: JSON.stringify({
+          success: false, status: 'rejected_duplicate', id: result.existingId,
+          similarity: Number(result.similarity.toFixed(3)),
+          conflicts: result.conflicts.map((c) => ({
+            id: c.id,
+            text: c.text,
+            similarity: Number(c.similarity.toFixed(3)),
+            category: c.category,
+          })),
+          message: `Rejected as near-duplicate of memory ${result.existingId} (similarity ${result.similarity.toFixed(3)} — review band)`,
+        }) }],
       };
     }
 
@@ -152,6 +180,17 @@ export async function handleCoreMemory(
       if (stats.embedding.staleDimensionCount && stats.embedding.staleDimensionCount > 0) {
         warnings.push(`${stats.embedding.staleDimensionCount} semantic memories use a different embedding model and will be skipped during search`);
       }
+      // Phase 4: surface in-process dimension-mismatch counter from SemanticStore.
+      const semanticHealth = memoryManager.semantic.getEmbeddingHealth();
+      if (semanticHealth.staleDimensionCount > 0) {
+        warnings.push(
+          `${semanticHealth.staleDimensionCount} runtime dimension-mismatch events observed (last at ${
+            semanticHealth.lastMismatchAt
+              ? new Date(semanticHealth.lastMismatchAt).toISOString()
+              : 'unknown'
+          })`,
+        );
+      }
       return {
         content: [{
           type: 'text',
@@ -167,6 +206,10 @@ export async function handleCoreMemory(
               dimension: stats.embedding.dimension, modelVersion: stats.embedding.modelVersion ?? null,
               avgNorm: stats.database.avgNorm ?? null, normStdDev: stats.database.normStdDev ?? null,
               staleDimensionCount: stats.embedding.staleDimensionCount ?? 0,
+              runtimeStaleDimensionCount: semanticHealth.staleDimensionCount,
+              lastDimensionMismatchAt: semanticHealth.lastMismatchAt,
+              currentDimension: semanticHealth.currentDimension,
+              currentModel: semanticHealth.currentModel,
             },
             latency: latencyStats,
             retrieval: { cacheHitRate: null },

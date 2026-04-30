@@ -41,9 +41,9 @@ export class DeepSeekClient {
       baseURL: 'https://api.deepseek.com/v1',
     });
     
-    this.defaultModel = config.model || 'deepseek-reasoner';
-    this.defaultMaxTokens = config.maxTokens || 4096;
-    this.defaultTemperature = config.temperature || 0.7;
+    this.defaultModel = config.model ?? 'deepseek-reasoner';
+    this.defaultMaxTokens = config.maxTokens ?? 4096;
+    this.defaultTemperature = config.temperature ?? 0.7;
   }
 
   /**
@@ -52,14 +52,14 @@ export class DeepSeekClient {
    */
   async chat(options: CompletionOptions): Promise<string> {
     const response = await this.client.chat.completions.create({
-      model: options.model || this.defaultModel,
+      model: options.model ?? this.defaultModel,
       messages: options.messages,
-      max_tokens: options.maxTokens || this.defaultMaxTokens,
-      temperature: options.temperature || this.defaultTemperature,
+      max_tokens: options.maxTokens ?? this.defaultMaxTokens,
+      temperature: options.temperature ?? this.defaultTemperature,
       stream: false,
     });
 
-    return response.choices[0]?.message?.content || '';
+    return response.choices[0]?.message?.content ?? '';
   }
 
   /**
@@ -70,7 +70,7 @@ export class DeepSeekClient {
     const stream = await this.client.chat.completions.create({
       model: 'deepseek-reasoner',
       messages: options.messages,
-      max_tokens: options.maxTokens || this.defaultMaxTokens,
+      max_tokens: options.maxTokens ?? this.defaultMaxTokens,
       stream: true,
     });
 
@@ -96,10 +96,10 @@ export class DeepSeekClient {
    */
   async *chatStream(options: CompletionOptions): AsyncGenerator<string> {
     const stream = await this.client.chat.completions.create({
-      model: options.model || this.defaultModel,
+      model: options.model ?? this.defaultModel,
       messages: options.messages,
-      max_tokens: options.maxTokens || this.defaultMaxTokens,
-      temperature: options.temperature || this.defaultTemperature,
+      max_tokens: options.maxTokens ?? this.defaultMaxTokens,
+      temperature: options.temperature ?? this.defaultTemperature,
       stream: true,
     });
 
@@ -120,7 +120,7 @@ export class DeepSeekClient {
       input: text,
     });
 
-    return response.data[0]?.embedding || [];
+    return response.data[0]?.embedding ?? [];
   }
 
   /**
@@ -159,7 +159,7 @@ export class DeepSeekClient {
 
 // Factory function for easy instantiation
 export function createDeepSeekClient(apiKey?: string): DeepSeekClient {
-  const key = apiKey || process.env.DEEPSEEK_API_KEY;
+  const key = apiKey?.trim() ? apiKey : process.env.DEEPSEEK_API_KEY;
   
   if (!key) {
     throw new Error('DEEPSEEK_API_KEY is required');

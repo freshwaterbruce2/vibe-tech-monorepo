@@ -1,4 +1,9 @@
 {
+  "pluginsConfig": {
+    "@nx/js": {
+      "analyzeSourceFiles": true
+    }
+  },
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "cli": {
     "packageManager": "pnpm"
@@ -26,7 +31,8 @@
       "!{projectRoot}/tsconfig.spec.json",
       "!{projectRoot}/.eslintrc.json",
       "!{projectRoot}/eslint.config.js",
-      "!{projectRoot}/**/*.test.[jt]s?(x)"
+      "!{projectRoot}/**/*.test.[jt]s?(x)",
+      "!{projectRoot}/src/test-setup.[jt]s"
     ],
     "sourceOnly": [
       "{projectRoot}/src/**",
@@ -175,19 +181,53 @@
         "{projectRoot}/.coverage"
       ],
       "cache": true
+    },
+    "@nx/vite:build": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
+    },
+    "@nx/vitest:test": {
+      "cache": true,
+      "inputs": ["default", "^production"]
+    },
+    "@nx/js:tsc": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
     }
   },
   "affected": {
     "defaultBase": "main"
   },
   "nxCloudId": "6977fcd7ceb01e5b11be2a95",
-  "tui": { "enabled": false },
+  "tui": {
+    "enabled": false
+  },
   "release": {
     "projects": ["packages/*", "!vibe-python-shared"],
     "projectsRelationship": "independent",
     "version": {
       "currentVersionResolver": "disk",
       "specifierSource": "prompt"
+    }
+  },
+  "analytics": true,
+  "generators": {
+    "@nx/react": {
+      "application": {
+        "babel": true,
+        "style": "css",
+        "linter": "eslint",
+        "bundler": "vite"
+      },
+      "component": {
+        "style": "css"
+      },
+      "library": {
+        "style": "css",
+        "linter": "eslint"
+      }
     }
   }
 }

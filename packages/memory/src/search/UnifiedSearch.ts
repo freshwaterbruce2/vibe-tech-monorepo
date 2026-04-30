@@ -4,6 +4,10 @@
  * merges results with Reciprocal Rank Fusion (RRF), deduplicates by content hash.
  */
 import { createHash } from 'node:crypto';
+import {
+  DEFAULT_EPISODIC_HALF_LIFE_MS,
+  DEFAULT_SEMANTIC_HALF_LIFE_MS,
+} from '../consolidation/MemoryDecay.js';
 import type { MemoryManager } from '../core/MemoryManager.js';
 import type { LearningBridge } from '../integrations/LearningBridge.js';
 import type { UnifiedSearchOptions, UnifiedSearchResult, UnifiedSource } from './types.js';
@@ -21,6 +25,31 @@ export interface RAGBridgeAdapter {
 
 const RRF_K = 60;
 
+// Per-source half-lives reused from MemoryDecay. Sources without a meaningful
+// timestamp (rag = file mtime is not freshness, learning/procedural = pattern stats)
+// get null, which keeps factor 1.0 and preserves prior ranking for those sources.
+const SOURCE_HALF_LIFE_MS: Record<UnifiedSource, number | null> = {
+  episodic: DEFAULT_EPISODIC_HALF_LIFE_MS,
+  semantic: DEFAULT_SEMANTIC_HALF_LIFE_MS,
+  procedural: null,
+  rag: null,
+  learning: null,
+};
+
+function recencyFactor(result: UnifiedSearchResult, now: number): number {
+  const halfLife = SOURCE_HALF_LIFE_MS[result.source];
+  if (halfLife === null || result.timestamp === undefined) return 1;
+  const ageMs = now - result.timestamp;
+  if (ageMs <= 0) return 1; // future or simultaneous timestamp: no decay
+  return Math.pow(2, -ageMs / halfLife);
+}
+
+// Rough English/code token estimator. ~4 chars/token is the OpenAI/Anthropic
+// rule of thumb; precise tokenization would require a vendor tokenizer (tiktoken)
+// which isn't worth the dependency for a budget cap that's already a soft hint.
+const CHARS_PER_TOKEN = 4;
+const estimateTokens = (text: string): number => Math.ceil(text.length / CHARS_PER_TOKEN);
+
 export class UnifiedSearch {
   constructor(
     private manager: MemoryManager,
@@ -30,12 +59,13 @@ export class UnifiedSearch {
 
   async search(query: string, options?: UnifiedSearchOptions): Promise<UnifiedSearchResult[]> {
     const limit = options?.limit ?? 10;
+    const recencyBoostEnabled = options?.recencyBoost ?? true;
     const sources = new Set<UnifiedSource>(
-      options?.sources ?? ['semantic', 'episodic', 'rag', 'learning'],
+      options?.sources ?? ['semantic', 'episodic', 'procedural', 'rag', 'learning'],
     );
 
     // Fan out to all enabled sources in parallel
-    // Phase 5: fetch 3× candidates per source before RRF merge for better fusion quality
+    // Phase 5: fetch 3x candidates per source before RRF merge for better fusion quality
     const fanout = limit * 3;
     const promises: Array<Promise<UnifiedSearchResult[]>> = [];
 
@@ -44,6 +74,9 @@ export class UnifiedSearch {
     }
     if (sources.has('episodic')) {
       promises.push(this.searchEpisodic(query, fanout, options?.timeRange));
+    }
+    if (sources.has('procedural') && this.learningBridge) {
+      promises.push(this.searchProcedural(query, fanout));
     }
     if (sources.has('rag') && this.ragBridge) {
       promises.push(this.searchRAG(query, fanout));
@@ -56,8 +89,16 @@ export class UnifiedSearch {
       .filter((p): p is PromiseFulfilledResult<UnifiedSearchResult[]> => p.status === 'fulfilled')
       .flatMap((p) => p.value);
 
+    // Pipeline (audit #3 then #2): recency boost first so per-result scores
+    // reflect age-decay, then token budget allocates by those adjusted scores
+    // so the budget allocator picks the freshest-relevant rows per source.
+    const boosted = recencyBoostEnabled ? this.applyRecencyBoost(allResults) : allResults;
+    const budgeted = options?.tokenBudget
+      ? this.applyTokenBudget(boosted, options.tokenBudget, options.sourceWeights, sources)
+      : boosted;
+
     // RRF merge: rank results per-source, then fuse scores
-    const rrfScored = this.rrfFusion(allResults);
+    const rrfScored = this.rrfFusion(budgeted);
 
     // Deduplicate by content hash
     const seen = new Set<string>();
@@ -69,6 +110,58 @@ export class UnifiedSearch {
     });
 
     return deduped.slice(0, limit);
+  }
+
+  private applyRecencyBoost(results: UnifiedSearchResult[]): UnifiedSearchResult[] {
+    const now = Date.now();
+    return results.map((r) => ({ ...r, score: r.score * recencyFactor(r, now) }));
+  }
+
+  private applyTokenBudget(
+    results: UnifiedSearchResult[],
+    tokenBudget: number,
+    sourceWeights: Partial<Record<UnifiedSource, number>> | undefined,
+    enabledSources: Set<UnifiedSource>,
+  ): UnifiedSearchResult[] {
+    // Group by source
+    const bySource = new Map<UnifiedSource, UnifiedSearchResult[]>();
+    for (const r of results) {
+      const group = bySource.get(r.source) ?? [];
+      group.push(r);
+      bySource.set(r.source, group);
+    }
+
+    // Allocate budget proportionally across enabled sources that actually returned
+    // something. Sources that returned zero results don't get a budget slice
+    // (their share redistributes to active sources).
+    const activeSources = [...enabledSources].filter((s) => (bySource.get(s)?.length ?? 0) > 0);
+    if (activeSources.length === 0) return results;
+
+    const weightFor = (s: UnifiedSource): number => sourceWeights?.[s] ?? 1;
+    const totalWeight = activeSources.reduce((sum, s) => sum + weightFor(s), 0);
+
+    const kept: UnifiedSearchResult[] = [];
+    for (const source of activeSources) {
+      const slice = Math.floor(tokenBudget * (weightFor(source) / totalWeight));
+      if (slice <= 0) continue;
+      const sourceResults = (bySource.get(source) ?? [])
+        .slice()
+        .sort((a, b) => b.score - a.score);
+
+      let used = 0;
+      for (const r of sourceResults) {
+        const cost = estimateTokens(r.text);
+        if (used + cost > slice && kept.some((k) => k.source === source)) {
+          // Stop adding this source once its slice is exhausted (but always keep
+          // at least one result per active source so a tiny budget doesn't drop
+          // a whole source).
+          break;
+        }
+        kept.push(r);
+        used += cost;
+      }
+    }
+    return kept;
   }
 
   private rrfFusion(results: UnifiedSearchResult[]): UnifiedSearchResult[] {
@@ -158,6 +251,30 @@ export class UnifiedSearch {
         metadata: { filePath: r.filePath, language: r.language },
       }));
     } catch {
+      return [];
+    }
+  }
+
+  private async searchProcedural(query: string, limit: number): Promise<UnifiedSearchResult[]> {
+    if (!this.learningBridge) return [];
+    try {
+      const hits = await this.learningBridge.searchProceduralPatterns(query, limit);
+      return hits.map((h) => ({
+        text: h.text,
+        score: h.score,
+        source: 'procedural' as const,
+        sourceId: h.id,
+        metadata: {
+          patternType: h.patternType,
+          patternSource: h.source,
+          frequency: h.frequency,
+          successRate: h.successRate,
+          similarity: h.similarity,
+          lastUsed: h.lastUsed,
+        },
+      }));
+    } catch {
+      // Embedder unavailable or query embed failed — degrade gracefully
       return [];
     }
   }

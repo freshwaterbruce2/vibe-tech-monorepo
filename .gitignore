@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+space-agent/
 *.local
 
 # Editor directories and files
@@ -58,6 +59,12 @@ npm-shrinkwrap.json
 **/.claude/settings.local.json
 .claude/worktrees/
 **/.claude/worktrees/
+.claude/scratch/
+**/.claude/scratch/
+
+# OpenCode / local assistant tooling (machine-specific)
+.opencode/
+**/.opencode/
 
 # Local editor/AI assistant tooling
 .codex/
@@ -86,6 +93,7 @@ obj/
 target/
 apps/nova-agent/src-tauri/target/
 apps/*/src-tauri/target/
+apps/*/src-tauri/gen/
 
 # Electron/Tauri packaging outputs
 dist-electron/
@@ -158,6 +166,7 @@ nul
 # Project-specific (to review)
 DesktopCommanderMCP/
 /Vibe-Tutor/
+/space-agent/
 opcode/
 
 # Sensitive files - API keys and credentials
@@ -264,6 +273,7 @@ final_memo.md
 **/health_output.txt
 **/build_result.txt
 **/build_output*.txt
+**/test-results.json
 /tmp/nx-graph.json
 /tmp/project-graph*.json
 /tmp/*lint-report*.json
@@ -277,6 +287,8 @@ final_memo.md
 apps/ai-youtube-pipeline/output/
 tools/vibe-finisher/output/
 apps/*/dev-dist/
+apps/VibeBlox/package/client/
+apps/cross-agent-reflection/n/
 apps/*/build_final/
 apps/*/build_v*/
 
@@ -322,3 +334,11 @@ status.err
 # ESLint per-project cache shards (written by scripts/fix-all-quality.ps1)
 .eslintcache/
 .eslintcache
+
+# Ollama runtime state
+Ollama/db.sqlite-shm
+Ollama/db.sqlite-wal
+
+.claude/worktrees
+vite.config.*.timestamp*
+vitest.config.*.timestamp*

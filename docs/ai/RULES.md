@@ -9,7 +9,6 @@
 
 ## MCP Servers (Local Tools)
 
-- `mcp-codeberg` — Git operations (GitHub)
 - `mcp-skills-server` — Skill library
 
 ## Self-Healing Tools

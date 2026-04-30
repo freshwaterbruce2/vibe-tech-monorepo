@@ -1,0 +1,17 @@
+{
+  "name": "chessmaster-academy-api",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "node --check server.mjs",
+    "start": "node server.mjs",
+    "dev": "node server.mjs"
+  },
+  "dependencies": {
+    "@google/genai": "^1.29.0",
+    "chess.js": "^1.4.0",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2"
+  }
+}

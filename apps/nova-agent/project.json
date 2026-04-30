@@ -49,6 +49,12 @@
         "cwd": "apps/nova-agent"
       }
     },
+    "check:rust-lines": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/check-line-limits.mjs --all --include-untracked --max 500 --path apps/nova-agent/src-tauri/src --include-ext .rs"
+      }
+    },
     "test:rust": {
       "executor": "nx:run-commands",
       "options": {

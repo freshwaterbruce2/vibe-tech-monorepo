@@ -37,6 +37,41 @@ export class EpisodicStore {
   }
 
   /**
+   * Add episodic memory with near-duplicate detection.
+   * Skips insert if an identical (source_id, session_id, query, response) row
+   * exists within the recency window (default: 5 minutes). Returns existing id
+   * on dup-hit. Use this for auto-recorded events that may retry/replay; use
+   * add() for explicit logging where every entry should land.
+   */
+  addUnique(
+    memory: EpisodicMemory,
+    options?: { recencyWindowMs?: number },
+  ): { id: number; deduped: boolean } {
+    const recencyWindowMs = options?.recencyWindowMs ?? 5 * 60 * 1000;
+    const ts = memory.timestamp ?? Date.now();
+    const cutoff = ts - recencyWindowMs;
+
+    const existing = this.db
+      .prepare(
+        `SELECT id FROM episodic_memory
+         WHERE source_id = ?
+           AND COALESCE(session_id, '') = COALESCE(?, '')
+           AND query = ?
+           AND response = ?
+           AND timestamp >= ?
+         ORDER BY timestamp DESC
+         LIMIT 1`,
+      )
+      .get(memory.sourceId, memory.sessionId ?? null, memory.query, memory.response, cutoff) as
+      | { id: number }
+      | undefined;
+
+    if (existing) return { id: existing.id, deduped: true };
+
+    return { id: this.add(memory), deduped: false };
+  }
+
+  /**
    * Batch insert episodic memories (uses SQLite transaction for speed)
    */
   addMany(memories: EpisodicMemory[]): number[] {

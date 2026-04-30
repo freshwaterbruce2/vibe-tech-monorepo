@@ -77,7 +77,7 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
                   setShowLifeSkills(false);
                   setShowSocialTips(false);
                 }}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                className="min-h-[44px] min-w-[44px] p-2 hover:bg-white/10 rounded-lg transition-colors"
                 title="Close panel"
                 aria-label="Close panel"
               >
@@ -146,7 +146,7 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
               <div className="flex gap-2 mt-2">
                 <button
                   onClick={() => setShowLifeSkills(true)}
-                  className="glass-card px-3 py-1.5 rounded-lg hover:bg-violet-500/20 transition-all text-sm flex items-center gap-1"
+                  className="glass-card min-h-[44px] px-3 py-2 rounded-lg hover:bg-violet-500/20 transition-all text-sm flex items-center gap-1"
                   title="Daily Life Skills Checklist"
                   aria-label="Daily Life Skills Checklist"
                 >
@@ -155,7 +155,7 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
                 </button>
                 <button
                   onClick={() => setShowSocialTips(true)}
-                  className="glass-card px-3 py-1.5 rounded-lg hover:bg-violet-500/20 transition-all text-sm flex items-center gap-1"
+                  className="glass-card min-h-[44px] px-3 py-2 rounded-lg hover:bg-violet-500/20 transition-all text-sm flex items-center gap-1"
                   title="Social Skills Tips"
                   aria-label="Social Skills Tips"
                 >
@@ -184,7 +184,7 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
                   }
                 });
               }}
-              className="px-4 py-2 text-sm bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 rounded-lg text-red-200 transition-all duration-200 hover:scale-105"
+              className="min-h-[44px] px-4 py-2 text-sm bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 rounded-lg text-red-200 transition-all duration-200 hover:scale-105"
             >
               Clear Chat
             </button>
@@ -207,7 +207,7 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
           <button
             type="button"
             onClick={() => setShowOfflineBanner(false)}
-            className="shrink-0 p-1 rounded hover:bg-white/10 transition-colors"
+            className="shrink-0 min-h-[44px] min-w-[44px] p-1 rounded hover:bg-white/10 transition-colors"
             aria-label="Dismiss offline warning"
           >
             <X size={14} />
@@ -246,7 +246,7 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
                 <button
                   key={prompt}
                   onClick={() => setInput(prompt)}
-                  className="px-4 py-2 text-sm rounded-xl bg-white/5 border border-[var(--glass-border)] text-text-secondary hover:bg-white/10 hover:text-text-primary transition-all duration-200"
+                  className="min-h-[44px] px-4 py-2 text-sm rounded-xl bg-white/5 border border-[var(--glass-border)] text-text-secondary hover:bg-white/10 hover:text-text-primary transition-all duration-200"
                 >
                   {prompt}
                 </button>

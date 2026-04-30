@@ -25,12 +25,17 @@ const WellnessHub = () => {
     setMood,
     setReflection,
     saveTodayEntry,
-    setShowAddEntry,
     setNewSituation,
     setNewThought,
     setNewEmotion,
     setNewIntensity,
+    toggleAddEntry,
+    cancelThoughtEntry,
     submitThoughtEntry,
+    isSavingToday,
+    isSubmittingThought,
+    canSaveToday,
+    canSubmitThought,
   } = useWellnessHub();
 
   return (
@@ -67,7 +72,7 @@ const WellnessHub = () => {
                 key={value}
                 type="button"
                 onClick={() => setMood(value)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm transition-all duration-200 ${
+                className={`flex min-h-[44px] items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm transition-all duration-200 touch-manipulation ${
                   mood === value
                     ? 'glass-button text-white font-semibold'
                     : 'glass-card text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:scale-105'
@@ -101,10 +106,10 @@ const WellnessHub = () => {
         <button
           type="button"
           onClick={saveTodayEntry}
-          disabled={savedToday && !mood && !reflection}
+          disabled={!canSaveToday || isSavingToday}
           className="glass-button px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {savedToday ? '✓ Saved today' : 'Save check-in'}
+          {isSavingToday ? 'Saving check-in...' : savedToday ? 'Update check-in' : 'Save check-in'}
         </button>
       </div>
 
@@ -114,9 +119,9 @@ const WellnessHub = () => {
           <h2 className="text-lg font-semibold text-[var(--text-primary)]">Thought Journal</h2>
           <button
             type="button"
-            onClick={() => setShowAddEntry(!showAddEntry)}
-            className="glass-button p-2 rounded-xl hover:scale-105 transition-all duration-200"
-            aria-label={showAddEntry ? 'Cancel' : 'Add thought entry'}
+            onClick={toggleAddEntry}
+            className="glass-button min-h-[44px] min-w-[44px] p-2 rounded-xl hover:scale-105 transition-all duration-200 touch-manipulation"
+            aria-label={showAddEntry ? 'Cancel thought entry' : 'Add thought entry'}
           >
             {showAddEntry ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
           </button>
@@ -180,14 +185,23 @@ const WellnessHub = () => {
                 />
               </div>
             </div>
-            <button
-              type="button"
-              onClick={submitThoughtEntry}
-              disabled={!newSituation.trim() || !newThought.trim() || !newEmotion.trim()}
-              className="glass-button px-4 py-2 rounded-xl text-sm font-medium hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Save entry
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={submitThoughtEntry}
+                disabled={isSubmittingThought || !canSubmitThought}
+                className="glass-button min-h-[44px] px-4 py-2 rounded-xl text-sm font-medium hover:scale-105 transition-all duration-200 touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmittingThought ? 'Saving entry...' : 'Save entry'}
+              </button>
+              <button
+                type="button"
+                onClick={cancelThoughtEntry}
+                className="glass-card min-h-[44px] px-4 py-2 rounded-xl text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all duration-200 touch-manipulation"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         )}
 

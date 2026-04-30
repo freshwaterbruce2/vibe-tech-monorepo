@@ -121,14 +121,12 @@ Ask me to "show the project graph" or "what projects are affected by this change
 
 #### Step 2: Update Configuration
 
-Edit `C:\dev\.mcp.json`:
+Edit `C:\dev\.mcp.json` for a maintained GitHub MCP server:
 
 ```json
 "github": {
-  "command": "node",
-  "args": [
-    "C:/dev/apps/mcp-codeberg/dist/index.js"
-  ],
+  "command": "npx",
+  "args": ["-y", "@modelcontextprotocol/server-github"],
   "env": {
     "GITHUB_TOKEN": "ghp_<your_actual_token>"
   }

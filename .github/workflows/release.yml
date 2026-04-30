@@ -1,0 +1,107 @@
+# Bump gravity-claw versions and push commits to both repositories.
+#
+# Setup (one-time): add repo secret GRAVITY_CLAW_RELEASE_TOKEN — a fine-grained or classic PAT
+# with contents:write on https://github.com/freshwaterbruce2/gravity-claw
+# (GITHUB_TOKEN on this repo cannot push to that separate repository.)
+#
+# Monorepo push uses the workflow GITHUB_TOKEN (needs contents:write — granted below).
+
+name: Release (gravity-claw bump)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Semantic version (e.g. 0.3.0 or v0.3.0)'
+        required: true
+        type: string
+      submodule_branch:
+        description: 'Branch in freshwaterbruce2/gravity-claw to commit and push'
+        required: true
+        default: main
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-gravity-claw-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '10.33.0'
+
+jobs:
+  bump:
+    name: Install, bump, commit, and push
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          submodules: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Sync submodule to branch tip, bump, commit, push
+        shell: pwsh
+        env:
+          BUMP_VERSION: ${{ inputs.version }}
+          SUBMODULE_BRANCH: ${{ inputs.submodule_branch }}
+          SUBMODULE_TOKEN: ${{ secrets.GRAVITY_CLAW_RELEASE_TOKEN }}
+          PARENT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          if (-not $env:SUBMODULE_TOKEN) {
+            throw "Missing secret GRAVITY_CLAW_RELEASE_TOKEN (PAT with contents:write on freshwaterbruce2/gravity-claw)."
+          }
+
+          $workspace = $env:GITHUB_WORKSPACE
+          $sub = Join-Path $workspace 'apps/gravity-claw'
+          $branch = $env:SUBMODULE_BRANCH.Trim()
+
+          git -C $sub fetch origin
+          git -C $sub switch -C $branch "origin/$branch"
+
+          & "$workspace/scripts/bump-app-version.ps1" -App 'gravity-claw' -Version $env:BUMP_VERSION
+
+          $verLabel = $env:BUMP_VERSION.Trim()
+          if ($verLabel.StartsWith('v', [StringComparison]::OrdinalIgnoreCase)) {
+            $verLabel = $verLabel.Substring(1)
+          }
+
+          git -C $sub config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C $sub config user.name 'github-actions[bot]'
+          git -C $sub add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml
+          git -C $sub diff --staged --quiet
+          if ($LASTEXITCODE -eq 0) {
+            throw 'No version changes to commit in gravity-claw (files already at this version?).'
+          }
+          git -C $sub commit -m "chore(release): v$verLabel"
+          git -C $sub remote set-url origin "https://x-access-token:$($env:SUBMODULE_TOKEN)@github.com/freshwaterbruce2/gravity-claw.git"
+          git -C $sub push origin $branch
+
+          Set-Location $workspace
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git config user.name 'github-actions[bot]'
+          git add apps/gravity-claw
+          git diff --staged --quiet
+          if ($LASTEXITCODE -eq 0) {
+            throw 'Submodule pointer was not updated in parent repo (unexpected).'
+          }
+          git commit -m "chore(gravity-claw): bump submodule to v$verLabel"
+          git remote set-url origin "https://x-access-token:$($env:PARENT_TOKEN)@github.com/$($env:GITHUB_REPOSITORY).git"
+          git push origin "HEAD:$($env:GITHUB_REF_NAME)"

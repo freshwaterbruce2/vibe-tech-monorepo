@@ -1,21 +1,15 @@
-import {
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  useTransition,
-} from 'react';
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import AchievementToast from './components/ui/AchievementToast';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import OfflineIndicator from './components/ui/OfflineIndicator';
 import { ResizableSplitPane } from './components/ui/ResizableSplitPane';
-import RouteErrorBoundary from './components/ui/RouteErrorBoundary';
 import Sidebar from './components/ui/Sidebar';
+import {
+  AppViewRenderer,
+  type OnboardingFlags,
+} from './components/AppViewRenderer';
 // Note: AchievementEvent type is used via handleAchievementEvent from useAchievements
 import { appIntegration } from './services/appIntegration';
-import { sendMessageToBuddy } from './services/buddyService';
 import { dataStore } from './services/dataStore';
 import { sendMessageToTutor } from './services/tutorService';
 import { triggerVibration } from './services/uiService';
@@ -30,46 +24,9 @@ import { useWorksheet } from './hooks/useWorksheet';
 import { logger } from './utils/logger';
 
 // Static imports — core views needed at first paint
-import HomeworkDashboard from './components/dashboard/HomeworkDashboard';
-import FirstWeekChecklist from './components/dashboard/FirstWeekChecklist';
-import SubjectCards from './components/dashboard/SubjectCards';
 import { TokenEarnAnimation } from './components/features/TokenEarnAnimation';
 import ChatWindow from './components/features/ChatWindow';
-import FirstRunOnboarding, {
-  WELCOME_TOKENS,
-  type OnboardingResult,
-} from './components/core/FirstRunOnboarding';
-import FocusTimer from './components/features/FocusTimer';
-
-// Lazy load heavy views
-const MusicLibrary = lazy(async () => import('./components/features/MusicLibrary'));
-const VibebuxRewardShop = lazy(async () => import('./components/features/VibebuxRewardShop'));
-const BrainGymHub = lazy(async () => import('./components/games/BrainGymHub'));
-const RealmView = lazy(async () => import('./components/realms/RealmView'));
-const ParentDashboard = lazy(async () => import('./components/dashboard/ParentDashboard'));
-const WorksheetResults = lazy(async () => import('./components/features/WorksheetResults'));
-const WorksheetView = lazy(async () => import('./components/features/WorksheetView'));
-const SensorySettings = lazy(async () => import('./components/settings/SensorySettings'));
-const AchievementCenter = lazy(async () => import('./components/ui/AchievementCenter'));
-const TokenWallet = lazy(async () => import('./components/features/TokenWallet'));
-const ParentRulesPage = lazy(async () => import('./components/settings/ParentRulesPage'));
-const SchedulesHub = lazy(async () => import('./components/schedules/SchedulesHub'));
-const WellnessHub = lazy(async () => import('./components/features/WellnessHub'));
-
-// Loading fallback for lazy-loaded views
-const ViewLoadingFallback = () => (
-  <div className="flex items-center justify-center min-h-[200px]">
-    <div className="w-8 h-8 border-3 border-violet-400 border-t-transparent rounded-full animate-spin" />
-  </div>
-);
-
-interface OnboardingFlags {
-  loaded: boolean;
-  hasCompletedFirstRun: boolean;
-  userAvatar: string;
-  hasVisitedShop: boolean;
-  checklistDone: boolean;
-}
+import { WELCOME_TOKENS, type OnboardingResult } from './components/core/FirstRunOnboarding';
 
 const INITIAL_ONBOARDING_FLAGS: OnboardingFlags = {
   loaded: false,
@@ -127,29 +84,30 @@ const App = () => {
   );
 
   const handleOnboardingComplete = useCallback(
-    async (data: OnboardingResult) => {
+    (data: OnboardingResult) => {
       if (isCompletingOnboarding) {
         return;
       }
 
       setIsCompletingOnboarding(true);
 
-      try {
-        await dataStore.saveUserSettings('onboarding_completed', 'true');
-        await dataStore.saveUserSettings('user_avatar', data.avatar);
-        await dataStore.saveUserSettings('user_type', data.userType);
-        setOnboardingFlags((prev) => ({
-          ...prev,
-          hasCompletedFirstRun: true,
-          userAvatar: data.avatar,
-        }));
-        handleEarnTokens(WELCOME_TOKENS, 'Welcome bonus');
-        setView('dashboard');
-      } catch (error) {
-        logger.error('[onboarding] Failed to complete onboarding:', error);
-        setIsCompletingOnboarding(false);
-        throw error;
-      }
+      void (async () => {
+        try {
+          await dataStore.saveUserSettings('onboarding_completed', 'true');
+          await dataStore.saveUserSettings('user_avatar', data.avatar);
+          await dataStore.saveUserSettings('user_type', data.userType);
+          setOnboardingFlags((prev) => ({
+            ...prev,
+            hasCompletedFirstRun: true,
+            userAvatar: data.avatar,
+          }));
+          handleEarnTokens(WELCOME_TOKENS, 'Welcome bonus');
+          setView('dashboard');
+        } catch (error) {
+          logger.error('[onboarding] Failed to complete onboarding:', error);
+          setIsCompletingOnboarding(false);
+        }
+      })();
     },
     [handleEarnTokens, isCompletingOnboarding],
   );
@@ -384,245 +342,60 @@ const App = () => {
     setPlaylists((prev) => prev.filter((p) => p.id !== id));
   }, []);
 
-  const renderView = () => {
-    const viewContent = (() => {
-      const showChecklist =
-        onboardingFlags.loaded && !onboardingFlags.checklistDone;
-      const handleChecklistNavigate = (nextView: View, action?: OnboardingNavigationAction) => {
-        setDashboardOnboardingAction(action ?? null);
-        setView(nextView);
-      };
-      const onboardingBanner = showChecklist ? (
-        <FirstWeekChecklist
-          hasAvatar={onboardingFlags.userAvatar !== ''}
-          welcomeTokensEarned={onboardingFlags.hasCompletedFirstRun}
-          hasHomework={hasHomework}
-          hasCompletedTask={hasCompletedTask}
-          hasVisitedShop={onboardingFlags.hasVisitedShop}
-          onNavigate={handleChecklistNavigate}
-        />
-      ) : null;
+  const handleChecklistNavigate = useCallback(
+    (nextView: View, action?: OnboardingNavigationAction) => {
+      setDashboardOnboardingAction(action ?? null);
+      setView(nextView);
+    },
+    [],
+  );
 
-      switch (view) {
-        case 'onboarding':
-          return (
-            <RouteErrorBoundary routeName="Onboarding">
-              <FirstRunOnboarding
-                onComplete={(data) => {
-                  void handleOnboardingComplete(data);
-                }}
-              />
-            </RouteErrorBoundary>
-          );
-        case 'dashboard':
-          return (
-            <RouteErrorBoundary routeName="Dashboard">
-              <HomeworkDashboard
-                items={homeworkItems}
-                onAdd={handleAddHomework}
-                onToggleComplete={handleToggleComplete}
-                tokens={userTokens}
-                onboardingBanner={onboardingBanner}
-                onboardingAction={dashboardOnboardingAction}
-                onOnboardingActionHandled={() => setDashboardOnboardingAction(null)}
-              />
-            </RouteErrorBoundary>
-          );
-        case 'tutor':
-          return (
-            <RouteErrorBoundary routeName="AI Tutor">
-              <ChatWindow
-                title="Vibe Tutor"
-                description="Get help with your homework and school concepts."
-                onSendMessage={sendMessageToTutor}
-                type="tutor"
-              />
-            </RouteErrorBoundary>
-          );
-        case 'friend':
-          return (
-            <RouteErrorBoundary routeName="AI Buddy">
-              <ChatWindow
-                title="Vibe Buddy"
-                description="Chat about life, gaming, social skills, and everything else!"
-                onSendMessage={sendMessageToBuddy}
-                type="friend"
-              />
-            </RouteErrorBoundary>
-          );
-        case 'achievements':
-          return (
-            <RouteErrorBoundary routeName="Achievements">
-              <AchievementCenter
-                achievements={achievements}
-                rewards={rewards}
-                onClaimReward={handleClaimReward}
-                claimedRewards={claimedRewards}
-                userTokens={userTokens}
-              />
-            </RouteErrorBoundary>
-          );
-        case 'schedules':
-          return (
-            <RouteErrorBoundary routeName="Schedules Hub">
-              <SchedulesHub
-                onEarnTokens={handleEarnTokens}
-                onClose={() => setView('dashboard')}
-              />
-            </RouteErrorBoundary>
-          );
-        case 'parent':
-          return (
-            <RouteErrorBoundary routeName="Parent Dashboard">
-              <ParentDashboard
-                items={homeworkItems}
-                rewards={rewards}
-                onUpdateRewards={updateRewards}
-                claimedRewards={claimedRewards}
-                onApproval={handleRewardApprovalWrapper}
-                onNavigate={setView}
-              />
-            </RouteErrorBoundary>
-          );
-        case 'music':
-          return (
-            <RouteErrorBoundary routeName="Music Library">
-              <MusicLibrary
-                playlists={playlists}
-                onAddPlaylist={handleAddPlaylist}
-                onRemovePlaylist={handleRemovePlaylist}
-              />
-            </RouteErrorBoundary>
-          );
-        case 'sensory':
-          return (
-            <RouteErrorBoundary routeName="Sensory Settings">
-              <SensorySettings />
-            </RouteErrorBoundary>
-          );
-        case 'focus':
-          return (
-            <RouteErrorBoundary routeName="Focus Timer">
-              <FocusTimer
-                onSessionComplete={(mins) => {
-                  handleEarnTokens(mins, 'Focus session');
-                  void handleAchievementEvent({
-                    type: 'FOCUS_SESSION_COMPLETED',
-                    payload: { duration: mins },
-                  });
-                }}
-              />
-            </RouteErrorBoundary>
-          );
-        case 'cards':
-          // Worksheet system with three states: card selection, active worksheet, results
-          return (
-            <RouteErrorBoundary routeName="Realm Quests">
-              {worksheetSession ? (
-                // Show results after completing worksheet
-                <WorksheetResults
-                  session={worksheetSession}
-                  leveledUp={worksheetLeveledUp}
-                  newDifficulty={worksheetNewDifficulty}
-                  starsToNextLevel={worksheetStarsToNextLevel}
-                  onTryAgain={handleWorksheetTryAgain}
-                  onNextWorksheet={handleWorksheetTryAgain}
-                  onBackToCards={handleWorksheetContinue}
-                />
-              ) : worksheetSubject && worksheetProgress ? (
-                // Show active worksheet
-                <WorksheetView
-                  subject={worksheetSubject}
-                  difficulty={worksheetProgress.currentDifficulty}
-                  onComplete={(session) => {
-                    void handleWorksheetComplete(session);
-                  }}
-                  onCancel={handleWorksheetCancel}
-                />
-              ) : !selectedRealmSubject ? (
-                // Show subject cards (main menu)
-                <SubjectCards onStartWorksheet={(subject) => setSelectedRealmSubject(subject)} userTokens={userTokens} />
-              ) : (
-                <RealmView
-                  subject={selectedRealmSubject}
-                  onStartWorksheet={(s) => handleStartWorksheet(s)}
-                  onBack={() => setSelectedRealmSubject(null)}
-                  onEarnTokens={handleEarnTokens}
-                  onGameCompleted={handleGameCompleted}
-                />
-              )}
-            </RouteErrorBoundary>
-          );
-        case 'games':
-          return (
-            <RouteErrorBoundary routeName="Brain Gym">
-              <BrainGymHub
-                userTokens={userTokens}
-                onEarnTokens={handleEarnTokens}
-                onSpendTokens={handleSpendTokens}
-                onGameCompleted={handleGameCompleted}
-                onClose={() => setView('dashboard')}
-              />
-            </RouteErrorBoundary>
-          );
-        case 'tokens':
-          return (
-            <RouteErrorBoundary routeName="Token Wallet">
-              <TokenWallet onClose={() => setView('dashboard')} onNavigate={setView} />
-            </RouteErrorBoundary>
-          );
-        case 'shop':
-          return (
-            <RouteErrorBoundary routeName="Reward Shop">
-              <VibebuxRewardShop
-                userTokens={userTokens}
-                onSpendTokens={handleSpendTokens}
-                onPurchaseComplete={() => {
-                  void handleAchievementEvent({ type: 'SHOP_PURCHASE' });
-                }}
-                onClose={() => setView('dashboard')}
-              />
-            </RouteErrorBoundary>
-          );
-        case 'parent-rules':
-          return (
-            <RouteErrorBoundary routeName="Parent Rules">
-              <ParentRulesPage onClose={() => setView('parent')} />
-            </RouteErrorBoundary>
-          );
-        case 'wellness':
-          return (
-            <RouteErrorBoundary routeName="Wellness Hub">
-              <WellnessHub />
-            </RouteErrorBoundary>
-          );
-        default:
-          return (
-            <RouteErrorBoundary routeName="Dashboard (Default)">
-              <HomeworkDashboard
-                items={homeworkItems}
-                onAdd={handleAddHomework}
-                onToggleComplete={handleToggleComplete}
-                tokens={userTokens}
-                onboardingBanner={onboardingBanner}
-                onboardingAction={dashboardOnboardingAction}
-                onOnboardingActionHandled={() => setDashboardOnboardingAction(null)}
-              />
-            </RouteErrorBoundary>
-          );
-      }
-    })();
-
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<ViewLoadingFallback />}>{viewContent}</Suspense>
-      </ErrorBoundary>
-    );
-  };
+  const renderView = () => (
+    <AppViewRenderer
+      achievements={achievements}
+      claimedRewards={claimedRewards}
+      dashboardOnboardingAction={dashboardOnboardingAction}
+      handleAchievementEvent={handleAchievementEvent}
+      handleAddHomework={handleAddHomework}
+      handleAddPlaylist={handleAddPlaylist}
+      handleChecklistNavigate={handleChecklistNavigate}
+      handleClaimReward={handleClaimReward}
+      handleEarnTokens={handleEarnTokens}
+      handleGameCompleted={handleGameCompleted}
+      handleOnboardingComplete={handleOnboardingComplete}
+      handleRemovePlaylist={handleRemovePlaylist}
+      handleRewardApprovalWrapper={handleRewardApprovalWrapper}
+      handleSpendTokens={handleSpendTokens}
+      handleStartWorksheet={handleStartWorksheet}
+      handleToggleComplete={handleToggleComplete}
+      handleWorksheetCancel={handleWorksheetCancel}
+      handleWorksheetComplete={handleWorksheetComplete}
+      handleWorksheetContinue={handleWorksheetContinue}
+      handleWorksheetTryAgain={handleWorksheetTryAgain}
+      homeworkItems={homeworkItems}
+      onDashboardOnboardingActionHandled={() => setDashboardOnboardingAction(null)}
+      onboardingFlags={onboardingFlags}
+      playlists={playlists}
+      rewards={rewards}
+      selectedRealmSubject={selectedRealmSubject}
+      setSelectedRealmSubject={setSelectedRealmSubject}
+      setView={setView}
+      updateRewards={updateRewards}
+      userTokens={userTokens}
+      view={view}
+      worksheetLeveledUp={worksheetLeveledUp}
+      worksheetNewDifficulty={worksheetNewDifficulty}
+      worksheetProgress={worksheetProgress}
+      worksheetSession={worksheetSession}
+      worksheetStarsToNextLevel={worksheetStarsToNextLevel}
+      worksheetSubject={worksheetSubject}
+    />
+  );
 
   const toggleNav = useCallback(() => {
     setIsNavCollapsed((prev) => !prev);
   }, []);
+  const isOnboardingView = view === 'onboarding';
 
   return (
     <div className="relative flex h-screen overflow-hidden bg-[var(--background-main)] text-[var(--text-primary)]">
@@ -674,7 +447,10 @@ const App = () => {
         </div>
 
         {/* Mobile: Full-screen dashboard */}
-        <div ref={mobileContentRef} className="md:hidden h-full overflow-y-auto pb-24">
+        <div
+          ref={mobileContentRef}
+          className={`md:hidden h-full overflow-y-auto ${isOnboardingView ? 'pb-4' : 'pb-mobile-nav-safe'}`}
+        >
           {renderView()}
           {!isOnline && <OfflineIndicator />}
         </div>

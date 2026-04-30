@@ -4,10 +4,11 @@ Handles: File upload, violation detection, date extraction, contradiction detect
 """
 
 import os
+import shutil
 import tempfile
 from pathlib import Path
-from typing import List, Optional
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form, Request
+from typing import List
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Request
 from pydantic import BaseModel
 
 from vibe_justice.services.document_processor_service import get_document_processor
@@ -55,6 +56,18 @@ class CompleteAnalysisResponse(BaseModel):
     summary: dict
 
 
+class DocumentAnalysisRequest(BaseModel):
+    documents: List[dict]
+
+
+class ViolationsRequest(DocumentAnalysisRequest):
+    case_type: str = "unemployment"
+
+
+class CompleteAnalysisRequest(DocumentAnalysisRequest):
+    case_type: str = "unemployment"
+
+
 @router.post("/upload", response_model=DocumentUploadResponse, dependencies=_auth)
 @limiter.limit("30/minute")
 async def upload_documents(
@@ -80,7 +93,8 @@ async def upload_documents(
     try:
         for upload_file in files:
             # Save uploaded file to temp location
-            file_path = os.path.join(temp_dir, upload_file.filename)
+            filename = Path(upload_file.filename or "uploaded-document").name
+            file_path = os.path.join(temp_dir, filename)
 
             with open(file_path, "wb") as f:
                 content = await upload_file.read()
@@ -92,7 +106,7 @@ async def upload_documents(
                 processed_docs.append(result)
             except Exception as e:
                 processed_docs.append({
-                    "filename": upload_file.filename,
+                    "filename": filename,
                     "error": str(e)
                 })
 
@@ -104,12 +118,13 @@ async def upload_documents(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Upload error: {str(e)}")
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 @router.post("/analyze/violations", response_model=ViolationsResponse, dependencies=_auth)
 async def analyze_violations(
-    documents: List[dict],
-    case_type: str = "unemployment"
+    request: ViolationsRequest,
 ):
     """
     Detect legal violations in uploaded documents.
@@ -121,15 +136,15 @@ async def analyze_violations(
     Returns:
         List of violations with severity, statute citations, recommended actions
     """
-    if not documents:
+    if not request.documents:
         raise HTTPException(status_code=400, detail="No documents provided")
 
     violation_detector = get_violation_detector()
 
     try:
         violations = await violation_detector.scan_for_violations(
-            documents,
-            case_type
+            request.documents,
+            request.case_type
         )
 
         violations_list = [v.to_dict() for v in violations]
@@ -145,7 +160,7 @@ async def analyze_violations(
 
 @router.post("/analyze/dates", response_model=DatesResponse, dependencies=_auth)
 async def analyze_dates(
-    documents: List[dict]
+    request: DocumentAnalysisRequest,
 ):
     """
     Extract critical dates and deadlines from documents.
@@ -156,13 +171,13 @@ async def analyze_dates(
     Returns:
         List of critical dates with labels, importance, days remaining
     """
-    if not documents:
+    if not request.documents:
         raise HTTPException(status_code=400, detail="No documents provided")
 
     date_extractor = get_date_extractor()
 
     try:
-        critical_dates = await date_extractor.extract_all_dates(documents)
+        critical_dates = await date_extractor.extract_all_dates(request.documents)
 
         dates_list = [d.to_dict() for d in critical_dates]
 
@@ -181,7 +196,7 @@ async def analyze_dates(
 
 @router.post("/analyze/contradictions", response_model=ContradictionsResponse, dependencies=_auth)
 async def analyze_contradictions(
-    documents: List[dict]
+    request: DocumentAnalysisRequest,
 ):
     """
     Find contradictions between multiple documents.
@@ -192,7 +207,7 @@ async def analyze_contradictions(
     Returns:
         List of contradictions with side-by-side statements, impact, rebuttal
     """
-    if not documents or len(documents) < 2:
+    if not request.documents or len(request.documents) < 2:
         raise HTTPException(
             status_code=400,
             detail="At least 2 documents required for contradiction analysis"
@@ -201,7 +216,7 @@ async def analyze_contradictions(
     contradiction_detector = get_contradiction_detector()
 
     try:
-        contradictions = await contradiction_detector.find_contradictions(documents)
+        contradictions = await contradiction_detector.find_contradictions(request.documents)
 
         contradictions_list = [c.to_dict() for c in contradictions]
 
@@ -216,8 +231,7 @@ async def analyze_contradictions(
 
 @router.post("/analyze/complete", response_model=CompleteAnalysisResponse, dependencies=_auth)
 async def complete_analysis(
-    documents: List[dict],
-    case_type: str = "unemployment"
+    request: CompleteAnalysisRequest,
 ):
     """
     Run complete document analysis (violations + dates + contradictions).
@@ -229,7 +243,7 @@ async def complete_analysis(
     Returns:
         Complete analysis with all findings and summary
     """
-    if not documents:
+    if not request.documents:
         raise HTTPException(status_code=400, detail="No documents provided")
 
     # Run all analyses in parallel (if needed later, for now sequential)
@@ -239,17 +253,20 @@ async def complete_analysis(
 
     try:
         # Detect violations
-        violations = await violation_detector.scan_for_violations(documents, case_type)
+        violations = await violation_detector.scan_for_violations(
+            request.documents,
+            request.case_type
+        )
         violations_list = [v.to_dict() for v in violations]
 
         # Extract dates
-        critical_dates = await date_extractor.extract_all_dates(documents)
+        critical_dates = await date_extractor.extract_all_dates(request.documents)
         dates_list = [d.to_dict() for d in critical_dates]
 
         # Find contradictions (only if multiple documents)
         contradictions_list = []
-        if len(documents) >= 2:
-            contradictions = await contradiction_detector.find_contradictions(documents)
+        if len(request.documents) >= 2:
+            contradictions = await contradiction_detector.find_contradictions(request.documents)
             contradictions_list = [c.to_dict() for c in contradictions]
 
         # Generate summary
