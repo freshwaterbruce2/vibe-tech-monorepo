@@ -1,0 +1,76 @@
+{
+  "name": "business-booking-platform-next",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/business-booking-platform-next/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "build": {
+      "executor": "@nx/vite:build",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/business-booking-platform-next"
+      },
+      "configurations": {
+        "development": {
+          "mode": "development"
+        },
+        "production": {
+          "mode": "production"
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/vite:dev-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "business-booking-platform-next:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "business-booking-platform-next:build:development",
+          "hmr": true
+        },
+        "production": {
+          "buildTarget": "business-booking-platform-next:build:production",
+          "hmr": false
+        }
+      }
+    },
+    "preview": {
+      "dependsOn": ["build"],
+      "executor": "@nx/vite:preview-server",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "business-booking-platform-next:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "business-booking-platform-next:build:development"
+        },
+        "production": {
+          "buildTarget": "business-booking-platform-next:build:production"
+        }
+      }
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "coverage/apps/business-booking-platform-next"
+      }
+    },
+    "serve-static": {
+      "executor": "@nx/web:file-server",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "business-booking-platform-next:build",
+        "spa": true
+      }
+    }
+  }
+}
