@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { LESSONS } from '../lib/lessons';
@@ -30,13 +30,31 @@ export function LessonMode({ pieceSet }: { pieceSet: string }) {
   );
   const [moveFrom, setMoveFrom] = useState<string | null>(null);
   const [optionSquares, setOptionSquares] = useState<Record<string, React.CSSProperties>>({});
+  const pendingTimers = useRef<number[]>([]);
 
   const lesson = LESSONS[currentLessonIndex];
   
   // Memoize custom pieces so we don't recreate them every render
   const customPieces = useMemo(() => piecesConfig(pieceSet), [pieceSet]);
+  const coachHints = useMemo(() => (coachEnabled ? getCoachHints(fen) : []), [coachEnabled, fen]);
+
+  function clearPendingTimers() {
+    pendingTimers.current.forEach((timerId) => window.clearTimeout(timerId));
+    pendingTimers.current = [];
+  }
+
+  function schedule(callback: () => void, delay: number) {
+    const timerId = window.setTimeout(() => {
+      pendingTimers.current = pendingTimers.current.filter((id) => id !== timerId);
+      callback();
+    }, delay);
+    pendingTimers.current.push(timerId);
+  }
+
+  useEffect(() => () => clearPendingTimers(), []);
 
   useEffect(() => {
+    clearPendingTimers();
     const newGame = new Chess(lesson.initialFen);
     setGame(newGame);
     setFen(newGame.fen());
@@ -79,12 +97,14 @@ export function LessonMode({ pieceSet }: { pieceSet: string }) {
     if (isSuccess || isAiThinking) return false;
     
     try {
-      const beforeFen = game.fen();
-      const moveResult = game.move(move);
+      const nextGame = new Chess(fen);
+      const beforeFen = nextGame.fen();
+      const moveResult = nextGame.move(move);
       
       if (moveResult === null) return false;
 
-      setFen(game.fen());
+      setGame(nextGame);
+      setFen(nextGame.fen());
 
       const targetMoves = lesson.targetMoves ?? (lesson.targetMove ? [lesson.targetMove] : []);
 
@@ -93,15 +113,16 @@ export function LessonMode({ pieceSet }: { pieceSet: string }) {
           setErrorMsg("");
           setHintLevel(0);
           setCoachFeedback(analyzeMove(beforeFen, moveResult.san));
-          playAiTrainingReply();
+          playAiTrainingReply(nextGame.fen());
         } else {
           const targetLabel = targetMoves.join(" or ");
           setErrorMsg(`Good try, but "${moveResult.san}" isn't the move we are looking for. Try ${targetLabel}.`);
-          setTimeout(() => {
-            game.undo();
-            setFen(game.fen());
+          schedule(() => {
+            const restoredGame = new Chess(beforeFen);
+            setGame(restoredGame);
+            setFen(restoredGame.fen());
             setErrorMsg("");
-            setCoachFeedback(getPositionCoachMessage(game.fen()));
+            setCoachFeedback(getPositionCoachMessage(restoredGame.fen()));
           }, 1500);
         }
       }
@@ -111,22 +132,25 @@ export function LessonMode({ pieceSet }: { pieceSet: string }) {
     }
   }
 
-  function playAiTrainingReply() {
-    if (game.isGameOver()) {
+  function playAiTrainingReply(replyFen: string) {
+    const replyGame = new Chess(replyFen);
+
+    if (replyGame.isGameOver()) {
       setIsSuccess(true);
       return;
     }
 
     setIsAiThinking(true);
 
-    window.setTimeout(() => {
-      const beforeAiFen = game.fen();
-      const aiMove = lesson.aiResponseMove ?? chooseAiMove(game.fen(), difficulty);
-      const responseMove = aiMove ? game.move(aiMove) : null;
+    schedule(() => {
+      const beforeAiFen = replyGame.fen();
+      const aiMove = lesson.aiResponseMove ?? chooseAiMove(replyGame.fen(), difficulty);
+      const responseMove = aiMove ? replyGame.move(aiMove) : null;
 
       if (responseMove) {
         setAiLastMove(responseMove.san);
-        setFen(game.fen());
+        setGame(replyGame);
+        setFen(replyGame.fen());
         setCoachFeedback(analyzeMove(beforeAiFen, responseMove.san));
       }
 
@@ -186,6 +210,7 @@ export function LessonMode({ pieceSet }: { pieceSet: string }) {
   }
 
   function retryLesson() {
+    clearPendingTimers();
     const newGame = new Chess(lesson.initialFen);
     setGame(newGame);
     setFen(newGame.fen());
@@ -337,7 +362,7 @@ export function LessonMode({ pieceSet }: { pieceSet: string }) {
             enabled={coachEnabled}
             feedback={coachFeedback}
             hintLevel={hintLevel}
-            hints={getCoachHints(fen)}
+            hints={coachHints}
             onHint={cycleHint}
             onToggle={() => setCoachEnabled((enabled) => !enabled)}
           />

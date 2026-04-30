@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import { CheckCircle2, ChevronRight, RefreshCcw } from 'lucide-react';
@@ -25,12 +25,22 @@ export function PuzzleMode({ pieceSet }: { pieceSet: string }) {
   const [coachFeedback, setCoachFeedback] = useState<CoachFeedback>(() =>
     getPositionCoachMessage(PUZZLES[0].initialFen),
   );
+  const resetTimer = useRef<number | null>(null);
 
   const puzzle = PUZZLES[currentPuzzleIndex];
   const game = useMemo(() => new Chess(fen), [fen]);
   const customPieces = useMemo(() => piecesConfig(pieceSet), [pieceSet]);
+  const coachHints = useMemo(() => (coachEnabled ? getCoachHints(fen) : []), [coachEnabled, fen]);
+
+  function clearResetTimer() {
+    if (resetTimer.current !== null) {
+      window.clearTimeout(resetTimer.current);
+      resetTimer.current = null;
+    }
+  }
 
   useEffect(() => {
+    clearResetTimer();
     const newGame = new Chess(puzzle.initialFen);
     setFen(newGame.fen());
     setMoveFrom(null);
@@ -41,7 +51,10 @@ export function PuzzleMode({ pieceSet }: { pieceSet: string }) {
     setCoachFeedback(getPositionCoachMessage(newGame.fen()));
   }, [puzzle]);
 
+  useEffect(() => () => clearResetTimer(), []);
+
   function resetPuzzle() {
+    clearResetTimer();
     const newGame = new Chess(puzzle.initialFen);
     setFen(newGame.fen());
     setMoveFrom(null);
@@ -95,7 +108,10 @@ export function PuzzleMode({ pieceSet }: { pieceSet: string }) {
         setErrorMsg('');
       } else {
         setErrorMsg(`That was legal, but the puzzle answer is stronger. Try again.`);
-        window.setTimeout(resetPuzzle, 1100);
+        resetTimer.current = window.setTimeout(() => {
+          resetTimer.current = null;
+          resetPuzzle();
+        }, 1100);
       }
 
       return true;
@@ -191,7 +207,7 @@ export function PuzzleMode({ pieceSet }: { pieceSet: string }) {
             enabled={coachEnabled}
             feedback={coachFeedback}
             hintLevel={hintLevel}
-            hints={getCoachHints(fen)}
+            hints={coachHints}
             onHint={() => setHintLevel((level) => (level >= 3 ? 0 : level + 1))}
             onToggle={() => setCoachEnabled((enabled) => !enabled)}
           />

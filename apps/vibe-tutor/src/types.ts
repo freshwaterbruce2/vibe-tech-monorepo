@@ -40,7 +40,7 @@ export type View =
   | 'wellness'
   | 'onboarding';
 
-export type OnboardingNavigationAction = 'open-add-homework';
+export type OnboardingNavigationAction = 'open-add-homework' | 'open-task-list';
 
 export interface Achievement {
   id: string;

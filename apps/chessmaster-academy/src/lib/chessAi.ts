@@ -17,7 +17,7 @@ const NEAR_CENTER_SQUARES = new Set(['c3', 'd3', 'e3', 'f3', 'c4', 'f4', 'c5', '
 const DIFFICULTY_DEPTH: Record<Difficulty, number> = {
   easy: 1,
   medium: 2,
-  hard: 3,
+  hard: 2,
 };
 
 const DIFFICULTY_NOISE: Record<Difficulty, number> = {
@@ -25,6 +25,15 @@ const DIFFICULTY_NOISE: Record<Difficulty, number> = {
   medium: 55,
   hard: 8,
 };
+
+const SEARCH_BRANCHING_LIMIT: Record<Difficulty, number> = {
+  easy: 12,
+  medium: 16,
+  hard: 20,
+};
+
+const MOVE_CACHE_LIMIT = 256;
+const moveCache = new Map<string, string | null>();
 
 function materialScore(chess: Chess) {
   return chess.board().flat().reduce((score, piece) => {
@@ -97,19 +106,20 @@ function moveOrderingScore(move: Move) {
   return score;
 }
 
-function minimax(chess: Chess, depth: number, alpha: number, beta: number): number {
+function minimax(chess: Chess, depth: number, alpha: number, beta: number, branchingLimit: number): number {
   if (depth === 0 || chess.isGameOver()) return evaluate(chess);
 
   const moves = chess
     .moves({ verbose: true })
-    .sort((a, b) => moveOrderingScore(b) - moveOrderingScore(a));
+    .sort((a, b) => moveOrderingScore(b) - moveOrderingScore(a))
+    .slice(0, branchingLimit);
 
   if (chess.turn() === 'w') {
     let best = -Infinity;
 
     for (const move of moves) {
       chess.move(move);
-      best = Math.max(best, minimax(chess, depth - 1, alpha, beta));
+      best = Math.max(best, minimax(chess, depth - 1, alpha, beta, branchingLimit));
       chess.undo();
       alpha = Math.max(alpha, best);
       if (beta <= alpha) break;
@@ -122,7 +132,7 @@ function minimax(chess: Chess, depth: number, alpha: number, beta: number): numb
 
   for (const move of moves) {
     chess.move(move);
-    best = Math.min(best, minimax(chess, depth - 1, alpha, beta));
+    best = Math.min(best, minimax(chess, depth - 1, alpha, beta, branchingLimit));
     chess.undo();
     beta = Math.min(beta, best);
     if (beta <= alpha) break;
@@ -143,18 +153,31 @@ function deterministicNoise(seed: string, amount: number) {
 }
 
 export function chooseAiMove(fen: string, difficulty: Difficulty): Move | null {
+  const cacheKey = `${difficulty}:${fen}`;
   const chess = new Chess(fen);
-  const legalMoves = chess.moves({ verbose: true });
+  const legalMoves = chess
+    .moves({ verbose: true })
+    .sort((a, b) => moveOrderingScore(b) - moveOrderingScore(a));
 
-  if (legalMoves.length === 0) return null;
+  if (moveCache.has(cacheKey)) {
+    const cachedSan = moveCache.get(cacheKey);
+    return cachedSan ? legalMoves.find((move) => move.san === cachedSan) ?? null : null;
+  }
+
+  if (legalMoves.length === 0) {
+    moveCache.set(cacheKey, null);
+    return null;
+  }
 
   const depth = DIFFICULTY_DEPTH[difficulty];
   const noise = DIFFICULTY_NOISE[difficulty];
   const isWhite = chess.turn() === 'w';
+  const branchingLimit = SEARCH_BRANCHING_LIMIT[difficulty];
+  const candidateMoves = legalMoves.slice(0, branchingLimit);
 
-  const scoredMoves = legalMoves.map((move) => {
+  const scoredMoves = candidateMoves.map((move) => {
     chess.move(move);
-    const score = minimax(chess, depth - 1, -Infinity, Infinity);
+    const score = minimax(chess, depth - 1, -Infinity, Infinity, branchingLimit);
     chess.undo();
 
     return {
@@ -166,10 +189,20 @@ export function chooseAiMove(fen: string, difficulty: Difficulty): Move | null {
   scoredMoves.sort((a, b) => (isWhite ? b.score - a.score : a.score - b.score));
 
   if (difficulty === 'easy' && scoredMoves.length > 2) {
-    return scoredMoves[Math.min(2, scoredMoves.length - 1)].move;
+    const move = scoredMoves[Math.min(2, scoredMoves.length - 1)].move;
+    moveCache.set(cacheKey, move.san);
+    return move;
   }
 
-  return scoredMoves[0].move;
+  const move = scoredMoves[0].move;
+  moveCache.set(cacheKey, move.san);
+
+  if (moveCache.size > MOVE_CACHE_LIMIT) {
+    const oldestKey = moveCache.keys().next().value;
+    if (oldestKey) moveCache.delete(oldestKey);
+  }
+
+  return move;
 }
 
 export function getDifficultyLabel(difficulty: Difficulty) {

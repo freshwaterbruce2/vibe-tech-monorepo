@@ -17,9 +17,11 @@ interface ChatMessage {
   content: string;
 }
 
+const STARTING_FEN = new Chess().fen();
+
 export function AITutorMode({ pieceSet }: { pieceSet: string }) {
-  const [game, setGame] = useState(new Chess());
-  const [fen, setFen] = useState(game.fen());
+  const [fen, setFen] = useState(STARTING_FEN);
+  const [fenInput, setFenInput] = useState(STARTING_FEN);
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState<string | boolean>(false);
@@ -28,6 +30,7 @@ export function AITutorMode({ pieceSet }: { pieceSet: string }) {
   const [moveFrom, setMoveFrom] = useState<string | null>(null);
   const [optionSquares, setOptionSquares] = useState<Record<string, React.CSSProperties>>({});
 
+  const game = useMemo(() => new Chess(fen), [fen]);
   const customPieces = useMemo(() => piecesConfig(pieceSet), [pieceSet]);
 
   useEffect(() => {
@@ -69,7 +72,8 @@ export function AITutorMode({ pieceSet }: { pieceSet: string }) {
     }
 
     try {
-      const move = game.move({
+      const nextGame = new Chess(fen);
+      const move = nextGame.move({
         from: moveFrom,
         to: square,
         promotion: 'q',
@@ -79,7 +83,8 @@ export function AITutorMode({ pieceSet }: { pieceSet: string }) {
          const hasMoveOptions = getMoveOptions(square);
          setMoveFrom(hasMoveOptions ? square : null);
       } else {
-         setFen(game.fen());
+         setFen(nextGame.fen());
+         setFenInput(nextGame.fen());
          setMoveFrom(null);
          setOptionSquares({});
       }
@@ -103,16 +108,17 @@ export function AITutorMode({ pieceSet }: { pieceSet: string }) {
     setOptionSquares({});
 
     try {
-      const move = game.move({
+      const nextGame = new Chess(fen);
+      const move = nextGame.move({
         from: sourceSquare,
         to: targetSquare,
         promotion: 'q',
       });
 
       if (move === null) return false;
-      setFen(game.fen());
+      setFen(nextGame.fen());
+      setFenInput(nextGame.fen());
       
-      // Optionally auto-prompt AI here, but let's leave it to manual questions for better UX
       return true;
     } catch (e) {
       return false;
@@ -120,9 +126,8 @@ export function AITutorMode({ pieceSet }: { pieceSet: string }) {
   }
 
   function resetBoard() {
-    const newGame = new Chess();
-    setGame(newGame);
-    setFen(newGame.fen());
+    setFen(STARTING_FEN);
+    setFenInput(STARTING_FEN);
     setChat([]);
     setMoveFrom(null);
     setOptionSquares({});
@@ -130,14 +135,15 @@ export function AITutorMode({ pieceSet }: { pieceSet: string }) {
 
   function handleFenChange(e: React.ChangeEvent<HTMLInputElement>) {
     const newFen = e.target.value;
-    setFen(newFen);
+    setFenInput(newFen);
     try {
       const newGame = new Chess(newFen);
-      setGame(newGame);
+      const normalizedFen = newGame.fen();
+      setFen(normalizedFen);
+      setFenInput(normalizedFen);
+    } catch (err) {
       setMoveFrom(null);
       setOptionSquares({});
-    } catch (err) {
-      // Invalid FEN string during typing is ignored for the game state
     }
   }
 
@@ -231,7 +237,7 @@ export function AITutorMode({ pieceSet }: { pieceSet: string }) {
               <span className="font-mono text-[10px] text-slate-500 font-bold tracking-widest uppercase hidden sm:inline-block">FEN:</span>
               <input 
                 type="text" 
-                value={fen} 
+                value={fenInput} 
                 onChange={handleFenChange}
                 className="bg-black/20 border border-white/5 text-slate-300 text-xs font-mono px-2 py-1 rounded w-full max-w-[200px] outline-none focus:border-indigo-500/50 focus:bg-black/40 transition-colors"
                 title="Paste FEN to set up a custom position"

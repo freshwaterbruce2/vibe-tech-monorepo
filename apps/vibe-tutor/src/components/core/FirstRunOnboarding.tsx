@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { VibeTechLogo } from '../ui/icons/VibeTechLogo';
+import { ONBOARDING_AVATARS, ONBOARDING_BRAND } from './onboardingVisuals';
 
 export interface OnboardingResult {
   userType: 'kid' | 'parent';
@@ -10,7 +11,6 @@ interface FirstRunOnboardingProps {
   onComplete: (data: OnboardingResult) => void | Promise<void>;
 }
 
-const AVATARS = ['🐉', '🦊', '🐱', '🦄', '🚀', '🎮'];
 const WELCOME_TOKENS = 25;
 
 const FirstRunOnboarding = ({ onComplete }: FirstRunOnboardingProps) => {
@@ -59,9 +59,15 @@ const FirstRunOnboarding = ({ onComplete }: FirstRunOnboardingProps) => {
         {step === 0 && (
           <div className="space-y-6 text-center">
             <div className="flex justify-center">
-              <VibeTechLogo className="w-24 h-24" aria-label="Vibe-Tech" />
+              <div className="relative">
+                <div className="absolute -inset-2 rounded-3xl bg-gradient-to-r from-violet-500/30 to-sky-500/30 blur-xl" />
+                <div className="relative flex items-center justify-center rounded-3xl border border-[var(--glass-border)] bg-white/5 p-4">
+                  <VibeTechLogo className="w-20 h-20" aria-label="Vibe-Tech" />
+                </div>
+              </div>
             </div>
-            <h1 className="text-3xl font-bold neon-text-primary">Welcome to Vibe-Tutor</h1>
+            <h1 className="text-3xl font-bold neon-text-primary">Welcome to {ONBOARDING_BRAND.title}</h1>
+            <p className="text-sm text-[var(--text-secondary)]">{ONBOARDING_BRAND.subtitle}</p>
             <p className="text-[var(--text-secondary)]">Who&apos;s using this app?</p>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -94,22 +100,36 @@ const FirstRunOnboarding = ({ onComplete }: FirstRunOnboardingProps) => {
             <p className="text-[var(--text-secondary)]">
               {userType === 'kid' ? 'This will be you!' : 'Pick one for your kid.'}
             </p>
-            <div className="grid grid-cols-3 gap-3">
-              {AVATARS.map((a) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {ONBOARDING_AVATARS.map((option) => (
                 <button
-                  key={a}
+                  key={option.id}
                   type="button"
                   onClick={() => {
-                    setAvatar(a);
+                    setAvatar(option.emoji);
                   }}
-                  className={`glass-card p-4 rounded-xl text-5xl hover:scale-110 transition-transform border-2 focus-glow ${
-                    avatar === a
+                  className={`glass-card rounded-xl p-3 transition-transform border-2 focus-glow hover:scale-[1.03] ${
+                    avatar === option.emoji
                       ? 'border-[var(--primary-accent)]'
                       : 'border-transparent'
                   }`}
-                  aria-label={`Choose avatar ${a}`}
+                  aria-label={`Choose avatar ${option.emoji} ${option.name}`}
                 >
-                  {a}
+                  <div className="flex flex-col items-center justify-center gap-2 text-center">
+                    <div
+                      className={`w-full aspect-square rounded-xl bg-gradient-to-br ${option.gradientClass} p-[2px]`}
+                    >
+                      <div className="h-full w-full rounded-[10px] bg-[var(--background-card)]/90 flex items-center justify-center">
+                        <span className="text-4xl leading-none" aria-hidden="true">
+                          {option.emoji}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="leading-tight">
+                      <p className="text-xs font-semibold text-[var(--text-primary)]">{option.name}</p>
+                      <p className="text-[10px] text-[var(--text-secondary)]">{option.subtitle}</p>
+                    </div>
+                  </div>
                 </button>
               ))}
             </div>
