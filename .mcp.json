@@ -26,7 +26,7 @@
     "sqlite": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/.local/bin/uvx.exe",
-      "args": ["mcp-server-sqlite", "--db-path", "D:/databases/database.db"]
+      "args": ["mcp-server-sqlite", "--db-path", "D:/databases/agent_learning.db"]
     },
     "skills": {
       "type": "stdio",

@@ -1,6 +1,6 @@
 # Agent Memory Protocol
 
-Last Updated: 2026-03-10
+Last Updated: 2026-04-26
 Priority: MANDATORY
 Status: ACTIVE
 Scope: All 24 specialist agents
@@ -21,9 +21,13 @@ This protocol defines the **mandatory memory behaviors** all agents must follow.
 
 | Layer               | Location                                             | Purpose                                                    | Access Method              |
 | ------------------- | ---------------------------------------------------- | ---------------------------------------------------------- | -------------------------- |
-| **Memory MCP**      | `apps/memory-mcp` → `~/.codex/memories/memory.db`    | Semantic + episodic + procedural memory with vector search | MCP tools (`memory_*`)     |
-| **Learning System** | `D:\learning-system` → `D:\databases\agent_learning.db` | Execution patterns, success/failure tracking               | SQL queries via sqlite MCP |
-| **Session Memory**  | `~/.codex/memories/` and configured MCP stores          | Current session context, recent tasks                      | Memory files and MCP tools |
+| **Memory MCP**      | `apps/memory-mcp` -> `D:\databases\memory.db`          | Semantic + episodic + procedural memory with vector search | MCP tools (`memory_*`)     |
+| **Learning System** | `D:\databases\agent_learning.db`                      | Execution patterns, success/failure tracking               | SQL queries via sqlite MCP |
+| **Session Memory**  | `apps/memory-bank/quick-access/recent-tasks.json`    | Current session context, recent tasks                      | File read                  |
+
+`D:\learning-system` is runtime/docs/artifact state for the learning system, not
+the live database root. Hook fallback logs are written under
+`D:\logs\learning-system`.
 
 ### Memory MCP Tools
 
@@ -44,7 +48,7 @@ This protocol defines the **mandatory memory behaviors** all agents must follow.
 | Table              | Purpose                                 | Query Before                   |
 | ------------------ | --------------------------------------- | ------------------------------ |
 | `success_patterns` | Proven approaches (confidence >= 0.8)   | Implementing any feature       |
-| `failure_patterns` | Known mistakes to avoid                 | Making architectural decisions |
+| `agent_mistakes`   | Known mistakes to avoid                 | Making architectural decisions |
 | `code_patterns`    | Reusable code snippets (19,974 entries) | Writing new code               |
 | `agent_executions` | Full execution history (59k+)           | Estimating task complexity     |
 | `task_patterns`    | High-level task strategies              | Planning multi-step work       |
@@ -59,7 +63,7 @@ This protocol defines the **mandatory memory behaviors** all agents must follow.
 1. RECALL: Query memory for relevant past work
    - memory_search_semantic("task description keywords")
    - Query success_patterns for proven approaches
-   - Query failure_patterns for known pitfalls
+   - Query agent_mistakes for known pitfalls
 
 2. CONTEXT: Load session state
    - memory_get_recent() for current session
@@ -76,7 +80,7 @@ This protocol defines the **mandatory memory behaviors** all agents must follow.
 
 2. UPDATE: Record outcome in learning system
    - Insert/update success_patterns on success
-   - Insert/update failure_patterns on failure
+   - Insert/update agent_mistakes on failure
 ```
 
 ### Domain-Specific Memory Patterns
@@ -139,18 +143,18 @@ Each agent type has specific memory patterns to follow:
 
 ```sql
 -- Check for proven approaches
-SELECT approach, tools_used, success_count, confidence_score
+SELECT description AS approach, frequency AS success_count, confidence_score
 FROM success_patterns
-WHERE task_type = :task_type
+WHERE (pattern_type = :task_type OR description LIKE '%' || :task_type || '%')
   AND confidence_score >= 0.8
 ORDER BY success_count DESC
 LIMIT 5;
 
 -- Check for known failures
-SELECT mistake_type, prevention_strategy, occurrence_count
-FROM failure_patterns
+SELECT mistake_type, prevention_strategy, identified_at
+FROM agent_mistakes
 WHERE mistake_type LIKE :task_type || '%'
-ORDER BY occurrence_count DESC
+ORDER BY identified_at DESC
 LIMIT 5;
 
 -- Find reusable code
@@ -191,7 +195,7 @@ Every agent `.md` file MUST include this section (customized per domain):
 
 1. `memory_search_semantic("<domain-specific keywords>")` - Find relevant past work
 2. Query `success_patterns` WHERE task_type IN ('<domain-task-types>')
-3. Query `failure_patterns` for known pitfalls in this domain
+3. Query `agent_mistakes` for known pitfalls in this domain
 
 ### After Completing Work
 
@@ -243,6 +247,9 @@ Every agent `.md` file MUST include this section (customized per domain):
 
 - **Memory MCP**: `apps/memory-mcp/`
 - **Memory Package**: `packages/memory/` (`@vibetech/memory`)
-- **Learning System**: `D:\learning-system/`
+- **Learning System Runtime/Docs/Artifacts**: `D:\learning-system/`
+- **Learning Database**: `D:\databases\agent_learning.db`
+- **Memory Database**: `D:\databases\memory.db`
+- **Hook Fallback Logs**: `D:\logs\learning-system`
 - **Agent Rules**: `.claude/AGENT_RULES.md`
 - **Agent Definitions**: `.claude/agents.json`

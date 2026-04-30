@@ -35,7 +35,7 @@ Specialized agent for database optimization, migrations, and data storage archit
 - **nova-agent**: `D:\databases\nova-agent.db` (SQLite)
 - **iconforge**: `D:\databases\database.db` (SQLite - unified)
 - **business-booking-platform**: PostgreSQL (production)
-- **Learning System**: `D:\databases\nova_shared.db` (SQLite, 55 MB, 59k+ records)
+- **Learning System**: `D:\databases\agent_learning.db` (SQLite)
 
 ## Critical Rules (D:\ Storage Policy)
 
@@ -207,7 +207,7 @@ Before creating database schemas:
 1. Check `packages/nova-database` for shared database utilities
 2. Check existing projects for similar schemas
 3. Review `D:\databases\` for existing databases
-4. Query nova_shared.db:
+4. Query `agent_learning.db`:
 
    ```sql
    SELECT name, code_snippet

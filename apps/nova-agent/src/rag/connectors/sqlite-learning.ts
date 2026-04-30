@@ -1,7 +1,7 @@
 /**
  * Learning System Connector
  * Read-only wrapper around the learning database (D:\databases\agent_learning.db).
- * Provides access to 59k+ execution patterns, success/failure tracking.
+ * Provides access to current execution patterns, success/failure tracking.
  */
 
 import { existsSync } from 'node:fs';
@@ -149,17 +149,21 @@ export class LearningConnector {
 
     try {
       const sql = agentName
-        ? `SELECT id, agent_name, mistake_type, description, severity, remediation_steps
+        ? `SELECT id, ? as agent_name, mistake_type, description,
+                  impact_severity as severity,
+                  prevention_strategy as remediation_steps
            FROM agent_mistakes
-           WHERE agent_name = ?
+           WHERE context_when_occurred LIKE ?
            ORDER BY identified_at DESC
            LIMIT 20`
-        : `SELECT id, agent_name, mistake_type, description, severity, remediation_steps
+        : `SELECT id, 'global' as agent_name, mistake_type, description,
+                  impact_severity as severity,
+                  prevention_strategy as remediation_steps
            FROM agent_mistakes
            ORDER BY identified_at DESC
            LIMIT 20`;
 
-      const params = agentName ? [agentName] : [];
+      const params = agentName ? [agentName, `%${agentName}%`] : [];
       const rows = this.db.prepare(sql).all(...params) as Array<{
         id: number;
         agent_name: string;
@@ -195,7 +199,7 @@ export class LearningConnector {
         SELECT
           COUNT(*) as total,
           AVG(CASE WHEN success = 1 THEN 1.0 ELSE 0.0 END) as success_rate,
-          AVG(execution_time_seconds) as avg_time
+          AVG(execution_time_ms) as avg_time
         FROM agent_executions
       `).get() as { total: number; success_rate: number; avg_time: number };
 

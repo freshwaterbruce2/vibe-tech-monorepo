@@ -371,12 +371,12 @@ Remove-Item -Path ".agent\skills\problematic-skill" -Recurse -Force
 
 # Analyze failures
 sqlite3 D:\databases\agent_learning.db @"
-SELECT tool_name, error_message, COUNT(*) as failures
+SELECT tools_used, error_message, COUNT(*) as failures
 FROM agent_executions
-WHERE tool_name IN (SELECT name FROM generated_skills)
+WHERE tools_used IN (SELECT name FROM generated_skills)
   AND success = 0
-  AND timestamp >= datetime('now', '-30 days')
-GROUP BY tool_name, error_message
+  AND started_at >= datetime('now', '-30 days')
+GROUP BY tools_used, error_message
 ORDER BY failures DESC;
 "@
 ```
@@ -436,9 +436,9 @@ ORDER BY s.success_rate DESC;
 sqlite3 D:\databases\agent_learning.db @"
 SELECT
     COUNT(*) as total_executions,
-    COUNT(DISTINCT tool_name) as unique_tools,
-    MIN(timestamp) as earliest_record,
-    MAX(timestamp) as latest_record
+    COUNT(DISTINCT tools_used) as unique_tools,
+    MIN(started_at) as earliest_record,
+    MAX(started_at) as latest_record
 FROM agent_executions;
 "@
 

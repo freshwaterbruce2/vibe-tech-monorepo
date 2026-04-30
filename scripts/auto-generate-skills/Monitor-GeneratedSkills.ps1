@@ -90,13 +90,13 @@ SELECT
     gs.deprecation_candidate,
     gs.generated_at,
     gs.last_used,
-    COUNT(ae.id) as recent_uses
+    COUNT(ae.execution_id) as recent_uses
 FROM generated_skills gs
 LEFT JOIN agent_executions ae ON (
     ae.tools_used LIKE '%' || gs.name || '%'
     OR ae.task_type = gs.name
 )
-    AND ae.executed_at >= $timeFilter
+    AND ae.started_at >= $timeFilter
 GROUP BY gs.name, gs.type, gs.success_rate, gs.usage_count, gs.user_rating, gs.deprecation_candidate, gs.generated_at, gs.last_used
 ORDER BY gs.usage_count DESC, gs.success_rate DESC;
 "@
@@ -222,7 +222,7 @@ if ($deprecationCandidates.Count -gt 0) {
     Write-Host "1. Review deprecation candidates for failures:" -ForegroundColor Yellow
     $deprecationCandidates | ForEach-Object {
         Write-Host "   - Analyze errors for: $($_.name)" -ForegroundColor White
-        Write-Host "     Query: SELECT error_details FROM agent_executions WHERE tools_used LIKE '%$($_.name)%' AND status='failed' LIMIT 10;" -ForegroundColor Gray
+        Write-Host "     Query: SELECT error_message FROM agent_executions WHERE tools_used LIKE '%$($_.name)%' AND success=0 LIMIT 10;" -ForegroundColor Gray
     }
     Write-Host ""
 }
