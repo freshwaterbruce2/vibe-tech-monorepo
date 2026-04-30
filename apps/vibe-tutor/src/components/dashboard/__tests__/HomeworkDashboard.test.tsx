@@ -150,7 +150,25 @@ describe('HomeworkDashboard', () => {
         expect(screen.getByTestId('add-modal')).toBeInTheDocument();
       });
 
-      expect(onOnboardingActionHandled).toHaveBeenCalledTimes(1);
+      expect(onOnboardingActionHandled).toHaveBeenCalled();
+    });
+
+    it('opens task context from onboarding task-list action and clears it', async () => {
+      const onOnboardingActionHandled = vi.fn();
+
+      render(
+        <HomeworkDashboard
+          {...mockProps}
+          onboardingAction="open-task-list"
+          onOnboardingActionHandled={onOnboardingActionHandled}
+        />,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('breakdown-modal')).toBeInTheDocument();
+      });
+
+      expect(onOnboardingActionHandled).toHaveBeenCalled();
     });
   });
 

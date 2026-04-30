@@ -43,7 +43,7 @@ export function registerServiceWorker(runtime: CapacitorRuntime = globalThis): v
 
   const register = () => {
     runtime.navigator?.serviceWorker
-      ?.register('/service-worker.js?v=6')
+      ?.register('/service-worker.js?v=7')
       .then(
         () => {
           logger.info('[PWA] Service Worker registered successfully');

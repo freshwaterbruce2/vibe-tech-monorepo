@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.chess.tutor',
-  appName: 'Chess Tutor',
+  appName: 'ChessMaster Academy',
   webDir: 'dist'
 };
 

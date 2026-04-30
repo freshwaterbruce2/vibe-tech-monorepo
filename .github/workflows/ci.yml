@@ -228,9 +228,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright browsers (Chromium only)
-        run: pnpm --filter business-booking-platform exec playwright install chromium --with-deps
-
       - name: Run E2E tests
         run: pnpm run ci:e2e
 
@@ -239,7 +236,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: apps/business-booking-platform/playwright-report/
+          path: coverage/apps/business-booking-platform-next/
           retention-days: 7
 
   # ============================================

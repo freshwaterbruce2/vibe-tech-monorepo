@@ -27,7 +27,10 @@
 		"paths": {
 			"@/*": ["./src/*"],
 			"@vibetech/*": ["./packages/*/src", "./packages/feature-flags/*/src"],
-			"@nova/*": ["./packages/*/src"]
+			"@nova/*": ["./packages/*/src"],
+			"@vibetech/business-booking-platform-next-backend": [
+				"apps/business-booking-platform-next/backend/src/index.ts"
+			]
 		},
 		"resolveJsonModule": true,
 		"allowJs": true,

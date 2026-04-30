@@ -50,7 +50,9 @@ const FirstWeekChecklist = ({
       id: 'complete',
       label: 'Complete a task',
       done: hasCompletedTask,
-      action: !hasCompletedTask ? { label: 'Open tasks', handler: () => onNavigate('dashboard') } : undefined,
+      action: !hasCompletedTask
+        ? { label: 'Open tasks', handler: () => onNavigate('dashboard', 'open-task-list') }
+        : undefined,
     },
     {
       id: 'shop',

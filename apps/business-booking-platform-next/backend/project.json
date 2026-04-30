@@ -1,0 +1,38 @@
+{
+  "name": "business-booking-platform-next-backend",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/business-booking-platform-next/backend/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/business-booking-platform-next/backend",
+        "main": "apps/business-booking-platform-next/backend/src/main.ts",
+        "tsConfig": "apps/business-booking-platform-next/backend/tsconfig.lib.json",
+        "assets": ["apps/business-booking-platform-next/backend/*.md"]
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "business-booking-platform-next-backend:build",
+        "watch": true
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "coverage/apps/business-booking-platform-next/backend"
+      }
+    }
+  }
+}
