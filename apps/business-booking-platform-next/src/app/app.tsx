@@ -100,7 +100,7 @@ function HomePage() {
       checkOut,
       guests: String(guests),
     });
-    navigate(`/search?${query.toString()}`);
+    void navigate(`/search?${query.toString()}`);
   };
 
   return (
@@ -162,10 +162,10 @@ function SearchPage() {
 
   const payload = useMemo(
     () => ({
-      destination: params.get('destination') || '',
-      checkIn: params.get('checkIn') || '',
-      checkOut: params.get('checkOut') || '',
-      guests: Number(params.get('guests') || '1'),
+      destination: params.get('destination') ?? '',
+      checkIn: params.get('checkIn') ?? '',
+      checkOut: params.get('checkOut') ?? '',
+      guests: Number(params.get('guests') ?? '1'),
     }),
     [params]
   );
@@ -211,7 +211,7 @@ function SearchPage() {
                 {hotel.currency} {hotel.nightlyRate.toFixed(2)} / night
               </p>
               <div className="actions">
-                <button type="button" onClick={() => navigate(`/hotel/${hotel.id}`)}>
+                <button type="button" onClick={() => void navigate(`/hotel/${hotel.id}`)}>
                   View details
                 </button>
               </div>
@@ -259,7 +259,7 @@ function HotelPage() {
             <p className="price">
               {hotel.currency} {hotel.nightlyRate.toFixed(2)} / night
             </p>
-            <button type="button" onClick={() => navigate(`/booking/${hotel.id}`)}>
+            <button type="button" onClick={() => void navigate(`/booking/${hotel.id}`)}>
               Book this hotel
             </button>
           </>
@@ -331,7 +331,7 @@ function BookingPage() {
         },
         true
       );
-      navigate(`/payment/${result.booking.id}`);
+      void navigate(`/payment/${result.booking.id}`);
     } catch (err) {
       if ((err as Error).message.includes('401')) {
         clearToken();
@@ -350,7 +350,12 @@ function BookingPage() {
         <h1>Booking details</h1>
         {hotel && <p>Hotel: {hotel.name}</p>}
         {error && <p className="error">{error}</p>}
-        <form className="gridForm" onSubmit={submitBooking}>
+        <form
+          className="gridForm"
+          onSubmit={(event) => {
+            void submitBooking(event);
+          }}
+        >
           <label>
             Check-in
             <input
@@ -457,7 +462,7 @@ function PaymentPage() {
         },
         true
       );
-      navigate(`/confirmation/${booking.id}`);
+      void navigate(`/confirmation/${booking.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Payment failed');
     } finally {
@@ -478,7 +483,13 @@ function PaymentPage() {
             <p>
               Booking #{booking.id} · {booking.currency} {booking.totalPrice.toFixed(2)}
             </p>
-            <button disabled={isPaying} type="button" onClick={payNow}>
+            <button
+              disabled={isPaying}
+              type="button"
+              onClick={() => {
+                void payNow();
+              }}
+            >
               {isPaying ? 'Processing payment...' : 'Pay now'}
             </button>
           </>
