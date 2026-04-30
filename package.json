@@ -122,7 +122,7 @@
     "ci:typecheck": "nx affected -t typecheck --base=origin/main --head=HEAD",
     "ci:test": "nx affected -t test --base=origin/main --head=HEAD",
     "ci:build": "nx affected -t build --base=origin/main --head=HEAD",
-    "ci:e2e": "pnpm --filter business-booking-platform exec playwright test --project=chromium",
+    "ci:e2e": "pnpm nx run business-booking-platform-next:test",
     "ci:lint:all": "nx run-many -t lint --all",
     "ci:typecheck:all": "nx run-many -t typecheck --all",
     "ci:test:all": "nx run-many -t test --all",

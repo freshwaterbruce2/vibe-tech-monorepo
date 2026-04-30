@@ -2,7 +2,8 @@ import { createBookingApiServer } from './lib/business-booking-platform-next-bac
 
 const DEFAULT_PORT = 3020;
 
-const port = Number.parseInt(process.env['PORT'] ?? '', 10) || DEFAULT_PORT;
+const parsedPort = Number.parseInt(process.env['PORT'] ?? '', 10);
+const port = Number.isNaN(parsedPort) ? DEFAULT_PORT : parsedPort;
 const host = process.env['HOST'] ?? '0.0.0.0';
 
 const app = createBookingApiServer();

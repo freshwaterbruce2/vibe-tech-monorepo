@@ -191,10 +191,10 @@
         "priority": "high",
         "description": "Memory system MCP server"
       },
-      "business-booking-platform": {
-        "status": "development",
-        "priority": "low",
-        "description": "Booking platform"
+      "business-booking-platform-next": {
+        "status": "beta",
+        "priority": "medium",
+        "description": "Clean-break business booking funnel (React + Nx + Node API)"
       },
       "desktop-commander-v3": {
         "status": "maintenance",
