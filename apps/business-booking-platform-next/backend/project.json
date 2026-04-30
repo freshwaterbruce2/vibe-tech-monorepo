@@ -27,6 +27,12 @@
     "lint": {
       "executor": "@nx/eslint:lint"
     },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p apps/business-booking-platform-next/backend/tsconfig.lib.json"
+      }
+    },
     "test": {
       "executor": "@nx/vitest:test",
       "outputs": ["{options.reportsDirectory}"],
