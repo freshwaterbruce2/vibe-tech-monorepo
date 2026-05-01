@@ -52,6 +52,27 @@ pub async fn chat_with_agent(
     // Release lock before long-running async call
     drop(agent_state);
 
+    // Fetch learning context (best-effort, non-fatal — empty string if DB unavailable)
+    let learning_snippet = {
+        let db_guard = db.lock().await;
+        db_guard
+            .as_ref()
+            .map(|svc| svc.get_learning_context_snippet())
+            .unwrap_or_default()
+    };
+
+    // Augment system prompt with learning context, capped to avoid token bloat
+    let system_prompt = if learning_snippet.is_empty() {
+        system_prompt
+    } else {
+        let snippet = if learning_snippet.len() > 800 {
+            format!("{}...", &learning_snippet[..797])
+        } else {
+            learning_snippet
+        };
+        format!("{}\n\n## Active Learning Context\n{}", system_prompt, snippet)
+    };
+
     match dispatch_model_request(
         &message,
         history,
