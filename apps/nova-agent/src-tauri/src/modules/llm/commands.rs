@@ -65,8 +65,8 @@ pub async fn chat_with_agent(
     let system_prompt = if learning_snippet.is_empty() {
         system_prompt
     } else {
-        let snippet = if learning_snippet.len() > 800 {
-            format!("{}...", &learning_snippet[..797])
+        let snippet = if learning_snippet.chars().count() > 200 {
+            learning_snippet.chars().take(200).collect::<String>() + "..."
         } else {
             learning_snippet
         };
