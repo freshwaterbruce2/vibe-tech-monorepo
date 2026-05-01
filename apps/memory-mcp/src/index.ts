@@ -147,6 +147,10 @@ async function main() {
       console.error('[memory-mcp] Learning bridge init failed (non-fatal):', err);
     }
 
+    // High-water mark: tracks the last successful learning sync so each decay
+    // cycle only ingests rows written since the previous run (avoids duplicates).
+    let lastLearningSync: string | undefined = undefined;
+
     // Initialize hierarchical summarizer & memory decay
     try {
       const llm = createLlmSummarizerFromEnv();
@@ -183,13 +187,16 @@ async function main() {
             console.error('[memory-mcp] Auto-consolidation failed:', consErr);
           }
 
-          // Periodic learning sync — ingest new learning data each decay cycle
+          // Periodic learning sync — ingest new rows since the last cycle only
           if (learningBridge) {
-            learningBridge.syncFromLearningSystem().then((syncResult) => {
+            const sincePrev = lastLearningSync;
+            const cycleStart = new Date().toISOString();
+            learningBridge.syncFromLearningSystem(sincePrev).then((syncResult) => {
+              lastLearningSync = cycleStart;
               const total = syncResult.executionsIngested + syncResult.patternsIngested + syncResult.mistakesIngested;
               if (total > 0) {
                 console.error(
-                  `[memory-mcp] Learning sync: ${syncResult.executionsIngested} executions, ${syncResult.patternsIngested} patterns, ${syncResult.mistakesIngested} mistakes`,
+                  `[memory-mcp] Learning sync (since ${sincePrev ?? 'beginning'}): ${syncResult.executionsIngested} executions, ${syncResult.patternsIngested} patterns, ${syncResult.mistakesIngested} mistakes`,
                 );
               }
             }).catch((syncErr: unknown) => {

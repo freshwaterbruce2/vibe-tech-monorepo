@@ -21,7 +21,6 @@ export interface SuccessPattern {
 
 export interface FailurePattern {
   id: number;
-  agentName: string;
   mistakeType: string;
   description: string;
   severity: string;
@@ -144,38 +143,31 @@ export class LearningConnector {
   /**
    * Get known failure patterns / mistakes
    */
-  getFailurePatterns(agentName?: string): FailurePattern[] {
+  getFailurePatterns(): FailurePattern[] {
     if (!this.db) return [];
 
     try {
-      const sql = agentName
-        ? `SELECT id, agent_name, mistake_type, description, severity, remediation_steps
-           FROM agent_mistakes
-           WHERE agent_name = ?
-           ORDER BY identified_at DESC
-           LIMIT 20`
-        : `SELECT id, agent_name, mistake_type, description, severity, remediation_steps
+      const rows = this.db
+        .prepare(
+          `SELECT id, mistake_type, description, impact_severity, prevention_strategy
            FROM agent_mistakes
            ORDER BY identified_at DESC
-           LIMIT 20`;
-
-      const params = agentName ? [agentName] : [];
-      const rows = this.db.prepare(sql).all(...params) as Array<{
+           LIMIT 20`,
+        )
+        .all() as Array<{
         id: number;
-        agent_name: string;
         mistake_type: string;
         description: string;
-        severity: string;
-        remediation_steps: string | null;
+        impact_severity: string;
+        prevention_strategy: string | null;
       }>;
 
       return rows.map((r) => ({
         id: r.id,
-        agentName: r.agent_name,
         mistakeType: r.mistake_type,
         description: r.description,
-        severity: r.severity,
-        remediation: r.remediation_steps,
+        severity: r.impact_severity,
+        remediation: r.prevention_strategy,
       }));
     } catch {
       return [];
@@ -195,7 +187,7 @@ export class LearningConnector {
         SELECT
           COUNT(*) as total,
           AVG(CASE WHEN success = 1 THEN 1.0 ELSE 0.0 END) as success_rate,
-          AVG(execution_time_seconds) as avg_time
+          AVG(execution_time_ms) / 1000.0 as avg_time
         FROM agent_executions
       `).get() as { total: number; success_rate: number; avg_time: number };
 
