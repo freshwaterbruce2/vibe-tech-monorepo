@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "MCP server for VibeTech workspace config: API keys, ports, servers, databases, env vars",
+  "description": "MCP server for VibeTech workspace config: API keys, ports, servers, plugins, databases, env vars",
   "scripts": {
     "build": "tsc -p tsconfig.json --incremental false",
     "start": "node dist/index.js",
