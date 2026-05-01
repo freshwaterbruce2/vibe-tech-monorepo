@@ -134,9 +134,9 @@ export function loadMcpConfig(): McpServerEntry[] {
     const args = cfg.args || [];
     const command = cfg.command || '';
 
-    // Determine if it's a custom (local) server vs. npx-based
-    const isCustom = command === 'node' && args.some((a) => a.includes('C:/dev/apps/'));
-    const distPath = isCustom ? (args.find((a) => a.includes('C:/dev/apps/')) || null) : null;
+    // Determine if it's a custom (local) server vs. npx-based.
+    const distPath = args.find((a) => /C:[/\\]dev[/\\]apps[/\\]/i.test(a)) || null;
+    const isCustom = distPath !== null;
 
     // Mask any sensitive env vars
     const env: Record<string, string> = {};
@@ -146,6 +146,79 @@ export function loadMcpConfig(): McpServerEntry[] {
 
     return { name, command, args, env, isCustom, distPath };
   });
+}
+
+// --- Workspace plugin loader ---
+
+export interface WorkspacePluginEntry {
+  name: string;
+  version: string;
+  description: string;
+  root: string;
+  manifestPath: string;
+  keywords: string[];
+  agents: string[];
+  commands: string[];
+  skills: string[];
+  hasHooks: boolean;
+}
+
+export function loadWorkspacePlugins(): WorkspacePluginEntry[] {
+  const pluginsDir = wsPath('plugins');
+  if (!existsSync(pluginsDir)) return [];
+
+  const plugins: WorkspacePluginEntry[] = [];
+  try {
+    const dirs = readdirSync(pluginsDir, { withFileTypes: true });
+    for (const dir of dirs) {
+      if (!dir.isDirectory()) continue;
+
+      const root = resolve(pluginsDir, dir.name);
+      const manifestPath = resolve(root, '.claude-plugin', 'plugin.json');
+      if (!existsSync(manifestPath)) continue;
+
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8')) as {
+        name?: string;
+        version?: string;
+        description?: string;
+        keywords?: string[];
+      };
+
+      const listMarkdownNames = (relativeDir: string): string[] => {
+        const fullPath = resolve(root, relativeDir);
+        if (!existsSync(fullPath)) return [];
+        return readdirSync(fullPath, { withFileTypes: true })
+          .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
+          .map((entry) => entry.name.replace(/\.md$/, ''))
+          .sort();
+      };
+
+      const skillsDir = resolve(root, 'skills');
+      const skills = existsSync(skillsDir)
+        ? readdirSync(skillsDir, { withFileTypes: true })
+          .filter((entry) => entry.isDirectory())
+          .map((entry) => entry.name)
+          .sort()
+        : [];
+
+      plugins.push({
+        name: manifest.name || dir.name,
+        version: manifest.version || 'unknown',
+        description: manifest.description || '',
+        root,
+        manifestPath,
+        keywords: manifest.keywords || [],
+        agents: listMarkdownNames('agents'),
+        commands: listMarkdownNames('commands'),
+        skills,
+        hasHooks: existsSync(resolve(root, 'hooks', 'hooks.json')),
+      });
+    }
+  } catch {
+    return plugins;
+  }
+
+  return plugins.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 // --- App-specific .env loader ---

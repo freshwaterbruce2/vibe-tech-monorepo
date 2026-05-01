@@ -16,6 +16,7 @@ import {
   loadEnvFile,
   loadPortRegistry,
   loadMcpConfig,
+  loadWorkspacePlugins,
   listAppEnvFiles,
   checkDatabases,
 } from './loaders.js';
@@ -258,6 +259,24 @@ Returns: Array of MCP server configurations.`,
   },
 );
 
+// ─── Tool: ws_list_workspace_plugins ───────────────────────────────
+server.tool(
+  'ws_list_workspace_plugins',
+  `List checked-in local workflow plugins from the workspace plugins/ directory.
+Shows each plugin's manifest metadata and available agents, commands, skills, and hooks.
+
+Returns: Array of local plugin configurations.`,
+  {},
+  async () => {
+    try {
+      const plugins = loadWorkspacePlugins();
+      return { content: [{ type: 'text', text: JSON.stringify(plugins, null, 2) }] };
+    } catch (error: unknown) {
+      return { content: [{ type: 'text', text: `Error: ${error instanceof Error ? error.message : String(error)}` }], isError: true };
+    }
+  },
+);
+
 // ─── Tool: ws_list_databases ───────────────────────────────────────
 server.tool(
   'ws_list_databases',
@@ -289,6 +308,7 @@ Use this for a quick health check or to orient a new agent session.`,
       const envEntries = loadEnvFile();
       const registry = loadPortRegistry();
       const mcpServers = loadMcpConfig();
+      const plugins = loadWorkspacePlugins();
       const databases = checkDatabases(KNOWN_DATABASES);
       const appEnvFiles = listAppEnvFiles();
 
@@ -311,6 +331,12 @@ Use this for a quick health check or to orient a new agent session.`,
           custom: mcpServers.filter((s) => s.isCustom).length,
           external: mcpServers.filter((s) => !s.isCustom).length,
           names: mcpServers.map((s) => s.name),
+        },
+        plugins: {
+          total: plugins.length,
+          names: plugins.map((p) => p.name),
+          commands: plugins.flatMap((p) => p.commands.map((command) => `${p.name}:${command}`)),
+          skills: plugins.flatMap((p) => p.skills.map((skill) => `${p.name}:${skill}`)),
         },
         databases: {
           total: databases.length,
@@ -344,6 +370,7 @@ Returns: Matches grouped by source.`,
       const envEntries = loadEnvFile();
       const registry = loadPortRegistry();
       const mcpServers = loadMcpConfig();
+      const plugins = loadWorkspacePlugins();
       const databases = checkDatabases(KNOWN_DATABASES);
 
       const results = {
@@ -356,12 +383,22 @@ Returns: Matches grouped by source.`,
         mcpServers: mcpServers.filter(
           (s) => s.name.toLowerCase().includes(q) || s.args.some((a) => a.toLowerCase().includes(q)),
         ),
+        plugins: plugins.filter(
+          (p) => p.name.toLowerCase().includes(q)
+            || p.description.toLowerCase().includes(q)
+            || p.commands.some((command) => command.toLowerCase().includes(q))
+            || p.skills.some((skill) => skill.toLowerCase().includes(q)),
+        ),
         databases: databases.filter(
           (d) => d.name.toLowerCase().includes(q) || d.purpose.toLowerCase().includes(q),
         ),
       };
 
-      const totalHits = results.env.length + results.ports.length + results.mcpServers.length + results.databases.length;
+      const totalHits = results.env.length
+        + results.ports.length
+        + results.mcpServers.length
+        + results.plugins.length
+        + results.databases.length;
 
       return {
         content: [{
