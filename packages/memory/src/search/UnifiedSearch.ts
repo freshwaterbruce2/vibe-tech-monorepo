@@ -55,6 +55,7 @@ export class UnifiedSearch {
     private manager: MemoryManager,
     private ragBridge: RAGBridgeAdapter | null = null,
     private learningBridge: LearningBridge | null = null,
+    private agentId: string = process.env['NOVA_AGENT_ID'] ?? 'nova-agent',
   ) {}
 
   async search(query: string, options?: UnifiedSearchOptions): Promise<UnifiedSearchResult[]> {
@@ -283,7 +284,7 @@ export class UnifiedSearch {
     if (!this.learningBridge) return [];
     try {
       // Use getAgentContext to pull patterns from the learning system
-      const ctx = this.learningBridge.getAgentContext('claude', limit);
+      const ctx = this.learningBridge.getAgentContext(this.agentId, limit);
       const queryLower = query.toLowerCase();
       return (ctx.knownPatterns ?? [])
         .filter((p) => p.description.toLowerCase().includes(queryLower) || p.type.toLowerCase().includes(queryLower))

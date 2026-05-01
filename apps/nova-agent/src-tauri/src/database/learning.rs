@@ -177,6 +177,56 @@ impl DatabaseService {
     }
 
     // ============================================
+    // LEARNING CONTEXT FOR CHAT
+    // ============================================
+
+    /// Build a compact learning-context snippet for injection into the system prompt.
+    /// Queries top success_patterns (confidence > 0.7) and recent agent_mistakes.
+    /// Returns an empty string on any DB error — always non-fatal.
+    pub fn get_learning_context_snippet(&self) -> String {
+        let mut parts: Vec<String> = Vec::new();
+
+        // Proven patterns (high-confidence, frequently used)
+        if let Ok(mut stmt) = self.learning_db.prepare(
+            "SELECT description FROM success_patterns \
+             WHERE confidence_score > 0.7 \
+             ORDER BY confidence_score DESC, frequency DESC LIMIT 3",
+        ) {
+            let rows: Vec<String> = stmt
+                .query_map([], |row| row.get::<_, String>(0))
+                .ok()
+                .into_iter()
+                .flatten()
+                .filter_map(|r| r.ok())
+                .map(|s| format!("- {}", s.chars().take(120).collect::<String>()))
+                .collect();
+            if !rows.is_empty() {
+                parts.push(format!("Proven patterns:\n{}", rows.join("\n")));
+            }
+        }
+
+        // Recent mistakes to avoid
+        if let Ok(mut stmt) = self.learning_db.prepare(
+            "SELECT description FROM agent_mistakes \
+             ORDER BY identified_at DESC LIMIT 2",
+        ) {
+            let rows: Vec<String> = stmt
+                .query_map([], |row| row.get::<_, String>(0))
+                .ok()
+                .into_iter()
+                .flatten()
+                .filter_map(|r| r.ok())
+                .map(|s| format!("- {}", s.chars().take(120).collect::<String>()))
+                .collect();
+            if !rows.is_empty() {
+                parts.push(format!("Avoid:\n{}", rows.join("\n")));
+            }
+        }
+
+        parts.join("\n\n")
+    }
+
+    // ============================================
     // SAFE RETRY METHODS
     // ============================================
 
