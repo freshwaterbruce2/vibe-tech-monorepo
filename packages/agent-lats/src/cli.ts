@@ -15,7 +15,7 @@ import { getDb, closeDb, recordOutcome, storeCritique, generatePreferencePairsFr
 import { plan, formatPlanForAgent } from './mcts.js';
 import { generateReflectionPrompt } from './reflect.js';
 import { critiqueFile } from './critique.js';
-import { runAssessmentCycle, getRecentAssessments } from './agent-q.js';
+import { runAssessmentCycle, runRecentAssessmentCycle, getRecentAssessments } from './agent-q.js';
 import { snapshot, evolve, deployVariant, diffVariants, getVariantHistory, getDeployedVariant } from './skill-evolution.js';
 import {
   startRun, recordStage, finishRun, getStageStats, suggestOrderings,
@@ -48,6 +48,7 @@ interface ParsedArgs {
   skillName?: string;
   mutationType?: MutationType;
   variantId?: string;
+  recentMinutes?: number;
   // pipeline-specific
   runId?: string;
   stage?: string;
@@ -106,6 +107,7 @@ function parseArgs(argv: string[]): ParsedArgs {
       case '--output-score':result.outputScore = parseFloat(next ?? '0'); i++; break;
       case '--error':       result.errorMessage = next; i++; break;
       case '--pipeline':    result.pipelineName = next; i++; break;
+      case '--recent':      result.recentMinutes = parseInt(next ?? '60', 10); i++; break;
     }
   }
 
@@ -502,10 +504,42 @@ async function main(): Promise<void> {
 
       case 'assess': {
         // lats assess --node <uuid>          — run Agent Q for a completed node
+        // lats assess --recent <N>           — assess orphan critiques from last N minutes
         // lats assess stats [--agent <id>]   — show quality history
-        const sub = args.subcommand ?? (args.nodeId ? 'run' : 'stats');
+        const sub = args.subcommand ?? (args.recentMinutes ? 'recent' : args.nodeId ? 'run' : 'stats');
 
-        if (sub === 'run') {
+        if (sub === 'recent') {
+          const minutes = args.recentMinutes ?? 60;
+          const assessment = runRecentAssessmentCycle(db, minutes);
+          if (!assessment) {
+            const msg = `No orphan self_critiques in the last ${minutes} minutes.`;
+            if (args.json) {
+              console.log(JSON.stringify({ ok: false, reason: msg }));
+            } else {
+              console.log(`⚠ ${msg}`);
+            }
+            break;
+          }
+          if (args.json) {
+            console.log(JSON.stringify({
+              window: minutes,
+              filesCritiqued: assessment.filesCritiqued,
+              avgFileQuality: assessment.avgFileQuality,
+              qualityScore: assessment.qualityScore,
+              qualityBand: assessment.qualityBand,
+              summary: assessment.summary,
+            }));
+          } else {
+            const band = { excellent: '✦', good: '✓', acceptable: '~', poor: '✗' }[assessment.qualityBand];
+            console.log(`\n${band} Agent Q (session orphans, last ${minutes}m)`);
+            console.log(`  Quality score: ${assessment.qualityScore.toFixed(3)} [${assessment.qualityBand}]`);
+            console.log(`  Files critiqued: ${assessment.filesCritiqued}`);
+            console.log(`    avg static score: ${assessment.avgFileQuality.toFixed(3)}`);
+            console.log(`    positive: ${assessment.positiveFiles}/${assessment.filesCritiqued}`);
+            console.log(`    clean:    ${assessment.cleanFiles}/${assessment.filesCritiqued}`);
+            console.log(`  Stored to agent_q_assessments.`);
+          }
+        } else if (sub === 'run') {
           if (!args.nodeId) {
             console.error('Error: --node <uuid> is required for `assess`');
             process.exit(1);

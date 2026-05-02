@@ -98,7 +98,24 @@ Stage positions (0-indexed, fixed order):
 | QualityGate | 6 |
 | Monitor | 7 |
 
-On failure, pass `--success false` and optionally `--error "what went wrong"`. This data feeds the blame attribution engine and ordering suggestions surfaced after each run.
+On failure, pass `--success false --error "<specific reason>"`. **CRITICAL**: Always extract the actual failure reason from the agent's result and pass it as `--error`. Never pass a generic string like "stage failed". For CodeReviewer, read `result.issues[0]` from state.json and pass it. For other agents, read `result.error` or `result.failureReason`. Storing the specific issue enables blame attribution and future diagnosis.
+
+```powershell
+# Example: CodeReviewer failure — extract issues from state.json
+$codeReviewerResult = (Get-Content state.json | ConvertFrom-Json).agents.CodeReviewer.result
+$firstIssue = $codeReviewerResult.issues | Select-Object -First 1
+$errorMsg = if ($firstIssue) { $firstIssue } else { "approved=false, no issues captured" }
+
+node C:\dev\packages\agent-lats\dist\cli.js pipeline stage `
+    --run $runId `
+    --stage CodeReviewer `
+    --position 2 `
+    --success false `
+    --duration $durationMs `
+    --error $errorMsg
+```
+
+This data feeds the blame attribution engine and ordering suggestions surfaced after each run.
 
 Also persist the `runId` in `state.json` alongside the `latsNodeId` so it survives fresh context iterations:
 
