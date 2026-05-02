@@ -39,6 +39,27 @@ try {
     if ($hookData.cwd -match 'apps[\\/]([^\\/]+)') { $project = $matches[1] }
     elseif ($hookData.cwd -match 'packages[\\/]([^\\/]+)') { $project = $matches[1] }
 
+    # Unconditional: surface orphan critiques (NULL lats_node_id) from last 60 minutes.
+    # These are written by normal Claude Code session edits that run without an active LATS node.
+    $recentArgs = @('C:\dev\packages\agent-lats\dist\cli.js', 'assess', '--recent', '60', '--json')
+    $recentOutput = & node @recentArgs 2>$null
+    if ($recentOutput) {
+        try {
+            $recentResult = $recentOutput | ConvertFrom-Json -ErrorAction Stop
+            if ($recentResult.qualityScore) {
+                $logDir = 'D:\logs\learning-system'
+                if (Test-Path $logDir) {
+                    $logLine = "[{0}] lats-assess-recent quality={1} [{2}] files={3}" -f `
+                        (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), `
+                        $recentResult.qualityScore.ToString('F3'), `
+                        $recentResult.qualityBand, `
+                        $recentResult.filesCritiqued
+                    Add-Content -Path "$logDir\lats-backpropagate.log" -Value $logLine -ErrorAction SilentlyContinue
+                }
+            }
+        } catch {}
+    }
+
     # Check for active LATS node
     $StateFile = 'D:\learning-system\lats-active-node.json'
     if (-not (Test-Path $StateFile)) { exit 0 }

@@ -257,6 +257,85 @@ export function getRecentAssessments(
 }
 
 // ---------------------------------------------------------------------------
+// Orphan critique assessment (session-level, no LATS node required)
+// ---------------------------------------------------------------------------
+
+/**
+ * Aggregate self_critiques with NULL lats_node_id from the last N minutes.
+ * These are critiques generated during normal Claude Code sessions where
+ * lats-active-node.json was not present, so they were never linked to a node.
+ *
+ * The synthetic lats_node_id / task_description use the prefix "session-orphan-"
+ * so getAvgQualityForAgent() LIKE queries using task keywords will not match them.
+ */
+export function assessRecentCritiques(
+  db: Database.Database,
+  windowMinutes: number,
+): AgentQAssessment | null {
+  const agg = db
+    .prepare(`
+      SELECT
+        COUNT(*)                                                               AS total,
+        AVG(static_score)                                                      AS avg_score,
+        SUM(CASE WHEN preference_type = 'positive' THEN 1 ELSE 0 END)         AS positives,
+        SUM(CASE WHEN preference_type = 'negative' THEN 1 ELSE 0 END)         AS negatives,
+        SUM(CASE WHEN violations IS NULL OR violations = '[]' THEN 1 ELSE 0 END) AS clean
+      FROM self_critiques
+      WHERE lats_node_id IS NULL
+        AND created_at >= datetime('now', '-' || ? || ' minutes')
+    `)
+    .get(windowMinutes) as {
+    total: number;
+    avg_score: number | null;
+    positives: number;
+    negatives: number;
+    clean: number;
+  } | undefined;
+
+  if (!agg || agg.total === 0) return null;
+
+  const avgFileQuality = agg.avg_score ?? 0.5;
+  const completionRate = agg.positives / agg.total;
+  const cleanliness = agg.clean / agg.total;
+
+  const qualityScore =
+    0.50 * avgFileQuality +
+    0.25 * completionRate +
+    0.25 * cleanliness;
+
+  const qualityBand: AgentQAssessment['qualityBand'] =
+    qualityScore >= 0.90 ? 'excellent' :
+    qualityScore >= 0.75 ? 'good'      :
+    qualityScore >= 0.55 ? 'acceptable': 'poor';
+
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const syntheticId = `session-orphan-${dateStr}`;
+
+  const summary =
+    `${agg.total} orphan file(s) in last ${windowMinutes}m. ` +
+    `avg=${avgFileQuality.toFixed(3)} ` +
+    `positive=${agg.positives}/${agg.total} ` +
+    `clean=${agg.clean}/${agg.total} ` +
+    `→ quality=${qualityScore.toFixed(3)} [${qualityBand}]`;
+
+  return {
+    id: randomUUID(),
+    latsNodeId: syntheticId,
+    agentId: null,
+    taskDescription: syntheticId,
+    filesCritiqued: agg.total,
+    avgFileQuality,
+    positiveFiles: agg.positives,
+    negativeFiles: agg.negatives,
+    cleanFiles: agg.clean,
+    qualityScore,
+    qualityBand,
+    summary,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Orchestration
 // ---------------------------------------------------------------------------
 
@@ -278,5 +357,20 @@ export function runAssessmentCycle(
   storeAgentQAssessment(db, assessment);
   updateNodeQualityScore(db, latsNodeId, assessment.qualityScore);
 
+  return assessment;
+}
+
+/**
+ * Assessment cycle for orphan critiques (no LATS node active).
+ * Surfaces session-level quality signal from critiques that were written
+ * during normal Claude Code sessions without an active LATS node.
+ */
+export function runRecentAssessmentCycle(
+  db: Database.Database,
+  windowMinutes: number,
+): AgentQAssessment | null {
+  const assessment = assessRecentCritiques(db, windowMinutes);
+  if (!assessment) return null;
+  storeAgentQAssessment(db, assessment);
   return assessment;
 }
