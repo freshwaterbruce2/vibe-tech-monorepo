@@ -54,7 +54,7 @@ console.warn(`[run-gradle] ANDROID_HOME=${env.ANDROID_HOME || '(not set)'}`);
 
 const result =
   process.platform === 'win32'
-    ? spawnSync(env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', ['gradlew.bat', ...gradleArgs].join(' ')], {
+    ? spawnSync(env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', ['.\\gradlew.bat', ...gradleArgs].join(' ')], {
         cwd: androidRoot,
         env,
         stdio: 'inherit',
