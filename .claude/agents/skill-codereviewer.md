@@ -51,14 +51,17 @@ foreach ($field in $required) {
 ### 4. Anti-Patterns Check
 
 ```powershell
-# Prohibited patterns
+# Prohibited patterns (in code blocks — not documentation prose)
 $antiPatterns = @(
     'npm install',        # Should be pnpm
     'npm run',            # Should be pnpm run
     'yarn',               # Never use yarn
     'import React from',  # React 19 doesn't need this
     'React.FC',           # Deprecated pattern
-    'C:\\dev\\apps',      # Hardcoded paths
+    # NOTE: 'C:\\dev\\apps' was previously listed here but caused false positives
+    # when skills legitimately referenced monorepo app paths in documentation.
+    # Path hardcoding in actual code is caught by the "No hardcoded absolute paths"
+    # monorepo rules check above.
 )
 
 foreach ($pattern in $antiPatterns) {
