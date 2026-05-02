@@ -1,8 +1,15 @@
-// Barrel re-export — preserves all existing import paths
+// Barrel re-export - preserves all existing import paths
 // Split into: sidebar-provider.tsx, sidebar-sections.tsx, sidebar-menu.tsx
 
-export { SidebarProvider, useSidebar } from "./sidebar-provider";
-export type { SidebarContextType } from "./sidebar-provider";
+export {
+	SIDEBAR_KEYBOARD_SHORTCUT,
+	SIDEBAR_WIDTH,
+	SIDEBAR_WIDTH_ICON,
+	SIDEBAR_WIDTH_MOBILE,
+	useSidebar,
+} from "./sidebar-context";
+export type { SidebarContextType } from "./sidebar-context";
+export { SidebarProvider } from "./sidebar-provider";
 export {
 	Sidebar,
 	SidebarContent,
