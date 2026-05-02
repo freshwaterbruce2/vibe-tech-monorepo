@@ -112,6 +112,178 @@ function Set-OpenClawGatewayLocalEnvironment {
     return $true
 }
 
+function Get-OpenClawConfigCandidatePaths {
+    $paths = [Collections.Generic.List[string]]::new()
+
+    $toolsConfigPath = 'D:\Data\Tools\.openclaw\openclaw.json'
+    if (Test-Path -LiteralPath $toolsConfigPath -PathType Leaf) {
+        $paths.Add($toolsConfigPath)
+    }
+
+    $userProfile = [Environment]::GetFolderPath('UserProfile')
+    if (-not [string]::IsNullOrWhiteSpace($userProfile)) {
+        $profileConfigPath = Join-Path $userProfile '.openclaw\openclaw.json'
+        if (Test-Path -LiteralPath $profileConfigPath -PathType Leaf) {
+            $paths.Add($profileConfigPath)
+        }
+    }
+
+    return @($paths | Select-Object -Unique)
+}
+
+function Ensure-JsonObjectProperty {
+    param(
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]$Target,
+        [Parameter(Mandatory = $true)]
+        [string]$Name
+    )
+
+    $property = $Target.PSObject.Properties[$Name]
+    if ($property -and $property.Value -is [pscustomobject]) {
+        return $property.Value
+    }
+
+    $value = [pscustomobject]@{}
+    $Target | Add-Member -MemberType NoteProperty -Name $Name -Value $value -Force
+    return $value
+}
+
+function Set-JsonBooleanProperty {
+    param(
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]$Target,
+        [Parameter(Mandatory = $true)]
+        [string]$Name,
+        [Parameter(Mandatory = $true)]
+        [bool]$Value
+    )
+
+    $property = $Target.PSObject.Properties[$Name]
+    if ($property -and $property.Value -is [bool] -and $property.Value -eq $Value) {
+        return $false
+    }
+
+    $Target | Add-Member -MemberType NoteProperty -Name $Name -Value $Value -Force
+    return $true
+}
+
+function Get-StringArrayProperty {
+    param(
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]$Target,
+        [Parameter(Mandatory = $true)]
+        [string]$Name
+    )
+
+    $property = $Target.PSObject.Properties[$Name]
+    if (-not $property -or $null -eq $property.Value) {
+        return @()
+    }
+
+    if ($property.Value -is [string]) {
+        return @($property.Value)
+    }
+
+    return @($property.Value)
+}
+
+function Normalize-OpenClawPluginDenyList {
+    param([object[]]$Deny)
+
+    return [string[]]@(
+        $Deny |
+            Where-Object { $_ -is [string] -and -not [string]::IsNullOrWhiteSpace($_) } |
+            ForEach-Object { $_.Trim() } |
+            Where-Object { $_ -ne 'discordvoice-call' } |
+            Select-Object -Unique
+    )
+}
+
+function Backup-OpenClawConfigFile {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+    $backupPath = "$Path.pre-local-plugin-quarantine-$timestamp.bak"
+    Copy-Item -LiteralPath $Path -Destination $backupPath -Force
+    Write-Host "[openclaw] Backed up config: $backupPath"
+}
+
+function Ensure-OpenClawLocalPluginQuarantine {
+    param([switch]$VerifyOnly)
+
+    $blockedPluginIds = @('discord', 'voice-call')
+    $configPaths = Get-OpenClawConfigCandidatePaths
+    if ($configPaths.Count -eq 0) {
+        throw 'No OpenClaw config files found to verify or update.'
+    }
+
+    $verificationErrors = [Collections.Generic.List[string]]::new()
+
+    foreach ($configPath in $configPaths) {
+        $config = Get-Content -Raw -LiteralPath $configPath | ConvertFrom-Json
+        $plugins = Ensure-JsonObjectProperty -Target $config -Name 'plugins'
+        $entries = Ensure-JsonObjectProperty -Target $plugins -Name 'entries'
+        $channels = Ensure-JsonObjectProperty -Target $config -Name 'channels'
+        $deny = Normalize-OpenClawPluginDenyList -Deny @(
+            Get-StringArrayProperty -Target $plugins -Name 'deny'
+        )
+
+        if ($VerifyOnly) {
+            if ($channels.PSObject.Properties['discord']) {
+                $verificationErrors.Add("$configPath still contains channels.discord.")
+            }
+
+            foreach ($pluginId in $blockedPluginIds) {
+                $entry = $entries.PSObject.Properties[$pluginId]
+                $enabledProperty = if ($entry) { $entry.Value.PSObject.Properties['enabled'] } else { $null }
+                if (-not $enabledProperty -or $enabledProperty.Value -ne $false) {
+                    $verificationErrors.Add("$configPath does not disable plugins.entries.$pluginId.enabled.")
+                }
+
+                if ($deny -notcontains $pluginId) {
+                    $verificationErrors.Add("$configPath plugins.deny does not include $pluginId.")
+                }
+            }
+
+            continue
+        }
+
+        $changed = $false
+        if ($channels.PSObject.Properties['discord']) {
+            $channels.PSObject.Properties.Remove('discord')
+            $changed = $true
+        }
+
+        foreach ($pluginId in $blockedPluginIds) {
+            $entry = Ensure-JsonObjectProperty -Target $entries -Name $pluginId
+            if (Set-JsonBooleanProperty -Target $entry -Name 'enabled' -Value $false) {
+                $changed = $true
+            }
+
+            if ($deny -notcontains $pluginId) {
+                $deny = [string[]]@($deny + $pluginId)
+                $changed = $true
+            }
+        }
+
+        if ($changed) {
+            Backup-OpenClawConfigFile -Path $configPath
+            $updatedDeny = Normalize-OpenClawPluginDenyList -Deny $deny
+            $plugins | Add-Member -MemberType NoteProperty -Name 'deny' -Value $updatedDeny -Force
+            $config | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $configPath -Encoding utf8NoBOM
+            Write-Host "[openclaw] Quarantined local blocking plugins in $configPath"
+        }
+    }
+
+    if ($VerifyOnly -and $verificationErrors.Count -gt 0) {
+        throw "OpenClaw local plugin quarantine verification failed:`n$($verificationErrors -join [Environment]::NewLine)"
+    }
+}
+
 function Test-OpenClawGateway {
     $gatewayUrl = "ws://127.0.0.1:$GatewayPort"
     $exitCode = Invoke-OpenClaw -ArgumentList @(
@@ -241,6 +413,7 @@ if (-not $SkipControlUiPatch) {
     }
 }
 
+Ensure-OpenClawLocalPluginQuarantine -VerifyOnly:$VerifyOnly
 Set-OpenClawGatewayLocalEnvironment -VerifyOnly:$VerifyOnly | Out-Null
 
 if ($VerifyOnly) {
