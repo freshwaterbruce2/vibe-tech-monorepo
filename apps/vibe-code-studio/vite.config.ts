@@ -166,7 +166,7 @@ export default defineConfig(({ mode }) => ({
 
     assetsInlineLimit: 4096,
 
-    target: ['es2022', 'edge88', 'firefox78', 'chrome87', 'safari14'],
+    target: ['es2022', 'chrome95'],
 
     reportCompressedSize: true
   },

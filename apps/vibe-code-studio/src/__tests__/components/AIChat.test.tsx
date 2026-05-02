@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { useState, type ComponentProps } from 'react';
 
-import { AIChat } from '../../components/AIChat';
+import { AIChat } from '../../components/AIChat/index';
 import type { AIMessage, AgentStep, AgentTask, ApprovalRequest } from '../../types';
 
 vi.mock('../../components/SecureMessageContent', () => ({

@@ -398,6 +398,7 @@ export class StrategyMemory {
         if (window.electron?.store) {
             stored = await window.electron.store.get(STORAGE_KEY);
         } else if (typeof localStorage !== 'undefined') {
+            // eslint-disable-next-line electron-security/no-localstorage-electron
             stored = localStorage.getItem(STORAGE_KEY);
         }
 
@@ -435,6 +436,7 @@ export class StrategyMemory {
       if (window.electron?.store) {
           await window.electron.store.set(STORAGE_KEY, JSON.stringify(patterns));
       } else if (typeof localStorage !== 'undefined') {
+          // eslint-disable-next-line electron-security/no-localstorage-electron
           localStorage.setItem(STORAGE_KEY, JSON.stringify(patterns));
       }
     } catch (error) {
