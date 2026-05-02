@@ -37,6 +37,7 @@
       "type": "stdio",
       "command": "node",
       "args": ["C:/dev/apps/memory-mcp/dist/index.js"],
+      "alwaysLoad": true,
       "env": {
         "MEMORY_DB_PATH": "D:/databases/memory.db",
         "MEMORY_EMBEDDING_MODEL": "text-embedding-3-small",
