@@ -56,6 +56,7 @@
     "@mediagrid/capacitor-native-audio": "^3.0.0",
     "@react-spring/web": "^10.0.3",
     "@sentry/react": "^10.46.0",
+    "@vibetech/avatars": "workspace:*",
     "@vibetech/openrouter-client": "workspace:^1.0.0",
     "better-sqlite3": "12.6.2",
     "canvas-confetti": "^1.9.4",
