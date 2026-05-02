@@ -7,7 +7,7 @@
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "node ../../node_modules/@tauri-apps/cli/tauri.js dev",
+        "command": "node ../../node_modules/@tauri-apps/cli/tauri.js dev --config src-tauri/tauri.dev.conf.json",
         "cwd": "apps/nova-agent"
       }
     },

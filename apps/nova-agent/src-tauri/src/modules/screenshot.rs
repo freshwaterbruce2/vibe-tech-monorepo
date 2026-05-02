@@ -2,8 +2,54 @@
 use screenshots::Screen;
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tracing::info;
+
+const SCREENSHOTS_DIR: &str = "D:\\screenshots\\nova-agent";
+
+fn screenshots_dir() -> PathBuf {
+    PathBuf::from(SCREENSHOTS_DIR)
+}
+
+fn resolve_screenshot_path(input: &str) -> Result<PathBuf, String> {
+    if input.trim().is_empty() || input.contains('\0') {
+        return Err("Invalid screenshot path".to_string());
+    }
+
+    let base_dir = screenshots_dir();
+    let input_path = Path::new(input);
+    let candidate = if input_path.is_absolute() {
+        input_path.to_path_buf()
+    } else {
+        let filename = input_path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .ok_or_else(|| "Invalid screenshot filename".to_string())?;
+
+        if filename != input {
+            return Err("Screenshot filename cannot include path separators".to_string());
+        }
+
+        base_dir.join(filename)
+    };
+
+    if candidate.extension().and_then(|ext| ext.to_str()) != Some("png") {
+        return Err("Screenshot path must point to a PNG file".to_string());
+    }
+
+    let base = base_dir
+        .canonicalize()
+        .map_err(|_| "Screenshot directory not found".to_string())?;
+    let target = candidate
+        .canonicalize()
+        .map_err(|_| "Screenshot not found".to_string())?;
+
+    if !target.starts_with(&base) {
+        return Err("Invalid screenshot path".to_string());
+    }
+
+    Ok(target)
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScreenshotResult {
@@ -30,7 +76,7 @@ pub async fn capture_screenshot() -> Result<ScreenshotResult, String> {
         .map_err(|e| format!("Failed to capture screenshot: {}", e))?;
 
     // Create screenshots directory in D:\screenshots (data storage)
-    let screenshots_dir = PathBuf::from("D:\\screenshots\\nova-agent");
+    let screenshots_dir = screenshots_dir();
     fs::create_dir_all(&screenshots_dir)
         .map_err(|e| format!("Failed to create screenshot directory: {}", e))?;
 
@@ -74,7 +120,7 @@ pub async fn capture_screenshot_display(display_index: usize) -> Result<Screensh
         .capture()
         .map_err(|e| format!("Failed to capture screenshot: {}", e))?;
 
-    let screenshots_dir = PathBuf::from("D:\\screenshots\\nova-agent");
+    let screenshots_dir = screenshots_dir();
     fs::create_dir_all(&screenshots_dir)
         .map_err(|e| format!("Failed to create screenshot directory: {}", e))?;
 
@@ -146,7 +192,7 @@ pub async fn capture_region(
 /// List all screenshots in the screenshots directory
 #[tauri::command]
 pub async fn list_screenshots() -> Result<Vec<ScreenshotFileInfo>, String> {
-    let screenshots_dir = PathBuf::from("D:\\screenshots\\nova-agent");
+    let screenshots_dir = screenshots_dir();
 
     if !screenshots_dir.exists() {
         return Ok(vec![]);
@@ -192,20 +238,11 @@ pub async fn list_screenshots() -> Result<Vec<ScreenshotFileInfo>, String> {
 /// Delete a screenshot file
 #[tauri::command]
 pub async fn delete_screenshot(path: String) -> Result<(), String> {
-    let filepath = PathBuf::from(&path);
-
-    // Verify it's in our screenshots directory
-    if !path.starts_with("D:\\screenshots\\nova-agent") {
-        return Err("Invalid screenshot path".to_string());
-    }
-
-    if !filepath.exists() {
-        return Err("Screenshot not found".to_string());
-    }
+    let filepath = resolve_screenshot_path(&path)?;
 
     fs::remove_file(&filepath).map_err(|e| format!("Failed to delete screenshot: {}", e))?;
 
-    info!("Screenshot deleted: {}", path);
+    info!("Screenshot deleted: {}", filepath.display());
     Ok(())
 }
 

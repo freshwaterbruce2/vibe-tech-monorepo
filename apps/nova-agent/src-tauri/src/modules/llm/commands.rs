@@ -70,7 +70,10 @@ pub async fn chat_with_agent(
         } else {
             learning_snippet
         };
-        format!("{}\n\n## Active Learning Context\n{}", system_prompt, snippet)
+        format!(
+            "{}\n\n## Active Learning Context\n{}",
+            system_prompt, snippet
+        )
     };
 
     match dispatch_model_request(
