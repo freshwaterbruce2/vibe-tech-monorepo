@@ -1,8 +1,11 @@
 // Analyze trading database using Node.js
 const Database = require("better-sqlite3");
-const path = require("path");
 
-const dbPath = "C:/dev/projects/crypto-enhanced/trading.db";
+// Prefer explicit env override; otherwise match apps/crypto-enhanced docs (PROJECT_GUIDE.md).
+const dbPath =
+	process.env.DB_PATH ||
+	process.env.CRYPTO_DB_PATH ||
+	"D:/databases/crypto-enhanced/trading.db";
 
 console.log("=".repeat(80));
 console.log("CRYPTO TRADING BOT - PERFORMANCE ANALYSIS");
