@@ -23,7 +23,7 @@
     "@fastify/cors": "^11.2.0",
     "@fastify/static": "^9.0.0",
     "@sentry/react": "^10.46.0",
-    "@stripe/stripe-js": "^8.11.0",
+    "@stripe/stripe-js": "^9.0.0",
     "@vibetech/ui": "workspace:*",
     "axios": "^1.13.6",
     "better-sqlite3": "12.6.2",
