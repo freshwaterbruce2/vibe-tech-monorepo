@@ -174,7 +174,7 @@ impl TaskExecutor {
             .min(MAX_EXECUTION_DURATION_MINUTES)
             .max(1);
 
-        if requires_approval && !approved_for_execution {
+        if (requires_approval || auto_execute) && !approved_for_execution {
             let db_guard = db.lock().await;
             if let Some(service) = db_guard.as_ref() {
                 let _ = service.update_task_status(&task.id, "awaiting_approval");

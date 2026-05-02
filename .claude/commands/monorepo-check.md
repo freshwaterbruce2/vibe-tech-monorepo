@@ -6,7 +6,14 @@ model: sonnet
 
 # Monorepo Smart Check
 
-You are a CI/CD expert. Analyze the current branch against main, identify only the packages that have been affected by the changes, then run the linter and test suite only for those affected packages and their direct dependents.
+Current effort level: **${CLAUDE_EFFORT}**
+
+Behavior by effort:
+- **low**: lint only (skip tests — fast feedback)
+- **medium**: lint + typecheck (no tests)
+- **high / xhigh / max**: lint + typecheck + tests (full check)
+
+You are a CI/CD expert. Analyze the current branch against main, identify only the packages that have been affected by the changes, then run checks according to the effort level above.
 
 ## Step 1: Detect Current Branch and Changed Files
 
@@ -77,7 +84,27 @@ Present with header:
 
 Show complete linting output, highlighting any errors or warnings.
 
-## Step 4: Run Tests on Affected
+## Step 4: Typecheck (medium / high / xhigh / max effort only)
+
+Skip this step if effort is **low**.
+
+Execute:
+
+```bash
+pnpm nx affected --target=typecheck --base=origin/main
+```
+
+Present with header:
+
+```
+════════════════════════════════════════
+  TYPECHECK RESULTS (Affected Only)
+════════════════════════════════════════
+```
+
+## Step 5: Run Tests on Affected (high / xhigh / max effort only)
+
+Skip this step if effort is **low** or **medium**.
 
 Execute:
 

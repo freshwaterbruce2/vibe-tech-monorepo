@@ -36,13 +36,6 @@ pub struct CleanResult {
     pub stopped_early: bool,
 }
 
-fn normalize_path(path: &Path) -> Result<String, String> {
-    let canonical = path
-        .canonicalize()
-        .map_err(|e| format!("Failed to canonicalize path: {}", e))?;
-    Ok(canonical.to_string_lossy().to_lowercase())
-}
-
 fn validate_root(root: &Path, allowlist: &[PathBuf]) -> Result<PathBuf, String> {
     if !root.is_absolute() {
         return Err("Root path must be absolute".to_string());
@@ -56,23 +49,21 @@ fn validate_root(root: &Path, allowlist: &[PathBuf]) -> Result<PathBuf, String> 
         return Err("Root path must exist and be a directory".to_string());
     }
 
-    let root_norm = normalize_path(root)?;
-    let mut allowed = false;
+    let canonical_root = root
+        .canonicalize()
+        .map_err(|e| format!("Failed to canonicalize root path: {}", e))?;
 
-    for allowed_root in allowlist {
-        if let Ok(allowed_norm) = normalize_path(allowed_root) {
-            if root_norm.starts_with(&allowed_norm) {
-                allowed = true;
-                break;
-            }
-        }
-    }
+    let allowed = allowlist
+        .iter()
+        .filter_map(|allowed_root| allowed_root.canonicalize().ok())
+        .filter(|allowed_root| allowed_root.is_dir())
+        .any(|allowed_root| canonical_root.starts_with(allowed_root));
 
     if !allowed {
         return Err("Root path is not in the allowlist".to_string());
     }
 
-    Ok(root.to_path_buf())
+    Ok(canonical_root)
 }
 
 fn build_allowlist(config: &Config) -> Vec<PathBuf> {
@@ -274,4 +265,21 @@ pub async fn clean_old_files(
         .map_err(|e| format!("File cleaner task failed: {}", e))??;
 
     Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validate_root_uses_component_boundaries() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let allowed = temp_dir.path().join("data");
+        let sibling_prefix = temp_dir.path().join("database");
+        std::fs::create_dir_all(&allowed).unwrap();
+        std::fs::create_dir_all(&sibling_prefix).unwrap();
+
+        assert!(validate_root(&allowed, &[allowed.clone()]).is_ok());
+        assert!(validate_root(&sibling_prefix, &[allowed]).is_err());
+    }
 }

@@ -1,0 +1,46 @@
+# Pyrefly config for the maintained crypto-enhanced Python gate.
+# Keep this scoped with mypy.ini unless the runtime type-check surface changes.
+
+project-includes = [
+  "src/config.py",
+  "src/database.py",
+  "src/kraken_client.py",
+  "src/runtime_paths.py",
+  "src/strategies.py",
+  "src/trading_engine.py",
+  "src/websocket_manager.py",
+  "scripts/start_live_trading.py",
+]
+
+project-excludes = [
+  ".venv",
+  ".mypy_cache",
+  ".pytest_cache",
+  "__pycache__",
+  "coverage_html",
+  "htmlcov",
+  "data",
+]
+
+search-path = [
+  "src",
+  "scripts",
+  "../../packages/feature-flags/sdk-python",
+]
+
+python-platform = "win32"
+python-version = "3.13"
+python-interpreter-path = ".venv/Scripts/python.exe"
+min-severity = "warn"
+
+ignore-missing-imports = [
+  "aiohttp",
+  "aiosqlite",
+  "dotenv",
+  "fastapi",
+  "pandas",
+  "psutil",
+  "pydantic",
+  "uvicorn",
+  "yaml",
+]

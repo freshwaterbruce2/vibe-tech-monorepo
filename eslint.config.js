@@ -93,12 +93,11 @@ export default tseslint.config(
       '**/ios/**',
       '**/_archived/**',
       '**/_backups/**',
-      'apps/vibe-code-studio/src/services/ai/**',
       'apps/vibe-code-studio/src/test-setup.ts',
       'apps/vibe-code-studio/src/**/__tests__/**',
       'apps/vibe-code-studio/src/**/*.{test,spec}.{ts,tsx}',
       'apps/vibe-code-studio/src/components/AIProviderSelector/AIProviderSelector.tsx',
-      'apps/vibe-code-studio/src/components/AgentMode/AgentModeV2/StepCardView.tsx',
+
       'apps/vibe-code-studio/src/components/ComponentLibrary/index.tsx',
       'apps/vibe-code-studio/src/components/EnhancedAgentMode/EnhancedAgentMode.tsx',
       'apps/vibe-code-studio/src/components/ModelPerformanceDashboard.tsx',
@@ -522,7 +521,7 @@ export default tseslint.config(
     files: ['apps/vibe-code-studio/src/**/*.{js,jsx,ts,tsx}'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }],
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/no-floating-promises': 'off',
       '@typescript-eslint/no-misused-promises': 'off',

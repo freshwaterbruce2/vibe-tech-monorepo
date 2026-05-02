@@ -230,6 +230,16 @@ apps/nova-agent/src-tauri/tauri.conf.backup.json
 # Serena (AI tool config)
 .serena/
 
+# OpenClaw (AI agent runtime state)
+.openclaw/
+
+# OpenClaw agent identity files (personal local config)
+HEARTBEAT.md
+IDENTITY.md
+SOUL.md
+TOOLS.md
+USER.md
+
 # Deprecated file backups
 *.deprecated
 
@@ -300,6 +310,7 @@ apps/vibe-justice/frontend/src-tauri/binaries/*.exe
 
 # Electron build output
 apps/vibe-tutor/release/
+apps/vibetech-command-center/release/
 
 # Archive (moved to D:\archive)
 archive/

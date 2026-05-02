@@ -47,5 +47,4 @@ Write-Host "🎯 Starting Nova Agent..." -ForegroundColor Cyan
 Write-Host ""
 
 # Launch Tauri dev server
-pnpm run tauri dev
-
+pnpm run dev

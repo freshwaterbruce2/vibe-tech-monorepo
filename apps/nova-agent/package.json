@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "tauri dev",
+    "dev": "tauri dev --config src-tauri/tauri.dev.conf.json",
     "dev:server": "tsx watch src/index.ts",
     "dev:web": "node ../../node_modules/vite/bin/vite.js",
     "inngest:serve": "tsx src/rag/inngest-serve.ts",
@@ -13,7 +13,7 @@
     "build": "tauri build",
     "build:frontend": "node ../../node_modules/vite/bin/vite.js build",
     "build:web": "pnpm run build:frontend",
-    "start": "tauri dev",
+    "start": "tauri dev --config src-tauri/tauri.dev.conf.json",
     "cli": "tsx src/cli.ts",
     "tauri": "tauri",
     "build:watch": "tsc -w",

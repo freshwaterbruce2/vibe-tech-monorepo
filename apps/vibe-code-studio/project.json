@@ -55,28 +55,6 @@
         "cwd": "apps/vibe-code-studio"
       }
     },
-    "electron-build": {
-      "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/src-tauri/target/release/bundle"
-      ],
-      "cache": false,
-      "options": {
-        "command": "pnpm run package",
-        "cwd": "apps/vibe-code-studio"
-      }
-    },
-    "electron-build-win": {
-      "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/src-tauri/target/release/bundle"
-      ],
-      "cache": false,
-      "options": {
-        "command": "pnpm run release:build:win",
-        "cwd": "apps/vibe-code-studio"
-      }
-    },
     "release-build": {
       "executor": "nx:run-commands",
       "outputs": [
@@ -204,7 +182,19 @@
         "cwd": "apps/vibe-code-studio"
       }
     },
-    "quality": {}
+    "quality": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "pnpm run lint",
+          "pnpm run typecheck",
+          "pnpm run test"
+        ],
+        "parallel": false,
+        "cwd": "apps/vibe-code-studio"
+      },
+      "cache": false
+    }
   },
   "tags": [
     "type:desktop",

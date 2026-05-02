@@ -42,9 +42,7 @@ type GlobalWithCrypto = typeof globalThis & { crypto?: WebCryptoGlobal };
  * `FromMainMessage` discriminated union.
  */
 interface ElectronIpcBridge {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   send(channel: string, data?: unknown): void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   on(channel: string, func: (...args: any[]) => void): (() => void) | void;
 }
 

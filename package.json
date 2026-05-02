@@ -112,6 +112,7 @@
     "memory:health": "powershell -ExecutionPolicy Bypass -File scripts\\memory-health-check.ps1 -OutputPath tmp\\memory-health-report.json",
     "learning:validate": "powershell -ExecutionPolicy Bypass -File scripts\\validate-learning-system.ps1",
     "openclaw:recover": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\\openclaw\\Start-LocalRecovery.ps1",
+    "openclaw:verify": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\\openclaw\\Start-LocalRecovery.ps1 -VerifyOnly",
     "workspace:inventory": "node scripts/monorepo-sync-audit.mjs --report-only",
     "workspace:cleanup:dry": "node scripts/monorepo-sync-audit.mjs --report-only --focus=cleanup",
     "workspace:health": "powershell -ExecutionPolicy Bypass -File scripts\\workspace-health.ps1 -OutputPath tmp\\workspace-health-report.json",

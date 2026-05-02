@@ -196,7 +196,7 @@ class RemoteConnectionManager {
 
   private persistToStorage(): void {
     try {
-      const data = Array.from(this.connections.values()).map(({ status, error, ...rest }) => rest);
+      const data = Array.from(this.connections.values()).map(({ status: _status, error: _error, ...rest }) => rest);
       // eslint-disable-next-line electron-security/no-localstorage-electron
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch { /* no-op */ }
