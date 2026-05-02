@@ -98,7 +98,7 @@ export const EnhancedAgentMode: React.FC = () => {
         source: response.provider || 'AI'
       }]);
 
-    } catch (err) {
+    } catch (_err) {
       setLogs(prev => [...prev, {
         id: Date.now().toString(),
         timestamp: new Date(),

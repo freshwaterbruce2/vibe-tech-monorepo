@@ -64,6 +64,21 @@ pub struct ErrorResponse {
 
 const MAX_ORIGIN_COUNT: usize = 64;
 const MAX_QUERY_LENGTH: usize = 1024;
+const DEFAULT_MOBILE_BRIDGE_PORT: u16 = 3000;
+
+fn mobile_lan_enabled() -> bool {
+    env::var("NOVA_MOBILE_LAN_ENABLED")
+        .map(|value| matches!(value.to_ascii_lowercase().as_str(), "1" | "true" | "yes"))
+        .unwrap_or(false)
+}
+
+pub fn bridge_port_from_env() -> u16 {
+    env::var("NOVA_MOBILE_BRIDGE_PORT")
+        .ok()
+        .and_then(|value| value.parse::<u16>().ok())
+        .filter(|port| *port > 0)
+        .unwrap_or(DEFAULT_MOBILE_BRIDGE_PORT)
+}
 
 /// Detect local network IP addresses for LAN mobile access
 fn local_ip_addresses() -> std::io::Result<Vec<String>> {
@@ -102,11 +117,13 @@ fn load_allowed_origins() -> Vec<String> {
                 "http://127.0.0.1:5173".to_string(),
                 "http://localhost:5173".to_string(),
             ];
-            // Auto-detect LAN IPs so mobile devices on the same network can connect
-            if let Ok(addrs) = local_ip_addresses() {
-                for addr in addrs {
-                    origins.push(format!("http://{}:3000", addr));
-                    origins.push(format!("http://{}:1420", addr));
+            if mobile_lan_enabled() {
+                let port = bridge_port_from_env();
+                if let Ok(addrs) = local_ip_addresses() {
+                    for addr in addrs {
+                        origins.push(format!("http://{}:{}", addr, port));
+                        origins.push(format!("http://{}:1420", addr));
+                    }
                 }
             }
             origins
@@ -289,8 +306,8 @@ async fn devices_register_handler(
         tracing::warn!("Empty push token received");
     } else {
         tracing::info!(
-            "[Nova Server] Registered push token: {}",
-            payload.push_token
+            "[Nova Server] Registered push token ({} chars)",
+            payload.push_token.chars().count()
         );
     }
     Json(serde_json::json!({ "success": true, "message": "Device registered" }))
@@ -384,6 +401,16 @@ pub fn create_router(state: Arc<AppState>) -> Router {
 pub async fn get_bridge_info(
     config: tauri::State<'_, Config>,
 ) -> Result<serde_json::Value, String> {
+    let port = bridge_port_from_env();
+    let host = if mobile_lan_enabled() {
+        local_ip_addresses()
+            .ok()
+            .and_then(|addrs| addrs.into_iter().next())
+            .unwrap_or_else(|| "127.0.0.1".to_string())
+    } else {
+        "127.0.0.1".to_string()
+    };
+
     let lan_ip = local_ip_addresses()
         .ok()
         .and_then(|addrs| addrs.into_iter().next())
@@ -391,9 +418,10 @@ pub async fn get_bridge_info(
 
     Ok(serde_json::json!({
         "token": config.mobile_bridge_token,
-        "url": format!("http://{}:3000", lan_ip),
+        "url": format!("http://{}:{}", host, port),
         "lanIp": lan_ip,
-        "port": 3000
+        "lanEnabled": mobile_lan_enabled(),
+        "port": port
     }))
 }
 
@@ -404,9 +432,13 @@ pub async fn start_server(state: Arc<AppState>, port: u16) -> anyhow::Result<()>
     }
 
     let app = create_router(state);
-    let addr = std::net::SocketAddr::from(([0, 0, 0, 0], port));
+    let addr = if mobile_lan_enabled() {
+        std::net::SocketAddr::from(([0, 0, 0, 0], port))
+    } else {
+        std::net::SocketAddr::from(([127, 0, 0, 1], port))
+    };
 
-    tracing::info!("Nova Mobile Bridge starting on http://0.0.0.0:{}", port);
+    tracing::info!("Nova Mobile Bridge starting on http://{}", addr);
 
     let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, app).await?;
@@ -415,76 +447,5 @@ pub async fn start_server(state: Arc<AppState>, port: u16) -> anyhow::Result<()>
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use axum::body::Body;
-    use axum::http::Request;
-    use tower::util::ServiceExt;
-
-    fn test_config() -> Config {
-        Config {
-            deepseek_api_key: String::new(),
-            deepseek_base_url: "https://api.deepseek.com/v1".to_string(),
-            deepseek_model: "deepseek-v3.2".to_string(),
-            groq_api_key: String::new(),
-            openrouter_api_key: String::new(),
-            huggingface_api_key: String::new(),
-            huggingface_base_url: "https://api-inference.huggingface.co/v1".to_string(),
-            kimi_api_key: String::new(),
-            database_path: "D:\\databases".to_string(),
-            workspace_root: "C:\\dev".to_string(),
-            deepcode_ws_url: "ws://127.0.0.1:5004".to_string(),
-            deepcode_ipc_enabled: false,
-            trading_data_dir: "D:\\trading_data".to_string(),
-            trading_logs_dir: "D:\\trading_logs".to_string(),
-            chroma_url: "http://localhost:8000".to_string(),
-            mobile_bridge_token: "test-token".to_string(),
-        }
-    }
-
-    fn test_state() -> Arc<AppState> {
-        Arc::new(AppState {
-            app_state: Arc::new(AsyncMutex::new(crate::modules::state::AgentState::default())),
-            config: test_config(),
-            db: Arc::new(AsyncMutex::new(None)),
-            started_at: Instant::now(),
-        })
-    }
-
-    #[tokio::test]
-    async fn protected_route_requires_authorization() {
-        let app = create_router(test_state());
-        let request = Request::builder()
-            .uri("/status")
-            .method(Method::GET)
-            .body(Body::empty())
-            .unwrap();
-
-        let response = app.oneshot(request).await.unwrap();
-        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
-    }
-
-    #[tokio::test]
-    async fn cors_allows_configured_origin_on_preflight() {
-        std::env::set_var("NOVA_MOBILE_ALLOWED_ORIGINS", "http://127.0.0.1:1420");
-
-        let app = create_router(test_state());
-        let request = Request::builder()
-            .uri("/status")
-            .method(Method::OPTIONS)
-            .header(header::ORIGIN, "http://127.0.0.1:1420")
-            .header(header::ACCESS_CONTROL_REQUEST_METHOD, "GET")
-            .body(Body::empty())
-            .unwrap();
-
-        let response = app.oneshot(request).await.unwrap();
-        assert_eq!(response.status(), StatusCode::OK);
-        assert_eq!(
-            response
-                .headers()
-                .get(header::ACCESS_CONTROL_ALLOW_ORIGIN)
-                .unwrap(),
-            "http://127.0.0.1:1420"
-        );
-    }
-}
+#[path = "http_server_tests.rs"]
+mod tests;

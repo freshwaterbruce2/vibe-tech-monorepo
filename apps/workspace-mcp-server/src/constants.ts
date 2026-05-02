@@ -27,7 +27,16 @@ export const KNOWN_DATABASES = [
   { name: 'database.db', path: 'D:\\databases\\database.db', purpose: 'Main app database' },
   { name: 'memory.db', path: 'D:\\databases\\memory.db', purpose: 'Memory system embeddings' },
   { name: 'agent_learning.db', path: 'D:\\databases\\agent_learning.db', purpose: 'Agent execution history' },
-  { name: 'trading.db', path: 'D:\\databases\\trading.db', purpose: 'Crypto trading records' },
+  {
+    name: 'trading.db',
+    path: 'D:\\databases\\trading.db',
+    purpose: 'Crypto trading stub/inventory listing (may be minimal; verify vs crypto-enhanced path)',
+  },
+  {
+    name: 'trading.db (crypto-enhanced)',
+    path: 'D:\\databases\\crypto-enhanced\\trading.db',
+    purpose: 'Primary crypto-enhanced SQLite when DB_PATH points here',
+  },
   { name: 'nova_activity.db', path: 'D:\\databases\\nova_activity.db', purpose: 'Nova agent activity log' },
 ] as const;
 
