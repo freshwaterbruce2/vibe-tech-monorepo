@@ -1,6 +1,8 @@
 # Repository Guidelines
 
-## 🚨 Non-negotiable Rules (2025 Architecture)
+> Status: secondary reference. Canonical workspace policy lives in `C:\dev\AGENTS.md`, `C:\dev\AI.md`, `C:\dev\WORKSPACE.json`, and `C:\dev\docs\WORKSPACE_STRUCTURE.md`.
+
+## 🚨 Non-negotiable Rules (Current Architecture)
 
 **1. Nova Agent**
 
@@ -8,10 +10,11 @@
 - **Capabilities**: Logs everything, surfaces "Next Steps"/"Doing Right"/"At Risk", scaffolds/builds projects.
 - **Access**: Full file system access with path validation; uses latest DeepSeek (2025-12-02).
 
-**2. Deep Code Editor**
+**2. Workspace Tooling**
 
-- **Role**: Separate monocle-grade IDE replacing VS Code/Cursor.
-- **Capabilities**: Full file/AST/refactor/codegen, uses DeepSeek, owns its UI.
+- **Package manager**: `pnpm` only.
+- **Build system**: `nx` targets (`pnpm nx ...`) for build/lint/test/dev flows.
+- **Source of truth**: root `AGENTS.md` and `AI.md` for active repo workflows.
 
 **3. Storage & Persistence**
 
@@ -21,8 +24,8 @@
 
 **4. Prompt Engineering & System Prompts**
 
-- **Location**: `D:\PromptEngineer` (Workspace), `D:\databases\nova_shared.db` (Storage).
-- **Access**: Agents must fetch their system prompts from the `prompt_entities` and `prompt_versions` tables in the unified database, rather than hardcoded strings.
+- **Location**: Prompt tooling and runtime data live on `D:\` surfaces.
+- **Access**: Resolve prompt storage and ownership from `D:\databases\DB_INVENTORY.md` and project-local docs before changing integrations.
 - **Management**: Use the `prompt_manager.py` tool in `D:\PromptEngineer` to manage prompt versions.
 
 **5. Bridge & IPC**
@@ -40,7 +43,7 @@
 
 ## Project Structure & Module Organization
 
-- Monorepo managed by pnpm workspaces (`pnpm-workspace.yaml`) and Turborepo (`turbo.json`).
+- Monorepo managed by pnpm workspaces (`pnpm-workspace.yaml`) and Nx (`nx.json`).
 - Applications live under `apps/` (e.g., `apps/nova-agent`, `apps/vibe-code-studio`, `apps/desktop-commander-v3`).
 - Backend services live under `backend/` (IPC/LSP proxies, workflow engine, search service).
 - Shared libraries and configs sit in `packages/` (e.g., `shared-utils`, `shared-config`, `ui`, `nova-*`, `vibetech-*`).
@@ -50,8 +53,8 @@
 
 - `pnpm install` — install workspace dependencies; required before any other command.
 - `pnpm dev:nova` / `pnpm dev:vibe` — run Nova Agent or Vibe Code Studio in watch/dev mode.
-- `pnpm build` — Turborepo orchestrated build across packages; use `pnpm build:all` to rebuild from scratch.
-- `pnpm test` — run vitest suites via Turborepo; `pnpm test:all` forces rebuild first.
+- `pnpm nx build <project>` — build via Nx target orchestration.
+- `pnpm nx test <project>` — run test targets via Nx.
 - `pnpm lint` / `pnpm lint:fix` — lint (and optionally auto-fix) with ESLint. `pnpm format` / `pnpm format:check` run Prettier.
 - `pnpm typecheck` — TypeScript project references/strictness pass.
 - For package-specific work, scope with `pnpm --filter <package> <command>` (e.g., `pnpm --filter shared-utils test`).
@@ -65,7 +68,7 @@
 
 ## Testing Guidelines
 
-- Framework: Vitest with coverage emitted to `coverage/` (cached by Turborepo).
+- Framework: Vitest with coverage emitted to `coverage/` (cache behavior managed by workspace tooling).
 - Place unit tests alongside sources or under `__tests__/` with `.test.ts[x]` suffix.
 - Keep tests deterministic; mock network/process boundaries. For new features, add at least one happy-path and one failure/edge test.
 - Run `pnpm test` before commits; ensure coverage not reduced for touched areas.
@@ -94,9 +97,9 @@
 
 ### Nova Agent Location & Documentation
 
-- **Source:** `projects/active/desktop-apps/nova-agent-current/`
-- **Quick Reference:** `projects/active/desktop-apps/nova-agent-current/AGENTS.md`
-- **Full Specification:** `projects/active/desktop-apps/nova-agent-current/NOVA_AGENT_COMPLETE_SPEC.md`
+- **Source:** `apps/nova-agent/`
+- **Quick Reference:** `apps/nova-agent/AGENTS.md` (when present), plus root `AGENTS.md`
+- **Cross-app integration:** `apps/vibe-code-studio/AGENTS.md`
 
 ### Critical Storage Rules for Nova
 
@@ -127,7 +130,7 @@ Databases:
 - **Learning Sync:** Bidirectional sync of agent_mistakes and agent_knowledge tables
 - **Auto-reconnect:** Nova reconnects with exponential backoff (max 10 attempts)
 - **See app-specific AGENTS.md files:**
-  - `projects/active/desktop-apps/nova-agent-current/AGENTS.md` - Nova specification
+  - `apps/nova-agent/AGENTS.md` - Nova specification (when present)
   - `apps/vibe-code-studio/AGENTS.md` - Vibe IPC bridge & frontend integration
 
 ## Voice-to-IPC Integration (Production Ready - 2025-11-28)
@@ -180,7 +183,7 @@ User Voice Input → Web Speech API → Error Boundaries → useVoiceCommands Ho
 
 - **Complete Spec:** `NOVA_V2_VOICE_IPC_IMPLEMENTATION_COMPLETE.md`
 - **Command Reference:** `docs/VOICE_COMMANDS.md`
-- **Learning Data:** `D:\databases\learning\nova-voice-ipc-integration-learnings.json`
+- **Learning Data:** keep durable artifacts on `D:\` and validate ownership with `D:\databases\DB_INVENTORY.md`
 
 <!-- nx configuration start-->
 <!-- Leave the start & end comments to automatically receive updates. -->
