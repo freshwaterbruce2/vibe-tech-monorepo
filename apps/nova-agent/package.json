@@ -26,6 +26,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch",
     "test:integration": "vitest run src/tests",
+    "test:ipc-smoke": "node scripts/smoke-test-ipc.mjs",
     "test:performance": "vitest run --reporter=json --outputFile=performance-results.json",
     "test:wsl": "vitest --pool=forks --poolOptions.forks.singleFork=true",
     "test:wsl:watch": "vitest watch --pool=forks --poolOptions.forks.singleFork=true",
