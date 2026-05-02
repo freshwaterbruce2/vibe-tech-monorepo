@@ -136,7 +136,7 @@ export class MultiFileEditDetector {
 
       logger.info(`[MultiFileEditDetector] Detected JSON pattern with ${changes.length} files`);
       return { detected: true, plan, changes };
-    } catch (error) {
+    } catch (_error) {
       return { detected: false };
     }
   }

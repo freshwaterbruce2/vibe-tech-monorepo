@@ -429,7 +429,7 @@ class TodoApp {
         this.nextId = parseInt(localStorage.getItem('nextId') || '1', 10);
       }
     } catch (e) {
-      console.error('Failed to load todos:', e);
+      logger.error('Failed to load todos:', e);
     }
   }
 

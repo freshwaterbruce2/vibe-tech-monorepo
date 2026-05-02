@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import type { InternalDependency } from '../../services/CodebaseAnalyzer';
+import type { InternalDependency } from '../../services/analysis/types';
 
 // Mock dependencies data
 const mockDependencies: InternalDependency[] = [
