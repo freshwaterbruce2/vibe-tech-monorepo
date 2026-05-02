@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { AvatarItemType, AvatarState, ShopItem } from '@vibetech/avatars';
 import { dataStore } from '../../services/dataStore';
 import { appStore } from '../../utils/electronStore';
-import { ALL_SHOP_ITEMS } from '../../services/avatarShopData';
+import { SHOP_ITEMS } from '../../services/avatarShopData';
 
 const EMPTY_STATE: AvatarState = {
   equippedItems: {},
@@ -159,7 +159,7 @@ export function useAvatarShop({ userTokens, onSpendTokens, onPurchaseComplete }:
   return {
     avatarState,
     loading,
-    allItems: ALL_SHOP_ITEMS,
+    allItems: SHOP_ITEMS,
     lastPurchased,
     isOwned,
     isEquipped,
