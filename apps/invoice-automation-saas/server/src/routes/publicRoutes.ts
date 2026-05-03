@@ -2,7 +2,10 @@ import type Database from "better-sqlite3";
 import type { FastifyInstance } from "fastify";
 import { events } from "../events.js";
 
-export const registerPublicRoutes = (app: FastifyInstance, db: Database) => {
+export const registerPublicRoutes = (
+	app: FastifyInstance,
+	db: Database.Database,
+) => {
 	app.get("/api/public/invoices/:id", async (req, reply) => {
 		const id = (req.params as any).id as string;
 		const token = String((req.query as any)?.token ?? "");

@@ -51,7 +51,8 @@ const signJwt = (payload: object, secret: string) => {
 const verifyJwt = <T>(token: string, secret: string): T | null => {
 	const parts = token.split(".");
 	if (parts.length !== 3) return null;
-	const [h, p, s] = parts;
+	// Length is checked above; narrow to a 3-tuple so destructure is fully typed.
+	const [h, p, s] = parts as [string, string, string];
 	const toSign = `${h}.${p}`;
 	const expected = crypto.createHmac("sha256", secret).update(toSign).digest();
 	const actual = base64UrlDecode(s);
@@ -112,7 +113,10 @@ export const parseSessionToken = (token: string) => {
 
 export const getSessionCookieName = () => TOKEN_COOKIE;
 
-export const getUserById = (db: Database, id: string): AuthUser | null => {
+export const getUserById = (
+	db: Database.Database,
+	id: string,
+): AuthUser | null => {
 	const row = db
 		.prepare(
 			"select id, email, full_name, company_name from users where id = ?",
