@@ -8,3 +8,7 @@ packages:
   - "backend"
   - "backend/*"
   - "tools/*/mcp-server"
+  # Exclude local-only WIP workspaces not yet committed to git.
+  # Re-add once the source tree lands in a separate PR.
+  - "!apps/gravity-claw"
+  - "!packages/games"
