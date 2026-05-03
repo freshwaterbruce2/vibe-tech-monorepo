@@ -402,6 +402,189 @@ describe('POST /api/invoices: tax strategy + currency stamping', () => {
     })
   })
 
+  describe('POST with expenseIds + timeEntryIds (bill once, atomic)', () => {
+    const seedExpense = (id: string, opts: Partial<{
+      amount: number
+      isBillable: number
+      invoicedOn: string | null
+      desc: string
+    }> = {}) => {
+      const now = new Date().toISOString()
+      db.prepare(
+        `INSERT INTO expenses
+           (id, user_id, amount, currency, expense_date, is_billable,
+            invoiced_on_invoice_id, description, created_at, updated_at)
+         VALUES (?, 'user-1', ?, 'USD', '2026-05-01', ?, ?, ?, ?, ?)`,
+      ).run(
+        id,
+        opts.amount ?? 50,
+        opts.isBillable ?? 1,
+        opts.invoicedOn ?? null,
+        opts.desc ?? `Expense ${id}`,
+        now,
+        now,
+      )
+    }
+    const seedProject = (id: string, name = 'Project A') => {
+      const now = new Date().toISOString()
+      db.prepare(
+        `INSERT INTO projects (id, user_id, name, hourly_rate, currency, status, created_at, updated_at)
+         VALUES (?, 'user-1', ?, 100, 'USD', 'active', ?, ?)`,
+      ).run(id, name, now, now)
+    }
+    const seedTimeEntry = (id: string, opts: Partial<{
+      projectId: string | null
+      durationSeconds: number
+      hourlyRate: number
+      isBillable: number
+      ended: boolean
+      invoicedOn: string | null
+    }> = {}) => {
+      const now = new Date().toISOString()
+      db.prepare(
+        `INSERT INTO time_entries
+           (id, user_id, project_id, started_at, ended_at, duration_seconds,
+            is_billable, hourly_rate, invoiced_on_invoice_id, created_at, updated_at)
+         VALUES (?, 'user-1', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        id,
+        opts.projectId ?? null,
+        '2026-05-01T09:00:00.000Z',
+        opts.ended === false ? null : '2026-05-01T10:00:00.000Z',
+        opts.durationSeconds ?? 3600,
+        opts.isBillable ?? 1,
+        opts.hourlyRate ?? 100,
+        opts.invoicedOn ?? null,
+        now,
+        now,
+      )
+    }
+
+    it('appends an expense as a line item and marks it billed', async () => {
+      seedExpense('exp-1', { amount: 75, desc: 'Taxi' })
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/invoices',
+        payload: newInvoiceBody({
+          subtotal: 0,
+          tax: 0,
+          total: 0,
+          items: [],
+          expenseIds: ['exp-1'],
+        }),
+      })
+      expect(res.statusCode).toBe(200)
+      const body = res.json() as {
+        invoice: { id: string; subtotal: number; total: number; items: Array<{ description: string; total: number }> }
+      }
+      expect(body.invoice.subtotal).toBe(75)
+      expect(body.invoice.total).toBe(75)
+      expect(body.invoice.items.some((i) => i.description === 'Taxi' && i.total === 75)).toBe(true)
+
+      const exp = db
+        .prepare('SELECT invoiced_on_invoice_id FROM expenses WHERE id = ?')
+        .get('exp-1') as { invoiced_on_invoice_id: string }
+      expect(exp.invoiced_on_invoice_id).toBe(body.invoice.id)
+    })
+
+    it('groups time entries by project and marks them billed', async () => {
+      seedProject('proj-1', 'Acme Site')
+      seedTimeEntry('te-1', { projectId: 'proj-1', durationSeconds: 3600, hourlyRate: 100 })
+      seedTimeEntry('te-2', { projectId: 'proj-1', durationSeconds: 1800, hourlyRate: 100 })
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/invoices',
+        payload: newInvoiceBody({
+          subtotal: 0,
+          tax: 0,
+          total: 0,
+          items: [],
+          timeEntryIds: ['te-1', 'te-2'],
+        }),
+      })
+      expect(res.statusCode).toBe(200)
+      const body = res.json() as {
+        invoice: { id: string; subtotal: number; items: Array<{ description: string; total: number }> }
+      }
+      expect(body.invoice.subtotal).toBeCloseTo(150, 5)
+      expect(body.invoice.items.length).toBe(1)
+      expect(body.invoice.items[0].description).toContain('Acme Site')
+
+      const te1 = db
+        .prepare('SELECT invoiced_on_invoice_id FROM time_entries WHERE id = ?')
+        .get('te-1') as { invoiced_on_invoice_id: string }
+      const te2 = db
+        .prepare('SELECT invoiced_on_invoice_id FROM time_entries WHERE id = ?')
+        .get('te-2') as { invoiced_on_invoice_id: string }
+      expect(te1.invoiced_on_invoice_id).toBe(body.invoice.id)
+      expect(te2.invoiced_on_invoice_id).toBe(body.invoice.id)
+    })
+
+    it('rejects already-invoiced expense (atomic with no items inserted)', async () => {
+      seedExpense('exp-already', { invoicedOn: 'some-other-invoice' })
+      const before = (
+        db.prepare('SELECT COUNT(*) AS n FROM invoices').get() as { n: number }
+      ).n
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/invoices',
+        payload: newInvoiceBody({
+          items: [],
+          expenseIds: ['exp-already'],
+        }),
+      })
+      expect(res.statusCode).toBe(400)
+
+      const after = (
+        db.prepare('SELECT COUNT(*) AS n FROM invoices').get() as { n: number }
+      ).n
+      expect(after).toBe(before)
+    })
+
+    it('rejects time entry that is still running', async () => {
+      seedTimeEntry('te-running', { ended: false })
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/invoices',
+        payload: newInvoiceBody({
+          items: [],
+          timeEntryIds: ['te-running'],
+        }),
+      })
+      expect(res.statusCode).toBe(400)
+    })
+
+    it('mixes regular items + expense + time correctly into totals', async () => {
+      seedExpense('exp-mix', { amount: 40, desc: 'Mileage' })
+      seedProject('proj-mix', 'Mix Project')
+      seedTimeEntry('te-mix', { projectId: 'proj-mix', durationSeconds: 7200, hourlyRate: 50 })
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/invoices',
+        payload: newInvoiceBody({
+          subtotal: 200,
+          tax: 0,
+          total: 200,
+          items: [{ description: 'Service', quantity: 2, price: 100, total: 200 }],
+          expenseIds: ['exp-mix'],
+          timeEntryIds: ['te-mix'],
+        }),
+      })
+      expect(res.statusCode).toBe(200)
+      const body = res.json() as {
+        invoice: { subtotal: number; total: number; items: unknown[] }
+      }
+      expect(body.invoice.subtotal).toBeCloseTo(200 + 40 + 100, 5)
+      expect(body.invoice.total).toBeCloseTo(340, 5)
+      expect(body.invoice.items.length).toBe(3)
+    })
+  })
+
   describe('PUT updates also recompute + stamp', () => {
     it('PUT recomputes per-item tax + re-stamps currency', async () => {
       db.prepare(

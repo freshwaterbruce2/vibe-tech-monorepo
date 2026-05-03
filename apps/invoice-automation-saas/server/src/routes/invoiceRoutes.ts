@@ -148,6 +148,201 @@ const stampCurrency = async (
 	).run(rate, userCurrency, invoiceId);
 };
 
+interface ExpenseRow {
+	id: string;
+	user_id: string;
+	description: string | null;
+	vendor: string | null;
+	amount: number;
+	is_billable: number;
+	invoiced_on_invoice_id: string | null;
+}
+
+interface TimeEntryRow {
+	id: string;
+	user_id: string;
+	project_id: string | null;
+	duration_seconds: number | null;
+	hourly_rate: number | null;
+	is_billable: number;
+	ended_at: string | null;
+	invoiced_on_invoice_id: string | null;
+}
+
+const validateBillables = (
+	db: Database.Database,
+	userId: string,
+	expenseIds: string[],
+	timeEntryIds: string[],
+):
+	| {
+			ok: true;
+			expenses: ExpenseRow[];
+			timeEntries: TimeEntryRow[];
+	  }
+	| { ok: false; status: number; error: string; details?: unknown } => {
+	let expenses: ExpenseRow[] = [];
+	if (expenseIds.length > 0) {
+		const ph = expenseIds.map(() => "?").join(",");
+		expenses = db
+			.prepare(
+				`SELECT id, user_id, description, vendor, amount, is_billable, invoiced_on_invoice_id
+				   FROM expenses WHERE id IN (${ph}) AND user_id = ?`,
+			)
+			.all(...expenseIds, userId) as ExpenseRow[];
+		if (expenses.length !== expenseIds.length)
+			return {
+				ok: false,
+				status: 400,
+				error: "one or more expenseIds not owned by user",
+			};
+		const bad = expenses.find(
+			(e) => !e.is_billable || e.invoiced_on_invoice_id,
+		);
+		if (bad)
+			return {
+				ok: false,
+				status: 400,
+				error: "every expense must be billable and not already invoiced",
+				details: { offendingId: bad.id },
+			};
+	}
+
+	let timeEntries: TimeEntryRow[] = [];
+	if (timeEntryIds.length > 0) {
+		const ph = timeEntryIds.map(() => "?").join(",");
+		timeEntries = db
+			.prepare(
+				`SELECT id, user_id, project_id, duration_seconds, hourly_rate,
+				        is_billable, ended_at, invoiced_on_invoice_id
+				   FROM time_entries WHERE id IN (${ph}) AND user_id = ?`,
+			)
+			.all(...timeEntryIds, userId) as TimeEntryRow[];
+		if (timeEntries.length !== timeEntryIds.length)
+			return {
+				ok: false,
+				status: 400,
+				error: "one or more timeEntryIds not owned by user",
+			};
+		const bad = timeEntries.find(
+			(e) => !e.is_billable || e.invoiced_on_invoice_id || !e.ended_at,
+		);
+		if (bad)
+			return {
+				ok: false,
+				status: 400,
+				error: "every time entry must be billable, ended, and not already invoiced",
+				details: { offendingId: bad.id },
+			};
+	}
+
+	return { ok: true, expenses, timeEntries };
+};
+
+const billExpensesAndTime = (
+	db: Database.Database,
+	invoiceId: string,
+	expenses: ExpenseRow[],
+	timeEntries: TimeEntryRow[],
+): { extraSubtotal: number } => {
+	if (expenses.length === 0 && timeEntries.length === 0)
+		return { extraSubtotal: 0 };
+
+	const projectNames = new Map<string, string>();
+	if (timeEntries.length > 0) {
+		const projectIds = Array.from(
+			new Set(
+				timeEntries
+					.map((e) => e.project_id)
+					.filter((p): p is string => Boolean(p)),
+			),
+		);
+		if (projectIds.length > 0) {
+			const ph = projectIds.map(() => "?").join(",");
+			const rows = db
+				.prepare(`SELECT id, name FROM projects WHERE id IN (${ph})`)
+				.all(...projectIds) as { id: string; name: string }[];
+			for (const r of rows) projectNames.set(r.id, r.name);
+		}
+	}
+
+	interface TimeGroup {
+		projectId: string | null;
+		hours: number;
+		rate: number;
+		ids: string[];
+	}
+	const timeGroups = new Map<string, TimeGroup>();
+	for (const e of timeEntries) {
+		const key = e.project_id ?? "__none__";
+		const seconds = e.duration_seconds ?? 0;
+		const hours = seconds / 3600;
+		const rate = e.hourly_rate ?? 0;
+		let g = timeGroups.get(key);
+		if (!g) {
+			g = { projectId: e.project_id, hours: 0, rate, ids: [] };
+			timeGroups.set(key, g);
+		}
+		g.hours += hours;
+		if (rate > 0) g.rate = rate;
+		g.ids.push(e.id);
+	}
+
+	const now = nowIso();
+	let extraSubtotal = 0;
+
+	const tx = db.transaction(() => {
+		for (const exp of expenses) {
+			db.prepare(
+				`INSERT INTO invoice_items
+				   (id, invoice_id, description, quantity, price, total, created_at)
+				 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			).run(
+				crypto.randomUUID(),
+				invoiceId,
+				exp.description ?? exp.vendor ?? "Expense",
+				1,
+				exp.amount,
+				exp.amount,
+				now,
+			);
+			db.prepare(
+				`UPDATE expenses SET invoiced_on_invoice_id = ?, updated_at = ? WHERE id = ?`,
+			).run(invoiceId, now, exp.id);
+			extraSubtotal += exp.amount;
+		}
+
+		for (const g of timeGroups.values()) {
+			const total = +(g.hours * g.rate).toFixed(2);
+			const desc = g.projectId
+				? `${projectNames.get(g.projectId) ?? "Project"} — ${g.hours.toFixed(2)}h`
+				: `Time — ${g.hours.toFixed(2)}h`;
+			db.prepare(
+				`INSERT INTO invoice_items
+				   (id, invoice_id, description, quantity, price, total, created_at)
+				 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			).run(
+				crypto.randomUUID(),
+				invoiceId,
+				desc,
+				+g.hours.toFixed(4),
+				g.rate,
+				total,
+				now,
+			);
+			for (const eid of g.ids) {
+				db.prepare(
+					`UPDATE time_entries SET invoiced_on_invoice_id = ?, updated_at = ? WHERE id = ?`,
+				).run(invoiceId, now, eid);
+			}
+			extraSubtotal += total;
+		}
+	});
+	tx();
+
+	return { extraSubtotal };
+};
+
 const toInvoiceApi = (db: Database.Database, invoiceId: string) => {
 	const invoice = db
 		.prepare("select * from invoices where id = ?")
@@ -288,6 +483,23 @@ export const registerInvoiceRoutes = (
 			Number(body.tax ?? 0),
 		);
 
+		const expenseIds = Array.isArray(
+			(body as { expenseIds?: unknown }).expenseIds,
+		)
+			? (body as { expenseIds: unknown[] }).expenseIds.map(String)
+			: [];
+		const timeEntryIds = Array.isArray(
+			(body as { timeEntryIds?: unknown }).timeEntryIds,
+		)
+			? (body as { timeEntryIds: unknown[] }).timeEntryIds.map(String)
+			: [];
+
+		const billable = validateBillables(db, userId, expenseIds, timeEntryIds);
+		if (!billable.ok)
+			return reply
+				.code(billable.status)
+				.send({ error: billable.error, ...(billable.details as object | undefined) });
+
 		const clientRow =
 			(db
 				.prepare("select * from clients where user_id = ? and email = ?")
@@ -367,6 +579,20 @@ export const registerInvoiceRoutes = (
 				item.taxRateId,
 				nowIso(),
 			);
+		}
+
+		const { extraSubtotal } = billExpensesAndTime(
+			db,
+			invoiceId,
+			billable.expenses,
+			billable.timeEntries,
+		);
+		if (extraSubtotal > 0) {
+			const newSubtotal = computed.subtotal + extraSubtotal;
+			const newTotal = newSubtotal + computed.tax;
+			db.prepare(
+				`UPDATE invoices SET subtotal = ?, total = ?, updated_at = ? WHERE id = ?`,
+			).run(newSubtotal, newTotal, nowIso(), invoiceId);
 		}
 
 		await stampCurrency(db, invoiceId, userId, currency, issueDate);
