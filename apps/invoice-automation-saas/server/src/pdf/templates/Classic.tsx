@@ -1,3 +1,5 @@
+import * as React from 'react'
+
 import {
   Document,
   Image,
@@ -8,6 +10,8 @@ import {
 } from '@react-pdf/renderer'
 
 import { mergeConfig, type TemplateProps } from './types.js'
+
+void React
 
 const formatAmount = (amount: number, currency: string): string => {
   try {
