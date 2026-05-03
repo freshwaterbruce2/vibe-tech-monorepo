@@ -11,7 +11,9 @@ import path from 'path'
 import { getSessionCookieName, parseSessionToken } from './auth.js'
 import { openDb } from './db.js'
 import { events } from './events.js'
+import './dunning/cronRegistration.js'
 import { startCronSchedules, stopCronSchedules } from './jobs/cron.js'
+import './jobs/handlers/dunningSweep.js'
 import './jobs/handlers/emailInvoice.js'
 import './jobs/handlers/emailOverdue.js'
 import './jobs/handlers/emailReceipt.js'
@@ -21,6 +23,7 @@ import './recurring/cronRegistration.js'
 import { migrate } from './migrate.js'
 import { registerAuthRoutes } from './routes/authRoutes.js'
 import { registerClientRoutes } from './routes/clientRoutes.js'
+import { registerDunningRoutes } from './routes/dunningRoutes.js'
 import { registerInvoiceRoutes } from './routes/invoiceRoutes.js'
 import { registerPaymentRoutes } from './routes/paymentRoutes.js'
 import { registerPublicRoutes } from './routes/publicRoutes.js'
@@ -110,6 +113,7 @@ const start = async () => {
   registerPublicRoutes(app, db)
   registerPaymentRoutes(app, db)
   registerRecurringRoutes(app, db)
+  registerDunningRoutes(app, db)
   await registerWebhookRoutes(app, db)
 
   if (process.env.SERVE_WEB === '1') {
