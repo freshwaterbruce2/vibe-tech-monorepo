@@ -13,6 +13,7 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import TaxRates from './pages/TaxRates'
 import Templates from './pages/Templates'
+import Time from './pages/Time'
 
 import 'react-toastify/dist/ReactToastify.css'
 
@@ -71,6 +72,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <Expenses />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/time"
+              element={
+                <ProtectedRoute>
+                  <Time />
                 </ProtectedRoute>
               }
             />
