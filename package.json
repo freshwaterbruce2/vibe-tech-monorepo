@@ -70,6 +70,11 @@
   "scripts": {
     "evaluate:target": "tsx backend/openrouter-proxy/src/utils/eval.ts",
     "evaluate:token-counter": "pnpm exec tsx packages/shared-utils/src/ai/eval.ts",
+    "project:start": "pwsh.exe -NoProfile -File tools/active-project/start.ps1",
+    "project:status": "pwsh.exe -NoProfile -File tools/active-project/status.ps1",
+    "project:check": "pwsh.exe -NoProfile -File tools/active-project/check.ps1",
+    "project:complete": "pwsh.exe -NoProfile -File tools/active-project/complete.ps1",
+    "project:test": "pwsh.exe -NoProfile -File tools/active-project/tests/run-tests.ps1 && pwsh.exe -NoProfile -File tools/active-project/tests/integration-tests.ps1",
     "dev": "nx run @vibetech/command-center:dev",
     "dev:gravity-claw": "nx run gravity-claw:dev",
     "build": "echo 'ERROR: Do not run build from workspace root. cd into a specific app first.' && exit 1",

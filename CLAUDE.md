@@ -28,6 +28,7 @@
 
 Detailed rules are in `.claude/rules/`. Key references:
 
+- Active project lock: `.claude/rules/active-project-lock.md` — finish before starting another (state in `D:\active-project\active-project.json`)
 - Paths policy: `.claude/rules/paths-policy.md`
 - No duplicates: `.claude/rules/no-duplicates.md`
 - No mock/placeholder code: `.claude/rules/no-mock-or-placeholder-code.md`
