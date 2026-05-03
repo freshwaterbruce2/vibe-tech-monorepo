@@ -10,6 +10,7 @@ import InvoicePayment from './pages/InvoicePayment'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
+import Templates from './pages/Templates'
 
 import 'react-toastify/dist/ReactToastify.css'
 
@@ -44,6 +45,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <CreateInvoice />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/templates"
+              element={
+                <ProtectedRoute>
+                  <Templates />
                 </ProtectedRoute>
               }
             />

@@ -25,9 +25,11 @@ import { registerAuthRoutes } from './routes/authRoutes.js'
 import { registerClientRoutes } from './routes/clientRoutes.js'
 import { registerDunningRoutes } from './routes/dunningRoutes.js'
 import { registerInvoiceRoutes } from './routes/invoiceRoutes.js'
+import { registerLogoRoutes } from './routes/logoRoutes.js'
 import { registerPaymentRoutes } from './routes/paymentRoutes.js'
 import { registerPublicRoutes } from './routes/publicRoutes.js'
 import { registerRecurringRoutes } from './routes/recurringRoutes.js'
+import { registerTemplateRoutes } from './routes/templateRoutes.js'
 import { registerWebhookRoutes } from './routes/webhookRoutes.js'
 import { registerRateLimits } from './security/rateLimit.js'
 
@@ -114,6 +116,8 @@ const start = async () => {
   registerPaymentRoutes(app, db)
   registerRecurringRoutes(app, db)
   registerDunningRoutes(app, db)
+  registerTemplateRoutes(app, db)
+  await registerLogoRoutes(app, db)
   await registerWebhookRoutes(app, db)
 
   if (process.env.SERVE_WEB === '1') {
