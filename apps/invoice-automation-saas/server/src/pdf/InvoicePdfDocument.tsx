@@ -5,6 +5,7 @@ export interface InvoicePdfLineItem {
   quantity: number
   unitPrice: number
   total: number
+  taxAmount?: number
 }
 
 export interface InvoicePdfClient {
@@ -25,6 +26,9 @@ export interface InvoicePdfData {
   tax: number
   total: number
   currency: string
+  taxStrategy?: 'invoice' | 'item'
+  userCurrencyAtIssue?: string | null
+  exchangeRateToUserCurrency?: number | null
   notes?: string | null
   terms?: string | null
   companyName?: string

@@ -29,6 +29,9 @@ interface InvoiceRow {
   status: string
   public_token: string | null
   user_id: string
+  tax_strategy: string | null
+  exchange_rate_to_user_currency: number | null
+  user_currency_at_issue: string | null
 }
 
 interface ClientRow {
@@ -73,7 +76,8 @@ const loadInvoiceContext = (
   const invoice = db
     .prepare(
       `SELECT id, invoice_number, total, currency, due_date, issue_date,
-              subtotal, tax, notes, terms, status, public_token, user_id
+              subtotal, tax, notes, terms, status, public_token, user_id,
+              tax_strategy, exchange_rate_to_user_currency, user_currency_at_issue
          FROM invoices WHERE id = ?`,
     )
     .get(invoiceId) as InvoiceRow | undefined
@@ -113,12 +117,17 @@ const buildPdf = async (ctx: InvoiceContext): Promise<Buffer> => {
     company: ctx.client.company ?? undefined,
     address: ctx.client.address ?? undefined,
   }
-  const lineItems: InvoicePdfLineItem[] = ctx.items.map((it) => ({
-    description: it.description,
-    quantity: it.quantity,
-    unitPrice: it.price,
-    total: it.total,
-  }))
+  const lineItems: InvoicePdfLineItem[] = ctx.items.map((it) => {
+    const subtotal = it.quantity * it.price
+    const taxAmount = +(it.total - subtotal).toFixed(2)
+    return {
+      description: it.description,
+      quantity: it.quantity,
+      unitPrice: it.price,
+      total: it.total,
+      taxAmount: taxAmount > 0 ? taxAmount : 0,
+    }
+  })
   const input: InvoicePdfInput = {
     invoiceNumber: ctx.invoice.invoice_number,
     issueDate: ctx.invoice.issue_date,
@@ -128,6 +137,9 @@ const buildPdf = async (ctx: InvoiceContext): Promise<Buffer> => {
     tax: ctx.invoice.tax,
     total: ctx.invoice.total,
     currency: ctx.invoice.currency,
+    taxStrategy: ctx.invoice.tax_strategy === 'item' ? 'item' : 'invoice',
+    userCurrencyAtIssue: ctx.invoice.user_currency_at_issue,
+    exchangeRateToUserCurrency: ctx.invoice.exchange_rate_to_user_currency,
     notes: ctx.invoice.notes,
     terms: ctx.invoice.terms,
     companyName: ctx.user.company_name ?? ctx.user.full_name ?? undefined,

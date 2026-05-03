@@ -55,6 +55,7 @@ const Classic = ({ data, config }: TemplateProps) => {
     cellDescription: { flex: 4, fontSize: 10 },
     cellQty: { flex: 1, fontSize: 10, textAlign: 'right' },
     cellPrice: { flex: 1.5, fontSize: 10, textAlign: 'right' },
+    cellTax: { flex: 1.2, fontSize: 10, textAlign: 'right' },
     cellTotal: { flex: 1.5, fontSize: 10, textAlign: 'right' },
     cellHeader: { fontFamily: `${cfg.fontFamily}-Bold`, fontSize: 10, color: '#374151' },
     totalsBlock: { marginTop: 12, alignItems: 'flex-end' },
@@ -78,7 +79,30 @@ const Classic = ({ data, config }: TemplateProps) => {
     logo: { width: 80, height: 80, objectFit: 'contain', marginBottom: 8 },
   })
 
-  const { invoiceNumber, issueDate, dueDate, client, lineItems, subtotal, tax, total, currency, notes, terms, companyName } = data
+  const {
+    invoiceNumber,
+    issueDate,
+    dueDate,
+    client,
+    lineItems,
+    subtotal,
+    tax,
+    total,
+    currency,
+    taxStrategy,
+    userCurrencyAtIssue,
+    exchangeRateToUserCurrency,
+    notes,
+    terms,
+    companyName,
+  } = data
+  const showItemTaxColumn =
+    taxStrategy === 'item' && lineItems.some((it) => (it.taxAmount ?? 0) > 0)
+  const showCurrencyConversion =
+    !!userCurrencyAtIssue &&
+    userCurrencyAtIssue.toUpperCase() !== currency.toUpperCase() &&
+    !!exchangeRateToUserCurrency &&
+    exchangeRateToUserCurrency > 0
 
   return (
     <Document title={`Invoice ${invoiceNumber}`} author={companyName ?? 'Invoice Automation SaaS'}>
@@ -110,6 +134,9 @@ const Classic = ({ data, config }: TemplateProps) => {
             <Text style={[styles.cellDescription, styles.cellHeader]}>Description</Text>
             <Text style={[styles.cellQty, styles.cellHeader]}>Qty</Text>
             <Text style={[styles.cellPrice, styles.cellHeader]}>Unit price</Text>
+            {showItemTaxColumn ? (
+              <Text style={[styles.cellTax, styles.cellHeader]}>Tax</Text>
+            ) : null}
             <Text style={[styles.cellTotal, styles.cellHeader]}>Total</Text>
           </View>
           {lineItems.map((item, index) => (
@@ -117,6 +144,11 @@ const Classic = ({ data, config }: TemplateProps) => {
               <Text style={styles.cellDescription}>{item.description}</Text>
               <Text style={styles.cellQty}>{item.quantity}</Text>
               <Text style={styles.cellPrice}>{formatAmount(item.unitPrice, currency)}</Text>
+              {showItemTaxColumn ? (
+                <Text style={styles.cellTax}>
+                  {formatAmount(item.taxAmount ?? 0, currency)}
+                </Text>
+              ) : null}
               <Text style={styles.cellTotal}>{formatAmount(item.total, currency)}</Text>
             </View>
           ))}
@@ -135,6 +167,19 @@ const Classic = ({ data, config }: TemplateProps) => {
             <Text style={styles.totalsLabelGrand}>Total</Text>
             <Text style={styles.totalsValueGrand}>{formatAmount(total, currency)}</Text>
           </View>
+          {showCurrencyConversion ? (
+            <View style={[styles.totalsRow, { marginTop: 6 }]}>
+              <Text style={[styles.totalsLabel, { fontSize: 9, color: '#6b7280' }]}>
+                {`1 ${currency} = ${exchangeRateToUserCurrency?.toFixed(4)} ${userCurrencyAtIssue}`}
+              </Text>
+              <Text style={[styles.totalsValue, { fontSize: 9, color: '#6b7280' }]}>
+                {formatAmount(
+                  total * (exchangeRateToUserCurrency ?? 1),
+                  userCurrencyAtIssue ?? currency,
+                )}
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         {notes || terms || cfg.footerText ? (

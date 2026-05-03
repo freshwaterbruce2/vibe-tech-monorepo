@@ -58,7 +58,30 @@ const Minimal = ({ data, config }: TemplateProps) => {
     logo: { width: 50, height: 50, objectFit: 'contain', marginBottom: 16 },
   })
 
-  const { invoiceNumber, issueDate, dueDate, client, lineItems, subtotal, tax, total, currency, notes, terms, companyName } = data
+  const {
+    invoiceNumber,
+    issueDate,
+    dueDate,
+    client,
+    lineItems,
+    subtotal,
+    tax,
+    total,
+    currency,
+    taxStrategy,
+    userCurrencyAtIssue,
+    exchangeRateToUserCurrency,
+    notes,
+    terms,
+    companyName,
+  } = data
+  const showItemTaxColumn =
+    taxStrategy === 'item' && lineItems.some((it) => (it.taxAmount ?? 0) > 0)
+  const showCurrencyConversion =
+    !!userCurrencyAtIssue &&
+    userCurrencyAtIssue.toUpperCase() !== currency.toUpperCase() &&
+    !!exchangeRateToUserCurrency &&
+    exchangeRateToUserCurrency > 0
 
   return (
     <Document title={`Invoice ${invoiceNumber}`} author={companyName ?? 'Invoice Automation SaaS'}>
@@ -89,6 +112,9 @@ const Minimal = ({ data, config }: TemplateProps) => {
             <Text style={[styles.cellDescription, styles.cellHeader]}>Description</Text>
             <Text style={[styles.cellQty, styles.cellHeader]}>Qty</Text>
             <Text style={[styles.cellPrice, styles.cellHeader]}>Unit</Text>
+            {showItemTaxColumn ? (
+              <Text style={[styles.cellPrice, styles.cellHeader]}>Tax</Text>
+            ) : null}
             <Text style={[styles.cellTotal, styles.cellHeader]}>Total</Text>
           </View>
           <View style={styles.divider} />
@@ -97,6 +123,11 @@ const Minimal = ({ data, config }: TemplateProps) => {
               <Text style={styles.cellDescription}>{item.description}</Text>
               <Text style={styles.cellQty}>{item.quantity}</Text>
               <Text style={styles.cellPrice}>{formatAmount(item.unitPrice, currency)}</Text>
+              {showItemTaxColumn ? (
+                <Text style={styles.cellPrice}>
+                  {formatAmount(item.taxAmount ?? 0, currency)}
+                </Text>
+              ) : null}
               <Text style={styles.cellTotal}>{formatAmount(item.total, currency)}</Text>
             </View>
           ))}
@@ -115,6 +146,19 @@ const Minimal = ({ data, config }: TemplateProps) => {
             <Text style={styles.totalsLabelGrand}>Total</Text>
             <Text style={styles.totalsValueGrand}>{formatAmount(total, currency)}</Text>
           </View>
+          {showCurrencyConversion ? (
+            <View style={[styles.totalsRow, { marginTop: 6 }]}>
+              <Text style={[styles.totalsLabel, { fontSize: 9, color: '#9ca3af' }]}>
+                {`1 ${currency} = ${exchangeRateToUserCurrency?.toFixed(4)} ${userCurrencyAtIssue}`}
+              </Text>
+              <Text style={[styles.totalsValue, { fontSize: 9, color: '#9ca3af' }]}>
+                {formatAmount(
+                  total * (exchangeRateToUserCurrency ?? 1),
+                  userCurrencyAtIssue ?? currency,
+                )}
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         {notes || terms || cfg.footerText ? (

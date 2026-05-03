@@ -20,6 +20,9 @@ export interface InvoicePdfInput {
   tax: number
   total: number
   currency: string
+  taxStrategy?: 'invoice' | 'item'
+  userCurrencyAtIssue?: string | null
+  exchangeRateToUserCurrency?: number | null
   notes?: string | null
   terms?: string | null
   companyName?: string
@@ -45,6 +48,9 @@ export const renderInvoicePdfBuffer = (
     tax: invoice.tax,
     total: invoice.total,
     currency: invoice.currency,
+    taxStrategy: invoice.taxStrategy,
+    userCurrencyAtIssue: invoice.userCurrencyAtIssue ?? null,
+    exchangeRateToUserCurrency: invoice.exchangeRateToUserCurrency ?? null,
     notes: invoice.notes ?? null,
     terms: invoice.terms ?? null,
     companyName: invoice.companyName,
