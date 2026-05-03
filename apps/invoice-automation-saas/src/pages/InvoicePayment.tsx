@@ -11,7 +11,6 @@ const InvoicePayment = () => {
 	const { invoiceId } = useParams();
 	const location = useLocation();
 	const navigate = useNavigate();
-	const [paid, setPaid] = useState(false);
 	const [invoice, setInvoice] = useState<Invoice | null>(null);
 	const [loading, setLoading] = useState(true);
 
@@ -19,6 +18,11 @@ const InvoicePayment = () => {
 		const params = new URLSearchParams(location.search);
 		const token = params.get("token");
 		return token ?? undefined;
+	}, [location.search]);
+
+	const checkoutStatus = useMemo(() => {
+		const params = new URLSearchParams(location.search);
+		return params.get("status");
 	}, [location.search]);
 
 	useEffect(() => {
@@ -29,7 +33,6 @@ const InvoicePayment = () => {
 			.then((found) => {
 				if (!mounted) return;
 				setInvoice(found);
-				setPaid(found?.status === "paid");
 				setLoading(false);
 			});
 		return () => {
@@ -37,19 +40,15 @@ const InvoicePayment = () => {
 		};
 	}, [invoiceId, publicToken]);
 
-	const onPaid = async () => {
-		if (!invoiceId) return;
-		const updated = await invoiceService.markInvoicePaid(invoiceId, {
-			publicToken,
-		});
-		if (updated) {
-			setInvoice(updated);
-			setPaid(true);
-			toast.success("Payment recorded (local)");
-		} else {
-			toast.error("Invoice not found");
+	useEffect(() => {
+		if (checkoutStatus === "success") {
+			toast.success("Payment received. Thank you.");
+		} else if (checkoutStatus === "canceled") {
+			toast.info("Payment canceled. You can retry below.");
 		}
-	};
+	}, [checkoutStatus]);
+
+	const paid = invoice?.status === "paid";
 
 	if (loading) {
 		return (
@@ -127,9 +126,11 @@ const InvoicePayment = () => {
 					</Card>
 
 					<PaymentForm
+						invoiceId={invoice.id}
+						publicToken={publicToken ?? ""}
 						amount={invoice.total}
 						currency={invoice.currency}
-						onPaid={onPaid}
+						disabled={paid || !publicToken}
 					/>
 				</div>
 			</main>
