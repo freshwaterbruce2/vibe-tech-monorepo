@@ -26,6 +26,7 @@ import { migrate } from './migrate.js'
 import { registerAuthRoutes } from './routes/authRoutes.js'
 import { registerClientRoutes } from './routes/clientRoutes.js'
 import { registerDunningRoutes } from './routes/dunningRoutes.js'
+import { registerExpenseRoutes } from './routes/expenseRoutes.js'
 import { registerInvoiceRoutes } from './routes/invoiceRoutes.js'
 import { registerLogoRoutes } from './routes/logoRoutes.js'
 import { registerPaymentRoutes } from './routes/paymentRoutes.js'
@@ -121,6 +122,7 @@ const start = async () => {
   registerDunningRoutes(app, db)
   registerTaxRoutes(app, db)
   registerTemplateRoutes(app, db)
+  await registerExpenseRoutes(app, db)
   await registerLogoRoutes(app, db)
   await registerWebhookRoutes(app, db)
 

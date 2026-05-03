@@ -6,6 +6,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import Clients from './pages/Clients'
 import CreateInvoice from './pages/CreateInvoice'
 import Dashboard from './pages/Dashboard'
+import Expenses from './pages/Expenses'
 import InvoicePayment from './pages/InvoicePayment'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
@@ -62,6 +63,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <TaxRates />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/expenses"
+              element={
+                <ProtectedRoute>
+                  <Expenses />
                 </ProtectedRoute>
               }
             />
