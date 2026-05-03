@@ -182,21 +182,8 @@ class InvoiceService {
     return updated
   }
 
-  async markInvoicePaid(id: string, options?: { publicToken?: string }) {
+  async markInvoicePaid(id: string) {
     this.hydrate()
-
-    if (options?.publicToken) {
-      await apiFetch(
-        `/api/public/invoices/${encodeURIComponent(id)}/pay?token=${encodeURIComponent(options.publicToken)}`,
-        { method: 'POST' }
-      )
-      // Re-fetch public invoice
-      const invoice = await this.getInvoiceById(id, {
-        publicToken: options.publicToken,
-      })
-      return invoice
-    }
-
     const data = await apiFetch(`/api/invoices/${encodeURIComponent(id)}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status: 'paid' }),

@@ -17,7 +17,9 @@ import { migrate } from './migrate.js'
 import { registerAuthRoutes } from './routes/authRoutes.js'
 import { registerClientRoutes } from './routes/clientRoutes.js'
 import { registerInvoiceRoutes } from './routes/invoiceRoutes.js'
+import { registerPaymentRoutes } from './routes/paymentRoutes.js'
 import { registerPublicRoutes } from './routes/publicRoutes.js'
+import { registerWebhookRoutes } from './routes/webhookRoutes.js'
 import { registerRateLimits } from './security/rateLimit.js'
 
 const PORT = Number(process.env.PORT ?? 8787)
@@ -100,6 +102,8 @@ const start = async () => {
   registerClientRoutes(app, db)
   registerInvoiceRoutes(app, db)
   registerPublicRoutes(app, db)
+  registerPaymentRoutes(app, db)
+  await registerWebhookRoutes(app, db)
 
   if (process.env.SERVE_WEB === '1') {
     const distDir = process.env.WEB_DIST_DIR
