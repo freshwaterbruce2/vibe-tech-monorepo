@@ -36,6 +36,7 @@
     "express": "^4.21.2",
     "lucide-react": "0.563.0",
     "motion": "^12.23.24",
+    "@vibetech/games": "workspace:*",
     "react": "19.2.4",
     "react-chessboard": "^5.10.0",
     "react-dom": "19.2.4",
