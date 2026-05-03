@@ -4,6 +4,7 @@ export interface InvoiceItem {
 	quantity: number;
 	price: number;
 	total: number;
+	taxRateId?: string;
 }
 
 export interface Client {
@@ -40,6 +41,9 @@ export interface Invoice {
 	notes?: string;
 	terms?: string;
 	currency: string;
+	taxStrategy?: "invoice" | "item";
+	exchangeRateToUserCurrency?: number;
+	userCurrencyAtIssue?: string;
 	recurring?: RecurringInvoice;
 	parentInvoiceId?: string; // For tracking recurring invoice series
 	publicToken?: string; // For public payment links (local backend)
@@ -55,4 +59,6 @@ export interface InvoiceFormData {
 	notes?: string;
 	terms?: string;
 	tax?: number;
+	currency?: string;
+	taxStrategy?: "invoice" | "item";
 }

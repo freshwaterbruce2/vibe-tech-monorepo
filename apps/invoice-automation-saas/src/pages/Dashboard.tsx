@@ -12,10 +12,31 @@ import { useAuth } from '../contexts/AuthContext'
 import { useRealtimeInvoices } from '../hooks/useRealtimeInvoices'
 import { invoiceService } from '../services/invoiceService'
 import type { Invoice } from '../types/invoice'
+import { formatCurrency } from '../lib/currency'
 import { generateInvoicePdf } from '../utils/generateInvoicePdf'
 
 const formatUsd = (value: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value)
+
+const formatInvoiceTotal = (invoice: Invoice): { value: string; tooltip?: string } => {
+  const value = formatCurrency(invoice.total, invoice.currency)
+  if (
+    invoice.userCurrencyAtIssue &&
+    invoice.userCurrencyAtIssue.toUpperCase() !== invoice.currency.toUpperCase() &&
+    invoice.exchangeRateToUserCurrency &&
+    invoice.exchangeRateToUserCurrency > 0
+  ) {
+    const equiv = formatCurrency(
+      invoice.total * invoice.exchangeRateToUserCurrency,
+      invoice.userCurrencyAtIssue,
+    )
+    return {
+      value,
+      tooltip: `${value} @ ${invoice.exchangeRateToUserCurrency.toFixed(4)} = ${equiv}`,
+    }
+  }
+  return { value }
+}
 
 type InvoiceStatus = Invoice['status']
 
@@ -206,18 +227,28 @@ const Dashboard = () => {
                 <span className="ui-text-right">Total</span>
                 <span className="ui-text-right">Actions</span>
               </div>
-              {invoices.map((invoice) => (
-                <div key={invoice.id} className="ui-table__row">
-                  <span className="ui-mono">{invoice.invoiceNumber}</span>
-                  <span>{invoice.client.name}</span>
-                  <span className="ui-muted">{format(invoice.dueDate, 'MMM d, yyyy')}</span>
-                  <span className={`ui-chip ui-chip--${invoice.status}`}>{invoice.status}</span>
-                  <span className="ui-text-right">{formatUsd(invoice.total)}</span>
-                  <span className="ui-text-right">
-                    <InvoiceActions invoice={invoice} />
-                  </span>
-                </div>
-              ))}
+              {invoices.map((invoice) => {
+                const { value, tooltip } = formatInvoiceTotal(invoice)
+                return (
+                  <div key={invoice.id} className="ui-table__row">
+                    <span className="ui-mono">{invoice.invoiceNumber}</span>
+                    <span>{invoice.client.name}</span>
+                    <span className="ui-muted">{format(invoice.dueDate, 'MMM d, yyyy')}</span>
+                    <span className={`ui-chip ui-chip--${invoice.status}`}>{invoice.status}</span>
+                    <span className="ui-text-right" title={tooltip}>
+                      {value}
+                      {tooltip ? (
+                        <span aria-hidden="true" className="ui-muted" style={{ marginLeft: 4 }}>
+                          *
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className="ui-text-right">
+                      <InvoiceActions invoice={invoice} />
+                    </span>
+                  </div>
+                )
+              })}
             </div>
           )}
         </Card>
