@@ -216,3 +216,222 @@ describe('PUT/DELETE /api/invoices/:id', () => {
     })
   })
 })
+
+describe('POST /api/invoices: tax strategy + currency stamping', () => {
+  let db: Database.Database
+  let tmpDir: string
+  let app: FastifyInstance
+
+  beforeEach(async () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'iaas-inv-fu-'))
+    db = new Database(path.join(tmpDir, 'test.db'))
+    db.pragma('foreign_keys = ON')
+    runMigrations(db, migrationsDir)
+    seedUser(db)
+    db.prepare(`UPDATE users SET default_currency = 'USD' WHERE id = ?`).run(
+      'user-1',
+    )
+
+    app = Fastify()
+    app.addHook('preHandler', async (req) => {
+      ;(req as unknown as { authUserId: string }).authUserId = 'user-1'
+    })
+    registerInvoiceRoutes(app, db)
+    await app.ready()
+  })
+
+  afterEach(async () => {
+    await app.close()
+    db.close()
+    fs.rmSync(tmpDir, { recursive: true, force: true })
+  })
+
+  const newInvoiceBody = (overrides: Record<string, unknown> = {}) => ({
+    invoiceNumber: 'INV-FU-1',
+    issueDate: '2026-05-01',
+    dueDate: '2026-05-31',
+    currency: 'USD',
+    status: 'draft',
+    client: { name: 'Acme', email: 'acme@example.com' },
+    subtotal: 0,
+    tax: 0,
+    total: 0,
+    items: [{ description: 'Service', quantity: 2, price: 100, total: 200 }],
+    ...overrides,
+  })
+
+  describe('tax_strategy="invoice" (default, backwards compatible)', () => {
+    it('uses body.tax as the absolute invoice-level tax', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/invoices',
+        payload: newInvoiceBody({ subtotal: 200, tax: 25, total: 225 }),
+      })
+      expect(res.statusCode).toBe(200)
+      const body = res.json() as {
+        invoice: { taxStrategy: string; subtotal: number; tax: number; total: number }
+      }
+      expect(body.invoice.taxStrategy).toBe('invoice')
+      expect(body.invoice.tax).toBe(25)
+      expect(body.invoice.total).toBe(225)
+    })
+  })
+
+  describe('tax_strategy="item"', () => {
+    it('computes per-item tax from each item.taxRateId', async () => {
+      db.prepare(
+        `INSERT INTO tax_rates (id, user_id, name, rate_pct, created_at)
+         VALUES ('tr-10', 'user-1', 'GST 10%', 10, ?)`,
+      ).run(new Date().toISOString())
+      db.prepare(
+        `INSERT INTO tax_rates (id, user_id, name, rate_pct, created_at)
+         VALUES ('tr-20', 'user-1', 'PST 20%', 20, ?)`,
+      ).run(new Date().toISOString())
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/invoices',
+        payload: newInvoiceBody({
+          taxStrategy: 'item',
+          items: [
+            { description: 'A', quantity: 1, price: 100, taxRateId: 'tr-10' },
+            { description: 'B', quantity: 2, price: 50, taxRateId: 'tr-20' },
+            { description: 'C (untaxed)', quantity: 1, price: 30 },
+          ],
+        }),
+      })
+      expect(res.statusCode).toBe(200)
+      const body = res.json() as {
+        invoice: {
+          taxStrategy: string
+          subtotal: number
+          tax: number
+          total: number
+          items: Array<{ taxRateId?: string; total: number }>
+        }
+      }
+      expect(body.invoice.taxStrategy).toBe('item')
+      expect(body.invoice.subtotal).toBe(230)
+      expect(body.invoice.tax).toBeCloseTo(10 + 20, 5)
+      expect(body.invoice.total).toBeCloseTo(230 + 30, 5)
+      expect(body.invoice.items[0].taxRateId).toBe('tr-10')
+      expect(body.invoice.items[1].taxRateId).toBe('tr-20')
+      expect(body.invoice.items[2].taxRateId).toBeUndefined()
+    })
+
+    it('ignores tax_rate_id when item-strategy not selected', async () => {
+      db.prepare(
+        `INSERT INTO tax_rates (id, user_id, name, rate_pct, created_at)
+         VALUES ('tr-x', 'user-1', 'X 99%', 99, ?)`,
+      ).run(new Date().toISOString())
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/invoices',
+        payload: newInvoiceBody({
+          tax: 5,
+          items: [{ description: 'A', quantity: 1, price: 100, taxRateId: 'tr-x' }],
+        }),
+      })
+      const body = res.json() as { invoice: { tax: number; total: number } }
+      expect(body.invoice.tax).toBe(5)
+      expect(body.invoice.total).toBe(105)
+    })
+
+    it('rejects unknown tax_rate_id silently (treats as 0%)', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/invoices',
+        payload: newInvoiceBody({
+          taxStrategy: 'item',
+          items: [{ description: 'A', quantity: 1, price: 100, taxRateId: 'tr-ghost' }],
+        }),
+      })
+      const body = res.json() as { invoice: { tax: number; total: number } }
+      expect(body.invoice.tax).toBe(0)
+      expect(body.invoice.total).toBe(100)
+    })
+  })
+
+  describe('currency stamping', () => {
+    it('stamps user_currency_at_issue + rate=1 when invoice currency matches user default', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/invoices',
+        payload: newInvoiceBody({
+          currency: 'USD',
+          subtotal: 100,
+          tax: 0,
+          total: 100,
+        }),
+      })
+      const body = res.json() as {
+        invoice: {
+          userCurrencyAtIssue?: string
+          exchangeRateToUserCurrency?: number
+        }
+      }
+      expect(body.invoice.userCurrencyAtIssue).toBe('USD')
+      expect(body.invoice.exchangeRateToUserCurrency).toBe(1)
+    })
+
+    it('stamps cached FX rate when invoice currency differs from user default', async () => {
+      db.prepare(
+        `INSERT INTO exchange_rates (base, quote, rate_date, rate, fetched_at)
+         VALUES ('EUR', 'USD', '2026-05-01', 1.085, ?)`,
+      ).run(new Date().toISOString())
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/invoices',
+        payload: newInvoiceBody({
+          currency: 'EUR',
+          subtotal: 100,
+          tax: 0,
+          total: 100,
+        }),
+      })
+      const body = res.json() as {
+        invoice: {
+          userCurrencyAtIssue?: string
+          exchangeRateToUserCurrency?: number
+        }
+      }
+      expect(body.invoice.userCurrencyAtIssue).toBe('USD')
+      expect(body.invoice.exchangeRateToUserCurrency).toBe(1.085)
+    })
+  })
+
+  describe('PUT updates also recompute + stamp', () => {
+    it('PUT recomputes per-item tax + re-stamps currency', async () => {
+      db.prepare(
+        `INSERT INTO tax_rates (id, user_id, name, rate_pct, created_at)
+         VALUES ('tr-15', 'user-1', 'VAT 15%', 15, ?)`,
+      ).run(new Date().toISOString())
+
+      const created = await app.inject({
+        method: 'POST',
+        url: '/api/invoices',
+        payload: newInvoiceBody({ status: 'draft' }),
+      })
+      const id = (created.json() as { invoice: { id: string } }).invoice.id
+
+      const res = await app.inject({
+        method: 'PUT',
+        url: `/api/invoices/${id}`,
+        payload: newInvoiceBody({
+          status: 'draft',
+          taxStrategy: 'item',
+          items: [{ description: 'X', quantity: 1, price: 200, taxRateId: 'tr-15' }],
+        }),
+      })
+      expect(res.statusCode).toBe(200)
+      const body = res.json() as {
+        invoice: { taxStrategy: string; tax: number; total: number }
+      }
+      expect(body.invoice.taxStrategy).toBe('item')
+      expect(body.invoice.tax).toBeCloseTo(30, 5)
+      expect(body.invoice.total).toBeCloseTo(230, 5)
+    })
+  })
+})

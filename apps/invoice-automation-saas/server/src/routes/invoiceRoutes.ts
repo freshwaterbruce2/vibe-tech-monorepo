@@ -2,6 +2,7 @@ import type Database from "better-sqlite3";
 import crypto from "crypto";
 import type { FastifyInstance } from "fastify";
 import { events } from "../events.js";
+import { getRate } from "../fx/cache.js";
 import { enqueueJob } from "../jobs/enqueue.js";
 import { createRecurringSchedule } from "./recurringRoutes.js";
 import type { Frequency } from "../recurring/scheduler.js";
@@ -20,6 +21,133 @@ import type {
 const nowIso = () => new Date().toISOString();
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
+interface TaxRateRow {
+	id: string;
+	user_id: string;
+	rate_pct: number;
+}
+
+interface NormalizedItem {
+	description: string;
+	quantity: number;
+	price: number;
+	taxRateId: string | null;
+	lineSubtotal: number;
+	lineTax: number;
+	total: number;
+}
+
+interface TaxStrategyResult {
+	strategy: "invoice" | "item";
+	items: NormalizedItem[];
+	subtotal: number;
+	tax: number;
+	total: number;
+}
+
+const applyTaxStrategy = (
+	db: Database.Database,
+	userId: string,
+	rawItems: unknown[],
+	rawStrategy: string | undefined,
+	rawInvoiceTax: number,
+): TaxStrategyResult => {
+	const strategy: "invoice" | "item" =
+		rawStrategy === "item" ? "item" : "invoice";
+
+	const ratesById = new Map<string, number>();
+	const lookupRate = (id: string): number | null => {
+		if (ratesById.has(id)) return ratesById.get(id) ?? null;
+		const row = db
+			.prepare(
+				"SELECT id, user_id, rate_pct FROM tax_rates WHERE id = ? AND user_id = ?",
+			)
+			.get(id, userId) as TaxRateRow | undefined;
+		const pct = row ? row.rate_pct : null;
+		if (pct !== null) ratesById.set(id, pct);
+		return pct;
+	};
+
+	const items: NormalizedItem[] = rawItems.map((raw) => {
+		const r = (raw ?? {}) as Record<string, unknown>;
+		const description = String(r.description ?? "");
+		const quantity = Number(r.quantity ?? 0);
+		const price = Number(r.price ?? 0);
+		const taxRateIdRaw = r.taxRateId ?? r.tax_rate_id;
+		const taxRateId =
+			typeof taxRateIdRaw === "string" && taxRateIdRaw.length > 0
+				? taxRateIdRaw
+				: null;
+		const lineSubtotal = quantity * price;
+		let lineTax = 0;
+		if (strategy === "item" && taxRateId) {
+			const pct = lookupRate(taxRateId);
+			if (pct !== null) {
+				lineTax = lineSubtotal * (pct / 100);
+			}
+		}
+		return {
+			description,
+			quantity,
+			price,
+			taxRateId,
+			lineSubtotal,
+			lineTax,
+			total: lineSubtotal + lineTax,
+		};
+	});
+
+	if (strategy === "item") {
+		const subtotal = items.reduce((s, it) => s + it.lineSubtotal, 0);
+		const tax = items.reduce((s, it) => s + it.lineTax, 0);
+		return { strategy, items, subtotal, tax, total: subtotal + tax };
+	}
+
+	const subtotal = items.reduce((s, it) => s + it.lineSubtotal, 0);
+	const tax = Number.isFinite(rawInvoiceTax) ? rawInvoiceTax : 0;
+	return { strategy, items, subtotal, tax, total: subtotal + tax };
+};
+
+interface UserCurrencyRow {
+	default_currency: string;
+}
+
+const stampCurrency = async (
+	db: Database.Database,
+	invoiceId: string,
+	userId: string,
+	invoiceCurrency: string,
+	issueDate: string,
+): Promise<void> => {
+	const userRow = db
+		.prepare("SELECT default_currency FROM users WHERE id = ?")
+		.get(userId) as UserCurrencyRow | undefined;
+	if (!userRow) return;
+	const userCurrency = userRow.default_currency;
+	let rate = 1;
+	if (invoiceCurrency.toUpperCase() !== userCurrency.toUpperCase()) {
+		try {
+			rate = await getRate(db, invoiceCurrency, userCurrency, issueDate);
+		} catch {
+			// If FX lookup fails (no network in tests, frankfurter down),
+			// stamp the user currency only and leave rate null. Better than
+			// blocking invoice creation.
+			db.prepare(
+				`UPDATE invoices
+				    SET user_currency_at_issue = ?
+				  WHERE id = ?`,
+			).run(userCurrency, invoiceId);
+			return;
+		}
+	}
+	db.prepare(
+		`UPDATE invoices
+		    SET exchange_rate_to_user_currency = ?,
+		        user_currency_at_issue = ?
+		  WHERE id = ?`,
+	).run(rate, userCurrency, invoiceId);
+};
+
 const toInvoiceApi = (db: Database.Database, invoiceId: string) => {
 	const invoice = db
 		.prepare("select * from invoices where id = ?")
@@ -35,6 +163,12 @@ const toInvoiceApi = (db: Database.Database, invoiceId: string) => {
 		)
 		.all(invoiceId) as InvoiceItemRow[];
 
+	const invAny = invoice as InvoiceRow & {
+		tax_strategy?: string | null;
+		exchange_rate_to_user_currency?: number | null;
+		user_currency_at_issue?: string | null;
+		template_id?: string | null;
+	};
 	return {
 		id: invoice.id,
 		invoiceNumber: invoice.invoice_number,
@@ -48,13 +182,17 @@ const toInvoiceApi = (db: Database.Database, invoiceId: string) => {
 			company: client.company ?? undefined,
 			address: client.address ?? undefined,
 		},
-		items: items.map((it) => ({
-			id: it.id,
-			description: it.description,
-			quantity: it.quantity,
-			price: it.price,
-			total: it.total,
-		})),
+		items: items.map((it) => {
+			const itAny = it as InvoiceItemRow & { tax_rate_id?: string | null };
+			return {
+				id: it.id,
+				description: it.description,
+				quantity: it.quantity,
+				price: it.price,
+				total: it.total,
+				taxRateId: itAny.tax_rate_id ?? undefined,
+			};
+		}),
 		subtotal: invoice.subtotal,
 		tax: invoice.tax,
 		total: invoice.total,
@@ -62,6 +200,11 @@ const toInvoiceApi = (db: Database.Database, invoiceId: string) => {
 		notes: invoice.notes ?? undefined,
 		terms: invoice.terms ?? undefined,
 		currency: invoice.currency,
+		taxStrategy: (invAny.tax_strategy ?? "invoice") as "invoice" | "item",
+		exchangeRateToUserCurrency:
+			invAny.exchange_rate_to_user_currency ?? undefined,
+		userCurrencyAtIssue: invAny.user_currency_at_issue ?? undefined,
+		templateId: invAny.template_id ?? undefined,
 		recurring: invoice.recurring_json
 			? JSON.parse(invoice.recurring_json)
 			: undefined,
@@ -135,10 +278,15 @@ export const registerInvoiceRoutes = (
 		if (!clientEmail.includes("@"))
 			return reply.code(400).send({ error: "client.email is invalid" });
 
-		const subtotal = Number(body.subtotal ?? 0);
-		const tax = Number(body.tax ?? 0);
-		const total = Number(body.total ?? 0);
-		const items = Array.isArray(body.items) ? body.items : [];
+		const rawItems = Array.isArray(body.items) ? body.items : [];
+		const taxStrategyRaw = (body as { taxStrategy?: string }).taxStrategy;
+		const computed = applyTaxStrategy(
+			db,
+			userId,
+			rawItems,
+			taxStrategyRaw,
+			Number(body.tax ?? 0),
+		);
 
 		const clientRow =
 			(db
@@ -177,7 +325,11 @@ export const registerInvoiceRoutes = (
 		const publicToken = crypto.randomBytes(16).toString("hex");
 
 		db.prepare(
-			"insert into invoices (id, user_id, invoice_number, client_id, issue_date, due_date, subtotal, tax, total, status, notes, terms, currency, recurring_json, parent_invoice_id, public_token, created_at, updated_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			`insert into invoices
+			   (id, user_id, invoice_number, client_id, issue_date, due_date,
+			    subtotal, tax, total, status, notes, terms, currency, recurring_json,
+			    parent_invoice_id, public_token, tax_strategy, created_at, updated_at)
+			 values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		).run(
 			invoiceId,
 			userId,
@@ -185,9 +337,9 @@ export const registerInvoiceRoutes = (
 			clientId,
 			issueDate,
 			dueDate,
-			subtotal,
-			tax,
-			total,
+			computed.subtotal,
+			computed.tax,
+			computed.total,
 			status,
 			notes,
 			terms,
@@ -195,23 +347,29 @@ export const registerInvoiceRoutes = (
 			recurring,
 			body.parentInvoiceId ?? null,
 			publicToken,
+			computed.strategy,
 			nowIso(),
 			nowIso(),
 		);
 
-		for (const item of items) {
+		for (const item of computed.items) {
 			db.prepare(
-				"insert into invoice_items (id, invoice_id, description, quantity, price, total, created_at) values (?, ?, ?, ?, ?, ?, ?)",
+				`insert into invoice_items
+				   (id, invoice_id, description, quantity, price, total, tax_rate_id, created_at)
+				 values (?, ?, ?, ?, ?, ?, ?, ?)`,
 			).run(
 				crypto.randomUUID(),
 				invoiceId,
-				String((item as Record<string, unknown>).description ?? ""),
-				Number((item as Record<string, unknown>).quantity ?? 0),
-				Number((item as Record<string, unknown>).price ?? 0),
-				Number((item as Record<string, unknown>).total ?? 0),
+				item.description,
+				item.quantity,
+				item.price,
+				item.total,
+				item.taxRateId,
 				nowIso(),
 			);
 		}
+
+		await stampCurrency(db, invoiceId, userId, currency, issueDate);
 
 		if (status === "sent") {
 			enqueueJob(db, {
@@ -323,10 +481,15 @@ export const registerInvoiceRoutes = (
 		if (!clientEmail.includes("@"))
 			return reply.code(400).send({ error: "client.email is invalid" });
 
-		const subtotal = Number(body.subtotal ?? 0);
-		const tax = Number(body.tax ?? 0);
-		const total = Number(body.total ?? 0);
-		const items = Array.isArray(body.items) ? body.items : [];
+		const rawItems = Array.isArray(body.items) ? body.items : [];
+		const taxStrategyRaw = (body as { taxStrategy?: string }).taxStrategy;
+		const computed = applyTaxStrategy(
+			db,
+			userId,
+			rawItems,
+			taxStrategyRaw,
+			Number(body.tax ?? 0),
+		);
 
 		const clientRow =
 			(db
@@ -365,40 +528,46 @@ export const registerInvoiceRoutes = (
 				`update invoices set
 					invoice_number = ?, client_id = ?, issue_date = ?, due_date = ?,
 					subtotal = ?, tax = ?, total = ?, status = ?, notes = ?, terms = ?,
-					currency = ?, recurring_json = ?, updated_at = ?
+					currency = ?, recurring_json = ?, tax_strategy = ?, updated_at = ?
 				 where id = ?`,
 			).run(
 				invoiceNumber,
 				clientId,
 				issueDate,
 				dueDate,
-				subtotal,
-				tax,
-				total,
+				computed.subtotal,
+				computed.tax,
+				computed.total,
 				status,
 				notes,
 				terms,
 				currency,
 				recurring,
+				computed.strategy,
 				nowIso(),
 				id,
 			);
 			db.prepare("delete from invoice_items where invoice_id = ?").run(id);
-			for (const item of items) {
+			for (const item of computed.items) {
 				db.prepare(
-					"insert into invoice_items (id, invoice_id, description, quantity, price, total, created_at) values (?, ?, ?, ?, ?, ?, ?)",
+					`insert into invoice_items
+					   (id, invoice_id, description, quantity, price, total, tax_rate_id, created_at)
+					 values (?, ?, ?, ?, ?, ?, ?, ?)`,
 				).run(
 					crypto.randomUUID(),
 					id,
-					String((item as Record<string, unknown>).description ?? ""),
-					Number((item as Record<string, unknown>).quantity ?? 0),
-					Number((item as Record<string, unknown>).price ?? 0),
-					Number((item as Record<string, unknown>).total ?? 0),
+					item.description,
+					item.quantity,
+					item.price,
+					item.total,
+					item.taxRateId,
 					nowIso(),
 				);
 			}
 		});
 		tx();
+
+		await stampCurrency(db, id, userId, currency, issueDate);
 
 		events.emitEvent({ type: "invoices:changed", userId });
 		return { invoice: toInvoiceApi(db, id) };
