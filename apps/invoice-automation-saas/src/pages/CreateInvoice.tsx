@@ -1,7 +1,7 @@
 import { addDays, format } from "date-fns";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import Button from "../components/common/Button";
 import Navigation from "../components/common/Navigation";
@@ -27,11 +27,17 @@ function createInvoiceIdentifiers() {
 
 const CreateInvoice = () => {
 	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
+	const editId = searchParams.get("edit");
+	const isEditMode = Boolean(editId);
+
 	const [recurring, setRecurring] = useState<RecurringSettingsValue>({
 		enabled: false,
 		frequency: "monthly",
 		interval: 1,
 	});
+	const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+	const [loadError, setLoadError] = useState<string | null>(null);
 
 	const methods = useForm<InvoiceFormData>({
 		defaultValues: {
@@ -47,6 +53,64 @@ const CreateInvoice = () => {
 		},
 		mode: "onBlur",
 	});
+
+	useEffect(() => {
+		if (!editId) return;
+		let cancelled = false;
+		void (async () => {
+			try {
+				const invoice = await invoiceService.getInvoiceById(editId);
+				if (cancelled) return;
+				if (!invoice) {
+					setLoadError("Invoice not found");
+					return;
+				}
+				if (invoice.status !== "draft") {
+					setLoadError(
+						`Only drafts can be edited (status: ${invoice.status})`,
+					);
+					return;
+				}
+				setEditingInvoice(invoice);
+				methods.reset({
+					client: {
+						name: invoice.client.name,
+						email: invoice.client.email,
+						phone: invoice.client.phone,
+						company: invoice.client.company,
+						address: invoice.client.address,
+					},
+					items: invoice.items.map((item) => ({
+						id: item.id,
+						description: item.description,
+						quantity: item.quantity,
+						price: item.price,
+						total: item.total,
+					})),
+					issueDate: format(invoice.issueDate, "yyyy-MM-dd"),
+					dueDate: format(invoice.dueDate, "yyyy-MM-dd"),
+					tax: invoice.subtotal > 0 ? (invoice.tax / invoice.subtotal) * 100 : 0,
+					notes: invoice.notes ?? "",
+					terms: invoice.terms ?? "",
+				});
+				if (invoice.recurring?.enabled) {
+					setRecurring({
+						enabled: true,
+						frequency: invoice.recurring.frequency,
+						interval: invoice.recurring.interval,
+					});
+				}
+			} catch (err) {
+				if (!cancelled)
+					setLoadError(
+						err instanceof Error ? err.message : "Failed to load invoice",
+					);
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [editId, methods]);
 
 	const watched = useWatch({
 		control: methods.control,
@@ -64,15 +128,19 @@ const CreateInvoice = () => {
 	}, [watched.items, watched.tax]);
 
 	const onSubmit = async (data: InvoiceFormData) => {
-		const { id, clientId, invoiceNumber } = createInvoiceIdentifiers();
+		const baseId = editingInvoice?.id ?? createInvoiceIdentifiers().id;
+		const baseClientId =
+			editingInvoice?.client.id ?? createInvoiceIdentifiers().clientId;
+		const baseInvoiceNumber =
+			editingInvoice?.invoiceNumber ?? createInvoiceIdentifiers().invoiceNumber;
 
 		const invoice: Invoice = {
-			id,
-			invoiceNumber,
+			id: baseId,
+			invoiceNumber: baseInvoiceNumber,
 			issueDate: new Date(data.issueDate),
 			dueDate: new Date(data.dueDate),
 			client: {
-				id: clientId,
+				id: baseClientId,
 				name: data.client.name ?? "Client",
 				email: data.client.email ?? "",
 				address: data.client.address,
@@ -83,7 +151,7 @@ const CreateInvoice = () => {
 				const quantity = safeNumber(item.quantity);
 				const price = safeNumber(item.price);
 				return {
-					id: item.id ?? `${id}_item_${index}`,
+					id: item.id ?? `${baseId}_item_${index}`,
 					description: item.description ?? "",
 					quantity,
 					price,
@@ -93,7 +161,7 @@ const CreateInvoice = () => {
 			subtotal: totals.subtotal,
 			tax: totals.tax,
 			total: totals.total,
-			status: "sent",
+			status: editingInvoice ? "draft" : "sent",
 			notes: data.notes,
 			terms: data.terms,
 			currency: "USD",
@@ -102,20 +170,29 @@ const CreateInvoice = () => {
 						enabled: true,
 						frequency: recurring.frequency,
 						interval: recurring.interval,
-						startDate: new Date(),
+						startDate: editingInvoice?.recurring?.startDate ?? new Date(),
 						endType: "never",
 					}
 				: undefined,
-			createdAt: new Date(),
+			createdAt: editingInvoice?.createdAt ?? new Date(),
 			updatedAt: new Date(),
 		};
 
-		const created = await invoiceService.createInvoice(invoice);
-		toast.success("Invoice created");
-		const suffix = created.publicToken
-			? `?token=${encodeURIComponent(created.publicToken)}`
-			: "";
-		navigate(`/invoice/${created.id}/payment${suffix}`);
+		if (editingInvoice) {
+			const updated = await invoiceService.updateInvoice(
+				editingInvoice.id,
+				invoice,
+			);
+			toast.success("Draft updated");
+			navigate(`/invoice/${updated.id}/payment`);
+		} else {
+			const created = await invoiceService.createInvoice(invoice);
+			toast.success("Invoice created");
+			const suffix = created.publicToken
+				? `?token=${encodeURIComponent(created.publicToken)}`
+				: "";
+			navigate(`/invoice/${created.id}/payment${suffix}`);
+		}
 	};
 
 	return (
@@ -126,7 +203,9 @@ const CreateInvoice = () => {
 					className="ui-row"
 					style={{ justifyContent: "space-between", alignItems: "center" }}
 				>
-					<h1 className="ui-h1">Create invoice</h1>
+					<h1 className="ui-h1">
+						{isEditMode ? "Edit draft invoice" : "Create invoice"}
+					</h1>
 					<Button
 						type="button"
 						variant="ghost"
