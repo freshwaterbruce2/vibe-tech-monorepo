@@ -15,10 +15,9 @@ import type {
 } from "./types.js";
 
 const nowIso = () => new Date().toISOString();
-const dateOnly = (value: Date) => value.toISOString().slice(0, 10);
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
-const toInvoiceApi = (db: Database, invoiceId: string) => {
+const toInvoiceApi = (db: Database.Database, invoiceId: string) => {
 	const invoice = db
 		.prepare("select * from invoices where id = ?")
 		.get(invoiceId) as InvoiceRow | undefined;
@@ -70,7 +69,10 @@ const toInvoiceApi = (db: Database, invoiceId: string) => {
 	};
 };
 
-export const registerInvoiceRoutes = (app: FastifyInstance, db: Database) => {
+export const registerInvoiceRoutes = (
+	app: FastifyInstance,
+	db: Database.Database,
+) => {
 	app.get("/api/invoices", async (req, reply) => {
 		const userId = (req as AuthenticatedRequest).authUserId;
 		if (!userId) return reply.code(401).send({ error: "Unauthorized" });

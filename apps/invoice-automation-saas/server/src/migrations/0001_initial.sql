@@ -1,9 +1,3 @@
--- InvoiceFlow local SQLite schema
--- Applied automatically on server start.
-
-PRAGMA foreign_keys = ON;
-PRAGMA journal_mode = WAL;
-
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,
@@ -67,4 +61,3 @@ CREATE TABLE IF NOT EXISTS invoice_items (
 );
 
 CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice ON invoice_items(invoice_id);
-

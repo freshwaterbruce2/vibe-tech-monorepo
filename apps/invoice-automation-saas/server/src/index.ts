@@ -102,7 +102,7 @@ const start = async () => {
         if (req.method === 'GET' && !req.url.startsWith('/api')) {
           return reply.sendFile('index.html')
         }
-        reply.code(404).send({ error: 'Not found' })
+        return reply.code(404).send({ error: 'Not found' })
       })
     }
   }
