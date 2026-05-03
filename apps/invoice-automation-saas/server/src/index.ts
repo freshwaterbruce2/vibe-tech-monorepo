@@ -15,13 +15,16 @@ import { startCronSchedules, stopCronSchedules } from './jobs/cron.js'
 import './jobs/handlers/emailInvoice.js'
 import './jobs/handlers/emailOverdue.js'
 import './jobs/handlers/emailReceipt.js'
+import './jobs/handlers/generateRecurring.js'
 import { startJobRunner } from './jobs/runner.js'
+import './recurring/cronRegistration.js'
 import { migrate } from './migrate.js'
 import { registerAuthRoutes } from './routes/authRoutes.js'
 import { registerClientRoutes } from './routes/clientRoutes.js'
 import { registerInvoiceRoutes } from './routes/invoiceRoutes.js'
 import { registerPaymentRoutes } from './routes/paymentRoutes.js'
 import { registerPublicRoutes } from './routes/publicRoutes.js'
+import { registerRecurringRoutes } from './routes/recurringRoutes.js'
 import { registerWebhookRoutes } from './routes/webhookRoutes.js'
 import { registerRateLimits } from './security/rateLimit.js'
 
@@ -106,6 +109,7 @@ const start = async () => {
   registerInvoiceRoutes(app, db)
   registerPublicRoutes(app, db)
   registerPaymentRoutes(app, db)
+  registerRecurringRoutes(app, db)
   await registerWebhookRoutes(app, db)
 
   if (process.env.SERVE_WEB === '1') {

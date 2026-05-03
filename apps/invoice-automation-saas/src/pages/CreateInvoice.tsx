@@ -225,7 +225,14 @@ const CreateInvoice = () => {
 						>
 							<InvoiceForm />
 							<RecurringSettings value={recurring} onChange={setRecurring} />
-							<Button type="submit">Create invoice</Button>
+							{loadError ? (
+								<div className="ui-error" role="alert">
+									{loadError}
+								</div>
+							) : null}
+							<Button type="submit" disabled={Boolean(loadError)}>
+								{isEditMode ? "Save changes" : "Create invoice"}
+							</Button>
 						</form>
 					</FormProvider>
 

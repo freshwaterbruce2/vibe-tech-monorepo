@@ -3,6 +3,8 @@ import crypto from "crypto";
 import type { FastifyInstance } from "fastify";
 import { events } from "../events.js";
 import { enqueueJob } from "../jobs/enqueue.js";
+import { createRecurringSchedule } from "./recurringRoutes.js";
+import type { Frequency } from "../recurring/scheduler.js";
 import type {
 	AuthenticatedRequest,
 	ClientRow,
@@ -215,6 +217,41 @@ export const registerInvoiceRoutes = (
 			enqueueJob(db, {
 				type: "email.invoice",
 				payload: { invoiceId },
+			});
+		}
+
+		if (
+			body.recurring &&
+			typeof body.recurring === "object" &&
+			(body.recurring as { enabled?: boolean }).enabled === true
+		) {
+			const r = body.recurring as {
+				frequency?: string;
+				interval?: number;
+				endDate?: string;
+				occurrences?: number;
+			};
+			const validFrequencies: Frequency[] = [
+				"weekly",
+				"monthly",
+				"quarterly",
+				"yearly",
+			];
+			const freq = (validFrequencies as string[]).includes(r.frequency ?? "")
+				? (r.frequency as Frequency)
+				: "monthly";
+			createRecurringSchedule(db, {
+				userId,
+				templateInvoiceId: invoiceId,
+				frequency: freq,
+				intervalCount: r.interval ?? 1,
+				endType: r.endDate
+					? "date"
+					: r.occurrences
+					? "occurrences"
+					: "never",
+				endDate: r.endDate ?? null,
+				occurrencesRemaining: r.occurrences ?? null,
 			});
 		}
 
