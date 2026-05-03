@@ -1,22 +1,16 @@
 import { renderToBuffer } from '@react-pdf/renderer'
 
-import InvoicePdfDocument from './InvoicePdfDocument.js'
 import type {
   InvoicePdfClient,
   InvoicePdfData,
   InvoicePdfLineItem,
 } from './InvoicePdfDocument.js'
+import { getTemplate } from './registry.js'
+import type { TemplateBase, TemplateConfig } from './templates/types.js'
 
 export type { InvoicePdfClient, InvoicePdfData, InvoicePdfLineItem }
+export type { TemplateBase, TemplateConfig }
 
-/**
- * Minimal invoice shape used as input to the PDF renderer.
- *
- * Defined locally (rather than reusing the frontend Invoice type from
- * src/types/invoice.ts) so the server pipeline does not depend on
- * browser-only types and can accept rows directly from SQLite (ISO date
- * strings, no Date objects).
- */
 export interface InvoicePdfInput {
   invoiceNumber: string
   issueDate: string
@@ -31,9 +25,15 @@ export interface InvoicePdfInput {
   companyName?: string
 }
 
+export interface RenderOptions {
+  template?: TemplateBase
+  config?: TemplateConfig
+}
+
 export const renderInvoicePdfBuffer = (
   invoice: InvoicePdfInput,
   items: InvoicePdfLineItem[],
+  options: RenderOptions = {},
 ): Promise<Buffer> => {
   const data: InvoicePdfData = {
     invoiceNumber: invoice.invoiceNumber,
@@ -50,9 +50,6 @@ export const renderInvoicePdfBuffer = (
     companyName: invoice.companyName,
   }
 
-  // Call the component directly to get the inner <Document> ReactElement.
-  // renderToBuffer expects ReactElement<DocumentProps>, which the component
-  // produces; using <Component data={...}/> would yield a wrapper element
-  // whose props do not match DocumentProps.
-  return renderToBuffer(InvoicePdfDocument({ data }))
+  const Component = getTemplate(options.template ?? 'classic')
+  return renderToBuffer(Component({ data, config: options.config }))
 }
