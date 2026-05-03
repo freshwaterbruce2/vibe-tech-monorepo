@@ -11,11 +11,14 @@ import path from 'path'
 import { getSessionCookieName, parseSessionToken } from './auth.js'
 import { openDb } from './db.js'
 import { events } from './events.js'
+import { startCronSchedules, stopCronSchedules } from './jobs/cron.js'
+import { startJobRunner } from './jobs/runner.js'
 import { migrate } from './migrate.js'
 import { registerAuthRoutes } from './routes/authRoutes.js'
 import { registerClientRoutes } from './routes/clientRoutes.js'
 import { registerInvoiceRoutes } from './routes/invoiceRoutes.js'
 import { registerPublicRoutes } from './routes/publicRoutes.js'
+import { registerRateLimits } from './security/rateLimit.js'
 
 const PORT = Number(process.env.PORT ?? 8787)
 const HOST = process.env.HOST ?? '127.0.0.1'
@@ -34,6 +37,23 @@ const start = async () => {
     credentials: true,
   })
   await app.register(cookie, {})
+  await registerRateLimits(app)
+
+  const jobRunner = startJobRunner(db, {
+    logger: (msg, meta) => app.log.error({ meta }, msg),
+  })
+  startCronSchedules()
+
+  const shutdown = async (signal: string) => {
+    app.log.info(`received ${signal}, shutting down`)
+    stopCronSchedules()
+    await jobRunner.stop()
+    await app.close()
+    db.close()
+    process.exit(0)
+  }
+  process.once('SIGTERM', () => void shutdown('SIGTERM'))
+  process.once('SIGINT', () => void shutdown('SIGINT'))
 
   app.get('/api/health', async () => ({ ok: true, ts: Date.now() }))
 
