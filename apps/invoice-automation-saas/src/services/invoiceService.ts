@@ -169,6 +169,37 @@ class InvoiceService {
     return created
   }
 
+  async updateInvoice(id: string, invoice: Invoice) {
+    this.hydrate()
+
+    const payload = {
+      ...invoice,
+      issueDate: invoice.issueDate.toISOString().slice(0, 10),
+      dueDate: invoice.dueDate.toISOString().slice(0, 10),
+      createdAt: invoice.createdAt.toISOString(),
+      updatedAt: invoice.updatedAt.toISOString(),
+    }
+
+    const data = await apiFetch(`/api/invoices/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+    const updated = deserializeInvoice(data.invoice as ApiInvoice)
+    this.invoices.set(updated.id, updated)
+    this.notify()
+    return updated
+  }
+
+  async deleteInvoice(id: string) {
+    this.hydrate()
+
+    await apiFetch(`/api/invoices/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    })
+    this.invoices.delete(id)
+    this.notify()
+  }
+
   async updateInvoiceStatus(id: string, status: 'draft' | 'sent' | 'paid' | 'overdue') {
     this.hydrate()
 

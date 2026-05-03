@@ -1,9 +1,11 @@
 import type Database from 'better-sqlite3'
 import type { FastifyInstance } from 'fastify'
 import type Stripe from 'stripe'
+import { Webhook } from 'svix'
 
 import { recordAudit } from '../audit.js'
 import { events } from '../events.js'
+import { enqueueJob } from '../jobs/enqueue.js'
 import { verifyWebhookSignature } from '../payments/stripeAdapter.js'
 
 interface InvoiceRow {
@@ -18,6 +20,20 @@ const getWebhookSecret = (): string => {
     throw new Error('STRIPE_WEBHOOK_SECRET is not set')
   }
   return secret
+}
+
+const getResendWebhookSecret = (): string => {
+  const secret = process.env.RESEND_WEBHOOK_SECRET
+  if (!secret) {
+    throw new Error('RESEND_WEBHOOK_SECRET is not set')
+  }
+  return secret
+}
+
+interface ResendEvent {
+  type: string
+  created_at?: string
+  data?: { email_id?: string; bounce?: { message?: string } }
 }
 
 export const registerWebhookRoutes = async (
@@ -137,10 +153,75 @@ export const registerWebhookRoutes = async (
         })
         tx()
 
+        enqueueJob(db, {
+          type: 'email.receipt',
+          payload: { invoiceId, paidAt: now },
+        })
+
         events.emitEvent({ type: 'invoices:changed', userId: invoice.user_id })
       }
 
       return { ok: true }
+    })
+
+    instance.post('/api/webhooks/resend', async (req, reply) => {
+      let secret: string
+      try {
+        secret = getResendWebhookSecret()
+      } catch (e) {
+        req.log.error({ err: e }, 'Resend webhook secret missing')
+        return reply.code(500).send({ error: 'Server misconfigured' })
+      }
+
+      const headers: Record<string, string> = {}
+      for (const name of ['svix-id', 'svix-timestamp', 'svix-signature']) {
+        const v = req.headers[name]
+        if (typeof v !== 'string' || !v) {
+          return reply.code(400).send({ error: `Missing ${name} header` })
+        }
+        headers[name] = v
+      }
+
+      let event: ResendEvent
+      try {
+        const wh = new Webhook(secret)
+        event = wh.verify((req.body as Buffer).toString('utf8'), headers) as ResendEvent
+      } catch (e) {
+        req.log.warn({ err: e }, 'Invalid Resend webhook signature')
+        return reply.code(400).send({ error: 'Invalid signature' })
+      }
+
+      const messageId = event.data?.email_id
+      if (!messageId) {
+        return { ok: true, skipped: 'no_message_id' }
+      }
+
+      const statusMap: Record<string, string> = {
+        'email.sent': 'sent',
+        'email.delivered': 'delivered',
+        'email.bounced': 'bounced',
+        'email.complained': 'bounced',
+        'email.delivery_delayed': 'sent',
+      }
+      const newStatus = statusMap[event.type]
+      if (!newStatus) {
+        return { ok: true, ignored: event.type }
+      }
+
+      const error =
+        event.type === 'email.bounced'
+          ? event.data?.bounce?.message ?? 'bounced'
+          : null
+
+      const result = db
+        .prepare(
+          `UPDATE email_log
+              SET status = ?, error = ?
+            WHERE resend_message_id = ?`,
+        )
+        .run(newStatus, error, messageId)
+
+      return { ok: true, updated: result.changes }
     })
   })
 }
