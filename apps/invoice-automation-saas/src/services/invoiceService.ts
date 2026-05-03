@@ -148,7 +148,10 @@ class InvoiceService {
     }
   }
 
-  async createInvoice(invoice: Invoice) {
+  async createInvoice(
+    invoice: Invoice,
+    extras?: { expenseIds?: string[]; timeEntryIds?: string[] },
+  ) {
     this.hydrate()
 
     const payload = {
@@ -157,6 +160,8 @@ class InvoiceService {
       dueDate: invoice.dueDate.toISOString().slice(0, 10),
       createdAt: invoice.createdAt.toISOString(),
       updatedAt: invoice.updatedAt.toISOString(),
+      expenseIds: extras?.expenseIds ?? [],
+      timeEntryIds: extras?.timeEntryIds ?? [],
     }
 
     const data = await apiFetch('/api/invoices', {
