@@ -21,7 +21,11 @@
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.2.0",
+    "@fastify/rate-limit": "^10.3.0",
     "@fastify/static": "^9.0.0",
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.0.8",
+    "@react-pdf/renderer": "^4.5.1",
     "@sentry/react": "^10.46.0",
     "@stripe/stripe-js": "^9.0.0",
     "@vibetech/ui": "workspace:*",
@@ -34,12 +38,16 @@
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "lucide-react": "0.563.0",
+    "node-cron": "^4.2.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-email": "^6.0.5",
     "react-hook-form": "^7.71.2",
     "react-router-dom": "^7.13.1",
     "react-toastify": "^11.0.5",
     "recharts": "^3.8.1",
+    "resend": "^6.12.2",
+    "stripe": "^22.1.0",
     "styled-components": "^6.3.12"
   },
   "devDependencies": {
