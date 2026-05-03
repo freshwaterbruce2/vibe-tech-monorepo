@@ -1,5 +1,5 @@
 import { format } from 'date-fns'
-import { Download, MoreHorizontal, Plus } from 'lucide-react'
+import { AlertCircle, Download, MoreHorizontal, Plus, RefreshCw } from 'lucide-react'
 import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
@@ -103,7 +103,17 @@ const InvoiceActions = ({ invoice }: { invoice: Invoice }) => {
 const Dashboard = () => {
   const { user } = useAuth()
 
-  const { invoices, loading, totals } = useRealtimeInvoices()
+  const { invoices, loading, error, retry, totals } = useRealtimeInvoices()
+  const [retrying, setRetrying] = useState(false)
+
+  const handleRetry = useCallback(async () => {
+    setRetrying(true)
+    try {
+      await retry()
+    } finally {
+      setRetrying(false)
+    }
+  }, [retry])
 
   const revenueSeries = useMemo(
     () => [
@@ -156,31 +166,60 @@ const Dashboard = () => {
         <Card className="ui-stack ui-stack--md">
           <div className="ui-row ui-dashboard__subheader">
             <h2 className="ui-h2">Recent invoices</h2>
-            <span className="ui-muted">{loading ? 'Loading…' : 'Live (session) data'}</span>
+            <span className="ui-muted">
+              {error ? 'Could not load invoices' : loading ? 'Loading…' : 'Live (session) data'}
+            </span>
           </div>
 
-          <div className="ui-table">
-            <div className="ui-table__head">
-              <span>Invoice</span>
-              <span>Client</span>
-              <span>Due</span>
-              <span>Status</span>
-              <span className="ui-text-right">Total</span>
-              <span className="ui-text-right">Actions</span>
-            </div>
-            {invoices.map((invoice) => (
-              <div key={invoice.id} className="ui-table__row">
-                <span className="ui-mono">{invoice.invoiceNumber}</span>
-                <span>{invoice.client.name}</span>
-                <span className="ui-muted">{format(invoice.dueDate, 'MMM d, yyyy')}</span>
-                <span className={`ui-chip ui-chip--${invoice.status}`}>{invoice.status}</span>
-                <span className="ui-text-right">{formatUsd(invoice.total)}</span>
-                <span className="ui-text-right">
-                  <InvoiceActions invoice={invoice} />
-                </span>
+          {error ? (
+            <div
+              role="alert"
+              aria-live="polite"
+              className="ui-stack ui-stack--md ui-dashboard__error"
+            >
+              <div className="ui-row" style={{ gap: '0.5rem', alignItems: 'center' }}>
+                <AlertCircle size={18} aria-hidden="true" />
+                <strong>Could not load invoices</strong>
               </div>
-            ))}
-          </div>
+              <div className="ui-muted">
+                Check your connection and try again. ({error.message})
+              </div>
+              <div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => void handleRetry()}
+                  loading={retrying}
+                  aria-label="Retry loading invoices"
+                >
+                  <RefreshCw size={14} aria-hidden="true" /> Retry
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="ui-table">
+              <div className="ui-table__head">
+                <span>Invoice</span>
+                <span>Client</span>
+                <span>Due</span>
+                <span>Status</span>
+                <span className="ui-text-right">Total</span>
+                <span className="ui-text-right">Actions</span>
+              </div>
+              {invoices.map((invoice) => (
+                <div key={invoice.id} className="ui-table__row">
+                  <span className="ui-mono">{invoice.invoiceNumber}</span>
+                  <span>{invoice.client.name}</span>
+                  <span className="ui-muted">{format(invoice.dueDate, 'MMM d, yyyy')}</span>
+                  <span className={`ui-chip ui-chip--${invoice.status}`}>{invoice.status}</span>
+                  <span className="ui-text-right">{formatUsd(invoice.total)}</span>
+                  <span className="ui-text-right">
+                    <InvoiceActions invoice={invoice} />
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
       </main>
     </div>

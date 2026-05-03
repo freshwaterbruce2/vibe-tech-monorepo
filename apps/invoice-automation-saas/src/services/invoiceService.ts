@@ -1,7 +1,11 @@
 import type { Invoice } from '../types/invoice'
-import { generateMockInvoices } from './mockApi'
 
-type Listener = (invoices: Invoice[]) => void
+export interface InvoiceListenerState {
+  invoices: Invoice[]
+  error: Error | null
+}
+
+type Listener = (state: InvoiceListenerState) => void
 
 type ApiInvoice = Omit<Invoice, 'issueDate' | 'dueDate' | 'createdAt' | 'updatedAt'> & {
   issueDate: string
@@ -25,6 +29,9 @@ const deserializeInvoice = (raw: ApiInvoice): Invoice =>
     updatedAt: reviveDate(raw.updatedAt),
   }) as Invoice
 
+const toError = (cause: unknown): Error =>
+  cause instanceof Error ? cause : new Error(typeof cause === 'string' ? cause : 'Unknown error')
+
 const apiFetch = async (path: string, init?: RequestInit) => {
   const res = await fetch(path, {
     ...init,
@@ -46,6 +53,7 @@ class InvoiceService {
   private hydrated = false
   private invoices = new Map<string, Invoice>()
   private listeners = new Set<Listener>()
+  private lastError: Error | null = null
 
   private setCache(invoices: Invoice[]) {
     this.invoices = new Map(invoices.map((invoice) => [invoice.id, invoice]))
@@ -56,9 +64,18 @@ class InvoiceService {
     this.hydrated = true
   }
 
+  private snapshot(): InvoiceListenerState {
+    return { invoices: this.listInvoicesSync(), error: this.lastError }
+  }
+
   private notify() {
-    const list = this.listInvoicesSync()
-    this.listeners.forEach((listener) => listener(list))
+    const state = this.snapshot()
+    this.listeners.forEach((listener) => listener(state))
+  }
+
+  private notifyError(cause: unknown) {
+    this.lastError = toError(cause)
+    this.notify()
   }
 
   private listInvoicesSync() {
@@ -71,20 +88,20 @@ class InvoiceService {
   subscribe(listener: Listener) {
     this.hydrate()
     this.listeners.add(listener)
-    listener(this.listInvoicesSync())
+    listener(this.snapshot())
 
     let es: EventSource | null = null
     try {
       es = new EventSource('/api/events', { withCredentials: true } as any)
       es.onmessage = () => {
-        void this.listInvoices().catch(() => {})
+        void this.listInvoices().catch((err) => this.notifyError(err))
       }
     } catch {
-      // ignore
+      // EventSource is best-effort; failure here doesn't surface as a load error.
     }
 
     // Initial fetch
-    void this.listInvoices().catch(() => {})
+    void this.listInvoices().catch((err) => this.notifyError(err))
 
     return () => {
       this.listeners.delete(listener)
@@ -93,21 +110,12 @@ class InvoiceService {
   }
 
   async listInvoices() {
-    try {
-      const data = await apiFetch('/api/invoices')
-      const invoices = ((data.invoices ?? []) as ApiInvoice[]).map(deserializeInvoice)
-      this.setCache(invoices)
-      this.notify()
-      return invoices
-    } catch {
-      if (this.invoices.size === 0) {
-        const mock = generateMockInvoices()
-        this.setCache(mock)
-        this.notify()
-        return mock
-      }
-      return this.listInvoicesSync()
-    }
+    const data = await apiFetch('/api/invoices')
+    const invoices = ((data.invoices ?? []) as ApiInvoice[]).map(deserializeInvoice)
+    this.setCache(invoices)
+    this.lastError = null
+    this.notify()
+    return invoices
   }
 
   async getInvoiceById(id: string, options?: { publicToken?: string }) {
