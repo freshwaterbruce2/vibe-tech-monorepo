@@ -10,6 +10,7 @@ import InvoicePayment from './pages/InvoicePayment'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
+import TaxRates from './pages/TaxRates'
 import Templates from './pages/Templates'
 
 import 'react-toastify/dist/ReactToastify.css'
@@ -53,6 +54,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <Templates />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tax-rates"
+              element={
+                <ProtectedRoute>
+                  <TaxRates />
                 </ProtectedRoute>
               }
             />
