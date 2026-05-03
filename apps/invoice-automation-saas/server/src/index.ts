@@ -30,10 +30,12 @@ import { registerExpenseRoutes } from './routes/expenseRoutes.js'
 import { registerInvoiceRoutes } from './routes/invoiceRoutes.js'
 import { registerLogoRoutes } from './routes/logoRoutes.js'
 import { registerPaymentRoutes } from './routes/paymentRoutes.js'
+import { registerProjectRoutes } from './routes/projectRoutes.js'
 import { registerPublicRoutes } from './routes/publicRoutes.js'
 import { registerRecurringRoutes } from './routes/recurringRoutes.js'
 import { registerTaxRoutes } from './routes/taxRoutes.js'
 import { registerTemplateRoutes } from './routes/templateRoutes.js'
+import { registerTimeRoutes } from './routes/timeRoutes.js'
 import { registerWebhookRoutes } from './routes/webhookRoutes.js'
 import { registerRateLimits } from './security/rateLimit.js'
 
@@ -122,6 +124,8 @@ const start = async () => {
   registerDunningRoutes(app, db)
   registerTaxRoutes(app, db)
   registerTemplateRoutes(app, db)
+  registerProjectRoutes(app, db)
+  registerTimeRoutes(app, db)
   await registerExpenseRoutes(app, db)
   await registerLogoRoutes(app, db)
   await registerWebhookRoutes(app, db)
