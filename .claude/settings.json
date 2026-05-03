@@ -198,6 +198,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/session-stop.ps1"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
