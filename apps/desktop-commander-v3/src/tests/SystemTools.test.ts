@@ -15,9 +15,24 @@ vi.mock("node:child_process", () => ({
 		}
 		return {} as any;
 	}),
+	execFile: vi.fn((file: string, args: any, options: any, callback: any) => {
+		// promisify(execFile) always passes a callback as the last arg
+		const cb =
+			typeof callback === "function"
+				? callback
+				: typeof options === "function"
+					? options
+					: typeof args === "function"
+						? args
+						: undefined;
+		if (typeof cb === "function") {
+			cb(null, { stdout: "", stderr: "" });
+		}
+		return {} as any;
+	}),
 }));
 
-import { exec } from "node:child_process";
+import { exec, execFile } from "node:child_process";
 
 // Mock systeminformation
 vi.mock("systeminformation");
@@ -324,9 +339,10 @@ describe("SystemTools", () => {
 
 	describe("runPowerShell", () => {
 		it("should run allowed PowerShell command", async () => {
-			vi.mocked(exec).mockImplementation(((
-				cmd: string,
-				options: any,
+			vi.mocked(execFile).mockImplementation(((
+				_file: string,
+				_args: any,
+				_options: any,
 				callback: any,
 			) => {
 				callback(null, { stdout: "result", stderr: "" });
@@ -339,6 +355,31 @@ describe("SystemTools", () => {
 			expect(result.output).toBe("result");
 		});
 
+		it("should pass script via -EncodedCommand (no quoting collisions)", async () => {
+			vi.mocked(execFile).mockImplementation(((
+				_file: string,
+				_args: any,
+				_options: any,
+				callback: any,
+			) => {
+				callback(null, { stdout: "ok", stderr: "" });
+				return {} as any;
+			}) as any);
+
+			const multilineScript = "$x = \"hello\"\n$y = 'world'\nWrite-Output \"$x $y\"";
+			await System.runPowerShell(multilineScript);
+
+			const call = vi.mocked(execFile).mock.calls.at(-1);
+			expect(call?.[0]).toBe("powershell.exe");
+			const args = call?.[1] as string[];
+			expect(args).toContain("-EncodedCommand");
+			expect(args).toContain("-NoProfile");
+			const encoded = args[args.indexOf("-EncodedCommand") + 1];
+			// Round-trip the base64 UTF-16LE to confirm the script survived intact.
+			const decoded = Buffer.from(encoded, "base64").toString("utf16le");
+			expect(decoded).toBe(multilineScript);
+		});
+
 		it("should block disallowed PowerShell commands", async () => {
 			await expect(
 				System.runPowerShell("Remove-Item -Force C:\\"),
@@ -346,9 +387,10 @@ describe("SystemTools", () => {
 		});
 
 		it("should return error for failed commands", async () => {
-			vi.mocked(exec).mockImplementation(((
-				cmd: string,
-				options: any,
+			vi.mocked(execFile).mockImplementation(((
+				_file: string,
+				_args: any,
+				_options: any,
 				callback: any,
 			) => {
 				callback(new Error("Command failed"), { stdout: "", stderr: "error" });
@@ -362,9 +404,10 @@ describe("SystemTools", () => {
 		});
 
 		it("should allow Get-Process command", async () => {
-			vi.mocked(exec).mockImplementation(((
-				cmd: string,
-				options: any,
+			vi.mocked(execFile).mockImplementation(((
+				_file: string,
+				_args: any,
+				_options: any,
 				callback: any,
 			) => {
 				callback(null, { stdout: "processes", stderr: "" });
@@ -391,9 +434,10 @@ describe("SystemTools", () => {
 		it("should run command if unsafe execution is enabled", async () => {
 			process.env.DC_ALLOW_UNSAFE_POWERSHELL = "1";
 
-			vi.mocked(exec).mockImplementation(((
-				cmd: string,
-				options: any,
+			vi.mocked(execFile).mockImplementation(((
+				_file: string,
+				_args: any,
+				_options: any,
 				callback: any,
 			) => {
 				callback(null, { stdout: "unsafe result", stderr: "" });
@@ -411,8 +455,9 @@ describe("SystemTools", () => {
 		it("should respect custom timeout", async () => {
 			process.env.DC_ALLOW_UNSAFE_POWERSHELL = "1";
 
-			vi.mocked(exec).mockImplementation(((
-				cmd: string,
+			vi.mocked(execFile).mockImplementation(((
+				_file: string,
+				_args: any,
 				options: any,
 				callback: any,
 			) => {

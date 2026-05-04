@@ -3,11 +3,19 @@
  * Uses systeminformation library and PowerShell for system operations.
  */
 
-import { exec } from "node:child_process";
+import { exec, execFile } from "node:child_process";
 import { promisify } from "node:util";
 import si from "systeminformation";
 
 const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
+
+// Encode a PowerShell script as base64 UTF-16LE for -EncodedCommand.
+// This bypasses every layer of shell quoting (cmd.exe + PowerShell), so
+// multi-line scripts and `$var = "..."` assignments pass through verbatim.
+function encodePowerShellCommand(script: string): string {
+	return Buffer.from(script, "utf16le").toString("base64");
+}
 
 export interface BatteryInfo {
 	hasBattery: boolean;
@@ -257,8 +265,15 @@ export async function runPowerShell(
 	}
 
 	try {
-		const { stdout, stderr } = await execAsync(
-			`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${command.replaceAll('"', '\\"')}"`,
+		const { stdout, stderr } = await execFileAsync(
+			"powershell.exe",
+			[
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-EncodedCommand",
+				encodePowerShellCommand(command),
+			],
 			{
 				maxBuffer: 50 * 1024 * 1024, // 50MB buffer for large outputs
 				timeout,
@@ -309,8 +324,15 @@ export async function runPowerShellUnsafe(
 	const timeout = options.timeoutMs ?? 60000;
 
 	try {
-		const { stdout, stderr } = await execAsync(
-			`powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${command.replaceAll('"', '\\"')}"`,
+		const { stdout, stderr } = await execFileAsync(
+			"powershell.exe",
+			[
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-EncodedCommand",
+				encodePowerShellCommand(command),
+			],
 			{
 				maxBuffer: 50 * 1024 * 1024,
 				timeout,
@@ -352,12 +374,17 @@ export async function runCmd(
 	}
 
 	try {
-		const { stdout, stderr } = await execAsync(
-			`cmd.exe /c "${command.replaceAll('"', '\\"')}"`,
+		// execFile drops Node's automatic `cmd.exe /s /c "..."` wrap, so we
+		// only have ONE layer of cmd parsing instead of two — multi-line
+		// strings with embedded quotes survive intact.
+		const { stdout, stderr } = await execFileAsync(
+			"cmd.exe",
+			["/c", command],
 			{
 				maxBuffer: 50 * 1024 * 1024, // 50MB buffer
 				timeout,
 				windowsHide: true,
+				windowsVerbatimArguments: true,
 			},
 		);
 
