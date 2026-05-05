@@ -351,17 +351,6 @@ export class MCPService extends EventEmitter {
       // Subscribe to the resource
       await connection.client.subscribeResource({ uri });
 
-      // Set up listener for resource updates
-      // Note: Notification handler setup commented out due to type issues
-      // Will be implemented when MCP SDK types are properly configured
-      // const self = this;
-      // connection.client.setNotificationHandler({
-      //   async handleNotification(notification: any) {
-      //     if (notification.method === 'notifications/resources/updated') {
-      //       self.emit('resourceUpdated', { serverName, uri });
-      //     }
-      //   }
-      // });
     } catch (error) {
       throw new Error(`Failed to subscribe to resource ${uri}: ${String(error)}`);
     }

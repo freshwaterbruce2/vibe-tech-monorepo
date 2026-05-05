@@ -25,7 +25,7 @@ export default defineConfig({
   /* Shared settings for all the projects below */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:3002',
+    baseURL: 'http://localhost:3001',
 
     /* Collect trace when retrying the failed test */
     trace: 'on-first-retry',
@@ -49,8 +49,8 @@ export default defineConfig({
   /* Note: For Electron app testing, tests should be run with app already running via `pnpm dev` */
   /* Or configure Electron-specific Playwright testing with @playwright/test electron support */
   webServer: {
-    command: 'pnpm run dev',
-    url: 'http://localhost:3002',
+    command: 'pnpm run dev:web',
+    url: 'http://localhost:3001',
     reuseExistingServer: true, // Allow tests to run against already-running dev server
     timeout: 120000,
   },

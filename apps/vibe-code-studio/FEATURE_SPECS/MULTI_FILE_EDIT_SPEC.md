@@ -1,9 +1,11 @@
 # Feature Spec: Multi-File Edit Approval UI
 
-**Status**: 🟡 Backend Exists (MultiFileEditor.ts), No UI
+**Status**: ✅ Implemented (backend + UI)
 **Priority**: MEDIUM (Cursor parity feature)
 **Effort**: 1 day
 **Dependencies**: MultiFileEditor service, Diff view component
+
+> **Note**: This spec was originally written before the UI was built. The Multi-File Edit Approval UI is now live in `src/components/MultiFileEditApprovalPanel.tsx` and integrated into `AppLayout.tsx`.
 
 ---
 

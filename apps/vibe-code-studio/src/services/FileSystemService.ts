@@ -11,7 +11,7 @@ export interface TrackedFile {
   path: string;
   status: FileStatus;
   originalPath?: string; // For renamed files
-  lastModified: number;  // Epoch timestamp
+  lastModified: number; // Epoch timestamp
 }
 
 /** Result of a content search match */
@@ -56,16 +56,13 @@ export class FileSystemService {
       for (const [key, value] of this.files) {
         filesData[key] = value;
       }
-      // eslint-disable-next-line electron-security/no-localstorage-electron
       localStorage.setItem(STORAGE_KEY_FILES, JSON.stringify(filesData));
-      // eslint-disable-next-line electron-security/no-localstorage-electron
       localStorage.setItem(STORAGE_KEY_RECENT, JSON.stringify(this.recentFiles));
 
       const trackedData: Record<string, TrackedFile> = {};
       for (const [key, value] of this.trackedFiles) {
         trackedData[key] = value;
       }
-      // eslint-disable-next-line electron-security/no-localstorage-electron
       localStorage.setItem(STORAGE_KEY_TRACKED, JSON.stringify(trackedData));
     } catch (error) {
       logger.warn('[FileSystemService] Failed to persist state to localStorage:', error);
@@ -75,7 +72,6 @@ export class FileSystemService {
   /** Restore file tree, recent files, and tracked file metadata from localStorage */
   private restoreFromStorage(): void {
     try {
-      // eslint-disable-next-line electron-security/no-localstorage-electron
       const filesJson = localStorage.getItem(STORAGE_KEY_FILES);
       if (filesJson) {
         const filesData = JSON.parse(filesJson) as Record<string, string>;
@@ -84,13 +80,11 @@ export class FileSystemService {
         }
       }
 
-      // eslint-disable-next-line electron-security/no-localstorage-electron
       const recentJson = localStorage.getItem(STORAGE_KEY_RECENT);
       if (recentJson) {
         this.recentFiles = JSON.parse(recentJson) as string[];
       }
 
-      // eslint-disable-next-line electron-security/no-localstorage-electron
       const trackedJson = localStorage.getItem(STORAGE_KEY_TRACKED);
       if (trackedJson) {
         const trackedData = JSON.parse(trackedJson) as Record<string, TrackedFile>;
@@ -100,7 +94,9 @@ export class FileSystemService {
       }
 
       if (this.files.size > 0) {
-        logger.debug(`[FileSystemService] Restored ${this.files.size} files, ${this.recentFiles.length} recent, ${this.trackedFiles.size} tracked from localStorage`);
+        logger.debug(
+          `[FileSystemService] Restored ${this.files.size} files, ${this.recentFiles.length} recent, ${this.trackedFiles.size} tracked from localStorage`,
+        );
       }
     } catch (error) {
       logger.warn('[FileSystemService] Failed to restore state from localStorage:', error);
@@ -109,10 +105,10 @@ export class FileSystemService {
 
   /** Record a file access in the recent files list */
   private recordRecentFile(path: string): void {
-    this.recentFiles = [
-      path,
-      ...this.recentFiles.filter((p) => p !== path),
-    ].slice(0, MAX_RECENT_FILES);
+    this.recentFiles = [path, ...this.recentFiles.filter((p) => p !== path)].slice(
+      0,
+      MAX_RECENT_FILES,
+    );
     this.persistToStorage();
   }
 
@@ -124,11 +120,8 @@ export class FileSystemService {
   /** Clear all persisted state from localStorage */
   clearPersistedState(): void {
     try {
-      // eslint-disable-next-line electron-security/no-localstorage-electron
       localStorage.removeItem(STORAGE_KEY_FILES);
-      // eslint-disable-next-line electron-security/no-localstorage-electron
       localStorage.removeItem(STORAGE_KEY_RECENT);
-      // eslint-disable-next-line electron-security/no-localstorage-electron
       localStorage.removeItem(STORAGE_KEY_TRACKED);
       logger.debug('[FileSystemService] Cleared persisted state');
     } catch (error) {
@@ -198,7 +191,7 @@ export class FileSystemService {
     this.trackedFiles = remappedTrackedFiles;
 
     this.recentFiles = this.recentFiles.map((recentPath) =>
-      this.remapNestedPath(recentPath, oldPath, newPath)
+      this.remapNestedPath(recentPath, oldPath, newPath),
     );
   }
 
@@ -303,10 +296,7 @@ export class FileSystemService {
    * Only searches in-memory files in web mode; in Electron mode also reads
    * files from the provided root path.
    */
-  async searchFileContents(
-    query: string,
-    rootPath?: string,
-  ): Promise<ContentSearchResult[]> {
+  async searchFileContents(query: string, rootPath?: string): Promise<ContentSearchResult[]> {
     const lowerQuery = query.toLowerCase();
     const results: ContentSearchResult[] = [];
 
@@ -375,7 +365,9 @@ export class FileSystemService {
 
   private initializeDemoFiles() {
     // Pre-populate demo files for web mode (Windows 11 - using virtual demo:// protocol)
-    this.files.set('demo://workspace/index.js', `// Demo JavaScript file for testing AI features
+    this.files.set(
+      'demo://workspace/index.js',
+      `// Demo JavaScript file for testing AI features
 
 class TodoApp {
   constructor() {
@@ -448,9 +440,12 @@ class TodoApp {
   }
 }
 
-module.exports = TodoApp;`);
+module.exports = TodoApp;`,
+    );
 
-    this.files.set('demo://workspace/README.md', `# Demo Workspace
+    this.files.set(
+      'demo://workspace/README.md',
+      `# Demo Workspace
 
 This is a demo workspace for testing the Vibe Code Studio with Cursor IDE features.
 
@@ -473,10 +468,13 @@ This is a demo workspace for testing the Vibe Code Studio with Cursor IDE featur
 1. Open a file from the sidebar
 2. Try AI-powered code completion
 3. Use Agent Mode for complex tasks
-4. Open the integrated terminal`);
+4. Open the integrated terminal`,
+    );
 
     // Add more demo files
-    this.files.set('demo://workspace/styles.css', `/* Demo CSS file for testing styling features */
+    this.files.set(
+      'demo://workspace/styles.css',
+      `/* Demo CSS file for testing styling features */
 
 .todo-app {
   max-width: 600px;
@@ -572,9 +570,12 @@ This is a demo workspace for testing the Vibe Code Studio with Cursor IDE featur
 
 .todo-item button:hover {
   background: #cc0000;
-}`);
+}`,
+    );
 
-    this.files.set('demo://workspace/utils.js', `// Utility functions for the Todo App
+    this.files.set(
+      'demo://workspace/utils.js',
+      `// Utility functions for the Todo App
 
 /**
  * Format a date to a readable string
@@ -657,7 +658,8 @@ module.exports = {
   debounce,
   filterTodos,
   searchTodos
-};`);
+};`,
+    );
   }
 
   /**
@@ -947,7 +949,7 @@ module.exports = {
           items.push({
             name: entry.name,
             path: normalizedPath,
-            type: entry.isDirectory ? 'directory' as const : 'file' as const,
+            type: entry.isDirectory ? ('directory' as const) : ('file' as const),
             size: 0, // Size will be fetched separately if needed
             modified: new Date(),
           });
@@ -958,7 +960,8 @@ module.exports = {
       } catch (error) {
         // Handle expected errors gracefully - return empty array
         const errorMsg = error instanceof Error ? error.message : String(error);
-        const isExpectedError = errorMsg.includes('ENOENT') || errorMsg.includes('No workspace folder approved yet');
+        const isExpectedError =
+          errorMsg.includes('ENOENT') || errorMsg.includes('No workspace folder approved yet');
         if (isExpectedError) {
           logger.debug('[FileSystemService] Expected error, returning empty:', errorMsg);
           return [];
@@ -1104,7 +1107,9 @@ module.exports = {
     // Join workspace root with relative path
     const resolved = this.joinPath(normalizedRoot, normalizedPath);
 
-    logger.debug(`[FileSystemService] Resolved path: "${path}" → "${resolved}" (workspace: ${workspaceRoot})`);
+    logger.debug(
+      `[FileSystemService] Resolved path: "${path}" → "${resolved}" (workspace: ${workspaceRoot})`,
+    );
     return resolved;
   }
 

@@ -21,7 +21,12 @@ export interface RegisteredSidebarItem {
   title: string;
 }
 
-type PluginEvent = 'plugin-installed' | 'plugin-activated' | 'plugin-deactivated' | 'plugin-uninstalled' | 'plugin-error';
+type PluginEvent =
+  | 'plugin-installed'
+  | 'plugin-activated'
+  | 'plugin-deactivated'
+  | 'plugin-uninstalled'
+  | 'plugin-error';
 type PluginEventHandler = (...args: unknown[]) => void;
 
 const STORAGE_KEY = 'vcs-plugins-installed';
@@ -64,7 +69,9 @@ class PluginManager {
 
     this.persistToStorage();
     this.emit('plugin-installed', id);
-    logger.info(`[PluginManager] Installed plugin "${plugin.manifest.name}" v${plugin.manifest.version}`);
+    logger.info(
+      `[PluginManager] Installed plugin "${plugin.manifest.name}" v${plugin.manifest.version}`,
+    );
   }
 
   async activatePlugin(id: string): Promise<void> {
@@ -223,7 +230,6 @@ class PluginManager {
   private persistToStorage(): void {
     try {
       const ids = Array.from(this.plugins.keys());
-      // eslint-disable-next-line electron-security/no-localstorage-electron
       localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
     } catch {
       // localStorage not available
@@ -232,7 +238,6 @@ class PluginManager {
 
   private restoreFromStorage(): void {
     try {
-      // eslint-disable-next-line electron-security/no-localstorage-electron
       const data = localStorage.getItem(STORAGE_KEY);
       if (data) {
         logger.debug(`[PluginManager] Found ${JSON.parse(data).length} saved plugins`);
