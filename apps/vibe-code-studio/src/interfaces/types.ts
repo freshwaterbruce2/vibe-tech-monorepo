@@ -3,9 +3,6 @@
  * Interfaces for the multi-agent system and specialized agents
  */
 
-// Re-export types from existing modules to maintain compatibility (disabled for now)
-// export type { AgentTask as Task, TaskContext, TaskResult } from '../services/AutonomousAgent';
-
 // Fallback type definitions
 export interface Task {
   id: string;

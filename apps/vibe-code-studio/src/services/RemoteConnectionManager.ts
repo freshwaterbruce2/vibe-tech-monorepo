@@ -120,9 +120,12 @@ class RemoteConnectionManager {
     try {
       const { Command } = await import('@tauri-apps/plugin-shell');
       const sshArgs = [
-        '-o', 'StrictHostKeyChecking=no',
-        '-o', 'ConnectTimeout=10',
-        '-p', String(conn.port),
+        '-o',
+        'StrictHostKeyChecking=no',
+        '-o',
+        'ConnectTimeout=10',
+        '-p',
+        String(conn.port),
       ];
 
       if (conn.authMethod === 'key' && conn.privateKeyPath) {
@@ -144,7 +147,10 @@ class RemoteConnectionManager {
   }
 
   async listRemoteFiles(id: string, path: string): Promise<RemoteFileEntry[]> {
-    const raw = await this.executeRemoteCommand(id, `ls -la --time-style=+%s "${path}" 2>/dev/null || ls -la "${path}"`);
+    const raw = await this.executeRemoteCommand(
+      id,
+      `ls -la --time-style=+%s "${path}" 2>/dev/null || ls -la "${path}"`,
+    );
     const lines = raw.trim().split('\n').slice(1); // skip "total" line
 
     const entries: RemoteFileEntry[] = [];
@@ -196,22 +202,26 @@ class RemoteConnectionManager {
 
   private persistToStorage(): void {
     try {
-      const data = Array.from(this.connections.values()).map(({ status: _status, error: _error, ...rest }) => rest);
-      // eslint-disable-next-line electron-security/no-localstorage-electron
+      const data = Array.from(this.connections.values()).map(
+        ({ status: _status, error: _error, ...rest }) => rest,
+      );
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    } catch { /* no-op */ }
+    } catch {
+      /* no-op */
+    }
   }
 
   private restoreFromStorage(): void {
     try {
-      // eslint-disable-next-line electron-security/no-localstorage-electron
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const items = JSON.parse(raw) as RemoteConnection[];
       for (const item of items) {
         this.connections.set(item.id, { ...item, status: 'disconnected' });
       }
-    } catch { /* no-op */ }
+    } catch {
+      /* no-op */
+    }
   }
 }
 

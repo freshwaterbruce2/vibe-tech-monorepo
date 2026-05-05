@@ -34,7 +34,6 @@ Let's build something amazing together!`,
 function loadPersistedMessages(): AIMessage[] {
   try {
     // Synchronous context — electron-store is async so localStorage is the only option here
-    // eslint-disable-next-line electron-security/no-localstorage-electron
     const raw = localStorage.getItem(CHAT_STORAGE_KEY);
     if (!raw) return [WELCOME_MESSAGE];
     const parsed = JSON.parse(raw) as Array<AIMessage & { timestamp: string }>;
@@ -96,21 +95,21 @@ export function useAIChat({
     }
   }, []);
 
-  const updateAiMessage = useCallback((messageId: string, updater: (msg: AIMessage) => AIMessage) => {
-    // Use startTransition for non-urgent message updates (agent task step progress)
-    startTransition(() => {
-      setAiMessages((prev) =>
-        prev.map((msg) => (msg.id === messageId ? updater(msg) : msg))
-      );
-    });
-  }, []);
+  const updateAiMessage = useCallback(
+    (messageId: string, updater: (msg: AIMessage) => AIMessage) => {
+      // Use startTransition for non-urgent message updates (agent task step progress)
+      startTransition(() => {
+        setAiMessages((prev) => prev.map((msg) => (msg.id === messageId ? updater(msg) : msg)));
+      });
+    },
+    [],
+  );
 
   const clearAiMessages = useCallback(() => {
     setAiMessages([WELCOME_MESSAGE]);
     if (window.electron?.store) {
       void window.electron.store.delete(CHAT_STORAGE_KEY);
     } else {
-      // eslint-disable-next-line electron-security/no-localstorage-electron
       localStorage.removeItem(CHAT_STORAGE_KEY);
     }
   }, []);
@@ -122,7 +121,6 @@ export function useAIChat({
       if (window.electron?.store) {
         void window.electron.store.set(CHAT_STORAGE_KEY, json);
       } else {
-        // eslint-disable-next-line electron-security/no-localstorage-electron
         localStorage.setItem(CHAT_STORAGE_KEY, json);
       }
     } catch {
@@ -172,24 +170,25 @@ export function useAIChat({
 - **Path**: ${currentFile.path || currentFile.name}
 - **Language**: ${currentFile.language || 'unknown'}`;
           if (currentFile.content) {
-            const truncated = currentFile.content.length > 8000
-              ? currentFile.content.substring(0, 8000) + '\n... (truncated)'
-              : currentFile.content;
+            const truncated =
+              currentFile.content.length > 8000
+                ? currentFile.content.substring(0, 8000) + '\n... (truncated)'
+                : currentFile.content;
             systemPrompt += `\n\n### File Contents\n\`\`\`${currentFile.language || ''}\n${truncated}\n\`\`\``;
           }
         }
 
         if (openFiles.length > 0) {
-          systemPrompt += `\n\n## Open Files\n${openFiles.map(f => `- ${f.name}`).join('\n')}`;
+          systemPrompt += `\n\n## Open Files\n${openFiles.map((f) => `- ${f.name}`).join('\n')}`;
         }
 
         systemPrompt += `\n\nWhen the user asks you to review, explain, or modify code, use the file contents above. Provide specific, actionable feedback referencing line numbers and code snippets.`;
 
         // Build conversation history from previous messages
         const conversationMessages = aiMessages
-          .filter(m => m.role === 'user' || m.role === 'assistant')
+          .filter((m) => m.role === 'user' || m.role === 'assistant')
           .slice(-10) // Last 10 messages for context
-          .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+          .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
 
         // Build context request with enhanced user activity
         const fullContextRequest: AIContextRequest = {
@@ -205,7 +204,7 @@ export function useAIChat({
             sidebarOpen,
             previewOpen,
             aiChatOpen,
-            recentFiles: openFiles.slice(0, 5).map(f => f.name),
+            recentFiles: openFiles.slice(0, 5).map((f) => f.name),
             workspaceFolder,
           },
           ...contextRequest,
@@ -290,7 +289,18 @@ export function useAIChat({
         setIsAiResponding(false);
       }
     },
-    [aiService, currentFile, workspaceContext, addAiMessage, onError, openFiles, workspaceFolder, sidebarOpen, previewOpen, aiMessages]
+    [
+      aiService,
+      currentFile,
+      workspaceContext,
+      addAiMessage,
+      onError,
+      openFiles,
+      workspaceFolder,
+      sidebarOpen,
+      previewOpen,
+      aiMessages,
+    ],
   );
 
   return {
