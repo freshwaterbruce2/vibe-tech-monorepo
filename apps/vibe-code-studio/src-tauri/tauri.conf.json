@@ -48,15 +48,7 @@
   },
   "plugins": {
     "shell": {
-      "open": true,
-      "scope": [
-        {
-          "name": "exec-cmd",
-          "cmd": "cmd",
-          "args": ["/C", { "validator": ".*" }],
-          "sidecar": false
-        }
-      ]
+      "open": true
     }
   }
 }
