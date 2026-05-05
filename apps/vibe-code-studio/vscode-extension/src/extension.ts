@@ -2,9 +2,9 @@ import * as vscode from 'vscode';
 import axios from 'axios';
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log('Vibe Code Studio extension is now active!');
+  // Vibe Code Studio extension activated
 
-  let disposableComplete = vscode.commands.registerCommand('vibeCodeStudio.completeCode', async () => {
+  const disposableComplete = vscode.commands.registerCommand('vibeCodeStudio.completeCode', async () => {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
       vscode.window.showInformationMessage('No active editor.');
