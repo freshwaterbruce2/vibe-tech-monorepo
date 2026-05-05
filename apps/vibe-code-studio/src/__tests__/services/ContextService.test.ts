@@ -300,7 +300,7 @@ describe('ContextService', () => {
       expect(window).toContain('Test workspace with 25 files');
     });
 
-    it.skip('should respect token limits', () => {
+    it('should respect token limits', () => {
       const smallContent = 'const x = 1;'.repeat(50); // ~600 chars = ~150 tokens
       const largeContent = 'b'.repeat(10000); // 10000 chars = ~2500 tokens
       const currentFile = createMockFile('/test/App.tsx', 'App.tsx', smallContent);
@@ -313,8 +313,8 @@ describe('ContextService', () => {
         ]
       };
 
-      // Token limit of 300 should fit current file (~150 tokens + header) but not related file (~2500 tokens)
-      const window = contextService.getContextWindow(context, 300);
+      // Token limit of 200 should fit current file (~150 tokens + header) but not related file preview (~125 tokens)
+      const window = contextService.getContextWindow(context, 200);
 
       // Should include current file but not related file due to token limit
       expect(window).toContain('=== Current File: App.tsx ===');

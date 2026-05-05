@@ -6,7 +6,7 @@
 import { SecureApiKeyManager } from '@vibetech/shared-utils';
 import { useEffect, useRef } from 'react';
 import { getDatabase, getDbInitError } from '../../modules/core/services/DatabaseManager';
-import { autoUpdater } from '../../services/AutoUpdateService';
+
 import { logger } from '../../services/Logger';
 import { telemetry } from '../../services/TelemetryService';
 import type { DbStatus } from '../types';
@@ -275,16 +275,6 @@ export function useAppInit(props: {
       version: import.meta.env['VITE_APP_VERSION'],
       platform: navigator.platform,
       language: navigator.language,
-    });
-
-    // Check for updates
-    autoUpdater.checkForUpdates().then((updateInfo) => {
-      if (updateInfo) {
-        showWarning(
-          'Update Available',
-          `Version ${updateInfo.version} is available. Restart to apply.`
-        );
-      }
     });
 
     // Demo mode: load demo workspace if no Electron
