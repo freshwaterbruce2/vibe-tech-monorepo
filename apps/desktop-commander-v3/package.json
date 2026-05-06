@@ -8,14 +8,14 @@
     "start": "node dist/index.js",
     "start:mcp": "node dist/mcp.js",
     "dev": "tsx watch src/index.ts",
-    "lint": "cd ../.. && pnpm exec eslint apps/desktop-commander-v3/src --ext .ts",
+    "lint": "cd ../.. && pnpm exec eslint apps/desktop-commander-v3/src",
     "test": "vitest",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.0",
     "@vibetech/shared-ipc": "workspace:^1.0.0",
-    "ajv": "^8.18.0",    "node-powershell": "^5.0.1",
+    "node-powershell": "^5.0.1",
     "open": "^11.0.0",
     "systeminformation": "^5.31.5",
     "ws": "^8.20.0",

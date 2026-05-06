@@ -7,3 +7,5 @@ nul
 node_modules_backup_temp_2/
 .claude/
 *.md
+tsconfig.lint.json
+

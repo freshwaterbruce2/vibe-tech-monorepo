@@ -1,11 +1,6 @@
 import * as FileSystem from "../FileSystemTools.js";
+import { ToolAnnotations } from "./types.js";
 
-interface ToolAnnotations {
-	readOnlyHint?: boolean;
-	destructiveHint?: boolean;
-	idempotentHint?: boolean;
-	openWorldHint?: boolean;
-}
 
 export const filesystemTools: Array<{
 	name: string;

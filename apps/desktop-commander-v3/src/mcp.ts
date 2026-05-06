@@ -46,7 +46,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 process.on("unhandledRejection", (reason) => {
-	console.error("Unhandled rejection in desktop-commander-v3 MCP server:", reason);
+	logger.error("Unhandled rejection in desktop-commander-v3 MCP server:", reason);
 });
 
 await server.connect(new StdioServerTransport());
