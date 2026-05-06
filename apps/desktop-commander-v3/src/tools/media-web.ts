@@ -2,12 +2,6 @@ import open from "open";
 import * as Media from "../MediaTools.js";
 import * as Web from "../WebTools.js";
 
-interface ToolAnnotations {
-	readOnlyHint?: boolean;
-	destructiveHint?: boolean;
-	idempotentHint?: boolean;
-	openWorldHint?: boolean;
-}
 
 function validateHttpUrl(url: string): string {
 	let parsed: URL;

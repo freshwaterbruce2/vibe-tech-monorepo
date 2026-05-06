@@ -2,12 +2,6 @@ import * as Screenshot from "../ScreenshotTools.js";
 import * as Window from "../WindowTools.js";
 import * as Input from "../InputTools.js";
 
-interface ToolAnnotations {
-	readOnlyHint?: boolean;
-	destructiveHint?: boolean;
-	idempotentHint?: boolean;
-	openWorldHint?: boolean;
-}
 
 export const uiTools: Array<{
 	name: string;

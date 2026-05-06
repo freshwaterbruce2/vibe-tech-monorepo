@@ -75,12 +75,13 @@ const prodPackageJson = {
     'db:seed': 'node server/db/seed.js',
   },
   dependencies: {
-    '@hono/node-server': '^1.13.7',
-    'better-sqlite3': '^11.9.0',
-    'bcryptjs': '^2.4.3',
+    '@hono/node-server': '^1.19.11',
+    '@hono/zod-validator': '^0.7.6',
+    'better-sqlite3': '12.6.2',
+    'bcryptjs': '^3.0.3',
     hono: '^4.6.14',
     jsonwebtoken: '^9.0.2',
-    zod: '^3.24.1',
+    zod: '^4.3.6',
   },
 };
 

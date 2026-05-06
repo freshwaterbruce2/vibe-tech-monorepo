@@ -3,12 +3,6 @@ import * as System from "../SystemTools.js";
 import * as Clipboard from "../ClipboardTools.js";
 import { getAllowedPaths } from "../PathValidator.js";
 
-interface ToolAnnotations {
-	readOnlyHint?: boolean;
-	destructiveHint?: boolean;
-	idempotentHint?: boolean;
-	openWorldHint?: boolean;
-}
 
 export const systemTools: Array<{
 	name: string;
