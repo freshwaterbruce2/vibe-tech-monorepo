@@ -47,7 +47,7 @@ export interface UseAppHandlersProps {
   tabCompletionProviderRef: MutableRefObject<{ dispose: () => void } | null>;
 
   // State setters
-  setCurrentError: (error: DetectedError | null) => void;
+  setCurrentError: (error: DetectedError | null | ((prev: DetectedError | null) => DetectedError | null)) => void;
   setCurrentFix: (fix: GeneratedFix | null) => void;
   setErrorFixPanelOpen: (open: boolean) => void;
   setFixLoading: (loading: boolean) => void;
@@ -205,6 +205,11 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     logger.debug('[AutoFix] Editor mounted, initializing error detection');
     editorRef.current = typedEditor;
 
+    // Clean up previous instances to avoid leaks and stale listeners
+    errorDetectorRef.current?.dispose();
+    codeActionProviderRef.current?.dispose();
+    tabCompletionProviderRef.current?.dispose();
+
     // Initialize AutoFixService
     autoFixServiceRef.current = new AutoFixService(aiService);
 
@@ -232,11 +237,14 @@ export function useAppHandlers(props: UseAppHandlersProps) {
       },
       onErrorResolved: (errorId: string) => {
         logger.debug('[AutoFix] Error resolved:', errorId);
-        if (currentError?.id === errorId) {
-          setErrorFixPanelOpen(false);
-          setCurrentError(null);
-          setCurrentFix(null);
-        }
+        setCurrentError((prev) => {
+          if (prev?.id === errorId) {
+            setErrorFixPanelOpen(false);
+            setCurrentFix(null);
+            return null;
+          }
+          return prev;
+        });
       },
     });
 

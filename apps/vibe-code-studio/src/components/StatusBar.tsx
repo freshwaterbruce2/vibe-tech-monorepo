@@ -19,6 +19,7 @@ import styled from 'styled-components';
 import { useGit } from '../hooks/useGit';
 import { vibeTheme } from '../styles/theme';
 import type { EditorFile } from '../types';
+import { shouldForwardMotionProp } from '../utils/motionProps';
 
 const StatusBarContainer = styled.div`
   display: flex;
@@ -45,7 +46,9 @@ const RightSection = styled.div`
   gap: ${vibeTheme.spacing[2]};
 `;
 
-const StatusItem = styled(motion.div)`
+const StatusItem = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   display: flex;
   align-items: center;
   gap: ${vibeTheme.spacing[1]};
@@ -70,7 +73,7 @@ const StatusItem = styled(motion.div)`
 `;
 
 const ToggleButton = styled(motion.button).withConfig({
-  shouldForwardProp: (prop) => prop !== 'active',
+  shouldForwardProp: (prop) => prop !== 'active' && shouldForwardMotionProp(prop),
 })<{ active: boolean }>`
   background: ${(props) => (props.active ? vibeTheme.colors.hoverStrong : 'transparent')};
   border: 1px solid ${(props) => (props.active ? 'rgba(0, 212, 255, 0.3)' : 'transparent')};

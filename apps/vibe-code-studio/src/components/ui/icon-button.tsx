@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import styled, { css } from 'styled-components';
 
 import { vibeTheme } from '../../styles/theme';
+import { shouldForwardMotionProp } from '../../utils/motionProps';
 
 export type IconButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type IconButtonSize = 'xs' | 'sm' | 'md' | 'lg';
@@ -122,7 +123,9 @@ const variantStyles = {
   `,
 };
 
-const StyledIconButton = styled(motion.button)<{
+const StyledIconButton = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{
   $variant: IconButtonVariant;
   $size: IconButtonSize;
 }>`
@@ -167,7 +170,9 @@ const StyledIconButton = styled(motion.button)<{
   }
 `;
 
-const LoadingSpinner = styled(motion.div)`
+const LoadingSpinner = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   position: absolute;
   display: flex;
   align-items: center;

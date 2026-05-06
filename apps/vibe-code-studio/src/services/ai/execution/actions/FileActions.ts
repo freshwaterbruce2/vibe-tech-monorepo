@@ -61,7 +61,7 @@ Generate ONLY the file content, no explanations.`;
             conversationHistory: [],
         });
 
-        const content = response.content.trim();
+        const content = (response.content ?? '').trim();
 
         if (!content || content.length < 50) {
             return getFallbackTemplate(fileName, extension);

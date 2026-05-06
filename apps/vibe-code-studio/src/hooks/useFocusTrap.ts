@@ -89,6 +89,7 @@ export function useFocusTrap<T extends HTMLElement = HTMLElement>(
     if (!isActive || !containerRef.current) {return;}
 
     const container = containerRef.current;
+    let focusTimeout: ReturnType<typeof setTimeout> | undefined;
 
     // Store the currently focused element to restore later
     previouslyFocusedElement.current = document.activeElement as HTMLElement;
@@ -98,7 +99,7 @@ export function useFocusTrap<T extends HTMLElement = HTMLElement>(
       const elementToFocus = initialFocus ?? getFocusableElements(container)[0];
       if (elementToFocus) {
         // Use setTimeout to ensure the element is rendered and focusable
-        setTimeout(() => {
+        focusTimeout = setTimeout(() => {
           elementToFocus.focus();
         }, 0);
       }
@@ -145,6 +146,9 @@ export function useFocusTrap<T extends HTMLElement = HTMLElement>(
 
     // Cleanup
     return () => {
+      if (focusTimeout) {
+        clearTimeout(focusTimeout);
+      }
       container.removeEventListener('keydown', handleKeyDown);
 
       // Restore focus to previously focused element

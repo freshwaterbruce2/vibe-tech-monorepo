@@ -1,5 +1,5 @@
 import { Copy, LogOut, Share2, Users, Wifi, WifiOff } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { useCollaboration } from '../hooks/useCollaboration';
 
@@ -87,6 +87,7 @@ export function CollaborationBar() {
   const [roomInput, setRoomInput] = useState('');
   const [nameInput, setNameInput] = useState('');
   const [copied, setCopied] = useState(false);
+  const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const handleJoin = useCallback(() => {
     if (roomInput.trim() && nameInput.trim()) {
@@ -99,10 +100,25 @@ export function CollaborationBar() {
     if (roomId) {
       navigator.clipboard.writeText(roomId).then(() => {
         setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        if (copiedTimeoutRef.current) {
+          clearTimeout(copiedTimeoutRef.current);
+        }
+        copiedTimeoutRef.current = setTimeout(() => {
+          copiedTimeoutRef.current = undefined;
+          setCopied(false);
+        }, 2000);
       });
     }
   }, [roomId]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (copiedTimeoutRef.current) {
+        clearTimeout(copiedTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const statusColor = status === 'connected' ? '#4ec94e' : status === 'connecting' ? '#e5c07b' : '#666';
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { AlertCircle, AlertTriangle, CheckCircle, Info, X } from 'lucide-react';
 import styled, { keyframes } from 'styled-components';
 
@@ -174,13 +174,27 @@ export const Notification = ({
   onClose,
 }: NotificationProps) => {
   const [isClosing, setIsClosing] = React.useState(false);
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const handleClose = useCallback(() => {
     setIsClosing(true);
-    setTimeout(() => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+    }
+    closeTimeoutRef.current = setTimeout(() => {
+      closeTimeoutRef.current = undefined;
       onClose(id);
     }, 300);
   }, [id, onClose]);
+
+  // Cleanup close timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (duration > 0) {

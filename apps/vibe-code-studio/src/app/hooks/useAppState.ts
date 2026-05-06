@@ -53,7 +53,7 @@ export interface UseAppStateReturn {
 
   // Error fix state
   currentError: DetectedError | null;
-  setCurrentError: (error: DetectedError | null) => void;
+  setCurrentError: (error: DetectedError | null | ((prev: DetectedError | null) => DetectedError | null)) => void;
   currentFix: GeneratedFix | null;
   setCurrentFix: (fix: GeneratedFix | null) => void;
   errorFixPanelOpen: boolean;

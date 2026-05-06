@@ -69,7 +69,7 @@ Generate ONE alternative strategy that's DIFFERENT from the original approach.`;
         });
 
         // Parse AI response (handle JSON in text)
-        const jsonMatch = response.content.match(/\{[\s\S]*\}/);
+        const jsonMatch = (response.content ?? '').match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
             logger.warn('[SelfCorrection] ⚠️ AI did not return valid JSON strategy');
             return null;

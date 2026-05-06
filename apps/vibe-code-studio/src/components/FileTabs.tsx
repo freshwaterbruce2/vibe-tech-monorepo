@@ -4,6 +4,7 @@ import styled from 'styled-components';
 
 import { vibeTheme } from '../styles/theme';
 import type { EditorFile } from '../types';
+import { shouldForwardMotionProp } from '../utils/motionProps';
 
 const TabsContainer = styled.div`
   display: flex;
@@ -32,7 +33,7 @@ const TabsContainer = styled.div`
 `;
 
 const Tab = styled(motion.div).withConfig({
-  shouldForwardProp: (prop) => prop !== 'active',
+  shouldForwardProp: (prop) => prop !== 'active' && shouldForwardMotionProp(prop),
 })<{ active: boolean }>`
   display: flex;
   align-items: center;
@@ -91,7 +92,9 @@ const TabLabel = styled.span.withConfig({
   }
 `;
 
-const CloseButton = styled(motion.button)`
+const CloseButton = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   background: transparent;
   border: none;
   color: ${vibeTheme.colors.textSecondary};

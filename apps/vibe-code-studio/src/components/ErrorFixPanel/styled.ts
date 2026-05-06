@@ -13,8 +13,10 @@ export const Container = styled(motion.div)`
   padding: 0;
   width: 100%;
   max-width: 600px;
+  max-height: calc(100vh - 120px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 
   &:focus {
     outline: 2px solid rgba(139, 92, 246, 0.5);

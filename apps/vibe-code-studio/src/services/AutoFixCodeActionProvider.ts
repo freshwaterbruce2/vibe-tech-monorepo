@@ -113,50 +113,59 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
    * Register command handlers for the code actions
    * Must be called after provider is registered
    */
-  registerCommandHandlers(editor: Monaco.editor.IStandaloneCodeEditor, monacoInstance: typeof Monaco) {
-    // Handler for single fix
-    this.registerCommand(monacoInstance, 'autofix.fixWithAI', async (...args: unknown[]) => {
-      const model = args[0] as Monaco.editor.ITextModel;
-      const marker = args[1] as Monaco.editor.IMarker;
-      try {
-        logger.debug('[CodeActionProvider] Fixing single error:', marker.message);
+  registerCommandHandlers(editor: Monaco.editor.IStandaloneCodeEditor, _monacoInstance: typeof Monaco) {
+    // Handler for single fix — registered as an editor action so Monaco's command service can invoke it
+    editor.addAction({
+      id: 'autofix.fixWithAI',
+      label: 'Fix with AI',
+      keybindings: [],
+      run: async (_ed, ...args: unknown[]) => {
+        const model = args[0] as Monaco.editor.ITextModel;
+        const marker = args[1] as Monaco.editor.IMarker;
+        try {
+          logger.debug('[CodeActionProvider] Fixing single error:', marker.message);
 
-        // Convert Monaco marker to DetectedError
-        const error = this.markerToDetectedError(marker, model);
+          // Convert Monaco marker to DetectedError
+          const error = this.markerToDetectedError(marker, model);
 
-        // Generate fix using AutoFixService
-        const fix = await this.autoFixService.generateFix(error, editor);
+          // Generate fix using AutoFixService
+          const fix = await this.autoFixService.generateFix(error, editor);
 
-        if (fix.suggestions.length === 0) {
-          throw new Error('No fix suggestions generated');
-        }
+          if (fix.suggestions.length === 0) {
+            throw new Error('No fix suggestions generated');
+          }
 
-        // Apply the first (highest confidence) suggestion
-        const suggestion = fix.suggestions[0]!;
-        this.applyFix(editor, model, suggestion);
+          // Apply the first (highest confidence) suggestion
+          const suggestion = fix.suggestions[0]!;
+          this.applyFix(editor, model, suggestion);
 
-        // Notify success
-        if (this.onFixApplied) {
-          this.onFixApplied(suggestion.title);
-        }
+          // Notify success
+          if (this.onFixApplied) {
+            this.onFixApplied(suggestion.title);
+          }
 
-        logger.debug('[CodeActionProvider] Fix applied successfully');
-      } catch (error) {
-        logger.error('[CodeActionProvider] Fix failed:', error);
-        if (this.onFixFailed) {
-          this.onFixFailed(error as Error);
+          logger.debug('[CodeActionProvider] Fix applied successfully');
+        } catch (error) {
+          logger.error('[CodeActionProvider] Fix failed:', error);
+          if (this.onFixFailed) {
+            this.onFixFailed(error as Error);
+          }
         }
       }
     });
 
     // Handler for fix all
-    this.registerCommand(monacoInstance, 'autofix.fixAllWithAI', async (...args: unknown[]) => {
-      const model = args[0] as Monaco.editor.ITextModel;
-      const markers = args[1] as Monaco.editor.IMarker[];
-      try {
-        logger.debug('[CodeActionProvider] Fixing multiple errors:', markers.length);
+    editor.addAction({
+      id: 'autofix.fixAllWithAI',
+      label: 'Fix all with AI',
+      keybindings: [],
+      run: async (_ed, ...args: unknown[]) => {
+        const model = args[0] as Monaco.editor.ITextModel;
+        const markers = args[1] as Monaco.editor.IMarker[];
+        try {
+          logger.debug('[CodeActionProvider] Fixing multiple errors:', markers.length);
 
-        let fixedCount = 0;
+          let fixedCount = 0;
         const errors: string[] = [];
 
         // Fix errors one by one (could be optimized with batch processing)
@@ -191,7 +200,7 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
           this.onFixFailed(error as Error);
         }
       }
-    });
+    }});
   }
 
   /**
@@ -265,43 +274,4 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
     return `${message.substring(0, maxLength)  }...`;
   }
 
-  /**
-   * Register a command in Monaco editor
-   * Helper method to handle command registration safely
-   */
-  private registerCommand(
-    monacoInstance: typeof Monaco,
-    commandId: string,
-    handler: (...args: unknown[]) => void | Promise<void>
-  ): void {
-    try {
-      const editorNs = monacoInstance.editor as unknown as Record<string, unknown>;
-
-      // Try to dispose existing command first (in case of hot reload)
-      try {
-        const getEditors = editorNs['getEditors'];
-        if (typeof getEditors === 'function') {
-          (getEditors() as Array<Record<string, unknown>>)?.forEach((ed) => {
-            const actions = ed['_actions'] as Array<{ id: string; dispose?: () => void }> | undefined;
-            actions?.forEach((action) => {
-              if (action.id === commandId) {
-                action.dispose?.();
-              }
-            });
-          });
-        }
-      } catch (_e) {
-        // Ignore disposal errors
-      }
-
-      // Register new command
-      const registerCommand = editorNs['registerCommand'];
-      if (typeof registerCommand === 'function') {
-        (registerCommand as (id: string, h: typeof handler) => void)(commandId, handler);
-      }
-      logger.debug('[CodeActionProvider] Registered command:', commandId);
-    } catch (error) {
-      logger.warn('[CodeActionProvider] Failed to register command:', commandId, error);
-    }
-  }
 }

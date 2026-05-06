@@ -2,7 +2,7 @@
  * useComponentLibrary Hook
  * State and actions for the ComponentLibrary component
  */
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { logger } from '../../services/Logger';
 
@@ -19,6 +19,7 @@ export function useComponentLibrary(options: UseComponentLibraryOptions) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedComponent, setSelectedComponent] = useState<UIComponent | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Group components by category
   const groupedComponents = useMemo(() => {
@@ -44,10 +45,25 @@ export function useComponentLibrary(options: UseComponentLibraryOptions) {
     try {
       await navigator.clipboard.writeText(component.code);
       setCopiedId(component.id);
-      setTimeout(() => setCopiedId(null), 2000);
+      if (copiedTimeoutRef.current) {
+        clearTimeout(copiedTimeoutRef.current);
+      }
+      copiedTimeoutRef.current = setTimeout(() => {
+        copiedTimeoutRef.current = undefined;
+        setCopiedId(null);
+      }, 2000);
     } catch (err) {
       logger.error('Failed to copy:', err);
     }
+  }, []);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (copiedTimeoutRef.current) {
+        clearTimeout(copiedTimeoutRef.current);
+      }
+    };
   }, []);
 
   const handleInsert = useCallback((component: UIComponent) => {
