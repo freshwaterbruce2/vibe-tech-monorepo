@@ -11,7 +11,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3003';
  * Get authentication token from localStorage
  */
 function getAuthToken(): string | null {
-  return window.electronAPI.store.get('token');
+  return localStorage.getItem("token");
 }
 
 /**

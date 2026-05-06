@@ -7,7 +7,7 @@ impl PredictionEngine {
     /// Assess risk of commit breaking tests based on file changes
     pub fn assess_commit_risk(&self, files: &[String]) -> Result<RiskLevel, String> {
         let db = self
-            .learning_db
+            .prediction_db
             .lock()
             .map_err(|e| format!("Failed to lock database: {}", e))?;
 

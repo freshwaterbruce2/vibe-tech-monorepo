@@ -462,7 +462,7 @@ const AIChat = ({
           <ModeButton $active={mode === 'agent'} onClick={() => handleModeChange('agent')}
             whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} data-testid="mode-agent">Agent</ModeButton>
         </ModeSwitcher>
-        <CloseButton onClick={onClose} title="Close AI Chat" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+        <CloseButton onClick={onClose} title="Close AI Chat" aria-label="Close AI Chat" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
           <X size={16} />
         </CloseButton>
       </ChatHeader>
@@ -512,8 +512,8 @@ const AIChat = ({
         <InputWrapper>
           <TextInput ref={inputRef} id="ai-chat-input" name="aiChatMessage" data-testid="chat-input"
             value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress}
-            placeholder={mode === 'agent' ? agentPlaceholder : 'Ask AI about your code...'} disabled={isTyping} />
-          <SendButton onClick={() => handleSend()} disabled={!input.trim() || isTyping} title="Send message (Enter)"
+            placeholder={mode === 'agent' ? agentPlaceholder : 'Ask AI about your code...'} disabled={isTyping} aria-label="Message input" />
+          <SendButton onClick={() => handleSend()} disabled={!input.trim() || isTyping} title="Send message (Enter)" aria-label="Send message"
             whileHover={!isTyping && input.trim() ? { scale: 1.05 } : {}}
             whileTap={!isTyping && input.trim() ? { scale: 0.95 } : {}}>
             <Send size={16} />

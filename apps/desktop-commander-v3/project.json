@@ -72,7 +72,13 @@
         "cwd": "apps/desktop-commander-v3"
       }
     },
-    "quality": {}
+    "quality": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run lint && pnpm run typecheck && pnpm run test",
+        "cwd": "apps/desktop-commander-v3"
+      }
+    }
   },
   "tags": [
     "scope:mcp",

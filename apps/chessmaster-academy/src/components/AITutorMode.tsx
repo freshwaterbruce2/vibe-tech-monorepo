@@ -1,16 +1,9 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
+import { ChessBoardSurface, type ChessBoardView } from '@vibetech/games/chess';
 import { getChessAdvice } from '../lib/gemini';
 import { Bot, Send, User, Loader2, PlaySquare, RefreshCcw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { 
-  customBoardStyle, 
-  customDarkSquareStyle, 
-  customLightSquareStyle, 
-  customDropSquareStyle, 
-  piecesConfig 
-} from '../lib/boardStyle';
 
 interface ChatMessage {
   role: 'user' | 'tutor';
@@ -19,7 +12,7 @@ interface ChatMessage {
 
 const STARTING_FEN = new Chess().fen();
 
-export function AITutorMode({ pieceSet }: { pieceSet: string }) {
+export function AITutorMode({ boardView = '2d', pieceSet }: { boardView?: ChessBoardView; pieceSet: string }) {
   const [fen, setFen] = useState(STARTING_FEN);
   const [fenInput, setFenInput] = useState(STARTING_FEN);
   const [chat, setChat] = useState<ChatMessage[]>([]);
@@ -31,7 +24,6 @@ export function AITutorMode({ pieceSet }: { pieceSet: string }) {
   const [optionSquares, setOptionSquares] = useState<Record<string, React.CSSProperties>>({});
 
   const game = useMemo(() => new Chess(fen), [fen]);
-  const customPieces = useMemo(() => piecesConfig(pieceSet), [pieceSet]);
 
   useEffect(() => {
     if (chatScrollRef.current) {
@@ -197,29 +189,20 @@ export function AITutorMode({ pieceSet }: { pieceSet: string }) {
            <span className="text-xs font-bold text-indigo-400 bg-indigo-500/20 px-3 py-1 rounded-lg uppercase tracking-wider">{pieceSet}</span>
         </div>
         <div className="flex flex-col justify-center rounded-lg border border-white/10 bg-white/5 p-2 shadow-2xl backdrop-blur-md md:rounded-3xl md:p-6 xl:flex-1" style={{ touchAction: 'none' }}>
-          <Chessboard 
-            key={pieceSet}
-            options={{
-              position: fen,
-              allowDragging: true,
-              onPieceDrop: onDrop,
-              onPieceClick: ({ square }) => {
-                if (square) onSquareClick(square);
-              },
-              onSquareClick: ({ square }) => onSquareClick(square),
-              onPieceDrag: ({ square }) => {
-                if (!square) return;
-                getMoveOptions(square);
-                setMoveFrom(square);
-              },
-              animationDurationInMs: 350,
-              squareStyles: optionSquares,
-              boardStyle: customBoardStyle,
-              darkSquareStyle: customDarkSquareStyle,
-              lightSquareStyle: customLightSquareStyle,
-              dropSquareStyle: customDropSquareStyle,
-              pieces: customPieces,
+          <ChessBoardSurface
+            boardKey={`${pieceSet}-ai-tutor`}
+            boardView={boardView}
+            fen={fen}
+            optionSquares={optionSquares}
+            pieceSet={pieceSet}
+            selectedSquare={moveFrom}
+            onPieceDrag={({ square }) => {
+              if (!square) return;
+              getMoveOptions(square);
+              setMoveFrom(square);
             }}
+            onPieceDrop={onDrop}
+            onSquareClick={onSquareClick}
           />
         </div>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 backdrop-blur-md bg-white/5 px-6 py-4 rounded-2xl border border-white/10 shadow-lg">
@@ -346,6 +329,7 @@ export function AITutorMode({ pieceSet }: { pieceSet: string }) {
             <button 
               onClick={handleSend}
               disabled={!input.trim() || Boolean(isTyping)}
+              aria-label="Send message"
               className="absolute right-2 p-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700/50 text-white rounded-lg transition-colors border border-indigo-500/50"
             >
               <Send size={18} />

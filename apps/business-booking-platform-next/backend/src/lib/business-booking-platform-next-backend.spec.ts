@@ -17,6 +17,7 @@ type Booking = {
   id: string;
   hotelId: string;
   totalPrice: number;
+  currency: string;
   paymentStatus: string;
   status: string;
 };
@@ -29,16 +30,19 @@ async function readJson<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
 
-async function postJson<T>(path: string, body: unknown, token?: string): Promise<T> {
+async function post(path: string, body: unknown, token?: string): Promise<Response> {
   const headers = new Headers({ 'Content-Type': 'application/json' });
   if (token) headers.set('Authorization', `Bearer ${token}`);
 
-  const response = await fetch(`${baseUrl}${path}`, {
+  return fetch(`${baseUrl}${path}`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
   });
+}
 
+async function postJson<T>(path: string, body: unknown, token?: string): Promise<T> {
+  const response = await post(path, body, token);
   expect(response.ok).toBe(true);
   return readJson<T>(response);
 }
@@ -79,7 +83,7 @@ describe('createBookingApiServer', () => {
     });
 
     expect(search.hotels).toEqual(
-      expect.arrayContaining([expect.objectContaining({ city: 'Miami' })])
+      expect.arrayContaining([expect.objectContaining({ city: 'Miami' })]),
     );
   });
 
@@ -91,6 +95,18 @@ describe('createBookingApiServer', () => {
       firstName: 'Demo',
       lastName: 'Traveler',
     });
+    const login = await postJson<AuthResponse>('/auth/login', {
+      email,
+      password: 'booking-pass',
+    });
+    expect(login.token).toBeTruthy();
+
+    const rejectedLogin = await fetch(`${baseUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: 'wrong-pass' }),
+    });
+    expect(rejectedLogin.status).toBe(401);
 
     const bookingResult = await postJson<{ booking: Booking }>(
       '/bookings',
@@ -100,7 +116,7 @@ describe('createBookingApiServer', () => {
         checkOut: '2026-05-06',
         guests: 2,
       },
-      auth.token
+      auth.token,
     );
 
     expect(bookingResult.booking.totalPrice).toBe(458);
@@ -113,7 +129,7 @@ describe('createBookingApiServer', () => {
         amount: bookingResult.booking.totalPrice,
         currency: 'USD',
       },
-      auth.token
+      auth.token,
     );
 
     expect(paymentResult.booking).toMatchObject({
@@ -121,5 +137,59 @@ describe('createBookingApiServer', () => {
       status: 'confirmed',
       paymentStatus: 'paid',
     });
+  });
+
+  it('rejects invalid booking dates and mismatched payment details', async () => {
+    const auth = await postJson<AuthResponse>('/auth/register', {
+      email: `auditor-${randomUUID()}@example.com`,
+      password: 'booking-pass',
+      firstName: 'Demo',
+      lastName: 'Auditor',
+    });
+
+    const invalidDates = await post(
+      '/bookings',
+      {
+        hotelId: 'h_1',
+        checkIn: '2026-05-06',
+        checkOut: '2026-05-04',
+        guests: 2,
+      },
+      auth.token,
+    );
+    expect(invalidDates.status).toBe(400);
+
+    const bookingResult = await postJson<{ booking: Booking }>(
+      '/bookings',
+      {
+        hotelId: 'h_1',
+        checkIn: '2026-05-04',
+        checkOut: '2026-05-06',
+        guests: 2,
+      },
+      auth.token,
+    );
+
+    const underpaid = await post(
+      '/payments/create',
+      {
+        bookingId: bookingResult.booking.id,
+        amount: bookingResult.booking.totalPrice - 1,
+        currency: bookingResult.booking.currency,
+      },
+      auth.token,
+    );
+    expect(underpaid.status).toBe(400);
+
+    const wrongCurrency = await post(
+      '/payments/create',
+      {
+        bookingId: bookingResult.booking.id,
+        amount: bookingResult.booking.totalPrice,
+        currency: 'EUR',
+      },
+      auth.token,
+    );
+    expect(wrongCurrency.status).toBe(400);
   });
 });

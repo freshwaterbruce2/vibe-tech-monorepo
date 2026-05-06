@@ -1,6 +1,6 @@
 {
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "name": "trendmart",
+  "name": "vibe-shop",
   "projectType": "application",
   "sourceRoot": "apps/vibe-shop/src",
   "targets": {

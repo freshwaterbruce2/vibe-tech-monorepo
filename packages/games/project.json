@@ -1,0 +1,45 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@vibetech/games",
+  "projectType": "library",
+  "root": "packages/games",
+  "sourceRoot": "packages/games/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "options": {
+        "command": "tsc -p tsconfig.build.json",
+        "cwd": "packages/games"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "eslint src --max-warnings 0",
+        "cwd": "packages/games"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/coverage"],
+      "cache": true,
+      "options": {
+        "command": "vitest run",
+        "cwd": "packages/games"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "packages/games"
+      }
+    },
+    "quality": {}
+  },
+  "tags": ["type:library", "scope:games", "platform:react", "platform:capacitor"]
+}

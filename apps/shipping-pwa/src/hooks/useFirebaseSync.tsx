@@ -246,9 +246,9 @@ export const useFirebaseSync = (): UseFirebaseSyncReturn => {
   const saveDoorEntry = useCallback(async (entry: any) => {
     if (!state.user) {
       // Save to localStorage only if not authenticated
-      const doorEntries = JSON.parse(window.electronAPI?.store.get('doorEntries') ?? '[]');
+      const doorEntries = JSON.parse(localStorage.getItem('doorEntries') ?? '[]');
       doorEntries.push({ ...entry, id: Date.now().toString() });
-      window.electronAPI?.store.set('doorEntries', JSON.stringify(doorEntries));
+      localStorage.setItem('doorEntries', JSON.stringify(doorEntries));
       return;
     }
 
@@ -265,9 +265,9 @@ export const useFirebaseSync = (): UseFirebaseSyncReturn => {
       });
 
       // Also save to localStorage for offline access
-      const doorEntries = JSON.parse(window.electronAPI?.store.get('doorEntries') ?? '[]');
+      const doorEntries = JSON.parse(localStorage.getItem('doorEntries') ?? '[]');
       doorEntries.push(entry);
-      window.electronAPI?.store.set('doorEntries', JSON.stringify(doorEntries));
+      localStorage.setItem('doorEntries', JSON.stringify(doorEntries));
     } catch (error) {
       setState(prev => ({
         ...prev,
@@ -280,9 +280,9 @@ export const useFirebaseSync = (): UseFirebaseSyncReturn => {
   const updatePalletCount = useCallback(async (doorNumber: number, count: number) => {
     if (!state.user) {
       // Save to localStorage only if not authenticated
-      const palletData = JSON.parse(window.electronAPI?.store.get('palletData') ?? '{}');
+      const palletData = JSON.parse(localStorage.getItem('palletData') ?? '{}');
       palletData[doorNumber.toString()] = count;
-      window.electronAPI?.store.set('palletData', JSON.stringify(palletData));
+      localStorage.setItem('palletData', JSON.stringify(palletData));
       return;
     }
 
@@ -300,9 +300,9 @@ export const useFirebaseSync = (): UseFirebaseSyncReturn => {
       );
 
       // Also update localStorage for offline access
-      const palletData = JSON.parse(window.electronAPI?.store.get('palletData') ?? '{}');
+      const palletData = JSON.parse(localStorage.getItem('palletData') ?? '{}');
       palletData[doorNumber.toString()] = count;
-      window.electronAPI?.store.set('palletData', JSON.stringify(palletData));
+      localStorage.setItem('palletData', JSON.stringify(palletData));
     } catch (error) {
       setState(prev => ({
         ...prev,

@@ -23,7 +23,10 @@ describe('FirstRunOnboarding', () => {
     const continueButton = screen.getByRole('button', { name: /continue/i });
     expect(continueButton).toBeDisabled();
 
-    fireEvent.click(screen.getByRole('button', { name: /choose avatar 🐉 focus dragon/i }));
+    const avatarImage = screen.getByRole('img', { name: /focus gamer/i });
+    expect(avatarImage).toHaveAttribute('src', '/avatars/avatar-boy-headphones.png');
+
+    fireEvent.click(screen.getByRole('button', { name: /choose avatar focus gamer/i }));
 
     expect(screen.getByText('Pick your avatar')).toBeInTheDocument();
     expect(continueButton).toBeEnabled();
@@ -39,7 +42,7 @@ describe('FirstRunOnboarding', () => {
     render(<FirstRunOnboarding onComplete={onComplete} />);
 
     fireEvent.click(screen.getByRole('button', { name: /i'm the kid/i }));
-    fireEvent.click(screen.getByRole('button', { name: /choose avatar 🐉 focus dragon/i }));
+    fireEvent.click(screen.getByRole('button', { name: /choose avatar focus gamer/i }));
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
 
     const startButton = screen.getByRole('button', { name: /start earning/i });
@@ -48,6 +51,10 @@ describe('FirstRunOnboarding', () => {
     fireEvent.click(startButton);
 
     expect(onComplete).toHaveBeenCalledTimes(1);
+    expect(onComplete).toHaveBeenCalledWith({
+      avatar: 'avatar-boy-headphones',
+      userType: 'kid',
+    });
     expect(screen.getByRole('button', { name: /saving/i })).toBeDisabled();
   });
 });

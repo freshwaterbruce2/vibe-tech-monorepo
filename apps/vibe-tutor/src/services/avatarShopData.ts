@@ -1,6 +1,49 @@
-import type { ShopItem } from '../types';
+import {
+  AVATAR_CHARACTERS,
+  BACKGROUND_ITEMS,
+  BADGE_ITEMS,
+  FRAME_ITEMS,
+  type ShopItem,
+} from '@vibetech/avatars';
 
-export const SHOP_ITEMS: ShopItem[] = [
+const LEGACY_AVATAR_VALUE_TO_ID: Record<string, string> = {
+  '🐉': 'avatar-boy-headphones',
+  '🦊': 'avatar-girl-glasses',
+  '🐱': 'avatar-teen-cap',
+  '🦄': 'avatar-teen-neon-hair',
+  '🚀': 'avatar-ai-buddy',
+  '🎮': 'avatar-calm-reader',
+  'focus-dragon': 'avatar-boy-headphones',
+  'swift-fox': 'avatar-girl-glasses',
+  'calm-cat': 'avatar-teen-cap',
+  'dream-unicorn': 'avatar-teen-neon-hair',
+  'rocket-spark': 'avatar-ai-buddy',
+  'game-hero': 'avatar-calm-reader',
+};
+
+export const AVATAR_CHARACTER_ITEMS: ShopItem[] = AVATAR_CHARACTERS.map((character) => ({
+  id: character.id,
+  name: character.name,
+  description: character.description,
+  cost: 0,
+  type: 'avatar',
+  statBoosts: {},
+  imageUrl: character.imagePath,
+  rarity: character.rarity,
+}));
+
+export const DEFAULT_AVATAR_ID = AVATAR_CHARACTER_ITEMS[0]?.id ?? 'avatar-boy-headphones';
+export const DEFAULT_UNLOCKED_AVATAR_IDS = AVATAR_CHARACTER_ITEMS.map((item) => item.id);
+
+const KNOWN_AVATAR_IDS = new Set(DEFAULT_UNLOCKED_AVATAR_IDS);
+
+export function normalizeAvatarId(value: string | null | undefined): string {
+  if (!value) return DEFAULT_AVATAR_ID;
+  if (KNOWN_AVATAR_IDS.has(value)) return value;
+  return LEGACY_AVATAR_VALUE_TO_ID[value] ?? DEFAULT_AVATAR_ID;
+}
+
+const GEAR_ITEMS: ShopItem[] = [
   {
     id: 'hat-math',
     name: "Mathematician's Cap",
@@ -64,4 +107,12 @@ export const SHOP_ITEMS: ShopItem[] = [
     statBoosts: { logicPower: 5, creativity: 3 }, // using logic/creativity for language arts proxy
     imageUrl: '✒️',
   },
+];
+
+export const SHOP_ITEMS: ShopItem[] = [
+  ...AVATAR_CHARACTER_ITEMS,
+  ...GEAR_ITEMS,
+  ...FRAME_ITEMS,
+  ...BADGE_ITEMS,
+  ...BACKGROUND_ITEMS,
 ];

@@ -1,17 +1,13 @@
 import cors from 'cors';
-import express, {
-  type Express,
-  type NextFunction,
-  type Request,
-  type Response,
-} from 'express';
-import { randomUUID } from 'node:crypto';
+import express, { type Express, type NextFunction, type Request, type Response } from 'express';
+import { randomBytes, randomUUID, scrypt, timingSafeEqual } from 'node:crypto';
+import { promisify } from 'node:util';
 import { z } from 'zod';
 
 interface User {
   id: string;
   email: string;
-  password: string;
+  passwordHash: string;
   firstName: string;
   lastName: string;
 }
@@ -21,10 +17,20 @@ interface Hotel {
   name: string;
   city: string;
   country: string;
+  neighborhood: string;
   description: string;
   nightlyRate: number;
   currency: string;
   rating: number;
+  reviewScore: number;
+  reviewCount: number;
+  imageUrl: string;
+  gallery: string[];
+  amenities: string[];
+  businessPerks: string[];
+  cancellationPolicy: string;
+  distanceFromCenter: string;
+  badge: string;
 }
 
 interface Booking {
@@ -55,6 +61,8 @@ const users: User[] = [];
 const sessions = new Map<string, string>();
 const bookings: Booking[] = [];
 const payments: Payment[] = [];
+const scryptAsync = promisify(scrypt);
+const PASSWORD_KEY_LENGTH = 64;
 
 const hotels: Hotel[] = [
   {
@@ -62,30 +70,60 @@ const hotels: Hotel[] = [
     name: 'Harbor Point Suites',
     city: 'Miami',
     country: 'USA',
+    neighborhood: 'Brickell waterfront',
     description: 'Oceanfront suites with coworking space and fast check-in.',
     nightlyRate: 229,
     currency: 'USD',
     rating: 4.6,
+    reviewScore: 9.1,
+    reviewCount: 1284,
+    imageUrl: '/images/hotel-rooftop.png',
+    gallery: ['/images/hotel-room-workspace.png', '/images/hotel-lobby-coworking.png'],
+    amenities: ['Fast Wi-Fi', 'Pool', 'Breakfast', 'Fitness center'],
+    businessPerks: ['Coworking lounge', 'Late checkout', 'Airport transfer'],
+    cancellationPolicy: 'Free cancellation until 24 hours before check-in',
+    distanceFromCenter: '0.4 mi from financial district',
+    badge: 'Best for client meetings',
   },
   {
     id: 'h_2',
     name: 'SoMa Executive Stay',
     city: 'San Francisco',
     country: 'USA',
+    neighborhood: 'SoMa',
     description: 'Central location for conferences with meeting-ready rooms.',
     nightlyRate: 285,
     currency: 'USD',
     rating: 4.4,
+    reviewScore: 8.8,
+    reviewCount: 946,
+    imageUrl: '/images/hotel-room-workspace.png',
+    gallery: ['/images/hotel-rooftop.png', '/images/hotel-lobby-coworking.png'],
+    amenities: ['Meeting rooms', 'Restaurant', 'EV charging', 'Gym'],
+    businessPerks: ['Boardroom access', 'Express laundry', 'Tech desk'],
+    cancellationPolicy: 'Fully refundable on flexible rates',
+    distanceFromCenter: '0.6 mi from Moscone Center',
+    badge: 'Conference favorite',
   },
   {
     id: 'h_3',
     name: 'Lakeview Business Hotel',
     city: 'Chicago',
     country: 'USA',
+    neighborhood: 'River North',
     description: 'Business travel focused amenities with flexible checkout.',
     nightlyRate: 199,
     currency: 'USD',
     rating: 4.3,
+    reviewScore: 8.6,
+    reviewCount: 731,
+    imageUrl: '/images/hotel-lobby-coworking.png',
+    gallery: ['/images/hotel-rooftop.png', '/images/hotel-room-workspace.png'],
+    amenities: ['Lake views', 'Free Wi-Fi', 'Restaurant', 'Parking'],
+    businessPerks: ['Quiet floors', 'Day-use office', 'Flexible checkout'],
+    cancellationPolicy: 'Free cancellation on most rooms',
+    distanceFromCenter: '0.8 mi from Merchandise Mart',
+    badge: 'Strong value',
   },
 ];
 
@@ -125,18 +163,73 @@ const squareWebhookSchema = z.object({
   data: z.record(z.string(), z.unknown()).optional(),
 });
 
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function parseBookingDate(value: string): number | null {
+  if (!DATE_ONLY_PATTERN.test(value)) return null;
+
+  const [yearText, monthText, dayText] = value.split('-');
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const timestamp = Date.UTC(year, month - 1, day);
+  const parsed = new Date(timestamp);
+
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return timestamp;
+}
+
+function validateBookingDates(checkIn: string, checkOut: string): string | null {
+  const checkInTime = parseBookingDate(checkIn);
+  if (checkInTime === null) return 'Check-in date must use YYYY-MM-DD';
+
+  const checkOutTime = parseBookingDate(checkOut);
+  if (checkOutTime === null) return 'Check-out date must use YYYY-MM-DD';
+
+  if (checkOutTime <= checkInTime) return 'Check-out date must be after check-in';
+
+  return null;
+}
+
 function calculateNights(checkIn: string, checkOut: string): number {
-  const checkInDate = new Date(checkIn);
-  const checkOutDate = new Date(checkOut);
-  const delta = checkOutDate.getTime() - checkInDate.getTime();
-  const nights = Math.ceil(delta / (1000 * 60 * 60 * 24));
-  return nights > 0 ? nights : 1;
+  const checkInTime = parseBookingDate(checkIn);
+  const checkOutTime = parseBookingDate(checkOut);
+  if (checkInTime === null || checkOutTime === null) return 0;
+
+  const delta = checkOutTime - checkInTime;
+  return Math.ceil(delta / (1000 * 60 * 60 * 24));
+}
+
+function toCurrencyCents(amount: number): number {
+  return Math.round(amount * 100);
 }
 
 function issueToken(userId: string): string {
   const token = `${userId}_${randomUUID()}`;
   sessions.set(token, userId);
   return token;
+}
+
+async function hashPassword(password: string): Promise<string> {
+  const salt = randomBytes(16).toString('hex');
+  const derivedKey = (await scryptAsync(password, salt, PASSWORD_KEY_LENGTH)) as Buffer;
+  return `${salt}:${derivedKey.toString('hex')}`;
+}
+
+async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+  const [salt, key] = storedHash.split(':');
+  if (!salt || !key) return false;
+
+  const storedKey = Buffer.from(key, 'hex');
+  const derivedKey = (await scryptAsync(password, salt, storedKey.length)) as Buffer;
+  return storedKey.length === derivedKey.length && timingSafeEqual(storedKey, derivedKey);
 }
 
 function parseAuthToken(req: Request): string | null {
@@ -172,7 +265,7 @@ export function createBookingApiServer(): Express {
     });
   });
 
-  app.post('/api/auth/register', (req, res) => {
+  app.post('/api/auth/register', async (req, res) => {
     const payload = registerSchema.safeParse(req.body);
     if (!payload.success) {
       res.status(400).json({ error: payload.error.flatten() });
@@ -187,7 +280,10 @@ export function createBookingApiServer(): Express {
 
     const user: User = {
       id: randomUUID(),
-      ...payload.data,
+      email: payload.data.email,
+      firstName: payload.data.firstName,
+      lastName: payload.data.lastName,
+      passwordHash: await hashPassword(payload.data.password),
     };
     users.push(user);
     const token = issueToken(user.id);
@@ -202,18 +298,15 @@ export function createBookingApiServer(): Express {
     });
   });
 
-  app.post('/api/auth/login', (req, res) => {
+  app.post('/api/auth/login', async (req, res) => {
     const payload = authSchema.safeParse(req.body);
     if (!payload.success) {
       res.status(400).json({ error: payload.error.flatten() });
       return;
     }
 
-    const user = users.find(
-      (candidate) =>
-        candidate.email === payload.data.email && candidate.password === payload.data.password
-    );
-    if (!user) {
+    const user = users.find((candidate) => candidate.email === payload.data.email);
+    if (!user || !(await verifyPassword(payload.data.password, user.passwordHash))) {
       res.status(401).json({ error: 'Invalid credentials' });
       return;
     }
@@ -301,6 +394,12 @@ export function createBookingApiServer(): Express {
       return;
     }
 
+    const dateError = validateBookingDates(payload.data.checkIn, payload.data.checkOut);
+    if (dateError) {
+      res.status(400).json({ error: dateError });
+      return;
+    }
+
     const hotel = hotels.find((candidate) => candidate.id === payload.data.hotelId);
     if (!hotel) {
       res.status(404).json({ error: 'Hotel not found' });
@@ -361,12 +460,28 @@ export function createBookingApiServer(): Express {
       res.status(404).json({ error: 'Booking not found' });
       return;
     }
+    if (booking.status === 'cancelled') {
+      res.status(409).json({ error: 'Cancelled bookings cannot be paid' });
+      return;
+    }
+    if (booking.paymentStatus === 'paid') {
+      res.status(409).json({ error: 'Booking is already paid' });
+      return;
+    }
+
+    const requestedCurrency = payload.data.currency.toUpperCase();
+    const amountMatches =
+      toCurrencyCents(payload.data.amount) === toCurrencyCents(booking.totalPrice);
+    if (!amountMatches || requestedCurrency !== booking.currency) {
+      res.status(400).json({ error: 'Payment amount or currency does not match booking' });
+      return;
+    }
 
     const payment: Payment = {
       id: randomUUID(),
       bookingId: booking.id,
       amount: payload.data.amount,
-      currency: payload.data.currency.toUpperCase(),
+      currency: requestedCurrency,
       provider: payload.data.provider,
       status: 'succeeded',
       createdAt: new Date().toISOString(),

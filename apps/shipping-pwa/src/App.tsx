@@ -58,7 +58,7 @@ const AppContent = () => {
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>
     // Check if this is the first time the user is opening the app
-    const hasCustomized = window.electronAPI?.store.get('warehouse-customized')
+    const hasCustomized = localStorage.getItem('warehouse-customized')
     const isDefaultConfig =
       config.companyName === 'Walmart Inc.' &&
       config.warehouseName === 'Distribution Center 8980'
@@ -78,19 +78,19 @@ const AppContent = () => {
   }, [config])
 
   const handleWelcomeComplete = () => {
-    window.electronAPI?.store.set('warehouse-customized', 'true')
+    localStorage.setItem('warehouse-customized', 'true')
     setShowWelcome(false)
   }
 
   const handleWelcomeSkip = () => {
-    window.electronAPI?.store.set('warehouse-customized', 'true')
+    localStorage.setItem('warehouse-customized', 'true')
     setShowWelcome(false)
   }
 
   // Check if user is authenticated (has tenant API key)
   const isAuthenticated =
-    window.electronAPI?.store.get('tenantApiKey') ??
-    window.electronAPI?.store.get('warehouse-customized')
+    localStorage.getItem('tenantApiKey') ??
+    localStorage.getItem('warehouse-customized')
 
   return (
     <>

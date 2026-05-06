@@ -291,13 +291,21 @@ const billExpensesAndTime = (
 	const now = nowIso();
 	let extraSubtotal = 0;
 
+	const insertItem = db.prepare(
+		`INSERT INTO invoice_items
+		   (id, invoice_id, description, quantity, price, total, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+	);
+	const markExpenseBilled = db.prepare(
+		`UPDATE expenses SET invoiced_on_invoice_id = ?, updated_at = ? WHERE id = ?`,
+	);
+	const markTimeEntryBilled = db.prepare(
+		`UPDATE time_entries SET invoiced_on_invoice_id = ?, updated_at = ? WHERE id = ?`,
+	);
+
 	const tx = db.transaction(() => {
 		for (const exp of expenses) {
-			db.prepare(
-				`INSERT INTO invoice_items
-				   (id, invoice_id, description, quantity, price, total, created_at)
-				 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-			).run(
+			insertItem.run(
 				crypto.randomUUID(),
 				invoiceId,
 				exp.description ?? exp.vendor ?? "Expense",
@@ -306,9 +314,7 @@ const billExpensesAndTime = (
 				exp.amount,
 				now,
 			);
-			db.prepare(
-				`UPDATE expenses SET invoiced_on_invoice_id = ?, updated_at = ? WHERE id = ?`,
-			).run(invoiceId, now, exp.id);
+			markExpenseBilled.run(invoiceId, now, exp.id);
 			extraSubtotal += exp.amount;
 		}
 
@@ -317,11 +323,7 @@ const billExpensesAndTime = (
 			const desc = g.projectId
 				? `${projectNames.get(g.projectId) ?? "Project"} — ${g.hours.toFixed(2)}h`
 				: `Time — ${g.hours.toFixed(2)}h`;
-			db.prepare(
-				`INSERT INTO invoice_items
-				   (id, invoice_id, description, quantity, price, total, created_at)
-				 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-			).run(
+			insertItem.run(
 				crypto.randomUUID(),
 				invoiceId,
 				desc,
@@ -331,9 +333,7 @@ const billExpensesAndTime = (
 				now,
 			);
 			for (const eid of g.ids) {
-				db.prepare(
-					`UPDATE time_entries SET invoiced_on_invoice_id = ?, updated_at = ? WHERE id = ?`,
-				).run(invoiceId, now, eid);
+				markTimeEntryBilled.run(invoiceId, now, eid);
 			}
 			extraSubtotal += total;
 		}

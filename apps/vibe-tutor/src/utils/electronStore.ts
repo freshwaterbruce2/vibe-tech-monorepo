@@ -14,13 +14,9 @@ if (typeof window !== 'undefined' && !window.electronAPI) {
   (window as Window & typeof globalThis & { electronAPI: unknown }).electronAPI = {
     isElectron: false,
     store: {
-      // eslint-disable-next-line electron-security/no-localstorage-electron -- Safe: only used in non-Electron contexts (PWA/Capacitor)
       get: (key: string) => localStorage.getItem(key),
-      // eslint-disable-next-line electron-security/no-localstorage-electron -- Safe: only used in non-Electron contexts (PWA/Capacitor)
       set: (key: string, value: unknown) => localStorage.setItem(key, String(value)),
-      // eslint-disable-next-line electron-security/no-localstorage-electron -- Safe: only used in non-Electron contexts (PWA/Capacitor)
       delete: (key: string) => localStorage.removeItem(key),
-      // eslint-disable-next-line electron-security/no-localstorage-electron -- Safe: only used in non-Electron contexts (PWA/Capacitor)
       clear: () => localStorage.clear(),
     },
     selectImportFile: async () => Promise.resolve(null),
@@ -105,7 +101,6 @@ export const sessionStore: AppStore = {
       }
 
       // Fallback to sessionStorage for web/PWA/Capacitor
-      // eslint-disable-next-line electron-security/no-localstorage-electron -- Safe: only used in non-Electron contexts
       const value = sessionStorage.getItem(key);
       if (value === null) return null;
 
@@ -129,7 +124,6 @@ export const sessionStore: AppStore = {
         return;
       }
 
-      // eslint-disable-next-line electron-security/no-localstorage-electron -- Safe: only used in non-Electron contexts
       sessionStorage.setItem(key, serialized);
     } catch (error) {
       logger.error(`[SessionStore] Failed to set '${key}':`, error);
@@ -143,7 +137,6 @@ export const sessionStore: AppStore = {
         return;
       }
 
-      // eslint-disable-next-line electron-security/no-localstorage-electron -- Safe: only used in non-Electron contexts
       sessionStorage.removeItem(key);
     } catch (error) {
       logger.error(`[SessionStore] Failed to remove '${key}':`, error);

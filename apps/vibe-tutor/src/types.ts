@@ -416,26 +416,21 @@ export interface NotificationConfig {
 
 // ========== Avatar RPG System ==========
 
-export type AvatarStat = 'mathPower' | 'sciencePower' | 'historyPower' | 'logicPower' | 'creativity';
+import type {
+  AvatarCharacter as SharedAvatarCharacter,
+  AvatarItemType as SharedAvatarItemType,
+  AvatarRarity as SharedAvatarRarity,
+  AvatarState as SharedAvatarState,
+  AvatarStat as SharedAvatarStat,
+  ShopItem as SharedShopItem,
+} from '@vibetech/avatars';
 
-export interface ShopItem {
-  id: string;
-  name: string;
-  description: string;
-  cost: number;
-  type: 'hat' | 'shirt' | 'accessory';
-  statBoosts: Partial<Record<AvatarStat, number>>;
-  imageUrl: string;
-}
-
-export interface AvatarState {
-  equippedItems: {
-    hat?: string;
-    shirt?: string;
-    accessory?: string;
-  };
-  ownedItems: string[];
-}
+export type AvatarCharacter = SharedAvatarCharacter;
+export type AvatarItemType = SharedAvatarItemType;
+export type AvatarRarity = SharedAvatarRarity;
+export type AvatarStat = SharedAvatarStat;
+export type ShopItem = SharedShopItem;
+export type AvatarState = SharedAvatarState;
 
 export interface BossDef {
   id: string;

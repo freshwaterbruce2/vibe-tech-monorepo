@@ -85,7 +85,7 @@ export async function initializeSentry(): Promise<void> {
   });
 
   // Set user information if available
-  const userSettings = window.electronAPI?.store.get('userSettings');
+  const userSettings = localStorage.getItem('userSettings');
   if (userSettings) {
     try {
       const settings = JSON.parse(userSettings);

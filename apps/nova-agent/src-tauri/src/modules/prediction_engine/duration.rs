@@ -22,7 +22,7 @@ impl PredictionEngine {
         }
 
         let db = self
-            .learning_db
+            .prediction_db
             .lock()
             .map_err(|e| format!("Failed to lock database: {}", e))?;
 

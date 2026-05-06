@@ -38,7 +38,7 @@
 | Project | Guide Location | Lines | Key Features |
 |---------|---------------|-------|--------------|
 | **vibe-code-studio** | `vibe-code-studio/PROJECT_GUIDE.md` | 630 | Electron IDE, Monaco editor |
-| **vibe-justice** | `vibe-justice/PROJECT_GUIDE.md` | 552 | Legal assistant, PyQt, ChromaDB |
+| **vibe-justice** | `vibe-justice/PROJECT_GUIDE.md` | 552 | Legal assistant, Tauri 2 frontend + Python backend |
 
 #### Mobile & PWA
 

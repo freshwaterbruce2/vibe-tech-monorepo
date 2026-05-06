@@ -120,13 +120,13 @@ ${activeFile.content}\n\
            
            <div className="flex items-center justify-between px-2 pb-1">
               <div className="flex items-center gap-1">
-                 <button className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors" title="Attach Image">
+                 <button className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors" title="Attach Image" aria-label="Attach image">
                     <Paperclip className="w-4 h-4" />
                  </button>
-                 <button className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors" title="Voice Dictation">
+                 <button className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors" title="Voice Dictation" aria-label="Voice dictation">
                     <Mic className="w-4 h-4" />
                  </button>
-                 <button className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors" title="Settings">
+                 <button className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors" title="Settings" aria-label="Settings">
                     <Settings2 className="w-4 h-4" />
                  </button>
               </div>

@@ -28,7 +28,7 @@ This system watches your active projects and automatically mirrors changes to `D
 2. **vibe-tech-lovable** - Portfolio website
 3. **shipping-pwa** - Shipping workflow PWA
 4. **business-booking-platform** - Hotel booking system
-5. **vibe-tutor** - Mobile PWA for students
+5. **vibe-tutor** - Electron + Capacitor tutor app for students
 6. **memory-bank** - Memory management system
 
 ## Synchronized Content

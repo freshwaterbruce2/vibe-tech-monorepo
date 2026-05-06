@@ -5,7 +5,9 @@ const ts = require('typescript');
 const { Chess } = require('chess.js');
 
 function loadTsExport(relativePath, exportName) {
-  const sourcePath = path.join(__dirname, '..', relativePath);
+  const sourcePath = path.isAbsolute(relativePath)
+    ? relativePath
+    : path.join(__dirname, '..', relativePath);
   const source = fs.readFileSync(sourcePath, 'utf8');
   const transpiled = ts.transpileModule(source, {
     compilerOptions: {
@@ -20,8 +22,11 @@ function loadTsExport(relativePath, exportName) {
   return sandbox.exports[exportName];
 }
 
-const LESSONS = loadTsExport(path.join('src', 'lib', 'lessons.ts'), 'LESSONS');
-const PUZZLES = loadTsExport(path.join('src', 'lib', 'puzzles.ts'), 'PUZZLES');
+const repoRoot = path.resolve(__dirname, '..', '..', '..');
+const sharedChessRoot = path.join(repoRoot, 'packages', 'games', 'src', 'chess', 'lib');
+
+const LESSONS = loadTsExport(path.join(sharedChessRoot, 'lessons.ts'), 'LESSONS');
+const PUZZLES = loadTsExport(path.join(sharedChessRoot, 'puzzles.ts'), 'PUZZLES');
 let failures = 0;
 
 for (const lesson of LESSONS) {

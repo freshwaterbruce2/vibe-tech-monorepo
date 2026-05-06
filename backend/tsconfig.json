@@ -12,6 +12,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["**/*.js", "**/*.mjs"],
+  "include": ["**/*.js", "**/*.mjs", "**/*.d.ts"],
   "exclude": ["node_modules", "coverage", "dist", "**/dist", "**/build"]
 }

@@ -1,33 +1,45 @@
 # VibeTech Monorepo Structure
 
-Last Updated: 2026-01-06
+Last Updated: 2026-05-04
 
 ## Overview
 
-C:\dev is an Nx monorepo containing 52+ integrated projects with shared tooling and intelligent caching.
+C:\dev is an Nx-managed pnpm monorepo. Current `pnpm exec nx show projects --json`
+reports 70 projects, but not every directory is a pnpm package.
 
 ## Project Breakdown
 
-### Applications (apps/) - 24 Total
+### Applications (`apps/`)
 
-- **15 Nx-Integrated**: business-booking-platform, crypto-enhanced, desktop-commander-v3, digital-content-builder, iconforge, invoice-automation-saas, memory-bank, nova-agent, shipping-pwa, symptom-tracker, vibe-code-studio, vibe-justice, vibe-shop, vibe-tech-lovable, vibe-tutor
-- **9 Non-Integrated**: advanced, chatbox-cli, claude-agents, n8n-automation, nova-mobile-app, prompt-engineer, shared-web, vibe-subscription-guard, _archived
+- `vibetech-command-center`: Electron 33 + electron-vite + electron-builder dashboard; not Tauri.
+- `vibe-tutor`: Electron 35.7 + Capacitor 8 tutor app; not React Native or Expo.
+- `nova-mobile-app`: Expo 54 + React Native 0.81; this is the actual mobile RN app.
+- `vibe-shop`: Next.js 16.1.6 storefront; approved exception to the no-Next default.
+- `vibe-justice`: no root `package.json`; Tauri 2 frontend under `frontend/` plus Python backend and PyInstaller `.spec`.
+- `business-booking-platform-next`: React/Vite Nx app with no root/frontend package manifest; backend has the only `package.json`.
+- `crypto-enhanced`: Python trading/analysis app managed through root scripts and Nx targets.
+- `gravity-claw`: local-only nested WIP repo excluded from `pnpm-workspace.yaml`; package version is not a shipped workspace release.
 
-### Backend Services (backend/) - 11 Total
+### Backend Services (`backend/`)
 
-All Nx-integrated: symptom-tracker-api, config, dap-proxy, data, ipc-bridge, lsp-proxy, middleware, nova-sqlite-mcp, prompt-engineer, search-service, workflow-engine
+Backend services include OpenRouter proxy, IPC/DAP/LSP proxies, workflow engine,
+prompt-engineer backend, middleware/config packages, and Nova SQLite MCP.
 
-### Shared Packages (packages/) - 18 Total
+### Shared Packages (`packages/`)
 
-All Nx-integrated: nova-core, nova-database, nova-types, shared-config, shared-ipc, shared-logic, shared-utils, vibetech-hooks, vibetech-shared, vibetech-types, ui, backend, logger, feature-flags, db-app, db-learning, service-common, vibe-python-shared
+Shared packages include `@vibetech/ui`, `@vibetech/shared`, `@vibetech/memory`,
+`@vibetech/openclaw-bridge`, MCP utilities, feature flags, logging, config, and
+Nova packages. `packages/nova-core` currently has no manifest and should not be
+treated as a workspace package until one exists.
 
 ## Key Files
 
 - nx.json - Nx workspace configuration
 - pnpm-workspace.yaml - pnpm workspace definition
-- CLAUDE.md - Primary workspace documentation
-- MONOREPO_WORKFLOW.md - Git workflow guide
-- .claude/rules/ - Modular documentation system
+- AGENTS.md - Primary Codex/Nx/local workflow instructions
+- AI.md - canonical path, tooling, and agent behavior rules
+- WORKSPACE.json - stack, project registry, and focus areas
+- docs/WORKSPACE_STRUCTURE.md - source vs local-only storage policy
 
 ## Performance Benefits
 
@@ -38,7 +50,7 @@ All Nx-integrated: nova-core, nova-database, nova-types, shared-config, shared-i
 
 ## Navigation Tips
 
-1. Use nx.json to understand project relationships
-2. Check project.json in each project for targets
-3. Use `pnpm nx graph` to visualize dependencies
-4. Run `pnpm nx show projects --projects=tag:web` to filter by tag
+1. Use `pnpm exec nx show projects --json` for the current project list.
+2. Use `pnpm exec nx show project <name> --json` for resolved targets.
+3. Check package manifests before assuming a directory is a pnpm package.
+4. Keep `pnpm-workspace.yaml` exclusions in mind for local-only WIP directories.

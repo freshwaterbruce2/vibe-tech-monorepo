@@ -54,7 +54,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 
 	const fetchPending = async () => {
 		try {
-			const token = window.electronAPI.store.get("token");
+			const token = localStorage.getItem("token");
 			const response = await fetch("/api/quests/pending", {
 				headers: { Authorization: `Bearer ${token}` },
 			});
@@ -73,7 +73,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 
 	const fetchPendingPurchases = async () => {
 		try {
-			const token = window.electronAPI.store.get("token");
+			const token = localStorage.getItem("token");
 			const response = await fetch("/api/rewards/pending", {
 				headers: { Authorization: `Bearer ${token}` },
 			});
@@ -99,7 +99,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 
 		setProcessing(completionId);
 		try {
-			const token = window.electronAPI.store.get("token");
+			const token = localStorage.getItem("token");
 			const response = await fetch(`/api/quests/${completionId}/approve`, {
 				method: "POST",
 				headers: {
@@ -138,7 +138,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 
 		setProcessingPurchase(purchaseId);
 		try {
-			const token = window.electronAPI.store.get("token");
+			const token = localStorage.getItem("token");
 			const response = await fetch(`/api/rewards/${purchaseId}/approve`, {
 				method: "POST",
 				headers: {
@@ -170,7 +170,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 
 		setBulkProcessing(true);
 		try {
-			const token = window.electronAPI.store.get("token");
+			const token = localStorage.getItem("token");
 			let successCount = 0;
 
 			for (const quest of pending) {
@@ -208,7 +208,7 @@ export default function AdminDashboard({ user }: AdminDashboardProps) {
 
 		setBulkProcessing(true);
 		try {
-			const token = window.electronAPI.store.get("token");
+			const token = localStorage.getItem("token");
 			let successCount = 0;
 
 			for (const purchase of pendingPurchases) {

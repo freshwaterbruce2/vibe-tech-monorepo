@@ -6,10 +6,6 @@ interface Props {
 }
 
 export function RouteErrorBoundary({ children }: Props) {
-  // Note: If using React Router, you can import and use useLocation here
-  // import { useLocation } from 'react-router-dom';
-  // const location = useLocation();
-
   return (
     <ErrorBoundary
       onError={(error) => {

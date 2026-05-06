@@ -2,14 +2,28 @@ import { useCallback, useEffect, useState } from 'react';
 import type { AvatarItemType, AvatarState, ShopItem } from '@vibetech/avatars';
 import { dataStore } from '../../services/dataStore';
 import { appStore } from '../../utils/electronStore';
-import { SHOP_ITEMS } from '../../services/avatarShopData';
+import {
+  DEFAULT_UNLOCKED_AVATAR_IDS,
+  SHOP_ITEMS,
+  normalizeAvatarId,
+} from '../../services/avatarShopData';
 
-const EMPTY_STATE: AvatarState = {
-  equippedItems: {},
-  ownedItems: [],
-  unlockedAvatars: [],
-  purchaseHistory: [],
-};
+function createBaseAvatarState(saved?: Partial<AvatarState> | null, legacyAvatar?: string): AvatarState {
+  const selectedAvatarId = normalizeAvatarId(saved?.selectedAvatarId ?? legacyAvatar);
+  const unlockedAvatars = new Set([
+    ...DEFAULT_UNLOCKED_AVATAR_IDS,
+    ...(saved?.unlockedAvatars ?? []),
+    selectedAvatarId,
+  ]);
+
+  return {
+    equippedItems: saved?.equippedItems ?? {},
+    ownedItems: saved?.ownedItems ?? [],
+    purchaseHistory: saved?.purchaseHistory ?? [],
+    selectedAvatarId,
+    unlockedAvatars: [...unlockedAvatars],
+  };
+}
 
 type EquippedSlot = keyof AvatarState['equippedItems'];
 
@@ -31,14 +45,17 @@ interface UseAvatarShopProps {
 }
 
 export function useAvatarShop({ userTokens, onSpendTokens, onPurchaseComplete }: UseAvatarShopProps) {
-  const [avatarState, setAvatarState] = useState<AvatarState>(EMPTY_STATE);
+  const [avatarState, setAvatarState] = useState<AvatarState>(() => createBaseAvatarState());
   const [loading, setLoading] = useState(true);
   const [lastPurchased, setLastPurchased] = useState<ShopItem | null>(null);
 
   useEffect(() => {
     void (async () => {
-      const saved = await dataStore.getAvatarState();
-      const base = saved ? { ...EMPTY_STATE, ...saved } : EMPTY_STATE;
+      const [saved, legacyAvatar] = await Promise.all([
+        dataStore.getAvatarState(),
+        dataStore.getUserSettings('user_avatar'),
+      ]);
+      const base = createBaseAvatarState(saved, legacyAvatar);
 
       // One-time migration: carry forward real-reward purchase history from old appStore keys
       const legacyPurchases = appStore.get<Array<{ itemId: string; date: string; cost: number }>>(
@@ -54,8 +71,11 @@ export function useAvatarShop({ userTokens, onSpendTokens, onPurchaseComplete }:
         appStore.delete('vibebuxShop_owned');
         appStore.delete('active_avatar');
         await dataStore.saveAvatarState(merged);
+        await dataStore.saveUserSettings('user_avatar', merged.selectedAvatarId ?? '');
         setAvatarState(merged);
       } else {
+        await dataStore.saveAvatarState(base);
+        await dataStore.saveUserSettings('user_avatar', base.selectedAvatarId ?? '');
         setAvatarState(base);
       }
 
@@ -114,7 +134,10 @@ export function useAvatarShop({ userTokens, onSpendTokens, onPurchaseComplete }:
         notifications.push({ type: 'reward_redeemed', item: item.name, date: entry.date });
         appStore.set('parent_notifications', JSON.stringify(notifications));
       } else if (item.type === 'avatar') {
-        newState = { ...newState, unlockedAvatars: [...newState.unlockedAvatars, item.id] };
+        newState = {
+          ...newState,
+          unlockedAvatars: [...new Set([...newState.unlockedAvatars, item.id])],
+        };
         if (!newState.selectedAvatarId) newState = { ...newState, selectedAvatarId: item.id };
       } else {
         newState = { ...newState, ownedItems: [...newState.ownedItems, item.id] };

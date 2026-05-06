@@ -69,7 +69,7 @@ class TenantApiService {
 
   private loadCredentialsFromStorage() {
     try {
-      const stored = window.electronAPI?.store.get('tenant_credentials');
+      const stored = localStorage.getItem('tenant_credentials');
       if (stored) {
         this.credentials = JSON.parse(stored);
       }
@@ -80,7 +80,7 @@ class TenantApiService {
 
   private saveCredentialsToStorage(credentials: TenantCredentials) {
     try {
-      window.electronAPI?.store.set('tenant_credentials', JSON.stringify(credentials));
+      localStorage.setItem('tenant_credentials', JSON.stringify(credentials));
       this.credentials = credentials;
     } catch (error) {
       console.error('Failed to save credentials to storage:', error);
@@ -134,7 +134,7 @@ class TenantApiService {
   }
 
   clearCredentials() {
-    window.electronAPI?.store.delete('tenant_credentials');
+    localStorage.removeItem('tenant_credentials');
     this.credentials = null;
   }
 

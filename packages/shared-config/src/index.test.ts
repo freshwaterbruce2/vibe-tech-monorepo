@@ -7,6 +7,7 @@ import {
     validatePath,
     getIPCConfig,
 } from './index';
+import { parseDatabaseInventoryMarkdown } from './database-inventory';
 
 describe('shared-config', () => {
     describe('normalizePath', () => {
@@ -89,6 +90,42 @@ describe('shared-config', () => {
             const config = getIPCConfig();
             expect(typeof config.reconnectDelay).toBe('number');
             expect(typeof config.maxReconnectAttempts).toBe('number');
+        });
+    });
+
+    describe('parseDatabaseInventoryMarkdown', () => {
+        it('parses live database rows and includes the crypto-enhanced trading entry', () => {
+            const markdown = [
+                '# D:\\databases Inventory',
+                '',
+                '## Live Databases (9)',
+                '',
+                '| File | Size | Owner / Primary App | Domain |',
+                '|------|-----:|----------------------|--------|',
+                '| `memory.db` | 20.2 MB | memory-mcp (`@vibetech/memory`) | Episodic memory |',
+                '| `trading.db` | 0.0 MB | `apps/crypto-enhanced` | Trading config / scratch |',
+                '',
+                'The usual canonical file is `D:\\databases\\crypto-enhanced\\trading.db`.',
+            ].join('\n');
+
+            const entries = parseDatabaseInventoryMarkdown(markdown);
+            expect(entries).toEqual(expect.arrayContaining([
+                {
+                    name: 'memory.db',
+                    path: 'D:\\databases\\memory.db',
+                    purpose: 'memory-mcp (@vibetech/memory) - Episodic memory',
+                },
+                {
+                    name: 'trading.db',
+                    path: 'D:\\databases\\trading.db',
+                    purpose: 'apps/crypto-enhanced - Trading config / scratch',
+                },
+                {
+                    name: 'trading.db (crypto-enhanced)',
+                    path: 'D:\\databases\\crypto-enhanced\\trading.db',
+                    purpose: 'apps/crypto-enhanced DB_PATH-resolved primary trading dataset',
+                },
+            ]));
         });
     });
 });

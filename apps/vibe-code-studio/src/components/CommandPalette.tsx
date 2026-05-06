@@ -265,6 +265,7 @@ export const CommandPalette = ({ isOpen, onClose, commands }: CommandPaletteProp
               setSearch(e.target.value);
               setActiveIndex(0);
             }}
+            aria-label="Search commands"
           />
         </SearchContainer>
 
@@ -283,6 +284,15 @@ export const CommandPalette = ({ isOpen, onClose, commands }: CommandPaletteProp
                       onClose();
                     }}
                     onMouseEnter={() => setActiveIndex(currentIndex)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        cmd.action();
+                        onClose();
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
                   >
                     <CommandIcon>{cmd.icon ?? <Command />}</CommandIcon>
                     <CommandContent>

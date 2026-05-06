@@ -11,7 +11,7 @@ export const usePalletEntries = () => {
 
   // Load from localStorage on mount
   useEffect(() => {
-    const savedEntries = window.electronAPI?.store.get("palletEntries");
+    const savedEntries = localStorage.getItem("palletEntries");
     if (savedEntries) {
       try {
         const parsed = JSON.parse(savedEntries);
@@ -38,7 +38,7 @@ export const usePalletEntries = () => {
   // Save to localStorage when entries change
   useEffect(() => {
     if (palletEntries.length > 0) {
-      window.electronAPI?.store.set("palletEntries", JSON.stringify(palletEntries));
+      localStorage.setItem("palletEntries", JSON.stringify(palletEntries));
     }
   }, [palletEntries]);
 

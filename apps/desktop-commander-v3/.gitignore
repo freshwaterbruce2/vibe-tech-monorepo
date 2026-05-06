@@ -1,3 +1,9 @@
 node_modules/
 dist/
+coverage/
+*.tsbuildinfo
+*.local.json
+nul
 node_modules_backup_temp_2/
+.claude/
+*.md

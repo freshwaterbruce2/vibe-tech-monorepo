@@ -21,11 +21,11 @@
     "5173": { "app": "root-dev", "type": "vite", "description": "Root Vite dev server (default)" },
     "5174": { "app": "vibeblox", "type": "vite", "description": "VibeBlox dev server" },
     "5175": { "app": "shipping-pwa", "type": "vite", "description": "Shipping PWA dev server" },
-    "5176": { "app": "monorepo-dashboard", "type": "vite", "description": "Monorepo Dashboard" },
+    "5176": { "app": "vibetech-command-center", "type": "vite", "description": "VibeTech Command Center" },
     "5177": {
-      "app": "monorepo-dashboard-server",
+      "app": "vibetech-command-center",
       "type": "backend",
-      "description": "Dashboard backend"
+      "description": "Command Center backend"
     },
     "5179": { "app": "symptom-tracker", "type": "vite", "description": "Symptom Tracker" },
     "8000": {

@@ -130,14 +130,14 @@ export const useLazyPWAData = <T,>(
 
     // Check cache first
     if (cacheKey) {
-      const cached = window.electronAPI?.store.get(cacheKey)
+      const cached = localStorage.getItem(cacheKey)
       if (cached) {
         try {
           // eslint-disable-next-line react-hooks/set-state-in-effect
           setData(JSON.parse(cached))
           return
         } catch {
-          window.electronAPI?.store.delete(cacheKey)
+          localStorage.removeItem(cacheKey)
         }
       }
     }
@@ -151,7 +151,7 @@ export const useLazyPWAData = <T,>(
 
         // Cache for offline use
         if (cacheKey && offlineSupport) {
-          window.electronAPI?.store.set(cacheKey, JSON.stringify(result))
+          localStorage.setItem(cacheKey, JSON.stringify(result))
         }
       })
       .catch(() => {
@@ -159,13 +159,13 @@ export const useLazyPWAData = <T,>(
 
         // Try to use cached data in error case
         if (cacheKey) {
-          const cached = window.electronAPI?.store.get(cacheKey)
+          const cached = localStorage.getItem(cacheKey)
           if (cached) {
             try {
               setData(JSON.parse(cached))
               setIsError(false)
             } catch {
-              window.electronAPI?.store.delete(cacheKey)
+              localStorage.removeItem(cacheKey)
             }
           }
         }

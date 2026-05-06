@@ -1,4 +1,3 @@
-// import { saveAs } from "file-saver"; // Removed file-saver dependency
 import JSZip from "jszip";
 import { DoorSchedule, PalletEntry } from "@/types/shipping";
 import { formatHHMMSS } from "@/hooks/useTimer";

@@ -26,3 +26,11 @@ export const mergeConfig = (config?: TemplateConfig): TemplateConfig => ({
   ...DEFAULT_CONFIG,
   ...config,
 })
+
+export const formatAmount = (amount: number, currency: string): string => {
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount)
+  } catch {
+    return `${amount.toFixed(2)} ${currency}`
+  }
+}

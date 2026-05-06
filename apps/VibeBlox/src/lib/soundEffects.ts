@@ -10,10 +10,10 @@ class SoundEffectsManager {
 
   constructor() {
     // Load sound preference from localStorage
-    const savedEnabled = window.electronAPI.store.get('soundEnabled');
+    const savedEnabled = localStorage.getItem("soundEnabled");
     this.enabled = savedEnabled !== 'false';
 
-    const savedVolume = window.electronAPI.store.get('soundVolume');
+    const savedVolume = localStorage.getItem("soundVolume");
     if (savedVolume) {
       this.volume = parseFloat(savedVolume);
     }
@@ -181,7 +181,7 @@ class SoundEffectsManager {
    */
   toggle() {
     this.enabled = !this.enabled;
-    window.electronAPI.store.set('soundEnabled', String(this.enabled));
+    localStorage.setItem("soundEnabled", String(this.enabled));
     return this.enabled;
   }
 
@@ -190,7 +190,7 @@ class SoundEffectsManager {
    */
   setVolume(volume: number) {
     this.volume = Math.max(0, Math.min(1, volume));
-    window.electronAPI.store.set('soundVolume', String(this.volume));
+    localStorage.setItem("soundVolume", String(this.volume));
   }
 
   /**

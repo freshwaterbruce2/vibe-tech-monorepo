@@ -15,9 +15,6 @@ import type { Invoice } from '../types/invoice'
 import { formatCurrency } from '../lib/currency'
 import { generateInvoicePdf } from '../utils/generateInvoicePdf'
 
-const formatUsd = (value: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value)
-
 const formatInvoiceTotal = (invoice: Invoice): { value: string; tooltip?: string } => {
   const value = formatCurrency(invoice.total, invoice.currency)
   if (
@@ -86,7 +83,7 @@ const InvoiceActions = ({ invoice }: { invoice: Invoice }) => {
 
   return (
     <div className="ui-actions">
-      <button type="button" className="ui-actions__btn" onClick={handlePdf} title="Download PDF">
+      <button type="button" className="ui-actions__btn" onClick={handlePdf} title="Download PDF" aria-label="Download PDF">
         <Download size={14} />
       </button>
 
@@ -98,6 +95,7 @@ const InvoiceActions = ({ invoice }: { invoice: Invoice }) => {
             onClick={() => setOpen((prev) => !prev)}
             disabled={busy}
             title="Change status"
+            aria-label="Change status"
           >
             <MoreHorizontal size={14} />
           </button>
@@ -167,11 +165,11 @@ const Dashboard = () => {
         <div className="ui-grid ui-grid--3">
           <Card className="ui-stack ui-stack--md">
             <div className="ui-muted">Total revenue</div>
-            <div className="ui-metric">{formatUsd(totals.totalRevenue)}</div>
+            <div className="ui-metric">{formatCurrency(totals.totalRevenue, 'USD')}</div>
           </Card>
           <Card className="ui-stack ui-stack--md">
             <div className="ui-muted">Outstanding</div>
-            <div className="ui-metric">{formatUsd(totals.outstanding)}</div>
+            <div className="ui-metric">{formatCurrency(totals.outstanding, 'USD')}</div>
           </Card>
           <Card className="ui-stack ui-stack--md">
             <div className="ui-muted">Invoices</div>

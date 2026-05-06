@@ -67,7 +67,7 @@ Projects <50% complete - **FROZEN** until Tier 1 & 2 done:
 - `invoice-automation-saas`
 - `vibe-subscription-guard`
 - `symptom-tracker`
-- `monorepo-dashboard`
+- `vibetech-command-center` (formerly `monorepo-dashboard` — retired, functionality moved to command-center Control Plane)
 - All others not in Tier 1/2
 
 ---

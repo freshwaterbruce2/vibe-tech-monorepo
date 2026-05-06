@@ -4,7 +4,7 @@
  */
 
 import type { FileChange, MultiFileEditPlan } from '@vibetech/types/multifile';
-import { useCallback, useMemo, useRef, type MutableRefObject } from 'react';
+import { useCallback, useMemo, useRef, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
 import modelPrompts from '../../config/model-prompts.json';
 import type { SearchScope } from '../../components/GlobalSearch/types';
 import { AutoFixCodeActionProvider } from '../../services/AutoFixCodeActionProvider';
@@ -47,7 +47,7 @@ export interface UseAppHandlersProps {
   tabCompletionProviderRef: MutableRefObject<{ dispose: () => void } | null>;
 
   // State setters
-  setCurrentError: (error: DetectedError | null | ((prev: DetectedError | null) => DetectedError | null)) => void;
+  setCurrentError: Dispatch<SetStateAction<DetectedError | null>>;
   setCurrentFix: (fix: GeneratedFix | null) => void;
   setErrorFixPanelOpen: (open: boolean) => void;
   setFixLoading: (loading: boolean) => void;

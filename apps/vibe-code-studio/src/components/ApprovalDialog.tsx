@@ -147,6 +147,7 @@ export const ApprovalDialog = ({
                       type="checkbox"
                       checked={selectedFiles.has(change.path)}
                       onChange={() => toggleFileSelection(change.path)}
+                      aria-label={`Select file ${change.path.split('/').pop() ?? change.path}`}
                     />
                     <FileInfo>
                       <FileName>{change.path.split('/').pop() ?? change.path}</FileName>

@@ -37,20 +37,36 @@ Skills: python-patterns, systematic-debugging, test-driven-development
 Key: ALWAYS wrap exchange calls in try/except, log all trades
 ```
 
-### vibe-code-studio (Electron Desktop)
+### vibe-code-studio (Tauri Desktop)
 ```
-Tech: Electron, React, TypeScript, IPC
-Commands: pnpm dev | pnpm build | pnpm package
+Tech: Tauri 2, React, TypeScript, IPC
+Commands: pnpm dev | pnpm build | pnpm tauri:build
 Skills: typescript-expert, react-patterns, performance-profiling
-Key: Type-safe IPC, context isolation, preload security
+Key: Type-safe IPC, Tauri invoke paths, desktop file-system permissions
 ```
 
 ### nova-mobile-app (React Native)
 ```
-Tech: React Native, Expo, TypeScript
+Tech: Expo 54, React Native 0.81, TypeScript
 Commands: pnpm start | pnpm ios | pnpm android
 Skills: react-patterns, testing-patterns, mobile-design
 Key: FlatList for lists, React Query for data, navigation types
+```
+
+### vibe-tutor (Electron + Capacitor)
+```
+Tech: Electron 35.7, Capacitor 8, React 19, Vite, Express
+Commands: pnpm nx build vibe-tutor | pnpm nx android:sync vibe-tutor | pnpm nx android:build vibe-tutor
+Skills: react-patterns, testing-patterns, mobile-design
+Key: This is not React Native or Expo; Android goes through Capacitor.
+```
+
+### vibetech-command-center (Electron Dashboard)
+```
+Tech: Electron 33, electron-vite, electron-builder, React, better-sqlite3
+Commands: pnpm nx build vibetech-command-center | pnpm nx test vibetech-command-center
+Skills: typescript-expert, react-patterns, systematic-debugging
+Key: This is not Tauri; use Electron/electron-vite packaging paths.
 ```
 
 ### invoice-automation-saas (Next.js SaaS)
@@ -61,12 +77,12 @@ Skills: nextjs-best-practices, prisma-expert, stripe-integration
 Key: ALWAYS filter by tenantId, verify Stripe webhooks
 ```
 
-### vibe-justice (AI Web App)
+### vibe-justice (Tauri + Python)
 ```
-Tech: Next.js 14, Claude API, SQLite
-Commands: pnpm dev | pnpm test | pnpm build
-Skills: nextjs-best-practices, llm-app-patterns, react-patterns
-Key: Stream AI responses, handle API errors gracefully
+Tech: Tauri 2 frontend, React/Vite, Python/FastAPI backend, PyInstaller .spec
+Commands: pnpm nx build vibe-justice | pnpm nx test:frontend vibe-justice | pnpm nx test:backend vibe-justice
+Skills: react-patterns, llm-app-patterns, python-patterns
+Key: No root package.json; commands delegate into frontend and backend directories.
 ```
 
 ---
