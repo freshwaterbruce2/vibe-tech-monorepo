@@ -711,7 +711,7 @@ module.exports = {
       try {
         // Create parent directory if it doesn't exist
         await this.createDirectory(parentDir);
-      } catch (_error) {
+      } catch {
         // Ignore error if directory already exists
         logger.debug('[FileSystemService] Parent directory might already exist:', parentDir);
       }
@@ -747,13 +747,18 @@ module.exports = {
     }
 
     if (this.electronService.isElectron()) {
-      if (await this.electronService.exists(path)) {
-        throw new Error(`File already exists: ${path}`);
+      try {
+        if (await this.electronService.exists(path)) {
+          throw new Error(`File already exists: ${path}`);
+        }
+        await this.electronService.writeFile(path, content);
+        this.trackFile(path, 'new');
+        this.recordRecentFile(path);
+        return;
+      } catch (error) {
+        logger.error('[FileSystemService] Electron createFile error:', error);
+        throw error;
       }
-      await this.electronService.writeFile(path, content);
-      this.trackFile(path, 'new');
-      this.recordRecentFile(path);
-      return;
     }
 
     // Handle virtual demo:// paths in-memory
@@ -793,11 +798,16 @@ module.exports = {
     }
 
     if (this.electronService.isElectron()) {
-      await this.electronService.remove(path);
-      this.files.delete(path);
-      this.trackFile(path, 'deleted');
-      this.persistToStorage();
-      return;
+      try {
+        await this.electronService.remove(path);
+        this.files.delete(path);
+        this.trackFile(path, 'deleted');
+        this.persistToStorage();
+        return;
+      } catch (error) {
+        logger.error('[FileSystemService] Electron deleteFile error:', error);
+        throw error;
+      }
     }
 
     // Handle virtual demo:// paths in-memory
@@ -844,16 +854,21 @@ module.exports = {
     }
 
     if (this.electronService.isElectron()) {
-      await this.electronService.rename(oldPath, newPath);
-      if (this.files.has(oldPath)) {
-        const content = this.files.get(oldPath) ?? '';
-        this.files.delete(oldPath);
-        this.files.set(newPath, content);
+      try {
+        await this.electronService.rename(oldPath, newPath);
+        if (this.files.has(oldPath)) {
+          const content = this.files.get(oldPath) ?? '';
+          this.files.delete(oldPath);
+          this.files.set(newPath, content);
+        }
+        this.untrackFile(oldPath);
+        this.trackFile(newPath, 'renamed', oldPath);
+        this.recordRecentFile(newPath);
+        return;
+      } catch (error) {
+        logger.error('[FileSystemService] Electron rename error:', error);
+        throw error;
       }
-      this.untrackFile(oldPath);
-      this.trackFile(newPath, 'renamed', oldPath);
-      this.recordRecentFile(newPath);
-      return;
     }
 
     const existing = this.files.get(oldPath);
@@ -895,9 +910,14 @@ module.exports = {
     }
 
     if (this.electronService.isElectron()) {
-      await this.electronService.createDirectory(path);
-      logger.debug(`[FileSystemService] Created directory via Electron: ${path}`);
-      return;
+      try {
+        await this.electronService.createDirectory(path);
+        logger.debug(`[FileSystemService] Created directory via Electron: ${path}`);
+        return;
+      } catch (error) {
+        logger.error('[FileSystemService] Electron createDirectory error:', error);
+        throw error;
+      }
     }
 
     // For web/demo mode, just track it (no-op for in-memory filesystem)

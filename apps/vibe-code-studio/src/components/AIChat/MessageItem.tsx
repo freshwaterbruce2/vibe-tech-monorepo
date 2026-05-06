@@ -4,7 +4,6 @@
  */
 import { Bot, Copy, ThumbsDown, ThumbsUp, User } from 'lucide-react';
 
-import type { AIMessage as _AIMessage } from '../../types';
 import SecureMessageContent from '../SecureMessageContent';
 
 import {

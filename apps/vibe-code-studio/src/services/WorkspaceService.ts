@@ -153,7 +153,7 @@ export class WorkspaceService {
           structure.tsConfig = JSON.parse(jsonContent);
           structure.configFiles.push('tsconfig.json');
 
-        } catch (_error) {
+        } catch {
           // Silently track file exists even if parsing fails
           // This is non-critical - tsconfig parsing is just for additional context
           structure.configFiles.push('tsconfig.json');

@@ -133,7 +133,7 @@ export class ErrorDetector {
 
     // Check for resolved errors
     const resolvedErrors: string[] = [];
-    for (const [errorId, _error] of this.activeErrors.entries()) {
+    for (const errorId of this.activeErrors.keys()) {
       if (!currentErrorIds.has(errorId)) {
         resolvedErrors.push(errorId);
 

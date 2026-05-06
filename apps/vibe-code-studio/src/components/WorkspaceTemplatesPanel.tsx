@@ -4,6 +4,7 @@
  */
 
 import { motion } from 'framer-motion';
+import { shouldForwardMotionProp } from '../utils/motionProps';
 import {
   Code2,
   FileCode,
@@ -153,7 +154,9 @@ const TemplateGrid = styled.div`
   gap: ${vibeTheme.spacing.md};
 `;
 
-const TemplateCard = styled(motion.button)`
+const TemplateCard = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   background: rgba(139, 92, 246, 0.05);
   border: 1px solid rgba(139, 92, 246, 0.1);
   border-radius: ${vibeTheme.borderRadius.medium};
@@ -230,7 +233,9 @@ const SetupTime = styled.div`
   gap: ${vibeTheme.spacing.xs};
 `;
 
-const Modal = styled(motion.div)`
+const Modal = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   position: fixed;
   top: 0;
   left: 0;
@@ -243,7 +248,9 @@ const Modal = styled(motion.div)`
   z-index: 1000;
 `;
 
-const ModalContent = styled(motion.div)`
+const ModalContent = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   background: ${vibeTheme.colors.secondary};
   border: 1px solid rgba(139, 92, 246, 0.3);
   border-radius: ${vibeTheme.borderRadius.large};

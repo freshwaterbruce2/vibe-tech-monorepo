@@ -41,8 +41,6 @@ export const CustomInstructionsPanel = ({
     currentRules ?? null
   );
   const [activeTab, setActiveTab] = useState<'global' | 'patterns' | 'templates' | 'ai'>('global');
-  const [_isEditing, _setIsEditing] = useState(false);
-  const [_editedContent, _setEditedContent] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 
   const loadRules = useCallback(async () => {
@@ -61,7 +59,6 @@ export const CustomInstructionsPanel = ({
   const handleSave = async () => {
     if (rules) {
       await onSaveRules(rules);
-      _setIsEditing(false);
     }
   };
 
@@ -420,10 +417,10 @@ export const CustomInstructionsPanel = ({
             style={{ display: 'none' }}
             id="import-rules"
           />
-          <IconButton onClick={() => document.getElementById('import-rules')?.click()}>
+          <IconButton onClick={() => document.getElementById('import-rules')?.click()} aria-label="Import rules">
             <Upload size={16} />
           </IconButton>
-          <IconButton onClick={handleExport}>
+          <IconButton onClick={handleExport} aria-label="Export rules">
             <Download size={16} />
           </IconButton>
           <SaveButton onClick={handleSave}>

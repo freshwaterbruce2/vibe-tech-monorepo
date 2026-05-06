@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { shouldForwardMotionProp } from '../utils/motionProps';
 import {
     Code,
     FileText,
@@ -119,7 +120,9 @@ const FeatureGrid = styled.div`
   margin: 0 auto ${vibeTheme.spacing['3xl']};
 `;
 
-const FeatureCard = styled(motion.div) <{ $variant?: 'primary' | 'secondary' }>`
+const FeatureCard = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{ $variant?: 'primary' | 'secondary' }>`
   background: ${(props) =>
     props.$variant === 'primary'
       ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(0, 212, 255, 0.05) 100%)'

@@ -297,7 +297,7 @@ export class SearchService {
 
     try {
       return new RegExp(pattern, flags);
-    } catch (_error) {
+    } catch {
       // If regex is invalid, fall back to literal search
       const escapedPattern = searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       return new RegExp(escapedPattern, flags);

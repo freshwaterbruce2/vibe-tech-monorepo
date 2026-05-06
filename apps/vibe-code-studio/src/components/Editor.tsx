@@ -153,7 +153,7 @@ const Editor = ({
   const { editorRef, handleEditorDidMount } = useEditorSetup(file, undefined, onEditorMount, liveStream);
 
   // Hook for inline AI editing
-  const { startInlineEdit: _startInlineEdit } = useInlineEdit(editorRef);
+  useInlineEdit(editorRef);
 
   // Hook for editor actions
   const { toggleComment, duplicateLine, moveLineUp, moveLineDown, triggerAiCompletion } = useEditorActions(editorRef);

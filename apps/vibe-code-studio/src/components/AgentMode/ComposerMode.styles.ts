@@ -1,9 +1,12 @@
 import { motion } from 'framer-motion';
+import { shouldForwardMotionProp } from '../../utils/motionProps';
 import styled from 'styled-components';
 
 import { vibeTheme } from '../../styles/theme';
 
-export const ComposerBackdrop = styled(motion.div)`
+export const ComposerBackdrop = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   position: fixed;
   top: 0;
   left: 0;
@@ -17,7 +20,9 @@ export const ComposerBackdrop = styled(motion.div)`
   justify-content: center;
 `;
 
-export const ComposerContainer = styled(motion.div)<{ $expanded?: boolean }>`
+export const ComposerContainer = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{ $expanded?: boolean }>`
   width: 100%;
   max-width: 1400px;
   height: ${props => props.$expanded ? '85vh' : '600px'};
@@ -64,7 +69,9 @@ export const ComposerActions = styled.div`
   gap: 8px;
 `;
 
-export const ActionButton = styled(motion.button)<{ $primary?: boolean }>`
+export const ActionButton = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{ $primary?: boolean }>`
   display: flex;
   align-items: center;
   gap: 6px;
@@ -118,7 +125,9 @@ export const FileListHeader = styled.div`
   }
 `;
 
-export const FileItem = styled(motion.div)<{ $selected?: boolean; $isDirty?: boolean }>`
+export const FileItem = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{ $selected?: boolean; $isDirty?: boolean }>`
   padding: 8px 16px;
   display: flex;
   align-items: center;
@@ -259,7 +268,9 @@ export const ContextTags = styled.div`
   margin-bottom: 12px;
 `;
 
-export const ContextTag = styled(motion.div)`
+export const ContextTag = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   display: flex;
   align-items: center;
   gap: 6px;

@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { shouldForwardMotionProp } from '../utils/motionProps';
 import {
   Activity,
   AlertCircle,
@@ -44,7 +45,9 @@ const RightSection = styled.div`
   gap: ${vibeTheme.spacing[2]};
 `;
 
-const StatusItem = styled(motion.div)<{ clickable?: boolean }>`
+const StatusItem = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{ clickable?: boolean }>`
   display: flex;
   align-items: center;
   gap: ${vibeTheme.spacing[1]};
