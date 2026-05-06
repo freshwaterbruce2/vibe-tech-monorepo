@@ -117,8 +117,6 @@ const readme = `# VibeBlox Production Package
 
 1. Install dependencies:
 \`\`\`bash
-npm install
-# or
 pnpm install
 \`\`\`
 
@@ -129,13 +127,13 @@ cp .env.example .env
 
 3. Initialize database:
 \`\`\`bash
-npm run db:migrate
-npm run db:seed
+pnpm run db:migrate
+pnpm run db:seed
 \`\`\`
 
 4. Start the server:
 \`\`\`bash
-npm start
+pnpm start
 \`\`\`
 
 The application will be available at http://localhost:3003
