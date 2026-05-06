@@ -769,9 +769,6 @@ importers:
       '@vibetech/shared-ipc':
         specifier: workspace:^1.0.0
         version: link:../../packages/shared-ipc
-      ajv:
-        specifier: ^8.18.0
-        version: 8.18.0
       node-powershell:
         specifier: ^5.0.1
         version: 5.0.1
@@ -30156,7 +30153,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.1.0
-      vitest: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(@vitest/browser-playwright@4.1.2)(@vitest/ui@4.1.2)(jsdom@29.0.2(@noble/hashes@1.8.0))(msw@2.12.14(@types/node@25.5.0)(typescript@5.9.3))(vite@8.0.3(@types/node@25.5.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))
+      vitest: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(@vitest/browser-playwright@4.1.2)(@vitest/ui@4.1.2)(jsdom@29.0.2(@noble/hashes@1.8.0))(msw@2.12.14(@types/node@25.5.0)(typescript@5.9.3))(vite@7.3.1(@types/node@25.5.0)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))
 
   '@vitest/utils@3.2.4':
     dependencies:
