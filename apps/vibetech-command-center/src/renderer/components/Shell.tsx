@@ -1,27 +1,31 @@
-import type { ReactNode, ComponentType } from 'react';
+import { type ReactNode, type ComponentType, useCallback } from 'react';
 import clsx from 'clsx';
 import {
   LayoutGrid, Database, Archive, Hammer, Search,
-  Sparkles, Activity, Menu
+  Sparkles, Activity, Menu, GitBranch, Table, Terminal, Brain
 } from 'lucide-react';
 import { useUiStore, type PanelId } from '@renderer/stores';
 import { useHealth } from '@renderer/hooks';
 
-interface NavItem {
+interface NavItemConfig {
   id: PanelId;
   label: string;
   icon: ComponentType<{ className?: string; size?: number }>;
   enabled: boolean;
 }
 
-const NAV: NavItem[] = [
+const NAV: NavItemConfig[] = [
   { id: 'apps',      label: 'Apps',       icon: LayoutGrid, enabled: true },
+  { id: 'affected',  label: 'Affected',   icon: GitBranch,  enabled: true },
   { id: 'databases', label: 'Databases',  icon: Database,   enabled: true },
+  { id: 'dbexplorer', label: 'DB Explorer', icon: Table,     enabled: true },
   { id: 'backups',   label: 'Backups',    icon: Archive,    enabled: true },
   { id: 'builds',    label: 'Builds',     icon: Hammer,     enabled: true },
   { id: 'rag',       label: 'RAG Search', icon: Search,     enabled: true },
   { id: 'claude',    label: 'Claude',     icon: Sparkles,   enabled: true },
-  { id: 'agents',    label: 'Agents',     icon: Activity,   enabled: true }
+  { id: 'agents',    label: 'Agents',     icon: Activity,   enabled: true },
+  { id: 'orchestrator', label: 'Orchestrator', icon: Terminal, enabled: true },
+  { id: 'memory', label: 'Memory', icon: Brain, enabled: true }
 ];
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -54,27 +58,15 @@ export function Shell({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="flex-1 py-2">
-          {NAV.map((item) => {
-            const Icon = item.icon;
-            const active = activePanel === item.id;
-            return (
-              <button
-                key={item.id}
-                disabled={!item.enabled}
-                onClick={() => item.enabled && setActivePanel(item.id)}
-                className={clsx(
-                  'w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
-                  active && 'bg-pulse-cyan-900 text-pulse-cyan-300 border-l-2 border-pulse-cyan',
-                  !active && item.enabled && 'text-slate-300 hover:bg-bg-elev hover:text-pulse-cyan',
-                  !item.enabled && 'text-slate-600 cursor-not-allowed'
-                )}
-                title={!item.enabled ? 'coming in a later chunk' : item.label}
-              >
-                <Icon size={16} />
-                {!sidebarCollapsed && <span>{item.label}</span>}
-              </button>
-            );
-          })}
+          {NAV.map((item) => (
+            <NavItem
+              key={item.id}
+              item={item}
+              active={activePanel === item.id}
+              sidebarCollapsed={sidebarCollapsed}
+              onClick={setActivePanel}
+            />
+          ))}
         </nav>
 
         <div className={clsx('px-4 py-3 border-t border-bg-line text-xs', sidebarCollapsed && 'text-center')}>
@@ -102,5 +94,39 @@ export function Shell({ children }: { children: ReactNode }) {
         </div>
       </main>
     </div>
+  );
+}
+
+function NavItem({
+  item,
+  active,
+  sidebarCollapsed,
+  onClick,
+}: {
+  item: NavItemConfig;
+  active: boolean;
+  sidebarCollapsed: boolean;
+  onClick: (id: PanelId) => void;
+}) {
+  const Icon = item.icon;
+  const handleClick = useCallback(() => {
+    if (item.enabled) onClick(item.id);
+  }, [item.enabled, item.id, onClick]);
+
+  return (
+    <button
+      disabled={!item.enabled}
+      onClick={handleClick}
+      className={clsx(
+        'w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors',
+        active && 'bg-pulse-cyan-900 text-pulse-cyan-300 border-l-2 border-pulse-cyan',
+        !active && item.enabled && 'text-slate-300 hover:bg-bg-elev hover:text-pulse-cyan',
+        !item.enabled && 'text-slate-600 cursor-not-allowed'
+      )}
+      title={!item.enabled ? 'coming in a later chunk' : item.label}
+    >
+      <Icon size={16} />
+      {!sidebarCollapsed && <span>{item.label}</span>}
+    </button>
   );
 }

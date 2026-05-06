@@ -169,7 +169,7 @@ httpServer.listen(port, '127.0.0.1', () => {
 async function shutdown(): Promise<void> {
   log('shutting down');
   httpServer.close();
-  await Promise.all([...sessions.keys()].map((sessionId) => closeSession(sessionId)));
+  await Promise.all([...sessions.keys()].map(async (sessionId) => closeSession(sessionId)));
   process.exit(0);
 }
 

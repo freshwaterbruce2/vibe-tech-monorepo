@@ -38,7 +38,25 @@ function mockBridge(overrides: Partial<CommandCenterAPI> = {}): void {
     claude:  { invoke: vi.fn() },
     rag:     { search: vi.fn() },
     fs:      { stat: vi.fn().mockResolvedValue({ ok: true, data: { path: '', exists: false, isDirectory: false, isFile: false, sizeBytes: 0, mtimeMs: null }, timestamp: Date.now() }) },
+    affected: { get: vi.fn().mockResolvedValue({ ok: true, data: { projects: [], generatedAt: Date.now() }, timestamp: Date.now() }), refresh: vi.fn() },
     meta:    { info: vi.fn().mockResolvedValue({ ok: true, data: { version: '0.1.0', monorepoRoot: 'C:\\dev', wsPort: 3210 }, timestamp: Date.now() }) },
+    dbExplorer: {
+      list: vi.fn().mockResolvedValue({ ok: true, data: [], timestamp: Date.now() }),
+      schema: vi.fn().mockResolvedValue({ ok: true, data: [], timestamp: Date.now() }),
+      query: vi.fn().mockResolvedValue({ ok: true, data: { columns: [], rows: [], rowCount: 0, truncated: false, executionMs: 0 }, timestamp: Date.now() })
+    },
+    agent: {
+      mcpStatus: vi.fn().mockResolvedValue({ ok: true, data: [], timestamp: Date.now() }),
+      taskRun: vi.fn().mockResolvedValue({ ok: true, data: { id: 'a1', command: 'pnpm', args: [], cwd: '.', pid: 1, status: 'running', startedAt: 1, exitCode: null }, timestamp: Date.now() }),
+      taskList: vi.fn().mockResolvedValue({ ok: true, data: [], timestamp: Date.now() }),
+      logSearch: vi.fn().mockResolvedValue({ ok: true, data: [], timestamp: Date.now() })
+    },
+    memory: {
+      snapshot: vi.fn().mockResolvedValue({ ok: true, data: { stats: [], recentEpisodic: [], recentSemantic: [], recentProcedural: [], decayItems: [], consolidationStatus: { lastRunAt: null, itemsSummarized: 0, itemsPruned: 0 }, generatedAt: Date.now() }, timestamp: Date.now() }),
+      search: vi.fn().mockResolvedValue({ ok: true, data: [], timestamp: Date.now() }),
+      decay: vi.fn().mockResolvedValue({ ok: true, data: [], timestamp: Date.now() }),
+      consolidate: vi.fn().mockResolvedValue({ ok: true, data: { success: false, message: 'read-only' }, timestamp: Date.now() })
+    },
     stream:  { subscribe: vi.fn(() => () => {}) },
     ...overrides
   };

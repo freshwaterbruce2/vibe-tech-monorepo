@@ -4,8 +4,11 @@ import { IPC_CHANNELS } from '../../shared/types';
 import type {
   IpcResult, NxGraph, ProbeResult, DbMetric,
   BackupRequest, BackupResult, BackupLogEntry,
-  ProcessHandle, ClaudeInvocation, ClaudeInvocationResult,
-  RagSearchQuery, RagSearchResult, ServiceName, FsStatResult
+  ProcessHandle, ProcessChunk, ClaudeInvocation, ClaudeInvocationResult,
+  RagSearchQuery, RagSearchResult, ServiceName, FsStatResult,
+  AffectedGraph, DbExplorerDatabase, DbTableSchema, DbExplorerResult,
+  McpServerStatus, AgentTaskLauncher, AgentTaskSpec, LogSearchFilters,
+  MemoryVizSnapshot, MemorySearchResult, MemoryDecayView
 } from '../../shared/types';
 import type { ServiceContainer } from '../service-container';
 
@@ -25,6 +28,15 @@ export function registerIpcHandlers(c: ServiceContainer): void {
   ipcMain.handle(IPC_CHANNELS.NX_REFRESH, async (): Promise<IpcResult<NxGraph>> => {
     try { return ok(await c.nxGraph.getGraph(true)); }
     catch (e) { return err(e, 'NX_REFRESH_FAILED'); }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.AFFECTED_GET, async (_evt, force?: boolean): Promise<IpcResult<AffectedGraph>> => {
+    try { return ok(await c.nxAffected.getAffected(force === true)); }
+    catch (e) { return err(e, 'AFFECTED_GET_FAILED'); }
+  });
+  ipcMain.handle(IPC_CHANNELS.AFFECTED_REFRESH, async (): Promise<IpcResult<AffectedGraph>> => {
+    try { return ok(await c.nxAffected.refresh()); }
+    catch (e) { return err(e, 'AFFECTED_REFRESH_FAILED'); }
   });
 
   ipcMain.handle(IPC_CHANNELS.HEALTH_PROBE_ALL, async (): Promise<IpcResult<ProbeResult[]>> => {
@@ -114,6 +126,63 @@ export function registerIpcHandlers(c: ServiceContainer): void {
   ipcMain.handle(IPC_CHANNELS.META_WS_PORT, async (): Promise<IpcResult<number>> => {
     try { return ok(c.wsPort); }
     catch (e) { return err(e, 'META_WS_PORT_FAILED'); }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.DB_EXPLORER_LIST, async (): Promise<IpcResult<DbExplorerDatabase[]>> => {
+    try { return ok(await c.dbExplorer.listDatabases()); }
+    catch (e) { return err(e, 'DB_EXPLORER_LIST_FAILED'); }
+  });
+  ipcMain.handle(IPC_CHANNELS.DB_EXPLORER_SCHEMA, async (_evt, dbPath: string): Promise<IpcResult<DbTableSchema[]>> => {
+    try {
+      if (typeof dbPath !== 'string') throw new Error('invalid dbPath');
+      return ok(await c.dbExplorer.getSchema(dbPath));
+    } catch (e) { return err(e, 'DB_EXPLORER_SCHEMA_FAILED'); }
+  });
+  ipcMain.handle(IPC_CHANNELS.DB_EXPLORER_QUERY, async (_evt, dbPath: string, sql: string): Promise<IpcResult<DbExplorerResult>> => {
+    try {
+      if (typeof dbPath !== 'string' || typeof sql !== 'string') throw new Error('invalid query params');
+      return ok(await c.dbExplorer.runQuery(dbPath, sql));
+    } catch (e) { return err(e, 'DB_EXPLORER_QUERY_FAILED'); }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.AGENT_MCP_STATUS, async (): Promise<IpcResult<McpServerStatus[]>> => {
+    try { return ok(await c.agent.probeMcpServers()); }
+    catch (e) { return err(e, 'AGENT_MCP_STATUS_FAILED'); }
+  });
+  ipcMain.handle(IPC_CHANNELS.AGENT_TASK_RUN, async (_evt, spec: AgentTaskLauncher): Promise<IpcResult<ProcessHandle>> => {
+    try {
+      if (!spec || typeof spec.project !== 'string' || typeof spec.target !== 'string') {
+        throw new Error('invalid task launcher spec');
+      }
+      return ok(await c.agent.runTask(spec));
+    } catch (e) { return err(e, 'AGENT_TASK_RUN_FAILED'); }
+  });
+  ipcMain.handle(IPC_CHANNELS.AGENT_TASK_LIST, async (): Promise<IpcResult<AgentTaskSpec[]>> => {
+    try { return ok(c.agent.listTasks()); }
+    catch (e) { return err(e, 'AGENT_TASK_LIST_FAILED'); }
+  });
+  ipcMain.handle(IPC_CHANNELS.AGENT_LOG_SEARCH, async (_evt, filters: LogSearchFilters): Promise<IpcResult<ProcessChunk[]>> => {
+    try { return ok(c.agent.searchLogs(filters)); }
+    catch (e) { return err(e, 'AGENT_LOG_SEARCH_FAILED'); }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.MEMORY_VIZ_SNAPSHOT, async (): Promise<IpcResult<MemoryVizSnapshot>> => {
+    try { return ok(await c.memory.getSnapshot() as MemoryVizSnapshot); }
+    catch (e) { return err(e, 'MEMORY_VIZ_SNAPSHOT_FAILED'); }
+  });
+  ipcMain.handle(IPC_CHANNELS.MEMORY_VIZ_SEARCH, async (_evt, query: string, topK?: number): Promise<IpcResult<MemorySearchResult[]>> => {
+    try {
+      if (typeof query !== 'string') throw new Error('invalid query');
+      return ok(c.memory.search(query, typeof topK === 'number' ? topK : 10) as MemorySearchResult[]);
+    } catch (e) { return err(e, 'MEMORY_VIZ_SEARCH_FAILED'); }
+  });
+  ipcMain.handle(IPC_CHANNELS.MEMORY_VIZ_DECAY, async (): Promise<IpcResult<MemoryDecayView[]>> => {
+    try { return ok(c.memory.computeDecay() as MemoryDecayView[]); }
+    catch (e) { return err(e, 'MEMORY_VIZ_DECAY_FAILED'); }
+  });
+  ipcMain.handle(IPC_CHANNELS.MEMORY_VIZ_CONSOLIDATE, async (): Promise<IpcResult<{ success: boolean; message: string }>> => {
+    try { return ok(c.memory.triggerConsolidation()); }
+    catch (e) { return err(e, 'MEMORY_VIZ_CONSOLIDATE_FAILED'); }
   });
 }
 

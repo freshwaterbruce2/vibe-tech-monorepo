@@ -21,3 +21,15 @@ export type { ClaudeBridgeOptions } from './claude-bridge';
 
 export { RagClient } from './rag-client';
 export type { RagClientOptions } from './rag-client';
+
+export { NxAffectedService } from './nx-affected';
+export type { NxAffectedOptions } from './nx-affected';
+
+export { DbExplorerService } from './db-explorer';
+export type { DbExplorerOptions } from './db-explorer';
+
+export { AgentOrchestratorService } from './agent-orchestrator';
+export type { AgentOrchestratorOptions } from './agent-orchestrator';
+
+export { MemoryVizService } from './memory-viz';
+export type { MemoryVizOptions } from './memory-viz';
