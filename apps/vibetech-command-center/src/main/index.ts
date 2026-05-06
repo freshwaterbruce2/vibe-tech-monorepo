@@ -7,7 +7,7 @@ import { wireStreams } from './stream-bridge';
 import { setupTray, teardownTray } from './tray';
 
 const isDev = !app.isPackaged;
-const WS_PORT = 3210;
+const DEFAULT_WS_PORT = 3210;
 const MONOREPO_ROOT = 'C:\\dev';
 
 let container: ServiceContainer | null = null;
@@ -48,13 +48,42 @@ function createWindow(): void {
 }
 
 async function bootstrap(): Promise<void> {
-  container = createServiceContainer({ monorepoRoot: MONOREPO_ROOT, wsPort: WS_PORT });
-  hub = new WsHub({ port: WS_PORT });
-  await hub.start();
+  hub = await startWsHub(getPreferredWsPort());
+  container = createServiceContainer({ monorepoRoot: MONOREPO_ROOT, wsPort: hub.actualPort });
   unwire = wireStreams(container, hub);
   registerIpcHandlers(container);
   container.watcher.start();
   setupTray(container, () => mainWindow);
+}
+
+function getPreferredWsPort(): number {
+  const raw = process.env['VIBETECH_COMMAND_CENTER_WS_PORT'] ?? process.env['COMMAND_CENTER_WS_PORT'];
+  if (!raw) return DEFAULT_WS_PORT;
+
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isInteger(parsed) && parsed >= 0 && parsed <= 65_535
+    ? parsed
+    : DEFAULT_WS_PORT;
+}
+
+async function startWsHub(preferredPort: number): Promise<WsHub> {
+  const preferredHub = new WsHub({ port: preferredPort });
+  try {
+    await preferredHub.start();
+    return preferredHub;
+  } catch (error) {
+    if (preferredPort === 0 || !isAddressInUse(error)) {
+      throw error;
+    }
+  }
+
+  const fallbackHub = new WsHub({ port: 0 });
+  await fallbackHub.start();
+  return fallbackHub;
+}
+
+function isAddressInUse(error: unknown): boolean {
+  return error instanceof Error && 'code' in error && error.code === 'EADDRINUSE';
 }
 
 async function shutdown(): Promise<void> {

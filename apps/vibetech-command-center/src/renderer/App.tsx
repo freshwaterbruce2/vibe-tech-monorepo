@@ -8,6 +8,10 @@ import { BuildStatus } from '@renderer/panels/BuildStatus';
 import { RagSearch } from '@renderer/panels/RagSearch';
 import { ClaudeLauncher } from '@renderer/panels/ClaudeLauncher';
 import { AgentConsole } from '@renderer/panels/AgentConsole';
+import { AgentOrchestrator } from '@renderer/panels/AgentOrchestrator';
+import { MemoryViz } from '@renderer/panels/MemoryViz';
+import { DbExplorer } from '@renderer/panels/DbExplorer';
+import { AffectedDashboard } from '@renderer/panels/AffectedDashboard';
 import { useUiStore } from '@renderer/stores';
 import { useFileEventSubscription } from '@renderer/hooks';
 
@@ -31,7 +35,11 @@ function AppInner() {
       {activePanel === 'builds'    && <BuildStatus />}
       {activePanel === 'rag'       && <RagSearch />}
       {activePanel === 'claude'    && <ClaudeLauncher />}
-      {activePanel === 'agents'    && <AgentConsole />}
+      {activePanel === 'agents'       && <AgentConsole />}
+      {activePanel === 'orchestrator' && <AgentOrchestrator />}
+      {activePanel === 'affected'     && <AffectedDashboard />}
+      {activePanel === 'dbexplorer'   && <DbExplorer />}
+      {activePanel === 'memory'       && <MemoryViz />}
     </Shell>
   );
 }
