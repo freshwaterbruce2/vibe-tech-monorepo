@@ -82,7 +82,9 @@ npm-shrinkwrap.json
 
 # Build directories
 build/
-.nx/
+.nx/*
+!.nx/
+!.nx/SELF_HEALING.md
 .next/
 out/
 *.tsbuildinfo
@@ -353,3 +355,9 @@ Ollama/db.sqlite-wal
 .claude/worktrees
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
+
+# NX local cache
+.nx/
+
+# Personal scratchpad
+MEMORY.md
