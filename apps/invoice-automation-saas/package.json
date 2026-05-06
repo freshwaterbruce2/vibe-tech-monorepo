@@ -33,7 +33,7 @@
     "axios": "^1.13.6",
     "better-sqlite3": "12.6.2",
     "date-fns": "^4.1.0",
-    "dotenv": "^17.3.1",
+    "dotenv": "^16.6.1",
     "fastify": "^5.8.4",
     "framer-motion": "^12.38.0",
     "html2canvas": "^1.4.1",

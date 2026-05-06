@@ -201,8 +201,8 @@ async fn main() {
     }
 
     // Initialize prediction engine
-    let learning_db_path = PathBuf::from(&config.database_path).join("learning.db");
-    let prediction_engine = match prediction_engine::PredictionEngine::new(learning_db_path) {
+    let prediction_db_path = PathBuf::from(&config.database_path).join("agent_learning.db");
+    let prediction_engine = match prediction_engine::PredictionEngine::new(prediction_db_path) {
         Ok(engine) => {
             info!("Prediction engine initialized successfully");
             Some(engine)

@@ -1,5 +1,5 @@
 {
-  "name": "vibe-tech-backend",
+  "name": "@vibetech/vibe-tech-lovable-backend",
   "version": "1.0.0",
   "description": "Backend server for Vibe Tech with local SQLite database",
   "main": "server.js",

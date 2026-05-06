@@ -1,9 +1,6 @@
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { cn } from "@vibetech/shared-utils";
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+export { cn };
 
 export function formatCost(usd: number): string {
   if (usd < 0.001) return '<$0.001';

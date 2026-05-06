@@ -57,7 +57,7 @@ export default function Quests({ user }: QuestsProps) {
 
   const fetchQuests = async () => {
     try {
-      const token = window.electronAPI.store.get('token');
+      const token = localStorage.getItem("token");
       const response = await fetch('/api/quests', {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -90,7 +90,7 @@ export default function Quests({ user }: QuestsProps) {
 
     setSubmitting(true);
     try {
-      const token = window.electronAPI.store.get('token');
+      const token = localStorage.getItem("token");
       const response = await fetch('/api/quests/complete', {
         method: 'POST',
         headers: {

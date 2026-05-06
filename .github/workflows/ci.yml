@@ -36,6 +36,22 @@ env:
 
 jobs:
   # ============================================
+  # DEPENDENCY REVIEW (PRs only)
+  # ============================================
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@3e9ad7370203c1e93d109be57f3b72eb0eb511b1 # v4
+
+  # ============================================
   # QUALITY GATES (Run on all branches)
   # ============================================
   quality:
@@ -59,13 +75,22 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Nx cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: .nx/cache
           key: nx-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
           restore-keys: |
             nx-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
             nx-${{ runner.os }}-
+
+      - name: Start Nx Cloud CI run
+        continue-on-error: true
+        run: >
+          pnpm exec nx start-ci-run
+          --distribute-on=manual
+          --stop-agents-after=lint,typecheck,test,build
+          --fix-tasks=lint,typecheck,test,build
+          --auto-apply-fixes=lint
 
       - name: Sync audit
         run: pnpm run ci:sync
@@ -78,6 +103,11 @@ jobs:
 
       - name: Test (affected)
         run: pnpm run ci:test
+
+      - name: Run Nx Cloud self-healing
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        run: pnpm exec nx fix-ci
 
   # ============================================
   # BUILD (main and develop only)
@@ -163,6 +193,8 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       contents: write
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
@@ -197,12 +229,85 @@ jobs:
 
       - name: Publish packages
         if: env.NPM_TOKEN != ''
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           "//registry.npmjs.org/:_authToken=$env:NPM_TOKEN" | Out-File ~/.npmrc
           pnpm changeset publish
           git push origin --tags 2>$null
+
+  # ============================================
+  # COVERAGE (non-blocking while coverage targets are being completed)
+  # ============================================
+  coverage:
+    name: Coverage (affected, non-blocking)
+    runs-on: windows-latest
+    needs: quality
+    if: always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch')
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Coverage (affected)
+        run: pnpm run ci:coverage
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: affected-coverage
+          path: |
+            coverage/**
+            apps/**/coverage/**
+            packages/**/coverage/**
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ============================================
+  # NODE 24 COMPATIBILITY (non-blocking canary)
+  # ============================================
+  node24-canary:
+    name: Node 24 Compatibility (non-blocking)
+    runs-on: windows-latest
+    needs: quality
+    if: always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch')
+    continue-on-error: true
+    env:
+      NODE_VERSION: '24'
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck (affected)
+        run: pnpm run ci:typecheck
+
+      - name: Build (affected)
+        run: pnpm run ci:build
 
   # ============================================
   # E2E TESTS (main, develop, and PRs)
@@ -238,70 +343,8 @@ jobs:
 
       - name: Upload Playwright report
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: playwright-report
           path: coverage/apps/business-booking-platform-next/
           retention-days: 7
-
-  # ============================================
-  # SELF-HEALING (on quality failure)
-  # ============================================
-  self-heal:
-    name: Self-Healing
-    runs-on: windows-latest
-    needs: quality
-    if: failure() && github.ref == 'refs/heads/develop'
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-        with:
-          fetch-depth: 0
-
-      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Check if auto-fix commit
-        id: check
-        run: |
-          $msg = git log -1 --pretty=%B
-          if ($msg -match "auto-fix") {
-            echo "skip=true" >> $env:GITHUB_OUTPUT
-          } else {
-            echo "skip=false" >> $env:GITHUB_OUTPUT
-          }
-
-      - name: Apply lint fixes
-        if: steps.check.outputs.skip != 'true'
-        run: |
-          git config user.name "Self-Healing Bot"
-          git config user.email "bot@vibetech.ai"
-
-          git diff --name-only origin/main | Out-File changed_files.txt
-          node scripts/validate-auto-fix-safety.mjs changed_files.txt
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "SAFETY CHECK FAILED: Aborting auto-fix."
-            exit 1
-          }
-
-          pnpm run lint:fix:all 2>$null
-
-          $status = git status --porcelain
-          if ($status) {
-            git add .
-            git commit -m "chore: auto-fix by self-healing system [skip ci]"
-            git push origin ${{ github.ref_name }}
-            Write-Host "Self-healing fixes applied and pushed."
-          } else {
-            Write-Host "No automated fixes could be applied."
-          }

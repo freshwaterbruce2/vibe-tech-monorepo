@@ -1,10 +1,10 @@
 # Workspace Dependency Graph
 
-> **Last Updated**: 2026-04-26
+> **Last Updated**: 2026-05-04
 >
 > Maps which apps consume which `@vibetech/*` and `@dev/*` workspace packages.
 >
-> **Note:** Some packages (e.g. `@vibetech/backend`, `@vibetech/db-app`, `@vibetech/mcp-testing`, `@vibetech/nova-database`, `@vibetech/service-common`, `@vibetech/vcs-theme`) currently have no `workspace:*` consumers. They are intentional standalone services, infrastructure-in-waiting, or path-imported modules — not dead code. See `tools/monorepo-sync/sync-audit.config.json` `allowedIsolatedProjects` for the canonical isolation list.
+> **Note:** Some packages (e.g. `@vibetech/backend`, `@vibetech/db-app`, `@vibetech/mcp-testing`, `@vibetech/nova-database`, `@vibetech/service-common`, `@vibetech/vcs-theme`) currently have no `workspace:*` consumers. They are intentional standalone services, infrastructure-in-waiting, or path-imported modules — not dead code. `packages/nova-core` is currently a directory without a `package.json`, so do not treat it as a workspace package until a manifest exists. See `tools/monorepo-sync/sync-audit.config.json` `allowedIsolatedProjects` for the canonical isolation list.
 
 ## Package → Consumers
 
@@ -15,7 +15,7 @@
 | `@vibetech/shared-utils`      | Multiple apps                                            |
 | `@vibetech/shared-config`     | Multiple apps                                            |
 | `@vibetech/testing-utils`     | Multiple apps (devDependency)                            |
-| `@vibetech/nova-core`         | `nova-agent`, `nova-mobile-app`                          |
+| `packages/nova-core`          | Directory-only shared logic; no package manifest          |
 | `@vibetech/nova-types`        | `nova-agent`, `nova-mobile-app`                          |
 | `@vibetech/nova-database`     | `nova-agent`                                             |
 | `@vibetech/logger`            | Multiple apps                                            |
@@ -37,7 +37,7 @@ When modifying a workspace package, these are the apps that may be affected:
 ### Medium Impact (2 consumers)
 
 - `@vibetech/shared-ipc` — IPC Bridge + Code Studio + Nova
-- `@vibetech/nova-core` — Nova Agent + Mobile
+- `packages/nova-core` — directory-only Nova logic; no package manifest
 - `@vibetech/nova-types` — Nova Agent + Mobile
 
 ### Low Impact (1 consumer)
@@ -48,7 +48,7 @@ When modifying a workspace package, these are the apps that may be affected:
 
 ```
 nova-agent
-  └─ @vibetech/nova-core
+  └─ packages/nova-core (path-imported directory, no package manifest)
   └─ @vibetech/nova-types
   └─ @vibetech/nova-database
   └─ @vibetech/shared-ipc

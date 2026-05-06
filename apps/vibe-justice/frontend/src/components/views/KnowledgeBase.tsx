@@ -240,6 +240,7 @@ export function KnowledgeBase() {
               disabled={loading}
               className="p-2 text-gray-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
               title="Refresh"
+              aria-label="Refresh"
             >
               <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
             </button>

@@ -6,7 +6,9 @@ const ts = require('typescript');
 const { Chess } = require('chess.js');
 
 function loadTsModule(relativePath) {
-  const sourcePath = path.join(__dirname, '..', relativePath);
+  const sourcePath = path.isAbsolute(relativePath)
+    ? relativePath
+    : path.join(__dirname, '..', relativePath);
   const source = fs.readFileSync(sourcePath, 'utf8');
   const transpiled = ts.transpileModule(source, {
     compilerOptions: {
@@ -21,7 +23,10 @@ function loadTsModule(relativePath) {
   return sandbox.module.exports;
 }
 
-const { chooseAiMove } = loadTsModule(path.join('src', 'lib', 'chessAi.ts'));
+const repoRoot = path.resolve(__dirname, '..', '..', '..');
+const { chooseAiMove } = loadTsModule(
+  path.join(repoRoot, 'packages', 'games', 'src', 'chess', 'lib', 'chessAi.ts'),
+);
 
 const positions = [
   new Chess().fen(),

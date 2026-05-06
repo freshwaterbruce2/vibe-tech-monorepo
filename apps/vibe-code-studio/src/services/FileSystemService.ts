@@ -738,15 +738,6 @@ module.exports = {
 
   async createFile(path: string, content: string = ''): Promise<void> {
     if (this.isElectron) {
-      if (await this.electronService.exists(path)) {
-        throw new Error(`File already exists: ${path}`);
-      }
-      await this.writeFile(path, content);
-      this.trackFile(path, 'new');
-      return;
-    }
-
-    if (this.electronService.isElectron()) {
       try {
         if (await this.electronService.exists(path)) {
           throw new Error(`File already exists: ${path}`);

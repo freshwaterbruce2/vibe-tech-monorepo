@@ -1,6 +1,6 @@
 # Tracked Projects
 
-All projects monitored during weekly maintenance. Last audited: 2026-03-07.
+All projects monitored during weekly maintenance. Last audited: 2026-05-04.
 
 ## Monorepo Apps (`C:\dev\apps\`) — 26 total
 
@@ -16,10 +16,11 @@ All projects monitored during weekly maintenance. Last audited: 2026-03-07.
 
 | Project          | Path                    | Type             | Notes                                        |
 | ---------------- | ----------------------- | ---------------- | -------------------------------------------- |
-| vibe-code-studio | `apps/vibe-code-studio` | Electron + Tauri | AI code editor                               |
+| vibe-code-studio | `apps/vibe-code-studio` | Tauri 2          | AI code editor                               |
 | vtde             | `apps/vtde`             | Tauri            | Vibe Tech Desktop Environment (active focus) |
 | clawdbot-desktop | `apps/clawdbot-desktop` | Electron         | Discord bot desktop UI                       |
-| vibe-justice     | `apps/vibe-justice`     | Tauri            | Legal case management                        |
+| vibe-justice     | `apps/vibe-justice`     | Tauri 2 + Python | No root package.json; frontend/backend split |
+| command-center   | `apps/vibetech-command-center` | Electron 33 | electron-vite/electron-builder dashboard     |
 
 ### Web Apps
 
@@ -28,20 +29,20 @@ All projects monitored during weekly maintenance. Last audited: 2026-03-07.
 | vibe-tech-lovable         | `apps/vibe-tech-lovable`         | Vite + React                | Company homepage            |
 | business-booking-platform | `apps/business-booking-platform` | Vite + React                | Booking SaaS                |
 | invoice-automation-saas   | `apps/invoice-automation-saas`   | Vite + React                | Invoice SaaS                |
-| monorepo-dashboard        | `apps/monorepo-dashboard`        | Vite + React                | NX workspace dashboard      |
+| vibetech-command-center   | `apps/vibetech-command-center`   | Electron 33 + React         | Control Plane (replaces retired monorepo-dashboard) |
 | shipping-pwa              | `apps/shipping-pwa`              | Vite + React (PWA)          | Shipping calculator         |
 | avge-dashboard            | `apps/avge-dashboard`            | Vite + React                | Dashboard app               |
 | symptom-tracker           | `apps/symptom-tracker`           | Vite + React                | Health symptom tracking     |
-| vibe-shop                 | `apps/vibe-shop`                 | Next.js                     | E-commerce (Prisma)         |
-| gravity-claw              | `apps/gravity-claw`              | Vite                        | Game app                    |
+| vibe-shop                 | `apps/vibe-shop`                 | Next.js 16.1.6              | Approved no-Next exception  |
+| gravity-claw              | `apps/gravity-claw`              | Local-only WIP              | pnpm-workspace excluded     |
 | VibeBlox                  | `apps/VibeBlox`                  | Vite + React                | Block-based builder         |
-| vibe-tutor                | `apps/vibe-tutor`                | Vite + Electron + Capacitor | Tutoring app (active focus) |
+| vibe-tutor                | `apps/vibe-tutor`                | Electron 35.7 + Capacitor 8 | Not React Native or Expo    |
 
 ### Mobile Apps
 
 | Project         | Path                   | Type                | Notes                             |
 | --------------- | ---------------------- | ------------------- | --------------------------------- |
-| nova-mobile-app | `apps/nova-mobile-app` | React Native (Expo) | Nova mobile client (active focus) |
+| nova-mobile-app | `apps/nova-mobile-app` | Expo 54 + React Native 0.81 | Actual React Native mobile app |
 
 ### MCP Servers
 
@@ -57,7 +58,7 @@ All projects monitored during weekly maintenance. Last audited: 2026-03-07.
 
 | Project         | Path                   | Type   | Notes              |
 | --------------- | ---------------------- | ------ | ------------------ |
-| crypto-enhanced | `apps/crypto-enhanced` | Python | Crypto trading bot |
+| crypto-enhanced | `apps/crypto-enhanced` | Python | Managed via root scripts/Nx targets |
 
 ### Backend
 
@@ -77,7 +78,7 @@ All projects monitored during weekly maintenance. Last audited: 2026-03-07.
 | mcp-core           | `packages/mcp-core`           | MCP servers          |
 | mcp-testing        | `packages/mcp-testing`        | MCP server tests     |
 | memory             | `packages/memory`             | Memory system        |
-| nova-core          | `packages/nova-core`          | Nova agent/mobile    |
+| nova-core          | `packages/nova-core`          | No package manifest; do not treat as workspace package |
 | nova-database      | `packages/nova-database`      | Nova apps            |
 | nova-types         | `packages/nova-types`         | Nova apps            |
 | openclaw-bridge    | `packages/openclaw-bridge`    | ClawdBot             |

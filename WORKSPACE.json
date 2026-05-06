@@ -1,12 +1,12 @@
 {
-  "version": "1.3.0",
-  "lastUpdated": "2026-04-23T10:30:00-04:00",
+  "version": "1.3.1",
+  "lastUpdated": "2026-05-04T17:25:03-04:00",
   "techStack": {
     "packageManager": "pnpm@10.33.0",
     "node": "22.x",
     "typescript": "5.9.3",
     "react": "19.2.4",
-    "buildSystem": "nx@22.6.5"
+    "buildSystem": "nx@22.7.1"
   },
   "versionControl": {
     "provider": "github",
@@ -119,17 +119,17 @@
       "vibe-tutor": {
         "status": "production",
         "priority": "high",
-        "description": "AI Tutor System (Electron + Capacitor, Play Store ready)"
+        "description": "AI Tutor System (Electron 35.7 + Capacitor 8 + React/Vite; Android via Capacitor, not React Native or Expo)"
       },
       "nova-mobile-app": {
         "status": "beta",
         "priority": "high",
-        "description": "Mobile Client for Nova (Expo 54, React Navigation, Zustand)"
+        "description": "Mobile Client for Nova (Expo 54 + React Native 0.81, React Navigation, Zustand)"
       },
       "vibetech-command-center": {
         "status": "beta",
         "priority": "high",
-        "description": "Dashboard and diagnostics app for monorepo health, local services, RAG search, backups, and agent launch workflows"
+        "description": "Tier 1 dashboard and diagnostics app (Electron 33 + electron-vite + electron-builder, not Tauri). MCP server build target (`tsconfig.mcp.json`), scripts: `mcp:start`, `probe:claude`, `probe:mcp`"
       },
       "shipping-pwa": {
         "status": "development",
@@ -159,17 +159,22 @@
       "vibe-justice": {
         "status": "maintenance",
         "priority": "medium",
-        "description": "Legal document analysis (Claude API)"
+        "description": "Legal document analysis (Tauri 2 frontend + Python/FastAPI backend packaged with PyInstaller; no root package.json)"
       },
       "vibe-shop": {
         "status": "development",
         "priority": "low",
-        "description": "E-commerce storefront (Next.js 16, Prisma, Neon — exception to no-Next rule)"
+        "description": "E-commerce storefront (Next.js 16.1.6, Prisma, Neon; approved exception to the no-Next default)"
       },
       "crypto-enhanced": {
         "status": "storage",
         "priority": "low",
-        "description": "Trading logic (Python, storage mode)"
+        "description": "Trading and analysis service (Python; managed through root scripts/Nx targets)"
+      },
+      "cross-agent-reflection": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Full-stack React + Express cross-agent reflection system"
       },
       "prompt-engineer": {
         "status": "maintenance",
@@ -186,15 +191,25 @@
         "priority": "medium",
         "description": "MCP gateway server"
       },
+      "mcp-rag-server": {
+        "status": "development",
+        "priority": "medium",
+        "description": "MCP server with LanceDB RAG capabilities"
+      },
       "memory-mcp": {
         "status": "development",
         "priority": "high",
         "description": "Memory system MCP server"
       },
+      "workspace-mcp-server": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Workspace MCP server"
+      },
       "business-booking-platform-next": {
         "status": "beta",
         "priority": "medium",
-        "description": "Clean-break business booking funnel (React + Nx + Node API)"
+        "description": "Clean-break business booking funnel (React/Vite Nx app; backend has the only package.json)"
       },
       "desktop-commander-v3": {
         "status": "maintenance",
@@ -204,7 +219,7 @@
       "gravity-claw": {
         "status": "development",
         "priority": "medium",
-        "description": "Gravity claw application"
+        "description": "Local-only WIP nested repo excluded from pnpm-workspace.yaml; package version is not a shipped workspace release"
       }
     },
     "packages": {
@@ -257,6 +272,11 @@
         "status": "production",
         "priority": "medium",
         "description": "Shared UI Components"
+      },
+      "games": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Shared React + Capacitor-safe educational games and chess trainers"
       },
       "logger": {
         "status": "production",
@@ -317,6 +337,16 @@
         "status": "production",
         "priority": "medium",
         "description": "Vibe Code Studio design tokens (colors, typography, spacing)"
+      },
+      "agent-lats": {
+        "status": "development",
+        "priority": "medium",
+        "description": "MCTS planning for autonomous agents"
+      },
+      "avatars": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Avatar types, data, and `AvatarImage` component"
       }
     }
   },

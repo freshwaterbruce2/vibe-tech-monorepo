@@ -4,6 +4,10 @@
 
 Explored C:\dev\packages directory structure and existing shared packages to understand patterns for creating new packages under packages/feature-flags/. Comprehensive findings document the current conventions, patterns, and best practices.
 
+Current drift note: `packages/nova-core` exists as a directory but has no
+`package.json`, so it should not be treated as a workspace package until a
+manifest is added.
+
 ---
 
 ## 1. Package Directory Structure & Registry
@@ -14,7 +18,7 @@ Explored C:\dev\packages directory structure and existing shared packages to und
 - **db-learning** - Learning system persistence
 - **feature-flags** - Feature flag system (monorepo with nested packages)
 - **logger** - Structured JSON logging
-- **nova-core** - NOVA Agent business logic
+- **nova-core** - NOVA Agent business logic directory; currently no package manifest
 - **nova-database** - NOVA database layer
 - **nova-types** - NOVA type definitions  
 - **service-common** - Microservice utilities

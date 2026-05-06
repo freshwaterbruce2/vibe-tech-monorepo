@@ -2,7 +2,30 @@ import { Zap, Sparkles, BookOpen, Brain, Activity, type LucideProps } from 'luci
 import React, { useEffect, useState, useMemo } from 'react';
 import { type AvatarState, type AvatarStat, type ShopItem } from '../../types';
 import { dataStore } from '../../services/dataStore';
-import { SHOP_ITEMS } from '../../services/avatarShopData';
+import {
+  DEFAULT_UNLOCKED_AVATAR_IDS,
+  SHOP_ITEMS,
+  normalizeAvatarId,
+} from '../../services/avatarShopData';
+import { AvatarPreview } from './AvatarPreview';
+
+function createAvatarState(saved?: Partial<AvatarState> | null, legacyAvatar?: string): AvatarState {
+  const selectedAvatarId = normalizeAvatarId(saved?.selectedAvatarId ?? legacyAvatar);
+
+  return {
+    equippedItems: saved?.equippedItems ?? {},
+    ownedItems: saved?.ownedItems ?? [],
+    purchaseHistory: saved?.purchaseHistory ?? [],
+    selectedAvatarId,
+    unlockedAvatars: [
+      ...new Set([
+        ...DEFAULT_UNLOCKED_AVATAR_IDS,
+        ...(saved?.unlockedAvatars ?? []),
+        selectedAvatarId,
+      ]),
+    ],
+  };
+}
 
 const STAT_ICONS: Record<AvatarStat, React.ComponentType<LucideProps>> = {
   mathPower: CalculatorIcon,
@@ -55,20 +78,23 @@ interface AvatarProfileProps {
 }
 
 export default function AvatarProfile({ onOpenShop }: AvatarProfileProps) {
-  const [avatarState, setAvatarState] = useState<AvatarState>({
-    equippedItems: {},
-    ownedItems: [],
-  });
+  const [avatarState, setAvatarState] = useState<AvatarState>(() => createAvatarState());
 
   useEffect(() => {
     async function load() {
-      const state = await dataStore.getAvatarState();
-      if (state) {
-        setAvatarState(state);
-      }
+      const [state, legacyAvatar] = await Promise.all([
+        dataStore.getAvatarState(),
+        dataStore.getUserSettings('user_avatar'),
+      ]);
+      setAvatarState(createAvatarState(state, legacyAvatar));
     }
     void load();
   }, []);
+
+  const selectedAvatarItem = useMemo(
+    () => SHOP_ITEMS.find((item) => item.id === avatarState.selectedAvatarId && item.type === 'avatar'),
+    [avatarState.selectedAvatarId],
+  );
 
   const equippedShopItems = useMemo(() => {
     const items: ShopItem[] = [];
@@ -137,6 +163,33 @@ export default function AvatarProfile({ onOpenShop }: AvatarProfileProps) {
             <Sparkles size={16} /> Open Shop
           </button>
         )}
+      </div>
+
+      <div
+        className="mb-6"
+        style={{
+          alignItems: 'center',
+          background: 'var(--background-card)',
+          border: '1px solid var(--glass-border)',
+          borderRadius: '12px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '18px',
+          padding: '16px',
+        }}
+      >
+        <AvatarPreview avatarState={avatarState} allItems={SHOP_ITEMS} size={132} />
+        <div style={{ minWidth: 0 }}>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '12px', textTransform: 'uppercase' }}>
+            Selected Avatar
+          </div>
+          <div style={{ fontSize: '22px', fontWeight: 'bold' }}>
+            {selectedAvatarItem?.name ?? 'Focus Gamer'}
+          </div>
+          <p style={{ color: 'var(--text-secondary)', margin: '6px 0 0 0' }}>
+            {selectedAvatarItem?.description ?? 'A focused learner ready for the next challenge.'}
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

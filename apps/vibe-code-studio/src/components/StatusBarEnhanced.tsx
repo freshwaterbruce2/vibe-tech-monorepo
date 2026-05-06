@@ -273,6 +273,14 @@ const StatusBarEnhanced = ({
         <ModelIndicator
           clickable
           onClick={onModelStrategyClick}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onModelStrategyClick?.();
+            }
+          }}
+          role="button"
+          tabIndex={0}
           whileHover={{ scale: 1.05, y: -1 }}
           whileTap={{ scale: 0.95 }}
           title={`Current AI: ${getModelDisplayName()} | Strategy: ${modelStrategy} | Click to change strategy`}
@@ -348,6 +356,7 @@ const StatusBarEnhanced = ({
           active={true}
           onClick={onToggleSidebar}
           title="Toggle Sidebar"
+          aria-label="Toggle sidebar"
           whileHover={{ scale: 1.05, y: -1 }}
           whileTap={{ scale: 0.95 }}
         >

@@ -31,7 +31,7 @@ export default function Login({ setUser }: LoginProps) {
 			}
 
 			const data = await response.json();
-			window.electronAPI.store.set("token", data.token);
+			localStorage.setItem("token", data.token);
 			setUser(data.user);
 			navigate("/");
 		} catch (err) {

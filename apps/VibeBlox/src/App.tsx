@@ -18,7 +18,7 @@ function App() {
 
   useEffect(() => {
     const validateUser = async () => {
-      const token = window.electronAPI.store.get('token');
+      const token = localStorage.getItem("token");
       if (token) {
         try {
           // Validate token and fetch user data
@@ -33,11 +33,11 @@ function App() {
             setUser(data.user);
           } else {
             // Invalid token, clear it
-            window.electronAPI.store.delete('token');
+            localStorage.removeItem("token");
           }
         } catch (error) {
           console.error('Auth validation error:', error);
-          window.electronAPI.store.delete('token');
+          localStorage.removeItem("token");
         }
       }
       setLoading(false);

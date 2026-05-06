@@ -1,5 +1,3 @@
-import * as React from 'react'
-
 import {
   Body,
   Container,
@@ -9,8 +7,6 @@ import {
   Section,
   Text,
 } from '@react-email/components'
-
-void React
 
 export interface PaymentReceiptProps {
   invoiceNumber: string

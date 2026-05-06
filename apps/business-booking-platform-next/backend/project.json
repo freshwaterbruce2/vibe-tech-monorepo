@@ -21,6 +21,7 @@
       "dependsOn": ["build"],
       "options": {
         "buildTarget": "business-booking-platform-next-backend:build",
+        "args": ["--port=3020", "--host=localhost"],
         "watch": true
       }
     },

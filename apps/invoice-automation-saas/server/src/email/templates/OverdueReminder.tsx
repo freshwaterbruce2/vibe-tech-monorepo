@@ -1,5 +1,3 @@
-import * as React from 'react'
-
 import {
   Body,
   Button,
@@ -10,8 +8,6 @@ import {
   Section,
   Text,
 } from '@react-email/components'
-
-void React
 
 export type ReminderStep = 1 | 2 | 3
 

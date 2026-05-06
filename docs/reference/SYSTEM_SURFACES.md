@@ -32,8 +32,9 @@ Legacy snapshot archives may still exist under `D:\_backups` (for example, pre-c
   `D:\databases\DB_INVENTORY.md` before restoring or recreating any database.
 - Root-level reports, screenshots, and scratch files are treated as cleanup
   candidates, not source-of-truth artifacts.
-- `.gitmodules` currently tracks `apps/gravity-claw` as a first-party app submodule;
-  keep submodule ownership explicit before cleanup.
+- `apps/gravity-claw` is a local-only nested WIP repo excluded from
+  `pnpm-workspace.yaml`; keep nested ownership explicit before cleanup and do
+  not treat its package version as a shipped workspace release.
 
 ## Supported review commands
 

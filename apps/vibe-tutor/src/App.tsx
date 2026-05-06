@@ -27,6 +27,10 @@ import { logger } from './utils/logger';
 import { TokenEarnAnimation } from './components/features/TokenEarnAnimation';
 import ChatWindow from './components/features/ChatWindow';
 import { WELCOME_TOKENS, type OnboardingResult } from './components/core/FirstRunOnboarding';
+import {
+  DEFAULT_UNLOCKED_AVATAR_IDS,
+  normalizeAvatarId,
+} from './services/avatarShopData';
 
 const INITIAL_ONBOARDING_FLAGS: OnboardingFlags = {
   loaded: false,
@@ -93,13 +97,28 @@ const App = () => {
 
       void (async () => {
         try {
+          const selectedAvatarId = normalizeAvatarId(data.avatar);
+          const existingAvatarState = await dataStore.getAvatarState();
+          const unlockedAvatars = new Set([
+            ...DEFAULT_UNLOCKED_AVATAR_IDS,
+            ...(existingAvatarState?.unlockedAvatars ?? []),
+            selectedAvatarId,
+          ]);
+
           await dataStore.saveUserSettings('onboarding_completed', 'true');
-          await dataStore.saveUserSettings('user_avatar', data.avatar);
+          await dataStore.saveUserSettings('user_avatar', selectedAvatarId);
           await dataStore.saveUserSettings('user_type', data.userType);
+          await dataStore.saveAvatarState({
+            equippedItems: existingAvatarState?.equippedItems ?? {},
+            ownedItems: existingAvatarState?.ownedItems ?? [],
+            purchaseHistory: existingAvatarState?.purchaseHistory ?? [],
+            selectedAvatarId,
+            unlockedAvatars: [...unlockedAvatars],
+          });
           setOnboardingFlags((prev) => ({
             ...prev,
             hasCompletedFirstRun: true,
-            userAvatar: data.avatar,
+            userAvatar: selectedAvatarId,
           }));
           handleEarnTokens(WELCOME_TOKENS, 'Welcome bonus');
           setView('dashboard');

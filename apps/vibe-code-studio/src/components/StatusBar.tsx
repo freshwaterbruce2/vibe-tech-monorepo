@@ -320,6 +320,7 @@ const StatusBar = ({
           active={sidebarOpen}
           onClick={onToggleSidebar}
           title="Toggle Sidebar"
+          aria-label="Toggle sidebar"
           whileHover={{ scale: 1.05, y: -1 }}
           whileTap={{ scale: 0.95 }}
         >

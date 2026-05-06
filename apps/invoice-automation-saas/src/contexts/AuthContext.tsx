@@ -1,5 +1,5 @@
 import type React from "react";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { authService, type LocalUser } from "../services/authService";
 
 interface AuthContextType {
@@ -84,18 +84,21 @@ export const AuthProvider = ({
 		setUser(currentUser);
 	};
 
+	const value = useMemo(
+		() => ({
+			user,
+			session,
+			loading,
+			signUp,
+			signIn,
+			signOut,
+			updateProfile,
+		}),
+		[user, session, loading, signUp, signIn, signOut, updateProfile],
+	);
+
 	return (
-		<AuthContext.Provider
-			value={{
-				user,
-				session,
-				loading,
-				signUp,
-				signIn,
-				signOut,
-				updateProfile,
-			}}
-		>
+		<AuthContext.Provider value={value}>
 			{children}
 		</AuthContext.Provider>
 	);

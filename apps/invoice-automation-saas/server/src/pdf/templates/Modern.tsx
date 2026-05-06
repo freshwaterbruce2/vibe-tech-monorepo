@@ -1,5 +1,3 @@
-import * as React from 'react'
-
 import {
   Document,
   Image,
@@ -9,17 +7,7 @@ import {
   View,
 } from '@react-pdf/renderer'
 
-import { mergeConfig, type TemplateProps } from './types.js'
-
-void React
-
-const formatAmount = (amount: number, currency: string): string => {
-  try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount)
-  } catch {
-    return `${amount.toFixed(2)} ${currency}`
-  }
-}
+import { formatAmount, mergeConfig, type TemplateProps } from './types.js'
 
 const Modern = ({ data, config }: TemplateProps) => {
   const cfg = mergeConfig(config)

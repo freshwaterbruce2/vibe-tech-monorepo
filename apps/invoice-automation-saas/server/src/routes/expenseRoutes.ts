@@ -73,11 +73,29 @@ const toApi = (row: ExpenseRow) => ({
 
 const getReceiptDir = (): string => process.env.RECEIPT_DIR ?? DEFAULT_RECEIPT_DIR
 
-const parseField = (raw: unknown, fallback = ''): string =>
-  raw === undefined || raw === null ? fallback : String(raw).trim()
+// In `attachFieldsToBody: true` mode each multipart field arrives as
+// { fieldname, value, ... } for text and as { fieldname, toBuffer, ... } for files.
+// In `keyValues` mode text fields are bare strings. Handle both.
+const extractValue = (raw: unknown): unknown => {
+  if (
+    raw &&
+    typeof raw === 'object' &&
+    'value' in raw &&
+    !('toBuffer' in raw)
+  ) {
+    return (raw as { value: unknown }).value
+  }
+  return raw
+}
+
+const parseField = (raw: unknown, fallback = ''): string => {
+  const v = extractValue(raw)
+  return v === undefined || v === null ? fallback : String(v).trim()
+}
 
 const parseAmount = (raw: unknown): number | null => {
-  const n = Number(raw)
+  const v = extractValue(raw)
+  const n = Number(v)
   if (!Number.isFinite(n) || n < 0) return null
   return n
 }
@@ -266,7 +284,7 @@ export const registerExpenseRoutes = async (
   // Multipart-scoped sub-app for create-with-receipt.
   await app.register(async (instance) => {
     await instance.register(multipart, {
-      attachFieldsToBody: 'keyValues',
+      attachFieldsToBody: true,
       limits: { fileSize: MAX_RECEIPT_BYTES, files: 1 },
     })
 
@@ -284,7 +302,7 @@ export const registerExpenseRoutes = async (
       const expenseDate = parseField(body.expenseDate)
       if (!expenseDate)
         return reply.code(400).send({ error: 'expenseDate is required (YYYY-MM-DD)' })
-      const isBillable = String(body.isBillable ?? 'false') === 'true' ? 1 : 0
+      const isBillable = parseField(body.isBillable, 'false') === 'true' ? 1 : 0
       const categoryId = parseField(body.categoryId) || null
       const clientId = parseField(body.clientId) || null
       const projectId = parseField(body.projectId) || null
