@@ -221,13 +221,13 @@ interface StrategyDistribution {
 // Component
 const ModelPerformanceDashboard: React.FC = () => {
   // State for metrics
-  const [totalRequests, _setTotalRequests] = useState(1247);
-  const [avgLatency, _setAvgLatency] = useState(342);
-  const [totalCost, _setTotalCost] = useState(1.62);
-  const [acceptanceRate, _setAcceptanceRate] = useState(76.3);
+  const [totalRequests] = useState(1247);
+  const [avgLatency] = useState(342);
+  const [totalCost] = useState(1.62);
+  const [acceptanceRate] = useState(76.3);
 
   // Model-specific metrics
-  const [modelMetrics, _setModelMetrics] = useState<ModelMetrics[]>([
+  const [modelMetrics] = useState<ModelMetrics[]>([
     {
       name: 'liquid/lfm-2.5-1.2b-thinking:free',
       displayName: 'LFM 2.5 Thinking (Free)',

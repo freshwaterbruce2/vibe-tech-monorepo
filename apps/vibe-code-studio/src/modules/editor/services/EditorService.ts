@@ -27,7 +27,7 @@ export class EditorService {
         isModified: false,
         lastModified: new Date(),
       };
-    } catch (_error) {
+    } catch {
       throw new Error(`Failed to load file: ${path}`);
     }
   }
@@ -39,7 +39,7 @@ export class EditorService {
         throw new Error('Native API not available');
       }
       await electronService.writeFile(file.path, file.content);
-    } catch (_error) {
+    } catch {
       throw new Error(`Failed to save file: ${file.path}`);
     }
   }

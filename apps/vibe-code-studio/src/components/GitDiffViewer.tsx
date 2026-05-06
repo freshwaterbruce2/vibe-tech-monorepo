@@ -4,6 +4,7 @@
  */
 
 import { motion } from 'framer-motion';
+import { shouldForwardMotionProp } from '../utils/motionProps';
 import {
   AlertTriangle,
   Check,
@@ -148,7 +149,9 @@ const FileList = styled.div`
   gap: ${vibeTheme.spacing.md};
 `;
 
-const FileCard = styled(motion.div)`
+const FileCard = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   background: rgba(139, 92, 246, 0.05);
   border: 1px solid rgba(139, 92, 246, 0.1);
   border-radius: ${vibeTheme.borderRadius.medium};

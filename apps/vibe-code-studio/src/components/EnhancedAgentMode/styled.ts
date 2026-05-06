@@ -3,6 +3,7 @@
  * All styled components for the Enhanced Agent Mode UI
  */
 import { motion } from 'framer-motion';
+import { shouldForwardMotionProp } from '../../utils/motionProps';
 import styled from 'styled-components';
 
 import { vibeTheme } from '../../styles/theme';
@@ -320,7 +321,9 @@ const getButtonColor = (variant?: ButtonVariant) => {
   }
 };
 
-export const ActionButton = styled(motion.button)<{ $variant?: ButtonVariant }>`
+export const ActionButton = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{ $variant?: ButtonVariant }>`
   display: flex;
   align-items: center;
   gap: 8px;

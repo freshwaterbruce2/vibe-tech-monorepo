@@ -220,7 +220,9 @@ export const useWorkspace = (): UseWorkspaceReturn => {
       const ctx = workspaceContextRef.current;
       if (ctx && !isIndexing) {
         logger.debug('[useWorkspace] Debounced refresh triggered');
-        indexWorkspace(ctx.rootPath);
+        indexWorkspace(ctx.rootPath).catch((err) => {
+          logger.error('[useWorkspace] Debounced refresh failed:', err);
+        });
       }
     }, 5000);
   }, [indexWorkspace, isIndexing]);

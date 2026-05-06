@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { shouldForwardMotionProp } from '../utils/motionProps';
 import styled from 'styled-components';
 import { vibeTheme } from '../styles/theme';
 
@@ -137,7 +138,9 @@ export const Input = styled.input`
   }
 `;
 
-export const IconButton = styled(motion.button)`
+export const IconButton = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   position: absolute;
   right: 8px;
   top: 50%;
@@ -161,7 +164,9 @@ export const ButtonGroup = styled.div`
   gap: ${vibeTheme.spacing.sm};
 `;
 
-export const Button = styled(motion.button)<{ variant?: 'primary' | 'secondary' | 'danger' }>`
+export const Button = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{ variant?: 'primary' | 'secondary' | 'danger' }>`
   background: ${(props) => {
     switch (props.variant) {
       case 'primary':

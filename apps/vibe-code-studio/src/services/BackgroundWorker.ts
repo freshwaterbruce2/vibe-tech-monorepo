@@ -35,7 +35,7 @@ export class BackgroundWorker {
   /**
    * Execute a task in the background worker
    */
-  async execute<_T = unknown>(
+  async execute(
     taskType: string,
     data: unknown,
     onProgress?: (progress: TaskProgress) => void
@@ -173,7 +173,7 @@ export class BackgroundWorkerPool {
   /**
    * Execute a task using an available worker from the pool
    */
-  async execute<T = unknown>(
+  async execute(
     taskType: string,
     data: unknown,
     onProgress?: (progress: TaskProgress) => void
@@ -181,7 +181,7 @@ export class BackgroundWorkerPool {
     const worker = await this.getAvailableWorker();
 
     try {
-      const result = await worker.execute<T>(taskType, data, onProgress);
+      const result = await worker.execute(taskType, data, onProgress);
       this.releaseWorker(worker);
       return result;
     } catch (error) {

@@ -109,6 +109,7 @@ export const NovaSidebar = () => {
               </button>
               <button 
                 onClick={() => handleReject(intent.id)}
+                aria-label="Reject intent"
                 className="px-2.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded transition-colors"
               >
                 <X size={12} />

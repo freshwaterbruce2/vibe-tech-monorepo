@@ -2,11 +2,14 @@
  * ComponentLibrary Styled Components
  */
 import { motion } from 'framer-motion';
+import { shouldForwardMotionProp } from '../../utils/motionProps';
 import styled from 'styled-components';
 
 import { vibeTheme } from '../../styles/theme';
 
-export const LibraryContainer = styled(motion.div)`
+export const LibraryContainer = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -111,7 +114,9 @@ export const ComponentGrid = styled.div`
   gap: 12px;
 `;
 
-export const ComponentCard = styled(motion.div)`
+export const ComponentCard = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   padding: 16px;
   border-radius: 8px;
   border: 1px solid ${vibeTheme.colors.border};
@@ -182,7 +187,9 @@ export const IconButton = styled.button`
   }
 `;
 
-export const PreviewModal = styled(motion.div)`
+export const PreviewModal = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   position: fixed;
   top: 0;
   left: 0;

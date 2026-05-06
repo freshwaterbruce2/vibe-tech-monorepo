@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { AnimatePresence as _AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { shouldForwardMotionProp } from '../../utils/motionProps';
 import styled from 'styled-components';
 
 import { vibeTheme } from '../../styles/theme';
@@ -51,7 +52,9 @@ const ContextMenuContent = styled(motion.div)<{ $x: number; $y: number }>`
   user-select: none;
 `;
 
-const MenuItem = styled(motion.div)<{ $disabled?: boolean; $danger?: boolean }>`
+const MenuItem = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{ $disabled?: boolean; $danger?: boolean }>`
   display: flex;
   align-items: center;
   padding: ${vibeTheme.spacing[2]} ${vibeTheme.spacing[3]};

@@ -291,32 +291,37 @@ export class DatabaseService {
     tokens?: number,
     context?: Record<string, unknown>,
   ): Promise<number> {
-    const key = `${STORAGE_FALLBACK_PREFIX}chat_${workspace}`;
-    let stored = '[]';
-    if (typeof window !== 'undefined' && window.electron?.store) {
-      stored = (await window.electron.store.get(key)) ?? '[]';
-    } else {
-      stored = localStorage.getItem(key) ?? '[]';
-    }
-    const msgs: ChatMessage[] = JSON.parse(stored);
-    const newMsg: ChatMessage = {
-      id: Date.now(),
-      timestamp: new Date(),
-      workspace_path: workspace,
-      user_message: userMessage,
-      ai_response: aiResponse,
-      model_used: model,
-      tokens_used: tokens ?? null,
-      workspace_context: context ? JSON.stringify(context) : null,
-    };
-    msgs.push(newMsg);
+    try {
+      const key = `${STORAGE_FALLBACK_PREFIX}chat_${workspace}`;
+      let stored = '[]';
+      if (typeof window !== 'undefined' && window.electron?.store) {
+        stored = (await window.electron.store.get(key)) ?? '[]';
+      } else {
+        stored = localStorage.getItem(key) ?? '[]';
+      }
+      const msgs: ChatMessage[] = JSON.parse(stored);
+      const newMsg: ChatMessage = {
+        id: Date.now(),
+        timestamp: new Date(),
+        workspace_path: workspace,
+        user_message: userMessage,
+        ai_response: aiResponse,
+        model_used: model,
+        tokens_used: tokens ?? null,
+        workspace_context: context ? JSON.stringify(context) : null,
+      };
+      msgs.push(newMsg);
 
-    if (typeof window !== 'undefined' && window.electron?.store) {
-      await window.electron.store.set(key, JSON.stringify(msgs));
-    } else {
-      localStorage.setItem(key, JSON.stringify(msgs));
+      if (typeof window !== 'undefined' && window.electron?.store) {
+        await window.electron.store.set(key, JSON.stringify(msgs));
+      } else {
+        localStorage.setItem(key, JSON.stringify(msgs));
+      }
+      return newMsg.id!;
+    } catch (e) {
+      logger.error('[DatabaseService] saveChatMessageFallback failed', e);
+      return 0;
     }
-    return newMsg.id!;
   }
 
   private async getChatHistoryFallback(
@@ -324,21 +329,38 @@ export class DatabaseService {
     limit: number,
     offset: number,
   ): Promise<ChatMessage[]> {
-    const key = `${STORAGE_FALLBACK_PREFIX}chat_${workspace}`;
-    let stored = '[]';
-    if (typeof window !== 'undefined' && window.electron?.store) {
-      stored = (await window.electron.store.get(key)) ?? '[]';
-    } else {
-      stored = localStorage.getItem(key) ?? '[]';
+    try {
+      const key = `${STORAGE_FALLBACK_PREFIX}chat_${workspace}`;
+      let stored = '[]';
+      if (typeof window !== 'undefined' && window.electron?.store) {
+        stored = (await window.electron.store.get(key)) ?? '[]';
+      } else {
+        stored = localStorage.getItem(key) ?? '[]';
+      }
+      const msgs: ChatMessage[] = JSON.parse(stored);
+      return msgs.slice(offset, offset + limit);
+    } catch (e) {
+      logger.error('[DatabaseService] getChatHistoryFallback failed', e);
+      return [];
     }
-    const msgs: ChatMessage[] = JSON.parse(stored);
-    return msgs.slice(offset, offset + limit);
   }
 
   // -------------------------------------------------------------------------
   // Utility parsers
   // -------------------------------------------------------------------------
   private parseChatMessage(row: unknown[] | Record<string, unknown>): ChatMessage {
+    let workspaceContext: unknown = null;
+    try {
+      if (Array.isArray(row) && row[7]) {
+        workspaceContext = JSON.parse(row[7] as string);
+      } else if (!Array.isArray(row) && row['workspace_context']) {
+        workspaceContext = JSON.parse(row['workspace_context'] as string);
+      }
+    } catch (e) {
+      logger.warn('[DatabaseService] Failed to parse workspace_context', e);
+      workspaceContext = null;
+    }
+
     if (Array.isArray(row)) {
       return {
         id: row[0] as number | undefined,
@@ -348,7 +370,7 @@ export class DatabaseService {
         ai_response: row[4] as string,
         model_used: row[5] as string,
         tokens_used: (row[6] as number | null | undefined) ?? null,
-        workspace_context: row[7] ? JSON.parse(row[7] as string) : null,
+        workspace_context: workspaceContext as string | null | undefined,
       };
     }
     return {
@@ -359,9 +381,7 @@ export class DatabaseService {
       ai_response: row['ai_response'] as string,
       model_used: row['model_used'] as string,
       tokens_used: (row['tokens_used'] as number | null | undefined) ?? null,
-      workspace_context: row['workspace_context']
-        ? JSON.parse(row['workspace_context'] as string)
-        : null,
+      workspace_context: workspaceContext as string | null | undefined,
     };
   }
 
@@ -395,12 +415,17 @@ export class DatabaseService {
 
   async getSetting(key: string): Promise<string | null> {
     if (this.useFallback) {
-      if (typeof window !== 'undefined' && window.electron?.store) {
-        return (
-          (await window.electron.store.get(`${STORAGE_FALLBACK_PREFIX}setting_${key}`)) ?? null
-        );
+      try {
+        if (typeof window !== 'undefined' && window.electron?.store) {
+          return (
+            (await window.electron.store.get(`${STORAGE_FALLBACK_PREFIX}setting_${key}`)) ?? null
+          );
+        }
+        return localStorage.getItem(`${STORAGE_FALLBACK_PREFIX}setting_${key}`);
+      } catch (e) {
+        logger.warn('[DatabaseService] getSetting fallback failed', e);
+        return null;
       }
-      return localStorage.getItem(`${STORAGE_FALLBACK_PREFIX}setting_${key}`);
     }
 
     try {
@@ -428,18 +453,22 @@ export class DatabaseService {
 
   async logEvent(eventType: string, data: Record<string, unknown>): Promise<void> {
     if (this.useFallback) {
-      const key = `${STORAGE_FALLBACK_PREFIX}events`;
-      let existing: Array<Record<string, unknown>> = [];
+      try {
+        const key = `${STORAGE_FALLBACK_PREFIX}events`;
+        let existing: Array<Record<string, unknown>> = [];
 
-      if (typeof window !== 'undefined' && window.electron?.store) {
-        const stored = (await window.electron.store.get(key)) ?? '[]';
-        existing = JSON.parse(stored);
-        existing.push({ eventType, data, timestamp: new Date().toISOString() });
-        await window.electron.store.set(key, JSON.stringify(existing));
-      } else {
-        existing = JSON.parse(localStorage.getItem(key) ?? '[]');
-        existing.push({ eventType, data, timestamp: new Date().toISOString() });
-        localStorage.setItem(key, JSON.stringify(existing));
+        if (typeof window !== 'undefined' && window.electron?.store) {
+          const stored = (await window.electron.store.get(key)) ?? '[]';
+          existing = JSON.parse(stored);
+          existing.push({ eventType, data, timestamp: new Date().toISOString() });
+          await window.electron.store.set(key, JSON.stringify(existing));
+        } else {
+          existing = JSON.parse(localStorage.getItem(key) ?? '[]');
+          existing.push({ eventType, data, timestamp: new Date().toISOString() });
+          localStorage.setItem(key, JSON.stringify(existing));
+        }
+      } catch (e) {
+        logger.warn('[DatabaseService] logEvent fallback failed', e);
       }
       return;
     }

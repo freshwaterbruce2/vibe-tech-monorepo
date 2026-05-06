@@ -11,6 +11,7 @@
  */
 import React, { useCallback, useEffect, useRef,useState } from 'react';
 import { AnimatePresence,motion } from 'framer-motion';
+import { shouldForwardMotionProp } from '../utils/motionProps';
 import {
   Check,
   Code2,
@@ -234,7 +235,9 @@ const CodeContent = styled.pre`
   }
 `;
 
-const GenerateButton = styled(motion.button)`
+const GenerateButton = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   padding: 12px 24px;
   border-radius: 8px;
   border: none;

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { FileChange } from '@vibetech/types/multifile';
 import { AnimatePresence,motion } from 'framer-motion';
+import { shouldForwardMotionProp } from '../utils/motionProps';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -204,7 +205,9 @@ export const ApprovalDialog = ({
   );
 };
 
-const Backdrop = styled(motion.div)`
+const Backdrop = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   position: fixed;
   top: 0;
   left: 0;
@@ -215,7 +218,9 @@ const Backdrop = styled(motion.div)`
   z-index: 1000;
 `;
 
-const Dialog = styled(motion.div)`
+const Dialog = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   position: fixed;
   top: 50%;
   left: 50%;

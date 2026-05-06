@@ -3,7 +3,7 @@
  * Reusable collapsible section for sidebar panels
  * No manual memoization needed - React 19 handles optimization
  */
-import { AnimatePresence, motion as _motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 import { SidebarContent, SidebarHeader, SidebarSection } from '../styled';

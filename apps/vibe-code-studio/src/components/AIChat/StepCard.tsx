@@ -6,7 +6,7 @@ import { memo, type ReactElement } from 'react';
 import { AlertCircle, CheckCircle2, Loader2, Shield, XCircle } from 'lucide-react';
 
 import { vibeTheme } from '../../styles/theme';
-import type { ApprovalRequest as _ApprovalRequest, StepStatus } from '../../types';
+import type { StepStatus } from '../../types';
 
 import {
   ApprovalButton,

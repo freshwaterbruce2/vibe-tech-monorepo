@@ -134,7 +134,7 @@ export class SessionManager {
   }
 
   restoreFromCheckpoint(checkpointId: string): Session | null {
-    for (const [_sessionId, checkpoints] of this.checkpoints) {
+    for (const checkpoints of this.checkpoints.values()) {
       const checkpoint = checkpoints.find((c) => c.checkpointId === checkpointId);
       if (checkpoint) {
         const restoredSession = JSON.parse(JSON.stringify(checkpoint.state));

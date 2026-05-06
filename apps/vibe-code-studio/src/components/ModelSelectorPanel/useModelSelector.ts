@@ -5,7 +5,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import type { CostTracker } from '../../services/CostTracker';
-import type { AIModel as _AIModel, ModelRegistry } from '../../services/ModelRegistry';
+import type { ModelRegistry } from '../../services/ModelRegistry';
 
 import type { FilterCapability, SortCriteria } from './types';
 

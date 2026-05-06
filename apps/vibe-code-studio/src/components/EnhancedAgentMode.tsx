@@ -98,7 +98,7 @@ export const EnhancedAgentMode: React.FC = () => {
         source: response.provider || 'AI'
       }]);
 
-    } catch (_err) {
+    } catch {
       setLogs(prev => [...prev, {
         id: Date.now().toString(),
         timestamp: new Date(),
@@ -180,6 +180,7 @@ export const EnhancedAgentMode: React.FC = () => {
               <button
                 onClick={handleSendMessage}
                 disabled={!input.trim() || isProcessing}
+                aria-label="Send message"
                 className="absolute right-3 bottom-3 p-2 bg-blue-600 hover:bg-blue-500 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send size={16} />
