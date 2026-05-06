@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "generatedAt": "2026-05-04T00:00:00-04:00",
+  "policy": {
+    "maxSlaDays": 14,
+    "owner": "workflow-maintainers",
+    "notes": "This is the single source of truth for intentionally skipped flaky tests. Do not skip tests without adding an entry here and linking a tracking issue."
+  },
+  "entries": []
+}
