@@ -238,7 +238,7 @@ Respond in JSON format with keys: summary, suggestions (array), strengths (array
         conversationHistory: [],
         workspaceContext: undefined
       });
-      const parsed = JSON.parse(response.content);
+      const parsed = JSON.parse(response.content ?? '');
       return parsed;
     } catch (_error) {
       return {

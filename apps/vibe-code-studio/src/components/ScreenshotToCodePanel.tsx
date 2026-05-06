@@ -9,7 +9,7 @@
  * - Copy to clipboard
  * - Insert into editor
  */
-import React, { useCallback, useRef,useState } from 'react';
+import React, { useCallback, useEffect, useRef,useState } from 'react';
 import { AnimatePresence,motion } from 'framer-motion';
 import {
   Check,
@@ -301,6 +301,7 @@ export const ScreenshotToCodePanel = ({
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const serviceRef = useRef(new ImageToCodeService(apiKey));
@@ -375,11 +376,26 @@ export const ScreenshotToCodePanel = ({
     try {
       await navigator.clipboard.writeText(result.code);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copiedTimeoutRef.current) {
+        clearTimeout(copiedTimeoutRef.current);
+      }
+      copiedTimeoutRef.current = setTimeout(() => {
+        copiedTimeoutRef.current = undefined;
+        setCopied(false);
+      }, 2000);
     } catch (err) {
       logger.error('Failed to copy:', err);
     }
   };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (copiedTimeoutRef.current) {
+        clearTimeout(copiedTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleInsert = () => {
     if (!result) {return;}

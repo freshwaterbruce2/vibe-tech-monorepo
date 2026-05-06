@@ -657,7 +657,7 @@ Focus on the semantic meaning and functionality.
       maxTokens: 100,
     });
 
-    return response.content.trim();
+    return (response.content ?? '').trim();
   }
 
   /**

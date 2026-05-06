@@ -135,6 +135,15 @@ export function VirtualList<T>({
     }, 150);
   };
 
+  // Cleanup scroll timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Get items to render
   const { startIndex, endIndex } = getVisibleRange();
   const visibleItems: Array<{ item: T; index: number; top: number }> = [];

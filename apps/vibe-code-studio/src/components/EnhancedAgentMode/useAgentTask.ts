@@ -21,6 +21,7 @@ export function useAgentTask(options: UseAgentTaskOptions): UseAgentTaskReturn {
   // Get all state and actions from the store - no memoization needed
   const store = useAgentModeStore();
   const logEndRef = useRef<HTMLDivElement>(null);
+  const onCompleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Initialize orchestrator and optimizer in store
   useEffect(() => {
@@ -50,10 +51,16 @@ export function useAgentTask(options: UseAgentTaskOptions): UseAgentTaskReturn {
 
   // Wrap executeTask to handle onComplete callback
   const executeTask = async () => {
+    // Clear any previous pending onComplete timeout
+    if (onCompleteTimeoutRef.current) {
+      clearTimeout(onCompleteTimeoutRef.current);
+      onCompleteTimeoutRef.current = undefined;
+    }
     const result = await store.executeTask();
     if (result) {
       // Auto-complete after showing results
-      setTimeout(() => {
+      onCompleteTimeoutRef.current = setTimeout(() => {
+        onCompleteTimeoutRef.current = undefined;
         onComplete(result);
       }, 2000);
     }
@@ -61,13 +68,29 @@ export function useAgentTask(options: UseAgentTaskOptions): UseAgentTaskReturn {
 
   // Wrap retryTask similarly
   const retryTask = async () => {
+    // Clear any previous pending onComplete timeout
+    if (onCompleteTimeoutRef.current) {
+      clearTimeout(onCompleteTimeoutRef.current);
+      onCompleteTimeoutRef.current = undefined;
+    }
     const result = await store.retryTask();
     if (result) {
-      setTimeout(() => {
+      // Auto-complete after showing results
+      onCompleteTimeoutRef.current = setTimeout(() => {
+        onCompleteTimeoutRef.current = undefined;
         onComplete(result);
       }, 2000);
     }
   };
+
+  // Cleanup pending timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (onCompleteTimeoutRef.current) {
+        clearTimeout(onCompleteTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     // State

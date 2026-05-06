@@ -52,6 +52,7 @@ export class AgentPerformanceOptimizer extends EventEmitter {
   }> = new Map();
   private optimizationStrategies: Map<string, OptimizationStrategy[]> = new Map();
   private performanceAlerts: PerformanceAlert[] = [];
+  private monitoringInterval: ReturnType<typeof setInterval> | null = null;
 
   // Performance thresholds
   private readonly THRESHOLDS = {
@@ -277,7 +278,7 @@ export class AgentPerformanceOptimizer extends EventEmitter {
         memoryUsage: process.memoryUsage?.()?.heapUsed || 0,
         apiCalls: 1,
         cacheHits: optimizedRequest.fromCache ? 1 : 0,
-        tokenCount: response.content.length / 4 // Rough estimate
+        tokenCount: (response.content ?? '').length / 4 // Rough estimate
       });
 
       return response;
@@ -466,7 +467,7 @@ export class AgentPerformanceOptimizer extends EventEmitter {
 
   private startPerformanceMonitoring(): void {
     // Monitor system performance every 30 seconds
-    setInterval(() => {
+    this.monitoringInterval = setInterval(() => {
       this.emit('performanceUpdate', {
         cacheSize: this.responseCache.size,
         totalProfiles: this.agentProfiles.size,
@@ -524,5 +525,16 @@ export class AgentPerformanceOptimizer extends EventEmitter {
     this.responseCache.clear();
     this.optimizationStrategies.clear();
     this.performanceAlerts = [];
+  }
+
+  /**
+   * Dispose of resources and stop performance monitoring
+   */
+  dispose(): void {
+    if (this.monitoringInterval) {
+      clearInterval(this.monitoringInterval);
+      this.monitoringInterval = null;
+    }
+    this.removeAllListeners();
   }
 }

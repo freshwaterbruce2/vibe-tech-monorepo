@@ -328,7 +328,7 @@ export class GitDiffService {
       });
 
       // Parse AI response
-      const insights = this.parseInsightsResponse(response.content);
+      const insights = this.parseInsightsResponse(response.content ?? '');
 
       return insights;
     } catch (error) {
@@ -449,7 +449,7 @@ Focus on the semantic meaning, not line-by-line details.
       maxTokens: 100,
     });
 
-    return response.content.trim();
+    return (response.content ?? '').trim();
   }
 
   /**
@@ -483,7 +483,7 @@ Focus on the semantic meaning, not line-by-line details.
         maxTokens: 300,
       });
 
-      return this.parseConflictSuggestion(response.content);
+      return this.parseConflictSuggestion(response.content ?? '');
     } catch (error) {
       logger.error('[GitDiff] Failed to suggest conflict resolution:', error);
       return {
