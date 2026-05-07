@@ -109,7 +109,10 @@ export class DesignTokenManager {
         { name: 'base', value: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)' },
         { name: 'md', value: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' },
         { name: 'lg', value: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' },
-        { name: 'xl', value: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)' },
+        {
+          name: 'xl',
+          value: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+        },
       ],
       borderRadius: [
         { name: 'none', value: '0px' },
@@ -242,7 +245,8 @@ export class DesignTokenManager {
   private exportToTypeScript(): string {
     let ts = 'export interface DesignTokens {\n';
     ts += '  colors: Record<string, string>;\n';
-    ts += '  typography: Record<string, { fontSize: string; lineHeight: string; fontWeight: string }>;\n';
+    ts +=
+      '  typography: Record<string, { fontSize: string; lineHeight: string; fontWeight: string }>;\n';
     ts += '  spacing: Record<string, string>;\n';
     ts += '  shadows: Record<string, string>;\n';
     ts += '  borderRadius: Record<string, string>;\n';
@@ -313,7 +317,6 @@ export class DesignTokenManager {
       if (window.electron?.store) {
         await window.electron.store.set(key, JSON.stringify(this.tokens));
       } else {
-        // eslint-disable-next-line electron-security/no-localstorage-electron
         localStorage.setItem(key, JSON.stringify(this.tokens));
       }
     }
@@ -323,9 +326,8 @@ export class DesignTokenManager {
     if (typeof window !== 'undefined') {
       let stored: string | null = null;
       if (window.electron?.store) {
-        stored = await window.electron.store.get(key) ?? null;
+        stored = (await window.electron.store.get(key)) ?? null;
       } else {
-        // eslint-disable-next-line electron-security/no-localstorage-electron
         stored = localStorage.getItem(key);
       }
 

@@ -251,6 +251,8 @@ export function AppLayout() {
           right: '20px',
           zIndex: 2000,
           maxWidth: '600px',
+          maxHeight: 'calc(100vh - 100px)',
+          overflowY: 'auto',
         }}>
           <Suspense fallback={null}>
             <ErrorFixPanel

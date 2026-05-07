@@ -6,10 +6,14 @@ import { AuthProvider } from './contexts/AuthContext'
 import Clients from './pages/Clients'
 import CreateInvoice from './pages/CreateInvoice'
 import Dashboard from './pages/Dashboard'
+import Expenses from './pages/Expenses'
 import InvoicePayment from './pages/InvoicePayment'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
+import TaxRates from './pages/TaxRates'
+import Templates from './pages/Templates'
+import Time from './pages/Time'
 
 import 'react-toastify/dist/ReactToastify.css'
 
@@ -44,6 +48,38 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <CreateInvoice />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/templates"
+              element={
+                <ProtectedRoute>
+                  <Templates />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tax-rates"
+              element={
+                <ProtectedRoute>
+                  <TaxRates />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/expenses"
+              element={
+                <ProtectedRoute>
+                  <Expenses />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/time"
+              element={
+                <ProtectedRoute>
+                  <Time />
                 </ProtectedRoute>
               }
             />

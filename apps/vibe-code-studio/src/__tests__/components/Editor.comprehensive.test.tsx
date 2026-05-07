@@ -72,9 +72,7 @@ vi.mock('@monaco-editor/react', () => ({
 // Mock services
 vi.mock('../../services/DeepSeekService');
 vi.mock('../../services/ai/UnifiedAIService');
-vi.mock('../../services/ai/InlineCompletionProvider', () => ({
-  registerInlineCompletionProvider: vi.fn(),
-}));
+
 
 // Mock framer-motion
 vi.mock('framer-motion', () => {

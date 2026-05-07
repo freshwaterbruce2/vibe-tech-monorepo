@@ -42,8 +42,8 @@ export const AdminAuthProvider = ({ children }: AdminAuthProviderProps) => {
       setError(null);
 
       try {
-        const savedToken = window.electronAPI?.store.get('admin-token');
-        const savedAdmin = window.electronAPI?.store.get('admin-user');
+        const savedToken = localStorage.getItem('admin-token');
+        const savedAdmin = localStorage.getItem('admin-user');
 
         if (savedToken && savedAdmin) {
           setToken(savedToken);
@@ -63,8 +63,8 @@ export const AdminAuthProvider = ({ children }: AdminAuthProviderProps) => {
   }, []);
 
   const clearStoredAuth = () => {
-    window.electronAPI?.store.delete('admin-token');
-    window.electronAPI?.store.delete('admin-user');
+    localStorage.removeItem('admin-token');
+    localStorage.removeItem('admin-user');
     setToken(null);
     setAdmin(null);
     setIsAuthenticated(false);
@@ -87,8 +87,8 @@ export const AdminAuthProvider = ({ children }: AdminAuthProviderProps) => {
 
       if (response.ok && data.success) {
         // Store authentication data
-        window.electronAPI?.store.set('admin-token', data.token);
-        window.electronAPI?.store.set('admin-user', JSON.stringify(data.admin));
+        localStorage.setItem('admin-token', data.token);
+        localStorage.setItem('admin-user', JSON.stringify(data.admin));
 
         setToken(data.token);
         setAdmin(data.admin);

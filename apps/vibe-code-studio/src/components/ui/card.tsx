@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import styled, { css } from 'styled-components';
 
 import { vibeTheme } from '../../styles/theme';
+import { shouldForwardMotionProp } from '../../utils/motionProps';
 
 export type CardVariant = 'default' | 'elevated' | 'outline' | 'glass';
 export type CardPadding = 'none' | 'sm' | 'md' | 'lg' | 'xl';
@@ -68,7 +69,9 @@ const variantStyles = {
   `,
 };
 
-const StyledCard = styled(motion.div)<{
+const StyledCard = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{
   $variant: CardVariant;
   $padding: CardPadding;
   $hoverable: boolean;

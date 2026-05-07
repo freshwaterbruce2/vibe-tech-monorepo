@@ -14,7 +14,10 @@ const nowIso = () => new Date().toISOString();
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
-export const registerAuthRoutes = (app: FastifyInstance, db: Database) => {
+export const registerAuthRoutes = (
+	app: FastifyInstance,
+	db: Database.Database,
+) => {
 	app.get("/api/auth/me", async (req) => {
 		const userId = (req as any).authUserId as string | undefined;
 		if (!userId) return { user: null };

@@ -39,8 +39,8 @@
 		"preview": "vite preview",
 		"setup:hooks":"node scripts/setup-hooks.js",
 		"test": "node ../../node_modules/vitest/vitest.mjs run",
-		"test:e2e": "tsx tests/run-e2e-tests.ts",
-		"test:e2e:headed": "HEADLESS=false tsx tests/run-e2e-tests.ts",
+		"test:e2e": "playwright test",
+		"test:e2e:headed": "HEADLESS=false playwright test",
 		"test:verify": "tsx tests/auto-verify.ts",
 		"test:all": "pnpm test && pnpm test:e2e",
 		"typecheck": "tsc --noEmit",
@@ -97,8 +97,7 @@
 		"vite-node": "5.3.0",
 		"vite-plugin-compression": "^0.5.1",
 		"vitest": "^4.1.2",
-		"wait-on": "^9.0.4",
-		"webpack-bundle-analyzer": "^5.3.0"
+		"wait-on": "^9.0.4"
 	},
 	"dependencies": {
 "@dnd-kit/core": "^6.3.1",

@@ -10,7 +10,7 @@
 		"build": "tsc && npx vite build",
 		"preview": "npx vite preview",
 		"server": "npx tsx server/index.ts",
-		"server:prod": "NODE_ENV=production npx tsx server/index.ts",
+		"server:prod": "cross-env NODE_ENV=production tsx server/index.ts",
 		"db:migrate": "npx tsx server/db/index.ts",
 		"db:seed": "npx tsx server/db/seed.ts",
 		"lint": "cross-env ESLINT_USE_FLAT_CONFIG=false eslint . --ext ts,tsx --report-unused-disable-directives",
@@ -53,9 +53,7 @@
 		"zod": "^4.3.6",
 		"zustand": "^5.0.11"
 	},
-	"devDependencies": {
-		"@types/bcrypt": "^6.0.0",
-		"@types/better-sqlite3": "^7.6.13",
+	"devDependencies": {		"@types/better-sqlite3": "^7.6.13",
 		"@types/jsonwebtoken": "^9.0.10",
 		"@types/node": "^25.5.0",
 		"@types/react": "19.2.10",

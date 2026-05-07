@@ -33,7 +33,7 @@ export const useUserSettings = () => {
 
   // Load settings on mount
   useEffect(() => {
-    const savedSettings = window.electronAPI?.store.get("userSettings");
+    const savedSettings = localStorage.getItem("userSettings");
     if (savedSettings) {
       try {
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -51,7 +51,7 @@ export const useUserSettings = () => {
   // Save settings when they change
   useEffect(() => {
     try {
-      window.electronAPI?.store.set("userSettings", JSON.stringify(settings));
+      localStorage.setItem("userSettings", JSON.stringify(settings));
 
       // Use IndexedDB for more reliable storage in PWA context
       if ("indexedDB" in window) {

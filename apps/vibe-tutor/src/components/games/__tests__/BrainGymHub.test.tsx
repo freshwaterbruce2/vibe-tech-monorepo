@@ -59,8 +59,8 @@ vi.mock('../../avatar/AvatarProfile', () => ({
     </div>
   ),
 }));
-vi.mock('../../avatar/AvatarShop', () => ({
-  default: () => <div data-testid="avatar-shop" />,
+vi.mock('../../avatar/AvatarShopUnified', () => ({
+  AvatarShopUnified: () => <div data-testid="avatar-shop" />,
 }));
 
 /* Import after all vi.mock() calls */

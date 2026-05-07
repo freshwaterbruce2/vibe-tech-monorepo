@@ -369,7 +369,7 @@ export class FirebaseSyncService {
     try {
       // Sync door entries from localStorage
       const doorEntries = JSON.parse(
-        window.electronAPI?.store.get('doorEntries') || '[]'
+        localStorage.getItem('doorEntries') || '[]'
       )
       for (const entry of doorEntries) {
         await FirebaseDoorService.saveDoorEntry({
@@ -380,7 +380,7 @@ export class FirebaseSyncService {
 
       // Sync pallet data from localStorage
       const palletData = JSON.parse(
-        window.electronAPI?.store.get('palletData') || '{}'
+        localStorage.getItem('palletData') || '{}'
       )
       for (const [doorNumber, count] of Object.entries(palletData)) {
         await FirebasePalletService.updatePalletCount(
@@ -404,7 +404,7 @@ export class FirebaseSyncService {
     try {
       // Sync door entries to localStorage
       const doorEntries = await FirebaseDoorService.getDoorEntries(tenantId)
-      window.electronAPI?.store.set('doorEntries', JSON.stringify(doorEntries))
+      localStorage.setItem('doorEntries', JSON.stringify(doorEntries))
 
       // Sync pallet data to localStorage
       const palletData = await FirebasePalletService.getPalletData(tenantId)
@@ -412,7 +412,7 @@ export class FirebaseSyncService {
       palletData.forEach(item => {
         palletMap[item.doorNumber.toString()] = item.count
       })
-      window.electronAPI?.store.set('palletData', JSON.stringify(palletMap))
+      localStorage.setItem('palletData', JSON.stringify(palletMap))
 
       console.warn('Firebase data successfully synced to local storage')
     } catch (error) {

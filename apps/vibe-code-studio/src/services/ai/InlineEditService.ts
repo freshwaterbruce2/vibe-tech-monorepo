@@ -51,7 +51,7 @@ ${contextStr}`
       temperature: 0.2,
     });
 
-    const cleanCode = response.content.replace(/^```\w*\n?|\n?```$/g, '').trim();
+    const cleanCode = (response.content ?? '').replace(/^```\w*\n?|\n?```$/g, '').trim();
     
     return {
       originalCode: code,

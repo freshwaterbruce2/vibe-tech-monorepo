@@ -61,10 +61,20 @@ const AgentMode = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [totalSteps, setTotalSteps] = useState(0);
   const logEndRef = useRef<HTMLDivElement>(null);
+  const onCompleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
+
+  // Cleanup pending timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (onCompleteTimeoutRef.current) {
+        clearTimeout(onCompleteTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const addLog = (type: LogEntry['type'], content: string) => {
     setLogs(prev => [...prev, {
@@ -86,6 +96,12 @@ const AgentMode = ({
 
   const executeTask = async () => {
     if (!task.trim()) {return;}
+
+    // Clear any pending onComplete timeout
+    if (onCompleteTimeoutRef.current) {
+      clearTimeout(onCompleteTimeoutRef.current);
+      onCompleteTimeoutRef.current = undefined;
+    }
 
     setStatus('running');
     setLogs([]);
@@ -131,7 +147,8 @@ const AgentMode = ({
       addLog('success', '✅ Task completed successfully!');
       
       // Call onComplete callback
-      setTimeout(() => {
+      onCompleteTimeoutRef.current = setTimeout(() => {
+        onCompleteTimeoutRef.current = undefined;
         onComplete(task);
       }, 1500);
 

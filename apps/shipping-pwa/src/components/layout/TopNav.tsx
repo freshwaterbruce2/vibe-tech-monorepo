@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Building2, ChevronDown, Settings, ExternalLink, Wifi, WifiOff } from 'lucide-react';
 import { useWarehouseConfig } from '@/config/warehouse';
-import cn from '@/utils/cn';
+import { cn } from '@/lib/utils';
 
 const modules = [
   { name: 'Scheduler', path: '/' },

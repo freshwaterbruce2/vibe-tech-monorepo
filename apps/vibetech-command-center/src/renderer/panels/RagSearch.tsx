@@ -125,6 +125,7 @@ function HitCard({ hit, onOpen }: { hit: RagHit; onOpen: (path: string) => void 
           onClick={() => onOpen(hit.path)}
           className="text-slate-500 hover:text-pulse-cyan shrink-0"
           title="open in Explorer"
+          aria-label="Open in Explorer"
           type="button"
         >
           <ExternalLink size={14} />

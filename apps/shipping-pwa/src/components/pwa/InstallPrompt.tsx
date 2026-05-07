@@ -43,7 +43,7 @@ const InstallPrompt = () => {
   const handleDismiss = () => {
     setDismissed(true)
     // Remember dismissal for 24 hours
-    window.electronAPI?.store.set(
+    localStorage.setItem(
       'installPromptDismissed',
       new Date().toISOString()
     )
@@ -51,7 +51,7 @@ const InstallPrompt = () => {
 
   // Check if the prompt was dismissed in the last 24 hours
   useEffect(() => {
-    const dismissedTime = window.electronAPI?.store.get(
+    const dismissedTime = localStorage.getItem(
       'installPromptDismissed'
     )
     if (dismissedTime) {
@@ -63,7 +63,7 @@ const InstallPrompt = () => {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setDismissed(true)
       } else {
-        window.electronAPI?.store.delete('installPromptDismissed')
+        localStorage.removeItem('installPromptDismissed')
       }
     }
   }, [])

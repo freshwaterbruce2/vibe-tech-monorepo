@@ -1,4 +1,5 @@
 import { WebSocketServer, WebSocket } from 'ws';
+import type { AddressInfo } from 'node:net';
 import type { StreamTopic, StreamMessage } from '../shared/types';
 
 export interface WsHubOptions {
@@ -28,6 +29,13 @@ export class WsHub {
         sock.on('error', () => this.clients.delete(sock));
       });
     });
+  }
+
+  get actualPort(): number {
+    const address = this.wss?.address();
+    return typeof address === 'object' && address !== null
+      ? (address as AddressInfo).port
+      : this.port;
   }
 
   async stop(): Promise<void> {

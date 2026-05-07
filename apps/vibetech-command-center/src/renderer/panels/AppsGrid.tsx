@@ -95,11 +95,23 @@ function AppCard({ app, lastActivity, lastBackup }: AppCardProps) {
   };
 
   const handleOpenTerminal = async (): Promise<void> => {
-    await window.commandCenter.process.spawn({
-      command: 'wt.exe',
-      args: ['-d', absPath],
-      cwd: 'C:\\dev'
-    });
+    // Try Windows Terminal first, fall back to cmd.exe
+    const hasWt = await window.commandCenter.fs.stat('C:\\Windows\\System32\\wt.exe')
+      .then((r) => r.ok && r.data.exists)
+      .catch(() => false);
+    if (hasWt) {
+      await window.commandCenter.process.spawn({
+        command: 'wt.exe',
+        args: ['-d', absPath],
+        cwd: 'C:\\dev'
+      });
+    } else {
+      await window.commandCenter.process.spawn({
+        command: 'cmd.exe',
+        args: ['/K', 'cd', '/d', absPath],
+        cwd: 'C:\\dev'
+      });
+    }
   };
 
   return (

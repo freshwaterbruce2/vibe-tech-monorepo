@@ -1,0 +1,65 @@
+{
+  "name": "@vibetech/games",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./core": {
+      "types": "./src/core/index.ts",
+      "import": "./src/core/index.ts",
+      "default": "./src/core/index.ts"
+    },
+    "./tutor": {
+      "types": "./src/tutor/index.ts",
+      "import": "./src/tutor/index.ts",
+      "default": "./src/tutor/index.ts"
+    },
+    "./chess": {
+      "types": "./src/chess/index.ts",
+      "import": "./src/chess/index.ts",
+      "default": "./src/chess/index.ts"
+    },
+    "./three": {
+      "types": "./src/three/index.ts",
+      "import": "./src/three/index.ts",
+      "default": "./src/three/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint src --max-warnings 0",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "dependencies": {
+    "@react-spring/web": "^10.0.3",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
+    "canvas-confetti": "^1.9.4",
+    "chess.js": "^1.4.0",
+    "lucide-react": "0.563.0",
+    "react-chessboard": "^5.10.0",
+    "sudoku-umd": "^1.0.1",
+    "three": "^0.183.2"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.2",
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/node": "^25.5.0",
+    "@types/react": "19.2.10",
+    "@types/react-dom": "19.2.3",
+    "@types/three": "^0.183.1",
+    "jsdom": "28.1.0",
+    "typescript": "5.9.3",
+    "vitest": "^4.1.2"
+  }
+}

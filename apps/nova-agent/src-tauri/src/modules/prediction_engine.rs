@@ -22,16 +22,16 @@ pub use commands::{
 pub use types::{PredictionResult, ProductivityInsights, Recommendation, RiskLevel, TimeWindow};
 
 pub struct PredictionEngine {
-    learning_db: Arc<Mutex<Connection>>,
+    prediction_db: Arc<Mutex<Connection>>,
     prediction_cache: Arc<Mutex<HashMap<String, (PredictionResult, SystemTime)>>>,
     cache_duration: Duration,
 }
 
 impl PredictionEngine {
-    /// Create new prediction engine with database connection
+    /// Create a prediction engine backed by the canonical learning database.
     pub fn new(db_path: PathBuf) -> Result<Self, String> {
         let conn = Connection::open(&db_path)
-            .map_err(|e| format!("Failed to open learning database: {}", e))?;
+            .map_err(|e| format!("Failed to open prediction database: {}", e))?;
 
         // Enable WAL mode for better concurrency.
         let _ = conn.query_row("PRAGMA journal_mode=WAL", [], |_| {
@@ -42,7 +42,7 @@ impl PredictionEngine {
         });
 
         let engine = Self {
-            learning_db: Arc::new(Mutex::new(conn)),
+            prediction_db: Arc::new(Mutex::new(conn)),
             prediction_cache: Arc::new(Mutex::new(HashMap::new())),
             cache_duration: Duration::from_secs(300),
         };
@@ -56,7 +56,7 @@ impl PredictionEngine {
     /// Initialize database tables for recommendations and accuracy tracking
     fn init_tables(&self) -> Result<(), String> {
         let db = self
-            .learning_db
+            .prediction_db
             .lock()
             .map_err(|e| format!("Failed to lock database: {}", e))?;
 

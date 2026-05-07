@@ -15,7 +15,7 @@ export const getDatabasePath = () => {
 	return dbPath;
 };
 
-export const openDb = () => {
+export const openDb = (): Database.Database => {
 	const dbPath = getDatabasePath();
 	fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 	const db = new Database(dbPath);

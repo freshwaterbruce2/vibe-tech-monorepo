@@ -29,11 +29,11 @@ GitHub rulesets are the modern replacement for legacy branch protection rules. T
 
 ### Create Ruleset: "Protect main"
 
-| Setting | Value |
-|---------|-------|
-| **Ruleset name** | `Protect main` |
-| **Enforcement** | `Active` |
-| **Target branches** | `main` |
+| Setting             | Value          |
+| ------------------- | -------------- |
+| **Ruleset name**    | `Protect main` |
+| **Enforcement**     | `Active`       |
+| **Target branches** | `main`         |
 
 ### Rules to enable:
 
@@ -58,13 +58,13 @@ GitHub rulesets are the modern replacement for legacy branch protection rules. T
 
 **Location**: Settings > Code security and analysis
 
-| Setting | Action |
-|---------|--------|
-| **Dependency graph** | Enable |
-| **Dependabot alerts** | Enable |
+| Setting                         | Action |
+| ------------------------------- | ------ |
+| **Dependency graph**            | Enable |
+| **Dependabot alerts**           | Enable |
 | **Dependabot security updates** | Enable |
-| **Secret scanning** | Enable |
-| **Push protection** | Enable |
+| **Secret scanning**             | Enable |
+| **Push protection**             | Enable |
 
 Push protection blocks commits that contain detected secrets (API keys, tokens, passwords) before they reach GitHub. This is your most important defense against credential leaks.
 
@@ -86,14 +86,15 @@ This performs static analysis to find security vulnerabilities like SQL injectio
 
 **Location**: Settings > Actions > General
 
-| Setting | Value |
-|---------|-------|
-| **Actions permissions** | `Allow owner actions and select non-owner actions` |
-| **Allow specified actions** | `actions/checkout@*, actions/setup-node@*, pnpm/action-setup@*` |
-| **Fork PR workflows** | `Require approval for first-time contributors` |
-| **Workflow permissions** | `Read repository contents and packages permissions` (read-only default) |
+| Setting                     | Value                                                                   |
+| --------------------------- | ----------------------------------------------------------------------- |
+| **Actions permissions**     | `Allow owner actions and select non-owner actions`                      |
+| **Allow specified actions** | `actions/checkout@*, actions/setup-node@*, pnpm/action-setup@*`         |
+| **Fork PR workflows**       | `Require approval for first-time contributors`                          |
+| **Workflow permissions**    | `Read repository contents and packages permissions` (read-only default) |
 
 ### Why this matters:
+
 - Restricting allowed actions prevents supply chain attacks from malicious third-party actions
 - Read-only default `GITHUB_TOKEN` means even if a workflow is compromised, it can't push code or modify releases
 - Jobs that need write access explicitly declare `permissions: contents: write` (already done in ci.yml)
@@ -104,16 +105,16 @@ This performs static analysis to find security vulnerabilities like SQL injectio
 
 **Location**: Settings > General
 
-| Setting | Value |
-|---------|-------|
-| **Visibility** | Private |
-| **Features > Wikis** | OFF (not needed) |
-| **Features > Projects** | ON or OFF (your preference) |
-| **Pull Requests > Allow merge commits** | ON |
-| **Pull Requests > Allow squash merging** | ON |
-| **Pull Requests > Allow rebase merging** | OFF (prevents history rewriting) |
-| **Pull Requests > Auto-merge** | OFF (require manual merge) |
-| **Pull Requests > Auto-delete head branches** | ON (cleanup after merge) |
+| Setting                                       | Value                            |
+| --------------------------------------------- | -------------------------------- |
+| **Visibility**                                | Private                          |
+| **Features > Wikis**                          | OFF (not needed)                 |
+| **Features > Projects**                       | ON or OFF (your preference)      |
+| **Pull Requests > Allow merge commits**       | ON                               |
+| **Pull Requests > Allow squash merging**      | ON                               |
+| **Pull Requests > Allow rebase merging**      | OFF (prevents history rewriting) |
+| **Pull Requests > Auto-merge**                | OFF (require manual merge)       |
+| **Pull Requests > Auto-delete head branches** | ON (cleanup after merge)         |
 
 ---
 
@@ -121,10 +122,10 @@ This performs static analysis to find security vulnerabilities like SQL injectio
 
 **Location**: Settings > Copilot (or Code security)
 
-| Setting | Value |
-|---------|-------|
-| **Allow GitHub to use code for Copilot training** | OFF |
-| **Copilot in PRs** | Your preference |
+| Setting                                           | Value           |
+| ------------------------------------------------- | --------------- |
+| **Allow GitHub to use code for Copilot training** | OFF             |
+| **Copilot in PRs**                                | Your preference |
 
 For a private repo with trading system code, disable Copilot training to keep your code out of AI training data.
 
@@ -134,16 +135,17 @@ For a private repo with trading system code, disable Copilot training to keep yo
 
 **Location**: github.com > Settings (your profile)
 
-| Setting | Action |
-|---------|--------|
-| **Two-factor authentication** | Enable (TOTP or security key) |
-| **Sessions** | Review active sessions regularly |
-| **Personal access tokens** | Use fine-grained tokens (NOT classic) |
-| **SSH keys** | Use ed25519 keys |
+| Setting                       | Action                                |
+| ----------------------------- | ------------------------------------- |
+| **Two-factor authentication** | Enable (TOTP or security key)         |
+| **Sessions**                  | Review active sessions regularly      |
+| **Personal access tokens**    | Use fine-grained tokens (NOT classic) |
+| **SSH keys**                  | Use ed25519 keys                      |
 
 ### Fine-Grained PAT Settings
 
 When creating tokens for CI/CD or local tooling:
+
 - Set **expiration** (90 days max recommended)
 - Scope to **specific repositories** only
 - Grant **minimum permissions** needed
@@ -156,6 +158,7 @@ When creating tokens for CI/CD or local tooling:
 **Location**: github.com > Settings > Notifications
 
 Enable email notifications for:
+
 - Dependabot alerts (security vulnerabilities)
 - Secret scanning alerts
 - Actions failures
@@ -173,42 +176,43 @@ These security measures are already applied in `.github/workflows/ci.yml`:
    - `pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda` (v4.1.0)
 
 2. **Least-privilege permissions** - Top-level `permissions: contents: read`
-   - Only `release` and `self-heal` jobs elevate to `contents: write`
+   - Only release/deploy jobs elevate to `contents: write`
 
 3. **Concurrency control** - Cancels redundant workflow runs on same branch
 
-4. **Self-heal restricted** - Only runs on `develop`, never auto-pushes to `main`
+4. **Self-healing restricted** - Nx Cloud `fix-ci` runs as a non-blocking PR step
+   and follows `.nx/SELF_HEALING.md`; the workflow no longer auto-pushes fixes.
 
 5. **Frozen lockfile** - `pnpm install --frozen-lockfile` prevents dependency tampering
 
 ## What Was Already Created
 
-| File | Purpose |
-|------|---------|
-| `.github/SECURITY.md` | Security policy and vulnerability reporting |
-| `.github/CODEOWNERS` | Mandatory review for CI, security, and trading code |
-| `.github/dependabot.yml` | Automated dependency vulnerability monitoring |
+| File                  | Purpose                                                    |
+| --------------------- | ---------------------------------------------------------- |
+| `.github/SECURITY.md` | Security policy and vulnerability reporting                |
+| `.github/CODEOWNERS`  | Mandatory review for CI, security, and trading code        |
+| `renovate.json`       | Version update automation and vulnerability-alert labeling |
 
 ---
 
 ## Threat Model Summary
 
-| Threat | Mitigation |
-|--------|-----------|
-| Supply chain attack via Actions | SHA-pinned actions, restricted allowed actions |
-| Malicious PR injecting code | Branch protection, required status checks, CODEOWNERS |
-| Credential leak | Secret scanning + push protection |
-| Dependency vulnerability | Dependabot alerts + security updates |
-| Code vulnerability (XSS, injection) | CodeQL code scanning |
-| Unauthorized force push | Branch ruleset blocks force pushes |
-| Token over-privilege | Read-only GITHUB_TOKEN default, fine-grained PATs |
-| AI training data leak | Copilot training disabled |
-| Compromised workflow | Self-heal restricted to develop only |
+| Threat                              | Mitigation                                                     |
+| ----------------------------------- | -------------------------------------------------------------- |
+| Supply chain attack via Actions     | SHA-pinned actions, restricted allowed actions                 |
+| Malicious PR injecting code         | Branch protection, required status checks, CODEOWNERS          |
+| Credential leak                     | Secret scanning + push protection                              |
+| Dependency vulnerability            | GitHub dependency graph/alerts plus Renovate vulnerability PRs |
+| Code vulnerability (XSS, injection) | CodeQL code scanning                                           |
+| Unauthorized force push             | Branch ruleset blocks force pushes                             |
+| Token over-privilege                | Read-only GITHUB_TOKEN default, fine-grained PATs              |
+| AI training data leak               | Copilot training disabled                                      |
+| Compromised workflow                | Non-blocking Nx Cloud self-healing; no workflow auto-push job  |
 
 ---
 
 ## Maintenance
 
-- **Weekly**: Review Dependabot PRs, check Actions logs
+- **Weekly**: Review Renovate PRs and Dependabot alerts, check Actions logs
 - **Monthly**: Rotate any PATs, review active sessions
 - **Quarterly**: Update pinned action SHAs to latest releases, review rulesets

@@ -165,7 +165,7 @@ export class AgentReliabilityManager extends EventEmitter {
             content: `[Simplified Response] ${response.content}`,
             confidence: Math.max(0.3, response.confidence - 0.2)
           };
-        } catch (_error) {
+        } catch {
           // Ultimate fallback: return a basic response
           return {
             content: `I apologize, but I'm experiencing technical difficulties. Please try a simpler request or contact support.`,

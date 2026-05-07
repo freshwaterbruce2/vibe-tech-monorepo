@@ -16,5 +16,17 @@ export default defineConfig(() => {
       // Do not modify this watcher setting during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'three-core': ['three'],
+            'three-drei': ['@react-three/drei'],
+            'react-three-fiber': ['@react-three/fiber'],
+          },
+        },
+      },
+      chunkSizeWarningLimit: 800,
+    },
   };
 });

@@ -1,0 +1,29 @@
+diff --git a/dist/src/ai/utils.js b/dist/src/ai/utils.js
+index da6b01e303aaf50029b91ba86d1888b5d6e502eb..42bfa942e9a0c29154c62387b337294dd9549fff 100644
+--- a/dist/src/ai/utils.js
++++ b/dist/src/ai/utils.js
+@@ -13,6 +13,7 @@ const fileutils_1 = require("../utils/fileutils");
+ const nx_cloud_utils_1 = require("../utils/nx-cloud-utils");
+ const output_1 = require("../utils/output");
+ const constants_1 = require("./constants");
++const smol_toml_1 = tslib_1.__importDefault(require("smol-toml"));
+ const set_up_ai_agents_1 = tslib_1.__importDefault(require("./set-up-ai-agents/set-up-ai-agents"));
+ // when adding new agents, be sure to also update the list in
+ // packages/create-nx-workspace/src/create-workspace-options.ts
+@@ -147,7 +148,15 @@ async function getAgentConfiguration(agent, workspaceRoot) {
+             let mcpConfigured;
+             if ((0, fs_1.existsSync)(mcpPath)) {
+                 const tomlContents = (0, fs_1.readFileSync)(mcpPath, 'utf-8');
+-                mcpConfigured = tomlContents.includes(constants_1.nxMcpTomlHeader);
++                try {
++                    const codexConfig = smol_toml_1.default.parse(tomlContents);
++                    mcpConfigured = !!codexConfig?.mcp_servers?.['nx-mcp'];
++                }
++                catch {
++                    mcpConfigured =
++                        tomlContents.includes(constants_1.nxMcpTomlHeader) ||
++                            tomlContents.includes('[mcp_servers.nx-mcp]');
++                }
+             }
+             else {
+                 mcpConfigured = false;

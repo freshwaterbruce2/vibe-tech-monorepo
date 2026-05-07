@@ -1,544 +1,292 @@
-# Invoice Automation SaaS - Project Guide
+# Invoice Automation SaaS — Project Guide
 
-**Project Path:** `C:\dev\apps\invoice-automation-saas`  
-**Type:** Full-Stack SaaS Application  
-**Platform:** Web (Multi-tenant)  
-**Database:** D:\databases\invoiceflow.db (SQLite)  
-**Status:** Production Ready
-
----
-
-## 🎯 Project Overview
-
-Multi-tenant SaaS platform for automated invoice processing, OCR extraction, and workflow automation. Features AI-powered data extraction, payment tracking, approval workflows, and comprehensive analytics.
-
-### Key Features
-
-- **AI-Powered OCR**: Extract data from PDF/image invoices
-- **Multi-tenant Architecture**: Isolated data per organization
-- **Workflow Automation**: Approval chains and notifications
-- **Payment Tracking**: Integration with accounting systems
-- **Analytics Dashboard**: Real-time reporting and insights
-- **API Integration**: Webhooks and REST API
-- **Role-Based Access**: Admin, Manager, User roles
-- **Audit Trail**: Complete activity logging
+**Path:** `C:\dev\apps\invoice-automation-saas`
+**Type:** Single-tenant invoice SaaS with recurring billing, automated dunning, and Stripe payments
+**Stack:** Vite + React 19 SPA + Fastify v5 API + better-sqlite3
+**Status:** Tier 1 (MVP parity ~Zoho Invoice) shipped 2026-05-03. See `docs/FEATURE-PARITY-PLAN.md` for the roadmap to Tier 2 (FreshBooks parity) and Tier 3 (mid-market).
 
 ---
 
-## 📁 Project Structure
+## What this app does
 
-```
-invoice-automation-saas/
-├── frontend/
-│   ├── src/
-│   │   ├── components/      # React components
-│   │   ├── pages/          # Page views
-│   │   ├── hooks/          # Custom hooks
-│   │   ├── contexts/       # React contexts
-│   │   ├── utils/          # Utilities
-│   │   └── api/            # API client
-│   ├── public/             # Static assets
-│   └── package.json
-├── backend/
-│   ├── src/
-│   │   ├── routes/         # API routes
-│   │   ├── controllers/    # Request handlers
-│   │   ├── models/         # Database models
-│   │   ├── services/       # Business logic
-│   │   ├── middleware/     # Express middleware
-│   │   └── utils/          # Utilities
-│   ├── migrations/         # Database migrations
-│   └── package.json
-├── shared/
-│   ├── types/              # Shared TypeScript types
-│   └── constants/          # Shared constants
-└── docs/                   # Documentation
-```
+Single-tenant invoicing for a freelancer or small business. Each user signs up, manages clients, creates invoices, sends them via email with PDF attached, accepts payment via Stripe Checkout, and gets automated overdue reminders.
+
+Real features that work end-to-end today:
+
+- Email/password signup + login with HS256 JWT cookie sessions, scrypt password hashing
+- Client CRUD with ownership isolation
+- Invoice create / edit (drafts only) / delete (drafts only) with line items, recurring config, tax, currency, notes/terms
+- Public invoice view via `?token=` (no login required for the recipient)
+- Stripe Checkout end-to-end: recipient clicks Pay → Stripe Checkout → signed webhook updates invoice
+- Resend email delivery: invoice-created emails with PDF attached, payment receipts, overdue reminders
+- Recurring invoices: configurable schedule (weekly/monthly/quarterly/yearly + interval), auto-clones the parent invoice and emails it
+- Automated dunning: configurable per-user policy (default 7/14/30 days), one reminder per step per invoice, daily 9am sweep
+- Manual payment recording (cash/check/other) with notes and audit trail
+- Audit log for invoice paid, payment session created, recurring generation, dunning policy changes
+
+Not yet built (see `docs/FEATURE-PARITY-PLAN.md`):
+
+- Tier 2: expense tracking, time tracking, multi-currency with FX caching, tax tables, customizable invoice templates
+- Tier 3: multi-tenant + organizations, role-based access, QuickBooks Online sync, outbound webhooks, client portal, reports & analytics
+
+There is no OCR, no organizations table, no multi-instance support. Earlier versions of this guide claimed those — they did not exist.
 
 ---
 
-## 🚀 Quick Start
+## Architecture
 
-### First Time Setup
+### Frontend (`src/`)
 
-```powershell
-# Navigate to project
-cd C:\dev\apps\invoice-automation-saas
+- React 19 SPA built with Vite
+- React Router for routing, react-hook-form for invoice form, react-toastify for notifications
+- `@vibetech/ui` workspace package for shared components (Button, Card, Navigation)
+- Sentry error tracking via `@sentry/react`
 
-# Install dependencies (entire monorepo)
-pnpm install
+Pages (`src/pages/`):
+- `Landing.tsx`, `Login.tsx`, `Signup.tsx` — public pages
+- `Dashboard.tsx` — authenticated invoice list with error state on API failure
+- `Clients.tsx` — client CRUD
+- `CreateInvoice.tsx` — create or edit (when `?edit=<id>`) draft invoices
+- `InvoicePayment.tsx` — public recipient view + Stripe Pay button
 
-# Set up database
-cd backend
-node src/scripts/init-db.js
+Services (`src/services/`):
+- `invoiceService.ts` — invoice CRUD, listener model with `{invoices, error}` state, propagates errors instead of returning fake data
+- `stripeService.ts` — `loadStripe` for Stripe.js + `createCheckoutSession` (POSTs to server)
+- `sentry.ts` — Sentry init
 
-# Run database migrations
-node src/scripts/migrate.js
+### Backend (`server/`)
 
-# Seed initial data (optional)
-node src/scripts/seed.js
+- Fastify v5 with cookie sessions, CORS, rate limiting (`@fastify/rate-limit`)
+- better-sqlite3 with WAL mode + foreign keys ON, file at `D:\databases\invoiceflow.db` (env: `DATABASE_PATH`)
+- Versioned SQL migrations at `server/src/migrations/NNNN_*.sql`, applied at startup
+- In-process job runner (`node-cron` + `jobs` table) with retries + idempotency
+- TypeScript strict mode, NodeNext modules, `.js` extensions on imports
+
+Layout:
 ```
-
-### Development Workflow
-
-```powershell
-# Start backend (from project root)
-cd C:\dev\apps\invoice-automation-saas
-pnpm run dev:backend
-
-# Start frontend (new terminal)
-pnpm run dev:frontend
-
-# Run both concurrently
-pnpm run dev
-```
-
-**Access Points:**
-
-- Frontend: <http://localhost:3000>
-- Backend API: <http://localhost:5000>
-- API Docs: <http://localhost:5000/api-docs>
-
----
-
-## 💾 Database
-
-### Location
-
-- **Path**: `D:\databases\invoiceflow.db`
-- **Type**: SQLite
-- **Backups**: `D:\databases\backups\invoiceflow_*.db`
-
-### Schema Overview
-
-```sql
--- Organizations (Multi-tenant)
-CREATE TABLE organizations (
-    id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
-    subdomain TEXT UNIQUE,
-    plan TEXT DEFAULT 'free',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Users
-CREATE TABLE users (
-    id INTEGER PRIMARY KEY,
-    org_id INTEGER,
-    email TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    role TEXT DEFAULT 'user',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (org_id) REFERENCES organizations(id)
-);
-
--- Invoices
-CREATE TABLE invoices (
-    id INTEGER PRIMARY KEY,
-    org_id INTEGER,
-    user_id INTEGER,
-    vendor_name TEXT,
-    invoice_number TEXT,
-    amount REAL,
-    due_date DATE,
-    status TEXT DEFAULT 'pending',
-    file_path TEXT,
-    extracted_data JSON,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (org_id) REFERENCES organizations(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-
--- Workflows
-CREATE TABLE workflows (
-    id INTEGER PRIMARY KEY,
-    org_id INTEGER,
-    name TEXT NOT NULL,
-    rules JSON,
-    active BOOLEAN DEFAULT 1,
-    FOREIGN KEY (org_id) REFERENCES organizations(id)
-);
-
--- Audit Log
-CREATE TABLE audit_log (
-    id INTEGER PRIMARY KEY,
-    org_id INTEGER,
-    user_id INTEGER,
-    action TEXT,
-    entity_type TEXT,
-    entity_id INTEGER,
-    details JSON,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-### Database Operations
-
-```powershell
-# View database
-D:
-cd D:\databases
-sqlite3 invoiceflow.db
-
-# Backup database
-Copy-Item invoiceflow.db -Destination "backups\invoiceflow_$(Get-Date -Format 'yyyyMMdd_HHmmss').db"
-
-# Restore from backup
-Copy-Item "backups\invoiceflow_20260102.db" -Destination invoiceflow.db
+server/src/
+  index.ts                  # Fastify boot, route registration, runner+cron lifecycle, graceful shutdown
+  db.ts                     # openDb() — D:\ guard, WAL pragma
+  auth.ts                   # JWT cookie session + scrypt password
+  audit.ts                  # recordAudit() / queryAudit()
+  events.ts                 # in-process EventEmitter for SSE
+  migrate.ts                # thin wrapper around runMigrations(migrationsDir)
+  migrations/               # numbered SQL files + index.ts (runner)
+    0001_initial.sql        # users, clients, invoices, invoice_items
+    0002_audit_log.sql
+    0003_jobs.sql
+    0004_payments.sql       # payments + stripe_events
+    0005_email_log.sql
+    0006_recurring.sql      # recurring_schedules
+    0007_dunning.sql        # dunning_policies + dunning_history
+    index.ts                # transactional, lexical-order, idempotent
+  clients/                  # SDK wrappers (lazy + fail-fast on missing env)
+    stripe.ts               # getStripe()
+    resend.ts               # getResend()
+    fx.ts                   # fetchExchangeRate() via Frankfurter (no SDK)
+  jobs/
+    runner.ts               # tick() + startJobRunner() with poll/lock/backoff
+    enqueue.ts              # enqueueJob()
+    cron.ts                 # registerCronSchedule() / startCronSchedules()
+    handlers/
+      index.ts              # handler registry
+      emailInvoice.ts       # 'email.invoice'
+      emailReceipt.ts       # 'email.receipt'
+      emailOverdue.ts       # 'email.overdue'
+      generateRecurring.ts  # 'recurring.generate'
+      dunningSweep.ts       # 'dunning.sweep'
+  payments/
+    stripeAdapter.ts        # buildCheckoutSession + verifyWebhookSignature
+  email/
+    render.ts               # @react-email/render wrappers
+    send.ts                 # sendInvoiceCreated/Receipt/Overdue with PDF attach
+    templates/              # InvoiceCreated, PaymentReceipt, OverdueReminder
+  pdf/
+    InvoicePdfDocument.tsx  # @react-pdf/renderer Document
+    render.ts               # renderInvoicePdfBuffer()
+  recurring/
+    generator.ts            # cloneInvoice(), generateNextInvoiceNumber()
+    scheduler.ts            # advanceDate(), findDueSchedules(), computeAdvancement()
+    cronRegistration.ts     # hourly sweep
+  dunning/
+    policy.ts               # getPolicy/upsertPolicy + DEFAULT_REMINDERS
+    sweep.ts                # runDunningSweep()
+    cronRegistration.ts     # daily 9am
+  routes/
+    authRoutes.ts           # /api/auth/{me,signup,login,logout,profile}
+    clientRoutes.ts         # /api/clients CRUD
+    invoiceRoutes.ts        # /api/invoices GET/POST/PUT/DELETE + status PATCH + resend POST
+    publicRoutes.ts         # /api/public/invoices/:id GET + record-manual-payment POST
+    paymentRoutes.ts        # /api/public/invoices/:id/checkout-session
+    webhookRoutes.ts        # /api/webhooks/stripe + /api/webhooks/resend (raw body, signed)
+    recurringRoutes.ts      # /api/recurring CRUD
+    dunningRoutes.ts        # /api/dunning/policy GET/PUT
+  security/
+    rateLimit.ts            # global 100/min, /api/auth/{login,signup} 5/min
 ```
 
 ---
 
-## 🔧 Configuration
+## Run it
 
-### Environment Variables
+### Dev (two processes)
 
-Create `.env` files in both frontend and backend:
+```powershell
+# In one shell - Vite SPA on http://localhost:5173
+pnpm --filter invoice-automation-saas dev
 
-**Backend (.env)**
-
-```env
-# Server
-PORT=5000
-NODE_ENV=development
-
-# Database
-DB_PATH=D:/databases/invoiceflow.db
-
-# Authentication
-JWT_SECRET=your-secret-key
-JWT_EXPIRES_IN=7d
-
-# OCR Service
-OCR_API_KEY=your-ocr-api-key
-OCR_PROVIDER=tesseract  # or 'aws-textract', 'google-vision'
-
-# Email
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-
-# Storage
-UPLOAD_DIR=D:/data/vibe-justice/uploads
-MAX_FILE_SIZE=10485760  # 10MB
+# In another shell - Fastify API on http://localhost:8787
+pnpm --filter invoice-automation-saas dev:api
 ```
 
-**Frontend (.env)**
+Vite proxies `/api` to `:8787` (see `vite.config.ts`).
 
-```env
-VITE_API_URL=http://localhost:5000
-VITE_APP_NAME=InvoiceFlow
+### Quality gates (must pass before commit)
+
+```powershell
+pnpm --filter invoice-automation-saas typecheck
+pnpm --filter invoice-automation-saas lint
+pnpm --filter invoice-automation-saas test -- --run
+pnpm exec tsc -p apps/invoice-automation-saas/server/tsconfig.json --noEmit
 ```
+
+The test suite (98 tests at Tier 1 ship) includes the migration runner, audit log, jobs runner, rate limiter, Stripe webhook signature flow, recurring scheduler/generator, and dunning sweep.
+
+### Production build
+
+```powershell
+pnpm --filter invoice-automation-saas build      # SPA -> dist/
+pnpm --filter invoice-automation-saas build:api  # server -> server/dist/
+pnpm --filter invoice-automation-saas start:api  # node server/dist/index.js
+```
+
+Set `SERVE_WEB=1` to have the API also serve the SPA from `dist/` (single-process deploy).
 
 ---
 
-## 📋 Common Tasks
+## Environment variables
 
-### User Management
+Per `.claude/rules/database-storage.md` and `.claude/rules/paths-policy.md`: code lives on `C:\dev`, all data on `D:\`. Never hardcode paths.
 
-```powershell
-# Create admin user
-cd C:\dev\apps\invoice-automation-saas\backend
-node src/scripts/create-admin.js --email admin@example.com --password secure123
+| Var | Required | Purpose |
+|-----|---|---|
+| `DATABASE_PATH` | yes (default `D:\databases\invoiceflow.db`) | SQLite location, must be on `D:\` |
+| `PORT` | optional (default 8787) | Fastify port |
+| `HOST` | optional (default 127.0.0.1) | Fastify bind |
+| `TRUST_PROXY` | optional | Set to `1` behind a reverse proxy |
+| `SERVE_WEB` | optional | Set to `1` to serve SPA from API |
+| `WEB_DIST_DIR` | optional | Override SPA dist path (default `<cwd>/dist`) |
+| `STRIPE_SECRET_KEY` | yes for payments | Server-side Stripe SDK key (`sk_test_...` or `sk_live_...`) |
+| `STRIPE_WEBHOOK_SECRET` | yes for payments | `/api/webhooks/stripe` signature verification (`whsec_...`) |
+| `APP_BASE_URL` | yes for payments+email | Used for Stripe success/cancel redirects and email pay links (e.g. `https://invoices.example.com`) |
+| `RESEND_API_KEY` | yes for email | Server-side Resend SDK key (`re_...`) |
+| `RESEND_WEBHOOK_SECRET` | yes for delivery tracking | `/api/webhooks/resend` Svix-style HMAC (`whsec_...`) |
+| `EMAIL_FROM` | yes for email | Verified Resend sender address |
+| `VITE_API_BASE_URL` | optional | Frontend API base (blank = same origin) |
+| `VITE_STRIPE_PUBLIC_KEY` | optional | Frontend Stripe.js publishable key (`pk_...`) — only needed if you embed Stripe Elements directly; the current Checkout-redirect flow does not |
 
-# List users
-node src/scripts/list-users.js
-
-# Reset password
-node src/scripts/reset-password.js --email user@example.com
-```
-
-### Invoice Processing
-
-```powershell
-# Process invoice manually
-node src/scripts/process-invoice.js --file "D:/data/invoices/invoice.pdf"
-
-# Reprocess failed invoices
-node src/scripts/retry-failed.js
-
-# Export invoices
-node src/scripts/export-invoices.js --org-id 1 --format csv
-```
-
-### Workflow Management
-
-```powershell
-# Create approval workflow
-node src/scripts/create-workflow.js --org-id 1 --name "Manager Approval"
-
-# Test workflow
-node src/scripts/test-workflow.js --workflow-id 1 --invoice-id 123
-```
+The env getters (`server/src/clients/{stripe,resend}.ts`) throw on first call with a clear "X is not set" message, so missing config fails fast at startup if a payment or email path is exercised.
 
 ---
 
-## 🧪 Testing
+## How payments flow end-to-end
 
-```powershell
-# Run all tests
-pnpm test
+1. Recipient opens public invoice link `https://app.example.com/invoice/<id>?token=<public_token>`
+2. They click Pay with Stripe → frontend POSTs `{token}` to `/api/public/invoices/:id/checkout-session`
+3. Server validates token + status, calls `buildCheckoutSession` (Stripe Adapter), returns `{url}`
+4. Frontend redirects browser to `url` (Stripe's hosted Checkout)
+5. Recipient completes payment → Stripe redirects to `${APP_BASE_URL}/pay/<id>?token=<token>&status=success`
+6. Stripe POSTs `checkout.session.completed` to `/api/webhooks/stripe`
+7. Server verifies signature with `STRIPE_WEBHOOK_SECRET`, dedupes via `stripe_events` PRIMARY KEY (so retries are no-ops), in a transaction: inserts `payments` row, sets invoice `status='paid'`, writes `audit_log`, emits SSE
+8. Server enqueues `email.receipt` job → background runner fetches it within 10 seconds → `sendPaymentReceipt` builds the React Email template and dispatches via Resend → writes `email_log` row
+9. Recipient receives a thanks-for-payment email
+10. When Resend's webhook later fires `email.delivered`/`email.bounced`, `/api/webhooks/resend` updates `email_log.status` keyed on `resend_message_id`
 
-# Run backend tests only
-cd backend
-pnpm test
-
-# Run frontend tests only
-cd frontend
-pnpm test
-
-# Run with coverage
-pnpm test:coverage
-
-# Run e2e tests
-pnpm test:e2e
-```
+Replays of the same Stripe event are no-ops at step 7 — the `INSERT OR IGNORE` into `stripe_events` returns 0 changes and the handler short-circuits with `{duplicate: true}`.
 
 ---
 
-## 🏗️ Building
+## How recurring invoices flow
 
-### Development Build
+1. User creates an invoice with `body.recurring.enabled = true`, `frequency: 'monthly'`, `interval: 1`, optional `endDate` or `occurrences`
+2. POST `/api/invoices` creates the invoice + a `recurring_schedules` row with `next_run_at = now + frequency*interval`
+3. Hourly cron (`recurring/cronRegistration.ts`, `0 * * * *`) calls `findDueSchedules`, enqueues `recurring.generate` jobs
+4. Job handler (`jobs/handlers/generateRecurring.ts`) calls `cloneInvoice` (transaction: clones invoice + line items, increments invoice number), calls `computeAdvancement` to advance `next_run_at` (or end if occurrences exhausted / end_date past), records audit, enqueues `email.invoice` job for the new invoice
+5. Email goes out the same way as a manual invoice send
 
-```powershell
-# Build frontend
-cd C:\dev\apps\invoice-automation-saas\frontend
-pnpm build
-
-# Build backend
-cd ../backend
-pnpm build
-```
-
-### Production Build
-
-```powershell
-# Build everything
-cd C:\dev\apps\invoice-automation-saas
-pnpm build:prod
-
-# Output:
-# frontend/dist - Static files
-# backend/dist - Compiled backend
-```
+User can manage schedules via:
+- `GET /api/recurring`
+- `PATCH /api/recurring/:id` (status, next_run_at, frequency, etc.)
+- `DELETE /api/recurring/:id` (sets status='ended')
 
 ---
 
-## 🚢 Deployment
+## How dunning flows
 
-### Environment Setup
-
-```powershell
-# Set production environment
-$env:NODE_ENV = "production"
-
-# Configure production database
-$env:DB_PATH = "D:/databases/invoiceflow_prod.db"
-```
-
-### Deploy Steps
-
-1. Build production version
-2. Set environment variables
-3. Run migrations
-4. Start services
-
-```powershell
-# Run migrations
-cd backend
-node dist/scripts/migrate.js
-
-# Start backend
-node dist/server.js
-
-# Serve frontend (use nginx, serve, or similar)
-cd ../frontend
-npx serve -s dist -p 3000
-```
+1. User configures policy via `PUT /api/dunning/policy` with `{enabled, reminders: [{daysAfterDue}]}`. Default if no row: enabled, reminders at 7/14/30 days
+2. Daily 9am cron (`dunning/cronRegistration.ts`) enqueues `dunning.sweep` job
+3. Sweep handler iterates `sent` invoices with `due_date < now`. For each, looks up policy. Computes `daysOverdue`. Finds the first reminder step `i` where `daysAfterDue <= daysOverdue` AND no `dunning_history` row exists for `(invoice_id, i+1)`. INSERT OR IGNORE into `dunning_history` (the unique constraint guarantees idempotency under concurrent sweeps), then enqueues `email.overdue` job
+4. `email.overdue` handler dispatches the `OverdueReminder` template (tone escalates with `reminderStep`) via Resend, writes `email_log`
 
 ---
 
-## 🔍 Monitoring & Logs
+## Migrations
 
-### Log Locations
+Add a new migration:
 
-- **Backend Logs**: `D:\logs\invoice-automation-saas\`
-- **Error Logs**: `D:\logs\invoice-automation-saas\errors.log`
-- **Access Logs**: `D:\logs\invoice-automation-saas\access.log`
-- **OCR Logs**: `D:\logs\invoice-automation-saas\ocr.log`
+1. Create `server/src/migrations/NNNN_short_name.sql` — must match `^\d{4}_[a-z0-9_-]+\.sql$`
+2. Use `IF NOT EXISTS` guards on table/index creation; idempotent semantics let the runner re-apply safely if interrupted
+3. For ALTER TABLE, write the migration plain (it WILL run exactly once thanks to `schema_migrations`)
+4. Restart the server (or call `migrate(db)` manually); migrations apply in lexical order, each in its own transaction. Rollback is automatic on failure.
 
-### View Logs
+Verify with `select * from schema_migrations` — every migration filename without `.sql` is a row.
 
-```powershell
-# View recent errors
-Get-Content D:\logs\invoice-automation-saas\errors.log -Tail 50 -Wait
+---
 
-# View access log
-Get-Content D:\logs\invoice-automation-saas\access.log -Tail 100
+## Jobs
 
-# Search logs
-Select-String -Path "D:\logs\invoice-automation-saas\*.log" -Pattern "error|critical"
+Enqueue from anywhere: `enqueueJob(db, { type: 'my.handler', payload: {...}, runAt?: Date, maxAttempts?: 5 })`.
+
+Register handlers at startup (import the file from `server/src/index.ts` for side effects):
+
+```ts
+import { registerHandler } from './jobs/handlers/index.js'
+
+registerHandler<MyPayload>('my.handler', async (payload, ctx) => {
+  await doWork(payload)
+  // throw to retry; runner uses 2^attempts minute backoff, capped at 1h
+})
 ```
 
----
+Schedule a cron at module-load time:
 
-## 🐛 Troubleshooting
+```ts
+import { registerCronSchedule } from './jobs/cron.js'
 
-### Common Issues
-
-**OCR Not Working**
-
-```powershell
-# Check Tesseract installation
-tesseract --version
-
-# Verify OCR service
-node src/scripts/test-ocr.js --file "test-invoice.pdf"
+registerCronSchedule({
+  name: 'unique-name',
+  expression: '0 9 * * *',  // node-cron syntax
+  task: () => { /* enqueue jobs, do not do work directly */ },
+})
 ```
 
-**Database Locked**
-
-```powershell
-# Check for open connections
-node src/scripts/check-db-connections.js
-
-# Force close (use carefully!)
-taskkill /F /IM node.exe
-```
-
-**File Upload Fails**
-
-```powershell
-# Check upload directory permissions
-icacls "D:\data\vibe-justice\uploads"
-
-# Create if missing
-New-Item -ItemType Directory -Force -Path "D:\data\vibe-justice\uploads"
-```
-
-**Email Not Sending**
-
-```powershell
-# Test SMTP connection
-node src/scripts/test-email.js --to test@example.com
-```
+The runner polls every 10s, claims up to 5 jobs at a time, marks them `running` with a 5-minute lock. If a worker crashes mid-run, the lock expires after 5 minutes and another worker reclaims the job (idempotency is the handler's responsibility — see Stripe webhook handler for the pattern).
 
 ---
 
-## 🔐 Security
+## Constraints (don't violate)
 
-### API Authentication
-
-- JWT tokens for authentication
-- Role-based access control (RBAC)
-- Organization-level data isolation
-
-### File Security
-
-```powershell
-# Scan uploads for malware (requires ClamAV or similar)
-node src/scripts/scan-uploads.js
-
-# Clean old uploads (90+ days)
-node src/scripts/cleanup-uploads.js --days 90
-```
+- No mocks/placeholders in production code (`.claude/rules/no-mock-or-placeholder-code.md`). Tests are fine.
+- All data on `D:\`, code on `C:\dev` (`.claude/rules/paths-policy.md`).
+- Never hardcode `D:\databases\...` — use `process.env.DATABASE_PATH`.
+- ASCII only in source-file comments (pre-commit hook enforces).
+- TypeScript strict mode, NodeNext modules, `.js` import extensions.
+- `pnpm --filter invoice-automation-saas <cmd>` from repo root — never bare `pnpm install` in app dir.
+- Migrations are append-only; never modify or delete an existing numbered file.
 
 ---
 
-## 📊 Analytics
+## Future work (see `docs/FEATURE-PARITY-PLAN.md`)
 
-### Generate Reports
-
-```powershell
-# Monthly invoice report
-node src/scripts/generate-report.js --org-id 1 --month 2026-01
-
-# Usage analytics
-node src/scripts/usage-stats.js --org-id 1
-
-# Export to CSV
-node src/scripts/export-analytics.js --org-id 1 --format csv
-```
-
----
-
-## 🔗 API Endpoints
-
-### Authentication
-
-- `POST /api/auth/login` - User login
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/refresh` - Refresh token
-
-### Invoices
-
-- `GET /api/invoices` - List invoices
-- `POST /api/invoices` - Upload new invoice
-- `GET /api/invoices/:id` - Get invoice details
-- `PUT /api/invoices/:id` - Update invoice
-- `DELETE /api/invoices/:id` - Delete invoice
-
-### Organizations
-
-- `GET /api/org` - Get current organization
-- `PUT /api/org` - Update organization
-- `GET /api/org/users` - List users
-
-### Workflows
-
-- `GET /api/workflows` - List workflows
-- `POST /api/workflows` - Create workflow
-- `PUT /api/workflows/:id` - Update workflow
-
----
-
-## 📚 Additional Resources
-
-- **API Documentation**: <http://localhost:5000/api-docs>
-- **Admin Panel**: <http://localhost:3000/admin>
-- **Swagger UI**: <http://localhost:5000/swagger>
-
----
-
-## 🎯 Key Dependencies
-
-### Frontend
-
-- React 18
-- TypeScript
-- Vite
-- React Router
-- Axios
-- React Query
-- Tailwind CSS
-
-### Backend
-
-- Express
-- TypeScript
-- SQLite3
-- JWT
-- Multer (file uploads)
-- Tesseract.js (OCR)
-- Nodemailer
-
----
-
-## ✅ Checklist for New Deployment
-
-- [ ] Database initialized
-- [ ] Migrations run
-- [ ] Admin user created
-- [ ] Environment variables set
-- [ ] Upload directories created
-- [ ] Email SMTP configured
-- [ ] OCR service tested
-- [ ] SSL certificate installed (production)
-- [ ] Backup automation configured
-
----
-
-**Last Updated**: January 2, 2026  
-**Maintainer**: Bruce  
-**Status**: Active Development
+- Tier 2 (~3-4 weeks): expense tracking, time tracking with billable hours, multi-currency with `exchange_rates` table cache, per-region tax tables, customizable invoice templates
+- Tier 3 (~5-7 weeks): multi-tenant migration (`org_id` everywhere, role-based access), QuickBooks Online OAuth + invoice sync, outbound webhooks, client portal upgrade, reports & analytics dashboard, optional Postgres swap if SQLite write contention becomes measurable

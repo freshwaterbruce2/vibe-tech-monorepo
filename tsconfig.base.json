@@ -26,6 +26,8 @@
 		"baseUrl": ".",
 		"paths": {
 			"@/*": ["./src/*"],
+			"@vibetech/games": ["./packages/games/src/index.ts"],
+			"@vibetech/games/*": ["./packages/games/src/*/index.ts"],
 			"@vibetech/*": ["./packages/*/src", "./packages/feature-flags/*/src"],
 			"@nova/*": ["./packages/*/src"],
 			"@vibetech/business-booking-platform-next-backend": [

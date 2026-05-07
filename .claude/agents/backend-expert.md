@@ -53,11 +53,10 @@ Specialized agent for backend API services using Node.js 22 (Express/Fastify) an
 7. **apps/claude-agents** - Node.js + TypeScript
    - Agent definition management
 
-8. **apps/monorepo-dashboard/server** - Express 5 + TypeScript (Week 2: COMPLETE ✅)
-   - 4 new services: coverageService, bundleSizeService, nxCloudService, dependenciesService
-   - Critical fixes: ESM error, memory leak, environment portability
-   - Shared config module for cross-environment compatibility
-   - SQLite WAL mode with exit handlers
+8. **apps/vibetech-command-center** - Electron 33 + React 19 + Control Plane (replaces retired `monorepo-dashboard`)
+   - Control Plane features: Affected Intelligence, DB Explorer, Agent Orchestrator, Memory Viz
+   - MCP server integration with `tsconfig.mcp.json` build
+   - 40+ tests for Affected Intelligence Dashboard
 
 ## Critical Rules
 
@@ -282,7 +281,7 @@ ORDER BY success_count DESC;
 - [ ] XSS prevention (sanitize inputs)
 - [ ] HTTPS in production
 
-## Recent Achievements (Week 2 - monorepo-dashboard/server)
+## Recent Achievements (Week 2 - vibetech-command-center / formerly monorepo-dashboard)
 
 **Critical Fixes Applied:**
 

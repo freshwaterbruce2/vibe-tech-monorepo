@@ -6,38 +6,38 @@ This monorepo contains multiple projects with different version support:
 
 ### Web Applications
 
-| Project | Version | Supported          |
-| ------- | ------- | ------------------ |
-| business-booking-platform | 2.0.x | :white_check_mark: |
-| invoice-automation-saas | 0.1.x | :white_check_mark: |
-| shipping-pwa | 1.x.x | :white_check_mark: |
-| vibe-tech-lovable | 1.x.x | :white_check_mark: |
+| Project                   | Version | Supported          |
+| ------------------------- | ------- | ------------------ |
+| business-booking-platform | 2.0.x   | :white_check_mark: |
+| invoice-automation-saas   | 0.1.x   | :white_check_mark: |
+| shipping-pwa              | 1.x.x   | :white_check_mark: |
+| vibe-tech-lovable         | 1.x.x   | :white_check_mark: |
 
 ### Desktop Applications
 
-| Project | Version | Supported          |
-| ------- | ------- | ------------------ |
-| nova-agent | 1.6.x | :white_check_mark: |
-| deepcode-editor | 1.0.x | :white_check_mark: |
+| Project         | Version | Supported          |
+| --------------- | ------- | ------------------ |
+| nova-agent      | 1.6.x   | :white_check_mark: |
+| deepcode-editor | 1.0.x   | :white_check_mark: |
 
 ### Mobile Applications
 
-| Project | Version | Supported          |
-| ------- | ------- | ------------------ |
-| Vibe-Tutor | 1.0.x | :white_check_mark: |
+| Project    | Version | Supported          |
+| ---------- | ------- | ------------------ |
+| Vibe-Tutor | 1.0.x   | :white_check_mark: |
 
 ### Backend & Services
 
-| Project | Version | Supported          |
-| ------- | ------- | ------------------ |
-| vibe-tech-backend | 1.x.x | :white_check_mark: |
-| crypto-enhanced | 1.x.x | :white_check_mark: |
+| Project           | Version | Supported          |
+| ----------------- | ------- | ------------------ |
+| vibe-tech-backend | 1.x.x   | :white_check_mark: |
+| crypto-enhanced   | 1.x.x   | :white_check_mark: |
 
 ### Workspace
 
-| Project | Version | Supported          |
-| ------- | ------- | ------------------ |
-| Workspace Root | 0.0.0 | :white_check_mark: |
+| Project        | Version | Supported          |
+| -------------- | ------- | ------------------ |
+| Workspace Root | 0.0.0   | :white_check_mark: |
 
 ## Reporting a Vulnerability
 
@@ -101,7 +101,7 @@ This repository follows these security practices:
 ### Dependency Management
 
 - Regular `pnpm audit` checks in CI/CD
-- Automated Dependabot updates
+- Automated Renovate updates
 - Lockfile (`pnpm-lock.yaml`) committed to repository
 
 ### Secrets Management & API Key Best Practices
@@ -188,7 +188,7 @@ Each project should validate required environment variables at startup:
 ```typescript
 // Example validation (TypeScript)
 const requiredEnvVars = ['DEEPSEEK_API_KEY', 'DATABASE_URL'];
-const missing = requiredEnvVars.filter(key => !process.env[key]);
+const missing = requiredEnvVars.filter((key) => !process.env[key]);
 if (missing.length > 0) {
   throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
 }
@@ -623,18 +623,12 @@ pnpm prune
 - Use `pnpm install --frozen-lockfile` in CI/CD
 - Never manually edit `pnpm-lock.yaml`
 
-**Dependabot Configuration:**
+**Dependency Update Automation:**
 
-```yaml
-# .github/dependabot.yml
-version: 2
-updates:
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-```
+Renovate is the version-update bot for npm and GitHub Actions dependencies.
+Keep GitHub dependency graph and Dependabot alerts enabled in repository
+settings, but do not reintroduce `.github/dependabot.yml` unless duplicate
+version-update PRs are intentionally accepted.
 
 ### CI/CD Security (GitHub Actions)
 
@@ -712,10 +706,10 @@ module.exports = {
   win: {
     certificateFile: process.env.WINDOWS_CERT_FILE,
     certificatePassword: process.env.WINDOWS_CERT_PASSWORD,
-    sign: './sign.js',  // Custom signing script
-    signingHashAlgorithms: ['sha256']
-  }
-}
+    sign: './sign.js', // Custom signing script
+    signingHashAlgorithms: ['sha256'],
+  },
+};
 ```
 
 **Certificate Management:**
@@ -741,7 +735,7 @@ autoUpdater.setFeedURL({
   provider: 'github',
   owner: 'yourusername',
   repo: 'yourrepo',
-  token: process.env.GITHUB_TOKEN  // Private repo access
+  token: process.env.GITHUB_TOKEN, // Private repo access
 });
 
 // Verify signature before installing
@@ -817,7 +811,7 @@ android {
 // Allow localhost during development
 const corsOptions = {
   origin: ['http://localhost:5173', 'http://localhost:3000'],
-  credentials: true
+  credentials: true,
 };
 ```
 
@@ -828,7 +822,7 @@ const corsOptions = {
 const corsOptions = {
   origin: process.env.ALLOWED_ORIGINS?.split(',') || [],
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
 };
 ```
 
@@ -841,10 +835,10 @@ app.use((req, res, next) => {
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-    "style-src 'self' 'unsafe-inline'; " +
-    "img-src 'self' data: https:; " +
-    "connect-src 'self' https://api.deepseek.com https://api.kraken.com"
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+      "style-src 'self' 'unsafe-inline'; " +
+      "img-src 'self' data: https:; " +
+      "connect-src 'self' https://api.deepseek.com https://api.kraken.com",
   );
   next();
 });
@@ -900,7 +894,7 @@ app.use((req, res, next) => {
 
 #### Dependency Update Strategy
 
-**Automated Updates (Dependabot):**
+**Automated Updates (Renovate):**
 
 - Security patches: Auto-merge if tests pass
 - Minor version bumps: Weekly review and merge

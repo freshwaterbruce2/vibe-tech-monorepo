@@ -1,0 +1,61 @@
+{
+  "name": "@vibetech/command-center",
+  "root": "apps/vibetech-command-center",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/vibetech-command-center/src",
+  "projectType": "application",
+  "tags": [
+    "scope:desktop",
+    "type:electron",
+    "platform:windows",
+    "language:typescript"
+  ],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "dev"
+      },
+      "cache": false
+    },
+    "build": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "build"
+      },
+      "outputs": [
+        "{projectRoot}/out"
+      ],
+      "cache": true
+    },
+    "test": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "test"
+      },
+      "cache": true
+    },
+    "preview": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "preview"
+      },
+      "dependsOn": [
+        "build"
+      ],
+      "cache": false
+    },
+    "lint": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "lint"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "typecheck"
+      }
+    }
+  }
+}

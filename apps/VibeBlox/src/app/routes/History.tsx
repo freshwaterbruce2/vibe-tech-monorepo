@@ -46,7 +46,7 @@ export default function History({ user }: HistoryProps) {
 
 	const fetchHistory = async () => {
 		try {
-			const token = window.electronAPI.store.get("token");
+			const token = localStorage.getItem("token");
 
 			// Fetch quest history
 			const questResponse = await fetch("/api/quests/history?limit=50", {

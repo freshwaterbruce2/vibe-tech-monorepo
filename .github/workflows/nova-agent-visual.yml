@@ -90,7 +90,7 @@ jobs:
 
       - name: Upload Playwright report on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: nova-agent-playwright-report
           path: apps/nova-agent/playwright-report/
@@ -98,7 +98,7 @@ jobs:
 
       - name: Upload snapshot diffs on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: nova-agent-snapshot-diffs
           path: apps/nova-agent/test-results/

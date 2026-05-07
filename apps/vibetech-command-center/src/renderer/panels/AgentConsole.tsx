@@ -100,6 +100,7 @@ function ProcessRow({ proc, selected, onSelect, onKill }: {
             onClick={(e) => { e.stopPropagation(); onKill(); }}
             className="text-slate-500 hover:text-status-error shrink-0"
             title="kill"
+            aria-label="Kill process"
             type="button"
           >
             <X size={14} />

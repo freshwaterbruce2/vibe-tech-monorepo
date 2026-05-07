@@ -165,7 +165,7 @@ export class AgentCoordinator {
         ...context.userPreferences,
         peerResponses: Object.entries(initialResponses).map(([agent, response]) => ({
           agent,
-          insights: response.content.substring(0, 500),
+          insights: (response.content ?? '').substring(0, 500),
           suggestions: response.suggestions ?? []
         }))
       }

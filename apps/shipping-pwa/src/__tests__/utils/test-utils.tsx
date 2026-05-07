@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import type { ReactElement } from 'react';
 import { render as rtlRender, RenderOptions } from '@testing-library/react';
 import { DoorSchedule } from '@/types/shipping';
@@ -42,10 +41,3 @@ export const expectValidationError = (container: HTMLElement, message: string) =
   const error = container.querySelector('[role="alert"]');
   expect(error).toHaveTextContent(message);
 };
-
-// Common accessibility checks
-export const expectNoAccessibilityViolations = async (container: HTMLElement) => {
-  const { axe } = await import('jest-axe');
-  const results = await axe(container);
-  expect(results).toHaveNoViolations();
-}; 

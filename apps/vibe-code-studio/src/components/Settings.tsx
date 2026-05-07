@@ -345,6 +345,7 @@ export const Settings = ({
                   AI Model
                   <button
                     onClick={() => setShowModelComparison(!showModelComparison)}
+                    aria-label="Compare AI models"
                     style={{
                       background: 'none',
                       border: 'none',

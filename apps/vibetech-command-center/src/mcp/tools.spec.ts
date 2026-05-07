@@ -15,6 +15,10 @@ function makeFakeContainer(): ServiceContainer {
         generatedAt: Date.now()
       })
     } as unknown as ServiceContainer['nxGraph'],
+    nxAffected: {
+      getAffected: vi.fn().mockResolvedValue({ base: 'origin/main', head: 'HEAD', projects: [], generatedAt: Date.now() }),
+      refresh: vi.fn().mockResolvedValue({ base: 'origin/main', head: 'HEAD', projects: [], generatedAt: Date.now() })
+    } as unknown as ServiceContainer['nxAffected'],
     health: {
       probeAll: vi.fn().mockResolvedValue([
         { service: 'dashboard-ui', host: '127.0.0.1', port: 5180, reachable: true, latencyMs: 1, checkedAt: 1 }
@@ -44,6 +48,31 @@ function makeFakeContainer(): ServiceContainer {
     rag: {
       search: vi.fn().mockResolvedValue({ query: 'test', hits: [], latencyMs: 10, source: 'unavailable' })
     } as unknown as ServiceContainer['rag'],
+    dbExplorer: {
+      listDatabases: vi.fn().mockResolvedValue([]),
+      getSchema: vi.fn().mockResolvedValue([]),
+      runQuery: vi.fn().mockResolvedValue({ columns: [], rows: [], rowCount: 0, truncated: false, executionMs: 0 })
+    } as unknown as ServiceContainer['dbExplorer'],
+    agent: {
+      probeMcpServers: vi.fn().mockResolvedValue([]),
+      runTask: vi.fn().mockResolvedValue({ id: 'a1', command: 'pnpm', args: [], cwd: '.', pid: 1, status: 'running', startedAt: 1, exitCode: null }),
+      listTasks: vi.fn().mockReturnValue([]),
+      searchLogs: vi.fn().mockReturnValue([])
+    } as unknown as ServiceContainer['agent'],
+    memory: {
+      getSnapshot: vi.fn().mockResolvedValue({
+        stats: [],
+        recentEpisodic: [],
+        recentSemantic: [],
+        recentProcedural: [],
+        decayItems: [],
+        consolidationStatus: { lastRunAt: null, itemsSummarized: 0, itemsPruned: 0 },
+        generatedAt: Date.now()
+      }),
+      search: vi.fn().mockResolvedValue([]),
+      computeDecay: vi.fn().mockResolvedValue([]),
+      triggerConsolidation: vi.fn().mockResolvedValue({ success: false, message: 'read-only' })
+    } as unknown as ServiceContainer['memory'],
     wsPort: 0
   };
 }

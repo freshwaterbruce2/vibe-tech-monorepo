@@ -31,7 +31,7 @@ export const UserProvider = ({
   const [currentUser, setCurrentUser] = useState<User>(defaultUser);
 
   useEffect(() => {
-    const savedUser = window.electronAPI?.store.get("currentUser");
+    const savedUser = localStorage.getItem("currentUser");
     if (savedUser) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentUser(JSON.parse(savedUser));
@@ -40,7 +40,7 @@ export const UserProvider = ({
 
   const updateUser = (user: User) => {
     setCurrentUser(user);
-    window.electronAPI?.store.set("currentUser", JSON.stringify(user));
+    localStorage.setItem("currentUser", JSON.stringify(user));
   };
 
   return (

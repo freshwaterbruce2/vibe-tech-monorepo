@@ -11,13 +11,13 @@
  */
 import { logger } from '../../services/Logger';
 import type {
-    ActionType,
-    AgentStep,
-    ReActCycle,
-    StrategyMatch,
-    StrategyMemoryStats,
-    StrategyPattern,
-    StrategyQuery
+  ActionType,
+  AgentStep,
+  ReActCycle,
+  StrategyMatch,
+  StrategyMemoryStats,
+  StrategyPattern,
+  StrategyQuery,
 } from '../../types';
 
 const STORAGE_KEY = 'deepcode_strategy_memory';
@@ -28,7 +28,9 @@ export class StrategyMemory {
   private storageAvailable: boolean = true;
 
   constructor() {
-    this.loadFromStorage().catch(err => logger.error('[StrategyMemory] Failed to load from storage', err));
+    this.loadFromStorage().catch((err) =>
+      logger.error('[StrategyMemory] Failed to load from storage', err),
+    );
   }
 
   /**
@@ -41,18 +43,14 @@ export class StrategyMemory {
       taskType?: string;
       fileExtension?: string;
       workspaceType?: string;
-    }
+    },
   ): Promise<void> {
     if (!cycle.observation.success) {
       logger.debug('[StrategyMemory] Skipping failed cycle - only storing successes');
       return;
     }
 
-    const problemSignature = this.generateSignature(
-      step.description,
-      step.action.type,
-      context
-    );
+    const problemSignature = this.generateSignature(step.description, step.action.type, context);
 
     // Check if pattern already exists
     const existingPattern = this.patterns.get(problemSignature);
@@ -64,11 +62,11 @@ export class StrategyMemory {
       existingPattern.lastSuccessAt = new Date();
       existingPattern.successRate = this.calculateSuccessRate(
         existingPattern.usageCount,
-        existingPattern.usageCount // All stored patterns are successes
+        existingPattern.usageCount, // All stored patterns are successes
       );
       existingPattern.confidence = Math.min(
         100,
-        existingPattern.confidence + 5 // Increase confidence with repeated success
+        existingPattern.confidence + 5, // Increase confidence with repeated success
       );
 
       logger.debug(`[StrategyMemory] Updated existing pattern: ${problemSignature}`);
@@ -114,20 +112,20 @@ export class StrategyMemory {
     const matches: StrategyMatch[] = [];
 
     for (const pattern of this.patterns.values()) {
-        const relevance = this.calculateRelevance(pattern, query);
-        if (relevance > 0) {
-            matches.push({
-                pattern,
-                relevanceScore: relevance,
-                reason: this.explainRelevance(pattern, query, relevance)
-            });
-        }
+      const relevance = this.calculateRelevance(pattern, query);
+      if (relevance > 0) {
+        matches.push({
+          pattern,
+          relevanceScore: relevance,
+          reason: this.explainRelevance(pattern, query, relevance),
+        });
+      }
     }
 
     // Sort by relevance (descending)
     return matches
-        .sort((a, b) => b.relevanceScore - a.relevanceScore)
-        .slice(0, query.maxResults ?? 5);
+      .sort((a, b) => b.relevanceScore - a.relevanceScore)
+      .slice(0, query.maxResults ?? 5);
   }
 
   // ... (recordPatternUsage same)
@@ -147,35 +145,36 @@ export class StrategyMemory {
     let newestPattern: StrategyPattern | undefined;
 
     if (patterns.length > 0) {
-        // Sorts for stats
-        const byUsage = [...patterns].sort((a, b) => b.usageCount - a.usageCount);
-        mostUsedPattern = byUsage[0];
+      // Sorts for stats
+      const byUsage = [...patterns].sort((a, b) => b.usageCount - a.usageCount);
+      mostUsedPattern = byUsage[0];
 
-        const byDate = [...patterns].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-        oldestPattern = byDate[0];
-        newestPattern = byDate[byDate.length - 1];
+      const byDate = [...patterns].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      oldestPattern = byDate[0];
+      newestPattern = byDate[byDate.length - 1];
 
-        // Calculate totals
-        for (const p of patterns) {
-            // Estimate successes/failures based on rate and count
-            const successes = Math.round((p.successRate / 100) * p.usageCount);
-            totalSuccesses += successes;
-            totalFailures += (p.usageCount - successes);
-        }
+      // Calculate totals
+      for (const p of patterns) {
+        // Estimate successes/failures based on rate and count
+        const successes = Math.round((p.successRate / 100) * p.usageCount);
+        totalSuccesses += successes;
+        totalFailures += p.usageCount - successes;
+      }
     }
 
-    const averageSuccessRate = patterns.length > 0
+    const averageSuccessRate =
+      patterns.length > 0
         ? patterns.reduce((acc, p) => acc + p.successRate, 0) / patterns.length
         : 0;
 
     return {
-        totalPatterns,
-        totalSuccesses,
-        totalFailures,
-        averageSuccessRate,
-        mostUsedPattern,
-        oldestPattern,
-        newestPattern
+      totalPatterns,
+      totalSuccesses,
+      totalFailures,
+      averageSuccessRate,
+      mostUsedPattern,
+      oldestPattern,
+      newestPattern,
     };
   }
 
@@ -236,7 +235,7 @@ export class StrategyMemory {
       taskType?: string;
       fileExtension?: string;
       workspaceType?: string;
-    }
+    },
   ): string {
     const normalized = description.toLowerCase().trim();
     const parts = [
@@ -259,10 +258,7 @@ export class StrategyMemory {
   /**
    * Calculate relevance score between a pattern and a query
    */
-  private calculateRelevance(
-    pattern: StrategyPattern,
-    query: StrategyQuery
-  ): number {
+  private calculateRelevance(pattern: StrategyPattern, query: StrategyQuery): number {
     let score = 0;
 
     // Action type match (high weight)
@@ -273,7 +269,7 @@ export class StrategyMemory {
     // Description similarity (moderate weight)
     const descSimilarity = this.calculateStringSimilarity(
       pattern.problemDescription.toLowerCase(),
-      query.problemDescription.toLowerCase()
+      query.problemDescription.toLowerCase(),
     );
     score += descSimilarity * 30;
 
@@ -282,7 +278,10 @@ export class StrategyMemory {
       if (query.context.taskType && pattern.context.taskType === query.context.taskType) {
         score += 15;
       }
-      if (query.context.fileExtension && pattern.context.fileExtension === query.context.fileExtension) {
+      if (
+        query.context.fileExtension &&
+        pattern.context.fileExtension === query.context.fileExtension
+      ) {
         score += 10;
       }
       if (query.context.errorType && pattern.context.errorType === query.context.errorType) {
@@ -294,7 +293,8 @@ export class StrategyMemory {
     score += (pattern.successRate / 100) * 10;
 
     // Recency bonus (recently used patterns get a small boost)
-    const daysSinceUse = (Date.now() - new Date(pattern.lastUsedAt).getTime()) / (1000 * 60 * 60 * 24);
+    const daysSinceUse =
+      (Date.now() - new Date(pattern.lastUsedAt).getTime()) / (1000 * 60 * 60 * 24);
     if (daysSinceUse < 7) {
       score += 5;
     }
@@ -309,7 +309,7 @@ export class StrategyMemory {
     const words1 = new Set(str1.split(/\s+/));
     const words2 = new Set(str2.split(/\s+/));
 
-    const intersection = new Set([...words1].filter(word => words2.has(word)));
+    const intersection = new Set([...words1].filter((word) => words2.has(word)));
     const union = new Set([...words1, ...words2]);
 
     return union.size > 0 ? intersection.size / union.size : 0;
@@ -318,11 +318,7 @@ export class StrategyMemory {
   /**
    * Explain why a pattern is relevant
    */
-  private explainRelevance(
-    pattern: StrategyPattern,
-    query: StrategyQuery,
-    _score: number
-  ): string {
+  private explainRelevance(pattern: StrategyPattern, query: StrategyQuery, _score: number): string {
     const reasons: string[] = [];
 
     if (query.actionType === pattern.actionType) {
@@ -364,9 +360,13 @@ export class StrategyMemory {
     // Sort by score: lower = more likely to prune
     // Score = usageCount * successRate * recencyBonus
     patterns.sort((a, b) => {
-      const scoreA = a.usageCount * (a.successRate / 100) *
+      const scoreA =
+        a.usageCount *
+        (a.successRate / 100) *
         (1 + 1 / (1 + (Date.now() - new Date(a.lastUsedAt).getTime()) / (1000 * 60 * 60 * 24)));
-      const scoreB = b.usageCount * (b.successRate / 100) *
+      const scoreB =
+        b.usageCount *
+        (b.successRate / 100) *
         (1 + 1 / (1 + (Date.now() - new Date(b.lastUsedAt).getTime()) / (1000 * 60 * 60 * 24)));
 
       return scoreA - scoreB; // Ascending (lowest scores first)
@@ -394,13 +394,12 @@ export class StrategyMemory {
     }
 
     try {
-        let stored: string | null = null;
-        if (window.electron?.store) {
-            stored = await window.electron.store.get(STORAGE_KEY);
-        } else if (typeof localStorage !== 'undefined') {
-            // eslint-disable-next-line electron-security/no-localstorage-electron
-            stored = localStorage.getItem(STORAGE_KEY);
-        }
+      let stored: string | null = null;
+      if (window.electron?.store) {
+        stored = await window.electron.store.get(STORAGE_KEY);
+      } else if (typeof localStorage !== 'undefined') {
+        stored = localStorage.getItem(STORAGE_KEY);
+      }
 
       if (stored) {
         const patterns = JSON.parse(stored) as StrategyPattern[];
@@ -434,10 +433,9 @@ export class StrategyMemory {
     try {
       const patterns = Array.from(this.patterns.values());
       if (window.electron?.store) {
-          await window.electron.store.set(STORAGE_KEY, JSON.stringify(patterns));
+        await window.electron.store.set(STORAGE_KEY, JSON.stringify(patterns));
       } else if (typeof localStorage !== 'undefined') {
-          // eslint-disable-next-line electron-security/no-localstorage-electron
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(patterns));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(patterns));
       }
     } catch (error) {
       logger.error('[StrategyMemory] Failed to save to storage:', error);

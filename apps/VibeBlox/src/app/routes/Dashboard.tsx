@@ -50,7 +50,7 @@ export default function Dashboard({ user }: DashboardProps) {
 
 		const fetchActivities = async () => {
 			try {
-				const token = window.electronAPI.store.get("token");
+				const token = localStorage.getItem("token");
 				const response = await fetch("/api/activity?limit=10", {
 					headers: { Authorization: `Bearer ${token}` },
 				});

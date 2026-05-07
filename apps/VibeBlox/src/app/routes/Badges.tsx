@@ -49,7 +49,7 @@ export default function Badges({ user }: BadgesProps) {
 
   const fetchAchievements = async () => {
     try {
-      const token = window.electronAPI.store.get('token');
+      const token = localStorage.getItem("token");
       const response = await fetch('/api/achievements', {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -67,7 +67,7 @@ export default function Badges({ user }: BadgesProps) {
 
   const fetchStats = async () => {
     try {
-      const token = window.electronAPI.store.get('token');
+      const token = localStorage.getItem("token");
       const response = await fetch('/api/achievements/stats', {
         headers: { Authorization: `Bearer ${token}` },
       });

@@ -5,7 +5,6 @@ import { useEffect, useRef,useState } from 'react';
 import { Check,ChevronDown, DollarSign, Sparkles, Zap } from 'lucide-react';
 import styled from 'styled-components';
 
-// import { AIProviderManager } from '../../services/ai/AIProviderManager';
 import type { AIModel} from '../../services/ai/AIProviderInterface';
 import { AIProvider, MODEL_REGISTRY } from '../../services/ai/AIProviderInterface';
 import { vibeTheme } from '../../styles/theme';
@@ -184,7 +183,6 @@ const Badge = styled.span<{ $type: 'recommended' | 'fast' | 'smart' }>`
 const ModelSelector = ({ currentModel, onModelChange }: ModelSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  // const [providerManager] = useState(() => new AIProviderManager());
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

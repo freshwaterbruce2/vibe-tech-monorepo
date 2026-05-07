@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Vibe-Tech Command Center — monorepo dashboard, diagnostics, and Claude Code bridge",
+  "author": "Bruce Freshwater",
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
@@ -32,7 +33,7 @@
     "better-sqlite3": "^11.7.0",
     "chokidar": "^4.0.1",
     "clsx": "^2.1.1",
-    "lucide-react": "^1.8.0",
+    "lucide-react": "0.563.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "ws": "^8.18.0",
@@ -101,7 +102,7 @@
           ]
         }
       ],
-      "icon": "build/icon.ico",
+      "icon": "build-resources/icon.ico",
       "artifactName": "${productName}-Setup-${version}.${ext}"
     },
     "nsis": {

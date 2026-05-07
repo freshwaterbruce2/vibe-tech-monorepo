@@ -4,6 +4,9 @@ import { immer } from 'zustand/middleware/immer';
 
 import type { EditorFile, EditorSettings, WorkspaceContext } from '../types';
 
+// Track notification auto-remove timers so they can be cleared on manual removal
+const notificationTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
 /**
  * Modern Zustand Store for Vibe Code Studio - 2025 Patterns
  *
@@ -265,14 +268,21 @@ export const useEditorStore = create<EditorState>()(
 
                 // Auto-remove after 5 seconds for non-error notifications
                 if (notification.type !== 'error') {
-                  setTimeout(() => {
+                  const timer = setTimeout(() => {
+                    notificationTimers.delete(id);
                     get().actions.removeNotification(id);
                   }, 5000);
+                  notificationTimers.set(id, timer);
                 }
               }),
 
             removeNotification: (id) =>
               set((state) => {
+                const timer = notificationTimers.get(id);
+                if (timer) {
+                  clearTimeout(timer);
+                  notificationTimers.delete(id);
+                }
                 const index = state.notifications.findIndex((n) => n.id === id);
                 if (index > -1) {
                   state.notifications.splice(index, 1);
@@ -281,6 +291,10 @@ export const useEditorStore = create<EditorState>()(
 
             clearNotifications: () =>
               set((state) => {
+                for (const timer of notificationTimers.values()) {
+                  clearTimeout(timer);
+                }
+                notificationTimers.clear();
                 state.notifications = [];
               }),
           },

@@ -1,28 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { logger } from '../services/Logger';
 import { WorkspaceService } from '../services/WorkspaceService';
 import type { ContextualFile, EditorFile, WorkspaceContext } from '../types';
-
-// Debounce utility function
-function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null;
-
-  return function executedFunction(...args: Parameters<T>) {
-    const later = () => {
-      timeout = null;
-      func(...args);
-    };
-
-    if (timeout) {
-      clearTimeout(timeout);
-    }
-    timeout = setTimeout(later, wait);
-  };
-}
 
 export interface UseWorkspaceReturn {
   workspaceService: WorkspaceService;
@@ -47,6 +27,7 @@ export const useWorkspace = (): UseWorkspaceReturn => {
   const [isIndexing, setIsIndexing] = useState(false);
   const [indexingProgress, setIndexingProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const indexingTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const indexWorkspace = useCallback(
     async (rootPath: string): Promise<WorkspaceContext | null> => {
@@ -55,13 +36,21 @@ export const useWorkspace = (): UseWorkspaceReturn => {
         return null;
       }
 
+      // Clear any previous reset timeout
+      if (indexingTimeoutRef.current) {
+        clearTimeout(indexingTimeoutRef.current);
+        indexingTimeoutRef.current = undefined;
+      }
+
+      let progressInterval: ReturnType<typeof setInterval> | undefined;
+
       try {
         setIsIndexing(true);
         setError(null);
         setIndexingProgress(0);
 
         // Simulate progress updates
-        const progressInterval = setInterval(() => {
+        progressInterval = setInterval(() => {
           setIndexingProgress((prev) => {
             if (prev >= 90) {
               clearInterval(progressInterval);
@@ -75,6 +64,7 @@ export const useWorkspace = (): UseWorkspaceReturn => {
         const context = await workspaceService.indexWorkspace(rootPath);
 
         clearInterval(progressInterval);
+        progressInterval = undefined;
         setIndexingProgress(100);
         setWorkspaceContext(context);
         setCurrentRootPath(context?.rootPath || null);
@@ -82,7 +72,7 @@ export const useWorkspace = (): UseWorkspaceReturn => {
         logger.debug('Workspace indexing completed:', context);
 
         // Reset progress after a brief delay
-        setTimeout(() => setIndexingProgress(0), 1000);
+        indexingTimeoutRef.current = setTimeout(() => setIndexingProgress(0), 1000);
 
         return context;
       } catch (err) {
@@ -90,11 +80,26 @@ export const useWorkspace = (): UseWorkspaceReturn => {
         setError(err instanceof Error ? err.message : 'Indexing failed');
         return null;
       } finally {
+        if (progressInterval) {
+          clearInterval(progressInterval);
+        }
         setIsIndexing(false);
       }
     },
     [workspaceService, isIndexing]
   );
+
+  // Cleanup any pending reset timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (indexingTimeoutRef.current) {
+        clearTimeout(indexingTimeoutRef.current);
+      }
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const getRelatedFiles = useCallback(
     (filePath: string, maxResults = 10): ContextualFile[] => {
@@ -204,17 +209,23 @@ export const useWorkspace = (): UseWorkspaceReturn => {
     workspaceContextRef.current = workspaceContext;
   }, [workspaceContext]);
 
-  const debouncedRefreshIndex = useMemo(
-    () =>
-      debounce(() => {
-        const ctx = workspaceContextRef.current;
-        if (ctx && !isIndexing) {
-          logger.debug('[useWorkspace] Debounced refresh triggered');
-          indexWorkspace(ctx.rootPath);
-        }
-      }, 5000),
-    [indexWorkspace, isIndexing] // Removed workspaceContext and refreshIndex to prevent loop
-  );
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const debouncedRefreshIndex = useCallback(() => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    debounceTimeoutRef.current = setTimeout(() => {
+      debounceTimeoutRef.current = undefined;
+      const ctx = workspaceContextRef.current;
+      if (ctx && !isIndexing) {
+        logger.debug('[useWorkspace] Debounced refresh triggered');
+        indexWorkspace(ctx.rootPath).catch((err) => {
+          logger.error('[useWorkspace] Debounced refresh failed:', err);
+        });
+      }
+    }, 5000);
+  }, [indexWorkspace, isIndexing]);
 
   const clearWorkspace = useCallback(() => {
     setWorkspaceContext(null);

@@ -2,8 +2,10 @@ import { Store } from "@tauri-apps/plugin-store";
 import {
 	createContext,
 	type ReactNode,
+	useCallback,
 	useContext,
 	useEffect,
+	useMemo,
 	useRef,
 	useState,
 } from "react";
@@ -119,66 +121,78 @@ export const NotificationsProvider = ({
 	}, [notifications]);
 
 	// Add a new notification
-	const addNotification = (
-		notification: Omit<Notification, "id" | "timestamp" | "read">,
-	) => {
-		const newNotification: Notification = {
-			...notification,
-			id: Date.now().toString(),
-			timestamp: new Date(),
-			read: false,
-		};
+	const addNotification = useCallback(
+		(notification: Omit<Notification, "id" | "timestamp" | "read">) => {
+			const newNotification: Notification = {
+				...notification,
+				id: Date.now().toString(),
+				timestamp: new Date(),
+				read: false,
+			};
 
-		setNotifications((prev) => [newNotification, ...prev]);
+			setNotifications((prev) => [newNotification, ...prev]);
 
-		// Show a toast for the new notification
-		toast({
-			title: notification.title,
-			description: notification.message,
-			variant: notification.type === "error" ? "destructive" : "default",
-		});
-	};
+			// Show a toast for the new notification
+			toast({
+				title: notification.title,
+				description: notification.message,
+				variant: notification.type === "error" ? "destructive" : "default",
+			});
+		},
+		[],
+	);
 
 	// Mark a notification as read
-	const markAsRead = (id: string) => {
+	const markAsRead = useCallback((id: string) => {
 		setNotifications((prev) =>
 			prev.map((notification) =>
 				notification.id === id ? { ...notification, read: true } : notification,
 			),
 		);
-	};
+	}, []);
 
 	// Mark all notifications as read
-	const markAllAsRead = () => {
+	const markAllAsRead = useCallback(() => {
 		setNotifications((prev) =>
 			prev.map((notification) => ({ ...notification, read: true })),
 		);
-	};
+	}, []);
 
 	// Remove a notification
-	const removeNotification = (id: string) => {
+	const removeNotification = useCallback((id: string) => {
 		setNotifications((prev) =>
 			prev.filter((notification) => notification.id !== id),
 		);
-	};
+	}, []);
 
 	// Clear all notifications
-	const clearAllNotifications = () => {
+	const clearAllNotifications = useCallback(() => {
 		setNotifications([]);
-	};
+	}, []);
+
+	const value = useMemo(
+		() => ({
+			notifications,
+			unreadCount,
+			addNotification,
+			markAsRead,
+			markAllAsRead,
+			removeNotification,
+			clearAllNotifications,
+		}),
+		[
+			notifications,
+			unreadCount,
+			addNotification,
+			markAsRead,
+			markAllAsRead,
+			removeNotification,
+			clearAllNotifications,
+		],
+	);
 
 	return (
-		<NotificationsContext.Provider
-			value={{
-				notifications,
-				unreadCount,
-				addNotification,
-				markAsRead,
-				markAllAsRead,
-				removeNotification,
-				clearAllNotifications,
-			}}
-		>
+		<NotificationsContext.Provider value={value}>
 			{children}
 		</NotificationsContext.Provider>
 	);

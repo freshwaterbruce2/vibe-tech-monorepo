@@ -59,7 +59,8 @@ export class ProcessRunner extends EventEmitter {
 
     proc.on('error', (err) => {
       this.updateStatus(id, 'error', null);
-      this.emit('error', { processId: id, error: err.message });
+      // Emit on a safe channel so uncaught listeners don't crash the app
+      this.emit('spawn-error', { processId: id, error: err.message });
     });
 
     proc.on('close', (code) => {

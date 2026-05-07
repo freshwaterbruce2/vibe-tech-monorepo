@@ -8,3 +8,5 @@ packages:
   - "backend"
   - "backend/*"
   - "tools/*/mcp-server"
+  # Exclude local-only WIP workspaces not yet committed to git.
+  - "!apps/gravity-claw"

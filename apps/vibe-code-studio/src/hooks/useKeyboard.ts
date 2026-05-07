@@ -17,8 +17,6 @@
  */
 import { useCallback, useEffect, useRef, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 
-import { logger as _logger } from '../services/Logger';
-
 export interface KeyboardHandlers {
   onEnter?: (event: KeyboardEvent) => void;
   onSpace?: (event: KeyboardEvent) => void;
@@ -47,16 +45,6 @@ export function useKeyboard(options: UseKeyboardOptions = {}) {
     enabled = true,
     preventDefault = true,
     stopPropagation = false,
-    onEnter: _onEnter,
-    onSpace: _onSpace,
-    onEscape: _onEscape,
-    onArrowUp: _onArrowUp,
-    onArrowDown: _onArrowDown,
-    onArrowLeft: _onArrowLeft,
-    onArrowRight: _onArrowRight,
-    onTab: _onTab,
-    onShiftTab: _onShiftTab,
-    onCustomKey: _onCustomKey,
   } = options;
 
   const handlersRef = useRef(options);

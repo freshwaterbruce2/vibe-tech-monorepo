@@ -28,6 +28,7 @@ export class TelemetryService {
   private flushInterval: number = 30000; // 30 seconds
   private maxQueueSize: number = 100;
   private enabled: boolean;
+  private flushTimer: ReturnType<typeof setInterval> | null = null;
 
   private constructor() {
     this.sessionId = this.generateSessionId();
@@ -234,7 +235,10 @@ export class TelemetryService {
    * Start interval to flush events
    */
   private startFlushInterval(): void {
-    setInterval(() => {
+    if (this.flushTimer) {
+      clearInterval(this.flushTimer);
+    }
+    this.flushTimer = setInterval(() => {
       this.flush();
       this.flushErrors();
     }, this.flushInterval);
@@ -265,6 +269,10 @@ export class TelemetryService {
    */
   disable(): void {
     this.enabled = false;
+    if (this.flushTimer) {
+      clearInterval(this.flushTimer);
+      this.flushTimer = null;
+    }
     this.eventQueue = [];
     this.errorQueue = [];
   }

@@ -53,4 +53,14 @@ describe('WsHub', () => {
     await new Promise((r) => setTimeout(r, 100));
     expect(hub.clientCount).toBe(0);
   });
+
+  it('reports the actual port when started with port 0', async () => {
+    const dynamicHub = new WsHub({ port: 0 });
+    await dynamicHub.start();
+    try {
+      expect(dynamicHub.actualPort).toBeGreaterThan(0);
+    } finally {
+      await dynamicHub.stop();
+    }
+  });
 });

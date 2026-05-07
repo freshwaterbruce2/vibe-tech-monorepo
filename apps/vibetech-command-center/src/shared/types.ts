@@ -34,10 +34,164 @@ export interface NxGraph {
   generatedAt: number;
 }
 
+// ---------- nx-affected ----------
+export type RiskFlag =
+  | 'CROSS_TIER_1'
+  | 'HIGH_FAN_OUT'
+  | 'NO_TEST_COVERAGE'
+  | 'BUILD_STALE'
+  | 'TYPECHECK_FAIL';
+
+export interface AffectedProject {
+  name: string;
+  type: 'app' | 'lib';
+  root: string;
+  tags: string[];
+  targets: string[];
+  upstream: string[];    // projects that depend on this
+  downstream: string[];  // projects this depends on
+  healthScore: number;   // 0-100
+  riskFlags: RiskFlag[];
+}
+
+export interface AffectedGraph {
+  base: string;
+  head: string;
+  projects: AffectedProject[];
+  generatedAt: number;
+}
+
+// ---------- db-explorer ----------
+export interface DbTableSchema {
+  name: string;
+  columns: Array<{ name: string; type: string; notNull: boolean; defaultValue: string | null }>;
+  rowCount: number;
+  estimatedSizeBytes: number | null;
+}
+
+export interface DbExplorerResult {
+  columns: string[];
+  rows: unknown[][];
+  rowCount: number;
+  truncated: boolean;
+  executionMs: number;
+}
+
+export interface DbExplorerDatabase {
+  name: string;
+  path: string;
+  sizeBytes: number;
+  walSizeBytes: number;
+  lastModifiedAt: number;
+  tables: DbTableSchema[];
+}
+
+// ---------- agent-orchestrator ----------
+export type McpTransport = 'stdio' | 'http';
+
+export interface McpServerStatus {
+  name: string;
+  transport: McpTransport;
+  port?: number;
+  healthy: boolean;
+  runtimeStatus?: 'running' | 'installed-not-running' | 'missing' | 'unreachable';
+  lastProbeAt: number;
+  error?: string;
+}
+
+export type AgentTaskStatus = 'pending' | 'running' | 'exited' | 'killed' | 'error';
+
+export interface AgentTaskSpec {
+  id: string;
+  project: string;
+  target: string;
+  args: string[];
+  status: AgentTaskStatus;
+  startedAt: number;
+  exitedAt?: number;
+  exitCode: number | null;
+}
+
+export interface AgentTaskLauncher {
+  project: string;
+  target: string;
+  args?: string[];
+}
+
+export interface LogSearchFilters {
+  processId?: string;
+  stream?: 'stdout' | 'stderr';
+  since?: number;
+}
+
+// ---------- memory-viz ----------
+export type MemoryStoreType = 'episodic' | 'semantic' | 'procedural';
+
+export interface MemoryStoreStats {
+  store: MemoryStoreType;
+  recordCount: number;
+  avgEmbeddingDim?: number;
+  lastConsolidatedAt?: number;
+}
+
+export interface EpisodicMemoryView {
+  id: number;
+  sourceAgent: string;
+  queryPreview: string;
+  responsePreview: string;
+  sessionId: string;
+  timestamp: number;
+}
+
+export interface SemanticMemoryView {
+  id: number;
+  text: string;
+  category: string;
+  importance: number;
+  accessCount: number;
+  lastAccessedAt: number;
+}
+
+export interface ProceduralMemoryView {
+  id: number;
+  pattern: string;
+  context: string;
+  frequency: number;
+  successRate: number;
+}
+
+export interface MemoryDecayView {
+  memoryId: number;
+  textPreview: string;
+  decayScore: number;
+  recommendedAction: 'keep' | 'summarize' | 'prune';
+}
+
+export interface MemorySearchResult {
+  source: MemoryStoreType;
+  id: number;
+  text: string;
+  score: number;
+}
+
+export interface MemoryVizSnapshot {
+  stats: MemoryStoreStats[];
+  recentEpisodic: EpisodicMemoryView[];
+  recentSemantic: SemanticMemoryView[];
+  recentProcedural: ProceduralMemoryView[];
+  decayItems: MemoryDecayView[];
+  consolidationStatus: {
+    lastRunAt: number | null;
+    itemsSummarized: number;
+    itemsPruned: number;
+  };
+  generatedAt: number;
+}
+
 // ---------- health-probe ----------
 export type ServiceName =
-  | 'frontend-vite'     // 5173
-  | 'backend-express'   // 5177
+  | 'ipc-bridge'        // 5004
+  | 'symptom-tracker'   // 5055
   | 'dashboard-ui'      // 5180
   | 'openrouter-proxy'  // 3001
   | 'memory-mcp'        // 3200
@@ -202,6 +356,8 @@ export type IpcResult<T> = IpcResponse<T> | IpcErrorResponse;
 export const IPC_CHANNELS = {
   NX_GET: 'cc:nx:get',
   NX_REFRESH: 'cc:nx:refresh',
+  AFFECTED_GET: 'cc:affected:get',
+  AFFECTED_REFRESH: 'cc:affected:refresh',
   HEALTH_PROBE_ALL: 'cc:health:probeAll',
   HEALTH_PROBE_ONE: 'cc:health:probeOne',
   DB_COLLECT_ALL: 'cc:db:collectAll',
@@ -214,7 +370,18 @@ export const IPC_CHANNELS = {
   RAG_SEARCH: 'cc:rag:search',
   META_INFO: 'cc:meta:info',
   META_WS_PORT: 'cc:meta:wsPort',
-  FS_STAT: 'cc:fs:stat'
+  FS_STAT: 'cc:fs:stat',
+  DB_EXPLORER_LIST: 'cc:dbExplorer:list',
+  DB_EXPLORER_SCHEMA: 'cc:dbExplorer:schema',
+  DB_EXPLORER_QUERY: 'cc:dbExplorer:query',
+  AGENT_MCP_STATUS: 'cc:agent:mcpStatus',
+  AGENT_TASK_RUN: 'cc:agent:taskRun',
+  AGENT_TASK_LIST: 'cc:agent:taskList',
+  AGENT_LOG_SEARCH: 'cc:agent:logSearch',
+  MEMORY_VIZ_SNAPSHOT: 'cc:memory:snapshot',
+  MEMORY_VIZ_SEARCH: 'cc:memory:search',
+  MEMORY_VIZ_DECAY: 'cc:memory:decay',
+  MEMORY_VIZ_CONSOLIDATE: 'cc:memory:consolidate'
 } as const;
 
 export type IpcChannel = typeof IPC_CHANNELS[keyof typeof IPC_CHANNELS];
@@ -265,8 +432,29 @@ export interface CommandCenterAPI {
   fs: {
     stat(path: string): Promise<IpcResult<FsStatResult>>;
   };
+  affected: {
+    get(force?: boolean): Promise<IpcResult<AffectedGraph>>;
+    refresh(): Promise<IpcResult<AffectedGraph>>;
+  };
   meta: {
     info(): Promise<IpcResult<{ version: string; monorepoRoot: string; wsPort: number }>>;
+  };
+  dbExplorer: {
+    list(): Promise<IpcResult<DbExplorerDatabase[]>>;
+    schema(dbPath: string): Promise<IpcResult<DbTableSchema[]>>;
+    query(dbPath: string, sql: string): Promise<IpcResult<DbExplorerResult>>;
+  };
+  agent: {
+    mcpStatus(): Promise<IpcResult<McpServerStatus[]>>;
+    taskRun(spec: AgentTaskLauncher): Promise<IpcResult<ProcessHandle>>;
+    taskList(): Promise<IpcResult<AgentTaskSpec[]>>;
+    logSearch(filters: LogSearchFilters): Promise<IpcResult<ProcessChunk[]>>;
+  };
+  memory: {
+    snapshot(): Promise<IpcResult<MemoryVizSnapshot>>;
+    search(query: string, topK?: number): Promise<IpcResult<MemorySearchResult[]>>;
+    decay(): Promise<IpcResult<MemoryDecayView[]>>;
+    consolidate(): Promise<IpcResult<{ success: boolean; message: string }>>;
   };
 
   stream: {

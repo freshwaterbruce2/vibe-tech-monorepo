@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { shouldForwardMotionProp } from '../utils/motionProps';
 import {
   Activity,
   AlertCircle,
@@ -44,7 +45,9 @@ const RightSection = styled.div`
   gap: ${vibeTheme.spacing[2]};
 `;
 
-const StatusItem = styled(motion.div)<{ clickable?: boolean }>`
+const StatusItem = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{ clickable?: boolean }>`
   display: flex;
   align-items: center;
   gap: ${vibeTheme.spacing[1]};
@@ -270,6 +273,14 @@ const StatusBarEnhanced = ({
         <ModelIndicator
           clickable
           onClick={onModelStrategyClick}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onModelStrategyClick?.();
+            }
+          }}
+          role="button"
+          tabIndex={0}
           whileHover={{ scale: 1.05, y: -1 }}
           whileTap={{ scale: 0.95 }}
           title={`Current AI: ${getModelDisplayName()} | Strategy: ${modelStrategy} | Click to change strategy`}
@@ -345,6 +356,7 @@ const StatusBarEnhanced = ({
           active={true}
           onClick={onToggleSidebar}
           title="Toggle Sidebar"
+          aria-label="Toggle sidebar"
           whileHover={{ scale: 1.05, y: -1 }}
           whileTap={{ scale: 0.95 }}
         >

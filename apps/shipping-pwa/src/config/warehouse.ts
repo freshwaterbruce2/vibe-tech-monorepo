@@ -563,7 +563,7 @@ class WarehouseConfigManager {
 
   private loadConfig(): WarehouseConfig {
     try {
-      const savedConfig = window.electronAPI?.store.get('warehouse-config');
+      const savedConfig = localStorage.getItem('warehouse-config');
       if (savedConfig) {
         return { ...defaultWarehouseConfig, ...JSON.parse(savedConfig) };
       }
@@ -655,7 +655,7 @@ class WarehouseConfigManager {
 
   private saveConfig(): void {
     try {
-      window.electronAPI?.store.set('warehouse-config', JSON.stringify(this.config));
+      localStorage.setItem('warehouse-config', JSON.stringify(this.config));
     } catch (error) {
       console.error('Failed to save warehouse config to localStorage:', error);
     }

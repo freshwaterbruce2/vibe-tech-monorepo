@@ -1,4 +1,5 @@
 // Game components for vibe-tutor
+export * from '@vibetech/games/tutor';
 export { default as AnagramsGame } from './AnagramsGame';
 export { default as BrainGymHub } from './BrainGymHub';
 export { default as CrosswordGame } from './CrosswordGame';

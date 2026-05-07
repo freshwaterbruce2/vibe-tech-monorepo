@@ -4,7 +4,7 @@
  */
 
 import type { FileChange, MultiFileEditPlan } from '@vibetech/types/multifile';
-import { useRef, useState, type MutableRefObject } from 'react';
+import { useRef, useState, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
 import type { editor as MonacoEditor } from 'monaco-editor';
 import type { AutoFixService, GeneratedFix } from '../../services/AutoFixService';
 import type { DetectedError, ErrorDetector } from '../../services/ErrorDetector';
@@ -53,7 +53,7 @@ export interface UseAppStateReturn {
 
   // Error fix state
   currentError: DetectedError | null;
-  setCurrentError: (error: DetectedError | null) => void;
+  setCurrentError: Dispatch<SetStateAction<DetectedError | null>>;
   currentFix: GeneratedFix | null;
   setCurrentFix: (fix: GeneratedFix | null) => void;
   errorFixPanelOpen: boolean;

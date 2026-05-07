@@ -63,11 +63,19 @@ export class ErrorDetector {
 
   private startMonitoring(): void {
     // Listen for changes in Monaco decorations (indicates errors changed)
-    const disposable = this.editor.onDidChangeModelDecorations(() => {
+    const decorationDisposable = this.editor.onDidChangeModelDecorations(() => {
       this.debouncedCheckForErrors();
     });
+    this.disposables.push(decorationDisposable);
 
-    this.disposables.push(disposable);
+    // Listen for model changes (new file opened) — re-check after a short delay
+    // to allow the language service to compute diagnostics
+    const modelDisposable = this.editor.onDidChangeModel(() => {
+      this.checkForErrors();
+      // Decorations may arrive async from the language service, so debounce a second check
+      this.debouncedCheckForErrors();
+    });
+    this.disposables.push(modelDisposable);
 
     // Initial error check (no debounce)
     this.checkForErrors();
@@ -125,7 +133,7 @@ export class ErrorDetector {
 
     // Check for resolved errors
     const resolvedErrors: string[] = [];
-    for (const [errorId, _error] of this.activeErrors.entries()) {
+    for (const errorId of this.activeErrors.keys()) {
       if (!currentErrorIds.has(errorId)) {
         resolvedErrors.push(errorId);
 

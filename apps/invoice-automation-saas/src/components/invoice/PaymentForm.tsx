@@ -1,11 +1,14 @@
 import { useState } from "react";
 import Button from "../common/Button";
 import Card from "../common/Card";
+import { createCheckoutSession } from "../../services/stripeService";
 
 interface PaymentFormProps {
+	invoiceId: string;
+	publicToken: string;
 	amount: number;
 	currency: string;
-	onPaid: () => Promise<void> | void;
+	disabled?: boolean;
 }
 
 const formatCurrency = (amount: number, currency: string) =>
@@ -14,17 +17,23 @@ const formatCurrency = (amount: number, currency: string) =>
 	);
 
 const PaymentForm = ({
+	invoiceId,
+	publicToken,
 	amount,
 	currency,
-	onPaid,
+	disabled = false,
 }: PaymentFormProps) => {
 	const [submitting, setSubmitting] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
-	const pay = async () => {
+	const startCheckout = async () => {
 		setSubmitting(true);
+		setError(null);
 		try {
-			await onPaid();
-		} finally {
+			const { url } = await createCheckoutSession(invoiceId, publicToken);
+			window.location.href = url;
+		} catch (e) {
+			setError(e instanceof Error ? e.message : "Could not start checkout");
 			setSubmitting(false);
 		}
 	};
@@ -37,13 +46,18 @@ const PaymentForm = ({
 			<p className="ui-text">
 				Amount due: <strong>{formatCurrency(amount, currency)}</strong>
 			</p>
-			<Button onClick={() => void pay()} loading={submitting}>
-				Mark as paid (local simulation)
+			{error ? (
+				<p className="ui-text" style={{ color: "var(--ui-color-danger, #dc2626)" }}>
+					{error}
+				</p>
+			) : null}
+			<Button
+				onClick={() => void startCheckout()}
+				loading={submitting}
+				disabled={disabled || submitting}
+			>
+				Pay with Stripe
 			</Button>
-			<p className="ui-muted">
-				When you add a backend, replace this with a real Stripe Checkout
-				session.
-			</p>
 		</Card>
 	);
 };

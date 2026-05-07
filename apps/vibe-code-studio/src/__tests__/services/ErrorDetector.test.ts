@@ -10,6 +10,7 @@ import type * as monaco from 'monaco-editor';
 type MockEditor = {
   getModel: () => MockModel | null;
   onDidChangeModelDecorations: (callback: () => void) => { dispose: () => void };
+  onDidChangeModel: (callback: () => void) => { dispose: () => void };
 };
 
 type MockModel = {
@@ -64,7 +65,8 @@ describe('ErrorDetector', () => {
         uri: { path: '/test/file.ts' },
         getAllDecorations: vi.fn(() => [])
       })),
-      onDidChangeModelDecorations: vi.fn(() => ({ dispose: vi.fn() }))
+      onDidChangeModelDecorations: vi.fn(() => ({ dispose: vi.fn() })),
+      onDidChangeModel: vi.fn(() => ({ dispose: vi.fn() }))
     };
 
     // Mock Monaco namespace
@@ -125,6 +127,7 @@ describe('ErrorDetector', () => {
       });
 
       expect(mockEditor.onDidChangeModelDecorations).toHaveBeenCalled();
+      expect(mockEditor.onDidChangeModel).toHaveBeenCalled();
     });
 
     it('should throw if editor is not provided', () => {

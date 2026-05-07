@@ -35,7 +35,7 @@ export class BackgroundWorker {
   /**
    * Execute a task in the background worker
    */
-  async execute<_T = unknown>(
+  async execute(
     taskType: string,
     data: unknown,
     onProgress?: (progress: TaskProgress) => void
@@ -58,6 +58,7 @@ export class BackgroundWorker {
 
           case 'result':
             this.messageHandlers.delete(taskId);
+            clearTimeout(timeoutId);
             resolve({
               success: true,
               data: message.payload,
@@ -66,6 +67,7 @@ export class BackgroundWorker {
 
           case 'error':
             this.messageHandlers.delete(taskId);
+            clearTimeout(timeoutId);
             resolve({
               success: false,
               error: typeof message.payload === 'string' ? message.payload : 'Unknown worker error',
@@ -81,7 +83,7 @@ export class BackgroundWorker {
       this.postMessage({ type: 'execute', payload: task });
 
       // Timeout after 5 minutes
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         if (this.messageHandlers.has(taskId)) {
           this.messageHandlers.delete(taskId);
           reject(new Error('Task execution timeout'));
@@ -171,7 +173,7 @@ export class BackgroundWorkerPool {
   /**
    * Execute a task using an available worker from the pool
    */
-  async execute<T = unknown>(
+  async execute(
     taskType: string,
     data: unknown,
     onProgress?: (progress: TaskProgress) => void
@@ -179,7 +181,7 @@ export class BackgroundWorkerPool {
     const worker = await this.getAvailableWorker();
 
     try {
-      const result = await worker.execute<T>(taskType, data, onProgress);
+      const result = await worker.execute(taskType, data, onProgress);
       this.releaseWorker(worker);
       return result;
     } catch (error) {

@@ -20,7 +20,7 @@ const mockError = {
 // Mock AIService
 vi.mock('../../services/ai/UnifiedAIService', () => ({
   UnifiedAIService: vi.fn().mockImplementation(() => ({
-    sendContextualMessage: vi.fn().mockResolvedValue('Suggested fix: Add property foo to interface Bar')
+    sendContextualMessage: vi.fn().mockResolvedValue({ content: 'Suggested fix: Add property foo to interface Bar' })
   }))
 }));
 
@@ -30,7 +30,7 @@ describe('ProactiveDebugger', () => {
 
   beforeEach(async () => {
     mockAIService = {
-      sendContextualMessage: vi.fn().mockResolvedValue('AI suggestion')
+      sendContextualMessage: vi.fn().mockResolvedValue({ content: 'AI suggestion' })
     };
 
     try {

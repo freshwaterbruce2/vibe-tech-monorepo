@@ -43,7 +43,8 @@ A new skill at `C:\dev\.claude\skills\user\ecosystem-sync\` that audits my monor
 
 **MCP-008 — Missing zod peer dep (2 servers):** mcp-skills-server, memory-mcp
 
-**CMD-004 — Missing CLAUDE.md (14 apps):** avge-dashboard, clawdbot-desktop, gravity-claw, invoice-automation-saas, mcp-codeberg, mcp-gateway, mcp-skills-server, memory-mcp, monorepo-dashboard, nova-mobile-app, prompt-engineer, symptom-tracker, VibeBlox, vtde
+**CMD-004 — Missing CLAUDE.md (13 apps):** avge-dashboard, clawdbot-desktop, gravity-claw, invoice-automation-saas, mcp-codeberg, mcp-gateway, mcp-skills-server, memory-mcp, nova-mobile-app, prompt-engineer, symptom-tracker, VibeBlox, vtde
+> Note: `monorepo-dashboard` was retired; functionality moved to `vibetech-command-center` (which has a CLAUDE.md).
 
 **Agent registry shows 4 entries** in `agents.json` but the vibetech-agents skill documents 19. Needs investigation.
 

@@ -102,6 +102,17 @@ temp/
 # Claude session data
 .claude/session-data/
 .claude/validation-reports/
+.claude/settings.local.json
+
+# DeepCode AI agent state
+.deepcode/
+
+# Serena AI assistant cache
+.serena/cache/
+.serena/memories/
+
+# Install logs
+install.log
 
 # Test reports
 reports/
