@@ -74,12 +74,6 @@ export default tseslint.config(
       'src/**',
 
       // Project specific
-      'DesktopCommanderMCP/**',
-      'Vibe-Tutor/**',
-      'opcode/**',
-      'edge_extension_deps/**',
-      'database-proxy-standalone/**',
-      'devworktrees*/**',
       'backups/**',
       'logs/**',
       'playwright-report/**',
@@ -87,8 +81,6 @@ export default tseslint.config(
       'projects/**',
       'PowerShell/**',
       'supabase/**',
-      'desktop-commander-mcp/**',
-      'workflow-hub-mcp/**',
       '**/android/**',
       '**/ios/**',
       '**/_archived/**',
@@ -103,14 +95,6 @@ export default tseslint.config(
       'apps/vibe-code-studio/src/components/ModelPerformanceDashboard.tsx',
       'apps/vibe-code-studio/src/components/VisualEditor/index.tsx',
 
-      // Orphaned/malformed directories
-      'C.devappsaugment-code/**',
-      'Cdev.husky/**',
-      'Cdev.vscode/**',
-      'NVIDIA Corporation/**',
-      '%SystemDrive%/**',
-      'antigravity-awesome-skills/**',
-      'ralph/**',
     ],
   },
 
