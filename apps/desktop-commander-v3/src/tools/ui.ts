@@ -1,6 +1,7 @@
 import * as Screenshot from "../ScreenshotTools.js";
 import * as Window from "../WindowTools.js";
 import * as Input from "../InputTools.js";
+import { ToolAnnotations } from "./types.js";
 
 
 export const uiTools: Array<{
