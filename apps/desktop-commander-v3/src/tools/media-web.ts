@@ -1,6 +1,7 @@
 import open from "open";
 import * as Media from "../MediaTools.js";
 import * as Web from "../WebTools.js";
+import { ToolAnnotations } from "./types.js";
 
 
 function validateHttpUrl(url: string): string {

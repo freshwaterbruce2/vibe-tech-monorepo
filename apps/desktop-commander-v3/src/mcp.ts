@@ -1,6 +1,7 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { logger } from "./Logger.js";
 import { systemTools, systemHandlers } from "./tools/system.js";
 import { filesystemTools, filesystemHandlers } from "./tools/filesystem.js";
 import { filesystemMutateTools, filesystemMutateHandlers } from "./tools/filesystem-mutate.js";

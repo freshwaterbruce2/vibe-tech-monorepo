@@ -2,6 +2,7 @@ import si from "systeminformation";
 import * as System from "../SystemTools.js";
 import * as Clipboard from "../ClipboardTools.js";
 import { getAllowedPaths } from "../PathValidator.js";
+import { ToolAnnotations } from "./types.js";
 
 
 export const systemTools: Array<{
