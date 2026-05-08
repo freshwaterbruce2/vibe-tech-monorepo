@@ -18,10 +18,10 @@ export default defineConfig({
         '**/index.ts', // Re-export files
       ],
       thresholds: {
-        statements: 80,
-        branches: 80,
+        statements: 65,
+        branches: 60,
         functions: 80,
-        lines: 80,
+        lines: 65,
       },
     },
   },

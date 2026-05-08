@@ -1,6 +1,6 @@
 {
   "version": "1.3.1",
-  "lastUpdated": "2026-05-04T17:25:03-04:00",
+  "lastUpdated": "2026-05-08T14:51:48-04:00",
   "techStack": {
     "packageManager": "pnpm@10.33.0",
     "node": "22.x",
@@ -220,6 +220,71 @@
         "status": "development",
         "priority": "medium",
         "description": "Local-only WIP nested repo excluded from pnpm-workspace.yaml; package version is not a shipped workspace release"
+      },
+      "dap-proxy": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Debug Adapter Protocol proxy (port 5003)"
+      },
+      "ipc-bridge": {
+        "status": "production",
+        "priority": "high",
+        "description": "WebSocket IPC bridge (NOVA ↔ VCS, port 5004)"
+      },
+      "lsp-proxy": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Language Server Protocol proxy (port 5002)"
+      },
+      "openrouter-proxy": {
+        "status": "production",
+        "priority": "high",
+        "description": "Centralized OpenRouter API proxy (port 3001)"
+      },
+      "workflow-engine": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Multi-step workflow orchestration"
+      },
+      "nova-sqlite-mcp": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Read-only MCP server for Nova DB"
+      },
+      "prompt-engineer-app": {
+        "status": "maintenance",
+        "priority": "medium",
+        "description": "Prompt Management System (full-stack React + Express)"
+      },
+      "vibe-tutor-api": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Vibe Tutor backend API (Express)"
+      },
+      "vibe-tech-lovable-backend": {
+        "status": "development",
+        "priority": "low",
+        "description": "Vibe Tech Lovable backend service"
+      },
+      "business-booking-platform-next-backend": {
+        "status": "beta",
+        "priority": "medium",
+        "description": "Business booking platform Node backend"
+      },
+      "vibe-justice-frontend": {
+        "status": "maintenance",
+        "priority": "medium",
+        "description": "Vibe Justice Tauri frontend"
+      },
+      "chessmaster-academy-api": {
+        "status": "development",
+        "priority": "low",
+        "description": "Chessmaster Academy render backend"
+      },
+      "symptom-tracker-api": {
+        "status": "development",
+        "priority": "low",
+        "description": "Symptom tracker backend API"
       }
     },
     "packages": {

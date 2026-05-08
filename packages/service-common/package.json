@@ -1,6 +1,7 @@
 {
   "name": "@vibetech/service-common",
   "version": "1.0.0",
+  "type": "module",
   "description": "Shared utilities, middleware, and types for microservices",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -25,7 +26,5 @@
     "typescript": "5.9.3",
     "vitest": "^4.1.2"
   },
-  "peerDependencies": {
-    "express": "^5.0.0"
-  }
+  "peerDependencies": {}
 }

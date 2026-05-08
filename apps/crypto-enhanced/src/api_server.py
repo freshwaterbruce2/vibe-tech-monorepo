@@ -135,6 +135,36 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def _extract_last_price(ticker: Dict[str, Any]) -> Optional[float]:
+    """Extract the last traded price from a Kraken ticker response."""
+    for pair_data in ticker.values():
+        if not isinstance(pair_data, dict):
+            continue
+        close_value = pair_data.get("c", [None])
+        if isinstance(close_value, list) and close_value:
+            close_value = close_value[0]
+        if close_value is not None:
+            return float(close_value)
+    return None
+
+
+def _portfolio_value(
+    usd_balance: float,
+    xlm_balance: float,
+    xlm_price: Optional[float],
+) -> Optional[float]:
+    """Return full portfolio value only when required valuation data exists."""
+    if xlm_balance and xlm_price is None:
+        return None
+    return usd_balance + (xlm_balance * (xlm_price or 0.0))
+
+
+def _valuation_status(xlm_balance: float, xlm_price: Optional[float]) -> str:
+    if xlm_balance and xlm_price is None:
+        return "price_unavailable"
+    if xlm_price is None:
+        return "price_not_required"
+    return "live"
 
 @app.get("/")
 async def root():
@@ -199,7 +229,7 @@ async def get_balances():
             # Get current XLM price with timeout
             try:
                 ticker = await asyncio.wait_for(
-                    kraken_client.get_ticker_information('XLMUSD'),
+                    kraken_client.get_ticker('XLMUSD'),
                     timeout=3.0
                 )
                 xlm_price = float(ticker.get('XXLMZUSD', {}).get('c', [0])[0])
@@ -304,7 +334,7 @@ async def get_dashboard_summary():
         # Get XLM price with timeout
         try:
             ticker = await asyncio.wait_for(
-                kraken_client.get_ticker_information('XLMUSD'),
+                kraken_client.get_ticker('XLMUSD'),
                 timeout=3.0
             )
             xlm_price = float(ticker.get('XXLMZUSD', {}).get('c', [0])[0])
@@ -390,7 +420,7 @@ async def get_risk_metrics():
         # Get XLM price with timeout
         try:
             ticker = await asyncio.wait_for(
-                kraken_client.get_ticker_information('XLMUSD'),
+                kraken_client.get_ticker('XLMUSD'),
                 timeout=3.0
             )
             xlm_price = float(ticker.get('XXLMZUSD', {}).get('c', [0])[0])
@@ -442,8 +472,8 @@ async def get_market_data(pair: str):
         if not kraken_client:
             raise HTTPException(status_code=503, detail="Kraken client not available")
 
-        ticker = await kraken_client.get_ticker_information(pair)
-        return {"data": ticker, "timestamp": datetime.now().isoformat()}
+        ticker = await kraken_client.get_ticker(pair)
+        return {"status": "live", "data": ticker, "timestamp": datetime.now().isoformat()}
 
     except Exception as e:
         logger.error(f"Error fetching market data: {e}")

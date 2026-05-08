@@ -1,9 +1,4 @@
 {
-  "pluginsConfig": {
-    "@nx/js": {
-      "analyzeSourceFiles": true
-    }
-  },
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "cli": {
     "packageManager": "pnpm"
@@ -242,7 +237,7 @@
     "enabled": false
   },
   "release": {
-    "projects": ["packages/*", "!vibe-python-shared"],
+    "projects": ["packages/*"],
     "projectsRelationship": "independent",
     "version": {
       "currentVersionResolver": "disk",
@@ -250,6 +245,9 @@
     }
   },
   "analytics": true,
+  "sync": {
+    "applyChanges": true
+  },
   "generators": {
     "@nx/react": {
       "application": {

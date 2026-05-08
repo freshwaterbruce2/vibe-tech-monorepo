@@ -7,10 +7,10 @@ export {
   type DeepSeekConfig,
   type ChatMessage,
   type CompletionOptions,
-} from './deepseek';
+} from './deepseek.js';
 
 // Logger
-export { logger, createChildLogger } from './logger';
+export { logger, createChildLogger } from './logger.js';
 
 // Middleware
 export {
@@ -20,10 +20,10 @@ export {
   asyncHandler,
   createRateLimitConfig,
   serviceAuth,
-} from './middleware';
+} from './middleware.js';
 
 // Types
-export * from './types';
+export * from './types.js';
 
 // Re-export commonly used external types
 export { z } from 'zod';

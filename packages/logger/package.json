@@ -21,7 +21,7 @@
   "author": "VibeTech",
   "license": "MIT",
   "dependencies": {
-    "@vibetech/shared-config": "workspace:^1.0.0"
+    "@vibetech/shared-config": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",

@@ -13,8 +13,8 @@ C:\dev\
 ├── apps/                 # Product apps, desktop apps, mobile apps, MCP servers
 ├── backend/              # Node.js Express backend services
 ├── packages/             # Shared libraries and utilities
-├── plugins/              # Local plugin/tooling packages
-└── scripts/              # PowerShell automation scripts
+├── scripts/              # PowerShell automation scripts
+└── tools/                # Local automation and maintenance tools
 ```
 
 ## 📦 Package Management
@@ -282,29 +282,7 @@ pnpm run start          # Run compiled code when the service exposes start
 
 ## 📊 4. Data Pipeline
 
-**Location**: `data_pipeline/`
-**Purpose**: ETL workflows, data transformation, and analytics
-
-### Technology Stack
-
-```python
-├── Python 3.12+          # Language
-├── asyncio               # Async operations
-├── pandas                # Data manipulation
-├── aiosqlite             # Async database
-├── aiohttp               # API calls
-```
-
-### Architecture
-
-```python
-# Async ETL workflows
-├── Extract               # Pull data from sources
-├── Transform             # Clean and process
-├── Load                  # Store in databases
-├── Validate              # Data quality checks
-└── Monitor               # Track pipeline health
-```
+> **Note (2026-05-08)**: The `data_pipeline/` directory does not currently exist in the workspace. This section is retained for historical context.
 
 ## 📦 5. Packages (Shared Code)
 
@@ -315,10 +293,14 @@ pnpm run start          # Run compiled code when the service exposes start
 
 ```
 packages/
-├── shared-ui/         # Common UI components
-├── shared-types/      # TypeScript definitions
+├── ui/                # Common UI components
+├── vibetech-types/    # TypeScript definitions
 ├── shared-utils/      # Utility functions
-└── shared-config/     # Shared configurations
+├── shared-config/     # Shared configurations
+├── backend/           # Vector store, embedding, IPC client
+├── logger/            # Structured JSON logging
+├── memory/            # Episodic, semantic, procedural memory
+└── games/             # Game logic and components
 ```
 
 ### Usage

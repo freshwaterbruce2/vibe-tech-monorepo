@@ -99,7 +99,8 @@ Product applications and standalone services:
 | `agent-engine`                   | CLI / Node Tool                   | TypeScript + tsup            |
 
 Two package workspaces are excluded from `pnpm-workspace.yaml`: `apps/gravity-claw`
-(local-only nested WIP, not a shipped workspace release) and `packages/games`.
+(local-only nested WIP, not a shipped workspace release). `packages/games` is included
+in the workspace and referenced by `chessmaster-academy` and `vibe-tutor`.
 `packages/nova-core` currently has no `package.json`; do not treat it as a
 workspace package until a manifest exists.
 

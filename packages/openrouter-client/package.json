@@ -1,6 +1,7 @@
 {
 	"name": "@vibetech/openrouter-client",
 	"version": "1.0.0",
+  "type": "module",
 	"description": "TypeScript client library for VibeTech OpenRouter proxy",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",

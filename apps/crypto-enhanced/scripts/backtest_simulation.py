@@ -1,6 +1,8 @@
 import os
 import sys
+from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -10,6 +12,136 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from risk.enhanced_risk_manager import EnhancedRiskManager
 
+@dataclass(frozen=True)
+class PaperSettings:
+    initial_balance: float
+    position_size_usd: float
+    max_total_exposure_usd: float
+    min_order_size_xlm: float
+
+
+@dataclass(frozen=True)
+class PaperTrade:
+    action: str
+    price: float
+    volume_xlm: float
+    equity: float
+
+
+@dataclass(frozen=True)
+class PaperBacktestResult:
+    total_orders: int
+    round_trips: int
+    open_position_xlm: float
+    max_exposure_usd: float
+    final_equity: float
+    equity_curve: list[float]
+    trades: list[PaperTrade]
+
+
+def load_example_config() -> dict[str, Any]:
+    """Return conservative example settings for offline paper backtests."""
+    return {
+        "position_size_usd": 20.0,
+        "max_total_exposure_usd": 30.0,
+        "min_order_size_xlm": 0.01,
+        "risk": {
+            "base_kelly_fraction": 0.05,
+            "max_leverage": 1.0,
+            "min_position_fraction": 0.01,
+            "max_position_fraction": 0.20,
+        },
+    }
+
+
+def build_settings(config_data: dict[str, Any], initial_balance: float) -> PaperSettings:
+    return PaperSettings(
+        initial_balance=initial_balance,
+        position_size_usd=float(config_data.get("position_size_usd", 25.0)),
+        max_total_exposure_usd=float(config_data.get("max_total_exposure_usd", 30.0)),
+        min_order_size_xlm=float(config_data.get("min_order_size_xlm", 0.01)),
+    )
+
+
+def build_risk_manager(config_data: dict[str, Any]) -> EnhancedRiskManager:
+    risk = config_data.get("risk", {})
+    return EnhancedRiskManager(
+        base_kelly_fraction=float(risk.get("base_kelly_fraction", 0.05)),
+        max_leverage=float(risk.get("max_leverage", 1.0)),
+        min_position_fraction=float(risk.get("min_position_fraction", 0.01)),
+        max_position_fraction=float(risk.get("max_position_fraction", 0.20)),
+    )
+
+
+def run_paper_backtest(
+    candles: pd.DataFrame,
+    settings: PaperSettings,
+    risk_manager: EnhancedRiskManager,
+    regime_name: str,
+) -> PaperBacktestResult:
+    """Run a deterministic long-only paper backtest for regression coverage."""
+    balance = settings.initial_balance
+    position_xlm = 0.0
+    entry_price = 0.0
+    max_exposure = 0.0
+    trades: list[PaperTrade] = []
+    equity_curve: list[float] = [balance]
+
+    if candles.empty:
+        return PaperBacktestResult(0, 0, 0.0, 0.0, balance, equity_curve, trades)
+
+    position_usd = min(settings.position_size_usd, settings.max_total_exposure_usd)
+
+    for i, row in enumerate(candles.itertuples(index=False), start=1):
+        price = float(getattr(row, "close"))
+
+        if position_xlm == 0.0 and i % 80 == 0:
+            volume_xlm = position_usd / price
+            if volume_xlm >= settings.min_order_size_xlm:
+                approved, _ = risk_manager.approve_trade(
+                    balance=balance,
+                    current_exposure=0.0,
+                    position_size_usd=position_usd,
+                    regime="trending" if "trend" in regime_name else "calm",
+                )
+                if approved:
+                    position_xlm = volume_xlm
+                    entry_price = price
+                    max_exposure = max(max_exposure, position_usd)
+                    trades.append(PaperTrade("entry", price, volume_xlm, balance))
+
+        elif position_xlm > 0.0 and (i % 80 == 20):
+            pnl = (price - entry_price) * position_xlm
+            balance += pnl
+            trades.append(PaperTrade("exit", price, position_xlm, balance))
+            position_xlm = 0.0
+            entry_price = 0.0
+
+        mark_to_market = balance + ((price - entry_price) * position_xlm if position_xlm else 0.0)
+        equity_curve.append(mark_to_market)
+
+    if position_xlm > 0.0:
+        price = float(candles.iloc[-1]["close"])
+        pnl = (price - entry_price) * position_xlm
+        balance += pnl
+        trades.append(PaperTrade("exit", price, position_xlm, balance))
+        position_xlm = 0.0
+        equity_curve.append(balance)
+
+    round_trips = min(
+        sum(1 for trade in trades if trade.action == "entry"),
+        sum(1 for trade in trades if trade.action == "exit"),
+    )
+
+    return PaperBacktestResult(
+        total_orders=len(trades),
+        round_trips=round_trips,
+        open_position_xlm=position_xlm,
+        max_exposure_usd=max_exposure,
+        final_equity=balance,
+        equity_curve=equity_curve,
+        trades=trades,
+    )
 
 def detailed_synthetic_price_series(n=1000, regime="spiky_vol", seed=42):
     """Generate high-resolution synthetic data for backtesting"""

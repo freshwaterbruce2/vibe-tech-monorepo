@@ -106,6 +106,36 @@ describe('OpenRouterClient', () => {
       expect(await client.healthCheck()).toBe(false);
     });
   });
+
+  describe('retry interceptor', () => {
+    it('retries failed requests when retries are configured', async () => {
+      new OpenRouterClient('http://localhost:3001', { retries: 1, retryDelay: 0 });
+      const [, onRejected] = mockAxiosInstance.interceptors.response.use.mock.calls[0] ?? [];
+      if (typeof onRejected !== 'function') {
+        throw new Error('Expected retry rejection interceptor to be registered');
+      }
+
+      const retryResult = { data: { ok: true } };
+      const config = { url: '/retry-me', method: 'get' };
+      mockAxiosInstance.request.mockResolvedValueOnce(retryResult);
+
+      await expect(onRejected({ config })).resolves.toBe(retryResult);
+      expect(config).toEqual({ url: '/retry-me', method: 'get', _retryCount: 1 });
+      expect(mockAxiosInstance.request).toHaveBeenCalledWith(config);
+    });
+
+    it('rejects retry errors without request config', async () => {
+      new OpenRouterClient('http://localhost:3001', { retries: 1, retryDelay: 0 });
+      const [, onRejected] = mockAxiosInstance.interceptors.response.use.mock.calls[0] ?? [];
+      if (typeof onRejected !== 'function') {
+        throw new Error('Expected retry rejection interceptor to be registered');
+      }
+
+      const error = new Error('missing config');
+      await expect(onRejected(error)).rejects.toBe(error);
+      expect(mockAxiosInstance.request).not.toHaveBeenCalled();
+    });
+  });
 });
 
 describe('createOpenRouterClient', () => {

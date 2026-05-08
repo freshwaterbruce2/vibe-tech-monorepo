@@ -29,7 +29,10 @@
 			"@vibetech/games": ["./packages/games/src/index.ts"],
 			"@vibetech/games/*": ["./packages/games/src/*/index.ts"],
 			"@vibetech/*": ["./packages/*/src", "./packages/feature-flags/*/src"],
-			"@nova/*": ["./packages/*/src"],
+			"@vibetech/hooks": ["./packages/vibetech-hooks/src/index.ts"],
+			"@vibetech/shared": ["./packages/vibetech-shared/src/index.ts"],
+			"@vibetech/types": ["./packages/vibetech-types/src/index.ts"],
+			"@nova/*": ["./packages/nova-*/src"],
 			"@vibetech/business-booking-platform-next-backend": [
 				"apps/business-booking-platform-next/backend/src/index.ts"
 			]

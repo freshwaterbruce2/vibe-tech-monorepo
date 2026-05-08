@@ -58,7 +58,7 @@
     "@sentry/react": "^10.46.0",
     "@vibetech/avatars": "workspace:*",
     "@vibetech/games": "workspace:*",
-    "@vibetech/openrouter-client": "workspace:^1.0.0",
+    "@vibetech/openrouter-client": "workspace:*",
     "better-sqlite3": "12.6.2",
     "canvas-confetti": "^1.9.4",
     "cors": "^2.8.6",

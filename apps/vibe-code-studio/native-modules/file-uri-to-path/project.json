@@ -1,0 +1,32 @@
+{
+  "name": "file-uri-to-path",
+  "projectType": "library",
+  "tags": [
+    "scope:vibe-code-studio",
+    "type:native-module",
+    "platform:desktop"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "echo 'Lint not applicable for native module'",
+        "cwd": "apps/vibe-code-studio/native-modules/file-uri-to-path"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "echo 'Typecheck not applicable for native module'",
+        "cwd": "apps/vibe-code-studio/native-modules/file-uri-to-path"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "echo 'Build not applicable for native module'",
+        "cwd": "apps/vibe-code-studio/native-modules/file-uri-to-path"
+      }
+    }
+  }
+}

@@ -4,6 +4,7 @@
 	"description": "LSP WebSocket proxy for browser-based code editor",
 	"main": "src/index.js",
 	"scripts": {
+		"build": "echo 'No build step required for JavaScript service'",
 		"start": "node src/index.js",
 		"lint": "eslint . --max-warnings 0",
 		"typecheck": "node -e \"console.log('typecheck not applicable: JavaScript service')\"",

@@ -72,12 +72,7 @@
     "jsx": "react-jsx",
     "jsxImportSource": "react"
   },
-  "include": [
-    "src/**/*",
-    "src/**/*.tsx", 
-    "src/**/*.ts",
-    "src/vite-env.d.ts"
-  ],
+  "include": ["src/**/*", "src/**/*.tsx", "src/**/*.ts", "src/vite-env.d.ts"],
   "exclude": [
     "node_modules",
     "dist",
@@ -108,7 +103,20 @@
     ".prettierrc.js",
     ".lintstagedrc.js"
   ],
-  "references": [],
+  "references": [
+    {
+      "path": "../../packages/vibetech-types"
+    },
+    {
+      "path": "../../packages/shared-utils/tsconfig.build.json"
+    },
+    {
+      "path": "../../packages/shared-ipc"
+    },
+    {
+      "path": "../../packages/feature-flags/sdk-node"
+    }
+  ],
   "typeAcquisition": {
     "enable": false
   }

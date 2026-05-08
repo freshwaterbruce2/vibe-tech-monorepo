@@ -82,6 +82,7 @@ function Get-ScanFiles {
         $fullName -notmatch '\\coverage\\' -and
         $fullName -notmatch '\\tmp\\' -and
         $fullName -notmatch '\\\.nx\\' -and
+        $fullName -notmatch '\\\.claude\\worktrees\\' -and
         $fullName -notmatch '\\docs\\' -and
         $fullName -notmatch '\\_archive\\' -and
         $fullName -notmatch '\\archive\\' -and

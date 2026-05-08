@@ -2,18 +2,20 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import Logger, { createLogger, LogLevel } from './index';
 
 describe('logger', () => {
-    let consoleSpy: ReturnType<typeof vi.spyOn>;
+    let stderrSpy: ReturnType<typeof vi.spyOn>;
     let logOutput: string[];
 
     beforeEach(() => {
         logOutput = [];
-        consoleSpy = vi.spyOn(console, 'log').mockImplementation((msg: string) => {
-            logOutput.push(msg);
-        });
+        const writeMock = ((chunk: string | Uint8Array): boolean => {
+            logOutput.push(String(chunk).trimEnd());
+            return true;
+        }) as typeof process.stderr.write;
+        stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(writeMock);
     });
 
     afterEach(() => {
-        consoleSpy.mockRestore();
+        stderrSpy.mockRestore();
     });
 
     describe('LogLevel', () => {
