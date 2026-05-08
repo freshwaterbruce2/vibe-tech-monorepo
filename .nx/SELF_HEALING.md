@@ -77,3 +77,6 @@ apply the matching fix before any other remediation.
   workspace package that has not been built yet; run `pnpm nx build <pkg>` first.
 - ESLint `no-relative-imports` violation -> replace the relative path with the `@/`
   alias for in-project imports or the workspace package name for cross-package imports.
+- TypeScript project references out of sync -> run `pnpm exec nx sync` for the root `tsconfig.json` only.
+  **Caution:** The workspace uses Vite with `noEmit`. Populating `references` in per-project `tsconfig.json`/`tsconfig.app.json` files breaks typecheck because Vite configs use `moduleResolution: "bundler"` without declaration emit. Keep project references in the root `tsconfig.json` only.
+- Missing `composite: true` in tsconfig -> add `"composite": true` to `compilerOptions` in `tsconfig.base.json` (root base config), not per-project configs.
