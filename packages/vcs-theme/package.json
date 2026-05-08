@@ -1,6 +1,7 @@
 {
   "name": "@vibetech/vcs-theme",
   "version": "1.0.0",
+  "type": "module",
   "description": "Vibe Code Studio design tokens — colors, typography, spacing, shadows, components",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

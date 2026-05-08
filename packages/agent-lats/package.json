@@ -1,6 +1,7 @@
 {
   "name": "@vibetech/agent-lats",
   "version": "1.0.0",
+  "type": "module",
   "description": "Language Agent Tree Search — MCTS-powered planning for autonomous agents",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -18,8 +19,8 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.8",
-    "@types/node": "^22.0.0",
+    "@types/node": "^25.5.0",
     "typescript": "^5.9.3",
-    "vitest": "^3.0.0"
+    "vitest": "^4.1.2"
   }
 }

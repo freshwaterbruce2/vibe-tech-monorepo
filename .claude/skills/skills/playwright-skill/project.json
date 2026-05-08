@@ -1,0 +1,5 @@
+{
+  "name": "playwright-skill",
+  "projectType": "library",
+  "tags": ["scope:tooling", "type:skill", "platform:web"]
+}

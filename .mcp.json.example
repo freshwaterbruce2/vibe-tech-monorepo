@@ -3,9 +3,20 @@
     "nx-mcp": {
       "type": "stdio",
       "command": "cmd",
-      "args": ["/c", "npx.cmd", "-y", "nx-mcp@latest"],
+      "args": [
+        "/c",
+        "npx.cmd",
+        "-y",
+        "nx-mcp@0.25.0",
+        "C:/dev",
+        "--transport",
+        "stdio",
+        "--disableTelemetry",
+        "--no-minimal"
+      ],
       "env": {
-        "NX_WORKSPACE_ROOT": "C:/dev"
+        "NX_WORKSPACE_ROOT": "C:/dev",
+        "NODE_OPTIONS": "--require C:/dev/scripts/nx-mcp-native-compat.cjs"
       }
     },
     "filesystem": {

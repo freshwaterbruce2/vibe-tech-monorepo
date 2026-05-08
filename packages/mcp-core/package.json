@@ -1,6 +1,7 @@
 {
   "name": "@vibetech/mcp-core",
   "version": "1.0.0",
+  "type": "module",
   "description": "Core types and utilities for VibeTech MCP servers",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

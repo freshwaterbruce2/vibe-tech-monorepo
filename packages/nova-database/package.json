@@ -25,7 +25,7 @@
     "typecheck": "tsc -p tsconfig.build.json --noEmit"
   },
   "dependencies": {
-    "@nova/types": "workspace:^2.0.0",
+    "@nova/types": "workspace:*",
     "better-sqlite3": "12.6.2"
   },
   "devDependencies": {

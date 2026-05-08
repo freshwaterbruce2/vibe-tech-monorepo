@@ -3,6 +3,7 @@
 // @see C:\dev\desktop-commander-v2\BEST_PRACTICES_2025_COMPLETE.md
 
 import js from '@eslint/js';
+import enforceModuleBoundariesModule from '@nx/eslint-plugin/src/rules/enforce-module-boundaries.js';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
@@ -10,6 +11,9 @@ import tseslint from 'typescript-eslint';
 
 // Custom Electron rules (AST-based, no false positives)
 import noLocalStorageElectron from './tools/eslint-rules/no-localstorage-electron.cjs';
+
+const enforceModuleBoundariesRule =
+  enforceModuleBoundariesModule.default ?? enforceModuleBoundariesModule;
 
 export default tseslint.config(
   // Ignore patterns (comprehensive)
@@ -270,6 +274,33 @@ export default tseslint.config(
           selector:
             'TSTypeReference[typeName.left.name="React"][typeName.right.name="FunctionComponent"]',
           message: 'Use typed props directly instead of React.FunctionComponent',
+        },
+      ],
+    },
+  },
+
+  // Nx module boundaries are staged in warn mode while the project tag taxonomy
+  // and existing target failures are cleaned up.
+  {
+    files: [
+      'apps/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'packages/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'backend/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+    ],
+    plugins: {
+      '@nx': {
+        rules: {
+          'enforce-module-boundaries': enforceModuleBoundariesRule,
+        },
+      },
+    },
+    rules: {
+      '@nx/enforce-module-boundaries': [
+        'warn',
+        {
+          enforceBuildableLibDependency: true,
+          allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
+          depConstraints: [{ sourceTag: '*', onlyDependOnLibsWithTags: ['*'] }],
         },
       ],
     },

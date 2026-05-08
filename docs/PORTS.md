@@ -9,7 +9,8 @@
 | Port  | Service                     | Location                                  | Notes                            |
 | ----- | --------------------------- | ----------------------------------------- | -------------------------------- |
 | 3000  | Nova Agent (Tauri server)   | `apps/nova-agent/src/server.ts`           | Desktop AI assistant             |
-| 3001  | Shipping PWA Worker         | `apps/shipping-pwa/worker/index.ts`       | Also used for mobile ADB reverse |
+| 3001  | OpenRouter Proxy            | `backend/openrouter-proxy/src/index.ts`   | Centralized API proxy            |
+| 3000  | Main Backend (prod)         | `backend/server-production.js`            | Express production server        |
 | 3003  | VibeBlox Backend            | `apps/VibeBlox/server/`                   | Hono server                      |
 | 3090  | AVGE Dashboard Backend      | `apps/avge-dashboard/server/src/index.ts` | Configurable via PORT env        |
 | 3100  | Feature Flags Server        | `packages/feature-flags/`                 | Self-hosted feature flags        |
@@ -27,8 +28,9 @@
 
 | Port | Service             | Notes                          |
 | ---- | ------------------- | ------------------------------ |
-| 3001 | Main Backend (dev)  | `backend/server.js`            |
-| 3001 | Main Backend (prod) | `backend/server-production.js` |
+| 9001 | Main Backend (dev)  | `backend/server.js`            |
+| 3000 | Main Backend (prod) | `backend/server-production.js` |
+| 3085 | Prompt Engineer     | `apps/prompt-engineer/server/` |
 
 ## Collision Warnings
 
@@ -36,7 +38,7 @@
 > **Port 5003**: Both `dap-proxy` and `workflow-engine` claim port 5003. Verify they don't run simultaneously.
 
 > [!WARNING]
-> **Port 3001**: Both `shipping-pwa` worker and the main backend use 3001. Use env overrides to differentiate.
+> **Port 9001**: Main backend dev server uses 9001. Ensure no other local services conflict.
 
 ## Reserved Ranges
 
