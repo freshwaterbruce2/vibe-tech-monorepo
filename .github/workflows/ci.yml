@@ -25,6 +25,7 @@ on:
 # Least-privilege: default to read-only for all jobs
 permissions:
   contents: read
+  pull-requests: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -136,6 +137,11 @@ jobs:
 
       - name: Build (affected)
         run: pnpm run ci:build
+
+      - name: Run Nx Cloud self-healing (build)
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        run: pnpm exec nx fix-ci
 
   # ============================================
   # CHANGESET STATUS CHECK (PRs only)
