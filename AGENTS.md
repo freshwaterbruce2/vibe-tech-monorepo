@@ -39,6 +39,10 @@ Key products include **NOVA Agent** (Tauri desktop AI assistant), **Vibe Code St
 
 The canonical repository is hosted on GitHub at `https://github.com/freshwaterbruce2/vibe-tech-monorepo.git`.
 
+## Master Agent
+
+This workspace defines a default **master agent** in `.claude/agents/master-agent.md` (and `.agent/agents/master-agent.md` for the Antigravity framework). Load it first when starting work in this repository for workspace orientation, path policy enforcement, and intelligent routing to specialist agents.
+
 # Technology Stack
 
 | Layer               | Technology                                                 |
