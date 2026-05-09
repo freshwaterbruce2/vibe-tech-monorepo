@@ -2,16 +2,22 @@ import Database from "better-sqlite3";
 import fs from "fs";
 import path from "path";
 
-const assertDatabasePathOnDDrive = (dbPath: string) => {
+const assertDatabasePathSafe = (dbPath: string) => {
 	const normalized = path.resolve(dbPath);
-	if (!/^[dD]:\\/.test(normalized)) {
-		throw new Error(`DATABASE_PATH must be on D:\\ (got: ${normalized})`);
+	// Allow D:\ drive (Windows local policy) or /data/ (Docker)
+	const isDDrive = /^[dD]:\\/.test(normalized);
+	const isDockerData = dbPath.startsWith('/data/') || normalized.startsWith('/data/');
+	if (!isDDrive && !isDockerData) {
+		throw new Error(
+			`DATABASE_PATH must be on D:\\ or /data/ (got: ${normalized}). ` +
+			`Use /data/invoiceflow.db for Docker deployments.`,
+		);
 	}
 };
 
 export const getDatabasePath = () => {
 	const dbPath = process.env.DATABASE_PATH || "D:\\databases\\invoiceflow.db";
-	assertDatabasePathOnDDrive(dbPath);
+	assertDatabasePathSafe(dbPath);
 	return dbPath;
 };
 
