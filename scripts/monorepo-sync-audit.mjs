@@ -18,7 +18,11 @@ const workspaceStatePath = resolve(workspaceRoot, 'WORKSPACE.json');
 const tmpDir = resolve(workspaceRoot, 'tmp');
 const graphPath = resolve(tmpDir, 'project-graph.sync-audit.json');
 const reportPath = resolve(tmpDir, 'monorepo-sync-audit-report.json');
-const nxCliPath = resolve(workspaceRoot, 'node_modules', 'nx', 'bin', 'nx.js');
+const nxCliCandidates = [
+  resolve(workspaceRoot, 'node_modules', 'nx', 'dist', 'bin', 'nx.js'),
+  resolve(workspaceRoot, 'node_modules', 'nx', 'bin', 'nx.js'),
+];
+const nxCliPath = nxCliCandidates.find((p) => existsSync(p)) ?? nxCliCandidates[0];
 
 function prependPathEntries(currentPath, entries) {
   const parts = (currentPath ?? '')
@@ -563,11 +567,15 @@ if (existsSync(workspaceStatePath)) {
   const diskApps = safeDirectoryEntries(resolve(workspaceRoot, 'apps'))
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name);
+  const diskBackend = safeDirectoryEntries(resolve(workspaceRoot, 'backend'))
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name);
   const diskPackages = safeDirectoryEntries(resolve(workspaceRoot, 'packages'))
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name);
 
-  const declaredAppsMissingOnDisk = declaredApps.filter((app) => !diskApps.includes(app));
+  const allDiskApps = [...diskApps, ...diskBackend];
+  const declaredAppsMissingOnDisk = declaredApps.filter((app) => !allDiskApps.includes(app));
   const declaredPackagesMissingOnDisk = declaredPackages.filter(
     (pkg) => !diskPackages.includes(pkg),
   );

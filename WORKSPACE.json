@@ -161,11 +161,6 @@
         "priority": "medium",
         "description": "Legal document analysis (Tauri 2 frontend + Python/FastAPI backend packaged with PyInstaller; no root package.json)"
       },
-      "vibe-shop": {
-        "status": "development",
-        "priority": "low",
-        "description": "E-commerce storefront (Next.js 16.1.6, Prisma, Neon; approved exception to the no-Next default)"
-      },
       "crypto-enhanced": {
         "status": "storage",
         "priority": "low",
@@ -245,41 +240,6 @@
         "status": "production",
         "priority": "medium",
         "description": "Multi-step workflow orchestration"
-      },
-      "nova-sqlite-mcp": {
-        "status": "development",
-        "priority": "medium",
-        "description": "Read-only MCP server for Nova DB"
-      },
-      "prompt-engineer-app": {
-        "status": "maintenance",
-        "priority": "medium",
-        "description": "Prompt Management System (full-stack React + Express)"
-      },
-      "vibe-tutor-api": {
-        "status": "production",
-        "priority": "medium",
-        "description": "Vibe Tutor backend API (Express)"
-      },
-      "vibe-tech-lovable-backend": {
-        "status": "development",
-        "priority": "low",
-        "description": "Vibe Tech Lovable backend service"
-      },
-      "business-booking-platform-next-backend": {
-        "status": "beta",
-        "priority": "medium",
-        "description": "Business booking platform Node backend"
-      },
-      "vibe-justice-frontend": {
-        "status": "maintenance",
-        "priority": "medium",
-        "description": "Vibe Justice Tauri frontend"
-      },
-      "chessmaster-academy-api": {
-        "status": "development",
-        "priority": "low",
-        "description": "Chessmaster Academy render backend"
       },
       "symptom-tracker-api": {
         "status": "development",
