@@ -362,3 +362,9 @@ vitest.config.*.timestamp*
 
 # Personal scratchpad
 MEMORY.md
+
+# Allow tracked release docs and example env for nova-agent
+!apps/nova-agent/RELEASE_READY.md
+!apps/nova-agent/SHIP_READY_REPORT.md
+!apps/nova-agent/CONSISTENCY_AUDIT_REPORT.md
+!apps/nova-agent/.env.example

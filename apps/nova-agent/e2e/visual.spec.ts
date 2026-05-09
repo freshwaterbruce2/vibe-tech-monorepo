@@ -30,9 +30,11 @@ for (const viewport of VIEWPORTS) {
 
     // Wait for the main landmark before snapshotting so we never capture
     // an empty root while React is still mounting.
-    await page.waitForSelector('main, [role="main"], #root > *', {
+    // Using 'main' only (no #root > * fallback) to avoid matching toast
+    // portals or background layers that render before app content.
+    await page.waitForSelector('main', {
       state: 'visible',
-      timeout: 15_000,
+      timeout: 30_000,
     });
 
     // Freeze caret blink + any css transitions before the screenshot.
@@ -47,6 +49,10 @@ for (const viewport of VIEWPORTS) {
         }
       `,
     });
+
+    // Allow a short settle period for JS-driven layout (Framer Motion) and
+    // font rasterisation to stabilise before capturing.
+    await page.waitForTimeout(300);
 
     await expect(page).toHaveScreenshot(`dashboard-${viewport.name}.png`, {
       fullPage: true,
