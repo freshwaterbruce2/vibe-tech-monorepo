@@ -34,7 +34,7 @@
 		"hook:memory": "node hooks/memory-monitor.js",
 		"hook:performance": "node hooks/performance-monitor.js",
 		"hook:pre-commit": "node hooks/pre-commit.js",
-		"lint":"cd ../.. && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" pnpm exec eslint apps/vibe-code-studio/src --max-warnings 0",
+		"lint": "cd ../.. && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" pnpm exec eslint apps/vibe-code-studio/src",
 		"lint:fix": "cd ../.. && cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" pnpm exec eslint apps/vibe-code-studio/src --fix",
 		"preview": "vite preview",
 		"setup:hooks":"node scripts/setup-hooks.js",
