@@ -1,5 +1,0 @@
-{
-  "name": "better-sqlite3",
-  "projectType": "library",
-  "tags": ["scope:vibe-code-studio", "type:native-module", "platform:desktop"]
-}

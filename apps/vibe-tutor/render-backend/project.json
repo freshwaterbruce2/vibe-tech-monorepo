@@ -1,5 +1,0 @@
-{
-  "name": "vibe-tutor-api",
-  "projectType": "application",
-  "tags": ["scope:vibe-tutor", "type:api", "stack:express"]
-}
