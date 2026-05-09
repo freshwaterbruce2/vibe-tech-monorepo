@@ -66,6 +66,11 @@ jobs:
       - name: Lint
         run: cd apps/nova-agent && pnpm run lint
 
+      # Workspace packages with composite: true must be built before
+      # dependent projects can typecheck against them.
+      - name: Build workspace dependencies
+        run: pnpm nx run-many -t build -p openrouter-client @vibetech/shared-utils @vibetech/inngest-client
+
       - name: Typecheck
         run: cd apps/nova-agent && pnpm run typecheck
 
