@@ -588,3 +588,57 @@ def InstanceLock(**kwargs) -> InstanceLockFixed:
     Returns the fixed version of InstanceLock
     """
     return InstanceLockFixed(**kwargs)
+
+
+def check_instance_lock(timeout: float = 0.5) -> bool:
+    """
+    Lightweight check to see if the instance lock is available.
+
+    Returns True if no other instance is running (lock acquired and released),
+    False if another instance holds the lock.
+
+    This is a gentler check than acquire() — it skips aggressive process
+    scanning and only validates filelock + port availability.
+    """
+    import tempfile
+    import socket
+
+    app_id = "kraken-crypto-trading-system-v1"
+    user_id = __import__('os').getenv('USERNAME', __import__('os').getenv('USER', 'unknown'))
+    full_lock_id = f"{app_id}-{user_id}"
+    temp_dir = Path(tempfile.gettempdir())
+    lock_file_path = temp_dir / f"{full_lock_id}.lock"
+    lock_port = 47777
+
+    # Layer 1: Try filelock
+    if FILELOCK_AVAILABLE:
+        try:
+            test_lock = FileLock(str(lock_file_path), timeout=timeout)
+            test_lock.acquire()
+            test_lock.release()
+        except Exception:
+            return False
+    else:
+        try:
+            if lock_file_path.exists():
+                return False
+            handle = open(lock_file_path, 'x')
+            handle.close()
+            lock_file_path.unlink(missing_ok=True)
+        except FileExistsError:
+            return False
+        except Exception:
+            return False
+
+    # Layer 2: Try port lock
+    try:
+        test_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        test_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        test_socket.bind(('127.0.0.1', lock_port))
+        test_socket.close()
+    except OSError:
+        return False
+    except Exception:
+        return False
+
+    return True
