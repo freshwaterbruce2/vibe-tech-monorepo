@@ -25,8 +25,8 @@ msiexec /i "NOVA Agent_1.3.0_x64_en-US.msi" /qn
 
 | File | Size | SHA-256 |
 |------|------|---------|
-| `NOVA Agent_1.3.0_x64_en-US.msi` | 25.6 MB | `7f5d6d7cf611a80dd8b65304895aeaaa19ab396704c12467ca4d57cdee63c464` |
-| `NOVA Agent_1.3.0_x64-setup.exe` | 16.4 MB | `08f870ddbde91be26f6ad5565718442972fa14cabe1687600e06432ea6136efc` |
+| `NOVA Agent_1.3.0_x64_en-US.msi` | 25.6 MB | `41daecdff00aa297fe2f18cd1c4c92bbf73deec2bdee964fdd7d8c3f9893ed8b` |
+| `NOVA Agent_1.3.0_x64-setup.exe` | 16.4 MB | `681977f63dd9079389a38317a0067d92ccf2e3444b5376c6df06eddac0745939` |
 
 ### Verification
 

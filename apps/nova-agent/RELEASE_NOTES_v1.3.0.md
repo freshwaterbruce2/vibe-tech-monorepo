@@ -55,8 +55,8 @@ Built by `pnpm tauri build` (Tauri 2.10.3, Rust stable, Node 22):
 
 | Artifact | File | Size | SHA-256 |
 |----------|------|------|---------|
-| **MSI Installer** | `NOVA Agent_1.3.0_x64_en-US.msi` | 25.6 MB (26,877,952 bytes) | `7f5d6d7cf611a80dd8b65304895aeaaa19ab396704c12467ca4d57cdee63c464` |
-| **NSIS Installer** | `NOVA Agent_1.3.0_x64-setup.exe` | 16.4 MB (17,224,296 bytes) | `08f870ddbde91be26f6ad5565718442972fa14cabe1687600e06432ea6136efc` |
+| **MSI Installer** | `NOVA Agent_1.3.0_x64_en-US.msi` | 25.6 MB (26,882,048 bytes) | `41daecdff00aa297fe2f18cd1c4c92bbf73deec2bdee964fdd7d8c3f9893ed8b` |
+| **NSIS Installer** | `NOVA Agent_1.3.0_x64-setup.exe` | 16.4 MB (17,217,541 bytes) | `681977f63dd9079389a38317a0067d92ccf2e3444b5376c6df06eddac0745939` |
 | **Release Binary** | `nova-agent.exe` | ~90.8 MB (95,175,680 bytes) | — |
 
 **Build location:** `D:\cargo-targets\release\bundle\`
