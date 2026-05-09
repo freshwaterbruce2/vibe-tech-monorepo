@@ -58,10 +58,10 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --filter nova-agent
+        run: pnpm install --frozen-lockfile
 
       - name: Stylelint CSS
-        run: pnpm --filter nova-agent run lint:css
+        run: cd apps/nova-agent && pnpm run lint:css
 
   visual-regression:
     name: Visual Regression (nova-agent)
@@ -80,13 +80,16 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile --filter nova-agent
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace dependencies
+        run: pnpm nx run-many -t build -p openrouter-client @vibetech/shared-utils @vibetech/inngest-client
 
       - name: Install Playwright Chromium
-        run: pnpm --filter nova-agent exec playwright install chromium --with-deps
+        run: cd apps/nova-agent && pnpm exec playwright install chromium --with-deps
 
       - name: Run visual regression tests
-        run: pnpm --filter nova-agent run test:visual
+        run: cd apps/nova-agent && pnpm run test:visual
 
       - name: Upload Playwright report on failure
         if: failure()

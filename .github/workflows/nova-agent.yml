@@ -104,6 +104,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build workspace dependencies
+        run: pnpm nx run-many -t build -p openrouter-client @vibetech/shared-utils @vibetech/inngest-client
+
       - name: Install Playwright Chromium
         run: cd apps/nova-agent && pnpm exec playwright install chromium
 
