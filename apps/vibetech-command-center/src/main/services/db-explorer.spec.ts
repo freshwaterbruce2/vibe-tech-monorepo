@@ -21,10 +21,10 @@ const dbMockState = vi.hoisted(() => ({
 }));
 
 vi.mock('better-sqlite3', () => ({
-  default: vi.fn().mockImplementation(() => {
+  default: vi.fn(function () {
     const instance = {
       pragma: vi.fn(),
-      prepare: vi.fn().mockImplementation(() => {
+      prepare: vi.fn().mockImplementation(function () {
         if (dbMockState.prepareThrows) throw dbMockState.prepareThrows;
         const stmt = dbMockState.prepareQueue.shift();
         if (stmt) return stmt;

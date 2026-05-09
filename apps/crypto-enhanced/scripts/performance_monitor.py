@@ -15,9 +15,24 @@ import statistics
 class PerformanceMonitor:
     """Monitor trading performance to validate profitability"""
 
-    def __init__(self, db_path: str = "trading.db"):
+    def __init__(self, db_path: str = "D:/databases/crypto-enhanced/trading.db"):
         self.db_path = db_path
         self.start_date = datetime.now()
+
+    def _table_exists(self, table_name: str) -> bool:
+        """Check if a table exists in the database."""
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+                (table_name,),
+            )
+            exists = cursor.fetchone() is not None
+            conn.close()
+            return exists
+        except Exception:
+            return False
 
     def get_connection(self):
         """Get database connection"""
@@ -31,6 +46,14 @@ class PerformanceMonitor:
         cutoff = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d %H:%M:%S')
 
         # Get all completed trades (filled orders)
+        if not self._table_exists("executions"):
+            conn.close()
+            return {
+                'status': 'insufficient_data',
+                'message': 'No trades in period (executions table missing)',
+                'days_monitored': 0
+            }
+
         cursor.execute("""
             SELECT
                 side,
@@ -49,24 +72,29 @@ class PerformanceMonitor:
         trades = cursor.fetchall()
 
         # Get balance history
-        cursor.execute("""
-            SELECT usd_balance, xlm_balance, timestamp
-            FROM balance_history
-            WHERE timestamp >= ?
-            ORDER BY timestamp
-        """, (cutoff,))
+        if self._table_exists("balance_history"):
+            cursor.execute("""
+                SELECT usd_balance, xlm_balance, timestamp
+                FROM balance_history
+                WHERE timestamp >= ?
+                ORDER BY timestamp
+            """, (cutoff,))
+        else:
+            cursor.execute("SELECT 1 WHERE 0")
 
         balance_history = cursor.fetchall()
 
         # Get system events (crashes, errors)
-        cursor.execute("""
-            SELECT COUNT(*) as error_count
-            FROM events
-            WHERE severity IN ('ERROR', 'CRITICAL')
-            AND timestamp >= ?
-        """, (cutoff,))
-
-        error_count = cursor.fetchone()[0]
+        if self._table_exists("events"):
+            cursor.execute("""
+                SELECT COUNT(*) as error_count
+                FROM events
+                WHERE severity IN ('ERROR', 'CRITICAL')
+                AND timestamp >= ?
+            """, (cutoff,))
+            error_count = cursor.fetchone()[0]
+        else:
+            error_count = 0
 
         conn.close()
 
@@ -155,7 +183,7 @@ class PerformanceMonitor:
 
             total_pnl = sum(p['pnl'] for p in realized_pnl)
 
-            # Expectancy = (Win% × Avg Win) - (Loss% × Avg Loss)
+            # Expectancy = (Win% * Avg Win) - (Loss% * Avg Loss)
             expectancy = (win_rate/100 * avg_win) - ((100-win_rate)/100 * abs(avg_loss))
 
             # Profit factor = Gross Profit / Gross Loss
@@ -245,47 +273,47 @@ class PerformanceMonitor:
     def _get_recommendation(self, criteria: Dict, trade_count: int) -> str:
         """Get scaling recommendation"""
         if all(criteria.values()):
-            return "✅ READY TO SCALE - All criteria met"
+            return "READY TO SCALE - All criteria met"
 
         missing = [k for k, v in criteria.items() if not v]
 
         if 'minimum_trades' in missing:
             trades_needed = 50 - trade_count
-            return f"⏳ WAIT - Need {trades_needed} more complete trades for validation"
+            return f"WAIT - Need {trades_needed} more complete trades for validation"
 
         if 'positive_expectancy' in missing:
-            return "❌ NOT READY - Negative expectancy (losing strategy)"
+            return "NOT READY - Negative expectancy (losing strategy)"
 
         if 'acceptable_win_rate' in missing:
-            return "⚠️ CAUTION - Win rate too low (below 52%)"
+            return "CAUTION - Win rate too low (below 52%)"
 
         if 'controlled_drawdown' in missing:
-            return "⚠️ HIGH RISK - Drawdown exceeds 30% (too volatile)"
+            return "HIGH RISK - Drawdown exceeds 30% (too volatile)"
 
-        return "⏳ MONITORING - Continue gathering data"
+        return "MONITORING - Continue gathering data"
 
     def generate_report(self, days: int = 7) -> str:
         """Generate human-readable performance report"""
         metrics = self.calculate_metrics(days)
 
         if metrics.get('status') == 'insufficient_data':
-            return "📊 INSUFFICIENT DATA - No trades recorded yet\n"
+            return "INSUFFICIENT DATA - No trades recorded yet\n"
 
         report = []
         report.append("=" * 70)
-        report.append(f"📊 TRADING PERFORMANCE REPORT - Last {days} Days")
+        report.append(f"TRADING PERFORMANCE REPORT - Last {days} Days")
         report.append("=" * 70)
         report.append("")
 
         # Trading Activity
-        report.append("📈 TRADING ACTIVITY")
+        report.append("TRADING ACTIVITY")
         report.append(f"  Total Executions: {metrics['total_trades']}")
-        report.append(f"  Complete Pairs: {metrics['completed_pairs']} (Buy → Sell)")
+        report.append(f"  Complete Pairs: {metrics['completed_pairs']} (Buy -> Sell)")
         report.append(f"  Buys: {metrics['buy_count']} | Sells: {metrics['sell_count']}")
         report.append("")
 
         # Performance Metrics
-        report.append("💰 PERFORMANCE METRICS")
+        report.append("PERFORMANCE METRICS")
         report.append(f"  Win Rate: {metrics['win_rate']}% ({metrics['win_count']}W / {metrics['loss_count']}L)")
         report.append(f"  Average Win: ${metrics['avg_win']:.2f}")
         report.append(f"  Average Loss: ${metrics['avg_loss']:.2f}")
@@ -296,34 +324,34 @@ class PerformanceMonitor:
         report.append("")
 
         # Risk Metrics
-        report.append("⚠️ RISK METRICS")
+        report.append("RISK METRICS")
         report.append(f"  Max Drawdown: {metrics['max_drawdown_pct']:.2f}%")
         report.append(f"  System Errors: {metrics['error_count']}")
         report.append("")
 
         # Scaling Assessment
         readiness = metrics['ready_to_scale']
-        report.append("🎯 CAPITAL SCALING ASSESSMENT")
+        report.append("CAPITAL SCALING ASSESSMENT")
         report.append(f"  Status: {readiness['recommendation']}")
         report.append("")
         report.append("  Criteria Checklist:")
         for criterion, met in readiness['criteria_met'].items():
-            status = "✅" if met else "❌"
+            status = "[Y]" if met else "[N]"
             criterion_name = criterion.replace('_', ' ').title()
             report.append(f"    {status} {criterion_name}")
         report.append("")
 
         # Recommendations
-        report.append("💡 RECOMMENDATIONS")
+        report.append("RECOMMENDATIONS")
         if readiness['ready']:
-            report.append("  • System validated - consider scaling capital")
-            report.append("  • Maintain current position sizing ratio")
-            report.append("  • Continue monitoring for regression")
+            report.append("  * System validated - consider scaling capital")
+            report.append("  * Maintain current position sizing ratio")
+            report.append("  * Continue monitoring for regression")
         else:
-            report.append("  • Continue paper trading with current capital")
-            report.append("  • Focus on improving win rate and expectancy")
-            report.append("  • Wait for minimum 50 complete trades")
-            report.append("  • DO NOT add capital yet")
+            report.append("  * Continue paper trading with current capital")
+            report.append("  * Focus on improving win rate and expectancy")
+            report.append("  * Wait for minimum 50 complete trades")
+            report.append("  * DO NOT add capital yet")
 
         report.append("")
         report.append("=" * 70)
@@ -367,7 +395,7 @@ def main():
             print(monitor.generate_report(30))
         elif command == 'snapshot':
             monitor.save_daily_snapshot()
-            print("✅ Daily snapshot saved")
+            print("Daily snapshot saved")
         else:
             print(f"Unknown command: {command}")
             print("Usage: python performance_monitor.py [daily|weekly|monthly|snapshot]")

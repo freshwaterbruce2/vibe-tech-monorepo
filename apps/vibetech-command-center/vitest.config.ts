@@ -8,11 +8,7 @@ export default defineConfig({
     include: ['src/**/*.spec.ts', 'src/**/*.spec.tsx', 'tests/unit/**/*.spec.ts'],
     testTimeout: 10_000,
     hookTimeout: 10_000,
-    environmentMatchGlobs: [
-      ['src/renderer/**/*.spec.tsx', 'jsdom'],
-      ['src/renderer/**/*.spec.ts', 'jsdom'],
-      ['**', 'node']
-    ],
+    environment: 'node',
     setupFiles: ['./tests/setup.ts'],
     coverage: {
       provider: 'v8',

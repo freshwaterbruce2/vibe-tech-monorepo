@@ -18,6 +18,13 @@ import sys
 import logging
 from pathlib import Path
 from typing import List, Tuple
+
+# Ensure src/ is on PYTHONPATH when running from scripts/
+project_root = Path(__file__).parent.parent
+src_path = str(project_root / "src")
+if src_path not in sys.path:
+    sys.path.insert(0, src_path)
+
 from api_validator import (
     KrakenAPIValidator,
     PortValidator,
@@ -57,13 +64,13 @@ class StartupValidator:
     def print_result(self, name: str, result: ValidationResult, critical: bool = False):
         """Print a validation result"""
         if result.is_valid:
-            status = f"{Colors.GREEN}✓ PASS{Colors.END}"
+            status = f"{Colors.GREEN}[PASS]{Colors.END}"
         else:
             if critical:
-                status = f"{Colors.RED}✗ CRITICAL{Colors.END}"
+                status = f"{Colors.RED}[CRIT]{Colors.END}"
                 self.critical_failures += 1
             else:
-                status = f"{Colors.YELLOW}⚠ WARNING{Colors.END}"
+                status = f"{Colors.YELLOW}[WARN]{Colors.END}"
                 self.warnings += 1
         
         print(f"{status:20} {name}")
@@ -118,7 +125,7 @@ class StartupValidator:
         self._check_dependencies()
         
         # Summary
-        self._print_summary()
+        return self._print_summary()
     
     def _check_instance_lock(self):
         """Check if another instance is running"""
@@ -191,14 +198,15 @@ class StartupValidator:
     
     def _check_config_files(self):
         """Check for required configuration files"""
+        project_root = Path(__file__).parent.parent
         required_files = [
             (".env", True),
-            ("config.json", False),
-            ("trading.db", False),
+            ("trading_config.json", False),
+            ("D:/databases/crypto-enhanced/trading.db", False),
         ]
         
         for filename, critical in required_files:
-            filepath = Path(__file__).parent / filename
+            filepath = project_root / filename if not Path(filename).is_absolute() else Path(filename)
             if filepath.exists():
                 result = ValidationResult(
                     is_valid=True,
@@ -254,7 +262,7 @@ class StartupValidator:
     
     def _check_database(self):
         """Check database file and integrity"""
-        db_path = Path(__file__).parent / "trading.db"
+        db_path = Path("D:/databases/crypto-enhanced/trading.db")
         
         if not db_path.exists():
             result = ValidationResult(
@@ -367,15 +375,15 @@ class StartupValidator:
         
         # Final verdict
         if self.critical_failures > 0:
-            print(f"{Colors.RED}{Colors.BOLD}❌ VALIDATION FAILED{Colors.END}")
+            print(f"{Colors.RED}{Colors.BOLD}VALIDATION FAILED{Colors.END}")
             print(f"{Colors.RED}Fix critical issues before starting trading!{Colors.END}")
             return False
         elif self.warnings > 0:
-            print(f"{Colors.YELLOW}{Colors.BOLD}⚠ VALIDATION PASSED WITH WARNINGS{Colors.END}")
+            print(f"{Colors.YELLOW}{Colors.BOLD}VALIDATION PASSED WITH WARNINGS{Colors.END}")
             print(f"{Colors.YELLOW}Review warnings but safe to proceed.{Colors.END}")
             return True
         else:
-            print(f"{Colors.GREEN}{Colors.BOLD}✓ ALL CHECKS PASSED{Colors.END}")
+            print(f"{Colors.GREEN}{Colors.BOLD}ALL CHECKS PASSED{Colors.END}")
             print(f"{Colors.GREEN}System is ready for trading!{Colors.END}")
             return True
 
