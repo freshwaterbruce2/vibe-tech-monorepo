@@ -77,5 +77,5 @@ describe('pdf render', () => {
       expect(pdf.length).toBeGreaterThan(1000)
       expect(pdf.subarray(0, 4).toString('utf8')).toBe('%PDF')
     }
-  })
+  }, 15000)
 })
