@@ -62,7 +62,13 @@ try {
     $EnableMemoryInjection = $true
     if ($EnableMemoryInjection) {
         try {
-            $MemoryBridgeUrl = "http://localhost:3200"
+            $MemoryBridgeUrl = if ($env:MEMORY_MCP_URL) {
+                $env:MEMORY_MCP_URL
+            } elseif ($env:MEMORY_MCP_PORT) {
+                "http://localhost:$($env:MEMORY_MCP_PORT)"
+            } else {
+                "http://localhost:3200"
+            }
 
             # Get memory context (recent work, patterns)
             $ContextBody = '{"method":"tools/call","params":{"name":"memory_get_context","arguments":{}}}'

@@ -51,14 +51,22 @@ if ($report.exists) {
 }
 
 if ($report.walExists) {
-    $walItem = Get-Item -LiteralPath $walPath
-    $report.walBytes = $walItem.Length
-    $report.walMB = [math]::Round(($walItem.Length / 1MB), 2)
+    $walItem = Get-Item -LiteralPath $walPath -ErrorAction SilentlyContinue
+    if ($null -ne $walItem) {
+        $report.walBytes = $walItem.Length
+        $report.walMB = [math]::Round(($walItem.Length / 1MB), 2)
+    } else {
+        $report.walExists = $false
+    }
 }
 
 if ($report.shmExists) {
-    $shmItem = Get-Item -LiteralPath $shmPath
-    $report.shmBytes = $shmItem.Length
+    $shmItem = Get-Item -LiteralPath $shmPath -ErrorAction SilentlyContinue
+    if ($null -ne $shmItem) {
+        $report.shmBytes = $shmItem.Length
+    } else {
+        $report.shmExists = $false
+    }
 }
 
 $outputDir = Split-Path -Parent $OutputPath

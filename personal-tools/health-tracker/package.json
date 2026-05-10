@@ -13,7 +13,8 @@
     "mobile:android:release": "pnpm run mobile:sync && cd android && gradlew.bat assembleRelease",
     "mobile:android:bundle:win": "powershell -ExecutionPolicy Bypass -File scripts\\build-android-release-bundle.ps1",
     "preview": "vite preview --host=0.0.0.0",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "tsc --noEmit"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.1",

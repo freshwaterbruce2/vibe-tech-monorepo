@@ -11,8 +11,8 @@ import type {
   TaskQueueOptions,
   TaskStats,
   TaskType,
-} from '@vibetech/types/tasks';
-import { TaskPriority, TaskStatus } from '@vibetech/types/tasks';
+} from '@vibetech/types';
+import { TaskPriority, TaskStatus } from '@vibetech/types';
 
 import { logger } from '../services/Logger';
 

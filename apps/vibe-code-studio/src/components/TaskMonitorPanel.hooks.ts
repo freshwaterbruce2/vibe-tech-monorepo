@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { BackgroundTask } from '@vibetech/types/tasks';
-import { TaskStatus } from '@vibetech/types/tasks';
+import type { BackgroundTask } from '@vibetech/types';
+import { TaskStatus } from '@vibetech/types';
 
 export function useTaskMonitor(tasks: BackgroundTask[]) {
   const [filter, setFilter] = useState<'all' | 'running' | 'queued' | 'completed'>('all');

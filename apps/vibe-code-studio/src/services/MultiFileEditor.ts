@@ -5,7 +5,7 @@ import type {
   FileChange,
   MultiFileEditPlan,
   MultiFileEditResult,
-} from '@vibetech/types/multifile';
+} from '@vibetech/types';
 
 import { logger } from '../services/Logger';
 

@@ -68,7 +68,7 @@ const DashboardHeader = ({ title, className = "", onAddLead }: DashboardHeaderPr
         >
           <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-[color:var(--c-cyan)/10] to-[color:var(--c-purple)/10] group-hover:opacity-80 transition-opacity"></span>
           <PlusCircle className="h-4 w-4 relative z-10 group-hover:rotate-90 transition-transform duration-300" />
-          <span className="relative z-10">New Lead</span>
+          <span className="relative z-10">Add Lead</span>
         </Button>
       </motion.div>
       

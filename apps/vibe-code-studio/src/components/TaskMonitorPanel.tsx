@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import type { BackgroundTask, TaskStats} from '@vibetech/types/tasks';
-import {TaskStatus } from '@vibetech/types/tasks';
+import type { BackgroundTask, TaskStats} from '@vibetech/types';
+import {TaskStatus } from '@vibetech/types';
 import { AnimatePresence,motion } from 'framer-motion';
 import {
   AlertCircle,

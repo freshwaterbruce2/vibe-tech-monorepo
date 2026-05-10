@@ -40,6 +40,13 @@
         "cwd": "apps/cross-agent-reflection"
       }
     },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run typecheck",
+        "cwd": "apps/cross-agent-reflection"
+      }
+    },
     "lint": {
       "executor": "nx:run-commands",
       "options": {

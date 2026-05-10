@@ -39,7 +39,7 @@ const DashboardMetrics = ({ metrics }: DashboardMetricsProps) => {
         trend={{ value: "3.2%", positive: true }}
       />
       <DashboardMetricCard 
-        title="Avg. Response Time"
+        title="Avg Response Time"
         value={metrics.avgResponseTime}
         description="improvement"
         icon={Activity}

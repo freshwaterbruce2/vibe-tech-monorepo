@@ -3,7 +3,7 @@
  * Extracts all useState calls into a single hook for cleaner organization
  */
 
-import type { FileChange, MultiFileEditPlan } from '@vibetech/types/multifile';
+import type { FileChange, MultiFileEditPlan } from '@vibetech/types';
 import { useRef, useState, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
 import type { editor as MonacoEditor } from 'monaco-editor';
 import type { AutoFixService, GeneratedFix } from '../../services/AutoFixService';

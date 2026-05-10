@@ -2,7 +2,7 @@
  * AIChat Types
  * Type definitions for the AI Chat component
  */
-import type { FileChange, MultiFileEditPlan } from '@vibetech/types/multifile';
+import type { FileChange, MultiFileEditPlan } from '@vibetech/types';
 import type { ReactElement, ReactNode } from 'react';
 import type { AIMessage, AgentStep, AgentTask, ApprovalRequest, StepStatus } from '../../types';
 import type { TaskPlanner } from '../../services/ai/TaskPlanner';

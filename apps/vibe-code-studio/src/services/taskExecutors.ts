@@ -1,8 +1,8 @@
 /**
  * Task Executors - Example implementations for common background tasks
  */
-import type { BackgroundTask, TaskExecutor, TaskProgress, TaskResult} from '@vibetech/types/tasks';
-import { TaskType } from '@vibetech/types/tasks';
+import type { BackgroundTask, TaskExecutor, TaskProgress, TaskResult} from '@vibetech/types';
+import { TaskType } from '@vibetech/types';
 
 import { logger } from '../services/Logger';
 

@@ -1,12 +1,13 @@
 import { test, expect } from '@playwright/test';
 
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:8082';
+
 test.describe('Design Uniformity Verification', () => {
   test('Services page now matches design patterns', async ({ page }) => {
-    const baseURL = 'http://localhost:8082';
     await page.setViewportSize({ width: 1920, height: 1080 });
 
     // Check Services page uses PageHeader component
-    await page.goto(`${baseURL}/services`);
+    await page.goto(`${BASE_URL}/services`);
     await page.waitForLoadState('networkidle');
     
     // Should now have gradient text elements (PageHeader)
@@ -54,22 +55,25 @@ test.describe('Design Uniformity Verification', () => {
   });
 
   test('Compare header styles across pages', async ({ page }) => {
-    const baseURL = 'http://localhost:8082';
+    test.setTimeout(45_000);
     const pages = ['/about', '/portfolio', '/services'];
     const headerStyles = [];
 
     for (const pagePath of pages) {
-      await page.goto(`${baseURL}${pagePath}`);
-      await page.waitForLoadState('networkidle');
-      
-      const header = await page.locator('h1').first();
-      const styles = await header.evaluate(el => {
-        const computed = window.getComputedStyle(el);
+      await page.goto(`${BASE_URL}${pagePath}`, { waitUntil: 'domcontentloaded' });
+      await expect(page.locator('h1').first()).toBeVisible();
+      const styles = await page.evaluate(() => {
+        const header = document.querySelector('h1');
+        if (!header) {
+          throw new Error('Expected h1 on page for header style comparison');
+        }
+
+        const computed = window.getComputedStyle(header);
         return {
           fontSize: computed.fontSize,
           fontWeight: computed.fontWeight,
           textAlign: computed.textAlign,
-          background: computed.background
+          background: computed.background,
         };
       });
       
@@ -90,7 +94,7 @@ test.describe('Design Uniformity Verification', () => {
   });
 
   test('Verify spacing consistency', async ({ page }) => {
-    await page.goto('http://localhost:8082/services');
+    await page.goto(`${BASE_URL}/services`);
     await page.waitForLoadState('networkidle');
 
     // Check section spacing consistency

@@ -2,6 +2,7 @@ import { Toaster } from '@/components/ui/toaster';
 import About from '@/pages/About';
 import Blog from '@/pages/Blog';
 import Contact from '@/pages/Contact';
+import Dashboard from '@/pages/Dashboard';
 import Index from '@/pages/Index';
 import NotFound from '@/pages/NotFound';
 import Portfolio from '@/pages/Portfolio';
@@ -24,6 +25,7 @@ const App: React.FC = () => {
         <Route path="/portfolio/:id" element={<ProjectDetail />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/tools" element={<Tools />} />
         <Route path="/resources" element={<Resources />} />
