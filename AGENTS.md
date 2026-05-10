@@ -445,6 +445,7 @@ Some tests (e.g. `@vibetech/shared-utils` path-validator tests) assert Windows `
 - Web SPAs (`chessmaster-academy`, `invoice-automation-saas`, `vibe-tech-lovable`, `VibeBlox`, `prompt-engineer-app`, `cross-agent-reflection`, `business-booking-platform-next`) start with `pnpm nx dev <project>` and are the easiest to test.
 - Python apps (`crypto-enhanced`, `vibe-justice/backend`) need a separate venv setup; they are optional for JS/TS development.
 - Many root scripts (in `package.json`) use `powershell` or `.ps1` files and will not work on Linux.
+- Do not use Vercel for Cloud Agent validation or deployment. Prefer local Nx dev/build/test workflows unless the user explicitly requests Vercel-specific work.
 
 ### Linting
 - `pnpm nx lint <project>` runs ESLint per-project and works on Linux.
