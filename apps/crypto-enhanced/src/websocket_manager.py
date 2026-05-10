@@ -6,12 +6,18 @@ Handles real-time market data and order updates with RFC3339 timestamp complianc
 import asyncio
 import json
 import logging
+import os
 import time
 from typing import Dict, Any, Optional, List, Callable
 import websockets
 from datetime import datetime
 from timestamp_utils import TimestampUtils, normalize as normalize_timestamp
 from errors_simple import WebSocketError, log_error
+
+
+class TradingDisabledError(Exception):
+    """Raised when trading is disabled via environment variable."""
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +54,8 @@ class WebSocketManager:
         self.token_refresh_task = None  # Background token refresh task
         self.dead_man_switch_task = None
         self._private_channel_failed = False  # Track if private channels are unavailable
+        self._state_lock = asyncio.Lock()
+        self.trading_enabled = os.environ.get("ENABLE_TRADING", "false").lower() == "true"
 
         # WebSocket V2 2025 compliance
         self.connection_attempts = []  # Track connection attempts for rate limiting
@@ -110,7 +118,8 @@ class WebSocketManager:
 
     async def stop(self):
         """Stop WebSocket connections with proper cleanup"""
-        self.running = False
+        async with self._state_lock:
+            self.running = False
         logger.info("Stopping WebSocket connections...")
 
         # Cancel and await all background tasks
@@ -147,10 +156,19 @@ class WebSocketManager:
             logger.info(f"Cancelled {len(tasks_to_cancel)} background tasks")
 
         # Close WebSocket connections
-        if self.public_ws:
-            await self.public_ws.close()
-        if self.private_ws:
-            await self.private_ws.close()
+        async with self._state_lock:
+            if self.public_ws:
+                try:
+                    await self.public_ws.close()
+                except Exception:
+                    pass
+                self.public_ws = None
+            if self.private_ws:
+                try:
+                    await self.private_ws.close()
+                except Exception:
+                    pass
+                self.private_ws = None
 
     def is_connected(self) -> bool:
         """Check if WebSocket is connected"""
@@ -179,7 +197,8 @@ class WebSocketManager:
                     async with asyncio.timeout(30):
                         # PHASE 1: Connect (should be fast, ~2-5s)
                         websocket = await websockets.connect(self.WS_URL)
-                        self.public_ws = websocket
+                        async with self._state_lock:
+                            self.public_ws = websocket
                         logger.info("Public WebSocket connected successfully")
                         
                         # PHASE 2: Subscribe to channels (should be fast, ~1-3s)
@@ -209,12 +228,13 @@ class WebSocketManager:
                     
                 except asyncio.TimeoutError:
                     logger.error("Public WebSocket setup timeout (connection or subscription failed)")
-                    if self.public_ws:
-                        try:
-                            await self.public_ws.close()
-                        except Exception:
-                            pass  # Cleanup should not raise
-                        self.public_ws = None
+                    async with self._state_lock:
+                        if self.public_ws:
+                            try:
+                                await self.public_ws.close()
+                            except Exception:
+                                pass  # Cleanup should not raise
+                            self.public_ws = None
                     await asyncio.sleep(reconnect_delay)
                     reconnect_delay = min(reconnect_delay * 2, self.max_reconnect_delay)
 
@@ -226,12 +246,13 @@ class WebSocketManager:
                 logger.exception(
                     f"Public WebSocket exception: {ws_error.message}"
                 )
-                if self.public_ws:
-                    try:
-                        await self.public_ws.close()
-                    except Exception:
-                        pass  # Cleanup should not raise
-                    self.public_ws = None
+                async with self._state_lock:
+                    if self.public_ws:
+                        try:
+                            await self.public_ws.close()
+                        except Exception:
+                            pass  # Cleanup should not raise
+                        self.public_ws = None
                 await asyncio.sleep(reconnect_delay)
                 reconnect_delay = min(
                     reconnect_delay * 2,
@@ -242,12 +263,13 @@ class WebSocketManager:
                     f"Unexpected error in public WebSocket: {type(e).__name__}: {e}",
                     exc_info=True
                 )
-                if self.public_ws:
-                    try:
-                        await self.public_ws.close()
-                    except Exception:
-                        pass  # Cleanup should not raise
-                    self.public_ws = None
+                async with self._state_lock:
+                    if self.public_ws:
+                        try:
+                            await self.public_ws.close()
+                        except Exception:
+                            pass  # Cleanup should not raise
+                        self.public_ws = None
                 await asyncio.sleep(reconnect_delay)
                 reconnect_delay = min(
                     reconnect_delay * 2,
@@ -271,7 +293,8 @@ class WebSocketManager:
                     async with asyncio.timeout(30):
                         # PHASE 1: Connect (should be fast, ~2-5s)
                         websocket = await websockets.connect(self.WS_AUTH_URL)
-                        self.private_ws = websocket
+                        async with self._state_lock:
+                            self.private_ws = websocket
                         logger.info("Private WebSocket connected successfully")
                         
                         # PHASE 2: Authenticate (should be fast, ~1-2s)
@@ -299,12 +322,13 @@ class WebSocketManager:
                     
                 except asyncio.TimeoutError:
                     logger.error("Private WebSocket setup timeout (connection, auth, or subscription failed)")
-                    if self.private_ws:
-                        try:
-                            await self.private_ws.close()
-                        except Exception:
-                            pass  # Cleanup should not raise
-                        self.private_ws = None
+                    async with self._state_lock:
+                        if self.private_ws:
+                            try:
+                                await self.private_ws.close()
+                            except Exception:
+                                pass  # Cleanup should not raise
+                            self.private_ws = None
                     await asyncio.sleep(reconnect_delay)
                     reconnect_delay = min(reconnect_delay * 2, self.max_reconnect_delay)
 
@@ -314,12 +338,13 @@ class WebSocketManager:
                     channel="private"
                 )
                 logger.exception(f"Private WebSocket exception: {ws_error.message}")
-                if self.private_ws:
-                    try:
-                        await self.private_ws.close()
-                    except Exception:
-                        pass  # Cleanup should not raise
-                    self.private_ws = None
+                async with self._state_lock:
+                    if self.private_ws:
+                        try:
+                            await self.private_ws.close()
+                        except Exception:
+                            pass  # Cleanup should not raise
+                        self.private_ws = None
                 await asyncio.sleep(reconnect_delay)
                 reconnect_delay = min(
                     reconnect_delay * 2,
@@ -330,12 +355,13 @@ class WebSocketManager:
                     f"Unexpected error in private WebSocket: {type(e).__name__}: {e}",
                     exc_info=True
                 )
-                if self.private_ws:
-                    try:
-                        await self.private_ws.close()
-                    except Exception:
-                        pass  # Cleanup should not raise
-                    self.private_ws = None
+                async with self._state_lock:
+                    if self.private_ws:
+                        try:
+                            await self.private_ws.close()
+                        except Exception:
+                            pass  # Cleanup should not raise
+                        self.private_ws = None
                 await asyncio.sleep(reconnect_delay)
                 reconnect_delay = min(
                     reconnect_delay * 2,
@@ -348,8 +374,9 @@ class WebSocketManager:
             try:
                 # Get WebSocket token from REST API
                 token_response = await self.kraken.get_websocket_token()
-                self.ws_token = token_response.get('token')
-                self.ws_token_timestamp = TimestampUtils.now_rfc3339()  # Track creation time
+                async with self._state_lock:
+                    self.ws_token = token_response.get('token')
+                    self.ws_token_timestamp = TimestampUtils.now_rfc3339()  # Track creation time
                 logger.info(f"WebSocket token obtained successfully (valid for 15 minutes)")
 
                 # Start proactive token refresh task
@@ -379,8 +406,9 @@ class WebSocketManager:
         else:
             logger.error("KrakenClient not provided, cannot get WebSocket token")
             logger.warning("Operating in public-only mode")
-            self.ws_token = None
-            self.ws_token_timestamp = None
+            async with self._state_lock:
+                self.ws_token = None
+                self.ws_token_timestamp = None
             self._private_channel_failed = True
 
     async def _token_refresh_monitor(self):
@@ -430,9 +458,10 @@ class WebSocketManager:
         try:
             logger.info("Refreshing WebSocket token...")
             token_response = await self.kraken.get_websocket_token()
-            old_token = self.ws_token
-            self.ws_token = token_response.get('token')
-            self.ws_token_timestamp = TimestampUtils.now_rfc3339()
+            async with self._state_lock:
+                old_token = self.ws_token
+                self.ws_token = token_response.get('token')
+                self.ws_token_timestamp = TimestampUtils.now_rfc3339()
 
             logger.info("WebSocket token refreshed successfully")
 
@@ -549,6 +578,7 @@ class WebSocketManager:
 
     async def _process_message(self, data: Dict, is_private: bool = False):
         """Process incoming message with exception isolation"""
+        self.last_heartbeat = time.time()
         msg_type = data.get('channel') or data.get('type')
 
         try:
@@ -577,6 +607,7 @@ class WebSocketManager:
 
     async def _handle_heartbeat(self, data: Dict, is_private: bool):
         """Handle heartbeat message"""
+        self.last_heartbeat = time.time()
         ws = self.private_ws if is_private else self.public_ws
         if ws is None:
             logger.warning("Heartbeat received without an active websocket")
@@ -623,7 +654,9 @@ class WebSocketManager:
     # Subscription methods
     async def subscribe_ticker(self, pair: str):
         """Subscribe to ticker channel with validation"""
-        if not self._validate_websocket(self.public_ws, "subscribe_ticker"):
+        async with self._state_lock:
+            ws = self.public_ws
+        if not self._validate_websocket(ws, "subscribe_ticker"):
             logger.error("Cannot subscribe to ticker - WebSocket not ready")
             return
 
@@ -634,16 +667,18 @@ class WebSocketManager:
                 "symbol": [pair]
             }
         }
-        if self.public_ws:
+        if ws:
             try:
-                await self.public_ws.send(json.dumps(msg))
+                await ws.send(json.dumps(msg))
                 logger.info(f"Subscribed to ticker channel for {pair}")
             except Exception as e:
                 logger.error(f"Failed to send ticker subscription: {e}")
 
     async def subscribe_ohlc(self, pair: str, interval: int = 60):
         """Subscribe to OHLC channel with validation"""
-        if not self._validate_websocket(self.public_ws, "subscribe_ohlc"):
+        async with self._state_lock:
+            ws = self.public_ws
+        if not self._validate_websocket(ws, "subscribe_ohlc"):
             logger.error("Cannot subscribe to OHLC - WebSocket not ready")
             return
 
@@ -655,15 +690,17 @@ class WebSocketManager:
                 "interval": interval
             }
         }
-        if self.public_ws:
+        if ws:
             try:
-                await self.public_ws.send(json.dumps(msg))
+                await ws.send(json.dumps(msg))
             except Exception as e:
                 logger.error(f"Failed to send message: {e}")
 
     async def subscribe_book(self, pair: str, depth: int = 10):
         """Subscribe to order book channel with validation"""
-        if not self._validate_websocket(self.public_ws, "subscribe_book"):
+        async with self._state_lock:
+            ws = self.public_ws
+        if not self._validate_websocket(ws, "subscribe_book"):
             logger.error("Cannot subscribe to order book - WebSocket not ready")
             return
 
@@ -675,15 +712,17 @@ class WebSocketManager:
                 "depth": depth
             }
         }
-        if self.public_ws:
+        if ws:
             try:
-                await self.public_ws.send(json.dumps(msg))
+                await ws.send(json.dumps(msg))
             except Exception as e:
                 logger.error(f"Failed to send message: {e}")
 
     async def subscribe_trade(self, pair: str):
         """Subscribe to trade channel with validation"""
-        if not self._validate_websocket(self.public_ws, "subscribe_trade"):
+        async with self._state_lock:
+            ws = self.public_ws
+        if not self._validate_websocket(ws, "subscribe_trade"):
             logger.error("Cannot subscribe to trades - WebSocket not ready")
             return
 
@@ -694,9 +733,9 @@ class WebSocketManager:
                 "symbol": [pair]
             }
         }
-        if self.public_ws:
+        if ws:
             try:
-                await self.public_ws.send(json.dumps(msg))
+                await ws.send(json.dumps(msg))
                 logger.info(f"Subscribed to trade channel for {pair}")
             except Exception as e:
                 logger.error(f"Failed to send trade subscription: {e}")
@@ -735,11 +774,17 @@ class WebSocketManager:
             reduce_only: True to reduce margin position only
             client_order_id: Optional client-assigned order ID
         """
+        if not self.trading_enabled:
+            raise TradingDisabledError("Trading is disabled. Set ENABLE_TRADING=true to enable.")
+
         # Validate WebSocket before placing order (critical operation)
-        if not self._validate_websocket(self.private_ws, "add_order"):
+        async with self._state_lock:
+            ws = self.private_ws
+            token = self.ws_token
+        if not self._validate_websocket(ws, "add_order"):
             raise Exception("Private WebSocket validation failed - cannot place order")
 
-        if not self.private_ws or not self.ws_token:
+        if not ws or not token:
             raise Exception("Private WebSocket not connected or no token available")
 
         # Generate unique request ID
@@ -751,7 +796,7 @@ class WebSocketManager:
             "side": side,
             "order_type": order_type,
             "order_qty": order_qty,
-            "token": self.ws_token
+            "token": token
         }
 
         # Add optional parameters
@@ -777,7 +822,7 @@ class WebSocketManager:
         }
 
         try:
-            await self.private_ws.send(json.dumps(message))
+            await ws.send(json.dumps(message))
             logger.info(f"Sent add_order request: {symbol} {side} {order_qty} @ {limit_price}")
             return {"req_id": req_id, "status": "sent"}
         except Exception as e:
@@ -791,7 +836,13 @@ class WebSocketManager:
         Args:
             orders: List of order dictionaries (min 2, max 15)
         """
-        if not self.private_ws or not self.ws_token:
+        if not self.trading_enabled:
+            raise TradingDisabledError("Trading is disabled. Set ENABLE_TRADING=true to enable.")
+
+        async with self._state_lock:
+            ws = self.private_ws
+            token = self.ws_token
+        if not ws or not token:
             raise Exception("Private WebSocket not connected or no token available")
 
         if len(orders) < 2 or len(orders) > 15:
@@ -801,7 +852,7 @@ class WebSocketManager:
 
         # Add token to each order
         for order in orders:
-            order["token"] = self.ws_token
+            order["token"] = token
 
         message = {
             "method": "batch_add",
@@ -812,7 +863,7 @@ class WebSocketManager:
         }
 
         try:
-            await self.private_ws.send(json.dumps(message))
+            await ws.send(json.dumps(message))
             logger.info(f"Sent batch_add request for {len(orders)} orders")
             return {"req_id": req_id, "status": "sent"}
         except Exception as e:
@@ -821,7 +872,13 @@ class WebSocketManager:
 
     async def cancel_order(self, order_id: str) -> Dict:
         """Cancel single order via WebSocket V2"""
-        if not self.private_ws or not self.ws_token:
+        if not self.trading_enabled:
+            raise TradingDisabledError("Trading is disabled. Set ENABLE_TRADING=true to enable.")
+
+        async with self._state_lock:
+            ws = self.private_ws
+            token = self.ws_token
+        if not ws or not token:
             raise Exception("Private WebSocket not connected or no token available")
 
         req_id = int(time.time() * 1000000)
@@ -830,13 +887,13 @@ class WebSocketManager:
             "method": "cancel_order",
             "params": {
                 "order_id": order_id,
-                "token": self.ws_token
+                "token": token
             },
             "req_id": req_id
         }
 
         try:
-            await self.private_ws.send(json.dumps(message))
+            await ws.send(json.dumps(message))
             logger.info(f"Sent cancel_order request for {order_id}")
             return {"req_id": req_id, "status": "sent"}
         except Exception as e:
@@ -845,7 +902,13 @@ class WebSocketManager:
 
     async def cancel_all_orders(self) -> Dict:
         """Cancel all orders via WebSocket V2"""
-        if not self.private_ws or not self.ws_token:
+        if not self.trading_enabled:
+            raise TradingDisabledError("Trading is disabled. Set ENABLE_TRADING=true to enable.")
+
+        async with self._state_lock:
+            ws = self.private_ws
+            token = self.ws_token
+        if not ws or not token:
             raise Exception("Private WebSocket not connected or no token available")
 
         req_id = int(time.time() * 1000000)
@@ -853,13 +916,13 @@ class WebSocketManager:
         message = {
             "method": "cancel_all",
             "params": {
-                "token": self.ws_token
+                "token": token
             },
             "req_id": req_id
         }
 
         try:
-            await self.private_ws.send(json.dumps(message))
+            await ws.send(json.dumps(message))
             logger.info("Sent cancel_all orders request")
             return {"req_id": req_id, "status": "sent"}
         except Exception as e:
@@ -882,14 +945,20 @@ class WebSocketManager:
             limit_price: New limit price
             post_only: New post_only flag
         """
-        if not self.private_ws or not self.ws_token:
+        if not self.trading_enabled:
+            raise TradingDisabledError("Trading is disabled. Set ENABLE_TRADING=true to enable.")
+
+        async with self._state_lock:
+            ws = self.private_ws
+            token = self.ws_token
+        if not ws or not token:
             raise Exception("Private WebSocket not connected or no token available")
 
         req_id = int(time.time() * 1000000)
 
         params = {
             "order_id": order_id,
-            "token": self.ws_token
+            "token": token
         }
 
         # Add only specified parameters
@@ -907,7 +976,7 @@ class WebSocketManager:
         }
 
         try:
-            await self.private_ws.send(json.dumps(message))
+            await ws.send(json.dumps(message))
             logger.info(f"Sent amend_order request for {order_id}")
             return {"req_id": req_id, "status": "sent"}
         except Exception as e:
@@ -953,10 +1022,19 @@ class WebSocketManager:
                 if time_since_last > self.heartbeat_timeout:
                     logger.warning(f"Heartbeat timeout: {time_since_last:.1f}s since last message")
                     # Trigger reconnection
-                    if self.public_ws:
-                        await self.public_ws.close()
-                    if self.private_ws:
-                        await self.private_ws.close()
+                    async with self._state_lock:
+                        if self.public_ws:
+                            try:
+                                await self.public_ws.close()
+                            except Exception:
+                                pass
+                            self.public_ws = None
+                        if self.private_ws:
+                            try:
+                                await self.private_ws.close()
+                            except Exception:
+                                pass
+                            self.private_ws = None
                     break
                 
                 last_ping_time = current_time

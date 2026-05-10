@@ -300,9 +300,12 @@ async def start_live_trading(auto_confirm: bool = False):
 
         except Exception as e:
             logger.error(f"Feature flag initialization failed: {e}")
-            if (
-                not args.bypass_duplicate_check
-            ):  # Reusing existing flag or we could add a new one, but for now just log
+            bypass = False
+            try:
+                bypass = args.bypass_duplicate_check
+            except NameError:
+                pass
+            if not bypass:
                 print(
                     f"[WARNING] Feature flag check failed: {e}. Proceeding with local config."
                 )

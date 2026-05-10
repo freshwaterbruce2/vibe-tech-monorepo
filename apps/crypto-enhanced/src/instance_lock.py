@@ -129,19 +129,7 @@ class InstanceLockFixed:
             print(f"[LOCK] [OK] Layer 1b SUCCESS - Legacy file lock acquired")
 
         # Layer 2: Process validation and PID tracking
-        process_lock_result = self._acquire_process_lock()
-        if process_lock_result == "retry_needed":
-            # Duplicates were killed, need to retry entire acquisition
-            print(f"[LOCK] [INFO] Duplicates cleaned up, retrying lock acquisition...")
-            self._cleanup_partial_locks()
-
-            if retry_count < max_retries:
-                time.sleep(2)  # Wait for cleanup to complete
-                return self.acquire(retry_count=retry_count + 1, max_retries=max_retries)
-            else:
-                print(f"[LOCK] [ERROR] Max retries ({max_retries}) exceeded after cleanup")
-                return False
-        elif not process_lock_result:
+        if not self._acquire_process_lock():
             print(f"[LOCK] [ERROR] Layer 2 FAILED - Process validation failed")
             self._cleanup_partial_locks()
             return False
@@ -183,41 +171,17 @@ class InstanceLockFixed:
             print(f"[LOCK] Legacy file lock error: {e}")
             return False
 
-    def _acquire_process_lock(self):
-        """Enhanced process validation and PID file management with auto-kill for duplicates
-        Returns: True if acquired, False if failed, "retry_needed" if duplicates were cleaned"""
+    def _acquire_process_lock(self) -> bool:
+        """Enhanced process validation and PID file management.
+        Returns: True if acquired, False if another instance is detected."""
         try:
             # Quick check for existing trading processes
             existing_processes = self._find_trading_processes()
 
             if existing_processes:
-                # Found duplicates - kill them and signal retry needed
-                print(f"[LOCK] Found {len(existing_processes)} duplicate process(es), cleaning up...")
-
-                for proc in existing_processes:
-                    try:
-                        cmdline = proc.cmdline()
-                        print(f"[LOCK] Killing PID {proc.pid}: {' '.join(cmdline[:3])}")
-                        proc.terminate()
-                        try:
-                            proc.wait(timeout=2)
-                            print(f"[LOCK] Killed PID {proc.pid}")
-                        except psutil.TimeoutExpired:
-                            proc.kill()  # Force kill if terminate times out
-                            proc.wait(timeout=1)
-                            print(f"[LOCK] Force killed PID {proc.pid}")
-                    except psutil.NoSuchProcess:
-                        print(f"[LOCK] PID {proc.pid} already gone")
-                    except psutil.ZombieProcess:
-                        print(f"[LOCK] PID {proc.pid} is zombie (already terminating)")
-                    except psutil.AccessDenied:
-                        print(f"[LOCK] Access denied killing PID {proc.pid} - may need manual cleanup")
-                    except Exception as e:
-                        print(f"[LOCK] Error killing PID {proc.pid}: {e}")
-
-                # Signal that duplicates were cleaned and retry is needed
-                print(f"[LOCK] Duplicate cleanup complete, will retry lock acquisition")
-                return "retry_needed"
+                pids = ", ".join(str(p.pid) for p in existing_processes)
+                print(f"[LOCK] Another instance detected (PIDs: {pids}). Manual cleanup required.")
+                return False
 
             # No duplicates found - proceed with PID file creation
             with open(self.pid_file_path, 'w') as f:
@@ -263,6 +227,8 @@ class InstanceLockFixed:
                     self.mutex_handle = None
                     return False
                 elif result == WAIT_ABANDONED:
+                    return True
+                elif result == WAIT_OBJECT_0:
                     return True
                 else:
                     kernel32.CloseHandle(self.mutex_handle)

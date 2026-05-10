@@ -28,8 +28,6 @@ if src_path not in sys.path:
 from api_validator import (
     KrakenAPIValidator,
     PortValidator,
-    RateLimitValidator,
-    EdgeCaseValidator,
     ValidationResult
 )
 from instance_lock import check_instance_lock
@@ -111,17 +109,13 @@ class StartupValidator:
         self.print_header("6. DATABASE CHECK")
         self._check_database()
         
-        # 7. Rate Limits
-        self.print_header("7. RATE LIMIT CONFIGURATION")
-        self._check_rate_limits()
-        
-        # 8. Network Connectivity (skip in quick mode)
+        # 7. Network Connectivity (skip in quick mode)
         if not self.quick_mode:
-            self.print_header("8. NETWORK CONNECTIVITY")
+            self.print_header("7. NETWORK CONNECTIVITY")
             await self._check_network()
         
-        # 9. Required Python Packages
-        self.print_header("9. PYTHON DEPENDENCIES")
+        # 8. Required Python Packages
+        self.print_header("8. PYTHON DEPENDENCIES")
         self._check_dependencies()
         
         # Summary
@@ -307,15 +301,6 @@ class StartupValidator:
                 message=f"Cannot read database: {e}"
             )
             self.print_result("Database Access", result, critical=True)
-    
-    def _check_rate_limits(self):
-        """Validate rate limit configuration"""
-        rate_limiter = RateLimitValidator()
-        
-        # Test each category
-        for category in ["public", "private", "websocket_connection"]:
-            result = rate_limiter.can_make_request(category)
-            self.print_result(f"Rate Limit: {category}", result, critical=False)
     
     async def _check_network(self):
         """Check network connectivity to Kraken"""

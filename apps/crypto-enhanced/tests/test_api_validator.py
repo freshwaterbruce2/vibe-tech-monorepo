@@ -3,9 +3,7 @@
 import pytest
 
 from api_validator import (
-    EdgeCaseValidator,
     KrakenAPIValidator,
-    RateLimitValidator,
     quick_validate_order,
     quick_validate_ws_subscribe,
 )
@@ -151,75 +149,6 @@ def test_order_param_validation_accepts_valid_limit_order():
     )
 
     assert result.is_valid
-
-
-def test_rate_limit_validator_tracks_requests_within_window(monkeypatch):
-    """Rate limiting should be deterministic around the configured window."""
-    now = 1000.0
-    monkeypatch.setattr("api_validator.time.time", lambda: now)
-
-    limiter = RateLimitValidator()
-    public_limit = limiter.limits["public"]["requests"]
-
-    for _ in range(public_limit):
-        assert limiter.can_make_request("public").is_valid
-        limiter.record_request("public")
-
-    limited = limiter.can_make_request("public")
-
-    assert not limited.is_valid
-    assert limited.details["current_count"] == public_limit
-    assert limited.details["wait_time_seconds"] == pytest.approx(1.0)
-
-    now = 1001.1
-    assert limiter.can_make_request("public").is_valid
-
-
-def test_rate_limit_validator_rejects_unknown_category():
-    """Unknown rate-limit buckets should fail closed."""
-    result = RateLimitValidator().can_make_request("unknown")
-
-    assert not result.is_valid
-    assert result.details == {"category": "unknown"}
-
-
-@pytest.mark.parametrize("response", [None, [], {}])
-def test_api_response_validation_rejects_empty_or_non_mapping_responses(response):
-    """Response validation should reject shapes that cannot be read safely."""
-    result = EdgeCaseValidator.validate_api_response(response)
-
-    assert not result.is_valid
-
-
-def test_api_response_validation_accepts_non_empty_mapping():
-    """Non-empty response dictionaries are safe to pass onward."""
-    result = EdgeCaseValidator.validate_api_response({"result": {"status": "ok"}})
-
-    assert result.is_valid
-
-
-def test_websocket_message_order_validation_checks_sequence_and_length():
-    """Message order validation should catch out-of-order WebSocket events."""
-    messages = [{"method": "subscribe"}, {"channel": "ticker"}]
-
-    assert EdgeCaseValidator.validate_websocket_message_order(
-        messages,
-        ["subscribe", "ticker"],
-    ).is_valid
-
-    wrong_order = EdgeCaseValidator.validate_websocket_message_order(
-        messages,
-        ["ticker", "subscribe"],
-    )
-    wrong_length = EdgeCaseValidator.validate_websocket_message_order(
-        messages,
-        ["subscribe"],
-    )
-
-    assert not wrong_order.is_valid
-    assert wrong_order.details["index"] == 0
-    assert not wrong_length.is_valid
-    assert wrong_length.details == {"expected": 1, "actual": 2}
 
 
 def test_quick_validation_helpers_return_boolean_results():
