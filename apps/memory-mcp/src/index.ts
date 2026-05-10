@@ -240,8 +240,12 @@ async function main() {
       console.error(`[memory-mcp] Auto-capture enabled (session: ${autoCapture.getSessionId()})`);
     }
 
-    // Start HTTP Bridge to support VTDE and other HTTP clients
-    const HTTP_PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3200;
+    // Start HTTP Bridge to support VTDE and other HTTP clients.
+    // Use dedicated memory bridge env vars to avoid collisions with generic PORT
+    // values loaded from unrelated local services in the monorepo root.
+    const bridgePortRaw = process.env.MEMORY_MCP_PORT ?? process.env.MEMORY_BRIDGE_PORT;
+    const parsedBridgePort = bridgePortRaw ? Number.parseInt(bridgePortRaw, 10) : Number.NaN;
+    const HTTP_PORT = Number.isFinite(parsedBridgePort) ? parsedBridgePort : 3200;
     const httpServer = http.createServer(async (req, res) => {
       // Set CORS headers
       res.setHeader('Access-Control-Allow-Origin', '*');

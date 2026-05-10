@@ -8,7 +8,7 @@ const NewLeadsMetric = () => {
 
   return (
     <DashboardMetricCard 
-      title="New Leads (24h)"
+      title="New Leads Today"
       value={newLeadsCount}
       description="from yesterday"
       icon={Database}

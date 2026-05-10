@@ -76,7 +76,7 @@ class NovaLearningBridge:
                 file_paths_modified=data.get('file_paths_modified')
             )
             if logged is None:
-                logged = True
+                logged = False
             return {
                 'success': bool(logged),
                 'data': {

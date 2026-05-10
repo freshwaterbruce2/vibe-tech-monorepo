@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+test.describe.configure({ mode: 'serial' });
+
 /**
  * Portfolio Filter Tests
  *
@@ -15,155 +17,133 @@ test.describe('Portfolio Filter', () => {
   });
 
   test('displays portfolio page with projects', async ({ page }) => {
-    // Check page title/heading
     await expect(page.getByRole('heading', { level: 1 })).toContainText(/portfolio|projects|work/i);
 
-    // Check project cards are visible
-    const projectCards = page.locator('[data-testid="project-card"], .project-card, [class*="portfolio"] [class*="card"]');
-    await expect(projectCards.first()).toBeVisible({ timeout: 10000 });
+    const projectLinks = page.locator('a[href^="/portfolio/project-"]');
+    await expect(projectLinks.first()).toBeVisible({ timeout: 10000 });
   });
 
   test('shows filter buttons for categories', async ({ page }) => {
-    // Look for filter buttons/tabs
-    const filterButtons = page.locator('[data-testid="filter-button"], [role="tab"], button:has-text("All")');
+    const filterButtons = page
+      .locator('section')
+      .filter({ has: page.getByRole('button', { name: /^all$/i }) })
+      .first()
+      .getByRole('button');
 
-    if (await filterButtons.first().isVisible()) {
-      await expect(filterButtons.first()).toBeVisible();
-
-      // Should have "All" filter option
-      await expect(page.getByRole('button', { name: /all/i })).toBeVisible();
-    }
+    await expect(filterButtons.first()).toBeVisible();
+    expect(await filterButtons.count()).toBeGreaterThan(1);
+    await expect(filterButtons.filter({ hasText: /^all$/i })).toHaveCount(1);
   });
 
   test('filters projects by category', async ({ page }) => {
-    // Get initial project count
-    const projectCards = page.locator('[data-testid="project-card"], .project-card');
-    const initialCount = await projectCards.count();
+    const projectLinks = page.locator('a[href^="/portfolio/project-"]');
+    const initialCount = await projectLinks.count();
 
-    // Find and click a category filter (e.g., "Web")
-    const webFilter = page.getByRole('button', { name: /web|development/i });
+    const filterButtons = page
+      .locator('section')
+      .filter({ has: page.getByRole('button', { name: /^all$/i }) })
+      .first()
+      .getByRole('button');
+    expect(await filterButtons.count()).toBeGreaterThan(1);
 
-    if (await webFilter.isVisible()) {
-      await webFilter.click();
+    const firstCategory = filterButtons.nth(1);
+    await firstCategory.click();
 
-      // Wait for filter to apply
-      await page.waitForTimeout(500);
-
-      // Count should change or stay same (filtered)
-      const filteredCount = await projectCards.count();
-      expect(filteredCount).toBeLessThanOrEqual(initialCount);
-    }
+    await expect(projectLinks.first()).toBeVisible();
+    const filteredCount = await projectLinks.count();
+    expect(filteredCount).toBeGreaterThan(0);
+    expect(filteredCount).toBeLessThanOrEqual(initialCount);
   });
 
   test('All filter shows all projects', async ({ page }) => {
-    const allFilter = page.getByRole('button', { name: /all/i });
+    const projectLinks = page.locator('a[href^="/portfolio/project-"]');
+    const allProjectsCount = await projectLinks.count();
 
-    if (await allFilter.isVisible()) {
-      // First click another filter
-      const otherFilter = page.locator('[data-testid="filter-button"], [role="tab"]').nth(1);
-      if (await otherFilter.isVisible()) {
-        await otherFilter.click();
-        await page.waitForTimeout(300);
-      }
+    const filterButtons = page
+      .locator('section')
+      .filter({ has: page.getByRole('button', { name: /^all$/i }) })
+      .first()
+      .getByRole('button');
 
-      // Then click All
-      await allFilter.click();
-      await page.waitForTimeout(300);
+    expect(await filterButtons.count()).toBeGreaterThan(1);
 
-      // All projects should be visible
-      const projectCards = page.locator('[data-testid="project-card"], .project-card');
-      await expect(projectCards.first()).toBeVisible();
-    }
+    await filterButtons.nth(1).click();
+    await expect(projectLinks.first()).toBeVisible();
+
+    await filterButtons.filter({ hasText: /^all$/i }).click();
+    await expect(projectLinks.first()).toBeVisible();
+    await expect(projectLinks).toHaveCount(allProjectsCount);
   });
 
   test('project card displays required information', async ({ page }) => {
-    const firstCard = page.locator('[data-testid="project-card"], .project-card').first();
+    const firstProject = page.locator('a[href^="/portfolio/project-"]').first();
 
-    if (await firstCard.isVisible()) {
-      // Should have title
-      const title = firstCard.locator('h2, h3, [class*="title"]');
-      await expect(title).toBeVisible();
-
-      // Should have image or placeholder
-      const image = firstCard.locator('img, [class*="image"], [class*="thumbnail"]');
-      await expect(image).toBeVisible();
-    }
+    await expect(firstProject).toBeVisible();
+    await expect(firstProject.getByRole('heading')).toBeVisible();
+    await expect(firstProject.locator('img')).toBeVisible();
   });
 
   test('clicking project card navigates to detail', async ({ page }) => {
-    const firstCard = page.locator('[data-testid="project-card"], .project-card').first();
-
-    if (await firstCard.isVisible()) {
-      // Click the card or its link
-      const link = firstCard.locator('a').first();
-
-      if (await link.isVisible()) {
-        await link.click();
-
-        // Should navigate to project detail page
-        await expect(page).toHaveURL(/project|portfolio\/.+/);
-      }
-    }
+    const firstProject = page.locator('a[href^="/portfolio/project-"]').first();
+    await firstProject.click();
+    await expect(page).toHaveURL(/\/portfolio\/project-/);
   });
 
-  test('filter state persists after navigation and back', async ({ page }) => {
-    const webFilter = page.getByRole('button', { name: /web/i });
+  test('can navigate to project detail and return to portfolio', async ({ page }) => {
+    const filterButtons = page
+      .locator('section')
+      .filter({ has: page.getByRole('button', { name: /^all$/i }) })
+      .first()
+      .getByRole('button');
 
-    if (await webFilter.isVisible()) {
-      // Apply filter
-      await webFilter.click();
-      await page.waitForTimeout(300);
+    expect(await filterButtons.count()).toBeGreaterThan(1);
+    await filterButtons.nth(1).click();
 
-      // Navigate to a project
-      const firstCard = page.locator('[data-testid="project-card"], .project-card a').first();
-      if (await firstCard.isVisible()) {
-        await firstCard.click();
-        await page.waitForTimeout(500);
+    const firstProject = page.locator('a[href^="/portfolio/project-"]').first();
+    await firstProject.click();
+    await expect(page).toHaveURL(/\/portfolio\/project-/);
 
-        // Go back
-        await page.goBack();
-
-        // Filter should still be active (this may vary by implementation)
-        await expect(webFilter).toHaveAttribute('aria-selected', 'true').catch(() => {
-          // Some implementations may not persist filter state
-        });
-      }
-    }
+    await page.goBack();
+    await expect(page).toHaveURL(/\/portfolio$/);
+    await expect(page.locator('a[href^="/portfolio/project-"]').first()).toBeVisible();
   });
 
   test('portfolio grid is responsive', async ({ page }) => {
-    // Desktop - should show multiple columns
+    const projectLinks = page.locator('a[href^="/portfolio/project-"]');
+
     await page.setViewportSize({ width: 1200, height: 800 });
-    const desktopCards = page.locator('[data-testid="project-card"], .project-card');
-    await expect(desktopCards.first()).toBeVisible();
+    await expect(projectLinks.first()).toBeVisible();
 
-    // Tablet
     await page.setViewportSize({ width: 768, height: 1024 });
-    await expect(desktopCards.first()).toBeVisible();
+    await expect(projectLinks.first()).toBeVisible();
 
-    // Mobile - should show single column
     await page.setViewportSize({ width: 375, height: 667 });
-    await expect(desktopCards.first()).toBeVisible();
+    await expect(projectLinks.first()).toBeVisible();
   });
 
   test('shows empty state when no projects match filter', async ({ page }) => {
-    // This test assumes there might be a filter with no results
-    // If all filters have results, this test will be skipped
-    const filterButtons = page.locator('[data-testid="filter-button"], [role="tab"]');
-    const count = await filterButtons.count();
+    const filterButtons = page
+      .locator('section')
+      .filter({ has: page.getByRole('button', { name: /^all$/i }) })
+      .first()
+      .getByRole('button');
+    const projectLinks = page.locator('a[href^="/portfolio/project-"]');
 
-    for (let i = 0; i < count; i++) {
-      await filterButtons.nth(i).click();
-      await page.waitForTimeout(300);
+    let emptyStateSeen = false;
 
-      const projectCards = page.locator('[data-testid="project-card"], .project-card');
-      const cardCount = await projectCards.count();
-
+    for (let index = 0; index < (await filterButtons.count()); index += 1) {
+      await filterButtons.nth(index).click();
+      const cardCount = await projectLinks.count();
       if (cardCount === 0) {
-        // Should show empty state message
-        await expect(page.getByText(/no projects|no results|nothing found/i)).toBeVisible();
+        await expect(page.getByText(/no projects found matching the selected filter/i)).toBeVisible();
+        emptyStateSeen = true;
         break;
       }
     }
+
+    if (!emptyStateSeen) {
+      await expect(projectLinks.first()).toBeVisible();
+    }
   });
 });
+

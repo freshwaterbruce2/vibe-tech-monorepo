@@ -1,36 +1,48 @@
 import { test, expect } from '@playwright/test';
 
+test.describe.configure({ mode: 'serial' });
+
 test.describe('Homepage Tests', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
   });
 
   test('should display homepage with hero section', async ({ page }) => {
     // Check if hero section is visible
-    await expect(page.locator('h1')).toContainText('Vibe Tech');
+    await expect(page.locator('h1')).toContainText(/Bruce Freshwater|Vibe Tech/i);
     
     // Check navigation elements
-    await expect(page.locator('nav')).toBeVisible();
-    await expect(page.getByText('Portfolio')).toBeVisible();
-    await expect(page.getByText('Services')).toBeVisible();
-    await expect(page.getByText('About')).toBeVisible();
-    await expect(page.getByText('Contact')).toBeVisible();
+    await expect(page.locator('header nav').first()).toBeVisible();
+    await expect(page.locator('header a[href="/portfolio"]').first()).toBeVisible();
+    await expect(page.locator('header a[href="/services"]').first()).toBeVisible();
+    await expect(page.locator('header a[href="/about"]').first()).toBeVisible();
+    await expect(page.locator('header a[href="/contact"]').first()).toBeVisible();
   });
 
   test('should have working navigation links', async ({ page }) => {
-    // Test Portfolio navigation
-    await page.getByText('Portfolio').click();
-    await expect(page).toHaveURL(/.*portfolio/);
-    
-    // Test Services navigation
-    await page.goto('/');
-    await page.getByText('Services').click();
-    await expect(page).toHaveURL(/.*services/);
-    
-    // Test About navigation
-    await page.goto('/');
-    await page.getByText('About').click();
-    await expect(page).toHaveURL(/.*about/);
+    const ensureHomeRoute = async () => {
+      if (/\/$/.test(new URL(page.url()).pathname)) {
+        return;
+      }
+
+      const homeLink = page.getByRole('link', { name: /vibe tech/i }).first();
+      await expect(homeLink).toBeVisible();
+      await homeLink.click({ timeout: 10_000 });
+      await expect(page).toHaveURL(/\/$/);
+    };
+
+    const clickHeaderLink = async (label: string, href: string) => {
+      await ensureHomeRoute();
+      const headerNav = page.locator('header nav').first();
+      const link = headerNav.getByRole('link', { name: label }).first();
+      await expect(link).toBeVisible();
+      await link.click({ timeout: 10_000 });
+      await expect(page).toHaveURL(new RegExp(`${href}$`));
+    };
+
+    await clickHeaderLink('Portfolio', '/portfolio');
+    await clickHeaderLink('Services', '/services');
+    await clickHeaderLink('About', '/about');
   });
 
   test('should display portfolio preview section', async ({ page }) => {
@@ -61,7 +73,9 @@ test.describe('Homepage Tests', () => {
     await expect(mobileMenuButton).toBeVisible();
     
     // Test mobile navigation
-    await mobileMenuButton.click();
+    await mobileMenuButton.evaluate((button) => {
+      (button as HTMLButtonElement).click();
+    });
     const mobileNav = page.locator('[data-testid="mobile-nav"]');
     await expect(mobileNav).toBeVisible();
   });

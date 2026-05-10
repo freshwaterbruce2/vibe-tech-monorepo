@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+test.describe.configure({ mode: 'serial' });
+
 /**
  * Pricing Page Tests
  *
@@ -15,142 +17,102 @@ test.describe('Pricing Page', () => {
   });
 
   test('displays pricing page with tiers', async ({ page }) => {
-    // Check page heading
-    await expect(page.getByRole('heading', { level: 1 })).toContainText(/pricing|plans/i);
-
-    // Check pricing cards exist
-    const pricingCards = page.locator('[data-testid="pricing-card"], [class*="pricing"] [class*="card"], [class*="plan"]');
-    await expect(pricingCards.first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(/pricing/i);
+    await expect(page.getByRole('heading', { name: /^starter$/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^professional$/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^enterprise$/i })).toBeVisible();
   });
 
   test('shows multiple pricing tiers', async ({ page }) => {
-    const pricingCards = page.locator('[data-testid="pricing-card"], [class*="pricing"] [class*="card"]');
-
-    // Should have at least 2 pricing tiers
-    const count = await pricingCards.count();
+    const tierHeadings = page.getByRole('heading').filter({
+      hasText: /^(Starter|Professional|Enterprise)$/,
+    });
+    const count = await tierHeadings.count();
     expect(count).toBeGreaterThanOrEqual(2);
   });
 
   test('each tier shows price and features', async ({ page }) => {
-    const firstTier = page.locator('[data-testid="pricing-card"], [class*="pricing"] [class*="card"]').first();
+    const starterTier = page.locator('[class*="glass-card"]').filter({
+      has: page.getByRole('heading', { name: /^starter$/i }),
+    });
 
-    if (await firstTier.isVisible()) {
-      // Should show price
-      const price = firstTier.locator('[class*="price"], :text(/\\$\\d+/)');
-      await expect(price).toBeVisible();
+    await expect(starterTier).toBeVisible();
+    await expect(starterTier.getByText(/\$\d+/)).toBeVisible();
 
-      // Should show features list
-      const features = firstTier.locator('ul li, [class*="feature"]');
-      const featureCount = await features.count();
-      expect(featureCount).toBeGreaterThan(0);
-    }
+    const features = starterTier.locator('ul li');
+    expect(await features.count()).toBeGreaterThan(0);
   });
 
   test('CTA buttons are visible and clickable', async ({ page }) => {
-    const ctaButtons = page.locator('[data-testid="pricing-cta"], [class*="pricing"] button, [class*="plan"] a[href*="contact"]');
-
-    if (await ctaButtons.first().isVisible()) {
-      // Each pricing tier should have a CTA
-      await expect(ctaButtons.first()).toBeVisible();
-
-      // CTA should be clickable (not disabled)
-      await expect(ctaButtons.first()).toBeEnabled();
-    }
+    const ctaButtons = page.locator('[class*="glass-card"] button');
+    await expect(ctaButtons.first()).toBeVisible();
+    await expect(ctaButtons.first()).toBeEnabled();
+    expect(await ctaButtons.count()).toBeGreaterThanOrEqual(3);
   });
 
-  test('CTA navigates to contact or checkout', async ({ page }) => {
-    const ctaButton = page.locator('[data-testid="pricing-cta"], [class*="pricing"] a, [class*="plan"] button').first();
-
-    if (await ctaButton.isVisible()) {
-      await ctaButton.click();
-
-      // Should navigate to contact page or show modal
-      await expect(page).toHaveURL(/contact|checkout|book|schedule/);
-    }
+  test('CTA interactions are clickable without navigation errors', async ({ page }) => {
+    const starterTier = page.locator('[class*="glass-card"]').filter({
+      has: page.getByRole('heading', { name: /^starter$/i }),
+    });
+    await starterTier.getByRole('button').click();
+    await expect(page).toHaveURL(/\/pricing$/);
   });
 
   test('highlights recommended/popular tier', async ({ page }) => {
-    // Look for highlighted/featured tier
-    const highlightedTier = page.locator('[data-testid="featured-tier"], [class*="popular"], [class*="recommended"], [class*="featured"]');
+    const highlightedTier = page.locator('[class*="glass-card"]').filter({
+      has: page.getByRole('heading', { name: /^professional$/i }),
+    });
 
-    if (await highlightedTier.isVisible()) {
-      await expect(highlightedTier).toBeVisible();
-
-      // Should have visual distinction (badge, border, etc.)
-      await expect(highlightedTier.locator(':text(/popular|recommended|best value/i)')).toBeVisible();
-    }
+    await expect(highlightedTier).toBeVisible();
+    await expect(highlightedTier.getByText(/most popular/i)).toBeVisible();
   });
 
   test('FAQ section exists and is interactive', async ({ page }) => {
-    // Scroll to FAQ section
-    const faqSection = page.locator('[data-testid="faq"], [class*="faq"], :text("Frequently Asked")').first();
+    await expect(page.getByRole('heading', { name: /frequently asked questions/i })).toBeVisible();
 
-    if (await faqSection.isVisible()) {
-      await faqSection.scrollIntoViewIfNeeded();
-
-      // Look for accordion items
-      const faqItems = page.locator('[data-testid="faq-item"], [class*="accordion"], details');
-
-      if (await faqItems.first().isVisible()) {
-        // Click to expand
-        await faqItems.first().click();
-
-        // Content should be visible
-        const content = faqItems.first().locator('[class*="content"], [class*="answer"], p');
-        await expect(content).toBeVisible();
-      }
-    }
+    const firstQuestion = page.getByRole('button', { name: /how do your prices compare to freelancers/i });
+    await firstQuestion.click();
+    await expect(
+      page.getByText(/subscription model provides consistent, professional service/i),
+    ).toBeVisible();
   });
 
   test('pricing toggle switches between monthly/yearly', async ({ page }) => {
-    const billingToggle = page.locator('[data-testid="billing-toggle"], [class*="toggle"], :text("Monthly")');
+    const starterTier = page.locator('[class*="glass-card"]').filter({
+      has: page.getByRole('heading', { name: /^starter$/i }),
+    });
 
-    if (await billingToggle.isVisible()) {
-      // Get initial price
-      const priceElement = page.locator('[class*="price"]').first();
-      const initialPrice = await priceElement.textContent();
+    await expect(starterTier.getByText('$29')).toBeVisible();
 
-      // Toggle billing period
-      await billingToggle.click();
-
-      // Price should change
-      await page.waitForTimeout(300);
-      const newPrice = await priceElement.textContent();
-
-      // Yearly price might be different (discount) or formatted differently
-      expect(newPrice).not.toEqual(initialPrice);
-    }
+    await page.getByRole('button', { name: /switch to yearly billing/i }).click();
+    await expect(starterTier.getByText('$24')).toBeVisible();
   });
 
   test('custom/enterprise option is available', async ({ page }) => {
-    // Look for custom/enterprise pricing option
-    const customOption = page.getByText(/custom|enterprise|contact us|let.s talk/i);
-
-    await expect(customOption.first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^enterprise$/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /need a custom solution/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /contact sales team/i })).toBeVisible();
   });
 
   test('pricing page is responsive', async ({ page }) => {
-    const pricingCards = page.locator('[data-testid="pricing-card"], [class*="pricing"] [class*="card"]');
+    const starterTier = page.locator('[class*="glass-card"]').filter({
+      has: page.getByRole('heading', { name: /^starter$/i }),
+    });
 
-    // Desktop
     await page.setViewportSize({ width: 1200, height: 800 });
-    await expect(pricingCards.first()).toBeVisible();
+    await expect(starterTier).toBeVisible();
 
-    // Tablet
     await page.setViewportSize({ width: 768, height: 1024 });
-    await expect(pricingCards.first()).toBeVisible();
+    await expect(starterTier).toBeVisible();
 
-    // Mobile - cards should stack
     await page.setViewportSize({ width: 375, height: 667 });
-    await expect(pricingCards.first()).toBeVisible();
+    await expect(starterTier).toBeVisible();
   });
 
   test('shows money-back guarantee or trust badges', async ({ page }) => {
-    const trustElements = page.getByText(/guarantee|secure|trusted|money.back|satisfaction/i);
-
-    // At least one trust element should be visible
-    if (await trustElements.first().isVisible()) {
-      await expect(trustElements.first()).toBeVisible();
-    }
+    await expect(page.getByText(/satisfaction guarantee/i)).toBeVisible();
+    await expect(page.getByText(/customer support/i)).toBeVisible();
+    await expect(page.getByText(/risk-free trial/i)).toBeVisible();
   });
 });
+

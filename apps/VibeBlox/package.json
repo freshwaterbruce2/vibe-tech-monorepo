@@ -6,9 +6,9 @@
 	"description": "Token-based incentive system for developmental growth",
 	"author": "Bruce (Dad)",
 	"scripts": {
-		"dev": "npx vite",
-		"build": "tsc && npx vite build",
-		"preview": "npx vite preview",
+		"dev": "node ../../node_modules/vite/bin/vite.js",
+		"build": "tsc && node ../../node_modules/vite/bin/vite.js build",
+		"preview": "node ../../node_modules/vite/bin/vite.js preview",
 		"server": "npx tsx server/index.ts",
 		"server:prod": "cross-env NODE_ENV=production tsx server/index.ts",
 		"db:migrate": "npx tsx server/db/index.ts",

@@ -91,9 +91,17 @@ try {
         }
     } | ConvertTo-Json -Depth 5 -Compress
 
+    $memoryBridgeUrl = if ($env:MEMORY_MCP_URL) {
+        $env:MEMORY_MCP_URL
+    } elseif ($env:MEMORY_MCP_PORT) {
+        "http://localhost:$($env:MEMORY_MCP_PORT)"
+    } else {
+        'http://localhost:3200'
+    }
+
     # POST with 2s timeout - fire and forget
     try {
-        Invoke-RestMethod -Uri 'http://localhost:3200' `
+        Invoke-RestMethod -Uri $memoryBridgeUrl `
             -Method POST `
             -Body $payload `
             -ContentType 'application/json' `

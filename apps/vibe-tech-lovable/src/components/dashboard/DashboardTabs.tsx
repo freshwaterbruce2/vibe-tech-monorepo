@@ -45,9 +45,9 @@ const DashboardTabs = ({ leads, activeTab, setActiveTab, onDeleteLead }: Dashboa
           Leads
         </TabsTrigger>
         
-        <TabsTrigger value="messages" className="flex items-center gap-2">
+        <TabsTrigger value="analytics" className="flex items-center gap-2">
           <MessageSquare className="h-4 w-4" />
-          Messages
+          Analytics
         </TabsTrigger>
         
         <TabsTrigger value="calendar" className="flex items-center gap-2">
@@ -57,7 +57,7 @@ const DashboardTabs = ({ leads, activeTab, setActiveTab, onDeleteLead }: Dashboa
       </TabsList>
       
       <div className="relative">
-        <TabsContent value="overview" className="mt-0">
+        <TabsContent value="overview" className="mt-0" data-testid="overview-content">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -67,7 +67,7 @@ const DashboardTabs = ({ leads, activeTab, setActiveTab, onDeleteLead }: Dashboa
           </motion.div>
         </TabsContent>
         
-        <TabsContent value="leads" className="mt-0">
+        <TabsContent value="leads" className="mt-0" data-testid="leads-content">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -77,7 +77,7 @@ const DashboardTabs = ({ leads, activeTab, setActiveTab, onDeleteLead }: Dashboa
           </motion.div>
         </TabsContent>
         
-        <TabsContent value="messages" className="mt-0">
+        <TabsContent value="analytics" className="mt-0" data-testid="analytics-content">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

@@ -3,7 +3,10 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
-    "incremental": false
+    "incremental": false,
+    "paths": {
+      "@vibetech/feature-flags-core": ["./packages/feature-flags/core/dist/index.d.ts"]
+    }
   },
   "include": ["src/**/*"]
 }

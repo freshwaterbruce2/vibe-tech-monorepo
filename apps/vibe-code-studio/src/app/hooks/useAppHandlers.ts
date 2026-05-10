@@ -3,7 +3,7 @@
  * Extracts callback functions for cleaner organization
  */
 
-import type { FileChange, MultiFileEditPlan } from '@vibetech/types/multifile';
+import type { FileChange, MultiFileEditPlan } from '@vibetech/types';
 import { useCallback, useMemo, useRef, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
 import modelPrompts from '../../config/model-prompts.json';
 import type { SearchScope } from '../../components/GlobalSearch/types';

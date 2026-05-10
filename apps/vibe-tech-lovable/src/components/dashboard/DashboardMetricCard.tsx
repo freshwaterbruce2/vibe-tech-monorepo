@@ -15,7 +15,7 @@ interface MetricCardProps {
 
 const DashboardMetricCard = ({ title, value, description, icon: Icon, trend }: MetricCardProps) => {
   return (
-    <Card className="bg-aura-backgroundLight border-aura-accent/10">
+    <Card className="bg-aura-backgroundLight border-aura-accent/10" data-testid="metric-card">
       <CardHeader className="pb-2">
         <CardDescription>{title}</CardDescription>
         <div className="flex justify-between items-center">

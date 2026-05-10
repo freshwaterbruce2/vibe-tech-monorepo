@@ -1,0 +1,45 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build outputs
+dist
+build
+target
+release
+out
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.production
+.env.development
+
+# Logs
+*.log
+logs
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+
+# Test
+coverage
+.nyc_output
+__pycache__
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Documentation
+*.md
