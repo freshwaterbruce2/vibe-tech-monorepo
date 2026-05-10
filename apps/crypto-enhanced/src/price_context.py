@@ -201,12 +201,15 @@ class PriceContextAnalyzer:
         discount = (self.avg_30d - current_price) / self.avg_30d
         quality = self.get_entry_quality(current_price)
 
+        avg_7d_str = f"{self.avg_7d:.4f}" if self.avg_7d is not None else "N/A"
+        avg_90d_str = f"{self.avg_90d:.4f}" if self.avg_90d is not None else "N/A"
+
         summary = f"""
 Price Context Analysis:
   Current Price: ${current_price:.4f}
-  7-day Average: ${self.avg_7d:.4f if self.avg_7d else 0:.4f}
+  7-day Average: ${avg_7d_str}
   30-day Average: ${self.avg_30d:.4f}
-  90-day Average: ${self.avg_90d:.4f if self.avg_90d else 0:.4f}
+  90-day Average: ${avg_90d_str}
 
   Discount from 30d avg: {discount*100:.1f}%
   Entry Quality: {quality}

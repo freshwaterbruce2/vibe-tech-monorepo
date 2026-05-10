@@ -4,17 +4,23 @@ Handles emergency kill switches and feature toggles
 """
 
 import asyncio
+import logging
 from typing import Optional
 
-from feature_flags import (
-    ClientConfig,
-    Environment,
-    FeatureFlagClient,
-    KillSwitchHandler,
-)
+try:
+    from feature_flags import (
+        ClientConfig,
+        Environment,
+        FeatureFlagClient,
+        KillSwitchHandler,
+    )
+except ImportError:
+    ClientConfig = Environment = FeatureFlagClient = KillSwitchHandler = None
+
+logger = logging.getLogger(__name__)
 
 
-class TradingBotKillSwitch(KillSwitchHandler):
+class TradingBotKillSwitch(KillSwitchHandler if KillSwitchHandler else object):
     """
     Kill switch handler for emergency trading stops
     Triggered when trading.emergency_stop flag is activated
@@ -28,6 +34,9 @@ class TradingBotKillSwitch(KillSwitchHandler):
         self.bot = bot
 
     async def on_kill_switch_triggered(self, flag_key: str, context: dict):
+        if KillSwitchHandler is None:
+            logger.warning("Kill switch triggered but feature_flags package is not available")
+            return
         """
         Called when any kill switch is activated
 
@@ -48,7 +57,7 @@ class FeatureFlagsService:
     def __init__(self, bot, server_url: str = "http://localhost:3100"):
         self.bot = bot
         self.server_url = server_url
-        self.client: Optional[FeatureFlagClient] = None
+        self.client: Optional["FeatureFlagClient"] = None
         self._initialized = False
 
     async def initialize(self, environment: str = "prod"):
@@ -60,6 +69,12 @@ class FeatureFlagsService:
         """
         if self._initialized:
             return
+
+        if Environment is None or ClientConfig is None or FeatureFlagClient is None:
+            raise RuntimeError(
+                "feature_flags package is not installed. "
+                "Install it or run without feature flag integration."
+            )
 
         env = Environment.PROD if environment == "prod" else Environment.DEV
 
