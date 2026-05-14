@@ -1,5 +1,7 @@
 _archive
 _archive/**
+_worktrees
+_worktrees/**
 .pytest_cache
 .pytest_cache/**
 .claude/skills/**
