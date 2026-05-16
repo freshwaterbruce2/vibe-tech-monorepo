@@ -22,7 +22,15 @@ COPY packages/emails/package.json packages/emails/package.json
 COPY packages/analytics/package.json packages/analytics/package.json
 COPY packages/landing/package.json packages/landing/package.json
 
-RUN pnpm install --frozen-lockfile --filter ./apps/<%= projectName %>...
+RUN pnpm install --frozen-lockfile \
+  --filter ./apps/<%= projectName %>... \
+  --filter @vibetech/feature-flags-core \
+  --filter @vibetech/auth \
+  --filter @vibetech/entitlements \
+  --filter @vibetech/billing \
+  --filter @vibetech/emails \
+  --filter @vibetech/analytics \
+  --filter @vibetech/landing
 
 FROM deps AS build
 
