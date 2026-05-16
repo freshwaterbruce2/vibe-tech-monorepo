@@ -421,3 +421,37 @@ When project reality changes, update this file together with the relevant source
 - Path and storage policy: `AI.md` and `docs/WORKSPACE_STRUCTURE.md`.
 - Database ownership: `D:\databases\DB_INVENTORY.md`.
 - Learning-system workflow: `D:\learning-system\enhanced_agent_guidelines.md`.
+
+## Cursor Cloud specific instructions
+
+This workspace was built for Windows 11. On Linux (Cloud Agent VMs), note these caveats:
+
+### pnpm store-dir override
+The root `.npmrc` sets `store-dir=D:\pnpm-store-v2` (Windows path). On Linux, override it before any pnpm command:
+```bash
+export npm_config_store_dir=/home/ubuntu/.pnpm-store
+```
+The update script handles this automatically on VM startup.
+
+### pnpm install requires --force
+The root `package.json` lists `@rollup/rollup-win32-x64-msvc` as a devDependency. On Linux, `pnpm install` will fail with `ERR_PNPM_UNSUPPORTED_PLATFORM` unless `--force` is passed.
+
+### Windows-specific tests
+Some tests (e.g. `@vibetech/shared-utils` path-validator tests) assert Windows `D:\` drive paths and will fail on Linux. These failures are expected and not caused by agent changes.
+
+### Running apps and services
+- Standard commands: `pnpm nx dev <project>`, `pnpm nx build <project>`, `pnpm nx test <project>`, `pnpm nx lint <project>` (see README.md).
+- Desktop apps (Tauri/Electron: `nova-agent`, `vibe-code-studio`, `vibetech-command-center`, `vibe-tutor`) require native toolchains (Rust, Electron) and may not fully build/run on Cloud Agent VMs.
+- Web SPAs (`chessmaster-academy`, `invoice-automation-saas`, `vibe-tech-lovable`, `VibeBlox`, `prompt-engineer-app`, `cross-agent-reflection`, `business-booking-platform-next`) start with `pnpm nx dev <project>` and are the easiest to test.
+- Python apps (`crypto-enhanced`, `vibe-justice/backend`) need a separate venv setup; they are optional for JS/TS development.
+- Many root scripts (in `package.json`) use `powershell` or `.ps1` files and will not work on Linux.
+- Do not use Vercel for Cloud Agent validation or deployment. Prefer local Nx dev/build/test workflows unless the user explicitly requests Vercel-specific work.
+
+### Linting
+- `pnpm nx lint <project>` runs ESLint per-project and works on Linux.
+- Root `pnpm run lint` runs `nx run-many -t lint` across all projects.
+- Biome (`biome.json`) has a config-level issue with an unrecognized key; ESLint is the primary linter.
+
+### Testing
+- `pnpm nx test <project>` runs per-project tests (usually Vitest).
+- Playwright E2E tests may timeout if they require a web server that isn't starting correctly; Vitest unit tests are the most reliable on Cloud Agent VMs.
