@@ -34,6 +34,63 @@ export interface NxGraph {
   generatedAt: number;
 }
 
+// ---------- factory status ----------
+export type FactoryStripeStatus =
+  | 'connected'
+  | 'scaffolded'
+  | 'not-configured'
+  | 'not-applicable';
+
+export interface FactoryReadiness {
+  auth: boolean;
+  billing: boolean;
+  entitlements: boolean;
+  landing: boolean;
+  analytics: boolean;
+  envExample: boolean;
+}
+
+export interface FactoryShippingReadiness {
+  shipCheck: boolean;
+  deploymentDoc: boolean;
+  vercelConfig: boolean;
+  railwayConfig: boolean;
+  stripeKeysPresent: boolean;
+  missingStripeKeys: string[];
+  deployKeysPresent: boolean;
+  missingDeployKeys: string[];
+}
+
+export interface FactoryAppLinks {
+  localDevUrl: string | null;
+  stripeDashboardUrl: string | null;
+}
+
+export interface FactoryAppStatus {
+  name: string;
+  root: string;
+  sourceRoot?: string;
+  tags: string[];
+  generatedBy: string | null;
+  displayName: string;
+  archetype: string;
+  stripeStatus: FactoryStripeStatus;
+  firstRevenueAt: string | null;
+  mrrCents: number | null;
+  currency: string | null;
+  readiness: FactoryReadiness;
+  shipping: FactoryShippingReadiness;
+  links: FactoryAppLinks;
+  metadataSource: 'vibe-app.json' | 'heuristic';
+}
+
+export type FactoryGeneratorArchetype = 'saas' | 'landing-only' | 'tauri-app';
+
+export interface FactoryGeneratorLauncher {
+  archetype: FactoryGeneratorArchetype;
+  name: string;
+}
+
 // ---------- nx-affected ----------
 export type RiskFlag =
   | 'CROSS_TIER_1'
@@ -356,6 +413,8 @@ export type IpcResult<T> = IpcResponse<T> | IpcErrorResponse;
 export const IPC_CHANNELS = {
   NX_GET: 'cc:nx:get',
   NX_REFRESH: 'cc:nx:refresh',
+  FACTORY_STATUS_LIST: 'cc:factory:list',
+  FACTORY_GENERATE: 'cc:factory:generate',
   AFFECTED_GET: 'cc:affected:get',
   AFFECTED_REFRESH: 'cc:affected:refresh',
   HEALTH_PROBE_ALL: 'cc:health:probeAll',
@@ -406,6 +465,10 @@ export interface CommandCenterAPI {
   nx: {
     get(force?: boolean): Promise<IpcResult<NxGraph>>;
     refresh(): Promise<IpcResult<NxGraph>>;
+  };
+  factory: {
+    list(force?: boolean): Promise<IpcResult<FactoryAppStatus[]>>;
+    generate(spec: FactoryGeneratorLauncher): Promise<IpcResult<ProcessHandle>>;
   };
   health: {
     probeAll(): Promise<IpcResult<ProbeResult[]>>;

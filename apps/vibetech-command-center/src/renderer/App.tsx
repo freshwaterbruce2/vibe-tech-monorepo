@@ -12,6 +12,7 @@ import { AgentOrchestrator } from '@renderer/panels/AgentOrchestrator';
 import { MemoryViz } from '@renderer/panels/MemoryViz';
 import { DbExplorer } from '@renderer/panels/DbExplorer';
 import { AffectedDashboard } from '@renderer/panels/AffectedDashboard';
+import { FactoryPanel } from '@renderer/panels/FactoryPanel';
 import { useUiStore } from '@renderer/stores';
 import { useFileEventSubscription } from '@renderer/hooks';
 
@@ -30,6 +31,7 @@ function AppInner() {
   return (
     <Shell>
       {activePanel === 'apps'      && <AppsGrid />}
+      {activePanel === 'factory'   && <FactoryPanel />}
       {activePanel === 'databases' && <DbHealth />}
       {activePanel === 'backups'   && <BackupLog />}
       {activePanel === 'builds'    && <BuildStatus />}

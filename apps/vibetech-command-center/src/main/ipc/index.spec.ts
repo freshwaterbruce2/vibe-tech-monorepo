@@ -53,6 +53,7 @@ function makeFakeContainer(): ServiceContainer {
     agent: {
       probeMcpServers: vi.fn().mockResolvedValue([]),
       runTask: vi.fn().mockResolvedValue({ id: 'a1', command: 'pnpm', args: [], cwd: '.', pid: 1, status: 'running', startedAt: 1, exitCode: null }),
+      runFactoryGenerator: vi.fn().mockResolvedValue({ id: 'fg1', command: 'pnpm', args: ['nx', 'g', '@vibetech/factory:saas', 'factory-next-app'], cwd: 'C:\\dev', pid: 1, status: 'running', startedAt: 1, exitCode: null }),
       listTasks: vi.fn().mockReturnValue([]),
       searchLogs: vi.fn().mockReturnValue([])
     } as unknown as ServiceContainer['agent'],
@@ -70,6 +71,9 @@ function makeFakeContainer(): ServiceContainer {
       computeDecay: vi.fn().mockResolvedValue([]),
       triggerConsolidation: vi.fn().mockResolvedValue({ success: false, message: 'read-only' })
     } as unknown as ServiceContainer['memory'],
+    factory: {
+      listStatuses: vi.fn().mockResolvedValue([])
+    } as unknown as ServiceContainer['factory'],
     wsPort: 3210
   };
 }
@@ -109,6 +113,18 @@ describe('IPC handlers', () => {
     const result = await h({}, {}) as { ok: boolean; error?: string };
     expect(result.ok).toBe(false);
     expect(result.error).toContain('invalid');
+  });
+
+  it('routes factory generator launches through the agent orchestrator', async () => {
+    const c = makeFakeContainer();
+    registerIpcHandlers(c);
+    const h = handlers.get(IPC_CHANNELS.FACTORY_GENERATE)!;
+    const result = await h({}, { archetype: 'saas', name: 'factory-next-app' }) as { ok: boolean };
+    expect(result.ok).toBe(true);
+    expect(c.agent.runFactoryGenerator).toHaveBeenCalledWith({
+      archetype: 'saas',
+      name: 'factory-next-app'
+    });
   });
 
   it('unregisters all channels', () => {

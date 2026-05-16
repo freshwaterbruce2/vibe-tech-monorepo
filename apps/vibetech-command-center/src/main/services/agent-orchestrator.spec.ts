@@ -148,6 +148,47 @@ describe('AgentOrchestratorService', () => {
     });
   });
 
+  describe('runFactoryGenerator', () => {
+    it('validates the factory archetype', async () => {
+      await expect(
+        service.runFactoryGenerator({ archetype: 'unknown' as 'saas', name: 'factory-next-app' }),
+      ).rejects.toThrow('invalid factory archetype');
+    });
+
+    it('validates the generated app name', async () => {
+      await expect(
+        service.runFactoryGenerator({ archetype: 'saas', name: 'bad app name' }),
+      ).rejects.toThrow('invalid factory app name');
+    });
+
+    it('spawns pnpm nx g @vibetech/factory:<archetype> <name> with correct cwd', async () => {
+      const handle = createMockHandle({
+        id: 'factory-1',
+        args: ['nx', 'g', '@vibetech/factory:saas', 'factory-next-app'],
+      });
+      runner.spawn.mockReturnValue(handle);
+      await service.runFactoryGenerator({ archetype: 'saas', name: 'factory-next-app' });
+      expect(runner.spawn).toHaveBeenCalledWith({
+        command: 'pnpm',
+        args: ['nx', 'g', '@vibetech/factory:saas', 'factory-next-app'],
+        cwd: 'C:\\dev',
+      });
+    });
+
+    it('tracks factory generator runs in the agent task list', async () => {
+      const handle = createMockHandle({ id: 'factory-task' });
+      runner.spawn.mockReturnValue(handle);
+      await service.runFactoryGenerator({ archetype: 'landing-only', name: 'landing-next-app' });
+      expect(service.listTasks()[0]).toMatchObject({
+        id: 'factory-task',
+        project: '@vibetech/factory',
+        target: 'generate:landing-only',
+        args: ['landing-next-app'],
+        status: 'running',
+      });
+    });
+  });
+
   describe('task lifecycle', () => {
     it('onChunk stores chunks in ring buffer', async () => {
       const handle = createMockHandle({ id: 'task-chunk' });

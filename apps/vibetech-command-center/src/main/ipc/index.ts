@@ -8,7 +8,8 @@ import type {
   RagSearchQuery, RagSearchResult, ServiceName, FsStatResult,
   AffectedGraph, DbExplorerDatabase, DbTableSchema, DbExplorerResult,
   McpServerStatus, AgentTaskLauncher, AgentTaskSpec, LogSearchFilters,
-  MemoryVizSnapshot, MemorySearchResult, MemoryDecayView
+  MemoryVizSnapshot, MemorySearchResult, MemoryDecayView, FactoryAppStatus,
+  FactoryGeneratorLauncher,
 } from '../../shared/types';
 import type { ServiceContainer } from '../service-container';
 
@@ -28,6 +29,20 @@ export function registerIpcHandlers(c: ServiceContainer): void {
   ipcMain.handle(IPC_CHANNELS.NX_REFRESH, async (): Promise<IpcResult<NxGraph>> => {
     try { return ok(await c.nxGraph.getGraph(true)); }
     catch (e) { return err(e, 'NX_REFRESH_FAILED'); }
+  });
+  ipcMain.handle(IPC_CHANNELS.FACTORY_STATUS_LIST, async (_evt, force?: boolean): Promise<IpcResult<FactoryAppStatus[]>> => {
+    try {
+      const graph = await c.nxGraph.getGraph(force === true);
+      return ok(await c.factory.listStatuses(graph));
+    } catch (e) { return err(e, 'FACTORY_STATUS_LIST_FAILED'); }
+  });
+  ipcMain.handle(IPC_CHANNELS.FACTORY_GENERATE, async (_evt, spec: FactoryGeneratorLauncher): Promise<IpcResult<ProcessHandle>> => {
+    try {
+      if (!spec || typeof spec.archetype !== 'string' || typeof spec.name !== 'string') {
+        throw new Error('invalid factory generator spec');
+      }
+      return ok(await c.agent.runFactoryGenerator(spec));
+    } catch (e) { return err(e, 'FACTORY_GENERATE_FAILED'); }
   });
 
   ipcMain.handle(IPC_CHANNELS.AFFECTED_GET, async (_evt, force?: boolean): Promise<IpcResult<AffectedGraph>> => {

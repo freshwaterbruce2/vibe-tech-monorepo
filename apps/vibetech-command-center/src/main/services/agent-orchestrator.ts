@@ -11,7 +11,8 @@ import type {
   AgentTaskSpec,
   AgentTaskLauncher,
   AgentTaskStatus,
-  LogSearchFilters
+  LogSearchFilters,
+  FactoryGeneratorLauncher,
 } from '../../shared/types';
 
 export interface AgentOrchestratorOptions {
@@ -29,6 +30,8 @@ interface McpRegistryEntry {
 }
 
 const MAX_LOG_RING = 5000;
+const FACTORY_ARCHETYPES = new Set(['saas', 'landing-only', 'tauri-app']);
+const FACTORY_APP_NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_-]*$/;
 
 export class AgentOrchestratorService {
   private tasks = new Map<string, AgentTaskSpec>();
@@ -126,6 +129,36 @@ export class AgentOrchestratorService {
       status: 'running' as AgentTaskStatus,
       startedAt: handle.startedAt,
       exitCode: null
+    };
+    this.tasks.set(handle.id, task);
+
+    return handle;
+  }
+
+  async runFactoryGenerator(spec: FactoryGeneratorLauncher): Promise<ProcessHandle> {
+    if (!spec || !FACTORY_ARCHETYPES.has(spec.archetype)) {
+      throw new Error('invalid factory archetype');
+    }
+
+    const name = typeof spec.name === 'string' ? spec.name.trim() : '';
+    if (!FACTORY_APP_NAME_PATTERN.test(name)) {
+      throw new Error('invalid factory app name');
+    }
+
+    const handle = this.opts.runner.spawn({
+      command: 'pnpm',
+      args: ['nx', 'g', `@vibetech/factory:${spec.archetype}`, name],
+      cwd: this.opts.monorepoRoot,
+    });
+
+    const task: AgentTaskSpec = {
+      id: handle.id,
+      project: '@vibetech/factory',
+      target: `generate:${spec.archetype}`,
+      args: [name],
+      status: 'running' as AgentTaskStatus,
+      startedAt: handle.startedAt,
+      exitCode: null,
     };
     this.tasks.set(handle.id, task);
 

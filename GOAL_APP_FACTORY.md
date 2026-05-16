@@ -2,8 +2,8 @@
 
 **Owner:** Bruce Freshwater (The Architect)
 **Repo:** `C:\dev` — `@vibetech/workspace`
-**Last verified against disk:** 2026-05-15
-**Status:** ACTIVE GOAL. Refuse work that does not advance it.
+**Last verified against disk:** 2026-05-16
+**Status:** COMPLETE. All binary success criteria are satisfied.
 
 ---
 
@@ -82,20 +82,30 @@ Every module to be extracted into a shared package already exists in working for
 
 ## 3. Success criteria (binary, verifiable)
 
-- [ ] **Six shared packages exist and are consumed by ≥2 apps each:**
-  - [ ] `@vibetech/auth` (extracted from `invoice-automation-saas/server/src/auth.ts`)
-  - [ ] `@vibetech/billing` (extracted from `payments/` + `dunning/`, Stripe 22 wrapper)
-  - [ ] `@vibetech/emails` (extracted from `email/`, Resend + react-email templates)
-  - [ ] `@vibetech/landing` (net new — React components: hero, pricing, FAQ, CTA, footer)
-  - [ ] `@vibetech/analytics` (net new — PostHog wrapper, opt-out by default for desktop)
-  - [ ] `@vibetech/entitlements` (thin wrapper over `@vibetech/feature-flags-server` for plan→feature mapping)
-- [ ] **`plugins/factory/` Nx plugin** exposes:
-  - [ ] `pnpm nx g @vibetech/factory:saas <name>` — produces buildable Vite+React+Fastify app in `apps/<name>` in under 60 seconds, with Stripe Checkout flow, login, landing page, and one gated route.
-  - [ ] `pnpm nx g @vibetech/factory:tauri-app <name>` — Tauri 2 desktop with license-key activation via `@vibetech/billing`.
-  - [ ] `pnpm nx g @vibetech/factory:landing-only <name>` — marketing-only site (no backend).
-- [ ] **`invoice-automation-saas` refactored** to consume the six packages with zero functional regression — proves the factory works on real shipping code.
-- [ ] **One new app generated end-to-end** via `nx g @vibetech/factory:saas` and deployed to production with a working Stripe Checkout in test mode.
-- [ ] **`vibetech-command-center` extended** with a "Factory" panel listing generated apps, their monetization status (Stripe connected, first revenue, MRR), and one-click generator launch.
+- [x] **Six shared packages exist and are consumed by ≥2 apps each:**
+  - [x] `@vibetech/auth` (extracted from `invoice-automation-saas/server/src/auth.ts`)
+  - [x] `@vibetech/billing` (extracted from `payments/` + `dunning/`, Stripe 22 wrapper)
+  - [x] `@vibetech/emails` (extracted from `email/`, Resend + react-email templates)
+  - [x] `@vibetech/landing` (net new — React components: hero, pricing, FAQ, CTA, footer)
+  - [x] `@vibetech/analytics` (net new — PostHog wrapper, opt-out by default for desktop)
+  - [x] `@vibetech/entitlements` (thin wrapper over `@vibetech/feature-flags-server` for plan→feature mapping)
+- [x] **`plugins/factory/` Nx plugin** exposes:
+  - [x] `pnpm nx g @vibetech/factory:saas <name>` — produces buildable Vite+React+Fastify app in `apps/<name>` in under 60 seconds, with Stripe Checkout flow, login, landing page, and one gated route.
+  - [x] `pnpm nx g @vibetech/factory:tauri-app <name>` — Tauri 2 desktop with license-key activation via `@vibetech/billing`.
+  - [x] `pnpm nx g @vibetech/factory:landing-only <name>` — marketing-only site (no backend).
+- [x] **`invoice-automation-saas` refactored** to consume the six packages with zero functional regression — proves the factory works on real shipping code.
+- [x] **One new app generated end-to-end** via `nx g @vibetech/factory:saas` and deployed to production with a working Stripe Checkout in test mode.
+- [x] **`vibetech-command-center` extended** with a "Factory" panel listing generated apps, their monetization status (Stripe connected, first revenue, MRR), and one-click generator launch.
+
+### Completion proof
+
+- Canonical generated SaaS baseline: `proposal-review-saas`
+- Frontend production URL: `https://proposal-review-saas.vercel.app`
+- Backend production URL: `https://proposal-review-api-production.up.railway.app`
+- Vercel production deployment: `dpl_FrzsNH1GCGKuSgrt1Df2UMRJixsf`
+- Railway backend deployment: `923fc203-d9b0-448a-b524-71ee46a51646`
+- Railway persistent volume: `proposal-review-api-volume` mounted at `/data`
+- Live proof: `POST /api/billing/pro-checkout` from the Vercel origin returns a Stripe test Checkout URL.
 
 ---
 

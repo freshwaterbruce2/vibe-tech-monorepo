@@ -60,6 +60,7 @@ SENTRY_DSN=
 3. Set the backend environment variables above.
 4. Confirm `GET /api/health` returns `{"ok":true,"app":"proposal-review-saas"}`.
 5. Confirm `GET /api/billing/demo-checkout` returns a Stripe Checkout URL once `STRIPE_SECRET_KEY` is set.
+6. Confirm `POST /api/billing/pro-checkout` with a proposal payload returns a Stripe Checkout URL and a usage quote.
 
 ## Vercel frontend steps
 
@@ -72,15 +73,25 @@ SENTRY_DSN=
 7. Set the frontend environment variables above.
 8. Use [vercel.json](C:/dev/apps/proposal-review-saas/vercel.json) so `/terms` and `/privacy` resolve to the SPA entry.
 
-## Production proof still missing
+## Production status
 
-This deployment scaffold is present, but the app is not yet proven deployed in production from this workspace session.
+Frontend production deploy is proven live:
 
-The current blockers are live credentials:
+- URL: `https://proposal-review-saas.vercel.app`
+- Latest verified deployment: `dpl_FrzsNH1GCGKuSgrt1Df2UMRJixsf`
+- Verified from this workspace on 2026-05-16 with `vercel inspect` and an HTTP 200 smoke.
 
-- `STRIPE_SECRET_KEY` is not available in the current environment
-- `VITE_STRIPE_PUBLIC_KEY` is not available in the current environment
-- `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID` are not available in the current environment
-- `RAILWAY_TOKEN` is not available in the current environment
+Backend production deploy is proven live:
 
-Until those exist and a live deploy is performed, the app is only locally smoke-verified.
+- URL: `https://proposal-review-api-production.up.railway.app`
+- Railway project: `proposal-review-saas`
+- Railway service: `proposal-review-api`
+- Latest verified deployment: `923fc203-d9b0-448a-b524-71ee46a51646`
+- Persistent Railway volume: `proposal-review-api-volume` mounted at `/data`
+
+Live E2E proof:
+
+- `VITE_API_BASE_URL` is set to the Railway API URL in Vercel production.
+- The deployed Vercel JS bundle contains the Railway API URL.
+- `GET /api/health` on Railway returns `{"ok":true,"app":"proposal-review-saas"}`.
+- `POST /api/billing/pro-checkout` from the Vercel origin returns a Stripe test Checkout URL.

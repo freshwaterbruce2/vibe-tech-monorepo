@@ -1,7 +1,19 @@
 import { create } from 'zustand';
 import type { FileEvent, ClaudeInvocationResult } from '@shared/types';
 
-export type PanelId = 'apps' | 'databases' | 'backups' | 'builds' | 'rag' | 'claude' | 'agents' | 'affected' | 'dbexplorer' | 'orchestrator' | 'memory';
+export type PanelId =
+  | 'apps'
+  | 'factory'
+  | 'databases'
+  | 'backups'
+  | 'builds'
+  | 'rag'
+  | 'claude'
+  | 'agents'
+  | 'affected'
+  | 'dbexplorer'
+  | 'orchestrator'
+  | 'memory';
 
 export interface CompletedClaudeRun {
   invocationId: string;
