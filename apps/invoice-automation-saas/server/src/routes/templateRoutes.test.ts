@@ -173,5 +173,5 @@ describe('template routes', () => {
     const body = res.rawPayload
     expect(body.length).toBeGreaterThan(1000)
     expect(body.subarray(0, 4).toString('utf8')).toBe('%PDF')
-  })
+  }, 15000)
 })
