@@ -82,7 +82,7 @@ export const BrainScan: React.FC = () => {
         <div className="mb-8 bg-slate-800/50 border border-cyan-500/30 rounded-xl p-4 animate-in fade-in slide-in-from-top-4">
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-sm font-semibold text-cyan-400">Teach the AI a new rule</h3>
-            <button onClick={() => setShowAddForm(false)}><X className="w-4 h-4 text-slate-400 hover:text-white"/></button>
+            <button onClick={() => setShowAddForm(false)} aria-label="Close form"><X className="w-4 h-4 text-slate-400 hover:text-white"/></button>
           </div>
           <div className="flex gap-2">
             <input
@@ -90,10 +90,11 @@ export const BrainScan: React.FC = () => {
               value={newPattern}
               onChange={(e) => setNewPattern(e.target.value)}
               placeholder="E.g., 'Always use styled-components for new UI elements'..."
+              aria-label="New logic rule pattern"
               className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-cyan-500"
               onKeyDown={async (e) => e.key === 'Enter' && handleSave()}
             />
-            <button onClick={handleSave} className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg">
+            <button onClick={handleSave} aria-label="Save rule" className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg">
               <Save className="w-4 h-4" />
             </button>
           </div>

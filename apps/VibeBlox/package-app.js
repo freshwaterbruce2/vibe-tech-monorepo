@@ -75,12 +75,13 @@ const prodPackageJson = {
     'db:seed': 'node server/db/seed.js',
   },
   dependencies: {
-    '@hono/node-server': '^1.13.7',
-    'better-sqlite3': '^11.9.0',
-    'bcryptjs': '^2.4.3',
+    '@hono/node-server': '^1.19.11',
+    '@hono/zod-validator': '^0.7.6',
+    'better-sqlite3': '12.6.2',
+    'bcryptjs': '^3.0.3',
     hono: '^4.6.14',
     jsonwebtoken: '^9.0.2',
-    zod: '^3.24.1',
+    zod: '^4.3.6',
   },
 };
 
@@ -117,8 +118,6 @@ const readme = `# VibeBlox Production Package
 
 1. Install dependencies:
 \`\`\`bash
-npm install
-# or
 pnpm install
 \`\`\`
 
@@ -129,13 +128,13 @@ cp .env.example .env
 
 3. Initialize database:
 \`\`\`bash
-npm run db:migrate
-npm run db:seed
+pnpm run db:migrate
+pnpm run db:seed
 \`\`\`
 
 4. Start the server:
 \`\`\`bash
-npm start
+pnpm start
 \`\`\`
 
 The application will be available at http://localhost:3003

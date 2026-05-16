@@ -384,12 +384,12 @@ class EnhancedNotificationService {
   }
 
   private async getBadgeCount(): Promise<number> {
-    const stored = window.electronAPI?.store.get('notificationBadgeCount')
+    const stored = localStorage.getItem('notificationBadgeCount')
     return stored ? parseInt(stored, 10) : 0
   }
 
   private async setBadgeCount(count: number): Promise<void> {
-    window.electronAPI?.store.set('notificationBadgeCount', count.toString())
+    localStorage.setItem('notificationBadgeCount', count.toString())
   }
 
   private async sendPermissionGrantedAnalytics(): Promise<void> {

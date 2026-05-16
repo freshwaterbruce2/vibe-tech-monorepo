@@ -61,7 +61,7 @@ export default function Shop({ user }: ShopProps) {
 
   const fetchRewards = async () => {
     try {
-      const token = window.electronAPI.store.get('token');
+      const token = localStorage.getItem("token");
       const response = await fetch('/api/rewards', {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -90,7 +90,7 @@ export default function Shop({ user }: ShopProps) {
 
     setPurchasing(true);
     try {
-      const token = window.electronAPI.store.get('token');
+      const token = localStorage.getItem("token");
       const response = await fetch('/api/rewards/purchase', {
         method: 'POST',
         headers: {

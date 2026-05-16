@@ -122,10 +122,10 @@ function ensureSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_mistakes_resolved ON agent_mistakes(resolved, identified_at DESC);
     CREATE INDEX IF NOT EXISTS idx_mistakes_category ON agent_mistakes(mistake_category, resolved);
 
-    -- Phase 2: Agent Q Assessments
+    -- Phase 2: Agent Q Assessments (lats_node_id nullable — NULL for session-orphan rows)
     CREATE TABLE IF NOT EXISTS agent_q_assessments (
       id TEXT PRIMARY KEY,
-      lats_node_id TEXT NOT NULL,
+      lats_node_id TEXT,
       agent_id TEXT,
       task_description TEXT NOT NULL,
       files_critiqued INTEGER NOT NULL DEFAULT 0,
@@ -136,8 +136,7 @@ function ensureSchema(db: Database.Database): void {
       quality_score REAL NOT NULL,
       quality_band TEXT NOT NULL,
       summary TEXT,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      FOREIGN KEY (lats_node_id) REFERENCES mcts_nodes(id)
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
     CREATE INDEX IF NOT EXISTS idx_aq_node ON agent_q_assessments(lats_node_id);
     CREATE INDEX IF NOT EXISTS idx_aq_agent ON agent_q_assessments(agent_id, quality_score DESC);
@@ -178,6 +177,38 @@ function ensureSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_stage_results_run ON pipeline_stage_results(run_id);
     CREATE INDEX IF NOT EXISTS idx_stage_results_stage ON pipeline_stage_results(stage_name, success);
   `);
+
+  // Migration: remove FK constraint from agent_q_assessments.lats_node_id so
+  // session-orphan assessments (no active LATS node) can be stored with lats_node_id = NULL.
+  const aqSchema = db
+    .prepare("SELECT sql FROM sqlite_schema WHERE name = 'agent_q_assessments' AND type = 'table'")
+    .get() as { sql: string } | undefined;
+  if (aqSchema?.sql?.includes('FOREIGN KEY (lats_node_id)')) {
+    db.exec(`
+      CREATE TABLE agent_q_assessments_new (
+        id TEXT PRIMARY KEY,
+        lats_node_id TEXT,
+        agent_id TEXT,
+        task_description TEXT NOT NULL,
+        files_critiqued INTEGER NOT NULL DEFAULT 0,
+        avg_file_quality REAL NOT NULL DEFAULT 0.5,
+        positive_files INTEGER NOT NULL DEFAULT 0,
+        negative_files INTEGER NOT NULL DEFAULT 0,
+        clean_files INTEGER NOT NULL DEFAULT 0,
+        quality_score REAL NOT NULL,
+        quality_band TEXT NOT NULL,
+        summary TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      INSERT OR IGNORE INTO agent_q_assessments_new SELECT * FROM agent_q_assessments;
+      DROP TABLE agent_q_assessments;
+      ALTER TABLE agent_q_assessments_new RENAME TO agent_q_assessments;
+      CREATE INDEX IF NOT EXISTS idx_aq_node ON agent_q_assessments(lats_node_id);
+      CREATE INDEX IF NOT EXISTS idx_aq_agent ON agent_q_assessments(agent_id, quality_score DESC);
+      CREATE INDEX IF NOT EXISTS idx_aq_task ON agent_q_assessments(task_description);
+      CREATE INDEX IF NOT EXISTS idx_aq_created ON agent_q_assessments(created_at DESC);
+    `);
+  }
 }
 
 /** Load all success patterns above a confidence threshold */

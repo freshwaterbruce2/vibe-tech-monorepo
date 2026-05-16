@@ -53,6 +53,7 @@ const DEFAULT_CONFIG: CacheConfig = {
 export class AIResponseCache {
   private cache: Map<string, CacheEntry> = new Map();
   private config: CacheConfig;
+  private cleanupTimer: ReturnType<typeof setInterval> | null = null;
   private metrics: CacheMetrics = {
     hits: 0,
     misses: 0,
@@ -298,7 +299,17 @@ export class AIResponseCache {
    */
   private startCleanupTimer(): void {
     // Run cleanup every 5 minutes
-    setInterval(() => this.cleanup(), 1000 * 60 * 5);
+    this.cleanupTimer = setInterval(() => this.cleanup(), 1000 * 60 * 5);
+  }
+
+  /**
+   * Dispose of the cache and stop the cleanup timer
+   */
+  dispose(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = null;
+    }
   }
 
   /**

@@ -1,6 +1,7 @@
 {
   "name": "@vibetech/feature-flags-sdk-react",
   "version": "0.1.0",
+  "type": "module",
   "description": "React SDK for feature flags with hooks and components",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -24,7 +25,7 @@
     "react": ">=18.0.0"
   },
   "dependencies": {
-    "@vibetech/feature-flags-core": "workspace:^0.1.0"
+    "@vibetech/feature-flags-core": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "19.2.10",

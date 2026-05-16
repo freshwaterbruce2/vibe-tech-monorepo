@@ -14,10 +14,10 @@
     "jsx": "preserve",
     // Type Safety: Gradual strict mode enablement
     "strict": true,
-    "strictNullChecks": true,  // ✓ Enabled: Catch null/undefined bugs
-    "strictFunctionTypes": true,  // ✓ Enabled: Better function type checking
-    "noImplicitThis": true,  // ✓ Enabled: Require explicit 'this' typing
-    "noUncheckedIndexedAccess": true,  // ✓ Enabled: Array/object access safety
+    "strictNullChecks": true, // ✓ Enabled: Catch null/undefined bugs
+    "strictFunctionTypes": true, // ✓ Enabled: Better function type checking
+    "noImplicitThis": true, // ✓ Enabled: Require explicit 'this' typing
+    "noUncheckedIndexedAccess": true, // ✓ Enabled: Array/object access safety
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
@@ -25,17 +25,14 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "include": [
-    "src/**/*",
-    "src/types/**/*",
-    "electron/**/*",
-    "tests/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "*.config.ts",
-    "capacitor.config.ts"
-  ],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src/**/*", "src/types/**/*", "electron/**/*", "tests/**/*"],
+  "exclude": ["node_modules", "dist", "*.config.ts", "capacitor.config.ts"],
+  "references": [
+    {
+      "path": "../../packages/openrouter-client"
+    },
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ]
 }

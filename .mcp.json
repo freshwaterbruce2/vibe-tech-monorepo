@@ -1,5 +1,24 @@
 {
   "mcpServers": {
+    "nx-mcp": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx.cmd",
+        "-y",
+        "nx-mcp@0.25.0",
+        "C:/dev",
+        "--transport",
+        "stdio",
+        "--disableTelemetry",
+        "--no-minimal"
+      ],
+      "env": {
+        "NX_WORKSPACE_ROOT": "C:/dev",
+        "NODE_OPTIONS": "--require C:/dev/scripts/nx-mcp-native-compat.cjs"
+      }
+    },
     "desktop-commander": {
       "type": "stdio",
       "command": "node",
@@ -37,6 +56,7 @@
       "type": "stdio",
       "command": "node",
       "args": ["C:/dev/apps/memory-mcp/dist/index.js"],
+      "alwaysLoad": true,
       "env": {
         "MEMORY_DB_PATH": "D:/databases/memory.db",
         "MEMORY_EMBEDDING_MODEL": "text-embedding-3-small",

@@ -37,11 +37,10 @@ Specialized agent for React 19 single-page applications with Vite 7, Tailwind CS
 6. **vibe-shop** - E-commerce platform
 7. **invoice-automation-saas** - Invoice generation SaaS
 8. **symptom-tracker** - Health tracking app
-9. **monorepo-dashboard** - Workspace monitoring (Week 2: COMPLETE ✅)
-   - 4 new features: Coverage, Bundles, Security, Nx Cloud
+9. **vibetech-command-center** - Electron 33 Desktop + Control Plane (replaces retired `monorepo-dashboard`)
+   - 4 Control Plane features: Affected Intelligence, DB Explorer, Agent Orchestrator, Memory Viz
    - React 19 compliance: 100%
-   - UI/UX Grade: A- (90/100)
-   - TanStack Query data fetching with 1-5min refetch intervals
+   - 40+ tests for Affected Intelligence Dashboard
 10. **n8n-automation** - Workflow automation
 11. **shared-web** - Shared web utilities
 12. **augment-code** - Code enhancement tool
@@ -215,7 +214,7 @@ pnpm vite-bundle-visualizer
 pnpm nx preview webapp-name
 ```
 
-## Recent Achievements (Week 2 - monorepo-dashboard)
+## Recent Achievements (Week 2 - vibetech-command-center / formerly monorepo-dashboard)
 
 **Implementation:**
 

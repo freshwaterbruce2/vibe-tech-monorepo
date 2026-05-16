@@ -8,14 +8,27 @@ vi.mock('fs', () => ({
   statSync: vi.fn(),
 }));
 
-import { existsSync, readFileSync } from 'fs';
-import { loadEnvFile, loadPortRegistry, checkDatabases } from '../loaders.js';
+import { existsSync, readFileSync, readdirSync } from 'fs';
+import {
+  loadEnvFile,
+  loadPortRegistry,
+  loadMcpConfig,
+  loadWorkspacePlugins,
+  checkDatabases,
+} from '../loaders.js';
 
 const mockExistsSync = vi.mocked(existsSync);
 const mockReadFileSync = vi.mocked(readFileSync);
+const mockReaddirSync = vi.mocked(readdirSync);
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+const mockDirent = (name: string, type: 'file' | 'dir') => ({
+  name,
+  isFile: () => type === 'file',
+  isDirectory: () => type === 'dir',
 });
 
 describe('loadEnvFile', () => {
@@ -100,6 +113,69 @@ describe('loadPortRegistry', () => {
     expect(result.lastUpdated).toBe('2024-01-01');
     expect(result.ports).toHaveLength(2);
     expect(result.ports.find(p => p.port === 3000)?.app).toBe('api-server');
+  });
+});
+
+describe('loadMcpConfig', () => {
+  it('treats local app servers as custom even when command is node.exe', () => {
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockReturnValue(JSON.stringify({
+      mcpServers: {
+        'command-center': {
+          command: 'node.exe',
+          args: ['C:/dev/apps/vibetech-command-center/dist/mcp/server.js'],
+          env: { NODE_ENV: 'production' },
+        },
+      },
+    }));
+
+    const result = loadMcpConfig();
+    expect(result[0]).toMatchObject({
+      name: 'command-center',
+      isCustom: true,
+      distPath: 'C:/dev/apps/vibetech-command-center/dist/mcp/server.js',
+    });
+  });
+});
+
+describe('loadWorkspacePlugins', () => {
+  it('discovers local workflow plugin manifests and capabilities', () => {
+    mockExistsSync.mockImplementation((path) => {
+      const value = String(path);
+      return value.endsWith('plugins')
+        || value.includes('.claude-plugin')
+        || value.endsWith('agents')
+        || value.endsWith('commands')
+        || value.endsWith('skills')
+        || value.endsWith('hooks\\hooks.json');
+    });
+
+    mockReadFileSync.mockReturnValue(JSON.stringify({
+      name: 'nx-toolkit',
+      version: '1.0.0',
+      description: 'Nx workflow plugin',
+      keywords: ['nx', 'monorepo'],
+    }));
+
+    mockReaddirSync.mockImplementation((path) => {
+      const value = String(path);
+      if (value.endsWith('plugins')) return [mockDirent('nx-toolkit', 'dir')] as any;
+      if (value.endsWith('agents')) return [mockDirent('workspace-advisor.md', 'file')] as any;
+      if (value.endsWith('commands')) return [mockDirent('impact.md', 'file')] as any;
+      if (value.endsWith('skills')) return [mockDirent('nx-deep-dive', 'dir')] as any;
+      return [] as any;
+    });
+
+    const result = loadWorkspacePlugins();
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      name: 'nx-toolkit',
+      version: '1.0.0',
+      agents: ['workspace-advisor'],
+      commands: ['impact'],
+      skills: ['nx-deep-dive'],
+      hasHooks: true,
+    });
   });
 });
 

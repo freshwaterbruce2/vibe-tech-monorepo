@@ -21,13 +21,12 @@ import KeyboardShortcuts from "./shipping/KeyboardShortcuts";
 import SpeedKeypad from "./shipping/SpeedKeypad";
 
 // --- IndexedDB Schema and Setup ---
-// const DB_NAME = "ShippingDB"; // Currently unused
 const STORE_NAME = "doorSchedulesStore";
 
 // Use localStorage as a fallback for data persistence
 const getAllSchedules = async (): Promise<DoorSchedule[]> => {
   try {
-    const savedSchedules = window.electronAPI?.store.get(STORE_NAME);
+    const savedSchedules = localStorage.getItem(STORE_NAME);
     return savedSchedules ? JSON.parse(savedSchedules) : [];
   } catch (error) {
     console.error("Error loading schedules from localStorage:", error);
@@ -41,7 +40,7 @@ const addOrUpdateSchedule = async (schedule: DoorSchedule) => {
     const updatedSchedules = schedules.some(s => s.id === schedule.id)
       ? schedules.map(s => s.id === schedule.id ? schedule : s)
       : [...schedules, schedule];
-    window.electronAPI?.store.set(STORE_NAME, JSON.stringify(updatedSchedules));
+    localStorage.setItem(STORE_NAME, JSON.stringify(updatedSchedules));
   } catch (error) {
     console.error("Error saving schedule to localStorage:", error);
   }
@@ -51,7 +50,7 @@ const deleteSchedule = async (id: string) => {
   try {
     const schedules = await getAllSchedules();
     const updatedSchedules = schedules.filter(s => s.id !== id);
-    window.electronAPI?.store.set(STORE_NAME, JSON.stringify(updatedSchedules));
+    localStorage.setItem(STORE_NAME, JSON.stringify(updatedSchedules));
   } catch (error) {
     console.error("Error deleting schedule from localStorage:", error);
   }

@@ -7,7 +7,7 @@ impl PredictionEngine {
     /// Recommend optimal time window for task type based on historical success
     pub fn recommend_task_timing(&self, task_type: &str) -> Result<TimeWindow, String> {
         let db = self
-            .learning_db
+            .prediction_db
             .lock()
             .map_err(|e| format!("Failed to lock database: {}", e))?;
 

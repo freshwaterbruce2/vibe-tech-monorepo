@@ -82,6 +82,7 @@ function Get-ScanFiles {
         $fullName -notmatch '\\coverage\\' -and
         $fullName -notmatch '\\tmp\\' -and
         $fullName -notmatch '\\\.nx\\' -and
+        $fullName -notmatch '\\\.claude\\worktrees\\' -and
         $fullName -notmatch '\\docs\\' -and
         $fullName -notmatch '\\_archive\\' -and
         $fullName -notmatch '\\archive\\' -and
@@ -101,7 +102,25 @@ function Find-DeprecatedReferences {
         return @()
     }
 
-    $matches = Select-String -Path $Files.FullName -SimpleMatch $Literal -ErrorAction SilentlyContinue
+    $matches = foreach ($file in $Files) {
+        if (-not $file) {
+            continue
+        }
+
+        $path = $file.FullName
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+            continue
+        }
+
+        try {
+            Select-String -LiteralPath $path -SimpleMatch $Literal -ErrorAction SilentlyContinue
+        }
+        catch {
+            # File-level scan races can happen while the workspace changes.
+            # Skip files that disappear between enumeration and content scan.
+            continue
+        }
+    }
     if ($IgnoreLiteral) {
         $matches = $matches | Where-Object { $_.Line -notlike "*$IgnoreLiteral*" }
     }

@@ -6,7 +6,7 @@ impl PredictionEngine {
     /// Analyze productivity patterns by hour and day
     pub fn get_productivity_insights(&self) -> Result<ProductivityInsights, String> {
         let db = self
-            .learning_db
+            .prediction_db
             .lock()
             .map_err(|e| format!("Failed to lock database: {}", e))?;
 

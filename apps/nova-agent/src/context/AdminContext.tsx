@@ -2,8 +2,10 @@ import { Store } from "@tauri-apps/plugin-store";
 import {
 	createContext,
 	type ReactNode,
+	useCallback,
 	useContext,
 	useEffect,
+	useMemo,
 	useState,
 } from "react";
 
@@ -42,23 +44,26 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
 		void initStore();
 	}, []);
 
-	const login = async (password: string): Promise<boolean> => {
-		if (password === ADMIN_PASSWORD) {
-			setIsAdmin(true);
-			if (store) {
-				try {
-					await store.set("vibetech_admin_session", "authenticated");
-					await store.save();
-				} catch (error) {
-					console.error("Failed to save session:", error);
+	const login = useCallback(
+		async (password: string): Promise<boolean> => {
+			if (password === ADMIN_PASSWORD) {
+				setIsAdmin(true);
+				if (store) {
+					try {
+						await store.set("vibetech_admin_session", "authenticated");
+						await store.save();
+					} catch (error) {
+						console.error("Failed to save session:", error);
+					}
 				}
+				return true;
 			}
-			return true;
-		}
-		return false;
-	};
+			return false;
+		},
+		[store],
+	);
 
-	const logout = async () => {
+	const logout = useCallback(async () => {
 		setIsAdmin(false);
 		if (store) {
 			try {
@@ -68,14 +73,19 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
 				console.error("Failed to clear session:", error);
 			}
 		}
-	};
+	}, [store]);
 
-	const checkAdminStatus = (): boolean => {
+	const checkAdminStatus = useCallback((): boolean => {
 		return isAdmin;
-	};
+	}, [isAdmin]);
+
+	const value = useMemo(
+		() => ({ isAdmin, login, logout, checkAdminStatus }),
+		[isAdmin, login, logout, checkAdminStatus],
+	);
 
 	return (
-		<AdminContext.Provider value={{ isAdmin, login, logout, checkAdminStatus }}>
+		<AdminContext.Provider value={value}>
 			{children}
 		</AdminContext.Provider>
 	);

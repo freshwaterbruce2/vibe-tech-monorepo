@@ -18,11 +18,11 @@ function App() {
 
   useEffect(() => {
     const validateUser = async () => {
-      const token = window.electronAPI.store.get('token');
+      const token = localStorage.getItem("token");
       if (token) {
         try {
           // Validate token and fetch user data
-          const response = await fetch('http://localhost:3003/api/auth/me', {
+          const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/me`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -33,11 +33,11 @@ function App() {
             setUser(data.user);
           } else {
             // Invalid token, clear it
-            window.electronAPI.store.delete('token');
+            localStorage.removeItem("token");
           }
         } catch (error) {
           console.error('Auth validation error:', error);
-          window.electronAPI.store.delete('token');
+          localStorage.removeItem("token");
         }
       }
       setLoading(false);

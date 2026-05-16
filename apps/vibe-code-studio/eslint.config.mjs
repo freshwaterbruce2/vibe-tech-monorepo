@@ -5,7 +5,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'dist-electron', 'out', 'src/services/ai/**', 'src/services/Logger.js', 'src/test-setup.ts'] },
+  { ignores: ['dist', 'dist-electron', 'out', 'src/services/ai/**', '!src/services/ai/completion/**', '!src/services/ai/providers/**', 'src/services/Logger.js', 'src/test-setup.ts'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
@@ -55,7 +55,7 @@ export default tseslint.config(
   {
     files: ['src/services/**/*.{ts,tsx,js}', 'src/utils/**/*.{ts,tsx}', 'src/types/**/*.{ts,tsx}'],
     rules: {
-      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/no-floating-promises': 'off',
       '@typescript-eslint/no-misused-promises': 'off',

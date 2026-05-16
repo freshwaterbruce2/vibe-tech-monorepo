@@ -1,5 +1,9 @@
 # CLAUDE.md — Session Guardrails
 
+## Default Agent
+
+This workspace defines a default **master agent** in `.claude/agents/master-agent.md` (and `.agent/agents/master-agent.md` for the Antigravity framework). Load it first when starting work in this repository for workspace orientation, path policy enforcement, and intelligent routing to specialist agents.
+
 ## Build & Install Failures
 
 - When a build or install command fails with OOM, NEVER retry the same command. First reduce parallelism (`--concurrency 1`, disable LTO, reduce parallel jobs), then retry.
@@ -28,6 +32,7 @@
 
 Detailed rules are in `.claude/rules/`. Key references:
 
+- Active project lock: `.claude/rules/active-project-lock.md` — finish before starting another (state in `D:\active-project\active-project.json`)
 - Paths policy: `.claude/rules/paths-policy.md`
 - No duplicates: `.claude/rules/no-duplicates.md`
 - No mock/placeholder code: `.claude/rules/no-mock-or-placeholder-code.md`

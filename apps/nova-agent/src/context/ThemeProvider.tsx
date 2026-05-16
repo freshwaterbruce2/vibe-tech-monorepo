@@ -3,6 +3,7 @@ import {
 	type ReactNode,
 	useContext,
 	useEffect,
+	useMemo,
 	useState,
 } from "react";
 
@@ -79,8 +80,10 @@ export const ThemeProvider = ({
 		return () => mediaQuery.removeEventListener("change", handleChange);
 	}, [theme, attribute, enableSystem]);
 
+	const value = useMemo(() => ({ theme, setTheme }), [theme]);
+
 	return (
-		<ThemeContext.Provider value={{ theme, setTheme }}>
+		<ThemeContext.Provider value={value}>
 			{children}
 		</ThemeContext.Provider>
 	);

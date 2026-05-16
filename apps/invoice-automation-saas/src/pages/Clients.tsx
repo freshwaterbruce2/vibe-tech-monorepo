@@ -126,7 +126,7 @@ export default function Clients() {
             style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}
           >
             <h2 className="ui-h2">{formMode === 'create' ? 'New Client' : 'Edit Client'}</h2>
-            <button className="ui-btn ui-btn--ghost" onClick={closeForm}>
+            <button className="ui-btn ui-btn--ghost" onClick={closeForm} aria-label="Close form">
               <X size={16} />
             </button>
           </div>
@@ -216,6 +216,7 @@ export default function Clients() {
                   className="ui-btn ui-btn--ghost ui-btn--sm"
                   onClick={() => openEdit(c)}
                   title="Edit"
+                  aria-label="Edit client"
                 >
                   <Pencil size={14} />
                 </button>
@@ -223,6 +224,7 @@ export default function Clients() {
                   className="ui-btn ui-btn--ghost ui-btn--sm"
                   onClick={async () => handleDelete(c.id, c.name)}
                   title="Delete"
+                  aria-label="Delete client"
                 >
                   <Trash2 size={14} />
                 </button>

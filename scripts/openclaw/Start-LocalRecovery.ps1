@@ -14,7 +14,8 @@ param(
     [int]$BrowserPort = 0,
     [int]$ReadyTimeoutSeconds = 150,
     [switch]$OpenDashboard,
-    [switch]$SkipControlUiPatch
+    [switch]$SkipControlUiPatch,
+    [switch]$VerifyOnly
 )
 
 Set-StrictMode -Version Latest
@@ -60,9 +61,239 @@ function Invoke-OpenClaw {
     }
 }
 
+function Get-OpenClawGatewayCommandPath {
+    $userProfile = [Environment]::GetFolderPath('UserProfile')
+    if ([string]::IsNullOrWhiteSpace($userProfile)) {
+        return $null
+    }
+
+    return Join-Path $userProfile '.openclaw\gateway.cmd'
+}
+
+function Set-OpenClawGatewayLocalEnvironment {
+    param([switch]$VerifyOnly)
+
+    if ($GatewayPort -ne 18789) {
+        return $false
+    }
+
+    $gatewayCommandPath = Get-OpenClawGatewayCommandPath
+    if ([string]::IsNullOrWhiteSpace($gatewayCommandPath) -or
+        -not (Test-Path -LiteralPath $gatewayCommandPath -PathType Leaf)) {
+        if ($VerifyOnly) {
+            throw "Verification failed: OpenClaw gateway service wrapper is missing."
+        }
+
+        return $false
+    }
+
+    $content = [IO.File]::ReadAllText($gatewayCommandPath, [Text.UTF8Encoding]::new($false))
+    if ($content -match '(?m)^set "OPENCLAW_DISABLE_BONJOUR=1"\s*$') {
+        return $false
+    }
+
+    if ($VerifyOnly) {
+        throw "Verification failed: gateway.cmd is missing OPENCLAW_DISABLE_BONJOUR=1."
+    }
+
+    $lineToAdd = 'set "OPENCLAW_DISABLE_BONJOUR=1"'
+    $pattern = '(?m)^set "OPENCLAW_SERVICE_VERSION=[^"]*"\s*$'
+    $match = [regex]::Match($content, $pattern)
+    if (-not $match.Success) {
+        throw "Could not find OpenClaw service environment block in $gatewayCommandPath."
+    }
+
+    $updated = $content.Insert(
+        $match.Index + $match.Length,
+        [Environment]::NewLine + $lineToAdd
+    )
+    [IO.File]::WriteAllText($gatewayCommandPath, $updated, [Text.UTF8Encoding]::new($false))
+    Write-Host "[openclaw] Applied gateway service env fix: OPENCLAW_DISABLE_BONJOUR=1"
+    return $true
+}
+
+function Get-OpenClawConfigCandidatePaths {
+    $paths = [Collections.Generic.List[string]]::new()
+
+    $toolsConfigPath = 'D:\Data\Tools\.openclaw\openclaw.json'
+    if (Test-Path -LiteralPath $toolsConfigPath -PathType Leaf) {
+        $paths.Add($toolsConfigPath)
+    }
+
+    $userProfile = [Environment]::GetFolderPath('UserProfile')
+    if (-not [string]::IsNullOrWhiteSpace($userProfile)) {
+        $profileConfigPath = Join-Path $userProfile '.openclaw\openclaw.json'
+        if (Test-Path -LiteralPath $profileConfigPath -PathType Leaf) {
+            $paths.Add($profileConfigPath)
+        }
+    }
+
+    return @($paths | Select-Object -Unique)
+}
+
+function Ensure-JsonObjectProperty {
+    param(
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]$Target,
+        [Parameter(Mandatory = $true)]
+        [string]$Name
+    )
+
+    $property = $Target.PSObject.Properties[$Name]
+    if ($property -and $property.Value -is [pscustomobject]) {
+        return $property.Value
+    }
+
+    $value = [pscustomobject]@{}
+    $Target | Add-Member -MemberType NoteProperty -Name $Name -Value $value -Force
+    return $value
+}
+
+function Set-JsonBooleanProperty {
+    param(
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]$Target,
+        [Parameter(Mandatory = $true)]
+        [string]$Name,
+        [Parameter(Mandatory = $true)]
+        [bool]$Value
+    )
+
+    $property = $Target.PSObject.Properties[$Name]
+    if ($property -and $property.Value -is [bool] -and $property.Value -eq $Value) {
+        return $false
+    }
+
+    $Target | Add-Member -MemberType NoteProperty -Name $Name -Value $Value -Force
+    return $true
+}
+
+function Get-StringArrayProperty {
+    param(
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]$Target,
+        [Parameter(Mandatory = $true)]
+        [string]$Name
+    )
+
+    $property = $Target.PSObject.Properties[$Name]
+    if (-not $property -or $null -eq $property.Value) {
+        return @()
+    }
+
+    if ($property.Value -is [string]) {
+        return @($property.Value)
+    }
+
+    return @($property.Value)
+}
+
+function Normalize-OpenClawPluginDenyList {
+    param([object[]]$Deny)
+
+    return [string[]]@(
+        $Deny |
+            Where-Object { $_ -is [string] -and -not [string]::IsNullOrWhiteSpace($_) } |
+            ForEach-Object { $_.Trim() } |
+            Where-Object { $_ -ne 'discordvoice-call' } |
+            Select-Object -Unique
+    )
+}
+
+function Backup-OpenClawConfigFile {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+    $backupPath = "$Path.pre-local-plugin-quarantine-$timestamp.bak"
+    Copy-Item -LiteralPath $Path -Destination $backupPath -Force
+    Write-Host "[openclaw] Backed up config: $backupPath"
+}
+
+function Ensure-OpenClawLocalPluginQuarantine {
+    param([switch]$VerifyOnly)
+
+    $blockedPluginIds = @('discord', 'voice-call')
+    $configPaths = Get-OpenClawConfigCandidatePaths
+    if ($configPaths.Count -eq 0) {
+        throw 'No OpenClaw config files found to verify or update.'
+    }
+
+    $verificationErrors = [Collections.Generic.List[string]]::new()
+
+    foreach ($configPath in $configPaths) {
+        $config = Get-Content -Raw -LiteralPath $configPath | ConvertFrom-Json
+        $plugins = Ensure-JsonObjectProperty -Target $config -Name 'plugins'
+        $entries = Ensure-JsonObjectProperty -Target $plugins -Name 'entries'
+        $channels = Ensure-JsonObjectProperty -Target $config -Name 'channels'
+        $deny = Normalize-OpenClawPluginDenyList -Deny @(
+            Get-StringArrayProperty -Target $plugins -Name 'deny'
+        )
+
+        if ($VerifyOnly) {
+            if ($channels.PSObject.Properties['discord']) {
+                $verificationErrors.Add("$configPath still contains channels.discord.")
+            }
+
+            foreach ($pluginId in $blockedPluginIds) {
+                $entry = $entries.PSObject.Properties[$pluginId]
+                $enabledProperty = if ($entry) { $entry.Value.PSObject.Properties['enabled'] } else { $null }
+                if (-not $enabledProperty -or $enabledProperty.Value -ne $false) {
+                    $verificationErrors.Add("$configPath does not disable plugins.entries.$pluginId.enabled.")
+                }
+
+                if ($deny -notcontains $pluginId) {
+                    $verificationErrors.Add("$configPath plugins.deny does not include $pluginId.")
+                }
+            }
+
+            continue
+        }
+
+        $changed = $false
+        if ($channels.PSObject.Properties['discord']) {
+            $channels.PSObject.Properties.Remove('discord')
+            $changed = $true
+        }
+
+        foreach ($pluginId in $blockedPluginIds) {
+            $entry = Ensure-JsonObjectProperty -Target $entries -Name $pluginId
+            if (Set-JsonBooleanProperty -Target $entry -Name 'enabled' -Value $false) {
+                $changed = $true
+            }
+
+            if ($deny -notcontains $pluginId) {
+                $deny = [string[]]@($deny + $pluginId)
+                $changed = $true
+            }
+        }
+
+        if ($changed) {
+            Backup-OpenClawConfigFile -Path $configPath
+            $updatedDeny = Normalize-OpenClawPluginDenyList -Deny $deny
+            $plugins | Add-Member -MemberType NoteProperty -Name 'deny' -Value $updatedDeny -Force
+            $config | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $configPath -Encoding utf8NoBOM
+            Write-Host "[openclaw] Quarantined local blocking plugins in $configPath"
+        }
+    }
+
+    if ($VerifyOnly -and $verificationErrors.Count -gt 0) {
+        throw "OpenClaw local plugin quarantine verification failed:`n$($verificationErrors -join [Environment]::NewLine)"
+    }
+}
+
 function Test-OpenClawGateway {
     $gatewayUrl = "ws://127.0.0.1:$GatewayPort"
-    $exitCode = Invoke-OpenClaw -ArgumentList @('gateway', 'probe', '--url', $gatewayUrl) -AllowFailure -Quiet
+    $exitCode = Invoke-OpenClaw -ArgumentList @(
+        'gateway',
+        'probe',
+        '--url',
+        $gatewayUrl,
+        '--timeout',
+        '15000'
+    ) -AllowFailure -Quiet
     return $exitCode -eq 0
 }
 
@@ -89,14 +320,11 @@ function Test-OpenClawGatewayPort {
 }
 
 function Wait-OpenClawGateway {
-    param(
-        [int]$TimeoutSeconds,
-        [Nullable[datetime]]$Since
-    )
+    param([int]$TimeoutSeconds)
 
     $deadline = [DateTimeOffset]::Now.AddSeconds($TimeoutSeconds)
     do {
-        if ((Test-OpenClawGateway) -or (Test-OpenClawGatewayReadyLog -Since $Since)) {
+        if (Test-OpenClawGateway) {
             return $true
         }
 
@@ -162,6 +390,7 @@ function Start-OpenClawGatewayForegroundHost {
 Set-Location -LiteralPath '$escapedRepoRoot'
 . '$escapedEnvironmentScript'
 Initialize-DevProcessEnvironment | Out-Null
+`$env:OPENCLAW_DISABLE_BONJOUR = '1'
 openclaw gateway run --port $GatewayPort
 "@
 
@@ -177,11 +406,65 @@ if (-not $SkipControlUiPatch) {
         throw "Missing Control UI patch script: $controlUiPatchScript"
     }
 
-    & $controlUiPatchScript
+    if ($VerifyOnly) {
+        & $controlUiPatchScript -VerifyOnly
+    } else {
+        & $controlUiPatchScript
+    }
+}
+
+Ensure-OpenClawLocalPluginQuarantine -VerifyOnly:$VerifyOnly
+Set-OpenClawGatewayLocalEnvironment -VerifyOnly:$VerifyOnly | Out-Null
+
+if ($VerifyOnly) {
+    $gatewayUrl = "ws://127.0.0.1:$GatewayPort"
+    if (-not (Test-OpenClawGateway)) {
+        $null = Invoke-OpenClaw -ArgumentList @(
+            'gateway',
+            'status',
+            '--url',
+            $gatewayUrl,
+            '--timeout',
+            '15000',
+            '--require-rpc'
+        ) -AllowFailure
+        throw "OpenClaw gateway probe failed for $gatewayUrl."
+    }
+
+    Invoke-OpenClaw -ArgumentList @(
+        'gateway',
+        'status',
+        '--url',
+        $gatewayUrl,
+        '--timeout',
+        '15000',
+        '--require-rpc'
+    )
+    Invoke-OpenClaw -ArgumentList @('health', '--timeout', '15000', '--json')
+    Invoke-OpenClaw -ArgumentList @('agents', 'list')
+    Invoke-OpenClaw -ArgumentList @('dashboard', '--no-open')
+    return
 }
 
 $startedGateway = $false
 if (-not (Test-OpenClawGateway)) {
+    $gatewayCommandPath = Get-OpenClawGatewayCommandPath
+    if ($GatewayPort -eq 18789 -and
+        ([string]::IsNullOrWhiteSpace($gatewayCommandPath) -or
+            -not (Test-Path -LiteralPath $gatewayCommandPath -PathType Leaf))) {
+        Write-Host "[openclaw] Gateway service wrapper is missing; reinstalling service..."
+        Invoke-OpenClaw -ArgumentList @(
+            'gateway',
+            'install',
+            '--force',
+            '--port',
+            "$GatewayPort",
+            '--runtime',
+            'node'
+        )
+        Set-OpenClawGatewayLocalEnvironment | Out-Null
+    }
+
     if (-not (Test-OpenClawGatewayPort -Port $GatewayPort)) {
         Write-Host "[openclaw] Gateway is not listening on ws://127.0.0.1:$GatewayPort; starting service..."
         if ($GatewayPort -eq 18789) {
@@ -192,6 +475,12 @@ if (-not (Test-OpenClawGateway)) {
             Start-OpenClawGatewayForegroundHost
             $startedGateway = $true
         }
+    } elseif ($GatewayPort -eq 18789) {
+        Write-Host "[openclaw] Gateway port is listening but probe/RPC failed; restarting service..."
+        Invoke-OpenClaw -ArgumentList @('gateway', 'stop') -AllowFailure | Out-Null
+        Set-OpenClawGatewayLocalEnvironment | Out-Null
+        Invoke-OpenClaw -ArgumentList @('gateway', 'start')
+        $startedGateway = $true
     }
 
     if (-not (Wait-OpenClawGatewayPort -Port $GatewayPort -TimeoutSeconds $ReadyTimeoutSeconds)) {
@@ -205,13 +494,21 @@ if (-not (Test-OpenClawGateway)) {
     }
 
     $readySince = if ($startedGateway) { $scriptStartedAt } else { $null }
-    if (-not (Wait-OpenClawGateway -TimeoutSeconds $ReadyTimeoutSeconds -Since $readySince)) {
-        $null = Invoke-OpenClaw -ArgumentList @('gateway', 'status') -AllowFailure
-        if (-not (Test-OpenClawGatewayReadyLog -Since $readySince)) {
-            throw "OpenClaw gateway is listening on ws://127.0.0.1:$GatewayPort, but probe and ready-log verification failed."
+    if (-not (Wait-OpenClawGateway -TimeoutSeconds $ReadyTimeoutSeconds)) {
+        $null = Invoke-OpenClaw -ArgumentList @(
+            'gateway',
+            'status',
+            '--url',
+            "ws://127.0.0.1:$GatewayPort",
+            '--timeout',
+            '15000',
+            '--require-rpc'
+        ) -AllowFailure
+        if (Test-OpenClawGatewayReadyLog -Since $readySince) {
+            Write-Warning "The latest OpenClaw log reports ready, but gateway probe/RPC verification failed."
         }
 
-        Write-Warning "OpenClaw gateway port is listening and the latest log reports ready, but gateway probe failed."
+        throw "OpenClaw gateway is listening on ws://127.0.0.1:$GatewayPort, but probe/RPC verification failed."
     }
 }
 
@@ -224,8 +521,18 @@ if (-not (Wait-OpenClawGatewayPort -Port $GatewayPort -TimeoutSeconds $ReadyTime
     throw "OpenClaw dashboard did not become reachable on http://127.0.0.1:$GatewayPort/."
 }
 
-$null = Invoke-OpenClaw -ArgumentList @('gateway', 'status') -AllowFailure
-$null = Invoke-OpenClaw -ArgumentList @('health') -AllowFailure
+$gatewayUrl = "ws://127.0.0.1:$GatewayPort"
+Invoke-OpenClaw -ArgumentList @(
+    'gateway',
+    'status',
+    '--url',
+    $gatewayUrl,
+    '--timeout',
+    '15000',
+    '--require-rpc'
+)
+Invoke-OpenClaw -ArgumentList @('health', '--timeout', '15000', '--json')
+Invoke-OpenClaw -ArgumentList @('agents', 'list')
 
 if ($OpenDashboard) {
     Invoke-OpenClaw -ArgumentList @('dashboard')

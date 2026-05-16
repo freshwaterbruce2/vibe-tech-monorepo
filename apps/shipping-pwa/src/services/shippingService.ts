@@ -102,7 +102,7 @@ export class ShippingService {
    */
   static async loadDoorSchedules(): Promise<DoorSchedule[]> {
     try {
-      const stored = window.electronAPI?.store.get(this.STORAGE_KEY)
+      const stored = localStorage.getItem(this.STORAGE_KEY)
       if (!stored) return []
 
       const doors = JSON.parse(stored) as DoorSchedule[]
@@ -129,7 +129,7 @@ export class ShippingService {
         )
       }
 
-      window.electronAPI?.store.set(
+      localStorage.setItem(
         this.STORAGE_KEY,
         JSON.stringify(validDoors)
       )
@@ -356,6 +356,6 @@ export class ShippingService {
    * Clears all door schedules (with confirmation)
    */
   static async clearAllDoors(): Promise<void> {
-    window.electronAPI?.store.delete(this.STORAGE_KEY)
+    localStorage.removeItem(this.STORAGE_KEY)
   }
 }

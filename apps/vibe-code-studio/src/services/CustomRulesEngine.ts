@@ -218,7 +218,7 @@ export class CustomRulesEngine {
         if (exists) {
           ruleFiles.unshift(rulesPath); // Add to beginning (workspace first)
         }
-      } catch (_error) {
+      } catch {
         // File doesn't exist, continue
       }
 

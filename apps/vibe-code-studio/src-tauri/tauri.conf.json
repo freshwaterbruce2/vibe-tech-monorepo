@@ -12,6 +12,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
+        "label": "main",
         "title": "Vibe Code Studio",
         "width": 1400,
         "height": 900,
@@ -47,15 +48,7 @@
   },
   "plugins": {
     "shell": {
-      "open": true,
-      "scope": [
-        {
-          "name": "exec-cmd",
-          "cmd": "cmd",
-          "args": ["/C", { "validator": ".*" }],
-          "sidecar": false
-        }
-      ]
+      "open": true
     }
   }
 }

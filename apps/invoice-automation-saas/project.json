@@ -23,7 +23,7 @@
     "api:build": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "tsc -p server/tsconfig.json",
+        "command": "if exist server\\dist rmdir /s /q server\\dist && if exist server\\tsconfig.tsbuildinfo del server\\tsconfig.tsbuildinfo && tsc -p server/tsconfig.json",
         "cwd": "apps/invoice-automation-saas"
       },
       "cache": true

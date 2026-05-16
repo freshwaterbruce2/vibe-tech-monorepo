@@ -1,0 +1,5 @@
+{
+  "name": "@vibetech/anthropic-api-tools",
+  "projectType": "application",
+  "tags": ["scope:tooling", "type:tool", "language:typescript"]
+}

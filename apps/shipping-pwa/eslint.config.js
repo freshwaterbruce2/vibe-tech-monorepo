@@ -14,7 +14,6 @@ export default tseslint.config(
       'coverage/**',
       '*.config.js',
       'vite.config.ts',
-      'server.ts',
       'worker/**',
       'tests/**',
       'android/**',

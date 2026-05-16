@@ -1,41 +1,64 @@
-# Workspace Context — @vibetech/workspace
+# Workspace Context - @vibetech/workspace
 
 ## Owner
-Bruce Freshwater — solo Windows 11 developer. No team. Ships everything himself.
 
-## Architecture
-- **Monorepo**: C:\dev — 28 apps, 26 packages, Nx 22.5.0 orchestration
-- **Package Manager**: pnpm 10.32.1 (isolated mode), store on D:\pnpm-store
-- **Code**: C:\dev only (Git-tracked)
-- **Data**: D:\ only (databases, logs, learning-system, screenshots)
-- **Version Control**: Codeberg (primary), GitHub mirror (CI/CD)
+Bruce Freshwater - solo Windows 11 developer working from the local monorepo.
 
-## Stack
-- TypeScript 5.9.3 strict, React 19.2.4, Tailwind 4.x
-- Desktop: Tauri 2.0 (nova-agent, vtde), Electron (vibe-code-studio, vibe-tutor)
-- Mobile: Expo 54 (nova-mobile-app), Capacitor (vibe-tutor)
-- Backend: Express 5 (port 5177), Vite dev (port 5173)
-- AI: OpenRouter → DeepSeek R1 (primary), Kimi 2.5 via Moonshot
-- Database: SQLite on D:\databases\ with WAL mode
-- Python 3.x (crypto-enhanced), Rust MSVC (Tauri apps)
+## Current Baseline
 
-## Key Constraints
-- Windows 11 ONLY — PowerShell 7+, no bash
-- pnpm ONLY with --filter — never bare install, never npm
-- 500-line file limit (360 hard rule in CLAUDE.md)
-- No git commands from AI — Bruce uses manual zip backups
-- Backup before destructive changes (Compress-Archive)
-- Search before creating (no-duplicates rule)
-- Complete features to 100% before starting new ones (Finisher Mode)
+- Repository root: `C:\dev`
+- Git host: GitHub, `https://github.com/freshwaterbruce2/vibe-tech-monorepo.git`
+- Package manager: `pnpm@10.33.0`
+- Node: `22.x`
+- Build system: `nx@22.6.5`
+- Current Nx project count: 70
+- Primary languages: TypeScript, JavaScript, Python, Rust, and React
 
-## Current Focus (as of 2026-04-08)
-1. VTDE — beta ship (Tauri 2.0, terminal widget, draggable windows, healing dashboard)
-2. Vibe Tutor — Play Store release (ESLint zero warnings, audit passed)
-3. Nova Mobile App — stabilization (stalled since 2026-02-16, needs decision)
+## Stack Reality Notes
 
-## Recently Shipped
-- Gravity Claw v1 — 2026-04-08 (Gemini/Kimi routing, MCP dispatch, Telegram bridge, SSE streaming)
+- `apps/vibetech-command-center` is Electron 33 + electron-vite + electron-builder; it is not Tauri.
+- `apps/vibe-tutor` is Electron 35.7 + Capacitor 8 + React/Vite with an Express backend; it is not React Native or Expo.
+- `apps/nova-mobile-app` is the actual Expo 54 / React Native 0.81 mobile app.
+- `apps/vibe-shop` is Next.js 16.1.6 and is an approved exception to the no-Next default.
+- `apps/gravity-claw` is a local-only nested WIP repo excluded from `pnpm-workspace.yaml`; its package version is not a shipped workspace release.
+- `apps/vibe-justice` has no root `package.json`; use the Tauri 2 frontend package and Python backend/PyInstaller `.spec` surfaces.
+- `apps/business-booking-platform-next` has no root/frontend package manifest; the backend owns the only package.json.
+- `apps/crypto-enhanced` is Python and is managed through root scripts/Nx targets.
+- `packages/nova-core` has no package manifest and should not be treated as a workspace package.
 
-## Specialist Agent System
-19 agents configured in .claude/agents.json — crypto-expert, webapp-expert, desktop-expert, mobile-expert, backend-expert, devops-expert, plus 11 sub-specialists.
+## Source And Data Policy
 
+- Source code lives under `C:\dev`.
+- Runtime data lives on `D:\`.
+- Active databases live under `D:\databases`.
+- Logs live under `D:\logs`.
+- Learning-system code/docs/artifacts live under `D:\learning-system`.
+- Do not recreate deprecated `C:\dev\data`, `C:\dev\logs`, `C:\dev\databases`, or `D:\learning` paths.
+
+## Workflow Rules
+
+- Use pnpm only.
+- Prefer Nx targets for lint, typecheck, test, build, e2e, and project discovery.
+- Search before creating new files, components, services, scripts, or docs.
+- Keep changes narrow and aligned with existing project patterns.
+- Preserve user or generated work in a dirty tree unless the user explicitly asks for cleanup.
+- Use `pnpm run quality:affected` for repo-level confidence after targeted validation.
+- Use `pnpm run workspace:health` when path, database, learning-system, or sync surfaces are touched.
+
+## Current Focus Areas
+
+- Workflow and CI hardening for the root monorepo.
+- Vibe Tutor readiness and Android/Capacitor validation.
+- Chessmaster Academy correctness and shared `@vibetech/games` extraction.
+- Gravity Claw local WIP runtime, dashboard, and bridge stability.
+- Command Center as the dashboard/diagnostics app.
+- Learning-system and database path consistency.
+
+## Canonical References
+
+- `AGENTS.md` - Codex/Nx/local workflow instructions.
+- `AI.md` - canonical path, tooling, and agent behavior rules.
+- `WORKSPACE.json` - current stack, project registry, and focus areas.
+- `docs/WORKSPACE_STRUCTURE.md` - source vs local-only storage policy.
+- `docs/ai/RULES.md` - detailed development and agent rules.
+- `D:\databases\DB_INVENTORY.md` - database ownership and active DB paths.

@@ -358,7 +358,7 @@ async fn dispatch_tool_call(
 
             let (auto_execute, risk, max_duration_minutes, requires_approval) =
                 parse_task_policy(&args);
-            let approved_for_execution = auto_execute && !requires_approval;
+            let approved_for_execution = false;
             let mut tags = vec![
                 format!("project:{}", project_path),
                 "ai_created".to_string(),
@@ -402,8 +402,8 @@ async fn dispatch_tool_call(
                 ) {
                     Ok(task_id) => {
                         info!("✅ Task created: {} ({})", task_id, args.title);
-                        let execution_status = if approved_for_execution {
-                            "Task approved for background execution."
+                        let execution_status = if auto_execute {
+                            "Task created and awaiting explicit approval before background execution."
                         } else if requires_approval {
                             "Task created and awaiting explicit approval before execution."
                         } else {

@@ -22,7 +22,7 @@
   "author": "VibeTech",
   "license": "MIT",
   "dependencies": {
-    "@vibetech/shared-config": "workspace:^1.0.0",
+    "@vibetech/shared-config": "workspace:*",
     "better-sqlite3": "12.6.2"
   },
   "devDependencies": {

@@ -93,6 +93,7 @@ export const InlineEditWidget = ({
           placeholder="Edit selection... (e.g. 'Add error handling')"
           disabled={isThinking || !!generatedCode}
           data-testid="instruction-input"
+          aria-label="Edit instruction"
           className="flex-1 bg-transparent border-none outline-none text-sm text-white placeholder-gray-500"
         />
         {generatedCode && (

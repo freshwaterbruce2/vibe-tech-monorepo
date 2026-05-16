@@ -5,6 +5,7 @@
 	"main": "src/server.js",
 	"type": "module",
 	"scripts": {
+		"build": "echo 'No build step required for JavaScript service'",
 		"start": "node src/server.js",
 		"lint": "eslint . --max-warnings 0",
 		"typecheck": "node -e \"console.log('typecheck not applicable: JavaScript service')\"",

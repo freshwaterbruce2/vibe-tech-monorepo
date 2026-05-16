@@ -39,3 +39,9 @@ coverage/
 # Temporary files
 *.tmp
 .cache/
+
+# Production build artifacts
+package/
+
+# Nested experiment apps
+apps/

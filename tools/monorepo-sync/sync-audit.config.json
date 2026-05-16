@@ -10,17 +10,24 @@
     "chessmaster-academy-api":       ["lint", "typecheck", "test"],
     "cross-agent-reflection":        ["test"],
     "devtools-mcp-server":           ["lint", "test"],
-    "mcp-rag-server":                ["test"]
+    "mcp-rag-server":                ["test"],
+    "@vibetech/anthropic-api-tools": ["lint", "test"],
+    "@vibetech/health-tracker":      ["test"],
+    "vibe-code-studio-vscode":       ["test"]
   },
   "allowedIsolatedProjects": [
     "@vibetech/feature-flags",
+    "@vibetech/hooks",
     "@vibetech/service-common",
+    "@vibetech/testing-utils",
     "@vibetech/command-center",
     "@vibetech/vcs-theme",
     "agent-engine",
     "agent-lats",
     "backend-config",
     "backend-middleware",
+    "business-booking-platform-next",
+    "business-booking-platform-next-backend",
     "chessmaster-academy",
     "chessmaster-academy-api",
     "crypto-enhanced",
@@ -34,13 +41,17 @@
     "nova-sqlite-mcp",
     "openrouter-proxy",
     "symptom-tracker-api",
-    "trendmart",
+    "vibe-shop",
     "legacy-booking-backend",
     "vibe-justice",
     "vibe-tech-backend",
     "vibe-tech-lovable-backend",
     "workspace-mcp-server",
-    "workflow-engine"
+    "workflow-engine",
+    "@vibetech/anthropic-api-tools",
+    "@vibetech/health-tracker",
+    "@vibetech/workspace",
+    "vibe-code-studio-vscode"
   ],
   "allowedStandaloneTags": [
     "standalone"

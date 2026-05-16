@@ -52,7 +52,7 @@ export function registerTools(c: ServiceContainer): McpTool[] {
     {
       name: 'dashboard_health_check',
       description:
-        'Probe all known dashboard-tracked services (frontend-vite on 5173, backend-express on 5177, openrouter-proxy on 3001, memory-mcp on 3200, dashboard-ui on 5180, dashboard-ipc on 3210) and return reachability and latency for each.',
+        'Probe all known dashboard-tracked services (ipc-bridge on 5004, symptom-tracker on 5055, openrouter-proxy on 3001, memory-mcp on 3200, dashboard-ui on 5180, dashboard-ipc on 3210) and return reachability and latency for each.',
       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
       handler: async (): Promise<unknown> => {
         const results: ProbeResult[] = await c.health.probeAll();
@@ -68,7 +68,7 @@ export function registerTools(c: ServiceContainer): McpTool[] {
     {
       name: 'dashboard_db_metrics',
       description:
-        'Return size, WAL size, table row counts, and journal mode for each SQLite database on D:\\ tracked by the dashboard (nova_activity, nova_shared, trading, learning). Read-only. Flags databases with WAL > 100 MB or total size > 500 MB.',
+        'Return size, WAL size, table row counts, and journal mode for each live SQLite database on D:\\ tracked by the dashboard. Read-only. Flags databases with WAL > 100 MB or total size > 500 MB.',
       inputSchema: {
         type: 'object',
         properties: {

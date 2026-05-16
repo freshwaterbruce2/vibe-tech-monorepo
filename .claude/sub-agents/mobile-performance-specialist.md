@@ -366,7 +366,8 @@ Return to `mobile-expert` when:
 
 ## Related Documentation
 
-- `apps/vibe-tutor/` — primary mobile app target
+- `apps/vibe-tutor/` — Capacitor Android app target; not React Native or Expo
+- `apps/nova-mobile-app/` — Expo/React Native mobile app target
 - `apps/vibe-tutor/vite.config.ts` — bundle configuration
 - `mobile-expert.md` — parent agent for native/build issues
 - Lighthouse: https://developer.chrome.com/docs/lighthouse

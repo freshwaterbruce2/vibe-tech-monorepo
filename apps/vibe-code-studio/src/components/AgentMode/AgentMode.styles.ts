@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { shouldForwardMotionProp } from '../../utils/motionProps';
 import styled from 'styled-components';
 import { vibeTheme } from '../../styles/theme';
 
@@ -186,7 +187,9 @@ export const Footer = styled.div`
   justify-content: space-between;
 `;
 
-export const ActionButton = styled(motion.button)<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
+export const ActionButton = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
   display: flex;
   align-items: center;
   gap: 6px;

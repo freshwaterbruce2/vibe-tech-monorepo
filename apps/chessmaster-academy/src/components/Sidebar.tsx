@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Bot, Gamepad2, LayoutDashboard, Puzzle, Settings } from 'lucide-react';
+import { BookOpen, Bot, Box, Gamepad2, LayoutDashboard, Puzzle, Settings } from 'lucide-react';
 import { PiecePreview } from '../lib/boardStyle';
 
 interface SidebarProps {
@@ -9,7 +9,12 @@ interface SidebarProps {
   setPieceSet: (set: string) => void;
 }
 
-export function Sidebar({ currentView, setCurrentView, pieceSet, setPieceSet }: SidebarProps) {
+export function Sidebar({
+  currentView,
+  setCurrentView,
+  pieceSet,
+  setPieceSet,
+}: SidebarProps) {
   const navItems = [
     { id: 'home', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
     { id: 'lessons', label: 'Lessons', icon: <BookOpen size={20} /> },
@@ -49,15 +54,19 @@ export function Sidebar({ currentView, setCurrentView, pieceSet, setPieceSet }: 
           <Settings size={14} /> Options
         </label>
         <div className="space-y-2">
+          <div className="flex items-center gap-2 rounded-xl border border-cyan-300/30 bg-cyan-500/10 px-3 py-2 text-xs font-extrabold uppercase tracking-widest text-cyan-100">
+            <Box size={16} />
+            3D Premium Board
+          </div>
           <div className="text-xs text-slate-400 font-medium ml-1">Piece Set</div>
           <div className="grid grid-cols-3 gap-2">
             {[
-              { id: 'fresca', name: 'Fresca' },
-              { id: 'cburnett', name: 'Classic' },
-              { id: 'alpha', name: 'Alpha' },
-              { id: 'merida', name: 'Merida' },
-              { id: 'california', name: 'Calif.' },
-              { id: 'staunty', name: 'Staunty' },
+              { id: 'academy_classic', name: 'Classic' },
+              { id: 'academy_patina', name: 'Patina' },
+              { id: 'academy_aged', name: 'Aged' },
+              { id: 'premium', name: 'Royal' },
+              { id: 'fresca', name: 'Crystal' },
+              { id: 'cburnett', name: 'Neon' },
             ].map((set) => (
               <button
                 key={set.id}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AvatarImage } from '@vibetech/avatars';
 import { VibeTechLogo } from '../ui/icons/VibeTechLogo';
 import { ONBOARDING_AVATARS, ONBOARDING_BRAND } from './onboardingVisuals';
 
@@ -19,6 +20,7 @@ const FirstRunOnboarding = ({ onComplete }: FirstRunOnboardingProps) => {
   const [avatar, setAvatar] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const selectedAvatar = ONBOARDING_AVATARS.find((option) => option.id === avatar);
 
   const handleFinish = async () => {
     if (!userType || !avatar || isSubmitting) {
@@ -106,23 +108,27 @@ const FirstRunOnboarding = ({ onComplete }: FirstRunOnboardingProps) => {
                   key={option.id}
                   type="button"
                   onClick={() => {
-                    setAvatar(option.emoji);
+                    setAvatar(option.id);
                   }}
                   className={`glass-card rounded-xl p-3 transition-transform border-2 focus-glow hover:scale-[1.03] ${
-                    avatar === option.emoji
+                    avatar === option.id
                       ? 'border-[var(--primary-accent)]'
                       : 'border-transparent'
                   }`}
-                  aria-label={`Choose avatar ${option.emoji} ${option.name}`}
+                  aria-label={`Choose avatar ${option.name}`}
                 >
                   <div className="flex flex-col items-center justify-center gap-2 text-center">
                     <div
                       className={`w-full aspect-square rounded-xl bg-gradient-to-br ${option.gradientClass} p-[2px]`}
                     >
-                      <div className="h-full w-full rounded-[10px] bg-[var(--background-card)]/90 flex items-center justify-center">
-                        <span className="text-4xl leading-none" aria-hidden="true">
-                          {option.emoji}
-                        </span>
+                      <div className="h-full w-full rounded-[10px] bg-[var(--background-card)]/90 flex items-center justify-center overflow-hidden">
+                        <AvatarImage
+                          src={option.imagePath}
+                          alt={option.name}
+                          size={96}
+                          className="h-full w-full"
+                          style={{ borderRadius: '10px' }}
+                        />
                       </div>
                     </div>
                     <div className="leading-tight">
@@ -155,8 +161,18 @@ const FirstRunOnboarding = ({ onComplete }: FirstRunOnboardingProps) => {
 
         {step === 2 && (
           <div className="space-y-6 text-center">
-            <div className="text-6xl" aria-hidden="true">
-              {avatar ?? '🎉'}
+            <div className="flex justify-center">
+              {selectedAvatar ? (
+                <AvatarImage
+                  src={selectedAvatar.imagePath}
+                  alt={selectedAvatar.name}
+                  size={112}
+                  className="rounded-2xl border border-[var(--glass-border)] shadow-[0_0_24px_rgba(56,189,248,0.25)]"
+                  style={{ borderRadius: '16px' }}
+                />
+              ) : (
+                <span className="text-6xl" aria-hidden="true">🎉</span>
+              )}
             </div>
             <h1 className="text-3xl font-bold neon-text-primary">You&apos;re all set!</h1>
             <p className="text-[var(--text-secondary)]">

@@ -11,11 +11,33 @@ import path from 'path'
 import { getSessionCookieName, parseSessionToken } from './auth.js'
 import { openDb } from './db.js'
 import { events } from './events.js'
+import './dunning/cronRegistration.js'
+import './fx/cronRegistration.js'
+import { startCronSchedules, stopCronSchedules } from './jobs/cron.js'
+import './jobs/handlers/dunningSweep.js'
+import './jobs/handlers/emailInvoice.js'
+import './jobs/handlers/emailOverdue.js'
+import './jobs/handlers/emailReceipt.js'
+import './jobs/handlers/fxRefresh.js'
+import './jobs/handlers/generateRecurring.js'
+import { startJobRunner } from './jobs/runner.js'
+import './recurring/cronRegistration.js'
 import { migrate } from './migrate.js'
 import { registerAuthRoutes } from './routes/authRoutes.js'
 import { registerClientRoutes } from './routes/clientRoutes.js'
+import { registerDunningRoutes } from './routes/dunningRoutes.js'
+import { registerExpenseRoutes } from './routes/expenseRoutes.js'
 import { registerInvoiceRoutes } from './routes/invoiceRoutes.js'
+import { registerLogoRoutes } from './routes/logoRoutes.js'
+import { registerPaymentRoutes } from './routes/paymentRoutes.js'
+import { registerProjectRoutes } from './routes/projectRoutes.js'
 import { registerPublicRoutes } from './routes/publicRoutes.js'
+import { registerRecurringRoutes } from './routes/recurringRoutes.js'
+import { registerTaxRoutes } from './routes/taxRoutes.js'
+import { registerTemplateRoutes } from './routes/templateRoutes.js'
+import { registerTimeRoutes } from './routes/timeRoutes.js'
+import { registerWebhookRoutes } from './routes/webhookRoutes.js'
+import { registerRateLimits } from './security/rateLimit.js'
 
 const PORT = Number(process.env.PORT ?? 8787)
 const HOST = process.env.HOST ?? '127.0.0.1'
@@ -34,6 +56,23 @@ const start = async () => {
     credentials: true,
   })
   await app.register(cookie, {})
+  await registerRateLimits(app)
+
+  const jobRunner = startJobRunner(db, {
+    logger: (msg, meta) => app.log.error({ meta }, msg),
+  })
+  startCronSchedules()
+
+  const shutdown = async (signal: string) => {
+    app.log.info(`received ${signal}, shutting down`)
+    stopCronSchedules()
+    await jobRunner.stop()
+    await app.close()
+    db.close()
+    process.exit(0)
+  }
+  process.once('SIGTERM', () => void shutdown('SIGTERM'))
+  process.once('SIGINT', () => void shutdown('SIGINT'))
 
   app.get('/api/health', async () => ({ ok: true, ts: Date.now() }))
 
@@ -80,6 +119,16 @@ const start = async () => {
   registerClientRoutes(app, db)
   registerInvoiceRoutes(app, db)
   registerPublicRoutes(app, db)
+  registerPaymentRoutes(app, db)
+  registerRecurringRoutes(app, db)
+  registerDunningRoutes(app, db)
+  registerTaxRoutes(app, db)
+  registerTemplateRoutes(app, db)
+  registerProjectRoutes(app, db)
+  registerTimeRoutes(app, db)
+  await registerExpenseRoutes(app, db)
+  await registerLogoRoutes(app, db)
+  await registerWebhookRoutes(app, db)
 
   if (process.env.SERVE_WEB === '1') {
     const distDir = process.env.WEB_DIST_DIR
@@ -102,7 +151,7 @@ const start = async () => {
         if (req.method === 'GET' && !req.url.startsWith('/api')) {
           return reply.sendFile('index.html')
         }
-        reply.code(404).send({ error: 'Not found' })
+        return reply.code(404).send({ error: 'Not found' })
       })
     }
   }

@@ -1,7 +1,7 @@
 // Shared Express middleware for all microservices
 
 import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
-import { logger } from './logger';
+import { logger } from './logger.js';
 import { ZodError } from 'zod';
 
 // Request logging middleware

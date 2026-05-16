@@ -1,9 +1,11 @@
 # Feature Spec: Cmd+K Inline Editing
 
-**Status**: ❌ Not Implemented
+**Status**: ✅ Implemented (via InlineEditWidget.tsx)
 **Priority**: CRITICAL (Cursor's killer feature)
 **Effort**: 2 days with TDD
 **Dependencies**: DeepSeek AI API, Monaco Editor
+
+> **Note**: This spec was originally written before implementation. The feature is now live in `src/components/Editor/InlineEditWidget.tsx` and wired to `Ctrl/Cmd+K` in `Editor.tsx`. The older `InlineEditDialog.tsx` component has been removed.
 
 ---
 

@@ -407,7 +407,7 @@ export class SecureApiKeyManager {
       }
       // For browser environments, this will be handled by bundler
       // Return null as we can't access import.meta.env safely here
-    } catch (_error) {
+    } catch {
       // Environment variables not available
     }
     return null;

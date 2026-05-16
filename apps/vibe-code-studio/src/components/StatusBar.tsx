@@ -1,11 +1,25 @@
 import { motion } from 'framer-motion';
-import { Activity, AlertCircle, CheckCircle, GitBranch, ImageIcon, Layers, MessageCircle, Package, Sidebar, Sparkles, Terminal, Zap } from 'lucide-react';
-import { memo, useEffect, useState } from 'react';
+import {
+  Activity,
+  AlertCircle,
+  CheckCircle,
+  GitBranch,
+  ImageIcon,
+  Layers,
+  MessageCircle,
+  Package,
+  Sidebar,
+  Sparkles,
+  Terminal,
+  Zap,
+} from 'lucide-react';
+import { memo } from 'react';
 import styled from 'styled-components';
 
 import { useGit } from '../hooks/useGit';
 import { vibeTheme } from '../styles/theme';
 import type { EditorFile } from '../types';
+import { shouldForwardMotionProp } from '../utils/motionProps';
 
 const StatusBarContainer = styled.div`
   display: flex;
@@ -32,7 +46,9 @@ const RightSection = styled.div`
   gap: ${vibeTheme.spacing[2]};
 `;
 
-const StatusItem = styled(motion.div)`
+const StatusItem = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   display: flex;
   align-items: center;
   gap: ${vibeTheme.spacing[1]};
@@ -57,14 +73,11 @@ const StatusItem = styled(motion.div)`
 `;
 
 const ToggleButton = styled(motion.button).withConfig({
-  shouldForwardProp: (prop) => prop !== 'active',
+  shouldForwardProp: (prop) => prop !== 'active' && shouldForwardMotionProp(prop),
 })<{ active: boolean }>`
-  background: ${(props) =>
-    props.active ? vibeTheme.colors.hoverStrong : 'transparent'};
-  border: 1px solid ${(props) =>
-    props.active ? 'rgba(0, 212, 255, 0.3)' : 'transparent'};
-  color: ${(props) =>
-    props.active ? vibeTheme.colors.text : vibeTheme.colors.textSecondary};
+  background: ${(props) => (props.active ? vibeTheme.colors.hoverStrong : 'transparent')};
+  border: 1px solid ${(props) => (props.active ? 'rgba(0, 212, 255, 0.3)' : 'transparent')};
+  color: ${(props) => (props.active ? vibeTheme.colors.text : vibeTheme.colors.textSecondary)};
   cursor: pointer;
   padding: ${vibeTheme.spacing[1]} ${vibeTheme.spacing[2]};
   border-radius: ${vibeTheme.borderRadius.sm};
@@ -77,14 +90,12 @@ const ToggleButton = styled(motion.button).withConfig({
   transition: ${vibeTheme.animation.transition.all};
 
   &:hover {
-    background: ${(props) =>
-      props.active ? vibeTheme.colors.active : vibeTheme.colors.hover};
+    background: ${(props) => (props.active ? vibeTheme.colors.active : vibeTheme.colors.hover)};
     color: ${vibeTheme.colors.text};
   }
 
   svg {
-    color: ${(props) =>
-      props.active ? vibeTheme.colors.cyan : 'inherit'};
+    color: ${(props) => (props.active ? vibeTheme.colors.cyan : 'inherit')};
     width: 14px;
     height: 14px;
   }
@@ -135,33 +146,6 @@ const StatusBar = ({
   onToggleVisualEditor,
 }: StatusBarProps) => {
   const { isGitRepo, status, branches } = useGit();
-
-  const [isDemoMode, setIsDemoMode] = useState(false);
-
-  useEffect(() => {
-    const loadDemoMode = async () => {
-      if (window.electron?.store) {
-        const val = await window.electron.store.get('forceDemoMode');
-        setIsDemoMode(String(val) === 'true');
-      } else {
-        // eslint-disable-next-line electron-security/no-localstorage-electron
-        setIsDemoMode(localStorage.getItem('forceDemoMode') === 'true');
-      }
-    };
-    loadDemoMode();
-  }, []);
-
-  const toggleDemoMode = async () => {
-    const newValue = !isDemoMode;
-    setIsDemoMode(newValue);
-    if (window.electron?.store) {
-      await window.electron.store.set('forceDemoMode', String(newValue));
-    } else {
-      // eslint-disable-next-line electron-security/no-localstorage-electron
-      localStorage.setItem('forceDemoMode', String(newValue));
-    }
-    window.location.reload();
-  };
 
   // Format model name for compact display (e.g. "moonshot/kimi-2.5-pro" → "Kimi 2.5 Pro")
   const modelLabel = (() => {
@@ -336,21 +320,11 @@ const StatusBar = ({
           active={sidebarOpen}
           onClick={onToggleSidebar}
           title="Toggle Sidebar"
+          aria-label="Toggle sidebar"
           whileHover={{ scale: 1.05, y: -1 }}
           whileTap={{ scale: 0.95 }}
         >
           <Sidebar size={14} />
-        </ToggleButton>
-
-        <ToggleButton
-          active={isDemoMode}
-          onClick={toggleDemoMode}
-          title={isDemoMode ? "Demo Mode ON (click to use real API)" : "Demo Mode OFF (click to use mock data)"}
-          whileHover={{ scale: 1.05, y: -1 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Sparkles size={14} />
-          {isDemoMode ? 'Demo' : 'Live'}
         </ToggleButton>
       </RightSection>
     </StatusBarContainer>

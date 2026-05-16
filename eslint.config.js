@@ -3,6 +3,7 @@
 // @see C:\dev\desktop-commander-v2\BEST_PRACTICES_2025_COMPLETE.md
 
 import js from '@eslint/js';
+import enforceModuleBoundariesModule from '@nx/eslint-plugin/src/rules/enforce-module-boundaries.js';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
@@ -10,6 +11,9 @@ import tseslint from 'typescript-eslint';
 
 // Custom Electron rules (AST-based, no false positives)
 import noLocalStorageElectron from './tools/eslint-rules/no-localstorage-electron.cjs';
+
+const enforceModuleBoundariesRule =
+  enforceModuleBoundariesModule.default ?? enforceModuleBoundariesModule;
 
 export default tseslint.config(
   // Ignore patterns (comprehensive)
@@ -74,12 +78,6 @@ export default tseslint.config(
       'src/**',
 
       // Project specific
-      'DesktopCommanderMCP/**',
-      'Vibe-Tutor/**',
-      'opcode/**',
-      'edge_extension_deps/**',
-      'database-proxy-standalone/**',
-      'devworktrees*/**',
       'backups/**',
       'logs/**',
       'playwright-report/**',
@@ -87,31 +85,20 @@ export default tseslint.config(
       'projects/**',
       'PowerShell/**',
       'supabase/**',
-      'desktop-commander-mcp/**',
-      'workflow-hub-mcp/**',
       '**/android/**',
       '**/ios/**',
       '**/_archived/**',
       '**/_backups/**',
-      'apps/vibe-code-studio/src/services/ai/**',
       'apps/vibe-code-studio/src/test-setup.ts',
       'apps/vibe-code-studio/src/**/__tests__/**',
       'apps/vibe-code-studio/src/**/*.{test,spec}.{ts,tsx}',
       'apps/vibe-code-studio/src/components/AIProviderSelector/AIProviderSelector.tsx',
-      'apps/vibe-code-studio/src/components/AgentMode/AgentModeV2/StepCardView.tsx',
+
       'apps/vibe-code-studio/src/components/ComponentLibrary/index.tsx',
       'apps/vibe-code-studio/src/components/EnhancedAgentMode/EnhancedAgentMode.tsx',
       'apps/vibe-code-studio/src/components/ModelPerformanceDashboard.tsx',
       'apps/vibe-code-studio/src/components/VisualEditor/index.tsx',
 
-      // Orphaned/malformed directories
-      'C.devappsaugment-code/**',
-      'Cdev.husky/**',
-      'Cdev.vscode/**',
-      'NVIDIA Corporation/**',
-      '%SystemDrive%/**',
-      'antigravity-awesome-skills/**',
-      'ralph/**',
     ],
   },
 
@@ -292,9 +279,40 @@ export default tseslint.config(
     },
   },
 
+  // Nx module boundaries are staged in warn mode while the project tag taxonomy
+  // and existing target failures are cleaned up.
+  {
+    files: [
+      'apps/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'packages/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'backend/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+    ],
+    plugins: {
+      '@nx': {
+        rules: {
+          'enforce-module-boundaries': enforceModuleBoundariesRule,
+        },
+      },
+    },
+    rules: {
+      '@nx/enforce-module-boundaries': [
+        'warn',
+        {
+          enforceBuildableLibDependency: true,
+          allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$'],
+          depConstraints: [{ sourceTag: '*', onlyDependOnLibsWithTags: ['*'] }],
+        },
+      ],
+    },
+  },
+
   // React-specific configuration
   {
-    files: ['apps/**/*.{jsx,tsx}', 'packages/**/*.{jsx,tsx}', 'apps/nova-mobile-app/src/**/*.{ts,tsx}'],
+    files: [
+      'apps/**/*.{jsx,tsx}',
+      'packages/**/*.{jsx,tsx}',
+      'apps/nova-mobile-app/src/**/*.{ts,tsx}',
+    ],
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
@@ -354,8 +372,14 @@ export default tseslint.config(
   },
 
   // Electron-specific security rules (AST-based)
+  // Only applies to actual Electron apps — NOT all apps/*/src/ directories.
+  // Web-only apps (e.g. business-booking-platform) must use localStorage freely.
   {
-    files: ['apps/**/electron/**/*.{js,ts,jsx,tsx}', 'apps/**/src/**/*.{js,ts,jsx,tsx}'],
+    files: [
+      'apps/nova-agent/**/*.{js,ts,jsx,tsx}',
+      'apps/vibe-code-studio/**/*.{js,ts,jsx,tsx}',
+      'apps/**/electron/**/*.{js,ts,jsx,tsx}',
+    ],
     plugins: {
       'electron-security': {
         rules: {
@@ -385,6 +409,26 @@ export default tseslint.config(
       '@typescript-eslint/no-non-null-assertion': 'off',
       'react-hooks/purity': 'off',
       'react-hooks/set-state-in-effect': 'off',
+    },
+  },
+
+  // Shared games V1 contains extracted app components; keep lint compatible
+  // with the source apps while the package API stabilizes.
+  {
+    files: ['packages/games/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/consistent-type-definitions': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/no-misused-promises': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/prefer-nullish-coalescing': 'off',
+      '@typescript-eslint/prefer-optional-chain': 'off',
+      'no-console': 'off',
+      'react-hooks/purity': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+      'react-refresh/only-export-components': 'off',
     },
   },
 
@@ -522,7 +566,10 @@ export default tseslint.config(
     files: ['apps/vibe-code-studio/src/**/*.{js,jsx,ts,tsx}'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+      ],
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/no-floating-promises': 'off',
       '@typescript-eslint/no-misused-promises': 'off',

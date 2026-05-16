@@ -22,12 +22,18 @@ This guide covers the Model Context Protocol (MCP) servers configured for this m
 
 **Purpose:** Provides deep integration with Nx monorepo structure
 
+**Current launch:** `.mcp.json`, `.mcp.json.example`, and `.vscode/mcp.json`
+pin `nx-mcp@0.25.0` for `C:/dev` over stdio with telemetry disabled. They also
+set `NODE_OPTIONS=--require C:/dev/scripts/nx-mcp-native-compat.cjs` so the
+server can load Nx 22 native internals on Windows.
+
 **Features:**
 
 - Workspace structure analysis
 - Project dependency graph
 - Running processes awareness
 - Task execution intelligence
+- VS Code Nx Console support for Project Details, Graph, and Run Target
 
 **Status:** ✓ Ready to use (no setup required)
 
@@ -36,6 +42,10 @@ This guide covers the Model Context Protocol (MCP) servers configured for this m
 ```
 Ask me to "show the project graph" or "what projects are affected by this change?"
 ```
+
+For Nx Console in VS Code, reload the VS Code window or use the Nx Console
+refresh action after changing workspace config. Then use the Nx Console panel to
+open Project Details, view the Graph, or run a target for a selected project.
 
 ---
 

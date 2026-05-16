@@ -1,6 +1,7 @@
 {
   "name": "@vibetech/feature-flags-core",
   "version": "0.1.0",
+  "type": "module",
   "description": "Core types and utilities for feature flags system",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

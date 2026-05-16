@@ -1,45 +1,47 @@
-# Glossary — VibeTech Workspace
+# Glossary - VibeTech Workspace
 
-## Acronyms & Terms
+## Acronyms And Terms
 
-| Term | Meaning |
-|------|---------|
-| VTDE | Vibe-Tech Desktop Environment (Tauri 2.0 app) |
-| MCP | Model Context Protocol — tool/server standard for AI agents |
-| AVGE | Autonomous Video Generation Engine |
-| VCS | Vibe Code Studio (Electron IDE) |
-| Ralph | Autonomous maintenance system (4AM cron, GitHub Actions) |
-| WAL | Write-Ahead Logging (SQLite concurrency mode) |
-| PSR | Unknown — ask Bruce if encountered |
-| OOM | Out of Memory — recurring issue with large builds |
-| Herd trim | Bulk deletion of stale/redundant apps from monorepo |
-| Finisher Mode | Dev philosophy: fix crashes, ship existing work, no new features |
-| Quality pipeline | `pnpm run quality` — lint + typecheck + build |
-| Ghost dirs | Empty/orphaned directories left after app deletions |
-| RTO | Unknown — appeared in Apr 6 Family calendar event "Look at RTO's". Ask Bruce. |
+| Term                | Meaning                                                                            |
+| ------------------- | ---------------------------------------------------------------------------------- |
+| Nx                  | Monorepo build, project graph, and affected-task system.                           |
+| MCP                 | Model Context Protocol - standard for AI tool/server integrations.                 |
+| OpenClaw            | Local gateway/bridge package and workflow surface.                                 |
+| WAL                 | Write-Ahead Logging for SQLite databases.                                          |
+| CIPE                | Nx Cloud CI pipeline execution.                                                    |
+| Fix CI              | Nx Cloud self-healing command: `pnpm exec nx fix-ci`.                              |
+| Quarantine          | Explicit list of known skipped/flaky tests in `quarantine.json`.                   |
+| Quality affected    | `pnpm run quality:affected`, the root affected lint/typecheck/build gate.          |
+| Workspace health    | `pnpm run workspace:health`, the path, learning, database, and sync audit wrapper. |
+| Sync audit          | `pnpm run sync:audit:report`, the monorepo project/config drift report.            |
+| Active project lock | Local guard in `D:\active-project\active-project.json` that limits commit scope.   |
 
-## AI Models
+## Project Names
 
-| Name | What |
-|------|------|
-| DeepSeek R1/V2 | Primary AI via OpenRouter proxy (localhost:3001) |
-| Kimi 2.5 | Moonshot model, used in Nova Agent and Vibe Code Studio |
-| Claude | Anthropic, used via Claude Code / Claude Desktop / Cowork |
+| Name                | Meaning                                                           |
+| ------------------- | ----------------------------------------------------------------- |
+| Vibe Tutor          | Electron 35.7 + Capacitor 8 tutor app in `apps/vibe-tutor`; not React Native or Expo. |
+| Chessmaster Academy | Chess learning app in `apps/chessmaster-academy`.                 |
+| Gravity Claw        | Local-only WIP AI agent orchestrator in `apps/gravity-claw`, excluded from pnpm workspace. |
+| Command Center      | Electron 33 dashboard/diagnostics app in `apps/vibetech-command-center`; not Tauri. |
+| Vibe Code Studio    | Tauri 2 IDE in `apps/vibe-code-studio`.                            |
+| Nova Agent          | Tauri desktop assistant in `apps/nova-agent`.                     |
+| Nova Mobile App     | Expo 54 / React Native 0.81 mobile app in `apps/nova-mobile-app`. |
+| Vibe Justice        | Tauri 2 frontend + Python backend app in `apps/vibe-justice`; no root package.json. |
+| Vibe Shop           | Next.js 16.1.6 storefront in `apps/vibe-shop`; approved Next exception. |
+| BBP Next            | Business booking React/Vite app with only a backend package manifest. |
+| VibeBlox            | Gamified token economy app in `apps/VibeBlox`.                    |
+| Crypto Enhanced     | Python trading/analysis app in `apps/crypto-enhanced`, managed by root scripts/Nx targets. |
+| nova-core           | Directory at `packages/nova-core` without a package manifest.     |
 
-## Project Codenames
+## Tooling
 
-| Name | Project |
-|------|---------|
-| Nova | Desktop AI assistant ecosystem (nova-agent, nova-mobile-app, nova-core, nova-types, nova-database) |
-| ClawdBot | Desktop automation app (Electron, nut-tree-fork) |
-| VibeBlox | Gamified token economy (Hono, SQLite) |
-| OpenClaw | Integration bridge package |
-| Gravity Claw | v1 shipped 2026-04-08. Gemini/Kimi routing, MCP dispatch, Telegram bridge, SSE streaming. |
-
-## Tools
-
-| Name | What |
-|------|------|
-| Desktop Commander v3 | Windows automation MCP server |
-| Port Manager | PowerShell script for port allocation (C:\dev\tools\port-manager\port.ps1) |
-| D:\ Snapshots | PowerShell backup system for D:\ drive data |
+| Name                 | Meaning                                                                        |
+| -------------------- | ------------------------------------------------------------------------------ |
+| pnpm                 | Required package manager for the monorepo.                                     |
+| Renovate             | Version-update bot for npm and GitHub Actions dependencies.                    |
+| Dependabot alerts    | GitHub dependency graph/security alert surface; not the version-update PR bot. |
+| Dependency review    | GitHub Actions PR dependency diff enforcement.                                 |
+| Nx Cloud             | Remote cache, CI run recording, and self-healing CI provider.                  |
+| Desktop Commander v3 | Windows automation MCP server.                                                 |
+| Port Manager         | Local PowerShell port allocation tooling under `tools/port-manager`.           |

@@ -61,7 +61,7 @@ export class TestDiscovery {
         // Simple regex to count test/it blocks
         const testMatches = content.match(/\b(test|it|describe)\s*\(/g) ?? [];
         totalCount += testMatches.length;
-      } catch (_error) {
+      } catch {
         // Skip files we can't read
       }
     }
@@ -77,7 +77,7 @@ export class TestDiscovery {
       // Try to import glob dynamically
       const { glob } = await import('glob');
       return glob as unknown as (pattern: string, options: { cwd: string; absolute: boolean; ignore?: string[] }) => Promise<string[]>;
-    } catch (_error) {
+    } catch {
       // Fallback to a simple file finder
       return this.simpleGlob.bind(this);
     }
@@ -122,7 +122,7 @@ export class TestDiscovery {
             }
           }
         }
-      } catch (_error) {
+      } catch {
         // Skip directories we can't read
       }
     };

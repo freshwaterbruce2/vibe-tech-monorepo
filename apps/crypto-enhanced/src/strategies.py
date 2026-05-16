@@ -147,9 +147,51 @@ class Strategy(ABC):
 
         return True
 
+    async def _count_persisted_trades_since(self, since: datetime) -> int:
+        """Count persisted orders/trades since a timestamp when DB access is available."""
+        conn = getattr(getattr(self.engine, "db", None), "conn", None)
+        if conn is None:
+            return 0
+
+        try:
+            cursor = await conn.execute(
+                """
+                SELECT COUNT(*)
+                FROM orders
+                WHERE created_at >= ?
+                  AND pair = ?
+                """,
+                (since.isoformat(), "XLM/USD"),
+            )
+            row = await cursor.fetchone()
+            return int(row[0]) if row else 0
+        except Exception as exc:
+            logger.warning(f"{self.name}: Persisted trade-limit check failed: {exc}")
+            return 0
+
+    async def can_trade_with_persisted_limits(self) -> bool:
+        """Check in-memory and DB-backed trade limits after process restart."""
+        if not self.can_trade():
+            return False
+
+        now = datetime.now()
+        daily_count = await self._count_persisted_trades_since(now - timedelta(days=1))
+        if daily_count >= self.max_daily_trades:
+            logger.warning(f"{self.name}: Persisted daily trade limit reached ({daily_count})")
+            return False
+
+        max_hourly = getattr(self, "max_trades_per_hour", None)
+        if max_hourly is not None:
+            hourly_count = await self._count_persisted_trades_since(now - timedelta(hours=1))
+            if hourly_count >= max_hourly:
+                logger.warning(f"{self.name}: Persisted hourly trade limit reached ({hourly_count})")
+                return False
+
+        return True
+
     async def place_trade(self, side: str, volume_usd: float, order_type: str = "limit", price: Optional[float] = None) -> Dict:
         """Place a trade through the trading engine"""
-        if not self.can_trade():
+        if not await self.can_trade_with_persisted_limits():
             return {"error": "Cannot trade due to limits"}
 
         try:

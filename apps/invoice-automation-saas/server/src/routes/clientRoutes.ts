@@ -15,7 +15,10 @@ import type {
 const nowIso = () => new Date().toISOString()
 const normalizeEmail = (email: string) => email.trim().toLowerCase()
 
-export const registerClientRoutes = (app: FastifyInstance, db: Database) => {
+export const registerClientRoutes = (
+  app: FastifyInstance,
+  db: Database.Database,
+) => {
   app.get('/api/clients', async (req, reply) => {
     const userId = (req as AuthenticatedRequest).authUserId
     if (!userId) return reply.code(401).send({ error: 'Unauthorized' })

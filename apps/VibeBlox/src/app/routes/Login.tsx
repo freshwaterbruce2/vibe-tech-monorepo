@@ -19,7 +19,7 @@ export default function Login({ setUser }: LoginProps) {
 		setLoading(true);
 
 		try {
-			const response = await fetch("http://localhost:3003/api/auth/login", {
+			const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/auth/login`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ username, password } as LoginRequest),
@@ -31,7 +31,7 @@ export default function Login({ setUser }: LoginProps) {
 			}
 
 			const data = await response.json();
-			window.electronAPI.store.set("token", data.token);
+			localStorage.setItem("token", data.token);
 			setUser(data.user);
 			navigate("/");
 		} catch (err) {

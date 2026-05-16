@@ -47,8 +47,8 @@ All port assignments are documented in `port-registry.json`:
 | 5173 | root-dev                  | vite    |
 | 5174 | vibeblox                  | vite    |
 | 5175 | shipping-pwa              | vite    |
-| 5176 | monorepo-dashboard        | vite    |
-| 5177 | monorepo-dashboard-server | backend |
+| 5176 | vibetech-command-center   | vite    |
+| 5177 | vibetech-command-center   | backend |
 | 5179 | symptom-tracker           | vite    |
 | 8000 | crypto-enhanced           | python  |
 | 8765 | memory-bank               | backend |

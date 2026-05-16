@@ -238,9 +238,9 @@ Respond in JSON format with keys: summary, suggestions (array), strengths (array
         conversationHistory: [],
         workspaceContext: undefined
       });
-      const parsed = JSON.parse(response.content);
+      const parsed = JSON.parse(response.content ?? '');
       return parsed;
-    } catch (_error) {
+    } catch {
       return {
         summary: 'Code review completed',
         suggestions: ['Add more tests', 'Consider edge cases', 'Review error handling'],

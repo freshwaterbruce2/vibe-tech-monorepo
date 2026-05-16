@@ -1,8 +1,11 @@
 import { motion } from 'framer-motion';
+import { shouldForwardMotionProp } from '../utils/motionProps';
 import styled from 'styled-components';
 import { vibeTheme } from '../styles/theme';
 
-export const Container = styled(motion.div)`
+export const Container = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   background: ${vibeTheme.colors.secondary};
   border: 1px solid rgba(139, 92, 246, 0.3);
   border-radius: 12px;
@@ -118,7 +121,9 @@ export const Tab = styled.button<{ $active: boolean }>`
   }
 `;
 
-export const TabContent = styled(motion.div)``;
+export const TabContent = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})``;
 
 export const Section = styled.div`
   margin-bottom: 24px;

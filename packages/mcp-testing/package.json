@@ -1,6 +1,7 @@
 {
   "name": "@vibetech/mcp-testing",
   "version": "1.0.0",
+  "type": "module",
   "description": "Testing utilities for VibeTech MCP servers",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -33,7 +34,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.0",
-    "@vibetech/mcp-core": "workspace:^1.0.0"
+    "@vibetech/mcp-core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",

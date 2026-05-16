@@ -46,7 +46,7 @@ const client = new IPCClient(
 	},
 );
 
-logger.info("Starting Desktop Commander V3 MCP Server...");
+logger.info("Starting Desktop Commander V3 IPC Bridge Client...");
 client.connect();
 
 // Handle shutdown

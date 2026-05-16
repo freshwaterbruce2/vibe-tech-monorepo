@@ -242,7 +242,7 @@ export const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
 
     return (
       <DropdownContainer ref={ref ?? dropdownRef}>
-        <div onClick={handleToggle}>{trigger}</div>
+        <div onClick={handleToggle} role="button" tabIndex={0} aria-haspopup="true" aria-expanded={isOpen}>{trigger}</div>
 
         <AnimatePresence>
           {isOpen && (

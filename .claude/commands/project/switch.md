@@ -17,7 +17,7 @@ Available projects:
 
 - web (root web application)
 - crypto (cryptocurrency trading)
-- vibe-tutor (mobile app)
+- vibe-tutor (Electron + Capacitor tutor app)
 - shipping (shipping-pwa)
 - business-booking (business-booking-platform)
 - vibe-code-studio (desktop editor)
@@ -34,7 +34,7 @@ Usage: /project:switch <project-name>
 Available Projects:
   web              - Root web application (React 19 + Nx)
   crypto           - Crypto trading system (Python)
-  vibe-tutor       - Mobile app (Capacitor)
+  vibe-tutor       - Electron + Capacitor tutor app
   shipping         - Shipping PWA
   business-booking - Business booking platform
   vibe-code-studio - Vibe Code Studio editor

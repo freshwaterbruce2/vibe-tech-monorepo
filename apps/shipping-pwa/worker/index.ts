@@ -61,11 +61,11 @@ const configureCors = (env: Env) => {
 };
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (req: any, res) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    environment: process.env.ENVIRONMENT || 'development',
+    environment: req.cloudflare?.env?.ENVIRONMENT || 'development',
     version: '2.0.0'
   });
 });
@@ -364,24 +364,17 @@ app.post('/api/admin/login', async (req, res, env: Env) => {
   }
 });
 
-// Export handler for Cloudflare Workers
-export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    // Configure CORS with environment
-    app.use(configureCors(env));
-
-    // Pass environment to all routes
-    app.use((req: any, res: any, next: any) => {
-      req.env = env;
-      next();
-    });
-
-    // Use httpServerHandler to handle the request
-    const handler = httpServerHandler({
-      port: 3001,
-      hostname: 'localhost'
-    });
-
-    return handler(request, env, ctx);
+// Configure CORS and env injection as global middleware
+// Note: In Workers, req.cloudflare.env provides bindings
+app.use((req: any, res: any, next: any) => {
+  if (req.cloudflare?.env) {
+    req.env = req.cloudflare.env;
   }
-};
+  next();
+});
+
+// Start the Express server so httpServerHandler can bridge it
+app.listen(3001);
+
+// Export handler for Cloudflare Workers
+export default httpServerHandler({ port: 3001 });

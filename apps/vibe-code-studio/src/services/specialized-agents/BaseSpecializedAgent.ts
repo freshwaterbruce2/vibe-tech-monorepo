@@ -392,7 +392,7 @@ export abstract class BaseSpecializedAgent {
       memoryUsage: process.memoryUsage?.()?.heapUsed || 0,
       apiCalls: fromCache ? 0 : 1,
       cacheHits: fromCache ? 1 : 0,
-      tokenCount: response.content.length / 4 // Rough estimate
+      tokenCount: (response.content ?? '').length / 4 // Rough estimate
     };
 
     this.performanceMetrics.push(metrics);

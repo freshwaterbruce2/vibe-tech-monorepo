@@ -41,9 +41,8 @@ export class WorkspaceManager {
       // Load current workspace
       let current: string | null = null;
       if (typeof window !== 'undefined' && window.electron?.store) {
-        current = await window.electron.store.get(STORAGE_CURRENT) ?? null;
+        current = (await window.electron.store.get(STORAGE_CURRENT)) ?? null;
       } else {
-        // eslint-disable-next-line electron-security/no-localstorage-electron
         current = localStorage.getItem(STORAGE_CURRENT);
       }
 
@@ -58,7 +57,6 @@ export class WorkspaceManager {
           if (typeof window !== 'undefined' && window.electron?.store) {
             await window.electron.store.delete(STORAGE_CURRENT);
           } else {
-            // eslint-disable-next-line electron-security/no-localstorage-electron
             localStorage.removeItem(STORAGE_CURRENT);
           }
         }
@@ -67,9 +65,8 @@ export class WorkspaceManager {
       // Load recent workspaces
       let recent: string | null = null;
       if (typeof window !== 'undefined' && window.electron?.store) {
-        recent = await window.electron.store.get(STORAGE_RECENT) ?? null;
+        recent = (await window.electron.store.get(STORAGE_RECENT)) ?? null;
       } else {
-        // eslint-disable-next-line electron-security/no-localstorage-electron
         recent = localStorage.getItem(STORAGE_RECENT);
       }
 
@@ -77,7 +74,7 @@ export class WorkspaceManager {
         const parsed = JSON.parse(recent);
         // Filter out invalid paths
         this.recentWorkspaces = parsed.filter((p: string) =>
-          /^[A-Za-z]:[\\/]|^\/|^demo:\/\//.test(p)
+          /^[A-Za-z]:[\\/]|^\/|^demo:\/\//.test(p),
         );
       }
     } catch (error) {
@@ -99,14 +96,12 @@ export class WorkspaceManager {
         if (store) {
           await store.set(STORAGE_CURRENT, this.currentWorkspace);
         } else {
-          // eslint-disable-next-line electron-security/no-localstorage-electron
           localStorage.setItem(STORAGE_CURRENT, this.currentWorkspace);
         }
       } else {
         if (store) {
-           await store.delete(STORAGE_CURRENT);
+          await store.delete(STORAGE_CURRENT);
         } else {
-          // eslint-disable-next-line electron-security/no-localstorage-electron
           localStorage.removeItem(STORAGE_CURRENT);
         }
       }
@@ -114,7 +109,6 @@ export class WorkspaceManager {
       if (store) {
         await store.set(STORAGE_RECENT, JSON.stringify(this.recentWorkspaces));
       } else {
-        // eslint-disable-next-line electron-security/no-localstorage-electron
         localStorage.setItem(STORAGE_RECENT, JSON.stringify(this.recentWorkspaces));
       }
     } catch (error) {
@@ -230,7 +224,9 @@ export class WorkspaceManager {
    * @returns Workspace folder name or null
    */
   getWorkspaceName(): string | null {
-    if (!this.currentWorkspace) {return null;}
+    if (!this.currentWorkspace) {
+      return null;
+    }
 
     // Extract folder name from path
     const parts = this.currentWorkspace.split(/[/\\]/);

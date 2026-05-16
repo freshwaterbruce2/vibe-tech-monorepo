@@ -202,9 +202,9 @@ const SignupPage = () => {
 
       if (data.success) {
         // Store the API key and tenant info
-        window.electronAPI?.store.set('tenantApiKey', data.tenant.apiKey);
-        window.electronAPI?.store.set('tenantId', data.tenant.id);
-        window.electronAPI?.store.set('tenantSubdomain', data.tenant.subdomain);
+        localStorage.setItem('tenantApiKey', data.tenant.apiKey);
+        localStorage.setItem('tenantId', data.tenant.id);
+        localStorage.setItem('tenantSubdomain', data.tenant.subdomain);
 
         toast({
           title: 'Account created successfully!',

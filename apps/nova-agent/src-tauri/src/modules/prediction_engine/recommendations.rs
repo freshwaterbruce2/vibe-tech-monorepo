@@ -7,7 +7,7 @@ impl PredictionEngine {
     /// Get all proactive recommendations that have not been dismissed.
     pub fn get_proactive_recommendations(&self) -> Result<Vec<Recommendation>, String> {
         let db = self
-            .learning_db
+            .prediction_db
             .lock()
             .map_err(|e| format!("Failed to lock database: {}", e))?;
 
@@ -72,7 +72,7 @@ impl PredictionEngine {
         metadata: Option<&str>,
     ) -> Result<i64, String> {
         let db = self
-            .learning_db
+            .prediction_db
             .lock()
             .map_err(|e| format!("Failed to lock database: {}", e))?;
 
@@ -114,7 +114,7 @@ impl PredictionEngine {
         actual_value: f64,
     ) -> Result<(), String> {
         let db = self
-            .learning_db
+            .prediction_db
             .lock()
             .map_err(|e| format!("Failed to lock database: {}", e))?;
 

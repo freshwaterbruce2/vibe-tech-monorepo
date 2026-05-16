@@ -8,8 +8,8 @@ export interface ServiceEndpoint {
 }
 
 export const DEFAULT_ENDPOINTS: ServiceEndpoint[] = [
-  { service: 'frontend-vite',    host: '127.0.0.1', port: 5173 },
-  { service: 'backend-express',  host: '127.0.0.1', port: 5177 },
+  { service: 'ipc-bridge',       host: '127.0.0.1', port: 5004 },
+  { service: 'symptom-tracker',  host: '127.0.0.1', port: 5055 },
   { service: 'dashboard-ui',     host: '127.0.0.1', port: 5180 },
   { service: 'openrouter-proxy', host: '127.0.0.1', port: 3001 },
   { service: 'memory-mcp',       host: '127.0.0.1', port: 3200 },

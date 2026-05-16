@@ -8,8 +8,8 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   // Check if user is authenticated
   const isAuthenticated =
-    window.electronAPI?.store.get('tenantApiKey') ||
-    window.electronAPI?.store.get('warehouse-customized');
+    localStorage.getItem('tenantApiKey') ||
+    localStorage.getItem('warehouse-customized');
 
   if (!isAuthenticated) {
     // Redirect to landing page if not authenticated

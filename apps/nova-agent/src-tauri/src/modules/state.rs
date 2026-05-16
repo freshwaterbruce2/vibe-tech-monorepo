@@ -79,8 +79,7 @@ impl Config {
             mobile_bridge_token: env::var("MOBILE_BRIDGE_TOKEN").unwrap_or_else(|_| {
                 let token = uuid::Uuid::new_v4().to_string();
                 tracing::warn!(
-                    "MOBILE_BRIDGE_TOKEN not set. Generated token: {}. Set this in .env or Settings.",
-                    token
+                    "MOBILE_BRIDGE_TOKEN not set. Generated an in-memory bridge token. Set this in .env or Settings."
                 );
                 token
             }),

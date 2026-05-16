@@ -201,8 +201,8 @@ async fn main() {
     }
 
     // Initialize prediction engine
-    let learning_db_path = PathBuf::from(&config.database_path).join("learning.db");
-    let prediction_engine = match prediction_engine::PredictionEngine::new(learning_db_path) {
+    let prediction_db_path = PathBuf::from(&config.database_path).join("agent_learning.db");
+    let prediction_engine = match prediction_engine::PredictionEngine::new(prediction_db_path) {
         Ok(engine) => {
             info!("Prediction engine initialized successfully");
             Some(engine)
@@ -242,7 +242,7 @@ async fn main() {
                 started_at: std::time::Instant::now(),
             });
             tauri::async_runtime::spawn(async move {
-                let port = 3000;
+                let port = http_server::bridge_port_from_env();
                 tracing::info!("Starting HTTP server for mobile bridge on port {}", port);
                 if let Err(e) = http_server::start_server(app_state_for_http, port).await {
                     tracing::error!("Failed to start HTTP server: {}", e);

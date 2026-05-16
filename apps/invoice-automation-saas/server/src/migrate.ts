@@ -1,9 +1,10 @@
-import type Database from "better-sqlite3";
-import fs from "fs";
-import path from "path";
+import type Database from 'better-sqlite3'
+import path from 'node:path'
 
-export const migrate = (db: Database) => {
-	const schemaPath = path.resolve(process.cwd(), "server", "src", "schema.sql");
-	const sql = fs.readFileSync(schemaPath, "utf-8");
-	db.exec(sql);
-};
+import { runMigrations, type MigrationResult } from './migrations/index.js'
+
+export const getMigrationsDir = (): string =>
+  path.resolve(process.cwd(), 'server', 'src', 'migrations')
+
+export const migrate = (db: Database.Database): MigrationResult =>
+  runMigrations(db, getMigrationsDir())

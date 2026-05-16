@@ -24,8 +24,8 @@
   "author": "VibeTech",
   "license": "MIT",
   "dependencies": {
-    "@vibetech/logger": "workspace:^1.0.0",
-    "@vibetech/shared-config": "workspace:^1.0.0",
+    "@vibetech/logger": "workspace:*",
+    "@vibetech/shared-config": "workspace:*",
     "better-sqlite3": "12.6.2",
     "chokidar": "^5.0.0",
     "sql.js": "^1.14.1"

@@ -98,7 +98,7 @@ export class AgentRecoveryStrategies {
             content: `[Simplified Response] ${response.content}`,
             confidence: Math.max(0.3, response.confidence - 0.2)
           };
-        } catch (_error) {
+        } catch {
           return {
             content: `I apologize, but I'm experiencing technical difficulties. Please try a simpler request or contact support.`,
             confidence: 0.2,

@@ -4,13 +4,21 @@ param(
     [string]$DatabaseRoot = 'D:\databases',
     [string]$OutputPath = (Join-Path (Resolve-Path (Join-Path $PSScriptRoot '..')).Path 'tmp\database-health-report.json'),
     [switch]$IncludeIntegrityCheck,
-    [switch]$IncludeArchived
+    [switch]$IncludeArchived,
+    [switch]$CheckpointLargeWal
 )
 
 $ErrorActionPreference = 'Stop'
 $workspaceRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $sqlite = Get-Command sqlite3 -ErrorAction SilentlyContinue
 $excludedPathFragments = @('\_archive', '\backups\', '\cdev-databases\')
+$knownDistinctNameGroups = @(
+    [pscustomobject]@{
+        normalizedName = 'trading'
+        members = @('trading.db', 'crypto-enhanced\trading.db')
+        reason = 'Top-level trading.db and crypto-enhanced\trading.db are documented as separate datasets in D:\databases\DB_INVENTORY.md.'
+    }
+)
 
 function Normalize-DbName {
     param([string]$Name)
@@ -44,6 +52,70 @@ function Get-IntegrityStatus {
     }
 }
 
+function Test-SameSet {
+    param([string[]]$Actual, [string[]]$Expected)
+
+    $actualSorted = @($Actual | Sort-Object)
+    $expectedSorted = @($Expected | Sort-Object)
+    if ($actualSorted.Count -ne $expectedSorted.Count) {
+        return $false
+    }
+
+    for ($i = 0; $i -lt $actualSorted.Count; $i++) {
+        if ($actualSorted[$i] -ne $expectedSorted[$i]) {
+            return $false
+        }
+    }
+
+    return $true
+}
+
+function Get-KnownDistinctGroup {
+    param([string]$NormalizedName, [object[]]$Members)
+
+    $relativePaths = @($Members | ForEach-Object { $_.relativePath })
+    foreach ($group in $knownDistinctNameGroups) {
+        if ($group.normalizedName -eq $NormalizedName -and (Test-SameSet -Actual $relativePaths -Expected $group.members)) {
+            return $group
+        }
+    }
+
+    return $null
+}
+
+function Invoke-WalCheckpoint {
+    param([string]$Path)
+
+    if (-not $sqlite) {
+        return [pscustomobject]@{ status = 'skipped:sqlite3-unavailable'; result = $null }
+    }
+
+    try {
+        $result = & $sqlite.Source $Path 'PRAGMA busy_timeout=5000; PRAGMA wal_checkpoint(TRUNCATE);' 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            return [pscustomobject]@{ status = 'error'; result = ($result -join "`n") }
+        }
+
+        $lines = @($result | Where-Object { $_ -match '\S' })
+        $checkpointLine = if ($lines.Count -gt 0) { $lines[-1] } else { '' }
+        $parts = @($checkpointLine -split '\|')
+        if ($parts.Count -ge 3) {
+            $status = if ($parts[0] -eq '0') { 'ok' } else { 'busy' }
+            return [pscustomobject]@{
+                status = $status
+                busy = [int]$parts[0]
+                logFrames = [int]$parts[1]
+                checkpointedFrames = [int]$parts[2]
+                result = $checkpointLine
+            }
+        }
+
+        return [pscustomobject]@{ status = 'unknown'; result = ($result -join "`n") }
+    } catch {
+        return [pscustomobject]@{ status = "error:$($_.Exception.Message)"; result = $null }
+    }
+}
+
 if (-not (Test-Path -LiteralPath $DatabaseRoot)) {
     throw "Database root not found: $DatabaseRoot"
 }
@@ -61,6 +133,13 @@ $records = foreach ($db in $dbFiles) {
     $walItem = if (Test-Path -LiteralPath $walPath) { Get-Item -LiteralPath $walPath } else { $null }
     $shmItem = if (Test-Path -LiteralPath $shmPath) { Get-Item -LiteralPath $shmPath } else { $null }
     $normalized = Normalize-DbName -Name $db.BaseName
+    $checkpoint = $null
+
+    if ($CheckpointLargeWal -and $walItem -and $walItem.Length -gt 10MB) {
+        $checkpoint = Invoke-WalCheckpoint -Path $db.FullName
+        $walItem = if (Test-Path -LiteralPath $walPath) { Get-Item -LiteralPath $walPath } else { $null }
+        $shmItem = if (Test-Path -LiteralPath $shmPath) { Get-Item -LiteralPath $shmPath } else { $null }
+    }
 
     [pscustomobject]@{
         name = $db.Name
@@ -76,21 +155,31 @@ $records = foreach ($db in $dbFiles) {
         shmExists = [bool]$shmItem
         shmBytes = if ($shmItem) { $shmItem.Length } else { 0 }
         integrity = Get-IntegrityStatus -Path $db.FullName
+        checkpoint = $checkpoint
         isCore = $db.Name -in @('database.db', 'memory.db', 'agent_learning.db', 'nova_activity.db')
     }
 }
 
-$duplicateGroups = @(
-    $records |
-        Group-Object normalizedName |
-        Where-Object { $_.Count -gt 1 } |
-        ForEach-Object {
-            [pscustomobject]@{
-                normalizedName = $_.Name
-                members = @($_.Group | Select-Object name, relativePath, fullPath)
-            }
+$duplicateGroups = @()
+$knownDistinctGroups = @()
+
+$duplicateCandidates = @($records | Group-Object normalizedName | Where-Object { $_.Count -gt 1 })
+foreach ($candidate in $duplicateCandidates) {
+    $knownGroup = Get-KnownDistinctGroup -NormalizedName $candidate.Name -Members $candidate.Group
+    if ($knownGroup) {
+        $knownDistinctGroups += [pscustomobject]@{
+            normalizedName = $candidate.Name
+            reason = $knownGroup.reason
+            members = @($candidate.Group | Select-Object name, relativePath, fullPath)
         }
-)
+    } else {
+        $duplicateGroups +=
+            [pscustomobject]@{
+                normalizedName = $candidate.Name
+                members = @($candidate.Group | Select-Object name, relativePath, fullPath)
+            }
+    }
+}
 
 $largeWalFiles = @(
     $records |
@@ -106,9 +195,12 @@ $report = [ordered]@{
         totalDatabases = $records.Count
         coreDatabases = ($records | Where-Object isCore | Measure-Object).Count
         duplicateNameGroups = $duplicateGroups.Count
+        knownDistinctNameGroups = $knownDistinctGroups.Count
         largeWalFiles = $largeWalFiles.Count
+        walCheckpointsAttempted = @($records | Where-Object { $_.checkpoint }).Count
     }
     duplicates = $duplicateGroups
+    knownDistinctNameGroups = $knownDistinctGroups
     largeWalFiles = $largeWalFiles
     files = $records
 }
@@ -124,6 +216,7 @@ Write-Host "Database Health Report" -ForegroundColor Cyan
 Write-Host "  Root:       $DatabaseRoot"
 Write-Host "  Databases:  $($records.Count)"
 Write-Host "  Duplicates: $($duplicateGroups.Count)"
+Write-Host "  Known distinct names: $($knownDistinctGroups.Count)"
 Write-Host "  Large WALs: $($largeWalFiles.Count)"
 Write-Host "  Report:     $OutputPath"
 
@@ -132,6 +225,14 @@ if ($duplicateGroups.Count -gt 0) {
     foreach ($group in $duplicateGroups) {
         $members = ($group.members | ForEach-Object { $_.relativePath }) -join ', '
         Write-Host "  $($group.normalizedName): $members" -ForegroundColor Yellow
+    }
+}
+
+if ($knownDistinctGroups.Count -gt 0) {
+    Write-Host "`nKnown distinct basename groups:" -ForegroundColor DarkGray
+    foreach ($group in $knownDistinctGroups) {
+        $members = ($group.members | ForEach-Object { $_.relativePath }) -join ', '
+        Write-Host "  $($group.normalizedName): $members" -ForegroundColor DarkGray
     }
 }
 

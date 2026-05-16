@@ -1,5 +1,6 @@
 import { SecureApiKeyManager } from '@vibetech/shared-utils';
 import { motion } from 'framer-motion';
+import { shouldForwardMotionProp } from '../utils/motionProps';
 import { AlertTriangle, CheckCircle, Eye, EyeOff, Save, Shield, TestTube, Trash2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
@@ -136,7 +137,9 @@ const Input = styled.input`
   }
 `;
 
-const IconButton = styled(motion.button)`
+const IconButton = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   position: absolute;
   right: 8px;
   top: 50%;
@@ -160,7 +163,9 @@ const ButtonGroup = styled.div`
   gap: ${vibeTheme.spacing.sm};
 `;
 
-const Button = styled(motion.button)<{ variant?: 'primary' | 'secondary' | 'danger' }>`
+const Button = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})<{ variant?: 'primary' | 'secondary' | 'danger' }>`
   background: ${props => {
     switch (props.variant) {
       case 'primary': return vibeTheme.gradients.primary;

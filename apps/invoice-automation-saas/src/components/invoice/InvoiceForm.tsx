@@ -1,11 +1,16 @@
 import { Trash2 } from "lucide-react";
-import { useFieldArray, useFormContext } from "react-hook-form";
+import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import type { TaxRate } from "../../services/taxRateService";
 import type { InvoiceFormData } from "../../types/invoice";
 import Button from "../common/Button";
 import Card from "../common/Card";
 import Input from "../common/Input";
 
-const InvoiceForm = () => {
+interface InvoiceFormProps {
+	taxRates?: TaxRate[];
+}
+
+const InvoiceForm = ({ taxRates = [] }: InvoiceFormProps) => {
 	const {
 		register,
 		formState: { errors },
@@ -16,6 +21,8 @@ const InvoiceForm = () => {
 		name: "items",
 		control,
 	});
+
+	const taxStrategy = useWatch({ control, name: "taxStrategy" }) ?? "invoice";
 
 	return (
 		<Card className="ui-stack ui-stack--md">
@@ -127,19 +134,51 @@ const InvoiceForm = () => {
 								</Button>
 							</div>
 						</div>
+						{taxStrategy === "item" && taxRates.length > 0 ? (
+							<div className="ui-grid ui-grid--2">
+								<label className="ui-stack ui-stack--xs">
+									<span className="ui-muted">Tax rate</span>
+									<select
+										className="ui-input"
+										{...register(`items.${index}.taxRateId` as const)}
+										defaultValue=""
+									>
+										<option value="">No tax</option>
+										{taxRates.map((rate) => (
+											<option key={rate.id} value={rate.id}>
+												{rate.name} ({rate.ratePct}%)
+											</option>
+										))}
+									</select>
+								</label>
+								<div />
+							</div>
+						) : null}
 					</div>
 				))}
 			</div>
 
 			<div className="ui-grid ui-grid--2">
-				<Input
-					label="Tax (%)"
-					type="number"
-					min={0}
-					step={0.01}
-					{...register("tax", { valueAsNumber: true })}
-				/>
-				<div />
+				<label className="ui-stack ui-stack--xs">
+					<span className="ui-muted">Tax strategy</span>
+					<select className="ui-input" {...register("taxStrategy")}>
+						<option value="invoice">Flat invoice tax</option>
+						<option value="item" disabled={taxRates.length === 0}>
+							Per-item tax {taxRates.length === 0 ? "(create tax rates first)" : ""}
+						</option>
+					</select>
+				</label>
+				{taxStrategy === "invoice" ? (
+					<Input
+						label="Tax (%)"
+						type="number"
+						min={0}
+						step={0.01}
+						{...register("tax", { valueAsNumber: true })}
+					/>
+				) : (
+					<div />
+				)}
 			</div>
 
 			<Input label="Notes" {...register("notes")} />

@@ -82,7 +82,9 @@ npm-shrinkwrap.json
 
 # Build directories
 build/
-.nx/
+.nx/*
+!.nx/
+!.nx/SELF_HEALING.md
 .next/
 out/
 *.tsbuildinfo
@@ -230,6 +232,16 @@ apps/nova-agent/src-tauri/tauri.conf.backup.json
 # Serena (AI tool config)
 .serena/
 
+# OpenClaw (AI agent runtime state)
+.openclaw/
+
+# OpenClaw agent identity files (personal local config)
+HEARTBEAT.md
+IDENTITY.md
+SOUL.md
+TOOLS.md
+USER.md
+
 # Deprecated file backups
 *.deprecated
 
@@ -300,6 +312,7 @@ apps/vibe-justice/frontend/src-tauri/binaries/*.exe
 
 # Electron build output
 apps/vibe-tutor/release/
+apps/vibetech-command-center/release/
 
 # Archive (moved to D:\archive)
 archive/
@@ -342,3 +355,16 @@ Ollama/db.sqlite-wal
 .claude/worktrees
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
+
+# NX local cache
+.nx/
+!.nx/SELF_HEALING.md
+
+# Personal scratchpad
+MEMORY.md
+
+# Allow tracked release docs and example env for nova-agent
+!apps/nova-agent/RELEASE_READY.md
+!apps/nova-agent/SHIP_READY_REPORT.md
+!apps/nova-agent/CONSISTENCY_AUDIT_REPORT.md
+!apps/nova-agent/.env.example

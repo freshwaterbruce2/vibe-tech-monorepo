@@ -14,7 +14,10 @@ const nowIso = () => new Date().toISOString();
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
-export const registerAuthRoutes = (app: FastifyInstance, db: Database) => {
+export const registerAuthRoutes = (
+	app: FastifyInstance,
+	db: Database.Database,
+) => {
 	app.get("/api/auth/me", async (req) => {
 		const userId = (req as any).authUserId as string | undefined;
 		if (!userId) return { user: null };
@@ -33,6 +36,10 @@ export const registerAuthRoutes = (app: FastifyInstance, db: Database) => {
 			return reply
 				.code(400)
 				.send({ error: "Password must be at least 8 characters" });
+		if (password.length > 256)
+			return reply
+				.code(400)
+				.send({ error: "Password must be at most 256 characters" });
 
 		const existing = db
 			.prepare("select id from users where email = ?")

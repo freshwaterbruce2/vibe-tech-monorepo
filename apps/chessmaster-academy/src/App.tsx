@@ -24,27 +24,42 @@ const AITutorMode = lazy(() =>
 function ViewFallback() {
   return (
     <div className="flex min-h-[calc(100dvh-8rem)] items-center justify-center px-4">
-      <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/20 border-t-indigo-300" />
+      <div
+        className={[
+          'h-10 w-10 animate-spin rounded-full border-2',
+          'border-white/20 border-t-indigo-300',
+        ].join(' ')}
+      />
     </div>
   );
 }
 
 export default function App() {
   const [currentView, setCurrentView] = useState('home');
-  const [pieceSet, setPieceSet] = useState('fresca');
+  const [pieceSet, setPieceSet] = useState('academy_classic');
 
   return (
-    <div className="relative flex h-screen flex-col overflow-hidden bg-[#0f172a] text-white font-sans md:flex-row">
+    <div
+      className={[
+        'relative flex h-screen flex-col overflow-hidden bg-[#0f172a]',
+        'font-sans text-white md:flex-row',
+      ].join(' ')}
+    >
       <main className="relative z-0 flex-1 overflow-y-auto pb-6 pt-16 md:pb-0 md:pt-0">
         <Suspense fallback={<ViewFallback />}>
           {currentView === 'home' && <HomeDashboard setCurrentView={setCurrentView} />}
-          {currentView === 'lessons' && <LessonMode pieceSet={pieceSet} />}
-          {currentView === 'play' && <PlayMode pieceSet={pieceSet} />}
-          {currentView === 'puzzles' && <PuzzleMode pieceSet={pieceSet} />}
-          {currentView === 'tutor' && <AITutorMode pieceSet={pieceSet} />}
+          {currentView === 'lessons' && <LessonMode boardView="3d" pieceSet={pieceSet} />}
+          {currentView === 'play' && <PlayMode boardView="3d" pieceSet={pieceSet} />}
+          {currentView === 'puzzles' && <PuzzleMode boardView="3d" pieceSet={pieceSet} />}
+          {currentView === 'tutor' && <AITutorMode boardView="3d" pieceSet={pieceSet} />}
         </Suspense>
       </main>
-      <Sidebar currentView={currentView} setCurrentView={setCurrentView} pieceSet={pieceSet} setPieceSet={setPieceSet} />
+      <Sidebar
+        currentView={currentView}
+        pieceSet={pieceSet}
+        setCurrentView={setCurrentView}
+        setPieceSet={setPieceSet}
+      />
     </div>
   );
 }

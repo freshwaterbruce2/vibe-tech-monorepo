@@ -74,13 +74,13 @@ Last updated: 2026-02-25
 
 agent-sdk-workspace, ai-youtube-pipeline, avge-dashboard, clawdbot-desktop,
 gravity-claw, invoice-automation-saas, mcp-codeberg, mcp-gateway,
-mcp-skills-server, memory-mcp, monorepo-dashboard, nova-mobile-app,
+mcp-skills-server, memory-mcp, nova-mobile-app,
 prompt-engineer, symptom-tracker, vibe-shop, VibeBlox, vtde
 
 ## Packages (27 in C:\dev\packages\)
 
 backend, db-app, db-learning, feature-flags, logger, mcp-core, mcp-testing,
-memory, nova-core, nova-database, nova-types, openclaw-bridge, openrouter-client,
+memory, nova-core (directory only; no package manifest), nova-database, nova-types, openclaw-bridge, openrouter-client,
 service-common, shared-config, shared-ipc, shared-logic, shared-utils,
 testing-utils, ui, vibe-python-shared, vibetech-hooks, vibetech-shared,
 vibetech-types

@@ -4,6 +4,7 @@
  */
 
 import { motion } from 'framer-motion';
+import { shouldForwardMotionProp } from '../utils/motionProps';
 import { Brain, ChevronRight, Code2, FileCode, Loader2, Search, Sparkles, X, Zap } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import styled from 'styled-components';
@@ -177,7 +178,9 @@ const ResultsList = styled.div`
   gap: ${vibeTheme.spacing.md};
 `;
 
-const ResultCard = styled(motion.div)`
+const ResultCard = styled(motion.div).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
   background: rgba(139, 92, 246, 0.05);
   border: 1px solid rgba(139, 92, 246, 0.1);
   border-radius: ${vibeTheme.borderRadius.medium};

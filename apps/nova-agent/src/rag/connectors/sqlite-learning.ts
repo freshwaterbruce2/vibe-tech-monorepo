@@ -199,7 +199,7 @@ export class LearningConnector {
         SELECT
           COUNT(*) as total,
           AVG(CASE WHEN success = 1 THEN 1.0 ELSE 0.0 END) as success_rate,
-          AVG(execution_time_ms) as avg_time
+          AVG(execution_time_ms) / 1000.0 as avg_time
         FROM agent_executions
       `).get() as { total: number; success_rate: number; avg_time: number };
 

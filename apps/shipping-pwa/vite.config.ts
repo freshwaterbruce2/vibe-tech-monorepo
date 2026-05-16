@@ -355,6 +355,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
     setupFiles: ['./src/setupTests.ts'],
     css: true,
     reporters: ['verbose'],
@@ -385,11 +386,6 @@ export default defineConfig({
     deps: {
       inline: ['@testing-library/jest-dom']
     },
-    pool: 'threads',
-    poolOptions: {
-      threads: {
-        singleThread: true
-      }
-    }
+    pool: 'threads'
   },
 })

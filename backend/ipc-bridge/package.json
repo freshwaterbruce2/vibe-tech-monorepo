@@ -23,7 +23,7 @@
   "author": "VibeTech",
   "license": "MIT",
   "dependencies": {
-    "@vibetech/shared-ipc": "workspace:^1.0.0",
+    "@vibetech/shared-ipc": "workspace:*",
     "ws": "^8.20.0"
   },
   "devDependencies": {

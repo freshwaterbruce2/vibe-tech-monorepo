@@ -11,9 +11,11 @@ Canonical review map for the workspace and the `D:\` operational surfaces.
 | Learning system | `D:\learning-system` | Learning runtime, logs, docs, Python helpers |
 | Logs | `D:\logs` | Application and maintenance logs |
 | Data | `D:\data` | Non-database datasets and exports |
-| Backups | `D:\backups` | Database/system backups and retention outputs |
+| Backups | `D:\backups` | Canonical root for database/system backups and retention outputs |
 
 `C:\dev\data`, `C:\dev\logs`, `C:\dev\databases`, and `D:\learning` remain deprecated.
+
+Legacy snapshot archives may still exist under `D:\_backups` (for example, pre-cleanup ZIPs referenced in `D:\databases\DB_INVENTORY.md`). Treat `D:\_backups` as historical storage, and write new backups to `D:\backups`.
 
 ## Canonical databases
 
@@ -30,8 +32,9 @@ Canonical review map for the workspace and the `D:\` operational surfaces.
   `D:\databases\DB_INVENTORY.md` before restoring or recreating any database.
 - Root-level reports, screenshots, and scratch files are treated as cleanup
   candidates, not source-of-truth artifacts.
-- `.gitmodules` currently tracks `apps/gravity-claw` as a first-party app submodule;
-  keep submodule ownership explicit before cleanup.
+- `apps/gravity-claw` is a local-only nested WIP repo excluded from
+  `pnpm-workspace.yaml`; keep nested ownership explicit before cleanup and do
+  not treat its package version as a shipped workspace release.
 
 ## Supported review commands
 

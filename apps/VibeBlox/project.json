@@ -128,6 +128,14 @@
         "cwd": "apps/VibeBlox"
       }
     },
-    "quality": {}
+    "quality": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "pnpm --filter @vibetech/vibeblox quality"
+        ],
+        "cwd": "apps/VibeBlox"
+      }
+    }
   }
 }

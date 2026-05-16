@@ -46,7 +46,7 @@ export class OutputParser {
                   coverage = parsed.coverage;
                 }
               }
-            } catch (_e) {
+            } catch {
               // Not JSON, try text parsing
             }
           }

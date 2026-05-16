@@ -37,7 +37,7 @@ export const AndroidVoiceFallback = ({
 
   // Store recent commands in localStorage
   useEffect(() => {
-    const stored = window.electronAPI?.store.get('android-voice-fallback-commands');
+    const stored = localStorage.getItem('android-voice-fallback-commands');
     if (stored) {
       try {
         // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -51,7 +51,7 @@ export const AndroidVoiceFallback = ({
   const saveRecentCommand = useCallback((command: string) => {
     const updated = [command, ...recentCommands.filter(c => c !== command)].slice(0, 5);
     setRecentCommands(updated);
-    window.electronAPI?.store.set('android-voice-fallback-commands', JSON.stringify(updated));
+    localStorage.setItem('android-voice-fallback-commands', JSON.stringify(updated));
   }, [recentCommands]);
 
   const processTextCommand = useCallback((input: string) => {
