@@ -13,7 +13,7 @@ export interface AuthUser {
 export const getSessionTtlSeconds = () => {
 	const raw = process.env.SESSION_TTL_SECONDS;
 	const asNumber = raw ? Number(raw) : NaN;
-	if (Number.isFinite(asNumber) && asNumber > 60) return Math.floor(asNumber);
+	if (Number.isFinite(asNumber) && asNumber > 0) return Math.floor(asNumber);
 	// default: 7 days
 	return 60 * 60 * 24 * 7;
 };

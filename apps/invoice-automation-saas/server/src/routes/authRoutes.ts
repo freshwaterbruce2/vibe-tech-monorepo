@@ -36,6 +36,10 @@ export const registerAuthRoutes = (
 			return reply
 				.code(400)
 				.send({ error: "Password must be at least 8 characters" });
+		if (password.length > 256)
+			return reply
+				.code(400)
+				.send({ error: "Password must be at most 256 characters" });
 
 		const existing = db
 			.prepare("select id from users where email = ?")

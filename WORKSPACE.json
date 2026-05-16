@@ -161,11 +161,6 @@
         "priority": "medium",
         "description": "Legal document analysis (Tauri 2 frontend + Python/FastAPI backend packaged with PyInstaller; no root package.json)"
       },
-      "vibe-shop": {
-        "status": "development",
-        "priority": "low",
-        "description": "E-commerce storefront (Next.js 16.1.6, Prisma, Neon; approved exception to the no-Next default)"
-      },
       "crypto-enhanced": {
         "status": "storage",
         "priority": "low",

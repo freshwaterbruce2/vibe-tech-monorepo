@@ -25,7 +25,20 @@
     ],
     "no-empty-source": null,
     "comment-empty-line-before": null,
-    "declaration-empty-line-before": null
+    "declaration-empty-line-before": null,
+    "color-hex-length": null,
+    "color-function-alias-notation": null,
+    "color-function-notation": null,
+    "alpha-value-notation": null,
+    "custom-property-empty-line-before": null,
+    "at-rule-empty-line-before": null,
+    "rule-empty-line-before": null,
+    "property-no-vendor-prefix": null,
+    "import-notation": null,
+    "font-family-name-quotes": null,
+    "property-no-unknown": null,
+    "media-feature-range-notation": null,
+    "length-zero-no-unit": null
   },
   "ignoreFiles": [
     "dist/**",
