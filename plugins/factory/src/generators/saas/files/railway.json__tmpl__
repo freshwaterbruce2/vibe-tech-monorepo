@@ -15,7 +15,6 @@
     ]
   },
   "deploy": {
-    "startCommand": "cd apps/<%= projectName %> && pnpm run start:api",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE"
