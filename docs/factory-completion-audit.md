@@ -37,6 +37,40 @@ Status: complete
 Validated on 2026-05-16:
 
 ```powershell
+pnpm nx run-many -t test --projects=@vibetech/auth,@vibetech/billing,@vibetech/emails,@vibetech/landing,@vibetech/analytics,@vibetech/entitlements,invoice-automation-saas,@vibetech/command-center --skip-nx-cache
+pnpm nx g @vibetech/factory:saas test-factory-app
+pnpm install --filter test-factory-app
+pnpm nx build test-factory-app --skip-nx-cache
+pnpm nx run test-factory-app:api:build --skip-nx-cache
+pnpm nx run invoice-automation-saas:api:build --skip-nx-cache
+Invoke-RestMethod https://proposal-review-api-production.up.railway.app/api/health
+Invoke-RestMethod https://proposal-review-api-production.up.railway.app/api/billing/pro-checkout
+```
+
+Strict thread-goal validation on 2026-05-16:
+
+- All required tests passed in one final Nx run:
+  - `@vibetech/auth`: 1 file passed, 8 tests passed.
+  - `@vibetech/billing`: 1 file passed, 8 tests passed.
+  - `@vibetech/emails`: 1 file passed, 6 tests passed.
+  - `@vibetech/landing`: 1 file passed, 2 tests passed.
+  - `@vibetech/analytics`: 1 file passed, 3 tests passed.
+  - `@vibetech/entitlements`: 1 file passed, 9 tests passed.
+  - `invoice-automation-saas`: 33 files passed, 175 tests passed.
+  - `@vibetech/command-center`: 29 files passed, 253 tests passed.
+- Fresh generator proof passed:
+  - `pnpm nx g @vibetech/factory:saas test-factory-app` created `apps/test-factory-app`.
+  - `pnpm nx build test-factory-app --skip-nx-cache` passed.
+  - `pnpm nx run test-factory-app:api:build --skip-nx-cache` passed.
+- Donor build sanity passed:
+  - `pnpm nx run invoice-automation-saas:api:build --skip-nx-cache` passed.
+- Live production proof rechecked:
+  - Railway `GET /api/health` returned `ok: true` and `app: "proposal-review-saas"`.
+  - Railway `POST /api/billing/pro-checkout` from the Vercel origin returned a Stripe Checkout URL and session id.
+
+Earlier validation retained for historical context:
+
+```powershell
 pnpm nx test invoice-automation-saas
 pnpm nx run-many -t build,api:build --projects=invoice-automation-saas
 pnpm nx test @vibetech/command-center --skip-nx-cache

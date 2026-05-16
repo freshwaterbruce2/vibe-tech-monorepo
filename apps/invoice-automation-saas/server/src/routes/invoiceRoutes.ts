@@ -1,6 +1,10 @@
 import type Database from "better-sqlite3";
 import crypto from "crypto";
 import type { FastifyInstance } from "fastify";
+import {
+	INVOICE_SAAS_FEATURES,
+	resolveUserEntitlement,
+} from "../entitlements.js";
 import { events } from "../events.js";
 import { getRate } from "../fx/cache.js";
 import { enqueueJob } from "../jobs/enqueue.js";
@@ -472,6 +476,22 @@ export const registerInvoiceRoutes = (
 			return reply.code(400).send({ error: "client.name is required" });
 		if (!clientEmail.includes("@"))
 			return reply.code(400).send({ error: "client.email is invalid" });
+
+		if (
+			body.recurring &&
+			typeof body.recurring === "object" &&
+			(body.recurring as { enabled?: boolean }).enabled === true
+		) {
+			const entitlement = resolveUserEntitlement(
+				userId,
+				INVOICE_SAAS_FEATURES.recurringBilling,
+			);
+			if (!entitlement.enabled) {
+				return reply
+					.code(403)
+					.send({ error: "Recurring billing is not enabled for your plan" });
+			}
+		}
 
 		const rawItems = Array.isArray(body.items) ? body.items : [];
 		const taxStrategyRaw = (body as { taxStrategy?: string }).taxStrategy;

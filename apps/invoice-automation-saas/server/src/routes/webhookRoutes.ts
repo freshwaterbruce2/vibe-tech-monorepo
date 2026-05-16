@@ -6,7 +6,10 @@ import { Webhook } from 'svix'
 import { recordAudit } from '../audit.js'
 import { events } from '../events.js'
 import { enqueueJob } from '../jobs/enqueue.js'
-import { verifyWebhookSignature } from '../payments/stripeAdapter.js'
+import {
+  type StripeWebhookEventLike,
+  verifyWebhookSignature,
+} from '../payments/stripeAdapter.js'
 
 interface InvoiceRow {
   id: string
@@ -63,7 +66,7 @@ export const registerWebhookRoutes = async (
         return reply.code(500).send({ error: 'Server misconfigured' })
       }
 
-      let event: Stripe.Event
+      let event: StripeWebhookEventLike
       try {
         event = verifyWebhookSignature(req.body as Buffer, sig, secret)
       } catch (e) {

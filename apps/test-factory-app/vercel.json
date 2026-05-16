@@ -1,0 +1,11 @@
+{
+  "buildCommand": "pnpm run build:shared:api && pnpm run build",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile --filter ./apps/test-factory-app...",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

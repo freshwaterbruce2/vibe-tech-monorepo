@@ -71,14 +71,21 @@ export const registerPaymentRoutes = (
       const baseUrl = getAppBaseUrl()
       try {
         const session = await buildCheckoutSession({
-          invoiceId: id,
-          publicToken: token,
-          amount: invoice.total,
           currency: invoice.currency,
-          invoiceNumber: invoice.invoice_number,
           successUrl: `${baseUrl}/pay/${id}?token=${token}&status=success`,
           cancelUrl: `${baseUrl}/pay/${id}?token=${token}&status=canceled`,
           customerEmail: client?.email ?? undefined,
+          metadata: {
+            invoice_id: id,
+            public_token: token,
+            invoice_number: invoice.invoice_number,
+          },
+          lineItems: [
+            {
+              name: `Invoice ${invoice.invoice_number}`,
+              unitAmount: invoice.total,
+            },
+          ],
         })
 
         recordAudit(db, {

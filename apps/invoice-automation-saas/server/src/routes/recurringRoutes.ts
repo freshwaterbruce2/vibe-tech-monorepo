@@ -3,6 +3,10 @@ import type { FastifyInstance } from 'fastify'
 
 import { recordAudit } from '../audit.js'
 import {
+  INVOICE_SAAS_FEATURES,
+  resolveUserEntitlement,
+} from '../entitlements.js'
+import {
   advanceDate,
   type Frequency,
 } from '../recurring/scheduler.js'
@@ -121,6 +125,16 @@ export const registerRecurringRoutes = (
     if (!existing) return reply.code(404).send({ error: 'Not found' })
     if (existing.user_id !== userId)
       return reply.code(403).send({ error: 'Forbidden' })
+
+    const entitlement = resolveUserEntitlement(
+      userId,
+      INVOICE_SAAS_FEATURES.recurringBilling,
+    )
+    if (!entitlement.enabled) {
+      return reply
+        .code(403)
+        .send({ error: 'Recurring billing is not enabled for your plan' })
+    }
 
     if (body.status && !VALID_STATUSES.has(body.status)) {
       return reply.code(400).send({ error: 'Invalid status' })
