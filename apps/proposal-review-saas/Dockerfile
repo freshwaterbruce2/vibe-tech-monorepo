@@ -9,7 +9,7 @@ WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
-FROM base AS deps
+FROM base AS build
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY patches ./patches
@@ -21,6 +21,14 @@ COPY packages/billing/package.json packages/billing/package.json
 COPY packages/emails/package.json packages/emails/package.json
 COPY packages/analytics/package.json packages/analytics/package.json
 COPY packages/landing/package.json packages/landing/package.json
+COPY apps/proposal-review-saas apps/proposal-review-saas
+COPY packages/feature-flags/core packages/feature-flags/core
+COPY packages/auth packages/auth
+COPY packages/entitlements packages/entitlements
+COPY packages/billing packages/billing
+COPY packages/emails packages/emails
+COPY packages/analytics packages/analytics
+COPY packages/landing packages/landing
 
 RUN pnpm install --frozen-lockfile \
   --filter ./apps/proposal-review-saas... \
@@ -31,17 +39,6 @@ RUN pnpm install --frozen-lockfile \
   --filter @vibetech/emails \
   --filter @vibetech/analytics \
   --filter @vibetech/landing
-
-FROM deps AS build
-
-COPY apps/proposal-review-saas apps/proposal-review-saas
-COPY packages/feature-flags/core packages/feature-flags/core
-COPY packages/auth packages/auth
-COPY packages/entitlements packages/entitlements
-COPY packages/billing packages/billing
-COPY packages/emails packages/emails
-COPY packages/analytics packages/analytics
-COPY packages/landing packages/landing
 
 RUN cd apps/proposal-review-saas && pnpm run build:shared:api && pnpm run build:api
 
