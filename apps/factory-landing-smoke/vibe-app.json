@@ -1,0 +1,12 @@
+{
+  "generatedBy": "@vibetech/factory:landing-only",
+  "projectName": "factory-landing-smoke",
+  "displayName": "FactoryLandingSmoke",
+  "archetype": "landing-only",
+  "monetization": {
+    "stripeConnected": null,
+    "firstRevenueAt": null,
+    "mrrCents": null,
+    "currency": null
+  }
+}

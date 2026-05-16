@@ -1,0 +1,29 @@
+{
+  "name": "@vibetech/analytics",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Browser analytics wrapper for VibeTech apps with desktop opt-out defaults",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src tests --ext .ts --max-warnings 0",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "5.9.3",
+    "vitest": "^4.1.2"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.28.2"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "factory",
+  "version": "0.1.0",
+  "description": "Workspace-local app factory plugin for generated VibeTech apps",
+  "author": {
+    "name": "VibeTech",
+    "email": "dev@vibetech.org"
+  },
+  "license": "MIT",
+  "keywords": ["nx", "generator", "factory", "saas", "tauri", "landing"]
+}

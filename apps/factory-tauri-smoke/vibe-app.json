@@ -1,0 +1,12 @@
+{
+  "generatedBy": "@vibetech/factory:tauri-app",
+  "projectName": "factory-tauri-smoke",
+  "displayName": "FactoryTauriSmoke",
+  "archetype": "tauri-desktop",
+  "monetization": {
+    "stripeConnected": false,
+    "firstRevenueAt": null,
+    "mrrCents": null,
+    "currency": "usd"
+  }
+}

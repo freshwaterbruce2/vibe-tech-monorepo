@@ -1,0 +1,23 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "RAILPACK",
+    "buildCommand": "cd apps/<%= projectName %> && pnpm run build:shared:api && pnpm run build:api",
+    "watchPatterns": [
+      "apps/<%= projectName %>/**",
+      "packages/auth/**",
+      "packages/analytics/**",
+      "packages/billing/**",
+      "packages/emails/**",
+      "packages/entitlements/**",
+      "packages/feature-flags/core/**",
+      "packages/landing/**"
+    ]
+  },
+  "deploy": {
+    "startCommand": "cd apps/<%= projectName %> && pnpm run start:api",
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 120,
+    "restartPolicyType": "ON_FAILURE"
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "name": "factory-tauri-smoke",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/factory-tauri-smoke/src",
+  "projectType": "application",
+  "implicitDependencies": ["@vibetech/billing"],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "apps/factory-tauri-smoke"
+      }
+    },
+    "dev:web": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev:web",
+        "cwd": "apps/factory-tauri-smoke"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "apps/factory-tauri-smoke"
+      }
+    },
+    "package:check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run package:check",
+        "cwd": "apps/factory-tauri-smoke"
+      }
+    },
+    "package": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run package",
+        "cwd": "apps/factory-tauri-smoke"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test",
+        "cwd": "apps/factory-tauri-smoke"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
+      "options": {
+        "command": "pnpm run typecheck",
+        "cwd": "apps/factory-tauri-smoke"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../node_modules/eslint/bin/eslint.js src vite.config.ts --ext .ts,.tsx",
+        "cwd": "apps/factory-tauri-smoke"
+      }
+    },
+    "quality": {}
+  },
+  "tags": ["scope:desktop", "type:application", "factory:generated", "factory:tauri-app"]
+}
