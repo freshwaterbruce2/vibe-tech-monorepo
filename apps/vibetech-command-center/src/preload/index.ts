@@ -68,6 +68,10 @@ const api: CommandCenterAPI = {
     get: async (force) => ipcRenderer.invoke(IPC_CHANNELS.NX_GET, force),
     refresh: async () => ipcRenderer.invoke(IPC_CHANNELS.NX_REFRESH)
   },
+  factory: {
+    list: async (force) => ipcRenderer.invoke(IPC_CHANNELS.FACTORY_STATUS_LIST, force),
+    generate: async (spec) => ipcRenderer.invoke(IPC_CHANNELS.FACTORY_GENERATE, spec)
+  },
   health: {
     probeAll: async () => ipcRenderer.invoke(IPC_CHANNELS.HEALTH_PROBE_ALL),
     probeOne: async (service) => ipcRenderer.invoke(IPC_CHANNELS.HEALTH_PROBE_ONE, service)

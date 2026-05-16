@@ -2,7 +2,7 @@ import { type ReactNode, type ComponentType, useCallback } from 'react';
 import clsx from 'clsx';
 import {
   LayoutGrid, Database, Archive, Hammer, Search,
-  Sparkles, Activity, Menu, GitBranch, Table, Terminal, Brain
+  Sparkles, Activity, Menu, GitBranch, Table, Terminal, Brain, Blocks
 } from 'lucide-react';
 import { useUiStore, type PanelId } from '@renderer/stores';
 import { useHealth } from '@renderer/hooks';
@@ -16,6 +16,7 @@ interface NavItemConfig {
 
 const NAV: NavItemConfig[] = [
   { id: 'apps',      label: 'Apps',       icon: LayoutGrid, enabled: true },
+  { id: 'factory',   label: 'Factory',    icon: Blocks,     enabled: true },
   { id: 'affected',  label: 'Affected',   icon: GitBranch,  enabled: true },
   { id: 'databases', label: 'Databases',  icon: Database,   enabled: true },
   { id: 'dbexplorer', label: 'DB Explorer', icon: Table,     enabled: true },

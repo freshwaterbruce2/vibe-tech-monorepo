@@ -10,7 +10,8 @@ import {
   NxAffectedService,
   DbExplorerService,
   AgentOrchestratorService,
-  MemoryVizService
+  MemoryVizService,
+  FactoryStatusService
 } from './services';
 
 export interface ServiceContainer {
@@ -26,6 +27,7 @@ export interface ServiceContainer {
   dbExplorer: DbExplorerService;
   agent: AgentOrchestratorService;
   memory: MemoryVizService;
+  factory: FactoryStatusService;
   wsPort: number;
 }
 
@@ -47,8 +49,9 @@ export function createServiceContainer(opts: ServiceContainerOptions): ServiceCo
   const rag = new RagClient();
   const dbExplorer = new DbExplorerService({ allowedRoots: [opts.monorepoRoot, 'D:\\databases'] });
   const memory = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
+  const factory = new FactoryStatusService({ monorepoRoot: opts.monorepoRoot });
 
-  return { watcher, nxGraph, nxAffected, health, dbMetrics, backup, runner, claude, rag, dbExplorer, agent, memory, wsPort: opts.wsPort };
+  return { watcher, nxGraph, nxAffected, health, dbMetrics, backup, runner, claude, rag, dbExplorer, agent, memory, factory, wsPort: opts.wsPort };
 }
 
 export async function disposeServiceContainer(c: ServiceContainer): Promise<void> {

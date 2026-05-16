@@ -73,6 +73,9 @@ function makeFakeContainer(): ServiceContainer {
       computeDecay: vi.fn().mockResolvedValue([]),
       triggerConsolidation: vi.fn().mockResolvedValue({ success: false, message: 'read-only' })
     } as unknown as ServiceContainer['memory'],
+    factory: {
+      listStatuses: vi.fn().mockResolvedValue([])
+    } as unknown as ServiceContainer['factory'],
     wsPort: 0
   };
 }

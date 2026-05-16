@@ -18,6 +18,8 @@
 
 ## Done
 
+- [x] ~~App Factory — COMPLETE: six shared monetization packages, three Nx generators, donor zero-regression proof, live `proposal-review-saas` production baseline, and Command Center Agent Orchestrator generator launch.~~ (2026-05-16)
+
 - [x] ~~Gravity Claw — v1 shipped: Gemini/Kimi routing, MCP tool dispatch, Telegram bridge, SSE streaming, task CRUD, settings UI. All files under limit, typechecks clean.~~ (2026-04-08)
 
 - [x] ~~Gravity Claw — file size refactor: index.ts + Settings.tsx split, all files under limit, typecheck clean~~ (2026-04-07)

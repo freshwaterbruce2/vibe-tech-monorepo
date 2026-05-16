@@ -5,13 +5,22 @@ import { useUiStore } from '@renderer/stores';
 import type {
   NxGraph, ProbeResult, DbMetric, BackupLogEntry, ProcessHandle,
   FileEvent, StreamTopic, RagSearchQuery, RagSearchResult,
-  ClaudeInvocation, ClaudeInvocationResult, ClaudeStreamEvent
+  ClaudeInvocation, ClaudeInvocationResult, ClaudeStreamEvent, FactoryAppStatus
 } from '@shared/types';
 
 export function useNxGraph(): UseQueryResult<NxGraph> {
   return useQuery({
     queryKey: ['nx', 'graph'],
     queryFn: async () => unwrap(window.commandCenter.nx.get()),
+    staleTime: 30_000,
+    refetchInterval: 60_000
+  });
+}
+
+export function useFactoryApps(): UseQueryResult<FactoryAppStatus[]> {
+  return useQuery({
+    queryKey: ['factory', 'apps'],
+    queryFn: async () => unwrap(window.commandCenter.factory.list()),
     staleTime: 30_000,
     refetchInterval: 60_000
   });

@@ -25,6 +25,10 @@ function mockBridge(overrides: Partial<CommandCenterAPI> = {}): void {
       }),
       refresh: vi.fn()
     },
+    factory: {
+      list: vi.fn().mockResolvedValue({ ok: true, data: [], timestamp: Date.now() }),
+      generate: vi.fn().mockResolvedValue({ ok: true, data: { id: 'fg1', command: 'pnpm', args: [], cwd: 'C:\\dev', pid: 1, status: 'running', startedAt: 1, exitCode: null }, timestamp: Date.now() })
+    },
     health:  { probeAll: vi.fn().mockResolvedValue({ ok: true, data: [], timestamp: Date.now() }), probeOne: vi.fn() },
     db:      { collectAll: vi.fn().mockResolvedValue({ ok: true, data: [], timestamp: Date.now() }) },
     backup:  {
