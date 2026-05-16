@@ -1,8 +1,8 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "RAILPACK",
-    "buildCommand": "cd apps/proposal-review-saas && pnpm run build:shared:api && pnpm run build:api",
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "apps/proposal-review-saas/Dockerfile",
     "watchPatterns": [
       "apps/proposal-review-saas/**",
       "packages/auth/**",
