@@ -8,7 +8,7 @@
     "dev": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "vite || npm run dev || echo 'Dev server not configured'",
+        "command": "node ../../node_modules/vite/bin/vite.js || npm run dev || echo 'Dev server not configured'",
         "cwd": "apps/prompt-engineer"
       }
     },
@@ -19,7 +19,7 @@
       ],
       "cache": true,
       "options": {
-        "command": "vite build || tsc || npm run build || echo 'Build not configured'",
+        "command": "node ../../node_modules/vite/bin/vite.js build || tsc || npm run build || echo 'Build not configured'",
         "cwd": "apps/prompt-engineer"
       }
     },

@@ -2,7 +2,7 @@
  * BackgroundWorker - Web Worker wrapper for CPU-intensive tasks
  * Provides a clean API for offloading work to background threads
  */
-import type { TaskProgress,TaskResult } from '@vibetech/types/tasks';
+import type { TaskProgress,TaskResult } from '@vibetech/types';
 
 import { logger } from '../services/Logger';
 

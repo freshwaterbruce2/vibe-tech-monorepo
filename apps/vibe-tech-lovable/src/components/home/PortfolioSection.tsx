@@ -32,7 +32,7 @@ const projects: Project[] = [
 
 const PortfolioSection = () => {
   return (
-    <section className="py-16 px-4 relative">
+    <section className="py-16 px-4 relative" data-testid="portfolio-section">
       <div className="max-w-6xl mx-auto relative z-10">
         <h2 className="text-3xl font-bold mb-12 text-center font-heading bg-gradient-to-r from-[#c87eff] via-[#8d4dff] to-[#00f7ff] text-transparent bg-clip-text">Spotlight on Recent Wins</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -40,7 +40,7 @@ const PortfolioSection = () => {
             <Link 
               key={project.id}
               to={`/portfolio/project-${project.id}`}
-              className="group"
+              className="group project-card"
             >
               <div className="glass-card border border-[rgba(185,51,255,0.2)] hover:border-[rgba(185,51,255,0.4)] hover:shadow-neon-purple transform transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 h-full">
                 <div className="h-48 overflow-hidden">

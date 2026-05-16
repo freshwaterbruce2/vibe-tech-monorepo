@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -n server,client -c cyan,magenta \"pnpm run dev:server\" \"pnpm run dev:client\"",
-    "dev:client": "vite --port 5185",
+    "dev:client": "node ../../node_modules/vite/bin/vite.js --port 5185",
     "dev:server": "tsx watch server/index.ts",
-    "build": "vite build",
+    "build": "node ../../node_modules/vite/bin/vite.js build",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit",
     "lint": "eslint src server --ext .ts,.tsx"
   },

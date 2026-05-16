@@ -12,6 +12,12 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     cors: true,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:9001',
+        changeOrigin: true,
+      },
+    },
     hmr: {
       overlay: true
     }

@@ -2,7 +2,7 @@
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -18,7 +18,7 @@ const workspaceStatePath = resolve(workspaceRoot, 'WORKSPACE.json');
 const tmpDir = resolve(workspaceRoot, 'tmp');
 const graphPath = resolve(tmpDir, 'project-graph.sync-audit.json');
 const reportPath = resolve(tmpDir, 'monorepo-sync-audit-report.json');
-const nxCliPath = resolve(workspaceRoot, 'node_modules', 'nx', 'bin', 'nx.js');
+const nxBinCmdPath = resolve(workspaceRoot, 'node_modules', '.bin', 'nx.cmd');
 
 function prependPathEntries(currentPath, entries) {
   const parts = (currentPath ?? '')
@@ -76,6 +76,7 @@ function createChildEnv() {
 }
 
 const childEnv = createChildEnv();
+const pnpmCmdPath = childEnv.PNPM_HOME ? resolve(childEnv.PNPM_HOME, 'pnpm.cmd') : null;
 
 function run(command, args = [], options = {}) {
   try {
@@ -439,34 +440,85 @@ const allowedMissingTargets = config.allowedMissingTargets ?? {};
 const allowedIsolatedProjects = new Set(config.allowedIsolatedProjects ?? []);
 const allowedStandaloneTags = new Set(config.allowedStandaloneTags ?? []);
 const { dirtyEntries, dirtyByPath, error: gitStatusError } = readGitStatus();
+const submodules = parseGitmodules();
+const submoduleRoots = submodules
+  .map((module) => normalizePath(module.path ?? ''))
+  .filter(Boolean);
+
+function isInSubmoduleProject(filePath) {
+  if (submoduleRoots.length === 0) {
+    return false;
+  }
+
+  const relPath = normalizePath(relative(workspaceRoot, filePath));
+  return submoduleRoots.some((submoduleRoot) => relPath.startsWith(`${submoduleRoot}/`));
+}
 
 let graphSource = 'nx-graph';
 let graphLoadWarning = null;
 let nodeMap = {};
 let dependencyMap = {};
 
-const graphCommand = existsSync(nxCliPath)
-  ? run(process.execPath, [nxCliPath, 'graph', '--file', graphPath, '--open=false'])
-  : {
-      ok: false,
-      stdout: '',
-      stderr: `Missing Nx CLI at ${nxCliPath}`,
-      code: 1,
-      error: null,
-    };
+const graphCommandCandidates = [
+  () =>
+    pnpmCmdPath && existsSync(pnpmCmdPath)
+      ? run(childEnv.ComSpec || 'cmd.exe', [
+          '/d',
+          '/s',
+          '/c',
+          `${pnpmCmdPath} nx graph --file ${graphPath} --open=false`,
+        ])
+      : {
+          ok: false,
+          stdout: '',
+          stderr: `Missing pnpm CLI at ${pnpmCmdPath ?? 'PNPM_HOME unresolved'}`,
+          code: 1,
+          error: null,
+        },
+  () =>
+    existsSync(nxBinCmdPath)
+      ? run(childEnv.ComSpec || 'cmd.exe', [
+          '/d',
+          '/s',
+          '/c',
+          `${nxBinCmdPath} graph --file ${graphPath} --open=false`,
+        ])
+      : {
+          ok: false,
+          stdout: '',
+          stderr: `Missing Nx CLI at ${nxBinCmdPath}`,
+          code: 1,
+          error: null,
+        },
+];
+
+let graphCommand = null;
+for (const candidate of graphCommandCandidates) {
+  const result = candidate();
+  if (result.ok) {
+    graphCommand = result;
+    break;
+  }
+  graphCommand = result;
+}
 if (graphCommand.ok && existsSync(graphPath)) {
   const graphJson = readJson(graphPath);
   nodeMap = graphJson?.graph?.nodes ?? {};
   dependencyMap = graphJson?.graph?.dependencies ?? {};
 } else {
   graphSource = 'project-json-fallback';
-  graphLoadWarning = (graphCommand.stderr || graphCommand.stdout || 'Nx graph unavailable.').trim();
+  graphLoadWarning = (
+    graphCommand.stderr ||
+    graphCommand.stdout ||
+    graphCommand.error ||
+    'Nx graph unavailable.'
+  ).trim();
 
   const projectFiles = [
     ...collectProjectJsonFiles(resolve(workspaceRoot, 'apps')),
     ...collectProjectJsonFiles(resolve(workspaceRoot, 'packages')),
     ...collectProjectJsonFiles(resolve(workspaceRoot, 'backend')),
-  ];
+  ].filter((filePath) => !isInSubmoduleProject(filePath));
 
   nodeMap = Object.fromEntries(
     projectFiles.map((filePath) => {
@@ -560,6 +612,7 @@ if (existsSync(workspaceStatePath)) {
   const workspaceState = readJson(workspaceStatePath);
   const declaredApps = Object.keys(workspaceState?.projects?.apps ?? {});
   const declaredPackages = Object.keys(workspaceState?.projects?.packages ?? {});
+  const projectNameSet = new Set(projectNames);
   const diskApps = safeDirectoryEntries(resolve(workspaceRoot, 'apps'))
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name);
@@ -567,7 +620,9 @@ if (existsSync(workspaceStatePath)) {
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name);
 
-  const declaredAppsMissingOnDisk = declaredApps.filter((app) => !diskApps.includes(app));
+  const declaredAppsMissingOnDisk = declaredApps.filter(
+    (app) => !diskApps.includes(app) && !projectNameSet.has(app),
+  );
   const declaredPackagesMissingOnDisk = declaredPackages.filter(
     (pkg) => !diskPackages.includes(pkg),
   );
@@ -618,7 +673,6 @@ const rootArtifactCandidates = collectRootArtifacts(dirtyByPath);
 const generatedArtifactCandidates = collectGeneratedArtifacts(dirtyByPath);
 const cleanupCandidates = [...rootArtifactCandidates, ...generatedArtifactCandidates];
 const pathPolicy = collectPathPolicyObservations();
-const submodules = parseGitmodules();
 const localToolState = collectLocalToolState();
 
 const issues = {

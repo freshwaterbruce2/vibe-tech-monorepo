@@ -3,7 +3,7 @@
  * Extracted from App.tsx for modularity
  */
 
-import type { FileChange, MultiFileEditPlan } from '@vibetech/types/multifile';
+import type { FileChange, MultiFileEditPlan } from '@vibetech/types';
 import type { editor as MonacoEditor } from 'monaco-editor';
 import type * as MonacoNS from 'monaco-editor';
 import type { GeneratedFix, FixSuggestion } from '../services/AutoFixService';

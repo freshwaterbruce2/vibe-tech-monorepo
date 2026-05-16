@@ -63,7 +63,7 @@ const services: Service[] = [
   },
   {
     icon: Smartphone,
-    title: "App Development",
+    title: "Mobile Apps",
     description: "Cross-platform mobile applications that deliver native performance and exceptional user experiences.",
     features: [
       "React Native development",
@@ -91,7 +91,7 @@ const ServicesSection = () => {
   };
 
   return (
-    <section className="py-20 px-4 relative overflow-hidden">
+    <section className="py-20 px-4 relative overflow-hidden" data-testid="services-section">
       {/* Animated background particles */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-10 left-10 w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>

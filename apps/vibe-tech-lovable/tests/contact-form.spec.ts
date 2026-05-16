@@ -1,4 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
+
+test.describe.configure({ mode: 'serial' });
 
 /**
  * Contact Form Tests
@@ -9,146 +11,156 @@ import { test, expect } from '@playwright/test';
  * - Success/error states
  * - Accessibility
  */
+const getContactForm = (page: Page): Locator =>
+  page.locator('form').filter({ has: page.locator('textarea[name="message"]') });
+
+const fillContactForm = async (form: Locator, values: { name: string; email: string; message: string }) => {
+  await form.getByLabel('Your Name').fill(values.name);
+  await form.getByLabel('Email Address').fill(values.email);
+  await form.getByLabel('Message').fill(values.message);
+};
+
 test.describe('Contact Form', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/contact');
+    await expect(getContactForm(page)).toBeVisible();
   });
 
   test('displays contact form with all fields', async ({ page }) => {
-    // Check form exists
-    const form = page.locator('form');
-    await expect(form).toBeVisible();
+    const form = getContactForm(page);
 
-    // Check required fields are present
-    await expect(page.getByLabel(/name/i)).toBeVisible();
-    await expect(page.getByLabel(/email/i)).toBeVisible();
-    await expect(page.getByLabel(/message/i)).toBeVisible();
-
-    // Check submit button
-    await expect(page.getByRole('button', { name: /send|submit/i })).toBeVisible();
+    await expect(form.getByLabel('Your Name')).toBeVisible();
+    await expect(form.getByLabel('Email Address')).toBeVisible();
+    await expect(form.getByLabel('Subject')).toBeVisible();
+    await expect(form.getByLabel('Message')).toBeVisible();
+    await expect(form.getByRole('button', { name: 'Send Message' })).toBeVisible();
   });
 
   test('validates required fields on empty submit', async ({ page }) => {
-    // Click submit without filling fields
-    await page.getByRole('button', { name: /send|submit/i }).click();
-
-    // Check for validation errors
-    const errorMessages = page.locator('[class*="error"], [role="alert"]');
-    await expect(errorMessages.first()).toBeVisible({ timeout: 5000 });
+    const form = getContactForm(page);
+    await form.getByRole('button', { name: 'Send Message' }).click();
+    await expect(page.getByRole('alert')).toContainText('Name, email, and message are required.');
   });
 
   test('validates email format', async ({ page }) => {
-    // Fill name
-    await page.getByLabel(/name/i).fill('Test User');
-
-    // Fill invalid email
-    await page.getByLabel(/email/i).fill('invalid-email');
-
-    // Fill message
-    await page.getByLabel(/message/i).fill('Test message');
-
-    // Submit
-    await page.getByRole('button', { name: /send|submit/i }).click();
-
-    // Should show email format error
-    await expect(page.getByText(/valid email|invalid email/i)).toBeVisible({ timeout: 5000 });
+    const form = getContactForm(page);
+    await fillContactForm(form, {
+      name: 'Test User',
+      email: 'invalid-email',
+      message: 'Test message',
+    });
+    await form.getByRole('button', { name: 'Send Message' }).click();
+    await expect(page.getByRole('alert')).toContainText('Please enter a valid email address.');
   });
 
   test('submits form with valid data', async ({ page }) => {
-    // Fill all required fields
-    await page.getByLabel(/name/i).fill('Test User');
-    await page.getByLabel(/email/i).fill('test@example.com');
-    await page.getByLabel(/message/i).fill('This is a test message from Playwright.');
-
-    // Fill optional fields if present
-    const phoneField = page.getByLabel(/phone/i);
-    if (await phoneField.isVisible()) {
-      await phoneField.fill('555-123-4567');
-    }
-
-    const companyField = page.getByLabel(/company/i);
-    if (await companyField.isVisible()) {
-      await companyField.fill('Test Company');
-    }
-
-    // Submit form
-    await page.getByRole('button', { name: /send|submit/i }).click();
-
-    // Wait for success message or redirect
-    await expect(
-      page.getByText(/thank you|success|sent|received/i)
-    ).toBeVisible({ timeout: 10000 });
+    const form = getContactForm(page);
+    await fillContactForm(form, {
+      name: 'Test User',
+      email: 'test@example.com',
+      message: 'This is a test message from Playwright.',
+    });
+    await form.getByRole('button', { name: 'Send Message' }).click();
+    await expect(page.getByRole('status')).toContainText('Thank you. Your message has been sent.');
   });
 
   test('shows loading state during submission', async ({ page }) => {
-    // Fill fields
-    await page.getByLabel(/name/i).fill('Test User');
-    await page.getByLabel(/email/i).fill('test@example.com');
-    await page.getByLabel(/message/i).fill('Test message');
-
-    // Submit and check for loading indicator
-    const submitButton = page.getByRole('button', { name: /send|submit/i });
-    await submitButton.click();
-
-    // Button should show loading state (disabled or spinner)
-    await expect(submitButton).toBeDisabled({ timeout: 1000 }).catch(() => {
-      // Some forms might use a different loading pattern
-    });
-  });
-
-  test('form fields are accessible', async ({ page }) => {
-    // Check labels are associated with inputs
-    const nameInput = page.getByLabel(/name/i);
-    await expect(nameInput).toHaveAttribute('id', /.+/);
-
-    const emailInput = page.getByLabel(/email/i);
-    await expect(emailInput).toHaveAttribute('type', 'email');
-
-    // Check form has accessible name
-    const form = page.locator('form');
-    await expect(form).toBeVisible();
-  });
-
-  test('handles server error gracefully', async ({ page, context }) => {
-    // Mock API to return error
-    await context.route('**/api/contact**', (route) => {
-      route.fulfill({
-        status: 500,
+    await page.route('**/api/contact', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      await route.fulfill({
+        status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'Server error' }),
+        body: JSON.stringify({ ok: true }),
       });
     });
 
-    // Fill and submit
-    await page.getByLabel(/name/i).fill('Test User');
-    await page.getByLabel(/email/i).fill('test@example.com');
-    await page.getByLabel(/message/i).fill('Test message');
-    await page.getByRole('button', { name: /send|submit/i }).click();
+    const form = getContactForm(page);
+    const submitButton = form.getByRole('button', { name: 'Send Message' });
 
-    // Should show error message
-    await expect(
-      page.getByText(/error|failed|try again/i)
-    ).toBeVisible({ timeout: 10000 });
+    await fillContactForm(form, {
+      name: 'Test User',
+      email: 'test@example.com',
+      message: 'Delayed response test',
+    });
+
+    await submitButton.click();
+    const sendingButton = form.getByRole('button', { name: /sending/i });
+    const statusMessage = page.getByRole('status');
+
+    await expect
+      .poll(
+        async () =>
+          (await sendingButton.isVisible().catch(() => false)) ||
+          (await statusMessage.isVisible().catch(() => false)),
+        { timeout: 3_000 },
+      )
+      .toBeTruthy();
+
+    if (await sendingButton.isVisible().catch(() => false)) {
+      await expect(sendingButton).toBeDisabled();
+    }
+
+    await expect(page.getByRole('status')).toContainText('Thank you. Your message has been sent.');
+  });
+
+  test('form fields are accessible', async ({ page }) => {
+    const form = getContactForm(page);
+    const nameInput = form.getByLabel('Your Name');
+    const emailInput = form.getByLabel('Email Address');
+    const messageInput = form.getByLabel('Message');
+
+    await expect(nameInput).toHaveAttribute('id', 'name');
+    await expect(emailInput).toHaveAttribute('id', 'email');
+    await expect(emailInput).toHaveAttribute('type', 'email');
+    await expect(messageInput).toHaveAttribute('id', 'message');
+  });
+
+  test('handles server error gracefully', async ({ page }) => {
+    await page.evaluate(() => {
+      const originalFetch = window.fetch.bind(window);
+      window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+        const rawUrl =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : input.url;
+
+        if (rawUrl.includes('/api/contact')) {
+          throw new Error('Simulated contact submit failure');
+        }
+
+        return originalFetch(input, init);
+      };
+    });
+
+    const form = getContactForm(page);
+    await fillContactForm(form, {
+      name: 'Test User',
+      email: 'test@example.com',
+      message: 'Test message',
+    });
+    await form.getByRole('button', { name: 'Send Message' }).click();
+    await expect(page.getByRole('alert')).toContainText('Submission failed. Please try again.');
   });
 
   test('clears form after successful submission', async ({ page }) => {
-    // Fill fields
-    await page.getByLabel(/name/i).fill('Test User');
-    await page.getByLabel(/email/i).fill('test@example.com');
-    await page.getByLabel(/message/i).fill('Test message');
+    const form = getContactForm(page);
+    const nameInput = form.getByLabel('Your Name');
+    const emailInput = form.getByLabel('Email Address');
+    const messageInput = form.getByLabel('Message');
 
-    // Submit
-    await page.getByRole('button', { name: /send|submit/i }).click();
+    await fillContactForm(form, {
+      name: 'Test User',
+      email: 'test@example.com',
+      message: 'Test message',
+    });
+    await form.getByRole('button', { name: 'Send Message' }).click();
 
-    // Wait for success
-    await expect(
-      page.getByText(/thank you|success|sent/i)
-    ).toBeVisible({ timeout: 10000 });
-
-    // Check if form is cleared (if still visible)
-    const nameInput = page.getByLabel(/name/i);
-    if (await nameInput.isVisible()) {
-      await expect(nameInput).toHaveValue('');
-    }
+    await expect(page.getByRole('status')).toContainText('Thank you. Your message has been sent.');
+    await expect(nameInput).toHaveValue('');
+    await expect(emailInput).toHaveValue('');
+    await expect(messageInput).toHaveValue('');
   });
 });
+

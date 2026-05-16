@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-const API_BASE_URL = 'http://localhost:9001';
+const API_BASE_URL = process.env.PLAYWRIGHT_API_BASE_URL ?? 'http://127.0.0.1:9001';
+const WEB_ORIGIN = process.env.PLAYWRIGHT_WEB_ORIGIN ?? 'http://127.0.0.1:8082';
 
 test.describe('Backend API Tests', () => {
   test('should return health status', async ({ request }) => {
@@ -15,8 +16,8 @@ test.describe('Backend API Tests', () => {
   test('should handle CORS correctly', async ({ request }) => {
     const response = await request.get(`${API_BASE_URL}/api/health`, {
       headers: {
-        'Origin': 'http://localhost:8082'
-      }
+        Origin: WEB_ORIGIN,
+      },
     });
     
     expect(response.status()).toBe(200);

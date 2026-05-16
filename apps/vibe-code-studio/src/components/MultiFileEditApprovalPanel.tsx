@@ -3,7 +3,7 @@
  * Shows diff preview with Monaco DiffEditor, allows selective file approval
  */
 import { DiffEditor } from '@monaco-editor/react';
-import type { FileChange, MultiFileEditPlan } from '@vibetech/types/multifile';
+import type { FileChange, MultiFileEditPlan } from '@vibetech/types';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronRight, FileText, Minus, Plus, X } from 'lucide-react';
 import { useMemo, useState } from 'react';

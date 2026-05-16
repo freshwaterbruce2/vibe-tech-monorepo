@@ -68,7 +68,7 @@ const DashboardLeads = ({ leads, onDeleteLead }: DashboardLeadsProps) => {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full" data-testid="leads-table">
               <thead>
                 <tr className="border-b border-aura-accent/10">
                   <th className="text-left py-3 px-2 font-medium text-aura-textSecondary">Name</th>

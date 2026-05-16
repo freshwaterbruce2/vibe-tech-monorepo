@@ -21,6 +21,13 @@
         "cwd": "apps/vibe-code-studio/vscode-extension"
       }
     },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../../node_modules/typescript/bin/tsc --noEmit",
+        "cwd": "apps/vibe-code-studio/vscode-extension"
+      }
+    },
     "lint": {
       "executor": "nx:run-commands",
       "options": {

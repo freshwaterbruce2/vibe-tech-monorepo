@@ -3,6 +3,7 @@ Nonce Manager - Ensures unique, incrementing nonces across all API calls
 Fixed to continue from Kraken's remembered high nonce value
 """
 
+import os
 import time
 import json
 from pathlib import Path
@@ -12,6 +13,11 @@ from timestamp_utils import TimestampUtils
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_NONCE_PATH = os.environ.get(
+    "NONCE_PATH",
+    r"D:\databases\crypto-enhanced\nonce_state.json"
+)
+
 class NonceManager:
     """Thread-safe nonce manager that continues from Kraken's remembered value"""
 
@@ -20,9 +26,12 @@ class NonceManager:
     # For existing keys with history, set to highest nonce Kraken remembers
     KRAKEN_REMEMBERED_NONCE = 1760356146471331622  # Last valid nonce from Kraken
 
-    def __init__(self, storage_path: str = "nonce_state.json"):
+    def __init__(self, storage_path: str = DEFAULT_NONCE_PATH, save_interval: int = 10):
         self.storage_path = Path(storage_path)
+        self.storage_path.parent.mkdir(parents=True, exist_ok=True)
         self.lock = Lock()
+        self.save_interval = save_interval
+        self._increments_since_save = 0
         self.last_nonce = self._load_nonce()
         logger.info(f"Nonce manager initialized with value: {self.last_nonce}")
 
@@ -71,7 +80,10 @@ class NonceManager:
         with self.lock:
             # Just increment by 1 - simple and reliable
             self.last_nonce += 1
-            self._save_nonce()
+            self._increments_since_save += 1
+            if self._increments_since_save >= self.save_interval:
+                self._save_nonce()
+                self._increments_since_save = 0
             return str(self.last_nonce)
 
     def reset(self):
@@ -79,5 +91,12 @@ class NonceManager:
         with self.lock:
             # Never reset below Kraken's memory
             self.last_nonce = self.KRAKEN_REMEMBERED_NONCE + 10000
+            self._increments_since_save = 0
             self._save_nonce()
             logger.info(f"Reset nonce to: {self.last_nonce}")
+
+    def close(self):
+        """Save nonce state before shutdown"""
+        with self.lock:
+            self._save_nonce()
+            self._increments_since_save = 0

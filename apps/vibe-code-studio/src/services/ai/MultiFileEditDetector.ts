@@ -7,7 +7,7 @@
  * - Markdown: Multiple file code blocks with file paths
  */
 
-import type { FileChange, MultiFileEditPlan } from '@vibetech/types/multifile';
+import type { FileChange, MultiFileEditPlan } from '@vibetech/types';
 import { logger } from '../Logger';
 
 export interface DetectionResult {

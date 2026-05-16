@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { FileChange } from '@vibetech/types/multifile';
+import type { FileChange } from '@vibetech/types';
 import { AnimatePresence,motion } from 'framer-motion';
 import { shouldForwardMotionProp } from '../utils/motionProps';
 import {

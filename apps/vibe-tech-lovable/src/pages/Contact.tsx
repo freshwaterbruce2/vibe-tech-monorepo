@@ -6,12 +6,63 @@ import { Textarea } from "@/components/ui/textarea";
 import PageLayout from "@/components/layout/PageLayout";
 import PageHeader from "@/components/ui/page-header";
 import { Mail, Phone, MapPin, Send } from "lucide-react";
+import { useState } from "react";
 
 const Contact = () => {
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // Placeholder for form submission logic
-    console.log("Form submitted");
+    setStatusMessage(null);
+    setErrorMessage(null);
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const name = String(formData.get("name") ?? "").trim();
+    const email = String(formData.get("email") ?? "").trim();
+    const subject = String(formData.get("subject") ?? "").trim();
+    const message = String(formData.get("message") ?? "").trim();
+
+    if (!name || !email || !message) {
+      setErrorMessage("Name, email, and message are required.");
+      return;
+    }
+
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      setErrorMessage("Please enter a valid email address.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          subject,
+          message,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+
+      form.reset();
+      setStatusMessage("Thank you. Your message has been sent.");
+    } catch (error) {
+      console.error("Contact form submit failed:", error);
+      setErrorMessage("Submission failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -38,12 +89,23 @@ const Contact = () => {
             {/* Contact Form */}
             <div className="p-8 rounded-lg border border-aura-accent/20 bg-aura-background shadow-neon">
               <h2 className="text-2xl font-semibold mb-6 font-heading text-white">Send Us a Message</h2>
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form noValidate onSubmit={handleSubmit} className="space-y-6">
+                {statusMessage ? (
+                  <p className="text-emerald-300" role="status">
+                    {statusMessage}
+                  </p>
+                ) : null}
+                {errorMessage ? (
+                  <p className="text-red-300" role="alert">
+                    {errorMessage}
+                  </p>
+                ) : null}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="name" className="text-white">Your Name</Label>
                     <Input 
                       id="name" 
+                      name="name"
                       type="text" 
                       required 
                       className="bg-aura-backgroundLight/20 border-aura-accent/20 focus-visible:ring-aura-accent/30 text-white"
@@ -53,6 +115,7 @@ const Contact = () => {
                     <Label htmlFor="email" className="text-white">Email Address</Label>
                     <Input 
                       id="email" 
+                      name="email"
                       type="email" 
                       required 
                       className="bg-aura-backgroundLight/20 border-aura-accent/20 focus-visible:ring-aura-accent/30 text-white"
@@ -63,6 +126,7 @@ const Contact = () => {
                   <Label htmlFor="subject" className="text-white">Subject</Label>
                   <Input 
                     id="subject" 
+                    name="subject"
                     type="text" 
                     className="bg-aura-backgroundLight/20 border-aura-accent/20 focus-visible:ring-aura-accent/30 text-white"
                   />
@@ -71,6 +135,7 @@ const Contact = () => {
                   <Label htmlFor="message" className="text-white">Message</Label>
                   <Textarea 
                     id="message" 
+                    name="message"
                     required 
                     rows={5}
                     className="bg-aura-backgroundLight/20 border-aura-accent/20 focus-visible:ring-aura-accent/30 text-white resize-none"
@@ -78,9 +143,10 @@ const Contact = () => {
                 </div>
                 <Button 
                   type="submit" 
+                  disabled={isSubmitting}
                   className="bg-aura-accent hover:bg-aura-accent/90 w-full sm:w-auto flex items-center gap-2 text-white"
                 >
-                  Send Message
+                  {isSubmitting ? "Sending..." : "Send Message"}
                   <Send className="h-4 w-4" />
                 </Button>
               </form>

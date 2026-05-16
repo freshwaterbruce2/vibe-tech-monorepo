@@ -25,16 +25,19 @@
 #>
 
 param(
+    [string]$ConfigPath = (Join-Path $env:USERPROFILE '.clawdbot\config.json'),
     [switch]$SkipBackup = $false,
     [switch]$SkipRestart = $false
 )
+
+$ErrorActionPreference = 'Stop'
 
 Write-Host "=== MoltBot Security Fix ===" -ForegroundColor Cyan
 Write-Host "Moving secrets to environment variables"
 Write-Host ""
 
-# Configuration path
-$configPath = "C:\Users\fresh_zxae3v6\.clawdbot\config.json"
+# Configuration path (parameterized for portability across machines)
+$configPath = $ConfigPath
 
 if (-not (Test-Path $configPath)) {
     Write-Host "[ERROR] Configuration file not found: $configPath" -ForegroundColor Red
@@ -52,11 +55,8 @@ if (-not $SkipBackup) {
         Write-Host "  [OK] Backup created: $backupPath" -ForegroundColor Green
     } catch {
         Write-Host "  [ERROR] Backup failed: $($_.Exception.Message)" -ForegroundColor Red
-        $continue = Read-Host "Continue without backup? (y/n)"
-        if ($continue -ne "y") {
-            Write-Host "[ABORT] Security fix cancelled" -ForegroundColor Yellow
-            exit 0
-        }
+        Write-Host "  [ABORT] Security fix cancelled (use -SkipBackup to proceed without backup)" -ForegroundColor Yellow
+        exit 1
     }
 } else {
     Write-Host "[1/6] Skipping backup (as requested)" -ForegroundColor Gray
