@@ -224,9 +224,9 @@ Before creating API integrations:
 4. Query nova_shared.db:
 
    ```sql
-   SELECT approach, tools_used
+   SELECT description AS approach, metadata AS tools_used
    FROM success_patterns
-   WHERE task_type IN ('api_integration', 'error_handling', 'retry_logic')
+   WHERE pattern_type IN ('api_integration', 'error_handling', 'retry_logic')
    ORDER BY success_count DESC;
    ```
 
@@ -240,9 +240,9 @@ Before creating API integrations:
 
 ```sql
 -- Get proven API patterns
-SELECT approach, execution_time_seconds
+SELECT description AS approach, last_used
 FROM success_patterns
-WHERE task_type IN ('api_call', 'openrouter_integration')
+WHERE pattern_type IN ('api_call', 'openrouter_integration')
   AND confidence_score >= 0.8
 ORDER BY success_count DESC;
 ```

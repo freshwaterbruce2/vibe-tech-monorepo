@@ -150,7 +150,7 @@ export class AgentContextLoader {
   /**
    * Load learning patterns from RAG system
    *
-   * Queries D:\databases\nova_shared.db for proven patterns
+   * Queries D:\databases\agent_learning.db for proven patterns
    * Returns top 5 patterns by confidence score (≥0.8)
    */
   private async loadLearningPatterns(agentName: string, projectName?: string): Promise<string> {
@@ -161,7 +161,7 @@ export class AgentContextLoader {
     try {
       // Dynamic import to avoid circular dependencies
       const { AgentLearningRAG } =
-        await import('../../packages/nova-core/src/intelligence/AgentLearningRAG');
+        await import('../../packages/vibetech-shared/src/intelligence/AgentLearningRAG');
 
       const rag = new AgentLearningRAG();
       const patterns = await rag.queryPatterns({

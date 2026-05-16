@@ -249,9 +249,9 @@ Before creating desktop features:
 
 ```sql
 -- Get proven Tauri patterns
-SELECT approach, tools_used, execution_time_seconds
+SELECT description AS approach, metadata AS tools_used, last_used
 FROM success_patterns
-WHERE project_name IN ('nova-agent', 'vibe-justice')
+WHERE description LIKE '%nova-agent%' OR description LIKE '%vibe-justice%'
   AND confidence_score >= 0.8
 ORDER BY success_count DESC;
 ```

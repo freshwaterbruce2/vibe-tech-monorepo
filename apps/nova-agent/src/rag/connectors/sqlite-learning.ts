@@ -1,7 +1,7 @@
 /**
  * Learning System Connector
  * Read-only wrapper around the learning database (D:\databases\agent_learning.db).
- * Provides access to 59k+ execution patterns, success/failure tracking.
+ * Provides access to current execution patterns, success/failure tracking.
  */
 
 import { existsSync } from 'node:fs';
@@ -21,6 +21,7 @@ export interface SuccessPattern {
 
 export interface FailurePattern {
   id: number;
+  agentName: string;
   mistakeType: string;
   description: string;
   severity: string;
@@ -143,31 +144,42 @@ export class LearningConnector {
   /**
    * Get known failure patterns / mistakes
    */
-  getFailurePatterns(): FailurePattern[] {
+  getFailurePatterns(agentName?: string): FailurePattern[] {
     if (!this.db) return [];
 
     try {
-      const rows = this.db
-        .prepare(
-          `SELECT id, mistake_type, description, impact_severity, prevention_strategy
+      const sql = agentName
+        ? `SELECT id, ? as agent_name, mistake_type, description,
+                  impact_severity as severity,
+                  prevention_strategy as remediation_steps
+           FROM agent_mistakes
+           WHERE context_when_occurred LIKE ?
+           ORDER BY identified_at DESC
+           LIMIT 20`
+        : `SELECT id, 'global' as agent_name, mistake_type, description,
+                  impact_severity as severity,
+                  prevention_strategy as remediation_steps
            FROM agent_mistakes
            ORDER BY identified_at DESC
-           LIMIT 20`,
-        )
-        .all() as Array<{
+           LIMIT 20`;
+
+      const params = agentName ? [agentName, `%${agentName}%`] : [];
+      const rows = this.db.prepare(sql).all(...params) as Array<{
         id: number;
+        agent_name: string;
         mistake_type: string;
         description: string;
-        impact_severity: string;
-        prevention_strategy: string | null;
+        severity: string;
+        remediation_steps: string | null;
       }>;
 
       return rows.map((r) => ({
         id: r.id,
+        agentName: r.agent_name,
         mistakeType: r.mistake_type,
         description: r.description,
-        severity: r.impact_severity,
-        remediation: r.prevention_strategy,
+        severity: r.severity,
+        remediation: r.remediation_steps,
       }));
     } catch {
       return [];

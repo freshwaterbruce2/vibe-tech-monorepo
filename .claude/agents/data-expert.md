@@ -259,9 +259,9 @@ Before creating data pipelines:
 
 ```sql
 -- Get proven data patterns
-SELECT approach, tools_used, execution_time_seconds
+SELECT description AS approach, metadata AS tools_used, last_used
 FROM success_patterns
-WHERE task_type IN ('vector_search', 'rag_query', 'etl_pipeline')
+WHERE pattern_type IN ('vector_search', 'rag_query', 'etl_pipeline')
   AND confidence_score >= 0.8
 ORDER BY success_count DESC;
 ```

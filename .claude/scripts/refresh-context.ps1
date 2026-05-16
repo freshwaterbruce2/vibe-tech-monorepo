@@ -47,7 +47,7 @@ $ClaudeRoot = "C:\dev\.claude"
 $AgentsDir = Join-Path $ClaudeRoot "agents"
 $ContextDir = Join-Path $ClaudeRoot "context"
 $ServicesDir = Join-Path $ClaudeRoot "services"
-$DatabasePath = "D:\databases\nova_shared.db"
+$DatabasePath = "D:\databases\agent_learning.db"
 
 # Colors
 function Write-Success { param($Message) Write-Host "✓ $Message" -ForegroundColor Green }
@@ -136,7 +136,7 @@ if (Test-Path $projectsDir) {
 # Step 4: Validate services
 Write-Info "Step 4: Validating context loader services..."
 $loaderPath = Join-Path $ServicesDir "AgentContextLoader.ts"
-$ragPath = "C:\dev\packages\nova-core\src\intelligence\AgentLearningRAG.ts"
+$ragPath = "C:\dev\packages\vibetech-shared\src\intelligence\AgentLearningRAG.ts"
 
 if ((Test-Path $loaderPath) -and (Test-Path $ragPath)) {
     Write-Success "Context loading infrastructure exists"

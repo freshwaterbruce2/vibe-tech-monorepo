@@ -3,7 +3,7 @@
     Monitor learning database health and growth
 
 .DESCRIPTION
-    Daily health check script for D:\databases\nova_shared.db:
+    Daily health check script for D:\databases\agent_learning.db:
     - Database size and growth rate
     - Table row counts (agent_executions, success_patterns, etc.)
     - Recent activity (last 24 hours)
@@ -48,7 +48,7 @@ $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
 # Paths
-$DatabasePath = "D:\databases\nova_shared.db"
+$DatabasePath = "D:\databases\agent_learning.db"
 $LogsPath = "D:\learning-system\logs"
 $ReportsPath = "D:\learning-system\reports"
 
@@ -67,7 +67,7 @@ function Write-Metric { param($Label, $Value, $Color = "White") Write-Host "  $L
 # Banner
 Write-Host "`n╔═══════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
 Write-Host "║     Learning Database Health Monitor v1.0.0              ║" -ForegroundColor Cyan
-Write-Host "║     Daily Health Check for nova_shared.db                ║" -ForegroundColor Cyan
+Write-Host "║     Daily Health Check for agent_learning.db             ║" -ForegroundColor Cyan
 Write-Host "╚═══════════════════════════════════════════════════════════╝`n" -ForegroundColor Cyan
 
 # Check if database exists
@@ -112,7 +112,7 @@ if ($previousReportPath) {
 
 # Step 2: Table row counts
 Write-Info "`nStep 2: Table row counts..."
-$tables = @("agent_executions", "success_patterns", "failure_patterns", "code_patterns", "task_patterns")
+$tables = @("agent_executions", "success_patterns", "agent_mistakes", "code_patterns", "task_patterns")
 $tableCounts = @{}
 
 foreach ($table in $tables) {
@@ -123,9 +123,9 @@ foreach ($table in $tables) {
 
 # Step 3: Recent activity (last 24 hours)
 Write-Info "`nStep 3: Recent activity (last 24 hours)..."
-$recentExecutions = Invoke-SqliteQuery "SELECT COUNT(*) FROM agent_executions WHERE executed_at > datetime('now', '-1 day');"
-$recentSuccess = Invoke-SqliteQuery "SELECT COUNT(*) FROM agent_executions WHERE executed_at > datetime('now', '-1 day') AND status = 'success';"
-$recentFailures = Invoke-SqliteQuery "SELECT COUNT(*) FROM agent_executions WHERE executed_at > datetime('now', '-1 day') AND status = 'failed';"
+$recentExecutions = Invoke-SqliteQuery "SELECT COUNT(*) FROM agent_executions WHERE started_at > datetime('now', '-1 day');"
+$recentSuccess = Invoke-SqliteQuery "SELECT COUNT(*) FROM agent_executions WHERE started_at > datetime('now', '-1 day') AND success = 1;"
+$recentFailures = Invoke-SqliteQuery "SELECT COUNT(*) FROM agent_executions WHERE started_at > datetime('now', '-1 day') AND success = 0;"
 
 Write-Metric "Total Executions" ([int]$recentExecutions).ToString("N0") "Cyan"
 Write-Metric "Successful" ([int]$recentSuccess).ToString("N0") "Green"
@@ -146,7 +146,7 @@ Write-Metric "Low Confidence (<0.5)" ([int]$lowConfidencePatterns).ToString("N0"
 
 # Step 5: Top agents by execution count
 Write-Info "`nStep 5: Top agents by execution count (last $Days days)..."
-$topAgents = Invoke-SqliteQuery "SELECT task_type, COUNT(*) as count FROM agent_executions WHERE executed_at > datetime('now', '-$Days days') GROUP BY task_type ORDER BY count DESC LIMIT 5;"
+$topAgents = Invoke-SqliteQuery "SELECT task_type, COUNT(*) as count FROM agent_executions WHERE started_at > datetime('now', '-$Days days') GROUP BY task_type ORDER BY count DESC LIMIT 5;"
 if ($topAgents) {
     $topAgents -split "`n" | ForEach-Object {
         if ($_ -match "(.+)\|(\d+)") {
@@ -159,9 +159,9 @@ if ($topAgents) {
 
 # Step 6: Failure pattern analysis
 Write-Info "`nStep 6: Failure pattern analysis..."
-$totalFailures = [int]$tableCounts["failure_patterns"]
+$totalFailures = [int]$tableCounts["agent_mistakes"]
 if ($totalFailures -gt 0) {
-    $topFailures = Invoke-SqliteQuery "SELECT mistake_type, occurrence_count FROM failure_patterns ORDER BY occurrence_count DESC LIMIT 3;"
+    $topFailures = Invoke-SqliteQuery "SELECT mistake_type, COUNT(*) as occurrence_count FROM agent_mistakes GROUP BY mistake_type ORDER BY occurrence_count DESC LIMIT 3;"
     if ($topFailures) {
         $topFailures -split "`n" | ForEach-Object {
             if ($_ -match "(.+)\|(\d+)") {

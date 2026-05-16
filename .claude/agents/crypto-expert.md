@@ -112,9 +112,9 @@ Before creating new trading logic:
 4. Query nova_shared.db for proven patterns:
 
    ```sql
-   SELECT approach, tools_used, success_count
+   SELECT description AS approach, metadata AS tools_used, frequency AS success_count
    FROM success_patterns
-   WHERE task_type = 'trading_algorithm'
+   WHERE pattern_type = 'trading_algorithm' OR description LIKE '%trading_algorithm%'
    ORDER BY success_count DESC LIMIT 5;
    ```
 
@@ -130,9 +130,9 @@ Before creating new trading logic:
 
 ```sql
 -- Get high-success trading patterns
-SELECT pattern_hash, approach, execution_time_seconds
+SELECT id, description AS approach, last_used
 FROM success_patterns
-WHERE project_name = 'crypto-enhanced'
+WHERE description LIKE '%crypto-enhanced%'
   AND confidence_score >= 0.9
 ORDER BY success_count DESC LIMIT 10;
 ```
@@ -141,10 +141,10 @@ ORDER BY success_count DESC LIMIT 10;
 
 ```sql
 -- Avoid known mistakes
-SELECT mistake_type, prevention_strategy, occurrence_count
-FROM failure_patterns
+SELECT mistake_type, prevention_strategy, identified_at
+FROM agent_mistakes
 WHERE mistake_type LIKE 'trading%'
-ORDER BY occurrence_count DESC LIMIT 5;
+ORDER BY identified_at DESC LIMIT 5;
 ```
 
 ## Performance Targets

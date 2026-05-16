@@ -49,19 +49,25 @@ Record every tool use for pattern recognition:
 ```sql
 -- Log execution start
 INSERT INTO agent_executions (
-  agent_name, tool_name, context, input_params, started_at
+  execution_id, agent_id, task_type, tools_used, started_at, context, project_name
 ) VALUES (
-  'your-agent-name', 'bash', 'quality check', '{"cmd": "pnpm run lint"}', datetime('now')
+  'exec-20260426-001',
+  'your-agent-id',
+  'quality-check',
+  '["bash"]',
+  datetime('now'),
+  '{"command": "pnpm run lint"}',
+  'vibe-tech-monorepo'
 );
 
 -- Log execution result
 UPDATE agent_executions
 SET completed_at = datetime('now'),
     success = 1, -- or 0 if failed
-    output_data = '{"stdout": "...", "exit_code": 0}',
+    metadata = '{"stdout": "...", "exit_code": 0}',
     execution_time_ms = 1250,
     error_message = NULL -- or error details if failed
-WHERE id = (SELECT MAX(id) FROM agent_executions WHERE agent_name = 'your-agent-name');
+WHERE execution_id = 'exec-20260426-001';
 ```
 
 ### 4. Contribute Knowledge (If Successful)
@@ -111,14 +117,18 @@ INSERT INTO agent_mistakes (
 
 **agent_executions** - Complete tool usage history
 
-- `agent_name` - Which agent executed
-- `tool_name` - Which tool was used (Bash, Read, Write, etc.)
-- `context` - What task was being performed
-- `input_params` - JSON of tool parameters
-- `output_data` - JSON of tool results
+- `execution_id` - Unique execution identifier
+- `agent_id` - Which agent executed
+- `task_type` - Category of task being performed
+- `tools_used` - JSON list of tools used
+- `started_at` - Execution start timestamp
+- `completed_at` - Execution completion timestamp
 - `success` - 1 for success, 0 for failure
 - `execution_time_ms` - Performance metric
 - `error_message` - Failure details
+- `metadata` - JSON of tool results and other details
+- `context` - JSON task context
+- `project_name` - Project or workspace name
 
 **task_patterns** - High-level task execution strategies
 
@@ -193,9 +203,12 @@ const result = await executeQualityCheck(proven.approach_description);
 
 // 5. Log execution
 await logExecution({
-  agent_name: 'pre-commit-quality-gate',
-  tool_name: 'bash',
-  context: 'quality check before commit',
+  execution_id: executionId,
+  agent_id: 'pre-commit-quality-gate',
+  task_type: 'quality-check',
+  tools_used: ['bash'],
+  context: { reason: 'quality check before commit' },
+  project_name: 'vibe-tech-monorepo',
   success: result.exitCode === 0,
   execution_time_ms: result.duration,
 });
@@ -261,13 +274,14 @@ Track agent performance with these queries:
 ```sql
 -- Agent success rate by task type
 SELECT
-  agent_name,
+  agent_id,
+  task_type,
   COUNT(*) as total_executions,
   SUM(CASE WHEN success = 1 THEN 1 ELSE 0 END) as successful,
   ROUND(AVG(CASE WHEN success = 1 THEN 1.0 ELSE 0.0 END), 2) as success_rate
 FROM agent_executions
 WHERE started_at >= datetime('now', '-30 days')
-GROUP BY agent_name
+GROUP BY agent_id, task_type
 ORDER BY success_rate DESC;
 
 -- Most valuable patterns (high success, frequently used)
@@ -290,7 +304,9 @@ LIMIT 10;
 ## Related Files
 
 - **Database**: `D:\databases\agent_learning.db` (SQLite with WAL mode)
-- **Logs**: `D:\learning-system\logs\tool-usage-YYYY-MM-DD.log` (daily rotation)
+- **Memory DB**: `D:\databases\memory.db`
+- **Learning Runtime/Docs/Artifacts**: `D:\learning-system`
+- **Hook Fallback Logs**: `D:\logs\learning-system`
 - **Hooks**:
   - `C:\dev\.claude\hooks\pre-tool-use.ps1` (automatic capture)
   - `C:\dev\.claude\hooks\post-tool-use.ps1` (results logging)
