@@ -1043,24 +1043,6 @@ importers:
       '@stripe/stripe-js':
         specifier: ^9.0.0
         version: 9.4.0
-      '@vibetech/analytics':
-        specifier: workspace:*
-        version: link:../../packages/analytics
-      '@vibetech/auth':
-        specifier: workspace:*
-        version: link:../../packages/auth
-      '@vibetech/billing':
-        specifier: workspace:*
-        version: link:../../packages/billing
-      '@vibetech/emails':
-        specifier: workspace:*
-        version: link:../../packages/emails
-      '@vibetech/entitlements':
-        specifier: workspace:*
-        version: link:../../packages/entitlements
-      '@vibetech/landing':
-        specifier: workspace:*
-        version: link:../../packages/landing
       '@vibetech/ui':
         specifier: workspace:*
         version: link:../../packages/ui
