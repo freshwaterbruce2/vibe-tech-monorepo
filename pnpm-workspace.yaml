@@ -9,6 +9,7 @@ packages:
   - "backend/*"
   - "tools/*/mcp-server"
   - "tools/anthropic-api"
+  - "plugins/*"
   # Exclude local-only WIP workspaces not yet committed to git.
   - "!apps/gravity-claw"
   # Exclude backend directories that are not independent packages.

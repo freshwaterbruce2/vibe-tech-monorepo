@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "cli": "nx",
+  "title": "tauri-app",
+  "type": "object",
+  "properties": {
+    "directory": {
+      "type": "string",
+      "description": "Directory and project name for the generated app",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      },
+      "x-prompt": "Which directory do you want to create the application in?"
+    },
+    "name": {
+      "type": "string",
+      "description": "Application name"
+    },
+    "displayName": {
+      "type": "string",
+      "description": "Display name shown in the generated UI"
+    },
+    "port": {
+      "type": "number",
+      "description": "Vite dev server port"
+    },
+    "tags": {
+      "type": "string",
+      "description": "Comma-separated Nx tags"
+    }
+  },
+  "required": []
+}

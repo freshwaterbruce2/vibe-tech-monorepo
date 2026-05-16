@@ -1,0 +1,12 @@
+{
+  "generatedBy": "@vibetech/factory:tauri-app",
+  "projectName": "<%= projectName %>",
+  "displayName": "<%= displayName %>",
+  "archetype": "tauri-desktop",
+  "monetization": {
+    "stripeConnected": false,
+    "firstRevenueAt": null,
+    "mrrCents": null,
+    "currency": "usd"
+  }
+}
