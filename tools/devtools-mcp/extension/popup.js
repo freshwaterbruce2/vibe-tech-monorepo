@@ -2,6 +2,7 @@ const dot = document.getElementById("dot");
 const label = document.getElementById("status-label");
 const wsUrlEl = document.getElementById("ws-url");
 const tabUrlEl = document.getElementById("tab-url");
+const DEFAULT_WS_URL = "ws://localhost:54321";
 
 chrome.runtime.sendMessage({ type: "get_status" }, (res) => {
   if (!res) {
@@ -15,10 +16,10 @@ chrome.runtime.sendMessage({ type: "get_status" }, (res) => {
     label.textContent = "Connected to MCP";
   } else {
     dot.className = "dot red";
-    label.textContent = "Not connected";
+    label.textContent = "Start the local MCP server";
   }
 
-  wsUrlEl.textContent = res.wsUrl ?? "ws://localhost:3001";
+  wsUrlEl.textContent = res.wsUrl ?? DEFAULT_WS_URL;
   tabUrlEl.textContent = res.activeTabUrl ?? "—";
   tabUrlEl.title = res.activeTabUrl ?? "";
 });

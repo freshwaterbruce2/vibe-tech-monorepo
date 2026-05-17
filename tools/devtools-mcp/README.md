@@ -11,7 +11,7 @@ Claude Desktop (MCP client)
         │  stdio
         ▼
   mcp-server (Node.js)        ← you run this
-        │  WebSocket (port 3001)
+        │  WebSocket (port 54321)
         ▼
   Browser Extension           ← installed in your browser
         │  chrome.tabs messaging
@@ -32,7 +32,7 @@ npm run build
 node dist/index.js
 ```
 
-The server listens on **stdio** (for MCP) and **ws://localhost:3001** (for the extension).  
+The server listens on **stdio** (for MCP) and **ws://localhost:54321** (for the extension).  
 To use a different WebSocket port: `DEVTOOLS_WS_PORT=3002 node dist/index.js`
 
 ### 2. Install the browser extension
@@ -162,7 +162,7 @@ Click the extension icon in your toolbar to see:
 ## Security
 
 - The WebSocket server only accepts connections from `localhost`
-- The extension only sends data to `ws://localhost:3001` (configurable)
+- The extension only sends data to `ws://localhost:54321` (configurable)
 - No data is sent to any remote server
 - `js_eval` executes arbitrary JS in the page — only use with sites you control or trust
 

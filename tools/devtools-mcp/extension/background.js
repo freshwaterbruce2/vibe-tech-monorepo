@@ -69,20 +69,28 @@ function connect() {
       return;
     }
 
+    const targetTabId = activeTabId;
+
     try {
       // Make sure the content script is injected (handles cases where it wasn't auto-injected)
       await chrome.scripting.executeScript({
-        target: { tabId: activeTabId },
+        target: { tabId: targetTabId },
         files: ["content.js"],
-      }).catch(() => {}); // ignore if already injected
+      });
 
-      const response = await chrome.tabs.sendMessage(activeTabId, { id, tool, params });
+      const response = await chrome.tabs.sendMessage(targetTabId, { id, tool, params });
       if (response?.error) {
         sendError(id, response.error);
       } else {
         sendResult(id, response?.result ?? null);
       }
     } catch (err) {
+      if (isTransientFrameError(err)) {
+        console.warn("[devtools-mcp] Content script request skipped during page transition:", err.message ?? err);
+        sendError(id, "Page changed while handling the request. Retry after navigation finishes.");
+        return;
+      }
+
       sendError(id, `Content script error: ${err.message ?? err}`);
     }
   };
@@ -110,6 +118,18 @@ function sendError(id, error) {
   if (ws?.readyState === 1) {
     ws.send(JSON.stringify({ id, error }));
   }
+}
+
+function isTransientFrameError(err) {
+  const message = String(err?.message ?? err ?? "");
+  return [
+    "Frame with ID 0 was removed",
+    "The frame was removed",
+    "Extension context invalidated",
+    "Receiving end does not exist",
+    "No tab with id",
+    "Cannot access contents of url",
+  ].some((needle) => message.includes(needle));
 }
 
 // ── Keep-alive ping ─────────────────────────────────────────────────────────

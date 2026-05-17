@@ -1,0 +1,12 @@
+{
+  "generatedBy": "@vibetech/factory:landing-only",
+  "projectName": "vibe-tech-marketing",
+  "displayName": "VibeTechMarketing",
+  "archetype": "landing-only",
+  "monetization": {
+    "stripeConnected": null,
+    "firstRevenueAt": null,
+    "mrrCents": null,
+    "currency": null
+  }
+}

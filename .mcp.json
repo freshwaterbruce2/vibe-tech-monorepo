@@ -21,7 +21,7 @@
     },
     "desktop-commander": {
       "type": "stdio",
-      "command": "node",
+      "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
       "args": ["C:/dev/apps/desktop-commander-v3/dist/mcp.js"],
       "env": {
         "NODE_ENV": "production"
@@ -49,12 +49,12 @@
     },
     "skills": {
       "type": "stdio",
-      "command": "node",
+      "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
       "args": ["C:/dev/apps/mcp-skills-server/dist/index.js"]
     },
     "memory": {
       "type": "stdio",
-      "command": "node",
+      "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
       "args": ["C:/dev/apps/memory-mcp/dist/index.js"],
       "alwaysLoad": true,
       "env": {
@@ -85,7 +85,7 @@
     },
     "rag": {
       "type": "stdio",
-      "command": "node",
+      "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
       "args": ["C:/dev/apps/mcp-rag-server/dist/index.js"],
       "env": {
         "NODE_ENV": "production"
@@ -93,7 +93,7 @@
     },
     "workspace": {
       "type": "stdio",
-      "command": "node",
+      "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
       "args": ["C:/dev/apps/workspace-mcp-server/dist/index.js"],
       "env": {
         "WORKSPACE_ROOT": "C:/dev"
@@ -101,7 +101,7 @@
     },
     "command-center": {
       "type": "stdio",
-      "command": "node.exe",
+      "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
       "args": ["C:/dev/apps/vibetech-command-center/dist/mcp/server.js"],
       "env": {
         "NODE_ENV": "production"
