@@ -368,3 +368,6 @@ MEMORY.md
 !apps/nova-agent/SHIP_READY_REPORT.md
 !apps/nova-agent/CONSISTENCY_AUDIT_REPORT.md
 !apps/nova-agent/.env.example
+
+# Vercel local project state and generated output
+.vercel
