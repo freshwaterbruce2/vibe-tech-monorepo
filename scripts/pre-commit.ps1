@@ -20,7 +20,7 @@ $sourceFiles = @(
 $typeScriptFiles = @(
     $stagedFiles | Where-Object { $_ -match '\.(ts|tsx)$' }
 )
-$nxFileList = ($stagedFiles -join ',')
+$nxTypecheckFileList = ($typeScriptFiles -join ',')
 
 function Invoke-QualityCommand {
     param(
@@ -63,15 +63,15 @@ if ($sourceFiles.Count -gt 0) {
 }
 
 # ============================================
-# 2. TypeScript Typecheck (affected projects)
+# 2. TypeScript Typecheck (projects affected by staged files)
 # ============================================
 if ($typeScriptFiles.Count -gt 0) {
-    # Use --uncommitted so Nx does not try to resolve defaultBase (main)
-    # against a remote that may not exist or be reachable in this context.
+    # Keep the hook scoped to the index. --uncommitted also includes unrelated
+    # unstaged work, which makes normal commits fail on other active lanes.
     $exitCode = [Math]::Max(
         [int]$exitCode,
         [int](Invoke-QualityCommand -Label "[2/3] Running Nx affected typecheck..." -Command {
-            pnpm exec nx affected -t typecheck --uncommitted --outputStyle=static
+            pnpm exec nx affected -t typecheck --files="$nxTypecheckFileList" --outputStyle=static
         })
     )
 } else {

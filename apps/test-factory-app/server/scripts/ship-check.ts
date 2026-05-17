@@ -357,7 +357,7 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 async function fetchRaw(url: string, init?: RequestInit): Promise<Response> {
-  return fetch(url, init);
+  return await fetch(url, init);
 }
 
 function resolveEnv(key: string): string | undefined {
@@ -371,7 +371,7 @@ function printResults(): void {
   }
 }
 
-function sleep(ms: number): Promise<void> {
+async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });

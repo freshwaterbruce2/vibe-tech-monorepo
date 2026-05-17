@@ -24,4 +24,16 @@ case "$branch" in
     ;;
 esac
 
+if [ -f "D:/active-project/active-project.json" ]; then
+    pwsh.exe -NoProfile -File "C:/dev/tools/active-project/check-staged.ps1"
+    if [ $? -ne 0 ]; then
+        exit 1
+    fi
+fi
+
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File "C:/dev/scripts/pre-commit.ps1"
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
 exit 0

@@ -9,8 +9,8 @@ The hook currently enforces:
 
 - no direct commits to `main`, `master`, or `develop`
 - active-project lock boundaries from `D:/active-project/active-project.json`
-- Nx affected lint for staged JS/TS files
-- Nx affected typecheck for staged TS/TSX files
+- ESLint for staged JS/TS files
+- Nx affected typecheck scoped to staged files
 - a 5 MB staged-file size guard
 
 ## Current Setup
@@ -21,11 +21,11 @@ The local hook should call the tracked script:
 pwsh.exe -NoProfile -ExecutionPolicy Bypass -File "C:/dev/scripts/pre-commit.ps1"
 ```
 
-The tracked script uses pnpm and Nx only:
+The tracked script keeps checks scoped to the staged index:
 
 ```powershell
-pnpm exec nx affected -t lint --files="<staged-files>" --outputStyle=static
-pnpm exec nx affected -t typecheck --files="<staged-files>" --outputStyle=static
+pnpm exec eslint --max-warnings=0 <staged-js-ts-files>
+pnpm exec nx affected -t typecheck --files="<staged-ts-tsx-files>" --outputStyle=static
 ```
 
 This replaces the older npm/Husky guidance and the previous
