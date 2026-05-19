@@ -45,6 +45,8 @@ playwright-report
 apps/*
 !apps/proposal-review-saas
 !apps/proposal-review-saas/**
+!apps/vibe-tech-lovable
+!apps/vibe-tech-lovable/**
 
 packages/*
 !packages/analytics
@@ -63,6 +65,10 @@ packages/feature-flags/*
 !packages/feature-flags/core/**
 !packages/landing
 !packages/landing/**
+!packages/shared-utils
+!packages/shared-utils/**
+!packages/ui
+!packages/ui/**
 
 **/.vercel
 **/node_modules
