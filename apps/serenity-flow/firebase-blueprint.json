@@ -1,0 +1,53 @@
+{
+  "entities": {
+    "JournalEntry": {
+      "title": "Journal Entry",
+      "description": "A private journal entry with mood tracking.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Title of the entry" },
+        "content": { "type": "string", "description": "Encrypted or plain text content" },
+        "mood": { "type": "string", "description": "How the user felt" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "userId": { "type": "string" }
+      },
+      "required": ["title", "content", "createdAt", "userId"]
+    },
+    "UserSettings": {
+      "title": "User Settings",
+      "description": "Security and profile settings.",
+      "type": "object",
+      "properties": {
+        "pin": { "type": "string", "description": "4-digit PIN hash or string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["pin", "userId"]
+    },
+    "DailyLesson": {
+      "title": "Daily Lesson",
+      "description": "CBT-inspired lesson or inspirational quote.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "type": { "type": "string", "enum": ["CBT", "Quote"] },
+        "date": { "type": "string", "format": "date" }
+      },
+      "required": ["title", "content", "type", "date"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/journal/{entryId}": {
+      "schema": "JournalEntry",
+      "description": "User's private journal entries."
+    },
+    "/users/{userId}/settings/profile": {
+      "schema": "UserSettings",
+      "description": "User's security settings (PIN)."
+    },
+    "/lessons/{lessonId}": {
+      "schema": "DailyLesson",
+      "description": "Global daily CBT lessons."
+    }
+  }
+}

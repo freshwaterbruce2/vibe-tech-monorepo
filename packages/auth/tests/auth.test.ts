@@ -25,6 +25,11 @@ describe('@vibetech/auth', () => {
     expect(getSessionTtlSeconds()).toBe(7200);
   });
 
+  it('honors short session ttl overrides for donor-app compatibility', () => {
+    process.env.SESSION_TTL_SECONDS = '30';
+    expect(getSessionTtlSeconds()).toBe(30);
+  });
+
   it('hashes and verifies passwords', async () => {
     const password = 'correct-horse-battery-staple';
     const { salt, hash } = await hashPassword(password);

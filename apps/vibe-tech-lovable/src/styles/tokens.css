@@ -28,6 +28,22 @@
    --text-primary: rgba(255,255,255,1);
    --text-secondary: rgba(155,161,204,1);
    --text-tertiary: rgba(255,255,255,.5);
+
+   /* Vibe marketing site aliases */
+   --vibe-bg-deep: var(--bg-start);
+   --vibe-glass-rgba: rgba(8, 10, 20, 0.82);
+   --vibe-glass-border: rgba(0, 255, 255, 0.22);
+   --vibe-neon-cyan: var(--c-cyan);
+   --vibe-letter-spacing-wide: 0;
+   --vibe-neural-grain: 0.08;
+
+   /* Aura Tailwind token backing values */
+   --aura-background: 235 35% 4%;
+   --aura-background-light: 235 30% 8%;
+   --aura-accent: 188 100% 50%;
+   --aura-accent-secondary: 272 100% 70%;
+   --aura-text: 220 20% 98%;
+   --aura-text-secondary: 226 20% 72%;
    
    /* Spacing units for consistency */
    --space-1: 0.25rem;

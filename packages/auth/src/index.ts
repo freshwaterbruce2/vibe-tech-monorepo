@@ -20,7 +20,7 @@ export interface SessionPayload {
 export const getSessionTtlSeconds = (): number => {
   const raw = process.env.SESSION_TTL_SECONDS;
   const asNumber = raw ? Number(raw) : Number.NaN;
-  if (Number.isFinite(asNumber) && asNumber > 60) {
+  if (Number.isFinite(asNumber) && asNumber > 0) {
     return Math.floor(asNumber);
   }
 

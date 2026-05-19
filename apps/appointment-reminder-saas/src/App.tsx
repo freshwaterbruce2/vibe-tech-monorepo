@@ -199,8 +199,12 @@ function ClinicDashboard({ apiBase }: { apiBase: string }) {
     <main className="app-shell">
       <header className="topbar">
         <div>
-          <p className="eyebrow">Appointment reminders</p>
-          <h1>Clinic dashboard</h1>
+          <p className="eyebrow">Clinic Autopilot</p>
+          <h1>Today&apos;s appointment flow</h1>
+          <p className="topbar-copy">
+            Keep reminders moving, spot no-show risk, and help patients reschedule without a phone
+            call.
+          </p>
         </div>
         <button onClick={() => void runReminders()} disabled={loading !== null}>
           {loading === 'reminders' ? 'Sending...' : 'Run reminder sweep'}
@@ -221,6 +225,7 @@ function ClinicDashboard({ apiBase }: { apiBase: string }) {
             void createAppointment();
           }}
         >
+          <p className="section-kicker">Quick add</p>
           <h2>Schedule appointment</h2>
           <label className="field">
             Patient
@@ -263,7 +268,10 @@ function ClinicDashboard({ apiBase }: { apiBase: string }) {
 
         <section className="panel appointment-panel">
           <div className="panel-heading">
-            <h2>Upcoming appointments</h2>
+            <div>
+              <p className="section-kicker">Reminder queue</p>
+              <h2>Upcoming appointments</h2>
+            </div>
             <span>{appointments.length} scheduled</span>
           </div>
           <div className="appointment-list">

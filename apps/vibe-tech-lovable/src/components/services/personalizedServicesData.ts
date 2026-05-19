@@ -1,61 +1,64 @@
-import { TrendingUp, Zap, Brain, Building2, Globe, DollarSign } from "lucide-react";
+import { Zap, Brain, Building2, Globe, DollarSign, Activity, GraduationCap } from "lucide-react";
 import { ServiceType } from "./types";
 
 export const personalizedServices: ServiceType[] = [
   {
-    id: "fintech",
-    name: "Financial Technology Solutions",
-    description: "Advanced trading systems and financial applications with real-time market data integration.",
+    id: "micro-saas",
+    name: "Micro-SaaS Product Factory",
+    description:
+      "Launch-ready SaaS foundations with landing pages, auth, billing, analytics, entitlements, deployment checks, and reusable shared packages.",
     icon: {
-      type: TrendingUp,
+      type: Building2,
       props: {
         className: "h-6 w-6 text-[color:var(--c-cyan)]"
       }
     },
     features: [
-      "Cryptocurrency trading systems (Kraken WebSocket v2)",
-      "Real-time market data processing and analysis", 
-      "Automated trading algorithms with risk management",
-      "Portfolio management and performance tracking",
-      "Secure API integrations for financial platforms"
+      "Generated Vite/React SaaS frontends",
+      "Fastify API scaffolds with health and auth flows",
+      "Stripe Checkout and entitlement integration paths",
+      "Vercel/Railway deployment guidance",
+      "Reusable Nx and pnpm workspace patterns"
     ],
-    technologies: ["Python", "WebSocket", "SQLite", "Kraken API", "Real-time Processing"],
+    technologies: ["Nx", "pnpm", "React", "Fastify", "Stripe", "Railway", "Vercel"],
     realProjects: [
-      "Multi-agent crypto trading system with 1.0% profit targeting",
-      "XLM/USD trading with advanced risk management",
-      "Real-time WebSocket v2 integration for live market data"
+      "Proposal Review SaaS",
+      "AppointmentReminderSaas",
+      "Factory runtime and landing smoke apps"
     ],
-    businessValue: "Automated revenue generation through systematic trading strategies"
+    businessValue: "Faster product launches with a repeatable monetization and deployment baseline"
   },
   {
-    id: "enterprise-pwa",
-    name: "Enterprise PWA Development", 
-    description: "Mission-critical Progressive Web Apps for business operations with offline capabilities.",
+    id: "clinic-operations",
+    name: "Clinic Operations Software",
+    description:
+      "Patient-flow tools for small clinics that need reminders, no-show visibility, and rescheduling without adding front-desk load.",
     icon: {
-      type: Building2,
+      type: Activity,
       props: {
         className: "h-6 w-6 text-[color:var(--c-purple)]"
       }
     },
     features: [
-      "Offline-first PWAs for operational continuity",
-      "Windows 11 integration and desktop installation",
-      "Real-time data synchronization and conflict resolution",
-      "Enterprise-grade security and data management",
-      "Custom workflow automation for business processes"
+      "Appointment reminder sweeps",
+      "Magic patient reschedule links",
+      "No-show tracking and monthly analytics",
+      "Tenant-aware demo clinic data",
+      "Frontend/API deployment split"
     ],
-    technologies: ["React", "TypeScript", "Service Workers", "IndexedDB", "Electron"],
+    technologies: ["React", "Fastify", "SQLite", "Tenant Headers", "Railway", "Vercel"],
     realProjects: [
-      "Walmart DC shipping management PWA (doors 332-454)", 
-      "Windows 11 productivity dashboard with SQLite integration",
-      "Document generation platform for legal workflows"
+      "Clinic Autopilot",
+      "AppointmentReminderSaas",
+      "Reschedule route workflow"
     ],
-    businessValue: "Operational efficiency gains through specialized business applications"
+    businessValue: "Reduce no-shows and manual reminder work for appointment-based businesses"
   },
   {
-    id: "ai-content",
-    name: "AI-Powered Content & Marketing",
-    description: "Intelligent content generation and marketing automation systems that drive engagement and revenue.",
+    id: "ai-tools",
+    name: "AI Review and Rewrite Tools",
+    description:
+      "Focused AI tools that turn messy business inputs into scores, recommendations, and paid upgrade opportunities.",
     icon: {
       type: Brain,
       props: {
@@ -63,74 +66,106 @@ export const personalizedServices: ServiceType[] = [
       }
     },
     features: [
-      "AI content generation with DeepSeek and OpenAI integration",
-      "Automated blog publishing with affiliate marketing",
-      "Smart content optimization for SEO and conversions", 
-      "Template-driven content creation systems",
-      "Analytics integration for performance tracking"
+      "Proposal scorecards and risk flags",
+      "Scope, pricing, and turnaround review",
+      "Pro rewrite preview flow",
+      "AI usage metering bridge to billing metadata",
+      "Operator sign-in for gated features"
     ],
-    technologies: ["DeepSeek AI", "OpenAI", "Express.js", "SQLite", "Google Analytics"],
+    technologies: ["React", "Fastify", "AI Metering", "Stripe Checkout", "Auth Sessions"],
     realProjects: [
-      "Blog publishing system with integrated affiliate marketing",
-      "AI-powered content builder for multiple content types",
-      "Template-based article generation with smart affiliate placement"
+      "Proposal Review SaaS",
+      "Pro rewrite lane",
+      "Generated operator auth"
     ],
-    businessValue: "Revenue generation through content marketing and affiliate partnerships"
+    businessValue: "Convert expert review into a repeatable paid product"
   },
   {
-    id: "booking-platforms",
-    name: "Booking & Property Management",
-    description: "Complete booking and property management solutions with real-time availability and payment processing.",
+    id: "business-automation",
+    name: "Business Automation Dashboards",
+    description:
+      "Back-office systems for teams that need client records, invoices, templates, time, expenses, payment paths, and operational clarity.",
     icon: {
-      type: Globe,
+      type: Zap,
       props: {
         className: "h-6 w-6 text-[color:var(--c-cyan)]"
       }
     },
     features: [
-      "Real hotel booking with LiteAPI integration",
-      "Property rental management with zero listing fees",
-      "Advanced search and filtering capabilities",
-      "Date selection and availability management",
-      "Payment processing and booking confirmations"
+      "Client and invoice management",
+      "Template and tax-rate workflows",
+      "Expense and time tracking",
+      "Protected dashboard routes",
+      "Payment-facing invoice routes"
     ],
-    technologies: ["React", "LiteAPI", "Express.js", "Payment APIs", "Real-time APIs"],
+    technologies: ["React", "Protected Routes", "Payments", "Templates", "Reporting"],
     realProjects: [
-      "Vibe-Booking: Hotel platform with passion-based matching",
-      "Vibe-Rentals: Zero-fee property rental marketplace", 
-      "Advanced booking systems with environment preferences"
+      "Invoice Automation",
+      "Client dashboards",
+      "Invoice payment route"
     ],
-    businessValue: "Revenue through booking commissions and platform usage fees"
+    businessValue: "Replace spreadsheet-heavy workflows with focused operational software"
   },
   {
-    id: "process-automation",
-    name: "Business Process Automation",
-    description: "Custom automation solutions that streamline workflows and eliminate manual tasks.",
+    id: "education-platforms",
+    name: "Education and Training Platforms",
+    description:
+      "Learning products for tutoring, practice games, student dashboards, mobile delivery, and AI-supported study workflows.",
     icon: {
-      type: Zap,
+      type: GraduationCap,
+      props: {
+        className: "h-6 w-6 text-[color:var(--c-teal)]"
+      }
+    },
+    features: [
+      "Tutor-first learning flows",
+      "Student dashboards and progress surfaces",
+      "Game-based practice modules",
+      "Android delivery path",
+      "AI assistance for learning workflows"
+    ],
+    technologies: ["React", "Electron", "Capacitor", "Android", "AI Assistance", "Learning Games"],
+    realProjects: [
+      "Vibe Tutor",
+      "Chessmaster Academy",
+      "Tutoring workflows",
+      "Learning-game surfaces"
+    ],
+    businessValue: "Turn education tools into clear product offers for learners, parents, and operators"
+  },
+  {
+    id: "marketing-hub",
+    name: "Product Marketing Hub",
+    description:
+      "Use Vibe-Tech.org as the front door for all Vibe-Tech project demos, quote requests, case studies, pricing, and launch updates.",
+    icon: {
+      type: Globe,
       props: {
         className: "h-6 w-6 text-[color:var(--c-purple)]"
       }
     },
     features: [
-      "Document generation and processing automation",
-      "Workflow orchestration with error handling",
-      "Data synchronization between systems",
-      "Custom business logic implementation", 
-      "Integration with existing enterprise systems"
+      "Multi-page product catalog",
+      "Portfolio case studies",
+      "Lead capture and contact flows",
+      "SEO metadata and sitemap alignment",
+      "Domain and deployment correction path"
     ],
-    technologies: ["FastAPI", "Svelte", "Python", "SQLite", "PowerShell"],
+    technologies: ["React", "Vite", "SEO", "Vercel", "Cloudflare", "Lead Forms"],
     realProjects: [
-      "Legal document generator with template system",
-      "Automated content workflow management",
-      "Multi-process orchestration with monitoring"
+      "Original Vibe-Tech.org website",
+      "Vibe-Tech Lovable site",
+      "Vibe Tutor",
+      "Chessmaster Academy",
+      "Full project suite portfolio"
     ],
-    businessValue: "Cost reduction through elimination of manual processes"
+    businessValue: "Turn every shipped app into a visible offer with a clear buyer path"
   },
   {
     id: "revenue-platforms",
-    name: "Revenue Generation Platforms",
-    description: "Complete systems designed to generate and optimize revenue streams through technology.",
+    name: "Revenue Platform Integration",
+    description:
+      "Connect product demos to checkout, onboarding, analytics, and deployment checks so offers can become paid products.",
     icon: {
       type: DollarSign,
       props: {
@@ -138,19 +173,19 @@ export const personalizedServices: ServiceType[] = [
       }
     },
     features: [
-      "Affiliate marketing integration and optimization",
-      "E-commerce and marketplace development",
-      "Revenue tracking and analytics dashboards",
-      "Automated monetization strategies",
-      "Performance optimization for conversions"
+      "Stripe Checkout test-mode readiness",
+      "Usage-to-billing metadata patterns",
+      "MRR and first-revenue tracking hooks",
+      "Production ship-check gates",
+      "Frontend/backend deployment proof"
     ],
-    technologies: ["React", "Affiliate APIs", "Analytics", "Payment Systems", "Conversion Tracking"],
+    technologies: ["Stripe", "Analytics", "Entitlements", "Vercel", "Railway", "Ship Checks"],
     realProjects: [
-      "Blog monetization system with affiliate integration",
-      "E-commerce marketplace with vendor management",
-      "Revenue tracking and optimization platforms"
+      "Proposal Review checkout flow",
+      "Generated SaaS monetization metadata",
+      "Factory deployment guides"
     ],
-    businessValue: "Direct revenue generation through multiple monetization channels"
+    businessValue: "Move from demos to repeatable paid offers with measurable launch gates"
   }
 ];
 

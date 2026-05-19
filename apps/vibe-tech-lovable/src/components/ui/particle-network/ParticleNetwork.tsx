@@ -18,7 +18,7 @@ const generateColor = (index: number) => {
 };
 
 const ParticleNetwork: React.FC<ParticleNetworkProps> = ({ count = 15, connectionThreshold = 2 }) => {
-  const particlesRef = useRef<THREE.Mesh[]>([]);
+  const particlesRef = useRef<Array<THREE.Mesh | undefined>>([]);
 
   // Generate particle positions with more intentional distribution
   // useState initializer ensures Math.random() is called only once, not during re-renders
@@ -57,7 +57,7 @@ const ParticleNetwork: React.FC<ParticleNetworkProps> = ({ count = 15, connectio
           directionX={0}
           directionY={0}
           ref={(el) => {
-            if (el) particlesRef.current[i] = el;
+            particlesRef.current[i] = el ?? undefined;
           }}
         />
       ))}
@@ -83,15 +83,11 @@ const ParticleNetwork: React.FC<ParticleNetworkProps> = ({ count = 15, connectio
             return (
               <ConnectionLine
                 key={`connection-${index1}-${index2}`}
-                startPos={particlesRef}
-                endPos={particlesRef}
+                particlesRef={particlesRef}
+                startIndex={index1}
+                endIndex={index2}
                 color="#28f0ff"
                 threshold={connectionThreshold}
-                startX={0}
-                startY={0}
-                endX={0}
-                endY={0}
-                opacity={0}
               />
             );
           }

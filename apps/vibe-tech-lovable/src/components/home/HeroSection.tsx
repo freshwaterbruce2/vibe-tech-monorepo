@@ -4,10 +4,10 @@ import { Link } from 'react-router-dom';
 
 const HeroSection = () => {
   return (
-    <section className="pt-28 pb-20 relative">
+    <section className="relative pt-24 pb-12 sm:pt-28 sm:pb-16">
       {/* Glassmorphic Container with Vibe Tech Premium Aesthetic */}
       <div
-        className="mx-auto max-w-6xl px-6 py-10 lg:flex lg:items-center relative z-10"
+        className="relative z-10 mx-auto grid max-w-6xl gap-8 px-6 py-8 sm:py-10 lg:grid-cols-[0.8fr_1.4fr] lg:items-center"
         style={{
           background: 'var(--vibe-glass-rgba)',
           backdropFilter: 'blur(20px)',
@@ -18,9 +18,9 @@ const HeroSection = () => {
         }}
       >
         {/* Left side - Avatar with Neon Cyan border */}
-        <div className="w-full md:w-1/3 mb-10 md:mb-0">
+        <div className="w-full">
           <div
-            className="relative w-64 h-64 mx-auto overflow-hidden rounded-full transition-all duration-300 hover:scale-105"
+            className="relative mx-auto h-36 w-36 overflow-hidden rounded-full transition-all duration-300 hover:scale-105 sm:h-56 sm:w-56 lg:h-64 lg:w-64"
             style={{
               border: '4px solid var(--vibe-neon-cyan)',
               boxShadow: '0 0 25px rgba(0, 242, 255, 0.6), inset 0 0 15px rgba(0, 242, 255, 0.2)',
@@ -35,9 +35,9 @@ const HeroSection = () => {
         </div>
 
         {/* Right side - Text with Vibe Tech Premium Typography */}
-        <div className="w-full md:w-2/3 md:pl-12">
+        <div className="w-full">
           <h1
-            className="font-heading text-4xl md:text-5xl lg:text-6xl font-light mb-4 text-white"
+            className="mb-4 font-heading text-3xl font-light text-white sm:text-4xl md:text-5xl lg:text-6xl"
             style={{
               letterSpacing: 'var(--vibe-letter-spacing-wide)',
               textShadow: '0 0 20px rgba(0, 242, 255, 0.5)',
@@ -47,27 +47,27 @@ const HeroSection = () => {
           </h1>
 
           <div className="mb-6">
-            <h2 className="text-2xl md:text-3xl font-heading font-light text-white tracking-wide">
-              Your Partner in Next-Level Digital Experiences
+            <h2 className="font-heading text-xl font-light tracking-wide text-white sm:text-2xl md:text-3xl">
+              The Product Hub for Everything Vibe-Tech Builds
             </h2>
           </div>
 
-          <p className="mb-8 max-w-2xl text-gray-300 font-body leading-relaxed">
-            Imagine a world where your website or app loads instantly, welcomes every user, and
-            feels as intuitive as a conversation. That's the power of design and code working in
-            perfect harmony.
+          <p className="mb-6 max-w-2xl font-body text-sm leading-relaxed text-gray-300 sm:mb-8 sm:text-base">
+            Vibe-Tech.org is the front door for every Vibe-Tech project: Vibe Tutor,
+            Chessmaster Academy, Proposal Review, Clinic Autopilot, Invoice Automation, desktop
+            tools, AI workflows, and the next products coming out of the Vibe-Tech factory.
           </p>
 
-          <div className="mb-8">
+          <div className="mb-8 hidden sm:block">
             <h3
               className="text-lg font-heading font-light mb-3 tracking-widest"
               style={{ color: 'var(--vibe-neon-cyan)' }}
             >
-              Ready to Ignite Your Vision?
+              Ready to Launch the Next Offer?
             </h3>
             <p className="mb-4 text-gray-300 font-body">
-              Tell me your goals, and together we'll craft a digital solution that dazzles and
-              delivers.
+              Tell me which product or workflow you want to sell, and I will map it into a clear
+              buyer path.
             </p>
             <SmartLeadForm variant="inline" buttonText="Contact Me" showServiceInterest={false} />
 
@@ -91,9 +91,15 @@ const HeroSection = () => {
             </div>
           </div>
 
+          <div className="mb-4 flex justify-center sm:hidden">
+            <NeonButton variant="gradient" size="lg" asChild>
+              <Link to="/contact">Contact Me</Link>
+            </NeonButton>
+          </div>
+
           <div className="text-center">
             <NeonButton variant="gradient" size="lg" asChild>
-              <Link to="/portfolio">View My Work</Link>
+              <Link to="/portfolio">Explore Products</Link>
             </NeonButton>
           </div>
         </div>

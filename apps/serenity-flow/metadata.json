@@ -1,0 +1,13 @@
+{
+  "name": "Serenity Flow",
+  "description": "An elegant, AI-guided coloring sanctuary for mindfulness. Features therapeutic color-by-number sessions, interactive butterfly/lotus mandalas, and empathetic AI companionship.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "AI-Guided Therapeutic Coloring",
+    "Mindful Palette Generation",
+    "Interactive SVG Symmetry Engine",
+    "Secure Progress Saving"
+  ]
+}

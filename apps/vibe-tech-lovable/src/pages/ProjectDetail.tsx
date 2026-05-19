@@ -7,12 +7,12 @@ import { projects } from "@/components/portfolio/projectsData";
 import { motion } from "framer-motion";
 
 const ProjectDetail = () => {
-  const { projectId } = useParams();
+  const { id: routeId, projectId } = useParams();
   
   // Find project by ID - handle both "project-1" format and direct "1" format
-  const id = projectId?.replace('project-', '') || projectId;
+  const projectParam = routeId ?? projectId;
+  const id = projectParam?.replace('project-', '') || projectParam;
   const project = projects.find(p => p.id.toString() === id);
-
   if (!project) {
     return (
       <PageLayout title="Project Not Found">
@@ -29,6 +29,12 @@ const ProjectDetail = () => {
       </PageLayout>
     );
   }
+
+  const imageFitClass =
+    project.imageFit === "contain"
+      ? "object-contain bg-[rgba(2,6,18,0.92)] p-4 md:p-6"
+      : "object-cover";
+  const screenshots = project.screenshots ?? [project.image];
 
   return (
     <PageLayout 
@@ -65,7 +71,7 @@ const ProjectDetail = () => {
                 <img 
                   src={project.image} 
                   alt={project.title}
-                  className="w-full h-auto rounded-lg"
+                  className={`h-[520px] w-full ${imageFitClass} rounded-lg`}
                 />
               </div>
             </motion.div>
@@ -124,6 +130,34 @@ const ProjectDetail = () => {
               </div>
             </motion.div>
           </div>
+
+          {screenshots.length > 1 && (
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.3 }}
+              className="mt-16"
+            >
+              <h2 className="text-3xl font-bold text-center mb-8 font-heading bg-gradient-to-r from-[#c87eff] via-[#8d4dff] to-[#00f7ff] text-transparent bg-clip-text">
+                Screenshots
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {screenshots.map((screenshot, index) => (
+                  <div
+                    key={screenshot}
+                    className="glass-card border border-[color:var(--c-purple)/20] overflow-hidden"
+                  >
+                    <img
+                      src={screenshot}
+                      alt={`${project.title} screenshot ${index + 1}`}
+                      className="h-[520px] w-full object-contain bg-[rgba(2,6,18,0.92)] p-3"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
 
           {/* Project Features Section */}
           <motion.div

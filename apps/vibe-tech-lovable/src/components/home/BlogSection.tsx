@@ -29,7 +29,7 @@ const recentPosts: BlogPost[] = [
 
 const BlogSection = () => {
   return (
-    <section className="py-16 px-4 relative">
+    <section className="relative border-y border-[rgba(0,255,255,0.12)] bg-[rgba(5,10,20,0.66)] px-4 py-24">
       <div className="max-w-6xl mx-auto relative z-10">
         <h2 className="text-3xl font-bold mb-12 text-center font-heading bg-gradient-to-r from-[#c87eff] via-[#8d4dff] to-[#00f7ff] text-transparent bg-clip-text">
           Insights & Inspiration

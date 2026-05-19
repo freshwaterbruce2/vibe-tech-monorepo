@@ -6,6 +6,7 @@ import {
   Palette, 
   Cog, 
   Smartphone, 
+  GraduationCap,
   ArrowRight, 
   Sparkles, 
   CheckCircle,
@@ -24,55 +25,73 @@ interface Service {
 const services: Service[] = [
   {
     icon: Code2,
-    title: "Web Development",
-    description: "Lightning-fast, scalable web applications built with modern frameworks like React, Next.js, and TypeScript.",
+    title: "Micro-SaaS Launches",
+    description:
+      "Productized web apps with landing pages, auth, billing, analytics, and deployment paths wired from the start.",
     features: [
-      "React & Next.js expertise",
-      "Performance optimization",
-      "SEO-friendly architecture",
-      "Modern deployment pipelines"
+      "Generated SaaS foundations",
+      "Stripe Checkout readiness",
+      "Vercel and Railway deployment shapes",
+      "Reusable app-factory patterns"
     ],
     color: "from-blue-400 to-cyan-400",
-    link: "/services#web-development"
+    link: "/services#micro-saas"
+  },
+  {
+    icon: GraduationCap,
+    title: "Education Platforms",
+    description:
+      "Tutor-first learning products, student dashboards, practice games, Android delivery, and AI-supported study workflows.",
+    features: [
+      "Vibe Tutor project home",
+      "Learning dashboards",
+      "Game-based practice",
+      "Mobile delivery paths"
+    ],
+    color: "from-teal-400 to-cyan-400",
+    link: "/portfolio/project-7"
   },
   {
     icon: Palette,
-    title: "UI/UX Design",
-    description: "User-centered design that combines beautiful aesthetics with intuitive functionality and seamless user journeys.",
+    title: "AI Business Tools",
+    description:
+      "Focused AI workflows that review proposals, rewrite sales language, generate content, and reduce manual review time.",
     features: [
-      "User research & personas",
-      "Wireframing & prototyping", 
-      "Design system creation",
-      "Accessibility compliance"
+      "Proposal scoring and rewrite guidance",
+      "AI usage metering patterns",
+      "Operator dashboards",
+      "Actionable review outputs"
     ],
     color: "from-purple-400 to-pink-400",
-    link: "/services#ui-ux-design"
+    link: "/services#ai-tools"
   },
   {
     icon: Cog,
-    title: "Custom Software",
-    description: "Enterprise-grade solutions tailored to your specific business needs, from APIs to complex automation systems.",
+    title: "Clinic Operations",
+    description:
+      "Practical healthcare operations software for reminders, reschedules, no-show visibility, and repeatable patient workflows.",
     features: [
-      "Business process automation",
-      "API development & integration",
-      "Database architecture",
-      "Scalable cloud solutions"
+      "Appointment reminder sweeps",
+      "Magic reschedule links",
+      "No-show analytics",
+      "Tenant-aware clinic data"
     ],
     color: "from-green-400 to-emerald-400",
-    link: "/services#custom-software"
+    link: "/services#clinic-operations"
   },
   {
     icon: Smartphone,
-    title: "Mobile Apps",
-    description: "Cross-platform mobile applications that deliver native performance and exceptional user experiences.",
+    title: "Business Automation",
+    description:
+      "Back-office tools for invoicing, client records, templates, tax rates, payment workflows, and operational reporting.",
     features: [
-      "React Native development",
-      "iOS & Android optimization",
-      "App Store deployment",
-      "Push notifications & analytics"
+      "Invoice and payment flows",
+      "Client and expense tracking",
+      "Template-driven operations",
+      "Protected dashboards"
     ],
     color: "from-orange-400 to-red-400",
-    link: "/services#app-development"
+    link: "/services#business-automation"
   }
 ];
 
@@ -91,7 +110,10 @@ const ServicesSection = () => {
   };
 
   return (
-    <section className="py-20 px-4 relative overflow-hidden" data-testid="services-section">
+    <section
+      className="relative overflow-hidden border-y border-white/10 bg-[rgba(5,8,20,0.72)] px-4 py-16 shadow-[inset_0_1px_0_rgba(0,255,255,0.08),inset_0_-1px_0_rgba(185,51,255,0.08)] md:py-24"
+      data-testid="services-section"
+    >
       {/* Animated background particles */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-10 left-10 w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
@@ -108,14 +130,14 @@ const ServicesSection = () => {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold mb-4 font-heading bg-gradient-to-r from-[#c87eff] via-[#8d4dff] to-[#00f7ff] text-transparent bg-clip-text">
-            What I Bring to the Table
+            The Vibe-Tech Project Front Door
           </h2>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Cutting-edge solutions that transform your vision into powerful digital experiences
+            A growing portfolio of education tools, productized apps, AI workflows, and operational software built from the same factory.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           {services.map((service, index) => {
             const IconComponent = service.icon;
             const isActive = activeService === index;

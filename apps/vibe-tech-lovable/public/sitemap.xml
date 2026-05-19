@@ -2,51 +2,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://vibetech.com/</loc>
-    <lastmod>2025-05-14</lastmod>
+    <loc>https://vibe-tech.org/</loc>
+    <lastmod>2026-05-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://vibetech.com/about</loc>
-    <lastmod>2025-05-14</lastmod>
+    <loc>https://vibe-tech.org/about</loc>
+    <lastmod>2026-05-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://vibetech.com/services</loc>
-    <lastmod>2025-05-14</lastmod>
+    <loc>https://vibe-tech.org/services</loc>
+    <lastmod>2026-05-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://vibetech.com/portfolio</loc>
-    <lastmod>2025-05-14</lastmod>
+    <loc>https://vibe-tech.org/portfolio</loc>
+    <lastmod>2026-05-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://vibetech.com/blog</loc>
-    <lastmod>2025-05-14</lastmod>
+    <loc>https://vibe-tech.org/blog</loc>
+    <lastmod>2026-05-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://vibetech.com/tools</loc>
-    <lastmod>2025-05-14</lastmod>
+    <loc>https://vibe-tech.org/tools</loc>
+    <lastmod>2026-05-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://vibetech.com/pricing</loc>
-    <lastmod>2025-05-14</lastmod>
+    <loc>https://vibe-tech.org/pricing</loc>
+    <lastmod>2026-05-18</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://vibetech.com/contact</loc>
-    <lastmod>2025-05-14</lastmod>
+    <loc>https://vibe-tech.org/contact</loc>
+    <lastmod>2026-05-18</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://vibe-tech.org/resources</loc>
+    <lastmod>2026-05-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://vibe-tech.org/privacy</loc>
+    <lastmod>2026-05-18</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://vibe-tech.org/terms</loc>
+    <lastmod>2026-05-18</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
 </urlset>

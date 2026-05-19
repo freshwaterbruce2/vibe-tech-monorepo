@@ -15,10 +15,12 @@ if (-not $stagedFiles -or $stagedFiles.Count -eq 0) {
 }
 
 $sourceFiles = @(
-    $stagedFiles | Where-Object { $_ -match '\.(ts|tsx|js|jsx|mjs|cjs)$' }
+    $stagedFiles | Where-Object {
+        $_ -match '\.(ts|tsx|js|jsx|mjs|cjs)$' -and $_ -notmatch '\.d\.ts$'
+    }
 )
 $typeScriptFiles = @(
-    $stagedFiles | Where-Object { $_ -match '\.(ts|tsx)$' }
+    $stagedFiles | Where-Object { $_ -match '\.(ts|tsx)$' -and $_ -notmatch '\.d\.ts$' }
 )
 $nxTypecheckFileList = ($typeScriptFiles -join ',')
 
@@ -52,6 +54,12 @@ function Invoke-QualityCommand {
 if ($sourceFiles.Count -gt 0) {
     # Use direct ESLint on staged files instead of nx affected to avoid
     # Nx graph computation hangs in pre-commit context.
+    $nodeOptions = if ($env:NODE_OPTIONS) { $env:NODE_OPTIONS } else { "" }
+    if ($nodeOptions -notmatch '--max-old-space-size=') {
+        $env:NODE_OPTIONS = (@($nodeOptions, '--max-old-space-size=8192') |
+            Where-Object { $_ }) -join ' '
+    }
+
     $exitCode = [Math]::Max(
         [int]$exitCode,
         [int](Invoke-QualityCommand -Label "[1/3] Running ESLint on staged files..." -Command {

@@ -1,8 +1,7 @@
-import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
-export default defineConfig({
+export default {
   plugins: [react()],
   test: {
     include: ['src/**/*.spec.ts', 'src/**/*.spec.tsx', 'tests/unit/**/*.spec.ts'],
@@ -24,4 +23,4 @@ export default defineConfig({
       '@renderer': resolve('src/renderer')
     }
   }
-});
+};

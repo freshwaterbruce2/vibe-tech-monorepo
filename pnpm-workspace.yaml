@@ -9,6 +9,7 @@ packages:
   - "backend/*"
   - "tools/*/mcp-server"
   - "tools/anthropic-api"
+  - "tools/vectorshift-svg"
   - "plugins/*"
   # Exclude local-only WIP workspaces not yet committed to git.
   - "!apps/gravity-claw"

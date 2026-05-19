@@ -1,0 +1,6 @@
+{
+  "name": "VectorShift PRD",
+  "description": "Product Requirements Document for an AI-powered auto-tracing vectorization tool similar to Vectorizer.ai.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

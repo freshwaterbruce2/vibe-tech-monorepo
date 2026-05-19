@@ -1,6 +1,6 @@
 # Factory Completion Audit
 
-Last updated: 2026-05-16
+Last updated: 2026-05-18
 Goal reference: [GOAL_APP_FACTORY.md](C:/dev/GOAL_APP_FACTORY.md)
 Status: complete
 
@@ -18,7 +18,7 @@ Status: complete
 | One generated SaaS app is deployed to production | Complete | Frontend: `https://proposal-review-saas.vercel.app`; backend: `https://proposal-review-api-production.up.railway.app` |
 | Generated app Stripe Checkout works in test mode | Complete | Live `POST /api/billing/pro-checkout` from the Vercel origin returned a Stripe test Checkout URL |
 | Command Center Factory panel lists generated apps | Complete | [FactoryPanel.tsx](C:/dev/apps/vibetech-command-center/src/renderer/panels/FactoryPanel.tsx) and `FactoryStatusService` |
-| Command Center Factory panel shows monetization status | Complete | Factory cards render Stripe status, first revenue, MRR, readiness, shipping, and dashboard links |
+| Command Center Factory panel shows monetization status | Complete | Factory cards render Stripe status, first revenue, MRR, readiness, shipping, and dashboard links from `vibe-app.json`; `proposal-review-saas` now reports `stripeStatus: connected` and `mrrCents: 0` |
 | Command Center Factory panel launches generators through Agent Orchestrator | Complete | `factory.generate()` IPC delegates to `AgentOrchestratorService.runFactoryGenerator()` and runs `pnpm nx g @vibetech/factory:<archetype> <name>` |
 
 ## Production Proof
@@ -34,36 +34,43 @@ Status: complete
 
 ## Final Validation
 
-Validated on 2026-05-16:
+Revalidated on 2026-05-18:
 
 ```powershell
 pnpm nx run-many -t test --projects=@vibetech/auth,@vibetech/billing,@vibetech/emails,@vibetech/landing,@vibetech/analytics,@vibetech/entitlements,invoice-automation-saas,@vibetech/command-center --skip-nx-cache
-pnpm nx g @vibetech/factory:saas test-factory-app
-pnpm install --filter test-factory-app
+pnpm nx run @vibetech/factory:test --skip-nx-cache
 pnpm nx build test-factory-app --skip-nx-cache
 pnpm nx run test-factory-app:api:build --skip-nx-cache
-pnpm nx run invoice-automation-saas:api:build --skip-nx-cache
+pnpm nx run-many -t build,api:build --projects=invoice-automation-saas --skip-nx-cache
+pnpm nx test @vibetech/command-center --skip-nx-cache
+pnpm nx typecheck @vibetech/command-center --skip-nx-cache
+pnpm nx build @vibetech/command-center --skip-nx-cache
 Invoke-RestMethod https://proposal-review-api-production.up.railway.app/api/health
 Invoke-RestMethod https://proposal-review-api-production.up.railway.app/api/billing/pro-checkout
 ```
 
-Strict thread-goal validation on 2026-05-16:
+Strict thread-goal validation on 2026-05-18:
 
 - All required tests passed in one final Nx run:
-  - `@vibetech/auth`: 1 file passed, 8 tests passed.
+  - `@vibetech/auth`: 1 file passed, 9 tests passed.
   - `@vibetech/billing`: 1 file passed, 8 tests passed.
   - `@vibetech/emails`: 1 file passed, 6 tests passed.
   - `@vibetech/landing`: 1 file passed, 2 tests passed.
   - `@vibetech/analytics`: 1 file passed, 3 tests passed.
   - `@vibetech/entitlements`: 1 file passed, 9 tests passed.
-  - `invoice-automation-saas`: 33 files passed, 175 tests passed.
+  - `invoice-automation-saas`: 34 files passed, 195 tests passed.
   - `@vibetech/command-center`: 29 files passed, 253 tests passed.
 - Fresh generator proof passed:
-  - `pnpm nx g @vibetech/factory:saas test-factory-app` created `apps/test-factory-app`.
+  - `pnpm nx run @vibetech/factory:test --skip-nx-cache` loaded the plugin successfully.
   - `pnpm nx build test-factory-app --skip-nx-cache` passed.
   - `pnpm nx run test-factory-app:api:build --skip-nx-cache` passed.
 - Donor build sanity passed:
-  - `pnpm nx run invoice-automation-saas:api:build --skip-nx-cache` passed.
+  - `pnpm nx run-many -t build,api:build --projects=invoice-automation-saas --skip-nx-cache` passed.
+- Command Center Factory panel validation passed:
+  - `pnpm nx test @vibetech/command-center --skip-nx-cache` passed.
+  - `pnpm nx typecheck @vibetech/command-center --skip-nx-cache` passed.
+  - `pnpm nx build @vibetech/command-center --skip-nx-cache` passed.
+  - `FactoryStatusService` returns `stripeStatus: "connected"`, `mrrCents: 0`, and `metadataSource: "vibe-app.json"` for `proposal-review-saas`.
 - Live production proof rechecked:
   - Railway `GET /api/health` returned `ok: true` and `app: "proposal-review-saas"`.
   - Railway `POST /api/billing/pro-checkout` from the Vercel origin returned a Stripe Checkout URL and session id.
