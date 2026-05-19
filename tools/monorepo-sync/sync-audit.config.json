@@ -6,14 +6,18 @@
     "build"
   ],
   "allowedMissingTargets": {
+    "@vibetech/factory":           ["typecheck", "build"],
     "devtools-mcp-server":           ["lint", "test"],
     "mcp-rag-server":                ["test"],
     "@vibetech/anthropic-api-tools": ["lint", "test"],
     "@vibetech/health-tracker":      ["test"],
+    "serenity-flow":                 ["test"],
+    "vectorshift-svg":               ["test"],
     "vibe-code-studio-vscode":       ["test"]
   },
   "allowedIsolatedProjects": [
     "@vibetech/anthropic-api-tools",
+    "@vibetech/factory",
     "@vibetech/feature-flags",
     "@vibetech/hooks",
     "@vibetech/health-tracker",
@@ -37,7 +41,9 @@
     "mcp-skills-server",
     "nova-mobile-app",
     "openrouter-proxy",
+    "serenity-flow",
     "symptom-tracker-api",
+    "vectorshift-svg",
     "vibe-shop",
     "vibe-justice",
     "vibe-code-studio-vscode",
