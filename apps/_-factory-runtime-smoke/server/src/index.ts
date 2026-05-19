@@ -31,14 +31,29 @@ app.get('/api/health', async () => ({
   app: '_-factory-runtime-smoke',
 }));
 
-app.get('/api/auth/me', async (req) => {
-  const status = readGeneratedAuthStatus(req.headers.cookie);
+app.get('/api/auth/me', async (req, reply) => {
+  try {
+    const status = readGeneratedAuthStatus(req.headers.cookie);
 
-  return {
-    ok: true,
-    configured: status.configured,
-    user: status.user,
-  };
+    if (!status) {
+      return reply.code(401).send({
+        ok: false,
+        error: 'Not authenticated',
+      });
+    }
+
+    return {
+      ok: true,
+      configured: !!status.configured,
+      user: status.user,
+    };
+  } catch (err) {
+    req.log.error({ err }, 'Error in /api/auth/me');
+    return reply.code(500).send({
+      ok: false,
+      error: 'Internal server error',
+    });
+  }
 });
 
 app.post('/api/auth/login', async (req, reply) => {

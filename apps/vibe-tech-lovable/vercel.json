@@ -1,4 +1,7 @@
 {
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile --filter ./apps/vibe-tech-lovable...",
+  "buildCommand": "cd ../.. && pnpm nx build vibe-tech-lovable",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/api/(.*)",

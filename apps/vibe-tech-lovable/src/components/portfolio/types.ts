@@ -5,5 +5,7 @@ export interface Project {
   category: string;
   description: string;
   image: string;
+  imageFit?: "cover" | "contain";
+  screenshots?: string[];
   tags: string[];
 }

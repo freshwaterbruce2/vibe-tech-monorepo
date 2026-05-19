@@ -22,6 +22,8 @@
 - `.env*` files other than examples/templates
 - `node_modules/`, `dist/`, `build/`, `release/`, `target/`
 - `_backups/`, `output/`, screenshots, logs, and test artifacts
+- VectorShift generated SVG output under `D:\VectorShift_Outputs\` until selected assets
+  are copied into a shipping app's `public/` or source asset folder
 - local AI/tool state such as `.agent/`, `.agents/`, `.codex-home/`, `.pnpm/`, `.serena/`
 
 ## Repo Rules

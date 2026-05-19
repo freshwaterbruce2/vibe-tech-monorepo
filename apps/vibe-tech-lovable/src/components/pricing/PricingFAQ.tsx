@@ -9,24 +9,24 @@ import {
 
 const faqItems = [
   {
-    question: "How do your prices compare to freelancers?",
-    answer: "While freelancer rates typically range from $30-150 per hour (often resulting in unpredictable project costs), our subscription model provides consistent, professional service at a fixed monthly rate. This eliminates surprise costs and ensures ongoing support."
+    question: "What does the monthly pricing cover?",
+    answer: "The monthly plans cover ongoing marketing-hub updates: product positioning, page updates, quote-flow improvements, launch messaging, route checks, and buyer-path refinements for the apps being promoted on Vibe-Tech.org."
   },
   {
-    question: "Why choose your service over DIY platforms?",
-    answer: "DIY platforms like Wix or Squarespace ($14-39/month) offer templates but lack professional design expertise. Our service includes custom professional design, development, and ongoing support at competitive rates, resulting in a higher-quality, unique website that truly represents your brand."
+    question: "Can this market more than one app?",
+    answer: "Yes. The site is being positioned as the front door for the full Vibe-Tech project suite, including Vibe Tutor, Chessmaster Academy, Proposal Review, Clinic Autopilot, Invoice Automation, and future generated products."
   },
   {
     question: "Can I upgrade or downgrade my plan?",
-    answer: "Yes, you can upgrade or downgrade your plan at any time. If you upgrade, you'll be charged the prorated difference for the remainder of your billing cycle. If you downgrade, the new rate will apply at the start of your next billing cycle."
+    answer: "Yes. Plans can scale from a single launch page to a multi-product catalog as more apps move from prototype to paid offer."
   },
   {
-    question: "Is there a setup fee or contract?",
-    answer: "No, we don't charge any setup fees and there are no long-term contracts. You can cancel your subscription at any time without penalty."
+    question: "Does this include deployment and domain work?",
+    answer: "The higher plans include deployment readiness support and coordination guidance. Production DNS or Vercel alias changes are handled as explicit release steps after the app build is verified."
   },
   {
-    question: "What happens if I need additional services?",
-    answer: "If you need services beyond what's included in your plan, we offer custom quotes for additional work. Our team will assess your requirements and provide transparent pricing before any work begins."
+    question: "What if a product still needs checkout or backend work?",
+    answer: "That work can be scoped separately. The marketing hub can still present the offer, capture leads, and make the next engineering gate clear while the product runtime is finished."
   }
 ];
 

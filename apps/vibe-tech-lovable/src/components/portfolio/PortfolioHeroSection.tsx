@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 const PortfolioHeroSection = () => {
   return <section className="pt-28 pb-12 px-4 relative z-10">
       <div className="max-w-6xl mx-auto">
-        <PageHeader title="Our Portfolio" subtitle="Explore our collection of projects spanning web development, mobile applications, and custom software solutions." />
+        <PageHeader title="Project Portfolio" subtitle="Explore the Vibe-Tech apps, learning products, SaaS tools, and automation systems now connected through Vibe-Tech.org." />
         
         <motion.div initial={{
         opacity: 0,
@@ -16,8 +16,9 @@ const PortfolioHeroSection = () => {
         duration: 0.7
       }} className="mt-8 text-center">
           <p className="max-w-2xl mx-auto text-gray-50">
-            Each project represents our commitment to innovative design, cutting-edge technology, 
-            and exceptional user experiences. Browse our showcase to see how we transform ideas into reality.
+            This is the catalog behind the public front door: Vibe Tutor, Chessmaster Academy,
+            Proposal Review, Clinic Autopilot, Invoice Automation, and the launch systems that
+            turn each app into a market-facing offer.
           </p>
         </motion.div>
       </div>

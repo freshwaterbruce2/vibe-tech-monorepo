@@ -4,7 +4,13 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { ConnectionLineProps } from './types';
 
-const ConnectionLine: React.FC<ConnectionLineProps> = ({ startPos, endPos, color, threshold }) => {
+const ConnectionLine: React.FC<ConnectionLineProps> = ({
+  particlesRef,
+  startIndex,
+  endIndex,
+  color,
+  threshold,
+}) => {
   const lineRef = useRef<THREE.Line>(null);
   const positionsRef = useRef(new Float32Array(6));
   const lineColorRef = useRef(new THREE.Color(color));
@@ -20,50 +26,51 @@ const ConnectionLine: React.FC<ConnectionLineProps> = ({ startPos, endPos, color
   }, []);
 
   useFrame(({ clock }) => {
-    if (lineRef.current && startPos.current && endPos.current) {
-      const positions = positionsRef.current;
-      // Update line vertices based on particle positions
-      positions[0] = startPos.current.position.x;
-      positions[1] = startPos.current.position.y;
-      positions[2] = startPos.current.position.z;
+    const startParticle = particlesRef.current[startIndex];
+    const endParticle = particlesRef.current[endIndex];
 
-      positions[3] = endPos.current.position.x;
-      positions[4] = endPos.current.position.y;
-      positions[5] = endPos.current.position.z;
+    if (!lineRef.current) {
+      return;
+    }
 
-      const positionAttribute = lineRef.current.geometry.attributes.position as THREE.BufferAttribute;
-      positionAttribute.needsUpdate = true;
+    if (!startParticle || !endParticle) {
+      lineRef.current.visible = false;
+      return;
+    }
 
-      // Calculate distance between particles
-      const distance = new THREE.Vector3(
-        startPos.current.position.x,
-        startPos.current.position.y,
-        startPos.current.position.z
-      ).distanceTo(new THREE.Vector3(
-        endPos.current.position.x,
-        endPos.current.position.y,
-        endPos.current.position.z
-      ));
+    const positions = positionsRef.current;
+    positions[0] = startParticle.position.x;
+    positions[1] = startParticle.position.y;
+    positions[2] = startParticle.position.z;
 
-      // Pulse effect for line opacity
-      const pulseFactor = (Math.sin(clock.elapsedTime * 2) + 1) * 0.2 + 0.1; // 0.1 to 0.5 range
+    positions[3] = endParticle.position.x;
+    positions[4] = endParticle.position.y;
+    positions[5] = endParticle.position.z;
 
-      // Only show lines for particles within threshold distance
-      if (distance < threshold) {
-        lineRef.current.visible = true;
+    let positionAttribute = lineRef.current.geometry.getAttribute(
+      'position',
+    ) as THREE.BufferAttribute | undefined;
+    if (!positionAttribute) {
+      positionAttribute = new THREE.BufferAttribute(positionsRef.current, 3);
+      lineRef.current.geometry.setAttribute('position', positionAttribute);
+    }
+    positionAttribute.needsUpdate = true;
 
-        // Adjust opacity based on distance and pulse
-        const opacity = (1 - (distance / threshold)) * pulseFactor;
-        if (lineRef.current.material instanceof THREE.LineBasicMaterial) {
-          lineRef.current.material.opacity = opacity;
+    const distance = startParticle.position.distanceTo(endParticle.position);
+    const pulseFactor = (Math.sin(clock.elapsedTime * 2) + 1) * 0.2 + 0.1; // 0.1 to 0.5 range
 
-          // Subtle color shift based on time
-          const hueShift = Math.sin(clock.elapsedTime * 0.2) * 0.05;
-          lineRef.current.material.color.copy(lineColorRef.current).offsetHSL(hueShift, 0, 0);
-        }
-      } else {
-        lineRef.current.visible = false;
+    if (distance < threshold) {
+      lineRef.current.visible = true;
+
+      const opacity = (1 - (distance / threshold)) * pulseFactor;
+      if (lineRef.current.material instanceof THREE.LineBasicMaterial) {
+        lineRef.current.material.opacity = opacity;
+
+        const hueShift = Math.sin(clock.elapsedTime * 0.2) * 0.05;
+        lineRef.current.material.color.copy(lineColorRef.current).offsetHSL(hueShift, 0, 0);
       }
+    } else {
+      lineRef.current.visible = false;
     }
   });
 

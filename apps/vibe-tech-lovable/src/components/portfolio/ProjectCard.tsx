@@ -10,6 +10,11 @@ interface ProjectCardProps {
 }
 
 const ProjectCard = ({ project }: ProjectCardProps) => {
+  const imageFitClass =
+    project.imageFit === "contain"
+      ? "object-contain bg-[rgba(2,6,18,0.92)] p-4"
+      : "object-cover";
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -24,7 +29,7 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
           <img 
             src={project.image} 
             alt={project.title} 
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className={`w-full h-full ${imageFitClass} group-hover:scale-105 transition-transform duration-500`}
             loading="lazy"
           />
           <div className="absolute top-3 right-3 bg-aura-accent/90 text-white text-xs font-medium px-3 py-1 rounded-full z-10 backdrop-blur-sm">

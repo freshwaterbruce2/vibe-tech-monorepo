@@ -12,7 +12,7 @@ const Footer = () => {
               Vibe Tech
             </h3>
             <p className="text-white mb-4">
-              Innovative digital solutions where bold design meets rock-solid functionality.
+              The marketing hub for Vibe Tech products, AI tools, and business automation.
             </p>
             <div className="text-white">
               <p>Bruce Freshwater · freshwaterbruce@icloud.com</p>
@@ -22,7 +22,7 @@ const Footer = () => {
           
           <div>
             <h4 className="font-bold mb-4 text-lg text-white">Quick Links</h4>
-            <ul className="space-y-2">
+            <ul className="grid grid-cols-2 gap-x-6 gap-y-2">
               <li>
                 <Link to="/" className="text-white hover:text-aura-accent transition-colors">
                   Home
@@ -34,8 +34,28 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
+                <Link to="/pricing" className="text-white hover:text-aura-accent transition-colors">
+                  Pricing
+                </Link>
+              </li>
+              <li>
                 <Link to="/portfolio" className="text-white hover:text-aura-accent transition-colors">
                   Portfolio
+                </Link>
+              </li>
+              <li>
+                <Link to="/tools" className="text-white hover:text-aura-accent transition-colors">
+                  Tools
+                </Link>
+              </li>
+              <li>
+                <Link to="/resources" className="text-white hover:text-aura-accent transition-colors">
+                  Resources
+                </Link>
+              </li>
+              <li>
+                <Link to="/blog" className="text-white hover:text-aura-accent transition-colors">
+                  Blog
                 </Link>
               </li>
               <li>
@@ -53,7 +73,7 @@ const Footer = () => {
         
         <div className="pt-6 border-t border-aura-accent/10 flex flex-col md:flex-row items-center justify-between">
           <p className="text-white text-sm mb-4 md:mb-0">
-            &copy; 2025 Vibe Tech. All rights reserved.
+            &copy; 2026 Vibe Tech. All rights reserved.
           </p>
           
           <div className="flex space-x-6">

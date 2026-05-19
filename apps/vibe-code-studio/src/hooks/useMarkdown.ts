@@ -95,11 +95,11 @@ export function useMarkdown(options: UseMarkdownOptions = {}) {
       workerRef.current.onmessage = (event: MessageEvent<MarkdownResponse>) => {
         const { id, error } = event.data;
 
-        const resolver = pendingRequestsRef.current.get(id);
-        if (resolver) {
-          resolver(event.data);
-          pendingRequestsRef.current.delete(id);
-        }
+        const pendingRequest = pendingRequestsRef.current.get(id);
+        if (!pendingRequest) return;
+
+        pendingRequest(event.data);
+        pendingRequestsRef.current.delete(id);
 
         setState((prev) => ({
           ...prev,

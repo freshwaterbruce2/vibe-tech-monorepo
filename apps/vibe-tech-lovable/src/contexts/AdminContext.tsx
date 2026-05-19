@@ -10,18 +10,47 @@ interface AdminContextType {
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 const ADMIN_PASSWORD = "vibe2024admin"; // In production, this would be handled more securely
+const ADMIN_SESSION_KEY = 'vibetech_admin_session';
+
+const getStoredAdminSession = (): string | null => {
+  const electronStore = window.electronAPI?.store;
+  if (electronStore) {
+    return electronStore.get(ADMIN_SESSION_KEY);
+  }
+
+  return window.localStorage.getItem(ADMIN_SESSION_KEY);
+};
+
+const setStoredAdminSession = () => {
+  const electronStore = window.electronAPI?.store;
+  if (electronStore) {
+    electronStore.set(ADMIN_SESSION_KEY, 'authenticated');
+    return;
+  }
+
+  window.localStorage.setItem(ADMIN_SESSION_KEY, 'authenticated');
+};
+
+const clearStoredAdminSession = () => {
+  const electronStore = window.electronAPI?.store;
+  if (electronStore) {
+    electronStore.delete(ADMIN_SESSION_KEY);
+    return;
+  }
+
+  window.localStorage.removeItem(ADMIN_SESSION_KEY);
+};
 
 export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isAdmin, setIsAdmin] = useState<boolean>(() => {
-    // Check if admin session exists in localStorage
-    const adminSession = window.electronAPI.store.get('vibetech_admin_session');
+    const adminSession = getStoredAdminSession();
     return adminSession === 'authenticated';
   });
 
   const login = (password: string): boolean => {
     if (password === ADMIN_PASSWORD) {
       setIsAdmin(true);
-      window.electronAPI.store.set('vibetech_admin_session', 'authenticated');
+      setStoredAdminSession();
       return true;
     }
     return false;
@@ -29,7 +58,7 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const logout = () => {
     setIsAdmin(false);
-    window.electronAPI.store.delete('vibetech_admin_session');
+    clearStoredAdminSession();
   };
 
   const checkAdminStatus = (): boolean => {

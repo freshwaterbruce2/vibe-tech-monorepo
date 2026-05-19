@@ -4,9 +4,9 @@
   "displayName": "Proposal Review",
   "archetype": "web-saas",
   "monetization": {
-    "stripeConnected": false,
+    "stripeConnected": true,
     "firstRevenueAt": null,
-    "mrrCents": null,
+    "mrrCents": 0,
     "currency": "usd"
   }
 }

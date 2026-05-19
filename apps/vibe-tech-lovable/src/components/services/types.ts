@@ -1,10 +1,12 @@
 
+import type { LucideIcon } from "lucide-react";
+
 export interface ServiceType {
   id: string;
   name: string;
   description: string;
   icon: {
-    type: string;
+    type: LucideIcon;
     props: {
       className: string;
     }
