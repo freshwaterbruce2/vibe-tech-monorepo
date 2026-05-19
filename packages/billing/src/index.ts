@@ -14,7 +14,6 @@ export interface StripeClientLike {
     sessions: {
       create(input: {
         mode: 'payment';
-        payment_method_types: string[];
         line_items: Array<{
           price_data: {
             currency: string;
@@ -92,7 +91,6 @@ export async function buildCheckoutSession(
 ): Promise<CheckoutSessionResult> {
   const session = await stripeClient.checkout.sessions.create({
     mode: 'payment',
-    payment_method_types: ['card'],
     line_items: input.lineItems.map((lineItem) => ({
       price_data: {
         currency: input.currency.toLowerCase(),

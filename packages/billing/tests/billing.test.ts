@@ -147,6 +147,11 @@ describe('@vibetech/billing stripe helpers', () => {
       url: 'https://checkout.stripe.test/session',
     });
     expect(create).toHaveBeenCalledOnce();
+    expect(create).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        payment_method_types: expect.anything(),
+      }),
+    );
   });
 
   it('delegates webhook verification to Stripe', () => {

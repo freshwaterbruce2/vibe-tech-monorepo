@@ -68,6 +68,7 @@ export function App() {
     try {
       const response = await fetch(`${apiBase}/api/review`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload),
       });
@@ -178,7 +179,9 @@ export function App() {
     setCheckoutError(null);
 
     try {
-      const response = await fetch(`${apiBase}/api/billing/demo-checkout`);
+      const response = await fetch(`${apiBase}/api/billing/demo-checkout`, {
+        credentials: 'include',
+      });
       const body = (await response.json()) as { url?: string; error?: string; detail?: string };
       if (!response.ok || !body.url) {
         throw new Error(body.detail ?? body.error ?? 'Checkout is not available');
@@ -341,14 +344,15 @@ export function App() {
 
             <div className="action-row">
               <button onClick={() => void runFreeReview()} disabled={loading !== null}>
-                {loading === 'review' ? 'Running review...' : 'Run free review'}
+                {loading === 'review' ? 'Building scorecard...' : 'Get My Free Scorecard'}
               </button>
-              <button className="secondary" onClick={() => void runProPreview()} disabled={loading !== null}>
-                {loading === 'pro'
-                  ? 'Loading pro...'
-                  : user
-                    ? 'Preview pro rewrite'
-                    : 'Sign in for pro rewrite'}
+              <button
+                id="pro-rewrite"
+                className="secondary"
+                onClick={() => void runProPreview()}
+                disabled={loading !== null}
+              >
+                {loading === 'pro' ? 'Unlocking rewrite...' : 'Unlock Pro Rewrite'}
               </button>
               <button className="secondary" onClick={() => void startCheckout()} disabled={loading !== null}>
                 {loading === 'checkout' ? 'Starting checkout...' : 'Open Stripe checkout'}
