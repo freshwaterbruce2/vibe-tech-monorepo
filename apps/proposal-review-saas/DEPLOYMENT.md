@@ -16,6 +16,7 @@ What it proves locally:
 - the compiled API passes health/auth/pro-route smoke checks
 - the checkout route returns a safe configuration error when Stripe credentials are absent
 - if `STRIPE_SECRET_KEY` is present, the checkout route must return a Stripe Checkout URL
+- `STRIPE_WEBHOOK_SECRET` enables `/api/billing/stripe-webhook` to grant the Pro Rewrite entitlement after paid Checkout completion
 - missing Stripe or deploy credentials are reported explicitly as warnings
 
 To make missing deploy credentials fail the preflight, run:
@@ -39,7 +40,10 @@ PORT=3000
 HOST=0.0.0.0
 APP_BASE_URL=https://proposal-review.your-domain.com
 STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
 RESEND_API_KEY=
+EMAIL_FROM=Proposal Review <scorecards@example.com>
+PROPOSAL_REVIEW_DATABASE_PATH=/data/proposal-review-saas.db
 SENTRY_DSN=
 ```
 
@@ -60,7 +64,8 @@ SENTRY_DSN=
 3. Set the backend environment variables above.
 4. Confirm `GET /api/health` returns `{"ok":true,"app":"proposal-review-saas"}`.
 5. Confirm `GET /api/billing/demo-checkout` returns a Stripe Checkout URL once `STRIPE_SECRET_KEY` is set.
-6. Confirm `POST /api/billing/pro-checkout` with a proposal payload returns a Stripe Checkout URL and a usage quote.
+6. Configure the Stripe webhook endpoint at `/api/billing/stripe-webhook` and set `STRIPE_WEBHOOK_SECRET` from the endpoint signing secret.
+7. Confirm a paid Checkout completion grants `premium.route` in `proposal_user_entitlements` so abandoned scorecard emails stop for upgraded users.
 
 ## Vercel frontend steps
 

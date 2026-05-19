@@ -28,7 +28,7 @@
   "author": "Vibetech",
   "license": "MIT",
   "dependencies": {
-    "inngest": "^3.52.7"
+    "inngest": "^3.54.0"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",

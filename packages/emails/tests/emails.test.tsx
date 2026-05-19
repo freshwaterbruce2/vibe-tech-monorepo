@@ -2,6 +2,9 @@ import { createElement } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import {
+  AbandonedScorecardDay1,
+  AbandonedScorecardDay3,
+  AbandonedScorecardDay7,
   InvoiceCreated,
   OverdueReminder,
   PaymentReceipt,
@@ -12,6 +15,8 @@ import {
 describe('@vibetech/emails', () => {
   const payUrl = 'https://example.com/pay/inv-12345';
   const invoiceNumber = 'INV-12345';
+  const scorecardUrl = 'https://example.com/scorecards/free-123';
+  const proRewriteUrl = 'https://example.com/pro-rewrite/start';
 
   it('renders InvoiceCreated HTML with invoice number and pay URL', async () => {
     const html = await renderToHtml(
@@ -87,6 +92,46 @@ describe('@vibetech/emails', () => {
       expect(html.length).toBeGreaterThan(0);
       expect(html).toContain(invoiceNumber);
       expect(html).toContain(payUrl);
+    },
+  );
+
+  it.each([
+    {
+      Template: AbandonedScorecardDay1,
+      dayCopy: 'Abandoned scorecard day 1',
+      ctaCopy: 'Start my Pro Rewrite',
+    },
+    {
+      Template: AbandonedScorecardDay3,
+      dayCopy: 'Abandoned scorecard day 3',
+      ctaCopy: 'Turn my scorecard into a rewrite',
+    },
+    {
+      Template: AbandonedScorecardDay7,
+      dayCopy: 'Abandoned scorecard day 7',
+      ctaCopy: 'Get the Pro Rewrite',
+    },
+  ] as const)(
+    'renders $dayCopy HTML with scorecard and Pro Rewrite copy',
+    async ({ Template, dayCopy, ctaCopy }) => {
+      const html = await renderToHtml(
+        createElement(Template, {
+          recipientName: 'Jordan',
+          score: 72,
+          scorecardUrl,
+          proRewriteUrl,
+          companyName: 'VibeTech',
+        }),
+      );
+
+      expect(html.length).toBeGreaterThan(0);
+      expect(html).toContain(dayCopy);
+      expect(html).toContain(ctaCopy);
+      expect(html).toContain(scorecardUrl);
+      expect(html).toContain(proRewriteUrl);
+      expect(html).toContain('scorecard');
+      expect(html).toContain('Pro Rewrite');
+      expect(html).toContain('72/100');
     },
   );
 });

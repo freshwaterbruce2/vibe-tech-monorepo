@@ -1,6 +1,6 @@
 {
   "buildCommand": "cd ../.. && pnpm nx build vibe-tech-marketing",
-  "installCommand": "cd ../.. && pnpm install --frozen-lockfile --filter ./apps/vibe-tech-marketing...",
+  "installCommand": "cd ../.. && pnpm install --force --frozen-lockfile --filter ./apps/vibe-tech-marketing...",
   "outputDirectory": "dist",
   "rewrites": [
     {

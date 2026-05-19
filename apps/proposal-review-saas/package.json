@@ -12,7 +12,7 @@
     "build:api": "tsc -p server/tsconfig.json",
     "start:api": "node server/dist/index.js",
     "ship:check": "pnpm run build:shared:api && pnpm run build && pnpm run build:api && tsx server/scripts/ship-check.ts",
-    "test": "node ../../node_modules/vitest/vitest.mjs run --passWithNoTests",
+    "test": "node ../../node_modules/vitest/vitest.mjs run --config server/vitest.config.mjs --passWithNoTests",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

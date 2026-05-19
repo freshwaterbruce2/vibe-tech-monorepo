@@ -1,6 +1,6 @@
 {
   "buildCommand": "pnpm run build:shared:api && pnpm run build",
-  "installCommand": "cd ../.. && pnpm install --frozen-lockfile --filter ./apps/appointment-reminder-saas...",
+  "installCommand": "cd ../.. && pnpm install --force --frozen-lockfile --filter ./apps/appointment-reminder-saas...",
   "outputDirectory": "dist",
   "rewrites": [
     {
@@ -10,6 +10,7 @@
   ],
   "experimentalServices": {
     "web": {
+      "entrypoint": ".",
       "routePrefix": "/",
       "framework": "vite"
     }
