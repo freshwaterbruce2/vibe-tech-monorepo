@@ -69,6 +69,7 @@ jobs:
             nx-${{ runner.os }}-
 
       - name: Start Nx Cloud CI run
+        if: ${{ vars.NX_ENABLE_DISTRIBUTED_CI == 'true' }}
         continue-on-error: true
         run: >
           pnpm exec nx start-ci-run
