@@ -34,12 +34,25 @@ import {
   type AbandonedScorecardEmailSender,
   type ScorecardLifecycleRepository,
 } from './scorecardLifecycle.js';
+import { createRateLimitPreHandler } from './rateLimit.js';
 
 loadLocalEnv();
 
 const app = Fastify({ logger: true });
 const port = Number(process.env.PORT ?? 5320);
 const host = process.env.HOST ?? '127.0.0.1';
+const demoCheckoutRateLimit = createRateLimitPreHandler({
+  keyPrefix: 'demo-checkout',
+  maxRequests: 10,
+  windowMs: 60_000,
+  message: 'Too many checkout requests. Please wait and try again.',
+});
+const stripeWebhookRateLimit = createRateLimitPreHandler({
+  keyPrefix: 'stripe-webhook',
+  maxRequests: 120,
+  windowMs: 60_000,
+  message: 'Too many webhook requests. Please wait and try again.',
+});
 
 registerJsonParserWithStripeRawBody();
 
@@ -215,75 +228,87 @@ app.post('/api/pro/rewrite', async (req, reply) => {
   };
 });
 
-app.get('/api/billing/demo-checkout', async (req, reply) => {
-  const baseUrl = process.env.APP_BASE_URL ?? `http://${host}:${port}`;
-  const authStatus = readGeneratedAuthStatus(req.headers.cookie);
+app.get(
+  '/api/billing/demo-checkout',
+  {
+    preHandler: demoCheckoutRateLimit,
+  },
+  async (req, reply) => {
+    const baseUrl = process.env.APP_BASE_URL ?? `http://${host}:${port}`;
+    const authStatus = readGeneratedAuthStatus(req.headers.cookie);
 
-  try {
-    const session = await buildCheckoutSession({
-      currency: 'USD',
-      successUrl: `${baseUrl}/billing/success`,
-      cancelUrl: `${baseUrl}/billing/canceled`,
-      customerEmail: authStatus.user?.email,
-      metadata: buildProRewriteCheckoutMetadata(authStatus.user),
-      lineItems: [
-        {
-          name: 'ProposalReviewSaas Pro',
-          unitAmount: 19,
-        },
-      ],
+    try {
+      const session = await buildCheckoutSession({
+        currency: 'USD',
+        successUrl: `${baseUrl}/billing/success`,
+        cancelUrl: `${baseUrl}/billing/canceled`,
+        customerEmail: authStatus.user?.email,
+        metadata: buildProRewriteCheckoutMetadata(authStatus.user),
+        lineItems: [
+          {
+            name: 'ProposalReviewSaas Pro',
+            unitAmount: 19,
+          },
+        ],
+      });
+
+      return {
+        ok: true,
+        url: session.url,
+        sessionId: session.id,
+      };
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      req.log.error({ err: error }, 'Demo checkout session failed');
+      return reply.code(503).send({
+        error: 'Stripe checkout is not configured',
+        detail,
+      });
+    }
+  },
+);
+
+app.post(
+  '/api/billing/stripe-webhook',
+  {
+    preHandler: stripeWebhookRateLimit,
+  },
+  async (req, reply) => {
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
+    if (!webhookSecret) {
+      return reply.code(503).send({
+        error: 'Stripe webhook is not configured',
+      });
+    }
+
+    const signature = firstString(req.headers['stripe-signature']);
+    if (!signature) {
+      return reply.code(400).send({
+        error: 'Missing Stripe signature',
+      });
+    }
+
+    const rawBody = Buffer.isBuffer(req.body)
+      ? req.body
+      : Buffer.from(JSON.stringify(req.body ?? {}));
+    let event: StripeWebhookEventLike;
+
+    try {
+      event = verifyWebhookSignature(rawBody, signature, webhookSecret);
+    } catch {
+      return reply.code(400).send({
+        error: 'Invalid Stripe signature',
+      });
+    }
+
+    const grant = grantProRewriteEntitlementFromStripeEvent(event, scorecardLifecycle, app.log);
+
+    return reply.code(grant.ok ? 200 : 503).send({
+      received: true,
+      ...grant,
     });
-
-    return {
-      ok: true,
-      url: session.url,
-      sessionId: session.id,
-    };
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error);
-    req.log.error({ err: error }, 'Demo checkout session failed');
-    return reply.code(503).send({
-      error: 'Stripe checkout is not configured',
-      detail,
-    });
-  }
-});
-
-app.post('/api/billing/stripe-webhook', async (req, reply) => {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
-  if (!webhookSecret) {
-    return reply.code(503).send({
-      error: 'Stripe webhook is not configured',
-    });
-  }
-
-  const signature = firstString(req.headers['stripe-signature']);
-  if (!signature) {
-    return reply.code(400).send({
-      error: 'Missing Stripe signature',
-    });
-  }
-
-  const rawBody = Buffer.isBuffer(req.body)
-    ? req.body
-    : Buffer.from(JSON.stringify(req.body ?? {}));
-  let event: StripeWebhookEventLike;
-
-  try {
-    event = verifyWebhookSignature(rawBody, signature, webhookSecret);
-  } catch {
-    return reply.code(400).send({
-      error: 'Invalid Stripe signature',
-    });
-  }
-
-  const grant = grantProRewriteEntitlementFromStripeEvent(event, scorecardLifecycle, app.log);
-
-  return reply.code(grant.ok ? 200 : 503).send({
-    received: true,
-    ...grant,
-  });
-});
+  },
+);
 
 app.addHook('onClose', async () => {
   stopAbandonedScorecardSweep?.();
@@ -367,7 +392,10 @@ function buildProRewriteCheckoutMetadata(user: AuthUser | null): Record<string, 
       featureKey: GENERATED_FEATURES.premiumRoute,
       userId: user?.id,
       userEmail: user?.email,
-    }).filter((entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1]),
+    }).filter(
+      (entry): entry is [string, string] =>
+        typeof entry[1] === 'string' && entry[1].length > 0,
+    ),
   );
 }
 
@@ -551,7 +579,7 @@ function firstString(...values: unknown[]): string | undefined {
 
 function normalizeEmail(value: string | undefined): string | null {
   const email = value?.trim().toLowerCase();
-  return email && email.includes('@') ? email : null;
+  return email?.includes('@') ? email : null;
 }
 
 function normalizeOptionalString(value: string | undefined): string | null {

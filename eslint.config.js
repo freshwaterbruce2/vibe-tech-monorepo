@@ -526,6 +526,18 @@ export default tseslint.config(
     },
   },
 
+  // proposal-review server tests use the nested Node tsconfig, not the Vite app tsconfig.
+  {
+    files: ['apps/proposal-review-saas/server/src/**/*.test.ts'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        projectService: false,
+        project: ['./apps/proposal-review-saas/server/tsconfig.lint.json'],
+      },
+    },
+  },
+
   // ipc-bridge: tests are outside the build tsconfig (src/**/* only), use lint tsconfig
   {
     files: ['backend/ipc-bridge/**/*.{ts,tsx}'],
