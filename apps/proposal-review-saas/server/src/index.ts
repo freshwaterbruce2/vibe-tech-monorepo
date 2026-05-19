@@ -233,6 +233,7 @@ app.get(
   {
     preHandler: demoCheckoutRateLimit,
   },
+  // codeql[js/missing-rate-limiting] Fastify route options apply demoCheckoutRateLimit above.
   async (req, reply) => {
     const baseUrl = process.env.APP_BASE_URL ?? `http://${host}:${port}`;
     const authStatus = readGeneratedAuthStatus(req.headers.cookie);
@@ -273,6 +274,7 @@ app.post(
   {
     preHandler: stripeWebhookRateLimit,
   },
+  // codeql[js/missing-rate-limiting] Fastify route options apply stripeWebhookRateLimit above.
   async (req, reply) => {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
     if (!webhookSecret) {
