@@ -1,150 +1,130 @@
 #!/usr/bin/env powershell
 # Hook Validation Script
-# Tests that hooks are properly configured and receiving data
+# Validates the active Claude Code hook configuration without executing hooks.
 
 param(
     [switch]$Verbose
 )
 
+$ErrorActionPreference = 'Continue'
+
 Write-Host "`n=== Claude Code Hook Validation ===" -ForegroundColor Cyan
 
-# Test 1: Check hooks exist
-Write-Host "`n[1/5] Checking hook files exist..." -ForegroundColor Yellow
-$HookFiles = @(
-    ".claude/hooks/pre-tool-use.ps1",
-    ".claude/hooks/post-tool-use.ps1"
-)
+$settingsPath = '.claude/settings.json'
+$failed = $false
 
-$AllExist = $true
-foreach ($HookFile in $HookFiles) {
-    if (Test-Path $HookFile) {
-        Write-Host "  OK $HookFile exists" -ForegroundColor Green
-    } else {
-        Write-Host "  FAIL $HookFile missing!" -ForegroundColor Red
-        $AllExist = $false
-    }
+if (-not (Test-Path -LiteralPath $settingsPath)) {
+    Write-Host "FAIL settings file missing: $settingsPath" -ForegroundColor Red
+    exit 1
 }
-
-# Test 2: Simulate hook execution with test JSON
-Write-Host "`n[2/5] Testing hook data parsing..." -ForegroundColor Yellow
-
-$TestPreToolJson = @{
-    session_id = "test-session"
-    tool_name = "TestTool"
-    tool_input = @{ test_param = "test_value" }
-    hook_event_name = "PreToolUse"
-} | ConvertTo-Json
-
-$TestPostToolJson = @{
-    session_id = "test-session"
-    tool_name = "TestTool"
-    tool_input = @{ test_param = "test_value" }
-    tool_response = @{ success = $true }
-    hook_event_name = "PostToolUse"
-} | ConvertTo-Json
 
 try {
-    # Test pre-tool-use hook
-    $TestPreToolJson | & powershell -NoProfile -ExecutionPolicy Bypass -File ".claude/hooks/pre-tool-use.ps1" 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "  OK pre-tool-use.ps1 executed successfully" -ForegroundColor Green
-    } else {
-        Write-Host "  FAIL pre-tool-use.ps1 failed (exit code: $LASTEXITCODE)" -ForegroundColor Red
-    }
-
-    # Test post-tool-use hook
-    $TestPostToolJson | & powershell -NoProfile -ExecutionPolicy Bypass -File ".claude/hooks/post-tool-use.ps1" 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "  OK post-tool-use.ps1 executed successfully" -ForegroundColor Green
-    } else {
-        Write-Host "  FAIL post-tool-use.ps1 failed (exit code: $LASTEXITCODE)" -ForegroundColor Red
-    }
+    $settings = Get-Content -LiteralPath $settingsPath -Raw | ConvertFrom-Json -ErrorAction Stop
+    Write-Host "OK settings.json parses" -ForegroundColor Green
 } catch {
-    Write-Host "  FAIL Hook execution error: $_" -ForegroundColor Red
+    Write-Host "FAIL settings.json does not parse: $_" -ForegroundColor Red
+    exit 1
 }
 
-# Test 3: Verify database has recent data
-Write-Host "`n[3/5] Checking database for recent activity..." -ForegroundColor Yellow
+Write-Host "`n[1/4] Checking configured hook files..." -ForegroundColor Yellow
+$hookRows = @()
+foreach ($event in $settings.hooks.PSObject.Properties.Name) {
+    foreach ($entry in $settings.hooks.$event) {
+        foreach ($hook in $entry.hooks) {
+            $command = [string]$hook.command
+            if ($command -match '-File\s+([^\s]+)') {
+                $path = $Matches[1]
+                $shell = if ($command -match '^\s*([^\s]+)') { $Matches[1] } else { 'powershell' }
+                $exists = Test-Path -LiteralPath $path
+                $resolvedPath = if ($exists) { (Resolve-Path -LiteralPath $path).Path } else { $path }
+                $hookRows += [pscustomobject]@{
+                    Event = $event
+                    Matcher = $entry.matcher
+                    Shell = $shell
+                    Path = $resolvedPath
+                    Exists = $exists
+                }
+                if ($exists) {
+                    Write-Host "  OK $event $path" -ForegroundColor Green
+                } else {
+                    Write-Host "  FAIL $event $path missing" -ForegroundColor Red
+                    $failed = $true
+                }
+            }
+        }
+    }
+}
 
-$DbPath = "D:\databases\agent_learning.db"
-if (Test-Path $DbPath) {
+if ($hookRows.Count -eq 0) {
+    Write-Host '  FAIL no command hooks found in settings.json' -ForegroundColor Red
+    $failed = $true
+}
+
+Write-Host "`n[2/4] Checking PowerShell syntax..." -ForegroundColor Yellow
+foreach ($row in $hookRows | Where-Object { $_.Exists }) {
+    $parseCommand = @'
+$Path = $env:CODEX_HOOK_PARSE_PATH
+$tokens = $null
+$parseErrors = $null
+[System.Management.Automation.Language.Parser]::ParseFile(
+    $Path,
+    [ref]$tokens,
+    [ref]$parseErrors
+) | Out-Null
+
+if ($parseErrors -and $parseErrors.Count -gt 0) {
+    foreach ($parseError in $parseErrors) {
+        Write-Output ("{0}: {1}" -f $parseError.Extent.StartLineNumber, $parseError.Message)
+    }
+    exit 1
+}
+exit 0
+'@
+
+    $env:CODEX_HOOK_PARSE_PATH = $row.Path
     try {
-        # Query for recent executions
-        $Query1 = "SELECT COUNT(*) FROM agent_executions WHERE started_at > datetime('now', '-1 hour');"
-        $RecentCount = & sqlite3 $DbPath $Query1 2>$null
-
-        # Query for Unknown tool names
-        $Query2 = "SELECT COUNT(*) FROM agent_executions WHERE tools_used = 'Unknown' AND started_at > datetime('now', '-1 hour');"
-        $UnknownCount = & sqlite3 $DbPath $Query2 2>$null
-
-        # Query for incomplete executions
-        $Query3 = "SELECT COUNT(*) FROM agent_executions WHERE completed_at IS NULL AND started_at > datetime('now', '-1 hour');"
-        $IncompleteCount = & sqlite3 $DbPath $Query3 2>$null
-
-        Write-Host "  OK Recent executions (last hour): $RecentCount" -ForegroundColor Green
-
-        if ($UnknownCount -gt 0) {
-            Write-Host "  WARN 'Unknown' tool names: $UnknownCount (should be 0!)" -ForegroundColor Yellow
+        $encodedCommand = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($parseCommand))
+        $parseOutput = & $row.Shell -NoProfile -ExecutionPolicy Bypass -EncodedCommand $encodedCommand 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "  FAIL $($row.Path)" -ForegroundColor Red
+            foreach ($parseLine in $parseOutput) {
+                Write-Host "    $parseLine" -ForegroundColor Red
+            }
+            $failed = $true
         } else {
-            Write-Host "  OK No 'Unknown' tool names" -ForegroundColor Green
+            Write-Host "  OK $($row.Path) ($($row.Shell))" -ForegroundColor Green
         }
-
-        if ($IncompleteCount -gt 0) {
-            Write-Host "  WARN Incomplete executions: $IncompleteCount (POST-TOOL hooks may be failing)" -ForegroundColor Yellow
-        } else {
-            Write-Host "  OK All executions completed" -ForegroundColor Green
-        }
-    } catch {
-        Write-Host "  FAIL Database query failed: $_" -ForegroundColor Red
+    } finally {
+        Remove-Item Env:\CODEX_HOOK_PARSE_PATH -ErrorAction SilentlyContinue
     }
-} else {
-    Write-Host "  FAIL Database not found at $DbPath" -ForegroundColor Red
 }
 
-# Test 4: Check logs for actual tool names
-Write-Host "`n[4/5] Checking logs for tool name diversity..." -ForegroundColor Yellow
-
-$LogFile = "D:\learning-system\logs\tool-usage-$(Get-Date -Format 'yyyy-MM-dd').log"
-if (Test-Path $LogFile) {
-    $LogContent = Get-Content $LogFile -ErrorAction SilentlyContinue
-    $ToolNames = $LogContent | Select-String "Tool: (\w+)" | ForEach-Object { $_.Matches.Groups[1].Value } | Select-Object -Unique
-
-    if ($ToolNames -contains "Unknown") {
-        Write-Host "  WARN Logs contain 'Unknown' tool names - hooks may not be parsing stdin correctly" -ForegroundColor Yellow
+Write-Host "`n[3/4] Checking status line command..." -ForegroundColor Yellow
+if ($settings.statusLine.command -match '-File\s+([^\s]+)') {
+    $statusPath = $Matches[1]
+    if (Test-Path -LiteralPath $statusPath) {
+        Write-Host "  OK $statusPath" -ForegroundColor Green
     } else {
-        Write-Host "  OK No 'Unknown' tool names in today's logs" -ForegroundColor Green
-    }
-
-    if ($Verbose) {
-        Write-Host "  Tool names found: $($ToolNames -join ', ')" -ForegroundColor Cyan
+        Write-Host "  FAIL $statusPath missing" -ForegroundColor Red
+        $failed = $true
     }
 } else {
-    Write-Host "  WARN No log file for today" -ForegroundColor Yellow
+    Write-Host '  WARN statusLine command does not use a -File path' -ForegroundColor Yellow
 }
 
-# Test 5: Verify settings.json configuration
-Write-Host "`n[5/5] Checking settings.json configuration..." -ForegroundColor Yellow
-
-$SettingsPath = ".claude/settings.json"
-if (Test-Path $SettingsPath) {
-    $Settings = Get-Content $SettingsPath | ConvertFrom-Json
-
-    if ($Settings.hooks.PreToolUse) {
-        Write-Host "  OK PreToolUse hooks configured" -ForegroundColor Green
-    } else {
-        Write-Host "  FAIL PreToolUse hooks not configured!" -ForegroundColor Red
-    }
-
-    if ($Settings.hooks.PostToolUse) {
-        Write-Host "  OK PostToolUse hooks configured" -ForegroundColor Green
-    } else {
-        Write-Host "  FAIL PostToolUse hooks not configured!" -ForegroundColor Red
-    }
+Write-Host "`n[4/4] Checking learning database path..." -ForegroundColor Yellow
+$dbPath = 'D:\databases\agent_learning.db'
+if (Test-Path -LiteralPath $dbPath) {
+    Write-Host "  OK $dbPath exists" -ForegroundColor Green
 } else {
-    Write-Host "  FAIL settings.json not found!" -ForegroundColor Red
+    Write-Host "  WARN $dbPath not found; hooks will run but learning writes may be skipped" -ForegroundColor Yellow
 }
 
-# Summary
+if ($Verbose) {
+    Write-Host "`nConfigured hooks:" -ForegroundColor Cyan
+    $hookRows | Format-Table -AutoSize
+}
+
 Write-Host "`n=== Validation Complete ===" -ForegroundColor Cyan
-Write-Host "Run with -Verbose for detailed output" -ForegroundColor Gray
-Write-Host ""
+if ($failed) { exit 1 }
+exit 0
