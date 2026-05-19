@@ -10,6 +10,7 @@
   ],
   "experimentalServices": {
     "web": {
+      "entrypoint": ".",
       "routePrefix": "/",
       "framework": "vite"
     }
