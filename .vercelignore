@@ -19,7 +19,9 @@ _worktrees
 memory
 memory-bank
 Ollama
-personal-tools
+personal-tools/*
+!personal-tools/health-tracker
+!personal-tools/health-tracker/**
 target
 tmp
 
@@ -45,6 +47,10 @@ playwright-report
 apps/*
 !apps/proposal-review-saas
 !apps/proposal-review-saas/**
+!apps/appointment-reminder-saas
+!apps/appointment-reminder-saas/**
+!apps/vibe-tech-marketing
+!apps/vibe-tech-marketing/**
 !apps/vibe-tech-lovable
 !apps/vibe-tech-lovable/**
 
