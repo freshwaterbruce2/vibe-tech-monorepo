@@ -47,8 +47,12 @@ export function startHttpApi(
     });
 
     async function handleRequest(req: IncomingMessage, res: ServerResponse) {
-        // CORS for remote clients
-        res.setHeader('Access-Control-Allow-Origin', '*');
+        // CORS for remote clients — computed per-request so env changes are picked up at runtime
+        const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:5173'];
+        const origin = req.headers.origin ?? '';
+        if (allowedOrigins.includes(origin)) {
+            res.setHeader('Access-Control-Allow-Origin', origin);
+        }
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 

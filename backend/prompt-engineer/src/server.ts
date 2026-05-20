@@ -52,8 +52,21 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
+// Admin secret middleware for sensitive endpoints
+function requireAdminSecret(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const secret = process.env.PROMPT_ENGINEER_SECRET;
+  if (!secret) {
+    return res.status(500).json({ error: 'Server not configured for settings updates' });
+  }
+  const header = req.headers['x-admin-secret'];
+  if (header !== secret) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
+
 // Update API key at runtime (stores in memory for this session)
-app.post('/api/settings/apikey', (req, res) => {
+app.post('/api/settings/apikey', requireAdminSecret, (req, res) => {
   const { apiKey } = req.body;
   if (apiKey && typeof apiKey === 'string') {
     process.env.OPENROUTER_API_KEY = apiKey;

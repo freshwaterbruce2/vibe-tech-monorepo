@@ -1,10 +1,14 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+function getCorsHeaders(req: Request): Record<string, string> {
+  const allowedOrigins = (Deno.env.get('ALLOWED_ORIGINS') || 'http://localhost:5173').split(',');
+  const origin = req.headers.get('origin') || '';
+  return {
+    'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : allowedOrigins[0],
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  };
+}
 
 // Cache the Supabase client instance
 const createSupabaseClient = (req) => {
@@ -28,20 +32,20 @@ const createSupabaseClient = (req) => {
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(req) });
   }
 
   try {
     const supabaseClient = createSupabaseClient(req);
     
     const { leadId } = await req.json();
-    console.log(`Processing lead enrichment for leadId: ${leadId}`);
+    console.warn(`Processing lead enrichment for leadId: ${leadId}`);
     
     if (!leadId) {
       return new Response(
         JSON.stringify({ error: 'leadId is required' }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
           status: 400 
         }
       );
@@ -59,7 +63,7 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Failed to fetch lead data' }),
         { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
           status: 404 
         }
       );
@@ -76,7 +80,7 @@ Deno.serve(async (req) => {
     if (emailDomain) {
       // Using EdgeRuntime.waitUntil for background processing if supported
       const enrichmentPromise = async () => {
-        console.log(`Enriching data for domain: ${emailDomain}`);
+        console.warn(`Enriching data for domain: ${emailDomain}`);
         
         // Pro plan simulation with more detailed enrichment
         if (emailDomain.includes('gmail') || emailDomain.includes('hotmail') || emailDomain.includes('yahoo')) {
@@ -114,7 +118,7 @@ Deno.serve(async (req) => {
           return new Response(
             JSON.stringify({ error: 'Failed to update lead with enriched data' }),
             { 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
               status: 500 
             }
           );
@@ -126,7 +130,7 @@ Deno.serve(async (req) => {
             lead: updatedLead
           }),
           { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
             status: 200 
           }
         );
@@ -139,7 +143,7 @@ Deno.serve(async (req) => {
           return new Response(
             JSON.stringify({ error: 'Failed to update lead with enriched data' }),
             { 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
               status: 500 
             }
           );
@@ -151,7 +155,7 @@ Deno.serve(async (req) => {
             lead: updatedLead
           }),
           { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
             status: 200 
           }
         );
@@ -164,7 +168,7 @@ Deno.serve(async (req) => {
         lead: lead
       }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
         status: 200 
       }
     );
@@ -174,7 +178,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...getCorsHeaders(req), 'Content-Type': 'application/json' },
         status: 500 
       }
     );

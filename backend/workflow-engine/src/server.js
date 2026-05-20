@@ -7,7 +7,7 @@
 import cors from 'cors';
 import sqlite3 from 'sqlite3';
 import { WebSocket } from 'ws';
-const express = require('express');
+import express from 'express';
 
 /** @typedef {import('express').Request} Request */
 /** @typedef {import('express').Response} Response */
@@ -19,10 +19,11 @@ const express = require('express');
 /** @typedef {{ message?: string }} ErrorLike */
 
 const app = express();
-const PORT = 5003;
+const PORT = 5005;
 const DATABASE_PATH = process.env.DATABASE_PATH || 'D:\\databases\\database.db';
 
-app.use(cors());
+const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173', 'http://localhost:3000'];
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
 /**

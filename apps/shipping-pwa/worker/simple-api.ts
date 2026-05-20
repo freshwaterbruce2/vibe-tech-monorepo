@@ -12,6 +12,12 @@ export interface Env {
   SENDGRID_API_KEY: string;
 }
 
+interface CreateTenantRequest {
+  name?: string;
+  subdomain?: string;
+  config?: Record<string, unknown>;
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -19,8 +25,10 @@ export default {
     const method = request.method;
 
     // CORS headers
+    const allowedOrigins = (env.CORS_ORIGINS ?? 'http://localhost:5173').split(',');
+    const requestOrigin = request.headers.get('Origin') ?? '';
     const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': allowedOrigins.includes(requestOrigin) ? requestOrigin : allowedOrigins[0],
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Tenant-ID, X-API-Key',
     };
@@ -108,7 +116,7 @@ export default {
 
       // Create tenant
       if (path === '/api/tenants/create' && method === 'POST') {
-        const body = await request.json() as any;
+        const body = (await request.json()) as CreateTenantRequest;
         const { name, subdomain, config } = body;
 
         if (!name || !subdomain) {
@@ -162,7 +170,7 @@ export default {
           name,
           subdomain,
           apiKey, // Note: In production, this should be hashed
-          JSON.stringify(config || {}),
+          JSON.stringify(config ?? {}),
           'free',
           'active',
           5,

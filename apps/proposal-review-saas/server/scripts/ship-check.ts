@@ -18,9 +18,9 @@ const serverEntry = path.join(projectRoot, 'server', 'dist', 'index.js');
 const appPort = 5322;
 const appHost = '127.0.0.1';
 const appBaseUrl = 'http://127.0.0.1:4320';
-const authSecret = 'proposal-review-local-auth-secret-12345';
+const authSecret = process.env.AUTH_SECRET ?? 'fallback-local-auth-secret';
 const operatorEmail = 'owner@proposal-review.test';
-const operatorPassword = 'super-secret-password';
+const operatorPassword = process.env.OPERATOR_PASSWORD ?? 'super-secret-password';
 const operatorName = 'Proposal Review Admin';
 
 loadLocalEnv(projectRoot);
@@ -364,8 +364,8 @@ function printResults(): void {
   }
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => {
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
 }

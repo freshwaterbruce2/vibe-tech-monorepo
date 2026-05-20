@@ -3,6 +3,7 @@
 
 require('dotenv').config();
 
+const crypto = require('crypto');
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
@@ -239,12 +240,20 @@ app.get('/health', (_req, res) => {
 app.post('/api/auth', authRateLimit, (req, res) => {
   const { password } = req.body;
 
-  if (!password) {
-    logger.warn('Authentication attempt without password', { ip: req.ip });
+  if (!password || typeof password !== 'string') {
+    logger.warn('Authentication attempt without valid password', { ip: req.ip });
     return res.status(400).json({ error: 'Password is required' });
   }
 
-  if (password === process.env.ADMIN_PASSWORD) {
+  // TODO: migrate to bcrypt hash comparison for production
+  function timingSafeEqual(a, b) {
+    const bufA = Buffer.from(a);
+    const bufB = Buffer.from(b);
+    if (bufA.length !== bufB.length) return false;
+    return crypto.timingSafeEqual(bufA, bufB);
+  }
+
+  if (timingSafeEqual(password, process.env.ADMIN_PASSWORD || '')) {
     logger.info('Successful authentication', { ip: req.ip });
     return res.json({ success: true, message: 'Authentication successful' });
   }

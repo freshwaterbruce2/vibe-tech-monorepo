@@ -16,9 +16,9 @@ const serverEntry = path.join(projectRoot, 'server', 'dist', 'index.js');
 const appPort = 5320 + 2;
 const appHost = '127.0.0.1';
 const appBaseUrl = 'http://127.0.0.1:4320';
-const authSecret = '_-factory-runtime-smoke-local-auth-secret-12345';
+const authSecret = process.env.AUTH_SECRET ?? 'fallback-local-auth-secret';
 const operatorEmail = 'owner@example.com';
-const operatorPassword = 'change-this-password';
+const operatorPassword = process.env.OPERATOR_PASSWORD ?? 'change-this-password';
 const operatorName = 'FactoryRuntimeSmoke Owner';
 
 const results: CheckResult[] = [];
@@ -317,8 +317,8 @@ function printResults(): void {
   }
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => {
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
 }

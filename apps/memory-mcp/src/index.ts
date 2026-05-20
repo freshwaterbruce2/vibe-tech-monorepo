@@ -38,7 +38,7 @@ function parseEmbeddingProvider(value: string | undefined): EmbeddingProvider | 
 // When set, model/dim/endpoint default to provider-appropriate values (see PROVIDER_DEFAULTS).
 const embeddingProvider = parseEmbeddingProvider(process.env.MEMORY_EMBEDDING_PROVIDER);
 const memoryManager = new MemoryManager({
-  dbPath: process.env.MEMORY_DB_PATH || 'D:\\databases\\memory.db',
+  dbPath: process.env.MEMORY_DB_PATH ?? 'D:\\databases\\memory.db',
   embeddingProvider,
   embeddingModel: process.env.MEMORY_EMBEDDING_MODEL,
   embeddingDimension: process.env.MEMORY_EMBEDDING_DIM
@@ -109,7 +109,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       try {
         await autoCapture.captureToolUse(
           request.params.name,
-          request.params.arguments || {},
+          request.params.arguments ?? {},
           success ? 'success' : 'failure',
           {
             duration: Date.now() - startTime,
@@ -246,9 +246,13 @@ async function main() {
     const bridgePortRaw = process.env.MEMORY_MCP_PORT ?? process.env.MEMORY_BRIDGE_PORT;
     const parsedBridgePort = bridgePortRaw ? Number.parseInt(bridgePortRaw, 10) : Number.NaN;
     const HTTP_PORT = Number.isFinite(parsedBridgePort) ? parsedBridgePort : 3200;
-    const httpServer = http.createServer(async (req, res) => {
-      // Set CORS headers
-      res.setHeader('Access-Control-Allow-Origin', '*');
+    const httpServer = http.createServer((req, res) => {
+      // Set CORS headers — computed per-request so env changes are picked up at runtime
+      const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:5173'];
+      const origin = req.headers.origin ?? '';
+      if (allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+      }
       res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
@@ -269,49 +273,51 @@ async function main() {
         body += chunk;
       });
 
-      req.on('end', async () => {
-        try {
-          const payload = JSON.parse(body);
-          if (payload.method === 'tools/call') {
-            const requestObj = {
-              method: 'tools/call' as const,
-              params: payload.params,
-            } as {
-              method: 'tools/call';
-              params: { name: string; arguments?: Record<string, unknown> };
-            };
+      req.on('end', () => {
+        void (async () => {
+          try {
+            const payload = JSON.parse(body);
+            if (payload.method === 'tools/call') {
+              const requestObj = {
+                method: 'tools/call' as const,
+                params: payload.params,
+              } as {
+                method: 'tools/call';
+                params: { name: string; arguments?: Record<string, unknown> };
+              };
 
-            const result = await handleToolCall(
-              requestObj,
-              memoryManager,
-              analyzer,
-              exporter,
-              consolidator,
-              cryptoMemory,
-              gitMemory,
-              novaMemory,
-              learningBridge,
-              summarizationDeps,
-            );
+              const result = await handleToolCall(
+                requestObj,
+                memoryManager,
+                analyzer,
+                exporter,
+                consolidator,
+                cryptoMemory,
+                gitMemory,
+                novaMemory,
+                learningBridge,
+                summarizationDeps,
+              );
 
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(
-              JSON.stringify({
-                jsonrpc: '2.0',
-                id: payload.id,
-                result,
-              }),
-            );
-          } else {
-            res.writeHead(400);
-            res.end(JSON.stringify({ error: 'Unsupported method' }));
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(
+                JSON.stringify({
+                  jsonrpc: '2.0',
+                  id: payload.id,
+                  result,
+                }),
+              );
+            } else {
+              res.writeHead(400);
+              res.end(JSON.stringify({ error: 'Unsupported method' }));
+            }
+          } catch (err) {
+            console.error('[memory-mcp] HTTP Error:', err);
+            const message = err instanceof Error ? err.message : 'Internal server error';
+            res.writeHead(500);
+            res.end(JSON.stringify({ error: message }));
           }
-        } catch (err) {
-          console.error('[memory-mcp] HTTP Error:', err);
-          const message = err instanceof Error ? err.message : 'Internal server error';
-          res.writeHead(500);
-          res.end(JSON.stringify({ error: message }));
-        }
+        })();
       });
     });
 
@@ -342,14 +348,17 @@ async function main() {
       memoryManager.close();
     };
 
-    process.on('SIGINT', async () => {
+    const shutdown = async () => {
       await cleanup();
       process.exit(0);
+    };
+
+    process.on('SIGINT', () => {
+      void shutdown();
     });
 
-    process.on('SIGTERM', async () => {
-      await cleanup();
-      process.exit(0);
+    process.on('SIGTERM', () => {
+      void shutdown();
     });
   } catch (error) {
     console.error('[memory-mcp] Initialization failed:', error);

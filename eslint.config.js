@@ -85,6 +85,7 @@ export default tseslint.config(
       'projects/**',
       'PowerShell/**',
       'supabase/**',
+      '**/supabase/**',
       '**/android/**',
       '**/ios/**',
       '**/_archived/**',
@@ -455,6 +456,8 @@ export default tseslint.config(
       'apps/cross-agent-reflection/**/*.{ts,tsx}',
       'apps/invoice-automation-saas/**/*.{ts,tsx}',
       'apps/appointment-reminder-saas/**/*.{ts,tsx}',
+      'apps/proposal-review-saas/**/*.{ts,tsx}',
+      'apps/shipping-pwa/**/*.{ts,tsx}',
       'apps/vibe-tech-lovable/**/*.{ts,tsx}',
       'apps/*factory*/**/*.{ts,tsx}',
       'tools/vectorshift-svg/**/*.{ts,tsx}',
@@ -486,6 +489,8 @@ export default tseslint.config(
           './apps/cross-agent-reflection/tsconfig.lint.json',
           './apps/invoice-automation-saas/tsconfig.lint.json',
           './apps/appointment-reminder-saas/tsconfig.lint.json',
+          './apps/proposal-review-saas/tsconfig.lint.json',
+          './apps/shipping-pwa/tsconfig.lint.json',
           './apps/vibe-tech-lovable/tsconfig.app.json',
           './apps/vibe-tech-lovable/tsconfig.node.json',
           './apps/*factory*/tsconfig.lint.json',
@@ -525,6 +530,15 @@ export default tseslint.config(
           ],
         },
       },
+    },
+  },
+
+  // Root backend entrypoints intentionally load sibling config/middleware modules
+  // directly because they are standalone Node servers, not workspace packages.
+  {
+    files: ['backend/server*.js'],
+    rules: {
+      '@nx/enforce-module-boundaries': 'off',
     },
   },
 

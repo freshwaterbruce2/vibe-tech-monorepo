@@ -24,8 +24,13 @@ const log = (message: string): void => {
   process.stderr.write(`[mcp-command-center-http] ${message}\n`);
 };
 
-function applyCors(res: ServerResponse): void {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+function applyCors(req: IncomingMessage, res: ServerResponse): void {
+  // CORS origins computed per-request so env changes are picked up at runtime
+  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:5173'];
+  const origin = req.headers.origin ?? '';
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'content-type,mcp-session-id,last-event-id');
   res.setHeader('Access-Control-Expose-Headers', 'mcp-session-id');
@@ -117,7 +122,7 @@ async function handleSessionRequest(req: IncomingMessage, res: ServerResponse): 
 }
 
 async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
-  applyCors(res);
+  applyCors(req, res);
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
