@@ -5,8 +5,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import PageLayout from "@/components/layout/PageLayout";
 import PageHeader from "@/components/ui/page-header";
+import { getApiBaseUrl } from "@/services/apiBase";
 import { Mail, Phone, MapPin, Send } from "lucide-react";
 import { useState } from "react";
+
+const API_BASE_URL = getApiBaseUrl();
 
 const Contact = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,7 +41,7 @@ const Contact = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/contact", {
+      const response = await fetch(`${API_BASE_URL}/api/contact`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

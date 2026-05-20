@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { URL } from 'node:url';
 
 const PORT = Number.parseInt(process.env.PORT ?? '9001', 10);
-const HOST = process.env.HOST ?? '127.0.0.1';
+const HOST = process.env.HOST ?? (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1');
 
 const nowIso = () => new Date().toISOString();
 
@@ -72,6 +72,8 @@ const server = http.createServer(async (req, res) => {
       res,
       200,
       {
+        ok: true,
+        app: 'vibe-tech-lovable',
         status: 'ok',
         database: 'D:\\vibe-tech-data\\vibetech.db',
         service: 'vibe-tech-lovable-local-backend',

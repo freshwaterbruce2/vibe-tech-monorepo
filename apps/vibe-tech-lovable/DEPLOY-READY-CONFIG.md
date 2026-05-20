@@ -9,14 +9,13 @@
 
 ## DEPLOYMENT STATUS ✅
 
-### Backend - Railway (LIVE)
+### Backend - Railway (target)
 
-- **Service**: function-bun-production-2a68
-- **URL**: <https://function-bun-production-2a68.up.railway.app>
-- **Status**: ✅ Deployed and running
-- **Database**: ✅ Connected and initialized
-- **Environment Variables**: ✅ All 11 variables configured
-- **Custom Domain**: vibe-tech.org (configured, waiting for DNS)
+- **Service**: vibe-tech-lovable backend
+- **URL**: <https://api.vibe-tech.org>
+- **Status**: Pending Railway redeploy and DNS verification
+- **Health Check**: `/api/health`
+- **Custom Domain**: `api.vibe-tech.org`
 
 ### Frontend - Vercel (DEPLOYING)
 
@@ -33,25 +32,22 @@
 
 ```env
 NODE_ENV=production
-PORT=3000
-FRONTEND_URL=https://vibe-tech.org
+HOST=0.0.0.0
 ALLOWED_ORIGINS=https://vibe-tech.org,https://www.vibe-tech.org
-SESSION_SECRET=VibeTech-Super-Secret-Key-2025-Production!@#$
-ADMIN_PASSWORD=VibeTech2025!SecureAdminPass
-DATABASE_PATH=/app/data/vibetech.db
-DATABASE_DIR=/app/data
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
-LOG_LEVEL=info
 ```
+
+Railway injects `PORT`; do not hard-code it. The service must listen on that `PORT` and bind
+`HOST=0.0.0.0`. The configured health check path is `/api/health`.
 
 ### Railway Deployment Steps
 
 1. Go to railway.app
 2. "Deploy from GitHub repo"
-3. Select your repo + /backend folder
+3. Select this app as the service root, or run the monorepo-root fallback command from
+   `apps/vibe-tech-lovable/railway.json`
 4. Set environment variables above
-5. Deploy automatically starts
+5. Confirm `GET https://api.vibe-tech.org/api/health` returns JSON with
+   `"app": "vibe-tech-lovable"`
 
 ---
 
@@ -108,7 +104,7 @@ After domain registration:
 - [ ] Deploy frontend to Vercel
 - [ ] Configure DNS records
 - [ ] Test: <https://vibe-tech.org>
-- [ ] Test API: <https://api.vibe-tech.org/health>
+- [ ] Test API: <https://api.vibe-tech.org/api/health>
 - [ ] Test blog: <https://vibe-tech.org/blog-editor>
 
 **ESTIMATED TOTAL TIME: 30 minutes after domain registration**

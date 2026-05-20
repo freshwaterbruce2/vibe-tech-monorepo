@@ -7,7 +7,7 @@ $exitCode = 0
 Write-Host "`n=== VibeTech Pre-Commit Quality Gates ===" -ForegroundColor Cyan
 Write-Host ""
 
-$stagedFiles = @(git diff --cached --name-only --diff-filter=ACM)
+$stagedFiles = @(git diff --cached --name-only --diff-filter=ACMR)
 
 if (-not $stagedFiles -or $stagedFiles.Count -eq 0) {
     Write-Host "No staged files to check." -ForegroundColor Yellow
@@ -23,6 +23,68 @@ $typeScriptFiles = @(
     $stagedFiles | Where-Object { $_ -match '\.(ts|tsx)$' -and $_ -notmatch '\.d\.ts$' }
 )
 $nxTypecheckFileList = ($typeScriptFiles -join ',')
+
+function Get-LintRoot {
+    param([string]$File)
+
+    $normalized = $File -replace '\\', '/'
+    $parts = @($normalized -split '/')
+
+    if ($parts.Count -lt 2) {
+        return '.'
+    }
+
+    switch ($parts[0]) {
+        'apps' {
+            return "apps/$($parts[1])"
+        }
+        'packages' {
+            if (
+                $parts.Count -ge 3 -and
+                $parts[1] -eq 'feature-flags' -and
+                (Test-Path -LiteralPath "packages/feature-flags/$($parts[2])/package.json")
+            ) {
+                return "packages/feature-flags/$($parts[2])"
+            }
+
+            return "packages/$($parts[1])"
+        }
+        'backend' {
+            if (
+                $parts.Count -ge 2 -and
+                (Test-Path -LiteralPath "backend/$($parts[1])/package.json")
+            ) {
+                return "backend/$($parts[1])"
+            }
+
+            return 'backend'
+        }
+        default {
+            return '.'
+        }
+    }
+}
+
+function Get-RelativeLintPath {
+    param(
+        [string]$File,
+        [string]$Root
+    )
+
+    $normalizedFile = $File -replace '\\', '/'
+    $normalizedRoot = $Root -replace '\\', '/'
+
+    if ($normalizedRoot -eq '.') {
+        return $normalizedFile
+    }
+
+    $prefix = "$normalizedRoot/"
+    if ($normalizedFile.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase)) {
+        return $normalizedFile.Substring($prefix.Length)
+    }
+
+    return $normalizedFile
+}
 
 function Invoke-QualityCommand {
     param(
@@ -53,7 +115,8 @@ function Invoke-QualityCommand {
 # ============================================
 if ($sourceFiles.Count -gt 0) {
     # Use direct ESLint on staged files instead of nx affected to avoid
-    # Nx graph computation hangs in pre-commit context.
+    # Nx graph computation hangs in pre-commit context. Run it from each
+    # project root so typed ESLint rules can find project-local tsconfig files.
     $nodeOptions = if ($env:NODE_OPTIONS) { $env:NODE_OPTIONS } else { "" }
     if ($nodeOptions -notmatch '--max-old-space-size=') {
         $env:NODE_OPTIONS = (@($nodeOptions, '--max-old-space-size=8192') |
@@ -63,7 +126,32 @@ if ($sourceFiles.Count -gt 0) {
     $exitCode = [Math]::Max(
         [int]$exitCode,
         [int](Invoke-QualityCommand -Label "[1/3] Running ESLint on staged files..." -Command {
-            pnpm exec eslint --max-warnings=0 @sourceFiles
+            $lintGroups = @{}
+            foreach ($file in $sourceFiles) {
+                $root = Get-LintRoot -File $file
+                if (-not $lintGroups.ContainsKey($root)) {
+                    $lintGroups[$root] = @()
+                }
+                $lintGroups[$root] += $file
+            }
+
+            foreach ($root in $lintGroups.Keys) {
+                $relativeFiles = @(
+                    $lintGroups[$root] | ForEach-Object {
+                        Get-RelativeLintPath -File $_ -Root $root
+                    }
+                )
+
+                Push-Location -LiteralPath $root
+                try {
+                    pnpm exec eslint --max-warnings=0 --no-warn-ignored @relativeFiles
+                    if ($LASTEXITCODE -ne 0) {
+                        throw "ESLint failed in $root with exit code $LASTEXITCODE"
+                    }
+                } finally {
+                    Pop-Location
+                }
+            }
         })
     )
 } else {

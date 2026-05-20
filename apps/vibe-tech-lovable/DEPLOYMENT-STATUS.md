@@ -27,12 +27,12 @@
 
 ## 🔧 TECHNICAL DETAILS
 
-### Backend - Railway ✅
+### Backend - Railway
 
-- **Service Name**: function-bun-production-2a68
-- **URL**: <https://function-bun-production-2a68.up.railway.app>
-- **Status**: Live and operational
-- **Health Check**: /health endpoint configured
+- **Service Name**: vibe-tech-lovable backend
+- **URL**: <https://api.vibe-tech.org>
+- **Status**: Config aligned locally; pending Railway redeploy and DNS verification
+- **Health Check**: /api/health endpoint configured
 - **Database**: SQLite connected and initialized
 - **Environment**: Production variables configured
 - **Custom Domain**: vibe-tech.org configured (awaiting DNS)
@@ -47,7 +47,7 @@
 - **Build**: npm run build → dist/
 - **Testing**: ✅ Playwright verification complete
 - **Environment Variables**:
-  - VITE_API_URL → <https://function-bun-production-2a68.up.railway.app>
+  - VITE_API_URL → <https://api.vibe-tech.org>
   - VITE_SITE_URL → <https://vibe-tech.org>
   - Production configuration complete
 
@@ -74,7 +74,7 @@
 
 ## 📋 KEY URLS
 
-- **Backend**: <https://function-bun-production-2a68.up.railway.app> ✅
+- **Backend**: <https://api.vibe-tech.org> (target; pending DNS verification)
 - **Frontend**: <https://vibe-tech.vercel.app> ✅
 - **Final Site**: <https://vibe-tech.org> 🔄 (DNS propagating)
 
@@ -86,7 +86,7 @@
 vibe-tech.org (IONOS DNS)
        ↓
 Vercel Frontend (React/TypeScript)
-       ↓ API calls to /api/*
+       ↓ API calls to VITE_API_URL (/api/*)
 Railway Backend (Express.js + SQLite)
 ```
 

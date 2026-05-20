@@ -2,7 +2,7 @@ import {
   EntitlementsService,
   type FeatureKey,
   type PlanFeatureMatrix,
-} from '../../../../packages/entitlements/dist/src/index.js'
+} from '@vibetech/entitlements'
 
 export const INVOICE_SAAS_FEATURES = {
   recurringBilling: 'recurring.billing',

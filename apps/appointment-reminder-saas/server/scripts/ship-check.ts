@@ -18,12 +18,13 @@ const serverEntry = path.join(projectRoot, 'server', 'dist', 'index.js');
 const appPort = 5320 + 2;
 const appHost = '127.0.0.1';
 const appBaseUrl = 'http://127.0.0.1:4320';
-const authSecret = 'appointment-reminder-saas-local-auth-secret-12345';
-const operatorEmail = 'owner@example.com';
-const operatorPassword = 'change-this-password';
-const operatorName = 'AppointmentReminderSaas Owner';
 
 loadLocalEnv(projectRoot);
+
+const authSecret = resolveLocalAuthSecret();
+const operatorEmail = resolveNonEmptyEnv('DEMO_USER_EMAIL', 'owner@example.com');
+const operatorPassword = resolveNonEmptyEnv('DEMO_USER_PASSWORD', 'change-this-password');
+const operatorName = resolveNonEmptyEnv('DEMO_USER_NAME', 'AppointmentReminderSaas Owner');
 
 const results: CheckResult[] = [];
 const requireDeployEnv = process.env.SHIP_CHECK_REQUIRE_DEPLOY_ENV === '1';
@@ -362,6 +363,24 @@ async function fetchRaw(url: string, init?: RequestInit): Promise<Response> {
 
 function resolveEnv(key: string): string | undefined {
   return process.env[key];
+}
+
+function resolveLocalAuthSecret(): string {
+  const configured = process.env.AUTH_SECRET?.trim();
+  if (configured && configured.length >= 32) {
+    return configured;
+  }
+
+  return 'appointment-reminder-local-auth-secret-12345';
+}
+
+function resolveNonEmptyEnv(key: string, fallback: string): string {
+  const configured = process.env[key]?.trim();
+  if (configured && configured.length > 0) {
+    return configured;
+  }
+
+  return fallback;
 }
 
 function printResults(): void {

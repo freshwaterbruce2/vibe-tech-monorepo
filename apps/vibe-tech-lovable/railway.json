@@ -2,12 +2,15 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "cd backend && npm install",
-    "watchPatterns": ["backend/**"]
+    "buildCommand": "node --version",
+    "watchPatterns": [
+      "backend/**",
+      "railway.json"
+    ]
   },
   "deploy": {
-    "startCommand": "cd backend && npm start",
-    "healthcheckPath": "/health",
+    "startCommand": "if [ -f backend/server.mjs ]; then NODE_ENV=production HOST=0.0.0.0 node backend/server.mjs; else NODE_ENV=production HOST=0.0.0.0 node apps/vibe-tech-lovable/backend/server.mjs; fi",
+    "healthcheckPath": "/api/health",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE"
   }
