@@ -3,20 +3,20 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Stripe checkout and dunning primitives for VibeTech apps",
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/src/index.d.ts",
-      "import": "./dist/src/index.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./client": {
-      "types": "./dist/src/client.d.ts",
-      "import": "./dist/src/client.js"
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js"
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.json --incremental false",
     "test": "vitest run",
     "lint": "eslint src tests --ext .ts --max-warnings 0",
     "typecheck": "tsc --noEmit"

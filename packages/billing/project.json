@@ -12,7 +12,7 @@
       ],
       "cache": true,
       "options": {
-        "command": "tsc",
+        "command": "tsc -p tsconfig.json --incremental false",
         "cwd": "packages/billing"
       }
     },

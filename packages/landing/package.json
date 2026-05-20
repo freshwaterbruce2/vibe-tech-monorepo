@@ -3,16 +3,16 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Shared landing page sections for VibeTech monetized apps",
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/src/index.d.ts",
-      "import": "./dist/src/index.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.json --incremental false",
     "test": "vitest run",
     "lint": "eslint src tests --ext .ts,.tsx --max-warnings 0",
     "typecheck": "tsc --noEmit"
