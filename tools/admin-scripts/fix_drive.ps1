@@ -15,6 +15,9 @@
           └── ... (loose dev folders)
 #>
 
+[CmdletBinding(SupportsShouldProcess = $true)]
+param()
+
 $root = "D:\"
 $devRoot = "D:\Dev"
 
@@ -41,7 +44,9 @@ if (Test-Path "D:\Dev\repositories") {
   # Actually, D:\Dev\Repositories exists now.
   # If D:\Dev\repositories content needs valid move:
   Get-ChildItem "D:\Dev\repositories" | Move-Item -Destination "D:\Dev\Repositories" -Force
-  Remove-Item "D:\Dev\repositories" -Force -Recurse -ErrorAction SilentlyContinue
+  if ($PSCmdlet.ShouldProcess("D:\Dev\repositories", "Delete")) {
+    Remove-Item "D:\Dev\repositories" -Force -Recurse -ErrorAction SilentlyContinue
+  }
   Write-Host "Consolidated Repositories" -ForegroundColor Green
 }
 

@@ -1,5 +1,6 @@
 # Automated Quality Check System
 # Runs comprehensive quality checks automatically when triggered
+[CmdletBinding(SupportsShouldProcess = $true)]
 param(
     [string]$TriggerType = "manual",
     [string]$ChangedFiles = "",
@@ -64,9 +65,10 @@ function Test-ProjectHealth {
         }
 
         # Build check
+        # Root pnpm run build intentionally fails; use quality:affected instead
         if (-not $QuickMode) {
             Write-AutoLog "Testing build..." "INFO"
-            $buildResult = pnpm run build 2>&1
+            $buildResult = pnpm run quality:affected 2>&1
             $health.build = $LASTEXITCODE -eq 0
             if ($health.build) { $health.score += 25 }
         }
@@ -115,7 +117,11 @@ function Invoke-SmartCleanup {
     # Clean temporary files
     $tempPatterns = @("*.tmp", "*.temp", "*.log")
     foreach ($pattern in $tempPatterns) {
-        Get-ChildItem -Path $pattern -ErrorAction SilentlyContinue | Remove-Item -Force
+        Get-ChildItem -Path $pattern -ErrorAction SilentlyContinue | ForEach-Object {
+            if ($PSCmdlet.ShouldProcess($_.FullName, "Delete")) {
+                Remove-Item -Path $_.FullName -Force
+            }
+        }
     }
 
     # Clean cache if too large
@@ -132,7 +138,9 @@ function Invoke-SmartCleanup {
         Write-AutoLog "Cache size exceeded 500MB, cleaning..." "WARN"
         foreach ($path in $cachePaths) {
             if (Test-Path $path) {
-                Remove-Item -Path $path -Recurse -Force -ErrorAction SilentlyContinue
+                if ($PSCmdlet.ShouldProcess($path, "Delete")) {
+                    Remove-Item -Path $path -Recurse -Force -ErrorAction SilentlyContinue
+                }
             }
         }
     }

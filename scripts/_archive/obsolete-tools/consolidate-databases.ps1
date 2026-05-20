@@ -1,3 +1,7 @@
+# WARNING: This script references RETIRED database paths.
+# Do NOT run without verifying current DB_INVENTORY.md.
+# This script is ARCHIVED and may cause DATA LOSS.
+
 <#
 .SYNOPSIS
     Database Consolidation Script - Migrate to Unified database.db

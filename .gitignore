@@ -371,3 +371,11 @@ MEMORY.md
 
 # Vercel local project state and generated output
 .vercel
+
+# Committed artifacts that should be ignored
+tools/autofixer/.venv/
+tools/jujutsu/jj.exe
+tools/vibe-finisher/output/*.jsonl
+tools/**/__pycache__/
+**/*.pyc
+scripts/_archive/

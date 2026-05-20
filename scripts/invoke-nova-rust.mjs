@@ -31,10 +31,12 @@ if (!existsSync(tauriRoot)) {
 
 const windowsRoot = process.env.SystemRoot || 'C:\\Windows';
 const windowsSystem32 = join(windowsRoot, 'System32');
+// TODO: Use vswhere.exe for dynamic discovery of MSVC and Windows SDK paths.
+const msvcVersion = process.env.VC_TOOLS_VERSION || '14.44.35207';
+const windowsSdkVersion = process.env.WINDOWS_SDK_VERSION || '10.0.26100.0';
 const vsTools =
-  'C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.44.35207';
+  `C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\${msvcVersion}`;
 const windowsSdk = 'C:\\Program Files (x86)\\Windows Kits\\10';
-const windowsSdkVersion = '10.0.26100.0';
 
 const env = {
   ...process.env,
@@ -47,7 +49,7 @@ const env = {
   VSCMD_SKIP_SENDTELEMETRY: '1',
   DOTNET_CLI_TELEMETRY_OPTOUT: '1',
   VCINSTALLDIR: 'C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\',
-  VCToolsVersion: '14.44.35207',
+  VCToolsVersion: msvcVersion,
   CC: join(vsTools, 'bin', 'HostX64', 'x64', 'cl.exe'),
   CXX: join(vsTools, 'bin', 'HostX64', 'x64', 'cl.exe'),
   INCLUDE: [
