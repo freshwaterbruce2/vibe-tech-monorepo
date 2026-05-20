@@ -15,6 +15,9 @@ try {
     $hookData = $inputJson | ConvertFrom-Json -ErrorAction Stop
     if ($hookData.tool_name -ne 'Agent') { exit 0 }
 
+    $sessionId = [string]($hookData.session_id ?? 'default')
+    $safeSessionId = $sessionId -replace '[^A-Za-z0-9_.-]', '_'
+
     # Stash start time for every Agent call so record-agent-execution.ps1
     # can compute execution_time_ms. Keyed by tool_use_id.
     $timingDir = 'D:\temp\agent-timings'
@@ -61,7 +64,7 @@ try {
         pipelineName = $pipelineName
         startedAt    = (Get-Date -Format 'o')
         stageIndex   = 0
-    } | ConvertTo-Json -Compress | Set-Content -Path "$stateDir\lats-active-pipeline.json" -Encoding UTF8
+    } | ConvertTo-Json -Compress | Set-Content -Path "$stateDir\lats-active-pipeline-$safeSessionId.json" -Encoding UTF8
 
     Write-Host "[LATS P4] Pipeline run started: $runId ($pipelineName)"
 

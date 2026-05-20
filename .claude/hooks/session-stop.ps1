@@ -17,8 +17,15 @@ try {
         Add-Content -Path "$logDir\session-lifecycle.log" -Value $logLine -ErrorAction SilentlyContinue
     }
 
-    # Flush any open LATS active-node (backpropagate as success if session ended cleanly)
-    $stateFile = 'D:\learning-system\lats-active-node.json'
+    # Flush any open LATS active-node only when the session ended cleanly.
+    if ($stopReason -notin @('stop', 'end_turn')) { exit 0 }
+
+    $sessionId = [string]($d.session_id ?? 'default')
+    $safeSessionId = $sessionId -replace '[^A-Za-z0-9_.-]', '_'
+    $stateFile = "D:\learning-system\lats-active-node-$safeSessionId.json"
+    if (-not (Test-Path $stateFile)) {
+        $stateFile = 'D:\learning-system\lats-active-node.json'
+    }
     if (Test-Path $stateFile) {
         $state = Get-Content $stateFile -Raw | ConvertFrom-Json -ErrorAction Stop
         if ($state.nodeId) {

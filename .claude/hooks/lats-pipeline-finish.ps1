@@ -14,7 +14,9 @@ try {
     $hookData = $inputJson | ConvertFrom-Json -ErrorAction Stop
     if ($hookData.tool_name -ne 'Agent') { exit 0 }
 
-    $stateFile = 'D:\learning-system\lats-active-pipeline.json'
+    $sessionId = [string]($hookData.session_id ?? 'default')
+    $safeSessionId = $sessionId -replace '[^A-Za-z0-9_.-]', '_'
+    $stateFile = "D:\learning-system\lats-active-pipeline-$safeSessionId.json"
     if (-not (Test-Path $stateFile)) { exit 0 }
 
     $state = Get-Content $stateFile -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop

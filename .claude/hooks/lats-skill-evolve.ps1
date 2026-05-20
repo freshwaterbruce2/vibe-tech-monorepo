@@ -27,6 +27,10 @@ try {
     if ($filePath -notmatch '\.(ts|tsx)$')            { exit 0 }
     if ($filePath -match '\.(test|spec)\.(ts|tsx)$')  { exit 0 }
 
+    # Skill mutation changes local skill files and can affect future sessions.
+    # Keep this hook report-only unless explicitly enabled for a controlled run.
+    if ($env:LATS_SKILL_EVOLVE_ENABLE -ne '1') { exit 0 }
+
     $CLI     = 'node'
     $CLIPath = 'C:\dev\packages\agent-lats\dist\cli.js'
     $dbPath  = if ($env:AGENT_LATS_DB_PATH) { $env:AGENT_LATS_DB_PATH } else { 'D:\databases\agent_learning.db' }

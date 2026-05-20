@@ -28,19 +28,20 @@ try {
     # Normalise path separators for Python
     $normalPath = $filePath -replace '\\', '/'
 
-    # Call inference model (5s timeout — never block on model load)
+    # Call inference model. Pass the path as argv so unusual filenames cannot
+    # break the Python snippet or execute arbitrary code.
     $pyScript = @"
 import sys, json
 sys.path.insert(0, 'D:/data/models')
 try:
     from infer import predict_quality_risks
-    r = predict_quality_risks('$normalPath')
+    r = predict_quality_risks(sys.argv[1])
     print(json.dumps(r))
 except Exception as e:
     print(json.dumps({'error': str(e)}))
 "@
 
-    $raw = & python -c $pyScript 2>$null
+    $raw = & python -c $pyScript $normalPath 2>$null
     if ([string]::IsNullOrWhiteSpace($raw)) { exit 0 }
 
     $prediction = $raw | ConvertFrom-Json -ErrorAction Stop

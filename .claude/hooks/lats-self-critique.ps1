@@ -41,7 +41,12 @@ try {
 
     # Get active LATS node ID if present
     $nodeFlag = ''
-    $stateFile = 'D:\learning-system\lats-active-node.json'
+    $sessionId = [string]($hookData.session_id ?? 'default')
+    $safeSessionId = $sessionId -replace '[^A-Za-z0-9_.-]', '_'
+    $stateFile = "D:\learning-system\lats-active-node-$safeSessionId.json"
+    if (-not (Test-Path $stateFile)) {
+        $stateFile = 'D:\learning-system\lats-active-node.json'
+    }
     if (Test-Path $stateFile) {
         try {
             $state = Get-Content $stateFile -Raw | ConvertFrom-Json -ErrorAction Stop

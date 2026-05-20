@@ -2,14 +2,20 @@
 # Outputs a reminder injected into Claude's context so it knows to
 # reference the edit-review panel and handle undo/redo context updates.
 
-$toolName = $env:CLAUDE_TOOL_NAME
+$raw = [Console]::In.ReadToEnd()
 $resultJson = $env:CLAUDE_TOOL_RESULT
 
 # Parse success flag from result
 $success = $false
 try {
-    $result = $resultJson | ConvertFrom-Json -ErrorAction Stop
-    $success = $result.success -eq $true
+    if (-not [string]::IsNullOrWhiteSpace($raw)) {
+        $hookData = $raw | ConvertFrom-Json -ErrorAction Stop
+        $success = ($hookData.tool_response.success -eq $true) -or
+            ($hookData.tool_response.is_error -eq $false)
+    } elseif (-not [string]::IsNullOrWhiteSpace($resultJson)) {
+        $result = $resultJson | ConvertFrom-Json -ErrorAction Stop
+        $success = $result.success -eq $true
+    }
 } catch { }
 
 if ($success) {

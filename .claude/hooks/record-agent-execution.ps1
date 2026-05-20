@@ -114,7 +114,9 @@ try {
     # Auto-record pipeline stage result if a ralph-wiggum run is active.
     # Maps subagent_type → (stageName, position) so the orchestrator doesn't
     # have to call `pipeline stage` manually after every sub-agent.
-    $pipelineStateFile = 'D:\learning-system\lats-active-pipeline.json'
+    $sessionId = [string]($hookData.session_id ?? 'default')
+    $safeSessionId = $sessionId -replace '[^A-Za-z0-9_.-]', '_'
+    $pipelineStateFile = "D:\learning-system\lats-active-pipeline-$safeSessionId.json"
     if (Test-Path $pipelineStateFile) {
         $stageMap = @{
             'skill-patternanalyzer' = @{ name = 'PatternAnalyzer'; pos = 0 }

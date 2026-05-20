@@ -60,8 +60,14 @@ try {
         } catch {}
     }
 
-    # Check for active LATS node
-    $StateFile = 'D:\learning-system\lats-active-node.json'
+    # Check for active LATS node. Prefer session-scoped state to avoid
+    # cross-session cleanup/backpropagation collisions.
+    $sessionId = [string]($hookData.session_id ?? 'default')
+    $safeSessionId = $sessionId -replace '[^A-Za-z0-9_.-]', '_'
+    $StateFile = "D:\learning-system\lats-active-node-$safeSessionId.json"
+    if (-not (Test-Path $StateFile)) {
+        $StateFile = 'D:\learning-system\lats-active-node.json'
+    }
     if (-not (Test-Path $StateFile)) { exit 0 }
 
     $state = Get-Content $StateFile -Raw | ConvertFrom-Json -ErrorAction Stop
