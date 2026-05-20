@@ -17,3 +17,12 @@
 
 ## Pending
 - None
+
+## 2026-05-20
+- **Fixed** gravity-claw Rust build environment
+  - Killed stale cargo processes holding package cache locks
+  - Added `apps/gravity-claw/src-tauri/.cargo/config.toml` with MSVC linker paths, `jobs=1`, env vars (`CC`, `CXX`, `INCLUDE`, `LIB`, `RUST_MIN_STACK`, etc.)
+  - Added release profile optimizations (`opt-level=0` for deps, `codegen-units=256`) to `Cargo.toml`
+  - Applied `cargo fmt` formatting fixes
+  - Applied `cargo clippy --fix` for 5 auto-fixable warnings (needless borrows, redundant pattern matching, single match)
+  - Verified `cargo check` and `cargo clippy` both pass clean

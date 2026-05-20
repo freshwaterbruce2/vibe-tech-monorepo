@@ -4,7 +4,7 @@
 ## General Guidelines for working with Nx
 
 - For navigating/exploring the workspace, invoke the `nx-workspace` skill first - it has patterns for querying projects, targets, and dependencies
-- When running tasks (for example build, lint, test, e2e, etc.), always prefer running the task through `nx` (i.e. `nx run`, `nx run-many`, `nx affected`) instead of using the underlying tooling directly
+- When running tasks (for example build, lint, test, e2e, etc.), always prefer running the task through `nx` (i.e., `nx run`, `nx run-many`, `nx affected`) instead of using the underlying tooling directly
 - Prefix nx commands with the workspace's package manager (e.g., `pnpm nx build`, `npm exec nx test`) - avoids using globally installed CLI
 - You have access to the Nx MCP server and its tools, use them to help the user
 - For Nx plugin best practices, check `node_modules/@nx/<plugin>/PLUGIN.md`. Not all plugins have this file - proceed without it if unavailable.
@@ -24,7 +24,7 @@
 
 # Project Overview
 
-This is **VibeTech Monorepo** (`@vibetech/workspace`), a large-scale, multi-platform software ecosystem developed on Windows. It is an Nx-managed pnpm workspace containing ~24 applications and ~27 shared libraries, with additional backend services, MCP servers, and automation tooling.
+This is **VibeTech Monorepo** (`@vibetech/workspace`), a large-scale, multi-platform software ecosystem developed on Windows. It is an Nx-managed pnpm workspace containing **33 application directories** (31 with `package.json`), **36 shared libraries**, and multiple backend services, MCP servers, and automation tooling.
 
 The project spans multiple runtime targets and languages:
 
@@ -69,95 +69,137 @@ The workspace uses **Nx** with `appsDir: "apps"` and `libsDir: "packages"`.
 
 ## Applications (`apps/`)
 
-Product applications and standalone services:
+Product applications and standalone services (33 directories, 31 with `package.json`):
 
-| App                              | Type                              | Stack                        |
-| -------------------------------- | --------------------------------- | ---------------------------- |
-| `nova-agent`                     | Tauri Desktop                     | React + Rust + SQLite + RAG  |
-| `vibe-code-studio`               | Tauri Desktop                     | React + Rust + Monaco Editor |
-| `vibe-tutor`                     | Electron 35.7 + Capacitor 8       | React + Express + Android + electron-builder |
-| `vibe-justice`                   | Tauri 2 frontend + Python backend | React + Vite + FastAPI + PyInstaller `.spec` |
-| `gravity-claw`                   | Local-only WIP nested repo        | React + Hono + Tauri scripts; pnpm-workspace excluded |
-| `vibetech-command-center`        | Electron 33 Desktop (Tier 1/beta) + Control Plane | React + electron-vite + electron-builder + better-sqlite3 + MCP server (`tsconfig.mcp.json`, scripts: `mcp:start`, `probe:claude`, `probe:mcp`) |
-| `business-booking-platform-next` | React SPA (Vite) + Node backend   | No root/frontend package.json; backend package only |
-| `invoice-automation-saas`        | React SPA + Fastify               | React + Fastify + Stripe     |
-| `vibe-shop`                      | Next.js 16.1.6 storefront         | Next + Prisma + Neon         |
-| `cross-agent-reflection`         | Full-stack React + Express        | React + Express              |
-| `prompt-engineer`                | Full-stack React + Express        | React + Express + OpenAI     |
-| `chessmaster-academy`            | React SPA + Capacitor + Express   | React + chess.js + Android   |
-| `shipping-pwa`                   | React PWA + Capacitor             | React + Cloudflare Workers   |
-| `VibeBlox`                       | React SPA + Hono                  | React + Hono + SQLite        |
-| `vibe-tech-lovable`              | React SPA (Vite)                  | React + shadcn/ui + Three.js |
-| `nova-mobile-app`                | React Native (Expo 54)            | React Native 0.81 + Zustand  |
-| `crypto-enhanced`                | Python Service                    | Python + Kraken API + SQLite; root scripts manage Nx targets |
-| `desktop-commander-v3`           | MCP Server                        | TypeScript + MCP SDK         |
-| `mcp-gateway`                    | MCP Server                        | TypeScript + MCP SDK         |
-| `mcp-rag-server`                 | MCP Server                        | TypeScript + LanceDB         |
-| `mcp-skills-server`              | MCP Server                        | TypeScript + MCP SDK         |
-| `memory-mcp`                     | MCP Server                        | TypeScript + LanceDB         |
-| `workspace-mcp-server`           | MCP Server                        | TypeScript + MCP SDK         |
-| `agent-engine`                   | CLI / Node Tool                   | TypeScript + tsup            |
+### Desktop (Tauri)
+| App | Package Name | Stack |
+|-----|-------------|-------|
+| `nova-agent` | `nova-agent` | React + Rust + SQLite + RAG |
+| `vibe-code-studio` | `vibe-code-studio` | React + Rust + Monaco Editor |
+| `vibe-justice` | `@vibetech/vibe-justice` | Tauri frontend + Python FastAPI backend |
+| `factory-tauri-smoke` | `factory-tauri-smoke` | Tauri smoke test app |
+| `gravity-claw` | `gravity-claw` | Local-only WIP nested repo; excluded from pnpm workspace |
 
-Two package workspaces are excluded from `pnpm-workspace.yaml`: `apps/gravity-claw`
-(local-only nested WIP, not a shipped workspace release). `packages/games` is included
-in the workspace and referenced by `chessmaster-academy` and `vibe-tutor`.
-`packages/nova-core` currently has no `package.json`; do not treat it as a
-workspace package until a manifest exists.
+### Desktop (Electron)
+| App | Package Name | Stack |
+|-----|-------------|-------|
+| `vibe-tutor` | `vibe-tutor` | Electron 35.7 + Capacitor 8 + Express |
+| `vibetech-command-center` | `@vibetech/command-center` | Electron 33 + Control Plane dashboard |
 
-### Control Plane Features (vibetech-command-center)
+### Mobile
+| App | Package Name | Stack |
+|-----|-------------|-------|
+| `nova-mobile-app` | `nova-mobile-app` | Expo SDK 54 / React Native 0.81 + Zustand |
+| `shipping-pwa` | `shipping-pwa` | React PWA + Capacitor |
 
-The command-center app hosts the VibeTech Control Plane — a single-pane-of-glass operations console for the monorepo:
+### Web / Full-Stack
+| App | Package Name | Stack |
+|-----|-------------|-------|
+| `VibeBlox` | `@vibetech/vibeblox` | React SPA + Hono + SQLite |
+| `invoice-automation-saas` | `invoice-automation-saas` | React SPA + Fastify + Stripe |
+| `business-booking-platform-next` | `@vibetech/business-booking-platform-next` | React SPA (Vite) + Node Express backend |
+| `vibe-shop` | `vibe-shop` | Next.js 16.1.6 + Prisma + Neon |
+| `chessmaster-academy` | `chessmaster-academy` | React SPA + Capacitor + Express |
+| `cross-agent-reflection` | `cross-agent-reflection` | React SPA + Express |
+| `prompt-engineer` | `@vibetech/prompt-engineer` | React SPA + Express + OpenAI |
+| `vibe-tech-lovable` | `vibe-tech-lovable` | React SPA (Vite) + shadcn/ui + Three.js |
+| `vibe-tech-marketing` | `vibe-tech-marketing` | React SPA (Vite) |
+| `appointment-reminder-saas` | `appointment-reminder-saas` | React SPA + Fastify |
+| `proposal-review-saas` | `proposal-review-saas` | React SPA + Fastify |
+| `serenity-flow` | `serenity-flow` | React SPA + Express |
+| `factory-landing-smoke` | `factory-landing-smoke` | Factory smoke test (Vite + React) |
+| `factory-saas-smoke` | `factory-saas-smoke` | Factory smoke test (Vite + React + Fastify) |
+| `_-factory-runtime-smoke` | `_-factory-runtime-smoke` | Factory smoke test (Vite + React + Fastify) |
+| `test-factory-app` | `test-factory-app` | Factory smoke test (Vite + React + Fastify) |
 
-1. **Affected Intelligence Dashboard** — Pre-commit impact analysis using `nx affected`. Shows affected projects, dependency subgraph, health scores (0-100), and risk flags (CROSS_TIER_1, HIGH_FAN_OUT, BUILD_STALE, NO_TEST_COVERAGE).
-2. **DB Explorer** — Read-only SQLite browser for workspace databases. Schema introspection, safe query runner (SELECT/WITH only, 5s timeout, 1,000-row cap), and DB inventory integration.
-3. **Agent Orchestrator** — MCP server health monitoring (7 servers), Nx task launcher (build/test/lint/typecheck/dev/e2e), process grid with kill/restart, and searchable log stream (5,000-line ring buffer).
-4. **Memory Viz** — Visualizer for `@vibetech/memory` stores. Episodic timeline, semantic explorer with importance bars, procedural patterns table, decay visualization (keep/summarize/prune), and cross-store vector search.
+### MCP Servers
+| App | Package Name | Stack |
+|-----|-------------|-------|
+| `desktop-commander-v3` | `desktop-commander-v3` | TypeScript + MCP SDK |
+| `mcp-gateway` | `@vibetech/mcp-gateway` | TypeScript + MCP SDK (HTTP API gateway) |
+| `mcp-rag-server` | `@vibetech/mcp-rag-server` | TypeScript + LanceDB |
+| `mcp-skills-server` | `mcp-skills-server` | TypeScript + MCP SDK |
+| `memory-mcp` | `memory-mcp` | TypeScript + LanceDB |
+| `workspace-mcp-server` | `workspace-mcp-server` | TypeScript + MCP SDK |
+
+### CLI / Tools
+| App | Package Name | Stack |
+|-----|-------------|-------|
+| `agent-engine` | `@vibetech/agent-engine` | TypeScript + tsup (monorepo orchestration agents) |
+
+### Python Service
+| App | Package Name | Stack |
+|-----|-------------|-------|
+| `crypto-enhanced` | *(no package.json)* | Python + Kraken API + SQLite; managed via Nx `project.json` |
+
+### Other
+| Directory | Notes |
+|-----------|-------|
+| `ide-bridge` | No `package.json`; contains only compiled `dist/` output |
 
 ## Shared Libraries (`packages/`)
 
-| Package                       | Scope    | Purpose                                                                |
-| ----------------------------- | -------- | ---------------------------------------------------------------------- |
-| `@vibetech/shared`            | VibeTech | Shared components for NOVA / VCS (agents, DB, AI, learning, IPC)       |
-| `@vibetech/ui`                | VibeTech | Shared UI components and design tokens                                 |
-| `@vibetech/vcs-theme`         | VibeTech | Vibe Code Studio design tokens                                         |
-| `@vibetech/avatars`           | VibeTech | Avatar types, data, and `AvatarImage` component                        |
-| `@vibetech/hooks`             | VibeTech | Shared React hooks                                                     |
-| `@vibetech/types`             | VibeTech | Shared TypeScript types (tasks, errorfix, multifile)                   |
-| `@vibetech/testing-utils`     | VibeTech | Shared testing utilities, fixtures, mocks                              |
-| `@vibetech/logger`            | VibeTech | Structured JSON logging                                                |
-| `@vibetech/shared-config`     | VibeTech | Zod-validated env and path utilities                                   |
-| `@vibetech/shared-utils`      | VibeTech | Utilities (UI, security, browser, AI safety)                           |
-| `@vibetech/shared-ipc`        | VibeTech | IPC message schemas and offline handlers                               |
-| `@vibetech/service-common`    | VibeTech | Microservice utilities, middleware, DeepSeek client                    |
-| `@vibetech/backend`           | VibeTech | Vector store, embedding, IPC client                                    |
-| `@vibetech/db-app`            | VibeTech | SQLite app database adapter with WAL                                   |
-| `@vibetech/inngest-client`    | VibeTech | Shared Inngest client and event types                                  |
-| `@vibetech/openrouter-client` | VibeTech | TypeScript client for OpenRouter proxy                                 |
-| `@vibetech/agent-lats`        | VibeTech | MCTS planning for autonomous agents                                    |
-| `@vibetech/memory`            | VibeTech | Episodic, semantic, procedural memory + vector search                  |
-| `@vibetech/openclaw-bridge`   | VibeTech | OpenClaw gateway bridge client                                         |
-| `@vibetech/mcp-core`          | VibeTech | Core types and utilities for MCP servers                               |
-| `@vibetech/mcp-testing`       | VibeTech | Testing utilities for MCP servers                                      |
-| `@vibetech/games`             | VibeTech | Game logic and components (chess, sudoku, 3D)                          |
-| `@nova/types`                 | Nova     | NOVA Agent shared TypeScript types                                     |
-| `@nova/database`              | Nova     | NOVA Agent SQLite database services                                    |
-| `@vibetech/feature-flags-*`   | VibeTech | Feature flags core, server, Node SDK, React SDK, dashboard, Python SDK |
+36 workspace packages total (31 top-level + 5 nested under `feature-flags/`):
+
+| Package | Scope | Purpose |
+|---------|-------|---------|
+| `@vibetech/agent-lats` | VibeTech | MCTS planning for autonomous agents |
+| `@vibetech/analytics` | VibeTech | Analytics tracking and measurement |
+| `@vibetech/auth` | VibeTech | Authentication utilities |
+| `@vibetech/avatars` | VibeTech | Avatar types, data, and `AvatarImage` component |
+| `@vibetech/backend` | VibeTech | Vector store, embedding, IPC client |
+| `@vibetech/billing` | VibeTech | Billing and subscription utilities |
+| `@vibetech/db-app` | VibeTech | SQLite app database adapter with WAL |
+| `@vibetech/emails` | VibeTech | Email templates and rendering |
+| `@vibetech/entitlements` | VibeTech | Feature entitlement system |
+| `@vibetech/feature-flags` | VibeTech | Feature flags umbrella package |
+| `@vibetech/games` | VibeTech | Game logic and components (chess, sudoku, 3D) |
+| `@vibetech/hooks` | VibeTech | Shared React hooks |
+| `@vibetech/inngest-client` | VibeTech | Shared Inngest client and event types |
+| `@vibetech/landing` | VibeTech | Landing page components |
+| `@vibetech/logger` | VibeTech | Structured JSON logging |
+| `@vibetech/mcp-core` | VibeTech | Core types and utilities for MCP servers |
+| `@vibetech/mcp-testing` | VibeTech | Testing utilities for MCP servers |
+| `@vibetech/memory` | VibeTech | Episodic, semantic, procedural memory + vector search |
+| `@vibetech/openclaw-bridge` | VibeTech | OpenClaw gateway bridge client |
+| `@vibetech/openrouter-client` | VibeTech | TypeScript client for OpenRouter proxy |
+| `@vibetech/service-common` | VibeTech | Microservice utilities, middleware, DeepSeek client |
+| `@vibetech/shared` | VibeTech | Shared components for NOVA / VCS |
+| `@vibetech/shared-config` | VibeTech | Zod-validated env and path utilities |
+| `@vibetech/shared-ipc` | VibeTech | IPC message schemas and offline handlers |
+| `@vibetech/shared-utils` | VibeTech | Utilities (UI, security, browser, AI safety) |
+| `@vibetech/testing-utils` | VibeTech | Shared testing utilities, fixtures, mocks |
+| `@vibetech/types` | VibeTech | Shared TypeScript types |
+| `@vibetech/ui` | VibeTech | Shared UI components and design tokens |
+| `@vibetech/vcs-theme` | VibeTech | Vibe Code Studio design tokens |
+| `@nova/database` | Nova | NOVA Agent SQLite database services |
+| `@nova/types` | Nova | NOVA Agent shared TypeScript types |
+
+### Feature Flags Sub-Packages
+| Package | Purpose |
+|---------|---------|
+| `@vibetech/feature-flags-core` | Core feature flag engine |
+| `@vibetech/feature-flags-server` | Server-side flag evaluation |
+| `@vibetech/feature-flags-sdk-node` | Node.js SDK |
+| `@vibetech/feature-flags-sdk-react` | React SDK |
+| `@vibetech/feature-flags-dashboard` | Management dashboard |
 
 ## Backend Services (`backend/`)
 
-| Service               | Purpose                           | Port |
-| --------------------- | --------------------------------- | ---- |
-| `openrouter-proxy`    | Centralized OpenRouter API proxy  | 3001 |
-| `ipc-bridge`          | WebSocket bridge (NOVA ↔ VCS)     | 5004 |
-| `dap-proxy`           | Debug Adapter Protocol proxy      | 5003 |
-| `lsp-proxy`           | Language Server Protocol proxy    | 5002 |
-| `prompt-engineer`     | Prompt optimization API           | 9001 |
-| `symptom-tracker-api` | Symptom tracker backend           | —    |
-| `workflow-engine`     | Multi-step workflow orchestration | 5003 |
-| `nova-sqlite-mcp`     | Read-only MCP server for Nova DB  | —    |
-| `config`              | Shared backend config             | —    |
-| `middleware`          | Shared security middleware        | —    |
-| `llm-finetuning`      | Python fine-tuning pipeline       | —    |
+| Service | Package Name | Purpose | Port |
+|---------|-------------|---------|------|
+| *(root)* | `vibe-tech-backend` | Main Express.js backend API (customers, leads, invoices, blog posts) | 3000 (dev) |
+| `openrouter-proxy/` | `openrouter-proxy` | Centralized OpenRouter API proxy | 3001 |
+| `prompt-engineer/` | `@vibetech/prompt-engineer-api` | Prompt optimization API | 9001 |
+| `lsp-proxy/` | `lsp-proxy` | Language Server Protocol WebSocket proxy | 5002 |
+| `dap-proxy/` | `dap-proxy` | Debug Adapter Protocol WebSocket proxy | 5003 |
+| `workflow-engine/` | `workflow-engine` | Multi-step workflow orchestration | 5003 *(note: same port as dap-proxy)* |
+| `ipc-bridge/` | `ipc-bridge` | WebSocket bridge (NOVA Agent ↔ Vibe Code Studio) | 5004 |
+| `symptom-tracker-api/` | `symptom-tracker-api` | Local-first symptom tracker API | 5055 |
+| `config/` | `backend-config` | Shared backend configuration | — |
+| `middleware/` | `backend-middleware` | Shared security middleware | — |
+| `llm-finetuning/` | *(none)* | Python fine-tuning pipeline (requirements.txt only) | — |
+| `types/` | *(none)* | Shared type declarations | — |
 
 # Build, Test & Development Commands
 
@@ -171,6 +213,7 @@ pnpm nx dev <project>
 pnpm nx build <project>
 pnpm nx lint <project>
 pnpm nx test <project>
+pnpm nx typecheck <project>
 pnpm run lint
 pnpm run typecheck
 pnpm run test
@@ -191,27 +234,31 @@ Initialize-DevProcessEnvironment
 
 ## Key Root Scripts
 
-| Script                             | Command                               |
-| ---------------------------------- | ------------------------------------- |
-| `dev`                              | `nx run @vibetech/command-center:dev` |
-| `lint` / `lint:biome` / `lint:fix` | ESLint + Biome linting                |
-| `format`                           | `biome format --write .`              |
-| `test:unit`                        | `vitest run`                          |
-| `test:e2e`                         | `playwright test`                     |
-| `typecheck`                        | `nx run-many -t typecheck`            |
-| `quality:affected`                 | `nx affected -t lint typecheck build` |
+| Script | Command |
+|--------|---------|
+| `dev` | `nx run @vibetech/command-center:dev` |
+| `lint` / `lint:biome` / `lint:fix` | ESLint + Biome linting |
+| `format` | `biome format --write .` |
+| `test:unit` | `vitest run` |
+| `test:e2e` | `playwright test` |
+| `typecheck` | `nx sync --apply && nx run-many -t typecheck` |
+| `quality:affected` | `nx affected -t lint typecheck build` |
+| `crypto:test` | Python tests for `apps/crypto-enhanced` |
+| `crypto:coverage` | pytest coverage for `apps/crypto-enhanced` |
+| `workspace:health` | PowerShell health check script |
+| `parallel:*` | PowerShell parallel workspace manager groups |
 
 # Testing Strategy
 
 The monorepo uses a multi-layered testing approach:
 
-| Layer         | Tool                    | Usage                                                                                                |
-| ------------- | ----------------------- | ---------------------------------------------------------------------------------------------------- |
-| **Unit**      | Vitest 4.1.2            | Primary runner for TS/JS. Co-located tests: `Component.test.tsx` next to source.                     |
-| **Component** | Testing Library + jsdom | React component testing in Vitest environment.                                                       |
-| **E2E**       | Playwright 1.58.2       | Browser automation, visual regression, and full user-flow testing.                                   |
-| **Python**    | pytest                  | Python services (`crypto-enhanced`, `vibe-justice/backend`).                                         |
-| **Coverage**  | @vitest/coverage-v8     | Target: 80% lines/functions/branches/statements minimum. Critical code (e.g., trading) targets 95%+. |
+| Layer | Tool | Usage |
+|-------|------|-------|
+| **Unit** | Vitest 4.1.2 | Primary runner for TS/JS. Discovers projects via `vitest.workspace.ts` from `**/vite.config.*` and `**/vitest.config.*` files. |
+| **Component** | Testing Library + jsdom | React component testing in Vitest environment. |
+| **E2E** | Playwright 1.58.2 | Browser automation, visual regression, and full user-flow testing. |
+| **Python** | pytest | Python services (`crypto-enhanced`, `vibe-justice/backend`). |
+| **Coverage** | @vitest/coverage-v8 | Target: 80% lines/functions/branches/statements minimum. Critical code (e.g., trading) targets 95%+. |
 
 ## Playwright Configuration
 
@@ -233,6 +280,7 @@ The monorepo uses a multi-layered testing approach:
 - **Focus**: Web search grounding (80 tests) and No-Duplicates behavioral compliance (80 tests).
 - **Target**: ≥95% standard tests, ≥90% adversarial resistance, zero hallucinated sources.
 - **Run**: `.\run-web-search-grounding-tests.ps1 -TestCategory "all"`
+- **Status**: Not yet integrated into CI/CD.
 
 ## Control Plane Tests
 
@@ -245,7 +293,7 @@ The monorepo uses a multi-layered testing approach:
 - **Target**: ES2022, Module: ESNext, Resolution: bundler.
 - **Strict Mode**: Full strict enabled (`strict`, `noImplicitAny`, `strictNullChecks`, `strictFunctionTypes`, `noUnusedLocals`, `noUnusedParameters`, `noImplicitReturns`, `noUncheckedIndexedAccess`).
 - **JSX**: `react-jsx`.
-- **No explicit `any`** without a justification comment.
+- **No explicit `any`** without a justification comment (warn-level in ESLint).
 - **Prefer `@/` alias** for `src` imports; avoid deep relative paths (`../../../`).
 - **Async-first** with `async/await`; avoid blocking callbacks.
 
@@ -258,16 +306,17 @@ The monorepo uses a multi-layered testing approach:
 
 ## Linting & Formatting
 
-| Tool         | Role                                  | Key Config                                                                                                                                                                                                                                         |
-| ------------ | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **ESLint 9** | TypeScript + React linting            | Flat config (`eslint.config.js`). Extends `@eslint/js/recommended`, `typescript-eslint/strict`, `typescript-eslint/stylistic`. Bans `eval`, `no-new-func`, `React.FC`, namespace imports. Custom rule `no-localstorage-electron` for desktop apps. |
-| **Biome**    | Fast formatting + import organization | `biome.json`. 2-space indent, LF, line width 100, single quotes, trailing commas `all`.                                                                                                                                                            |
-| **Prettier** | Secondary formatting                  | `.prettierrc`. Print width 100, single quotes, trailing commas `all`, LF.                                                                                                                                                                          |
+| Tool | Role | Key Config |
+|------|------|------------|
+| **ESLint 9** | TypeScript + React linting | Flat config (`eslint.config.js`). Extends `@eslint/js/recommended`, `typescript-eslint/strict`, `typescript-eslint/stylistic`. Bans `eval`, `no-new-func`, `React.FC`, namespace imports. Custom rule `no-localstorage-electron` for desktop apps. |
+| **Biome** | Fast formatting + import organization | `biome.json`. 2-space indent, LF, line width 100, single quotes, trailing commas `all`. |
+| **Prettier** | Secondary formatting | `.prettierrc`. Print width 100, single quotes, trailing commas `all`, LF. |
 
 ### Per-Project Overrides
 
 - **Relaxed linting** for legacy projects: `desktop-commander-v3`, `clawdbot-desktop`, `vibetech-shared`, `invoice-automation-saas`, `prompt-engineer`, `business-booking-platform/backend`, `shipping-pwa`, `nova-mobile-app`.
 - **Fully off** for `packages/games`.
+- **Relaxed** for `vibe-code-studio` (legacy code), `serenity-flow`, `vibe-tech-lovable`, `tools/vectorshift-svg`.
 
 ## Styling
 
@@ -288,13 +337,16 @@ The monorepo uses a multi-layered testing approach:
 
 ## GitHub Actions Workflows
 
-| Workflow                              | Trigger                                   | Purpose                                                                                                                                       |
-| ------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ci.yml`                              | Push/PR to `main`, `develop`, `feature/*` | Main quality pipeline: dependency review, sync audit, affected lint/typecheck/test/build, changeset check, release, coverage, canary Node 24. |
-| `release.yml`                         | `workflow_dispatch`                       | Legacy gravity-claw version workflow; verify nested/local-only state before use.                                                              |
-| `nova-agent-visual.yml`               | Path-filtered to `apps/nova-agent/**`     | Stylelint + Playwright visual regression.                                                                                                     |
-| `vibe-justice.yml`                    | Path-filtered to `apps/vibe-justice/**`   | Frontend (Nx) + Backend (pytest) validation.                                                                                                  |
-| `vibe-tutor-privacy-policy-pages.yml` | Push to `main`                            | Deploys static pages to GitHub Pages.                                                                                                         |
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| `ci.yml` | Push/PR to `main`, `develop`, `feature/*` | Main quality pipeline: dependency review, sync audit, affected lint/typecheck/test/build, changeset check, release, coverage, canary Node 24. |
+| `nova-agent.yml` | Path-filtered to `apps/nova-agent/**` and `packages/**` | Quality, Playwright E2E, optional Tauri build. Uploads installers as artifacts. |
+| `nova-agent-visual.yml` | Path-filtered to `apps/nova-agent/**` | Stylelint + Playwright visual regression. |
+| `vibe-justice.yml` | Path-filtered to `apps/vibe-justice/**` | Frontend (Nx) + Backend (pytest) validation. |
+| `invoice-automation-saas.yml` | Path-filtered to `apps/invoice-automation-saas/**` | Per-app validation: lint, typecheck, test, build frontend, build API. |
+| `vibetech-command-center.yml` | Path-filtered to `apps/vibetech-command-center/**` | Quality gates, then package unpacked app via electron-builder. |
+| `vibe-tutor-privacy-policy-pages.yml` | Push to `main` | Deploys static pages to GitHub Pages. |
+| `release.yml` | `workflow_dispatch` | Legacy gravity-claw version bump workflow. |
 
 ## CI Policies
 
@@ -347,8 +399,7 @@ Canonical workspace references:
 - `tests/` - cross-workspace tests and agent evaluation suites.
 - `tools/` - local automation and maintenance tools.
 
-Do not treat nested app folders as separate git repos unless their own git root is
-verified. The root working tree is the default source of truth.
+Do not treat nested app folders as separate git repos unless their own git root is verified. The root working tree is the default source of truth.
 
 # Development Rules
 
@@ -401,12 +452,9 @@ Before changing repair, maintenance, database, memory, or hook flows:
 
 # Safety Protocols
 
-MoltBot and crypto operations are observation-only unless the user gives explicit,
-task-specific authorization for non-trading maintenance. Never execute buy, sell,
-or trade actions.
+MoltBot and crypto operations are observation-only unless the user gives explicit, task-specific authorization for non-trading maintenance. Never execute buy, sell, or trade actions.
 
-When monitoring Gmail or hook-driven notifications, enforce a 5-minute deduplication
-window and avoid repeated identical alerts.
+When monitoring Gmail or hook-driven notifications, enforce a 5-minute deduplication window and avoid repeated identical alerts.
 
 Retention defaults:
 

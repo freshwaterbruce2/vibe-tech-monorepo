@@ -1,16 +1,18 @@
 # Active Context
 
 ## Current Task
-None — memory integration is complete.
+Gravity-Claw Rust build fix — completed.
 
 ## Status
-- Persistent memory system fully operational for Kimi Code CLI
-- Using `scripts/memory-cli.cjs` (Node.js + better-sqlite3) for DB access
-- File-based Memory Bank at `memory-bank/` for high-level context
-- `.kimi/AGENTS.md` contains usage rules
+- `cargo check` passes (exit 0)
+- `cargo clippy` passes with zero warnings
+- `cargo fmt` applied
+- Stale cargo processes cleaned up
+- Added `.cargo/config.toml` with MSVC toolchain configuration
+- Added release profile optimizations to `Cargo.toml`
 
 ## Next Steps
-Resume normal work. Use memory commands when making decisions or discovering patterns.
+Awaiting user direction — no active task.
 
 ## Blockers
 None.
