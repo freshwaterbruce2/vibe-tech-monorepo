@@ -85,7 +85,6 @@
       "{workspaceRoot}/tsconfig.*.json",
       "{workspaceRoot}/vite.config.ts",
       "{workspaceRoot}/vite.config.production.ts",
-      "{workspaceRoot}/vitest.config.ts",
       "{workspaceRoot}/playwright.config.ts",
       "{workspaceRoot}/eslint.config.js",
       "{workspaceRoot}/tailwind.config.ts",

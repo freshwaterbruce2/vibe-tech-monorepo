@@ -1,0 +1,44 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@vibetech/openclaw-bridge",
+  "projectType": "library",
+  "root": "packages/openclaw-bridge",
+  "sourceRoot": "packages/openclaw-bridge/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true,
+      "options": {
+        "command": "node ../../node_modules/typescript/bin/tsc",
+        "cwd": "packages/openclaw-bridge"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "vitest run",
+        "cwd": "packages/openclaw-bridge"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "eslint src/**/*.ts",
+        "cwd": "packages/openclaw-bridge"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "node ../../node_modules/typescript/bin/tsc --noEmit",
+        "cwd": "packages/openclaw-bridge"
+      }
+    },
+    "quality": {}
+  },
+  "tags": ["type:library", "scope:openclaw"]
+}
