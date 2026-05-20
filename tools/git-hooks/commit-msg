@@ -1,0 +1,11 @@
+#!/bin/sh
+# Commit message validation hook.
+# Validates conventional commit format using commitlint.
+# Emergency bypass (use sparingly): git commit --no-verify
+
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File "C:/dev/scripts/commit-msg.ps1" "$1"
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+exit 0

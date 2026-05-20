@@ -4,6 +4,7 @@
 # Unix shell scripts — must stay LF
 *.sh     text eol=lf
 *.bash   text eol=lf
+tools/git-hooks/* text eol=lf
 
 # Force LF for files that Unix tooling runs (docker, ci images)
 Dockerfile         text eol=lf
