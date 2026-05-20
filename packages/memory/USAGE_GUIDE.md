@@ -819,8 +819,10 @@ Set in `.mcp.json`:
     "args": ["C:/dev/apps/memory-mcp/dist/index.js"],
     "env": {
       "MEMORY_DB_PATH": "D:/databases/memory.db",
+      "MEMORY_EMBEDDING_PROVIDER": "ollama",
       "MEMORY_EMBEDDING_MODEL": "nomic-embed-text",
       "MEMORY_EMBEDDING_DIM": "768",
+      "MEMORY_EMBEDDING_ENDPOINT": "http://localhost:11434",
       "MEMORY_FALLBACK_TRANSFORMERS": "true"
     }
   }

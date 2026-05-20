@@ -46,7 +46,7 @@ export class EmbeddingService {
 
   constructor(config: MemoryConfig) {
     this.explicitProvider = config.embeddingProvider !== undefined;
-    this.provider = config.embeddingProvider ?? 'openrouter';
+    this.provider = config.embeddingProvider ?? 'ollama';
     const defaults = PROVIDER_DEFAULTS[this.provider];
     this.model = config.embeddingModel ?? defaults.model;
     this.dimension = config.embeddingDimension ?? defaults.dimension;
@@ -314,9 +314,7 @@ export class EmbeddingService {
    * No silent fallback — if Ollama fails, throw so the caller sees the real error.
    */
   private async embedWithOllama(text: string): Promise<number[]> {
-    if (!this.ollamaClient) {
-      this.ollamaClient = new Ollama({ host: this.endpoint });
-    }
+    this.ollamaClient ??= new Ollama({ host: this.endpoint });
     let lastError: Error | null = null;
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       try {

@@ -6,7 +6,7 @@ import os from 'node:os';
 
 const TEST_DB_PATH = path.join(os.tmpdir(), 'vibetech-memory-integration-test.db');
 
-const EMBEDDING_DIMENSION = 1536; // canonical OpenRouter text-embedding-3-small
+const EMBEDDING_DIMENSION = 1536; // OpenRouter text-embedding-3-small
 const PROXY_ORIGIN = 'http://localhost:3001';
 
 /**
@@ -130,6 +130,7 @@ describe('MemoryManager integration', () => {
   it('should initialize with OpenRouter and report healthy', async () => {
     manager = new MemoryManager({
       dbPath: TEST_DB_PATH,
+      embeddingProvider: 'openrouter',
       embeddingModel: 'text-embedding-3-small',
       embeddingDimension: EMBEDDING_DIMENSION,
       fallbackToTransformers: false,
@@ -146,6 +147,7 @@ describe('MemoryManager integration', () => {
   it('should store and search semantic memories with real embeddings', async () => {
     manager = new MemoryManager({
       dbPath: TEST_DB_PATH,
+      embeddingProvider: 'openrouter',
       embeddingModel: 'text-embedding-3-small',
       embeddingDimension: EMBEDDING_DIMENSION,
       fallbackToTransformers: false,
@@ -184,6 +186,7 @@ describe('MemoryManager integration', () => {
   it('should store and retrieve episodic + procedural memories', async () => {
     manager = new MemoryManager({
       dbPath: TEST_DB_PATH,
+      embeddingProvider: 'openrouter',
       embeddingModel: 'text-embedding-3-small',
       embeddingDimension: EMBEDDING_DIMENSION,
       fallbackToTransformers: false,
@@ -211,7 +214,7 @@ describe('MemoryManager integration', () => {
     const stats = manager.getStats();
     expect(stats.database.episodicCount).toBe(1);
     expect(stats.database.proceduralCount).toBe(1);
-    // Canonical provider/dimension per 2026-03-23 migration: OpenRouter text-embedding-3-small → 1536d
+    // This test pins OpenRouter to keep the mocked embedding endpoint deterministic.
     expect(stats.embedding.provider).toBe('openrouter');
     expect(stats.embedding.dimension).toBe(EMBEDDING_DIMENSION);
   });

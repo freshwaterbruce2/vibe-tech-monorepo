@@ -2,7 +2,7 @@
 export interface MemoryConfig {
   /** Database path (e.g., D:\databases\memory.db) */
   dbPath: string;
-  /** Primary embedding provider (default: 'openrouter'). When set, init() will not silently switch providers. */
+  /** Primary embedding provider (default: 'ollama'). When set, init() will not silently switch providers. */
   embeddingProvider?: EmbeddingProvider;
   /** Embedding model name (default depends on provider: openrouter→text-embedding-3-small, ollama→nomic-embed-text) */
   embeddingModel?: string;

@@ -59,9 +59,10 @@
       "alwaysLoad": true,
       "env": {
         "MEMORY_DB_PATH": "D:/databases/memory.db",
-        "MEMORY_EMBEDDING_MODEL": "text-embedding-3-small",
-        "MEMORY_EMBEDDING_DIM": "1536",
-        "MEMORY_EMBEDDING_ENDPOINT": "http://localhost:3001",
+        "MEMORY_EMBEDDING_PROVIDER": "ollama",
+        "MEMORY_EMBEDDING_MODEL": "nomic-embed-text",
+        "MEMORY_EMBEDDING_DIM": "768",
+        "MEMORY_EMBEDDING_ENDPOINT": "http://localhost:11434",
         "LEARNING_DB_PATH": "D:/databases/agent_learning.db"
       }
     },
