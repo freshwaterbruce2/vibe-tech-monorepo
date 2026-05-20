@@ -1,6 +1,10 @@
 {
   "extends": "./tsconfig.base.json",
-  "files": [],
+  "compilerOptions": {
+    "composite": false
+  },
+  "include": [],
+  "exclude": ["node_modules", "dist", "build"],
   "references": [
     {
       "path": "./packages/openrouter-client"

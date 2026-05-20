@@ -4,7 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "nx": {
-    "tags": ["scope:workspace", "type:workspace", "language:typescript"]
+    "tags": [
+      "scope:workspace",
+      "type:workspace",
+      "language:typescript"
+    ]
   },
   "description": "Vibe Tech multi-project monorepo with booking platforms, web apps, and desktop applications",
   "packageManager": "pnpm@10.33.0",
@@ -130,6 +134,7 @@
     "ci:test": "nx affected -t test --base=origin/main --head=HEAD",
     "ci:build": "nx affected -t build --base=origin/main --head=HEAD",
     "ci:coverage": "nx affected -t test:coverage --base=origin/main --head=HEAD",
+    "ci:e2e": "pnpm exec playwright test",
     "ci:lint:all": "nx run-many -t lint --all",
     "build:all": "nx run-many -t build --all",
     "build:production:all": "nx run-many -t build:production",

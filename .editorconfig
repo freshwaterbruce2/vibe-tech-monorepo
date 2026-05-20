@@ -14,9 +14,9 @@ indent_style = space
 indent_size = 2
 
 # CRITICAL: File size limit enforcement notice
-# ⚠️ MAX 360 LINES PER FILE - This is a HARD RULE ⚠️
+# ⚠️ MAX 500 LINES PER FILE - This is a HARD RULE ⚠️
 # Editors should warn when approaching this limit
-max_line_length = 120
+max_line_length = 100
 
 # JavaScript/TypeScript files
 [*.{js,jsx,ts,tsx,mjs,cjs}]
