@@ -246,6 +246,11 @@ app.post('/api/auth', authRateLimit, (req, res) => {
   }
 
   // TODO: migrate to bcrypt hash comparison for production
+  /**
+   * @param {string} a
+   * @param {string} b
+   * @returns {boolean}
+   */
   function timingSafeEqual(a, b) {
     const bufA = Buffer.from(a);
     const bufB = Buffer.from(b);
