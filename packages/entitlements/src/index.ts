@@ -13,6 +13,79 @@ export type PlanId = string;
 export type FeatureKey = string;
 export type PlanFeatureMatrix = Record<PlanId, readonly FeatureKey[]>;
 
+/** Feature access metadata categories supported by the centralized access gate. */
+export type AccessFeatureKind = 'boolean' | 'configuration' | 'metered';
+
+/** Application role identifier used by RBAC checks. */
+export type AccessRoleKey = string;
+
+/** Numeric usage limit for a plan or tier; null means unlimited. */
+export type AccessLimit = number | null;
+
+/** User shape consumed by canAccess without coupling callers to a concrete auth provider. */
+export interface AccessUser {
+  id?: string;
+  userId?: string;
+  plan?: PlanId;
+  tier?: PlanId;
+  roles?: readonly AccessRoleKey[];
+  usage?: Partial<Record<FeatureKey, number>>;
+  attributes?: Record<string, unknown>;
+}
+
+/** Per-feature metadata that combines flag, plan/tier, RBAC, and metered rules. */
+export interface AccessFeatureMetadata {
+  kind?: AccessFeatureKind;
+  flagKey?: string;
+  entitlementFeatureKey?: FeatureKey;
+  requiredRoles?: readonly AccessRoleKey[];
+  requireAllRoles?: boolean;
+  tierAccess?: Partial<Record<PlanId, boolean>>;
+  tierLimits?: Partial<Record<PlanId, AccessLimit>>;
+  defaultLimit?: AccessLimit;
+  usageKey?: FeatureKey;
+}
+
+/** Synchronous usage provider used for metered access checks. */
+export interface AccessUsageServiceLike {
+  getUsage(user: AccessUser, featureKey: FeatureKey): number;
+}
+
+/** Runtime policy inputs for canAccess. */
+export interface AccessPolicy {
+  matrix?: PlanFeatureMatrix;
+  features?: Partial<Record<FeatureKey, AccessFeatureMetadata>>;
+  evaluationService?: FeatureEvaluationServiceLike;
+  usageService?: AccessUsageServiceLike;
+  context?: Partial<Omit<EntitlementEvaluationContext, 'attributes'>> & {
+    attributes?: Record<string, unknown>;
+  };
+  failOpenOnServiceDisruption?: boolean;
+}
+
+/** Machine-readable result from canAccess. */
+export interface AccessDecision {
+  featureKey: FeatureKey;
+  allowed: boolean;
+  source: 'configured' | 'flag' | 'matrix' | 'rbac' | 'limit' | 'fail_open';
+  reason:
+    | 'allowed'
+    | 'feature_not_configured'
+    | 'missing_tier'
+    | 'tier_denied'
+    | 'role_denied'
+    | 'limit_exceeded'
+    | 'flag_denied'
+    | 'service_disruption';
+  failOpen: boolean;
+  flagKey?: string;
+  flagReason?: EvaluationResult['reason'];
+  requiredRoles?: readonly AccessRoleKey[];
+  limit?: number;
+  used?: number;
+  config?: Record<string, unknown>;
+}
+
 export interface EntitlementFlagBuildOptions {
   createdBy?: string;
   tags?: string[];
@@ -148,6 +221,234 @@ export const createEntitlementContext = (
     plan,
   },
 });
+
+const getStringAttribute = (
+  attributes: Record<string, unknown> | undefined,
+  key: string,
+): string | undefined => {
+  const value = attributes?.[key];
+  return typeof value === 'string' ? value : undefined;
+};
+
+const getAccessTier = (user: AccessUser): PlanId | undefined =>
+  user.tier ??
+  user.plan ??
+  getStringAttribute(user.attributes, 'tier') ??
+  getStringAttribute(user.attributes, 'plan');
+
+const getAccessUserId = (user: AccessUser): string | undefined => user.userId ?? user.id;
+
+const hasRequiredRoles = (
+  userRoles: readonly AccessRoleKey[] | undefined,
+  requiredRoles: readonly AccessRoleKey[],
+  requireAllRoles: boolean,
+): boolean => {
+  const roles = new Set(userRoles ?? []);
+  return requireAllRoles
+    ? requiredRoles.every((role) => roles.has(role))
+    : requiredRoles.some((role) => roles.has(role));
+};
+
+const resolveFeatureLimit = (
+  metadata: AccessFeatureMetadata | undefined,
+  tier: PlanId | undefined,
+): AccessLimit | undefined => {
+  if (!metadata) {
+    return undefined;
+  }
+
+  if (tier) {
+    const tierLimit = metadata.tierLimits?.[tier];
+    if (tierLimit !== undefined) {
+      return tierLimit;
+    }
+  }
+
+  return metadata.defaultLimit;
+};
+
+const createAccessEvaluationContext = (
+  user: AccessUser,
+  tier: PlanId | undefined,
+  policy: AccessPolicy,
+): EvaluationContext => ({
+  environment: policy.context?.environment ?? 'prod',
+  userId: policy.context?.userId ?? getAccessUserId(user),
+  sessionId: policy.context?.sessionId,
+  appName: policy.context?.appName,
+  appVersion: policy.context?.appVersion,
+  attributes: {
+    ...(user.attributes ?? {}),
+    ...(policy.context?.attributes ?? {}),
+    ...(tier ? { plan: tier, tier } : {}),
+  },
+});
+
+const denyAccess = (
+  featureKey: FeatureKey,
+  reason: AccessDecision['reason'],
+  source: AccessDecision['source'],
+  details: Omit<
+    Partial<AccessDecision>,
+    'allowed' | 'failOpen' | 'featureKey' | 'reason' | 'source'
+  > = {},
+): AccessDecision => ({
+  featureKey,
+  allowed: false,
+  source,
+  reason,
+  failOpen: false,
+  ...details,
+});
+
+const allowAccess = (
+  featureKey: FeatureKey,
+  details: Omit<
+    Partial<AccessDecision>,
+    'allowed' | 'failOpen' | 'featureKey' | 'reason'
+  > = {},
+): AccessDecision => ({
+  featureKey,
+  allowed: true,
+  source: details.source ?? 'configured',
+  reason: 'allowed',
+  failOpen: false,
+  ...details,
+});
+
+const serviceDisruptionDecision = (
+  featureKey: FeatureKey,
+  failOpen: boolean,
+  details: Omit<
+    Partial<AccessDecision>,
+    'allowed' | 'failOpen' | 'featureKey' | 'reason' | 'source'
+  > = {},
+): AccessDecision =>
+  failOpen
+    ? {
+        featureKey,
+        allowed: true,
+        source: 'fail_open',
+        reason: 'service_disruption',
+        failOpen: true,
+        ...details,
+      }
+    : denyAccess(featureKey, 'service_disruption', 'fail_open', details);
+
+/**
+ * Evaluates whether a user can access a feature by combining RBAC, plan/tier
+ * entitlements, metered limits, and feature-flag gates.
+ */
+export const canAccess = (
+  user: AccessUser,
+  featureKey: FeatureKey,
+  policy: AccessPolicy = {},
+): AccessDecision => {
+  const metadata = policy.features?.[featureKey];
+  const entitlementFeatureKey = metadata?.entitlementFeatureKey ?? featureKey;
+  const flagKey = metadata?.flagKey ?? createEntitlementFlagKey(entitlementFeatureKey);
+  const tier = getAccessTier(user);
+  const failOpen = policy.failOpenOnServiceDisruption ?? true;
+  const hasConfiguredFeature = Boolean(
+    metadata ?? policy.matrix ?? policy.evaluationService,
+  );
+
+  if (!hasConfiguredFeature) {
+    return denyAccess(featureKey, 'feature_not_configured', 'configured');
+  }
+
+  const requiredRoles = metadata?.requiredRoles ?? [];
+  if (
+    requiredRoles.length > 0 &&
+    !hasRequiredRoles(user.roles, requiredRoles, metadata?.requireAllRoles ?? false)
+  ) {
+    return denyAccess(featureKey, 'role_denied', 'rbac', { requiredRoles });
+  }
+
+  if (metadata?.tierAccess) {
+    if (!tier) {
+      return denyAccess(featureKey, 'missing_tier', 'configured');
+    }
+
+    if (metadata.tierAccess[tier] !== true) {
+      return denyAccess(featureKey, 'tier_denied', 'configured');
+    }
+  }
+
+  if (policy.matrix) {
+    if (!tier) {
+      return denyAccess(featureKey, 'missing_tier', 'matrix');
+    }
+
+    if (!hasPlanFeature(policy.matrix, tier, entitlementFeatureKey)) {
+      return denyAccess(featureKey, 'tier_denied', 'matrix');
+    }
+  }
+
+  const limit = resolveFeatureLimit(metadata, tier);
+  if (metadata?.kind === 'metered' || limit !== undefined) {
+    if (!tier) {
+      return denyAccess(featureKey, 'missing_tier', 'limit');
+    }
+
+    if (limit !== undefined && limit !== null) {
+      const usageKey = metadata?.usageKey ?? entitlementFeatureKey;
+      let used: number;
+
+      try {
+        used = policy.usageService?.getUsage(user, usageKey) ?? user.usage?.[usageKey] ?? 0;
+      } catch {
+        return serviceDisruptionDecision(featureKey, failOpen, {
+          flagKey,
+          limit,
+        });
+      }
+
+      if (used >= limit) {
+        return denyAccess(featureKey, 'limit_exceeded', 'limit', {
+          limit,
+          used,
+        });
+      }
+    }
+  }
+
+  if (policy.evaluationService) {
+    let evaluation: EvaluationResult;
+
+    try {
+      evaluation = policy.evaluationService.evaluate(
+        flagKey,
+        createAccessEvaluationContext(user, tier, policy),
+      );
+    } catch {
+      return serviceDisruptionDecision(featureKey, failOpen, { flagKey });
+    }
+
+    if (evaluation.reason === 'error') {
+      return serviceDisruptionDecision(featureKey, failOpen, {
+        flagKey,
+        flagReason: evaluation.reason,
+      });
+    }
+
+    if (!evaluation.enabled) {
+      return denyAccess(featureKey, 'flag_denied', 'flag', {
+        flagKey,
+        flagReason: evaluation.reason,
+      });
+    }
+
+    return allowAccess(featureKey, {
+      source: 'flag',
+      flagKey,
+      flagReason: evaluation.reason,
+      config: evaluation.payload,
+    });
+  }
+
+  return allowAccess(featureKey, { source: policy.matrix ? 'matrix' : 'configured' });
+};
 
 export class EntitlementsService {
   private readonly matrix: PlanFeatureMatrix;

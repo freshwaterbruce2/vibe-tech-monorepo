@@ -8,11 +8,13 @@ import type {
 import {
   ENTITLEMENT_FLAG_PREFIX,
   EntitlementsService,
+  canAccess,
   collectFeatureKeys,
   createEntitlementContext,
   createEntitlementFlagKey,
   createEntitlementFlags,
   hasPlanFeature,
+  type AccessPolicy,
 } from '../src/index.js';
 
 const matrix = {
@@ -190,5 +192,257 @@ describe('@vibetech/entitlements', () => {
   it('exposes direct matrix checks', () => {
     expect(hasPlanFeature(matrix, 'team', 'seats.manage')).toBe(true);
     expect(hasPlanFeature(matrix, 'free', 'seats.manage')).toBe(false);
+  });
+
+  it('resolves boolean access through RBAC, matrix entitlements, and flag gates', () => {
+    const evaluationService = {
+      evaluate: vi.fn(
+        (_flagKey: string, context: EvaluationContext): EvaluationResult => ({
+          flagKey: 'entitlement.reports.advanced',
+          enabled: context.attributes?.plan === 'pro',
+          reason: 'targeting_rule_match',
+        }),
+      ),
+    };
+    const policy: AccessPolicy = {
+      matrix,
+      features: {
+        'reports.advanced': {
+          kind: 'boolean',
+          requiredRoles: ['analyst'],
+        },
+      },
+      evaluationService,
+      context: { environment: 'prod' },
+    };
+
+    expect(
+      canAccess(
+        { id: 'user-1', plan: 'pro', roles: ['analyst'] },
+        'reports.advanced',
+        policy,
+      ),
+    ).toEqual({
+      featureKey: 'reports.advanced',
+      allowed: true,
+      source: 'flag',
+      reason: 'allowed',
+      failOpen: false,
+      flagKey: 'entitlement.reports.advanced',
+      flagReason: 'targeting_rule_match',
+      config: undefined,
+    });
+    expect(evaluationService.evaluate).toHaveBeenCalledWith(
+      'entitlement.reports.advanced',
+      expect.objectContaining({
+        environment: 'prod',
+        userId: 'user-1',
+        attributes: { plan: 'pro', tier: 'pro' },
+      }),
+    );
+
+    expect(
+      canAccess(
+        { id: 'user-2', plan: 'pro', roles: ['viewer'] },
+        'reports.advanced',
+        policy,
+      ),
+    ).toEqual({
+      featureKey: 'reports.advanced',
+      allowed: false,
+      source: 'rbac',
+      reason: 'role_denied',
+      failOpen: false,
+      requiredRoles: ['analyst'],
+    });
+
+    expect(
+      canAccess(
+        { id: 'user-3', plan: 'free', roles: ['analyst'] },
+        'reports.advanced',
+        policy,
+      ),
+    ).toEqual({
+      featureKey: 'reports.advanced',
+      allowed: false,
+      source: 'matrix',
+      reason: 'tier_denied',
+      failOpen: false,
+    });
+  });
+
+  it('returns configuration payloads from the feature evaluation service', () => {
+    const evaluationService = {
+      evaluate: vi.fn(
+        (): EvaluationResult => ({
+          flagKey: 'config.ai-assistant',
+          enabled: true,
+          reason: 'default_value',
+          payload: {
+            model: 'gpt-test',
+            maxTokens: 1200,
+          },
+        }),
+      ),
+    };
+
+    expect(
+      canAccess(
+        { id: 'user-1', plan: 'team' },
+        'ai-assistant.config',
+        {
+          features: {
+            'ai-assistant.config': {
+              kind: 'configuration',
+              flagKey: 'config.ai-assistant',
+            },
+          },
+          evaluationService,
+        },
+      ),
+    ).toEqual({
+      featureKey: 'ai-assistant.config',
+      allowed: true,
+      source: 'flag',
+      reason: 'allowed',
+      failOpen: false,
+      flagKey: 'config.ai-assistant',
+      flagReason: 'default_value',
+      config: {
+        model: 'gpt-test',
+        maxTokens: 1200,
+      },
+    });
+  });
+
+  it('resolves metered limits below the limit and denies at or above the limit', () => {
+    const policyForUsage = (used: number): AccessPolicy => ({
+      features: {
+        'documents.export': {
+          kind: 'metered',
+          tierLimits: { pro: 10 },
+          usageKey: 'documents.export',
+        },
+      },
+      usageService: {
+        getUsage: vi.fn(() => used),
+      },
+    });
+
+    expect(
+      canAccess({ id: 'user-1', plan: 'pro' }, 'documents.export', policyForUsage(9)),
+    ).toEqual({
+      featureKey: 'documents.export',
+      allowed: true,
+      source: 'configured',
+      reason: 'allowed',
+      failOpen: false,
+    });
+
+    expect(
+      canAccess({ id: 'user-1', plan: 'pro' }, 'documents.export', policyForUsage(10)),
+    ).toEqual({
+      featureKey: 'documents.export',
+      allowed: false,
+      source: 'limit',
+      reason: 'limit_exceeded',
+      failOpen: false,
+      limit: 10,
+      used: 10,
+    });
+
+    expect(
+      canAccess({ id: 'user-1', plan: 'pro' }, 'documents.export', policyForUsage(11)),
+    ).toEqual({
+      featureKey: 'documents.export',
+      allowed: false,
+      source: 'limit',
+      reason: 'limit_exceeded',
+      failOpen: false,
+      limit: 10,
+      used: 11,
+    });
+  });
+
+  it('fails open when feature flag or usage services throw', () => {
+    expect(
+      canAccess(
+        { id: 'user-1', plan: 'pro' },
+        'reports.advanced',
+        {
+          features: { 'reports.advanced': { kind: 'boolean' } },
+          evaluationService: {
+            evaluate: vi.fn(() => {
+              throw new Error('flag service unavailable');
+            }),
+          },
+        },
+      ),
+    ).toEqual({
+      featureKey: 'reports.advanced',
+      allowed: true,
+      source: 'fail_open',
+      reason: 'service_disruption',
+      failOpen: true,
+      flagKey: 'entitlement.reports.advanced',
+    });
+
+    expect(
+      canAccess(
+        { id: 'user-1', plan: 'pro' },
+        'documents.export',
+        {
+          features: {
+            'documents.export': {
+              kind: 'metered',
+              tierLimits: { pro: 10 },
+            },
+          },
+          usageService: {
+            getUsage: vi.fn(() => {
+              throw new Error('usage service unavailable');
+            }),
+          },
+        },
+      ),
+    ).toEqual({
+      featureKey: 'documents.export',
+      allowed: true,
+      source: 'fail_open',
+      reason: 'service_disruption',
+      failOpen: true,
+      flagKey: 'entitlement.documents.export',
+      limit: 10,
+    });
+  });
+
+  it('does not fail open for normal access denials', () => {
+    expect(
+      canAccess(
+        { id: 'user-1', plan: 'pro' },
+        'reports.advanced',
+        {
+          features: { 'reports.advanced': { kind: 'boolean' } },
+          evaluationService: {
+            evaluate: vi.fn(
+              (): EvaluationResult => ({
+                flagKey: 'entitlement.reports.advanced',
+                enabled: false,
+                reason: 'default_value',
+              }),
+            ),
+          },
+          failOpenOnServiceDisruption: true,
+        },
+      ),
+    ).toEqual({
+      featureKey: 'reports.advanced',
+      allowed: false,
+      source: 'flag',
+      reason: 'flag_denied',
+      failOpen: false,
+      flagKey: 'entitlement.reports.advanced',
+      flagReason: 'default_value',
+    });
   });
 });
