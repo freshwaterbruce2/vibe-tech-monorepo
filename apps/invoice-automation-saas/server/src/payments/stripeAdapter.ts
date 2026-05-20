@@ -2,9 +2,12 @@ export type {
   BuildCheckoutSessionInput,
   CheckoutSessionResult as CheckoutSession,
   StripeWebhookEventLike,
-} from '@vibetech/billing'
+} from '@vibetech/payments'
 export {
   buildCheckoutSession,
+  createTenantCheckoutSession,
   getStripeClient,
+  lookupSubscriptionStatus,
   verifyWebhookSignature,
-} from '@vibetech/billing'
+  verifyStripeWebhook,
+} from '@vibetech/payments'

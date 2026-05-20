@@ -9,7 +9,7 @@
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/packages/monetization",
+        "outputPath": "packages/monetization/dist",
         "main": "packages/monetization/src/index.ts",
         "tsConfig": "packages/monetization/tsconfig.lib.json",
         "assets": ["packages/monetization/*.md"]

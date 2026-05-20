@@ -9,7 +9,7 @@
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/packages/payments",
+        "outputPath": "packages/payments/dist",
         "main": "packages/payments/src/index.ts",
         "tsConfig": "packages/payments/tsconfig.lib.json",
         "assets": ["packages/payments/*.md"]

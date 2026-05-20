@@ -1,1 +1,1 @@
-export * from './lib/monetization';
+export * from './lib/monetization.js';

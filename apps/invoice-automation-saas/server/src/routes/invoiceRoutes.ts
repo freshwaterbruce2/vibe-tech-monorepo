@@ -2,7 +2,14 @@ import type Database from "better-sqlite3";
 import crypto from "crypto";
 import type { FastifyInstance } from "fastify";
 import {
+	getPlanDefinition,
+	getTenantPlan,
+	setTenantPlan,
+	type PlanLevel,
+} from "@vibetech/monetization";
+import {
 	INVOICE_SAAS_FEATURES,
+	resolveUserPlan,
 	resolveUserEntitlement,
 } from "../entitlements.js";
 import { events } from "../events.js";
@@ -24,6 +31,7 @@ import type {
 
 const nowIso = () => new Date().toISOString();
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
+const MONTHLY_INVOICE_METRIC = "invoices.created";
 
 interface TaxRateRow {
 	id: string;
@@ -115,6 +123,35 @@ const applyTaxStrategy = (
 interface UserCurrencyRow {
 	default_currency: string;
 }
+
+const getMonthlyInvoiceWindowStart = (now: Date = new Date()): string => {
+	const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+	return start.toISOString();
+};
+
+const getMonthlyInvoiceLimit = (plan: PlanLevel): number | null =>
+	getPlanDefinition(plan).limits[MONTHLY_INVOICE_METRIC] ?? null;
+
+const countInvoicesThisMonth = (
+	db: Database.Database,
+	userId: string,
+	now: Date = new Date(),
+): number => {
+	const row = db
+		.prepare(
+			"select count(*) as count from invoices where user_id = ? and created_at >= ?",
+		)
+		.get(userId, getMonthlyInvoiceWindowStart(now)) as
+		| { count: number }
+		| undefined;
+	return row?.count ?? 0;
+};
+
+const resolveInvoicePlan = (userId: string): PlanLevel => {
+	const plan = resolveUserPlan();
+	setTenantPlan(userId, plan);
+	return getTenantPlan(userId);
+};
 
 const stampCurrency = async (
 	db: Database.Database,
@@ -476,6 +513,20 @@ export const registerInvoiceRoutes = (
 			return reply.code(400).send({ error: "client.name is required" });
 		if (!clientEmail.includes("@"))
 			return reply.code(400).send({ error: "client.email is invalid" });
+
+		const plan = resolveInvoicePlan(userId);
+		const monthlyInvoiceLimit = getMonthlyInvoiceLimit(plan);
+		const invoicesThisMonth = countInvoicesThisMonth(db, userId);
+		if (
+			monthlyInvoiceLimit !== null &&
+			invoicesThisMonth >= monthlyInvoiceLimit
+		) {
+			return reply.code(402).send({
+				error: `The ${plan} plan includes up to ${monthlyInvoiceLimit} invoices per month`,
+				plan,
+				limit: monthlyInvoiceLimit,
+			});
+		}
 
 		if (
 			body.recurring &&

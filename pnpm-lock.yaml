@@ -1113,21 +1113,24 @@ importers:
       '@vibetech/analytics':
         specifier: workspace:*
         version: link:../../packages/analytics
+      '@vibetech/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@vibetech/auth':
         specifier: workspace:*
         version: link:../../packages/auth
-      '@vibetech/billing':
+      '@vibetech/email':
         specifier: workspace:*
-        version: link:../../packages/billing
-      '@vibetech/emails':
-        specifier: workspace:*
-        version: link:../../packages/emails
-      '@vibetech/entitlements':
-        specifier: workspace:*
-        version: link:../../packages/entitlements
+        version: link:../../packages/email
       '@vibetech/landing':
         specifier: workspace:*
         version: link:../../packages/landing
+      '@vibetech/monetization':
+        specifier: workspace:*
+        version: link:../../packages/monetization
+      '@vibetech/payments':
+        specifier: workspace:*
+        version: link:../../packages/payments
       '@vibetech/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -3788,6 +3791,9 @@ importers:
 
   packages/ai:
     dependencies:
+      '@vibetech/monetization':
+        specifier: workspace:*
+        version: link:../monetization
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
@@ -3928,6 +3934,15 @@ importers:
 
   packages/email:
     dependencies:
+      '@vibetech/emails':
+        specifier: workspace:*
+        version: link:../emails
+      react:
+        specifier: 19.2.4
+        version: 19.2.4
+      resend:
+        specifier: ^6.12.2
+        version: 6.12.2(@react-email/render@2.0.8(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
@@ -4451,6 +4466,12 @@ importers:
 
   packages/payments:
     dependencies:
+      '@vibetech/billing':
+        specifier: workspace:*
+        version: link:../billing
+      '@vibetech/monetization':
+        specifier: workspace:*
+        version: link:../monetization
       tslib:
         specifier: ^2.3.0
         version: 2.8.1

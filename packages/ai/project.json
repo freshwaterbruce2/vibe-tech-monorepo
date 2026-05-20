@@ -9,7 +9,7 @@
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/packages/ai",
+        "outputPath": "packages/ai/dist",
         "main": "packages/ai/src/index.ts",
         "tsConfig": "packages/ai/tsconfig.lib.json",
         "assets": ["packages/ai/*.md"]

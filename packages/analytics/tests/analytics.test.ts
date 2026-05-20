@@ -1,4 +1,12 @@
-import { BrowserAnalytics, initAnalytics, shouldDisableAnalytics } from '../src/index.js';
+import {
+  BrowserAnalytics,
+  initAnalytics,
+  shouldDisableAnalytics,
+  trackCheckoutStart,
+  trackChurnRisk,
+  trackSignup,
+  trackUpgrade,
+} from '../src/index.js';
 import { describe, expect, it } from 'vitest';
 
 describe('@vibetech/analytics', () => {
@@ -30,5 +38,52 @@ describe('@vibetech/analytics', () => {
     });
 
     expect(client.enabled).toBe(false);
+  });
+
+  it('tracks standardized monetization funnel events', () => {
+    const events: Array<{ name: string; properties?: Record<string, unknown> }> = [];
+    const client = {
+      track: (name: string, properties?: Record<string, unknown>) => {
+        events.push({ name, properties });
+      },
+      revenue: (amount: number, currency?: string, properties?: Record<string, unknown>) => {
+        events.push({ name: 'Purchase', properties: { amount, currency, ...properties } });
+      },
+    };
+
+    trackSignup(client, {
+      tenantId: 'tenant-a',
+      appId: 'invoice-automation-saas',
+      plan: 'free',
+    });
+    trackCheckoutStart(client, {
+      tenantId: 'tenant-a',
+      appId: 'invoice-automation-saas',
+      plan: 'pro',
+    });
+    trackUpgrade(client, {
+      tenantId: 'tenant-a',
+      appId: 'invoice-automation-saas',
+      previousPlan: 'free',
+      plan: 'pro',
+      amount: 19,
+      currency: 'USD',
+    });
+    trackChurnRisk(client, {
+      tenantId: 'tenant-a',
+      appId: 'invoice-automation-saas',
+      reason: 'usage_dropped',
+    });
+
+    expect(events.map((event) => event.name)).toEqual([
+      'Signup Completed',
+      'Checkout Started',
+      'Purchase',
+      'Churn Risk Detected',
+    ]);
+    expect(events[0]?.properties).toMatchObject({
+      tenant_id: 'tenant-a',
+      app_id: 'invoice-automation-saas',
+    });
   });
 });
