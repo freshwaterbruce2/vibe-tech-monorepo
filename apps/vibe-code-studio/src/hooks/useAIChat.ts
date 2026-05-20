@@ -1,4 +1,4 @@
-import { startTransition, useCallback, useEffect, useState } from 'react';
+import { startTransition, useCallback, useEffect, useRef, useState } from 'react';
 
 import { MultiFileEditDetector } from '../services/ai/MultiFileEditDetector';
 import type { UnifiedAIService } from '../services/ai/UnifiedAIService';
@@ -32,15 +32,8 @@ Let's build something amazing together!`,
 };
 
 function loadPersistedMessages(): AIMessage[] {
-  try {
-    // Synchronous context — electron-store is async so localStorage is the only option here
-    const raw = localStorage.getItem(CHAT_STORAGE_KEY);
-    if (!raw) return [WELCOME_MESSAGE];
-    const parsed = JSON.parse(raw) as Array<AIMessage & { timestamp: string }>;
-    return parsed.map((m) => ({ ...m, timestamp: new Date(m.timestamp) }));
-  } catch {
-    return [WELCOME_MESSAGE];
-  }
+  // Electron store is async; initial state uses welcome message and loads asynchronously
+  return [WELCOME_MESSAGE];
 }
 
 export interface UseAIChatReturn {
@@ -105,23 +98,37 @@ export function useAIChat({
     [],
   );
 
+  const isHydratedRef = useRef(false);
+
   const clearAiMessages = useCallback(() => {
     setAiMessages([WELCOME_MESSAGE]);
     if (window.electron?.store) {
       void window.electron.store.delete(CHAT_STORAGE_KEY);
-    } else {
-      localStorage.removeItem(CHAT_STORAGE_KEY);
     }
   }, []);
 
-  // Persist messages on every change — use electron-store in Electron, localStorage as web fallback
+  // Load persisted messages from electron-store on mount
   useEffect(() => {
+    if (!window.electron?.store) return;
+    window.electron.store.get(CHAT_STORAGE_KEY).then((raw) => {
+      if (typeof raw === 'string') {
+        const parsed = JSON.parse(raw) as Array<AIMessage & { timestamp: string }>;
+        setAiMessages(parsed.map((m) => ({ ...m, timestamp: new Date(m.timestamp) })));
+      }
+    }).catch(() => {
+      // ignore load errors
+    }).finally(() => {
+      isHydratedRef.current = true;
+    });
+  }, []);
+
+  // Persist messages on every change — use electron-store in Electron
+  useEffect(() => {
+    if (!isHydratedRef.current) return;
     try {
       const json = JSON.stringify(aiMessages.slice(-MAX_PERSISTED_MESSAGES));
       if (window.electron?.store) {
         void window.electron.store.set(CHAT_STORAGE_KEY, json);
-      } else {
-        localStorage.setItem(CHAT_STORAGE_KEY, json);
       }
     } catch {
       // ignore quota / store errors
@@ -300,6 +307,8 @@ export function useAIChat({
       sidebarOpen,
       previewOpen,
       aiMessages,
+      aiChatOpen,
+      onMultiFileEditDetected,
     ],
   );
 

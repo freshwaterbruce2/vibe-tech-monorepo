@@ -56,7 +56,10 @@ function App() {
         try {
           await fetch('/api/settings/apikey', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Admin-Secret': import.meta.env.VITE_PROMPT_ENGINEER_SECRET ?? '',
+            },
             body: JSON.stringify({ apiKey }),
           });
         } catch (err) {
