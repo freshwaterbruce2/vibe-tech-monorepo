@@ -1,0 +1,11 @@
+{
+  "buildCommand": "pnpm run build",
+  "installCommand": "cd ../.. && pnpm install --force --no-frozen-lockfile --filter ./apps/prior-auth-pro...",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
