@@ -115,7 +115,8 @@ Final Phase 4 production proof:
 - Inaugural generated SaaS app: `prior-auth-pro`
 - Frontend production URL: `https://prior-auth-pro.vercel.app`
 - Backend production URL: `https://prior-auth-pro-api-production.up.railway.app`
-- Source branch and commit: `feat/monorepo-monetization-integration` at `3cf85fb4`
+- Source branch: `feat/monorepo-monetization-integration`; PriorAuthPro proof commit:
+  `3cf85fb4`
 - Live proof: Vercel frontend returned HTTP 200, Railway API health returned `ok: true`,
   Stripe test-mode subscription Checkout completed, the webhook upgraded
   `owner@example.com` to `pro` / `active`, and the first appeal letter used the
