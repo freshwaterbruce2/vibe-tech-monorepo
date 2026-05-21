@@ -4,6 +4,9 @@
 $ErrorActionPreference = "Stop"
 $exitCode = 0
 
+$env:NX_DAEMON = "false"
+$env:NX_NO_CLOUD = "true"
+
 Write-Host "`n=== VibeTech Pre-Commit Quality Gates ===" -ForegroundColor Cyan
 Write-Host ""
 
@@ -16,11 +19,17 @@ if (-not $stagedFiles -or $stagedFiles.Count -eq 0) {
 
 $sourceFiles = @(
     $stagedFiles | Where-Object {
-        $_ -match '\.(ts|tsx|js|jsx|mjs|cjs)$' -and $_ -notmatch '\.d\.ts$'
+        $_ -match '\.(ts|tsx|js|jsx|mjs|cjs)$' -and
+        $_ -notmatch '\.d\.ts$' -and
+        $_ -notmatch '^plugins/factory/src/generators/.+/files/'
     }
 )
 $typeScriptFiles = @(
-    $stagedFiles | Where-Object { $_ -match '\.(ts|tsx)$' -and $_ -notmatch '\.d\.ts$' }
+    $stagedFiles | Where-Object {
+        $_ -match '\.(ts|tsx)$' -and
+        $_ -notmatch '\.d\.ts$' -and
+        $_ -notmatch '^plugins/factory/src/generators/.+/files/'
+    }
 )
 $nxTypecheckFileList = ($typeScriptFiles -join ',')
 

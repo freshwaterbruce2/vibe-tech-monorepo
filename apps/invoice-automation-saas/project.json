@@ -22,8 +22,11 @@
     },
     "api:build": {
       "executor": "nx:run-commands",
+      "outputs": [
+        "{projectRoot}/server/dist/**"
+      ],
       "options": {
-        "command": "if exist server\\dist rmdir /s /q server\\dist && if exist server\\tsconfig.tsbuildinfo del server\\tsconfig.tsbuildinfo && tsc -p server/tsconfig.json",
+        "command": "node -e \"const fs=require('node:fs'); fs.rmSync('server/dist',{recursive:true,force:true}); fs.rmSync('server/tsconfig.tsbuildinfo',{force:true});\" && tsc -p server/tsconfig.json",
         "cwd": "apps/invoice-automation-saas"
       },
       "cache": true
@@ -77,6 +80,10 @@
     },
     "test": {
       "executor": "nx:run-commands",
+      "dependsOn": [
+        "^build",
+        "api:build"
+      ],
       "options": {
         "command": "node ../../node_modules/vitest/vitest.mjs",
         "cwd": "apps/invoice-automation-saas"

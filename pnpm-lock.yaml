@@ -1119,9 +1119,15 @@ importers:
       '@vibetech/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@vibetech/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
       '@vibetech/email':
         specifier: workspace:*
         version: link:../../packages/email
+      '@vibetech/emails':
+        specifier: workspace:*
+        version: link:../../packages/emails
       '@vibetech/landing':
         specifier: workspace:*
         version: link:../../packages/landing

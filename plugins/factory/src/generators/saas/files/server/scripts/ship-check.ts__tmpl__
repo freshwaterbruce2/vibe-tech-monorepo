@@ -187,11 +187,11 @@ async function runLocalApiSmoke(): Promise<void> {
     });
     results.push({
       id: 'api-pro-authorized',
-      ok: proRoute.feature === 'premium.route',
+      ok: proRoute.feature === 'analytics.revenue',
       detail:
-        proRoute.feature === 'premium.route'
-          ? 'Protected pro route returns the generated feature key after login'
-          : 'Protected pro route did not return the generated feature key',
+        proRoute.feature === 'analytics.revenue'
+          ? 'Protected pro route returns the generated monetization feature key after login'
+          : 'Protected pro route did not return the generated monetization feature key',
     });
 
     const rewrite = await fetchJson<{ rewrite?: { recommendedCta?: string } }>(
@@ -220,6 +220,45 @@ async function runLocalApiSmoke(): Promise<void> {
         typeof rewrite.rewrite?.recommendedCta === 'string'
           ? 'Protected pro rewrite route returns rewrite guidance after login'
           : 'Protected pro rewrite route did not return rewrite guidance',
+    });
+
+    const receipt = await fetchJson<{ subject?: string; html?: string; text?: string }>(
+      `http://${appHost}:${appPort}/api/emails/demo-receipt`,
+    );
+    const receiptOk =
+      typeof receipt.subject === 'string' &&
+      receipt.subject.length > 0 &&
+      typeof receipt.html === 'string' &&
+      receipt.html.includes('DEMO-100') &&
+      typeof receipt.text === 'string' &&
+      receipt.text.includes('DEMO-100');
+    results.push({
+      id: 'api-email-receipt',
+      ok: receiptOk,
+      detail: receiptOk
+        ? 'Receipt email route renders shared email subject, HTML, and text output'
+        : 'Receipt email route did not render the expected shared email payload',
+    });
+
+    const aiUsage = await fetchJson<{ usage?: { totalTokens?: number } }>(
+      `http://${appHost}:${appPort}/api/ai/demo-usage`,
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'x-plan': 'pro',
+          cookie,
+        },
+        body: '{}',
+      },
+    );
+    results.push({
+      id: 'api-ai-usage',
+      ok: aiUsage.usage?.totalTokens === 200,
+      detail:
+        aiUsage.usage?.totalTokens === 200
+          ? 'Protected AI usage route records shared metering state'
+          : 'Protected AI usage route did not return expected usage metering state',
     });
 
     await checkBillingCheckout();

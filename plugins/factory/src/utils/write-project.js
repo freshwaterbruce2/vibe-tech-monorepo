@@ -68,10 +68,13 @@ function writeSaasProject(tree, options) {
     implicitDependencies: [
       '@vibetech/auth',
       '@vibetech/analytics',
+      '@vibetech/ai',
       '@vibetech/billing',
+      '@vibetech/email',
       '@vibetech/emails',
-      '@vibetech/entitlements',
       '@vibetech/landing',
+      '@vibetech/monetization',
+      '@vibetech/payments',
     ],
     targets: {
       dev: {
