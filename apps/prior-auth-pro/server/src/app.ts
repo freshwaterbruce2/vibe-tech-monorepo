@@ -27,7 +27,17 @@ import {
 
 loadLocalEnv();
 
-const STRICT_AUTH_PATHS = new Set(['/api/auth/login']);
+const STANDARD_RATE_LIMIT = {
+  config: {
+    rateLimit: { max: 100, timeWindow: '1 minute' },
+  },
+};
+
+const STRICT_AUTH_RATE_LIMIT = {
+  config: {
+    rateLimit: { max: 5, timeWindow: '1 minute' },
+  },
+};
 
 export const app = Fastify({ logger: true });
 
@@ -51,17 +61,6 @@ await app.register(cors, {
   credentials: true,
 });
 
-app.addHook('onRoute', (routeOptions) => {
-  const url = typeof routeOptions.url === 'string' ? routeOptions.url : '';
-  if (STRICT_AUTH_PATHS.has(url)) {
-    const config = (routeOptions.config ?? {}) as {
-      rateLimit?: { max: number; timeWindow: string };
-    };
-    config.rateLimit = { max: 5, timeWindow: '1 minute' };
-    routeOptions.config = config;
-  }
-});
-
 await app.register(rateLimit, {
   max: 100,
   timeWindow: '1 minute',
@@ -75,7 +74,7 @@ app.get('/api/health', async () => ({
   app: 'prior-auth-pro',
 }));
 
-app.get('/api/auth/me', async (req) => {
+app.get('/api/auth/me', STANDARD_RATE_LIMIT, async (req) => {
   const status = readGeneratedAuthStatus(req.headers.cookie);
 
   return {
@@ -86,7 +85,7 @@ app.get('/api/auth/me', async (req) => {
   };
 });
 
-app.post('/api/auth/login', async (req, reply) => {
+app.post('/api/auth/login', STRICT_AUTH_RATE_LIMIT, async (req, reply) => {
   if (!isGeneratedAuthReady()) {
     return reply.code(503).send({
       error: 'Generated auth is not configured',
@@ -116,14 +115,14 @@ app.post('/api/auth/login', async (req, reply) => {
   };
 });
 
-app.post('/api/auth/logout', async (_req, reply) => {
+app.post('/api/auth/logout', STRICT_AUTH_RATE_LIMIT, async (_req, reply) => {
   reply.header('set-cookie', buildGeneratedLogoutCookie());
   return {
     ok: true,
   };
 });
 
-app.get('/api/pro', async (req, reply) => {
+app.get('/api/pro', STANDARD_RATE_LIMIT, async (req, reply) => {
   const authUser = requireGeneratedAuth(req.headers.cookie);
   if (!authUser) {
     return reply.code(401).send({
@@ -168,7 +167,7 @@ app.get('/api/emails/demo-receipt', async () => {
   };
 });
 
-app.post('/api/pro/rewrite', async (req, reply) => {
+app.post('/api/pro/rewrite', STANDARD_RATE_LIMIT, async (req, reply) => {
   const authUser = requireGeneratedAuth(req.headers.cookie);
   if (!authUser) {
     return reply.code(401).send({
@@ -194,7 +193,7 @@ app.post('/api/pro/rewrite', async (req, reply) => {
   };
 });
 
-app.post('/api/appeals/generate', async (req, reply) => {
+app.post('/api/appeals/generate', STANDARD_RATE_LIMIT, async (req, reply) => {
   const authUser = requireGeneratedAuth(req.headers.cookie);
   if (!authUser) {
     return reply.code(401).send({
@@ -243,7 +242,7 @@ app.post('/api/appeals/generate', async (req, reply) => {
   }
 });
 
-app.get('/api/billing/status', async (req, reply) => {
+app.get('/api/billing/status', STANDARD_RATE_LIMIT, async (req, reply) => {
   const authUser = requireGeneratedAuth(req.headers.cookie);
   if (!authUser) {
     return reply.code(401).send({
@@ -257,7 +256,7 @@ app.get('/api/billing/status', async (req, reply) => {
   };
 });
 
-app.post('/api/billing/checkout', async (req, reply) => {
+app.post('/api/billing/checkout', STANDARD_RATE_LIMIT, async (req, reply) => {
   const authUser = requireGeneratedAuth(req.headers.cookie);
   if (!authUser) {
     return reply.code(401).send({
@@ -328,7 +327,7 @@ app.get('/api/billing/demo-checkout', async (req, reply) => {
   }
 });
 
-app.post('/api/billing/webhook', async (req, reply) => {
+app.post('/api/billing/webhook', STANDARD_RATE_LIMIT, async (req, reply) => {
   const secret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
   if (!secret) {
     return reply.code(503).send({
