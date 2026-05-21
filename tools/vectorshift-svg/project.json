@@ -59,6 +59,14 @@
         "cwd": "tools/vectorshift-svg"
       }
     },
+    "test": {
+      "executor": "nx:run-commands",
+      "outputs": [],
+      "options": {
+        "command": "pnpm run typecheck",
+        "cwd": "tools/vectorshift-svg"
+      }
+    },
     "clean": {
       "executor": "nx:run-commands",
       "options": {
@@ -68,5 +76,5 @@
     },
     "quality": {}
   },
-  "tags": ["scope:tooling", "type:tool", "asset-pipeline:svg"]
+  "tags": ["scope:tooling", "type:tool", "asset-pipeline:svg", "standalone"]
 }
