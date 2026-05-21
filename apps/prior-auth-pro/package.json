@@ -16,6 +16,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@fastify/cors": "^11.2.0",
+    "@fastify/rate-limit": "^10.3.0",
     "@vibetech/auth": "workspace:*",
     "@vibetech/analytics": "workspace:*",
     "@vibetech/ai": "workspace:*",
@@ -23,10 +25,9 @@
     "@vibetech/emails": "workspace:*",
     "@vibetech/entitlements": "workspace:*",
     "@vibetech/landing": "workspace:*",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
     "fastify": "^5.8.4",
-    "@fastify/cors": "^11.2.0"
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",

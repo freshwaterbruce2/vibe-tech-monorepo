@@ -1,4 +1,5 @@
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import Fastify from 'fastify';
 import type { AuthUser } from '@vibetech/auth';
 import { buildCheckoutSession, verifyWebhookSignature } from '@vibetech/billing';
@@ -26,6 +27,8 @@ import {
 
 loadLocalEnv();
 
+const STRICT_AUTH_PATHS = new Set(['/api/auth/login']);
+
 export const app = Fastify({ logger: true });
 
 app.removeContentTypeParser('application/json');
@@ -46,6 +49,23 @@ app.addContentTypeParser('application/json', { parseAs: 'string' }, (req, body, 
 await app.register(cors, {
   origin: true,
   credentials: true,
+});
+
+app.addHook('onRoute', (routeOptions) => {
+  const url = typeof routeOptions.url === 'string' ? routeOptions.url : '';
+  if (STRICT_AUTH_PATHS.has(url)) {
+    const config = (routeOptions.config ?? {}) as {
+      rateLimit?: { max: number; timeWindow: string };
+    };
+    config.rateLimit = { max: 5, timeWindow: '1 minute' };
+    routeOptions.config = config;
+  }
+});
+
+await app.register(rateLimit, {
+  max: 100,
+  timeWindow: '1 minute',
+  keyGenerator: (req) => req.ip ?? 'unknown',
 });
 
 app.get('/', async () => buildApiRootMetadata(resolveAppBaseUrl()));
