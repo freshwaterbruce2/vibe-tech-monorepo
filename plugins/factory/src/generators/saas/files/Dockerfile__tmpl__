@@ -16,28 +16,37 @@ COPY patches ./patches
 COPY apps/<%= projectName %>/package.json apps/<%= projectName %>/package.json
 COPY packages/feature-flags/core/package.json packages/feature-flags/core/package.json
 COPY packages/auth/package.json packages/auth/package.json
-COPY packages/entitlements/package.json packages/entitlements/package.json
+COPY packages/monetization/package.json packages/monetization/package.json
 COPY packages/billing/package.json packages/billing/package.json
+COPY packages/payments/package.json packages/payments/package.json
 COPY packages/emails/package.json packages/emails/package.json
+COPY packages/email/package.json packages/email/package.json
 COPY packages/analytics/package.json packages/analytics/package.json
+COPY packages/ai/package.json packages/ai/package.json
 COPY packages/landing/package.json packages/landing/package.json
 COPY apps/<%= projectName %> apps/<%= projectName %>
 COPY packages/feature-flags/core packages/feature-flags/core
 COPY packages/auth packages/auth
-COPY packages/entitlements packages/entitlements
+COPY packages/monetization packages/monetization
 COPY packages/billing packages/billing
+COPY packages/payments packages/payments
 COPY packages/emails packages/emails
+COPY packages/email packages/email
 COPY packages/analytics packages/analytics
+COPY packages/ai packages/ai
 COPY packages/landing packages/landing
 
 RUN pnpm install --frozen-lockfile \
   --filter ./apps/<%= projectName %>... \
   --filter @vibetech/feature-flags-core \
   --filter @vibetech/auth \
-  --filter @vibetech/entitlements \
+  --filter @vibetech/monetization \
   --filter @vibetech/billing \
+  --filter @vibetech/payments \
   --filter @vibetech/emails \
+  --filter @vibetech/email \
   --filter @vibetech/analytics \
+  --filter @vibetech/ai \
   --filter @vibetech/landing
 
 RUN cd apps/<%= projectName %> && pnpm run build:shared:api && pnpm run build:api

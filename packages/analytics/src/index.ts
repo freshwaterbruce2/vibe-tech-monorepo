@@ -29,6 +29,23 @@ export interface BrowserAnalyticsClient {
   ): void;
 }
 
+export type MonetizationEventName =
+  | 'Signup Completed'
+  | 'Checkout Started'
+  | 'Plan Upgraded'
+  | 'Churn Risk Detected';
+
+export interface MonetizationAnalyticsPayload {
+  tenantId: string;
+  appId: string;
+  plan?: string;
+  previousPlan?: string;
+  amount?: number;
+  currency?: string;
+  reason?: string;
+  properties?: AnalyticsProperties;
+}
+
 declare global {
   interface Window {
     gtag?: (...args: unknown[]) => void;
@@ -204,3 +221,49 @@ export const initAnalytics = (
 
   return client;
 };
+
+const monetizationProperties = (
+  payload: MonetizationAnalyticsPayload,
+): AnalyticsProperties => ({
+  tenant_id: payload.tenantId,
+  app_id: payload.appId,
+  plan: payload.plan,
+  previous_plan: payload.previousPlan,
+  amount: payload.amount,
+  currency: payload.currency,
+  reason: payload.reason,
+  ...(payload.properties ?? {}),
+});
+
+export function trackSignup(
+  client: Pick<BrowserAnalyticsClient, 'track'>,
+  payload: MonetizationAnalyticsPayload,
+): void {
+  client.track('Signup Completed', monetizationProperties(payload));
+}
+
+export function trackCheckoutStart(
+  client: Pick<BrowserAnalyticsClient, 'track'>,
+  payload: MonetizationAnalyticsPayload,
+): void {
+  client.track('Checkout Started', monetizationProperties(payload));
+}
+
+export function trackUpgrade(
+  client: Pick<BrowserAnalyticsClient, 'track' | 'revenue'>,
+  payload: MonetizationAnalyticsPayload,
+): void {
+  const currency = payload.currency ?? 'USD';
+  if (typeof payload.amount === 'number') {
+    client.revenue(payload.amount, currency, monetizationProperties(payload));
+    return;
+  }
+  client.track('Plan Upgraded', monetizationProperties(payload));
+}
+
+export function trackChurnRisk(
+  client: Pick<BrowserAnalyticsClient, 'track'>,
+  payload: MonetizationAnalyticsPayload,
+): void {
+  client.track('Churn Risk Detected', monetizationProperties(payload));
+}

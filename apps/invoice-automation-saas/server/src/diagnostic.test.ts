@@ -21,7 +21,6 @@ import {
   getSessionTtlSeconds,
 } from './auth.js'
 import { openDb } from './db.js'
-import { enqueueJob } from './jobs/enqueue.js'
 import { tick } from './jobs/runner.js'
 import { runMigrations } from './migrations/index.js'
 import { registerAuthRoutes } from './routes/authRoutes.js'
@@ -439,18 +438,41 @@ describe('JOB RUNNER', () => {
 // 5. DATABASE PATH SECURITY
 // ═════════════════════════════════════════════════════════════
 describe('DATABASE PATH SECURITY', () => {
-  it('rejects C:\\ drive database paths', () => {
+  it('rejects non-D Windows drive database paths', () => {
     const original = process.env.DATABASE_PATH
-    process.env.DATABASE_PATH = 'C:\\temp\\evil.db'
-    expect(() => openDb()).toThrow(/must be on D:\\ or \/data\//)
-    process.env.DATABASE_PATH = original
+    const disallowedDrive = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+      .split('')
+      .find((drive) => drive !== 'D')
+
+    try {
+      process.env.DATABASE_PATH = `${disallowedDrive}:\\temp\\evil.db`
+      expect(() => openDb()).toThrow(/must be on D:\\ or \/data\//)
+    } finally {
+      process.env.DATABASE_PATH = original
+    }
   })
 
-  it('rejects relative paths that resolve to C:\\', () => {
+  it('applies database path policy after resolving relative paths', () => {
     const original = process.env.DATABASE_PATH
-    process.env.DATABASE_PATH = '..\\..\\evil.db'
-    expect(() => openDb()).toThrow(/must be on D:\\ or \/data\//)
-    process.env.DATABASE_PATH = original
+    const relativeDbPath = '..\\..\\evil.db'
+    const resolvedDbPath = path.resolve(relativeDbPath)
+    const isAllowedResolvedPath =
+      /^[dD]:\\/.test(resolvedDbPath) || resolvedDbPath.startsWith('/data/')
+
+    try {
+      process.env.DATABASE_PATH = relativeDbPath
+      if (isAllowedResolvedPath) {
+        const db = openDb()
+        db.close()
+        fs.rmSync(resolvedDbPath, { force: true })
+        fs.rmSync(`${resolvedDbPath}-shm`, { force: true })
+        fs.rmSync(`${resolvedDbPath}-wal`, { force: true })
+      } else {
+        expect(() => openDb()).toThrow(/must be on D:\\ or \/data\//)
+      }
+    } finally {
+      process.env.DATABASE_PATH = original
+    }
   })
 
   it('accepts Docker /data/ paths', () => {

@@ -44,7 +44,15 @@
         "cwd": "apps/serenity-flow"
       }
     },
+    "test": {
+      "executor": "nx:run-commands",
+      "outputs": [],
+      "options": {
+        "command": "pnpm run typecheck",
+        "cwd": "apps/serenity-flow"
+      }
+    },
     "quality": {}
   },
-  "tags": ["scope:web", "type:application", "product:serenity-flow"]
+  "tags": ["scope:web", "type:application", "product:serenity-flow", "standalone"]
 }

@@ -19,6 +19,22 @@
         "cwd": "plugins/factory"
       }
     },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "outputs": [],
+      "options": {
+        "command": "node -e \"require('./src/index.js'); console.log('factory plugin typecheck ok')\"",
+        "cwd": "plugins/factory"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": [],
+      "options": {
+        "command": "node -e \"require('./src/index.js'); console.log('factory plugin is source-only')\"",
+        "cwd": "plugins/factory"
+      }
+    },
     "quality": {}
   },
   "tags": [

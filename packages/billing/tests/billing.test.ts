@@ -108,7 +108,8 @@ class FakeDb {
 
 describe('@vibetech/billing stripe helpers', () => {
   it('builds a checkout session from generic line items', async () => {
-    const create = vi.fn(async () => ({
+    const create = vi.fn(async (input: Parameters<StripeClientLike['checkout']['sessions']['create']>[0]) => ({
+      input,
       id: 'cs_test_123',
       url: 'https://checkout.stripe.test/session',
     }));
@@ -147,6 +148,7 @@ describe('@vibetech/billing stripe helpers', () => {
       url: 'https://checkout.stripe.test/session',
     });
     expect(create).toHaveBeenCalledOnce();
+    expect(create.mock.calls.at(0)?.[0]).not.toHaveProperty('payment_method_types');
   });
 
   it('delegates webhook verification to Stripe', () => {

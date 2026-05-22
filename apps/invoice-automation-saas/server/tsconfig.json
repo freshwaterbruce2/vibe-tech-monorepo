@@ -12,6 +12,23 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@vibetech/billing": [
+        "packages/billing/dist/src/index.d.ts"
+      ],
+      "@vibetech/email": [
+        "packages/email/dist/src/index.d.ts"
+      ],
+      "@vibetech/emails": [
+        "packages/emails/dist/src/index.d.ts"
+      ],
+      "@vibetech/monetization": [
+        "packages/monetization/dist/src/index.d.ts"
+      ],
+      "@vibetech/payments": [
+        "packages/payments/dist/src/index.d.ts"
+      ]
+    },
     "types": [
       "node"
     ]

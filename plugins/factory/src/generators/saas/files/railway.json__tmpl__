@@ -7,11 +7,14 @@
       "apps/<%= projectName %>/**",
       "packages/auth/**",
       "packages/analytics/**",
+      "packages/ai/**",
       "packages/billing/**",
+      "packages/email/**",
       "packages/emails/**",
-      "packages/entitlements/**",
       "packages/feature-flags/core/**",
-      "packages/landing/**"
+      "packages/landing/**",
+      "packages/monetization/**",
+      "packages/payments/**"
     ]
   },
   "deploy": {

@@ -13,7 +13,7 @@ pnpm nx run <%= projectName %>:ship:check
 What it proves locally:
 - shared packages build cleanly
 - frontend and API compile cleanly
-- the compiled API passes health/auth/pro-route smoke checks
+- the compiled API passes health/auth/pro-route, email, AI-metering, and Stripe smoke checks
 - missing Stripe or deploy credentials are reported explicitly
 
 ## Deployment shape
@@ -21,6 +21,7 @@ What it proves locally:
 - Frontend: Vercel static Vite deployment
 - Backend: Railway Fastify deployment
 - Billing: Stripe Checkout in test mode first
+- Monetization: shared `@vibetech/monetization`, `@vibetech/payments`, `@vibetech/email`, and `@vibetech/ai` packages
 
 ## Required environment variables
 
@@ -35,7 +36,12 @@ DEMO_USER_EMAIL=
 DEMO_USER_PASSWORD=
 DEMO_USER_NAME=
 STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
 RESEND_API_KEY=
+RESEND_WEBHOOK_SECRET=
+EMAIL_FROM=
+GEMINI_API_KEY=
+OPENROUTER_API_KEY=
 SENTRY_DSN=
 ```
 

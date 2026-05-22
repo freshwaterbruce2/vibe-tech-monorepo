@@ -35,7 +35,11 @@
 			"@nova/*": ["./packages/nova-*/src"],
 			"@vibetech/business-booking-platform-next-backend": [
 				"apps/business-booking-platform-next/backend/src/index.ts"
-			]
+			],
+			"@vibetech/monetization": ["./packages/monetization/src/index.ts"],
+			"@vibetech/payments": ["./packages/payments/src/index.ts"],
+			"@vibetech/email": ["./packages/email/src/index.ts"],
+			"@vibetech/ai": ["./packages/ai/src/index.ts"]
 		},
 		"resolveJsonModule": true,
 		"allowJs": true,

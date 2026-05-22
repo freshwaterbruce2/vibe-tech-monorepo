@@ -1,4 +1,9 @@
 {
+  "pluginsConfig": {
+    "@nx/js": {
+      "analyzeSourceFiles": true
+    }
+  },
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "cli": {
     "packageManager": "pnpm"
@@ -50,6 +55,14 @@
       "options": {
         "targetName": "e2e",
         "ciTargetName": "e2e-ci"
+      }
+    },
+    {
+      "plugin": "@nx/vitest",
+      "options": {
+        "testTargetName": "vitest:test",
+        "ciTargetName": "test-ci",
+        "testMode": "watch"
       }
     }
   ],

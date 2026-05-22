@@ -1,33 +1,30 @@
 import {
-  EntitlementsService,
+  canUseFeature,
+  setTenantPlan,
   type FeatureKey,
-  type PlanFeatureMatrix,
-} from '../../../../packages/entitlements/dist/src/index.js'
+  type PlanLevel,
+} from '@vibetech/monetization'
 
 export const INVOICE_SAAS_FEATURES = {
+  invoiceCreation: 'invoices.create',
+  invoiceUnlimited: 'invoices.unlimited',
   recurringBilling: 'recurring.billing',
+  dunningEmails: 'dunning.emails',
 } as const satisfies Record<string, FeatureKey>
 
-const PLAN_FEATURES = {
-  legacy: [INVOICE_SAAS_FEATURES.recurringBilling],
-} as const satisfies PlanFeatureMatrix
+const PLAN_LEVELS = ['free', 'starter', 'pro', 'business'] as const
 
-const entitlements = new EntitlementsService(PLAN_FEATURES)
+const isPlanLevel = (value: string): value is PlanLevel =>
+  (PLAN_LEVELS as readonly string[]).includes(value)
 
-const getEntitlementEnvironment = (): 'dev' | 'staging' | 'prod' => {
-  switch (process.env.NODE_ENV) {
-    case 'production':
-      return 'prod'
-    case 'staging':
-      return 'staging'
-    default:
-      return 'dev'
-  }
+export const resolveUserPlan = (): PlanLevel => {
+  const configured = process.env['INVOICE_SAAS_DEFAULT_PLAN'] ?? 'free'
+  return isPlanLevel(configured) ? configured : 'free'
 }
 
 export interface UserEntitlementSnapshot {
   featureKey: FeatureKey
-  plan: keyof typeof PLAN_FEATURES
+  plan: PlanLevel
   enabled: boolean
 }
 
@@ -35,15 +32,12 @@ export const resolveUserEntitlement = (
   userId: string,
   featureKey: FeatureKey,
 ): UserEntitlementSnapshot => {
-  const plan = 'legacy'
-  const enabled = entitlements.hasFeature(plan, featureKey, {
-    environment: getEntitlementEnvironment(),
-    userId,
-  })
+  const plan = resolveUserPlan()
+  setTenantPlan(userId, plan)
 
   return {
     featureKey,
     plan,
-    enabled,
+    enabled: canUseFeature(userId, featureKey),
   }
 }
