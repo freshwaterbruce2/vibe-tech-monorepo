@@ -22,6 +22,9 @@
     },
     "api:build": {
       "executor": "nx:run-commands",
+      "dependsOn": [
+        "^build"
+      ],
       "outputs": [
         "{projectRoot}/server/dist/**"
       ],
