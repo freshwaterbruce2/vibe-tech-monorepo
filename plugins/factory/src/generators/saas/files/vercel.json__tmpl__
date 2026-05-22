@@ -1,6 +1,6 @@
 {
   "buildCommand": "pnpm run build:shared:api && pnpm run build",
-  "installCommand": "cd ../.. && pnpm install --frozen-lockfile --filter ./apps/<%= projectName %>...",
+  "installCommand": "cd ../.. && pnpm install --force --frozen-lockfile --filter ./apps/<%= projectName %>...",
   "outputDirectory": "dist",
   "rewrites": [
     {
