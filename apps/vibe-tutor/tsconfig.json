@@ -20,7 +20,12 @@
     "noUncheckedIndexedAccess": true, // ✓ Enabled: Array/object access safety
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@vibetech/avatars": ["../../packages/avatars/src/index.ts"],
+      "@vibetech/avatars/*": ["../../packages/avatars/src/*"],
+      "@vibetech/games": ["../../packages/games/src/index.ts"],
+      "@vibetech/games/tutor": ["../../packages/games/src/tutor/index.ts"],
+      "@vibetech/games/*": ["../../packages/games/src/*/index.ts"]
     },
     "allowImportingTsExtensions": true,
     "noEmit": true

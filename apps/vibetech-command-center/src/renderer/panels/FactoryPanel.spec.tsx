@@ -13,16 +13,17 @@ const mockSubscribe = vi.fn(() => () => {});
 const factoryApps: FactoryAppStatus[] = [
   {
     name: 'factory-saas-smoke',
+    projectName: 'factory-saas-smoke',
     root: 'apps/factory-saas-smoke',
     sourceRoot: 'apps/factory-saas-smoke/src',
     tags: ['scope:web', 'factory:generated', 'factory:saas'],
     generatedBy: '@vibetech/factory:saas',
     displayName: 'Factory SaaS Smoke',
     archetype: 'web-saas',
-    stripeStatus: 'scaffolded',
-    firstRevenueAt: null,
-    mrrCents: null,
-    currency: null,
+    stripeStatus: 'connected',
+    firstRevenueAt: '2026-05-15',
+    mrrCents: 4900,
+    currency: 'usd',
     readiness: {
       auth: true,
       billing: true,
@@ -36,10 +37,10 @@ const factoryApps: FactoryAppStatus[] = [
       deploymentDoc: true,
       vercelConfig: true,
       railwayConfig: true,
-      stripeKeysPresent: false,
-      missingStripeKeys: ['STRIPE_SECRET_KEY', 'VITE_STRIPE_PUBLIC_KEY'],
-      deployKeysPresent: false,
-      missingDeployKeys: ['VERCEL_TOKEN', 'VERCEL_ORG_ID', 'VERCEL_PROJECT_ID', 'RAILWAY_TOKEN'],
+      stripeKeysPresent: true,
+      missingStripeKeys: [],
+      deployKeysPresent: true,
+      missingDeployKeys: [],
     },
     links: {
       localDevUrl: 'http://127.0.0.1:4320',
@@ -100,17 +101,15 @@ describe('FactoryPanel', () => {
     renderPanel();
 
     await waitFor(() => expect(screen.getByText('factory-saas-smoke')).toBeTruthy());
-    expect(screen.getByText('scaffolded')).toBeTruthy();
-    expect(screen.getAllByText('none yet')).toHaveLength(2);
+    expect(screen.getByText('Factory SaaS Smoke')).toBeTruthy();
+    expect(screen.getByText('connected')).toBeTruthy();
+    expect(screen.getByText('May 15, 2026')).toBeTruthy();
+    expect(screen.getAllByText('USD 49.00').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('billing')).toBeTruthy();
     expect(screen.getByText('ship:check')).toBeTruthy();
     expect(screen.getByText('deploy creds')).toBeTruthy();
-    expect(screen.getByText('Missing Stripe keys')).toBeTruthy();
-    expect(screen.getByText('STRIPE_SECRET_KEY')).toBeTruthy();
-    expect(screen.getByText('VITE_STRIPE_PUBLIC_KEY')).toBeTruthy();
-    expect(screen.getByText('Missing deploy keys')).toBeTruthy();
-    expect(screen.getByText('VERCEL_TOKEN')).toBeTruthy();
-    expect(screen.getByText('RAILWAY_TOKEN')).toBeTruthy();
+    expect(screen.queryByText('Missing Stripe keys')).toBeNull();
+    expect(screen.queryByText('Missing deploy keys')).toBeNull();
     expect(screen.getByRole('link', { name: /local dev/i }).getAttribute('href')).toBe('http://127.0.0.1:4320');
     expect(screen.getByRole('link', { name: /stripe dashboard/i }).getAttribute('href')).toBe('https://dashboard.stripe.com/test/payments');
   });

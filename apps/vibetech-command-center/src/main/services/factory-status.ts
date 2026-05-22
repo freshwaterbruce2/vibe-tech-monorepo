@@ -27,6 +27,13 @@ interface FactoryManifest {
   };
 }
 
+interface FactoryMonetizationSignals {
+  stripeConnected: boolean | null;
+  firstRevenueAt: string | null;
+  mrrCents: number | null;
+  currency: string | null;
+}
+
 interface PackageManifest {
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
@@ -38,7 +45,7 @@ export class FactoryStatusService {
 
   async listStatuses(graph: NxGraph): Promise<FactoryAppStatus[]> {
     return Object.values(graph.projects)
-      .filter((project) => project.type === 'app' && project.tags.includes('factory:generated'))
+      .filter((project) => project.type === 'app' && this.isFactoryGeneratedProject(project))
       .map((project) => this.readProjectStatus(project))
       .sort((a, b) => a.name.localeCompare(b.name));
   }
@@ -56,6 +63,8 @@ export class FactoryStatusService {
     const manifest = this.readJsonFile<FactoryManifest>(manifestPath);
     const packageJson = this.readJsonFile<PackageManifest>(packageJsonPath);
     const projectJson = this.readJsonFile<{ targets?: Record<string, unknown> }>(projectJsonPath);
+    const archetype = manifest?.archetype ?? this.deriveArchetype(project.tags);
+    const monetization = this.normalizeMonetization(manifest?.monetization);
     const dependencyNames = new Set([
       ...Object.keys(packageJson?.dependencies ?? {}),
       ...Object.keys(packageJson?.devDependencies ?? {}),
@@ -65,24 +74,25 @@ export class FactoryStatusService {
     const missingDeployKeys = this.getMissingEnvKeys(DEPLOY_ENV_KEYS);
 
     const stripeStatus = this.resolveStripeStatus({
-      archetype: manifest?.archetype ?? this.deriveArchetype(project.tags),
-      manifest,
+      archetype,
+      stripeConnected: monetization.stripeConnected,
       dependencyNames,
       envExamplePath,
     });
 
     return {
       name: project.name,
+      projectName: manifest?.projectName ?? project.name,
       root: project.root,
       sourceRoot: project.sourceRoot,
       tags: project.tags,
       generatedBy: manifest?.generatedBy ?? null,
-      displayName: manifest?.displayName ?? project.name,
-      archetype: manifest?.archetype ?? this.deriveArchetype(project.tags),
+      displayName: manifest?.displayName ?? manifest?.projectName ?? project.name,
+      archetype,
       stripeStatus,
-      firstRevenueAt: manifest?.monetization?.firstRevenueAt ?? null,
-      mrrCents: manifest?.monetization?.mrrCents ?? null,
-      currency: manifest?.monetization?.currency ?? null,
+      firstRevenueAt: monetization.firstRevenueAt,
+      mrrCents: monetization.mrrCents,
+      currency: monetization.currency,
       readiness: {
         auth: dependencyNames.has('@vibetech/auth'),
         billing: dependencyNames.has('@vibetech/billing'),
@@ -111,14 +121,46 @@ export class FactoryStatusService {
     };
   }
 
+  private isFactoryGeneratedProject(project: NxGraph['projects'][string]): boolean {
+    if (project.tags.includes('factory:generated')) {
+      return true;
+    }
+
+    const manifestPath = join(this.opts.monorepoRoot, project.root, 'vibe-app.json');
+    const manifest = this.readJsonFile<FactoryManifest>(manifestPath);
+    return manifest?.generatedBy?.startsWith('@vibetech/factory:') === true;
+  }
+
   private deriveArchetype(tags: string[]): string {
     const tag = tags.find((entry) => entry.startsWith('factory:') && entry !== 'factory:generated');
     return tag ? tag.replace('factory:', '') : 'generated';
   }
 
+  private normalizeMonetization(
+    monetization: FactoryManifest['monetization'] | undefined,
+  ): FactoryMonetizationSignals {
+    const stripeConnected = typeof monetization?.stripeConnected === 'boolean'
+      ? monetization.stripeConnected
+      : null;
+    const firstRevenueAt = typeof monetization?.firstRevenueAt === 'string'
+      && monetization.firstRevenueAt.trim().length > 0
+      ? monetization.firstRevenueAt.trim()
+      : null;
+    const mrrCents = typeof monetization?.mrrCents === 'number'
+      && Number.isFinite(monetization.mrrCents)
+      ? monetization.mrrCents
+      : null;
+    const currency = typeof monetization?.currency === 'string'
+      && monetization.currency.trim().length > 0
+      ? monetization.currency.trim().toLowerCase()
+      : null;
+
+    return { stripeConnected, firstRevenueAt, mrrCents, currency };
+  }
+
   private resolveStripeStatus(input: {
     archetype: string;
-    manifest?: FactoryManifest;
+    stripeConnected: boolean | null;
     dependencyNames: Set<string>;
     envExamplePath: string;
   }): FactoryStripeStatus {
@@ -126,11 +168,10 @@ export class FactoryStatusService {
       return 'not-applicable';
     }
 
-    const explicit = input.manifest?.monetization?.stripeConnected;
-    if (explicit === true) {
+    if (input.stripeConnected === true) {
       return 'connected';
     }
-    if (explicit === false) {
+    if (input.stripeConnected === false) {
       return 'not-configured';
     }
 

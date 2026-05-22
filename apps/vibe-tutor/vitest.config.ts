@@ -20,6 +20,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
+      '@vibetech/avatars': resolve(__dirname, '../../packages/avatars/src/index.ts'),
+      '@vibetech/games/tutor': resolve(__dirname, '../../packages/games/src/tutor/index.ts'),
+      '@vibetech/games': resolve(__dirname, '../../packages/games/src/index.ts'),
     },
   },
 });

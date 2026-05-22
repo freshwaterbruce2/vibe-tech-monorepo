@@ -9,7 +9,11 @@
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "src",
-    "paths": {},
+    "baseUrl": ".",
+    "paths": {
+      "@vibetech/shared-config": ["../shared-config/dist/index.d.ts"],
+      "@vibetech/shared-config/*": ["../shared-config/dist/*.d.ts"]
+    },
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

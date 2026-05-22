@@ -38,6 +38,7 @@ export function FactoryPanel() {
       connected: apps.filter((app) => app.stripeStatus === 'connected').length,
       scaffolded: apps.filter((app) => app.stripeStatus === 'scaffolded').length,
       withRevenue: apps.filter((app) => app.firstRevenueAt !== null).length,
+      totalMrr: formatMrrTotal(apps),
       shipReadyLocal: apps.filter((app) =>
         app.shipping.shipCheck
         && app.shipping.deploymentDoc
@@ -88,6 +89,7 @@ export function FactoryPanel() {
           <span>{summary.connected} connected</span>
           <span>{summary.scaffolded} scaffolded</span>
           <span>{summary.withRevenue} with revenue</span>
+          <span>{summary.totalMrr} MRR</span>
           <span>{summary.shipReadyLocal} locally ready</span>
           <span>{summary.blockedOnCreds} blocked on creds</span>
         </div>
@@ -100,6 +102,7 @@ export function FactoryPanel() {
             <SummaryTile label="Stripe connected" value={String(summary.connected)} tone="ok" />
             <SummaryTile label="Stripe scaffolded" value={String(summary.scaffolded)} tone="warn" />
             <SummaryTile label="Revenue seen" value={String(summary.withRevenue)} tone="ok" />
+            <SummaryTile label="Total MRR" value={summary.totalMrr} tone="ok" />
             <SummaryTile label="Locally ready" value={String(summary.shipReadyLocal)} tone="ok" />
             <SummaryTile label="Blocked on creds" value={String(summary.blockedOnCreds)} tone="warn" />
           </div>
@@ -230,7 +233,8 @@ function GeneratedAppCard({ project }: { project: FactoryAppStatus }) {
     <article className="rounded-lg border border-bg-line bg-bg-elev p-4">
       <div className="mb-3 flex items-start justify-between gap-2">
         <div>
-          <div className="font-mono text-sm text-slate-100">{project.name}</div>
+          <div className="text-sm font-semibold text-slate-100">{project.displayName}</div>
+          <div className="font-mono text-xs text-slate-500">{project.projectName}</div>
           <div className="text-xs text-slate-500">{project.root}</div>
         </div>
         <div className="flex items-center gap-2">
@@ -263,7 +267,7 @@ function GeneratedAppCard({ project }: { project: FactoryAppStatus }) {
         <SignalRow
           icon={<BadgeDollarSign size={12} />}
           label="First revenue"
-          value={project.firstRevenueAt ?? 'none yet'}
+          value={formatRevenueDate(project.firstRevenueAt)}
         />
         <SignalRow
           icon={<BadgeDollarSign size={12} />}
@@ -306,7 +310,7 @@ function GeneratedAppCard({ project }: { project: FactoryAppStatus }) {
             keys={project.shipping.missingDeployKeys}
           />
         )}
-        {(project.links.localDevUrl || project.links.stripeDashboardUrl) && (
+        {((project.links.localDevUrl ?? project.links.stripeDashboardUrl) !== null) && (
           <div className="mt-3 flex flex-wrap gap-2">
             {project.links.localDevUrl && (
               <ActionLink href={project.links.localDevUrl} label="Local dev" />
@@ -418,4 +422,53 @@ function formatMrr(mrrCents: number | null, currency: string | null): string {
 
   const amount = (mrrCents / 100).toFixed(2);
   return `${currency?.toUpperCase() ?? 'USD'} ${amount}`;
+}
+
+function formatMrrTotal(apps: readonly FactoryAppStatus[]): string {
+  const totals = apps.reduce<Map<string, number>>((acc, app) => {
+    if (app.mrrCents === null) {
+      return acc;
+    }
+
+    const currency = app.currency?.toLowerCase() ?? 'usd';
+    acc.set(currency, (acc.get(currency) ?? 0) + app.mrrCents);
+    return acc;
+  }, new Map());
+
+  if (totals.size === 0) {
+    return 'none yet';
+  }
+
+  if (totals.size > 1) {
+    return 'mixed';
+  }
+
+  const firstTotal = [...totals.entries()][0];
+  if (firstTotal === undefined) {
+    return 'none yet';
+  }
+
+  const [currency, cents] = firstTotal;
+  return formatMrr(cents, currency);
+}
+
+function formatRevenueDate(firstRevenueAt: string | null): string {
+  if (firstRevenueAt === null) {
+    return 'none yet';
+  }
+
+  const dateOnly = firstRevenueAt.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  const date = dateOnly
+    ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
+    : new Date(firstRevenueAt);
+
+  if (Number.isNaN(date.getTime())) {
+    return firstRevenueAt;
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  }).format(date);
 }

@@ -103,20 +103,6 @@
     ".prettierrc.js",
     ".lintstagedrc.js"
   ],
-  "references": [
-    {
-      "path": "../../packages/vibetech-types"
-    },
-    {
-      "path": "../../packages/shared-utils/tsconfig.build.json"
-    },
-    {
-      "path": "../../packages/shared-ipc"
-    },
-    {
-      "path": "../../packages/feature-flags/sdk-node"
-    }
-  ],
   "typeAcquisition": {
     "enable": false
   }

@@ -9,7 +9,11 @@
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "paths": {},
+    "baseUrl": ".",
+    "paths": {
+      "@vibetech/logger": ["../logger/dist/index.d.ts"],
+      "@vibetech/logger/*": ["../logger/dist/*.d.ts"]
+    },
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

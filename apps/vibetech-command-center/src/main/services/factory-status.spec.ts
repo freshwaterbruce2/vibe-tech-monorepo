@@ -1,7 +1,7 @@
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { FactoryStatusService } from './factory-status';
 import type { NxGraph } from '../../shared/types';
 
@@ -13,7 +13,10 @@ function makeTempRoot(): string {
   return root;
 }
 
-function makeGraph(projectRoot: string): NxGraph {
+function makeGraph(
+  projectRoot: string,
+  tags = ['scope:web', 'factory:generated', 'factory:saas'],
+): NxGraph {
   return {
     projects: {
       'factory-saas-smoke': {
@@ -21,7 +24,7 @@ function makeGraph(projectRoot: string): NxGraph {
         type: 'app',
         root: projectRoot,
         sourceRoot: `${projectRoot}/src`,
-        tags: ['scope:web', 'factory:generated', 'factory:saas'],
+        tags,
         implicitDependencies: ['@vibetech/auth', '@vibetech/billing', '@vibetech/analytics'],
       },
     },
@@ -31,6 +34,18 @@ function makeGraph(projectRoot: string): NxGraph {
 }
 
 describe('FactoryStatusService', () => {
+  beforeEach(() => {
+    for (const key of [
+      'STRIPE_SECRET_KEY',
+      'VITE_STRIPE_PUBLIC_KEY',
+      'VERCEL_TOKEN',
+      'VERCEL_ORG_ID',
+      'VERCEL_PROJECT_ID',
+      'RAILWAY_TOKEN',
+    ]) {
+      process.env[key] = '';
+    }
+  });
   afterEach(() => {
     while (tmpRoots.length > 0) {
       rmSync(tmpRoots.pop()!, { recursive: true, force: true });
@@ -44,6 +59,7 @@ describe('FactoryStatusService', () => {
 
     writeFileSync(join(appRoot, 'vibe-app.json'), JSON.stringify({
       generatedBy: '@vibetech/factory:saas',
+      projectName: 'factory-saas-smoke',
       displayName: 'Factory SaaS Smoke',
       archetype: 'web-saas',
       monetization: {
@@ -73,9 +89,13 @@ describe('FactoryStatusService', () => {
     writeFileSync(join(appRoot, 'railway.json'), '{}');
 
     const service = new FactoryStatusService({ monorepoRoot: root });
-    const [status] = await service.listStatuses(makeGraph('apps/factory-saas-smoke'));
+    const [status] = await service.listStatuses(makeGraph(
+      'apps/factory-saas-smoke',
+      ['scope:web', 'type:application'],
+    ));
 
     expect(status).toBeDefined();
+    expect(status!.projectName).toBe('factory-saas-smoke');
     expect(status!.displayName).toBe('Factory SaaS Smoke');
     expect(status!.stripeStatus).toBe('connected');
     expect(status!.firstRevenueAt).toBe('2026-05-15');
@@ -120,6 +140,7 @@ describe('FactoryStatusService', () => {
     const [status] = await service.listStatuses(makeGraph('apps/factory-saas-smoke'));
 
     expect(status).toBeDefined();
+    expect(status!.projectName).toBe('factory-saas-smoke');
     expect(status!.displayName).toBe('factory-saas-smoke');
     expect(status!.stripeStatus).toBe('scaffolded');
     expect(status!.firstRevenueAt).toBeNull();

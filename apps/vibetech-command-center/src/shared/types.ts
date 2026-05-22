@@ -68,6 +68,7 @@ export interface FactoryAppLinks {
 
 export interface FactoryAppStatus {
   name: string;
+  projectName: string;
   root: string;
   sourceRoot?: string;
   tags: string[];
