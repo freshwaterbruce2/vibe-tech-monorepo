@@ -1,0 +1,20 @@
+{
+  "name": "@vibetech/email",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js"
+    }
+  },
+  "dependencies": {
+    "@vibetech/emails": "workspace:*",
+    "react": "19.2.4",
+    "resend": "^6.12.2",
+    "tslib": "^2.3.0"
+  }
+}

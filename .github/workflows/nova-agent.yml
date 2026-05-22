@@ -27,6 +27,10 @@ concurrency:
 env:
   NODE_VERSION: '22'
   PNPM_VERSION: '10.33.0'
+  NODE_OPTIONS: '--max-old-space-size=4096'
+  NX_DAEMON: 'false'
+  NX_NO_CLOUD: 'true'
+  NX_SKIP_REMOTE_CACHE: 'true'
 
 jobs:
   quality:
@@ -69,7 +73,10 @@ jobs:
       # Workspace packages with composite: true must be built before
       # dependent projects can typecheck against them.
       - name: Build workspace dependencies
-        run: pnpm nx run-many -t build -p openrouter-client @vibetech/shared-utils @vibetech/inngest-client
+        run: |
+          pnpm --dir packages/openrouter-client run build
+          pnpm --dir packages/shared-utils run build
+          pnpm --dir packages/inngest-client run build
 
       - name: Typecheck
         run: cd apps/nova-agent && pnpm run typecheck
@@ -105,7 +112,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build workspace dependencies
-        run: pnpm nx run-many -t build -p openrouter-client @vibetech/shared-utils @vibetech/inngest-client
+        run: |
+          pnpm --dir packages/openrouter-client run build
+          pnpm --dir packages/shared-utils run build
+          pnpm --dir packages/inngest-client run build
 
       - name: Install Playwright Chromium
         run: cd apps/nova-agent && pnpm exec playwright install chromium

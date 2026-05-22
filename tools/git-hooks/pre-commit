@@ -4,6 +4,12 @@
 # Emergency bypass (use sparingly): git commit --no-verify
 
 branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null)
+
+if [ -z "$repo_root" ]; then
+    echo "REFUSE: unable to resolve repository root for pre-commit hook."
+    exit 1
+fi
 
 case "$branch" in
   main|master|develop)
@@ -25,13 +31,13 @@ case "$branch" in
 esac
 
 if [ -f "D:/active-project/active-project.json" ]; then
-    pwsh.exe -NoProfile -File "C:/dev/tools/active-project/check-staged.ps1"
+    pwsh.exe -NoProfile -File "$repo_root/tools/active-project/check-staged.ps1"
     if [ $? -ne 0 ]; then
         exit 1
     fi
 fi
 
-pwsh.exe -NoProfile -ExecutionPolicy Bypass -File "C:/dev/scripts/pre-commit.ps1"
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File "$repo_root/scripts/pre-commit.ps1"
 if [ $? -ne 0 ]; then
     exit 1
 fi

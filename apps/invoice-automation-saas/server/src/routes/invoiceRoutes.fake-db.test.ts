@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({
 	resolveRecurringEnabled: true,
+	defaultPlan: 'pro',
 	createRecurringSchedule: vi.fn(),
 	enqueueJob: vi.fn(),
 	emitEvent: vi.fn(),
@@ -16,9 +17,10 @@ vi.mock('../entitlements.js', () => ({
 	},
 	resolveUserEntitlement: vi.fn(() => ({
 		featureKey: 'recurring.billing',
-		plan: state.resolveRecurringEnabled ? 'legacy' : 'free',
+		plan: state.defaultPlan,
 		enabled: state.resolveRecurringEnabled,
 	})),
+	resolveUserPlan: vi.fn(() => state.defaultPlan),
 }));
 
 vi.mock('../events.js', () => ({
@@ -117,6 +119,20 @@ class FakeStatement {
 			const [userId] = params as [string];
 			const user = this.db.users.get(userId);
 			return user ? { default_currency: user.default_currency } : undefined;
+		}
+
+		if (
+			this.sql.startsWith(
+				'select count(*) as count from invoices where user_id = ? and created_at >= ?',
+			)
+		) {
+			const [userId, windowStart] = params as [string, string];
+			return {
+				count: [...this.db.invoices.values()].filter(
+					(invoice) =>
+						invoice.user_id === userId && invoice.created_at >= windowStart,
+				).length,
+			};
 		}
 
 		if (this.sql.startsWith('select * from invoices where id = ?')) {
@@ -390,6 +406,8 @@ describe('POST /api/invoices recurring entitlement with fake db', () => {
 
 	beforeEach(async () => {
 		vi.clearAllMocks();
+		state.defaultPlan = 'pro';
+		state.resolveRecurringEnabled = true;
 		db = new FakeDb();
 		db.users.set('user-1', { id: 'user-1', default_currency: 'USD' });
 
@@ -477,5 +495,47 @@ describe('POST /api/invoices recurring entitlement with fake db', () => {
 			type: 'invoices:changed',
 			userId: 'user-1',
 		});
+	});
+
+	it('blocks the fourth monthly invoice on the free plan before writes', async () => {
+		state.defaultPlan = 'free';
+		const createdAt = new Date().toISOString();
+		for (const id of ['inv-1', 'inv-2', 'inv-3']) {
+			db.invoices.set(id, {
+				id,
+				user_id: 'user-1',
+				invoice_number: id,
+				client_id: 'client-1',
+				issue_date: '2026-05-01',
+				due_date: '2026-05-31',
+				subtotal: 100,
+				tax: 0,
+				total: 100,
+				status: 'sent',
+				notes: null,
+				terms: null,
+				currency: 'USD',
+				recurring_json: null,
+				parent_invoice_id: null,
+				public_token: `${id}-token`,
+				tax_strategy: 'invoice',
+				created_at: createdAt,
+				updated_at: createdAt,
+			});
+		}
+
+		const res = await app.inject({
+			method: 'POST',
+			url: '/api/invoices',
+			payload: buildInvoiceBody(),
+		});
+
+		expect(res.statusCode).toBe(402);
+		expect(res.json()).toMatchObject({
+			plan: 'free',
+			limit: 3,
+		});
+		expect(db.invoices.size).toBe(3);
+		expect(state.enqueueJob).not.toHaveBeenCalled();
 	});
 });

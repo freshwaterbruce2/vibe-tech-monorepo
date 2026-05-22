@@ -1,13 +1,9 @@
 import cors from '@fastify/cors';
 import Fastify from 'fastify';
 import type { AuthUser } from '@vibetech/auth';
-import { buildCheckoutSession } from '@vibetech/billing';
-import {
-  PaymentReceipt,
-  renderToHtml,
-  renderToText,
-} from '@vibetech/emails';
-
+import { getAiUsage, recordAiUsage } from '@vibetech/ai';
+import { buildPaymentReceiptEmail } from '@vibetech/email';
+import { createTenantCheckoutSession } from '@vibetech/payments';
 import {
   buildGeneratedLogoutCookie,
   buildGeneratedSessionCookie,
@@ -15,7 +11,12 @@ import {
   readGeneratedAuthStatus,
   verifyGeneratedLogin,
 } from './authSession.js';
-import { GENERATED_FEATURES, hasFeature } from './entitlements.js';
+import {
+  GENERATED_FEATURES,
+  GENERATED_TENANT_ID,
+  hasFeature,
+  resolveGeneratedPlan,
+} from './entitlements.js';
 import { loadLocalEnv } from './loadLocalEnv.js';
 
 loadLocalEnv();
@@ -88,7 +89,7 @@ app.get('/api/pro', async (req, reply) => {
     });
   }
 
-  const plan = req.headers['x-plan'] === 'pro' ? 'pro' : 'free';
+  const plan = resolveGeneratedPlan(req.headers['x-plan']);
 
   if (!hasFeature(plan, GENERATED_FEATURES.premiumRoute)) {
     return reply.code(403).send({
@@ -107,7 +108,7 @@ app.get('/api/pro', async (req, reply) => {
 
 app.get('/api/emails/demo-receipt', async () => {
   const viewUrl = `${process.env.APP_BASE_URL ?? `http://${host}:${port}`}/billing/receipt-preview`;
-  const template = PaymentReceipt({
+  const email = await buildPaymentReceiptEmail({
     invoiceNumber: 'DEMO-100',
     amount: 19,
     currency: 'USD',
@@ -119,9 +120,9 @@ app.get('/api/emails/demo-receipt', async () => {
 
   return {
     ok: true,
-    subject: 'Payment received for invoice DEMO-100',
-    html: await renderToHtml(template),
-    text: await renderToText(template),
+    subject: email.subject,
+    html: email.html,
+    text: email.text,
   };
 });
 
@@ -133,7 +134,7 @@ app.post('/api/pro/rewrite', async (req, reply) => {
     });
   }
 
-  const plan = req.headers['x-plan'] === 'pro' ? 'pro' : 'free';
+  const plan = resolveGeneratedPlan(req.headers['x-plan']);
   if (!hasFeature(plan, GENERATED_FEATURES.premiumRoute)) {
     return reply.code(403).send({
       error: 'Upgrade required',
@@ -154,9 +155,12 @@ app.post('/api/pro/rewrite', async (req, reply) => {
 
 app.get('/api/billing/demo-checkout', async (req, reply) => {
   const baseUrl = process.env.APP_BASE_URL ?? `http://${host}:${port}`;
+  const plan = 'pro';
 
   try {
-    const session = await buildCheckoutSession({
+    const session = await createTenantCheckoutSession({
+      tenantId: GENERATED_TENANT_ID,
+      plan,
       currency: 'USD',
       successUrl: `${baseUrl}/billing/success`,
       cancelUrl: `${baseUrl}/billing/canceled`,
@@ -185,6 +189,42 @@ app.get('/api/billing/demo-checkout', async (req, reply) => {
       detail,
     });
   }
+});
+
+app.post('/api/ai/demo-usage', async (req, reply) => {
+  const authUser = requireGeneratedAuth(req.headers.cookie);
+  if (!authUser) {
+    return reply.code(401).send({
+      error: 'Sign in to access AI usage metering',
+    });
+  }
+
+  const plan = resolveGeneratedPlan(req.headers['x-plan']);
+  if (!hasFeature(plan, GENERATED_FEATURES.aiAssistant)) {
+    return reply.code(403).send({
+      error: 'Upgrade required',
+      plan,
+    });
+  }
+
+  const usage = recordAiUsage({
+    appId: '<%= projectName %>',
+    tenantId: GENERATED_TENANT_ID,
+    provider: 'openrouter',
+    usage: {
+      inputTokens: 120,
+      outputTokens: 80,
+      totalTokens: 200,
+      costUsd: 0,
+    },
+  });
+
+  return {
+    ok: true,
+    user: authUser,
+    usage,
+    summary: getAiUsage('<%= projectName %>', 'openrouter', GENERATED_TENANT_ID),
+  };
 });
 
 await app.listen({ port, host });

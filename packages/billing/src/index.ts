@@ -14,7 +14,6 @@ export interface StripeClientLike {
     sessions: {
       create(input: {
         mode: 'payment';
-        payment_method_types: string[];
         line_items: Array<{
           price_data: {
             currency: string;
@@ -28,6 +27,7 @@ export interface StripeClientLike {
         metadata?: Record<string, string>;
         success_url: string;
         cancel_url: string;
+        customer?: string;
         customer_email?: string;
       }): Promise<{
         id: string;
@@ -56,7 +56,7 @@ export function getStripeClient(): StripeClientLike {
     return cachedStripeClient as unknown as StripeClientLike;
   }
 
-  const key = process.env.STRIPE_SECRET_KEY;
+  const key = process.env['STRIPE_SECRET_KEY'];
   if (!key) {
     throw new Error('STRIPE_SECRET_KEY is not set');
   }
@@ -76,6 +76,7 @@ export interface BuildCheckoutSessionInput {
   currency: string;
   successUrl: string;
   cancelUrl: string;
+  customerId?: string;
   customerEmail?: string;
   metadata?: Record<string, string>;
   lineItems: readonly CheckoutLineItemInput[];
@@ -92,7 +93,6 @@ export async function buildCheckoutSession(
 ): Promise<CheckoutSessionResult> {
   const session = await stripeClient.checkout.sessions.create({
     mode: 'payment',
-    payment_method_types: ['card'],
     line_items: input.lineItems.map((lineItem) => ({
       price_data: {
         currency: input.currency.toLowerCase(),
@@ -106,6 +106,7 @@ export async function buildCheckoutSession(
     metadata: input.metadata,
     success_url: input.successUrl,
     cancel_url: input.cancelUrl,
+    customer: input.customerId,
     customer_email: input.customerEmail,
   });
 
