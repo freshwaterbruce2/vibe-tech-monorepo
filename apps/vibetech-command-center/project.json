@@ -24,7 +24,8 @@
         "script": "build"
       },
       "outputs": [
-        "{projectRoot}/out"
+        "{projectRoot}/out",
+        "{projectRoot}/dist/mcp"
       ],
       "cache": true
     },

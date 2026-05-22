@@ -7,15 +7,6 @@ import viteCompression from 'vite-plugin-compression'
 
 const rendererPort = Number(process.env.VIBE_RENDERER_PORT ?? process.env.VITE_PORT ?? 5174)
 
-const nodeBuiltins = [
-  'fs', 'path', 'os', 'crypto', 'http', 'https', 'net', 'tls',
-  'stream', 'zlib', 'url', 'util', 'events', 'buffer', 'child_process',
-  'dns', 'dgram', 'cluster', 'module', 'readline', 'vm', 'assert',
-  'constants', 'querystring', 'string_decoder', 'punycode', 'tty',
-  'worker_threads', 'perf_hooks', 'async_hooks',
-  ...builtinModules,
-  ...builtinModules.map(m => `node:${m}`),
-]
 
 export default defineConfig(({ mode }) => ({
   // @monaco-editor/react handles workers automatically - NO plugin needed
@@ -57,6 +48,12 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
+      '@vibetech/types': resolve(__dirname, '../../packages/vibetech-types/src/index.ts'),
+      '@vibetech/shared-ipc': resolve(__dirname, '../../packages/shared-ipc/src/index.ts'),
+      '@vibetech/shared-utils': resolve(__dirname, '../../packages/shared-utils/src/index.ts'),
+      '@vibetech/shared-utils/ai': resolve(__dirname, '../../packages/shared-utils/src/ai/index.ts'),
+      '@vibetech/feature-flags-core': resolve(__dirname, '../../packages/feature-flags/core/src/index.ts'),
+      '@vibetech/feature-flags-sdk-node': resolve(__dirname, '../../packages/feature-flags/sdk-node/src/index.ts'),
       // Stub Node.js builtins that crypto-js and other deps try to import
       'fs': resolve(__dirname, 'src/shims/empty-module.ts'),
       'path': resolve(__dirname, 'src/shims/empty-module.ts'),

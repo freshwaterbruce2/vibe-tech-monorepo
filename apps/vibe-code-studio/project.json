@@ -144,6 +144,14 @@
       },
       "cache": true
     },
+    "lint:fix": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run lint:fix",
+        "cwd": "apps/vibe-code-studio"
+      },
+      "cache": true
+    },
     "format": {
       "executor": "nx:run-commands",
       "options": {

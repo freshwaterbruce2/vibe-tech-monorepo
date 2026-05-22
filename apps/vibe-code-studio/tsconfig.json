@@ -19,6 +19,13 @@
       "@types/*": ["./src/types/*"],
       "@utils/*": ["./src/utils/*"],
       "@electron/*": ["./electron/*"],
+      "@vibetech/types": ["../../packages/vibetech-types/src/index.ts"],
+      "@vibetech/types/*": ["../../packages/vibetech-types/src/*"],
+      "@vibetech/feature-flags-core": ["../../packages/feature-flags/core/src/index.ts"],
+      "@vibetech/feature-flags-sdk-node": ["../../packages/feature-flags/sdk-node/src/index.ts"],
+      "@vibetech/shared-ipc": ["../../packages/shared-ipc/src/index.ts"],
+      "@vibetech/shared-utils": ["../../packages/shared-utils/src/index.ts"],
+      "@vibetech/shared-utils/*": ["../../packages/shared-utils/src/*"],
       "@vibetech/*": ["../../packages/*/src"],
       "@dev/feature-flags-*": ["../../packages/feature-flags/*/src"]
     },

@@ -46,6 +46,9 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
+        '@vibetech/avatars': path.resolve(__dirname, '../../packages/avatars/src/index.ts'),
+        '@vibetech/games/tutor': path.resolve(__dirname, '../../packages/games/src/tutor/index.ts'),
+        '@vibetech/games': path.resolve(__dirname, '../../packages/games/src/index.ts'),
       },
     },
     server: {
