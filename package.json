@@ -130,6 +130,7 @@
     "ci:test": "nx affected -t test --base=origin/main --head=HEAD",
     "ci:build": "nx affected -t build --base=origin/main --head=HEAD",
     "ci:coverage": "nx affected -t test:coverage --base=origin/main --head=HEAD",
+    "ci:e2e": "nx affected -t e2e --base=origin/main --head=HEAD --parallel=1 --outputStyle=static",
     "ci:lint:all": "nx run-many -t lint --all",
     "build:all": "nx run-many -t build --all",
     "build:production:all": "nx run-many -t build:production",
