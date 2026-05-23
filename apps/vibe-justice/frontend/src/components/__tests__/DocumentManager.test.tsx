@@ -248,12 +248,11 @@ describe('DocumentManager', () => {
         target: { files: [file] }
       });
 
-      await waitFor(() => {
-        expect(screen.getByText(/contract.txt/i)).toBeInTheDocument();
-      });
-
-      // Click analyze button
+      // Click analyze button once enabled (upload is complete)
       const analyzeButton = screen.getByRole('button', { name: /Analyze/i });
+      await waitFor(() => {
+        expect(analyzeButton).not.toBeDisabled();
+      });
       await user.click(analyzeButton);
 
       await waitFor(() => {
@@ -291,12 +290,10 @@ describe('DocumentManager', () => {
         target: { files: [file] }
       });
 
-      // Small delay to stabilize flaky environment
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      await screen.findByText(/test.txt/i);
-
       const analyzeButton = screen.getByRole('button', { name: /Analyze/i });
+      await waitFor(() => {
+        expect(analyzeButton).not.toBeDisabled();
+      });
       await user.click(analyzeButton);
 
       expect(await screen.findByText(/API rate limit exceeded/i)).toBeInTheDocument();
@@ -320,12 +317,10 @@ describe('DocumentManager', () => {
         target: { files: [file] }
       });
 
-      // Small delay to stabilize flaky environment
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      await screen.findByText(/test.txt/i);
-
       const analyzeButton = screen.getByRole('button', { name: /Analyze/i });
+      await waitFor(() => {
+        expect(analyzeButton).not.toBeDisabled();
+      });
       
       // Use fireEvent to trigger click without awaiting the entire async chain
       // This allows us to check the state while analysis is "in progress"
@@ -398,12 +393,10 @@ describe('DocumentManager', () => {
         target: { files: [file] }
       });
 
-      // Small delay to stabilize flaky environment
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      await screen.findByText(/test.txt/i);
-
-      const analyzeButton = await screen.findByRole('button', { name: /Analyze/i });
+      const analyzeButton = screen.getByRole('button', { name: /Analyze/i });
+      await waitFor(() => {
+        expect(analyzeButton).not.toBeDisabled();
+      });
       await user.click(analyzeButton);
 
       await screen.findByText(/Case Strength Assessment/i);
@@ -470,12 +463,10 @@ describe('DocumentManager', () => {
         target: { files: [file] }
       });
 
-      // Small delay to stabilize flaky environment
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      await screen.findByText(/test.txt/i);
-
-      const analyzeButton = await screen.findByRole('button', { name: /Analyze/i });
+      const analyzeButton = screen.getByRole('button', { name: /Analyze/i });
+      await waitFor(() => {
+        expect(analyzeButton).not.toBeDisabled();
+      });
       await user.click(analyzeButton);
 
       await screen.findByText(/Case Strength Assessment/i);
