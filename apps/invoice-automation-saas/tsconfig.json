@@ -2,11 +2,7 @@
   "compilerOptions": {
     "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": [
-      "ES2020",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
@@ -20,16 +16,15 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": [
-    "src"
-  ],
-  "exclude": [
-    "src*.test.ts",
-    "src*.test.tsx",
-    "src/__tests__*",
-    "node_modules"
-  ],
+  "include": ["src"],
+  "exclude": ["src*.test.ts", "src*.test.tsx", "src/__tests__*", "node_modules"],
   "references": [
+    {
+      "path": "../../packages/emails"
+    },
+    {
+      "path": "../../packages/billing"
+    },
     {
       "path": "./tsconfig.node.json"
     }
