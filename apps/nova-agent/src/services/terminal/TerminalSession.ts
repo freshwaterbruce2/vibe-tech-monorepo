@@ -46,7 +46,7 @@ export class TerminalSession {
 	 * Initialize and spawn the shell process
 	 */
 	async spawn(): Promise<void> {
-		const shell = this.options.shell ?? "powershell.exe";
+		const shell = this.options.shell ?? "pwsh.exe";
 
 		// Tauri Command
 		// Note: 'powershell' must be allowed in tauri.conf.json > capabilities
