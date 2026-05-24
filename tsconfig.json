@@ -4,6 +4,12 @@
   "references": [
     {
       "path": "./packages/openrouter-client"
+    },
+    {
+      "path": "./packages/billing"
+    },
+    {
+      "path": "./packages/emails"
     }
   ]
 }
