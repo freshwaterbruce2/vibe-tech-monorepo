@@ -44,13 +44,17 @@ export class FactoryStatusService {
   constructor(private readonly opts: FactoryStatusServiceOptions) {}
 
   async listStatuses(graph: NxGraph): Promise<FactoryAppStatus[]> {
-    return Object.values(graph.projects)
-      .filter((project) => project.type === 'app' && this.isFactoryGeneratedProject(project))
-      .map((project) => this.readProjectStatus(project))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    const projects = Object.values(graph.projects)
+      .filter((project) => project.type === 'app' && this.isFactoryGeneratedProject(project));
+
+    const statuses = await Promise.all(
+      projects.map((project) => this.readProjectStatus(project))
+    );
+
+    return statuses.sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  private readProjectStatus(project: NxGraph['projects'][string]): FactoryAppStatus {
+  private async readProjectStatus(project: NxGraph['projects'][string]): Promise<FactoryAppStatus> {
     const projectRoot = join(this.opts.monorepoRoot, project.root);
     const manifestPath = join(projectRoot, 'vibe-app.json');
     const envExamplePath = join(projectRoot, '.env.example');
@@ -70,15 +74,103 @@ export class FactoryStatusService {
       ...Object.keys(packageJson?.devDependencies ?? {}),
       ...project.implicitDependencies,
     ]);
-    const missingStripeKeys = this.getMissingEnvKeys(STRIPE_ENV_KEYS);
-    const missingDeployKeys = this.getMissingEnvKeys(DEPLOY_ENV_KEYS);
 
-    const stripeStatus = this.resolveStripeStatus({
+    // Load project-specific environment variables from .env.local and .env
+    const envVars: Record<string, string> = {};
+    for (const fileName of ['.env.local', '.env']) {
+      const filePath = join(projectRoot, fileName);
+      if (existsSync(filePath)) {
+        try {
+          const content = readFileSync(filePath, 'utf8');
+          for (const line of content.split(/\r?\n/)) {
+            const trimmed = line.trim();
+            if (!trimmed || trimmed.startsWith('#')) continue;
+            const separator = trimmed.indexOf('=');
+            if (separator <= 0) continue;
+            const key = trimmed.slice(0, separator).trim();
+            const value = this.trimEnvQuotes(trimmed.slice(separator + 1).trim());
+            if (/^[A-Z0-9_]+$/i.test(key)) {
+              envVars[key] = value;
+            }
+          }
+        } catch {
+          // Ignore read errors
+        }
+      }
+    }
+
+    const missingStripeKeys = this.getMissingKeysForProject(envVars, STRIPE_ENV_KEYS);
+    const missingDeployKeys = this.getMissingKeysForProject(envVars, DEPLOY_ENV_KEYS);
+
+    let stripeStatus = this.resolveStripeStatus({
       archetype,
       stripeConnected: monetization.stripeConnected,
       dependencyNames,
       envExamplePath,
     });
+
+    let firstRevenueAt = monetization.firstRevenueAt;
+    let mrrCents = monetization.mrrCents;
+    let currency = monetization.currency;
+
+    const stripeSecretKey = envVars['STRIPE_SECRET_KEY'] ?? process.env['STRIPE_SECRET_KEY'];
+    if (stripeStatus !== 'not-applicable' && stripeSecretKey && stripeSecretKey.trim().length > 0) {
+      try {
+        const balanceRes = await this.queryStripeAPI('balance', stripeSecretKey);
+        if (balanceRes) {
+          stripeStatus = 'connected';
+
+          const chargesRes = await this.queryStripeAPI('charges?limit=100&status=succeeded', stripeSecretKey);
+          if (chargesRes && Array.isArray(chargesRes.data) && chargesRes.data.length > 0) {
+            let oldestCharge = chargesRes.data[chargesRes.data.length - 1];
+            for (let i = chargesRes.data.length - 1; i >= 0; i--) {
+              const charge = chargesRes.data[i];
+              if (charge.status === 'succeeded' && charge.amount > 0) {
+                oldestCharge = charge;
+                break;
+              }
+            }
+            if (oldestCharge && oldestCharge.created) {
+              firstRevenueAt = new Date(oldestCharge.created * 1000).toISOString().split('T')[0] ?? null;
+            }
+          }
+
+          const subsRes = await this.queryStripeAPI('subscriptions?status=active&limit=100', stripeSecretKey);
+          if (subsRes && Array.isArray(subsRes.data)) {
+            let computedMrr = 0;
+            for (const sub of subsRes.data) {
+              const items = sub.items?.data ?? [];
+              for (const item of items) {
+                const price = item.price;
+                if (price && price.unit_amount) {
+                  const amount = price.unit_amount * (item.quantity ?? 1);
+                  const interval = price.recurring?.interval ?? 'month';
+                  const intervalCount = price.recurring?.interval_count ?? 1;
+
+                  let monthlyAmount = amount;
+                  if (interval === 'year') {
+                    monthlyAmount = amount / 12;
+                  } else if (interval === 'week') {
+                    monthlyAmount = (amount * 52) / 12;
+                  } else if (interval === 'day') {
+                    monthlyAmount = (amount * 365) / 12;
+                  } else if (interval === 'month') {
+                    monthlyAmount = amount / intervalCount;
+                  }
+                  computedMrr += monthlyAmount;
+                }
+              }
+            }
+            mrrCents = Math.round(computedMrr);
+            if (subsRes.data.length > 0 && subsRes.data[0].currency) {
+              currency = subsRes.data[0].currency;
+            }
+          }
+        }
+      } catch (stripeError) {
+        console.warn(`Stripe API query failed for project ${project.name}:`, stripeError);
+      }
+    }
 
     return {
       name: project.name,
@@ -90,9 +182,9 @@ export class FactoryStatusService {
       displayName: manifest?.displayName ?? manifest?.projectName ?? project.name,
       archetype,
       stripeStatus,
-      firstRevenueAt: monetization.firstRevenueAt,
-      mrrCents: monetization.mrrCents,
-      currency: monetization.currency,
+      firstRevenueAt,
+      mrrCents,
+      currency,
       readiness: {
         auth: dependencyNames.has('@vibetech/auth'),
         billing: dependencyNames.has('@vibetech/billing'),
@@ -198,13 +290,6 @@ export class FactoryStatusService {
     }
   }
 
-  private getMissingEnvKeys(keys: readonly string[]): string[] {
-    return keys.filter((key) => {
-      const value = process.env[key];
-      return typeof value !== 'string' || value.length === 0;
-    });
-  }
-
   private resolveLocalDevUrl(packageJson: PackageManifest | undefined, projectRoot: string): string | null {
     const candidateScripts = [
       packageJson?.scripts?.['dev:web'],
@@ -225,6 +310,35 @@ export class FactoryStatusService {
     const tauriConfigPath = join(projectRoot, 'src-tauri', 'tauri.conf.json');
     const tauriConfig = this.readJsonFile<{ build?: { devUrl?: string } }>(tauriConfigPath);
     return tauriConfig?.build?.devUrl ?? null;
+  }
+
+  private trimEnvQuotes(value: string): string {
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      return value.slice(1, -1);
+    }
+    return value;
+  }
+
+  private getMissingKeysForProject(envVars: Record<string, string>, keys: readonly string[]): string[] {
+    return keys.filter((key) => {
+      const value = envVars[key] ?? process.env[key];
+      return typeof value !== 'string' || value.length === 0;
+    });
+  }
+
+  private async queryStripeAPI(endpoint: string, secretKey: string): Promise<any> {
+    const response = await fetch(`https://api.stripe.com/v1/${endpoint}`, {
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`Stripe API error: ${response.status} ${response.statusText}`);
+    }
+    return response.json();
   }
 }
 

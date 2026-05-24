@@ -41,10 +41,15 @@ try {
     $output | Out-File $logFile -Append
 
     # The orchestrator outputs the report path in --json mode
-    $reportPath = ($output | Select-Object -Last 1).Trim()
-    if (Test-Path $reportPath) {
-        Copy-Item $reportPath $reportFile -Force
-        "Report saved: $reportFile" | Out-File $logFile -Append
+    if ($output) {
+        $lastLine = ($output | Select-Object -Last 1)
+        if ($lastLine) {
+            $reportPath = [string]$lastLine.ToString().Trim()
+            if (Test-Path $reportPath) {
+                Copy-Item $reportPath $reportFile -Force
+                "Report saved: $reportFile" | Out-File $logFile -Append
+            }
+        }
     }
 
     "Exit code: $exitCode" | Out-File $logFile -Append

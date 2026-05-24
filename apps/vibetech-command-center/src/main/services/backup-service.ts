@@ -89,33 +89,50 @@ export class BackupService {
   }
 
   private async runCompressArchive(source: string, zipPath: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      // Argv-based, no shell interpolation. Paths passed via env vars — PowerShell 7 required.
-      const args = [
-        '-NoLogo',
-        '-NoProfile',
-        '-NonInteractive',
-        '-Command',
-        'Compress-Archive -Path $env:BKP_SOURCE -DestinationPath $env:BKP_DEST -CompressionLevel Optimal -Force'
-      ];
-      const proc = spawn(this.psPath, args, {
-        shell: false,
-        windowsHide: true,
-        env: { ...process.env, BKP_SOURCE: source, BKP_DEST: zipPath }
+    const run = (psPath: string) => {
+      return new Promise<void>((resolve, reject) => {
+        // Argv-based, no shell interpolation. Paths passed via env vars — PowerShell 7/5.1 required.
+        const args = [
+          '-NoLogo',
+          '-NoProfile',
+          '-NonInteractive',
+          '-Command',
+          'Compress-Archive -Path $env:BKP_SOURCE -DestinationPath $env:BKP_DEST -CompressionLevel Optimal -Force'
+        ];
+        const proc = spawn(psPath, args, {
+          shell: false,
+          windowsHide: true,
+          env: { ...process.env, BKP_SOURCE: source, BKP_DEST: zipPath }
+        });
+        let stderr = '';
+        if (proc.stderr) {
+          proc.stderr.on('data', (d) => { stderr += d.toString(); });
+        }
+        const timer = setTimeout(() => {
+          proc.kill();
+          reject(new Error(`Compress-Archive timed out after ${this.timeoutMs}ms`));
+        }, this.timeoutMs);
+        proc.on('error', (err) => {
+          clearTimeout(timer);
+          reject(err);
+        });
+        proc.on('close', (code) => {
+          clearTimeout(timer);
+          if (code === 0) resolve();
+          else reject(new Error(`Compress-Archive exit ${code}: ${stderr.slice(0, 500)}`));
+        });
       });
-      let stderr = '';
-      proc.stderr.on('data', (d) => { stderr += d.toString(); });
-      const timer = setTimeout(() => {
-        proc.kill();
-        reject(new Error(`Compress-Archive timed out after ${this.timeoutMs}ms`));
-      }, this.timeoutMs);
-      proc.on('error', (err) => { clearTimeout(timer); reject(err); });
-      proc.on('close', (code) => {
-        clearTimeout(timer);
-        if (code === 0) resolve();
-        else reject(new Error(`Compress-Archive exit ${code}: ${stderr.slice(0, 500)}`));
-      });
-    });
+    };
+
+    try {
+      await run(this.psPath);
+    } catch (err) {
+      if ((err as any).code === 'ENOENT' && this.psPath === 'pwsh.exe') {
+        await run('powershell.exe');
+      } else {
+        throw err;
+      }
+    }
   }
 
   private timestamp(): string {

@@ -5,7 +5,7 @@ import { existsSync } from 'fs';
 export * from './database-inventory.js';
 
 // Load .env from monorepo root
-loadEnv({ path: resolve(process.cwd(), '.env') });
+loadEnv({ path: resolve(process.cwd(), '.env'), quiet: true });
 
 // Environment schema with validation
 const envSchema = z.object({

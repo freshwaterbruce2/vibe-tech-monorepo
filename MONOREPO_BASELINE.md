@@ -16,7 +16,7 @@ This file is the starting contract for keeping the whole monorepo healthy. Use i
 - Projects: `pnpm exec nx show projects` reported 93 projects on 2026-05-22.
 - Root `pnpm run build` intentionally fails. Build a project or use Nx run-many/affected commands instead.
 - Remote SSH checks should use the repaired desktop PATH. If Git emits config path warnings over SSH, run with `GIT_CONFIG_GLOBAL=NUL` and `XDG_CONFIG_HOME=C:\dev\.no-xdg` until the desktop Git config is permanently cleaned up.
-- Windows remote-to-local symlink evaluation is still a known SSH caveat. Prefer a local desktop shell for final release-grade validation if workspace package links behave differently over SSH.
+- SSH validation has a Windows junction caveat: `pnpm install --frozen-lockfile` over SSH can fail while traversing workspace links with `untrusted mount point` errors, observed on 2026-05-23 at `backend/ipc-bridge/node_modules/@vibetech/shared-ipc/package.json`. Prefer a local desktop shell for install/final release validation; use SSH for focused Nx checks that do not need package-link traversal.
 
 ## Canonical Commands
 

@@ -1,4 +1,3 @@
-/* eslint-disable @nx/enforce-module-boundaries -- nested feature-flags workspace import is a known Nx false positive */
 import type {
   EvaluationContext,
   EvaluationResult,

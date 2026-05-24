@@ -121,6 +121,25 @@ else {
 }
 
 $distCandidates = CollectDistCandidates
+
+$cacheRoots = @(
+    $env:TEMP,
+    "C:\Windows\Temp",
+    "C:\dev\.nx\cache",
+    "C:\dev\node_modules\.cache",
+    (Join-Path $env:LOCALAPPDATA 'Temp\claude')
+)
+
+Write-Host "\nCleaning system temp and cache folders..."
+$cacheCount = 0
+foreach ($cRoot in $cacheRoots) {
+    if (Test-Path -LiteralPath $cRoot) {
+        $cEntries = Get-ChildItem -LiteralPath $cRoot -Force -ErrorAction SilentlyContinue
+        $cacheCount += $cEntries.Count
+        Remove-DirectoryContents -DirectoryPath $cRoot
+    }
+}
+
 Write-Host "`nCleaning dist artifacts..."
 $distCount = $distCandidates.Count
 foreach ($candidate in $distCandidates) {
@@ -128,10 +147,10 @@ foreach ($candidate in $distCandidates) {
 }
 
 if ($DryRun) {
-    Write-Host "`nDry run complete. Would remove $tmpCount tmp entries and $distCount dist paths."
+    Write-Host "`nDry run complete. Would remove $tmpCount tmp entries, $cacheCount cache/temp entries, and $distCount dist paths."
 }
 else {
-    Write-Host "`nCleanup complete. Removed $tmpCount tmp entries and $distCount dist paths."
+    Write-Host "`nCleanup complete. Removed $tmpCount tmp entries, $cacheCount cache/temp entries, and $distCount dist paths."
 }
 
 exit 0

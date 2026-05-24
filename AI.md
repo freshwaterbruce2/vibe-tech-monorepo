@@ -58,7 +58,7 @@ Domain rules:
 - Desktop: keep bundles small; follow project AI.md for app-specific rules.
 - Mobile: test device constraints; use Nx targets for mobile builds.
 - Crypto: never place live trades without explicit confirmation; never run multiple bots; never commit API keys; store trading state on D:\databases\.
-- Backend/data: SQLite on D:\databases with WAL; parameterized queries only; explicit migrations required.
+- Backend/data: SQLite on D:\databases with WAL (PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;); parameterized queries only; explicit migrations required. Standardized to prevent locks across DeepCode Editor, Nova, and background scripts.
 
 ---
 
@@ -80,6 +80,8 @@ AI tooling:
 
 Git rules:
 
+- Primary Remote: GitHub (https://github.com/freshwaterbruce2/vibe-tech-monorepo.git). Codeberg and Woodpecker CI are deprecated.
+- CI/CD: Use GitHub Actions (.github/workflows/). Never reference Woodpecker pipelines or Codeberg-specific mechanisms.
 - If the user says they are not using git, do not run git commands or rely on git history.
 
 ---
@@ -120,13 +122,19 @@ For complex tasks (>5 tool calls, multi-step, research), use file-based planning
 Purpose: automatic capture of tool usage and pattern recognition.
 
 Key locations:
-
 - Database: D:\databases\agent_learning.db
 - Logs: D:\learning-system\logs\tool-usage-YYYY-MM-DD.log
 - Hooks: C:\dev\.claude\hooks\pre-tool-use-stdin.ps1 and post-tool-use-stdin.ps1
 
-Quick checks:
+Core Schema Tables:
+- `agent_executions`: Telemetry logs of agent timing, tool usage (JSON), and task success.
+- `agent_mistakes`: Identified mistakes, root cause analysis, prevention strategies, and severity ratings.
+- `agent_knowledge`: Learned facts, confidence levels, usage counts, and applicability.
+- `code_patterns`: Large index of snippets, imports, and usage frequency.
+- `self_critiques`: Automated code quality scorecard outputs.
+- `mcts_nodes`: Monte Carlo Tree Search trajectory nodes containing value scores and reflections.
 
+Quick checks:
 - Tail today’s log: D:\learning-system\logs\tool-usage-YYYY-MM-DD.log
 - Validate tables: sqlite3 D:\databases\agent_learning.db ".tables"
 - Run path policy review: `pnpm run paths:check`
