@@ -11,10 +11,10 @@
 		"dashboard"
 	],
 	"scripts": {
-		"build": "pnpm -r build",
-		"dev": "pnpm -r --parallel dev",
-		"lint": "pnpm --filter @vibetech/feature-flags-core lint && pnpm --filter @vibetech/feature-flags-sdk-node lint && pnpm --filter @vibetech/feature-flags-sdk-react lint && pnpm --filter @vibetech/feature-flags-server lint && pnpm --filter @vibetech/feature-flags-dashboard lint",
-		"test": "pnpm -r test",
-		"typecheck": "pnpm --filter @vibetech/feature-flags-core typecheck && pnpm --filter @vibetech/feature-flags-sdk-node typecheck && pnpm --filter @vibetech/feature-flags-sdk-react typecheck && pnpm --filter @vibetech/feature-flags-server typecheck && pnpm --filter @vibetech/feature-flags-dashboard typecheck"
+		"build": "pnpm --filter \"@vibetech/feature-flags-*\" build",
+		"dev": "pnpm --filter \"@vibetech/feature-flags-*\" --parallel dev",
+		"lint": "pnpm --filter \"@vibetech/feature-flags-*\" lint",
+		"test": "pnpm --filter \"@vibetech/feature-flags-*\" test",
+		"typecheck": "pnpm --filter \"@vibetech/feature-flags-*\" typecheck"
 	}
 }

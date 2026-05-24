@@ -25,6 +25,16 @@ export interface ValidationOptions {
   requireFormat?: 'json' | 'xml' | 'markdown' | 'text';
 }
 
+const MARKDOWN_MARKERS = ['#', '*', '`', '[', ']'] as const;
+
+const stripControlCharacters = (value: string): string =>
+  Array.from(value)
+    .filter((char) => {
+      const code = char.charCodeAt(0);
+      return code === 9 || code === 10 || code === 13 || (code >= 32 && code !== 127);
+    })
+    .join('');
+
 /**
  * Validate LLM output with comprehensive safety checks
  */
@@ -68,13 +78,13 @@ export function validateLLMOutput(
       message: `Output exceeds max length (${output.length} > ${maxLength})`,
       fixed: true,
     });
-    sanitized = output.substring(0, maxLength) + '...';
+    sanitized = `${output.substring(0, maxLength)}...`;
   }
 
   // Strip control characters
   if (stripControlChars) {
     const before = sanitized;
-    sanitized = sanitized.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '');
+    sanitized = stripControlCharacters(sanitized);
     if (before !== sanitized) {
       issues.push({
         type: 'encoding',
@@ -194,21 +204,22 @@ function validateFormat(
         return { valid: false, error: err instanceof Error ? err.message : 'Invalid JSON' };
       }
 
-    case 'xml':
+    case 'xml': {
       // Basic XML validation (opening/closing tags match)
       const xmlPattern = /<(\w+)[^>]*>[\s\S]*?<\/\1>/g;
       if (!xmlPattern.test(text) && text.includes('<')) {
         return { valid: false, error: 'Malformed XML' };
       }
       return { valid: true };
+    }
 
-    case 'markdown':
+    case 'markdown': {
       // Basic markdown check (has some markdown syntax)
-      const mdPattern = /[#*`\[\]]/;
-      if (!mdPattern.test(text)) {
+      if (!MARKDOWN_MARKERS.some((marker) => text.includes(marker))) {
         return { valid: false, error: 'No markdown formatting detected' };
       }
       return { valid: true };
+    }
 
     case 'text':
       // Plain text - always valid
@@ -255,7 +266,7 @@ export function validateStructuredOutput<T>(
   } catch (err) {
     return {
       valid: false,
-      errors: ['Invalid JSON: ' + (err instanceof Error ? err.message : 'Parse error')],
+      errors: [`Invalid JSON: ${err instanceof Error ? err.message : 'Parse error'}`],
     };
   }
 

@@ -133,7 +133,7 @@ export function truncateTextToTokens(text: string, maxTokens: number): string {
   const charLimit = Math.floor(text.length * ratio);
 
   // Truncate and add ellipsis
-  return text.substring(0, charLimit) + '...';
+  return `${text.substring(0, charLimit)}...`;
 }
 
 /**

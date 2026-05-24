@@ -313,6 +313,35 @@ export const ackMessageSchema = baseMessageSchema.extend({
     }),
 });
 
+export const connectMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.CONNECT),
+    payload: z.object({}).optional(),
+});
+
+export const disconnectMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.DISCONNECT),
+    payload: z.object({}).optional(),
+});
+
+export const pingMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.PING),
+    payload: z.object({}).optional(),
+});
+
+export const pongMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.PONG),
+    payload: z.object({}).optional(),
+});
+
+export const identifyMessageSchema = baseMessageSchema.extend({
+    type: z.literal(IPCMessageType.IDENTIFY),
+    payload: z.object({
+        clientType: z.string(),
+        capabilities: z.array(z.string()).optional(),
+    }).optional(),
+});
+
+
 export const commandRequestMessageSchema = baseMessageSchema.extend({
     type: z.literal(IPCMessageType.COMMAND_REQUEST),
     timeoutMs: z.number().int().positive().optional(),
@@ -472,7 +501,6 @@ export const mcpToolResultMessageSchema = baseMessageSchema.extend({
     payload: mcpToolResultPayloadSchema,
 });
 
-// Union of all message types
 export const ipcMessageSchema = z.discriminatedUnion('type', [
     openFileMessageSchema,
     openProjectMessageSchema,
@@ -502,6 +530,11 @@ export const ipcMessageSchema = z.discriminatedUnion('type', [
     agentTaskResultMessageSchema,
     mcpToolCallMessageSchema,
     mcpToolResultMessageSchema,
+    connectMessageSchema,
+    disconnectMessageSchema,
+    pingMessageSchema,
+    pongMessageSchema,
+    identifyMessageSchema,
 ]);
 
 // TypeScript types
@@ -574,5 +607,11 @@ export type AgentTaskDispatchMessage = z.infer<typeof agentTaskDispatchMessageSc
 export type AgentTaskResultMessage = z.infer<typeof agentTaskResultMessageSchema>;
 export type McpToolCallMessage = z.infer<typeof mcpToolCallMessageSchema>;
 export type McpToolResultMessage = z.infer<typeof mcpToolResultMessageSchema>;
+
+export type ConnectMessage = z.infer<typeof connectMessageSchema>;
+export type DisconnectMessage = z.infer<typeof disconnectMessageSchema>;
+export type PingMessage = z.infer<typeof pingMessageSchema>;
+export type PongMessage = z.infer<typeof pongMessageSchema>;
+export type IdentifyMessage = z.infer<typeof identifyMessageSchema>;
 
 export type IPCMessage = z.infer<typeof ipcMessageSchema>;

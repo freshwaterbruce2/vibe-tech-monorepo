@@ -17,6 +17,14 @@ export interface SanitizeResult {
   warnings: string[];
 }
 
+const stripControlCharacters = (value: string): string =>
+  Array.from(value)
+    .filter((char) => {
+      const code = char.charCodeAt(0);
+      return code === 9 || code === 10 || code === 13 || (code >= 32 && code !== 127);
+    })
+    .join('');
+
 /**
  * Sanitize user input before inserting into prompts
  */
@@ -48,7 +56,7 @@ export function sanitizeUserInput(
   // Remove control characters
   if (removeControlChars) {
     const before = sanitized;
-    sanitized = sanitized.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '');
+    sanitized = stripControlCharacters(sanitized);
     if (before !== sanitized) {
       modified = true;
       warnings.push('Removed control characters');
@@ -240,7 +248,7 @@ export function sanitizeFileContent(
     const ratio = maxLength / sanitized.length;
     const lines = sanitized.split('\n');
     const keepLines = Math.floor(lines.length * ratio);
-    sanitized = lines.slice(0, keepLines).join('\n') + '\n\n// ... truncated';
+    sanitized = `${lines.slice(0, keepLines).join('\n')}\n\n// ... truncated`;
   }
 
   return sanitized;
