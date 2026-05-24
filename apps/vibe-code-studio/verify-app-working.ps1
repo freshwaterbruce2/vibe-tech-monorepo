@@ -3,8 +3,11 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 $candidates = @(
+  (Join-Path $env:LOCALAPPDATA 'Vibe Code Studio\vibe-code-studio.exe'),
   (Join-Path $env:LOCALAPPDATA 'Programs\vibe-code-studio\Vibe Code Studio.exe'),
   (Join-Path $env:LOCALAPPDATA 'Programs\Vibe Code Studio\Vibe Code Studio.exe'),
+  'D:\cargo-targets\release\vibe-code-studio.exe',
+  'D:\cargo-targets\release\Vibe Code Studio.exe',
   (Join-Path $projectRoot 'src-tauri\target\release\Vibe Code Studio.exe'),
   (Join-Path $projectRoot 'src-tauri\target\release\vibe-code-studio.exe')
 )
