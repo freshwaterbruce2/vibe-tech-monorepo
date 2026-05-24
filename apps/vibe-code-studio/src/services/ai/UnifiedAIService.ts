@@ -49,6 +49,7 @@ export class UnifiedAIService {
   private readonly factory: AIProviderFactory;
   private currentModel: string = 'moonshot/kimi-2.5-pro'; // Kimi 2.5 Pro - direct Moonshot API
   private _isDemo: boolean = false;
+  private activeControllers: Set<AbortController> = new Set();
 
   private constructor() {
     this.factory = AIProviderFactory.getInstance();
@@ -59,6 +60,14 @@ export class UnifiedAIService {
       UnifiedAIService.instance = new UnifiedAIService();
     }
     return UnifiedAIService.instance;
+  }
+
+  cancelActiveGenerations(): void {
+    logger.info(`[UnifiedAI] Cancelling ${this.activeControllers.size} active generations`);
+    for (const controller of this.activeControllers) {
+      controller.abort();
+    }
+    this.activeControllers.clear();
   }
 
   async initialize(): Promise<void> {
@@ -152,13 +161,24 @@ export class UnifiedAIService {
         }
       }
 
-      const response = await provider.complete(this.currentModel, {
-        messages: request.messages,
-        maxTokens: request.maxTokens,
-        temperature: request.temperature,
-      });
+      const controller = new AbortController();
+      if (request.signal) {
+        request.signal.addEventListener('abort', () => controller.abort());
+      }
+      this.activeControllers.add(controller);
 
-      return { ...response, provider: String(modelInfo.provider) } as AICompletionResponse & { provider: string };
+      try {
+        const response = await provider.complete(this.currentModel, {
+          messages: request.messages,
+          maxTokens: request.maxTokens,
+          temperature: request.temperature,
+          signal: controller.signal,
+        });
+
+        return { ...response, provider: String(modelInfo.provider) } as AICompletionResponse & { provider: string };
+      } finally {
+        this.activeControllers.delete(controller);
+      }
     } catch (primaryError) {
         logger.error('[UnifiedAI] AI service failed:', primaryError);
         const errorMsg = primaryError instanceof Error ? primaryError.message : 'Unknown error';
@@ -288,14 +308,22 @@ export class UnifiedAIService {
 
       // Try streaming if supported
       if (provider.streamComplete) {
-        for await (const chunk of provider.streamComplete(this.currentModel, {
-          messages,
-          maxTokens: context.maxTokens ?? 2000,
-          temperature: context.temperature ?? 0.3,
-        })) {
-          if (chunk.content) {
-            yield chunk.content;
+        const controller = new AbortController();
+        this.activeControllers.add(controller);
+
+        try {
+          for await (const chunk of provider.streamComplete(this.currentModel, {
+            messages,
+            maxTokens: context.maxTokens ?? 2000,
+            temperature: context.temperature ?? 0.3,
+            signal: controller.signal,
+          })) {
+            if (chunk.content) {
+              yield chunk.content;
+            }
           }
+        } finally {
+          this.activeControllers.delete(controller);
         }
       } else {
         // Fallback to non-streaming

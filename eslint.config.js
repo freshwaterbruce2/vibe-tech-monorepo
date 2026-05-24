@@ -308,6 +308,9 @@ export default tseslint.config(
             '^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$',
             '^@vibetech/feature-flags-sdk-node$',
           ],
+          ignoredCircularDependencies: [
+            ['@vibetech/feature-flags-sdk-node', '@vibetech/workspace'],
+          ],
           depConstraints: [{ sourceTag: '*', onlyDependOnLibsWithTags: ['*'] }],
         },
       ],
@@ -456,10 +459,8 @@ export default tseslint.config(
       'apps/invoice-automation-saas/**/*.{ts,tsx}',
       'apps/appointment-reminder-saas/**/*.{ts,tsx}',
       'apps/vibe-tech-lovable/**/*.{ts,tsx}',
-      'apps/*factory*/**/*.{ts,tsx}',
       'tools/vectorshift-svg/**/*.{ts,tsx}',
       'packages/openrouter-client/**/*.ts',
-      'packages/agent-lats/**/*.ts',
       'packages/inngest-client/**/*.{ts,tsx}',
       'packages/vibetech-types/**/*.{ts,tsx}',
       'packages/vibetech-hooks/**/*.{ts,tsx}',
@@ -491,10 +492,8 @@ export default tseslint.config(
           './apps/appointment-reminder-saas/tsconfig.lint.json',
           './apps/vibe-tech-lovable/tsconfig.app.json',
           './apps/vibe-tech-lovable/tsconfig.node.json',
-          './apps/*factory*/tsconfig.lint.json',
           './tools/vectorshift-svg/tsconfig.json',
           './packages/openrouter-client/tsconfig.lint.json',
-          './packages/agent-lats/tsconfig.lint.json',
           './packages/inngest-client/tsconfig.lint.json',
           './packages/vibetech-types/tsconfig.lint.json',
           './packages/vibetech-hooks/tsconfig.lint.json',
@@ -512,6 +511,30 @@ export default tseslint.config(
           './apps/workspace-mcp-server/tsconfig.lint.json',
           './backend/openrouter-proxy/tsconfig.lint.json',
         ],
+      },
+    },
+  },
+
+  {
+    files: ['packages/agent-lats/**/*.ts'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        projectService: false,
+        project: ['./packages/agent-lats/tsconfig.lint.json'],
+      },
+    },
+  },
+
+  // Factory-generated smoke apps have small lint tsconfigs; keep them out of
+  // the broader migration override to avoid loading unrelated projects.
+  {
+    files: ['apps/*factory*/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        projectService: false,
+        project: ['./apps/*factory*/tsconfig.lint.json'],
       },
     },
   },

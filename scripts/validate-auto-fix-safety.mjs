@@ -4,6 +4,7 @@ import YAML from 'yaml';
 import { minimatch } from 'minimatch';
 
 const CONFIG_PATHS = [
+  '.woodpecker/self-healing-config.yml',
   '.github/self-healing-config.yml'
 ];
 
@@ -19,7 +20,7 @@ function loadConfig() {
       }
     }
   }
-  console.error('No safety config found in .github');
+  console.error('No safety config found in .woodpecker or .github');
   process.exit(1);
 }
 

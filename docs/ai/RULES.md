@@ -3,6 +3,7 @@
 ## Critical Constraints
 
 - **Package Manager**: `pnpm` only. NEVER use `npm` or `yarn`.
+- **Version Control & CI**: Hosted on GitHub (https://github.com/freshwaterbruce2/vibe-tech-monorepo). Use GitHub Actions for CI.
 - **File Structure**: Target 500 lines +/- 100 per file. Split components and logic early.
 - **Pathing**: Use **absolute paths** in documentation and when calling tools.
 - **Safety**: Backup files before destructive changes. Verify builds locally before committing.

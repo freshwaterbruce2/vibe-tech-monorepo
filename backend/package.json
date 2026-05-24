@@ -12,7 +12,7 @@
     "prod": "set NODE_ENV=production && node server-production.js",
     "prod:unix": "NODE_ENV=production node server-production.js",
     "test": "vitest run",
-    "lint": "eslint .",
+    "lint": "eslint server.js server-production.js server.test.mjs config middleware --ext .js,.mjs",
     "typecheck": "tsc --noEmit",
     "health": "curl -f http://localhost:3000/health || exit 1"
   },

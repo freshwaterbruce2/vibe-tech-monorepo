@@ -5,23 +5,23 @@
 
 import { WebSocketServer, WebSocket } from "ws";
 
-export type ToolRequest = {
+export interface ToolRequest {
   id: string;
   tool: string;
   params: Record<string, unknown>;
-};
+}
 
-export type ToolResponse = {
+export interface ToolResponse {
   id: string;
   result?: unknown;
   error?: string;
-};
+}
 
-type PendingRequest = {
+interface PendingRequest {
   resolve: (value: unknown) => void;
   reject: (reason: Error) => void;
   timer: ReturnType<typeof setTimeout>;
-};
+}
 
 const TIMEOUT_MS = 15_000;
 
@@ -89,7 +89,8 @@ export class ExtensionBridge {
   }
 
   async call(tool: string, params: Record<string, unknown>): Promise<unknown> {
-    if (!this.isConnected) {
+    const client = this.client;
+    if (client?.readyState !== WebSocket.OPEN) {
       throw new Error(
         "No browser extension connected. Make sure the DevTools MCP extension is installed and the page is open."
       );
@@ -107,7 +108,7 @@ export class ExtensionBridge {
       this.pending.set(id, { resolve, reject, timer });
 
       try {
-        this.client!.send(JSON.stringify(request));
+        client.send(JSON.stringify(request));
       } catch (err) {
         clearTimeout(timer);
         this.pending.delete(id);
