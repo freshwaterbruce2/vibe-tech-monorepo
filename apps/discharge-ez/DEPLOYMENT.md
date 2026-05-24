@@ -75,10 +75,24 @@ SENTRY_DSN=
 7. Set the frontend environment variables above.
 8. Use [vercel.json](./vercel.json) so `/terms` and `/privacy` resolve to the SPA entry.
 
+## Stripe Webhook Setup
+
+To ensure persistent entitlements and user subscription updates are synced correctly with the SQLite DB:
+
+1. Navigate to the Stripe Dashboard (Developers > Webhooks).
+2. Click **Add Endpoint** and enter your Railway backend URL followed by the webhook path: `https://<YOUR_RAILWAY_APP_URL>/api/webhooks/stripe`.
+3. Select the following events to listen to:
+   - `checkout.session.completed`
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+   - `invoice.payment_failed`
+4. Click **Add Endpoint**.
+5. Reveal the signing secret (starts with `whsec_`) and add it to your Railway backend environment variables as `STRIPE_WEBHOOK_SECRET`.
+
 ## Production proof
 
-This scaffold is deployment-ready, but live proof still requires:
+This app is deployment-ready, but live proof still requires:
 
-- Stripe test credentials
+- Stripe test credentials and webhook configuration
 - Vercel deploy credentials
 - Railway deploy credentials

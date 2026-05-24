@@ -1,5 +1,6 @@
 import cors from '@fastify/cors';
 import Fastify from 'fastify';
+import Stripe from 'stripe';
 import type { AuthUser } from '@vibetech/auth';
 import {
   getAiUsage,
@@ -23,7 +24,16 @@ import {
   hasFeature,
   resolveGeneratedPlan,
 } from './entitlements.js';
+import fastifyRawBody from 'fastify-raw-body';
 import { loadLocalEnv } from './loadLocalEnv.js';
+import {
+  getActiveSubscriptionForEmail,
+  hasProcessedEvent,
+  markEventProcessed,
+  upsertCustomer,
+  upsertSubscription,
+  updateSubscriptionStatus,
+} from './db.js';
 
 loadLocalEnv();
 
@@ -34,6 +44,11 @@ const host = process.env.HOST ?? '127.0.0.1';
 await app.register(cors, {
   origin: true,
   credentials: true,
+});
+
+await app.register(fastifyRawBody, {
+  field: 'rawBody',
+  global: false,
 });
 
 app.get('/api/health', async () => ({
@@ -95,12 +110,17 @@ app.get('/api/pro', async (req, reply) => {
     });
   }
 
-  const plan = resolveGeneratedPlan(req.headers['x-plan']);
+  // Prefer DB-backed subscription state; fall back to x-plan header for dev/test
+  const dbSub = authUser.email
+    ? getActiveSubscriptionForEmail(authUser.email)
+    : null;
+  const plan = dbSub ? (dbSub.plan as 'free' | 'starter' | 'pro' | 'business') : resolveGeneratedPlan(req.headers['x-plan']);
 
   if (!hasFeature(plan, GENERATED_FEATURES.premiumRoute)) {
     return reply.code(403).send({
-      error: 'Upgrade required',
+      error: 'Upgrade required to access this feature.',
       plan,
+      upgradeUrl: `${process.env.APP_BASE_URL ?? `http://${host}:${port}`}#pricing`,
     });
   }
 
@@ -110,6 +130,123 @@ app.get('/api/pro', async (req, reply) => {
     plan,
     feature: GENERATED_FEATURES.premiumRoute,
   };
+});
+
+interface StripeSubscription {
+  id: string;
+  status: string;
+  customer: string | { id: string };
+  current_period_end: number | null;
+  metadata?: Record<string, string | undefined>;
+  cancel_at_period_end: boolean;
+}
+
+interface StripeInvoice {
+  subscription: string | { id: string } | null;
+}
+
+// ── Stripe webhook ────────────────────────────────────────────────────────────
+
+app.post('/api/webhooks/stripe', {
+  config: { rawBody: true },
+}, async (req, reply) => {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    req.log.warn('STRIPE_WEBHOOK_SECRET is not set — skipping signature verification');
+  }
+
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  if (!stripeSecretKey) {
+    return reply.code(503).send({ error: 'Stripe is not configured' });
+  }
+
+  const stripe = new Stripe(stripeSecretKey);
+  let event: Stripe.Event;
+
+  try {
+    const sig = req.headers['stripe-signature'];
+    const rawBody = (req as unknown as { rawBody?: Buffer }).rawBody;
+
+    if (webhookSecret && sig && rawBody) {
+      event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
+    } else {
+      // No secret configured (dev mode) — trust the parsed body
+      event = req.body as Stripe.Event;
+    }
+  } catch (err) {
+    req.log.error({ err }, 'Stripe webhook signature verification failed');
+    return reply.code(400).send({ error: 'Webhook signature invalid' });
+  }
+
+  // Idempotency guard
+  if (hasProcessedEvent(event.id)) {
+    req.log.info({ eventId: event.id }, 'Stripe event already processed — skipping');
+    return { ok: true, skipped: true };
+  }
+
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        if (session.mode === 'subscription' && session.customer && session.subscription) {
+          const customerId = typeof session.customer === 'string' ? session.customer : session.customer.id;
+          const email = session.customer_email ?? session.customer_details?.email ?? '';
+          if (email) upsertCustomer(customerId, email);
+
+          // Fetch full subscription to get period end and plan
+          const sub = (await stripe.subscriptions.retrieve(
+            typeof session.subscription === 'string' ? session.subscription : session.subscription.id,
+          )) as unknown as StripeSubscription;
+          const periodEnd = sub.current_period_end
+            ? new Date(sub.current_period_end * 1000).toISOString()
+            : null;
+          const planName = sub.metadata?.plan ?? 'pro';
+          upsertSubscription(sub.id, customerId, sub.status, planName, periodEnd, sub.cancel_at_period_end);
+        }
+        break;
+      }
+
+      case 'customer.subscription.updated': {
+        const sub = event.data.object as unknown as StripeSubscription;
+        const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
+        const periodEnd = sub.current_period_end
+          ? new Date(sub.current_period_end * 1000).toISOString()
+          : null;
+        upsertSubscription(sub.id, customerId, sub.status, sub.metadata?.plan ?? 'pro', periodEnd, sub.cancel_at_period_end);
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        const sub = event.data.object as unknown as StripeSubscription;
+        updateSubscriptionStatus(sub.id, 'canceled', null, false);
+        break;
+      }
+
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object as unknown as StripeInvoice;
+        const subId = typeof invoice.subscription === 'string' ? invoice.subscription : (invoice.subscription?.id ?? null);
+        if (subId) {
+          updateSubscriptionStatus(subId, 'past_due', null, false);
+        }
+        break;
+      }
+
+      case 'customer.subscription.trial_will_end': {
+        // Log for now — hook into email/notification here
+        req.log.info({ eventId: event.id }, 'Trial ending soon event received');
+        break;
+      }
+
+      default:
+        req.log.debug({ type: event.type }, 'Unhandled Stripe event type');
+    }
+
+    markEventProcessed(event.id, event.type);
+    return { ok: true };
+  } catch (err) {
+    req.log.error({ err, eventId: event.id }, 'Failed to process Stripe event');
+    return reply.code(500).send({ error: 'Webhook handler error' });
+  }
 });
 
 app.get('/api/emails/demo-receipt', async () => {
