@@ -1,11 +1,27 @@
 import fs from 'fs';
 import path from 'path';
+
+interface ElectronAppLike {
+  getPath(name: 'userData'): string;
+}
+
+const getElectronApp = (): ElectronAppLike => {
+  if (typeof process !== 'undefined' && process.versions && process.versions.electron) {
+    try {
+      const req = eval('require');
+      return req('electron').app as ElectronAppLike;
+    } catch {
+      // Ignore
+    }
+  }
+  throw new Error('Not running in Electron environment');
+};
+
 export const getIntelligencePath = () => {
   const preferred = 'D:\\data\\ai-models';
   let userDataPath: string;
   try {
-    // Use eval to prevent static analyzers (like Vite's esbuild) from seeing this as a dependency
-    const electronApp = (0, eval)("require('electron')").app;
+    const electronApp = getElectronApp();
     userDataPath = electronApp.getPath('userData');
   } catch {
     // Fallback for non-electron environments or before app is ready
@@ -35,7 +51,7 @@ export const getStoragePath = (subDir: string) => {
 
   let userDataPath: string;
   try {
-    const electronApp = (0, eval)("require('electron')").app;
+    const electronApp = getElectronApp();
     userDataPath = electronApp.getPath('userData');
   } catch {
     userDataPath = path.join(process.cwd(), 'userData');

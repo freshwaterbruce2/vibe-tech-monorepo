@@ -342,7 +342,7 @@ export class SecureApiKeyManager {
       if (this.electronStorage) {
         const result = await this.electronStorage.keys();
         if (result.success && result.keys) {
-          keys = result.keys;
+          ({ keys } = result);
         }
       }
 
@@ -457,7 +457,8 @@ export class SecureApiKeyManager {
       }
 
       const uniqueKeys = Array.from(new Set(keysToRemove));
-      await Promise.all(uniqueKeys.map(async (key) => this.forceRemoveStorageKey(key)));
+      const removeStorageKey = this.forceRemoveStorageKey.bind(this);
+      await Promise.all(uniqueKeys.map(removeStorageKey));
 
       this.storage.removeItem(this.encryptionKeyName);
       this.encryptionKey = this.getOrCreateEncryptionKey();
@@ -497,7 +498,7 @@ export class SecureApiKeyManager {
       if (typeof parsedRecord.key !== 'string') return null;
       if (!parsedRecord.metadata || typeof parsedRecord.metadata !== 'object') return null;
 
-      const metadata = parsedRecord.metadata as Record<string, unknown>;
+      const { metadata } = parsedRecord as { metadata: Record<string, unknown> };
       if (typeof metadata.provider !== 'string') return null;
       if (typeof metadata.encrypted !== 'boolean') return null;
 

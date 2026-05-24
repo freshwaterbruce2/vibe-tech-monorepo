@@ -31,6 +31,7 @@ describe('authSession', () => {
 
   it('requires AUTH_SECRET before a session can be parsed', () => {
     vi.unstubAllEnvs();
+    vi.stubEnv('AUTH_SECRET', '');
 
     expect(isGeneratedAuthConfigured()).toBe(false);
     expect(getGeneratedAuthConfigError()).toContain('AUTH_SECRET');
