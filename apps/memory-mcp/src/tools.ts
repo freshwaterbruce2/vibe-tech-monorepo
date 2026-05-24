@@ -766,6 +766,121 @@ export const tools: Tool[] = [
     },
   },
 
+  // Cognitive Memory (outcomes and anti-patterns)
+  {
+    name: 'memory_cognitive_store_outcome',
+    description:
+      'Store a task outcome for cognitive retrieval. Outcomes are retrieved with semantic similarity, base-level activation/decay, success rate, and confidence scoring.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        task: {
+          type: 'string',
+          description: 'Task or goal this outcome belongs to',
+        },
+        outcome: {
+          type: 'string',
+          description: 'What happened and what was learned',
+        },
+        context: {
+          type: 'string',
+          description: 'Optional environment, project, or constraint context',
+        },
+        successful: {
+          type: 'boolean',
+          description: 'Whether this task outcome was successful (default: true)',
+          default: true,
+        },
+        confidence: {
+          type: 'number',
+          description: 'Confidence in this outcome 0-1 (default: 0.7)',
+          default: 0.7,
+          minimum: 0,
+          maximum: 1,
+        },
+        metadata: {
+          type: 'object',
+          description: 'Additional metadata (JSON object)',
+        },
+      },
+      required: ['task', 'outcome'],
+    },
+  },
+  {
+    name: 'memory_cognitive_store_antipattern',
+    description:
+      'Store an anti-pattern for cognitive retrieval. Anti-patterns represent failure-backed approaches to avoid.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        task: {
+          type: 'string',
+          description: 'Task or goal where the anti-pattern appears',
+        },
+        antiPattern: {
+          type: 'string',
+          description: 'Approach, behavior, or implementation pattern to avoid',
+        },
+        context: {
+          type: 'string',
+          description: 'Optional environment, project, or constraint context',
+        },
+        recommendation: {
+          type: 'string',
+          description: 'Safer replacement approach',
+        },
+        confidence: {
+          type: 'number',
+          description: 'Confidence in this anti-pattern 0-1 (default: 0.8)',
+          default: 0.8,
+          minimum: 0,
+          maximum: 1,
+        },
+        metadata: {
+          type: 'object',
+          description: 'Additional metadata (JSON object)',
+        },
+      },
+      required: ['task', 'antiPattern'],
+    },
+  },
+  {
+    name: 'memory_cognitive_retrieve',
+    description:
+      'Retrieve task outcomes and anti-patterns with 4-factor cognitive scoring: semantic similarity, base-level activation/decay, success rate, and confidence.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: 'Search query text',
+        },
+        limit: {
+          type: 'number',
+          description: 'Maximum cognitive results to return (default: 5)',
+          default: 5,
+        },
+        kind: {
+          type: 'string',
+          enum: ['outcome', 'anti_pattern'],
+          description: 'Optional cognitive memory kind filter',
+        },
+        minScore: {
+          type: 'number',
+          description: 'Optional minimum final score 0-1',
+          minimum: 0,
+          maximum: 1,
+        },
+        includeSemantic: {
+          type: 'boolean',
+          description: 'Also return standard semantic vector results for comparison',
+          default: false,
+        },
+      },
+      required: ['query'],
+    },
+  },
+
   // Conflict Detection (Phase 3)
   {
     name: 'memory_conflict_check',
@@ -808,9 +923,10 @@ export const tools: Tool[] = [
           type: 'array',
           items: {
             type: 'string',
-            enum: ['semantic', 'episodic', 'rag', 'learning'],
+            enum: ['semantic', 'episodic', 'procedural', 'cognitive', 'rag', 'learning'],
           },
-          description: 'Which sources to search (default: all)',
+          description:
+            'Which sources to search (default: standard semantic, episodic, procedural, rag, learning; cognitive is opt-in)',
         },
       },
       required: ['query'],

@@ -24,7 +24,8 @@
     "test": {
       "executor": "nx:run-script",
       "options": { "script": "test" },
-      "cache": true
+      "cache": true,
+      "dependsOn": []
     },
     "typecheck": {
       "executor": "nx:run-script",

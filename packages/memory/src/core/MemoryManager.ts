@@ -1,6 +1,7 @@
 import type Database from 'better-sqlite3';
 import { createLogger } from '@vibetech/logger';
 import { MemoryDecay } from '../consolidation/MemoryDecay.js';
+import { CognitiveMemoryAdapter } from '../cognitive/CognitiveMemoryAdapter.js';
 import { DatabaseManager } from '../database/DatabaseManager.js';
 import { EmbeddingService } from '../embeddings/EmbeddingService.js';
 import { EpisodicStore } from '../stores/EpisodicStore.js';
@@ -78,6 +79,7 @@ export class MemoryManager {
   public episodic!: EpisodicStore;
   public semantic!: SemanticStore;
   public procedural!: ProceduralStore;
+  public cognitive!: CognitiveMemoryAdapter;
   public decay!: MemoryDecay;
   public latency: LatencyTracker = new LatencyTracker();
 
@@ -113,6 +115,7 @@ export class MemoryManager {
     this.episodic = new EpisodicStore(db);
     this.semantic = new SemanticStore(db, this.embeddingService);
     this.procedural = new ProceduralStore(db);
+    this.cognitive = new CognitiveMemoryAdapter(db, this.embeddingService);
     this.decay = new MemoryDecay();
 
     logger.info('Memory system initialized');
