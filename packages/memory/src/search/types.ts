@@ -1,4 +1,10 @@
-export type UnifiedSource = 'semantic' | 'episodic' | 'procedural' | 'rag' | 'learning';
+export type UnifiedSource =
+  | 'semantic'
+  | 'episodic'
+  | 'procedural'
+  | 'cognitive'
+  | 'rag'
+  | 'learning';
 
 export interface UnifiedSearchOptions {
   limit?: number;

@@ -36,8 +36,12 @@ env:
   PNPM_VERSION: '10.33.0'
   NODE_OPTIONS: '--max-old-space-size=4096'
   NX_DAEMON: 'false'
-  NX_NO_CLOUD: 'true'
-  NX_SKIP_REMOTE_CACHE: 'true'
+  NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+  NX_CACHE_FAIL_ON_ERROR: 'false'
+  NX_REJECT_UNKNOWN_LOCAL_CACHE: '0'
+  DATABASE_PATH: '${{ github.workspace }}/d-drive/databases/memory.db'
+  LOG_PATH: '${{ github.workspace }}/d-drive/logs'
+  LEARNING_SYSTEM_PATH: '${{ github.workspace }}/d-drive/learning-system'
 
 jobs:
   # ============================================
@@ -51,6 +55,13 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: 0
+
+      - name: Provision Mocked Drive Directories
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/d-drive/databases"
+          New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/d-drive/logs"
+          New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/d-drive/learning-system"
 
       - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
         with:
@@ -191,6 +202,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Provision Mocked Drive Directories
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/d-drive/databases"
+          New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/d-drive/logs"
+          New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/d-drive/learning-system"
+
       - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
         with:
           version: ${{ env.PNPM_VERSION }}
@@ -322,6 +340,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Provision Mocked Drive Directories
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/d-drive/databases"
+          New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/d-drive/logs"
+          New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/d-drive/learning-system"
+
       - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
         with:
           version: ${{ env.PNPM_VERSION }}
@@ -370,6 +395,13 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: 0
+
+      - name: Provision Mocked Drive Directories
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/d-drive/databases"
+          New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/d-drive/logs"
+          New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/d-drive/learning-system"
 
       - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
         with:

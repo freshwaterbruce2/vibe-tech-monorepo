@@ -3,6 +3,19 @@ export { MemoryManager } from './core/MemoryManager.js';
 export { DatabaseManager } from './database/DatabaseManager.js';
 export { EmbeddingService } from './embeddings/EmbeddingService.js';
 
+// Cognitive memory exports
+export { CognitiveMemoryAdapter } from './cognitive/CognitiveMemoryAdapter.js';
+export type {
+  CognitiveMemoryKind,
+  CognitiveMemoryRecord,
+  CognitiveRetrievalOptions,
+  CognitiveScoreComponents,
+  CognitiveScoringWeights,
+  CognitiveSearchResult,
+  StoreAntiPatternInput,
+  StoreOutcomeInput,
+} from './cognitive/CognitiveMemoryAdapter.js';
+
 // Store exports
 export { EpisodicStore } from './stores/EpisodicStore.js';
 export { ProceduralStore } from './stores/ProceduralStore.js';

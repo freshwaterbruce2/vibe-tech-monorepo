@@ -32,6 +32,7 @@ const SOURCE_HALF_LIFE_MS: Record<UnifiedSource, number | null> = {
   episodic: DEFAULT_EPISODIC_HALF_LIFE_MS,
   semantic: DEFAULT_SEMANTIC_HALF_LIFE_MS,
   procedural: null,
+  cognitive: null,
   rag: null,
   learning: null,
 };
@@ -78,6 +79,9 @@ export class UnifiedSearch {
     }
     if (sources.has('procedural') && this.learningBridge) {
       promises.push(this.searchProcedural(query, fanout));
+    }
+    if (sources.has('cognitive')) {
+      promises.push(this.searchCognitive(query, fanout));
     }
     if (sources.has('rag') && this.ragBridge) {
       promises.push(this.searchRAG(query, fanout));
@@ -278,6 +282,27 @@ export class UnifiedSearch {
       // Embedder unavailable or query embed failed — degrade gracefully
       return [];
     }
+  }
+
+  private async searchCognitive(query: string, limit: number): Promise<UnifiedSearchResult[]> {
+    const cognitive = this.manager.cognitive;
+    if (!cognitive) return [];
+
+    const results = await cognitive.retrieve(query, { limit, updateAccess: false });
+    return results.map((r) => ({
+      text: `${r.record.kind}: ${r.record.task}\n${r.record.summary}`,
+      score: r.score,
+      source: 'cognitive' as const,
+      sourceId: r.record.id.toString(),
+      metadata: {
+        kind: r.record.kind,
+        context: r.record.context,
+        recommendation: r.record.recommendation,
+        confidence: r.record.confidence,
+        components: r.components,
+      },
+      timestamp: r.record.createdAt,
+    }));
   }
 
   private async searchLearning(query: string, limit: number): Promise<UnifiedSearchResult[]> {

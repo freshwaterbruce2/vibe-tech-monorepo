@@ -149,6 +149,34 @@ export class DatabaseManager {
       `CREATE INDEX IF NOT EXISTS idx_procedural_last_used ON procedural_memory (last_used)`,
     );
 
+    // Cognitive memory table (task outcomes and anti-patterns with retrieval-time scoring)
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS cognitive_memory (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        kind TEXT NOT NULL CHECK (kind IN ('outcome', 'anti_pattern')),
+        task TEXT NOT NULL,
+        summary TEXT NOT NULL,
+        context TEXT,
+        recommendation TEXT,
+        embedding BLOB,
+        embedding_model TEXT,
+        created_at INTEGER NOT NULL,
+        last_accessed INTEGER,
+        access_count INTEGER DEFAULT 0,
+        success_count INTEGER DEFAULT 0,
+        failure_count INTEGER DEFAULT 0,
+        confidence REAL DEFAULT 0.7,
+        metadata TEXT
+      )
+    `);
+    this.db.exec(`CREATE INDEX IF NOT EXISTS idx_cognitive_kind ON cognitive_memory (kind)`);
+    this.db.exec(
+      `CREATE INDEX IF NOT EXISTS idx_cognitive_created ON cognitive_memory (created_at DESC)`,
+    );
+    this.db.exec(
+      `CREATE INDEX IF NOT EXISTS idx_cognitive_accessed ON cognitive_memory (last_accessed)`,
+    );
+
     // Health metrics table (system health tracking)
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS health_metrics (

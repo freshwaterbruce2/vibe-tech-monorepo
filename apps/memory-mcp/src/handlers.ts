@@ -12,6 +12,7 @@ import type {
   NovaMemory,
   PatternAnalyzer,
 } from '@vibetech/memory';
+import { handleCognitiveMemory } from './handlers-cognitive.js';
 import { handleCoreMemory } from './handlers-core.js';
 import { handleIntegrations } from './handlers-integrations.js';
 import { handleLearning } from './handlers-learning.js';
@@ -62,7 +63,13 @@ export async function handleToolCall(
     );
     if (learningResult) return learningResult;
 
-    // 4. Unified search (fans out across all sources)
+    // 4. Cognitive memory (outcomes, anti-patterns, retrieval-time scoring)
+    const cognitiveResult = await handleCognitiveMemory(
+      name, args as Record<string, unknown>, memoryManager,
+    );
+    if (cognitiveResult) return cognitiveResult;
+
+    // 5. Unified search (fans out across all sources)
     const unifiedResult = await handleUnifiedSearch(
       name, args as Record<string, unknown>,
       memoryManager, learningBridge,
