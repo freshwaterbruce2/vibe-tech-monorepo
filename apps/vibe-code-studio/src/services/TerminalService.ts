@@ -163,7 +163,7 @@ export class TerminalService {
 
     // Determine shell + args
     const platform = this.getPlatform();
-    const shell = platform === 'win32' ? 'powershell.exe' : (this.getProcessEnv()['SHELL'] || '/bin/bash');
+    const shell = platform === 'win32' ? 'pwsh.exe' : (this.getProcessEnv()['SHELL'] || '/bin/bash');
     const args = platform === 'win32' ? ['-NoLogo', '-NoProfile'] : [];
 
     // Build env
@@ -263,7 +263,7 @@ export class TerminalService {
     const platform = this.getPlatform();
     const env = this.getProcessEnv();
     if (platform === 'win32') {
-      return (env['COMSPEC'] ?? 'cmd.exe') as string;
+      return 'pwsh.exe';
     } else {
       return (env['SHELL'] ?? '/bin/bash') as string;
     }
