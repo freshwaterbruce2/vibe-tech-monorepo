@@ -34,6 +34,9 @@
   - Correct: `pnpm nx test vibe-tutor`
   - Incorrect: `pnpm build` from the root; the root build script intentionally fails.
   - App-local commands are allowed only when the project docs or `project.json` target requires them.
+- **Vite Production Builds**: Enforce `cross-env NODE_ENV=production` for all production builds to prevent compiler emission of `jsxDEV` calls, which crash on startup when React resolves to its production bundle.
+- **Tauri / Electron Build Commands**: In configuration files (e.g., `tauri.conf.json`), define the `beforeBuildCommand` as `pnpm run build` or explicitly set `NODE_ENV=production` so the built bundles are correctly optimized.
+- **Database Env Overrides**: Database connection logic must check for the `DATABASE_PATH` environment variable first before falling back to `D:\databases\` to align with the paths policy.
 - **Command chaining**: Use semicolons (`;`) not `&&` (PowerShell 7+).
 - **Mobile Debugging**: Use `adb reverse tcp:3001 tcp:3001` for Android <-> Localhost connection.
 - **Windows Compatibility**: Use proper path handling for Windows.

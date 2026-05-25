@@ -7,6 +7,8 @@ import { MODELS_ARRAY } from '../services/ai/AIProviderInterface';
 import ApiKeySettings from './ApiKeySettings';
 import { ModelComparison } from './ModelComparison';
 import { defaultSettings, getModelPricing, supportsReasoning } from './Settings.constants';
+import { authService, UserWithPlan } from '../services/AuthService';
+import { billingService } from '../services/BillingService';
 import {
     Button,
     ButtonGroup,
@@ -41,6 +43,14 @@ export const Settings = ({
 }: SettingsProps) => {
   const [localSettings, setLocalSettings] = useState<EditorSettings>(settings);
   const [showModelComparison, setShowModelComparison] = useState(false);
+  const [user, setUser] = useState<UserWithPlan | null>(authService.getCurrentUser());
+
+  useEffect(() => {
+    const unsubscribe = authService.subscribe((u) => {
+      setUser(u);
+    });
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     setLocalSettings(settings);
@@ -435,6 +445,77 @@ export const Settings = ({
           <SettingsSection>
             <SectionTitle>API Keys</SectionTitle>
             <ApiKeySettings />
+          </SettingsSection>
+
+          {/* Subscription Section */}
+          <SettingsSection>
+            <SectionTitle>Subscription & Account</SectionTitle>
+            {user ? (
+              <div style={{ padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#f5f7fb' }}>{user.fullName || 'Developer'}</div>
+                    <div style={{ fontSize: '12px', color: '#94a3b8' }}>{user.email}</div>
+                  </div>
+                  <div style={{
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    background: user.plan === 'pro' ? 'rgba(34, 211, 238, 0.15)' : 'rgba(148, 163, 184, 0.15)',
+                    color: user.plan === 'pro' ? '#67e8f9' : '#94a3b8',
+                    border: `1px solid ${user.plan === 'pro' ? 'rgba(34, 211, 238, 0.3)' : 'rgba(148, 163, 184, 0.3)'}`
+                  }}>
+                    {user.plan}
+                  </div>
+                </div>
+
+                {user.plan === 'free' ? (
+                  <div>
+                    <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: '#b7c3d6', lineHeight: '1.5' }}>
+                      Upgrade to Vibe Code Studio Pro to unlock proactive AI autocomplete, unlimited assistant chat queries, and advanced multi-agent executions.
+                    </p>
+                    <Button
+                      $variant="primary"
+                      onClick={async () => {
+                        try {
+                          await billingService.triggerCheckout();
+                        } catch (err: any) {
+                          alert(err.message || 'Billing checkout failed');
+                        }
+                      }}
+                      style={{ width: '100%', background: 'linear-gradient(135deg, #22d3ee 0%, #0e7490 100%)', color: '#08111f' }}
+                    >
+                      Upgrade to Pro - $19/mo
+                    </Button>
+                  </div>
+                ) : (
+                  <p style={{ margin: 0, fontSize: '12px', color: '#67e8f9', fontWeight: 500 }}>
+                    ✨ Thank you for subscribing to Pro! You have full access to all elite agent and autocomplete features.
+                  </p>
+                )}
+
+                <button
+                  onClick={() => authService.logout()}
+                  style={{
+                    alignSelf: 'flex-start',
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#f43f5e',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    padding: 0,
+                    textDecoration: 'underline'
+                  }}
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <div style={{ color: '#94a3b8', fontSize: '13px' }}>Not signed in.</div>
+            )}
           </SettingsSection>
         </SettingsContent>
 

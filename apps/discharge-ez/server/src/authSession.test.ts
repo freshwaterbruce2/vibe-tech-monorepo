@@ -1,59 +1,75 @@
-import { describe, expect, it, vi } from 'vitest';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
-import {
-  buildGeneratedLogoutCookie,
-  buildGeneratedSessionCookie,
-  getGeneratedAuthConfigError,
-  getGeneratedAuthUser,
-  isGeneratedAuthConfigured,
-  readGeneratedAuthStatus,
-  verifyGeneratedLogin,
-} from './authSession.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const AUTH_SECRET = 'discharge-ez-local-auth-secret-12345';
 
 describe('authSession', () => {
-  it('uses the configured generated user and password defaults', () => {
-    vi.stubEnv('DEMO_USER_EMAIL', 'owner@discharge-ez.test');
-    vi.stubEnv('DEMO_USER_NAME', 'DischargeEZ Admin');
-    vi.stubEnv('DEMO_USER_PASSWORD', 'super-secret-password');
+  let tempDir: string;
 
-    expect(getGeneratedAuthUser()).toEqual({
-      id: 'generated-owner',
-      email: 'owner@discharge-ez.test',
-      fullName: 'DischargeEZ Admin',
-    });
-    expect(verifyGeneratedLogin('owner@discharge-ez.test', 'super-secret-password')).toEqual({
-      id: 'generated-owner',
-      email: 'owner@discharge-ez.test',
-      fullName: 'DischargeEZ Admin',
-    });
-    expect(verifyGeneratedLogin('owner@discharge-ez.test', 'wrong-password')).toBeNull();
+  beforeEach(() => {
+    vi.resetModules();
+    vi.unstubAllEnvs();
+    tempDir = mkdtempSync(join(tmpdir(), 'discharge-ez-auth-'));
+    vi.stubEnv('DISCHARGE_EZ_DB_PATH', join(tempDir, 'auth.test.db'));
   });
 
-  it('requires AUTH_SECRET before a session can be parsed', () => {
+  afterEach(async () => {
+    const db = await import('./db.js');
+    db.closeDatabaseForTests();
     vi.unstubAllEnvs();
+    vi.useRealTimers();
+    rmSync(tempDir, { recursive: true, force: true });
+  });
 
-    expect(isGeneratedAuthConfigured()).toBe(false);
-    expect(getGeneratedAuthConfigError()).toContain('AUTH_SECRET');
-    expect(readGeneratedAuthStatus(undefined)).toEqual({
+  it('requires AUTH_SECRET and a SQLite user before auth is configured', async () => {
+    const auth = await import('./authSession.js');
+
+    await expect(auth.isAuthConfigured()).resolves.toBe(false);
+    expect(auth.getAuthConfigError()).toContain('AUTH_SECRET');
+    await expect(auth.readAuthStatus(undefined)).resolves.toEqual({
       configured: false,
       user: null,
     });
   });
 
-  it('round-trips a generated session cookie when auth is configured', () => {
-    vi.stubEnv('AUTH_SECRET', 'discharge-ez-local-auth-secret-12345');
-    vi.stubEnv('DEMO_USER_EMAIL', 'owner@discharge-ez.test');
-    vi.stubEnv('DEMO_USER_NAME', 'DischargeEZ Admin');
+  it('seeds the first SQLite operator user from bootstrap env once', async () => {
+    vi.stubEnv('AUTH_SECRET', AUTH_SECRET);
+    vi.stubEnv('DISCHARGE_EZ_BOOTSTRAP_EMAIL', 'owner@discharge-ez.test');
+    vi.stubEnv('DISCHARGE_EZ_BOOTSTRAP_NAME', 'DischargeEZ Admin');
+    vi.stubEnv('DISCHARGE_EZ_BOOTSTRAP_PASSWORD', 'super-secret-password');
 
-    const user = getGeneratedAuthUser();
-    const cookie = buildGeneratedSessionCookie(user);
+    const auth = await import('./authSession.js');
+
+    await expect(auth.isAuthConfigured()).resolves.toBe(true);
+    await expect(auth.verifyLogin('owner@discharge-ez.test', 'super-secret-password')).resolves.toMatchObject({
+      id: 'discharge-ez-owner',
+      email: 'owner@discharge-ez.test',
+      fullName: 'DischargeEZ Admin',
+    });
+    await expect(auth.verifyLogin('owner@discharge-ez.test', 'wrong-password')).resolves.toBeNull();
+  });
+
+  it('round-trips a database-backed session cookie', async () => {
+    vi.stubEnv('AUTH_SECRET', AUTH_SECRET);
+    vi.stubEnv('DISCHARGE_EZ_BOOTSTRAP_EMAIL', 'owner@discharge-ez.test');
+    vi.stubEnv('DISCHARGE_EZ_BOOTSTRAP_NAME', 'DischargeEZ Admin');
+    vi.stubEnv('DISCHARGE_EZ_BOOTSTRAP_PASSWORD', 'super-secret-password');
+
+    const auth = await import('./authSession.js');
+    const user = await auth.verifyLogin('owner@discharge-ez.test', 'super-secret-password');
+
+    expect(user).not.toBeNull();
+    const cookie = auth.buildSessionCookie(user!);
 
     expect(cookie).toContain('invoiceflow_session=');
     expect(cookie).toContain('HttpOnly');
-    expect(readGeneratedAuthStatus(cookie)).toEqual({
+    await expect(auth.readAuthStatus(cookie)).resolves.toEqual({
       configured: true,
       user,
     });
-    expect(buildGeneratedLogoutCookie()).toContain('Max-Age=0');
+    expect(auth.buildLogoutCookie()).toContain('Max-Age=0');
   });
 });

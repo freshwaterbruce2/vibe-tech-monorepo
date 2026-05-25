@@ -74,7 +74,9 @@ shimWithTimeout.then(() => {
   );
   (window as unknown as Record<string, unknown>).__APP_MOUNTED__ = true;
 }).catch((err) => {
-  logger.error('[TauriShim] Fatal error:', err);
+  const errMsg = err instanceof Error ? err.message : String(err);
+  const errStack = err instanceof Error ? err.stack : '';
+  logger.error(`[TauriShim] Fatal error: ${errMsg}\nStack: ${errStack}`);
   ReactDOM.createRoot(root).render(
     <StrictMode>
       <ErrorBoundary>

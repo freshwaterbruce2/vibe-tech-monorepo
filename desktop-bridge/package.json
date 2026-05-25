@@ -1,0 +1,16 @@
+{
+  "name": "desktop-bridge",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Command Center Desktop Bridge - REST + WebSocket Server",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "fastify": "^4.26.2",
+    "@fastify/websocket": "^8.3.1",
+    "@fastify/cors": "^9.0.1",
+    "dotenv": "^16.4.5"
+  }
+}

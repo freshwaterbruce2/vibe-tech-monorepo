@@ -22,7 +22,8 @@ What it proves locally:
 - Frontend: Vercel static Vite deployment
 - Backend: Railway Fastify deployment
 - Billing: Stripe Checkout in test mode first
-- Monetization: shared `@vibetech/monetization`, `@vibetech/payments`, `@vibetech/email`, and `@vibetech/ai` packages
+- Monetization: shared `@vibetech/monetization`, `@vibetech/billing`, `@vibetech/payments`, `@vibetech/email`, and `@vibetech/ai` packages
+- Auth source of truth: persistent SQLite users table with `@vibetech/auth` password/session helpers
 
 ## Required environment variables
 
@@ -33,11 +34,15 @@ PORT=5320
 HOST=0.0.0.0
 APP_BASE_URL=https://discharge-ez.your-domain.com
 AUTH_SECRET=
-DEMO_USER_EMAIL=
-DEMO_USER_PASSWORD=
-DEMO_USER_NAME=
+DISCHARGE_EZ_DB_PATH=
+DISCHARGE_EZ_BOOTSTRAP_EMAIL=
+DISCHARGE_EZ_BOOTSTRAP_PASSWORD=
+DISCHARGE_EZ_BOOTSTRAP_NAME=
+DISCHARGE_EZ_BOOTSTRAP_COMPANY=
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
+DISCHARGE_EZ_STRIPE_PRICE_ID=
+DISCHARGE_EZ_PRO_MONTHLY_CENTS=900
 RESEND_API_KEY=
 RESEND_WEBHOOK_SECRET=
 EMAIL_FROM=
@@ -63,6 +68,7 @@ SENTRY_DSN=
 3. Set the backend environment variables above.
 4. Confirm `GET /api/health` returns `{"ok":true,"app":"discharge-ez"}`.
 5. Confirm `GET /api/billing/demo-checkout` returns a Stripe Checkout URL once `STRIPE_SECRET_KEY` is set.
+6. Confirm `GET /api/billing/mrr` returns live Stripe MRR metadata when Stripe credentials are set.
 
 ## Vercel frontend steps
 
@@ -83,8 +89,11 @@ To ensure persistent entitlements and user subscription updates are synced corre
 2. Click **Add Endpoint** and enter your Railway backend URL followed by the webhook path: `https://<YOUR_RAILWAY_APP_URL>/api/webhooks/stripe`.
 3. Select the following events to listen to:
    - `checkout.session.completed`
+   - `customer.subscription.created`
    - `customer.subscription.updated`
    - `customer.subscription.deleted`
+   - `customer.subscription.paused`
+   - `customer.subscription.resumed`
    - `invoice.payment_failed`
 4. Click **Add Endpoint**.
 5. Reveal the signing secret (starts with `whsec_`) and add it to your Railway backend environment variables as `STRIPE_WEBHOOK_SECRET`.
@@ -96,3 +105,11 @@ This app is deployment-ready, but live proof still requires:
 - Stripe test credentials and webhook configuration
 - Vercel deploy credentials
 - Railway deploy credentials
+
+## Auth bootstrap
+
+On first startup, if the SQLite `users` table is empty, the app can create the first operator from `DISCHARGE_EZ_BOOTSTRAP_EMAIL` and `DISCHARGE_EZ_BOOTSTRAP_PASSWORD`. After that, the SQLite database is the source of truth; rotate or remove the bootstrap variables once the first user exists.
+
+## Dynamic MRR metadata
+
+`vibe-app.json` intentionally leaves `monetization.mrrCents` as `null`. The production app reads live recurring revenue from Stripe through `GET /api/billing/mrr`, falling back to the local SQLite subscription mirror when Stripe credentials are unavailable.

@@ -2,42 +2,70 @@ import {
   createSessionToken,
   getSessionCookieName,
   getSessionTtlSeconds,
+  getUserById,
+  hashPassword,
   parseSessionToken,
+  verifyPassword,
   type AuthUser,
 } from '@vibetech/auth';
 
-const GENERATED_USER_ID = 'generated-owner';
-const DEFAULT_USER_EMAIL = 'owner@example.com';
-const DEFAULT_USER_NAME = 'DischargeEz Owner';
-const DEFAULT_USER_PASSWORD = 'change-this-password';
+import {
+  createUser,
+  getDatabase,
+  getUserCredentialsByEmail,
+  hasUsers,
+} from './db.js';
 
-export interface GeneratedAuthStatus {
+const BOOTSTRAP_USER_ID = 'discharge-ez-owner';
+
+export interface AuthStatus {
   configured: boolean;
   user: AuthUser | null;
 }
 
-export function getGeneratedAuthUser(): AuthUser {
-  const configuredEmail = process.env.DEMO_USER_EMAIL?.trim();
-  const configuredName = process.env.DEMO_USER_NAME?.trim();
+export async function ensureBootstrapUser(): Promise<void> {
+  if (hasUsers()) {
+    return;
+  }
 
-  return {
-    id: GENERATED_USER_ID,
-    email: nonEmptyOrFallback(configuredEmail, DEFAULT_USER_EMAIL),
-    fullName: nonEmptyOrFallback(configuredName, DEFAULT_USER_NAME),
-  };
+  const email = process.env.DISCHARGE_EZ_BOOTSTRAP_EMAIL?.trim();
+  const password = process.env.DISCHARGE_EZ_BOOTSTRAP_PASSWORD?.trim();
+  const fullName = process.env.DISCHARGE_EZ_BOOTSTRAP_NAME?.trim();
+  const companyName = process.env.DISCHARGE_EZ_BOOTSTRAP_COMPANY?.trim();
+
+  if (!email || !password) {
+    return;
+  }
+
+  const passwordHash = await hashPassword(password);
+  createUser({
+    id: BOOTSTRAP_USER_ID,
+    email,
+    fullName: fullName || 'DischargeEz Owner',
+    companyName,
+    passwordSalt: passwordHash.salt,
+    passwordHash: passwordHash.hash,
+  });
 }
 
-export function isGeneratedAuthConfigured(): boolean {
-  const secret = process.env.AUTH_SECRET ?? '';
-  return secret.trim().length >= 32;
+export async function isAuthConfigured(): Promise<boolean> {
+  await ensureBootstrapUser();
+  return hasAuthSecret() && hasUsers();
 }
 
-export function getGeneratedAuthConfigError(): string {
-  return 'AUTH_SECRET must be set to at least 32 characters to enable generated auth.';
+export function getAuthConfigError(): string {
+  if (!hasAuthSecret()) {
+    return 'AUTH_SECRET must be set to at least 32 characters to enable authentication.';
+  }
+
+  return [
+    'No operator user exists in the SQLite database.',
+    'Create one during setup or set DISCHARGE_EZ_BOOTSTRAP_EMAIL and DISCHARGE_EZ_BOOTSTRAP_PASSWORD once to seed the first user.',
+  ].join(' ');
 }
 
-export function readGeneratedAuthStatus(cookieHeader: string | undefined): GeneratedAuthStatus {
-  if (!isGeneratedAuthConfigured()) {
+export async function readAuthStatus(cookieHeader: string | undefined): Promise<AuthStatus> {
+  if (!(await isAuthConfigured())) {
     return {
       configured: false,
       user: null,
@@ -54,11 +82,15 @@ export function readGeneratedAuthStatus(cookieHeader: string | undefined): Gener
 
   try {
     const payload = parseSessionToken(token);
-    const configuredUser = getGeneratedAuthUser();
-    if (
-      payload?.sub !== configuredUser.id ||
-      payload.email.toLowerCase() !== configuredUser.email.toLowerCase()
-    ) {
+    if (!payload) {
+      return {
+        configured: true,
+        user: null,
+      };
+    }
+
+    const user = getUserById(getDatabase(), payload.sub);
+    if (!user || user.email.toLowerCase() !== payload.email.toLowerCase()) {
       return {
         configured: true,
         user: null,
@@ -67,7 +99,7 @@ export function readGeneratedAuthStatus(cookieHeader: string | undefined): Gener
 
     return {
       configured: true,
-      user: configuredUser,
+      user,
     };
   } catch {
     return {
@@ -77,23 +109,25 @@ export function readGeneratedAuthStatus(cookieHeader: string | undefined): Gener
   }
 }
 
-export function verifyGeneratedLogin(email: string, password: string): AuthUser | null {
-  const normalizedEmail = email.trim().toLowerCase();
-  const configuredUser = getGeneratedAuthUser();
-  const configuredPassword = process.env.DEMO_USER_PASSWORD?.trim();
-
-  if (normalizedEmail !== configuredUser.email.toLowerCase()) {
+export async function verifyLogin(email: string, password: string): Promise<AuthUser | null> {
+  if (!(await isAuthConfigured())) {
     return null;
   }
 
-  if (password !== nonEmptyOrFallback(configuredPassword, DEFAULT_USER_PASSWORD)) {
+  const row = getUserCredentialsByEmail(email);
+  if (!row) {
     return null;
   }
 
-  return configuredUser;
+  const passwordMatches = await verifyPassword(password, row.password_salt, row.password_hash);
+  if (!passwordMatches) {
+    return null;
+  }
+
+  return getUserById(getDatabase(), row.id);
 }
 
-export function buildGeneratedSessionCookie(user: AuthUser): string {
+export function buildSessionCookie(user: AuthUser): string {
   const token = createSessionToken(user);
   const secure = process.env.NODE_ENV === 'production' || isHttpsUrl(process.env.APP_BASE_URL);
   const parts = [
@@ -108,7 +142,7 @@ export function buildGeneratedSessionCookie(user: AuthUser): string {
   return parts.join('; ');
 }
 
-export function buildGeneratedLogoutCookie(): string {
+export function buildLogoutCookie(): string {
   const secure = process.env.NODE_ENV === 'production' || isHttpsUrl(process.env.APP_BASE_URL);
   const parts = [
     `${getSessionCookieName()}=`,
@@ -120,6 +154,11 @@ export function buildGeneratedLogoutCookie(): string {
   ].filter(Boolean);
 
   return parts.join('; ');
+}
+
+function hasAuthSecret(): boolean {
+  const secret = process.env.AUTH_SECRET ?? '';
+  return secret.trim().length >= 32;
 }
 
 function readCookie(cookieHeader: string | undefined, name: string): string | null {
@@ -140,8 +179,4 @@ function readCookie(cookieHeader: string | undefined, name: string): string | nu
 
 function isHttpsUrl(value: string | undefined): boolean {
   return typeof value === 'string' && value.startsWith('https://');
-}
-
-function nonEmptyOrFallback(value: string | undefined, fallback: string): string {
-  return value && value.length > 0 ? value : fallback;
 }

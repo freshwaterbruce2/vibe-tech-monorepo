@@ -8,9 +8,16 @@ pub struct DbState {
 }
 
 fn get_db_path() -> PathBuf {
+    // Check environment variable first
+    if let Ok(env_path) = std::env::var("DATABASE_PATH") {
+        if !env_path.trim().is_empty() {
+            return PathBuf::from(env_path);
+        }
+    }
+
     // Follow the Vibe workspace convention: data on D:\databases\
     if cfg!(target_os = "windows") {
-        let d_path = PathBuf::from(r"D:\databases\database.db");
+        let d_path = PathBuf::from(r"D:\databases\vibe_studio.db");
         if d_path.parent().map(|p| p.exists()).unwrap_or(false) {
             return d_path;
         }
@@ -19,7 +26,7 @@ fn get_db_path() -> PathBuf {
     dirs::data_dir()
         .unwrap_or_else(|| PathBuf::from("."))
         .join("vibe-code-studio")
-        .join("database.db")
+        .join("vibe_studio.db")
 }
 
 fn ensure_connection(state: &DbState) -> Result<(), String> {

@@ -1,7 +1,7 @@
 /**
  * DatabaseService - Centralized database integration
  *
- * Integrates Vibe Code Studio with the centralized D:\\databases\\database.db
+ * Integrates Vibe Code Studio with the centralized D:\\databases\\vibe_studio.db
  * following monorepo best practices.
  *
  * Features:
@@ -26,8 +26,8 @@ import { runMigration } from './migrationRunner';
 const getDatabasePath = (): string => {
   // Detect Electron environment - use unified hub DB
   if (typeof window !== 'undefined' && window.electron?.isElectron) {
-    // Always use D:\databases\database.db for unified integration
-    const centralized = import.meta.env.VITE_DATABASE_PATH || 'D:\\databases\\database.db';
+    // Always use D:\databases\vibe_studio.db for unified integration
+    const centralized = import.meta.env.VITE_DATABASE_PATH || 'D:\\databases\\vibe_studio.db';
     logger.debug(`[DatabaseService] Using unified hub DB at ${centralized}`);
     return centralized;
   }

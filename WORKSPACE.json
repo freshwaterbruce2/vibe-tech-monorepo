@@ -1,6 +1,6 @@
 {
   "version": "1.3.1",
-  "lastUpdated": "2026-05-18T14:20:00-04:00",
+  "lastUpdated": "2026-05-24T23:59:00-04:00",
   "techStack": {
     "packageManager": "pnpm@10.33.0",
     "node": "22.x",
@@ -18,6 +18,16 @@
     "provider": "openrouter"
   },
   "recentActivity": [
+    {
+      "date": "2026-05-25",
+      "project": "android-command-center",
+      "action": "Scaffolded native Android client, compiled debug APK (remediated Gradle native daemon thread memory OOM), deployed to Galaxy A54 over ADB, and verified WebSocket connection & auth with the Desktop Bridge via URL query parameters."
+    },
+    {
+      "date": "2026-05-24",
+      "project": "vibe-code-studio",
+      "action": "Diagnosed and repaired post-package loading failure by forcing NODE_ENV=production in Vite compiler; added DATABASE_PATH environment override in Tauri backend; built and verified C:\\Dev\\desktop-bridge server for local LAN REST+WS."
+    },
     {
       "date": "2026-05-24",
       "project": "discharge-ez",

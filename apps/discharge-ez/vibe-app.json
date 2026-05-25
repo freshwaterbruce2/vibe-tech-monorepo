@@ -6,7 +6,7 @@
   "monetization": {
     "stripeConnected": true,
     "firstRevenueAt": "2026-05-23",
-    "mrrCents": 900,
+    "mrrCents": null,
     "currency": "usd"
   }
 }

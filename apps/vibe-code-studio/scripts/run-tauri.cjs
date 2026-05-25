@@ -1,4 +1,4 @@
-const { spawnSync } = require('node:child_process');
+const { spawnSync, spawn } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -108,15 +108,47 @@ const tauriCli = resolveTauriCli();
 const env = loadWindowsBuildEnv(process.env);
 const args = [tauriCli, ...process.argv.slice(2)];
 
-const result = spawnSync(process.execPath, args, {
+// Spawn companion backend server in the background
+const backendProcess = spawn(process.execPath, [path.join(__dirname, 'backend-server.js')], {
+  cwd: projectRoot,
+  stdio: 'inherit',
+  env: { ...env, NODE_ENV: 'development' }
+});
+
+console.log('[run-tauri] Spawned companion backend server.');
+
+const tauriProcess = spawn(process.execPath, args, {
   cwd: projectRoot,
   env,
   stdio: 'inherit',
 });
 
-if (result.error) {
-  console.error('[run-tauri] Failed to start Tauri:', result.error.message);
-  process.exit(1);
+function cleanup() {
+  console.log('[run-tauri] Shutting down companion processes...');
+  try {
+    backendProcess.kill();
+  } catch (e) {
+    console.error('[run-tauri] Failed to kill backend-server:', e.message);
+  }
 }
 
-process.exit(result.status ?? 0);
+tauriProcess.on('exit', (code) => {
+  cleanup();
+  process.exit(code ?? 0);
+});
+
+tauriProcess.on('error', (err) => {
+  console.error('[run-tauri] Failed to start Tauri:', err.message);
+  cleanup();
+  process.exit(1);
+});
+
+process.on('SIGINT', () => {
+  cleanup();
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  cleanup();
+  process.exit(0);
+});
