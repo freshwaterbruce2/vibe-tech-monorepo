@@ -3,7 +3,11 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   DEFAULT_REMINDERS,
   buildCheckoutSession,
+  createStripeWebhookBus,
+  deriveStripeSubscriptionMrr,
   getDunningPolicy,
+  readStripeObjectId,
+  resolveStripeWebhookEvent,
   runDunningSweep,
   upsertDunningPolicy,
   validateDunningReminders,
@@ -175,6 +179,123 @@ describe('@vibetech/billing stripe helpers', () => {
       verifyWebhookSignature(Buffer.from('{}'), 'sig', 'secret', stripeClient),
     ).toBe(event);
     expect(constructEvent).toHaveBeenCalledOnce();
+  });
+
+  it('resolves signed webhook events through the supplied Stripe client', () => {
+    const event = {
+      id: 'evt_signed',
+      type: 'customer.subscription.updated',
+      data: {
+        object: {},
+      },
+    };
+    const constructEvent = vi.fn(() => event);
+
+    expect(
+      resolveStripeWebhookEvent({
+        rawBody: Buffer.from('{}'),
+        signature: ['sig_1'],
+        secret: 'whsec_test',
+        stripeClient: {
+          webhooks: {
+            constructEvent,
+          },
+        },
+      }),
+    ).toBe(event);
+    expect(constructEvent).toHaveBeenCalledWith(
+      Buffer.from('{}'),
+      'sig_1',
+      'whsec_test',
+    );
+  });
+
+  it('dispatches exact and prefix webhook handlers with idempotency', async () => {
+    const handled: string[] = [];
+    const processed = new Set<string>();
+    const bus = createStripeWebhookBus({
+      hasProcessedEvent: (eventId) => processed.has(eventId),
+      markEventProcessed: (event) => {
+        processed.add(event.id);
+      },
+      handlers: {
+        'checkout.session.completed': (event) => {
+          handled.push(`exact:${event.type}`);
+        },
+      },
+      prefixHandlers: [
+        {
+          prefix: 'customer.subscription.',
+          handle: (event) => {
+            handled.push(`prefix:${event.type}`);
+          },
+        },
+      ],
+    });
+
+    await expect(
+      bus.dispatch({
+        id: 'evt_checkout',
+        type: 'checkout.session.completed',
+        data: { object: {} },
+      }),
+    ).resolves.toMatchObject({ handled: true, skipped: false });
+    await expect(
+      bus.dispatch({
+        id: 'evt_subscription',
+        type: 'customer.subscription.updated',
+        data: { object: {} },
+      }),
+    ).resolves.toMatchObject({ handled: true, skipped: false });
+    await expect(
+      bus.dispatch({
+        id: 'evt_subscription',
+        type: 'customer.subscription.updated',
+        data: { object: {} },
+      }),
+    ).resolves.toMatchObject({ handled: true, skipped: true });
+
+    expect(handled).toEqual([
+      'exact:checkout.session.completed',
+      'prefix:customer.subscription.updated',
+    ]);
+  });
+
+  it('derives monthly recurring revenue from subscription items', () => {
+    expect(readStripeObjectId({ id: 'cus_123' })).toBe('cus_123');
+    expect(
+      deriveStripeSubscriptionMrr({
+        id: 'sub_123',
+        status: 'active',
+        items: {
+          data: [
+            {
+              quantity: 2,
+              price: {
+                unit_amount: 12000,
+                currency: 'USD',
+                recurring: {
+                  interval: 'year',
+                },
+              },
+            },
+            {
+              quantity: 1,
+              price: {
+                unit_amount: 500,
+                currency: 'USD',
+                recurring: {
+                  interval: 'month',
+                },
+              },
+            },
+          ],
+        },
+      }),
+    ).toEqual({
+      monthlyMrrCents: 2500,
+      currency: 'usd',
+    });
   });
 });
 

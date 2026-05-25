@@ -12,7 +12,7 @@ packages:
   - "tools/vectorshift-svg"
   - "plugins/*"
   # Exclude local-only WIP workspaces not yet committed to git.
-  - "!apps/gravity-claw"
+  - "apps/gravity-claw"
   # Exclude backend directories that are not independent packages.
   - "!backend/types"
   - "!backend/llm-finetuning"

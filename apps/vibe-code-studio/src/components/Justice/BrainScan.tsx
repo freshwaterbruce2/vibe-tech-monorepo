@@ -65,7 +65,7 @@ export const BrainScan: React.FC = () => {
             <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
               Vibe-Justice: Brain Scan
             </h1>
-            <p className="text-xs text-slate-500">Live Neural Interface • D:\databases\database.db</p>
+            <p className="text-xs text-slate-500">Live Neural Interface • D:\databases\vibe_studio.db</p>
           </div>
         </div>
 

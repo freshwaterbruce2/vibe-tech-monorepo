@@ -20,9 +20,11 @@
 ❌ `pnpm build` from repo root (ambiguous)
 ❌ Skipping `pnpm install` after git pull
 ❌ Ignoring NX cache issues
+❌ Running Vite production builds without forcing `NODE_ENV=production` (leads to fatal `f.jsxDEV` runtime crashes due to React mismatch)
 ✅ `pnpm nx build <project>` from the repo root
 ✅ Run `pnpm install` first
 ✅ `npx nx reset` if cache problems
+✅ Prepend `cross-env NODE_ENV=production` to all production build scripts in `package.json`
 
 ## Version Control
 

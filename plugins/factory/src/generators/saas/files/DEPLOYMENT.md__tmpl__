@@ -21,7 +21,7 @@ What it proves locally:
 - Frontend: Vercel static Vite deployment
 - Backend: Railway Fastify deployment
 - Billing: Stripe Checkout in test mode first
-- Monetization: shared `@vibetech/monetization`, `@vibetech/payments`, `@vibetech/email`, and `@vibetech/ai` packages
+- Monetization: shared `@vibetech/monetization`, `@vibetech/billing`, `@vibetech/payments`, `@vibetech/email`, and `@vibetech/ai` packages
 
 ## Required environment variables
 
@@ -62,6 +62,11 @@ SENTRY_DSN=
 3. Set the backend environment variables above.
 4. Confirm `GET /api/health` returns `{"ok":true,"app":"<%= projectName %>"}`.
 5. Confirm `GET /api/billing/demo-checkout` returns a Stripe Checkout URL once `STRIPE_SECRET_KEY` is set.
+6. Configure Stripe to send Checkout and subscription events to `/api/webhooks/stripe`.
+
+## Stripe Webhook Bus
+
+Generated SaaS apps include `/api/webhooks/stripe`, powered by the shared `@vibetech/billing` Stripe Webhook Bus. Configure `STRIPE_WEBHOOK_SECRET` in production so Stripe signatures are verified from the raw request body. The generated starter logs Checkout and `customer.subscription.*` events; replace the in-memory processed-event set with your app database when adding persistent entitlements.
 
 ## Vercel frontend steps
 

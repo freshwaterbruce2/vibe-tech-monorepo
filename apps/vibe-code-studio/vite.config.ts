@@ -49,6 +49,10 @@ export default defineConfig(({ mode }) => ({
     alias: {
       '@': resolve(__dirname, 'src'),
       '@vibetech/types': resolve(__dirname, '../../packages/vibetech-types/src/index.ts'),
+      '@vibetech/auth': resolve(__dirname, '../../packages/auth/src/index.ts'),
+      '@vibetech/billing': resolve(__dirname, '../../packages/billing/src/index.ts'),
+      '@vibetech/entitlements': resolve(__dirname, '../../packages/entitlements/src/index.ts'),
+      '@vibetech/landing': resolve(__dirname, '../../packages/landing/src/index.tsx'),
       '@vibetech/shared-ipc': resolve(__dirname, '../../packages/shared-ipc/src/index.ts'),
       '@vibetech/shared-utils': resolve(__dirname, '../../packages/shared-utils/src/index.ts'),
       '@vibetech/shared-utils/ai': resolve(__dirname, '../../packages/shared-utils/src/ai/index.ts'),

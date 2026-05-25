@@ -1,5 +1,6 @@
 import { FeatureFlagClient } from '@vibetech/feature-flags-sdk-node';
 import { logger } from './Logger';
+import { entitlementsService } from './EntitlementsService';
 
 /**
  * Feature Flag Service for Vibe Code Studio
@@ -38,7 +39,10 @@ class FeatureFlagService {
    * Check if AI autocomplete is enabled
    */
   isAIAutocompleteEnabled(): boolean {
-    if (!this.client) return false;
+    if (!entitlementsService.hasFeature('ai.autocomplete')) {
+      return false;
+    }
+    if (!this.client) return true;
     return this.client.isEnabled('vibe-studio.ai_autocomplete');
   }
 

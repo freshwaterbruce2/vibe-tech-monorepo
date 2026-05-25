@@ -1,5 +1,6 @@
 import type Database from 'better-sqlite3';
 import StripeConstructor from 'stripe';
+export * from './webhooks.js';
 
 export interface StripeWebhookEventLike {
   id: string;

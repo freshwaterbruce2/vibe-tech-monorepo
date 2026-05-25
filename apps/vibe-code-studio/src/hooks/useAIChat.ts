@@ -3,6 +3,7 @@ import { startTransition, useCallback, useEffect, useState } from 'react';
 import { MultiFileEditDetector } from '../services/ai/MultiFileEditDetector';
 import type { UnifiedAIService } from '../services/ai/UnifiedAIService';
 import { logger } from '../services/Logger';
+import { entitlementsService } from '../services/EntitlementsService';
 import type { AIContextRequest, AIMessage, EditorFile, WorkspaceContext } from '../types';
 import type { FileChange, MultiFileEditPlan } from '../types/multifile';
 
@@ -130,6 +131,21 @@ export function useAIChat({
 
   const handleSendMessage = useCallback(
     async (message: string, contextRequest?: Partial<AIContextRequest>) => {
+      const plan = entitlementsService.getCurrentPlan();
+      if (plan === 'free') {
+        const userMsgsCount = aiMessages.filter((m) => m.role === 'user').length;
+        if (userMsgsCount >= 10) {
+          const limitMsg: AIMessage = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `⚠️ **Free Plan Limit Reached**\n\nYou have used your daily limit of 10 messages. Please click the [Upgrade to Pro](#login) link or go to Settings to unlock unlimited AI assistant queries, autocomplete, custom rules, and multi-agent execution.`,
+            timestamp: new Date(),
+          };
+          setAiMessages((prev) => [...prev, limitMsg]);
+          return;
+        }
+      }
+
       // Add user message
       const userMessage: AIMessage = {
         id: crypto.randomUUID(),

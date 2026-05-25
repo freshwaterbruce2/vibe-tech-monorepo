@@ -1,7 +1,18 @@
 import cors from '@fastify/cors';
 import Fastify from 'fastify';
-import Stripe from 'stripe';
 import type { AuthUser } from '@vibetech/auth';
+import {
+  createStripeWebhookBus,
+  deriveStripeSubscriptionMrr,
+  getStripeClient,
+  readStripeObjectId,
+  resolveStripeWebhookEvent,
+  type StripeCheckoutSessionLike,
+  type StripeInvoiceLike,
+  type StripeSubscriptionLike,
+  type StripeWebhookBusEvent,
+  type StripeWebhookVerifierLike,
+} from '@vibetech/billing';
 import {
   getAiUsage,
   recordAiUsage,
@@ -10,13 +21,12 @@ import {
   generateWithMetering,
 } from '@vibetech/ai';
 import { buildPaymentReceiptEmail } from '@vibetech/email';
-import { createTenantCheckoutSession } from '@vibetech/payments';
 import {
-  buildGeneratedLogoutCookie,
-  buildGeneratedSessionCookie,
-  getGeneratedAuthConfigError,
-  readGeneratedAuthStatus,
-  verifyGeneratedLogin,
+  buildLogoutCookie,
+  buildSessionCookie,
+  getAuthConfigError,
+  readAuthStatus,
+  verifyLogin,
 } from './authSession.js';
 import {
   GENERATED_FEATURES,
@@ -28,11 +38,14 @@ import fastifyRawBody from 'fastify-raw-body';
 import { loadLocalEnv } from './loadLocalEnv.js';
 import {
   getActiveSubscriptionForEmail,
+  getStoredMrrMetadata,
+  getStripeCustomerIdForUser,
   hasProcessedEvent,
   markEventProcessed,
   upsertCustomer,
   upsertSubscription,
   updateSubscriptionStatus,
+  type MrrMetadata,
 } from './db.js';
 
 loadLocalEnv();
@@ -57,7 +70,7 @@ app.get('/api/health', async () => ({
 }));
 
 app.get('/api/auth/me', async (req) => {
-  const status = readGeneratedAuthStatus(req.headers.cookie);
+  const status = await readAuthStatus(req.headers.cookie);
 
   return {
     ok: true,
@@ -67,10 +80,10 @@ app.get('/api/auth/me', async (req) => {
 });
 
 app.post('/api/auth/login', async (req, reply) => {
-  if (!isGeneratedAuthReady()) {
+  if (!(await isAuthReady())) {
     return reply.code(503).send({
-      error: 'Generated auth is not configured',
-      detail: getGeneratedAuthConfigError(),
+      error: 'Authentication is not configured',
+      detail: getAuthConfigError(),
     });
   }
 
@@ -81,14 +94,14 @@ app.post('/api/auth/login', async (req, reply) => {
     });
   }
 
-  const user = verifyGeneratedLogin(body.email, body.password);
+  const user = await verifyLogin(body.email, body.password);
   if (!user) {
     return reply.code(401).send({
       error: 'Invalid email or password',
     });
   }
 
-  reply.header('set-cookie', buildGeneratedSessionCookie(user));
+  reply.header('set-cookie', buildSessionCookie(user));
   return {
     ok: true,
     user,
@@ -96,14 +109,14 @@ app.post('/api/auth/login', async (req, reply) => {
 });
 
 app.post('/api/auth/logout', async (_req, reply) => {
-  reply.header('set-cookie', buildGeneratedLogoutCookie());
+  reply.header('set-cookie', buildLogoutCookie());
   return {
     ok: true,
   };
 });
 
 app.get('/api/pro', async (req, reply) => {
-  const authUser = requireGeneratedAuth(req.headers.cookie);
+  const authUser = await requireAuth(req.headers.cookie);
   if (!authUser) {
     return reply.code(401).send({
       error: 'Sign in to access the pro route',
@@ -132,18 +145,131 @@ app.get('/api/pro', async (req, reply) => {
   };
 });
 
-interface StripeSubscription {
-  id: string;
-  status: string;
-  customer: string | { id: string };
-  current_period_end: number | null;
-  metadata?: Record<string, string | undefined>;
-  cancel_at_period_end: boolean;
+interface StripeListResponse<T> {
+  data: T[];
 }
 
-interface StripeInvoice {
-  subscription: string | { id: string } | null;
+interface StripeApiClient {
+  checkout: {
+    sessions: {
+      create(input: StripeSubscriptionCheckoutInput): Promise<{
+        id: string;
+        url: string | null;
+      }>;
+    };
+  };
+  subscriptions: {
+    retrieve(subscriptionId: string, options?: { expand?: string[] }): Promise<StripeSubscriptionLike>;
+    list(input: {
+      status: 'active';
+      limit: number;
+      expand?: string[];
+    }): Promise<StripeListResponse<StripeSubscriptionLike>>;
+  };
+  webhooks: {
+    constructEvent(rawBody: Buffer, signature: string, secret: string): StripeWebhookBusEvent;
+  };
 }
+
+interface StripeSubscriptionCheckoutInput {
+  mode: 'subscription';
+  line_items: Array<
+    | {
+        price: string;
+        quantity: number;
+      }
+    | {
+        price_data: {
+          currency: string;
+          product_data: {
+            name: string;
+          };
+          unit_amount: number;
+          recurring: {
+            interval: 'month';
+          };
+        };
+        quantity: number;
+      }
+  >;
+  success_url: string;
+  cancel_url: string;
+  customer?: string;
+  customer_email?: string;
+  metadata: Record<string, string>;
+  subscription_data: {
+    metadata: Record<string, string>;
+  };
+  allow_promotion_codes: boolean;
+}
+
+const stripeWebhookBus = createStripeWebhookBus({
+  hasProcessedEvent,
+  markEventProcessed: (event) => {
+    markEventProcessed(event.id, event.type);
+  },
+  handlers: {
+    'checkout.session.completed': async (event) => {
+      const session = event.data.object as StripeCheckoutSessionLike;
+      if (session.mode !== 'subscription' || !session.customer || !session.subscription) {
+        return;
+      }
+
+      const customerId = readStripeObjectId(session.customer);
+      const subscriptionId = readStripeObjectId(session.subscription);
+      const email = session.customer_email ?? session.customer_details?.email ?? '';
+      const userId = session.metadata?.userId ?? null;
+      if (customerId && email) {
+        upsertCustomer(customerId, email, userId);
+      }
+
+      if (!subscriptionId) {
+        return;
+      }
+
+      const sub = await getStripeApiClient().subscriptions.retrieve(subscriptionId, {
+        expand: ['items.data.price'],
+      });
+      mirrorStripeSubscription(sub, {
+        fallbackCustomerId: customerId,
+        fallbackUserId: userId,
+        fallbackEmail: email,
+      });
+    },
+    'customer.subscription.created': (event) => {
+      mirrorStripeSubscription(event.data.object as StripeSubscriptionLike);
+    },
+    'customer.subscription.updated': (event) => {
+      mirrorStripeSubscription(event.data.object as StripeSubscriptionLike);
+    },
+    'customer.subscription.deleted': (event) => {
+      const sub = event.data.object as StripeSubscriptionLike;
+      updateSubscriptionStatus(sub.id, 'canceled', null, false);
+    },
+    'customer.subscription.trial_will_end': (event, context) => {
+      mirrorStripeSubscription(event.data.object as StripeSubscriptionLike);
+      context.logger?.info?.({ eventId: event.id }, 'Trial ending soon event received');
+    },
+    'invoice.payment_failed': (event) => {
+      const invoice = event.data.object as StripeInvoiceLike;
+      const subId = readStripeObjectId(invoice.subscription);
+      if (subId) {
+        updateSubscriptionStatus(subId, 'past_due', null, false);
+      }
+    },
+  },
+  prefixHandlers: [
+    {
+      prefix: 'customer.subscription.',
+      handle: (event) => {
+        mirrorStripeSubscription(event.data.object as StripeSubscriptionLike);
+      },
+    },
+  ],
+  defaultHandler: (event, context) => {
+    context.logger?.debug?.({ type: event.type }, 'Unhandled Stripe event type');
+  },
+});
 
 // ── Stripe webhook ────────────────────────────────────────────────────────────
 
@@ -155,94 +281,31 @@ app.post('/api/webhooks/stripe', {
     req.log.warn('STRIPE_WEBHOOK_SECRET is not set — skipping signature verification');
   }
 
-  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-  if (!stripeSecretKey) {
+  if (!process.env.STRIPE_SECRET_KEY) {
     return reply.code(503).send({ error: 'Stripe is not configured' });
   }
 
-  const stripe = new Stripe(stripeSecretKey);
-  let event: Stripe.Event;
+  const stripe = getStripeApiClient();
+  let event: StripeWebhookBusEvent;
 
   try {
-    const sig = req.headers['stripe-signature'];
     const rawBody = (req as unknown as { rawBody?: Buffer }).rawBody;
-
-    if (webhookSecret && sig && rawBody) {
-      event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
-    } else {
-      // No secret configured (dev mode) — trust the parsed body
-      event = req.body as Stripe.Event;
-    }
+    event = resolveStripeWebhookEvent({
+      rawBody,
+      signature: req.headers['stripe-signature'],
+      secret: webhookSecret,
+      parsedBody: req.body,
+      stripeClient: stripe as unknown as StripeWebhookVerifierLike,
+      allowUnsigned: !webhookSecret,
+    });
   } catch (err) {
     req.log.error({ err }, 'Stripe webhook signature verification failed');
     return reply.code(400).send({ error: 'Webhook signature invalid' });
   }
 
-  // Idempotency guard
-  if (hasProcessedEvent(event.id)) {
-    req.log.info({ eventId: event.id }, 'Stripe event already processed — skipping');
-    return { ok: true, skipped: true };
-  }
-
   try {
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session;
-        if (session.mode === 'subscription' && session.customer && session.subscription) {
-          const customerId = typeof session.customer === 'string' ? session.customer : session.customer.id;
-          const email = session.customer_email ?? session.customer_details?.email ?? '';
-          if (email) upsertCustomer(customerId, email);
-
-          // Fetch full subscription to get period end and plan
-          const sub = (await stripe.subscriptions.retrieve(
-            typeof session.subscription === 'string' ? session.subscription : session.subscription.id,
-          )) as unknown as StripeSubscription;
-          const periodEnd = sub.current_period_end
-            ? new Date(sub.current_period_end * 1000).toISOString()
-            : null;
-          const planName = sub.metadata?.plan ?? 'pro';
-          upsertSubscription(sub.id, customerId, sub.status, planName, periodEnd, sub.cancel_at_period_end);
-        }
-        break;
-      }
-
-      case 'customer.subscription.updated': {
-        const sub = event.data.object as unknown as StripeSubscription;
-        const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
-        const periodEnd = sub.current_period_end
-          ? new Date(sub.current_period_end * 1000).toISOString()
-          : null;
-        upsertSubscription(sub.id, customerId, sub.status, sub.metadata?.plan ?? 'pro', periodEnd, sub.cancel_at_period_end);
-        break;
-      }
-
-      case 'customer.subscription.deleted': {
-        const sub = event.data.object as unknown as StripeSubscription;
-        updateSubscriptionStatus(sub.id, 'canceled', null, false);
-        break;
-      }
-
-      case 'invoice.payment_failed': {
-        const invoice = event.data.object as unknown as StripeInvoice;
-        const subId = typeof invoice.subscription === 'string' ? invoice.subscription : (invoice.subscription?.id ?? null);
-        if (subId) {
-          updateSubscriptionStatus(subId, 'past_due', null, false);
-        }
-        break;
-      }
-
-      case 'customer.subscription.trial_will_end': {
-        // Log for now — hook into email/notification here
-        req.log.info({ eventId: event.id }, 'Trial ending soon event received');
-        break;
-      }
-
-      default:
-        req.log.debug({ type: event.type }, 'Unhandled Stripe event type');
-    }
-
-    markEventProcessed(event.id, event.type);
-    return { ok: true };
+    const result = await stripeWebhookBus.dispatch(event, { logger: req.log });
+    return { ok: true, handled: result.handled, skipped: result.skipped };
   } catch (err) {
     req.log.error({ err, eventId: event.id }, 'Failed to process Stripe event');
     return reply.code(500).send({ error: 'Webhook handler error' });
@@ -270,7 +333,7 @@ app.get('/api/emails/demo-receipt', async () => {
 });
 
 app.post('/api/pro/rewrite', async (req, reply) => {
-  const authUser = requireGeneratedAuth(req.headers.cookie);
+  const authUser = await requireAuth(req.headers.cookie);
   if (!authUser) {
     return reply.code(401).send({
       error: 'Sign in to access pro rewrite guidance',
@@ -296,26 +359,39 @@ app.post('/api/pro/rewrite', async (req, reply) => {
 });
 
 app.get('/api/billing/demo-checkout', async (req, reply) => {
+  const authUser = await requireAuth(req.headers.cookie);
+  if (!authUser) {
+    return reply.code(401).send({
+      error: 'Sign in before starting checkout',
+    });
+  }
+
   const baseUrl = process.env.APP_BASE_URL ?? `http://${host}:${port}`;
   const plan = 'pro';
 
   try {
-    const session = await createTenantCheckoutSession({
-      tenantId: GENERATED_TENANT_ID,
+    const stripe = getStripeApiClient();
+    const existingCustomerId = getStripeCustomerIdForUser(authUser.id);
+    const metadata = {
+      app: 'discharge-ez',
+      tenant_id: GENERATED_TENANT_ID,
       plan,
-      currency: 'USD',
-      successUrl: `${baseUrl}/billing/success`,
-      cancelUrl: `${baseUrl}/billing/canceled`,
-      metadata: {
-        app: 'discharge-ez',
-        plan: 'pro',
+      userId: authUser.id,
+      userEmail: authUser.email,
+    };
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      line_items: buildCheckoutLineItems(),
+      success_url: `${baseUrl}/billing/success`,
+      cancel_url: `${baseUrl}/billing/canceled`,
+      ...(existingCustomerId
+        ? { customer: existingCustomerId }
+        : { customer_email: authUser.email }),
+      metadata,
+      subscription_data: {
+        metadata,
       },
-      lineItems: [
-        {
-          name: 'DischargeEz Pro',
-          unitAmount: 19,
-        },
-      ],
+      allow_promotion_codes: true,
     });
 
     return {
@@ -333,8 +409,15 @@ app.get('/api/billing/demo-checkout', async (req, reply) => {
   }
 });
 
+app.get('/api/billing/mrr', async () => {
+  return {
+    ok: true,
+    monetization: await getMrrMetadata(),
+  };
+});
+
 app.post('/api/ai/demo-usage', async (req, reply) => {
-  const authUser = requireGeneratedAuth(req.headers.cookie);
+  const authUser = await requireAuth(req.headers.cookie);
   if (!authUser) {
     return reply.code(401).send({
       error: 'Sign in to access AI usage metering',
@@ -451,15 +534,129 @@ function normalizeLoginInput(body: unknown): {
   };
 }
 
-function isGeneratedAuthReady(): boolean {
-  return readGeneratedAuthStatus(undefined).configured;
+async function isAuthReady(): Promise<boolean> {
+  return (await readAuthStatus(undefined)).configured;
 }
 
-function requireGeneratedAuth(cookieHeader: string | undefined): AuthUser | null {
-  const status = readGeneratedAuthStatus(cookieHeader);
+async function requireAuth(cookieHeader: string | undefined): Promise<AuthUser | null> {
+  const status = await readAuthStatus(cookieHeader);
   if (!status.configured) {
     return null;
   }
 
   return status.user;
+}
+
+function getStripeApiClient(): StripeApiClient {
+  return getStripeClient() as unknown as StripeApiClient;
+}
+
+function buildCheckoutLineItems(): StripeSubscriptionCheckoutInput['line_items'] {
+  const configuredPriceId =
+    process.env.DISCHARGE_EZ_STRIPE_PRICE_ID?.trim() ??
+    process.env.STRIPE_PRO_PRICE_ID?.trim();
+
+  if (configuredPriceId) {
+    return [
+      {
+        price: configuredPriceId,
+        quantity: 1,
+      },
+    ];
+  }
+
+  return [
+    {
+      price_data: {
+        currency: (process.env.DISCHARGE_EZ_PRO_CURRENCY ?? 'usd').toLowerCase(),
+        product_data: {
+          name: 'DischargeEz Pro',
+        },
+        unit_amount: readPositiveInteger(process.env.DISCHARGE_EZ_PRO_MONTHLY_CENTS, 900),
+        recurring: {
+          interval: 'month',
+        },
+      },
+      quantity: 1,
+    },
+  ];
+}
+
+function mirrorStripeSubscription(
+  sub: StripeSubscriptionLike,
+  fallback: {
+    fallbackCustomerId?: string | null;
+    fallbackUserId?: string | null;
+    fallbackEmail?: string | null;
+  } = {},
+): void {
+  const customerId = readStripeObjectId(sub.customer) ?? fallback.fallbackCustomerId;
+  const userId = sub.metadata?.userId ?? fallback.fallbackUserId ?? null;
+  const email = sub.metadata?.userEmail ?? fallback.fallbackEmail ?? null;
+
+  if (!customerId) {
+    return;
+  }
+
+  if (email) {
+    upsertCustomer(customerId, email, userId);
+  }
+
+  const periodEnd = sub.current_period_end
+    ? new Date(sub.current_period_end * 1000).toISOString()
+    : null;
+  const mrr = deriveStripeSubscriptionMrr(sub);
+
+  upsertSubscription(
+    sub.id,
+    customerId,
+    userId,
+    sub.status,
+    sub.metadata?.plan ?? 'pro',
+    mrr.currency,
+    sub.status === 'active' ? mrr.monthlyMrrCents : 0,
+    periodEnd,
+    Boolean(sub.cancel_at_period_end),
+  );
+}
+
+async function getMrrMetadata(): Promise<MrrMetadata> {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return getStoredMrrMetadata();
+  }
+
+  try {
+    const subscriptions = await getStripeApiClient().subscriptions.list({
+      status: 'active',
+      limit: 100,
+      expand: ['data.items.data.price'],
+    });
+    const totals = new Map<string, { mrrCents: number; activeSubscriptions: number }>();
+
+    for (const subscription of subscriptions.data) {
+      const mrr = deriveStripeSubscriptionMrr(subscription);
+      const current = totals.get(mrr.currency) ?? { mrrCents: 0, activeSubscriptions: 0 };
+      current.mrrCents += mrr.monthlyMrrCents;
+      current.activeSubscriptions += 1;
+      totals.set(mrr.currency, current);
+    }
+
+    const [currency, total] =
+      [...totals.entries()].sort((left, right) => right[1].mrrCents - left[1].mrrCents)[0] ??
+      ['usd', { mrrCents: 0, activeSubscriptions: 0 }];
+
+    return {
+      mrrCents: Math.round(total.mrrCents),
+      currency,
+      activeSubscriptions: total.activeSubscriptions,
+      source: 'stripe-live',
+    };
+  } catch {
+    return getStoredMrrMetadata();
+  }
+}
+
+function readPositiveInteger(value: string | undefined, fallback: number): number {
+  const parsed = value ? Number.parseInt(value, 10) : Number.NaN;
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
