@@ -91,9 +91,9 @@ Core shared/runtime packages:
 - `packages/shared-config`
 - `packages/shared-utils`
 - `packages/shared-ipc`
-- `packages/vibetech-shared`
-- `packages/vibetech-types`
-- `packages/vibetech-hooks`
+- `packages/shared`
+- `packages/types`
+- `packages/hooks`
 - `packages/ui`
 - `packages/logger`
 - `packages/backend`

@@ -38,8 +38,6 @@ env/
 .pytest_cache/
 
 # Environment files
-.env
-.env.local
 .env.*.local
 .env.*
 !.env.example
@@ -71,6 +69,12 @@ npm-shrinkwrap.json
 .codex-home/
 .agent/
 .agents/
+!.agents/
+!.agents/skills/
+!.agents/skills/cross-package-refactor/
+!.agents/skills/cross-package-refactor/SKILL.md
+!.agents/skills/factory-launch/
+!.agents/skills/factory-launch/SKILL.md
 .git-archive-*/
 .codex-readiness-integration-test/
 .playwright-cli/
@@ -371,3 +375,11 @@ MEMORY.md
 
 # Vercel local project state and generated output
 .vercel
+
+.projects/cache
+.projects/vault
+.projects/state.test.json
+.projects/state.local.test.json
+.env
+.env.local
+.env.test

@@ -304,5 +304,5 @@ After successful integration test:
 - Full Plan: `INTEGRATION_COMPLETION_PLAN.md`
 - Nova Docs: `apps/nova-agent/PRODUCTION_READINESS_REPORT.md`
 - Vibe Docs: `apps/vibe-code-studio/PRODUCTION_BUILD_CHECKLIST.md`
-- IPC Schema: `packages/vibetech-shared/src/ipc-protocol.ts`
+- IPC Schema: `packages/shared/src/ipc-protocol.ts`
 

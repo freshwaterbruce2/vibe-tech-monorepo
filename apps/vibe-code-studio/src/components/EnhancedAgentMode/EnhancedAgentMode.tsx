@@ -149,20 +149,20 @@ export function EnhancedAgentMode({
                 availableAgents={availableAgents}
                 activeAgents={activeAgents}
                 agentProfiles={agentProfiles}
-                isExpanded={expandedSections.has('agents')}
+                isExpanded={expandedSections.includes('agents')}
                 onToggle={() => toggleSection('agents')}
               />
 
               <PerformancePanel
                 performanceReport={performanceReport}
-                isExpanded={expandedSections.has('performance')}
+                isExpanded={expandedSections.includes('performance')}
                 onToggle={() => toggleSection('performance')}
               />
 
               {workspaceContext && (
                 <ContextPanel
                   workspaceContext={workspaceContext}
-                  isExpanded={expandedSections.has('context')}
+                  isExpanded={expandedSections.includes('context')}
                   onToggle={() => toggleSection('context')}
                 />
               )}

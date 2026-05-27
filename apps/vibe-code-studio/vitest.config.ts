@@ -7,10 +7,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
-      '@vibetech/types': resolve(__dirname, '../../packages/vibetech-types/src/index.ts'),
+      '@vibetech/types': resolve(__dirname, '../../packages/types/src/index.ts'),
       '@vibetech/shared-ipc': resolve(__dirname, '../../packages/shared-ipc/src/index.ts'),
-      '@vibetech/shared-utils': resolve(__dirname, '../../packages/shared-utils/src/index.ts'),
-      '@vibetech/shared-utils/ai': resolve(__dirname, '../../packages/shared-utils/src/ai/index.ts'),
+      '@vibetech/core': resolve(__dirname, '../../packages/core/src/index.ts'),
       '@vibetech/feature-flags-core': resolve(__dirname, '../../packages/feature-flags/core/src/index.ts'),
       '@vibetech/feature-flags-sdk-node': resolve(__dirname, '../../packages/feature-flags/sdk-node/src/index.ts'),
       'monaco-editor': resolve(__dirname, 'src/__tests__/__mocks__/monaco-editor.ts'),

@@ -4,7 +4,6 @@
  *
  * Provides access to VibeTech's MCP ecosystem:
  * - Filesystem operations
- * - GitHub repository search
  * - Desktop automation (Windows)
  * - Multi-step task execution
  */
@@ -211,7 +210,6 @@ class VibeTechBridgeExtension extends EventEmitter {
             },
             capabilities: [
                 'filesystem',
-                'codeberg',
                 'desktop-commander',
                 'task-execution'
             ]

@@ -117,7 +117,7 @@
 		"@vibetech/landing": "workspace:*",
 		"@vibetech/feature-flags-sdk-node": "workspace:*",
 		"@vibetech/shared-ipc": "workspace:*",
-		"@vibetech/shared-utils": "workspace:*",
+		"@vibetech/core": "workspace:*",
 		"@vibetech/types": "workspace:*",
 		"better-sqlite3": "12.6.2",
 		"stripe": "^22.1.0",

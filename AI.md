@@ -66,6 +66,74 @@ Domain rules:
 
 Process:
 
+# AI Workspace Rules (Canonical)
+
+Single source of truth for workspace behavior, paths, rules, workflow, and agents.
+
+Last Updated: 2026-04-29
+System: Windows (Win32)
+Repository Root: C:\dev
+
+---
+
+## 1) Paths and data storage (non-negotiable)
+
+**Code lives in C:\dev.** **Data lives in D:\.** Never mix.
+
+Approved paths:
+
+- Code: C:\dev\
+- Databases: D:\databases\<project>
+- Logs: D:\logs\<project>
+- Datasets: D:\data\
+- Learning system: D:\learning-system\
+
+Deprecated paths:
+
+- D:\learning\ (use D:\learning-system\)
+- C:\dev\data, C:\dev\logs, C:\dev\databases
+
+Enforcement:
+
+- Any code that writes files must default to D:\ locations.
+- Path changes follow [docs/reference/PATH_CHANGE_RULES.md](docs/reference/PATH_CHANGE_RULES.md).
+- Workspace/database ownership and review entrypoints are summarized in [docs/reference/SYSTEM_SURFACES.md](docs/reference/SYSTEM_SURFACES.md).
+
+---
+
+## 2) Core rules (coding + behavior)
+
+Package manager and tooling:
+
+- Use pnpm only. Never use npm or yarn. Exception: isolated npm installs are permitted for native compiled modules that fail under pnpm strict linking (e.g., better-sqlite3, @nut-tree-fork/nut-js).
+- Prefer Nx targets for build/test/lint: pnpm nx ...
+
+Code quality:
+
+- Max 500 lines per file. Split large files.
+- Keep functions under 50 lines when possible.
+- No emojis in code comments or commit messages.
+- Comments explain why, not what.
+- Prefer explicit error handling over silent failures.
+- Avoid overcomplicated abstractions.
+- TypeScript strict mode. No explicit any without a justification comment.
+- Use @/ alias for src imports; avoid deep relative paths.
+- Async-first with async/await; avoid blocking callbacks.
+
+Domain rules:
+
+- Web apps: functional components, small components, use pnpm nx dev/build.
+- Desktop: keep bundles small; follow project AI.md for app-specific rules.
+- Mobile: test device constraints; use Nx targets for mobile builds.
+- Crypto: never place live trades without explicit confirmation; never run multiple bots; never commit API keys; store trading state on D:\databases\.
+- Backend/data: SQLite on D:\databases with WAL (PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;); parameterized queries only; explicit migrations required. Standardized to prevent locks across DeepCode Editor, Nova, and background scripts.
+
+---
+
+## 3) Workflow (agent + dev)
+
+Process:
+
 1. Analyze the request and read relevant files first.
 2. Plan changes in small, targeted diffs.
 3. Implement using apply_patch.
@@ -74,15 +142,13 @@ Process:
 
 AI tooling:
 
-- Primary interactive workflow: Codex CLI/local agent sessions in this repository.
-- Gemini Code Assist, Claude Code, OpenCode, and Copilot configs are maintained as optional client integrations.
-- Do not assume Cursor or Copilot are installed; prefer repo-local config and terminal validation first.
+- Permitted interactive workflow: Codex CLI (by ChatGPT), Antigravity 2.0 CLI, and Antigravity 2.0 IDE.
+- No other editors or AI tools (such as VS Code, Claude Code, or Cursor) are used for building, refactoring, or backup operations.
 
 Git rules:
 
-- Primary Remote: GitHub (https://github.com/freshwaterbruce2/vibe-tech-monorepo.git). Codeberg and Woodpecker CI are deprecated.
-- CI/CD: Use GitHub Actions (.github/workflows/). Never reference Woodpecker pipelines or Codeberg-specific mechanisms.
-- If the user says they are not using git, do not run git commands or rely on git history.
+- Primary Remote: GitHub (https://github.com/freshwaterbruce2/vibe-tech-monorepo.git).
+- CI/CD: Use GitHub Actions (`.github/workflows/`).
 
 ---
 

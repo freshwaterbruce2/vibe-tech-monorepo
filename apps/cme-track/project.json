@@ -1,0 +1,97 @@
+{
+  "name": "cme-track",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/cme-track/src",
+  "projectType": "application",
+  "implicitDependencies": [
+    "@vibetech/auth",
+    "@vibetech/analytics",
+    "ai",
+    "@vibetech/billing",
+    "email",
+    "@vibetech/emails",
+    "@vibetech/landing",
+    "monetization",
+    "payments",
+    "@vibetech/db-app"
+  ],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "apps/cme-track"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "apps/cme-track"
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run preview",
+        "cwd": "apps/cme-track"
+      }
+    },
+    "api:dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev:api",
+        "cwd": "apps/cme-track"
+      }
+    },
+    "api:build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
+      "outputs": ["{projectRoot}/server/dist"],
+      "options": {
+        "command": "pnpm run build:api",
+        "cwd": "apps/cme-track"
+      }
+    },
+    "api:start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run start:api",
+        "cwd": "apps/cme-track"
+      }
+    },
+    "ship:check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run ship:check",
+        "cwd": "apps/cme-track"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test",
+        "cwd": "apps/cme-track"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
+      "options": {
+        "command": "pnpm run typecheck",
+        "cwd": "apps/cme-track"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../node_modules/eslint/bin/eslint.js src server/src vite.config.ts --ext .ts,.tsx --ignore-pattern \"server/src/**/*.test.ts\"",
+        "cwd": "apps/cme-track"
+      }
+    },
+    "quality": {}
+  },
+  "tags": ["scope:web", "type:application", "factory:generated", "factory:saas"]
+}

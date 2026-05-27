@@ -64,7 +64,6 @@ function formatHelp() {
 
 **Available Servers**:
 • \`filesystem\` - File operations (read, write, list, search)
-• \`codeberg\` - GitHub repository search and file reading
 • \`desktop-commander\` - Desktop automation (Windows)
 • \`sequential-thinking\` - AI reasoning engine
 
@@ -72,9 +71,6 @@ function formatHelp() {
 
 **List files**:
 \`/mcp filesystem list_directory {"path":"./"}\`
-
-**Search repos**:
-\`/mcp codeberg codeberg_search_repos {"query":"vibetech","limit":5}\`
 
 **System info**:
 \`/mcp desktop-commander dc_get_system_info {}\`

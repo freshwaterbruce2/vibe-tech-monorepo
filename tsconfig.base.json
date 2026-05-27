@@ -29,12 +29,12 @@
 			"@vibetech/games": ["./packages/games/src/index.ts"],
 			"@vibetech/games/*": ["./packages/games/src/*/index.ts"],
 			"@vibetech/*": ["./packages/*/src", "./packages/feature-flags/*/src"],
-			"@vibetech/hooks": ["./packages/vibetech-hooks/src/index.ts"],
-			"@vibetech/shared": ["./packages/vibetech-shared/src/index.ts"],
-			"@vibetech/types": ["./packages/vibetech-types/src/index.ts"],
+			"@vibetech/hooks": ["./packages/hooks/src/index.ts"],
+			"@vibetech/core": ["./packages/core/src/index.ts"],
+			"@vibetech/types": ["./packages/types/src/index.ts"],
 			"@nova/*": ["./packages/nova-*/src"],
-			"@vibetech/business-booking-platform-next-backend": [
-				"apps/business-booking-platform-next/backend/src/index.ts"
+			"vibe-booking-backend": [
+				"apps/vibe-booking/backend/src/index.ts"
 			],
 			"@vibetech/monetization": ["./packages/monetization/src/index.ts"],
 			"@vibetech/payments": ["./packages/payments/src/index.ts"],

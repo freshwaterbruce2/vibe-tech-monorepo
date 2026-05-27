@@ -40,7 +40,9 @@ function Invoke-QualityCommand {
     )
 
     Write-Host $Label -ForegroundColor Yellow
+    $oldPreference = $ErrorActionPreference
     try {
+        $ErrorActionPreference = "Continue"
         # Route the inner command's stdout/stderr to the host so they don't
         # leak into the function's success stream and pollute the return value.
         & $Command 2>&1 | Out-Host
@@ -54,6 +56,8 @@ function Invoke-QualityCommand {
     } catch {
         Write-Host "  Error: $_" -ForegroundColor Red
         return 1
+    } finally {
+        $ErrorActionPreference = $oldPreference
     }
 }
 
@@ -71,8 +75,23 @@ if ($sourceFiles.Count -gt 0) {
 
     $exitCode = [Math]::Max(
         [int]$exitCode,
-        [int](Invoke-QualityCommand -Label "[1/3] Running ESLint on staged files..." -Command {
-            pnpm exec eslint --max-warnings=0 @sourceFiles
+        [int](Invoke-QualityCommand -Label "[1/3] Running ESLint on staged files in batches..." -Command {
+            $batchSize = 5
+            $eslintFail = $false
+            for ($i = 0; $i -lt $sourceFiles.Count; $i += $batchSize) {
+                $end = [Math]::Min($i + $batchSize - 1, $sourceFiles.Count - 1)
+                $batch = $sourceFiles[$i..$end]
+                if ($batch -and $batch.Count -gt 0) {
+                    pnpm exec eslint --max-warnings=0 --no-warn-ignored @batch
+                    if ($LASTEXITCODE -ne 0) {
+                        $eslintFail = $true
+                        break
+                    }
+                }
+            }
+            if ($eslintFail) {
+                cmd.exe /c "exit 1"
+            }
         })
     )
 } else {

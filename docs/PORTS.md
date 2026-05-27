@@ -21,8 +21,6 @@
 | 5173  | Vite Dev (default)          | Multiple apps                             | Vite default dev port            |
 | 5176  | Feature Flags Dashboard     | `packages/feature-flags/dashboard/`       | Vite dev server                  |
 | 5177  | VibeTech Command Center     | `apps/vibetech-command-center/`           | Electron 33 + Control Plane dev  |
-| 18789 | ClawdBot Desktop HTTP       | `apps/clawdbot-desktop/electron/main.ts`  | Desktop automation               |
-| 18790 | ClawdBot Desktop WS         | `apps/clawdbot-desktop/electron/main.ts`  | WebSocket                        |
 
 ## Backend Server (Express)
 

@@ -156,7 +156,7 @@ Before implementing features:
 
 1. Check `src/components/` for existing UI
 2. Check `src/services/` for API clients
-3. Check `packages/vibetech-shared/` for shared utilities
+3. Check `packages/shared/` for shared utilities
 4. Query learning DB for proven patterns:
 
    ```sql
@@ -168,7 +168,7 @@ Before implementing features:
 ## Integration Points
 
 **OpenRouter Proxy**: `backend/openrouter-proxy/` (port 3001)
-**Shared UI**: `packages/vibetech-shared/ui/`
+**Shared UI**: `packages/shared/ui/`
 **Database Utils**: `packages/nova-database/`
 
 ---

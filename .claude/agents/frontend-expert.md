@@ -43,7 +43,7 @@ Works with:
    ```
 
 2. **NEVER duplicate UI components**
-   - Check `packages/vibetech-shared` first
+   - Check `packages/shared` first
    - Check shadcn/ui library
    - Check project-specific components
 
@@ -201,7 +201,7 @@ export const designTokens = {
 Before creating UI components:
 
 1. Check shadcn/ui registry
-2. Check `packages/vibetech-shared/src/components`
+2. Check `packages/shared/src/components`
 3. Check project's existing components
 4. Query nova_shared.db:
 

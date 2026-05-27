@@ -3,7 +3,7 @@ import fs from "fs";
 
 const config = JSON.parse(
   fs.readFileSync(
-    "C:/Users/fresh_zxae3v6/.gemini/antigravity/mcp_config.json",
+    "C:/Users/fresh_zxae3v6/.gemini/config/mcp_config.json",
     "utf8",
   ),
 );

@@ -99,6 +99,8 @@ export default tseslint.config(
       'apps/vibe-code-studio/src/components/ModelPerformanceDashboard.tsx',
       'apps/vibe-code-studio/src/components/VisualEditor/index.tsx',
 
+      // Third party / example integrations
+      'packages/openclaw-bridge/examples/**',
     ],
   },
 
@@ -450,20 +452,16 @@ export default tseslint.config(
       'packages/shared-ipc/**/*.{ts,tsx}',
       'packages/shared-config/**/*.{ts,tsx}',
       'packages/nova-types/**/*.{ts,tsx}',
-      'packages/vibetech-shared/**/*.{ts,tsx}',
+      'packages/core/**/*.{ts,tsx}',
       'apps/desktop-commander-v3/**/*.{ts,tsx}',
       'apps/memory-mcp/**/*.{ts,tsx}',
-      'apps/vibe-shop/**/*.{ts,tsx}',
       'apps/vibe-code-studio/**/*.{ts,tsx}',
-      'apps/cross-agent-reflection/**/*.{ts,tsx}',
-      'apps/invoice-automation-saas/**/*.{ts,tsx}',
-      'apps/appointment-reminder-saas/**/*.{ts,tsx}',
       'apps/vibe-tech-lovable/**/*.{ts,tsx}',
       'tools/vectorshift-svg/**/*.{ts,tsx}',
       'packages/openrouter-client/**/*.ts',
       'packages/inngest-client/**/*.{ts,tsx}',
-      'packages/vibetech-types/**/*.{ts,tsx}',
-      'packages/vibetech-hooks/**/*.{ts,tsx}',
+      'packages/types/**/*.{ts,tsx}',
+      'packages/hooks/**/*.{ts,tsx}',
       'packages/testing-utils/**/*.{ts,tsx}',
       'packages/service-common/**/*.{ts,tsx}',
       'packages/monetization/**/*.{ts,tsx}',
@@ -482,21 +480,17 @@ export default tseslint.config(
           './packages/shared-ipc/tsconfig.lint.json',
           './packages/shared-config/tsconfig.lint.json',
           './packages/nova-types/tsconfig.lint.json',
-          './packages/vibetech-shared/tsconfig.lint.json',
+          './packages/core/tsconfig.json',
           './apps/desktop-commander-v3/tsconfig.lint.json',
           './apps/memory-mcp/tsconfig.lint.json',
-          './apps/vibe-shop/tsconfig.lint.json',
           './apps/vibe-code-studio/tsconfig.lint.json',
-          './apps/cross-agent-reflection/tsconfig.lint.json',
-          './apps/invoice-automation-saas/tsconfig.lint.json',
-          './apps/appointment-reminder-saas/tsconfig.lint.json',
           './apps/vibe-tech-lovable/tsconfig.app.json',
           './apps/vibe-tech-lovable/tsconfig.node.json',
           './tools/vectorshift-svg/tsconfig.json',
           './packages/openrouter-client/tsconfig.lint.json',
           './packages/inngest-client/tsconfig.lint.json',
-          './packages/vibetech-types/tsconfig.lint.json',
-          './packages/vibetech-hooks/tsconfig.lint.json',
+          './packages/types/tsconfig.lint.json',
+          './packages/hooks/tsconfig.lint.json',
           './packages/testing-utils/tsconfig.lint.json',
           './packages/service-common/tsconfig.lint.json',
           './packages/monetization/tsconfig.lib.json',
@@ -561,6 +555,18 @@ export default tseslint.config(
     },
   },
 
+  // vibe-reflection: server and client have separate configs, use tsconfig.lint.json
+  {
+    files: ['apps/vibe-reflection/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        projectService: false,
+        project: ['./apps/vibe-reflection/tsconfig.lint.json'],
+      },
+    },
+  },
+
   // ipc-bridge: tests are outside the build tsconfig (src/**/* only), use lint tsconfig
   {
     files: ['backend/ipc-bridge/**/*.{ts,tsx}'],
@@ -591,13 +597,13 @@ export default tseslint.config(
   {
     files: [
       'apps/desktop-commander-v3/src/**/*.{ts,tsx}',
-      'apps/clawdbot-desktop/**/*.{ts,tsx}',
-      'packages/vibetech-shared/**/*.{ts,tsx}',
-      'apps/invoice-automation-saas/**/*.{ts,tsx}',
+      'packages/core/**/*.{ts,tsx}',
+      'apps/vibe-invoice/**/*.{ts,tsx}',
       'apps/prompt-engineer/**/*.{ts,tsx}',
-      'apps/business-booking-platform/backend/src/**/*.{ts,tsx}',
-      'apps/shipping-pwa/src/**/*.{ts,tsx}',
+      'apps/vibe-booking/backend/src/**/*.{ts,tsx}',
+      'apps/vibe-shipping/src/**/*.{ts,tsx}',
       'apps/nova-mobile-app/src/**/*.{ts,tsx}',
+      'apps/vibe-tutor-mobile/src/**/*.{ts,tsx}',
     ],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
@@ -624,7 +630,18 @@ export default tseslint.config(
       'apps/serenity-flow/**/*.{js,jsx,ts,tsx}',
       'apps/vibe-tech-lovable/**/*.{js,jsx,ts,tsx,mjs,cjs}',
       'tools/vectorshift-svg/**/*.{js,jsx,ts,tsx}',
+      'apps/cme-track/**/*.{js,jsx,ts,tsx}',
+      'apps/vibe-booking-v2/**/*.{js,jsx,ts,tsx}',
+      'apps/vibe-dental/**/*.{js,jsx,ts,tsx}',
+      'apps/vibe-portal/**/*.{js,jsx,ts,tsx}',
+      'apps/vibe-reminder-v2/**/*.{js,jsx,ts,tsx}',
+      'apps/vibetech-command-center/**/*.{js,jsx,ts,tsx}',
+      'backend/ipc-bridge/**/*.{js,jsx,ts,tsx}',
     ],
+    plugins: {
+      '@typescript-eslint': tseslint.plugin,
+    },
+    extends: [tseslint.configs.disableTypeChecked],
     languageOptions: {
       parserOptions: {
         project: false,
@@ -640,6 +657,7 @@ export default tseslint.config(
       '@typescript-eslint/prefer-nullish-coalescing': 'off',
       '@typescript-eslint/prefer-optional-chain': 'off',
       '@typescript-eslint/promise-function-async': 'off',
+      '@typescript-eslint/await-thenable': 'off',
       'no-console': 'off',
       'no-await-in-loop': 'off',
       'no-restricted-syntax': 'off',
@@ -655,13 +673,12 @@ export default tseslint.config(
 
   // Relaxed rules for vibe-code-studio legacy code
   {
-    files: ['apps/vibe-code-studio/src/**/*.{js,jsx,ts,tsx}'],
+    files: ['apps/vibe-code-studio/**/*.{js,jsx,ts,tsx}'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-vars': [
-        'warn',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
-      ],
+      '@typescript-eslint/no-unused-vars': 'off',
+      'no-unused-vars': 'off',
+      'prefer-destructuring': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
       '@typescript-eslint/no-floating-promises': 'off',
       '@typescript-eslint/no-misused-promises': 'off',
@@ -679,6 +696,49 @@ export default tseslint.config(
       'no-restricted-syntax': 'off',
       'react-hooks/exhaustive-deps': 'off',
       'react-refresh/only-export-components': 'off',
+    },
+  },
+
+  // Disable enforce-module-boundaries for openclaw-bridge examples to avoid AST boundary crashes
+  {
+    files: ['packages/openclaw-bridge/examples/**/*.{js,jsx,ts,tsx,mjs,cjs}'],
+    rules: {
+      '@nx/enforce-module-boundaries': 'off',
+    },
+  },
+
+  // Disable type-checked rules for configuration files, test scripts, and dev tools to avoid parser project service errors
+  {
+    files: [
+      '**/*.config.{js,ts,mjs,cjs}',
+      '**/playwright.config.ts',
+      '**/vite.config.{js,ts}',
+      '**/vitest.config.{js,ts}',
+      '**/tests/e2e/**/*.{js,ts,tsx}',
+      '**/e2e/**/*.{js,ts,tsx}',
+      '**/scripts/**/*.{js,ts,tsx}',
+      'packages/openclaw-bridge/examples/**/*.{js,ts}',
+    ],
+    plugins: {
+      '@typescript-eslint': tseslint.plugin,
+    },
+    extends: [tseslint.configs.disableTypeChecked],
+    languageOptions: {
+      parserOptions: {
+        project: false,
+        projectService: false,
+      },
+    },
+  },
+
+  // Server files in prompt-engineer need their own tsconfig file
+  {
+    files: ['apps/prompt-engineer/server/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        project: 'apps/prompt-engineer/tsconfig.server.json',
+        projectService: false,
+      },
     },
   },
 

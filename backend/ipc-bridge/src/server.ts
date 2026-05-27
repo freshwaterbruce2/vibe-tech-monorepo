@@ -227,6 +227,33 @@ export class IPCBridgeServer {
     }
 
     const path = resolveRequestPath(req);
+    if (path === '/api/launch-nova') {
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204, {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        });
+        res.end();
+        return;
+      }
+
+      import('child_process').then(({ exec }) => {
+        exec('pnpm nx run nova-agent:start', { cwd: process.cwd() }, (err) => {
+          if (err) {
+            console.error('Failed to launch Nova Agent:', err);
+          }
+        });
+      });
+
+      res.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      });
+      res.end(JSON.stringify({ ok: true, message: 'Launching Nova Agent...' }));
+      return;
+    }
+
     if (path === '/healthz' || path === '/health') {
       createHealthHandler(wss)(req, res);
       return;

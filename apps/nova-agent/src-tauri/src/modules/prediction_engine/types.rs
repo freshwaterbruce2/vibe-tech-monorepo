@@ -47,3 +47,10 @@ pub struct Recommendation {
     pub dismissed: bool,
     pub metadata: Option<String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PredictionAccuracyMetrics {
+    pub average_error_percentage: f64,
+    pub total_predictions: i64,
+    pub successful_predictions: i64,
+}

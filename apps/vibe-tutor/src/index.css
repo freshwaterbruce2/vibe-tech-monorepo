@@ -1,9 +1,31 @@
 /* OpenDyslexic Font for accessibility - must come before @tailwind */
 @import url('https://fonts.cdnfonts.com/css/opendyslexic');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-background-main: var(--background-main);
+  --color-background-card: var(--background-card);
+  --color-background-surface: var(--background-surface);
+  --color-glass-surface: var(--glass-surface);
+  --color-glass-border: var(--glass-border);
+  --color-primary-accent: var(--primary-accent);
+  --color-secondary-accent: var(--secondary-accent);
+  --color-tertiary-accent: var(--tertiary-accent);
+  --color-quaternary-accent: var(--quaternary-accent);
+  --color-energy-accent: var(--energy-accent);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-placeholder: var(--text-placeholder);
+  --color-token-color: var(--token-color);
+
+  --min-height-touch: 48px;
+  --min-height-touch-sm: 44px;
+  --min-width-touch: 48px;
+  --min-width-touch-sm: 44px;
+}
 
 .dyslexia-font {
   font-family: 'OpenDyslexic', 'Comic Sans MS', sans-serif;

@@ -63,3 +63,7 @@ Detailed rules are in `.claude/rules/`. Key references:
 - The `nx-generate` skill handles generator discovery internally - don't call nx_docs just to look up generator syntax
 
 <!-- nx configuration end-->
+
+<!-- stripe-projects-cli managed:claude-md:start -->
+look at AGENTS.md for your rules
+<!-- stripe-projects-cli managed:claude-md:end -->

@@ -355,7 +355,7 @@ export default function ZenColoring() {
         }
       });
 
-      const data = JSON.parse(response.text);
+      const data = JSON.parse(response.text ?? '{}');
       setSessionInfo(data);
       setActivePalette('ai');
       setSelectedColor(data.palette["1"].hex);

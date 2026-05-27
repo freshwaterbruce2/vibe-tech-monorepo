@@ -4,5 +4,10 @@
     "outDir": "dist",
     "incremental": false
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "references": [
+    {
+      "path": "../../logger"
+    }
+  ]
 }

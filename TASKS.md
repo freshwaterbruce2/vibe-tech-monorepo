@@ -24,7 +24,7 @@
 
 - [x] ~~Gravity Claw — file size refactor: index.ts + Settings.tsx split, all files under limit, typecheck clean~~ (2026-04-07)
 
-- [x] ~~Tech debt blitz — R3F types, barrel exports, DB consolidation, Codeberg CI restored~~ (2026-04-05)
+- [x] ~~Tech debt blitz — R3F types, barrel exports, DB consolidation, legacy CI restored~~ (2026-04-05)
 - [x] ~~Memory System — Phase 3 integrated, agent_learning.db consolidated, mcp split into 5 modules, feedback loop closed~~ (2026-04-05)
 - [x] ~~Codebase review — ghost dirs, Zod v4, script paths, TS pins~~ (2026-03-29)
 - [x] ~~Workspace-wide lint zeroed, 500-line limit enforced~~ (2026-03-14)

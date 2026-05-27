@@ -23,7 +23,7 @@ interface PieceTheme {
 type ProfilePoint = [radius: number, y: number];
 type Vec3 = [number, number, number];
 
-export function getPieceTheme(pieceSet = 'fresca') {
+export function getPieceTheme(pieceSet = 'fresca'): PieceTheme {
   const themes: Record<string, PieceTheme> = {
     premium: {
       style: 'wood',
@@ -105,7 +105,7 @@ export function getPieceTheme(pieceSet = 'fresca') {
     },
   };
 
-  return themes[pieceSet] ?? themes.fresca;
+  return (themes[pieceSet] ?? themes['fresca']) as PieceTheme;
 }
 
 export function pieceAccent(color: PieceColor, pieceSet?: string) {

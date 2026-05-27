@@ -1,0 +1,103 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "vibe-shipping",
+  "projectType": "application",
+  "sourceRoot": "apps/vibe-shipping/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "apps/vibe-shipping"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "apps/vibe-shipping"
+      }
+    },
+    "build-mobile": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist", "{projectRoot}/android/app/build"],
+      "options": {
+        "command": "pnpm run build:mobile",
+        "cwd": "apps/vibe-shipping"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../node_modules/eslint/bin/eslint.js . --max-warnings 750",
+        "cwd": "apps/vibe-shipping"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run typecheck",
+        "cwd": "apps/vibe-shipping"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/coverage"],
+      "options": {
+        "command": "pnpm run test",
+        "cwd": "apps/vibe-shipping"
+      }
+    },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test:coverage",
+        "cwd": "apps/vibe-shipping"
+      }
+    },
+    "test-e2e": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test:e2e",
+        "cwd": "apps/vibe-shipping"
+      }
+    },
+    "test:ui": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test:ui",
+        "cwd": "apps/vibe-shipping"
+      }
+    },
+    "quality": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run quality",
+        "cwd": "apps/vibe-shipping"
+      }
+    },
+    "server": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run server",
+        "cwd": "apps/vibe-shipping"
+      }
+    },
+    "server-dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run server:dev",
+        "cwd": "apps/vibe-shipping"
+      }
+    },
+    "worker-deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run worker:deploy",
+        "cwd": "apps/vibe-shipping"
+      }
+    }
+  },
+  "tags": ["scope:web", "product:shipping-pwa", "type:application"]
+}

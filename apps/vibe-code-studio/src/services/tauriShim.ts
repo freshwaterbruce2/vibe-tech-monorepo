@@ -73,6 +73,10 @@ export async function installTauriShim(): Promise<void> {
         await s.save();
         return { success: true };
       },
+      async keys() {
+        const s = await getStore();
+        return await s.keys();
+      },
     },
 
     // --- Dialog ---

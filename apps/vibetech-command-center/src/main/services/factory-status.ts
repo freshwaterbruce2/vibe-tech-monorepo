@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { FactoryAppStatus, FactoryStripeStatus, NxGraph } from '../../shared/types';
 
@@ -120,7 +120,7 @@ export class FactoryStatusService {
         if (balanceRes) {
           stripeStatus = 'connected';
 
-          const chargesRes = await this.queryStripeAPI('charges?limit=100&status=succeeded', stripeSecretKey);
+          const chargesRes = await this.queryStripeAPI('charges?limit=100', stripeSecretKey);
           if (chargesRes && Array.isArray(chargesRes.data) && chargesRes.data.length > 0) {
             let oldestCharge = chargesRes.data[chargesRes.data.length - 1];
             for (let i = chargesRes.data.length - 1; i >= 0; i--) {
@@ -164,6 +164,29 @@ export class FactoryStatusService {
             mrrCents = Math.round(computedMrr);
             if (subsRes.data.length > 0 && subsRes.data[0].currency) {
               currency = subsRes.data[0].currency;
+            }
+          }
+
+          // Cache monetization signals to vibe-app.json manifest to avoid redundant API queries
+          if (stripeStatus === 'connected' && (
+            monetization.stripeConnected !== true ||
+            monetization.firstRevenueAt !== firstRevenueAt ||
+            monetization.mrrCents !== mrrCents ||
+            monetization.currency !== currency
+          )) {
+            try {
+              const updatedManifest = {
+                ...manifest,
+                monetization: {
+                  stripeConnected: true,
+                  firstRevenueAt,
+                  mrrCents,
+                  currency: currency ?? 'usd',
+                },
+              };
+              writeFileSync(manifestPath, JSON.stringify(updatedManifest, null, 2), 'utf8');
+            } catch (writeErr) {
+              console.warn(`Failed to write monetization status back to vibe-app.json for ${project.name}:`, writeErr);
             }
           }
         }

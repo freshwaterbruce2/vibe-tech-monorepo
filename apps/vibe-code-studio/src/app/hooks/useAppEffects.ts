@@ -3,7 +3,7 @@
  * Extracts useEffect hooks from App.tsx for cleaner organization
  */
 
-import { SecureApiKeyManager } from '@vibetech/shared-utils';
+import { SecureApiKeyManager } from '@vibetech/core';
 import { useEffect, useRef } from 'react';
 import { getDatabase, getDbInitError } from '../../modules/core/services/DatabaseManager';
 

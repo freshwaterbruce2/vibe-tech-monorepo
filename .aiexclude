@@ -73,9 +73,14 @@ cache/
 .gemini/tmp/
 .claude/logs/
 .claude/context/
+.claude/worktrees/
 .serena/
 .agent/data/
+.agent/checkpoints/
+.agent/worktrees/
 .antigravity/cache/
+.antigravitycli/
+_worktrees/
 notebooklm/
 logs/
 **/logs/

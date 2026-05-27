@@ -219,17 +219,10 @@ Extensions add persistent commands to OpenClaw.
       "description": "List files in directory",
       "usage": "/files [path]",
       "handler": "commands/files.js"
-    },
-    {
-      "name": "search",
-      "description": "Search code in repository",
-      "usage": "/search <query>",
-      "handler": "commands/search.js"
     }
   ],
   "capabilities": [
     "filesystem",
-    "codeberg",
     "desktop-commander"
   ],
   "config": {
@@ -330,8 +323,7 @@ export default async function mcpCommand(context, extension) {
     if (args.length < 2) {
         return '❌ Usage: /mcp <server> <tool> [args]\n\n' +
                'Examples:\n' +
-               '/mcp filesystem list_directory {"path":"./"}\\n' +
-               '/mcp codeberg codeberg_search_repos {"query":"vibetech"}';
+               '/mcp filesystem list_directory {"path":"./"}';
     }
 
     const [server, tool, ...jsonArgs] = args;
@@ -416,65 +408,6 @@ export default async function filesCommand(context, extension) {
 }
 ```
 
-### /search Command
-
-**File**: `~/.openclaw/extensions/vibetech-bridge/commands/search.js`
-
-```javascript
-/**
- * /search <query>
- * Search for repositories on GitHub
- */
-export default async function searchCommand(context, extension) {
-    const { args } = context;
-    const bridge = extension.getBridge();
-
-    if (!bridge?.isConnected) {
-        return '❌ Bridge not connected';
-    }
-
-    if (args.length === 0) {
-        return '❌ Usage: /search <query>\n\nExample: /search vibetech';
-    }
-
-    const query = args.join(' ');
-
-    try {
-        const result = await bridge.callTool({
-            server: 'codeberg',
-            tool: 'codeberg_search_repos',
-            args: { query, limit: 5 },
-            timeout: 15000,
-        });
-
-        if (!result.success) {
-            return `❌ Error: ${result.error}`;
-        }
-
-        const repos = result.data.repositories || [];
-
-        if (repos.length === 0) {
-            return `🔍 No repositories found for "${query}"`;
-        }
-
-        let response = `🔍 **Search Results for "${query}"**\n\n`;
-
-        repos.forEach((repo, i) => {
-            response += `${i + 1}. **${repo.full_name}**\n`;
-            response += `   ${repo.description || 'No description'}\n`;
-            response += `   ⭐ ${repo.stars_count} | 🍴 ${repo.forks_count}\n`;
-            response += `   🔗 ${repo.html_url}\n\n`;
-        });
-
-        return response;
-    } catch (err) {
-        return `❌ Error: ${err.message}`;
-    }
-}
-```
-
----
-
 ## Common Use Cases
 
 ### Use Case 1: File Operations
@@ -505,32 +438,21 @@ await bridge.callTool({
 });
 ```
 
-### Use Case 2: Code Search
+### Use Case 2: Workspace File Lookup
 
 ```javascript
-// Search GitHub repositories
+// List workspace documentation
 await bridge.callTool({
-    server: 'codeberg',
-    tool: 'codeberg_search_repos',
-    args: { query: 'vibetech', limit: 10 }
+    server: 'filesystem',
+    tool: 'list_directory',
+    args: { path: './docs' }
 });
 
-// Get repository details
+// Read a local file
 await bridge.callTool({
-    server: 'codeberg',
-    tool: 'codeberg_get_repo_details',
-    args: { owner: 'freshwaterbruce2', repo: 'Monorepo' }
-});
-
-// Read file from repository
-await bridge.callTool({
-    server: 'codeberg',
-    tool: 'codeberg_read_file',
-    args: {
-        owner: 'freshwaterbruce2',
-        repo: 'Monorepo',
-        path: 'README.md'
-    }
+    server: 'filesystem',
+    tool: 'read_file',
+    args: { path: './README.md' }
 });
 ```
 
@@ -568,9 +490,9 @@ await bridge.dispatchTask({
     priority: 'high',
     steps: [
         {
-            server: 'codeberg',
-            tool: 'codeberg_search_repos',
-            args: { query: 'vibetech' }
+            server: 'filesystem',
+            tool: 'list_directory',
+            args: { path: './docs' }
         },
         {
             server: 'filesystem',
@@ -725,7 +647,6 @@ openclaw extensions load ~/.openclaw/extensions/vibetech-bridge
 # 4. Test commands
 openclaw test-command /mcp filesystem list_directory {"path":"./"}
 openclaw test-command /files ./
-openclaw test-command /search vibetech
 ```
 
 ### Integration Tests
@@ -763,15 +684,6 @@ async function runTests() {
             args: { path: './' }
         });
         console.log(`✅ Found ${files.data.files?.length || 0} files\n`);
-
-        // Test 4: GitHub
-        console.log('Test 4: Search Repositories');
-        const search = await bridge.callTool({
-            server: 'codeberg',
-            tool: 'codeberg_search_repos',
-            args: { query: 'vibetech', limit: 3 }
-        });
-        console.log(`✅ Found ${search.data.repositories?.length || 0} repos\n`);
 
         console.log('All tests passed! ✅');
 

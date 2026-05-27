@@ -1,0 +1,79 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "vibe-tutor-mobile",
+  "projectType": "application",
+  "root": "apps/vibe-tutor-mobile",
+  "sourceRoot": "apps/vibe-tutor-mobile/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "dev"
+      },
+      "cache": false
+    },
+    "build": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "build"
+      },
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
+      "cache": true
+    },
+    "test": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "test"
+      },
+      "cache": true
+    },
+    "typecheck": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "typecheck"
+      }
+    },
+    "android:sync": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:sync"
+      },
+      "cache": false
+    },
+    "android:build": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:build"
+      },
+      "outputs": [
+        "{projectRoot}/android/app/build"
+      ],
+      "cache": true
+    },
+    "android:bundle:release": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:bundle:release"
+      },
+      "outputs": [
+        "{projectRoot}/android/app/build/outputs/bundle/release"
+      ],
+      "cache": false
+    },
+    "android:doctor": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "android:doctor"
+      },
+      "cache": false
+    },
+    "quality": {}
+  },
+  "tags": [
+    "type:mobile",
+    "scope:vibe-tutor",
+    "platform:android"
+  ]
+}

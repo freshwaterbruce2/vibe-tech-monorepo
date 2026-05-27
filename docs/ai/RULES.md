@@ -4,6 +4,7 @@
 
 - **Package Manager**: `pnpm` only. NEVER use `npm` or `yarn`.
 - **Version Control & CI**: Hosted on GitHub (https://github.com/freshwaterbruce2/vibe-tech-monorepo). Use GitHub Actions for CI.
+- **Permitted Development Tools**: Only use Codex CLI (by ChatGPT), Antigravity 2.0 CLI, and Antigravity 2.0 IDE for editing, refactoring, building, or backing up the monorepo. All other tools (including VS Code, Claude Code, and Cursor) are strictly prohibited.
 - **File Structure**: Target 500 lines +/- 100 per file. Split components and logic early.
 - **Pathing**: Use **absolute paths** in documentation and when calling tools.
 - **Safety**: Backup files before destructive changes. Verify builds locally before committing.

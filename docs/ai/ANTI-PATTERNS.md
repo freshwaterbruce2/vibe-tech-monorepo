@@ -28,7 +28,6 @@
 
 ## Version Control
 
-❌ Codeberg references (we use GitHub)
 ❌ Committing node_modules
 ❌ Large binary files in repo
 ✅ GitHub: github.com/freshwaterbruce2/vibe-tech-monorepo

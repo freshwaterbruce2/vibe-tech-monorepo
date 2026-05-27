@@ -1,0 +1,12 @@
+{
+  "generatedBy": "@vibetech/factory:saas",
+  "projectName": "business-booking-v2",
+  "displayName": "BusinessBookingV2",
+  "archetype": "web-saas",
+  "monetization": {
+    "stripeConnected": false,
+    "firstRevenueAt": null,
+    "mrrCents": null,
+    "currency": "usd"
+  }
+}

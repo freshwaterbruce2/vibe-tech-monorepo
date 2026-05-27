@@ -19,6 +19,26 @@
   },
   "recentActivity": [
     {
+      "date": "2026-05-27",
+      "project": "cme-track",
+      "action": "Scaffolded cme-track Micro-SaaS application, implemented CME credit tracker logging, secured endpoints behind a database-backed SQLite Pro tier entitlement, fully integrated Stripe checkout and webhook updates, and verified production builds, Vitest units, and E2E Playwright tests."
+    },
+    {
+      "date": "2026-05-27",
+      "project": "monorepo-branding-and-testing",
+      "action": "Updated client-portal and dental-scheduler to Vibe-Tech branding, verified production builds, typechecks, and ship checks. Configured visual regression testing and added games E2E specs in vibe-tutor. Verified tests pass on vibe-code-studio and nova-agent. Authored a monorepo-wide brand consistency audit."
+    },
+    {
+      "date": "2026-05-26",
+      "project": "dental-scheduler",
+      "action": "Configured shared Stripe keys fallback, fixed Playwright E2E strict-mode locator in smoke.spec.ts, and resolved custom feature gating in entitlements.ts. Installed Stripe CLI, projects plugin, and agent skills (.agents/skills/stripe-*), initializing Stripe Projects in C:\\dev."
+    },
+    {
+      "date": "2026-05-25",
+      "project": "vibe-code-studio",
+      "action": "Fixed both the TypeError: x.has is not a function and subsequent x.includes is not a function hydration crashes in Enhanced Agent Mode by migrating expandedSections from a Set to a string array, and introducing versioning (v2) and merge-validation guards in Zustand persist storage. Rebuilt and packaged the application, silently deployed the update, and verified the entire register/login and UI control flow using custom PowerShell scripts driven by Win32 user32 APIs and SendKeys keyboard simulation."
+    },
+    {
       "date": "2026-05-25",
       "project": "android-command-center",
       "action": "Scaffolded native Android client, compiled debug APK (remediated Gradle native daemon thread memory OOM), deployed to Galaxy A54 over ADB, and verified WebSocket connection & auth with the Desktop Bridge via URL query parameters."
@@ -151,7 +171,7 @@
         "priority": "high",
         "description": "Tier 1 dashboard and diagnostics app (Electron 33 + electron-vite + electron-builder, not Tauri). MCP server build target (`tsconfig.mcp.json`), scripts: `mcp:start`, `probe:claude`, `probe:mcp`"
       },
-      "shipping-pwa": {
+      "vibe-shipping": {
         "status": "development",
         "priority": "medium",
         "description": "Logistics PWA"
@@ -161,22 +181,22 @@
         "priority": "medium",
         "description": "Serenity Flow React/Vite app using VectorShift-generated SVG assets"
       },
-      "invoice-automation-saas": {
+      "vibe-invoice": {
         "status": "development",
         "priority": "medium",
-        "description": "Invoice processing (Next.js, Stripe)"
+        "description": "Invoice processing SaaS application with Vibe-Tech branding"
       },
       "vibe-tech-lovable": {
         "status": "production",
         "priority": "medium",
         "description": "Vibe Tech landing page"
       },
-      "chessmaster-academy": {
+      "vibe-chess": {
         "status": "development",
         "priority": "medium",
-        "description": "Chess lesson, puzzle, and AI tutor app (React + Vite + Capacitor)"
+        "description": "Chess lesson, puzzle, and AI tutor application with Vibe-Tech branding"
       },
-      "VibeBlox": {
+      "vibe-blox": {
         "status": "development",
         "priority": "medium",
         "description": "Gamified token economy (Hono, SQLite)"
@@ -191,15 +211,20 @@
         "priority": "low",
         "description": "Trading and analysis service (Python; managed through root scripts/Nx targets)"
       },
-      "cross-agent-reflection": {
+      "vibe-reflection": {
         "status": "development",
         "priority": "medium",
         "description": "Full-stack React + Express cross-agent reflection system"
       },
-      "prompt-engineer": {
-        "status": "maintenance",
+      "vibe-booking-v2": {
+        "status": "development",
         "priority": "medium",
-        "description": "Prompt Management System"
+        "description": "Business Booking V2 application with Vibe-Tech branding"
+      },
+      "vibe-reminder-v2": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Appointment Reminder V2 application with Vibe-Tech branding"
       },
       "mcp-skills-server": {
         "status": "production",
@@ -226,7 +251,7 @@
         "priority": "medium",
         "description": "Workspace MCP server"
       },
-      "business-booking-platform-next": {
+      "vibe-booking": {
         "status": "beta",
         "priority": "medium",
         "description": "Clean-break business booking funnel (React/Vite Nx app; backend has the only package.json)"
@@ -271,7 +296,7 @@
         "priority": "medium",
         "description": "Prompt Management System (full-stack React + Express)"
       },
-      "business-booking-platform-next-backend": {
+      "vibe-booking-backend": {
         "status": "beta",
         "priority": "medium",
         "description": "Business booking platform Node backend"
@@ -285,6 +310,26 @@
         "status": "development",
         "priority": "low",
         "description": "Symptom tracker backend API"
+      },
+      "vibe-portal": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Client Portal SaaS application with dark-mode UI and multi-tier billing"
+      },
+      "vibe-dental": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Dental Scheduler SaaS application with Vibe-Tech branding"
+      },
+      "vibe-reminder": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Appointment Reminder SaaS application with Vibe-Tech branding"
+      },
+      "vibe-discharge": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Discharge SaaS application with Vibe-Tech branding"
       }
     },
     "packages": {
@@ -323,10 +368,10 @@
         "priority": "medium",
         "description": "Shared configuration"
       },
-      "shared-utils": {
+      "core": {
         "status": "production",
         "priority": "medium",
-        "description": "Shared utilities"
+        "description": "Consolidated core services and utilities"
       },
       "testing-utils": {
         "status": "production",
@@ -368,17 +413,13 @@
         "priority": "medium",
         "description": "Common service patterns"
       },
-      "vibetech-hooks": {
+      "hooks": {
         "status": "production",
         "priority": "medium",
         "description": "Shared React hooks"
       },
-      "vibetech-shared": {
-        "status": "production",
-        "priority": "medium",
-        "description": "Shared Vibe utilities"
-      },
-      "vibetech-types": {
+
+      "types": {
         "status": "production",
         "priority": "medium",
         "description": "Shared TypeScript types"
@@ -433,7 +474,12 @@
       "description": "Local raster-to-SVG asset pipeline for generating app-ready SVG assets"
     }
   },
-  "currentFocus": ["vibetech-command-center", "memory-system", "nova-mobile-app", "vibe-tutor-release"],
+  "currentFocus": [
+    "vibetech-command-center",
+    "memory-system",
+    "nova-mobile-app",
+    "vibe-tutor-release"
+  ],
   "blockers": [],
   "rules": "./docs/ai/RULES.md",
   "paths": {

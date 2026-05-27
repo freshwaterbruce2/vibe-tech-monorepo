@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Chess } from 'chess.js';
 import { CheckCircle2, ChevronRight, RefreshCcw } from 'lucide-react';
 import { PUZZLES } from '../lib/puzzles';
@@ -8,19 +8,19 @@ import { ChessBoardSurface, type ChessBoardView } from './ChessBoardSurface';
 
 export function PuzzleMode({ boardView = '2d', pieceSet }: { boardView?: ChessBoardView; pieceSet: string }) {
   const [currentPuzzleIndex, setCurrentPuzzleIndex] = useState(0);
-  const [fen, setFen] = useState(PUZZLES[0].initialFen);
+  const [fen, setFen] = useState(PUZZLES[0]?.initialFen ?? '');
   const [moveFrom, setMoveFrom] = useState<string | null>(null);
-  const [optionSquares, setOptionSquares] = useState<Record<string, React.CSSProperties>>({});
+  const [optionSquares, setOptionSquares] = useState<Record<string, CSSProperties>>({});
   const [isSolved, setIsSolved] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [coachEnabled, setCoachEnabled] = useState(true);
   const [hintLevel, setHintLevel] = useState(0);
   const [coachFeedback, setCoachFeedback] = useState<CoachFeedback>(() =>
-    getPositionCoachMessage(PUZZLES[0].initialFen),
+    getPositionCoachMessage(PUZZLES[0]!.initialFen),
   );
   const resetTimer = useRef<number | null>(null);
 
-  const puzzle = PUZZLES[currentPuzzleIndex];
+  const puzzle = PUZZLES[currentPuzzleIndex]!;
   const game = useMemo(() => new Chess(fen), [fen]);
   const coachHints = useMemo(() => (coachEnabled ? getCoachHints(fen) : []), [coachEnabled, fen]);
 

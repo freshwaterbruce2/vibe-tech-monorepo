@@ -12,7 +12,8 @@ export type FeatureKey =
   | 'dunning.emails'
   | 'recurring.billing'
   | 'analytics.revenue'
-  | 'ai.assistant';
+  | 'ai.assistant'
+  | 'bookings.create';
 
 export type UsageMetric = 'invoices.created' | 'emails.sent' | 'ai.tokens';
 
@@ -92,6 +93,7 @@ export const PLAN_DEFINITIONS = {
       'recurring.billing',
       'analytics.revenue',
       'ai.assistant',
+      'bookings.create',
     ],
     limits: {
       'invoices.created': null,
@@ -112,6 +114,7 @@ export const PLAN_DEFINITIONS = {
       'recurring.billing',
       'analytics.revenue',
       'ai.assistant',
+      'bookings.create',
     ],
     limits: {
       'invoices.created': null,

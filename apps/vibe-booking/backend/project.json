@@ -1,0 +1,45 @@
+{
+  "name": "vibe-booking-backend",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/vibe-booking/backend/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/vibe-booking/backend",
+        "main": "apps/vibe-booking/backend/src/main.ts",
+        "tsConfig": "apps/vibe-booking/backend/tsconfig.lib.json",
+        "assets": ["apps/vibe-booking/backend/*.md"]
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "vibe-booking-backend:build",
+        "args": ["--port=3020", "--host=localhost"],
+        "watch": true
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p apps/vibe-booking/backend/tsconfig.lib.json"
+      }
+    },
+    "test": {
+      "executor": "@nx/vitest:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "coverage/apps/vibe-booking/backend"
+      }
+    }
+  }
+}

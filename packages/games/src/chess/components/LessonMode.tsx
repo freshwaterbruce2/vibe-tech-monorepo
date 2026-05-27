@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, type CSSProperties } from 'react';
 import { Chess } from 'chess.js';
 import { LESSONS } from '../lib/lessons';
 import { CheckCircle2, ChevronRight, RefreshCcw, Sparkles } from 'lucide-react';
@@ -9,8 +9,8 @@ import { ChessBoardSurface, type ChessBoardView } from './ChessBoardSurface';
 
 export function LessonMode({ boardView = '2d', pieceSet }: { boardView?: ChessBoardView; pieceSet: string }) {
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
-  const [game, setGame] = useState(new Chess(LESSONS[0].initialFen));
-  const [fen, setFen] = useState(LESSONS[0].initialFen);
+  const [game, setGame] = useState(new Chess(LESSONS[0]!.initialFen));
+  const [fen, setFen] = useState(LESSONS[0]!.initialFen);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
@@ -19,13 +19,13 @@ export function LessonMode({ boardView = '2d', pieceSet }: { boardView?: ChessBo
   const [coachEnabled, setCoachEnabled] = useState(true);
   const [hintLevel, setHintLevel] = useState(0);
   const [coachFeedback, setCoachFeedback] = useState<CoachFeedback>(() =>
-    getPositionCoachMessage(LESSONS[0].initialFen),
+    getPositionCoachMessage(LESSONS[0]!.initialFen),
   );
   const [moveFrom, setMoveFrom] = useState<string | null>(null);
-  const [optionSquares, setOptionSquares] = useState<Record<string, React.CSSProperties>>({});
+  const [optionSquares, setOptionSquares] = useState<Record<string, CSSProperties>>({}); 
   const pendingTimers = useRef<number[]>([]);
 
-  const lesson = LESSONS[currentLessonIndex];
+  const lesson = LESSONS[currentLessonIndex]!;
   
   const coachHints = useMemo(() => (coachEnabled ? getCoachHints(fen) : []), [coachEnabled, fen]);
 

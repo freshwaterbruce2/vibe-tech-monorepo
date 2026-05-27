@@ -1,4 +1,4 @@
-use super::{PredictionEngine, Recommendation};
+use super::{PredictionAccuracyMetrics, PredictionEngine, Recommendation};
 use rusqlite::params;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tracing::{debug, info};
@@ -148,5 +148,151 @@ impl PredictionEngine {
             prediction_id, error_percentage
         );
         Ok(())
+    }
+
+    pub fn mark_recommendation_executed(&self, recommendation_id: i64) -> Result<(), String> {
+        let db = self
+            .prediction_db
+            .lock()
+            .map_err(|e| format!("Failed to lock database: {}", e))?;
+
+        let updated = db
+            .execute(
+                "UPDATE proactive_recommendations SET executed = 1 WHERE id = ?1",
+                params![recommendation_id],
+            )
+            .map_err(|e| format!("Failed to mark recommendation executed: {}", e))?;
+
+        if updated == 0 {
+            return Err(format!("Recommendation #{} not found", recommendation_id));
+        }
+
+        info!("Marked recommendation #{} executed", recommendation_id);
+        Ok(())
+    }
+
+    pub fn dismiss_recommendation(&self, recommendation_id: i64) -> Result<(), String> {
+        let db = self
+            .prediction_db
+            .lock()
+            .map_err(|e| format!("Failed to lock database: {}", e))?;
+
+        let updated = db
+            .execute(
+                "UPDATE proactive_recommendations SET dismissed = 1 WHERE id = ?1",
+                params![recommendation_id],
+            )
+            .map_err(|e| format!("Failed to dismiss recommendation: {}", e))?;
+
+        if updated == 0 {
+            return Err(format!("Recommendation #{} not found", recommendation_id));
+        }
+
+        info!("Dismissed recommendation #{}", recommendation_id);
+        Ok(())
+    }
+
+    pub fn get_prediction_accuracy_metrics(&self) -> Result<PredictionAccuracyMetrics, String> {
+        let db = self
+            .prediction_db
+            .lock()
+            .map_err(|e| format!("Failed to lock database: {}", e))?;
+
+        db.query_row(
+            "SELECT
+                COALESCE(AVG(error_percentage), 0.0),
+                COUNT(*),
+                COALESCE(SUM(CASE WHEN error_percentage <= 20.0 THEN 1 ELSE 0 END), 0)
+             FROM prediction_accuracy",
+            [],
+            |row| {
+                Ok(PredictionAccuracyMetrics {
+                    average_error_percentage: row.get(0)?,
+                    total_predictions: row.get(1)?,
+                    successful_predictions: row.get(2)?,
+                })
+            },
+        )
+        .map_err(|e| format!("Failed to query prediction accuracy: {}", e))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::tempdir;
+
+    fn test_engine() -> PredictionEngine {
+        let dir = tempdir().expect("create tempdir");
+        let db_path = dir.into_path().join("agent_learning.db");
+        PredictionEngine::new(db_path).expect("create prediction engine")
+    }
+
+    #[test]
+    fn recommendation_execute_and_dismiss_update_state() {
+        let engine = test_engine();
+        let id = engine
+            .create_recommendation(
+                "predictive",
+                "medium",
+                "Run focused validation",
+                "A focused check is likely to catch integration drift.",
+                "Run check",
+                "pnpm nx check:rust nova-agent",
+                0.8,
+                "Improves release confidence",
+                None,
+            )
+            .expect("create recommendation");
+
+        engine
+            .mark_recommendation_executed(id)
+            .expect("mark recommendation executed");
+
+        let active = engine
+            .get_proactive_recommendations()
+            .expect("query recommendations");
+        assert_eq!(active.len(), 1);
+        assert!(active[0].executed);
+
+        engine
+            .dismiss_recommendation(id)
+            .expect("dismiss recommendation");
+        let active = engine
+            .get_proactive_recommendations()
+            .expect("query recommendations after dismiss");
+        assert!(active.is_empty());
+    }
+
+    #[test]
+    fn prediction_accuracy_metrics_report_totals_and_successes() {
+        let engine = test_engine();
+        let id = engine
+            .create_recommendation(
+                "predictive",
+                "low",
+                "Estimate duration",
+                "Use historical timing data.",
+                "Review",
+                "review",
+                0.7,
+                "Improves estimates",
+                None,
+            )
+            .expect("create recommendation");
+
+        engine
+            .track_prediction_accuracy(id, 100.0, 115.0)
+            .expect("record accurate prediction");
+        engine
+            .track_prediction_accuracy(id, 100.0, 150.0)
+            .expect("record inaccurate prediction");
+
+        let metrics = engine
+            .get_prediction_accuracy_metrics()
+            .expect("query accuracy metrics");
+        assert_eq!(metrics.total_predictions, 2);
+        assert_eq!(metrics.successful_predictions, 1);
+        assert!((metrics.average_error_percentage - 32.5).abs() < f64::EPSILON);
     }
 }

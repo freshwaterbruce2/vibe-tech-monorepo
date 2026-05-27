@@ -1,0 +1,93 @@
+{
+  "name": "vibe-reminder",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/vibe-reminder/src",
+  "projectType": "application",
+  "implicitDependencies": [
+    "@vibetech/auth",
+    "@vibetech/analytics",
+    "@vibetech/billing",
+    "@vibetech/emails",
+    "@vibetech/entitlements",
+    "@vibetech/landing"
+  ],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "apps/vibe-reminder"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "apps/vibe-reminder"
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run preview",
+        "cwd": "apps/vibe-reminder"
+      }
+    },
+    "api:dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev:api",
+        "cwd": "apps/vibe-reminder"
+      }
+    },
+    "api:build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
+      "outputs": ["{projectRoot}/server/dist"],
+      "options": {
+        "command": "pnpm run build:api",
+        "cwd": "apps/vibe-reminder"
+      }
+    },
+    "api:start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run start:api",
+        "cwd": "apps/vibe-reminder"
+      }
+    },
+    "ship:check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run ship:check",
+        "cwd": "apps/vibe-reminder"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test",
+        "cwd": "apps/vibe-reminder"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
+      "options": {
+        "command": "pnpm run typecheck",
+        "cwd": "apps/vibe-reminder"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../node_modules/eslint/bin/eslint.js src server/src vite.config.ts --ext .ts,.tsx --ignore-pattern \"server/src/**/*.test.ts\"",
+        "cwd": "apps/vibe-reminder"
+      }
+    },
+    "quality": {}
+  },
+  "tags": ["scope:web", "type:application", "factory:generated", "factory:saas"]
+}

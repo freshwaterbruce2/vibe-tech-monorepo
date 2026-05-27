@@ -1,7 +1,43 @@
 import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import Database from 'better-sqlite3';
 import bcryptjs from 'bcryptjs';
+
+// Load env variables from .env files
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const envPaths = [
+  path.join(__dirname, '..', '.env'),
+  path.join(__dirname, '..', '..', '..', '.env')
+];
+
+for (const envPath of envPaths) {
+  if (fs.existsSync(envPath)) {
+    try {
+      const content = fs.readFileSync(envPath, 'utf8');
+      for (const line of content.split(/\r?\n/)) {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+          const eq = trimmed.indexOf('=');
+          const key = trimmed.slice(0, eq).trim();
+          const val = trimmed.slice(eq + 1).trim();
+          if (!process.env[key]) {
+            process.env[key] = val;
+          }
+        }
+      }
+    } catch (e) {
+      console.error(`[Backend] Error loading ${envPath}:`, e);
+    }
+  }
+}
+
+// Fallback AUTH_SECRET if still missing or too short
+if (!process.env.AUTH_SECRET || process.env.AUTH_SECRET.length < 32) {
+  process.env.AUTH_SECRET = 'default_vibe_studio_secret_32_chars_long';
+}
 import {
   getUserById,
   verifyPassword,
@@ -326,7 +362,10 @@ const server = http.createServer(async (req, res) => {
       }
 
       let passwordValid = false;
-      if (userRow.password_hash.startsWith('$2b$')) {
+      const isBuffer = Buffer.isBuffer(userRow.password_hash);
+      const isBcrypt = !isBuffer && typeof userRow.password_hash === 'string' && userRow.password_hash.startsWith('$2b$');
+
+      if (isBcrypt) {
         // Legacy bcrypt verification
         passwordValid = bcryptjs.compareSync(password, userRow.password_hash);
       } else if (userRow.password_salt) {

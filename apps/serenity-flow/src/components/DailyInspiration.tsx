@@ -55,7 +55,7 @@ export default function DailyInspiration() {
         }
       });
 
-      const data = JSON.parse(response.text);
+      const data = JSON.parse(response.text ?? '{}');
       setInspiration(data);
     } catch (error) {
       setInspiration(FALLBACK_INSPIRATION);

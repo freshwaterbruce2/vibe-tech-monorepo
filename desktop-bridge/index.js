@@ -79,10 +79,11 @@ fastify.post('/build/:project', async (request, reply) => {
   console.log(`[Build] Starting build for project: ${project}`);
   
   // Use PowerShell 7 to execute pnpm run build:<project> in workspace root
-  const child = spawn('pwsh', ['-Command', `pnpm run build:${project}`], {
+  const child = spawn('pwsh', ['-NoProfile', '-NonInteractive', '-Command', `pnpm run build:${project}`], {
     cwd: workspaceRoot,
     env: { ...process.env }
   });
+  child.stdin.end();
 
   child.stdout.on('data', (data) => {
     reply.raw.write(data);
@@ -118,10 +119,11 @@ fastify.post('/build', async (request, reply) => {
 
   console.log(`[Build] Starting build for project: ${project}`);
 
-  const child = spawn('pwsh', ['-Command', `pnpm run build:${project}`], {
+  const child = spawn('pwsh', ['-NoProfile', '-NonInteractive', '-Command', `pnpm run build:${project}`], {
     cwd: workspaceRoot,
     env: { ...process.env }
   });
+  child.stdin.end();
 
   child.stdout.on('data', (data) => {
     reply.raw.write(data);
@@ -181,7 +183,7 @@ fastify.route({
           }
 
           console.log(`[WS Exec] Running command: ${command}`);
-          const child = spawn('pwsh', ['-Command', command], {
+          const child = spawn('pwsh', ['-NoProfile', '-NonInteractive', '-Command', '-'], {
             cwd: workspaceRoot,
             env: { ...process.env }
           });
@@ -194,9 +196,17 @@ fastify.route({
             connection.socket.send(JSON.stringify({ type: 'stderr', data: data.toString() }));
           });
 
+          child.on('error', (err) => {
+            console.error('[WS Exec Error] Failed to start child:', err);
+            connection.socket.send(JSON.stringify({ type: 'error', message: `Spawn error: ${err.message}` }));
+          });
+
           child.on('close', (code) => {
             connection.socket.send(JSON.stringify({ type: 'exit', code }));
           });
+
+          child.stdin.write(command);
+          child.stdin.end();
         }
       } catch (err) {
         connection.socket.send(JSON.stringify({ type: 'error', message: `Parse error: ${err.message}` }));

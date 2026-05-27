@@ -1,5 +1,5 @@
 import type { AIChatOptions, AICompletionRequest, AICompletionResponse, ChatMessage } from '../../types/ai';
-import { SecureApiKeyManager } from '@vibetech/shared-utils';
+import { SecureApiKeyManager } from '@vibetech/core';
 import { logger } from '../Logger';
 import { AIProviderFactory } from './AIProviderFactory';
 import { AIProvider, MODEL_REGISTRY } from './AIProviderInterface';
