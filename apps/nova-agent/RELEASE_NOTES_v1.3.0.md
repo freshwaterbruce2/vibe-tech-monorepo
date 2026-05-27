@@ -108,7 +108,7 @@ Built by `pnpm tauri build` (Tauri 2.10.3, Rust stable, Node 22):
 
 - `fix(quality): zero lint warnings + type cleanup in nova-agent and vibe-code-studio`.
 - `refactor(nova-agent): replace :any with proper types in source files`.
-- `fix(nova-agent): repoint @nova/core and @nova/types imports to @vibetech/vibetech-shared` — aligns with monorepo shared package.
+- `fix(nova-agent): repoint @nova/core and @nova/types imports to @vibetech/shared` — aligns with monorepo shared package.
 
 ## Data Storage
 

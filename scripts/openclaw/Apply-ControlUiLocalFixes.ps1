@@ -215,23 +215,37 @@ function Resolve-OpenClawPackageRoot {
         return $resolved
     }
 
-    $localAppData = [Environment]::GetFolderPath('LocalApplicationData')
-    $pnpmRoot = Join-Path $localAppData 'pnpm\global\5\.pnpm'
-    if (-not (Test-Path -LiteralPath $pnpmRoot -PathType Container)) {
-        throw "Could not find pnpm global package root: $pnpmRoot"
-    }
-
-    $candidates = Get-ChildItem -LiteralPath $pnpmRoot -Directory -Filter 'openclaw@*' |
-        Sort-Object LastWriteTime -Descending |
-        ForEach-Object { Join-Path $_.FullName 'node_modules\openclaw' }
-
-    foreach ($candidate in $candidates) {
-        if (Test-OpenClawPackageRoot -Root $candidate) {
-            return $candidate
+    # First check if openclaw exists in PATH (handles fnm and other custom setups)
+    $command = Get-Command openclaw -ErrorAction SilentlyContinue
+    if ($command) {
+        $binDir = Split-Path -Parent $command.Source
+        $fnmCandidate = Join-Path $binDir 'node_modules\openclaw'
+        if (Test-OpenClawPackageRoot -Root $fnmCandidate) {
+            return $fnmCandidate
+        }
+        # If openclaw is a cmd wrapper, try its parent or sibling node_modules
+        $parentDir = Split-Path -Parent $binDir
+        $parentCandidate = Join-Path $parentDir 'node_modules\openclaw'
+        if (Test-OpenClawPackageRoot -Root $parentCandidate) {
+            return $parentCandidate
         }
     }
 
-    throw "Could not locate an installed OpenClaw package under $pnpmRoot"
+    $localAppData = [Environment]::GetFolderPath('LocalApplicationData')
+    $pnpmRoot = Join-Path $localAppData 'pnpm\global\5\.pnpm'
+    if (Test-Path -LiteralPath $pnpmRoot -PathType Container) {
+        $candidates = Get-ChildItem -LiteralPath $pnpmRoot -Directory -Filter 'openclaw@*' |
+            Sort-Object LastWriteTime -Descending |
+            ForEach-Object { Join-Path $_.FullName 'node_modules\openclaw' }
+
+        foreach ($candidate in $candidates) {
+            if (Test-OpenClawPackageRoot -Root $candidate) {
+                return $candidate
+            }
+        }
+    }
+
+    throw "Could not locate an installed OpenClaw package."
 }
 
 function Get-Utf8Text {

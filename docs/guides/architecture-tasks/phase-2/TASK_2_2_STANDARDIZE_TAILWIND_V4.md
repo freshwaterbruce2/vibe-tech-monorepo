@@ -1,4 +1,4 @@
-﻿# Task 2.2: Standardize Tailwind v4
+# Task 2.2: Standardize Tailwind v4
 
 ## ðŸ“‹ Task Details
 
@@ -26,11 +26,11 @@ Migrate `apps/vibe-tutor` from Tailwind v3 to v4.
 
 ## âœ… Verification Checklist
 
-- [ ] pnpm override removed
-- [ ] v4 config working
-- [ ] All components render correctly
-- [ ] No visual regressions
-- [ ] Build successful
+- [x] pnpm override removed
+- [x] v4 config working
+- [x] All components render correctly
+- [x] No visual regressions
+- [x] Build successful
 
 ## ðŸŽ¯ Success Criteria
 

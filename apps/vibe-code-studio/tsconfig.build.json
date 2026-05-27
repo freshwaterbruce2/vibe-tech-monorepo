@@ -108,16 +108,28 @@
   },
   "references": [
     {
-      "path": "../../packages/vibetech-types"
+      "path": "../../packages/types"
     },
     {
-      "path": "../../packages/shared-utils/tsconfig.build.json"
+      "path": "../../packages/core/tsconfig.build.json"
     },
     {
       "path": "../../packages/shared-ipc"
     },
     {
       "path": "../../packages/feature-flags/sdk-node"
+    },
+    {
+      "path": "../../packages/landing"
+    },
+    {
+      "path": "../../packages/entitlements"
+    },
+    {
+      "path": "../../packages/billing"
+    },
+    {
+      "path": "../../packages/auth"
     }
   ]
 }

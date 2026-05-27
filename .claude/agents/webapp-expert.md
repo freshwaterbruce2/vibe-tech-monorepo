@@ -165,8 +165,8 @@ export default defineConfig({
 Before creating web components:
 
 1. Check shadcn/ui for existing components
-2. Check `packages/vibetech-shared` for shared React components
-3. Search `packages/vibetech-hooks` for custom hooks
+2. Check `packages/shared` for shared React components
+3. Search `packages/hooks` for custom hooks
 4. Query nova_shared.db:
 
    ```sql

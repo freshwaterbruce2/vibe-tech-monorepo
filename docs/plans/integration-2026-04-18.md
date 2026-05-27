@@ -34,7 +34,6 @@ Goal: Make the monorepo work *for itself* — writes from any app flow into memo
 │  apps/mcp-skills-server (stdio) ............. DEPRECATED.md     │
 │  apps/desktop-commander-v3 ......... powered by dc_*            │
 │  apps/mcp-gateway (dev) ............ not wired in .mcp.json     │
-│  apps/mcp-codeberg ................. git ops                    │
 │  apps/vibetech-command-center ...... dashboard                  │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘

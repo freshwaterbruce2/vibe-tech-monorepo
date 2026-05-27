@@ -26,9 +26,9 @@ manifest is added.
 - **shared-ipc** - IPC message schemas
 - **shared-utils** - General utilities
 - **ui** - React UI components
-- **vibetech-hooks** - React hooks library
-- **vibetech-shared** - Shared components
-- **vibetech-types** - Type definitions
+- **hooks** - React hooks library
+- **shared** - Shared components
+- **types** - Type definitions
 
 ### Workspace Registration (pnpm-workspace.yaml)
 

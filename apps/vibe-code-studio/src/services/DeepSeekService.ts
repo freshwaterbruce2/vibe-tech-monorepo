@@ -23,7 +23,7 @@ import {
   validateLLMOutput,
   validateStreamChunk,
   costTracker,
-} from '@vibetech/shared-utils';
+} from '@vibetech/core';
 
 export type MessageRole = 'system' | 'user' | 'assistant';
 

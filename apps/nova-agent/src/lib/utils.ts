@@ -4,6 +4,6 @@ import {
 	getScreenSize, 
 	isTouchDevice, 
 	safeWindow 
-} from "@vibetech/shared-utils";
+} from "@vibetech/core";
 
 export { cn, isBrowser, getScreenSize, isTouchDevice, safeWindow };

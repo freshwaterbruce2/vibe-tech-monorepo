@@ -18,6 +18,13 @@
       },
       "cache": false
     },
+    "serve": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "dev"
+      },
+      "cache": false
+    },
     "build": {
       "executor": "nx:run-script",
       "options": {

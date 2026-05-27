@@ -1,4 +1,4 @@
-﻿# Task 2.1: Merge Shared Packages
+# Task 2.1: Merge Shared Packages
 
 ## ðŸ“‹ Task Details
 
@@ -13,7 +13,7 @@
 
 ## ðŸŽ¯ Objective
 
-Merge `vibetech-shared` + `shared-utils` + `shared-logic` into new `@vibetech/core` package.
+Merge `shared` + `shared-utils` + `shared-logic` into new `@vibetech/core` package.
 
 ## ðŸ“ New Package Structure
 
@@ -22,7 +22,7 @@ packages/core/
 â”œâ”€â”€ src/
 â”‚   â”œâ”€â”€ utils/          # From shared-utils
 â”‚   â”œâ”€â”€ logic/          # From shared-logic
-â”‚   â”œâ”€â”€ shared/         # From vibetech-shared
+â”‚   â”œâ”€â”€ shared/         # From shared
 â”‚   â”œâ”€â”€ hooks/          # React hooks
 â”‚   â””â”€â”€ index.ts
 â”œâ”€â”€ package.json

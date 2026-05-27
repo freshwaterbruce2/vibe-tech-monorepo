@@ -266,7 +266,7 @@ The monorepo uses a multi-layered testing approach:
 
 ### Per-Project Overrides
 
-- **Relaxed linting** for legacy projects: `desktop-commander-v3`, `clawdbot-desktop`, `vibetech-shared`, `invoice-automation-saas`, `prompt-engineer`, `business-booking-platform/backend`, `shipping-pwa`, `nova-mobile-app`.
+- **Relaxed linting** for legacy projects: `desktop-commander-v3`, `shared`, `invoice-automation-saas`, `prompt-engineer`, `business-booking-platform/backend`, `shipping-pwa`, `nova-mobile-app`.
 - **Fully off** for `packages/games`.
 
 ## Styling
@@ -364,6 +364,21 @@ verified. The root working tree is the default source of truth.
 - Add or update tests when behavior changes.
 - Use `apply_patch` for manual edits.
 
+# Antigravity Orchestration Rules
+
+- For shared-package API changes or generated SaaS template changes, use the
+  `.agents/skills/cross-package-refactor` workflow and split independent app/package
+  updates with Antigravity `/goal` or `.agent/workflows/orchestrate.md`.
+- For App Factory SaaS launches, use `.agents/skills/factory-launch` before
+  generator edits or generated app verification.
+- Antigravity MCP config is unified for GUI and CLI at
+  `C:\Users\fresh_zxae3v6\.gemini\config\mcp_config.json`.
+- Keep `nx-mcp` enabled for `C:/dev` and prefer Nx graph/affected queries over
+  broad manual searches when determining downstream impact.
+- If Git worktree support sets `extensions.worktreeConfig=true`, ensure the
+  local repo config also has `core.repositoryformatversion=1` before launching
+  Antigravity.
+
 # No Duplicates Rule
 
 Before creating anything new:
@@ -401,7 +416,7 @@ Before changing repair, maintenance, database, memory, or hook flows:
 
 # Safety Protocols
 
-MoltBot and crypto operations are observation-only unless the user gives explicit,
+Crypto operations are observation-only unless the user gives explicit,
 task-specific authorization for non-trading maintenance. Never execute buy, sell,
 or trade actions.
 
@@ -455,3 +470,13 @@ Some tests (e.g. `@vibetech/shared-utils` path-validator tests) assert Windows `
 ### Testing
 - `pnpm nx test <project>` runs per-project tests (usually Vitest).
 - Playwright E2E tests may timeout if they require a web server that isn't starting correctly; Vitest unit tests are the most reliable on Cloud Agent VMs.
+
+<!-- stripe-projects-cli managed:agents-md:start -->
+## Stripe Projects CLI
+
+This repository is initialized for the Stripe project "dev".
+
+## Tools used
+
+- [Stripe CLI](https://docs.stripe.com/stripe-cli) with the `projects` plugin to manage third-party services, credentials, and deployments for this project. Use the stripe-projects-cli to manage deploying and access to third party services.
+<!-- stripe-projects-cli managed:agents-md:end -->

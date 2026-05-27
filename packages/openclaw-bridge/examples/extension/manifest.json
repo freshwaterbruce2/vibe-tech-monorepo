@@ -1,7 +1,7 @@
 {
   "name": "vibetech-bridge",
   "version": "2.0.0",
-  "description": "VibeTech Gateway MCP Bridge - Access filesystem, GitHub, and desktop tools",
+  "description": "VibeTech Gateway MCP Bridge - Access filesystem and desktop tools",
   "author": "VibeTech",
   "license": "MIT",
   "entry": "index.js",
@@ -12,7 +12,6 @@
       "usage": "/mcp <server> <tool> [args]",
       "examples": [
         "/mcp filesystem list_directory {\"path\":\"./\"}",
-        "/mcp codeberg codeberg_search_repos {\"query\":\"vibetech\"}",
         "/mcp desktop-commander dc_get_system_info {}"
       ],
       "handler": "commands/mcp.js",
@@ -31,18 +30,6 @@
       "platforms": ["telegram", "discord", "slack", "whatsapp"]
     },
     {
-      "name": "search",
-      "description": "Search GitHub repositories",
-      "usage": "/search <query> [--limit N]",
-      "examples": [
-        "/search vibetech",
-        "/search \"ai assistant\" --limit 10",
-        "/search openclaw"
-      ],
-      "handler": "commands/search.js",
-      "platforms": ["telegram", "discord", "slack"]
-    },
-    {
       "name": "screenshot",
       "description": "Take a screenshot (Windows only)",
       "usage": "/screenshot [filename]",
@@ -57,7 +44,6 @@
   ],
   "capabilities": {
     "filesystem": ["read", "write", "list"],
-    "codeberg": ["search", "read"],
     "desktop": ["screenshot", "system_info"]
   },
   "config": {
@@ -76,7 +62,6 @@
     "mcp",
     "bridge",
     "filesystem",
-    "codeberg",
     "automation",
     "vibetech"
   ]

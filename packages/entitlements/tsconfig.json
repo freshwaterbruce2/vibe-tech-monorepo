@@ -12,6 +12,7 @@
     "outDir": "./dist",
     "rootDir": ".",
     "strict": true,
+    "composite": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,

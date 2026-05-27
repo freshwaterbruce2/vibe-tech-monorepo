@@ -1,8 +1,7 @@
-import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
-import { BadgeDollarSign, Boxes, CreditCard, ExternalLink, Rocket, TerminalSquare } from 'lucide-react';
+import { Boxes, Calendar, CreditCard, ExternalLink, Rocket, TerminalSquare, TrendingUp } from 'lucide-react';
 import { Panel, StatusDot } from '@renderer/components/Panel';
 import { useFactoryApps, useProcessOutput } from '@renderer/hooks';
 import type {
@@ -229,11 +228,47 @@ function SummaryTile({
 }
 
 function GeneratedAppCard({ project }: { project: FactoryAppStatus }) {
+  const stripeBadge = useMemo(() => {
+    switch (project.stripeStatus) {
+      case 'connected':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-400 shadow-sm shadow-emerald-950/20">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+            </span>
+            connected
+          </span>
+        );
+      case 'scaffolded':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[10px] font-medium text-amber-400 shadow-sm shadow-amber-950/20">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+            scaffolded
+          </span>
+        );
+      case 'not-applicable':
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-500/10 border border-slate-500/20 px-2 py-0.5 text-[10px] font-medium text-slate-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-slate-500"></span>
+            not applicable
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 text-[10px] font-medium text-rose-400 shadow-sm shadow-rose-950/20">
+            <span className="h-1.5 w-1.5 rounded-full bg-rose-500"></span>
+            not configured
+          </span>
+        );
+    }
+  }, [project.stripeStatus]);
+
   return (
-    <article className="rounded-lg border border-bg-line bg-bg-elev p-4">
+    <article className="group relative rounded-xl border border-bg-line bg-gradient-to-br from-slate-900/60 to-slate-950/80 p-4 shadow-sm hover:-translate-y-0.5 hover:border-pulse-cyan-500/30 hover:shadow-lg hover:shadow-cyan-950/20 transition-all duration-300 ease-out">
       <div className="mb-3 flex items-start justify-between gap-2">
         <div>
-          <div className="text-sm font-semibold text-slate-100">{project.displayName}</div>
+          <div className="text-sm font-semibold text-slate-100 group-hover:text-pulse-cyan-200 transition-colors duration-300">{project.displayName}</div>
           <div className="font-mono text-xs text-slate-500">{project.projectName}</div>
           <div className="text-xs text-slate-500">{project.root}</div>
         </div>
@@ -258,22 +293,37 @@ function GeneratedAppCard({ project }: { project: FactoryAppStatus }) {
           ))}
       </div>
 
-      <div className="space-y-2 text-xs text-slate-400">
-        <SignalRow
-          icon={<CreditCard size={12} />}
-          label="Stripe"
-          value={formatStripeStatus(project.stripeStatus)}
-        />
-        <SignalRow
-          icon={<BadgeDollarSign size={12} />}
-          label="First revenue"
-          value={formatRevenueDate(project.firstRevenueAt)}
-        />
-        <SignalRow
-          icon={<BadgeDollarSign size={12} />}
-          label="MRR"
-          value={formatMrr(project.mrrCents, project.currency)}
-        />
+      <div className="mt-3 rounded-lg border border-slate-800/40 bg-slate-950/40 p-3 shadow-inner shadow-black/10">
+        <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-slate-500">
+          Monetization Telemetry
+        </div>
+        <div className="space-y-2 text-xs">
+          <div className="flex items-center justify-between gap-3">
+            <span className="flex items-center gap-2 text-slate-400">
+              <CreditCard size={12} className="text-indigo-400" />
+              <span>Stripe Status</span>
+            </span>
+            <span>{stripeBadge}</span>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="flex items-center gap-2 text-slate-400">
+              <Calendar size={12} className="text-emerald-400" />
+              <span>First Revenue</span>
+            </span>
+            <span className="font-medium text-slate-200">
+              {formatRevenueDate(project.firstRevenueAt)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="flex items-center gap-2 text-slate-400">
+              <TrendingUp size={12} className="text-cyan-400" />
+              <span>Est. MRR</span>
+            </span>
+            <span className="font-semibold text-cyan-400">
+              {formatMrr(project.mrrCents, project.currency)}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="mt-4 border-t border-bg-line pt-3">
@@ -325,25 +375,6 @@ function GeneratedAppCard({ project }: { project: FactoryAppStatus }) {
   );
 }
 
-function SignalRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="flex items-center gap-2 text-slate-500">
-        {icon}
-        {label}
-      </span>
-      <span className="text-right text-slate-300">{value}</span>
-    </div>
-  );
-}
 
 function ReadinessPill({ label, ok }: { label: string; ok: boolean }) {
   return (
@@ -402,18 +433,6 @@ function stripeDotTone(status: FactoryStripeStatus): boolean | 'warn' {
   return false;
 }
 
-function formatStripeStatus(status: FactoryStripeStatus): string {
-  switch (status) {
-    case 'connected':
-      return 'connected';
-    case 'scaffolded':
-      return 'scaffolded';
-    case 'not-applicable':
-      return 'not applicable';
-    default:
-      return 'not configured';
-  }
-}
 
 function formatMrr(mrrCents: number | null, currency: string | null): string {
   if (mrrCents === null) {

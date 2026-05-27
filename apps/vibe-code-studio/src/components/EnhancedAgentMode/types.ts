@@ -108,7 +108,7 @@ export interface UseAgentTaskReturn {
   readonly logs: readonly LogEntry[];
   readonly activeAgents: readonly string[];
   readonly agentProfiles: ReadonlyMap<string, PerformanceProfile>;
-  readonly expandedSections: ReadonlySet<string>;
+  readonly expandedSections: readonly string[];
   readonly currentProgress: string;
   readonly logEndRef: RefObject<HTMLDivElement | null>;
   // Error recovery state

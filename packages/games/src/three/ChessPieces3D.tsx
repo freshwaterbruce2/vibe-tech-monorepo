@@ -381,7 +381,7 @@ function QueenPiece({ color, pieceSet }: { color: PieceColor; pieceSet?: string 
         const jewelColor = x === 0 && z === 0 ? GOLD : accent;
 
         return (
-          <mesh key={`${x}-${z}`} position={[x, y, z]}>
+          <mesh key={`${x}-${z}`} position={[x as number, y as number, z as number]}>
             <octahedronGeometry args={[x === 0 && z === 0 ? 0.12 : 0.095, 0]} />
             {premiumDetail ? (
               <RoyalTrimMaterial color={jewelColor} intensity={0.14} />

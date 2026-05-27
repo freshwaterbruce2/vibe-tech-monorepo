@@ -82,8 +82,8 @@ prompt-engineer, symptom-tracker, vibe-shop, VibeBlox, vtde
 backend, db-app, db-learning, feature-flags, logger, mcp-core, mcp-testing,
 memory, nova-core (directory only; no package manifest), nova-database, nova-types, openclaw-bridge, openrouter-client,
 service-common, shared-config, shared-ipc, shared-logic, shared-utils,
-testing-utils, ui, vibe-python-shared, vibetech-hooks, vibetech-shared,
-vibetech-types
+testing-utils, ui, vibe-python-shared, hooks, shared,
+types
 
 ## Cross-Cutting Configs
 

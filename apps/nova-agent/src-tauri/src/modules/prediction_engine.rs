@@ -19,7 +19,10 @@ pub use commands::{
     assess_commit_risk_command, get_proactive_recommendations, get_productivity_insights,
     get_task_prediction, recommend_task_timing_command,
 };
-pub use types::{PredictionResult, ProductivityInsights, Recommendation, RiskLevel, TimeWindow};
+pub use types::{
+    PredictionAccuracyMetrics, PredictionResult, ProductivityInsights, Recommendation, RiskLevel,
+    TimeWindow,
+};
 
 pub struct PredictionEngine {
     prediction_db: Arc<Mutex<Connection>>,

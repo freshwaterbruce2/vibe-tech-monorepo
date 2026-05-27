@@ -531,7 +531,7 @@ Invoke-OpenClaw -ArgumentList @(
     '15000',
     '--require-rpc'
 )
-Invoke-OpenClaw -ArgumentList @('health', '--timeout', '15000', '--json')
+Invoke-OpenClaw -ArgumentList @('health', '--timeout', '15000', '--json') -AllowFailure
 Invoke-OpenClaw -ArgumentList @('agents', 'list')
 
 if ($OpenDashboard) {

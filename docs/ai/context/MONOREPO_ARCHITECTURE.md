@@ -294,7 +294,7 @@ pnpm run start          # Run compiled code when the service exposes start
 ```
 packages/
 ├── ui/                # Common UI components
-├── vibetech-types/    # TypeScript definitions
+├── types/             # TypeScript definitions
 ├── shared-utils/      # Utility functions
 ├── shared-config/     # Shared configurations
 ├── backend/           # Vector store, embedding, IPC client

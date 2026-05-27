@@ -1,0 +1,109 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "vibe-invoice",
+  "projectType": "application",
+  "root": "apps/vibe-invoice",
+  "sourceRoot": "apps/vibe-invoice/src",
+  "implicitDependencies": [],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../node_modules/vite/bin/vite.js",
+        "cwd": "apps/vibe-invoice"
+      }
+    },
+    "api:dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsx watch server/src/index.ts",
+        "cwd": "apps/vibe-invoice"
+      }
+    },
+    "api:build": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "{projectRoot}/server/dist/**"
+      ],
+      "options": {
+        "command": "node -e \"const fs=require('node:fs'); fs.rmSync('server/dist',{recursive:true,force:true}); fs.rmSync('server/tsconfig.tsbuildinfo',{force:true});\" && tsc -p server/tsconfig.json",
+        "cwd": "apps/vibe-invoice"
+      },
+      "cache": true
+    },
+    "api:start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node server/dist/index.js",
+        "cwd": "apps/vibe-invoice"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
+      "cache": true,
+      "options": {
+        "command": "node ../../node_modules/vite/bin/vite.js build",
+        "cwd": "apps/vibe-invoice"
+      },
+      "configurations": {
+        "production": {
+          "command": "cmd /c \"set NODE_ENV=production&& node ../../node_modules/vite/bin/vite.js build\"",
+          "cwd": "apps/vibe-invoice"
+        }
+      }
+    },
+    "preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../node_modules/vite/bin/vite.js preview",
+        "cwd": "apps/vibe-invoice"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../node_modules/eslint/bin/eslint.js src --max-warnings 0",
+        "cwd": "apps/vibe-invoice"
+      },
+      "cache": true
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "apps/vibe-invoice"
+      },
+      "cache": true
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "^build",
+        "api:build"
+      ],
+      "options": {
+        "command": "node ../../node_modules/vitest/vitest.mjs",
+        "cwd": "apps/vibe-invoice"
+      },
+      "cache": true
+    },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test:coverage",
+        "cwd": "apps/vibe-invoice"
+      }
+    },
+    "quality": {}
+  },
+  "tags": [
+    "type:web",
+    "scope:vibe-invoice"
+  ]
+}

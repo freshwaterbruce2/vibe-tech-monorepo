@@ -13,6 +13,8 @@
     "start:api": "node server/dist/index.js",
     "ship:check": "pnpm run build:shared:api && pnpm run build && pnpm run build:api && tsx server/scripts/ship-check.ts",
     "test": "node ../../node_modules/vitest/vitest.mjs run --passWithNoTests",
+    "test:e2e": "playwright test",
+    "ux:polish": "bash scripts/ralph_loop_runner.sh",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -20,6 +22,7 @@
     "@vibetech/analytics": "workspace:*",
     "@vibetech/ai": "workspace:*",
     "@vibetech/billing": "workspace:*",
+    "@vibetech/db-app": "workspace:*",
     "@vibetech/email": "workspace:*",
     "@vibetech/emails": "workspace:*",
     "@vibetech/landing": "workspace:*",
@@ -35,6 +38,8 @@
     "@types/node": "^25.5.0",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
+    "@nx/playwright": "22.7.1",
+    "@playwright/test": "^1.58.2",
     "@vitejs/plugin-react": "^5.2.0",
     "tsx": "^4.21.0",
     "typescript": "5.9.3",

@@ -19,8 +19,8 @@
       "@types/*": ["./src/types/*"],
       "@utils/*": ["./src/utils/*"],
       "@electron/*": ["./electron/*"],
-      "@vibetech/types": ["../../packages/vibetech-types/src/index.ts"],
-      "@vibetech/types/*": ["../../packages/vibetech-types/src/*"],
+      "@vibetech/types": ["../../packages/types/src/index.ts"],
+      "@vibetech/types/*": ["../../packages/types/src/*"],
       "@vibetech/auth": ["../../packages/auth/src/index.ts"],
       "@vibetech/billing": ["../../packages/billing/src/index.ts"],
       "@vibetech/entitlements": ["../../packages/entitlements/src/index.ts"],
@@ -28,8 +28,8 @@
       "@vibetech/feature-flags-core": ["../../packages/feature-flags/core/src/index.ts"],
       "@vibetech/feature-flags-sdk-node": ["../../packages/feature-flags/sdk-node/src/index.ts"],
       "@vibetech/shared-ipc": ["../../packages/shared-ipc/src/index.ts"],
-      "@vibetech/shared-utils": ["../../packages/shared-utils/src/index.ts"],
-      "@vibetech/shared-utils/*": ["../../packages/shared-utils/src/*"],
+      "@vibetech/core": ["../../packages/core/src/index.ts"],
+      "@vibetech/core/*": ["../../packages/core/src/*"],
       "@vibetech/*": ["../../packages/*/src"],
       "@dev/feature-flags-*": ["../../packages/feature-flags/*/src"]
     },
@@ -60,5 +60,10 @@
     "compilerOptions": {
       "module": "commonjs"
     }
-  }
+  },
+  "references": [
+    {
+      "path": "../../packages/billing"
+    }
+  ]
 }

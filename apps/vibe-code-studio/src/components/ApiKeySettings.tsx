@@ -1,4 +1,4 @@
-import { SecureApiKeyManager } from '@vibetech/shared-utils';
+import { SecureApiKeyManager } from '@vibetech/core';
 import { motion } from 'framer-motion';
 import { shouldForwardMotionProp } from '../utils/motionProps';
 import { AlertTriangle, CheckCircle, Eye, EyeOff, Save, Shield, TestTube, Trash2 } from 'lucide-react';

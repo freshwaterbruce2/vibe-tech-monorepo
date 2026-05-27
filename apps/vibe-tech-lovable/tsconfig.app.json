@@ -32,7 +32,7 @@
       "path": "../../packages/ui/tsconfig.build.json"
     },
     {
-      "path": "../../packages/shared-utils/tsconfig.build.json"
+      "path": "../../packages/core/tsconfig.build.json"
     }
   ]
 }

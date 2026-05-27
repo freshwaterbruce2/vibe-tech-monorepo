@@ -239,7 +239,7 @@ Before creating UI patterns:
 
 1. Check design system documentation
 2. Review existing components for similar patterns
-3. Check `packages/vibetech-shared` for shared UI
+3. Check `packages/shared` for shared UI
 4. Query nova_shared.db:
 
    ```sql

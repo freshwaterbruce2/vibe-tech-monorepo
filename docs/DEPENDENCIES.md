@@ -19,9 +19,9 @@
 | `@vibetech/nova-types`        | `nova-agent`, `nova-mobile-app`                          |
 | `@vibetech/nova-database`     | `nova-agent`                                             |
 | `@vibetech/logger`            | Multiple apps                                            |
-| `@vibetech/vibetech-hooks`    | React apps                                               |
-| `@vibetech/vibetech-shared`   | Multiple apps                                            |
-| `@vibetech/vibetech-types`    | Multiple apps                                            |
+| `@vibetech/hooks`             | React apps                                               |
+| `@vibetech/shared`            | Multiple apps                                            |
+| `@vibetech/types`             | Multiple apps                                            |
 | `@vibetech/feature-flags-sdk-node` | `vibe-code-studio`, `nova-agent`, `crypto-enhanced`      |
 
 ## Impact Radius Guide

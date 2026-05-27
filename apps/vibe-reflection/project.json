@@ -1,0 +1,58 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "vibe-reflection",
+  "projectType": "application",
+  "sourceRoot": "apps/vibe-reflection/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "apps/vibe-reflection"
+      }
+    },
+    "dev:client": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev:client",
+        "cwd": "apps/vibe-reflection"
+      }
+    },
+    "dev:server": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev:server",
+        "cwd": "apps/vibe-reflection"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "apps/vibe-reflection"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run typecheck",
+        "cwd": "apps/vibe-reflection"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run lint",
+        "cwd": "apps/vibe-reflection"
+      }
+    }
+  },
+  "tags": [
+    "scope:app",
+    "type:web",
+    "stack:vite",
+    "stack:react",
+    "stack:express"
+  ]
+}

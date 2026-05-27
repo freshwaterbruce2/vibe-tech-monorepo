@@ -37,7 +37,7 @@ interface AgentModeState {
   logs: readonly LogEntry[];
   activeAgents: readonly string[];
   agentProfiles: ReadonlyMap<string, PerformanceProfile>;
-  expandedSections: ReadonlySet<string>;
+  expandedSections: readonly string[];
   currentProgress: string;
 
   // Error recovery state
@@ -78,7 +78,7 @@ interface AgentModeActions {
 
   // UI state
   toggleSection: (section: string) => void;
-  setExpandedSections: (sections: ReadonlySet<string>) => void;
+  setExpandedSections: (sections: readonly string[]) => void;
 
   // Context management
   setWorkspaceContext: (context: WorkspaceContextInfo | undefined) => void;
@@ -106,7 +106,7 @@ const initialState: AgentModeState = {
   logs: [],
   activeAgents: [],
   agentProfiles: new Map(),
-  expandedSections: new Set(['agents', 'performance']),
+  expandedSections: ['agents', 'performance'],
   currentProgress: '',
   // Error recovery state
   lastError: null,
@@ -372,20 +372,18 @@ export const useAgentModeStore = create<AgentModeStore>()(
           // UI state
           toggleSection: (section) => {
             set((state) => {
-              const newSet = new Set(state.expandedSections);
-              if (newSet.has(section)) {
-                newSet.delete(section);
+              const current = state.expandedSections;
+              if (current.includes(section)) {
+                state.expandedSections = current.filter((s) => s !== section);
               } else {
-                newSet.add(section);
+                state.expandedSections = [...current, section];
               }
-              state.expandedSections = newSet;
             });
           },
 
           setExpandedSections: (sections) => {
             set((state) => {
-              // Create mutable Set from ReadonlySet
-              state.expandedSections = new Set(sections);
+              state.expandedSections = [...sections];
             });
           },
 
@@ -469,7 +467,22 @@ export const useAgentModeStore = create<AgentModeStore>()(
         })),
         {
           name: 'agent-mode-storage',
-          version: 1,
+          version: 2,
+          migrate: (persistedState: any, version: number) => {
+            if (version === 1) {
+              if (persistedState && typeof persistedState === 'object') {
+                persistedState.expandedSections = ['agents', 'performance'];
+              }
+            }
+            return persistedState;
+          },
+          merge: (persistedState: any, currentState: any) => {
+            const merged = { ...currentState, ...persistedState };
+            if (!Array.isArray(merged.expandedSections)) {
+              merged.expandedSections = ['agents', 'performance'];
+            }
+            return merged;
+          },
           // Only persist minimal state for recovery
           partialize: (state) => ({
             task: state.task,

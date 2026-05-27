@@ -91,9 +91,9 @@ All projects monitored during weekly maintenance. Last audited: 2026-05-04.
 | testing-utils      | `packages/testing-utils`      | All test suites      |
 | ui                 | `packages/ui`                 | All frontend apps    |
 | vibe-python-shared | `packages/vibe-python-shared` | Python apps          |
-| vibetech-hooks     | `packages/vibetech-hooks`     | React apps           |
-| vibetech-shared    | `packages/vibetech-shared`    | All apps             |
-| vibetech-types     | `packages/vibetech-types`     | All apps             |
+| hooks              | `packages/hooks`              | React apps           |
+| shared             | `packages/shared`             | All apps             |
+| types              | `packages/types`              | All apps             |
 
 ## Backend Services (`C:\dev\backend\`)
 

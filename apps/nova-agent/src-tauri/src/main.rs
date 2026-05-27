@@ -389,6 +389,9 @@ async fn main() {
             prediction_engine::commands::get_proactive_recommendations,
             prediction_engine::commands::assess_commit_risk_command,
             prediction_engine::commands::recommend_task_timing_command,
+            prediction_engine::commands::execute_recommendation,
+            prediction_engine::commands::dismiss_recommendation,
+            prediction_engine::commands::get_prediction_accuracy,
             // RAG (Semantic Search)
             rag::rag_index_file,
             rag::rag_search,

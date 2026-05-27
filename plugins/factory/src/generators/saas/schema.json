@@ -28,6 +28,10 @@
     "tags": {
       "type": "string",
       "description": "Comma-separated Nx tags"
+    },
+    "prompt": {
+      "type": "string",
+      "description": "Natural language prompt to expand into a detailed monetization PRD"
     }
   },
   "required": []

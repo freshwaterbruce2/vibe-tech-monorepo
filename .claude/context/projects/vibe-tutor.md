@@ -230,7 +230,7 @@ Before implementing features:
 
 1. Check `src/components/` for existing UI
 2. Check `src/services/assistantClient.ts` for AI patterns
-3. Check `packages/vibetech-shared/` for shared utilities
+3. Check `packages/shared/` for shared utilities
 4. Query learning DB:
 
    ```sql
@@ -242,8 +242,8 @@ Before implementing features:
 ## Integration Points
 
 **OpenRouter Proxy**: `apps/vibe-tutor/render-backend/` (port 3001)
-**Shared UI**: `packages/vibetech-shared/ui/`
-**Shared Hooks**: `packages/vibetech-shared/hooks/`
+**Shared UI**: `packages/shared/ui/`
+**Shared Hooks**: `packages/hooks/`
 
 ---
 

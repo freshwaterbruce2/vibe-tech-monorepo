@@ -8,6 +8,24 @@ import { useEffect, useRef } from 'react';
 import { useAgentModeStore } from './stores/agentModeStore';
 import type { UseAgentTaskOptions, UseAgentTaskReturn } from './types';
 
+const isWorkspaceContextEqual = (a: any, b: any) => {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  
+  const aOpenFiles = a.openFiles || [];
+  const bOpenFiles = b.openFiles || [];
+  
+  if (aOpenFiles.length !== bOpenFiles.length) return false;
+  for (let i = 0; i < aOpenFiles.length; i++) {
+    if (aOpenFiles[i] !== bOpenFiles[i]) return false;
+  }
+  
+  return (
+    a.workspaceFolder === b.workspaceFolder &&
+    a.currentFile === b.currentFile
+  );
+};
+
 /**
  * Custom hook for managing multi-agent task execution.
  * Bridges the component to the Zustand store for centralized state management.
@@ -23,11 +41,18 @@ export function useAgentTask(options: UseAgentTaskOptions): UseAgentTaskReturn {
   const logEndRef = useRef<HTMLDivElement>(null);
   const onCompleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  // Initialize orchestrator and optimizer in store
+  // Initialize orchestrator and optimizer in store, guarded against infinite loops
   useEffect(() => {
-    store.setOrchestrator(orchestrator);
-    store.setPerformanceOptimizer(performanceOptimizer);
-    store.setWorkspaceContext(workspaceContext);
+    const currentState = useAgentModeStore.getState();
+    if (orchestrator !== currentState.orchestrator) {
+      store.setOrchestrator(orchestrator);
+    }
+    if (performanceOptimizer !== currentState.performanceOptimizer) {
+      store.setPerformanceOptimizer(performanceOptimizer);
+    }
+    if (!isWorkspaceContextEqual(workspaceContext, currentState.workspaceContext)) {
+      store.setWorkspaceContext(workspaceContext);
+    }
   }, [orchestrator, performanceOptimizer, workspaceContext, store]);
 
   // Auto-scroll to latest log

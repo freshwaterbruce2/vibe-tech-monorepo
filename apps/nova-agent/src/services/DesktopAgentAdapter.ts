@@ -1,6 +1,6 @@
 
-import { BaseAgentAdapter } from '@vibetech/shared';
-import type { ProjectInfo, AgentState, WebSearchResult } from '@vibetech/shared';
+import { BaseAgentAdapter } from '@vibetech/core';
+import type { ProjectInfo, AgentState, WebSearchResult } from '@vibetech/core';
 import { AgentService } from './AgentService';
 
 export class DesktopAgentAdapter extends BaseAgentAdapter {

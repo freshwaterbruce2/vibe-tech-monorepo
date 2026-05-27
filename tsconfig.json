@@ -10,6 +10,12 @@
     },
     {
       "path": "./packages/emails"
+    },
+    {
+      "path": "./packages/shared-config"
+    },
+    {
+      "path": "./packages/logger"
     }
   ]
 }

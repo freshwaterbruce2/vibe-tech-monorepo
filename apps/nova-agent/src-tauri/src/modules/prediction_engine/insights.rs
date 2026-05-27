@@ -102,19 +102,29 @@ fn query_most_productive_day(db: &rusqlite::Connection, since: i64) -> Result<St
 fn query_average_focus_duration(db: &rusqlite::Connection, since: i64) -> Result<f64, String> {
     let mut focus_stmt = db
         .prepare(
-            "SELECT AVG(json_extract(metadata, '$.duration')) as avg_focus
+            "SELECT AVG(COALESCE(
+                json_extract(metadata, '$.duration_minutes'),
+                json_extract(metadata, '$.duration') / 60.0
+            )) as avg_focus
             FROM learning_events
-            WHERE event_type = 'deep_work'
-              AND created_at > ?1
-              AND json_extract(metadata, '$.duration') IS NOT NULL",
+            WHERE created_at > ?1
+              AND (
+                json_extract(metadata, '$.duration_minutes') IS NOT NULL
+                OR json_extract(metadata, '$.duration') IS NOT NULL
+              )
+              AND (
+                json_extract(metadata, '$.duration_minutes') IS NOT NULL
+                OR title LIKE '%deep_work%'
+                OR title LIKE '%focus%'
+                OR description LIKE '%focused%'
+              )",
         )
         .map_err(|e| format!("Failed to prepare focus query: {}", e))?;
 
     Ok(focus_stmt
         .query_row(params![since], |row| row.get::<_, Option<f64>>(0))
         .unwrap_or(Some(0.0))
-        .unwrap_or(0.0)
-        / 60.0)
+        .unwrap_or(0.0))
 }
 
 fn query_task_completion_rate(db: &rusqlite::Connection, since: i64) -> Result<f64, String> {
@@ -171,5 +181,75 @@ fn day_name(day_num: &str) -> &'static str {
         "5" => "Friday",
         "6" => "Saturday",
         _ => "Unknown",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rusqlite::Connection;
+
+    fn live_schema_db() -> Connection {
+        let db = Connection::open_in_memory().expect("open in-memory db");
+        db.execute_batch(
+            "CREATE TABLE learning_events (
+                id INTEGER PRIMARY KEY,
+                title TEXT,
+                description TEXT,
+                outcome TEXT,
+                app_source TEXT,
+                created_at INTEGER,
+                metadata TEXT
+            );",
+        )
+        .expect("create learning_events");
+        db
+    }
+
+    #[test]
+    fn average_focus_duration_uses_live_learning_event_schema() {
+        let db = live_schema_db();
+        db.execute(
+            "INSERT INTO learning_events (
+                title,
+                description,
+                outcome,
+                app_source,
+                created_at,
+                metadata
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![
+                "deep_work_session",
+                "Focused coding session",
+                "success",
+                "nova",
+                100,
+                r#"{"duration_minutes":90}"#,
+            ],
+        )
+        .expect("insert duration_minutes event");
+        db.execute(
+            "INSERT INTO learning_events (
+                title,
+                description,
+                outcome,
+                app_source,
+                created_at,
+                metadata
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![
+                "focus_session",
+                "Focused writing session",
+                "success",
+                "nova",
+                200,
+                r#"{"duration":1800}"#,
+            ],
+        )
+        .expect("insert duration seconds event");
+
+        let avg = query_average_focus_duration(&db, 0).expect("query avg focus");
+
+        assert!((avg - 60.0).abs() < f64::EPSILON);
     }
 }

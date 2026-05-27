@@ -30,7 +30,6 @@ pnpm nx dev <project-name>   # e.g. pnpm nx dev nova-agent
 | vtde | VibeTech Desktop Environment | Tauri, React | Active |
 | vibe-code-studio | AI-powered code editor | Electron, Tauri, React | Maintained |
 | gravity-claw | AI agent orchestrator with tool routing and chat bridges | Electron, React, Hono | Maintained |
-| clawdbot-desktop | Desktop automation bot | Electron | Experimental |
 
 ### Web
 
@@ -80,7 +79,7 @@ Key packages by dependents. Full list in `packages/`.
 
 | Package | Purpose | Dependents |
 |---------|---------|------------|
-| vibetech-shared | Core shared utilities and types | 15 |
+| shared | Core shared utilities and types | 15 |
 | shared-utils | Helper functions and common logic | 7 |
 | shared-ipc | Inter-process communication protocol | 6 |
 | logger | Structured logging | 6 |
