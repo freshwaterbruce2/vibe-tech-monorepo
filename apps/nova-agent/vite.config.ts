@@ -26,11 +26,20 @@ const NODE_BUILTINS = new Set([
   'util',
   'os',
   'electron',
+  'crypto',
+  'url',
+  'stream',
+  'events',
   'node:fs',
   'node:path',
   'node:child_process',
   'node:util',
   'node:os',
+  'node:fs/promises',
+  'node:crypto',
+  'node:url',
+  'node:stream',
+  'node:events',
 ]);
 
 const STUB_ID = '\0node-builtin-stub';
@@ -60,17 +69,34 @@ function stubNodeBuiltins(): Plugin {
 					export const mkdirSync = noop;
 					export const readdirSync = noopArr;
 					export const accessSync = noop;
+					export const statSync = () => ({ size: 0, mtime: new Date(), isDirectory: () => false });
+					export const lstatSync = () => ({ size: 0, mtime: new Date(), isDirectory: () => false });
+					export const realpathSync = (p) => p || "";
+					export const watch = () => ({ close: noop, on: () => ({ on: () => {} }) });
+					export const watchFile = noop;
+					export const unwatchFile = noop;
 					export const readFile = noopPromise;
 					export const writeFile = noopPromise;
 					export const mkdir = noopPromise;
+					export const stat = () => Promise.resolve({ size: 0, mtime: new Date(), isDirectory: () => false });
+					export const lstat = () => Promise.resolve({ size: 0, mtime: new Date(), isDirectory: () => false });
+					export const realpath = (p) => Promise.resolve(p || "");
+					export const readdir = () => Promise.resolve([]);
+					export const open = () => Promise.resolve({ close: noopPromise, read: noopPromise, write: noopPromise });
 					export const exists = noopPromise;
 					export const constants = { W_OK: 2, R_OK: 4, F_OK: 0 };
+					export class Stats { isDirectory() { return false; } isFile() { return true; } }
 
 					// path stubs
 					export const join = (...a) => a.join("/");
 					export const resolve = (...a) => a.join("/");
+					export const normalize = (p) => p || "";
+					export const relative = (from, to) => to || "";
+					export const sep = "/";
 					export const basename = (p) => (p || "").split("/").pop() || "";
 					export const dirname = (p) => (p || "").split("/").slice(0, -1).join("/");
+					export const extname = (p) => { const idx = (p || "").lastIndexOf("."); return idx > -1 ? (p || "").slice(idx) : ""; };
+					export const isAbsolute = (p) => (p || "").startsWith("/") || (p || "").includes(":");
 
 					// child_process stubs
 					export const exec = noop;
@@ -86,10 +112,69 @@ function stubNodeBuiltins(): Plugin {
 					export const ipcRenderer = {};
 					export const BrowserWindow = {};
 
+					// os stubs
+					export const type = () => "Windows_NT";
+					export const platform = () => "win32";
+					export const arch = () => "x64";
+					export const homedir = () => "/user/home";
+					export const tmpdir = () => "/tmp";
+					export const release = () => "10.0.0";
+
+					// crypto stubs
+					export const createHash = () => ({
+						update: () => ({
+							digest: () => "stubbed-hash"
+						})
+					});
+
+					// url stubs
+					export const pathToFileURL = (p) => new URL("file:///" + (p || "").replace(/\\\\/g, "/"));
+
+					// stream stubs
+					export class Readable {
+						static from() { return new Readable(); }
+						pipe(dest) { return dest; }
+						on() { return this; }
+						once() { return this; }
+						emit() { return true; }
+					}
+					export class Writable {
+						pipe(dest) { return dest; }
+						on() { return this; }
+					}
+					export class Transform {
+						pipe(dest) { return dest; }
+						on() { return this; }
+					}
+					export class PassThrough {
+						pipe(dest) { return dest; }
+						on() { return this; }
+					}
+					export class Stream {
+						pipe(dest) { return dest; }
+						on() { return this; }
+					}
+					export const pipeline = noop;
+
+					// events stubs
+					export class EventEmitter {
+						on() { return this; }
+						once() { return this; }
+						off() { return this; }
+						emit() { return true; }
+						removeAllListeners() { return this; }
+					}
+
 					export default {
 						existsSync, readFileSync, writeFileSync, mkdirSync,
-						readdirSync, accessSync, constants, join, resolve,
-						basename, dirname, exec, promisify, app
+						readdirSync, accessSync, statSync, lstatSync, realpathSync, readFile, writeFile,
+						mkdir, stat, lstat, realpath, readdir, open, exists, constants, Stats, join, resolve, normalize, relative, sep,
+						basename, dirname, extname, isAbsolute, exec, execSync, spawn,
+						promisify, app, ipcMain, ipcRenderer, BrowserWindow,
+						createHash, pathToFileURL,
+						Readable, Writable, Transform, PassThrough, Stream, pipeline,
+						EventEmitter,
+						type, platform, arch, homedir, tmpdir, release
 					};
 				`;
       }

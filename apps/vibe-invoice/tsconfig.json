@@ -26,6 +26,9 @@
       "path": "../../packages/billing"
     },
     {
+      "path": "../../packages/auth"
+    },
+    {
       "path": "./tsconfig.node.json"
     }
   ],

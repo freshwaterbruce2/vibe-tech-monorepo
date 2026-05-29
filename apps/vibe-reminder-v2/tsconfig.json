@@ -20,6 +20,9 @@
     },
     {
       "path": "../../packages/billing"
+    },
+    {
+      "path": "../../packages/auth"
     }
   ]
 }

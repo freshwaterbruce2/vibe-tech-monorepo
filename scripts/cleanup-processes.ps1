@@ -52,12 +52,12 @@ Write-Host "=== Process Cleanup ===" -ForegroundColor Cyan
 if ($DryRun) { Write-Host "[DRY RUN] No processes will be killed" -ForegroundColor Yellow }
 
 # --- Node Processes ---
-$nodeProcs = Get-CimInstance Win32_Process -Filter "Name='node.exe'" |
-    Select-Object ProcessId, CreationDate, CommandLine |
+$nodeProcs = Get-Process -Name node -ErrorAction SilentlyContinue |
+    Select-Object Id, StartTime, CommandLine |
     ForEach-Object {
         [PSCustomObject]@{
-            PID     = $_.ProcessId
-            Created = $_.CreationDate
+            PID     = $_.Id
+            Created = $_.StartTime
             Type    = Get-McpType $_.CommandLine
             Cmd     = $_.CommandLine
         }
@@ -83,6 +83,15 @@ if ($All) {
     $toKill = $toKill | Select-Object -Unique -Property PID, Type
 }
 
+# Exclude the current powershell process and all its ancestor processes to prevent suicide/runner termination
+$ancestors = @()
+$curr = Get-Process -Id $PID -ErrorAction SilentlyContinue
+while ($curr) {
+    $ancestors += $curr.Id
+    $curr = $curr.Parent
+}
+$toKill = $toKill | Where-Object { $_.PID -notin $ancestors }
+
 $nodeKilled = 0
 foreach ($proc in $toKill) {
     if ($DryRun) {
@@ -94,8 +103,15 @@ foreach ($proc in $toKill) {
 }
 
 # --- Python Processes ---
-$pyProcs = Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
-    Select-Object ProcessId, CreationDate, CommandLine
+$pyProcs = Get-Process -Name python -ErrorAction SilentlyContinue |
+    Select-Object Id, StartTime, CommandLine |
+    ForEach-Object {
+        [PSCustomObject]@{
+            ProcessId    = $_.Id
+            CreationDate = $_.StartTime
+            CommandLine  = $_.CommandLine
+        }
+    }
 
 $pyToKill = @()
 
@@ -145,3 +161,5 @@ if (-not $DryRun) {
     $pyRemaining = (Get-Process python -ErrorAction SilentlyContinue).Count
     Write-Host "  Remaining: $remaining Node, $pyRemaining Python" -ForegroundColor Green
 }
+
+exit 0

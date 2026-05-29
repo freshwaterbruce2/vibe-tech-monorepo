@@ -11,7 +11,6 @@ import {
   createStripeWebhookBus,
   getStripeClient,
   resolveStripeWebhookEvent,
-  type StripeCheckoutSessionLike,
   type StripeSubscriptionLike,
   type StripeWebhookVerifierLike,
 } from '@vibetech/billing';
@@ -19,6 +18,8 @@ import { createTenantCheckoutSession } from '@vibetech/payments';
 import fastifyRawBody from 'fastify-raw-body';
 import { loadLocalEnv } from './loadLocalEnv.js';
 import { AppDatabase } from '@vibetech/db-app';
+import { buildPaymentReceiptEmail } from '@vibetech/email';
+import { recordAiUsage, getAiUsage } from '@vibetech/ai';
 import { setupStripeTenant } from './stripeSetup.js';
 import {
   isGeneratedAuthConfigured,
@@ -305,7 +306,7 @@ const stripeWebhookBus = createStripeWebhookBus({
             context.logger?.info?.({ bookingId }, 'Booking payment processed via Stripe webhook');
           }
         } catch (err) {
-          context.logger?.error?.({ err, bookingId }, 'Failed to process Stripe webhook payment');
+          app.log.error({ err, bookingId }, 'Failed to process Stripe webhook payment');
         }
       }
     },
@@ -337,6 +338,26 @@ app.get('/api/health', async () => ({
   service: 'vibe-booking-backend',
   timestamp: new Date().toISOString(),
 }));
+
+app.get('/api/emails/demo-receipt', async () => {
+  const viewUrl = `${process.env.APP_BASE_URL ?? `http://${host}:${port}`}/billing/receipt-preview`;
+  const email = await buildPaymentReceiptEmail({
+    invoiceNumber: 'DEMO-100',
+    amount: 9,
+    currency: 'USD',
+    paidAt: '2026-05-15',
+    viewUrl,
+    companyName: 'Vibe Booking',
+    clientName: 'Demo customer',
+  });
+
+  return {
+    ok: true,
+    subject: email.subject,
+    html: email.html,
+    text: email.text,
+  };
+});
 
 app.post(
   '/api/webhooks/stripe',
@@ -482,18 +503,39 @@ app.get('/api/auth/me', async (req) => {
   };
 });
 
-app.get('/api/pro', { preHandler: [requireAuth] }, async (req, reply) => {
+app.get('/api/pro', { preHandler: [requireAuth] }, async () => {
   return {
     feature: 'analytics.revenue',
     plan: 'pro',
   };
 });
 
-app.post('/api/pro/rewrite', { preHandler: [requireAuth] }, async (req, reply) => {
+app.post('/api/pro/rewrite', { preHandler: [requireAuth] }, async () => {
   return {
     rewrite: {
       recommendedCta: 'Upgrade to automate this proposal workflow',
     },
+  };
+});
+
+app.post('/api/ai/demo-usage', { preHandler: [requireAuth] }, async (req) => {
+  const usage = recordAiUsage({
+    appId: 'vibe-booking-backend',
+    tenantId: 'vibe-booking-tenant',
+    provider: 'openrouter',
+    usage: {
+      inputTokens: 120,
+      outputTokens: 80,
+      totalTokens: 200,
+      costUsd: 0,
+    },
+  });
+
+  return {
+    ok: true,
+    user: req.user,
+    usage,
+    summary: getAiUsage('vibe-booking-backend', 'openrouter', 'vibe-booking-tenant'),
   };
 });
 
@@ -742,8 +784,8 @@ app.post('/api/payments/create-checkout-session', { preHandler: [requireAuth] },
   const nights = calculateNights(booking.checkIn, booking.checkOut);
   const baseUrl = req.headers.origin ?? process.env.APP_BASE_URL ?? `http://${host}:${port}`;
 
-  if (!process.env.STRIPE_SECRET_KEY) {
-    req.log.warn('STRIPE_SECRET_KEY is not set - returning mock checkout redirect url');
+  if (!process.env.STRIPE_SECRET_KEY || process.env.PLAYWRIGHT_TEST === '1') {
+    req.log.warn('Stripe checkout bypassed (falsy key or E2E test mode) - returning mock checkout redirect url');
     
     // Simulate webhook completion locally
     setTimeout(() => {

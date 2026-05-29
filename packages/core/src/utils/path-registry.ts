@@ -6,7 +6,7 @@ interface ElectronAppLike {
 }
 
 const getElectronApp = (): ElectronAppLike => {
-  if (typeof process !== 'undefined' && process.versions && process.versions.electron) {
+  if (typeof process !== 'undefined' && process.versions?.electron) {
     try {
       const req = eval('require');
       return req('electron').app as ElectronAppLike;

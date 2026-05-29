@@ -32,6 +32,8 @@ export default tseslint.config(
       '**/.output/**',
       '.vite-cache/**',
       '**/.vite/**',
+      '.vercel',
+      '**/.vercel/**',
 
       // Dependencies
       'node_modules',
@@ -111,6 +113,9 @@ export default tseslint.config(
       'apps/**/*.{js,mjs,cjs,jsx}',
       'packages/**/*.{js,mjs,cjs,jsx}',
       'backend/**/*.{js,mjs,cjs,jsx}',
+      'personal-tools/**/*.{js,mjs,cjs,jsx}',
+      'plugins/**/*.{js,mjs,cjs,jsx}',
+      'desktop-bridge/**/*.{js,mjs,cjs,jsx}',
     ],
     languageOptions: {
       ecmaVersion: 2025,
@@ -200,6 +205,8 @@ export default tseslint.config(
       'packages/**/*.{ts,tsx}',
       'backend/**/*.{ts,tsx}',
       'tools/**/*.{ts,tsx}',
+      'personal-tools/**/*.{ts,tsx}',
+      'plugins/**/*.{ts,tsx}',
     ],
     languageOptions: {
       ecmaVersion: 2025,
@@ -293,6 +300,9 @@ export default tseslint.config(
       'apps/**/*.{js,mjs,cjs,jsx,ts,tsx}',
       'packages/**/*.{js,mjs,cjs,jsx,ts,tsx}',
       'backend/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'personal-tools/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'plugins/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'desktop-bridge/**/*.{js,mjs,cjs,jsx,ts,tsx}',
     ],
     plugins: {
       '@nx': {
@@ -325,6 +335,7 @@ export default tseslint.config(
       'apps/**/*.{jsx,tsx}',
       'packages/**/*.{jsx,tsx}',
       'apps/nova-mobile-app/src/**/*.{ts,tsx}',
+      'personal-tools/**/*.{jsx,tsx}',
     ],
     plugins: {
       'react-hooks': reactHooks,
@@ -365,6 +376,9 @@ export default tseslint.config(
       'apps/**/*.{js,mjs,cjs,jsx,ts,tsx}',
       'packages/**/*.{js,mjs,cjs,jsx,ts,tsx}',
       'backend/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'personal-tools/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'plugins/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'desktop-bridge/**/*.{js,mjs,cjs,jsx,ts,tsx}',
     ],
     rules: {
       // ========================================
@@ -529,6 +543,19 @@ export default tseslint.config(
         tsconfigRootDir: import.meta.dirname,
         projectService: false,
         project: ['./apps/*factory*/tsconfig.lint.json'],
+      },
+    },
+  },
+
+  // vibe-shop: tsconfig.json excludes tests (so tsc --noEmit stays green);
+  // its tsconfig.lint.json includes them so typed linting can resolve test files.
+  {
+    files: ['apps/vibe-shop/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        projectService: false,
+        project: ['./apps/vibe-shop/tsconfig.lint.json'],
       },
     },
   },

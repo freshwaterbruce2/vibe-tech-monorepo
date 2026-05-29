@@ -16,6 +16,12 @@
     },
     {
       "path": "./packages/logger"
+    },
+    {
+      "path": "./packages/entitlements"
+    },
+    {
+      "path": "./packages/auth"
     }
   ]
 }

@@ -10,16 +10,23 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@vibetech/*": ["../../packages/*/src", "../../packages/feature-flags/*/src"]
+      "@vibetech/*": ["../../packages/*/src", "../../packages/feature-flags/*/src"],
+      "vite": ["../../node_modules/vite"]
     }
   },
   "include": ["src/**/*", "vite.config.ts"],
   "references": [
     {
+      "path": "../../packages/entitlements"
+    },
+    {
       "path": "../../packages/emails"
     },
     {
       "path": "../../packages/billing"
+    },
+    {
+      "path": "../../packages/auth"
     }
   ]
 }

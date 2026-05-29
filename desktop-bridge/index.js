@@ -63,14 +63,14 @@ fastify.get('/health', async (request, reply) => {
 // Authenticated Build Endpoint
 fastify.post('/build/:project', async (request, reply) => {
   if (!isAuthenticated(request)) {
-    reply.status(401);
-    return { error: 'Unauthorized' };
+    reply.status(401).send({ error: 'Unauthorized' });
+    return;
   }
 
   const project = request.params.project;
   if (!project) {
-    reply.status(400);
-    return { error: 'Project name is required' };
+    reply.status(400).send({ error: 'Project name is required' });
+    return;
   }
 
   reply.header('Content-Type', 'text/plain; charset=utf-8');
@@ -102,16 +102,16 @@ fastify.post('/build/:project', async (request, reply) => {
 // Alternative POST /build with JSON body
 fastify.post('/build', async (request, reply) => {
   if (!isAuthenticated(request)) {
-    reply.status(401);
-    return { error: 'Unauthorized' };
+    reply.status(401).send({ error: 'Unauthorized' });
+    return;
   }
 
   const body = request.body || {};
   const project = body.project || request.query?.project;
 
   if (!project) {
-    reply.status(400);
-    return { error: 'Project name is required in request body or query parameter' };
+    reply.status(400).send({ error: 'Project name is required in request body or query parameter' });
+    return;
   }
 
   reply.header('Content-Type', 'text/plain; charset=utf-8');
