@@ -338,3 +338,234 @@ dd {
   color: var(--primary);
   margin: 0 auto;
 }
+
+/* Premium Enhancements & Glassmorphism */
+.filtersPanel,
+.hotelResult,
+.bookingPanel,
+.checkoutForm,
+.staySummary,
+.reviewsSection,
+.addReviewForm {
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+  transition: all 0.3s ease;
+}
+
+.hotelResult:hover {
+  transform: translateY(-2px);
+  border-color: rgba(35, 72, 105, 0.4) !important;
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Promo / Discount Styling */
+.promoSection {
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.promoInputGrid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+}
+
+.promoInput {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: white;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.95rem;
+}
+
+.promoInput:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 10px rgba(0, 150, 255, 0.2);
+}
+
+.promoError {
+  color: #ff5e5e;
+  font-size: 0.85rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+.promoSuccess {
+  color: #38bdf8;
+  font-size: 0.85rem;
+  margin: 0;
+  font-weight: 600;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+}
+
+.discountedPrice {
+  color: #38bdf8;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.originalTotal {
+  text-decoration: line-through;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: normal;
+}
+
+.discountRow dd {
+  color: #38bdf8;
+}
+
+/* Reviews Styling */
+.reviewsSection {
+  margin-top: 2rem;
+  padding: clamp(1rem, 3vw, 2rem);
+  border-radius: 8px;
+}
+
+.reviewsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 1.5rem;
+}
+
+.reviewsHeader h2 {
+  font-size: 1.8rem;
+  margin: 0 0 0.25rem 0;
+}
+
+.reviewsHeader .subtitle {
+  color: var(--muted);
+  margin: 0;
+}
+
+.reviewsStats {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.overallScore {
+  background: rgba(35, 72, 105, 0.3);
+  border: 1px solid rgba(35, 72, 105, 0.5);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.overallScore strong {
+  font-size: 2rem;
+  display: block;
+  line-height: 1;
+  color: #38bdf8;
+}
+
+.overallScore span {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.reviewVolume {
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.addReviewForm {
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.addReviewForm h3 {
+  margin: 0 0 0.5rem 0;
+}
+
+.addReviewForm textarea {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: white;
+  padding: 0.75rem;
+  resize: vertical;
+  width: 100%;
+}
+
+.addReviewForm select {
+  background: #111a24;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: white;
+  padding: 0.5rem;
+  width: 100%;
+}
+
+.loginPromptText {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 6px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.reviewsList {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.reviewItem {
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 1.25rem;
+  border-radius: 8px;
+}
+
+.reviewItem header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.reviewAuthor {
+  display: flex;
+  flex-direction: column;
+}
+
+.reviewDate {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.reviewItemRating {
+  display: flex;
+  gap: 2px;
+}
+
+.starFilled {
+  color: #fbbf24;
+}
+
+.starEmpty {
+  color: rgba(255, 255, 255, 0.15);
+}
+
+.commentText {
+  margin: 0;
+  line-height: 1.5;
+  color: #e2e8f0;
+}
+

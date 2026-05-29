@@ -19,6 +19,27 @@ export function BookingPage() {
   const [lastName, setLastName] = useState('Traveler');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [promoCodeInput, setPromoCodeInput] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<{ code: string; discountPercentage: number } | null>(null);
+  const [promoError, setPromoError] = useState('');
+
+  const handleApplyPromo = async () => {
+    setPromoError('');
+    if (!promoCodeInput.trim()) return;
+    try {
+      const res = await apiFetch<{ promo: { code: string; discountPercentage: number } }>(
+        '/bookings/validate-promo',
+        {
+          method: 'POST',
+          body: JSON.stringify({ code: promoCodeInput }),
+        }
+      );
+      setAppliedPromo(res.promo);
+    } catch (err) {
+      setPromoError(err instanceof Error ? err.message : 'Invalid promo code');
+      setAppliedPromo(null);
+    }
+  };
 
   useEffect(() => {
     const run = async () => {
@@ -70,6 +91,7 @@ export function BookingPage() {
             checkIn: searchValues.checkIn,
             checkOut: searchValues.checkOut,
             guests: searchValues.guests,
+            promoCode: appliedPromo?.code || undefined,
           }),
         },
         true,
@@ -172,6 +194,28 @@ export function BookingPage() {
               </div>
             </div>
 
+            <div className="formSection promoSection">
+              <h2>Promo / Coupon Code</h2>
+              <div className="promoInputGrid">
+                <input
+                  type="text"
+                  placeholder="Enter code (e.g. VIBE20)"
+                  value={promoCodeInput}
+                  onChange={(e) => setPromoCodeInput(e.target.value)}
+                  className="promoInput"
+                />
+                <button type="button" onClick={() => { void handleApplyPromo(); }} className="secondaryButton">
+                  Apply
+                </button>
+              </div>
+              {promoError && <p className="promoError">{promoError}</p>}
+              {appliedPromo && (
+                <p className="promoSuccess">
+                  Code {appliedPromo.code} applied! ({appliedPromo.discountPercentage}% discount)
+                </p>
+              )}
+            </div>
+
             <button
               className="primaryButton wideButton"
               disabled={isSubmitting || !hotel}
@@ -181,7 +225,7 @@ export function BookingPage() {
             </button>
           </form>
 
-          {hotel && <StaySummary hotel={hotel} nights={nights} />}
+          {hotel && <StaySummary hotel={hotel} nights={nights} appliedPromo={appliedPromo} />}
         </section>
       </main>
     </AppShell>
@@ -320,7 +364,18 @@ export function ConfirmationPage() {
   );
 }
 
-function StaySummary({ hotel, nights }: { hotel: Hotel; nights: number }) {
+function StaySummary({
+  hotel,
+  nights,
+  appliedPromo,
+}: {
+  hotel: Hotel;
+  nights: number;
+  appliedPromo?: { code: string; discountPercentage: number } | null;
+}) {
+  const baseTotal = hotel.nightlyRate * nights;
+  const finalTotal = appliedPromo ? baseTotal * (1 - appliedPromo.discountPercentage / 100) : baseTotal;
+
   return (
     <aside className="staySummary">
       <img src={hotel.imageUrl} alt={`${hotel.name} preview`} />
@@ -337,9 +392,20 @@ function StaySummary({ hotel, nights }: { hotel: Hotel; nights: number }) {
           <dt>Stay length</dt>
           <dd>{nights} nights</dd>
         </div>
+        {appliedPromo && (
+          <div className="discountRow">
+            <dt>Promo Discount ({appliedPromo.code})</dt>
+            <dd>- {appliedPromo.discountPercentage}%</dd>
+          </div>
+        )}
         <div>
           <dt>Total</dt>
-          <dd>{formatCurrency(hotel.nightlyRate * nights, hotel.currency)}</dd>
+          <dd className={appliedPromo ? 'discountedPrice' : ''}>
+            {appliedPromo && (
+              <span className="originalTotal">{formatCurrency(baseTotal, hotel.currency)}</span>
+            )}
+            {formatCurrency(finalTotal, hotel.currency)}
+          </dd>
         </div>
       </dl>
       <p>{hotel.cancellationPolicy}</p>

@@ -1,7 +1,7 @@
 import { BriefcaseBusiness, CheckCircle2, MapPin, Star, Wifi } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
-import { apiFetch } from './api';
+import { apiFetch, getToken } from './api';
 import {
   calculateNights,
   formatCurrency,
@@ -10,7 +10,7 @@ import {
   toSearchParams,
 } from './booking-utils';
 import { AppShell } from './layout';
-import type { Hotel } from './types';
+import type { Hotel, Review } from './types';
 
 export function HotelPage() {
   const { hotelId = '' } = useParams();
@@ -18,6 +18,11 @@ export function HotelPage() {
   const searchValues = useMemo(() => parseSearchValues(params), [params]);
   const [hotel, setHotel] = useState<Hotel | null>(null);
   const [error, setError] = useState('');
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [newRating, setNewRating] = useState(5);
+  const [newComment, setNewComment] = useState('');
+  const [reviewFormError, setReviewFormError] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   useEffect(() => {
     const run = async () => {
@@ -25,12 +30,37 @@ export function HotelPage() {
       try {
         const result = await apiFetch<{ hotel: Hotel }>(`/hotels/${hotelId}`);
         setHotel(result.hotel);
+        const reviewsRes = await apiFetch<{ reviews: Review[] }>(`/hotels/${hotelId}/reviews`);
+        setReviews(reviewsRes.reviews);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load hotel');
       }
     };
     if (hotelId) void run();
   }, [hotelId]);
+
+  const submitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setReviewFormError('');
+    setIsSubmittingReview(true);
+    try {
+      const result = await apiFetch<{ ok: boolean; reviews: Review[] }>(
+        `/hotels/${hotelId}/reviews`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ rating: newRating, comment: newComment }),
+        },
+        true,
+      );
+      setReviews(result.reviews);
+      setNewComment('');
+      setNewRating(5);
+    } catch (err) {
+      setReviewFormError(err instanceof Error ? err.message : 'Failed to post review');
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
 
   if (!hotelId) return <Navigate to="/" replace />;
 
@@ -131,6 +161,88 @@ export function HotelPage() {
                 </Link>
                 <p>{hotel.cancellationPolicy}</p>
               </aside>
+            </section>
+
+            <section className="reviewsSection">
+              <div className="reviewsHeader">
+                <div>
+                  <h2>Guest reviews</h2>
+                  <p className="subtitle">Real stays. Verified reviews from Vibe guests.</p>
+                </div>
+                <div className="reviewsStats">
+                  <div className="overallScore">
+                    <strong>{(reviews.length > 0 ? (reviews.reduce((acc, curr) => acc + curr.rating, 0) / reviews.length) : hotel.reviewScore).toFixed(1)}</strong>
+                    <span>out of 5</span>
+                  </div>
+                  <div className="reviewVolume">
+                    <span>{reviews.length || hotel.reviewCount} verified ratings</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Add Review Form */}
+              {getToken() ? (
+                <form className="addReviewForm" onSubmit={(e) => { void submitReview(e); }}>
+                  <h3>Share your experience</h3>
+                  {reviewFormError && <p className="error">{reviewFormError}</p>}
+                  <div className="ratingSelection">
+                    <label>
+                      Rating
+                      <select value={newRating} onChange={(e) => setNewRating(Number(e.target.value))}>
+                        <option value="5">5 Stars (Excellent)</option>
+                        <option value="4">4 Stars (Very Good)</option>
+                        <option value="3">3 Stars (Good)</option>
+                        <option value="2">2 Stars (Fair)</option>
+                        <option value="1">1 Star (Poor)</option>
+                      </select>
+                    </label>
+                  </div>
+                  <label>
+                    Comment
+                    <textarea
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Write your review here..."
+                      rows={4}
+                      required
+                    />
+                  </label>
+                  <button type="submit" disabled={isSubmittingReview} className="secondaryButton">
+                    {isSubmittingReview ? 'Submitting...' : 'Post review'}
+                  </button>
+                </form>
+              ) : (
+                <p className="loginPromptText">
+                  You must be <Link to={`/booking/${hotel.id}?${query}`}>signed in</Link> to write a review.
+                </p>
+              )}
+
+              {/* Reviews List */}
+              <div className="reviewsList">
+                {reviews.length === 0 ? (
+                  <p className="statusText">No reviews yet. Be the first to leave one!</p>
+                ) : (
+                  reviews.map((rev) => (
+                    <article key={rev.id} className="reviewItem">
+                      <header>
+                        <div className="reviewAuthor">
+                          <strong>{rev.userName}</strong>
+                          <span className="reviewDate">{new Date(rev.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <div className="reviewItemRating">
+                          {Array.from({ length: rev.rating }).map((_, i) => (
+                            <Star key={i} size={14} className="starFilled" fill="currentColor" />
+                          ))}
+                          {Array.from({ length: 5 - rev.rating }).map((_, i) => (
+                            <Star key={i} size={14} className="starEmpty" />
+                          ))}
+                        </div>
+                      </header>
+                      <p className="commentText">{rev.comment}</p>
+                    </article>
+                  ))
+                )}
+              </div>
             </section>
           </>
         )}
