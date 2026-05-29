@@ -5,18 +5,18 @@
 }
 
 :root {
-  --bg: #f6f8fb;
-  --surface: #ffffff;
-  --surface-soft: #eef5ff;
-  --text: #102033;
-  --muted: #5d6b7c;
-  --border: #dbe4ee;
-  --primary: #1769e0;
-  --primary-dark: #0e4fae;
-  --emerald: #087f5b;
-  --amber: #b7791f;
-  --danger: #b42318;
-  --shadow: 0 16px 45px rgb(16 32 51 / 12%);
+  --bg: #030712;
+  --surface: rgba(17, 24, 39, 0.7);
+  --surface-soft: rgba(31, 41, 55, 0.8);
+  --text: #f3f4f6;
+  --muted: #9ca3af;
+  --border: rgba(255, 255, 255, 0.08);
+  --primary: #38bdf8;
+  --primary-dark: #0284c7;
+  --emerald: #34d399;
+  --amber: #fbbf24;
+  --danger: #f87171;
+  --shadow: 0 16px 45px rgba(0, 0, 0, 0.6);
 }
 
 body {
@@ -54,7 +54,7 @@ img {
 
 .siteHeader {
   align-items: center;
-  background: rgb(255 255 255 / 94%);
+  background: rgba(17, 24, 39, 0.8);
   border-bottom: 1px solid var(--border);
   display: grid;
   gap: 1rem;
