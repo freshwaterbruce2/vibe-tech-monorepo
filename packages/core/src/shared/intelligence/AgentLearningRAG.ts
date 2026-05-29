@@ -350,6 +350,8 @@ export class AgentLearningRAG {
 }
 
 const isMainModule = (): boolean => {
+  // Guard for non-Node environments (e.g. browser bundlers): process / argv may be absent.
+  if (typeof process === 'undefined' || !Array.isArray(process.argv)) return false;
   const entryFile = process.argv[1];
   if (!entryFile) return false;
   return import.meta.url === pathToFileURL(entryFile).href;
