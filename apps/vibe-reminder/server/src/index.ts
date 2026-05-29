@@ -64,7 +64,7 @@ app.post('/api/auth/login', async (req, reply) => {
     });
   }
 
-  const user = verifyGeneratedLogin(body.email, body.password);
+  const user = await verifyGeneratedLogin(body.email, body.password);
   if (!user) {
     return reply.code(401).send({
       error: 'Invalid email or password',
