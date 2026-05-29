@@ -25,6 +25,7 @@ COPY packages/analytics/package.json packages/analytics/package.json
 COPY packages/ai/package.json packages/ai/package.json
 COPY packages/landing/package.json packages/landing/package.json
 COPY packages/db-app/package.json packages/db-app/package.json
+COPY packages/shared-config/package.json packages/shared-config/package.json
 COPY apps/vibe-booking-backend apps/vibe-booking-backend
 COPY packages/feature-flags/core packages/feature-flags/core
 COPY packages/auth packages/auth
@@ -37,6 +38,9 @@ COPY packages/analytics packages/analytics
 COPY packages/ai packages/ai
 COPY packages/landing packages/landing
 COPY packages/db-app packages/db-app
+COPY packages/shared-config packages/shared-config
+
+RUN node -e "const fs = require('fs'); const pkg = JSON.parse(fs.readFileSync('package.json')); pkg.pnpm.onlyBuiltDependencies = pkg.pnpm.onlyBuiltDependencies.filter(x => x !== '@railway/cli'); fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));"
 
 RUN pnpm install --frozen-lockfile \
   --filter ./apps/vibe-booking-backend... \
@@ -50,7 +54,8 @@ RUN pnpm install --frozen-lockfile \
   --filter @vibetech/analytics \
   --filter @vibetech/ai \
   --filter @vibetech/landing \
-  --filter @vibetech/db-app
+  --filter @vibetech/db-app \
+  --filter @vibetech/shared-config
 
 RUN cd apps/vibe-booking-backend && pnpm run build:shared:api && pnpm run build:api
 
