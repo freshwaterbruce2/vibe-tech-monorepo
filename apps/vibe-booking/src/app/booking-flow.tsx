@@ -190,7 +190,6 @@ export function BookingPage() {
 
 export function PaymentPage() {
   const { bookingId = '' } = useParams();
-  const navigate = useNavigate();
   const [booking, setBooking] = useState<Booking | null>(null);
   const [error, setError] = useState('');
   const [isPaying, setIsPaying] = useState(false);
@@ -212,22 +211,23 @@ export function PaymentPage() {
     setIsPaying(true);
     setError('');
     try {
-      await apiFetch(
-        '/payments/create',
+      const result = await apiFetch<{ url: string }>(
+        '/payments/create-checkout-session',
         {
           method: 'POST',
           body: JSON.stringify({
             bookingId: booking.id,
-            amount: booking.totalPrice,
-            currency: booking.currency,
           }),
         },
         true,
       );
-      void navigate(`/confirmation/${booking.id}`);
+      if (result.url) {
+        window.location.href = result.url;
+      } else {
+        throw new Error('Payment checkout session failed to initialize');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Payment failed');
-    } finally {
       setIsPaying(false);
     }
   };
