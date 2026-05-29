@@ -17,7 +17,7 @@ import {
 import { createTenantCheckoutSession } from '@vibetech/payments';
 import fastifyRawBody from 'fastify-raw-body';
 import { loadLocalEnv } from './loadLocalEnv.js';
-import { AppDatabase } from '@vibetech/db-app';
+import { AppDatabase, BookingRepository } from '@vibetech/db-app';
 import { buildPaymentReceiptEmail } from '@vibetech/email';
 import { recordAiUsage, getAiUsage } from '@vibetech/ai';
 import { setupStripeTenant } from './stripeSetup.js';
@@ -215,51 +215,8 @@ function requireAuth(req: any, reply: any, done: () => void) {
   done();
 }
 
-// Auto-initialize SQLite database schemas from monetization PRD
-function initializeDatabaseSchema() {
-  try {
-    app.log.info('Initializing SQLite database schema...');
-    const db = AppDatabase.getInstance().getDatabase();
-
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS booking_users (
-        id TEXT PRIMARY KEY,
-        email TEXT UNIQUE NOT NULL,
-        passwordHash TEXT NOT NULL,
-        firstName TEXT NOT NULL,
-        lastName TEXT NOT NULL
-      );
-      CREATE TABLE IF NOT EXISTS vibe_bookings (
-        id TEXT PRIMARY KEY,
-        hotelId TEXT NOT NULL,
-        userId TEXT NOT NULL,
-        checkIn TEXT NOT NULL,
-        checkOut TEXT NOT NULL,
-        guests INTEGER NOT NULL,
-        totalPrice REAL NOT NULL,
-        currency TEXT NOT NULL,
-        status TEXT NOT NULL,
-        paymentStatus TEXT NOT NULL,
-        createdAt TEXT NOT NULL
-      );
-      CREATE TABLE IF NOT EXISTS vibe_payments (
-        id TEXT PRIMARY KEY,
-        bookingId TEXT NOT NULL,
-        amount REAL NOT NULL,
-        currency TEXT NOT NULL,
-        provider TEXT NOT NULL,
-        status TEXT NOT NULL,
-        createdAt TEXT NOT NULL
-      );
-    `);
-
-    app.log.info('SQLite database schema initialized successfully!');
-  } catch (err) {
-    app.log.error({ err }, 'Failed to initialize database schema');
-  }
-}
-
-initializeDatabaseSchema();
+app.log.info('Initializing SQLite database schema using BookingRepository...');
+const bookingRepo = new BookingRepository();
 
 await app.register(cors, {
   origin: true,
@@ -293,16 +250,22 @@ const stripeWebhookBus = createStripeWebhookBus({
       const bookingId = session.metadata?.bookingId;
       if (bookingId) {
         try {
-          const db = AppDatabase.getInstance().getDatabase();
-          const booking = db.prepare('SELECT * FROM vibe_bookings WHERE id = ?').get(bookingId) as any;
+          const booking = bookingRepo.getBookingById(bookingId);
           if (booking && booking.paymentStatus !== 'paid') {
             const paymentId = randomUUID();
             const createdAt = new Date().toISOString();
             
-            db.prepare('INSERT INTO vibe_payments (id, bookingId, amount, currency, provider, status, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)')
-              .run(paymentId, booking.id, booking.totalPrice, booking.currency, 'stripe', 'succeeded', createdAt);
+            bookingRepo.createPayment({
+              id: paymentId,
+              bookingId: booking.id,
+              amount: booking.totalPrice,
+              currency: booking.currency,
+              provider: 'stripe',
+              status: 'succeeded',
+              createdAt,
+            });
               
-            db.prepare("UPDATE vibe_bookings SET paymentStatus = 'paid', status = 'confirmed' WHERE id = ?").run(booking.id);
+            bookingRepo.confirmBookingPayment(booking.id);
             context.logger?.info?.({ bookingId }, 'Booking payment processed via Stripe webhook');
           }
         } catch (err) {
@@ -416,8 +379,7 @@ app.post('/api/auth/register', async (req, reply) => {
     return reply.code(400).send({ error: payload.error.flatten() });
   }
 
-  const db = AppDatabase.getInstance().getDatabase();
-  const existing = db.prepare('SELECT * FROM booking_users WHERE email = ?').get(payload.data.email);
+  const existing = bookingRepo.getUserByEmail(payload.data.email);
   if (existing) {
     return reply.code(409).send({ error: 'Email already registered' });
   }
@@ -425,13 +387,13 @@ app.post('/api/auth/register', async (req, reply) => {
   const userId = randomUUID();
   const passwordHash = await hashPassword(payload.data.password);
 
-  db.prepare('INSERT INTO booking_users (id, email, passwordHash, firstName, lastName) VALUES (?, ?, ?, ?, ?)').run(
-    userId,
-    payload.data.email,
+  bookingRepo.createUser({
+    id: userId,
+    email: payload.data.email,
     passwordHash,
-    payload.data.firstName,
-    payload.data.lastName
-  );
+    firstName: payload.data.firstName,
+    lastName: payload.data.lastName,
+  });
 
   const authUser: AuthUser = {
     id: userId,
@@ -467,8 +429,7 @@ app.post('/api/auth/login', async (req, reply) => {
   }
 
   // 2. Fall back to standard SQLite customer auth
-  const db = AppDatabase.getInstance().getDatabase();
-  const user = db.prepare('SELECT * FROM booking_users WHERE email = ?').get(payload.data.email) as any;
+  const user = bookingRepo.getUserByEmail(payload.data.email);
   if (!user || !(await verifyPassword(payload.data.password, user.passwordHash))) {
     return reply.code(401).send({ error: 'Invalid credentials' });
   }
@@ -666,37 +627,32 @@ app.post('/api/bookings', { preHandler: [requireAuth] }, async (req, reply) => {
   const bookingId = randomUUID();
   const createdAt = new Date().toISOString();
 
-  const db = AppDatabase.getInstance().getDatabase();
-  db.prepare(
-    'INSERT INTO vibe_bookings (id, hotelId, userId, checkIn, checkOut, guests, totalPrice, currency, status, paymentStatus, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(
-    bookingId,
-    hotel.id,
-    req.user!.id,
-    payload.data.checkIn,
-    payload.data.checkOut,
-    payload.data.guests,
+  bookingRepo.createBooking({
+    id: bookingId,
+    hotelId: hotel.id,
+    userId: req.user!.id,
+    checkIn: payload.data.checkIn,
+    checkOut: payload.data.checkOut,
+    guests: payload.data.guests,
     totalPrice,
-    hotel.currency,
-    'pending',
-    'unpaid',
-    createdAt
-  );
+    currency: hotel.currency,
+    status: 'pending',
+    paymentStatus: 'unpaid',
+    createdAt,
+  });
 
-  const booking = db.prepare('SELECT * FROM vibe_bookings WHERE id = ?').get(bookingId);
+  const booking = bookingRepo.getBookingById(bookingId);
   return { booking };
 });
 
 app.get('/api/bookings', { preHandler: [requireAuth] }, async (req) => {
-  const db = AppDatabase.getInstance().getDatabase();
-  const userBookings = db.prepare('SELECT * FROM vibe_bookings WHERE userId = ?').all(req.user!.id);
+  const userBookings = bookingRepo.getUserBookings(req.user!.id);
   return { bookings: userBookings };
 });
 
 app.get('/api/bookings/:bookingId', { preHandler: [requireAuth] }, async (req, reply) => {
   const params = req.params as { bookingId: string };
-  const db = AppDatabase.getInstance().getDatabase();
-  const booking = db.prepare('SELECT * FROM vibe_bookings WHERE id = ? AND userId = ?').get(params.bookingId, req.user!.id) as any;
+  const booking = bookingRepo.getBookingByIdAndUser(params.bookingId, req.user!.id);
   if (!booking) {
     return reply.code(404).send({ error: 'Booking not found' });
   }
@@ -705,14 +661,13 @@ app.get('/api/bookings/:bookingId', { preHandler: [requireAuth] }, async (req, r
 
 app.post('/api/bookings/:bookingId/cancel', { preHandler: [requireAuth] }, async (req, reply) => {
   const params = req.params as { bookingId: string };
-  const db = AppDatabase.getInstance().getDatabase();
-  const booking = db.prepare('SELECT * FROM vibe_bookings WHERE id = ? AND userId = ?').get(params.bookingId, req.user!.id) as any;
+  const booking = bookingRepo.getBookingByIdAndUser(params.bookingId, req.user!.id);
   if (!booking) {
     return reply.code(404).send({ error: 'Booking not found' });
   }
 
-  db.prepare("UPDATE vibe_bookings SET status = 'cancelled' WHERE id = ?").run(params.bookingId);
-  const updatedBooking = db.prepare('SELECT * FROM vibe_bookings WHERE id = ?').get(params.bookingId);
+  bookingRepo.cancelBooking(params.bookingId);
+  const updatedBooking = bookingRepo.getBookingById(params.bookingId);
   return { booking: updatedBooking };
 });
 
@@ -733,8 +688,7 @@ app.post('/api/payments/create', { preHandler: [requireAuth] }, async (req, repl
     return reply.code(400).send({ error: payload.error.flatten() });
   }
 
-  const db = AppDatabase.getInstance().getDatabase();
-  const booking = db.prepare('SELECT * FROM vibe_bookings WHERE id = ? AND userId = ?').get(payload.data.bookingId, req.user!.id) as any;
+  const booking = bookingRepo.getBookingByIdAndUser(payload.data.bookingId, req.user!.id);
   if (!booking) {
     return reply.code(404).send({ error: 'Booking not found' });
   }
@@ -753,13 +707,20 @@ app.post('/api/payments/create', { preHandler: [requireAuth] }, async (req, repl
   const paymentId = randomUUID();
   const createdAt = new Date().toISOString();
 
-  db.prepare('INSERT INTO vibe_payments (id, bookingId, amount, currency, provider, status, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)')
-    .run(paymentId, booking.id, payload.data.amount, requestedCurrency, payload.data.provider, 'succeeded', createdAt);
+  bookingRepo.createPayment({
+    id: paymentId,
+    bookingId: booking.id,
+    amount: payload.data.amount,
+    currency: requestedCurrency,
+    provider: payload.data.provider,
+    status: 'succeeded',
+    createdAt,
+  });
 
-  db.prepare("UPDATE vibe_bookings SET paymentStatus = 'paid', status = 'confirmed' WHERE id = ?").run(booking.id);
+  bookingRepo.confirmBookingPayment(booking.id);
 
-  const updatedBooking = db.prepare('SELECT * FROM vibe_bookings WHERE id = ?').get(booking.id);
-  const payment = db.prepare('SELECT * FROM vibe_payments WHERE id = ?').get(paymentId);
+  const updatedBooking = bookingRepo.getBookingById(booking.id);
+  const payment = bookingRepo.getPaymentById(paymentId);
 
   return { payment, booking: updatedBooking };
 });
@@ -770,8 +731,7 @@ app.post('/api/payments/create-checkout-session', { preHandler: [requireAuth] },
     return reply.code(400).send({ error: payload.error.flatten() });
   }
 
-  const db = AppDatabase.getInstance().getDatabase();
-  const booking = db.prepare('SELECT * FROM vibe_bookings WHERE id = ? AND userId = ?').get(payload.data.bookingId, req.user!.id) as any;
+  const booking = bookingRepo.getBookingByIdAndUser(payload.data.bookingId, req.user!.id);
   if (!booking) {
     return reply.code(404).send({ error: 'Booking not found' });
   }
@@ -792,9 +752,16 @@ app.post('/api/payments/create-checkout-session', { preHandler: [requireAuth] },
       try {
         const paymentId = randomUUID();
         const createdAt = new Date().toISOString();
-        db.prepare('INSERT INTO vibe_payments (id, bookingId, amount, currency, provider, status, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)')
-          .run(paymentId, booking.id, booking.totalPrice, booking.currency, 'stripe', 'succeeded', createdAt);
-        db.prepare("UPDATE vibe_bookings SET paymentStatus = 'paid', status = 'confirmed' WHERE id = ?").run(booking.id);
+        bookingRepo.createPayment({
+          id: paymentId,
+          bookingId: booking.id,
+          amount: booking.totalPrice,
+          currency: booking.currency,
+          provider: 'stripe',
+          status: 'succeeded',
+          createdAt,
+        });
+        bookingRepo.confirmBookingPayment(booking.id);
         req.log.info({ bookingId: booking.id }, 'Mock Stripe checkout completed');
       } catch (err) {
         req.log.error({ err }, 'Mock Stripe checkout completion failed');
@@ -841,6 +808,59 @@ app.post('/api/payments/create-checkout-session', { preHandler: [requireAuth] },
     req.log.error({ err: error }, 'Stripe checkout session creation failed');
     return reply.code(500).send({ error: 'Stripe integration error' });
   }
+});
+
+// Validate Promo Code
+const validatePromoSchema = z.object({
+  code: z.string().min(1),
+});
+
+app.post('/api/bookings/validate-promo', async (req, reply) => {
+  const payload = validatePromoSchema.safeParse(req.body);
+  if (!payload.success) {
+    return reply.code(400).send({ error: payload.error.flatten() });
+  }
+  const promo = bookingRepo.getPromoCode(payload.data.code.toUpperCase());
+  if (!promo) {
+    return reply.code(404).send({ error: 'Promo code not found or inactive' });
+  }
+  return { ok: true, promo };
+});
+
+// Reviews Endpoints
+const createReviewSchema = z.object({
+  rating: z.number().int().min(1).max(5),
+  comment: z.string().min(1),
+});
+
+app.get('/api/hotels/:hotelId/reviews', async (req) => {
+  const params = req.params as { hotelId: string };
+  const reviews = bookingRepo.getReviewsByHotel(params.hotelId);
+  return { reviews };
+});
+
+app.post('/api/hotels/:hotelId/reviews', { preHandler: [requireAuth] }, async (req, reply) => {
+  const params = req.params as { hotelId: string };
+  const payload = createReviewSchema.safeParse(req.body);
+  if (!payload.success) {
+    return reply.code(400).send({ error: payload.error.flatten() });
+  }
+  
+  const reviewId = randomUUID();
+  const createdAt = new Date().toISOString();
+  
+  bookingRepo.createReview({
+    id: reviewId,
+    hotelId: params.hotelId,
+    userId: req.user!.id,
+    userName: req.user!.fullName || req.user!.email,
+    rating: payload.data.rating,
+    comment: payload.data.comment,
+    createdAt,
+  });
+
+  const reviews = bookingRepo.getReviewsByHotel(params.hotelId);
+  return { ok: true, reviews };
 });
 
 // Stripe checkout session generator demo integration
