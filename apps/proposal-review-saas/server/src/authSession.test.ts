@@ -1,36 +1,44 @@
-import { describe, expect, it, vi } from 'vitest';
-
+import { describe, expect, it, vi, beforeAll, afterAll } from 'vitest';
+import { openAuthDb, upsertUser } from '@vibetech/auth';
 import {
   buildGeneratedLogoutCookie,
   buildGeneratedSessionCookie,
   getGeneratedAuthConfigError,
-  getGeneratedAuthUser,
   isGeneratedAuthConfigured,
   readGeneratedAuthStatus,
   verifyGeneratedLogin,
 } from './authSession.js';
 
 describe('authSession', () => {
-  it('uses the configured generated user and password defaults', () => {
-    vi.stubEnv('DEMO_USER_EMAIL', 'owner@proposal-review.test');
-    vi.stubEnv('DEMO_USER_NAME', 'Proposal Review Admin');
-    vi.stubEnv('DEMO_USER_PASSWORD', 'super-secret-password');
+  const testDbPath = 'D:\\databases\\proposal-review-test-auth-unit.db';
 
-    expect(getGeneratedAuthUser()).toEqual({
-      id: 'generated-owner',
+  beforeAll(async () => {
+    vi.stubEnv('AUTH_DB_PATH', testDbPath);
+    const db = openAuthDb(testDbPath);
+    await upsertUser(db, {
       email: 'owner@proposal-review.test',
+      password: 'super-secret-password',
+      isAdmin: true,
       fullName: 'Proposal Review Admin',
     });
-    expect(verifyGeneratedLogin('owner@proposal-review.test', 'super-secret-password')).toEqual({
-      id: 'generated-owner',
-      email: 'owner@proposal-review.test',
-      fullName: 'Proposal Review Admin',
-    });
-    expect(verifyGeneratedLogin('owner@proposal-review.test', 'wrong-password')).toBeNull();
+    db.close();
+  });
+
+  afterAll(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('verifies login against the central DB store', async () => {
+    const user = await verifyGeneratedLogin('owner@proposal-review.test', 'super-secret-password');
+    expect(user).not.toBeNull();
+    expect(user?.email).toBe('owner@proposal-review.test');
+    expect(user?.isAdmin).toBe(true);
+
+    const wrong = await verifyGeneratedLogin('owner@proposal-review.test', 'wrong-password');
+    expect(wrong).toBeNull();
   });
 
   it('requires AUTH_SECRET before a session can be parsed', () => {
-    vi.unstubAllEnvs();
     vi.stubEnv('AUTH_SECRET', '');
 
     expect(isGeneratedAuthConfigured()).toBe(false);
@@ -43,10 +51,12 @@ describe('authSession', () => {
 
   it('round-trips a generated session cookie when auth is configured', () => {
     vi.stubEnv('AUTH_SECRET', 'proposal-review-local-auth-secret-12345');
-    vi.stubEnv('DEMO_USER_EMAIL', 'owner@proposal-review.test');
-    vi.stubEnv('DEMO_USER_NAME', 'Proposal Review Admin');
 
-    const user = getGeneratedAuthUser();
+    const user = {
+      id: 'generated-owner',
+      email: 'owner@proposal-review.test',
+      isAdmin: true,
+    };
     const cookie = buildGeneratedSessionCookie(user);
 
     expect(cookie).toContain('invoiceflow_session=');
