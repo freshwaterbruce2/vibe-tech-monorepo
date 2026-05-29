@@ -17,7 +17,7 @@ import {
 import { createTenantCheckoutSession } from '@vibetech/payments';
 import fastifyRawBody from 'fastify-raw-body';
 import { loadLocalEnv } from './loadLocalEnv.js';
-import { AppDatabase, BookingRepository } from '@vibetech/db-app';
+import { BookingRepository } from '@vibetech/db-app';
 import { buildPaymentReceiptEmail } from '@vibetech/email';
 import { recordAiUsage, getAiUsage } from '@vibetech/ai';
 import { setupStripeTenant } from './stripeSetup.js';
