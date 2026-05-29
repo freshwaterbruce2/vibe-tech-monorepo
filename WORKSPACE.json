@@ -21,7 +21,7 @@
     {
       "date": "2026-05-29",
       "project": "vibe-booking",
-      "action": "Configured Vercel (vercel.json) and Railway (railway.json) deployments, fixed unused variables compiler errors in booking-flow.tsx, built and verified frontend/backend targets under Nx, and pushed the feature branch for remote deployments."
+      "action": "Refactored backend API to use shared @vibetech/db-app BookingRepository pattern, implemented verified guest reviews and coupon discount codes, migrated styling system to a premium dark theme, passed local preflight ship:check tests, and deployed directly to production main."
     },
     {
       "date": "2026-05-28",
