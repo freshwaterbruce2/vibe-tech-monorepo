@@ -6,7 +6,14 @@
     "build"
   ],
   "allowedMissingTargets": {
-    "devtools-mcp-server": ["test"]
+    "devtools-mcp-server":           ["lint", "test"],
+    "mcp-rag-server":                ["test"],
+    "@vibetech/anthropic-api-tools": ["lint", "test"],
+    "@vibetech/health-tracker":      ["test"],
+    "vibe-code-studio-vscode":       ["test"],
+    "chessmaster-academy-api":       ["typecheck", "test", "build"],
+    "desktop-bridge":                ["typecheck", "test", "build"],
+    "vibe-reflection":               ["test"]
   },
   "allowedIsolatedProjects": [
     "@vibetech/anthropic-api-tools",
@@ -30,6 +37,8 @@
     "vibe-justice",
     "vibe-code-studio-vscode",
     "workflow-engine",
+    "@vibetech/workspace",
+    "chessmaster-academy-api",
     "desktop-bridge",
     "vibe-booking",
     "vibe-booking-backend",
