@@ -46,6 +46,13 @@
         "command": "pnpm run lint",
         "cwd": "apps/vibe-reflection"
       }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "echo 'No tests defined for vibe-reflection'",
+        "cwd": "apps/vibe-reflection"
+      }
     }
   },
   "tags": [

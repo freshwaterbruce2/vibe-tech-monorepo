@@ -63,7 +63,13 @@
   },
   "references": [
     {
+      "path": "../../packages/entitlements"
+    },
+    {
       "path": "../../packages/billing"
+    },
+    {
+      "path": "../../packages/auth"
     }
   ]
 }

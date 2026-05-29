@@ -19,6 +19,36 @@
   },
   "recentActivity": [
     {
+      "date": "2026-05-29",
+      "project": "vibe-booking",
+      "action": "Configured Vercel (vercel.json) and Railway (railway.json) deployments, fixed unused variables compiler errors in booking-flow.tsx, built and verified frontend/backend targets under Nx, and pushed the feature branch for remote deployments."
+    },
+    {
+      "date": "2026-05-28",
+      "project": "vibe-booking-backend",
+      "action": "Implemented Stripe Checkout Session endpoint (/api/payments/create-checkout-session), resolved dynamic redirects using Request Origin, and wired checkout.session.completed webhook processing. Refactored E2E tests to run concurrently on separate workers and verified all pass."
+    },
+    {
+      "date": "2026-05-28",
+      "project": "monorepo-security",
+      "action": "Updated root package.json to override Vite dependency to >=7.3.2 to fix CVE-2026-39364 (server.fs.deny query bypass). Ran pnpm install to apply overrides and verified E2E test suites pass successfully."
+    },
+    {
+      "date": "2026-05-28",
+      "project": "vibe-booking-backend",
+      "action": "Implemented Playwright E2E tests for registration and login paths in vibe-booking. Renamed users, bookings, and payments tables to booking_users, vibe_bookings, and vibe_payments to isolate reservation schemas from conflicting shared SQLite tables. Exposed /api/pro and /api/pro/rewrite endpoints and added Authorization header parser support."
+    },
+    {
+      "date": "2026-05-28",
+      "project": "vibe-booking",
+      "action": "Connected vibe-booking widgets frontend to the vibe-booking-backend Fastify API via proxy port 4020. Resolved vitest runner conflicts with playwright tests by adding exclude pathing filters to the backend vite.config.ts, and verified compile and test suites pass."
+    },
+    {
+      "date": "2026-05-28",
+      "project": "vibe-booking-backend",
+      "action": "Scaffolded vibe-booking-backend Node Fastify API using SaaS template. Resolved workspace paths configuration issues, rebuilt @vibetech/db-app with corrected rootDir and package entries to allow clean TypeScript compilation, and successfully verified local API health and search query responses."
+    },
+    {
       "date": "2026-05-27",
       "project": "cme-track",
       "action": "Configured and verified the production deployment preflight validator script, ensuring isolated SQLite volume mount handling and environment checks."
@@ -257,7 +287,7 @@
         "description": "Workspace MCP server"
       },
       "vibe-booking": {
-        "status": "beta",
+        "status": "production",
         "priority": "medium",
         "description": "Clean-break business booking funnel (React/Vite Nx app; backend has the only package.json)"
       },
@@ -302,7 +332,7 @@
         "description": "Prompt Management System (full-stack React + Express)"
       },
       "vibe-booking-backend": {
-        "status": "beta",
+        "status": "production",
         "priority": "medium",
         "description": "Business booking platform Node backend"
       },
@@ -480,6 +510,7 @@
     }
   },
   "currentFocus": [
+    "vibe-booking-backend",
     "vibetech-command-center",
     "memory-system",
     "nova-mobile-app",

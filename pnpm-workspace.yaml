@@ -4,7 +4,7 @@ packages:
   - "apps/*"
   - "apps/**/backend"
   - "apps/**/frontend"
-  - "apps/chessmaster-academy/render-backend"
+  - "apps/vibe-chess/render-backend"
   - "backend"
   - "backend/*"
   - "tools/*/mcp-server"

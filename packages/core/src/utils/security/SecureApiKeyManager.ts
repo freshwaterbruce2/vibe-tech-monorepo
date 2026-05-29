@@ -113,7 +113,7 @@ export class SecureApiKeyManager {
               }
             }
             return { success: true, value: parsed };
-          } catch (err) {
+          } catch {
             return { success: false, value: null };
           }
         },
@@ -122,7 +122,7 @@ export class SecureApiKeyManager {
             const valStr = typeof value === 'string' ? value : JSON.stringify(value);
             await rendererWindow.electron!.store!.set(key, valStr);
             return { success: true };
-          } catch (err) {
+          } catch {
             return { success: false };
           }
         },
@@ -130,7 +130,7 @@ export class SecureApiKeyManager {
           try {
             await rendererWindow.electron!.store!.delete(key);
             return { success: true };
-          } catch (err) {
+          } catch {
             return { success: false };
           }
         },
@@ -138,7 +138,7 @@ export class SecureApiKeyManager {
           try {
             const storeKeys = await (rendererWindow.electron!.store! as any).keys?.();
             return { success: true, keys: storeKeys || [] };
-          } catch (err) {
+          } catch {
             return { success: false, keys: [] };
           }
         }

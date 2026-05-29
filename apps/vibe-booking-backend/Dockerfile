@@ -24,6 +24,7 @@ COPY packages/email/package.json packages/email/package.json
 COPY packages/analytics/package.json packages/analytics/package.json
 COPY packages/ai/package.json packages/ai/package.json
 COPY packages/landing/package.json packages/landing/package.json
+COPY packages/db-app/package.json packages/db-app/package.json
 COPY apps/vibe-booking-backend apps/vibe-booking-backend
 COPY packages/feature-flags/core packages/feature-flags/core
 COPY packages/auth packages/auth
@@ -35,6 +36,7 @@ COPY packages/email packages/email
 COPY packages/analytics packages/analytics
 COPY packages/ai packages/ai
 COPY packages/landing packages/landing
+COPY packages/db-app packages/db-app
 
 RUN pnpm install --frozen-lockfile \
   --filter ./apps/vibe-booking-backend... \
@@ -47,7 +49,8 @@ RUN pnpm install --frozen-lockfile \
   --filter @vibetech/email \
   --filter @vibetech/analytics \
   --filter @vibetech/ai \
-  --filter @vibetech/landing
+  --filter @vibetech/landing \
+  --filter @vibetech/db-app
 
 RUN cd apps/vibe-booking-backend && pnpm run build:shared:api && pnpm run build:api
 

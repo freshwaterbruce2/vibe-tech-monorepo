@@ -10,7 +10,7 @@ _worktrees/**
 .playwright-mcp/**
 apps/**/native-modules/**
 apps/shipping-pwa/shipping-rn/**
-apps/chessmaster-academy/render-backend/**
+apps/vibe-chess/render-backend/**
 tmp/nx-graph.json
 tmp/project-graph*.json
 tmp/monorepo-sync-audit-report.json

@@ -16,10 +16,16 @@
   "include": ["src/**/*", "vite.config.ts"],
   "references": [
     {
+      "path": "../../packages/entitlements"
+    },
+    {
       "path": "../../packages/emails"
     },
     {
       "path": "../../packages/billing"
+    },
+    {
+      "path": "../../packages/auth"
     }
   ]
 }

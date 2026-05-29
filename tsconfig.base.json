@@ -34,7 +34,7 @@
 			"@vibetech/types": ["./packages/types/src/index.ts"],
 			"@nova/*": ["./packages/nova-*/src"],
 			"vibe-booking-backend": [
-				"apps/vibe-booking/backend/src/index.ts"
+				"apps/vibe-booking-backend/server/src/index.ts"
 			],
 			"@vibetech/monetization": ["./packages/monetization/src/index.ts"],
 			"@vibetech/payments": ["./packages/payments/src/index.ts"],
@@ -68,10 +68,12 @@
 	},
 	"exclude": [
 		"node_modules",
+		"**/node_modules",
 		"dist",
 		"build",
 		".nx",
 		"coverage",
+		"**/coverage",
 		"**/*.spec.ts",
 		"**/*.test.ts",
 		"**/*.spec.tsx",

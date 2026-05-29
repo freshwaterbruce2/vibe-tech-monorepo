@@ -34,6 +34,7 @@ export default defineConfig({
         DEMO_USER_EMAIL: 'owner@example.com',
         DEMO_USER_PASSWORD: 'change-this-password',
         DEMO_USER_NAME: 'Vibe Booking Owner',
+        PLAYWRIGHT_TEST: '1',
       },
     },
     {

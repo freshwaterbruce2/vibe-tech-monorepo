@@ -1,11 +1,26 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS",
-    "buildCommand": "pnpm nx build vibe-booking-backend"
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "apps/vibe-booking-backend/Dockerfile",
+    "watchPatterns": [
+      "apps/vibe-booking-backend/**",
+      "packages/auth/**",
+      "packages/analytics/**",
+      "packages/ai/**",
+      "packages/billing/**",
+      "packages/email/**",
+      "packages/emails/**",
+      "packages/feature-flags/core/**",
+      "packages/landing/**",
+      "packages/monetization/**",
+      "packages/payments/**",
+      "packages/db-app/**"
+    ]
   },
   "deploy": {
-    "startCommand": "node dist/apps/vibe-booking-backend/main.js",
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 120,
     "restartPolicyType": "ON_FAILURE"
   }
 }
