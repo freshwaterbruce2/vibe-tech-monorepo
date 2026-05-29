@@ -560,6 +560,7 @@ const createBookingSchema = z.object({
   checkIn: z.string().min(1),
   checkOut: z.string().min(1),
   guests: z.number().int().min(1).max(8),
+  promoCode: z.string().optional(),
 });
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -623,7 +624,13 @@ app.post('/api/bookings', { preHandler: [requireAuth] }, async (req, reply) => {
   }
 
   const nights = calculateNights(payload.data.checkIn, payload.data.checkOut);
-  const totalPrice = nights * hotel.nightlyRate;
+  let totalPrice = nights * hotel.nightlyRate;
+  if (payload.data.promoCode) {
+    const promo = bookingRepo.getPromoCode(payload.data.promoCode.toUpperCase());
+    if (promo) {
+      totalPrice = totalPrice * (1 - promo.discountPercentage / 100);
+    }
+  }
   const bookingId = randomUUID();
   const createdAt = new Date().toISOString();
 
