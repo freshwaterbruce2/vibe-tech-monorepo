@@ -1,0 +1,11 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "pnpm nx build vibe-booking-backend"
+  },
+  "deploy": {
+    "startCommand": "node dist/apps/vibe-booking-backend/main.js",
+    "restartPolicyType": "ON_FAILURE"
+  }
+}
