@@ -178,13 +178,13 @@ export class BookingRepository {
     // Run dynamic migrations for existing schemas
     try {
       this.db.exec("ALTER TABLE vibe_bookings ADD COLUMN bookingType TEXT");
-    } catch (e) {}
+    } catch {}
     try {
       this.db.exec("ALTER TABLE vibe_bookings ADD COLUMN teamName TEXT");
-    } catch (e) {}
+    } catch {}
     try {
       this.db.exec("ALTER TABLE vibe_bookings ADD COLUMN billingMethod TEXT");
-    } catch (e) {}
+    } catch {}
 
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS vibe_payments (
