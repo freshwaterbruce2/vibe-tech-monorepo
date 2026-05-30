@@ -40,7 +40,9 @@ export interface Booking {
   createdAt: string;
   bookingType?: 'individual' | 'team';
   teamName?: string;
-  billingMethod?: 'personal' | 'corporate_invoice';
+  billingMethod?: 'personal' | 'corporate_invoice' | 'bleisure_split';
+  businessNights?: number;
+  leisureNights?: number;
 }
 
 export interface AuthResponse {

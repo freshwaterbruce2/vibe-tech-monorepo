@@ -560,6 +560,18 @@ export default tseslint.config(
     },
   },
 
+  // vibe-booking-backend: use tsconfig.lint.json to include all files for linting
+  {
+    files: ['apps/vibe-booking-backend/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        projectService: false,
+        project: ['./apps/vibe-booking-backend/tsconfig.lint.json'],
+      },
+    },
+  },
+
   // Nova-agent test/example files linted outside tsconfig project
   {
     files: [
