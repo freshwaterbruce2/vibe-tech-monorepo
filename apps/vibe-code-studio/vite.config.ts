@@ -54,7 +54,16 @@ export default defineConfig(({ mode }) => ({
       '@vibetech/entitlements': resolve(__dirname, '../../packages/entitlements/src/index.ts'),
       '@vibetech/landing': resolve(__dirname, '../../packages/landing/src/index.tsx'),
       '@vibetech/shared-ipc': resolve(__dirname, '../../packages/shared-ipc/src/index.ts'),
-      '@vibetech/core': resolve(__dirname, '../../packages/core/src/index.ts'),
+      // The app only consumes browser-safe utilities (SecureApiKeyManager, token
+      // counters, LLM validators, costTracker) from @vibetech/core. Point the alias
+      // at the utils barrel, not the package root: the root also re-exports shared/
+      // (DatabaseManager, AgentLearningRAG, pythonAdapter, ...) whose Node-only
+      // top-level code crashes the renderer. utils/ has no native/dotenv deps.
+      '@vibetech/core': resolve(__dirname, '../../packages/core/src/utils/index.ts'),
+      // Defensive: shared-config runs Node-only code (process.cwd, dotenv) at module
+      // load. Not reachable via the utils barrel above, but kept so any future import
+      // can't reintroduce the crash. See src/shims/shared-config-shim.js.
+      '@vibetech/shared-config': resolve(__dirname, 'src/shims/shared-config-shim.js'),
       '@vibetech/feature-flags-core': resolve(__dirname, '../../packages/feature-flags/core/src/index.ts'),
       '@vibetech/feature-flags-sdk-node': resolve(__dirname, '../../packages/feature-flags/sdk-node/src/index.ts'),
       // Stub Node.js builtins that crypto-js and other deps try to import
@@ -68,6 +77,8 @@ export default defineConfig(({ mode }) => ({
       'node:os': resolve(__dirname, 'src/shims/os-shim.js'),
       'node:events': resolve(__dirname, 'src/shims/events-shim.js'),
       'events': resolve(__dirname, 'src/shims/events-shim.js'),
+      'util': resolve(__dirname, 'src/shims/util-shim.js'),
+      'node:util': resolve(__dirname, 'src/shims/util-shim.js'),
       'crypto': resolve(__dirname, 'src/shims/empty-module.js'),
       'node:crypto': resolve(__dirname, 'src/shims/empty-module.js'),
       'http': resolve(__dirname, 'src/shims/empty-module.js'),

@@ -1,13 +1,18 @@
 import type Database from 'better-sqlite3';
 import crypto from 'crypto';
 
-const TOKEN_COOKIE = 'invoiceflow_session';
+// Default kept as the original invoiceflow cookie for backward compatibility with
+// existing consumers (cme-track, prior-auth-pro, factory-saas-smoke). Apps that want
+// to share one session across the workspace set AUTH_COOKIE_NAME to the same value.
+const DEFAULT_TOKEN_COOKIE = 'invoiceflow_session';
 
 export interface AuthUser {
   id: string;
   email: string;
   fullName?: string;
   companyName?: string;
+  /** True for the central workspace admin account. Optional for backward compatibility. */
+  isAdmin?: boolean;
 }
 
 export interface SessionPayload {
@@ -15,6 +20,8 @@ export interface SessionPayload {
   email: string;
   iat: number;
   exp: number;
+  /** Present only when the authenticated user is an admin. */
+  isAdmin?: boolean;
 }
 
 export const getSessionTtlSeconds = (): number => {
@@ -121,6 +128,7 @@ export const createSessionToken = (user: AuthUser): string => {
     email: user.email,
     iat: now,
     exp,
+    ...(user.isAdmin ? { isAdmin: true } : {}),
   };
   return signJwt(payload, secret);
 };
@@ -139,7 +147,10 @@ export const parseSessionToken = (token: string): SessionPayload | null => {
   return parsed;
 };
 
-export const getSessionCookieName = (): string => TOKEN_COOKIE;
+export const getSessionCookieName = (): string => {
+  const configured = process.env.AUTH_COOKIE_NAME?.trim();
+  return configured && configured.length > 0 ? configured : DEFAULT_TOKEN_COOKIE;
+};
 
 export const getUserById = (
   db: Database.Database,
@@ -169,3 +180,9 @@ export const getUserById = (
     companyName: row.company_name ?? undefined,
   };
 };
+
+// Central workspace user store (D:\databases\auth.db). Exported here so consumers can
+// `import { openAuthDb, authenticateUser, upsertUser } from '@vibetech/auth'`.
+// Placed last: store.ts imports hashPassword/verifyPassword from this module, which are
+// defined above, so this re-export evaluates safely despite the circular reference.
+export * from './store.js';

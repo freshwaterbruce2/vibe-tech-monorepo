@@ -25,9 +25,13 @@ async function getLazyKey(providerType: AIProvider): Promise<string> {
   const mapping = envMap[providerType];
   if (!mapping) return '';
 
-  // For Moonshot, also check KIMI_API_KEY (system env var exposed via envPrefix)
+  // For Moonshot, also accept the KIMI_*/VITE_KIMI_* aliases (envPrefix exposes both).
+  // Mirrors MoonshotService's own constructor resolution order.
   if (providerType === AIProvider.MOONSHOT) {
-    const kimiKey = import.meta.env['KIMI_API_KEY'] || '';
+    const kimiKey =
+      import.meta.env['KIMI_API_KEY'] ||
+      import.meta.env['VITE_KIMI_API_KEY'] ||
+      '';
     if (kimiKey) return kimiKey;
   }
 

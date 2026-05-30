@@ -438,7 +438,7 @@ app.post('/api/auth/login', async (req, reply) => {
   }
 
   // 1. Try generated operator auth first
-  const operatorUser = verifyGeneratedLogin(payload.data.email, payload.data.password);
+  const operatorUser = await verifyGeneratedLogin(payload.data.email, payload.data.password);
   if (operatorUser) {
     const token = createSessionToken(operatorUser);
     reply.header('set-cookie', buildGeneratedSessionCookie(operatorUser));

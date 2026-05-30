@@ -92,7 +92,9 @@ function initializeDatabaseSchema() {
     const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
     if (!existingUser) {
       app.log.info('Seeding default operator user and company in SQLite...');
-      const userId = 'generated-owner'; // Must match GENERATED_USER_ID from authSession.ts
+      // Local entitlement row id. Credentials live in the central auth store; this
+      // table is joined by email only, so the id value is not security-relevant.
+      const userId = 'generated-owner';
       
       if (!existingCompany) {
         db.prepare(`
@@ -273,7 +275,7 @@ app.post('/api/auth/login', async (req, reply) => {
     });
   }
 
-  const user = verifyGeneratedLogin(body.email, body.password);
+  const user = await verifyGeneratedLogin(body.email, body.password);
   if (!user) {
     return reply.code(401).send({
       error: 'Invalid email or password',
