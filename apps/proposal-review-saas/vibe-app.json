@@ -5,8 +5,8 @@
   "archetype": "web-saas",
   "monetization": {
     "stripeConnected": true,
-    "firstRevenueAt": null,
-    "mrrCents": 0,
+    "firstRevenueAt": "2026-05-21",
+    "mrrCents": 2900,
     "currency": "usd"
   }
 }
