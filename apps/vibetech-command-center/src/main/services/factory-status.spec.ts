@@ -157,4 +157,39 @@ describe('FactoryStatusService', () => {
     expect(status!.links.stripeDashboardUrl).toBe('https://dashboard.stripe.com/test/payments');
     expect(status!.metadataSource).toBe('heuristic');
   });
+
+  it('gracefully handles placeholder Stripe secret key and flags as scaffolded', async () => {
+    const root = makeTempRoot();
+    const appRoot = join(root, 'apps', 'factory-saas-smoke');
+    mkdirSync(appRoot, { recursive: true });
+
+    writeFileSync(join(appRoot, 'vibe-app.json'), JSON.stringify({
+      generatedBy: '@vibetech/factory:saas',
+      projectName: 'factory-saas-smoke',
+      displayName: 'Factory SaaS Smoke',
+      archetype: 'web-saas',
+      monetization: {
+        stripeConnected: false,
+        firstRevenueAt: null,
+        mrrCents: null,
+        currency: 'usd',
+      },
+    }));
+    writeFileSync(join(appRoot, 'package.json'), JSON.stringify({
+      dependencies: {
+        '@vibetech/billing': 'workspace:*',
+      },
+    }));
+    writeFileSync(join(appRoot, 'project.json'), JSON.stringify({ targets: {} }));
+    writeFileSync(join(appRoot, '.env'), 'STRIPE_SECRET_KEY=sk_test_51234567890abcdefghijklmnopqrstuvwxyz\n');
+    writeFileSync(join(appRoot, '.env.example'), 'STRIPE_SECRET_KEY=\n');
+
+    const service = new FactoryStatusService({ monorepoRoot: root });
+    const [status] = await service.listStatuses(makeGraph('apps/factory-saas-smoke'));
+
+    expect(status).toBeDefined();
+    expect(status!.stripeStatus).toBe('scaffolded');
+    expect(status!.firstRevenueAt).toBeNull();
+    expect(status!.mrrCents).toBeNull();
+  });
 });
