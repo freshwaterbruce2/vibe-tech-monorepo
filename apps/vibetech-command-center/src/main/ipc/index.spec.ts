@@ -74,6 +74,10 @@ function makeFakeContainer(): ServiceContainer {
     factory: {
       listStatuses: vi.fn().mockResolvedValue([])
     } as unknown as ServiceContainer['factory'],
+    envConfig: {
+      listConfigs: vi.fn().mockResolvedValue([]),
+      updateEnvVar: vi.fn(),
+    } as unknown as ServiceContainer['envConfig'],
     wsPort: 3210
   };
 }
@@ -125,6 +129,21 @@ describe('IPC handlers', () => {
       archetype: 'saas',
       name: 'factory-next-app'
     });
+  });
+
+  it('routes env config requests through the envConfig service', async () => {
+    const c = makeFakeContainer();
+    registerIpcHandlers(c);
+
+    const hList = handlers.get(IPC_CHANNELS.ENV_CONFIG_LIST)!;
+    const resList = await hList({}, false) as { ok: boolean };
+    expect(resList.ok).toBe(true);
+    expect(c.envConfig.listConfigs).toHaveBeenCalled();
+
+    const hUpdate = handlers.get(IPC_CHANNELS.ENV_CONFIG_UPDATE)!;
+    const resUpdate = await hUpdate({}, { projectRoot: 'apps/test-app', file: '.env.local', key: 'API_KEY', value: 'secret' }) as { ok: boolean };
+    expect(resUpdate.ok).toBe(true);
+    expect(c.envConfig.updateEnvVar).toHaveBeenCalledWith('apps/test-app', '.env.local', 'API_KEY', 'secret');
   });
 
   it('unregisters all channels', () => {

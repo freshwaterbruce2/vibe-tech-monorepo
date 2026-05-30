@@ -121,6 +121,10 @@ const api: CommandCenterAPI = {
     decay: async () => ipcRenderer.invoke(IPC_CHANNELS.MEMORY_VIZ_DECAY),
     consolidate: async () => ipcRenderer.invoke(IPC_CHANNELS.MEMORY_VIZ_CONSOLIDATE)
   },
+  envConfig: {
+    list: async (force) => ipcRenderer.invoke(IPC_CHANNELS.ENV_CONFIG_LIST, force),
+    update: async (spec) => ipcRenderer.invoke(IPC_CHANNELS.ENV_CONFIG_UPDATE, spec)
+  },
 
   stream: {
     subscribe(topic, handler) {

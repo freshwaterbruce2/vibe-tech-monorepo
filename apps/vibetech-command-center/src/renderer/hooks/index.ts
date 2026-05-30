@@ -5,7 +5,8 @@ import { useUiStore } from '@renderer/stores';
 import type {
   NxGraph, ProbeResult, DbMetric, BackupLogEntry, ProcessHandle,
   FileEvent, StreamTopic, RagSearchQuery, RagSearchResult,
-  ClaudeInvocation, ClaudeInvocationResult, ClaudeStreamEvent, FactoryAppStatus
+  ClaudeInvocation, ClaudeInvocationResult, ClaudeStreamEvent, FactoryAppStatus,
+  ProjectEnvInfo
 } from '@shared/types';
 
 export function useNxGraph(): UseQueryResult<NxGraph> {
@@ -140,4 +141,23 @@ export function useProcessOutput(
   }, [processId]);
 
   return chunks;
+}
+
+export function useEnvConfigs(force?: boolean): UseQueryResult<ProjectEnvInfo[]> {
+  return useQuery({
+    queryKey: ['env', 'configs', force],
+    queryFn: async () => unwrap(window.commandCenter.envConfig.list(force)),
+    staleTime: 10_000,
+    refetchInterval: 30_000
+  });
+}
+
+export function useUpdateEnvConfig(): UseMutationResult<
+  void,
+  Error,
+  { projectRoot: string; file: '.env' | '.env.local'; key: string; value: string }
+> {
+  return useMutation({
+    mutationFn: async (spec) => unwrap(window.commandCenter.envConfig.update(spec))
+  });
 }

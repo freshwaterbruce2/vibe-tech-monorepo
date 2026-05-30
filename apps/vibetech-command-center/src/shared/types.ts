@@ -119,6 +119,25 @@ export interface AffectedGraph {
   generatedAt: number;
 }
 
+// ---------- env-config ----------
+export interface ProjectEnvValue {
+  envValue: string | null;
+  envLocalValue: string | null;
+  resolvedValue: string | null;
+  isPlaceholder: boolean;
+}
+
+export interface ProjectEnvInfo {
+  projectName: string;
+  projectRoot: string;
+  envExampleExists: boolean;
+  envExists: boolean;
+  envLocalExists: boolean;
+  requiredKeys: string[];
+  values: Record<string, ProjectEnvValue>;
+  missingKeys: string[];
+}
+
 // ---------- db-explorer ----------
 export interface DbTableSchema {
   name: string;
@@ -441,7 +460,9 @@ export const IPC_CHANNELS = {
   MEMORY_VIZ_SNAPSHOT: 'cc:memory:snapshot',
   MEMORY_VIZ_SEARCH: 'cc:memory:search',
   MEMORY_VIZ_DECAY: 'cc:memory:decay',
-  MEMORY_VIZ_CONSOLIDATE: 'cc:memory:consolidate'
+  MEMORY_VIZ_CONSOLIDATE: 'cc:memory:consolidate',
+  ENV_CONFIG_LIST: 'cc:envConfig:list',
+  ENV_CONFIG_UPDATE: 'cc:envConfig:update'
 } as const;
 
 export type IpcChannel = typeof IPC_CHANNELS[keyof typeof IPC_CHANNELS];
@@ -519,6 +540,10 @@ export interface CommandCenterAPI {
     search(query: string, topK?: number): Promise<IpcResult<MemorySearchResult[]>>;
     decay(): Promise<IpcResult<MemoryDecayView[]>>;
     consolidate(): Promise<IpcResult<{ success: boolean; message: string }>>;
+  };
+  envConfig: {
+    list(force?: boolean): Promise<IpcResult<ProjectEnvInfo[]>>;
+    update(spec: { projectRoot: string; file: '.env' | '.env.local'; key: string; value: string }): Promise<IpcResult<void>>;
   };
 
   stream: {

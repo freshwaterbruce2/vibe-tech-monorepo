@@ -13,7 +13,8 @@ export type PanelId =
   | 'affected'
   | 'dbexplorer'
   | 'orchestrator'
-  | 'memory';
+  | 'memory'
+  | 'envconfig';
 
 export interface CompletedClaudeRun {
   invocationId: string;
