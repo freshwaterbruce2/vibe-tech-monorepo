@@ -20,6 +20,11 @@
   "recentActivity": [
     {
       "date": "2026-05-29",
+      "project": "monorepo-auth",
+      "action": "Ported vibe-reminder, vibe-dental, vibe-portal, and vibe-reminder-v2 SaaS applications to the database-backed secure central authentication pattern (D:\\databases\\auth.db), resolving local preflight ship:check tests and conventional commits formatting."
+    },
+    {
+      "date": "2026-05-29",
       "project": "vibe-booking",
       "action": "Refactored backend API to use shared @vibetech/db-app BookingRepository pattern, implemented verified guest reviews and coupon discount codes, migrated styling system to a premium dark theme, passed local preflight ship:check tests, and deployed directly to production main."
     },
