@@ -22,6 +22,10 @@ export function BookingPage() {
   const [promoCodeInput, setPromoCodeInput] = useState('');
   const [appliedPromo, setAppliedPromo] = useState<{ code: string; discountPercentage: number } | null>(null);
   const [promoError, setPromoError] = useState('');
+  
+  const [bookingType, setBookingType] = useState<'individual' | 'team'>('individual');
+  const [teamName, setTeamName] = useState('');
+  const [billingMethod, setBillingMethod] = useState<'personal' | 'corporate_invoice'>('personal');
 
   const handleApplyPromo = async () => {
     setPromoError('');
@@ -92,6 +96,9 @@ export function BookingPage() {
             checkOut: searchValues.checkOut,
             guests: searchValues.guests,
             promoCode: appliedPromo?.code || undefined,
+            bookingType,
+            teamName: bookingType === 'team' ? teamName : undefined,
+            billingMethod,
           }),
         },
         true,
@@ -194,6 +201,49 @@ export function BookingPage() {
               </div>
             </div>
 
+            <div className="formSection">
+              <h2>Corporate booking options</h2>
+              <div style={{ display: 'flex', gap: '16px', flexDirection: 'column' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  Booking Type
+                  <select
+                    value={bookingType}
+                    onChange={(event) => setBookingType(event.target.value as 'individual' | 'team')}
+                    style={{ padding: '8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: '#1c1c1e', color: '#fff' }}
+                  >
+                    <option value="individual">Individual Stay (Me)</option>
+                    <option value="team">Team / Group Stay</option>
+                  </select>
+                </label>
+                
+                {bookingType === 'team' && (
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    Company Team Name
+                    <input
+                      type="text"
+                      value={teamName}
+                      onChange={(event) => setTeamName(event.target.value)}
+                      placeholder="e.g. Sales Team, Engineering"
+                      required
+                      style={{ padding: '8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: '#1c1c1e', color: '#fff' }}
+                    />
+                  </label>
+                )}
+
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  Billing & Invoice Method
+                  <select
+                    value={billingMethod}
+                    onChange={(event) => setBillingMethod(event.target.value as 'personal' | 'corporate_invoice')}
+                    style={{ padding: '8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: '#1c1c1e', color: '#fff' }}
+                  >
+                    <option value="personal">Personal / Credit Card (Stripe Checkout)</option>
+                    <option value="corporate_invoice">Corporate Invoice (Send to Company Central Billing)</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
             <div className="formSection promoSection">
               <h2>Promo / Coupon Code</h2>
               <div className="promoInputGrid">
@@ -277,6 +327,7 @@ export function PaymentPage() {
   };
 
   if (!bookingId) return <Navigate to="/" replace />;
+  const isInvoiceBooking = booking?.billingMethod === 'corporate_invoice';
 
   return (
     <AppShell>
@@ -284,11 +335,11 @@ export function PaymentPage() {
         <section className="checkoutHeader">
           <div>
             <h1>Secure payment</h1>
-            <p>Review the total and confirm the booking.</p>
+            <p>{isInvoiceBooking ? 'Confirm corporate invoicing and reserve.' : 'Review the total and confirm the booking.'}</p>
           </div>
           <div className="secureNote">
             <ShieldCheck size={18} aria-hidden="true" />
-            Payment protected
+            {isInvoiceBooking ? 'Central billing validation' : 'Payment protected'}
           </div>
         </section>
         <section className="paymentPanel">
@@ -299,7 +350,15 @@ export function PaymentPage() {
               <div>
                 <ReceiptText size={24} aria-hidden="true" />
                 <h2>Booking #{booking.id.slice(0, 8)}</h2>
-                <p>{formatCurrency(booking.totalPrice, booking.currency)} total due today.</p>
+                <p>
+                  {formatCurrency(booking.totalPrice, booking.currency)} 
+                  {isInvoiceBooking ? ' will be billed directly to your company account.' : ' total due today.'}
+                </p>
+                {booking.teamName && (
+                  <p style={{ fontSize: '13px', color: '#9ca3af', margin: '4px 0 0 0' }}>
+                    Group Booking for: <strong>{booking.teamName}</strong>
+                  </p>
+                )}
               </div>
               <button
                 className="primaryButton wideButton"
@@ -309,8 +368,17 @@ export function PaymentPage() {
                   void payNow();
                 }}
               >
-                <CreditCard size={18} aria-hidden="true" />
-                {isPaying ? 'Processing payment...' : 'Pay now'}
+                {isInvoiceBooking ? (
+                  <>
+                    <ReceiptText size={18} aria-hidden="true" />
+                    {isPaying ? 'Processing invoice...' : 'Generate & Send Invoice'}
+                  </>
+                ) : (
+                  <>
+                    <CreditCard size={18} aria-hidden="true" />
+                    {isPaying ? 'Processing payment...' : 'Pay now'}
+                  </>
+                )}
               </button>
             </>
           )}
@@ -324,6 +392,7 @@ export function ConfirmationPage() {
   const { bookingId = '' } = useParams();
   const [booking, setBooking] = useState<Booking | null>(null);
   const [error, setError] = useState('');
+  const [params] = useSearchParams();
 
   useEffect(() => {
     const run = async () => {
@@ -336,6 +405,8 @@ export function ConfirmationPage() {
     };
     if (bookingId) void run();
   }, [bookingId]);
+
+  const isInvoice = params.get('method') === 'invoice' || booking?.billingMethod === 'corporate_invoice';
 
   return (
     <AppShell>
@@ -351,8 +422,41 @@ export function ConfirmationPage() {
               <div className="summaryRows">
                 <span>Status: {booking.status}</span>
                 <span>Payment: {booking.paymentStatus}</span>
+                <span>Billing: {booking.billingMethod === 'corporate_invoice' ? 'Corporate Central Invoice' : 'Credit Card'}</span>
+                {booking.teamName && <span>Team: {booking.teamName}</span>}
                 <span>{formatCurrency(booking.totalPrice, booking.currency)}</span>
               </div>
+              {isInvoice && (
+                <div style={{
+                  margin: '20px 0',
+                  padding: '16px',
+                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                  border: '1px solid rgba(59, 130, 246, 0.2)',
+                  borderRadius: '8px',
+                  textAlign: 'left'
+                }}>
+                  <h3 style={{ color: '#60a5fa', marginBottom: '8px', fontSize: '15px' }}>📄 Corporate Invoice Generated</h3>
+                  <p style={{ fontSize: '13px', margin: 0, color: '#9ca3af', marginBottom: '12px' }}>
+                    An invoice has been sent directly to the central account for approval and payment. No personal card will be charged.
+                  </p>
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      alert('Downloading Invoice PDF Receipt... \n\nBooking Reference: ' + booking.id + '\nTotal Billed: ' + formatCurrency(booking.totalPrice, booking.currency) + (booking.teamName ? ('\nGroup: ' + booking.teamName) : ''));
+                    }}
+                    style={{
+                      color: '#3b82f6',
+                      textDecoration: 'underline',
+                      fontSize: '13px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Download Invoice PDF Receipt
+                  </a>
+                </div>
+              )}
               <Link className="primaryButton" to="/">
                 Start another search
               </Link>

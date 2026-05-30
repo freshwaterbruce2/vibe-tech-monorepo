@@ -1,3 +1,9 @@
+export interface PolicyCompliance {
+  isWithinPolicy: boolean;
+  requiresApproval: boolean;
+  policyReason?: string;
+}
+
 export interface Hotel {
   id: string;
   name: string;
@@ -17,6 +23,7 @@ export interface Hotel {
   cancellationPolicy: string;
   distanceFromCenter: string;
   badge: string;
+  policyCompliance?: PolicyCompliance;
 }
 
 export interface Booking {
@@ -31,6 +38,9 @@ export interface Booking {
   status: 'pending' | 'confirmed' | 'cancelled';
   paymentStatus: 'unpaid' | 'paid' | 'refunded';
   createdAt: string;
+  bookingType?: 'individual' | 'team';
+  teamName?: string;
+  billingMethod?: 'personal' | 'corporate_invoice';
 }
 
 export interface AuthResponse {
@@ -59,3 +69,4 @@ export interface Review {
   comment: string;
   createdAt: string;
 }
+
