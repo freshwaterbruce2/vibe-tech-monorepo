@@ -19,6 +19,11 @@
   },
   "recentActivity": [
     {
+      "date": "2026-05-30",
+      "project": "vibe-discharge",
+      "action": "Migrated auth system from legacy local password salts/hashes to central D:\\databases\\auth.db using @vibetech/auth. Updated authSession server helpers and refactored unit test suite to run hermetically against an isolated test database on the D:\\ drive."
+    },
+    {
       "date": "2026-05-29",
       "project": "monorepo-auth",
       "action": "Ported vibe-reminder, vibe-dental, vibe-portal, and vibe-reminder-v2 SaaS applications to the database-backed secure central authentication pattern (D:\\databases\\auth.db), resolving local preflight ship:check tests and conventional commits formatting."

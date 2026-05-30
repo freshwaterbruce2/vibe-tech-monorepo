@@ -1,5 +1,4 @@
 import Database from 'better-sqlite3';
-import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -21,20 +20,9 @@ db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
 db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,
-    email TEXT NOT NULL UNIQUE,
-    full_name TEXT,
-    company_name TEXT,
-    password_salt BLOB NOT NULL,
-    password_hash BLOB NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-
   CREATE TABLE IF NOT EXISTS stripe_customers (
     id TEXT PRIMARY KEY,
-    user_id TEXT REFERENCES users(id),
+    user_id TEXT,
     email TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
@@ -42,7 +30,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS stripe_subscriptions (
     id TEXT PRIMARY KEY,
     customer_id TEXT NOT NULL REFERENCES stripe_customers(id),
-    user_id TEXT REFERENCES users(id),
+    user_id TEXT,
     status TEXT NOT NULL,
     plan TEXT NOT NULL DEFAULT 'pro',
     currency TEXT NOT NULL DEFAULT 'usd',
@@ -59,8 +47,8 @@ db.exec(`
   );
 `);
 
-ensureColumn('stripe_customers', 'user_id', 'TEXT REFERENCES users(id)');
-ensureColumn('stripe_subscriptions', 'user_id', 'TEXT REFERENCES users(id)');
+ensureColumn('stripe_customers', 'user_id', 'TEXT');
+ensureColumn('stripe_subscriptions', 'user_id', 'TEXT');
 ensureColumn('stripe_subscriptions', 'currency', "TEXT NOT NULL DEFAULT 'usd'");
 ensureColumn('stripe_subscriptions', 'monthly_mrr_cents', 'INTEGER NOT NULL DEFAULT 0');
 
@@ -79,15 +67,6 @@ export interface SubscriptionRow {
   updated_at: string;
 }
 
-export interface UserCredentialsRow {
-  id: string;
-  email: string;
-  full_name: string | null;
-  company_name: string | null;
-  password_salt: Buffer;
-  password_hash: Buffer;
-}
-
 export interface MrrMetadata {
   mrrCents: number;
   currency: string;
@@ -98,17 +77,6 @@ export interface MrrMetadata {
 // ─── Queries ──────────────────────────────────────────────────────────────────
 
 const stmts = {
-  countUsers: db.prepare<[], { count: number }>(`SELECT COUNT(*) AS count FROM users`),
-  insertUser: db.prepare<[string, string, string | null, string | null, Buffer, Buffer]>(
-    `INSERT INTO users (id, email, full_name, company_name, password_salt, password_hash)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-  ),
-  getUserCredentialsByEmail: db.prepare<[string]>(
-    `SELECT id, email, full_name, company_name, password_salt, password_hash
-     FROM users
-     WHERE lower(email) = lower(?)
-     LIMIT 1`,
-  ),
   upsertCustomer: db.prepare<[string, string | null, string]>(
     `INSERT INTO stripe_customers (id, user_id, email)
      VALUES (?, ?, ?)
@@ -171,37 +139,6 @@ export function getDatabase(): Database.Database {
 
 export function closeDatabaseForTests(): void {
   db.close();
-}
-
-export function hasUsers(): boolean {
-  const row = stmts.countUsers.get();
-  return (row?.count ?? 0) > 0;
-}
-
-export function createUser(input: {
-  id?: string;
-  email: string;
-  fullName?: string;
-  companyName?: string;
-  passwordSalt: Buffer;
-  passwordHash: Buffer;
-}): string {
-  const id = input.id ?? crypto.randomUUID();
-  stmts.insertUser.run(
-    id,
-    input.email.trim().toLowerCase(),
-    input.fullName?.trim() || null,
-    input.companyName?.trim() || null,
-    input.passwordSalt,
-    input.passwordHash,
-  );
-  return id;
-}
-
-export function getUserCredentialsByEmail(email: string): UserCredentialsRow | null {
-  return (stmts.getUserCredentialsByEmail.get(email.trim().toLowerCase()) as
-    | UserCredentialsRow
-    | undefined) ?? null;
 }
 
 export function upsertCustomer(customerId: string, email: string, userId?: string | null) {

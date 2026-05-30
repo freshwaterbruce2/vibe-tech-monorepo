@@ -1,67 +1,34 @@
 import {
+  authenticateUser,
   createSessionToken,
   getSessionCookieName,
   getSessionTtlSeconds,
   getUserById,
-  hashPassword,
+  openAuthDb,
   parseSessionToken,
-  verifyPassword,
   type AuthUser,
 } from '@vibetech/auth';
 
-import {
-  createUser,
-  getDatabase,
-  getUserCredentialsByEmail,
-  hasUsers,
-} from './db.js';
-
-const BOOTSTRAP_USER_ID = 'discharge-ez-owner';
+// Lazily-opened handle to the central workspace auth store (D:\databases\auth.db).
+let authDb: ReturnType<typeof openAuthDb> | null = null;
+function getAuthDb(): ReturnType<typeof openAuthDb> {
+  return (authDb ??= openAuthDb());
+}
 
 export interface AuthStatus {
   configured: boolean;
   user: AuthUser | null;
 }
 
-export async function ensureBootstrapUser(): Promise<void> {
-  if (hasUsers()) {
-    return;
-  }
-
-  const email = process.env.DISCHARGE_EZ_BOOTSTRAP_EMAIL?.trim();
-  const password = process.env.DISCHARGE_EZ_BOOTSTRAP_PASSWORD?.trim();
-  const fullName = process.env.DISCHARGE_EZ_BOOTSTRAP_NAME?.trim();
-  const companyName = process.env.DISCHARGE_EZ_BOOTSTRAP_COMPANY?.trim();
-
-  if (!email || !password) {
-    return;
-  }
-
-  const passwordHash = await hashPassword(password);
-  createUser({
-    id: BOOTSTRAP_USER_ID,
-    email,
-    fullName: fullName || 'DischargeEz Owner',
-    companyName,
-    passwordSalt: passwordHash.salt,
-    passwordHash: passwordHash.hash,
-  });
-}
-
 export async function isAuthConfigured(): Promise<boolean> {
-  await ensureBootstrapUser();
-  return hasAuthSecret() && hasUsers();
+  return hasAuthSecret();
 }
 
 export function getAuthConfigError(): string {
   if (!hasAuthSecret()) {
     return 'AUTH_SECRET must be set to at least 32 characters to enable authentication.';
   }
-
-  return [
-    'No operator user exists in the SQLite database.',
-    'Create one during setup or set DISCHARGE_EZ_BOOTSTRAP_EMAIL and DISCHARGE_EZ_BOOTSTRAP_PASSWORD once to seed the first user.',
-  ].join(' ');
+  return 'Authentication database configuration error.';
 }
 
 export async function readAuthStatus(cookieHeader: string | undefined): Promise<AuthStatus> {
@@ -89,8 +56,8 @@ export async function readAuthStatus(cookieHeader: string | undefined): Promise<
       };
     }
 
-    const user = getUserById(getDatabase(), payload.sub);
-    if (!user || user.email.toLowerCase() !== payload.email.toLowerCase()) {
+    const user = getUserById(getAuthDb(), payload.sub);
+    if (user?.email.toLowerCase() !== payload.email.toLowerCase()) {
       return {
         configured: true,
         user: null,
@@ -114,17 +81,7 @@ export async function verifyLogin(email: string, password: string): Promise<Auth
     return null;
   }
 
-  const row = getUserCredentialsByEmail(email);
-  if (!row) {
-    return null;
-  }
-
-  const passwordMatches = await verifyPassword(password, row.password_salt, row.password_hash);
-  if (!passwordMatches) {
-    return null;
-  }
-
-  return getUserById(getDatabase(), row.id);
+  return authenticateUser(getAuthDb(), email, password);
 }
 
 export function buildSessionCookie(user: AuthUser): string {
