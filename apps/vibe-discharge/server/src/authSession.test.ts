@@ -1,30 +1,28 @@
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeAll, afterAll } from 'vitest';
+import { openAuthDb, upsertUser } from '@vibetech/auth';
 
 const AUTH_SECRET = 'discharge-ez-local-auth-secret-12345';
+const TEST_DB_PATH = 'D:\\databases\\discharge-test-auth-unit.db';
 
 describe('authSession', () => {
-  let tempDir: string;
-
-  beforeEach(() => {
-    vi.resetModules();
-    vi.unstubAllEnvs();
-    tempDir = mkdtempSync(join(tmpdir(), 'discharge-ez-auth-'));
-    vi.stubEnv('DISCHARGE_EZ_DB_PATH', join(tempDir, 'auth.test.db'));
+  beforeAll(async () => {
+    vi.stubEnv('AUTH_DB_PATH', TEST_DB_PATH);
+    const db = openAuthDb(TEST_DB_PATH);
+    await upsertUser(db, {
+      email: 'owner@discharge-ez.test',
+      password: 'super-secret-password',
+      isAdmin: true,
+      fullName: 'DischargeEZ Admin',
+    });
+    db.close();
   });
 
-  afterEach(async () => {
-    const db = await import('./db.js');
-    db.closeDatabaseForTests();
+  afterAll(() => {
     vi.unstubAllEnvs();
-    vi.useRealTimers();
-    rmSync(tempDir, { recursive: true, force: true });
   });
 
-  it('requires AUTH_SECRET and a SQLite user before auth is configured', async () => {
+  it('requires AUTH_SECRET before auth is configured', async () => {
+    vi.stubEnv('AUTH_SECRET', '');
     const auth = await import('./authSession.js');
 
     await expect(auth.isAuthConfigured()).resolves.toBe(false);
@@ -35,17 +33,12 @@ describe('authSession', () => {
     });
   });
 
-  it('seeds the first SQLite operator user from bootstrap env once', async () => {
+  it('verifies login against the central DB store', async () => {
     vi.stubEnv('AUTH_SECRET', AUTH_SECRET);
-    vi.stubEnv('DISCHARGE_EZ_BOOTSTRAP_EMAIL', 'owner@discharge-ez.test');
-    vi.stubEnv('DISCHARGE_EZ_BOOTSTRAP_NAME', 'DischargeEZ Admin');
-    vi.stubEnv('DISCHARGE_EZ_BOOTSTRAP_PASSWORD', 'super-secret-password');
-
     const auth = await import('./authSession.js');
 
     await expect(auth.isAuthConfigured()).resolves.toBe(true);
     await expect(auth.verifyLogin('owner@discharge-ez.test', 'super-secret-password')).resolves.toMatchObject({
-      id: 'discharge-ez-owner',
       email: 'owner@discharge-ez.test',
       fullName: 'DischargeEZ Admin',
     });
@@ -54,10 +47,6 @@ describe('authSession', () => {
 
   it('round-trips a database-backed session cookie', async () => {
     vi.stubEnv('AUTH_SECRET', AUTH_SECRET);
-    vi.stubEnv('DISCHARGE_EZ_BOOTSTRAP_EMAIL', 'owner@discharge-ez.test');
-    vi.stubEnv('DISCHARGE_EZ_BOOTSTRAP_NAME', 'DischargeEZ Admin');
-    vi.stubEnv('DISCHARGE_EZ_BOOTSTRAP_PASSWORD', 'super-secret-password');
-
     const auth = await import('./authSession.js');
     const user = await auth.verifyLogin('owner@discharge-ez.test', 'super-secret-password');
 
@@ -68,8 +57,13 @@ describe('authSession', () => {
     expect(cookie).toContain('HttpOnly');
     await expect(auth.readAuthStatus(cookie)).resolves.toEqual({
       configured: true,
-      user,
+      user: {
+        id: user!.id,
+        email: 'owner@discharge-ez.test',
+        fullName: 'DischargeEZ Admin',
+      },
     });
     expect(auth.buildLogoutCookie()).toContain('Max-Age=0');
   });
 });
+
