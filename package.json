@@ -47,7 +47,6 @@
       "@firebase/util",
       "@playwright/test",
       "@prisma/engines",
-      "@railway/cli",
       "@scarf/scarf",
       "@sentry/cli",
       "@swc/core",
@@ -75,6 +74,9 @@
       "unrs-resolver",
       "utf-8-validate",
       "workerd"
+    ],
+    "ignoredBuiltDependencies": [
+      "@railway/cli"
     ],
     "patchedDependencies": {
       "nx@22.7.1": "patches/nx@22.7.1.patch"
