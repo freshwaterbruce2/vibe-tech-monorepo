@@ -76,6 +76,7 @@ function makeFakeContainer(): ServiceContainer {
     factory: {
       listStatuses: vi.fn().mockResolvedValue([])
     } as unknown as ServiceContainer['factory'],
+    envConfig: {} as ServiceContainer['envConfig'],
     wsPort: 0
   };
 }

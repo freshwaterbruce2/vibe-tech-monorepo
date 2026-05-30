@@ -63,6 +63,10 @@ function mockBridge(overrides: Partial<CommandCenterAPI> = {}): void {
       consolidate: vi.fn().mockResolvedValue({ ok: true, data: { success: false, message: 'read-only' }, timestamp: Date.now() })
     },
     stream:  { subscribe: vi.fn(() => () => {}) },
+    envConfig: {
+      list: vi.fn().mockResolvedValue({ ok: true, data: [], timestamp: Date.now() }),
+      update: vi.fn().mockResolvedValue({ ok: true, data: undefined, timestamp: Date.now() })
+    },
     ...overrides
   };
   Object.defineProperty(window, 'commandCenter', { value: base, writable: true, configurable: true });

@@ -9,7 +9,7 @@ import type {
   AffectedGraph, DbExplorerDatabase, DbTableSchema, DbExplorerResult,
   McpServerStatus, AgentTaskLauncher, AgentTaskSpec, LogSearchFilters,
   MemoryVizSnapshot, MemorySearchResult, MemoryDecayView, FactoryAppStatus,
-  FactoryGeneratorLauncher,
+  FactoryGeneratorLauncher, ProjectEnvInfo,
 } from '../../shared/types';
 import type { ServiceContainer } from '../service-container';
 
@@ -43,6 +43,23 @@ export function registerIpcHandlers(c: ServiceContainer): void {
       }
       return ok(await c.agent.runFactoryGenerator(spec));
     } catch (e) { return err(e, 'FACTORY_GENERATE_FAILED'); }
+  });
+  ipcMain.handle(IPC_CHANNELS.ENV_CONFIG_LIST, async (_evt, force?: boolean): Promise<IpcResult<ProjectEnvInfo[]>> => {
+    try {
+      const graph = await c.nxGraph.getGraph(force === true);
+      return ok(await c.envConfig.listConfigs(graph));
+    } catch (e) { return err(e, 'ENV_CONFIG_LIST_FAILED'); }
+  });
+  ipcMain.handle(IPC_CHANNELS.ENV_CONFIG_UPDATE, async (
+    _evt, spec: { projectRoot: string; file: '.env' | '.env.local'; key: string; value: string }
+  ): Promise<IpcResult<void>> => {
+    try {
+      if (!spec || typeof spec.projectRoot !== 'string' || typeof spec.file !== 'string' || typeof spec.key !== 'string' || typeof spec.value !== 'string') {
+        throw new Error('invalid environment update spec');
+      }
+      c.envConfig.updateEnvVar(spec.projectRoot, spec.file, spec.key, spec.value);
+      return ok(undefined);
+    } catch (e) { return err(e, 'ENV_CONFIG_UPDATE_FAILED'); }
   });
 
   ipcMain.handle(IPC_CHANNELS.AFFECTED_GET, async (_evt, force?: boolean): Promise<IpcResult<AffectedGraph>> => {
