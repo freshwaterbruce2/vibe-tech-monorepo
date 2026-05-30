@@ -3,6 +3,7 @@ import { constants as fsConstants } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
+import { openAuthDb, upsertUser } from '@vibetech/auth';
 import { loadLocalEnv } from '../src/loadLocalEnv.js';
 
 interface CheckResult {
@@ -22,6 +23,9 @@ const authSecret = 'vibe-booking-backend-local-auth-secret-12345';
 const operatorEmail = 'owner@example.com';
 const operatorPassword = 'change-this-password';
 const operatorName = 'Vibe Booking Owner';
+// Throwaway central-auth store for the ship-check, isolated from the real
+// D:\databases\auth.db. Seeded with the operator below so login succeeds.
+const testAuthDbPath = 'D:\\databases\\vibe-booking-backend-test-auth.db';
 
 loadLocalEnv(projectRoot);
 
@@ -112,12 +116,31 @@ async function checkEnvPresence(keys: string[], id: string, successDetail: strin
   });
 }
 
+async function seedCentralAuth(): Promise<void> {
+  const db = openAuthDb(testAuthDbPath);
+  try {
+    await upsertUser(db, {
+      email: operatorEmail,
+      password: operatorPassword,
+      isAdmin: true,
+      fullName: operatorName,
+    });
+  } finally {
+    db.close();
+  }
+}
+
 async function runLocalApiSmoke(): Promise<void> {
+  // Login authenticates against the central store, so the operator must exist
+  // in it before the server starts.
+  await seedCentralAuth();
+
   const env = {
     ...process.env,
     PORT: String(appPort),
     HOST: appHost,
     APP_BASE_URL: appBaseUrl,
+    AUTH_DB_PATH: testAuthDbPath,
     AUTH_SECRET: authSecret,
     DEMO_USER_EMAIL: operatorEmail,
     DEMO_USER_PASSWORD: operatorPassword,

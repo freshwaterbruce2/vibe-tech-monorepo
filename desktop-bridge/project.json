@@ -1,0 +1,36 @@
+{
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "name": "desktop-bridge",
+  "projectType": "application",
+  "sourceRoot": "desktop-bridge",
+  "targets": {
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint .",
+        "cwd": "desktop-bridge"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "echo 'No build required for desktop-bridge'",
+        "cwd": "desktop-bridge"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "echo 'No typecheck required for desktop-bridge'",
+        "cwd": "desktop-bridge"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "echo 'No tests defined for desktop-bridge'",
+        "cwd": "desktop-bridge"
+      }
+    }
+  }
+}

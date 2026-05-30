@@ -1,8 +1,9 @@
-import { access, readFile } from 'node:fs/promises';
+import { access, readFile, writeFile, mkdir } from 'node:fs/promises';
 import { constants as fsConstants } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
+import { openAuthDb, upsertUser } from '@vibetech/auth';
 import { loadLocalEnv } from '../src/loadLocalEnv.js';
 
 interface CheckResult {
@@ -22,6 +23,10 @@ const authSecret = 'prior-auth-pro-local-auth-secret-12345';
 const operatorEmail = 'owner@example.com';
 const operatorPassword = 'change-this-password';
 const operatorName = 'PriorAuthPro Owner';
+// Throwaway central-auth store for the ship-check, isolated from the real
+// D:\databases\auth.db. Seeded with the operator below so login succeeds.
+const testAuthDbPath = 'D:\\databases\\prior-auth-pro-test-auth.db';
+const testStatePath = 'D:\\databases\\prior-auth-pro-test-state.json';
 
 loadLocalEnv(projectRoot);
 
@@ -112,17 +117,64 @@ async function checkEnvPresence(keys: string[], id: string, successDetail: strin
   });
 }
 
+async function seedCentralAuth(): Promise<void> {
+  const db = openAuthDb(testAuthDbPath);
+  try {
+    await upsertUser(db, {
+      email: operatorEmail,
+      password: operatorPassword,
+      isAdmin: true,
+      fullName: operatorName,
+    });
+  } finally {
+    db.close();
+  }
+}
+
+async function seedSubscriptionState(): Promise<void> {
+  const stateDir = path.dirname(testStatePath);
+  await mkdir(stateDir, { recursive: true });
+
+  const state = {
+    users: {
+      [operatorEmail.toLowerCase()]: {
+        email: operatorEmail.toLowerCase(),
+        plan: 'pro',
+        status: 'active',
+        updatedAt: new Date().toISOString(),
+        appealGenerations: 0,
+        aiTokens: 0,
+      },
+    },
+    processedEvents: {},
+  };
+
+  await writeFile(testStatePath, JSON.stringify(state, null, 2), 'utf8');
+}
+
 async function runLocalApiSmoke(): Promise<void> {
+  // Login authenticates against the central store, so the operator must exist
+  // in it before the server starts. Also seed the subscription plan state.
+  await seedCentralAuth();
+  await seedSubscriptionState();
+
   const env = {
     ...process.env,
     PORT: String(appPort),
     HOST: appHost,
     APP_BASE_URL: appBaseUrl,
+    AUTH_DB_PATH: testAuthDbPath,
+    PRIOR_AUTH_STATE_PATH: testStatePath,
     AUTH_SECRET: authSecret,
     DEMO_USER_EMAIL: operatorEmail,
     DEMO_USER_PASSWORD: operatorPassword,
     DEMO_USER_NAME: operatorName,
   };
+
+  // If Stripe key is the default placeholder, remove it so the smoke test fallback runs.
+  if (env.STRIPE_SECRET_KEY === 'sk_test_51234567890abcdefghijklmnopqrstuvwxyz') {
+    delete env.STRIPE_SECRET_KEY;
+  }
 
   const child = spawn(process.execPath, [serverEntry], {
     cwd: projectRoot,
@@ -361,7 +413,11 @@ async function fetchRaw(url: string, init?: RequestInit): Promise<Response> {
 }
 
 function resolveEnv(key: string): string | undefined {
-  return process.env[key];
+  const val = process.env[key];
+  if (key === 'STRIPE_SECRET_KEY' && val === 'sk_test_51234567890abcdefghijklmnopqrstuvwxyz') {
+    return undefined;
+  }
+  return val;
 }
 
 function printResults(): void {

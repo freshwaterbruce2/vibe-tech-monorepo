@@ -276,10 +276,10 @@ export class AIProviderFactory {
 
     await Promise.all(initPromises);
 
-    // Set default provider (prefer OpenRouter → Moonshot → Google)
+    // Set default provider (prefer Moonshot/Kimi direct API -> OpenRouter -> Google)
     const preferredOrder = [
-      AIProvider.OPENROUTER,
       AIProvider.MOONSHOT,
+      AIProvider.OPENROUTER,
       AIProvider.GOOGLE,
       AIProvider.DEEPSEEK,
       AIProvider.OPENAI,
