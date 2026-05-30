@@ -4,9 +4,9 @@
   "displayName": "Vibe-Tech",
   "archetype": "web-saas",
   "monetization": {
-    "stripeConnected": false,
+    "stripeConnected": true,
     "firstRevenueAt": null,
-    "mrrCents": null,
+    "mrrCents": 0,
     "currency": "usd"
   }
 }
