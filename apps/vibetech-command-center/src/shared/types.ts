@@ -462,7 +462,9 @@ export const IPC_CHANNELS = {
   MEMORY_VIZ_DECAY: 'cc:memory:decay',
   MEMORY_VIZ_CONSOLIDATE: 'cc:memory:consolidate',
   ENV_CONFIG_LIST: 'cc:envConfig:list',
-  ENV_CONFIG_UPDATE: 'cc:envConfig:update'
+  ENV_CONFIG_UPDATE: 'cc:envConfig:update',
+  SELF_HEALING_GET: 'cc:selfHealing:get',
+  SELF_HEALING_TRIGGER: 'cc:selfHealing:trigger'
 } as const;
 
 export type IpcChannel = typeof IPC_CHANNELS[keyof typeof IPC_CHANNELS];
@@ -545,9 +547,48 @@ export interface CommandCenterAPI {
     list(force?: boolean): Promise<IpcResult<ProjectEnvInfo[]>>;
     update(spec: { projectRoot: string; file: '.env' | '.env.local'; key: string; value: string }): Promise<IpcResult<void>>;
   };
+  selfHealing: {
+    get(force?: boolean): Promise<IpcResult<SelfHealingTelemetry>>;
+    trigger(): Promise<IpcResult<ProcessHandle>>;
+  };
 
   stream: {
     subscribe(topic: StreamTopic, handler: (payload: unknown) => void): () => void;
+  };
+}
+
+export interface SelfHealingLoopResult {
+  loop_name: string;
+  status: 'success' | 'dry_run' | 'skipped' | 'failed' | 'partial';
+  issues_found: number;
+  issues_fixed: number;
+  issues_blocked: number;
+  duration_seconds: number;
+  errors: string[];
+  fixes_applied: string[];
+}
+
+export interface SelfHealingReport {
+  timestamp: string;
+  report_file: string;
+  summary: {
+    overall_status: 'healthy' | 'degraded' | 'monitoring';
+    total_issues_found: number;
+    total_issues_fixed: number;
+    total_issues_blocked: number;
+    total_duration_seconds: number;
+    loops_run: number;
+  };
+  loops: SelfHealingLoopResult[];
+}
+
+export interface SelfHealingTelemetry {
+  policy: string;
+  history: SelfHealingReport[];
+  config: {
+    killSwitch: boolean;
+    dryRun: boolean;
+    logPath: string;
   };
 }
 

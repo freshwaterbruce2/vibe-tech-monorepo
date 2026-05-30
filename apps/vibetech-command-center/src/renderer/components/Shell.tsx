@@ -2,7 +2,7 @@ import { type ReactNode, type ComponentType, useCallback } from 'react';
 import clsx from 'clsx';
 import {
   LayoutGrid, Database, Archive, Hammer, Search,
-  Sparkles, Activity, Menu, GitBranch, Table, Terminal, Brain, Blocks, Shield
+  Sparkles, Activity, Menu, GitBranch, Table, Terminal, Brain, Blocks, Shield, Wrench
 } from 'lucide-react';
 import { useUiStore, type PanelId } from '@renderer/stores';
 import { useHealth } from '@renderer/hooks';
@@ -18,6 +18,7 @@ const NAV: NavItemConfig[] = [
   { id: 'apps',      label: 'Apps',       icon: LayoutGrid, enabled: true },
   { id: 'factory',   label: 'Factory',    icon: Blocks,     enabled: true },
   { id: 'envconfig', label: 'Secrets',    icon: Shield,     enabled: true },
+  { id: 'selfhealing', label: 'Self Healing', icon: Wrench,   enabled: true },
   { id: 'affected',  label: 'Affected',   icon: GitBranch,  enabled: true },
   { id: 'databases', label: 'Databases',  icon: Database,   enabled: true },
   { id: 'dbexplorer', label: 'DB Explorer', icon: Table,     enabled: true },

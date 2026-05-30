@@ -14,6 +14,7 @@ import { DbExplorer } from '@renderer/panels/DbExplorer';
 import { AffectedDashboard } from '@renderer/panels/AffectedDashboard';
 import { FactoryPanel } from '@renderer/panels/FactoryPanel';
 import { EnvConfigPanel } from '@renderer/panels/EnvConfigPanel';
+import { SelfHealingPanel } from '@renderer/panels/SelfHealingPanel';
 import { useUiStore } from '@renderer/stores';
 import { useFileEventSubscription } from '@renderer/hooks';
 
@@ -34,6 +35,7 @@ function AppInner() {
       {activePanel === 'apps'      && <AppsGrid />}
       {activePanel === 'factory'   && <FactoryPanel />}
       {activePanel === 'envconfig' && <EnvConfigPanel />}
+      {activePanel === 'selfhealing' && <SelfHealingPanel />}
       {activePanel === 'databases' && <DbHealth />}
       {activePanel === 'backups'   && <BackupLog />}
       {activePanel === 'builds'    && <BuildStatus />}
@@ -47,3 +49,4 @@ function AppInner() {
     </Shell>
   );
 }
+

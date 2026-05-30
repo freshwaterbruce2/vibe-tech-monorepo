@@ -14,7 +14,8 @@ export type PanelId =
   | 'dbexplorer'
   | 'orchestrator'
   | 'memory'
-  | 'envconfig';
+  | 'envconfig'
+  | 'selfhealing';
 
 export interface CompletedClaudeRun {
   invocationId: string;
