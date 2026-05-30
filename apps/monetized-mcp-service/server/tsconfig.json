@@ -12,12 +12,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "types": ["node"],
-    "paths": {
-      "@vibetech/monetization": ["../../../packages/monetization/dist/src/index.d.ts"],
-      "@vibetech/payments": ["../../../packages/payments/dist/src/index.d.ts"],
-      "@vibetech/email": ["../../../packages/email/dist/src/index.d.ts"],
-      "@vibetech/ai": ["../../../packages/ai/dist/src/index.d.ts"]
-    }
+    "paths": {}
   },
   "include": ["src/**/*.ts"]
 }

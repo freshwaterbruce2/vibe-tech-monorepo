@@ -127,7 +127,11 @@ const api: CommandCenterAPI = {
   },
   selfHealing: {
     get: async (force) => ipcRenderer.invoke(IPC_CHANNELS.SELF_HEALING_GET, force),
-    trigger: async () => ipcRenderer.invoke(IPC_CHANNELS.SELF_HEALING_TRIGGER)
+    trigger: async () => ipcRenderer.invoke(IPC_CHANNELS.SELF_HEALING_TRIGGER),
+    ciInfo: async (args) => ipcRenderer.invoke(IPC_CHANNELS.SELF_HEALING_CI_INFO, args),
+    ciUpdateFix: async (spec) => ipcRenderer.invoke(IPC_CHANNELS.SELF_HEALING_CI_UPDATE_FIX, spec),
+    getWorkspace: async () => ipcRenderer.invoke(IPC_CHANNELS.NX_MCP_WORKSPACE),
+    getProjectDetails: async (projectName: string) => ipcRenderer.invoke(IPC_CHANNELS.NX_MCP_PROJECT_DETAILS, projectName)
   },
 
   stream: {

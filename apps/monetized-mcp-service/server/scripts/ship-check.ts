@@ -3,7 +3,6 @@ import { constants as fsConstants } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
-import { openAuthDb, upsertUser } from '@vibetech/auth';
 import { loadLocalEnv } from '../src/loadLocalEnv.js';
 
 interface CheckResult {
@@ -16,14 +15,13 @@ interface CheckResult {
 const here = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(here, '..', '..');
 const serverEntry = path.join(projectRoot, 'server', 'dist', 'index.js');
-const appPort = 5320 + 2;
+const appPort = 6300 + 2;
 const appHost = '127.0.0.1';
-const appBaseUrl = 'http://127.0.0.1:4320';
-const authSecret = 'discharge-ez-local-auth-secret-12345';
+const appBaseUrl = 'http://127.0.0.1:5300';
+const authSecret = 'monetized-mcp-service-local-auth-secret-12345';
 const operatorEmail = 'owner@example.com';
 const operatorPassword = 'change-this-password';
-const operatorName = 'DischargeEz Owner';
-const testAuthDbPath = 'D:\\databases\\vibe-discharge-test-auth.db';
+const operatorName = 'Monetized MCP Service Owner';
 
 loadLocalEnv(projectRoot);
 
@@ -33,10 +31,10 @@ const requireDeployEnv = process.env.SHIP_CHECK_REQUIRE_DEPLOY_ENV === '1';
 async function main(): Promise<void> {
   await checkFile(serverEntry, 'compiled-api', 'Compiled API entry exists');
   await checkDeploymentDoc();
-await checkEnvPresence(
-    ['AUTH_SECRET', 'DISCHARGE_EZ_BOOTSTRAP_EMAIL', 'DISCHARGE_EZ_BOOTSTRAP_PASSWORD'],
+  await checkEnvPresence(
+    ['AUTH_SECRET', 'DEMO_USER_EMAIL', 'DEMO_USER_PASSWORD'],
     'auth-env',
-    'Bootstrap auth env vars available for the first SQLite operator user',
+    'Starter auth env vars available for generated login flow',
   );
   await checkEnvPresence(
     ['STRIPE_SECRET_KEY', 'VITE_STRIPE_PUBLIC_KEY'],
@@ -114,34 +112,16 @@ async function checkEnvPresence(keys: string[], id: string, successDetail: strin
   });
 }
 
-async function seedCentralAuth(): Promise<void> {
-  const db = openAuthDb(testAuthDbPath);
-  try {
-    await upsertUser(db, {
-      email: operatorEmail,
-      password: operatorPassword,
-      isAdmin: true,
-      fullName: operatorName,
-    });
-  } finally {
-    db.close();
-  }
-}
-
 async function runLocalApiSmoke(): Promise<void> {
-  await seedCentralAuth();
-
   const env = {
     ...process.env,
     PORT: String(appPort),
     HOST: appHost,
     APP_BASE_URL: appBaseUrl,
-    AUTH_DB_PATH: testAuthDbPath,
     AUTH_SECRET: authSecret,
-    DISCHARGE_EZ_DB_PATH: path.join(projectRoot, '.tmp', `ship-check-${Date.now()}.sqlite`),
-    DISCHARGE_EZ_BOOTSTRAP_EMAIL: operatorEmail,
-    DISCHARGE_EZ_BOOTSTRAP_PASSWORD: operatorPassword,
-    DISCHARGE_EZ_BOOTSTRAP_NAME: operatorName,
+    DEMO_USER_EMAIL: operatorEmail,
+    DEMO_USER_PASSWORD: operatorPassword,
+    DEMO_USER_NAME: operatorName,
   };
 
   const child = spawn(process.execPath, [serverEntry], {
@@ -171,8 +151,8 @@ async function runLocalApiSmoke(): Promise<void> {
       ok: meBefore.configured === true && meBefore.user === null,
       detail:
         meBefore.configured === true && meBefore.user === null
-          ? 'SQLite auth is configured and starts unauthenticated'
-          : 'SQLite auth probe did not return the expected pre-login state',
+          ? 'Generated auth is configured and starts unauthenticated'
+          : 'Generated auth probe did not return the expected pre-login state',
     });
 
     const unauthorizedPro = await fetchRaw(`http://${appHost}:${appPort}/api/pro`, {
@@ -199,8 +179,8 @@ async function runLocalApiSmoke(): Promise<void> {
       ok: meAfter.user?.email === operatorEmail,
       detail:
         meAfter.user?.email === operatorEmail
-          ? 'SQLite login returns the bootstrap operator account'
-          : 'SQLite login did not persist the expected operator session',
+          ? 'Generated login returns the configured operator account'
+          : 'Generated login did not persist the expected operator session',
     });
 
     const proRoute = await fetchJson<{ feature?: string }>(`http://${appHost}:${appPort}/api/pro`, {
@@ -214,8 +194,8 @@ async function runLocalApiSmoke(): Promise<void> {
       ok: proRoute.feature === 'analytics.revenue',
       detail:
         proRoute.feature === 'analytics.revenue'
-          ? 'Protected pro route returns the monetization feature key after login'
-          : 'Protected pro route did not return the monetization feature key',
+          ? 'Protected pro route returns the generated monetization feature key after login'
+          : 'Protected pro route did not return the generated monetization feature key',
     });
 
     const rewrite = await fetchJson<{ rewrite?: { recommendedCta?: string } }>(
@@ -285,7 +265,7 @@ async function runLocalApiSmoke(): Promise<void> {
           : 'Protected AI usage route did not return expected usage metering state',
     });
 
-    await checkBillingCheckout(cookie);
+    await checkBillingCheckout();
 
     const logout = await fetchRaw(`http://${appHost}:${appPort}/api/auth/logout`, {
       method: 'POST',
@@ -306,8 +286,8 @@ async function runLocalApiSmoke(): Promise<void> {
       ok: afterLogout.user === null,
       detail:
         afterLogout.user === null
-          ? 'Logout clears the SQLite-backed operator session'
-          : 'Logout did not clear the SQLite-backed operator session',
+          ? 'Logout clears the generated operator session'
+          : 'Logout did not clear the generated operator session',
     });
   } catch (error) {
     results.push({
@@ -320,10 +300,8 @@ async function runLocalApiSmoke(): Promise<void> {
   }
 }
 
-async function checkBillingCheckout(cookie: string): Promise<void> {
-  const response = await fetchRaw(`http://${appHost}:${appPort}/api/billing/demo-checkout`, {
-    headers: { cookie }
-  });
+async function checkBillingCheckout(): Promise<void> {
+  const response = await fetchRaw(`http://${appHost}:${appPort}/api/billing/demo-checkout`);
 
   if (!resolveEnv('STRIPE_SECRET_KEY')) {
     results.push({

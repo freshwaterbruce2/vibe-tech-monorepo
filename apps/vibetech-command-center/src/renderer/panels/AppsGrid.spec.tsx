@@ -69,7 +69,11 @@ function mockBridge(overrides: Partial<CommandCenterAPI> = {}): void {
     },
     selfHealing: {
       get: vi.fn().mockResolvedValue({ ok: true, data: { policy: '', history: [], config: { killSwitch: false, dryRun: true, logPath: '' } }, timestamp: Date.now() }),
-      trigger: vi.fn().mockResolvedValue({ ok: true, data: { id: 'sh1', command: 'python', args: [], cwd: '.', pid: 1, status: 'running', startedAt: 1, exitCode: null }, timestamp: Date.now() })
+      trigger: vi.fn().mockResolvedValue({ ok: true, data: { id: 'sh1', command: 'python', args: [], cwd: '.', pid: 1, status: 'running', startedAt: 1, exitCode: null }, timestamp: Date.now() }),
+      ciInfo: vi.fn().mockResolvedValue({ ok: true, data: null, timestamp: Date.now() }),
+      ciUpdateFix: vi.fn().mockResolvedValue({ ok: true, data: null, timestamp: Date.now() }),
+      getWorkspace: vi.fn().mockResolvedValue({ ok: true, data: { projects: {}, dependencies: {} }, timestamp: Date.now() }),
+      getProjectDetails: vi.fn().mockResolvedValue({ ok: true, data: null, timestamp: Date.now() })
     },
     ...overrides
   };

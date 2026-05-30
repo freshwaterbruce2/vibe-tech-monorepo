@@ -78,6 +78,9 @@ function makeFakeContainer(): ServiceContainer {
     } as unknown as ServiceContainer['factory'],
     envConfig: {} as ServiceContainer['envConfig'],
     selfHealing: {} as ServiceContainer['selfHealing'],
+    nxMcp: {
+      callTool: vi.fn().mockResolvedValue({ content: [] }),
+    } as unknown as ServiceContainer['nxMcp'],
     wsPort: 0
   };
 }

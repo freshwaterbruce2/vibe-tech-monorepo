@@ -675,6 +675,7 @@ export default tseslint.config(
       'apps/vibe-portal/**/*.{js,jsx,ts,tsx}',
       'apps/vibe-reminder-v2/**/*.{js,jsx,ts,tsx}',
       'apps/vibe-discharge/**/*.{js,jsx,ts,tsx}',
+      'apps/monetized-mcp-service/**/*.{js,jsx,ts,tsx}',
       'apps/vibetech-command-center/**/*.{js,jsx,ts,tsx}',
       'backend/ipc-bridge/**/*.{js,jsx,ts,tsx}',
     ],

@@ -464,7 +464,11 @@ export const IPC_CHANNELS = {
   ENV_CONFIG_LIST: 'cc:envConfig:list',
   ENV_CONFIG_UPDATE: 'cc:envConfig:update',
   SELF_HEALING_GET: 'cc:selfHealing:get',
-  SELF_HEALING_TRIGGER: 'cc:selfHealing:trigger'
+  SELF_HEALING_TRIGGER: 'cc:selfHealing:trigger',
+  SELF_HEALING_CI_INFO: 'cc:selfHealing:ciInfo',
+  SELF_HEALING_CI_UPDATE_FIX: 'cc:selfHealing:ciUpdateFix',
+  NX_MCP_WORKSPACE: 'cc:nxMcp:workspace',
+  NX_MCP_PROJECT_DETAILS: 'cc:nxMcp:projectDetails'
 } as const;
 
 export type IpcChannel = typeof IPC_CHANNELS[keyof typeof IPC_CHANNELS];
@@ -550,6 +554,10 @@ export interface CommandCenterAPI {
   selfHealing: {
     get(force?: boolean): Promise<IpcResult<SelfHealingTelemetry>>;
     trigger(): Promise<IpcResult<ProcessHandle>>;
+    ciInfo(args?: { branch?: string; select?: string }): Promise<IpcResult<unknown>>;
+    ciUpdateFix(spec: { shortLink: string; action: 'APPLY' | 'REJECT' | 'RERUN_ENVIRONMENT_STATE' }): Promise<IpcResult<unknown>>;
+    getWorkspace(): Promise<IpcResult<unknown>>;
+    getProjectDetails(projectName: string): Promise<IpcResult<unknown>>;
   };
 
   stream: {

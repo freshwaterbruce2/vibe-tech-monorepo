@@ -1,0 +1,15 @@
+# Local environment / secrets (never commit)
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+server/dist/
+
+# Build metadata / packaged bundles (generated artifacts)
+*.tsbuildinfo
+*.mcpb
+
+# Dependencies
+node_modules/

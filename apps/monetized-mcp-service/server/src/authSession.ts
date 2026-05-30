@@ -1,0 +1,147 @@
+import {
+  createSessionToken,
+  getSessionCookieName,
+  getSessionTtlSeconds,
+  parseSessionToken,
+  type AuthUser,
+} from '@vibetech/auth';
+
+const GENERATED_USER_ID = 'generated-owner';
+const DEFAULT_USER_EMAIL = 'owner@example.com';
+const DEFAULT_USER_NAME = 'Monetized MCP Service Owner';
+const DEFAULT_USER_PASSWORD = 'change-this-password';
+
+export interface GeneratedAuthStatus {
+  configured: boolean;
+  user: AuthUser | null;
+}
+
+export function getGeneratedAuthUser(): AuthUser {
+  const configuredEmail = process.env.DEMO_USER_EMAIL?.trim();
+  const configuredName = process.env.DEMO_USER_NAME?.trim();
+
+  return {
+    id: GENERATED_USER_ID,
+    email: nonEmptyOrFallback(configuredEmail, DEFAULT_USER_EMAIL),
+    fullName: nonEmptyOrFallback(configuredName, DEFAULT_USER_NAME),
+  };
+}
+
+export function isGeneratedAuthConfigured(): boolean {
+  const secret = process.env.AUTH_SECRET ?? '';
+  return secret.trim().length >= 32;
+}
+
+export function getGeneratedAuthConfigError(): string {
+  return 'AUTH_SECRET must be set to at least 32 characters to enable generated auth.';
+}
+
+export function readGeneratedAuthStatus(cookieHeader: string | undefined): GeneratedAuthStatus {
+  if (!isGeneratedAuthConfigured()) {
+    return {
+      configured: false,
+      user: null,
+    };
+  }
+
+  const token = readCookie(cookieHeader, getSessionCookieName());
+  if (!token) {
+    return {
+      configured: true,
+      user: null,
+    };
+  }
+
+  try {
+    const payload = parseSessionToken(token);
+    const configuredUser = getGeneratedAuthUser();
+    if (
+      payload?.sub !== configuredUser.id ||
+      payload.email.toLowerCase() !== configuredUser.email.toLowerCase()
+    ) {
+      return {
+        configured: true,
+        user: null,
+      };
+    }
+
+    return {
+      configured: true,
+      user: configuredUser,
+    };
+  } catch {
+    return {
+      configured: true,
+      user: null,
+    };
+  }
+}
+
+export function verifyGeneratedLogin(email: string, password: string): AuthUser | null {
+  const normalizedEmail = email.trim().toLowerCase();
+  const configuredUser = getGeneratedAuthUser();
+  const configuredPassword = process.env.DEMO_USER_PASSWORD?.trim();
+
+  if (normalizedEmail !== configuredUser.email.toLowerCase()) {
+    return null;
+  }
+
+  if (password !== nonEmptyOrFallback(configuredPassword, DEFAULT_USER_PASSWORD)) {
+    return null;
+  }
+
+  return configuredUser;
+}
+
+export function buildGeneratedSessionCookie(user: AuthUser): string {
+  const token = createSessionToken(user);
+  const secure = process.env.NODE_ENV === 'production' || isHttpsUrl(process.env.APP_BASE_URL);
+  const parts = [
+    `${getSessionCookieName()}=${token}`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Lax',
+    `Max-Age=${getSessionTtlSeconds()}`,
+    secure ? 'Secure' : '',
+  ].filter(Boolean);
+
+  return parts.join('; ');
+}
+
+export function buildGeneratedLogoutCookie(): string {
+  const secure = process.env.NODE_ENV === 'production' || isHttpsUrl(process.env.APP_BASE_URL);
+  const parts = [
+    `${getSessionCookieName()}=`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Lax',
+    'Max-Age=0',
+    secure ? 'Secure' : '',
+  ].filter(Boolean);
+
+  return parts.join('; ');
+}
+
+function readCookie(cookieHeader: string | undefined, name: string): string | null {
+  if (!cookieHeader) {
+    return null;
+  }
+
+  const prefix = `${name}=`;
+  for (const rawPart of cookieHeader.split(';')) {
+    const part = rawPart.trim();
+    if (part.startsWith(prefix)) {
+      return part.slice(prefix.length);
+    }
+  }
+
+  return null;
+}
+
+function isHttpsUrl(value: string | undefined): boolean {
+  return typeof value === 'string' && value.startsWith('https://');
+}
+
+function nonEmptyOrFallback(value: string | undefined, fallback: string): string {
+  return value && value.length > 0 ? value : fallback;
+}

@@ -1,7 +1,144 @@
-import { useState } from 'react';
+/* eslint-disable react-hooks/preserve-manual-memoization */
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Shield, ShieldAlert, Play, RefreshCw, CheckCircle2, XCircle, Info } from 'lucide-react';
+import clsx from 'clsx';
+import { useCiInformation, useUpdateCiFix } from '@renderer/hooks';
+import { PoissonDiagnosticChart } from '@renderer/components/PoissonDiagnosticChart';
+import { AffectedProjectGraph } from '@renderer/components/AffectedProjectGraph';
 import type { SelfHealingTelemetry } from '../../shared/types';
+
+function LiveCiStatusWidget() {
+  const { data: ci, isLoading, error } = useCiInformation({
+    select: 'cipeStatus,cipeUrl,branch,commitSha,selfHealingStatus,verificationStatus,userAction,failedTaskIds,verifiedTaskIds,selfHealingEnabled,shortLink,suggestedFixDescription'
+  });
+  const updateMutation = useUpdateCiFix();
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+
+  const handleUpdate = async (action: 'APPLY' | 'REJECT' | 'RERUN_ENVIRONMENT_STATE') => {
+    if (!ci?.shortLink) return;
+    setActionError(null);
+    setActionSuccess(null);
+    try {
+      await updateMutation.mutateAsync({ shortLink: ci.shortLink, action });
+      setActionSuccess(`Successfully sent action: ${action}`);
+    } catch (e: any) {
+      setActionError(e.message || String(e));
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="bg-bg-panel border border-bg-line p-5 rounded-lg font-mono text-xs text-slate-500 flex items-center justify-center gap-2">
+        <RefreshCw size={14} className="animate-spin text-pulse-cyan" />
+        <span>Polling Live Nx Cloud CI...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-bg-panel border border-bg-line p-5 rounded-lg font-mono text-xs text-status-error/80 flex items-start gap-2">
+        <ShieldAlert size={14} className="shrink-0" />
+        <span>Nx Cloud CI Offline: {error instanceof Error ? error.message : String(error)}</span>
+      </div>
+    );
+  }
+
+  if (!ci) {
+    return (
+      <div className="bg-bg-panel border border-bg-line p-5 rounded-lg font-mono text-xs text-slate-500 italic text-center">
+        No active CI pipelines found on current branch.
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-bg-panel border border-bg-line p-5 rounded-lg space-y-4 font-mono text-xs">
+      <div className="flex justify-between items-center border-b border-bg-line pb-2">
+        <h3 className="font-semibold text-slate-200 uppercase tracking-wider">Live Nx Cloud CI Status</h3>
+        <a href={ci.cipeUrl} target="_blank" rel="noreferrer" className="text-pulse-cyan hover:underline text-[10px]">
+          View Pipeline ↗
+        </a>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-slate-400">
+        <div>Branch: <span className="text-slate-200">{ci.branch || 'unknown'}</span></div>
+        <div>Commit: <span className="text-slate-200">{ci.commitSha?.slice(0, 7) || 'n/a'}</span></div>
+        <div>Pipeline: <span className={clsx(
+          'font-semibold',
+          ci.cipeStatus === 'success' && 'text-status-ok',
+          ci.cipeStatus === 'failed' && 'text-status-error',
+          ci.cipeStatus === 'running' && 'text-pulse-cyan animate-pulse'
+        )}>{(ci.cipeStatus || 'unknown').toUpperCase()}</span></div>
+        <div>Self-Healing: <span className={clsx(
+          'font-semibold',
+          ci.selfHealingStatus === 'succeeded' && 'text-status-ok',
+          ci.selfHealingStatus === 'failed' && 'text-status-error',
+          ci.selfHealingStatus === 'pending' && 'text-amber-400',
+          ci.selfHealingStatus === 'verifying' && 'text-pulse-cyan animate-pulse'
+        )}>{(ci.selfHealingStatus || 'disabled').toUpperCase()}</span></div>
+      </div>
+
+      {ci.failedTaskIds && ci.failedTaskIds.length > 0 && (
+        <div className="bg-red-950/20 border border-red-500/20 p-2.5 rounded">
+          <div className="text-red-400 font-semibold mb-1">Failed Tasks ({ci.failedTaskIds.length}):</div>
+          <div className="space-y-0.5 max-h-24 overflow-y-auto pr-1">
+            {ci.failedTaskIds.map((t: string) => (
+              <div key={t} className="text-[11px] text-red-300/90">{t}</div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {ci.suggestedFixDescription && (
+        <div className="bg-bg-elev/50 border border-bg-line p-3 rounded space-y-2">
+          <div className="text-pulse-cyan font-semibold">Suggested Self-Healing Fix:</div>
+          <div className="text-[11px] text-slate-300 leading-relaxed max-h-32 overflow-y-auto pr-1 whitespace-pre-wrap">
+            {ci.suggestedFixDescription}
+          </div>
+
+          {ci.shortLink && (
+            <div className="flex flex-wrap gap-2 pt-2 border-t border-bg-line/50">
+              <button
+                type="button"
+                onClick={() => handleUpdate('APPLY')}
+                disabled={updateMutation.isPending}
+                className="px-2.5 py-1 bg-emerald-950/50 hover:bg-emerald-900 border border-emerald-500/30 text-emerald-400 rounded font-semibold text-[10px]"
+              >
+                Accept Fix
+              </button>
+              <button
+                type="button"
+                onClick={() => handleUpdate('REJECT')}
+                disabled={updateMutation.isPending}
+                className="px-2.5 py-1 bg-rose-950/50 hover:bg-rose-900 border border-rose-500/30 text-rose-400 rounded font-semibold text-[10px]"
+              >
+                Reject Fix
+              </button>
+              <button
+                type="button"
+                onClick={() => handleUpdate('RERUN_ENVIRONMENT_STATE')}
+                disabled={updateMutation.isPending}
+                className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 rounded font-semibold text-[10px]"
+              >
+                Rerun Env
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {actionSuccess && (
+        <div className="text-[10px] text-emerald-400 font-semibold">{actionSuccess}</div>
+      )}
+      {actionError && (
+        <div className="text-[10px] text-status-error font-semibold">{actionError}</div>
+      )}
+    </div>
+  );
+}
 
 export function SelfHealingPanel() {
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
@@ -54,6 +191,31 @@ export function SelfHealingPanel() {
     }
   });
 
+  const history = telemetry?.history ?? [];
+  const selectedReport = history.find((h) => h.report_file === selectedReportId) ?? history[0] ?? null;
+
+  const affectedProjects = useMemo(() => {
+    if (!selectedReport) return ['@vibetech/command-center'];
+    const projects = new Set<string>();
+    selectedReport.loops.forEach((l) => {
+      if (l.issues_fixed > 0) {
+        const parts = l.loop_name.split(':');
+        if (parts.length > 1 && parts[1]) {
+          projects.add(parts[1]);
+        } else {
+          projects.add(l.loop_name);
+        }
+      }
+      l.fixes_applied?.forEach((f) => {
+        const match = f.match(/(@[a-zA-Z0-9-]+\/[a-zA-Z0-9-]+|[a-zA-Z0-9-]+)/);
+        if (match) {
+          projects.add(match[0]);
+        }
+      });
+    });
+    return projects.size > 0 ? Array.from(projects) : ['@vibetech/command-center'];
+  }, [selectedReport]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -74,9 +236,6 @@ export function SelfHealingPanel() {
       </div>
     );
   }
-
-  const history = telemetry?.history ?? [];
-  const selectedReport = history.find((h) => h.report_file === selectedReportId) ?? history[0] ?? null;
 
   return (
     <div className="space-y-6">
@@ -202,6 +361,33 @@ export function SelfHealingPanel() {
 
         {/* Right: Selected Report Details & Console Log */}
         <div className="space-y-6 lg:col-span-2">
+          {/* Live CI Status Widget */}
+          <LiveCiStatusWidget />
+
+          {/* Poisson Diagnostic Chart */}
+          <PoissonDiagnosticChart
+            lambda={0.25}
+            k={history[0]?.summary.total_issues_found ?? 0}
+            historicalData={
+              history.length > 0
+                ? [...history].slice(0, 10).reverse().map((h) => ({
+                    hour: new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    errors: h.summary.total_issues_found ?? 0
+                  }))
+                : [
+                    { hour: '10:00', errors: 0 },
+                    { hour: '11:00', errors: 0 },
+                    { hour: '12:00', errors: 0 },
+                    { hour: '13:00', errors: 0 },
+                    { hour: '14:00', errors: 0 },
+                    { hour: '15:00', errors: 0 }
+                  ]
+            }
+          />
+
+          {/* Affected dependency blast radius graph */}
+          <AffectedProjectGraph affectedProjects={affectedProjects} />
+
           {/* Running Terminal Console */}
           {(running || terminalLog.length > 0) && (
             <div className="bg-black/85 border border-slate-800 rounded-lg overflow-hidden flex flex-col h-[280px]">

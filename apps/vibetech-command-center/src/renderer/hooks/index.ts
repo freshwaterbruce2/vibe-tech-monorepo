@@ -161,3 +161,43 @@ export function useUpdateEnvConfig(): UseMutationResult<
     mutationFn: async (spec) => unwrap(window.commandCenter.envConfig.update(spec))
   });
 }
+
+export function useCiInformation(args?: { branch?: string; select?: string }): UseQueryResult<any> {
+  return useQuery({
+    queryKey: ['ci', 'information', args?.branch, args?.select],
+    queryFn: async () => unwrap(window.commandCenter.selfHealing.ciInfo(args)),
+    refetchInterval: 10_000,
+    staleTime: 5_000
+  });
+}
+
+export function useUpdateCiFix(): UseMutationResult<
+  any,
+  Error,
+  { shortLink: string; action: 'APPLY' | 'REJECT' | 'RERUN_ENVIRONMENT_STATE' }
+> {
+  return useMutation({
+    mutationFn: async (spec) => unwrap(window.commandCenter.selfHealing.ciUpdateFix(spec))
+  });
+}
+
+export function useNxMcpWorkspace(): UseQueryResult<any> {
+  return useQuery({
+    queryKey: ['nx-mcp', 'workspace'],
+    queryFn: async () => unwrap(window.commandCenter.selfHealing.getWorkspace()),
+    staleTime: 60_000,
+    refetchInterval: 120_000
+  });
+}
+
+export function useNxMcpProjectDetails(projectName: string | null): UseQueryResult<any> {
+  return useQuery({
+    queryKey: ['nx-mcp', 'project-details', projectName],
+    queryFn: async () => {
+      if (!projectName) return null;
+      return unwrap(window.commandCenter.selfHealing.getProjectDetails(projectName));
+    },
+    enabled: !!projectName,
+    staleTime: 60_000
+  });
+}

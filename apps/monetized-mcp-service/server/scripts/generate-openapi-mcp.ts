@@ -1,0 +1,92 @@
+import * as fs from 'fs';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const openapiPath = path.join(__dirname, '..', '..', 'openapi.json');
+const outputPath = path.join(__dirname, '..', '..', 'server', 'src', 'openapiMcpServer.ts');
+
+interface OpenAPISchema {
+  paths: Record<string, Record<string, { description?: string; summary?: string }>>;
+}
+
+function cleanToolName(method: string, route: string): string {
+  // e.g. POST /api/auth/login -> api_auth_login_post
+  const cleanedRoute = route
+    .replace(/^\//, '')
+    .replace(/[^a-zA-Z0-9]/g, '_');
+  return `${cleanedRoute}_${method.toLowerCase()}`;
+}
+
+try {
+  console.log(`Reading OpenAPI spec from: ${openapiPath}`);
+  const spec: OpenAPISchema = JSON.parse(fs.readFileSync(openapiPath, 'utf-8'));
+  
+  let toolRegistrations = '';
+  
+  for (const [route, methods] of Object.entries(spec.paths)) {
+    for (const [method, details] of Object.entries(methods)) {
+      const toolName = cleanToolName(method, route);
+      const description = details.description || details.summary || `${method.toUpperCase()} request to ${route}`;
+      
+      toolRegistrations += `
+// Tool: ${toolName}
+server.tool(
+  '${toolName}',
+  \`${description}\`,
+  {
+    params: z.record(z.string(), z.any()).optional().describe('JSON parameters for request body/query'),
+  },
+  async ({ params }) => {
+    try {
+      const url = 'http://127.0.0.1:5300' + '${route}';
+      const isGet = ${method.toUpperCase() === 'GET' ? 'true' : 'false'};
+      
+      const response = await fetch(url, {
+        method: '${method.toUpperCase()}',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: isGet ? undefined : JSON.stringify(params || {}),
+      });
+      
+      const text = await response.text();
+      return {
+        content: [{ type: 'text', text }],
+      };
+    } catch (error: any) {
+      return {
+        content: [{ type: 'text', text: \`Error calling endpoint: \${error.message}\` }],
+        isError: true,
+      };
+    }
+  }
+);
+`;
+    }
+  }
+
+  const generatedCode = `/**
+ * Auto-generated OpenAPI MCP Server Bridge.
+ * Maps openapi.json routes to type-safe MCP tools.
+ */
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
+
+export const server = new McpServer({
+  name: 'monetized-mcp-openapi-bridge',
+  version: '1.0.0',
+});
+
+${toolRegistrations}
+`;
+
+  fs.writeFileSync(outputPath, generatedCode, 'utf-8');
+  console.log(`Successfully generated OpenAPI MCP server at: ${outputPath}`);
+  process.exit(0);
+} catch (err) {
+  console.error('Failed to generate OpenAPI MCP server:', err);
+  process.exit(1);
+}

@@ -225,6 +225,22 @@ export function registerIpcHandlers(c: ServiceContainer): void {
     try { return ok(await c.selfHealing.triggerRun()); }
     catch (e) { return err(e, 'SELF_HEALING_TRIGGER_FAILED'); }
   });
+  ipcMain.handle(IPC_CHANNELS.SELF_HEALING_CI_INFO, async (_evt, args?: { branch?: string; select?: string }): Promise<IpcResult<unknown>> => {
+    try { return ok(await c.nxMcp.callTool('ci_information', args ?? {})); }
+    catch (e) { return err(e, 'SELF_HEALING_CI_INFO_FAILED'); }
+  });
+  ipcMain.handle(IPC_CHANNELS.SELF_HEALING_CI_UPDATE_FIX, async (_evt, spec: { shortLink: string; action: 'APPLY' | 'REJECT' | 'RERUN_ENVIRONMENT_STATE' }): Promise<IpcResult<unknown>> => {
+    try { return ok(await c.nxMcp.callTool('update_self_healing_fix', spec)); }
+    catch (e) { return err(e, 'SELF_HEALING_CI_UPDATE_FIX_FAILED'); }
+  });
+  ipcMain.handle(IPC_CHANNELS.NX_MCP_WORKSPACE, async (): Promise<IpcResult<unknown>> => {
+    try { return ok(await c.nxMcp.callTool('nx_workspace', {})); }
+    catch (e) { return err(e, 'NX_MCP_WORKSPACE_FAILED'); }
+  });
+  ipcMain.handle(IPC_CHANNELS.NX_MCP_PROJECT_DETAILS, async (_evt, projectName: string): Promise<IpcResult<unknown>> => {
+    try { return ok(await c.nxMcp.callTool('nx_project_details', { projectName })); }
+    catch (e) { return err(e, 'NX_MCP_PROJECT_DETAILS_FAILED'); }
+  });
 }
 
 export function unregisterIpcHandlers(): void {

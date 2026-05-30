@@ -39,3 +39,5 @@ export type { FactoryStatusServiceOptions } from './factory-status';
 
 export { EnvConfigService } from './env-config';
 export { SelfHealingService } from './self-healing';
+export { NxMcpClient } from './nx-mcp-client';
+export type { NxMcpClientOptions } from './nx-mcp-client';

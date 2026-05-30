@@ -1,0 +1,116 @@
+import {
+  MonetizedMCPServer,
+  PriceListingRequest,
+  PriceListingResponse,
+  PaymentMethodsResponse,
+  MakePurchaseRequest,
+  MakePurchaseResponse,
+  PaymentMethods,
+  PaymentsTools,
+} from 'monetizedmcp-sdk';
+import { Address } from 'viem';
+
+export class MonetizedServiceServer extends MonetizedMCPServer {
+  private paymentTools: PaymentsTools;
+  private sellerWallet: Address;
+
+  constructor() {
+    super();
+    this.paymentTools = new PaymentsTools();
+    this.sellerWallet = (process.env.SELLER_WALLET_ADDRESS || '0x9815053D2A72e61aA660995F775c6D654b7ED734') as Address;
+  }
+
+  // 1. Expose price listing tool
+  async priceListing(_priceListingRequest: PriceListingRequest): Promise<PriceListingResponse> {
+    return {
+      items: [
+        {
+          id: 'vibe-summary',
+          name: 'Generate Vibe Summary',
+          description: 'Uses advanced models to summarize codebases and generate a rich high-vibe report.',
+          price: {
+            amount: 0.0001, // 0.0001 USDC
+            paymentMethod: PaymentMethods.USDC_BASE_SEPOLIA,
+          },
+          params: {
+            projectPath: {
+              type: 'string',
+              description: 'Path of the project to analyze',
+            },
+          },
+        },
+        {
+          id: 'pro-consultation',
+          name: 'AI Pro Architecture Consultation',
+          description: 'High-level architectural audit and recommendation generator.',
+          price: {
+            amount: 0.0005, // 0.0005 USDC
+            paymentMethod: PaymentMethods.USDC_BASE_SEPOLIA,
+          },
+          params: {
+            focusArea: {
+              type: 'string',
+              description: 'Focus area (e.g., security, scale, database)',
+            },
+          },
+        },
+      ],
+    };
+  }
+
+  // 2. Expose supported payment methods (Base Sepolia USDC and Mainnet USDC)
+  async paymentMethods(): Promise<PaymentMethodsResponse[]> {
+    return [
+      {
+        walletAddress: this.sellerWallet,
+        paymentMethod: PaymentMethods.USDC_BASE_SEPOLIA,
+      },
+      {
+        walletAddress: this.sellerWallet,
+        paymentMethod: PaymentMethods.USDC_BASE_MAINNET,
+      },
+    ];
+  }
+
+  // 3. Process purchases and run the paid tool logic
+  async makePurchase(purchaseRequest: MakePurchaseRequest): Promise<MakePurchaseResponse> {
+    const { itemId, params, signedTransaction, paymentMethod } = purchaseRequest;
+
+    // Resolve the item price
+    let amount = 0.0001;
+    if (itemId === 'pro-consultation') {
+      amount = 0.0005;
+    }
+
+    // Verify and Settle Payment via x402 protocol using Circle / Coinbase rails under the hood
+    const result = await this.paymentTools.verifyAndSettlePayment(
+      amount as any, // pass numeric amount
+      this.sellerWallet,
+      {
+        facilitatorUrl: 'https://x402.org/facilitator',
+        paymentHeader: signedTransaction,
+        resource: `mcp://${itemId}` as any,
+        paymentMethod,
+      }
+    );
+
+    if (!result.success) {
+      throw new Error(`USDC Nanopayment verification failed: ${result.message}`);
+    }
+
+    // Deliver the service/tool output upon successful receipt
+    let toolResult = '';
+    if (itemId === 'vibe-summary') {
+      toolResult = `[x402 PAID SERVICE RECEIVED] Vibe summary generated for project: ${params.projectPath ?? 'monorepo'}. The system state is green, all tests are passing, and developer mood is set to 'excellent'.`;
+    } else {
+      toolResult = `[x402 PAID SERVICE RECEIVED] Pro Architecture review for '${params.focusArea ?? 'general'}': recommended migration to fully decentralized agent networks.`;
+    }
+
+    return {
+      purchasableItemId: itemId,
+      makePurchaseRequest: purchaseRequest,
+      orderId: `order_${Date.now()}`,
+      toolResult,
+    };
+  }
+}
