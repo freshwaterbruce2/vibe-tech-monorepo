@@ -114,7 +114,22 @@ export class FactoryStatusService {
     let currency = monetization.currency;
 
     const stripeSecretKey = envVars['STRIPE_SECRET_KEY'] ?? process.env['STRIPE_SECRET_KEY'];
-    if (stripeStatus !== 'not-applicable' && stripeSecretKey && stripeSecretKey.trim().length > 0) {
+    const isDummyStripeKey = (key: string | undefined): boolean => {
+      if (!key) return true;
+      const val = key.trim();
+      return (
+        val === 'sk_test_51234567890abcdefghijklmnopqrstuvwxyz' ||
+        val === 'placeholder' ||
+        val.startsWith('sk_test_placeholder') ||
+        val === ''
+      );
+    };
+
+    if (stripeStatus !== 'not-applicable' && stripeSecretKey && isDummyStripeKey(stripeSecretKey)) {
+      stripeStatus = 'scaffolded';
+    }
+
+    if (stripeStatus !== 'not-applicable' && stripeSecretKey && !isDummyStripeKey(stripeSecretKey)) {
       try {
         const balanceRes = await this.queryStripeAPI('balance', stripeSecretKey);
         if (balanceRes) {
