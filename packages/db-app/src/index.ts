@@ -110,7 +110,9 @@ export interface VibeBooking {
   createdAt: string;
   bookingType?: 'individual' | 'team';
   teamName?: string;
-  billingMethod?: 'personal' | 'corporate_invoice';
+  billingMethod?: 'personal' | 'corporate_invoice' | 'bleisure_split';
+  businessNights?: number;
+  leisureNights?: number;
 }
 
 export interface VibePayment {
@@ -171,7 +173,9 @@ export class BookingRepository {
         createdAt TEXT NOT NULL,
         bookingType TEXT,
         teamName TEXT,
-        billingMethod TEXT
+        billingMethod TEXT,
+        businessNights INTEGER,
+        leisureNights INTEGER
       );
     `);
 
@@ -184,6 +188,12 @@ export class BookingRepository {
     } catch {}
     try {
       this.db.exec("ALTER TABLE vibe_bookings ADD COLUMN billingMethod TEXT");
+    } catch {}
+    try {
+      this.db.exec("ALTER TABLE vibe_bookings ADD COLUMN businessNights INTEGER");
+    } catch {}
+    try {
+      this.db.exec("ALTER TABLE vibe_bookings ADD COLUMN leisureNights INTEGER");
     } catch {}
 
     this.db.exec(`
@@ -245,8 +255,8 @@ export class BookingRepository {
 
   public createBooking(booking: VibeBooking): void {
     this.db.prepare(`
-      INSERT INTO vibe_bookings (id, hotelId, userId, checkIn, checkOut, guests, totalPrice, currency, status, paymentStatus, createdAt, bookingType, teamName, billingMethod)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO vibe_bookings (id, hotelId, userId, checkIn, checkOut, guests, totalPrice, currency, status, paymentStatus, createdAt, bookingType, teamName, billingMethod, businessNights, leisureNights)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       booking.id,
       booking.hotelId,
@@ -261,7 +271,9 @@ export class BookingRepository {
       booking.createdAt,
       booking.bookingType ?? 'individual',
       booking.teamName ?? null,
-      booking.billingMethod ?? 'personal'
+      booking.billingMethod ?? 'personal',
+      booking.businessNights ?? null,
+      booking.leisureNights ?? null
     );
   }
 

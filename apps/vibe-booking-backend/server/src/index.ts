@@ -18,6 +18,7 @@ import { createTenantCheckoutSession } from '@vibetech/payments';
 import fastifyRawBody from 'fastify-raw-body';
 import { loadLocalEnv } from './loadLocalEnv.js';
 import { BookingRepository } from '@vibetech/db-app';
+import { searchHotels, getHotelDetails } from './expediaClient.js';
 import { buildPaymentReceiptEmail } from '@vibetech/email';
 import { recordAiUsage, getAiUsage } from '@vibetech/ai';
 import { setupStripeTenant } from './stripeSetup.js';
@@ -80,69 +81,6 @@ function evaluatePolicyCompliance(hotel: Hotel): PolicyCompliance {
     policyReason: `Rate ($${hotel.nightlyRate}/night) exceeds corporate travel budget limit of $250.`,
   };
 }
-
-const hotels: Hotel[] = [
-  {
-    id: 'h_1',
-    name: 'Harbor Point Suites',
-    city: 'Miami',
-    country: 'USA',
-    neighborhood: 'Brickell waterfront',
-    description: 'Oceanfront suites with coworking space and fast check-in.',
-    nightlyRate: 229,
-    currency: 'USD',
-    rating: 4.6,
-    reviewScore: 9.1,
-    reviewCount: 1284,
-    imageUrl: '/images/hotel-rooftop.png',
-    gallery: ['/images/hotel-room-workspace.png', '/images/hotel-lobby-coworking.png'],
-    amenities: ['Fast Wi-Fi', 'Pool', 'Breakfast', 'Fitness center'],
-    businessPerks: ['Coworking lounge', 'Late checkout', 'Airport transfer'],
-    cancellationPolicy: 'Free cancellation until 24 hours before check-in',
-    distanceFromCenter: '0.4 mi from financial district',
-    badge: 'Best for client meetings',
-  },
-  {
-    id: 'h_2',
-    name: 'SoMa Executive Stay',
-    city: 'San Francisco',
-    country: 'USA',
-    neighborhood: 'SoMa',
-    description: 'Central location for conferences with meeting-ready rooms.',
-    nightlyRate: 285,
-    currency: 'USD',
-    rating: 4.4,
-    reviewScore: 8.8,
-    reviewCount: 946,
-    imageUrl: '/images/hotel-room-workspace.png',
-    gallery: ['/images/hotel-rooftop.png', '/images/hotel-lobby-coworking.png'],
-    amenities: ['Meeting rooms', 'Restaurant', 'EV charging', 'Gym'],
-    businessPerks: ['Boardroom access', 'Express laundry', 'Tech desk'],
-    cancellationPolicy: 'Fully refundable on flexible rates',
-    distanceFromCenter: '0.6 mi from Moscone Center',
-    badge: 'Conference favorite',
-  },
-  {
-    id: 'h_3',
-    name: 'Lakeview Business Hotel',
-    city: 'Chicago',
-    country: 'USA',
-    neighborhood: 'River North',
-    description: 'Business travel focused amenities with flexible checkout.',
-    nightlyRate: 199,
-    currency: 'USD',
-    rating: 4.3,
-    reviewScore: 8.6,
-    reviewCount: 731,
-    imageUrl: '/images/hotel-lobby-coworking.png',
-    gallery: ['/images/hotel-rooftop.png', '/images/hotel-room-workspace.png'],
-    amenities: ['Lake views', 'Free Wi-Fi', 'Restaurant', 'Parking'],
-    businessPerks: ['Quiet floors', 'Day-use office', 'Flexible checkout'],
-    cancellationPolicy: 'Free cancellation on most rooms',
-    distanceFromCenter: '0.8 mi from Merchandise Mart',
-    badge: 'Strong value',
-  },
-];
 
 async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16).toString('hex');
@@ -276,15 +214,44 @@ const stripeWebhookBus = createStripeWebhookBus({
             const paymentId = randomUUID();
             const createdAt = new Date().toISOString();
             
-            bookingRepo.createPayment({
-              id: paymentId,
-              bookingId: booking.id,
-              amount: booking.totalPrice,
-              currency: booking.currency,
-              provider: 'stripe',
-              status: 'succeeded',
-              createdAt,
-            });
+            if (booking.billingMethod === 'bleisure_split') {
+              const totalNights = calculateNights(booking.checkIn, booking.checkOut);
+              const leisureNights = booking.leisureNights ?? 0;
+              const leisurePrice = totalNights > 0 ? (leisureNights / totalNights) * booking.totalPrice : 0;
+              const corporatePrice = booking.totalPrice - leisurePrice;
+
+              // Record Stripe payment for personal/leisure portion
+              bookingRepo.createPayment({
+                id: paymentId,
+                bookingId: booking.id,
+                amount: leisurePrice,
+                currency: booking.currency,
+                provider: 'stripe',
+                status: 'succeeded',
+                createdAt,
+              });
+
+              // Record Corporate invoice payment for corporate portion
+              bookingRepo.createPayment({
+                id: randomUUID(),
+                bookingId: booking.id,
+                amount: corporatePrice,
+                currency: booking.currency,
+                provider: 'corporate_invoice',
+                status: 'succeeded',
+                createdAt,
+              });
+            } else {
+              bookingRepo.createPayment({
+                id: paymentId,
+                bookingId: booking.id,
+                amount: booking.totalPrice,
+                currency: booking.currency,
+                provider: 'stripe',
+                status: 'succeeded',
+                createdAt,
+              });
+            }
               
             bookingRepo.confirmBookingPayment(booking.id);
             context.logger?.info?.({ bookingId }, 'Booking payment processed via Stripe webhook');
@@ -534,15 +501,14 @@ app.post('/api/hotels/search', async (req, reply) => {
     return reply.code(400).send({ error: payload.error.flatten() });
   }
 
-  const destination = payload.data.destination.toLowerCase().trim();
-  const result = hotels.filter((hotel) => {
-    if (!destination) return true;
-    return (
-      hotel.city.toLowerCase().includes(destination) ||
-      hotel.country.toLowerCase().includes(destination) ||
-      hotel.name.toLowerCase().includes(destination)
-    );
-  }).map((hotel) => ({
+  const expediaHotels = await searchHotels(
+    payload.data.destination,
+    payload.data.checkIn,
+    payload.data.checkOut,
+    payload.data.guests
+  );
+
+  const result = expediaHotels.map((hotel) => ({
     ...hotel,
     policyCompliance: evaluatePolicyCompliance(hotel),
   }));
@@ -555,7 +521,7 @@ app.post('/api/hotels/search', async (req, reply) => {
 
 app.get('/api/hotels/:hotelId', async (req, reply) => {
   const params = req.params as { hotelId: string };
-  const hotel = hotels.find((candidate) => candidate.id === params.hotelId);
+  const hotel = await getHotelDetails(params.hotelId);
   if (!hotel) {
     return reply.code(404).send({ error: 'Hotel not found' });
   }
@@ -570,7 +536,7 @@ app.get('/api/hotels/:hotelId', async (req, reply) => {
 app.get('/api/hotels/:hotelId/availability', async (req, reply) => {
   const params = req.params as { hotelId: string };
   const query = req.query as { checkIn?: string; checkOut?: string };
-  const hotel = hotels.find((candidate) => candidate.id === params.hotelId);
+  const hotel = await getHotelDetails(params.hotelId);
   if (!hotel) {
     return reply.code(404).send({ error: 'Hotel not found' });
   }
@@ -592,7 +558,9 @@ const createBookingSchema = z.object({
   promoCode: z.string().optional(),
   bookingType: z.enum(['individual', 'team']).optional().default('individual'),
   teamName: z.string().optional(),
-  billingMethod: z.enum(['personal', 'corporate_invoice']).optional().default('personal'),
+  billingMethod: z.enum(['personal', 'corporate_invoice', 'bleisure_split']).optional().default('personal'),
+  businessNights: z.number().int().min(0).optional(),
+  leisureNights: z.number().int().min(0).optional(),
 });
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -650,12 +618,22 @@ app.post('/api/bookings', { preHandler: [requireAuth] }, async (req, reply) => {
     return reply.code(400).send({ error: dateError });
   }
 
-  const hotel = hotels.find((candidate) => candidate.id === payload.data.hotelId);
+  const hotel = await getHotelDetails(payload.data.hotelId);
   if (!hotel) {
     return reply.code(404).send({ error: 'Hotel not found' });
   }
 
   const nights = calculateNights(payload.data.checkIn, payload.data.checkOut);
+
+  // Validate Bleisure Split-Payment nights sum
+  if (payload.data.billingMethod === 'bleisure_split') {
+    const bNights = payload.data.businessNights ?? 0;
+    const lNights = payload.data.leisureNights ?? 0;
+    if (bNights + lNights !== nights) {
+      return reply.code(400).send({ error: `Bleisure split nights (${bNights} business + ${lNights} leisure) must sum to total stay length of ${nights} nights.` });
+    }
+  }
+
   let totalPrice = nights * hotel.nightlyRate;
   if (payload.data.promoCode) {
     const promo = bookingRepo.getPromoCode(payload.data.promoCode.toUpperCase());
@@ -681,6 +659,8 @@ app.post('/api/bookings', { preHandler: [requireAuth] }, async (req, reply) => {
     bookingType: payload.data.bookingType,
     teamName: payload.data.teamName,
     billingMethod: payload.data.billingMethod,
+    businessNights: payload.data.businessNights,
+    leisureNights: payload.data.leisureNights,
   });
 
   const booking = bookingRepo.getBookingById(bookingId);
@@ -778,13 +758,17 @@ app.post('/api/payments/create-checkout-session', { preHandler: [requireAuth] },
     return reply.code(404).send({ error: 'Booking not found' });
   }
 
-  const hotel = hotels.find((h) => h.id === booking.hotelId);
+  const hotel = await getHotelDetails(booking.hotelId);
   if (!hotel) {
     return reply.code(404).send({ error: 'Hotel not found' });
   }
 
   const nights = calculateNights(booking.checkIn, booking.checkOut);
   const baseUrl = req.headers.origin ?? process.env.APP_BASE_URL ?? `http://${host}:${port}`;
+
+  const isSplit = booking.billingMethod === 'bleisure_split';
+  const leisurePrice = isSplit && nights > 0 ? ((booking.leisureNights ?? 0) / nights) * booking.totalPrice : 0;
+  const corporatePrice = isSplit ? booking.totalPrice - leisurePrice : booking.totalPrice;
 
   if (booking.billingMethod === 'corporate_invoice') {
     // Skip Stripe - directly create invoice payment and auto-confirm stay
@@ -815,15 +799,38 @@ app.post('/api/payments/create-checkout-session', { preHandler: [requireAuth] },
       try {
         const paymentId = randomUUID();
         const createdAt = new Date().toISOString();
-        bookingRepo.createPayment({
-          id: paymentId,
-          bookingId: booking.id,
-          amount: booking.totalPrice,
-          currency: booking.currency,
-          provider: 'stripe',
-          status: 'succeeded',
-          createdAt,
-        });
+        if (isSplit) {
+          // Record leisure portion
+          bookingRepo.createPayment({
+            id: paymentId,
+            bookingId: booking.id,
+            amount: leisurePrice,
+            currency: booking.currency,
+            provider: 'stripe',
+            status: 'succeeded',
+            createdAt,
+          });
+          // Record corporate portion
+          bookingRepo.createPayment({
+            id: randomUUID(),
+            bookingId: booking.id,
+            amount: corporatePrice,
+            currency: booking.currency,
+            provider: 'corporate_invoice',
+            status: 'succeeded',
+            createdAt,
+          });
+        } else {
+          bookingRepo.createPayment({
+            id: paymentId,
+            bookingId: booking.id,
+            amount: booking.totalPrice,
+            currency: booking.currency,
+            provider: 'stripe',
+            status: 'succeeded',
+            createdAt,
+          });
+        }
         bookingRepo.confirmBookingPayment(booking.id);
         req.log.info({ bookingId: booking.id }, 'Mock Stripe checkout completed');
       } catch (err) {
@@ -831,9 +838,10 @@ app.post('/api/payments/create-checkout-session', { preHandler: [requireAuth] },
       }
     }, 100);
 
+    const redirectParams = isSplit ? '?method=bleisure_split' : '';
     return {
       ok: true,
-      url: `${baseUrl}/confirmation/${booking.id}`,
+      url: `${baseUrl}/confirmation/${booking.id}${redirectParams}`,
     };
   }
 
@@ -846,16 +854,16 @@ app.post('/api/payments/create-checkout-session', { preHandler: [requireAuth] },
           price_data: {
             currency: booking.currency.toLowerCase(),
             product_data: {
-              name: `Stay at ${hotel.name}`,
-              description: `${nights} nights, ${booking.guests} guests`,
+              name: isSplit ? `Stay at ${hotel.name} - Leisure Portion (${booking.leisureNights} nights)` : `Stay at ${hotel.name}`,
+              description: `${isSplit ? booking.leisureNights : nights} nights, ${booking.guests} guests`,
             },
-            unit_amount: Math.round(booking.totalPrice * 100),
+            unit_amount: Math.round((isSplit ? leisurePrice : booking.totalPrice) * 100),
           },
           quantity: 1,
         },
       ],
       mode: 'payment',
-      success_url: `${baseUrl}/confirmation/${booking.id}?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${baseUrl}/confirmation/${booking.id}?session_id={CHECKOUT_SESSION_ID}${isSplit ? '&method=bleisure_split' : ''}`,
       cancel_url: `${baseUrl}/payment/${booking.id}`,
       metadata: {
         bookingId: booking.id,

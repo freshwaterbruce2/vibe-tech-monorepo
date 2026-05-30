@@ -67,7 +67,7 @@ export function Dashboard({
   if (!currentUser) {
     return (
       <div style={{ maxWidth: '500px', margin: '40px auto' }} className="glass-card">
-        <span className="eyebrow">Operator Portal</span>
+        <span className="eyebrow">Operator account</span>
         <h2 style={{ fontSize: '28px', margin: '8px 0' }}>Operator Sign In</h2>
         <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '24px' }}>
           Authenticate using your operator credentials to manage client schedules, view billing records, and access entitlements.
@@ -81,27 +81,31 @@ export function Dashboard({
           style={{ display: 'grid', gap: '16px' }}
         >
           <div className="form-group">
-            <label>Operator Email</label>
-            <input
-              type="email"
-              className="form-input"
-              required
-              placeholder="owner@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <label>
+              Operator Email
+              <input
+                type="email"
+                className="form-input"
+                required
+                placeholder="owner@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </label>
           </div>
 
           <div className="form-group">
-            <label>Operator Password</label>
-            <input
-              type="password"
-              className="form-input"
-              required
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <label>
+              Operator Password
+              <input
+                type="password"
+                className="form-input"
+                required
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </label>
           </div>
 
           {authMessage && (
@@ -111,7 +115,7 @@ export function Dashboard({
           )}
 
           <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Authenticating...' : 'Sign In as Operator'}
+            {loading ? 'Authenticating...' : 'Sign in for pro access'}
           </button>
         </form>
       </div>
@@ -123,11 +127,11 @@ export function Dashboard({
       {/* Header bar showing active entitlement */}
       <div className="operator-info-bar">
         <div>
-          🔐 Signed in as <strong>{currentUser.fullName ?? currentUser.email}</strong> (Operator)
+          🔐 Signed in as <strong>{currentUser.fullName ?? currentUser.email}</strong> (Operator) - Session active
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
           <button className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => { void checkProRoute(); }}>
-            Check Pro Entitlement
+            check protected pro route
           </button>
         </div>
       </div>

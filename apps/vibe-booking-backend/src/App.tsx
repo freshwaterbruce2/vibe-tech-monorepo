@@ -9,7 +9,7 @@ interface GeneratedAuthUser {
 }
 
 export function App() {
-  const [currentView, setCurrentView] = useState<'booking' | 'dashboard'>('booking');
+  const [currentView, setCurrentView] = useState<'booking' | 'dashboard'>('dashboard');
   const [currentUser, setCurrentUser] = useState<GeneratedAuthUser | null>(null);
   const [authMessage, setAuthMessage] = useState<string | null>(null);
   const [proMessage, setProMessage] = useState<string | null>(null);
@@ -107,12 +107,34 @@ export function App() {
         throw new Error(body.error ?? 'Protected route check failed');
       }
 
-      setProMessage(`Access active for plan: ${body.plan}. Current entitlement: ${body.feature}.`);
+      setProMessage(`Access active for plan: ${body.plan}. Current entitlement: ${body.feature}. - protected route is live`);
     } catch (requestError) {
       setProMessage(requestError instanceof Error ? requestError.message : String(requestError));
     } finally {
       setLoading(null);
     }
+  }
+
+  const path = window.location.pathname;
+
+  if (path === '/terms') {
+    return (
+      <div className="app-container" style={{ padding: '40px', maxWidth: '800px', margin: '0 auto' }}>
+        <h1>Terms of Service</h1>
+        <p>These are the terms of service for Vibe Booking.</p>
+        <a href="/" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Back to home</a>
+      </div>
+    );
+  }
+
+  if (path === '/privacy') {
+    return (
+      <div className="app-container" style={{ padding: '40px', maxWidth: '800px', margin: '0 auto' }}>
+        <h1>Privacy Policy</h1>
+        <p>This is the privacy policy for Vibe Booking.</p>
+        <a href="/" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Back to home</a>
+      </div>
+    );
   }
 
   return (
@@ -138,6 +160,13 @@ export function App() {
           />
         )}
       </main>
+
+      <footer style={{ marginTop: 'auto', padding: '20px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '13px', color: 'var(--text-muted)' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '20px' }}>
+          <a href="/terms" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Terms</a>
+          <a href="/privacy" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Privacy</a>
+        </div>
+      </footer>
     </div>
   );
 }

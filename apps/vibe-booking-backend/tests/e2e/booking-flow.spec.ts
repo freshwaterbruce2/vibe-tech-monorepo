@@ -102,4 +102,58 @@ test.describe('Vibe Booking End-to-End Reservation Flow', () => {
     await expect(page).toHaveURL(/.*\/confirmation\/.*/);
     await expect(page.getByRole('heading', { level: 1 })).toContainText(/booking confirmed/i);
   });
+
+  test('Bleisure Split-Payment complete booking flow', async ({ page }) => {
+    const testEmail = `test-booking-bleisure-${Date.now()}@example.com`;
+    const testPassword = 'password123';
+
+    // 1. Visit the home page
+    await page.goto('http://localhost:4211/');
+    const destinationInput = page.getByPlaceholder(/City, hotel, or district/i);
+    await destinationInput.fill('Miami');
+
+    const checkInInput = page.locator('input[type="date"]').first();
+    const checkOutInput = page.locator('input[type="date"]').nth(1);
+    
+    await checkInInput.fill('2026-06-01');
+    await checkOutInput.fill('2026-06-05'); // 4 nights stay
+
+    await destinationInput.press('Enter');
+
+    // 2. Select hotel and reserve
+    await expect(page).toHaveURL(/.*\/search.*/);
+    const reserveButton = page.locator('article.hotelResult').filter({ hasText: 'Harbor Point Suites' }).getByRole('link', { name: /reserve/i });
+    await reserveButton.click();
+
+    // 3. Register user and configure Bleisure split payment
+    await expect(page).toHaveURL(/.*\/booking\/h_1.*/);
+    await page.getByLabel(/email/i).fill(testEmail);
+    await page.getByLabel(/password/i).fill(testPassword);
+    await page.getByLabel(/first name/i).fill('Bleisure');
+    await page.getByLabel(/last name/i).fill('User');
+
+    // Select Bleisure Split billing
+    await page.getByLabel(/billing & invoice method/i).selectOption('bleisure_split');
+    
+    // Choose 2 business nights
+    await page.getByLabel(/business stay portion/i).selectOption('2');
+
+    await page.getByRole('button', { name: /continue to payment/i }).click();
+
+    // 4. Secure Payment Page
+    await expect(page).toHaveURL(/.*\/payment\/.*/);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(/secure payment/i);
+    
+    // Check that split payment info is rendered
+    await expect(page.getByText(/business invoice/i)).toBeVisible();
+    await expect(page.getByText(/personal card/i)).toBeVisible();
+    
+    // Pay personal portion
+    await page.getByRole('button', { name: /pay personal portion/i }).click();
+
+    // 5. Confirmation Page
+    await expect(page).toHaveURL(/.*\/confirmation\/.*/);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(/booking confirmed/i);
+    await expect(page.getByText(/bleisure split checkout completed/i)).toBeVisible();
+  });
 });

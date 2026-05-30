@@ -8,9 +8,9 @@ interface NavbarProps {
 export function Navbar({ currentView, setCurrentView, currentUser, onSignOut }: NavbarProps) {
   return (
     <header className="navbar">
-      <div className="logo">
+      <h1 className="logo">
         <span style={{ fontSize: '24px' }}>⚡</span> VIBE BOOKING
-      </div>
+      </h1>
       <div className="nav-links">
         <button
           className={`nav-btn ${currentView === 'booking' ? 'active' : ''}`}

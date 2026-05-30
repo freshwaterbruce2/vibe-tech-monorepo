@@ -25,7 +25,8 @@ export function BookingPage() {
   
   const [bookingType, setBookingType] = useState<'individual' | 'team'>('individual');
   const [teamName, setTeamName] = useState('');
-  const [billingMethod, setBillingMethod] = useState<'personal' | 'corporate_invoice'>('personal');
+  const [billingMethod, setBillingMethod] = useState<'personal' | 'corporate_invoice' | 'bleisure_split'>('personal');
+  const [businessNights, setBusinessNights] = useState(1);
 
   const handleApplyPromo = async () => {
     setPromoError('');
@@ -99,6 +100,8 @@ export function BookingPage() {
             bookingType,
             teamName: bookingType === 'team' ? teamName : undefined,
             billingMethod,
+            businessNights: billingMethod === 'bleisure_split' ? businessNights : undefined,
+            leisureNights: billingMethod === 'bleisure_split' ? Math.max(0, nights - businessNights) : undefined,
           }),
         },
         true,
@@ -234,13 +237,41 @@ export function BookingPage() {
                   Billing & Invoice Method
                   <select
                     value={billingMethod}
-                    onChange={(event) => setBillingMethod(event.target.value as 'personal' | 'corporate_invoice')}
+                    onChange={(event) => {
+                      const method = event.target.value as 'personal' | 'corporate_invoice' | 'bleisure_split';
+                      setBillingMethod(method);
+                      if (method === 'bleisure_split' && businessNights >= nights) {
+                        setBusinessNights(Math.max(1, nights - 1));
+                      }
+                    }}
                     style={{ padding: '8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: '#1c1c1e', color: '#fff' }}
                   >
                     <option value="personal">Personal / Credit Card (Stripe Checkout)</option>
                     <option value="corporate_invoice">Corporate Invoice (Send to Company Central Billing)</option>
+                    <option value="bleisure_split">Bleisure Split-Payment (Split Business & Leisure nights)</option>
                   </select>
                 </label>
+
+                {billingMethod === 'bleisure_split' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      Business Stay Portion (Nights Billed to Corporate Central Invoice)
+                      <select
+                        value={businessNights}
+                        onChange={(event) => setBusinessNights(Number(event.target.value))}
+                        style={{ padding: '8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: '#1c1c1e', color: '#fff' }}
+                      >
+                        {Array.from({ length: nights }, (_, i) => i + 1).map((val) => (
+                          <option key={val} value={val}>{val} {val === 1 ? 'night' : 'nights'}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#9ca3af' }}>
+                      <span>Leisure Stay Portion (Personal Card):</span>
+                      <strong style={{ color: '#fff' }}>{Math.max(0, nights - businessNights)} {Math.max(0, nights - businessNights) === 1 ? 'night' : 'nights'}</strong>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -275,7 +306,7 @@ export function BookingPage() {
             </button>
           </form>
 
-          {hotel && <StaySummary hotel={hotel} nights={nights} appliedPromo={appliedPromo} />}
+          {hotel && <StaySummary hotel={hotel} nights={nights} appliedPromo={appliedPromo} billingMethod={billingMethod} businessNights={billingMethod === 'bleisure_split' ? businessNights : undefined} />}
         </section>
       </main>
     </AppShell>
@@ -328,6 +359,17 @@ export function PaymentPage() {
 
   if (!bookingId) return <Navigate to="/" replace />;
   const isInvoiceBooking = booking?.billingMethod === 'corporate_invoice';
+  const isBleisureSplit = booking?.billingMethod === 'bleisure_split';
+
+  // Calculate pricing split
+  const totalNights = booking ? calculateNights(booking.checkIn, booking.checkOut) : 0;
+  const businessNights = booking?.businessNights ?? 0;
+  const leisureNights = booking?.leisureNights ?? 0;
+  const totalPrice = booking?.totalPrice ?? 0;
+  const currency = booking?.currency ?? 'USD';
+
+  const leisurePrice = totalNights > 0 ? (leisureNights / totalNights) * totalPrice : 0;
+  const corporatePrice = totalPrice - leisurePrice;
 
   return (
     <AppShell>
@@ -335,7 +377,13 @@ export function PaymentPage() {
         <section className="checkoutHeader">
           <div>
             <h1>Secure payment</h1>
-            <p>{isInvoiceBooking ? 'Confirm corporate invoicing and reserve.' : 'Review the total and confirm the booking.'}</p>
+            <p>
+              {isInvoiceBooking 
+                ? 'Confirm corporate invoicing and reserve.' 
+                : isBleisureSplit 
+                  ? 'Confirm corporate invoice and pay personal leisure portion.' 
+                  : 'Review the total and confirm the booking.'}
+            </p>
           </div>
           <div className="secureNote">
             <ShieldCheck size={18} aria-hidden="true" />
@@ -350,10 +398,29 @@ export function PaymentPage() {
               <div>
                 <ReceiptText size={24} aria-hidden="true" />
                 <h2>Booking #{booking.id.slice(0, 8)}</h2>
-                <p>
-                  {formatCurrency(booking.totalPrice, booking.currency)} 
-                  {isInvoiceBooking ? ' will be billed directly to your company account.' : ' total due today.'}
-                </p>
+                
+                {isBleisureSplit ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', margin: '16px 0', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px' }}>
+                      <span style={{ color: '#9ca3af' }}>Business Invoice ({businessNights} nights):</span>
+                      <strong style={{ color: '#60a5fa' }}>{formatCurrency(corporatePrice, currency)}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px' }}>
+                      <span style={{ color: '#9ca3af' }}>Personal Card ({leisureNights} nights):</span>
+                      <strong style={{ color: '#10b981' }}>{formatCurrency(leisurePrice, currency)}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px', fontWeight: 'bold' }}>
+                      <span>Total Price:</span>
+                      <span>{formatCurrency(totalPrice, currency)}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <p>
+                    {formatCurrency(booking.totalPrice, booking.currency)} 
+                    {isInvoiceBooking ? ' will be billed directly to your company account.' : ' total due today.'}
+                  </p>
+                )}
+                
                 {booking.teamName && (
                   <p style={{ fontSize: '13px', color: '#9ca3af', margin: '4px 0 0 0' }}>
                     Group Booking for: <strong>{booking.teamName}</strong>
@@ -372,6 +439,11 @@ export function PaymentPage() {
                   <>
                     <ReceiptText size={18} aria-hidden="true" />
                     {isPaying ? 'Processing invoice...' : 'Generate & Send Invoice'}
+                  </>
+                ) : isBleisureSplit ? (
+                  <>
+                    <CreditCard size={18} aria-hidden="true" />
+                    {isPaying ? 'Processing payment...' : `Pay Personal Portion (${formatCurrency(leisurePrice, currency)})`}
                   </>
                 ) : (
                   <>
@@ -407,6 +479,7 @@ export function ConfirmationPage() {
   }, [bookingId]);
 
   const isInvoice = params.get('method') === 'invoice' || booking?.billingMethod === 'corporate_invoice';
+  const isBleisureSplit = params.get('method') === 'bleisure_split' || booking?.billingMethod === 'bleisure_split';
 
   return (
     <AppShell>
@@ -422,7 +495,7 @@ export function ConfirmationPage() {
               <div className="summaryRows">
                 <span>Status: {booking.status}</span>
                 <span>Payment: {booking.paymentStatus}</span>
-                <span>Billing: {booking.billingMethod === 'corporate_invoice' ? 'Corporate Central Invoice' : 'Credit Card'}</span>
+                <span>Billing: {booking.billingMethod === 'corporate_invoice' ? 'Corporate Central Invoice' : booking.billingMethod === 'bleisure_split' ? 'Bleisure Split-Payment' : 'Credit Card'}</span>
                 {booking.teamName && <span>Team: {booking.teamName}</span>}
                 <span>{formatCurrency(booking.totalPrice, booking.currency)}</span>
               </div>
@@ -457,6 +530,61 @@ export function ConfirmationPage() {
                   </a>
                 </div>
               )}
+              {isBleisureSplit && (
+                <div style={{
+                  margin: '20px 0',
+                  padding: '16px',
+                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                  border: '1px solid rgba(16, 185, 129, 0.2)',
+                  borderRadius: '8px',
+                  textAlign: 'left'
+                }}>
+                  <h3 style={{ color: '#34d399', marginBottom: '8px', fontSize: '15px' }}>📄 Bleisure Split Checkout Completed</h3>
+                  <p style={{ fontSize: '13px', margin: 0, color: '#9ca3af', marginBottom: '12px' }}>
+                    Business stay portion has been invoiced directly to your central corporate account. Personal/leisure portion has been successfully billed to your card.
+                  </p>
+                  <div style={{ display: 'flex', gap: '16px' }}>
+                    <a
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const bNights = booking.businessNights ?? 0;
+                        const nights = calculateNights(booking.checkIn, booking.checkOut);
+                        const corporatePrice = nights > 0 ? (bNights / nights) * booking.totalPrice : 0;
+                        alert('Downloading Corporate Invoice PDF... \n\nBooking Reference: ' + booking.id + '\nCorporate Portion: ' + formatCurrency(corporatePrice, booking.currency) + ` (${bNights} business nights)`);
+                      }}
+                      style={{
+                        color: '#60a5fa',
+                        textDecoration: 'underline',
+                        fontSize: '13px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Download Corporate Invoice
+                    </a>
+                    <a
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const lNights = booking.leisureNights ?? 0;
+                        const nights = calculateNights(booking.checkIn, booking.checkOut);
+                        const leisurePrice = nights > 0 ? (lNights / nights) * booking.totalPrice : 0;
+                        alert('Downloading Leisure Receipt PDF... \n\nBooking Reference: ' + booking.id + '\nPersonal Charge: ' + formatCurrency(leisurePrice, booking.currency) + ` (${lNights} leisure nights)`);
+                      }}
+                      style={{
+                        color: '#34d399',
+                        textDecoration: 'underline',
+                        fontSize: '13px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Download Card Receipt
+                    </a>
+                  </div>
+                </div>
+              )}
               <Link className="primaryButton" to="/">
                 Start another search
               </Link>
@@ -472,10 +600,14 @@ function StaySummary({
   hotel,
   nights,
   appliedPromo,
+  billingMethod,
+  businessNights,
 }: {
   hotel: Hotel;
   nights: number;
   appliedPromo?: { code: string; discountPercentage: number } | null;
+  billingMethod?: 'personal' | 'corporate_invoice' | 'bleisure_split';
+  businessNights?: number;
 }) {
   const baseTotal = hotel.nightlyRate * nights;
   const finalTotal = appliedPromo ? baseTotal * (1 - appliedPromo.discountPercentage / 100) : baseTotal;
@@ -511,6 +643,18 @@ function StaySummary({
             {formatCurrency(finalTotal, hotel.currency)}
           </dd>
         </div>
+        {billingMethod === 'bleisure_split' && businessNights && (
+          <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px', marginTop: '8px' }}>
+              <dt style={{ color: '#60a5fa' }}>Corporate portion ({businessNights} nights)</dt>
+              <dd style={{ color: '#60a5fa' }}>{formatCurrency((businessNights / nights) * finalTotal, hotel.currency)}</dd>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+              <dt style={{ color: '#10b981' }}>Leisure portion ({Math.max(0, nights - businessNights)} nights)</dt>
+              <dd style={{ color: '#10b981' }}>{formatCurrency(((nights - businessNights) / nights) * finalTotal, hotel.currency)}</dd>
+            </div>
+          </>
+        )}
       </dl>
       <p>{hotel.cancellationPolicy}</p>
     </aside>
