@@ -39,6 +39,12 @@ const host = process.env.HOST ?? '127.0.0.1';
 const scryptAsync = promisify(scrypt);
 const PASSWORD_KEY_LENGTH = 64;
 
+interface PolicyCompliance {
+  isWithinPolicy: boolean;
+  requiresApproval: boolean;
+  policyReason?: string;
+}
+
 interface Hotel {
   id: string;
   name: string;
@@ -58,6 +64,21 @@ interface Hotel {
   cancellationPolicy: string;
   distanceFromCenter: string;
   badge: string;
+  policyCompliance?: PolicyCompliance;
+}
+
+function evaluatePolicyCompliance(hotel: Hotel): PolicyCompliance {
+  if (hotel.nightlyRate <= 250) {
+    return {
+      isWithinPolicy: true,
+      requiresApproval: false,
+    };
+  }
+  return {
+    isWithinPolicy: false,
+    requiresApproval: true,
+    policyReason: `Rate ($${hotel.nightlyRate}/night) exceeds corporate travel budget limit of $250.`,
+  };
 }
 
 const hotels: Hotel[] = [
@@ -521,7 +542,10 @@ app.post('/api/hotels/search', async (req, reply) => {
       hotel.country.toLowerCase().includes(destination) ||
       hotel.name.toLowerCase().includes(destination)
     );
-  });
+  }).map((hotel) => ({
+    ...hotel,
+    policyCompliance: evaluatePolicyCompliance(hotel),
+  }));
 
   return {
     search: payload.data,
@@ -535,7 +559,12 @@ app.get('/api/hotels/:hotelId', async (req, reply) => {
   if (!hotel) {
     return reply.code(404).send({ error: 'Hotel not found' });
   }
-  return { hotel };
+  return {
+    hotel: {
+      ...hotel,
+      policyCompliance: evaluatePolicyCompliance(hotel),
+    },
+  };
 });
 
 app.get('/api/hotels/:hotelId/availability', async (req, reply) => {
@@ -561,6 +590,9 @@ const createBookingSchema = z.object({
   checkOut: z.string().min(1),
   guests: z.number().int().min(1).max(8),
   promoCode: z.string().optional(),
+  bookingType: z.enum(['individual', 'team']).optional().default('individual'),
+  teamName: z.string().optional(),
+  billingMethod: z.enum(['personal', 'corporate_invoice']).optional().default('personal'),
 });
 
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -646,6 +678,9 @@ app.post('/api/bookings', { preHandler: [requireAuth] }, async (req, reply) => {
     status: 'pending',
     paymentStatus: 'unpaid',
     createdAt,
+    bookingType: payload.data.bookingType,
+    teamName: payload.data.teamName,
+    billingMethod: payload.data.billingMethod,
   });
 
   const booking = bookingRepo.getBookingById(bookingId);
@@ -750,6 +785,27 @@ app.post('/api/payments/create-checkout-session', { preHandler: [requireAuth] },
 
   const nights = calculateNights(booking.checkIn, booking.checkOut);
   const baseUrl = req.headers.origin ?? process.env.APP_BASE_URL ?? `http://${host}:${port}`;
+
+  if (booking.billingMethod === 'corporate_invoice') {
+    // Skip Stripe - directly create invoice payment and auto-confirm stay
+    const paymentId = randomUUID();
+    const createdAt = new Date().toISOString();
+    bookingRepo.createPayment({
+      id: paymentId,
+      bookingId: booking.id,
+      amount: booking.totalPrice,
+      currency: booking.currency,
+      provider: 'corporate_invoice',
+      status: 'succeeded',
+      createdAt,
+    });
+    bookingRepo.confirmBookingPayment(booking.id);
+    req.log.info({ bookingId: booking.id }, 'Corporate invoice booking confirmed');
+    return {
+      ok: true,
+      url: `${baseUrl}/confirmation/${booking.id}?method=invoice`,
+    };
+  }
 
   if (!process.env.STRIPE_SECRET_KEY || process.env.PLAYWRIGHT_TEST === '1') {
     req.log.warn('Stripe checkout bypassed (falsy key or E2E test mode) - returning mock checkout redirect url');

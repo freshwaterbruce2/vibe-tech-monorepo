@@ -39,6 +39,45 @@ export function HotelCard({ hotel, searchValues }: HotelCardProps) {
           <div>
             <h2>{hotel.name}</h2>
             <p>{hotel.description}</p>
+            {hotel.policyCompliance && (
+              <div style={{ marginTop: '10px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                {hotel.policyCompliance.isWithinPolicy ? (
+                  <span style={{
+                    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                    color: '#4ade80',
+                    border: '1px solid rgba(34, 197, 94, 0.3)',
+                    padding: '3px 10px',
+                    borderRadius: '9999px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    ✓ Within Corporate Policy
+                  </span>
+                ) : (
+                  <span 
+                    title={hotel.policyCompliance.policyReason}
+                    style={{
+                      backgroundColor: 'rgba(234, 179, 8, 0.15)',
+                      color: '#facc15',
+                      border: '1px solid rgba(234, 179, 8, 0.3)',
+                      padding: '3px 10px',
+                      borderRadius: '9999px',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      cursor: 'help'
+                    }}
+                  >
+                    ⚠ Requires Manager Approval
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           <div className="reviewBox" aria-label={`${hotel.reviewScore} review score`}>
             <strong>{hotel.reviewScore.toFixed(1)}</strong>

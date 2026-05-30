@@ -108,6 +108,9 @@ export interface VibeBooking {
   status: 'pending' | 'confirmed' | 'cancelled';
   paymentStatus: 'unpaid' | 'paid';
   createdAt: string;
+  bookingType?: 'individual' | 'team';
+  teamName?: string;
+  billingMethod?: 'personal' | 'corporate_invoice';
 }
 
 export interface VibePayment {
@@ -165,8 +168,25 @@ export class BookingRepository {
         currency TEXT NOT NULL,
         status TEXT NOT NULL,
         paymentStatus TEXT NOT NULL,
-        createdAt TEXT NOT NULL
+        createdAt TEXT NOT NULL,
+        bookingType TEXT,
+        teamName TEXT,
+        billingMethod TEXT
       );
+    `);
+
+    // Run dynamic migrations for existing schemas
+    try {
+      this.db.exec("ALTER TABLE vibe_bookings ADD COLUMN bookingType TEXT");
+    } catch (e) {}
+    try {
+      this.db.exec("ALTER TABLE vibe_bookings ADD COLUMN teamName TEXT");
+    } catch (e) {}
+    try {
+      this.db.exec("ALTER TABLE vibe_bookings ADD COLUMN billingMethod TEXT");
+    } catch (e) {}
+
+    this.db.exec(`
       CREATE TABLE IF NOT EXISTS vibe_payments (
         id TEXT PRIMARY KEY,
         bookingId TEXT NOT NULL,
@@ -225,8 +245,8 @@ export class BookingRepository {
 
   public createBooking(booking: VibeBooking): void {
     this.db.prepare(`
-      INSERT INTO vibe_bookings (id, hotelId, userId, checkIn, checkOut, guests, totalPrice, currency, status, paymentStatus, createdAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO vibe_bookings (id, hotelId, userId, checkIn, checkOut, guests, totalPrice, currency, status, paymentStatus, createdAt, bookingType, teamName, billingMethod)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       booking.id,
       booking.hotelId,
@@ -238,7 +258,10 @@ export class BookingRepository {
       booking.currency,
       booking.status,
       booking.paymentStatus,
-      booking.createdAt
+      booking.createdAt,
+      booking.bookingType ?? 'individual',
+      booking.teamName ?? null,
+      booking.billingMethod ?? 'personal'
     );
   }
 

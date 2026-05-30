@@ -105,9 +105,59 @@ export function HotelPage() {
             <section className="propertyLayout">
               <div className="propertyDetails">
                 <div className="propertyIntro">
-                  <span>{hotel.badge}</span>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
+                    <span>{hotel.badge}</span>
+                    {hotel.policyCompliance && (
+                      hotel.policyCompliance.isWithinPolicy ? (
+                        <span style={{
+                          backgroundColor: 'rgba(34, 197, 94, 0.15)',
+                          color: '#4ade80',
+                          border: '1px solid rgba(34, 197, 94, 0.3)',
+                          padding: '3px 10px',
+                          borderRadius: '9999px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          display: 'inline-flex',
+                          alignItems: 'center'
+                        }}>
+                          ✓ Within Corporate Policy
+                        </span>
+                      ) : (
+                        <span 
+                          title={hotel.policyCompliance.policyReason}
+                          style={{
+                            backgroundColor: 'rgba(234, 179, 8, 0.15)',
+                            color: '#facc15',
+                            border: '1px solid rgba(234, 179, 8, 0.3)',
+                            padding: '3px 10px',
+                            borderRadius: '9999px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            cursor: 'help'
+                          }}
+                        >
+                          ⚠ Requires Manager Approval
+                        </span>
+                      )
+                    )}
+                  </div>
                   <h2>Why this stay works</h2>
                   <p>{hotel.description}</p>
+                  {hotel.policyCompliance && !hotel.policyCompliance.isWithinPolicy && (
+                    <div style={{
+                      marginTop: '12px',
+                      padding: '12px',
+                      backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid rgba(239, 68, 68, 0.2)',
+                      borderRadius: '8px',
+                      color: '#f87171',
+                      fontSize: '13px'
+                    }}>
+                      <strong>Policy Advisory:</strong> This room rate exceeds the company nightly travel budget limit ($250). Managers will receive a sign-off request upon reservation submission.
+                    </div>
+                  )}
                 </div>
                 <div className="detailGrid">
                   <article>
