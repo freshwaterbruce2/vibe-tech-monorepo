@@ -3,6 +3,7 @@ import { constants as fsConstants } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
+import { openAuthDb, upsertUser } from '@vibetech/auth';
 import { loadLocalEnv } from '../src/loadLocalEnv.js';
 
 interface CheckResult {
@@ -22,6 +23,9 @@ const authSecret = 'client-portal-local-auth-secret-12345';
 const operatorEmail = 'owner@example.com';
 const operatorPassword = 'change-this-password';
 const operatorName = 'Vibe-Tech Owner';
+// Throwaway central-auth store for the ship-check, isolated from the real
+// D:\databases\auth.db. Seeded with the operator below so login succeeds.
+const testAuthDbPath = 'D:\\databases\\vibe-portal-test-auth.db';
 
 loadLocalEnv(projectRoot);
 
@@ -112,19 +116,43 @@ async function checkEnvPresence(keys: string[], id: string, successDetail: strin
   });
 }
 
+async function seedCentralAuth(): Promise<void> {
+  const db = openAuthDb(testAuthDbPath);
+  try {
+    await upsertUser(db, {
+      email: operatorEmail,
+      password: operatorPassword,
+      isAdmin: true,
+      fullName: operatorName,
+    });
+  } finally {
+    db.close();
+  }
+}
+
 async function runLocalApiSmoke(): Promise<void> {
+  // Login authenticates against the central store, so the operator must exist
+  // in it before the server starts.
+  await seedCentralAuth();
+
   const env = {
     ...process.env,
     PORT: String(appPort),
     HOST: appHost,
     APP_BASE_URL: appBaseUrl,
     APP_DB_PATH: 'D:\\databases\\vibe-portal-test.db',
+    AUTH_DB_PATH: testAuthDbPath,
     AUTH_SECRET: authSecret,
     DEMO_USER_EMAIL: operatorEmail,
     DEMO_USER_PASSWORD: operatorPassword,
     DEMO_USER_NAME: operatorName,
     DEMO_PLAN: 'pro',
   };
+
+  // If Stripe key is the default placeholder, remove it so the smoke test fallback runs.
+  if (env.STRIPE_SECRET_KEY === 'sk_test_51234567890abcdefghijklmnopqrstuvwxyz') {
+    delete env.STRIPE_SECRET_KEY;
+  }
 
   const child = spawn(process.execPath, [serverEntry], {
     cwd: projectRoot,
@@ -404,7 +432,11 @@ async function fetchRaw(url: string, init?: RequestInit): Promise<Response> {
 }
 
 function resolveEnv(key: string): string | undefined {
-  return process.env[key];
+  const val = process.env[key];
+  if (key === 'STRIPE_SECRET_KEY' && val === 'sk_test_51234567890abcdefghijklmnopqrstuvwxyz') {
+    return undefined;
+  }
+  return val;
 }
 
 function printResults(): void {
