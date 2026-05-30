@@ -67,6 +67,10 @@ function mockBridge(overrides: Partial<CommandCenterAPI> = {}): void {
       list: vi.fn().mockResolvedValue({ ok: true, data: [], timestamp: Date.now() }),
       update: vi.fn().mockResolvedValue({ ok: true, data: undefined, timestamp: Date.now() })
     },
+    selfHealing: {
+      get: vi.fn().mockResolvedValue({ ok: true, data: { policy: '', history: [], config: { killSwitch: false, dryRun: true, logPath: '' } }, timestamp: Date.now() }),
+      trigger: vi.fn().mockResolvedValue({ ok: true, data: { id: 'sh1', command: 'python', args: [], cwd: '.', pid: 1, status: 'running', startedAt: 1, exitCode: null }, timestamp: Date.now() })
+    },
     ...overrides
   };
   Object.defineProperty(window, 'commandCenter', { value: base, writable: true, configurable: true });

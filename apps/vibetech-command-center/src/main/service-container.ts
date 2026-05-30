@@ -12,7 +12,8 @@ import {
   AgentOrchestratorService,
   MemoryVizService,
   FactoryStatusService,
-  EnvConfigService
+  EnvConfigService,
+  SelfHealingService
 } from './services';
 
 export interface ServiceContainer {
@@ -30,6 +31,7 @@ export interface ServiceContainer {
   memory: MemoryVizService;
   factory: FactoryStatusService;
   envConfig: EnvConfigService;
+  selfHealing: SelfHealingService;
   wsPort: number;
 }
 
@@ -53,9 +55,11 @@ export function createServiceContainer(opts: ServiceContainerOptions): ServiceCo
   const memory = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
   const factory = new FactoryStatusService({ monorepoRoot: opts.monorepoRoot });
   const envConfig = new EnvConfigService({ monorepoRoot: opts.monorepoRoot });
+  const selfHealing = new SelfHealingService({ monorepoRoot: opts.monorepoRoot }, runner);
 
-  return { watcher, nxGraph, nxAffected, health, dbMetrics, backup, runner, claude, rag, dbExplorer, agent, memory, factory, envConfig, wsPort: opts.wsPort };
+  return { watcher, nxGraph, nxAffected, health, dbMetrics, backup, runner, claude, rag, dbExplorer, agent, memory, factory, envConfig, selfHealing, wsPort: opts.wsPort };
 }
+
 
 export async function disposeServiceContainer(c: ServiceContainer): Promise<void> {
   try { await c.watcher.stop(); } catch {}

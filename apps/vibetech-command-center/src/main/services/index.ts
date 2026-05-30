@@ -38,3 +38,4 @@ export { FactoryStatusService } from './factory-status';
 export type { FactoryStatusServiceOptions } from './factory-status';
 
 export { EnvConfigService } from './env-config';
+export { SelfHealingService } from './self-healing';

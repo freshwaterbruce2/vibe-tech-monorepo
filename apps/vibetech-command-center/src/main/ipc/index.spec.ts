@@ -78,6 +78,10 @@ function makeFakeContainer(): ServiceContainer {
       listConfigs: vi.fn().mockResolvedValue([]),
       updateEnvVar: vi.fn(),
     } as unknown as ServiceContainer['envConfig'],
+    selfHealing: {
+      getTelemetry: vi.fn().mockResolvedValue({ policy: '', history: [], config: { killSwitch: false, dryRun: true, logPath: '' } }),
+      triggerRun: vi.fn().mockResolvedValue({ id: 'sh1', command: 'python', args: [], cwd: '.', pid: 1, status: 'running', startedAt: 1, exitCode: null }),
+    } as unknown as ServiceContainer['selfHealing'],
     wsPort: 3210
   };
 }

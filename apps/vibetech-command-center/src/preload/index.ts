@@ -125,6 +125,10 @@ const api: CommandCenterAPI = {
     list: async (force) => ipcRenderer.invoke(IPC_CHANNELS.ENV_CONFIG_LIST, force),
     update: async (spec) => ipcRenderer.invoke(IPC_CHANNELS.ENV_CONFIG_UPDATE, spec)
   },
+  selfHealing: {
+    get: async (force) => ipcRenderer.invoke(IPC_CHANNELS.SELF_HEALING_GET, force),
+    trigger: async () => ipcRenderer.invoke(IPC_CHANNELS.SELF_HEALING_TRIGGER)
+  },
 
   stream: {
     subscribe(topic, handler) {

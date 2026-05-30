@@ -9,7 +9,7 @@ import type {
   AffectedGraph, DbExplorerDatabase, DbTableSchema, DbExplorerResult,
   McpServerStatus, AgentTaskLauncher, AgentTaskSpec, LogSearchFilters,
   MemoryVizSnapshot, MemorySearchResult, MemoryDecayView, FactoryAppStatus,
-  FactoryGeneratorLauncher, ProjectEnvInfo,
+  FactoryGeneratorLauncher, ProjectEnvInfo, SelfHealingTelemetry
 } from '../../shared/types';
 import type { ServiceContainer } from '../service-container';
 
@@ -215,6 +215,15 @@ export function registerIpcHandlers(c: ServiceContainer): void {
   ipcMain.handle(IPC_CHANNELS.MEMORY_VIZ_CONSOLIDATE, async (): Promise<IpcResult<{ success: boolean; message: string }>> => {
     try { return ok(c.memory.triggerConsolidation()); }
     catch (e) { return err(e, 'MEMORY_VIZ_CONSOLIDATE_FAILED'); }
+  });
+
+  ipcMain.handle(IPC_CHANNELS.SELF_HEALING_GET, async (_evt, _force?: boolean): Promise<IpcResult<SelfHealingTelemetry>> => {
+    try { return ok(await c.selfHealing.getTelemetry()); }
+    catch (e) { return err(e, 'SELF_HEALING_GET_FAILED'); }
+  });
+  ipcMain.handle(IPC_CHANNELS.SELF_HEALING_TRIGGER, async (): Promise<IpcResult<ProcessHandle>> => {
+    try { return ok(await c.selfHealing.triggerRun()); }
+    catch (e) { return err(e, 'SELF_HEALING_TRIGGER_FAILED'); }
   });
 }
 
