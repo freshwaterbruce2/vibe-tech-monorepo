@@ -1,24 +1,24 @@
 // Configuration for NOVA Mobile App
-import { Platform } from 'react-native';
 
 // Platform-aware API URL detection
 // - iOS Simulator: 'localhost' works directly
 // - Android Emulator: '10.0.2.2' is the special alias for host machine
 // - Physical device: Use your computer's LAN IP, or `adb reverse tcp:3000 tcp:3000`
 function getDefaultApiHost(): string {
+  const envUrl = process.env.EXPO_PUBLIC_API_URL || process.env.EXPO_PUBLIC_OVERRIDE_API_URL;
+  if (envUrl) return envUrl;
+
   if (!__DEV__) return 'https://api.nova-ai.com';
 
-  // Android emulator needs 10.0.2.2 to reach host machine
-  if (Platform.OS === 'android') return 'http://10.0.2.2:3000';
-
-  // iOS simulator and web can use localhost
-  return 'http://localhost:3000';
+  // On-device testing via adb reverse tcp:5005 tcp:5005 maps localhost:5005 to the host's 5005 gateway.
+  // Android emulator can also use 10.0.2.2:5005 if adb reverse is not active, but localhost is preferred for adb reverse.
+  return 'http://localhost:5005';
 }
 
 export const config = {
   // API URLs
   API_URL: getDefaultApiHost(),
-  WS_URL: __DEV__ ? 'ws://localhost:3000' : 'wss://api.nova-ai.com',
+  WS_URL: __DEV__ ? 'ws://localhost:5005' : 'wss://api.nova-ai.com',
 
   // Authentication
   // ⚠️ WARNING: Set EXPO_PUBLIC_BRIDGE_TOKEN in your .env — the fallback is for dev only.

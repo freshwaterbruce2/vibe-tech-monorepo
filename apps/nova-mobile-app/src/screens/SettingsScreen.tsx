@@ -8,6 +8,7 @@ import {
   Shield,
   Settings as SettingsIcon,
   Trash2,
+  Unlink,
 } from 'lucide-react-native';
 import { useState } from 'react';
 import {
@@ -27,7 +28,7 @@ import { useChatStore } from '../stores/chatStore';
 import { useConnectionStore } from '../stores/connectionStore';
 
 export function SettingsScreen() {
-  const { serverUrl, bridgeToken, setServerUrl, setBridgeToken, checkConnection } =
+  const { serverUrl, bridgeToken, setServerUrl, setBridgeToken, checkConnection, disconnect } =
     useConnectionStore();
   const { clearHistory } = useChatStore();
   const { biometricEnabled, toggleBiometric } = useAuthStore();
@@ -70,6 +71,20 @@ export function SettingsScreen() {
   const handleBiometricToggle = async () => {
     await toggleBiometric();
     void Haptics.selectionAsync();
+  };
+
+  const handleDisconnect = () => {
+    Alert.alert('Disconnect Host', 'This will unlink this device from the Nova desktop agent host.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Unlink',
+        style: 'destructive',
+        onPress: () => {
+          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+          disconnect();
+        },
+      },
+    ]);
   };
 
   return (
@@ -162,6 +177,18 @@ export function SettingsScreen() {
           >
             <Trash2 size={16} color={T.STATUS_ERROR} />
             <Text style={styles.dangerBtnText}>Clear All Messages</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Connection Setup */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Account & Linkage</Text>
+          <TouchableOpacity
+            style={styles.dangerBtn}
+            onPress={handleDisconnect}
+          >
+            <Unlink size={16} color={T.STATUS_ERROR} />
+            <Text style={styles.dangerBtnText}>Disconnect / Unlink Host</Text>
           </TouchableOpacity>
         </View>
 

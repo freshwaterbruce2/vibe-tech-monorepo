@@ -60,7 +60,7 @@ function LoadingScreen() {
 // ── App Content ─────────────────────────────────────────────────────────────
 function AppContent() {
   const [hydrated, setHydrated] = useState(false);
-  const { initialize, checkConnection, isConnected } = useConnectionStore();
+  const { initialize, checkConnection, isConnected, isLinked } = useConnectionStore();
   const { biometricEnabled, isUnlocked, lock } = useAuthStore();
 
   // Wait for stores to rehydrate from AsyncStorage
@@ -111,8 +111,8 @@ function AppContent() {
     return <LockScreen />;
   }
 
-  // Show AuthScreen if not connected to the backend
-  if (!isConnected) {
+  // Show AuthScreen if not connected and not linked to a host
+  if (!isConnected && !isLinked) {
     return <AuthScreen />;
   }
 

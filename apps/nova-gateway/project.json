@@ -1,0 +1,36 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "nova-gateway",
+  "projectType": "application",
+  "root": "apps/nova-gateway",
+  "sourceRoot": "apps/nova-gateway/src",
+  "targets": {
+    "dev": {
+      "executor": "nx:run-script",
+      "options": { "script": "dev" },
+      "cache": false
+    },
+    "build": {
+      "executor": "nx:run-script",
+      "options": { "script": "build" },
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true
+    },
+    "lint": {
+      "executor": "nx:run-script",
+      "options": { "script": "lint" },
+      "cache": true
+    },
+    "test": {
+      "executor": "nx:run-script",
+      "options": { "script": "test" },
+      "cache": true
+    },
+    "typecheck": {
+      "executor": "nx:run-script",
+      "options": { "script": "typecheck" },
+      "cache": true
+    }
+  },
+  "tags": ["scope:backend", "type:application", "language:typescript"]
+}

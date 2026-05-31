@@ -1,4 +1,5 @@
 import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
@@ -40,7 +41,15 @@ export async function registerForPushNotificationsAsync() {
 
     // Get the standard Expo token (or APNS/FCM device token if passing projectId)
     // To work seamlessly in dev we use the generic Expo push token.
-    token = (await Notifications.getExpoPushTokenAsync()).data;
+    const projectId =
+      Constants.expoConfig?.extra?.eas?.projectId ??
+      Constants.easConfig?.projectId;
+
+    token = (
+      await Notifications.getExpoPushTokenAsync({
+        projectId,
+      })
+    ).data;
     console.log('App Push Token:', token);
   } else {
     console.log('Must use physical device for Push Notifications');

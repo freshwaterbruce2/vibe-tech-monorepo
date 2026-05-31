@@ -61,6 +61,7 @@ interface ConnectionState {
   bridgeToken: string;
   adapter: HttpAgentAdapter | null;
   isConnected: boolean;
+  isLinked: boolean;
   agentStatus: AgentState | null;
   error: string | null;
 
@@ -75,6 +76,9 @@ interface ConnectionState {
 
   /** Check connection to the Nova bridge */
   checkConnection: () => Promise<void>;
+
+  /** Disconnect and reset the linkage status */
+  disconnect: () => void;
 }
 
 export const useConnectionStore = create<ConnectionState>()(
@@ -84,6 +88,7 @@ export const useConnectionStore = create<ConnectionState>()(
       bridgeToken: config.BRIDGE_TOKEN,
       adapter: null,
       isConnected: false,
+      isLinked: false,
       agentStatus: null,
       error: null,
 
@@ -117,7 +122,7 @@ export const useConnectionStore = create<ConnectionState>()(
 
         try {
           const status = await adapter.getStatus();
-          set({ isConnected: true, agentStatus: status, error: null });
+          set({ isConnected: true, isLinked: true, agentStatus: status, error: null });
         } catch (err) {
           set({
             isConnected: false,
@@ -126,6 +131,17 @@ export const useConnectionStore = create<ConnectionState>()(
           });
         }
       },
+
+      disconnect: () => {
+        set({
+          isLinked: false,
+          isConnected: false,
+          serverUrl: config.API_URL,
+          bridgeToken: config.BRIDGE_TOKEN,
+          error: null,
+          agentStatus: null,
+        });
+      },
     }),
     {
       name: 'nova-connection',
@@ -133,6 +149,7 @@ export const useConnectionStore = create<ConnectionState>()(
       partialize: (state) => ({
         serverUrl: state.serverUrl,
         bridgeToken: state.bridgeToken,
+        isLinked: state.isLinked,
       }),
     },
   ),

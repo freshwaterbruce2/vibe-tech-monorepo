@@ -134,8 +134,8 @@ export function ChatScreen() {
       addMessage(userMsg);
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-      // If offline, queue the message
-      if (!isOnline || !adapter) {
+      // If offline or disconnected from host, queue the message
+      if (!isOnline || !isConnected || !adapter) {
         updateMessageStatus(newId, 'queued');
         enqueue({ id: newId, content: text, timestamp: new Date().toISOString() });
         return;

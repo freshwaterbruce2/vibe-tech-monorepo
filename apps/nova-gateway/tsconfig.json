@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "@vibetech/shared-ipc": ["../../packages/shared-ipc/dist/index.d.ts"],
+      "@vibetech/logger": ["../../packages/logger/dist/index.d.ts"],
+      "@vibetech/shared-config": ["../../packages/shared-config/dist/index.d.ts"]
+    }
+  },
+  "include": ["src/**/*", "tests/**/*"],
+  "exclude": ["node_modules", "dist"],
+  "references": [
+    {
+      "path": "../../packages/logger"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "name": "@vibetech/nova-gateway",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Nova Agent Gateway: 24/7 bot gateway and webhook platform connecting Telegram & Discord to Nova Agent desktop",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.app.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.2.0",
+    "@fastify/websocket": "^11.0.2",
+    "@vibetech/logger": "workspace:*",
+    "@vibetech/shared-ipc": "workspace:*",
+    "better-sqlite3": "12.6.2",
+    "discord.js": "^14.16.3",
+    "fastify": "^5.8.4",
+    "telegraf": "^4.16.3",
+    "ws": "^8.20.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^25.5.0",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.21.0",
+    "typescript": "5.9.3",
+    "vitest": "^4.1.2"
+  }
+}

@@ -1,5 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { Fingerprint } from 'lucide-react-native';
+import { useEffect } from 'react';
 import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { config } from '../config';
 import { useAuthStore } from '../stores/authStore';
@@ -17,6 +18,10 @@ export function LockScreen() {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
+
+  useEffect(() => {
+    void handleUnlock();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
