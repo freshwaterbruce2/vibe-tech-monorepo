@@ -1,0 +1,60 @@
+// Configuration for <%= displayName %> Mobile App
+
+function getDefaultApiHost(): string {
+  const envUrl = process.env.EXPO_PUBLIC_API_URL ?? process.env.EXPO_PUBLIC_OVERRIDE_API_URL;
+  if (envUrl) return envUrl;
+
+  if (!__DEV__) return 'https://api.<%= projectName %>.com';
+
+  return 'http://localhost:5005';
+}
+
+export const config = {
+  API_URL: getDefaultApiHost(),
+  WS_URL: __DEV__ ? 'ws://localhost:5005' : 'wss://api.<%= projectName %>.com',
+
+  BRIDGE_TOKEN: (() => {
+    const token = process.env.EXPO_PUBLIC_BRIDGE_TOKEN;
+    if (!token && !__DEV__) {
+      throw new Error('EXPO_PUBLIC_BRIDGE_TOKEN is required in production builds');
+    }
+    return token ?? 'mobile_default_secret_token_change_me';
+  })(),
+
+  API_TIMEOUT: 30_000,
+  DEBUG: __DEV__,
+
+  APP_NAME: '<%= displayName %>',
+  APP_VERSION: '1.0.0',
+
+  FEATURES: {
+    BIOMETRIC_AUTH: true,
+    PUSH_NOTIFICATIONS: true,
+  },
+
+  // Premium UI Theme - Vibe-Tech design system
+  THEME: {
+    BACKGROUND: '#0a0a0f',
+    SURFACE: '#111118',
+    SURFACE_ELEVATED: '#1a1a24',
+    BORDER: '#2a2a3a',
+
+    TEXT_PRIMARY: '#f0f0f5',
+    TEXT_SECONDARY: '#8888a0',
+    TEXT_MUTED: '#555570',
+
+    ACCENT_CYAN: '#00d4ff',
+    ACCENT_MAGENTA: '#ff006e',
+    ACCENT_GREEN: '#00ff88',
+    ACCENT_AMBER: '#ffaa00',
+
+    STATUS_ONLINE: '#00ff88',
+    STATUS_OFFLINE: '#ff4444',
+  },
+} as const;
+
+export const getApiUrl = (endpoint: string): string => {
+  return `${config.API_URL}${endpoint}`;
+};
+
+export type AppConfig = typeof config;

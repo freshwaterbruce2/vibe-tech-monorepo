@@ -1,0 +1,33 @@
+import { act } from 'react';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { useAuthStore } from './authStore';
+
+describe('useAuthStore', () => {
+  beforeEach(() => {
+    // Reset state before each test
+    act(() => {
+      useAuthStore.setState({
+        biometricEnabled: false,
+        isUnlocked: true,
+      });
+    });
+  });
+
+  it('initializes with default values', () => {
+    const state = useAuthStore.getState();
+    expect(state.biometricEnabled).toBe(false);
+    expect(state.isUnlocked).toBe(true);
+  });
+
+  it('locks and unlocks correctly', () => {
+    act(() => {
+      useAuthStore.getState().lock();
+    });
+    expect(useAuthStore.getState().isUnlocked).toBe(false);
+
+    act(() => {
+      useAuthStore.getState().unlock();
+    });
+    expect(useAuthStore.getState().isUnlocked).toBe(true);
+  });
+});

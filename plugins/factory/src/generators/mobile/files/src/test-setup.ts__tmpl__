@@ -1,0 +1,48 @@
+import { vi } from 'vitest';
+
+// Mock react-native — not available in Node test environment
+vi.mock('react-native', () => ({
+  Platform: {
+    OS: 'ios',
+    select: (obj: Record<string, unknown>) => obj.ios ?? obj.default,
+  },
+  StyleSheet: {
+    create: (styles: Record<string, unknown>) => styles,
+  },
+  Alert: {
+    alert: vi.fn(),
+  },
+}));
+
+// Mock expo-local-authentication
+vi.mock('expo-local-authentication', () => ({
+  hasHardwareAsync: vi.fn(async () => true),
+  isEnrolledAsync: vi.fn(async () => true),
+  authenticateAsync: vi.fn(async () => ({ success: true })),
+}));
+
+// Mock expo-haptics
+vi.mock('expo-haptics', () => ({
+  selectionAsync: vi.fn(),
+  notificationAsync: vi.fn(),
+  impactAsync: vi.fn(),
+}));
+
+// Mock @react-native-async-storage/async-storage
+vi.mock('@react-native-async-storage/async-storage', () => {
+  let store: Record<string, string> = {};
+  return {
+    default: {
+      getItem: vi.fn(async (key: string) => store[key] ?? null),
+      setItem: vi.fn(async (key: string, value: string) => {
+        store[key] = value;
+      }),
+      removeItem: vi.fn(async (key: string) => {
+        delete store[key];
+      }),
+      clear: vi.fn(async () => {
+        store = {};
+      }),
+    },
+  };
+});

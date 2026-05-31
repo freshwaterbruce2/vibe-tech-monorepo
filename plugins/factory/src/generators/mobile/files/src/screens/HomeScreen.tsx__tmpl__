@@ -1,0 +1,107 @@
+import { StyleSheet, Text, View } from 'react-native';
+import { ThemeButton } from '../components/ThemeButton';
+import { config } from '../config';
+
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+export function HomeScreen({ navigation }: any) {
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}><%= displayName %></Text>
+        <Text style={styles.subtitle}>Expo 54 + React Native 0.81 Scaffold</Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Vibe-Tech Design Tokens</Text>
+        <View style={styles.row}>
+          <View style={[styles.badge, { backgroundColor: config.THEME.ACCENT_CYAN }]}><Text style={styles.badgeText}>Cyan</Text></View>
+          <View style={[styles.badge, { backgroundColor: config.THEME.ACCENT_MAGENTA }]}><Text style={styles.badgeText}>Magenta</Text></View>
+          <View style={[styles.badge, { backgroundColor: config.THEME.ACCENT_GREEN }]}><Text style={styles.badgeText}>Green</Text></View>
+        </View>
+        <Text style={styles.description}>
+          This template is pre-configured with native workspace resolution, tsconfig base setups, haptics, biometrics, and vitest.
+        </Text>
+      </View>
+
+      <View style={styles.actions}>
+        <ThemeButton
+          title="Go to Settings"
+          variant="accent"
+          hapticType="light"
+          onPress={() => navigation.navigate('Settings')}
+        />
+        <ThemeButton
+          title="Trigger Success Haptic"
+          variant="primary"
+          hapticType="success"
+        />
+        <ThemeButton
+          title="Trigger Warning Haptic"
+          variant="secondary"
+          hapticType="warning"
+        />
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: config.THEME.BACKGROUND,
+    padding: 24,
+    justifyContent: 'center',
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  title: {
+    color: config.THEME.TEXT_PRIMARY,
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  subtitle: {
+    color: config.THEME.TEXT_SECONDARY,
+    fontSize: 14,
+    marginTop: 8,
+  },
+  card: {
+    backgroundColor: config.THEME.SURFACE,
+    borderRadius: 12,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: config.THEME.BORDER,
+    marginBottom: 32,
+  },
+  cardTitle: {
+    color: config.THEME.TEXT_PRIMARY,
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  row: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  badge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+  },
+  badgeText: {
+    color: '#000000',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  description: {
+    color: config.THEME.TEXT_SECONDARY,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  actions: {
+    marginTop: 16,
+  },
+});

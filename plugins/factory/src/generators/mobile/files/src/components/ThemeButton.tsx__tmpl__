@@ -1,0 +1,117 @@
+import * as Haptics from 'expo-haptics';
+import { GestureResponderEvent, StyleSheet, Text, TouchableOpacity, type TouchableOpacityProps } from 'react-native';
+import { config } from '../config';
+
+interface ThemeButtonProps extends TouchableOpacityProps {
+  title: string;
+  variant?: 'primary' | 'secondary' | 'accent';
+  hapticType?: 'selection' | 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error';
+}
+
+export function ThemeButton({
+  title,
+  variant = 'primary',
+  hapticType = 'selection',
+  style,
+  onPress,
+  ...props
+}: ThemeButtonProps) {
+  const handlePress = (e: GestureResponderEvent) => {
+    switch (hapticType) {
+      case 'selection':
+        void Haptics.selectionAsync();
+        break;
+      case 'light':
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        break;
+      case 'medium':
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        break;
+      case 'heavy':
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        break;
+      case 'success':
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        break;
+      case 'warning':
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        break;
+      case 'error':
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        break;
+    }
+    if (onPress) onPress(e);
+  };
+
+  const getButtonStyle = () => {
+    switch (variant) {
+      case 'secondary':
+        return styles.secondaryButton;
+      case 'accent':
+        return styles.accentButton;
+      case 'primary':
+      default:
+        return styles.primaryButton;
+    }
+  };
+
+  const getTextStyle = () => {
+    switch (variant) {
+      case 'secondary':
+        return styles.secondaryText;
+      case 'accent':
+        return styles.accentText;
+      case 'primary':
+      default:
+        return styles.primaryText;
+    }
+  };
+
+  return (
+    <TouchableOpacity
+      style={[styles.button, getButtonStyle(), style]}
+      onPress={handlePress}
+      activeOpacity={0.8}
+      {...props}
+    >
+      <Text style={[styles.text, getTextStyle()]}>{title}</Text>
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  button: {
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 8,
+  },
+  primaryButton: {
+    backgroundColor: config.THEME.SURFACE_ELEVATED,
+    borderWidth: 1,
+    borderColor: config.THEME.BORDER,
+  },
+  secondaryButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: config.THEME.BORDER,
+  },
+  accentButton: {
+    backgroundColor: config.THEME.ACCENT_CYAN,
+  },
+  text: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  primaryText: {
+    color: config.THEME.TEXT_PRIMARY,
+  },
+  secondaryText: {
+    color: config.THEME.TEXT_SECONDARY,
+  },
+  accentText: {
+    color: '#000000',
+  },
+});

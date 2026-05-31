@@ -1,0 +1,143 @@
+import { NavigationContainer } from '@react-navigation/native';
+import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
+import { Component, useEffect, useState, type ReactNode } from 'react';
+import { ActivityIndicator, AppState, ScrollView, StatusBar, StyleSheet, Text, View, type AppStateStatus } from 'react-native';
+import { config } from './src/config';
+import { RootNavigator } from './src/navigation/RootNavigator';
+import { useAuthStore } from './src/stores/authStore';
+
+// ── Error Boundary ──────────────────────────────────────────────────────────
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  render() {
+    if (this.state.error) {
+      const err = this.state.error as Error;
+      return (
+        <View style={styles.errContainer}>
+          <StatusBar backgroundColor="#1a0000" barStyle="light-content" />
+          <Text style={styles.errTitle}>App Crash Caught</Text>
+          <ScrollView style={styles.errScroll}>
+            <Text style={styles.errName}>{err.name}</Text>
+            <Text style={styles.errMsg}>{err.message}</Text>
+            <Text style={styles.errStack}>{err.stack}</Text>
+          </ScrollView>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// ── Loading Screen ──────────────────────────────────────────────────────────
+function LoadingScreen() {
+  return (
+    <View style={styles.loadingContainer}>
+      <StatusBar backgroundColor={config.THEME.BACKGROUND} barStyle="light-content" />
+      <Text style={styles.loadingTitle}><%= displayName %></Text>
+      <ActivityIndicator size="large" color={config.THEME.ACCENT_CYAN} style={{ marginTop: 16 }} />
+    </View>
+  );
+}
+
+// ── App Content ─────────────────────────────────────────────────────────────
+function AppContent() {
+  const [hydrated] = useState(true); // store hydration flag
+  const { biometricEnabled, isUnlocked, lock, authenticate } = useAuthStore();
+
+  // Re-lock on app background when biometric is enabled
+  useEffect(() => {
+    if (!config.FEATURES.BIOMETRIC_AUTH) return;
+
+    const handleAppState = (state: AppStateStatus) => {
+      if (state === 'background' && biometricEnabled) {
+        lock();
+      } else if (state === 'active' && biometricEnabled && !isUnlocked) {
+        void authenticate().catch(console.error);
+      }
+    };
+
+    const sub = AppState.addEventListener('change', handleAppState);
+    return () => sub.remove();
+  }, [biometricEnabled, lock, isUnlocked, authenticate]);
+
+  // Authenticate on initial mount if biometric is enabled
+  useEffect(() => {
+    if (biometricEnabled && !isUnlocked) {
+      void authenticate().catch(console.error);
+    }
+  }, [biometricEnabled, isUnlocked, authenticate]);
+
+  if (!hydrated) return <LoadingScreen />;
+
+  // Render Lock screen placeholder if locked
+  if (biometricEnabled && !isUnlocked) {
+    return (
+      <View style={styles.lockContainer}>
+        <StatusBar backgroundColor={config.THEME.BACKGROUND} barStyle="light-content" />
+        <Text style={styles.lockText}>Application Locked</Text>
+        <ThemeButton
+          title="Unlock with Biometrics"
+          variant="accent"
+          onPress={() => void authenticate().catch(console.error)}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <NavigationContainer>
+      <ExpoStatusBar style="light" />
+      <RootNavigator />
+    </NavigationContainer>
+  );
+}
+
+// Helper local button import to avoid cyclic resolution in Lock screen
+import { ThemeButton } from './src/components/ThemeButton';
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <AppContent />
+    </ErrorBoundary>
+  );
+}
+
+const styles = StyleSheet.create({
+  errContainer: { flex: 1, backgroundColor: '#1a0000', padding: 20, paddingTop: 60 },
+  errTitle: { color: '#ff4444', fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
+  errName: { color: '#ff8888', fontSize: 16, fontWeight: '700', marginBottom: 8 },
+  errMsg: { color: '#ffaaaa', fontSize: 14, marginBottom: 12 },
+  errScroll: { flex: 1 },
+  errStack: { color: '#cc6666', fontSize: 11, fontFamily: 'monospace' },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: config.THEME.BACKGROUND,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingTitle: {
+    color: config.THEME.ACCENT_CYAN,
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: 2,
+  },
+  lockContainer: {
+    flex: 1,
+    backgroundColor: config.THEME.BACKGROUND,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  lockText: {
+    color: config.THEME.TEXT_PRIMARY,
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 20,
+  },
+});

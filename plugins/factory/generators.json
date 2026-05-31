@@ -20,6 +20,11 @@
       "schema": "./src/generators/mcp/schema.json",
       "description": "Generate a FastMCP server scaffold with x402 USDC monetization and Fastify API"
     },
+    "mobile": {
+      "factory": "./src/generators/mobile/generator.js",
+      "schema": "./src/generators/mobile/schema.json",
+      "description": "Generate an Expo 54 + React Native 0.81 cross-platform mobile app scaffold"
+    },
     "landing-only": {
       "factory": "./src/generators/landing-only/generator.js",
       "schema": "./src/generators/landing-only/schema.json",

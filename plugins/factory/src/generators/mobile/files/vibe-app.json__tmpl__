@@ -1,0 +1,12 @@
+{
+  "generatedBy": "@vibetech/factory:mobile",
+  "projectName": "<%= projectName %>",
+  "displayName": "<%= displayName %>",
+  "archetype": "expo-mobile",
+  "monetization": {
+    "stripeConnected": false,
+    "firstRevenueAt": null,
+    "mrrCents": null,
+    "currency": "usd"
+  }
+}

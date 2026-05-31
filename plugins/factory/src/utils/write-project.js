@@ -425,10 +425,65 @@ function writeMcpProject(tree, options) {
   });
 }
 
+function writeMobileProject(tree, options) {
+  addProjectConfiguration(tree, options.projectName, {
+    root: options.projectRoot,
+    sourceRoot: `${options.projectRoot}/src`,
+    projectType: 'application',
+    targets: {
+      dev: {
+        executor: 'nx:run-commands',
+        options: {
+          command: 'pnpm start',
+          cwd: options.projectRoot,
+        },
+      },
+      typecheck: {
+        executor: 'nx:run-commands',
+        options: {
+          command: 'pnpm exec tsc --noEmit',
+          cwd: options.projectRoot,
+        },
+      },
+      test: {
+        executor: 'nx:run-commands',
+        options: {
+          command: 'pnpm exec vitest run',
+          cwd: options.projectRoot,
+        },
+      },
+      'test:coverage': {
+        executor: 'nx:run-commands',
+        options: {
+          command: 'pnpm exec vitest run --coverage',
+          cwd: options.projectRoot,
+        },
+      },
+      lint: {
+        executor: 'nx:run-commands',
+        options: {
+          command: 'node ../../node_modules/eslint/bin/eslint.js src --ext .ts,.tsx',
+          cwd: options.projectRoot,
+        },
+      },
+      build: {
+        executor: 'nx:run-commands',
+        options: {
+          command: 'pnpm run build',
+          cwd: options.projectRoot,
+        },
+      },
+      quality: {},
+    },
+    tags: options.tags,
+  });
+}
+
 module.exports = {
   writeLandingProject,
   writeSaasProject,
   writeTauriProject,
   writeDesktopProject,
   writeMcpProject,
+  writeMobileProject,
 };

@@ -1,0 +1,111 @@
+import { StyleSheet, Switch, Text, View } from 'react-native';
+import { ThemeButton } from '../components/ThemeButton';
+import { config } from '../config';
+import { useAuthStore } from '../stores/authStore';
+
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+export function SettingsScreen({ navigation }: any) {
+  const { biometricEnabled, toggleBiometric } = useAuthStore();
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Settings</Text>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Security</Text>
+        <View style={styles.settingRow}>
+          <View>
+            <Text style={styles.settingLabel}>Biometric Unlock</Text>
+            <Text style={styles.settingDesc}>Require Face ID / Fingerprint on start</Text>
+          </View>
+          <Switch
+            value={biometricEnabled}
+            onValueChange={() => void toggleBiometric().catch(console.error)}
+            trackColor={{ false: config.THEME.BORDER, true: config.THEME.ACCENT_CYAN }}
+            thumbColor={biometricEnabled ? '#ffffff' : '#8888a0'}
+          />
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>System</Text>
+        <View style={styles.settingRow}>
+          <Text style={styles.settingLabel}>App Version</Text>
+          <Text style={styles.valueText}>{config.APP_VERSION}</Text>
+        </View>
+        <View style={styles.settingRow}>
+          <Text style={styles.settingLabel}>Metro Server Port</Text>
+          <Text style={styles.valueText}>8081</Text>
+        </View>
+      </View>
+
+      <ThemeButton
+        title="Back to Home"
+        variant="secondary"
+        hapticType="light"
+        onPress={() => navigation.goBack()}
+        style={styles.backBtn}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: config.THEME.BACKGROUND,
+    padding: 24,
+  },
+  header: {
+    marginTop: 40,
+    marginBottom: 32,
+  },
+  title: {
+    color: config.THEME.TEXT_PRIMARY,
+    fontSize: 24,
+    fontWeight: '800',
+  },
+  section: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    color: config.THEME.ACCENT_MAGENTA,
+    fontSize: 12,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    marginBottom: 12,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: config.THEME.SURFACE,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: config.THEME.BORDER,
+    marginBottom: 8,
+  },
+  settingLabel: {
+    color: config.THEME.TEXT_PRIMARY,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  settingDesc: {
+    color: config.THEME.TEXT_SECONDARY,
+    fontSize: 12,
+    marginTop: 4,
+  },
+  valueText: {
+    color: config.THEME.TEXT_SECONDARY,
+    fontSize: 14,
+  },
+  backBtn: {
+    marginTop: 'auto',
+    marginBottom: 20,
+  },
+});
