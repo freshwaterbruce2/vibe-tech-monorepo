@@ -63,6 +63,35 @@ export function initializeSchema(): void {
       )
     `);
 
+    // Seed mock channels for development testing/broadcasting if empty
+    const checkClients = db.prepare('SELECT COUNT(*) as count FROM unified_clients').get() as { count: number };
+    if (checkClients.count === 0) {
+      logger.info('Seeding mock client sessions for Discord and Telegram...');
+      const runSeed = db.transaction(() => {
+        db.prepare("INSERT OR IGNORE INTO unified_clients (id) VALUES ('client_mock_discord')").run();
+        db.prepare("INSERT OR IGNORE INTO unified_clients (id) VALUES ('client_mock_telegram')").run();
+        
+        db.prepare(`
+          INSERT OR IGNORE INTO user_identities (unified_client_id, platform, platform_user_id, platform_username)
+          VALUES ('client_mock_discord', 'discord', '123456789012345678', 'MockDiscordUser')
+        `).run();
+        db.prepare(`
+          INSERT OR IGNORE INTO user_identities (unified_client_id, platform, platform_user_id, platform_username)
+          VALUES ('client_mock_telegram', 'telegram', '987654321', 'MockTelegramUser')
+        `).run();
+
+        db.prepare(`
+          INSERT OR IGNORE INTO client_sessions (unified_client_id, last_platform, last_channel_id, conversation_state)
+          VALUES ('client_mock_discord', 'discord', '123456789012345678', '{"history":[],"variables":{},"activeProjectId":null}')
+        `).run();
+        db.prepare(`
+          INSERT OR IGNORE INTO client_sessions (unified_client_id, last_platform, last_channel_id, conversation_state)
+          VALUES ('client_mock_telegram', 'telegram', '987654321', '{"history":[],"variables":{},"activeProjectId":null}')
+        `).run();
+      });
+      runSeed();
+    }
+
     logger.info('Database schema initialized successfully.');
   } catch (err) {
     logger.error('Failed to run database migrations:', {}, err as Error);

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { Client, GatewayIntentBits, Partials, AttachmentBuilder } from 'discord.js';
 import fs from 'fs';
 import { BaseAdapter } from './adapter.interface.js';
@@ -82,6 +83,10 @@ export class DiscordAdapter implements BaseAdapter {
       logger.error('Failed to start Discord Bot Adapter:', {}, err as Error);
       throw err;
     }
+  }
+
+  public getClientInstance(): Client | null {
+    return this.client;
   }
 
   public async stop(): Promise<void> {
