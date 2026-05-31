@@ -21,8 +21,12 @@
     },
     "build": {
       "executor": "nx:run-commands",
-      "dependsOn": ["^build"],
-      "outputs": ["{projectRoot}/dist"],
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
         "command": "pnpm run build",
         "cwd": "apps/proposal-review-saas"
@@ -44,8 +48,12 @@
     },
     "api:build": {
       "executor": "nx:run-commands",
-      "dependsOn": ["^build"],
-      "outputs": ["{projectRoot}/server/dist"],
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "{projectRoot}/server/dist"
+      ],
       "options": {
         "command": "pnpm run build:api",
         "cwd": "apps/proposal-review-saas"
@@ -74,7 +82,9 @@
     },
     "typecheck": {
       "executor": "nx:run-commands",
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "options": {
         "command": "pnpm run typecheck",
         "cwd": "apps/proposal-review-saas"
@@ -87,7 +97,26 @@
         "cwd": "apps/proposal-review-saas"
       }
     },
-    "quality": {}
+    "quality": {},
+    "deploy": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "commands": [
+          "pnpm exec vercel build --prod --yes --scope team_K61A5zl2rIRvueizg7oCGh1n",
+          "pnpm exec vercel deploy --prebuilt --prod --scope team_K61A5zl2rIRvueizg7oCGh1n --yes"
+        ],
+        "cwd": "apps/proposal-review-saas",
+        "parallel": false
+      }
+    }
   },
-  "tags": ["scope:web", "type:application", "factory:generated", "factory:saas"]
+  "tags": [
+    "scope:web",
+    "type:application",
+    "factory:generated",
+    "factory:saas"
+  ]
 }

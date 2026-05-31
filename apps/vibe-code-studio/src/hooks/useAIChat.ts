@@ -53,6 +53,7 @@ export interface UseAIChatReturn {
   clearAiMessages: () => void;
   addAiMessage: (message: AIMessage) => void;
   updateAiMessage: (messageId: string, updater: (msg: AIMessage) => AIMessage) => void;
+  cancelActiveGeneration: () => void;
 }
 
 export interface UseAIChatProps {
@@ -319,6 +320,11 @@ export function useAIChat({
     ],
   );
 
+  const cancelActiveGeneration = useCallback(() => {
+    aiService.cancelActiveGenerations();
+    setIsAiResponding(false);
+  }, [aiService]);
+
   return {
     aiMessages,
     aiChatOpen,
@@ -328,5 +334,6 @@ export function useAIChat({
     clearAiMessages,
     addAiMessage,
     updateAiMessage,
+    cancelActiveGeneration,
   };
 }

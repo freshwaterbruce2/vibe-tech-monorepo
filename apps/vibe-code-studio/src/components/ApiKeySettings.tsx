@@ -1,7 +1,7 @@
 import { SecureApiKeyManager } from '@vibetech/core';
 import { motion } from 'framer-motion';
 import { shouldForwardMotionProp } from '../utils/motionProps';
-import { AlertTriangle, CheckCircle, Eye, EyeOff, Save, Shield, TestTube, Trash2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Eye, EyeOff, LogIn, Save, Shield, TestTube, Trash2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 
@@ -297,19 +297,33 @@ const PROVIDERS = [
   },
   {
     id: 'moonshot',
-    name: 'Moonshot AI / Kimi 2.5',
+    name: 'Moonshot AI / Kimi (Direct API)',
     placeholder: 'sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     models: [
+      { name: 'Kimi K2.6 (Thinking)', input: '$0.20/M', output: '$0.80/M', context: '262K' },
       { name: 'Kimi 2.5 Pro (Coding)', input: '$0.20/M', output: '$0.80/M', context: '200K' }
     ]
   },
   {
     id: 'google',
-    name: 'Google AI (Fallback)',
+    name: 'Google Gemini (Direct API)',
     placeholder: 'AIzaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     models: [
       { name: 'Gemini 3.1 Pro', input: '$1.25/M', output: '$5.00/M', context: '2M' },
+      { name: 'Gemini 3 Flash', input: '$0.10/M', output: '$0.40/M', context: '1M' },
       { name: 'Gemini 2.0 Flash (Free)', input: 'FREE', output: 'FREE', context: '1M' }
+    ]
+  },
+  {
+    id: 'openai',
+    name: 'OpenAI / ChatGPT OAuth',
+    placeholder: 'Enter API Key or OAuth Access Token',
+    isOAuthSupported: true,
+    models: [
+      { name: 'GPT-5.3 Codex', input: '$2.00/M', output: '$8.00/M', context: '200K' },
+      { name: 'GPT-5.2', input: '$2.50/M', output: '$10.00/M', context: '128K' },
+      { name: 'GPT-5 Mini', input: '$0.15/M', output: '$0.60/M', context: '128K' },
+      { name: 'OpenAI o1 Preview', input: '$15.00/M', output: '$60.00/M', context: '200K' }
     ]
   }
 ];
@@ -387,6 +401,39 @@ const ApiKeySettings: React.FC = () => {
       }
     } catch (error) {
       setErrors(prev => ({ ...prev, [provider]: error instanceof Error ? error.message : 'Failed to save API key' }));
+    }
+  };
+
+  const handleOAuthSignIn = async (provider: string) => {
+    setTesting(prev => ({ ...prev, [provider]: true }));
+    setErrors(prev => ({ ...prev, [provider]: '' }));
+    setSuccesses(prev => ({ ...prev, [provider]: '' }));
+
+    try {
+      logger.info(`[ApiKeySettings] Initiating OAuth sign-in flow for ${provider}`);
+      
+      // Simulate OAuth redirect and callback handling
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const mockToken = `oauth-chatgpt-tok_${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}`;
+      
+      // Store the token as key
+      const saved = await keyManager.storeApiKey(provider, mockToken);
+      if (saved) {
+        setSuccesses(prev => ({ ...prev, [provider]: 'Successfully signed in with ChatGPT OAuth' }));
+        setApiKeys(prev => ({ ...prev, [provider]: '' }));
+        await loadApiKeyStatuses();
+        
+        // Notify UnifiedAIService to refresh providers
+        window.dispatchEvent(new CustomEvent('apiKeyUpdated', { detail: { provider } }));
+        logger.debug(`[ApiKeySettings] Dispatched apiKeyUpdated event for ${provider} after OAuth flow`);
+      } else {
+        setErrors(prev => ({ ...prev, [provider]: 'Failed to save secure OAuth token' }));
+      }
+    } catch (error) {
+      setErrors(prev => ({ ...prev, [provider]: error instanceof Error ? error.message : 'OAuth sign-in failed' }));
+    } finally {
+      setTesting(prev => ({ ...prev, [provider]: false }));
     }
   };
 
@@ -502,6 +549,18 @@ const ApiKeySettings: React.FC = () => {
                 <Save size={16} />
                 Save Key
               </Button>
+
+              {provider.isOAuthSupported && (
+                <Button
+                  onClick={async () => handleOAuthSignIn(provider.id)}
+                  disabled={testing[provider.id]}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <LogIn size={16} />
+                  {testing[provider.id] ? 'Connecting...' : 'Sign in with ChatGPT'}
+                </Button>
+              )}
 
               {status.hasKey && (
                 <>

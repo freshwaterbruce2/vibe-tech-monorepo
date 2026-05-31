@@ -72,8 +72,7 @@
     },
     "notebooklm": {
       "type": "stdio",
-      "command": "python",
-      "args": ["-m", "notebooklm_mcp_server"]
+      "command": "C:/Users/fresh_zxae3v6/.local/bin/notebooklm-mcp.EXE"
     },
     "chrome-devtools": {
       "type": "stdio",

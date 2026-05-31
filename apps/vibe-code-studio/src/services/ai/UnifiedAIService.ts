@@ -11,7 +11,7 @@ async function getLazyKey(providerType: AIProvider): Promise<string> {
   // Map provider to env var name and storage key
   const envMap: Record<string, { envVar: string; storageKey: string }> = {
     [AIProvider.OPENROUTER]: { envVar: 'VITE_OPENROUTER_API_KEY', storageKey: 'openrouter' },
-    [AIProvider.OPENAI]: { envVar: 'VITE_OPENROUTER_API_KEY', storageKey: 'openrouter' },
+    [AIProvider.OPENAI]: { envVar: 'VITE_OPENAI_API_KEY', storageKey: 'openai' },
     [AIProvider.ANTHROPIC]: { envVar: 'VITE_OPENROUTER_API_KEY', storageKey: 'openrouter' },
     [AIProvider.GROQ]: { envVar: 'VITE_OPENROUTER_API_KEY', storageKey: 'openrouter' },
     [AIProvider.PERPLEXITY]: { envVar: 'VITE_OPENROUTER_API_KEY', storageKey: 'openrouter' },
@@ -72,6 +72,10 @@ export class UnifiedAIService {
       controller.abort();
     }
     this.activeControllers.clear();
+  }
+
+  cancelActiveGeneration(): void {
+    this.cancelActiveGenerations();
   }
 
   async initialize(): Promise<void> {

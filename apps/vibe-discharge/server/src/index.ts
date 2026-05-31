@@ -19,6 +19,8 @@ import {
   createFetchGeminiProvider,
   createFetchOpenRouterProvider,
   generateWithMetering,
+  type AiGenerateInput,
+  type AiProvider,
 } from '@vibetech/ai';
 import { buildPaymentReceiptEmail } from '@vibetech/email';
 import {
@@ -461,8 +463,9 @@ function getAiProvider() {
   }
   return {
     name: 'gemini' as const,
-    async generate(input: { prompt: string }) {
-      const mockResult = `[SIMPLIFIED INSTRUCTION (Mocked Gemini Output)]:\nHere are the simplified, 5th-grade reading level patient instructions:\n\n1. Take your medication as prescribed.\n2. Keep your surgical site clean and dry.\n3. Drink plenty of water and rest.\n\nInput received: "${input.prompt.substring(0, 50)}..."`;
+    async generate(input: AiGenerateInput) {
+      const promptText = input.prompt ?? '';
+      const mockResult = `[SIMPLIFIED INSTRUCTION (Mocked Gemini Output)]:\nHere are the simplified, 5th-grade reading level patient instructions:\n\n1. Take your medication as prescribed.\n2. Keep your surgical site clean and dry.\n3. Drink plenty of water and rest.\n\nInput received: "${promptText.substring(0, 50)}..."`;
       return {
         provider: 'gemini' as const,
         model: 'mock-model',
@@ -470,7 +473,7 @@ function getAiProvider() {
         usage: { inputTokens: 50, outputTokens: 80, totalTokens: 130 }
       };
     }
-  };
+  } as AiProvider;
 }
 
 app.post('/api/simplify', async (req, reply) => {

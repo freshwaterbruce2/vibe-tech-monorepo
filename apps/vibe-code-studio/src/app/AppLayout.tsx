@@ -307,6 +307,8 @@ export function AppLayout() {
               messages={extras.aiMessages}
               onSendMessage={extras.handleAIMessage}
               onClose={() => ui.setAiChatOpen(false)}
+              onCancelGeneration={extras.cancelActiveGeneration}
+              isAiResponding={extras.isAiResponding}
               showReasoningProcess={ws.editorSettings.showReasoningProcess}
               currentModel={ws.editorSettings.aiModel}
               mode={ui.chatMode}

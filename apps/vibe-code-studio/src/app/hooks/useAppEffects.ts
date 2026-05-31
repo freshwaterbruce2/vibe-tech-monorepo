@@ -116,6 +116,16 @@ export function useAIProviderInit() {
         });
       }
 
+      // OpenAI (direct API or ChatGPT OAuth)
+      const openaiKey = await getKey('VITE_OPENAI_API_KEY', 'openai');
+      if (openaiKey) {
+        configs.set(AIProvider.OPENAI, {
+          provider: AIProvider.OPENAI,
+          apiKey: openaiKey,
+          model: 'gpt-4o',
+        });
+      }
+
       // Local Provider always available
       configs.set(AIProvider.LOCAL, {
         provider: AIProvider.LOCAL,
@@ -162,6 +172,8 @@ export function useAIProviderInit() {
           await initProviderWithKey(factory, AIProvider.GOOGLE, apiKey, 'gemini-2.0-flash');
         } else if (provider === 'deepseek') {
           await initProviderWithKey(factory, AIProvider.DEEPSEEK, apiKey, 'deepseek/deepseek-v3.2');
+        } else if (provider === 'openai') {
+          await initProviderWithKey(factory, AIProvider.OPENAI, apiKey, 'gpt-4o');
         }
       } catch (error) {
         logger.error(`[useAIProviderInit] Failed to re-init provider ${provider}:`, error);

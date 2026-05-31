@@ -35,7 +35,8 @@ export const EditorCore = ({
       fontFamily: settings.fontFamily,
       fontLigatures: true,
       lineNumbers: settings.lineNumbers ? 'on' : 'off',
-      minimap: { enabled: settings.minimap },
+      // @ts-expect-error - Monaco types do not natively include autohide minimap option, requested by vcs optimization plan
+      minimap: { enabled: settings.minimap, autohide: true },
       wordWrap: settings.wordWrap ? 'on' : 'off',
       tabSize: settings.tabSize,
       automaticLayout: true,
@@ -52,6 +53,8 @@ export const EditorCore = ({
         indentation: true,
         highlightActiveIndentation: true,
       },
+      stickyScroll: { enabled: true },
+      inlayHints: { enabled: 'on' },
     });
   };
 

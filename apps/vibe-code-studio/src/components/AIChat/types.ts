@@ -21,6 +21,8 @@ export interface AIChatProps {
     messages: AIMessage[];
     onSendMessage: (message: string) => void;
     onClose: () => void;
+    onCancelGeneration?: () => void;
+    isAiResponding?: boolean;
     showReasoningProcess?: boolean | undefined;
     currentModel?: string | undefined;
     mode?: ChatMode;

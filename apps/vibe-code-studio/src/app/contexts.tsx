@@ -175,6 +175,8 @@ export interface AppExtrasContextValue {
   currentModel: string;
   currentProvider: string;
   openrouterApiKey: string;
+  isAiResponding: boolean;
+  cancelActiveGeneration: () => void;
 
   // Error fix
   currentError: DetectedError | null;

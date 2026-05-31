@@ -3,7 +3,9 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/vibe-tech-marketing/src",
   "projectType": "application",
-  "implicitDependencies": ["@vibetech/landing"],
+  "implicitDependencies": [
+    "@vibetech/landing"
+  ],
   "targets": {
     "dev": {
       "executor": "nx:run-commands",
@@ -14,8 +16,12 @@
     },
     "build": {
       "executor": "nx:run-commands",
-      "dependsOn": ["^build"],
-      "outputs": ["{projectRoot}/dist"],
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
         "command": "pnpm run build",
         "cwd": "apps/vibe-tech-marketing"
@@ -37,7 +43,9 @@
     },
     "typecheck": {
       "executor": "nx:run-commands",
-      "dependsOn": ["^build"],
+      "dependsOn": [
+        "^build"
+      ],
       "options": {
         "command": "pnpm run typecheck",
         "cwd": "apps/vibe-tech-marketing"
@@ -50,7 +58,26 @@
         "cwd": "apps/vibe-tech-marketing"
       }
     },
-    "quality": {}
+    "quality": {},
+    "deploy": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "build"
+      ],
+      "options": {
+        "commands": [
+          "pnpm exec vercel build --prod --yes --scope team_K61A5zl2rIRvueizg7oCGh1n",
+          "pnpm exec vercel deploy --prebuilt --prod --scope team_K61A5zl2rIRvueizg7oCGh1n --yes"
+        ],
+        "cwd": "apps/vibe-tech-marketing",
+        "parallel": false
+      }
+    }
   },
-  "tags": ["scope:web", "type:application", "factory:generated", "factory:landing-only"]
+  "tags": [
+    "scope:web",
+    "type:application",
+    "factory:generated",
+    "factory:landing-only"
+  ]
 }

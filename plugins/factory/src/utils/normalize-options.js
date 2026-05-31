@@ -32,6 +32,8 @@ function defaultPortFor(appType) {
       return 4300;
     case 'tauri-app':
       return 4310;
+    case 'desktop':
+      return 4330;
     case 'saas':
     default:
       return 4320;
@@ -48,6 +50,13 @@ function defaultTagsFor(appType) {
         'type:application',
         'factory:generated',
         'factory:tauri-app'
+      ];
+    case 'desktop':
+      return [
+        'scope:desktop',
+        'type:application',
+        'factory:generated',
+        'factory:desktop'
       ];
     case 'saas':
     default:

@@ -1,0 +1,12 @@
+{
+  "generatedBy": "@vibetech/factory:desktop",
+  "projectName": "my-test-desktop",
+  "displayName": "MyTestDesktop",
+  "archetype": "tauri-desktop",
+  "monetization": {
+    "stripeConnected": false,
+    "firstRevenueAt": null,
+    "mrrCents": null,
+    "currency": "usd"
+  }
+}

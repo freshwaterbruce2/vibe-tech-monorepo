@@ -40,6 +40,8 @@
     "store:allow-set",
     "store:allow-delete",
     "store:allow-save",
-    "store:allow-load"
+    "store:allow-load",
+    "window-state:default",
+    "os:default"
   ]
 }

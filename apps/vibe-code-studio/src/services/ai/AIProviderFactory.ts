@@ -19,6 +19,7 @@ import { DeepSeekService } from './providers/DeepSeekService';
 import { GoogleGenerativeAIService } from './providers/GoogleGenerativeAIService';
 import { MoonshotService } from './providers/MoonshotService';
 import { OpenRouterService } from './providers/OpenRouterService';
+import { OpenAIService } from './providers/OpenAIService';
 // Hybrid architecture: Direct APIs for Moonshot, DeepSeek, & Google, OpenRouter for everything else
 
 export interface ProviderStatus {
@@ -75,6 +76,12 @@ export class AIProviderFactory {
     if (provider === AIProvider.GOOGLE) {
       logger.info(`[AIProviderFactory] Creating Google provider (direct API)`);
       return new ServiceAdapter(new GoogleGenerativeAIService(), provider);
+    }
+
+    // OpenAI: Direct API via API key or OAuth access token
+    if (provider === AIProvider.OPENAI) {
+      logger.info(`[AIProviderFactory] Creating OpenAI provider (direct API)`);
+      return new ServiceAdapter(new OpenAIService(), provider);
     }
 
     // OpenRouter: Everything else (massive model selection)

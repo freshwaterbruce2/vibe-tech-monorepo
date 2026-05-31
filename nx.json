@@ -240,6 +240,18 @@
       "cache": true,
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"]
+    },
+    "deploy": {
+      "dependsOn": ["build"],
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "pnpm exec vercel build --prod --yes --scope team_K61A5zl2rIRvueizg7oCGh1n",
+          "pnpm exec vercel deploy --prebuilt --prod --scope team_K61A5zl2rIRvueizg7oCGh1n --yes"
+        ],
+        "cwd": "{projectRoot}",
+        "parallel": false
+      }
     }
   },
   "affected": {

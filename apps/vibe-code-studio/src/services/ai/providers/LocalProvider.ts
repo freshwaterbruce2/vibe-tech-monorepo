@@ -39,7 +39,8 @@ export class LocalProvider implements IAIProvider {
           max_tokens: options.maxTokens ?? 4096,
           temperature: options.temperature ?? 0.7,
           stream: false
-        })
+        }),
+        signal: options.signal
       });
 
       if (!response.ok) {

@@ -232,8 +232,81 @@ function writeTauriProject(tree, options) {
   });
 }
 
+function writeDesktopProject(tree, options) {
+  addProjectConfiguration(tree, options.projectName, {
+    root: options.projectRoot,
+    sourceRoot: `${options.projectRoot}/src`,
+    projectType: 'application',
+    implicitDependencies: ['@vibetech/billing'],
+    targets: {
+      dev: {
+        executor: 'nx:run-commands',
+        options: {
+          command: 'pnpm run dev',
+          cwd: options.projectRoot,
+        },
+      },
+      'dev:web': {
+        executor: 'nx:run-commands',
+        options: {
+          command: 'pnpm run dev:web',
+          cwd: options.projectRoot,
+        },
+      },
+      build: {
+        executor: 'nx:run-commands',
+        dependsOn: ['^build'],
+        outputs: ['{projectRoot}/dist'],
+        options: {
+          command: 'pnpm run build',
+          cwd: options.projectRoot,
+        },
+      },
+      'package:check': {
+        executor: 'nx:run-commands',
+        options: {
+          command: 'pnpm run package:check',
+          cwd: options.projectRoot,
+        },
+      },
+      package: {
+        executor: 'nx:run-commands',
+        options: {
+          command: 'pnpm run package',
+          cwd: options.projectRoot,
+        },
+      },
+      test: {
+        executor: 'nx:run-commands',
+        options: {
+          command: 'pnpm run test',
+          cwd: options.projectRoot,
+        },
+      },
+      typecheck: {
+        executor: 'nx:run-commands',
+        dependsOn: ['^build'],
+        options: {
+          command: 'pnpm run typecheck',
+          cwd: options.projectRoot,
+        },
+      },
+      lint: {
+        executor: 'nx:run-commands',
+        options: {
+          command: "node ../../node_modules/eslint/bin/eslint.js src vite.config.ts --ext .ts,.tsx",
+          cwd: options.projectRoot,
+        },
+      },
+      quality: {},
+    },
+    tags: options.tags,
+  });
+}
+
 module.exports = {
   writeLandingProject,
   writeSaasProject,
   writeTauriProject,
+  writeDesktopProject,
 };

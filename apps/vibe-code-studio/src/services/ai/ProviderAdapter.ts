@@ -14,6 +14,7 @@ import { OpenRouterService } from './providers/OpenRouterService';
 import { MoonshotService } from './providers/MoonshotService';
 import { DeepSeekService } from './providers/DeepSeekService';
 import { GoogleGenerativeAIService } from './providers/GoogleGenerativeAIService';
+import { OpenAIService } from './providers/OpenAIService';
 
 export class ServiceAdapter implements IAIProvider {
     private service: IAIService;
@@ -35,6 +36,8 @@ export class ServiceAdapter implements IAIProvider {
                 this.service = new DeepSeekService({ apiKey: config.apiKey });
             } else if (this.service.id === 'google') {
                 this.service = new GoogleGenerativeAIService({ apiKey: config.apiKey });
+            } else if (this.service.id === 'openai') {
+                this.service = new OpenAIService({ apiKey: config.apiKey });
             }
         }
 
@@ -78,12 +81,11 @@ export class ServiceAdapter implements IAIProvider {
             throw new Error('Streaming not supported by this service');
         }
 
-        // Note: IAIService.stream signature: stream(messages: ChatMessage[], options?: AIChatOptions)
-        // options in AIChatOptions has model, temperature, maxTokens
         const chatOptions = {
             model: model,
             temperature: options.temperature,
-            maxTokens: options.maxTokens
+            maxTokens: options.maxTokens,
+            signal: options.signal
         };
 
         for await (const chunk of this.service.stream(options.messages, chatOptions)) {

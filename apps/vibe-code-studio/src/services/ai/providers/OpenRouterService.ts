@@ -325,7 +325,8 @@ export class OpenRouterService implements IAIService {
     const response = await fetch(url, {
       method: 'POST',
       headers: this.getHeaders(),
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      signal: options?.signal
     });
 
     if (!response.ok || !response.body) {

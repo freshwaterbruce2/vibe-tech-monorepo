@@ -370,7 +370,8 @@ const Editor = ({
               fontSize: settings?.fontSize ?? 14,
               fontFamily: 'JetBrains Mono, Fira Code, Monaco, Consolas, monospace',
               fontLigatures: true,
-              minimap: { enabled: settings?.minimap !== false, maxColumn: 120, renderCharacters: false, showSlider: 'mouseover' },
+              // @ts-expect-error - Monaco types do not natively include autohide minimap option, requested by vcs optimization plan
+              minimap: { enabled: settings?.minimap !== false, maxColumn: 120, renderCharacters: false, showSlider: 'mouseover', autohide: true },
               wordWrap: settings?.wordWrap ? 'on' : 'off',
               tabSize: settings?.tabSize ?? 2,
               lineNumbers: 'on',

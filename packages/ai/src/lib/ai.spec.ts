@@ -3,10 +3,15 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import {
   createAiRouter,
   createFetchGeminiProvider,
+  createFetchMoonshotProvider,
+  createFetchDeepSeekProvider,
+  createFetchOpenAIProvider,
+  createLocalProvider,
   generateWithMetering,
   getAiUsage,
   recordAiUsage,
   resetAiUsage,
+  parseStreamBody,
   type AiProvider,
 } from './ai';
 
@@ -101,5 +106,141 @@ describe('@vibetech/ai', () => {
 
     expect(result.text).toBe('invoice copy');
     expect(getAiUsage('invoice-automation-saas', 'gemini', 'tenant-a')?.totalTokens).toBe(10);
+  });
+
+  it('handles Moonshot direct provider with Kimi and thinking configuration', async () => {
+    const fetchImpl = vi.fn(async (_url, init) => {
+      const body = JSON.parse(init?.body as string);
+      expect(body.model).toBe('kimi-k2.6');
+      expect(body.thinking?.type).toBe('enabled');
+      expect(body.temperature).toBe(1.0);
+
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          choices: [
+            {
+              message: {
+                content: 'Kimi response',
+                reasoning: 'Kimi is thinking...',
+              },
+              finish_reason: 'stop',
+            },
+          ],
+          usage: {
+            prompt_tokens: 10,
+            completion_tokens: 20,
+            total_tokens: 30,
+          },
+        }),
+      };
+    }) as unknown as typeof fetch;
+
+    const provider = createFetchMoonshotProvider({
+      apiKey: 'test-kimi-key',
+      model: 'kimi-k2.6',
+      fetchImpl,
+    });
+
+    const result = await provider.generate({
+      appId: 'test-app',
+      prompt: 'Code a parser',
+    });
+
+    expect(result.text).toBe('Kimi response');
+    expect(result.reasoning).toBe('Kimi is thinking...');
+    expect(result.usage.totalTokens).toBe(30);
+  });
+
+  it('handles DeepSeek direct provider and captures reasoning_content', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        choices: [
+          {
+            message: {
+              content: 'DeepSeek response',
+              reasoning_content: 'DeepSeek CoT...',
+            },
+          },
+        ],
+        usage: {
+          prompt_tokens: 5,
+          completion_tokens: 5,
+          total_tokens: 10,
+        },
+      }),
+    })) as unknown as typeof fetch;
+
+    const provider = createFetchDeepSeekProvider({
+      apiKey: 'test-ds-key',
+      fetchImpl,
+    });
+
+    const result = await provider.generate({
+      appId: 'test-app',
+      prompt: 'Explain logic',
+    });
+
+    expect(result.text).toBe('DeepSeek response');
+    expect(result.reasoning).toBe('DeepSeek CoT...');
+  });
+
+  it('handles OpenAI and Local providers', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        choices: [{ message: { content: 'OpenAI response' } }],
+      }),
+    })) as unknown as typeof fetch;
+
+    const openaiProvider = createFetchOpenAIProvider({
+      apiKey: 'test-oa-key',
+      fetchImpl,
+    });
+
+    const localProvider = createLocalProvider({
+      baseUrl: 'http://localhost:11434/v1',
+      fetchImpl,
+    });
+
+    const resultOa = await openaiProvider.generate({ appId: 'test', prompt: 'test' });
+    const resultLoc = await localProvider.generate({ appId: 'test', prompt: 'test' });
+
+    expect(resultOa.text).toBe('OpenAI response');
+    expect(resultLoc.text).toBe('OpenAI response');
+  });
+
+  it('propagates AbortSignal for cancellation during stream parsing', async () => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    const mockReadable = {
+      getReader: () => {
+        return {
+          read: async () => {
+            // Cancel stream instantly on first read
+            controller.abort();
+            return { done: false, value: new TextEncoder().encode('data: {"choices":[{"delta":{"content":"Chunk 1"}}]}\n') };
+          },
+          releaseLock: () => {},
+        };
+      },
+    };
+
+    const response = {
+      body: mockReadable,
+    } as unknown as Response;
+
+    const stream = parseStreamBody(response, (data) => ({ text: data.choices[0].delta.content }), signal);
+
+    await expect(async () => {
+      for await (const _chunk of stream) {
+        // Read should throw DOMException due to abort
+      }
+    }).rejects.toThrow();
   });
 });

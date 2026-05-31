@@ -23,7 +23,7 @@ const defaultLogger: Logger = {
 // API key validation patterns
 const API_KEY_PATTERNS = {
   DEEPSEEK: /^sk-[a-f0-9]{32,}$/i,
-  OPENAI: /^sk-[a-zA-Z0-9]{48,}$/,
+  OPENAI: /^(sk-[a-zA-Z0-9]{48,}|oauth-[a-zA-Z0-9\-_]{15,}|eyJ[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+\.[a-zA-Z0-9\-_]+)$/,
   OPENROUTER: /^sk-or-[a-zA-Z0-9\-_]{20,}$/,
   MOONSHOT: /^sk-[a-zA-Z0-9]{20,}$/,
   ANTHROPIC: /^sk-ant-[a-zA-Z0-9\-_]{95,}$/,

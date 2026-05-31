@@ -10,6 +10,11 @@
       "schema": "./src/generators/tauri-app/schema.json",
       "description": "Generate a Tauri 2 desktop app scaffold wired for monetization"
     },
+    "desktop": {
+      "factory": "./src/generators/desktop/generator.js",
+      "schema": "./src/generators/desktop/schema.json",
+      "description": "Generate a Tauri 2 desktop app scaffold adhering to canonical paths"
+    },
     "landing-only": {
       "factory": "./src/generators/landing-only/generator.js",
       "schema": "./src/generators/landing-only/schema.json",

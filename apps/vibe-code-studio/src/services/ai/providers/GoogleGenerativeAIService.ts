@@ -36,9 +36,21 @@ export class GoogleGenerativeAIService implements IAIService {
     }));
   }
 
+  private resolveModel(rawModelId?: string): string {
+    const defaultModel = 'gemini-3.1-pro';
+    if (!rawModelId) return defaultModel;
+    const cleanId = rawModelId.replace(/^google\//, '');
+    const map: Record<string, string> = {
+      'gemini-2.0-flash-exp:free': 'gemini-2.0-flash',
+      'gemini-2.0-flash-exp': 'gemini-2.0-flash',
+      'gemini-3-flash-preview': 'gemini-3-flash-preview',
+      'gemini-3.1-pro': 'gemini-3.1-pro',
+    };
+    return map[cleanId.toLowerCase()] ?? cleanId;
+  }
+
   async complete(request: AICompletionRequest): Promise<AICompletionResponse> {
-    const rawModelId = request.model ?? 'gemini-3.1-pro';
-    const modelId = rawModelId.replace(/^google\//, '');
+    const modelId = this.resolveModel(request.model);
     const url = `${this.baseUrl}/models/${modelId}:generateContent?key=${this.apiKey}`;
 
     // Extract system instruction if present
@@ -91,8 +103,7 @@ export class GoogleGenerativeAIService implements IAIService {
   }
 
   async *stream(messages: ChatMessage[], options?: AIChatOptions): AsyncGenerator<string, void, unknown> {
-    const rawModelId = options?.model ?? 'gemini-3.1-pro';
-    const modelId = rawModelId.replace(/^google\//, '');
+    const modelId = this.resolveModel(options?.model);
     const url = `${this.baseUrl}/models/${modelId}:streamGenerateContent?alt=sse&key=${this.apiKey}`;
 
     const systemMessage = messages.find(m => m.role === 'system');
@@ -120,7 +131,8 @@ export class GoogleGenerativeAIService implements IAIService {
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      signal: options?.signal
     });
 
     if (!response.ok || !response.body) {

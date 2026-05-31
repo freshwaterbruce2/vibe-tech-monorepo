@@ -1,6 +1,6 @@
 {
   "version": "1.3.1",
-  "lastUpdated": "2026-05-24T23:59:00-04:00",
+  "lastUpdated": "2026-05-31T00:52:00-04:00",
   "techStack": {
     "packageManager": "pnpm@10.33.0",
     "node": "22.x",
@@ -18,6 +18,16 @@
     "provider": "openrouter"
   },
   "recentActivity": [
+    {
+      "date": "2026-05-31",
+      "project": "remix-ai-avatar",
+      "action": "Reviewed architecture/code quality, migrated directory to C:\\dev\\remix-ai-avatar to resolve Windows ampersand path failures, upgraded Gradle wrapper to 9.3.1 to support Android Gradle Plugin 9.1.1, resolved keystore signing configs, cleaned signature mismatches via ADB, and successfully compiled/installed the debug APK on Galaxy A54 phone."
+    },
+    {
+      "date": "2026-05-30",
+      "project": "notebooklm-mcp",
+      "action": "Cleaned up 62 irrelevant sources (travel research, note-taking guides) from the Vibe Project Memory notebook, verified all other notebooks are clean, and corrected .mcp.json configuration to point to the correct global executable notebooklm-mcp.EXE."
+    },
     {
       "date": "2026-05-30",
       "project": "monetized-mcp-service",

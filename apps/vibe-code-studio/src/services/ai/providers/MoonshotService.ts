@@ -112,6 +112,8 @@ export class MoonshotService implements IAIService {
     const map: Record<string, string> = {
       'kimi': 'kimi-k2.5',
       'kimi-k2.5': 'kimi-k2.5',
+      'kimi-k2.6': 'kimi-k2.6',
+      'moonshot/kimi-k2.6': 'kimi-k2.6',
       'kimi-k2': 'kimi-k2.5',
       'kimi-2.5-pro': 'kimi-k2.5',
       'moonshot/kimi-2.5-pro': 'kimi-k2.5',
@@ -211,7 +213,8 @@ export class MoonshotService implements IAIService {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${this.apiKey}`
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      signal: options?.signal
     });
 
     if (!response.ok || !response.body) {

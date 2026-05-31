@@ -60,7 +60,7 @@ export const MODELS_ARRAY: AIModel[] = [
   {
     id: 'openai/gpt-5.3-codex',
     name: 'GPT-5.3 Codex',
-    provider: AIProvider.OPENROUTER,
+    provider: AIProvider.OPENAI,
     contextWindow: 200000,
     maxOutput: 32768,
     costPerMillionInput: 2.00,
@@ -178,7 +178,7 @@ export const MODELS_ARRAY: AIModel[] = [
   {
     id: 'openai/gpt-5-mini',
     name: 'GPT-5 Mini',
-    provider: AIProvider.OPENROUTER,
+    provider: AIProvider.OPENAI,
     contextWindow: 128000,
     maxOutput: 16384,
     costPerMillionInput: 0.15,
@@ -195,6 +195,17 @@ export const MODELS_ARRAY: AIModel[] = [
     costPerMillionInput: 0.20,
     costPerMillionOutput: 0.80,
     capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION],
+    recommended: true,
+  },
+  {
+    id: 'moonshot/kimi-k2.6',
+    name: 'Kimi K2.6 (Thinking/Coding)',
+    provider: AIProvider.MOONSHOT,
+    contextWindow: 262000,
+    maxOutput: 16384,
+    costPerMillionInput: 0.20,
+    costPerMillionOutput: 0.80,
+    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.EXTENDED_THINKING],
     recommended: true,
   },
   {
@@ -226,7 +237,7 @@ export const MODELS_ARRAY: AIModel[] = [
   {
     id: 'openai/gpt-5.2',
     name: 'GPT-5.2',
-    provider: AIProvider.OPENROUTER,
+    provider: AIProvider.OPENAI,
     contextWindow: 128000,
     maxOutput: 16384,
     costPerMillionInput: 2.50,
@@ -241,7 +252,7 @@ export const MODELS_ARRAY: AIModel[] = [
   {
     id: 'openai/gpt-5.2-pro',
     name: 'GPT-5.2 Pro',
-    provider: AIProvider.OPENROUTER,
+    provider: AIProvider.OPENAI,
     contextWindow: 128000,
     maxOutput: 16384,
     costPerMillionInput: 10.00,
@@ -263,7 +274,7 @@ export const MODELS_ARRAY: AIModel[] = [
   {
     id: 'openai/o1-preview',
     name: 'OpenAI o1 Preview',
-    provider: AIProvider.OPENROUTER,
+    provider: AIProvider.OPENAI,
     contextWindow: 200000,
     maxOutput: 100000,
     costPerMillionInput: 15.00,

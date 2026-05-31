@@ -1,7 +1,7 @@
 /**
  * AIChat Component - Main AI chat interface with chat and agent modes
  */
-import { Play, Send, X, Zap } from 'lucide-react';
+import { Play, Send, Square, X, Zap } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react';
 
 import { logger } from '../../services/Logger';
@@ -29,7 +29,7 @@ const MODE_QUICK_ACTIONS: Record<ChatMode, string[]> = {
 };
 
 const AIChat = ({
-  messages, onSendMessage, onClose, showReasoningProcess = false, currentModel: _currentModel = 'moonshot/kimi-2.5-pro',
+  messages, onSendMessage, onClose, onCancelGeneration, showReasoningProcess = false, currentModel: _currentModel = 'moonshot/kimi-2.5-pro',
   mode: externalMode, onModeChange, taskPlanner, executionEngine, workspaceContext,
   onAddMessage, onUpdateMessage, onFileChanged, onTaskComplete, onTaskError, onApprovalRequired,
   onMultiFileEditDetected: _onMultiFileEditDetected,
@@ -69,6 +69,19 @@ const AIChat = ({
     };
     loadWidth();
   }, []);
+
+  // Cancel generation on Escape key
+  useEffect(() => {
+    if (!isTyping || !onCancelGeneration) return;
+    const handleKeyDown = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onCancelGeneration();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isTyping, onCancelGeneration]);
 
   const handleModeChange = useCallback((newMode: ChatMode) => {
     if (onModeChange) {
@@ -513,11 +526,19 @@ const AIChat = ({
           <TextInput ref={inputRef} id="ai-chat-input" name="aiChatMessage" data-testid="chat-input"
             value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress}
             placeholder={mode === 'agent' ? agentPlaceholder : 'Ask AI about your code...'} disabled={isTyping} aria-label="Message input" />
-          <SendButton onClick={() => handleSend()} disabled={!input.trim() || isTyping} title="Send message (Enter)" aria-label="Send message"
-            whileHover={!isTyping && input.trim() ? { scale: 1.05 } : {}}
-            whileTap={!isTyping && input.trim() ? { scale: 0.95 } : {}}>
-            <Send size={16} />
-          </SendButton>
+          {isTyping && onCancelGeneration ? (
+            <SendButton onClick={onCancelGeneration} disabled={false} title="Cancel generation (Esc)" aria-label="Cancel generation"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}>
+              <Square size={16} fill="currentColor" />
+            </SendButton>
+          ) : (
+            <SendButton onClick={() => handleSend()} disabled={!input.trim() || isTyping} title="Send message (Enter)" aria-label="Send message"
+              whileHover={!isTyping && input.trim() ? { scale: 1.05 } : {}}
+              whileTap={!isTyping && input.trim() ? { scale: 0.95 } : {}}>
+              <Send size={16} />
+            </SendButton>
+          )}
         </InputWrapper>
       </InputContainer>
     </ChatContainer>

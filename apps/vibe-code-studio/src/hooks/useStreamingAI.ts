@@ -44,6 +44,7 @@ export function useStreamingCompletion() {
     cancelledRef.current = true;
     setIsCompleting(false);
     setCompletion('');
+    unifiedAI.cancelActiveGenerations();
   }, []);
 
   return { completion, isCompleting, getCompletion, cancelCompletion };

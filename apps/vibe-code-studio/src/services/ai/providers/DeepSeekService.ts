@@ -186,7 +186,8 @@ export class DeepSeekService implements IAIService {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${this.apiKey}`
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      signal: options?.signal
     });
 
     if (!response.ok || !response.body) {
