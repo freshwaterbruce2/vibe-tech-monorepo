@@ -19,172 +19,37 @@ function removeCrossOrigin(): Plugin {
 // and the workspace-level `electron` package import fs, path, child_process,
 // util, and electron — none of which exist in WebView2.
 // This plugin redirects those imports to a virtual stub at build time.
-const NODE_BUILTINS = new Set([
-  'fs',
-  'path',
-  'child_process',
-  'util',
-  'os',
-  'electron',
-  'crypto',
-  'url',
-  'stream',
-  'events',
-  'node:fs',
-  'node:path',
-  'node:child_process',
-  'node:util',
-  'node:os',
-  'node:fs/promises',
-  'node:crypto',
-  'node:url',
-  'node:stream',
-  'node:events',
-]);
+// Node built-ins are stubbed via resolve.alias mapping directly to src/stubs/node-builtins-stub.ts
 
-const STUB_ID = '\0node-builtin-stub';
-
-function stubNodeBuiltins(): Plugin {
+// Custom plugin to support Chromium's "Automatic Workspace Folders" feature (M-135+)
+function devtoolsWorkspacePlugin(): Plugin {
   return {
-    name: 'stub-node-builtins',
-    enforce: 'pre',
-    resolveId(source) {
-      if (NODE_BUILTINS.has(source)) {
-        return STUB_ID;
-      }
-      return null;
-    },
-    load(id) {
-      if (id === STUB_ID) {
-        return `
-					const noop = () => {};
-					const noopStr = () => "";
-					const noopArr = () => [];
-					const noopPromise = () => Promise.resolve();
-
-					// fs stubs
-					export const existsSync = () => false;
-					export const readFileSync = noopStr;
-					export const writeFileSync = noop;
-					export const mkdirSync = noop;
-					export const readdirSync = noopArr;
-					export const accessSync = noop;
-					export const statSync = () => ({ size: 0, mtime: new Date(), isDirectory: () => false });
-					export const lstatSync = () => ({ size: 0, mtime: new Date(), isDirectory: () => false });
-					export const realpathSync = (p) => p || "";
-					export const watch = () => ({ close: noop, on: () => ({ on: () => {} }) });
-					export const watchFile = noop;
-					export const unwatchFile = noop;
-					export const readFile = noopPromise;
-					export const writeFile = noopPromise;
-					export const mkdir = noopPromise;
-					export const stat = () => Promise.resolve({ size: 0, mtime: new Date(), isDirectory: () => false });
-					export const lstat = () => Promise.resolve({ size: 0, mtime: new Date(), isDirectory: () => false });
-					export const realpath = (p) => Promise.resolve(p || "");
-					export const readdir = () => Promise.resolve([]);
-					export const open = () => Promise.resolve({ close: noopPromise, read: noopPromise, write: noopPromise });
-					export const exists = noopPromise;
-					export const constants = { W_OK: 2, R_OK: 4, F_OK: 0 };
-					export class Stats { isDirectory() { return false; } isFile() { return true; } }
-
-					// path stubs
-					export const join = (...a) => a.join("/");
-					export const resolve = (...a) => a.join("/");
-					export const normalize = (p) => p || "";
-					export const relative = (from, to) => to || "";
-					export const sep = "/";
-					export const basename = (p) => (p || "").split("/").pop() || "";
-					export const dirname = (p) => (p || "").split("/").slice(0, -1).join("/");
-					export const extname = (p) => { const idx = (p || "").lastIndexOf("."); return idx > -1 ? (p || "").slice(idx) : ""; };
-					export const isAbsolute = (p) => (p || "").startsWith("/") || (p || "").includes(":");
-
-					// child_process stubs
-					export const exec = noop;
-					export const execSync = noopStr;
-					export const spawn = noop;
-
-					// util stubs
-					export const promisify = (fn) => fn;
-
-					// electron stubs
-					export const app = { getPath: () => "/stub" };
-					export const ipcMain = {};
-					export const ipcRenderer = {};
-					export const BrowserWindow = {};
-
-					// os stubs
-					export const type = () => "Windows_NT";
-					export const platform = () => "win32";
-					export const arch = () => "x64";
-					export const homedir = () => "/user/home";
-					export const tmpdir = () => "/tmp";
-					export const release = () => "10.0.0";
-
-					// crypto stubs
-					export const createHash = () => ({
-						update: () => ({
-							digest: () => "stubbed-hash"
-						})
-					});
-
-					// url stubs
-					export const pathToFileURL = (p) => new URL("file:///" + (p || "").replace(/\\\\/g, "/"));
-
-					// stream stubs
-					export class Readable {
-						static from() { return new Readable(); }
-						pipe(dest) { return dest; }
-						on() { return this; }
-						once() { return this; }
-						emit() { return true; }
-					}
-					export class Writable {
-						pipe(dest) { return dest; }
-						on() { return this; }
-					}
-					export class Transform {
-						pipe(dest) { return dest; }
-						on() { return this; }
-					}
-					export class PassThrough {
-						pipe(dest) { return dest; }
-						on() { return this; }
-					}
-					export class Stream {
-						pipe(dest) { return dest; }
-						on() { return this; }
-					}
-					export const pipeline = noop;
-
-					// events stubs
-					export class EventEmitter {
-						on() { return this; }
-						once() { return this; }
-						off() { return this; }
-						emit() { return true; }
-						removeAllListeners() { return this; }
-					}
-
-					export default {
-						existsSync, readFileSync, writeFileSync, mkdirSync,
-						readdirSync, accessSync, statSync, lstatSync, realpathSync, readFile, writeFile,
-						mkdir, stat, lstat, realpath, readdir, open, exists, constants, Stats, join, resolve, normalize, relative, sep,
-						basename, dirname, extname, isAbsolute, exec, execSync, spawn,
-						promisify, app, ipcMain, ipcRenderer, BrowserWindow,
-						createHash, pathToFileURL,
-						Readable, Writable, Transform, PassThrough, Stream, pipeline,
-						EventEmitter,
-						type, platform, arch, homedir, tmpdir, release
-					};
-				`;
-      }
-      return null;
+    name: 'vite-plugin-devtools-workspace',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const urlPath = req.url ? req.url.split('?')[0] : '';
+        if (urlPath === '/.well-known/appspecific/com.chrome.devtools.json') {
+          res.setHeader('Content-Type', 'application/json');
+          res.setHeader('Access-Control-Allow-Origin', '*');
+          res.end(JSON.stringify({
+            workspace: {
+              root: path.resolve(__dirname).replace(/\\/g, '/'),
+              uuid: 'a58e6dfd-2101-4475-b6d3-2f22b79a838b',
+            },
+          }));
+          return;
+        }
+        next();
+      });
     },
   };
 }
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(mode),
+  },
   // Persistent cache directory for faster rebuilds
   cacheDir: '.vite-cache',
 
@@ -199,12 +64,12 @@ export default defineConfig(({ mode }) => ({
       'X-Permitted-Cross-Domain-Policies': 'none',
       'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
       'Content-Security-Policy':
-        "default-src 'self' 'unsafe-inline' 'unsafe-eval' ws: wss: http: https: data:;",
+        "default-src 'self' 'unsafe-inline' 'unsafe-eval' ws: wss: http: https: data: blob:; worker-src 'self' blob:;",
     },
   },
   base: './',
   plugins: [
-    stubNodeBuiltins(),
+    devtoolsWorkspacePlugin(),
     react(),
     tsconfigPaths({
       projects: [path.resolve(__dirname, './tsconfig.json')],
@@ -213,13 +78,37 @@ export default defineConfig(({ mode }) => ({
     removeCrossOrigin(),
   ].filter(Boolean),
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@vibetech/openrouter-client': path.resolve(
-        __dirname,
-        '../../packages/openrouter-client/dist/index.js',
-      ),
-    },
+    alias: [
+      { find: '@', replacement: path.resolve(__dirname, './src') },
+      {
+        find: '@vibetech/openrouter-client',
+        replacement: path.resolve(
+          __dirname,
+          '../../packages/openrouter-client/dist/index.js',
+        ),
+      },
+      {
+        find: '@vibetech/shared-config',
+        replacement: path.resolve(__dirname, './src/stubs/shared-config-shim.ts'),
+      },
+      {
+        find: 'better-sqlite3',
+        replacement: path.resolve(__dirname, './src/stubs/node-empty.ts'),
+      },
+      // Exact Node.js built-ins shims using RegExp
+      {
+        find: /^(node:)?fs(\/promises)?$/,
+        replacement: path.resolve(__dirname, './src/stubs/node-builtins-stub.ts'),
+      },
+      {
+        find: /^(node:)?path(\/(posix|win32))?$/,
+        replacement: path.resolve(__dirname, './src/stubs/node-builtins-stub.ts'),
+      },
+      {
+        find: /^(node:)?(child_process|util|os|electron|crypto|url|stream|events|process)$/,
+        replacement: path.resolve(__dirname, './src/stubs/node-builtins-stub.ts'),
+      },
+    ],
   },
   build: {
     target: 'esnext',
@@ -265,3 +154,4 @@ export default defineConfig(({ mode }) => ({
     noExternal: ['@vibetech/openrouter-client'],
   },
 }));
+

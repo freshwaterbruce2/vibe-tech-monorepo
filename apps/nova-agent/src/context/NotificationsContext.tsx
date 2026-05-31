@@ -1,4 +1,4 @@
-import { Store } from "@tauri-apps/plugin-store";
+import { loadStore } from "@/lib/store";
 import {
 	createContext,
 	type ReactNode,
@@ -63,7 +63,7 @@ export const NotificationsProvider = ({
 
 		const loadNotifications = async () => {
 			try {
-				const store = await Store.load(NOTIFICATIONS_STORE_PATH);
+				const store = await loadStore(NOTIFICATIONS_STORE_PATH);
 				const storedNotifications = await store.get<string>(
 					NOTIFICATIONS_STORAGE_KEY,
 				);
@@ -106,7 +106,7 @@ export const NotificationsProvider = ({
 
 		const saveNotifications = async () => {
 			try {
-				const store = await Store.load(NOTIFICATIONS_STORE_PATH);
+				const store = await loadStore(NOTIFICATIONS_STORE_PATH);
 				await store.set(
 					NOTIFICATIONS_STORAGE_KEY,
 					JSON.stringify(notifications),

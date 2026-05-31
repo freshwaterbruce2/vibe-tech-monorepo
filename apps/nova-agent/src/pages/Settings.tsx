@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { useDbHealth } from '@/hooks/useNovaData';
 import { invoke } from '@tauri-apps/api/core';
-import { Store } from '@tauri-apps/plugin-store';
+import { loadStore } from "@/lib/store";
 import { Settings as SettingsIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -37,7 +37,7 @@ const Settings = () => {
 
     const loadActiveTab = async () => {
       try {
-        const store = await Store.load(SETTINGS_STORE_PATH);
+        const store = await loadStore(SETTINGS_STORE_PATH);
         const savedTab = await store.get<string>(SETTINGS_ACTIVE_TAB_KEY);
         if (!isCancelled && savedTab) {
           setActiveTab(savedTab);
@@ -61,7 +61,7 @@ const Settings = () => {
 
     const saveActiveTab = async () => {
       try {
-        const store = await Store.load(SETTINGS_STORE_PATH);
+        const store = await loadStore(SETTINGS_STORE_PATH);
         await store.set(SETTINGS_ACTIVE_TAB_KEY, activeTab);
         await store.save();
       } catch (error) {

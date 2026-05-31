@@ -10,7 +10,7 @@ import { useGravityClaw, type GCMessage } from "@/hooks/useGravityClaw";
 import { useVoice } from "@/hooks/useVoice";
 import { AgentService, type PendingTask } from "@/services/AgentService";
 import type { AgentState, ChatMessage } from "@/types/agent";
-import { Store } from "@tauri-apps/plugin-store";
+import { loadStore } from "@/lib/store";
 import { ChatSidebar } from "./chat/ChatSidebar";
 import { MessageList } from "./chat/MessageList";
 
@@ -129,7 +129,7 @@ const ChatInterface = () => {
 		void loadAgentStatus();
 		const loadMessages = async () => {
 			try {
-				const store = await Store.load(CHAT_STORE_PATH);
+				const store = await loadStore(CHAT_STORE_PATH);
 				const saved = await store.get<string>(CHAT_STORAGE_KEY);
 				if (saved) {
 					const parsed: ChatMessage[] = JSON.parse(saved);
@@ -161,7 +161,7 @@ const ChatInterface = () => {
 		if (messages.length === 0) return;
 		const saveMessages = async () => {
 			try {
-				const store = await Store.load(CHAT_STORE_PATH);
+				const store = await loadStore(CHAT_STORE_PATH);
 				const toSave = messages.slice(-MAX_PERSISTED_MESSAGES);
 				await store.set(CHAT_STORAGE_KEY, JSON.stringify(toSave));
 				await store.save();

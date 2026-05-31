@@ -1,4 +1,5 @@
 import { Store } from "@tauri-apps/plugin-store";
+import { loadStore, MockStore } from "@/lib/store";
 import {
 	createContext,
 	type ReactNode,
@@ -22,12 +23,12 @@ const ADMIN_PASSWORD = "vibe2026admin"; // In production, this would be handled 
 
 export const AdminProvider = ({ children }: { children: ReactNode }) => {
 	const [isAdmin, setIsAdmin] = useState<boolean>(false);
-	const [store, setStore] = useState<Store | null>(null);
+	const [store, setStore] = useState<Store | MockStore | null>(null);
 
 	useEffect(() => {
 		const initStore = async () => {
 			try {
-				const newStore = await Store.load("store.json");
+				const newStore = await loadStore("store.json");
 				setStore(newStore);
 
 				const adminSession = await newStore.get<string>(
