@@ -34,6 +34,8 @@ function defaultPortFor(appType) {
       return 4310;
     case 'desktop':
       return 4330;
+    case 'mcp':
+      return 4340;
     case 'saas':
     default:
       return 4320;
@@ -57,6 +59,13 @@ function defaultTagsFor(appType) {
         'type:application',
         'factory:generated',
         'factory:desktop'
+      ];
+    case 'mcp':
+      return [
+        'scope:web',
+        'type:application',
+        'factory:generated',
+        'factory:mcp'
       ];
     case 'saas':
     default:

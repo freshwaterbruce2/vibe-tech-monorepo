@@ -304,9 +304,131 @@ function writeDesktopProject(tree, options) {
   });
 }
 
+function writeMcpProject(tree, options) {
+  addProjectConfiguration(tree, options.projectName, {
+    root: options.projectRoot,
+    sourceRoot: `${options.projectRoot}/src`,
+    projectType: 'application',
+    implicitDependencies: [
+      '@vibetech/auth',
+      '@vibetech/analytics',
+      'ai',
+      '@vibetech/billing',
+      'email',
+      '@vibetech/emails',
+      '@vibetech/landing',
+      'monetization',
+      'payments',
+      '@vibetech/db-app',
+    ],
+    targets: {
+      dev: {
+        executor: 'nx:run-commands',
+        options: {
+          command: 'pnpm run dev',
+          cwd: options.projectRoot,
+        },
+      },
+      build: {
+        executor: 'nx:run-commands',
+        dependsOn: ['^build'],
+        outputs: ['{projectRoot}/dist'],
+        options: {
+          command: 'pnpm run build',
+          cwd: options.projectRoot,
+        },
+      },
+      preview: {
+        executor: 'nx:run-commands',
+        options: {
+          command: 'pnpm run preview',
+          cwd: options.projectRoot,
+        },
+      },
+      'api:dev': {
+        executor: 'nx:run-commands',
+        options: {
+          command: 'pnpm run dev:api',
+          cwd: options.projectRoot,
+        },
+      },
+      'api:build': {
+        executor: 'nx:run-commands',
+        dependsOn: ['^build'],
+        outputs: ['{projectRoot}/server/dist'],
+        options: {
+          command: 'pnpm run build:api',
+          cwd: options.projectRoot,
+        },
+      },
+      'api:start': {
+        executor: 'nx:run-commands',
+        options: {
+          command: 'pnpm run start:api',
+          cwd: options.projectRoot,
+        },
+      },
+      'start-mcp': {
+        executor: 'nx:run-commands',
+        options: {
+          command: 'pnpm run start:mcp',
+          cwd: options.projectRoot,
+        },
+      },
+      'export-openapi': {
+        executor: 'nx:run-commands',
+        options: {
+          command: 'pnpm run export:openapi',
+          cwd: options.projectRoot,
+        },
+      },
+      'generate-openapi-mcp': {
+        executor: 'nx:run-commands',
+        options: {
+          command: 'pnpm run generate:openapi-mcp',
+          cwd: options.projectRoot,
+        },
+      },
+      'ship:check': {
+        executor: 'nx:run-commands',
+        options: {
+          command: 'pnpm run ship:check',
+          cwd: options.projectRoot,
+        },
+      },
+      test: {
+        executor: 'nx:run-commands',
+        options: {
+          command: 'pnpm run test',
+          cwd: options.projectRoot,
+        },
+      },
+      typecheck: {
+        executor: 'nx:run-commands',
+        dependsOn: ['^build'],
+        options: {
+          command: 'pnpm run typecheck',
+          cwd: options.projectRoot,
+        },
+      },
+      lint: {
+        executor: 'nx:run-commands',
+        options: {
+          command:
+            "node ../../node_modules/eslint/bin/eslint.js src server/src vite.config.ts --ext .ts,.tsx --ignore-pattern \"server/src/**/*.test.ts\"",
+          cwd: options.projectRoot,
+        },
+      },
+      quality: {},
+    },
+    tags: options.tags,
+  });
+}
+
 module.exports = {
   writeLandingProject,
   writeSaasProject,
   writeTauriProject,
   writeDesktopProject,
+  writeMcpProject,
 };

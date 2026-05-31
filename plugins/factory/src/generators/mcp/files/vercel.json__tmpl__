@@ -1,0 +1,17 @@
+{
+  "buildCommand": "pnpm nx run-many -t build --projects=tag:type:library && pnpm run build",
+  "installCommand": "cd ../.. && pnpm install --force --frozen-lockfile --filter ./apps/<%= projectName %>...",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "experimentalServices": {
+    "web": {
+      "routePrefix": "/",
+      "framework": "vite"
+    }
+  }
+}

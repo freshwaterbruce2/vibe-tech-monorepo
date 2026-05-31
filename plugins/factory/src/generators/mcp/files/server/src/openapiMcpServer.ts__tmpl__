@@ -1,0 +1,44 @@
+/**
+ * Auto-generated OpenAPI MCP Server Bridge.
+ * Maps openapi.json routes to type-safe MCP tools.
+ */
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
+
+export const server = new McpServer({
+  name: '<%= projectName %>-openapi-bridge',
+  version: '1.0.0',
+});
+
+// Tool: api_health_get
+server.tool(
+  'api_health_get',
+  `GET request to /api/health`,
+  {
+    params: z.record(z.string(), z.any()).optional().describe('JSON parameters for request body/query'),
+  },
+  async ({ params }) => {
+    try {
+      const url = 'http://127.0.0.1:<%= apiPort + 1000 %>' + '/api/health';
+      const isGet = true;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: isGet ? undefined : JSON.stringify(params || {}),
+      });
+      
+      const text = await response.text();
+      return {
+        content: [{ type: 'text', text }],
+      };
+    } catch (error: any) {
+      return {
+        content: [{ type: 'text', text: `Error calling endpoint: ${error.message}` }],
+        isError: true,
+      };
+    }
+  }
+);

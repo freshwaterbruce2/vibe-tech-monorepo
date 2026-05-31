@@ -1,0 +1,21 @@
+{
+  "manifest_version": "0.2",
+  "name": "<%= projectName %>",
+  "version": "0.1.0",
+  "description": "A Monetized MCP server exposing paid AI capabilities via x402 USDC micropayments for <%= displayName %>",
+  "author": {
+    "name": "VibeTech Engineering"
+  },
+  "server": {
+    "type": "node",
+    "entry_point": "server/dist/runMcp.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/server/dist/runMcp.js"
+      ],
+      "env": {}
+    }
+  },
+  "license": "MIT"
+}

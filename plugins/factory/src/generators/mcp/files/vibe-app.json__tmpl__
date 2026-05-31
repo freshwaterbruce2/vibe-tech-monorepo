@@ -1,0 +1,12 @@
+{
+  "generatedBy": "@vibetech/factory:mcp",
+  "projectName": "<%= projectName %>",
+  "displayName": "<%= displayName %>",
+  "archetype": "mcp-service",
+  "monetization": {
+    "stripeConnected": false,
+    "firstRevenueAt": null,
+    "mrrCents": null,
+    "currency": "usd"
+  }
+}

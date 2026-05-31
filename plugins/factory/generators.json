@@ -15,6 +15,11 @@
       "schema": "./src/generators/desktop/schema.json",
       "description": "Generate a Tauri 2 desktop app scaffold adhering to canonical paths"
     },
+    "mcp": {
+      "factory": "./src/generators/mcp/generator.js",
+      "schema": "./src/generators/mcp/schema.json",
+      "description": "Generate a FastMCP server scaffold with x402 USDC monetization and Fastify API"
+    },
     "landing-only": {
       "factory": "./src/generators/landing-only/generator.js",
       "schema": "./src/generators/landing-only/schema.json",
