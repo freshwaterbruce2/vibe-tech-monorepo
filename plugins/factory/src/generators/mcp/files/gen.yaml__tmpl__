@@ -1,0 +1,15 @@
+configVersion: 2.0.0
+generation:
+  sdkClassName: "<%= className %>SDK"
+  maintainOpenAPIOrder: true
+  usageSnippets:
+    optionalPropertyRendering: "withExample"
+  schemaPath: "openapi.json"
+  fixes:
+    nameResolutionDec2023: true
+    parameterOrderingFeb2024: true
+    securityFeb2025: true
+typescript:
+  version: 0.1.0
+  author: "VibeTech"
+  packageName: "@vibetech/<%= projectName %>"

@@ -1,0 +1,12 @@
+workflowVersion: 1.0.0
+sources:
+  <%= projectName %>-openapi:
+    inputs:
+      - location: openapi.json
+targets:
+  <%= projectName %>-typescript-sdk:
+    target: typescript
+    source: <%= projectName %>-openapi
+    publish:
+      npm:
+        token: $NPM_TOKEN
