@@ -20,6 +20,11 @@
   "recentActivity": [
     {
       "date": "2026-05-31",
+      "project": "monorepo-ci",
+      "action": "Implemented Option 3 (CI/CD Reliability Phase 1). Replaced manual workspace package builds with dynamic, topological library builds using Nx tag filtering in .github/workflows/nova-agent-visual.yml and .github/workflows/nova-agent.yml. Verified yaml syntax and workspace health, and committed changes under conventional commit guidelines."
+    },
+    {
+      "date": "2026-05-31",
       "project": "remix-ai-avatar",
       "action": "Reviewed architecture/code quality, migrated directory to C:\\dev\\remix-ai-avatar to resolve Windows ampersand path failures, upgraded Gradle wrapper to 9.3.1 to support Android Gradle Plugin 9.1.1, resolved keystore signing configs, cleaned signature mismatches via ADB, and successfully compiled/installed the debug APK on Galaxy A54 phone."
     },
