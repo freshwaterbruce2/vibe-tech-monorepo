@@ -63,7 +63,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/d-drive/logs"
           New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/d-drive/learning-system"
 
-      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -209,7 +209,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/d-drive/logs"
           New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/d-drive/learning-system"
 
-      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -241,7 +241,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -292,7 +292,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -347,7 +347,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/d-drive/logs"
           New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/d-drive/learning-system"
 
-      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -403,7 +403,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/d-drive/logs"
           New-Item -ItemType Directory -Force -Path "${{ github.workspace }}/d-drive/learning-system"
 
-      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -450,7 +450,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
         with:
           version: ${{ env.PNPM_VERSION }}
 
