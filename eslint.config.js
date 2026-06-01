@@ -493,7 +493,7 @@ export default tseslint.config(
         project: [
           './packages/shared-ipc/tsconfig.lint.json',
           './packages/shared-config/tsconfig.lint.json',
-          './packages/nova-types/tsconfig.lint.json',
+          './packages/rag-core/tsconfig.json',
           './packages/core/tsconfig.json',
           './apps/desktop-commander-v3/tsconfig.lint.json',
           './apps/memory-mcp/tsconfig.lint.json',

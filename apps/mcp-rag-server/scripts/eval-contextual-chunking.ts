@@ -126,8 +126,8 @@ function scoreResults(results: SearchResult[], expected: string[]): QueryScore {
     : 0;
   let rr = 0;
   for (let i = 0; i < Math.min(results.length, 10); i++) {
-    const r = results[i]!;
-    if (expected.some((e) => r.chunk.filePath.includes(e))) {
+    const r = results[i];
+    if (r && expected.some((e) => r.chunk.filePath.includes(e))) {
       rr = 1 / (i + 1);
       break;
     }
