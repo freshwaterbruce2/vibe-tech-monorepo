@@ -4,9 +4,7 @@
     "lib": ["ES2022"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "strict": true,
     "noUncheckedIndexedAccess": false,
     "esModuleInterop": true,
@@ -15,13 +13,12 @@
     "outDir": "./dist",
     "rootDir": "./src"
   },
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "**/*.test.ts",
-    "src/test/setup.ts"
-  ],
-  "extends": "../../tsconfig.base.json"
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "**/*.test.ts", "src/test/setup.ts"],
+  "extends": "../../tsconfig.base.json",
+  "references": [
+    {
+      "path": "../../packages/shared-ipc"
+    }
+  ]
 }

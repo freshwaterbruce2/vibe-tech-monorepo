@@ -73,7 +73,8 @@
       "sqlite3",
       "unrs-resolver",
       "utf-8-validate",
-      "workerd"
+      "workerd",
+      "ffmpeg-static"
     ],
     "ignoredBuiltDependencies": [
       "@railway/cli"
@@ -255,6 +256,7 @@
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
     "@eslint/js": "^9.39.4",
+    "@nx/devkit": "22.7.1",
     "@nx/eslint-plugin": "22.7.1",
     "@nx/js": "22.7.1",
     "@nx/playwright": "22.7.1",
@@ -279,6 +281,7 @@
     "@types/react-dom": "19.2.3",
     "@vibetech/factory": "workspace:*",
     "@vitejs/plugin-react": "^5.2.0",
+    "@vitejs/plugin-react-swc": "^4.3.0",
     "@vitest/coverage-v8": "^4.1.2",
     "@vitest/ui": "^4.1.2",
     "autoprefixer": "^10.4.27",
@@ -286,6 +289,7 @@
     "eslint": "^9.39.4",
     "eslint-plugin-import": "2.31.0",
     "eslint-plugin-jsx-a11y": "6.10.1",
+    "eslint-plugin-playwright": "^1.6.2",
     "eslint-plugin-react": "7.35.0",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",

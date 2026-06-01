@@ -16,4 +16,5 @@ tmp/project-graph*.json
 tmp/monorepo-sync-audit-report.json
 token*.png
 id_zoom*.png
-bottoken.png
+vibe-mechanic
+vibe-mechanic/**

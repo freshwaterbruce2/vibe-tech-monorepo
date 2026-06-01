@@ -166,4 +166,63 @@ describe('Backend API', () => {
             expect(res.status).toBe(204);
         });
     });
+
+    describe('Video Render API', () => {
+        const tempBg = path.join(__dirname, 'temp_bg.mp4');
+        const tempAvatar = path.join(__dirname, 'temp_avatar.mp4');
+
+        beforeAll(async () => {
+            const { execSync } = await import('child_process');
+            const ffmpegPath = (await import('ffmpeg-static')).default;
+            
+            try {
+                // Generate a 1-second dummy background video
+                execSync(`"${ffmpegPath}" -y -f lavfi -i testsrc=duration=1:size=640x480:rate=30 -pix_fmt yuv420p "${tempBg}"`, { stdio: 'ignore' });
+                // Generate a 1-second dummy avatar video with green background
+                execSync(`"${ffmpegPath}" -y -f lavfi -i color=color=green:duration=1:size=640x480:rate=30 -pix_fmt yuv420p "${tempAvatar}"`, { stdio: 'ignore' });
+            } catch (err) {
+                console.error('Failed to create dummy videos for tests:', err);
+            }
+        });
+
+        afterAll(() => {
+            if (fs.existsSync(tempBg)) fs.unlinkSync(tempBg);
+            if (fs.existsSync(tempAvatar)) fs.unlinkSync(tempAvatar);
+        });
+
+        it('returns 400 if missing inputs', async () => {
+            const res = await request(app)
+                .post('/api/render-video')
+                .send({ avatarVideoPath: '' });
+            expect(res.status).toBe(400);
+            expect(res.body.error).toContain('Missing');
+        });
+
+        it('returns 404 if file does not exist', async () => {
+            const res = await request(app)
+                .post('/api/render-video')
+                .send({ avatarVideoPath: 'nonexistent.mp4', backgroundVideoPath: tempBg });
+            expect(res.status).toBe(404);
+            expect(res.body.error).toContain('not found');
+        });
+
+        it('successfully overlays avatar and returns merged path', async () => {
+            if (fs.existsSync(tempBg) && fs.existsSync(tempAvatar)) {
+                const res = await request(app)
+                    .post('/api/render-video')
+                    .send({ avatarVideoPath: tempAvatar, backgroundVideoPath: tempBg });
+                
+                expect(res.status).toBe(200);
+                expect(res.body.success).toBe(true);
+                expect(res.body.videoUrl).toBeDefined();
+                expect(res.body.outputPath).toBeDefined();
+
+                // Clean up generated output file
+                if (fs.existsSync(res.body.outputPath)) {
+                    fs.unlinkSync(res.body.outputPath);
+                }
+            }
+        });
+    });
 });
+

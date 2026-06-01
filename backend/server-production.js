@@ -1,4 +1,5 @@
 // @ts-check
+/* eslint-disable consistent-return */
 // Production-ready Express server for Vibe Tech
 
 require('dotenv').config();
@@ -7,6 +8,10 @@ const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const compression = require('compression');
+const path = require('path');
+const fs = require('fs');
+const ffmpegPath = require('ffmpeg-static');
+
 
 const { getDatabaseConfig } = require('./config/database');
 const { logger, requestLogger } = require('./config/logger');
@@ -97,7 +102,16 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(requestLogger);
+
+// Ensure renders directory exists on D:\ drive (storage policy)
+const rendersDir = 'D:\\renders';
+if (!fs.existsSync(rendersDir)) {
+  fs.mkdirSync(rendersDir, { recursive: true });
+}
+app.use('/api/renders', express.static(rendersDir));
+
 app.use('/api/', apiRateLimit);
+
 
 /** @type {SqliteDatabase | null} */
 let db = null;
@@ -425,7 +439,81 @@ app.post(
   }
 );
 
+
+app.post(
+  '/api/render-video',
+  /** @param {import('express').Request} req @param {import('express').Response} res */
+  (req, res) => {
+    const { avatarVideoPath, backgroundVideoPath } = req.body;
+
+    if (!avatarVideoPath || !backgroundVideoPath) {
+      res.status(400).json({ error: 'Missing avatarVideoPath or backgroundVideoPath in request body' });
+      return;
+    }
+
+    // Verify inputs exist
+    if (!fs.existsSync(avatarVideoPath)) {
+      logger.error('Avatar video file not found', { path: avatarVideoPath });
+      res.status(404).json({ error: `Avatar video file not found at path: ${avatarVideoPath}` });
+      return;
+    }
+    if (!fs.existsSync(backgroundVideoPath)) {
+      logger.error('Background video file not found', { path: backgroundVideoPath });
+      res.status(404).json({ error: `Background video file not found at path: ${backgroundVideoPath}` });
+      return;
+    }
+
+    const outputFilename = `merged_output_${Date.now()}.mp4`;
+    const outputPath = path.join(rendersDir, outputFilename);
+
+    // Normalize paths to use forward slashes (prevents backslash escape issues in FFmpeg on Windows)
+    const cleanBackgroundPath = path.resolve(backgroundVideoPath).replace(/\\/g, '/');
+    const cleanAvatarPath = path.resolve(avatarVideoPath).replace(/\\/g, '/');
+    const cleanOutputPath = path.resolve(outputPath).replace(/\\/g, '/');
+
+    logger.info('Starting video rendering', { 
+      avatarVideoPath: cleanAvatarPath, 
+      backgroundVideoPath: cleanBackgroundPath, 
+      outputPath: cleanOutputPath 
+    });
+
+    const { spawn } = require('child_process');
+
+    // Command line construction using double quotes for path arguments to ensure safe shell execution on Windows/Linux
+    const cmd = `"${ffmpegPath}" -i "${cleanBackgroundPath}" -i "${cleanAvatarPath}" -y -filter_complex "[1:v]colorkey=0x00FF00:0.3:0.1[ckout];[0:v][ckout]overlay=x=0:y=0[outv]" -map "[outv]" -map "1:a?" -c:v libx264 -pix_fmt yuv420p "${cleanOutputPath}"`;
+
+    logger.debug('FFmpeg executing command', { commandLine: cmd });
+
+    const child = spawn(cmd, { shell: true });
+
+    let stderrData = '';
+    child.stderr.on('data', (data) => {
+      stderrData += data.toString();
+    });
+
+    child.on('close', (code) => {
+      if (code === 0) {
+        logger.info('Video rendering completed successfully', { outputPath });
+        res.json({
+          success: true,
+          videoUrl: `http://localhost:${PORT}/api/renders/${outputFilename}`,
+          outputPath: outputPath
+        });
+      } else {
+        logger.error('Video rendering failed', { error: stderrData });
+        res.status(500).json({ error: `FFmpeg rendering failed: ${stderrData}` });
+      }
+    });
+
+    child.on('error', (err) => {
+      logger.error('Video rendering spawn failed', { error: err.message });
+      res.status(500).json({ error: `FFmpeg spawn error: ${err.message}` });
+    });
+  }
+);
+
 app.use(errorHandler);
+
 
 app.use('*', (req, res) => {
   logger.warn('404 Not Found', { url: req.originalUrl, method: req.method, ip: req.ip });

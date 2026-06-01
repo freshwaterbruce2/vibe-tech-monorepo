@@ -42,11 +42,13 @@ const __dirname = dirname(__filename);
 
 // NOTE: the @nova-rag/* tsconfig path aliases are resolved by tsup at build
 // time, not by tsx at runtime. Eval imports therefore reach into nova-agent
-// source directly. Same effect, no bundler step needed for a one-off script.
-import { RAGIndexer } from '../../nova-agent/src/rag/indexer.js';
-import { RAGRetriever } from '../../nova-agent/src/rag/retriever.js';
-import { DEFAULT_RAG_CONFIG } from '../src/rag/types.js';
-import type { RAGConfig, SearchResult } from '../src/rag/types.js';
+import {
+  RAGIndexer,
+  RAGRetriever,
+  DEFAULT_RAG_CONFIG,
+  type RAGConfig,
+  type SearchResult,
+} from '@vibetech/rag-core';
 
 // ─── Config ─────────────────────────────────────────────────────────────────
 

@@ -63,6 +63,9 @@
   },
   "references": [
     {
+      "path": "../../packages/shared-ipc"
+    },
+    {
       "path": "../../packages/entitlements"
     },
     {

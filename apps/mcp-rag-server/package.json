@@ -14,6 +14,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.0",
     "@lancedb/lancedb": "^0.27.1",
+    "@vibetech/rag-core": "workspace:*",
     "better-sqlite3": "12.6.2",
     "ts-morph": "^27.0.2",
     "zod": "^4.3.6"

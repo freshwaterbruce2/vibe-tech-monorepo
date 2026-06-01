@@ -5,6 +5,12 @@ const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const ffmpeg = require('fluent-ffmpeg');
+const ffmpegPath = require('ffmpeg-static');
+
+// Set ffmpeg path dynamically
+ffmpeg.setFfmpegPath(ffmpegPath);
+
 
 // Create Express app
 const app = express();
@@ -13,6 +19,14 @@ const PORT = process.env.PORT || 9001;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Ensure renders directory exists on D:\ drive (storage policy)
+const rendersDir = 'D:\\renders';
+if (!fs.existsSync(rendersDir)) {
+  fs.mkdirSync(rendersDir, { recursive: true });
+}
+app.use('/api/renders', express.static(rendersDir));
+
 
 // Database setup - use test DB path if TEST_DB_PATH is set
 const dbDir = process.env.TEST_DB_PATH
@@ -398,6 +412,66 @@ app.delete('/api/blog/:id', (req, res) => {
     return res.status(204).send();
   });
 });
+
+app.post('/api/render-video', (req, res) => {
+  const { avatarVideoPath, backgroundVideoPath } = req.body;
+
+  if (!avatarVideoPath || !backgroundVideoPath) {
+    return res.status(400).json({ error: 'Missing avatarVideoPath or backgroundVideoPath in request body' });
+  }
+
+  // Verify inputs exist
+  if (!fs.existsSync(avatarVideoPath)) {
+    return res.status(404).json({ error: `Avatar video file not found at path: ${avatarVideoPath}` });
+  }
+  if (!fs.existsSync(backgroundVideoPath)) {
+    return res.status(404).json({ error: `Background video file not found at path: ${backgroundVideoPath}` });
+  }
+
+  const outputFilename = `merged_output_${Date.now()}.mp4`;
+  const outputPath = path.join(rendersDir, outputFilename);
+
+  // Normalize paths to use forward slashes (prevents backslash escape issues in FFmpeg on Windows)
+  const cleanBackgroundPath = path.resolve(backgroundVideoPath).replace(/\\/g, '/');
+  const cleanAvatarPath = path.resolve(avatarVideoPath).replace(/\\/g, '/');
+  const cleanOutputPath = path.resolve(outputPath).replace(/\\/g, '/');
+
+  console.warn(`[FFmpeg] Rendering: Compositing ${cleanAvatarPath} over ${cleanBackgroundPath}`);
+
+  const { spawn } = require('child_process');
+
+  // Command line construction using double quotes for path arguments to ensure safe shell execution on Windows/Linux
+  const cmd = `"${ffmpegPath}" -i "${cleanBackgroundPath}" -i "${cleanAvatarPath}" -y -filter_complex "[1:v]colorkey=0x00FF00:0.3:0.1[ckout];[0:v][ckout]overlay=x=0:y=0[outv]" -map "[outv]" -map "1:a?" -c:v libx264 -pix_fmt yuv420p "${cleanOutputPath}"`;
+
+  console.warn(`[FFmpeg] Executing command: ${cmd}`);
+
+  const child = spawn(cmd, { shell: true });
+
+  let stderrData = '';
+  child.stderr.on('data', (data) => {
+    stderrData += data.toString();
+  });
+
+  child.on('close', (code) => {
+    if (code === 0) {
+      console.warn(`[FFmpeg] Successfully rendered composite output to: ${outputPath}`);
+      return res.json({
+        success: true,
+        videoUrl: `http://localhost:${PORT}/api/renders/${outputFilename}`,
+        outputPath: outputPath
+      });
+    } else {
+      console.error(`[FFmpeg] Rendering failed with exit code ${code}:`, stderrData);
+      return res.status(500).json({ error: `FFmpeg rendering failed: ${stderrData}` });
+    }
+  });
+
+  child.on('error', (err) => {
+    console.error('[FFmpeg] Spawn error:', err);
+    return res.status(500).json({ error: `FFmpeg spawn error: ${err.message}` });
+  });
+});
+
 
 // Close database
 function closeDb() {

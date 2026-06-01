@@ -20,6 +20,9 @@
   "extends": "../../tsconfig.base.json",
   "references": [
     {
+      "path": "../shared-ipc"
+    },
+    {
       "path": "../logger"
     }
   ]

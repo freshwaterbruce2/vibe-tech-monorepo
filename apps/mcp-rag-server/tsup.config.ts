@@ -19,7 +19,7 @@ export default defineConfig({
   ],
   esbuildOptions(options) {
     options.alias = {
-      '@nova-rag': resolve(__dirname, '../nova-agent/src/rag'),
+      '@nova-rag': resolve(__dirname, '../../packages/rag-core/src'),
     };
   },
 });

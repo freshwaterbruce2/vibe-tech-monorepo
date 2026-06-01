@@ -30,7 +30,19 @@
   "exclude": ["node_modules"],
   "references": [
     {
+      "path": "../../packages/shared-ipc"
+    },
+    {
+      "path": "../../packages/shared-config"
+    },
+    {
       "path": "../../packages/openrouter-client"
+    },
+    {
+      "path": "../../packages/logger"
+    },
+    {
+      "path": "../../packages/inngest-client"
     },
     {
       "path": "./tsconfig.node.json"

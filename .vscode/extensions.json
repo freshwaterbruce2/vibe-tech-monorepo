@@ -5,7 +5,8 @@
     "Google.gemini-cli-vscode-ide-companion",
     "printfn.gemini-improved",
     "dbaeumer.vscode-eslint",
-    "esbenp.prettier-vscode"
+    "esbenp.prettier-vscode",
+    "ms-playwright.playwright"
   ],
   "unwantedRecommendations": [
     "github.copilot",

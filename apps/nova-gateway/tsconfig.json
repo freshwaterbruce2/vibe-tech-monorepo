@@ -18,6 +18,9 @@
   "exclude": ["node_modules", "dist"],
   "references": [
     {
+      "path": "../../packages/shared-ipc"
+    },
+    {
       "path": "../../packages/logger"
     }
   ]

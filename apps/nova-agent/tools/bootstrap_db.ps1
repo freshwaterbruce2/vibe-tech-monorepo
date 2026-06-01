@@ -9,8 +9,8 @@ $ErrorActionPreference = "Stop"
 
 function Assert-OnDDrive([string]$PathValue, [string]$Name) {
   $full = [System.IO.Path]::GetFullPath($PathValue)
-  if (-not $full.ToUpperInvariant().StartsWith("D:\\")) {
-    throw "$Name must be on D:\\ (got $full)"
+  if (-not $full.ToUpperInvariant().StartsWith("D:\")) {
+    throw "$Name must be on D:\ (got $full)"
   }
 }
 
@@ -61,7 +61,7 @@ os.makedirs(os.path.dirname(db_path), exist_ok=True)
 conn = sqlite3.connect(db_path)
 cur = conn.cursor()
 
-cur.execute(\"\"\"
+cur.execute("""
 CREATE TABLE IF NOT EXISTS prompt_entities (
   prompt_id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -72,8 +72,8 @@ CREATE TABLE IF NOT EXISTS prompt_entities (
   created_at TEXT NOT NULL,
   last_updated TEXT NOT NULL
 );
-\"\"\")
-cur.execute(\"\"\"
+""")
+cur.execute("""
 CREATE TABLE IF NOT EXISTS prompt_versions (
   version_id TEXT PRIMARY KEY,
   prompt_id TEXT NOT NULL,
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS prompt_versions (
   created_by TEXT NOT NULL,
   notes TEXT
 );
-\"\"\")
+""")
 
 def now():
   return datetime.datetime.utcnow().isoformat() + "Z"
@@ -122,6 +122,12 @@ conn.commit()
 conn.close()
 "@
 
-& $pythonExe @pythonArgs -c $pyCode
+$tempPy = [System.IO.Path]::GetTempFileName() + ".py"
+$pyCode | Set-Content $tempPy -Encoding UTF8
+try {
+  & $pythonExe @pythonArgs $tempPy
+} finally {
+  if (Test-Path $tempPy) { Remove-Item $tempPy -Force }
+}
 
 Write-Host "SUCCESS: Prompt bootstrap completed for $DbPath" -ForegroundColor Green

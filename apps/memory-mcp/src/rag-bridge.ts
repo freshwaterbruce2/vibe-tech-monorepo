@@ -6,12 +6,15 @@
  * Static imports allow tsup to bundle nova-agent's RAG modules at build time.
  */
 
-import { RAGIndexer } from '../../nova-agent/src/rag/indexer.js';
-import { RAGRetriever } from '../../nova-agent/src/rag/retriever.js';
-import { RAGReranker } from '../../nova-agent/src/rag/reranker.js';
-import { RAGCache } from '../../nova-agent/src/rag/cache.js';
-import { DEFAULT_RAG_CONFIG } from '../../nova-agent/src/rag/types.js';
-import type { RAGConfig, SearchResult } from '../../nova-agent/src/rag/types.js';
+import {
+  RAGIndexer,
+  RAGRetriever,
+  RAGReranker,
+  RAGCache,
+  DEFAULT_RAG_CONFIG,
+  type RAGConfig,
+  type SearchResult,
+} from '@vibetech/rag-core';
 
 export interface RAGSearchParams {
   query: string;

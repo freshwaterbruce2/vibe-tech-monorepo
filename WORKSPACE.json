@@ -443,16 +443,7 @@
         "priority": "high",
         "description": "IPC message schemas (Zod)"
       },
-      "nova-types": {
-        "status": "production",
-        "priority": "high",
-        "description": "Shared Types for Nova"
-      },
-      "nova-database": {
-        "status": "production",
-        "priority": "high",
-        "description": "Nova database layer"
-      },
+
       "db-app": {
         "status": "production",
         "priority": "medium",

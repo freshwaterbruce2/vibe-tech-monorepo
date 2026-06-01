@@ -22,8 +22,9 @@ import {
   TradingConnector,
   LearningConnector,
   DEFAULT_RAG_CONFIG,
-} from './rag/index.js';
-import type { SearchQuery, SearchResult } from './rag/index.js';
+  type SearchQuery,
+  type SearchResult,
+} from '@vibetech/rag-core';
 
 // ─── Globals ─────────────────────────────────────────────────────────────────
 

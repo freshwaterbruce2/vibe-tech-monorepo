@@ -4,8 +4,8 @@
   "env": {
     "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "128000",
     "MAX_THINKING_TOKENS": "32000",
-    "BASH_DEFAULT_TIMEOUT_MS": "120000",
-    "BASH_MAX_TIMEOUT_MS": "600000",
+    "BASH_DEFAULT_TIMEOUT_MS": "300000",
+    "BASH_MAX_TIMEOUT_MS": "900000",
     "BASH_MAX_OUTPUT_LENGTH": "100000",
     "MCP_TIMEOUT": "60000",
     "MCP_TOOL_TIMEOUT": "60000",
@@ -38,6 +38,12 @@
       "Bash(git branch:*)",
       "Bash(git show:*)",
       "Bash(git pull:*)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git stash:*)",
+      "Bash(gh:*)",
+      "Bash(rg:*)",
+      "Bash(jq:*)",
       "Bash(python:*)",
       "Bash(powershell:*)",
       "Bash(pwsh:*)",
@@ -86,6 +92,8 @@
       "Read(./apps/crypto-enhanced/nonce_state_secondary.json)",
       "Read(./apps/crypto-enhanced/config.py)",
       "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
       "Bash(format:*)",
       "Bash(diskpart:*)",
       "Bash(npm install:*)",
@@ -98,14 +106,8 @@
       "Bash(bun add:*)"
     ],
     "ask": [
-      "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(git rebase:*)",
-      "Bash(curl:*)",
-      "Bash(wget:*)",
-      "Bash(rm:*)",
-      "Bash(del:*)",
-      "Bash(Remove-Item:*)"
+      "Bash(git commit --no-verify:*)"
     ],
     "defaultMode": "default",
     "additionalDirectories": [
@@ -119,7 +121,7 @@
       "D:/backups"
     ]
   },
-  "model": "claude-opus-4-7",
+  "model": "claude-opus-4-8",
   "enableAllProjectMcpServers": false,
   "enabledMcpjsonServers": [
     "desktop-commander",
