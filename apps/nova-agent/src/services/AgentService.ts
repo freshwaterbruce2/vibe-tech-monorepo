@@ -120,6 +120,21 @@ export class AgentService {
 		}
 	}
 
+	static async getDecryptedApiKeys(): Promise<{
+		deepseek_key?: string;
+		groq_key?: string;
+		openrouter_key?: string;
+		google_key?: string;
+		kimi_key?: string;
+	}> {
+		try {
+			return await invoke("get_decrypted_api_keys");
+		} catch (error) {
+			console.error("Failed to get decrypted API keys:", error);
+			throw error;
+		}
+	}
+
 	static async saveApiKeys(keys: {
 		deepseek_key?: string;
 		groq_key?: string;

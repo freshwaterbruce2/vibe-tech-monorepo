@@ -9,7 +9,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useGravityClaw, type GCMessage } from "@/hooks/useGravityClaw";
 import { useVoice } from "@/hooks/useVoice";
 import { AgentService, type PendingTask } from "@/services/AgentService";
-import type { AgentState, ChatMessage } from "@/types/agent";
+import { NovaAiAgent } from "@/services/NovaAiAgent";
+import type { AgentState, ChatMessage as CoreChatMessage } from "@/types/agent";
+
+export interface ChatMessage extends Omit<CoreChatMessage, 'role'> {
+	role: 'user' | 'assistant' | 'system' | 'tool';
+	reasoning?: string;
+}
+
 import { loadStore } from "@/lib/store";
 import { ChatSidebar } from "./chat/ChatSidebar";
 import { MessageList } from "./chat/MessageList";
@@ -49,10 +56,21 @@ const ChatInterface = () => {
 	const { sendMessage: gcSend, isStreaming, abort: gcAbort, model: gcModel } = useGravityClaw();
 	const speakRef = useRef<(text: string) => Promise<void>>(async () => undefined);
 
+	const messagesRef = useRef(messages);
+	useEffect(() => {
+		messagesRef.current = messages;
+	}, [messages]);
+
+	const abortControllerRef = useRef<AbortController | null>(null);
+
 	// ── sendMessage ──────────────────────────────────────────────────────────
 	const sendMessage = useCallback(
 		async (text: string) => {
 			if (!text.trim() || isLoading) return;
+
+			abortControllerRef.current?.abort();
+			const ac = new AbortController();
+			abortControllerRef.current = ac;
 
 			const userMsg: ChatMessage = { role: "user", content: text, timestamp: nextTimestamp() };
 			setMessages((prev) => [...prev, userMsg]);
@@ -84,11 +102,51 @@ const ChatInterface = () => {
 					});
 					gcHistoryRef.current = [...history, { role: "assistant", content: responseText }];
 				} else {
-					responseText = await AgentService.chat(text);
+					const streamKey = nextTimestamp();
 					setMessages((prev) => [
 						...prev,
-						{ role: "assistant", content: responseText, timestamp: nextTimestamp() },
+						{ role: "assistant", content: "", timestamp: streamKey },
 					]);
+
+					const mappedHistory = messagesRef.current.map((m) => ({
+						role: m.role,
+						content: m.content,
+					}));
+					mappedHistory.push({ role: "user", content: text });
+
+					const result = await NovaAiAgent.run({
+						messages: mappedHistory,
+						onChunk: ({ text, reasoning }) => {
+							setMessages((prev) =>
+								prev.map((m) =>
+									m.timestamp === streamKey ? { ...m, content: text, reasoning } : m,
+								),
+							);
+						},
+						onToolCall: (toolName, args) => {
+							setMessages((prev) => [
+								...prev,
+								{
+									role: "system",
+									content: `🔧 Executing tool: ${toolName} with arguments: ${JSON.stringify(args, null, 2)}`,
+									timestamp: nextTimestamp(),
+								},
+							]);
+						},
+						onToolResult: (toolName, toolResult) => {
+							setMessages((prev) => [
+								...prev,
+								{
+									role: "system",
+									content: `✅ Tool: ${toolName} finished.\nResult:\n${toolResult}`,
+									timestamp: nextTimestamp(),
+								},
+							]);
+						},
+						signal: ac.signal,
+					});
+
+					responseText = result.text;
 					gcHistoryRef.current = [
 						...gcHistoryRef.current,
 						{ role: "user", content: text },
@@ -105,14 +163,18 @@ const ChatInterface = () => {
 				if ((err as Error).name === "AbortError") return;
 				setMessages((prev) => [
 					...prev,
-					{ role: "system", content: `Error: ${err instanceof Error ? err.message : String(err)}`, timestamp: nextTimestamp() },
+					{ role: "system", content: `❌ Error: ${err instanceof Error ? err.message : String(err)}`, timestamp: nextTimestamp() },
 				]);
 			} finally {
 				setIsLoading(false);
+				if (abortControllerRef.current === ac) {
+					abortControllerRef.current = null;
+				}
 			}
 		},
 		[isLoading, gravityClawMode, voiceEnabled, gcSend],
 	);
+
 
 	// ── Voice ────────────────────────────────────────────────────────────────
 	const sendMessageRef = useRef(sendMessage);
@@ -209,7 +271,13 @@ const ChatInterface = () => {
 	const handleScreenshotAnalysis = (analysis: string, imagePath: string) => {
 		setMessages((prev) => [...prev, { role: "assistant", content: `📸 Screenshot Analysis:\n\n${analysis}\n\nImage: ${imagePath}`, timestamp: nextTimestamp() }]);
 	};
-	const toggleGravityClawMode = () => { if (isLoading) gcAbort(); setGravityClawMode((prev) => !prev); };
+	const toggleGravityClawMode = () => {
+		if (isLoading) {
+			gcAbort();
+			abortControllerRef.current?.abort();
+		}
+		setGravityClawMode((prev) => !prev);
+	};
 
 	// ── Derived UI ────────────────────────────────────────────────────────────
 	const gcClawUrl = (import.meta.env.VITE_GRAVITY_CLAW_URL as string | undefined) ?? "http://localhost:5187";

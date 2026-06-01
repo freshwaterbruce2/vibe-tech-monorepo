@@ -127,6 +127,16 @@ export const process = {
 	platform: "win32",
 };
 
+// async_hooks stub
+export class AsyncLocalStorage<T = any> {
+	disable() {}
+	getStore(): T | undefined { return undefined; }
+	run<R>(store: T, callback: (...args: any[]) => R, ...args: any[]): R {
+		return callback(...args);
+	}
+	enterWith(store: T) {}
+}
+
 // default export contains all
 export default {
 	existsSync, readFileSync, writeFileSync, mkdirSync,
@@ -138,5 +148,6 @@ export default {
 	Readable, Writable, Transform, PassThrough, Stream, Duplex, pipeline,
 	EventEmitter,
 	type, platform, arch, homedir, tmpdir, release,
-	process
+	process,
+	AsyncLocalStorage
 };

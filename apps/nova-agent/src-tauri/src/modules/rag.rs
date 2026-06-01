@@ -8,7 +8,11 @@ use lancedb::query::{ExecutableQuery, QueryBase};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, error, info, warn};
 
-use crate::modules::{path_policy, state::Config};
+use crate::modules::{
+    path_policy,
+    state::Config,
+    credentials::{CredentialStore, keys},
+};
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -196,6 +200,10 @@ pub async fn rag_index_file(
     info!("RAG: indexing {}", file_path);
 
     let config = Config::from_env();
+    let api_key = CredentialStore::get_with_fallback(keys::OPENROUTER_API_KEY, "OPENROUTER_API_KEY")
+        .unwrap_or(None)
+        .unwrap_or_else(|| config.openrouter_api_key.clone());
+
     let conn = connect(&config.lance_db_path).await?;
     let schema = rag_schema();
 
@@ -216,7 +224,7 @@ pub async fn rag_index_file(
         .to_string();
 
     for (i, chunk) in chunks.iter().enumerate() {
-        match embed(chunk, &config.openrouter_api_key).await {
+        match embed(chunk, &api_key).await {
             Ok(v) => {
                 let chunk_meta = {
                     let mut m = metadata.clone();
@@ -282,13 +290,17 @@ pub async fn rag_search(query: String, top_k: usize) -> Result<Vec<RagSearchResu
     debug!("RAG search: '{query}' (top_k={top_k})");
 
     let config = Config::from_env();
+    let api_key = CredentialStore::get_with_fallback(keys::OPENROUTER_API_KEY, "OPENROUTER_API_KEY")
+        .unwrap_or(None)
+        .unwrap_or_else(|| config.openrouter_api_key.clone());
+
     let conn = connect(&config.lance_db_path).await?;
 
     if !table_exists(&conn).await? {
         return Ok(vec![]);
     }
 
-    let query_vec = embed(&query, &config.openrouter_api_key).await?;
+    let query_vec = embed(&query, &api_key).await?;
 
     let table = conn
         .open_table(TABLE_NAME)

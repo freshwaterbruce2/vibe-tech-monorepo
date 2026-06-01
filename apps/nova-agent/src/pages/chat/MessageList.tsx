@@ -2,7 +2,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Bot, User } from "lucide-react";
 import React from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { ChatMessage } from "@/types/agent";
+import type { ChatMessage as CoreChatMessage } from "@/types/agent";
+
+export interface ChatMessage extends Omit<CoreChatMessage, 'role'> {
+	role: 'user' | 'assistant' | 'system' | 'tool';
+	reasoning?: string;
+}
+
 
 interface MessageListProps {
 	messages: ChatMessage[];
@@ -37,24 +43,43 @@ export function MessageList({
 									msg.role === "user"
 										? "bg-gradient-to-br from-cyan-600 to-blue-600 text-white rounded-tr-none"
 										: msg.role === "system"
-											? "bg-red-900/50 border border-red-500/30 text-red-200"
-											: gravityClawMode
-												? "bg-purple-900/30 border border-purple-500/20 text-white rounded-tl-none"
-												: "bg-white/10 border border-white/10 text-white rounded-tl-none"
+											? msg.content.startsWith("❌")
+												? "bg-red-950/40 border border-red-800/40 text-red-200 text-xs font-mono rounded-lg w-full"
+												: "bg-cyan-950/40 border border-cyan-800/40 text-cyan-200 text-xs font-mono rounded-lg w-full"
+											: msg.role === "tool"
+												? "bg-yellow-950/40 border border-yellow-800/40 text-yellow-200 text-xs font-mono rounded-lg w-full"
+												: gravityClawMode
+													? "bg-purple-900/30 border border-purple-500/20 text-white rounded-tl-none"
+													: "bg-white/10 border border-white/10 text-white rounded-tl-none"
 								}`}
 							>
 								<div className="flex items-center gap-2 mb-1 opacity-70 text-xs">
 									{msg.role === "user" ? <User className="w-3 h-3" /> : <Bot className="w-3 h-3" />}
-									<span>{msg.role === "user" ? "You" : modeLabel}</span>
+									<span>
+										{msg.role === "user"
+											? "You"
+											: msg.role === "system"
+												? "System Log"
+												: msg.role === "tool"
+													? "Tool Result"
+													: modeLabel}
+									</span>
 									<span>•</span>
 									<span>{new Date(msg.timestamp).toLocaleTimeString()}</span>
 								</div>
+								{msg.reasoning && (
+									<div className="mb-3 rounded-lg bg-black/30 border border-cyan-500/20 p-3 text-xs text-cyan-200/80 font-mono max-h-48 overflow-y-auto whitespace-pre-wrap">
+										<div className="font-bold uppercase tracking-wider text-[10px] text-cyan-400 mb-1 opacity-90">Reasoning Process</div>
+										{msg.reasoning}
+									</div>
+								)}
 								<div className="whitespace-pre-wrap leading-relaxed">
 									{msg.content || (
 										<span className="opacity-40 italic text-sm">Thinking…</span>
 									)}
 								</div>
 							</div>
+
 						</motion.div>
 					))}
 				</AnimatePresence>

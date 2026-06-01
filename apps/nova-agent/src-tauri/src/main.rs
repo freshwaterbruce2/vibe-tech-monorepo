@@ -326,6 +326,7 @@ async fn main() {
             llm::commands::set_active_model,
             credentials::save_api_keys,
             credentials::get_api_key_status,
+            credentials::get_decrypted_api_keys,
             // Filesystem
             filesystem::read_file,
             filesystem::write_file,

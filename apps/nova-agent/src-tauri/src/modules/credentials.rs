@@ -289,6 +289,23 @@ mod tests {
         // Should not error when deleting nonexistent credential (idempotent)
         CredentialStore::delete(test_key).expect("Delete should be idempotent");
     }
+
+    #[tokio::test]
+    async fn test_get_decrypted_api_keys() {
+        let original_deepseek = CredentialStore::get(keys::DEEPSEEK_API_KEY).unwrap();
+        
+        CredentialStore::set(keys::DEEPSEEK_API_KEY, "sk-test-deepseek").unwrap();
+        
+        let keys = get_decrypted_api_keys().await.expect("Failed to get keys");
+        assert_eq!(keys.deepseek_key, Some("sk-test-deepseek".to_string()));
+        
+        // Restore
+        if let Some(val) = original_deepseek {
+            CredentialStore::set(keys::DEEPSEEK_API_KEY, &val).unwrap();
+        } else {
+            let _ = CredentialStore::delete(keys::DEEPSEEK_API_KEY);
+        }
+    }
 }
 
 // ==========================================
@@ -372,4 +389,24 @@ pub async fn save_api_keys(
     // The previously viewed `credentials.rs` implementation of `get_with_fallback` suggests intended usage.
 
     Ok(())
+}
+
+#[derive(serde::Serialize)]
+pub struct DecryptedApiKeys {
+    pub deepseek_key: Option<String>,
+    pub groq_key: Option<String>,
+    pub openrouter_key: Option<String>,
+    pub google_key: Option<String>,
+    pub kimi_key: Option<String>,
+}
+
+#[tauri::command]
+pub async fn get_decrypted_api_keys() -> Result<DecryptedApiKeys, String> {
+    Ok(DecryptedApiKeys {
+        deepseek_key: CredentialStore::get(keys::DEEPSEEK_API_KEY).map_err(|e| e.to_string())?,
+        groq_key: CredentialStore::get(keys::GROQ_API_KEY).map_err(|e| e.to_string())?,
+        openrouter_key: CredentialStore::get(keys::OPENROUTER_API_KEY).map_err(|e| e.to_string())?,
+        google_key: CredentialStore::get(keys::GOOGLE_API_KEY).map_err(|e| e.to_string())?,
+        kimi_key: CredentialStore::get(keys::KIMI_API_KEY).map_err(|e| e.to_string())?,
+    })
 }

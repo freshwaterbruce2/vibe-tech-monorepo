@@ -1,8 +1,6 @@
 import ModelSelector from '@/components/ModelSelector';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -11,22 +9,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Bot, Key, Shield } from 'lucide-react';
+import { Bot, Shield } from 'lucide-react';
 
 interface AiModelsTabProps {
   activeModel: string;
-  groqKey: string;
   onModelChange: (value: string) => void;
-  onGroqKeyChange: (value: string) => void;
-  onSaveGroqKey: () => void;
 }
 
 const AiModelsTab = ({
   activeModel,
-  groqKey,
   onModelChange,
-  onGroqKeyChange,
-  onSaveGroqKey,
 }: AiModelsTabProps) => {
   return (
     <div className="space-y-4 mt-6">
@@ -180,29 +172,6 @@ const AiModelsTab = ({
               </div>
             </div>
           </details>
-
-          <div className="space-y-4 pt-4 border-t border-white/10">
-            <div className="flex items-center gap-2">
-              <Key className="w-4 h-4 text-orange-400" />
-              <Label className="text-orange-400">Groq (Llama 3.1/3.3)</Label>
-            </div>
-            <div className="flex gap-2">
-              <Input
-                type="password"
-                placeholder="gsk_..."
-                value={groqKey}
-                onChange={(e) => onGroqKeyChange(e.target.value)}
-                className="bg-black/50 border-orange-500/30 text-orange-100 font-mono"
-              />
-              <Button
-                onClick={onSaveGroqKey}
-                variant="outline"
-                className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
-              >
-                Save Key
-              </Button>
-            </div>
-          </div>
 
           <div className="space-y-2 pt-4 border-t border-white/10">
             <Label>Context Window</Label>

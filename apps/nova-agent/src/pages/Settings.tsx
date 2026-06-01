@@ -83,13 +83,6 @@ const Settings = () => {
     }
   };
 
-  const handleSaveGroqKey = () => {
-    if (groqKey.startsWith('gsk_') && groqKey.length > 20) {
-      toast({ title: 'Key Saved', description: 'Groq API Key saved (session only)' });
-    } else {
-      toast({ title: 'Invalid Key', description: 'Invalid Groq API Key format', variant: 'destructive' });
-    }
-  };
 
   // Load API key status on mount
   useEffect(() => {
@@ -180,10 +173,7 @@ const Settings = () => {
           <TabsContent value="ai">
             <AiModelsTab
               activeModel={activeModel}
-              groqKey={groqKey}
               onModelChange={(v) => { void handleModelChange(v); }}
-              onGroqKeyChange={setGroqKey}
-              onSaveGroqKey={handleSaveGroqKey}
             />
           </TabsContent>
 

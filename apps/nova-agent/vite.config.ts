@@ -105,7 +105,7 @@ export default defineConfig(({ mode }) => ({
         replacement: path.resolve(__dirname, './src/stubs/node-builtins-stub.ts'),
       },
       {
-        find: /^(node:)?(child_process|util|os|electron|crypto|url|stream|events|process)$/,
+        find: /^(node:)?(child_process|util|os|electron|crypto|url|stream|events|process|async_hooks)$/,
         replacement: path.resolve(__dirname, './src/stubs/node-builtins-stub.ts'),
       },
     ],
