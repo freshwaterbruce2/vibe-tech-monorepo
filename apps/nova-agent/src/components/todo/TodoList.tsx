@@ -16,7 +16,6 @@ import type { Todo, TodoPriority } from "./types";
 
 const TodoList = () => {
 	const [todos, setTodos] = useState<Todo[]>(() => {
-		// eslint-disable-next-line electron-security/no-localstorage-electron
 		const storedTodos = localStorage.getItem("vibetech-todos");
 		if (!storedTodos) {
 			return [];
@@ -34,7 +33,6 @@ const TodoList = () => {
 
 	// Save todos to localStorage whenever they change
 	useEffect(() => {
-		// eslint-disable-next-line electron-security/no-localstorage-electron
 		localStorage.setItem("vibetech-todos", JSON.stringify(todos));
 	}, [todos]);
 

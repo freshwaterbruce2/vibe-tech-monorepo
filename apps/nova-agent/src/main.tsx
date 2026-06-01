@@ -19,11 +19,59 @@ if (!isTauri) {
     switch (cmd) {
       case "get_tasks":
         return [];
+      case "get_recent_activities":
+        return [];
+      case "get_learning_events":
+        return [];
+      case "get_focus_state":
+        return null;
       case "get_agent_status":
         return {
+          active_conversations: [],
+          memory_count: 0,
+          capabilities: [],
+          current_project: null,
+          active_model: "mock-model",
+          ipc_connected: true,
           status: "idle",
           currentTask: null,
           health: "good",
+        };
+      case "get_task_stats":
+        return {};
+      case "get_today_activity_count":
+        return 0;
+      case "get_context_snapshot":
+        return {
+          timestamp: Date.now(),
+          workspace_root: "C:/dev/apps/nova-agent",
+          git_status: {
+            branch: "chore/typescript-lsp-fix",
+            modified_files: [],
+            staged_files: [],
+            behind: 0,
+            ahead: 0,
+          },
+          active_processes: [],
+          current_project: {
+            name: "nova-agent",
+            path: "C:/dev/apps/nova-agent",
+            project_type: "tauri",
+          },
+          recent_files: [],
+          deep_work_minutes: 0,
+        };
+      case "get_memory_overview":
+        return {
+          count: 0,
+          recent: [],
+        };
+      case "get_storage_health":
+        return {
+          database_path: "D:/databases/nova.db",
+          on_d_drive: true,
+          db_initialized: true,
+          message: "Healthy (Mock)",
         };
       case "list_projects":
         return [];
