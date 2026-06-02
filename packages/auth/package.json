@@ -15,7 +15,8 @@
     "build": "tsc",
     "test": "vitest run",
     "lint": "eslint src tests --ext .ts --max-warnings 0",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "reset-password": "tsx src/reset-password.ts"
   },
   "dependencies": {
     "better-sqlite3": "12.6.2"

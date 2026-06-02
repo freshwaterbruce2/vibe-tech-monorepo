@@ -92,6 +92,15 @@ Must maintain exactly one root documentation file:
 
 **Maintenance**: When any component is modified, the agent MUST update these standardized files to reflect the changes.
 
+## Shared Agent Workflows & Commands
+
+### `/reset-password` Command
+- **Purpose**: Securely reset a user's password across database stores.
+- **Skill Files**:
+  - [.agent/skills/reset-password/SKILL.md](file:///C:/dev/.agent/skills/reset-password/SKILL.md) (Antigravity IDE)
+  - [.claude/skills/reset-password/SKILL.md](file:///C:/dev/.claude/skills/reset-password/SKILL.md) (Claude Code)
+- **Utility Runner**: [scripts/reset-db-password.js](file:///C:/dev/scripts/reset-db-password.js)
+
 ## What NOT To Do
 
 - Don't mix npm/pnpm commands
