@@ -105,7 +105,7 @@ export default defineConfig(({ mode }) => ({
         replacement: path.resolve(__dirname, './src/stubs/node-builtins-stub.ts'),
       },
       {
-        find: /^(node:)?(child_process|util|os|electron|crypto|url|stream|events|process|async_hooks)$/,
+        find: /^(node:)?(child_process|util|os|electron|crypto|url|stream|events|process|async_hooks|buffer|http|https|zlib|net|tls|dns|readline|vm|perf_hooks)$/,
         replacement: path.resolve(__dirname, './src/stubs/node-builtins-stub.ts'),
       },
     ],
@@ -114,12 +114,7 @@ export default defineConfig(({ mode }) => ({
     target: 'esnext',
     minify: mode === 'production' ? 'esbuild' : false,
     rollupOptions: {
-      external: [
-        // Tauri APIs (loaded at runtime by Tauri shell)
-        '@tauri-apps/api',
-        '@tauri-apps/plugin-fs',
-        '@tauri-apps/plugin-shell',
-      ],
+      external: [],
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],

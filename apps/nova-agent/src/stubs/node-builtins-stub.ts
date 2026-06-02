@@ -137,6 +137,26 @@ export class AsyncLocalStorage<T = any> {
 	enterWith(store: T) {}
 }
 
+// buffer stubs
+export class Buffer {
+	static isBuffer() { return false; }
+	static from() { return new Buffer(); }
+	static alloc() { return new Buffer(); }
+	static concat() { return new Buffer(); }
+	toString() { return ""; }
+}
+
+// network and server stubs
+export const http = { createServer: noop, request: noop };
+export const https = { createServer: noop, request: noop };
+export const net = { createServer: noop, connect: noop, Socket: class Socket {} };
+export const tls = { createServer: noop, connect: noop };
+export const dns = { lookup: noop, resolve: noop };
+export const zlib = { createGzip: noop, createGunzip: noop };
+export const readline = { createInterface: noop };
+export const vm = { runInContext: noop, createContext: noop };
+export const perf_hooks = { performance: { now: () => Date.now() } };
+
 // default export contains all
 export default {
 	existsSync, readFileSync, writeFileSync, mkdirSync,
@@ -149,5 +169,16 @@ export default {
 	EventEmitter,
 	type, platform, arch, homedir, tmpdir, release,
 	process,
-	AsyncLocalStorage
+	AsyncLocalStorage,
+	Buffer,
+	http,
+	https,
+	net,
+	tls,
+	dns,
+	zlib,
+	readline,
+	vm,
+	perf_hooks
 };
+

@@ -1,0 +1,23 @@
+{
+  "name": "@vibetech/avatar-processor",
+  "version": "1.0.0",
+  "description": "Avatar processing library for GLB to VRM rigging and landmark tracking translation",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.lib.json",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc -p tsconfig.lib.json --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

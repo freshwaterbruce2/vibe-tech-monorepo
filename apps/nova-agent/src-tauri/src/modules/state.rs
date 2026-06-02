@@ -67,7 +67,7 @@ impl Config {
                 .unwrap_or_else(|_| "ws://127.0.0.1:5004".to_string()),
             deepcode_ipc_enabled: env::var("DEEPCODE_IPC_ENABLED")
                 .map(|v| v.to_lowercase() == "true" || v == "1")
-                .unwrap_or(false),
+                .unwrap_or(true),
             trading_data_dir: env::var("TRADING_DATA_DIR")
                 .unwrap_or_else(|_| "D:\\trading_data".to_string()),
             trading_logs_dir: env::var("TRADING_LOGS_DIR")

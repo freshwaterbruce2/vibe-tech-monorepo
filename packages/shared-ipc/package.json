@@ -13,7 +13,7 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json --incremental false",
+    "build": "tsc -p tsconfig.json",
     "clean": "rimraf dist",
     "test": "vitest",
     "typecheck": "tsc --noEmit",

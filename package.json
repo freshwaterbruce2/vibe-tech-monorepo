@@ -114,7 +114,7 @@
     "test:coverage": "pnpm run test:unit:coverage ; pnpm run crypto:coverage",
     "test:coverage:all": "nx run-many -t test:coverage",
     "coverage:report": "pnpm run test:unit:coverage ; pnpm run crypto:coverage:report",
-    "typecheck": "pwsh -NoProfile -ExecutionPolicy Bypass -Command \"$env:NODE_OPTIONS='--max-old-space-size=8192'; nx sync --apply ; nx run-many -t typecheck\"",
+    "typecheck": "pwsh -NoProfile -ExecutionPolicy Bypass -Command \"$env:NODE_OPTIONS='--max-old-space-size=8192'; nx sync --apply ; nx run-many -t typecheck --exclude=@vibetech/workspace\"",
     "typecheck:ci": "pwsh -NoProfile -ExecutionPolicy Bypass -Command \"$env:NODE_OPTIONS='--max-old-space-size=8192'; nx run-many -t typecheck --all --parallel=4\"",
     "quality": "pwsh -NoProfile -ExecutionPolicy Bypass -Command \"$env:NODE_OPTIONS='--max-old-space-size=8192'; nx run-many -t lint typecheck build\"",
     "quality:fix": "nx run-many -t lint:fix typecheck",

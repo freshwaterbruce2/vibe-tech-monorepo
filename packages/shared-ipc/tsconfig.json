@@ -9,6 +9,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
+    "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
     "baseUrl": ".",
     "paths": {
       "@vibetech/logger": ["../logger/dist/index.d.ts"],

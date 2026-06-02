@@ -148,6 +148,7 @@ const Editor = ({
   // Inline edit dialog state (Cmd+K)
   const [inlineEditOpen, setInlineEditOpen] = useState(false);
   const [inlineEditPos, setInlineEditPos] = useState({ top: 0, left: 0 });
+  const monacoRef = useRef<typeof Monaco | null>(null);
 
   // Hook for editor setup and reference
   const { editorRef, handleEditorDidMount } = useEditorSetup(file, undefined, onEditorMount, liveStream);
@@ -157,6 +158,38 @@ const Editor = ({
 
   // Hook for editor actions
   const { toggleComment, duplicateLine, moveLineUp, moveLineDown, triggerAiCompletion } = useEditorActions(editorRef);
+
+  // Local editor mount wrapper to add Monaco editor command for Ctrl+K
+  const handleEditorMountLocal = useCallback((editorInstance: editor.IStandaloneCodeEditor, monaco: typeof Monaco) => {
+    monacoRef.current = monaco;
+    handleEditorDidMount(editorInstance, monaco);
+
+    // Register Ctrl+K / Cmd+K inside Monaco safely (guarded for mocks in tests)
+    if (monaco?.KeyMod && monaco?.KeyCode) {
+      editorInstance.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => {
+        const position = editorInstance.getPosition();
+        if (position) {
+          const scroller = editorInstance.getScrolledVisiblePosition(position);
+          if (scroller) {
+            const domNode = editorInstance.getDomNode();
+            if (domNode) {
+              const rect = domNode.getBoundingClientRect();
+              setInlineEditPos({
+                top: rect.top + scroller.top + 25,
+                left: Math.max(20, Math.min(rect.left + scroller.left, rect.right - 520))
+              });
+            } else {
+              setInlineEditPos({
+                top: scroller.top + 25,
+                left: Math.min(scroller.left, 500)
+              });
+            }
+            setInlineEditOpen(true);
+          }
+        }
+      });
+    }
+  }, [handleEditorDidMount]);
 
   // Cleanup Monacopilot on unmount (handled inside useEditorSetup)
 
@@ -226,11 +259,19 @@ const Editor = ({
         if (position) {
             const scroller = editorRef.current.getScrolledVisiblePosition(position);
             if (scroller) {
-                // Adjust position to be below the current line
-                setInlineEditPos({
-                    top: scroller.top + 25,
-                    left: Math.min(scroller.left, 500) // Keep it somewhat centered or left-aligned
-                });
+                const domNode = editorRef.current.getDomNode();
+                if (domNode) {
+                    const rect = domNode.getBoundingClientRect();
+                    setInlineEditPos({
+                        top: rect.top + scroller.top + 25,
+                        left: Math.max(20, Math.min(rect.left + scroller.left, rect.right - 520))
+                    });
+                } else {
+                    setInlineEditPos({
+                        top: scroller.top + 25,
+                        left: Math.min(scroller.left, 500)
+                    });
+                }
                 setInlineEditOpen(true);
             }
         }
@@ -361,7 +402,7 @@ const Editor = ({
             value={file.content}
             onChange={(value) => onFileChange(value ?? '')}
             beforeMount={handleBeforeMount}
-            onMount={handleEditorDidMount}
+            onMount={handleEditorMountLocal}
             theme={settings?.theme === 'light' ? 'vs' : settings?.theme === 'custom' ? 'custom-user-theme' : 'vs-dark'}
             options={{
               selectOnLineNumbers: true,
@@ -474,6 +515,8 @@ const Editor = ({
               }
               setInlineEditOpen(false);
             }}
+            editor={editorRef.current}
+            monaco={monacoRef.current}
           />
         )}
       </MonacoContainer>

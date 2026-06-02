@@ -48,6 +48,50 @@
 2. **Context Awareness**: Check `WORKSPACE.json` and `CURRENT.md` to understand current state and focus.
 3. **Artifacts**: Created in conversation artifacts directory, but reference `D:\` for persistent storage or `C:\dev` for source code.
 
+## Workspace Documentation Standards
+
+Every project component, tool, or resource in this monorepo must adhere to strict documentation structures based on its type. Historical or point-in-time files (e.g., old post-mortems, temporary audit reports, or specific draft release logs) must not reside in project roots and must be moved to a `docs/archive/` or `docs/history/` directory.
+
+### 1. Applications (`apps/`)
+Must maintain exactly three root documentation files:
+- `README.md` — Technical / User overview, dependencies, quick start, build, and test commands.
+- `AI.md` — Context for AI agents working on the project (agent orientation, key state files, paths, and architecture boundaries).
+- `RELEASE_READY.md` — Production release checklist, build environment requirements, verification steps, and current release metadata (version, date, features).
+
+### 2. Shared Libraries & Packages (`packages/`)
+Must maintain exactly two root documentation files:
+- `README.md` — Technical details, package API exports, usage examples, consumer integration, and test setup.
+- `AI.md` — Orientation for AI agents (type definitions, architecture constraints, dependency mapping, and internal files).
+
+### 3. MCP Servers
+Must maintain exactly three root documentation files:
+- `README.md` — Technical setup, installation, environment variables, configuration, and execution instructions.
+- `AI.md` — AI orientation, codebase layout, and external API mappings.
+- `TOOLS.md` — Reference schemas for all tools, resources, prompts, input arguments, output payloads, and mock responses for local testing.
+
+### 4. Skills (`.agent/skills/`)
+Must maintain exactly one root documentation file:
+- `SKILL.md` — YAML frontmatter (name, description, tags, version), environment requirements, operational playbook, rules, and example commands/procedures.
+
+### 5. Agents (`.agent/agents/`)
+Must maintain exactly one root documentation file:
+- `AGENT.md` — Standard system prompt, role definition, behavioral directives, tool bindings, and agent-to-agent communication protocols.
+
+### 6. Plugins (e.g., Vite, Tauri, or Nx Plugins)
+Must maintain exactly one root documentation file:
+- `PLUGIN.md` — Technical API, lifecycle hooks, configuration options, input/output schemas, and troubleshooting guidelines.
+
+### 7. Tools & Utilities (`tools/`)
+Must maintain exactly two root documentation files:
+- `README.md` — Script/utility capabilities, execution commands, parameter/option references, and example input/output payloads.
+- `AI.md` — Context for AI agents invoking, configuring, or extending the tool's automation logic.
+
+### 8. CI/CD Workflows (`.github/workflows/`)
+Must maintain exactly one root documentation file:
+- `README.md` — Structural layout of pipelines, trigger events, target filters, cache strategies, build configurations, and triage instructions for failed runs.
+
+**Maintenance**: When any component is modified, the agent MUST update these standardized files to reflect the changes.
+
 ## What NOT To Do
 
 - Don't mix npm/pnpm commands
@@ -55,3 +99,5 @@
 - Don't create files >600 lines
 - Don't skip backups before refactors
 - Don't use `&&` for command chaining (use `;` in PowerShell)
+- Don't keep historical or point-in-time files in application root directories (archive them to `docs/archive/` or `docs/history/` instead)
+

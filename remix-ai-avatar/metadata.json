@@ -1,0 +1,8 @@
+{
+  "name": "Remix: AI Avatar \u0026 YouTube Automator",
+  "description": "Create professional AI avatars and generate scripts, schedules, titles, and thumbnails for your automated YouTube channel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

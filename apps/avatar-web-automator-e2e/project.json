@@ -1,0 +1,10 @@
+{
+  "name": "avatar-web-automator-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/avatar-web-automator-e2e/src",
+  "tags": [],
+  "implicitDependencies": ["avatar-web-automator"],
+  "// targets": "to see all targets run: nx show project avatar-web-automator-e2e --web",
+  "targets": {}
+}

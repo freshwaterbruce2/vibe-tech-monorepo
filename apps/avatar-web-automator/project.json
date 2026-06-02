@@ -1,0 +1,53 @@
+{
+  "name": "avatar-web-automator",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/avatar-web-automator/src",
+  "projectType": "application",
+  "tags": [
+    "type:application",
+    "platform:web",
+    "stack:react",
+    "stack:vite",
+    "stack:tailwind"
+  ],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../node_modules/vite/bin/vite.js build",
+        "cwd": "apps/avatar-web-automator"
+      },
+      "outputs": [
+        "{workspaceRoot}/dist/apps/avatar-web-automator"
+      ]
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../node_modules/vite/bin/vite.js",
+        "cwd": "apps/avatar-web-automator"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../node_modules/eslint/bin/eslint.js \"src/**/*.{ts,tsx}\" --ignore-pattern \"src/**/*.test.ts\" --ignore-pattern \"src/**/*.test.tsx\"",
+        "cwd": "apps/avatar-web-automator"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../node_modules/typescript/bin/tsc --noEmit",
+        "cwd": "apps/avatar-web-automator"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../node_modules/vitest/vitest.mjs run",
+        "cwd": "apps/avatar-web-automator"
+      }
+    }
+  }
+}

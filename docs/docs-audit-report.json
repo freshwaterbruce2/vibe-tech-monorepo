@@ -1,0 +1,1699 @@
+[
+  {
+    "name": "vibe-code-studio-vscode",
+    "rootPath": "apps/vibe-code-studio/vscode-extension",
+    "type": "apps",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/feature-flags-dashboard",
+    "rootPath": "packages/feature-flags/dashboard",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/feature-flags-sdk-react",
+    "rootPath": "packages/feature-flags/sdk-react",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/feature-flags-sdk-node",
+    "rootPath": "packages/feature-flags/sdk-node",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/feature-flags-server",
+    "rootPath": "packages/feature-flags/server",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/health-tracker",
+    "rootPath": "personal-tools/health-tracker",
+    "type": "packages",
+    "existingMarkdown": [
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "avatar-web-automator-e2e",
+    "rootPath": "apps/avatar-web-automator-e2e",
+    "type": "apps",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "devtools-mcp-server",
+    "rootPath": "tools/devtools-mcp/mcp-server",
+    "type": "tools",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/command-center",
+    "rootPath": "apps/vibetech-command-center",
+    "type": "apps",
+    "existingMarkdown": [
+      "CLAUDE.md",
+      "README.md",
+      "SELF_HOSTING.md"
+    ],
+    "missing": [
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "CLAUDE.md",
+      "SELF_HOSTING.md"
+    ]
+  },
+  {
+    "name": "_-factory-runtime-smoke",
+    "rootPath": "apps/_-factory-runtime-smoke",
+    "type": "apps",
+    "existingMarkdown": [
+      "DEPLOYMENT.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "DEPLOYMENT.md"
+    ]
+  },
+  {
+    "name": "@vibetech/feature-flags-core",
+    "rootPath": "packages/feature-flags/core",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "factory-landing-smoke",
+    "rootPath": "apps/factory-landing-smoke",
+    "type": "apps",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "monetized-mcp-service",
+    "rootPath": "apps/monetized-mcp-service",
+    "type": "mcp",
+    "existingMarkdown": [
+      "DEPLOYMENT.md",
+      "README.monetization.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "TOOLS.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "DEPLOYMENT.md",
+      "README.monetization.md"
+    ]
+  },
+  {
+    "name": "openrouter-client",
+    "rootPath": "packages/openrouter-client",
+    "type": "packages",
+    "existingMarkdown": [
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "vibe-justice-frontend",
+    "rootPath": "apps/vibe-justice/frontend",
+    "type": "apps",
+    "existingMarkdown": [
+      "INTEGRATION_SUMMARY.md",
+      "OPENROUTER_INTEGRATION.md",
+      "TESTING_FIX_INSTRUCTIONS.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "INTEGRATION_SUMMARY.md",
+      "OPENROUTER_INTEGRATION.md",
+      "TESTING_FIX_INSTRUCTIONS.md"
+    ]
+  },
+  {
+    "name": "@vibetech/avatar-processor",
+    "rootPath": "packages/avatar-processor",
+    "type": "packages",
+    "existingMarkdown": [
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "avatar-web-automator",
+    "rootPath": "apps/avatar-web-automator",
+    "type": "apps",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "desktop-commander-v3",
+    "rootPath": "apps/desktop-commander-v3",
+    "type": "apps",
+    "existingMarkdown": [
+      "CHANGELOG-v2.0.0.md",
+      "CLAUDE_DESKTOP_SETUP_NEW.md",
+      "FILE_OPS_DOCS.md",
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "CHANGELOG-v2.0.0.md",
+      "CLAUDE_DESKTOP_SETUP_NEW.md",
+      "FILE_OPS_DOCS.md"
+    ]
+  },
+  {
+    "name": "proposal-review-saas",
+    "rootPath": "apps/proposal-review-saas",
+    "type": "apps",
+    "existingMarkdown": [
+      "DEPLOYMENT.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "DEPLOYMENT.md"
+    ]
+  },
+  {
+    "name": "vibe-booking-backend",
+    "rootPath": "apps/vibe-booking-backend",
+    "type": "apps",
+    "existingMarkdown": [
+      "DEPLOYMENT.md",
+      "README.monetization.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "DEPLOYMENT.md",
+      "README.monetization.md"
+    ]
+  },
+  {
+    "name": "workspace-mcp-server",
+    "rootPath": "apps/workspace-mcp-server",
+    "type": "mcp",
+    "existingMarkdown": [
+      "CLAUDE.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "TOOLS.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "CLAUDE.md"
+    ]
+  },
+  {
+    "name": "factory-tauri-smoke",
+    "rootPath": "apps/factory-tauri-smoke",
+    "type": "apps",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "openrouter-proxy",
+    "rootPath": "backend/openrouter-proxy",
+    "type": "packages",
+    "existingMarkdown": [
+      "QUICK_START.md",
+      "README.md",
+      "VERIFICATION_REPORT.md"
+    ],
+    "missing": [
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "QUICK_START.md",
+      "VERIFICATION_REPORT.md"
+    ]
+  },
+  {
+    "name": "symptom-tracker-api",
+    "rootPath": "apps/symptom-tracker-api",
+    "type": "apps",
+    "existingMarkdown": [
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "vibe-tech-marketing",
+    "rootPath": "apps/vibe-tech-marketing",
+    "type": "apps",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/inngest-client",
+    "rootPath": "packages/inngest-client",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/service-common",
+    "rootPath": "packages/service-common",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "factory-saas-smoke",
+    "rootPath": "apps/factory-saas-smoke",
+    "type": "apps",
+    "existingMarkdown": [
+      "DEPLOYMENT.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "DEPLOYMENT.md"
+    ]
+  },
+  {
+    "name": "workflow-engine",
+    "rootPath": "backend/workflow-engine",
+    "type": "packages",
+    "existingMarkdown": [
+      "AI.md"
+    ],
+    "missing": [
+      "README.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/feature-flags",
+    "rootPath": "packages/feature-flags",
+    "type": "packages",
+    "existingMarkdown": [
+      "INTEGRATION.md",
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "INTEGRATION.md"
+    ]
+  },
+  {
+    "name": "@vibetech/shared-config",
+    "rootPath": "packages/shared-config",
+    "type": "packages",
+    "existingMarkdown": [
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/testing-utils",
+    "rootPath": "packages/testing-utils",
+    "type": "packages",
+    "existingMarkdown": [
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "mcp-skills-server",
+    "rootPath": "apps/mcp-skills-server",
+    "type": "mcp",
+    "existingMarkdown": [
+      "CLAUDE.md",
+      "DEPRECATED.md",
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "TOOLS.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "CLAUDE.md",
+      "DEPRECATED.md"
+    ]
+  },
+  {
+    "name": "vibe-tech-lovable",
+    "rootPath": "apps/vibe-tech-lovable",
+    "type": "apps",
+    "existingMarkdown": [
+      "AI.md",
+      "CLAUDE-OPTIMIZED.md",
+      "CLAUDE.legacy.2026-01-22.md",
+      "CLAUDE.md",
+      "DEPLOY-READY-CONFIG.md",
+      "DEPLOYMENT-STATUS.md",
+      "DOMAIN-REGISTRATION-GUIDE.md",
+      "IMAGE_DOWNLOAD_GUIDE.md",
+      "LAUNCH-SUCCESS.md",
+      "LAUNCH-SUMMARY.md",
+      "PUBLIC_MIGRATION_2026-01-24.md",
+      "README.md",
+      "STATUS.md"
+    ],
+    "missing": [
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "CLAUDE-OPTIMIZED.md",
+      "CLAUDE.legacy.2026-01-22.md",
+      "CLAUDE.md",
+      "DEPLOY-READY-CONFIG.md",
+      "DEPLOYMENT-STATUS.md",
+      "DOMAIN-REGISTRATION-GUIDE.md",
+      "IMAGE_DOWNLOAD_GUIDE.md",
+      "LAUNCH-SUCCESS.md",
+      "LAUNCH-SUMMARY.md",
+      "PUBLIC_MIGRATION_2026-01-24.md",
+      "STATUS.md"
+    ]
+  },
+  {
+    "name": "vibe-tutor-mobile",
+    "rootPath": "apps/vibe-tutor-mobile",
+    "type": "apps",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/entitlements",
+    "rootPath": "packages/entitlements",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "monetization",
+    "rootPath": "packages/monetization",
+    "type": "packages",
+    "existingMarkdown": [
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "test-factory-app",
+    "rootPath": "apps/test-factory-app",
+    "type": "apps",
+    "existingMarkdown": [
+      "DEPLOYMENT.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "DEPLOYMENT.md"
+    ]
+  },
+  {
+    "name": "vectorshift-svg",
+    "rootPath": "tools/vectorshift-svg",
+    "type": "tools",
+    "existingMarkdown": [
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "vibe-code-studio",
+    "rootPath": "apps/vibe-code-studio",
+    "type": "apps",
+    "existingMarkdown": [
+      "AGENTS.md",
+      "AI.md",
+      "ARCHITECTURE.md",
+      "CLAUDE.md",
+      "CONTRIBUTING.md",
+      "PLAN.md",
+      "README.md",
+      "SECURITY_GUIDELINES.md"
+    ],
+    "missing": [
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "AGENTS.md",
+      "ARCHITECTURE.md",
+      "CLAUDE.md",
+      "CONTRIBUTING.md",
+      "PLAN.md",
+      "SECURITY_GUIDELINES.md"
+    ]
+  },
+  {
+    "name": "vibe-reminder-v2",
+    "rootPath": "apps/vibe-reminder-v2",
+    "type": "apps",
+    "existingMarkdown": [
+      "DEPLOYMENT.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "DEPLOYMENT.md"
+    ]
+  },
+  {
+    "name": "crypto-enhanced",
+    "rootPath": "apps/crypto-enhanced",
+    "type": "apps",
+    "existingMarkdown": [
+      "AGENTS.md",
+      "AI.md",
+      "ASYNC_IMPROVEMENTS_2025.md",
+      "BASE64_FIX_SUMMARY.md",
+      "BOT_V2_SUMMARY.md",
+      "CLAUDE.md",
+      "IMPROVEMENT_PLAN.md",
+      "INTEGRATION_GUIDE.md",
+      "LEARNING_INTEGRATION_GUIDE.md",
+      "MONITORING_GUIDE.md",
+      "OPTIMIZATION_SUMMARY.md",
+      "PROJECT_GUIDE.md",
+      "QUICK_REFERENCE.md",
+      "README.md",
+      "SESSION_SUMMARY_2025_ASYNC.md",
+      "SIMPLIFICATION_DONE.md",
+      "SIMPLIFICATION_GUIDE.md",
+      "USAGE.md",
+      "VALIDATION_REPORT.md"
+    ],
+    "missing": [
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "AGENTS.md",
+      "ASYNC_IMPROVEMENTS_2025.md",
+      "BASE64_FIX_SUMMARY.md",
+      "BOT_V2_SUMMARY.md",
+      "CLAUDE.md",
+      "IMPROVEMENT_PLAN.md",
+      "INTEGRATION_GUIDE.md",
+      "LEARNING_INTEGRATION_GUIDE.md",
+      "MONITORING_GUIDE.md",
+      "OPTIMIZATION_SUMMARY.md",
+      "PROJECT_GUIDE.md",
+      "QUICK_REFERENCE.md",
+      "SESSION_SUMMARY_2025_ASYNC.md",
+      "SIMPLIFICATION_DONE.md",
+      "SIMPLIFICATION_GUIDE.md",
+      "USAGE.md",
+      "VALIDATION_REPORT.md"
+    ]
+  },
+  {
+    "name": "mcp-testing",
+    "rootPath": "packages/mcp-testing",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "my-test-desktop",
+    "rootPath": "apps/my-test-desktop",
+    "type": "apps",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "nova-mobile-app",
+    "rootPath": "apps/nova-mobile-app",
+    "type": "apps",
+    "existingMarkdown": [
+      "CLAUDE.md",
+      "POST-MORTEM-console-patch.md",
+      "README.md",
+      "RELEASE_NOTES_v1.0.0.md",
+      "SHIP_READY_REPORT.md",
+      "STATUS.md",
+      "TESTING.md"
+    ],
+    "missing": [
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "CLAUDE.md",
+      "POST-MORTEM-console-patch.md",
+      "RELEASE_NOTES_v1.0.0.md",
+      "SHIP_READY_REPORT.md",
+      "STATUS.md",
+      "TESTING.md"
+    ]
+  },
+  {
+    "name": "prompt-engineer-app",
+    "rootPath": "apps/prompt-engineer",
+    "type": "apps",
+    "existingMarkdown": [
+      "CLAUDE.md",
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "CLAUDE.md"
+    ]
+  },
+  {
+    "name": "vibe-booking-v2",
+    "rootPath": "apps/vibe-booking-v2",
+    "type": "apps",
+    "existingMarkdown": [
+      "DEPLOYMENT.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "DEPLOYMENT.md"
+    ]
+  },
+  {
+    "name": "vibe-reflection",
+    "rootPath": "apps/vibe-reflection",
+    "type": "apps",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/anthropic-api-tools",
+    "rootPath": "tools/anthropic-api",
+    "type": "tools",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/shared-ipc",
+    "rootPath": "packages/shared-ipc",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "agent-lats",
+    "rootPath": "packages/agent-lats",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "factory-verify",
+    "rootPath": "apps/factory-verify",
+    "type": "apps",
+    "existingMarkdown": [
+      "DEPLOYMENT.md",
+      "README.monetization.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "DEPLOYMENT.md",
+      "README.monetization.md"
+    ]
+  },
+  {
+    "name": "mcp-rag-server",
+    "rootPath": "apps/mcp-rag-server",
+    "type": "mcp",
+    "existingMarkdown": [
+      "CLAUDE.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "TOOLS.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "CLAUDE.md"
+    ]
+  },
+  {
+    "name": "prior-auth-pro",
+    "rootPath": "apps/prior-auth-pro",
+    "type": "apps",
+    "existingMarkdown": [
+      "DEPLOYMENT.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "DEPLOYMENT.md"
+    ]
+  },
+  {
+    "name": "vibe-discharge",
+    "rootPath": "apps/vibe-discharge",
+    "type": "apps",
+    "existingMarkdown": [
+      "DEPLOYMENT.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "DEPLOYMENT.md"
+    ]
+  },
+  {
+    "name": "@vibetech/analytics",
+    "rootPath": "packages/analytics",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/vcs-theme",
+    "rootPath": "packages/vcs-theme",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "backend-middleware",
+    "rootPath": "backend/middleware",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "ipc-bridge",
+    "rootPath": "backend/ipc-bridge",
+    "type": "packages",
+    "existingMarkdown": [
+      "AI.md",
+      "README.md",
+      "TASK_MESSAGES.md"
+    ],
+    "missing": [
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "TASK_MESSAGES.md"
+    ]
+  },
+  {
+    "name": "serenity-flow",
+    "rootPath": "apps/serenity-flow",
+    "type": "apps",
+    "existingMarkdown": [
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "vibe-reminder",
+    "rootPath": "apps/vibe-reminder",
+    "type": "apps",
+    "existingMarkdown": [
+      "DEPLOYMENT.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "DEPLOYMENT.md"
+    ]
+  },
+  {
+    "name": "vibe-shipping",
+    "rootPath": "apps/vibe-shipping",
+    "type": "apps",
+    "existingMarkdown": [
+      "Active Context.md",
+      "AI.md",
+      "CHANGELOG.md",
+      "CLAUDE.legacy.2026-01-22.md",
+      "CLAUDE.md",
+      "CREATE_REPO_GUIDE.md",
+      "DEPLOYMENT.md",
+      "DEPLOYMENT_GUIDE.md",
+      "DEPLOY_GUIDE.md",
+      "DEVELOPER_GUIDE.md",
+      "DEVELOPMENT_PROGRESS.md",
+      "NEW_UI_COMPONENTS.md",
+      "PLAYWRIGHT_TEST_IMPROVEMENTS.md",
+      "Product Context.md",
+      "PRODUCTION-CHECKLIST.md",
+      "PRODUCTION_DEPLOYMENT_PLAN.md",
+      "PRODUCTION_READY_SUMMARY.md",
+      "PRODUCTION_TEST_SUITE_DOCUMENTATION.md",
+      "Progress.md",
+      "Project Brief.md",
+      "PROJECT_GUIDE.md",
+      "PWA_FIXES_APPLIED.md",
+      "README.md",
+      "RELEASE_NOTES.md",
+      "SECURITY.md",
+      "SENTRY_INTEGRATION.md",
+      "SERVER_MODULARIZATION_PLAN.md",
+      "SMOOTH_DEPLOY_FINAL.md",
+      "STATUS.md",
+      "System Patterns.md",
+      "TDD Plan.md",
+      "Tech Context.md",
+      "TESTING_INFRASTRUCTURE_SETUP.md",
+      "USER_GUIDE.md"
+    ],
+    "missing": [
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "Active Context.md",
+      "CHANGELOG.md",
+      "CLAUDE.legacy.2026-01-22.md",
+      "CLAUDE.md",
+      "CREATE_REPO_GUIDE.md",
+      "DEPLOYMENT.md",
+      "DEPLOYMENT_GUIDE.md",
+      "DEPLOY_GUIDE.md",
+      "DEVELOPER_GUIDE.md",
+      "DEVELOPMENT_PROGRESS.md",
+      "NEW_UI_COMPONENTS.md",
+      "PLAYWRIGHT_TEST_IMPROVEMENTS.md",
+      "Product Context.md",
+      "PRODUCTION-CHECKLIST.md",
+      "PRODUCTION_DEPLOYMENT_PLAN.md",
+      "PRODUCTION_READY_SUMMARY.md",
+      "PRODUCTION_TEST_SUITE_DOCUMENTATION.md",
+      "Progress.md",
+      "Project Brief.md",
+      "PROJECT_GUIDE.md",
+      "PWA_FIXES_APPLIED.md",
+      "RELEASE_NOTES.md",
+      "SECURITY.md",
+      "SENTRY_INTEGRATION.md",
+      "SERVER_MODULARIZATION_PLAN.md",
+      "SMOOTH_DEPLOY_FINAL.md",
+      "STATUS.md",
+      "System Patterns.md",
+      "TDD Plan.md",
+      "Tech Context.md",
+      "TESTING_INFRASTRUCTURE_SETUP.md",
+      "USER_GUIDE.md"
+    ]
+  },
+  {
+    "name": "@vibetech/rag-core",
+    "rootPath": "packages/rag-core",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "agent-engine",
+    "rootPath": "apps/agent-engine",
+    "type": "apps",
+    "existingMarkdown": [
+      "CLAUDE.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "CLAUDE.md"
+    ]
+  },
+  {
+    "name": "dap-proxy",
+    "rootPath": "backend/dap-proxy",
+    "type": "packages",
+    "existingMarkdown": [
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "lsp-proxy",
+    "rootPath": "backend/lsp-proxy",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "mcp-core",
+    "rootPath": "packages/mcp-core",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "nova-gateway",
+    "rootPath": "apps/nova-gateway",
+    "type": "apps",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "payments",
+    "rootPath": "packages/payments",
+    "type": "packages",
+    "existingMarkdown": [
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "vibe-booking",
+    "rootPath": "apps/vibe-booking",
+    "type": "apps",
+    "existingMarkdown": [
+      "corporate-features.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "corporate-features.md"
+    ]
+  },
+  {
+    "name": "vibe-invoice",
+    "rootPath": "apps/vibe-invoice",
+    "type": "apps",
+    "existingMarkdown": [
+      "CHANGELOG.md",
+      "CLAUDE.md",
+      "findings.md",
+      "JOB_HARDENING_DESIGN.md",
+      "ORCHESTRATOR_INSTRUCTIONS.md",
+      "PRODUCTION_SETUP.md",
+      "PROJECT_GUIDE.md",
+      "README.md",
+      "REFACTOR_PLAN_APIFETCH.md",
+      "REFACTOR_SUMMARY.md",
+      "SELF_HOSTING.md",
+      "task_plan.md",
+      "VISUAL_GUIDE.md"
+    ],
+    "missing": [
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "CHANGELOG.md",
+      "CLAUDE.md",
+      "findings.md",
+      "JOB_HARDENING_DESIGN.md",
+      "ORCHESTRATOR_INSTRUCTIONS.md",
+      "PRODUCTION_SETUP.md",
+      "PROJECT_GUIDE.md",
+      "REFACTOR_PLAN_APIFETCH.md",
+      "REFACTOR_SUMMARY.md",
+      "SELF_HOSTING.md",
+      "task_plan.md",
+      "VISUAL_GUIDE.md"
+    ]
+  },
+  {
+    "name": "vibe-justice",
+    "rootPath": "apps/vibe-justice",
+    "type": "apps",
+    "existingMarkdown": [
+      "AI.md",
+      "CLAUDE.md"
+    ],
+    "missing": [
+      "README.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "CLAUDE.md"
+    ]
+  },
+  {
+    "name": "@vibetech/avatars",
+    "rootPath": "packages/avatars",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/backend",
+    "rootPath": "packages/backend",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/billing",
+    "rootPath": "packages/billing",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/landing",
+    "rootPath": "packages/landing",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "mcp-gateway",
+    "rootPath": "apps/mcp-gateway",
+    "type": "mcp",
+    "existingMarkdown": [
+      "CLAUDE.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "TOOLS.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "CLAUDE.md"
+    ]
+  },
+  {
+    "name": "vibe-dental",
+    "rootPath": "apps/vibe-dental",
+    "type": "apps",
+    "existingMarkdown": [
+      "DEPLOYMENT.md",
+      "README.monetization.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "DEPLOYMENT.md",
+      "README.monetization.md"
+    ]
+  },
+  {
+    "name": "vibe-portal",
+    "rootPath": "apps/vibe-portal",
+    "type": "apps",
+    "existingMarkdown": [
+      "DEPLOYMENT.md",
+      "README.monetization.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "DEPLOYMENT.md",
+      "README.monetization.md"
+    ]
+  },
+  {
+    "name": "@vibetech/db-app",
+    "rootPath": "packages/db-app",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/emails",
+    "rootPath": "packages/emails",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/factory",
+    "rootPath": "plugins/factory",
+    "type": "packages",
+    "existingMarkdown": [
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/logger",
+    "rootPath": "packages/logger",
+    "type": "packages",
+    "existingMarkdown": [
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/memory",
+    "rootPath": "packages/memory",
+    "type": "packages",
+    "existingMarkdown": [
+      "README.md",
+      "USAGE_GUIDE.md"
+    ],
+    "missing": [
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "USAGE_GUIDE.md"
+    ]
+  },
+  {
+    "name": "memory-mcp",
+    "rootPath": "apps/memory-mcp",
+    "type": "mcp",
+    "existingMarkdown": [
+      "CLAUDE.md",
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "TOOLS.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "CLAUDE.md"
+    ]
+  },
+  {
+    "name": "nova-agent",
+    "rootPath": "apps/nova-agent",
+    "type": "apps",
+    "existingMarkdown": [
+      "AI.md",
+      "LICENSE.md",
+      "README.md",
+      "RELEASE_READY.md"
+    ],
+    "missing": [
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "LICENSE.md"
+    ]
+  },
+  {
+    "name": "vibe-chess",
+    "rootPath": "apps/vibe-chess",
+    "type": "apps",
+    "existingMarkdown": [
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "vibe-tutor",
+    "rootPath": "apps/vibe-tutor",
+    "type": "apps",
+    "existingMarkdown": [
+      "AI.md",
+      "CLAUDE.md",
+      "README.md"
+    ],
+    "missing": [
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "CLAUDE.md"
+    ]
+  },
+  {
+    "name": "@vibetech/hooks",
+    "rootPath": "packages/hooks",
+    "type": "packages",
+    "existingMarkdown": [
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/types",
+    "rootPath": "packages/types",
+    "type": "packages",
+    "existingMarkdown": [
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "backend-config",
+    "rootPath": "backend/config",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "cme-track",
+    "rootPath": "apps/cme-track",
+    "type": "apps",
+    "existingMarkdown": [
+      "DEPLOYMENT.md",
+      "README.monetization.md"
+    ],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "DEPLOYMENT.md",
+      "README.monetization.md"
+    ]
+  },
+  {
+    "name": "desktop-bridge",
+    "rootPath": "desktop-bridge",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "email",
+    "rootPath": "packages/email",
+    "type": "packages",
+    "existingMarkdown": [
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "vibe-blox",
+    "rootPath": "apps/vibe-blox",
+    "type": "apps",
+    "existingMarkdown": [
+      "CLAUDE.md",
+      "GETTING-STARTED.md",
+      "INSTALLATION.md",
+      "README.md",
+      "STATUS.md",
+      "VIBEBLOX-PRD.md"
+    ],
+    "missing": [
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "CLAUDE.md",
+      "GETTING-STARTED.md",
+      "INSTALLATION.md",
+      "STATUS.md",
+      "VIBEBLOX-PRD.md"
+    ]
+  },
+  {
+    "name": "vibe-shop",
+    "rootPath": "apps/vibe-shop",
+    "type": "apps",
+    "existingMarkdown": [
+      "CLAUDE.md",
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "RELEASE_READY.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "CLAUDE.md"
+    ]
+  },
+  {
+    "name": "@vibetech/auth",
+    "rootPath": "packages/auth",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/core",
+    "rootPath": "packages/core",
+    "type": "packages",
+    "existingMarkdown": [],
+    "missing": [
+      "README.md",
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "@vibetech/ui",
+    "rootPath": "packages/ui",
+    "type": "packages",
+    "existingMarkdown": [
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "ai",
+    "rootPath": "packages/ai",
+    "type": "packages",
+    "existingMarkdown": [
+      "README.md"
+    ],
+    "missing": [
+      "AI.md",
+      "GEMINI.md"
+    ],
+    "nonStandard": []
+  },
+  {
+    "name": "vibe-tech-backend",
+    "rootPath": "backend",
+    "type": "packages",
+    "existingMarkdown": [
+      "AI.md",
+      "DEPLOYMENT.md",
+      "README.md"
+    ],
+    "missing": [
+      "GEMINI.md"
+    ],
+    "nonStandard": [
+      "DEPLOYMENT.md"
+    ]
+  },
+  {
+    "name": "@vibetech/workspace",
+    "rootPath": ".",
+    "type": "packages",
+    "existingMarkdown": [
+      "AGENTS.md",
+      "AI.md",
+      "android-remote-tests.md",
+      "automated-game-testing.md",
+      "avatar-web-automator-plan.md",
+      "CLAUDE.md",
+      "env-config-manager-plan.md",
+      "GEMINI.md",
+      "GOAL_APP_FACTORY.md",
+      "HEARTBEAT.md",
+      "IDENTITY.md",
+      "MEMORY.md",
+      "MONETIZATION.md",
+      "monorepo-cleanup-plan.md",
+      "MONOREPO_BASELINE.md",
+      "production-readiness.md",
+      "README.md",
+      "SECURITY.md",
+      "setup-desktop-gateway.psl.md",
+      "SOUL.md",
+      "TASKS.md",
+      "TOOLS.md",
+      "ts-strict-fix.md",
+      "USER.md",
+      "vibe-booking-improvements.md"
+    ],
+    "missing": [],
+    "nonStandard": [
+      "AGENTS.md",
+      "android-remote-tests.md",
+      "automated-game-testing.md",
+      "avatar-web-automator-plan.md",
+      "CLAUDE.md",
+      "env-config-manager-plan.md",
+      "GOAL_APP_FACTORY.md",
+      "HEARTBEAT.md",
+      "IDENTITY.md",
+      "MEMORY.md",
+      "MONETIZATION.md",
+      "monorepo-cleanup-plan.md",
+      "MONOREPO_BASELINE.md",
+      "production-readiness.md",
+      "SECURITY.md",
+      "setup-desktop-gateway.psl.md",
+      "SOUL.md",
+      "TASKS.md",
+      "TOOLS.md",
+      "ts-strict-fix.md",
+      "USER.md",
+      "vibe-booking-improvements.md"
+    ]
+  }
+]
