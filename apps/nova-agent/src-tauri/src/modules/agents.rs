@@ -1,6 +1,9 @@
 use crate::modules::prompts;
+use crate::modules::rag;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::OnceLock;
+use tokio::sync::Mutex;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AgentProfile {
@@ -77,6 +80,7 @@ impl AgentRegistry {
         Self { agents }
     }
 
+    #[allow(dead_code)]
     pub fn get_agent(&self, id: &str) -> Option<&AgentProfile> {
         self.agents.get(id)
     }
@@ -92,3 +96,89 @@ impl Default for AgentRegistry {
         Self::new()
     }
 }
+
+// --- Semantic Routing & Worktree Scope ---
+
+tokio::task_local! {
+    pub static WORKTREE_PATH: std::path::PathBuf;
+}
+
+static AGENT_EMBEDDINGS: OnceLock<Mutex<HashMap<String, Vec<f32>>>> = OnceLock::new();
+
+fn get_agent_embeddings() -> &'static Mutex<HashMap<String, Vec<f32>>> {
+    AGENT_EMBEDDINGS.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+pub fn cosine_similarity(v1: &[f32], v2: &[f32]) -> f32 {
+    if v1.len() != v2.len() || v1.is_empty() {
+        return 0.0;
+    }
+    let dot_product: f32 = v1.iter().zip(v2.iter()).map(|(x, y)| x * y).sum();
+    let norm_a: f32 = v1.iter().map(|x| x * x).sum::<f32>().sqrt();
+    let norm_b: f32 = v2.iter().map(|x| x * x).sum::<f32>().sqrt();
+    if norm_a == 0.0 || norm_b == 0.0 {
+        0.0
+    } else {
+        dot_product / (norm_a * norm_b)
+    }
+}
+
+pub async fn route_prompt(prompt: &str, api_key: &str) -> String {
+    // 1. Get embedding for the prompt
+    let prompt_vec = match rag::embed(prompt, api_key).await {
+        Ok(vec) => vec,
+        Err(e) => {
+            tracing::warn!("Failed to embed prompt for routing: {}. Falling back to default 'nova'.", e);
+            return "nova".to_string();
+        }
+    };
+
+    // 2. Ensure agent embeddings are cached
+    let cache_guard_mutex = get_agent_embeddings();
+    let mut cache_guard = cache_guard_mutex.lock().await;
+    
+    let agent_descriptions = vec![
+        ("nova", "Neural Omnipresent Virtual Assistant - General purpose AI helper, desktop control, memory search, general queries."),
+        ("architect", "Expert in system design, planning, software architecture, databases, schemas, and high-level structure."),
+        ("coder", "Expert software engineer focused on correctness, efficiency, refactoring, debugging, coding, and implementation."),
+    ];
+
+    for (id, desc) in &agent_descriptions {
+        if !cache_guard.contains_key(*id) {
+            match rag::embed(desc, api_key).await {
+                Ok(vec) => {
+                    cache_guard.insert(id.to_string(), vec);
+                }
+                Err(e) => {
+                    tracing::warn!("Failed to embed agent '{}' description: {}", id, e);
+                }
+            }
+        }
+    }
+
+    // 3. Compute cosine similarity for each cached agent
+    let mut best_agent = "nova".to_string();
+    let mut best_similarity = 0.0f32;
+    let threshold = 0.40f32; // Cosine similarity threshold
+
+    for (id, _) in &agent_descriptions {
+        if let Some(agent_vec) = cache_guard.get(*id) {
+            let sim = cosine_similarity(&prompt_vec, agent_vec);
+            tracing::info!("Semantic Routing: Agent '{}' similarity = {}", id, sim);
+            if sim > best_similarity {
+                best_similarity = sim;
+                best_agent = id.to_string();
+            }
+        }
+    }
+
+    tracing::info!("Semantic Routing selected: '{}' (similarity = {})", best_agent, best_similarity);
+    
+    if best_similarity >= threshold {
+        best_agent
+    } else {
+        tracing::info!("Highest similarity {} below threshold {}. Falling back to 'nova'.", best_similarity, threshold);
+        "nova".to_string()
+    }
+}
+
