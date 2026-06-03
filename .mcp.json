@@ -90,7 +90,7 @@
         "NODE_ENV": "production"
       }
     },
-    "workspace": {
+    "vibe-workspace": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
       "args": ["C:/dev/apps/workspace-mcp-server/dist/index.js"],
