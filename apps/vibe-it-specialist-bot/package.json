@@ -1,0 +1,72 @@
+{
+  "name": "@vibetech/vibe-it-specialist-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Telegram IT specialist bot for diagnosing and fixing the VibeTech monorepo.",
+  "nx": {
+    "name": "vibe-it-specialist-bot",
+    "tags": [
+      "scope:app",
+      "type:bot",
+      "platform:telegram",
+      "language:typescript"
+    ],
+    "targets": {
+      "dev": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "pnpm --filter @vibetech/vibe-it-specialist-bot dev"
+        }
+      },
+      "start": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "pnpm --filter @vibetech/vibe-it-specialist-bot start"
+        }
+      },
+      "build": {
+        "executor": "nx:run-commands",
+        "outputs": [
+          "{projectRoot}/dist"
+        ],
+        "options": {
+          "command": "pnpm --filter @vibetech/vibe-it-specialist-bot build"
+        }
+      },
+      "typecheck": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "pnpm --filter @vibetech/vibe-it-specialist-bot typecheck"
+        }
+      },
+      "test": {
+        "executor": "nx:run-commands",
+        "outputs": [
+          "{projectRoot}/coverage"
+        ],
+        "options": {
+          "command": "pnpm --filter @vibetech/vibe-it-specialist-bot test"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/src/index.js",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "lint": "eslint src tests --max-warnings 0"
+  },
+  "dependencies": {
+    "telegraf": "^4.16.3",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "^4.20.6",
+    "typescript": "5.9.3",
+    "vitest": "^4.0.15"
+  }
+}

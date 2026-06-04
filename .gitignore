@@ -378,6 +378,10 @@ MEMORY.md
 # Vercel local project state and generated output
 .vercel
 
+
+# Claude Code personal overrides (not committed)
+.claude/settings.local.json
+
 .projects/cache
 .projects/vault
 .projects/state.test.json
@@ -386,5 +390,28 @@ MEMORY.md
 .env.local
 .env.test
 
-# Claude Code personal overrides (not committed)
-.claude/settings.local.json
+# Auto-added by Vibe IT Specialist Bot path-policy fixer
+android-command-center/*.log
+apps/gravity-claw/.codex-plan/**/*.log
+apps/gravity-claw/*.log
+apps/nova-mobile-app/**/*.log
+apps/proposal-review-saas/**/*.log
+apps/vibe-code-studio/*.log
+apps/vibe-discharge/.tmp/*.sqlite*
+apps/vibe-invoice/**/*.log
+apps/vibe-justice/**/*.log
+apps/vibe-reminder/*.log
+apps/vibe-shipping/.wrangler/state/**/*.sqlite*
+apps/vibe-tech-lovable/*.log
+apps/vibe-tutor/**/*.log
+gc-bin-*.log
+gc-dev-*.log
+Ollama/*.log
+Ollama/db.sqlite*
+remix-ai-avatar/**/*.log
+stderr.log
+stdout.log
+tauri-final-*.log
+tauri-test*.log
+tmp-pnpm-install*.log
+tools/vectorshift-svg/**/*.log
