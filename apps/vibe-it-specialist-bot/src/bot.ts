@@ -51,7 +51,7 @@ export function createBot(config: BotConfig): Telegraf {
     await prepareOrRun(ctx, text);
   });
 
-  for (const task of ['status', 'ci', 'diagnose', 'health', 'affected-quality', 'git-status', 'nx-report', 'optimize', 'optimize-targets', 'optimize-deps', 'optimize-hygiene', 'optimize-paths', 'optimize-trends', 'optimize-cache', 'optimize-report'] as const) {
+  for (const task of ['status', 'ci', 'incidents', 'diagnose', 'health', 'affected-quality', 'git-status', 'nx-report', 'optimize', 'optimize-targets', 'optimize-deps', 'optimize-hygiene', 'optimize-paths', 'optimize-trends', 'optimize-cache', 'optimize-report'] as const) {
     bot.action(`run:${task}`, async (ctx) => {
       await ctx.answerCbQuery(`Running ${task}`);
       await prepareOrRun(ctx, `run ${task}`);
@@ -122,8 +122,8 @@ export function createBot(config: BotConfig): Telegraf {
 
 function mainMenu() {
   return Markup.inlineKeyboard([
-    [Markup.button.callback('Status', 'run:status'), Markup.button.callback('CI Status', 'run:ci'), Markup.button.callback('Diagnose', 'run:diagnose')],
-    [Markup.button.callback('Git Status', 'run:git-status'), Markup.button.callback('Nx Report', 'run:nx-report')],
+    [Markup.button.callback('Status', 'run:status'), Markup.button.callback('CI Status', 'run:ci'), Markup.button.callback('Incidents', 'run:incidents')],
+    [Markup.button.callback('Diagnose', 'run:diagnose'), Markup.button.callback('Git Status', 'run:git-status'), Markup.button.callback('Nx Report', 'run:nx-report')],
     [Markup.button.callback('Affected Checks', 'run:affected-quality'), Markup.button.callback('Optimize Workspace', 'run:optimize')],
     [Markup.button.callback('Fix Path Policy', 'confirm:fix-paths'), Markup.button.callback('Fix TS Version', 'confirm:fix-typescript')],
     [Markup.button.callback('Fix Targets', 'confirm:fix-targets'), Markup.button.callback('Reset Nx Cache', 'confirm:nx-reset')],
@@ -143,6 +143,7 @@ function helpText(): string {
     `Commands:\n` +
     `/it status\n` +
     `/it ci\n` +
+    `/it incidents\n` +
     `/it diagnose\n` +
     `/it health\n` +
     `/it affected\n` +

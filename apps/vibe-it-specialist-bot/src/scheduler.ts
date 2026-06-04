@@ -1,6 +1,24 @@
 import type { Telegraf } from 'telegraf';
 import type { BotConfig } from './config.js';
 import { buildTask, runTask, telegramSafeText } from './tasks.js';
+import { appendFileSync, mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
+
+const SCHEDULER_INCIDENT_FILE = 'D:/logs/vibe-it-specialist-bot/scheduler-incidents.jsonl';
+
+function logSchedulerIncident(event: string, error: unknown): void {
+  try {
+    mkdirSync(dirname(SCHEDULER_INCIDENT_FILE), { recursive: true });
+    const record = {
+      timestamp: new Date().toISOString(),
+      event,
+      error: error instanceof Error ? error.message : String(error)
+    };
+    appendFileSync(SCHEDULER_INCIDENT_FILE, JSON.stringify(record) + '\n', 'utf8');
+  } catch (err) {
+    console.error('Failed to write scheduler incident:', err);
+  }
+}
 
 export function getWeekNumber(d: Date): number {
   const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -20,6 +38,7 @@ async function sendMessageSafe(bot: Telegraf, adminId: number, text: string): Pr
       await bot.telegram.sendMessage(adminId, safe);
     } catch (err) {
       console.error(`Failed to send message to ${adminId}:`, err);
+      logSchedulerIncident(`sendMessage:${adminId}`, err);
     }
   }
 }
@@ -45,6 +64,7 @@ async function runDailyMorning(bot: Telegraf, config: BotConfig): Promise<void> 
     await broadcast(bot, config, trendsRes);
   } catch (err) {
     console.error('Failed to run daily morning scheduled tasks:', err);
+    logSchedulerIncident('daily-morning', err);
   }
 }
 
@@ -73,6 +93,7 @@ async function runWeeklySummary(bot: Telegraf, config: BotConfig): Promise<void>
     await broadcast(bot, config, targetsRes);
   } catch (err) {
     console.error('Failed to run weekly scheduled tasks:', err);
+    logSchedulerIncident('weekly-summary', err);
   }
 }
 
@@ -107,6 +128,7 @@ export function startScheduler(bot: Telegraf, config: BotConfig): void {
         }
       } catch (err) {
         console.error('Error in scheduler loop:', err);
+        logSchedulerIncident('scheduler-loop', err);
       }
     })();
   }, 30000);

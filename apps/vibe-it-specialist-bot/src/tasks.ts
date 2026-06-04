@@ -64,6 +64,7 @@ export const ALLOWLISTED_RUN_TASKS: Record<string, TaskDefinition> = {
   'optimize-report': { label: 'Optimization: report', command: 'node apps/vibe-it-specialist-bot/dist/src/optimization.js report', requiresConfirmation: false },
   status: { label: 'Bot status', command: 'node apps/vibe-it-specialist-bot/dist/src/status.js', requiresConfirmation: false },
   ci: { label: 'Bot CI/CD status', command: 'node apps/vibe-it-specialist-bot/dist/src/ci.js', requiresConfirmation: false },
+  incidents: { label: 'Bot incidents report', command: 'node apps/vibe-it-specialist-bot/dist/src/incidents.js', requiresConfirmation: false },
 };
 
 export function listTaskKeys(): string[] {
@@ -89,6 +90,7 @@ export function buildTask(input: string, now = new Date(), options: TaskOptions 
   switch (kind) {
     case 'status':
     case 'ci':
+    case 'incidents':
     case 'diagnose':
     case 'health':
     case 'affected':

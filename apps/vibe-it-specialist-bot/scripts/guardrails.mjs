@@ -6,7 +6,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const packageRoot = path.resolve(__dirname, '..');
 const srcDir = path.join(packageRoot, 'src');
 
-console.warn('=== Running Bot CI/CD Guardrails ===');
+const qualityFilePath = 'D:/logs/vibe-it-specialist-bot/.quality.json';
+function writeQualityStatus(passed, details = '') {
+  try {
+    fs.mkdirSync(path.dirname(qualityFilePath), { recursive: true });
+    fs.writeFileSync(qualityFilePath, JSON.stringify({
+      passed,
+      timestamp: new Date().toISOString(),
+      details,
+    }, null, 2), 'utf8');
+  } catch (err) {
+    console.warn('[WARN] Failed to write quality status file:', err.message);
+  }
+}
 
 // 1. Static Analysis: Scan src/**/*.ts for forbidden patterns
 function scanDirectory(dir) {
@@ -25,7 +37,6 @@ function scanDirectory(dir) {
       const codeOnly = content.replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1');
 
       // Check for emoji/Unicode characters in code
-      // Emojis/extended pictographics
       const emojiRegex = /\p{Extended_Pictographic}/u;
       if (emojiRegex.test(codeOnly)) {
         console.error(`[ERROR] File ${relativePath} contains forbidden emoji/Unicode characters in operational code.`);
@@ -42,38 +53,43 @@ function scanDirectory(dir) {
   return errors;
 }
 
-const staticErrors = scanDirectory(srcDir);
-if (staticErrors > 0) {
-  console.error(`[FAIL] Static analysis failed with ${staticErrors} errors.`);
-  process.exit(1);
-}
-console.warn('[OK] Static analysis checks passed.');
+async function main() {
+  console.warn('=== Running Bot CI/CD Guardrails ===');
 
-// 2. Dynamic Integration Checks: Import compiled modules and verify behavior
-const tasksPath = path.resolve(packageRoot, 'dist/src/tasks.js');
-if (!fs.existsSync(tasksPath)) {
-  console.error('[ERROR] Compiled tasks.js not found. Please run build first.');
-  process.exit(1);
-}
+  // 1. Static Analysis
+  const staticErrors = scanDirectory(srcDir);
+  if (staticErrors > 0) {
+    throw new Error(`Static analysis failed with ${staticErrors} errors.`);
+  }
+  console.warn('[OK] Static analysis checks passed.');
 
-try {
+  // 2. Dynamic Integration Checks
+  const tasksPath = path.resolve(packageRoot, 'dist/src/tasks.js');
+  if (!fs.existsSync(tasksPath)) {
+    throw new Error('Compiled tasks.js not found. Please run build first.');
+  }
+
   const { buildTask } = await import(`file://${tasksPath}`);
 
   // Test cmd / shell disabled
   try {
     buildTask('cmd');
-    console.error('[ERROR] buildTask("cmd") did not throw an error.');
-    process.exit(1);
-  } catch {
-    // Expected
+    throw new Error('buildTask("cmd") did not throw an error.');
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('did not throw')) {
+      throw err;
+    }
+    // Expected throw
   }
 
   try {
     buildTask('shell');
-    console.error('[ERROR] buildTask("shell") did not throw an error.');
-    process.exit(1);
-  } catch {
-    // Expected
+    throw new Error('buildTask("shell") did not throw an error.');
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('did not throw')) {
+      throw err;
+    }
+    // Expected throw
   }
 
   // Verify mutating fixer commands are confirmation-gated
@@ -88,14 +104,15 @@ try {
   for (const { cmd, label } of mutatingFixers) {
     const task = buildTask(cmd);
     if (!task.requiresConfirmation) {
-      console.error(`[ERROR] Task "${cmd}" (${label}) must be confirmation-gated but requiresConfirmation is false.`);
-      process.exit(1);
+      throw new Error(`Task "${cmd}" (${label}) must be confirmation-gated but requiresConfirmation is false.`);
     }
   }
 
   // Verify safe diagnostic commands do not require confirmation
   const safeDiagnostics = [
     'status',
+    'ci',
+    'incidents',
     'diagnose',
     'health',
     'optimize',
@@ -105,40 +122,29 @@ try {
   for (const cmd of safeDiagnostics) {
     const task = buildTask(cmd);
     if (task.requiresConfirmation) {
-      console.error(`[ERROR] Diagnostic task "${cmd}" should not require confirmation.`);
-      process.exit(1);
+      throw new Error(`Diagnostic task "${cmd}" should not require confirmation.`);
     }
   }
 
   // Verify log paths are on D:/ logs
   const sampleTask = buildTask('status');
   if (!sampleTask.logPath.startsWith('D:/logs/')) {
-    console.error(`[ERROR] Task log path must start with D:/logs/, got: ${sampleTask.logPath}`);
-    process.exit(1);
+    throw new Error(`Task log path must start with D:/logs/, got: ${sampleTask.logPath}`);
   }
   if (!sampleTask.historyPath.startsWith('D:/logs/')) {
-    console.error(`[ERROR] Task history path must start with D:/logs/, got: ${sampleTask.historyPath}`);
-    process.exit(1);
+    throw new Error(`Task history path must start with D:/logs/, got: ${sampleTask.historyPath}`);
   }
 
   console.warn('[OK] Dynamic behavior checks passed.');
   
-  // Write quality status file
-  const qualityFilePath = 'D:/logs/vibe-it-specialist-bot/.quality.json';
-  try {
-    fs.mkdirSync(path.dirname(qualityFilePath), { recursive: true });
-    fs.writeFileSync(qualityFilePath, JSON.stringify({
-      passed: true,
-      timestamp: new Date().toISOString(),
-    }, null, 2), 'utf8');
-    console.warn(`[OK] Quality check status written to ${qualityFilePath}`);
-  } catch (err) {
-    console.warn('[WARN] Failed to write quality status file:', err.message);
-  }
-} catch (err) {
-  console.error('[ERROR] Failed to run dynamic checks:', err);
-  process.exit(1);
+  writeQualityStatus(true);
+  console.warn(`[OK] Quality check status written to ${qualityFilePath}`);
+  console.warn('=== All Guardrail Checks Passed Successfully ===');
 }
 
-console.warn('=== All Guardrail Checks Passed Successfully ===');
-process.exit(0);
+main().catch(err => {
+  const errMsg = err instanceof Error ? err.message : String(err);
+  console.error('[ERROR] Failed to run dynamic checks:', errMsg);
+  writeQualityStatus(false, errMsg);
+  process.exit(1);
+});

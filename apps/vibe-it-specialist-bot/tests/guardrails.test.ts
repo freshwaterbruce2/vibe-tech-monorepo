@@ -28,6 +28,8 @@ describe('bot quality guardrails', () => {
   it('verifies safe diagnostics do not require confirmation', () => {
     const safe = [
       'status',
+      'ci',
+      'incidents',
       'diagnose',
       'health',
       'optimize',

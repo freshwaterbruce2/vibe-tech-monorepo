@@ -52,6 +52,10 @@ describe('IT specialist tasks', () => {
     const task7 = buildTask('ci');
     expect(task7.command).toBe('node apps/vibe-it-specialist-bot/dist/src/ci.js');
     expect(task7.label).toBe('Bot CI/CD status');
+
+    const task8 = buildTask('incidents');
+    expect(task8.command).toBe('node apps/vibe-it-specialist-bot/dist/src/incidents.js');
+    expect(task8.label).toBe('Bot incidents report');
   });
 
   it('builds allowlisted run tasks', () => {
