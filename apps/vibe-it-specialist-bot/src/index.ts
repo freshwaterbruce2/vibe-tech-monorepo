@@ -4,6 +4,8 @@ import { startScheduler } from './scheduler.js';
 
 loadLocalEnv(new URL('../.env', import.meta.url));
 loadLocalEnv(new URL('../../.env', import.meta.url));
+loadLocalEnv(new URL('../../../.env', import.meta.url));
+loadLocalEnv(new URL('../../../../.env', import.meta.url));
 
 
 const config = loadConfig();
