@@ -186,6 +186,20 @@ jobs:
           }
           pnpm nx run-many -t test --projects="$projects" --parallel=2 --outputStyle=static
 
+      - name: Quality/Guardrails (affected)
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:NX_CI_PROJECTS)) {
+            Write-Host "Quality checks skipped; no changed Nx projects."
+            exit 0
+          }
+          $projects = pnpm nx show projects --withTarget quality --projects "$env:NX_CI_PROJECTS" --sep=','
+          if ([string]::IsNullOrWhiteSpace($projects)) {
+            Write-Host "Quality checks skipped; changed projects do not expose quality targets."
+            exit 0
+          }
+          pnpm nx run-many -t quality --projects="$projects" --parallel=1 --outputStyle=static
+
       # Nx Cloud self-healing requires Nx Cloud auth and is not supported on
       # Windows runners. Keep required PR quality gates local and deterministic.
 

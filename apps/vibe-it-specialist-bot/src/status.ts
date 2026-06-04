@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync, statSync, writeFileSync, unlinkSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { execSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 
 const LOG_DIR = 'D:/logs/vibe-it-specialist-bot';
 const OPTIMIZATION_DIR = join(LOG_DIR, 'optimization');
@@ -34,7 +34,9 @@ function formatUptime(ms: number): string {
 
 function getNxDaemonStatus(): string {
   try {
-    const output = execSync('pnpm exec nx daemon', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    const cmd = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+    const res = spawnSync(cmd, ['exec', 'nx', 'daemon'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    const output = res.stdout || '';
     if (output.toLowerCase().includes('running') || output.toLowerCase().includes('active') || output.toLowerCase().includes('started')) {
       return 'Available';
     }

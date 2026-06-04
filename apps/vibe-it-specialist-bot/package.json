@@ -48,6 +48,12 @@
         "options": {
           "command": "pnpm --filter @vibetech/vibe-it-specialist-bot test"
         }
+      },
+      "quality": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "pnpm --filter @vibetech/vibe-it-specialist-bot quality"
+        }
       }
     }
   },
@@ -57,7 +63,8 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "lint": "eslint src tests --max-warnings 0"
+    "lint": "eslint src tests --max-warnings 0",
+    "quality": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && node scripts/guardrails.mjs"
   },
   "dependencies": {
     "telegraf": "^4.16.3",
