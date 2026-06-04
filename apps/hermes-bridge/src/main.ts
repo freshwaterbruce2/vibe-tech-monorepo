@@ -22,8 +22,18 @@ const host = process.env['HOST'] ?? '127.0.0.1';
 
 // Register CORS
 await app.register(cors, {
-  origin: true,
+  origin: (origin, cb) => {
+    // Allow localhost/127.0.0.1 on any port (especially 8787 for webui, 5173/5180 for command-center)
+    if (!origin || /https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      cb(null, true);
+      return;
+    }
+    cb(new Error("Not allowed by CORS"), false);
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie', 'X-Hermes-CSRF-Token'],
+  exposedHeaders: ['Set-Cookie'],
 });
 
 // Helper to parse cookies from headers
