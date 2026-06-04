@@ -139,7 +139,7 @@ function runPathFix(): string {
   const reportPath = join(MIGRATION_LOG_DIR, `path-migration-report-${stamp}.md`);
 
   // Generate recommendations based on migrated items
-  let recommendationsMd = `## 💡 Recommended Configuration Changes\n\n`;
+  let recommendationsMd = `## Recommended Configuration Changes\n\n`;
   const projectsSeen = new Set<string>();
 
   for (const item of items) {
@@ -190,7 +190,7 @@ function runPathFix(): string {
 
   md += `### Migrated Files Details\n\n`;
   if (items.length === 0) {
-    md += `🎉 No files required migration or all files are already compliant.\n`;
+    md += `[OK] No files required migration or all files are already compliant.\n`;
   } else {
     md += `| Original File (C:) | Target Path (D:) | Status |\n`;
     md += `| --- | --- | --- |\n`;
@@ -203,7 +203,7 @@ function runPathFix(): string {
 
   md += recommendationsMd + '\n';
 
-  md += `### ⚠️ Important Action Required\n\n`;
+  md += `### [WARN] Important Action Required\n\n`;
   md += `The database and log files have been **copied** to the target \`D:\\\` directory. To preserve stability, the original files on the \`C:\\\` drive were **not** deleted. \n\n`;
   md += `Please update your application configurations (e.g., \`.env\` files, configuration structures, or SQLite connection strings) to point to the new \`D:\\\` paths instead of using relative paths inside \`C:\\dev\`. Once verified, you may safely delete the original files manually.\n`;
 
@@ -214,7 +214,7 @@ function runPathFix(): string {
     console.error('Failed to write path migration report', err);
   }
 
-  let summary = `✅ *Path Policy Migration Complete* ✅\n\n`;
+  let summary = `=== Path Policy Migration Complete ===\n\n`;
   summary += `• Files Copied: ${items.filter(i => i.status === 'copied').length}\n`;
   summary += `• Gitignore Updated: ${gitIgnoreUpdated ? 'Yes' : 'No'}\n\n`;
   if (items.length > 0) {
@@ -223,7 +223,7 @@ function runPathFix(): string {
       summary += `${idx + 1}. \`${basename(item.originalPath)}\` ➔ \`${basename(item.targetPath)}\`\n`;
     });
   }
-  summary += `\n📄 *Migration Report*: ${reportPath}\n\n*Note*: Original files were preserved. Please update your connection strings/configs before manually deleting them.`;
+  summary += `\n*Migration Report*: ${reportPath}\n\n*Note*: Original files were preserved. Please update your connection strings/configs before manually deleting them.`;
   return summary;
 }
 

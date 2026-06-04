@@ -498,13 +498,13 @@ export function runOptimization(categoryFilter?: string): string {
   const sortedFindings = [...p0, ...p1, ...p2, ...p3];
   const sliceFindings = sortedFindings.slice(0, 10);
   
-  let teleSummary = `🔧 *Monorepo Optimization Summary* 🔧\n\n`;
+  let teleSummary = `=== Monorepo Optimization Summary ===\n\n`;
   teleSummary += `• Projects: ${projects.length}\n`;
   teleSummary += `• P0 (Critical): ${p0.length} | P1 (High): ${p1.length} | P2 (Medium): ${p2.length}\n\n`;
   teleSummary += `*Top Findings:*\n`;
   
   if (sliceFindings.length === 0) {
-    teleSummary += `🎉 No optimization findings! Monorepo is in perfect health.\n`;
+    teleSummary += `[OK] No optimization findings! Monorepo is in perfect health.\n`;
   } else {
     let idx = 1;
     for (const f of sliceFindings) {
@@ -517,7 +517,7 @@ export function runOptimization(categoryFilter?: string): string {
     teleSummary += `\n...and ${sortedFindings.length - 10} more findings.\n`;
   }
 
-  teleSummary += `\n📄 *Full Report*: ${mdPath}\n💾 *JSON Report*: ${jsonPath}`;
+  teleSummary += `\n*Full Report*: ${mdPath}\n*JSON Report*: ${jsonPath}`;
   return teleSummary;
 }
 

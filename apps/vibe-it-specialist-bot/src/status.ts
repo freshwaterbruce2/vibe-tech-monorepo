@@ -147,7 +147,7 @@ function runStatus(): string {
     } catch {}
   }
 
-  let output = `🤖 *Vibe IT Specialist Bot Status* 🤖\n\n`;
+  let output = `=== Vibe IT Specialist Bot Status ===\n\n`;
   output += `• *Status*: Online\n`;
   output += `• *Uptime*: ${uptimeStr}\n`;
   output += `• *PID*: ${pid}\n`;

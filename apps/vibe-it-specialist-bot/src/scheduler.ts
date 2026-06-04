@@ -32,7 +32,7 @@ async function broadcast(bot: Telegraf, config: BotConfig, text: string): Promis
 
 async function runDailyMorning(bot: Telegraf, config: BotConfig): Promise<void> {
   try {
-    await broadcast(bot, config, '🌅 *Good morning! Running scheduled daily IT status & optimization checks...*');
+    await broadcast(bot, config, '=== Good morning! Running scheduled daily IT status & optimization checks ===');
     
     // 1. Bot status
     const statusTask = buildTask('status');
@@ -50,7 +50,7 @@ async function runDailyMorning(bot: Telegraf, config: BotConfig): Promise<void> 
 
 async function runWeeklySummary(bot: Telegraf, config: BotConfig): Promise<void> {
   try {
-    await broadcast(bot, config, '📅 *Monday Morning Weekly Checkpoint: Running full workspace optimization audits...*');
+    await broadcast(bot, config, '=== Monday Morning Weekly Checkpoint: Running full workspace optimization audits ===');
     
     // 1. Optimize
     const optTask = buildTask('run optimize');

@@ -262,7 +262,7 @@ function runTargetsFix(): string {
 
   md += `### Updated Projects Details\n\n`;
   if (updates.length === 0) {
-    md += `🎉 All projects have compliant target/scripts configurations!\n`;
+    md += `[OK] All projects have compliant target/scripts configurations!\n`;
   } else {
     for (const u of updates) {
       md += `#### Project: \`${u.projectName}\` (\`type: ${u.projectClass}\`)\n`;
@@ -274,14 +274,14 @@ function runTargetsFix(): string {
       if (u.recommendations.length > 0) {
         md += `* **Manual Recommendations**:\n`;
         for (const rec of u.recommendations) {
-          md += `  - ⚠️ ${rec}\n`;
+          md += `  - [WARN] ${rec}\n`;
         }
       }
       md += `\n`;
     }
   }
 
-  md += `### ⚠️ Verification Required\n\n`;
+  md += `### [WARN] Verification Required\n\n`;
   md += `Please verify that the newly added targets run successfully in the workspace by executing command checks, for example:\n\n`;
   md += `* \`/it run affected-quality\` (to check build/test/lint/typecheck status on modified files)\n`;
   md += `* \`/it typecheck <project>\`\n`;
@@ -294,7 +294,7 @@ function runTargetsFix(): string {
     console.error('Failed to write target migration report', err);
   }
 
-  let summary = `✅ *Target Coverage Correction Complete* ✅\n\n`;
+  let summary = `=== Target Coverage Correction Complete ===\n\n`;
   summary += `• Projects Configured: ${updates.length}\n\n`;
   if (updates.length > 0) {
     summary += `*Updated Projects:*\n`;
@@ -303,7 +303,7 @@ function runTargetsFix(): string {
       summary += `${idx + 1}. \`${u.projectName}\` (Class: \`${u.projectClass}\`, Added: [${addedNames}])\n`;
     });
   }
-  summary += `\n📄 *Migration Report*: ${reportPath}\n\n*Note*: Check the report for any manual configuration recommendations.`;
+  summary += `\n*Migration Report*: ${reportPath}\n\n*Note*: Check the report for any manual configuration recommendations.`;
   return summary;
 }
 

@@ -123,7 +123,7 @@ function runTypeScriptFix(): string {
 
   md += `### Updated Projects Details\n\n`;
   if (updates.length === 0) {
-    md += `🎉 All projects are already aligned with typescript version \`${TARGET_TS_VERSION}\`!\n`;
+    md += `[OK] All projects are already aligned with typescript version \`${TARGET_TS_VERSION}\`!\n`;
   } else {
     md += `| Project / Package | package.json Path | Location | Original Version | New Version |\n`;
     md += `| --- | --- | --- | --- | --- |\n`;
@@ -133,7 +133,7 @@ function runTypeScriptFix(): string {
     md += `\n`;
   }
 
-  md += `### ⚠️ Action Required\n\n`;
+  md += `### [WARN] Action Required\n\n`;
   md += `The TypeScript versions have been aligned in package configurations. To apply these changes in the workspace and rebuild node_modules, you MUST run a fresh install:\n\n`;
   md += `1. Run \`/it run pnpm-install\` in the bot (or run \`pnpm install\` in the root terminal).\n`;
   md += `2. Build and verify the affected packages to ensure zero compiler discrepancies.\n`;
@@ -145,7 +145,7 @@ function runTypeScriptFix(): string {
     console.error('Failed to write TypeScript migration report', err);
   }
 
-  let summary = `✅ *TypeScript Version Alignment Complete* ✅\n\n`;
+  let summary = `=== TypeScript Version Alignment Complete ===\n\n`;
   summary += `• Configurations Updated: ${updates.length}\n`;
   summary += `• Target Version: \`typescript@${TARGET_TS_VERSION}\`\n\n`;
   if (updates.length > 0) {
@@ -154,7 +154,7 @@ function runTypeScriptFix(): string {
       summary += `${idx + 1}. \`${u.projectName}\` (\`${u.field}\`: \`${u.oldVersion}\` ➔ \`${u.newVersion}\`)\n`;
     });
   }
-  summary += `\n📄 *Migration Report*: ${reportPath}\n\n*Note*: Please run \`/it run pnpm-install\` next to compile the updated packages.`;
+  summary += `\n*Migration Report*: ${reportPath}\n\n*Note*: Please run \`/it run pnpm-install\` next to compile the updated packages.`;
   return summary;
 }
 

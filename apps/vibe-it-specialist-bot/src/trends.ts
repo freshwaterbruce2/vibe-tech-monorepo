@@ -85,7 +85,7 @@ function extractStats(report: OptimizationReport): SummaryStats {
 
 export function analyzeTrends(categoryFilter = 'all'): string {
   if (!existsSync(LOG_DIR)) {
-    return `ℹ️ *No optimization history found.* Run \`/it optimize\` first to generate a report.`;
+    return `[INFO] *No optimization history found.* Run \`/it optimize\` first to generate a report.`;
   }
 
   // Find all JSON reports and isolate by category filter to prevent comparison mismatches
@@ -114,28 +114,28 @@ export function analyzeTrends(categoryFilter = 'all'): string {
       .filter(f => f.filter === targetFilter)
       .map(f => f.path);
   } catch (err) {
-    return `❌ *Failed to read optimization reports directory*: ${err instanceof Error ? err.message : String(err)}`;
+    return `[ERROR] *Failed to read optimization reports directory*: ${err instanceof Error ? err.message : String(err)}`;
   }
 
   if (files.length === 0) {
-    return `ℹ️ *No optimization history found for category "${targetFilter}".* Run \`/it optimize ${targetFilter === 'all' ? '' : targetFilter}\` first.`;
+    return `[INFO] *No optimization history found for category "${targetFilter}".* Run \`/it optimize ${targetFilter === 'all' ? '' : targetFilter}\` first.`;
   }
 
   const latestFile = files[files.length - 1];
   if (!latestFile) {
-    return `ℹ️ *No optimization history found.*`;
+    return `[INFO] *No optimization history found.*`;
   }
   let latestReport: OptimizationReport;
   try {
     latestReport = JSON.parse(readFileSync(join(LOG_DIR, latestFile), 'utf8')) as OptimizationReport;
   } catch (err) {
-    return `❌ *Failed to parse latest report* \`${latestFile}\`: ${err instanceof Error ? err.message : String(err)}`;
+    return `[ERROR] *Failed to parse latest report* \`${latestFile}\`: ${err instanceof Error ? err.message : String(err)}`;
   }
 
   const latestStats = extractStats(latestReport);
   const latestScore = calculateHealthScore(latestStats.P0Count, latestStats.P1Count, latestStats.P2Count, latestStats.P3Count);
 
-  let trendOutput = `📈 *VibeTech Monorepo Health Trend (${targetFilter.toUpperCase()})* 📈\n\n`;
+  let trendOutput = `=== VibeTech Monorepo Health Trend (${targetFilter.toUpperCase()}) ===\n\n`;
 
   if (files.length > 1) {
     const prevFile = files[files.length - 2];
@@ -187,12 +187,12 @@ export function analyzeTrends(categoryFilter = 'all'): string {
       if (regressed.length > 0) {
         trendOutput += `*Regressions (New Issues):*\n`;
         regressed.slice(0, 5).forEach((f) => {
-          trendOutput += `• ⚠️ [${f.category}] \`${f.message}\`\n`;
+          trendOutput += `• [WARN] [${f.category}] \`${f.message}\`\n`;
         });
         if (regressed.length > 5) trendOutput += `• ...and ${regressed.length - 5} more regressions.\n`;
         trendOutput += `\n`;
       } else {
-        trendOutput += `🎉 *No new regressions introduced!*\n\n`;
+        trendOutput += `[OK] *No new regressions introduced!*\n\n`;
       }
     }
   } else {
@@ -254,7 +254,7 @@ export function analyzeTrends(categoryFilter = 'all'): string {
         });
       }
     } catch (err) {
-      trendOutput += `\n⚠️ *Could not read task execution history*: ${err instanceof Error ? err.message : String(err)}`;
+      trendOutput += `\n[WARN] *Could not read task execution history*: ${err instanceof Error ? err.message : String(err)}`;
     }
   }
 
@@ -269,7 +269,7 @@ export function analyzeTrends(categoryFilter = 'all'): string {
     writeFileSync(latestTrendPath, trendOutput, 'utf8');
   } catch {}
 
-  trendOutput += `\n\n📄 *Trend Report*: ${trendReportPath}`;
+  trendOutput += `\n\n*Trend Report*: ${trendReportPath}`;
   return trendOutput;
 }
 
