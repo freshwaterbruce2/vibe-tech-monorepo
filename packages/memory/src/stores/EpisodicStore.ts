@@ -138,15 +138,20 @@ export class EpisodicStore {
         SELECT
           e.id, e.source_id as sourceId, e.timestamp, e.query, e.response,
           e.session_id as sessionId, e.metadata,
-          (-bm25(episodic_fts, 10.0, 1.0)) as score
+          (-bm25(episodic_fts, 10.0, 1.0)) * (
+            CASE
+              WHEN ?3 - e.timestamp <= 0 THEN 1.0
+              ELSE exp(-(?3 - e.timestamp) * 0.69314718056 / 432000000.0)
+            END
+          ) as score
         FROM episodic_fts
         JOIN episodic_memory e ON e.id = episodic_fts.rowid
-        WHERE episodic_fts MATCH ?
+        WHERE episodic_fts MATCH ?1
         ORDER BY score DESC
-        LIMIT ?
+        LIMIT ?2
       `);
 
-      const rows = stmt.all(queryText, limit) as EpisodicRow[];
+      const rows = stmt.all(queryText, limit, Date.now()) as EpisodicRow[];
       return rows.map((row) => this.mapRow(row));
     } catch {
       // FTS5 not available — fall back to LIKE
