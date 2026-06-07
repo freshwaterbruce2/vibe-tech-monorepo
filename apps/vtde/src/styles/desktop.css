@@ -1,0 +1,76 @@
+/* ─────────────────────────────────────────────────────────
+   VTDE — Desktop & Icons
+   ───────────────────────────────────────────────────────── */
+
+.vtde-desktop {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #0f172a 0%, #020617 50%, #0c1027 100%);
+  user-select: none;
+}
+
+.vtde-desktop__workspace {
+  flex: 1;
+  padding: 24px;
+  position: relative;
+}
+
+.vtde-desktop__icons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 96px);
+  grid-template-rows: repeat(auto-fill, 96px);
+  gap: 8px;
+  max-width: 600px;
+}
+
+.vtde-desktop__widgets {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Desktop Icons ──────────────────────────────────────── */
+.desktop-icon {
+  width: 96px;
+  height: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  color: #fff;
+  font-size: 11px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+  transition: all 0.15s;
+}
+
+.desktop-icon:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--border-subtle);
+}
+
+.desktop-icon:active {
+  transform: scale(0.95);
+}
+
+.desktop-icon__img {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+}
+
+.desktop-icon__label {
+  max-width: 88px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

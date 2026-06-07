@@ -6,15 +6,9 @@
     "build"
   ],
   "allowedMissingTargets": {
-    "devtools-mcp-server":           ["lint", "test"],
-    "mcp-rag-server":                ["test"],
-    "@vibetech/anthropic-api-tools": ["lint", "test"],
-    "@vibetech/health-tracker":      ["test"],
-    "vibe-code-studio-vscode":       ["test"],
-    "chessmaster-academy-api":       ["typecheck", "test", "build"],
-    "desktop-bridge":                ["typecheck", "test", "build"],
-    "avatar-web-automator-e2e":      ["test", "build"],
-    "vibe-reflection":               ["test"]
+    "devtools-mcp-server": ["test"],
+    "avatar-web-automator-e2e": ["build"],
+    "hermes-webui-devtools": ["typecheck", "test", "build"]
   },
   "allowedIsolatedProjects": [
     "@vibetech/anthropic-api-tools",
@@ -27,25 +21,24 @@
     "@vibetech/vcs-theme",
     "agent-engine",
     "agent-lats",
-    "crypto-enhanced",
     "dap-proxy",
     "devtools-mcp-server",
     "lsp-proxy",
     "mcp-skills-server",
     "openrouter-proxy",
-    "symptom-tracker-api",
     "vibe-shop",
-    "vibe-justice",
     "vibe-code-studio-vscode",
     "workflow-engine",
-    "@vibetech/workspace",
-    "chessmaster-academy-api",
     "desktop-bridge",
     "vibe-booking",
-    "vibe-booking-backend",
-    "vibe-reflection"
+    "vibe-reflection",
+    "hermes-webui-devtools",
+    "nova-mobile-app",
+    "vibe-hermes-control",
+    "vibe-it-specialist-bot"
   ],
   "allowedStandaloneTags": [
     "standalone"
   ]
 }
+

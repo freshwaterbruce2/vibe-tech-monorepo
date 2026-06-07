@@ -1,0 +1,181 @@
+/* ─────────────────────────────────────────────────────────
+   VTDE — Nova Quick Chat (Embedded Panel)
+   ───────────────────────────────────────────────────────── */
+
+.nova-chat {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: rgba(10, 15, 28, 0.95);
+  color: #e2e8f0;
+  font-family: system-ui, sans-serif;
+}
+
+.nova-chat__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.nova-chat__title {
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nova-chat__memory-badge {
+  font-size: 12px;
+  animation: memoryPulse 2s ease-in-out infinite;
+}
+
+.nova-chat__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nova-chat__auth-btn {
+  border: none;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    opacity 0.15s;
+}
+
+.nova-chat__auth-btn--signin {
+  background: #4285f4;
+  color: #fff;
+  font-weight: 600;
+}
+
+.nova-chat__auth-btn--signin:hover {
+  background: #3367d6;
+}
+
+.nova-chat__auth-btn--signin:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.nova-chat__auth-btn--user {
+  background: rgba(66, 133, 244, 0.15);
+  color: #93bbfc;
+  font-weight: 500;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nova-chat__auth-btn--user:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+}
+
+.nova-chat__close {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nova-chat__close:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.nova-chat__messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nova-chat__welcome {
+  text-align: center;
+  padding: 32px 16px;
+  color: #94a3b8;
+}
+
+.nova-chat__welcome p {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.nova-chat__welcome-sub {
+  font-size: 11px !important;
+  color: #64748b !important;
+}
+
+.nova-chat__bubble {
+  max-width: 85%;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.nova-chat__bubble--user {
+  align-self: flex-end;
+  background: #1e40af;
+  color: #dbeafe;
+  border-bottom-right-radius: 3px;
+}
+
+.nova-chat__bubble--nova {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
+  border-bottom-left-radius: 3px;
+}
+
+.nova-chat__loading {
+  font-size: 12px;
+  color: #64748b;
+  font-style: italic;
+  padding: 4px 0;
+}
+
+.nova-chat__input-area {
+  padding: 10px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.nova-chat__input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #e2e8f0;
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.nova-chat__input:focus {
+  border-color: rgba(66, 133, 244, 0.4);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.nova-chat__input::placeholder {
+  color: #475569;
+}
