@@ -1,6 +1,6 @@
 {
   "version": "1.3.1",
-  "lastUpdated": "2026-06-07T02:59:00-04:00",
+  "lastUpdated": "2026-06-07T12:20:00-04:00",
   "techStack": {
     "packageManager": "pnpm@10.33.0",
     "node": "22.x",
@@ -18,6 +18,11 @@
     "provider": "openrouter"
   },
   "recentActivity": [
+    {
+      "date": "2026-06-07",
+      "project": "nova-mobile-app",
+      "action": "Added local Gradle build and deploy scripts (`scripts/run-gradle.cjs`, `android:build:clean`, `android:build:debug`, `android:install`, `android:uninstall`, `android:deploy`) configured like `vibe-tutor`. Created `local.properties` and updated `run-gradle.cjs` to resolve `ANDROID_HOME` to the correct Android SDK location. Successfully compiled the debug APK locally (7m 2s)."
+    },
     {
       "date": "2026-06-07",
       "project": "workspace-hygiene-fix",
