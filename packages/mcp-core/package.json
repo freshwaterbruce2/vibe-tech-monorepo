@@ -40,10 +40,10 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/node": "^25.5.0",
+    "@types/node": "catalog:",
     "@vitest/coverage-v8": "^4.1.2",
     "tsup": "^8.5.1",
-    "typescript": "5.9.3",
+    "typescript": "catalog:",
     "vitest": "^4.1.2"
   },
   "peerDependencies": {

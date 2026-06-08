@@ -34,7 +34,7 @@
     "@vibetech/games": "workspace:*",
     "chess.js": "^1.4.0",
     "dotenv": "^16.6.1",
-    "express": "^4.21.2",
+    "express": "catalog:",
     "lucide-react": "0.563.0",
     "motion": "^12.23.24",
     "react": "19.2.4",
@@ -46,11 +46,11 @@
     "@capacitor/android": "^8.3.1",
     "@capacitor/cli": "^8.3.1",
     "@types/express": "^4.17.21",
-    "@types/node": "^25.5.0",
+    "@types/node": "catalog:",
     "autoprefixer": "^10.4.21",
     "tailwindcss": "4.1.18",
     "tsx": "^4.21.0",
-    "typescript": "5.9.3",
-    "vite": "^7.3.1"
+    "typescript": "catalog:",
+    "vite": "catalog:"
   }
 }

@@ -54,12 +54,12 @@
   "devDependencies": {
     "@testing-library/react": "^16.3.2",
     "@types/canvas-confetti": "^1.9.0",
-    "@types/node": "^25.5.0",
+    "@types/node": "catalog:",
     "@types/react": "19.2.10",
     "@types/react-dom": "19.2.3",
     "@types/three": "^0.183.1",
     "jsdom": "28.1.0",
-    "typescript": "5.9.3",
+    "typescript": "catalog:",
     "vitest": "^4.1.2"
   }
 }

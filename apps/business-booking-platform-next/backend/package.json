@@ -7,7 +7,7 @@
   "types": "./src/index.d.ts",
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^5.1.0",
+    "express": "catalog:",
     "tslib": "^2.3.0",
     "zod": "^4.3.6"
   },

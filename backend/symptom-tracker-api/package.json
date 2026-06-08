@@ -12,13 +12,13 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "express": "^5.2.1",
+    "express": "catalog:",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
-    "@types/node": "^25.5.0",
+    "@types/node": "catalog:",
     "tsx": "^4.21.0",
-    "typescript": "5.9.3"
+    "typescript": "catalog:"
   }
 }

@@ -4,7 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "nx": {
-    "tags": ["scope:workspace", "type:workspace", "language:typescript"]
+    "tags": [
+      "scope:workspace",
+      "type:workspace",
+      "language:typescript"
+    ]
   },
   "description": "Vibe Tech multi-project monorepo with booking platforms, web apps, and desktop applications",
   "packageManager": "pnpm@10.33.0",
@@ -266,7 +270,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^25.5.0",
+    "@types/node": "catalog:",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "^5.2.0",
@@ -294,9 +298,9 @@
     "tailwindcss": "4.1.18",
     "terser": "^5.46.1",
     "tslib": "^2.3.0",
-    "typescript": "5.9.3",
+    "typescript": "catalog:",
     "typescript-eslint": "^8.57.2",
-    "vite": "^7.3.3",
+    "vite": "catalog:",
     "vitest": "^4.1.2"
   },
   "repository": {

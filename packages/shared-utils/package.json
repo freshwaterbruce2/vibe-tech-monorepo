@@ -46,11 +46,11 @@
   },
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",
-    "@types/node": "^25.5.0",
+    "@types/node": "catalog:",
     "@vitest/coverage-v8": "^4.1.2",
     "@vitest/ui": "^4.1.2",
     "jsdom": "28.0.0",
-    "typescript": "5.9.3",
+    "typescript": "catalog:",
     "vitest": "^4.1.2"
   }
 }

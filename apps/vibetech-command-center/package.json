@@ -47,7 +47,7 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/better-sqlite3": "^7.6.12",
-    "@types/node": "^22.10.0",
+    "@types/node": "catalog:",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/ws": "^8.5.13",
@@ -60,8 +60,8 @@
     "jsdom": "^29.0.2",
     "postcss": "^8.4.49",
     "tailwindcss": "^4.1.18",
-    "typescript": "5.9.3",
-    "vite": "^7.3.1",
+    "typescript": "catalog:",
+    "vite": "catalog:",
     "vitest": "^4.1.2"
   },
   "build": {

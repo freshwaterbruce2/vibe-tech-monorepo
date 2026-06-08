@@ -49,10 +49,10 @@
     "ws": "^8.20.0"
   },
   "devDependencies": {
-    "@types/node": "^25.5.0",
+    "@types/node": "catalog:",
     "@types/ws": "^8.18.1",
     "tsx": "^4.21.0",
-    "typescript": "5.9.3",
+    "typescript": "catalog:",
     "vitest": "^4.1.2"
   }
 }
