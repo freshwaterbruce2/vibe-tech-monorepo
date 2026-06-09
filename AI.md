@@ -39,6 +39,15 @@ Package manager and tooling:
 
 - Use pnpm only. Never use npm or yarn. Exception: isolated npm installs are permitted for native compiled modules that fail under pnpm strict linking (e.g., better-sqlite3, @nut-tree-fork/nut-js).
 - Prefer Nx targets for build/test/lint: pnpm nx ...
+
+Build and Install Failures:
+- When a build or install command fails with OOM, NEVER retry the same command. First reduce parallelism (`--concurrency 1`, disable LTO, reduce parallel jobs), then retry.
+- When pnpm install OOMs, try `pnpm install --filter <specific-project>` instead of full workspace install.
+
+Windows Environment:
+- Use `npx.cmd` (not `npx`) when constructing MCP server commands on Windows.
+- Do NOT use `sed` for file manipulation. Use PowerShell or Python instead.
+- For git operations, use `git rm` instead of `rm` to avoid lock file race conditions.
 - For bulk operations (e.g., `Remove-Item`, `Copy-Item`), NEVER use `-Verbose` and suppress/limit stdout (e.g., redirect to `$null` or pipe to `Out-Null`) to prevent massive token inflation.
 
 Code quality:
@@ -52,6 +61,9 @@ Code quality:
 - TypeScript strict mode. No explicit any without a justification comment.
 - Use @/ alias for src imports; avoid deep relative paths.
 - Async-first with async/await; avoid blocking callbacks.
+- After EACH file edit that fixes lint/TS errors, re-read the file before making the next edit (line numbers shift).
+- Fix ONE file first and verify it passes before applying the same fix pattern across multiple files.
+- For eslint-disable comments, always verify the exact line number by reading the file immediately before placing the comment.
 
 Domain rules:
 
@@ -72,6 +84,12 @@ Process:
 3. Implement using apply_patch.
 4. Verify with the narrowest relevant `pnpm nx <target> <project>` command.
 5. For repo-level confidence, run `pnpm run quality:affected` before full-workspace checks.
+
+Approach Strategy:
+- When a fix attempt fails twice with the same approach, STOP and try a fundamentally different strategy.
+- For unfamiliar errors, search the codebase for prior solutions before attempting fixes.
+- When debugging, write a minimal reproduction first, then fix against that — don't scatter-shot across components.
+- For any non-trivial task, run `/explore <problem>` first. It does a read-only diagnosis and produces a plan. Implementation only starts after the plan is approved. This prevents the wrong-approach-first failure mode.
 
 AI tooling:
 
@@ -137,6 +155,19 @@ Quick checks:
 
 ## 5) Agent rules (Nx and tooling)
 
+Default Agent:
+- This workspace defines a default **master agent** in `.claude/agents/master-agent.md` (and `.agent/agents/master-agent.md` for the Antigravity framework). Load it first when starting work in this repository for workspace orientation, path policy enforcement, and intelligent routing to specialist agents.
+
+Canonical Rules:
+- Active project lock: `.claude/rules/active-project-lock.md` — finish before starting another (state in `D:\active-project\active-project.json`)
+- Paths policy: `.claude/rules/paths-policy.md`
+- No duplicates: `.claude/rules/no-duplicates.md`
+- No mock/placeholder code: `.claude/rules/no-mock-or-placeholder-code.md`
+- TypeScript patterns: `.claude/rules/typescript-patterns.md`
+- Testing strategy: `.claude/rules/testing-strategy.md`
+- Craft edit-review widget: `.claude/rules/craft-edit-review.md`
+
+Nx Guidelines:
 - Prefer Nx tasks over direct tool invocation.
 - Use Nx workspace/project details and docs tools for Nx questions.
 - When unsure about configuration, retrieve the latest Nx docs.
