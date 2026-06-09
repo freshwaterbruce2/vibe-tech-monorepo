@@ -39,6 +39,7 @@ Package manager and tooling:
 
 - Use pnpm only. Never use npm or yarn. Exception: isolated npm installs are permitted for native compiled modules that fail under pnpm strict linking (e.g., better-sqlite3, @nut-tree-fork/nut-js).
 - Prefer Nx targets for build/test/lint: pnpm nx ...
+- For bulk operations (e.g., `Remove-Item`, `Copy-Item`), NEVER use `-Verbose` and suppress/limit stdout (e.g., redirect to `$null` or pipe to `Out-Null`) to prevent massive token inflation.
 
 Code quality:
 
