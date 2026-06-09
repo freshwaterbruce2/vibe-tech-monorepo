@@ -19,6 +19,11 @@
   },
   "recentActivity": [
     {
+      "date": "2026-06-09",
+      "project": "monorepo",
+      "action": "Cleaned up 658 lines of redundant rules by consolidating CLAUDE.md, rules.md, AGENT_RULES.md, CLAUDE-OPTIMIZED.md, and docs/ai/RULES.md into AI.md. Applied launcher fix, cleared 1.86 GB of old Antigravity folders, and fixed the hooks validation script."
+    },
+    {
       "date": "2026-03-29",
       "project": "monorepo",
       "action": "Codebase review: deleted ghost dir Vibe-Tech, aligned agent-engine Zod to v4, fixed script paths, pinned vcs-theme TS, synced WORKSPACE.json"
@@ -393,9 +398,9 @@
   "blockers": [],
   "rules": "./docs/ai/RULES.md",
   "paths": {
-    "apps": "C:/dev/apps",
-    "packages": "C:/dev/packages",
-    "tools": "C:/dev/tools",
+    "apps": "V:/monorepo/apps",
+    "packages": "V:/monorepo/packages",
+    "tools": "V:/monorepo/tools",
     "logs": "D:/logs",
     "data": "D:/",
     "learning": "D:/learning-system"
