@@ -129,8 +129,9 @@ if (-not (Test-Path -LiteralPath 'D:\learning-system\.venv')) {
     Write-Host '  OK  Python virtual environment found' -ForegroundColor Green
 }
 
-if (-not (Test-Path -LiteralPath 'C:\dev\.claude\hooks')) {
-    Add-Warning 'C:\dev\.claude\hooks is missing.'
+$hooksPath = Join-Path $workspaceRoot '.claude\hooks'
+if (-not (Test-Path -LiteralPath $hooksPath)) {
+    Add-Warning "$hooksPath is missing."
     Write-Host '  WARN Hook directory missing' -ForegroundColor Yellow
 } else {
     Write-Host '  OK  Hook directory found' -ForegroundColor Green
