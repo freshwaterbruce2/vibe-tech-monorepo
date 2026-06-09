@@ -1,0 +1,13 @@
+{
+	"appId": "com.vibetech.vibetutor.mobile",
+	"appName": "Vibe Tutor",
+	"webDir": "dist",
+	"server": {
+		"androidScheme": "https"
+	},
+	"android": {
+		"backgroundColor": "#101828",
+		"webContentsDebuggingEnabled": true,
+		"appendUserAgent": "VibeTutorMobile/1.6.0"
+	}
+}

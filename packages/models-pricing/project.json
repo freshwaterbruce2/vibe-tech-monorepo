@@ -1,0 +1,46 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "@vibetech/models-pricing",
+  "projectType": "library",
+  "root": "packages/models-pricing",
+  "sourceRoot": "packages/models-pricing/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
+      "cache": true,
+      "options": {
+        "command": "node ../../node_modules/typescript/bin/tsc -p tsconfig.build.json",
+        "cwd": "packages/models-pricing"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "vitest run",
+        "cwd": "packages/models-pricing"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm exec eslint src --ext .ts --max-warnings 0",
+        "cwd": "packages/models-pricing"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../node_modules/typescript/bin/tsc --noEmit",
+        "cwd": "packages/models-pricing"
+      }
+    }
+  },
+  "tags": [
+    "type:library",
+    "scope:shared"
+  ]
+}

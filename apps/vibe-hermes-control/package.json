@@ -1,0 +1,28 @@
+{
+  "name": "vibe-hermes-control",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node ../../node_modules/vite/bin/vite.js --host 127.0.0.1 --port 4388",
+    "build": "cross-env NODE_ENV=production vite build",
+    "preview": "node ../../node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4389",
+    "typecheck": "tsc --noEmit",
+    "test": "node ../../node_modules/vitest/vitest.mjs run --passWithNoTests",
+    "lint": "eslint src --max-warnings 0"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.2.0",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "vite": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "cross-env": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

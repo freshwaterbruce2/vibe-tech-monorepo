@@ -1,0 +1,53 @@
+{
+  "version": "1.0.0",
+  "scheduled_tasks": [
+    {
+      "id": "morning-workspace-pulse",
+      "name": "Morning Workspace Pulse",
+      "schedule": "0 9 * * 1-5",
+      "description": "Daily diagnostic report and trends check (bot status, optimize trends)",
+      "target": "vibe-it-specialist-bot",
+      "command": "node apps/vibe-it-specialist-bot/dist/src/status.js ; node apps/vibe-it-specialist-bot/dist/src/trends.js"
+    },
+    {
+      "id": "weekly-workspace-cleanup",
+      "name": "Weekly Workspace Clean-Up",
+      "schedule": "0 17 * * 5",
+      "description": "Prunes stale build artifacts, local logs, and SQLite files violating path policy",
+      "target": "workspace",
+      "command": "pnpm run workspace:cleanup:drift"
+    },
+    {
+      "id": "competitor-monitor",
+      "name": "Weekly Competitor Intelligence Scan",
+      "schedule": "0 10 * * 1",
+      "description": "Scans AI agent landscape for updates (Hermes, Claude, etc.) and drafts competitor digest",
+      "target": "gemini-spark",
+      "command": "pnpm run competitor:scan"
+    },
+    {
+      "id": "vip-auto-responder",
+      "name": "VIP Email Auto-Responder",
+      "schedule": "*/15 * * * *",
+      "description": "Monitors Gmail for urgent/VIP emails, drafts and saves contextual auto-responses",
+      "target": "gemini-spark",
+      "command": "pnpm run email:auto-respond"
+    },
+    {
+      "id": "expense-logger",
+      "name": "Automated Expense & Receipt Logger",
+      "schedule": "0 */2 * * *",
+      "description": "Scans Gmail for invoices/receipts, parses metadata, and logs to Google Sheets",
+      "target": "gemini-spark",
+      "command": "pnpm run expense:log"
+    },
+    {
+      "id": "meeting-prep",
+      "name": "Calendar Meeting Prep Assistant",
+      "schedule": "0 8 * * 1-5",
+      "description": "Checks upcoming meetings, gathers contact & document history, and drafts briefs",
+      "target": "gemini-spark",
+      "command": "pnpm run calendar:prep"
+    }
+  ]
+}

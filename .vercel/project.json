@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_rNWQnWzEtEZtS8yxjkWwiP3Htn8U",
+  "orgId": "team_K61A5zl2rIRvueizg7oCGh1n",
+  "projectName": "proposal-review-saas",
+  "settings": {
+    "createdAt": 1778886081459,
+    "framework": "vite",
+    "devCommand": null,
+    "installCommand": "cd ../.. && pnpm install --frozen-lockfile --filter ./apps/proposal-review-saas...",
+    "buildCommand": "pnpm run build:shared:api && pnpm run build",
+    "outputDirectory": "dist",
+    "rootDirectory": "apps/proposal-review-saas",
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

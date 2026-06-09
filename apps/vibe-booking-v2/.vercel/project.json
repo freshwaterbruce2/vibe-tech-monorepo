@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_ST2Pi38T6yRL548wt1XFEwQg4Qnx",
+  "orgId": "team_K61A5zl2rIRvueizg7oCGh1n",
+  "projectName": "vibe-booking-v2",
+  "settings": {
+    "createdAt": 1780170070012,
+    "framework": "services",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

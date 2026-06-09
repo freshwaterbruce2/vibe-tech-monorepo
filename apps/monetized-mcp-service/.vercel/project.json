@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_xYbDsbQwWgCxfG0njpcEVVVBUOg3",
+  "orgId": "team_K61A5zl2rIRvueizg7oCGh1n",
+  "projectName": "monetized-mcp-service",
+  "settings": {
+    "createdAt": 1780170042469,
+    "framework": "services",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

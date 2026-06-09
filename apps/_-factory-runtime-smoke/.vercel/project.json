@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_hOsEsbYR9qtzVYrSdR4TdWGwW5rr",
+  "orgId": "team_K61A5zl2rIRvueizg7oCGh1n",
+  "projectName": "_-factory-runtime-smoke",
+  "settings": {
+    "createdAt": 1780170107486,
+    "framework": "services",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

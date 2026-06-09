@@ -38,7 +38,7 @@ process.on('uncaughtException', (err) => {
 // watchFolders: tells Metro's file watcher where to look for source changes.
 // nodeModulesPaths: tells the resolver where to find installed packages.
 // extraNodeModules: direct fallback map for packages that exist only at root.
-config.watchFolders = [workspaceRoot, projectRoot];
+config.watchFolders = [projectRoot];
 
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),

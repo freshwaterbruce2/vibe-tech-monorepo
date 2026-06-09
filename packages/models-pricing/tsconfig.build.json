@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts", "vitest.config.ts"],
+  "references": [
+    {
+      "path": "../shared-config/tsconfig.build.json"
+    }
+  ]
+}

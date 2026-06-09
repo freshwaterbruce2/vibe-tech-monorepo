@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_TPD92KbhPOD5yMRsvXJUZI04Vl9o",
+  "orgId": "team_K61A5zl2rIRvueizg7oCGh1n",
+  "projectName": "factory-verify",
+  "settings": {
+    "createdAt": 1780170042296,
+    "framework": "services",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

@@ -4,6 +4,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { logger } from './utils/logger';
 import { openRouterRouter } from './routes/openrouter';
+import { authRouter } from './routes/auth';
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/requestLogger';
 
@@ -25,7 +26,7 @@ const limiter = rateLimit({
   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS ?? '60'),
   message: 'Too many requests from this IP, please try again later.'
 });
-app.use('/api', limiter);
+app.use('/api', limiter as any); // Cast to any to resolve Express 5 / express-rate-limit compatibility mismatch
 
 // Request logging
 app.use(requestLogger);
@@ -73,6 +74,16 @@ app.get('/health', (req, res) => {
 app.use('/api/openrouter', openRouterRouter);
 // Also mount at /api/v1 for OpenAI-compatible clients (EmbeddingService, RAGEmbedder)
 app.use('/api/v1', openRouterRouter);
+
+// Auth & Health Routes
+app.use('/api/auth', authRouter);
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
 
 // Error handling
 app.use(errorHandler);

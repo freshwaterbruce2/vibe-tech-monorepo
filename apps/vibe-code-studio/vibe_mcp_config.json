@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "claude-context": {
+      "command": "C:\\Users\\fresh_zxae3v6\\AppData\\Roaming\\fnm\\node-versions\\v22.22.2\\installation\\npx.cmd",
+      "args": [
+        "-y",
+        "@zilliz/claude-context-mcp@latest"
+      ],
+      "env": {
+        "MILVUS_ADDRESS": "localhost:19530",
+        "EMBEDDING_PROVIDER": "Ollama",
+        "OLLAMA_MODEL": "nomic-embed-text",
+        "OLLAMA_HOST": "http://localhost:11434",
+        "EMBEDDING_DIMENSION": "768",
+        "HYBRID_MODE": "false"
+      }
+    }
+  }
+}

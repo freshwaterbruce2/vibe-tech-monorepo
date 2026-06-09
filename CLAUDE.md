@@ -20,6 +20,8 @@ This workspace defines a default **master agent** in `.claude/agents/master-agen
 - Use `npx.cmd` (not `npx`) when constructing MCP server commands on Windows.
 - Do NOT use `sed` for file manipulation. Use PowerShell or Python instead.
 - For git operations, use `git rm` instead of `rm` to avoid lock file race conditions.
+- For bulk operations (e.g., `Remove-Item`, `Copy-Item`), NEVER use `-Verbose` and suppress/limit stdout (e.g., redirect to `$null` or pipe to `Out-Null`) to prevent massive token inflation.
+
 
 ## Approach Strategy
 

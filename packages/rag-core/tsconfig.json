@@ -1,0 +1,43 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "lib": ["ES2022"],
+    "moduleResolution": "node",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": "src",
+    "baseUrl": ".",
+    "paths": {
+      "@vibetech/logger": ["../logger/dist/index.d.ts"],
+      "@vibetech/shared-config": ["../shared-config/dist/index.d.ts"],
+      "@vibetech/inngest-client": ["../inngest-client/dist/index.d.ts"],
+      "@vibetech/openrouter-client": ["../openrouter-client/dist/index.d.ts"]
+    },
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"],
+  "extends": "../../tsconfig.base.json",
+  "references": [
+    {
+      "path": "../openrouter-client"
+    },
+    {
+      "path": "../shared-config"
+    },
+    {
+      "path": "../logger"
+    },
+    {
+      "path": "../inngest-client"
+    }
+  ]
+}

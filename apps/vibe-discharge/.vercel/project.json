@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_J8ielqUeL0Ha7T5XYZbOkTwwV4gS",
+  "orgId": "team_K61A5zl2rIRvueizg7oCGh1n",
+  "projectName": "vibe-discharge",
+  "settings": {
+    "createdAt": 1780170079441,
+    "framework": "services",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

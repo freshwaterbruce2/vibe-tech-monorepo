@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_blwn3oilOTgGfpOnJuAbsgR2B03I",
+  "orgId": "team_K61A5zl2rIRvueizg7oCGh1n",
+  "projectName": "prior-auth-pro",
+  "settings": {
+    "createdAt": 1779378786784,
+    "framework": "vite",
+    "devCommand": null,
+    "installCommand": "cd ../.. && pnpm install --force --no-frozen-lockfile --filter ./apps/prior-auth-pro...",
+    "buildCommand": "pnpm run build:shared:api && pnpm run build",
+    "outputDirectory": "dist",
+    "rootDirectory": "apps/prior-auth-pro",
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

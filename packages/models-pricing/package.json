@@ -1,0 +1,37 @@
+{
+  "name": "@vibetech/models-pricing",
+  "version": "1.0.0",
+  "description": "Dynamic database-backed tracking service for AI models and pricing",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rimraf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts --max-warnings 0"
+  },
+  "author": "VibeTech",
+  "license": "MIT",
+  "dependencies": {
+    "@vibetech/shared-config": "workspace:*",
+    "better-sqlite3": "12.6.2",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "catalog:",
+    "@types/node": "catalog:",
+    "rimraf": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

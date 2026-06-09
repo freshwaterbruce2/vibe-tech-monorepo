@@ -1,0 +1,44 @@
+{
+  "name": "@vibetech/rag-core",
+  "version": "1.0.0",
+  "description": "Shared RAG pipeline library for VibeTech monorepo projects",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "lint": "eslint . --max-warnings 0"
+  },
+  "dependencies": {
+    "@lancedb/lancedb": "^0.27.1",
+    "@vibetech/logger": "workspace:*",
+    "@vibetech/shared-config": "workspace:*",
+    "@vibetech/inngest-client": "workspace:*",
+    "@vibetech/openrouter-client": "workspace:*",
+    "better-sqlite3": "12.6.2",
+    "ts-morph": "^27.0.2",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.5.0",
+    "rimraf": "^6.1.3",
+    "typescript": "5.9.3",
+    "vitest": "^4.1.2"
+  },
+  "author": "VibeTech",
+  "license": "MIT"
+}

@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_emEfalPteLQfAISO5I2D1fP6fiNo",
+  "orgId": "team_K61A5zl2rIRvueizg7oCGh1n",
+  "projectName": "factory-saas-smoke",
+  "settings": {
+    "createdAt": 1780170042358,
+    "framework": "services",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

@@ -1,0 +1,85 @@
+{
+	"appId": "com.vibetech.dc8980.shipping",
+	"appName": "DC8980 Shipping",
+	"webDir": "dist",
+	"bundledWebRuntime": false,
+	"android": {
+		"allowMixedContent": false,
+		"captureInput": true,
+		"webContentsDebuggingEnabled": false,
+		"loggingBehavior": "none",
+		"hardwareAccelerated": true,
+		"allowDownloads": true,
+		"allowsRecordAudio": true,
+		"keepAlive": true,
+		"maxMemorySize": 512,
+		"minWebViewVersion": 89,
+		"useLegacyBridge": false,
+		"backgroundColor": "#0052CC"
+	},
+	"ios": {
+		"scheme": "DC8980 Shipping",
+		"backgroundColor": "#0052CC",
+		"contentInset": "automatic",
+		"scrollEnabled": true,
+		"allowsLinkPreview": false,
+		"handleApplicationURL": false,
+		"minVersion": "13.0"
+	},
+	"plugins": {
+		"SplashScreen": {
+			"launchShowDuration": 2000,
+			"backgroundColor": "#0052CC",
+			"androidSplashResourceName": "splash",
+			"androidScaleType": "CENTER_CROP",
+			"iosSpinnerStyle": "small",
+			"showSpinner": false,
+			"splashFullScreen": true,
+			"splashImmersive": true
+		},
+		"Keyboard": {
+			"resize": "body",
+			"style": "dark",
+			"resizeOnFullScreen": true
+		},
+		"StatusBar": {
+			"style": "light",
+			"backgroundColor": "#0052CC",
+			"overlaysWebView": false
+		},
+		"App": {
+			"launchUrl": "",
+			"deepLinkOnly": false
+		},
+		"Camera": {
+			"permissions": [
+				"camera",
+				"photos"
+			]
+		},
+		"Microphone": {
+			"permissions": [
+				"microphone"
+			]
+		},
+		"LocalNotifications": {
+			"smallIcon": "ic_stat_icon_config_sample",
+			"iconColor": "#0052CC",
+			"sound": "beep.wav"
+		},
+		"PushNotifications": {
+			"presentationOptions": [
+				"badge",
+				"sound",
+				"alert"
+			]
+		}
+	},
+	"server": {
+		"cleartext": false,
+		"allowNavigation": [
+			"https://*"
+		],
+		"errorPath": "error.html"
+	}
+}

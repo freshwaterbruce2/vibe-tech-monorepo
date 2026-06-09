@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_PpFRDlaQoiriVPEKVasmprWLwI6Z",
+  "orgId": "team_K61A5zl2rIRvueizg7oCGh1n",
+  "projectName": "vibe-reminder-v2",
+  "settings": {
+    "createdAt": 1780170102272,
+    "framework": "services",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

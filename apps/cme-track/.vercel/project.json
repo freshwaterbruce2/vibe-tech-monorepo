@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_Q84MlAVEm3Ggsi1ka7qDoHg3OnTD",
+  "orgId": "team_K61A5zl2rIRvueizg7oCGh1n",
+  "projectName": "cme-track",
+  "settings": {
+    "createdAt": 1780169750770,
+    "framework": "services",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

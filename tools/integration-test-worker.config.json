@@ -1,0 +1,32 @@
+{
+  "testWorker": {
+    "name": "integration-test-worker",
+    "version": "1.0.0",
+    "description": "Integration and E2E test execution worker for Vibe Tech monorepo",
+    "defaults": {
+      "outputPath": "D:\\data\\test-results",
+      "parallel": 1,
+      "retries": {
+        "ci": 2,
+        "local": 0
+      },
+      "timeout": 180000,
+      "trace": "on-first-retry",
+      "screenshot": "only-on-failure",
+      "video": "retain-on-failure"
+    },
+    "projects": {
+      "autoDetect": true,
+      "include": [],
+      "exclude": []
+    },
+    "artifacts": {
+      "collect": ["screenshots", "traces", "videos", "logs"],
+      "retentionDays": 30
+    },
+    "reporting": {
+      "formats": ["json", "junit", "markdown"],
+      "aggregate": true
+    }
+  }
+}

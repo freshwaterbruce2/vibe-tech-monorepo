@@ -1,0 +1,15 @@
+V:/monorepo/apps/nova-mobile-app/android/app/.cxx/Debug/4m4h1l2a/x86_64/CMakeFiles/appmodules.dir
+V:/monorepo/apps/nova-mobile-app/android/app/.cxx/Debug/4m4h1l2a/x86_64/CMakeFiles/edit_cache.dir
+V:/monorepo/apps/nova-mobile-app/android/app/.cxx/Debug/4m4h1l2a/x86_64/CMakeFiles/rebuild_cache.dir
+V:/monorepo/apps/nova-mobile-app/android/app/.cxx/Debug/4m4h1l2a/x86_64/rnasyncstorage_autolinked_build/CMakeFiles/react_codegen_rnasyncstorage.dir
+V:/monorepo/apps/nova-mobile-app/android/app/.cxx/Debug/4m4h1l2a/x86_64/rnasyncstorage_autolinked_build/CMakeFiles/edit_cache.dir
+V:/monorepo/apps/nova-mobile-app/android/app/.cxx/Debug/4m4h1l2a/x86_64/rnasyncstorage_autolinked_build/CMakeFiles/rebuild_cache.dir
+V:/monorepo/apps/nova-mobile-app/android/app/.cxx/Debug/4m4h1l2a/x86_64/safeareacontext_autolinked_build/CMakeFiles/react_codegen_safeareacontext.dir
+V:/monorepo/apps/nova-mobile-app/android/app/.cxx/Debug/4m4h1l2a/x86_64/safeareacontext_autolinked_build/CMakeFiles/edit_cache.dir
+V:/monorepo/apps/nova-mobile-app/android/app/.cxx/Debug/4m4h1l2a/x86_64/safeareacontext_autolinked_build/CMakeFiles/rebuild_cache.dir
+V:/monorepo/apps/nova-mobile-app/android/app/.cxx/Debug/4m4h1l2a/x86_64/rnscreens_autolinked_build/CMakeFiles/react_codegen_rnscreens.dir
+V:/monorepo/apps/nova-mobile-app/android/app/.cxx/Debug/4m4h1l2a/x86_64/rnscreens_autolinked_build/CMakeFiles/edit_cache.dir
+V:/monorepo/apps/nova-mobile-app/android/app/.cxx/Debug/4m4h1l2a/x86_64/rnscreens_autolinked_build/CMakeFiles/rebuild_cache.dir
+V:/monorepo/apps/nova-mobile-app/android/app/.cxx/Debug/4m4h1l2a/x86_64/rnsvg_autolinked_build/CMakeFiles/react_codegen_rnsvg.dir
+V:/monorepo/apps/nova-mobile-app/android/app/.cxx/Debug/4m4h1l2a/x86_64/rnsvg_autolinked_build/CMakeFiles/edit_cache.dir
+V:/monorepo/apps/nova-mobile-app/android/app/.cxx/Debug/4m4h1l2a/x86_64/rnsvg_autolinked_build/CMakeFiles/rebuild_cache.dir

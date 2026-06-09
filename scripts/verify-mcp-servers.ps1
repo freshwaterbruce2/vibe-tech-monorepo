@@ -40,7 +40,8 @@ Write-Host ""
 
 # Check .mcp.json configuration
 Write-Host "4. Checking .mcp.json configuration..." -ForegroundColor Yellow
-$mcpConfigPath = "C:\dev\.mcp.json"
+$repoRoot = Split-Path -Parent $PSScriptRoot
+$mcpConfigPath = "$repoRoot\.mcp.json"
 if (Test-Path $mcpConfigPath) {
     Write-Host "   [OK] .mcp.json exists" -ForegroundColor Green
     $config = Get-Content $mcpConfigPath -Raw | ConvertFrom-Json
@@ -56,10 +57,10 @@ Write-Host ""
 # Check critical directories
 Write-Host "5. Checking critical directories..." -ForegroundColor Yellow
 $directories = @(
-    "C:\dev",
-    "C:\dev\apps",
-    "C:\dev\packages",
-    "C:\dev\backend",
+    "$repoRoot",
+    "$repoRoot\apps",
+    "$repoRoot\packages",
+    "$repoRoot\backend",
     "D:\databases",
     "D:\logs",
     "D:\learning-system"
@@ -93,7 +94,7 @@ Write-Host ""
 
 # Check Python MCP script
 Write-Host "7. Checking Python MCP scripts..." -ForegroundColor Yellow
-$pythonScript = "C:\dev\tools\deepseek_hands.py"
+$pythonScript = "$repoRoot\tools\deepseek_hands.py"
 if (Test-Path $pythonScript) {
     Write-Host "   [OK] deepseek_hands.py exists" -ForegroundColor Green
 } else {

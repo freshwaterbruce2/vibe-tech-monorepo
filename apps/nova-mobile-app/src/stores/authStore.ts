@@ -3,10 +3,22 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { Alert } from 'react-native';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { apiClient, setClientAuthToken } from '../api/client';
+
+interface UserInfo {
+  id: string;
+  email: string;
+  fullName: string;
+}
 
 interface AuthState {
+  token: string | null;
+  user: UserInfo | null;
+  isLoading: boolean;
   biometricEnabled: boolean;
   isUnlocked: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
   toggleBiometric: () => Promise<void>;
   authenticate: () => Promise<boolean>;
   lock: () => void;
@@ -16,8 +28,27 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
+      token: null,
+      user: null,
+      isLoading: false,
       biometricEnabled: false,
       isUnlocked: true,
+
+      login: async (email, password) => {
+        set({ isLoading: true });
+        try {
+          const response = await apiClient.post('/auth/login', { email, password });
+          const { token, user } = response.data;
+          set({ token, user, isLoading: false, isUnlocked: true });
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      logout: async () => {
+        set({ token: null, user: null, isUnlocked: true });
+      },
 
       toggleBiometric: async () => {
         const current = get().biometricEnabled;
@@ -68,7 +99,16 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'nova-auth',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ biometricEnabled: state.biometricEnabled }),
+      partialize: (state) => ({
+        token: state.token,
+        user: state.user,
+        biometricEnabled: state.biometricEnabled,
+      }),
     },
   ),
 );
+
+// Subscribe to token changes to keep apiClient headers updated
+useAuthStore.subscribe((state) => {
+  setClientAuthToken(state.token);
+});
