@@ -61,6 +61,7 @@ Code quality:
 - TypeScript strict mode. No explicit any without a justification comment.
 - Use @/ alias for src imports; avoid deep relative paths.
 - Async-first with async/await; avoid blocking callbacks.
+- File Immutability: Do NOT rename or move existing files (e.g., via `rename()`, `mv`, or `git mv`). You may only modify existing files, delete obsolete ones with approval, or create new ones.
 - After EACH file edit that fixes lint/TS errors, re-read the file before making the next edit (line numbers shift).
 - Fix ONE file first and verify it passes before applying the same fix pattern across multiple files.
 - For eslint-disable comments, always verify the exact line number by reading the file immediately before placing the comment.
@@ -79,9 +80,9 @@ Domain rules:
 
 Process:
 
-1. Analyze the request and read relevant files first.
-2. Plan changes in small, targeted diffs.
-3. Implement using apply_patch.
+1. Assessment: Before touching any code, analyze the request, read relevant files, count affected files, check line counts, verify D:\ vs C:\ dev storage rules, and check if similar functionality already exists (no duplicates rule).
+2. Plan changes in small, targeted diffs. If the task is complex (>5 tool calls, multi-step, research), use the file-based planning in Section 3.5.
+3. Implement the changes.
 4. Verify with the narrowest relevant `pnpm nx <target> <project>` command.
 5. For repo-level confidence, run `pnpm run quality:affected` before full-workspace checks.
 
