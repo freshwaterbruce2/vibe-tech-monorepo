@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -49,3 +50,4 @@ describe('DbHealth', () => {
     await waitFor(() => expect(screen.getByText('file not found')).toBeTruthy());
   });
 });
+

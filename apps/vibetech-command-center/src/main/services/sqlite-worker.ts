@@ -4,6 +4,14 @@ import { existsSync, statSync, readdirSync } from 'node:fs';
 import { resolve, normalize, relative, isAbsolute } from 'node:path';
 import { loadDatabaseTargets } from './database-inventory';
 import { openReadOnlyDatabase as openDatabase } from './sqlite-native';
+import type { DbExplorerDatabase, DbTableSchema } from '../../shared/types';
+
+interface WorkerResponse {
+  id: string;
+  success: boolean;
+  data?: unknown;
+  error?: string;
+}
 
 // Normalize helper
 function normalizeWindowsPath(p: string): string {
@@ -56,7 +64,7 @@ const SEMANTIC_HALF_LIFE_MS = 11 * 24 * 60 * 60 * 1000;
 const RECENT_MEMORY_LIMIT = 100;
 const DECAY_PREVIEW_LIMIT = 500;
 
-function runComputeDecay(db: Database.Database): any[] {
+function runComputeDecay(db: Database.Database) {
   const now = Date.now();
   const rows = db.prepare(`
     SELECT id, text, category, importance, created,
@@ -89,19 +97,19 @@ function runComputeDecay(db: Database.Database): any[] {
 }
 
 export function handleWorkerAction(
-  message: { id: string; action: string; payload: any },
-  postMessage: (res: any) => void
+  message: { id: string; action: string; payload: unknown },
+  postMessage: (res: WorkerResponse) => void
 ): void {
   const { id, action, payload } = message;
 
   try {
-    let resultData: any;
+    let resultData: unknown;
 
     if (action === 'dbExplorer.listDatabases') {
       const { allowedRoots } = payload as { allowedRoots: string[] };
       const inventory = loadDatabaseTargets();
       const normAllowedRoots = allowedRoots.map((r: string) => normalizeWindowsPath(resolve(r)));
-      const result: any[] = [];
+      const result: DbExplorerDatabase[] = [];
       const seenPaths = new Set<string>();
 
       for (const target of inventory) {
@@ -165,7 +173,7 @@ export function handleWorkerAction(
           .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
           .all() as Array<{ name: string }>;
 
-        const schemas: any[] = [];
+        const schemas: DbTableSchema[] = [];
         for (const t of tableRows) {
           const tableName = t.name;
           const infoRows = db.prepare(`PRAGMA table_info("${tableName.replace(/"/g, '""')}")`).all() as Array<{

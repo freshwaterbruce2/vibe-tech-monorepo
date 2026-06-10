@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -49,6 +50,15 @@ function setupBridge(options?: {
         },
         timestamp: Date.now()
       })
+    },
+    webmcp: {
+      status: vi.fn().mockResolvedValue({
+        ok: true,
+        data: { connected: false, toolCount: 0, lastSyncAt: null, pendingExecutions: 0 },
+        timestamp: Date.now()
+      }),
+      list: vi.fn().mockResolvedValue({ ok: true, data: [], timestamp: Date.now() }),
+      execute: vi.fn().mockResolvedValue({ ok: true, data: { success: true }, timestamp: Date.now() })
     }
   };
 
@@ -297,3 +307,4 @@ describe('AgentOrchestrator', () => {
     });
   });
 });
+

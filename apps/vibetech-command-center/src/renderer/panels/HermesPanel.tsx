@@ -1,6 +1,35 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Square, ExternalLink, RefreshCw, Cpu, Activity, ShieldCheck } from 'lucide-react';
 import { Panel } from '@renderer/components/Panel';
+import type { ProcessChunk, ProcessHandle } from '@shared/types';
+
+// Minimal typings for the Electron <webview> element and its events; the full
+// WebviewTag type lives in the main-process electron typings, not the renderer DOM lib.
+interface HermesWebview extends HTMLElement {
+  reload: () => void;
+}
+
+interface WebviewFailLoadEvent extends Event {
+  isMainFrame: boolean;
+  errorDescription?: string;
+  errorCode?: number;
+}
+
+interface ProcessExitEvent {
+  id: string;
+  exitCode: number | null;
+}
+
+// Probe server health to see if it is running (even if launched externally)
+const probeHealth = async (): Promise<boolean> => {
+  try {
+    // Use no-cors to prevent CORS blocks, we only care if a TCP response is returned
+    await fetch('http://127.0.0.1:8787/health', { mode: 'no-cors', cache: 'no-store' });
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 export function HermesPanel() {
   const [isRunning, setIsRunning] = useState<boolean>(false);
@@ -11,39 +40,29 @@ export function HermesPanel() {
   const [webviewLoading, setWebviewLoading] = useState<boolean>(true);
   const [webviewError, setWebviewError] = useState<{ message: string; code?: number } | null>(null);
   const logsEndRef = useRef<HTMLDivElement | null>(null);
-  const webviewRef = useRef<any>(null);
+  const webviewRef = useRef<HermesWebview | null>(null);
 
-  // Probe server health to see if it is running (even if launched externally)
-  const probeHealth = async (): Promise<boolean> => {
-    try {
-      // Use no-cors to prevent CORS blocks, we only care if a TCP response is returned
-      await fetch('http://127.0.0.1:8787/health', { mode: 'no-cors', cache: 'no-store' });
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  const checkStatus = async () => {
+  const checkStatus = useCallback(async (): Promise<void> => {
     setIsChecking(true);
     const alive = await probeHealth();
     setIsRunning(alive);
     setIsChecking(false);
-  };
+  }, []);
 
   // Initial check and periodic polling
   useEffect(() => {
-    checkStatus();
-    const interval = setInterval(async () => {
-      const alive = await probeHealth();
-      setIsRunning(alive);
-      if (alive) {
-        setIsStarting(false);
-      }
+    void checkStatus();
+    const interval = setInterval(() => {
+      void probeHealth().then((alive) => {
+        setIsRunning(alive);
+        if (alive) {
+          setIsStarting(false);
+        }
+      });
     }, 4000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [checkStatus]);
 
   // Reset webview states when isRunning becomes true
   useEffect(() => {
@@ -71,11 +90,12 @@ export function HermesPanel() {
       setWebviewLoading(false);
     };
 
-    const handleFailLoad = (e: any) => {
-      if (e.isMainFrame) {
+    const handleFailLoad = (e: Event) => {
+      const evt = e as WebviewFailLoadEvent;
+      if (evt.isMainFrame) {
         setWebviewError({
-          message: e.errorDescription || 'Connection to Hermes WebUI failed.',
-          code: e.errorCode,
+          message: evt.errorDescription ?? 'Connection to Hermes WebUI failed.',
+          code: evt.errorCode,
         });
         setWebviewLoading(false);
       }
@@ -101,7 +121,7 @@ export function HermesPanel() {
       webview.removeEventListener('did-fail-load', handleFailLoad);
       webview.removeEventListener('crashed', handleCrashed);
     };
-  }, [isRunning, webviewRef.current]);
+  }, [isRunning]);
 
   const handleReloadWebview = () => {
     if (webviewRef.current) {
@@ -120,14 +140,16 @@ export function HermesPanel() {
   useEffect(() => {
     if (!processId) return;
 
-    const unsubscribe = window.commandCenter.stream.subscribe('cc.process.chunk', (chunk: any) => {
-      if (chunk && chunk.processId === processId) {
+    const unsubscribe = window.commandCenter.stream.subscribe('cc.process.chunk', (payload) => {
+      const chunk = payload as ProcessChunk;
+      if (chunk.processId === processId) {
         setLogs((prev) => [...prev, chunk.data].slice(-100));
       }
     });
 
-    const unsubscribeExit = window.commandCenter.stream.subscribe('cc.process.exit', (event: any) => {
-      if (event && event.id === processId) {
+    const unsubscribeExit = window.commandCenter.stream.subscribe('cc.process.exit', (payload) => {
+      const event = payload as ProcessExitEvent;
+      if (event.id === processId) {
         setIsStarting(false);
         setIsRunning(false);
         setProcessId(null);
@@ -146,9 +168,9 @@ export function HermesPanel() {
     setLogs(['[System] Launching Hermes WebUI via start.ps1...']);
 
     // Check if hermes-webui exists
-    const statRes = await window.commandCenter.fs.stat('C:\\dev\\tools\\hermes-webui\\start.ps1');
+    const statRes = await window.commandCenter.fs.stat('V:\\monorepo\\tools\\hermes-webui\\start.ps1');
     if (!statRes.ok || !statRes.data.exists) {
-      setLogs((prev) => [...prev, '[Error] start.ps1 not found in C:\\dev\\tools\\hermes-webui\\. Please check your installation.']);
+      setLogs((prev) => [...prev, '[Error] start.ps1 not found in V:\\monorepo\\tools\\hermes-webui\\. Please check your installation.']);
       setIsStarting(false);
       return;
     }
@@ -156,30 +178,31 @@ export function HermesPanel() {
     // Spawn powershell execution in background
     const spawnRes = await window.commandCenter.process.spawn({
       command: 'powershell.exe',
-      args: ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', 'C:\\dev\\tools\\hermes-webui\\start.ps1', '-Port', '8787'],
-      cwd: 'C:\\dev\\tools\\hermes-webui'
+      args: ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', 'V:\\monorepo\\tools\\hermes-webui\\start.ps1', '-Port', '8787'],
+      cwd: 'V:\\monorepo\\tools\\hermes-webui'
     });
 
     if (spawnRes.ok) {
-      const procData = spawnRes.data;
+      const procData: ProcessHandle = spawnRes.data;
       setProcessId(procData.id);
-      setLogs((prev) => [...prev, `[System] Process spawned (PID: ${procData.pid || 'unknown'}). Waiting for server response...`]);
+      setLogs((prev) => [...prev, `[System] Process spawned (PID: ${procData.pid ?? 'unknown'}). Waiting for server response...`]);
 
       // Poll aggressively for 15 seconds to detect startup
       let attempts = 0;
-      const pollTimer = setInterval(async () => {
+      const pollTimer = setInterval(() => {
         attempts++;
-        const alive = await probeHealth();
-        if (alive) {
-          setIsRunning(true);
-          setIsStarting(false);
-          clearInterval(pollTimer);
-          setLogs((prev) => [...prev, '[System] Hermes WebUI is up and responding! Loading interface...']);
-        } else if (attempts >= 15) {
-          clearInterval(pollTimer);
-          setIsStarting(false);
-          setLogs((prev) => [...prev, '[Warning] WebUI did not respond in time. It might still be starting, or check the terminal output below.']);
-        }
+        void probeHealth().then((alive) => {
+          if (alive) {
+            setIsRunning(true);
+            setIsStarting(false);
+            clearInterval(pollTimer);
+            setLogs((prev) => [...prev, '[System] Hermes WebUI is up and responding! Loading interface...']);
+          } else if (attempts >= 15) {
+            clearInterval(pollTimer);
+            setIsStarting(false);
+            setLogs((prev) => [...prev, '[Warning] WebUI did not respond in time. It might still be starting, or check the terminal output below.']);
+          }
+        });
       }, 1000);
     } else {
       setIsStarting(false);
@@ -201,7 +224,7 @@ export function HermesPanel() {
     await window.commandCenter.process.spawn({
       command: 'explorer.exe',
       args: ['http://127.0.0.1:8787'],
-      cwd: 'C:\\dev'
+      cwd: 'V:\\monorepo'
     });
   };
 
@@ -209,7 +232,7 @@ export function HermesPanel() {
     <Panel
       title="Hermes Workspace"
       loading={isChecking && !isStarting}
-      onRefresh={checkStatus}
+      onRefresh={() => { void checkStatus(); }}
       actions={
         <div className="flex items-center gap-2">
           {isRunning ? (
@@ -219,7 +242,7 @@ export function HermesPanel() {
                 Live on 8787
               </span>
               <button
-                onClick={handleOpenExternal}
+                onClick={() => { void handleOpenExternal(); }}
                 className="btn btn-primary text-xs py-1 px-2.5"
                 title="Open in external browser"
               >
@@ -227,7 +250,7 @@ export function HermesPanel() {
               </button>
               {processId && (
                 <button
-                  onClick={handleStop}
+                  onClick={() => { void handleStop(); }}
                   className="btn text-xs py-1 px-2.5 text-status-error border-status-error/30 hover:bg-status-error/10"
                   title="Stop server"
                 >
@@ -242,7 +265,7 @@ export function HermesPanel() {
             </span>
           )}
           <button
-            onClick={checkStatus}
+            onClick={() => { void checkStatus(); }}
             className="btn text-xs py-1"
             title="Refresh status"
             disabled={isChecking || isStarting}
@@ -259,7 +282,7 @@ export function HermesPanel() {
               ref={webviewRef}
               src="http://127.0.0.1:8787"
               className="w-full h-full border-0 absolute inset-0"
-              allowpopups="true"
+              allowpopups={true}
             />
             {/* Loading Overlay */}
             {webviewLoading && (
@@ -305,7 +328,7 @@ export function HermesPanel() {
                     <RefreshCw size={14} /> Retry Connection
                   </button>
                   <button
-                    onClick={handleStop}
+                    onClick={() => { void handleStop(); }}
                     className="btn text-status-error border-status-error/30 hover:bg-status-error/10 px-4 py-2 flex items-center gap-2"
                   >
                     <Square size={14} /> Stop Server
@@ -331,7 +354,7 @@ export function HermesPanel() {
             <div className="flex items-center gap-3 mb-8">
               {!isStarting ? (
                 <button
-                  onClick={handleLaunch}
+                  onClick={() => { void handleLaunch(); }}
                   className="btn btn-primary px-6 py-2.5 text-base flex items-center gap-2 shadow-glow-cyan hover:shadow-glow-cyan-strong transition-all"
                 >
                   <Play size={16} fill="currentColor" /> Launch WebUI

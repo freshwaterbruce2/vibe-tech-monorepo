@@ -33,3 +33,6 @@ export type { AgentOrchestratorOptions } from './agent-orchestrator';
 
 export { MemoryVizService } from './memory-viz';
 export type { MemoryVizOptions } from './memory-viz';
+
+export { WebMCPGatewayService } from './webmcp-gateway';
+export type { WebMCPGatewayOptions, WebMCPRendererTarget } from './webmcp-gateway';

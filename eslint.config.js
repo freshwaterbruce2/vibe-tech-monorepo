@@ -598,4 +598,11 @@ export default tseslint.config(
       '@typescript-eslint/prefer-nullish-coalescing': 'off',
     },
   },
+
+  // Build-tool config files usually sit outside their app's tsconfig include,
+  // so the type-aware project service cannot resolve them. Lint untyped.
+  {
+    files: ['**/vite.config.*', '**/vitest.config.*', '**/electron.vite.config.*'],
+    ...tseslint.configs.disableTypeChecked,
+  },
 );

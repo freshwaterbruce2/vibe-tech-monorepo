@@ -23,7 +23,10 @@ export class ProcessRunner extends EventEmitter {
 
   spawn(spec: ProcessSpec): ProcessHandle {
     const id = randomUUID();
-    const proc = spawn(spec.command, [...spec.args], {
+    const command = process.platform === 'win32' && spec.command === 'pnpm'
+      ? 'pnpm.cmd'
+      : spec.command;
+    const proc = spawn(command, [...spec.args], {
       cwd: spec.cwd,
       env: { ...process.env, ...(spec.env ?? {}) },
       shell: false,

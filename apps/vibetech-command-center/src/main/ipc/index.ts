@@ -8,7 +8,8 @@ import type {
   RagSearchQuery, RagSearchResult, ServiceName, FsStatResult,
   AffectedGraph, DbExplorerDatabase, DbTableSchema, DbExplorerResult,
   McpServerStatus, AgentTaskLauncher, AgentTaskSpec, LogSearchFilters,
-  MemoryVizSnapshot, MemorySearchResult, MemoryDecayView
+  MemoryVizSnapshot, MemorySearchResult, MemoryDecayView,
+  WebMCPToolDescriptor, WebMCPExecuteResponse, WebMCPGatewayStatus
 } from '../../shared/types';
 import type { ServiceContainer } from '../service-container';
 
@@ -119,7 +120,7 @@ export function registerIpcHandlers(c: ServiceContainer): void {
 
   ipcMain.handle(IPC_CHANNELS.META_INFO, async (): Promise<IpcResult<{ version: string; monorepoRoot: string; wsPort: number }>> => {
     try {
-      return ok({ version: '0.1.0', monorepoRoot: 'C:\\dev', wsPort: c.wsPort });
+      return ok({ version: '0.1.0', monorepoRoot: 'V:\\monorepo', wsPort: c.wsPort });
     } catch (e) { return err(e, 'META_INFO_FAILED'); }
   });
 
@@ -184,8 +185,32 @@ export function registerIpcHandlers(c: ServiceContainer): void {
     try { return ok(c.memory.triggerConsolidation()); }
     catch (e) { return err(e, 'MEMORY_VIZ_CONSOLIDATE_FAILED'); }
   });
+
+  ipcMain.handle(IPC_CHANNELS.WEBMCP_SYNC_TOOLS, async (evt, tools: WebMCPToolDescriptor[]): Promise<IpcResult<WebMCPGatewayStatus>> => {
+    try { return ok(c.webmcp.syncTools(tools, evt.sender)); }
+    catch (e) { return err(e, 'WEBMCP_SYNC_TOOLS_FAILED'); }
+  });
+  ipcMain.handle(IPC_CHANNELS.WEBMCP_LIST, async (): Promise<IpcResult<WebMCPToolDescriptor[]>> => {
+    try { return ok(c.webmcp.listTools()); }
+    catch (e) { return err(e, 'WEBMCP_LIST_FAILED'); }
+  });
+  ipcMain.handle(IPC_CHANNELS.WEBMCP_STATUS, async (): Promise<IpcResult<WebMCPGatewayStatus>> => {
+    try { return ok(c.webmcp.getStatus()); }
+    catch (e) { return err(e, 'WEBMCP_STATUS_FAILED'); }
+  });
+  ipcMain.handle(IPC_CHANNELS.WEBMCP_EXECUTE, async (_evt, name: string, args: Record<string, unknown>): Promise<IpcResult<unknown>> => {
+    try {
+      if (typeof name !== 'string' || name.length === 0) throw new Error('invalid tool name');
+      return ok(await c.webmcp.executeTool(name, args ?? {}));
+    } catch (e) { return err(e, 'WEBMCP_EXECUTE_FAILED'); }
+  });
+  // Fire-and-forget reply path: the renderer answers execute requests here.
+  ipcMain.on(IPC_CHANNELS.WEBMCP_EXECUTE_RESULT, (_evt, res: WebMCPExecuteResponse) => {
+    c.webmcp.handleExecuteResult(res);
+  });
 }
 
 export function unregisterIpcHandlers(): void {
   for (const ch of Object.values(IPC_CHANNELS)) ipcMain.removeHandler(ch);
+  ipcMain.removeAllListeners(IPC_CHANNELS.WEBMCP_EXECUTE_RESULT);
 }

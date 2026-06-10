@@ -4,7 +4,7 @@ import { sep } from 'node:path';
 import type { FileEvent, FileEventType } from '../../shared/types';
 
 export interface MonorepoWatcherOptions {
-  monorepoRoot: string;       // default: C:\dev
+  monorepoRoot: string;       // default: V:\monorepo
   debounceMs?: number;        // default: 250
   ignoreInitial?: boolean;    // default: true
 }

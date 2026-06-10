@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -58,3 +59,4 @@ describe('BackupLog', () => {
     await waitFor(() => expect(screen.getByText(/no backups yet/i)).toBeTruthy());
   });
 });
+

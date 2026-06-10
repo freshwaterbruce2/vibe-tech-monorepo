@@ -1,7 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryVizService } from './memory-viz';
 
-vi.mock('better-sqlite3', () => ({ default: vi.fn() }));
+vi.mock('better-sqlite3', () => {
+  let activeImpl: any = null;
+  const mockCtor = vi.fn().mockImplementation(function (this: any, ...args: any[]) {
+    if (activeImpl) {
+      return activeImpl.apply(this, args);
+    }
+    return {};
+  });
+  const originalMockImplementation = mockCtor.mockImplementation;
+  mockCtor.mockImplementation = function (fn: any) {
+    activeImpl = fn;
+    return originalMockImplementation.call(this, fn);
+  };
+  return { default: mockCtor };
+});
 vi.mock('node:fs');
 
 import Database from 'better-sqlite3';
@@ -75,7 +89,7 @@ describe('MemoryVizService', () => {
 
     it('opens the external memory database in read-only query mode', () => {
       const mockDb = createMockDb({});
-      MockedDatabase.mockImplementation(() => mockDb as unknown as ReturnType<typeof Database>);
+      MockedDatabase.mockImplementation(function() { return mockDb as unknown as ReturnType<typeof Database>; });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
       svc.getSnapshot();
@@ -96,7 +110,7 @@ describe('MemoryVizService', () => {
         semantic_memory: [{ id: 2, text: 't', category: 'c', importance: 5, created: Date.now(), last_accessed: Date.now(), access_count: 3 }],
         procedural_memory: [{ id: 3, pattern: 'p', context: 'ctx', frequency: 10, success_rate: 0.9, last_used: Date.now() }],
       });
-      MockedDatabase.mockImplementation(() => mockDb as unknown as ReturnType<typeof Database>);
+      MockedDatabase.mockImplementation(function() { return mockDb as unknown as ReturnType<typeof Database>; });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
       const result = svc.getSnapshot() as Record<string, unknown>;
@@ -116,7 +130,7 @@ describe('MemoryVizService', () => {
         semantic_memory: [{ id: 2 }],
         procedural_memory: [{ id: 3 }],
       });
-      MockedDatabase.mockImplementation(() => mockDb as unknown as ReturnType<typeof Database>);
+      MockedDatabase.mockImplementation(function() { return mockDb as unknown as ReturnType<typeof Database>; });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
       const result = svc.getSnapshot() as { stats: Array<{ store: string; recordCount: number }> };
@@ -128,7 +142,7 @@ describe('MemoryVizService', () => {
     });
 
     it('handles missing database gracefully', () => {
-      MockedDatabase.mockImplementation(() => { throw new Error('ENOENT'); });
+      MockedDatabase.mockImplementation(function() { throw new Error('ENOENT'); });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\missing.db' });
       const result = svc.getSnapshot() as Record<string, unknown>;
@@ -147,7 +161,7 @@ describe('MemoryVizService', () => {
 
     it('handles empty stores gracefully', () => {
       const mockDb = createMockDb({});
-      MockedDatabase.mockImplementation(() => mockDb as unknown as ReturnType<typeof Database>);
+      MockedDatabase.mockImplementation(function() { return mockDb as unknown as ReturnType<typeof Database>; });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
       const result = svc.getSnapshot() as Record<string, unknown>;
@@ -186,7 +200,7 @@ describe('MemoryVizService', () => {
           success_rate: 1,
         })),
       });
-      MockedDatabase.mockImplementation(() => mockDb as unknown as ReturnType<typeof Database>);
+      MockedDatabase.mockImplementation(function() { return mockDb as unknown as ReturnType<typeof Database>; });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
       const result = svc.getSnapshot() as {
@@ -213,7 +227,7 @@ describe('MemoryVizService', () => {
           { action: 'prune', created_at: ts },
         ],
       });
-      MockedDatabase.mockImplementation(() => mockDb as unknown as ReturnType<typeof Database>);
+      MockedDatabase.mockImplementation(function() { return mockDb as unknown as ReturnType<typeof Database>; });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
       const result = svc.getSnapshot() as { consolidationStatus: { lastRunAt: number; itemsSummarized: number; itemsPruned: number } };
@@ -229,7 +243,7 @@ describe('MemoryVizService', () => {
       const mockDb = createMockDb({
         episodic_memory: [{ id: 1, query: 'hello', response: 'world', timestamp: Date.now() }],
       });
-      MockedDatabase.mockImplementation(() => mockDb as unknown as ReturnType<typeof Database>);
+      MockedDatabase.mockImplementation(function() { return mockDb as unknown as ReturnType<typeof Database>; });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
       const results = svc.search('hello', 5);
@@ -240,7 +254,7 @@ describe('MemoryVizService', () => {
       const mockDb = createMockDb({
         episodic_memory: [{ id: 1, query: 'hello', response: 'world', timestamp: Date.now(), score: 1.0 }],
       });
-      MockedDatabase.mockImplementation(() => mockDb as unknown as ReturnType<typeof Database>);
+      MockedDatabase.mockImplementation(function() { return mockDb as unknown as ReturnType<typeof Database>; });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
       const results = svc.search('hello') as Array<{ source: string; text: string; score: number }>;
@@ -252,7 +266,7 @@ describe('MemoryVizService', () => {
     });
 
     it('returns empty array when database is unavailable', () => {
-      MockedDatabase.mockImplementation(() => { throw new Error('ENOENT'); });
+      MockedDatabase.mockImplementation(function() { throw new Error('ENOENT'); });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\missing.db' });
       const results = svc.search('hello');
@@ -264,7 +278,7 @@ describe('MemoryVizService', () => {
         id: i, query: `q${i}`, response: `r${i}`, timestamp: Date.now()
       }));
       const mockDb = createMockDb({ episodic_memory: rows });
-      MockedDatabase.mockImplementation(() => mockDb as unknown as ReturnType<typeof Database>);
+      MockedDatabase.mockImplementation(function() { return mockDb as unknown as ReturnType<typeof Database>; });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
       const results = svc.search('q', 5);
@@ -279,7 +293,7 @@ describe('MemoryVizService', () => {
           { id: 1, text: 'a', category: null, importance: 5, created: Date.now(), last_accessed: Date.now(), access_count: 0 },
         ],
       });
-      MockedDatabase.mockImplementation(() => mockDb as unknown as ReturnType<typeof Database>);
+      MockedDatabase.mockImplementation(function() { return mockDb as unknown as ReturnType<typeof Database>; });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
       const results = svc.computeDecay() as Array<{ decayScore: number }>;
@@ -294,7 +308,7 @@ describe('MemoryVizService', () => {
           { id: 1, text: 'a', category: null, importance: 10, created: Date.now(), last_accessed: Date.now(), access_count: 10 },
         ],
       });
-      MockedDatabase.mockImplementation(() => mockDb as unknown as ReturnType<typeof Database>);
+      MockedDatabase.mockImplementation(function() { return mockDb as unknown as ReturnType<typeof Database>; });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
       const results = svc.computeDecay() as Array<{ recommendedAction: string }>;
@@ -308,7 +322,7 @@ describe('MemoryVizService', () => {
           { id: 1, text: 'a', category: null, importance: 3, created: Date.now() - 20 * 24 * 60 * 60 * 1000, last_accessed: Date.now() - 20 * 24 * 60 * 60 * 1000, access_count: 0 },
         ],
       });
-      MockedDatabase.mockImplementation(() => mockDb as unknown as ReturnType<typeof Database>);
+      MockedDatabase.mockImplementation(function() { return mockDb as unknown as ReturnType<typeof Database>; });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
       const results = svc.computeDecay() as Array<{ recommendedAction: string }>;
@@ -322,7 +336,7 @@ describe('MemoryVizService', () => {
           { id: 1, text: 'a', category: null, importance: 1, created: Date.now() - 60 * 24 * 60 * 60 * 1000, last_accessed: Date.now() - 60 * 24 * 60 * 60 * 1000, access_count: 0 },
         ],
       });
-      MockedDatabase.mockImplementation(() => mockDb as unknown as ReturnType<typeof Database>);
+      MockedDatabase.mockImplementation(function() { return mockDb as unknown as ReturnType<typeof Database>; });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
       const results = svc.computeDecay() as Array<{ recommendedAction: string }>;
@@ -332,7 +346,7 @@ describe('MemoryVizService', () => {
 
     it('returns empty array when no semantic memories exist', () => {
       const mockDb = createMockDb({});
-      MockedDatabase.mockImplementation(() => mockDb as unknown as ReturnType<typeof Database>);
+      MockedDatabase.mockImplementation(function() { return mockDb as unknown as ReturnType<typeof Database>; });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
       const results = svc.computeDecay();
@@ -350,7 +364,7 @@ describe('MemoryVizService', () => {
         access_count: 1,
       }));
       const mockDb = createMockDb({ semantic_memory: rows });
-      MockedDatabase.mockImplementation(() => mockDb as unknown as ReturnType<typeof Database>);
+      MockedDatabase.mockImplementation(function() { return mockDb as unknown as ReturnType<typeof Database>; });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
       const results = svc.computeDecay();
@@ -369,7 +383,7 @@ describe('MemoryVizService', () => {
           { id: 2, text: 'prune', category: null, importance: 1, created: Date.now() - 60 * 24 * 60 * 60 * 1000, last_accessed: Date.now() - 60 * 24 * 60 * 60 * 1000, access_count: 0 },
         ],
       });
-      MockedDatabase.mockImplementation(() => mockDb as unknown as ReturnType<typeof Database>);
+      MockedDatabase.mockImplementation(function() { return mockDb as unknown as ReturnType<typeof Database>; });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
       const result = svc.triggerConsolidation();
@@ -384,7 +398,7 @@ describe('MemoryVizService', () => {
     });
 
     it('returns failure when database is unavailable', () => {
-      MockedDatabase.mockImplementation(() => { throw new Error('ENOENT'); });
+      MockedDatabase.mockImplementation(function() { throw new Error('ENOENT'); });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\missing.db' });
       const result = svc.triggerConsolidation();
@@ -396,7 +410,7 @@ describe('MemoryVizService', () => {
     it('returns failure message on preview error', () => {
       const mockDb = createMockDb({});
       mockDb.prepare.mockImplementation(() => { throw new Error('readonly'); });
-      MockedDatabase.mockImplementation(() => mockDb as unknown as ReturnType<typeof Database>);
+      MockedDatabase.mockImplementation(function() { return mockDb as unknown as ReturnType<typeof Database>; });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
       const result = svc.triggerConsolidation();
@@ -412,7 +426,7 @@ describe('MemoryVizService', () => {
       mockDb.prepare.mockImplementation(() => {
         throw new Error('database disk image is malformed');
       });
-      MockedDatabase.mockImplementation(() => mockDb as unknown as ReturnType<typeof Database>);
+      MockedDatabase.mockImplementation(function() { return mockDb as unknown as ReturnType<typeof Database>; });
 
       const svc = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
       expect(() => svc.computeDecay()).toThrow('database disk image is malformed');

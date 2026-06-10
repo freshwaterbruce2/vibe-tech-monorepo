@@ -87,7 +87,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <div className="text-sm text-slate-400">
             <span className="text-pulse-cyan">{NAV.find((n) => n.id === activePanel)?.label ?? ''}</span>
           </div>
-          <div className="text-xs text-slate-500 font-mono">C:\dev</div>
+          <div className="text-xs text-slate-500 font-mono">V:\monorepo</div>
         </header>
         <div className="flex-1 overflow-auto p-6">
           {children}

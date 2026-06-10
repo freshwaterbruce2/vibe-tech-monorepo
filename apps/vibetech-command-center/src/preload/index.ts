@@ -1,5 +1,9 @@
-import { contextBridge, ipcRenderer } from 'electron';
-import { IPC_CHANNELS, type StreamTopic, type StreamMessage, type CommandCenterAPI } from '@shared/types';
+import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
+import {
+  IPC_CHANNELS, WEBMCP_EXECUTE_REQUEST_CHANNEL,
+  type StreamTopic, type StreamMessage, type CommandCenterAPI,
+  type WebMCPExecuteRequest, type WebMCPExecuteResponse, type WebMCPToolDescriptor
+} from '@shared/types';
 
 let ws: WebSocket | null = null;
 let wsPort: number | null = null;
@@ -116,6 +120,24 @@ const api: CommandCenterAPI = {
     search: async (query, topK) => ipcRenderer.invoke(IPC_CHANNELS.MEMORY_VIZ_SEARCH, query, topK),
     decay: async () => ipcRenderer.invoke(IPC_CHANNELS.MEMORY_VIZ_DECAY),
     consolidate: async () => ipcRenderer.invoke(IPC_CHANNELS.MEMORY_VIZ_CONSOLIDATE)
+  },
+  webmcp: {
+    publishTools: async (tools: WebMCPToolDescriptor[]) =>
+      ipcRenderer.invoke(IPC_CHANNELS.WEBMCP_SYNC_TOOLS, tools),
+    list: async () => ipcRenderer.invoke(IPC_CHANNELS.WEBMCP_LIST),
+    execute: async (name: string, toolArgs: Record<string, unknown>) =>
+      ipcRenderer.invoke(IPC_CHANNELS.WEBMCP_EXECUTE, name, toolArgs),
+    status: async () => ipcRenderer.invoke(IPC_CHANNELS.WEBMCP_STATUS),
+    onExecuteRequest(handler: (req: WebMCPExecuteRequest) => void) {
+      const listener = (_evt: IpcRendererEvent, req: WebMCPExecuteRequest): void => { handler(req); };
+      ipcRenderer.on(WEBMCP_EXECUTE_REQUEST_CHANNEL, listener);
+      return () => {
+        ipcRenderer.removeListener(WEBMCP_EXECUTE_REQUEST_CHANNEL, listener);
+      };
+    },
+    respond(res: WebMCPExecuteResponse) {
+      ipcRenderer.send(IPC_CHANNELS.WEBMCP_EXECUTE_RESULT, res);
+    }
   },
 
   stream: {

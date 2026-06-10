@@ -73,6 +73,13 @@ function makeFakeContainer(): ServiceContainer {
       computeDecay: vi.fn().mockResolvedValue([]),
       triggerConsolidation: vi.fn().mockResolvedValue({ success: false, message: 'read-only' })
     } as unknown as ServiceContainer['memory'],
+    webmcp: {
+      syncTools: vi.fn().mockReturnValue({ connected: true, toolCount: 0, lastSyncAt: null, pendingExecutions: 0 }),
+      listTools: vi.fn().mockReturnValue([]),
+      getStatus: vi.fn().mockReturnValue({ connected: false, toolCount: 0, lastSyncAt: null, pendingExecutions: 0 }),
+      executeTool: vi.fn().mockResolvedValue(null),
+      handleExecuteResult: vi.fn()
+    } as unknown as ServiceContainer['webmcp'],
     wsPort: 0
   };
 }

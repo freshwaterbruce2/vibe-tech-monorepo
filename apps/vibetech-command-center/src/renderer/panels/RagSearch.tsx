@@ -49,7 +49,7 @@ export function RagSearch() {
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="semantic search across C:\dev  (Ctrl+K)"
+            placeholder="semantic search across V:\monorepo  (Ctrl+K)"
             className="w-full bg-bg-elev border border-bg-line rounded pl-10 pr-24 py-2.5 text-sm
                        font-mono placeholder-slate-600 focus:outline-none focus:border-pulse-cyan-700
                        focus:shadow-glow-cyan"

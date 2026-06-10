@@ -10,7 +10,8 @@ import {
   NxAffectedService,
   DbExplorerService,
   AgentOrchestratorService,
-  MemoryVizService
+  MemoryVizService,
+  WebMCPGatewayService
 } from './services';
 
 export interface ServiceContainer {
@@ -26,6 +27,7 @@ export interface ServiceContainer {
   dbExplorer: DbExplorerService;
   agent: AgentOrchestratorService;
   memory: MemoryVizService;
+  webmcp: WebMCPGatewayService;
   wsPort: number;
 }
 
@@ -36,7 +38,8 @@ export interface ServiceContainerOptions {
 
 export function createServiceContainer(opts: ServiceContainerOptions): ServiceContainer {
   const runner = new ProcessRunner();
-  const agent = new AgentOrchestratorService({ monorepoRoot: opts.monorepoRoot, runner });
+  const webmcp = new WebMCPGatewayService();
+  const agent = new AgentOrchestratorService({ monorepoRoot: opts.monorepoRoot, runner, webmcpGateway: webmcp });
   const watcher = new MonorepoWatcher({ monorepoRoot: opts.monorepoRoot, debounceMs: 250 });
   const nxGraph = new NxGraphService({ monorepoRoot: opts.monorepoRoot });
   const nxAffected = new NxAffectedService({ monorepoRoot: opts.monorepoRoot });
@@ -48,12 +51,13 @@ export function createServiceContainer(opts: ServiceContainerOptions): ServiceCo
   const dbExplorer = new DbExplorerService({ allowedRoots: [opts.monorepoRoot, 'D:\\databases'] });
   const memory = new MemoryVizService({ dbPath: 'D:\\databases\\memory.db' });
 
-  return { watcher, nxGraph, nxAffected, health, dbMetrics, backup, runner, claude, rag, dbExplorer, agent, memory, wsPort: opts.wsPort };
+  return { watcher, nxGraph, nxAffected, health, dbMetrics, backup, runner, claude, rag, dbExplorer, agent, memory, webmcp, wsPort: opts.wsPort };
 }
 
 export async function disposeServiceContainer(c: ServiceContainer): Promise<void> {
   try { await c.watcher.stop(); } catch {}
   try { await c.rag.disconnect(); } catch {}
+  try { c.webmcp.dispose(); } catch {}
   for (const p of c.runner.list()) {
     if (p.status === 'running') c.runner.kill(p.id);
   }

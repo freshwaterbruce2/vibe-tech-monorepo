@@ -72,6 +72,8 @@ export function useStream<T = unknown>(topic: StreamTopic, handler: (payload: T)
   }, [topic, handler]);
 }
 
+export { useWebMCPGateway } from './useWebMCPGateway';
+
 export function useFileEventSubscription(): void {
   const pushFileEvents = useUiStore((s) => s.pushFileEvents);
   const setWsConnected = useUiStore((s) => s.setWsConnected);

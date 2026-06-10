@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -57,6 +58,14 @@ function mockBridge(overrides: Partial<CommandCenterAPI> = {}): void {
       decay: vi.fn().mockResolvedValue({ ok: true, data: [], timestamp: Date.now() }),
       consolidate: vi.fn().mockResolvedValue({ ok: true, data: { success: false, message: 'read-only' }, timestamp: Date.now() })
     },
+    webmcp: {
+      publishTools: vi.fn().mockResolvedValue({ ok: true, data: { connected: true, toolCount: 0, lastSyncAt: null, pendingExecutions: 0 }, timestamp: Date.now() }),
+      list: vi.fn().mockResolvedValue({ ok: true, data: [], timestamp: Date.now() }),
+      execute: vi.fn().mockResolvedValue({ ok: true, data: null, timestamp: Date.now() }),
+      status: vi.fn().mockResolvedValue({ ok: true, data: { connected: false, toolCount: 0, lastSyncAt: null, pendingExecutions: 0 }, timestamp: Date.now() }),
+      onExecuteRequest: vi.fn(() => () => {}),
+      respond: vi.fn()
+    },
     stream:  { subscribe: vi.fn(() => () => {}) },
     ...overrides
   };
@@ -94,3 +103,4 @@ describe('AppsGrid', () => {
     }));
   });
 });
+

@@ -3,6 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { Play, Square, RotateCcw, Search, Activity, Server } from 'lucide-react';
 import clsx from 'clsx';
 import { Panel, RelativeTime } from '@renderer/components/Panel';
+import { WebMCPTools } from '@renderer/panels/WebMCPTools';
 import { unwrap } from '@renderer/lib/ipc';
 import { useNxGraph, useCurrentTime } from '@renderer/hooks';
 import type { ProcessHandle, AgentTaskLauncher, McpServerStatus, AgentTaskSpec, LogSearchFilters, ProcessChunk } from '@shared/types';
@@ -20,29 +21,39 @@ export function AgentOrchestrator() {
     queryFn: async () => unwrap(window.commandCenter.agent.taskList()),
     refetchInterval: 5_000
   });
+  const webMcpStatusQuery = useQuery({
+    queryKey: ['webmcp', 'status'],
+    queryFn: async () => unwrap(window.commandCenter.webmcp.status()),
+    refetchInterval: 10_000
+  });
   const taskRun = useMutation({
     mutationFn: async (spec: AgentTaskLauncher) => unwrap(window.commandCenter.agent.taskRun(spec))
   });
   const healthyCount = mcpQuery.data?.filter((s) => s.healthy === true).length ?? 0;
   const unhealthyCount = mcpQuery.data?.filter((s) => s.healthy === false).length ?? 0;
 
+  const webMcpStatus = webMcpStatusQuery.data;
+  const webMcpToolCount = webMcpStatus?.connected ? webMcpStatus.toolCount : 0;
+
   return (
-    <div className="flex flex-col gap-4 h-full min-h-0">
-      <div className="shrink-0 flex items-center justify-between">
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-pulse-cyan">Agent Orchestrator</h1>
         <div className="flex items-center gap-3 text-xs">
+          {webMcpStatus?.connected && (
+            <span className="text-pulse-cyan-300 font-semibold border-r border-bg-line pr-3">
+              WebMCP: {webMcpToolCount} tools
+            </span>
+          )}
           <span className="flex items-center gap-1 text-status-ok"><Activity size={12} /> {healthyCount} healthy</span>
           <span className="flex items-center gap-1 text-status-error"><Activity size={12} /> {unhealthyCount} unhealthy</span>
         </div>
       </div>
-      <div className="flex-[2] min-h-0 flex flex-col gap-4 overflow-hidden">
-        <McpHealthStrip servers={mcpQuery.data ?? []} isLoading={mcpQuery.isFetching} />
-        <NxTaskLauncher onLaunch={(spec) => taskRun.mutate(spec)} isPending={taskRun.isPending} lastHandle={taskRun.data ?? null} />
-      </div>
-      <div className="flex-[3] min-h-0 flex flex-col gap-4 overflow-hidden">
-        <TaskList tasks={taskQuery.data ?? []} isLoading={taskQuery.isFetching} onRefetch={useCallback(() => { void taskQuery.refetch(); }, [taskQuery])} />
-        <LogSearch tasks={taskQuery.data ?? []} />
-      </div>
+      <McpHealthStrip servers={mcpQuery.data ?? []} isLoading={mcpQuery.isFetching} />
+      <NxTaskLauncher onLaunch={(spec) => taskRun.mutate(spec)} isPending={taskRun.isPending} lastHandle={taskRun.data ?? null} />
+      <TaskList tasks={taskQuery.data ?? []} isLoading={taskQuery.isFetching} onRefetch={useCallback(() => { void taskQuery.refetch(); }, [taskQuery])} />
+      <WebMCPTools />
+      <LogSearch tasks={taskQuery.data ?? []} />
     </div>
   );
 }
@@ -127,7 +138,7 @@ function NxTaskLauncher({ onLaunch, isPending, lastHandle }: { onLaunch: (spec: 
       </form>
       {lastHandle && (
         <div className="mt-2 text-xs">
-          <span className="text-status-ok">Launched</span> process <span className="font-mono text-slate-300">{lastHandle.id}</span> —{' '}
+          <span className="text-status-ok">Launched</span> process <span className="font-mono text-slate-300">{lastHandle.id}</span> -{' '}
           <span className={clsx(lastHandle.status === 'running' ? 'text-pulse-cyan' : lastHandle.status === 'exited' && lastHandle.exitCode === 0 ? 'text-status-ok' : 'text-status-error')}>
             {lastHandle.status}
           </span>
@@ -172,7 +183,7 @@ function TaskList({ tasks, isLoading, onRefetch }: { tasks: AgentTaskSpec[]; isL
           <tbody>
             {sorted.map((task) => <TaskRow key={task.id} task={task} now={now} onKill={handleKill} onRestart={handleRestart} />)}
             {sorted.length === 0 && (
-              <tr><td colSpan={7} className="py-4 text-slate-500 text-sm italic text-center">no tasks yet — launch one above</td></tr>
+              <tr><td colSpan={7} className="py-4 text-slate-500 text-sm italic text-center">no tasks yet - launch one above</td></tr>
             )}
           </tbody>
         </table>
@@ -220,7 +231,7 @@ function TaskRow({ task, now, onKill, onRestart }: { task: AgentTaskSpec; now: n
       <td className="py-2 px-3 font-mono text-xs">
         {task.exitCode !== null ? (
           <span className={task.exitCode === 0 ? 'text-status-ok' : 'text-status-error'}>{task.exitCode}</span>
-        ) : <span className="text-slate-600">—</span>}
+        ) : <span className="text-slate-600">-</span>}
       </td>
       <td className="py-2 px-3 text-right">
         <div className="flex items-center justify-end gap-2">
@@ -296,7 +307,7 @@ function LogSearch({ tasks }: { tasks: AgentTaskSpec[] }) {
         {error && <div className="text-status-error text-sm font-mono">{error}</div>}
         <div className="bg-bg-base border border-bg-line rounded p-3 h-48 overflow-auto font-mono text-xs space-y-0.5">
           {results.length === 0 ? (
-            <div className="text-slate-600 italic">{isSearching ? 'searching...' : 'no results — adjust filters and search'}</div>
+            <div className="text-slate-600 italic">{isSearching ? 'searching...' : 'no results - adjust filters and search'}</div>
           ) : (
             results.map((chunk, i) => (
               <div key={i} className={clsx('flex gap-2', chunk.stream === 'stderr' ? 'text-status-error' : 'text-slate-300')}>

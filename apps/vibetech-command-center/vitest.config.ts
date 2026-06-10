@@ -8,12 +8,22 @@ export default defineConfig({
     include: ['src/**/*.spec.ts', 'src/**/*.spec.tsx', 'tests/unit/**/*.spec.ts'],
     testTimeout: 10_000,
     hookTimeout: 10_000,
-    environmentMatchGlobs: [
-      ['src/renderer/**/*.spec.tsx', 'jsdom'],
-      ['src/renderer/**/*.spec.ts', 'jsdom'],
-      ['**', 'node']
-    ],
+    environment: 'node',
+    maxWorkers: 1,
+    poolOptions: {
+      threads: {
+        singleThread: true
+      },
+      forks: {
+        singleFork: true
+      }
+    },
     setupFiles: ['./tests/setup.ts'],
+    server: {
+      deps: {
+        inline: ['chokidar', 'readdirp']
+      }
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],

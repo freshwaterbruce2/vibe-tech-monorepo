@@ -3,6 +3,7 @@ import { normalize } from 'node:path';
 import { existsSync } from 'node:fs';
 import { createConnection } from 'node:net';
 import type { ProcessRunner } from './process-runner';
+import type { WebMCPGatewayService } from './webmcp-gateway';
 import type {
   ProcessHandle,
   ProcessChunk,
@@ -17,6 +18,8 @@ import type {
 export interface AgentOrchestratorOptions {
   monorepoRoot: string;
   runner: ProcessRunner;
+  /** Bridge to WebMCP tools registered in the dashboard renderer. */
+  webmcpGateway?: WebMCPGatewayService;
 }
 
 interface McpRegistryEntry {
@@ -53,6 +56,21 @@ export class AgentOrchestratorService {
   async probeMcpServers(): Promise<McpServerStatus[]> {
     const now = Date.now();
     const results: McpServerStatus[] = [];
+
+    const gateway = this.opts.webmcpGateway;
+    if (gateway) {
+      const status = gateway.getStatus();
+      results.push({
+        name: 'webmcp-ui-gateway',
+        transport: 'ipc',
+        healthy: status.connected,
+        runtimeStatus: status.connected ? 'running' : 'unreachable',
+        lastProbeAt: now,
+        error: status.connected
+          ? undefined
+          : 'dashboard renderer not connected'
+      });
+    }
 
     for (const entry of this.mcpRegistry) {
       if (entry.transport === 'http' && entry.port) {

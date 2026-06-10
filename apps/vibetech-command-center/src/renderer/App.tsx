@@ -13,7 +13,7 @@ import { MemoryViz } from '@renderer/panels/MemoryViz';
 import { DbExplorer } from '@renderer/panels/DbExplorer';
 import { AffectedDashboard } from '@renderer/panels/AffectedDashboard';
 import { useUiStore } from '@renderer/stores';
-import { useFileEventSubscription } from '@renderer/hooks';
+import { useFileEventSubscription, useWebMCPGateway } from '@renderer/hooks';
 
 export function App() {
   return (
@@ -25,6 +25,7 @@ export function App() {
 
 function AppInner() {
   useFileEventSubscription();
+  useWebMCPGateway();
   const activePanel = useUiStore((s) => s.activePanel);
 
   return (

@@ -94,7 +94,7 @@ export function BackupLog() {
 
       <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
         <HardDrive size={12} />
-        <span className="font-mono">C:\dev\_backups\</span>
+        <span className="font-mono">V:\monorepo\_backups\</span>
       </div>
     </Panel>
   );

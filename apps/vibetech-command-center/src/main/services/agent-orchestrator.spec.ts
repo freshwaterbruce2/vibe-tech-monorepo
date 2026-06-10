@@ -93,6 +93,40 @@ describe('AgentOrchestratorService', () => {
       expect(dc.error).toContain('cwd does not exist');
     });
 
+    it('includes webmcp-ui-gateway entry reflecting gateway status when a gateway is provided', async () => {
+      vi.mocked(existsSync).mockReturnValue(true);
+      const gateway = {
+        getStatus: vi.fn().mockReturnValue({ connected: true, toolCount: 4, lastSyncAt: Date.now(), pendingExecutions: 0 })
+      };
+      const withGateway = new AgentOrchestratorService({
+        monorepoRoot: 'C:\\dev',
+        runner: runner as unknown as ProcessRunner,
+        webmcpGateway: gateway as unknown as import('./webmcp-gateway').WebMCPGatewayService
+      });
+      const results = await withGateway.probeMcpServers();
+      expect(results).toHaveLength(8);
+      const entry = results.find((r) => r.name === 'webmcp-ui-gateway')!;
+      expect(entry).toMatchObject({ transport: 'ipc', healthy: true, runtimeStatus: 'running' });
+      expect(entry.error).toBeUndefined();
+    });
+
+    it('marks webmcp-ui-gateway unhealthy when the renderer is disconnected', async () => {
+      vi.mocked(existsSync).mockReturnValue(true);
+      const gateway = {
+        getStatus: vi.fn().mockReturnValue({ connected: false, toolCount: 0, lastSyncAt: null, pendingExecutions: 0 })
+      };
+      const withGateway = new AgentOrchestratorService({
+        monorepoRoot: 'C:\\dev',
+        runner: runner as unknown as ProcessRunner,
+        webmcpGateway: gateway as unknown as import('./webmcp-gateway').WebMCPGatewayService
+      });
+      const results = await withGateway.probeMcpServers();
+      const entry = results.find((r) => r.name === 'webmcp-ui-gateway')!;
+      expect(entry.healthy).toBe(false);
+      expect(entry.runtimeStatus).toBe('unreachable');
+      expect(entry.error).toBe('dashboard renderer not connected');
+    });
+
     it('includes correct name, transport, and lastProbeAt', async () => {
       vi.mocked(existsSync).mockReturnValue(true);
       const before = Date.now();

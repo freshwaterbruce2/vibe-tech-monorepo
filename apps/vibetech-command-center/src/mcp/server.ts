@@ -7,7 +7,7 @@ import {
 import { createServiceContainer, disposeServiceContainer, type ServiceContainer } from '../main/service-container';
 import { registerTools, type McpTool } from './tools';
 
-const MONOREPO_ROOT = 'C:\\dev';
+const MONOREPO_ROOT = 'V:\\monorepo';
 
 async function main(): Promise<void> {
   const log = (msg: string): void => { process.stderr.write(`[mcp-command-center] ${msg}\n`); };

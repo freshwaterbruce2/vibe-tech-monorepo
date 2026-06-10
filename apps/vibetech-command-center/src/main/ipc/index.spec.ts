@@ -1,11 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const handlers = new Map<string, (evt: unknown, ...args: unknown[]) => Promise<unknown>>();
+const listeners = new Map<string, (evt: unknown, ...args: unknown[]) => void>();
 
 vi.mock('electron', () => ({
   ipcMain: {
     handle: vi.fn((ch: string, h: (evt: unknown, ...args: unknown[]) => Promise<unknown>) => { handlers.set(ch, h); }),
-    removeHandler: vi.fn((ch: string) => { handlers.delete(ch); })
+    removeHandler: vi.fn((ch: string) => { handlers.delete(ch); }),
+    on: vi.fn((ch: string, l: (evt: unknown, ...args: unknown[]) => void) => { listeners.set(ch, l); }),
+    removeAllListeners: vi.fn((ch: string) => { listeners.delete(ch); })
   }
 }));
 
@@ -70,17 +73,30 @@ function makeFakeContainer(): ServiceContainer {
       computeDecay: vi.fn().mockResolvedValue([]),
       triggerConsolidation: vi.fn().mockResolvedValue({ success: false, message: 'read-only' })
     } as unknown as ServiceContainer['memory'],
+    webmcp: {
+      syncTools: vi.fn().mockReturnValue({ connected: true, toolCount: 1, lastSyncAt: 1, pendingExecutions: 0 }),
+      listTools: vi.fn().mockReturnValue([]),
+      getStatus: vi.fn().mockReturnValue({ connected: false, toolCount: 0, lastSyncAt: null, pendingExecutions: 0 }),
+      executeTool: vi.fn().mockResolvedValue({ success: true }),
+      handleExecuteResult: vi.fn()
+    } as unknown as ServiceContainer['webmcp'],
     wsPort: 3210
   };
 }
 
 describe('IPC handlers', () => {
-  beforeEach(() => { handlers.clear(); });
+  beforeEach(() => { handlers.clear(); listeners.clear(); });
 
   it('registers all channels', () => {
     registerIpcHandlers(makeFakeContainer());
     for (const ch of Object.values(IPC_CHANNELS)) {
-      expect(handlers.has(ch)).toBe(true);
+      // WEBMCP_EXECUTE_RESULT is a fire-and-forget reply path (ipcMain.on),
+      // every other channel is a request/response handler (ipcMain.handle).
+      if (ch === IPC_CHANNELS.WEBMCP_EXECUTE_RESULT) {
+        expect(listeners.has(ch)).toBe(true);
+      } else {
+        expect(handlers.has(ch)).toBe(true);
+      }
     }
   });
 
@@ -111,10 +127,43 @@ describe('IPC handlers', () => {
     expect(result.error).toContain('invalid');
   });
 
+  it('routes webmcp sync to the gateway with the sending webContents', async () => {
+    const c = makeFakeContainer();
+    registerIpcHandlers(c);
+    const h = handlers.get(IPC_CHANNELS.WEBMCP_SYNC_TOOLS)!;
+    const sender = { send: vi.fn(), isDestroyed: vi.fn(), once: vi.fn() };
+    const tools = [{ name: 't', description: '', inputSchema: {}, type: 'imperative' }];
+    const result = await h({ sender }, tools) as { ok: boolean; data?: unknown };
+    expect(result.ok).toBe(true);
+    expect(c.webmcp.syncTools).toHaveBeenCalledWith(tools, sender);
+  });
+
+  it('returns err envelope when webmcp execute fails', async () => {
+    const c = makeFakeContainer();
+    (c.webmcp.executeTool as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('not connected'));
+    registerIpcHandlers(c);
+    const h = handlers.get(IPC_CHANNELS.WEBMCP_EXECUTE)!;
+    const result = await h({}, 'tool', {}) as { ok: boolean; error?: string; code?: string };
+    expect(result.ok).toBe(false);
+    expect(result.error).toBe('not connected');
+    expect(result.code).toBe('WEBMCP_EXECUTE_FAILED');
+  });
+
+  it('forwards execute results from the renderer to the gateway', () => {
+    const c = makeFakeContainer();
+    registerIpcHandlers(c);
+    const l = listeners.get(IPC_CHANNELS.WEBMCP_EXECUTE_RESULT)!;
+    const res = { requestId: 'r1', ok: true, result: 42 };
+    l({}, res);
+    expect(c.webmcp.handleExecuteResult).toHaveBeenCalledWith(res);
+  });
+
   it('unregisters all channels', () => {
     registerIpcHandlers(makeFakeContainer());
     expect(handlers.size).toBeGreaterThan(0);
+    expect(listeners.size).toBeGreaterThan(0);
     unregisterIpcHandlers();
     expect(handlers.size).toBe(0);
+    expect(listeners.size).toBe(0);
   });
 });

@@ -1,4 +1,4 @@
-// Shared contract types — consumed by main, preload, and renderer.
+// Shared contract types - consumed by main, preload, and renderer.
 
 // ---------- monorepo-watcher ----------
 export type FileEventType = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir';
@@ -16,7 +16,7 @@ export interface FileEvent {
 export interface NxProject {
   name: string;
   type: 'app' | 'lib';
-  root: string;           // relative to C:\dev
+  root: string;           // relative to V:\monorepo
   sourceRoot?: string;
   tags: string[];
   implicitDependencies: string[];
@@ -87,7 +87,7 @@ export interface DbExplorerDatabase {
 }
 
 // ---------- agent-orchestrator ----------
-export type McpTransport = 'stdio' | 'http';
+export type McpTransport = 'stdio' | 'http' | 'ipc';
 
 export interface McpServerStatus {
   name: string;
@@ -122,6 +122,37 @@ export interface LogSearchFilters {
   processId?: string;
   stream?: 'stdout' | 'stderr';
   since?: number;
+}
+
+// ---------- webmcp-gateway ----------
+// Tools registered in the renderer via WebMCPManager (document.modelContext)
+// and bridged into the main process over IPC so the orchestrator can call them.
+
+export interface WebMCPToolDescriptor {
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;
+  type: 'imperative' | 'declarative';
+}
+
+export interface WebMCPExecuteRequest {
+  requestId: string;
+  name: string;
+  args: Record<string, unknown>;
+}
+
+export interface WebMCPExecuteResponse {
+  requestId: string;
+  ok: boolean;
+  result?: unknown;
+  error?: string;
+}
+
+export interface WebMCPGatewayStatus {
+  connected: boolean;
+  toolCount: number;
+  lastSyncAt: number | null;
+  pendingExecutions: number;
 }
 
 // ---------- memory-viz ----------
@@ -381,8 +412,17 @@ export const IPC_CHANNELS = {
   MEMORY_VIZ_SNAPSHOT: 'cc:memory:snapshot',
   MEMORY_VIZ_SEARCH: 'cc:memory:search',
   MEMORY_VIZ_DECAY: 'cc:memory:decay',
-  MEMORY_VIZ_CONSOLIDATE: 'cc:memory:consolidate'
+  MEMORY_VIZ_CONSOLIDATE: 'cc:memory:consolidate',
+  WEBMCP_SYNC_TOOLS: 'cc:webmcp:syncTools',
+  WEBMCP_LIST: 'cc:webmcp:list',
+  WEBMCP_EXECUTE: 'cc:webmcp:execute',
+  WEBMCP_STATUS: 'cc:webmcp:status',
+  WEBMCP_EXECUTE_RESULT: 'cc:webmcp:executeResult'
 } as const;
+
+// Main -> renderer push channel (webContents.send), intentionally not part of
+// IPC_CHANNELS because unregisterIpcHandlers only tears down ipcMain handlers.
+export const WEBMCP_EXECUTE_REQUEST_CHANNEL = 'cc:webmcp:executeRequest';
 
 export type IpcChannel = typeof IPC_CHANNELS[keyof typeof IPC_CHANNELS];
 
@@ -455,6 +495,14 @@ export interface CommandCenterAPI {
     search(query: string, topK?: number): Promise<IpcResult<MemorySearchResult[]>>;
     decay(): Promise<IpcResult<MemoryDecayView[]>>;
     consolidate(): Promise<IpcResult<{ success: boolean; message: string }>>;
+  };
+  webmcp: {
+    publishTools(tools: WebMCPToolDescriptor[]): Promise<IpcResult<WebMCPGatewayStatus>>;
+    list(): Promise<IpcResult<WebMCPToolDescriptor[]>>;
+    execute(name: string, args: Record<string, unknown>): Promise<IpcResult<unknown>>;
+    status(): Promise<IpcResult<WebMCPGatewayStatus>>;
+    onExecuteRequest(handler: (req: WebMCPExecuteRequest) => void): () => void;
+    respond(res: WebMCPExecuteResponse): void;
   };
 
   stream: {
