@@ -1,9 +1,9 @@
-# pnpm Cleanup Script
+﻿# pnpm Cleanup Script
 # Simple, tested version
 
 param([switch]$DryRun)
 
-$RootDir = "C:\dev"
+$RootDir = "V:\monorepo"
 $environmentScript = Join-Path $PSScriptRoot 'Initialize-DevProcessEnvironment.ps1'
 
 . $environmentScript

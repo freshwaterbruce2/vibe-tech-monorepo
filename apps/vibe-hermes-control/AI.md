@@ -30,8 +30,8 @@ category: apps
 - **Ports**: 
   - Dev: `4388`
   - Preview: `4389`
-- **Isolated Storage Policy**: All logs, sqlite databases, and runtime caches must be located on the `D:\` drive (e.g. under `D:\databases\` or `D:\logs\`). Code remains on the `C:\` drive under `C:/dev/apps/vibe-hermes-control`.
+- **Isolated Storage Policy**: All logs, sqlite databases, and runtime caches must be located on the `D:\` drive (e.g. under `D:\databases\` or `D:\logs\`). Code remains on the `C:\` drive under `V:/monorepo/apps/vibe-hermes-control`.
 
 ## References
 
-- Workspace Rules: [RULES.md](file:///C:/dev/docs/ai/RULES.md)
+- Workspace Rules: [RULES.md](file:///V:/monorepo/docs/ai/RULES.md)

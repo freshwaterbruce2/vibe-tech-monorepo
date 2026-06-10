@@ -2,7 +2,7 @@
 #
 # Activated by running `pnpm --filter nova-agent install` which triggers the
 # `prepare: "husky"` script. To point git at this hook directory for the
-# monorepo, from C:\dev run:
+# monorepo, from V:\monorepo run:
 #   git config core.hooksPath apps/nova-agent/.husky
 #
 # Runs (in order):

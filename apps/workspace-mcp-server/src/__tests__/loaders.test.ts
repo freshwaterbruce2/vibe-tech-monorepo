@@ -123,7 +123,7 @@ describe('loadMcpConfig', () => {
       mcpServers: {
         'command-center': {
           command: 'node.exe',
-          args: ['C:/dev/apps/vibetech-command-center/dist/mcp/server.js'],
+          args: ['V:/monorepo/apps/vibetech-command-center/dist/mcp/server.js'],
           env: { NODE_ENV: 'production' },
         },
       },
@@ -133,7 +133,7 @@ describe('loadMcpConfig', () => {
     expect(result[0]).toMatchObject({
       name: 'command-center',
       isCustom: true,
-      distPath: 'C:/dev/apps/vibetech-command-center/dist/mcp/server.js',
+      distPath: 'V:/monorepo/apps/vibetech-command-center/dist/mcp/server.js',
     });
   });
 });

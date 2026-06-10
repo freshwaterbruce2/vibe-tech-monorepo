@@ -16,7 +16,7 @@ Protects against clickjacking, XSS attacks, and other security vulnerabilities.
 
    ```bash
    # Find it in GitHub or clone it:
-   cd C:\dev\projects\active\web-apps
+   cd V:\monorepo\projects\active\web-apps
    git clone https://github.com/freshwaterbruce2/vibe-booking-platform.git
    cd vibe-booking-platform
    ```
@@ -25,7 +25,7 @@ Protects against clickjacking, XSS attacks, and other security vulnerabilities.
 
    ```powershell
    # Copy netlify.toml to your project
-   Copy-Item C:\dev\netlify-booking-platform-config.toml .\netlify.toml
+   Copy-Item V:\monorepo\netlify-booking-platform-config.toml .\netlify.toml
    ```
 
 3. **Commit and push:**
@@ -133,7 +133,7 @@ Secures API keys and database credentials.
 
 ### Reference
 
-See `C:\dev\.env.booking-platform.example` for full list of variables
+See `V:\monorepo\.env.booking-platform.example` for full list of variables
 
 ---
 

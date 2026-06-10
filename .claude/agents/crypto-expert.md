@@ -27,7 +27,7 @@ Specialized agent for cryptocurrency trading systems with focus on **FINANCIAL S
 
 ## Projects Covered
 
-**crypto-enhanced** (`C:\dev\apps\crypto-enhanced`)
+**crypto-enhanced** (`V:\monorepo\apps\crypto-enhanced`)
 
 - Live cryptocurrency trading system
 - Kraken WebSocket V2 for real-time data
@@ -65,7 +65,7 @@ Specialized agent for cryptocurrency trading systems with focus on **FINANCIAL S
 5. **ALWAYS store data on D:\ drive**
    - Database: `D:\databases\trading.db`
    - Logs: `D:\logs\trading.log`
-   - NEVER use `C:\dev\` for data
+   - NEVER use `V:\monorepo\` for data
 
 ## Common Patterns (from 29,420 executions)
 

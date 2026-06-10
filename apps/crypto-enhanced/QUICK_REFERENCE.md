@@ -1,6 +1,6 @@
 # Quick Reference Guide - Crypto Trading Bot
 
-**Location:** `C:\dev\apps\crypto-enhanced`
+**Location:** `V:\monorepo\apps\crypto-enhanced`
 
 Agent workflows are observation-only for live trading. Use status and
 validation commands; a human operator must handle live start or restart.
@@ -13,7 +13,7 @@ validation commands; a human operator must handle live start or restart.
 
 ```powershell
 # Navigate to project
-cd C:\dev\apps\crypto-enhanced
+cd V:\monorepo\apps\crypto-enhanced
 
 # Activate virtual environment
 .\.venv\Scripts\activate
@@ -170,7 +170,7 @@ Get-Process python | Stop-Process -Force
 
 ```powershell
 # Navigate to project
-cd C:\dev\apps\crypto-enhanced
+cd V:\monorepo\apps\crypto-enhanced
 
 # Activate environment
 .\.venv\Scripts\activate

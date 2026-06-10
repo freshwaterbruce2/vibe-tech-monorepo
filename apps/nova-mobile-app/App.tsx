@@ -11,7 +11,7 @@ import {
   type AppStateStatus,
 } from 'react-native';
 import { config } from './src/config';
-import { AppNavigator } from './src/navigation/AppNavigator';
+import { RootNavigator } from './src/navigation/RootNavigator';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { LockScreen } from './src/screens/LockScreen';
 import { registerForPushNotificationsAsync } from './src/services/pushNotificationService';
@@ -119,7 +119,7 @@ function AppContent() {
   return (
     <>
       <ExpoStatusBar style="light" />
-      <AppNavigator />
+      <RootNavigator />
     </>
   );
 }

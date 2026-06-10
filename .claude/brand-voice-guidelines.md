@@ -3,7 +3,7 @@
 **Status:** v1.0 (canonical — 2026-04-16)
 **Owner:** Bruce Freshwater
 **Scope:** Vibe Tech umbrella brand + all @vibetech products
-**Source:** Generated from brand-voice discovery (Google Drive + `C:\dev` monorepo), refined through guided resolution of five open questions.
+**Source:** Generated from brand-voice discovery (Google Drive + `V:\monorepo` monorepo), refined through guided resolution of five open questions.
 
 > This is a living document, but all discovery-phase open questions are resolved as of v1.0. Future updates should append to the changelog.
 
@@ -173,7 +173,7 @@ Full tokens live in Tailwind config + CSS custom properties (`--vibe-*`). Summar
 - Motion: smooth transitions, subtle scale on hover (`hover:scale-105 duration-300`)
 - Icons: Lucide React for UI, custom SVG gradients for logo and feature marks
 
-**Tokens location — LOCKED.** All design tokens live in `C:\dev\packages\design-tokens`. Single source of truth for every app.
+**Tokens location — LOCKED.** All design tokens live in `V:\monorepo\packages\design-tokens`. Single source of truth for every app.
 
 **Structure (target):**
 ```
@@ -336,4 +336,4 @@ All five discovery-phase open questions are resolved. This guide is now canonica
 
 - **2026-04-16 v1.0** — All five open questions resolved. Hybrid brand posture locked. Design tokens location locked (`packages/design-tokens`). Per-product ICPs locked (two-tier: commercial vs. dogfood). Guide is canonical.
 - **2026-04-16 v0.2** — Locked brand name ("Vibe Tech") and product naming rules (Vibe prefix mandatory, no hyphens in display).
-- **2026-04-16 v0.1** — initial draft generated from brand-voice discovery of Google Drive + `C:\dev` monorepo.
+- **2026-04-16 v0.1** — initial draft generated from brand-voice discovery of Google Drive + `V:\monorepo` monorepo.

@@ -15,13 +15,13 @@ The monorepo is the **source of truth**. Skills, agents, MCP servers, and plugin
 
 | Component            | Location                                                                                        | What Drifts                                                      |
 | -------------------- | ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **Skills** (user)    | `C:\dev\.claude\skills\user\`                                                                   | Paths, dependency versions, framework patterns, config baselines |
-| **Agent configs**    | `C:\dev\.claude\sub-agents\config.yml`                                                          | Model versions, tool lists, trigger patterns, delegation rules   |
-| **Agent delegation** | `C:\dev\.claude\agent-delegation.yaml`                                                          | Execution order, parallel groups                                 |
-| **Agent registry**   | `C:\dev\.claude\agents.json`                                                                    | Agent count, categories, parent mappings                         |
-| **MCP servers**      | `C:\dev\apps\` (desktop-commander-v3, mcp-gateway, mcp-codeberg, mcp-skills-server, memory-mcp) | SDK versions, tool schemas, env vars                             |
+| **Skills** (user)    | `V:\monorepo\.claude\skills\user\`                                                                   | Paths, dependency versions, framework patterns, config baselines |
+| **Agent configs**    | `V:\monorepo\.claude\sub-agents\config.yml`                                                          | Model versions, tool lists, trigger patterns, delegation rules   |
+| **Agent delegation** | `V:\monorepo\.claude\agent-delegation.yaml`                                                          | Execution order, parallel groups                                 |
+| **Agent registry**   | `V:\monorepo\.claude\agents.json`                                                                    | Agent count, categories, parent mappings                         |
+| **MCP servers**      | `V:\monorepo\apps\` (desktop-commander-v3, mcp-gateway, mcp-codeberg, mcp-skills-server, memory-mcp) | SDK versions, tool schemas, env vars                             |
 | **MCP config**       | `claude_desktop_config.json` / `.mcp.json`                                                      | Server entries, paths, args                                      |
-| **CLAUDE.md** files  | Per-app root in `C:\dev\apps\`                                                                  | Project status, dependency lists, known issues                   |
+| **CLAUDE.md** files  | Per-app root in `V:\monorepo\apps\`                                                                  | Project status, dependency lists, known issues                   |
 
 ## Workflow
 
@@ -31,18 +31,18 @@ Collect current state of all components. Load `references/component-registry.md`
 
 ```powershell
 # Scan user skill files
-Get-ChildItem -Path "C:\dev\.claude\skills\user" -Recurse -Filter "SKILL.md"
+Get-ChildItem -Path "V:\monorepo\.claude\skills\user" -Recurse -Filter "SKILL.md"
 
 # Scan agent configs
-Get-Content "C:\dev\.claude\sub-agents\config.yml"
-Get-Content "C:\dev\.claude\agents.json"
+Get-Content "V:\monorepo\.claude\sub-agents\config.yml"
+Get-Content "V:\monorepo\.claude\agents.json"
 
 # Scan MCP server package.json files
 @('desktop-commander-v3','mcp-gateway','mcp-codeberg','mcp-skills-server','memory-mcp') |
-  ForEach-Object { Get-Content "C:\dev\apps\$_\package.json" }
+  ForEach-Object { Get-Content "V:\monorepo\apps\$_\package.json" }
 
 # Scan CLAUDE.md files (top-level apps only, skip node_modules)
-Get-ChildItem -Path "C:\dev\apps" -Directory |
+Get-ChildItem -Path "V:\monorepo\apps" -Directory |
   Where-Object { $_.Name -ne 'node_modules' } |
   ForEach-Object { Join-Path $_.FullName 'CLAUDE.md' } |
   Where-Object { Test-Path $_ }
@@ -105,7 +105,7 @@ After user approval:
 1. **Backup first** (always):
    ```powershell
    $ts = Get-Date -Format "yyyyMMdd_HHmmss"
-   Compress-Archive -Path "C:\dev\.claude" -DestinationPath "C:\dev\_backups\claude-config_$ts.zip"
+   Compress-Archive -Path "V:\monorepo\.claude" -DestinationPath "V:\monorepo\_backups\claude-config_$ts.zip"
    ```
 2. Apply approved changes to skill files, agent configs, MCP configs
 3. Validate: re-scan changed files to confirm fixes resolved the drift
@@ -118,7 +118,7 @@ Load `references/drift-rules.md` for the full rule set. Key rules:
 ### Path Validation
 
 - Every file path in a skill/agent config must resolve to an existing location
-- `C:\dev\apps\*`, `C:\dev\packages\*` — validate against actual directory listing
+- `V:\monorepo\apps\*`, `V:\monorepo\packages\*` — validate against actual directory listing
 - Skip paths inside fenced code blocks and known example/template paths
 
 ### Dependency Version Sync

@@ -37,11 +37,11 @@ The system replaces the defunct Python-based learning system on D:\learning-syst
 | agent_learning.db | D:\databases\agent_learning.db | 22MB, last written 2026-02-09 by scheduled task |
 | knowledge_pool.db | D:\databases\knowledge_pool.db | 12KB, barely used |
 | ChromaDB directory | D:\databases\chromadb\ | Old vector store, unused |
-| Memory bank app | C:\dev\apps\memory-bank\ | Deleted from git (shows as `D` in status) |
-| MCP server memory | C:\dev\apps\mcp-server\ | Has MCP_ENABLE_MEMORY_BANK env but disabled |
+| Memory bank app | V:\monorepo\apps\memory-bank\ | Deleted from git (shows as `D` in status) |
+| MCP server memory | V:\monorepo\apps\mcp-server\ | Has MCP_ENABLE_MEMORY_BANK env but disabled |
 | Hook system | .claude/hooks/ | PowerShell hooks exist but learning capture is broken |
-| Skills server | C:\dev\apps\mcp-skills-server\ | Active, keyword-only search (no vector) |
-| Serena memories | C:\dev\.serena\memories\ | Active, markdown-based, no programmatic access |
+| Skills server | V:\monorepo\apps\mcp-skills-server\ | Active, keyword-only search (no vector) |
+| Serena memories | V:\monorepo\.serena\memories\ | Active, markdown-based, no programmatic access |
 | 30+ SQLite databases | D:\databases\ | Scattered, many dormant/duplicate |
 
 ### Pain Points

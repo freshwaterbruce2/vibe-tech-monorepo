@@ -1,4 +1,4 @@
-# Desktop Commander Automation - Complete Test Suite
+﻿# Desktop Commander Automation - Complete Test Suite
 # Tests all automation capabilities
 
 Import-Module "$PSScriptRoot\DesktopCommanderAutomation.psm1" -Force
@@ -81,7 +81,7 @@ try {
 Write-Host "[TEST 4] Screen Capture" -ForegroundColor Yellow
 
 try {
-    $screenshotPath = "C:\dev\test-screenshot-$(Get-Date -Format 'yyyyMMdd-HHmmss').png"
+    $screenshotPath = "V:\monorepo\test-screenshot-$(Get-Date -Format 'yyyyMMdd-HHmmss').png"
     $result = Capture-Screen -Path $screenshotPath -Width 800 -Height 600
     
     if (Test-Path $screenshotPath) {
@@ -170,6 +170,6 @@ Write-Host "SUCCESS RATE: $successCount/$totalCount ($([math]::Round(($successCo
 Write-Host "================================================" -ForegroundColor Cyan
 Write-Host ""
 
-$resultsPath = "C:\dev\automation-test-results.txt"
+$resultsPath = "V:\monorepo\automation-test-results.txt"
 $results | Out-File $resultsPath
 Write-Host "Results saved to: $resultsPath" -ForegroundColor Cyan

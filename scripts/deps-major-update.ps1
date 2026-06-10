@@ -1,4 +1,4 @@
-# deps-major-update.ps1
+﻿# deps-major-update.ps1
 # Safely update a major dependency with backup
 # Usage: .\scripts\deps-major-update.ps1 -Package "react"
 
@@ -8,7 +8,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-Set-Location "C:\dev"
+Set-Location "V:\monorepo"
 
 Write-Host "`n⚠️ Major Update: $Package" -ForegroundColor Yellow
 Write-Host "=" * 50 -ForegroundColor Gray

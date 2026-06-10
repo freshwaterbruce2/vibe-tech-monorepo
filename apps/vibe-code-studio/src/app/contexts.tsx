@@ -194,6 +194,8 @@ export interface AppExtrasContextValue {
   multiFileApprovalOpen: boolean;
   handleApplyMultiFileChanges: (selectedFiles: string[]) => Promise<void>;
   handleRejectMultiFileChanges: () => void;
+  handleAcceptFile: (filePath: string) => Promise<void>;
+  handleRejectFile: (filePath: string) => void;
 
   // Notifications
   notifications: NotificationItem[];

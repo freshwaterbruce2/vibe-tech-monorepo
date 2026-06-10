@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+﻿#Requires -Version 7.0
 <#
 .SYNOPSIS
     Fix pnpm hoisting by removing all node_modules and reinstalling
@@ -22,7 +22,7 @@ Write-Host "================================`n" -ForegroundColor Cyan
 
 # Verify we're in the right directory
 if (-not (Test-Path "pnpm-workspace.yaml")) {
-    Write-Error "❌ Must run from C:\dev (pnpm workspace root)"
+    Write-Error "❌ Must run from V:\monorepo (pnpm workspace root)"
     exit 1
 }
 

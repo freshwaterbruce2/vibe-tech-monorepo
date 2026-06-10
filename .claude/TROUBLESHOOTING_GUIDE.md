@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-Solutions to common issues in the C:\dev monorepo.
+Solutions to common issues in the V:\monorepo monorepo.
 
 ---
 
@@ -247,7 +247,7 @@ export default {
 **Diagnosis**:
 
 ```powershell
-cd C:\dev\apps\crypto-enhanced
+cd V:\monorepo\apps\crypto-enhanced
 .venv\Scripts\activate
 
 # Check Python version
@@ -308,7 +308,7 @@ pip install -r requirements.txt
 **Solution 1** - Reset nonce state:
 
 ```powershell
-cd C:\dev\apps\crypto-enhanced
+cd V:\monorepo\apps\crypto-enhanced
 
 # Remove nonce state files
 Remove-Item nonce_state.json, nonce_state_primary.json -ErrorAction SilentlyContinue

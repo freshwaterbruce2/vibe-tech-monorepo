@@ -5,7 +5,7 @@ Use this to understand the relationships between apps, the IPC bridge, and the d
 
 --- SYSTEM MAP (Depth 2) ---
 
->>> IPC MESSAGE SCHEMAS (Central Nervous System) (C:\dev\packages\shared-ipc\src\schemas.ts)
+>>> IPC MESSAGE SCHEMAS (Central Nervous System) (V:\monorepo\packages\shared-ipc\src\schemas.ts)
 ------------------------------------------
 import { z } from 'zod';
 
@@ -496,7 +496,7 @@ export type IPCMessage = z.infer<typeof ipcMessageSchema>;
 
 ==========================================
 
->>> WORKFLOW ENGINE DATABASE (C:\dev\backend\workflow-engine\schemas\workflow_schema.sql)
+>>> WORKFLOW ENGINE DATABASE (V:\monorepo\backend\workflow-engine\schemas\workflow_schema.sql)
 ------------------------------------------
 -- Workflow Automation Schema
 -- Created: 2025-11-10
@@ -605,7 +605,7 @@ INSERT OR IGNORE INTO workflow_templates (name, description, category, steps) VA
 
 ==========================================
 
->>> VIBE SHOP PRISMA SCHEMA (C:\dev\apps\vibe-shop\prisma\schema.prisma)
+>>> VIBE SHOP PRISMA SCHEMA (V:\monorepo\apps\vibe-shop\prisma\schema.prisma)
 ------------------------------------------
 generator client {
   provider = "prisma-client-js"
@@ -700,7 +700,7 @@ model Click {
 
 ==========================================
 
->>> NOVA CORE DATABASE MANAGER (C:\dev\packages\nova-core\src\persistence\DatabaseManager.ts)
+>>> NOVA CORE DATABASE MANAGER (V:\monorepo\packages\nova-core\src\persistence\DatabaseManager.ts)
 ------------------------------------------
 import Database from 'better-sqlite3';
 import * as fs from 'fs';

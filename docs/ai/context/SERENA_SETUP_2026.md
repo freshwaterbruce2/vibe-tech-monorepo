@@ -14,7 +14,7 @@ Successfully upgraded Serena MCP server with 2026 best practices, comprehensive 
 
 ### 1. Project-Specific Configuration ✅
 
-**File:** `C:\dev\.serena\project.yml`
+**File:** `V:\monorepo\.serena\project.yml`
 
 **Enhancements:**
 
@@ -28,7 +28,7 @@ Successfully upgraded Serena MCP server with 2026 best practices, comprehensive 
 
 ### 2. Comprehensive Memory System ✅
 
-**Location:** `C:\dev\.serena\memories\`
+**Location:** `V:\monorepo\.serena\memories\`
 
 **Created 6 Memories:**
 
@@ -41,7 +41,7 @@ Successfully upgraded Serena MCP server with 2026 best practices, comprehensive 
 
 ### 3. MCP Configuration ✅
 
-**File:** `C:\dev\.mcp.json`
+**File:** `V:\monorepo\.mcp.json`
 
 Added Serena using uvx (2026 best practice):
 
@@ -94,7 +94,7 @@ Added Serena using uvx (2026 best practice):
 
 1. **Restart Claude Code** to activate Serena
 2. **Verify dashboard** at <http://localhost:24282/dashboard/>
-3. **Test activation**: "activate the project C:\dev"
+3. **Test activation**: "activate the project V:\monorepo"
 4. **Browse memories**: Use list_memories tool
 
 ---
@@ -129,7 +129,7 @@ tool_timeout: 300
 
 ## Troubleshooting
 
-**"No active project"** → Ask: "activate the project C:\dev"
+**"No active project"** → Ask: "activate the project V:\monorepo"
 **LSP not working** → Verify languages in project.yml
 **Tool timeout** → Increase tool_timeout (currently 300s)
 **Memory not found** → Use list_memories tool
@@ -142,10 +142,10 @@ tool_timeout: 300
 **Configuration:**
 
 - Global: `C:\Users\fresh_zxae3v6\.serena\serena_config.yml`
-- Project: `C:\dev\.serena\project.yml`
-- MCP: `C:\dev\.mcp.json`
+- Project: `V:\monorepo\.serena\project.yml`
+- MCP: `V:\monorepo\.mcp.json`
 
-**Memories:** `C:\dev\.serena\memories\` (6 files)
+**Memories:** `V:\monorepo\.serena\memories\` (6 files)
 
 **Documentation:**
 

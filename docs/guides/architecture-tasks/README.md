@@ -3,7 +3,7 @@
 ## ðŸ“‹ Project Overview
 
 **Project:** Architecture Improvement Initiative  
-**Location:** `C:\dev\docs\guides\architecture-tasks`  
+**Location:** `V:\monorepo\docs\guides\architecture-tasks`  
 **Created:** 2026-01-30  
 **Status:** Ready for Execution
 

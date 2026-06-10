@@ -11,7 +11,7 @@ Version: 1.0
 ## ═══════════════════════════════════════════════════════════════
 
 **New Module:** `hallucination_detector.rs` (96 lines)
-**Location:** `C:\dev\apps\nova-agent\src-tauri\src\modules\hallucination_detector.rs`
+**Location:** `V:\monorepo\apps\nova-agent\src-tauri\src\modules\hallucination_detector.rs`
 
 **Purpose:** Prevents AI models from claiming file operations without actually executing tools.
 
@@ -139,22 +139,22 @@ regex = "1.10"  # Required for pattern matching
 
 ### Created Files
 
-1. **C:\dev\apps\nova-agent\src-tauri\src\modules\hallucination_detector.rs** (96 lines)
+1. **V:\monorepo\apps\nova-agent\src-tauri\src\modules\hallucination_detector.rs** (96 lines)
    - Pattern detection functions
    - Response validation logic
    - Unit tests
 
 ### Modified Files
 
-1. **C:\dev\apps\nova-agent\src-tauri\src\modules\mod.rs** (+1 line)
+1. **V:\monorepo\apps\nova-agent\src-tauri\src\modules\mod.rs** (+1 line)
    - Added hallucination_detector module
 
-2. **C:\dev\apps\nova-agent\src-tauri\src\modules\llm.rs** (+15 lines)
+2. **V:\monorepo\apps\nova-agent\src-tauri\src\modules\llm.rs** (+15 lines)
    - Added import
    - Added tool call counter
    - Added validation before returning responses
 
-3. **C:\dev\apps\nova-agent\src-tauri\Cargo.toml** (+1 line)
+3. **V:\monorepo\apps\nova-agent\src-tauri\Cargo.toml** (+1 line)
    - Added regex dependency
 
 ---
@@ -185,7 +185,7 @@ regex = "1.10"  # Required for pattern matching
 Open NOVA at <http://localhost:5173/> and send:
 
 ```
-Create a file at C:\dev\hallucination-test.txt with "testing detection"
+Create a file at V:\monorepo\hallucination-test.txt with "testing detection"
 ```
 
 **Expected (if model tries to hallucinate):**
@@ -199,7 +199,7 @@ operations without actually calling the required tools..."
 **Model will retry or you can give explicit instruction:**
 
 ```
-Use write_file() tool to create C:\dev\hallucination-test.txt
+Use write_file() tool to create V:\monorepo\hallucination-test.txt
 ```
 
 ---
@@ -207,7 +207,7 @@ Use write_file() tool to create C:\dev\hallucination-test.txt
 ### Test 2: Legitimate Operation (Should Allow)
 
 ```
-Use write_file() to create C:\dev\test-real.txt with "real file"
+Use write_file() to create V:\monorepo\test-real.txt with "real file"
 Then read it back with read_file().
 ```
 
@@ -225,7 +225,7 @@ Then read it back with read_file().
 ### Test 3: Normal Conversation (Should Allow)
 
 ```
-What files are in C:\dev\apps\nova-agent?
+What files are in V:\monorepo\apps\nova-agent?
 ```
 
 **Expected:**
@@ -328,7 +328,7 @@ Result: ✅ ALLOWED (no file claims)
 User: "Create a file"
 Model: NO tool calls
 total_tool_calls = 0
-Response: "✅ Created file at C:\dev\test.txt"
+Response: "✅ Created file at V:\monorepo\test.txt"
 Result: ❌ BLOCKED (false claim detected)
 ```
 
@@ -398,7 +398,7 @@ fn test_blocks_without_tool_calls() {
 **Run Tests:**
 
 ```bash
-cd C:\dev\apps\nova-agent\src-tauri
+cd V:\monorepo\apps\nova-agent\src-tauri
 cargo test hallucination_detector
 ```
 

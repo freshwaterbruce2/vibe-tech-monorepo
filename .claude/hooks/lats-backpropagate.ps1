@@ -8,7 +8,7 @@
 #   4. Cleans up the state file
 #
 # The state file is written by any agent that calls:
-#   node C:\dev\packages\agent-lats\dist\cli.js plan ...
+#   node V:\monorepo\packages\agent-lats\dist\cli.js plan ...
 # and then saves the nodeId to D:\learning-system\lats-active-node.json
 
 $ErrorActionPreference = 'SilentlyContinue'
@@ -41,7 +41,7 @@ try {
 
     # Unconditional: surface orphan critiques (NULL lats_node_id) from last 60 minutes.
     # These are written by normal Claude Code session edits that run without an active LATS node.
-    $recentArgs = @('C:\dev\packages\agent-lats\dist\cli.js', 'assess', '--recent', '60', '--json')
+    $recentArgs = @('V:\monorepo\packages\agent-lats\dist\cli.js', 'assess', '--recent', '60', '--json')
     $recentOutput = & node @recentArgs 2>$null
     if ($recentOutput) {
         try {
@@ -70,7 +70,7 @@ try {
 
     # Build CLI args
     $latsArgs = @(
-        'C:\dev\packages\agent-lats\dist\cli.js',
+        'V:\monorepo\packages\agent-lats\dist\cli.js',
         'backpropagate',
         '--node', $nodeId,
         '--success', $successStr
@@ -96,7 +96,7 @@ try {
 
     # Phase 2: Agent Q assessment — aggregate per-file critique scores into quality signal.
     # Fires after backpropagation so the quality score overwrites the binary value in mcts_nodes.
-    $assessArgs = @('C:\dev\packages\agent-lats\dist\cli.js', 'assess', '--node', $nodeId, '--json')
+    $assessArgs = @('V:\monorepo\packages\agent-lats\dist\cli.js', 'assess', '--node', $nodeId, '--json')
     $assessOutput = & node @assessArgs 2>$null
     $qualityBand = ''
     if ($assessOutput) {

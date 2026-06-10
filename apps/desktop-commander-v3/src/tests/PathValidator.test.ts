@@ -80,7 +80,7 @@ describe("PathValidator", () => {
 
 		// Edge cases - path prefix matching
 		it("should NOT match similar prefixes that are not subdirectories", () => {
-			// "C:\develop" should NOT match "C:\dev"
+			// "V:\monorepoelop" should NOT match "V:\monorepo"
 			expect(isPathAllowed("C:\\develop", "read")).toBe(false);
 			expect(isPathAllowed("C:\\developer\\projects", "read")).toBe(false);
 		});
@@ -129,7 +129,7 @@ describe("PathValidator", () => {
 
 	describe("normalizePath", () => {
 		it("should normalize path separators to backslashes (case preserved)", () => {
-			const result = normalizePath("C:/Dev/Test");
+			const result = normalizePath("V:/monorepo/Test");
 			expect(result).not.toContain("/");
 			expect(result).toContain("\\");
 		});

@@ -28,18 +28,18 @@ Specialized agent for mobile applications using Capacitor 7 with React 19. Focus
 
 ## Projects Covered
 
-1. **vibe-tutor** (`C:\dev\apps\vibe-tutor`) - **PRODUCTION**
+1. **vibe-tutor** (`V:\monorepo\apps\vibe-tutor`) - **PRODUCTION**
    - AI-powered homework manager for ADHD/autism students
    - React 19 + Capacitor 7
    - Express backend with OpenRouter (Claude 4.5 + DeepSeek R1)
    - Status: v1.4.0, versionCode 25, Play Store ready
    - Database: `D:\databases\vibe-tutor.db`
 
-2. **vibe-subscription-guard** (`C:\dev\apps\vibe-subscription-guard`)
+2. **vibe-subscription-guard** (`V:\monorepo\apps\vibe-subscription-guard`)
    - Subscription management system
    - Capacitor Android app
 
-3. **nova-mobile-app** (`C:\dev\apps\nova-mobile-app`)
+3. **nova-mobile-app** (`V:\monorepo\apps\nova-mobile-app`)
    - Mobile version of Nova Agent
 
 ## Critical Rules (Android WebView)

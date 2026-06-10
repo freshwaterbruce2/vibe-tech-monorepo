@@ -110,7 +110,7 @@
     "test:coverage": "pnpm run test:unit:coverage && pnpm run crypto:coverage",
     "test:coverage:all": "nx run-many -t test:coverage",
     "coverage:report": "pnpm run test:unit:coverage && pnpm run crypto:coverage:report",
-    "typecheck": "nx sync --apply && nx run-many -t typecheck",
+    "typecheck": "nx sync --apply && nx run-many -t typecheck --exclude @vibetech/workspace",
     "typecheck:ci": "nx run-many -t typecheck --all --parallel=4",
     "quality": "nx run-many -t lint typecheck build",
     "quality:fix": "nx run-many -t lint:fix typecheck",

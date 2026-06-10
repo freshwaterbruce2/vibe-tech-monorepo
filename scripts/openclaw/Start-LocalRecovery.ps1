@@ -1,10 +1,10 @@
-<#
+﻿<#
 .SYNOPSIS
   Repairs the local process environment, starts OpenClaw gateway recovery, and
   prints a verified dashboard URL.
 
 .DESCRIPTION
-  This is the workspace-level OpenClaw recovery entry point for C:\dev. It keeps
+  This is the workspace-level OpenClaw recovery entry point for V:\monorepo. It keeps
   the existing Control UI patch script as the owner of bundled UI edits, then
   verifies the local loopback gateway before printing or opening browser mode.
 #>

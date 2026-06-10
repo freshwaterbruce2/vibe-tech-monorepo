@@ -1,4 +1,4 @@
-# AGENTS.md — Operational Learnings
+﻿# AGENTS.md — Operational Learnings
 
 > Auto-updated during Ralph iterations. Contains Windows-specific commands, project quirks, and lessons learned.
 
@@ -20,7 +20,7 @@
 
 ## Project-Specific Quirks
 
-### C:\dev Monorepo
+### V:\monorepo Monorepo
 
 - **44 projects** across apps/ and packages/
 - Most packages/ lack tests (nova-*, shared-*)
@@ -69,7 +69,7 @@
 ### Iteration 6
 
 - argparse `type=Path` auto-converts strings to Path objects
-- Default paths should use raw strings: `r"C:\dev"`
+- Default paths should use raw strings: `r"V:\monorepo"`
 
 ### Iteration 7
 

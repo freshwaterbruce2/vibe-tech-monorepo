@@ -18,9 +18,9 @@
 - Dashboard ports: UI dev 5180, IPC/WS 3210. MCP server is stdio.
 
 ## Paths
-- App root: `C:\dev\apps\vibetech-command-center`
-- Monorepo root: `C:\dev`
-- Backups: `C:\dev\_backups\`
+- App root: `V:\monorepo\apps\vibetech-command-center`
+- Monorepo root: `V:\monorepo`
+- Backups: `V:\monorepo\_backups\`
 - External DBs: `D:\databases\*.db`, `D:\learning-system\*.db`
 - LanceDB (RAG): `D:\nova-agent-data\lance-db\`
 
@@ -31,6 +31,6 @@ Output the `Compress-Archive` command first, then the change. No exceptions.
 
 - Production build: `pnpm run package` produces `release\Vibe-Tech Command Center-Setup-${version}.exe`
 - Dev: `pnpm run dev` (electron-vite hot reload)
-- MCP server: standalone via `pnpm run mcp:start`, registered in `C:\dev\.mcp.json` as `command-center`
+- MCP server: standalone via `pnpm run mcp:start`, registered in `V:\monorepo\.mcp.json` as `command-center`
 - Tray: app keeps running after window close; quit via tray menu
 - Tests: `pnpm run test` (unit/integration), `pnpm run test:e2e` (Playwright Electron), `pnpm run test:all` for both

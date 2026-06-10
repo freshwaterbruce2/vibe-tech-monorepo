@@ -7,7 +7,7 @@ This is a **LIVE CRYPTOCURRENCY TRADING SYSTEM** that trades with **REAL MONEY**
 **Current Status**:
 
 - **Runtime state**: verify with local status scripts before quoting balance or open positions
-- **Location**: `C:\dev\apps\crypto-enhanced\`
+- **Location**: `V:\monorepo\apps\crypto-enhanced\`
 - **Agent policy**: observe, test, and review only. Do not start, restart, or
   auto-confirm live trading from an agent workflow.
 
@@ -22,7 +22,7 @@ This is a **LIVE CRYPTOCURRENCY TRADING SYSTEM** that trades with **REAL MONEY**
 1. **Understand Current State**
 
    ```powershell
-   cd C:\dev\apps\crypto-enhanced
+   cd V:\monorepo\apps\crypto-enhanced
    .venv\Scripts\activate
    python scripts\check_status.py  # Check if bot is running
    ```
@@ -552,7 +552,7 @@ async def test_transaction_rollback():
 
 ```powershell
 # Run tests
-cd C:\dev\apps\crypto-enhanced
+cd V:\monorepo\apps\crypto-enhanced
 .venv\Scripts\activate
 python run_tests.py
 
@@ -628,7 +628,7 @@ sqlite3 trading.db "PRAGMA journal_mode=WAL;"
 
 ```powershell
 # Method 1: Graceful shutdown
-cd C:\dev\apps\crypto-enhanced
+cd V:\monorepo\apps\crypto-enhanced
 .\stop_trading.ps1
 
 # Method 2: Force kill (if unresponsive)

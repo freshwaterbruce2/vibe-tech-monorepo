@@ -1,7 +1,7 @@
-# Configure Jujutsu user settings
+﻿# Configure Jujutsu user settings
 $ErrorActionPreference = "Stop"
 
-$env:PATH = "C:\dev\tools\jujutsu;$env:PATH"
+$env:PATH = "V:\monorepo\tools\jujutsu;$env:PATH"
 
 Write-Host "Configuring Jujutsu user settings...`n"
 

@@ -1,8 +1,8 @@
-#Requires -Version 7.0
+﻿#Requires -Version 7.0
 
 <#
 .SYNOPSIS
-    Restore full snapshot (C:\dev + D:\databases + D:\learning-system)
+    Restore full snapshot (V:\monorepo + D:\databases + D:\learning-system)
 
 .DESCRIPTION
     Restores a complete snapshot including code and data.
@@ -108,7 +108,7 @@ if ($metadata.tag) {
 }
 
 Write-Host "`nWhat will be restored:" -ForegroundColor Yellow
-Write-Host "  ✓ C:\dev (workspace/code)" -ForegroundColor Green
+Write-Host "  ✓ V:\monorepo (workspace/code)" -ForegroundColor Green
 
 if ($metadata.components.databases.included -and $RestoreDatabases) {
     Write-Host "  ✓ D:\databases (SQLite databases)" -ForegroundColor Green
@@ -156,21 +156,21 @@ if (Test-Path $archivePath) {
 }
 
 # ============================================================================
-# RESTORE C:\dev (Workspace)
+# RESTORE V:\monorepo (Workspace)
 # ============================================================================
-Write-Host "📁 [1/3] Restoring workspace (C:\dev)..." -ForegroundColor Cyan
+Write-Host "📁 [1/3] Restoring workspace (V:\monorepo)..." -ForegroundColor Cyan
 
 $workspaceSource = "$extractPath\workspace"
 if (Test-Path $workspaceSource) {
     # Clear current workspace (except .git and version-control)
-    Get-ChildItem "C:\dev" -Force -ErrorAction SilentlyContinue | Where-Object {
+    Get-ChildItem "V:\monorepo" -Force -ErrorAction SilentlyContinue | Where-Object {
         $_.Name -ne '.git' -and $_.Name -ne 'scripts'
     } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 
     # Restore workspace
-    Copy-Item -Path "$workspaceSource\*" -Destination "C:\dev" -Recurse -Force
+    Copy-Item -Path "$workspaceSource\*" -Destination "V:\monorepo" -Recurse -Force
 
-    $workspaceFiles = Get-ChildItem "C:\dev" -Recurse -File | Measure-Object
+    $workspaceFiles = Get-ChildItem "V:\monorepo" -Recurse -File | Measure-Object
     Write-Host "✓ Restored workspace: $($workspaceFiles.Count) files" -ForegroundColor Green
 } else {
     Write-Host "⚠ Workspace data not found in snapshot" -ForegroundColor Yellow

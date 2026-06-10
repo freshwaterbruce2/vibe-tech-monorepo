@@ -9,7 +9,7 @@ Weekly interactive workflow: Claude proposes updates, user approves, Claude exec
 
 ## Locations
 
-- **Monorepo**: `C:\dev`
+- **Monorepo**: `V:\monorepo`
 - **External projects**: `C:\Users\fresh_zxae3v6`
 
 ## Weekly Workflow

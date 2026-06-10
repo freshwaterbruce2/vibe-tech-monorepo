@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+﻿#Requires -Version 7.0
 
 <#
 .SYNOPSIS
@@ -40,7 +40,7 @@ param(
     [string]$RepoPath = "D:\repositories\vibetech",
 
     [Parameter(Mandatory = $false)]
-    [string]$WorkspacePath = "C:\dev"
+    [string]$WorkspacePath = "V:\monorepo"
 )
 
 Set-StrictMode -Version Latest
@@ -222,7 +222,7 @@ Write-Host "✓ Workspace restored successfully!`n" -ForegroundColor Green
 # Suggest next steps
 Write-Host "Next steps:`n" -ForegroundColor Cyan
 Write-Host "1. Verify workspace: " -NoNewline
-Write-Host "Get-ChildItem C:\dev" -ForegroundColor Gray
+Write-Host "Get-ChildItem V:\monorepo" -ForegroundColor Gray
 Write-Host "2. Run quality checks: " -NoNewline
 Write-Host "pnpm run quality" -ForegroundColor Gray
 Write-Host "3. View history: " -NoNewline

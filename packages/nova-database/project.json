@@ -40,6 +40,7 @@
     },
     "typecheck": {
       "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
       "options": {
         "command": "tsc -p tsconfig.build.json --noEmit",
         "cwd": "packages/nova-database"

@@ -181,7 +181,7 @@ The system will:
 ### 1. Verify Learning System Available
 
 ```bash
-cd C:\dev\apps\crypto-enhanced
+cd V:\monorepo\apps\crypto-enhanced
 python src\learning_integration.py
 ```
 

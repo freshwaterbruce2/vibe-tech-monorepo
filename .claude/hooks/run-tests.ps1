@@ -14,7 +14,7 @@ try {
         if ($filePath -match '\.(ts|tsx|js|jsx)$' -and $filePath -notmatch '\.(test|spec)\.(ts|tsx|js|jsx)$') {
             $testFile = $filePath -replace '\.(ts|tsx|js|jsx)$', '.test.$1'
             if (Test-Path $testFile) {
-                Push-Location "C:\dev" -ErrorAction SilentlyContinue
+                Push-Location "V:\monorepo" -ErrorAction SilentlyContinue
                 pnpm run test -- "$testFile" 2>$null | Out-Null
                 Pop-Location -ErrorAction SilentlyContinue
             }

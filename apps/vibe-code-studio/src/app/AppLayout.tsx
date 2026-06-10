@@ -32,6 +32,7 @@ const PreviewPanel = lazy(() => import('../components/PreviewPanel').then(m => (
 const ScreenshotToCodePanel = lazy(() => import('../components/ScreenshotToCodePanel').then(m => ({ default: m.ScreenshotToCodePanel })));
 const TerminalPanel = lazy(() => import('../components/TerminalPanel').then(m => ({ default: m.TerminalPanel })));
 const VisualEditor = lazy(() => import('../components/VisualEditor').then(m => ({ default: m.VisualEditor })));
+const WebMCPInspector = lazy(() => import('../components/WebMCPInspector').then(m => ({ default: m.WebMCPInspector })));
 const WelcomeScreen = lazy(() => import('../components/WelcomeScreen'));
 
 import type { GeneratedFix } from '../services/AutoFixService';
@@ -225,6 +226,7 @@ export function AppLayout() {
         onToggleScreenshot={extras.handleToggleScreenshotPanel}
         onToggleLibrary={extras.handleToggleComponentLibrary}
         onToggleVisualEditor={extras.handleToggleVisualEditor}
+        onToggleWebMcp={() => ui.setActiveVisualPanel(ui.activeVisualPanel === 'webmcp' ? 'none' : 'webmcp')}
       />
 
       <NotificationContainer notifications={extras.notifications} onClose={extras.removeNotification} />
@@ -378,6 +380,27 @@ export function AppLayout() {
             }}
           >
             <ComponentLibrary onInsertComponent={extras.handleInsertCode} />
+          </motion.div>
+        )}
+
+        {ui.activeVisualPanel === 'webmcp' && (
+          <motion.div
+            initial={{ opacity: 0, x: 300 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 300 }}
+            style={{
+              position: 'absolute',
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: '450px',
+              zIndex: 100,
+              boxShadow: '-4px 0 20px rgba(0,0,0,0.3)',
+            }}
+          >
+            <Suspense fallback={null}>
+              <WebMCPInspector onClose={() => ui.setActiveVisualPanel('none')} />
+            </Suspense>
           </motion.div>
         )}
 

@@ -1,6 +1,6 @@
 # Tool Description Enhancements for Anti-Hallucination
 
-# To be implemented in: C:\dev\apps\nova-agent\src-tauri\src\modules\
+# To be implemented in: V:\monorepo\apps\nova-agent\src-tauri\src\modules\
 
 ## CRITICAL: All tool descriptions must enforce verification
 
@@ -32,7 +32,7 @@ Add verification requirements to EVERY tool description.
 ///
 /// Returns: Confirmation with exact line count
 /// Example response format:
-///   "✅ Updated C:\dev\file.tsx (245 lines written)"
+///   "✅ Updated V:\monorepo\file.tsx (245 lines written)"
 ///
 /// FORBIDDEN:
 /// - Saying "I'll write..." without calling this function
@@ -73,7 +73,7 @@ Add verification requirements to EVERY tool description.
 ///
 /// Returns: Actual file contents with line info
 /// Example response format:
-///   "Read C:\dev\project\package.json:
+///   "Read V:\monorepo\project\package.json:
 ///    {
 ///      "name": "project-name",
 ///      ...
@@ -96,7 +96,7 @@ Add verification requirements to EVERY tool description.
 ///
 /// Returns: [FILE] and [DIR] prefixed list
 /// Example response format:
-///   "Directory contents of C:\dev\project\:
+///   "Directory contents of V:\monorepo\project\:
 ///    [DIR] src
 ///    [FILE] package.json
 ///    [FILE] tsconfig.json"
@@ -114,7 +114,7 @@ Add verification requirements to EVERY tool description.
 
 ### 1. Update Rust Tool Descriptions
 
-File: `C:\dev\apps\nova-agent\src-tauri\src\modules\llm.rs`
+File: `V:\monorepo\apps\nova-agent\src-tauri\src\modules\llm.rs`
 
 Add documentation to #[tauri::command] functions:
 
@@ -160,7 +160,7 @@ Then check if NOVA's response mentions the action without the tool call.
 
 ### Test 1: File Write Verification
 
-Request: "Create C:\dev\test-nova-verification.txt with content 'Test 123'"
+Request: "Create V:\monorepo\test-nova-verification.txt with content 'Test 123'"
 
 Expected: 
 
@@ -176,7 +176,7 @@ Failure indicators:
 
 ### Test 2: Local vs Web Search
 
-Request: "Review C:\dev\apps\symptom-tracker"
+Request: "Review V:\monorepo\apps\symptom-tracker"
 
 Expected:
 

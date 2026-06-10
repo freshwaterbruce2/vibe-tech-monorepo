@@ -50,7 +50,7 @@ try {
     }
 
     # Run LATS critique (max 5s — fire and observe)
-    $latsArgs = @('C:\dev\packages\agent-lats\dist\cli.js', 'critique', '--file', $filePath)
+    $latsArgs = @('V:\monorepo\packages\agent-lats\dist\cli.js', 'critique', '--file', $filePath)
     if ($newFileFlag) { $latsArgs += $newFileFlag }
     if ($nodeFlag)    { $latsArgs += '--node'; $latsArgs += $state.nodeId }
 

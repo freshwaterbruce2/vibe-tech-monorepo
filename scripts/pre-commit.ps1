@@ -55,7 +55,7 @@ if ($sourceFiles.Count -gt 0) {
     $exitCode = [Math]::Max(
         [int]$exitCode,
         [int](Invoke-QualityCommand -Label "[1/3] Running ESLint on staged files..." -Command {
-            pnpm exec eslint --max-warnings=0 @sourceFiles
+            pnpm exec eslint --max-warnings=0 --no-warn-ignored @sourceFiles
         })
     )
 } else {

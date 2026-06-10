@@ -1,4 +1,4 @@
-#!/usr/bin/env powershell
+﻿#!/usr/bin/env powershell
 <#
 .SYNOPSIS
     Automated backup for MoltBot critical data
@@ -95,8 +95,8 @@ try {
     $hooksBackupDir = Join-Path $backupDir "hooks"
     New-Item -ItemType Directory -Path $hooksBackupDir -Force | Out-Null
 
-    if (Test-Path "C:\dev\.claude\hooks") {
-        Copy-Item "C:\dev\.claude\hooks\*.ps1" $hooksBackupDir -ErrorAction SilentlyContinue
+    if (Test-Path "V:\monorepo\.claude\hooks") {
+        Copy-Item "V:\monorepo\.claude\hooks\*.ps1" $hooksBackupDir -ErrorAction SilentlyContinue
         $hookCount = (Get-ChildItem $hooksBackupDir -File).Count
         Write-Host "  [OK] $hookCount hook scripts" -ForegroundColor Green
     }

@@ -1,4 +1,4 @@
-# Setup-Laptop-SSH-Client.ps1
+﻿# Setup-Laptop-SSH-Client.ps1
 # Configures SSH client on Windows 11 Laptop for Remote Development
 
 <#
@@ -109,11 +109,11 @@ mkdir -p ~/.ssh; echo '$publicKey' >> ~/.ssh/authorized_keys; chmod 700 ~/.ssh; 
 # Step 5: Clone repository
 Write-Host ""
 Write-Host "[5/6] Setting up local Git repository..." -ForegroundColor Yellow
-if (Test-Path "C:\dev\.git") {
-    Write-Host "  Repository already exists at C:\dev" -ForegroundColor Green
+if (Test-Path "V:\monorepo\.git") {
+    Write-Host "  Repository already exists at V:\monorepo" -ForegroundColor Green
 } else {
     Write-Host "  Clone manually with:" -ForegroundColor Yellow
-    Write-Host "  git clone https://github.com/freshwaterbruce2/vibetech.git C:\dev" -ForegroundColor White
+    Write-Host "  git clone https://github.com/freshwaterbruce2/vibetech.git V:\monorepo" -ForegroundColor White
 }
 
 # Step 6: Check VS Code
@@ -146,5 +146,5 @@ Write-Host "  2. Press Ctrl+Shift+P" -ForegroundColor White
 Write-Host "  3. Type 'Remote-SSH: Connect to Host'" -ForegroundColor White
 Write-Host "  4. Enter: $DesktopUsername@$DesktopIP" -ForegroundColor White
 Write-Host "  5. Select Windows as platform" -ForegroundColor White
-Write-Host "  6. Open folder: C:\dev" -ForegroundColor White
+Write-Host "  6. Open folder: V:\monorepo" -ForegroundColor White
 Write-Host ""

@@ -92,9 +92,9 @@ Look for: `"serverInfo":{"name":"desktop-commander","version":"0.2.16"}`
 
 ### If version still shows 0.2.14
 
-1. Verify rebuild succeeded: `ls C:\dev\DesktopCommanderMCP\dist\index.js`
+1. Verify rebuild succeeded: `ls V:\monorepo\DesktopCommanderMCP\dist\index.js`
 2. Check file modification time (should be recent)
-3. Rebuild again: `cd C:\dev\DesktopCommanderMCP && npm run build`
+3. Rebuild again: `cd V:\monorepo\DesktopCommanderMCP && npm run build`
 4. Restart Claude Desktop again
 
 ### Configuration (No Changes Needed)

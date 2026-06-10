@@ -1,5 +1,5 @@
-# monorepo-cleanup.ps1
-# Comprehensive monorepo cleanup for C:\dev
+﻿# monorepo-cleanup.ps1
+# Comprehensive monorepo cleanup for V:\monorepo
 # Frees disk space by removing build artifacts, caches, and duplicates
 # Safety: DryRun mode enabled by default
 # Author: Claude Architect
@@ -12,7 +12,7 @@ param(
 )
 
 $ErrorActionPreference = "Continue"
-$Root = "C:\dev"
+$Root = "V:\monorepo"
 $Timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $TotalFreed = 0
 

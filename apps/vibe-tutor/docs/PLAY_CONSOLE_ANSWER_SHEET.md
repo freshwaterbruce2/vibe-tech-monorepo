@@ -2,7 +2,7 @@
 
 **App:** Vibe Tutor  
 **Prepared:** March 10, 2026  
-**Use with:** [DATA_SAFETY.md](C:\dev\apps\vibe-tutor\docs\DATA_SAFETY.md), [PRIVACY_POLICY.md](C:\dev\apps\vibe-tutor\docs\PRIVACY_POLICY.md)
+**Use with:** [DATA_SAFETY.md](V:\monorepo\apps\vibe-tutor\docs\DATA_SAFETY.md), [PRIVACY_POLICY.md](V:\monorepo\apps\vibe-tutor\docs\PRIVACY_POLICY.md)
 
 This sheet is written as a fill-in guide for Play Console screens.
 
@@ -212,8 +212,8 @@ If reviewer clarification is needed:
 
 Before clicking submit in Play Console, verify all of these match:
 
-- [DATA_SAFETY.md](C:\dev\apps\vibe-tutor\docs\DATA_SAFETY.md)
-- [PRIVACY_POLICY.md](C:\dev\apps\vibe-tutor\docs\PRIVACY_POLICY.md)
+- [DATA_SAFETY.md](V:\monorepo\apps\vibe-tutor\docs\DATA_SAFETY.md)
+- [PRIVACY_POLICY.md](V:\monorepo\apps\vibe-tutor\docs\PRIVACY_POLICY.md)
 - hosted privacy-policy URL
 - Android manifest permissions
 - target audience selections

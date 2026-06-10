@@ -6,14 +6,14 @@ Canonical review map for the workspace and the `D:\` operational surfaces.
 
 | Surface | Path | Purpose |
 | --- | --- | --- |
-| Source code | `C:\dev` | Versioned monorepo, scripts, docs, Nx config |
+| Source code | `V:\monorepo` | Versioned monorepo, scripts, docs, Nx config |
 | Databases | `D:\databases` | Durable SQLite databases and WAL/SHM sidecars |
 | Learning system | `D:\learning-system` | Learning runtime, logs, docs, Python helpers |
 | Logs | `D:\logs` | Application and maintenance logs |
 | Data | `D:\data` | Non-database datasets and exports |
 | Backups | `D:\backups` | Canonical root for database/system backups and retention outputs |
 
-`C:\dev\data`, `C:\dev\logs`, `C:\dev\databases`, and `D:\learning` remain deprecated.
+`V:\monorepo\data`, `V:\monorepo\logs`, `V:\monorepo\databases`, and `D:\learning` remain deprecated.
 
 Legacy snapshot archives may still exist under `D:\_backups` (for example, pre-cleanup ZIPs referenced in `D:\databases\DB_INVENTORY.md`). Treat `D:\_backups` as historical storage, and write new backups to `D:\backups`.
 

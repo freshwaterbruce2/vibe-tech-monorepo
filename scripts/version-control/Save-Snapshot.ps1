@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+﻿#Requires -Version 7.0
 
 <#
 .SYNOPSIS
@@ -39,7 +39,7 @@ param(
     [string]$RepoPath = "D:\repositories\vibetech",
 
     [Parameter(Mandatory = $false)]
-    [string]$WorkspacePath = "C:\dev"
+    [string]$WorkspacePath = "V:\monorepo"
 )
 
 Set-StrictMode -Version Latest

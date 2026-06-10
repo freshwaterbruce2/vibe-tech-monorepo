@@ -10,7 +10,7 @@ The Finisher is a stateful loop agent that autonomously drives projects from 90%
 
 - **Loops autonomously** until completion criteria are met
 - **Manages state** across sessions via `FINISHER_STATE.md`
-- **System-aware** understands your C:\dev (code) + D:\ (data/learning) architecture
+- **System-aware** understands your V:\monorepo (code) + D:\ (data/learning) architecture
 - **Researches current best practices** (2026-aware web search)
 - **Works in small batches** (1-3 items per loop) to prevent overwhelm
 - **Enforces completion** via stop hook that prevents premature exit
@@ -80,7 +80,7 @@ All progress is tracked in `FINISHER_STATE.md` (project root):
 Already installed at:
 
 ```
-C:\dev\.claude\plugins\the-finisher
+V:\monorepo\.claude\plugins\the-finisher
 ```
 
 Claude Code will auto-discover it in your monorepo workspace.
@@ -90,7 +90,7 @@ Claude Code will auto-discover it in your monorepo workspace.
 Copy to your global plugins directory:
 
 ```powershell
-Copy-Item -Path "C:\dev\.claude\plugins\the-finisher" `
+Copy-Item -Path "V:\monorepo\.claude\plugins\the-finisher" `
           -Destination "C:\Users\$env:USERNAME\.claude\plugins\" `
           -Recurse
 ```
@@ -126,7 +126,7 @@ The agent will prioritize work based on your goal.
 Check the state file at any time:
 
 ```
-C:\dev\[your-project]\FINISHER_STATE.md
+V:\monorepo\[your-project]\FINISHER_STATE.md
 ```
 
 It contains:
@@ -159,7 +159,7 @@ Otherwise, the stop hook will restart the agent automatically.
 The Finisher expects this structure:
 
 ```
-C:\dev                  # Code (monorepo)
+V:\monorepo                  # Code (monorepo)
 ├── apps\
 ├── packages\
 └── .claude\
@@ -191,7 +191,7 @@ The agent considers a project "production-ready" when ALL of these are met:
 
 Unlike generic AI agents, The Finisher understands your specific environment:
 
-- **C:\dev** - Source code, monorepo
+- **V:\monorepo** - Source code, monorepo
 - **D:\databases** - SQLite/PostgreSQL databases
 - **D:\learning-system** - Reference patterns (checked BEFORE web search)
 - **D:\logs** - Application logs
@@ -249,7 +249,7 @@ powershell -File "$env:CLAUDE_PLUGIN_ROOT/tools/Test-DrivePaths.ps1"
 Output:
 
 ```
-🔍 Validating D:\ paths for project: C:\dev\apps\nova-agent
+🔍 Validating D:\ paths for project: V:\monorepo\apps\nova-agent
 
 📂 Scanning configuration files...
   ✓ Found: .env
@@ -347,7 +347,7 @@ the-finisher/
 ### Example 1: Vibe Code Studio
 
 ```
-cd C:\dev\apps\vibe-code-studio
+cd V:\monorepo\apps\vibe-code-studio
 /finish "Prepare for v1.0.0 release"
 ```
 
@@ -383,7 +383,7 @@ After 5 loops:
 ### Example 2: Nova Agent
 
 ```
-cd C:\dev\apps\nova-agent
+cd V:\monorepo\apps\nova-agent
 /finish
 ```
 
@@ -440,7 +440,7 @@ In `prompts/system.md`, change the small batch rule:
 This plugin is part of the VibeTech monorepo:
 
 ```
-C:\dev\.claude\plugins\the-finisher
+V:\monorepo\.claude\plugins\the-finisher
 ```
 
 To modify:
@@ -459,7 +459,7 @@ Copyright (c) 2026 Bruce (<freshwaterbruce2@gmail.com>)
 
 - **Ralph-Wiggum Plugin** - Inspiration for loop mechanics
 - **Plugin-Dev Plugin** - Official Claude Code plugin development kit
-- **C:\dev\CLAUDE.md** - Monorepo workspace guidelines
+- **V:\monorepo\CLAUDE.md** - Monorepo workspace guidelines
 
 ---
 

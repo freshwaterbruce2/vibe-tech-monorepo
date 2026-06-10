@@ -1,4 +1,4 @@
-# Practical Automation Examples
+﻿# Practical Automation Examples
 # Real-world use cases for keyboard & mouse automation
 
 Import-Module "$PSScriptRoot\WindowsAutomation.psm1"
@@ -66,7 +66,7 @@ function Capture-AnnotatedScreenshot {
     
     # Capture screenshot
     $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-    $screenshotPath = if ($OutputPath) { $OutputPath } else { "C:\dev\screenshot_$timestamp.png" }
+    $screenshotPath = if ($OutputPath) { $OutputPath } else { "V:\monorepo\screenshot_$timestamp.png" }
     Capture-Screenshot -Path $screenshotPath
     
     # Create metadata file
@@ -160,7 +160,7 @@ Write-Host ""
 
 function Quick-TradingBotStatus {
     # Get trading bot database info
-    $dbPath = "C:\dev\projects\crypto-enhanced\trading.db"
+    $dbPath = "V:\monorepo\projects\crypto-enhanced\trading.db"
     
     if (Test-Path $dbPath) {
         $dbInfo = Get-Item $dbPath
@@ -222,7 +222,7 @@ function Invoke-DevelopmentWorkflowMacro {
     
     # Step 1: Check git status
     Write-Host "  [1/5] Checking git status..." -ForegroundColor Gray
-    $gitStatus = git -C "C:\dev" status --short 2>$null
+    $gitStatus = git -C "V:\monorepo" status --short 2>$null
     if ($gitStatus) {
         Write-Host "    Found uncommitted changes" -ForegroundColor Yellow
     } else {
@@ -237,7 +237,7 @@ function Invoke-DevelopmentWorkflowMacro {
     
     # Step 3: Check trading bot
     Write-Host "  [3/5] Checking trading bot status..." -ForegroundColor Gray
-    $dbPath = "C:\dev\projects\crypto-enhanced\trading.db"
+    $dbPath = "V:\monorepo\projects\crypto-enhanced\trading.db"
     if (Test-Path $dbPath) {
         $age = ((Get-Date) - (Get-Item $dbPath).LastWriteTime).TotalMinutes
         $status = if ($age -lt 5) { "ACTIVE" } elseif ($age -lt 60) { "RECENT" } else { "IDLE" }
@@ -267,7 +267,7 @@ Next Actions:
     
     # Step 5: Screenshot current state
     Write-Host "  [5/5] Capturing screenshot..." -ForegroundColor Gray
-    $screenshot = "C:\dev\workflow_$(Get-Date -Format 'yyyyMMdd_HHmmss').png"
+    $screenshot = "V:\monorepo\workflow_$(Get-Date -Format 'yyyyMMdd_HHmmss').png"
     Capture-Screenshot -Path $screenshot
     Write-Host "    Saved: $screenshot" -ForegroundColor Green
     
@@ -327,5 +327,5 @@ Write-Host "  - Automate repetitive development workflows" -ForegroundColor Gray
 Write-Host ""
 
 Write-Host "All functions available in:" -ForegroundColor Green
-Write-Host "  C:\dev\tools\windows-automation\WindowsAutomation.psm1" -ForegroundColor White
+Write-Host "  V:\monorepo\tools\windows-automation\WindowsAutomation.psm1" -ForegroundColor White
 Write-Host ""

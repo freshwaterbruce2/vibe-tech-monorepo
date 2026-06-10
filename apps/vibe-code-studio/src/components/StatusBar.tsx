@@ -8,6 +8,7 @@ import {
   Layers,
   MessageCircle,
   Package,
+  Plug,
   Sidebar,
   Sparkles,
   Terminal,
@@ -125,6 +126,7 @@ interface StatusBarProps {
   onToggleScreenshot?: () => void;
   onToggleLibrary?: () => void;
   onToggleVisualEditor?: () => void;
+  onToggleWebMcp?: () => void;
 }
 
 const StatusBar = ({
@@ -144,10 +146,11 @@ const StatusBar = ({
   onToggleScreenshot,
   onToggleLibrary,
   onToggleVisualEditor,
+  onToggleWebMcp,
 }: StatusBarProps) => {
   const { isGitRepo, status, branches } = useGit();
 
-  // Format model name for compact display (e.g. "moonshot/kimi-2.5-pro" → "Kimi 2.5 Pro")
+  // Format model name for compact display (e.g. "moonshot/kimi-2.5-pro" -> "Kimi 2.5 Pro")
   const modelLabel = (() => {
     if (!currentModel) return 'AI Ready';
     const name = currentModel.split('/').pop() ?? currentModel;
@@ -263,6 +266,19 @@ const StatusBar = ({
           >
             <Layers size={14} />
             Visual
+          </ToggleButton>
+        )}
+
+        {onToggleWebMcp && (
+          <ToggleButton
+            active={activeVisualPanel === 'webmcp'}
+            onClick={onToggleWebMcp}
+            title="WebMCP Tool Inspector"
+            whileHover={{ scale: 1.05, y: -1 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Plug size={14} />
+            WebMCP
           </ToggleButton>
         )}
 

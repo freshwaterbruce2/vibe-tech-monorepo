@@ -23,13 +23,13 @@ const prebuildInstall = join(rootNodeModules, '.bin', 'prebuild-install.cmd');
 // Back up the current (system-Node ABI) binary before replacing it.
 if (existsSync(binaryPath) && !existsSync(backupPath)) {
   copyFileSync(binaryPath, backupPath);
-  console.log('[rebuild-native] Backed up system-Node binary to:', backupPath);
+  console.warn('[rebuild-native] Backed up system-Node binary to:', backupPath);
 }
 
-console.log(`[rebuild-native] Installing Electron ${electronVersion} binary...`);
+console.warn(`[rebuild-native] Installing Electron ${electronVersion} binary...`);
 execFileSync(prebuildInstall, ['--runtime=electron', `--target=${electronVersion}`, '--arch=x64'], {
   cwd: betterSqliteDir,
   stdio: 'inherit',
   shell: true
 });
-console.log('[rebuild-native] Done - Electron binary in place for packaging.');
+console.warn('[rebuild-native] Done - Electron binary in place for packaging.');

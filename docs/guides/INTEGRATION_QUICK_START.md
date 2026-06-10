@@ -20,7 +20,7 @@
 1. **Clone Repository**
 
    ```bash
-   cd C:\dev
+   cd V:\monorepo
    git pull origin main
    ```
 
@@ -56,7 +56,7 @@
 ### Step 1: Start Shared OpenRouter Proxy (5 min)
 
 ```bash
-cd C:\dev\backend\openrouter-proxy
+cd V:\monorepo\backend\openrouter-proxy
 pnpm install
 pnpm dev
 ```
@@ -78,7 +78,7 @@ curl http://localhost:3001/health
 ### Step 2: Start Vibe Code Studio (5 min)
 
 ```bash
-cd C:\dev\apps\vibe-code-studio
+cd V:\monorepo\apps\vibe-code-studio
 pnpm install
 pnpm dev
 ```
@@ -101,7 +101,7 @@ pnpm dev
 ### Step 3: Start Nova Agent (5 min)
 
 ```bash
-cd C:\dev\apps\nova-agent
+cd V:\monorepo\apps\nova-agent
 pnpm install
 pnpm tauri dev
 ```
@@ -143,7 +143,7 @@ pnpm tauri dev
 
    ```
    [IPC Bridge] Received message: file:open
-   [IPC Bridge] Opening file: C:\dev\test.txt at line 10
+   [IPC Bridge] Opening file: V:\monorepo\test.txt at line 10
    ```
 
 **Success Criteria:**

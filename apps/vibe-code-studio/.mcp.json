@@ -6,7 +6,7 @@
     },
     "github": {
       "command": "node",
-      "args": ["C:/dev/apps/mcp-codeberg/dist/index.js"],
+      "args": ["V:/monorepo/apps/mcp-codeberg/dist/index.js"],
       "env": {
         "GITHUB_TOKEN": "${GITHUB_TOKEN}"
       }

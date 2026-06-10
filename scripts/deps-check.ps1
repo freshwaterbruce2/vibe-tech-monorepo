@@ -1,4 +1,4 @@
-# deps-check.ps1
+﻿# deps-check.ps1
 # Check and update dependencies manually
 # Usage: .\scripts\deps-check.ps1 [-Update] [-Audit]
 
@@ -9,7 +9,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-Set-Location "C:\dev"
+Set-Location "V:\monorepo"
 
 function Test-GitWorktreeDirty {
   $status = git status --porcelain 2>$null

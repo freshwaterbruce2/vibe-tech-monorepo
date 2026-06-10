@@ -1,8 +1,8 @@
-# Fix React Import Patterns for React 19
+﻿# Fix React Import Patterns for React 19
 # This script removes unused React imports and converts React.FC patterns
 
 param(
-    [string]$ProjectPath = "C:\dev\apps\vibe-code-studio",
+    [string]$ProjectPath = "V:\monorepo\apps\vibe-code-studio",
     [switch]$DryRun = $false
 )
 

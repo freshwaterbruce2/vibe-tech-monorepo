@@ -1,5 +1,5 @@
 # NOVA Mobile v1.0.0 Ship Playbook
-# Run from C:\dev in PowerShell 7+. Copy-paste in stages; each stage is idempotent.
+# Run from V:\monorepo in PowerShell 7+. Copy-paste in stages; each stage is idempotent.
 # Mirrors the release checklist in RELEASE_NOTES_v1.0.0.md.
 #
 # Prereqs:
@@ -10,7 +10,7 @@
 #   - For Android smoke test: a connected device OR running emulator
 
 $ErrorActionPreference = 'Stop'
-Set-Location C:\dev\apps\nova-mobile-app
+Set-Location V:\monorepo\apps\nova-mobile-app
 
 # ---------------------------------------------------------------------------
 # Stage 0 - BACKUP (always first, per .claude rules)
@@ -25,7 +25,7 @@ Write-Host "BACKUP: _backups\Backup_$stamp.zip" -ForegroundColor Green
 # ---------------------------------------------------------------------------
 # Stage 1 - Install deps (nova-mobile-app only)
 # ---------------------------------------------------------------------------
-Set-Location C:\dev
+Set-Location V:\monorepo
 pnpm install --filter nova-mobile-app --frozen-lockfile=false
 
 # ---------------------------------------------------------------------------
@@ -38,7 +38,7 @@ pnpm --filter nova-mobile-app run test
 # ---------------------------------------------------------------------------
 # Stage 3 - Verify env template exists and prod config is valid
 # ---------------------------------------------------------------------------
-Set-Location C:\dev\apps\nova-mobile-app
+Set-Location V:\monorepo\apps\nova-mobile-app
 if (-not (Test-Path .\.env.example)) {
     throw ".env.example is missing — refusing to ship without the template"
 }
@@ -128,7 +128,7 @@ pnpm exec eas submit `
 # ---------------------------------------------------------------------------
 # Requires: gh CLI authenticated against github.com/freshwaterbruce2/Monorepo.
 # Tag convention: nova-mobile-app-v1.0.0
-Set-Location C:\dev
+Set-Location V:\monorepo
 $tag = "nova-mobile-app-v1.0.0"
 git tag -a $tag -m "NOVA Mobile v1.0.0"
 git push origin $tag
@@ -136,7 +136,7 @@ git push origin $tag
 gh release create $tag `
     --title "NOVA Mobile v1.0.0" `
     --notes-file apps/nova-mobile-app/RELEASE_NOTES_v1.0.0.md `
-    "C:\dev\apps\nova-mobile-app\_builds\nova-mobile-v1.0.0.apk" `
-    "C:\dev\apps\nova-mobile-app\_builds\SHA256SUMS.txt"
+    "V:\monorepo\apps\nova-mobile-app\_builds\nova-mobile-v1.0.0.apk" `
+    "V:\monorepo\apps\nova-mobile-app\_builds\SHA256SUMS.txt"
 
 Write-Host "Release $tag published." -ForegroundColor Green

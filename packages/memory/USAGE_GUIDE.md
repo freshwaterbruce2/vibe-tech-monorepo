@@ -718,7 +718,7 @@ Complete guide to using the VibeTech Memory System via MCP tools.
 ```json
 {
   "name": "VibeTech Monorepo",
-  "path": "C:/dev",
+  "path": "V:/monorepo",
   "currentFile": "packages/memory/src/integrations/NovaMemory.ts",
   "currentTask": "Implement context persistence",
   "recentFiles": [
@@ -755,7 +755,7 @@ Complete guide to using the VibeTech Memory System via MCP tools.
 ```json
 {
   "name": "VibeTech Monorepo",
-  "path": "C:/dev",
+  "path": "V:/monorepo",
   "currentFile": "packages/memory/src/integrations/NovaMemory.ts",
   "currentTask": "Implement context persistence",
   "recentFiles": [
@@ -816,7 +816,7 @@ Set in `.mcp.json`:
 {
   "memory": {
     "command": "node",
-    "args": ["C:/dev/apps/memory-mcp/dist/index.js"],
+    "args": ["V:/monorepo/apps/memory-mcp/dist/index.js"],
     "env": {
       "MEMORY_DB_PATH": "D:/databases/memory.db",
       "MEMORY_EMBEDDING_MODEL": "nomic-embed-text",
@@ -1037,7 +1037,7 @@ Test-Path D:\databases\memory.db
 
 # Create if missing
 New-Item -Path D:\databases -ItemType Directory -Force
-node C:\dev\apps\memory-mcp\dist\index.js  # Auto-creates DB
+node V:\monorepo\apps\memory-mcp\dist\index.js  # Auto-creates DB
 ```
 
 ### Issue: "Ollama connection failed"

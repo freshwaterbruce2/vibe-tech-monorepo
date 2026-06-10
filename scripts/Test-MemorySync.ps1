@@ -1,11 +1,11 @@
-# Test-MemorySync.ps1
+﻿# Test-MemorySync.ps1
 # Quick test script to verify memory sync configuration
 
 Write-Host "`n[TEST] Memory Sync Configuration Test" -ForegroundColor Cyan
 Write-Host "=================================" -ForegroundColor Cyan
 
 # Check configuration file
-$configFile = "C:\dev\memory_sync.yaml"
+$configFile = "V:\monorepo\memory_sync.yaml"
 if (Test-Path $configFile) {
     Write-Host "[OK] Configuration file exists: $configFile" -ForegroundColor Green
     $fileSize = (Get-Item $configFile).Length
@@ -65,12 +65,12 @@ if (Test-Path $memoryBank) {
 # Check project paths
 Write-Host "`nProject Paths:" -ForegroundColor Yellow
 $projects = @(
-    @{Name="crypto-enhanced"; Path="C:\dev\apps\crypto-enhanced"},
-    @{Name="vibe-tech-lovable"; Path="C:\dev\apps\vibe-tech-lovable"},
-    @{Name="digital-content-builder"; Path="C:\dev\apps\digital-content-builder"},
-    @{Name="business-booking-platform"; Path="C:\dev\apps\business-booking-platform"},
-    @{Name="vibe-tutor"; Path="C:\dev\Vibe-Tutor"},
-    @{Name="memory-bank"; Path="C:\dev\apps\memory-bank"}
+    @{Name="crypto-enhanced"; Path="V:\monorepo\apps\crypto-enhanced"},
+    @{Name="vibe-tech-lovable"; Path="V:\monorepo\apps\vibe-tech-lovable"},
+    @{Name="digital-content-builder"; Path="V:\monorepo\apps\digital-content-builder"},
+    @{Name="business-booking-platform"; Path="V:\monorepo\apps\business-booking-platform"},
+    @{Name="vibe-tutor"; Path="V:\monorepo\Vibe-Tutor"},
+    @{Name="memory-bank"; Path="V:\monorepo\apps\memory-bank"}
 )
 
 $validProjects = 0
@@ -86,9 +86,9 @@ foreach ($project in $projects) {
 # Check prompt sources
 Write-Host "`nPrompt Sources:" -ForegroundColor Yellow
 $promptSources = @(
-    @{Name="Commands"; Path="C:\dev\.claude\commands"},
-    @{Name="Agents"; Path="C:\dev\.claude\agents"},
-    @{Name="CLAUDE.md"; Path="C:\dev\CLAUDE.md"}
+    @{Name="Commands"; Path="V:\monorepo\.claude\commands"},
+    @{Name="Agents"; Path="V:\monorepo\.claude\agents"},
+    @{Name="CLAUDE.md"; Path="V:\monorepo\CLAUDE.md"}
 )
 
 foreach ($prompt in $promptSources) {

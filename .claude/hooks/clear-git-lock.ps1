@@ -1,6 +1,6 @@
 # Clear stale .git/index.lock before git/Serena operations
 # Prevents Serena MCP server race condition with git index.lock
-$projectDir = if ($env:PROJECT_DIR) { $env:PROJECT_DIR } else { 'C:\dev' }
+$projectDir = if ($env:PROJECT_DIR) { $env:PROJECT_DIR } else { 'V:\monorepo' }
 $lockFile = Join-Path $projectDir ".git\index.lock"
 if (-not (Test-Path $lockFile)) { exit 0 }
 

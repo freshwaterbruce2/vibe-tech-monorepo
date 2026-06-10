@@ -1,6 +1,6 @@
 # Vibe Justice - Project Guide
 
-**Project Path:** `C:\dev\apps\vibe-justice`  
+**Project Path:** `V:\monorepo\apps\vibe-justice`  
 **Database:** `D:\databases\vibe_justice.db`  
 **Logs:** `D:\logs\vibe-justice`  
 **Data:** `D:\VibeJusticeData`  
@@ -55,7 +55,7 @@ vibe-justice/
 
 ```powershell
 # Navigate to project
-cd C:\dev\apps\vibe-justice
+cd V:\monorepo\apps\vibe-justice
 
 # Create virtual environment
 python -m venv .venv

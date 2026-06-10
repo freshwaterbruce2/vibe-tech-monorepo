@@ -127,7 +127,7 @@ After adding all variables:
 
 **Total Time: 15-20 minutes**  
 **Difficulty: Easy - just copy/paste!**  
-**Full guide: C:\dev\GET-API-KEYS-WALKTHROUGH.md**
+**Full guide: V:\monorepo\GET-API-KEYS-WALKTHROUGH.md**
 
 ---
 

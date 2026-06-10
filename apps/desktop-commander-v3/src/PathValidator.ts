@@ -2,7 +2,7 @@
  * PathValidator - Strict path validation with allow-list for Desktop Commander V3
  *
  * Allowed paths:
- * - C:\dev - Development work (read/write)
+ * - V:\monorepo - Development work (read/write)
  * - D:\ - Databases, learning system, large files (read/write)
  * - C:\Users\fresh_zxae3v6\OneDrive - Read-only access
  */
@@ -86,7 +86,7 @@ function findAllowedPath(inputPath: string): AllowedPath | null {
 		// Check if the normalized path starts with the allowed path
 		if (normalized.startsWith(allowed.normalized)) {
 			// Ensure it's actually a subdirectory, not just a prefix match
-			// e.g., "c:\develop" should not match "c:\dev"
+			// e.g., "V:\monorepoelop" should not match "V:\monorepo"
 			const remainder = normalized.slice(allowed.normalized.length);
 
 			// If remainder is empty, it's an exact match

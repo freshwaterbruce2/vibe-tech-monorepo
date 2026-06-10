@@ -494,7 +494,7 @@ $ARGUMENTS
 - Execute bash commands using the Bash tool
 - Use Nx MCP tools for detailed project analysis
 - Project name is case-sensitive
-- All commands run from C:\dev as base directory
+- All commands run from V:\monorepo as base directory
 - Analysis is read-only and safe to run anytime
 - Results provide comprehensive project understanding
 - Use for troubleshooting and optimization

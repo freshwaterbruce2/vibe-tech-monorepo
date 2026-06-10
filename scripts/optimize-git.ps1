@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
     Applies advanced Git performance configurations for the VibeTech monorepo.
@@ -63,10 +63,10 @@ git config --local pack.windowMemory 1g
 git config --local pack.packSizeLimit 2g
 Write-Host "  [x] pack.windowMemory = 1g, pack.packSizeLimit = 2g" -ForegroundColor Gray
 
-# Clean up invalid legacy hookspath pointing to deleted C:\dev
+# Clean up invalid legacy hookspath pointing to deleted V:\monorepo
 $legacyHooks = git config --local core.hookspath 2>$null
 if ($legacyHooks) {
-    if ($legacyHooks -like "*C:\dev*") {
+    if ($legacyHooks -like "*V:\monorepo*") {
         Write-Host "  [-] Found invalid core.hookspath ($legacyHooks). Resetting it to default..." -ForegroundColor Yellow
         git config --local --unset core.hookspath
         Write-Host "  [x] core.hookspath unset (will default to relative .git/hooks)" -ForegroundColor Gray

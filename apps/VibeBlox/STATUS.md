@@ -4,7 +4,7 @@
 
 ## Current state
 - ✅ Backend server runs on `http://localhost:3003`
-- ✅ SQLite DB stored on `D:\data\vibeblox\vibeblox.db` (never inside `C:\dev`)
+- ✅ SQLite DB stored on `D:\data\vibeblox\vibeblox.db` (never inside `V:\monorepo`)
 - ✅ Auth/login working (seeded users exist)
 
 ## Key implementation notes
@@ -16,17 +16,17 @@
 ## Quick commands
 ```powershell
 # Terminal 1: backend
-cd C:\dev\apps\VibeBlox
+cd V:\monorepo\apps\VibeBlox
 pnpm run server
 
 # Terminal 2: frontend
-cd C:\dev\apps\VibeBlox
+cd V:\monorepo\apps\VibeBlox
 pnpm run dev
 ```
 
 ## DB init / seed
 ```powershell
-cd C:\dev\apps\VibeBlox
+cd V:\monorepo\apps\VibeBlox
 pnpm run db:migrate
 pnpm run db:seed
 ```

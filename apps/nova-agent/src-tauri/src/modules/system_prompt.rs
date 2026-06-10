@@ -6,7 +6,7 @@ use tracing::{info, warn};
 
 pub fn load_system_prompt() -> String {
     // Kimi K2.5 optimized prompt - leverages native multimodal, thinking mode, and agentic features
-    let prompt_path = r"C:\dev\apps\nova-agent\prompts\nova-kimi-k2.5-v1.md";
+    let prompt_path = r"V:\monorepo\apps\nova-agent\prompts\nova-kimi-k2.5-v1.md";
 
     match fs::read_to_string(prompt_path) {
         Ok(content) => {

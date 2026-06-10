@@ -1,4 +1,4 @@
-# Cleanup and Reinstall Script for pnpm Monorepo
+﻿# Cleanup and Reinstall Script for pnpm Monorepo
 # Last Updated: 2026-02-03
 # Purpose: Deep clean node_modules and reinstall with pnpm
 
@@ -11,7 +11,7 @@ Write-Host "=== pnpm Monorepo Cleanup and Reinstall ===" -ForegroundColor Cyan
 Write-Host ""
 
 # Configuration
-$RootDir = "C:\dev"
+$RootDir = "V:\monorepo"
 
 # Step 1: Create backup snapshot (unless skipped)
 if (-not $SkipBackup) {

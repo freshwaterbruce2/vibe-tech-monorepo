@@ -7,7 +7,7 @@ Last Updated: 2026-04-26
 | Server | Command | Purpose |
 |--------|---------|---------|
 | `desktop-commander` | `node apps/desktop-commander-v3/dist/mcp.js` | Windows automation |
-| `filesystem` | `npx @modelcontextprotocol/server-filesystem` | File access (C:\dev, D:\) |
+| `filesystem` | `npx @modelcontextprotocol/server-filesystem` | File access (V:\monorepo, D:\) |
 | `nx-mcp` | `npx nx-mcp@latest` | Nx workspace management |
 | `sqlite` | `npx @modelcontextprotocol/server-sqlite` | Main DB (D:\databases\database.db) |
 | `skills` | `node apps/mcp-skills-server/dist/index.js` | Agent skills system |
@@ -23,17 +23,17 @@ Last Updated: 2026-04-26
 
 | Editor | Config File | Key format notes |
 |--------|-------------|-----------------|
-| Claude Code | `C:\dev\.mcp.json` | `"mcpServers"` key, `"type": "stdio"` |
+| Claude Code | `V:\monorepo\.mcp.json` | `"mcpServers"` key, `"type": "stdio"` |
 | Claude Desktop | `%APPDATA%\Claude\claude_desktop_config.json` | `"mcpServers"` key, NO `"type"` field |
-| VS Code | `C:\dev\.vscode\mcp.json` | `"servers"` key (not `"mcpServers"`) |
+| VS Code | `V:\monorepo\.vscode\mcp.json` | `"servers"` key (not `"mcpServers"`) |
 
 ## Rebuild Custom Servers
 
 ```powershell
-pnpm --filter mcp-skills-server build     # C:\dev\apps\mcp-skills-server
-pnpm --filter memory-mcp build            # C:\dev\apps\memory-mcp
-pnpm --filter mcp-rag-server build        # C:\dev\apps\mcp-rag-server
-pnpm --filter workspace-mcp-server build  # C:\dev\apps\workspace-mcp-server
+pnpm --filter mcp-skills-server build     # V:\monorepo\apps\mcp-skills-server
+pnpm --filter memory-mcp build            # V:\monorepo\apps\memory-mcp
+pnpm --filter mcp-rag-server build        # V:\monorepo\apps\mcp-rag-server
+pnpm --filter workspace-mcp-server build  # V:\monorepo\apps\workspace-mcp-server
 ```
 
 ## Common Issues

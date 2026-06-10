@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { CONFIG } from '../config.js';
 import { runCommand } from '../tools/process-tools.js';
 import { ProjectClassifier, type ProjectMetadata, type ProjectType } from './project-classifier.js';
+import { ParlRewardShaper, type ParlRewardResult } from './parl-reward-shaper.js';
 import type { TaskSpec } from '../types.js';
 
 const TYPE_CONSTRAINTS: Record<ProjectType, string[]> = {
@@ -23,16 +24,25 @@ export interface RoutedTask {
   task: TaskSpec;
 }
 
+export type ExecutionStrategy = 'parallel' | 'sequential';
+
 export interface RouteResult {
   goal: string;
   projects: ProjectMetadata[];
   tasks: RoutedTask[];
+  strategy: ExecutionStrategy;
+  rewardInfo?: ParlRewardResult;
 }
 
+/** Goals with explicit ordering language cannot be parallelized safely. */
+const SEQUENTIAL_GOAL_PATTERN = /\b(first|then|after|before|finally|step\s*\d)\b/i;
+
 export class MonorepoTaskRouter {
+  private readonly rewardShaper = new ParlRewardShaper();
+
   constructor(private readonly classifier = new ProjectClassifier()) {}
 
-  route(goal: string, explicitProjects?: string[]): RouteResult {
+  route(goal: string, explicitProjects?: string[], epoch = 0, maxEpochs = 100): RouteResult {
     const projects =
       explicitProjects && explicitProjects.length > 0
         ? explicitProjects.map((name) => this.classifier.classify(name))
@@ -41,7 +51,56 @@ export class MonorepoTaskRouter {
       project,
       task: this.buildTaskSpec(goal, project),
     }));
-    return { goal, projects, tasks };
+    const { strategy, rewardInfo } = this.selectStrategy(goal, projects.length, epoch, maxEpochs);
+    return { goal, projects, tasks, strategy, rewardInfo };
+  }
+
+  /**
+   * Scores parallel vs sequential execution with the PARL reward shaper and
+   * picks the strategy with the higher terminal reward (quality + efficiency).
+   * The annealed r_parallel exploration bonus is deliberately excluded from the
+   * comparison: it is a training-time incentive, not task value.
+   */
+  private selectStrategy(
+    goal: string,
+    projectCount: number,
+    epoch: number,
+    maxEpochs: number,
+  ): { strategy: ExecutionStrategy; rewardInfo: ParlRewardResult } {
+    // Planning-time priors: outcomes are unknown before execution, so quality
+    // metrics are held at their optimum and the comparison reduces to the
+    // efficiency term E(tau), which is what actually differs between strategies.
+    const qualityPriors = {
+      taskCompletionRate: 1.0,
+      regressionFreeRate: 1.0,
+      safetyViolationRate: 0.0,
+    };
+    const sequentialStrict = SEQUENTIAL_GOAL_PATTERN.test(goal);
+
+    const parallelReward = this.rewardShaper.calculateReward({
+      epoch,
+      maxEpochs,
+      subAgentCount: projectCount,
+      ...qualityPriors,
+      // Ordering constraints keep the critical path at full length even when
+      // sub-agents are instantiated, so parallelism only adds overhead.
+      criticalSteps: sequentialStrict ? projectCount : 1,
+      totalTasks: projectCount,
+      isParallelExecution: true,
+    });
+    const sequentialReward = this.rewardShaper.calculateReward({
+      epoch,
+      maxEpochs,
+      subAgentCount: 1,
+      ...qualityPriors,
+      criticalSteps: projectCount,
+      totalTasks: projectCount,
+      isParallelExecution: false,
+    });
+
+    return parallelReward.terminalReward > sequentialReward.terminalReward
+      ? { strategy: 'parallel', rewardInfo: parallelReward }
+      : { strategy: 'sequential', rewardInfo: sequentialReward };
   }
 
   private detectAffectedProjects(): ProjectMetadata[] {

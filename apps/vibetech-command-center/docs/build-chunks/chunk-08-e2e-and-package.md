@@ -11,7 +11,7 @@
 ## 0. Backup first
 
 ```powershell
-Compress-Archive -Path C:\dev\apps\vibetech-command-center -DestinationPath C:\dev\_backups\pre-chunk08_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
+Compress-Archive -Path V:\monorepo\apps\vibetech-command-center -DestinationPath V:\monorepo\_backups\pre-chunk08_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
 ```
 
 ---
@@ -21,7 +21,7 @@ Compress-Archive -Path C:\dev\apps\vibetech-command-center -DestinationPath C:\d
 `@playwright/test` is already installed from Chunk 1. Add the Electron driver and Playwright's browser binaries (we don't actually need browsers for Electron, but the install ensures the runner is usable).
 
 ```powershell
-cd C:\dev\apps\vibetech-command-center
+cd V:\monorepo\apps\vibetech-command-center
 pnpm add -D @playwright/test
 pnpm exec playwright install chromium
 ```
@@ -229,7 +229,7 @@ test('quick-backup button on Backups panel triggers backup.create', async () => 
   await page.getByRole('button', { name: /Backups/ }).click();
   await expect(page.locator('text=/Recent Backups/')).toBeVisible({ timeout: 10_000 });
 
-  // Snapshot existing backups in C:\dev\_backups, then click button, then verify count grew.
+  // Snapshot existing backups in V:\monorepo\_backups, then click button, then verify count grew.
   const before = existsSync('C:\\dev\\_backups')
     ? readdirSync('C:\\dev\\_backups').filter((f) => f.endsWith('.zip')).length
     : 0;
@@ -244,7 +244,7 @@ test('quick-backup button on Backups panel triggers backup.create', async () => 
 });
 ```
 
-> **Why the second test uses `C:\dev\packages`:** it's the smallest non-trivial source in the monorepo and Compress-Archive runs in seconds. If your `packages/` is huge for some reason, change it to a smaller fixture path or skip with `test.skip()`.
+> **Why the second test uses `V:\monorepo\packages`:** it's the smallest non-trivial source in the monorepo and Compress-Archive runs in seconds. If your `packages/` is huge for some reason, change it to a smaller fixture path or skip with `test.skip()`.
 
 ### Suite 4: Stream + file watcher
 
@@ -562,7 +562,7 @@ Add to `package.json` scripts:
 ## 7. Build the installer
 
 ```powershell
-cd C:\dev\apps\vibetech-command-center
+cd V:\monorepo\apps\vibetech-command-center
 pnpm run package:dir   # fast: produces release\win-unpacked\Vibe-Tech Command Center.exe
 ```
 
@@ -614,7 +614,7 @@ Done.
 ## 8. Run the full test pyramid
 
 ```powershell
-cd C:\dev\apps\vibetech-command-center
+cd V:\monorepo\apps\vibetech-command-center
 pnpm run typecheck
 pnpm run test
 pnpm run test:e2e
@@ -631,7 +631,7 @@ If E2E fails on the file watcher test (suite 4) due to timing, increase the `set
 
 ## 9. Optional: update CLAUDE.md with shipped state
 
-Append to `C:\dev\apps\vibetech-command-center\CLAUDE.md`:
+Append to `V:\monorepo\apps\vibetech-command-center\CLAUDE.md`:
 
 ```markdown
 
@@ -639,7 +639,7 @@ Append to `C:\dev\apps\vibetech-command-center\CLAUDE.md`:
 
 - Production build: `pnpm run package` produces `release\Vibe-Tech Command Center-Setup-${version}.exe`
 - Dev: `pnpm run dev` (electron-vite hot reload)
-- MCP server: standalone via `pnpm run mcp:start`, registered in `C:\dev\.mcp.json` as `command-center`
+- MCP server: standalone via `pnpm run mcp:start`, registered in `V:\monorepo\.mcp.json` as `command-center`
 - Tray: app keeps running after window close; quit via tray menu
 - Tests: `pnpm run test` (unit/integration), `pnpm run test:e2e` (Playwright Electron), `pnpm run test:all` for both
 ```
@@ -669,7 +669,7 @@ Append to `C:\dev\apps\vibetech-command-center\CLAUDE.md`:
 
 3. **Defender or other antivirus blocking the unsigned `.exe`** — Windows SmartScreen will warn on first run because the installer isn't code-signed. Click "More info" → "Run anyway". Code signing is a $300/year cert and out of scope for an internal tool. Flag if Defender deletes the installer outright (rare for non-network binaries).
 
-4. **`.mcp.json` path may need updating after install** — your registration currently points at `C:\dev\apps\vibetech-command-center\dist\mcp\server.js` (the dev path). If you want Claude Desktop to use the installed copy, update the entry to point at `%LOCALAPPDATA%\Programs\vibe-tech-command-center\resources\mcp\server.js` after install. Keeping the dev path is fine for now — it's what you've been testing against.
+4. **`.mcp.json` path may need updating after install** — your registration currently points at `V:\monorepo\apps\vibetech-command-center\dist\mcp\server.js` (the dev path). If you want Claude Desktop to use the installed copy, update the entry to point at `%LOCALAPPDATA%\Programs\vibe-tech-command-center\resources\mcp\server.js` after install. Keeping the dev path is fine for now — it's what you've been testing against.
 
 5. **Tray icon rendering** — the embedded base64 PNG is a placeholder; it'll look like a tiny pixelated square. Drop a real icon at `assets/tray-icon.png` and update `setupTray` to use `nativeImage.createFromPath('assets/tray-icon.png')`. Strictly cosmetic; ship without.
 
@@ -682,8 +682,8 @@ Append to `C:\dev\apps\vibetech-command-center\CLAUDE.md`:
 ## Post-chunk backup
 
 ```powershell
-Compress-Archive -Path C:\dev\apps\vibetech-command-center -DestinationPath C:\dev\_backups\command-center-chunk08-complete_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
-Compress-Archive -Path "C:\dev\apps\vibetech-command-center\release" -DestinationPath C:\dev\_backups\command-center-installer-v0.1.0_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
+Compress-Archive -Path V:\monorepo\apps\vibetech-command-center -DestinationPath V:\monorepo\_backups\command-center-chunk08-complete_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
+Compress-Archive -Path "V:\monorepo\apps\vibetech-command-center\release" -DestinationPath V:\monorepo\_backups\command-center-installer-v0.1.0_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
 ```
 
 The second backup is the **shipped artifact** — keep this zip. If you ever lose the installer or need to roll back to v0.1.0, it's right there.

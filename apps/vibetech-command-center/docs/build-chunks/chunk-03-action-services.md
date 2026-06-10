@@ -13,7 +13,7 @@
 ## 0. Backup first
 
 ```powershell
-Compress-Archive -Path C:\dev\apps\vibetech-command-center -DestinationPath C:\dev\_backups\pre-chunk03_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
+Compress-Archive -Path V:\monorepo\apps\vibetech-command-center -DestinationPath V:\monorepo\_backups\pre-chunk03_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
 ```
 
 ---
@@ -27,7 +27,7 @@ Append the following to the existing file. Do not replace existing types.
 export interface BackupRequest {
   sourcePath: string;        // absolute Windows path — file or directory
   label?: string;            // optional tag, sanitized into filename
-  destinationDir?: string;   // defaults to C:\dev\_backups
+  destinationDir?: string;   // defaults to V:\monorepo\_backups
 }
 
 export interface BackupResult {
@@ -114,7 +114,7 @@ export interface RagSearchQuery {
 
 export interface RagHit {
   score: number;
-  path: string;            // absolute path inside C:\dev
+  path: string;            // absolute path inside V:\monorepo
   language: string | null;
   snippet: string;
   startLine: number | null;
@@ -145,7 +145,7 @@ import { basename, join, resolve } from 'node:path';
 import type { BackupRequest, BackupResult, BackupLogEntry } from '@shared/types';
 
 export interface BackupServiceOptions {
-  defaultDestination?: string;          // default C:\dev\_backups
+  defaultDestination?: string;          // default V:\monorepo\_backups
   powershellPath?: string;              // default pwsh.exe (PS7)
   timeoutMs?: number;                   // default 10 minutes
 }
@@ -858,7 +858,7 @@ describe('ClaudeBridge', () => {
 
 **Path:** `src/main/services/rag-client.ts`
 
-Client for your existing `mcp-rag-server` at `C:\dev\apps\mcp-rag-server`. Uses the MCP SDK's stdio transport. Graceful degradation if the server isn't reachable — returns `source: 'unavailable'` instead of throwing.
+Client for your existing `mcp-rag-server` at `V:\monorepo\apps\mcp-rag-server`. Uses the MCP SDK's stdio transport. Graceful degradation if the server isn't reachable — returns `source: 'unavailable'` instead of throwing.
 
 ```typescript
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
@@ -1095,7 +1095,7 @@ export type { RagClientOptions } from './rag-client';
 ## 7. Run the suite
 
 ```powershell
-cd C:\dev\apps\vibetech-command-center
+cd V:\monorepo\apps\vibetech-command-center
 pnpm run typecheck ; pnpm run test
 ```
 
@@ -1136,7 +1136,7 @@ pnpm run typecheck ; pnpm run test
 ## Post-chunk backup
 
 ```powershell
-Compress-Archive -Path C:\dev\apps\vibetech-command-center -DestinationPath C:\dev\_backups\command-center-chunk03-complete_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
+Compress-Archive -Path V:\monorepo\apps\vibetech-command-center -DestinationPath V:\monorepo\_backups\command-center-chunk03-complete_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
 ```
 
 Ping me with `chunk 3 complete` (plus any oddities) and I'll write Chunk 4 — IPC + preload + shell. That's where the services stop being libraries and start being the dashboard backend the renderer will talk to.

@@ -1,4 +1,4 @@
-# Vibe Finisher
+﻿# Vibe Finisher
 
 > "Working > Perfect" - The Finisher Philosophy
 
@@ -24,7 +24,7 @@ Vibe Finisher is an autonomous agent that:
 
 ```powershell
 # 1. Initialize a project
-.\init.ps1 -TargetProject "C:\dev\apps\your-project"
+.\init.ps1 -TargetProject "V:\monorepo\apps\your-project"
 
 # 2. Run single pass (test mode)
 .\sync.ps1 -DryRun
@@ -58,8 +58,8 @@ vibe-finisher/
 Edit `finisher.yaml`:
 
 ```yaml
-targetProject: C:\dev\apps\vibe-tutor
-backupDir: C:\dev\_backups
+targetProject: V:\monorepo\apps\vibe-tutor
+backupDir: V:\monorepo\_backups
 
 finishCriteria:
   - "App launches without crashes"

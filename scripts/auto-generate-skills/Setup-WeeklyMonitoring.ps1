@@ -1,4 +1,4 @@
-# Setup-WeeklyMonitoring.ps1
+﻿# Setup-WeeklyMonitoring.ps1
 # Sets up automated weekly skill performance monitoring
 
 param(
@@ -9,7 +9,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $TaskName = "SkillMonitoring-Weekly"
-$ScriptPath = "C:\dev\scripts\auto-generate-skills\Monitor-GeneratedSkills.ps1"
+$ScriptPath = "V:\monorepo\scripts\auto-generate-skills\Monitor-GeneratedSkills.ps1"
 $LogPath = "D:\logs\skill-monitoring"
 
 Write-Host "Skill Monitoring - Automated Weekly Setup" -ForegroundColor Cyan

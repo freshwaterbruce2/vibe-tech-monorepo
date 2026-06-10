@@ -56,37 +56,37 @@ Based on project selection, execute appropriate cd command:
 **web:**
 
 ```bash
-cd C:\dev && pwd
+cd V:\monorepo && pwd
 ```
 
 **crypto:**
 
 ```bash
-cd C:\dev\apps\crypto-enhanced && pwd
+cd V:\monorepo\apps\crypto-enhanced && pwd
 ```
 
 **vibe-tutor:**
 
 ```bash
-cd C:\dev\apps\vibe-tutor && pwd
+cd V:\monorepo\apps\vibe-tutor && pwd
 ```
 
 **shipping:**
 
 ```bash
-cd C:\dev\apps\shipping-pwa && pwd
+cd V:\monorepo\apps\shipping-pwa && pwd
 ```
 
 **business-booking:**
 
 ```bash
-cd C:\dev\apps\business-booking-platform && pwd
+cd V:\monorepo\apps\business-booking-platform && pwd
 ```
 
 **vibe-code-studio:**
 
 ```bash
-cd C:\dev\apps\vibe-code-studio && pwd
+cd V:\monorepo\apps\vibe-code-studio && pwd
 ```
 
 Present with header:
@@ -305,5 +305,5 @@ $ARGUMENTS
 - Automatically navigates to project directory
 - Provides context-specific quick start info
 - Shows git status and recent activity
-- All paths are absolute from C:\dev
+- All paths are absolute from V:\monorepo
 - Helps quickly resume work on any project

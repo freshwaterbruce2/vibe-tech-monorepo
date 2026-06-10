@@ -11,7 +11,7 @@
 PowerShell-based local snapshots at `D:\repositories\vibetech`. Use before risky changes.
 
 ```powershell
-cd C:\dev\scripts\version-control
+cd V:\monorepo\scripts\version-control
 .\Save-Snapshot.ps1 -Description "Before migration"
 .\List-Snapshots.ps1
 .\Restore-Snapshot.ps1 -SnapshotId "20260119-121005"

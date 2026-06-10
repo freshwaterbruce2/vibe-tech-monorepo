@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console -- manual smoke-test script; console output is its report */
 
 /**
  * Test Memory System - Phase 2 Features
@@ -100,7 +101,7 @@ async function runTests() {
     const nova = new NovaMemory(memory);
     await nova.setContext({
       name: 'VibeTech Monorepo',
-      path: 'C:/dev',
+      path: 'V:/monorepo',
       currentFile: 'packages/memory/test-memory.mjs',
       currentTask: 'Testing Phase 2 integrations',
       recentFiles: ['index.ts', 'MemoryManager.ts', 'test-memory.mjs'],

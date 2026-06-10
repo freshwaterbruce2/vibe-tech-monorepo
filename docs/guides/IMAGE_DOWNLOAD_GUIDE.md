@@ -71,7 +71,7 @@
 
 ```powershell
 # Navigate to the custom-images directory
-cd "C:\dev\projects\web-apps\vibe-tech-lovable\public\custom-images"
+cd "V:\monorepo\projects\web-apps\vibe-tech-lovable\public\custom-images"
 
 # Download all images using PowerShell
 Invoke-WebRequest -Uri "https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1800&auto=format&fit=crop" -OutFile "ai-saas-dashboard.jpg"
@@ -89,7 +89,7 @@ Invoke-WebRequest -Uri "https://images.unsplash.com/photo-1635070041078-e363dbe0
 
 1. Right-click each URL above
 2. Save each image with the specified filename
-3. Place in: `C:\dev\projects\web-apps\vibe-tech-lovable\public\custom-images\`
+3. Place in: `V:\monorepo\projects\web-apps\vibe-tech-lovable\public\custom-images\`
 
 ## Image Optimization Tips
 
@@ -103,7 +103,7 @@ Invoke-WebRequest -Uri "https://images.unsplash.com/photo-1635070041078-e363dbe0
 After downloading, verify all 9 images are present:
 
 ```powershell
-ls "C:\dev\projects\web-apps\vibe-tech-lovable\public\custom-images\"
+ls "V:\monorepo\projects\web-apps\vibe-tech-lovable\public\custom-images\"
 ```
 
 You should see all 9 .jpg files listed.

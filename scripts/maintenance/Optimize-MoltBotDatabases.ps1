@@ -1,4 +1,4 @@
-#!/usr/bin/env powershell
+﻿#!/usr/bin/env powershell
 <#
 .SYNOPSIS
     Optimize MoltBot SQLite databases for performance
@@ -73,7 +73,7 @@ if ($DatabaseName -ne "All" -and $retiredDatabases.ContainsKey($DatabaseName)) {
 # Create backup unless skipped
 if (-not $SkipBackup) {
     Write-Host "[SAFETY] Creating pre-optimization backup..." -ForegroundColor Yellow
-    $backupScript = "C:\dev\scripts\backup\Backup-MoltBotData.ps1"
+    $backupScript = "V:\monorepo\scripts\backup\Backup-MoltBotData.ps1"
 
     if (Test-Path $backupScript) {
         try {

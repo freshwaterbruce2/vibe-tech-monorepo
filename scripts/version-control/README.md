@@ -1,4 +1,4 @@
-# D:\ Drive Version Control Scripts
+﻿# D:\ Drive Version Control Scripts
 
 **Your Personal Local "GitHub" Without Git**
 
@@ -118,15 +118,15 @@ D:\repositories\vibetech\
 
 ### Main Documentation
 
-- **Complete Guide:** `C:\dev\D_DRIVE_VERSION_CONTROL_GUIDE.md`
-- **Setup Complete:** `C:\dev\D_DRIVE_VERSION_CONTROL_SETUP_COMPLETE.md`
-- **Rule File:** `C:\dev\.claude\rules\d-drive-version-control.md`
+- **Complete Guide:** `V:\monorepo\D_DRIVE_VERSION_CONTROL_GUIDE.md`
+- **Setup Complete:** `V:\monorepo\D_DRIVE_VERSION_CONTROL_SETUP_COMPLETE.md`
+- **Rule File:** `V:\monorepo\.claude\rules\d-drive-version-control.md`
 
 ### Quick Reference
 
-- **Commands:** `C:\dev\.claude\rules\commands-reference.md`
+- **Commands:** `V:\monorepo\.claude\rules\commands-reference.md`
 - **CLAUDE.md:** Section on D:\ version control
-- **Global Context:** `C:\dev\.claude\context\global.md`
+- **Global Context:** `V:\monorepo\.claude\context\global.md`
 
 ---
 
@@ -163,22 +163,22 @@ Add to `$PROFILE` for quick access:
 
 ```powershell
 function dsnapshot {
-    cd C:\dev\scripts\version-control
+    cd V:\monorepo\scripts\version-control
     .\Save-Snapshot.ps1 -Description $args[0]
 }
 
 function dlist {
-    cd C:\dev\scripts\version-control
+    cd V:\monorepo\scripts\version-control
     .\List-Snapshots.ps1
 }
 
 function drestore {
-    cd C:\dev\scripts\version-control
+    cd V:\monorepo\scripts\version-control
     .\Restore-Snapshot.ps1 -SnapshotId $args[0]
 }
 
 function dquick {
-    cd C:\dev\scripts\version-control
+    cd V:\monorepo\scripts\version-control
     .\QUICK_START.ps1
 }
 ```
@@ -208,7 +208,7 @@ dquick
 ## Status
 
 - **Repository:** `D:\repositories\vibetech`
-- **Workspace:** `C:\dev`
+- **Workspace:** `V:\monorepo`
 - **Current Branch:** `main`
 - **Initialized:** 2026-01-15 11:15:30
 - **Status:** ACTIVE

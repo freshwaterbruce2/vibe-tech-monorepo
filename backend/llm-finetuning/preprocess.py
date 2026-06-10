@@ -6,7 +6,7 @@ from pathlib import Path
 from tqdm import tqdm
 
 # Configuration
-SOURCE_ROOT = r"C:\dev"
+SOURCE_ROOT = r"V:\monorepo"
 OUTPUT_DIR = r"D:\data\code-completion-dataset"
 TRAIN_FILE = os.path.join(OUTPUT_DIR, "train.jsonl")
 TEST_FILE = os.path.join(OUTPUT_DIR, "test.jsonl")

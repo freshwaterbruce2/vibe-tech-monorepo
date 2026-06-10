@@ -3,7 +3,7 @@
  *
  * Output: `${ACP_FEED_DIR}/products-<ISO8601>.jsonl.gz` and a `latest.jsonl.gz`
  * overwrite copy. ACP_FEED_DIR defaults to `D:\data\vibe-shop\acp-feed` per
- * the monorepo paths-policy (no runtime data on C:\dev).
+ * the monorepo paths-policy (no runtime data on V:\monorepo).
  *
  * Usage: pnpm --filter vibe-shop tsx scripts/build-acp-feed.ts
  *
@@ -52,7 +52,7 @@ async function main(): Promise<void> {
   await writeFile(dated, gzipped);
   await writeFile(latest, gzipped);
 
-  // eslint-disable-next-line no-console
+   
   console.log(
     `acp-feed: wrote ${inputs.length} products → ${dated} (${gzipped.byteLength} bytes gzipped)`,
   );
@@ -60,7 +60,7 @@ async function main(): Promise<void> {
 
 main()
   .catch((err) => {
-    // eslint-disable-next-line no-console
+     
     console.error('acp-feed: failed', err);
     process.exitCode = 1;
   })

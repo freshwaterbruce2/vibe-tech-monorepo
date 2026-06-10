@@ -117,7 +117,7 @@ Transform daily responsibilities and developmental activities into an engaging g
 ### Tech Stack
 
 ```
-Location: C:\dev\apps\vibeblox (within @vibetech/workspace monorepo)
+Location: V:\monorepo\apps\vibeblox (within @vibetech/workspace monorepo)
 Database: D:\data\vibeblox\vibeblox.db
 
 Frontend:
@@ -147,7 +147,7 @@ Build/Dev:
 ### Project Structure
 
 ```
-C:\dev\apps\vibeblox\
+V:\monorepo\apps\vibeblox\
 ├── src\
 │   ├── app\
 │   │   ├── routes\
@@ -1233,7 +1233,7 @@ GET  /api/reports/trends    - Trend analysis
    - API documentation
 
 4. **Source Code**
-   - Location: `C:\dev\apps\vibeblox`
+   - Location: `V:\monorepo\apps\vibeblox`
    - Following @vibetech/workspace standards
 
 ---

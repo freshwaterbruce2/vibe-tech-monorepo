@@ -2,7 +2,7 @@
 
 Date: 2026-04-18
 Author: The Architect (system-design review for Bruce)
-Scope: C:\dev monorepo + D:\databases + D:\learning-system + D:\ memory sprawl
+Scope: V:\monorepo monorepo + D:\databases + D:\learning-system + D:\ memory sprawl
 Goal: Make the monorepo work *for itself* — writes from any app flow into memory, learning, and RAG; nightly self-analysis produces prioritized Finisher tasks without human glue.
 
 > Superseded safety note (2026-04-25): database cleanup guidance in this plan must
@@ -15,7 +15,7 @@ Goal: Make the monorepo work *for itself* — writes from any app flow into memo
 ## 1. What's actually wired today
 
 ```
-┌─────────────────────── C:\dev (code) ──────────────────────────┐
+┌─────────────────────── V:\monorepo (code) ──────────────────────────┐
 │                                                                 │
 │  apps/memory-mcp (stdio + HTTP:3200)                            │
 │    ├─ imports @vibetech/memory  (packages/memory)               │
@@ -165,7 +165,7 @@ $victims = @(
   'job_queue','trendmart','vibe_shop','cleanup_automation'
 )
 foreach ($v in $victims) {
-  $hits = Get-ChildItem C:\dev -Recurse -Include *.ts,*.tsx,*.py,*.json `
+  $hits = Get-ChildItem V:\monorepo -Recurse -Include *.ts,*.tsx,*.py,*.json `
     -ErrorAction SilentlyContinue |
     Select-String -Pattern "$v\.db" -SimpleMatch
   if (-not $hits) {
@@ -286,7 +286,7 @@ Delete `D:\learning-system\data\*.json` writes. `HOW_LEARNING_WORKS.md` gets rew
 One PowerShell task that runs at 4 AM (replaces `ralph` + manual consolidation + manual WORKSPACE.json edits):
 
 ```
-C:\dev\scripts\nightly\Run-MonorepoEvolution.ps1
+V:\monorepo\scripts\nightly\Run-MonorepoEvolution.ps1
 
   Step 1: memory_consolidate (threshold 0.9, dryRun false)
   Step 2: memory_decay_stats + archive
@@ -308,7 +308,7 @@ Registered via Task Scheduler:
 ```powershell
 Register-ScheduledTask -TaskName "MonorepoEvolution" `
   -Action (New-ScheduledTaskAction -Execute 'pwsh.exe' `
-    -Argument '-File C:\dev\scripts\nightly\Run-MonorepoEvolution.ps1') `
+    -Argument '-File V:\monorepo\scripts\nightly\Run-MonorepoEvolution.ps1') `
   -Trigger (New-ScheduledTaskTrigger -Daily -At 4am) `
   -Settings (New-ScheduledTaskSettingsSet -StartWhenAvailable -WakeToRun)
 ```
@@ -347,7 +347,7 @@ Returns a ranked list. This is what you ask for at the start of every session to
 | Week | Deliverable | Backup command first | Validates |
 |---|---|---|---|
 | 1 | Dead-DB cleanup + pnpm-store dedup + backup dir collapse | `Compress-Archive -Path D:\databases\*.db* -DestinationPath D:\_backups\db_$(Get-Date -Format 'yyyyMMdd').zip` | `ws_list_databases` shows 8 files, not 18 |
-| 1 | `packages/rag` + `packages/embeddings` extracted | `Compress-Archive -Path C:\dev\apps\mcp-rag-server,C:\dev\apps\nova-agent\src\rag,C:\dev\apps\memory-mcp\src\rag-bridge.ts -DestinationPath C:\dev\_backups\pre-rag-consolidation_$(Get-Date -Format 'yyyyMMdd').zip` | `pnpm nx build memory-mcp mcp-rag-server nova-agent` green |
+| 1 | `packages/rag` + `packages/embeddings` extracted | `Compress-Archive -Path V:\monorepo\apps\mcp-rag-server,V:\monorepo\apps\nova-agent\src\rag,V:\monorepo\apps\memory-mcp\src\rag-bridge.ts -DestinationPath V:\monorepo\_backups\pre-rag-consolidation_$(Get-Date -Format 'yyyyMMdd').zip` | `pnpm nx build memory-mcp mcp-rag-server nova-agent` green |
 | 2 | `packages/event-bus` + 3 producer wirings (vtde, nova-agent, git-hook) | `Compress-Archive -Path D:\databases\events.db* -DestinationPath D:\_backups\events_$(Get-Date -Format 'yyyyMMdd').zip` if exists | `SELECT count(*) FROM events` grows during a dev session |
 | 2 | workspace-mcp schema registry + `ws_list_schemas` tool | — | `ws_workspace_summary` returns live DB list not hardcoded |
 | 3 | Python learning-engine → agent_learning.db direct writes; delete JSON paths | `Compress-Archive -Path D:\learning-system -DestinationPath D:\_backups\learning-system_$(Get-Date -Format 'yyyyMMdd').zip` | `memory_learning_sync` returns nonzero patternsIngested |

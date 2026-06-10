@@ -1,4 +1,4 @@
-# Restart OpenRouter Proxy Server
+﻿# Restart OpenRouter Proxy Server
 Write-Host "🔄 Restarting OpenRouter Proxy..." -ForegroundColor Yellow
 Write-Host ""
 
@@ -13,6 +13,6 @@ if ($process) {
 Write-Host "🔌 Starting OpenRouter Proxy Server..." -ForegroundColor Cyan
 Write-Host ""
 
-cd C:\dev\backend\openrouter-proxy
+cd V:\monorepo\backend\openrouter-proxy
 pnpm dev
 

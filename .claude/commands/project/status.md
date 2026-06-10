@@ -13,7 +13,7 @@ Get a comprehensive health check across all active projects in the monorepo.
 Execute this bash command to check web app status:
 
 ```bash
-cd C:\dev && npm run typecheck 2>&1 | head -5
+cd V:\monorepo && npm run typecheck 2>&1 | head -5
 ```
 
 Present with header:
@@ -31,7 +31,7 @@ Show TypeScript status (passing/failing).
 Execute this bash command to check crypto system:
 
 ```bash
-cd C:\dev\apps\crypto-enhanced && if [ -f D:\databases\trading.db ]; then sqlite3 D:\databases\trading.db "SELECT COUNT(*) FROM positions WHERE status='open';" 2>&1; else echo "Database not found"; fi
+cd V:\monorepo\apps\crypto-enhanced && if [ -f D:\databases\trading.db ]; then sqlite3 D:\databases\trading.db "SELECT COUNT(*) FROM positions WHERE status='open';" 2>&1; else echo "Database not found"; fi
 ```
 
 Present with header:
@@ -49,7 +49,7 @@ Show open positions count and system health.
 Execute this bash command:
 
 ```bash
-cd C:\dev\Vibe-Tutor && if [ -f package.json ]; then grep "version" package.json | head -1; else echo "Project not found"; fi
+cd V:\monorepo\Vibe-Tutor && if [ -f package.json ]; then grep "version" package.json | head -1; else echo "Project not found"; fi
 ```
 
 Present with header:
@@ -67,7 +67,7 @@ Show current version.
 Execute this bash command:
 
 ```bash
-cd C:\dev && git status --short
+cd V:\monorepo && git status --short
 ```
 
 Present with header:
@@ -85,7 +85,7 @@ Show modified files and git status.
 Execute this bash command:
 
 ```bash
-powershell -Command "if (Test-Path 'C:\dev\node_modules\.cache\nx') { $size = (Get-ChildItem -Path 'C:\dev\node_modules\.cache\nx' -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum / 1MB; 'Cache size: {0:N2} MB' -f $size } else { 'Nx cache not found' }"
+powershell -Command "if (Test-Path 'V:\monorepo\node_modules\.cache\nx') { $size = (Get-ChildItem -Path 'V:\monorepo\node_modules\.cache\nx' -Recurse -File -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum / 1MB; 'Cache size: {0:N2} MB' -f $size } else { 'Nx cache not found' }"
 ```
 
 Present with header:

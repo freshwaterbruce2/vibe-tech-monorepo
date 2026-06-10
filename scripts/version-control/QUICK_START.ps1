@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+﻿#Requires -Version 7.0
 
 <#
 .SYNOPSIS
@@ -72,7 +72,7 @@ if ($isInitialized) {
         }
         "4" {
             Write-Host "`nOpening documentation...`n" -ForegroundColor Cyan
-            Start-Process "notepad" -ArgumentList "C:\dev\D_DRIVE_VERSION_CONTROL_GUIDE.md"
+            Start-Process "notepad" -ArgumentList "V:\monorepo\D_DRIVE_VERSION_CONTROL_GUIDE.md"
         }
         "5" {
             Write-Host "`n========================================" -ForegroundColor Cyan
@@ -149,7 +149,7 @@ $createSnapshot = Read-Host "Create first snapshot? (Y/N)"
 if ($createSnapshot -eq 'Y') {
     Write-Host "`nGreat! Let's create your first snapshot.`n" -ForegroundColor Cyan
 
-    Write-Host "This will save the current state of C:\dev to D:\repositories\vibetech\`n" -ForegroundColor Gray
+    Write-Host "This will save the current state of V:\monorepo to D:\repositories\vibetech\`n" -ForegroundColor Gray
 
     Write-Host "Enter a description (or press Enter for default):" -ForegroundColor Cyan
     $description = Read-Host "Description"
@@ -179,7 +179,7 @@ Write-Host "⏪ Restore snapshot:" -ForegroundColor White
 Write-Host "   .\Restore-Snapshot.ps1 -SnapshotId `"20260114-153000`"`n" -ForegroundColor Gray
 
 Write-Host "📖 Full documentation:" -ForegroundColor White
-Write-Host "   C:\dev\D_DRIVE_VERSION_CONTROL_GUIDE.md`n" -ForegroundColor Gray
+Write-Host "   V:\monorepo\D_DRIVE_VERSION_CONTROL_GUIDE.md`n" -ForegroundColor Gray
 
 Write-Host "💡 Tip: Create snapshots before risky changes!" -ForegroundColor Yellow
 Write-Host "   You can always restore to any previous state.`n" -ForegroundColor Gray

@@ -373,10 +373,10 @@ processCart@https://example.com/app.js:200:15`;
       const parser = new StackTraceParser();
       const frame: StackFrame = {
         functionName: 'testFunc',
-        file: 'C:/dev/test.ts',
+        file: 'V:/monorepo/test.ts',
         line: 42,
         column: 10,
-        source: 'at testFunc (C:/dev/test.ts:42:10)'
+        source: 'at testFunc (V:/monorepo/test.ts:42:10)'
       };
 
       const formatted = parser.formatFrame(frame);

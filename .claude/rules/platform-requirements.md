@@ -13,10 +13,10 @@ All development targets Windows 11 exclusively. Do not suggest or implement cros
 
 ## Path Conventions
 
-- `C:\dev\` — all source code (apps, packages, backend)
+- `V:\monorepo\` — all source code (apps, packages, backend)
 - `D:\` — all data (databases, logs, learning-system, screenshots)
 
-Never use Unix paths (`/home/user`, `/var/lib`). Never store data files in `C:\dev`.
+Never use Unix paths (`/home/user`, `/var/lib`). Never store data files in `V:\monorepo`.
 
 ## Required Build Tools
 

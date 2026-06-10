@@ -114,12 +114,12 @@ If you relied on the allow-list for security:
 - ❌ **Removed:** PowerShell command allow-list
 - ❌ **Removed:** Command validation against safe list
 - ✅ **Added:** Comprehensive security warnings in code/docs
-- ✅ **Kept:** File system path restrictions (C:\dev, D:\, OneDrive)
+- ✅ **Kept:** File system path restrictions (V:\monorepo, D:\, OneDrive)
 - ✅ **Kept:** Timeout protection (prevents hanging)
 - ✅ **Kept:** Buffer limits (prevents memory exhaustion)
 
 ### Security Features Still In Place
-1. **File System Limits** - Only C:\dev, D:\, OneDrive (read-only)
+1. **File System Limits** - Only V:\monorepo, D:\, OneDrive (read-only)
 2. **Timeout Protection** - Default 60s, max configurable
 3. **Buffer Limits** - 50MB max output
 4. **No Interactive Commands** - Commands requiring input will timeout
@@ -179,7 +179,7 @@ If you relied on the allow-list for security:
 
 1. **Rebuild:**
    ```bash
-   cd C:\dev\apps\desktop-commander-v3
+   cd V:\monorepo\apps\desktop-commander-v3
    pnpm run build
    ```
 

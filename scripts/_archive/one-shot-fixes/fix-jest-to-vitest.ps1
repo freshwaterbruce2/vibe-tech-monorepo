@@ -1,11 +1,11 @@
-# Fix Jest to Vitest Migration
+﻿# Fix Jest to Vitest Migration
 # Replaces jest.fn() with vi.fn() and other jest patterns
 # Created: 2026-01-25
 
 Write-Host "Finding files with jest patterns..." -ForegroundColor Cyan
 
 # Find all files with jest. patterns in shipping-pwa
-$files = Get-ChildItem -Path "C:\dev\apps\shipping-pwa" -Recurse -Include "*.ts","*.tsx" |
+$files = Get-ChildItem -Path "V:\monorepo\apps\shipping-pwa" -Recurse -Include "*.ts","*.tsx" |
     Where-Object { $_.FullName -notmatch "node_modules" } |
     Where-Object { (Get-Content $_.FullName -Raw) -match "jest\." }
 
@@ -48,7 +48,7 @@ foreach ($file in $files) {
 
     if ($content -ne $originalContent) {
         Set-Content $file.FullName $content -NoNewline
-        $relativePath = $file.FullName.Replace("C:\dev\", "")
+        $relativePath = $file.FullName.Replace("V:\monorepo\", "")
         Write-Host "Fixed: $relativePath" -ForegroundColor Green
         $fixedCount++
         $changedFiles += $relativePath

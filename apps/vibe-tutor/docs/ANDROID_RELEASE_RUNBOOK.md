@@ -6,7 +6,7 @@ This runbook prepares `vibe-tutor` for Google Play internal testing and producti
 
 - JDK 17 installed and available in `PATH`
 - Android SDK + build tools installed
-- `pnpm install` completed at repo root (`C:\dev`)
+- `pnpm install` completed at repo root (`V:\monorepo`)
 - Play Console app created for package id `com.vibetech.tutor`
 - Play App Signing enabled in Play Console
 
@@ -34,7 +34,7 @@ From `apps/vibe-tutor/android`:
 
 ## 4) Build and Validate with Nx
 
-Run from repo root (`C:\dev`):
+Run from repo root (`V:\monorepo`):
 
 ```powershell
 pnpm nx run vibe-tutor:build

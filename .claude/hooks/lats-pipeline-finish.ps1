@@ -22,7 +22,7 @@ try {
     if (-not $runId) { exit 0 }
 
     $CLI     = 'node'
-    $CLIPath = 'C:\dev\packages\agent-lats\dist\cli.js'
+    $CLIPath = 'V:\monorepo\packages\agent-lats\dist\cli.js'
 
     # Infer success from tool response content
     $responseContent = ''

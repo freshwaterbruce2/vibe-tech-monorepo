@@ -1,6 +1,6 @@
 # Repository Guidelines
 
-> Status: secondary reference. Canonical workspace policy lives in `C:\dev\AGENTS.md`, `C:\dev\AI.md`, `C:\dev\WORKSPACE.json`, and `C:\dev\docs\WORKSPACE_STRUCTURE.md`.
+> Status: secondary reference. Canonical workspace policy lives in `V:\monorepo\AGENTS.md`, `V:\monorepo\AI.md`, `V:\monorepo\WORKSPACE.json`, and `V:\monorepo\docs\WORKSPACE_STRUCTURE.md`.
 
 ## 🚨 Non-negotiable Rules (Current Architecture)
 
@@ -104,7 +104,7 @@
 ### Critical Storage Rules for Nova
 
 ```
-C:\dev\         = ALL CODE (source, configs, repos)
+V:\monorepo\         = ALL CODE (source, configs, repos)
 D:\databases\   = ALL DATA (DBs, logs, learning, large files)
 
 Databases:
@@ -216,7 +216,7 @@ The Codex CLI is configured via `~/.codex/config.toml` with the following optimi
 
 The following Model Context Protocol (MCP) servers are configured:
 
-1. **filesystem** - Access to C:\dev (entire monorepo)
+1. **filesystem** - Access to V:\monorepo (entire monorepo)
 2. **filesystem-data** - Access to D:\ drive (logs, databases, data, learning)
 3. **sqlite** - Database operations in D:\databases
 4. **desktop-commander** - Custom Windows automation via Desktop Commander v3
@@ -226,7 +226,7 @@ The following Model Context Protocol (MCP) servers are configured:
 
 When using Codex in this monorepo:
 
-- **Launch from C:\dev**: `codex` or `codex --cd C:\dev`
+- **Launch from V:\monorepo**: `codex` or `codex --cd V:\monorepo`
 - **Use profiles**: `codex --profile crypto` for trading system work
 - **Workspace-aware**: Codex automatically detects pnpm workspaces and Nx configuration
 - **AGENTS.md discovery**: Codex reads AGENTS.md files hierarchically (root → project-specific)

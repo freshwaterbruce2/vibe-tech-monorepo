@@ -40,7 +40,7 @@ interface LoadedContext {
 export class AgentContextLoader {
   private cache: Map<string, CacheEntry> = new Map();
   private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
-  private readonly CLAUDE_ROOT = process.env.CLAUDE_ROOT || 'C:\\dev\\.claude';
+  private readonly CLAUDE_ROOT = process.env.CLAUDE_ROOT || 'V:\\monorepo\\.claude';
   private readonly CONTEXT_DIR = join(this.CLAUDE_ROOT, 'context');
   private readonly AGENTS_DIR = join(this.CLAUDE_ROOT, 'agents');
 

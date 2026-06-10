@@ -49,7 +49,7 @@ $processId = (Get-NetTCPConnection -LocalPort 5175).OwningProcess
 Stop-Process -Id $processId -Force
 
 # Or use the dev command's port-check
-cd C:\dev
+cd V:\monorepo
 pnpm run dev:port-check 5175
 ```
 
@@ -69,7 +69,7 @@ tauri-plugin-dialog = "2.6"  # Update from 2.5
 ### Option 1: Via Nx (Recommended)
 
 ```bash
-cd C:\dev
+cd V:\monorepo
 
 # Method 1: Using Nx (with Nx Cloud warning - can ignore)
 pnpm nx tauri:dev vibe-justice
@@ -84,14 +84,14 @@ pnpm run tauri:dev
 **Terminal 1 - Frontend (Vite):**
 
 ```bash
-cd C:\dev\apps\vibe-justice\frontend
+cd V:\monorepo\apps\vibe-justice\frontend
 pnpm run dev  # Starts on localhost:5175
 ```
 
 **Terminal 2 - Backend (FastAPI):**
 
 ```bash
-cd C:\dev\apps\vibe-justice\backend
+cd V:\monorepo\apps\vibe-justice\backend
 .venv\Scripts\activate
 uvicorn main:app --reload --port 8000
 ```
@@ -99,7 +99,7 @@ uvicorn main:app --reload --port 8000
 **Terminal 3 - Tauri (Rust Desktop App):**
 
 ```bash
-cd C:\dev\apps\vibe-justice\frontend
+cd V:\monorepo\apps\vibe-justice\frontend
 pnpm tauri dev  # Launches desktop window
 ```
 
@@ -217,7 +217,7 @@ node test-deepseek-models.mjs
 curl http://localhost:3001/health
 
 # Start everything in parallel
-cd C:\dev
+cd V:\monorepo
 pnpm nx dev:all vibe-justice  # Frontend + Backend
 ```
 

@@ -1,5 +1,5 @@
-# Git Workflow Helper for C:\dev Monorepo
-# Add to your PowerShell profile: . C:\dev\tools\git-workflow-helper.ps1
+﻿# Git Workflow Helper for V:\monorepo Monorepo
+# Add to your PowerShell profile: . V:\monorepo\tools\git-workflow-helper.ps1
 
 function Show-CommitStatus {
     <#
@@ -133,7 +133,7 @@ function Show-WorkflowHelp {
     Write-Host @"
 
 ┌─────────────────────────────────────────────────────────────────┐
-│  C:\dev MONOREPO - INCREMENTAL MERGE WORKFLOW                   │
+│  V:\monorepo MONOREPO - INCREMENTAL MERGE WORKFLOW                   │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  DAILY WORKFLOW:                                                │
@@ -163,7 +163,7 @@ function Show-WorkflowHelp {
 │  Small merges = 2-5 conflicts (easy)                            │
 │  Large merges = 147+ conflicts (hours of work)                  │
 │                                                                 │
-│  📖 Full docs: C:\dev\MONOREPO_WORKFLOW.md                      │
+│  📖 Full docs: V:\monorepo\MONOREPO_WORKFLOW.md                      │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 
@@ -176,9 +176,9 @@ Set-Alias workflow-merge Start-WorkflowMerge
 Set-Alias workflow-help Show-WorkflowHelp
 Set-Alias commits Show-CommitStatus
 
-# Display reminder when navigating to C:\dev
+# Display reminder when navigating to V:\monorepo
 $currentPath = Get-Location
-if ($currentPath.Path -like "*C:\dev*") {
+if ($currentPath.Path -like "*V:\monorepo*") {
     Write-Host "💡 Tip: Run 'workflow-status' to check your merge status" -ForegroundColor Cyan
 }
 

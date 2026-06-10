@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "composite": true,
     "target": "ES2022",
     "module": "ESNext",
     "lib": ["ES2022"],
@@ -24,20 +23,11 @@
     "resolveJsonModule": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"],
+  "exclude": ["node_modules", "dist", "src/__tests__", "src/**/*.test.ts", "src/**/*.spec.ts"],
   "extends": "../../tsconfig.base.json",
   "references": [
     {
       "path": "../openrouter-client"
-    },
-    {
-      "path": "../shared-config"
-    },
-    {
-      "path": "../logger"
-    },
-    {
-      "path": "../inngest-client"
     }
   ]
 }

@@ -111,7 +111,7 @@ git reset --hard HEAD~1
 
 ## Configuration
 
-Edit `C:\dev\memory_sync.yaml` to:
+Edit `V:\monorepo\memory_sync.yaml` to:
 
 - Add/remove projects
 - Change auto-commit threshold
@@ -133,7 +133,7 @@ python -m pip install watchdog pyyaml gitpython
 .\Test-MemorySync.ps1
 
 # Run with verbose output
-python C:\dev\memory_watcher.py
+python V:\monorepo\memory_watcher.py
 ```
 
 ### High CPU usage
@@ -199,9 +199,9 @@ Remove-Item "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\MemorySy
 
 ## Created Files
 
-- `C:\dev\scripts\Start-MemorySync.ps1` - Launcher script
-- `C:\dev\scripts\Test-MemorySync.ps1` - Test script
-- `C:\dev\scripts\python\memory_watcher.py` - Python watcher
+- `V:\monorepo\scripts\Start-MemorySync.ps1` - Launcher script
+- `V:\monorepo\scripts\Test-MemorySync.ps1` - Test script
+- `V:\monorepo\scripts\python\memory_watcher.py` - Python watcher
 - Memory-sync configuration should stay under `scripts\` or `D:\`, not as
   generated files in the repo root.
 - `D:\memory_bank\` - Centralized memory storage

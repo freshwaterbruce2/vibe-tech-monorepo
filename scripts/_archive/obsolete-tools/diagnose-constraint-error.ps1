@@ -1,4 +1,4 @@
-# PostgreSQL Constraint Error Diagnostic
+﻿# PostgreSQL Constraint Error Diagnostic
 # This script helps identify where the constraint error is coming from
 
 Write-Host "`n=== PostgreSQL Constraint Error Diagnostic ===" -ForegroundColor Cyan
@@ -62,7 +62,7 @@ $ormPatterns = @("typeorm", "prisma", "sequelize", "knex", "objection")
 $configFiles = @()
 
 foreach ($pattern in $ormPatterns) {
-    $found = Get-ChildItem -Path C:\dev -Recurse -Filter "*$pattern*" -File -ErrorAction SilentlyContinue |
+    $found = Get-ChildItem -Path V:\monorepo -Recurse -Filter "*$pattern*" -File -ErrorAction SilentlyContinue |
              Where-Object { $_.Extension -in ".json", ".js", ".ts", ".yml", ".yaml" } |
              Select-Object -First 5
 
@@ -88,9 +88,9 @@ Write-Host "  - Other ORMs with hash-based naming" -ForegroundColor White
 # Check recent error logs
 Write-Host "`n[7] Checking Recent Application Logs..." -ForegroundColor Magenta
 $logDirs = @(
-    "C:\dev\logs",
-    "C:\dev\projects\crypto-enhanced\logs",
-    "C:\dev\projects\active\*\logs"
+    "V:\monorepo\logs",
+    "V:\monorepo\projects\crypto-enhanced\logs",
+    "V:\monorepo\projects\active\*\logs"
 )
 
 $recentLogs = @()

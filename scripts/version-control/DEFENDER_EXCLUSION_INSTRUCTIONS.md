@@ -1,4 +1,4 @@
-# Windows Defender Exclusion Instructions
+﻿# Windows Defender Exclusion Instructions
 
 **Issue:** Windows Defender may block snapshot compression, flagging files as "potentially unwanted software" (false positive).
 
@@ -14,7 +14,7 @@
 2. Navigate to scripts directory:
 
    ```powershell
-   cd C:\dev\scripts\version-control
+   cd V:\monorepo\scripts\version-control
    ```
 
 3. Run the exclusion script:
@@ -28,7 +28,7 @@
 **That's it!** The script will add exclusions for:
 
 - `D:\repositories\vibetech\snapshots\` (snapshot storage)
-- `C:\dev\scripts\version-control\` (PowerShell scripts)
+- `V:\monorepo\scripts\version-control\` (PowerShell scripts)
 
 ---
 
@@ -41,7 +41,7 @@ If you prefer to add exclusions manually:
 ```powershell
 # Run PowerShell as Administrator, then:
 Add-MpPreference -ExclusionPath "D:\repositories\vibetech\snapshots"
-Add-MpPreference -ExclusionPath "C:\dev\scripts\version-control"
+Add-MpPreference -ExclusionPath "V:\monorepo\scripts\version-control"
 ```
 
 ### Option 2: Windows Security GUI
@@ -54,7 +54,7 @@ Add-MpPreference -ExclusionPath "C:\dev\scripts\version-control"
 6. Click **Add an exclusion** → **Folder**
 7. Add these folders:
    - `D:\repositories\vibetech\snapshots`
-   - `C:\dev\scripts\version-control`
+   - `V:\monorepo\scripts\version-control`
 
 ---
 
@@ -70,7 +70,7 @@ Get-MpPreference | Select-Object -ExpandProperty ExclusionPath
 
 ```
 D:\repositories\vibetech\snapshots
-C:\dev\scripts\version-control
+V:\monorepo\scripts\version-control
 ```
 
 ---
@@ -78,7 +78,7 @@ C:\dev\scripts\version-control
 ## Test Snapshot After Adding Exclusion
 
 ```powershell
-cd C:\dev\scripts\version-control
+cd V:\monorepo\scripts\version-control
 .\Save-Snapshot.ps1 -Description "Test after Defender exclusion"
 ```
 
@@ -90,17 +90,17 @@ Should complete without errors now!
 
 **These exclusions are safe because:**
 
-1. ✅ You control the code in C:\dev
+1. ✅ You control the code in V:\monorepo
 2. ✅ Snapshots are compressed copies of YOUR code
 3. ✅ No external/untrusted files are involved
 4. ✅ You can verify snapshot contents anytime
-5. ✅ Windows Defender still scans C:\dev itself
+5. ✅ Windows Defender still scans V:\monorepo itself
 
 **What the exclusion does:**
 
 - Tells Defender: "Don't scan files in snapshots directory during compression"
 - Does NOT disable Defender for your whole system
-- Does NOT affect scanning of C:\dev source code
+- Does NOT affect scanning of V:\monorepo source code
 
 **Real-world analogy:**
 
@@ -117,7 +117,7 @@ To remove exclusions later:
 ```powershell
 # Run as Administrator
 Remove-MpPreference -ExclusionPath "D:\repositories\vibetech\snapshots"
-Remove-MpPreference -ExclusionPath "C:\dev\scripts\version-control"
+Remove-MpPreference -ExclusionPath "V:\monorepo\scripts\version-control"
 ```
 
 ---
@@ -144,7 +144,7 @@ Remove-MpPreference -ExclusionPath "C:\dev\scripts\version-control"
 If you don't want to add exclusions, delete the flagged file:
 
 ```powershell
-Remove-Item "C:\dev\apps\vibe-justice\MODEL_UPDATE_2026-01-13.md" -Force
+Remove-Item "V:\monorepo\apps\vibe-justice\MODEL_UPDATE_2026-01-13.md" -Force
 ```
 
 Then create snapshot:

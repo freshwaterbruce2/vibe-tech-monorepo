@@ -1,6 +1,6 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 # Database Path Policy Cleanup Script
-# Migrates databases from C:\dev to D:\databases and removes test artifacts
+# Migrates databases from V:\monorepo to D:\databases and removes test artifacts
 
 param(
     [switch]$DryRun = $true,  # Default to dry run for safety
@@ -80,22 +80,22 @@ function Move-Database {
 
 # 1. Remove empty placeholder (crypto-enhanced)
 Write-Host "`n=== crypto-enhanced/trading.db ===" -ForegroundColor Cyan
-Remove-Database "C:\dev\apps\crypto-enhanced\trading.db" "Empty placeholder (0 bytes) - real DB at D:\databases\trading.db"
+Remove-Database "V:\monorepo\apps\crypto-enhanced\trading.db" "Empty placeholder (0 bytes) - real DB at D:\databases\trading.db"
 
 # 2. Remove all test databases (nova-agent)
 Write-Host "`n=== nova-agent test databases ===" -ForegroundColor Cyan
-$testDbs = Get-ChildItem "C:\dev\apps\nova-agent\test-db" -Filter "*.db" -ErrorAction SilentlyContinue
+$testDbs = Get-ChildItem "V:\monorepo\apps\nova-agent\test-db" -Filter "*.db" -ErrorAction SilentlyContinue
 foreach ($db in $testDbs) {
     Remove-Database $db.FullName "Test artifact from Oct/Nov 2025"
 }
 
 # 3. Move digital-content-builder database (has data)
 Write-Host "`n=== digital-content-builder/database.sqlite ===" -ForegroundColor Cyan
-Move-Database "C:\dev\apps\digital-content-builder\database.sqlite" "digital-content-builder.db" "Contains data (68KB) - migrate to D:\databases"
+Move-Database "V:\monorepo\apps\digital-content-builder\database.sqlite" "digital-content-builder.db" "Contains data (68KB) - migrate to D:\databases"
 
 # 4. Move vibe-subscription-guard database
 Write-Host "`n=== vibe-subscription-guard/data/app.db ===" -ForegroundColor Cyan
-Move-Database "C:\dev\apps\vibe-subscription-guard\data\app.db" "vibe-subscription-guard.db" "App database - should be on D:\databases"
+Move-Database "V:\monorepo\apps\vibe-subscription-guard\data\app.db" "vibe-subscription-guard.db" "App database - should be on D:\databases"
 
 # Summary
 Write-Host "`n=== Summary ===" -ForegroundColor Cyan

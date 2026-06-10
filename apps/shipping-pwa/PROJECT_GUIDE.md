@@ -1,6 +1,6 @@
 # Shipping PWA - Project Guide
 
-**Project Path:** `C:\dev\apps\shipping-pwa`  
+**Project Path:** `V:\monorepo\apps\shipping-pwa`  
 **Type:** Progressive Web App (PWA) + Mobile (Capacitor)  
 **Platform:** Web, Android, iOS  
 **Status:** Production Ready
@@ -55,7 +55,7 @@ shipping-pwa/
 
 ```powershell
 # Navigate to project
-cd C:\dev\apps\shipping-pwa
+cd V:\monorepo\apps\shipping-pwa
 
 # Install dependencies
 pnpm install

@@ -1,7 +1,9 @@
 import { Alert } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
+import * as SecureStore from 'expo-secure-store';
 import { useAuthStore } from './authStore';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { apiClient } from '../api/client';
 
 vi.mock('react-native', () => ({
   Platform: {
@@ -19,12 +21,10 @@ vi.mock('expo-local-authentication', () => ({
   authenticateAsync: vi.fn(),
 }));
 
-vi.mock('@react-native-async-storage/async-storage', () => ({
-  default: {
-    getItem: vi.fn().mockResolvedValue(null),
-    setItem: vi.fn().mockResolvedValue(undefined),
-    removeItem: vi.fn().mockResolvedValue(undefined),
-  },
+vi.mock('expo-secure-store', () => ({
+  getItemAsync: vi.fn().mockResolvedValue(null),
+  setItemAsync: vi.fn().mockResolvedValue(undefined),
+  deleteItemAsync: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe('authStore', () => {
@@ -148,6 +148,34 @@ describe('authStore', () => {
       useAuthStore.setState({ isUnlocked: false });
       useAuthStore.getState().unlock();
       expect(useAuthStore.getState().isUnlocked).toBe(true);
+    });
+  });
+
+  describe('login and logout', () => {
+    it('should successfully log in and call SecureStore.setItemAsync', async () => {
+      const mockUser = { id: '1', email: 'test@nova.ai', fullName: 'Test User' };
+      const mockToken = 'mock-jwt-token';
+      vi.spyOn(apiClient, 'post').mockResolvedValue({
+        data: { token: mockToken, user: mockUser },
+      });
+
+      await useAuthStore.getState().login('test@nova.ai', 'password');
+
+      expect(useAuthStore.getState().token).toBe(mockToken);
+      expect(useAuthStore.getState().user).toEqual(mockUser);
+      expect(SecureStore.setItemAsync).toHaveBeenCalled();
+    });
+
+    it('should successfully log out and clear the session', async () => {
+      useAuthStore.setState({
+        token: 'mock-jwt-token',
+        user: { id: '1', email: 'test@nova.ai', fullName: 'Test User' },
+      });
+
+      await useAuthStore.getState().logout();
+
+      expect(useAuthStore.getState().token).toBeNull();
+      expect(useAuthStore.getState().user).toBeNull();
     });
   });
 });

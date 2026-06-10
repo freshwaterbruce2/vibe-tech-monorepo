@@ -63,7 +63,7 @@ Match the task to the right executor. For detailed MCP tool signatures, read
 | Create new app/package | See "Creating Apps" below | Nx generators via Desktop Commander |
 | Weekly update, dep check, config align | `monorepo-maintenance` skill | Read SKILL.md first |
 | Lint, typecheck, build | Desktop Commander `dc_run_powershell` | `pnpm run quality --filter @vibetech/<app>` |
-| Read/write files on C:\dev | Desktop Commander `dc_read_file` / `dc_write_file` | Always absolute Windows paths |
+| Read/write files on V:\monorepo | Desktop Commander `dc_read_file` / `dc_write_file` | Always absolute Windows paths |
 | Search code across monorepo | Desktop Commander `dc_search_content` | Faster than manual grep |
 | Run dev server | Desktop Commander `dc_run_powershell` | `pnpm run dev:all --filter @vibetech/<app>` |
 | Look up library docs | Context7 `resolve-library-id` → `get-library-docs` | React, Vite, Tailwind, etc. |
@@ -132,8 +132,8 @@ Match the task to the right executor. For detailed MCP tool signatures, read
 ### Hard Rules (violate = broken build)
 
 1. **pnpm only.** Never npm. Never yarn. Always `--filter @vibetech/<package>`.
-2. **D:\ for data.** All .db, .sqlite, .log files on D:\. Never C:\dev.
-3. **Windows paths.** Backslashes always: `C:\dev\apps\nova-agent\src\index.ts`
+2. **D:\ for data.** All .db, .sqlite, .log files on D:\. Never V:\monorepo.
+3. **Windows paths.** Backslashes always: `V:\monorepo\apps\nova-agent\src\index.ts`
 4. **PowerShell 7.** Chain with `;` not `&&`. Use `npx.cmd` not `npx`.
 5. **File size limit.** 500 lines max per .ts/.tsx. Target 200-300 for components.
 6. **Backup before destructive changes.** Run `Compress-Archive` first.

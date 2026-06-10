@@ -130,7 +130,7 @@ Use this to verify API keys are configured before running services.`,
       }
 
       // Load raw entries (we need the actual value for length check)
-      const filePath = envPath || `${process.env.WORKSPACE_ROOT || 'C:\\dev'}\\.env`;
+      const filePath = envPath ?? `${process.env.WORKSPACE_ROOT ?? 'V:\\monorepo'}\\.env`;
       const { readFileSync, existsSync } = await import('fs');
       if (!existsSync(filePath)) {
         return { content: [{ type: 'text', text: `File not found: ${filePath}` }] };
@@ -319,7 +319,7 @@ Use this for a quick health check or to orient a new agent session.`,
       }
 
       const summary = {
-        workspace: process.env.WORKSPACE_ROOT || 'C:\\dev',
+        workspace: process.env.WORKSPACE_ROOT ?? 'V:\\monorepo',
         envVars: { total: envEntries.length, byCategory: envByCategory },
         ports: {
           assigned: registry.ports.length,
@@ -410,6 +410,79 @@ Returns: Matches grouped by source.`,
       return { content: [{ type: 'text', text: `Error: ${error instanceof Error ? error.message : String(error)}` }], isError: true };
     }
   },
+);
+
+// ─── Resource: workspace-rules ─────────────────────────────────────
+server.resource(
+  'workspace-rules',
+  'workspace://rules',
+  {
+    title: 'Workspace Rules and Guardrails',
+    description: 'The canonical rules, storage constraints, safety policies, coding guidelines, and workflows for this monorepo.',
+  },
+  async (uri) => {
+    try {
+      const { readFileSync } = await import('fs');
+      const rulesPath = `${process.env.WORKSPACE_ROOT ?? 'V:\\monorepo'}\\AI.md`;
+      const content = readFileSync(rulesPath, 'utf-8');
+      return {
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: 'text/markdown',
+            text: content,
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        contents: [
+          {
+            uri: uri.href,
+            mimeType: 'text/plain',
+            text: `Failed to load rules: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
+      };
+    }
+  }
+);
+
+// ─── Prompt: align-rules ───────────────────────────────────────────
+server.prompt(
+  'align-rules',
+  'Adopt the canonical workspace rules, guardrails, and project context to ensure complete alignment.',
+  {},
+  async () => {
+    try {
+      const { readFileSync } = await import('fs');
+      const rulesPath = `${process.env.WORKSPACE_ROOT ?? 'V:\\monorepo'}\\AI.md`;
+      const content = readFileSync(rulesPath, 'utf-8');
+      return {
+        messages: [
+          {
+            role: 'user',
+            content: {
+              type: 'text',
+              text: `Please read and strictly adopt these workspace rules, paths policies, safety guardrails, and development guidelines for all future actions in this conversation:\n\n${content}`,
+            },
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        messages: [
+          {
+            role: 'user',
+            content: {
+              type: 'text',
+              text: `Failed to load rules: ${error instanceof Error ? error.message : String(error)}`,
+            },
+          },
+        ],
+      };
+    }
+  }
 );
 
 // ─── Start Server ──────────────────────────────────────────────────

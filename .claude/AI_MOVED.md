@@ -4,10 +4,10 @@ AI configuration has been centralized. Find docs at:
 
 | What            | New Location                               |
 | --------------- | ------------------------------------------ |
-| Rules           | `C:\dev\docs\ai\RULES.md`                  |
-| Context         | `C:\dev\docs\ai\context\`                  |
-| Workflows       | `C:\dev\docs\ai\rules\COMMON_WORKFLOWS.md` |
-| Anti-patterns   | `C:\dev\docs\ai\ANTI-PATTERNS.md`          |
-| Claude-specific | `C:\dev\docs\ai\agent-specific\claude.md`  |
+| Rules           | `V:\monorepo\docs\ai\RULES.md`                  |
+| Context         | `V:\monorepo\docs\ai\context\`                  |
+| Workflows       | `V:\monorepo\docs\ai\rules\COMMON_WORKFLOWS.md` |
+| Anti-patterns   | `V:\monorepo\docs\ai\ANTI-PATTERNS.md`          |
+| Claude-specific | `V:\monorepo\docs\ai\agent-specific\claude.md`  |
 
 This folder now contains only Claude-specific MCP tools and commands.

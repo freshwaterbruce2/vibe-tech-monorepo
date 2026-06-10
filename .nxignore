@@ -15,3 +15,8 @@ tmp/monorepo-sync-audit-report.json
 token*.png
 id_zoom*.png
 bottoken.png
+.vercel
+**/.vercel
+**/node_modules
+**/dist
+

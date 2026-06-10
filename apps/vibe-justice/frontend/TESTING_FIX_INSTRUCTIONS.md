@@ -25,7 +25,7 @@ TypeError: React.act is not a function
 ### Option 1: Upgrade @testing-library/react (PREFERRED)
 
 ```powershell
-cd C:\dev\apps\vibe-justice\frontend
+cd V:\monorepo\apps\vibe-justice\frontend
 pnpm add @testing-library/react@latest
 pnpm test
 ```
@@ -96,7 +96,7 @@ setupFiles: ['./src/test/setup.ts']
 Run:
 
 ```powershell
-cd C:\dev\apps\vibe-justice\frontend
+cd V:\monorepo\apps\vibe-justice\frontend
 pnpm test
 ```
 
@@ -104,6 +104,6 @@ Target: All 63 tests passing (or at minimum, 57 React tests no longer failing on
 
 ## Key Files
 
-- `C:\dev\apps\vibe-justice\frontend\vitest.config.ts`
-- `C:\dev\apps\vibe-justice\frontend\package.json`
-- `C:\dev\apps\vibe-justice\frontend\src\test\setup.ts` (create if needed)
+- `V:\monorepo\apps\vibe-justice\frontend\vitest.config.ts`
+- `V:\monorepo\apps\vibe-justice\frontend\package.json`
+- `V:\monorepo\apps\vibe-justice\frontend\src\test\setup.ts` (create if needed)

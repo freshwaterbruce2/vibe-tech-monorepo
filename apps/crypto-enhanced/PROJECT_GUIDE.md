@@ -2,8 +2,8 @@
 
 ## Canonical Location
 
-- App: `C:\dev\apps\crypto-enhanced`
-- Legacy path: `C:\dev\projects\crypto-enhanced` is retired
+- App: `V:\monorepo\apps\crypto-enhanced`
+- Legacy path: `V:\monorepo\projects\crypto-enhanced` is retired
 
 ## Runtime Surface
 
@@ -40,7 +40,7 @@ apps/crypto-enhanced/
 ## Setup
 
 ```powershell
-cd C:\dev\apps\crypto-enhanced
+cd V:\monorepo\apps\crypto-enhanced
 python -m venv .venv
 .\.venv\Scripts\pip install -r requirements.txt
 Copy-Item .env.example .env
@@ -50,7 +50,7 @@ Copy-Item trading_config.example.json trading_config.json
 ## Verification
 
 ```powershell
-cd C:\dev\apps\crypto-enhanced
+cd V:\monorepo\apps\crypto-enhanced
 .\.venv\Scripts\python.exe run_tests.py
 .\.venv\Scripts\python.exe -m pylint src scripts start_live_trading.py run_tests.py
 .\.venv\Scripts\python.exe -m mypy src scripts start_live_trading.py run_tests.py

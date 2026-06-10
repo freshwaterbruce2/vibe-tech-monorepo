@@ -1,4 +1,4 @@
-# Demo: Automated Development Workflow
+﻿# Demo: Automated Development Workflow
 # Combines: Window focus, keyboard input, clipboard, notifications
 
 Import-Module "$PSScriptRoot\WindowsAutomation.psm1"
@@ -10,7 +10,7 @@ Write-Host ""
 # Scenario: Quickly document what you're working on
 
 Write-Host "[1] Reading project status..." -ForegroundColor Yellow
-$dbPath = "C:\dev\projects\crypto-enhanced\trading.db"
+$dbPath = "V:\monorepo\projects\crypto-enhanced\trading.db"
 if (Test-Path $dbPath) {
     $dbSize = (Get-Item $dbPath).Length / 1KB
     $lastMod = (Get-Item $dbPath).LastWriteTime
@@ -45,7 +45,7 @@ if (Test-Path $dbPath) {
     Write-Host ""
     
     # Take screenshot for documentation
-    $screenshotPath = "C:\dev\daily_status_$(Get-Date -Format 'yyyyMMdd').png"
+    $screenshotPath = "V:\monorepo\daily_status_$(Get-Date -Format 'yyyyMMdd').png"
     Write-Host "[4] Capturing screenshot..." -ForegroundColor Yellow
     Capture-Screenshot -Path $screenshotPath
     

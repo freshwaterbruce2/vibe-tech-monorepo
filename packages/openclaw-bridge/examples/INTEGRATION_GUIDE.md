@@ -56,7 +56,7 @@ npm install -g openclaw@2026.2.19-2
 
 ```bash
 # From VibeTech monorepo
-cd C:\dev\packages\openclaw-bridge
+cd V:\monorepo\packages\openclaw-bridge
 pnpm install
 pnpm build
 pnpm link --global

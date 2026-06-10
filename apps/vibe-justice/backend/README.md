@@ -14,7 +14,7 @@ Python FastAPI backend for the Vibe-Justice legal AI assistant.
 
 ```powershell
 # Windows PowerShell
-cd C:\dev\apps\vibe-justice\backend
+cd V:\monorepo\apps\vibe-justice\backend
 python -m venv .venv
 .\.venv\Scripts\activate
 ```

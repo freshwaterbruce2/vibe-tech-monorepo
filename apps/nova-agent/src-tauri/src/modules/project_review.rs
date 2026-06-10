@@ -224,7 +224,7 @@ mod tests {
         )
         .unwrap();
 
-        let review = find_latest_review_for_project(r"C:\dev\apps\nova-agent")
+        let review = find_latest_review_for_project(r"V:\monorepo\apps\nova-agent")
             .unwrap()
             .unwrap();
 
@@ -235,7 +235,7 @@ mod tests {
     #[test]
     fn collects_missing_windows_paths_from_text() {
         let missing = collect_missing_path_references(
-            r"Review C:\dev\docs\architecture-improvement\AGENT_ASSIGNMENTS.md and C:\definitely-missing\plan.md",
+            r"Review V:\monorepo\docs\architecture-improvement\AGENT_ASSIGNMENTS.md and C:\definitely-missing\plan.md",
         );
 
         assert!(!missing.is_empty());

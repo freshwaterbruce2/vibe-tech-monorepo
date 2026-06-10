@@ -10,7 +10,7 @@
     "adb:reverse": "pwsh ./scripts/adb-reverse.ps1",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:integration": "vitest run --config vitest.config.ts src/**/*.integration.test.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "build": "expo export --platform web",
     "typecheck": "tsc --noEmit",
     "lint": "eslint ."

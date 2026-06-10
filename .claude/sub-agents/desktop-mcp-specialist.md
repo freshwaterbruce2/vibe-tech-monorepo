@@ -45,9 +45,9 @@ Violating this order causes IPC bridge to silently fail without actionable error
 
 ### Config File Management
 
-- `C:\dev\.mcp.json` — Claude Code MCP config
+- `V:\monorepo\.mcp.json` — Claude Code MCP config
 - `%APPDATA%\Claude\claude_desktop_config.json` — Claude Desktop config
-- `C:\dev\.vscode\mcp.json` — VS Code MCP config
+- `V:\monorepo\.vscode\mcp.json` — VS Code MCP config
 - Format differences: Claude Code uses `"type": "stdio"`, Claude Desktop does NOT
 
 ### Tool Registration Verification
@@ -222,10 +222,10 @@ function validateMCPConfig(config: unknown, editor: 'claude-code' | 'claude-desk
 pnpm --filter @vibetech/mcp-server build
 
 # Verify dist exists
-Test-Path C:\dev\apps\mcp-server\dist\main.js
+Test-Path V:\monorepo\apps\mcp-server\dist\main.js
 
 # Validate JSON config
-node -e "JSON.parse(require('fs').readFileSync('C:/dev/.mcp.json','utf8')); console.log('OK')"
+node -e "JSON.parse(require('fs').readFileSync('V:/monorepo/.mcp.json','utf8')); console.log('OK')"
 
 # Only then restart Claude Desktop
 ```
@@ -344,9 +344,9 @@ Escalate to `mcp-server-specialist` when:
 
 ## Related Documentation
 
-- `C:\dev\.claude\rules\mcp-servers.md` — canonical MCP server list and config formats
+- `V:\monorepo\.claude\rules\mcp-servers.md` — canonical MCP server list and config formats
 - `apps/desktop-commander-v3/` — primary desktop MCP server
-- `C:\dev\.mcp.json` — Claude Code MCP config (source of truth)
+- `V:\monorepo\.mcp.json` — Claude Code MCP config (source of truth)
 - `mcp-server-specialist.md` — building new MCP servers
 - `desktop-expert.md` — parent agent for Electron/Tauri integration
 

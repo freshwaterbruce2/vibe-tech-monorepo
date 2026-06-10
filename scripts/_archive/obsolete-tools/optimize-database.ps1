@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Database Performance Optimization Script
 
@@ -368,7 +368,7 @@ SELECT * FROM trades WHERE 1=0;
     }
 
     # Create cleanup script
-    $cleanupScriptPath = "C:\dev\scripts\cleanup-old-data.ps1"
+    $cleanupScriptPath = "V:\monorepo\scripts\cleanup-old-data.ps1"
     $cleanupScript = @'
 # Database Cleanup Script - Run weekly via Task Scheduler
 
@@ -524,7 +524,7 @@ if (-not $DryRun) {
 # Step 8: Create optimization report
 Write-Header "Step 8: Creating Optimization Report"
 
-$reportPath = "C:\dev\DATABASE_OPTIMIZATION_REPORT_$(Get-Date -Format 'yyyy-MM-dd-HHmmss').md"
+$reportPath = "V:\monorepo\DATABASE_OPTIMIZATION_REPORT_$(Get-Date -Format 'yyyy-MM-dd-HHmmss').md"
 
 $indexCount = if (-not $DryRun) {
     sqlite3 $UnifiedDB "SELECT COUNT(*) FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%';"
@@ -622,7 +622,7 @@ $benchmarkResult
 ### Automated Cleanup
 - **Script:** scripts/cleanup-old-data.ps1
 - **Frequency:** Weekly (recommended)
-- **Setup:** ``schtasks /create /tn 'Database Cleanup' /tr 'powershell -File C:\dev\scripts\cleanup-old-data.ps1' /sc weekly``
+- **Setup:** ``schtasks /create /tn 'Database Cleanup' /tr 'powershell -File V:\monorepo\scripts\cleanup-old-data.ps1' /sc weekly``
 
 ### Manual Maintenance
 ``````powershell

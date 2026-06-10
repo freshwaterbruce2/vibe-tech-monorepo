@@ -292,8 +292,8 @@ LIMIT 10;
 - **Database**: `D:\databases\agent_learning.db` (SQLite with WAL mode)
 - **Logs**: `D:\learning-system\logs\tool-usage-YYYY-MM-DD.log` (daily rotation)
 - **Hooks**:
-  - `C:\dev\.claude\hooks\pre-tool-use.ps1` (automatic capture)
-  - `C:\dev\.claude\hooks\post-tool-use.ps1` (results logging)
+  - `V:\monorepo\.claude\hooks\pre-tool-use.ps1` (automatic capture)
+  - `V:\monorepo\.claude\hooks\post-tool-use.ps1` (results logging)
 
 ## References
 

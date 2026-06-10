@@ -1,8 +1,8 @@
-import os
+﻿import os
 import re
 from pathlib import Path
 
-PROJECT_ROOT = r"C:\dev\apps\vibe-tutor\src"
+PROJECT_ROOT = r"V:\monorepo\apps\vibe-tutor\src"
 
 def add_react_import():
     count = 0

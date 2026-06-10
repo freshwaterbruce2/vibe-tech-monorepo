@@ -1,4 +1,4 @@
-"""Self-Healing Monorepo System — Config Loader & Validation."""
+﻿"""Self-Healing Monorepo System — Config Loader & Validation."""
 
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -8,7 +8,7 @@ import yaml
 
 
 DEFAULT_CONFIG_PATHS = [
-    Path(r"C:\dev\.github\self-healing-config.yml"),
+    Path(r"V:\monorepo\.github\self-healing-config.yml"),
 ]
 
 

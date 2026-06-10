@@ -3,6 +3,7 @@
  * Extracts callback functions for cleaner organization
  */
 
+// eslint-disable-next-line @nx/enforce-module-boundaries -- shared package subpath import; the rule misclassifies the alias target
 import type { FileChange, MultiFileEditPlan } from '@vibetech/types/multifile';
 import { useCallback, useMemo, useRef, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
 import modelPrompts from '../../config/model-prompts.json';
@@ -20,6 +21,7 @@ import type { UnifiedAIService } from '../../services/ai/UnifiedAIService';
 import type { FileSystemService } from '../../services/FileSystemService';
 import type { EditorFile } from '../../types';
 import type { VisualPanelState } from '../types';
+import { useMultiFileHandlers } from './useMultiFileHandlers';
 import { registerCompletion } from 'monacopilot';
 import type { editor as MonacoEditorNS } from 'monaco-editor';
 import type * as MonacoNS from 'monaco-editor';
@@ -439,50 +441,24 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     }
   }, []);
 
-  // Multi-File Edit handlers
-  const handleApplyMultiFileChanges = useCallback(async (selectedFiles: string[]) => {
-    const plan = (window as unknown as Record<string, unknown>)['__multiFileEditPlan'] as MultiFileEditPlan | null;
-    const changes = ((window as unknown as Record<string, unknown>)['__multiFileChanges'] as FileChange[] | undefined) ?? [];
-
-    if (!plan) {
-      logger.error('[MultiFileEdit] No plan available');
-      return;
-    }
-
-    try {
-      const selectedChanges = changes.filter(c => selectedFiles.includes(c.path));
-      const applyFn = (multiFileEditor as Record<string, unknown>)['applyChanges'] as ((c: FileChange[]) => Promise<{ success: boolean; appliedFiles: string[]; error?: string }>) | undefined;
-      if (!applyFn) throw new Error('multiFileEditor.applyChanges not available');
-      const result = await applyFn(selectedChanges);
-
-      if (result.success) {
-        showSuccess('Changes Applied', `Successfully applied changes to ${result.appliedFiles.length} file(s)`);
-
-        if (currentFile && selectedFiles.includes(currentFile.path)) {
-          const content = await fileSystemService.readFile(currentFile.path);
-          if (content !== undefined) {
-            handleFileChange(content);
-          }
-        }
-      } else {
-        showError('Apply Failed', result.error ?? 'Unknown error');
-      }
-
-      setMultiFileApprovalOpen(false);
-      setMultiFileEditPlan(null);
-      setMultiFileChanges([]);
-    } catch (error) {
-      logger.error('[MultiFileEdit] Failed to apply changes:', error);
-      showError('Apply Failed', error instanceof Error ? error.message : 'Unknown error');
-    }
-  }, [multiFileEditor, currentFile, fileSystemService, handleFileChange, showSuccess, showError, setMultiFileApprovalOpen, setMultiFileEditPlan, setMultiFileChanges]);
-
-  const handleRejectMultiFileChanges = useCallback(() => {
-    setMultiFileApprovalOpen(false);
-    setMultiFileEditPlan(null);
-    setMultiFileChanges([]);
-    logger.debug('[MultiFileEdit] Changes rejected');
-  }, [setMultiFileApprovalOpen, setMultiFileEditPlan, setMultiFileChanges]);
+  // Multi-File Edit handlers (apply/reject all, per-file accept/reject, detection)
+  const {
+    handleApplyMultiFileChanges,
+    handleRejectMultiFileChanges,
+    handleAcceptFile,
+    handleRejectFile,
+    handleMultiFileEditDetected,
+  } = useMultiFileHandlers({
+    multiFileEditor,
+    currentFile,
+    fileSystemService,
+    setMultiFileEditPlan,
+    setMultiFileChanges,
+    setMultiFileApprovalOpen,
+    handleFileChange,
+    showSuccess,
+    showError,
+  });
 
   // Model change handler
   const handleModelChange = useCallback(async (model: AIModel) => {
@@ -549,14 +525,6 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     showSuccess(`AI ${command} command executed`);
   }, [currentFile, aiChatOpen, setAiChatOpen, handleAIMessage, showSuccess, showWarning]);
 
-  // Multi-File Edit Detection Handler
-  const handleMultiFileEditDetected = useCallback((plan: MultiFileEditPlan, changes: FileChange[]) => {
-    logger.info('[App] Multi-file edit detected:', plan.description);
-    setMultiFileEditPlan(plan);
-    setMultiFileChanges(changes);
-    setMultiFileApprovalOpen(true);
-  }, [setMultiFileEditPlan, setMultiFileChanges, setMultiFileApprovalOpen]);
-
   return {
     handleEditorMount,
     handleApplyFix,
@@ -569,6 +537,8 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     handleInsertCode,
     handleApplyMultiFileChanges,
     handleRejectMultiFileChanges,
+    handleAcceptFile,
+    handleRejectFile,
     handleModelChange,
     handleProviderChange,
     handleAICommand,

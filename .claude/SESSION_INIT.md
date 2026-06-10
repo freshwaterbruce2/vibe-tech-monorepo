@@ -10,12 +10,12 @@ When Claude starts a new session with Bruce, IMMEDIATELY perform these steps BEF
 
 ```powershell
 # Read current dev status
-Get-Content C:\dev\DEV_CONTEXT.md -ErrorAction SilentlyContinue
+Get-Content V:\monorepo\DEV_CONTEXT.md -ErrorAction SilentlyContinue
 ```
 
 **Tool Calls Required:**
 
-1. `desktop-commander:dc_read_file` → `C:\dev\DEV_CONTEXT.md`
+1. `desktop-commander:dc_read_file` → `V:\monorepo\DEV_CONTEXT.md`
 2. `serena:activate_project` → Activate relevant project based on user query
 
 ---
@@ -77,7 +77,7 @@ skills:get_skill("dispatching-parallel-agents")
 Read the agent manifest:
 
 ```
-desktop-commander:dc_read_file → C:\dev\.claude\agents.json
+desktop-commander:dc_read_file → V:\monorepo\.claude\agents.json
 ```
 
 If task matches a specialist, consider delegation:
@@ -108,7 +108,7 @@ Before starting work, confirm these tools respond:
 
 **Agent should:**
 
-1. ✅ Read `C:\dev\DEV_CONTEXT.md`
+1. ✅ Read `V:\monorepo\DEV_CONTEXT.md`
 2. ✅ Identify: Code/Build task
 3. ✅ Load skills: `typescript-expert`, `testing-patterns`
 4. ✅ Activate project: `serena:activate_project("nova-agent")`

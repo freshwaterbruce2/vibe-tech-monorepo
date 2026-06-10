@@ -1,4 +1,4 @@
-# Generate-Skill.ps1
+﻿# Generate-Skill.ps1
 # AI-powered skill generation using Gemini 3 Pro based on learning patterns
 
 param(
@@ -16,10 +16,10 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Paths
-$AnalysisDir = "C:\dev\.agent\skills\auto-skill-creator\analysis"
-$MonorepoRoot = "C:\dev"
-$ExistingSkillsDir = "C:\dev\.agent\skills"
-$ExistingAgentsDir = "C:\dev\.antigravity\agents"
+$AnalysisDir = "V:\monorepo\.agent\skills\auto-skill-creator\analysis"
+$MonorepoRoot = "V:\monorepo"
+$ExistingSkillsDir = "V:\monorepo\.agent\skills"
+$ExistingAgentsDir = "V:\monorepo\.antigravity\agents"
 
 # Load pattern data
 Write-Host "Loading Pattern Data..." -ForegroundColor Cyan
@@ -69,7 +69,7 @@ VibeTech Nx Monorepo Structure:
 - Packages: Shared libraries (@nova/*, @vibetech/ui)
 - Backend: Node.js/Python services
 - Tech Stack: TypeScript 5.9, pnpm 9.15.0, Nx 21.6+, Tailwind 3.4.18
-- Storage: C:\dev (code), D:\ (data/logs/databases)
+- Storage: V:\monorepo (code), D:\ (data/logs/databases)
 - Package Manager: ALWAYS pnpm (never npm/yarn)
 "@
 

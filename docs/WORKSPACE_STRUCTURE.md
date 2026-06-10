@@ -1,6 +1,6 @@
 # Workspace Structure
 
-`C:\dev` is the local workspace root for source code. It is not a storage location for live databases, generated releases, or machine-specific tool state.
+`V:\monorepo` is the local workspace root for source code. It is not a storage location for live databases, generated releases, or machine-specific tool state.
 
 ## Keep In Git
 

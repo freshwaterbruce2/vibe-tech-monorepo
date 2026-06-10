@@ -152,7 +152,7 @@ pnpm add @modelcontextprotocol/sdk express zod --filter memory-mcp
 Before making any changes, create a snapshot:
 
 ```powershell
-cd C:\dev\scripts\version-control
+cd V:\monorepo\scripts\version-control
 .\Save-Snapshot.ps1 -Description "Before memory system Phase 0" -Tag "pre-memory-system"
 ```
 
@@ -239,7 +239,7 @@ if ($pyFiles.Count -eq 0) {
 Write-Host "`n=== Phase 0 Verification Complete ===" -ForegroundColor Cyan
 ```
 
-Save this as `C:\dev\scripts\verify-phase-0.ps1`
+Save this as `V:\monorepo\scripts\verify-phase-0.ps1`
 
 ---
 
@@ -289,7 +289,7 @@ ollama pull nomic-embed-text --verbose
 Test-Path "D:\repositories\vibetech"
 
 # If not, initialize first
-cd C:\dev\scripts\version-control
+cd V:\monorepo\scripts\version-control
 .\Initialize-LocalRepo.ps1
 ```
 

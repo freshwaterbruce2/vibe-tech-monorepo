@@ -31,7 +31,7 @@ try {
     # Suggests relevant skills based on project and prompt keywords
     # ============================================================================
     if ($PromptAnalysis.is_task -or $PromptAnalysis.is_error -or $PromptAnalysis.complexity -ge 3) {
-        $SkillRecommenderPath = "C:\dev\.claude\hooks\skill-recommender.ps1"
+        $SkillRecommenderPath = "V:\monorepo\.claude\hooks\skill-recommender.ps1"
         if (Test-Path $SkillRecommenderPath) {
             try {
                 & $SkillRecommenderPath -Project $CurrentProject -Prompt $UserPrompt -Intent $PromptAnalysis.category

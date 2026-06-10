@@ -1,4 +1,4 @@
-# Claude Desktop Instructions for C:\dev Monorepo
+# Claude Desktop Instructions for V:\monorepo Monorepo
 
 ## 🎯 Primary Context
 
@@ -31,7 +31,7 @@ The `apps/crypto-enhanced` directory contains a LIVE trading system currently tr
 **Emergency Stop:**
 
 ```powershell
-cd C:\dev\apps\crypto-enhanced
+cd V:\monorepo\apps\crypto-enhanced
 .\stop_trading.ps1
 ```
 
@@ -61,7 +61,7 @@ python run_tests.py
 ## 📁 Project Structure
 
 ```
-C:\dev\
+V:\monorepo\
 ├── src/                      # Main web app (React 19.2 + TypeScript + Vite)
 ├── projects/
 │   ├── crypto-enhanced/      # ⚠️ LIVE trading bot (Python async)

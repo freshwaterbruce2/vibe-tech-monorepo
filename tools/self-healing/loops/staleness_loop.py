@@ -1,4 +1,4 @@
-"""Staleness healing loop — identifies stale/abandoned projects.
+﻿"""Staleness healing loop — identifies stale/abandoned projects.
 
 Wraps the existing Ralph ProjectScanner + scorer for health grading.
 """
@@ -9,7 +9,7 @@ from pathlib import Path
 from .base_loop import BaseLoop
 
 # Add Ralph source to path for import
-RALPH_PATH = Path(r"C:\dev\tools\ralph")
+RALPH_PATH = Path(r"V:\monorepo\tools\ralph")
 
 
 class StalenessLoop(BaseLoop):

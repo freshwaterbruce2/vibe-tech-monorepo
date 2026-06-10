@@ -20,7 +20,7 @@ Created: October 1, 2025
 
 **Files:**
 
-- `C:\dev\netlify-booking-platform-config.toml` → Copy to your vibe-booking-platform repo
+- `V:\monorepo\netlify-booking-platform-config.toml` → Copy to your vibe-booking-platform repo
 
 **Verification:**
 

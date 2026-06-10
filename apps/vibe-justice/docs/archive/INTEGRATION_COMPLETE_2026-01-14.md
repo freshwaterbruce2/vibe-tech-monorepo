@@ -103,7 +103,7 @@ curl http://localhost:3001/health
 ### Step 2: Start Backend
 
 ```powershell
-cd C:\dev\apps\vibe-justice\backend
+cd V:\monorepo\apps\vibe-justice\backend
 
 # Activate virtual environment
 .venv\Scripts\activate
@@ -148,7 +148,7 @@ if ($processId) {
 ### Step 5: Start Tauri App
 
 ```powershell
-cd C:\dev\apps\vibe-justice\frontend
+cd V:\monorepo\apps\vibe-justice\frontend
 pnpm tauri dev
 ```
 
@@ -201,7 +201,7 @@ info: Request completed {"duration":"5936ms","ip":"::1","method":"POST","path":"
 
 ```powershell
 # Start proxy
-cd C:\dev\backend\openrouter-proxy
+cd V:\monorepo\backend\openrouter-proxy
 pnpm dev
 
 # Verify running
@@ -217,7 +217,7 @@ curl http://localhost:3001/health
 **Solution**:
 
 ```powershell
-cd C:\dev\apps\vibe-justice\backend
+cd V:\monorepo\apps\vibe-justice\backend
 .venv\Scripts\activate
 pip install requests==2.32.3
 ```

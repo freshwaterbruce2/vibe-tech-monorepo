@@ -85,7 +85,7 @@ Specialized agent for backend API services using Node.js 22 (Express/Fastify) an
 
    ```typescript
    const DB_PATH = process.env.DATABASE_PATH || 'D:\\databases\\app.db';
-   // NEVER: './data/app.db' or 'C:\\dev\\...'
+   // NEVER: './data/app.db' or 'V:\\monorepo\\...'
    ```
 
 4. **ALWAYS implement rate limiting**

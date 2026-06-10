@@ -4,7 +4,7 @@
 AI-powered legal document analysis web application
 
 ## Location
-`C:\dev\apps\vibe-justice\`
+`V:\monorepo\apps\vibe-justice\`
 
 ## Tech Stack
 - **Framework**: Next.js 14 (App Router)

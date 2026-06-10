@@ -1,13 +1,13 @@
-# Analyze-GeminiIndexing.ps1
+﻿# Analyze-GeminiIndexing.ps1
 # Analyzes which files Gemini would index based on VS Code settings
 
 param(
     [switch]$Detailed,
     [switch]$ExportCsv,
-    [string]$OutputPath = "C:\dev\gemini-indexing-report.csv"
+    [string]$OutputPath = "V:\monorepo\gemini-indexing-report.csv"
 )
 
-Write-Host "Analyzing Gemini Indexing for C:\dev..." -ForegroundColor Cyan
+Write-Host "Analyzing Gemini Indexing for V:\monorepo..." -ForegroundColor Cyan
 Write-Host ""
 
 # Exclusion patterns (from recommended settings)
@@ -68,10 +68,10 @@ function Test-ShouldInclude {
     return $includeExtensions -contains $ext
 }
 
-Write-Host "Scanning C:\dev directory..." -ForegroundColor Yellow
+Write-Host "Scanning V:\monorepo directory..." -ForegroundColor Yellow
 
 # Get all files
-$allFiles = Get-ChildItem -Path "C:\dev" -File -Recurse -ErrorAction SilentlyContinue
+$allFiles = Get-ChildItem -Path "V:\monorepo" -File -Recurse -ErrorAction SilentlyContinue
 
 # Statistics
 $stats = @{
@@ -93,7 +93,7 @@ foreach ($file in $allFiles) {
     $stats.TotalFiles++
     $stats.TotalSize += $file.Length
 
-    $relativePath = $file.FullName.Replace("C:\dev\", "")
+    $relativePath = $file.FullName.Replace("V:\monorepo\", "")
 
     # Check exclusions
     if (Test-ShouldExclude $file.FullName) {

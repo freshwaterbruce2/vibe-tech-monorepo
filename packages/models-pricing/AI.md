@@ -26,8 +26,8 @@ category: packages
 ## Tech Stack & Architecture
 
 - **Core Technologies**: TypeScript, better-sqlite3, `@vibetech/shared-config`
-- **Isolated Storage Policy**: The database is stored at `D:\databases\models_pricing.db`. Code remains on the `C:\` drive under `C:/dev/packages/models-pricing`.
+- **Isolated Storage Policy**: The database is stored at `D:\databases\models_pricing.db`. Code remains on the `C:\` drive under `V:/monorepo/packages/models-pricing`.
 
 ## References
 
-- Workspace Rules: [RULES.md](file:///C:/dev/docs/ai/RULES.md)
+- Workspace Rules: [RULES.md](file:///V:/monorepo/docs/ai/RULES.md)

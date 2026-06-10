@@ -53,7 +53,7 @@ Your VibeBlox gamified token economy system has been scaffolded and is ready for
 
 ```powershell
 # From workspace root
-cd C:\dev
+cd V:\monorepo
 pnpm install --no-frozen-lockfile
 
 # This will resolve the bcrypt lockfile issue and install all dependencies
@@ -62,7 +62,7 @@ pnpm install --no-frozen-lockfile
 ### Step 2: Create Environment File
 
 ```powershell
-cd C:\dev\apps\vibeblox
+cd V:\monorepo\apps\vibeblox
 copy .env.example .env
 
 # Edit .env and set a secure JWT secret (optional for development)
@@ -110,7 +110,7 @@ Open **two terminal windows**:
 **Terminal 1 - Backend API:**
 
 ```powershell
-cd C:\dev\apps\vibeblox
+cd V:\monorepo\apps\vibeblox
 pnpm server
 
 # API runs on http://localhost:3003
@@ -119,7 +119,7 @@ pnpm server
 **Terminal 2 - Frontend Dev Server:**
 
 ```powershell
-cd C:\dev\apps\vibeblox
+cd V:\monorepo\apps\vibeblox
 pnpm dev
 
 # App runs on http://localhost:5174
@@ -379,7 +379,7 @@ pnpm nx lint vibeblox         # Lint via Nx
 **Solution:**
 
 ```powershell
-cd C:\dev
+cd V:\monorepo
 pnpm install --no-frozen-lockfile
 ```
 
@@ -392,7 +392,7 @@ pnpm install --no-frozen-lockfile
 New-Item -ItemType Directory -Force -Path D:\data\vibeblox
 
 # Run migration
-cd C:\dev\apps\vibeblox
+cd V:\monorepo\apps\vibeblox
 pnpm db:migrate
 pnpm db:seed
 ```

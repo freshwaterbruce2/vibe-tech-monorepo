@@ -1,7 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "cleanupPeriodDays": 30,
-  "effortLevel": "high",
   "env": {
     "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "128000",
     "MAX_THINKING_TOKENS": "32000",
@@ -136,7 +135,9 @@
     "workspace",
     "command-center"
   ],
-  "disabledMcpjsonServers": ["puppeteer"],
+  "disabledMcpjsonServers": [
+    "puppeteer"
+  ],
   "hooks": {
     "PreToolUse": [
       {
@@ -159,6 +160,15 @@
       }
     ],
     "PostToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/learning/learning-engine-hook.ps1"
+          }
+        ]
+      },
       {
         "matcher": "Agent",
         "hooks": [
@@ -211,13 +221,24 @@
       }
     ]
   },
+  "worktree": {
+    "symlinkDirectories": [
+      "node_modules",
+      ".nx",
+      ".cache",
+      "dist"
+    ],
+    "sparsePaths": [
+      "apps/",
+      "packages/",
+      "backend/",
+      "tools/",
+      ".claude/"
+    ]
+  },
   "statusLine": {
     "type": "command",
     "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/status-line.ps1"
-  },
-  "worktree": {
-    "symlinkDirectories": ["node_modules", ".nx", ".cache", "dist"],
-    "sparsePaths": ["apps/", "packages/", "backend/", "tools/", ".claude/"]
   },
   "enabledPlugins": {
     "csharp-lsp@claude-plugins-official": true,
@@ -233,5 +254,6 @@
         "repo": "nrwl/nx-ai-agents-config"
       }
     }
-  }
+  },
+  "effortLevel": "high"
 }

@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-Explored C:\dev\packages directory structure and existing shared packages to understand patterns for creating new packages under packages/feature-flags/. Comprehensive findings document the current conventions, patterns, and best practices.
+Explored V:\monorepo\packages directory structure and existing shared packages to understand patterns for creating new packages under packages/feature-flags/. Comprehensive findings document the current conventions, patterns, and best practices.
 
 Current drift note: `packages/nova-core` exists as a directory but has no
 `package.json`, so it should not be treated as a workspace package until a

@@ -1,4 +1,4 @@
-# Database Backup System - Quick Reference
+﻿# Database Backup System - Quick Reference
 
 **Last Updated:** 2026-01-19
 **Status:** Production Ready ✅
@@ -19,7 +19,7 @@ The database backup system consists of two scripts:
 ### Automated (Non-Interactive)
 
 ```powershell
-cd C:\dev\admin_scripts
+cd V:\monorepo\admin_scripts
 .\Run-DatabaseBackup.ps1
 ```
 
@@ -101,7 +101,7 @@ D:\backups\database-backups\
 ### Test the System
 
 ```powershell
-cd C:\dev\admin_scripts
+cd V:\monorepo\admin_scripts
 .\Test-DatabaseBackup.ps1
 ```
 
@@ -113,21 +113,21 @@ Performs comprehensive verification without modifying data.
 # Keep backups for 90 days instead of 365
 .\Run-DatabaseBackup.ps1 -Interactive
 # OR directly:
-cd C:\dev\scripts
+cd V:\monorepo\scripts
 .\database-backup.ps1 -RetentionDays 90
 ```
 
 ### Skip Verification (Faster)
 
 ```powershell
-cd C:\dev\scripts
+cd V:\monorepo\scripts
 .\database-backup.ps1 -SkipVerification
 ```
 
 ### Incremental Backup (Future)
 
 ```powershell
-cd C:\dev\scripts
+cd V:\monorepo\scripts
 .\database-backup.ps1 -BackupType Incremental
 ```
 
@@ -142,7 +142,7 @@ Create a Windows Task Scheduler task:
 ```xml
 Action: Start a program
 Program: powershell.exe
-Arguments: -ExecutionPolicy Bypass -File "C:\dev\admin_scripts\Run-DatabaseBackup.ps1"
+Arguments: -ExecutionPolicy Bypass -File "V:\monorepo\admin_scripts\Run-DatabaseBackup.ps1"
 Trigger: Daily at 2:00 AM
 ```
 
@@ -152,7 +152,7 @@ Trigger: Daily at 2:00 AM
 # Add to your startup script
 $trigger = New-JobTrigger -Daily -At "2:00 AM"
 $job = Register-ScheduledJob -Name "DatabaseBackup" `
-    -FilePath "C:\dev\admin_scripts\Run-DatabaseBackup.ps1" `
+    -FilePath "V:\monorepo\admin_scripts\Run-DatabaseBackup.ps1" `
     -Trigger $trigger
 ```
 
@@ -294,7 +294,7 @@ Start-Service MyService
 
 ### Previous
 
-- Migrated from Desktop to `C:\dev\admin_scripts`
+- Migrated from Desktop to `V:\monorepo\admin_scripts`
 - Refactored for automation
 - Added visual "Second Brain Preservation" wrapper
 

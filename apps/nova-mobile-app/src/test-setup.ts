@@ -1,5 +1,8 @@
 import { vi } from 'vitest';
 
+// Define global __DEV__ for test environments
+(global as any).__DEV__ = true;
+
 // Mock react-native — not available in Node test environment
 vi.mock('react-native', () => ({
   Platform: {

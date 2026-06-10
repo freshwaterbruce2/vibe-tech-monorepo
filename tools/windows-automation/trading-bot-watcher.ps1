@@ -1,4 +1,4 @@
-# Trading Bot Build Watcher - Demonstrates practical Windows automation
+﻿# Trading Bot Build Watcher - Demonstrates practical Windows automation
 # Uses: Clipboard, Notifications, Screenshots on failures
 
 Import-Module "$PSScriptRoot\WindowsAutomation.psm1"
@@ -9,7 +9,7 @@ Write-Host "================================" -ForegroundColor Cyan
 Write-Host ""
 
 # Monitor the crypto-enhanced project
-$projectPath = "C:\dev\projects\crypto-enhanced"
+$projectPath = "V:\monorepo\projects\crypto-enhanced"
 
 if (Test-Path $projectPath) {
     Write-Host "[OK] Found project: crypto-enhanced" -ForegroundColor Green
@@ -55,7 +55,7 @@ if (Test-Path $projectPath) {
                 -Duration 10
             
             # Capture error screenshot
-            $screenshotPath = "C:\dev\error_screenshot_$(Get-Date -Format 'yyyyMMdd_HHmmss').png"
+            $screenshotPath = "V:\monorepo\error_screenshot_$(Get-Date -Format 'yyyyMMdd_HHmmss').png"
             Capture-Screenshot -Path $screenshotPath
             Write-Host "[ERROR] Error screenshot saved: $screenshotPath" -ForegroundColor Red
         }

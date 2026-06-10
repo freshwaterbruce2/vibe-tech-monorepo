@@ -353,6 +353,16 @@ export class UnifiedAIService {
   }
 
   /**
+   * Get the API key for the current model's provider.
+   * Checks env vars first, then falls back to SecureApiKeyManager.
+   */
+  async getApiKeyForCurrentModel(): Promise<string> {
+    const modelInfo = MODEL_REGISTRY[this.currentModel];
+    const providerType = modelInfo?.provider ?? AIProvider.DEEPSEEK;
+    return getLazyKey(providerType);
+  }
+
+  /**
    * Check if running in demo mode
    */
   get isDemo(): boolean {

@@ -24,24 +24,24 @@ $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
 # ── Configuration ──────────────────────────────────────────────
 $Config = @{
-    MonorepoRoot    = "C:\dev"
+    MonorepoRoot    = "V:\monorepo"
     ExternalRoot    = "C:\Users\fresh_zxae3v6"
     # IMPORTANT: Only scan USER skills, not the community skills repo
-    SkillsPath      = Join-Path "C:\dev\.claude\skills" "user"
-    AgentsConfig    = "C:\dev\.claude\sub-agents\config.yml"
-    AgentsRegistry  = "C:\dev\.claude\agents.json"
-    AgentDelegation = "C:\dev\.claude\agent-delegation.yaml"
+    SkillsPath      = Join-Path "V:\monorepo\.claude\skills" "user"
+    AgentsConfig    = "V:\monorepo\.claude\sub-agents\config.yml"
+    AgentsRegistry  = "V:\monorepo\.claude\agents.json"
+    AgentDelegation = "V:\monorepo\.claude\agent-delegation.yaml"
     # MCP servers live under apps, not tools
     McpApps         = @(
-        "C:\dev\apps\desktop-commander-v3"
-        "C:\dev\apps\mcp-gateway"
-        "C:\dev\apps\mcp-codeberg"
-        "C:\dev\apps\mcp-skills-server"
-        "C:\dev\apps\memory-mcp"
+        "V:\monorepo\apps\desktop-commander-v3"
+        "V:\monorepo\apps\mcp-gateway"
+        "V:\monorepo\apps\mcp-codeberg"
+        "V:\monorepo\apps\mcp-skills-server"
+        "V:\monorepo\apps\memory-mcp"
     )
     ClaudeDesktopCfg = "$env:APPDATA\Claude\claude_desktop_config.json"
-    McpProjectCfg   = "C:\dev\.mcp.json"
-    BackupPath      = "C:\dev\_backups"
+    McpProjectCfg   = "V:\monorepo\.mcp.json"
+    BackupPath      = "V:\monorepo\_backups"
     # Directories to skip during CLAUDE.md scan
     ExcludeDirs     = @('node_modules', '.next', 'dist', 'dist-electron', 'build', 'out', '.git', '__pycache__', '.cache', 'package', '.turbo', 'coverage', '.vite')
 }
@@ -89,7 +89,7 @@ function Get-RealPaths {
         $_ -notmatch '\\Temp\\Stolen' -and
         $_ -notmatch '\\Temp\\Azure' -and
         $_ -notmatch '\[project' -and
-        $_ -match '^(C:\\dev|C:\\Users\\fresh_zxae3v6|D:\\)'
+        $_ -match '^(V:\\monorepo|C:\\Users\\fresh_zxae3v6|D:\\)'
     }
 }
 

@@ -7,7 +7,7 @@ You only need **2 things** to run InvoiceFlow locally:
 ### 1. Generate an Auth Secret
 
 ```powershell
-cd C:\dev\apps\invoice-automation-saas
+cd V:\monorepo\apps\invoice-automation-saas
 .\scripts\generate-secret.ps1
 ```
 
@@ -37,11 +37,11 @@ pnpm nx run invoice-automation-saas:build
 pnpm nx run invoice-automation-saas:api:build
 
 # Start server (serves both API + frontend)
-cd C:\dev\apps\invoice-automation-saas
+cd V:\monorepo\apps\invoice-automation-saas
 $env:AUTH_SECRET="your-secret"
 $env:DATABASE_PATH="D:\databases\invoiceflow.db"
 $env:SERVE_WEB="1"
-$env:WEB_DIST_DIR="C:\dev\apps\invoice-automation-saas\dist"
+$env:WEB_DIST_DIR="V:\monorepo\apps\invoice-automation-saas\dist"
 node server/dist/index.js
 ```
 
@@ -98,7 +98,7 @@ Open http://localhost:8787
 ## Docker Deployment
 
 ```powershell
-cd C:\dev\apps\invoice-automation-saas
+cd V:\monorepo\apps\invoice-automation-saas
 docker-compose up --build -d
 ```
 

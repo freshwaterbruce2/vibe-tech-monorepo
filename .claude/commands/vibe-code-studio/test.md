@@ -13,7 +13,7 @@ Run comprehensive test suite including unit tests and end-to-end tests.
 1. Navigate to Vibe Code Studio directory:
 
    ```bash
-   cd C:\dev\apps\vibe-code-studio
+   cd V:\monorepo\apps\vibe-code-studio
    ```
 
 2. Run unit tests (Vitest):

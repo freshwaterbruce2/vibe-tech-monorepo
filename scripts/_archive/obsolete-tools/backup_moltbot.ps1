@@ -1,4 +1,4 @@
-
+﻿
 # MoltBot Backup Automation
 # Backs up configuration (.openclaw), memory database (D:\databases\moltbot_memory.sqlite), and hooks (.claude)
 # Retention: 14 days (Config), 30 days (Memory/Deep Recall)
@@ -6,7 +6,7 @@
 $BackupRoot = "D:\backups\moltbot"
 $ConfigPath = "C:\Users\fresh_zxae3v6\.openclaw"
 $MemoryPath = "D:\databases\moltbot_memory.sqlite"
-$HooksPath  = "C:\dev\.claude"
+$HooksPath  = "V:\monorepo\.claude"
 $Date = Get-Date -Format "yyyyMMdd"
 
 # Ensure backup directory

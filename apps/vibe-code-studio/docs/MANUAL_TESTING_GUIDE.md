@@ -19,7 +19,7 @@ Perform comprehensive manual testing of all major features before creating produ
 ### 1. Start the Application in Dev Mode
 
 ```powershell
-cd C:\dev\apps\vibe-code-studio
+cd V:\monorepo\apps\vibe-code-studio
 npm run dev
 ```
 

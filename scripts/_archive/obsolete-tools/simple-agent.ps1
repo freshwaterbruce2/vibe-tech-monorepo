@@ -1,4 +1,4 @@
-#!/usr/bin/env powershell
+﻿#!/usr/bin/env powershell
 param(
     [Parameter(Mandatory=$true, Position=0)]
     [string]$Task,
@@ -6,7 +6,7 @@ param(
 )
 
 # Configuration
-$AgentSystemPath = "C:\dev\projects\active\agents"
+$AgentSystemPath = "V:\monorepo\projects\active\agents"
 $BridgeScript = Join-Path $AgentSystemPath "claude_code_bridge.py"
 
 # Simple logging

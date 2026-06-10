@@ -5,8 +5,8 @@
 
 import { loadDatabaseInventory } from '@vibetech/shared-config/database-inventory';
 
-// Workspace root (C:\dev on Windows, mapped mount in sandbox)
-export const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT || 'C:\\dev';
+// Workspace root (V:\monorepo on Windows, mapped mount in sandbox)
+export const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT ?? 'V:\\monorepo';
 
 // Key files this server reads
 export const ENV_FILE = '.env';

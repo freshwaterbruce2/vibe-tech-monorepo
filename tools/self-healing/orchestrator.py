@@ -1,4 +1,4 @@
-"""Self-Healing Monorepo Orchestrator.
+﻿"""Self-Healing Monorepo Orchestrator.
 
 Usage:
     python -m tools.self-healing.orchestrator                    # dry-run all loops
@@ -20,7 +20,7 @@ from .loops.dependency_loop import DependencyLoop
 from .loops.staleness_loop import StalenessLoop
 from .reporters.reporter import HealingReporter
 
-REPO_ROOT = Path(r"C:\dev")
+REPO_ROOT = Path(r"V:\monorepo")
 
 LOOP_REGISTRY: dict[str, type] = {
     "lint": LintLoop,

@@ -37,7 +37,7 @@ if (Test-Path $appPath) {
     $candidates | ForEach-Object { Write-Host "   $_" -ForegroundColor Gray }
     Write-Host ""
     Write-Host "Run this first:" -ForegroundColor Yellow
-    Write-Host "   cd C:\dev\apps\vibe-code-studio" -ForegroundColor Gray
+    Write-Host "   cd V:\monorepo\apps\vibe-code-studio" -ForegroundColor Gray
     Write-Host "   pnpm run tauri:dev" -ForegroundColor Gray
     Write-Host "   or pnpm run tauri:build" -ForegroundColor Gray
 }

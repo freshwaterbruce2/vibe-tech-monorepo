@@ -9,7 +9,7 @@
 This is a **multi-domain monorepo** managed with pnpm workspaces and Nx, containing:
 
 ```
-C:\dev\
+V:\monorepo\
 ├── Root Web App          # React 19.2 + TypeScript + Vite (main application)
 ├── projects/             # Sub-projects and specialized applications
 ├── backend/              # Node.js Express backend services
@@ -47,7 +47,7 @@ C:\dev\
 
 ## 🌐 1. Root Web Application
 
-**Location**: Root directory (C:\dev)
+**Location**: Root directory (V:\monorepo)
 **Purpose**: Main customer-facing web application
 
 ### Technology Stack

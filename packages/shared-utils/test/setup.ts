@@ -2,7 +2,7 @@
  * Vitest setup file for @vibetech/shared-utils
  */
 
-import { vi } from 'vitest';
+import { beforeEach, vi } from 'vitest';
 
 // Mock localStorage
 const localStorageMock = (() => {

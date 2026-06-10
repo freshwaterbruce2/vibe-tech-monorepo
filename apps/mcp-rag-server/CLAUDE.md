@@ -1,6 +1,6 @@
 # mcp-rag-server — AI Context
 
-Canonical workspace rules live in `C:\dev\AI.md`. This file is the per-app override for `mcp-rag-server` only. If anything here conflicts with the root `AI.md`, the root wins.
+Canonical workspace rules live in `V:\monorepo\AI.md`. This file is the per-app override for `mcp-rag-server` only. If anything here conflicts with the root `AI.md`, the root wins.
 
 ## What this is
 
@@ -15,7 +15,7 @@ Standalone MCP server that exposes the Nova-Agent RAG pipeline to Claude Desktop
 - `db_query_trading` — read-only SELECT/WITH/PRAGMA against `D:\databases\trading.db`, auto-LIMIT injected
 - `db_query_learning` — read-only SELECT against `D:\databases\agent_learning.db`
 
-Registered in `C:\dev\.mcp.json` under key `"rag"`.
+Registered in `V:\monorepo\.mcp.json` under key `"rag"`.
 
 ## Stack
 
@@ -29,15 +29,15 @@ Registered in `C:\dev\.mcp.json` under key `"rag"`.
 
 RAG code is NOT fully duplicated from `nova-agent`. The current call:
 
-**Local copies (live in `C:\dev\apps\mcp-rag-server\src\rag\`):**
+**Local copies (live in `V:\monorepo\apps\mcp-rag-server\src\rag\`):**
 
 - `types.ts`, `cache.ts`, `embedder.ts`, `reranker.ts`
 - Custom barrel `index.ts` that re-exports the local files plus the aliased modules
 
 **Aliased from nova-agent (resolved via tsconfig `paths` + tsup `noExternal`, inlined into `dist` at build time):**
 
-- `@nova-rag/indexer` → `C:\dev\apps\nova-agent\src\rag\indexer.ts`
-- `@nova-rag/retriever` → `C:\dev\apps\nova-agent\src\rag\retriever.ts`
+- `@nova-rag/indexer` → `V:\monorepo\apps\nova-agent\src\rag\indexer.ts`
+- `@nova-rag/retriever` → `V:\monorepo\apps\nova-agent\src\rag\retriever.ts`
 - `@nova-rag/connectors/sqlite-trading` → `...\nova-agent\src\rag\connectors\sqlite-trading.ts`
 - `@nova-rag/connectors/sqlite-learning` → `...\nova-agent\src\rag\connectors\sqlite-learning.ts`
 - `chunker.ts` comes along transitively via `indexer.ts`
@@ -50,7 +50,7 @@ RAG code is NOT fully duplicated from `nova-agent`. The current call:
 
 ## Build & Dev
 
-All commands from repo root (`C:\dev`), PowerShell 7:
+All commands from repo root (`V:\monorepo`), PowerShell 7:
 
 ```powershell
 # Type-check only (no emit) — fast green-light check
@@ -66,14 +66,14 @@ pnpm --filter @vibetech/mcp-rag-server build:watch
 pnpm --filter @vibetech/mcp-rag-server dev
 
 # Run the shipped artifact
-node C:\dev\apps\mcp-rag-server\dist\index.js
+node V:\monorepo\apps\mcp-rag-server\dist\index.js
 ```
 
 ## Runtime config
 
 - LanceDB vector store: `D:\nova-agent-data\lance-db\` (env `LANCEDB_PATH` overrides)
 - Query cache SQLite: `D:\nova-agent-data\cache\query-cache.sqlite`
-- Workspace root indexed: `C:\dev` (`apps\`, `packages\`, `backend\`)
+- Workspace root indexed: `V:\monorepo` (`apps\`, `packages\`, `backend\`)
 - Embeddings: `text-embedding-3-small` (1536d) via OpenRouter proxy at `http://localhost:3001`
 - Trading DB: `D:\databases\trading.db`
 - Learning DB: `D:\databases\agent_learning.db`
@@ -86,16 +86,16 @@ node C:\dev\apps\mcp-rag-server\dist\index.js
 - [x] Runtime smoke: cold `node dist\index.js` reaches `MCP server running on stdio` in ~6-7 s
 - [x] LanceDB opens at `D:\nova-agent-data\lance-db\`, RAGIndexer logs `Indexer initialized`
 - [x] Both sqlite connectors open clean — `D:\databases\trading.db` (12 KB) and `D:\databases\agent_learning.db` (21 MB) — no exceptions at `trading.connect()` / `learning.connect()`
-- [ ] **Last step, owner: Bruce.** Restart Claude Desktop so it re-reads `C:\dev\.mcp.json` and exposes the six tools under the `"rag"` server in the tool list
+- [ ] **Last step, owner: Bruce.** Restart Claude Desktop so it re-reads `V:\monorepo\.mcp.json` and exposes the six tools under the `"rag"` server in the tool list
 
 **Index state flag (not a blocker):** on cold startup, indexer reports `0 files, 0 chunks` even though `D:\nova-agent-data\lance-db\` has existing tables from mid-March (`codebase`, `codebase.lance`, `conversations`, `docs`). First `rag_index_run` call will resolve it: if chunk count jumps to thousands instantly, the state counter was stale and the existing LanceDB data is still live; if it rebuilds from zero, the old tables are orphaned and can be cleared with `Remove-Item -Recurse D:\nova-agent-data\lance-db\<stale-table>`.
 
 ### Re-verify after changes
 
-If anything in the graph shifts (nova-agent RAG edits, dependency bumps, tsconfig moves), rerun from `C:\dev`:
+If anything in the graph shifts (nova-agent RAG edits, dependency bumps, tsconfig moves), rerun from `V:\monorepo`:
 
 ```powershell
-pnpm --filter '@vibetech/mcp-rag-server' typecheck; pnpm --filter '@vibetech/mcp-rag-server' build; node C:\dev\apps\mcp-rag-server\dist\index.js  # Ctrl+C after "running on stdio"
+pnpm --filter '@vibetech/mcp-rag-server' typecheck; pnpm --filter '@vibetech/mcp-rag-server' build; node V:\monorepo\apps\mcp-rag-server\dist\index.js  # Ctrl+C after "running on stdio"
 ```
 
 ## Known quirks and landmines
@@ -111,7 +111,7 @@ pnpm --filter '@vibetech/mcp-rag-server' typecheck; pnpm --filter '@vibetech/mcp
 
 ## Pointers
 
-- Root canonical rules: `C:\dev\AI.md`
-- MCP registration: `C:\dev\.mcp.json` (key `"rag"`)
-- Source of truth for RAG pipeline: `C:\dev\apps\nova-agent\src\rag\`
-- Backups of this file: `C:\dev\apps\mcp-rag-server\_backups\`
+- Root canonical rules: `V:\monorepo\AI.md`
+- MCP registration: `V:\monorepo\.mcp.json` (key `"rag"`)
+- Source of truth for RAG pipeline: `V:\monorepo\apps\nova-agent\src\rag\`
+- Backups of this file: `V:\monorepo\apps\mcp-rag-server\_backups\`

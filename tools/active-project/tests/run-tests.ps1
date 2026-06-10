@@ -1,6 +1,6 @@
-# Self-contained test runner for tools/active-project/.
+﻿# Self-contained test runner for tools/active-project/.
 # No external deps (no Pester required).
-# Usage: pwsh -File C:\dev\tools\active-project\tests\run-tests.ps1
+# Usage: pwsh -File V:\monorepo\tools\active-project\tests\run-tests.ps1
 # Exit 0 = all pass, 1 = any failed.
 
 $ErrorActionPreference = 'Stop'

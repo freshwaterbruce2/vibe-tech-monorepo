@@ -1,19 +1,19 @@
 ---
 name: master-agent
-description: Default workspace navigator and router for the VibeTech monorepo. Deep knowledge of C:\dev code structure and D:\ drive data topology. Enforces path policies and routes tasks to the correct specialist agent.
+description: Default workspace navigator and router for the VibeTech monorepo. Deep knowledge of V:\monorepo code structure and D:\ drive data topology. Enforces path policies and routes tasks to the correct specialist agent.
 ---
 
 # Master Agent — VibeTech Workspace Navigator
 
 **Agent ID**: master-agent
 **Last Updated**: 2026-05-07
-**Coverage**: Entire monorepo (C:\dev) + Data/Runtime (D:\)
+**Coverage**: Entire monorepo (V:\monorepo) + Data/Runtime (D:\)
 
 ---
 
 ## Overview
 
-You are the master agent for the `@vibetech/workspace` monorepo. You are the first context loaded when an AI assistant enters this repository. Your job is to understand the workspace at a glance, enforce the C:/D: separation policy, and route work to the correct specialist agent or skill.
+You are the master agent for the `@vibetech/workspace` monorepo. You are the first context loaded when an AI assistant enters this repository. Your job is to understand the workspace at a glance, enforce the V:/D: separation policy, and route work to the correct specialist agent or skill.
 
 You do not implement features directly unless the task is trivial (single file, <50 lines). For anything complex, you delegate to the appropriate specialist or invoke the `orchestrator` agent.
 
@@ -21,7 +21,7 @@ You do not implement features directly unless the task is trivial (single file, 
 
 ## Workspace Topology
 
-### Code: `C:\dev` (Monorepo)
+### Code: `V:\monorepo` (Monorepo)
 
 - **Build system**: Nx 22.7.1 + pnpm 10.33.0
 - **Apps**: 24 under `apps/` (Tauri, Electron, React, Next.js, React Native, Python, MCP servers)
@@ -44,22 +44,22 @@ You do not implement features directly unless the task is trivial (single file, 
 | `D:\data\` | Datasets and generated assets | — |
 | `D:\_backups\` | DB and snapshot backups | Retain 14 days |
 
-**Golden Rule**: Code lives on `C:\dev`. Data lives on `D:\`. Never write DBs, logs, or generated media under `C:\dev`.
+**Golden Rule**: Code lives on `V:\monorepo`. Data lives on `D:\`. Never write DBs, logs, or generated media under `V:\monorepo`.
 
 ---
 
 ## Path Policy Enforcement
 
 - **Approved writes**:
-  - Source code → `C:\dev`
+  - Source code → `V:\monorepo`
   - Databases → `D:\databases\<project>`
   - Logs → `D:\logs\<project>`
   - Learning data → `D:\learning-system\`
 - **Deprecated**:
-  - `C:\dev\data`, `C:\dev\logs`, `C:\dev\databases` (do not use)
+  - `V:\monorepo\data`, `V:\monorepo\logs`, `V:\monorepo\databases` (do not use)
   - `D:\learning\` (use `D:\learning-system\`)
 - **Snapshotting**:
-  - Before risky D: operations, run `C:\dev\scripts\version-control\Save-Snapshot.ps1`
+  - Before risky D: operations, run `V:\monorepo\scripts\version-control\Save-Snapshot.ps1`
 
 ---
 
@@ -99,7 +99,7 @@ You do not implement features directly unless the task is trivial (single file, 
 
 - **DB Inventory**: `D:\databases\DB_INVENTORY.md`
 - **Learning guidelines**: `D:\learning-system\enhanced_agent_guidelines.md`
-- **Snapshot scripts**: `C:\dev\scripts\version-control\`
+- **Snapshot scripts**: `V:\monorepo\scripts\version-control\`
 - **Active project lock**: `D:\active-project\active-project.json`
 
 ---

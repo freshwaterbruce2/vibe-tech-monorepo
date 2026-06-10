@@ -3,6 +3,7 @@
  * Extracted from App.tsx for modularity
  */
 
+// eslint-disable-next-line @nx/enforce-module-boundaries -- shared package subpath import; the rule misclassifies the alias target
 import type { FileChange, MultiFileEditPlan } from '@vibetech/types/multifile';
 import type { editor as MonacoEditor } from 'monaco-editor';
 import type * as MonacoNS from 'monaco-editor';
@@ -16,7 +17,7 @@ import type { SearchOptions } from '../components/GlobalSearch/types';
 export type ChatMode = 'chat' | 'agent';
 
 // Visual panel states
-export type VisualPanelState = 'none' | 'screenshot' | 'library' | 'visual';
+export type VisualPanelState = 'none' | 'screenshot' | 'library' | 'visual' | 'webmcp';
 
 // Database status
 export type DbStatus = 'initializing' | 'ready' | 'fallback';

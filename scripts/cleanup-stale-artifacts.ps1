@@ -1,10 +1,10 @@
-param(
+﻿param(
     [switch]$DryRun
 )
 
 $ErrorActionPreference = 'Continue'
 
-$root = "C:\dev"
+$root = "V:\monorepo"
 $tmpRoot = Join-Path $root "tmp"
 $driftRoots = @(
     $root
@@ -107,7 +107,7 @@ function CollectDistCandidates {
     return [string[]]($unique.Keys | Sort-Object { $_.Length } -Descending)
 }
 
-Write-Host "Cleaning stale C:\dev artifacts"
+Write-Host "Cleaning stale V:\monorepo artifacts"
 
 $tmpCount = 0
 if (Test-Path -LiteralPath $tmpRoot) {

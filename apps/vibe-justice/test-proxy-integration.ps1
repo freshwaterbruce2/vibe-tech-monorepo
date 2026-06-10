@@ -54,7 +54,7 @@ try {
 
 # Step 4: Check Vibe-Justice frontend config
 Write-Host "4️⃣  Checking Vibe-Justice frontend..." -ForegroundColor Yellow
-$openrouterConfig = Get-Content "C:\dev\apps\vibe-justice\frontend\src\services\openrouter.ts" | Select-String -Pattern "localhost:3001"
+$openrouterConfig = Get-Content "V:\monorepo\apps\vibe-justice\frontend\src\services\openrouter.ts" | Select-String -Pattern "localhost:3001"
 if ($openrouterConfig) {
     Write-Host "   ✅ Frontend correctly configured for localhost:3001" -ForegroundColor Green
 } else {

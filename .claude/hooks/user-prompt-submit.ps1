@@ -11,7 +11,7 @@ param(
 $ErrorActionPreference = "SilentlyContinue"
 
 # Configuration
-$MemoryPath = "C:\dev\apps\memory-bank"
+$MemoryPath = "V:\monorepo\apps\memory-bank"
 $CounterFile = "$env:TEMP\claude_prompt_counter.txt"
 $TaskHistoryFile = "$MemoryPath\quick-access\recent-tasks.json"
 
@@ -283,7 +283,7 @@ function Should-SaveContext {
 function Get-AgentRecommendation {
     param([string]$TaskDescription, [string]$ProjectContext)
 
-    $OrchestratorPath = "C:\dev\apps\memory-bank\agent_orchestrator.py"
+    $OrchestratorPath = "V:\monorepo\apps\memory-bank\agent_orchestrator.py"
 
     if (-not (Test-Path $OrchestratorPath)) {
         return $null
@@ -306,7 +306,7 @@ function Get-AgentRecommendation {
 # ============================================================================
 
 $PlanningFilesPath = "D:\planning-files"
-$PlanningThresholdsFile = "C:\dev\.claude\planning-thresholds.json"
+$PlanningThresholdsFile = "V:\monorepo\.claude\planning-thresholds.json"
 
 function Get-PlanningThresholds {
     try {
@@ -633,7 +633,7 @@ try {
     # Suggests relevant skills based on project and prompt keywords
     # ============================================================================
     if ($PromptAnalysis.is_task -or $PromptAnalysis.is_error -or $PromptAnalysis.complexity -ge 3) {
-        $SkillRecommenderPath = "C:\dev\.claude\hooks\skill-recommender.ps1"
+        $SkillRecommenderPath = "V:\monorepo\.claude\hooks\skill-recommender.ps1"
         if (Test-Path $SkillRecommenderPath) {
             try {
                 & $SkillRecommenderPath -Project $CurrentProject -Prompt $UserPrompt -Intent $PromptAnalysis.category

@@ -51,7 +51,7 @@ export function MyComponent() {
 ## Development
 
 ```powershell
-cd C:\dev
+cd V:\monorepo
 pnpm nx run @vibetech/ui:typecheck
 pnpm nx run @vibetech/ui:lint
 ```

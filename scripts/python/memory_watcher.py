@@ -178,7 +178,7 @@ class MemorySyncHandler(FileSystemEventHandler):
             self.log(f"Auto-commit error: {e}", 'error')
 
 def main():
-    config_path = r"C:\dev\memory_sync.yaml"
+    config_path = r"V:\monorepo\memory_sync.yaml"
 
     if not os.path.exists(config_path):
         print(f"âŒ Config file not found: {config_path}")

@@ -67,7 +67,7 @@ let (outbound_tx, mut outbound_rx) =
 ```markdown
 - Windows 11 only (no cross-platform assumptions)
 - Privacy-first: local-only processing
-- Filesystem rules: C:\dev (code), D:\ (data)
+- Filesystem rules: V:\monorepo (code), D:\ (data)
 - 24/7 runtime reliability
 ```
 
@@ -88,7 +88,7 @@ let (outbound_tx, mut outbound_rx) =
 
 ```markdown
 ALWAYS check local filesystem FIRST before searching the web
-- If Bruce mentions C:\dev\ → Use local tools
+- If Bruce mentions V:\monorepo\ → Use local tools
 - If Bruce says "review" + local path → Use local tools
 - Only use web_search for: news, API docs, external libraries
 ```

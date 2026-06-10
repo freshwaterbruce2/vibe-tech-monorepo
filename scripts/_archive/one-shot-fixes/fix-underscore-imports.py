@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Fix corrupted underscore imports in TypeScript files."""
 
 import os
@@ -39,7 +39,7 @@ def fix_file(filepath):
 
 def main():
     """Fix all TypeScript files in the monorepo."""
-    base_dir = Path(r"C:\dev")
+    base_dir = Path(r"V:\monorepo")
 
     # Directories to skip
     skip_dirs = {

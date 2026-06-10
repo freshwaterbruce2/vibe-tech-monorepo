@@ -13,7 +13,7 @@
 ## 0. Backup first
 
 ```powershell
-Compress-Archive -Path C:\dev\apps\vibetech-command-center -DestinationPath C:\dev\_backups\pre-chunk05_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
+Compress-Archive -Path V:\monorepo\apps\vibetech-command-center -DestinationPath V:\monorepo\_backups\pre-chunk05_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
 ```
 
 ---
@@ -21,7 +21,7 @@ Compress-Archive -Path C:\dev\apps\vibetech-command-center -DestinationPath C:\d
 ## 1. Install UI dependencies
 
 ```powershell
-cd C:\dev\apps\vibetech-command-center
+cd V:\monorepo\apps\vibetech-command-center
 pnpm add lucide-react clsx
 pnpm add -D @testing-library/react @testing-library/jest-dom @testing-library/user-event jsdom
 ```
@@ -424,7 +424,7 @@ export function Shell({ children }: { children: React.ReactNode }): JSX.Element 
           <div className="text-sm text-slate-400">
             <span className="text-pulse-cyan">{NAV.find((n) => n.id === activePanel)?.label ?? ''}</span>
           </div>
-          <div className="text-xs text-slate-500 font-mono">C:\dev</div>
+          <div className="text-xs text-slate-500 font-mono">V:\monorepo</div>
         </header>
         <div className="flex-1 overflow-auto p-6">
           {children}
@@ -887,7 +887,7 @@ export function BackupLog(): JSX.Element {
       {isLoading ? (
         <div className="text-slate-500 text-sm">loading backups...</div>
       ) : (data ?? []).length === 0 ? (
-        <div className="text-slate-500 text-sm italic">no backups yet in C:\dev\_backups</div>
+        <div className="text-slate-500 text-sm italic">no backups yet in V:\monorepo\_backups</div>
       ) : (
         <div className="overflow-hidden rounded border border-bg-line">
           <table className="w-full text-sm">
@@ -922,7 +922,7 @@ export function BackupLog(): JSX.Element {
 
       <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
         <HardDrive size={12} />
-        <span className="font-mono">C:\dev\_backups\</span>
+        <span className="font-mono">V:\monorepo\_backups\</span>
       </div>
     </Panel>
   );
@@ -1201,7 +1201,7 @@ describe('BackupLog', () => {
 ## 11. Run everything
 
 ```powershell
-cd C:\dev\apps\vibetech-command-center
+cd V:\monorepo\apps\vibetech-command-center
 pnpm run typecheck ; pnpm run test ; pnpm run dev
 ```
 
@@ -1218,7 +1218,7 @@ pnpm run typecheck ; pnpm run test ; pnpm run dev
 - Click an app's Backup button → zip appears in BackupLog within 10s (auto-refresh)
 - Switch to Databases → 4 DB rows, any with `error: file not found` clearly marked
 - Switch to Backups → scrollable table + two quick-backup buttons
-- Touch a file in `C:\dev\apps\nova-agent\src\anything.ts` → within a second, the nova-agent card shows a cyan "live" dot and the "last edit" timestamp updates
+- Touch a file in `V:\monorepo\apps\nova-agent\src\anything.ts` → within a second, the nova-agent card shows a cyan "live" dot and the "last edit" timestamp updates
 
 ---
 
@@ -1233,7 +1233,7 @@ pnpm run typecheck ; pnpm run test ; pnpm run dev
 7. BackupLog quick-backup button creates a new zip, list auto-refreshes.
 8. No panel file exceeds 500 lines. Sanity check: `Get-ChildItem src\renderer -Recurse -Include *.tsx | ForEach-Object { "$($_.Name): $((Get-Content $_.FullName).Count)" }`.
 9. Switching panels does not refetch already-cached queries within staleTime.
-10. File changes in `C:\dev\apps\*\src` reach AppsGrid cards as "last edit" updates within 1s.
+10. File changes in `V:\monorepo\apps\*\src` reach AppsGrid cards as "last edit" updates within 1s.
 
 ---
 
@@ -1254,7 +1254,7 @@ pnpm run typecheck ; pnpm run test ; pnpm run dev
 ## Post-chunk backup
 
 ```powershell
-Compress-Archive -Path C:\dev\apps\vibetech-command-center -DestinationPath C:\dev\_backups\command-center-chunk05-complete_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
+Compress-Archive -Path V:\monorepo\apps\vibetech-command-center -DestinationPath V:\monorepo\_backups\command-center-chunk05-complete_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
 ```
 
 Ping me with `chunk 5 complete` (plus any oddities) and I'll write Chunk 6 — the remaining four panels: BuildStatus, RagSearch, ClaudeLauncher, AgentConsole. Chunk 6 is where the dashboard starts to *do* things beyond observation: invoke Claude Code sessions, search the RAG index, and stream live output. The ClaudeLauncher panel in particular is the payoff of the Chunk 3 `claude-bridge` service — a visual front-end for spawning Claude Code against any app in the grid.

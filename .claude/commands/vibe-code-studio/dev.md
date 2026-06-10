@@ -13,7 +13,7 @@ Start the Vibe Code Studio code editor in development mode with hot reload.
 1. Navigate to Vibe Code Studio directory:
 
    ```bash
-   cd C:\dev\apps\vibe-code-studio
+   cd V:\monorepo\apps\vibe-code-studio
    ```
 
 2. Install dependencies if needed:

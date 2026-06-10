@@ -1,4 +1,4 @@
-"""Entry point for: python -m src"""
+﻿"""Entry point for: python -m src"""
 
 import argparse
 import sys
@@ -18,7 +18,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--path",
         type=Path,
-        default=Path(r"C:\dev"),
+        default=Path(r"V:\monorepo"),
         help="Root path to scan (default: C:\\dev)",
     )
     parser.add_argument(

@@ -14,7 +14,7 @@ Run comprehensive quality checks on the e-commerce platform codebase.
 1. Navigate to Vibe-Shop directory:
 
    ```bash
-   cd C:\dev\apps\vibe-shop
+   cd V:\monorepo\apps\vibe-shop
    ```
 
 2. Run ESLint:

@@ -27,6 +27,12 @@ export function useWebMCP({
     logger.info('[WebMCP] Initializing WebMCP manager and polyfills in VCS...');
     const manager = WebMCPManager.getInstance();
 
+    // One controller per effect run: aborting on cleanup unregisters all four
+    // tools (locally and natively) before the next run re-registers them with
+    // fresh closures over the current editor state.
+    const controller = new AbortController();
+    const { signal } = controller;
+
     // Start mutation observer scanning for declarative forms in DOM
     manager.startScanning(() => {
       logger.debug('[WebMCP] DOM scanned: updated WebMCP declarative tools');
@@ -60,7 +66,7 @@ export function useWebMCP({
           workspaceFolder,
         };
       },
-    });
+    }, { signal });
 
     // 2. Tool to open a file by path
     manager.registerImperativeTool({
@@ -82,7 +88,7 @@ export function useWebMCP({
         await handleOpenFile(args.path);
         return { success: true, message: `Successfully opened ${args.path}` };
       },
-    });
+    }, { signal });
 
     // 3. Tool to insert code at current cursor
     manager.registerImperativeTool({
@@ -104,7 +110,7 @@ export function useWebMCP({
         handleInsertCode(args.code);
         return { success: true, message: 'Code successfully inserted' };
       },
-    });
+    }, { signal });
 
     // 4. Tool to save current active file
     manager.registerImperativeTool({
@@ -120,10 +126,11 @@ export function useWebMCP({
         await handleSaveFile();
         return { success: true, message: 'File successfully saved' };
       },
-    });
+    }, { signal });
 
     return () => {
       logger.info('[WebMCP] Cleaning up WebMCP session...');
+      controller.abort();
       manager.stopScanning();
     };
   }, [

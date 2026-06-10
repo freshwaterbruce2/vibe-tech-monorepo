@@ -1,4 +1,4 @@
-#!/usr/bin/env powershell
+﻿#!/usr/bin/env powershell
 # Simulates PostToolUse hook payloads for the Agent tool.
 # Pipes them into record-agent-execution.ps1 and verifies the DB rows were written.
 
@@ -31,7 +31,7 @@ function Invoke-HookCase {
         tool_response = @{
             is_error = $false
         }
-        cwd = 'C:\dev\apps\memory-mcp'
+        cwd = 'V:\monorepo\apps\memory-mcp'
     }
     if ($null -ne $DurationMs) {
         $hookPayload.duration_ms = $DurationMs

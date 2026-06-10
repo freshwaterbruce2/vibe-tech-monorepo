@@ -5,8 +5,8 @@ Exposes agent skills from the monorepo and community repositories as MCP tools a
 ## Features
 
 - **260+ Skills** from two repositories:
-  - `c:\dev\.agent\skills` (48 monorepo skills)
-  - `c:\dev\antigravity-awesome-skills\skills` (212+ community skills)
+  - `V:\monorepo\.agent\skills` (48 monorepo skills)
+  - `V:\monorepo\antigravity-awesome-skills\skills` (212+ community skills)
 
 - **MCP Tools**:
   - `skills_list` - List all available skills
@@ -20,7 +20,7 @@ Exposes agent skills from the monorepo and community repositories as MCP tools a
 ## Installation
 
 ```bash
-cd c:\dev\apps\mcp-skills-server
+cd V:\monorepo\apps\mcp-skills-server
 pnpm install
 pnpm build
 ```

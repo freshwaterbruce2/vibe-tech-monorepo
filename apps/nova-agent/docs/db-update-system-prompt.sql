@@ -6,7 +6,7 @@ DELETE FROM settings WHERE key IN ('nova_system_prompt_path', 'nova_system_promp
 
 -- Point to the 7-layer system prompt file
 INSERT INTO settings (key, value) VALUES 
-  ('nova_system_prompt_path', 'C:\dev\apps\nova-agent\docs\7-layer-system-prompt.md'),
+  ('nova_system_prompt_path', 'V:\monorepo\apps\nova-agent\docs\7-layer-system-prompt.md'),
   ('nova_system_prompt_version', '2.0_7layer'),
   ('nova_use_7layer_prompt', 'true');
 

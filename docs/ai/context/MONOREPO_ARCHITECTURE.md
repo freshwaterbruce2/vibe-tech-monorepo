@@ -9,7 +9,7 @@
 This is a **multi-domain monorepo** managed with pnpm workspaces and Nx, containing:
 
 ```
-C:\dev\
+V:\monorepo\
 ├── apps/                 # Product apps, desktop apps, mobile apps, MCP servers
 ├── backend/              # Node.js Express backend services
 ├── packages/             # Shared libraries and utilities
@@ -40,7 +40,7 @@ C:\dev\
 
 ## 🌐 1. Root Web Application
 
-**Location**: Root directory (C:\dev)
+**Location**: Root directory (V:\monorepo)
 **Purpose**: Main customer-facing web application
 
 ### Technology Stack

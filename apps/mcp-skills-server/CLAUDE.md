@@ -17,8 +17,8 @@ node apps/mcp-skills-server/dist/index.js  # run as MCP server
 
 ## Notes
 - Reads skill definitions from two sources (see `src/store.ts` `SKILL_SOURCES`):
-  - `C:\dev\.agent\skills\` — hand-crafted monorepo skills
-  - `C:\dev\.claude\skills\` — Ralph Wiggum auto-generated skills (written here by `skill-skillgenerator` agent)
+  - `V:\monorepo\.agent\skills\` — hand-crafted monorepo skills
+  - `V:\monorepo\.claude\skills\` — Ralph Wiggum auto-generated skills (written here by `skill-skillgenerator` agent)
 - gray-matter parses YAML frontmatter to extract skill metadata (name, description, triggers)
 - Registered in `.mcp.json` as the `skills` server
 - Adding a monorepo skill = add a `<name>/SKILL.md` under `.agent/skills/`

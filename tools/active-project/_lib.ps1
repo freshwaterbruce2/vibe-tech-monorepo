@@ -1,9 +1,9 @@
-# Shared helpers for active-project tooling.
+﻿# Shared helpers for active-project tooling.
 # Dot-source from other scripts: . "$PSScriptRoot\_lib.ps1"
 
 $Script:LockPath    = if ($env:ACTIVE_PROJECT_LOCK_PATH) { $env:ACTIVE_PROJECT_LOCK_PATH } else { 'D:\active-project\active-project.json' }
 $Script:HistoryDir  = if ($env:ACTIVE_PROJECT_HISTORY_DIR) { $env:ACTIVE_PROJECT_HISTORY_DIR } else { 'D:\active-project\history' }
-$Script:RepoRoot    = if ($env:ACTIVE_PROJECT_REPO_ROOT) { $env:ACTIVE_PROJECT_REPO_ROOT } else { 'C:\dev' }
+$Script:RepoRoot    = if ($env:ACTIVE_PROJECT_REPO_ROOT) { $env:ACTIVE_PROJECT_REPO_ROOT } else { 'V:\monorepo' }
 
 function Get-Lock {
     if (-not (Test-Path $Script:LockPath)) { return $null }

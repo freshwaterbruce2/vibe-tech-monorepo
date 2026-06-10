@@ -1,4 +1,4 @@
-#Requires -RunAsAdministrator
+﻿#Requires -RunAsAdministrator
 <#
 .SYNOPSIS
     Setup Windows Task Scheduler for automated database backups
@@ -11,8 +11,8 @@
 $ErrorActionPreference = 'Stop'
 
 # Backup script location
-$BackupScript = "C:\dev\scripts\database-backup.ps1"
-$MonitorScript = "C:\dev\scripts\monitor-backups.ps1"
+$BackupScript = "V:\monorepo\scripts\database-backup.ps1"
+$MonitorScript = "V:\monorepo\scripts\monitor-backups.ps1"
 
 Write-Host "=== Setting up Database Backup Schedule ===" -ForegroundColor Cyan
 
@@ -124,4 +124,4 @@ Write-Host "  • Pre-Shutdown: On system restart/shutdown"
 Write-Host "`nManage tasks:"
 Write-Host "  • Task Scheduler: taskschd.msc"
 Write-Host "  • View logs: D:\backups\database-backups\backup_log_*.txt"
-Write-Host "  • Monitor: C:\dev\scripts\monitor-backups.ps1"
+Write-Host "  • Monitor: V:\monorepo\scripts\monitor-backups.ps1"

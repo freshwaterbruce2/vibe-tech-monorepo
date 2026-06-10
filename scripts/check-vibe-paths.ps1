@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 [CmdletBinding()]
 param(
     [switch]$FixPermissions
@@ -67,26 +67,31 @@ function Get-ScanFiles {
     $rootFiles = Get-ChildItem -Path $workspaceRoot -File -ErrorAction SilentlyContinue |
         Where-Object { $_.Extension.ToLowerInvariant() -in $extensions }
 
+    function Get-FilesFast {
+        param([string]$Path)
+        $files = Get-ChildItem -Path $Path -File -ErrorAction SilentlyContinue |
+            Where-Object { $_.Extension.ToLowerInvariant() -in $extensions }
+        $dirs = Get-ChildItem -Path $Path -Directory -ErrorAction SilentlyContinue | Where-Object {
+            $_.Name -notin @(
+                'node_modules', '.git', 'dist', 'coverage', 'tmp', '.nx', 
+                'worktrees', 'docs', '_archive', 'archive', 'tools'
+            )
+        }
+        $results = [System.Collections.Generic.List[System.IO.FileInfo]]::new()
+        foreach ($f in $files) { $results.Add($f) }
+        foreach ($d in $dirs) {
+            $subFiles = Get-FilesFast -Path $d.FullName
+            foreach ($sf in $subFiles) { $results.Add($sf) }
+        }
+        return $results
+    }
+
     $nestedFiles = foreach ($scanRoot in $scanRoots) {
-        Get-ChildItem -Path $scanRoot -Recurse -File -ErrorAction SilentlyContinue
+        Get-FilesFast -Path $scanRoot
     }
 
     @($rootFiles + $nestedFiles) | Where-Object {
         $fullName = $_.FullName
-        $extension = $_.Extension.ToLowerInvariant()
-
-        $extension -in $extensions -and
-        $fullName -notmatch '\\\.git\\' -and
-        $fullName -notmatch '\\node_modules\\' -and
-        $fullName -notmatch '\\dist\\' -and
-        $fullName -notmatch '\\coverage\\' -and
-        $fullName -notmatch '\\tmp\\' -and
-        $fullName -notmatch '\\\.nx\\' -and
-        $fullName -notmatch '\\\.claude\\worktrees\\' -and
-        $fullName -notmatch '\\docs\\' -and
-        $fullName -notmatch '\\_archive\\' -and
-        $fullName -notmatch '\\archive\\' -and
-        $fullName -notmatch '\\tools\\' -and
         $fullName -notlike "$PSScriptRoot\check-vibe-paths.ps1"
     }
 }
@@ -102,25 +107,24 @@ function Find-DeprecatedReferences {
         return @()
     }
 
-    $matches = foreach ($file in $Files) {
-        if (-not $file) {
-            continue
-        }
-
-        $path = $file.FullName
-        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-            continue
-        }
-
-        try {
-            Select-String -LiteralPath $path -SimpleMatch $Literal -ErrorAction SilentlyContinue
-        }
-        catch {
-            # File-level scan races can happen while the workspace changes.
-            # Skip files that disappear between enumeration and content scan.
-            continue
+    $paths = [System.Collections.Generic.List[string]]::new()
+    foreach ($file in $Files) {
+        if ($file -and (Test-Path -LiteralPath $file.FullName -PathType Leaf)) {
+            $paths.Add($file.FullName)
         }
     }
+
+    if ($paths.Count -eq 0) {
+        return @()
+    }
+
+    $matches = try {
+        Select-String -LiteralPath $paths -SimpleMatch $Literal -ErrorAction SilentlyContinue
+    }
+    catch {
+        @()
+    }
+
     if ($IgnoreLiteral) {
         $matches = $matches | Where-Object { $_.Line -notlike "*$IgnoreLiteral*" }
     }
@@ -145,7 +149,7 @@ if ($FixPermissions) {
 
 Write-Host "`n[1/3] Checking canonical storage roots..." -ForegroundColor Yellow
 foreach ($entry in @(
-        @{ Path = 'C:\dev'; Label = 'source root' },
+        @{ Path = $workspaceRoot; Label = 'source root' },
         @{ Path = 'D:\learning-system'; Label = 'learning-system root' },
         @{ Path = 'D:\databases'; Label = 'databases root' },
         @{ Path = 'D:\logs'; Label = 'logs root' },
@@ -157,9 +161,12 @@ foreach ($entry in @(
 Write-Host "`n[2/3] Verifying deprecated roots are absent..." -ForegroundColor Yellow
 foreach ($entry in @(
         @{ Path = 'D:\learning'; Label = 'deprecated D:\learning root' },
-        @{ Path = 'C:\dev\data'; Label = 'deprecated C:\dev\data root' },
-        @{ Path = 'C:\dev\logs'; Label = 'deprecated C:\dev\logs root' },
-        @{ Path = 'C:\dev\databases'; Label = 'deprecated C:\dev\databases root' }
+        @{ Path = 'V:\monorepo\data'; Label = 'deprecated V:\monorepo\data root' },
+        @{ Path = 'V:\monorepo\logs'; Label = 'deprecated V:\monorepo\logs root' },
+        @{ Path = 'V:\monorepo\databases'; Label = 'deprecated V:\monorepo\databases root' },
+        @{ Path = 'V:\monorepo\data'; Label = 'deprecated V:\monorepo\data root' },
+        @{ Path = 'V:\monorepo\logs'; Label = 'deprecated V:\monorepo\logs root' },
+        @{ Path = 'V:\monorepo\databases'; Label = 'deprecated V:\monorepo\databases root' }
     )) {
     Test-DeprecatedPathMissing -Path $entry.Path -Label $entry.Label
 }
@@ -175,18 +182,33 @@ $deprecatedRules = @(
         IgnoreLiteral = 'D:\learning-system'
     },
     @{
-        Label = 'deprecated C:\dev\data path'
-        Literal = 'C:\dev\data'
+        Label = 'deprecated V:\monorepo\data path'
+        Literal = 'V:\monorepo\data'
         IgnoreLiteral = $null
     },
     @{
-        Label = 'deprecated C:\dev\logs path'
-        Literal = 'C:\dev\logs'
+        Label = 'deprecated V:\monorepo\logs path'
+        Literal = 'V:\monorepo\logs'
         IgnoreLiteral = $null
     },
     @{
-        Label = 'deprecated C:\dev\databases path'
-        Literal = 'C:\dev\databases'
+        Label = 'deprecated V:\monorepo\databases path'
+        Literal = 'V:\monorepo\databases'
+        IgnoreLiteral = $null
+    },
+    @{
+        Label = 'deprecated V:\monorepo\data path'
+        Literal = 'V:\monorepo\data'
+        IgnoreLiteral = $null
+    },
+    @{
+        Label = 'deprecated V:\monorepo\logs path'
+        Literal = 'V:\monorepo\logs'
+        IgnoreLiteral = $null
+    },
+    @{
+        Label = 'deprecated V:\monorepo\databases path'
+        Literal = 'V:\monorepo\databases'
         IgnoreLiteral = $null
     }
 )

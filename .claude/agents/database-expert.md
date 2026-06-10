@@ -39,15 +39,15 @@ Specialized agent for database optimization, migrations, and data storage archit
 
 ## Critical Rules (D:\ Storage Policy)
 
-1. **ALWAYS store databases on D:\ drive (NEVER C:\dev)**
+1. **ALWAYS store databases on D:\ drive (NEVER V:\monorepo)**
 
    ```typescript
    // CORRECT
    const DB_PATH = process.env.DATABASE_PATH || 'D:\\databases\\app.db';
 
    // WRONG
-   const DB_PATH = './data/app.db'; // Relative to C:\dev
-   const DB_PATH = 'C:\\dev\\data\\app.db'; // In source tree
+   const DB_PATH = './data/app.db'; // Relative to V:\monorepo
+   const DB_PATH = 'V:\\monorepo\\data\\app.db'; // In source tree
    ```
 
 2. **ALWAYS use environment variables**
@@ -191,9 +191,9 @@ export function validateDatabasePath(path: string): boolean {
     throw new Error(`Invalid database path: ${path}. Must be on D:\\ drive.`);
   }
 
-  // MUST NOT be in C:\dev
-  if (path.includes('C:\\dev') || path.includes('C:/dev')) {
-    throw new Error(`Invalid database path: ${path}. Cannot store data in C:\\dev`);
+  // MUST NOT be in V:\monorepo
+  if (path.includes('V:\\monorepo') || path.includes('V:/monorepo')) {
+    throw new Error(`Invalid database path: ${path}. Cannot store data in V:\\monorepo`);
   }
 
   return true;

@@ -21,14 +21,14 @@ Before invoking any sub-agent, call the LATS planner to get a scored approach:
 
 ```powershell
 # Step 1: Get ranked approaches (outputs JSON with nodeId + approach)
-$planJson = (node C:\dev\packages\agent-lats\dist\cli.js plan --task "<describe the stage goal>" --candidates 3 --json) -join "`n"
+$planJson = (node V:\monorepo\packages\agent-lats\dist\cli.js plan --task "<describe the stage goal>" --candidates 3 --json) -join "`n"
 $plan = $planJson | ConvertFrom-Json
 $nodeId  = $plan.recommended.nodeId
 $approach = $plan.recommended.approach
 
 # Step 2: Register the active node BEFORE invoking the sub-agent.
 # This links subsequent file-level critiques (Phase 2 quality signal) to this node.
-pwsh -NoProfile -ExecutionPolicy Bypass -File C:\dev\.claude\hooks\lats-register-node.ps1 `
+pwsh -NoProfile -ExecutionPolicy Bypass -File V:\monorepo\.claude\hooks\lats-register-node.ps1 `
     -NodeId $nodeId `
     -Approach $approach `
     -TaskDescription "<describe the stage goal>"
@@ -43,11 +43,11 @@ After the sub-agent finishes, record the outcome:
 ```powershell
 # Success — the lats-backpropagate.ps1 PostToolUse hook does this automatically.
 # Only call manually if the hook is disabled or you need an explicit record:
-node C:\dev\packages\agent-lats\dist\cli.js backpropagate --node <nodeId> --success true --agent <agentId>
+node V:\monorepo\packages\agent-lats\dist\cli.js backpropagate --node <nodeId> --success true --agent <agentId>
 
 # Failure (also generate a self-critique)
-node C:\dev\packages\agent-lats\dist\cli.js backpropagate --node <nodeId> --success false --reflection "<what went wrong>"
-node C:\dev\packages\agent-lats\dist\cli.js reflect --node <nodeId> --outcome "<what actually happened>"
+node V:\monorepo\packages\agent-lats\dist\cli.js backpropagate --node <nodeId> --success false --reflection "<what went wrong>"
+node V:\monorepo\packages\agent-lats\dist\cli.js reflect --node <nodeId> --outcome "<what actually happened>"
 ```
 
 Store the LATS node ID in state.json so it survives fresh context iterations:
@@ -76,7 +76,7 @@ After **each sub-agent completes**, record its result so blame attribution and o
 ```powershell
 # Record a stage result (adapt StageName, position, success, and duration)
 if ($runId) {
-    node C:\dev\packages\agent-lats\dist\cli.js pipeline stage `
+    node V:\monorepo\packages\agent-lats\dist\cli.js pipeline stage `
         --run $runId `
         --stage PatternAnalyzer `
         --position 0 `
@@ -106,7 +106,7 @@ $codeReviewerResult = (Get-Content state.json | ConvertFrom-Json).agents.CodeRev
 $firstIssue = $codeReviewerResult.issues | Select-Object -First 1
 $errorMsg = if ($firstIssue) { $firstIssue } else { "approved=false, no issues captured" }
 
-node C:\dev\packages\agent-lats\dist\cli.js pipeline stage `
+node V:\monorepo\packages\agent-lats\dist\cli.js pipeline stage `
     --run $runId `
     --stage CodeReviewer `
     --position 2 `
@@ -164,7 +164,7 @@ Also persist the `runId` in `state.json` alongside the `latsNodeId` so it surviv
 **Manual Trigger**:
 
 ```powershell
-cd C:\dev\.claude\skills\auto-skill-creator
+cd V:\monorepo\.claude\skills\auto-skill-creator
 .\ralph-loop.ps1 -Pattern "component-creation"
 ```
 

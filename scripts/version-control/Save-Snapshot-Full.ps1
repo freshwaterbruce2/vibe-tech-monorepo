@@ -1,12 +1,12 @@
-#Requires -Version 7.0
+﻿#Requires -Version 7.0
 
 <#
 .SYNOPSIS
-    Save full snapshot including C:\dev + D:\databases + D:\learning-system
+    Save full snapshot including V:\monorepo + D:\databases + D:\learning-system
 
 .DESCRIPTION
     Creates a comprehensive snapshot of both code and data:
-    - C:\dev (workspace/code)
+    - V:\monorepo (workspace/code)
     - D:\databases (SQLite databases)
     - D:\learning-system (AI learning data)
 
@@ -50,7 +50,7 @@ param(
     [string]$RepoPath = "D:\repositories\vibetech",
 
     [Parameter(Mandatory = $false)]
-    [string]$WorkspacePath = "C:\dev"
+    [string]$WorkspacePath = "V:\monorepo"
 )
 
 Set-StrictMode -Version Latest
@@ -99,7 +99,7 @@ if ($Tag) {
 }
 
 Write-Host "`nWhat will be captured:" -ForegroundColor Yellow
-Write-Host "  ✓ C:\dev (workspace/code)" -ForegroundColor Green
+Write-Host "  ✓ V:\monorepo (workspace/code)" -ForegroundColor Green
 if ($IncludeDatabases) {
     Write-Host "  ✓ D:\databases (SQLite databases)" -ForegroundColor Green
 } else {
@@ -121,9 +121,9 @@ $totalFiles = 0
 $totalSize = 0
 
 # ============================================================================
-# 1. COPY C:\dev (Workspace/Code)
+# 1. COPY V:\monorepo (Workspace/Code)
 # ============================================================================
-Write-Section "📁 [1/3] Copying workspace (C:\dev)..."
+Write-Section "📁 [1/3] Copying workspace (V:\monorepo)..."
 
 $robocopyArgs = @(
     $WorkspacePath,
@@ -256,7 +256,7 @@ $metadata = @{
     compressionEnabled = $config.compression
     components = @{
         workspace = @{
-            path = "C:\dev"
+            path = "V:\monorepo"
             files = $workspaceCount
             size = $workspaceSize
         }
@@ -291,7 +291,7 @@ $changelogEntry = @"
 **Type:** Full System Snapshot (Code + Data)
 
 **Components:**
-- Workspace (C:\dev): $workspaceCount files ($([math]::Round($workspaceSize / 1MB, 2)) MB)
+- Workspace (V:\monorepo): $workspaceCount files ($([math]::Round($workspaceSize / 1MB, 2)) MB)
 $(if ($IncludeDatabases) { "- Databases (D:\databases): $dbCount files ($([math]::Round($dbSize / 1MB, 2)) MB)" })
 $(if ($IncludeLearning) { "- Learning (D:\learning-system): $learningCount files ($([math]::Round($learningSize / 1MB, 2)) MB)" })
 

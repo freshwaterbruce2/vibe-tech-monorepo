@@ -4,16 +4,16 @@ Last Updated: 2026-01-06
 
 ## Storage Rules
 
-### Code Storage (C:\dev)
+### Code Storage (V:\monorepo)
 
 ALL source code, configuration, and version-controlled files
 
-- Monorepo Root: C:\dev (Git repository)
-- Applications: C:\dev\apps\
-- Packages: C:\dev\packages\
-- Backend: C:\dev\backend\
+- Monorepo Root: V:\monorepo (Git repository)
+- Applications: V:\monorepo\apps\
+- Packages: V:\monorepo\packages\
+- Backend: V:\monorepo\backend\
 
-NEVER store data or logs in C:\dev
+NEVER store data or logs in V:\monorepo
 
 ### Data Storage (D:\)
 
@@ -44,7 +44,7 @@ ALWAYS use D:\ for:
 - Session data / cache files
 - Build artifacts (temporary)
 
-NEVER put on C:\dev:
+NEVER put on V:\monorepo:
 
 - Large files (>5MB)
 - Binary data files
@@ -68,6 +68,6 @@ Run: .\check-vibe-paths.ps1
 
 ## Related Documentation
 
-- C:\dev\docs\PATHS_POLICY.md (official policy)
+- V:\monorepo\docs\PATHS_POLICY.md (official policy)
 - .claude/rules/database-storage.md
 - .claude/rules/paths-policy.md

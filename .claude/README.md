@@ -1,6 +1,6 @@
 # Claude Desktop Project Knowledge
 
-This directory contains comprehensive documentation for the C:\dev monorepo, specifically designed for use with Claude Desktop's project knowledge feature.
+This directory contains comprehensive documentation for the V:\monorepo monorepo, specifically designed for use with Claude Desktop's project knowledge feature.
 
 ## 📚 Documentation Overview
 
@@ -63,7 +63,7 @@ These files are designed to be used with Claude Desktop's project knowledge feat
 
 1. **Add this directory to your project**:
    - Open Claude Desktop
-   - Add the C:\dev directory as a project
+   - Add the V:\monorepo directory as a project
    - Claude will automatically have access to these guides
 
 2. **Claude will automatically reference these files**:
@@ -242,4 +242,4 @@ For questions not covered in these guides:
 ---
 
 **Last Updated**: October 12, 2025
-**Monorepo Version**: C:\dev (React 19.2.4, TypeScript 5.9.3, Python 3.12+)
+**Monorepo Version**: V:\monorepo (React 19.2.4, TypeScript 5.9.3, Python 3.12+)

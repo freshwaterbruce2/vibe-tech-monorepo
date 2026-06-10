@@ -1,10 +1,10 @@
-# Monorepo Git Workflow - C:\dev
+# Monorepo Git Workflow - V:\monorepo
 
 **2026 Best Practice: Incremental Merging for Nx + pnpm Monorepos**
 
 ## 📦 Monorepo Structure
 
-**C:\dev = ONE REPOSITORY with ALL projects inside**
+**V:\monorepo = ONE REPOSITORY with ALL projects inside**
 
 - **Repository**: `https://github.com/freshwaterbruce2/vibe-tech-monorepo.git`
 - **Strategy**: Monorepo (Google, Meta, Microsoft approach)

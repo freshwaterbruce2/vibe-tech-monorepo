@@ -1,4 +1,4 @@
-# Standalone version of Get-DevMetrics
+﻿# Standalone version of Get-DevMetrics
 # Development Metrics Script
 
 Write-Host ""
@@ -12,7 +12,7 @@ $projectDirs = @("apps", "packages", "backend", "tools")
 $totalProjects = 0
 
 foreach ($dir in $projectDirs) {
-    $path = Join-Path "C:\dev" $dir
+    $path = Join-Path "V:\monorepo" $dir
     if (Test-Path $path) {
         $count = (Get-ChildItem -Path $path -Directory -ErrorAction SilentlyContinue).Count
         if ($count -gt 0) {
@@ -26,7 +26,7 @@ Write-Host "  Total: $totalProjects projects"
 # Quick file stats (limited to apps folder for speed)
 Write-Host ""
 Write-Host "File counts (apps folder only):" -ForegroundColor Yellow
-$appsPath = "C:\dev\apps"
+$appsPath = "V:\monorepo\apps"
 
 if (Test-Path $appsPath) {
     # Count TypeScript files

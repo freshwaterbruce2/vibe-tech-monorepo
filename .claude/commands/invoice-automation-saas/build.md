@@ -13,7 +13,7 @@ Build Invoice Automation SaaS platform for production deployment.
 1. Navigate to Invoice Automation directory:
 
    ```bash
-   cd C:\dev\apps\invoice-automation-saas
+   cd V:\monorepo\apps\invoice-automation-saas
    ```
 
 2. Clean previous builds:

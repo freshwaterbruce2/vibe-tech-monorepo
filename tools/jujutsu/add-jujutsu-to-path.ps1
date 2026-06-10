@@ -1,7 +1,7 @@
-# Add Jujutsu to system PATH permanently
+﻿# Add Jujutsu to system PATH permanently
 $ErrorActionPreference = "Stop"
 
-$jjPath = "C:\dev\tools\jujutsu"
+$jjPath = "V:\monorepo\tools\jujutsu"
 
 Write-Host "Adding Jujutsu to User PATH..."
 

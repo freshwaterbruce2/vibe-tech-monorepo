@@ -323,7 +323,7 @@ git commit --no-verify -m "emergency fix"  # Use with extreme caution
 
 ### Database Security (D:\databases\)
 
-**MANDATORY POLICY:** All databases, logs, and large datasets MUST be stored on D:\ drive, never in C:\dev\ or project directories.
+**MANDATORY POLICY:** All databases, logs, and large datasets MUST be stored on D:\ drive, never in V:\monorepo\ or project directories.
 
 #### Database Storage Structure
 
@@ -546,7 +546,7 @@ PRAGMA cache_size = -64000;          -- 64MB cache (negative = KB)
 ### Development Environment
 
 - D:\ drive used for all persistent data (databases, logs, datasets)
-- C:\dev\ for code only (no data storage)
+- V:\monorepo\ for code only (no data storage)
 - Local development uses `localhost` only
 - Production builds must set proper `CORS` origins
 - PowerShell execution policy: `RemoteSigned` or `Bypass` for development scripts

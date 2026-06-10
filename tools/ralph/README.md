@@ -1,4 +1,4 @@
-# Project Health Scanner
+﻿# Project Health Scanner
 
 > Built with the Ralph autonomous coding methodology
 
@@ -17,9 +17,9 @@ Higher health score = needs more attention.
 ## Quick Start
 
 ```powershell
-# From C:\dev\ralph
+# From V:\monorepo\ralph
 python -m src                      # Console output
-python -m src --output markdown    # Save to C:\dev\PROJECT_HEALTH.md
+python -m src --output markdown    # Save to V:\monorepo\PROJECT_HEALTH.md
 python -m src --top 10             # Top 10 projects only
 python -m src --output both        # Both console and markdown
 ```
@@ -28,7 +28,7 @@ python -m src --output both        # Both console and markdown
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--path PATH` | Root path to scan | `C:\dev` |
+| `--path PATH` | Root path to scan | `V:\monorepo` |
 | `--output FORMAT` | `console`, `markdown`, or `both` | `console` |
 | `--top N` | Show only top N projects | all |
 | `--markdown-path PATH` | Custom path for markdown output | `ROOT\PROJECT_HEALTH.md` |
@@ -37,7 +37,7 @@ python -m src --output both        # Both console and markdown
 
 ```
 PROJECT HEALTH REPORT
-Scanned: C:\dev
+Scanned: V:\monorepo
 Found: 44 projects
 
 PROJECT                        TYPE      SCORE  STALE  TODOs  TESTS    LINES

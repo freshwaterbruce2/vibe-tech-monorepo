@@ -1,7 +1,7 @@
 {
   "name": "the-finisher",
   "version": "0.1.0",
-  "description": "Autonomous project completion agent with system awareness - loops until projects reach production-ready status. Understands C:\\dev (code) + D:\\ (data/learning) architecture.",
+  "description": "Autonomous project completion agent with system awareness - loops until projects reach production-ready status. Understands V:\\monorepo (code) + D:\\ (data/learning) architecture.",
   "author": {
     "name": "Bruce",
     "email": "freshwaterbruce2@gmail.com"

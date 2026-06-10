@@ -4,7 +4,7 @@
 
 ### 1. Build
 ```bash
-cd C:\dev\apps\desktop-commander-v3 && pnpm run build
+cd V:\monorepo\apps\desktop-commander-v3 && pnpm run build
 ```
 
 ### 2. Configure
@@ -28,7 +28,7 @@ Edit `%APPDATA%\Claude\claude_desktop_config.json`:
 ## Test It
 
 **PowerShell:** `Run: Get-Process | Select-Object -First 5`
-**CMD:** `Run: dir C:\dev`
+**CMD:** `Run: dir V:\monorepo`
 
 ---
 

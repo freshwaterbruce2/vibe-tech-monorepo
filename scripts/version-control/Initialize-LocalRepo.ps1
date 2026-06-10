@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+﻿#Requires -Version 7.0
 
 <#
 .SYNOPSIS
@@ -24,7 +24,7 @@ param(
     [string]$RepoPath = "D:\repositories\vibetech",
 
     [Parameter(Mandatory = $false)]
-    [string]$WorkspacePath = "C:\dev",
+    [string]$WorkspacePath = "V:\monorepo",
 
     [Parameter(Mandatory = $false)]
     [switch]$Force
@@ -323,7 +323,7 @@ Write-Host "1. Create your first snapshot:" -ForegroundColor White
 Write-Host "   .\Save-Snapshot.ps1 -Description `"Initial workspace state`"`n" -ForegroundColor Gray
 
 Write-Host "2. View available commands:" -ForegroundColor White
-Write-Host "   Get-ChildItem C:\dev\scripts\version-control\*.ps1`n" -ForegroundColor Gray
+Write-Host "   Get-ChildItem V:\monorepo\scripts\version-control\*.ps1`n" -ForegroundColor Gray
 
 Write-Host "3. Read documentation:" -ForegroundColor White
 Write-Host "   Get-Content $RepoPath\README.md`n" -ForegroundColor Gray

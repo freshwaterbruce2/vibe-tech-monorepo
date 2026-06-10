@@ -28,7 +28,7 @@ try {
     if ($filePath -match '\.(test|spec)\.(ts|tsx)$')  { exit 0 }
 
     $CLI     = 'node'
-    $CLIPath = 'C:\dev\packages\agent-lats\dist\cli.js'
+    $CLIPath = 'V:\monorepo\packages\agent-lats\dist\cli.js'
     $dbPath  = if ($env:AGENT_LATS_DB_PATH) { $env:AGENT_LATS_DB_PATH } else { 'D:\databases\agent_learning.db' }
 
     # Count low-score critiques in last 24h

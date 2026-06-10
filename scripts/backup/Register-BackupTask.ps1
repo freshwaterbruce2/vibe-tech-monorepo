@@ -1,4 +1,4 @@
-#!/usr/bin/env powershell
+﻿#!/usr/bin/env powershell
 <#
 .SYNOPSIS
     Register Windows Scheduled Task for automated MoltBot backups
@@ -22,7 +22,7 @@ param(
 
 $TaskName = "MoltBot-DailyBackup"
 $TaskPath = "\MoltBot\"
-$ScriptPath = "C:\dev\scripts\backup\Backup-MoltBotData.ps1"
+$ScriptPath = "V:\monorepo\scripts\backup\Backup-MoltBotData.ps1"
 
 if ($Unregister) {
     Write-Host "Unregistering scheduled task..." -ForegroundColor Yellow

@@ -43,7 +43,7 @@ if (electronVersions.size === 0) {
 
 mkdirSync(nativeDir, { recursive: true });
 
-for (const electronVersion of electronVersions) {
+async function fetchPrebuild(electronVersion) {
   const abiVersion = nodeAbi.getAbi(electronVersion, 'electron');
   const targetFile = join(nativeDir, `better_sqlite3-electron-v${abiVersion}.node`);
   const markerFile = join(nativeDir, `better_sqlite3-electron-v${abiVersion}.json`);
@@ -52,8 +52,8 @@ for (const electronVersion of electronVersions) {
     try {
       const marker = JSON.parse(readFileSync(markerFile, 'utf8'));
       if (marker.betterSqlite3 === betterSqlite3Version) {
-        console.log(`[fetch-electron-native] ABI ${abiVersion} (Electron ${electronVersion}) already cached.`);
-        continue;
+        console.warn(`[fetch-electron-native] ABI ${abiVersion} (Electron ${electronVersion}) already cached.`);
+        return;
       }
     } catch {
       // unreadable marker: refetch
@@ -61,11 +61,10 @@ for (const electronVersion of electronVersions) {
   }
 
   const url = `https://github.com/WiseLibs/better-sqlite3/releases/download/v${betterSqlite3Version}/better-sqlite3-v${betterSqlite3Version}-electron-v${abiVersion}-win32-x64.tar.gz`;
-  console.log(`[fetch-electron-native] Downloading ${url}`);
+  console.warn(`[fetch-electron-native] Downloading ${url}`);
   const res = await fetch(url);
   if (!res.ok) {
-    console.error(`[fetch-electron-native] Download failed: HTTP ${res.status} for ${url}`);
-    process.exit(1);
+    throw new Error(`[fetch-electron-native] Download failed: HTTP ${res.status} for ${url}`);
   }
   const buf = Buffer.from(await res.arrayBuffer());
 
@@ -77,8 +76,15 @@ for (const electronVersion of electronVersions) {
     execFileSync('tar', ['-xzf', tarball, '-C', tmp]);
     copyFileSync(join(tmp, 'build', 'Release', 'better_sqlite3.node'), targetFile);
     writeFileSync(markerFile, JSON.stringify({ betterSqlite3: betterSqlite3Version, electron: electronVersion }, null, 2));
-    console.log(`[fetch-electron-native] Installed ${targetFile}`);
+    console.warn(`[fetch-electron-native] Installed ${targetFile}`);
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
+}
+
+try {
+  await Promise.all([...electronVersions].map(fetchPrebuild));
+} catch (err) {
+  console.error(err instanceof Error ? err.message : String(err));
+  process.exit(1);
 }

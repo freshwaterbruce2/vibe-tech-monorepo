@@ -13,5 +13,5 @@
     }
   },
   "include": ["**/*.js", "**/*.mjs", "**/*.d.ts"],
-  "exclude": ["node_modules", "coverage", "dist", "**/dist", "**/build"]
+  "exclude": ["node_modules", "**/coverage", "dist", "**/dist", "**/build"]
 }

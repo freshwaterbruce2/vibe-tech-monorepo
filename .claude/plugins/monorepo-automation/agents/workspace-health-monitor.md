@@ -64,7 +64,7 @@ Collect quality metrics using existing infrastructure:
 
 ```powershell
 # Use existing auto-quality-check.ps1
-C:\dev\scripts\auto-quality-check.ps1 -TriggerType "health-monitor" -Silent
+V:\monorepo\scripts\auto-quality-check.ps1 -TriggerType "health-monitor" -Silent
 
 # Parses JSON output:
 # {
@@ -180,7 +180,7 @@ CREATE TABLE health_snapshots (
 
 ```bash
 # Quality check
-powershell C:\dev\scripts\auto-quality-check.ps1 -TriggerType "health-monitor" -Silent
+powershell V:\monorepo\scripts\auto-quality-check.ps1 -TriggerType "health-monitor" -Silent
 
 # Test coverage
 pnpm nx affected -t test --coverage --parallel=3 --skip-nx-cache
@@ -462,7 +462,7 @@ Nice work on cache optimization!
 
 ```powershell
 # Leverage existing quality check infrastructure
-C:\dev\scripts\auto-quality-check.ps1 -TriggerType "health-monitor" -Silent
+V:\monorepo\scripts\auto-quality-check.ps1 -TriggerType "health-monitor" -Silent
 
 # Parse JSON output for health metrics
 ```
@@ -498,7 +498,7 @@ Run health checks automatically:
 
 ```powershell
 # Daily health check (via scheduled task)
-powershell C:\dev\scripts\run-health-check.ps1
+powershell V:\monorepo\scripts\run-health-check.ps1
 
 # Generates report and stores in database
 # Sends alerts if thresholds breached

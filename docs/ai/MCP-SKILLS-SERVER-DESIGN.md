@@ -243,7 +243,7 @@ export async function loadSkills(): Promise<Map<string, Skill>> {
   const skills = new Map<string, Skill>();
 
   // Load category skills
-  const categoriesDir = 'C:/dev/.claude/commands/categories';
+  const categoriesDir = 'V:/monorepo/.claude/commands/categories';
   const categoryFiles = await readdir(categoriesDir);
 
   for (const file of categoryFiles) {
@@ -262,7 +262,7 @@ export async function loadSkills(): Promise<Map<string, Skill>> {
   }
 
   // Load community skills
-  const communityDir = 'C:/dev/.claude/skills/skills';
+  const communityDir = 'V:/monorepo/.claude/skills/skills';
   const communityFiles = await readdir(communityDir);
 
   for (const file of communityFiles) {
@@ -293,9 +293,9 @@ export async function loadSkills(): Promise<Map<string, Skill>> {
   "mcpServers": {
     "monorepo-skills": {
       "command": "node",
-      "args": ["C:/dev/backend/mcp-skills-server/dist/server.js"],
+      "args": ["V:/monorepo/backend/mcp-skills-server/dist/server.js"],
       "env": {
-        "SKILLS_ROOT": "C:/dev/.claude"
+        "SKILLS_ROOT": "V:/monorepo/.claude"
       }
     }
   }
@@ -309,7 +309,7 @@ export async function loadSkills(): Promise<Map<string, Skill>> {
   "mcpServers": {
     "monorepo-skills": {
       "command": "node",
-      "args": ["C:/dev/backend/mcp-skills-server/dist/server.js"]
+      "args": ["V:/monorepo/backend/mcp-skills-server/dist/server.js"]
     }
   }
 }

@@ -1,5 +1,4 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import * as Haptics from 'expo-haptics';
 import { Activity, Brain, MessageCircle, Settings } from 'lucide-react-native';
 import { Platform, View } from 'react-native';
@@ -12,26 +11,11 @@ import { StatusScreen } from '../screens/StatusScreen';
 
 const Tab = createBottomTabNavigator();
 
-const DarkTheme = {
-  ...DefaultTheme,
-  dark: true,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: config.THEME.ACCENT_CYAN,
-    background: config.THEME.BACKGROUND,
-    card: config.THEME.SURFACE,
-    text: config.THEME.TEXT_PRIMARY,
-    border: config.THEME.BORDER,
-    notification: config.THEME.ACCENT_MAGENTA,
-  },
-};
-
 const TAB_BAR_HEIGHT = Platform.OS === 'ios' ? 80 : 60;
 
 export function AppNavigator() {
   return (
-    <NavigationContainer theme={DarkTheme}>
-      <View style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
         {config.FEATURES.OFFLINE_MODE && <OfflineBanner />}
         <Tab.Navigator
           screenOptions={{
@@ -87,6 +71,5 @@ export function AppNavigator() {
           />
         </Tab.Navigator>
       </View>
-    </NavigationContainer>
   );
 }

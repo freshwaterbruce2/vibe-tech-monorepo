@@ -247,7 +247,7 @@ class CircuitBreaker:
 
 ### Pattern: SQLite Database on D:\ Drive
 
-**ALL databases MUST be stored on D:\ drive, NEVER in C:\dev**
+**ALL databases MUST be stored on D:\ drive, NEVER in V:\monorepo**
 
 ```python
 # ✅ CORRECT: apps/crypto-enhanced/database.py
@@ -447,11 +447,11 @@ except Exception as e:
         engine.stop()
 ```
 
-### ❌ Storing Database in C:\dev
+### ❌ Storing Database in V:\monorepo
 
 ```python
 # WRONG: Database in source tree
-DB_PATH = 'C:\\dev\\apps\\crypto-enhanced\\trading.db'
+DB_PATH = 'V:\\monorepo\\apps\\crypto-enhanced\\trading.db'
 
 # RIGHT: D:\ drive storage
 DB_PATH = 'D:\\databases\\trading.db'
@@ -492,14 +492,14 @@ The trading system has been successfully restored to full functionality:
 ## Related Documentation
 
 - **Database Storage Pattern**: `.claude/rules/database-storage.md`
-- **Path Policy**: `C:\dev\docs\PATHS_POLICY.md`
-- **Monorepo Workflow**: `C:\dev\MONOREPO_WORKFLOW.md`
+- **Path Policy**: `V:\monorepo\docs\PATHS_POLICY.md`
+- **Monorepo Workflow**: `V:\monorepo\MONOREPO_WORKFLOW.md`
 - **Git Pre-commit Hooks**: `.claude/rules/git-workflow.md`
 
 ## References
 
-- **Project Root:** `C:\dev\apps\crypto-enhanced`
-- **Project CLAUDE.md:** `C:\dev\apps\crypto-enhanced\CLAUDE.md`
+- **Project Root:** `V:\monorepo\apps\crypto-enhanced`
+- **Project CLAUDE.md:** `V:\monorepo\apps\crypto-enhanced\CLAUDE.md`
 - **Database:** resolve from `.env` / `DB_PATH`; do not hardcode a DB path for
   live diagnostics.
 - **Logs:** `D:\logs\trading.log`, `D:\logs\trading_new.log`

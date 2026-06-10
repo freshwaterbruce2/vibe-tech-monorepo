@@ -1,6 +1,6 @@
 # Code Quality Standards
 
-Standards and best practices for maintaining high-quality code across the C:\dev monorepo.
+Standards and best practices for maintaining high-quality code across the V:\monorepo monorepo.
 
 ---
 

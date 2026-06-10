@@ -1,4 +1,4 @@
-# notify-healing-report.ps1
+﻿# notify-healing-report.ps1
 # Sends self-healing report summary to Telegram via the bot API.
 # Called by self-healing-cron.ps1 after each run.
 
@@ -10,7 +10,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Load bot token from Gravity Claw .env
-$envFile = "C:\dev\apps\gravity-claw\.env"
+$envFile = "V:\monorepo\apps\gravity-claw\.env"
 if (-not (Test-Path $envFile)) {
     Write-Error "Gravity Claw .env not found at $envFile"
     exit 1

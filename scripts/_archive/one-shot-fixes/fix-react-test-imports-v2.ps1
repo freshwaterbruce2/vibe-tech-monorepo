@@ -1,4 +1,4 @@
-# Fix Outdated React Imports in Test Files (React 19+)
+﻿# Fix Outdated React Imports in Test Files (React 19+)
 # Removes unnecessary 'import React from "react"' lines
 # Created: 2026-01-25
 
@@ -22,7 +22,7 @@ $skippedCount = 0
 Write-Host "Starting React import cleanup..." -ForegroundColor Cyan
 
 foreach ($file in $files) {
-    $fullPath = Join-Path 'C:\dev' $file
+    $fullPath = Join-Path 'V:\monorepo' $file
 
     if (-not (Test-Path $fullPath)) {
         Write-Host "Skipped (not found): $file" -ForegroundColor Yellow

@@ -1,6 +1,6 @@
 # Nx Workspace Management Commands
 
-This directory contains 7 comprehensive Nx workspace management commands for the C:\dev monorepo.
+This directory contains 7 comprehensive Nx workspace management commands for the V:\monorepo monorepo.
 
 ## Available Commands
 

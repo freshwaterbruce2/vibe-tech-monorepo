@@ -1,6 +1,6 @@
 {
   "version": "1.3.1",
-  "lastUpdated": "2026-05-08T14:51:48-04:00",
+  "lastUpdated": "2026-06-10T13:44:52-04:00",
   "techStack": {
     "packageManager": "pnpm@10.33.0",
     "node": "22.x",
@@ -18,6 +18,11 @@
     "provider": "openrouter"
   },
   "recentActivity": [
+    {
+      "date": "2026-06-10",
+      "project": "monorepo",
+      "action": "Created session handoff skill, implemented session_handoff.py script, and fixed legacy start-session/end-session scripts."
+    },
     {
       "date": "2026-06-09",
       "project": "monorepo",
@@ -46,7 +51,7 @@
     {
       "date": "2026-02-17",
       "project": "monorepo",
-      "action": "Herd trim — deleted 8 stale/redundant apps: vibe-desktop, vibe-agent, vibe-subscription-guard, n8n-automation, vibe-neural-interface, digital-content-builder, shared-web, VibeOS"
+      "action": "Herd trim \u2014 deleted 8 stale/redundant apps: vibe-desktop, vibe-agent, vibe-subscription-guard, n8n-automation, vibe-neural-interface, digital-content-builder, shared-web, VibeOS"
     },
     {
       "date": "2026-02-16",
@@ -61,17 +66,17 @@
     {
       "date": "2026-02-16",
       "project": "memory",
-      "action": "Phase 3B/3C complete — 10 issues (real embeddings, schema versioning, TTL cache, strict TS, 16 new tests). 56/56 green."
+      "action": "Phase 3B/3C complete \u2014 10 issues (real embeddings, schema versioning, TTL cache, strict TS, 16 new tests). 56/56 green."
     },
     {
       "date": "2026-02-16",
       "project": "nova-mobile-app",
-      "action": "Full revival — 4-screen navigation, HTTP bridge, Zustand stores, 12/12 tests"
+      "action": "Full revival \u2014 4-screen navigation, HTTP bridge, Zustand stores, 12/12 tests"
     },
     {
       "date": "2026-02-15",
       "project": "monorepo",
-      "action": "Dependency drift fix — all packages aligned to canonical root versions"
+      "action": "Dependency drift fix \u2014 all packages aligned to canonical root versions"
     },
     {
       "date": "2026-02-15",
@@ -101,7 +106,7 @@
     {
       "date": "2026-02-08",
       "project": "clawdbot-desktop",
-      "action": "nut-js → @nut-tree-fork/nut-js migration"
+      "action": "nut-js \u2192 @nut-tree-fork/nut-js migration"
     }
   ],
   "projects": {
@@ -229,7 +234,7 @@
       "ipc-bridge": {
         "status": "production",
         "priority": "high",
-        "description": "WebSocket IPC bridge (NOVA ↔ VCS, port 5004)"
+        "description": "WebSocket IPC bridge (NOVA \u2194 VCS, port 5004)"
       },
       "lsp-proxy": {
         "status": "production",
@@ -383,7 +388,7 @@
   "tools": {
     "ralph": {
       "status": "production",
-      "description": "Autonomous maintenance system — live mode, 4AM cron, GitHub Actions"
+      "description": "Autonomous maintenance system \u2014 live mode, 4AM cron, GitHub Actions"
     },
     "autofixer": {
       "status": "production",
@@ -394,7 +399,11 @@
       "description": "Project completion tool"
     }
   },
-  "currentFocus": ["vibetech-command-center", "memory-system", "nova-mobile-app", "vibe-tutor-release"],
+  "currentFocus": [
+    "vibetech-command-center",
+    "memory-system",
+    "nova-mobile-app"
+  ],
   "blockers": [],
   "rules": "./docs/ai/RULES.md",
   "paths": {

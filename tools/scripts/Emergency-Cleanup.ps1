@@ -1,4 +1,4 @@
-# Emergency Disk Cleanup Script
+﻿# Emergency Disk Cleanup Script
 # CRITICAL: C:\ drive is 99.3% full!
 
 param(
@@ -12,11 +12,11 @@ Write-Host ""
 # Quick check of immediate cleanup targets
 Write-Host "Quick scan for large cleanup targets..." -ForegroundColor Yellow
 
-# 1. Find largest node_modules in C:\dev
+# 1. Find largest node_modules in V:\monorepo
 Write-Host "`nChecking node_modules folders (top 5 largest)..." -ForegroundColor Cyan
 $largestNodeModules = @()
 
-Get-ChildItem -Path "C:\dev\apps" -Directory | ForEach-Object {
+Get-ChildItem -Path "V:\monorepo\apps" -Directory | ForEach-Object {
     $nmPath = Join-Path $_.FullName "node_modules"
     if (Test-Path $nmPath) {
         $projectName = $_.Name
@@ -39,10 +39,10 @@ $buildFolders = @()
 $buildPaths = @("dist", "build", ".next", ".turbo", "out")
 
 foreach ($buildPath in $buildPaths) {
-    $found = Get-ChildItem -Path "C:\dev" -Directory -Filter $buildPath -Recurse -ErrorAction SilentlyContinue |
+    $found = Get-ChildItem -Path "V:\monorepo" -Directory -Filter $buildPath -Recurse -ErrorAction SilentlyContinue |
              Select-Object -First 10
     foreach ($folder in $found) {
-        $buildFolders += $folder.FullName.Replace("C:\dev\", "")
+        $buildFolders += $folder.FullName.Replace("V:\monorepo\", "")
     }
 }
 
@@ -83,7 +83,7 @@ if (-not $Execute) {
     Write-Host "  .\Emergency-Cleanup.ps1 -Execute" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "This will:" -ForegroundColor Gray
-    Write-Host "  - Remove ALL node_modules in C:\dev\apps" -ForegroundColor Gray
+    Write-Host "  - Remove ALL node_modules in V:\monorepo\apps" -ForegroundColor Gray
     Write-Host "  - Remove ALL dist/build folders" -ForegroundColor Gray
     Write-Host "  - Clear npm/pnpm caches" -ForegroundColor Gray
 } else {
@@ -95,7 +95,7 @@ if (-not $Execute) {
 
         # Delete all node_modules in apps
         Write-Host "`nDeleting node_modules folders..." -ForegroundColor Yellow
-        Get-ChildItem -Path "C:\dev\apps" -Directory | ForEach-Object {
+        Get-ChildItem -Path "V:\monorepo\apps" -Directory | ForEach-Object {
             $nmPath = Join-Path $_.FullName "node_modules"
             if (Test-Path $nmPath) {
                 Write-Host "  Removing: $($_.Name)/node_modules" -ForegroundColor Gray
@@ -104,7 +104,7 @@ if (-not $Execute) {
         }
 
         # Delete packages node_modules
-        Get-ChildItem -Path "C:\dev\packages" -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+        Get-ChildItem -Path "V:\monorepo\packages" -Directory -ErrorAction SilentlyContinue | ForEach-Object {
             $nmPath = Join-Path $_.FullName "node_modules"
             if (Test-Path $nmPath) {
                 Write-Host "  Removing: packages/$($_.Name)/node_modules" -ForegroundColor Gray
@@ -116,9 +116,9 @@ if (-not $Execute) {
         Write-Host "`nDeleting build artifacts..." -ForegroundColor Yellow
         $buildPaths = @("dist", "build", ".next", ".turbo", "out")
         foreach ($buildPath in $buildPaths) {
-            Get-ChildItem -Path "C:\dev" -Directory -Filter $buildPath -Recurse -ErrorAction SilentlyContinue |
+            Get-ChildItem -Path "V:\monorepo" -Directory -Filter $buildPath -Recurse -ErrorAction SilentlyContinue |
             ForEach-Object {
-                Write-Host "  Removing: $($_.FullName.Replace('C:\dev\', ''))" -ForegroundColor Gray
+                Write-Host "  Removing: $($_.FullName.Replace('V:\monorepo\', ''))" -ForegroundColor Gray
                 Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
             }
         }
@@ -146,7 +146,7 @@ if (-not $Execute) {
         }
 
         Write-Host "`nTo reinstall dependencies for a project:" -ForegroundColor Cyan
-        Write-Host "  cd C:\dev\apps\[project-name]" -ForegroundColor Gray
+        Write-Host "  cd V:\monorepo\apps\[project-name]" -ForegroundColor Gray
         Write-Host "  pnpm install" -ForegroundColor Gray
     } else {
         Write-Host "Cleanup cancelled." -ForegroundColor Yellow

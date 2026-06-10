@@ -1,7 +1,7 @@
-# Get-DailyContext.ps1
+﻿# Get-DailyContext.ps1
 # Emits structured JSON context for the /craft:daily-log slash command.
 # Read-only: WORKSPACE.json, git state, listening ports.
-# Usage: pwsh C:\dev\tools\scripts\Get-DailyContext.ps1
+# Usage: pwsh V:\monorepo\tools\scripts\Get-DailyContext.ps1
 
 [CmdletBinding()]
 param()
@@ -9,7 +9,7 @@ param()
 $ErrorActionPreference = 'SilentlyContinue'
 
 # --- WORKSPACE.json ----------------------------------------------------------
-$workspacePath = 'C:\dev\WORKSPACE.json'
+$workspacePath = 'V:\monorepo\WORKSPACE.json'
 if (-not (Test-Path $workspacePath)) {
     Write-Error "WORKSPACE.json not found at $workspacePath"
     exit 1
@@ -21,7 +21,7 @@ $recent = @($workspace.recentActivity | Select-Object -First 5 | ForEach-Object 
 })
 
 # --- Git state ---------------------------------------------------------------
-Push-Location 'C:\dev'
+Push-Location 'V:\monorepo'
 try {
     $branch = (& git rev-parse --abbrev-ref HEAD) 2>$null
     $commitsAhead = @()

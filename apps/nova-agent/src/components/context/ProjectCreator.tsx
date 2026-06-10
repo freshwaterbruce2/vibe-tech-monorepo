@@ -135,7 +135,7 @@ export function ProjectCreator() {
 						value={path}
 						onChange={(e) => setPath(e.target.value)}
 						className="w-full border border-white/10 bg-black/50 rounded px-3 py-2 text-white placeholder:text-gray-600"
-						placeholder="C:\dev\apps"
+						placeholder="V:\monorepo\apps"
 					/>
 				</div>
 				{result && (

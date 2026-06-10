@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type RequestHandler } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -93,11 +93,14 @@ export class FeatureFlagServer {
     }));
 
     // Rate limiting
+    // express-rate-limit's bundled types resolve against @types/express v4 in
+    // the pnpm graph while this package compiles with @types/express v5; the
+    // runtime middleware is compatible, only the declaration identities differ.
     this.app.use('/api/', rateLimit({
       windowMs: this.config.rateLimit.windowMs,
       max: this.config.rateLimit.max,
       message: { error: 'Too many requests, please try again later' },
-    }));
+    }) as unknown as RequestHandler);
 
     // Body parsing
     this.app.use(express.json({ limit: '1mb' }));
@@ -182,9 +185,10 @@ export { RealTimeService } from './websocket/real-time.js';
 export { createRoutes } from './api/routes.js';
 
 // Start server if run directly
-const isMainModule = process.argv[1]?.includes('feature-flags') ||
-                     process.argv[1]?.endsWith('index.ts') ||
-                     process.argv[1]?.endsWith('index.js');
+const entryScript = process.argv[1] ?? '';
+const isMainModule = entryScript.includes('feature-flags') ||
+                     entryScript.endsWith('index.ts') ||
+                     entryScript.endsWith('index.js');
 
 if (isMainModule) {
   const server = new FeatureFlagServer();
@@ -195,14 +199,17 @@ if (isMainModule) {
   });
 
   // Graceful shutdown
-  process.on('SIGINT', async () => {
-    logger.info('Shutting down...');
+  const shutdown = async (): Promise<void> => {
     await server.stop();
     process.exit(0);
+  };
+
+  process.on('SIGINT', () => {
+    logger.info('Shutting down...');
+    void shutdown();
   });
 
-  process.on('SIGTERM', async () => {
-    await server.stop();
-    process.exit(0);
+  process.on('SIGTERM', () => {
+    void shutdown();
   });
 }

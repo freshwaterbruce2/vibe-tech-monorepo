@@ -19,7 +19,7 @@ Path to the project to analyze (default: current directory)
 Output format: table, json, markdown (default: markdown)
 
 .EXAMPLE
-.\Classify-Errors.ps1 -ProjectPath "C:\dev\apps\nova-agent"
+.\Classify-Errors.ps1 -ProjectPath "V:\monorepo\apps\nova-agent"
 
 .EXAMPLE
 .\Classify-Errors.ps1 -Format json > errors.json

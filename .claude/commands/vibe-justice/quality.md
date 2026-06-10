@@ -14,7 +14,7 @@ Run comprehensive quality checks on the legal AI platform codebase.
 1. Navigate to Vibe-Justice directory:
 
    ```bash
-   cd C:\dev\apps\vibe-justice
+   cd V:\monorepo\apps\vibe-justice
    ```
 
 2. Run ESLint:

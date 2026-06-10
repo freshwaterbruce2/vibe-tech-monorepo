@@ -121,7 +121,7 @@
 
 ### 2.1 Package: `@vibetech/memory` (packages/memory)
 
-**Location**: `C:\dev\packages\memory\`
+**Location**: `V:\monorepo\packages\memory\`
 
 **Responsibilities**:
 - Core memory operations (store, retrieve, search)
@@ -205,7 +205,7 @@ const health = await memory.getHealth();
 
 ### 2.2 App: `memory-mcp` (apps/memory-mcp)
 
-**Location**: `C:\dev\apps\memory-mcp\`
+**Location**: `V:\monorepo\apps\memory-mcp\`
 
 **Responsibilities**:
 - MCP protocol implementation
@@ -1071,7 +1071,7 @@ See `packages/memory/README.md` (to be created) for full TypeScript API document
 
 ```
 Developer Machine (Windows 11)
-├── C:\dev (Code)
+├── V:\monorepo (Code)
 │   ├── packages\memory\ (Build outputs to dist/)
 │   └── apps\memory-mcp\ (Build outputs to dist/)
 ├── D:\databases\memory.db (Data)
@@ -1088,7 +1088,7 @@ pnpm --filter @vibetech/memory build
 pnpm --filter memory-mcp build
 
 # Start MCP server (via MCP config)
-node C:\dev\apps\memory-mcp\dist\index.js
+node V:\monorepo\apps\memory-mcp\dist\index.js
 ```
 
 ### 10.2 MCP Configuration
@@ -1121,7 +1121,7 @@ node C:\dev\apps\memory-mcp\dist\index.js
 **Scheduled Task**: Daily at 3:00 AM
 
 ```powershell
-# C:\dev\scripts\memory-health-check.ps1
+# V:\monorepo\scripts\memory-health-check.ps1
 
 # Check DB accessibility
 Test-Path "D:\databases\memory.db"

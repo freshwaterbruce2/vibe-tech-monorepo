@@ -1,4 +1,4 @@
-#!/usr/bin/env powershell
+﻿#!/usr/bin/env powershell
 <#
 .SYNOPSIS
     Register Windows Scheduled Tasks for MoltBot maintenance
@@ -28,7 +28,7 @@ $TaskPath = "\MoltBot\"
 $tasks = @{
     "LogRotation" = @{
         Name = "MoltBot-WeeklyLogRotation"
-        Script = "C:\dev\scripts\maintenance\Rotate-MoltBotLogs.ps1"
+        Script = "V:\monorepo\scripts\maintenance\Rotate-MoltBotLogs.ps1"
         Schedule = "Weekly on Sundays at 3:00 AM"
         Trigger = {
             New-ScheduledTaskTrigger -Weekly -DaysOfWeek Sunday -At 3:00AM
@@ -36,7 +36,7 @@ $tasks = @{
     }
     "DatabaseOptimization" = @{
         Name = "MoltBot-MonthlyDatabaseOptimization"
-        Script = "C:\dev\scripts\maintenance\Optimize-MoltBotDatabases.ps1"
+        Script = "V:\monorepo\scripts\maintenance\Optimize-MoltBotDatabases.ps1"
         Schedule = "Monthly on 1st at 4:00 AM"
         Trigger = {
             # Monthly trigger (1st of month)

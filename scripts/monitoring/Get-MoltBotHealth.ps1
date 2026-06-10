@@ -1,4 +1,4 @@
-#!/usr/bin/env powershell
+﻿#!/usr/bin/env powershell
 <#
 .SYNOPSIS
     MoltBot system health check dashboard
@@ -160,7 +160,7 @@ function Test-HookHealth {
         HookCount = 0
     }
 
-    $hooksDir = "C:\dev\.claude\hooks"
+    $hooksDir = "V:\monorepo\.claude\hooks"
     if (-not (Test-Path $hooksDir)) {
         $health.Status = "Missing"
         $health.Issues += "Hooks directory not found"

@@ -71,16 +71,16 @@ try {
 
     # Infer project from cwd in JSON or workspace
     if (-not $project -and $hookData.cwd) {
-        if ($hookData.cwd -match 'C:\\dev\\apps\\([^\\]+)') { $project = $matches[1] }
-        elseif ($hookData.cwd -match 'C:\\dev\\packages\\([^\\]+)') { $project = $matches[1] }
-        elseif ($hookData.cwd -match 'C:\\dev\\backend\\([^\\]+)') { $project = $matches[1] }
+        if ($hookData.cwd -match 'V:\\monorepo\\apps\\([^\\]+)') { $project = $matches[1] }
+        elseif ($hookData.cwd -match 'V:\\monorepo\\packages\\([^\\]+)') { $project = $matches[1] }
+        elseif ($hookData.cwd -match 'V:\\monorepo\\backend\\([^\\]+)') { $project = $matches[1] }
     }
 
     # Fallback to env:PWD
     if (-not $project -and $env:PWD) {
-        if ($env:PWD -match 'C:\\dev\\apps\\([^\\]+)') { $project = $matches[1] }
-        elseif ($env:PWD -match 'C:\\dev\\packages\\([^\\]+)') { $project = $matches[1] }
-        elseif ($env:PWD -match 'C:\\dev\\backend\\([^\\]+)') { $project = $matches[1] }
+        if ($env:PWD -match 'V:\\monorepo\\apps\\([^\\]+)') { $project = $matches[1] }
+        elseif ($env:PWD -match 'V:\\monorepo\\packages\\([^\\]+)') { $project = $matches[1] }
+        elseif ($env:PWD -match 'V:\\monorepo\\backend\\([^\\]+)') { $project = $matches[1] }
     }
 
     # Log tool result to file
@@ -88,8 +88,41 @@ try {
     $LogEntry = "[$Timestamp] [POST-TOOL] Tool: $toolName | Status: $statusText | Duration: $executionTime`s | Session: $sessionId | Project: $project"
     Add-Content -Path $LogFile -Value $LogEntry -ErrorAction SilentlyContinue
 
-    # Note: Per-tool learning DB writes superseded by record-agent-execution.ps1
-    # (PostToolUse hook matching Agent tool). See .claude/hooks/record-agent-execution.ps1
+    # Record ALL tool executions to learning DB via learning_engine.py
+    # (record-agent-execution.ps1 only handles Agent subagent calls)
+    if ($toolName -ne 'Agent' -and $toolName -ne 'Unknown') {
+        try {
+            $leProject = if ($project) { $project } else { '' }
+            $leContext = ''
+            if ($hookData.tool_input) {
+                $inputSnippet = $hookData.tool_input | ConvertTo-Json -Depth 2 -Compress -ErrorAction SilentlyContinue
+                if ($inputSnippet) {
+                    $leContext = $inputSnippet.Substring(0, [Math]::Min(400, $inputSnippet.Length))
+                    $leContext = $leContext -replace "'", "" -replace "`n", " " -replace "`r", ""
+                }
+            }
+            $leExecTime = if ($executionTime) { [Math]::Round($executionTime, 3) } else { 0 }
+            $leSuccess = if ($success) { 'True' } else { 'False' }
+            $leError = if ($errorMessage) { ($errorMessage -replace "'", "").Substring(0, [Math]::Min(200, $errorMessage.Length)) } else { '' }
+
+            $pyCmd = "import sys;sys.path.insert(0,r'D:\learning-system');" +
+                     "from learning_engine import SimpleLearningEngine;" +
+                     "SimpleLearningEngine().learn_from_execution(" +
+                     "agent_name='antigravity'," +
+                     "task_type='$($toolName -replace "'","")'," +
+                     "success=$leSuccess," +
+                     "tools_used=['$($toolName -replace "'","")']," +
+                     "execution_time=$leExecTime," +
+                     "project='$leProject'," +
+                     "context='$leContext'," +
+                     "error_message='$leError')"
+
+            Start-Process -FilePath 'python' -ArgumentList '-c', "`"$pyCmd`"" `
+                -WindowStyle Hidden -ErrorAction SilentlyContinue
+        } catch {
+            # Silent - learning engine is best-effort
+        }
+    }
 
 } catch {
     # Log parsing error but don't block cleanup

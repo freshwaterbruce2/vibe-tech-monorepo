@@ -15,8 +15,11 @@ import {
   Terminal,
   AlertTriangle
 } from 'lucide-react';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- same-app import via the '@/' alias; the rule misreads it as cross-app
 import { Button } from '@/components/ui/button';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- same-app import via the '@/' alias; the rule misreads it as cross-app
 import { Card } from '@/components/ui/card';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- same-app import via the '@/' alias; the rule misreads it as cross-app
 import { Input } from '@/components/ui/input';
 
 interface SubtaskStatus {
@@ -129,8 +132,8 @@ export default function AgentsWindow() {
 
         if (result.code === 0) {
           // Parse the output. Example 'git worktree list' output:
-          // C:/dev                   1234abc [main]
-          // C:/dev/tmp/worker-1      5678def [auto-fix-branch]
+          // V:/monorepo                   1234abc [main]
+          // V:/monorepo/tmp/worker-1      5678def [auto-fix-branch]
           const lines = result.stdout.trim().split('\n');
           const lastLine = lines[lines.length - 1]; // The most recently created worktree
           if (lastLine) {
@@ -410,7 +413,7 @@ export default function AgentsWindow() {
                 <GitPullRequest className="w-6 h-6 text-[#00ffff]" />
                 <div>
                   <h3 className="font-extrabold text-lg text-white">Reconciliation: {selectedSubtask.title}</h3>
-                  <p className="text-xs text-white/50">Branch: {selectedSubtask.branch_name} | Target: C:\dev</p>
+                  <p className="text-xs text-white/50">Branch: {selectedSubtask.branch_name} | Target: V:\monorepo</p>
                 </div>
               </div>
               <Button 

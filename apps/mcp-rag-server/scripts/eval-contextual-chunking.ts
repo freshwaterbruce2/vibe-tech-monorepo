@@ -16,7 +16,7 @@
  *     same endpoint nova-agent uses for embeddings AND for the contextualizer
  *     chat-completion calls). Without it both runs will fail.
  *
- * How to run (from C:\dev):
+ * How to run (from V:\monorepo):
  *   pnpm --filter @vibetech/mcp-rag-server exec tsx ^
  *     apps/mcp-rag-server/scripts/eval-contextual-chunking.ts
  *
@@ -43,7 +43,9 @@ const __dirname = dirname(__filename);
 // NOTE: the @nova-rag/* tsconfig path aliases are resolved by tsup at build
 // time, not by tsx at runtime. Eval imports therefore reach into nova-agent
 // source directly. Same effect, no bundler step needed for a one-off script.
+// eslint-disable-next-line @nx/enforce-module-boundaries -- intentional cross-app source import for this one-off eval script (see NOTE above)
 import { RAGIndexer } from '../../nova-agent/src/rag/indexer.js';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- intentional cross-app source import for this one-off eval script (see NOTE above)
 import { RAGRetriever } from '../../nova-agent/src/rag/retriever.js';
 import { DEFAULT_RAG_CONFIG } from '../src/rag/types.js';
 import type { RAGConfig, SearchResult } from '../src/rag/types.js';
@@ -124,8 +126,8 @@ function scoreResults(results: SearchResult[], expected: string[]): QueryScore {
     : 0;
   let rr = 0;
   for (let i = 0; i < Math.min(results.length, 10); i++) {
-    const r = results[i]!;
-    if (expected.some((e) => r.chunk.filePath.includes(e))) {
+    const r = results[i];
+    if (r && expected.some((e) => r.chunk.filePath.includes(e))) {
       rr = 1 / (i + 1);
       break;
     }

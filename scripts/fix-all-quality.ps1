@@ -1,4 +1,4 @@
-# fix-all-quality.ps1
+﻿# fix-all-quality.ps1
 # Whole-monorepo quality pass: lint + typecheck across Nx-affected projects.
 # Skips build (Tauri/Rust crates handled separately).
 # Outputs machine-readable logs to D:\logs\quality\ for downstream triage.
@@ -14,7 +14,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$repo = 'C:\dev'
+$repo = 'V:\monorepo'
 $logDir = 'D:\logs\quality'
 $timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 
@@ -30,7 +30,7 @@ $summary = Join-Path $logDir "summary_$timestamp.txt"
 
 # --- Nx Cloud lock guard ---------------------------------------------------
 # The sandbox-environment runs can leave orphaned extract locks. Clear before run.
-$nxCloudLock = 'C:\dev\.nx\cache\cloud\extract.lock'
+$nxCloudLock = 'V:\monorepo\.nx\cache\cloud\extract.lock'
 if (Test-Path $nxCloudLock) {
     Write-Host "[pre] Clearing stale Nx Cloud extract.lock..." -ForegroundColor Yellow
     try {

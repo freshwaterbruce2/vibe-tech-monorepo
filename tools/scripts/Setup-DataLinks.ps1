@@ -1,4 +1,4 @@
-# Setup symbolic links between C:\dev and D:\ for large data files
+﻿# Setup symbolic links between V:\monorepo and D:\ for large data files
 # Run as Administrator for symlink creation
 
 param(
@@ -7,19 +7,19 @@ param(
 
 $links = @(
     @{
-        Link = "C:\dev\apps\crypto-enhanced\logs"
+        Link = "V:\monorepo\apps\crypto-enhanced\logs"
         Target = "D:\logs\crypto-enhanced"
     },
     @{
-        Link = "C:\dev\apps\crypto-enhanced\databases"
+        Link = "V:\monorepo\apps\crypto-enhanced\databases"
         Target = "D:\databases\crypto-enhanced"
     },
     @{
-        Link = "C:\dev\logs"
+        Link = "V:\monorepo\logs"
         Target = "D:\logs\monorepo"
     },
     @{
-        Link = "C:\dev\data"
+        Link = "V:\monorepo\data"
         Target = "D:\data"
     }
 )
@@ -80,7 +80,7 @@ foreach ($item in $links) {
 Write-Host "`n✨ Symlink setup complete!" -ForegroundColor Green
 
 # Add to .gitignore if needed
-$gitignorePath = "C:\dev\.gitignore"
+$gitignorePath = "V:\monorepo\.gitignore"
 $ignoreEntries = @(
     "# Symbolic links to D:\ drive",
     "logs",

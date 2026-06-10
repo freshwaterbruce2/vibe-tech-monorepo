@@ -46,8 +46,8 @@ def resolve_executable(explicit_path: Optional[str]) -> Optional[str]:
         candidates.append(env_path)
     candidates.extend(
         [
-            r"C:\dev\apps\nova-agent\src-tauri\target\release\nova-agent.exe",
-            r"C:\dev\apps\nova-agent\src-tauri\target\debug\nova-agent.exe",
+            r"V:\monorepo\apps\nova-agent\src-tauri\target\release\nova-agent.exe",
+            r"V:\monorepo\apps\nova-agent\src-tauri\target\debug\nova-agent.exe",
         ]
     )
 

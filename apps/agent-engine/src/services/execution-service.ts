@@ -60,7 +60,7 @@ export class ExecutionService {
     private readonly traceRepository = new RunTraceRepository(),
     private readonly candidateRepository = new CandidateRepository(),
     private readonly benchmarkService = new BenchmarkService(),
-    private readonly evaluationService = new EvaluationService('C:\\dev', 'scripted'),
+    private readonly evaluationService = new EvaluationService('V:\\monorepo', 'scripted'),
     private readonly memoryClient = new MemoryClient(),
     private readonly worktreeService = new WorktreeService(),
     private readonly promotionService = new PromotionService(),

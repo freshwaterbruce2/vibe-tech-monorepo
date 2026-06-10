@@ -1,4 +1,4 @@
-# cleanup-vcs-duplicates.ps1
+﻿# cleanup-vcs-duplicates.ps1
 # Purpose: Remove duplicate/stale directories from vibe-code-studio
 # Safety: Creates backup before deletion
 # Author: Claude Architect
@@ -10,8 +10,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$VCSPath = "C:\dev\apps\vibe-code-studio"
-$BackupDir = "C:\dev\apps\vibe-code-studio\_backups"
+$VCSPath = "V:\monorepo\apps\vibe-code-studio"
+$BackupDir = "V:\monorepo\apps\vibe-code-studio\_backups"
 $Timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 
 Write-Host "=== VCS Cleanup Script ===" -ForegroundColor Cyan

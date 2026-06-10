@@ -1,4 +1,4 @@
-# MCP Desktop Diagnostic Script
+﻿# MCP Desktop Diagnostic Script
 
 $configPath = "$env:APPDATA\Claude\claude_desktop_config.json"
 Write-Output "════════════════════════════════════════"
@@ -126,7 +126,7 @@ Write-Output "   - Rebuild MCP server: cd to server dir, run 'npm run build'"
 Write-Output "   - Run 'npm run sync-version' if available"
 Write-Output ""
 Write-Output "4. To manually test MCP server:"
-Write-Output "   - cd C:\dev\DesktopCommanderMCP"
+Write-Output "   - cd V:\monorepo\DesktopCommanderMCP"
 Write-Output "   - node dist/desktop-commander-with-path.js"
 Write-Output ""
 Write-Output "5. Full restart protocol:"

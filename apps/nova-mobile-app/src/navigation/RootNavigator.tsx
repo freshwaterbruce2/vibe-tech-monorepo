@@ -30,7 +30,7 @@ export function RootNavigator() {
         {token == null ? (
           <Stack.Screen name="Login" component={LoginScreen} />
         ) : (
-          <Stack.Screen name="MainApp" component={AppNavigator} />
+          <Stack.Screen name="Dashboard" component={AppNavigator} />
         )}
       </Stack.Navigator>
     </NavigationContainer>

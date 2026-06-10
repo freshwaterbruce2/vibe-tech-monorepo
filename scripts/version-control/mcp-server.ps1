@@ -1,4 +1,4 @@
-# MCP Server for D:\ Drive Version Control
+﻿# MCP Server for D:\ Drive Version Control
 # Exposes version control operations to Antigravity IDE via MCP
 
 param(
@@ -7,7 +7,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$VCRoot = "C:\dev\scripts\version-control"
+$VCRoot = "V:\monorepo\scripts\version-control"
 
 function Write-MCPResponse {
     param([hashtable]$Response)
@@ -20,7 +20,7 @@ function Get-Tools {
         tools = @(
             @{
                 name = "snapshot_create"
-                description = "Create a snapshot of C:\dev workspace"
+                description = "Create a snapshot of V:\monorepo workspace"
                 inputSchema = @{
                     type = "object"
                     properties = @{

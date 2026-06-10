@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Analyzes a drive or directory for cleanup opportunities.
     Non-destructive. Generates a CSV report.
@@ -11,12 +11,12 @@
     4. Root Chaos (Loose files in root).
 
 .EXAMPLE
-    .\analyze_drive.ps1 -RootPath "D:\" -ReportPath "C:\dev\admin_scripts\drive_report.txt"
+    .\analyze_drive.ps1 -RootPath "D:\" -ReportPath "V:\monorepo\admin_scripts\drive_report.txt"
 #>
 
 param (
     [string]$RootPath = "D:\",
-    [string]$ReportPath = "C:\dev\admin_scripts\drive_report.csv"
+    [string]$ReportPath = "V:\monorepo\admin_scripts\drive_report.csv"
 )
 
 $ErrorActionPreference = "SilentlyContinue"

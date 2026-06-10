@@ -1,8 +1,8 @@
-import os
+﻿import os
 import re
 
-SOURCE_FILE = r"C:\dev\CLAUDE.md"
-OUTPUT_DIR = r"C:\dev\claude-prompts"
+SOURCE_FILE = r"V:\monorepo\CLAUDE.md"
+OUTPUT_DIR = r"V:\monorepo\claude-prompts"
 
 # Mapping of Headers to Filenames
 # Keys are regex patterns for the headers (without the ## prefix)

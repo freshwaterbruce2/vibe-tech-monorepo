@@ -20,6 +20,7 @@ import type {
 
 import { logger } from '../services/Logger';
 import { EventEmitter } from '../utils/EventEmitter';
+import { WebMCPManager } from '@vibetech/shared-utils';
 
 // Check if we're in a desktop environment (Electron/Tauri with Node.js APIs)
 const isDesktopEnvironment = (() => {
@@ -94,23 +95,34 @@ export class MCPService extends EventEmitter {
    * Check if MCP features are available in this environment
    */
   isAvailable(): boolean {
-    return this.isDesktop;
+    return this.isDesktop || typeof window !== 'undefined';
   }
 
   /**
    * Get list of configured servers
    */
   getServers(): Array<{ name: string; config: MCPServerConfig }> {
-    return Object.entries(this.config.mcpServers).map(([name, config]) => ({
+    const servers = Object.entries(this.config.mcpServers).map(([name, config]) => ({
       name,
       config
     }));
+    // Add client-side virtual WebMCP server
+    servers.push({
+      name: 'webmcp',
+      config: { command: 'virtual', args: [], env: {} }
+    });
+    return servers;
   }
 
   /**
    * Connect to an MCP server
    */
   async connectServer(serverName: string): Promise<void> {
+    if (serverName === 'webmcp') {
+      this.emit('serverConnected', serverName);
+      return;
+    }
+
     if (!this.isDesktop) {
       throw new Error('MCP features are only available in desktop mode (Electron/Tauri). Run "npm run dev" instead of "npm run dev:web".');
     }
@@ -195,6 +207,11 @@ export class MCPService extends EventEmitter {
    * Disconnect from an MCP server
    */
   async disconnectServer(serverName: string): Promise<void> {
+    if (serverName === 'webmcp') {
+      this.emit('serverDisconnected', serverName);
+      return;
+    }
+
     if (!this.isDesktop) {
       return; // No-op in web mode
     }
@@ -226,6 +243,10 @@ export class MCPService extends EventEmitter {
    * Check if connected to a server
    */
   isConnected(serverName: string): boolean {
+    if (serverName === 'webmcp') {
+      return true;
+    }
+
     if (!this.isDesktop) {
       return false;
     }
@@ -238,6 +259,16 @@ export class MCPService extends EventEmitter {
    * Get list of tools from a connected server
    */
   async getTools(serverName: string): Promise<Tool[]> {
+    if (serverName === 'webmcp') {
+      // WebMCP schemas are always object-typed; the spread keeps any extra
+      // schema fields while satisfying the SDK's literal type requirement.
+      return WebMCPManager.getInstance().listTools().map(t => ({
+        name: t.name,
+        description: t.description,
+        inputSchema: { ...t.inputSchema, type: 'object' as const }
+      }));
+    }
+
     if (!this.isDesktop) {
       return [];
     }
@@ -264,6 +295,17 @@ export class MCPService extends EventEmitter {
     toolName: string,
     parameters: Record<string, unknown>
   ): Promise<CallToolResult> {
+    if (serverName === 'webmcp') {
+      try {
+        const result = await WebMCPManager.getInstance().executeTool(toolName, parameters);
+        return {
+          content: [{ type: 'text', text: typeof result === 'string' ? result : JSON.stringify(result, null, 2) }]
+        };
+      } catch (error) {
+        throw new Error(`Failed to invoke WebMCP tool ${toolName}: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
     if (!this.isDesktop) {
       throw new Error('MCP features are only available in desktop mode (Electron/Tauri).');
     }

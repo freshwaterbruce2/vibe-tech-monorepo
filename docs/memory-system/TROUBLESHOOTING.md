@@ -8,7 +8,7 @@ Run these checks before using the Memory System:
 
 ```powershell
 # 1. Run integration tests
-C:\dev\scripts\test-memory-system.ps1
+V:\monorepo\scripts\test-memory-system.ps1
 
 # 2. Check Ollama
 curl http://localhost:11434/api/tags
@@ -17,7 +17,7 @@ curl http://localhost:11434/api/tags
 Test-Path D:\databases\memory.db
 
 # 4. Check MCP registration
-node -e "console.log(JSON.parse(require('fs').readFileSync('C:/dev/.mcp.json','utf8')).mcpServers['memory-bank'])"
+node -e "console.log(JSON.parse(require('fs').readFileSync('V:/monorepo/.mcp.json','utf8')).mcpServers['memory-bank'])"
 ```
 
 **Expected Results:**
@@ -39,17 +39,17 @@ node -e "console.log(JSON.parse(require('fs').readFileSync('C:/dev/.mcp.json','u
 **Diagnostic:**
 ```powershell
 # Check .mcp.json
-Get-Content C:\dev\.mcp.json | ConvertFrom-Json | Select-Object -ExpandProperty mcpServers
+Get-Content V:\monorepo\.mcp.json | ConvertFrom-Json | Select-Object -ExpandProperty mcpServers
 
 # Verify MCP server built
-Test-Path C:\dev\apps\memory-mcp\dist\index.js
+Test-Path V:\monorepo\apps\memory-mcp\dist\index.js
 ```
 
 **Solutions:**
 
 1. **Rebuild MCP server:**
    ```powershell
-   cd C:\dev
+   cd V:\monorepo
    pnpm --filter memory-mcp build
    ```
 
@@ -222,16 +222,16 @@ node -e "const db = require('better-sqlite3')('D:/databases/memory.db', {readonl
 ### 6. Path Policy Violations
 
 **Symptoms:**
-- Database found in `C:\dev`
+- Database found in `V:\monorepo`
 - Permission errors
 
 **Diagnostic:**
 ```powershell
 # Run validation script
-C:\dev\check-vibe-paths.ps1
+V:\monorepo\check-vibe-paths.ps1
 
 # Check for databases in wrong location
-Get-ChildItem C:\dev -Recurse -Include *.db,*.sqlite -ErrorAction SilentlyContinue | Where {$_.FullName -notlike "*node_modules*"}
+Get-ChildItem V:\monorepo -Recurse -Include *.db,*.sqlite -ErrorAction SilentlyContinue | Where {$_.FullName -notlike "*node_modules*"}
 ```
 
 **Solutions:**
@@ -239,13 +239,13 @@ Get-ChildItem C:\dev -Recurse -Include *.db,*.sqlite -ErrorAction SilentlyContin
 1. **Move database to D:\:**
    ```powershell
    # If database is in wrong location
-   Move-Item "C:\dev\wrong-location\memory.db" "D:\databases\memory.db"
+   Move-Item "V:\monorepo\wrong-location\memory.db" "D:\databases\memory.db"
    ```
 
 2. **Update environment variables:**
    ```powershell
    # Check .mcp.json
-   $mcpConfig = Get-Content C:\dev\.mcp.json | ConvertFrom-Json
+   $mcpConfig = Get-Content V:\monorepo\.mcp.json | ConvertFrom-Json
    $mcpConfig.mcpServers.'memory-bank'.env.DATABASE_PATH
    # Should output: D:\databases\memory.db
    ```
@@ -261,7 +261,7 @@ Get-ChildItem C:\dev -Recurse -Include *.db,*.sqlite -ErrorAction SilentlyContin
 **Diagnostic:**
 ```powershell
 # Check TypeScript compilation
-cd C:\dev\packages\memory
+cd V:\monorepo\packages\memory
 pnpm run build
 
 # Check for missing dependencies
@@ -272,7 +272,7 @@ pnpm list --depth=0
 
 1. **Clean rebuild:**
    ```powershell
-   cd C:\dev
+   cd V:\monorepo
    pnpm --filter memory clean
    pnpm --filter memory build
    pnpm --filter memory-mcp build
@@ -280,15 +280,15 @@ pnpm list --depth=0
 
 2. **Install missing dependencies:**
    ```powershell
-   cd C:\dev
+   cd V:\monorepo
    pnpm install
    ```
 
 3. **Check TypeScript config:**
    ```powershell
    # Verify tsconfig.json exists
-   Test-Path C:\dev\packages\memory\tsconfig.json
-   Test-Path C:\dev\apps\memory-mcp\tsconfig.json
+   Test-Path V:\monorepo\packages\memory\tsconfig.json
+   Test-Path V:\monorepo\apps\memory-mcp\tsconfig.json
    ```
 
 ---
@@ -301,8 +301,8 @@ pnpm list --depth=0
 # All-in-one diagnostic
 $checks = @{
     "Database" = Test-Path D:\databases\memory.db
-    "MCP Dist" = Test-Path C:\dev\apps\memory-mcp\dist\index.js
-    "Lib Dist" = Test-Path C:\dev\packages\memory\dist\index.js
+    "MCP Dist" = Test-Path V:\monorepo\apps\memory-mcp\dist\index.js
+    "Lib Dist" = Test-Path V:\monorepo\packages\memory\dist\index.js
     "Ollama" = (Invoke-RestMethod http://localhost:11434/api/tags -ErrorAction SilentlyContinue) -ne $null
 }
 
@@ -340,7 +340,7 @@ If all else fails, reset the Memory System:
 Copy-Item D:\databases\memory.db D:\databases\memory.db.backup
 
 # 2. Clean build artifacts
-cd C:\dev
+cd V:\monorepo
 Remove-Item packages\memory\dist -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item apps\memory-mcp\dist -Recurse -Force -ErrorAction SilentlyContinue
 
@@ -349,7 +349,7 @@ pnpm --filter memory build
 pnpm --filter memory-mcp build
 
 # 4. Reinitialize database (run integration test)
-C:\dev\scripts\test-memory-system.ps1
+V:\monorepo\scripts\test-memory-system.ps1
 
 # 5. Restart Claude Code
 # (Close completely, wait 10s, reopen)
@@ -363,13 +363,13 @@ If issues persist:
 
 1. **Run full integration test:**
    ```powershell
-   C:\dev\scripts\test-memory-system.ps1 -Verbose
+   V:\monorepo\scripts\test-memory-system.ps1 -Verbose
    ```
 
 2. **Collect diagnostics:**
    ```powershell
    # Save output to file
-   C:\dev\scripts\test-memory-system.ps1 -Verbose > C:\dev\memory-diagnostics.txt
+   V:\monorepo\scripts\test-memory-system.ps1 -Verbose > V:\monorepo\memory-diagnostics.txt
    ```
 
 3. **Check logs:**
@@ -381,10 +381,10 @@ If issues persist:
 
 ## Reference
 
-- **Integration Test:** `C:\dev\scripts\test-memory-system.ps1`
-- **Quick Start:** `C:\dev\docs\memory-system\QUICK_START.md`
+- **Integration Test:** `V:\monorepo\scripts\test-memory-system.ps1`
+- **Quick Start:** `V:\monorepo\docs\memory-system\QUICK_START.md`
 - **Path Policy:** `.claude/rules/paths-policy.md`
-- **MCP Config:** `C:\dev\.mcp.json`
+- **MCP Config:** `V:\monorepo\.mcp.json`
 
 ---
 

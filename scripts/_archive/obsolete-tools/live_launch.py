@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Nova Live Launch Manager (Personal / Windows 11)
 
@@ -28,7 +28,7 @@ from typing import Any, Dict, List, Optional
 # ==============================
 # Configuration (simple)
 # ==============================
-DEV_ROOT = Path(r"C:\dev")
+DEV_ROOT = Path(r"V:\monorepo")
 SRC_ROOT = DEV_ROOT / "src"
 
 DATA_ROOT = Path(r"D:\databases")

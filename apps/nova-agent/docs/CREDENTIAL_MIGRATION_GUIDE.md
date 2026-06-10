@@ -62,7 +62,7 @@ async function migrateCredentials() {
 
 ```powershell
 # Navigate to NOVA Agent directory
-cd C:\dev\apps\nova-agent\src-tauri
+cd V:\monorepo\apps\nova-agent\src-tauri
 
 # Build the project (if not already built)
 cargo build --release
@@ -173,7 +173,7 @@ fn get_api_key(key_name: &str, env_var: &str) -> Option<String> {
 1. **Delete `.env` file**
 
    ```powershell
-   cd C:\dev\apps\nova-agent
+   cd V:\monorepo\apps\nova-agent
    Remove-Item .env -Confirm
    ```
 
@@ -251,7 +251,7 @@ whoami
 **Solution:**
 
 ```powershell
-cd C:\dev\apps\nova-agent
+cd V:\monorepo\apps\nova-agent
 pnpm run build:frontend
 cargo build --release
 pnpm run dev  # or pnpm run start

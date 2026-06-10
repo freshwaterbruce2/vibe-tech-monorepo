@@ -120,7 +120,7 @@ USB DEBUGGING SETUP (Recommended):
 
 4. Start backend server:
 
-   cd C:\dev\apps\vibe-tutor\render-backend
+   cd V:\monorepo\apps\vibe-tutor\render-backend
    node server.mjs
 
 5. Now the Android app can reach your PC's localhost:3001

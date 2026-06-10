@@ -53,7 +53,7 @@
 
 - `D:\databases\` for SQLite databases
 - `D:\learning-system\` for learning data
-- Separation from code (`C:\dev`)
+- Separation from code (`V:\monorepo`)
 
 **Industry Pattern (2026):**
 
@@ -77,8 +77,8 @@
 **✅ CLAUDE.md Hierarchical Structure**
 Your setup supports:
 
-- Root: `C:\dev\CLAUDE.md` (main monorepo guidelines)
-- Projects: `C:\dev\.claude\rules\*.md` (specialized rules)
+- Root: `V:\monorepo\CLAUDE.md` (main monorepo guidelines)
+- Projects: `V:\monorepo\.claude\rules\*.md` (specialized rules)
 - Apps: Individual app CLAUDE.md files supported
 
 **2026 Best Practice:**
@@ -173,7 +173,7 @@ $env:MAX_THINKING_TOKENS = 31999               # +60% increase
 
 Create a dedicated environment file for Claude Code:
 
-**File:** `C:\dev\.claude\env.ps1`
+**File:** `V:\monorepo\.claude\env.ps1`
 
 ```powershell
 # Claude Code persistent environment
@@ -185,7 +185,7 @@ $env:LOG_PATH = "D:\logs"
 **Add to profile:**
 
 ```powershell
-$env:CLAUDE_ENV_FILE = "C:\dev\.claude\env.ps1"
+$env:CLAUDE_ENV_FILE = "V:\monorepo\.claude\env.ps1"
 ```
 
 **Benefit:** Claude Code sources this file before each Bash command, making environment persistent across all commands.
@@ -194,7 +194,7 @@ $env:CLAUDE_ENV_FILE = "C:\dev\.claude\env.ps1"
 
 For team distribution via Git:
 
-**File:** `C:\dev\.claude\settings.json`
+**File:** `V:\monorepo\.claude\settings.json`
 
 ```json
 {

@@ -1,8 +1,8 @@
-# SPEC-001: Project Health Scanner
+﻿# SPEC-001: Project Health Scanner
 
 ## Overview
 
-A Python CLI tool that scans the C:\dev monorepo and generates a prioritized "finish list" by analyzing project health metrics.
+A Python CLI tool that scans the V:\monorepo monorepo and generates a prioritized "finish list" by analyzing project health metrics.
 
 ## Problem Statement
 
@@ -19,8 +19,8 @@ A Python CLI tool that scans the C:\dev monorepo and generates a prioritized "fi
 
 ### REQ-1: Project Discovery
 
-- Scan `C:\dev\apps\` for all subdirectories
-- Scan `C:\dev\packages\` for all subdirectories
+- Scan `V:\monorepo\apps\` for all subdirectories
+- Scan `V:\monorepo\packages\` for all subdirectories
 - Identify project type by presence of:
   - `package.json` → Node/React project
   - `requirements.txt` or `pyproject.toml` → Python project
@@ -40,7 +40,7 @@ A Python CLI tool that scans the C:\dev monorepo and generates a prioritized "fi
 ### REQ-3: Output Formats
 
 - **Console**: Pretty-printed table with color coding
-- **Markdown**: `C:\dev\PROJECT_HEALTH.md` auto-generated report
+- **Markdown**: `V:\monorepo\PROJECT_HEALTH.md` auto-generated report
 - **JSON**: Machine-readable for integration (optional)
 
 ### REQ-4: Prioritization Algorithm
@@ -54,7 +54,7 @@ Higher score = needs more attention
 python -m health_scanner [OPTIONS]
 
 Options:
-  --path PATH       Root path to scan (default: C:\dev)
+  --path PATH       Root path to scan (default: V:\monorepo)
   --output FORMAT   console|markdown|json (default: console)
   --top N           Show only top N projects (default: all)
   --include-build   Run build check (slow)
@@ -76,7 +76,7 @@ Options:
 
 ## Technical Constraints
 
-- Python 3.11+ (available in C:\dev\.venv)
+- Python 3.11+ (available in V:\monorepo\.venv)
 - No external dependencies beyond stdlib if possible
 - Windows-native paths (backslashes)
 - Must handle permission errors gracefully

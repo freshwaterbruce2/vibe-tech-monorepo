@@ -11,8 +11,8 @@ import { spawn } from 'child_process';
 import { mkdir, writeFile, readdir, readFile } from 'fs/promises';
 import { join } from 'path';
 
-const WORKSPACE_ROOT = 'C:\dev';
-const DEFAULT_OUTPUT_PATH = 'D:\data\test-results';
+const WORKSPACE_ROOT = 'V:\\monorepo';
+const DEFAULT_OUTPUT_PATH = 'D:\\data\\test-results';
 
 async function main() {
   const args = process.argv.slice(2);
@@ -214,11 +214,11 @@ async function main() {
 
 function generateMarkdownSummary(results, outputDir) {
   const statusEmoji = {
-    passed: 'âœ…',
-    failed: 'âŒ',
-    timeout: 'â±ï¸',
-    error: 'ðŸ’¥',
-    unknown: 'â“',
+    passed: 'PASS',
+    failed: 'FAIL',
+    timeout: 'TIMEOUT',
+    error: 'ERROR',
+    unknown: '?',
   };
 
   const failedPackages = results.packages.filter(p => p.status !== 'passed');
@@ -246,7 +246,7 @@ function generateMarkdownSummary(results, outputDir) {
   ];
 
   for (const r of results.packages) {
-    lines.push(`| ${r.package} | ${statusEmoji[r.status] || 'â“'} ${r.status} | ${(r.durationMs / 1000).toFixed(2)}s |`);
+    lines.push(`| ${r.package} | ${statusEmoji[r.status] || '?'} ${r.status} | ${(r.durationMs / 1000).toFixed(2)}s |`);
   }
 
   lines.push('');
@@ -254,7 +254,7 @@ function generateMarkdownSummary(results, outputDir) {
   lines.push('');
 
   if (failedPackages.length === 0) {
-    lines.push('None - all tests passed! ðŸŽ‰');
+    lines.push('None - all tests passed!');
   } else {
     for (const r of failedPackages) {
       lines.push(`- **${r.package}**: ${r.error || 'Failed'}`);
@@ -272,8 +272,7 @@ function generateMarkdownSummary(results, outputDir) {
   lines.push(results.command);
   lines.push('```');
 
-  return lines.join('
-');
+  return lines.join('\n');
 }
 
 async function getUnitTestPackages() {

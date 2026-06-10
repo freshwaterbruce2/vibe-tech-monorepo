@@ -4,7 +4,7 @@ Core patterns for the @vibetech/workspace monorepo.
 
 ## File Organization
 
-- **Code storage**: `C:\dev` (monorepo root)
+- **Code storage**: `V:\monorepo` (monorepo root)
 - **Data/logs storage**: `D:\` (never in code directories)
 - **External projects**: `C:\Users\fresh_zxae3v6`
 
@@ -31,7 +31,7 @@ Core patterns for the @vibetech/workspace monorepo.
 ## Monorepo Structure
 
 ```
-C:\dev\
+V:\monorepo\
 ├── apps/                    # Deployable applications (26)
 ├── backend/                 # Backend services & proxies
 ├── packages/                # Shared libraries (24)
@@ -45,7 +45,7 @@ C:\dev\
 
 ## Version Control
 
-- **Platform**: GitHub (Git exists at `C:\dev\.git`)
+- **Platform**: GitHub (Git exists at `V:\monorepo\.git`)
 - **Sync**: GitHub only. No GitLab.
 - **Shell commands**: Never include git commands in automated workflows or skill scripts.
 

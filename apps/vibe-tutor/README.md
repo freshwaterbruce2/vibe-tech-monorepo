@@ -31,7 +31,7 @@
 1. **Install dependencies:**
 
    ```powershell
-   cd C:\dev
+   cd V:\monorepo
    pnpm install
    ```
 

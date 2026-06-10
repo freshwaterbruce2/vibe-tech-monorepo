@@ -158,7 +158,7 @@ After analysis, update `state.json`:
 1. **Existing Skills**:
 
    ```powershell
-   Get-ChildItem "C:\dev\.claude\skills" -Directory | Select-Object Name
+   Get-ChildItem "V:\monorepo\.claude\skills" -Directory | Select-Object Name
    ```
 
 2. **Generated Skills Database**:
@@ -179,7 +179,7 @@ After analysis, update `state.json`:
 **Reuse Logic From**:
 
 ```powershell
-C:\dev\scripts\auto-generate-skills\Analyze-Patterns.ps1
+V:\monorepo\scripts\auto-generate-skills\Analyze-Patterns.ps1
 ```
 
 **Key Functions to Leverage**:

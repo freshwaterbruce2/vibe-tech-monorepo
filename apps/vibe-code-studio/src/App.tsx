@@ -44,6 +44,7 @@ import {
 } from './app/hooks/useAppEffects';
 import { useAppHandlers } from './app/hooks/useAppHandlers';
 import { useAppState } from './app/hooks/useAppState';
+import { useWebMCP } from './app/hooks/useWebMCP';
 
 // Components
 import { ModernErrorBoundary } from './components/ErrorBoundary/index';
@@ -475,6 +476,14 @@ function App() {
     setTerminalOpen: appState.setTerminalOpen,
     terminalOpen: appState.terminalOpen,
   });
+  useWebMCP({
+    currentFile,
+    openFiles,
+    workspaceFolder,
+    handleOpenFile,
+    handleSaveFile,
+    handleInsertCode: handlers.handleInsertCode,
+  });
 
   // Memoize context values to prevent unnecessary re-renders of consumers
   const servicesContextValue = useMemo(() => ({
@@ -553,6 +562,8 @@ function App() {
     multiFileApprovalOpen: appState.multiFileApprovalOpen,
     handleApplyMultiFileChanges: handlers.handleApplyMultiFileChanges,
     handleRejectMultiFileChanges: handlers.handleRejectMultiFileChanges,
+    handleAcceptFile: handlers.handleAcceptFile,
+    handleRejectFile: handlers.handleRejectFile,
     notifications, showSuccess, showError, showWarning, removeNotification,
     commands,
     handleToggleScreenshotPanel: handlers.handleToggleScreenshotPanel,
@@ -568,6 +579,7 @@ function App() {
     handlers.handleApplyFix, appState.autoFixServiceRef,
     appState.multiFileEditPlan, appState.multiFileChanges, appState.multiFileApprovalOpen,
     handlers.handleApplyMultiFileChanges, handlers.handleRejectMultiFileChanges,
+    handlers.handleAcceptFile, handlers.handleRejectFile,
     notifications, showSuccess, showError, showWarning, removeNotification,
     commands,
     handlers.handleToggleScreenshotPanel, handlers.handleToggleComponentLibrary,

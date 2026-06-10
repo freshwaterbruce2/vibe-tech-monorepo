@@ -2,7 +2,7 @@
 
 All projects monitored during weekly maintenance. Last audited: 2026-05-04.
 
-## Monorepo Apps (`C:\dev\apps\`) — 26 total
+## Monorepo Apps (`V:\monorepo\apps\`) — 26 total
 
 ### AI & Agents
 
@@ -66,7 +66,7 @@ All projects monitored during weekly maintenance. Last audited: 2026-05-04.
 | -------------------- | --------------------------- | ------- | ----------- |
 | vibe-booking-backend | `apps/vibe-booking-backend` | Node.js | Booking API |
 
-## Shared Libraries (`C:\dev\packages\`) — 24 total
+## Shared Libraries (`V:\monorepo\packages\`) — 24 total
 
 | Library            | Path                          | Used By              |
 | ------------------ | ----------------------------- | -------------------- |
@@ -95,7 +95,7 @@ All projects monitored during weekly maintenance. Last audited: 2026-05-04.
 | vibetech-shared    | `packages/vibetech-shared`    | All apps             |
 | vibetech-types     | `packages/vibetech-types`     | All apps             |
 
-## Backend Services (`C:\dev\backend\`)
+## Backend Services (`V:\monorepo\backend\`)
 
 | Service             | Path                          | Purpose                |
 | ------------------- | ----------------------------- | ---------------------- |
@@ -109,7 +109,7 @@ All projects monitored during weekly maintenance. Last audited: 2026-05-04.
 | symptom-tracker-api | `backend/symptom-tracker-api` | Health API             |
 | workflow-engine     | `backend/workflow-engine`     | Task automation        |
 
-## Plugins (`C:\dev\plugins\`)
+## Plugins (`V:\monorepo\plugins\`)
 
 | Plugin     | Path                 | Purpose                        |
 | ---------- | -------------------- | ------------------------------ |

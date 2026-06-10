@@ -1,4 +1,4 @@
-function Get-FolderSize { param($path)
+﻿function Get-FolderSize { param($path)
   if (!(Test-Path $path)) { return 0 }
   (Get-ChildItem $path -Recurse -Force -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum).Sum
 }
@@ -16,27 +16,27 @@ Write-Host "User TEMP ($($env:TEMP))`n  Size: $(Fmt $s1)"
 $s2 = Get-FolderSize 'C:\Windows\Temp'
 Write-Host "Windows TEMP`n  Size: $(Fmt $s2)"
 
-$s3 = Get-FolderSize 'C:\dev\.nx\cache'
-Write-Host "C:\dev .nx\cache`n  Size: $(Fmt $s3)"
+$s3 = Get-FolderSize 'V:\monorepo\.nx\cache'
+Write-Host "V:\monorepo .nx\cache`n  Size: $(Fmt $s3)"
 
-$s4 = Get-FolderSize 'C:\dev\node_modules\.cache'
-Write-Host "C:\dev node_modules\.cache`n  Size: $(Fmt $s4)"
+$s4 = Get-FolderSize 'V:\monorepo\node_modules\.cache'
+Write-Host "V:\monorepo node_modules\.cache`n  Size: $(Fmt $s4)"
 
 $claudeTemp = Join-Path $env:LOCALAPPDATA 'Temp\claude'
 $s5 = Get-FolderSize $claudeTemp
 Write-Host "Claude tool-results cache ($claudeTemp)`n  Size: $(Fmt $s5)"
 
-Write-Host 'Scanning C:\dev dist/ folders (skipping node_modules)...'
+Write-Host 'Scanning V:\monorepo dist/ folders (skipping node_modules)...'
 $distSize = 0
 $distDirs = @()
-Get-ChildItem C:\dev -Recurse -Filter 'dist' -Directory -ErrorAction SilentlyContinue |
+Get-ChildItem V:\monorepo -Recurse -Filter 'dist' -Directory -ErrorAction SilentlyContinue |
   Where-Object { $_.FullName -notmatch 'node_modules' } |
   ForEach-Object {
     $sz = Get-FolderSize $_.FullName
     $distSize += $sz
     $distDirs += "  $($_.FullName) ($(Fmt $sz))"
   }
-Write-Host "C:\dev dist/ folders: $(Fmt $distSize)"
+Write-Host "V:\monorepo dist/ folders: $(Fmt $distSize)"
 $distDirs | ForEach-Object { Write-Host $_ }
 
 $total = $s1 + $s2 + $s3 + $s4 + $s5 + $distSize

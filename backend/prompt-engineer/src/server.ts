@@ -1,6 +1,6 @@
 import cors from 'cors';
 import 'dotenv/config';
-import express from 'express';
+import express, { type RequestHandler } from 'express';
 import rateLimit from 'express-rate-limit';
 import { historyRouter } from './routes/history.js';
 import { optimizeRouter } from './routes/optimize.js';
@@ -33,7 +33,10 @@ const limiter = rateLimit({
       retryAfter: retryAfter > 0 ? retryAfter : 60,
     });
   },
-});
+  // express-rate-limit's bundled types resolve against @types/express v4 in the
+  // pnpm graph while this app compiles with @types/express v5; the runtime
+  // middleware is compatible, only the declaration identities differ.
+}) as unknown as RequestHandler;
 
 // Apply rate limiting only to /api/optimize
 app.use('/api/optimize', limiter);

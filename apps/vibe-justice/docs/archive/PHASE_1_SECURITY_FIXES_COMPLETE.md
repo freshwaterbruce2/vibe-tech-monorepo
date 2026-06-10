@@ -25,7 +25,7 @@ All critical security vulnerabilities identified in the December 2025 audit have
 **Files Modified:**
 
 - `C:\Users\fresh_zxae3v6\.claude\settings.json` - Fixed Bash(*) → Bash
-- `C:\dev\.mcp.json` - Added cmd /c wrapper for Windows npx
+- `V:\monorepo\.mcp.json` - Added cmd /c wrapper for Windows npx
 
 ### Task 1: Fixed Fail-Open Authentication (30 min)
 
@@ -155,11 +155,11 @@ All critical security vulnerabilities identified in the December 2025 audit have
 
 ```bash
 # Backend
-cd C:\dev\apps\vibe-justice\backend
+cd V:\monorepo\apps\vibe-justice\backend
 pip install slowapi redis
 
 # Frontend (if needed)
-cd C:\dev\apps\vibe-justice\frontend
+cd V:\monorepo\apps\vibe-justice\frontend
 pnpm install
 ```
 
@@ -167,7 +167,7 @@ pnpm install
 
 ```bash
 # Copy and configure .env
-cd C:\dev\apps\vibe-justice\backend
+cd V:\monorepo\apps\vibe-justice\backend
 cp .env.example .env
 
 # Generate secure API key
@@ -178,7 +178,7 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 ### 3. Run Security Tests
 
 ```bash
-cd C:\dev\apps\vibe-justice\backend
+cd V:\monorepo\apps\vibe-justice\backend
 python test_security_fixes.py
 ```
 
@@ -186,11 +186,11 @@ python test_security_fixes.py
 
 ```bash
 # Terminal 1: Backend
-cd C:\dev\apps\vibe-justice\backend
+cd V:\monorepo\apps\vibe-justice\backend
 python main.py
 
 # Terminal 2: Frontend
-cd C:\dev\apps\vibe-justice\frontend
+cd V:\monorepo\apps\vibe-justice\frontend
 pnpm run dev
 
 # Terminal 3: Redis (optional)

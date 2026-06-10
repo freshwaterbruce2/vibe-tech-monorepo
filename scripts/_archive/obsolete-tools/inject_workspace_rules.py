@@ -1,11 +1,11 @@
-
+﻿
 import sqlite3
 import os
 from datetime import datetime
 
 DB_PATH = r"D:\databases\moltbot_memory.sqlite"
-Workspace_Rules_Path = r"C:\dev\docs\ai\WORKSPACE.md"
-Agents_Rules_Path = r"C:\dev\AGENTS.md"
+Workspace_Rules_Path = r"V:\monorepo\docs\ai\WORKSPACE.md"
+Agents_Rules_Path = r"V:\monorepo\AGENTS.md"
 
 def inject_rules():
     if not os.path.exists(DB_PATH):

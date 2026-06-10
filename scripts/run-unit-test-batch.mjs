@@ -26,13 +26,13 @@ import { join, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const WORKSPACE_ROOT = 'C:\dev';
+const WORKSPACE_ROOT = 'V:\\monorepo';
 
 // Parse arguments
 function parseArgs() {
   const args = process.argv.slice(2);
   const options = {
-    outputPath: 'D:\data\test-results',
+    outputPath: 'D:\\data\\test-results',
     parallel: 4,
     projects: '',
     continueOnError: true,
@@ -91,9 +91,7 @@ function createLogger(logFile) {
   
   async function flush() {
     if (logs.length > 0) {
-      const content = logs.join('
-') + '
-';
+      const content = logs.join('\n') + '\n';
       await writeFile(logFile, content, { flag: 'a' });
       logs.length = 0;
     }
@@ -388,11 +386,11 @@ async function main() {
   
   // Generate markdown summary
   const statusEmoji = {
-    passed: 'âœ…',
-    failed: 'âŒ',
-    timeout: 'â±ï¸',
-    error: 'ðŸ’¥',
-    unknown: 'â“',
+    passed: 'PASS',
+    failed: 'FAIL',
+    timeout: 'TIMEOUT',
+    error: 'ERROR',
+    unknown: '?',
   };
   
   const summaryReport = `# Unit Test Batch Results
@@ -414,15 +412,13 @@ async function main() {
 
 | Package | Status | Duration |
 |---------|--------|----------|
-${results.map(r => `| ${r.package} | ${statusEmoji[r.status] || 'â“'} ${r.status} | ${(r.durationMs / 1000).toFixed(2)}s |`).join('
-')}
+${results.map(r => `| ${r.package} | ${statusEmoji[r.status] || '?'} ${r.status} | ${(r.durationMs / 1000).toFixed(2)}s |`).join('\n')}
 
 ## Failed Packages
 
 ${results.filter(r => r.status !== 'passed').length === 0 
-  ? 'None - all tests passed! ðŸŽ‰' 
-  : results.filter(r => r.status !== 'passed').map(r => `- **${r.package}**: ${r.error || 'Failed'}`).join('
-')}
+  ? 'None - all tests passed!'
+  : results.filter(r => r.status !== 'passed').map(r => `- **${r.package}**: ${r.error || 'Failed'}`).join('\n')}
 
 ## Output Location
 
@@ -433,8 +429,7 @@ Test results stored in: \`${runOutputDir}\`
   await writeFile(summaryFile, summaryReport, 'utf-8');
   
   // Console summary
-  console.log('
-========================================');
+  console.log('\n========================================');
   console.log('UNIT TEST BATCH COMPLETE');
   console.log('========================================');
   console.log(`Total Packages: ${summary.total}`);

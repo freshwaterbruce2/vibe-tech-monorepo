@@ -1,5 +1,5 @@
-# LearningSystem PowerShell Module - Enhanced with Auto-Capture
-# Location: C:\dev\scripts\LearningSystem.psm1
+﻿# LearningSystem PowerShell Module - Enhanced with Auto-Capture
+# Location: V:\monorepo\scripts\LearningSystem.psm1
 
 $Script:DbPath = "D:\databases\agent_learning.db"
 $Script:PythonVenv = "D:\learning-system\.venv\Scripts\python.exe"

@@ -1,5 +1,5 @@
-param(
-  [string]$RepoRoot = "C:\dev",
+﻿param(
+  [string]$RepoRoot = "V:\monorepo",
   [string]$LogPath = "D:\logs\dev-metrics.log",
   [int]$MaxLines = 360
 )

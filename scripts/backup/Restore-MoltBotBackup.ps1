@@ -1,4 +1,4 @@
-#!/usr/bin/env powershell
+﻿#!/usr/bin/env powershell
 <#
 .SYNOPSIS
     Restore MoltBot data from backup
@@ -193,7 +193,7 @@ if ($RestoreMode -eq "All" -or $RestoreMode -eq "Hooks") {
 
     if (Test-Path $hooksBackupDir) {
         $hooks = Get-ChildItem $hooksBackupDir -File
-        $targetHooksDir = "C:\dev\.claude\hooks"
+        $targetHooksDir = "V:\monorepo\.claude\hooks"
 
         if (-not (Test-Path $targetHooksDir)) {
             New-Item -ItemType Directory -Path $targetHooksDir -Force | Out-Null

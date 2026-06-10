@@ -23,7 +23,7 @@ The Memory System provides persistent memory across Claude Code sessions using t
 Run the integration test script:
 
 ```powershell
-C:\dev\scripts\test-memory-system.ps1
+V:\monorepo\scripts\test-memory-system.ps1
 ```
 
 Expected output: All tests passing (✓)
@@ -289,7 +289,7 @@ Use memory_add_semantic:
 
 # Add path policies
 Use memory_add_semantic:
-  content: "CRITICAL: Databases go to D:\databases\, logs to D:\logs\, code stays in C:\dev\"
+  content: "CRITICAL: Databases go to D:\databases\, logs to D:\logs\, code stays in V:\monorepo\"
   metadata: { "category": "policy", "priority": "critical" }
 ```
 
@@ -348,7 +348,7 @@ node -e "const db = require('better-sqlite3')('D:/databases/memory.db'); db.prag
 
 **Verify MCP server is registered:**
 ```powershell
-node -e "console.log(JSON.parse(require('fs').readFileSync('C:/dev/.mcp.json','utf8')).mcpServers['memory-bank'])"
+node -e "console.log(JSON.parse(require('fs').readFileSync('V:/monorepo/.mcp.json','utf8')).mcpServers['memory-bank'])"
 ```
 
 **Restart Claude Code:**
@@ -398,7 +398,7 @@ For programmatic usage, see:
 
 ## Support
 
-- **Integration Test:** `C:\dev\scripts\test-memory-system.ps1`
+- **Integration Test:** `V:\monorepo\scripts\test-memory-system.ps1`
 - **Health Check:** Use `memory_health` tool
 - **Database Inspection:** Use SQLite CLI or DB Browser for SQLite
 

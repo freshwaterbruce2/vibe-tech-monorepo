@@ -13,14 +13,14 @@
 ## 0. Backup first
 
 ```powershell
-Compress-Archive -Path C:\dev\apps\vibetech-command-center -DestinationPath C:\dev\_backups\pre-chunk02_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
+Compress-Archive -Path V:\monorepo\apps\vibetech-command-center -DestinationPath V:\monorepo\_backups\pre-chunk02_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
 ```
 
 ---
 
 ## 1. Test infrastructure setup
 
-Add Vitest config at `C:\dev\apps\vibetech-command-center\vitest.config.ts`:
+Add Vitest config at `V:\monorepo\apps\vibetech-command-center\vitest.config.ts`:
 
 ```typescript
 import { defineConfig } from 'vitest/config';
@@ -59,7 +59,7 @@ Add scripts to `package.json` (use `str_replace` on the existing `"scripts"` blo
 Add dev dependencies if missing:
 
 ```powershell
-cd C:\dev\apps\vibetech-command-center
+cd V:\monorepo\apps\vibetech-command-center
 pnpm add -D @vitest/coverage-v8
 ```
 
@@ -98,7 +98,7 @@ export interface FileEvent {
 export interface NxProject {
   name: string;
   type: 'app' | 'lib';
-  root: string;           // relative to C:\dev
+  root: string;           // relative to V:\monorepo
   sourceRoot?: string;
   tags: string[];
   implicitDependencies: string[];
@@ -157,7 +157,7 @@ export interface DbMetric {
 **Path:** `src/main/services/monorepo-watcher.ts`
 
 Responsibilities:
-- Watch `C:\dev\apps\*\src` and `C:\dev\packages\*\src` recursively
+- Watch `V:\monorepo\apps\*\src` and `V:\monorepo\packages\*\src` recursively
 - Emit debounced `FileEvent` objects on an EventEmitter
 - Ignore `node_modules`, `dist`, `.nx`, `_backups`, `.turbo`, `out`, `.git`, dotfiles
 - Derive `appName` / `packageName` from path segments
@@ -170,7 +170,7 @@ import { sep } from 'node:path';
 import type { FileEvent, FileEventType } from '@shared/types';
 
 export interface MonorepoWatcherOptions {
-  monorepoRoot: string;       // default: C:\dev
+  monorepoRoot: string;       // default: V:\monorepo
   debounceMs?: number;        // default: 250
   ignoreInitial?: boolean;    // default: true
 }
@@ -1008,7 +1008,7 @@ export type { DbMetricsOptions, DbTarget } from './db-metrics';
 ## 8. Run the suite
 
 ```powershell
-cd C:\dev\apps\vibetech-command-center
+cd V:\monorepo\apps\vibetech-command-center
 pnpm run typecheck
 pnpm run test
 ```
@@ -1054,7 +1054,7 @@ Two known-possible issues on your setup:
 ## Post-chunk backup
 
 ```powershell
-Compress-Archive -Path C:\dev\apps\vibetech-command-center -DestinationPath C:\dev\_backups\command-center-chunk02-complete_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
+Compress-Archive -Path V:\monorepo\apps\vibetech-command-center -DestinationPath V:\monorepo\_backups\command-center-chunk02-complete_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
 ```
 
 Ping me with `chunk 2 complete` (plus any oddities) and I'll write Chunk 3 — the action services (`backup-service`, `process-runner`, `claude-bridge`, `rag-client`), which is where the dashboard stops watching and starts doing.

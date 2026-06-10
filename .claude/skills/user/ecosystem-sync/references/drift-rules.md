@@ -6,7 +6,7 @@ Complete rule set for detecting ecosystem drift. Each rule has an ID, severity, 
 
 | ID       | Rule                                               | Severity    | Auto-fixable             |
 | -------- | -------------------------------------------------- | ----------- | ------------------------ |
-| PATH-001 | Every `C:\dev\*` path in a skill file must resolve | 🔴 Breaking | No (needs manual review) |
+| PATH-001 | Every `V:\monorepo\*` path in a skill file must resolve | 🔴 Breaking | No (needs manual review) |
 | PATH-002 | Every `C:\Users\fresh_zxae3v6\*` path must resolve | 🔴 Breaking | No                       |
 | PATH-003 | Agent config paths must point to existing files    | 🔴 Breaking | No                       |
 | PATH-004 | MCP server executable paths must resolve           | 🔴 Breaking | No                       |
@@ -36,7 +36,7 @@ Select-String -Path $file -Pattern '[A-Z]:\\[^\s"''`]+' -AllMatches |
 
 ```powershell
 # Get monorepo root versions
-$rootPkg = Get-Content "C:\dev\package.json" | ConvertFrom-Json
+$rootPkg = Get-Content "V:\monorepo\package.json" | ConvertFrom-Json
 $reactVersion = $rootPkg.dependencies.react -replace '[\^~]',''
 $tsVersion = $rootPkg.devDependencies.typescript -replace '[\^~]',''
 
@@ -59,7 +59,7 @@ $tsVersion = $rootPkg.devDependencies.typescript -replace '[\^~]',''
 
 ```powershell
 # Count agents in config vs skill
-$configAgents = (Get-Content "C:\dev\.claude\agents.json" | ConvertFrom-Json).Count
+$configAgents = (Get-Content "V:\monorepo\.claude\agents.json" | ConvertFrom-Json).Count
 # Compare to count mentioned in vibetech-agents SKILL.md
 ```
 
