@@ -1,0 +1,7 @@
+{
+  "tool_name": "Write",
+  "tool_response": { "is_error": false },
+  "duration_ms": 150,
+  "cwd": "V:\\monorepo\\apps\\vibetech-command-center",
+  "tool_input": { "path": "src/renderer/components/TestPanel.tsx", "content": "export function TestPanel() { return <div>Test</div>; }" }
+}

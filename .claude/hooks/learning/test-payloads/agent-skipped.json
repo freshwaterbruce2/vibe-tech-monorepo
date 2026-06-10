@@ -1,0 +1,7 @@
+{
+  "tool_name": "Agent",
+  "tool_response": { "is_error": false },
+  "duration_ms": 5000,
+  "cwd": "V:\\monorepo",
+  "tool_input": { "prompt": "Fix the build", "model": "claude-opus-4" }
+}

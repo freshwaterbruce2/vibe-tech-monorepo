@@ -1,0 +1,8 @@
+{
+  "tool_name": "Bash",
+  "tool_response": { "is_error": true },
+  "error": "Command failed with exit code 1: pnpm test --filter shared-utils",
+  "duration_ms": 2500,
+  "cwd": "V:\\monorepo\\packages\\shared-utils",
+  "tool_input": { "command": "pnpm test --filter shared-utils" }
+}
