@@ -5,6 +5,7 @@ packages:
   - "apps/**/backend"
   - "apps/**/frontend"
   - "apps/chessmaster-academy/render-backend"
+  - "apps/vibe-code-studio/vscode-extension"
   - "backend"
   - "backend/*"
   - "tools/*/mcp-server"
