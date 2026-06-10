@@ -15,6 +15,9 @@ export * from './security';
 // Browser Utilities
 export * from './browser';
 
+// WebMCP Support
+export * from './webmcp';
+
 // Path Registry
 export * from './path-registry';
 
