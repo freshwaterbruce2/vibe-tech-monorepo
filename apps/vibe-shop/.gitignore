@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# webmcp generator raw output (adopted copy lives in src/lib)
+/webmcp-output/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
