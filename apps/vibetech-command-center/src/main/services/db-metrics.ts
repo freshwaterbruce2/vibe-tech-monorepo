@@ -1,7 +1,8 @@
-import Database from 'better-sqlite3';
+import type Database from 'better-sqlite3';
 import { statSync, existsSync } from 'node:fs';
 import type { DbMetric } from '../../shared/types';
 import { loadDatabaseTargets } from './database-inventory';
+import { openReadOnlyDatabase } from './sqlite-native';
 
 export interface DbTarget {
   name: string;
@@ -51,7 +52,7 @@ export class DbMetricsService {
       const walPath = `${target.path}-wal`;
       const walSizeBytes = existsSync(walPath) ? statSync(walPath).size : 0;
 
-      const database = (db = new Database(target.path, { readonly: true, fileMustExist: true }));
+      const database = (db = openReadOnlyDatabase(target.path));
       database.pragma('query_only = ON');
 
       const pageCount = (database.pragma('page_count', { simple: true }) as number) ?? 0;

@@ -1,8 +1,9 @@
-import Database from 'better-sqlite3';
+import type Database from 'better-sqlite3';
 import { existsSync, statSync, readdirSync } from 'node:fs';
 import { resolve, normalize, relative, isAbsolute } from 'node:path';
 import type { DbExplorerDatabase, DbTableSchema, DbExplorerResult } from '../../shared/types';
 import { loadDatabaseTargets } from './database-inventory';
+import { openReadOnlyDatabase } from './sqlite-native';
 
 export interface DbExplorerOptions {
   allowedRoots: string[]; // e.g., ['D:\\databases', 'C:\\dev']
@@ -111,7 +112,7 @@ export class DbExplorerService {
 
     let db: Database.Database | null = null;
     try {
-      db = new Database(dbPath, { readonly: true, fileMustExist: true });
+      db = openReadOnlyDatabase(dbPath);
       db.pragma('query_only = ON');
 
       const tableRows = db
@@ -172,7 +173,7 @@ export class DbExplorerService {
     let db: Database.Database | null = null;
     const startedAt = Date.now();
     try {
-      db = new Database(dbPath, { readonly: true, fileMustExist: true });
+      db = openReadOnlyDatabase(dbPath);
       db.pragma('query_only = ON');
 
       const stmt = db.prepare(limitSql(sql));

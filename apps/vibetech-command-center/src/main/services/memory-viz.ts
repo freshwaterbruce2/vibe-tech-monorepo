@@ -1,4 +1,5 @@
-import Database from 'better-sqlite3';
+import type Database from 'better-sqlite3';
+import { openReadOnlyDatabase } from './sqlite-native';
 
 export interface MemoryVizOptions {
   dbPath: string;
@@ -16,7 +17,7 @@ export class MemoryVizService {
   private getDb(): Database.Database | null {
     if (this.db) return this.db;
     try {
-      const db = new Database(this.opts.dbPath, { readonly: true, fileMustExist: true });
+      const db = openReadOnlyDatabase(this.opts.dbPath);
       db.pragma('query_only = ON');
       this.db = db;
       return db;

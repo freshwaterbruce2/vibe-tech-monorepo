@@ -2,10 +2,11 @@
   "name": "@vibetech/command-center",
   "version": "0.1.0",
   "private": true,
-  "description": "Vibe-Tech Command Center — monorepo dashboard, diagnostics, and Claude Code bridge",
+  "description": "Vibe-Tech Command Center - monorepo dashboard, diagnostics, and Claude Code bridge",
   "author": "Bruce Freshwater",
   "main": "out/main/index.js",
   "scripts": {
+    "predev": "node scripts/fetch-electron-native.mjs",
     "dev": "electron-vite dev",
     "build": "electron-vite build && pnpm run build:mcp",
     "lint": "pnpm exec eslint src --ext .ts,.tsx",
@@ -30,8 +31,10 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
     "@tanstack/react-query": "^5.95.2",
+    "@vibetech/shared-utils": "workspace:*",
     "better-sqlite3": "^11.7.0",
     "chokidar": "^4.0.1",
+    "readdirp": "^4.0.1",
     "clsx": "^2.1.1",
     "lucide-react": "0.563.0",
     "react": "19.2.4",
@@ -67,7 +70,7 @@
   "build": {
     "appId": "com.vibetech.command-center",
     "productName": "Vibe-Tech Command Center",
-    "copyright": "Copyright © 2026 Bruce Freshwater",
+    "copyright": "Copyright (c) 2026 Bruce Freshwater",
     "directories": {
       "output": "release",
       "buildResources": "build"

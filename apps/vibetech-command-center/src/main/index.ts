@@ -8,7 +8,22 @@ import { setupTray, teardownTray } from './tray';
 
 const isDev = !app.isPackaged;
 const DEFAULT_WS_PORT = 3210;
-const MONOREPO_ROOT = 'C:\\dev';
+const DEFAULT_CDP_PORT = 9222;
+const MONOREPO_ROOT = 'V:\\monorepo';
+
+// External agents attach over the Chrome DevTools Protocol; the switch only
+// takes effect if appended before the app 'ready' event, so this runs at
+// module load. Port 0 via env opts out entirely (CDP is a local
+// code-execution surface - any process on this machine can attach).
+function configureRemoteDebugging(): void {
+  const raw = process.env['VIBETECH_COMMAND_CENTER_CDP_PORT'] ?? process.env['COMMAND_CENTER_CDP_PORT'];
+  const parsed = raw === undefined ? DEFAULT_CDP_PORT : Number.parseInt(raw, 10);
+  const port = Number.isInteger(parsed) && parsed >= 0 && parsed <= 65_535 ? parsed : DEFAULT_CDP_PORT;
+  if (port === 0) return;
+  app.commandLine.appendSwitch('remote-debugging-port', String(port));
+}
+
+configureRemoteDebugging();
 
 let container: ServiceContainer | null = null;
 let hub: WsHub | null = null;

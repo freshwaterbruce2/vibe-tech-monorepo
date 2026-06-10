@@ -1,8 +1,9 @@
 import { parentPort } from 'node:worker_threads';
-import Database from 'better-sqlite3';
+import type Database from 'better-sqlite3';
 import { existsSync, statSync, readdirSync } from 'node:fs';
 import { resolve, normalize, relative, isAbsolute } from 'node:path';
 import { loadDatabaseTargets } from './database-inventory';
+import { openReadOnlyDatabase as openDatabase } from './sqlite-native';
 
 // Normalize helper
 function normalizeWindowsPath(p: string): string {
@@ -156,7 +157,7 @@ export function handleWorkerAction(
         throw new Error('Database path is outside allowed roots');
       }
 
-      const db = new Database(dbPath, { readonly: true, fileMustExist: true });
+      const db = openDatabase(dbPath);
       db.pragma('query_only = ON');
 
       try {
@@ -214,7 +215,7 @@ export function handleWorkerAction(
       guardSql(sql);
 
       const startedAt = Date.now();
-      const db = new Database(dbPath, { readonly: true, fileMustExist: true });
+      const db = openDatabase(dbPath);
       db.pragma('query_only = ON');
 
       try {
@@ -243,7 +244,7 @@ export function handleWorkerAction(
       let db: Database.Database | null = null;
 
       try {
-        db = new Database(dbPath, { readonly: true, fileMustExist: true });
+        db = openDatabase(dbPath);
         db.pragma('query_only = ON');
       } catch {
         resultData = {
@@ -325,7 +326,7 @@ export function handleWorkerAction(
       let db: Database.Database | null = null;
 
       try {
-        db = new Database(dbPath, { readonly: true, fileMustExist: true });
+        db = openDatabase(dbPath);
         db.pragma('query_only = ON');
       } catch {
         resultData = [];
@@ -374,7 +375,7 @@ export function handleWorkerAction(
       let db: Database.Database | null = null;
 
       try {
-        db = new Database(dbPath, { readonly: true, fileMustExist: true });
+        db = openDatabase(dbPath);
         db.pragma('query_only = ON');
       } catch (err) {
         // Propagate ENOENT/missing file errors to let client know DB is unavailable
