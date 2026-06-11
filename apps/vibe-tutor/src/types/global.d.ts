@@ -6,17 +6,9 @@ interface Window {
   // Experimental Web Speech API
   SpeechRecognition: typeof SpeechRecognition;
   webkitSpeechRecognition: typeof SpeechRecognition;
-  electronAPI: {
-    store: {
-      get: (key: string) => unknown;
-      set: (key: string, value: unknown) => void;
-      delete: (key: string) => void;
-      clear: () => void;
-    };
-    isElectron?: boolean;
-    selectImportFile: () => Promise<string | null>;
-    ingestAndroidExport: (content: string) => Promise<{ inserted: number; skipped: number; total: number }>;
-  };
+  // Single source of truth lives in electron.d.ts; keep this an alias so the
+  // two Window augmentations cannot drift apart.
+  electronAPI: import('./electron').ElectronAPI;
 }
 
 // Minimal SpeechRecognition definitions if not available in lib.dom.d.ts

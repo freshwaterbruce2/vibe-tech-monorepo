@@ -34,6 +34,29 @@ const api = {
     throw new Error('error' in response && response.error ? response.error : 'Ingestion failed');
   },
 
+  // Local LLM model lifecycle (@electron/llm). Inference itself goes through
+  // window.electronAi, injected separately by @electron/llm's own preload.
+  localLlm: {
+    getStatus: async (): Promise<{ state: string; progress: number }> => {
+      return ipcRenderer.invoke('local-llm:status');
+    },
+    downloadModel: async (): Promise<{ ok: boolean; state?: string; error?: string }> => {
+      return ipcRenderer.invoke('local-llm:download');
+    },
+    cancelDownload: async (): Promise<void> => {
+      await ipcRenderer.invoke('local-llm:cancel-download');
+    },
+    onDownloadProgress: (callback: (loaded: number) => void): (() => void) => {
+      const listener = (_event: unknown, payload: { loaded: number }) => {
+        callback(payload.loaded);
+      };
+      ipcRenderer.on('local-llm:download-progress', listener);
+      return () => {
+        ipcRenderer.removeListener('local-llm:download-progress', listener);
+      };
+    },
+  },
+
   // Electron-store IPC bridge (synchronous for backward compatibility)
   store: {
     get: (key: string): unknown => {
