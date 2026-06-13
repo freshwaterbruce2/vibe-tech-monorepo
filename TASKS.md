@@ -2,8 +2,7 @@
 
 ## Active
 
-- [ ] **VTDE — Ship beta** - Tauri 2.0 desktop environment, terminal widget, draggable windows, healing dashboard. Control Plane Polish done 2026-02-23.
-- [ ] **Vibe Tutor — Release** - Play Store audit passed, ESLint zero warnings. Final ship.
+(None)
 
 ## Waiting On
 
@@ -18,6 +17,7 @@
 
 ## Done
 
+- [x] ~~Vibe Tutor — Release: Play Store audit passed, ESLint zero warnings. Final ship.~~ (2026-06-13)
 - [x] ~~Gravity Claw — v1 shipped: Gemini/Kimi routing, MCP tool dispatch, Telegram bridge, SSE streaming, task CRUD, settings UI. All files under limit, typechecks clean.~~ (2026-04-08)
 
 - [x] ~~Gravity Claw — file size refactor: index.ts + Settings.tsx split, all files under limit, typecheck clean~~ (2026-04-07)
