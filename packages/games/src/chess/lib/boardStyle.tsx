@@ -1,4 +1,4 @@
-import React from 'react';
+import { type CSSProperties } from 'react';
 import { defaultPieces, type PieceRenderObject } from 'react-chessboard';
 
 export const customBoardStyle = {
@@ -62,7 +62,7 @@ export function getPieceSvgStyle(
   piece: string,
   pieceSet: string = 'fresca',
   squareWidth?: number,
-): React.CSSProperties {
+): CSSProperties {
   const isWhite = piece.startsWith('w');
   const look = getPieceLook(pieceSet);
   const size = squareWidth ? `${Math.max(24, Math.floor(squareWidth))}px` : '100%';
@@ -86,7 +86,7 @@ type LocalPieceProps = {
   fill?: string;
   square?: string;
   squareWidth?: number;
-  svgStyle?: React.CSSProperties;
+  svgStyle?: CSSProperties;
 };
 
 export function PiecePreview({

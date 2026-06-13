@@ -1,10 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback, memo, type CSSProperties } from 'react';
 import { Chess } from 'chess.js';
 import { Bot, RefreshCcw, Users } from 'lucide-react';
-import { chooseAiMove, getDifficultyLabel, type Difficulty } from '../lib/chessAi';
+import { getDifficultyLabel, type Difficulty } from '../lib/chessAi';
 import { analyzeMove, getCoachHints, getPositionCoachMessage, type CoachFeedback } from '../lib/coach';
 import { ChessBoardSurface, type ChessBoardView } from './ChessBoardSurface';
 import { CoachPanel } from './CoachPanel';
+import { triggerHaptic } from '../lib/haptic';
+
 
 type PlayModeType = 'ai' | 'local';
 type PlayerColor = 'w' | 'b';
@@ -17,13 +19,13 @@ function getGameStatus(chess: Chess) {
   return `${chess.turn() === 'w' ? 'White' : 'Black'} to move.`;
 }
 
-export function PlayMode({ boardView = '2d', pieceSet }: { boardView?: ChessBoardView; pieceSet: string }) {
+export const PlayMode = memo(function PlayMode({ boardView = '2d', pieceSet }: { boardView?: ChessBoardView; pieceSet: string }) {
   const [mode, setMode] = useState<PlayModeType>('ai');
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
   const [humanColor, setHumanColor] = useState<PlayerColor>('w');
   const [fen, setFen] = useState(() => new Chess().fen());
   const [moveFrom, setMoveFrom] = useState<string | null>(null);
-  const [optionSquares, setOptionSquares] = useState<Record<string, React.CSSProperties>>({});
+  const [optionSquares, setOptionSquares] = useState<Record<string, CSSProperties>>({});
   const [lastMove, setLastMove] = useState<string | null>(null);
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [coachEnabled, setCoachEnabled] = useState(true);
@@ -41,29 +43,43 @@ export function PlayMode({ boardView = '2d', pieceSet }: { boardView?: ChessBoar
     if (mode !== 'ai' || game.isGameOver() || game.turn() === humanColor) return;
 
     setIsAiThinking(true);
+    let worker: Worker | null = null;
     const timeoutId = window.setTimeout(() => {
-      const aiGame = new Chess(fen);
-      const aiMove = chooseAiMove(aiGame.fen(), difficulty);
+      worker = new Worker(new URL('../lib/chessAi.worker.ts', import.meta.url), { type: 'module' });
 
-      if (aiMove) {
-        const beforeAiFen = aiGame.fen();
-        const moveResult = aiGame.move(aiMove);
-        setFen(aiGame.fen());
-        setLastMove(`AI: ${moveResult.san}`);
-        const feedback = analyzeMove(beforeAiFen, moveResult.san);
-        setCoachFeedback(feedback);
-        setReviewItems((items) => [...items.slice(-5), feedback]);
-      }
+      worker.onmessage = (e) => {
+        const { move, error } = e.data;
+        if (error) {
+          console.error('[Chess AI Worker] error:', error);
+        } else if (move) {
+          const aiGame = new Chess(fen);
+          const beforeAiFen = aiGame.fen();
+          const moveResult = aiGame.move(move);
+          setFen(aiGame.fen());
+          setLastMove(`AI: ${moveResult.san}`);
+          const feedback = analyzeMove(beforeAiFen, moveResult.san);
+          setCoachFeedback(feedback);
+          setReviewItems((items) => [...items.slice(-5), feedback]);
+        }
 
-      setIsAiThinking(false);
-      setMoveFrom(null);
-      setOptionSquares({});
+        setIsAiThinking(false);
+        setMoveFrom(null);
+        setOptionSquares({});
+      };
+
+      worker.postMessage({ fen, difficulty });
     }, difficulty === 'hard' ? 550 : 300);
 
-    return () => window.clearTimeout(timeoutId);
+    return () => {
+      window.clearTimeout(timeoutId);
+      if (worker) {
+        worker.terminate();
+      }
+    };
   }, [difficulty, fen, game, humanColor, mode]);
 
-  function resetGame(nextMode = mode, nextHumanColor = humanColor) {
+  const resetGame = useCallback((nextMode = mode, nextHumanColor = humanColor) => {
+    triggerHaptic();
     const newGame = new Chess();
     setFen(newGame.fen());
     setMoveFrom(null);
@@ -75,9 +91,9 @@ export function PlayMode({ boardView = '2d', pieceSet }: { boardView?: ChessBoar
     setReviewItems([]);
     setMode(nextMode);
     setHumanColor(nextHumanColor);
-  }
+  }, [mode, humanColor]);
 
-  function getMoveOptions(square: string) {
+  const getMoveOptions = useCallback((square: string) => {
     if (!canHumanMove || isAiThinking) return false;
 
     const piece = game.get(square as never);
@@ -97,8 +113,7 @@ export function PlayMode({ boardView = '2d', pieceSet }: { boardView?: ChessBoar
       return false;
     }
 
-    const nextSquares: Record<string, React.CSSProperties> = {};
-
+    const nextSquares: Record<string, CSSProperties> = {};
     moves.forEach((move) => {
       nextSquares[move.to] = {
         background: game.get(move.to as never)
@@ -111,9 +126,9 @@ export function PlayMode({ boardView = '2d', pieceSet }: { boardView?: ChessBoar
     nextSquares[square] = { background: 'rgba(255, 215, 0, 0.4)' };
     setOptionSquares(nextSquares);
     return true;
-  }
+  }, [canHumanMove, isAiThinking, game, mode, humanColor]);
 
-  function makeMove(from: string, to: string) {
+  const makeMove = useCallback((from: string, to: string) => {
     if (!canHumanMove || isAiThinking) return false;
 
     try {
@@ -131,17 +146,19 @@ export function PlayMode({ boardView = '2d', pieceSet }: { boardView?: ChessBoar
       setHintLevel(0);
       setMoveFrom(null);
       setOptionSquares({});
+      triggerHaptic();
       return true;
     } catch {
       return false;
     }
-  }
+  }, [canHumanMove, isAiThinking, fen]);
 
-  function cycleHint() {
+  const cycleHint = useCallback(() => {
+    triggerHaptic();
     setHintLevel((current) => (current >= 3 ? 0 : current + 1));
-  }
+  }, []);
 
-  function onSquareClick(square: string) {
+  const onSquareClick = useCallback((square: string) => {
     if (!moveFrom) {
       if (getMoveOptions(square)) setMoveFrom(square);
       return;
@@ -150,18 +167,18 @@ export function PlayMode({ boardView = '2d', pieceSet }: { boardView?: ChessBoar
     if (!makeMove(moveFrom, square)) {
       setMoveFrom(getMoveOptions(square) ? square : null);
     }
-  }
+  }, [moveFrom, getMoveOptions, makeMove]);
 
-  function onDrop({
+  const onDrop = useCallback(({
     sourceSquare,
     targetSquare,
   }: {
     sourceSquare: string;
     targetSquare: string | null;
-  }) {
+  }) => {
     if (!targetSquare) return false;
     return makeMove(sourceSquare, targetSquare);
-  }
+  }, [makeMove]);
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-3 pb-40 pt-3 md:px-6 md:py-6 lg:min-h-screen lg:flex-row lg:items-center lg:gap-8 lg:pb-6">
@@ -298,4 +315,5 @@ export function PlayMode({ boardView = '2d', pieceSet }: { boardView?: ChessBoar
       </div>
     </div>
   );
-}
+});
+

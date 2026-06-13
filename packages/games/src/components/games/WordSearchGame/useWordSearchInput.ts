@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState, type Dispatch, type SetStateAction, type TouchEvent } from 'react';
 import { logger } from '../../../utils/logger';
 import type { WordSearchGrid } from '../../../services/puzzleGenerator';
 import { appStore } from '../../../utils/electronStore';
@@ -6,8 +6,8 @@ import { appStore } from '../../../utils/electronStore';
 interface UseWordSearchInputProps {
   puzzle: WordSearchGrid | null;
   foundWords: Set<string>;
-  setFoundWords: React.Dispatch<React.SetStateAction<Set<string>>>;
-  setCelebrate: React.Dispatch<React.SetStateAction<boolean>>;
+  setFoundWords: Dispatch<SetStateAction<Set<string>>>;
+  setCelebrate: Dispatch<SetStateAction<boolean>>;
   config: { soundEnabled?: boolean };
   isActive: boolean;
   playSound: (type: 'success' | 'error' | 'pop' | 'victory' | 'levelUp') => void;
@@ -174,7 +174,7 @@ export function useWordSearchInput({
   );
 
   const handleTouchMove = useCallback(
-    (e: React.TouchEvent) => {
+    (e: TouchEvent) => {
       if (!isActive || !selecting || !puzzle) return;
 
       try {

@@ -1,5 +1,5 @@
 import { Pause } from 'lucide-react';
-import React from 'react';
+import { type TouchEvent } from 'react';
 import type { WordSearchGrid as WordSearchGridType } from '../../../services/puzzleGenerator';
 import { logger } from '../../../utils/logger';
 
@@ -16,7 +16,7 @@ interface WordSearchGridProps {
   onCellMouseEnter: (row: number, col: number) => void;
   onCellMouseUp: () => void;
   onTouchStart: (row: number, col: number) => void;
-  onTouchMove: (e: React.TouchEvent) => void;
+  onTouchMove: (e: TouchEvent) => void;
   onTouchEnd: () => void;
   onMouseLeave: () => void;
   getCellKey: (row: number, col: number) => string;

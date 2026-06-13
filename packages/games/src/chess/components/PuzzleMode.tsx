@@ -1,16 +1,18 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback, memo, type CSSProperties } from 'react';
 import { Chess } from 'chess.js';
 import { CheckCircle2, ChevronRight, RefreshCcw } from 'lucide-react';
 import { PUZZLES } from '../lib/puzzles';
 import { analyzeMove, getCoachHints, getPositionCoachMessage, type CoachFeedback } from '../lib/coach';
 import { CoachPanel } from './CoachPanel';
 import { ChessBoardSurface, type ChessBoardView } from './ChessBoardSurface';
+import { triggerHaptic } from '../lib/haptic';
 
-export function PuzzleMode({ boardView = '2d', pieceSet }: { boardView?: ChessBoardView; pieceSet: string }) {
+
+export const PuzzleMode = memo(function PuzzleMode({ boardView = '2d', pieceSet }: { boardView?: ChessBoardView; pieceSet: string }) {
   const [currentPuzzleIndex, setCurrentPuzzleIndex] = useState(0);
   const [fen, setFen] = useState(PUZZLES[0].initialFen);
   const [moveFrom, setMoveFrom] = useState<string | null>(null);
-  const [optionSquares, setOptionSquares] = useState<Record<string, React.CSSProperties>>({});
+  const [optionSquares, setOptionSquares] = useState<Record<string, CSSProperties>>({});
   const [isSolved, setIsSolved] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [coachEnabled, setCoachEnabled] = useState(true);
@@ -45,7 +47,8 @@ export function PuzzleMode({ boardView = '2d', pieceSet }: { boardView?: ChessBo
 
   useEffect(() => () => clearResetTimer(), []);
 
-  function resetPuzzle() {
+  const resetPuzzle = useCallback(() => {
+    triggerHaptic();
     clearResetTimer();
     const newGame = new Chess(puzzle.initialFen);
     setFen(newGame.fen());
@@ -55,16 +58,16 @@ export function PuzzleMode({ boardView = '2d', pieceSet }: { boardView?: ChessBo
     setErrorMsg('');
     setHintLevel(0);
     setCoachFeedback(getPositionCoachMessage(newGame.fen()));
-  }
+  }, [puzzle]);
 
-  function getMoveOptions(square: string) {
+  const getMoveOptions = useCallback((square: string) => {
     const moves = game.moves({ square: square as never, verbose: true });
     if (moves.length === 0) {
       setOptionSquares({});
       return false;
     }
 
-    const nextSquares: Record<string, React.CSSProperties> = {};
+    const nextSquares: Record<string, CSSProperties> = {};
     moves.forEach((move) => {
       nextSquares[move.to] = {
         background: game.get(move.to as never)
@@ -76,9 +79,9 @@ export function PuzzleMode({ boardView = '2d', pieceSet }: { boardView?: ChessBo
     nextSquares[square] = { background: 'rgba(255, 215, 0, 0.4)' };
     setOptionSquares(nextSquares);
     return true;
-  }
+  }, [game]);
 
-  function makeMove(from: string, to: string) {
+  const makeMove = useCallback((from: string, to: string) => {
     if (isSolved) return false;
 
     const nextGame = new Chess(fen);
@@ -98,6 +101,7 @@ export function PuzzleMode({ boardView = '2d', pieceSet }: { boardView?: ChessBo
       if (moveResult.san === puzzle.targetMove) {
         setIsSolved(true);
         setErrorMsg('');
+        triggerHaptic();
       } else {
         setErrorMsg(`That was legal, but the puzzle answer is stronger. Try again.`);
         resetTimer.current = window.setTimeout(() => {
@@ -110,9 +114,9 @@ export function PuzzleMode({ boardView = '2d', pieceSet }: { boardView?: ChessBo
     } catch {
       return false;
     }
-  }
+  }, [fen, isSolved, puzzle, resetPuzzle]);
 
-  function onSquareClick(square: string) {
+  const onSquareClick = useCallback((square: string) => {
     if (!moveFrom) {
       if (getMoveOptions(square)) setMoveFrom(square);
       return;
@@ -121,24 +125,25 @@ export function PuzzleMode({ boardView = '2d', pieceSet }: { boardView?: ChessBo
     if (!makeMove(moveFrom, square)) {
       setMoveFrom(getMoveOptions(square) ? square : null);
     }
-  }
+  }, [moveFrom, getMoveOptions, makeMove]);
 
-  function onDrop({
+  const onDrop = useCallback(({
     sourceSquare,
     targetSquare,
   }: {
     sourceSquare: string;
     targetSquare: string | null;
-  }) {
+  }) => {
     if (!targetSquare) return false;
     return makeMove(sourceSquare, targetSquare);
-  }
+  }, [makeMove]);
 
-  function nextPuzzle() {
+  const nextPuzzle = useCallback(() => {
+    triggerHaptic();
     if (currentPuzzleIndex < PUZZLES.length - 1) {
       setCurrentPuzzleIndex((index) => index + 1);
     }
-  }
+  }, [currentPuzzleIndex]);
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-3 pb-40 pt-3 md:px-6 md:py-6 lg:min-h-screen lg:flex-row lg:items-center lg:gap-8 lg:pb-6">
@@ -214,4 +219,5 @@ export function PuzzleMode({ boardView = '2d', pieceSet }: { boardView?: ChessBo
       </div>
     </div>
   );
-}
+});
+

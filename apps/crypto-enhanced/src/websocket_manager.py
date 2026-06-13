@@ -12,6 +12,7 @@ import websockets
 from datetime import datetime
 from timestamp_utils import TimestampUtils, normalize as normalize_timestamp
 from errors_simple import WebSocketError, log_error
+from rate_limiter import KrakenRateLimiter
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +33,11 @@ class WebSocketManager:
     WS_URL = "wss://ws.kraken.com/v2"
     WS_AUTH_URL = "wss://ws-auth.kraken.com/v2"
 
-    def __init__(self, config, kraken_client=None):
+    def __init__(self, config, kraken_client=None,
+                 rate_limiter: Optional[KrakenRateLimiter] = None):
         self.config = config
         self.kraken = kraken_client  # Need this to get WebSocket token
+        self.rate_limiter: Optional[KrakenRateLimiter] = rate_limiter
         self.public_ws: Optional[websockets.WebSocketClientProtocol] = None
         self.private_ws: Optional[websockets.WebSocketClientProtocol] = None
         self.running = False
@@ -776,6 +779,15 @@ class WebSocketManager:
             "req_id": req_id
         }
 
+        # Rate-limit check: +1 point per order placement
+        if self.rate_limiter is not None:
+            allowed = await self.rate_limiter.acquire_order()
+            if not allowed:
+                raise Exception(
+                    f"Rate limiter throttled order placement "
+                    f"({self.rate_limiter.status()['utilization_pct']:.0f}% utilisation)"
+                )
+
         try:
             await self.private_ws.send(json.dumps(message))
             logger.info(f"Sent add_order request: {symbol} {side} {order_qty} @ {limit_price}")
@@ -823,6 +835,17 @@ class WebSocketManager:
         """Cancel single order via WebSocket V2"""
         if not self.private_ws or not self.ws_token:
             raise Exception("Private WebSocket not connected or no token available")
+
+        # Rate-limit check: +8 points per cancellation
+        if self.rate_limiter is not None:
+            allowed = await self.rate_limiter.acquire_cancel()
+            if not allowed:
+                logger.warning(
+                    "Rate limiter throttled cancel for %s (%.0f%% utilisation)",
+                    order_id, self.rate_limiter.status()["utilization_pct"],
+                )
+                # Cancellation is still sent even when throttled — dropping a cancel
+                # is more dangerous than incurring a rate-limit penalty.
 
         req_id = int(time.time() * 1000000)
 

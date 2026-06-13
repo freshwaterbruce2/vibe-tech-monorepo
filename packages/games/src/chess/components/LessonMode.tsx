@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, memo, type CSSProperties } from 'react';
 import { Chess } from 'chess.js';
 import { LESSONS } from '../lib/lessons';
 import { CheckCircle2, ChevronRight, RefreshCcw, Sparkles } from 'lucide-react';
-import { chooseAiMove, getDifficultyLabel, type Difficulty } from '../lib/chessAi';
+import { getDifficultyLabel, type Difficulty } from '../lib/chessAi';
 import { analyzeMove, getCoachHints, getPositionCoachMessage, type CoachFeedback } from '../lib/coach';
 import { CoachPanel } from './CoachPanel';
 import { ChessBoardSurface, type ChessBoardView } from './ChessBoardSurface';
+import { triggerHaptic } from '../lib/haptic';
 
-export function LessonMode({ boardView = '2d', pieceSet }: { boardView?: ChessBoardView; pieceSet: string }) {
+
+export const LessonMode = memo(function LessonMode({ boardView = '2d', pieceSet }: { boardView?: ChessBoardView; pieceSet: string }) {
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [game, setGame] = useState(new Chess(LESSONS[0].initialFen));
   const [fen, setFen] = useState(LESSONS[0].initialFen);
@@ -22,27 +24,32 @@ export function LessonMode({ boardView = '2d', pieceSet }: { boardView?: ChessBo
     getPositionCoachMessage(LESSONS[0].initialFen),
   );
   const [moveFrom, setMoveFrom] = useState<string | null>(null);
-  const [optionSquares, setOptionSquares] = useState<Record<string, React.CSSProperties>>({});
+  const [optionSquares, setOptionSquares] = useState<Record<string, CSSProperties>>({});
   const pendingTimers = useRef<number[]>([]);
+  const activeWorkerRef = useRef<Worker | null>(null);
 
   const lesson = LESSONS[currentLessonIndex];
   
   const coachHints = useMemo(() => (coachEnabled ? getCoachHints(fen) : []), [coachEnabled, fen]);
 
-  function clearPendingTimers() {
+  const clearPendingTimers = useCallback(() => {
     pendingTimers.current.forEach((timerId) => window.clearTimeout(timerId));
     pendingTimers.current = [];
-  }
+    if (activeWorkerRef.current) {
+      activeWorkerRef.current.terminate();
+      activeWorkerRef.current = null;
+    }
+  }, []);
 
-  function schedule(callback: () => void, delay: number) {
+  const schedule = useCallback((callback: () => void, delay: number) => {
     const timerId = window.setTimeout(() => {
       pendingTimers.current = pendingTimers.current.filter((id) => id !== timerId);
       callback();
     }, delay);
     pendingTimers.current.push(timerId);
-  }
+  }, []);
 
-  useEffect(() => () => clearPendingTimers(), []);
+  useEffect(() => () => clearPendingTimers(), [clearPendingTimers]);
 
   useEffect(() => {
     clearPendingTimers();
@@ -57,16 +64,16 @@ export function LessonMode({ boardView = '2d', pieceSet }: { boardView?: ChessBo
     setCoachFeedback(getPositionCoachMessage(newGame.fen()));
     setMoveFrom(null);
     setOptionSquares({});
-  }, [currentLessonIndex, lesson]);
+  }, [currentLessonIndex, lesson, clearPendingTimers]);
 
-  function getMoveOptions(square: string) {
+  const getMoveOptions = useCallback((square: string) => {
     const moves = game.moves({ square: square as any, verbose: true });
     if (moves.length === 0) {
       setOptionSquares({});
       return false;
     }
 
-    const newSquares: Record<string, React.CSSProperties> = {};
+    const newSquares: Record<string, CSSProperties> = {};
     moves.map((move: any) => {
       newSquares[move.to] = {
         background:
@@ -82,9 +89,72 @@ export function LessonMode({ boardView = '2d', pieceSet }: { boardView?: ChessBo
     };
     setOptionSquares(newSquares);
     return true;
-  }
+  }, [game]);
 
-  function makeMove(move: { from: string; to: string; promotion?: string }) {
+  const playAiTrainingReply = useCallback((replyFen: string) => {
+    const replyGame = new Chess(replyFen);
+
+    if (replyGame.isGameOver()) {
+      setIsSuccess(true);
+      return;
+    }
+
+    setIsAiThinking(true);
+
+    if (lesson.aiResponseMove) {
+      schedule(() => {
+        const beforeAiFen = replyGame.fen();
+        const responseMove = replyGame.move(lesson.aiResponseMove!);
+
+        if (responseMove) {
+          setAiLastMove(responseMove.san);
+          setGame(replyGame);
+          setFen(replyGame.fen());
+          setCoachFeedback(analyzeMove(beforeAiFen, responseMove.san));
+        }
+
+        setIsAiThinking(false);
+        setIsSuccess(true);
+      }, difficulty === 'hard' ? 450 : 300);
+    } else {
+      if (activeWorkerRef.current) {
+        activeWorkerRef.current.terminate();
+      }
+
+      const worker = new Worker(new URL('../lib/chessAi.worker.ts', import.meta.url), { type: 'module' });
+      activeWorkerRef.current = worker;
+
+      worker.onmessage = (e) => {
+        const { move, error } = e.data;
+        if (error) {
+          console.error('[Chess AI Worker] error:', error);
+          setIsAiThinking(false);
+          activeWorkerRef.current = null;
+          return;
+        }
+
+        schedule(() => {
+          const beforeAiFen = replyGame.fen();
+          const responseMove = move ? replyGame.move(move) : null;
+
+          if (responseMove) {
+            setAiLastMove(responseMove.san);
+            setGame(replyGame);
+            setFen(replyGame.fen());
+            setCoachFeedback(analyzeMove(beforeAiFen, responseMove.san));
+          }
+
+          setIsAiThinking(false);
+          setIsSuccess(true);
+          activeWorkerRef.current = null;
+        }, difficulty === 'hard' ? 450 : 300);
+      };
+
+      worker.postMessage({ fen: replyFen, difficulty });
+    }
+  }, [difficulty, lesson, schedule]);
+
+  const makeMove = useCallback((move: { from: string; to: string; promotion?: string }) => {
     if (isSuccess || isAiThinking) return false;
     
     try {
@@ -104,6 +174,7 @@ export function LessonMode({ boardView = '2d', pieceSet }: { boardView?: ChessBo
           setErrorMsg("");
           setHintLevel(0);
           setCoachFeedback(analyzeMove(beforeFen, moveResult.san));
+          triggerHaptic();
           playAiTrainingReply(nextGame.fen());
         } else {
           const targetLabel = targetMoves.join(" or ");
@@ -121,36 +192,9 @@ export function LessonMode({ boardView = '2d', pieceSet }: { boardView?: ChessBo
     } catch (error) {
       return false;
     }
-  }
+  }, [fen, isSuccess, isAiThinking, lesson, playAiTrainingReply, schedule]);
 
-  function playAiTrainingReply(replyFen: string) {
-    const replyGame = new Chess(replyFen);
-
-    if (replyGame.isGameOver()) {
-      setIsSuccess(true);
-      return;
-    }
-
-    setIsAiThinking(true);
-
-    schedule(() => {
-      const beforeAiFen = replyGame.fen();
-      const aiMove = lesson.aiResponseMove ?? chooseAiMove(replyGame.fen(), difficulty);
-      const responseMove = aiMove ? replyGame.move(aiMove) : null;
-
-      if (responseMove) {
-        setAiLastMove(responseMove.san);
-        setGame(replyGame);
-        setFen(replyGame.fen());
-        setCoachFeedback(analyzeMove(beforeAiFen, responseMove.san));
-      }
-
-      setIsAiThinking(false);
-      setIsSuccess(true);
-    }, difficulty === 'hard' ? 450 : 300);
-  }
-
-  function onSquareClick(square: string) {
+  const onSquareClick = useCallback((square: string) => {
     if (isSuccess) return;
 
     if (!moveFrom) {
@@ -172,15 +216,15 @@ export function LessonMode({ boardView = '2d', pieceSet }: { boardView?: ChessBo
       const hasOptions = getMoveOptions(square);
       setMoveFrom(hasOptions ? square : null);
     }
-  }
+  }, [isSuccess, moveFrom, getMoveOptions, makeMove]);
 
-  function onDrop({
+  const onDrop = useCallback(({
     sourceSquare,
     targetSquare,
   }: {
     sourceSquare: string;
     targetSquare: string | null;
-  }) {
+  }) => {
     if (!targetSquare) return false;
 
     setMoveFrom(null);
@@ -192,15 +236,17 @@ export function LessonMode({ boardView = '2d', pieceSet }: { boardView?: ChessBo
       promotion: 'q', // always promote to a queen for simplicity
     });
     return move;
-  }
+  }, [makeMove]);
 
-  function nextLesson() {
+  const nextLesson = useCallback(() => {
+    triggerHaptic();
     if (currentLessonIndex < LESSONS.length - 1) {
       setCurrentLessonIndex(currentLessonIndex + 1);
     }
-  }
+  }, [currentLessonIndex]);
 
-  function retryLesson() {
+  const retryLesson = useCallback(() => {
+    triggerHaptic();
     clearPendingTimers();
     const newGame = new Chess(lesson.initialFen);
     setGame(newGame);
@@ -213,11 +259,12 @@ export function LessonMode({ boardView = '2d', pieceSet }: { boardView?: ChessBo
     setCoachFeedback(getPositionCoachMessage(newGame.fen()));
     setMoveFrom(null);
     setOptionSquares({});
-  }
+  }, [lesson, clearPendingTimers]);
 
-  function cycleHint() {
+  const cycleHint = useCallback(() => {
+    triggerHaptic();
     setHintLevel((current) => (current >= 3 ? 0 : current + 1));
-  }
+  }, []);
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-3 pb-40 pt-3 animate-in fade-in slide-in-from-bottom-4 duration-500 md:px-6 md:py-6 lg:min-h-screen lg:flex-row lg:items-center lg:gap-8 lg:pb-6 xl:gap-12">
@@ -373,4 +420,5 @@ export function LessonMode({ boardView = '2d', pieceSet }: { boardView?: ChessBo
       </div>
     </div>
   );
-}
+});
+

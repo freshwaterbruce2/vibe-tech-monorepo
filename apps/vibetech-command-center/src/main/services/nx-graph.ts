@@ -36,7 +36,7 @@ export class NxGraphService {
       const out = join(tmp, 'graph.json');
       const cmd = this.opts.nxCommand ?? 'pnpm.cmd';
       const args = this.opts.nxArgs ?? ['exec', 'nx', 'graph', `--file=${out}`];
-      const timeoutMs = this.opts.timeoutMs ?? 30_000;
+      const timeoutMs = this.opts.timeoutMs ?? 90_000;
 
       const proc = spawn(cmd, args, {
         cwd: this.opts.monorepoRoot,

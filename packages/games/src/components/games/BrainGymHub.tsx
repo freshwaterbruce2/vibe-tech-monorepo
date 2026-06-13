@@ -10,7 +10,7 @@ import {
   Trophy,
   Zap,
 } from 'lucide-react';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, type CSSProperties } from 'react';
 import { getGameDisplayName } from '../../services/gameProgression';
 import { DAILY_GOAL_BONUS, DAILY_GOAL_TARGET, ZONE_CONFIG, ZONE_ORDER, XP_PER_LEVEL } from './brainGymConstants';
 import { formatSeconds, getGameStats, GAME_SUBJECT_MAP, renderStarString } from './brainGymHelpers';
@@ -142,22 +142,22 @@ export default function BrainGymHub(props: BrainGymHubProps) {
         <p className="gh-subtitle">Synapse Station</p>
 
         <div className="gh-stats-grid">
-          <div className="gh-stat-box" style={{ '--stat-accent': 'var(--token-color)' } as React.CSSProperties}>
+          <div className="gh-stat-box" style={{ '--stat-accent': 'var(--token-color)' } as CSSProperties}>
             <Star size={18} color="var(--token-color)" />
             <span className="gh-stat-value">{userTokens}</span>
             <span className="gh-stat-label">Synapses</span>
           </div>
-          <div className="gh-stat-box" style={{ '--stat-accent': '#22d3ee' } as React.CSSProperties}>
+          <div className="gh-stat-box" style={{ '--stat-accent': '#22d3ee' } as CSSProperties}>
             <Trophy size={18} color="#22d3ee" />
             <span className="gh-stat-value">{stats.level}</span>
             <span className="gh-stat-label">Cognitive Fitness</span>
           </div>
-          <div className="gh-stat-box" style={{ '--stat-accent': streakActive ? 'var(--success-accent)' : 'var(--text-tertiary)' } as React.CSSProperties}>
+          <div className="gh-stat-box" style={{ '--stat-accent': streakActive ? 'var(--success-accent)' : 'var(--text-tertiary)' } as CSSProperties}>
             <Flame size={18} color={streakActive ? 'var(--success-accent)' : 'var(--text-tertiary)'} />
             <span className="gh-stat-value">{stats.streak}</span>
             <span className="gh-stat-label">Neural Link</span>
           </div>
-          <div className="gh-stat-box" style={{ '--stat-accent': '#38BDF8' } as React.CSSProperties}>
+          <div className="gh-stat-box" style={{ '--stat-accent': '#38BDF8' } as CSSProperties}>
             <Gift size={18} color="#38BDF8" />
             <span className="gh-stat-value">{stats.chestProgress}/5</span>
             <span className="gh-stat-label">Data Cache</span>
@@ -170,12 +170,12 @@ export default function BrainGymHub(props: BrainGymHubProps) {
             <span>Fitness {stats.level + 1}</span>
           </div>
           <div className="gh-xp-track">
-            <div className="gh-xp-fill" style={{ '--xp-pct': `${xpProgress}%` } as React.CSSProperties} />
+            <div className="gh-xp-fill" style={{ '--xp-pct': `${xpProgress}%` } as CSSProperties} />
           </div>
         </div>
 
         {featuredRecommendation && (
-          <section className="gh-zone-section" style={{ '--zone-color': ZONE_CONFIG[featuredRecommendation.game.zone].color } as React.CSSProperties}>
+          <section className="gh-zone-section" style={{ '--zone-color': ZONE_CONFIG[featuredRecommendation.game.zone].color } as CSSProperties}>
             <div className="gh-zone-header">
               <span className="gh-zone-emoji">🎯</span>
               <div className="gh-zone-info">
@@ -186,8 +186,8 @@ export default function BrainGymHub(props: BrainGymHubProps) {
             </div>
             <div className="gh-featured-grid">
               <button onClick={() => launchGame(featuredRecommendation.game.id)} className="gh-game-card gh-featured-card">
-                <div className="gh-card-stripe" style={{ '--stripe-color': ZONE_CONFIG[featuredRecommendation.game.zone].color } as React.CSSProperties} />
-                <div className="gh-game-icon-box" style={{ '--icon-bg': `${featuredRecommendation.game.color}15` } as React.CSSProperties}>
+                <div className="gh-card-stripe" style={{ '--stripe-color': ZONE_CONFIG[featuredRecommendation.game.zone].color } as CSSProperties} />
+                <div className="gh-game-icon-box" style={{ '--icon-bg': `${featuredRecommendation.game.color}15` } as CSSProperties}>
                   <FeaturedGameIcon size={28} color={featuredRecommendation.game.color} />
                 </div>
                 <h3 className="gh-game-name">{featuredRecommendation.game.name}</h3>
@@ -208,22 +208,22 @@ export default function BrainGymHub(props: BrainGymHubProps) {
                     <span className="gh-target-value">{featuredRecommendation.target.valueText}</span>
                   </div>
                   <p className="gh-target-detail">{featuredRecommendation.target.detail}</p>
-                  <div className="gh-target-track"><div className="gh-target-fill" style={{ '--target-pct': `${featuredRecommendation.target.progressPct}%` } as React.CSSProperties} /></div>
+                  <div className="gh-target-track"><div className="gh-target-fill" style={{ '--target-pct': `${featuredRecommendation.target.progressPct}%` } as CSSProperties} /></div>
                 </div>
               </button>
               <div className="gh-featured-panel">
-                <div className="gh-stat-box" style={{ '--stat-accent': '#38BDF8' } as React.CSSProperties}>
+                <div className="gh-stat-box" style={{ '--stat-accent': '#38BDF8' } as CSSProperties}>
                   <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-slate-400"><Target size={12} color="#38BDF8" />Daily Goal</div>
                   <span className="gh-stat-value">{dailyGoalProgress}/{DAILY_GOAL_TARGET}</span>
                   <span className="gh-stat-label">{stats.dailyGoalCompletedOn === todayKey ? `Completed +${DAILY_GOAL_BONUS}` : `${DAILY_GOAL_TARGET - globalThis.Math.min(dailyGoalProgress, DAILY_GOAL_TARGET)} runs left`}</span>
-                  <div className="gh-target-track mt-2 w-full"><div className="gh-target-fill" style={{ '--target-pct': `${dailyGoalPct}%` } as React.CSSProperties} /></div>
+                  <div className="gh-target-track mt-2 w-full"><div className="gh-target-fill" style={{ '--target-pct': `${dailyGoalPct}%` } as CSSProperties} /></div>
                 </div>
-                <div className="gh-stat-box" style={{ '--stat-accent': '#22d3ee' } as React.CSSProperties}>
+                <div className="gh-stat-box" style={{ '--stat-accent': '#22d3ee' } as CSSProperties}>
                   <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-slate-400"><Trophy size={12} color="#22d3ee" />Total Runs</div>
                   <span className="gh-stat-value">{totalTrackedRuns}</span>
                   <span className="gh-stat-label">completed Brain Gym sessions</span>
                 </div>
-                <div className="gh-stat-box" style={{ '--stat-accent': '#67e8f9' } as React.CSSProperties}>
+                <div className="gh-stat-box" style={{ '--stat-accent': '#67e8f9' } as CSSProperties}>
                   <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] text-slate-400"><Clock3 size={12} color="#67e8f9" />Next Unlock</div>
                   <span className="gh-stat-value text-base">{nextUnlockGame ? `${nextUnlockGame.minLevel}` : 'MAX'}</span>
                   <span className="gh-stat-label">{nextUnlockGame ? nextUnlockGame.name : 'All drills live'}</span>
@@ -244,19 +244,19 @@ export default function BrainGymHub(props: BrainGymHubProps) {
             return (
               <button key={z} onClick={() => setZoneFilter(z)}
                 className={`gh-filter-btn ${zoneFilter === z ? 'gh-filter-btn--active' : 'gh-filter-btn--inactive'}`}
-                style={zoneFilter === z ? { '--filter-accent': cfg.color } as React.CSSProperties : undefined}>
+                style={zoneFilter === z ? { '--filter-accent': cfg.color } as CSSProperties : undefined}>
                 {cfg.emoji} {cfg.label}
               </button>
             );
           })}
         </div>
-
+ 
         <div className="gh-zones">
           {visibleZones.map((zone) => {
             const cfg = ZONE_CONFIG[zone];
             const games = gamesByZone[zone];
             return (
-              <section key={zone} className={`gh-zone-section gh-zone--${zone}`} style={{ '--zone-color': cfg.color } as React.CSSProperties}>
+              <section key={zone} className={`gh-zone-section gh-zone--${zone}`} style={{ '--zone-color': cfg.color } as CSSProperties}>
                 <div className="gh-zone-header">
                   <span className="gh-zone-emoji">{cfg.emoji}</span>
                   <div className="gh-zone-info"><h3 className="gh-zone-title">{cfg.label}</h3><p className="gh-zone-desc">{cfg.desc}</p></div>
@@ -272,8 +272,8 @@ export default function BrainGymHub(props: BrainGymHubProps) {
                       <button key={game.id} disabled={locked} onClick={() => !locked && launchGame(game.id)}
                         aria-label={locked ? `${game.name} — unlock at Level ${game.minLevel}` : `Play ${game.name}`}
                         className={`gh-game-card ${locked ? 'gh-game-card--locked' : ''}`}>
-                        <div className="gh-card-stripe" style={{ '--stripe-color': cfg.color } as React.CSSProperties} />
-                        <div className="gh-game-icon-box" style={{ '--icon-bg': `${game.color}15` } as React.CSSProperties}>
+                        <div className="gh-card-stripe" style={{ '--stripe-color': cfg.color } as CSSProperties} />
+                        <div className="gh-game-icon-box" style={{ '--icon-bg': `${game.color}15` } as CSSProperties}>
                           <Icon size={28} color={game.color} />
                         </div>
                         <h3 className="gh-game-name">{locked ? '🔒 ' : ''}{game.name}</h3>
@@ -308,7 +308,7 @@ export default function BrainGymHub(props: BrainGymHubProps) {
                                 <span className="gh-target-value">{target.valueText}</span>
                               </div>
                               <p className="gh-target-detail">{target.detail}</p>
-                              <div className="gh-target-track"><div className="gh-target-fill" style={{ '--target-pct': `${target.progressPct}%` } as React.CSSProperties} /></div>
+                              <div className="gh-target-track"><div className="gh-target-fill" style={{ '--target-pct': `${target.progressPct}%` } as CSSProperties} /></div>
                             </div>
                           )}
                           <div className="gh-token-reward"><Zap size={14} className="gh-token-icon" /><span className="gh-token-text">+{game.tokens} Synapses</span></div>
