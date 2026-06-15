@@ -351,11 +351,6 @@
         "priority": "medium",
         "description": "Business booking platform Node backend"
       },
-      "vibe-justice-frontend": {
-        "status": "maintenance",
-        "priority": "medium",
-        "description": "Vibe Justice Tauri frontend"
-      },
       "symptom-tracker-api": {
         "status": "development",
         "priority": "low",
@@ -380,11 +375,6 @@
         "status": "development",
         "priority": "medium",
         "description": "Discharge SaaS application with Vibe-Tech branding"
-      },
-      "monetized-mcp-service": {
-        "status": "development",
-        "priority": "high",
-        "description": "Monetized MCP Server exposing paid AI capabilities via x402 USDC micropayments"
       }
     },
     "packages": {
