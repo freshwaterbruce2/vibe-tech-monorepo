@@ -3,7 +3,7 @@ import { createServer, type Server } from 'http';
 import axios from 'axios';
 import express, { type Express } from 'express';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { openRouterRouter } from './openrouter';
+import { calculateCost, openRouterRouter, refreshLivePricing } from './openrouter';
 import { trackUsage } from '../utils/usage';
 
 vi.mock('axios', () => ({
@@ -18,6 +18,7 @@ vi.mock('../utils/logger', () => ({
   logger: {
     error: vi.fn(),
     info: vi.fn(),
+    warn: vi.fn(),
   },
 }));
 
@@ -133,5 +134,65 @@ describe('openRouterRouter streaming chat', () => {
         tokens: 42,
       }),
     );
+  });
+});
+
+describe('calculateCost pricing', () => {
+  beforeEach(() => {
+    process.env.OPENROUTER_API_KEY = 'test-key';
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    delete process.env.OPENROUTER_API_KEY;
+  });
+
+  it('returns 0 when usage is missing', () => {
+    expect(calculateCost('anthropic/claude-opus-4.5')).toBe(0);
+  });
+
+  it('prefers live pricing from the OpenRouter /models endpoint', async () => {
+    // OpenRouter reports pricing as USD-per-token strings.
+    mockedAxios.get.mockResolvedValueOnce({
+      data: {
+        data: [
+          {
+            id: 'vendor/live-model',
+            pricing: { prompt: '0.000002', completion: '0.000008' },
+          },
+        ],
+      },
+    });
+
+    await refreshLivePricing();
+
+    // 1M prompt tokens * $0.000002 + 1M completion tokens * $0.000008 = $10.
+    const cost = calculateCost('vendor/live-model', {
+      prompt_tokens: 1_000_000,
+      completion_tokens: 1_000_000,
+    });
+
+    expect(cost).toBeCloseTo(10, 6);
+  });
+
+  it('falls back to the static table for models missing from live pricing', async () => {
+    mockedAxios.get.mockResolvedValueOnce({
+      data: { data: [{ id: 'vendor/other', pricing: { prompt: '0', completion: '0' } }] },
+    });
+
+    await refreshLivePricing();
+
+    // claude-opus-4.5 fallback: input 0.015, output 0.075 per 1M tokens.
+    const cost = calculateCost('anthropic/claude-opus-4.5', {
+      prompt_tokens: 1_000_000,
+      completion_tokens: 1_000_000,
+    });
+
+    expect(cost).toBeCloseTo(0.09, 6);
+  });
+
+  it('throws when the API key is not configured', async () => {
+    delete process.env.OPENROUTER_API_KEY;
+    await expect(refreshLivePricing()).rejects.toThrow('OPENROUTER_API_KEY not configured');
   });
 });
