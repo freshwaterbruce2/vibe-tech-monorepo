@@ -68,7 +68,7 @@ echo "On branch: $BRANCH_NAME"
 ## Step 4: Create D:\ Snapshot
 
 ```bash
-cd C:/dev/scripts/version-control && powershell -ExecutionPolicy Bypass -File Save-Snapshot.ps1 -Description "Before overnight loops $(date +%Y-%m-%d)" -Tag "pre-loop-$(date +%Y%m%d)"
+cd V:/monorepo/scripts/version-control && powershell -ExecutionPolicy Bypass -File Save-Snapshot.ps1 -Description "Before overnight loops $(date +%Y-%m-%d)" -Tag "pre-loop-$(date +%Y%m%d)"
 ```
 
 If snapshot fails, WARN but continue (don't block on this).
@@ -94,7 +94,7 @@ If < 5GB free on either drive, WARN but continue.
 ## Step 6: Kill Stale Processes
 
 ```bash
-powershell -ExecutionPolicy Bypass -File C:/dev/scripts/cleanup-processes.ps1
+powershell -ExecutionPolicy Bypass -File V:/monorepo/scripts/cleanup-processes.ps1
 ```
 
 ## Step 7: Create Session Directory and State Files
@@ -149,7 +149,7 @@ echo "State files created."
 ## Step 8: Run Baseline Health Check
 
 ```bash
-powershell -ExecutionPolicy Bypass -File C:/dev/scripts/workspace-health.ps1 2>&1 | tail -20
+powershell -ExecutionPolicy Bypass -File V:/monorepo/scripts/workspace-health.ps1 2>&1 | tail -20
 ```
 
 ## Step 9: Print Summary
@@ -177,7 +177,7 @@ Commit budgets: quality=20, cleanup=10, review=0 (read-only)
 Auto-merge to main every 10 commits.
 
 To rollback everything:
-  cd C:\dev\scripts\version-control
+  cd V:\monorepo\scripts\version-control
   .\Restore-Snapshot.ps1 -Tag "pre-loop-YYYYMMDD"
 
 ================================================================

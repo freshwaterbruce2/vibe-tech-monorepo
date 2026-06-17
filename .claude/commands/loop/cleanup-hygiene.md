@@ -51,8 +51,8 @@ Remove stale debug output files from the repository root:
 
 ```bash
 # Find candidates (DO NOT delete yet)
-ls -la C:/dev/*_output.txt C:/dev/*_build.txt C:/dev/*_results.txt C:/dev/*_test.txt 2>/dev/null
-ls -la C:/dev/lint-report.json C:/dev/lint_*.txt C:/dev/graph.json 2>/dev/null
+ls -la V:/monorepo/*_output.txt V:/monorepo/*_build.txt V:/monorepo/*_results.txt V:/monorepo/*_test.txt 2>/dev/null
+ls -la V:/monorepo/lint-report.json V:/monorepo/lint_*.txt V:/monorepo/graph.json 2>/dev/null
 ```
 
 For each file found:
@@ -106,14 +106,14 @@ Check for stale/orphaned documentation:
 
 ```bash
 # List docs that might be stale
-ls C:/dev/docs/archive/ C:/dev/docs/deprecated/ 2>/dev/null
+ls V:/monorepo/docs/archive/ V:/monorepo/docs/deprecated/ 2>/dev/null
 ```
 
 For ANY documentation file before deleting, verify it's not linked from other docs:
 
 ```bash
 # For each candidate doc, check references
-grep -r "FILENAME" C:/dev/docs/ C:/dev/CLAUDE.md C:/dev/AI.md C:/dev/README.md 2>/dev/null | head -5
+grep -r "FILENAME" V:/monorepo/docs/ V:/monorepo/CLAUDE.md V:/monorepo/AI.md V:/monorepo/README.md 2>/dev/null | head -5
 ```
 
 Only remove docs that have ZERO references from other files.
@@ -121,7 +121,7 @@ Only remove docs that have ZERO references from other files.
 If `scripts/docs-cleanup.ps1` exists, run it in dry-run first:
 
 ```bash
-powershell -ExecutionPolicy Bypass -File C:/dev/scripts/docs-cleanup.ps1 -DryRun 2>&1 | tail -20
+powershell -ExecutionPolicy Bypass -File V:/monorepo/scripts/docs-cleanup.ps1 -DryRun 2>&1 | tail -20
 ```
 
 Review output. If safe, run without dry-run. Stage and commit.
@@ -134,7 +134,7 @@ Commit: `chore: remove stale documentation`
 
 ```bash
 # Find reports older than 7 days
-find C:/dev/tmp/ -type f -mtime +7 2>/dev/null | head -20
+find V:/monorepo/tmp/ -type f -mtime +7 2>/dev/null | head -20
 ```
 
 For each file:
@@ -152,7 +152,7 @@ Commit: `chore: clean stale tmp/ reports older than 7 days`
 Read the current .gitignore:
 
 ```bash
-cat C:/dev/.gitignore
+cat V:/monorepo/.gitignore
 ```
 
 Check if these patterns are already present. Add any that are missing:
@@ -186,7 +186,7 @@ git worktree prune -v 2>&1
 Also clean up any leftover lock files:
 
 ```bash
-find C:/dev/.git/worktrees/ -name "*.lock" -mtime +1 2>/dev/null
+find V:/monorepo/.git/worktrees/ -name "*.lock" -mtime +1 2>/dev/null
 ```
 
 Commit only if `.git/worktrees/` changed (unlikely to need commit for this).

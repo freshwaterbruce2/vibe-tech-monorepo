@@ -66,9 +66,9 @@ try {
 
     # Infer project from cwd
     $project = $null
-    if ($hookData.cwd -match 'C:\\dev\\apps\\([^\\]+)') { $project = $matches[1] }
-    elseif ($hookData.cwd -match 'C:\\dev\\packages\\([^\\]+)') { $project = $matches[1] }
-    elseif ($hookData.cwd -match 'C:\\dev\\backend\\([^\\]+)') { $project = $matches[1] }
+    if ($hookData.cwd -match 'V:\\monorepo\\apps\\([^\\]+)') { $project = $matches[1] }
+    elseif ($hookData.cwd -match 'V:\\monorepo\\packages\\([^\\]+)') { $project = $matches[1] }
+    elseif ($hookData.cwd -match 'V:\\monorepo\\backend\\([^\\]+)') { $project = $matches[1] }
 
     # Build MCP payload
     $mcpArgs = @{
@@ -133,7 +133,7 @@ try {
                 $runId = $ps.runId
                 if ($runId) {
                     $CLI = 'node'
-                    $CLIPath = 'C:\dev\packages\agent-lats\dist\cli.js'
+                    $CLIPath = 'V:\monorepo\packages\agent-lats\dist\cli.js'
                     $successStr = if ($success) { 'true' } else { 'false' }
                     $durationArg = if ($executionTimeMs) { $executionTimeMs } else { 0 }
                     $stageArgs = @($CLIPath, 'pipeline', 'stage',

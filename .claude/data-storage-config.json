@@ -6,7 +6,7 @@
 
   "basePaths": {
     "dataRoot": "D:\\",
-    "projectRoot": "C:\\dev",
+    "projectRoot": "V:\\monorepo",
     "description": "ALL data, logs, databases, and learning systems MUST be stored on D:\\ drive"
   },
 
@@ -154,12 +154,12 @@
 
   "forbiddenPaths": {
     "never_use": [
-      "C:\\dev\\logs",
-      "C:\\dev\\data",
-      "C:\\dev\\databases",
-      "C:\\dev\\apps\\*/logs",
-      "C:\\dev\\apps\\*/data",
-      "C:\\dev\\apps\\*/db",
+      "V:\\monorepo\\logs",
+      "V:\\monorepo\\data",
+      "V:\\monorepo\\databases",
+      "V:\\monorepo\\apps\\*/logs",
+      "V:\\monorepo\\apps\\*/data",
+      "V:\\monorepo\\apps\\*/db",
       "./logs",
       "./data",
       "./database"
@@ -205,7 +205,7 @@
       "ALL databases → D:\\databases\\[project]\\",
       "ALL data files → D:\\data\\[project]\\",
       "ALL ML models → D:\\learning-system\\[project]\\",
-      "NEVER store data in C:\\dev\\"
+      "NEVER store data in V:\\monorepo\\"
     ]
   }
 }

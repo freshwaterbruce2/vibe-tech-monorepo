@@ -39,13 +39,13 @@ Primary interface for reading/writing files and running commands on Bruce's Wind
 **Common patterns:**
 ```
 # Run quality checks
-dc_run_powershell: "cd C:\dev; pnpm run quality --filter @vibetech/nova-agent"
+dc_run_powershell: "cd V:\monorepo; pnpm run quality --filter @vibetech/nova-agent"
 
 # Search for a function across the monorepo
-dc_search_content: { directory: "C:\\dev\\apps", pattern: "useAuthContext", filePattern: "*.tsx" }
+dc_search_content: { directory: "V:\\monorepo\\apps", pattern: "useAuthContext", filePattern: "*.tsx" }
 
 # Read a specific file
-dc_read_file: { path: "C:\\dev\\apps\\nova-agent\\src\\index.ts" }
+dc_read_file: { path: "V:\\monorepo\\apps\\nova-agent\\src\\index.ts" }
 ```
 
 ### Windows-MCP
@@ -74,7 +74,7 @@ General-purpose database access for app databases on D:\.
 
 **Rules:**
 - All database files live on `D:\databases\`
-- Never store .db files in C:\dev
+- Never store .db files in V:\monorepo
 - Use `read_query` for SELECT, `write_query` for INSERT/UPDATE/DELETE/CREATE
 - `append_insight` saves analysis notes alongside data
 

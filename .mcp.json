@@ -8,21 +8,21 @@
         "npx.cmd",
         "-y",
         "nx-mcp@0.25.0",
-        "C:/dev",
+        "V:/monorepo",
         "--transport",
         "stdio",
         "--disableTelemetry",
         "--no-minimal"
       ],
       "env": {
-        "NX_WORKSPACE_ROOT": "C:/dev",
-        "NODE_OPTIONS": "--require C:/dev/scripts/nx-mcp-native-compat.cjs"
+        "NX_WORKSPACE_ROOT": "V:/monorepo",
+        "NODE_OPTIONS": "--require V:/monorepo/scripts/nx-mcp-native-compat.cjs"
       }
     },
     "desktop-commander": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
-      "args": ["C:/dev/apps/desktop-commander-v3/dist/mcp.js"],
+      "args": ["V:/monorepo/apps/desktop-commander-v3/dist/mcp.js"],
       "env": {
         "NODE_ENV": "production"
       }
@@ -35,7 +35,7 @@
         "npx.cmd",
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "C:/dev",
+        "V:/monorepo",
         "D:/databases",
         "D:/logs",
         "D:/learning-system",
@@ -50,12 +50,12 @@
     "skills": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
-      "args": ["C:/dev/apps/mcp-skills-server/dist/index.js"]
+      "args": ["V:/monorepo/apps/mcp-skills-server/dist/index.js"]
     },
     "memory": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
-      "args": ["C:/dev/apps/memory-mcp/dist/index.js"],
+      "args": ["V:/monorepo/apps/memory-mcp/dist/index.js"],
       "alwaysLoad": true,
       "env": {
         "MEMORY_DB_PATH": "D:/databases/memory.db",
@@ -86,7 +86,7 @@
     "rag": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
-      "args": ["C:/dev/apps/mcp-rag-server/dist/index.js"],
+      "args": ["V:/monorepo/apps/mcp-rag-server/dist/index.js"],
       "env": {
         "NODE_ENV": "production"
       }
@@ -94,15 +94,15 @@
     "workspace": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
-      "args": ["C:/dev/apps/workspace-mcp-server/dist/index.js"],
+      "args": ["V:/monorepo/apps/workspace-mcp-server/dist/index.js"],
       "env": {
-        "WORKSPACE_ROOT": "C:/dev"
+        "WORKSPACE_ROOT": "V:/monorepo"
       }
     },
     "command-center": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
-      "args": ["C:/dev/apps/vibetech-command-center/dist/mcp/server.js"],
+      "args": ["V:/monorepo/apps/vibetech-command-center/dist/mcp/server.js"],
       "env": {
         "NODE_ENV": "production"
       }

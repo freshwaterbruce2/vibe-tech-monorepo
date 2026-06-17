@@ -1,32 +1,48 @@
 {
   "project_agents": {
     "crypto-enhanced": "crypto-expert",
+
     "nova-agent": "desktop-expert",
     "vibe-code-studio": "desktop-expert",
     "vibe-justice": "desktop-expert",
     "desktop-commander-v3": "desktop-expert",
-    "advanced": "desktop-expert",
-    "vibe-agent": "desktop-expert",
+    "vibetech-command-center": "desktop-expert",
     "prompt-engineer": "desktop-expert",
+
     "vibe-tutor": "mobile-expert",
-    "vibe-subscription-guard": "mobile-expert",
+    "vibe-tutor-mobile": "mobile-expert",
     "nova-mobile-app": "mobile-expert",
-    "iconforge": "webapp-expert",
-    "business-booking-platform": "webapp-expert",
-    "digital-content-builder": "webapp-expert",
-    "shipping-pwa": "webapp-expert",
-    "vibe-tech-lovable": "webapp-expert",
+
     "vibe-shop": "webapp-expert",
-    "invoice-automation-saas": "webapp-expert",
-    "symptom-tracker": "webapp-expert",
-    "vibetech-command-center": "webapp-expert",
-    "n8n-automation": "webapp-expert",
-    "shared-web": "webapp-expert",
-    "augment-code": "webapp-expert",
-    "openrouter-proxy": "backend-expert",
-    "ipc-bridge": "backend-expert",
-    "search-service": "backend-expert",
-    "memory-bank": "backend-expert"
+    "vibe-tech-lovable": "webapp-expert",
+    "vibe-tech-marketing": "webapp-expert",
+    "vibe-blox": "webapp-expert",
+    "vibe-chess": "webapp-expert",
+    "vibe-booking": "webapp-expert",
+    "vibe-booking-v2": "webapp-expert",
+    "vibe-portal": "webapp-expert",
+    "vibe-reflection": "webapp-expert",
+    "vibe-reminder": "webapp-expert",
+    "vibe-reminder-v2": "webapp-expert",
+    "vibe-dental": "webapp-expert",
+    "vibe-discharge": "webapp-expert",
+    "vibe-invoice": "webapp-expert",
+    "vibe-shipping": "webapp-expert",
+    "prior-auth-pro": "webapp-expert",
+    "proposal-review-saas": "webapp-expert",
+    "serenity-flow": "webapp-expert",
+    "cme-track": "webapp-expert",
+
+    "vibe-booking-backend": "backend-expert",
+    "symptom-tracker-api": "backend-expert",
+    "mcp-gateway": "backend-expert",
+    "mcp-rag-server": "backend-expert",
+    "mcp-skills-server": "backend-expert",
+    "memory-mcp": "backend-expert",
+    "workspace-mcp-server": "backend-expert",
+    "agent-engine": "backend-expert",
+
+    "learning-pipeline-mcp": "learning-expert"
   },
   "agent_definitions": {
     "crypto-expert": {
@@ -206,29 +222,19 @@
       "primary_directive": "Component reusability and React 19 patterns",
       "description": "Specialized in React component development with shadcn/ui and modern patterns"
     },
-    "state-management-specialist": {
-      "display_name": "State Management Specialist",
-      "file": "sub-agents/state-management-specialist.md",
-      "model": "claude-sonnet-4-6",
-      "context_budget": 4500,
-      "parent_agent": "webapp-expert",
-      "expertise": ["React Query", "Zustand", "Context API", "state patterns"],
-      "primary_directive": "Optimal state management architecture",
-      "description": "Expert in modern React state management patterns and data fetching"
-    },
-    "routing-navigation-specialist": {
-      "display_name": "Routing & Navigation Specialist",
-      "file": "sub-agents/routing-navigation-specialist.md",
+    "web-state-specialist": {
+      "display_name": "Web State Specialist",
+      "file": "sub-agents/web-state-specialist.md",
       "model": "claude-haiku-4-5-20251001",
       "context_budget": 3500,
       "parent_agent": "webapp-expert",
-      "expertise": ["React Router v7", "navigation patterns", "route guards"],
-      "primary_directive": "Type-safe routing and navigation",
-      "description": "Specialized in React Router v7 and client-side navigation"
+      "expertise": ["TanStack Query", "Zustand", "Jotai", "state patterns"],
+      "primary_directive": "Optimal state management architecture",
+      "description": "Expert in modern React state management patterns and data fetching"
     },
-    "frontend-testing-specialist": {
-      "display_name": "Frontend Testing Specialist",
-      "file": "sub-agents/frontend-testing-specialist.md",
+    "web-testing-specialist": {
+      "display_name": "Web Testing Specialist",
+      "file": "sub-agents/web-testing-specialist.md",
       "model": "claude-haiku-4-5-20251001",
       "context_budget": 3500,
       "parent_agent": "webapp-expert",
@@ -236,9 +242,9 @@
       "primary_directive": "Comprehensive test coverage with modern tools",
       "description": "Expert in frontend testing strategies and test automation"
     },
-    "capacitor-integration-specialist": {
-      "display_name": "Capacitor Integration Specialist",
-      "file": "sub-agents/capacitor-integration-specialist.md",
+    "capacitor-build-specialist": {
+      "display_name": "Capacitor Build Specialist",
+      "file": "sub-agents/capacitor-build-specialist.md",
       "model": "claude-sonnet-4-6",
       "context_budget": 4500,
       "parent_agent": "mobile-expert",
@@ -256,9 +262,9 @@
       "primary_directive": "Mobile-first UI/UX patterns",
       "description": "Specialized in mobile-optimized UI components and touch interactions"
     },
-    "pwa-optimization-specialist": {
-      "display_name": "PWA Optimization Specialist",
-      "file": "sub-agents/pwa-optimization-specialist.md",
+    "pwa-specialist": {
+      "display_name": "PWA Specialist",
+      "file": "sub-agents/pwa-specialist.md",
       "model": "claude-haiku-4-5-20251001",
       "context_budget": 3500,
       "parent_agent": "mobile-expert",
@@ -378,19 +384,19 @@
     }
   },
   "model_definitions": {
-    "claude-opus-4-7": {
-      "display_name": "Claude Opus 4.7",
+    "claude-opus-4-8": {
+      "display_name": "Claude Opus 4.8",
       "provider": "Anthropic",
       "use_cases": ["orchestration", "planning", "architecture", "complex reasoning", "multi-step tasks"],
       "context_window": 200000,
-      "description": "Opus 4.7 - best model for orchestration, planning, and complex monorepo work. Default for lead agent."
+      "description": "Opus 4.8 - best model for orchestration, planning, and complex monorepo work. Default for lead agent."
     },
-    "claude-opus-4-6": {
-      "display_name": "Claude Opus 4.6",
+    "claude-opus-4-7": {
+      "display_name": "Claude Opus 4.7",
       "provider": "Anthropic",
       "use_cases": ["planning", "architecture", "complex reasoning", "code generation"],
       "context_window": 200000,
-      "description": "Opus 4.6 - prior generation, kept as fallback."
+      "description": "Opus 4.7 - prior generation, kept as fallback."
     },
     "claude-sonnet-4-6": {
       "display_name": "Claude Sonnet 4.6",

@@ -71,16 +71,16 @@ try {
 
     # Infer project from cwd in JSON or workspace
     if (-not $project -and $hookData.cwd) {
-        if ($hookData.cwd -match 'C:\\dev\\apps\\([^\\]+)') { $project = $matches[1] }
-        elseif ($hookData.cwd -match 'C:\\dev\\packages\\([^\\]+)') { $project = $matches[1] }
-        elseif ($hookData.cwd -match 'C:\\dev\\backend\\([^\\]+)') { $project = $matches[1] }
+        if ($hookData.cwd -match 'V:\\monorepo\\apps\\([^\\]+)') { $project = $matches[1] }
+        elseif ($hookData.cwd -match 'V:\\monorepo\\packages\\([^\\]+)') { $project = $matches[1] }
+        elseif ($hookData.cwd -match 'V:\\monorepo\\backend\\([^\\]+)') { $project = $matches[1] }
     }
 
     # Fallback to env:PWD
     if (-not $project -and $env:PWD) {
-        if ($env:PWD -match 'C:\\dev\\apps\\([^\\]+)') { $project = $matches[1] }
-        elseif ($env:PWD -match 'C:\\dev\\packages\\([^\\]+)') { $project = $matches[1] }
-        elseif ($env:PWD -match 'C:\\dev\\backend\\([^\\]+)') { $project = $matches[1] }
+        if ($env:PWD -match 'V:\\monorepo\\apps\\([^\\]+)') { $project = $matches[1] }
+        elseif ($env:PWD -match 'V:\\monorepo\\packages\\([^\\]+)') { $project = $matches[1] }
+        elseif ($env:PWD -match 'V:\\monorepo\\backend\\([^\\]+)') { $project = $matches[1] }
     }
 
     # Log tool result to file

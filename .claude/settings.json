@@ -119,7 +119,7 @@
       "D:/backups"
     ]
   },
-  "model": "claude-opus-4-7",
+  "model": "claude-opus-4-8",
   "enableAllProjectMcpServers": false,
   "enabledMcpjsonServers": [
     "desktop-commander",

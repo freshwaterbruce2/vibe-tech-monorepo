@@ -4,7 +4,7 @@ This guide covers the Model Context Protocol (MCP) servers configured for this m
 
 ## Current Configuration
 
-**File:** `C:\dev\.mcp.json`
+**File:** `V:\monorepo\.mcp.json`
 
 ### Configured MCP Servers
 
@@ -52,8 +52,8 @@ Ask me to "show the project graph" or "what projects are affected by this change
 
 **Allowed Directories:**
 
-- `C:\dev` (main workspace)
-- `C:\dev\projects` (all projects)
+- `V:\monorepo` (main workspace)
+- `V:\monorepo\projects` (all projects)
 - `D:\` (additional drive)
 
 **Status:** ✓ Ready to use (no setup required)
@@ -113,7 +113,7 @@ Ask me to "show the project graph" or "what projects are affected by this change
 
 1. Go to GitHub → Settings → Developer settings → Personal access tokens
 2. Click "Generate new token"
-3. Give it a descriptive name: "Claude Code MCP - C:\dev workspace"
+3. Give it a descriptive name: "Claude Code MCP - V:\monorepo workspace"
 4. Select the repository scopes you need
    - **For read-only** (recommended to start): `repo` read permissions
    - **For full functionality**: full `repo` permissions
@@ -121,13 +121,13 @@ Ask me to "show the project graph" or "what projects are affected by this change
 
 #### Step 2: Update Configuration
 
-Edit `C:\dev\.mcp.json`:
+Edit `V:\monorepo\.mcp.json`:
 
 ```json
 "codeberg": {
   "command": "node",
   "args": [
-    "C:/dev/apps/mcp-codeberg/dist/index.js"
+    "V:/monorepo/apps/mcp-codeberg/dist/index.js"
   ],
   "env": {
     "GITHUB_TOKEN": "ghp_<your_actual_token>"
@@ -169,7 +169,7 @@ Restart Claude Code completely to load the new token.
 
 **Current Configuration:**
 
-- Database: `C:/dev/apps/crypto-enhanced/trading.db` (SQLite)
+- Database: `V:/monorepo/apps/crypto-enhanced/trading.db` (SQLite)
 - Mode: Read-only (safe for production)
 
 **Status:** ✓ Ready to use (no additional setup)
@@ -185,7 +185,7 @@ Restart Claude Code completely to load the new token.
 
 **Adding More Databases:**
 
-Edit `C:\dev\.mcp.json` to add PostgreSQL connections:
+Edit `V:\monorepo\.mcp.json` to add PostgreSQL connections:
 
 ```json
 "postgres": {
@@ -214,7 +214,7 @@ Or add multiple databases by creating separate server entries:
   "args": [
     "-y",
     "@modelcontextprotocol/server-postgres",
-    "sqlite://C:/dev/apps/crypto-enhanced/trading.db"
+    "sqlite://V:/monorepo/apps/crypto-enhanced/trading.db"
   ]
 }
 ```
@@ -229,7 +229,7 @@ After completing setup, verify connections:
 2. Ask: "What MCP servers are connected?"
 3. Test each server:
    - **Nx**: "Show me the Nx project graph"
-   - **Filesystem**: "List files in C:\dev\apps\crypto-enhanced"
+   - **Filesystem**: "List files in V:\monorepo\apps\crypto-enhanced"
    - **Puppeteer**: "Navigate to <https://example.com> and take a screenshot"
    - **GitHub MCP**: "Show me recent commits on this repository"
    - **PostgreSQL**: "Show tables in the trading database"
@@ -279,7 +279,7 @@ After completing setup, verify connections:
 
 **Solutions:**
 
-1. Verify database file exists: `Test-Path "C:/dev/apps/crypto-enhanced/trading.db"`
+1. Verify database file exists: `Test-Path "V:/monorepo/apps/crypto-enhanced/trading.db"`
 2. Check file permissions (read access required)
 3. For PostgreSQL, verify connection string format
 4. Test connection string with: `sqlite3 trading.db ".tables"` or `psql <connection_string>`
@@ -344,8 +344,8 @@ Restrict or expand filesystem access:
   "args": [
     "-y",
     "@modelcontextprotocol/server-filesystem",
-    "C:\\dev\\projects\\active\\web-apps",
-    "C:\\dev\\projects\\crypto-enhanced"
+    "V:\\monorepo\\projects\\active\\web-apps",
+    "V:\\monorepo\\projects\\crypto-enhanced"
   ]
 }
 ```
@@ -402,7 +402,7 @@ For HTTP-based MCP servers:
 **2026-03-07** - GitHub migration update
 
 - Added Nx MCP (monorepo intelligence)
-- Added Filesystem MCP (C:\dev, C:\dev\projects, D:\)
+- Added Filesystem MCP (V:\monorepo, V:\monorepo\projects, D:\)
 - Added Puppeteer MCP (browser automation)
 - Added GitHub MCP (requires token setup)
 - Added PostgreSQL MCP (SQLite mode for trading.db)
