@@ -45,6 +45,30 @@ updates:
       - 'python'
     open-pull-requests-limit: 5
 
+  - package-ecosystem: 'pip'
+    directory: '/apps/crypto-enhanced'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    commit-message:
+      prefix: 'deps'
+    labels:
+      - 'dependencies'
+      - 'python'
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: 'pip'
+    directory: '/apps/vibe-justice/backend'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    commit-message:
+      prefix: 'deps'
+    labels:
+      - 'dependencies'
+      - 'python'
+    open-pull-requests-limit: 5
+
   # Rust - Tauri desktop apps (Cargo.lock had open security alerts)
   - package-ecosystem: 'cargo'
     directory: '/apps/nova-agent/src-tauri'
@@ -60,6 +84,18 @@ updates:
 
   - package-ecosystem: 'cargo'
     directory: '/apps/vibe-justice/frontend/src-tauri'
+    schedule:
+      interval: 'weekly'
+      day: 'thursday'
+    commit-message:
+      prefix: 'deps'
+    labels:
+      - 'dependencies'
+      - 'rust'
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: 'cargo'
+    directory: '/apps/vibe-code-studio/src-tauri'
     schedule:
       interval: 'weekly'
       day: 'thursday'
