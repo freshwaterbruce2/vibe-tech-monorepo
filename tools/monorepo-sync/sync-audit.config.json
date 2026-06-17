@@ -42,7 +42,11 @@
     "desktop-bridge",
     "vibe-booking",
     "vibe-booking-backend",
-    "vibe-reflection"
+    "vibe-reflection",
+    "learning-pipeline-mcp",
+    "monorepo-health-mcp",
+    "proactive-recommendations-mcp",
+    "skill-feedback-mcp"
   ],
   "allowedStandaloneTags": [
     "standalone"
