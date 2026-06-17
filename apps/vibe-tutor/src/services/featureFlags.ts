@@ -12,6 +12,7 @@ export interface FeatureFlags {
   buddyRolePlay: boolean;
   adaptiveAudio: boolean;
   enhancedAccessibility: boolean;
+  localAiTools: boolean;
 }
 
 const DEFAULT_FLAGS: FeatureFlags = {
@@ -19,6 +20,7 @@ const DEFAULT_FLAGS: FeatureFlags = {
   buddyRolePlay: true,
   adaptiveAudio: true,
   enhancedAccessibility: true,
+  localAiTools: true,
 };
 
 const STORAGE_KEY = 'vibe-feature-flags';

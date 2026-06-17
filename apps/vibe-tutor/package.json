@@ -52,6 +52,7 @@
     "@capacitor/core": "^8.3.0",
     "@capacitor/file-transfer": "^2.0.4",
     "@capacitor/filesystem": "^8.1.2",
+    "@electron/llm": "^1.1.1",
     "@google/genai": "^1.46.0",
     "@jaredreisinger/react-crossword": "^5.2.0",
     "@mediagrid/capacitor-native-audio": "^3.0.0",
