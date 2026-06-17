@@ -31,3 +31,41 @@ updates:
       # Don't auto-update major versions (breaking changes)
       - dependency-name: '*'
         update-types: ['version-update:semver-major']
+
+  # Python - LLM fine-tuning backend (had open security alerts)
+  - package-ecosystem: 'pip'
+    directory: '/backend/llm-finetuning'
+    schedule:
+      interval: 'weekly'
+      day: 'wednesday'
+    commit-message:
+      prefix: 'deps'
+    labels:
+      - 'dependencies'
+      - 'python'
+    open-pull-requests-limit: 5
+
+  # Rust - Tauri desktop apps (Cargo.lock had open security alerts)
+  - package-ecosystem: 'cargo'
+    directory: '/apps/nova-agent/src-tauri'
+    schedule:
+      interval: 'weekly'
+      day: 'thursday'
+    commit-message:
+      prefix: 'deps'
+    labels:
+      - 'dependencies'
+      - 'rust'
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: 'cargo'
+    directory: '/apps/vibe-justice/frontend/src-tauri'
+    schedule:
+      interval: 'weekly'
+      day: 'thursday'
+    commit-message:
+      prefix: 'deps'
+    labels:
+      - 'dependencies'
+      - 'rust'
+    open-pull-requests-limit: 5
