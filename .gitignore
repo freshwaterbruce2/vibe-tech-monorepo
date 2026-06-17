@@ -156,6 +156,7 @@ null
 # Backup files
 *.backup
 *.bak
+*.bak_*
 *~
 _backup_*
 src.backup

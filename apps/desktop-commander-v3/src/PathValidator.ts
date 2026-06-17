@@ -19,6 +19,8 @@ interface AllowedPath {
 	allowRead: boolean;
 	allowWrite: boolean;
 	type: PathType;
+	/** Permit soft-blocked build dirs (e.g. dist) under this root */
+	allowBuildArtifacts?: boolean;
 }
 
 // Define allowed paths with their permissions
@@ -36,6 +38,7 @@ const ALLOWED_PATHS: AllowedPath[] = [
 		allowRead: true,
 		allowWrite: true,
 		type: "data",
+		allowBuildArtifacts: true,
 	},
 	{
 		path: "C:\\Users\\fresh_zxae3v6\\OneDrive",
@@ -44,21 +47,55 @@ const ALLOWED_PATHS: AllowedPath[] = [
 		allowWrite: false, // Read-only
 		type: "onedrive",
 	},
+	{
+		path: "V:\\monorepo",
+		normalized: "v:\\monorepo",
+		allowBuildArtifacts: true,
+		allowRead: true,
+		allowWrite: true,
+		type: "dev",
+	},
 ];
 
 /**
  * Patterns that are always blocked regardless of allowed-path membership
  */
-const BLOCKED_PATTERNS = ["node_modules", ".git", "dist"];
+const HARD_BLOCKED_PATTERNS = ["node_modules", ".git"];
+const SOFT_BLOCKED_PATTERNS = ["dist"];
+
+/**
+ * Global override: when permission is explicitly granted via the
+ * DC_ALLOW_BLOCKED_PATHS env var (set in the MCP launch env), all pattern
+ * blocks are lifted. Off by default.
+ */
+function isBlockOverrideEnabled(): boolean {
+	const v = (process.env.DC_ALLOW_BLOCKED_PATHS ?? "").toLowerCase();
+	return v === "1" || v === "true" || v === "yes";
+}
 
 /**
  * Check if a path contains a blocked pattern segment
  */
 export function isPathBlocked(inputPath: string): boolean {
-	const normalized = inputPath.replace(/\//g, "\\");
-	return BLOCKED_PATTERNS.some((pattern) =>
-		normalized.split("\\").includes(pattern),
-	);
+	// Explicit permission lifts all pattern blocks
+	if (isBlockOverrideEnabled()) {
+		return false;
+	}
+
+	const segments = inputPath.replace(/\//g, "\\").split("\\");
+
+	// node_modules and .git are blocked under every allowed root
+	if (HARD_BLOCKED_PATTERNS.some((pattern) => segments.includes(pattern))) {
+		return true;
+	}
+
+	// dist (build output) allowed only under roots flagged allowBuildArtifacts
+	// (V:\monorepo, D:\); blocked elsewhere
+	if (SOFT_BLOCKED_PATTERNS.some((pattern) => segments.includes(pattern))) {
+		return !findAllowedPath(inputPath)?.allowBuildArtifacts;
+	}
+
+	return false;
 }
 
 /**
@@ -146,7 +183,7 @@ export function validatePath(inputPath: string, mode: PathMode): string {
 
 	if (isPathBlocked(inputPath)) {
 		throw new Error(
-			`Access denied: ${inputPath} contains a blocked path segment (${BLOCKED_PATTERNS.join(", ")}).`,
+			`Access denied: ${inputPath} contains a blocked path segment (node_modules/.git always; dist outside V:\\ and D:\\ (set DC_ALLOW_BLOCKED_PATHS=1 to override)).`,
 		);
 	}
 
