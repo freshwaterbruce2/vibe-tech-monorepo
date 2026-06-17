@@ -347,9 +347,9 @@ export class EmbeddingService {
     try {
       // Lazy-load and cache the pipeline
       if (!this.transformerPipeline) {
-        // Dynamic import - @xenova/transformers is a devDependency/optional fallback
+        // Dynamic import - @huggingface/transformers is a devDependency/optional fallback
         const transformers = await (Function(
-          'return import("@xenova/transformers")',
+          'return import("@huggingface/transformers")',
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
         )() as Promise<any>);
         this.transformerPipeline = await transformers.pipeline(

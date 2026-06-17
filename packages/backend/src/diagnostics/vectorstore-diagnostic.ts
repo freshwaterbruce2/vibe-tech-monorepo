@@ -7,7 +7,7 @@
  * 3. Database initialization (without full VectorStore due to Electron dependency)
  */
 
-import { env, pipeline } from '@xenova/transformers';
+import { env, pipeline } from '@huggingface/transformers';
 import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
