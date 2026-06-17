@@ -1,9 +1,9 @@
 {
-  "name": "learning-pipeline-mcp",
+  "name": "proactive-recommendations-mcp",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "MCP server for orchestrating learning system insight-to-skill pipeline",
+  "description": "MCP server for retrieving, dismissing, and creating tasks from proactive agent recommendations",
   "scripts": {
     "build": "tsc -p tsconfig.json --incremental false",
     "start": "node dist/index.js",
@@ -14,10 +14,12 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.0",
+    "better-sqlite3": "12.6.2",
     "dotenv": "^16.5.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^25.5.0",
     "typescript": "5.9.3"
   }
