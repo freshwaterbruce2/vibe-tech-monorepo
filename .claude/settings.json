@@ -141,6 +141,15 @@
   "hooks": {
     "PreToolUse": [
       {
+        "matcher": "Bash|PowerShell|mcp__desktop-commander__dc_run_powershell|mcp__desktop-commander__dc_run_cmd",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/delete-guard.ps1"
+          }
+        ]
+      },
+      {
         "matcher": "Agent",
         "hooks": [
           {
