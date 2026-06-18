@@ -20,6 +20,10 @@
       {
         "command": "vibeCodeStudio.completeCode",
         "title": "Vibe: Complete Code"
+      },
+      {
+        "command": "gemini.inlineSuggestion.acceptAll",
+        "title": "Gemini: Accept All Inline Suggestions"
       }
     ],
     "configuration": {

@@ -205,6 +205,16 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     logger.debug('[AutoFix] Editor mounted, initializing error detection');
     editorRef.current = typedEditor;
 
+    // Register custom command gemini.inlineSuggestion.acceptAll
+    typedEditor.addAction({
+      id: 'gemini.inlineSuggestion.acceptAll',
+      label: 'Accept All Gemini Inline Suggestions',
+      keybindings: [],
+      run: (ed) => {
+        ed.trigger('keyboard', 'editor.action.inlineSuggest.commit', {});
+      }
+    });
+
     // Clean up previous instances to avoid leaks and stale listeners
     errorDetectorRef.current?.dispose();
     codeActionProviderRef.current?.dispose();

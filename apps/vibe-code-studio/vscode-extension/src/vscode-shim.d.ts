@@ -35,6 +35,7 @@ declare module 'vscode' {
 
   export namespace commands {
     function registerCommand(command: string, callback: (...args: unknown[]) => unknown): Disposable;
+    function executeCommand<T = unknown>(command: string, ...rest: unknown[]): Promise<T | undefined>;
   }
 
   export namespace window {

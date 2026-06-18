@@ -54,7 +54,11 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-  context.subscriptions.push(disposableComplete);
+  const disposableAcceptAll = vscode.commands.registerCommand('gemini.inlineSuggestion.acceptAll', () => {
+    vscode.commands.executeCommand('editor.action.inlineSuggest.commit');
+  });
+
+  context.subscriptions.push(disposableComplete, disposableAcceptAll);
 }
 
 export function deactivate() {}
