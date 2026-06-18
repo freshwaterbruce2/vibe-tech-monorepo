@@ -10,5 +10,5 @@ export default defineConfig({
   treeshake: true,
   target: 'node22',
   outDir: 'dist',
-  external: ['better-sqlite3', 'sqlite-vec', '@xenova/transformers'],
+  external: ['better-sqlite3', 'sqlite-vec', '@huggingface/transformers'],
 });

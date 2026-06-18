@@ -1,7 +1,7 @@
 // packages/backend/src/services/VectorStore.ts
 import { type LogicPattern, type VectorSearchResult } from '@vibetech/core';
 import { getIntelligencePath } from '@vibetech/core';
-import { env } from '@xenova/transformers';
+import { env } from '@huggingface/transformers';
 import Database from 'better-sqlite3';
 import log from 'electron-log';
 import fs from 'fs';
@@ -59,7 +59,7 @@ export class VectorStore {
   private configureOnnxRuntime() {
     /**
      * Remediates ONNX DLL isolation.
-     * Instructs @xenova/transformers to look for local binaries
+     * Instructs @huggingface/transformers to look for local binaries
      * in the unpacked ASAR resources directory.
      */
     env.localModelPath = path.join(this.modelRoot, 'models');
