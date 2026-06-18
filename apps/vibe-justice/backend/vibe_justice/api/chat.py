@@ -33,10 +33,14 @@ class ChatResponse(BaseModel):
 
 @router.post("/simple", response_model=ChatResponse)
 @limiter.limit("30/minute")
-async def simple_chat(request: Request, body: ChatRequest):
+def simple_chat(request: Request, body: ChatRequest):
     """
     Chat endpoint with DeepSeek R1 reasoning support.
     Automatically selects reasoning model for complex queries.
+
+    Defined as a sync handler so FastAPI runs it in its threadpool: the AI
+    call below uses blocking `requests`, which would stall the event loop if
+    this were `async def`.
     """
     if not body.message:
         raise HTTPException(status_code=400, detail="Message cannot be empty")
@@ -65,10 +69,13 @@ async def simple_chat(request: Request, body: ChatRequest):
 
 @router.post("/rag", response_model=ChatResponse)
 @limiter.limit("30/minute")
-async def rag_chat(request: Request, body: ChatRequest):
+def rag_chat(request: Request, body: ChatRequest):
     """
     RAG-enhanced chat with document retrieval.
     Uses ChromaDB to find relevant legal context.
+
+    Sync handler (runs in FastAPI's threadpool): both retrieval and the AI
+    call use blocking I/O, which would stall the event loop under `async def`.
     """
     if not body.message:
         raise HTTPException(status_code=400, detail="Message cannot be empty")

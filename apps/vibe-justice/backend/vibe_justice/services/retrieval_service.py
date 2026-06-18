@@ -11,6 +11,7 @@ import hashlib
 import logging
 import os
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import List, Optional
 
@@ -35,13 +36,36 @@ logger = logging.getLogger(__name__)
 _PROXY_FALLBACK_LOGGED = False
 
 
+@lru_cache(maxsize=2048)
+def _fetch_embedding_cached(endpoint: str, model: str, text: str) -> tuple[float, ...]:
+    """Fetch one embedding from the proxy, memoized by (endpoint, model, text).
+
+    Returns an immutable tuple so cached entries can't be mutated by callers,
+    and *raises* on any failure so the caller falls back WITHOUT poisoning the
+    cache — once the proxy recovers, the next call retries instead of serving a
+    stale degraded vector. Keyed on endpoint+model so config changes don't
+    return embeddings produced under a different configuration.
+    """
+    assert httpx is not None  # caller (_get_embedding) guards on this
+    with httpx.Client(timeout=30.0) as client:
+        response = client.post(endpoint, json={"model": model, "input": text})
+        response.raise_for_status()
+        data = response.json()
+        embedding = data["data"][0]["embedding"]
+        if not isinstance(embedding, list) or not embedding:
+            raise ValueError("proxy returned empty embedding")
+        return tuple(embedding)
+
+
 def _get_embedding(text: str, dimensions: int = 1536) -> List[float]:
     """Generate a real embedding via the local OpenRouter proxy.
 
     Uses ``text-embedding-3-small`` (1536-d) which matches the monorepo's
-    memory / RAG stack. If the proxy is unreachable, logs a single WARN and
-    falls back to the deterministic hash embedding so retrieval degrades
-    gracefully instead of crashing.
+    memory / RAG stack. Successful results are cached (see
+    ``_fetch_embedding_cached``) so repeated queries avoid the network round
+    trip. If the proxy is unreachable, logs a single WARN and falls back to the
+    deterministic hash embedding so retrieval degrades gracefully instead of
+    crashing.
 
     Config:
         OPENROUTER_PROXY_URL     (default: http://localhost:3001)
@@ -63,17 +87,7 @@ def _get_embedding(text: str, dimensions: int = 1536) -> List[float]:
     endpoint = f"{proxy_url}/api/v1/embeddings"
 
     try:
-        with httpx.Client(timeout=30.0) as client:
-            response = client.post(
-                endpoint,
-                json={"model": model, "input": text},
-            )
-            response.raise_for_status()
-            data = response.json()
-            embedding = data["data"][0]["embedding"]
-            if not isinstance(embedding, list) or not embedding:
-                raise ValueError("proxy returned empty embedding")
-            return embedding
+        return list(_fetch_embedding_cached(endpoint, model, text))
     except Exception as e:
         if not _PROXY_FALLBACK_LOGGED:
             logger.warning(
