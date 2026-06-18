@@ -265,6 +265,14 @@ let livePricingFetchedAt = 0;
 let lastPricingAttemptAt = 0;
 let pricingRefreshInFlight: Promise<void> | null = null;
 
+// Coerce an untyped JSON value (OpenRouter reports pricing as USD strings such
+// as "0.000003", occasionally as numbers) into a number, or NaN if unusable.
+function toNumber(value: unknown): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return Number.parseFloat(value);
+  return NaN;
+}
+
 // Fetch and cache real-time pricing from the OpenRouter models endpoint.
 // Exported for testing and for explicit warm-ups; routine callers should use
 // the fire-and-forget ensureFreshPricing() instead.
@@ -284,14 +292,19 @@ async function refreshLivePricing(): Promise<void> {
   }
 
   const next: Record<string, ModelPricing> = {};
-  for (const model of models) {
-    const id = model?.id;
-    const pricing = model?.pricing;
-    if (typeof id !== 'string' || !pricing) continue;
+  for (const entry of models as unknown[]) {
+    if (typeof entry !== 'object' || entry === null) continue;
+    const record = entry as Record<string, unknown>;
 
-    // OpenRouter pricing fields are USD-per-token strings (e.g. "0.000003").
-    const promptPerToken = Number.parseFloat(pricing.prompt);
-    const completionPerToken = Number.parseFloat(pricing.completion);
+    const id = record.id;
+    const pricing = record.pricing;
+    if (typeof id !== 'string' || typeof pricing !== 'object' || pricing === null) {
+      continue;
+    }
+
+    const pricingRecord = pricing as Record<string, unknown>;
+    const promptPerToken = toNumber(pricingRecord.prompt);
+    const completionPerToken = toNumber(pricingRecord.completion);
     if (!Number.isFinite(promptPerToken) || !Number.isFinite(completionPerToken)) {
       continue;
     }
