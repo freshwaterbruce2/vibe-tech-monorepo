@@ -34,9 +34,19 @@ def client():
 
 
 @pytest.fixture
-def api_headers():
+def api_headers(monkeypatch):
+    """Valid API-key header with the server-side key configured to match.
+
+    require_api_key fails closed with HTTP 500 when VIBE_JUSTICE_API_KEY is
+    unset, so without configuring it the auth gate short-circuits before the
+    behavior under test (e.g. the SSRF guard) is ever reached. monkeypatch
+    auto-restores, so this never leaks into tests that rely on the key being
+    unset (e.g. test_llm_endpoints_require_api_key).
+    """
     import os
-    key = os.getenv("VIBE_JUSTICE_API_KEY", "test-api-key-" + "x" * 32)
+
+    key = os.getenv("VIBE_JUSTICE_API_KEY") or "test-api-key-" + "x" * 32
+    monkeypatch.setenv("VIBE_JUSTICE_API_KEY", key)
     return {"X-API-Key": key}
 
 
