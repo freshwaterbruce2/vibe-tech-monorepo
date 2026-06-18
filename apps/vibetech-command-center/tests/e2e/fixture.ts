@@ -6,7 +6,7 @@ export interface AppFixture {
   page: Page;
 }
 
-export async function launchApp(): Promise<AppFixture> {
+export async function launchApp(extraEnv: Record<string, string> = {}): Promise<AppFixture> {
   const root = join(__dirname, '..', '..');
   const app = await electron.launch({
     args: [join(root, 'out', 'main', 'index.js')],
@@ -15,7 +15,10 @@ export async function launchApp(): Promise<AppFixture> {
     env: {
       ...process.env,
       NODE_ENV: 'test',
-      ELECTRON_DISABLE_DEVTOOLS: '1'
+      ELECTRON_DISABLE_DEVTOOLS: '1',
+      // Per-test overrides — e.g. CLAUDE_JS_PATH/NODE_EXE_PATH to point the real
+      // ClaudeBridge at a fake cli.js so the stream path can be exercised offline.
+      ...extraEnv
     }
   });
 
