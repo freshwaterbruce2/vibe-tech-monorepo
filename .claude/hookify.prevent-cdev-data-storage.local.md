@@ -5,24 +5,24 @@ event: file
 conditions:
   - field: file_path
     operator: regex_match
-    pattern: C:/dev/.*\.(db|sqlite|sqlite3|log)$
+    pattern: V:/monorepo/.*\.(db|sqlite|sqlite3|log)$
 action: block
 ---
 
 🚨 **CRITICAL: Data storage violation!**
 
-**ALL databases and logs must be stored on D:\ drive, NEVER in C:\dev**
+**ALL databases and logs must be stored on D:\ drive, NEVER in V:\monorepo**
 
 **Correct locations:**
 
 ```
-❌ C:\dev\database.db
+❌ V:\monorepo\database.db
 ✅ D:\databases\database.db
 
-❌ C:\dev\app.log
+❌ V:\monorepo\app.log
 ✅ D:\logs\app.log
 
-❌ C:\dev\trading.db
+❌ V:\monorepo\trading.db
 ✅ D:\databases\crypto-enhanced\trading.db
 ```
 

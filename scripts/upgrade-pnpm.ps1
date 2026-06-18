@@ -38,7 +38,7 @@ function Write-Warning { param($Message) Write-Host "⚠️  $Message" -Foregrou
 function Write-Error { param($Message) Write-Host "❌ $Message" -ForegroundColor Red }
 function Write-Header { param($Message) Write-Host "`n========== $Message ==========" -ForegroundColor Magenta }
 
-$MonorepoRoot = "C:\dev"
+$MonorepoRoot = "V:\monorepo"
 
 Write-Header "pnpm Upgrade and Cleanup Script"
 

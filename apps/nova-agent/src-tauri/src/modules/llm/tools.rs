@@ -482,7 +482,7 @@ mod tests {
 
         let write_summary = summarize_tool_args(
             "write_file",
-            r#"{"path":"C:\\dev\\apps\\nova-agent\\secret.txt","content":"api-key-value"}"#,
+            r#"{"path":"V:\\monorepo\\apps\\nova-agent\\secret.txt","content":"api-key-value"}"#,
         )
         .to_string();
         assert!(write_summary.contains("content_chars"));

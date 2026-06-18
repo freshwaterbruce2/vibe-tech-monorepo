@@ -395,9 +395,9 @@ function searchLiteral(literal) {
 
 function collectPathPolicyObservations() {
   const learningSearch = searchLiteral('D:\\learning');
-  const dataSearch = searchLiteral('C:\\dev\\data');
-  const logsSearch = searchLiteral('C:\\dev\\logs');
-  const databasesSearch = searchLiteral('C:\\dev\\databases');
+  const dataSearch = searchLiteral('V:\\monorepo\\data');
+  const logsSearch = searchLiteral('V:\\monorepo\\logs');
+  const databasesSearch = searchLiteral('V:\\monorepo\\databases');
 
   const deprecatedLearning = learningSearch.items
     .filter((item) => !item.match.includes('D:\\learning-system'))

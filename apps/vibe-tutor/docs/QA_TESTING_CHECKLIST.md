@@ -1259,7 +1259,7 @@ adb shell "watch -n 1 'dumpsys meminfo com.vibetech.tutor | grep TOTAL'"
 - [ ] **App Signing**
   - [ ] Release key used (not debug)
   - [ ] Key password secured
-  - [ ] Keystore backed up: `C:\dev\apps\vibe-tutor\android\signing\release.keystore`
+  - [ ] Keystore backed up: `V:\monorepo\apps\vibe-tutor\android\signing\release.keystore`
   - [ ] Key alias: vibetech_release
   - [ ] Status: VERIFIED
 

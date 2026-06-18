@@ -44,7 +44,7 @@ const recommendation: Recommendation = {
 
 // Monitoring config
 const config: MonitoringConfig = {
-    workspacePath: 'C:\\dev',
+    workspacePath: 'V:\\monorepo',
     excludePaths: ['node_modules', '.git', 'dist'],
     debounceMs: 100,
     maxEventsPerSecond: 50,

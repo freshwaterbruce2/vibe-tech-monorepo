@@ -15,7 +15,7 @@ function setupBridge(searchImpl?: ReturnType<typeof vi.fn>): ReturnType<typeof v
       hits: [
         {
           score: 0.91,
-          path: 'C:\\dev\\apps\\vibetech-command-center\\src\\main\\services\\claude-bridge.ts',
+          path: 'V:\\monorepo\\apps\\vibetech-command-center\\src\\main\\services\\claude-bridge.ts',
           language: 'typescript',
           snippet: 'export class ClaudeBridge',
           startLine: 12,

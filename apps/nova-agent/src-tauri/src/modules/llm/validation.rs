@@ -225,7 +225,7 @@ mod tests {
         let payload = CreateTaskArgs {
             title: "Review project".to_string(),
             description: Some("Inspect files".to_string()),
-            project_path: Some(r"C:\dev\apps\nova-agent".to_string()),
+            project_path: Some(r"V:\monorepo\apps\nova-agent".to_string()),
             priority: Some("medium".to_string()),
             auto_execute: None,
             risk: None,
@@ -247,7 +247,7 @@ mod tests {
         let payload = CreateTaskArgs {
             title: "Run dangerous migration".to_string(),
             description: Some("Apply risky change".to_string()),
-            project_path: Some(r"C:\dev\apps\nova-agent".to_string()),
+            project_path: Some(r"V:\monorepo\apps\nova-agent".to_string()),
             priority: Some("high".to_string()),
             auto_execute: Some(true),
             risk: Some("critical".to_string()),
@@ -268,19 +268,19 @@ mod tests {
     fn generic_plan_flags_require_review_evidence_references() {
         let review = ProjectReviewSummary {
             artifact_path: r"D:\databases\nova-agent\reviews\nova-agent.json".to_string(),
-            reviewed_path: r"C:\dev\apps\nova-agent".to_string(),
+            reviewed_path: r"V:\monorepo\apps\nova-agent".to_string(),
             reviewed_at: "2026-03-09T10:00:00Z".to_string(),
             review_version: "grounded-review-v1".to_string(),
             evidence_count: 2,
             evidence_paths: vec![
-                r"C:\dev\apps\nova-agent\package.json".to_string(),
-                r"C:\dev\apps\nova-agent\src-tauri\src\task_executor.rs".to_string(),
+                r"V:\monorepo\apps\nova-agent\package.json".to_string(),
+                r"V:\monorepo\apps\nova-agent\src-tauri\src\task_executor.rs".to_string(),
             ],
         };
 
         let flags = detect_generic_plan_flags(
             "Create a comprehensive dashboard and write docs later",
-            r"C:\dev\apps\nova-agent",
+            r"V:\monorepo\apps\nova-agent",
             &review,
         );
 

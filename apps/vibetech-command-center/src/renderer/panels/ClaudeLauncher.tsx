@@ -96,7 +96,7 @@ export function ClaudeLauncher() {
     if (!selectedApp || !promptToRun) return;
     const app = apps.find((a) => a.name === selectedApp);
     if (!app) return;
-    const cwd = `C:\\dev\\${app.root.replace(/\//g, '\\')}`;
+    const cwd = `V:\\monorepo\\${app.root.replace(/\//g, '\\')}`;
 
     // Generate ID client-side BEFORE mutate — subscription is live before first stream event arrives.
     const invocationId = crypto.randomUUID();

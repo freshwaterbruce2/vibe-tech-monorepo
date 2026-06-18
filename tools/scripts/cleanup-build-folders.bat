@@ -3,7 +3,7 @@ echo === Cleaning Build Artifacts ===
 echo.
 
 echo Removing dist folders...
-for /d /r "C:\dev\apps" %%d in (dist) do (
+for /d /r "V:\monorepo\apps" %%d in (dist) do (
     if exist "%%d" (
         echo   Removing: %%d
         rmdir /s /q "%%d" 2>nul
@@ -11,7 +11,7 @@ for /d /r "C:\dev\apps" %%d in (dist) do (
 )
 
 echo Removing build folders...
-for /d /r "C:\dev\apps" %%d in (build) do (
+for /d /r "V:\monorepo\apps" %%d in (build) do (
     if exist "%%d" (
         echo   Removing: %%d
         rmdir /s /q "%%d" 2>nul
@@ -19,7 +19,7 @@ for /d /r "C:\dev\apps" %%d in (build) do (
 )
 
 echo Removing .next folders...
-for /d /r "C:\dev\apps" %%d in (.next) do (
+for /d /r "V:\monorepo\apps" %%d in (.next) do (
     if exist "%%d" (
         echo   Removing: %%d
         rmdir /s /q "%%d" 2>nul
@@ -27,7 +27,7 @@ for /d /r "C:\dev\apps" %%d in (.next) do (
 )
 
 echo Removing .turbo folders...
-for /d /r "C:\dev" %%d in (.turbo) do (
+for /d /r "V:\monorepo" %%d in (.turbo) do (
     if exist "%%d" (
         echo   Removing: %%d
         rmdir /s /q "%%d" 2>nul
@@ -35,7 +35,7 @@ for /d /r "C:\dev" %%d in (.turbo) do (
 )
 
 echo Removing out folders...
-for /d /r "C:\dev\apps" %%d in (out) do (
+for /d /r "V:\monorepo\apps" %%d in (out) do (
     if exist "%%d" (
         echo   Removing: %%d
         rmdir /s /q "%%d" 2>nul

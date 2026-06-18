@@ -3,7 +3,7 @@
 **Last Updated:** 2026-01-14
 **Status:** ACTIVE - PRODUCTION READY
 **Location:** D:\repositories\vibetech
-**Workspace:** C:\dev
+**Workspace:** V:\monorepo
 
 ---
 
@@ -18,7 +18,7 @@ A PowerShell-based version control system using D:\ drive as a local repository 
 **Initialize (first time only):**
 
 ```powershell
-cd C:\dev\scripts\version-control
+cd V:\monorepo\scripts\version-control
 .\Initialize-LocalRepo.ps1
 ```
 
@@ -199,7 +199,7 @@ pnpm run quality  # Run quality checks
 
 ## Scripts Reference
 
-**Core scripts (C:\dev\scripts\version-control\):**
+**Core scripts (V:\monorepo\scripts\version-control\):**
 
 - `Initialize-LocalRepo.ps1` - Initialize repository (first time)
 - `Save-Snapshot.ps1` - Create snapshot (like git commit)
@@ -220,7 +220,7 @@ pnpm run quality  # Run quality checks
 
 **Main guide:**
 
-- `C:\dev\D_DRIVE_VERSION_CONTROL_GUIDE.md` (comprehensive 500+ line guide)
+- `V:\monorepo\D_DRIVE_VERSION_CONTROL_GUIDE.md` (comprehensive 500+ line guide)
 
 **Repository README:**
 
@@ -273,7 +273,7 @@ pnpm nx affected -t build,test,lint
 
 ```powershell
 # Daily snapshot at 11:59 PM (optional)
-$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-File C:\dev\scripts\version-control\Save-Snapshot.ps1 -Description 'Daily automatic snapshot'"
+$action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-File V:\monorepo\scripts\version-control\Save-Snapshot.ps1 -Description 'Daily automatic snapshot'"
 $trigger = New-ScheduledTaskTrigger -Daily -At 11:59PM
 Register-ScheduledTask -TaskName "VibeTech Daily Snapshot" -Action $action -Trigger $trigger
 ```

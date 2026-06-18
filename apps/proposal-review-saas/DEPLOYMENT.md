@@ -56,7 +56,7 @@ SENTRY_DSN=
 ## Railway backend steps
 
 1. Deploy from the monorepo root.
-2. Use [railway.json](C:/dev/apps/proposal-review-saas/railway.json).
+2. Use [railway.json](V:/monorepo/apps/proposal-review-saas/railway.json).
 3. Set the backend environment variables above.
 4. Confirm `GET /api/health` returns `{"ok":true,"app":"proposal-review-saas"}`.
 5. Confirm `GET /api/billing/demo-checkout` returns a Stripe Checkout URL once `STRIPE_SECRET_KEY` is set.
@@ -71,7 +71,7 @@ SENTRY_DSN=
 5. Build command: `pnpm run build:shared:api && pnpm run build`
 6. Output directory: `dist`
 7. Set the frontend environment variables above.
-8. Use [vercel.json](C:/dev/apps/proposal-review-saas/vercel.json) so `/terms` and `/privacy` resolve to the SPA entry.
+8. Use [vercel.json](V:/monorepo/apps/proposal-review-saas/vercel.json) so `/terms` and `/privacy` resolve to the SPA entry.
 
 ## Production status
 

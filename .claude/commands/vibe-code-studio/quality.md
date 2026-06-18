@@ -14,7 +14,7 @@ Run comprehensive quality checks on the code editor codebase.
 1. Navigate to Vibe Code Studio directory:
 
    ```bash
-   cd C:\dev\apps\vibe-code-studio
+   cd V:\monorepo\apps\vibe-code-studio
    ```
 
 2. Run ESLint:

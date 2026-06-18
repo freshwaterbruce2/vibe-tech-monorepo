@@ -161,7 +161,7 @@ describe('MemoryManager integration', () => {
     });
 
     await manager.semantic.add({
-      text: 'All databases must be stored on D:\\ drive, never in C:\\dev source tree',
+      text: 'All databases must be stored on D:\\ drive, never in V:\\monorepo source tree',
       category: 'rules',
       importance: 10,
     });

@@ -138,7 +138,7 @@ If you make changes to the profile or want to reload configuration:
 To verify configuration is active:
 
 ```powershell
-C:\dev\scripts\Verify-ClaudeConfig.ps1
+V:\monorepo\scripts\Verify-ClaudeConfig.ps1
 ```
 
 ### Checking Individual Variables
@@ -157,26 +157,26 @@ Get-ChildItem Env: | Where-Object { $_.Name -like "CLAUDE*" }
 
 ### 1. Setup Script
 
-**Location:** `C:\dev\scripts\Setup-ClaudeProfile.ps1`
+**Location:** `V:\monorepo\scripts\Setup-ClaudeProfile.ps1`
 
 **Purpose:** Adds Claude Code configuration to PowerShell profile
 
 **Usage:**
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File "C:\dev\scripts\Setup-ClaudeProfile.ps1"
+powershell -ExecutionPolicy Bypass -File "V:\monorepo\scripts\Setup-ClaudeProfile.ps1"
 ```
 
 ### 2. Verification Script
 
-**Location:** `C:\dev\scripts\Verify-ClaudeConfig.ps1`
+**Location:** `V:\monorepo\scripts\Verify-ClaudeConfig.ps1`
 
 **Purpose:** Verifies all environment variables are set correctly
 
 **Usage:**
 
 ```powershell
-C:\dev\scripts\Verify-ClaudeConfig.ps1
+V:\monorepo\scripts\Verify-ClaudeConfig.ps1
 ```
 
 ---

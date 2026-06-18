@@ -14,7 +14,7 @@ fn test_config() -> Config {
         huggingface_base_url: "https://api-inference.huggingface.co/v1".to_string(),
         kimi_api_key: String::new(),
         database_path: "D:\\databases".to_string(),
-        workspace_root: "C:\\dev".to_string(),
+        workspace_root: "V:\\monorepo".to_string(),
         deepcode_ws_url: "ws://127.0.0.1:5004".to_string(),
         deepcode_ipc_enabled: false,
         trading_data_dir: "D:\\trading_data".to_string(),

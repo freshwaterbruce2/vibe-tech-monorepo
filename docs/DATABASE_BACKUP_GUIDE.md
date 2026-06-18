@@ -28,7 +28,7 @@ Comprehensive automated backup solution for all SQLite databases in the VibeTech
 
 ```powershell
 # Run as Administrator
-cd C:\dev\scripts
+cd V:\monorepo\scripts
 .\setup-backup-schedule.ps1
 ```
 
@@ -505,8 +505,8 @@ Add backup step to GitHub Actions:
 - name: Backup Databases
   if: github.ref == 'refs/heads/main'
   run: |
-    pwsh -File C:\dev\scripts\database-backup.ps1 -BackupType Full
-    pwsh -File C:\dev\scripts\monitor-backups.ps1 -Detailed
+    pwsh -File V:\monorepo\scripts\database-backup.ps1 -BackupType Full
+    pwsh -File V:\monorepo\scripts\monitor-backups.ps1 -Detailed
 ```
 
 ---

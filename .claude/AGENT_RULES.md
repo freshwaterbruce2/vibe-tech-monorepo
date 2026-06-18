@@ -113,7 +113,7 @@ REQUIRED_PATHS:
   temp:        "D:\\temp\\[project-name]\\"
 
 FORBIDDEN:
-  - ❌ NEVER store logs in C:\dev\
+  - ❌ NEVER store logs in V:\monorepo\
   - ❌ NEVER put databases in project folders
   - ❌ NEVER save data files in repository
   - ❌ NEVER place ML models in source code
@@ -125,7 +125,7 @@ EXAMPLES:
 
   # ❌ WRONG:
   log_path: "./logs/app.log"
-  db_path:  "C:\\dev\\apps\\nova-agent\\database.db"
+  db_path:  "V:\\monorepo\\apps\\nova-agent\\database.db"
 ```
 
 ---

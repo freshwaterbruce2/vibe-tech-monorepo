@@ -57,7 +57,7 @@ NOVA Agent uses a **custom OpenRouter proxy server** instead of directly calling
 
 ### Location
 
-**Path:** `C:\dev\backend\openrouter-proxy`
+**Path:** `V:\monorepo\backend\openrouter-proxy`
 **Package:** `openrouter-proxy@1.0.0`
 **Tech Stack:** Express.js + TypeScript + Winston logging
 
@@ -154,7 +154,7 @@ Response: { "status": "ok", "timestamp": "2026-01-07T..." }
 
 ### Environment Variables
 
-**File:** `C:\dev\apps\nova-agent\.env`
+**File:** `V:\monorepo\apps\nova-agent\.env`
 
 ```bash
 # Custom OpenRouter Proxy Server
@@ -307,7 +307,7 @@ return inputCost + outputCost;
 ### Development Mode
 
 ```bash
-cd C:\dev\backend\openrouter-proxy
+cd V:\monorepo\backend\openrouter-proxy
 pnpm install
 pnpm run dev  # tsx watch src/index.ts (hot reload)
 ```
@@ -315,7 +315,7 @@ pnpm run dev  # tsx watch src/index.ts (hot reload)
 ### Production Mode
 
 ```bash
-cd C:\dev\backend\openrouter-proxy
+cd V:\monorepo\backend\openrouter-proxy
 pnpm run build  # Compile TypeScript
 pnpm start      # Run compiled JavaScript
 ```
@@ -351,7 +351,7 @@ curl http://localhost:3001/health
 **Solution:**
 
 ```bash
-cd C:\dev\backend\openrouter-proxy
+cd V:\monorepo\backend\openrouter-proxy
 echo "OPENROUTER_API_KEY=sk-or-v1-..." > .env
 pnpm run dev
 ```
@@ -363,7 +363,7 @@ pnpm run dev
 **Solution:**
 
 ```bash
-cd C:\dev\backend\openrouter-proxy
+cd V:\monorepo\backend\openrouter-proxy
 pnpm run dev
 ```
 
@@ -374,7 +374,7 @@ pnpm run dev
 **Solution:**
 
 ```bash
-cd C:\dev\apps\nova-agent
+cd V:\monorepo\apps\nova-agent
 echo "OPENROUTER_API_KEY=proxy-handled" >> .env
 ```
 

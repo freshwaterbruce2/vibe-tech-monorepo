@@ -116,7 +116,7 @@ export function CreateTaskDialog({
 								id="projectPath"
 								value={projectPath}
 								onChange={(e) => setProjectPath(e.target.value)}
-								placeholder="C:\\dev\\apps\\nova-agent"
+								placeholder="V:\\monorepo\\apps\\nova-agent"
 								required
 							/>
 							<p className="text-xs text-muted-foreground">

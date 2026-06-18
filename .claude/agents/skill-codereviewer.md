@@ -58,7 +58,7 @@ $antiPatterns = @(
     'yarn',               # Never use yarn
     'import React from',  # React 19 doesn't need this
     'React.FC',           # Deprecated pattern
-    # NOTE: 'C:\\dev\\apps' was previously listed here but caused false positives
+    # NOTE: 'V:\\monorepo\\apps' was previously listed here but caused false positives
     # when skills legitimately referenced monorepo app paths in documentation.
     # Path hardcoding in actual code is caught by the "No hardcoded absolute paths"
     # monorepo rules check above.

@@ -8,7 +8,7 @@ param(
 )
 
 $ErrorActionPreference = "SilentlyContinue"
-$MemoryPath = "C:\dev\apps\memory-mcp"
+$MemoryPath = "V:\monorepo\apps\memory-mcp"
 
 # TIMEOUT: Maximum seconds to wait for any operation
 $TIMEOUT_SECONDS = 2

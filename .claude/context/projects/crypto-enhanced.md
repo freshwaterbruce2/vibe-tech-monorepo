@@ -109,7 +109,7 @@ if consecutive_failures >= 5:
 DB_PATH = r"D:\databases\crypto-enhanced\trading.db"
 LOG_PATH = r"D:\logs\trading.log"
 
-# WRONG (relative paths in C:\dev)
+# WRONG (relative paths in V:\monorepo)
 DB_PATH = "trading.db"
 ```
 

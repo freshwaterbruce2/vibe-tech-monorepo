@@ -50,7 +50,7 @@ Write-Host ""
 Write-Host "Step 2: Removing .git directories from submodules..." -ForegroundColor Cyan
 
 foreach ($submodule in $submodules) {
-    $fullPath = "C:\dev\$submodule"
+    $fullPath = "V:\monorepo\$submodule"
     $gitPath = Join-Path $fullPath ".git"
 
     if (Test-Path $gitPath) {
@@ -75,7 +75,7 @@ Write-Host ""
 Write-Host "Step 3: Adding directories as regular files..." -ForegroundColor Cyan
 
 foreach ($submodule in $submodules) {
-    $fullPath = "C:\dev\$submodule"
+    $fullPath = "V:\monorepo\$submodule"
 
     if (Test-Path $fullPath) {
         Write-Host "  Adding: $submodule" -ForegroundColor Yellow
@@ -92,9 +92,9 @@ foreach ($submodule in $submodules) {
 Write-Host ""
 Write-Host "Step 4: Cleaning up .gitmodules (if exists)..." -ForegroundColor Cyan
 
-if (Test-Path "C:\dev\.gitmodules") {
+if (Test-Path "V:\monorepo\.gitmodules") {
     Write-Host "  Removing .gitmodules file" -ForegroundColor Yellow
-    Remove-Item "C:\dev\.gitmodules" -Force
+    Remove-Item "V:\monorepo\.gitmodules" -Force
     git rm -f .gitmodules 2>&1 | Out-Null
     Write-Host "    ✓ Removed .gitmodules" -ForegroundColor Green
 } else {

@@ -25,7 +25,7 @@
     .\Test-Plugin.ps1
 
 .EXAMPLE
-    .\Test-Plugin.ps1 -PluginPath "C:\dev\.claude\plugins\the-finisher" -Verbose
+    .\Test-Plugin.ps1 -PluginPath "V:\monorepo\.claude\plugins\the-finisher" -Verbose
 #>
 
 param(

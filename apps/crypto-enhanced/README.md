@@ -1,7 +1,7 @@
 # Crypto Enhanced
 
 Scalping-first Kraken trading app for the monorepo. The canonical project path is
-`C:\dev\apps\crypto-enhanced`.
+`V:\monorepo\apps\crypto-enhanced`.
 
 ## Current Shape
 
@@ -17,7 +17,7 @@ Scalping-first Kraken trading app for the monorepo. The canonical project path i
 ## Quick Start
 
 ```powershell
-cd C:\dev\apps\crypto-enhanced
+cd V:\monorepo\apps\crypto-enhanced
 python -m venv .venv
 .\.venv\Scripts\pip install -r requirements.txt
 Copy-Item .env.example .env
@@ -26,7 +26,7 @@ Copy-Item trading_config.example.json trading_config.json
 
 ## Nx Commands
 
-Run from `C:\dev`:
+Run from `V:\monorepo`:
 
 ```powershell
 pnpm nx run crypto-enhanced:install
@@ -41,7 +41,7 @@ wrapper. Do not run it from an agent workflow.
 
 ## Direct Commands
 
-Run from `C:\dev\apps\crypto-enhanced`:
+Run from `V:\monorepo\apps\crypto-enhanced`:
 
 ```powershell
 .\.venv\Scripts\python.exe run_tests.py
@@ -66,7 +66,7 @@ strategy classes.
 
 ## Notes
 
-- The legacy `C:\dev\projects\crypto-enhanced` location is retired.
+- The legacy `V:\monorepo\projects\crypto-enhanced` location is retired.
 - The live `.env` can override the DB with `DB_PATH`; on this machine it has
   pointed at `D:\databases\crypto-enhanced\trading.db`. Do not normalize DB
   locations without a backup-first migration plan.

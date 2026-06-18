@@ -23,7 +23,7 @@ function setupBridge(options?: {
   const {
     mcpStatus = [],
     taskList = [],
-    taskRun = { id: 'run-1', command: 'pnpm', args: [], cwd: 'C:\\dev', pid: 1, status: 'running', startedAt: Date.now(), exitCode: null },
+    taskRun = { id: 'run-1', command: 'pnpm', args: [], cwd: 'V:\\monorepo', pid: 1, status: 'running', startedAt: Date.now(), exitCode: null },
     logSearch = []
   } = options ?? {};
 
@@ -171,7 +171,7 @@ describe('AgentOrchestrator', () => {
 
     it('shows spawned process ID after run', async () => {
       const user = userEvent.setup();
-      const taskRun: ProcessHandle = { id: 'spawn-123', command: 'pnpm', args: [], cwd: 'C:\\dev', pid: 1, status: 'running', startedAt: Date.now(), exitCode: null };
+      const taskRun: ProcessHandle = { id: 'spawn-123', command: 'pnpm', args: [], cwd: 'V:\\monorepo', pid: 1, status: 'running', startedAt: Date.now(), exitCode: null };
       setupBridge({ taskRun });
       renderWithQuery(<AgentOrchestrator />);
       await waitFor(() => expect(screen.getByRole('option', { name: 'nova-agent' })).toBeTruthy());

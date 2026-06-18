@@ -396,7 +396,7 @@ mod tests {
 
     #[test]
     fn test_context_engine_creation() {
-        let engine = ContextEngine::new("C:\\dev".to_string());
-        assert_eq!(engine.workspace_root, "C:\\dev");
+        let engine = ContextEngine::new("V:\\monorepo".to_string());
+        assert_eq!(engine.workspace_root, "V:\\monorepo");
     }
 }

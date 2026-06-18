@@ -42,7 +42,7 @@ DEEPSEEK_API_KEY=sk-or-v1-xxxxxxxxxxxxxxxxxxxxx
 Since the Rust backend loads environment variables on startup, you must restart:
 
 ```powershell
-# In your terminal at C:\dev
+# In your terminal at V:\monorepo
 pnpm nx dev nova-agent
 ```
 

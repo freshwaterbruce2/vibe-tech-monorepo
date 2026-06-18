@@ -50,7 +50,7 @@ class NovaTrayApp:
 
     def open_vibe(self):
         # Using a more robust method to find the exe or fall back to dev script
-        vibe_path = 'C:\\dev\\apps\\vibe-code-studio\\dist\\win-unpacked\\Vibe Code Studio.exe'
+        vibe_path = 'V:\\monorepo\\apps\\vibe-code-studio\\dist\\win-unpacked\\Vibe Code Studio.exe'
         if os.path.exists(vibe_path):
             os.startfile(vibe_path)
         else:

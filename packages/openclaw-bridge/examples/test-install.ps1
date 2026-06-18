@@ -4,7 +4,7 @@
 $ErrorActionPreference = 'Stop'
 
 $openclawDir = Join-Path $env:USERPROFILE '.openclaw'
-$source = 'C:\dev\packages\openclaw-bridge\examples'
+$source = 'V:\monorepo\packages\openclaw-bridge\examples'
 
 Write-Host "Installing to: $openclawDir" -ForegroundColor Cyan
 

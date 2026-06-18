@@ -8,7 +8,7 @@ Build today's daily dev log and post it to the Craft daily note.
 
 ## Steps
 
-1. **Gather context.** Run `pwsh C:\dev\tools\scripts\Get-DailyContext.ps1` via Bash. Parse the JSON output. Do not fabricate fields — if the script fails, stop and show the error.
+1. **Gather context.** Run `pwsh V:\monorepo\tools\scripts\Get-DailyContext.ps1` via Bash. Parse the JSON output. Do not fabricate fields — if the script fails, stop and show the error.
 
 2. **Format markdown body** using the parsed context:
 

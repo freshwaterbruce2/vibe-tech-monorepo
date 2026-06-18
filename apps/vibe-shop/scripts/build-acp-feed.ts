@@ -3,7 +3,7 @@
  *
  * Output: `${ACP_FEED_DIR}/products-<ISO8601>.jsonl.gz` and a `latest.jsonl.gz`
  * overwrite copy. ACP_FEED_DIR defaults to `D:\data\vibe-shop\acp-feed` per
- * the monorepo paths-policy (no runtime data on C:\dev).
+ * the monorepo paths-policy (no runtime data on V:\monorepo).
  *
  * Usage: pnpm --filter vibe-shop tsx scripts/build-acp-feed.ts
  *

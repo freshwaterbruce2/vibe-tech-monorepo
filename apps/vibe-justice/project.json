@@ -143,27 +143,11 @@
         "cwd": "apps/vibe-justice/frontend"
       }
     },
-    "electron:dev": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm run electron:dev",
-        "cwd": "apps/vibe-justice/frontend"
-      }
-    },
-    "electron:build": {
-      "executor": "nx:run-commands",
-      "dependsOn": ["build:frontend"],
-      "outputs": ["{projectRoot}/frontend/dist", "{projectRoot}/frontend/dist-electron"],
-      "options": {
-        "command": "pnpm run electron:build",
-        "cwd": "apps/vibe-justice/frontend"
-      }
-    },
     "backend:build": {
       "executor": "nx:run-commands",
       "outputs": ["{projectRoot}/backend/dist"],
       "options": {
-        "command": "pwsh -File ../../build_v8_final.ps1",
+        "command": "pwsh -File ../build_v8_final.ps1",
         "cwd": "apps/vibe-justice/backend"
       }
     },

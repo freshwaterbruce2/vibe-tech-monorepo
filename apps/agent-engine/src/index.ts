@@ -44,10 +44,10 @@ function printFailingSuites(suites: Array<{ suite: string; details: string[] }>)
 }
 
 async function runBenchmark(): Promise<void> {
-  const evaluation = new EvaluationService('C:\\dev', 'scripted');
+  const evaluation = new EvaluationService('V:\\monorepo', 'scripted');
   const benchmarkService = new BenchmarkService();
   const repoSuites = await evaluation.runRepoLocalSuites();
-  const regressionSuites = benchmarkService.runRegressionPackSuites('C:\\dev');
+  const regressionSuites = benchmarkService.runRegressionPackSuites('V:\\monorepo');
   const external = benchmarkService.runExternalLane();
   const allSuites = [...repoSuites, ...regressionSuites, ...(external ? [external] : [])];
   const report = benchmarkService.createReport(allSuites);
@@ -62,11 +62,11 @@ async function runBenchmark(): Promise<void> {
 }
 
 async function runSelfEval(): Promise<void> {
-  const evaluation = new EvaluationService('C:\\dev', 'scripted');
+  const evaluation = new EvaluationService('V:\\monorepo', 'scripted');
   const benchmarkService = new BenchmarkService();
   const suites = [
     ...(await evaluation.runBehavioralSuites()),
-    ...benchmarkService.runRegressionPackSuites('C:\\dev'),
+    ...benchmarkService.runRegressionPackSuites('V:\\monorepo'),
   ];
   const score = evaluation.summarizeScore(suites);
 
@@ -91,7 +91,7 @@ async function runSelfEval(): Promise<void> {
 }
 
 async function runBehavioralEval(suiteId: string, categoryOrCaseId?: string): Promise<void> {
-  const evaluation = new EvaluationService('C:\\dev', 'auto');
+  const evaluation = new EvaluationService('V:\\monorepo', 'auto');
   const suites = await evaluation.runBehavioralSuites();
   const selected = suites.find((suite) => suite.suite === suiteId);
 

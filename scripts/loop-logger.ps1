@@ -1,5 +1,5 @@
 # Loop Logger - Structured logging for overnight loop sessions
-# Usage: . C:\dev\scripts\loop-logger.ps1
+# Usage: . V:\monorepo\scripts\loop-logger.ps1
 #        Write-LoopLog -Loop "quality-sweep" -Project "vibe-tutor" -Message "lint: 3 errors fixed"
 #        Write-LoopLog -Loop "cleanup-hygiene" -Phase 2 -Message "staged 45 deleted build artifacts"
 #        Write-LoopLog -Loop "review-optimize" -Project "nova-agent" -Message "reviewed: anti-patterns=12, security=0"

@@ -7,7 +7,7 @@ Navigate to the crypto trading system directory and run the performance monitori
 
 Steps:
 
-1. Change to crypto-enhanced directory: `cd C:\dev\apps\crypto-enhanced`
+1. Change to crypto-enhanced directory: `cd V:\monorepo\apps\crypto-enhanced`
 2. Run the quick status dashboard: `python scripts\check_status.py`
 3. If user asks for detailed report, run: `python scripts\performance_monitor.py weekly`
 4. If user asks for validation status, run: `python scripts\performance_monitor.py monthly`

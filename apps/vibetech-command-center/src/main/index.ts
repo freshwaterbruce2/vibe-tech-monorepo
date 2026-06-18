@@ -8,7 +8,7 @@ import { setupTray, teardownTray } from './tray';
 
 const isDev = !app.isPackaged;
 const DEFAULT_WS_PORT = 3210;
-const MONOREPO_ROOT = 'C:\\dev';
+const MONOREPO_ROOT = 'V:\\monorepo';
 
 let container: ServiceContainer | null = null;
 let hub: WsHub | null = null;

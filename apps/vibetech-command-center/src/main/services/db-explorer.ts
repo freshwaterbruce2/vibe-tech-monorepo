@@ -5,7 +5,7 @@ import type { DbExplorerDatabase, DbTableSchema, DbExplorerResult } from '../../
 import { loadDatabaseTargets } from './database-inventory';
 
 export interface DbExplorerOptions {
-  allowedRoots: string[]; // e.g., ['D:\\databases', 'C:\\dev']
+  allowedRoots: string[]; // e.g., ['D:\\databases', 'V:\\monorepo']
 }
 
 const ROW_LIMIT = 1_000;

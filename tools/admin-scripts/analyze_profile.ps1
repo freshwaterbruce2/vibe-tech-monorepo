@@ -3,7 +3,7 @@
     Analyzes User Profile for Cleanup Candidates
 #>
 $profilePath = "C:\Users\fresh_zxae3v6"
-$reportPath = "C:\dev\admin_scripts\profile_report.txt"
+$reportPath = "V:\monorepo\admin_scripts\profile_report.txt"
 
 Write-Host "Analyzing Profile: $profilePath..." -ForegroundColor Cyan
 

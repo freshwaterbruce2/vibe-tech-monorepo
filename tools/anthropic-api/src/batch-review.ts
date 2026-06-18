@@ -11,7 +11,7 @@ async function batchReview() {
   let changedFiles: string[];
   try {
     const diff = execSync(`git diff --name-only ${baseBranch}`, {
-      cwd: 'C:\\dev',
+      cwd: 'V:\\monorepo',
       encoding: 'utf-8',
     });
     changedFiles = diff
@@ -33,7 +33,7 @@ async function batchReview() {
   const requests = changedFiles.map((file, i) => {
     let content: string;
     try {
-      content = readFileSync(`C:\\dev\\${file}`, 'utf-8');
+      content = readFileSync(`V:\\monorepo\\${file}`, 'utf-8');
     } catch {
       return null;
     }

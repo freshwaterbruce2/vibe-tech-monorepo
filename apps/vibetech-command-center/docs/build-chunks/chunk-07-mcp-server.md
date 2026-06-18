@@ -1,6 +1,6 @@
 # Chunk 7 — MCP Server Exposure
 
-**Goal:** Expose the dashboard's service layer as an MCP server via stdio transport, registered in `C:\dev\.mcp.json` so Claude Desktop and Claude Code can both call it. Runs as a separate Node process (not inside the Electron main process) so it works whether the dashboard window is open or not.
+**Goal:** Expose the dashboard's service layer as an MCP server via stdio transport, registered in `V:\monorepo\.mcp.json` so Claude Desktop and Claude Code can both call it. Runs as a separate Node process (not inside the Electron main process) so it works whether the dashboard window is open or not.
 
 **Session time budget:** ~1.5 hours.
 
@@ -13,13 +13,13 @@
 ## 0. Backup first
 
 ```powershell
-Compress-Archive -Path C:\dev\apps\vibetech-command-center -DestinationPath C:\dev\_backups\pre-chunk07_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
+Compress-Archive -Path V:\monorepo\apps\vibetech-command-center -DestinationPath V:\monorepo\_backups\pre-chunk07_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
 ```
 
 Also back up the monorepo MCP registration file specifically, since we're about to modify it:
 
 ```powershell
-Copy-Item C:\dev\.mcp.json C:\dev\_backups\mcp.json.pre-chunk07_$(Get-Date -Format 'yyyyMMdd_HHmmss').bak
+Copy-Item V:\monorepo\.mcp.json V:\monorepo\_backups\mcp.json.pre-chunk07_$(Get-Date -Format 'yyyyMMdd_HHmmss').bak
 ```
 
 ---
@@ -41,7 +41,7 @@ The services are deliberately framework-agnostic (no Electron imports in `servic
 ## 2. Install MCP SDK server bits
 
 ```powershell
-cd C:\dev\apps\vibetech-command-center
+cd V:\monorepo\apps\vibetech-command-center
 pnpm add @modelcontextprotocol/sdk
 # Already installed as a dep for rag-client, but ensure the version supports server-side SDK exports
 ```
@@ -49,8 +49,8 @@ pnpm add @modelcontextprotocol/sdk
 Confirm the SDK version exports `/server/index.js` and `/server/stdio.js`:
 
 ```powershell
-Test-Path C:\dev\apps\vibetech-command-center\node_modules\@modelcontextprotocol\sdk\dist\esm\server\index.js
-Test-Path C:\dev\apps\vibetech-command-center\node_modules\@modelcontextprotocol\sdk\dist\esm\server\stdio.js
+Test-Path V:\monorepo\apps\vibetech-command-center\node_modules\@modelcontextprotocol\sdk\dist\esm\server\index.js
+Test-Path V:\monorepo\apps\vibetech-command-center\node_modules\@modelcontextprotocol\sdk\dist\esm\server\stdio.js
 ```
 
 Both should return `True`. If not, `pnpm add @modelcontextprotocol/sdk@latest` and re-check.
@@ -73,7 +73,7 @@ import {
 import { createServiceContainer, disposeServiceContainer, type ServiceContainer } from '../main/service-container';
 import { registerTools, type McpTool } from './tools';
 
-const MONOREPO_ROOT = 'C:\\dev';
+const MONOREPO_ROOT = 'V:\\monorepo';
 
 async function main(): Promise<void> {
   // MCP servers communicate on stdin/stdout. Anything we log to console.log would corrupt
@@ -198,7 +198,7 @@ export function registerTools(c: ServiceContainer): McpTool[] {
           apps: filtered.map((a) => ({
             name: a.name,
             root: a.root,
-            absolute_path: `C:\\dev\\${a.root.replace(/\//g, '\\')}`,
+            absolute_path: `V:\\monorepo\\${a.root.replace(/\//g, '\\')}`,
             tags: a.tags,
             dependencies: graph.dependencies[a.name]?.map((d) => d.target) ?? []
           }))
@@ -256,7 +256,7 @@ export function registerTools(c: ServiceContainer): McpTool[] {
       inputSchema: {
         type: 'object',
         properties: {
-          path: { type: 'string', description: 'Absolute Windows path, e.g., C:\\dev\\apps\\nova-agent\\dist' }
+          path: { type: 'string', description: 'Absolute Windows path, e.g., V:\\monorepo\\apps\\nova-agent\\dist' }
         },
         required: ['path'],
         additionalProperties: false
@@ -283,7 +283,7 @@ export function registerTools(c: ServiceContainer): McpTool[] {
     {
       name: 'dashboard_recent_backups',
       description:
-        'List recent zip backups from C:\\dev\\_backups sorted newest-first. Each entry includes the zip filename, size, and creation time. Use to check whether a recent change was backed up.',
+        'List recent zip backups from V:\\monorepo\\_backups sorted newest-first. Each entry includes the zip filename, size, and creation time. Use to check whether a recent change was backed up.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -305,7 +305,7 @@ export function registerTools(c: ServiceContainer): McpTool[] {
     {
       name: 'dashboard_create_backup',
       description:
-        'Create a zip backup of a directory or file. Uses PowerShell Compress-Archive under the hood (Bruce\'s standard command). Destination defaults to C:\\dev\\_backups. Filenames are deterministic: <source>_<label>_<yyyymmdd_hhmmss>.zip. USE THIS BEFORE ANY DESTRUCTIVE CHANGE.',
+        'Create a zip backup of a directory or file. Uses PowerShell Compress-Archive under the hood (Bruce\'s standard command). Destination defaults to V:\\monorepo\\_backups. Filenames are deterministic: <source>_<label>_<yyyymmdd_hhmmss>.zip. USE THIS BEFORE ANY DESTRUCTIVE CHANGE.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -330,7 +330,7 @@ export function registerTools(c: ServiceContainer): McpTool[] {
     {
       name: 'dashboard_search_rag',
       description:
-        'Semantic search across the C:\\dev monorepo using the local RAG index (mcp-rag-server). Returns file paths, snippets, and similarity scores. Prefer this over reading entire files when looking for a specific concept, pattern, or symbol.',
+        'Semantic search across the V:\\monorepo monorepo using the local RAG index (mcp-rag-server). Returns file paths, snippets, and similarity scores. Prefer this over reading entire files when looking for a specific concept, pattern, or symbol.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -390,7 +390,7 @@ export function registerTools(c: ServiceContainer): McpTool[] {
         if (!app || app.type !== 'app') {
           throw new Error(`not an app: ${appName}`);
         }
-        const cwd = `C:\\dev\\${app.root.replace(/\//g, '\\')}`;
+        const cwd = `V:\\monorepo\\${app.root.replace(/\//g, '\\')}`;
 
         const allowedTools = Array.isArray(args['allowed_tools'])
           ? (args['allowed_tools'] as ClaudeAllowedTool[])
@@ -467,7 +467,7 @@ export function registerTools(c: ServiceContainer): McpTool[] {
           monorepo: {
             apps_count: apps.length,
             libs_count: libs.length,
-            root: 'C:\\dev'
+            root: 'V:\\monorepo'
           },
           databases: {
             tracked: dbArray.length,
@@ -543,7 +543,7 @@ The tsconfig extends the root which has `@shared/*` aliases, but `tsc` doesn't r
 Go with **Option A**. Run this find-and-replace in PowerShell:
 
 ```powershell
-cd C:\dev\apps\vibetech-command-center\src
+cd V:\monorepo\apps\vibetech-command-center\src
 
 # main/services/*.ts → ../../shared/types
 Get-ChildItem -Path main\services -Filter *.ts -Recurse | ForEach-Object {
@@ -586,7 +586,7 @@ Inside the `"scripts"` block, add:
 Run the build:
 
 ```powershell
-cd C:\dev\apps\vibetech-command-center
+cd V:\monorepo\apps\vibetech-command-center
 pnpm run build:mcp
 ```
 
@@ -602,12 +602,12 @@ All three should be `True`.
 
 ---
 
-## 6. Register the MCP server in `C:\dev\.mcp.json`
+## 6. Register the MCP server in `V:\monorepo\.mcp.json`
 
 The file already contains the `rag` entry. Add a `command-center` entry alongside it. Read the existing file first:
 
 ```powershell
-Get-Content C:\dev\.mcp.json
+Get-Content V:\monorepo\.mcp.json
 ```
 
 Add (merge with existing `mcpServers` object):
@@ -617,7 +617,7 @@ Add (merge with existing `mcpServers` object):
   "mcpServers": {
     "command-center": {
       "command": "node.exe",
-      "args": ["C:\\dev\\apps\\vibetech-command-center\\dist\\mcp\\server.js"],
+      "args": ["V:\\monorepo\\apps\\vibetech-command-center\\dist\\mcp\\server.js"],
       "env": {
         "NODE_ENV": "production"
       }
@@ -629,12 +629,12 @@ Add (merge with existing `mcpServers` object):
 **Do not remove or modify existing entries** (`rag`, etc.). Use a proper JSON merge — PowerShell example:
 
 ```powershell
-$mcpPath = 'C:\dev\.mcp.json'
+$mcpPath = 'V:\monorepo\.mcp.json'
 $json = Get-Content $mcpPath -Raw | ConvertFrom-Json
 if (-not $json.mcpServers) { $json | Add-Member -MemberType NoteProperty -Name mcpServers -Value (New-Object PSObject) }
 $json.mcpServers | Add-Member -MemberType NoteProperty -Name 'command-center' -Value @{
   command = 'node.exe'
-  args = @('C:\dev\apps\vibetech-command-center\dist\mcp\server.js')
+  args = @('V:\monorepo\apps\vibetech-command-center\dist\mcp\server.js')
   env = @{ NODE_ENV = 'production' }
 } -Force
 $json | ConvertTo-Json -Depth 10 | Set-Content $mcpPath -Encoding UTF8
@@ -643,7 +643,7 @@ $json | ConvertTo-Json -Depth 10 | Set-Content $mcpPath -Encoding UTF8
 Verify:
 
 ```powershell
-Get-Content C:\dev\.mcp.json | ConvertFrom-Json | Select-Object -ExpandProperty mcpServers
+Get-Content V:\monorepo\.mcp.json | ConvertFrom-Json | Select-Object -ExpandProperty mcpServers
 ```
 
 Should list both `rag` (or whatever existed) and `command-center`.
@@ -748,7 +748,7 @@ Add to `package.json` scripts:
 Run it:
 
 ```powershell
-cd C:\dev\apps\vibetech-command-center
+cd V:\monorepo\apps\vibetech-command-center
 pnpm run probe:mcp
 ```
 
@@ -816,8 +816,8 @@ function makeFakeContainer(): ServiceContainer {
       ])
     } as unknown as ServiceContainer['dbMetrics'],
     backup: {
-      createBackup: vi.fn().mockResolvedValue({ success: true, zipPath: 'C:\\dev\\_backups\\x.zip', sizeBytes: 1024, sourcePath: '.', label: 'unit', startedAt: 1, completedAt: 2, durationMs: 1 }),
-      listRecent: vi.fn().mockReturnValue([{ zipPath: 'C:\\dev\\_backups\\x.zip', sizeBytes: 1024, createdAt: Date.now(), label: null }])
+      createBackup: vi.fn().mockResolvedValue({ success: true, zipPath: 'V:\\monorepo\\_backups\\x.zip', sizeBytes: 1024, sourcePath: '.', label: 'unit', startedAt: 1, completedAt: 2, durationMs: 1 }),
+      listRecent: vi.fn().mockReturnValue([{ zipPath: 'V:\\monorepo\\_backups\\x.zip', sizeBytes: 1024, createdAt: Date.now(), label: null }])
     } as unknown as ServiceContainer['backup'],
     runner: {
       list: vi.fn().mockReturnValue([
@@ -902,7 +902,7 @@ describe('MCP tool registry', () => {
     const t = tools.find((x) => x.name === 'dashboard_invoke_claude')!;
     await t.handler({ app_name: 'nova-agent', prompt: 'review' });
     expect(c.claude.invoke).toHaveBeenCalledWith(expect.objectContaining({
-      cwd: 'C:\\dev\\apps\\nova-agent',
+      cwd: 'V:\\monorepo\\apps\\nova-agent',
       allowedTools: ['Read', 'Glob', 'Grep'],
       permissionMode: 'plan'
     }));
@@ -943,7 +943,7 @@ describe('MCP tool registry', () => {
 ## 10. Run everything
 
 ```powershell
-cd C:\dev\apps\vibetech-command-center
+cd V:\monorepo\apps\vibetech-command-center
 pnpm run typecheck
 pnpm run test
 pnpm run build:mcp
@@ -966,7 +966,7 @@ Then manually verify Claude Desktop integration per section 8.
 2. `pnpm run test` — all tests pass.
 3. `pnpm run build:mcp` produces `dist/mcp/server.js` and `dist/main/services/*.js`.
 4. `pnpm run probe:mcp` prints `[probe] PASS` with at least 10 tools listed.
-5. `C:\dev\.mcp.json` contains a `command-center` entry alongside existing entries; no existing entries were removed.
+5. `V:\monorepo\.mcp.json` contains a `command-center` entry alongside existing entries; no existing entries were removed.
 6. Claude Desktop, after a full restart, can call `dashboard_overview` and returns a populated summary.
 7. `src/mcp/tools.ts` and `src/mcp/server.ts` each under 500 lines.
 8. The Electron app (`pnpm run dev`) still launches cleanly — no regressions from the import rewrite.
@@ -993,8 +993,8 @@ Then manually verify Claude Desktop integration per section 8.
 ## Post-chunk backup
 
 ```powershell
-Compress-Archive -Path C:\dev\apps\vibetech-command-center -DestinationPath C:\dev\_backups\command-center-chunk07-complete_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
-Copy-Item C:\dev\.mcp.json C:\dev\_backups\mcp.json.chunk07-complete_$(Get-Date -Format 'yyyyMMdd_HHmmss').bak
+Compress-Archive -Path V:\monorepo\apps\vibetech-command-center -DestinationPath V:\monorepo\_backups\command-center-chunk07-complete_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
+Copy-Item V:\monorepo\.mcp.json V:\monorepo\_backups\mcp.json.chunk07-complete_$(Get-Date -Format 'yyyyMMdd_HHmmss').bak
 ```
 
-Ping me with `chunk 7 complete` (plus any Claude Desktop integration oddities) and I'll write Chunk 8 — Playwright E2E tests plus electron-builder packaging to a single `.exe` you pin to the taskbar. That's the ship chunk. After Chunk 8, the Command Center is a daily-driver app with both a UI and an MCP surface, fully tested end-to-end, installed as a native Windows app.
+Ping me with `chunk 7 complete` (plus any Claude Desktop integration oddities) and I'll write Chunk 8 — Playwright E2E tests plus electron-builder packaging to a single `.exe` you pin to the taskbar. That's the ship chunk. After Chunk 8, the Command Center is a dai

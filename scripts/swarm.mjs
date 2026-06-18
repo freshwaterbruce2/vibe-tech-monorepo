@@ -44,7 +44,7 @@ if (isMainThread) {
   // In a real swarm, this would execute the command via child_process.spawn.
   // For safety and prototype validation, we are simulating the hook first.
   const [cmd, ...args] = command.split(' ');
-  const child = spawn(cmd, args, { shell: true, cwd: 'C:\\\\dev' });
+  const child = spawn(cmd, args, { shell: true, cwd: 'V:\\\\monorepo' });
 
   child.stdout.on('data', (data) => {
     parentPort.postMessage(`STDOUT: ${data.toString().trim()}`);

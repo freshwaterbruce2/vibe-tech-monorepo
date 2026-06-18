@@ -6,7 +6,7 @@ overloading the model context.
 
 ### Components
 
-- `C:\\dev\\tools\\claude_orchestration_harness.py`
+- `V:\\monorepo\\tools\\claude_orchestration_harness.py`
   - Reusable Python module that wires:
     - Tool Search Tool (`tool_search_tool_regex_20251119`)
     - Programmatic Tool Calling (`code_execution_20250825`)
@@ -16,7 +16,7 @@ overloading the model context.
     - Runs multi-step conversations with tool_use and server_tool_use blocks.
     - Delegates programmatic tool calls to a `CodeExecutionRuntime`.
 
-- `C:\\dev\\tools\\deepseek_hands.py`
+- `V:\\monorepo\\tools\\deepseek_hands.py`
   - MCP server (`desktop-hands-v1`) that exposes desktop control tools:
     - `take_screenshot` – returns base64 PNG of the current desktop.
     - `mouse_action` – move/click/double_click/drag at (x, y).
@@ -34,7 +34,7 @@ The root `.mcp.json` now includes:
       "type": "stdio",
       "command": "python",
       "args": [
-        "C:\\\\dev\\\\tools\\\\deepseek_hands.py"
+        "V:\\\\monorepo\\\\tools\\\\deepseek_hands.py"
       ]
     }
   }

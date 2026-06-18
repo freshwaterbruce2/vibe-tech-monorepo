@@ -16,7 +16,7 @@ You are operating in a **multi-drive Windows 11 environment** with strict separa
 
 ### Drive Architecture
 
-- **Code Root:** `C:\dev` (Current project context - monorepo)
+- **Code Root:** `V:\monorepo` (Current project context - monorepo)
 - **Data Root:** `D:\databases` (SQLite, PostgreSQL, vector stores)
 - **Learning System:** `D:\learning-system` (Reference patterns, code snippets, verified solutions)
 - **Logs:** `D:\logs` (Application logs, trading logs, audit trails)

@@ -148,11 +148,11 @@ Created comprehensive test scripts:
 
 ```bash
 # Start OpenRouter proxy
-cd C:\dev\backend\openrouter-proxy
+cd V:\monorepo\backend\openrouter-proxy
 pnpm dev
 
 # Test models
-cd C:\dev\apps\vibe-justice
+cd V:\monorepo\apps\vibe-justice
 node test-deepseek-models.mjs
 
 # Run integration test
@@ -212,10 +212,10 @@ const result = await analyzeLegalDocument(
 
 ## Documentation References
 
-- **OpenRouter Proxy**: `C:\dev\backend\openrouter-proxy\QUICK_START.md`
-- **Available Models**: `C:\dev\backend\openrouter-proxy\README.md`
-- **Vibe-Justice**: `C:\dev\apps\vibe-justice\CLAUDE.md`
-- **Roadmap**: `C:\dev\apps\vibe-justice\VIBE_JUSTICE_ROADMAP.md`
+- **OpenRouter Proxy**: `V:\monorepo\backend\openrouter-proxy\QUICK_START.md`
+- **Available Models**: `V:\monorepo\backend\openrouter-proxy\README.md`
+- **Vibe-Justice**: `V:\monorepo\apps\vibe-justice\CLAUDE.md`
+- **Roadmap**: `V:\monorepo\apps\vibe-justice\VIBE_JUSTICE_ROADMAP.md`
 
 ---
 

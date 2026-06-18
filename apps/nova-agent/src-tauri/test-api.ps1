@@ -78,7 +78,7 @@ try {
     Write-Host "========================================" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "Next steps:" -ForegroundColor Cyan
-    Write-Host "  1. cd C:\dev\apps\nova-agent" -ForegroundColor White
+    Write-Host "  1. cd V:\monorepo\apps\nova-agent" -ForegroundColor White
     Write-Host "  2. pnpm tauri dev" -ForegroundColor White
     Write-Host ""
     

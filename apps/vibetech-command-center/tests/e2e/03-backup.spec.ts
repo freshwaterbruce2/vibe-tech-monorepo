@@ -40,14 +40,14 @@ test('quick-backup button on Backups panel triggers backup.create', async () => 
   await page.getByRole('button', { name: /Backups/ }).click();
   await expect(page.locator('text=/Recent Backups/')).toBeVisible({ timeout: 10_000 });
 
-  const before = existsSync('C:\\dev\\_backups')
-    ? readdirSync('C:\\dev\\_backups').filter((f) => f.endsWith('.zip')).length
+  const before = existsSync('V:\\monorepo\\_backups')
+    ? readdirSync('V:\\monorepo\\_backups').filter((f) => f.endsWith('.zip')).length
     : 0;
 
   await page.getByRole('button', { name: /Backup packages\// }).click();
 
   await expect(page.locator('text=/backup created/')).toBeVisible({ timeout: 30_000 });
 
-  const after = readdirSync('C:\\dev\\_backups').filter((f) => f.endsWith('.zip')).length;
+  const after = readdirSync('V:\\monorepo\\_backups').filter((f) => f.endsWith('.zip')).length;
   expect(after).toBeGreaterThan(before);
 });

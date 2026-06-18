@@ -62,7 +62,7 @@ export function AffectedDashboard() {
     void window.commandCenter.process.spawn({
       command: 'pnpm',
       args: ['exec', 'nx', 'affected', '-t', 'lint', 'typecheck', 'test'],
-      cwd: 'C:\\dev'
+      cwd: 'V:\\monorepo'
     });
   }, []);
 

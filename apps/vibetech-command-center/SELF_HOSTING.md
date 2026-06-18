@@ -18,7 +18,7 @@ This guide covers building and packaging the Command Center from source on Windo
 Run all commands from the app directory:
 
 ```powershell
-cd C:\dev\apps\vibetech-command-center
+cd V:\monorepo\apps\vibetech-command-center
 ```
 
 ### 1. Install dependencies

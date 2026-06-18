@@ -1,6 +1,6 @@
 # Invoice Automation SaaS — Project Guide
 
-**Path:** `C:\dev\apps\invoice-automation-saas`
+**Path:** `V:\monorepo\apps\invoice-automation-saas`
 **Type:** Single-tenant invoice SaaS with recurring billing, automated dunning, and Stripe payments
 **Stack:** Vite + React 19 SPA + Fastify v5 API + better-sqlite3
 **Status:** Tier 1 (MVP parity ~Zoho Invoice) shipped 2026-05-03. See `docs/FEATURE-PARITY-PLAN.md` for the roadmap to Tier 2 (FreshBooks parity) and Tier 3 (mid-market).
@@ -166,7 +166,7 @@ Set `SERVE_WEB=1` to have the API also serve the SPA from `dist/` (single-proces
 
 ## Environment variables
 
-Per `.claude/rules/database-storage.md` and `.claude/rules/paths-policy.md`: code lives on `C:\dev`, all data on `D:\`. Never hardcode paths.
+Per `.claude/rules/database-storage.md` and `.claude/rules/paths-policy.md`: code lives on `V:\monorepo`, all data on `D:\`. Never hardcode paths.
 
 | Var | Required | Purpose |
 |-----|---|---|
@@ -277,7 +277,7 @@ The runner polls every 10s, claims up to 5 jobs at a time, marks them `running` 
 ## Constraints (don't violate)
 
 - No mocks/placeholders in production code (`.claude/rules/no-mock-or-placeholder-code.md`). Tests are fine.
-- All data on `D:\`, code on `C:\dev` (`.claude/rules/paths-policy.md`).
+- All data on `D:\`, code on `V:\monorepo` (`.claude/rules/paths-policy.md`).
 - Never hardcode `D:\databases\...` — use `process.env.DATABASE_PATH`.
 - ASCII only in source-file comments (pre-commit hook enforces).
 - TypeScript strict mode, NodeNext modules, `.js` import extensions.

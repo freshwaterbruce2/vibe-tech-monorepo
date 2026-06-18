@@ -6,8 +6,8 @@ This document provides a comprehensive migration assessment for transitioning `a
 
 ## 1. Executive Summary
 
-- **App Target:** [vibe-tutor](file:///C:/dev/apps/vibe-tutor)
-- **Current Version:** v3.4.15 (configured via a pnpm override in root [package.json](file:///C:/dev/package.json#L29))
+- **App Target:** [vibe-tutor](file:///V:/monorepo/apps/vibe-tutor)
+- **Current Version:** v3.4.15 (configured via a pnpm override in root [package.json](file:///V:/monorepo/package.json#L29))
 - **Target Version:** v4.1.18 (monorepo root standard)
 - **Migration Strategy:** CSS-first configuration via Vite Plugin (`@tailwindcss/vite`), eliminating `tailwind.config.cjs` and legacy PostCSS pipeline.
 - **Estimated Effort:** **24 hours** (including build validation, dependency resolution, manual theme verification, and multi-platform testing across Electron and Capacitor/Android targets).
@@ -20,10 +20,10 @@ This document provides a comprehensive migration assessment for transitioning `a
 In `apps/vibe-tutor`, Tailwind is set up using traditional PostCSS and a configuration file:
 
 ### 2.1 Configuration File Analysis
-- **Path:** [tailwind.config.cjs](file:///C:/dev/apps/vibe-tutor/tailwind.config.cjs)
+- **Path:** [tailwind.config.cjs](file:///V:/monorepo/apps/vibe-tutor/tailwind.config.cjs)
 - **Content Coverage:**
   - Content paths target `index.html` and `./src/**/*.{ts,tsx}`.
-  - **Extended Colors:** Maps custom semantic keys to CSS custom properties defined in [theme.css](file:///C:/dev/apps/vibe-tutor/src/styles/theme.css):
+  - **Extended Colors:** Maps custom semantic keys to CSS custom properties defined in [theme.css](file:///V:/monorepo/apps/vibe-tutor/src/styles/theme.css):
     - `'background-main': 'var(--background-main)'`
     - `'background-card': 'var(--background-card)'`
     - `'background-surface': 'var(--background-surface)'`
@@ -45,15 +45,15 @@ In `apps/vibe-tutor`, Tailwind is set up using traditional PostCSS and a configu
     - `minWidth` extended with `touch` (`48px`) and `touch-sm` (`44px`).
 
 ### 2.2 PostCSS Setup
-- **Path:** [postcss.config.cjs](file:///C:/dev/apps/vibe-tutor/postcss.config.cjs)
+- **Path:** [postcss.config.cjs](file:///V:/monorepo/apps/vibe-tutor/postcss.config.cjs)
 - **Plugins:** Standard `tailwindcss` and `autoprefixer` execution.
 
 ### 2.3 Dependencies
-- **Path:** [package.json](file:///C:/dev/apps/vibe-tutor/package.json#L91-L92)
+- **Path:** [package.json](file:///V:/monorepo/apps/vibe-tutor/package.json#L91-L92)
   - `"tailwindcss": "3.4.15"`
   - `"postcss": "^8.5.12"`
   - `"autoprefixer": "^10.5.0"`
-- **Root Override:** [package.json](file:///C:/dev/package.json#L29)
+- **Root Override:** [package.json](file:///V:/monorepo/package.json#L29)
   - `"vibe-tutor>tailwindcss": "3.4.15"` overrides the workspace standard `4.1.18` specifically for this project.
 
 ---
@@ -87,11 +87,11 @@ To migrate `vibe-tutor` to Tailwind v4, the following steps will be executed:
 
 ### Step 5.1: Package and Environment Alignment
 1. **Remove Local Tailwind Dependencies:** Remove `tailwindcss`, `postcss`, and `autoprefixer` from `apps/vibe-tutor/package.json`.
-2. **Remove pnpm Override:** Delete `"vibe-tutor>tailwindcss": "3.4.15"` from the root [package.json](file:///C:/dev/package.json).
+2. **Remove pnpm Override:** Delete `"vibe-tutor>tailwindcss": "3.4.15"` from the root [package.json](file:///V:/monorepo/package.json).
 3. **Install Vite Plugin:** Install `@tailwindcss/vite` in `apps/vibe-tutor/package.json` devDependencies.
 
 ### Step 5.2: CSS and Theme Config Relocation
-1. **Update Imports:** In [index.css](file:///C:/dev/apps/vibe-tutor/src/index.css), replace:
+1. **Update Imports:** In [index.css](file:///V:/monorepo/apps/vibe-tutor/src/index.css), replace:
    ```css
    @tailwind base;
    @tailwind components;
@@ -101,7 +101,7 @@ To migrate `vibe-tutor` to Tailwind v4, the following steps will be executed:
    ```css
    @import "tailwindcss";
    ```
-2. **Define Theme Overrides:** Convert `tailwind.config.cjs` declarations to a CSS-native `@theme` block in [index.css](file:///C:/dev/apps/vibe-tutor/src/index.css):
+2. **Define Theme Overrides:** Convert `tailwind.config.cjs` declarations to a CSS-native `@theme` block in [index.css](file:///V:/monorepo/apps/vibe-tutor/src/index.css):
    ```css
    @theme {
      --color-background-main: var(--background-main);
@@ -132,7 +132,7 @@ To migrate `vibe-tutor` to Tailwind v4, the following steps will be executed:
    - Remove `postcss.config.cjs`
 
 ### Step 5.3: Build System Refactoring
-1. **Update Vite Configuration:** Modify [vite.config.ts](file:///C:/dev/apps/vibe-tutor/vite.config.ts) to register the `@tailwindcss/vite` plugin:
+1. **Update Vite Configuration:** Modify [vite.config.ts](file:///V:/monorepo/apps/vibe-tutor/vite.config.ts) to register the `@tailwindcss/vite` plugin:
    ```typescript
    import tailwindcss from '@tailwindcss/vite';
    

@@ -453,7 +453,7 @@ Would you like me to create a cleanup plan?
 
 ```bash
 # 1. Create snapshot
-cd C:\dev\scripts\version-control
+cd V:\monorepo\scripts\version-control
 .\Save-Snapshot.ps1 -Description "Before dead code cleanup"
 
 # 2. Remove unused exports

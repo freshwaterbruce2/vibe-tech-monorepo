@@ -13,7 +13,7 @@
 ## 0. Backup first
 
 ```powershell
-Compress-Archive -Path C:\dev\apps\vibetech-command-center -DestinationPath C:\dev\_backups\pre-chunk04_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
+Compress-Archive -Path V:\monorepo\apps\vibetech-command-center -DestinationPath V:\monorepo\_backups\pre-chunk04_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
 ```
 
 ---
@@ -376,7 +376,7 @@ export function registerIpcHandlers(c: ServiceContainer): void {
   // --- meta ---
   ipcMain.handle(IPC_CHANNELS.META_INFO, async (): Promise<IpcResult<{ version: string; monorepoRoot: string; wsPort: number }>> => {
     try {
-      return ok({ version: '0.1.0', monorepoRoot: 'C:\\dev', wsPort: c.wsPort });
+      return ok({ version: '0.1.0', monorepoRoot: 'V:\\monorepo', wsPort: c.wsPort });
     } catch (e) { return err(e, 'META_INFO_FAILED'); }
   });
 }
@@ -441,7 +441,7 @@ import { wireStreams } from './stream-bridge';
 
 const isDev = !app.isPackaged;
 const WS_PORT = 3210;
-const MONOREPO_ROOT = 'C:\\dev';
+const MONOREPO_ROOT = 'V:\\monorepo';
 
 let container: ServiceContainer | null = null;
 let hub: WsHub | null = null;
@@ -755,7 +755,7 @@ export function App(): JSX.Element {
       <Section title={`file events stream (ws: ${state.wsConnected ? 'OK' : '—'})`}>
         <div className="text-xs text-slate-400 max-h-48 overflow-auto">
           {state.fileEvents.length === 0 ? (
-            <em>edit any file in C:\dev\apps\* or C:\dev\packages\* to see events...</em>
+            <em>edit any file in V:\monorepo\apps\* or V:\monorepo\packages\* to see events...</em>
           ) : state.fileEvents.map((e, i) => (
             <div key={i}>{new Date(e.timestamp).toLocaleTimeString()} {e.type} {e.appName ?? e.packageName ?? '?'} — {e.path}</div>
           ))}
@@ -940,7 +940,7 @@ describe('WsHub', () => {
 ## 12. Run everything
 
 ```powershell
-cd C:\dev\apps\vibetech-command-center
+cd V:\monorepo\apps\vibetech-command-center
 pnpm run typecheck
 pnpm run test
 pnpm run dev
@@ -954,12 +954,12 @@ pnpm run dev
 
 **Dev launch expected:**
 - Electron window opens with the Chunk 4 smoke-test harness
-- `meta` section shows version 0.1.0, monorepoRoot C:\dev, wsPort 3210
+- `meta` section shows version 0.1.0, monorepoRoot V:\monorepo, wsPort 3210
 - `health` section shows 6 services (most will be `false` — that's fine, we haven't started them)
 - `databases` section shows 4 rows (those with `error: file not found` for DBs not present on your machine are expected)
 - `nx projects` section shows your ~28 apps + ~26 packages project names
 - `recent backups` shows the zips created during Chunks 0-3
-- **Manual check**: touch a file at `C:\dev\apps\nova-agent\src\anyfile.ts` → the file events stream section updates within 1 second
+- **Manual check**: touch a file at `V:\monorepo\apps\nova-agent\src\anyfile.ts` → the file events stream section updates within 1 second
 
 ---
 
@@ -969,7 +969,7 @@ pnpm run dev
 2. `pnpm run test` — all tests pass, no skips.
 3. `pnpm run dev` opens the smoke-test harness without console errors.
 4. All 5 IPC sections populate within 5 seconds of window load.
-5. Touching a file in `C:\dev\apps\*\src` causes a row to appear in the file events stream within 1 second.
+5. Touching a file in `V:\monorepo\apps\*\src` causes a row to appear in the file events stream within 1 second.
 6. Closing the window exits cleanly (check Task Manager — no orphaned `Electron.exe` or `node.exe` from Claude/RAG stubs).
 7. No service file or main-process file exceeds 500 lines.
 
@@ -990,7 +990,7 @@ pnpm run dev
 ## Post-chunk backup
 
 ```powershell
-Compress-Archive -Path C:\dev\apps\vibetech-command-center -DestinationPath C:\dev\_backups\command-center-chunk04-complete_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
+Compress-Archive -Path V:\monorepo\apps\vibetech-command-center -DestinationPath V:\monorepo\_backups\command-center-chunk04-complete_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
 ```
 
-Ping me with `chunk 4 complete` (plus any oddities) and I'll write Chunk 5 — the first three real panels (AppsGrid, DbHealth, BackupLog) that replace the smoke-test harness with the actual dashboard UI. Zustand store, TanStack Query, Vibe-Tech brand tokens applied.
+Ping me with `chunk 4 complete` (plus any oddities) and I'll write Chunk 5 — the first three real panels (AppsGrid, DbHealth, BackupLog) that replace the smoke-test harness with the actual dashboard UI. Zustand store,

@@ -242,7 +242,7 @@ tail -f ~/Library/Application\ Support/Claude/logs/mcp.log
   "mcpServers": {
     "my-server": {
       "command": "node",
-      "args": ["C:\\dev\\my-server\\dist\\index.js"]
+      "args": ["V:\\monorepo\\my-server\\dist\\index.js"]
     }
   }
 }
@@ -287,7 +287,7 @@ tail -f ~/Library/Application\ Support/Claude/logs/mcp.log
       "command": "npx",
       "args": ["-y", "@wonderwhy-er/desktop-commander"],
       "env": {
-        "ALLOWED_DIRECTORIES": "C:\\dev,C:\\projects"
+        "ALLOWED_DIRECTORIES": "V:\\monorepo,C:\\projects"
       }
     }
   }

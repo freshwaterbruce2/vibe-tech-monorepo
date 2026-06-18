@@ -64,7 +64,7 @@ apps/vibeblox/
 ### 1. Install Dependencies
 
 ```powershell
-cd C:\dev\apps\vibeblox
+cd V:\monorepo\apps\vibeblox
 pnpm install
 ```
 

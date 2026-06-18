@@ -2,7 +2,7 @@
  * PathValidator - Strict path validation with allow-list for Desktop Commander V3
  *
  * Allowed paths:
- * - C:\dev - Development work (read/write)
+ * - V:\monorepo - Development work (read/write)
  * - D:\ - Databases, learning system, large files (read/write)
  * - C:\Users\fresh_zxae3v6\OneDrive - Read-only access
  */
@@ -26,8 +26,8 @@ interface AllowedPath {
 // Define allowed paths with their permissions
 const ALLOWED_PATHS: AllowedPath[] = [
 	{
-		path: "C:\\dev",
-		normalized: "c:\\dev",
+		path: "V:\\monorepo",
+		normalized: "V:\\monorepo",
 		allowRead: true,
 		allowWrite: true,
 		type: "dev",
@@ -123,7 +123,7 @@ function findAllowedPath(inputPath: string): AllowedPath | null {
 		// Check if the normalized path starts with the allowed path
 		if (normalized.startsWith(allowed.normalized)) {
 			// Ensure it's actually a subdirectory, not just a prefix match
-			// e.g., "c:\develop" should not match "c:\dev"
+			// e.g., "c:\develop" should not match "V:\monorepo"
 			const remainder = normalized.slice(allowed.normalized.length);
 
 			// If remainder is empty, it's an exact match
@@ -199,7 +199,7 @@ export function validatePath(inputPath: string, mode: PathMode): string {
 		if (pathType === "unknown") {
 			throw new Error(
 				`Access denied: ${inputPath}. Path is outside allowed directories. ` +
-					`Allowed: C:\\dev, D:\\, C:\\Users\\fresh_zxae3v6\\OneDrive (read-only)`,
+					`Allowed: V:\\monorepo, D:\\, C:\\Users\\fresh_zxae3v6\\OneDrive (read-only)`,
 			);
 		}
 

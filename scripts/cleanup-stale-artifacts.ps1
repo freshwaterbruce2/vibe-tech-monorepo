@@ -4,7 +4,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 
-$root = "C:\dev"
+$root = "V:\monorepo"
 $tmpRoot = Join-Path $root "tmp"
 $driftRoots = @(
     $root
@@ -117,7 +117,7 @@ function CollectDistCandidates {
     return [string[]]($unique.Keys | Sort-Object { $_.Length } -Descending)
 }
 
-Write-Host "Cleaning stale C:\dev artifacts"
+Write-Host "Cleaning stale V:\monorepo artifacts"
 
 $tmpCount = 0
 if (Test-Path -LiteralPath $tmpRoot) {
@@ -135,8 +135,8 @@ $distCandidates = CollectDistCandidates
 $cacheRoots = @(
     $env:TEMP,
     "C:\Windows\Temp",
-    "C:\dev\.nx\cache",
-    "C:\dev\node_modules\.cache",
+    "V:\monorepo\.nx\cache",
+    "V:\monorepo\node_modules\.cache",
     (Join-Path $env:LOCALAPPDATA 'Temp\claude')
 )
 

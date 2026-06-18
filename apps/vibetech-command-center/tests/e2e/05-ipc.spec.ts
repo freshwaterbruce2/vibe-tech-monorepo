@@ -11,7 +11,7 @@ test('meta.info returns expected shape', async () => {
   expect((result as { ok: boolean }).ok).toBe(true);
   const data = (result as { ok: true; data: { version: string; monorepoRoot: string; wsPort: number } }).data;
   expect(data.version).toBeTruthy();
-  expect(data.monorepoRoot).toBe('C:\\dev');
+  expect(data.monorepoRoot).toBe('V:\\monorepo');
   expect(data.wsPort).toBeGreaterThan(0);
 });
 

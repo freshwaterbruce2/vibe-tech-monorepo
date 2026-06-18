@@ -42,7 +42,7 @@
 ## Context
 
 - Root workspace rules live in `AGENTS.md`, `AI.md`, and `WORKSPACE.json`.
-- Shared runtime data belongs on `D:/`, not under `C:/dev`.
+- Shared runtime data belongs on `D:/`, not under `V:/monorepo`.
 - Direct commits to `main`, `master`, and `develop` are blocked locally.
 
 ## Deterministic Nx Checks

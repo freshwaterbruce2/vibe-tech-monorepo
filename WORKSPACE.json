@@ -1,6 +1,6 @@
 {
-  "version": "1.3.1",
-  "lastUpdated": "2026-05-24T23:59:00-04:00",
+  "version": "1.3.2",
+  "lastUpdated": "2026-06-17T00:00:00-04:00",
   "techStack": {
     "packageManager": "pnpm@10.33.0",
     "node": "22.x",
@@ -81,7 +81,7 @@
     {
       "date": "2026-05-26",
       "project": "dental-scheduler",
-      "action": "Configured shared Stripe keys fallback, fixed Playwright E2E strict-mode locator in smoke.spec.ts, and resolved custom feature gating in entitlements.ts. Installed Stripe CLI, projects plugin, and agent skills (.agents/skills/stripe-*), initializing Stripe Projects in C:\\dev."
+      "action": "Configured shared Stripe keys fallback, fixed Playwright E2E strict-mode locator in smoke.spec.ts, and resolved custom feature gating in entitlements.ts. Installed Stripe CLI, projects plugin, and agent skills (.agents/skills/stripe-*), initializing Stripe Projects in V:\\monorepo."
     },
     {
       "date": "2026-05-25",
@@ -96,7 +96,7 @@
     {
       "date": "2026-05-24",
       "project": "vibe-code-studio",
-      "action": "Diagnosed and repaired post-package loading failure by forcing NODE_ENV=production in Vite compiler; added DATABASE_PATH environment override in Tauri backend; built and verified C:\\Dev\\desktop-bridge server for local LAN REST+WS."
+      "action": "Diagnosed and repaired post-package loading failure by forcing NODE_ENV=production in Vite compiler; added DATABASE_PATH environment override in Tauri backend; built and verified V:\\monorepo\\desktop-bridge server for local LAN REST+WS."
     },
     {
       "date": "2026-05-24",
@@ -194,7 +194,7 @@
       "agent-engine": {
         "status": "development",
         "priority": "medium",
-        "description": "Autonomous coding engine with gated self-improvement (Anthropic SDK)"
+        "description": "Autonomous coding engine with gated self-improvement (Kimi/Moonshot via OpenRouter; not Anthropic SDK)"
       },
       "nova-agent": {
         "status": "production",
@@ -204,7 +204,7 @@
       "vibe-code-studio": {
         "status": "production",
         "priority": "high",
-        "description": "Advanced Development & Packaging IDE (Electron)"
+        "description": "Advanced Development & Packaging IDE (Tauri 2.0; src-tauri present)"
       },
       "vibe-tutor": {
         "status": "production",
@@ -375,6 +375,91 @@
         "status": "development",
         "priority": "medium",
         "description": "Discharge SaaS application with Vibe-Tech branding"
+      },
+      "cme-track": {
+        "status": "production",
+        "priority": "medium",
+        "description": "CME credit tracker Micro-SaaS (Stripe, SQLite Pro tier) [added 2026-06-17 audit]"
+      },
+      "prior-auth-pro": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Prior-authorization SaaS [added 2026-06-17 audit]"
+      },
+      "proposal-review-saas": {
+        "status": "production",
+        "priority": "medium",
+        "description": "Proposal review SaaS (live, Stripe) [added 2026-06-17 audit]"
+      },
+      "vibe-shop": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Storefront (Next.js) [added 2026-06-17 audit]"
+      },
+      "vibe-tech-marketing": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Marketing site [added 2026-06-17 audit]"
+      },
+      "vibe-tutor-mobile": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Vibe Tutor mobile (Capacitor/Vite) [added 2026-06-17 audit]"
+      },
+      "prompt-engineer": {
+        "status": "maintenance",
+        "priority": "low",
+        "description": "Prompt engineering app (registry previously 'prompt-engineer-app') [added 2026-06-17 audit]"
+      },
+      "learning-pipeline-mcp": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Learning pipeline MCP server [added 2026-06-17 audit]"
+      },
+      "monorepo-health-mcp": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Monorepo health MCP server [added 2026-06-17 audit]"
+      },
+      "proactive-recommendations-mcp": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Proactive recommendations MCP server [added 2026-06-17 audit]"
+      },
+      "skill-feedback-mcp": {
+        "status": "development",
+        "priority": "medium",
+        "description": "Skill feedback MCP server [added 2026-06-17 audit]"
+      },
+      "_-factory-runtime-smoke": {
+        "status": "scaffold",
+        "priority": "low",
+        "description": "Factory smoke-test scaffold — removal candidate [added 2026-06-17 audit]"
+      },
+      "factory-landing-smoke": {
+        "status": "scaffold",
+        "priority": "low",
+        "description": "Factory smoke-test scaffold — removal candidate [added 2026-06-17 audit]"
+      },
+      "factory-saas-smoke": {
+        "status": "scaffold",
+        "priority": "low",
+        "description": "Factory smoke-test scaffold — removal candidate [added 2026-06-17 audit]"
+      },
+      "factory-tauri-smoke": {
+        "status": "scaffold",
+        "priority": "low",
+        "description": "Factory smoke-test scaffold — removal candidate [added 2026-06-17 audit]"
+      },
+      "factory-verify": {
+        "status": "scaffold",
+        "priority": "low",
+        "description": "Factory verify scaffold — removal candidate [added 2026-06-17 audit]"
+      },
+      "test-factory-app": {
+        "status": "scaffold",
+        "priority": "low",
+        "description": "Factory test app (near-dup of factory-verify) — removal candidate [added 2026-06-17 audit]"
       }
     },
     "packages": {
@@ -463,7 +548,6 @@
         "priority": "medium",
         "description": "Shared React hooks"
       },
-
       "types": {
         "status": "production",
         "priority": "medium",
@@ -529,9 +613,9 @@
   "blockers": [],
   "rules": "./docs/ai/RULES.md",
   "paths": {
-    "apps": "C:/dev/apps",
-    "packages": "C:/dev/packages",
-    "tools": "C:/dev/tools",
+    "apps": "V:/monorepo/apps",
+    "packages": "V:/monorepo/packages",
+    "tools": "V:/monorepo/tools",
     "logs": "D:/logs",
     "data": "D:/",
     "learning": "D:/learning-system"

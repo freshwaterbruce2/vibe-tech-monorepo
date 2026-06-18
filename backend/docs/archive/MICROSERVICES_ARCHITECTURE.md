@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the microservices architecture designed for the C:\dev monorepo.
+This document outlines the microservices architecture designed for the V:\monorepo monorepo.
 
 ## Services Summary
 

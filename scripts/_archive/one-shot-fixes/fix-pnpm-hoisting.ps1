@@ -22,7 +22,7 @@ Write-Host "================================`n" -ForegroundColor Cyan
 
 # Verify we're in the right directory
 if (-not (Test-Path "pnpm-workspace.yaml")) {
-    Write-Error "❌ Must run from C:\dev (pnpm workspace root)"
+    Write-Error "❌ Must run from V:\monorepo (pnpm workspace root)"
     exit 1
 }
 
@@ -48,8 +48,8 @@ if ($DryRun) {
     Write-Host "🔍 DRY RUN MODE - No changes will be made`n" -ForegroundColor Yellow
 
     Write-Host "Would remove:" -ForegroundColor Yellow
-    $appNodeModules | ForEach-Object { Write-Host "  - $($_.FullName -replace 'C:\\dev\\', '')" }
-    $pkgNodeModules | ForEach-Object { Write-Host "  - $($_.FullName -replace 'C:\\dev\\', '')" }
+    $appNodeModules | ForEach-Object { Write-Host "  - $($_.FullName -replace 'V:\\monorepo\\', '')" }
+    $pkgNodeModules | ForEach-Object { Write-Host "  - $($_.FullName -replace 'V:\\monorepo\\', '')" }
 
     Write-Host "`nWould also remove:" -ForegroundColor Yellow
     Write-Host "  - pnpm-lock.yaml"
@@ -66,11 +66,11 @@ if ($DryRun) {
 # Step 2: Remove all app/package node_modules
 Write-Host "🗑️  Removing app/package node_modules..." -ForegroundColor Yellow
 $appNodeModules | ForEach-Object {
-    Write-Host "  Removing: $($_.FullName -replace 'C:\\dev\\', '')"
+    Write-Host "  Removing: $($_.FullName -replace 'V:\\monorepo\\', '')"
     Remove-Item -Path $_.FullName -Recurse -Force
 }
 $pkgNodeModules | ForEach-Object {
-    Write-Host "  Removing: $($_.FullName -replace 'C:\\dev\\', '')"
+    Write-Host "  Removing: $($_.FullName -replace 'V:\\monorepo\\', '')"
     Remove-Item -Path $_.FullName -Recurse -Force
 }
 
@@ -128,8 +128,8 @@ if ($afterTotal -gt 5) {
     Write-Host "   This may indicate version conflicts or native modules`n"
 
     Write-Host "Remaining directories:"
-    $afterAppNodeModules | ForEach-Object { Write-Host "  - $($_.FullName -replace 'C:\\dev\\', '')" }
-    $afterPkgNodeModules | ForEach-Object { Write-Host "  - $($_.FullName -replace 'C:\\dev\\', '')" }
+    $afterAppNodeModules | ForEach-Object { Write-Host "  - $($_.FullName -replace 'V:\\monorepo\\', '')" }
+    $afterPkgNodeModules | ForEach-Object { Write-Host "  - $($_.FullName -replace 'V:\\monorepo\\', '')" }
 } else {
     Write-Host "`n✅ Hoisting successful! $afterTotal directories remaining (acceptable)" -ForegroundColor Green
 }

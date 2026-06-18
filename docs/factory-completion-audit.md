@@ -1,7 +1,7 @@
 # Factory Completion Audit
 
 Last updated: 2026-05-18
-Goal reference: [GOAL_APP_FACTORY.md](C:/dev/GOAL_APP_FACTORY.md)
+Goal reference: [GOAL_APP_FACTORY.md](V:/monorepo/GOAL_APP_FACTORY.md)
 Status: complete
 
 ## Binary Success Criteria
@@ -10,14 +10,14 @@ Status: complete
 |---|---|---|
 | Six shared packages exist | Complete | `packages/auth`, `packages/billing`, `packages/emails`, `packages/landing`, `packages/analytics`, `packages/entitlements` |
 | Six shared packages are consumed by at least two apps each | Complete | `invoice-automation-saas`, generated smoke apps, and `proposal-review-saas` depend on the extracted packages |
-| `plugins/factory` exposes `saas` | Complete | [plugins/factory/src/generators/saas](C:/dev/plugins/factory/src/generators/saas) |
-| `plugins/factory` exposes `tauri-app` | Complete | [plugins/factory/src/generators/tauri-app](C:/dev/plugins/factory/src/generators/tauri-app) |
-| `plugins/factory` exposes `landing-only` | Complete | [plugins/factory/src/generators/landing-only](C:/dev/plugins/factory/src/generators/landing-only) |
-| SaaS generator emits Vite + React + Fastify app with auth, landing, gated route, and Stripe checkout flow | Complete | `factory-saas-smoke` and [apps/proposal-review-saas](C:/dev/apps/proposal-review-saas/project.json) were generated from the factory and build through Nx |
+| `plugins/factory` exposes `saas` | Complete | [plugins/factory/src/generators/saas](V:/monorepo/plugins/factory/src/generators/saas) |
+| `plugins/factory` exposes `tauri-app` | Complete | [plugins/factory/src/generators/tauri-app](V:/monorepo/plugins/factory/src/generators/tauri-app) |
+| `plugins/factory` exposes `landing-only` | Complete | [plugins/factory/src/generators/landing-only](V:/monorepo/plugins/factory/src/generators/landing-only) |
+| SaaS generator emits Vite + React + Fastify app with auth, landing, gated route, and Stripe checkout flow | Complete | `factory-saas-smoke` and [apps/proposal-review-saas](V:/monorepo/apps/proposal-review-saas/project.json) were generated from the factory and build through Nx |
 | `invoice-automation-saas` consumes the six packages with zero functional regression | Complete | `pnpm nx test invoice-automation-saas`; `pnpm nx run-many -t build,api:build --projects=invoice-automation-saas` |
 | One generated SaaS app is deployed to production | Complete | Frontend: `https://proposal-review-saas.vercel.app`; backend: `https://proposal-review-api-production.up.railway.app` |
 | Generated app Stripe Checkout works in test mode | Complete | Live `POST /api/billing/pro-checkout` from the Vercel origin returned a Stripe test Checkout URL |
-| Command Center Factory panel lists generated apps | Complete | [FactoryPanel.tsx](C:/dev/apps/vibetech-command-center/src/renderer/panels/FactoryPanel.tsx) and `FactoryStatusService` |
+| Command Center Factory panel lists generated apps | Complete | [FactoryPanel.tsx](V:/monorepo/apps/vibetech-command-center/src/renderer/panels/FactoryPanel.tsx) and `FactoryStatusService` |
 | Command Center Factory panel shows monetization status | Complete | Factory cards render Stripe status, first revenue, MRR, readiness, shipping, and dashboard links from `vibe-app.json`; `proposal-review-saas` now reports `stripeStatus: connected` and `mrrCents: 0` |
 | Command Center Factory panel launches generators through Agent Orchestrator | Complete | `factory.generate()` IPC delegates to `AgentOrchestratorService.runFactoryGenerator()` and runs `pnpm nx g @vibetech/factory:<archetype> <name>` |
 

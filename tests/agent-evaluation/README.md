@@ -20,7 +20,7 @@ This directory contains automated testing tools for evaluating LLM agent behavio
 
 ```powershell
 # Navigate to test directory
-cd C:\dev\tests\agent-evaluation
+cd V:\monorepo\tests\agent-evaluation
 
 # Run all web search grounding tests (80 total)
 .\run-web-search-grounding-tests.ps1 -TestCategory "all"
@@ -36,7 +36,7 @@ cd C:\dev\tests\agent-evaluation
 
 ```powershell
 # Navigate to test directory
-cd C:\dev\tests\agent-evaluation
+cd V:\monorepo\tests\agent-evaluation
 
 # Run all no duplicates tests (80 total)
 .\run-no-duplicates-tests.ps1 -TestCategory "all"
@@ -471,7 +471,7 @@ Status: ⚠️ NEEDS IMPROVEMENT (Target: 100%)
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 
 # Run from correct directory
-cd C:\dev\tests\agent-evaluation
+cd V:\monorepo\tests\agent-evaluation
 .\run-web-search-grounding-tests.ps1
 ```
 

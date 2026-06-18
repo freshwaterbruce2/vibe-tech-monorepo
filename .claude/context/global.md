@@ -8,7 +8,7 @@
 ## Monorepo Structure
 
 ```
-C:\dev (vibetech.git)
+V:\monorepo (vibetech.git)
 ├── apps/           # 27 applications (web, desktop, mobile)
 ├── packages/       # Shared libraries (@nova/*, @vibetech/ui)
 ├── backend/        # Root-level API servers (openrouter-proxy, vibe-tech-backend)
@@ -28,7 +28,7 @@ C:\dev (vibetech.git)
 
 **CRITICAL**: C:\ for code, D:\ for data
 
-- **Code**: `C:\dev\` (GitHub: vibetech.git)
+- **Code**: `V:\monorepo\` (GitHub: vibetech.git)
 - **Databases**: `D:\databases\` (SQLite, PostgreSQL)
 - **Logs**: `D:\logs\`
 - **Learning System**: `D:\learning-system\` (59,014+ executions)

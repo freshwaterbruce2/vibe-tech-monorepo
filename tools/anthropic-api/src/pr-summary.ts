@@ -11,12 +11,12 @@ async function generatePRSummary() {
   let log: string;
   try {
     diff = execSync(`git diff ${baseBranch}...HEAD`, {
-      cwd: 'C:\\dev',
+      cwd: 'V:\\monorepo',
       encoding: 'utf-8',
       maxBuffer: 1024 * 1024 * 10,
     });
     log = execSync(`git log ${baseBranch}..HEAD --oneline`, {
-      cwd: 'C:\\dev',
+      cwd: 'V:\\monorepo',
       encoding: 'utf-8',
     });
   } catch {

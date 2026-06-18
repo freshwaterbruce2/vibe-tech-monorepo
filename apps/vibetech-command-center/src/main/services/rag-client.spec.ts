@@ -56,8 +56,8 @@ describe('RagClient', () => {
           type: 'text',
           text: JSON.stringify({
             hits: [
-              { score: 0.91, path: 'C:\\dev\\apps\\nova-agent\\src\\index.ts', language: 'typescript', snippet: 'export const x', startLine: 1, endLine: 3 },
-              { score: 0.77, path: 'C:\\dev\\packages\\shared\\src\\util.ts', language: 'typescript', snippet: 'function y()', startLine: 10, endLine: 15 }
+              { score: 0.91, path: 'V:\\monorepo\\apps\\nova-agent\\src\\index.ts', language: 'typescript', snippet: 'export const x', startLine: 1, endLine: 3 },
+              { score: 0.77, path: 'V:\\monorepo\\packages\\shared\\src\\util.ts', language: 'typescript', snippet: 'function y()', startLine: 10, endLine: 15 }
             ]
           })
         }

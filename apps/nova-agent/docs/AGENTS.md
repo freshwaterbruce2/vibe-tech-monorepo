@@ -1,6 +1,6 @@
 # AGENTS.md - Nova Agent
 
-> **Location:** `C:\dev\apps\nova-agent`
+> **Location:** `V:\monorepo\apps\nova-agent`
 > **Status:** Active desktop app (`package.json` version 1.3.0)
 > **Knowledge Base:** `D:\databases\agent_learning.db`
 > **Identity:** Single-user (Bruce), Local-First, Persistent Context
@@ -39,7 +39,7 @@ It bridges the gap between your IDE, your filesystem, and your productivity, uti
 ## Critical Storage Architecture
 
 ```
-C:\dev\apps\nova-agent    = APPLICATION CODE (Stateless)
+V:\monorepo\apps\nova-agent    = APPLICATION CODE (Stateless)
 D:\databases\             = STATE & MEMORY (Persistent)
 ├── nova_activity.db      # High-frequency activity logs & snapshots
 ├── agent_learning.db     # Long-term memory & knowledge

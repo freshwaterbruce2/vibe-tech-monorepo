@@ -16,7 +16,7 @@ export interface FileEvent {
 export interface NxProject {
   name: string;
   type: 'app' | 'lib';
-  root: string;           // relative to C:\dev
+  root: string;           // relative to V:\monorepo
   sourceRoot?: string;
   tags: string[];
   implicitDependencies: string[];

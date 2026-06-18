@@ -13,7 +13,7 @@ Build Vibe-Shop e-commerce platform for production deployment.
 1. Navigate to Vibe-Shop directory:
 
    ```bash
-   cd C:\dev\apps\vibe-shop
+   cd V:\monorepo\apps\vibe-shop
    ```
 
 2. Clean previous builds:

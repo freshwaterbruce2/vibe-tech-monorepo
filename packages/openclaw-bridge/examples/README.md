@@ -34,7 +34,7 @@ examples/
 
 2. **IPC Bridge running**:
    ```bash
-   cd C:\dev
+   cd V:\monorepo
    pnpm --filter @vibetech/openclaw-bridge dev
    ```
 
@@ -52,7 +52,7 @@ examples/
 
 ```powershell
 # Windows
-cd C:\dev\packages\openclaw-bridge\examples
+cd V:\monorepo\packages\openclaw-bridge\examples
 .\install.ps1
 ```
 
@@ -116,7 +116,7 @@ Expected response:
 ```
 /mcp help
 /files
-/files C:\dev
+/files V:\monorepo
 /search vibetech
 /screenshot
 ```
@@ -128,7 +128,7 @@ Expected response:
 | Command | Description | Example |
 |---------|-------------|---------|
 | `/mcp` | Call any MCP tool | `/mcp filesystem list_directory {"path":"./"}` |
-| `/files` | List files/dirs | `/files C:\dev` |
+| `/files` | List files/dirs | `/files V:\monorepo` |
 | `/search` | Search GitHub | `/search vibetech --limit 10` |
 | `/screenshot` | Take screenshot (Windows) | `/screenshot capture.png` |
 
@@ -181,7 +181,7 @@ Edit `~/.openclaw/openclaw.json`:
 
 ```bash
 # Start IPC Bridge
-cd C:\dev
+cd V:\monorepo
 pnpm --filter @vibetech/openclaw-bridge dev
 
 # Test bridge connection
@@ -232,7 +232,7 @@ tail -f ~/.openclaw/logs/vibetech-bridge.log
 **Solution:**
 ```bash
 # Start IPC Bridge
-cd C:\dev
+cd V:\monorepo
 pnpm --filter @vibetech/openclaw-bridge dev
 
 # Verify port 5004 available
@@ -253,12 +253,12 @@ netstat -an | findstr 5004
 ### Example 1: List Files
 
 ```
-/files C:\dev
+/files V:\monorepo
 ```
 
 Response:
 ```
-📁 C:\dev
+📁 V:\monorepo
 
 📂 Directories (3):
   • apps/

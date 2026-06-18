@@ -28,7 +28,7 @@ Write-Host "`nThis script will add Windows Defender exclusions for:`n" -Foregrou
 Write-Host "  1. D:\repositories\vibetech\snapshots\" -ForegroundColor Yellow
 Write-Host "     (Snapshot storage - safe to exclude)`n" -ForegroundColor Gray
 
-Write-Host "  2. C:\dev\scripts\version-control\" -ForegroundColor Yellow
+Write-Host "  2. V:\monorepo\scripts\version-control\" -ForegroundColor Yellow
 Write-Host "     (PowerShell scripts - safe to exclude)`n" -ForegroundColor Gray
 
 Write-Host "Why is this needed?" -ForegroundColor Cyan
@@ -52,7 +52,7 @@ try {
 
     # Add exclusion for version-control scripts
     Write-Host "`nAdding exclusion for scripts..." -ForegroundColor Cyan
-    Add-MpPreference -ExclusionPath "C:\dev\scripts\version-control"
+    Add-MpPreference -ExclusionPath "V:\monorepo\scripts\version-control"
     Write-Host "✓ Scripts directory excluded" -ForegroundColor Green
 
     Write-Host "`n╔════════════════════════════════════════════════════════════╗" -ForegroundColor Green

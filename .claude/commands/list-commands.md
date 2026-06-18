@@ -5,7 +5,7 @@ description: List all available slash commands with descriptions
 
 # Available Slash Commands
 
-All custom slash commands for the C:\dev monorepo.
+All custom slash commands for the V:\monorepo monorepo.
 
 ## Core Workflow
 

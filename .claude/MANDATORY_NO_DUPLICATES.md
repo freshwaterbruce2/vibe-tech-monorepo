@@ -51,7 +51,7 @@ This rule applies to:
 
 This rule is enforced:
 
-- In root workspace (C:\dev\CLAUDE.md)
+- In root workspace (V:\monorepo\CLAUDE.md)
 - In global settings (~\.claude\CLAUDE.md)
 - In detailed guide (.claude/rules/no-duplicates.md)
 - In this mandatory notice
@@ -165,10 +165,10 @@ For complete enforcement guide, workflow examples, and edge cases:
 
 This rule is enforced in:
 
-1. **Root workspace:** C:\dev\CLAUDE.md (Section: NO DUPLICATES RULE)
+1. **Root workspace:** V:\monorepo\CLAUDE.md (Section: NO DUPLICATES RULE)
 2. **Global config:** ~\.claude\CLAUDE.md (Section: CRITICAL: No Duplicates Rule)
-3. **Detailed guide:** C:\dev\.claude\rules\no-duplicates.md
-4. **This notice:** C:\dev\.claude\MANDATORY_NO_DUPLICATES.md
+3. **Detailed guide:** V:\monorepo\.claude\rules\no-duplicates.md
+4. **This notice:** V:\monorepo\.claude\MANDATORY_NO_DUPLICATES.md
 
 ---
 

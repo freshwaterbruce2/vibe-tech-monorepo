@@ -32,7 +32,7 @@ $projects = @(
 
 $existingProjects = 0
 foreach ($project in $projects) {
-    $path = "C:\dev\$project"
+    $path = "V:\monorepo\$project"
     if (Test-Path $path) {
         $existingProjects++
         Write-Host "  ✅ $project" -ForegroundColor Green
@@ -42,9 +42,9 @@ Write-Host "  Total: $existingProjects projects found"
 
 # Test 3: Quick file stats
 Write-Host "`n3. Quick Stats:" -ForegroundColor Yellow
-$tsFiles = (Get-ChildItem -Path "C:\dev\apps" -Include "*.ts","*.tsx" -Recurse -ErrorAction SilentlyContinue |
+$tsFiles = (Get-ChildItem -Path "V:\monorepo\apps" -Include "*.ts","*.tsx" -Recurse -ErrorAction SilentlyContinue |
     Where-Object { $_.FullName -notmatch "node_modules" }).Count
-$jsFiles = (Get-ChildItem -Path "C:\dev\apps" -Include "*.js","*.jsx" -Recurse -ErrorAction SilentlyContinue |
+$jsFiles = (Get-ChildItem -Path "V:\monorepo\apps" -Include "*.js","*.jsx" -Recurse -ErrorAction SilentlyContinue |
     Where-Object { $_.FullName -notmatch "node_modules" }).Count
 
 Write-Host "  TypeScript files: $tsFiles"
@@ -66,7 +66,7 @@ if ($dDrive) {
 # Test 5: Available commands
 Write-Host "`n5. PowerShell Shortcuts Available:" -ForegroundColor Yellow
 $shortcuts = @(
-    "cdev - Navigate to C:\dev",
+    "cdev - Navigate to V:\monorepo",
     "dlogs - Navigate to D:\logs",
     "gs - git status",
     "nxdev <project> - Start dev server",

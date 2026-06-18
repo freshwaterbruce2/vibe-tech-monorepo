@@ -815,7 +815,7 @@ adb pull /sdcard/promo.mp4 ./video/
 **Standard Folder Structure:**
 
 ```
-C:\dev\apps\vibe-tutor\store-assets/
+V:\monorepo\apps\vibe-tutor\store-assets/
 ├── icon-1024x1024.png
 ├── feature-graphic-1024x500.jpg
 ├── screenshots/
@@ -871,7 +871,7 @@ C:\dev\apps\vibe-tutor\store-assets/
 
 ```powershell
 # Verify all assets exist and correct size
-Get-ChildItem "C:\dev\apps\vibe-tutor\store-assets\" -Recurse |
+Get-ChildItem "V:\monorepo\apps\vibe-tutor\store-assets\" -Recurse |
   Where-Object {$_.Extension -match "png|jpg|mp4"} |
   Select-Object Name, @{Name="SizeMB"; Expression={[math]::Round($_.Length/1MB, 2)}}
 
@@ -926,7 +926,7 @@ For each asset:
 1. Create ZIP file with all assets:
 
    ```bash
-   Compress-Archive -Path "C:\dev\apps\vibe-tutor\store-assets" -DestinationPath "vibe-tutor-store-assets.zip"
+   Compress-Archive -Path "V:\monorepo\apps\vibe-tutor\store-assets" -DestinationPath "vibe-tutor-store-assets.zip"
    ```
 
 2. Verify ZIP integrity:
@@ -962,7 +962,7 @@ For each asset:
 
 ```powershell
 # Create directory structure for assets
-$baseDir = "C:\dev\apps\vibe-tutor\store-assets"
+$baseDir = "V:\monorepo\apps\vibe-tutor\store-assets"
 @(
   "$baseDir",
   "$baseDir\screenshots",
@@ -1013,7 +1013,7 @@ Write-Host "4. Run quality validation checks"
 **Validation script after assets created:**
 
 ```powershell
-$baseDir = "C:\dev\apps\vibe-tutor\store-assets"
+$baseDir = "V:\monorepo\apps\vibe-tutor\store-assets"
 
 Write-Host "=== VIBE-TUTOR STORE ASSETS VALIDATION ===" -ForegroundColor Cyan
 

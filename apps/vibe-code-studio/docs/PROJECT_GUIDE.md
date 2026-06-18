@@ -1,6 +1,6 @@
 # Vibe Code Studio - Project Guide
 
-**Project Path:** `C:\dev\apps\vibe-code-studio`  
+**Project Path:** `V:\monorepo\apps\vibe-code-studio`  
 **Database:** `D:\databases\vibe-code-studio`  
 **Logs:** `D:\logs\vibe-code-studio`  
 **Data:** `D:\data\vibe-code-studio`  
@@ -58,7 +58,7 @@ vibe-code-studio/
 
 ```powershell
 # Navigate to project
-cd C:\dev\apps\vibe-code-studio
+cd V:\monorepo\apps\vibe-code-studio
 
 # Install dependencies
 pnpm install

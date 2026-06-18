@@ -11,7 +11,7 @@ try {
     $toolName = if ($d.tool_name) { $d.tool_name } else { 'unknown' }
 
     # Call memory-compact.cjs to save task state before context loss
-    $CompactScript = "C:\dev\scripts\memory-compact.cjs"
+    $CompactScript = "V:\monorepo\scripts\memory-compact.cjs"
     if (Test-Path $CompactScript) {
         & node $CompactScript `
             --task "Context compaction triggered by $toolName" `

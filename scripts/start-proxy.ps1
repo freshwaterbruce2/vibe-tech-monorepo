@@ -2,6 +2,6 @@
 Write-Host "🔌 Starting OpenRouter Proxy Server..." -ForegroundColor Cyan
 Write-Host ""
 
-cd C:\dev\backend\openrouter-proxy
+cd V:\monorepo\backend\openrouter-proxy
 pnpm dev
 

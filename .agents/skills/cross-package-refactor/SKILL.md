@@ -38,7 +38,7 @@ Use Antigravity `/goal` or the repo `orchestrate` workflow when the work spans i
 Prefer the narrowest Nx command first:
 
 ```powershell
-Set-Location -LiteralPath 'C:\dev'
+Set-Location -LiteralPath 'V:\monorepo'
 pnpm exec nx graph --print
 pnpm nx affected -t lint typecheck test build
 ```
@@ -46,7 +46,7 @@ pnpm nx affected -t lint typecheck test build
 When a specific project is known, use:
 
 ```powershell
-Set-Location -LiteralPath 'C:\dev'
+Set-Location -LiteralPath 'V:\monorepo'
 pnpm nx test <project>
 pnpm nx build <project>
 ```

@@ -18,8 +18,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--path",
         type=Path,
-        default=Path(r"C:\dev"),
-        help="Root path to scan (default: C:\\dev)",
+        default=Path(r"V:\monorepo"),
+        help="Root path to scan (default: V:\\monorepo)",
     )
     parser.add_argument(
         "--output",
@@ -76,4 +76,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main

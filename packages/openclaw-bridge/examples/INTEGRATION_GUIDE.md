@@ -56,7 +56,7 @@ npm install -g openclaw@2026.2.19-2
 
 ```bash
 # From VibeTech monorepo
-cd C:\dev\packages\openclaw-bridge
+cd V:\monorepo\packages\openclaw-bridge
 pnpm install
 pnpm build
 pnpm link --global
@@ -177,7 +177,7 @@ export default async function onMessage(message) {
 
 Send a message to OpenClaw:
 ```
-/mcp filesystem list_directory {"path":"C:\\dev"}
+/mcp filesystem list_directory {"path":"V:\\monorepo"}
 ```
 
 Expected response:
@@ -417,14 +417,14 @@ export default async function filesCommand(context, extension) {
 await bridge.callTool({
     server: 'filesystem',
     tool: 'list_directory',
-    args: { path: 'C:\\dev' }
+    args: { path: 'V:\\monorepo' }
 });
 
 // Read file
 await bridge.callTool({
     server: 'filesystem',
     tool: 'read_file',
-    args: { path: 'C:\\dev\\README.md' }
+    args: { path: 'V:\\monorepo\\README.md' }
 });
 
 // Write file
@@ -432,7 +432,7 @@ await bridge.callTool({
     server: 'filesystem',
     tool: 'write_file',
     args: {
-        path: 'C:\\dev\\output.txt',
+        path: 'V:\\monorepo\\output.txt',
         content: 'Hello from OpenClaw!'
     }
 });
@@ -497,7 +497,7 @@ await bridge.dispatchTask({
         {
             server: 'filesystem',
             tool: 'list_directory',
-            args: { path: 'C:\\dev' }
+            args: { path: 'V:\\monorepo' }
         },
         {
             server: 'sequential-thinking',
@@ -791,4 +791,4 @@ logger.error('Tool failed', { error: err.message, stack: err.stack });
 
 ---
 
-**Integration Complete!** 🎊 OpenClaw can now access all MCP servers in the Gateway ecosystem.
+**Integration Complete!** 🎊 OpenClaw can now access all MCP servers in the Gateway ecosyst

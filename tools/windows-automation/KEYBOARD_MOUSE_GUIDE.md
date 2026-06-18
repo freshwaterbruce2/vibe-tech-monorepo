@@ -7,7 +7,7 @@ Complete automation toolkit providing Windows-MCP functionality through Desktop 
 No installation needed! Just import the module:
 
 ```powershell
-Import-Module C:\dev\tools\windows-automation\WindowsAutomation.psm1
+Import-Module V:\monorepo\tools\windows-automation\WindowsAutomation.psm1
 ```
 
 ## 🎹 Keyboard Functions
@@ -253,7 +253,7 @@ Send-Keys "{ENTER}"
 ```powershell
 # Capture current state
 $mousePos = Get-MousePosition
-Capture-Screenshot -Path "C:\dev\screenshot.png"
+Capture-Screenshot -Path "V:\monorepo\screenshot.png"
 
 # Create annotation
 $annotation = "Mouse was at ($($mousePos.X), $($mousePos.Y)) when captured"
@@ -549,7 +549,7 @@ function Monitor-TradingBot {
                     -Message "No activity for $([math]::Round($age)) minutes!"
                     
                 # Take screenshot
-                Capture-Screenshot -Path "C:\dev\bot_alert_$(Get-Date -Format 'yyyyMMdd_HHmmss').png"
+                Capture-Screenshot -Path "V:\monorepo\bot_alert_$(Get-Date -Format 'yyyyMMdd_HHmmss').png"
             }
         }
         
@@ -582,7 +582,7 @@ function Monitor-TradingBot {
 
 ```powershell
 # Import module
-Import-Module C:\dev\tools\windows-automation\WindowsAutomation.psm1
+Import-Module V:\monorepo\tools\windows-automation\WindowsAutomation.psm1
 
 # Get current mouse position
 $pos = Get-MousePosition
@@ -595,7 +595,7 @@ Type-Text -Text "Hello from automation!"
 Set-ClipboardText "Automated content"
 
 # Take screenshot
-Capture-Screenshot -Path "C:\dev\test.png"
+Capture-Screenshot -Path "V:\monorepo\test.png"
 
 # Show notification
 Show-WindowsNotification `
@@ -605,12 +605,12 @@ Show-WindowsNotification `
 
 ## 🎓 Learning Resources
 
-- **Demo Script**: Run `C:\dev\tools\windows-automation\keyboard-mouse-demo.ps1`
-- **Practical Examples**: Run `C:\dev\tools\windows-automation\practical-examples.ps1`
-- **Full Demo**: Run `C:\dev\tools\windows-automation\demo.ps1`
+- **Demo Script**: Run `V:\monorepo\tools\windows-automation\keyboard-mouse-demo.ps1`
+- **Practical Examples**: Run `V:\monorepo\tools\windows-automation\practical-examples.ps1`
+- **Full Demo**: Run `V:\monorepo\tools\windows-automation\demo.ps1`
 
 ---
 
-**Location**: `C:\dev\tools\windows-automation\`  
+**Location**: `V:\monorepo\tools\windows-automation\`  
 **Module**: `WindowsAutomation.psm1`  
 **Status**: ✅ Fully functional and tested

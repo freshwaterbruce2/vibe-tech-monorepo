@@ -2,7 +2,7 @@
 .SYNOPSIS
     Sets up the "Antigravity" development environment structure.
 .DESCRIPTION
-    Enforces the C:\dev (Code) and D:\antigravity (Data) separation.
+    Enforces the V:\monorepo (Code) and D:\antigravity (Data) separation.
     Creates necessary directories, sets environment variables, and checks tool configurations.
 #>
 
@@ -11,7 +11,7 @@ $ErrorActionPreference = "Stop"
 Write-Host "🪐 Initializing Project Antigravity..." -ForegroundColor Cyan
 
 # 1. Path Definitions
-$CodeRoot = "C:\dev"
+$CodeRoot = "V:\monorepo"
 $DataDrive = "D:"
 $AntigravityRoot = "$DataDrive\antigravity"
 $Dirs = @(

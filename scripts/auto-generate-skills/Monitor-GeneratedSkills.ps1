@@ -11,7 +11,7 @@ $ErrorActionPreference = "Stop"
 
 # Paths
 $LearningDB = "D:\databases\agent_learning.db"
-$SkillsDir = "C:\dev\.agent\skills"
+$SkillsDir = "V:\monorepo\.agent\skills"
 
 Write-Host "Auto-Generated Skills Performance Monitor" -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Gray

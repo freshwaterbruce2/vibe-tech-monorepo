@@ -11,7 +11,7 @@
 ## 0. Backup first (run before touching anything)
 
 ```powershell
-Compress-Archive -Path C:\dev\nx.json,C:\dev\pnpm-workspace.yaml,C:\dev\.mcp.json,C:\dev\package.json -DestinationPath C:\dev\_backups\pre-command-center-chunk01_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip
+Compress-Archive -Path V:\monorepo\nx.json,V:\monorepo\pnpm-workspace.yaml,V:\monorepo\.mcp.json,V:\monorepo\package.json -DestinationPath V:\monorepo\_backups\pre-command-center-chunk01_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip
 ```
 
 Verify the zip exists before proceeding. If it fails, stop.
@@ -21,12 +21,12 @@ Verify the zip exists before proceeding. If it fails, stop.
 ## 1. Scaffold directory and manifest
 
 ```powershell
-cd C:\dev\apps
+cd V:\monorepo\apps
 New-Item -ItemType Directory -Path vibetech-command-center -Force
 Set-Location vibetech-command-center
 ```
 
-Create `C:\dev\apps\vibetech-command-center\package.json` directly (do **not** run `pnpm init` — the template it generates doesn't match our monorepo conventions):
+Create `V:\monorepo\apps\vibetech-command-center\package.json` directly (do **not** run `pnpm init` — the template it generates doesn't match our monorepo conventions):
 
 ```json
 {
@@ -86,7 +86,7 @@ pnpm install
 
 ## 2. TypeScript config
 
-Create `C:\dev\apps\vibetech-command-center\tsconfig.json`:
+Create `V:\monorepo\apps\vibetech-command-center\tsconfig.json`:
 
 ```json
 {
@@ -117,13 +117,13 @@ Create `C:\dev\apps\vibetech-command-center\tsconfig.json`:
 }
 ```
 
-**Note:** If `C:\dev\tsconfig.base.json` does not exist or lacks the required options, drop the `extends` line and inline everything. Verify before assuming.
+**Note:** If `V:\monorepo\tsconfig.base.json` does not exist or lacks the required options, drop the `extends` line and inline everything. Verify before assuming.
 
 ---
 
 ## 3. electron-vite config
 
-Create `C:\dev\apps\vibetech-command-center\electron.vite.config.ts`:
+Create `V:\monorepo\apps\vibetech-command-center\electron.vite.config.ts`:
 
 ```typescript
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
@@ -376,7 +376,7 @@ foreach ($p in $placeholders) {
 
 ## 5. CLAUDE.md (app-local invariants)
 
-Create `C:\dev\apps\vibetech-command-center\CLAUDE.md` — every Claude Code session in this app inherits it:
+Create `V:\monorepo\apps\vibetech-command-center\CLAUDE.md` — every Claude Code session in this app inherits it:
 
 ```markdown
 # Command Center — Session Invariants
@@ -399,9 +399,9 @@ Create `C:\dev\apps\vibetech-command-center\CLAUDE.md` — every Claude Code ses
 - Dashboard ports: UI dev 5180, IPC/WS 3210. MCP server is stdio.
 
 ## Paths
-- App root: `C:\dev\apps\vibetech-command-center`
-- Monorepo root: `C:\dev`
-- Backups: `C:\dev\_backups\`
+- App root: `V:\monorepo\apps\vibetech-command-center`
+- Monorepo root: `V:\monorepo`
+- Backups: `V:\monorepo\_backups\`
 - External DBs: `D:\databases\*.db`, `D:\learning-system\*.db`
 - LanceDB (RAG): `D:\nova-agent-data\lance-db\`
 
@@ -413,11 +413,11 @@ Output the `Compress-Archive` command first, then the change. No exceptions.
 
 ## 6. Nx workspace registration
 
-Open `C:\dev\nx.json`. Verify `vibetech-command-center` is auto-discovered by the `apps/*` glob. If `nx.json` uses an explicit `projects` array, add the entry. Do not modify anything else in `nx.json`.
+Open `V:\monorepo\nx.json`. Verify `vibetech-command-center` is auto-discovered by the `apps/*` glob. If `nx.json` uses an explicit `projects` array, add the entry. Do not modify anything else in `nx.json`.
 
 Run:
 ```powershell
-cd C:\dev
+cd V:\monorepo
 pnpm exec nx show projects | Select-String 'command-center'
 ```
 
@@ -428,7 +428,7 @@ Expected output: `@vibetech/command-center` (or `vibetech-command-center` depend
 ## 7. First boot verification
 
 ```powershell
-cd C:\dev\apps\vibetech-command-center
+cd V:\monorepo\apps\vibetech-command-center
 pnpm run typecheck
 pnpm run dev
 ```
@@ -443,7 +443,7 @@ If any of: native build failures, missing preload, blank window — stop and deb
 
 This is the most important part of Chunk 1. We prove the bridge works in isolation before wiring a UI to it.
 
-Create `C:\dev\apps\vibetech-command-center\scripts\probe-claude-stream.mjs`:
+Create `V:\monorepo\apps\vibetech-command-center\scripts\probe-claude-stream.mjs`:
 
 ```javascript
 // Probe: verify `claude -p --output-format stream-json` produces parseable,
@@ -532,7 +532,7 @@ proc.on('close', (code) => {
 Run it:
 
 ```powershell
-cd C:\dev\apps\vibetech-command-center
+cd V:\monorepo\apps\vibetech-command-center
 pnpm run probe:claude
 ```
 
@@ -565,7 +565,7 @@ I'll adapt Chunk 2 accordingly. Do not proceed to Chunk 2 until every acceptance
 ## Post-chunk backup
 
 ```powershell
-Compress-Archive -Path C:\dev\apps\vibetech-command-center -DestinationPath C:\dev\_backups\command-center-chunk01-complete_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
+Compress-Archive -Path V:\monorepo\apps\vibetech-command-center -DestinationPath V:\monorepo\_backups\command-center-chunk01-complete_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
 ```
 
 Then ping me with `chunk 1 complete` (plus any oddities) and I'll write Chunk 2.

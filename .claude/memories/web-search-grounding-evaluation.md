@@ -51,14 +51,14 @@ Complete evaluation framework for testing agents that use web search to ground r
 
 ```powershell
 # Run full evaluation suite (80 tests)
-cd C:\dev\tests\agent-evaluation
+cd V:\monorepo\tests\agent-evaluation
 .\run-web-search-grounding-tests.ps1 -TestCategory "all"
 
 # Run adversarial tests only
 .\run-web-search-grounding-tests.ps1 -TestCategory "adversarial"
 
 # View behavioral contract
-cat C:\dev\.claude\rules\web-search-grounding-behavioral-contract.md
+cat V:\monorepo\.claude\rules\web-search-grounding-behavioral-contract.md
 ```
 
 ---

@@ -9,7 +9,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-Set-Location "C:\dev"
+Set-Location "V:\monorepo"
 
 function Test-GitWorktreeDirty {
   $status = git status --porcelain 2>$null

@@ -13,7 +13,7 @@ export const filesystemMutateTools: Array<{
 		description: `Write text content to a file. Supports overwrite and append modes.
 
 Allowed Paths:
-- C:\\dev - Full write access (development workspace)
+- V:\\monorepo - Full write access (development workspace)
 - D:\\ - Full write access (databases, logs, data)
 - OneDrive - Read-only (writes NOT allowed)
 
@@ -29,9 +29,9 @@ Error Cases:
 - Disk full → Write error
 
 Examples:
-- path: "C:\\dev\\output.txt", content: "Hello" → Create/overwrite file
+- path: "V:\\monorepo\\output.txt", content: "Hello" → Create/overwrite file
 - path: "D:\\logs\\app.log", content: "ERROR", append: true → Append to log
-- path: "C:\\dev\\new\\file.json", content: "{}", createDirs: true → Create dirs + file`,
+- path: "V:\\monorepo\\new\\file.json", content: "{}", createDirs: true → Create dirs + file`,
 		inputSchema: {
 			type: "object",
 			properties: {

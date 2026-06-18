@@ -245,6 +245,14 @@ export function getHistoricalSuccessRate(
   taskKeywords: string[],
   agentId?: string,
 ): number {
+  // `agent_executions` is owned by the shared learning DB (Python learning-system),
+  // not created by ensureSchema() here. Guard against its absence so the MCTS prior
+  // degrades gracefully instead of throwing "no such table".
+  const tbl = db
+    .prepare("SELECT name FROM sqlite_schema WHERE type='table' AND name='agent_executions'")
+    .get();
+  if (!tbl) return 0.5; // neutral prior when the shared table isn't present yet
+
   // Match any execution whose task_type contains any of the keywords
   const like = taskKeywords.map(() => 'task_type LIKE ?').join(' OR ');
   const params: (string | number)[] = taskKeywords.map((k) => `%${k}%`);

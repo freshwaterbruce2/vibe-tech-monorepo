@@ -110,9 +110,9 @@ console.log(`Attempting to connect to: ${connectionString}\n`);
 		console.log("Checking for pg module in existing projects...\n");
 
 		const projectDirs = [
-			"C:\\dev\\projects\\active\\web-apps\\vibe-booking-platform",
-			"C:\\dev\\projects\\active\\desktop-apps\\nova-agent-current",
-			"C:\\dev\\backend",
+			"V:\\monorepo\\projects\\active\\web-apps\\vibe-booking-platform",
+			"V:\\monorepo\\projects\\active\\desktop-apps\\nova-agent-current",
+			"V:\\monorepo\\backend",
 		];
 
 		projectDirs.forEach((dir) => {

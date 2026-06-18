@@ -73,7 +73,7 @@ interface AppCardProps {
 }
 
 function AppCard({ app, lastActivity, lastBackup }: AppCardProps) {
-  const absPath = `C:\\dev\\${app.root.replace(/\//g, '\\')}`;
+  const absPath = `V:\\monorepo\\${app.root.replace(/\//g, '\\')}`;
   const now = useCurrentTime(60_000);
 
   const handleBackup = async (): Promise<void> => {
@@ -90,7 +90,7 @@ function AppCard({ app, lastActivity, lastBackup }: AppCardProps) {
     await window.commandCenter.process.spawn({
       command: 'explorer.exe',
       args: [absPath],
-      cwd: 'C:\\dev'
+      cwd: 'V:\\monorepo'
     });
   };
 
@@ -103,13 +103,13 @@ function AppCard({ app, lastActivity, lastBackup }: AppCardProps) {
       await window.commandCenter.process.spawn({
         command: 'wt.exe',
         args: ['-d', absPath],
-        cwd: 'C:\\dev'
+        cwd: 'V:\\monorepo'
       });
     } else {
       await window.commandCenter.process.spawn({
         command: 'cmd.exe',
         args: ['/K', 'cd', '/d', absPath],
-        cwd: 'C:\\dev'
+        cwd: 'V:\\monorepo'
       });
     }
   };

@@ -102,7 +102,7 @@ Write-Host "[4/7] SCREENSHOT CAPTURE" -ForegroundColor Cyan
 Write-Host "----------------------------------------------" -ForegroundColor DarkGray
 
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-$screenshotPath = "C:\dev\showcase_$timestamp.png"
+$screenshotPath = "V:\monorepo\showcase_$timestamp.png"
 
 Write-Host "  Capturing screenshot..." -ForegroundColor White
 Capture-Screenshot -Path $screenshotPath | Out-Null
@@ -211,7 +211,7 @@ $ram = [math]::Round((Get-Counter '\Memory\Available MBytes').CounterSamples.Coo
 
 # Check trading bot
 $tradingBotStatus = "Unknown"
-$dbPath = "C:\dev\projects\crypto-enhanced\trading.db"
+$dbPath = "V:\monorepo\projects\crypto-enhanced\trading.db"
 if (Test-Path $dbPath) {
     $dbAge = ((Get-Date) - (Get-Item $dbPath).LastWriteTime).TotalMinutes
     $tradingBotStatus = if ($dbAge -lt 5) { "ACTIVE" } elseif ($dbAge -lt 60) { "RECENT" } else { "IDLE" }

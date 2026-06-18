@@ -59,7 +59,7 @@ describe('BuildStatus', () => {
   });
 
   it('shows "never" for apps without dist/', async () => {
-    setupBridge({ 'C:\\dev\\apps\\nova-agent\\dist': { exists: false, mtimeMs: null } });
+    setupBridge({ 'V:\\monorepo\\apps\\nova-agent\\dist': { exists: false, mtimeMs: null } });
     renderWithQuery(<BuildStatus />);
     await waitFor(() => expect(screen.getByText('nova-agent')).toBeTruthy());
     expect(screen.getByText('never')).toBeTruthy();
@@ -68,7 +68,7 @@ describe('BuildStatus', () => {
   it('shows fresh status for recently-built apps', async () => {
     const recent = Date.now() - 5 * 60 * 1000;
     setupBridge({
-      'C:\\dev\\apps\\nova-agent\\dist': { exists: true, mtimeMs: recent, sizeBytes: 1_000_000, isDirectory: true }
+      'V:\\monorepo\\apps\\nova-agent\\dist': { exists: true, mtimeMs: recent, sizeBytes: 1_000_000, isDirectory: true }
     });
     renderWithQuery(<BuildStatus />);
     await waitFor(() => expect(screen.getByText(/MB/)).toBeTruthy());

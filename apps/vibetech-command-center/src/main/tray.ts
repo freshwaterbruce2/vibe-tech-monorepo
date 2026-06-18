@@ -24,18 +24,18 @@ export function setupTray(container: ServiceContainer, getWindow: () => BrowserW
       },
       { type: 'separator' },
       {
-        label: 'Backup C:\\dev\\apps',
+        label: 'Backup V:\\monorepo\\apps',
         click: () => {
           void container.backup
-            .createBackup({ sourcePath: 'C:\\dev\\apps', label: 'tray-quick' })
+            .createBackup({ sourcePath: 'V:\\monorepo\\apps', label: 'tray-quick' })
             .catch((error) => console.error('tray backup failed for apps:', error));
         }
       },
       {
-        label: 'Backup C:\\dev\\packages',
+        label: 'Backup V:\\monorepo\\packages',
         click: () => {
           void container.backup
-            .createBackup({ sourcePath: 'C:\\dev\\packages', label: 'tray-quick' })
+            .createBackup({ sourcePath: 'V:\\monorepo\\packages', label: 'tray-quick' })
             .catch((error) => console.error('tray backup failed for packages:', error));
         }
       },

@@ -6,7 +6,7 @@ try {
         $command = $json.tool_input.command
         $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
         $logEntry = "[$timestamp] $command"
-        Add-Content -Path "C:\dev\.claude\bash-commands.log" -Value $logEntry -ErrorAction SilentlyContinue
+        Add-Content -Path "V:\monorepo\.claude\bash-commands.log" -Value $logEntry -ErrorAction SilentlyContinue
     }
 } catch {
     # Silently fail - don't block the hook

@@ -24,7 +24,7 @@ This directory contains the infrastructure for fine-tuning a custom LLM (Large L
 
 ### 1. Data Preprocessing
 
-Extract code from the monorepo (`C:\dev`) and prepare it for training.
+Extract code from the monorepo (`V:\monorepo`) and prepare it for training.
 
 ```bash
 python preprocess.py

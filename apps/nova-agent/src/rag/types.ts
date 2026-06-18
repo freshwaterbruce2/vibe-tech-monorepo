@@ -252,7 +252,7 @@ export const DEFAULT_RAG_CONFIG: RAGConfig = {
   cachePath: 'D:\\nova-agent-data\\cache\\query-cache.sqlite',
   hashIndexPath: 'D:\\nova-agent-data\\indexes\\file-hashes.json',
   logPath: 'D:\\nova-agent-data\\logs\\rag-operations.log',
-  workspaceRoot: 'C:\\dev',
+  workspaceRoot: 'V:\\monorepo',
   embeddingEndpoint: 'http://localhost:3001',
   embeddingModel: 'text-embedding-3-small',
   maxChunkTokens: 512,

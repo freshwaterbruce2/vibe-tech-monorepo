@@ -5,14 +5,14 @@
     Sets up the finisher configuration for a target project.
     Creates project-specific scratchpad and analyzes initial state.
 .EXAMPLE
-    .\init.ps1 -TargetProject "C:\dev\apps\vibe-tutor"
+    .\init.ps1 -TargetProject "V:\monorepo\apps\vibe-tutor"
 #>
 
 param(
     [Parameter(Mandatory=$true)]
     [string]$TargetProject,
     
-    [string]$BackupDir = "C:\dev\_backups"
+    [string]$BackupDir = "V:\monorepo\_backups"
 )
 
 $ErrorActionPreference = "Stop"

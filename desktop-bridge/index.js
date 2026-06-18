@@ -14,7 +14,7 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 const port = parseInt(process.env.CC_BRIDGE_PORT || '8743', 10);
 const host = process.env.CC_BRIDGE_HOST || '0.0.0.0';
 const token = process.env.CC_BRIDGE_TOKEN;
-const workspaceRoot = process.env.WORKSPACE_ROOT || 'C:\\dev';
+const workspaceRoot = process.env.WORKSPACE_ROOT || 'V:\\monorepo';
 
 if (!token) {
   console.warn('[Warning] CC_BRIDGE_TOKEN is not defined in the environment. All requests will be accepted.');

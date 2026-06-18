@@ -8,15 +8,15 @@
         "npx.cmd",
         "-y",
         "nx-mcp@0.25.0",
-        "C:/dev",
+        "V:/monorepo",
         "--transport",
         "stdio",
         "--disableTelemetry",
         "--no-minimal"
       ],
       "env": {
-        "NX_WORKSPACE_ROOT": "C:/dev",
-        "NODE_OPTIONS": "--require C:/dev/scripts/nx-mcp-native-compat.cjs"
+        "NX_WORKSPACE_ROOT": "V:/monorepo",
+        "NODE_OPTIONS": "--require V:/monorepo/scripts/nx-mcp-native-compat.cjs"
       }
     },
     "filesystem": {
@@ -27,7 +27,7 @@
         "npx.cmd",
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "C:/dev",
+        "V:/monorepo",
         "D:/databases",
         "D:/logs",
         "D:/learning-system",
@@ -37,7 +37,7 @@
     "memory": {
       "type": "stdio",
       "command": "node",
-      "args": ["C:/dev/apps/memory-mcp/dist/index.js"],
+      "args": ["V:/monorepo/apps/memory-mcp/dist/index.js"],
       "env": {
         "MEMORY_DB_PATH": "D:/databases/memory.db",
         "LEARNING_DB_PATH": "D:/databases/agent_learning.db"

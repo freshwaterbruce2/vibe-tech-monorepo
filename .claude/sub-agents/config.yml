@@ -724,7 +724,7 @@ sub_agents:
       database_location: "D:\\databases"
       sqlite_path_pattern: "D:\\databases\\{app_name}\\{db_name}.db"
       backup_location: "D:\\databases\\_backups"
-      never_store_in: "C:\\dev"
+      never_store_in: "V:\\monorepo"
 
     database_patterns:
       sqlite:

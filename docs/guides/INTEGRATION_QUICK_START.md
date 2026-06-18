@@ -20,7 +20,7 @@
 1. **Clone Repository**
 
    ```bash
-   cd C:\dev
+   cd V:\monorepo
    git pull origin main
    ```
 
@@ -56,7 +56,7 @@
 ### Step 1: Start Shared OpenRouter Proxy (5 min)
 
 ```bash
-cd C:\dev\backend\openrouter-proxy
+cd V:\monorepo\backend\openrouter-proxy
 pnpm install
 pnpm dev
 ```
@@ -78,7 +78,7 @@ curl http://localhost:3001/health
 ### Step 2: Start Vibe Code Studio (5 min)
 
 ```bash
-cd C:\dev\apps\vibe-code-studio
+cd V:\monorepo\apps\vibe-code-studio
 pnpm install
 pnpm dev
 ```
@@ -101,7 +101,7 @@ pnpm dev
 ### Step 3: Start Nova Agent (5 min)
 
 ```bash
-cd C:\dev\apps\nova-agent
+cd V:\monorepo\apps\nova-agent
 pnpm install
 pnpm tauri dev
 ```
@@ -132,7 +132,7 @@ pnpm tauri dev
    // Send test message to Vibe
    window.__TAURI__.invoke('send_ipc_message', {
      type: 'file:open',
-     payload: { path: 'C:\\dev\\test.txt', line: 10 }
+     payload: { path: 'V:\\monorepo\\test.txt', line: 10 }
    })
    ```
 
@@ -143,7 +143,7 @@ pnpm tauri dev
 
    ```
    [IPC Bridge] Received message: file:open
-   [IPC Bridge] Opening file: C:\dev\test.txt at line 10
+   [IPC Bridge] Opening file: V:\monorepo\test.txt at line 10
    ```
 
 **Success Criteria:**
@@ -304,5 +304,4 @@ After successful integration test:
 - Full Plan: `INTEGRATION_COMPLETION_PLAN.md`
 - Nova Docs: `apps/nova-agent/PRODUCTION_READINESS_REPORT.md`
 - Vibe Docs: `apps/vibe-code-studio/PRODUCTION_BUILD_CHECKLIST.md`
-- IPC Schema: `packages/shared/src/ipc-protocol.ts`
-
+- IPC Schema: `packages/shared

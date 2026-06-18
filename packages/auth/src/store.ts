@@ -7,7 +7,7 @@
  * admin email + password works across every app that points at the same AUTH_DB_PATH
  * and AUTH_SECRET.
  *
- * Per workspace paths policy: databases live on D:\, never in C:\dev. The path is
+ * Per workspace paths policy: databases live on D:\, never in V:\monorepo. The path is
  * env-driven (AUTH_DB_PATH) and never hardcoded into app source.
  */
 

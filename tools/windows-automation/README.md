@@ -6,13 +6,13 @@ Full-featured Windows automation toolkit providing keyboard, mouse, clipboard, s
 
 ```powershell
 # Import the module
-Import-Module C:\dev\tools\windows-automation\WindowsAutomation.psm1
+Import-Module V:\monorepo\tools\windows-automation\WindowsAutomation.psm1
 
 # Test it out
 Type-Text -Text "Hello from Windows Automation!"
 $pos = Get-MousePosition
 Write-Host "Mouse at: ($($pos.X), $($pos.Y))"
-Capture-Screenshot -Path "C:\dev\test.png"
+Capture-Screenshot -Path "V:\monorepo\test.png"
 Show-WindowsNotification -Title "Ready!" -Message "Automation is working!"
 ```
 
@@ -20,10 +20,10 @@ Show-WindowsNotification -Title "Ready!" -Message "Automation is working!"
 
 ```powershell
 # Import the module (no installation needed!)
-Import-Module C:\dev\tools\windows-automation\WindowsAutomation.psm1
+Import-Module V:\monorepo\tools\windows-automation\WindowsAutomation.psm1
 
 # Optional: Add to PowerShell profile for permanent access
-Add-Content $PROFILE "Import-Module C:\dev\tools\windows-automation\WindowsAutomation.psm1"
+Add-Content $PROFILE "Import-Module V:\monorepo\tools\windows-automation\WindowsAutomation.psm1"
 ```
 
 ## ✨ Core Features
@@ -109,14 +109,14 @@ $content = Get-ClipboardText
 Write-Host $content
 
 # Take screenshot
-$path = Capture-Screenshot -Path "C:\dev\screenshot.png"
+$path = Capture-Screenshot -Path "V:\monorepo\screenshot.png"
 Write-Host "Screenshot saved: $path"
 
 # Screenshot with notification
-Capture-Screenshot -Path "C:\dev\test.png"
+Capture-Screenshot -Path "V:\monorepo\test.png"
 Show-WindowsNotification `
     -Title "Screenshot Captured" `
-    -Message "Saved to C:\dev\test.png"
+    -Message "Saved to V:\monorepo\test.png"
 ```
 
 ### Window Management
@@ -163,7 +163,7 @@ function Capture-AnnotatedScreen {
     param([string]$Annotation)
     
     $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-    $path = "C:\dev\screenshots\capture_$timestamp.png"
+    $path = "V:\monorepo\screenshots\capture_$timestamp.png"
     
     # Capture
     Capture-Screenshot -Path $path
@@ -246,7 +246,7 @@ Quick Actions:
     Set-ClipboardText $report
     
     # Screenshot
-    $screenshot = "C:\dev\snapshots\dev_$(Get-Date -Format 'yyyyMMdd_HHmmss').png"
+    $screenshot = "V:\monorepo\snapshots\dev_$(Get-Date -Format 'yyyyMMdd_HHmmss').png"
     Capture-Screenshot -Path $screenshot
     
     # Notify
@@ -386,13 +386,13 @@ Invoke-ClickSequence -Clicks $menuSequence
 
 ```powershell
 # Comprehensive keyboard & mouse demo
-C:\dev\tools\windows-automation\keyboard-mouse-demo.ps1
+V:\monorepo\tools\windows-automation\keyboard-mouse-demo.ps1
 
 # Practical real-world examples
-C:\dev\tools\windows-automation\practical-examples.ps1
+V:\monorepo\tools\windows-automation\practical-examples.ps1
 
 # Complete feature showcase
-C:\dev\tools\windows-automation\demo.ps1
+V:\monorepo\tools\windows-automation\demo.ps1
 ```
 
 ### Documentation
@@ -410,7 +410,7 @@ C:\dev\tools\windows-automation\demo.ps1
 notepad $PROFILE
 
 # Add this line:
-Import-Module C:\dev\tools\windows-automation\WindowsAutomation.psm1
+Import-Module V:\monorepo\tools\windows-automation\WindowsAutomation.psm1
 
 # Save and reload
 . $PROFILE
@@ -421,7 +421,7 @@ Import-Module C:\dev\tools\windows-automation\WindowsAutomation.psm1
 ```json
 {
   "scripts": {
-    "build:notify": "pnpm nx run <project>:build && powershell -Command \"Import-Module C:/dev/tools/windows-automation/WindowsAutomation.psm1; Show-WindowsNotification -Title 'Build Complete' -Message 'Your build finished successfully'\""
+    "build:notify": "pnpm nx run <project>:build && powershell -Command \"Import-Module V:/monorepo/tools/windows-automation/WindowsAutomation.psm1; Show-WindowsNotification -Title 'Build Complete' -Message 'Your build finished successfully'\""
   }
 }
 ```
@@ -434,7 +434,7 @@ Import-Module C:\dev\tools\windows-automation\WindowsAutomation.psm1
 # Add to your trading bot startup
 function Start-TradingBotWithNotifications {
     # Start bot
-    python C:\dev\apps\crypto-enhanced\start_live_trading.py
+    python V:\monorepo\apps\crypto-enhanced\start_live_trading.py
     
     # Notify when started
     Show-WindowsNotification `
@@ -449,13 +449,13 @@ function Start-TradingBotWithNotifications {
 # Automated build workflow
 function Build-WithScreenshot {
     # Take pre-build screenshot
-    Capture-Screenshot -Path "C:\dev\builds\pre_build.png"
+    Capture-Screenshot -Path "V:\monorepo\builds\pre_build.png"
     
     # Run build
     pnpm nx run <project>:build
     
     # Take post-build screenshot
-    Capture-Screenshot -Path "C:\dev\builds\post_build.png"
+    Capture-Screenshot -Path "V:\monorepo\builds\post_build.png"
     
     # Copy build log to clipboard
     $log = Get-Content .\build.log -Tail 20 -Raw
@@ -512,7 +512,7 @@ All features have been tested and confirmed working!
 ## 📍 File Locations
 
 ```
-C:\dev\tools\windows-automation\
+V:\monorepo\tools\windows-automation\
 ├── WindowsAutomation.psm1          # Main PowerShell module
 ├── windows_automation.py            # Python async version
 ├── README.md                        # This file
@@ -529,18 +529,18 @@ C:\dev\tools\windows-automation\
 
 ```powershell
 # Run the full demo
-C:\dev\tools\windows-automation\demo.ps1
+V:\monorepo\tools\windows-automation\demo.ps1
 
 # Or start with keyboard & mouse
-C:\dev\tools\windows-automation\keyboard-mouse-demo.ps1
+V:\monorepo\tools\windows-automation\keyboard-mouse-demo.ps1
 
 # Or try practical examples
-C:\dev\tools\windows-automation\practical-examples.ps1
+V:\monorepo\tools\windows-automation\practical-examples.ps1
 ```
 
 ---
 
 **Status**: ✅ Fully functional and production-ready  
-**Location**: `C:\dev\tools\windows-automation\`  
+**Location**: `V:\monorepo\tools\windows-automation\`  
 **Support**: All features tested and documented  
 **Last Updated**: 2025-10-12

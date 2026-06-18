@@ -35,7 +35,7 @@ ${CLAUDE_PLUGIN_ROOT}/prompts/system.md
 This contains:
 
 - Your identity and role
-- System awareness (C:\dev + D:\ architecture)
+- System awareness (V:\monorepo + D:\ architecture)
 - Phase-based state machine logic
 - Behavioral rules and completion criteria
 

@@ -35,7 +35,7 @@ These hooks ensure the memory system works AUTOMATICALLY in every Claude Code se
 To verify hooks are working:
 
 ```powershell
-powershell -Command "& 'C:\dev\.claude\hooks\session-start.ps1'"
+powershell -Command "& 'V:\monorepo\.claude\hooks\session-start.ps1'"
 ```
 
 ## Troubleshooting

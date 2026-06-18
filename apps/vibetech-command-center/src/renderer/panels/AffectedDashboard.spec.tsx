@@ -301,7 +301,7 @@ describe('AffectedDashboard', () => {
       expect(mockSpawn).toHaveBeenCalledWith({
         command: 'pnpm',
         args: ['exec', 'nx', 'affected', '-t', 'lint', 'typecheck', 'test'],
-        cwd: 'C:\\dev'
+        cwd: 'V:\\monorepo'
       });
     });
   });

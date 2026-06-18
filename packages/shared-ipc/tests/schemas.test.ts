@@ -12,7 +12,7 @@ describe('IPC Message Schemas', () => {
     describe('OpenFileMessage', () => {
         it('should validate a valid open file message', () => {
             const message = createOpenFileMessage('nova', {
-                filePath: 'C:\\dev\\test.ts',
+                filePath: 'V:\\monorepo\\test.ts',
                 line: 10,
                 column: 5,
             });
@@ -20,7 +20,7 @@ describe('IPC Message Schemas', () => {
             expect(isValidIPCMessage(message)).toBe(true);
             const validated = validateIPCMessage(message);
             expect(validated.type).toBe(IPCMessageType.FILE_OPEN);
-            expect(validated.payload.filePath).toBe('C:\\dev\\test.ts');
+            expect(validated.payload.filePath).toBe('V:\\monorepo\\test.ts');
         });
 
     it('should reject empty file path', () => {

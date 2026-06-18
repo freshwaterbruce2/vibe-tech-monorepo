@@ -32,7 +32,7 @@ Before touching ANY code:
 
 1. Count files to be modified
 2. Check line count of existing files (max 500 lines per file)
-3. Verify data storage locations (D:\ for data, C:\dev for code)
+3. Verify data storage locations (D:\ for data, V:\monorepo for code)
 4. Check if similar functionality already exists (no duplicates rule)
 
 ### **STEP 2: PLANNING**
@@ -48,7 +48,7 @@ For complex changes (3+ files or uncertain scope):
 
 1. **FOLLOW the no-duplicates rule** - search before creating
 2. **ENFORCE line limits** - max 500 lines per file
-3. **USE proper paths** - D:\ for data, C:\dev for code
+3. **USE proper paths** - D:\ for data, V:\monorepo for code
 4. **MAINTAIN file names** - avoid renaming existing files
 5. **TEST as you go** - run quality checks incrementally
 
@@ -107,7 +107,7 @@ REQUIRED_PATHS:
   temp:        "D:\\temp\\[project-name]\\"
 
 FORBIDDEN:
-  - ❌ NEVER store logs in C:\dev\
+  - ❌ NEVER store logs in V:\monorepo\
   - ❌ NEVER put databases in project folders
   - ❌ NEVER save data files in repository
   - ❌ NEVER place ML models in source code
@@ -119,7 +119,7 @@ EXAMPLES:
 
   # ❌ WRONG:
   log_path: "./logs/app.log"
-  db_path:  "C:\\dev\\apps\\nova-agent\\database.db"
+  db_path:  "V:\\monorepo\\apps\\nova-agent\\database.db"
 ```
 
 ---

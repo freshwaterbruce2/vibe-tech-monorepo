@@ -17,7 +17,7 @@ export class BackupService {
   private readonly timeoutMs: number;
 
   constructor(opts: BackupServiceOptions = {}) {
-    this.defaultDest = opts.defaultDestination ?? 'C:\\dev\\_backups';
+    this.defaultDest = opts.defaultDestination ?? 'V:\\monorepo\\_backups';
     this.psPath = opts.powershellPath ?? 'pwsh.exe';
     this.timeoutMs = opts.timeoutMs ?? 10 * 60 * 1000;
   }

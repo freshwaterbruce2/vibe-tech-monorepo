@@ -12,7 +12,7 @@ operator decision.
 
 ## Step 1: Resolve Runtime Database
 
-Run from `C:\dev`:
+Run from `V:\monorepo`:
 
 ```bash
 cd apps/crypto-enhanced && python - <<'PY'

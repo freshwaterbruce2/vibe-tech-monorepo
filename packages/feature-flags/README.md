@@ -12,7 +12,7 @@ Self-hosted feature flag system for the monorepo, supporting:
 ### 1. Install Dependencies
 
 ```powershell
-cd C:\dev
+cd V:\monorepo
 pnpm install
 ```
 

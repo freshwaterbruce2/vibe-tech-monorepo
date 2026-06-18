@@ -7,10 +7,10 @@ Write-Host "================================" -ForegroundColor Cyan
 # Quick project count
 Write-Host ""
 Write-Host "Projects:" -ForegroundColor Yellow
-$apps = (Get-ChildItem -Path "C:\dev\apps" -Directory -ErrorAction SilentlyContinue).Count
-$packages = (Get-ChildItem -Path "C:\dev\packages" -Directory -ErrorAction SilentlyContinue).Count
-$backend = (Get-ChildItem -Path "C:\dev\backend" -Directory -ErrorAction SilentlyContinue).Count
-$tools = (Get-ChildItem -Path "C:\dev\tools" -Directory -ErrorAction SilentlyContinue).Count
+$apps = (Get-ChildItem -Path "V:\monorepo\apps" -Directory -ErrorAction SilentlyContinue).Count
+$packages = (Get-ChildItem -Path "V:\monorepo\packages" -Directory -ErrorAction SilentlyContinue).Count
+$backend = (Get-ChildItem -Path "V:\monorepo\backend" -Directory -ErrorAction SilentlyContinue).Count
+$tools = (Get-ChildItem -Path "V:\monorepo\tools" -Directory -ErrorAction SilentlyContinue).Count
 
 Write-Host "  apps: $apps" -ForegroundColor Cyan
 Write-Host "  packages: $packages" -ForegroundColor Cyan
@@ -45,4 +45,4 @@ Write-Host ""
 
 # Add as an alias
 Write-Host "Tip: Add this alias to your PowerShell profile:" -ForegroundColor Gray
-Write-Host '  Set-Alias metrics "C:\dev\tools\scripts\Get-DevMetrics-Fast.ps1"' -ForegroundColor Gray
+Write-Host '  Set-Alias metrics "V:\monorepo\tools\scripts\Get-DevMetrics-Fast.ps1"' -ForegroundColor Gray

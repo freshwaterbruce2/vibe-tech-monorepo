@@ -7,7 +7,7 @@ Android companion for the NOVA AI Assistant desktop (nova-agent). Connects over 
 
 ## Prerequisites
 
-- Node 22.x, pnpm 10.x (monorepo workspace is at `C:\dev`)
+- Node 22.x, pnpm 10.x (monorepo workspace is at `V:\monorepo`)
 - Android Studio + Android SDK Platform-Tools (`adb` must be on PATH)
 - `eas-cli` globally installed for cloud builds: `pnpm add -g eas-cli`
 - An Expo account linked to EAS (`eas login`)
@@ -15,14 +15,14 @@ Android companion for the NOVA AI Assistant desktop (nova-agent). Connects over 
 
 ## Quick Start (Dev)
 
-Run every command from `C:\dev` using pnpm workspace filters.
+Run every command from `V:\monorepo` using pnpm workspace filters.
 
 ```powershell
 # 1. Install dependencies for this app only
 pnpm install --filter nova-mobile-app
 
 # 2. Copy the env template and set the bridge token
-Copy-Item C:\dev\apps\nova-mobile-app\.env.example C:\dev\apps\nova-mobile-app\.env
+Copy-Item V:\monorepo\apps\nova-mobile-app\.env.example V:\monorepo\apps\nova-mobile-app\.env
 # then edit .env — EXPO_PUBLIC_BRIDGE_TOKEN must match the desktop
 
 # 3. Start the Nova Desktop bridge (separate terminal)
@@ -42,7 +42,7 @@ The desktop bridge binds to `127.0.0.1:3000` only. Use ADB reverse to forward th
 pnpm --filter nova-mobile-app adb:reverse
 ```
 
-This runs `C:\dev\apps\nova-mobile-app\scripts\adb-reverse.ps1`, which calls `adb reverse tcp:3000 tcp:3000` and `adb reverse tcp:8081 tcp:8081` (Metro bundler). USB debugging must be enabled on the device.
+This runs `V:\monorepo\apps\nova-mobile-app\scripts\adb-reverse.ps1`, which calls `adb reverse tcp:3000 tcp:3000` and `adb reverse tcp:8081 tcp:8081` (Metro bundler). USB debugging must be enabled on the device.
 
 ## API URL Resolution
 
@@ -83,7 +83,7 @@ pnpm --filter nova-mobile-app adb:reverse       # USB port forward helper
 ## Production Build (Android, EAS Cloud)
 
 ```powershell
-Set-Location C:\dev\apps\nova-mobile-app
+Set-Location V:\monorepo\apps\nova-mobile-app
 
 # APK for internal distribution (sideload on any device)
 pnpm exec eas build --platform android --profile preview
@@ -93,7 +93,7 @@ pnpm exec eas build --platform android --profile production
 pnpm exec eas submit --platform android --profile production
 ```
 
-Build profiles live in `eas.json`. The full release flow is scripted at `C:\dev\apps\nova-mobile-app\scripts\ship-v1.0.0.ps1` — read `RELEASE_NOTES_v1.0.0.md` before running.
+Build profiles live in `eas.json`. The full release flow is scripted at `V:\monorepo\apps\nova-mobile-app\scripts\ship-v1.0.0.ps1` — read `RELEASE_NOTES_v1.0.0.md` before running.
 
 ## Project Structure
 
@@ -132,7 +132,7 @@ nova-mobile-app/
 
 - Tokens stored in `expo-secure-store`, not `AsyncStorage`.
 - Desktop bridge is bound to `127.0.0.1:3000` by default; LAN access requires explicit un-gating + authentication in `apps/nova-agent/src-tauri/src/main.rs`.
-- No database in `C:\dev` — all app state lives on the device or in memory. Desktop-side data remains under `D:\databases\`.
+- No database in `V:\monorepo` — all app state lives on the device or in memory. Desktop-side data remains under `D:\databases\`.
 
 ## Related Docs
 

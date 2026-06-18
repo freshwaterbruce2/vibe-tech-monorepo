@@ -242,8 +242,8 @@ mod tests {
 
     #[test]
     fn signature_collapses_paths_and_numbers() {
-        let a = signature_for_task("Refactor auth", "Update auth flow in C:\\dev\\apps\\foo");
-        let b = signature_for_task("Refactor auth", "Update auth flow in C:\\dev\\apps\\bar");
+        let a = signature_for_task("Refactor auth", "Update auth flow in V:\\monorepo\\apps\\foo");
+        let b = signature_for_task("Refactor auth", "Update auth flow in V:\\monorepo\\apps\\bar");
         assert_eq!(a, b, "paths should normalize to <path>");
 
         let c = signature_for_task("Bug fix #1234", "Fix retry on attempt 5");

@@ -8,7 +8,7 @@
 | ------------------------------- | --------------------------------------------------------------------------- |
 | TypeScript, React, build errors | `typescript-expert`, `react-patterns`                                       |
 | NX, monorepo, workspace         | Use `nx-mcp:nx_docs` tool                                                   |
-| Desktop app, Electron, Tauri    | Read `C:\dev\.claude\agents\desktop-expert.md`                              |
+| Desktop app, Electron, Tauri    | Read `V:\monorepo\.claude\agents\desktop-expert.md`                              |
 | File operations, backup         | Use `desktop-commander` tools                                               |
 | Documents, PDFs, spreadsheets   | Load `/mnt/skills/public/{docx,pdf,xlsx}/SKILL.md`                          |
 | Browser automation              | Use `playwright:` or `Claude in Chrome:` tools                              |
@@ -26,7 +26,7 @@ serena:list_memories()  # Check for prior context
 
 ## Step 3: Check for Specialist Agents
 
-Read `C:\dev\.claude\agents.json` if the task could be delegated:
+Read `V:\monorepo\.claude\agents.json` if the task could be delegated:
 
 - Complex backend → `backend-expert.md`
 - UI/UX work → `ui-ux-expert.md`
@@ -50,4 +50,4 @@ If you respond without loading at least ONE relevant skill or using ONE speciali
 ---
 
 _Created: 2026-01-29_
-_Location: C:\dev\.claude\BOOT_SEQUENCE.md_
+_Location: V:\monorepo\.claude\BOOT_SEQUENCE.md_

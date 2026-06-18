@@ -27,14 +27,14 @@ Write-Host "`nStarting cleanup..." -ForegroundColor Green
 
 # 1. Clean node_modules
 Write-Host "`n1. Cleaning node_modules..." -ForegroundColor Cyan
-& cmd /c 'for /d %i in (C:\dev\apps\*) do @if exist "%i\node_modules" rmdir /s /q "%i\node_modules" 2>nul'
-& cmd /c 'for /d %i in (C:\dev\packages\*) do @if exist "%i\node_modules" rmdir /s /q "%i\node_modules" 2>nul'
+& cmd /c 'for /d %i in (V:\monorepo\apps\*) do @if exist "%i\node_modules" rmdir /s /q "%i\node_modules" 2>nul'
+& cmd /c 'for /d %i in (V:\monorepo\packages\*) do @if exist "%i\node_modules" rmdir /s /q "%i\node_modules" 2>nul'
 
 # 2. Clean build artifacts
 Write-Host "2. Cleaning build artifacts..." -ForegroundColor Cyan
 $buildDirs = @("dist", "build", ".next", ".turbo", "out", "coverage", ".parcel-cache")
 foreach ($dir in $buildDirs) {
-    Get-ChildItem -Path "C:\dev" -Directory -Filter $dir -Recurse -ErrorAction SilentlyContinue |
+    Get-ChildItem -Path "V:\monorepo" -Directory -Filter $dir -Recurse -ErrorAction SilentlyContinue |
     ForEach-Object {
         Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
     }

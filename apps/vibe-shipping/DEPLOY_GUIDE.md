@@ -70,7 +70,7 @@ vercel
 # Ensure clean build before deployment
 pnpm nx run shipping-pwa:typecheck
 pnpm nx run shipping-pwa:build
-cd C:\dev\apps\shipping-pwa
+cd V:\monorepo\apps\shipping-pwa
 pnpm run preview     # Test locally on http://localhost:4173
 ```
 
@@ -79,9 +79,9 @@ pnpm run preview     # Test locally on http://localhost:4173
 ### Android (Google Play)
 
 ```powershell
-cd C:\dev
+cd V:\monorepo
 pnpm nx run shipping-pwa:build-mobile
-cd C:\dev\apps\shipping-pwa
+cd V:\monorepo\apps\shipping-pwa
 pnpm exec cap open android
 # Build signed APK/AAB in Android Studio
 # Upload to Google Play Console
@@ -90,9 +90,9 @@ pnpm exec cap open android
 ### iOS (App Store)
 
 ```powershell
-cd C:\dev
+cd V:\monorepo
 pnpm nx run shipping-pwa:build-mobile
-cd C:\dev\apps\shipping-pwa
+cd V:\monorepo\apps\shipping-pwa
 pnpm exec cap open ios
 # Build archive in Xcode
 # Upload to App Store Connect

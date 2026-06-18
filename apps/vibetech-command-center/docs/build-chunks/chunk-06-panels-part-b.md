@@ -13,7 +13,7 @@
 ## 0. Backup first
 
 ```powershell
-Compress-Archive -Path C:\dev\apps\vibetech-command-center -DestinationPath C:\dev\_backups\pre-chunk06_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
+Compress-Archive -Path V:\monorepo\apps\vibetech-command-center -DestinationPath V:\monorepo\_backups\pre-chunk06_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
 ```
 
 ---
@@ -110,7 +110,7 @@ interface BuildInfo {
 }
 
 async function probeBuildInfo(app: NxProject): Promise<BuildInfo> {
-  const distPath = `C:\\dev\\${app.root.replace(/\//g, '\\')}\\dist`;
+  const distPath = `V:\\monorepo\\${app.root.replace(/\//g, '\\')}\\dist`;
   // Use process spawn to stat the dist dir via PowerShell — no new IPC surface required.
   // A lightweight approach: invoke a one-shot node script that prints the mtime.
   const probeResult = await unwrap(
@@ -120,7 +120,7 @@ async function probeBuildInfo(app: NxProject): Promise<BuildInfo> {
         '-e',
         `const fs=require('fs');try{const s=fs.statSync(${JSON.stringify(distPath)});process.stdout.write(String(s.mtimeMs));}catch{process.stdout.write('MISSING');}`
       ],
-      cwd: 'C:\\dev',
+      cwd: 'V:\\monorepo',
       timeoutMs: 3_000
     })
   );
@@ -266,7 +266,7 @@ export function BuildStatus(): JSX.Element {
 }
 
 function BuildRow({ app }: { app: NxProject }): JSX.Element {
-  const distPath = `C:\\dev\\${app.root.replace(/\//g, '\\')}\\dist`;
+  const distPath = `V:\\monorepo\\${app.root.replace(/\//g, '\\')}\\dist`;
 
   const { data, isLoading } = useQuery<FsStatResult>({
     queryKey: ['fs', 'stat', distPath],
@@ -362,7 +362,7 @@ export function RagSearch(): JSX.Element {
     await window.commandCenter.process.spawn({
       command: 'explorer.exe',
       args: ['/select,', path],
-      cwd: 'C:\\dev'
+      cwd: 'V:\\monorepo'
     });
   };
 
@@ -377,7 +377,7 @@ export function RagSearch(): JSX.Element {
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="semantic search across C:\dev  (Ctrl+K)"
+            placeholder="semantic search across V:\monorepo  (Ctrl+K)"
             className="w-full bg-bg-elev border border-bg-line rounded pl-10 pr-24 py-2.5 text-sm
                        font-mono placeholder-slate-600 focus:outline-none focus:border-pulse-cyan-700
                        focus:shadow-glow-cyan"
@@ -569,7 +569,7 @@ export function ClaudeLauncher(): JSX.Element {
     if (!selectedApp || !prompt.trim()) return;
     const app = apps.find((a) => a.name === selectedApp);
     if (!app) return;
-    const cwd = `C:\\dev\\${app.root.replace(/\//g, '\\')}`;
+    const cwd = `V:\\monorepo\\${app.root.replace(/\//g, '\\')}`;
     // Generate local invocation id so the stream hook can filter
     // (the real id comes from the bridge — we use a correlation id passed through)
     // Simplification: our bridge already assigns invocationId internally and emits it
@@ -1001,7 +1001,7 @@ function setupBridge(searchImpl?: ReturnType<typeof vi.fn>): ReturnType<typeof v
       latencyMs: 42,
       source: 'mcp-rag-server',
       hits: [
-        { score: 0.91, path: 'C:\\dev\\apps\\vibetech-command-center\\src\\main\\services\\claude-bridge.ts', language: 'typescript', snippet: 'export class ClaudeBridge', startLine: 12, endLine: 20 }
+        { score: 0.91, path: 'V:\\monorepo\\apps\\vibetech-command-center\\src\\main\\services\\claude-bridge.ts', language: 'typescript', snippet: 'export class ClaudeBridge', startLine: 12, endLine: 20 }
       ]
     },
     timestamp: Date.now()
@@ -1142,7 +1142,7 @@ describe('ClaudeLauncher', () => {
     await waitFor(() => expect(launch).not.toBeDisabled());
     await user.click(launch);
     expect(invoke).toHaveBeenCalledWith(expect.objectContaining({
-      cwd: 'C:\\dev\\apps\\nova-agent',
+      cwd: 'V:\\monorepo\\apps\\nova-agent',
       allowedTools: expect.arrayContaining(['Read']),
       permissionMode: 'plan'
     }));
@@ -1270,7 +1270,7 @@ describe('BuildStatus', () => {
   });
 
   it('shows "never" for apps without dist/', async () => {
-    setupBridge({ 'C:\\dev\\apps\\nova-agent\\dist': { exists: false, mtimeMs: null } });
+    setupBridge({ 'V:\\monorepo\\apps\\nova-agent\\dist': { exists: false, mtimeMs: null } });
     renderWithQuery(<BuildStatus />);
     await waitFor(() => expect(screen.getByText('nova-agent')).toBeInTheDocument());
     expect(screen.getByText('never')).toBeInTheDocument();
@@ -1278,7 +1278,7 @@ describe('BuildStatus', () => {
 
   it('shows fresh status for recently-built apps', async () => {
     const recent = Date.now() - 5 * 60 * 1000; // 5 min ago
-    setupBridge({ 'C:\\dev\\apps\\nova-agent\\dist': { exists: true, mtimeMs: recent, sizeBytes: 1_000_000, isDirectory: true } });
+    setupBridge({ 'V:\\monorepo\\apps\\nova-agent\\dist': { exists: true, mtimeMs: recent, sizeBytes: 1_000_000, isDirectory: true } });
     renderWithQuery(<BuildStatus />);
     await waitFor(() => expect(screen.getByText(/MB/)).toBeInTheDocument());
   });
@@ -1290,7 +1290,7 @@ describe('BuildStatus', () => {
 ## 8. Run everything
 
 ```powershell
-cd C:\dev\apps\vibetech-command-center
+cd V:\monorepo\apps\vibetech-command-center
 pnpm run typecheck ; pnpm run test ; pnpm run dev
 ```
 
@@ -1328,7 +1328,7 @@ pnpm run typecheck ; pnpm run test ; pnpm run dev
 
 1. **ClaudeLauncher stream gap** — flagged in section 4. Early stream events before `invoke.mutate` resolves are filtered out by the `invocationId` check. If your first Claude run shows the result card but an empty stream, that's why. The fix for a later chunk is a client-generated correlation id.
 
-2. **RagSearch depends on a live `mcp-rag-server`** — if the server isn't running, the panel shows `source: unavailable`. Per the memory, the server at `C:\dev\apps\mcp-rag-server` may need `pnpm run build` + `pnpm run start` first. Alternatively, launching it from Claude Desktop via the `.mcp.json` "rag" entry starts it stdio-style, but the dashboard's `rag-client` launches its own stdio child. If the server binary path in Chunk 3's `RagClient` default (`C:\dev\apps\mcp-rag-server\dist\index.js`) is wrong, queries fail silently with `unavailable`. Verify the dist path exists; update `RagClientOptions.args` if needed.
+2. **RagSearch depends on a live `mcp-rag-server`** — if the server isn't running, the panel shows `source: unavailable`. Per the memory, the server at `V:\monorepo\apps\mcp-rag-server` may need `pnpm run build` + `pnpm run start` first. Alternatively, launching it from Claude Desktop via the `.mcp.json` "rag" entry starts it stdio-style, but the dashboard's `rag-client` launches its own stdio child. If the server binary path in Chunk 3's `RagClient` default (`V:\monorepo\apps\mcp-rag-server\dist\index.js`) is wrong, queries fail silently with `unavailable`. Verify the dist path exists; update `RagClientOptions.args` if needed.
 
 3. **`explorer.exe /select,`** needs the comma — it's a documented Windows quirk. The code has it. If clicking a RAG result opens the parent folder but doesn't highlight the file, Windows Explorer changed behavior (unlikely) — or your path has unusual characters. Escape-wrap doesn't help for `/select,` specifically.
 
@@ -1341,7 +1341,7 @@ pnpm run typecheck ; pnpm run test ; pnpm run dev
 ## Post-chunk backup
 
 ```powershell
-Compress-Archive -Path C:\dev\apps\vibetech-command-center -DestinationPath C:\dev\_backups\command-center-chunk06-complete_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
+Compress-Archive -Path V:\monorepo\apps\vibetech-command-center -DestinationPath V:\monorepo\_backups\command-center-chunk06-complete_$(Get-Date -Format 'yyyyMMdd_HHmmss').zip -CompressionLevel Optimal
 ```
 
-Ping me with `chunk 6 complete` (plus any oddities — especially around ClaudeLauncher streaming and RAG connectivity) and I'll write Chunk 7 — MCP server exposure. That's the loop-closing move: the dashboard itself becomes an MCP server registered in `C:\dev\.mcp.json`, so Claude Desktop can call dashboard tools (`dashboard_get_app_status`, `dashboard_trigger_backup`, `dashboard_launch_dev`, etc.) as part of any conversation.
+Ping me with `chunk 6 complete` (plus any oddities — especially around ClaudeLauncher streaming and RAG connectivity) and I'll write Chunk 7 — MCP server exposure. That's the loop-closing move: the dashboard itself becomes an MCP server registered in `V:\monorepo\.mcp.json`, so Claude Desktop can call dashboard tools (`dashboard_get_app_status`, `dashboard_trigger_backup`, `dashboard_laun

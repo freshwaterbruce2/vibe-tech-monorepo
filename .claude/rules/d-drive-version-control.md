@@ -2,17 +2,17 @@
 
 Priority: MANDATORY
 Repository: `D:\repositories\vibetech`
-Scripts: `C:\dev\scripts\version-control\`
+Scripts: `V:\monorepo\scripts\version-control\`
 
 ## When to Use
 
-Create a snapshot BEFORE: database migrations, major refactoring, destructive operations, testing risky changes, or any "I'm going to try something" moment. Use GitHub (C:\dev) for code version control — this system is for D:\ data snapshots only.
+Create a snapshot BEFORE: database migrations, major refactoring, destructive operations, testing risky changes, or any "I'm going to try something" moment. Use GitHub (V:\monorepo) for code version control — this system is for D:\ data snapshots only.
 
 ## Commands
 
 ```powershell
 # Create snapshot
-cd C:\dev\scripts\version-control
+cd V:\monorepo\scripts\version-control
 .\Save-Snapshot.ps1 -Description "Before database migration"
 .\Save-Snapshot.ps1 -Description "Production ready" -Tag "v1.0.0"
 

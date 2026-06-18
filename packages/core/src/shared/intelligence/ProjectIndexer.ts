@@ -15,9 +15,9 @@ export class ProjectIndexer {
     }
 
     /**
-     * Performs a recursive crawl of C:\dev to build Nova's world-view.
+     * Performs a recursive crawl of V:\monorepo to build Nova's world-view.
      */
-    public async indexWorkspace(rootPath: string = process.env.WORKSPACE_ROOT ?? 'C:\\dev'): Promise<void> {
+    public async indexWorkspace(rootPath: string = process.env.WORKSPACE_ROOT ?? 'V:\\monorepo'): Promise<void> {
         logger.info(`[Indexer] Starting full crawl of ${rootPath}...`);
         this.db.initialize();
 
@@ -131,4 +131,3 @@ export class ProjectIndexer {
             return [];
         }
     }
-}

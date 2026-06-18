@@ -325,7 +325,7 @@ mod tests {
                 None,
                 Some(30),
                 Some(serde_json::json!({
-                    "project_path": "C:\\dev\\apps\\nova-agent",
+                    "project_path": "V:\\monorepo\\apps\\nova-agent",
                     "auto_execute": false,
                     "requires_approval": true,
                 })),
@@ -336,7 +336,7 @@ mod tests {
         let metadata: serde_json::Value =
             serde_json::from_str(task.metadata.as_deref().unwrap()).unwrap();
 
-        assert_eq!(metadata["project_path"], "C:\\dev\\apps\\nova-agent");
+        assert_eq!(metadata["project_path"], "V:\\monorepo\\apps\\nova-agent");
         assert_eq!(metadata["auto_execute"], false);
         assert_eq!(metadata["requires_approval"], true);
         assert_eq!(metadata["estimated_minutes"], 30);

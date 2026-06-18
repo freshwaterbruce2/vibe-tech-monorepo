@@ -52,7 +52,7 @@ export const systemTools: Array<{
 		description: `Get list of allowed filesystem paths and their read/write permissions. Use this to understand which directories the MCP server can access.
 
 Returns: Array of allowed paths with permission levels:
-- C:\\dev - Read/Write (development workspace)
+- V:\\monorepo - Read/Write (development workspace)
 - D:\\ - Read/Write (databases, logs, learning data, screenshots)
 - C:\\Users\\fresh_zxae3v6\\OneDrive - Read-only
 
@@ -63,7 +63,7 @@ Use this tool when:
 
 Example output:
 [
-  { path: "C:\\dev", read: true, write: true },
+  { path: "V:\\monorepo", read: true, write: true },
   { path: "D:\\", read: true, write: true },
   { path: "C:\\Users\\fresh_zxae3v6\\OneDrive", read: true, write: false }
 ]`,
@@ -160,7 +160,7 @@ Error Handling:
 
 Examples:
 - command: "Get-Process | Where {$_.CPU -gt 100}" → CPU-intensive processes
-- command: "Get-ChildItem C:\\dev -Recurse | Measure-Object" → File count
+- command: "Get-ChildItem V:\\monorepo -Recurse | Measure-Object" → File count
 - command: "Test-Path D:\\databases\\trading.db" → Check file exists
 
 Returns: { exitCode, stdout, stderr, executionTime }`,
@@ -193,7 +193,7 @@ SECURITY: Powerful legacy shell. Prefer 'dc_run_powershell' for modern Windows o
 Timeout: Commands that exceed timeout (default 60s) are forcefully terminated.
 
 Examples:
-- command: "dir C:\\dev /s /b" → Recursive file list
+- command: "dir V:\\monorepo /s /b" → Recursive file list
 - command: "tasklist | findstr node" → Find Node.js processes
 - command: "echo %PATH%" → Display PATH environment variable
 

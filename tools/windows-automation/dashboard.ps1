@@ -32,7 +32,7 @@ function Show-SystemStatus {
     
     # 3. Check trading bot status
     Write-Host "[3] Trading Bot:" -ForegroundColor Yellow
-    $dbPath = "C:\dev\projects\crypto-enhanced\trading.db"
+    $dbPath = "V:\monorepo\projects\crypto-enhanced\trading.db"
     if (Test-Path $dbPath) {
         $dbSize = (Get-Item $dbPath).Length / 1KB
         $lastMod = (Get-Item $dbPath).LastWriteTime

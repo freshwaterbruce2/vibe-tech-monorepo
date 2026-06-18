@@ -83,7 +83,7 @@ export default function PersonalCopilot() {
 		setIsIndexing(true);
 		try {
 			const result = await invoke<string>("index_codebase_command", {
-				rootPath: "C:\\dev",
+				rootPath: "V:\\monorepo",
 				maxFiles: 2000,
 			});
 			console.log(result);

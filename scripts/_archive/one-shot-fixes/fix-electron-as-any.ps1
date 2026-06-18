@@ -4,7 +4,7 @@
 # Date: 2026-01-25
 
 $ErrorActionPreference = "Stop"
-$Root = "C:\dev\apps\vibe-code-studio\src"
+$Root = "V:\monorepo\apps\vibe-code-studio\src"
 
 Write-Host "=== Fixing window.electron 'as any' casts ===" -ForegroundColor Cyan
 

@@ -51,7 +51,7 @@ export function BuildStatus() {
 }
 
 function BuildRow({ app }: { app: NxProject }) {
-  const distPath = `C:\\dev\\${app.root.replace(/\//g, '\\')}\\dist`;
+  const distPath = `V:\\monorepo\\${app.root.replace(/\//g, '\\')}\\dist`;
   const now = useCurrentTime(60_000);
 
   const { data, isLoading } = useQuery<FsStatResult>({

@@ -336,7 +336,7 @@ mod tests {
         let input = GuidanceInput {
             context: SystemContext {
                 timestamp: 0,
-                workspace_root: "C:\\dev".to_string(),
+                workspace_root: "V:\\monorepo".to_string(),
                 git_status: Some(GitStatus {
                     branch: "main".to_string(),
                     modified_files: vec!["file1.rs".to_string(); 15],

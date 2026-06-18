@@ -1,8 +1,8 @@
 # VIBE-TECH APP FACTORY — Codex Mission Brief
-
+## VIBE-TECH APP FACTORY — Codex Mission Brief
 **Owner:** Bruce Freshwater (The Architect)
-**Repo:** `C:\dev` — `@vibetech/workspace`
-**Last verified against disk:** 2026-05-21
+**Repo:** `V:\monorepo` — `@vibetech/workspace`
+**Last verified against disk:** 2026-06-17
 **Status:** COMPLETE. Final completion audit reverified all binary success criteria, including the
 PriorAuthPro production Checkout, webhook, and metered AI appeal proof.
 
@@ -21,7 +21,7 @@ This is Finisher Mode applied to the whole monorepo. **No net-new apps unless th
 
 ---
 
-## 2. Ground truth (verified against `C:\dev` on 2026-05-15)
+## 2. Ground truth (verified against `V:\monorepo` on 2026-06-17)
 
 ### 2.1 Stack actually in use
 
@@ -173,9 +173,9 @@ plugins/
 
 ### Phase 0 — Audit (1 day, mostly `codex exec`)
 
-**Output:** `C:\dev\docs\factory-audit.md`
+**Output:** `V:\monorepo\docs\factory-audit.md`
 
-- Inventory all 24 apps in `C:\dev\apps\`. For each, record:
+- Inventory all 24 apps in `V:\monorepo\apps\`. For each, record:
   - Archetype: `web-saas` | `tauri-desktop` | `electron-desktop` | `mobile` | `mcp-server` | `experiment`
   - Ship status: `shipping` | `near-ship` | `polish-needed` | `broken` | `archive-candidate`
   - Monetization wiring: `full` (Stripe + auth + entitlements) | `partial` | `none`
@@ -232,7 +232,7 @@ Add a "Factory" panel to `vibetech-command-center`:
 - **Use `codex exec`** for any task estimated >30 minutes. Keep the TUI for code review and pairing.
 - **Use subagents** for Phase 1 — the six package extractions are independent, parallel is safe.
 - **Use `--search` (live)** when researching Stripe API, Tauri 2, react-email, PostHog — these change fast.
-- **MCP servers already registered** in `C:\dev\.mcp.json`. Use `rag_search` against the existing codebase before writing new code that may already exist (No Duplicates Rule from AGENTS.md).
+- **MCP servers already registered** in `V:\monorepo\.mcp.json`. Use `rag_search` against the existing codebase before writing new code that may already exist (No Duplicates Rule from AGENTS.md).
 - **Backup before any destructive op:**
 
   ```powershell
@@ -262,7 +262,7 @@ Add a "Factory" panel to `vibetech-command-center`:
 ## 8. Kickoff
 
 ```powershell
-cd C:\dev
+cd V:\monorepo
 pnpm run project:start app-factory
 codex exec --sandbox workspace-write --search "Read GOAL_APP_FACTORY.md, AGENTS.md, and CLAUDE.md. Execute Phase 0. Output docs\factory-audit.md and stop for review."
 ```

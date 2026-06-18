@@ -5,7 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  // Public directory (migrated from C:\dev\public to app-specific location 2026-01-24)
+  // Public directory (migrated from V:\monorepo\public to app-specific location 2026-01-24)
   publicDir: './public',
 
   server: {

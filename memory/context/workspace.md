@@ -6,11 +6,11 @@ Bruce Freshwater - solo Windows 11 developer working from the local monorepo.
 
 ## Current Baseline
 
-- Repository root: `C:\dev`
+- Repository root: `V:\monorepo`
 - Git host: GitHub, `https://github.com/freshwaterbruce2/vibe-tech-monorepo.git`
 - Package manager: `pnpm@10.33.0`
 - Node: `22.x`
-- Build system: `nx@22.6.5`
+- Build system: `nx@22.7.1`
 - Current Nx project count: 70
 - Primary languages: TypeScript, JavaScript, Python, Rust, and React
 
@@ -28,12 +28,12 @@ Bruce Freshwater - solo Windows 11 developer working from the local monorepo.
 
 ## Source And Data Policy
 
-- Source code lives under `C:\dev`.
+- Source code lives under `V:\monorepo`.
 - Runtime data lives on `D:\`.
 - Active databases live under `D:\databases`.
 - Logs live under `D:\logs`.
 - Learning-system code/docs/artifacts live under `D:\learning-system`.
-- Do not recreate deprecated `C:\dev\data`, `C:\dev\logs`, `C:\dev\databases`, or `D:\learning` paths.
+- Do not recreate deprecated `V:\monorepo\data`, `V:\monorepo\logs`, `V:\monorepo\databases`, or `D:\learning` paths.
 
 ## Workflow Rules
 

@@ -50,7 +50,7 @@ function getConfig(): RAGConfig {
     cachePath: process.env.RAG_CACHE_PATH ?? 'D:\\nova-agent-data\\cache\\query-cache.sqlite',
     hashIndexPath: process.env.RAG_HASH_INDEX_PATH ?? 'D:\\nova-agent-data\\indexes\\file-hashes.json',
     logPath: process.env.RAG_LOG_PATH ?? 'D:\\nova-agent-data\\logs\\rag-operations.log',
-    workspaceRoot: process.env.RAG_WORKSPACE_ROOT ?? 'C:\\dev',
+    workspaceRoot: process.env.RAG_WORKSPACE_ROOT ?? 'V:\\monorepo',
     embeddingEndpoint: process.env.RAG_EMBEDDING_ENDPOINT ?? 'http://localhost:3001',
     embeddingModel: process.env.RAG_EMBEDDING_MODEL ?? 'text-embedding-3-small',
     maxChunkTokens: 512,

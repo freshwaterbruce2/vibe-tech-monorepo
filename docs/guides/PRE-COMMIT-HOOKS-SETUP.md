@@ -18,7 +18,7 @@ The hook currently enforces:
 The local hook should call the tracked script:
 
 ```sh
-pwsh.exe -NoProfile -ExecutionPolicy Bypass -File "C:/dev/scripts/pre-commit.ps1"
+pwsh.exe -NoProfile -ExecutionPolicy Bypass -File "V:/monorepo/scripts/pre-commit.ps1"
 ```
 
 The tracked script keeps checks scoped to the staged index:

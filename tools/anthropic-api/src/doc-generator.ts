@@ -38,7 +38,7 @@ async function generateDocs() {
     process.exit(1);
   }
 
-  const fullPath = join('C:\\dev', projectPath);
+  const fullPath = join('V:\\monorepo', projectPath);
   console.log(`Scanning ${fullPath} for undocumented files...\n`);
 
   const files = collectFiles(fullPath, ['.ts', '.tsx']).filter(
@@ -57,7 +57,7 @@ async function generateDocs() {
     const hasExports =
       content.includes('export ') || content.includes('module.exports');
     if (hasExports && !hasJsdoc && content.length < 30000) {
-      undocumented.push({ path: relative('C:\\dev', file), content });
+      undocumented.push({ path: relative('V:\\monorepo', file), content });
     }
   }
 

@@ -13,7 +13,7 @@ A powerful Model Context Protocol (MCP) server for Windows 11 desktop automation
 
 ### 📁 Filesystem
 - Full read/write/search capabilities
-- Access restricted to `C:\dev`, `D:\`, and `OneDrive` (Read-only)
+- Access restricted to `V:\monorepo`, `D:\`, and `OneDrive` (Read-only)
 - Advanced features: ACL, file hashing, robocopy integration
 
 ### 🖱️ Desktop Control
@@ -66,7 +66,7 @@ Add the following to your MCP client configuration (e.g., `claude_desktop_config
     "desktop-commander": {
       "command": "node",
       "args": [
-        "C:\\dev\\apps\\desktop-commander-v3\\dist\\mcp.js"
+        "V:\\monorepo\\apps\\desktop-commander-v3\\dist\\mcp.js"
       ],
       "env": {
         "NODE_ENV": "production"
@@ -81,7 +81,7 @@ Add the following to your MCP client configuration (e.g., `claude_desktop_config
 **CRITICAL**: This server has **UNRESTRICTED** system access including:
 - ✅ Full PowerShell execution (any command, any script)
 - ✅ Full CMD execution (any command, batch files)
-- ✅ File system operations (C:\dev, D:\, OneDrive)
+- ✅ File system operations (V:\monorepo, D:\, OneDrive)
 - ✅ Input simulation (mouse, keyboard)
 - ✅ System control (volume, brightness, processes)
 
@@ -96,7 +96,7 @@ Add the following to your MCP client configuration (e.g., `claude_desktop_config
 - Production systems without security review
 
 Filesystem access is limited to:
-- `C:\dev` (Read/Write)
+- `V:\monorepo` (Read/Write)
 - `D:\` (Read/Write)
 - `C:\Users\fresh_zxae3v6\OneDrive` (Read-Only)
 

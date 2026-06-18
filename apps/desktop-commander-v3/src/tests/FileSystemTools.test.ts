@@ -45,7 +45,7 @@ describe("FileSystemTools", () => {
 		vi.spyOn(fs.promises, "unlink").mockResolvedValue(undefined);
 
 		// Default PathValidator mocks
-		vi.mocked(PathValidator.validatePath).mockReturnValue("C:\\dev\\test.txt");
+		vi.mocked(PathValidator.validatePath).mockReturnValue("V:\\monorepo\\test.txt");
 		vi.mocked(PathValidator.isFile).mockResolvedValue(true);
 		vi.mocked(PathValidator.isDirectory).mockResolvedValue(false);
 		vi.mocked(PathValidator.pathExists).mockResolvedValue(true);
@@ -57,15 +57,15 @@ describe("FileSystemTools", () => {
 			vi.mocked(fs.promises.readFile).mockResolvedValue(mockContent);
 			vi.mocked(PathValidator.isFile).mockResolvedValue(true);
 
-			const result = await FileSystem.readFile("C:\\dev\\test.txt");
+			const result = await FileSystem.readFile("V:\\monorepo\\test.txt");
 
 			expect(result).toBe(mockContent);
 			expect(PathValidator.validatePath).toHaveBeenCalledWith(
-				"C:\\dev\\test.txt",
+				"V:\\monorepo\\test.txt",
 				"read",
 			);
 			expect(fs.promises.readFile).toHaveBeenCalledWith(
-				"C:\\dev\\test.txt",
+				"V:\\monorepo\\test.txt",
 				"utf-8",
 			);
 		});
@@ -73,7 +73,7 @@ describe("FileSystemTools", () => {
 		it("should throw error if path is not a file", async () => {
 			vi.mocked(PathValidator.isFile).mockResolvedValue(false);
 
-			await expect(FileSystem.readFile("C:\\dev\\directory")).rejects.toThrow(
+			await expect(FileSystem.readFile("V:\\monorepo\\directory")).rejects.toThrow(
 				"Not a file or does not exist",
 			);
 		});
@@ -95,11 +95,11 @@ describe("FileSystemTools", () => {
 			vi.mocked(fs.promises.readFile).mockResolvedValue(mockBuffer);
 			vi.mocked(PathValidator.isFile).mockResolvedValue(true);
 
-			const result = await FileSystem.readFileBase64("C:\\dev\\image.png");
+			const result = await FileSystem.readFileBase64("V:\\monorepo\\image.png");
 
 			expect(result).toBe(mockBuffer.toString("base64"));
 			expect(PathValidator.validatePath).toHaveBeenCalledWith(
-				"C:\\dev\\image.png",
+				"V:\\monorepo\\image.png",
 				"read",
 			);
 		});
@@ -109,14 +109,14 @@ describe("FileSystemTools", () => {
 		it("should write file contents successfully", async () => {
 			vi.mocked(fs.promises.writeFile).mockResolvedValue(undefined);
 
-			await FileSystem.writeFile("C:\\dev\\test.txt", "content");
+			await FileSystem.writeFile("V:\\monorepo\\test.txt", "content");
 
 			expect(PathValidator.validatePath).toHaveBeenCalledWith(
-				"C:\\dev\\test.txt",
+				"V:\\monorepo\\test.txt",
 				"write",
 			);
 			expect(fs.promises.writeFile).toHaveBeenCalledWith(
-				"C:\\dev\\test.txt",
+				"V:\\monorepo\\test.txt",
 				"content",
 				"utf-8",
 			);
@@ -126,11 +126,11 @@ describe("FileSystemTools", () => {
 			vi.mocked(fs.promises.mkdir).mockResolvedValue(undefined);
 			vi.mocked(fs.promises.writeFile).mockResolvedValue(undefined);
 
-			await FileSystem.writeFile("C:\\dev\\new\\test.txt", "content", {
+			await FileSystem.writeFile("V:\\monorepo\\new\\test.txt", "content", {
 				createDirs: true,
 			});
 
-			expect(fs.promises.mkdir).toHaveBeenCalledWith("C:\\dev\\new", {
+			expect(fs.promises.mkdir).toHaveBeenCalledWith("V:\\monorepo\\new", {
 				recursive: true,
 			});
 		});
@@ -138,12 +138,12 @@ describe("FileSystemTools", () => {
 		it("should append to file when append option is true", async () => {
 			vi.mocked(fs.promises.appendFile).mockResolvedValue(undefined);
 
-			await FileSystem.writeFile("C:\\dev\\test.txt", "more content", {
+			await FileSystem.writeFile("V:\\monorepo\\test.txt", "more content", {
 				append: true,
 			});
 
 			expect(fs.promises.appendFile).toHaveBeenCalledWith(
-				"C:\\dev\\test.txt",
+				"V:\\monorepo\\test.txt",
 				"more content",
 				"utf-8",
 			);
@@ -163,7 +163,7 @@ describe("FileSystemTools", () => {
 			]);
 			vi.mocked(fs.promises.stat).mockResolvedValue({ size: 100 } as any);
 
-			const result = await FileSystem.listDirectory("C:\\dev");
+			const result = await FileSystem.listDirectory("V:\\monorepo");
 
 			expect(result).toHaveLength(2);
 			expect(result[0]).toEqual({ name: "file1.txt", type: "file", size: 100 });
@@ -174,7 +174,7 @@ describe("FileSystemTools", () => {
 			vi.mocked(PathValidator.isDirectory).mockResolvedValue(false);
 
 			await expect(
-				FileSystem.listDirectory("C:\\dev\\test.txt"),
+				FileSystem.listDirectory("V:\\monorepo\\test.txt"),
 			).rejects.toThrow("Not a directory");
 		});
 
@@ -197,7 +197,7 @@ describe("FileSystemTools", () => {
 				]);
 			vi.mocked(fs.promises.stat).mockResolvedValue({ size: 50 } as any);
 
-			const result = await FileSystem.listDirectory("C:\\dev", {
+			const result = await FileSystem.listDirectory("V:\\monorepo", {
 				recursive: true,
 			});
 
@@ -209,13 +209,13 @@ describe("FileSystemTools", () => {
 		it("should create directory successfully", async () => {
 			vi.mocked(fs.promises.mkdir).mockResolvedValue(undefined);
 
-			await FileSystem.createDirectory("C:\\dev\\newdir");
+			await FileSystem.createDirectory("V:\\monorepo\\newdir");
 
 			expect(PathValidator.validatePath).toHaveBeenCalledWith(
-				"C:\\dev\\newdir",
+				"V:\\monorepo\\newdir",
 				"write",
 			);
-			expect(fs.promises.mkdir).toHaveBeenCalledWith("C:\\dev\\newdir", {
+			expect(fs.promises.mkdir).toHaveBeenCalledWith("V:\\monorepo\\newdir", {
 				recursive: true,
 			});
 		});
@@ -223,9 +223,9 @@ describe("FileSystemTools", () => {
 		it("should create directory with recursive option disabled", async () => {
 			vi.mocked(fs.promises.mkdir).mockResolvedValue(undefined);
 
-			await FileSystem.createDirectory("C:\\dev\\newdir", { recursive: false });
+			await FileSystem.createDirectory("V:\\monorepo\\newdir", { recursive: false });
 
-			expect(fs.promises.mkdir).toHaveBeenCalledWith("C:\\dev\\newdir", {
+			expect(fs.promises.mkdir).toHaveBeenCalledWith("V:\\monorepo\\newdir", {
 				recursive: false,
 			});
 		});
@@ -238,13 +238,13 @@ describe("FileSystemTools", () => {
 			} as any);
 			vi.mocked(fs.promises.unlink).mockResolvedValue(undefined);
 
-			await FileSystem.deleteFile("C:\\dev\\test.txt");
+			await FileSystem.deleteFile("V:\\monorepo\\test.txt");
 
 			expect(PathValidator.validatePath).toHaveBeenCalledWith(
-				"C:\\dev\\test.txt",
+				"V:\\monorepo\\test.txt",
 				"write",
 			);
-			expect(fs.promises.unlink).toHaveBeenCalledWith("C:\\dev\\test.txt");
+			expect(fs.promises.unlink).toHaveBeenCalledWith("V:\\monorepo\\test.txt");
 		});
 
 		it("should delete directory recursively", async () => {
@@ -253,9 +253,9 @@ describe("FileSystemTools", () => {
 			} as any);
 			vi.mocked(fs.promises.rm).mockResolvedValue(undefined);
 
-			await FileSystem.deleteFile("C:\\dev\\folder", { recursive: true });
+			await FileSystem.deleteFile("V:\\monorepo\\folder", { recursive: true });
 
-			expect(fs.promises.rm).toHaveBeenCalledWith("C:\\dev\\folder", {
+			expect(fs.promises.rm).toHaveBeenCalledWith("V:\\monorepo\\folder", {
 				recursive: true,
 			});
 		});
@@ -265,7 +265,7 @@ describe("FileSystemTools", () => {
 				isDirectory: () => true,
 			} as any);
 
-			await expect(FileSystem.deleteFile("C:\\dev\\folder")).rejects.toThrow(
+			await expect(FileSystem.deleteFile("V:\\monorepo\\folder")).rejects.toThrow(
 				"Cannot delete directory without recursive flag",
 			);
 		});
@@ -275,19 +275,19 @@ describe("FileSystemTools", () => {
 		it("should move file successfully", async () => {
 			vi.mocked(fs.promises.rename).mockResolvedValue(undefined);
 
-			await FileSystem.moveFile("C:\\dev\\src.txt", "C:\\dev\\dest.txt");
+			await FileSystem.moveFile("V:\\monorepo\\src.txt", "V:\\monorepo\\dest.txt");
 
 			expect(PathValidator.validatePath).toHaveBeenCalledWith(
-				"C:\\dev\\src.txt",
+				"V:\\monorepo\\src.txt",
 				"write",
 			);
 			expect(PathValidator.validatePath).toHaveBeenCalledWith(
-				"C:\\dev\\dest.txt",
+				"V:\\monorepo\\dest.txt",
 				"write",
 			);
 			expect(fs.promises.rename).toHaveBeenCalledWith(
-				"C:\\dev\\src.txt",
-				"C:\\dev\\dest.txt",
+				"V:\\monorepo\\src.txt",
+				"V:\\monorepo\\dest.txt",
 			);
 		});
 	});
@@ -296,19 +296,19 @@ describe("FileSystemTools", () => {
 		it("should copy file successfully", async () => {
 			vi.mocked(fs.promises.copyFile).mockResolvedValue(undefined);
 
-			await FileSystem.copyFile("C:\\dev\\src.txt", "C:\\dev\\dest.txt");
+			await FileSystem.copyFile("V:\\monorepo\\src.txt", "V:\\monorepo\\dest.txt");
 
 			expect(PathValidator.validatePath).toHaveBeenCalledWith(
-				"C:\\dev\\src.txt",
+				"V:\\monorepo\\src.txt",
 				"read",
 			);
 			expect(PathValidator.validatePath).toHaveBeenCalledWith(
-				"C:\\dev\\dest.txt",
+				"V:\\monorepo\\dest.txt",
 				"write",
 			);
 			expect(fs.promises.copyFile).toHaveBeenCalledWith(
-				"C:\\dev\\src.txt",
-				"C:\\dev\\dest.txt",
+				"V:\\monorepo\\src.txt",
+				"V:\\monorepo\\dest.txt",
 			);
 		});
 	});
@@ -325,7 +325,7 @@ describe("FileSystemTools", () => {
 			};
 			vi.mocked(fs.promises.stat).mockResolvedValue(mockStats as any);
 
-			const result = await FileSystem.getFileInfo("C:\\dev\\test.txt");
+			const result = await FileSystem.getFileInfo("V:\\monorepo\\test.txt");
 
 			expect(result.name).toBe("test.txt");
 			expect(result.size).toBe(1024);
@@ -354,7 +354,7 @@ describe("FileSystemTools", () => {
 				} as any,
 			]);
 
-			const result = await FileSystem.searchFiles("C:\\dev", "*.txt");
+			const result = await FileSystem.searchFiles("V:\\monorepo", "*.txt");
 
 			expect(result.length).toBeGreaterThan(0);
 			expect(result[0].type).toBe("file");
@@ -369,7 +369,7 @@ describe("FileSystemTools", () => {
 				}),
 			);
 
-			const result = await FileSystem.searchFiles("C:\\dev", "*.txt", {
+			const result = await FileSystem.searchFiles("V:\\monorepo", "*.txt", {
 				maxResults: 10,
 			});
 
@@ -390,7 +390,7 @@ describe("FileSystemTools", () => {
 				"line 1\nfoo bar\nline 3",
 			);
 
-			const result = await FileSystem.searchContent("C:\\dev", "foo");
+			const result = await FileSystem.searchContent("V:\\monorepo", "foo");
 
 			expect(result.length).toBeGreaterThan(0);
 			expect(result[0].line).toBe(2);
@@ -412,7 +412,7 @@ describe("FileSystemTools", () => {
 			]);
 			vi.mocked(fs.promises.readFile).mockResolvedValue("content");
 
-			await FileSystem.searchContent("C:\\dev", "content", {
+			await FileSystem.searchContent("V:\\monorepo", "content", {
 				extensions: ["txt"],
 			});
 
@@ -428,8 +428,8 @@ describe("FileSystemTools", () => {
 			vi.mocked(fs.promises.readFile).mockResolvedValue("content");
 
 			const result = await FileSystem.readFiles([
-				"C:\\dev\\file1.txt",
-				"C:\\dev\\file2.txt",
+				"V:\\monorepo\\file1.txt",
+				"V:\\monorepo\\file2.txt",
 			]);
 
 			expect(result).toHaveLength(2);
@@ -445,8 +445,8 @@ describe("FileSystemTools", () => {
 				.mockRejectedValueOnce(new Error("Read failed"));
 
 			const result = await FileSystem.readFiles([
-				"C:\\dev\\file1.txt",
-				"C:\\dev\\file2.txt",
+				"V:\\monorepo\\file1.txt",
+				"V:\\monorepo\\file2.txt",
 			]);
 
 			expect(result).toHaveLength(2);
@@ -458,7 +458,7 @@ describe("FileSystemTools", () => {
 			vi.mocked(PathValidator.isFile).mockResolvedValue(true);
 			vi.mocked(fs.promises.stat).mockResolvedValue({ size: 2000000 } as any);
 
-			const result = await FileSystem.readFiles(["C:\\dev\\large.txt"], {
+			const result = await FileSystem.readFiles(["V:\\monorepo\\large.txt"], {
 				maxBytes: 1000000,
 			});
 
@@ -473,8 +473,8 @@ describe("FileSystemTools", () => {
 			vi.mocked(fs.promises.writeFile).mockResolvedValue(undefined);
 
 			const files = [
-				{ path: "C:\\dev\\file1.txt", content: "content1" },
-				{ path: "C:\\dev\\file2.txt", content: "content2" },
+				{ path: "V:\\monorepo\\file1.txt", content: "content1" },
+				{ path: "V:\\monorepo\\file2.txt", content: "content2" },
 			];
 
 			const result = await FileSystem.writeFiles(files);
@@ -492,8 +492,8 @@ describe("FileSystemTools", () => {
 				.mockRejectedValueOnce(new Error("Write failed"));
 
 			const files = [
-				{ path: "C:\\dev\\file1.txt", content: "new1" },
-				{ path: "C:\\dev\\file2.txt", content: "new2" },
+				{ path: "V:\\monorepo\\file1.txt", content: "new1" },
+				{ path: "V:\\monorepo\\file2.txt", content: "new2" },
 			];
 
 			await expect(
@@ -512,7 +512,7 @@ describe("FileSystemTools", () => {
 
 			const edits = [
 				{
-					path: "C:\\dev\\test.txt",
+					path: "V:\\monorepo\\test.txt",
 					mode: "literal" as const,
 					needle: "world",
 					replacement: "universe",
@@ -531,7 +531,7 @@ describe("FileSystemTools", () => {
 
 			const edits = [
 				{
-					path: "C:\\dev\\test.txt",
+					path: "V:\\monorepo\\test.txt",
 					mode: "regex" as const,
 					needle: "foo",
 					replacement: "baz",
@@ -549,7 +549,7 @@ describe("FileSystemTools", () => {
 
 			const edits = [
 				{
-					path: "C:\\dev\\test.txt",
+					path: "V:\\monorepo\\test.txt",
 					mode: "literal" as const,
 					needle: "missing",
 					replacement: "new",
@@ -566,7 +566,7 @@ describe("FileSystemTools", () => {
 
 			const edits = [
 				{
-					path: "C:\\dev\\test.txt",
+					path: "V:\\monorepo\\test.txt",
 					mode: "literal" as const,
 					needle: "world",
 					replacement: "universe",

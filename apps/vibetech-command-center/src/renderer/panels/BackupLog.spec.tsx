@@ -8,7 +8,7 @@ import { BackupLog } from './BackupLog';
 function setupBridge(listData: unknown[], createImpl?: ReturnType<typeof vi.fn>): ReturnType<typeof vi.fn> {
   const create = createImpl ?? vi.fn().mockResolvedValue({
     ok: true,
-    data: { success: true, zipPath: 'C:\\dev\\_backups\\x.zip', sizeBytes: 2048, sourcePath: '.', label: 'all-apps', startedAt: 1, completedAt: 2, durationMs: 1 },
+    data: { success: true, zipPath: 'V:\\monorepo\\_backups\\x.zip', sizeBytes: 2048, sourcePath: '.', label: 'all-apps', startedAt: 1, completedAt: 2, durationMs: 1 },
     timestamp: Date.now()
   });
   Object.defineProperty(window, 'commandCenter', {
@@ -33,8 +33,8 @@ describe('BackupLog', () => {
 
   it('renders backup rows', async () => {
     setupBridge([
-      { zipPath: 'C:\\dev\\_backups\\alpha.zip', sizeBytes: 1024 * 1024, createdAt: Date.now() - 60_000, label: 'alpha' },
-      { zipPath: 'C:\\dev\\_backups\\beta.zip',  sizeBytes: 2 * 1024 * 1024, createdAt: Date.now() - 120_000, label: 'beta' }
+      { zipPath: 'V:\\monorepo\\_backups\\alpha.zip', sizeBytes: 1024 * 1024, createdAt: Date.now() - 60_000, label: 'alpha' },
+      { zipPath: 'V:\\monorepo\\_backups\\beta.zip',  sizeBytes: 2 * 1024 * 1024, createdAt: Date.now() - 120_000, label: 'beta' }
     ]);
     renderWithQuery(<BackupLog />);
     await waitFor(() => expect(screen.getByText('alpha.zip')).toBeTruthy());
@@ -48,7 +48,7 @@ describe('BackupLog', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: /Backup apps\// })).toBeTruthy());
     await user.click(screen.getByRole('button', { name: /Backup apps\// }));
     expect(create).toHaveBeenCalledWith(expect.objectContaining({
-      sourcePath: 'C:\\dev\\apps',
+      sourcePath: 'V:\\monorepo\\apps',
       label: 'all-apps'
     }));
   });

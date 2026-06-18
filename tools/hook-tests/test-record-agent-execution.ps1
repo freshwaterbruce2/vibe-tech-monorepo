@@ -31,7 +31,7 @@ function Invoke-HookCase {
         tool_response = @{
             is_error = $false
         }
-        cwd = 'C:\dev\apps\memory-mcp'
+        cwd = 'V:\monorepo\apps\memory-mcp'
     }
     if ($null -ne $DurationMs) {
         $hookPayload.duration_ms = $DurationMs

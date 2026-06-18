@@ -1,6 +1,6 @@
 # Common Workflows
 
-Day-to-day development tasks and procedures for the C:\dev monorepo.
+Day-to-day development tasks and procedures for the V:\monorepo monorepo.
 
 > Current safety note (2026-04-25): crypto/trading snippets in older sections are
 > read-only guidance unless explicitly marked otherwise. Agents must not start,
@@ -14,7 +14,7 @@ Day-to-day development tasks and procedures for the C:\dev monorepo.
 
 ```powershell
 # Navigate to monorepo root
-cd C:\dev
+cd V:\monorepo
 
 # Pull latest changes
 git pull origin main
@@ -128,7 +128,7 @@ git push origin feature/your-feature-name
 #### 1. Pre-Change Checklist
 
 ```powershell
-cd C:\dev\apps\crypto-enhanced
+cd V:\monorepo\apps\crypto-enhanced
 .venv\Scripts\activate
 
 # 1. Check bot status
@@ -201,7 +201,7 @@ Get-Content trading_new.log -Tail 50 -Wait
 #### 1. Navigate and Setup
 
 ```powershell
-cd C:\dev\backend
+cd V:\monorepo\backend
 
 # Install dependencies if needed
 pnpm install
@@ -231,12 +231,12 @@ pnpm run dev  # Port 3000
 #### 4. Quality Checks
 
 ```powershell
-# From C:\dev, use the backend Nx project
+# From V:\monorepo, use the backend Nx project
 pnpm nx run vibe-tech-backend:lint
 pnpm nx run vibe-tech-backend:typecheck
 pnpm nx run vibe-tech-backend:test
 
-# Or from C:\dev\backend
+# Or from V:\monorepo\backend
 pnpm run lint
 pnpm run typecheck
 pnpm run build
@@ -604,7 +604,7 @@ git push origin main
 #### Starting for Production
 
 ```powershell
-cd C:\dev\apps\crypto-enhanced
+cd V:\monorepo\apps\crypto-enhanced
 .venv\Scripts\activate
 
 # Verify everything
@@ -625,12 +625,12 @@ Get-Content trading_new.log -Tail 50 -Wait
 # Download from: https://nssm.cc/
 
 # Install as service
-nssm install TradingBot "C:\dev\apps\crypto-enhanced\.venv\Scripts\python.exe" "C:\dev\apps\crypto-enhanced\start_live_trading.py"
+nssm install TradingBot "V:\monorepo\apps\crypto-enhanced\.venv\Scripts\python.exe" "V:\monorepo\apps\crypto-enhanced\start_live_trading.py"
 
 # Configure
-nssm set TradingBot AppDirectory "C:\dev\apps\crypto-enhanced"
-nssm set TradingBot AppStdout "C:\dev\apps\crypto-enhanced\logs\service.log"
-nssm set TradingBot AppStderr "C:\dev\apps\crypto-enhanced\logs\service_error.log"
+nssm set TradingBot AppDirectory "V:\monorepo\apps\crypto-enhanced"
+nssm set TradingBot AppStdout "V:\monorepo\apps\crypto-enhanced\logs\service.log"
+nssm set TradingBot AppStderr "V:\monorepo\apps\crypto-enhanced\logs\service_error.log"
 
 # Start service
 nssm start TradingBot

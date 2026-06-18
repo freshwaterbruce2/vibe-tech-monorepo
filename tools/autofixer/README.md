@@ -19,7 +19,7 @@ Built with **Claude Agent SDK v0.1.14** (latest as of Dec 9, 2025)
 ### 1. Clone or Copy
 
 ```bash
-cd C:\dev\tools
+cd V:\monorepo\tools
 # Directory already created with all files
 ```
 
@@ -79,7 +79,7 @@ python fix_once.py error.log --dry-run
 cat vite.log | python fix_once.py --stdin
 
 # Specify project root
-python fix_once.py error.log --project-root C:\dev\my-project
+python fix_once.py error.log --project-root V:\monorepo\my-project
 ```
 
 ### Continuous Monitoring
@@ -112,7 +112,7 @@ python main.py --log-file error.log
 python main.py --log-text "src/App.tsx(15,12): error TS2304: Cannot find name 'React'"
 
 # Options
-python main.py --log-file error.log --dry-run --project-root C:\dev\project
+python main.py --log-file error.log --dry-run --project-root V:\monorepo\project
 ```
 
 ## Supported Error Types

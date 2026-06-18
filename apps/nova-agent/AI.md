@@ -28,7 +28,7 @@ category: desktop
 
 ## Storage
 
-- Code: `C:\dev\apps\nova-agent`
+- Code: `V:\monorepo\apps\nova-agent`
 - Any logs/DB/learning artifacts must go on `D:\`.
 
 ## References

@@ -10,7 +10,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Load bot token from Gravity Claw .env
-$envFile = "C:\dev\apps\gravity-claw\.env"
+$envFile = "V:\monorepo\apps\gravity-claw\.env"
 if (-not (Test-Path $envFile)) {
     Write-Error "Gravity Claw .env not found at $envFile"
     exit 1

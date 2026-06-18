@@ -10,7 +10,7 @@
 ## File Organization
 
 ❌ Files over 500 lines - Split early
-❌ Writing data/logs to C:\dev - Use D:\
+❌ Writing data/logs to V:\monorepo - Use D:\
 ❌ Relative paths in documentation
 ✅ Data/logs → D:\
 ✅ Absolute paths in docs

@@ -19,7 +19,7 @@ export class RagClient {
   constructor(opts: RagClientOptions = {}) {
     this.opts = {
       command: opts.command ?? 'node.exe',
-      args: opts.args ?? ['C:\\dev\\apps\\mcp-rag-server\\dist\\index.js'],
+      args: opts.args ?? ['V:\\monorepo\\apps\\mcp-rag-server\\dist\\index.js'],
       cwd: opts.cwd,
       connectTimeoutMs: opts.connectTimeoutMs ?? 5_000,
       requestTimeoutMs: opts.requestTimeoutMs ?? 15_000

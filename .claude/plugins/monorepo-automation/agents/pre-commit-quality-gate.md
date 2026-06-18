@@ -33,7 +33,7 @@ Run comprehensive quality pipeline using existing infrastructure:
 
 ```powershell
 # Use existing auto-quality-check.ps1 script
-C:\dev\scripts\auto-quality-check.ps1 -TriggerType "pre-commit" -QuickMode
+V:\monorepo\scripts\auto-quality-check.ps1 -TriggerType "pre-commit" -QuickMode
 ```
 
 **Checks performed:**
@@ -131,7 +131,7 @@ This agent is called by the existing pre-commit hook at:
 
 ```powershell
 # Full quality pipeline
-C:\dev\scripts\auto-quality-check.ps1 -TriggerType "pre-commit"
+V:\monorepo\scripts\auto-quality-check.ps1 -TriggerType "pre-commit"
 
 # Nx affected quality
 pnpm nx affected -t quality --parallel=3

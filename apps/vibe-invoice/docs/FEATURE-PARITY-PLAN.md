@@ -1114,8 +1114,8 @@ T3.8 (multi-instance) optional, last
 
 The most load-bearing files for the entire plan — every Tier 0/1 task either creates or modifies these:
 
-- `C:\dev\apps\invoice-automation-saas\server\src\migrate.ts` — **must** be rewritten to a versioned runner before any feature work (T0.1).
-- `C:\dev\apps\invoice-automation-saas\server\src\index.ts` — registration point for new routes, jobs runner, rate limiter, raw-body webhook parser.
-- `C:\dev\apps\invoice-automation-saas\server\src\routes\invoiceRoutes.ts` — touched by T1.1 (payments), T1.3 (recurring), T1.5 (edit), T2.1/T2.2 (line-items from expenses/time), T2.4 (tax), T2.5 (template), T3.0 (org_id).
-- `C:\dev\apps\invoice-automation-saas\src\services\invoiceService.ts` — client-side counterpart; mockApi removal (T0.2), all new endpoints, currency display.
-- `C:\dev\apps\invoice-automation-saas\src\components\invoice\PaymentForm.tsx` — replace the placeholder "mark as paid (local simulation)" with real Stripe Checkout (T1.1).
+- `V:\monorepo\apps\invoice-automation-saas\server\src\migrate.ts` — **must** be rewritten to a versioned runner before any feature work (T0.1).
+- `V:\monorepo\apps\invoice-automation-saas\server\src\index.ts` — registration point for new routes, jobs runner, rate limiter, raw-body webhook parser.
+- `V:\monorepo\apps\invoice-automation-saas\server\src\routes\invoiceRoutes.ts` — touched by T1.1 (payments), T1.3 (recurring), T1.5 (edit), T2.1/T2.2 (line-items from expenses/time), T2.4 (tax), T2.5 (template), T3.0 (org_id).
+- `V:\monorepo\apps\invoice-automation-saas\src\services\invoiceService.ts` — client-side counterpart; mockApi removal (T0.2), all new endpoints, currency display.
+- `V:\monorepo\apps\invoice-automation-saas\src\components\invoice\PaymentForm.tsx` — replace the placeholder "mark as paid (local simulation)" with real Stripe Checkout (T1.1).

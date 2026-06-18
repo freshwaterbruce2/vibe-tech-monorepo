@@ -24,7 +24,7 @@ async function resolveFfmpeg(): Promise<string> {
 	}
 
 	const candidates = [
-		"C:\\dev\\tools\\ffmpeg\\bin\\ffmpeg.exe",
+		"V:\\monorepo\\tools\\ffmpeg\\bin\\ffmpeg.exe",
 		"C:\\ffmpeg\\bin\\ffmpeg.exe",
 		"D:\\tools\\ffmpeg\\bin\\ffmpeg.exe",
 	];

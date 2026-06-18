@@ -5,20 +5,20 @@ Implement a centralized Environment Configuration & Secrets Manager inside the V
 
 ## Tasks
 - [x] **Task 1: Build Backend Env Service**  
-  Create `EnvConfigService` in [apps/vibetech-command-center/src/main/services/env-config.ts](file:///C:/dev/apps/vibetech-command-center/src/main/services/env-config.ts) to:
+  Create `EnvConfigService` in [apps/vibetech-command-center/src/main/services/env-config.ts](file:///V:/monorepo/apps/vibetech-command-center/src/main/services/env-config.ts) to:
   * Read, parse, and write `.env`, `.env.local`, and `.env.example` files.
   * Compare variables present in `.env` / `.env.local` against required keys in `.env.example`.
   * Expose list, read, and write operations.
   → *Verify:* Write unit tests in `env-config.spec.ts` confirming correct key parsing and value writing.
   
 - [x] **Task 2: Register IPC Handlers**  
-  Wire up IPC channels in [apps/vibetech-command-center/src/main/ipc/index.ts](file:///C:/dev/apps/vibetech-command-center/src/main/ipc/index.ts) for:
+  Wire up IPC channels in [apps/vibetech-command-center/src/main/ipc/index.ts](file:///V:/monorepo/apps/vibetech-command-center/src/main/ipc/index.ts) for:
   * `ENV_CONFIG_LIST`: Retrieves environment variable schemas and values for all projects.
   * `ENV_CONFIG_UPDATE`: Updates a specific key-value pair in a project's `.env` or `.env.local`.
   → *Verify:* Compile main and preload bundles successfully.
   
 - [x] **Task 3: Create UI Component**  
-  Build the `EnvConfigPanel.tsx` in [apps/vibetech-command-center/src/renderer/panels/EnvConfigPanel.tsx](file:///C:/dev/apps/vibetech-command-center/src/renderer/panels/EnvConfigPanel.tsx) with:
+  Build the `EnvConfigPanel.tsx` in [apps/vibetech-command-center/src/renderer/panels/EnvConfigPanel.tsx](file:///V:/monorepo/apps/vibetech-command-center/src/renderer/panels/EnvConfigPanel.tsx) with:
   * A table showing projects, their environment files, missing keys (against `.env.example`), and present keys.
   * Interactive forms/inline editors to set or modify secret values directly from the UI.
   * Filters to show only projects with missing keys or specific key patterns (e.g. `STRIPE_`).

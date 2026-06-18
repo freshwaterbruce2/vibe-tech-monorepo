@@ -50,7 +50,7 @@ This is a **self-improving AI system** that automatically generates new skills a
 
 ```powershell
 # Navigate to scripts directory
-cd C:\dev\scripts\auto-generate-skills
+cd V:\monorepo\scripts\auto-generate-skills
 
 # 1. Analyze patterns
 .\Analyze-Patterns.ps1
@@ -214,7 +214,7 @@ The `/generate-skills` workflow is located at:
 # Weekly manual workflow (recommended)
 
 # 1. Monday: Analyze patterns
-cd C:\dev\scripts\auto-generate-skills
+cd V:\monorepo\scripts\auto-generate-skills
 .\Analyze-Patterns.ps1
 
 # 2. Review candidates
@@ -277,7 +277,7 @@ Minimum confidence: 0.75 (75%)
 1. **Create Safety Snapshot**
 
    ```powershell
-   cd C:\dev\scripts\version-control
+   cd V:\monorepo\scripts\version-control
    .\Save-Snapshot.ps1 -Description "Before skill generation"
    ```
 
@@ -313,7 +313,7 @@ If generated skill causes issues:
 
 ```powershell
 # 1. Restore pre-generation snapshot
-cd C:\dev\scripts\version-control
+cd V:\monorepo\scripts\version-control
 .\Restore-Snapshot.ps1 -Tag "before-skill-generation"
 
 # 2. Mark skill as deprecated
@@ -490,7 +490,7 @@ code .agent\skills\<skill-name>\SKILL.md
 # Run the workflow steps manually to verify
 
 # 3. Check for monorepo-specific paths
-# Ensure C:\dev\ and D:\ paths are correct
+# Ensure V:\monorepo\ and D:\ paths are correct
 
 # 4. Mark for review
 sqlite3 D:\databases\agent_learning.db @"
@@ -534,7 +534,7 @@ CREATE INDEX idx_generated_skills_deprecated ON generated_skills(deprecation_can
 ## File Structure
 
 ```
-C:\dev\
+V:\monorepo\
 ├── scripts\
 │   └── auto-generate-skills\
 │       ├── README.md (this file)
@@ -569,7 +569,7 @@ C:\dev\
 
 - **META-SKILL Spec**: `.agent/skills/auto-skill-creator/SKILL.md`
 - **Workflow**: `.agent/workflows/generate-skills.md`
-- **Learning System**: `C:\dev\docs\LEARNING_SYSTEM.md`
+- **Learning System**: `V:\monorepo\docs\LEARNING_SYSTEM.md`
 - **Antigravity README**: `.antigravity/README.md`
 
 ---

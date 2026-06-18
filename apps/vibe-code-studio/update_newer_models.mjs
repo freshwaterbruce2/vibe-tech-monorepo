@@ -1,7 +1,7 @@
 import fs from 'fs';
 
 // 1. Update OpenRouterService.ts
-const orPath = 'C:/dev/apps/vibe-code-studio/src/services/ai/providers/OpenRouterService.ts';
+const orPath = 'V:/monorepo/apps/vibe-code-studio/src/services/ai/providers/OpenRouterService.ts';
 let orCode = fs.readFileSync(orPath, 'utf-8');
 
 // We are injecting new 2026 models into the map
@@ -31,7 +31,7 @@ fs.writeFileSync(orPath, orCode);
 console.log("Updated OpenRouterService.ts");
 
 // 2. Update AIProviderInterface.ts
-const intPath = 'C:/dev/apps/vibe-code-studio/src/services/ai/AIProviderInterface.ts';
+const intPath = 'V:/monorepo/apps/vibe-code-studio/src/services/ai/AIProviderInterface.ts';
 let intCode = fs.readFileSync(intPath, 'utf-8');
 
 // Using regex to replace the specific objects with the requested new models.

@@ -2,13 +2,13 @@
 
 **Created:** January 2, 2026  
 **Purpose:** Complete reference to all project documentation  
-**Location:** C:\dev\DOCUMENTATION_INDEX.md
+**Location:** V:\monorepo\DOCUMENTATION_INDEX.md
 
 ---
 
 ## 📚 Complete Documentation Inventory
 
-### 🏠 Root Documentation (C:\dev\)
+### 🏠 Root Documentation (V:\monorepo\)
 
 | Document | Lines | Purpose | Upload This When... |
 |----------|-------|---------|-------------------|
@@ -16,7 +16,7 @@
 | **QUICK_REFERENCE.md** | 630 | Common commands and operations | Need quick commands for any task |
 | **DOCUMENTATION_INDEX.md** | (this file) | Master guide to all docs | Need to find specific documentation |
 
-### 📁 Project-Specific Guides (C:\dev\apps\)
+### 📁 Project-Specific Guides (V:\monorepo\apps\)
 
 #### Core Infrastructure
 
@@ -80,21 +80,21 @@
 **Scenario 1: General Development Work**
 
 ```
-Upload: C:\dev\PROJECT_INSTRUCTIONS.md
+Upload: V:\monorepo\PROJECT_INSTRUCTIONS.md
 Result: Claude understands your entire dev environment
 ```
 
 **Scenario 2: Quick Commands Needed**
 
 ```
-Upload: C:\dev\QUICK_REFERENCE.md
+Upload: V:\monorepo\QUICK_REFERENCE.md
 Result: Claude has all copy-paste ready commands
 ```
 
 **Scenario 3: Working on Specific Project**
 
 ```
-Upload: C:\dev\apps\crypto-enhanced\PROJECT_GUIDE.md
+Upload: V:\monorepo\apps\crypto-enhanced\PROJECT_GUIDE.md
 Result: Claude knows that project in detail
 ```
 
@@ -220,17 +220,17 @@ Result: Claude understands the learning infrastructure
 
 ```powershell
 # Open in VS Code
-code C:\dev\PROJECT_INSTRUCTIONS.md
-code C:\dev\QUICK_REFERENCE.md
+code V:\monorepo\PROJECT_INSTRUCTIONS.md
+code V:\monorepo\QUICK_REFERENCE.md
 code D:\learning-system\COMPLETE_GUIDE.md
 code D:\databases\DATABASE_COMPLETE_SCHEMAS.md
 
 # Open specific project guide
-code C:\dev\apps\crypto-enhanced\PROJECT_GUIDE.md
-code C:\dev\apps\invoice-automation-saas\PROJECT_GUIDE.md
+code V:\monorepo\apps\crypto-enhanced\PROJECT_GUIDE.md
+code V:\monorepo\apps\invoice-automation-saas\PROJECT_GUIDE.md
 
 # Search documentation
-Select-String -Path "C:\dev\**\PROJECT_GUIDE.md" -Pattern "your-search-term"
+Select-String -Path "V:\monorepo\**\PROJECT_GUIDE.md" -Pattern "your-search-term"
 Select-String -Path "D:\learning-system\COMPLETE_GUIDE.md" -Pattern "your-search-term"
 ```
 
@@ -238,10 +238,10 @@ Select-String -Path "D:\learning-system\COMPLETE_GUIDE.md" -Pattern "your-search
 
 ```powershell
 # Check when last updated
-Get-ChildItem C:\dev -Filter "PROJECT_*.md" | Select-Object Name, LastWriteTime
+Get-ChildItem V:\monorepo -Filter "PROJECT_*.md" | Select-Object Name, LastWriteTime
 
 # List all project guides
-Get-ChildItem C:\dev\apps -Recurse -Filter "PROJECT_GUIDE.md" | Select-Object FullName
+Get-ChildItem V:\monorepo\apps -Recurse -Filter "PROJECT_GUIDE.md" | Select-Object FullName
 ```
 
 ---
@@ -347,10 +347,10 @@ Upload: PROJECT_INSTRUCTIONS.md + QUICK_REFERENCE.md + Specific PROJECT_GUIDE.md
 
 ```powershell
 # Check last update dates
-Get-ChildItem C:\dev\apps\*\PROJECT_GUIDE.md | Select-Object Name, LastWriteTime | Sort-Object LastWriteTime
+Get-ChildItem V:\monorepo\apps\*\PROJECT_GUIDE.md | Select-Object Name, LastWriteTime | Sort-Object LastWriteTime
 
 # Find outdated docs (>30 days)
-Get-ChildItem C:\dev\apps\*\PROJECT_GUIDE.md | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-30) }
+Get-ChildItem V:\monorepo\apps\*\PROJECT_GUIDE.md | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-30) }
 ```
 
 ---

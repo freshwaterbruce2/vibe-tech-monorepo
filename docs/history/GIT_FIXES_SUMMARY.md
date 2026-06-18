@@ -47,7 +47,7 @@ error: unable to create file projects/active/desktop-apps/deepcode-editor/releas
 
 ### Solution 1: Convert Submodules to Regular Directories
 
-**Automated Script Created:** `C:\dev\scripts\fix-submodules.ps1`
+**Automated Script Created:** `V:\monorepo\scripts\fix-submodules.ps1`
 
 **What it does:**
 
@@ -60,7 +60,7 @@ error: unable to create file projects/active/desktop-apps/deepcode-editor/releas
 **How to run:**
 
 ```powershell
-cd C:\dev
+cd V:\monorepo
 .\scripts\fix-submodules.ps1
 ```
 
@@ -175,7 +175,7 @@ This is blocking Git operations and should be fixed first.
 
 ```powershell
 # Run the automated fix
-cd C:\dev
+cd V:\monorepo
 .\scripts\fix-submodules.ps1
 
 # Or use the manual method above
@@ -285,18 +285,18 @@ If something goes wrong:
 
 ```powershell
 # 1. Find your backup
-Get-ChildItem C:\dev -Filter ".git-submodule-backups-*" -Directory |
+Get-ChildItem V:\monorepo -Filter ".git-submodule-backups-*" -Directory |
     Sort-Object CreationTime -Descending |
     Select-Object -First 1
 
 # 2. Restore from backup
-$backupDir = "C:\dev\.git-submodule-backups-YYYYMMDD-HHMMSS"
+$backupDir = "V:\monorepo\.git-submodule-backups-YYYYMMDD-HHMMSS"
 $submodules = @("apps/business-booking-platform", "apps/iconforge", ...)
 
 foreach ($submodule in $submodules) {
     $submoduleName = $submodule.Replace('/', '-')
     $backupPath = Join-Path $backupDir $submoduleName
-    $targetPath = "C:\dev\$submodule"
+    $targetPath = "V:\monorepo\$submodule"
 
     Remove-Item -Path $targetPath -Recurse -Force
     Copy-Item -Path $backupPath -Destination $targetPath -Recurse

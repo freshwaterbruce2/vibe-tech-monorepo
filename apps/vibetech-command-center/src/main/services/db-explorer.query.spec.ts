@@ -52,7 +52,7 @@ describe('DbExplorerService > runQuery', () => {
     dbMockState.mockDbInstances.length = 0;
     dbMockState.prepareQueue.length = 0;
     dbMockState.prepareThrows = null;
-    allowedRoots = ['D:\\databases', 'C:\\dev'];
+    allowedRoots = ['D:\\databases', 'V:\\monorepo'];
     existingPaths = new Set();
     pathStats = new Map();
 

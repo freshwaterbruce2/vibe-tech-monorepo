@@ -17,7 +17,7 @@ voice-assisted updates, exports, and PWA/mobile deployment for the Walmart DC
 Run from the workspace root:
 
 ```powershell
-cd C:\dev
+cd V:\monorepo
 pnpm install
 pnpm nx run shipping-pwa:dev
 ```
@@ -67,6 +67,6 @@ apps/shipping-pwa/
 
 ## Notes
 
-Use pnpm/Nx from `C:\dev`; do not run npm, yarn, or Bun commands for this app.
+Use pnpm/Nx from `V:\monorepo`; do not run npm, yarn, or Bun commands for this app.
 Serve production builds over HTTPS for PWA installability and service worker
 features.

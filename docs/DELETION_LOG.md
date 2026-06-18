@@ -10,7 +10,7 @@ Phase 2 dead-code elimination log for the VibeTech monorepo.
 | --- | --- | --- | --- |
 | Knip | `pnpm dlx knip --no-progress --reporter json --no-exit-code` | Completed with report; emitted a Prisma `DATABASE_URL` config warning before JSON. | `D:\planning-files\phase-2-dead-code\20260525-072803\knip-report.json` |
 | Knip production | `pnpm dlx knip --production --no-progress --reporter json --no-exit-code` | Completed with dummy analysis-only `DATABASE_URL`. | `D:\planning-files\phase-2-dead-code\20260525-072803\knip-production-report.json` |
-| Depcheck | `pnpm dlx depcheck C:\dev --json` | Returned issues plus one invalid-file parse warning for commented `tsconfig.base.json`; root `pnpm exec depcheck` is blocked by an `entities` export mismatch. | `D:\planning-files\phase-2-dead-code\20260525-072803\depcheck-root-report.json` |
+| Depcheck | `pnpm dlx depcheck V:\monorepo --json` | Returned issues plus one invalid-file parse warning for commented `tsconfig.base.json`; root `pnpm exec depcheck` is blocked by an `entities` export mismatch. | `D:\planning-files\phase-2-dead-code\20260525-072803\depcheck-root-report.json` |
 
 ### Guardrails
 
@@ -61,7 +61,7 @@ Shared docs/examples patched in the same batch: `AI.md`, `docs/ai/ANTI-PATTERNS.
 
 | Removed item | Type | Risk assessment | Impact |
 | --- | --- | --- | --- |
-| `apps/VibeBlox/apps/clawdbot-desktop/` | Untracked stale nested app copy | User confirmed old ClawdBot/MoltBot project should be deleted; zero tracked files under the path; removed after verifying path under `C:\dev\apps\VibeBlox\apps`. | Removed untracked local app copy and nested `node_modules`. |
+| `apps/VibeBlox/apps/clawdbot-desktop/` | Untracked stale nested app copy | User confirmed old ClawdBot/MoltBot project should be deleted; zero tracked files under the path; removed after verifying path under `V:\monorepo\apps\VibeBlox\apps`. | Removed untracked local app copy and nested `node_modules`. |
 
 ### Batch 5
 

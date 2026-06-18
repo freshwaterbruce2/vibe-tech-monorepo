@@ -1,8 +1,8 @@
 # Factory Audit
 
 Last updated: 2026-05-15
-Scope: `C:\dev\apps\*`
-Goal reference: `C:\dev\GOAL_APP_FACTORY.md`
+Scope: `V:\monorepo\apps\*`
+Goal reference: `V:\monorepo\GOAL_APP_FACTORY.md`
 
 ## Executive summary
 
@@ -34,7 +34,7 @@ reference apps for auth/checkout patterns only, not as primary factory donors.
 
 - Read the workspace and goal guardrails from `AGENTS.md`, `CLAUDE.md`,
   `AI.md`, and `.claude/agents/master-agent.md`.
-- Verified live app folders with `Get-ChildItem C:\dev\apps -Directory`.
+- Verified live app folders with `Get-ChildItem V:\monorepo\apps -Directory`.
 - Verified Nx-visible projects with `pnpm exec nx show projects`.
 - Read current registry and task state from `WORKSPACE.json` and `TASKS.md`.
 - Verified active-project lock behavior from `tools/active-project/_lib.ps1`

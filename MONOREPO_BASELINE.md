@@ -1,7 +1,7 @@
 # Monorepo Baseline
 
 Last updated: 2026-05-22
-Workspace: `C:\dev` on desktop host `MYFIRSTBUILD`
+Workspace: `V:\monorepo` on desktop host `MYFIRSTBUILD`
 Package: `@vibetech/workspace`
 
 ## Purpose
@@ -15,7 +15,7 @@ This file is the starting contract for keeping the whole monorepo healthy. Use i
 - Nx: workspace uses pnpm/Nx with apps under `apps` and libraries under `packages`.
 - Projects: `pnpm exec nx show projects` reported 93 projects on 2026-05-22.
 - Root `pnpm run build` intentionally fails. Build a project or use Nx run-many/affected commands instead.
-- Remote SSH checks should use the repaired desktop PATH. If Git emits config path warnings over SSH, run with `GIT_CONFIG_GLOBAL=NUL` and `XDG_CONFIG_HOME=C:\dev\.no-xdg` until the desktop Git config is permanently cleaned up.
+- Remote SSH checks should use the repaired desktop PATH. If Git emits config path warnings over SSH, run with `GIT_CONFIG_GLOBAL=NUL` and `XDG_CONFIG_HOME=V:\monorepo\.no-xdg` until the desktop Git config is permanently cleaned up.
 - SSH validation has a Windows junction caveat: `pnpm install --frozen-lockfile` over SSH can fail while traversing workspace links with `untrusted mount point` errors, observed on 2026-05-23 at `backend/ipc-bridge/node_modules/@vibetech/shared-ipc/package.json`. Prefer a local desktop shell for install/final release validation; use SSH for focused Nx checks that do not need package-link traversal.
 
 ## Canonical Commands
@@ -174,4 +174,4 @@ Cleanup/parking candidates:
 3. Run affected lint/typecheck/test/build and summarize failures by project.
 4. Decide which factory/generated apps are fixtures, archived projects, or cleanup candidates.
 5. Handle the `gravity-claw` updater key as a separate security/remediation task.
-6. Decide whether to disable Nx Cloud fully for local/CI reliability or resolve the Nx Cloud organization plan warning.
+6. Decide whether to disable Nx Cloud fully for local/CI reliability or resolve the Nx Cloud organization plan warni

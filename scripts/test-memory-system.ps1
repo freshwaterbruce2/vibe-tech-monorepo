@@ -94,14 +94,14 @@ if (Test-Path "D:\databases\memory.db") {
 }
 
 # Check MCP server built
-if (Test-Path "C:\dev\apps\memory-mcp\dist\index.js") {
+if (Test-Path "V:\monorepo\apps\memory-mcp\dist\index.js") {
     Write-Success "MCP server built (apps/memory-mcp/dist/index.js)"
 } else {
     Write-Failure "MCP server not built"
 }
 
 # Check memory library built
-if (Test-Path "C:\dev\packages\memory\dist\index.js") {
+if (Test-Path "V:\monorepo\packages\memory\dist\index.js") {
     Write-Success "Memory library built (packages/memory/dist/index.js)"
 } else {
     Write-Failure "Memory library not built"
@@ -109,7 +109,7 @@ if (Test-Path "C:\dev\packages\memory\dist\index.js") {
 
 # Check .mcp.json configuration
 try {
-    $mcpConfig = Get-Content "C:\dev\.mcp.json" | ConvertFrom-Json
+    $mcpConfig = Get-Content "V:\monorepo\.mcp.json" | ConvertFrom-Json
     if ($mcpConfig.mcpServers.'memory') {
         Write-Success "MCP server registered in .mcp.json"
         if ($Verbose) {
@@ -329,9 +329,9 @@ Write-Section "Phase 7: Storage Path Policy Compliance"
 
 $violations = @()
 
-# Check for databases in C:\dev (limited to apps/ and packages/ for performance)
+# Check for databases in V:\monorepo (limited to apps/ and packages/ for performance)
 # Only scan specific directories to avoid long scan times
-$scanPaths = @("C:\dev\apps", "C:\dev\packages", "C:\dev\backend")
+$scanPaths = @("V:\monorepo\apps", "V:\monorepo\packages", "V:\monorepo\backend")
 foreach ($scanPath in $scanPaths) {
     if (Test-Path $scanPath) {
         $cDevDatabases = Get-ChildItem -Path $scanPath -Recurse -Include *.db,*.sqlite,*.sqlite3 -Depth 2 -ErrorAction SilentlyContinue |
@@ -340,7 +340,7 @@ foreach ($scanPath in $scanPaths) {
 
         if ($cDevDatabases) {
             foreach ($db in $cDevDatabases) {
-                $violations += "Database found in C:\dev: $($db.FullName)"
+                $violations += "Database found in V:\monorepo: $($db.FullName)"
             }
         }
     }

@@ -53,7 +53,7 @@ function makeFakeContainer(): ServiceContainer {
     agent: {
       probeMcpServers: vi.fn().mockResolvedValue([]),
       runTask: vi.fn().mockResolvedValue({ id: 'a1', command: 'pnpm', args: [], cwd: '.', pid: 1, status: 'running', startedAt: 1, exitCode: null }),
-      runFactoryGenerator: vi.fn().mockResolvedValue({ id: 'fg1', command: 'pnpm', args: ['nx', 'g', '@vibetech/factory:saas', 'factory-next-app'], cwd: 'C:\\dev', pid: 1, status: 'running', startedAt: 1, exitCode: null }),
+      runFactoryGenerator: vi.fn().mockResolvedValue({ id: 'fg1', command: 'pnpm', args: ['nx', 'g', '@vibetech/factory:saas', 'factory-next-app'], cwd: 'V:\\monorepo', pid: 1, status: 'running', startedAt: 1, exitCode: null }),
       listTasks: vi.fn().mockReturnValue([]),
       searchLogs: vi.fn().mockReturnValue([])
     } as unknown as ServiceContainer['agent'],

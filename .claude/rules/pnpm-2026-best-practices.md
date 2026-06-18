@@ -35,7 +35,7 @@ pnpm --filter <project> test
 cd apps/vibe-tutor && pnpm install
 ```
 
-Never run bare `pnpm install` from inside a project directory. At repo root (`C:\dev`), `pnpm install` is the correct command for full workspace hydration.
+Never run bare `pnpm install` from inside a project directory. At repo root (`V:\monorepo`), `pnpm install` is the correct command for full workspace hydration.
 
 ## Nx Integration (preferred for build/test)
 

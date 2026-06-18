@@ -10,7 +10,7 @@ function createCandidate(): CandidateRevision {
     benchmarkScope: ['repo-local', 'behavioral'],
     rollbackRef: 'abc123',
     branchName: 'codex/agent-engine-candidate-1',
-    worktreePath: 'C:\\dev\\.tmp\\candidate-1',
+    worktreePath: 'V:\\monorepo\\.tmp\\candidate-1',
     filesTouched: ['apps/agent-engine/src/services/evaluation-service.ts'],
     diffSummary: 'Improve behavioral prompts',
     status: 'pending',

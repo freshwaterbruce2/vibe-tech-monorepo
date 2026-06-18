@@ -5,7 +5,7 @@
 
 param (
   [string]$RootPath = "D:\",
-  [string]$ReportPath = "C:\dev\admin_scripts\quick_drive_report.txt"
+  [string]$ReportPath = "V:\monorepo\admin_scripts\quick_drive_report.txt"
 )
 
 $ErrorActionPreference = "SilentlyContinue"

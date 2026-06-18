@@ -41,7 +41,7 @@ export function registerTools(c: ServiceContainer): McpTool[] {
           apps: filtered.map((a) => ({
             name: a.name,
             root: a.root,
-            absolute_path: `C:\\dev\\${a.root.replace(/\//g, '\\')}`,
+            absolute_path: `V:\\monorepo\\${a.root.replace(/\//g, '\\')}`,
             tags: a.tags,
             dependencies: graph.dependencies[a.name]?.map((d) => d.target) ?? []
           }))
@@ -119,7 +119,7 @@ export function registerTools(c: ServiceContainer): McpTool[] {
       inputSchema: {
         type: 'object',
         properties: {
-          path: { type: 'string', description: 'Absolute Windows path, e.g., C:\\dev\\apps\\nova-agent\\dist' }
+          path: { type: 'string', description: 'Absolute Windows path, e.g., V:\\monorepo\\apps\\nova-agent\\dist' }
         },
         required: ['path'],
         additionalProperties: false
@@ -146,7 +146,7 @@ export function registerTools(c: ServiceContainer): McpTool[] {
     {
       name: 'dashboard_recent_backups',
       description:
-        'List recent zip backups from C:\\dev\\_backups sorted newest-first. Each entry includes the zip filename, size, and creation time. Use to check whether a recent change was backed up.',
+        'List recent zip backups from V:\\monorepo\\_backups sorted newest-first. Each entry includes the zip filename, size, and creation time. Use to check whether a recent change was backed up.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -168,7 +168,7 @@ export function registerTools(c: ServiceContainer): McpTool[] {
     {
       name: 'dashboard_create_backup',
       description:
-        "Create a zip backup of a directory or file. Uses PowerShell Compress-Archive under the hood (Bruce's standard command). Destination defaults to C:\\dev\\_backups. Filenames are deterministic: <source>_<label>_<yyyymmdd_hhmmss>.zip. USE THIS BEFORE ANY DESTRUCTIVE CHANGE.",
+        "Create a zip backup of a directory or file. Uses PowerShell Compress-Archive under the hood (Bruce's standard command). Destination defaults to V:\\monorepo\\_backups. Filenames are deterministic: <source>_<label>_<yyyymmdd_hhmmss>.zip. USE THIS BEFORE ANY DESTRUCTIVE CHANGE.",
       inputSchema: {
         type: 'object',
         properties: {
@@ -193,7 +193,7 @@ export function registerTools(c: ServiceContainer): McpTool[] {
     {
       name: 'dashboard_search_rag',
       description:
-        'Semantic search across the C:\\dev monorepo using the local RAG index (mcp-rag-server). Returns file paths, snippets, and similarity scores. Prefer this over reading entire files when looking for a specific concept, pattern, or symbol.',
+        'Semantic search across the V:\\monorepo monorepo using the local RAG index (mcp-rag-server). Returns file paths, snippets, and similarity scores. Prefer this over reading entire files when looking for a specific concept, pattern, or symbol.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -253,7 +253,7 @@ export function registerTools(c: ServiceContainer): McpTool[] {
         if (app?.type !== 'app') {
           throw new Error(`not an app: ${appName}`);
         }
-        const cwd = `C:\\dev\\${app.root.replace(/\//g, '\\')}`;
+        const cwd = `V:\\monorepo\\${app.root.replace(/\//g, '\\')}`;
 
         const allowedTools = Array.isArray(args['allowed_tools'])
           ? (args['allowed_tools'] as ClaudeAllowedTool[])
@@ -330,7 +330,7 @@ export function registerTools(c: ServiceContainer): McpTool[] {
           monorepo: {
             apps_count: apps.length,
             libs_count: libs.length,
-            root: 'C:\\dev'
+            root: 'V:\\monorepo'
           },
           databases: {
             tracked: dbArray.length,

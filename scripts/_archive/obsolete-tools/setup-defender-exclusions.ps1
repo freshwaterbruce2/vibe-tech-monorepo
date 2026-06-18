@@ -5,7 +5,7 @@
     Add Windows Defender exclusions for development directories
 
 .DESCRIPTION
-    Adds exclusions to Windows Defender for C:\dev and related build/cache directories
+    Adds exclusions to Windows Defender for V:\monorepo and related build/cache directories
     to improve build performance (5-10% faster).
 
 .NOTES
@@ -29,10 +29,10 @@ function Write-Error { Write-Host $args -ForegroundColor Red }
 
 # Directories to exclude
 $ExclusionPaths = @(
-    "C:\dev",                           # Main development directory
-    "C:\dev\node_modules",              # Node modules (scanned heavily)
-    "C:\dev\.nx",                       # Nx cache
-    "C:\dev\.pnpm-store",               # pnpm global store
+    "V:\monorepo",                           # Main development directory
+    "V:\monorepo\node_modules",              # Node modules (scanned heavily)
+    "V:\monorepo\.nx",                       # Nx cache
+    "V:\monorepo\.pnpm-store",               # pnpm global store
     "D:\databases",                     # Database files
     "D:\learning-system",               # Learning system data
     "D:\logs",                          # Log files

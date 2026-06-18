@@ -10,7 +10,7 @@
 
 ```powershell
 # Quick status check (add this to a PowerShell script)
-$logPath = "C:\dev\apps\crypto-enhanced\logs\trading_new.log"
+$logPath = "V:\monorepo\apps\crypto-enhanced\logs\trading_new.log"
 Write-Host "=== TRADING BOT QUICK STATUS ===" -ForegroundColor Cyan
 Write-Host "Last 5 log entries:" -ForegroundColor Yellow
 Get-Content $logPath -Tail 5
@@ -254,7 +254,7 @@ Stop-Process -Name python -Force
 Start-Sleep -Seconds 5
 
 # Human operator only: restart after confirming account state and risk controls
-cd C:\dev\apps\crypto-enhanced
+cd V:\monorepo\apps\crypto-enhanced
 .\.venv\Scripts\activate
 # python start_live_trading.py
 ```

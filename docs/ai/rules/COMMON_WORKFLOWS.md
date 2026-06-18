@@ -1,6 +1,6 @@
 # Common Workflows
 
-Day-to-day development tasks and procedures for the C:\dev monorepo.
+Day-to-day development tasks and procedures for the V:\monorepo monorepo.
 
 ---
 
@@ -10,7 +10,7 @@ Day-to-day development tasks and procedures for the C:\dev monorepo.
 
 ```powershell
 # Navigate to monorepo root
-cd C:\dev
+cd V:\monorepo
 
 # Pull latest changes
 git pull origin main
@@ -124,7 +124,7 @@ git push origin feature/your-feature-name
 #### 1. Pre-Change Checklist
 
 ```powershell
-cd C:\dev\apps\crypto-enhanced
+cd V:\monorepo\apps\crypto-enhanced
 .venv\Scripts\activate
 
 # 1. Check bot status
@@ -197,7 +197,7 @@ Get-Content trading_new.log -Tail 50 -Wait
 #### 1. Navigate and Setup
 
 ```powershell
-cd C:\dev\backend
+cd V:\monorepo\backend
 
 # Install dependencies if needed
 pnpm install
@@ -598,7 +598,7 @@ git push origin main
 #### Production Readiness Checks
 
 ```powershell
-cd C:\dev\apps\crypto-enhanced
+cd V:\monorepo\apps\crypto-enhanced
 .venv\Scripts\activate
 
 # Verify without starting live trading

@@ -59,7 +59,7 @@
     "enable_safety_scanner": true,
     "enforce_path_containment": true,
     "allowed_directories": [
-      "C:\\dev",
+      "V:\\monorepo",
       "D:\\screenshots",
       "~/.openclaw"
     ]

@@ -9,7 +9,7 @@ import {
 } from '../main/service-container';
 import { createCommandCenterMcpServer } from './server-core';
 
-const MONOREPO_ROOT = 'C:\\dev';
+const MONOREPO_ROOT = 'V:\\monorepo';
 const DEFAULT_PORT = 3211;
 
 interface SessionState {

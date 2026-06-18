@@ -32,8 +32,8 @@ function makeFakeContainer(): ServiceContainer {
       ])
     } as unknown as ServiceContainer['dbMetrics'],
     backup: {
-      createBackup: vi.fn().mockResolvedValue({ success: true, zipPath: 'C:\\dev\\_backups\\x.zip', sizeBytes: 1024, sourcePath: '.', label: 'unit', startedAt: 1, completedAt: 2, durationMs: 1 }),
-      listRecent: vi.fn().mockReturnValue([{ zipPath: 'C:\\dev\\_backups\\x.zip', sizeBytes: 1024, createdAt: Date.now(), label: null }])
+      createBackup: vi.fn().mockResolvedValue({ success: true, zipPath: 'V:\\monorepo\\_backups\\x.zip', sizeBytes: 1024, sourcePath: '.', label: 'unit', startedAt: 1, completedAt: 2, durationMs: 1 }),
+      listRecent: vi.fn().mockReturnValue([{ zipPath: 'V:\\monorepo\\_backups\\x.zip', sizeBytes: 1024, createdAt: Date.now(), label: null }])
     } as unknown as ServiceContainer['backup'],
     runner: {
       list: vi.fn().mockReturnValue([
@@ -147,7 +147,7 @@ describe('MCP tool registry', () => {
     const t = tools.find((x) => x.name === 'dashboard_invoke_claude')!;
     await t.handler({ app_name: 'nova-agent', prompt: 'review' });
     expect(c.claude.invoke).toHaveBeenCalledWith(expect.objectContaining({
-      cwd: 'C:\\dev\\apps\\nova-agent',
+      cwd: 'V:\\monorepo\\apps\\nova-agent',
       allowedTools: ['Read', 'Glob', 'Grep'],
       permissionMode: 'plan'
     }));

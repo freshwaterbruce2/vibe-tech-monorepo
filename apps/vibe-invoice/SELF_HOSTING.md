@@ -5,7 +5,7 @@ SQLite database on `D:\` (WAL mode).
 
 ## 1) Build
 
-From `C:\dev\apps\invoice-automation-saas`:
+From `V:\monorepo\apps\invoice-automation-saas`:
 
 - Install deps: `pnpm install`
 - Build web UI: `pnpm build`
@@ -21,14 +21,14 @@ Create a production env file and set:
 - `PORT=8787`
 - `TRUST_PROXY=1` (if behind a reverse proxy)
 - `SERVE_WEB=1`
-- `WEB_DIST_DIR=C:\dev\apps\invoice-automation-saas\dist`
+- `WEB_DIST_DIR=V:\monorepo\apps\invoice-automation-saas\dist`
 - `COOKIE_DOMAIN=invoiceflow.yourdomain.com` (optional; set when using a real domain)
 
 See `apps/invoice-automation-saas/.env.production.example`.
 
 ## 3) Run the API (serves the UI too)
 
-From `C:\dev\apps\invoice-automation-saas`:
+From `V:\monorepo\apps\invoice-automation-saas`:
 
 - Start: `pnpm start:api`
 
@@ -53,6 +53,6 @@ Run the API as a service so it restarts automatically:
 - NSSM: <https://nssm.cc/>
 - Or a scheduled task on startup.
 
-The service should run from `C:\dev\apps\invoice-automation-saas` so `WEB_DIST_DIR` can be relative
+The service should run from `V:\monorepo\apps\invoice-automation-saas` so `WEB_DIST_DIR` can be relative
 (or set `WEB_DIST_DIR` explicitly).
 

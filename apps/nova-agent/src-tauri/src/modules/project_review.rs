@@ -198,11 +198,11 @@ mod tests {
         fs::write(
             &older,
             r#"{
-                "reviewed_path": "C:\\dev\\apps\\nova-agent",
+                "reviewed_path": "V:\\monorepo\\apps\\nova-agent",
                 "reviewed_at": "2026-03-09T10:00:00Z",
                 "review_version": "v1",
                 "evidence_count": 1,
-                "evidence": [{ "path": "C:\\dev\\apps\\nova-agent\\package.json" }]
+                "evidence": [{ "path": "V:\\monorepo\\apps\\nova-agent\\package.json" }]
             }"#,
         )
         .unwrap();
@@ -212,19 +212,19 @@ mod tests {
         fs::write(
             &newer,
             r#"{
-                "reviewed_path": "C:\\dev\\apps\\nova-agent",
+                "reviewed_path": "V:\\monorepo\\apps\\nova-agent",
                 "reviewed_at": "2026-03-09T11:00:00Z",
                 "review_version": "v1",
                 "evidence_count": 2,
                 "evidence": [
-                    { "path": "C:\\dev\\apps\\nova-agent\\package.json" },
-                    { "path": "C:\\dev\\apps\\nova-agent\\project.json" }
+                    { "path": "V:\\monorepo\\apps\\nova-agent\\package.json" },
+                    { "path": "V:\\monorepo\\apps\\nova-agent\\project.json" }
                 ]
             }"#,
         )
         .unwrap();
 
-        let review = find_latest_review_for_project(r"C:\dev\apps\nova-agent")
+        let review = find_latest_review_for_project(r"V:\monorepo\apps\nova-agent")
             .unwrap()
             .unwrap();
 
@@ -235,7 +235,7 @@ mod tests {
     #[test]
     fn collects_missing_windows_paths_from_text() {
         let missing = collect_missing_path_references(
-            r"Review C:\dev\docs\architecture-improvement\AGENT_ASSIGNMENTS.md and C:\definitely-missing\plan.md",
+            r"Review V:\monorepo\docs\architecture-improvement\AGENT_ASSIGNMENTS.md and C:\definitely-missing\plan.md",
         );
 
         assert!(!missing.is_empty());

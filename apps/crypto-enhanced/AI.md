@@ -29,7 +29,7 @@ category: python
 
 ## Storage
 
-- Code: `C:\dev\apps\crypto-enhanced`
+- Code: `V:\monorepo\apps\crypto-enhanced`
 - Database/state/logs: must live on `D:\` (see workspace rules)
 
 ## References

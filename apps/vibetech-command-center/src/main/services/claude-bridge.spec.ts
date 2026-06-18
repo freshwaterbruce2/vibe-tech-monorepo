@@ -108,7 +108,7 @@ describe('ClaudeBridge', () => {
     const s = new Spy();
     const args = s.inspect({
       prompt: 'do it',
-      cwd: 'C:\\dev',
+      cwd: 'V:\\monorepo',
       allowedTools: ['Read', 'Edit', 'Bash'],
       resumeSessionId: 'sess-1',
       permissionMode: 'acceptEdits',

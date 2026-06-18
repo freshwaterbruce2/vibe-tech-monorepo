@@ -27,7 +27,7 @@ function mockBridge(overrides: Partial<CommandCenterAPI> = {}): void {
     },
     factory: {
       list: vi.fn().mockResolvedValue({ ok: true, data: [], timestamp: Date.now() }),
-      generate: vi.fn().mockResolvedValue({ ok: true, data: { id: 'fg1', command: 'pnpm', args: [], cwd: 'C:\\dev', pid: 1, status: 'running', startedAt: 1, exitCode: null }, timestamp: Date.now() })
+      generate: vi.fn().mockResolvedValue({ ok: true, data: { id: 'fg1', command: 'pnpm', args: [], cwd: 'V:\\monorepo', pid: 1, status: 'running', startedAt: 1, exitCode: null }, timestamp: Date.now() })
     },
     health:  { probeAll: vi.fn().mockResolvedValue({ ok: true, data: [], timestamp: Date.now() }), probeOne: vi.fn() },
     db:      { collectAll: vi.fn().mockResolvedValue({ ok: true, data: [], timestamp: Date.now() }) },
@@ -44,7 +44,7 @@ function mockBridge(overrides: Partial<CommandCenterAPI> = {}): void {
     rag:     { search: vi.fn() },
     fs:      { stat: vi.fn().mockResolvedValue({ ok: true, data: { path: '', exists: false, isDirectory: false, isFile: false, sizeBytes: 0, mtimeMs: null }, timestamp: Date.now() }) },
     affected: { get: vi.fn().mockResolvedValue({ ok: true, data: { projects: [], generatedAt: Date.now() }, timestamp: Date.now() }), refresh: vi.fn() },
-    meta:    { info: vi.fn().mockResolvedValue({ ok: true, data: { version: '0.1.0', monorepoRoot: 'C:\\dev', wsPort: 3210 }, timestamp: Date.now() }) },
+    meta:    { info: vi.fn().mockResolvedValue({ ok: true, data: { version: '0.1.0', monorepoRoot: 'V:\\monorepo', wsPort: 3210 }, timestamp: Date.now() }) },
     dbExplorer: {
       list: vi.fn().mockResolvedValue({ ok: true, data: [], timestamp: Date.now() }),
       schema: vi.fn().mockResolvedValue({ ok: true, data: [], timestamp: Date.now() }),

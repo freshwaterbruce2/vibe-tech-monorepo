@@ -17,7 +17,7 @@
 
 ## Environment
 - Primary dev: Windows 11
-- Code: `C:\dev`
+- Code: `V:\monorepo`
 - Data: `D:\databases`, `D:\logs`, `D:\learning-system`
 - SQLite databases use WAL mode
 

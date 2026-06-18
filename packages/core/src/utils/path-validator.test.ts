@@ -22,7 +22,7 @@ describe('path-validator', () => {
 
     it('rejects C: drive paths', () => {
       const invalidPaths = [
-        'C:\dev\test.db',
+        'V:\monorepo\test.db',
         'C:/Users/test.db',
         'c:\test\data.db',
       ];
@@ -44,7 +44,7 @@ describe('path-validator', () => {
     });
 
     it('throws error with helpful message including both paths', () => {
-      const testPath = 'C:\dev\test.db';
+      const testPath = 'V:\monorepo\test.db';
       
       try {
         validateDataPath(testPath);
@@ -79,7 +79,7 @@ describe('path-validator', () => {
     });
 
     it('returns false for invalid paths', () => {
-      expect(isDataPathValid('C:\dev\test.db')).toBe(false);
+      expect(isDataPathValid('V:\monorepo\test.db')).toBe(false);
       expect(isDataPathValid('C:/Users/data.db')).toBe(false);
       expect(isDataPathValid('E:\backup\data.db')).toBe(false);
     });

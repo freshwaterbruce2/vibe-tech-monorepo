@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Turborepo Setup Script for C:\dev Monorepo
+    Turborepo Setup Script for V:\monorepo Monorepo
 
 .DESCRIPTION
     Installs and configures Turborepo for the pnpm monorepo, enabling:
@@ -41,7 +41,7 @@ function Write-Warning { param($Message) Write-Host "⚠️  $Message" -Foregrou
 function Write-Error { param($Message) Write-Host "❌ $Message" -ForegroundColor Red }
 function Write-Header { param($Message) Write-Host "`n========== $Message ==========" -ForegroundColor Magenta }
 
-$MonorepoRoot = "C:\dev"
+$MonorepoRoot = "V:\monorepo"
 
 Write-Header "Turborepo Setup Script"
 Write-Info "Mode: $(if ($DryRun) { 'DRY RUN (simulation)' } else { 'LIVE' })"

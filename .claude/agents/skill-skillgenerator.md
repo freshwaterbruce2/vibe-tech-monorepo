@@ -123,7 +123,7 @@ metadata:
 
 **Rollback Process**:
 \`\`\`powershell
-cd C:\dev\scripts\version-control
+cd V:\monorepo\scripts\version-control
 .\Restore-Snapshot.ps1 -Tag "before-{{SKILL_NAME}}"
 \`\`\`
 
@@ -177,7 +177,7 @@ LIMIT 5;
 
 ```powershell
 # Find related skills
-Get-ChildItem "C:\dev\.claude\skills" -Directory |
+Get-ChildItem "V:\monorepo\.claude\skills" -Directory |
     Where-Object { $_.Name -like "*component*" -or $_.Name -like "*react*" }
 ```
 
@@ -187,7 +187,7 @@ Get-ChildItem "C:\dev\.claude\skills" -Directory |
 ### CRITICAL RULES (Must Include)
 
 1. **Package Manager**: ALWAYS use `pnpm` (never npm/yarn)
-2. **File Paths**: Use `C:\dev` for code, `D:\` for data
+2. **File Paths**: Use `V:\monorepo` for code, `D:\` for data
 3. **Line Limit**: Target ≤500 lines per file
 4. **TypeScript**: Strict mode enabled
 5. **React 19**: Named imports only (`import { useState } from 'react'`)
@@ -279,14 +279,14 @@ After generation, update state.json:
       "status": "completed",
       "attempts": 1,
       "result": {
-        "skillFile": "C:\dev\.claude\skills\component-creation-workflow\SKILL.md",
+        "skillFile": "V:\monorepo\.claude\skills\component-creation-workflow\SKILL.md",
         "linesGenerated": 287,
         "sectionsIncluded": 7,
         "examplesIncluded": 3
       }
     }
   },
-  "skillPath": "C:\dev\.claude\skills\component-creation-workflow\SKILL.md"
+  "skillPath": "V:\monorepo\.claude\skills\component-creation-workflow\SKILL.md"
 }
 ```
 

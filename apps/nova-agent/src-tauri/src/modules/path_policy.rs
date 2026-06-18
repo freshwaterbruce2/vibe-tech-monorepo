@@ -3,7 +3,7 @@ use std::{
     path::{Component, Path, PathBuf},
 };
 
-const DEFAULT_WORKSPACE_ROOT: &str = "C:\\dev";
+const DEFAULT_WORKSPACE_ROOT: &str = "V:\\monorepo";
 const MAX_PATH_LENGTH: usize = 4096;
 const MAX_TEMPLATE_NAME_LEN: usize = 128;
 
@@ -267,7 +267,7 @@ mod tests {
         assert!(has_traversal_pattern(r"..\secrets.txt"));
         assert!(has_traversal_pattern("../secrets.txt"));
         assert!(has_traversal_pattern("%2e%2e%5csecrets.txt"));
-        assert!(!has_traversal_pattern(r"C:\dev\apps\nova-agent"));
+        assert!(!has_traversal_pattern(r"V:\monorepo\apps\nova-agent"));
     }
 
     #[test]
@@ -280,9 +280,9 @@ mod tests {
 
     #[test]
     fn within_root_check_is_prefix_safe() {
-        let root = Path::new(r"C:\dev");
-        assert!(is_within_root(Path::new(r"C:\dev\apps\nova-agent"), root));
-        assert!(!is_within_root(Path::new(r"C:\developer\other"), root));
+        let root = Path::new(r"V:\monorepo");
+        assert!(is_within_root(Path::new(r"V:\monorepo\apps\nova-agent"), root));
+        assert!(!is_within_root(Path::new(r"V:\monorepoeloper\other"), root));
         assert!(!is_within_root(Path::new(r"D:\other"), root));
     }
 }

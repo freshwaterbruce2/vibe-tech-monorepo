@@ -573,7 +573,7 @@ export const WorkspaceTemplatesPanel = ({ onClose, onSuccess, onError }: Workspa
               <Label>Target Directory</Label>
               <Input
                 type="text"
-                placeholder="C:\dev\apps\my-project"
+                placeholder="V:\monorepo\apps\my-project"
                 value={targetPath}
                 onChange={e => setTargetPath(e.target.value)}
                 disabled={isGenerating}

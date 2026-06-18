@@ -127,10 +127,10 @@ Never run bare `pnpm install` from inside a project directory. Always use `--fil
 
 ## Architecture
 
-Source code lives on `C:\dev`. All runtime data (databases, logs, learning system) lives on `D:\`. See `AI.md` and `docs/WORKSPACE_STRUCTURE.md` for the workspace policy.
+Source code lives on `V:\monorepo`. All runtime data (databases, logs, learning system) lives on `D:\`. See `AI.md` and `docs/WORKSPACE_STRUCTURE.md` for the workspace policy.
 
 ```
-C:\dev\              source code (git-tracked)
+V:\monorepo\              source code (git-tracked)
 D:\databases\        SQLite databases
 D:\logs\             application logs
 D:\data\             datasets

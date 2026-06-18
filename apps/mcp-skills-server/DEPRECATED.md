@@ -7,7 +7,7 @@ This package has been deprecated and merged into the unified MCP server.
 Use `@vibetech/mcp-server` instead:
 
 ```bash
-cd C:\dev\apps\mcp-server
+cd V:\monorepo\apps\mcp-server
 pnpm build
 node dist/main.js
 ```

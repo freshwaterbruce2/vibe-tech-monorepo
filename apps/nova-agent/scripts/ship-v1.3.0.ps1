@@ -1,9 +1,9 @@
 # Nova Agent v1.3.0 Ship Playbook
-# Run from C:\dev in PowerShell 7+. Copy-paste in stages; each stage is idempotent.
+# Run from V:\monorepo in PowerShell 7+. Copy-paste in stages; each stage is idempotent.
 # Mirrors the release checklist in RELEASE_NOTES_v1.3.0.md.
 
 $ErrorActionPreference = 'Stop'
-Set-Location C:\dev\apps\nova-agent
+Set-Location V:\monorepo\apps\nova-agent
 
 # ---------------------------------------------------------------------------
 # Stage 0 - BACKUP (always first, per .claude rules)
@@ -18,7 +18,7 @@ Write-Host "BACKUP: _backups\Backup_$stamp.zip" -ForegroundColor Green
 # ---------------------------------------------------------------------------
 # Stage 1 - Install deps (nova-agent only, with new devDeps for Stylelint)
 # ---------------------------------------------------------------------------
-Set-Location C:\dev
+Set-Location V:\monorepo
 pnpm add -D --filter nova-agent stylelint@^17 stylelint-config-standard@^40
 pnpm install --filter nova-agent --frozen-lockfile=false
 
@@ -44,13 +44,13 @@ pnpm --filter nova-agent run test:visual   # should be all green now
 # ---------------------------------------------------------------------------
 # Points git at apps/nova-agent/.husky so the pre-commit script runs.
 # If other apps add their own hooks later, swap to a root-level .husky instead.
-Set-Location C:\dev
+Set-Location V:\monorepo
 git config core.hooksPath apps/nova-agent/.husky
 
 # ---------------------------------------------------------------------------
 # Stage 5 - Build Tauri release (produces MSI + NSIS installers)
 # ---------------------------------------------------------------------------
-Set-Location C:\dev\apps\nova-agent
+Set-Location V:\monorepo\apps\nova-agent
 pnpm run build   # = tauri build
 
 # ---------------------------------------------------------------------------
@@ -78,7 +78,7 @@ Get-Content .\src-tauri\target\release\bundle\SHA256SUMS.txt
 # ---------------------------------------------------------------------------
 # Requires: gh CLI authenticated against github.com/freshwaterbruce2/Monorepo (or
 # wherever this repo's remote points). Tag convention: nova-agent-v1.3.0
-Set-Location C:\dev
+Set-Location V:\monorepo
 $tag = "nova-agent-v1.3.0"
 git tag -a $tag -m "NOVA Agent v1.3.0"
 git push origin $tag
@@ -88,6 +88,6 @@ gh release create $tag `
     --notes-file apps/nova-agent/RELEASE_NOTES_v1.3.0.md `
     "$($msi.FullName)" `
     "$($nsis.FullName)" `
-    "C:\dev\apps\nova-agent\src-tauri\target\release\bundle\SHA256SUMS.txt"
+    "V:\monorepo\apps\nova-agent\src-tauri\target\release\bundle\SHA256SUMS.txt"
 
 Write-Host "Release $tag published." -ForegroundColor Green

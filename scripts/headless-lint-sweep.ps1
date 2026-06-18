@@ -36,7 +36,7 @@ $ErrorActionPreference = "Stop"
 $LogDir    = "D:\logs\headless-runs"
 $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $LogFile   = Join-Path $LogDir "lint-sweep-$Timestamp.log"
-$WorkDir   = "C:\dev"
+$WorkDir   = "V:\monorepo"
 
 # --- Ensure log dir exists ---
 if (-not (Test-Path $LogDir)) {
@@ -86,7 +86,7 @@ if ($DryRun) {
 }
 
 # --- D:\ snapshot before starting ---
-$SnapshotScript = "C:\dev\scripts\version-control\Save-Snapshot.ps1"
+$SnapshotScript = "V:\monorepo\scripts\version-control\Save-Snapshot.ps1"
 if (Test-Path $SnapshotScript) {
     Write-Host "[snapshot] Creating safety snapshot before sweep..."
     try {

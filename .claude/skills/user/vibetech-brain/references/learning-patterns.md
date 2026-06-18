@@ -193,7 +193,7 @@ memory_rag_index_status()      # Is RAG index current?
 ### Monorepo Health
 Via Desktop Commander:
 ```powershell
-cd C:\dev; pnpm run quality    # Full lint + typecheck + build
+cd V:\monorepo; pnpm run quality    # Full lint + typecheck + build
 npx.cmd nx graph               # Dependency visualization
 npx.cmd nx affected --all      # What's changed since last check
 ```

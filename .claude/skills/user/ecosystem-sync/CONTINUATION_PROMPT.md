@@ -4,7 +4,7 @@ I just finished building and debugging the **ecosystem-sync** skill with Claude.
 
 ### What Was Built
 
-A new skill at `C:\dev\.claude\skills\user\ecosystem-sync\` that audits my monorepo's AI ecosystem (skills, agents, MCP servers, CLAUDE.md files) for drift. It includes:
+A new skill at `V:\monorepo\.claude\skills\user\ecosystem-sync\` that audits my monorepo's AI ecosystem (skills, agents, MCP servers, CLAUDE.md files) for drift. It includes:
 
 - **SKILL.md** — workflow docs with corrected paths
 - **references/component-registry.md** — real inventory (26 apps, 27 packages, 5 MCP servers, 9 apps with CLAUDE.md)
@@ -54,6 +54,6 @@ A new skill at `C:\dev\.claude\skills\user\ecosystem-sync\` that audits my monor
 2. **Bump all 5 MCP servers** to SDK 1.27+ and migrate from legacy `setRequestHandler` → `McpServer+registerTool` with zod schemas
 3. **Generate CLAUDE.md files** for the 14 apps missing them
 4. **Investigate agents.json** — why only 4 entries vs 19 documented?
-5. **Run the audit again** to verify the `_backups` exclusion fix: `C:\dev\.claude\skills\user\ecosystem-sync\scripts\audit-ecosystem.ps1 -Mode Full`
+5. **Run the audit again** to verify the `_backups` exclusion fix: `V:\monorepo\.claude\skills\user\ecosystem-sync\scripts\audit-ecosystem.ps1 -Mode Full`
 
-Read `C:\dev\.claude\skills\user\ecosystem-sync\SKILL.md` and `C:\dev\.claude\skills\user\ecosystem-sync\references\component-registry.md` to get full context before starting.
+Read `V:\monorepo\.claude\skills\user\ecosystem-sync\SKILL.md` and `V:\monorepo\.claude\skills\user\ecosystem-sync\references\component-registry.md` to get full context before starting.

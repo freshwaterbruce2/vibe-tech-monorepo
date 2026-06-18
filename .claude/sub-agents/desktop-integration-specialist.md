@@ -577,7 +577,7 @@ export class IpcBridge {
 }
 
 // Usage in React component
-const content = await ipcBridge.readFile('C:\\dev\\file.txt');
+const content = await ipcBridge.readFile('V:\\monorepo\\file.txt');
 
 Implement IPC file reading? (y/n)
 ```
@@ -699,8 +699,8 @@ export class TauriIpcBridge {
 
 // Usage
 const tauri = new TauriIpcBridge();
-const content = await tauri.readFile('C:\\dev\\file.txt');
-await tauri.writeFile('C:\\dev\\output.txt', 'Hello!');
+const content = await tauri.readFile('V:\\monorepo\\file.txt');
+await tauri.writeFile('V:\\monorepo\\output.txt', 'Hello!');
 
 Implement Tauri commands? (y/n)
 ```

@@ -36,7 +36,7 @@ try {
     if (-not $isOrchestrator) { exit 0 }
 
     $CLI     = 'node'
-    $CLIPath = 'C:\dev\packages\agent-lats\dist\cli.js'
+    $CLIPath = 'V:\monorepo\packages\agent-lats\dist\cli.js'
 
     # Derive pipeline name — colon-syntax only ("pipeline:name") to avoid
     # matching "pipeline for ..." in natural-language task descriptions.

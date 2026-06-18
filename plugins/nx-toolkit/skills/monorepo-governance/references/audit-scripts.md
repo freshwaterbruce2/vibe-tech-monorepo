@@ -13,7 +13,7 @@ pnpm nx run-many -t lint --all --parallel=5
 
 ```powershell
 # PowerShell: Find project.json files missing tags
-Get-ChildItem -Path C:\dev -Recurse -Filter "project.json" |
+Get-ChildItem -Path V:\monorepo -Recurse -Filter "project.json" |
   Where-Object { $_.FullName -notmatch "node_modules" } |
   ForEach-Object {
     $content = Get-Content $_.FullName | ConvertFrom-Json
@@ -83,7 +83,7 @@ if ($LASTEXITCODE -ne 0) {
 # 2. Tag completeness
 Write-Host "[2/6] Checking project tags..." -ForegroundColor Yellow
 $untagged = @()
-Get-ChildItem -Path C:\dev -Recurse -Filter "project.json" |
+Get-ChildItem -Path V:\monorepo -Recurse -Filter "project.json" |
   Where-Object { $_.FullName -notmatch "node_modules|\.nx|dist" } |
   ForEach-Object {
     $content = Get-Content $_.FullName -Raw | ConvertFrom-Json

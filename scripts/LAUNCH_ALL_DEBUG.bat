@@ -18,14 +18,14 @@ echo Launched.
 echo.
 
 echo [3/4] Launching Vibe Justice...
-cd /d "C:\dev\apps\vibe-justice\dist\VibeJustice"
+cd /d "V:\monorepo\apps\vibe-justice\dist\VibeJustice"
 start "" "VibeJustice.exe"
 if %errorlevel% neq 0 echo FAILED to launch Vibe Justice
 echo Launched.
 echo.
 
 echo [4/4] Launching Vibe Code Studio (Fixed Mode)...
-cd /d "C:\dev\apps\vibe-code-studio"
+cd /d "V:\monorepo\apps\vibe-code-studio"
 :: Launch electron with explicit path to app.asar
 start "" "dist-electron\win-unpacked\electron.exe" "dist-electron\win-unpacked\resources\app.asar"
 if %errorlevel% neq 0 echo FAILED to launch Vibe Code Studio

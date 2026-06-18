@@ -90,7 +90,7 @@ Required:
 - `DATABASE_URL` — Neon Postgres connection string
 - `GOOGLE_API_KEY` — Gemini API key for AI-generated recommendations
 
-Database files do not live in this repo. All runtime data lives in Neon (managed); this monorepo policy keeps source on `C:\dev` and runtime data off `C:\dev`.
+Database files do not live in this repo. All runtime data lives in Neon (managed); this monorepo policy keeps source on `V:\monorepo` and runtime data off `V:\monorepo`.
 
 ## Development
 

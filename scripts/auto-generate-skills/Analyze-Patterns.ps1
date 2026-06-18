@@ -16,7 +16,7 @@ $ErrorActionPreference = "Stop"
 
 # Paths
 $LearningDB = "D:\databases\agent_learning.db"
-$OutputDir = "C:\dev\.agent\skills\auto-skill-creator\analysis"
+$OutputDir = "V:\monorepo\.agent\skills\auto-skill-creator\analysis"
 
 # Ensure output directory exists
 New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null

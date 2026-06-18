@@ -258,7 +258,7 @@ export class SemanticSearchService {
    * Walks the directory tree via FileSystemService, reads each file, and
    * stores it in the in-memory cache for keyword / semantic search.
    *
-   * @param rootPath  Workspace root (e.g. "demo://workspace" or "C:/dev/apps/myapp")
+   * @param rootPath  Workspace root (e.g. "demo://workspace" or "V:/monorepo/apps/myapp")
    * @param maxFiles  Safety cap to prevent runaway indexing (default 500)
    * @returns Number of files indexed
    */

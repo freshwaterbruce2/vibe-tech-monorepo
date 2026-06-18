@@ -33,7 +33,7 @@ Use this skill before triggering or modifying the App Factory SaaS generator.
 Use project-scoped Nx validation first:
 
 ```powershell
-Set-Location -LiteralPath 'C:\dev'
+Set-Location -LiteralPath 'V:\monorepo'
 pnpm nx lint <generated-project>
 pnpm nx typecheck <generated-project>
 pnpm nx build <generated-project>

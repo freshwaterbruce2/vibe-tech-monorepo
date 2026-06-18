@@ -62,7 +62,7 @@ impl Config {
                 .or_else(|_| env::var("VITE_KIMI_API_KEY"))
                 .unwrap_or_else(|_| "".to_string()),
             database_path,
-            workspace_root: env::var("WORKSPACE_ROOT").unwrap_or_else(|_| "C:\\dev".to_string()),
+            workspace_root: env::var("WORKSPACE_ROOT").unwrap_or_else(|_| "V:\\monorepo".to_string()),
             deepcode_ws_url: env::var("DEEPCODE_WS_URL")
                 .unwrap_or_else(|_| "ws://127.0.0.1:5004".to_string()),
             deepcode_ipc_enabled: env::var("DEEPCODE_IPC_ENABLED")

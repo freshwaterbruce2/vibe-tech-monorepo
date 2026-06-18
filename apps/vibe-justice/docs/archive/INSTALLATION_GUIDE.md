@@ -39,12 +39,12 @@ Two Windows installer formats are available:
 
 **MSI:**
 ```
-C:\dev\apps\vibe-justice\frontend\src-tauri\target\release\bundle\msi\Vibe-Justice_1.0.0_x64_en-US.msi
+V:\monorepo\apps\vibe-justice\frontend\src-tauri\target\release\bundle\msi\Vibe-Justice_1.0.0_x64_en-US.msi
 ```
 
 **Or NSIS:**
 ```
-C:\dev\apps\vibe-justice\frontend\src-tauri\target\release\bundle\nsis\Vibe-Justice_1.0.0_x64-setup.exe
+V:\monorepo\apps\vibe-justice\frontend\src-tauri\target\release\bundle\nsis\Vibe-Justice_1.0.0_x64-setup.exe
 ```
 
 ### Step 2: Follow Installation Wizard

@@ -57,13 +57,13 @@ Write-Host "[OK] Background memory sync running." -ForegroundColor Green
 # 5. Launch Codex Sandbox Shell
 Write-Host "`n[+] Spawning Codex Workspace Sandbox..." -ForegroundColor Green
 Write-Host "--------------------------------------------------" -ForegroundColor Gray
-Write-Host " Launching: codex --cd C:/dev" -ForegroundColor White
-Write-Host " Sandbox active: Writable roots limited to C:/dev and D:/databases" -ForegroundColor Gray
+Write-Host " Launching: codex --cd V:/monorepo" -ForegroundColor White
+Write-Host " Sandbox active: Writable roots limited to V:/monorepo and D:/databases" -ForegroundColor Gray
 Write-Host "--------------------------------------------------" -ForegroundColor Gray
 
 # Use npx.cmd for executing Codex command in Windows environment safely
 if (Get-Command "codex" -ErrorAction SilentlyContinue) {
-    codex --cd C:/dev
+    codex --cd V:/monorepo
 } else {
     Write-Warning "codex command is not installed or available in PATH. Please configure your Codex CLI."
 }

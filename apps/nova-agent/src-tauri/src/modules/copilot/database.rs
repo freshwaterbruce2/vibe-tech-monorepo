@@ -195,7 +195,7 @@ mod tests {
             pattern_type: "function".to_string(),
             name: "safe_search".to_string(),
             code_snippet: "fn safe_search() {}".to_string(),
-            file_path: "C:\\dev\\apps\\nova-agent\\src\\safe.rs".to_string(),
+            file_path: "V:\\monorepo\\apps\\nova-agent\\src\\safe.rs".to_string(),
             language: "rust".to_string(),
             imports: None,
             usage_count: 0,

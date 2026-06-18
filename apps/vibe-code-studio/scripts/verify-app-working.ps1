@@ -1,8 +1,8 @@
 # PowerShell script to verify DeepCode Editor is working
-# Run from C:\dev\projects\desktop-apps\deepcode-editor
+# Run from V:\monorepo\projects\desktop-apps\deepcode-editor
 
 Write-Host "Verifying DeepCode Editor application..." -ForegroundColor Cyan
-Set-Location "C:\dev\projects\desktop-apps\deepcode-editor"
+Set-Location "V:\monorepo\projects\desktop-apps\deepcode-editor"
 
 # Check Node.js
 if (!(Get-Command node -ErrorAction SilentlyContinue)) {

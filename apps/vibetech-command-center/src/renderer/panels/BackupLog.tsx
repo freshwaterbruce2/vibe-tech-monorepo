@@ -36,14 +36,14 @@ export function BackupLog() {
           <button
             className="btn btn-primary text-xs"
             disabled={busy}
-            onClick={() => { void handleQuickBackup('C:\\dev\\apps', 'all-apps'); }}
+            onClick={() => { void handleQuickBackup('V:\\monorepo\\apps', 'all-apps'); }}
           >
             <Archive size={12} /> Backup apps/
           </button>
           <button
             className="btn btn-primary text-xs"
             disabled={busy}
-            onClick={() => { void handleQuickBackup('C:\\dev\\packages', 'all-packages'); }}
+            onClick={() => { void handleQuickBackup('V:\\monorepo\\packages', 'all-packages'); }}
           >
             <Archive size={12} /> Backup packages/
           </button>
@@ -59,7 +59,7 @@ export function BackupLog() {
       {isLoading ? (
         <div className="text-slate-500 text-sm">loading backups...</div>
       ) : (data ?? []).length === 0 ? (
-        <div className="text-slate-500 text-sm italic">{'no backups yet in C:\\dev\\_backups'}</div>
+        <div className="text-slate-500 text-sm italic">{'no backups yet in V:\\monorepo\\_backups'}</div>
       ) : (
         <div className="overflow-hidden rounded border border-bg-line">
           <table className="w-full text-sm">
@@ -94,7 +94,7 @@ export function BackupLog() {
 
       <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
         <HardDrive size={12} />
-        <span className="font-mono">C:\dev\_backups\</span>
+        <span className="font-mono">V:\monorepo\_backups\</span>
       </div>
     </Panel>
   );

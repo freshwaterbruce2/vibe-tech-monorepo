@@ -5,7 +5,7 @@
 | Time | Action | Result |
 | --- | --- | --- |
 | 2026-05-24 18:29 | Goal received and existing completed goal state checked. | Goal tracker is already occupied by the prior completed objective, so this work is tracked in planning files. |
-| 2026-05-24 18:30 | Read Serena instructions and activated `C:\dev`. | Semantic coding tools are available for this workspace. |
+| 2026-05-24 18:30 | Read Serena instructions and activated `V:\monorepo`. | Semantic coding tools are available for this workspace. |
 | 2026-05-24 18:31 | Read planning-with-files skill. | Created app-local planning files to respect edit boundaries. |
 | 2026-05-24 18:31 | Searched memory for Stripe/webhook/factory patterns. | Found prior guidance to treat webhook-persisted subscription state as part of the revenue gate. |
 | 2026-05-24 18:36 | Implemented shared billing Webhook Bus. | Added event resolution, dispatch/idempotency, ID helper, MRR helper, and unit coverage. |

@@ -4,7 +4,7 @@ Last Updated: 2026-05-04
 
 ## Overview
 
-C:\dev is an Nx-managed pnpm monorepo. Current `pnpm exec nx show projects --json`
+V:\monorepo is an Nx-managed pnpm monorepo. Current `pnpm exec nx show projects --json`
 reports 70 projects, but not every directory is a pnpm package.
 
 ## Project Breakdown

@@ -8,13 +8,13 @@ let fixture: AppFixture;
 test.beforeEach(async () => { fixture = await launchApp(); });
 test.afterEach(async () => { await closeApp(fixture); });
 
-test('file changes in C:\\dev\\apps cause watcher events to reach renderer', async () => {
+test('file changes in V:\\monorepo\\apps cause watcher events to reach renderer', async () => {
   const { page } = fixture;
 
   await expect(page.locator('text=/Apps \\(\\d+\\)/')).toBeVisible({ timeout: 15_000 });
   await expect(page.locator('text=stream live')).toBeVisible({ timeout: 10_000 });
 
-  const probeDir = 'C:\\dev\\apps\\vibetech-command-center\\src\\__e2e_probe__';
+  const probeDir = 'V:\\monorepo\\apps\\vibetech-command-center\\src\\__e2e_probe__';
   const probeFile = join(probeDir, `probe-${Date.now()}.ts`);
 
   if (!existsSync(probeDir)) mkdirSync(probeDir, { recursive: true });

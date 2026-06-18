@@ -24,13 +24,13 @@ Serena is an advanced semantic code analysis MCP server with LSP integration, me
 
 ### Project Config
 
-- Location: `C:\dev\.serena\project.yml`
+- Location: `V:\monorepo\.serena\project.yml`
 - Controls: Languages, tools, read-only mode, initial prompt
 - Customized for VibeTech monorepo
 
 ### Memories
 
-- Location: `C:\dev\.serena\memories\*.md`
+- Location: `V:\monorepo\.serena\memories\*.md`
 - Content: Monorepo structure, tech stack, safety rules, workflows
 - Retention: 90 days (configurable)
 
@@ -187,7 +187,7 @@ custom_rules:
 
 ### Issue: "No active project"
 
-**Solution**: `activate_project` tool with path "C:\dev"
+**Solution**: `activate_project` tool with path "V:\monorepo"
 
 ### Issue: LSP not working
 
@@ -212,7 +212,7 @@ tool_timeout: 300  # 5 minutes
 
 **Solution**:
 
-1. Check: C:\dev\.serena\memories\
+1. Check: V:\monorepo\.serena\memories\
 2. Use: list_memories tool
 3. Verify: memory_retention_days in config
 

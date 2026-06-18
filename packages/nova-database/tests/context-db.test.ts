@@ -20,7 +20,7 @@ describe('ContextDatabase', () => {
     it('should insert and retrieve project', () => {
       const project = {
         name: 'test-app',
-        path: 'C:\\dev\\apps\\test-app',
+        path: 'V:\\monorepo\\apps\\test-app',
         type: 'web-app' as const,
         frameworks: ['react', 'typescript'],
         lastActive: Date.now(),
@@ -39,7 +39,7 @@ describe('ContextDatabase', () => {
     it('should upsert project on conflict', () => {
       const project = {
         name: 'test-app',
-        path: 'C:\\dev\\apps\\test-app',
+        path: 'V:\\monorepo\\apps\\test-app',
         type: 'web-app' as const,
         frameworks: ['react'],
         lastActive: Date.now(),
@@ -61,7 +61,7 @@ describe('ContextDatabase', () => {
       
       db.insertProject({
         name: 'old-project',
-        path: 'C:\\dev\\apps\\old',
+        path: 'V:\\monorepo\\apps\\old',
         type: 'backend' as const,
         frameworks: [],
         lastActive: now - 10000,
@@ -70,7 +70,7 @@ describe('ContextDatabase', () => {
 
       db.insertProject({
         name: 'new-project',
-        path: 'C:\\dev\\apps\\new',
+        path: 'V:\\monorepo\\apps\\new',
         type: 'web-app' as const,
         frameworks: [],
         lastActive: now,
@@ -85,17 +85,17 @@ describe('ContextDatabase', () => {
     it('should update project', () => {
       db.insertProject({
         name: 'test-app',
-        path: 'C:\\dev\\apps\\test',
+        path: 'V:\\monorepo\\apps\\test',
         type: 'web-app' as const,
         frameworks: ['react'],
         lastActive: Date.now(),
         fileCount: 50
       });
 
-      const success = db.updateProject('C:\\dev\\apps\\test', { fileCount: 100 });
+      const success = db.updateProject('V:\\monorepo\\apps\\test', { fileCount: 100 });
       expect(success).toBe(true);
 
-      const updated = db.getProject('C:\\dev\\apps\\test');
+      const updated = db.getProject('V:\\monorepo\\apps\\test');
       expect(updated!.fileCount).toBe(100);
     });
 
@@ -107,17 +107,17 @@ describe('ContextDatabase', () => {
     it('should delete project', () => {
       db.insertProject({
         name: 'test-app',
-        path: 'C:\\dev\\apps\\test',
+        path: 'V:\\monorepo\\apps\\test',
         type: 'web-app' as const,
         frameworks: [],
         lastActive: Date.now(),
         fileCount: 50
       });
 
-      const success = db.deleteProject('C:\\dev\\apps\\test');
+      const success = db.deleteProject('V:\\monorepo\\apps\\test');
       expect(success).toBe(true);
 
-      const retrieved = db.getProject('C:\\dev\\apps\\test');
+      const retrieved = db.getProject('V:\\monorepo\\apps\\test');
       expect(retrieved).toBeNull();
     });
   });

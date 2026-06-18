@@ -21,8 +21,8 @@ Write-Host ""
 
 # Test 1: Check if required scripts exist
 Write-Host "[1/5] Checking required scripts..." -ForegroundColor Yellow
-$wrapperScript = "C:\dev\admin_scripts\Run-DatabaseBackup.ps1"
-$robustScript = "C:\dev\scripts\database-backup.ps1"
+$wrapperScript = "V:\monorepo\admin_scripts\Run-DatabaseBackup.ps1"
+$robustScript = "V:\monorepo\scripts\database-backup.ps1"
 
 if (Test-Path $wrapperScript) {
     Write-Host "  ✓ Wrapper script exists: $wrapperScript" -ForegroundColor Green
@@ -140,7 +140,7 @@ Write-Host "$foundCount found" -ForegroundColor $(if ($foundCount -gt 0) { 'Gree
 
 Write-Host ""
 Write-Host "To run backup manually:" -ForegroundColor Cyan
-Write-Host '  cd C:\dev\admin_scripts' -ForegroundColor White
+Write-Host '  cd V:\monorepo\admin_scripts' -ForegroundColor White
 Write-Host '  .\Run-DatabaseBackup.ps1' -ForegroundColor White
 Write-Host ""
 Write-Host "To run with visual feedback:" -ForegroundColor Cyan

@@ -17,7 +17,7 @@ $profileContent = @'
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force -ErrorAction SilentlyContinue
 
 # Import custom modules
-$devModule = "C:\dev\tools\powershell\DevAutomation.psm1"
+$devModule = "V:\monorepo\tools\powershell\DevAutomation.psm1"
 if (Test-Path $devModule) {
     Import-Module $devModule -Force
 }
@@ -29,7 +29,7 @@ Set-Alias -Name compliance -Value Test-CodeCompliance
 Set-Alias -Name monitor -Value Start-MonitoringDashboard
 
 # Quick navigation
-function cdev { Set-Location C:\dev }
+function cdev { Set-Location V:\monorepo }
 function ddata { Set-Location D:\ }
 function dlogs { Set-Location D:\logs }
 function ddb { Set-Location D:\databases }
@@ -50,7 +50,7 @@ function nxlint { pnpm nx run-many -t lint }
 
 # AI assistant helpers
 function claude {
-    Set-Location C:\dev
+    Set-Location V:\monorepo
     claude-code
 }
 
@@ -79,8 +79,8 @@ Write-Host "Type 'Get-Command -Module DevAutomation' for custom commands" -Foreg
 Write-Host ""
 
 # Auto-navigate to monorepo on startup
-if (Test-Path C:\dev) {
-    Set-Location C:\dev
+if (Test-Path V:\monorepo) {
+    Set-Location V:\monorepo
 }
 '@
 

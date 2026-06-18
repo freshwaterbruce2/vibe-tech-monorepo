@@ -14,7 +14,7 @@ Local batch raster-to-SVG converter for app assets.
 ## Run Locally
 
 ```powershell
-cd C:\dev
+cd V:\monorepo
 pnpm nx dev vectorshift-svg
 ```
 

@@ -62,7 +62,7 @@ function setupBridge() {
       id: 'proc-1',
       command: 'pnpm',
       args: ['nx', 'g', '@vibetech/factory:saas', 'factory-next-app'],
-      cwd: 'C:\\dev',
+      cwd: 'V:\\monorepo',
       pid: 123,
       status: 'running',
       startedAt: Date.now(),

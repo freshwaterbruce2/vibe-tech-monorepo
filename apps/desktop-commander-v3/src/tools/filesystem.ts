@@ -13,12 +13,12 @@ export const filesystemTools: Array<{
 		description: `Read file contents as UTF-8 text or base64-encoded binary.
 
 Allowed Paths:
-- C:\\dev - Full read access (development workspace)
+- V:\\monorepo - Full read access (development workspace)
 - D:\\ - Full read access (databases, logs, learning data)
 - C:\\Users\\fresh_zxae3v6\\OneDrive - Read-only
 
 Parameters:
-- path: Absolute Windows path (e.g., "C:\\dev\\README.md")
+- path: Absolute Windows path (e.g., "V:\\monorepo\\README.md")
 - base64: true for binary files (images, PDFs, executables), false for text (default)
 
 Error Cases:
@@ -27,14 +27,14 @@ Error Cases:
 - Binary file without base64=true → May return garbled text. Retry with base64=true.
 
 Examples:
-- path: "C:\\dev\\package.json" → Read package.json as text
+- path: "V:\\monorepo\\package.json" → Read package.json as text
 - path: "D:\\screenshots\\screenshot.png", base64: true → Read image as base64`,
 		inputSchema: {
 			type: "object",
 			properties: {
 				path: {
 					type: "string",
-					description: "Absolute Windows path (e.g., 'C:\\dev\\README.md')",
+					description: "Absolute Windows path (e.g., 'V:\\monorepo\\README.md')",
 					minLength: 1,
 				},
 				base64: {
@@ -61,7 +61,7 @@ Performance:
 - Recursive listing: 1-5s for large directories (>1000 files)
 
 Examples:
-- path: "C:\\dev", recursive: false → List C:\\dev files only
+- path: "V:\\monorepo", recursive: false → List V:\\monorepo files only
 - path: "D:\\databases", recursive: true, maxDepth: 2 → List databases + subdirs (2 levels deep)
 
 Returns: [{ name, path, size, type, modified, isDirectory }]`,
@@ -104,9 +104,9 @@ Parameters:
 - maxResults: Limit results (1-500, default 100)
 
 Examples:
-- path: "C:\\dev\\apps", pattern: "*.ts" → Find all TypeScript files
+- path: "V:\\monorepo\\apps", pattern: "*.ts" → Find all TypeScript files
 - path: "D:\\logs", pattern: "error*.log" → Find error log files
-- path: "C:\\dev", pattern: "package.json" → Find all package.json files
+- path: "V:\\monorepo", pattern: "package.json" → Find all package.json files
 
 Returns: [{ path, name, size, modified }]`,
 		inputSchema: {
@@ -155,7 +155,7 @@ Error Cases:
 - No matches → Returns empty array (not an error)
 
 Examples:
-- path: "C:\\dev\\apps", query: "useEffect", extensions: ["ts", "tsx"] → Find React hooks
+- path: "V:\\monorepo\\apps", query: "useEffect", extensions: ["ts", "tsx"] → Find React hooks
 - path: "D:\\logs", query: "ERROR", caseSensitive: true → Find error logs
 
 Returns: [{ file, line, lineNumber, match }]`,
@@ -281,11 +281,11 @@ Performance:
 
 Use Cases:
 - Backup D:\\databases → D:\\backups (safe, restartable)
-- Sync C:\\dev\\dist → D:\\build-cache (mirror mode for exact copy)
+- Sync V:\\monorepo\\dist → D:\\build-cache (mirror mode for exact copy)
 
 Examples:
-- Basic copy: source="C:\\dev\\src", destination="D:\\backup\\src"
-- Mirror (dangerous): source="C:\\dev\\dist", destination="D:\\cache", mirror=true, confirmDangerous=true
+- Basic copy: source="V:\\monorepo\\src", destination="D:\\backup\\src"
+- Mirror (dangerous): source="V:\\monorepo\\dist", destination="D:\\cache", mirror=true, confirmDangerous=true
 
 Returns: { copied, skipped, errors, exitCode, executionTime }`,
 		inputSchema: {

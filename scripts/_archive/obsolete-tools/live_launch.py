@@ -6,7 +6,7 @@ Goal: "Zero Human Intervention"
 - Single-instance supervisor (prevents duplicates)
 - Safe kill switch (targets only supervised Nova processes)
 - Diagnostic loop (restart-on-exit + restart-on-hang via heartbeats)
-- Enforces: code in C:\\dev, data/logs in D:\\databases
+- Enforces: code in V:\\monorepo, data/logs in D:\\databases
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ from typing import Any, Dict, List, Optional
 # ==============================
 # Configuration (simple)
 # ==============================
-DEV_ROOT = Path(r"C:\dev")
+DEV_ROOT = Path(r"V:\monorepo")
 SRC_ROOT = DEV_ROOT / "src"
 
 DATA_ROOT = Path(r"D:\databases")

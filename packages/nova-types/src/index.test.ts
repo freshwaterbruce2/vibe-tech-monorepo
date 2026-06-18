@@ -32,12 +32,12 @@ describe('nova-types', () => {
     describe('Activity types', () => {
         it('FileEvent accepts valid structure', () => {
             const event: FileEvent = {
-                path: 'C:\\dev\\test.ts',
+                path: 'V:\\monorepo\\test.ts',
                 eventType: 'create',
                 timestamp: Date.now(),
                 project: 'test-project',
             };
-            expect(event.path).toBe('C:\\dev\\test.ts');
+            expect(event.path).toBe('V:\\monorepo\\test.ts');
             expect(event.eventType).toBe('create');
         });
 
@@ -51,14 +51,14 @@ describe('nova-types', () => {
 
         it('GitEvent accepts valid structure', () => {
             const event: GitEvent = {
-                repoPath: 'C:\\dev',
+                repoPath: 'V:\\monorepo',
                 eventType: 'commit',
                 branch: 'main',
                 commitHash: 'abc123',
                 message: 'Initial commit',
                 timestamp: Date.now(),
             };
-            expect(event.repoPath).toBe('C:\\dev');
+            expect(event.repoPath).toBe('V:\\monorepo');
             expect(event.eventType).toBe('commit');
         });
 
@@ -156,7 +156,7 @@ describe('nova-types', () => {
         it('ProjectContext accepts valid structure', () => {
             const ctx: ProjectContext = {
                 name: 'my-app',
-                path: 'C:\\dev\\apps\\my-app',
+                path: 'V:\\monorepo\\apps\\my-app',
                 type: 'web-app',
                 frameworks: ['react', 'vite'],
                 lastActive: Date.now(),
@@ -181,7 +181,7 @@ describe('nova-types', () => {
     describe('Monitoring types', () => {
         it('MonitoringConfig accepts valid structure', () => {
             const config: MonitoringConfig = {
-                workspacePath: 'C:\\dev',
+                workspacePath: 'V:\\monorepo',
                 excludePaths: ['node_modules', '.git'],
                 debounceMs: 100,
                 maxEventsPerSecond: 50,
@@ -203,7 +203,7 @@ describe('nova-types', () => {
 
         it('GitRepoInfo includes branch and commit info', () => {
             const info: GitRepoInfo = {
-                path: 'C:\\dev',
+                path: 'V:\\monorepo',
                 currentBranch: 'feature/test',
                 isDirty: true,
                 ahead: 2,

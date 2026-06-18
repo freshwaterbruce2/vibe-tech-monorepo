@@ -296,7 +296,7 @@ describe('ErrorDetector', () => {
 
       const consoleOutput = `
 Error: Cannot read property 'foo' of undefined
-    at Object.<anonymous> (C:\\dev\\test\\file.ts:25:10)
+    at Object.<anonymous> (V:\\monorepo\\test\\file.ts:25:10)
     at Module._compile (internal/modules/cjs/loader.js:1063:30)
 `;
 
@@ -326,7 +326,7 @@ Error: Cannot read property 'foo' of undefined
 
       const consoleOutput = `
 TypeError: x is not a function
-    at test (C:\\dev\\app.ts:42:5)
+    at test (V:\\monorepo\\app.ts:42:5)
 `;
 
       detector = new ErrorDetector({

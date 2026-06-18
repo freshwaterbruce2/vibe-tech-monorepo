@@ -19,9 +19,9 @@ This workspace defines a default **master agent** in `.agent/agents/master-agent
 
 ## 2. Paths and Data Policy (Non-Negotiable)
 
-- **Code Location**: `C:\dev` (All project source code, configurations, and build setups).
+- **Code Location**: `V:\monorepo` (All project source code, configurations, and build setups).
 - **Data Location**: `D:\` (All databases, runtime logs, cache files, and learning data).
-- **Enforcement**: Any code that writes files must default to `D:\` locations (e.g. `D:\databases\`, `D:\logs\`, `D:\learning-system\`). Never write databases or logs directly into `C:\dev`.
+- **Enforcement**: Any code that writes files must default to `D:\` locations (e.g. `D:\databases\`, `D:\logs\`, `D:\learning-system\`). Never write databases or logs directly into `V:\monorepo`.
 
 ---
 

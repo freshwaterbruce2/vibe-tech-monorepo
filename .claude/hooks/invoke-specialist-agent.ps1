@@ -9,7 +9,7 @@ param(
 )
 
 $ErrorActionPreference = "SilentlyContinue"
-$OrchestratorPath = "C:\dev\projects\active\web-apps\memory-bank\agent_orchestrator.py"
+$OrchestratorPath = "V:\monorepo\projects\active\web-apps\memory-bank\agent_orchestrator.py"
 
 function Get-AgentRecommendation {
     param([string]$Task, [string]$Project)

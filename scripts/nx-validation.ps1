@@ -1,5 +1,5 @@
 $ErrorActionPreference = 'Continue'
-Set-Location C:\dev
+Set-Location V:\monorepo
 
 . (Join-Path $PSScriptRoot 'Initialize-DevProcessEnvironment.ps1')
 $null = Initialize-DevProcessEnvironment

@@ -428,7 +428,7 @@ NEXT STEPS:
 - Execute bash commands using the Bash tool
 - Use Nx MCP tools for workspace analysis
 - All checks are non-destructive (read-only)
-- Run from C:\dev as base directory
+- Run from V:\monorepo as base directory
 - Health check takes 30-60 seconds to complete
 - Results cached for 5 minutes
 - Safe to run frequently during development

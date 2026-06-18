@@ -33,7 +33,7 @@ process.on('uncaughtException', (err) => {
 // ─────────────────────────────────────────────────────────────────────────
 
 // ─── Monorepo Resolution ──────────────────────────────────────────────────
-// pnpm hoists packages like react-native to C:\dev\node_modules (workspace root).
+// pnpm hoists packages like react-native to V:\monorepo\node_modules (workspace root).
 // Metro needs to know about BOTH the project-level and root-level node_modules.
 // watchFolders: tells Metro's file watcher where to look for source changes.
 // nodeModulesPaths: tells the resolver where to find installed packages.
@@ -48,7 +48,7 @@ config.resolver.disableHierarchicalLookup = false;
 
 // Direct fallback: if Metro can't find a package locally, look in workspace root.
 // This is the definitive fix for pnpm monorepos where react-native is hoisted
-// to C:\dev\node_modules but has no symlink in the project's node_modules.
+// to V:\monorepo\node_modules but has no symlink in the project's node_modules.
 config.resolver.extraNodeModules = new Proxy(
   {},
   {

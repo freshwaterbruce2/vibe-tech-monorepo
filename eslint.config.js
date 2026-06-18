@@ -1,6 +1,6 @@
 // ESLint Flat Config (ESLint 9+) - Unified Configuration
 // Enforces all 24 best practices from learning system analysis
-// @see C:\dev\desktop-commander-v2\BEST_PRACTICES_2025_COMPLETE.md
+// @see V:\monorepo\desktop-commander-v2\BEST_PRACTICES_2025_COMPLETE.md
 
 import js from '@eslint/js';
 import enforceModuleBoundariesModule from '@nx/eslint-plugin/src/rules/enforce-module-boundaries.js';

@@ -274,7 +274,7 @@ describe('Nova Agent Tauri Commands', () => {
   describe('Context Engine', () => {
     it('get_context_snapshot returns system context', async () => {
       const mockContext: SystemContext = {
-        workspace_path: 'C:\\dev\\apps\\nova-agent',
+        workspace_path: 'V:\\monorepo\\apps\\nova-agent',
         git_status: {
           branch: 'main',
           modified_files: 3,
@@ -379,20 +379,20 @@ describe('Nova Agent Tauri Commands', () => {
     it('create_project creates project successfully', async () => {
       mockInvoke.mockResolvedValueOnce({
         success: true,
-        path: 'C:\\dev\\projects\\my-app',
+        path: 'V:\\monorepo\\projects\\my-app',
       });
 
       const { invoke } = await import('@tauri-apps/api/core');
       const result = await invoke<{ success: boolean; path: string }>('create_project', {
         templateId: 'nx-react',
         projectName: 'my-app',
-        targetPath: 'C:\\dev\\projects',
+        targetPath: 'V:\\monorepo\\projects',
       });
 
       expect(mockInvoke).toHaveBeenCalledWith('create_project', {
         templateId: 'nx-react',
         projectName: 'my-app',
-        targetPath: 'C:\\dev\\projects',
+        targetPath: 'V:\\monorepo\\projects',
       });
       expect(result.success).toBe(true);
     });

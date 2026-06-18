@@ -1,11 +1,11 @@
-# Initialize Jujutsu in C:\dev (colocated with Git)
+# Initialize Jujutsu in V:\monorepo (colocated with Git)
 $ErrorActionPreference = "Stop"
 
 # Ensure jj is in PATH for this session
-$env:PATH = "C:\dev\tools\jujutsu;$env:PATH"
+$env:PATH = "V:\monorepo\tools\jujutsu;$env:PATH"
 
 # Navigate to repository
-Set-Location "C:\dev"
+Set-Location "V:\monorepo"
 
 Write-Host "Current directory: $(Get-Location)"
 Write-Host "Git repository: $(Test-Path .git)"

@@ -24,7 +24,7 @@ function createMockHandle(overrides?: Partial<ProcessHandle>): ProcessHandle {
     id: 'proc-1',
     command: 'pnpm',
     args: ['exec', 'nx', 'build', 'my-app'],
-    cwd: 'C:\\dev',
+    cwd: 'V:\\monorepo',
     pid: 1234,
     status: 'running',
     startedAt: Date.now(),
@@ -40,7 +40,7 @@ describe('AgentOrchestratorService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     runner = new MockRunner();
-    service = new AgentOrchestratorService({ monorepoRoot: 'C:\\dev', runner: runner as unknown as ProcessRunner });
+    service = new AgentOrchestratorService({ monorepoRoot: 'V:\\monorepo', runner: runner as unknown as ProcessRunner });
   });
 
   describe('constructor', () => {
@@ -64,7 +64,7 @@ describe('AgentOrchestratorService', () => {
 
     it('marks stdio server healthy when matching process is running in runner', async () => {
       runner.list.mockReturnValue([
-        { cwd: 'C:\\dev\\apps\\desktop-commander-v3', status: 'running' }
+        { cwd: 'V:\\monorepo\\apps\\desktop-commander-v3', status: 'running' }
       ]);
       vi.mocked(existsSync).mockReturnValue(false);
       const results = await service.probeMcpServers();
@@ -122,7 +122,7 @@ describe('AgentOrchestratorService', () => {
       expect(runner.spawn).toHaveBeenCalledWith({
         command: 'pnpm',
         args: ['exec', 'nx', 'build', 'my-app', '--skip-nx-cache'],
-        cwd: 'C:\\dev'
+        cwd: 'V:\\monorepo'
       });
     });
 
@@ -171,7 +171,7 @@ describe('AgentOrchestratorService', () => {
       expect(runner.spawn).toHaveBeenCalledWith({
         command: 'pnpm',
         args: ['nx', 'g', '@vibetech/factory:saas', 'factory-next-app'],
-        cwd: 'C:\\dev',
+        cwd: 'V:\\monorepo',
       });
     });
 

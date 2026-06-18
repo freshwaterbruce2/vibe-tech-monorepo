@@ -87,7 +87,7 @@ describe('ClaudeLauncher', () => {
     await waitFor(() => expect((launch as HTMLButtonElement).disabled).toBe(false));
     await user.click(launch);
     expect(invoke).toHaveBeenCalledWith(expect.objectContaining({
-      cwd: 'C:\\dev\\apps\\nova-agent',
+      cwd: 'V:\\monorepo\\apps\\nova-agent',
       allowedTools: expect.arrayContaining(['Read']),
       permissionMode: 'plan'
     }));

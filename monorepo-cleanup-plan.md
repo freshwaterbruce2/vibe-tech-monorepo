@@ -8,8 +8,8 @@ Optimize workspace performance and disk footprint by terminating stale backgroun
 - [x] Task 2: Remove 1,935+ stale temp/cache entries and 100 dist directories -> Run `pnpm run workspace:cleanup:drift` (executes `scripts/cleanup-stale-artifacts.ps1`). Verify: `pnpm run workspace:cleanup:drift:dry` outputs `Would remove 0 tmp, 0 cache, 0 dist paths`.
 - [x] Task 3: Reclaim 5.83 GB of storage by pruning and reinstalling workspace packages -> Run `pnpm run cleanup:pnpm` (executes `scripts/pnpm-cleanup.ps1`). Verify: Command completes successfully with all `node_modules` restored via a clean `pnpm install`.
 - [x] Task 4: Fix unexpected target gaps in workspace configuration -> 
-  - Add missing `typecheck`, `test`, `build` targets to [desktop-bridge/project.json](file:///C:/dev/desktop-bridge/project.json).
-  - Add missing `test` target to [apps/vibe-reflection/project.json](file:///C:/dev/apps/vibe-reflection/project.json).
+  - Add missing `typecheck`, `test`, `build` targets to [desktop-bridge/project.json](file:///V:/monorepo/desktop-bridge/project.json).
+  - Add missing `test` target to [apps/vibe-reflection/project.json](file:///V:/monorepo/apps/vibe-reflection/project.json).
   - Verify: Run `pnpm run workspace:health` and check that `Unexpected target gaps` is `0` under the sync audit section.
 - [ ] Task 5: Verify workspace health and baseline compilation -> Run `pnpm run quality` and check that linting, typechecking, and builds succeed monorepo-wide.
 

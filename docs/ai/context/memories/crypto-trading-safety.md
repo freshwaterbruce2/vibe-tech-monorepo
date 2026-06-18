@@ -52,7 +52,7 @@ This system trades with REAL MONEY
 Resolve the runtime database from `apps/crypto-enhanced\.env` / `DB_PATH`
 before querying. On this machine it has pointed at
 `D:\databases\crypto-enhanced\trading.db`. Never store trading databases under
-`C:\dev`.
+`V:\monorepo`.
 
 Example:
 
@@ -101,7 +101,7 @@ NO CAPITAL SCALING until "READY TO SCALE"
 - ❌ Bypass pre-commit hooks
 - ❌ Modify risk parameters without approval
 - ❌ Ignore failed orders
-- ❌ Store database in C:\dev
+- ❌ Store database in V:\monorepo
 - ❌ Hardcode API credentials
 
 ## Reference

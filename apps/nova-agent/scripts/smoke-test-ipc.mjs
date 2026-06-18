@@ -155,7 +155,7 @@ async function runSmokeTest() {
                 ws.send(
                     makeMessage('context:update', {
                         project: 'smoke-test',
-                        path: 'C:\\dev\\apps\\nova-agent',
+                        path: 'V:\\monorepo\\apps\\nova-agent',
                         language: 'rust',
                         activity: 'ipc-smoke-test',
                     })

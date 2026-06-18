@@ -28,7 +28,7 @@
         { "path": "$DOCUMENT/**" },
         { "path": "$HOME/**" },
         { "path": "$APPDATA/**" },
-        { "path": "C:\\dev\\**" },
+        { "path": "V:\\monorepo\\**" },
         { "path": "D:\\databases\\**" },
         { "path": "D:\\logs\\**" },
         { "path": "D:\\data\\**" },

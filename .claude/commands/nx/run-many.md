@@ -494,7 +494,7 @@ $ARGUMENTS
 - Respect task dependencies automatically
 - Show real-time progress during execution
 - Cache results for subsequent runs
-- All commands run from C:\dev as base directory
+- All commands run from V:\monorepo as base directory
 - Default parallel tasks: 3 (configurable)
 - Failed tasks don't stop other tasks
 - Results aggregated at completion

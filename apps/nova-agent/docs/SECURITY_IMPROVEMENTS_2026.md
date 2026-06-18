@@ -509,7 +509,7 @@ NOVA Agent → http://localhost:3001/api/openrouter → Proxy Server → OpenRou
 **Proxy Server (.env):**
 
 ```bash
-# Location: C:\dev\backend\openrouter-proxy\.env
+# Location: V:\monorepo\backend\openrouter-proxy\.env
 OPENROUTER_API_KEY=sk-or-v1-your-real-api-key
 PORT=3001
 ```
@@ -517,7 +517,7 @@ PORT=3001
 **NOVA Agent (.env):**
 
 ```bash
-# Location: C:\dev\apps\nova-agent\.env
+# Location: V:\monorepo\apps\nova-agent\.env
 OPENROUTER_BASE_URL=http://localhost:3001/api/openrouter
 OPENROUTER_API_KEY=proxy-handled  # Placeholder (proxy handles auth)
 ```
@@ -535,7 +535,7 @@ OPENROUTER_API_KEY=proxy-handled  # Placeholder (proxy handles auth)
 ### Starting the Proxy Server
 
 ```bash
-cd C:\dev\backend\openrouter-proxy
+cd V:\monorepo\backend\openrouter-proxy
 pnpm install
 pnpm run dev  # Development mode with hot reload
 ```

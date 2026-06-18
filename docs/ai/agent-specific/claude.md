@@ -21,6 +21,6 @@
 
 ## Context Files to Read
 
-1. `C:\dev\WORKSPACE.json`
+1. `V:\monorepo\WORKSPACE.json`
 2. `D:\learning-system\sessions\CURRENT.md`
-3. `C:\dev\docs\ai\RULES.md`
+3. `V:\monorepo\docs\ai\RULES.md`

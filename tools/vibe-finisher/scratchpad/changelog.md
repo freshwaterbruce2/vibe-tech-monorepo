@@ -5,5 +5,5 @@
 ### Session Start
 
 - Vibe Finisher initialized
-- Initial backup created: C:\dev\_backups\vibe-code-studio_pre-finisher_20260109_122659.zip
+- Initial backup created: V:\monorepo\_backups\vibe-code-studio_pre-finisher_20260109_122659.zip
 - TypeScript errors found: 305

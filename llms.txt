@@ -1,6 +1,6 @@
 # VibeTech Monorepo
 
-> A multi-application monorepo (30+ apps, 25+ shared packages) coordinated via Nx 22.6 + pnpm 10.33. Spans AI agent infrastructure, developer tools, consumer apps, MCP servers, and a Python crypto trading system. Source code on `C:\dev`; all runtime data (databases, logs, learning system) on `D:\`. Windows 11 only.
+> A multi-application monorepo (30+ apps, 25+ shared packages) coordinated via Nx 22.6 + pnpm 10.33. Spans AI agent infrastructure, developer tools, consumer apps, MCP servers, and a Python crypto trading system. Source code on `V:\monorepo`; all runtime data (databases, logs, learning system) on `D:\`. Windows 11 only.
 
 The monorepo is organized into three pillars: AI agent infrastructure (LATS planner, episodic + semantic + RAG memory, MCP server ecosystem), developer tools (Nova Agent, Vibe Code Studio, VTDE shell, Vibetech Command Center), and consumer/business apps (Vibe Tutor, Vibe Shop, Vibe Justice, business booking, invoice SaaS). Code is TypeScript-first with Python for crypto and Rust/MSVC for Tauri desktop apps.
 
@@ -18,7 +18,7 @@ Files an agent should consult before doing any work in this repo.
 
 Canonical rules live in `.claude/rules/`. These are mandatory; violations block commits.
 
-- [.claude/rules/paths-policy.md](.claude/rules/paths-policy.md): Code on `C:\dev`, all data on `D:\`. Never mix.
+- [.claude/rules/paths-policy.md](.claude/rules/paths-policy.md): Code on `V:\monorepo`, all data on `D:\`. Never mix.
 - [.claude/rules/database-storage.md](.claude/rules/database-storage.md): All SQLite/LanceDB on `D:\databases\`; use env var `DATABASE_PATH`, never hardcode paths
 - [.claude/rules/no-duplicates.md](.claude/rules/no-duplicates.md): Search before creating any file or feature; modify-first default
 - [.claude/rules/no-mock-or-placeholder-code.md](.claude/rules/no-mock-or-placeholder-code.md): Mock/stub/TODO code is prohibited outside test files
@@ -53,7 +53,7 @@ Never run bare `pnpm install` from inside a project directory; use `--filter` fr
 ## Architecture
 
 ```
-C:\dev\               source code (Git)
+V:\monorepo\               source code (Git)
 ├── apps\             30+ applications (AI, MCP, web, mobile, desktop)
 ├── packages\         25+ shared packages (memory, ui, mcp-core, types)
 ├── backend\          standalone backend services

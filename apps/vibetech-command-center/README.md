@@ -120,7 +120,7 @@ Copy `.env.example` to `.env` for local development.
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `VIBETECH_COMMAND_CENTER_WS_PORT` | `3210` | WebSocket hub port for renderer↔main stream communication |
-| `DB_EXPLORER_ROOTS` | `D:\databases;C:\dev` | Semicolon-separated list of allowed DB roots for DB Explorer |
+| `DB_EXPLORER_ROOTS` | `D:\databases;V:\monorepo` | Semicolon-separated list of allowed DB roots for DB Explorer |
 | `NODE_ENV` | `development` | Node environment |
 
 ---

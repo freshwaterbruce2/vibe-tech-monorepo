@@ -3,7 +3,7 @@ use std::{path::PathBuf, time::Duration};
 use tokio::{process::Command, time::timeout};
 use tracing::{error, info};
 
-const DEFAULT_ORCHESTRATOR_SCRIPT: &str = "C:\\dev\\tools\\nova_orchestrator.py";
+const DEFAULT_ORCHESTRATOR_SCRIPT: &str = "V:\\monorepo\\tools\\nova_orchestrator.py";
 const MAX_PROMPT_BYTES: usize = 16 * 1024;
 const MAX_OUTPUT_BYTES: usize = 64 * 1024;
 const MAX_RUNTIME_SECONDS: u64 = 120;

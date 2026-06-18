@@ -161,7 +161,7 @@ The command-center app hosts the VibeTech Control Plane — a single-pane-of-gla
 
 # Build, Test & Development Commands
 
-Run commands from `C:\dev` unless a project-specific document says otherwise.
+Run commands from `V:\monorepo` unless a project-specific document says otherwise.
 
 ```powershell
 pnpm install
@@ -281,7 +281,7 @@ The monorepo uses a multi-layered testing approach:
 - **Code Injection**: ESLint bans `eval`, `no-implied-eval`, `no-new-func`, and `no-script-url`.
 - **Crypto / Trading**: `apps/crypto-enhanced` is **observation-only** unless explicit task-specific authorization is given. Never execute buy, sell, or trade actions without user confirmation. Circuit breakers and position limits are enforced.
 - **Secrets**: Never commit API keys. Use `.env.example` for templates. Trading state and databases live on `D:\`.
-- **Path Safety**: Code lives on `C:\dev`; runtime data (databases, logs, learning artifacts) lives on `D:\`. Any code writing files must default to `D:\` locations.
+- **Path Safety**: Code lives on `V:\monorepo`; runtime data (databases, logs, learning artifacts) lives on `D:\`. Any code writing files must default to `D:\` locations.
 - **Database Safety**: SQLite on `D:\databases` with WAL mode. Parameterized queries only. Explicit migrations required.
 
 # Deployment & CI/CD
@@ -323,13 +323,13 @@ The monorepo uses a multi-layered testing approach:
 
 # Workspace Snapshot
 
-- Repository root: `C:\dev`.
+- Repository root: `V:\monorepo`.
 - Repository host: GitHub, `https://github.com/freshwaterbruce2/vibe-tech-monorepo.git`.
 - Package manager: `pnpm@10.33.0` only.
 - Node: `>=22.0.0`; current local toolchain is Node 22.x.
 - Build system: `nx@22.7.1` with apps in `apps/` and libraries in `packages/`.
 - Primary languages: TypeScript, JavaScript, Python, Rust, and React.
-- Shared runtime data, logs, databases, and learning artifacts live on `D:\`, not under `C:\dev`.
+- Shared runtime data, logs, databases, and learning artifacts live on `D:\`, not under `V:\monorepo`.
 
 Canonical workspace references:
 
@@ -373,7 +373,7 @@ verified. The root working tree is the default source of truth.
   generator edits or generated app verification.
 - Antigravity MCP config is unified for GUI and CLI at
   `C:\Users\fresh_zxae3v6\.gemini\config\mcp_config.json`.
-- Keep `nx-mcp` enabled for `C:/dev` and prefer Nx graph/affected queries over
+- Keep `nx-mcp` enabled for `V:\monorepo` and prefer Nx graph/affected queries over
   broad manual searches when determining downstream impact.
 - If Git worktree support sets `extensions.worktreeConfig=true`, ensure the
   local repo config also has `core.repositoryformatversion=1` before launching
@@ -411,7 +411,7 @@ Before changing repair, maintenance, database, memory, or hook flows:
 
 - Validate the current path against `D:\databases\DB_INVENTORY.md`.
 - Do not recreate retired databases to satisfy stale scripts.
-- Prefer updating existing maintenance scripts under `C:\dev\scripts`.
+- Prefer updating existing maintenance scripts under `V:\monorepo\scripts`.
 - Treat `D:\learning-system` as local code/docs/artifact state, not as the home of live runtime databases.
 
 # Safety Protocols

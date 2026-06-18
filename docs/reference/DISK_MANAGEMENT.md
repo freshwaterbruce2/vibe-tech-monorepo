@@ -11,10 +11,10 @@
 
 ```powershell
 # Run the quick cleanup script
-C:\dev\tools\scripts\Quick-Cleanup.ps1
+V:\monorepo\tools\scripts\Quick-Cleanup.ps1
 
 # Or run with auto-confirm
-C:\dev\tools\scripts\Quick-Cleanup.ps1 -Auto
+V:\monorepo\tools\scripts\Quick-Cleanup.ps1 -Auto
 ```
 
 ### Check Disk Usage
@@ -56,10 +56,10 @@ For projects you're not actively working on:
 
 ```powershell
 # Move a project to D:\
-Move-Item -Path "C:\dev\apps\old-project" -Destination "D:\archived-projects\old-project"
+Move-Item -Path "V:\monorepo\apps\old-project" -Destination "D:\archived-projects\old-project"
 
 # Create a symbolic link if needed
-New-Item -ItemType SymbolicLink -Path "C:\dev\apps\old-project" -Target "D:\archived-projects\old-project"
+New-Item -ItemType SymbolicLink -Path "V:\monorepo\apps\old-project" -Target "D:\archived-projects\old-project"
 ```
 
 ## Space-Saving Tips
@@ -74,7 +74,7 @@ New-Item -ItemType SymbolicLink -Path "C:\dev\apps\old-project" -Target "D:\arch
 
 ```bash
 # Before starting work on a project
-cd C:\dev\apps\my-project
+cd V:\monorepo\apps\my-project
 pnpm install  # Reinstalls dependencies
 
 # After finishing work (optional)
@@ -83,10 +83,10 @@ rm -rf node_modules  # PowerShell: Remove-Item node_modules -Recurse -Force
 
 ## Monitoring Tools Created
 
-- `C:\dev\tools\scripts\Get-DevMetrics-Fast.ps1` - Quick disk usage check
-- `C:\dev\tools\scripts\Quick-Cleanup.ps1` - Automated cleanup script
-- `C:\dev\tools\scripts\Emergency-Cleanup.ps1` - Emergency space recovery
-- `C:\dev\tools\scripts\Analyze-DiskSpace.ps1` - Detailed space analysis
+- `V:\monorepo\tools\scripts\Get-DevMetrics-Fast.ps1` - Quick disk usage check
+- `V:\monorepo\tools\scripts\Quick-Cleanup.ps1` - Automated cleanup script
+- `V:\monorepo\tools\scripts\Emergency-Cleanup.ps1` - Emergency space recovery
+- `V:\monorepo\tools\scripts\Analyze-DiskSpace.ps1` - Detailed space analysis
 
 ## Red Flags to Watch For
 

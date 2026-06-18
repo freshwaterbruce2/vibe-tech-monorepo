@@ -46,7 +46,7 @@ function truncateToBudget(parts, budgetChars) {
 function getGitContext() {
   try {
     const { execSync } = require('child_process');
-    const branch = execSync('git branch --show-current', { encoding: 'utf8', cwd: 'C:/dev' }).trim();
+    const branch = execSync('git branch --show-current', { encoding: 'utf8', cwd: 'V:/monorepo' }).trim();
     return { branch };
   } catch {
     return { branch: 'unknown' };

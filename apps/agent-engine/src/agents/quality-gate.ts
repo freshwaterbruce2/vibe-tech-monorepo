@@ -24,7 +24,7 @@ export async function runQualityGate(target = 'affected'): Promise<void> {
     }
   }
 
-  const evaluation = new EvaluationService('C:\\dev', 'scripted');
+  const evaluation = new EvaluationService('V:\\monorepo', 'scripted');
   const suites = await evaluation.runRepoLocalSuites();
   const benchmark = new BenchmarkService().createReport(suites);
 

@@ -7,8 +7,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$ProxyDir = "C:\dev\backend\openrouter-proxy"
-$NovaEnvFile = "C:\dev\apps\nova-agent\src-tauri\.env"
+$ProxyDir = "V:\monorepo\backend\openrouter-proxy"
+$NovaEnvFile = "V:\monorepo\apps\nova-agent\src-tauri\.env"
 $ProxyEnvFile = "$ProxyDir\.env"
 
 function Write-ColorOutput {
@@ -87,7 +87,7 @@ NOVA_ENABLE_CODE_EXEC=true
 
 # OpenRouter Configuration (via local proxy)
 # The proxy server at localhost:3001 handles authentication
-# Real API key is stored in C:\dev\backend\openrouter-proxy\.env
+# Real API key is stored in V:\monorepo\backend\openrouter-proxy\.env
 OPENROUTER_BASE_URL=http://localhost:3001/api/openrouter
 OPENROUTER_API_KEY=proxy-handled
 "@
@@ -167,7 +167,7 @@ OPENROUTER_API_KEY=proxy-handled
     Write-ColorOutput "     cd $ProxyDir" "Gray"
     Write-ColorOutput "     pnpm run dev" "Gray"
     Write-ColorOutput "`n  2. Start NOVA Agent:" "White"
-    Write-ColorOutput "     cd C:\dev\apps\nova-agent" "Gray"
+    Write-ColorOutput "     cd V:\monorepo\apps\nova-agent" "Gray"
     Write-ColorOutput "     pnpm tauri dev" "Gray"
     
     Write-ColorOutput "`n📚 Documentation:" "Cyan"

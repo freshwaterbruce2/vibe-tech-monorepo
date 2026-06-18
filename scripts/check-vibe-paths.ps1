@@ -143,9 +143,9 @@ if ($FixPermissions) {
     Add-Warning '-FixPermissions is deprecated; this script is now read-only and reports policy drift only.'
 }
 
-Write-Host "`n[1/3] Checking canonical storage roots..." -ForegroundColor Yellow
+Write-Host "[1/3] Checking canonical storage roots..." -ForegroundColor Yellow
 foreach ($entry in @(
-        @{ Path = 'C:\dev'; Label = 'source root' },
+        @{ Path = 'V:\monorepo'; Label = 'source root' },
         @{ Path = 'D:\learning-system'; Label = 'learning-system root' },
         @{ Path = 'D:\databases'; Label = 'databases root' },
         @{ Path = 'D:\logs'; Label = 'logs root' },
@@ -154,12 +154,12 @@ foreach ($entry in @(
     Test-RequiredPath -Path $entry.Path -Label $entry.Label
 }
 
-Write-Host "`n[2/3] Verifying deprecated roots are absent..." -ForegroundColor Yellow
+Write-Host "[2/3] Verifying deprecated roots are absent..." -ForegroundColor Yellow
 foreach ($entry in @(
         @{ Path = 'D:\learning'; Label = 'deprecated D:\learning root' },
-        @{ Path = 'C:\dev\data'; Label = 'deprecated C:\dev\data root' },
-        @{ Path = 'C:\dev\logs'; Label = 'deprecated C:\dev\logs root' },
-        @{ Path = 'C:\dev\databases'; Label = 'deprecated C:\dev\databases root' }
+        @{ Path = 'V:\monorepo\data'; Label = 'deprecated V:\monorepo\data root' },
+        @{ Path = 'V:\monorepo\logs'; Label = 'deprecated V:\monorepo\logs root' },
+        @{ Path = 'V:\monorepo\databases'; Label = 'deprecated V:\monorepo\databases root' }
     )) {
     Test-DeprecatedPathMissing -Path $entry.Path -Label $entry.Label
 }
@@ -175,18 +175,18 @@ $deprecatedRules = @(
         IgnoreLiteral = 'D:\learning-system'
     },
     @{
-        Label = 'deprecated C:\dev\data path'
-        Literal = 'C:\dev\data'
+        Label = 'deprecated V:\monorepo\data path'
+        Literal = 'V:\monorepo\data'
         IgnoreLiteral = $null
     },
     @{
-        Label = 'deprecated C:\dev\logs path'
-        Literal = 'C:\dev\logs'
+        Label = 'deprecated V:\monorepo\logs path'
+        Literal = 'V:\monorepo\logs'
         IgnoreLiteral = $null
     },
     @{
-        Label = 'deprecated C:\dev\databases path'
-        Literal = 'C:\dev\databases'
+        Label = 'deprecated V:\monorepo\databases path'
+        Literal = 'V:\monorepo\databases'
         IgnoreLiteral = $null
     }
 )

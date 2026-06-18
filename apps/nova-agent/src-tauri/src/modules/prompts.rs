@@ -71,7 +71,7 @@ fn resolve_seed_dir() -> Option<PathBuf> {
         }
     }
 
-    let hardcoded = PathBuf::from(r"C:\dev\apps\nova-agent\prompts");
+    let hardcoded = PathBuf::from(r"V:\monorepo\apps\nova-agent\prompts");
     if hardcoded.is_dir() {
         return Some(hardcoded);
     }

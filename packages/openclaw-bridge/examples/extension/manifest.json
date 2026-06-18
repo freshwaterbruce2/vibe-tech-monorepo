@@ -23,7 +23,7 @@
       "usage": "/files [path]",
       "examples": [
         "/files",
-        "/files C:\\dev",
+        "/files V:\\monorepo",
         "/files /home/user/projects"
       ],
       "handler": "commands/files.js",

@@ -22,7 +22,7 @@ try {
     if (Test-Path $stateFile) {
         $state = Get-Content $stateFile -Raw | ConvertFrom-Json -ErrorAction Stop
         if ($state.nodeId) {
-            & node C:\dev\packages\agent-lats\dist\cli.js backpropagate `
+            & node V:\monorepo\packages\agent-lats\dist\cli.js backpropagate `
                 --node $state.nodeId --success true 2>$null
         }
         Remove-Item $stateFile -Force -ErrorAction SilentlyContinue

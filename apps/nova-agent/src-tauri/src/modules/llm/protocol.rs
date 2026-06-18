@@ -187,7 +187,7 @@ pub(super) fn get_tools() -> Vec<Tool> {
                         },
                         "project_path": {
                             "type": "string",
-                            "description": "Absolute path to the project (e.g., 'C:\\dev\\apps\\vibeblox')"
+                            "description": "Absolute path to the project (e.g., 'V:\\monorepo\\apps\\vibeblox')"
                         }
                     },
                     "required": ["title", "description", "project_path"]

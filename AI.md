@@ -2,19 +2,19 @@
 
 Single source of truth for workspace behavior, paths, rules, workflow, and agents.
 
-Last Updated: 2026-04-29
+Last Updated: 2026-06-17
 System: Windows (Win32)
-Repository Root: C:\dev
+Repository Root: V:\monorepo
 
 ---
 
 ## 1) Paths and data storage (non-negotiable)
 
-**Code lives in C:\dev.** **Data lives in D:\.** Never mix.
+**Code lives in V:\monorepo.** **Data lives in D:\.** Never mix.
 
 Approved paths:
 
-- Code: C:\dev\
+- Code: V:\monorepo\
 - Databases: D:\databases\<project>
 - Logs: D:\logs\<project>
 - Datasets: D:\data\
@@ -23,7 +23,7 @@ Approved paths:
 Deprecated paths:
 
 - D:\learning\ (use D:\learning-system\)
-- C:\dev\data, C:\dev\logs, C:\dev\databases
+- V:\monorepo\data, V:\monorepo\logs, V:\monorepo\databases
 
 Enforcement:
 
@@ -70,19 +70,19 @@ Process:
 
 Single source of truth for workspace behavior, paths, rules, workflow, and agents.
 
-Last Updated: 2026-04-29
+Last Updated: 2026-06-17
 System: Windows (Win32)
-Repository Root: C:\dev
+Repository Root: V:\monorepo
 
 ---
 
 ## 1) Paths and data storage (non-negotiable)
 
-**Code lives in C:\dev.** **Data lives in D:\.** Never mix.
+**Code lives in V:\monorepo.** **Data lives in D:\.** Never mix.
 
 Approved paths:
 
-- Code: C:\dev\
+- Code: V:\monorepo\
 - Databases: D:\databases\<project>
 - Logs: D:\logs\<project>
 - Datasets: D:\data\
@@ -91,7 +91,7 @@ Approved paths:
 Deprecated paths:
 
 - D:\learning\ (use D:\learning-system\)
-- C:\dev\data, C:\dev\logs, C:\dev\databases
+- V:\monorepo\data, V:\monorepo\logs, V:\monorepo\databases
 
 Enforcement:
 
@@ -190,7 +190,7 @@ Purpose: automatic capture of tool usage and pattern recognition.
 Key locations:
 - Database: D:\databases\agent_learning.db
 - Logs: D:\learning-system\logs\tool-usage-YYYY-MM-DD.log
-- Hooks: C:\dev\.claude\hooks\pre-tool-use-stdin.ps1 and post-tool-use-stdin.ps1
+- Hooks: V:\monorepo\.claude\hooks\pre-tool-use-stdin.ps1 and post-tool-use-stdin.ps1
 
 Core Schema Tables:
 - `agent_executions`: Telemetry logs of agent timing, tool usage (JSON), and task success.
@@ -231,11 +231,11 @@ See: `.claude/rules/web-search-grounding-evaluation-summary.md` for complete det
 
 ## 6) Documentation policy
 
-Canonical rules live here: C:\dev\AI.md
+Canonical rules live here: V:\monorepo\AI.md
 
 Allowed lightweight pointers:
 
-- C:\dev\CLAUDE.md
+- V:\monorepo\CLAUDE.md
 - docs/ai/WORKSPACE.md
 
 Project-specific overrides only when necessary:

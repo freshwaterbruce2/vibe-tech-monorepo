@@ -21,12 +21,12 @@
 
 ## Project Structure & Data
 
-- **Apps**: `C:\dev\apps\`
-- **Packages**: `C:\dev\packages\`
-- **Tools**: `C:\dev\tools\`
+- **Apps**: `V:\monorepo\apps\`
+- **Packages**: `V:\monorepo\packages\`
+- **Tools**: `V:\monorepo\tools\`
 - **Data/Logs/DB**: `D:\` (Strictly enforced. Do not write large artifacts to C:)
 - **Learning System**: `D:\learning-system\`
-- **Workspace Configuration**: `C:\dev\WORKSPACE.json` (Read this first on session start).
+- **Workspace Configuration**: `V:\monorepo\WORKSPACE.json` (Read this first on session start).
 
 ## Environment & Build Protocols
 
@@ -46,12 +46,12 @@
 
 1. **Sequential Turns**: Strictly follow `user` -> `model` -> `user`.
 2. **Context Awareness**: Check `WORKSPACE.json` and `CURRENT.md` to understand current state and focus.
-3. **Artifacts**: Created in conversation artifacts directory, but reference `D:\` for persistent storage or `C:\dev` for source code.
+3. **Artifacts**: Created in conversation artifacts directory, but reference `D:\` for persistent storage or `V:\monorepo` for source code.
 
 ## What NOT To Do
 
 - Don't mix npm/pnpm commands
-- Don't write data to C:\dev (use D:\)
+- Don't write data to V:\monorepo (use D:\)
 - Don't create files >600 lines
 - Don't skip backups before refactors
 - Don't use `&&` for command chaining (use `;` in PowerShell)

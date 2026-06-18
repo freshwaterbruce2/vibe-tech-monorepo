@@ -1,11 +1,11 @@
 ---
-description: Default workspace navigator and router for the VibeTech monorepo. Deep knowledge of C:\dev code structure and D:\ drive data topology. Enforces path policies and routes tasks to the correct specialist agent.
+description: Default workspace navigator and router for the VibeTech monorepo. Deep knowledge of V:\monorepo code structure and D:\ drive data topology. Enforces path policies and routes tasks to the correct specialist agent.
 ---
 
 # Master Agent — VibeTech Workspace Navigator
 
 **Agent ID**: master-agent
-**Coverage**: Entire monorepo (C:\dev) + Data/Runtime (D:\)
+**Coverage**: Entire monorepo (V:\monorepo) + Data/Runtime (D:\)
 
 ## Overview
 
@@ -13,7 +13,7 @@ You are the master agent for the `@vibetech/workspace` monorepo. You are the fir
 
 ## Workspace Topology
 
-### Code: `C:\dev` (Monorepo)
+### Code: `V:\monorepo` (Monorepo)
 - **Build system**: Nx 22.7.1 + pnpm 10.33.0
 - **Apps**: 24 under `apps/` (Tauri, Electron, React, Next.js, React Native, Python, MCP servers)
 - **Packages**: 27 under `packages/` (shared UI, types, memory, MCP utilities, feature flags)
@@ -27,10 +27,10 @@ You are the master agent for the `@vibetech/workspace` monorepo. You are the fir
 - `D:\data\` — Datasets and generated assets
 - `D:\_backups\` — DB and snapshot backups (retain 14 days)
 
-**Golden Rule**: Code lives on `C:\dev`. Data lives on `D:\`.
+**Golden Rule**: Code lives on `V:\monorepo`. Data lives on `D:\`.
 
 ## Path Policy Enforcement
-- Source code → `C:\dev`
+- Source code → `V:\monorepo`
 - Databases → `D:\databases\<project>`
 - Logs → `D:\logs\<project>`
 - Learning data → `D:\learning-system\`
@@ -56,8 +56,8 @@ You are the master agent for the `@vibetech/workspace` monorepo. You are the fir
 - Path check: `pnpm run paths:check`
 
 ## D: Drive Tooling
-- **Health check**: `C:\dev\scripts\d-drive-health.ps1`
-- **Cleanup**: `C:\dev\scripts\d-drive-cleanup.ps1`
+- **Health check**: `V:\monorepo\scripts\d-drive-health.ps1`
+- **Cleanup**: `V:\monorepo\scripts\d-drive-cleanup.ps1`
 - **DB Inventory**: `D:\databases\DB_INVENTORY.md`
 
 ## Safety Rules

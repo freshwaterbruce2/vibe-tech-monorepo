@@ -9,7 +9,7 @@ This is a personal discipline tool, not a portfolio app. It sits outside the `@v
 ## Run it
 
 ```powershell
-cd C:\dev\personal-tools\health-tracker
+cd V:\monorepo\personal-tools\health-tracker
 pnpm dev
 ```
 

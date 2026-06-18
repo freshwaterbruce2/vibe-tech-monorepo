@@ -29,7 +29,7 @@ Read this before changing any paths.
 ## Approved paths
 
 ```
-C:\dev\                    # Source code ONLY
+V:\monorepo\                    # Source code ONLY
 D:\learning-system\        # Learning data (NEW as of 2025-12-24)
 D:\databases\              # SQLite databases
 D:\logs\                   # Application logs
@@ -42,9 +42,9 @@ D:\data\                   # Other data files
 
 ```
 D:\learning\               # DEPRECATED 2025-12-24 → Use D:\learning-system\
-C:\dev\data\               # NEVER store data here → Use D:\data\
-C:\dev\logs\               # NEVER store logs here → Use D:\logs\
-C:\dev\databases\          # NEVER store DB here → Use D:\databases\
+V:\monorepo\data\               # NEVER store data here → Use D:\data\
+V:\monorepo\logs\               # NEVER store logs here → Use D:\logs\
+V:\monorepo\databases\          # NEVER store DB here → Use D:\databases\
 ```
 
 ---

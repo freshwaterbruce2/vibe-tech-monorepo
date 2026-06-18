@@ -164,7 +164,7 @@ function New-WorkerScript {
 `$logFile    = Join-Path `$LogDir    "`$CellName.log"
 
 # Always run claude from the repo root so relative paths in tasks resolve correctly
-Set-Location 'C:\dev'
+Set-Location 'V:\monorepo'
 
 # Ensure DLQ dir exists
 if (-not (Test-Path `$DlqDir)) { New-Item -ItemType Directory -Path `$DlqDir -Force | Out-Null }
@@ -232,7 +232,7 @@ while (`$true) {
         Append-Log "[`$dlqTs] `$taskText"
         [ordered]@{ cell = `$CellName; task = `$taskText; failures = `$strikes; escalatedAt = (Get-Date -Format 'o') } |
             ConvertTo-Json | Set-Content (Join-Path `$DlqDir "$(Get-Date -Format 'yyyyMMdd-HHmmssfff').json") -Encoding UTF8
-        & 'C:\dev\scripts\New-Issue.ps1' -Title "DLQ: task failed 3 times on `$CellName" ``
+        & 'V:\monorepo\scripts\New-Issue.ps1' -Title "DLQ: task failed 3 times on `$CellName" ``
             -Description `$taskText.Substring(0,[Math]::Min(200,`$taskText.Length)) ``
             -Severity 'high' -FoundBy `$CellName | Out-Null
         continue
@@ -257,7 +257,7 @@ while (`$true) {
         Append-Log `$output
 
         # Auto-log any __ISSUE__ markers
-        `$issueScript = 'C:\dev\scripts\New-Issue.ps1'
+        `$issueScript = 'V:\monorepo\scripts\New-Issue.ps1'
         if (Test-Path `$issueScript) {
             @(`$output) | Where-Object { `$_ -match '^__ISSUE__\s*\{' } | ForEach-Object {
                 try {

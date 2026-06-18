@@ -6,7 +6,7 @@ describe('resolveServerCommand', () => {
     const resolved = resolveServerCommand(
       {
         command: 'node',
-        args: ['C:/dev/apps/desktop-commander-v3/dist/mcp.js'],
+        args: ['V:/monorepo/apps/desktop-commander-v3/dist/mcp.js'],
         env: {},
       },
       {
@@ -19,7 +19,7 @@ describe('resolveServerCommand', () => {
     expect(resolved.command).toBe(
       'C:/Users/test/AppData/Local/Volta/tools/image/node/22.21.1/node.exe'
     );
-    expect(resolved.args).toEqual(['C:/dev/apps/desktop-commander-v3/dist/mcp.js']);
+    expect(resolved.args).toEqual(['V:/monorepo/apps/desktop-commander-v3/dist/mcp.js']);
   });
 
   it('rewrites bare python commands to py.exe on Windows when available', () => {

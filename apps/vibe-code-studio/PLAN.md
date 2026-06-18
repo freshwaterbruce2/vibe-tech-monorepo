@@ -6,10 +6,10 @@ Review Vibe Code Studio beyond the previous baseline, package a fresh Windows de
 
 ## Context
 
-- Target repo: `C:\dev`
-- Target app: `C:\dev\apps\vibe-code-studio`
+- Target repo: `V:\monorepo`
+- Target app: `V:\monorepo\apps\vibe-code-studio`
 - Remote host: `myfirstbuild`
-- Git on the desktop has a known broken global config path warning; use `GIT_CONFIG_GLOBAL=NUL`, `GIT_CONFIG_NOSYSTEM=1`, and `XDG_CONFIG_HOME=C:\dev\.gitconfig-empty` when needed.
+- Git on the desktop has a known broken global config path warning; use `GIT_CONFIG_GLOBAL=NUL`, `GIT_CONFIG_NOSYSTEM=1`, and `XDG_CONFIG_HOME=V:\monorepo\.gitconfig-empty` when needed.
 - Avoid recursive traversal through `node_modules` because workspace junctions can hit Windows untrusted mount-point errors.
 - Nx Cloud is unavailable/disabled for this workspace; use `NX_NO_CLOUD=true` and rely on local validation.
 
@@ -53,7 +53,7 @@ Review Vibe Code Studio beyond the previous baseline, package a fresh Windows de
 - Rustup was registered but missing from its old PATH location; reinstall put working Rust/Cargo under `D:\Data\Tools\.cargo\bin`.
 - Nx Cloud is down/disabled; local Nx commands are the validation source of truth.
 - Markdown preview still renders worker-produced HTML through `dangerouslySetInnerHTML`; the worker does not fully sanitize arbitrary markdown before HTML generation. This did not block local install but remains a security hardening item.
-- Tauri capabilities intentionally expose local developer-tool power: shell/PTY and broad file scopes including `C:\dev` and selected `D:\` paths. This matches the desktop IDE use case but should not be treated as sandboxed untrusted-content execution.
+- Tauri capabilities intentionally expose local developer-tool power: shell/PTY and broad file scopes including `V:\monorepo` and selected `D:\` paths. This matches the desktop IDE use case but should not be treated as sandboxed untrusted-content execution.
 - Test output includes non-failing warnings: styled-components forwards `severity` to DOM in `CodeQualityPanel`, and one React test emits an `act(...)` warning.
 - Build output includes a non-failing Vite chunking warning for mixed static/dynamic imports of `@tauri-apps/plugin-fs`.
 - Monaco worker payloads are large, especially the TypeScript worker; acceptable for now but worth future performance review.

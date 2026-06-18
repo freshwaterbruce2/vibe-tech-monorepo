@@ -151,7 +151,7 @@ export function registerIpcHandlers(c: ServiceContainer): void {
 
   ipcMain.handle(IPC_CHANNELS.META_INFO, async (): Promise<IpcResult<{ version: string; monorepoRoot: string; wsPort: number }>> => {
     try {
-      return ok({ version: '0.1.0', monorepoRoot: 'C:\\dev', wsPort: c.wsPort });
+      return ok({ version: '0.1.0', monorepoRoot: 'V:\\monorepo', wsPort: c.wsPort });
     } catch (e) { return err(e, 'META_INFO_FAILED'); }
   });
 

@@ -111,7 +111,7 @@ describe('NxAffectedService', () => {
         nodes: { 'app-a': { type: 'app', data: { root: 'apps/app-a', tags: [] } } }
       });
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p1 = svc.getAffected(false);
       flushSpawns(0);
       await p1;
@@ -131,7 +131,7 @@ describe('NxAffectedService', () => {
         nodes: { 'app-a': { type: 'app', data: { root: 'apps/app-a', tags: [] } } }
       });
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p1 = svc.getAffected(false);
       flushSpawns(0);
       await p1;
@@ -149,7 +149,7 @@ describe('NxAffectedService', () => {
         nodes: { 'app-a': { type: 'app', data: { root: 'apps/app-a', tags: [] } } }
       });
 
-      const svc = new ExposedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new ExposedService({ monorepoRoot: 'V:\\monorepo' });
       const before = Date.now();
       svc.setCacheTs(before - 20_000);
 
@@ -172,7 +172,7 @@ describe('NxAffectedService', () => {
         }
       });
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(0);
       const result = await p;
@@ -198,7 +198,7 @@ describe('NxAffectedService', () => {
         }
       });
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(0);
       const result = await p;
@@ -216,7 +216,7 @@ describe('NxAffectedService', () => {
         }
       });
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(0);
       const result = await p;
@@ -236,7 +236,7 @@ describe('NxAffectedService', () => {
         }
       });
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(0);
       const result = await p;
@@ -254,7 +254,7 @@ describe('NxAffectedService', () => {
         }
       });
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(0);
       const result = await p;
@@ -283,10 +283,10 @@ describe('NxAffectedService', () => {
           app6: [{ source: 'app6', target: 'risky-lib' }],
         }
       });
-      missingPaths.add(join('C:\\dev', 'packages/risky-lib', 'dist'));
-      missingPaths.add(join('C:\\dev', 'packages/risky-lib', 'coverage'));
+      missingPaths.add(join('V:\\monorepo', 'packages/risky-lib', 'dist'));
+      missingPaths.add(join('V:\\monorepo', 'packages/risky-lib', 'coverage'));
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(0);
       const result = await p;
@@ -318,10 +318,10 @@ describe('NxAffectedService', () => {
         }
       });
       // CROSS_TIER_1 + HIGH_FAN_OUT + BUILD_STALE + NO_TEST_COVERAGE = 4 flags = 20 points
-      missingPaths.add(join('C:\\dev', 'packages/doomed', 'dist'));
-      missingPaths.add(join('C:\\dev', 'packages/doomed', 'coverage'));
+      missingPaths.add(join('V:\\monorepo', 'packages/doomed', 'dist'));
+      missingPaths.add(join('V:\\monorepo', 'packages/doomed', 'coverage'));
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(0);
       const result = await p;
@@ -346,7 +346,7 @@ describe('NxAffectedService', () => {
         }
       });
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(0);
       const result = await p;
@@ -370,7 +370,7 @@ describe('NxAffectedService', () => {
         },
       });
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(0);
       const result = await p;
@@ -391,7 +391,7 @@ describe('NxAffectedService', () => {
         }
       });
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(0);
       const result = await p;
@@ -421,7 +421,7 @@ describe('NxAffectedService', () => {
         }
       });
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(0);
       const result = await p;
@@ -449,7 +449,7 @@ describe('NxAffectedService', () => {
         }
       });
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(0);
       const result = await p;
@@ -464,9 +464,9 @@ describe('NxAffectedService', () => {
           'no-dist': { type: 'app', data: { root: 'apps/no-dist', tags: [] } }
         }
       });
-      missingPaths.add(join('C:\\dev', 'apps/no-dist', 'dist'));
+      missingPaths.add(join('V:\\monorepo', 'apps/no-dist', 'dist'));
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(0);
       const result = await p;
@@ -481,9 +481,9 @@ describe('NxAffectedService', () => {
           'old-dist': { type: 'app', data: { root: 'apps/old-dist', tags: [] } }
         }
       });
-      stalePaths.add(join('C:\\dev', 'apps/old-dist', 'dist'));
+      stalePaths.add(join('V:\\monorepo', 'apps/old-dist', 'dist'));
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(0);
       const result = await p;
@@ -499,7 +499,7 @@ describe('NxAffectedService', () => {
         }
       });
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(0);
       const result = await p;
@@ -521,9 +521,9 @@ describe('NxAffectedService', () => {
           },
         },
       });
-      missingPaths.add(join('C:\\dev', 'apps/vibetech-command-center', 'dist'));
+      missingPaths.add(join('V:\\monorepo', 'apps/vibetech-command-center', 'dist'));
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(0);
       const result = await p;
@@ -545,9 +545,9 @@ describe('NxAffectedService', () => {
           },
         },
       });
-      missingPaths.add(join('C:\\dev', 'apps/vibetech-command-center', 'out'));
+      missingPaths.add(join('V:\\monorepo', 'apps/vibetech-command-center', 'out'));
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(0);
       const result = await p;
@@ -562,9 +562,9 @@ describe('NxAffectedService', () => {
           'no-cov': { type: 'app', data: { root: 'apps/no-cov', tags: [] } }
         }
       });
-      missingPaths.add(join('C:\\dev', 'apps/no-cov', 'coverage'));
+      missingPaths.add(join('V:\\monorepo', 'apps/no-cov', 'coverage'));
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(0);
       const result = await p;
@@ -580,7 +580,7 @@ describe('NxAffectedService', () => {
         }
       });
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(0);
       const result = await p;
@@ -593,7 +593,7 @@ describe('NxAffectedService', () => {
     it('throws descriptive error when nx command exits non-zero', async () => {
       buildGraph({ affected: ['a'], nodes: { a: { type: 'app', data: { root: 'apps/a' } } } });
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(1);
 
@@ -604,7 +604,7 @@ describe('NxAffectedService', () => {
       buildGraph({ affected: ['a'], nodes: { a: { type: 'app', data: { root: 'apps/a' } } } });
       vi.mocked(readFileSync).mockReturnValue('not json');
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
       flushSpawns(0);
 
@@ -614,7 +614,7 @@ describe('NxAffectedService', () => {
     it('throws descriptive error on spawn error event', async () => {
       buildGraph({ affected: ['a'], nodes: { a: { type: 'app', data: { root: 'apps/a' } } } });
 
-      const svc = new NxAffectedService({ monorepoRoot: 'C:\\dev' });
+      const svc = new NxAffectedService({ monorepoRoot: 'V:\\monorepo' });
       const p = svc.getAffected(false);
 
       const err = new Error('spawn ENOENT');

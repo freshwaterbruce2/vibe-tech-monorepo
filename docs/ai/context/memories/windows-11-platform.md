@@ -76,10 +76,10 @@ Remove-Item
 
 ## Path Conventions
 
-### Code Storage (C:\\dev)
+### Code Storage (V:\\monorepo)
 
 ```
-C:\\dev\\                  # All source code
+V:\\monorepo\\                  # All source code
 ├── apps\\                # Applications
 ├── packages\\            # Shared libraries
 └── backend\\             # Backend services
@@ -214,7 +214,7 @@ Use Windows syntax for commands:
 ```powershell
 # ✅ CORRECT (Windows PowerShell)
 Get-Process | Where-Object { $_.Name -like "node*" }
-Test-Path C:\\dev\\apps\\nova-agent
+Test-Path V:\\monorepo\\apps\\nova-agent
 
 # ❌ WRONG (Unix/Linux bash)
 ps aux | grep node
@@ -237,5 +237,5 @@ node -e "console.log(process.platform)"  # Should output: win32
 ## Reference
 
 - .claude/rules/platform-requirements.md (detailed guidelines)
-- C:\\dev\\docs\\PATHS_POLICY.md (path conventions)
+- V:\\monorepo\\docs\\PATHS_POLICY.md (path conventions)
 - Desktop app CLAUDE.md files (app-specific requirements)

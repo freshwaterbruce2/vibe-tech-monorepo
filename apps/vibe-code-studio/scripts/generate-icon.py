@@ -34,5 +34,5 @@ def create_icon(filename):
         f.write(pixels)
 
 if __name__ == '__main__':
-    create_icon("c:\\dev\\apps\\vibe-code-studio\\build-resources\\icon.ico")
+    create_icon("V:\\monorepo\\apps\\vibe-code-studio\\build-resources\\icon.ico")
     print("Created 256x256 icon.ico")

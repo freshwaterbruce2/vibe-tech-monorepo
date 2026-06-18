@@ -16,7 +16,7 @@
  *     same endpoint nova-agent uses for embeddings AND for the contextualizer
  *     chat-completion calls). Without it both runs will fail.
  *
- * How to run (from C:\dev):
+ * How to run (from V:\monorepo):
  *   pnpm --filter @vibetech/mcp-rag-server exec tsx ^
  *     apps/mcp-rag-server/scripts/eval-contextual-chunking.ts
  *

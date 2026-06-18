@@ -179,7 +179,7 @@ RISK STATUS:
 **IMPORTANT EXECUTION NOTES:**
 
 - Execute each bash command using the Bash tool
-- All commands should be run from the C:\dev directory as base
+- All commands should be run from the V:\monorepo directory as base
 - If a command fails, note the error but continue to next step
 - This is a financial trading system - accuracy is critical
 - If you see concerning activity (many failed orders, unusual positions), alert the user immediately

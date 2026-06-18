@@ -519,7 +519,7 @@ if (-not $SkipValidation) {
 # Step 9: Create migration report
 Write-Header "Step 9: Creating Migration Report"
 
-$reportPath = "C:\dev\DATABASE_CONSOLIDATION_REPORT_$(Get-Date -Format 'yyyy-MM-dd-HHmmss').md"
+$reportPath = "V:\monorepo\DATABASE_CONSOLIDATION_REPORT_$(Get-Date -Format 'yyyy-MM-dd-HHmmss').md"
 $report = @"
 # Database Consolidation Report
 **Date:** $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')

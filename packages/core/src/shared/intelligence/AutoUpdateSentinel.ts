@@ -13,10 +13,10 @@ export class AutoUpdateSentinel {
     }
 
     /**
-     * Watches C:\dev for real-time changes.
+     * Watches V:\monorepo for real-time changes.
      * Optimized for Windows 11 performance.
      */
-    public start(watchPath: string = process.env.WORKSPACE_ROOT ?? 'C:\\dev'): void {
+    public start(watchPath: string = process.env.WORKSPACE_ROOT ?? 'V:\\monorepo'): void {
         this.watcher = chokidar.watch(watchPath, {
             ignored: [
                 /^\./,
@@ -77,4 +77,3 @@ export class AutoUpdateSentinel {
         
         await this.indexer.updateSingleFile(filePath);
     }
-}

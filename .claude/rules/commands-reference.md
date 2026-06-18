@@ -48,11 +48,11 @@ pnpm nx reset                       # Clear Nx cache
 ## Port Manager
 
 ```powershell
-C:\dev\tools\port-manager\port.ps1 check 8091   # Check if port in use
-C:\dev\tools\port-manager\port.ps1 kill 8091    # Kill process on port
-C:\dev\tools\port-manager\port.ps1 list         # List all registered ports
-C:\dev\tools\port-manager\port.ps1 clear vite   # Kill all Vite dev servers
-C:\dev\tools\port-manager\port.ps1 find 3000 3099  # Find free port in range
+V:\monorepo\tools\port-manager\port.ps1 check 8091   # Check if port in use
+V:\monorepo\tools\port-manager\port.ps1 kill 8091    # Kill process on port
+V:\monorepo\tools\port-manager\port.ps1 list         # List all registered ports
+V:\monorepo\tools\port-manager\port.ps1 clear vite   # Kill all Vite dev servers
+V:\monorepo\tools\port-manager\port.ps1 find 3000 3099  # Find free port in range
 ```
 
 Port ranges: `3000-3099` backend, `3100-3199` MCP, `5173-5199` Vite, `8000-8999` specialized.

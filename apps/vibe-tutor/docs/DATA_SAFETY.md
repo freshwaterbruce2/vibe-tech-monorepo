@@ -2,7 +2,7 @@
 
 **App:** Vibe Tutor  
 **Reviewed Against Code:** March 9, 2026  
-**Policy Baseline:** [PRIVACY_POLICY.md](C:\dev\apps\vibe-tutor\docs\PRIVACY_POLICY.md)
+**Policy Baseline:** [PRIVACY_POLICY.md](V:\monorepo\apps\vibe-tutor\docs\PRIVACY_POLICY.md)
 
 This file is the working source of truth for Play Console Data safety answers.
 
@@ -182,7 +182,7 @@ Use this posture:
 Verify all of the following match each other:
 
 - Play Console Data Safety answers
-- [PRIVACY_POLICY.md](C:\dev\apps\vibe-tutor\docs\PRIVACY_POLICY.md)
-- [privacy-policy.html](C:\dev\apps\vibe-tutor\public\privacy-policy.html)
+- [PRIVACY_POLICY.md](V:\monorepo\apps\vibe-tutor\docs\PRIVACY_POLICY.md)
+- [privacy-policy.html](V:\monorepo\apps\vibe-tutor\public\privacy-policy.html)
 - target audience / age settings
 - any future telemetry or crash-reporting SDKs added after this review

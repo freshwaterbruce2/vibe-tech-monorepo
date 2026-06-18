@@ -16,7 +16,7 @@ describe('ActivityDatabase', () => {
     describe('File Events', () => {
         it('inserts and retrieves file event', () => {
             const event: FileEvent = {
-                path: 'C:\\dev\\test.ts',
+                path: 'V:\\monorepo\\test.ts',
                 eventType: 'create',
                 timestamp: Date.now(),
                 project: 'test-project',
@@ -27,7 +27,7 @@ describe('ActivityDatabase', () => {
 
             const events = db.getFileEvents();
             expect(events).toHaveLength(1);
-            expect(events[0].path).toBe('C:\\dev\\test.ts');
+            expect(events[0].path).toBe('V:\\monorepo\\test.ts');
             expect(events[0].eventType).toBe('create');
         });
 
@@ -76,7 +76,7 @@ describe('ActivityDatabase', () => {
     describe('Git Events', () => {
         it('inserts and retrieves git event', () => {
             const event: GitEvent = {
-                repoPath: 'C:\\dev',
+                repoPath: 'V:\\monorepo',
                 eventType: 'commit',
                 branch: 'main',
                 commitHash: 'abc123',

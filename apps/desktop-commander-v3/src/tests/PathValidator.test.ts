@@ -14,9 +14,9 @@ import {
 describe("PathValidator", () => {
 	describe("isPathAllowed", () => {
 		// Allowed paths - READ
-		it("should allow reading from C:\\dev", () => {
-			expect(isPathAllowed("C:\\dev", "read")).toBe(true);
-			expect(isPathAllowed("C:\\dev\\projects\\myapp", "read")).toBe(true);
+		it("should allow reading from V:\\monorepo", () => {
+			expect(isPathAllowed("V:\\monorepo", "read")).toBe(true);
+			expect(isPathAllowed("V:\\monorepo\\projects\\myapp", "read")).toBe(true);
 		});
 
 		it("should allow reading from D:\\", () => {
@@ -34,9 +34,9 @@ describe("PathValidator", () => {
 		});
 
 		// Allowed paths - WRITE
-		it("should allow writing to C:\\dev", () => {
-			expect(isPathAllowed("C:\\dev", "write")).toBe(true);
-			expect(isPathAllowed("C:\\dev\\projects\\myapp\\src", "write")).toBe(
+		it("should allow writing to V:\\monorepo", () => {
+			expect(isPathAllowed("V:\\monorepo", "write")).toBe(true);
+			expect(isPathAllowed("V:\\monorepo\\projects\\myapp\\src", "write")).toBe(
 				true,
 			);
 		});
@@ -80,16 +80,16 @@ describe("PathValidator", () => {
 
 		// Edge cases - path prefix matching
 		it("should NOT match similar prefixes that are not subdirectories", () => {
-			// "C:\develop" should NOT match "C:\dev"
+			// "V:\monorepoelop" should NOT match "V:\monorepo"
 			expect(isPathAllowed("C:\\develop", "read")).toBe(false);
 			expect(isPathAllowed("C:\\developer\\projects", "read")).toBe(false);
 		});
 	});
 
 	describe("getPathType", () => {
-		it('should return "dev" for C:\\dev paths', () => {
-			expect(getPathType("C:\\dev")).toBe("dev");
-			expect(getPathType("C:\\dev\\apps\\myapp")).toBe("dev");
+		it('should return "dev" for V:\\monorepo paths', () => {
+			expect(getPathType("V:\\monorepo")).toBe("dev");
+			expect(getPathType("V:\\monorepo\\apps\\myapp")).toBe("dev");
 		});
 
 		it('should return "data" for D:\\ paths', () => {
@@ -110,7 +110,7 @@ describe("PathValidator", () => {
 
 	describe("validatePath", () => {
 		it("should return normalized path for valid paths", () => {
-			const result = validatePath("C:\\dev\\test", "read");
+			const result = validatePath("V:\\monorepo\\test", "read");
 			expect(result).toContain("dev");
 		});
 
@@ -129,7 +129,7 @@ describe("PathValidator", () => {
 
 	describe("normalizePath", () => {
 		it("should normalize path separators to backslashes (case preserved)", () => {
-			const result = normalizePath("C:/Dev/Test");
+			const result = normalizePath("V:/monorepo/Test");
 			expect(result).not.toContain("/");
 			expect(result).toContain("\\");
 		});

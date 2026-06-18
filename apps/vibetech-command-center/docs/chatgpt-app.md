@@ -32,7 +32,7 @@ read-only by default unless a specific task needs edit permissions.
 
 ## Local Validation
 
-Run from `C:\dev`:
+Run from `V:\monorepo`:
 
 ```powershell
 pnpm nx run '@vibetech/command-center:build:mcp'
