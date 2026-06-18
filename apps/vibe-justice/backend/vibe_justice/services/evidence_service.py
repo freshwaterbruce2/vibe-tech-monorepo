@@ -19,6 +19,7 @@ except Exception:  # pragma: no cover
 from vibe_justice.services.extraction_service import ExtractionService
 from vibe_justice.services.file_service import FileService
 from vibe_justice.services.retrieval_service import _hash_embedding
+from vibe_justice.utils.chunking import chunk_text
 from vibe_justice.utils.domain import normalize_domain
 from vibe_justice.utils.paths import get_data_directory
 
@@ -109,7 +110,7 @@ class EvidenceService:
         if not text.strip():
             raise ValueError("No text extracted")
 
-        chunks = self._chunk_text(text, 1200, 200)
+        chunks = chunk_text(text, size=1200, overlap=200)
         file_hash = self._calculate_file_hash(file_path)
 
         client = self._ensure_chroma()
@@ -126,17 +127,6 @@ class EvidenceService:
 
         collection.upsert(ids=ids, documents=docs, embeddings=emiss, metadatas=metas)
         return {"chunks_indexed": len(ids), "status": "indexed"}
-
-    def _chunk_text(self, text: str, size: int, overlap: int) -> List[str]:
-        chunks = []
-        start = 0
-        while start < len(text):
-            end = start + size
-            chunk = text[start:end].strip()
-            if chunk:
-                chunks.append(chunk)
-            start = end - overlap
-        return chunks
 
     def _calculate_file_hash(self, path: Path) -> str:
         hasher = hashlib.sha256()

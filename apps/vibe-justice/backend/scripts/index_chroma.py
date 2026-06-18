@@ -14,10 +14,17 @@ import hashlib
 import math
 import os
 import re
+import sys
 from pathlib import Path
-from typing import Iterable, List
+from typing import List
 
 import chromadb
+
+# Make the backend package importable when this script is run directly
+# (``python scripts/index_chroma.py``) without an editable install.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from vibe_justice.utils.chunking import chunk_text  # noqa: E402
 
 
 def normalize_domain(domain: str) -> str:
@@ -42,24 +49,6 @@ def hash_embedding(text: str, dim: int = 128) -> List[float]:
     if norm > 0:
         vector = [v / norm for v in vector]
     return vector
-
-
-def chunk_text(text: str, chunk_size: int, overlap: int) -> Iterable[str]:
-    if chunk_size <= 0:
-        raise ValueError("chunk_size must be > 0")
-    if overlap < 0:
-        raise ValueError("overlap must be >= 0")
-    if overlap >= chunk_size:
-        raise ValueError("overlap must be < chunk_size")
-
-    start = 0
-    length = len(text)
-    while start < length:
-        end = min(length, start + chunk_size)
-        chunk = text[start:end].strip()
-        if chunk:
-            yield chunk
-        start = end - overlap
 
 
 def main() -> int:

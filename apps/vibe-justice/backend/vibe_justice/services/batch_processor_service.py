@@ -4,6 +4,7 @@ Supports: Phone photos (JPG/PNG), scanned PDFs, DOCX, TXT
 """
 
 import asyncio
+import os
 from typing import List, Dict, Optional
 from pathlib import Path
 from datetime import datetime
@@ -127,6 +128,17 @@ class BatchProcessorService:
         self.ocr_formats = {".jpg", ".jpeg", ".png", ".tiff", ".tif", ".webp", ".pdf"}
         self.document_formats = {".pdf", ".docx", ".txt"}
 
+        # Max files extracted in parallel. OCR is CPU-bound (Tesseract), so cap
+        # concurrency to the available cores to avoid thread thrashing. Override
+        # with VIBE_JUSTICE_OCR_CONCURRENCY.
+        try:
+            override = int(os.getenv("VIBE_JUSTICE_OCR_CONCURRENCY", "0"))
+        except ValueError:
+            override = 0
+        self._extraction_concurrency = override if override > 0 else min(
+            (os.cpu_count() or 4), 8
+        )
+
     async def process_batch(
         self,
         file_paths: List[str],
@@ -149,22 +161,28 @@ class BatchProcessorService:
         # Generate batch ID
         batch_id = f"batch_{start_time.strftime('%Y%m%d_%H%M%S')}"
 
-        # Step 1: Extract text from all files
-        file_results = []
-        successful_docs = []  # For AI analysis
+        # Step 1: Extract text from all files concurrently.
+        # Each file's extraction offloads its blocking OCR/parse work via
+        # asyncio.to_thread, so fanning the files out with gather lets Tesseract
+        # run them in parallel. A semaphore caps concurrency to avoid spawning
+        # an unbounded number of CPU-bound OCR threads (thrashing). Order is
+        # preserved because gather returns results in submission order.
+        semaphore = asyncio.Semaphore(self._extraction_concurrency)
 
-        for file_path in file_paths:
-            file_result = await self._process_single_file(file_path)
-            file_results.append(file_result)
+        async def _extract(path: str) -> BatchFileResult:
+            async with semaphore:
+                return await self._process_single_file(path)
 
-            if file_result.success:
-                # Prepare for AI analysis
-                successful_docs.append(
-                    {
-                        "filename": file_result.filename,
-                        "text_content": file_result.text_content,
-                    }
-                )
+        file_results: List[BatchFileResult] = await asyncio.gather(
+            *(_extract(file_path) for file_path in file_paths)
+        )
+
+        # Prepare successfully extracted documents for AI analysis.
+        successful_docs = [
+            {"filename": r.filename, "text_content": r.text_content}
+            for r in file_results
+            if r.success
+        ]
 
         # Step 2: Run AI analysis on successfully extracted documents
         violations = []
@@ -347,7 +365,7 @@ class BatchProcessorService:
                     ocr_confidence=None,
                 )
 
-        except Exception as e:
+        except Exception:
             # Direct extraction failed, fall through to OCR
             pass
 
