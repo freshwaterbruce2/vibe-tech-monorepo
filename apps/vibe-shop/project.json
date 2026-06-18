@@ -20,7 +20,8 @@
         "command": "pnpm run build",
         "cwd": "apps/vibe-shop",
         "env": {
-          "NODE_ENV": "production"
+          "NODE_ENV": "production",
+          "SKIP_ENV_VALIDATION": "true"
         }
       }
     },

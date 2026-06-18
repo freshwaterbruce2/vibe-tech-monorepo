@@ -18,33 +18,45 @@ const CATEGORY_ICONS: Record<string, typeof Zap> = {
   automotive: Zap,
 };
 
-async function getTrendingProducts(): Promise<Product[]> {
-  const products = await prisma.product.findMany({
-    where: { isActive: true },
-    orderBy: { trendScore: "desc" },
-    take: 8,
-  });
+export const dynamic = 'force-dynamic';
 
-  return products.map((p) => ({
-    ...p,
-    price: Number(p.price),
-    trendScore: Number(p.trendScore),
-    commissionRate: p.commissionRate ? Number(p.commissionRate) : null,
-  })) as Product[];
+async function getTrendingProducts(): Promise<Product[]> {
+  try {
+    const products = await prisma.product.findMany({
+      where: { isActive: true },
+      orderBy: { trendScore: "desc" },
+      take: 8,
+    });
+
+    return products.map((p) => ({
+      ...p,
+      price: Number(p.price),
+      trendScore: Number(p.trendScore),
+      commissionRate: p.commissionRate ? Number(p.commissionRate) : null,
+    })) as Product[];
+  } catch (error) {
+    console.error("Failed to fetch trending products:", error);
+    return [];
+  }
 }
 
 async function getCategories() {
-  const categories = await prisma.category.findMany({
-    include: { _count: { select: { products: true } } },
-    orderBy: { name: "asc" },
-  });
+  try {
+    const categories = await prisma.category.findMany({
+      include: { _count: { select: { products: true } } },
+      orderBy: { name: "asc" },
+    });
 
-  return categories.map((c) => ({
-    name: c.name,
-    slug: c.slug,
-    icon: CATEGORY_ICONS[c.slug] ?? Sparkles,
-    count: c._count.products,
-  }));
+    return categories.map((c) => ({
+      name: c.name,
+      slug: c.slug,
+      icon: CATEGORY_ICONS[c.slug] ?? Sparkles,
+      count: c._count.products,
+    }));
+  } catch (error) {
+    console.error("Failed to fetch categories:", error);
+    return [];
+  }
 }
 
 export default async function HomePage() {
