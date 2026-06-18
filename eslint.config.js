@@ -523,6 +523,21 @@ export default tseslint.config(
     },
   },
 
+  // openrouter-proxy: scope typed linting to its own tsconfig.lint.json instead
+  // of the shared multi-project array above. Linting this project against the
+  // full project list builds one TS program per tsconfig and exhausts the CI
+  // Node heap (OOM in `eslint src`); a single-project program keeps it bounded.
+  {
+    files: ['backend/openrouter-proxy/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        projectService: false,
+        project: ['./backend/openrouter-proxy/tsconfig.lint.json'],
+      },
+    },
+  },
+
   {
     files: ['packages/agent-lats/**/*.ts'],
     languageOptions: {
