@@ -21,8 +21,26 @@ export async function launchApp(): Promise<AppFixture> {
 
   const page = await app.firstWindow({ timeout: 30_000 });
   await page.waitForLoadState('domcontentloaded');
-  await page.waitForTimeout(500);
+
+  // Real readiness instead of a fixed sleep: wait until the preload bridge is actually
+  // exposed on window. This fails closed (throws on timeout) rather than racing a blind
+  // delay that can pass before the renderer has wired up.
+  await page.waitForFunction(
+    () => typeof window.commandCenter?.stream?.subscribe === 'function',
+    undefined,
+    { timeout: 15_000 }
+  );
+
   return { app, page };
+}
+
+/**
+ * Resolve once the live WebSocket stream is actually connected, using the app's own
+ * "stream live" indicator as the readiness signal. Call before exercising any stream
+ * topic so subscriptions attach to an already-open socket and no events are dropped.
+ */
+export async function waitForStreamLive(page: Page, timeoutMs = 10_000): Promise<void> {
+  await page.locator('text=stream live').waitFor({ state: 'visible', timeout: timeoutMs });
 }
 
 export async function closeApp(fixture: AppFixture): Promise<void> {
