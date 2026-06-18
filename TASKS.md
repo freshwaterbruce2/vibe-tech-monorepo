@@ -2,7 +2,7 @@
 
 ## Active
 
-- [ ] **VTDE — Ship beta** - Tauri 2.0 desktop environment, terminal widget, draggable windows, healing dashboard. Control Plane Polish done 2026-02-23.
+- [x] ~~**VTDE — Ship beta** - Tauri 2.0 desktop environment, terminal widget, draggable windows, healing dashboard. Control Plane Polish done 2026-02-23. Superseded by @vibetech/command-center (Electron 33, fully verified unit + E2E + packed setup).~~ (2026-06-18)
 - [ ] **Vibe Tutor — Release** - Play Store audit passed, ESLint zero warnings. Final ship.
 
 ## Waiting On
