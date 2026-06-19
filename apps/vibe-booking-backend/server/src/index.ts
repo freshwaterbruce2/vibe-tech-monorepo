@@ -16,12 +16,18 @@ import { setupStripeTenant } from './stripeSetup.js';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import {
+  applyPromoDiscount,
   calculateNights,
   validateBookingDates,
 } from './bookingHelpers.js';
-import { requireAuth, setupAuthHook } from './authHelpers.js';
+import { getAuthUser, requireAuth, setupAuthHook } from './authHelpers.js';
 import { registerAuthRoutes } from './authRoutes.js';
 import { createBookingStripeWebhookBus } from './stripeWebhookBus.js';
+import {
+  createStripeCheckoutSession,
+  recordCorporateInvoicePayment,
+  scheduleMockCheckoutCompletion,
+} from './checkoutHelpers.js';
 import {
   DEFAULT_HOST,
   DEFAULT_PORT,
@@ -254,20 +260,19 @@ app.post('/api/bookings', { preHandler: [requireAuth] }, async (req, reply) => {
     }
   }
 
-  let totalPrice = nights * hotel.nightlyRate;
-  if (payload.data.promoCode) {
-    const promo = bookingRepo.getPromoCode(payload.data.promoCode.toUpperCase());
-    if (promo) {
-      totalPrice = totalPrice * (1 - promo.discountPercentage / 100);
-    }
-  }
+  const totalPrice = applyPromoDiscount(
+    bookingRepo,
+    nights * hotel.nightlyRate,
+    payload.data.promoCode,
+  );
   const bookingId = randomUUID();
   const createdAt = new Date().toISOString();
+  const user = getAuthUser(req);
 
   bookingRepo.createBooking({
     id: bookingId,
     hotelId: hotel.id,
-    userId: req.user!.id,
+    userId: user.id,
     checkIn: payload.data.checkIn,
     checkOut: payload.data.checkOut,
     guests: payload.data.guests,
@@ -288,13 +293,15 @@ app.post('/api/bookings', { preHandler: [requireAuth] }, async (req, reply) => {
 });
 
 app.get('/api/bookings', { preHandler: [requireAuth] }, async (req) => {
-  const userBookings = bookingRepo.getUserBookings(req.user!.id);
+  const user = getAuthUser(req);
+  const userBookings = bookingRepo.getUserBookings(user.id);
   return { bookings: userBookings };
 });
 
 app.get('/api/bookings/:bookingId', { preHandler: [requireAuth] }, async (req, reply) => {
   const params = req.params as { bookingId: string };
-  const booking = bookingRepo.getBookingByIdAndUser(params.bookingId, req.user!.id);
+  const user = getAuthUser(req);
+  const booking = bookingRepo.getBookingByIdAndUser(params.bookingId, user.id);
   if (!booking) {
     return reply.code(404).send({ error: 'Booking not found' });
   }
@@ -303,7 +310,8 @@ app.get('/api/bookings/:bookingId', { preHandler: [requireAuth] }, async (req, r
 
 app.post('/api/bookings/:bookingId/cancel', { preHandler: [requireAuth] }, async (req, reply) => {
   const params = req.params as { bookingId: string };
-  const booking = bookingRepo.getBookingByIdAndUser(params.bookingId, req.user!.id);
+  const user = getAuthUser(req);
+  const booking = bookingRepo.getBookingByIdAndUser(params.bookingId, user.id);
   if (!booking) {
     return reply.code(404).send({ error: 'Booking not found' });
   }
@@ -330,7 +338,8 @@ app.post('/api/payments/create', { preHandler: [requireAuth] }, async (req, repl
     return reply.code(400).send({ error: payload.error.flatten() });
   }
 
-  const booking = bookingRepo.getBookingByIdAndUser(payload.data.bookingId, req.user!.id);
+  const user = getAuthUser(req);
+  const booking = bookingRepo.getBookingByIdAndUser(payload.data.bookingId, user.id);
   if (!booking) {
     return reply.code(404).send({ error: 'Booking not found' });
   }
@@ -373,7 +382,8 @@ app.post('/api/payments/create-checkout-session', { preHandler: [requireAuth] },
     return reply.code(400).send({ error: payload.error.flatten() });
   }
 
-  const booking = bookingRepo.getBookingByIdAndUser(payload.data.bookingId, req.user!.id);
+  const user = getAuthUser(req);
+  const booking = bookingRepo.getBookingByIdAndUser(payload.data.bookingId, user.id);
   if (!booking) {
     return reply.code(404).send({ error: 'Booking not found' });
   }
@@ -385,116 +395,26 @@ app.post('/api/payments/create-checkout-session', { preHandler: [requireAuth] },
 
   const nights = calculateNights(booking.checkIn, booking.checkOut);
   const baseUrl = req.headers.origin ?? process.env.APP_BASE_URL ?? `http://${host}:${port}`;
-
   const isSplit = booking.billingMethod === 'bleisure_split';
-  const leisurePrice = isSplit && nights > 0 ? ((booking.leisureNights ?? 0) / nights) * booking.totalPrice : 0;
+  const leisurePrice =
+    isSplit && nights > 0
+      ? ((booking.leisureNights ?? 0) / nights) * booking.totalPrice
+      : 0;
   const corporatePrice = isSplit ? booking.totalPrice - leisurePrice : booking.totalPrice;
+  const pricing = { isSplit, nights, leisurePrice, corporatePrice };
 
   if (booking.billingMethod === 'corporate_invoice') {
-    // Skip Stripe - directly create invoice payment and auto-confirm stay
-    const paymentId = randomUUID();
-    const createdAt = new Date().toISOString();
-    bookingRepo.createPayment({
-      id: paymentId,
-      bookingId: booking.id,
-      amount: booking.totalPrice,
-      currency: booking.currency,
-      provider: 'corporate_invoice',
-      status: 'succeeded',
-      createdAt,
-    });
-    bookingRepo.confirmBookingPayment(booking.id);
-    req.log.info({ bookingId: booking.id }, 'Corporate invoice booking confirmed');
-    return {
-      ok: true,
-      url: `${baseUrl}/confirmation/${booking.id}?method=invoice`,
-    };
+    return recordCorporateInvoicePayment(bookingRepo, booking, baseUrl, req.log);
   }
 
   if (!process.env.STRIPE_SECRET_KEY || process.env.PLAYWRIGHT_TEST === '1') {
     req.log.warn('Stripe checkout bypassed (falsy key or E2E test mode) - returning mock checkout redirect url');
-    
-    // Simulate webhook completion locally
-    setTimeout(() => {
-      try {
-        const paymentId = randomUUID();
-        const createdAt = new Date().toISOString();
-        if (isSplit) {
-          // Record leisure portion
-          bookingRepo.createPayment({
-            id: paymentId,
-            bookingId: booking.id,
-            amount: leisurePrice,
-            currency: booking.currency,
-            provider: 'stripe',
-            status: 'succeeded',
-            createdAt,
-          });
-          // Record corporate portion
-          bookingRepo.createPayment({
-            id: randomUUID(),
-            bookingId: booking.id,
-            amount: corporatePrice,
-            currency: booking.currency,
-            provider: 'corporate_invoice',
-            status: 'succeeded',
-            createdAt,
-          });
-        } else {
-          bookingRepo.createPayment({
-            id: paymentId,
-            bookingId: booking.id,
-            amount: booking.totalPrice,
-            currency: booking.currency,
-            provider: 'stripe',
-            status: 'succeeded',
-            createdAt,
-          });
-        }
-        bookingRepo.confirmBookingPayment(booking.id);
-        req.log.info({ bookingId: booking.id }, 'Mock Stripe checkout completed');
-      } catch (err) {
-        req.log.error({ err }, 'Mock Stripe checkout completion failed');
-      }
-    }, 100);
-
-    const redirectParams = isSplit ? '?method=bleisure_split' : '';
-    return {
-      ok: true,
-      url: `${baseUrl}/confirmation/${booking.id}${redirectParams}`,
-    };
+    return scheduleMockCheckoutCompletion(bookingRepo, booking, pricing, baseUrl, req.log);
   }
 
   try {
-    const stripe = getStripeClient() as any;
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: booking.currency.toLowerCase(),
-            product_data: {
-              name: isSplit ? `Stay at ${hotel.name} - Leisure Portion (${booking.leisureNights} nights)` : `Stay at ${hotel.name}`,
-              description: `${isSplit ? booking.leisureNights : nights} nights, ${booking.guests} guests`,
-            },
-            unit_amount: Math.round((isSplit ? leisurePrice : booking.totalPrice) * 100),
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      success_url: `${baseUrl}/confirmation/${booking.id}?session_id={CHECKOUT_SESSION_ID}${isSplit ? '&method=bleisure_split' : ''}`,
-      cancel_url: `${baseUrl}/payment/${booking.id}`,
-      metadata: {
-        bookingId: booking.id,
-        app: 'vibe-booking-backend',
-      },
-    });
-
-    return {
-      ok: true,
-      url: session.url,
-    };
+    const { url } = await createStripeCheckoutSession(booking, hotel.name, pricing, baseUrl);
+    return { ok: true, url };
   } catch (error) {
     req.log.error({ err: error }, 'Stripe checkout session creation failed');
     return reply.code(500).send({ error: 'Stripe integration error' });
@@ -539,12 +459,13 @@ app.post('/api/hotels/:hotelId/reviews', { preHandler: [requireAuth] }, async (r
   
   const reviewId = randomUUID();
   const createdAt = new Date().toISOString();
-  
+  const user = getAuthUser(req);
+
   bookingRepo.createReview({
     id: reviewId,
     hotelId: params.hotelId,
-    userId: req.user!.id,
-    userName: req.user!.fullName || req.user!.email,
+    userId: user.id,
+    userName: user.fullName ?? user.email,
     rating: payload.data.rating,
     comment: payload.data.comment,
     createdAt,

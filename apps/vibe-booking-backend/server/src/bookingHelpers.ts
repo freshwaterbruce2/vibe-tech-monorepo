@@ -1,3 +1,6 @@
+import { randomUUID } from 'node:crypto';
+import { BookingRepository } from '@vibetech/db-app';
+
 export const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export function parseBookingDate(value: string): number | null {
@@ -44,4 +47,36 @@ export function calculateNights(checkIn: string, checkOut: string): number {
 
   const delta = checkOutTime - checkInTime;
   return Math.ceil(delta / (1000 * 60 * 60 * 24));
+}
+
+/** Apply an active promo code's percentage discount to a base price. */
+export function applyPromoDiscount(
+  bookingRepo: BookingRepository,
+  basePrice: number,
+  promoCode: string | undefined,
+): number {
+  if (!promoCode) return basePrice;
+  const promo = bookingRepo.getPromoCode(promoCode.toUpperCase());
+  if (!promo) return basePrice;
+  return basePrice * (1 - promo.discountPercentage / 100);
+}
+
+/** Insert a succeeded payment record (shared payment-row construction). */
+export function insertSucceededPayment(
+  bookingRepo: BookingRepository,
+  bookingId: string,
+  amount: number,
+  currency: string,
+  provider: string,
+  createdAt: string = new Date().toISOString(),
+): void {
+  bookingRepo.createPayment({
+    id: randomUUID(),
+    bookingId,
+    amount,
+    currency,
+    provider,
+    status: 'succeeded',
+    createdAt,
+  });
 }

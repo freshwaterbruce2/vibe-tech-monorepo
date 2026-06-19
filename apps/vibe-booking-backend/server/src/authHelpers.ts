@@ -7,7 +7,11 @@ import {
 } from '@vibetech/auth';
 import { randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
-import { type FastifyInstance } from 'fastify';
+import {
+  type FastifyInstance,
+  type FastifyReply,
+  type FastifyRequest,
+} from 'fastify';
 import { PASSWORD_KEY_LENGTH } from './types.js';
 
 declare module 'fastify' {
@@ -50,10 +54,10 @@ export async function verifyPassword(
 }
 
 function isSecureEnvironment(): boolean {
-  return (
-    process.env.NODE_ENV === 'production' ||
-    (process.env.APP_BASE_URL && process.env.APP_BASE_URL.startsWith('https://'))
-  );
+  if (process.env.NODE_ENV === 'production') {
+    return true;
+  }
+  return process.env.APP_BASE_URL?.startsWith('https://') ?? false;
 }
 
 export function buildSessionCookie(user: AuthUser): string {
@@ -100,12 +104,28 @@ export function getCookie(
   return null;
 }
 
-export function requireAuth(req: any, reply: any, done: () => void): void {
+export function requireAuth(
+  req: FastifyRequest,
+  reply: FastifyReply,
+  done: () => void,
+): void {
   if (!req.user) {
     reply.code(401).send({ error: 'Unauthorized' });
     return;
   }
   done();
+}
+
+/**
+ * Narrow `req.user` (typed `AuthUser | null`) to a non-null `AuthUser`.
+ * Routes guarded by `requireAuth` always have a user; this replaces
+ * non-null assertions at call sites.
+ */
+export function getAuthUser(req: FastifyRequest): AuthUser {
+  if (!req.user) {
+    throw new Error('Authenticated user missing from request');
+  }
+  return req.user;
 }
 
 export function setupAuthHook(app: FastifyInstance): void {
@@ -122,7 +142,7 @@ export function setupAuthHook(app: FastifyInstance): void {
           req.user = {
             id: payload.sub,
             email: payload.email,
-            fullName: (payload as any).fullName || payload.email,
+            fullName: (payload as { fullName?: string }).fullName ?? payload.email,
           };
         }
       } catch {

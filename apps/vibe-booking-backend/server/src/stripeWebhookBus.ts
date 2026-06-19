@@ -1,10 +1,85 @@
-import { randomUUID } from 'node:crypto';
 import {
   createStripeWebhookBus,
   type StripeSubscriptionLike,
+  type StripeWebhookBusContext,
+  type StripeWebhookBusEvent,
 } from '@vibetech/billing';
 import { BookingRepository } from '@vibetech/db-app';
-import { calculateNights } from './bookingHelpers.js';
+import { calculateNights, insertSucceededPayment } from './bookingHelpers.js';
+
+type Booking = NonNullable<ReturnType<BookingRepository['getBookingById']>>;
+
+interface StripeCheckoutSessionObject {
+  id?: string;
+  metadata?: { bookingId?: string } | null;
+  customer_email?: string | null;
+  customer_details?: { email?: string | null } | null;
+}
+
+/** Record Stripe payment(s) for a confirmed checkout (split or single). */
+function recordWebhookPayments(
+  bookingRepo: BookingRepository,
+  booking: Booking,
+): void {
+  const createdAt = new Date().toISOString();
+  if (booking.billingMethod === 'bleisure_split') {
+    const totalNights = calculateNights(booking.checkIn, booking.checkOut);
+    const leisureNights = booking.leisureNights ?? 0;
+    const leisurePrice =
+      totalNights > 0 ? (leisureNights / totalNights) * booking.totalPrice : 0;
+    const corporatePrice = booking.totalPrice - leisurePrice;
+    // Record Stripe payment for personal/leisure portion
+    insertSucceededPayment(
+      bookingRepo, booking.id, leisurePrice, booking.currency, 'stripe', createdAt,
+    );
+    // Record corporate invoice payment for corporate portion
+    insertSucceededPayment(
+      bookingRepo, booking.id, corporatePrice, booking.currency, 'corporate_invoice', createdAt,
+    );
+  } else {
+    insertSucceededPayment(
+      bookingRepo, booking.id, booking.totalPrice, booking.currency, 'stripe', createdAt,
+    );
+  }
+  bookingRepo.confirmBookingPayment(booking.id);
+}
+
+function handleCheckoutSessionCompleted(
+  bookingRepo: BookingRepository,
+  event: StripeWebhookBusEvent,
+  context: StripeWebhookBusContext,
+): void {
+  const session = event.data.object as StripeCheckoutSessionObject;
+  context.logger?.info?.(
+    {
+      app: 'vibe-booking-backend',
+      eventId: event.id,
+      sessionId: session.id,
+      customerEmail:
+        session.customer_email ?? session.customer_details?.email ?? null,
+    },
+    'Stripe checkout session completed webhook received',
+  );
+
+  const bookingId = session.metadata?.bookingId;
+  if (!bookingId) return;
+
+  try {
+    const booking = bookingRepo.getBookingById(bookingId);
+    if (booking && booking.paymentStatus !== 'paid') {
+      recordWebhookPayments(bookingRepo, booking);
+      context.logger?.info?.(
+        { bookingId },
+        'Booking payment processed via Stripe webhook',
+      );
+    }
+  } catch (err) {
+    context.logger?.error?.(
+      { err, bookingId },
+      'Failed to process Stripe webhook payment',
+    );
+  }
+}
 
 export function createBookingStripeWebhookBus(
   bookingRepo: BookingRepository,
@@ -17,86 +92,8 @@ export function createBookingStripeWebhookBus(
       processedStripeWebhookEvents.add(event.id);
     },
     handlers: {
-      'checkout.session.completed': (event, context) => {
-        const session = event.data.object as any;
-        context.logger?.info?.(
-          {
-            app: 'vibe-booking-backend',
-            eventId: event.id,
-            sessionId: session.id,
-            customerEmail:
-              session.customer_email ?? session.customer_details?.email ?? null,
-          },
-          'Stripe checkout session completed webhook received',
-        );
-
-        const bookingId = session.metadata?.bookingId;
-        if (bookingId) {
-          try {
-            const booking = bookingRepo.getBookingById(bookingId);
-            if (booking && booking.paymentStatus !== 'paid') {
-              const paymentId = randomUUID();
-              const createdAt = new Date().toISOString();
-
-              if (booking.billingMethod === 'bleisure_split') {
-                const totalNights = calculateNights(
-                  booking.checkIn,
-                  booking.checkOut,
-                );
-                const leisureNights = booking.leisureNights ?? 0;
-                const leisurePrice =
-                  totalNights > 0
-                    ? (leisureNights / totalNights) * booking.totalPrice
-                    : 0;
-                const corporatePrice = booking.totalPrice - leisurePrice;
-
-                // Record Stripe payment for personal/leisure portion
-                bookingRepo.createPayment({
-                  id: paymentId,
-                  bookingId: booking.id,
-                  amount: leisurePrice,
-                  currency: booking.currency,
-                  provider: 'stripe',
-                  status: 'succeeded',
-                  createdAt,
-                });
-
-                // Record Corporate invoice payment for corporate portion
-                bookingRepo.createPayment({
-                  id: randomUUID(),
-                  bookingId: booking.id,
-                  amount: corporatePrice,
-                  currency: booking.currency,
-                  provider: 'corporate_invoice',
-                  status: 'succeeded',
-                  createdAt,
-                });
-              } else {
-                bookingRepo.createPayment({
-                  id: paymentId,
-                  bookingId: booking.id,
-                  amount: booking.totalPrice,
-                  currency: booking.currency,
-                  provider: 'stripe',
-                  status: 'succeeded',
-                  createdAt,
-                });
-              }
-
-              bookingRepo.confirmBookingPayment(booking.id);
-              context.logger?.info?.(
-                { bookingId },
-                'Booking payment processed via Stripe webhook',
-              );
-            }
-          } catch (err) {
-            context.logger?.error?.(
-              { err, bookingId },
-              'Failed to process Stripe webhook payment',
-            );
-          }
-        }
-      },
+      'checkout.session.completed': (event, context) =>
+        handleCheckoutSessionCompleted(bookingRepo, event, context),
     },
     prefixHandlers: [
       {
