@@ -9,7 +9,7 @@ import {
     Square,
     Zap
 } from 'lucide-react';
-import React from 'react';
+import React, { useState } from 'react';
 
 import {
     ActionButton,
@@ -66,6 +66,10 @@ export function EnhancedAgentMode({
     workspaceContext,
     onComplete,
   });
+
+  // Selected log entry for the detail view (toggled by clicking a log row)
+  const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
+  const selectedLog = logs.find((entry) => entry.id === selectedLogId) ?? null;
 
   if (!isOpen) return null;
 
@@ -139,9 +143,99 @@ export function EnhancedAgentMode({
                 logs={logs}
                 formatTimestamp={formatTimestamp}
                 height={400}
-                onLogClick={(_log) => { /* log detail view not yet implemented */ }}
+                onLogClick={(log) =>
+                  setSelectedLogId((prev) => (prev === log.id ? null : log.id))
+                }
               />
               <div ref={logEndRef} />
+
+              {selectedLog && (
+                <div
+                  role="region"
+                  aria-label="Selected log detail"
+                  style={{
+                    marginTop: 8,
+                    padding: '10px 12px',
+                    border: '1px solid #3c3c3c',
+                    borderRadius: 6,
+                    background: '#1e1e1e',
+                    color: '#cccccc',
+                    fontSize: 12,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: 6,
+                    }}
+                  >
+                    <strong style={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                      {selectedLog.type}
+                      {selectedLog.agentName ? ` · ${selectedLog.agentName}` : ''}
+                    </strong>
+                    <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <span style={{ opacity: 0.7 }}>
+                        {formatTimestamp(selectedLog.timestamp)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void navigator.clipboard?.writeText(selectedLog.content);
+                        }}
+                        aria-label="Copy log message"
+                        style={{
+                          background: 'transparent',
+                          border: '1px solid #3c3c3c',
+                          borderRadius: 4,
+                          color: '#cccccc',
+                          cursor: 'pointer',
+                          fontSize: 11,
+                          padding: '2px 8px',
+                        }}
+                      >
+                        Copy
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedLogId(null)}
+                        aria-label="Close log detail"
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#cccccc',
+                          cursor: 'pointer',
+                          fontSize: 14,
+                          lineHeight: 1,
+                        }}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  </div>
+                  <pre
+                    style={{
+                      margin: 0,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    {selectedLog.content}
+                  </pre>
+                  {selectedLog.metrics && (
+                    <div style={{ marginTop: 6, opacity: 0.8 }}>
+                      {selectedLog.metrics.confidence != null &&
+                        `${Math.round(selectedLog.metrics.confidence * 100)}% confidence`}
+                      {selectedLog.metrics.processingTime != null &&
+                        ` · ${selectedLog.metrics.processingTime}ms`}
+                      {selectedLog.metrics.suggestions != null &&
+                        ` · ${selectedLog.metrics.suggestions} suggestions`}
+                    </div>
+                  )}
+                </div>
+              )}
             </TaskSection>
 
             <Sidebar>

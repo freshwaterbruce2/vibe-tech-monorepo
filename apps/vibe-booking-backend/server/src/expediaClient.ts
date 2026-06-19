@@ -252,7 +252,8 @@ export async function getHotelDetails(hotelId: string): Promise<ExpediaHotel | n
           country: prop.address?.country_code ?? 'USA',
           neighborhood: prop.address?.neighborhood ?? 'Downtown',
           description: prop.description ?? 'Stunning property with premium views.',
-          nightlyRate: 200, // Default price fallback for detail view when availability is not queried
+          // Default price fallback for detail view when availability is not queried
+          nightlyRate: 200,
           currency: 'USD',
           rating: prop.ratings?.property?.rating ?? 4.0,
           reviewScore: prop.ratings?.guest?.score ?? 8.0,

@@ -12,7 +12,7 @@
 
 ```bash
 # ALWAYS read the main rules first
-cat MONOREPO_RULES.md
+cat AI.md
 ```
 
 ### 2. **VERIFY YOUR ROLE**
@@ -30,7 +30,7 @@ cat MONOREPO_RULES.md
 Before touching ANY code:
 
 1. Count files to be modified
-2. Check line count of existing files
+2. Check line count of existing files (500 soft / 600 hard)
 3. Determine if planning is required (3+ files)
 
 ### **STEP 2: PLANNING (Opus/Claude Code Only)**
@@ -55,7 +55,7 @@ If you are Sonnet 4.6:
 
 1. **WAIT for approved plan** from Opus/Claude Code
 2. **FOLLOW plan exactly** - no deviations
-3. **ENFORCE line limits** - split files over 500 lines
+3. **ENFORCE line limits** - split files over 500/600 lines
 4. **MAINTAIN file names** - never rename existing files
 
 ---
@@ -66,11 +66,11 @@ If you are Sonnet 4.6:
 
 ```python
 # Before editing ANY file:
-if file_lines > 500:
-    STOP - File must be split into modules
+if file_lines > 600:
+    STOP - File must be split into modules (warns at 500 lines)
 
 # Before creating ANY file:
-if estimated_lines > 500:
+if estimated_lines > 600:
     STOP - Design as multiple modules
 ```
 
@@ -93,7 +93,7 @@ if estimated_lines > 500:
 Every file must follow:
 
 ```typescript
-// MAX 500 LINES PER FILE
+// MAX 500 LINES SOFT / 600 LINES HARD
 // Single responsibility
 // Clear interfaces
 // Dependency injection
@@ -108,7 +108,7 @@ REQUIRED_PATHS:
   logs:        "D:\\logs\\[project-name]\\"
   databases:   "D:\\databases\\[project-name]\\"
   data_files:  "D:\\data\\[project-name]\\"
-  learning:    "D:\\learning\\[project-name]\\"
+  learning:    "D:\\learning-system\\[project-name]\\"
   backups:     "D:\\backups\\[project-name]\\"
   temp:        "D:\\temp\\[project-name]\\"
 
@@ -168,7 +168,7 @@ powershell -Command "(Get-Content 'filepath').Count"
 
 ```bash
 # Check for oversized files
-pnpm run validate:size
+pnpm run lines:check
 ```
 
 ### **Check Planning Requirement:**
@@ -199,8 +199,8 @@ START
   │   ├─ 1-2 files → Proceed with caution
   │   └─ 3+ files → STOP! Planning required
   │
-  ├─ File over 500 lines?
-  │   ├─ Yes → STOP! Must split
+  ├─ File over 600 lines?
+  │   ├─ Yes → STOP! Must split (warns at 500)
   │   └─ No → Continue
   │
   ├─ Need to rename file?
@@ -242,7 +242,7 @@ START
 
 ## 🆘 WHEN IN DOUBT
 
-1. **READ** `MONOREPO_RULES.md`
+1. **READ** `AI.md`
 2. **CHECK** file sizes with validation scripts
 3. **ASK** for clarification before proceeding
 4. **PLAN** thoroughly for complex changes

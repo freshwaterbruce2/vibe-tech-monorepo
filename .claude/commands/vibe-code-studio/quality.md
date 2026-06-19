@@ -1,81 +1,55 @@
 ---
 name: code-studio:quality
-description: Run complete quality pipeline for Vibe Code Studio
+description: Run the full quality pipeline for Vibe Code Studio
 argument-hint: [fix]
 model: sonnet
 ---
 
 # Vibe Code Studio Quality Pipeline
 
-Run comprehensive quality checks on the code editor codebase.
+Run lint + typecheck + tests (and optionally a build) for the editor. Run from `V:\monorepo`.
 
 ## Steps
 
-1. Navigate to Vibe Code Studio directory:
+1. Lint (ESLint flat config):
 
-   ```bash
-   cd V:\monorepo\apps\vibe-code-studio
+   ```powershell
+   # default
+   $env:NX_NO_CLOUD='true'; pnpm nx run vibe-code-studio:lint
+   # with auto-fix when invoked as `code-studio:quality fix`
+   $env:NX_NO_CLOUD='true'; pnpm nx run vibe-code-studio:lint-fix
    ```
 
-2. Run ESLint:
+2. TypeScript type checking (`tsc --noEmit`):
 
-   ```bash
-   if [ "$1" = "fix" ]; then
-     echo "Running ESLint with auto-fix..."
-     pnpm lint --fix
-   else
-     echo "Running ESLint..."
-     pnpm lint
-   fi
+   ```powershell
+   $env:NX_NO_CLOUD='true'; pnpm nx run vibe-code-studio:typecheck
    ```
 
-3. Run TypeScript type checking:
+3. Tests (Vitest):
 
-   ```bash
-   echo ""
-   echo "Running TypeScript type checking..."
-   pnpm typecheck
+   ```powershell
+   $env:NX_NO_CLOUD='true'; pnpm nx run vibe-code-studio:test
    ```
 
-4. Run tests:
+4. (Optional) Build verification (Vite production build):
 
-   ```bash
-   echo ""
-   echo "Running test suite..."
-   pnpm test
+   ```powershell
+   $env:NX_NO_CLOUD='true'; pnpm nx run vibe-code-studio:build
    ```
 
-5. Build verification:
+Steps 1–3 are bundled in a single Nx target:
 
-   ```bash
-   echo ""
-   echo "Verifying build process..."
-   pnpm build:renderer
-   pnpm build:main
-   ```
-
-6. Summary report:
-
-   ```bash
-   echo ""
-   echo "=== QUALITY REPORT ==="
-   echo "✓ ESLint: PASSED"
-   echo "✓ TypeScript: PASSED"
-   echo "✓ Tests: PASSED"
-   echo "✓ Build: PASSED"
-   echo ""
-   echo "Vibe Code Studio is ready for commit/deployment"
-   ```
+```powershell
+$env:NX_NO_CLOUD='true'; pnpm nx run vibe-code-studio:quality
+```
 
 ## Usage
 
-- `code-studio:quality` - Run all checks (no auto-fix)
-- `code-studio:quality fix` - Run with auto-fix for linting issues
+- `code-studio:quality` — lint + typecheck + test.
+- `code-studio:quality fix` — same, but auto-fix lint issues first (`lint-fix`).
 
 ## Expected Output
 
-- Zero ESLint errors
-- Zero TypeScript errors
-- All tests passing
-- Successful renderer and main builds
-- Total execution time: ~60-90 seconds
+- Zero ESLint errors, zero TypeScript errors, all tests passing.
+- Optional: successful Vite production build (`apps/vibe-code-studio/dist`).

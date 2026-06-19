@@ -35,7 +35,7 @@ This workspace defines a default **master agent** in `.agent/agents/master-agent
 
 ## 4. Lint & TypeScript Fixing
 
-- Enforce a strict **500-line soft limit** per file. Component files should target 200–300 lines. Split components and logic early.
+- Enforce a **500-line soft limit** and **600-line hard limit** per file. Component files should target 200–300 lines. Split components and logic early.
 - Fix one file first and verify it passes before applying the same fix pattern across multiple files.
 - Enable TypeScript strict mode. Avoid the `any` type without a justification comment.
 

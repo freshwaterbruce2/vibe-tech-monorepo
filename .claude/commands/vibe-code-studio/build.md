@@ -1,67 +1,52 @@
 ---
 name: code-studio:build
-description: Build Vibe Code Studio for Windows production
+description: Build Vibe Code Studio (Tauri 2) for Windows production
 model: sonnet
 ---
 
 # Vibe Code Studio Production Build
 
-Build Vibe Code Studio code editor for Windows deployment.
+Build the Vibe Code Studio desktop editor (Tauri 2 + React 19 + Vite) for Windows.
+
+> This is a **Tauri** app, not Electron. The frontend is built with Vite (`tsc && vite build`)
+> and packaged into MSI/NSIS installers by the Tauri CLI. Run all commands from the repo
+> root `V:\monorepo` — the Nx targets set the correct `cwd`.
 
 ## Steps
 
-1. Navigate to Vibe Code Studio directory:
+1. (Optional) Clean previous artifacts:
 
-   ```bash
-   cd V:\monorepo\apps\vibe-code-studio
+   ```powershell
+   pnpm nx run vibe-code-studio:clean
    ```
 
-2. Clean previous builds:
+2. Build the frontend (TypeScript + Vite bundle → `apps/vibe-code-studio/dist`):
 
-   ```bash
-   rm -rf dist out
-   echo "✓ Cleaned previous build artifacts"
+   ```powershell
+   $env:NX_NO_CLOUD='true'; pnpm nx run vibe-code-studio:build
    ```
 
-3. Build renderer (Vite):
+3. Package the Windows desktop app (Tauri → MSI + NSIS installers):
 
-   ```bash
-   echo "Building renderer process..."
-   pnpm build:renderer
+   ```powershell
+   $env:NX_NO_CLOUD='true'; pnpm nx run vibe-code-studio:package
    ```
 
-4. Build main process (TypeScript):
+   Packaging compiles the Rust backend and needs the MSVC toolchain plus the isolated
+   Cargo/Git environment documented in `apps/vibe-code-studio/PLAN.md` (Rust/Cargo under
+   `D:\Data\Tools\.cargo\bin`, `GIT_CONFIG_GLOBAL=NUL`).
 
-   ```bash
-   echo ""
-   echo "Building main process..."
-   pnpm build:main
-   ```
+4. (Optional) Smoke-verify the built app:
 
-5. Package for Windows:
-
-   ```bash
-   echo ""
-   echo "Packaging Electron application..."
-   pnpm build:electron
-   ```
-
-6. Report build artifacts:
-
-   ```bash
-   echo ""
-   echo "=== BUILD ARTIFACTS ==="
-   if [ -d "out" ]; then
-     ls -lh out/*.exe 2>/dev/null
-     du -sh out
-   fi
+   ```powershell
+   pnpm nx run vibe-code-studio:verify-app-working
    ```
 
 ## Expected Output
 
-- Renderer bundle optimized
-- Main process compiled
-- Windows executable (.exe) created
-- Installer package generated (NSIS)
-- Build size typically 100-200MB (includes Electron runtime)
-- Artifacts in out/ directory
+- `apps/vibe-code-studio/dist/` — optimized Vite frontend bundle.
+- MSI installer: `…/release/bundle/msi/Vibe Code Studio_<version>_x64_en-US.msi`
+- NSIS installer: `…/release/bundle/nsis/Vibe Code Studio_<version>_x64-setup.exe`
+  (the workspace redirects the Cargo target dir to `D:\cargo-targets`, so installers land
+  under `D:\cargo-targets\release\bundle\…`).
+- Per-user installer (`currentUser` NSIS mode). No Electron runtime is bundled.
