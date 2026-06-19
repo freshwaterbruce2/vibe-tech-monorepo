@@ -5,6 +5,7 @@ import {
   type StripeWebhookBusEvent,
 } from '@vibetech/billing';
 import { BookingRepository } from '@vibetech/db-app';
+import type { FastifyBaseLogger } from 'fastify';
 import { calculateNights, insertSucceededPayment } from './bookingHelpers.js';
 
 type Booking = NonNullable<ReturnType<BookingRepository['getBookingById']>>;
@@ -74,7 +75,7 @@ function handleCheckoutSessionCompleted(
       );
     }
   } catch (err) {
-    context.logger?.error?.(
+    (context.logger as unknown as FastifyBaseLogger | undefined)?.error?.(
       { err, bookingId },
       'Failed to process Stripe webhook payment',
     );
