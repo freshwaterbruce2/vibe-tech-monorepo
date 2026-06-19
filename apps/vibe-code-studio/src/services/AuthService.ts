@@ -1,4 +1,6 @@
-import { AuthUser } from '@vibetech/auth';
+import type { AuthUser } from '@vibetech/auth';
+
+import { logger } from './Logger';
 
 export interface UserWithPlan extends AuthUser {
   plan: string;
@@ -22,7 +24,7 @@ class AuthService {
         }
       }
     } catch (err) {
-      console.error('[AuthService] Init error:', err);
+      logger.error('[AuthService] Init error:', err);
     }
     this.currentUser = null;
     this.notify();
@@ -53,7 +55,12 @@ class AuthService {
     throw new Error('Invalid response');
   }
 
-  async register(email: string, password: string, fullName?: string, companyName?: string): Promise<UserWithPlan | null> {
+  async register(
+    email: string,
+    password: string,
+    fullName?: string,
+    companyName?: string,
+  ): Promise<UserWithPlan | null> {
     const res = await fetch('http://localhost:5004/api/auth/register', {
       method: 'POST',
       headers: {
@@ -84,7 +91,7 @@ class AuthService {
         credentials: 'include',
       });
     } catch (err) {
-      console.error('[AuthService] Logout error:', err);
+      logger.error('[AuthService] Logout error:', err);
     }
     this.currentUser = null;
     this.notify();

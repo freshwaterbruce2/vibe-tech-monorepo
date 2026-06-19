@@ -1,4 +1,5 @@
 import { authService } from './AuthService';
+import { logger } from './Logger';
 
 class BillingService {
   async triggerCheckout(): Promise<void> {
@@ -26,7 +27,7 @@ class BillingService {
         throw new Error('No checkout URL returned from backend server');
       }
     } catch (err: any) {
-      console.error('[BillingService] Checkout error:', err);
+      logger.error('[BillingService] Checkout error:', err);
       throw new Error(err.message || 'Billing error');
     }
   }

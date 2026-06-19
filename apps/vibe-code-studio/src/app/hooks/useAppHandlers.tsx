@@ -18,6 +18,7 @@ import type { SearchOptions } from '../../services/SearchService';
 import type { AIModel } from '../../services/ai/AIProviderInterface';
 import type { UnifiedAIService } from '../../services/ai/UnifiedAIService';
 import type { FileSystemService } from '../../services/FileSystemService';
+import type { MultiFileEditor } from '../../services/MultiFileEditor';
 import type { EditorFile } from '../../types';
 import type { VisualPanelState } from '../types';
 import { registerCompletion } from 'monacopilot';
@@ -30,11 +31,15 @@ export interface UseAppHandlersProps {
   // Services
   aiService: UnifiedAIService;
   fileSystemService: FileSystemService;
-  multiFileEditor: Record<string, unknown>;
+  multiFileEditor: MultiFileEditor;
 
   // File state
   currentFile: EditorFile | null;
   openFiles: EditorFile[];
+
+  // Multi-file edit live state
+  multiFileEditPlan: MultiFileEditPlan | null;
+  multiFileChanges: FileChange[];
 
   // Workspace
   workspaceFolder: string | null;
@@ -83,6 +88,8 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     aiService,
     fileSystemService,
     multiFileEditor,
+    multiFileEditPlan,
+    multiFileChanges,
     currentFile,
     // openFiles,
     showSuccess,
@@ -116,7 +123,6 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     activeVisualPanel,
   } = props;
 
-  // Search service instance
   const searchService = useMemo(() => new SearchService(fileSystemService), [fileSystemService]);
   const workspaceFileCacheRef = useRef<{
     rootPath: string;
@@ -199,7 +205,10 @@ export function useAppHandlers(props: UseAppHandlersProps) {
   );
 
   // Handle editor mount - initialize error detection
-  const handleEditorMount = useCallback((editor: MonacoEditorNS.IStandaloneCodeEditor | unknown, monaco: typeof MonacoNS | unknown) => {
+  const handleEditorMount = useCallback((
+    editor: MonacoEditorNS.IStandaloneCodeEditor | unknown,
+    monaco: typeof MonacoNS | unknown,
+  ) => {
     const typedEditor = editor as MonacoEditorNS.IStandaloneCodeEditor;
     const typedMonaco = monaco as typeof MonacoNS;
     logger.debug('[AutoFix] Editor mounted, initializing error detection');
@@ -302,9 +311,11 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     };
     logger.debug('[TabCompletion] Inline completion provider registered successfully');
 
-  }, [aiService, currentFile, currentError, showSuccess, showError, setCurrentError, setCurrentFix, setErrorFixPanelOpen, setFixLoading, setFixError]);
+  }, [
+    aiService, currentFile, currentError, showSuccess, showError,
+    setCurrentError, setCurrentFix, setErrorFixPanelOpen, setFixLoading, setFixError,
+  ]);
 
-  // Apply suggested fix
   const handleApplyFix = useCallback((suggestion: FixSuggestion) => {
     if (!editorRef.current || !currentError) {
       logger.error('[AutoFix] Cannot apply fix: editor or error not available');
@@ -337,7 +348,6 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     }
   }, [currentError, showSuccess, showError, setErrorFixPanelOpen, setCurrentError, setCurrentFix]);
 
-  // Handle file open from search
   const handleOpenFileFromSearch = useCallback((file: string, line?: number, column?: number) => {
     handleOpenFileRaw(file);
     if (line && editorRef.current) {
@@ -354,7 +364,6 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     }
   }, [handleOpenFileRaw]);
 
-  // Handle replace in file
   const handleReplaceInFile = useCallback(async (
     file: string,
     searchText: string,
@@ -362,9 +371,12 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     options: SearchOptions
   ) => {
     try {
+      const patternFactory = searchService as unknown as {
+        createSearchPattern: (s: string, o: SearchOptions) => RegExp;
+      };
       const result = await searchService.replaceInFile(
         file,
-        (searchService as unknown as { createSearchPattern: (s: string, o: SearchOptions) => RegExp }).createSearchPattern(searchText, options),
+        patternFactory.createSearchPattern(searchText, options),
         replaceText,
         options
       );
@@ -384,7 +396,6 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     }
   }, [currentFile, fileSystemService, handleFileChange, showSuccess, showError, searchService]);
 
-  // Handle search in files
   const handleSearchInFiles = useCallback(async (
     searchText: string,
     files: string[],
@@ -433,7 +444,6 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     setActiveVisualPanel(activeVisualPanel === 'visual' ? 'none' : 'visual');
   }, [activeVisualPanel, setActiveVisualPanel]);
 
-  // Insert generated code into editor
   const handleInsertCode = useCallback((code: string) => {
     if (editorRef.current) {
       const position = editorRef.current.getPosition();
@@ -449,21 +459,15 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     }
   }, []);
 
-  // Multi-File Edit handlers
   const handleApplyMultiFileChanges = useCallback(async (selectedFiles: string[]) => {
-    const plan = (window as unknown as Record<string, unknown>)['__multiFileEditPlan'] as MultiFileEditPlan | null;
-    const changes = ((window as unknown as Record<string, unknown>)['__multiFileChanges'] as FileChange[] | undefined) ?? [];
-
-    if (!plan) {
+    if (!multiFileEditPlan) {
       logger.error('[MultiFileEdit] No plan available');
       return;
     }
 
     try {
-      const selectedChanges = changes.filter(c => selectedFiles.includes(c.path));
-      const applyFn = (multiFileEditor as Record<string, unknown>)['applyChanges'] as ((c: FileChange[]) => Promise<{ success: boolean; appliedFiles: string[]; error?: string }>) | undefined;
-      if (!applyFn) throw new Error('multiFileEditor.applyChanges not available');
-      const result = await applyFn(selectedChanges);
+      const selectedChanges = multiFileChanges.filter(c => selectedFiles.includes(c.path));
+      const result = await multiFileEditor.applyChanges(selectedChanges);
 
       if (result.success) {
         showSuccess('Changes Applied', `Successfully applied changes to ${result.appliedFiles.length} file(s)`);
@@ -485,7 +489,11 @@ export function useAppHandlers(props: UseAppHandlersProps) {
       logger.error('[MultiFileEdit] Failed to apply changes:', error);
       showError('Apply Failed', error instanceof Error ? error.message : 'Unknown error');
     }
-  }, [multiFileEditor, currentFile, fileSystemService, handleFileChange, showSuccess, showError, setMultiFileApprovalOpen, setMultiFileEditPlan, setMultiFileChanges]);
+  }, [
+    multiFileEditor, multiFileEditPlan, multiFileChanges, currentFile, fileSystemService,
+    handleFileChange, showSuccess, showError, setMultiFileApprovalOpen,
+    setMultiFileEditPlan, setMultiFileChanges,
+  ]);
 
   const handleRejectMultiFileChanges = useCallback(() => {
     setMultiFileApprovalOpen(false);
@@ -494,7 +502,6 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     logger.debug('[MultiFileEdit] Changes rejected');
   }, [setMultiFileApprovalOpen, setMultiFileEditPlan, setMultiFileChanges]);
 
-  // Model change handler
   const handleModelChange = useCallback(async (model: AIModel) => {
     setCurrentModel(model.id);
     try {
@@ -504,7 +511,6 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     }
   }, [aiService, showError, setCurrentModel]);
 
-  // Provider change handler
   const handleProviderChange = useCallback(async (provider: string) => {
     setCurrentProvider(provider);
     try {
@@ -559,8 +565,10 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     showSuccess(`AI ${command} command executed`);
   }, [currentFile, aiChatOpen, setAiChatOpen, handleAIMessage, showSuccess, showWarning]);
 
-  // Multi-File Edit Detection Handler
-  const handleMultiFileEditDetected = useCallback((plan: MultiFileEditPlan, changes: FileChange[]) => {
+  const handleMultiFileEditDetected = useCallback((
+    plan: MultiFileEditPlan,
+    changes: FileChange[],
+  ) => {
     logger.info('[App] Multi-file edit detected:', plan.description);
     setMultiFileEditPlan(plan);
     setMultiFileChanges(changes);

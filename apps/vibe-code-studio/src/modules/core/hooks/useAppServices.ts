@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { unifiedAI } from '../../../services/ai/UnifiedAIService';
 import { logger } from '../../../services/Logger';
 import { FileSystemService } from '../../../services/FileSystemService';
@@ -10,8 +10,8 @@ import { liveEditorStream } from '../../../services/LiveEditorStream';
 import type { BackgroundAgentSystem } from '../../../services/BackgroundAgentSystem';
 import { AgentOrchestrator } from '../../../services/specialized-agents/AgentOrchestrator';
 import { AgentPerformanceOptimizer } from '../../../services/AgentPerformanceOptimizer';
+import { MultiFileEditor } from '../../../services/MultiFileEditor';
 
-const multiFileEditor: Record<string, never> = {};
 const backgroundAgentSystem = {
   on: () => {},
   off: () => {},
@@ -22,47 +22,31 @@ export function useAppServices() {
   const [isAIReady, setIsAIReady] = useState(false);
   const [serviceError, setServiceError] = useState<string | null>(null);
 
-  // Initialize real service instances
-  const fileSystemServiceRef = useRef<FileSystemService | null>(null);
-  if (!fileSystemServiceRef.current) {
-    fileSystemServiceRef.current = new FileSystemService();
-  }
+  // Stable service singletons — useMemo keeps each instance render-safe (no ref
+  // `.current` access during render) while creating it exactly once per hook lifetime.
+  const fileSystemService = useMemo(() => new FileSystemService(), []);
+  const workspaceService = useMemo(() => new WorkspaceService(), []);
+  const gitService = useMemo(() => new GitService('/'), []);
 
-  const workspaceServiceRef = useRef<WorkspaceService | null>(null);
-  if (!workspaceServiceRef.current) {
-    workspaceServiceRef.current = new WorkspaceService();
-  }
+  // Agent services depend on the base services above.
+  const taskPlanner = useMemo(
+    () => new TaskPlanner(unifiedAI, fileSystemService),
+    [fileSystemService]
+  );
+  const executionEngine = useMemo(
+    () => new ExecutionEngine(fileSystemService, unifiedAI, workspaceService, gitService),
+    [fileSystemService, workspaceService, gitService]
+  );
 
-  const gitServiceRef = useRef<GitService | null>(null);
-  if (!gitServiceRef.current) {
-    gitServiceRef.current = new GitService('/');
-  }
+  // Multi-agent orchestrator — agents use UnifiedAIService internally.
+  const orchestrator = useMemo(() => new AgentOrchestrator(), []);
+  const performanceOptimizer = useMemo(() => new AgentPerformanceOptimizer(), []);
 
-  const fileSystemService = fileSystemServiceRef.current!;
-  const workspaceService = workspaceServiceRef.current!;
-  const gitService = gitServiceRef.current!;
-
-  // Initialize agent services (depend on other services)
-  const taskPlannerRef = useRef<TaskPlanner | null>(null);
-  if (!taskPlannerRef.current) {
-    taskPlannerRef.current = new TaskPlanner(unifiedAI, fileSystemService);
-  }
-
-  const executionEngineRef = useRef<ExecutionEngine | null>(null);
-  if (!executionEngineRef.current) {
-    executionEngineRef.current = new ExecutionEngine(fileSystemService, unifiedAI, workspaceService, gitService);
-  }
-
-  // Multi-agent orchestrator — agents use UnifiedAIService internally
-  const orchestratorRef = useRef<AgentOrchestrator | null>(null);
-  if (!orchestratorRef.current) {
-    orchestratorRef.current = new AgentOrchestrator();
-  }
-
-  const performanceOptimizerRef = useRef<AgentPerformanceOptimizer | null>(null);
-  if (!performanceOptimizerRef.current) {
-    performanceOptimizerRef.current = new AgentPerformanceOptimizer();
-  }
+  // Multi-file editor — coordinates atomic multi-file changes with backup/rollback.
+  const multiFileEditor = useMemo(
+    () => new MultiFileEditor(unifiedAI, fileSystemService),
+    [fileSystemService]
+  );
 
   useEffect(() => {
     const initServices = async () => {
@@ -87,11 +71,11 @@ export function useAppServices() {
     fileSystemService,
     workspaceService,
     gitService,
-    taskPlanner: taskPlannerRef.current!,
-    executionEngine: executionEngineRef.current!,
+    taskPlanner,
+    executionEngine,
     liveStream: liveEditorStream,
-    orchestrator: orchestratorRef.current!,
-    performanceOptimizer: performanceOptimizerRef.current!,
+    orchestrator,
+    performanceOptimizer,
     multiFileEditor,
     backgroundAgentSystem,
   };

@@ -4,119 +4,92 @@
  * This is a simplified version that leverages Zustand for state management.
  * No manual memoization needed - React 19 handles optimization.
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type MutableRefObject, type RefObject } from 'react';
 import { useAgentModeStore } from './stores/agentModeStore';
 import type { UseAgentTaskOptions, UseAgentTaskReturn } from './types';
 
 const isWorkspaceContextEqual = (a: any, b: any) => {
   if (a === b) return true;
   if (!a || !b) return false;
-  
+
   const aOpenFiles = a.openFiles || [];
   const bOpenFiles = b.openFiles || [];
-  
+
   if (aOpenFiles.length !== bOpenFiles.length) return false;
   for (let i = 0; i < aOpenFiles.length; i++) {
     if (aOpenFiles[i] !== bOpenFiles[i]) return false;
   }
-  
+
   return (
     a.workspaceFolder === b.workspaceFolder &&
     a.currentFile === b.currentFile
   );
 };
 
+type CompleteTimeoutRef = MutableRefObject<ReturnType<typeof setTimeout> | undefined>;
+
 /**
- * Custom hook for managing multi-agent task execution.
- * Bridges the component to the Zustand store for centralized state management.
- *
- * @param options - Configuration options including orchestrator and optimizer
- * @returns All state and actions needed for agent task management
+ * Store-sync, auto-scroll, periodic profile refresh, and unmount cleanup effects.
+ * Actions are read via getState() so the whole-store snapshot is NOT a dependency
+ * (depending on `store` here re-runs/loops the effects on every state change).
  */
-export function useAgentTask(options: UseAgentTaskOptions): UseAgentTaskReturn {
-  const { orchestrator, performanceOptimizer, workspaceContext, onComplete } = options;
+function useAgentTaskEffects(
+  options: UseAgentTaskOptions,
+  logs: UseAgentTaskReturn['logs'],
+  logEndRef: RefObject<HTMLDivElement | null>,
+  onCompleteTimeoutRef: CompleteTimeoutRef,
+): void {
+  const { orchestrator, performanceOptimizer, workspaceContext } = options;
 
-  // Get all state and actions from the store - no memoization needed
-  const store = useAgentModeStore();
-  const logEndRef = useRef<HTMLDivElement>(null);
-  const onCompleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  // Initialize orchestrator and optimizer in store, guarded against infinite loops
   useEffect(() => {
     const currentState = useAgentModeStore.getState();
     if (orchestrator !== currentState.orchestrator) {
-      store.setOrchestrator(orchestrator);
+      currentState.setOrchestrator(orchestrator);
     }
     if (performanceOptimizer !== currentState.performanceOptimizer) {
-      store.setPerformanceOptimizer(performanceOptimizer);
+      currentState.setPerformanceOptimizer(performanceOptimizer);
     }
     if (!isWorkspaceContextEqual(workspaceContext, currentState.workspaceContext)) {
-      store.setWorkspaceContext(workspaceContext);
+      currentState.setWorkspaceContext(workspaceContext);
     }
-  }, [orchestrator, performanceOptimizer, workspaceContext, store]);
+  }, [orchestrator, performanceOptimizer, workspaceContext]);
 
   // Auto-scroll to latest log
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [store.logs]);
+  }, [logs, logEndRef]);
 
-  // Update agent profiles periodically
+  // Update agent profiles periodically (poll once mounted).
   useEffect(() => {
-    const interval = setInterval(() => {
-      store.updateAgentProfiles();
-      store.updatePerformanceReport();
-    }, 2000);
+    const runUpdate = () => {
+      const { updateAgentProfiles, updatePerformanceReport } = useAgentModeStore.getState();
+      updateAgentProfiles();
+      updatePerformanceReport();
+    };
 
-    // Initial update
-    store.updateAgentProfiles();
-    store.updatePerformanceReport();
+    runUpdate();
+    const interval = setInterval(runUpdate, 2000);
 
     return () => clearInterval(interval);
-  }, [store]);
+  }, []);
 
-  // Wrap executeTask to handle onComplete callback
-  const executeTask = async () => {
-    // Clear any previous pending onComplete timeout
-    if (onCompleteTimeoutRef.current) {
-      clearTimeout(onCompleteTimeoutRef.current);
-      onCompleteTimeoutRef.current = undefined;
-    }
-    const result = await store.executeTask();
-    if (result) {
-      // Auto-complete after showing results
-      onCompleteTimeoutRef.current = setTimeout(() => {
-        onCompleteTimeoutRef.current = undefined;
-        onComplete(result);
-      }, 2000);
-    }
-  };
-
-  // Wrap retryTask similarly
-  const retryTask = async () => {
-    // Clear any previous pending onComplete timeout
-    if (onCompleteTimeoutRef.current) {
-      clearTimeout(onCompleteTimeoutRef.current);
-      onCompleteTimeoutRef.current = undefined;
-    }
-    const result = await store.retryTask();
-    if (result) {
-      // Auto-complete after showing results
-      onCompleteTimeoutRef.current = setTimeout(() => {
-        onCompleteTimeoutRef.current = undefined;
-        onComplete(result);
-      }, 2000);
-    }
-  };
-
-  // Cleanup pending timeout on unmount
+  // Cleanup pending onComplete timeout on unmount
   useEffect(() => {
     return () => {
       if (onCompleteTimeoutRef.current) {
         clearTimeout(onCompleteTimeoutRef.current);
       }
     };
-  }, []);
+  }, [onCompleteTimeoutRef]);
+}
 
+/** Map the Zustand store snapshot + wrapped actions to the hook's public shape. */
+function buildAgentTaskReturn(
+  store: ReturnType<typeof useAgentModeStore.getState>,
+  logEndRef: RefObject<HTMLDivElement | null>,
+  executeTask: () => Promise<void>,
+  retryTask: () => Promise<void>,
+): UseAgentTaskReturn {
   return {
     // State
     task: store.task,
@@ -148,6 +121,55 @@ export function useAgentTask(options: UseAgentTaskOptions): UseAgentTaskReturn {
     availableAgents: store.availableAgents,
     performanceReport: store.performanceReport,
   };
+}
+
+/**
+ * Custom hook for managing multi-agent task execution.
+ * Bridges the component to the Zustand store for centralized state management.
+ *
+ * @param options - Configuration options including orchestrator and optimizer
+ * @returns All state and actions needed for agent task management
+ */
+export function useAgentTask(options: UseAgentTaskOptions): UseAgentTaskReturn {
+  const { onComplete } = options;
+
+  const store = useAgentModeStore();
+  const logEndRef = useRef<HTMLDivElement>(null);
+  const onCompleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useAgentTaskEffects(options, store.logs, logEndRef, onCompleteTimeoutRef);
+
+  // Wrap executeTask to handle onComplete callback
+  const executeTask = async () => {
+    if (onCompleteTimeoutRef.current) {
+      clearTimeout(onCompleteTimeoutRef.current);
+      onCompleteTimeoutRef.current = undefined;
+    }
+    const result = await store.executeTask();
+    if (result) {
+      onCompleteTimeoutRef.current = setTimeout(() => {
+        onCompleteTimeoutRef.current = undefined;
+        onComplete(result);
+      }, 2000);
+    }
+  };
+
+  // Wrap retryTask similarly
+  const retryTask = async () => {
+    if (onCompleteTimeoutRef.current) {
+      clearTimeout(onCompleteTimeoutRef.current);
+      onCompleteTimeoutRef.current = undefined;
+    }
+    const result = await store.retryTask();
+    if (result) {
+      onCompleteTimeoutRef.current = setTimeout(() => {
+        onCompleteTimeoutRef.current = undefined;
+        onComplete(result);
+      }, 2000);
+    }
+  };
+
+  return buildAgentTaskReturn(store, logEndRef, executeTask, retryTask);
 }
 
 // Re-export the original types for compatibility

@@ -44,6 +44,7 @@ import {
 } from './app/hooks/useAppEffects';
 import { useAppHandlers } from './app/hooks/useAppHandlers';
 import { useAppState } from './app/hooks/useAppState';
+import { useWorkspaceFileHandlers } from './app/hooks/useWorkspaceFileHandlers';
 
 // Components
 import { ModernErrorBoundary } from './components/ErrorBoundary/index';
@@ -53,26 +54,6 @@ import { InputDialog } from './components/InputDialog';
 import { DesignTokenManager } from './services/DesignTokenManager';
 import { logger } from './services/Logger';
 import { getUserFriendlyError } from './utils/errorHandler';
-
-// Types
-import type { EditorFile } from './types';
-
-function normalizePath(path: string): string {
-  return path.replace(/\\/g, '/');
-}
-
-function remapOpenPath(path: string, oldPath: string, newPath: string): string {
-  if (path === oldPath) {
-    return newPath;
-  }
-
-  const prefix = `${oldPath}/`;
-  if (path.startsWith(prefix)) {
-    return `${newPath}${path.slice(oldPath.length)}`;
-  }
-
-  return path;
-}
 
 function App() {
   // Input dialog state
@@ -180,10 +161,7 @@ function App() {
   useEffect(() => {
     const loadTokens = async () => {
       await DesignTokenManager.load();
-      // We don't have a specific setter for tokens exposed in context yet,
-      // but this ensures the async load logic is triggered.
-      // In a real scenario, we'd update a context or store here.
-      // If it's intended to be a global singleton or side-effect, we just need to ensure load() is called.
+      // Triggers the async token-load side effect (no context setter yet).
     };
     loadTokens();
   }, []);
@@ -245,154 +223,27 @@ function App() {
     }
   }, [handleOpenFolder, showError]);
 
-  // Helper function for creating new files
-  const handleCreateFile = useCallback((name: string) => {
-    const getLanguageFromExtension = (filePath: string): string => {
-      const ext = filePath.split('.').pop()?.toLowerCase();
-      const languageMap: Record<string, string> = {
-        js: 'javascript', jsx: 'javascript', ts: 'typescript', tsx: 'typescript',
-        py: 'python', java: 'java', cpp: 'cpp', c: 'c', cs: 'csharp', php: 'php',
-        rb: 'ruby', go: 'go', rs: 'rust', html: 'html', css: 'css', scss: 'scss',
-        json: 'json', xml: 'xml', yaml: 'yaml', yml: 'yaml', md: 'markdown',
-        sh: 'shell', sql: 'sql',
-      };
-      return languageMap[ext ?? ''] ?? 'plaintext';
-    };
-
-    const newFile: EditorFile = {
-      id: name,
-      name,
-      path: name,
-      content: '',
-      language: getLanguageFromExtension(name),
-      isModified: false,
-    };
-    setCurrentFile(newFile);
-  }, [setCurrentFile]);
-
-  const handleCreateWorkspaceFile = useCallback(async (filePath: string): Promise<void> => {
-    const normalizedPath = normalizePath(filePath);
-
-    try {
-      await fileSystemService.createFile(normalizedPath, '');
-      await handleOpenFile(normalizedPath);
-      showSuccess('File Created', `Created ${normalizedPath.split('/').pop()}`);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      showError('Create File Failed', `Unable to create file: ${errorMessage}`);
-      throw error;
-    }
-  }, [fileSystemService, handleOpenFile, showSuccess, showError]);
-
-  const handleCreateWorkspaceFolder = useCallback(async (folderPath: string): Promise<void> => {
-    const normalizedPath = normalizePath(folderPath);
-
-    try {
-      await fileSystemService.createDirectory(normalizedPath);
-      showSuccess('Folder Created', `Created ${normalizedPath.split('/').pop()}`);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      showError('Create Folder Failed', `Unable to create folder: ${errorMessage}`);
-      throw error;
-    }
-  }, [fileSystemService, showSuccess, showError]);
-
-  const handleRenameWorkspacePath = useCallback(async (oldPath: string, newPath: string): Promise<void> => {
-    const normalizedOldPath = normalizePath(oldPath);
-    const normalizedNewPath = normalizePath(newPath);
-
-    try {
-      await fileSystemService.rename(normalizedOldPath, normalizedNewPath);
-
-      setOpenFiles(
-        openFiles.map((file) => {
-          const remappedPath = remapOpenPath(file.path, normalizedOldPath, normalizedNewPath);
-          if (remappedPath === file.path) {
-            return file;
-          }
-
-          return {
-            ...file,
-            id: remappedPath,
-            path: remappedPath,
-            name: remappedPath.split('/').pop() ?? remappedPath,
-          };
-        })
-      );
-
-      if (currentFile) {
-        const remappedCurrentPath = remapOpenPath(
-          currentFile.path,
-          normalizedOldPath,
-          normalizedNewPath
-        );
-        if (remappedCurrentPath !== currentFile.path) {
-          setCurrentFile({
-            ...currentFile,
-            id: remappedCurrentPath,
-            path: remappedCurrentPath,
-            name: remappedCurrentPath.split('/').pop() ?? remappedCurrentPath,
-          });
-        }
-      }
-
-      showSuccess(
-        'Item Renamed',
-        `${normalizedOldPath.split('/').pop()} → ${normalizedNewPath.split('/').pop()}`
-      );
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      showError('Rename Failed', `Unable to rename item: ${errorMessage}`);
-      throw error;
-    }
-  }, [fileSystemService, currentFile, openFiles, setCurrentFile, setOpenFiles, showSuccess, showError]);
-
-  // Handle file deletion
-  const handleDeleteFile = useCallback(async (filePath: string): Promise<void> => {
-    const normalizedPath = normalizePath(filePath);
-    const removedPrefix = `${normalizedPath}/`;
-
-    try {
-      await fileSystemService.deleteFile(normalizedPath);
-      if (currentFile?.path === normalizedPath || currentFile?.path.startsWith(removedPrefix)) {
-        setCurrentFile(null);
-      }
-      const updatedOpenFiles = openFiles.filter(
-        file => file.path !== normalizedPath && !file.path.startsWith(removedPrefix)
-      );
-      setOpenFiles(updatedOpenFiles);
-      showSuccess('File Deleted', `Successfully deleted ${normalizedPath.split('/').pop()}`);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      showError('Delete Failed', `Unable to delete file: ${errorMessage}`);
-      throw error;
-    }
-  }, [fileSystemService, currentFile, openFiles, setCurrentFile, setOpenFiles, showSuccess, showError]);
-
-  // Handle saving all open files
-  const handleSaveAll = useCallback(async () => {
-    try {
-      const modifiedFiles = openFiles.filter(f => f.isModified);
-      await Promise.all(modifiedFiles.map(f => fileSystemService.writeFile(f.path, f.content)));
-      const savedCount = modifiedFiles.length;
-      if (savedCount > 0) {
-        showSuccess('Files Saved', `Successfully saved ${savedCount} file(s)`);
-      } else {
-        showWarning('No Changes', 'No files needed to be saved');
-      }
-    } catch (error: unknown) {
-      logger.error('Save all failed', { error });
-      showError('Save Failed', 'Unable to save all files');
-    }
-  }, [openFiles, fileSystemService, showSuccess, showWarning, showError]);
-
-  // Handle closing current workspace
-  const handleCloseFolder = useCallback(() => {
-    setWorkspaceFolder(null);
-    setCurrentFile(null);
-    setOpenFiles([]);
-    showSuccess('Workspace Closed', 'Workspace has been closed');
-  }, [setWorkspaceFolder, setCurrentFile, setOpenFiles, showSuccess]);
+  // Workspace file handlers (create / rename / delete / save / close)
+  const {
+    handleCreateFile,
+    handleCreateWorkspaceFile,
+    handleCreateWorkspaceFolder,
+    handleRenameWorkspacePath,
+    handleDeleteFile,
+    handleSaveAll,
+    handleCloseFolder,
+  } = useWorkspaceFileHandlers({
+    fileSystemService,
+    currentFile,
+    openFiles,
+    setCurrentFile,
+    setOpenFiles,
+    setWorkspaceFolder,
+    handleOpenFile,
+    showSuccess,
+    showError,
+    showWarning,
+  });
 
   // Handle creating new file
   const handleNewFile = useCallback(() => {
@@ -404,6 +255,8 @@ function App() {
     aiService,
     fileSystemService,
     multiFileEditor,
+    multiFileEditPlan: appState.multiFileEditPlan,
+    multiFileChanges: appState.multiFileChanges,
     currentFile,
     openFiles,
     workspaceFolder,
@@ -480,23 +333,29 @@ function App() {
   const servicesContextValue = useMemo(() => ({
     aiService, fileSystemService, taskPlanner, liveStream, executionEngine, backgroundAgentSystem,
     orchestrator, performanceOptimizer,
-  }), [aiService, fileSystemService, taskPlanner, liveStream, executionEngine, backgroundAgentSystem,
-    orchestrator, performanceOptimizer]);
+  }), [
+    aiService, fileSystemService, taskPlanner, liveStream,
+    executionEngine, backgroundAgentSystem, orchestrator, performanceOptimizer,
+  ]);
 
   const uiPanelContextValue = useMemo(() => ({
     settingsOpen, setSettingsOpen,
     aiChatOpen, setAiChatOpen,
     gitPanelOpen: appState.gitPanelOpen,
     globalSearchOpen: appState.globalSearchOpen, setGlobalSearchOpen: appState.setGlobalSearchOpen,
-    keyboardShortcutsOpen: appState.keyboardShortcutsOpen, setKeyboardShortcutsOpen: appState.setKeyboardShortcutsOpen,
-    backgroundPanelOpen: appState.backgroundPanelOpen, setBackgroundPanelOpen: appState.setBackgroundPanelOpen,
+    keyboardShortcutsOpen: appState.keyboardShortcutsOpen,
+    setKeyboardShortcutsOpen: appState.setKeyboardShortcutsOpen,
+    backgroundPanelOpen: appState.backgroundPanelOpen,
+    setBackgroundPanelOpen: appState.setBackgroundPanelOpen,
     commandPaletteOpen, setCommandPaletteOpen,
     previewOpen: appState.previewOpen, setPreviewOpen: appState.setPreviewOpen,
     terminalOpen: appState.terminalOpen, setTerminalOpen: appState.setTerminalOpen,
     sidebarOpen, setSidebarOpen,
-    activeVisualPanel: appState.activeVisualPanel, setActiveVisualPanel: appState.setActiveVisualPanel,
+    activeVisualPanel: appState.activeVisualPanel,
+    setActiveVisualPanel: appState.setActiveVisualPanel,
     chatMode: appState.chatMode, setChatMode: appState.setChatMode,
-    errorFixPanelOpen: appState.errorFixPanelOpen, setErrorFixPanelOpen: appState.setErrorFixPanelOpen,
+    errorFixPanelOpen: appState.errorFixPanelOpen,
+    setErrorFixPanelOpen: appState.setErrorFixPanelOpen,
     agentModeOpen: appState.agentModeOpen, setAgentModeOpen: appState.setAgentModeOpen,
   }), [
     settingsOpen, setSettingsOpen, aiChatOpen, setAiChatOpen,
