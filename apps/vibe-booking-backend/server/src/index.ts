@@ -1,17 +1,8 @@
 import cors from '@fastify/cors';
 import Fastify from 'fastify';
 import {
-  createSessionToken,
-  getSessionCookieName,
-  getSessionTtlSeconds,
-  parseSessionToken,
-  type AuthUser,
-} from '@vibetech/auth';
-import {
-  createStripeWebhookBus,
   getStripeClient,
   resolveStripeWebhookEvent,
-  type StripeSubscriptionLike,
   type StripeWebhookVerifierLike,
 } from '@vibetech/billing';
 import { createTenantCheckoutSession } from '@vibetech/payments';
@@ -22,157 +13,26 @@ import { searchHotels, getHotelDetails } from './expediaClient.js';
 import { buildPaymentReceiptEmail } from '@vibetech/email';
 import { recordAiUsage, getAiUsage } from '@vibetech/ai';
 import { setupStripeTenant } from './stripeSetup.js';
-import {
-  isGeneratedAuthConfigured,
-  verifyGeneratedLogin,
-  buildGeneratedSessionCookie,
-} from './authSession.js';
-import { randomBytes, randomUUID, scrypt, timingSafeEqual } from 'node:crypto';
-import { promisify } from 'node:util';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-
+import {
+  calculateNights,
+  validateBookingDates,
+} from './bookingHelpers.js';
+import { requireAuth, setupAuthHook } from './authHelpers.js';
+import { registerAuthRoutes } from './authRoutes.js';
+import { createBookingStripeWebhookBus } from './stripeWebhookBus.js';
+import {
+  DEFAULT_HOST,
+  DEFAULT_PORT,
+  evaluatePolicyCompliance,
+} from './types.js';
 loadLocalEnv();
-
 const app = Fastify({ logger: true });
-const port = Number(process.env.PORT ?? 4020);
-const host = process.env.HOST ?? '127.0.0.1';
+const port = Number(process.env.PORT ?? DEFAULT_PORT);
+const host = process.env.HOST ?? DEFAULT_HOST;
 
-const scryptAsync = promisify(scrypt);
-const PASSWORD_KEY_LENGTH = 64;
-
-interface PolicyCompliance {
-  isWithinPolicy: boolean;
-  requiresApproval: boolean;
-  policyReason?: string;
-}
-
-interface Hotel {
-  id: string;
-  name: string;
-  city: string;
-  country: string;
-  neighborhood: string;
-  description: string;
-  nightlyRate: number;
-  currency: string;
-  rating: number;
-  reviewScore: number;
-  reviewCount: number;
-  imageUrl: string;
-  gallery: string[];
-  amenities: string[];
-  businessPerks: string[];
-  cancellationPolicy: string;
-  distanceFromCenter: string;
-  badge: string;
-  policyCompliance?: PolicyCompliance;
-}
-
-function evaluatePolicyCompliance(hotel: Hotel): PolicyCompliance {
-  if (hotel.nightlyRate <= 250) {
-    return {
-      isWithinPolicy: true,
-      requiresApproval: false,
-    };
-  }
-  return {
-    isWithinPolicy: false,
-    requiresApproval: true,
-    policyReason: `Rate ($${hotel.nightlyRate}/night) exceeds corporate travel budget limit of $250.`,
-  };
-}
-
-async function hashPassword(password: string): Promise<string> {
-  const salt = randomBytes(16).toString('hex');
-  const derivedKey = (await scryptAsync(password, salt, PASSWORD_KEY_LENGTH)) as Buffer;
-  return `${salt}:${derivedKey.toString('hex')}`;
-}
-
-async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
-  const [salt, key] = storedHash.split(':');
-  if (!salt || !key) return false;
-
-  const storedKey = Buffer.from(key, 'hex');
-  const derivedKey = (await scryptAsync(password, salt, storedKey.length)) as Buffer;
-  return storedKey.length === derivedKey.length && timingSafeEqual(storedKey, derivedKey);
-}
-
-function buildSessionCookie(user: AuthUser): string {
-  const token = createSessionToken(user);
-  const secure = process.env.NODE_ENV === 'production' || (process.env.APP_BASE_URL && process.env.APP_BASE_URL.startsWith('https://'));
-  const parts = [
-    `${getSessionCookieName()}=${token}`,
-    'Path=/',
-    'HttpOnly',
-    'SameSite=Lax',
-    `Max-Age=${getSessionTtlSeconds()}`,
-    secure ? 'Secure' : '',
-  ].filter(Boolean);
-
-  return parts.join('; ');
-}
-
-function buildLogoutCookie(): string {
-  const secure = process.env.NODE_ENV === 'production' || (process.env.APP_BASE_URL && process.env.APP_BASE_URL.startsWith('https://'));
-  const parts = [
-    `${getSessionCookieName()}=`,
-    'Path=/',
-    'HttpOnly',
-    'SameSite=Lax',
-    'Max-Age=0',
-    secure ? 'Secure' : '',
-  ].filter(Boolean);
-
-  return parts.join('; ');
-}
-
-function getCookie(cookieHeader: string | undefined, name: string): string | null {
-  if (!cookieHeader) return null;
-  const prefix = `${name}=`;
-  for (const rawPart of cookieHeader.split(';')) {
-    const part = rawPart.trim();
-    if (part.startsWith(prefix)) {
-      return part.slice(prefix.length);
-    }
-  }
-  return null;
-}
-
-declare module 'fastify' {
-  interface FastifyRequest {
-    user: AuthUser | null;
-  }
-}
-
-app.decorateRequest('user', null);
-app.addHook('preHandler', async (req) => {
-  let token = getCookie(req.headers.cookie, getSessionCookieName());
-  if (!token && req.headers.authorization?.startsWith('Bearer ')) {
-    token = req.headers.authorization.slice(7);
-  }
-  if (token && token !== 'undefined') {
-    try {
-      const payload = parseSessionToken(token);
-      if (payload) {
-        req.user = {
-          id: payload.sub,
-          email: payload.email,
-          fullName: (payload as any).fullName || payload.email,
-        };
-      }
-    } catch {
-      req.user = null;
-    }
-  }
-});
-
-function requireAuth(req: any, reply: any, done: () => void) {
-  if (!req.user) {
-    reply.code(401).send({ error: 'Unauthorized' });
-    return;
-  }
-  done();
-}
+setupAuthHook(app);
 
 app.log.info('Initializing SQLite database schema using BookingRepository...');
 const bookingRepo = new BookingRepository();
@@ -187,102 +47,7 @@ await app.register(fastifyRawBody, {
   global: false,
 });
 
-const processedStripeWebhookEvents = new Set<string>();
-const stripeWebhookBus = createStripeWebhookBus({
-  hasProcessedEvent: (eventId) => processedStripeWebhookEvents.has(eventId),
-  markEventProcessed: (event) => {
-    processedStripeWebhookEvents.add(event.id);
-  },
-  handlers: {
-    'checkout.session.completed': (event, context) => {
-      const session = event.data.object as any;
-      context.logger?.info?.(
-        {
-          app: 'vibe-booking-backend',
-          eventId: event.id,
-          sessionId: session.id,
-          customerEmail: session.customer_email ?? session.customer_details?.email ?? null,
-        },
-        'Stripe checkout session completed webhook received',
-      );
-
-      const bookingId = session.metadata?.bookingId;
-      if (bookingId) {
-        try {
-          const booking = bookingRepo.getBookingById(bookingId);
-          if (booking && booking.paymentStatus !== 'paid') {
-            const paymentId = randomUUID();
-            const createdAt = new Date().toISOString();
-            
-            if (booking.billingMethod === 'bleisure_split') {
-              const totalNights = calculateNights(booking.checkIn, booking.checkOut);
-              const leisureNights = booking.leisureNights ?? 0;
-              const leisurePrice = totalNights > 0 ? (leisureNights / totalNights) * booking.totalPrice : 0;
-              const corporatePrice = booking.totalPrice - leisurePrice;
-
-              // Record Stripe payment for personal/leisure portion
-              bookingRepo.createPayment({
-                id: paymentId,
-                bookingId: booking.id,
-                amount: leisurePrice,
-                currency: booking.currency,
-                provider: 'stripe',
-                status: 'succeeded',
-                createdAt,
-              });
-
-              // Record Corporate invoice payment for corporate portion
-              bookingRepo.createPayment({
-                id: randomUUID(),
-                bookingId: booking.id,
-                amount: corporatePrice,
-                currency: booking.currency,
-                provider: 'corporate_invoice',
-                status: 'succeeded',
-                createdAt,
-              });
-            } else {
-              bookingRepo.createPayment({
-                id: paymentId,
-                bookingId: booking.id,
-                amount: booking.totalPrice,
-                currency: booking.currency,
-                provider: 'stripe',
-                status: 'succeeded',
-                createdAt,
-              });
-            }
-              
-            bookingRepo.confirmBookingPayment(booking.id);
-            context.logger?.info?.({ bookingId }, 'Booking payment processed via Stripe webhook');
-          }
-        } catch (err) {
-          app.log.error({ err, bookingId }, 'Failed to process Stripe webhook payment');
-        }
-      }
-    },
-  },
-  prefixHandlers: [
-    {
-      prefix: 'customer.subscription.',
-      handle: (event, context) => {
-        const subscription = event.data.object as StripeSubscriptionLike;
-        context.logger?.info?.(
-          {
-            app: 'vibe-booking-backend',
-            eventId: event.id,
-            subscriptionId: subscription.id,
-            status: subscription.status,
-          },
-          'Stripe subscription event received',
-        );
-      },
-    },
-  ],
-  defaultHandler: (event, context) => {
-    context.logger?.debug?.({ type: event.type }, 'Unhandled Stripe webhook event');
-  },
-});
+const stripeWebhookBus = createBookingStripeWebhookBus(bookingRepo);
 
 app.get('/api/health', async () => ({
   status: 'ok',
@@ -349,108 +114,7 @@ app.post(
   },
 );
 
-const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-  firstName: z.string().min(1),
-  lastName: z.string().min(1),
-});
-
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-});
-
-app.post('/api/auth/register', async (req, reply) => {
-  const payload = registerSchema.safeParse(req.body);
-  if (!payload.success) {
-    return reply.code(400).send({ error: payload.error.flatten() });
-  }
-
-  const existing = bookingRepo.getUserByEmail(payload.data.email);
-  if (existing) {
-    return reply.code(409).send({ error: 'Email already registered' });
-  }
-
-  const userId = randomUUID();
-  const passwordHash = await hashPassword(payload.data.password);
-
-  bookingRepo.createUser({
-    id: userId,
-    email: payload.data.email,
-    passwordHash,
-    firstName: payload.data.firstName,
-    lastName: payload.data.lastName,
-  });
-
-  const authUser: AuthUser = {
-    id: userId,
-    email: payload.data.email,
-    fullName: `${payload.data.firstName} ${payload.data.lastName}`,
-  };
-
-  const token = createSessionToken(authUser);
-  reply.header('set-cookie', buildSessionCookie(authUser));
-  return {
-    ok: true,
-    user: authUser,
-    token,
-  };
-});
-
-app.post('/api/auth/login', async (req, reply) => {
-  const payload = loginSchema.safeParse(req.body);
-  if (!payload.success) {
-    return reply.code(400).send({ error: payload.error.flatten() });
-  }
-
-  // 1. Try generated operator auth first
-  const operatorUser = await verifyGeneratedLogin(payload.data.email, payload.data.password);
-  if (operatorUser) {
-    const token = createSessionToken(operatorUser);
-    reply.header('set-cookie', buildGeneratedSessionCookie(operatorUser));
-    return {
-      ok: true,
-      user: operatorUser,
-      token,
-    };
-  }
-
-  // 2. Fall back to standard SQLite customer auth
-  const user = bookingRepo.getUserByEmail(payload.data.email);
-  if (!user || !(await verifyPassword(payload.data.password, user.passwordHash))) {
-    return reply.code(401).send({ error: 'Invalid credentials' });
-  }
-
-  const authUser: AuthUser = {
-    id: user.id,
-    email: user.email,
-    fullName: `${user.firstName} ${user.lastName}`,
-  };
-
-  const token = createSessionToken(authUser);
-  reply.header('set-cookie', buildSessionCookie(authUser));
-  return {
-    ok: true,
-    user: authUser,
-    token,
-  };
-});
-
-app.post('/api/auth/logout', async (_req, reply) => {
-  reply.header('set-cookie', buildLogoutCookie());
-  return {
-    ok: true,
-  };
-});
-
-app.get('/api/auth/me', async (req) => {
-  return {
-    ok: true,
-    user: req.user,
-    configured: isGeneratedAuthConfigured(),
-  };
-});
+registerAuthRoutes(app, bookingRepo);
 
 app.get('/api/pro', { preHandler: [requireAuth] }, async () => {
   return {
@@ -562,50 +226,6 @@ const createBookingSchema = z.object({
   businessNights: z.number().int().min(0).optional(),
   leisureNights: z.number().int().min(0).optional(),
 });
-
-const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-
-function parseBookingDate(value: string): number | null {
-  if (!DATE_ONLY_PATTERN.test(value)) return null;
-
-  const [yearText, monthText, dayText] = value.split('-');
-  const year = Number(yearText);
-  const month = Number(monthText);
-  const day = Number(dayText);
-  const timestamp = Date.UTC(year, month - 1, day);
-  const parsed = new Date(timestamp);
-
-  if (
-    parsed.getUTCFullYear() !== year ||
-    parsed.getUTCMonth() !== month - 1 ||
-    parsed.getUTCDate() !== day
-  ) {
-    return null;
-  }
-
-  return timestamp;
-}
-
-function validateBookingDates(checkIn: string, checkOut: string): string | null {
-  const checkInTime = parseBookingDate(checkIn);
-  if (checkInTime === null) return 'Check-in date must use YYYY-MM-DD';
-
-  const checkOutTime = parseBookingDate(checkOut);
-  if (checkOutTime === null) return 'Check-out date must use YYYY-MM-DD';
-
-  if (checkOutTime <= checkInTime) return 'Check-out date must be after check-in';
-
-  return null;
-}
-
-function calculateNights(checkIn: string, checkOut: string): number {
-  const checkInTime = parseBookingDate(checkIn);
-  const checkOutTime = parseBookingDate(checkOut);
-  if (checkInTime === null || checkOutTime === null) return 0;
-
-  const delta = checkOutTime - checkInTime;
-  return Math.ceil(delta / (1000 * 60 * 60 * 24));
-}
 
 app.post('/api/bookings', { preHandler: [requireAuth] }, async (req, reply) => {
   const payload = createBookingSchema.safeParse(req.body);

@@ -156,18 +156,38 @@ function walkDirectory(dirPath) {
 console.log("🔍 Validating file sizes...\n");
 console.log(`📏 Hard limit: ${MAX_LINES} lines | ⚠️  Warning at: ${WARNING_THRESHOLD} lines\n`);
 
-const fileArgs = process.argv.slice(2);
+const rawArgs = process.argv.slice(2);
+let topN = 0;
+const fileArgs = [];
+
+for (const arg of rawArgs) {
+  if (arg === '--top') {
+    topN = Infinity; // will be refined by next numeric arg
+  } else if (topN === Infinity && /^\d+$/.test(arg)) {
+    topN = parseInt(arg, 10);
+  } else {
+    fileArgs.push(arg);
+  }
+}
 
 if (fileArgs.length > 0) {
-	// Scoped mode: check only the files passed in (e.g. staged files).
-	for (const arg of fileArgs) {
-		const fullPath = path.resolve(process.cwd(), arg);
-		if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-			checkFile(fullPath);
-		}
-	}
+  // Scoped mode (pre-commit hook or explicit paths)
+  for (const arg of fileArgs) {
+    const fullPath = path.resolve(process.cwd(), arg);
+    if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+      checkFile(fullPath);
+    }
+  }
 } else {
-	walkDirectory(process.cwd());
+  walkDirectory(process.cwd());
+}
+
+// If user asked for --top N, trim results to the largest N
+if (topN > 0) {
+  violations.sort((a, b) => b.lines - a.lines);
+  warnings.sort((a, b) => b.lines - a.lines);
+  if (violations.length > topN) violations.length = topN;
+  if (warnings.length > topN) warnings.length = topN;
 }
 
 // Report results
