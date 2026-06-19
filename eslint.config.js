@@ -293,6 +293,82 @@ export default tseslint.config(
     },
   },
 
+  // ========================================
+  // Workspace size caps (500 +/- 100 line policy)
+  // File cap 600 (hard) / warning band starts at 500 via Prettier + reviews.
+  // Line length 100. Exclusions handled in the override block below.
+  // ========================================
+  {
+    files: [
+      'apps/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'packages/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'backend/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'tools/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'personal-tools/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'plugins/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+      'desktop-bridge/**/*.{js,mjs,cjs,jsx,ts,tsx}',
+    ],
+    rules: {
+      'max-lines': ['error', { max: 600, skipBlankLines: true, skipComments: true }],
+      'max-len': [
+        'error',
+        {
+          code: 100,
+          tabWidth: 2,
+          ignoreUrls: true,
+          ignoreStrings: true,
+          ignoreTemplateLiterals: true,
+          ignoreRegExpLiterals: true,
+          ignoreComments: false,
+        },
+      ],
+    },
+  },
+
+  // Function-length cap (50 lines) — non-component files only.
+  // React components (.tsx/.jsx) are exempt: the workspace policy allows
+  // components 200-300 lines, which would conflict with a 50-line function cap.
+  {
+    files: [
+      'apps/**/*.{js,mjs,cjs,ts}',
+      'packages/**/*.{js,mjs,cjs,ts}',
+      'backend/**/*.{js,mjs,cjs,ts}',
+      'tools/**/*.{js,mjs,cjs,ts}',
+      'personal-tools/**/*.{js,mjs,cjs,ts}',
+      'plugins/**/*.{js,mjs,cjs,ts}',
+      'desktop-bridge/**/*.{js,mjs,cjs,ts}',
+    ],
+    rules: {
+      'max-lines-per-function': [
+        'error',
+        { max: 50, skipBlankLines: true, skipComments: true, IIFEs: true },
+      ],
+    },
+  },
+
+  // Size-cap exclusions: tests, generated code, snapshots, migrations, and
+  // scaffolding templates are never subject to the size/length caps.
+  {
+    files: [
+      '**/*.{test,spec}.{ts,tsx,js,jsx,mjs,cjs}',
+      '**/__tests__/**',
+      '**/tests/**',
+      '**/e2e/**',
+      '**/*.gen.ts',
+      '**/*.generated.*',
+      '**/*.snap',
+      '**/migrations/**',
+      '**/generated/**',
+      '**/.prisma/**',
+      'plugins/factory/src/generators/**/files/**',
+    ],
+    rules: {
+      'max-lines': 'off',
+      'max-lines-per-function': 'off',
+      'max-len': 'off',
+    },
+  },
+
   // Nx module boundaries are staged in warn mode while the project tag taxonomy
   // and existing target failures are cleaned up.
   {
@@ -670,7 +746,6 @@ export default tseslint.config(
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
       'no-console': 'off',
-      'max-len': 'off',
       'consistent-return': 'off',
       'react-hooks/exhaustive-deps': 'off',
       'react-refresh/only-export-components': 'off',
@@ -688,7 +763,6 @@ export default tseslint.config(
       'apps/vibe-booking-v2/**/*.{js,jsx,ts,tsx}',
       'apps/vibe-dental/**/*.{js,jsx,ts,tsx}',
       'apps/vibe-portal/**/*.{js,jsx,ts,tsx}',
-      'apps/vibe-reminder-v2/**/*.{js,jsx,ts,tsx}',
       'apps/vibe-discharge/**/*.{js,jsx,ts,tsx}',
       'apps/vibetech-command-center/**/*.{js,jsx,ts,tsx}',
       'backend/ipc-bridge/**/*.{js,jsx,ts,tsx}',

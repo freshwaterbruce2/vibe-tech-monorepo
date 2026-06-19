@@ -115,9 +115,9 @@ if ($typeScriptFiles.Count -gt 0) {
 }
 
 # ============================================
-# 3. File Size Check (prevent large files)
+# 3. File Size Check (byte size + line-count caps)
 # ============================================
-Write-Host "[3/3] Checking file sizes..." -ForegroundColor Yellow
+Write-Host "[3/3] Checking file sizes and line counts..." -ForegroundColor Yellow
 
 $maxSizeBytes = 5MB
 $largeFiles = @()
@@ -138,7 +138,28 @@ if ($largeFiles.Count -gt 0) {
     }
     $exitCode = 1
 } else {
-    Write-Host "  File sizes OK" -ForegroundColor Green
+    Write-Host "  Byte sizes OK (<5MB)" -ForegroundColor Green
+}
+
+# Line-count cap (500 warn / 600 hard) via the shared validator. The script
+# applies its own extension filter and exclusion globs (tests, generated code,
+# migrations, scaffolding templates).
+$lineCountFiles = @(
+    $stagedFiles | Where-Object {
+        $_ -match '\.(ts|tsx|js|jsx|mjs|cjs|py|rs|go|java|cs|cpp|c|rb|php|kt|swift)$' -and
+        $_ -notmatch '\.d\.ts$'
+    }
+)
+
+if ($lineCountFiles.Count -gt 0) {
+    $exitCode = [Math]::Max(
+        [int]$exitCode,
+        [int](Invoke-QualityCommand -Label "  Checking line-count caps on staged files..." -Command {
+            node scripts/validate-file-size.js @lineCountFiles
+        })
+    )
+} else {
+    Write-Host "  Line-count check skipped (no code files)" -ForegroundColor DarkGray
 }
 
 # ============================================

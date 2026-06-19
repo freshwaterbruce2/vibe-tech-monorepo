@@ -18,7 +18,7 @@ import { registerLocalLlmIpc, setupLocalLlm } from './llm';
 // better-sqlite3 is preferred for Electron (sync + fast transactions).
 // NOTE: Requires dependency + rebuild for Electron.
 
-const HUB_DB_PATH = String.raw`D:\databases\database.db`;
+const HUB_DB_PATH = process.env.HUB_DB_PATH ?? String.raw`D:\databases\database.db`;
 
 const DEV_SERVER_URL = 'http://localhost:5173';
 function isDevMode(): boolean {
