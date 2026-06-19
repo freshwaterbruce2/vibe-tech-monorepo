@@ -9,7 +9,8 @@
     "@vibetech/billing",
     "@vibetech/emails",
     "@vibetech/entitlements",
-    "@vibetech/landing"
+    "@vibetech/landing",
+    "monetization"
   ],
   "targets": {
     "dev": {

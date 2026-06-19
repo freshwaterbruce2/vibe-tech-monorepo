@@ -1,8 +1,17 @@
 import cors from '@fastify/cors';
 import Fastify from 'fastify';
+import rawBody from 'fastify-raw-body';
 import type { AuthUser } from '@vibetech/auth';
-import { buildCheckoutSession } from '@vibetech/billing';
+import {
+  buildCheckoutSession,
+  createStripeWebhookBus,
+  getStripeClient,
+  readStripeObjectId,
+  resolveStripeWebhookEvent,
+} from '@vibetech/billing';
+import type { StripeCheckoutSessionLike } from '@vibetech/billing';
 import { PaymentReceipt, renderToHtml, renderToText } from '@vibetech/emails';
+import { getTenantPlan, setTenantPlan } from '@vibetech/monetization';
 
 import {
   buildGeneratedLogoutCookie,
@@ -20,6 +29,8 @@ import { openDb } from './db.js';
 import { GENERATED_FEATURES, hasFeature } from './entitlements.js';
 import { loadLocalEnv } from './loadLocalEnv.js';
 import { ReminderService } from './reminders.js';
+import type { ReminderDelivery } from './reminders.js';
+import { createReminderScheduler } from './scheduler.js';
 
 loadLocalEnv();
 
@@ -32,6 +43,13 @@ const reminders = new ReminderService();
 await app.register(cors, {
   origin: true,
   credentials: true,
+});
+
+await app.register(rawBody, {
+  field: 'rawBody',
+  global: false,
+  encoding: false,
+  runFirst: true,
 });
 
 app.get('/api/health', async () => ({
@@ -93,7 +111,7 @@ app.get('/api/pro', async (req, reply) => {
     });
   }
 
-  const plan = req.headers['x-plan'] === 'pro' ? 'pro' : 'free';
+  const plan = resolveEffectivePlan(authUser);
 
   if (!hasFeature(plan, GENERATED_FEATURES.premiumRoute)) {
     return reply.code(403).send({
@@ -176,18 +194,11 @@ app.post('/api/appointments/:id/no-show', async (req, reply) => {
 
 app.post('/api/reminders/run', async (req) => {
   const tenantId = readTenantId(req.headers['x-tenant-id']);
-  const candidates = appointments.listReminderCandidates(tenantId);
-  const deliveries = [];
-
-  for (const appointment of candidates) {
-    const delivery = await reminders.sendReminder(appointment);
-    appointments.markReminderSent(appointment.id);
-    deliveries.push(delivery);
-  }
+  const deliveries = await processTenantReminders(tenantId);
 
   return {
     ok: true,
-    scanned: candidates.length,
+    scanned: deliveries.length,
     deliveries,
   };
 });
@@ -249,7 +260,7 @@ app.post('/api/pro/rewrite', async (req, reply) => {
     });
   }
 
-  const plan = req.headers['x-plan'] === 'pro' ? 'pro' : 'free';
+  const plan = resolveEffectivePlan(authUser);
   if (!hasFeature(plan, GENERATED_FEATURES.premiumRoute)) {
     return reply.code(403).send({
       error: 'Upgrade required',
@@ -303,6 +314,60 @@ app.get('/api/billing/demo-checkout', async (req, reply) => {
   }
 });
 
+const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+const processedStripeEvents = new Set<string>();
+
+const stripeWebhookBus = createStripeWebhookBus({
+  handlers: {
+    'checkout.session.completed': (event) => {
+      const session = event.data.object as StripeCheckoutSessionLike;
+      const tenantId = resolveCheckoutTenantId(session);
+      setTenantPlan(tenantId, 'pro');
+      app.log.info({ tenantId, eventId: event.id }, 'Tenant upgraded to pro plan');
+    },
+  },
+  hasProcessedEvent: (eventId) => processedStripeEvents.has(eventId),
+  markEventProcessed: (event) => {
+    processedStripeEvents.add(event.id);
+  },
+});
+
+app.post('/api/webhooks/stripe', { config: { rawBody: true } }, async (req, reply) => {
+  const rawBuffer = (req as { rawBody?: string | Buffer }).rawBody;
+
+  let event;
+  try {
+    event = resolveStripeWebhookEvent({
+      rawBody: Buffer.isBuffer(rawBuffer) ? rawBuffer : undefined,
+      signature: req.headers['stripe-signature'],
+      secret: stripeWebhookSecret,
+      parsedBody: req.body,
+      stripeClient: stripeWebhookSecret ? getStripeClient() : undefined,
+      allowUnsigned: stripeWebhookSecret ? false : true,
+    });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    req.log.error({ err: error }, 'Stripe webhook verification failed');
+    return reply.code(400).send({ error: 'Invalid webhook payload', detail });
+  }
+
+  const result = await stripeWebhookBus.dispatch(event, { logger: req.log });
+  return { ok: true, handled: result.handled, eventId: result.eventId };
+});
+
+const reminderScheduler = createReminderScheduler({
+  task: runScheduledReminderSweep,
+  intervalMs: resolveSchedulerIntervalMs(),
+  logger: app.log,
+});
+
+if (process.env.REMINDER_SCHEDULER_ENABLED === 'true') {
+  reminderScheduler.start();
+  app.log.info({ intervalMs: resolveSchedulerIntervalMs() }, 'Reminder scheduler started');
+}
+
+registerShutdownHandlers();
+
 await app.listen({ port, host });
 
 function normalizeLoginInput(body: unknown): {
@@ -352,4 +417,61 @@ function requireGeneratedAuth(cookieHeader: string | undefined): AuthUser | null
   }
 
   return status.user;
+}
+
+function resolveEffectivePlan(authUser: AuthUser): 'free' | 'pro' {
+  if (authUser.isAdmin) {
+    return 'pro';
+  }
+
+  const planLevel = getTenantPlan(authUser.id);
+  return planLevel === 'pro' || planLevel === 'business' ? 'pro' : 'free';
+}
+
+function resolveCheckoutTenantId(session: StripeCheckoutSessionLike): string {
+  const fromMetadata = session.metadata?.tenantId?.trim();
+  if (fromMetadata) {
+    return fromMetadata;
+  }
+
+  return readStripeObjectId(session.customer) ?? 'demo-clinic';
+}
+
+async function processTenantReminders(tenantId: string): Promise<ReminderDelivery[]> {
+  const candidates = appointments.listReminderCandidates(tenantId);
+  const deliveries: ReminderDelivery[] = [];
+
+  for (const appointment of candidates) {
+    const delivery = await reminders.sendReminder(appointment);
+    appointments.markReminderSent(appointment.id);
+    deliveries.push(delivery);
+  }
+
+  return deliveries;
+}
+
+function resolveSchedulerIntervalMs(): number {
+  const parsed = Number(process.env.REMINDER_SCHEDULER_INTERVAL_MS);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 300_000;
+}
+
+async function runScheduledReminderSweep(): Promise<void> {
+  for (const tenantId of appointments.listTenantIdsWithPendingReminders()) {
+    const deliveries = await processTenantReminders(tenantId);
+    if (deliveries.length > 0) {
+      app.log.info({ tenantId, sent: deliveries.length }, 'Scheduled reminders sent');
+    }
+  }
+}
+
+function registerShutdownHandlers(): void {
+  const shutdown = (signal: NodeJS.Signals): void => {
+    app.log.info({ signal }, 'Shutting down reminder service');
+    reminderScheduler.stop();
+    void app.close().finally(() => process.exit(0));
+  };
+
+  for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+    process.once(signal, shutdown);
+  }
 }

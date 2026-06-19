@@ -130,6 +130,22 @@ export class AppointmentRepository {
     return rows.map(mapAppointment);
   }
 
+  listTenantIdsWithPendingReminders(horizonHours = 24): string[] {
+    const now = new Date();
+    const horizon = new Date(now.getTime() + horizonHours * 60 * 60 * 1000);
+    const rows = this.db
+      .prepare(
+        `SELECT DISTINCT tenant_id
+           FROM appointments
+          WHERE status IN ('scheduled', 'rescheduled')
+            AND appointment_time BETWEEN ? AND ?
+            AND last_reminder_at IS NULL`,
+      )
+      .all(now.toISOString(), horizon.toISOString()) as { tenant_id: string }[];
+
+    return rows.map((row) => row.tenant_id);
+  }
+
   findByToken(token: string): Appointment | null {
     const row = this.db
       .prepare('SELECT * FROM appointments WHERE reschedule_token = ?')

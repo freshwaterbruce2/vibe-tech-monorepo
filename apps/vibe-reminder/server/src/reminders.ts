@@ -1,6 +1,7 @@
 import { renderToHtml, renderToText } from '@vibetech/emails';
 import React from 'react';
 import { Resend } from 'resend';
+import twilio from 'twilio';
 
 import type { Appointment } from './appointments.js';
 
@@ -73,6 +74,13 @@ export class ReminderService {
     ? new Resend(process.env.RESEND_API_KEY)
     : null;
 
+  private readonly twilioClient =
+    process.env.TWILIO_ACCOUNT_SID &&
+    process.env.TWILIO_AUTH_TOKEN &&
+    process.env.TWILIO_FROM_NUMBER
+      ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+      : null;
+
   async sendReminder(appointment: Appointment): Promise<ReminderDelivery> {
     if (isEmailContact(appointment.patientContact)) {
       return this.sendEmailReminder(appointment);
@@ -118,14 +126,35 @@ export class ReminderService {
   }
 
   private async sendSmsReminder(appointment: Appointment): Promise<ReminderDelivery> {
-    await Promise.resolve(buildReminderText(appointment));
+    const body = buildReminderText(appointment);
 
-    return {
-      appointmentId: appointment.id,
-      channel: 'sms',
-      destination: appointment.patientContact,
-      status: 'mocked',
-      providerId: `mock-sms-${appointment.id}`,
-    };
+    if (!this.twilioClient) {
+      return {
+        appointmentId: appointment.id,
+        channel: 'sms',
+        destination: appointment.patientContact,
+        status: 'mocked',
+        providerId: `mock-sms-${appointment.id}`,
+      };
+    }
+
+    try {
+      const message = await this.twilioClient.messages.create({
+        body,
+        from: process.env.TWILIO_FROM_NUMBER,
+        to: appointment.patientContact,
+      });
+
+      return {
+        appointmentId: appointment.id,
+        channel: 'sms',
+        destination: appointment.patientContact,
+        status: 'sent',
+        providerId: message.sid,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Twilio reminder failed: ${message}`);
+    }
   }
 }

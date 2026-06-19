@@ -11,7 +11,11 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {}
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts"],
+  "//exclude": "Override tsconfig.base's test exclude so the lint project service resolves test files. The build uses tsconfig.build.json, which re-excludes tests.",
+  "exclude": []
 }

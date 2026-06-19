@@ -36,7 +36,15 @@ DEMO_USER_EMAIL=
 DEMO_USER_PASSWORD=
 DEMO_USER_NAME=
 STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
 RESEND_API_KEY=
+EMAIL_FROM=
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_FROM_NUMBER=
+REMINDER_SCHEDULER_ENABLED=
+REMINDER_SCHEDULER_INTERVAL_MS=
+APPOINTMENTS_DATABASE_PATH=
 SENTRY_DSN=
 ```
 
@@ -68,6 +76,85 @@ SENTRY_DSN=
 6. Output directory: `dist`
 7. Set the frontend environment variables above.
 8. Use [vercel.json](./vercel.json) so `/terms` and `/privacy` resolve to the SPA entry.
+
+## Reminder delivery channels
+
+Appointment reminders are dispatched per contact based on the contact's
+destination. Each channel is independent: an unconfigured channel degrades to a
+no-op "mocked" delivery so the app still runs end-to-end without crashing.
+
+### SMS reminders (Twilio)
+
+| Variable | Required? | Purpose |
+| --- | --- | --- |
+| `TWILIO_ACCOUNT_SID` | Conditional | Twilio account SID. Required (with the two below) to send real SMS. |
+| `TWILIO_AUTH_TOKEN` | Conditional | Twilio auth token. |
+| `TWILIO_FROM_NUMBER` | Conditional | Sender number SMS reminders are sent from. |
+
+- When **all three** `TWILIO_*` variables are set, reminders to phone-number
+  contacts are sent via Twilio SMS.
+- When **any** are unset, SMS reminders fall back to a no-op "mocked" delivery
+  (logged, not sent). The app continues to run normally.
+- For production sending in the US/Canada you must complete A2P 10DLC
+  registration (or use a verified toll-free number) before Twilio will deliver
+  your messages.
+- Source: https://www.twilio.com/docs/messaging/tutorials/how-to-send-sms-messages
+
+### Email reminders (Resend)
+
+| Variable | Required? | Purpose |
+| --- | --- | --- |
+| `RESEND_API_KEY` | Conditional | Resend API key. Required to send real email. |
+| `EMAIL_FROM` | Conditional | Verified sender address for reminder emails. |
+
+- When `RESEND_API_KEY` is set, email contacts get reminders via Resend, sent
+  from `EMAIL_FROM`.
+- When the key is unset, email reminders fall back to a no-op "mocked" delivery.
+  The app continues to run normally.
+
+## Automatic reminder scheduler
+
+A background sweep can periodically send due reminders without any manual
+trigger.
+
+| Variable | Required? | Purpose |
+| --- | --- | --- |
+| `REMINDER_SCHEDULER_ENABLED` | No | Set to `1` or `true` to enable the background sweep. Default: disabled. |
+| `REMINDER_SCHEDULER_INTERVAL_MS` | No | Tick interval in milliseconds. Default: `900000` (15 minutes). |
+
+Behavior:
+
+- When enabled, the scheduler ticks every `REMINDER_SCHEDULER_INTERVAL_MS` and
+  scans for appointments due within the next 24 hours that have not yet been
+  reminded.
+- Reminders are sent **idempotently**: each appointment is reminded at most once,
+  tracked via its `last_reminder_at` timestamp.
+- A manual trigger is always available: `POST /api/reminders/run` runs the same
+  sweep on demand (useful for testing or for external cron schedulers).
+
+## Stripe webhook
+
+| Variable | Required? | Purpose |
+| --- | --- | --- |
+| `STRIPE_SECRET_KEY` | Yes (billing) | Secret key used to create Stripe Checkout sessions. |
+| `STRIPE_WEBHOOK_SECRET` | Yes (billing) | Signing secret used to verify incoming Stripe webhook events. |
+
+- The app exposes `POST /api/webhooks/stripe`. It verifies the Stripe signature
+  against `STRIPE_WEBHOOK_SECRET` and rejects any request that fails
+  verification.
+- On a `checkout.session.completed` event, the account's plan is upgraded to
+  `pro` server-side and persisted. Clients can **not** self-assign a plan — plan
+  state changes only through a verified Stripe webhook.
+- `STRIPE_SECRET_KEY` is still required for the Checkout flow itself
+  (see the Railway steps above).
+
+## Database
+
+- Appointment data persists to a local SQLite database at
+  `D:\databases\appointment-reminder-saas.db`.
+- Override the path with `APPOINTMENTS_DATABASE_PATH`. Locally this must point
+  to a path on `D:\` (per the workspace paths policy); on Railway use a path
+  under the mounted `/data` volume.
 
 ## Production proof
 

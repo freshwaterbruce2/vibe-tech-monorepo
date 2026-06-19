@@ -62,7 +62,8 @@ function ClinicDashboard({ apiBase }: { apiBase: string }) {
   const [loading, setLoading] = useState<'load' | 'no-show' | 'reminders' | 'create' | null>('load');
   const [patientName, setPatientName] = useState('');
   const [patientContact, setPatientContact] = useState('');
-  const [appointmentTime, setAppointmentTime] = useState(toLocalInputValue(new Date().toISOString()));
+  const defaultAppointmentTime = toLocalInputValue(new Date().toISOString());
+  const [appointmentTime, setAppointmentTime] = useState(defaultAppointmentTime);
 
   const loadAppointments = useCallback(async () => {
     const response = await fetch(`${apiBase}/api/appointments`, {

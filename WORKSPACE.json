@@ -271,11 +271,6 @@
         "priority": "medium",
         "description": "Business Booking V2 application with Vibe-Tech branding"
       },
-      "vibe-reminder-v2": {
-        "status": "development",
-        "priority": "medium",
-        "description": "Appointment Reminder V2 application with Vibe-Tech branding"
-      },
       "mcp-skills-server": {
         "status": "production",
         "priority": "high",
