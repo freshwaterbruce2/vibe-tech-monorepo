@@ -1,51 +1,36 @@
 ---
 name: code-studio:dev
-description: Start Vibe Code Studio Electron app in development mode
+description: Start Vibe Code Studio (Tauri 2) in development mode
 model: sonnet
 ---
 
 # Vibe Code Studio Development Mode
 
-Start the Vibe Code Studio code editor in development mode with hot reload.
+Start the Vibe Code Studio editor in development with hot reload. Run from `V:\monorepo`.
 
 ## Steps
 
-1. Navigate to Vibe Code Studio directory:
+1. Full desktop app (native Tauri shell + Vite HMR):
 
-   ```bash
-   cd V:\monorepo\apps\vibe-code-studio
+   ```powershell
+   pnpm nx run vibe-code-studio:dev
    ```
 
-2. Install dependencies if needed:
+   This runs `tauri:dev` (via `scripts/run-tauri.cjs`), which starts Vite on port 5174 and
+   launches the native Tauri window against it. The first run compiles the Rust backend and
+   may take several minutes.
 
-   ```bash
-   if [ ! -d "node_modules" ]; then
-     echo "Installing dependencies..."
-     pnpm install
-   fi
+2. Web-only (no native shell, fastest UI iteration):
+
+   ```powershell
+   pnpm nx run vibe-code-studio:dev:web
    ```
 
-3. Start Electron with hot reload:
-
-   ```bash
-   pnpm dev
-   ```
-
-4. Report status:
-
-   ```
-   ✓ Vibe Code Studio development mode started
-   → Electron app launching...
-   → Renderer hot reload: ENABLED
-   → Main process debugging: ENABLED
-   → Press Ctrl+C to stop
-   ```
+   Serves the renderer at http://localhost:3001 in a browser. Tauri-native features (PTY
+   terminal, native dialogs, scoped file system) are unavailable in web-only mode.
 
 ## Expected Output
 
-- Electron window opens with code editor
-- Hot Module Replacement for renderer process
-- Main process restarts on changes
-- DevTools available (F12)
-- File system access ready
-- Terminal integration active
+- `dev`: native Tauri window opens with the editor; Vite HMR on save; DevTools available.
+- `dev:web`: browser app on http://localhost:3001 with HMR.
+- Press Ctrl+C to stop.

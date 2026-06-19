@@ -251,7 +251,7 @@ The monorepo uses a multi-layered testing approach:
 
 ## File Size & Structure
 
-- **Max 500 lines per file** (target +/- 100). Split components and logic early.
+- **Max 500 lines soft limit, 600 lines hard limit** per file. Split components and logic early.
 - **Max ~50 lines per function** when possible.
 - **Comments explain why, not what.**
 - **No emojis** in code comments or commit messages.

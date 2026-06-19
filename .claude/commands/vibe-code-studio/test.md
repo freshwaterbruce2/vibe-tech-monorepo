@@ -1,69 +1,39 @@
 ---
 name: code-studio:test
-description: Run unit tests and E2E tests for Vibe Code Studio
+description: Run unit and E2E tests for Vibe Code Studio
 model: sonnet
 ---
 
 # Vibe Code Studio Test Suite
 
-Run comprehensive test suite including unit tests and end-to-end tests.
+Run the unit (Vitest) and end-to-end (Playwright) suites. Run from `V:\monorepo`.
 
 ## Steps
 
-1. Navigate to Vibe Code Studio directory:
+1. Unit / integration tests (Vitest, jsdom):
 
-   ```bash
-   cd V:\monorepo\apps\vibe-code-studio
+   ```powershell
+   $env:NX_NO_CLOUD='true'; pnpm nx run vibe-code-studio:test
    ```
 
-2. Run unit tests (Vitest):
+2. E2E tests (Playwright, Chromium; boots the Vite dev server on port 3001):
 
-   ```bash
-   echo "Running unit tests..."
-   pnpm test:unit
+   ```powershell
+   pnpm --filter vibe-code-studio test:e2e
    ```
 
-3. Run E2E tests (Playwright):
+   Headed / debug mode: `pnpm --filter vibe-code-studio test:e2e:headed`.
 
-   ```bash
-   if grep -q "\"test:e2e\":" package.json 2>/dev/null; then
-     echo ""
-     echo "Running E2E tests..."
-     pnpm test:e2e
-   else
-     echo ""
-     echo "⚠ E2E tests not configured"
-   fi
-   ```
+## Notes
 
-4. Generate coverage report:
-
-   ```bash
-   if grep -q "\"test:coverage\":" package.json 2>/dev/null; then
-     echo ""
-     echo "Generating coverage report..."
-     pnpm test:coverage
-   fi
-   ```
-
-5. Report test results:
-
-   ```bash
-   echo ""
-   echo "=== TEST SUMMARY ==="
-   echo "✓ Unit tests completed"
-   if grep -q "\"test:e2e\":" package.json 2>/dev/null; then
-     echo "✓ E2E tests completed"
-   fi
-   if grep -q "\"test:coverage\":" package.json 2>/dev/null; then
-     echo "→ Coverage report: coverage/index.html"
-   fi
-   ```
+- Vitest config: `apps/vibe-code-studio/vitest.config.ts` (v8 coverage provider, thresholds
+  60% lines / 60% functions / 50% branches / 60% statements). There is no separate
+  `test:coverage` script — run coverage with
+  `pnpm --filter vibe-code-studio test -- --coverage`.
+- Playwright config: `apps/vibe-code-studio/playwright.config.ts`. E2E specs live in
+  `apps/vibe-code-studio/tests/`.
 
 ## Expected Output
 
-- Unit test results with pass/fail status
-- E2E test results (if configured)
-- Code coverage metrics (if generated)
-- Test execution time
-- Failed test details (if any)
+- Vitest: per-file pass/fail with totals.
+- Playwright: HTML report; video + screenshot captured on failure.

@@ -31,7 +31,7 @@ cat docs/ai/WORKSPACE.md
 Before touching ANY code:
 
 1. Count files to be modified
-2. Check line count of existing files (max 500 lines per file)
+2. Check line count of existing files (max 500 lines soft limit, 600 lines hard limit)
 3. Verify data storage locations (D:\ for data, V:\monorepo for code)
 4. Check if similar functionality already exists (no duplicates rule)
 
@@ -47,7 +47,7 @@ For complex changes (3+ files or uncertain scope):
 ### **STEP 3: EXECUTION**
 
 1. **FOLLOW the no-duplicates rule** - search before creating
-2. **ENFORCE line limits** - max 500 lines per file
+2. **ENFORCE line limits** - max 500 lines soft / 600 lines hard limit
 3. **USE proper paths** - D:\ for data, V:\monorepo for code
 4. **MAINTAIN file names** - avoid renaming existing files
 5. **TEST as you go** - run quality checks incrementally
@@ -60,11 +60,11 @@ For complex changes (3+ files or uncertain scope):
 
 ```python
 # Before editing ANY file:
-if file_lines > 500:
-    STOP - File must be split into modules
+if file_lines > 600:
+    STOP - File must be split into modules (warns at 500 lines)
 
 # Before creating ANY file:
-if estimated_lines > 500:
+if estimated_lines > 600:
     STOP - Design as multiple modules
 ```
 
@@ -87,7 +87,7 @@ if estimated_lines > 500:
 Every file must follow:
 
 ```typescript
-// MAX 500 LINES PER FILE
+// MAX 500 LINES SOFT / 600 LINES HARD
 // Single responsibility
 // Clear interfaces
 // Dependency injection
@@ -102,7 +102,7 @@ REQUIRED_PATHS:
   logs:        "D:\\logs\\[project-name]\\"
   databases:   "D:\\databases\\[project-name]\\"
   data_files:  "D:\\data\\[project-name]\\"
-  learning:    "D:\\learning\\[project-name]\\"
+  learning:    "D:\\learning-system\\[project-name]\\"
   backups:     "D:\\backups\\[project-name]\\"
   temp:        "D:\\temp\\[project-name]\\"
 
@@ -213,8 +213,8 @@ START
   │   ├─ 1-2 files → Proceed with caution
   │   └─ 3+ files → Use TodoWrite and plan carefully
   │
-  ├─ File over 500 lines?
-  │   ├─ Yes → STOP! Must split into modules
+  ├─ File over 600 lines?
+  │   ├─ Yes → STOP! Must split into modules (warns at 500)
   │   └─ No → Continue
   │
   ├─ Storing logs/data/databases?
