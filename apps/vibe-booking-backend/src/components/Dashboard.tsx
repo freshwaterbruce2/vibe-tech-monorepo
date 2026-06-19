@@ -70,7 +70,8 @@ export function Dashboard({
         <span className="eyebrow">Operator account</span>
         <h2 style={{ fontSize: '28px', margin: '8px 0' }}>Operator Sign In</h2>
         <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '24px' }}>
-          Authenticate using your operator credentials to manage client schedules, view billing records, and access entitlements.
+          Authenticate using your operator credentials to manage client
+          schedules, view billing records, and access entitlements.
         </p>
 
         <form
@@ -127,7 +128,8 @@ export function Dashboard({
       {/* Header bar showing active entitlement */}
       <div className="operator-info-bar">
         <div>
-          🔐 Signed in as <strong>{currentUser.fullName ?? currentUser.email}</strong> (Operator) - Session active
+          <span>🔐 Signed in as <strong>{currentUser.fullName ?? currentUser.email}</strong></span>
+          <span> (Operator) - Session active</span>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
           <button className="btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => { void checkProRoute(); }}>

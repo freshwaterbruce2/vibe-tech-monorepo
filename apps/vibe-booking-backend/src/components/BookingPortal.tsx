@@ -169,7 +169,8 @@ export function BookingPortal({ apiBase }: BookingPortalProps) {
             <span className="eyebrow">Step 3</span>
             <h2 style={{ fontSize: '24px', margin: '8px 0' }}>Provide Details</h2>
             <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-              Enter your details below to finalize booking your {selectedService.name} on June {selectedDay} at {selectedSlot}.
+              Enter your details below to finalize booking your
+              {` ${selectedService.name} on June ${selectedDay} at ${selectedSlot}.`}
             </p>
 
             <form onSubmit={(e) => { void handleBookNow(e); }} style={{ display: 'grid', gap: '16px' }}>
