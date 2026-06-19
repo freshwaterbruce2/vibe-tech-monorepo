@@ -85,14 +85,10 @@ describe('ErrorDetector', () => {
     onErrorCallback = vi.fn();
     onErrorResolvedCallback = vi.fn();
 
-    // Import ErrorDetector (will fail initially - TDD RED phase)
-    try {
-      const module = await import('../../services/ErrorDetector');
-      ErrorDetector = module.ErrorDetector;
-    } catch {
-      // Expected to fail initially - we haven't implemented it yet
-      ErrorDetector = null;
-    }
+    // Import the REAL ErrorDetector. If this fails, the test must fail loudly
+    // (no silent escape hatch) — the module exists and is under test.
+    const module = await import('../../services/ErrorDetector');
+    ErrorDetector = module.ErrorDetector;
   });
 
   afterEach(() => {
@@ -103,11 +99,6 @@ describe('ErrorDetector', () => {
 
   describe('Initialization', () => {
     it('should initialize without errors', () => {
-      if (!ErrorDetector) {
-        expect(true).toBe(true); // TDD RED - implementation doesn't exist yet
-        return;
-      }
-
       expect(() => {
         detector = new ErrorDetector({
           editor: mockEditor as any,
@@ -119,8 +110,6 @@ describe('ErrorDetector', () => {
     });
 
     it('should start monitoring on initialization', () => {
-      if (!ErrorDetector) return;
-
       detector = new ErrorDetector({
         editor: mockEditor as any,
         monaco: mockMonaco
@@ -131,8 +120,6 @@ describe('ErrorDetector', () => {
     });
 
     it('should throw if editor is not provided', () => {
-      if (!ErrorDetector) return;
-
       expect(() => {
         new ErrorDetector({
           monaco: mockMonaco
@@ -143,8 +130,6 @@ describe('ErrorDetector', () => {
 
   describe('TypeScript Error Detection', () => {
     it('should detect TypeScript errors from Monaco markers', () => {
-      if (!ErrorDetector) return;
-
       const markers: MonacoMarker[] = [
         {
           severity: 8, // Error
@@ -182,8 +167,6 @@ describe('ErrorDetector', () => {
     });
 
     it('should detect TypeScript warnings', () => {
-      if (!ErrorDetector) return;
-
       const markers: MonacoMarker[] = [
         {
           severity: 4, // Warning
@@ -217,8 +200,6 @@ describe('ErrorDetector', () => {
     });
 
     it('should handle multiple errors', () => {
-      if (!ErrorDetector) return;
-
       const markers: MonacoMarker[] = [
         {
           severity: 8,
@@ -254,8 +235,6 @@ describe('ErrorDetector', () => {
 
   describe('ESLint Error Detection', () => {
     it('should detect ESLint errors', () => {
-      if (!ErrorDetector) return;
-
       const markers: MonacoMarker[] = [
         {
           severity: 8,
@@ -292,8 +271,6 @@ describe('ErrorDetector', () => {
 
   describe('Runtime Error Detection', () => {
     it('should parse runtime errors from console output', () => {
-      if (!ErrorDetector) return;
-
       const consoleOutput = `
 Error: Cannot read property 'foo' of undefined
     at Object.<anonymous> (V:\\monorepo\\test\\file.ts:25:10)
@@ -322,8 +299,6 @@ Error: Cannot read property 'foo' of undefined
     });
 
     it('should handle TypeError exceptions', () => {
-      if (!ErrorDetector) return;
-
       const consoleOutput = `
 TypeError: x is not a function
     at test (V:\\monorepo\\app.ts:42:5)
@@ -348,8 +323,6 @@ TypeError: x is not a function
     });
 
     it('should ignore non-error console output', () => {
-      if (!ErrorDetector) return;
-
       const consoleOutput = 'INFO: Application started successfully';
 
       detector = new ErrorDetector({
@@ -366,8 +339,6 @@ TypeError: x is not a function
 
   describe('Error Resolution', () => {
     it('should detect when errors are resolved', () => {
-      if (!ErrorDetector) return;
-
       // Initially has errors
       const initialMarkers: MonacoMarker[] = [
         {
@@ -401,8 +372,6 @@ TypeError: x is not a function
     });
 
     it('should track active errors', () => {
-      if (!ErrorDetector) return;
-
       const markers: MonacoMarker[] = [
         {
           severity: 8,
@@ -429,8 +398,6 @@ TypeError: x is not a function
     });
 
     it('should clear resolved errors from active list', () => {
-      if (!ErrorDetector) return;
-
       mockMonaco.editor.getModelMarkers.mockReturnValue([
         {
           severity: 8,
@@ -460,8 +427,6 @@ TypeError: x is not a function
 
   describe('Disposal', () => {
     it('should stop monitoring when disposed', () => {
-      if (!ErrorDetector) return;
-
       const disposeMock = vi.fn();
       mockEditor.onDidChangeModelDecorations = vi.fn(() => ({ dispose: disposeMock }));
 
@@ -476,8 +441,6 @@ TypeError: x is not a function
     });
 
     it('should not emit events after disposal', () => {
-      if (!ErrorDetector) return;
-
       detector = new ErrorDetector({
         editor: mockEditor as any,
         monaco: mockMonaco,
@@ -505,8 +468,6 @@ TypeError: x is not a function
 
   describe('Error Deduplication', () => {
     it('should not emit duplicate errors', () => {
-      if (!ErrorDetector) return;
-
       const markers: MonacoMarker[] = [
         {
           severity: 8,
@@ -536,8 +497,6 @@ TypeError: x is not a function
     });
 
     it('should emit new errors even if similar message', () => {
-      if (!ErrorDetector) return;
-
       mockMonaco.editor.getModelMarkers
         .mockReturnValueOnce([
           {
