@@ -64,6 +64,10 @@ npm-shrinkwrap.json
 .opencode/
 **/.opencode/
 
+# Hermes Agent runtime state (machine-specific)
+.hermes/
+**/.hermes/
+
 # Local editor/AI assistant tooling
 .codex/
 .codex-home/
