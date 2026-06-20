@@ -7,7 +7,7 @@ Multi-project monorepo spanning desktop, web, mobile, and infrastructure applica
 - **Node.js** 22+
 - **pnpm** 10.33+ (`corepack enable && corepack prepare pnpm@10.33.0 --activate`)
 - **Windows 11** (primary development platform)
-- **Rust toolchain** (MSVC) -- required for Tauri apps (nova-agent, vtde)
+- **Rust toolchain** (MSVC) -- required for Tauri apps (nova-agent, vibe-code-studio, vibe-justice)
 - **Python 3.11+** -- required for crypto-enhanced only
 - **Visual Studio Build Tools 2022** -- native module compilation
 
@@ -27,8 +27,8 @@ pnpm nx dev <project-name>   # e.g. pnpm nx dev nova-agent
 | App | Description | Tech | Status |
 |-----|-------------|------|--------|
 | nova-agent | AI desktop assistant with RAG pipeline | Tauri, React, Rust, LanceDB | Active |
-| vtde | VibeTech Desktop Environment | Tauri, React | Active |
-| vibe-code-studio | AI-powered code editor | Electron, Tauri, React | Maintained |
+| vibetech-command-center | Ops control plane (legacy name "VTDE") | Electron 33, electron-vite, React | Active |
+| vibe-code-studio | AI-powered code editor | Tauri 2, React, Monaco | Maintained |
 | gravity-claw | AI agent orchestrator with tool routing and chat bridges | Electron, React, Hono | Maintained |
 
 ### Web
@@ -73,7 +73,7 @@ pnpm nx dev <project-name>   # e.g. pnpm nx dev nova-agent
 | symptom-tracker-api | Health symptom tracker API | Experimental |
 | vibe-tech-backend | Shared backend server with local SQLite database | Maintained |
 
-## Shared Packages (25 total)
+## Shared Packages (34 total)
 
 Key packages by dependents. Full list in `packages/`.
 
