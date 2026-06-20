@@ -1,211 +1,272 @@
-import { AnimatePresence, motion } from "framer-motion";
-import {
-	Activity,
-	AlertCircle,
-	Command,
-	Send,
-	Sparkles,
-	Terminal,
-} from "lucide-react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import PageLayout from "@/components/layout/PageLayout";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { OrchestratorService } from "@/services/OrchestratorService";
+import { toast } from "@/hooks/use-toast";
+import { ComputerUseService, type ActiveWindowInfo } from "@/services/computerUseService";
+import { executeAction } from "./nova-hands/actionExecutor";
+import type { AgentAction, HistoryItem } from "./nova-hands/types";
+
+// Import modular sub-components
+import { DisplayViewport } from "./orchestrator/components/DisplayViewport";
+import { HistoryLog } from "./orchestrator/components/HistoryLog";
+import { ControlConsole } from "./orchestrator/components/ControlConsole";
+import { StatusPanel } from "./orchestrator/components/StatusPanel";
+import { ConsentGate } from "./orchestrator/components/ConsentGate";
 
 const Orchestrator = () => {
-	const [prompt, setPrompt] = useState("");
-	const [isExecuting, setIsExecuting] = useState(false);
-	const [history, setHistory] = useState<
-		{ prompt: string; result: string; timestamp: string }[]
-	>([]);
+	const [goal, setGoal] = useState("");
+	const [isLoopRunning, setIsLoopRunning] = useState(false);
+	const [isAutoMode, setIsAutoMode] = useState(false);
+	const [loopStatus, setLoopStatus] = useState<"idle" | "observing" | "analyzing" | "awaiting_consent" | "simulating">("idle");
+	const [currentScreenshot, setCurrentScreenshot] = useState<string | null>(null);
+	const [focusedWindow, setFocusedWindow] = useState<ActiveWindowInfo | null>(null);
+	const [currentThought, setCurrentThought] = useState("");
+	const [nextAction, setNextAction] = useState<AgentAction | null>(null);
+	const [history, setHistory] = useState<HistoryItem[]>([]);
 	const [error, setError] = useState<string | null>(null);
+	const [hoverCoords, setHoverCoords] = useState<{ x: number; y: number } | null>(null);
 
-	const handleExecute = async () => {
-		if (!prompt.trim()) return;
+	const loopRunningRef = useRef(isLoopRunning);
+	useEffect(() => {
+		loopRunningRef.current = isLoopRunning;
+	}, [isLoopRunning]);
 
-		setIsExecuting(true);
+	const handleImageMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+		const rect = e.currentTarget.getBoundingClientRect();
+		const x = Math.floor(((e.clientX - rect.left) / rect.width) * 1000);
+		const y = Math.floor(((e.clientY - rect.top) / rect.height) * 1000);
+		setHoverCoords({ x, y });
+	};
+
+	const handleImageMouseLeave = () => {
+		setHoverCoords(null);
+	};
+
+	const startAgentLoop = async () => {
+		if (!goal.trim()) {
+			toast({ title: "Input Required", description: "Please enter a goal first.", variant: "destructive" });
+			return;
+		}
+		setIsLoopRunning(true);
 		setError(null);
-		const startTime = new Date();
+		
+		await runLoopStep(true);
+	};
 
+	const stopAgentLoop = () => {
+		setIsLoopRunning(false);
+		setLoopStatus("idle");
+	};
+
+	const runLoopStep = async (shouldContinue: boolean) => {
+		if (!shouldContinue && !loopRunningRef.current) return;
+		
 		try {
-			const result = await OrchestratorService.orchestrate(prompt);
-			setHistory((prev) => [
+			setLoopStatus("observing");
+			const screenshotBase64 = await ComputerUseService.captureDisplay();
+			setCurrentScreenshot(screenshotBase64);
+
+			let activeWin: ActiveWindowInfo | null = null;
+			try {
+				activeWin = await ComputerUseService.getFocusedWindow();
+				setFocusedWindow(activeWin);
+			} catch (e) {
+				console.warn("Failed to retrieve active window info:", e);
+			}
+
+			setLoopStatus("analyzing");
+			
+			const systemPrompt = `You are an AI desktop assistant with direct computer control capabilities.
+Your goal is: "${goal}"
+
+You operate on a normalized screen coordinates grid of 1000x1000 pixels (X and Y are between 0 and 999).
+Active Window: ${activeWin ? `${activeWin.process_name} - "${activeWin.title}"` : "unknown"}
+
+Return your next action in JSON format inside markdown blocks:
+\`\`\`json
+{
+  "thought": "Explain what you see and what action you will take.",
+  "action": {
+    "type": "mouse",
+    "action": "click" | "move" | "right_click" | "double_click" | "drag_to",
+    "x": 450,
+    "y": 200
+  }
+}
+\`\`\`
+For keyboard actions:
+\`\`\`json
+{
+  "thought": "Explain what you will type.",
+  "action": {
+    "type": "keyboard",
+    "action": "type",
+    "text": "text to type"
+  }
+}
+\`\`\`
+For special keys:
+\`\`\`json
+{
+  "thought": "Pressing enter key to submit form.",
+  "action": {
+    "type": "keyboard",
+    "action": "press_key",
+    "key": "enter"
+  }
+}
+\`\`\`
+For keyboard shortcuts (hotkeys):
+\`\`\`json
+{
+  "thought": "Copying selected text.",
+  "action": {
+    "type": "keyboard",
+    "action": "hotkey",
+    "key": "c",
+    "modifiers": ["ctrl"]
+  }
+}
+\`\`\`
+When the goal is fully achieved:
+\`\`\`json
+{
+  "thought": "Task complete.",
+  "action": {
+    "type": "done"
+  }
+}
+\`\`\`
+
+Available actions:
+- Mouse:
+  { "type": "mouse", "action": "move" | "click" | "right_click" | "double_click" | "drag_to", "x": 0..999, "y": 0..999 }
+- Keyboard:
+  { "type": "keyboard", "action": "type", "text": "string to type" }
+  { "type": "keyboard", "action": "press_key", "key": "enter" | "backspace" | "tab" | "escape" | "space" | "up" | "down" | "left" | "right" | "ctrl" | "shift" | "alt" }
+  { "type": "keyboard", "action": "hotkey", "key": "character (e.g. 'c')", "modifiers": ["ctrl" | "alt" | "shift" | "win"] }
+- Task completed:
+  { "type": "done" }
+
+Take step-by-step actions. Output ONLY the JSON block inside markdown.`;
+
+			const response = await ComputerUseService.callMultimodalLlm([
 				{
-					prompt,
-					result,
-					timestamp: startTime.toLocaleTimeString(),
-				},
-				...prev,
-			]);
-			setPrompt("");
+					role: "user",
+					text: "Analyze the current screen and return the next action.",
+					image_base64: screenshotBase64
+				}
+			], systemPrompt);
+
+			const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/) ?? [null, response];
+			const jsonText = jsonMatch[1] ?? response;
+			const payload = JSON.parse(jsonText.trim());
+
+			setCurrentThought(payload.thought);
+			setNextAction(payload.action as AgentAction);
+			setLoopStatus("awaiting_consent");
+
+			if (isAutoMode) {
+				await new Promise((resolve) => setTimeout(resolve, 1500));
+				await handleApproveAction(payload.action);
+			}
 		} catch (err) {
 			setError(String(err));
-		} finally {
-			setIsExecuting(false);
+			setIsLoopRunning(false);
+			setLoopStatus("idle");
+		}
+	};
+
+	const handleApproveAction = async (action: AgentAction) => {
+		if (!action) return;
+		setLoopStatus("simulating");
+		try {
+			const historyItem = await executeAction(action, { currentThought });
+
+			if (historyItem) {
+				setHistory((prev) => [historyItem, ...prev]);
+				setNextAction(null);
+				if (loopRunningRef.current) {
+					await new Promise((resolve) => setTimeout(resolve, 800));
+					void runLoopStep(false);
+				} else {
+					setLoopStatus("idle");
+				}
+			} else {
+				toast({ title: "Task Complete", description: "The agent has completed the task successfully!" });
+				setIsLoopRunning(false);
+				setLoopStatus("idle");
+				setNextAction(null);
+			}
+		} catch (err) {
+			setError(String(err));
+			setIsLoopRunning(false);
+			setLoopStatus("idle");
+		}
+	};
+
+	const handleRejectAction = () => {
+		setIsLoopRunning(false);
+		setLoopStatus("idle");
+		setNextAction(null);
+		toast({ title: "Action Rejected", description: "Orchestration loop paused by user." });
+	};
+
+	const handleRefreshScreenshot = async () => {
+		try {
+			const screenshotBase64 = await ComputerUseService.captureDisplay();
+			setCurrentScreenshot(screenshotBase64);
+			toast({ title: "Screen Captured", description: "Screenshot updated successfully." });
+		} catch (e) {
+			setError(String(e));
 		}
 	};
 
 	return (
 		<PageLayout
 			title="Nova Hands"
-			description="Desktop Orchestration & Automation. Use natural language to control your environment."
+			description="OS-level desktop automation loop. Direct mouse and keyboard control backed by Gemini."
 		>
 			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-				{/* Control Panel */}
+				{/* Screen View */}
 				<div className="lg:col-span-2 space-y-6">
-					<Card className="p-6 border-aura-accent/30 bg-aura-darkBg/90 backdrop-blur-xl hover:shadow-neon-blue transition-all duration-300">
-						<div className="flex items-center gap-2 mb-6 text-aura-neonBlue">
-							<Command className="w-6 h-6" />
-							<h2 className="text-xl font-bold tracking-tight text-white uppercase">
-								Command Input
-							</h2>
-						</div>
+					<DisplayViewport
+						currentScreenshot={currentScreenshot}
+						nextAction={nextAction}
+						hoverCoords={hoverCoords}
+						handleImageMouseMove={handleImageMouseMove}
+						handleImageMouseLeave={handleImageMouseLeave}
+						handleRefreshScreenshot={() => { void handleRefreshScreenshot(); }}
+					/>
 
-						<div className="space-y-4">
-							<div className="relative">
-								<Input
-									value={prompt}
-									onChange={(e) => setPrompt(e.target.value)}
-									onKeyDown={(e) => { if (e.key === "Enter") { void handleExecute(); } }}
-									placeholder="e.g., 'Open a browser and search for the latest Rust news'"
-									className="pr-12 bg-aura-darkBgLight/50 border-aura-accent/30 text-white placeholder:text-aura-textSecondary focus:border-aura-neonBlue focus:ring-1 focus:ring-aura-neonBlue"
-									disabled={isExecuting}
-								/>
-								<Button
-									onClick={() => { void handleExecute(); }}
-									disabled={isExecuting || !prompt.trim()}
-									className="absolute right-1 top-1 h-8 w-8 p-0 bg-aura-neonBlue hover:bg-aura-neonBlue/80 text-aura-darkBg"
-								>
-									<Send className="w-4 h-4" />
-								</Button>
-							</div>
-
-							{error && (
-								<div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm animate-pulse-glow">
-									<AlertCircle className="w-4 h-4" />
-									<span>{error}</span>
-								</div>
-							)}
-
-							<div className="flex flex-wrap gap-2">
-								<span className="text-xs text-aura-textSecondary uppercase tracking-widest mt-1 mr-2">
-									Suggestions:
-								</span>
-								{[
-									"Check CPU load",
-									"List current git branches",
-									"Open Vibe Code Studio",
-								].map((s) => (
-									<Badge
-										key={s}
-										variant="outline"
-										className="cursor-pointer border-aura-neonBlue/30 hover:bg-aura-neonBlue/10 transition-colors"
-										onClick={() => setPrompt(s)}
-									>
-										{s}
-									</Badge>
-								))}
-							</div>
-						</div>
-					</Card>
-
-					{/* Execution History */}
-					<Card className="p-6 border-aura-accent/30 bg-aura-darkBg/90 backdrop-blur-xl">
-						<div className="flex items-center gap-2 mb-6 text-aura-neonPurple">
-							<Terminal className="w-6 h-6" />
-							<h2 className="text-xl font-bold tracking-tight text-white uppercase">
-								Execution Log
-							</h2>
-						</div>
-
-						<ScrollArea className="h-[400px] pr-4">
-							<AnimatePresence initial={false}>
-								{history.length === 0 ? (
-									<div className="flex flex-col items-center justify-center h-full text-aura-textSecondary opacity-50 space-y-4">
-										<Activity className="w-12 h-12" />
-										<p>No commands executed yet.</p>
-									</div>
-								) : (
-									<div className="space-y-4">
-										{history.map((item, i) => (
-											<motion.div
-												key={i}
-												initial={{ opacity: 0, x: -20 }}
-												animate={{ opacity: 1, x: 0 }}
-												className="p-4 rounded-lg bg-aura-darkBgLight/30 border border-aura-accent/20 space-y-2 group"
-											>
-												<div className="flex items-center justify-between">
-													<span className="text-sm font-semibold text-aura-neonBlue font-mono">{`> ${item.prompt}`}</span>
-													<span className="text-xs text-aura-textSecondary">
-														{item.timestamp}
-													</span>
-												</div>
-												<div className="text-sm text-white/90 font-mono whitespace-pre-wrap pl-4 border-l-2 border-aura-neonPurple/30">
-													{item.result}
-												</div>
-											</motion.div>
-										))}
-									</div>
-								)}
-							</AnimatePresence>
-						</ScrollArea>
-					</Card>
+					<HistoryLog history={history} />
 				</div>
 
-				{/* Status Sidebar */}
+				{/* Sidebar */}
 				<div className="space-y-6">
-					<Card className="p-6 border-aura-accent/30 bg-aura-darkBg/90 backdrop-blur-xl hover:shadow-neon-green transition-all duration-300">
-						<h3 className="text-lg font-bold text-white mb-4 uppercase flex items-center gap-2">
-							<Sparkles className="w-5 h-5 text-aura-neonGreen" />
-							Orchestrator Status
-						</h3>
-						<div className="space-y-4">
-							<div className="flex justify-between items-center text-sm">
-								<span className="text-aura-textSecondary">Engine</span>
-								<span className="text-white font-mono">Claude-Sonnet-4.5</span>
-							</div>
-							<div className="flex justify-between items-center text-sm">
-								<span className="text-aura-textSecondary">Execution Node</span>
-								<Badge className="bg-aura-neonBlue/10 text-aura-neonBlue border-aura-neonBlue/30">
-									Sidecar Active
-								</Badge>
-							</div>
-							<div className="flex justify-between items-center text-sm">
-								<span className="text-aura-textSecondary">System Access</span>
-								<Badge className="bg-aura-neonGreen/10 text-aura-neonGreen border-aura-neonGreen/30">
-									Granted
-								</Badge>
-							</div>
-						</div>
-					</Card>
+					<ControlConsole
+						goal={goal}
+						setGoal={setGoal}
+						isLoopRunning={isLoopRunning}
+						isAutoMode={isAutoMode}
+						setIsAutoMode={setIsAutoMode}
+						startAgentLoop={() => { void startAgentLoop(); }}
+						stopAgentLoop={() => { void stopAgentLoop(); }}
+					/>
 
-					<Card className="p-6 border-aura-accent/30 bg-aura-darkBg/90 backdrop-blur-xl">
-						<h3 className="text-lg font-bold text-white mb-4 uppercase">
-							Capabilities
-						</h3>
-						<ul className="space-y-3 text-sm text-aura-textSecondary">
-							<li className="flex items-center gap-2">
-								<div className="w-1.5 h-1.5 rounded-full bg-aura-neonBlue" />
-								File Management
-							</li>
-							<li className="flex items-center gap-2">
-								<div className="w-1.5 h-1.5 rounded-full bg-aura-neonPurple" />
-								Shell Command Execution
-							</li>
-							<li className="flex items-center gap-2">
-								<div className="w-1.5 h-1.5 rounded-full bg-aura-neonPink" />
-								Browser Automation
-							</li>
-							<li className="flex items-center gap-2">
-								<div className="w-1.5 h-1.5 rounded-full bg-aura-neonGreen" />
-								Workspace Orchestration
-							</li>
-						</ul>
-					</Card>
+					<StatusPanel
+						loopStatus={loopStatus}
+						focusedWindow={focusedWindow}
+						error={error}
+					/>
+
+					{loopStatus === "awaiting_consent" && nextAction && (
+						<ConsentGate
+							nextAction={nextAction}
+							currentThought={currentThought}
+							handleRejectAction={handleRejectAction}
+							handleApproveAction={(action) => { void handleApproveAction(action); }}
+						/>
+					)}
 				</div>
 			</div>
 		</PageLayout>
