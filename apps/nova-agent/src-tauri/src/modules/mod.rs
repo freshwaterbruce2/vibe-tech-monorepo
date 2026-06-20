@@ -25,3 +25,4 @@ pub mod state;
 pub mod system_prompt;
 pub mod web;
 pub mod websocket_auth;
+pub mod computer_use;

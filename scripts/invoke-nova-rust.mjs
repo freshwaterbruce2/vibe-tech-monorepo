@@ -32,7 +32,7 @@ if (!existsSync(tauriRoot)) {
 const windowsRoot = process.env.SystemRoot || 'C:\\Windows';
 const windowsSystem32 = join(windowsRoot, 'System32');
 const vsTools =
-  'C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Tools\\MSVC\\14.44.35207';
+  'C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.44.35207';
 const windowsSdk = 'C:\\Program Files (x86)\\Windows Kits\\10';
 const windowsSdkVersion = '10.0.26100.0';
 
@@ -46,7 +46,7 @@ const env = {
   PROCESSOR_ARCHITECTURE: process.env.PROCESSOR_ARCHITECTURE || 'AMD64',
   VSCMD_SKIP_SENDTELEMETRY: '1',
   DOTNET_CLI_TELEMETRY_OPTOUT: '1',
-  VCINSTALLDIR: 'C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\',
+  VCINSTALLDIR: 'C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\',
   VCToolsVersion: '14.44.35207',
   CC: join(vsTools, 'bin', 'HostX64', 'x64', 'cl.exe'),
   CXX: join(vsTools, 'bin', 'HostX64', 'x64', 'cl.exe'),
