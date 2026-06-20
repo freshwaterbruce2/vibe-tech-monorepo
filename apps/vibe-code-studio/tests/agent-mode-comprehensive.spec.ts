@@ -275,11 +275,18 @@ test.describe('Agent Mode - Performance Tests', () => {
 
     // Measure memory usage (basic check)
     const metrics = await page.evaluate(() => {
-      if (performance.memory) {
+      const perfWithMemory = performance as Performance & {
+        memory?: {
+          usedJSHeapSize: number;
+          totalJSHeapSize: number;
+          jsHeapSizeLimit: number;
+        };
+      };
+      if (perfWithMemory.memory) {
         return {
-          usedJSHeapSize: performance.memory.usedJSHeapSize,
-          totalJSHeapSize: performance.memory.totalJSHeapSize,
-          jsHeapSizeLimit: performance.memory.jsHeapSizeLimit
+          usedJSHeapSize: perfWithMemory.memory.usedJSHeapSize,
+          totalJSHeapSize: perfWithMemory.memory.totalJSHeapSize,
+          jsHeapSizeLimit: perfWithMemory.memory.jsHeapSizeLimit
         };
       }
       return null;

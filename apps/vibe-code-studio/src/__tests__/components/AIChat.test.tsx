@@ -4,6 +4,8 @@ import { useState, type ComponentProps } from 'react';
 
 import { AIChat } from '../../components/AIChat/index';
 import type { AIMessage, AgentStep, AgentTask, ApprovalRequest } from '../../types';
+import type { TaskPlanner } from '../../services/ai/TaskPlanner';
+import type { ExecutionEngine } from '../../services/ai/ExecutionEngine';
 
 vi.mock('../../components/SecureMessageContent', () => ({
   default: ({ content }: { content: string }) => <div>{content}</div>,
@@ -99,7 +101,7 @@ describe('AIChat', () => {
         reasoning: 'Plan generated',
         warnings: ['Review generated changes before committing.'],
       }),
-    };
+    } as unknown as TaskPlanner;
     const onFileChanged = vi.fn();
     const executionEngine = {
       setTaskContext: vi.fn(),
@@ -112,7 +114,7 @@ describe('AIChat', () => {
         task.status = 'completed';
         callbacks.onTaskComplete?.(task);
       }),
-    };
+    } as unknown as ExecutionEngine;
 
     render(
       <AIChatHarness
@@ -162,7 +164,7 @@ describe('AIChat', () => {
         task,
         reasoning: 'Plan generated',
       }),
-    };
+    } as unknown as TaskPlanner;
     const executionEngine = {
       setTaskContext: vi.fn(),
       executeTask: vi.fn(async (_task: AgentTask, callbacks: any) => {
@@ -176,7 +178,7 @@ describe('AIChat', () => {
           callbacks.onTaskError?.(task, new Error('Rejected'));
         }
       }),
-    };
+    } as unknown as ExecutionEngine;
 
     render(
       <AIChatHarness

@@ -48,6 +48,9 @@ export class ServiceAdapter implements IAIProvider {
             temperature: options.temperature,
             maxTokens: options.maxTokens,
             stream: false,
+            // Forward the caller's cancel signal so an aborted request actually
+            // tears down the underlying fetch (e.g. proxy / direct provider calls).
+            signal: options.signal,
         };
 
         const response = await this.service.complete(request);
@@ -73,17 +76,21 @@ export class ServiceAdapter implements IAIProvider {
         };
     }
 
-    async *streamComplete(model: string, options: CompletionOptions): AsyncGenerator<StreamCompletionResponse> {
+    async *streamComplete(
+        model: string,
+        options: CompletionOptions
+    ): AsyncGenerator<StreamCompletionResponse> {
         if (!this.service.stream) {
             throw new Error('Streaming not supported by this service');
         }
 
-        // Note: IAIService.stream signature: stream(messages: ChatMessage[], options?: AIChatOptions)
-        // options in AIChatOptions has model, temperature, maxTokens
+        // IAIService.stream signature: stream(messages, options?) where options
+        // (AIChatOptions) carries model, temperature, maxTokens.
         const chatOptions = {
             model: model,
             temperature: options.temperature,
-            maxTokens: options.maxTokens
+            maxTokens: options.maxTokens,
+            signal: options.signal,
         };
 
         for await (const chunk of this.service.stream(options.messages, chatOptions)) {
@@ -106,24 +113,36 @@ export class ServiceAdapter implements IAIProvider {
     }
 
     async validateConnection(): Promise<boolean> {
-        // Try a minimal completion or check init status
-        // Since IAIService doesn't have a standardized validate, we'll assume true if initialize didn't throw,
-        // or try a cheap call if possible.
-        try {
-            // We can't easily make a call without a valid model and api key, which we assume are set.
-            // Let's rely on initialization for now.
-            return true;
-        } catch (_e) {
-            return false;
+        // IAIService has no standardized validate, but some services (e.g. the
+        // backend proxy) expose a real reachability check. Delegate to it when
+        // present so "available" reflects reality; otherwise assume reachable
+        // (direct services surface real errors at call time).
+        const svc = this.service as Partial<{ validateConnection: () => Promise<boolean> }>;
+        if (typeof svc.validateConnection === 'function') {
+            try {
+                return await svc.validateConnection();
+            } catch (_e) {
+                return false;
+            }
         }
+        return true;
     }
 
-    async getUsageStats(): Promise<{ tokensUsed: number; estimatedCost: number; requestCount: number; }> {
+    async getUsageStats(): Promise<{
+        tokensUsed: number;
+        estimatedCost: number;
+        requestCount: number;
+    }> {
         // Provide dummy stats or implement tracking if possible
         return { tokensUsed: 0, estimatedCost: 0, requestCount: 0 };
     }
 
     cancelStream(): void {
-        // Not implemented in IAIService
+        // Delegate to the wrapped service when it supports cancellation (e.g. the
+        // backend proxy aborts its active AbortControllers). Mirrors the
+        // validateConnection delegation above so factory cleanup() actually tears
+        // down in-flight streams instead of silently no-op'ing.
+        const svc = this.service as Partial<{ cancelStream: () => void }>;
+        svc.cancelStream?.();
     }
 }

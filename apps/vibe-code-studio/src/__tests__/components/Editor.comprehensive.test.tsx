@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { ComponentProps } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Editor from '../../components/Editor';
@@ -100,10 +101,10 @@ vi.mock('react-hotkeys-hook', () => ({
 describe('Editor - Comprehensive Tests', () => {
   let mockFile: EditorFile;
   let mockOpenFiles: EditorFile[];
-  let mockOnFileChange: ReturnType<typeof vi.fn>;
-  let mockOnCloseFile: ReturnType<typeof vi.fn>;
-  let mockOnSaveFile: ReturnType<typeof vi.fn>;
-  let mockOnFileSelect: ReturnType<typeof vi.fn>;
+  let mockOnFileChange: ReturnType<typeof vi.fn<(content: string) => void>>;
+  let mockOnCloseFile: ReturnType<typeof vi.fn<(path: string) => void>>;
+  let mockOnSaveFile: ReturnType<typeof vi.fn<() => void>>;
+  let mockOnFileSelect: ReturnType<typeof vi.fn<(file: EditorFile) => void>>;
   let mockDeepSeekService: DeepSeekService;
   let mockAIService: UnifiedAIService;
   let mockSettings: EditorSettings;
@@ -112,31 +113,34 @@ describe('Editor - Comprehensive Tests', () => {
     vi.clearAllMocks();
 
     mockFile = {
+      id: 'file-1',
       path: '/test/file.ts',
       name: 'file.ts',
       content: 'const x = 1;',
       language: 'typescript',
+      isModified: false,
     };
 
     mockOpenFiles = [mockFile];
 
-    mockOnFileChange = vi.fn();
-    mockOnCloseFile = vi.fn();
-    mockOnSaveFile = vi.fn();
-    mockOnFileSelect = vi.fn();
+    mockOnFileChange = vi.fn<(content: string) => void>();
+    mockOnCloseFile = vi.fn<(path: string) => void>();
+    mockOnSaveFile = vi.fn<() => void>();
+    mockOnFileSelect = vi.fn<(file: EditorFile) => void>();
 
-    mockDeepSeekService = new DeepSeekService('test-key');
-    mockAIService = new UnifiedAIService();
+    mockDeepSeekService = new DeepSeekService({ apiKey: 'test-key' });
+    mockAIService = UnifiedAIService.getInstance();
 
     mockSettings = {
       theme: 'vibe-dark',
       fontSize: 14,
       fontFamily: 'JetBrains Mono',
       tabSize: 2,
-      wordWrap: 'on',
-      minimap: { enabled: true },
+      wordWrap: true,
+      minimap: true,
       autoSave: true,
-      autoSaveDelay: 1000,
+      aiAutoComplete: true,
+      aiSuggestions: true,
     };
   });
 
@@ -197,8 +201,8 @@ describe('Editor - Comprehensive Tests', () => {
           onCloseFile={mockOnCloseFile}
           onSaveFile={mockOnSaveFile}
           onFileSelect={mockOnFileSelect}
-          deepSeekService={mockDeepSeekService}
           aiService={mockAIService}
+          {...({ deepSeekService: mockDeepSeekService } as Partial<ComponentProps<typeof Editor>>)}
         />
       );
 
@@ -259,10 +263,12 @@ describe('Editor - Comprehensive Tests', () => {
       );
 
       const newFile: EditorFile = {
+        id: 'file-2',
         path: '/test/file2.ts',
         name: 'file2.ts',
         content: 'const z = 3;',
         language: 'typescript',
+        isModified: false,
       };
 
       rerender(
@@ -282,10 +288,12 @@ describe('Editor - Comprehensive Tests', () => {
 
     it('should handle file selection', () => {
       const secondFile: EditorFile = {
+        id: 'file-2',
         path: '/test/file2.ts',
         name: 'file2.ts',
         content: 'const y = 2;',
         language: 'typescript',
+        isModified: false,
       };
 
       render(
@@ -306,10 +314,12 @@ describe('Editor - Comprehensive Tests', () => {
 
     it('should handle file close', () => {
       const secondFile: EditorFile = {
+        id: 'file-2',
         path: '/test/file2.ts',
         name: 'file2.ts',
         content: 'const y = 2;',
         language: 'typescript',
+        isModified: false,
       };
 
       render(
@@ -425,8 +435,22 @@ describe('Editor - Comprehensive Tests', () => {
     it('should handle multiple open files', () => {
       const files: EditorFile[] = [
         mockFile,
-        { path: '/test/file2.ts', name: 'file2.ts', content: 'const y = 2;', language: 'typescript' },
-        { path: '/test/file3.ts', name: 'file3.ts', content: 'const z = 3;', language: 'typescript' },
+        {
+          id: 'file-2',
+          path: '/test/file2.ts',
+          name: 'file2.ts',
+          content: 'const y = 2;',
+          language: 'typescript',
+          isModified: false,
+        },
+        {
+          id: 'file-3',
+          path: '/test/file3.ts',
+          name: 'file3.ts',
+          content: 'const z = 3;',
+          language: 'typescript',
+          isModified: false,
+        },
       ];
 
       render(
@@ -458,10 +482,12 @@ describe('Editor - Comprehensive Tests', () => {
       );
 
       const file2: EditorFile = {
+        id: 'file-2',
         path: '/test/file2.ts',
         name: 'file2.ts',
         content: 'const y = 2;',
         language: 'typescript',
+        isModified: false,
       };
 
       rerender(
@@ -498,10 +524,12 @@ describe('Editor - Comprehensive Tests', () => {
 
     it('should support JavaScript files', () => {
       const jsFile: EditorFile = {
+        id: 'app-js',
         path: '/test/app.js',
         name: 'app.js',
         content: 'console.log("hello");',
         language: 'javascript',
+        isModified: false,
       };
 
       render(
@@ -520,10 +548,12 @@ describe('Editor - Comprehensive Tests', () => {
 
     it('should support JSON files', () => {
       const jsonFile: EditorFile = {
+        id: 'config-json',
         path: '/test/config.json',
         name: 'config.json',
         content: '{"key": "value"}',
         language: 'json',
+        isModified: false,
       };
 
       render(
@@ -542,10 +572,12 @@ describe('Editor - Comprehensive Tests', () => {
 
     it('should support CSS files', () => {
       const cssFile: EditorFile = {
+        id: 'styles-css',
         path: '/test/styles.css',
         name: 'styles.css',
         content: 'body { margin: 0; }',
         language: 'css',
+        isModified: false,
       };
 
       render(
@@ -564,10 +596,12 @@ describe('Editor - Comprehensive Tests', () => {
 
     it('should support Markdown files', () => {
       const mdFile: EditorFile = {
+        id: 'readme-md',
         path: '/test/README.md',
         name: 'README.md',
         content: '# Title\n\nContent',
         language: 'markdown',
+        isModified: false,
       };
 
       render(
@@ -595,7 +629,7 @@ describe('Editor - Comprehensive Tests', () => {
           onCloseFile={mockOnCloseFile}
           onSaveFile={mockOnSaveFile}
           onFileSelect={mockOnFileSelect}
-          deepSeekService={mockDeepSeekService}
+          {...({ deepSeekService: mockDeepSeekService } as Partial<ComponentProps<typeof Editor>>)}
         />
       );
 
@@ -638,7 +672,7 @@ describe('Editor - Comprehensive Tests', () => {
     it('should apply word wrap setting', () => {
       const settings: EditorSettings = {
         ...mockSettings,
-        wordWrap: 'on',
+        wordWrap: true,
       };
 
       render(
@@ -653,7 +687,7 @@ describe('Editor - Comprehensive Tests', () => {
         />
       );
 
-      expect(settings.wordWrap).toBe('on');
+      expect(settings.wordWrap).toBe(true);
     });
 
     it('should apply tab size setting', () => {
@@ -680,7 +714,7 @@ describe('Editor - Comprehensive Tests', () => {
     it('should toggle minimap', () => {
       const settings: EditorSettings = {
         ...mockSettings,
-        minimap: { enabled: false },
+        minimap: false,
       };
 
       render(
@@ -695,14 +729,13 @@ describe('Editor - Comprehensive Tests', () => {
         />
       );
 
-      expect(settings.minimap.enabled).toBe(false);
+      expect(settings.minimap).toBe(false);
     });
 
     it('should apply auto-save settings', () => {
       const settings: EditorSettings = {
         ...mockSettings,
         autoSave: true,
-        autoSaveDelay: 2000,
       };
 
       render(
@@ -718,17 +751,18 @@ describe('Editor - Comprehensive Tests', () => {
       );
 
       expect(settings.autoSave).toBe(true);
-      expect(settings.autoSaveDelay).toBe(2000);
     });
   });
 
   describe('Edge Cases', () => {
     it('should handle empty file content', () => {
       const emptyFile: EditorFile = {
+        id: 'empty-ts',
         path: '/test/empty.ts',
         name: 'empty.ts',
         content: '',
         language: 'typescript',
+        isModified: false,
       };
 
       render(
@@ -749,10 +783,12 @@ describe('Editor - Comprehensive Tests', () => {
     it('should handle very large files', () => {
       const largeContent = 'const x = 1;\n'.repeat(10000);
       const largeFile: EditorFile = {
+        id: 'large-ts',
         path: '/test/large.ts',
         name: 'large.ts',
         content: largeContent,
         language: 'typescript',
+        isModified: false,
       };
 
       render(
@@ -771,10 +807,12 @@ describe('Editor - Comprehensive Tests', () => {
 
     it('should handle special characters in file content', () => {
       const specialFile: EditorFile = {
+        id: 'special-ts',
         path: '/test/special.ts',
         name: 'special.ts',
         content: 'const emoji = "🚀";\nconst unicode = "Ω";\nconst tab = "\\t";',
         language: 'typescript',
+        isModified: false,
       };
 
       render(

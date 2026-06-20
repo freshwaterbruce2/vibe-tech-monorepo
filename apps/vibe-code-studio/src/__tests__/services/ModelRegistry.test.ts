@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import type { AIModel } from '../../services/ModelRegistry';
 
 describe('ModelRegistry', () => {
   let ModelRegistry: any;
@@ -82,7 +83,7 @@ describe('ModelRegistry', () => {
       const openRouterModels = registry.listModelsByProvider('openrouter');
 
       expect(openRouterModels.length).toBeGreaterThan(0);
-      expect(openRouterModels.every(m => m.provider === 'openrouter')).toBe(true);
+      expect(openRouterModels.every((m: AIModel) => m.provider === 'openrouter')).toBe(true);
     });
 
     it('should filter models by capability', () => {

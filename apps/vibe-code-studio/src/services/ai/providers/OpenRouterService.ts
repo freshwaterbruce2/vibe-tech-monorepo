@@ -242,7 +242,13 @@ export class OpenRouterService implements IAIService {
       'free-vision': 'meta-llama/llama-3.2-11b-vision-instruct:free', // Free with vision
   };
 
-  private resolveModel(model: string): string {
+  /**
+   * Map a Vibe model id/alias to a canonical OpenRouter `author/slug` id.
+   * Exposed statically so the backend-proxy client applies the SAME mapping in
+   * proxy mode — otherwise bare aliases (e.g. 'gpt-4o' from the analysis services)
+   * reach OpenRouter unmapped and get rejected with HTTP 400 "not a valid model ID".
+   */
+  static resolveModelId(model: string): string {
     const mapped = OpenRouterService.MODEL_MAP[model];
     if (mapped) return mapped;
 
@@ -251,6 +257,10 @@ export class OpenRouterService implements IAIService {
 
     // Fallback: assume OpenAI/ prefix if unknown
     return `openai/${model}`;
+  }
+
+  private resolveModel(model: string): string {
+    return OpenRouterService.resolveModelId(model);
   }
 
   async complete(request: AICompletionRequest): Promise<AICompletionResponse> {
@@ -293,7 +303,9 @@ export class OpenRouterService implements IAIService {
     const rawContent = choice.message.content;
 
     // Parse reasoning if using a reasoning model
-    const parsed = isReasoningModel(model) ? parseDeepSeekStream(rawContent) : { content: rawContent, reasoning: null };
+    const parsed = isReasoningModel(model)
+      ? parseDeepSeekStream(rawContent)
+      : { content: rawContent, reasoning: null };
 
     return {
       content: parsed.content,
@@ -307,7 +319,10 @@ export class OpenRouterService implements IAIService {
     };
   }
 
-  async *stream(messages: ChatMessage[], options?: AIChatOptions): AsyncGenerator<string, void, unknown> {
+  async *stream(
+    messages: ChatMessage[],
+    options?: AIChatOptions
+  ): AsyncGenerator<string, void, unknown> {
     // Use proxy endpoint or direct OpenRouter API
     const url = this.useProxy
       ? `${this.baseUrl}/api/openrouter/chat`
@@ -390,7 +405,10 @@ export class OpenRouterService implements IAIService {
     return response.content;
   }
 
-  async generateText(prompt: string, options?: { maxTokens?: number; temperature?: number; model?: string; signal?: AbortSignal }): Promise<string> {
+  async generateText(
+    prompt: string,
+    options?: { maxTokens?: number; temperature?: number; model?: string; signal?: AbortSignal }
+  ): Promise<string> {
     return this.chat([{ role: 'user', content: prompt }], options);
   }
 }

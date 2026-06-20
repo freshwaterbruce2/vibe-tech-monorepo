@@ -94,6 +94,9 @@ export default tseslint.config(
       'apps/vibe-code-studio/src/test-setup.ts',
       'apps/vibe-code-studio/src/**/__tests__/**',
       'apps/vibe-code-studio/src/**/*.{test,spec}.{ts,tsx}',
+      // Playwright E2E specs: not in the typed tsconfig program (same intent as
+      // the ignored src unit tests above) — keeps typed linting from erroring on them.
+      'apps/vibe-code-studio/tests/**',
       'apps/vibe-code-studio/src/components/AIProviderSelector/AIProviderSelector.tsx',
 
       'apps/vibe-code-studio/src/components/ComponentLibrary/index.tsx',
