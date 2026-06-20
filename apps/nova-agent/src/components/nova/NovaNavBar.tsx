@@ -2,7 +2,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/context/AdminContext';
 import { useNovaData } from '@/hooks/useNovaData';
-import { ChevronRight, LogOut, Settings, Shield, Sparkles, Zap } from 'lucide-react';
+import { ChevronRight, Hand, LogOut, Settings, Shield, Sparkles, Zap } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 const NovaNavBar = () => {
@@ -17,6 +17,7 @@ const NovaNavBar = () => {
     { path: '/copilot', label: 'Copilot' },
     { path: '/context-guide', label: 'Context' },
     { path: '/calendar', label: 'Calendar' },
+    { path: '/nova-hands', label: 'Nova Hands', icon: Hand },
     { path: '/admin', label: isAdmin ? 'Admin' : 'Login' },
   ];
 
@@ -76,6 +77,9 @@ const NovaNavBar = () => {
                     border: 'none',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
                     ...(isActive(item.path)
                       ? {
                           background: 'linear-gradient(135deg, #b026ff, #ff2d95)',
@@ -101,6 +105,7 @@ const NovaNavBar = () => {
                   }}
                   onClick={() => { void navigate(item.path); }}
                 >
+                  {item.icon && <item.icon style={{ width: '16px', height: '16px' }} />}
                   {item.label}
                 </button>
               ))}
