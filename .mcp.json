@@ -5,7 +5,7 @@
       "command": "cmd",
       "args": [
         "/c",
-        "npx.cmd",
+        "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/npx.cmd",
         "-y",
         "nx-mcp@0.25.0",
         "V:/monorepo",
@@ -34,7 +34,7 @@
       "command": "cmd",
       "args": [
         "/c",
-        "npx.cmd",
+        "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/npx.cmd",
         "-y",
         "@modelcontextprotocol/server-filesystem",
         "V:/monorepo",
@@ -122,32 +122,56 @@
       "command": "cmd",
       "args": [
         "/c",
-        "npx.cmd",
+        "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/npx.cmd",
         "-y",
         "@anaisbetts/mcp-youtube"
       ]
     },
     "notebooklm": {
       "type": "stdio",
-      "command": "python",
+      "command": "C:/Users/fresh_zxae3v6/.local/bin/uv.exe",
       "args": [
-        "-m",
-        "notebooklm_mcp_server"
+        "tool",
+        "run",
+        "--from",
+        "notebooklm-mcp-server",
+        "notebooklm-mcp"
       ]
     },
     "chrome-devtools": {
       "type": "stdio",
-      "command": "cmd",
+      "command": "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
       "args": [
-        "/c",
-        "npx.cmd",
-        "-y",
-        "chrome-devtools-mcp@latest",
-        "--autoConnect"
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "V:/monorepo/scripts/start-chrome-devtools-mcp.ps1"
       ],
       "env": {
         "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS": "1"
       }
+    },
+    "monorepo-health": {
+      "type": "stdio",
+      "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
+      "args": [
+        "V:/monorepo/apps/monorepo-health-mcp/dist/index.js"
+      ]
+    },
+    "proactive-recommendations": {
+      "type": "stdio",
+      "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
+      "args": [
+        "V:/monorepo/apps/proactive-recommendations-mcp/dist/index.js"
+      ]
+    },
+    "skill-feedback": {
+      "type": "stdio",
+      "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
+      "args": [
+        "V:/monorepo/apps/skill-feedback-mcp/dist/index.js"
+      ]
     },
     "serena": {
       "type": "stdio",

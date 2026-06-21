@@ -23,12 +23,13 @@ export interface UseDocumentManagerReturn {
   uploadError: string | null
   analysisError: string | null
   exportError: string | null
-  fileInputRef: React.RefObject<HTMLInputElement>
+  fileInputRef: React.RefObject<HTMLInputElement | null>
 
   // handlers
   handleUpload: () => Promise<void>
   handleWebFileChange: (event: ChangeEvent<HTMLInputElement>) => Promise<void>
   analyzeDocument: (doc: Document) => Promise<void>
+  selectDocument: (doc: Document) => void
   exportResults: (format: 'pdf' | 'docx' | 'txt') => Promise<void>
   printDocument: () => void
   deleteDocument: (id: string) => void
@@ -224,6 +225,10 @@ export function useDocumentManager(): UseDocumentManagerReturn {
       setUploadError(errorMessage)
       setDocuments((prev) => prev.map((d) => (d.id === newDoc.id ? { ...d, status: 'error' } : d)))
     }
+  }
+
+  const selectDocument = (doc: Document) => {
+    setSelectedDoc(doc)
   }
 
   const analyzeDocument = async (doc: Document) => {
@@ -457,6 +462,7 @@ Powered by DeepSeek R1 AI Legal Analysis
     handleUpload,
     handleWebFileChange,
     analyzeDocument,
+    selectDocument,
     exportResults,
     printDocument,
     deleteDocument,

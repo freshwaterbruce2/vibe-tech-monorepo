@@ -102,23 +102,44 @@ function Find-DeprecatedReferences {
         return @()
     }
 
-    $matches = foreach ($file in $Files) {
-        if (-not $file) {
-            continue
-        }
-
-        $path = $file.FullName
-        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-            continue
-        }
-
+    $matches = @()
+    $rg = Get-Command rg -ErrorAction SilentlyContinue
+    if ($rg) {
+        $tempFile = [System.IO.Path]::GetTempFileName()
         try {
-            Select-String -LiteralPath $path -SimpleMatch $Literal -ErrorAction SilentlyContinue
+            $filePaths = @($Files | Where-Object { $_ } | ForEach-Object { $_.FullName })
+            $filePaths | Set-Content -Path $tempFile -Encoding UTF8
+            $rgResult = & $rg.Source --color never --fixed-strings -n -H --files-from $tempFile -- $Literal 2>$null
+            foreach ($line in $rgResult) {
+                if ($line -match '^(?i)([a-z]:[^:]+):(\d+):(.*)$') {
+                    $matches += [pscustomobject]@{
+                        Path = $Matches[1]
+                        LineNumber = [int]$Matches[2]
+                        Line = $Matches[3]
+                    }
+                }
+            }
         }
         catch {
-            # File-level scan races can happen while the workspace changes.
-            # Skip files that disappear between enumeration and content scan.
-            continue
+            # Fallback
+            $filePaths = @($Files | Where-Object { $_ } | ForEach-Object { $_.FullName })
+            if ($filePaths.Count -gt 0) {
+                $matches = Select-String -Path $filePaths -SimpleMatch $Literal -ErrorAction SilentlyContinue
+            }
+        }
+        finally {
+            if (Test-Path -LiteralPath $tempFile) {
+                Remove-Item -Path $tempFile -Force
+            }
+        }
+    }
+    else {
+        $filePaths = @($Files | Where-Object { $_ } | ForEach-Object { $_.FullName })
+        if ($filePaths.Count -gt 0) {
+            try {
+                $matches = Select-String -Path $filePaths -SimpleMatch $Literal -ErrorAction SilentlyContinue
+            }
+            catch {}
         }
     }
     if ($IgnoreLiteral) {
@@ -226,3 +247,5 @@ if ($script:issues.Count -gt 0) {
 }
 
 Write-Host "`nPath policy validation passed." -ForegroundColor Green
+$global:LASTEXITCODE = 0
+

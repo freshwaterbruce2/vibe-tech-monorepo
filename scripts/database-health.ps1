@@ -242,3 +242,6 @@ if ($largeWalFiles.Count -gt 0) {
         Write-Host "  $($item.relativePath) ($($item.walMB) MB)" -ForegroundColor Yellow
     }
 }
+
+$global:LASTEXITCODE = 0
+

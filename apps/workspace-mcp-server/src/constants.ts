@@ -66,3 +66,4 @@ export function maskSecret(value: string): string {
 // Check if an env var name is sensitive
 export function isSensitive(key: string): boolean {
   return SENSITIVE_PATTERNS.some((pattern) => pattern.test(key));
+}

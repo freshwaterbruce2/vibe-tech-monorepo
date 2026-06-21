@@ -4,7 +4,6 @@ Supports: PDF, DOCX, TXT, images (with OCR)
 """
 
 import os
-import re
 from typing import List, Dict, Optional
 from pathlib import Path
 import pypdf

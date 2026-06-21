@@ -1,7 +1,6 @@
 import multiprocessing
 import sys
 
-import psutil  # Force PyInstaller detection
 
 
 def run_ui():

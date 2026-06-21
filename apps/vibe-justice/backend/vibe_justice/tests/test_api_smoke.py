@@ -1,6 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
-from fastapi.testclient import TestClient
+from unittest.mock import patch
 
 from main import app
 from vibe_justice.utils.auth import require_api_key

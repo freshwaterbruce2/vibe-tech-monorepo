@@ -1,0 +1,32 @@
+{
+  "name": "@vibetech/workspace",
+  "$schema": "node_modules/nx/schemas/project-schema.json",
+  "targets": {
+    "local-registry": {
+      "executor": "@nx/js:verdaccio",
+      "options": {
+        "port": 4873,
+        "config": ".verdaccio/config.yml",
+        "storage": "tmp/local-registry/storage"
+      }
+    },
+    "paths:check": {
+      "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-vibe-paths.ps1"
+    },
+    "typecheck": {
+      "executor": "nx:noop"
+    },
+    "lint": {
+      "executor": "nx:noop"
+    },
+    "test": {
+      "executor": "nx:noop"
+    },
+    "test:unit": {
+      "executor": "nx:noop"
+    },
+    "build": {
+      "executor": "nx:noop"
+    }
+  }
+}

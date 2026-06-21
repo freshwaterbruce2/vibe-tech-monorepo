@@ -4,9 +4,8 @@ Supports: JPG, PNG, PDF, TIFF (including phone camera photos)
 """
 
 import os
-import tempfile
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from PIL import Image
 import pytesseract
 from pdf2image import convert_from_path

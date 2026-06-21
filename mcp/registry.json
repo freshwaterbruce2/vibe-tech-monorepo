@@ -89,14 +89,29 @@
     },
     "notebooklm": {
       "transport": "stdio",
-      "command": "python",
-      "args": ["-m", "notebooklm_mcp_server"]
+      "command": "uv",
+      "args": ["tool", "run", "--from", "notebooklm-mcp-server", "notebooklm-mcp"]
     },
     "chrome-devtools": {
       "transport": "stdio",
-      "command": "npx",
-      "args": ["-y", "chrome-devtools-mcp@latest", "--autoConnect"],
+      "command": "powershell",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "V:/monorepo/scripts/start-chrome-devtools-mcp.ps1"],
       "env": { "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS": "1" }
+    },
+    "monorepo-health": {
+      "transport": "stdio",
+      "command": "node",
+      "args": ["V:/monorepo/apps/monorepo-health-mcp/dist/index.js"]
+    },
+    "proactive-recommendations": {
+      "transport": "stdio",
+      "command": "node",
+      "args": ["V:/monorepo/apps/proactive-recommendations-mcp/dist/index.js"]
+    },
+    "skill-feedback": {
+      "transport": "stdio",
+      "command": "node",
+      "args": ["V:/monorepo/apps/skill-feedback-mcp/dist/index.js"]
     },
     "serena": {
       "transport": "stdio",

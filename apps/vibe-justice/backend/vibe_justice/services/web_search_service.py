@@ -7,7 +7,7 @@ and regulatory information without requiring API keys.
 
 import logging
 from dataclasses import dataclass
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict
 
 import httpx
 from duckduckgo_search import DDGS

@@ -39,9 +39,14 @@ Key products include **NOVA Agent** (Tauri desktop AI assistant), **Vibe Code St
 
 The canonical repository is hosted on GitHub at `https://github.com/freshwaterbruce2/vibe-tech-monorepo.git`.
 
-## Master Agent
+## Master Agent & Hierarchical Orchestration
 
 This workspace defines a default **master agent** in `.claude/agents/master-agent.md` (and `.agent/agents/master-agent.md` for the Antigravity framework). Load it first when starting work in this repository for workspace orientation, path policy enforcement, and intelligent routing to specialist agents.
+
+- **Delegation Gate**: The Master Orchestrator must never implement complex features directly. If a task requires editing multiple files, complex logic, or more than 5 tool calls, the Master Orchestrator must delegate the tasks to specialized child agents (e.g., `frontend-expert`, `backend-expert`, `qa-expert`, or `data-expert`).
+- **Model Routing Criteria**:
+  - **Reasoning & Judgment (Sonnet 4.6 / Gemini 2.5 Pro)**: Reserved for architecture, planning, code reviews, and safety-gated execution.
+  - **Deterministic & Repetitive Tasks (Haiku 4.5 / Gemini 2.5 Flash)**: Routed to fast, cheap models for compilation checks, formatting, linting, and workspace cleanup.
 
 # Technology Stack
 
@@ -242,19 +247,18 @@ The monorepo uses a multi-layered testing approach:
 
 ## TypeScript
 
+- **Strict Type Safety**: TypeScript strict mode must remain enabled (`strict`, `noImplicitAny`, `strictNullChecks`, `strictFunctionTypes`, `noUnusedLocals`, `noUnusedParameters`, `noImplicitReturns`, `noUncheckedIndexedAccess`).
+- **No Explicit `any`**: Do not use explicit `any` without a clear comment explaining the justification.
 - **Target**: ES2022, Module: ESNext, Resolution: bundler.
-- **Strict Mode**: Full strict enabled (`strict`, `noImplicitAny`, `strictNullChecks`, `strictFunctionTypes`, `noUnusedLocals`, `noUnusedParameters`, `noImplicitReturns`, `noUncheckedIndexedAccess`).
 - **JSX**: `react-jsx`.
-- **No explicit `any`** without a justification comment.
-- **Prefer `@/` alias** for `src` imports; avoid deep relative paths (`../../../`).
+- **Imports**: Utilize path aliases (e.g., `@/`) for source imports; avoid deep relative pathing (e.g., `../../../../`).
 - **Async-first** with `async/await`; avoid blocking callbacks.
 
-## File Size & Structure
+## File Size & Structure Limits
 
-- **Max 500 lines soft limit, 1000 lines hard limit** per file. Split components and logic early.
-- **Max ~50 lines per function** when possible.
-- **Comments explain why, not what.**
-- **No emojis** in code comments or commit messages.
+- **Strict File-Level Complexity Limits**: Enforce a strict **500-line soft limit** (1000-line hard limit) per source file. React components and logic files should target 200–300 lines. Split modules and components early.
+- **Function Length Bounds**: Keep individual functions under 50 lines to ensure atomic testability and logical isolation.
+- **Comments & Commits**: Explain the **why**, not the **what**. Do not use emojis in code comments or git commit messages.
 
 ## Linting & Formatting
 
@@ -275,14 +279,24 @@ The monorepo uses a multi-layered testing approach:
 - **Dark mode**: `class` strategy.
 - **Custom theme**: Extensive `aura`, `futuristic`, `sidebar` palettes, neon glow animations.
 
-# Security Considerations
+# Security & Drive Segregation Considerations
 
+- **Strict Code-Data Drive Segregation**:
+  - **Code Drive (V:\monorepo)**: Strictly reserved for canonical source files, build assets, and packages. Under no circumstances should databases, runtime logs, or temporary execution caches be written directly here.
+  - **Data Drive (D:\)**: Strictly segregated for all runtime assets. All code files must default to writing/reading data from `D:\` paths:
+    - SQLite/PostgreSQL Databases: `D:\databases\<project>\`
+    - Runtime logs: `D:\logs\<project>\`
+    - Agent Learning System: `D:\learning-system\`
+    - Datasets & Ingestion folders: `D:\data\`
+    - Backups: `D:\_backups\`
+- **High-Concurrency SQLite Database Standards**: Any SQLite database managed on `D:\databases` must enforce the following performance configurations to prevent multi-process locking across tools:
+  - **Write-Ahead Logging (WAL) mode** enabled (`PRAGMA journal_mode=WAL;`).
+  - **Busy Timeout** set to `5000`ms (`PRAGMA busy_timeout=5000;`).
+  - **Parameterized Queries** enforced for all operations to prevent syntax corruption and injection.
 - **Electron Security**: Custom ESLint rule `no-localstorage-electron` prevents `localStorage` usage in Electron contexts across `apps/nova-agent/**`, `apps/vibe-code-studio/**`, and `apps/**/electron/**`.
 - **Code Injection**: ESLint bans `eval`, `no-implied-eval`, `no-new-func`, and `no-script-url`.
 - **Crypto / Trading**: `apps/crypto-enhanced` is **observation-only** unless explicit task-specific authorization is given. Never execute buy, sell, or trade actions without user confirmation. Circuit breakers and position limits are enforced.
 - **Secrets**: Never commit API keys. Use `.env.example` for templates. Trading state and databases live on `D:\`.
-- **Path Safety**: Code lives on `V:\monorepo`; runtime data (databases, logs, learning artifacts) lives on `D:\`. Any code writing files must default to `D:\` locations.
-- **Database Safety**: SQLite on `D:\databases` with WAL mode. Parameterized queries only. Explicit migrations required.
 
 # Deployment & CI/CD
 
@@ -378,6 +392,26 @@ verified. The root working tree is the default source of truth.
 - If Git worktree support sets `extensions.worktreeConfig=true`, ensure the
   local repo config also has `core.repositoryformatversion=1` before launching
   Antigravity.
+
+# State Management & Error Recovery (Manus Pattern & 3-Strike Protocol)
+
+For complex tasks (defined as requiring >5 tool calls, multi-step execution, or research), you must adopt file-based planning:
+
+- **Planning Directory**: `C:\Users\fresh_zxae3v6\.gemini\antigravity\scratch\planning\`
+- **Core Files**:
+  - `task_plan.md` — Outline phases, track progress, document decisions (update after each phase).
+  - `findings.md` — Record findings, schemas, and configurations (update after any discovery).
+  - `progress.md` — Keep a continuous execution log and test outcomes.
+- **Planning Rules**:
+  - **Create Plan First**: Write `task_plan.md` before executing any edits or complex commands.
+  - **2-Action Rule**: Save findings and state to `findings.md` after every 2 file view/search operations.
+  - **Read Before Decide**: Reread the planning files before making major architecture or design decisions.
+  - **Log Errors**: Record all errors, including attempt numbers, in `progress.md`.
+- **3-Strike Protocol**:
+  1. *Strike 1 (Attempt 1)*: Diagnose the issue and apply a direct fix.
+  2. *Strike 2 (Attempt 2)*: Pivot to an alternative technical approach.
+  3. *Strike 3 (Attempt 3)*: Perform a broader architectural rethink of the task.
+  4. *Post-Strike 3*: Stop immediately and escalate to the user for guidance.
 
 # No Duplicates Rule
 

@@ -28,7 +28,14 @@ const BACKUP_DIR = 'D:/backups/mcp-sync';
 const NODE_BIN =
   process.env.MCP_NODE_BIN ||
   'C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe';
+const NPX_BIN =
+  process.env.MCP_NPX_BIN ||
+  'C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/npx.cmd';
+const UV_BIN = process.env.MCP_UV_BIN || 'C:/Users/fresh_zxae3v6/.local/bin/uv.exe';
 const UVX_BIN = process.env.MCP_UVX_BIN || 'C:/Users/fresh_zxae3v6/.local/bin/uvx.exe';
+const POWERSHELL_BIN =
+  process.env.MCP_POWERSHELL_BIN ||
+  'C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe';
 
 function resolveStdio(command, args = []) {
   switch (command) {
@@ -36,8 +43,12 @@ function resolveStdio(command, args = []) {
       return { command: NODE_BIN, args };
     case 'uvx':
       return { command: UVX_BIN, args };
+    case 'uv':
+      return { command: UV_BIN, args };
     case 'npx':
-      return { command: 'cmd', args: ['/c', 'npx.cmd', ...args] };
+      return { command: 'cmd', args: ['/c', NPX_BIN, ...args] };
+    case 'powershell':
+      return { command: POWERSHELL_BIN, args };
     default:
       return { command, args };
   }

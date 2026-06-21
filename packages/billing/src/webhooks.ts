@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 export interface StripeWebhookBusEvent {
   id: string;
   type: string;

@@ -6,13 +6,11 @@ Run this after implementing all fixes to ensure they work correctly.
 
 import os
 import sys
-import json
 import time
 import platform
 import threading
 import tempfile
 from pathlib import Path
-from datetime import datetime
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent))

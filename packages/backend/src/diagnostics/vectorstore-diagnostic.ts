@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 /**
  * VectorStore Diagnostic Script (Standalone - No Electron Dependencies)
  *
@@ -197,6 +198,8 @@ async function runDiagnostic() {
     }
 
     const db = new Database(testDbPath);
+    db.pragma('journal_mode = WAL');
+    db.pragma('busy_timeout = 5000');
     logger.info(`      Database connection established`);
 
     // Create test schema (same as VectorStore)
