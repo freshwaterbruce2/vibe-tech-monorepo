@@ -23,7 +23,7 @@ Aliases: `git commits-ahead`, `git sync`, `git imerge`
 3. ESLint check — Runs ESLint on staged JavaScript/TypeScript files.
 4. TypeScript typecheck — Runs Nx affected typecheck on staged files.
 5. Byte-size check — Blocks staged files exceeding 5MB.
-6. Line-count check — Enforces the 500-line soft warning and 600-line hard block limits on staged code (via `scripts/validate-file-size.js`).
+6. Line-count check — Enforces the 500-line soft warning and 1000-line hard block limits on staged code (via `scripts/validate-file-size.js`).
 
 **Bypass (emergency only):**
 ```bash

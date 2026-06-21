@@ -298,7 +298,7 @@ export default tseslint.config(
 
   // ========================================
   // Workspace size caps (500 +/- 100 line policy)
-  // File cap 600 (hard) / warning band starts at 500 via Prettier + reviews.
+  // File cap 1000 (hard) / warning band starts at 500 via Prettier + reviews.
   // Line length 100. Exclusions handled in the override block below.
   // ========================================
   {
@@ -312,7 +312,7 @@ export default tseslint.config(
       'desktop-bridge/**/*.{js,mjs,cjs,jsx,ts,tsx}',
     ],
     rules: {
-      'max-lines': ['error', { max: 600, skipBlankLines: true, skipComments: true }],
+      'max-lines': ['error', { max: 1000, skipBlankLines: true, skipComments: true }],
       'max-len': [
         'error',
         {

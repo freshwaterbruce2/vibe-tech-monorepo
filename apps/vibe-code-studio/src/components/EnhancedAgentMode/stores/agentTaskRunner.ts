@@ -2,7 +2,7 @@
  * Agent task execution pipeline for Enhanced Agent Mode.
  *
  * Extracted from agentModeStore.ts so each unit stays under the 50-line function
- * cap (and the store under the 600-line file cap). Operates purely over the
+ * cap (and the store under the 1000-line file cap). Operates purely over the
  * store's set/get plus addLog — no React, no side effects beyond store + logs.
  */
 import type { Draft } from 'immer';

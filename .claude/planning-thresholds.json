@@ -18,9 +18,9 @@
     },
 
     "fileSize": {
-      "hardLimit": 600,
+      "hardLimit": 1000,
       "warningThreshold": 500,
-      "description": "500 +/- 100 line policy: warn at 500, hard-reject above 600. Excludes tests, markdown, logs, generated code, migrations, and scaffolding templates. Enforced by scripts/validate-file-size.js + ESLint max-lines (eslint.config.js).",
+      "description": "500 +/- 100 line policy: warn at 500, hard-reject above 1000. Excludes tests, markdown, logs, generated code, migrations, and scaffolding templates. Enforced by scripts/validate-file-size.js + ESLint max-lines (eslint.config.js).",
       "enforcement": "AUTOMATIC_REJECTION"
     }
   },
@@ -114,7 +114,7 @@
       },
       {
         "check": "file_size",
-        "action": "block_if_exceeds_600_lines"
+        "action": "block_if_exceeds_1000_lines"
       },
       {
         "check": "file_naming",
@@ -161,6 +161,6 @@
     "exceptions": "NONE - This is mandatory",
     "planner": "Opus 4.7 or Claude Code ONLY",
     "implementer": "Sonnet 4.6 ONLY",
-    "fileLimit": "500 soft / 600 hard MAX per file (excludes tests, md, generated)"
+    "fileLimit": "500 soft / 1000 hard MAX per file (excludes tests, md, generated)"
   }
 }

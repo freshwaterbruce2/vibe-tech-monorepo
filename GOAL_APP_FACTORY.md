@@ -253,7 +253,7 @@ Add a "Factory" panel to `vibetech-command-center`:
 
 - Any request to commit to `main`, `master`, or `develop`.
 - Any new app proposed that the factory could generate instead.
-- Any file edit that would push a file past 600 lines.
+- Any file edit that would push a file past 1000 lines.
 - Any destructive operation without a prior `Compress-Archive` backup line in the same command.
 - Any proposal to rip out Electron from `vibetech-command-center` or `vibe-tutor` — both are shipping; this goal does not block on a Tauri migration.
 

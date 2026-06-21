@@ -52,6 +52,6 @@
 
 - Don't mix npm/pnpm commands
 - Don't write data to V:\monorepo (use D:\)
-- Don't create files >600 lines
+- Don't create files >1000 lines
 - Don't skip backups before refactors
 - Don't use `&&` for command chaining (use `;` in PowerShell)

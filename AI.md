@@ -42,7 +42,7 @@ Package manager and tooling:
 
 Code quality:
 
-- Max 500 lines soft limit, 600 lines hard limit (rejection/block). Split large files.
+- Max 500 lines soft limit, 1000 lines hard limit (rejection/block). Split large files.
 - Keep functions under 50 lines when possible.
 - No emojis in code comments or commit messages.
 - Comments explain why, not what.

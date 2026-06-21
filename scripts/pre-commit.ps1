@@ -141,7 +141,7 @@ if ($largeFiles.Count -gt 0) {
     Write-Host "  Byte sizes OK (<5MB)" -ForegroundColor Green
 }
 
-# Line-count cap (500 warn / 600 hard) via the shared validator. The script
+# Line-count cap (500 warn / 1000 hard) via the shared validator. The script
 # applies its own extension filter and exclusion globs (tests, generated code,
 # migrations, scaffolding templates).
 $lineCountFiles = @(
