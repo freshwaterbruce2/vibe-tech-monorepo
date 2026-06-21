@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
+  Brain,
   Bug,
   Code,
   FileText,
@@ -47,6 +48,7 @@ interface UseAICommandPaletteProps {
   onAIAddComments?: () => void;
   onAIGenerateComponent?: () => void;
   onFormatDocument?: () => void;
+  onOpenBrainScan?: () => void;
   currentFile?: string | null;
 }
 
@@ -220,6 +222,16 @@ export const useAICommandPalette = (props: UseAICommandPaletteProps) => {
       action: () => props.onToggleAIChat?.(),
       category: 'View',
       keywords: ['toggle', 'ai', 'chat', 'assistant'],
+    },
+
+    {
+      id: 'view-learning-memory',
+      title: 'View Learning Memory',
+      description: "Inspect the agent's learned patterns (Brain Scan)",
+      icon: <Brain size={18} />,
+      action: () => props.onOpenBrainScan?.(),
+      category: 'View',
+      keywords: ['learning', 'memory', 'brain', 'patterns', 'strategy', 'scan'],
     },
 
     // Settings

@@ -43,11 +43,13 @@ fn ensure_connection(state: &DbState) -> Result<(), String> {
         conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")
             .map_err(|e| e.to_string())?;
 
-        // Create strategy_memory table if it doesn't exist
+        // Create strategy_memory table if it doesn't exist.
+        // pattern_hash is UNIQUE so db_save_pattern's ON CONFLICT(pattern_hash)
+        // upsert resolves against it (without the constraint the upsert errors).
         conn.execute(
             "CREATE TABLE IF NOT EXISTS strategy_memory (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                pattern_hash TEXT NOT NULL,
+                pattern_hash TEXT UNIQUE NOT NULL,
                 pattern_data TEXT NOT NULL,
                 success_rate REAL DEFAULT 0,
                 usage_count INTEGER DEFAULT 0,
