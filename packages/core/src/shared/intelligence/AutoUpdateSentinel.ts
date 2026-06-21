@@ -77,3 +77,4 @@ export class AutoUpdateSentinel {
         
         await this.indexer.updateSingleFile(filePath);
     }
+}
