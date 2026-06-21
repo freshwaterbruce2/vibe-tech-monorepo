@@ -36,11 +36,9 @@ module.exports = {
   rangeStart: 0,
   rangeEnd: Infinity,
 
-  // Which parser to use
-  parser: undefined,
-
-  // Specify the file name used to infer which parser to use
-  filepath: undefined,
+  // parser/filepath are intentionally omitted — Prettier infers the parser from
+  // each file's extension. Setting parser: undefined here makes Prettier 3 throw
+  // "Invalid parser value ... received undefined" instead of inferring.
 
   // Restrict Prettier to only format files that contain a special comment
   requirePragma: false,
