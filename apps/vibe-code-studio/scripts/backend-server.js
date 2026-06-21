@@ -9,7 +9,7 @@ import Database from 'better-sqlite3';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const envPaths = [
   path.join(__dirname, '..', '.env'),
-  path.join(__dirname, '..', '..', '..', '.env')
+  path.join(__dirname, '..', '..', '..', '.env'),
 ];
 
 for (const envPath of envPaths) {
@@ -44,7 +44,10 @@ import { routeAppRequest } from './routes/app-routes.js';
 import { registerAiProxyRoutes } from './routes/ai-proxy.js';
 
 const PORT = 5004;
-const DB_PATH = 'D:\\databases\\vibe_studio.db';
+// App-specific override ONLY — deliberately NOT the generic DATABASE_PATH, which other
+// monorepo apps set (a stray value would split state from the Tauri side, src-tauri/src/db.rs).
+// Unset => canonical default. Mirrors get_db_path() in db.rs.
+const DB_PATH = process.env.VCS_DATABASE_PATH || 'D:\\databases\\vibe_studio.db';
 
 // -----------------------------------------------------------------------------
 // Database Initialization (Safe, WAL mode, non-destructive)
@@ -136,9 +139,9 @@ const server = http.createServer(async (req, res) => {
   }
 
   const getBody = () =>
-    new Promise((resolve) => {
+    new Promise(resolve => {
       let body = '';
-      req.on('data', (chunk) => (body += chunk));
+      req.on('data', chunk => (body += chunk));
       req.on('end', () => resolve(body));
     });
 
@@ -183,10 +186,10 @@ const server = http.createServer(async (req, res) => {
 // -----------------------------------------------------------------------------
 const wss = new WebSocketServer({ noServer: true });
 
-wss.on('connection', (ws) => {
+wss.on('connection', ws => {
   console.log('[Backend] ✅ Client connected');
 
-  ws.on('message', (message) => {
+  ws.on('message', message => {
     try {
       const msgStr = message.toString();
       const parsed = JSON.parse(msgStr);
@@ -200,13 +203,13 @@ wss.on('connection', (ws) => {
     console.log('[Backend] ❌ Client disconnected');
   });
 
-  ws.on('error', (err) => {
+  ws.on('error', err => {
     console.error('[Backend] Client connection error:', err);
   });
 });
 
 server.on('upgrade', (request, socket, head) => {
-  wss.handleUpgrade(request, socket, head, (ws) => {
+  wss.handleUpgrade(request, socket, head, ws => {
     wss.emit('connection', ws, request);
   });
 });
@@ -216,7 +219,7 @@ server.listen(PORT, () => {
   console.log('[Backend] Waiting for Vibe Code Studio to connect...\n');
 });
 
-server.on('error', (error) => {
+server.on('error', error => {
   if (error.code === 'EADDRINUSE') {
     console.error(`[Backend] ⚠️ Error: Port ${PORT} is already in use.`);
     console.error('[Backend] Is another instance or the real Nova Agent already running?');

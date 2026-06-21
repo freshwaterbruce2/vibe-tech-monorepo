@@ -8,8 +8,12 @@ pub struct DbState {
 }
 
 fn get_db_path() -> PathBuf {
-    // Check environment variable first
-    if let Ok(env_path) = std::env::var("DATABASE_PATH") {
+    // App-specific override ONLY. We deliberately do NOT honor the generic
+    // DATABASE_PATH here: other monorepo apps consume it (vibe-invoice, vibe-justice),
+    // and a stray DATABASE_PATH=...\database.db would point VCS at the wrong file,
+    // splitting state from the Node backend (scripts/backend-server.js). Mirrors the
+    // vibe-blox VIBEBLOX_DATABASE_PATH convention. Unset => canonical default below.
+    if let Ok(env_path) = std::env::var("VCS_DATABASE_PATH") {
         if !env_path.trim().is_empty() {
             return PathBuf::from(env_path);
         }
