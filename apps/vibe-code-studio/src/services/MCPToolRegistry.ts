@@ -45,6 +45,12 @@ export class MCPToolRegistry {
   }
 
   private registerDefaultTools() {
+    this.registerFilesystemTools();
+    this.registerGithubTools();
+    this.registerMemoryTools();
+  }
+
+  private registerFilesystemTools() {
     // Filesystem tools
     this.registerTool({
       id: 'mcp.filesystem.read',
@@ -62,7 +68,9 @@ export class MCPToolRegistry {
         },
       ],
     });
+  }
 
+  private registerGithubTools() {
     // GitHub tools
     this.registerTool({
       id: 'mcp.github.create_pr',
@@ -98,7 +106,9 @@ export class MCPToolRegistry {
         },
       ],
     });
+  }
 
+  private registerMemoryTools() {
     // Memory tools
     this.registerTool({
       id: 'mcp.memory.store',

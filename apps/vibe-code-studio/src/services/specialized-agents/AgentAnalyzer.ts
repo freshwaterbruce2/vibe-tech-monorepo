@@ -6,23 +6,10 @@ export class AgentAnalyzer {
   /**
    * Advanced request analysis and coordination planning
    */
-  async analyzeAndCoordinate(
-    request: string,
+  private scoreAgents(
+    requestLower: string,
     context: AgentContext
-  ): Promise<{
-    agents: string[];
-    strategy: 'sequential' | 'parallel' | 'hierarchical' | 'collaborative';
-    reasoning: string;
-    confidence: number;
-    parallelism: number;
-  }> {
-    const requestLower = request.toLowerCase();
-    const agents: string[] = [];
-    let strategy: 'sequential' | 'parallel' | 'hierarchical' | 'collaborative' = 'parallel';
-    let reasoning = '';
-    let confidence = 0.8;
-    let parallelism = 1;
-
+  ): Record<string, number> {
     // Complex pattern matching for agent selection
     const patterns = {
       architecture: /\b(architecture|design|structure|pattern|scalability|system)\b/g,
@@ -56,6 +43,22 @@ export class AgentAnalyzer {
       }
     }
 
+    return scores;
+  }
+
+  private selectAgents(scores: Record<string, number>): {
+    agents: string[];
+    strategy: 'sequential' | 'parallel' | 'hierarchical' | 'collaborative';
+    reasoning: string;
+    confidence: number;
+    parallelism: number;
+  } {
+    const agents: string[] = [];
+    let strategy: 'sequential' | 'parallel' | 'hierarchical' | 'collaborative' = 'parallel';
+    let reasoning = '';
+    let confidence = 0.8;
+    let parallelism = 1;
+
     // Select agents based on scores
     const sortedAgents = Object.entries(scores)
       .filter(([_, score]) => score > 0)
@@ -75,7 +78,7 @@ export class AgentAnalyzer {
     } else {
       // Multi-agent coordination
       agents.push(...sortedAgents.slice(0, 3)); // Limit to top 3 for efficiency
-      
+
       // Determine coordination strategy
       if (agents.includes('technical_lead') && agents.length > 2) {
         strategy = 'hierarchical';
@@ -90,7 +93,7 @@ export class AgentAnalyzer {
         reasoning = 'Parallel processing by multiple specialists';
         parallelism = Math.min(agents.length, 3);
       }
-      
+
       confidence = Math.min(0.9, 0.7 + (Math.max(...Object.values(scores)) / 10));
     }
 
@@ -100,12 +103,29 @@ export class AgentAnalyzer {
       strategy = 'hierarchical';
     }
 
+    return { agents, strategy, reasoning, confidence, parallelism };
+  }
+
+  async analyzeAndCoordinate(
+    request: string,
+    context: AgentContext
+  ): Promise<{
+    agents: string[];
+    strategy: 'sequential' | 'parallel' | 'hierarchical' | 'collaborative';
+    reasoning: string;
+    confidence: number;
+    parallelism: number;
+  }> {
+    const requestLower = request.toLowerCase();
+    const scores = this.scoreAgents(requestLower, context);
+    const plan = this.selectAgents(scores);
+
     return {
-      agents: agents.filter(agent => this.agents.has(agent)),
-      strategy,
-      reasoning,
-      confidence,
-      parallelism
+      agents: plan.agents.filter(agent => this.agents.has(agent)),
+      strategy: plan.strategy,
+      reasoning: plan.reasoning,
+      confidence: plan.confidence,
+      parallelism: plan.parallelism
     };
   }
 }

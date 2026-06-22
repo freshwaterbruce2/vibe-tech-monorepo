@@ -130,7 +130,11 @@ export class AgentCoordinator {
 
         // Execute other agents in parallel with enhanced context
         const remainingAgents = agentKeys.filter(key => key !== techLeadKey);
-        const remainingResponses = await this.executeParallel(remainingAgents, request, enhancedContext);
+        const remainingResponses = await this.executeParallel(
+          remainingAgents,
+          request,
+          enhancedContext
+        );
         
         Object.assign(responses, remainingResponses);
       } catch (error) {

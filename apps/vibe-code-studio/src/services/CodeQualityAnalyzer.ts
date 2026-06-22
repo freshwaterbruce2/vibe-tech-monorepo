@@ -154,42 +154,53 @@ export class CodeQualityAnalyzer {
   /**
    * Detect code issues
    */
-  private detectIssues(code: string, language: string, _filePath: string): QualityIssue[] {
+  private detectJsTsIssues(code: string): QualityIssue[] {
     const issues: QualityIssue[] = [];
 
     // Check for var usage (JavaScript/TypeScript)
+    const varMatches = code.match(/\bvar\s+/g);
+    if (varMatches && varMatches.length > 0) {
+      issues.push({
+        type: 'code-smell',
+        severity: 'warning',
+        message: `Found ${varMatches.length} usage(s) of 'var'. Use 'const' or 'let' instead.`,
+        suggestion: 'Replace var with const for constants or let for variables',
+      });
+    }
+
+    // Check for eval() usage
+    const evalMatches = code.match(/eval\s*\(/g);
+    if (evalMatches && evalMatches.length > 0) {
+      issues.push({
+        type: 'code-smell',
+        severity: 'error',
+        message: `eval() usage detected ${evalMatches.length} time(s). This is a security risk and performance issue.`,
+        suggestion: 'Refactor to avoid eval()',
+      });
+    }
+
+    // Check for deeply nested loops
+    const nestedLoopPattern = /for\s*\([^)]*\)\s*{[^}]*for\s*\([^)]*\)/g;
+    if (nestedLoopPattern.test(code)) {
+      issues.push({
+        type: 'complexity',
+        severity: 'warning',
+        message: 'Deeply nested loops detected',
+        suggestion: 'Consider refactoring into separate functions',
+      });
+    }
+
+    return issues;
+  }
+
+  /**
+   * Detect code issues
+   */
+  private detectIssues(code: string, language: string, _filePath: string): QualityIssue[] {
+    const issues: QualityIssue[] = [];
+
     if (language === 'javascript' || language === 'typescript') {
-      const varMatches = code.match(/\bvar\s+/g);
-      if (varMatches && varMatches.length > 0) {
-        issues.push({
-          type: 'code-smell',
-          severity: 'warning',
-          message: `Found ${varMatches.length} usage(s) of 'var'. Use 'const' or 'let' instead.`,
-          suggestion: 'Replace var with const for constants or let for variables',
-        });
-      }
-
-      // Check for eval() usage
-      const evalMatches = code.match(/eval\s*\(/g);
-      if (evalMatches && evalMatches.length > 0) {
-        issues.push({
-          type: 'code-smell',
-          severity: 'error',
-          message: `eval() usage detected ${evalMatches.length} time(s). This is a security risk and performance issue.`,
-          suggestion: 'Refactor to avoid eval()',
-        });
-      }
-
-      // Check for deeply nested loops
-      const nestedLoopPattern = /for\s*\([^)]*\)\s*{[^}]*for\s*\([^)]*\)/g;
-      if (nestedLoopPattern.test(code)) {
-        issues.push({
-          type: 'complexity',
-          severity: 'warning',
-          message: 'Deeply nested loops detected',
-          suggestion: 'Consider refactoring into separate functions',
-        });
-      }
+      issues.push(...this.detectJsTsIssues(code));
     }
 
     // Check for missing documentation

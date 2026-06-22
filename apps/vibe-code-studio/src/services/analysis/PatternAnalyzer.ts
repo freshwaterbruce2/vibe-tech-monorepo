@@ -6,6 +6,49 @@ import type { CodePatterns } from './types';
 export class PatternAnalyzer {
   constructor(private readonly aiService: IAIService) {}
 
+  private async runAnalysis(patternPrompt: string): Promise<string> {
+    const contextRequest = {
+      userQuery: patternPrompt,
+      relatedFiles: [],
+      workspaceContext: {
+        rootPath: '/',
+        totalFiles: 0,
+        languages: ['JavaScript', 'TypeScript'],
+        testFiles: 0,
+        projectStructure: {},
+        dependencies: {},
+        exports: {},
+        symbols: {},
+        lastIndexed: new Date(),
+        summary: 'Codebase analysis context',
+      },
+      conversationHistory: [],
+    };
+
+    const systemPrompt = await PromptBuilder.buildContextualSystemPrompt(
+      contextRequest,
+      'gpt-4o'
+    );
+    const messages: ChatMessage[] = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: patternPrompt }
+    ];
+
+    let analysis = '';
+    if (this.aiService.stream) {
+      for await (const chunk of this.aiService.stream(messages)) {
+        analysis += chunk;
+      }
+    } else {
+      const response = await this.aiService.complete({
+        messages,
+        model: 'gpt-4o'
+      });
+      analysis = response.content;
+    }
+    return analysis;
+  }
+
   async analyze(_rootPath: string): Promise<CodePatterns> {
     const patternPrompt = `Analyze the codebase patterns and conventions:
 
@@ -21,43 +64,7 @@ Identify:
 Provide confidence scores (0-1) for each pattern identified.`;
 
     try {
-      const contextRequest = {
-        userQuery: patternPrompt,
-        relatedFiles: [],
-        workspaceContext: {
-          rootPath: '/',
-          totalFiles: 0,
-          languages: ['JavaScript', 'TypeScript'],
-          testFiles: 0,
-          projectStructure: {},
-          dependencies: {},
-          exports: {},
-          symbols: {},
-          lastIndexed: new Date(),
-          summary: 'Codebase analysis context',
-        },
-        conversationHistory: [],
-      };
-
-      const systemPrompt = await PromptBuilder.buildContextualSystemPrompt(contextRequest, 'gpt-4o');
-      const messages: ChatMessage[] = [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: patternPrompt }
-      ];
-
-      let analysis = '';
-      if (this.aiService.stream) {
-          for await (const chunk of this.aiService.stream(messages)) {
-            analysis += chunk;
-          }
-      } else {
-        const response = await this.aiService.complete({
-            messages,
-            model: 'gpt-4o'
-        });
-        analysis = response.content;
-      }
-
+      const analysis = await this.runAnalysis(patternPrompt);
       return this.parsePatternAnalysis(analysis);
     } catch (error) {
       logger.error('Pattern analysis failed:', error);

@@ -136,15 +136,57 @@ export class AutoFixService {
     logger.debug(`[AutoFix] Selected model: ${selectedModel}`);
 
     const prompt = this.buildFixPrompt(error, context, { filePath, languageId });
+    const estimatedCost = this.estimateFixCost(selectedModel, prompt);
+
+    const response = await this.requestFix(prompt);
+
+    const generationTime = Date.now() - startTime;
+    const suggestions = this.parseResponse(response, error, selectedModel, estimatedCost);
+
+    const validatedSuggestions = await this.validateSuggestions(
+      suggestions,
+      fileContent,
+      languageId,
+      error
+    );
+
+    const explanation = this.extractExplanation(response);
+
+    const fix: GeneratedFix = {
+      error,
+      suggestions: validatedSuggestions,
+      context,
+      explanation,
+      modelUsed: selectedModel,
+      generationTime
+    };
+
+    const validCount = validatedSuggestions.filter(s => s.validated).length;
+    logger.debug(`[AutoFix] Validation complete. ${validCount} valid fixes.`);
+
+    this.cache.set(cacheKey, fix);
+    this.codeVersions.set(cacheKey, fileContent);
+
+    return fix;
+  }
+
+  /**
+   * Estimate the cost of generating a fix for the given prompt and model.
+   */
+  private estimateFixCost(selectedModel: string, prompt: string): number {
     const promptTokens = Math.ceil(prompt.length / 4);
     const estimatedOutputTokens = 500;
 
     const modelInfo = this.modelRegistry.getModel(selectedModel);
-    const estimatedCost = modelInfo
+    return modelInfo
       ? this.modelRegistry.calculateCost(selectedModel, promptTokens, estimatedOutputTokens)
       : 0;
+  }
 
-    let response: string;
+  /**
+   * Send the fix prompt to the AI service and return the raw response content.
+   */
+  private async requestFix(prompt: string): Promise<string> {
     try {
       this.aiService.setModel?.('moonshot/kimi-2.5-pro');
 
@@ -160,18 +202,23 @@ export class AutoFixService {
         },
         conversationHistory: []
       });
-      response = aiResponse.content;
+      return aiResponse.content;
     } catch (err) {
       throw new Error(`AI service error: ${(err as Error).message}`);
     }
+  }
 
-    const generationTime = Date.now() - startTime;
-    const suggestions = this.parseResponse(response, error, selectedModel, estimatedCost);
-
-    // --- SHADOW VALIDATION LOOP ---
-    // Apply fixes to a hidden model and check if they resolve the error
+  /**
+   * Apply each suggestion to a hidden model (shadow validation) and re-rank.
+   */
+  private async validateSuggestions(
+    suggestions: FixSuggestion[],
+    fileContent: string,
+    languageId: string,
+    error: DetectedError
+  ): Promise<FixSuggestion[]> {
     const validatedSuggestions: FixSuggestion[] = [];
-    
+
     for (const suggestion of suggestions) {
       const isValid = await this.validateSuggestion(suggestion, fileContent, languageId, error);
       if (isValid) {
@@ -189,23 +236,7 @@ export class AutoFixService {
     // Re-rank suggestions: Validated first
     validatedSuggestions.sort((a, b) => (a.validated === b.validated ? 0 : a.validated ? -1 : 1));
 
-    const explanation = this.extractExplanation(response);
-
-    const fix: GeneratedFix = {
-      error,
-      suggestions: validatedSuggestions,
-      context,
-      explanation,
-      modelUsed: selectedModel,
-      generationTime
-    };
-
-    logger.debug(`[AutoFix] Validation complete. ${validatedSuggestions.filter(s => s.validated).length} valid fixes.`);
-
-    this.cache.set(cacheKey, fix);
-    this.codeVersions.set(cacheKey, fileContent);
-
-    return fix;
+    return validatedSuggestions;
   }
 
   /**
@@ -251,7 +282,9 @@ export class AutoFixService {
       // 5. Verify: Did we introduce NEW errors?
       // (Ignoring the original error for this check)
       const newErrorCount = markers.filter(m => m.message !== targetError.message).length;
-      const originalErrorCount = monaco.editor.getModelMarkers({ resource: monaco.Uri.parse(targetError.file) }).length;
+      const originalErrorCount = monaco.editor.getModelMarkers({
+        resource: monaco.Uri.parse(targetError.file)
+      }).length;
 
       if (errorStillExists) {
         logger.debug(`[AutoFix] Validation Failed: Fix did not resolve error.`);
@@ -313,7 +346,11 @@ export class AutoFixService {
     return { codeFence: 'typescript', languageName: 'TypeScript', disallowTypeScriptSyntax: false };
   }
 
-  private extractContext(fileContent: string, errorLine: number, contextLines: number = 10): string {
+  private extractContext(
+    fileContent: string,
+    errorLine: number,
+    contextLines: number = 10
+  ): string {
     const lines = fileContent.split('\n');
     const startLine = Math.max(0, errorLine - contextLines);
     const endLine = Math.min(lines.length, errorLine + contextLines);
@@ -338,7 +375,10 @@ export class AutoFixService {
     const errorTypeCapitalized = this.formatErrorType(error.type);
     const filePath = fileInfo?.filePath ?? error.file ?? 'unknown';
     const languageId = fileInfo?.languageId ?? '';
-    const { codeFence, languageName, disallowTypeScriptSyntax } = this.inferCodeFence(filePath, languageId);
+    const { codeFence, languageName, disallowTypeScriptSyntax } = this.inferCodeFence(
+      filePath,
+      languageId
+    );
     let prompt = `You are an expert code fixer. Analyze this ${errorTypeCapitalized} error and suggest fixes.\n\n`;
 
     prompt += `File: ${filePath}\n`;

@@ -70,7 +70,7 @@ export class ImageToCodeService {
     logger.debug('[ImageToCode] Starting conversion...', { framework, styling });
 
     // Step 1: Initial code generation from image
-    let code = await this.generateInitialCode(
+    const initialCode = await this.generateInitialCode(
       imageData,
       framework,
       styling,
@@ -78,12 +78,37 @@ export class ImageToCodeService {
       responsive
     );
 
+    logger.debug('[ImageToCode] Initial code generated, length:', initialCode.length);
+
+    // Step 2: Iterative refinement with screenshot comparison
+    const { code, iterations, improvements } = await this.runRefinementLoop(
+      imageData,
+      initialCode,
+      framework,
+      styling,
+      maxIterations
+    );
+
+    return {
+      code,
+      framework,
+      styling,
+      iterations,
+      improvements,
+    };
+  }
+
+  private async runRefinementLoop(
+    imageData: string,
+    initialCode: string,
+    framework: ImageToCodeOptions['framework'],
+    styling: ImageToCodeOptions['styling'],
+    maxIterations: number
+  ): Promise<{ code: string; iterations: number; improvements: string[] }> {
+    let code = initialCode;
     let iterations = 1;
     const improvements: string[] = [];
 
-    logger.debug('[ImageToCode] Initial code generated, length:', code.length);
-
-    // Step 2: Iterative refinement with screenshot comparison
     while (iterations < maxIterations) {
       logger.debug(`[ImageToCode] Starting refinement iteration ${iterations}/${maxIterations}`);
 
@@ -114,13 +139,7 @@ export class ImageToCodeService {
       iterations++;
     }
 
-    return {
-      code,
-      framework,
-      styling,
-      iterations,
-      improvements,
-    };
+    return { code, iterations, improvements };
   }
 
   /**

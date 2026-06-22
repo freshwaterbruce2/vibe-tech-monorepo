@@ -121,7 +121,11 @@ function tryParseJsonObjectFromText(text: string, expectedKeys: string[]): JsonO
       if (expectedKeys.length > 0 && score === 0) continue;
 
       const entry = { score, length: candidate.length, parsed: parsedObject };
-      if (!best || entry.score > best.score || (entry.score === best.score && entry.length < best.length)) {
+      const isBetter =
+        !best ||
+        entry.score > best.score ||
+        (entry.score === best.score && entry.length < best.length);
+      if (isBetter) {
         best = entry;
       }
     } catch {
@@ -138,16 +142,13 @@ export class ReActExecutor {
   constructor(private aiService: UnifiedAIService) {}
 
   /**
-   * Phase 1: THOUGHT - Reason about approach before acting
-   * Generates detailed reasoning about how to execute the step
+   * Builds the THOUGHT-phase prompt including any prior-attempt learnings
    */
-  async generateThought(
+  private buildThoughtPrompt(
     step: AgentStep,
     task: AgentTask,
-    previousAttempts: ReActCycle[] = []
-  ): Promise<ReActThought> {
-    const startTime = Date.now();
-
+    previousAttempts: ReActCycle[]
+  ): string {
     const previousLearnings = previousAttempts.length > 0
       ? `\n**Previous Attempts:**\n${previousAttempts.map((cycle, i) => `
 Attempt ${i + 1}:
@@ -158,7 +159,7 @@ Attempt ${i + 1}:
 `).join('\n')}`
       : '';
 
-    const prompt = `You are an AI coding agent about to execute a task step. Think carefully about the best approach BEFORE taking action.
+    return `You are an AI coding agent about to execute a task step. Think carefully about the best approach BEFORE taking action.
 
 **Task Context:**
 User Request: ${task.userRequest}
@@ -189,6 +190,42 @@ Reason about the best way to execute this step. Consider:
   "risks": ["Risk 1: File might not exist", "Risk 2: ..."],
   "expectedOutcome": "What I expect to happen when I execute this"
 }`;
+  }
+
+  private buildThoughtFromData(
+    thoughtData: JsonObject,
+    step: AgentStep,
+    startTime: number
+  ): ReActThought {
+    const thought: ReActThought = {
+      reasoning: (thoughtData['reasoning'] as string) || 'No reasoning provided',
+      approach: (thoughtData['approach'] as string) || step.action.type,
+      alternatives: (thoughtData['alternatives'] as string[]) || [],
+      confidence: Math.min(100, Math.max(0, (thoughtData['confidence'] as number) || 50)),
+      risks: (thoughtData['risks'] as string[]) || [],
+      expectedOutcome: (thoughtData['expectedOutcome'] as string) || 'Unknown',
+      timestamp: new Date(),
+    };
+
+    logger.debug(`[ReAct] 💭 Thought generated in ${Date.now() - startTime}ms`);
+    logger.debug(`[ReAct]    Approach: ${thought.approach}`);
+    logger.debug(`[ReAct]    Confidence: ${thought.confidence}%`);
+    logger.debug(`[ReAct]    Risks: ${thought.risks.length}`);
+
+    return thought;
+  }
+
+  /**
+   * Phase 1: THOUGHT - Reason about approach before acting
+   * Generates detailed reasoning about how to execute the step
+   */
+  async generateThought(
+    step: AgentStep,
+    task: AgentTask,
+    previousAttempts: ReActCycle[] = []
+  ): Promise<ReActThought> {
+    const startTime = Date.now();
+    const prompt = this.buildThoughtPrompt(step, task, previousAttempts);
 
     try {
       const response = await this.aiService.sendContextualMessage({
@@ -209,22 +246,7 @@ Reason about the best way to execute this step. Consider:
       ]);
 
       if (thoughtData) {
-        const thought: ReActThought = {
-          reasoning: (thoughtData['reasoning'] as string) || 'No reasoning provided',
-          approach: (thoughtData['approach'] as string) || step.action.type,
-          alternatives: (thoughtData['alternatives'] as string[]) || [],
-          confidence: Math.min(100, Math.max(0, (thoughtData['confidence'] as number) || 50)),
-          risks: (thoughtData['risks'] as string[]) || [],
-          expectedOutcome: (thoughtData['expectedOutcome'] as string) || 'Unknown',
-          timestamp: new Date(),
-        };
-
-        logger.debug(`[ReAct] 💭 Thought generated in ${Date.now() - startTime}ms`);
-        logger.debug(`[ReAct]    Approach: ${thought.approach}`);
-        logger.debug(`[ReAct]    Confidence: ${thought.confidence}%`);
-        logger.debug(`[ReAct]    Risks: ${thought.risks.length}`);
-
-        return thought;
+        return this.buildThoughtFromData(thoughtData, step, startTime);
       }
 
       logger.debug('[ReAct] Thought response was not valid JSON; using fallback');
@@ -245,19 +267,13 @@ Reason about the best way to execute this step. Consider:
     };
   }
 
-  /**
-   * Phase 3: OBSERVATION - Analyze what actually happened
-   * Compares expected vs actual outcome
-   */
-  async generateObservation(
+  private buildObservationPrompt(
     thought: ReActThought,
     action: StepAction,
     result: StepResult,
     executionTimeMs: number
-  ): Promise<ReActObservation> {
-    const startTime = Date.now();
-
-    const prompt = `You are an AI coding agent analyzing the outcome of an action you just took.
+  ): string {
+    return `You are an AI coding agent analyzing the outcome of an action you just took.
 
 **What You Thought Would Happen:**
 Expected: ${thought.expectedOutcome}
@@ -288,6 +304,41 @@ Analyze the outcome compared to your expectations.
   "learnings": ["Learning 1", "Learning 2"],
   "unexpectedEvents": ["Unexpected event 1", "Unexpected event 2"]
 }`;
+  }
+
+  private buildObservationFromData(
+    obsData: JsonObject,
+    result: StepResult,
+    startTime: number
+  ): ReActObservation {
+    const observation: ReActObservation = {
+      actualOutcome: (obsData['actualOutcome'] as string) ?? result.message ?? 'Action executed',
+      success: result.success,
+      differences: (obsData['differences'] as string[]) || [],
+      learnings: (obsData['learnings'] as string[]) || [],
+      unexpectedEvents: (obsData['unexpectedEvents'] as string[]) || [],
+      timestamp: new Date(),
+    };
+
+    logger.debug(`[ReAct] 👁️ Observation generated in ${Date.now() - startTime}ms`);
+    logger.debug(`[ReAct]    Outcome: ${observation.actualOutcome}`);
+    logger.debug(`[ReAct]    Learnings: ${observation.learnings.length}`);
+
+    return observation;
+  }
+
+  /**
+   * Phase 3: OBSERVATION - Analyze what actually happened
+   * Compares expected vs actual outcome
+   */
+  async generateObservation(
+    thought: ReActThought,
+    action: StepAction,
+    result: StepResult,
+    executionTimeMs: number
+  ): Promise<ReActObservation> {
+    const startTime = Date.now();
+    const prompt = this.buildObservationPrompt(thought, action, result, executionTimeMs);
 
     try {
       const response = await this.aiService.sendContextualMessage({
@@ -306,20 +357,7 @@ Analyze the outcome compared to your expectations.
       ]);
 
       if (obsData) {
-        const observation: ReActObservation = {
-          actualOutcome: (obsData['actualOutcome'] as string) ?? result.message ?? 'Action executed',
-          success: result.success,
-          differences: (obsData['differences'] as string[]) || [],
-          learnings: (obsData['learnings'] as string[]) || [],
-          unexpectedEvents: (obsData['unexpectedEvents'] as string[]) || [],
-          timestamp: new Date(),
-        };
-
-        logger.debug(`[ReAct] 👁️ Observation generated in ${Date.now() - startTime}ms`);
-        logger.debug(`[ReAct]    Outcome: ${observation.actualOutcome}`);
-        logger.debug(`[ReAct]    Learnings: ${observation.learnings.length}`);
-
-        return observation;
+        return this.buildObservationFromData(obsData, result, startTime);
       }
 
       logger.debug('[ReAct] Observation response was not valid JSON; using fallback');
@@ -338,19 +376,13 @@ Analyze the outcome compared to your expectations.
     };
   }
 
-  /**
-   * Phase 4: REFLECTION - Learn from the outcome
-   * Decides whether to retry and what to change
-   */
-  async generateReflection(
+  private buildReflectionPrompt(
     thought: ReActThought,
     observation: ReActObservation,
     step: AgentStep,
-    previousAttempts: ReActCycle[] = []
-  ): Promise<ReActReflection> {
-    const startTime = Date.now();
-
-    const prompt = `You are an AI coding agent reflecting on the outcome of an action.
+    previousAttempts: ReActCycle[]
+  ): string {
+    return `You are an AI coding agent reflecting on the outcome of an action.
 
 **Your Original Plan:**
 Reasoning: ${thought.reasoning}
@@ -381,6 +413,39 @@ Reflect deeply on what happened. Should we retry with changes, or is this good e
   "suggestedChanges": ["Change 1 for next attempt", "Change 2"],
   "knowledgeGained": "Key insight learned from this attempt"
 }`;
+  }
+
+  private buildReflectionFromData(refData: JsonObject, startTime: number): ReActReflection {
+    const reflection: ReActReflection = {
+      whatWorked: (refData['whatWorked'] as string[]) || [],
+      whatFailed: (refData['whatFailed'] as string[]) || [],
+      rootCause: refData['rootCause'] as string | undefined,
+      shouldRetry: refData['shouldRetry'] === true,
+      suggestedChanges: (refData['suggestedChanges'] as string[]) || [],
+      knowledgeGained: (refData['knowledgeGained'] as string) || 'No specific learning captured',
+      timestamp: new Date(),
+    };
+
+    logger.debug(`[ReAct] 🤔 Reflection generated in ${Date.now() - startTime}ms`);
+    logger.debug(`[ReAct]    Should Retry: ${reflection.shouldRetry}`);
+    logger.debug(`[ReAct]    Root Cause: ${reflection.rootCause ?? 'N/A'}`);
+    logger.debug(`[ReAct]    Knowledge: ${reflection.knowledgeGained}`);
+
+    return reflection;
+  }
+
+  /**
+   * Phase 4: REFLECTION - Learn from the outcome
+   * Decides whether to retry and what to change
+   */
+  async generateReflection(
+    thought: ReActThought,
+    observation: ReActObservation,
+    step: AgentStep,
+    previousAttempts: ReActCycle[] = []
+  ): Promise<ReActReflection> {
+    const startTime = Date.now();
+    const prompt = this.buildReflectionPrompt(thought, observation, step, previousAttempts);
 
     try {
       const response = await this.aiService.sendContextualMessage({
@@ -401,22 +466,7 @@ Reflect deeply on what happened. Should we retry with changes, or is this good e
       ]);
 
       if (refData) {
-        const reflection: ReActReflection = {
-          whatWorked: (refData['whatWorked'] as string[]) || [],
-          whatFailed: (refData['whatFailed'] as string[]) || [],
-          rootCause: refData['rootCause'] as string | undefined,
-          shouldRetry: refData['shouldRetry'] === true,
-          suggestedChanges: (refData['suggestedChanges'] as string[]) || [],
-          knowledgeGained: (refData['knowledgeGained'] as string) || 'No specific learning captured',
-          timestamp: new Date(),
-        };
-
-        logger.debug(`[ReAct] 🤔 Reflection generated in ${Date.now() - startTime}ms`);
-        logger.debug(`[ReAct]    Should Retry: ${reflection.shouldRetry}`);
-        logger.debug(`[ReAct]    Root Cause: ${reflection.rootCause ?? 'N/A'}`);
-        logger.debug(`[ReAct]    Knowledge: ${reflection.knowledgeGained}`);
-
-        return reflection;
+        return this.buildReflectionFromData(refData, startTime);
       }
 
       logger.debug('[ReAct] Reflection response was not valid JSON; using fallback');
@@ -463,7 +513,12 @@ Reflect deeply on what happened. Should we retry with changes, or is this good e
 
     // Phase 3: OBSERVATION
     logger.debug('[ReAct] Phase 3/4: Observing outcome...');
-    const observation = await this.generateObservation(thought, step.action, result, actionDuration);
+    const observation = await this.generateObservation(
+      thought,
+      step.action,
+      result,
+      actionDuration
+    );
 
     // Phase 4: REFLECTION
     logger.debug('[ReAct] Phase 4/4: Reflecting on result...');

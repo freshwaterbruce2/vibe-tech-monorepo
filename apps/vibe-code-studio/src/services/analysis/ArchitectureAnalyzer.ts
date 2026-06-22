@@ -6,6 +6,49 @@ import type { ArchitectureInsights } from './types';
 export class ArchitectureAnalyzer {
   constructor(private readonly aiService: IAIService) {}
 
+  private async runAnalysis(architecturePrompt: string): Promise<string> {
+    const contextRequest = {
+      userQuery: architecturePrompt,
+      relatedFiles: [],
+      workspaceContext: {
+        rootPath: '/',
+        totalFiles: 0,
+        languages: ['JavaScript', 'TypeScript'],
+        testFiles: 0,
+        projectStructure: {},
+        dependencies: {},
+        exports: {},
+        symbols: {},
+        lastIndexed: new Date(),
+        summary: 'Architecture analysis context',
+      },
+      conversationHistory: [],
+    };
+
+    const systemPrompt = await PromptBuilder.buildContextualSystemPrompt(
+      contextRequest,
+      'gpt-4o'
+    );
+    const messages: ChatMessage[] = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: architecturePrompt }
+    ];
+
+    let analysis = '';
+    if (this.aiService.stream) {
+      for await (const chunk of this.aiService.stream(messages)) {
+        analysis += chunk;
+      }
+    } else {
+      const response = await this.aiService.complete({
+        messages,
+        model: 'gpt-4o'
+      });
+      analysis = response.content;
+    }
+    return analysis;
+  }
+
   async analyze(_rootPath: string): Promise<ArchitectureInsights> {
     const architecturePrompt = `Analyze the software architecture:
 
@@ -28,43 +71,7 @@ Provide recommendations for:
 - Better separation of concerns`;
 
     try {
-      const contextRequest = {
-        userQuery: architecturePrompt,
-        relatedFiles: [],
-        workspaceContext: {
-          rootPath: '/',
-          totalFiles: 0,
-          languages: ['JavaScript', 'TypeScript'],
-          testFiles: 0,
-          projectStructure: {},
-          dependencies: {},
-          exports: {},
-          symbols: {},
-          lastIndexed: new Date(),
-          summary: 'Architecture analysis context',
-        },
-        conversationHistory: [],
-      };
-
-      const systemPrompt = await PromptBuilder.buildContextualSystemPrompt(contextRequest, 'gpt-4o');
-      const messages: ChatMessage[] = [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: architecturePrompt }
-      ];
-
-      let analysis = '';
-      if (this.aiService.stream) {
-          for await (const chunk of this.aiService.stream(messages)) {
-            analysis += chunk;
-          }
-      } else {
-        const response = await this.aiService.complete({
-            messages,
-            model: 'gpt-4o'
-        });
-        analysis = response.content;
-      }
-
+      const analysis = await this.runAnalysis(architecturePrompt);
       return this.parseArchitectureAnalysis(analysis);
     } catch (error) {
       logger.error('Architecture analysis failed:', error);

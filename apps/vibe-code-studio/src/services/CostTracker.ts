@@ -248,8 +248,11 @@ export class CostTracker {
     }
 
     const timestamps = this.entries.map(e => e.timestamp);
-    const start = timestamps.length > 0 ? new Date(Math.min(...timestamps.map(d => d.getTime()))) : new Date();
-    const end = timestamps.length > 0 ? new Date(Math.max(...timestamps.map(d => d.getTime()))) : new Date();
+    const times = timestamps.map(d => d.getTime());
+    const start =
+      timestamps.length > 0 ? new Date(Math.min(...times)) : new Date();
+    const end =
+      timestamps.length > 0 ? new Date(Math.max(...times)) : new Date();
 
     return {
       summary: this.getStatistics(),

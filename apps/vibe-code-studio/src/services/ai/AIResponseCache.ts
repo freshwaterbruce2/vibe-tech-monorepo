@@ -145,7 +145,11 @@ export class AIResponseCache {
   /**
    * Store response in cache
    */
-  async set(request: AICompletionRequest, response: AICompletionResponse, provider: string): Promise<void> {
+  async set(
+    request: AICompletionRequest,
+    response: AICompletionResponse,
+    provider: string
+  ): Promise<void> {
     const key = this.generateKey(request);
 
     // Evict oldest entry if cache is full (LRU)

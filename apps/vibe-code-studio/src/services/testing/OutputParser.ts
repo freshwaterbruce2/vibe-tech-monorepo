@@ -12,6 +12,19 @@ import type {
     TestSuite
 } from './types';
 
+type AssertionResult = {
+  status?: string;
+  fullName?: string;
+  title?: string;
+  failureMessages?: string[];
+  duration?: number;
+  location?: { line?: number; column?: number };
+};
+type JestTestResult = {
+  name?: string;
+  assertionResults?: AssertionResult[];
+};
+
 export class OutputParser {
   private readonly logger: LoggerFunction;
 
@@ -85,44 +98,15 @@ export class OutputParser {
   /**
    * Parse Jest/Vitest JSON output
    */
-  private parseJestVitestJson(result: Record<string, unknown>): { tests: TestResult[]; coverage?: CoverageInfo } {
+  private parseJestVitestJson(
+    result: Record<string, unknown>
+  ): { tests: TestResult[]; coverage?: CoverageInfo } {
     const tests: TestResult[] = [];
     let coverage: CoverageInfo | undefined;
 
-    type AssertionResult = {
-      status?: string;
-      fullName?: string;
-      title?: string;
-      failureMessages?: string[];
-      duration?: number;
-      location?: { line?: number; column?: number };
-    };
-    type JestTestResult = {
-      name?: string;
-      assertionResults?: AssertionResult[];
-    };
-
     // Handle Jest format
     if (result['testResults']) {
-      for (const testResult of result['testResults'] as JestTestResult[]) {
-        const file = testResult.name;
-
-        for (const assertionResult of testResult.assertionResults ?? []) {
-          tests.push({
-            passed: assertionResult.status === 'passed',
-            testName: assertionResult.fullName ?? assertionResult.title ?? '',
-            output: assertionResult.failureMessages?.join('\n') ?? '',
-            error: assertionResult.status === 'failed' ?
-              assertionResult.failureMessages?.join('\n') : undefined,
-            duration: assertionResult.duration ?? 0,
-            location: {
-              file: file ?? '',
-              line: assertionResult.location?.line,
-              column: assertionResult.location?.column
-            }
-          });
-        }
-      }
+      this.pushJestTests(result['testResults'] as JestTestResult[], tests);
 
       // Parse coverage if available
       if (result['coverageMap']) {
@@ -147,11 +131,42 @@ export class OutputParser {
   }
 
   /**
+   * Push parsed Jest assertion results into the tests array
+   */
+  private pushJestTests(testResults: JestTestResult[], tests: TestResult[]): void {
+    for (const testResult of testResults) {
+      const file = testResult.name;
+
+      for (const assertionResult of testResult.assertionResults ?? []) {
+        tests.push({
+          passed: assertionResult.status === 'passed',
+          testName: assertionResult.fullName ?? assertionResult.title ?? '',
+          output: assertionResult.failureMessages?.join('\n') ?? '',
+          error: assertionResult.status === 'failed' ?
+            assertionResult.failureMessages?.join('\n') : undefined,
+          duration: assertionResult.duration ?? 0,
+          location: {
+            file: file ?? '',
+            line: assertionResult.location?.line,
+            column: assertionResult.location?.column
+          }
+        });
+      }
+    }
+  }
+
+  /**
    * Extract tests from Vitest task structure
    */
-  private extractVitestTests(tasks: Record<string, unknown>[], file: string, tests: TestResult[]): void {
+  private extractVitestTests(
+    tasks: Record<string, unknown>[],
+    file: string,
+    tests: TestResult[]
+  ): void {
     for (const task of tasks) {
-      const taskResult = task['result'] as { state?: string; error?: { message?: string }; duration?: number } | undefined;
+      const taskResult = task['result'] as
+        | { state?: string; error?: { message?: string }; duration?: number }
+        | undefined;
       const taskLocation = task['location'] as { line?: number; column?: number } | undefined;
       if (task['type'] === 'test') {
         tests.push({
@@ -175,7 +190,11 @@ export class OutputParser {
   /**
    * Parse text output for test results
    */
-  private parseTextOutput(stdout: string, stderr: string, framework: TestFrameworkInfo): TestResult[] {
+  private parseTextOutput(
+    stdout: string,
+    stderr: string,
+    framework: TestFrameworkInfo
+  ): TestResult[] {
     const tests: TestResult[] = [];
     const output = stdout + stderr;
 

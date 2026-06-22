@@ -96,6 +96,83 @@ function estimateFileExistence(filePath: string): boolean {
 }
 
 /**
+ * Fallback 1: Search workspace for file instead of direct read
+ */
+function buildSearchFallback(step: AgentStep): FallbackPlan | null {
+    if (step.action.type !== 'read_file') {
+        return null;
+    }
+    const filePath = step.action.params['filePath'] as string;
+    if (!filePath) {
+        return null;
+    }
+    const fileName = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? filePath;
+    return {
+        id: `fallback_${step.id}_1`,
+        stepId: step.id,
+        trigger: 'If file not found',
+        alternativeAction: {
+            type: 'search_codebase',
+            params: {
+                searchQuery: `*${fileName}`,
+            },
+        },
+        confidence: 75,
+        reasoning: 'Search workspace for file instead of direct read',
+    };
+}
+
+/**
+ * Fallback 2: Create a default config file when one is missing
+ */
+function buildDefaultConfigFallback(step: AgentStep): FallbackPlan | null {
+    const configFilePath = step.action.params['filePath'] as string | undefined;
+    const isConfigRead =
+        step.action.type === 'read_file' &&
+        step.description.toLowerCase().includes('config');
+    if (!isConfigRead || !configFilePath) {
+        return null;
+    }
+    return {
+        id: `fallback_${step.id}_2`,
+        stepId: step.id,
+        trigger: 'If file not found after search',
+        alternativeAction: {
+            type: 'write_file',
+            params: {
+                filePath: configFilePath,
+                content: '{}', // Default empty config
+            },
+        },
+        confidence: 60,
+        reasoning: 'Create default config if none exists',
+    };
+}
+
+/**
+ * Fallback 3: Request user input for high-risk actions
+ */
+function buildUserInputFallback(step: AgentStep, confidence: StepConfidence): FallbackPlan | null {
+    if (confidence.riskLevel !== 'high') {
+        return null;
+    }
+    return {
+        id: `fallback_${step.id}_3`,
+        stepId: step.id,
+        trigger: 'If action fails after all attempts',
+        alternativeAction: {
+            type: 'custom',
+            params: {
+                action: 'request_user_input',
+                reason: 'High risk action failed, need human guidance',
+            },
+        },
+        confidence: 90, // User input is always high confidence
+        reasoning: 'Request human input for critical decision',
+    };
+}
+
+/**
  * Generate fallback plans for a step based on its action type and confidence
  */
 export function generateFallbackPlans(step: AgentStep, confidence: StepConfidence): FallbackPlan[] {
@@ -103,66 +180,21 @@ export function generateFallbackPlans(step: AgentStep, confidence: StepConfidenc
 
     // Low confidence steps need fallback plans
     if (confidence.score < 60) {
-        // Fallback 1: Search before read
-        if (step.action.type === 'read_file') {
-            const filePath = step.action.params['filePath'] as string;
-            if (filePath) {
-                const fileName = filePath.split('/').pop() ?? filePath.split('\\').pop() ?? filePath;
-                fallbacks.push({
-                    id: `fallback_${step.id}_1`,
-                    stepId: step.id,
-                    trigger: 'If file not found',
-                    alternativeAction: {
-                        type: 'search_codebase',
-                        params: {
-                            searchQuery: `*${fileName}`,
-                        },
-                    },
-                    confidence: 75,
-                    reasoning: 'Search workspace for file instead of direct read',
-                });
+        const candidates = [
+            buildSearchFallback(step),
+            buildDefaultConfigFallback(step),
+            buildUserInputFallback(step, confidence),
+        ];
+        for (const candidate of candidates) {
+            if (candidate) {
+                fallbacks.push(candidate);
             }
-        }
-
-        // Fallback 2: Create with default template
-        const configFilePath = step.action.params['filePath'] as string | undefined;
-        if (step.action.type === 'read_file' && step.description.toLowerCase().includes('config') && configFilePath) {
-            fallbacks.push({
-                id: `fallback_${step.id}_2`,
-                stepId: step.id,
-                trigger: 'If file not found after search',
-                alternativeAction: {
-                    type: 'write_file',
-                    params: {
-                        filePath: configFilePath,
-                        content: '{}', // Default empty config
-                    },
-                },
-                confidence: 60,
-                reasoning: 'Create default config if none exists',
-            });
-        }
-
-        // Fallback 3: Request user input for critical actions
-        if (confidence.riskLevel === 'high') {
-            fallbacks.push({
-                id: `fallback_${step.id}_3`,
-                stepId: step.id,
-                trigger: 'If action fails after all attempts',
-                alternativeAction: {
-                    type: 'custom',
-                    params: {
-                        action: 'request_user_input',
-                        reason: 'High risk action failed, need human guidance',
-                    },
-                },
-                confidence: 90, // User input is always high confidence
-                reasoning: 'Request human input for critical decision',
-            });
         }
     }
 
-    logger.debug(`[ConfidenceCalculator] Generated ${fallbacks.length} fallback plans for step ${step.id}`);
+    logger.debug(
+        `[ConfidenceCalculator] Generated ${fallbacks.length} fallback plans for step ${step.id}`
+    );
     return fallbacks;
 }
 

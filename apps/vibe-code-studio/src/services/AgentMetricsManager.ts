@@ -62,7 +62,12 @@ export class AgentMetricsManager {
     this.reliabilityMetrics.set(agentId, metrics);
   }
 
-  recordFailure(agentId: string, error: Error, context: Record<string, unknown>, _responseTime: number): number {
+  recordFailure(
+    agentId: string,
+    error: Error,
+    context: Record<string, unknown>,
+    _responseTime: number
+  ): number {
     const metrics = this.getMetrics(agentId);
     metrics.totalRequests++;
     metrics.failedRequests++;
@@ -107,15 +112,20 @@ export class AgentMetricsManager {
             intervals.push(current.timestamp.getTime() - previous.timestamp.getTime());
           }
         }
-        metrics.mtbf = intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length / 1000 / 60;
+        metrics.mtbf =
+          intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length / 1000 / 60;
       }
 
       const recoveredFailures = history.filter(f => f.recovered && f.recoveryTime);
       if (recoveredFailures.length > 0) {
-        metrics.mttr = recoveredFailures.reduce((sum, f) => sum + (f.recoveryTime ?? 0), 0) / recoveredFailures.length / 1000;
+        metrics.mttr =
+          recoveredFailures.reduce((sum, f) => sum + (f.recoveryTime ?? 0), 0) /
+          recoveredFailures.length /
+          1000;
       }
 
-      metrics.uptime = metrics.totalRequests > 0 ? metrics.successfulRequests / metrics.totalRequests : 1.0;
+      metrics.uptime =
+        metrics.totalRequests > 0 ? metrics.successfulRequests / metrics.totalRequests : 1.0;
     }
   }
 

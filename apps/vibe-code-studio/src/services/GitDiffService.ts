@@ -236,7 +236,9 @@ export class GitDiffService {
   /**
    * Calculate stats for hunks
    */
-  private calculateStats(hunks: DiffHunk[]): { additions: number; deletions: number; total: number } {
+  private calculateStats(
+    hunks: DiffHunk[],
+  ): { additions: number; deletions: number; total: number } {
     let additions = 0;
     let deletions = 0;
 

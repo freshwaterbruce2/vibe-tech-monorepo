@@ -31,6 +31,13 @@ export interface DiffLine {
   lineNumber: number;
 }
 
+interface DiffParseState {
+  files: DiffFile[];
+  currentFile: DiffFile | null;
+  currentChunk: DiffChunk | null;
+  newLineNumber: number;
+}
+
 export interface ReviewComment {
   file: string;
   line: number;
@@ -77,89 +84,114 @@ export class AICodeReviewer {
   }
 
   /**
+   * Append a content line to the current chunk, mutating chunk/file counts.
+   * Returns the updated newLineNumber.
+   */
+  private appendContentLine(
+    line: string,
+    currentChunk: DiffChunk,
+    currentFile: DiffFile,
+    newLineNumber: number
+  ): number {
+    if (line.startsWith('+') && !line.startsWith('+++')) {
+      currentChunk.lines.push({
+        type: 'add',
+        content: line.substring(1),
+        lineNumber: newLineNumber++
+      });
+      currentFile.additions++;
+    } else if (line.startsWith('-') && !line.startsWith('---')) {
+      currentChunk.lines.push({
+        type: 'remove',
+        content: line.substring(1),
+        lineNumber: newLineNumber
+      });
+      currentFile.deletions++;
+    } else if (line.startsWith(' ')) {
+      currentChunk.lines.push({
+        type: 'context',
+        content: line.substring(1),
+        lineNumber: newLineNumber++
+      });
+    }
+    return newLineNumber;
+  }
+
+  /**
+   * Process a single diff line, mutating the parse state in place.
+   */
+  private processDiffLine(line: string, state: DiffParseState): void {
+    // File header: diff --git a/file b/file
+    if (line.startsWith('diff --git')) {
+      if (state.currentFile) {
+        state.files.push(state.currentFile);
+      }
+      const match = line.match(/b\/(.+)$/);
+      state.currentFile = {
+        path: match?.[1] ?? 'unknown',
+        additions: 0,
+        deletions: 0,
+        chunks: []
+      };
+      return;
+    }
+
+    // Chunk header: @@ -10,6 +10,8 @@
+    if (line.startsWith('@@')) {
+      const match = line.match(/@@ -(\d+),?\d* \+(\d+),?\d* @@/);
+      if (match?.[1] && match[2] && state.currentFile) {
+        if (state.currentChunk) {
+          state.currentFile.chunks.push(state.currentChunk);
+        }
+        state.newLineNumber = parseInt(match[2], 10);
+        state.currentChunk = {
+          oldStart: parseInt(match[1], 10),
+          newStart: state.newLineNumber,
+          lines: []
+        };
+      }
+      return;
+    }
+
+    // Content lines
+    if (state.currentChunk && state.currentFile) {
+      state.newLineNumber = this.appendContentLine(
+        line,
+        state.currentChunk,
+        state.currentFile,
+        state.newLineNumber
+      );
+    }
+  }
+
+  /**
    * Parse git diff
    */
   parseDiff(diff: string): ParsedDiff {
-    const files: DiffFile[] = [];
-    let totalAdditions = 0;
-    let totalDeletions = 0;
+    const state: DiffParseState = {
+      files: [],
+      currentFile: null,
+      currentChunk: null,
+      newLineNumber: 0
+    };
 
-    const lines = diff.split('\n');
-    let currentFile: DiffFile | null = null;
-    let currentChunk: DiffChunk | null = null;
-    let newLineNumber = 0;
-
-    for (const line of lines) {
-      // File header: diff --git a/file b/file
-      if (line.startsWith('diff --git')) {
-        if (currentFile) {
-          files.push(currentFile);
-        }
-        const match = line.match(/b\/(.+)$/);
-        currentFile = {
-          path: match?.[1] ?? 'unknown',
-          additions: 0,
-          deletions: 0,
-          chunks: []
-        };
-        continue;
-      }
-
-      // Chunk header: @@ -10,6 +10,8 @@
-      if (line.startsWith('@@')) {
-        const match = line.match(/@@ -(\d+),?\d* \+(\d+),?\d* @@/);
-        if (match?.[1] && match[2] && currentFile) {
-          if (currentChunk) {
-            currentFile.chunks.push(currentChunk);
-          }
-          newLineNumber = parseInt(match[2], 10);
-          currentChunk = {
-            oldStart: parseInt(match[1], 10),
-            newStart: newLineNumber,
-            lines: []
-          };
-        }
-        continue;
-      }
-
-      // Content lines
-      if (currentChunk && currentFile) {
-        if (line.startsWith('+') && !line.startsWith('+++')) {
-          currentChunk.lines.push({
-            type: 'add',
-            content: line.substring(1),
-            lineNumber: newLineNumber++
-          });
-          currentFile.additions++;
-          totalAdditions++;
-        } else if (line.startsWith('-') && !line.startsWith('---')) {
-          currentChunk.lines.push({
-            type: 'remove',
-            content: line.substring(1),
-            lineNumber: newLineNumber
-          });
-          currentFile.deletions++;
-          totalDeletions++;
-        } else if (line.startsWith(' ')) {
-          currentChunk.lines.push({
-            type: 'context',
-            content: line.substring(1),
-            lineNumber: newLineNumber++
-          });
-        }
-      }
+    for (const line of diff.split('\n')) {
+      this.processDiffLine(line, state);
     }
 
     // Push last file
-    if (currentFile) {
-      if (currentChunk) {
-        currentFile.chunks.push(currentChunk);
+    if (state.currentFile) {
+      if (state.currentChunk) {
+        state.currentFile.chunks.push(state.currentChunk);
       }
-      files.push(currentFile);
+      state.files.push(state.currentFile);
     }
 
+    const totalAdditions = state.files.reduce((sum, f) => sum + f.additions, 0);
+    const totalDeletions = state.files.reduce((sum, f) => sum + f.deletions, 0);
+
     return {
-      files,
+      files: state.files,
       totalAdditions,
       totalDeletions
     };

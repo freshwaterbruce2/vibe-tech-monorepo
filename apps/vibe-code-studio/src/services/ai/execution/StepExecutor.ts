@@ -67,6 +67,257 @@ export async function executeStepWithFallbacks(
 }
 
 /**
+ * Runs a step via the ReAct cycle, storing successful patterns to memory
+ */
+async function runReActAttempt(
+    step: AgentStep,
+    context: StepExecutionContext,
+    actionRegistry: ReturnType<typeof createActionRegistry>,
+    relevantPatterns: unknown[]
+): Promise<StepResult> {
+    const { reactExecutor, strategyMemory, enableMemory, taskState } = context;
+    logger.debug('[StepExecutor] 🔄 Using ReAct pattern for step execution');
+
+    // Execute the full ReAct cycle
+    const reActCycle = await reactExecutor.executeReActCycle(
+        step,
+        taskState.task!,
+        // Action executor function
+        async (action) => {
+            return await executeAction(
+                action.type,
+                action.params as Record<string, unknown>,
+                context,
+                actionRegistry
+            );
+        }
+    );
+
+    // Use the result from the ReAct cycle
+    const result: StepResult = {
+        success: reActCycle.observation.success,
+        message: reActCycle.observation.actualOutcome,
+        data: {
+            reActCycle, // Include full cycle for UI display
+            thought: reActCycle.thought,
+            reflection: reActCycle.reflection,
+            relevantPatterns, // Include memory patterns that were consulted
+        },
+    };
+
+    // Store successful pattern to memory
+    if (reActCycle.observation.success && enableMemory) {
+        await strategyMemory.storeSuccessfulPattern(step, reActCycle, {
+            taskType: step.action.type,
+        });
+    }
+
+    // If ReAct reflection suggests retry with changes, apply those changes
+    if (!reActCycle.observation.success && reActCycle.reflection.shouldRetry) {
+        logger.debug(
+            `[StepExecutor] 🔄 ReAct suggests retry with changes:`,
+            reActCycle.reflection.suggestedChanges
+        );
+    }
+
+    return result;
+}
+
+/**
+ * Executes a single attempt of a step (one loop iteration), returning its result
+ */
+async function executeStepAttempt(
+    step: AgentStep,
+    context: StepExecutionContext,
+    actionRegistry: ReturnType<typeof createActionRegistry>,
+    callbacks?: ExecutionCallbacks
+): Promise<StepResult> {
+    const { strategyMemory, enableReAct, enableMemory, taskState } = context;
+
+    step.status = 'in_progress';
+    step.startedAt = new Date();
+
+    if (callbacks?.onStepStart) {
+        callbacks.onStepStart(step);
+    }
+
+    // Query strategy memory for relevant patterns BEFORE execution
+    let relevantPatterns: unknown[] = [];
+    if (enableMemory) {
+        relevantPatterns = await strategyMemory.queryPatterns({
+            problemDescription: step.description,
+            actionType: step.action.type,
+            context: {
+                taskType: step.action.type,
+            },
+            maxResults: 3,
+        });
+    }
+
+    // Execute with ReAct pattern (Thought-Action-Observation-Reflection)
+    let result: StepResult;
+
+    if (enableReAct && taskState.task) {
+        result = await runReActAttempt(step, context, actionRegistry, relevantPatterns);
+    } else {
+        // Fallback: Execute action directly without ReAct pattern
+        result = await executeAction(
+            step.action.type,
+            step.action.params as Record<string, unknown>,
+            context,
+            actionRegistry
+        );
+    }
+
+    return finalizeStepResult(step, result, callbacks);
+}
+
+/**
+ * Finalizes a step's status (skipped/completed) and fires the completion callback
+ */
+function finalizeStepResult(
+    step: AgentStep,
+    result: StepResult,
+    callbacks?: ExecutionCallbacks
+): StepResult {
+    // Check if step was skipped (e.g., optional file not found)
+    step.status = result.skipped ? 'skipped' : 'completed';
+    step.completedAt = new Date();
+    step.result = result;
+
+    if (callbacks?.onStepComplete) {
+        callbacks.onStepComplete(step, result);
+    }
+
+    return result;
+}
+
+/**
+ * When the agent appears stuck, seek AI help and either adjust the step's action
+ * (return null to keep retrying) or return a terminal StepResult to stop.
+ */
+async function handleStuckPattern(
+    step: AgentStep,
+    context: StepExecutionContext,
+    error: Error
+): Promise<StepResult | null> {
+    const { metacognitiveLayer, taskState } = context;
+
+    const stuckAnalysis = taskState.task
+        ? await metacognitiveLayer.analyzeStuckPattern(step, taskState.task, error)
+        : { isStuck: false, recommendation: '', confidence: 0 };
+
+    const shouldSeekHelp =
+        stuckAnalysis.isStuck &&
+        'shouldSeekHelp' in stuckAnalysis &&
+        stuckAnalysis.shouldSeekHelp &&
+        taskState.task;
+    if (!shouldSeekHelp || !taskState.task) {
+        return null;
+    }
+
+    logger.debug('[StepExecutor] 🤔 Agent appears stuck, seeking help from AI...');
+    try {
+        const pattern = ('pattern' in stuckAnalysis && stuckAnalysis.pattern
+            ? stuckAnalysis.pattern
+            : 'unknown') as StuckPattern;
+        const helpResponse = await metacognitiveLayer.seekHelp(step, taskState.task, pattern);
+
+        if (helpResponse.shouldContinue) {
+            logger.debug(`[StepExecutor] 💡 AI guidance: ${helpResponse.suggestedApproach}`);
+            // Try the AI's suggested approach as an alternative strategy
+            step.action = {
+                type: 'custom' as ActionType,
+                params: {
+                    approach: helpResponse.suggestedApproach,
+                    reasoning: helpResponse.reasoning,
+                },
+            };
+            return null;
+        }
+
+        logger.debug(`[StepExecutor] 🛑 AI recommends stopping: ${helpResponse.reasoning}`);
+        step.status = 'failed';
+        step.error = `Stopped on AI recommendation: ${helpResponse.reasoning}`;
+        step.completedAt = new Date();
+        return {
+            success: false,
+            message: `AI analysis suggests stopping: ${helpResponse.reasoning}`,
+        };
+    } catch (helpError) {
+        logger.error('[StepExecutor] ⚠️ Failed to get help:', helpError);
+        // Continue with normal retry logic if help-seeking fails
+        return null;
+    }
+}
+
+/**
+ * Handles a failed step attempt: stuck detection, final-failure, and self-correction.
+ * Returns a terminal StepResult, or null to continue the retry loop.
+ */
+async function handleStepFailure(
+    step: AgentStep,
+    context: StepExecutionContext,
+    error: unknown,
+    callbacks?: ExecutionCallbacks
+): Promise<StepResult | null> {
+    step.retryCount++;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    logger.error(
+        `[StepExecutor] ❌ Step ${step.order} failed ` +
+            `(attempt ${step.retryCount}/${step.maxRetries}):`,
+        errorMessage
+    );
+
+    const stuckResult = await handleStuckPattern(step, context, error as Error);
+    if (stuckResult) {
+        return stuckResult;
+    }
+
+    if (step.retryCount >= step.maxRetries) {
+        // Final failure
+        step.status = 'failed';
+        step.error = errorMessage;
+        step.completedAt = new Date();
+
+        const result: StepResult = {
+            success: false,
+            message: `Failed after ${step.maxRetries} retries: ${errorMessage}`,
+        };
+
+        if (callbacks?.onStepError) {
+            callbacks.onStepError(step, error as Error);
+        }
+
+        return result;
+    }
+
+    // Self-Correction - Try different strategy instead of same retry
+    logger.debug(`[StepExecutor] 🔄 Attempting self-correction...`);
+    const alternativeStrategy = await generateAlternativeStrategy(
+        step,
+        error as Error,
+        step.retryCount,
+        context
+    );
+
+    if (alternativeStrategy) {
+        // Update step action to use alternative strategy
+        logger.debug(`[StepExecutor] ✅ Using alternative: ${alternativeStrategy.type}`);
+        step.action = alternativeStrategy;
+        // Continue loop to try new strategy
+    } else {
+        // No alternative found, use exponential backoff before retry
+        logger.debug(`[StepExecutor] ⚠️ No alternative found, retrying original action...`);
+        const backoffMs = calculateBackoffDelay(step.retryCount);
+        await sleep(backoffMs);
+    }
+
+    return null;
+}
+
+/**
  * Executes a single step with retry logic and error handling
  * Uses ReAct pattern (Phase 4) + self-correction (Phase 2) + metacognition (Phase 3)
  */
@@ -75,14 +326,7 @@ export async function executeStepWithRetry(
     context: StepExecutionContext,
     callbacks?: ExecutionCallbacks
 ): Promise<StepResult> {
-    const {
-        metacognitiveLayer,
-        reactExecutor,
-        strategyMemory,
-        enableReAct,
-        enableMemory,
-        taskState,
-    } = context;
+    const { metacognitiveLayer, taskState } = context;
 
     // Monitor step for stuck patterns
     if (taskState.task) {
@@ -93,184 +337,11 @@ export async function executeStepWithRetry(
 
     while (step.retryCount <= step.maxRetries) {
         try {
-            step.status = 'in_progress';
-            step.startedAt = new Date();
-
-            if (callbacks?.onStepStart) {
-                callbacks.onStepStart(step);
-            }
-
-            // Query strategy memory for relevant patterns BEFORE execution
-            let relevantPatterns: unknown[] = [];
-            if (enableMemory) {
-                relevantPatterns = await strategyMemory.queryPatterns({
-                    problemDescription: step.description,
-                    actionType: step.action.type,
-                    context: {
-                        taskType: step.action.type,
-                    },
-                    maxResults: 3,
-                });
-            }
-
-            // Execute with ReAct pattern (Thought-Action-Observation-Reflection)
-            let result: StepResult;
-
-            if (enableReAct && taskState.task) {
-                logger.debug('[StepExecutor] 🔄 Using ReAct pattern for step execution');
-
-                // Execute the full ReAct cycle
-                const reActCycle = await reactExecutor.executeReActCycle(
-                    step,
-                    taskState.task,
-                    // Action executor function
-                    async (action) => {
-                        return await executeAction(action.type, action.params as Record<string, unknown>, context, actionRegistry);
-                    }
-                );
-
-                // Use the result from the ReAct cycle
-                result = {
-                    success: reActCycle.observation.success,
-                    message: reActCycle.observation.actualOutcome,
-                    data: {
-                        reActCycle, // Include full cycle for UI display
-                        thought: reActCycle.thought,
-                        reflection: reActCycle.reflection,
-                        relevantPatterns, // Include memory patterns that were consulted
-                    }
-                };
-
-                // Store successful pattern to memory
-                if (reActCycle.observation.success && enableMemory) {
-                    await strategyMemory.storeSuccessfulPattern(
-                        step,
-                        reActCycle,
-                        {
-                            taskType: step.action.type,
-                        }
-                    );
-                }
-
-                // If ReAct reflection suggests retry with changes, apply those changes
-                if (!reActCycle.observation.success && reActCycle.reflection.shouldRetry) {
-                    logger.debug(`[StepExecutor] 🔄 ReAct suggests retry with changes:`, reActCycle.reflection.suggestedChanges);
-                }
-            } else {
-                // Fallback: Execute action directly without ReAct pattern
-                result = await executeAction(step.action.type, step.action.params as Record<string, unknown>, context, actionRegistry);
-            }
-
-            // Check if step was skipped (e.g., optional file not found)
-            if (result.skipped) {
-                step.status = 'skipped';
-                step.completedAt = new Date();
-                step.result = result;
-
-                if (callbacks?.onStepComplete) {
-                    callbacks.onStepComplete(step, result);
-                }
-
-                return result;
-            }
-
-            step.status = 'completed';
-            step.completedAt = new Date();
-            step.result = result;
-
-            if (callbacks?.onStepComplete) {
-                callbacks.onStepComplete(step, result);
-            }
-
-            return result;
+            return await executeStepAttempt(step, context, actionRegistry, callbacks);
         } catch (error) {
-            step.retryCount++;
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-            logger.error(`[StepExecutor] ❌ Step ${step.order} failed (attempt ${step.retryCount}/${step.maxRetries}):`, errorMessage);
-
-            // Check if agent is stuck before final failure
-            const stuckAnalysis = taskState.task
-                ? await metacognitiveLayer.analyzeStuckPattern(
-                    step,
-                    taskState.task,
-                    error as Error
-                )
-                : { isStuck: false, recommendation: '', confidence: 0 };
-
-            if (stuckAnalysis.isStuck && 'shouldSeekHelp' in stuckAnalysis && stuckAnalysis.shouldSeekHelp && taskState.task) {
-                logger.debug('[StepExecutor] 🤔 Agent appears stuck, seeking help from AI...');
-                try {
-                    const helpResponse = await metacognitiveLayer.seekHelp(
-                        step,
-                        taskState.task,
-                        ('pattern' in stuckAnalysis && stuckAnalysis.pattern ? stuckAnalysis.pattern : 'unknown') as StuckPattern
-                    );
-
-                    if (helpResponse.shouldContinue) {
-                        logger.debug(`[StepExecutor] 💡 AI guidance: ${helpResponse.suggestedApproach}`);
-                        // Try the AI's suggested approach as an alternative strategy
-                        step.action = {
-                            type: 'custom' as ActionType,
-                            params: {
-                                approach: helpResponse.suggestedApproach,
-                                reasoning: helpResponse.reasoning
-                            }
-                        };
-                    } else {
-                        logger.debug(`[StepExecutor] 🛑 AI recommends stopping: ${helpResponse.reasoning}`);
-                        step.status = 'failed';
-                        step.error = `Stopped on AI recommendation: ${helpResponse.reasoning}`;
-                        step.completedAt = new Date();
-
-                        return {
-                            success: false,
-                            message: `AI analysis suggests stopping: ${helpResponse.reasoning}`,
-                        };
-                    }
-                } catch (helpError) {
-                    logger.error('[StepExecutor] ⚠️ Failed to get help:', helpError);
-                    // Continue with normal retry logic if help-seeking fails
-                }
-            }
-
-            if (step.retryCount >= step.maxRetries) {
-                // Final failure
-                step.status = 'failed';
-                step.error = errorMessage;
-                step.completedAt = new Date();
-
-                const result: StepResult = {
-                    success: false,
-                    message: `Failed after ${step.maxRetries} retries: ${errorMessage}`,
-                };
-
-                if (callbacks?.onStepError) {
-                    callbacks.onStepError(step, error as Error);
-                }
-
-                return result;
-            }
-
-            // Self-Correction - Try different strategy instead of same retry
-            logger.debug(`[StepExecutor] 🔄 Attempting self-correction...`);
-            const alternativeStrategy = await generateAlternativeStrategy(
-                step,
-                error as Error,
-                step.retryCount,
-                context
-            );
-
-            if (alternativeStrategy) {
-                // Update step action to use alternative strategy
-                logger.debug(`[StepExecutor] ✅ Using alternative: ${alternativeStrategy.type}`);
-                step.action = alternativeStrategy;
-                // Continue loop to try new strategy
-            } else {
-                // No alternative found, use exponential backoff before retry
-                logger.debug(`[StepExecutor] ⚠️ No alternative found, retrying original action...`);
-                const backoffMs = calculateBackoffDelay(step.retryCount);
-                await sleep(backoffMs);
+            const failureResult = await handleStepFailure(step, context, error, callbacks);
+            if (failureResult) {
+                return failureResult;
             }
         }
     }

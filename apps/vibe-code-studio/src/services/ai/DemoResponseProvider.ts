@@ -8,6 +8,18 @@ import type {
   AIResponse,
 } from '../../types';
 
+interface TaskPlanStep {
+  order: number;
+  title: string;
+  description: string;
+  action: {
+    type: string;
+    params: Record<string, unknown>;
+  };
+  requiresApproval: boolean;
+  maxRetries: number;
+}
+
 /**
  * Provides demo responses when no real API key is available
  */
@@ -65,85 +77,120 @@ ${request.workspaceContext?.languages ? `Based on your project context (${reques
     };
   }
 
+  private static parseBooleanField(query: string, field: string): boolean | undefined {
+    const match = query.match(new RegExp(`"${field}"\\s*:\\s*(true|false)`, 'i'));
+    if (!match) return undefined;
+    return match[1]?.toLowerCase() === 'true';
+  }
+
   private static getReActJsonResponse(request: AIContextRequest): AIResponse | null {
     const lowerQuery = request.userQuery.toLowerCase();
     if (!lowerQuery.includes('response format (json only)')) return null;
 
-    const parseBooleanField = (field: string): boolean | undefined => {
-      const match = request.userQuery.match(new RegExp(`"${field}"\\s*:\\s*(true|false)`, 'i'));
-      if (!match) return undefined;
-      return match[1]?.toLowerCase() === 'true';
-    };
-
     // Phase 1: Thought
     if (lowerQuery.includes('"reasoning"') && lowerQuery.includes('"expectedoutcome"')) {
-      return {
-        content: JSON.stringify({
-          reasoning: 'I will execute the step carefully and validate inputs/outputs before making changes.',
-          approach: 'Follow the planned action, then verify results and handle errors gracefully.',
-          alternatives: [
-            'Inspect the relevant files/config first to confirm assumptions',
-            'Run a dry-run or smaller-scope version of the action',
-          ],
-          confidence: 50,
-          risks: [
-            'Demo mode response is synthetic',
-            'The action may require permissions or missing dependencies',
-          ],
-          expectedOutcome: 'The action completes and returns a clear success/failure result.',
-        }, null, 2),
-        metadata: {
-          model: 'demo',
-          tokens: 120,
-          processing_time: 50,
-        },
-      };
+      return this.getReActThoughtResponse();
     }
 
     // Phase 3: Observation
     if (lowerQuery.includes('"actualoutcome"') && lowerQuery.includes('"unexpectedevents"')) {
-      const success = parseBooleanField('success') ?? true;
-
-      return {
-        content: JSON.stringify({
-          actualOutcome: success ? 'The action completed successfully.' : 'The action failed to complete.',
-          success,
-          differences: [],
-          learnings: [
-            'Ensure outputs are validated and errors are handled consistently.',
-          ],
-          unexpectedEvents: [],
-        }, null, 2),
-        metadata: {
-          model: 'demo',
-          tokens: 120,
-          processing_time: 50,
-        },
-      };
+      return this.getReActObservationResponse(request.userQuery);
     }
 
     // Phase 4: Reflection
     if (lowerQuery.includes('"whatworked"') && lowerQuery.includes('"knowledgegained"')) {
-      const shouldRetry = parseBooleanField('shouldRetry') ?? false;
-
-      return {
-        content: JSON.stringify({
-          whatWorked: ['The step executed without crashing the app.'],
-          whatFailed: [],
-          rootCause: shouldRetry ? 'The first attempt did not meet expectations.' : undefined,
-          shouldRetry,
-          suggestedChanges: shouldRetry ? ['Adjust the approach based on observed differences.'] : [],
-          knowledgeGained: 'JSON-only responses should be enforced for structured agent phases.',
-        }, null, 2),
-        metadata: {
-          model: 'demo',
-          tokens: 120,
-          processing_time: 50,
-        },
-      };
+      return this.getReActReflectionResponse(request.userQuery);
     }
 
     return null;
+  }
+
+  private static getReActThoughtResponse(): AIResponse {
+    return {
+      content: JSON.stringify({
+        reasoning:
+          'I will execute the step carefully and validate inputs/outputs before making changes.',
+        approach: 'Follow the planned action, then verify results and handle errors gracefully.',
+        alternatives: [
+          'Inspect the relevant files/config first to confirm assumptions',
+          'Run a dry-run or smaller-scope version of the action',
+        ],
+        confidence: 50,
+        risks: [
+          'Demo mode response is synthetic',
+          'The action may require permissions or missing dependencies',
+        ],
+        expectedOutcome: 'The action completes and returns a clear success/failure result.',
+      }, null, 2),
+      metadata: {
+        model: 'demo',
+        tokens: 120,
+        processing_time: 50,
+      },
+    };
+  }
+
+  private static getReActObservationResponse(query: string): AIResponse {
+    const success = this.parseBooleanField(query, 'success') ?? true;
+
+    return {
+      content: JSON.stringify({
+        actualOutcome: success
+          ? 'The action completed successfully.'
+          : 'The action failed to complete.',
+        success,
+        differences: [],
+        learnings: [
+          'Ensure outputs are validated and errors are handled consistently.',
+        ],
+        unexpectedEvents: [],
+      }, null, 2),
+      metadata: {
+        model: 'demo',
+        tokens: 120,
+        processing_time: 50,
+      },
+    };
+  }
+
+  private static getReActReflectionResponse(query: string): AIResponse {
+    const shouldRetry = this.parseBooleanField(query, 'shouldRetry') ?? false;
+
+    return {
+      content: JSON.stringify({
+        whatWorked: ['The step executed without crashing the app.'],
+        whatFailed: [],
+        rootCause: shouldRetry ? 'The first attempt did not meet expectations.' : undefined,
+        shouldRetry,
+        suggestedChanges: shouldRetry
+          ? ['Adjust the approach based on observed differences.']
+          : [],
+        knowledgeGained:
+          'JSON-only responses should be enforced for structured agent phases.',
+      }, null, 2),
+      metadata: {
+        model: 'demo',
+        tokens: 120,
+        processing_time: 50,
+      },
+    };
+  }
+
+  private static buildCompletion(
+    text: string,
+    confidence: number,
+    position: { line: number; column: number }
+  ): AICodeCompletion {
+    return {
+      text,
+      range: {
+        startLineNumber: position.line,
+        startColumn: position.column,
+        endLineNumber: position.line,
+        endColumn: position.column,
+      },
+      confidence,
+    };
   }
 
   static getCodeCompletion(
@@ -153,62 +200,20 @@ ${request.workspaceContext?.languages ? `Based on your project context (${reques
   ): AICodeCompletion[] {
     // Simple demo completions based on common patterns
     if (code.includes('console.')) {
-      return [
-        {
-          text: 'log()',
-          range: {
-            startLineNumber: position.line,
-            startColumn: position.column,
-            endLineNumber: position.line,
-            endColumn: position.column,
-          },
-          confidence: 0.9,
-        },
-      ];
+      return [this.buildCompletion('log()', 0.9, position)];
     }
 
     if (code.includes('useState')) {
-      return [
-        {
-          text: '(initialValue)',
-          range: {
-            startLineNumber: position.line,
-            startColumn: position.column,
-            endLineNumber: position.line,
-            endColumn: position.column,
-          },
-          confidence: 0.85,
-        },
-      ];
+      return [this.buildCompletion('(initialValue)', 0.85, position)];
     }
 
     if (code.includes('function ') || code.includes('const ')) {
       return [
-        {
-          text: '() => {\n  // Implementation here\n  return null\n}',
-          range: {
-            startLineNumber: position.line,
-            startColumn: position.column,
-            endLineNumber: position.line,
-            endColumn: position.column,
-          },
-          confidence: 0.8,
-        },
+        this.buildCompletion('() => {\n  // Implementation here\n  return null\n}', 0.8, position),
       ];
     }
 
-    return [
-      {
-        text: '// Add your code here',
-        range: {
-          startLineNumber: position.line,
-          startColumn: position.column,
-          endLineNumber: position.line,
-          endColumn: position.column,
-        },
-        confidence: 0.5,
-      },
-    ];
+    return [this.buildCompletion('// Add your code here', 0.5, position)];
   }
 
   static getCodeGenerationResponse(request: AICodeGenerationRequest): AICodeGenerationResponse {
@@ -289,130 +294,16 @@ export default generatedFunction`,
     const workspaceRootMatch = request.userQuery.match(/- Root: (.+?)(?:\n|$)/);
     const workspaceRoot = workspaceRootMatch?.[1] ?? '/';
 
-    // Determine appropriate steps based on the request
-    let steps = [];
+    const steps = this.buildTaskPlanSteps(userRequest, workspaceRoot);
 
-    if (userRequest.toLowerCase().includes('review') || userRequest.toLowerCase().includes('analyze')) {
-      steps = [
-        {
-          order: 1,
-          title: 'Read project structure',
-          description: `Analyze the directory structure of ${workspaceRoot}`,
-          action: {
-            type: 'search_codebase',
-            params: {
-              searchQuery: 'project structure',
-              workspaceRoot,
-              pattern: '*',
-              includeFiles: true,
-              includeDirs: true
-            }
-          },
-          requiresApproval: false,
-          maxRetries: 3
-        },
-        {
-          order: 2,
-          title: 'Analyze key files',
-          description: 'Review package.json, tsconfig.json, and main entry points',
-          action: {
-            type: 'analyze_code',
-            params: {
-              workspaceRoot,
-              files: ['package.json', 'tsconfig.json', 'src/index.tsx', 'src/App.tsx']
-            }
-          },
-          requiresApproval: false,
-          maxRetries: 3
-        },
-        {
-          order: 3,
-          title: 'Generate analysis report',
-          description: 'Create a comprehensive report of findings',
-          action: {
-            type: 'write_file',
-            params: {
-              filePath: `${workspaceRoot}/ANALYSIS_REPORT.md`,
-              content: '# Project Analysis Report\n\n*Analysis will be generated here*'
-            }
-          },
-          requiresApproval: true,
-          maxRetries: 3
-        }
-      ];
-    } else if (userRequest.toLowerCase().includes('create') || userRequest.toLowerCase().includes('new')) {
-      steps = [
-        {
-          order: 1,
-          title: 'Create new file',
-          description: `Create the requested file in ${workspaceRoot}`,
-          action: {
-            type: 'write_file',
-            params: {
-              filePath: `${workspaceRoot}/new-file.tsx`,
-              content: '// New file created by Agent Mode'
-            }
-          },
-          requiresApproval: true,
-          maxRetries: 3
-        }
-      ];
-    } else if (userRequest.toLowerCase().includes('fix') || userRequest.toLowerCase().includes('bug')) {
-      steps = [
-        {
-          order: 1,
-          title: 'Identify the issue',
-          description: 'Search codebase for potential issues',
-          action: {
-            type: 'search_codebase',
-            params: {
-              searchQuery: 'TODO FIXME BUG ERROR',
-              workspaceRoot,
-              pattern: 'TODO|FIXME|BUG|ERROR'
-            }
-          },
-          requiresApproval: false,
-          maxRetries: 3
-        },
-        {
-          order: 2,
-          title: 'Apply fix',
-          description: 'Modify the identified files to fix the issue',
-          action: {
-            type: 'edit_file',
-            params: {
-              filePath: `${workspaceRoot}/src/buggy-file.tsx`,
-              oldText: '// Old code',
-              newText: '// Fixed code'
-            }
-          },
-          requiresApproval: true,
-          maxRetries: 3
-        }
-      ];
-    } else {
-      // Generic task
-      steps = [
-        {
-          order: 1,
-          title: 'Execute task',
-          description: userRequest,
-          action: {
-            type: 'custom',
-            params: {
-              userRequest
-            }
-          },
-          requiresApproval: true,
-          maxRetries: 3
-        }
-      ];
-    }
+    const reasoning =
+      'This is a demo task plan. In production mode with a real AI API key, the agent would ' +
+      'generate context-aware steps based on your actual codebase.';
 
     const taskPlan = {
       title: userRequest,
       description: `Demo mode: Task plan for "${userRequest}"`,
-      reasoning: 'This is a demo task plan. In production mode with a real AI API key, the agent would generate context-aware steps based on your actual codebase.',
+      reasoning,
       steps,
       warnings: [
         'Demo mode active - using simulated task planning',
@@ -428,5 +319,143 @@ export default generatedFunction`,
         processing_time: 150,
       },
     };
+  }
+
+  private static buildTaskPlanSteps(userRequest: string, workspaceRoot: string): TaskPlanStep[] {
+    const lower = userRequest.toLowerCase();
+
+    // Determine appropriate steps based on the request
+    if (lower.includes('review') || lower.includes('analyze')) {
+      return this.buildReviewSteps(workspaceRoot);
+    }
+    if (lower.includes('create') || lower.includes('new')) {
+      return this.buildCreateSteps(workspaceRoot);
+    }
+    if (lower.includes('fix') || lower.includes('bug')) {
+      return this.buildFixSteps(workspaceRoot);
+    }
+    return this.buildGenericSteps(userRequest);
+  }
+
+  private static buildReviewSteps(workspaceRoot: string): TaskPlanStep[] {
+    return [
+      {
+        order: 1,
+        title: 'Read project structure',
+        description: `Analyze the directory structure of ${workspaceRoot}`,
+        action: {
+          type: 'search_codebase',
+          params: {
+            searchQuery: 'project structure',
+            workspaceRoot,
+            pattern: '*',
+            includeFiles: true,
+            includeDirs: true
+          }
+        },
+        requiresApproval: false,
+        maxRetries: 3
+      },
+      {
+        order: 2,
+        title: 'Analyze key files',
+        description: 'Review package.json, tsconfig.json, and main entry points',
+        action: {
+          type: 'analyze_code',
+          params: {
+            workspaceRoot,
+            files: ['package.json', 'tsconfig.json', 'src/index.tsx', 'src/App.tsx']
+          }
+        },
+        requiresApproval: false,
+        maxRetries: 3
+      },
+      {
+        order: 3,
+        title: 'Generate analysis report',
+        description: 'Create a comprehensive report of findings',
+        action: {
+          type: 'write_file',
+          params: {
+            filePath: `${workspaceRoot}/ANALYSIS_REPORT.md`,
+            content: '# Project Analysis Report\n\n*Analysis will be generated here*'
+          }
+        },
+        requiresApproval: true,
+        maxRetries: 3
+      }
+    ];
+  }
+
+  private static buildCreateSteps(workspaceRoot: string): TaskPlanStep[] {
+    return [
+      {
+        order: 1,
+        title: 'Create new file',
+        description: `Create the requested file in ${workspaceRoot}`,
+        action: {
+          type: 'write_file',
+          params: {
+            filePath: `${workspaceRoot}/new-file.tsx`,
+            content: '// New file created by Agent Mode'
+          }
+        },
+        requiresApproval: true,
+        maxRetries: 3
+      }
+    ];
+  }
+
+  private static buildFixSteps(workspaceRoot: string): TaskPlanStep[] {
+    return [
+      {
+        order: 1,
+        title: 'Identify the issue',
+        description: 'Search codebase for potential issues',
+        action: {
+          type: 'search_codebase',
+          params: {
+            searchQuery: 'TODO FIXME BUG ERROR',
+            workspaceRoot,
+            pattern: 'TODO|FIXME|BUG|ERROR'
+          }
+        },
+        requiresApproval: false,
+        maxRetries: 3
+      },
+      {
+        order: 2,
+        title: 'Apply fix',
+        description: 'Modify the identified files to fix the issue',
+        action: {
+          type: 'edit_file',
+          params: {
+            filePath: `${workspaceRoot}/src/buggy-file.tsx`,
+            oldText: '// Old code',
+            newText: '// Fixed code'
+          }
+        },
+        requiresApproval: true,
+        maxRetries: 3
+      }
+    ];
+  }
+
+  private static buildGenericSteps(userRequest: string): TaskPlanStep[] {
+    return [
+      {
+        order: 1,
+        title: 'Execute task',
+        description: userRequest,
+        action: {
+          type: 'custom',
+          params: {
+            userRequest
+          }
+        },
+        requiresApproval: true,
+        maxRetries: 3
+      }
+    ];
   }
 }

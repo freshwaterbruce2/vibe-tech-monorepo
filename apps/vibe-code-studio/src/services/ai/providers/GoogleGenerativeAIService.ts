@@ -90,7 +90,24 @@ export class GoogleGenerativeAIService implements IAIService {
     };
   }
 
-  async *stream(messages: ChatMessage[], options?: AIChatOptions): AsyncGenerator<string, void, unknown> {
+  private *parseStreamLines(lines: string[]): Generator<string, void, unknown> {
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        try {
+          const data = JSON.parse(line.slice(6));
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) yield text;
+        } catch (_e) {
+          // Partial JSON or heartbeat
+        }
+      }
+    }
+  }
+
+  async *stream(
+    messages: ChatMessage[],
+    options?: AIChatOptions
+  ): AsyncGenerator<string, void, unknown> {
     const rawModelId = options?.model ?? 'gemini-3.1-pro';
     const modelId = rawModelId.replace(/^google\//, '');
     const url = `${this.baseUrl}/models/${modelId}:streamGenerateContent?alt=sse&key=${this.apiKey}`;
@@ -140,17 +157,7 @@ export class GoogleGenerativeAIService implements IAIService {
         const lines = buffer.split('\n');
         buffer = lines.pop() ?? '';
 
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (text) yield text;
-            } catch (_e) {
-              // Partial JSON or heartbeat
-            }
-          }
-        }
+        yield* this.parseStreamLines(lines);
       }
     } finally {
       reader.releaseLock();
@@ -167,7 +174,15 @@ export class GoogleGenerativeAIService implements IAIService {
     return response.content;
   }
 
-  async generateText(prompt: string, options?: { maxTokens?: number; temperature?: number; model?: string; signal?: AbortSignal }): Promise<string> {
+  async generateText(
+    prompt: string,
+    options?: {
+      maxTokens?: number;
+      temperature?: number;
+      model?: string;
+      signal?: AbortSignal;
+    }
+  ): Promise<string> {
     return this.chat([{ role: 'user', content: prompt }], options);
   }
 }

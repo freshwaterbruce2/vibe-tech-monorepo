@@ -124,7 +124,6 @@ export class LiveEditorStream {
 
     this.isStreaming = true;
     const totalChars = content.length;
-    let currentChar = 0;
 
     // Determine starting position
     const model = this.editor.getModel();
@@ -137,6 +136,24 @@ export class LiveEditorStream {
 
     // Calculate delay between characters based on stream speed
     const delayMs = 1000 / this.settings.streamSpeed;
+
+    await this.streamCharacters(filePath, content, position, totalChars, delayMs);
+
+    this.isStreaming = false;
+  }
+
+  private async streamCharacters(
+    filePath: string,
+    content: string,
+    position: StreamPosition,
+    totalChars: number,
+    delayMs: number
+  ): Promise<void> {
+    if (!this.editor) {
+      return;
+    }
+
+    let currentChar = 0;
 
     // Stream character by character
     for (const char of content) {
@@ -183,8 +200,6 @@ export class LiveEditorStream {
       // Delay before next character
       await this.sleep(delayMs);
     }
-
-    this.isStreaming = false;
   }
 
   /**
@@ -350,51 +365,64 @@ export class LiveEditorStream {
         newIndex++;
       } else {
         // Lines differ - find next match
-        const nextMatchOld = this.findNextMatch(
+        ({ oldIndex, newIndex } = this.resolveLineDifference(
           oldLines,
-          newLines[newIndex]!,
-          oldIndex
-        );
-        const nextMatchNew = this.findNextMatch(
           newLines,
-          oldLines[oldIndex]!,
-          newIndex
-        );
-
-        if (nextMatchOld !== -1 && nextMatchOld < nextMatchNew) {
-          // Deletion detected
-          changes.push({
-            type: 'deletion',
-            startLine: oldIndex + 1,
-            endLine: nextMatchOld,
-          });
-          oldIndex = nextMatchOld + 1;
-          newIndex++;
-        } else if (nextMatchNew !== -1) {
-          // Addition detected
-          changes.push({
-            type: 'addition',
-            startLine: newIndex + 1,
-            endLine: nextMatchNew,
-            content: newLines.slice(newIndex, nextMatchNew + 1).join('\n'),
-          });
-          newIndex = nextMatchNew + 1;
-          oldIndex++;
-        } else {
-          // Modification (no clear match found)
-          changes.push({
-            type: 'modification',
-            startLine: Math.min(oldIndex, newIndex) + 1,
-            endLine: Math.min(oldIndex, newIndex) + 1,
-            content: newLines[newIndex],
-          });
-          oldIndex++;
-          newIndex++;
-        }
+          oldIndex,
+          newIndex,
+          changes
+        ));
       }
     }
 
     return changes;
+  }
+
+  private resolveLineDifference(
+    oldLines: string[],
+    newLines: string[],
+    oldIndex: number,
+    newIndex: number,
+    changes: DiffChange[]
+  ): { oldIndex: number; newIndex: number } {
+    const nextMatchOld = this.findNextMatch(
+      oldLines,
+      newLines[newIndex]!,
+      oldIndex
+    );
+    const nextMatchNew = this.findNextMatch(
+      newLines,
+      oldLines[oldIndex]!,
+      newIndex
+    );
+
+    if (nextMatchOld !== -1 && nextMatchOld < nextMatchNew) {
+      // Deletion detected
+      changes.push({
+        type: 'deletion',
+        startLine: oldIndex + 1,
+        endLine: nextMatchOld,
+      });
+      return { oldIndex: nextMatchOld + 1, newIndex: newIndex + 1 };
+    } else if (nextMatchNew !== -1) {
+      // Addition detected
+      changes.push({
+        type: 'addition',
+        startLine: newIndex + 1,
+        endLine: nextMatchNew,
+        content: newLines.slice(newIndex, nextMatchNew + 1).join('\n'),
+      });
+      return { oldIndex: oldIndex + 1, newIndex: nextMatchNew + 1 };
+    } else {
+      // Modification (no clear match found)
+      changes.push({
+        type: 'modification',
+        startLine: Math.min(oldIndex, newIndex) + 1,
+        endLine: Math.min(oldIndex, newIndex) + 1,
+        content: newLines[newIndex],
+      });
+      return { oldIndex: oldIndex + 1, newIndex: newIndex + 1 };
+    }
   }
 
   /**

@@ -15,6 +15,13 @@ function getBasename(filename: string, ext?: string): string {
 import { FrameworkDetector } from './FrameworkDetector';
 import type { LoggerFunction, TestRunnerOptions } from './types';
 
+type FunctionParam = { name: string; type?: string; optional?: boolean; defaultValue?: string };
+type FunctionDetails = {
+  params: FunctionParam[];
+  isAsync: boolean;
+  returnType?: string;
+};
+
 export class TestGenerator {
   private readonly logger: LoggerFunction;
   private readonly frameworkDetector: FrameworkDetector;
@@ -208,7 +215,12 @@ export class TestGenerator {
     return tests;
   }
 
-  private generateFunctionTest(func: string, isReact: boolean, testFunction: string, code?: string): string {
+  private generateFunctionTest(
+    func: string,
+    isReact: boolean,
+    testFunction: string,
+    code?: string
+  ): string {
     let test = `  describe('${func}', () => {\n`;
     test += `    ${testFunction}('should be defined', () => {\n`;
     test += `      expect(${func}).toBeDefined();\n`;
@@ -217,156 +229,224 @@ export class TestGenerator {
     const isComponent = isReact && (func.charAt(0) === func.charAt(0).toUpperCase());
 
     if (isComponent) {
-      // React component — generate render, snapshot, and interaction tests
-      test += `    ${testFunction}('should render without crashing', () => {\n`;
-      test += `      render(<${func} />);\n`;
-      test += `    });\n\n`;
-
-      test += `    ${testFunction}('should match snapshot', () => {\n`;
-      test += `      const { container } = render(<${func} />);\n`;
-      test += `      expect(container.firstChild).toMatchSnapshot();\n`;
-      test += `    });\n\n`;
-
-      test += `    ${testFunction}('should be accessible', () => {\n`;
-      test += `      render(<${func} />);\n`;
-      test += `      const element = screen.getByRole('main') ?? document.querySelector('[data-testid]');\n`;
-      test += `      if (element) {\n`;
-      test += `        expect(element).toBeInTheDocument();\n`;
-      test += `      }\n`;
-      test += `    });\n\n`;
+      test += this.generateComponentTests(func, testFunction);
     } else {
-      // Regular function — generate tests based on parameter analysis
-      const details = code ? this.extractFunctionDetails(code, func) : { params: [], isAsync: false };
-
-      if (details.params.length === 0) {
-        // No-arg function
-        if (details.isAsync) {
-          test += `    ${testFunction}('should resolve when called', async () => {\n`;
-          test += `      const result = await ${func}();\n`;
-          test += `      expect(result).toBeDefined();\n`;
-          test += `    });\n\n`;
-        } else {
-          test += `    ${testFunction}('should return a value when called', () => {\n`;
-          test += `      const result = ${func}();\n`;
-          test += `      expect(result).toBeDefined();\n`;
-          test += `    });\n\n`;
-        }
-      } else {
-        // Build sample arguments
-        const sampleArgs = details.params
-          .filter(p => !p.optional)
-          .map(p => this.getSampleValue(p.type, p.name))
-          .join(', ');
-
-        if (details.isAsync) {
-          test += `    ${testFunction}('should resolve with valid arguments', async () => {\n`;
-          test += `      const result = await ${func}(${sampleArgs});\n`;
-          test += `      expect(result).toBeDefined();\n`;
-          test += `    });\n\n`;
-        } else {
-          test += `    ${testFunction}('should return expected output with valid arguments', () => {\n`;
-          test += `      const result = ${func}(${sampleArgs});\n`;
-          test += `      expect(result).toBeDefined();\n`;
-          test += `    });\n\n`;
-        }
-
-        // Test with edge cases for each parameter type
-        for (const param of details.params) {
-          if (param.type === 'string' || (!param.type && (param.name.includes('name') || param.name.includes('text') || param.name.includes('str')))) {
-            test += `    ${testFunction}('should handle empty string for ${param.name}', ${details.isAsync ? 'async ' : ''}() => {\n`;
-            const edgeArgs = details.params.map(p =>
-              p.name === param.name ? "''" : this.getSampleValue(p.type, p.name)
-            ).join(', ');
-            if (details.isAsync) {
-              test += `      const result = await ${func}(${edgeArgs});\n`;
-            } else {
-              test += `      const result = ${func}(${edgeArgs});\n`;
-            }
-            test += `      expect(result).toBeDefined();\n`;
-            test += `    });\n\n`;
-          }
-
-          if (param.type === 'number' || (!param.type && (param.name.includes('count') || param.name.includes('num') || param.name.includes('index')))) {
-            test += `    ${testFunction}('should handle zero for ${param.name}', ${details.isAsync ? 'async ' : ''}() => {\n`;
-            const zeroArgs = details.params.map(p =>
-              p.name === param.name ? '0' : this.getSampleValue(p.type, p.name)
-            ).join(', ');
-            if (details.isAsync) {
-              test += `      const result = await ${func}(${zeroArgs});\n`;
-            } else {
-              test += `      const result = ${func}(${zeroArgs});\n`;
-            }
-            test += `      expect(result).toBeDefined();\n`;
-            test += `    });\n\n`;
-
-            test += `    ${testFunction}('should handle negative number for ${param.name}', ${details.isAsync ? 'async ' : ''}() => {\n`;
-            const negArgs = details.params.map(p =>
-              p.name === param.name ? '-1' : this.getSampleValue(p.type, p.name)
-            ).join(', ');
-            if (details.isAsync) {
-              test += `      const result = await ${func}(${negArgs});\n`;
-            } else {
-              test += `      const result = ${func}(${negArgs});\n`;
-            }
-            test += `      expect(result).toBeDefined();\n`;
-            test += `    });\n\n`;
-          }
-        }
-
-        // Test optional parameters are truly optional
-        const requiredParams = details.params.filter(p => !p.optional);
-        if (requiredParams.length < details.params.length && requiredParams.length > 0) {
-          const requiredArgs = requiredParams.map(p => this.getSampleValue(p.type, p.name)).join(', ');
-          test += `    ${testFunction}('should work with only required arguments', ${details.isAsync ? 'async ' : ''}() => {\n`;
-          if (details.isAsync) {
-            test += `      const result = await ${func}(${requiredArgs});\n`;
-          } else {
-            test += `      const result = ${func}(${requiredArgs});\n`;
-          }
-          test += `      expect(result).toBeDefined();\n`;
-          test += `    });\n\n`;
-        }
-      }
-
-      // Type-specific return assertions
-      if (details.returnType) {
-        const rt = details.returnType.toLowerCase();
-        const asyncPrefix = details.isAsync ? 'async ' : '';
-        const awaitPrefix = details.isAsync ? 'await ' : '';
-        const args = details.params.length > 0
-          ? details.params.map(p => this.getSampleValue(p.type, p.name)).join(', ')
-          : '';
-
-        if (rt === 'boolean') {
-          test += `    ${testFunction}('should return a boolean', ${asyncPrefix}() => {\n`;
-          test += `      const result = ${awaitPrefix}${func}(${args});\n`;
-          test += `      expect(typeof result).toBe('boolean');\n`;
-          test += `    });\n\n`;
-        } else if (rt === 'number') {
-          test += `    ${testFunction}('should return a number', ${asyncPrefix}() => {\n`;
-          test += `      const result = ${awaitPrefix}${func}(${args});\n`;
-          test += `      expect(typeof result).toBe('number');\n`;
-          test += `    });\n\n`;
-        } else if (rt === 'string') {
-          test += `    ${testFunction}('should return a string', ${asyncPrefix}() => {\n`;
-          test += `      const result = ${awaitPrefix}${func}(${args});\n`;
-          test += `      expect(typeof result).toBe('string');\n`;
-          test += `    });\n\n`;
-        } else if (rt.endsWith('[]') || rt.startsWith('array')) {
-          test += `    ${testFunction}('should return an array', ${asyncPrefix}() => {\n`;
-          test += `      const result = ${awaitPrefix}${func}(${args});\n`;
-          test += `      expect(Array.isArray(result)).toBe(true);\n`;
-          test += `    });\n\n`;
-        } else if (rt === 'void') {
-          test += `    ${testFunction}('should return undefined (void)', ${asyncPrefix}() => {\n`;
-          test += `      const result = ${awaitPrefix}${func}(${args});\n`;
-          test += `      expect(result).toBeUndefined();\n`;
-          test += `    });\n\n`;
-        }
-      }
+      test += this.generateRegularFunctionTests(func, testFunction, code);
     }
 
     test += `  });\n\n`;
+    return test;
+  }
+
+  private generateComponentTests(func: string, testFunction: string): string {
+    // React component — generate render, snapshot, and interaction tests
+    let test = `    ${testFunction}('should render without crashing', () => {\n`;
+    test += `      render(<${func} />);\n`;
+    test += `    });\n\n`;
+
+    test += `    ${testFunction}('should match snapshot', () => {\n`;
+    test += `      const { container } = render(<${func} />);\n`;
+    test += `      expect(container.firstChild).toMatchSnapshot();\n`;
+    test += `    });\n\n`;
+
+    test += `    ${testFunction}('should be accessible', () => {\n`;
+    test += `      render(<${func} />);\n`;
+    test += `      const element = screen.getByRole('main') ?? document.querySelector('[data-testid]');\n`;
+    test += `      if (element) {\n`;
+    test += `        expect(element).toBeInTheDocument();\n`;
+    test += `      }\n`;
+    test += `    });\n\n`;
+    return test;
+  }
+
+  private generateRegularFunctionTests(
+    func: string,
+    testFunction: string,
+    code?: string
+  ): string {
+    // Regular function — generate tests based on parameter analysis
+    const details = code ? this.extractFunctionDetails(code, func) : { params: [], isAsync: false };
+
+    let test = '';
+    if (details.params.length === 0) {
+      // No-arg function
+      if (details.isAsync) {
+        test += `    ${testFunction}('should resolve when called', async () => {\n`;
+        test += `      const result = await ${func}();\n`;
+        test += `      expect(result).toBeDefined();\n`;
+        test += `    });\n\n`;
+      } else {
+        test += `    ${testFunction}('should return a value when called', () => {\n`;
+        test += `      const result = ${func}();\n`;
+        test += `      expect(result).toBeDefined();\n`;
+        test += `    });\n\n`;
+      }
+    } else {
+      test += this.generateArgTests(func, testFunction, details);
+    }
+
+    test += this.generateReturnTypeTests(func, testFunction, details);
+    return test;
+  }
+
+  private generateArgTests(
+    func: string,
+    testFunction: string,
+    details: FunctionDetails
+  ): string {
+    // Build sample arguments
+    const sampleArgs = details.params
+      .filter(p => !p.optional)
+      .map(p => this.getSampleValue(p.type, p.name))
+      .join(', ');
+
+    let test = '';
+    if (details.isAsync) {
+      test += `    ${testFunction}('should resolve with valid arguments', async () => {\n`;
+      test += `      const result = await ${func}(${sampleArgs});\n`;
+      test += `      expect(result).toBeDefined();\n`;
+      test += `    });\n\n`;
+    } else {
+      test += `    ${testFunction}('should return expected output with valid arguments', () => {\n`;
+      test += `      const result = ${func}(${sampleArgs});\n`;
+      test += `      expect(result).toBeDefined();\n`;
+      test += `    });\n\n`;
+    }
+
+    // Test with edge cases for each parameter type
+    for (const param of details.params) {
+      test += this.generateParamEdgeCaseTests(func, testFunction, details, param);
+    }
+
+    // Test optional parameters are truly optional
+    const requiredParams = details.params.filter(p => !p.optional);
+    if (requiredParams.length < details.params.length && requiredParams.length > 0) {
+      const requiredArgs = requiredParams.map(p => this.getSampleValue(p.type, p.name)).join(', ');
+      const asyncPrefix = details.isAsync ? 'async ' : '';
+      test += `    ${testFunction}('should work with only required arguments', ${asyncPrefix}() => {\n`;
+      if (details.isAsync) {
+        test += `      const result = await ${func}(${requiredArgs});\n`;
+      } else {
+        test += `      const result = ${func}(${requiredArgs});\n`;
+      }
+      test += `      expect(result).toBeDefined();\n`;
+      test += `    });\n\n`;
+    }
+    return test;
+  }
+
+  private generateParamEdgeCaseTests(
+    func: string,
+    testFunction: string,
+    details: FunctionDetails,
+    param: FunctionParam
+  ): string {
+    const asyncPrefix = details.isAsync ? 'async ' : '';
+    let test = '';
+
+    const isStringy = param.type === 'string' ||
+      (!param.type && (param.name.includes('name') || param.name.includes('text') ||
+        param.name.includes('str')));
+    if (isStringy) {
+      test += `    ${testFunction}('should handle empty string for ${param.name}', ${asyncPrefix}() => {\n`;
+      const edgeArgs = details.params.map(p =>
+        p.name === param.name ? "''" : this.getSampleValue(p.type, p.name)
+      ).join(', ');
+      if (details.isAsync) {
+        test += `      const result = await ${func}(${edgeArgs});\n`;
+      } else {
+        test += `      const result = ${func}(${edgeArgs});\n`;
+      }
+      test += `      expect(result).toBeDefined();\n`;
+      test += `    });\n\n`;
+    }
+
+    const isNumeric = param.type === 'number' ||
+      (!param.type && (param.name.includes('count') || param.name.includes('num') ||
+        param.name.includes('index')));
+    if (isNumeric) {
+      test += this.generateNumericEdgeCaseTests(func, testFunction, details, param);
+    }
+    return test;
+  }
+
+  private generateNumericEdgeCaseTests(
+    func: string,
+    testFunction: string,
+    details: FunctionDetails,
+    param: FunctionParam
+  ): string {
+    const asyncPrefix = details.isAsync ? 'async ' : '';
+    let test = '';
+
+    test += `    ${testFunction}('should handle zero for ${param.name}', ${asyncPrefix}() => {\n`;
+    const zeroArgs = details.params.map(p =>
+      p.name === param.name ? '0' : this.getSampleValue(p.type, p.name)
+    ).join(', ');
+    if (details.isAsync) {
+      test += `      const result = await ${func}(${zeroArgs});\n`;
+    } else {
+      test += `      const result = ${func}(${zeroArgs});\n`;
+    }
+    test += `      expect(result).toBeDefined();\n`;
+    test += `    });\n\n`;
+
+    test += `    ${testFunction}('should handle negative number for ${param.name}', ${asyncPrefix}() => {\n`;
+    const negArgs = details.params.map(p =>
+      p.name === param.name ? '-1' : this.getSampleValue(p.type, p.name)
+    ).join(', ');
+    if (details.isAsync) {
+      test += `      const result = await ${func}(${negArgs});\n`;
+    } else {
+      test += `      const result = ${func}(${negArgs});\n`;
+    }
+    test += `      expect(result).toBeDefined();\n`;
+    test += `    });\n\n`;
+    return test;
+  }
+
+  private generateReturnTypeTests(
+    func: string,
+    testFunction: string,
+    details: FunctionDetails
+  ): string {
+    if (!details.returnType) {
+      return '';
+    }
+    const rt = details.returnType.toLowerCase();
+    const asyncPrefix = details.isAsync ? 'async ' : '';
+    const awaitPrefix = details.isAsync ? 'await ' : '';
+    const args = details.params.length > 0
+      ? details.params.map(p => this.getSampleValue(p.type, p.name)).join(', ')
+      : '';
+
+    let test = '';
+    if (rt === 'boolean') {
+      test += `    ${testFunction}('should return a boolean', ${asyncPrefix}() => {\n`;
+      test += `      const result = ${awaitPrefix}${func}(${args});\n`;
+      test += `      expect(typeof result).toBe('boolean');\n`;
+      test += `    });\n\n`;
+    } else if (rt === 'number') {
+      test += `    ${testFunction}('should return a number', ${asyncPrefix}() => {\n`;
+      test += `      const result = ${awaitPrefix}${func}(${args});\n`;
+      test += `      expect(typeof result).toBe('number');\n`;
+      test += `    });\n\n`;
+    } else if (rt === 'string') {
+      test += `    ${testFunction}('should return a string', ${asyncPrefix}() => {\n`;
+      test += `      const result = ${awaitPrefix}${func}(${args});\n`;
+      test += `      expect(typeof result).toBe('string');\n`;
+      test += `    });\n\n`;
+    } else if (rt.endsWith('[]') || rt.startsWith('array')) {
+      test += `    ${testFunction}('should return an array', ${asyncPrefix}() => {\n`;
+      test += `      const result = ${awaitPrefix}${func}(${args});\n`;
+      test += `      expect(Array.isArray(result)).toBe(true);\n`;
+      test += `    });\n\n`;
+    } else if (rt === 'void') {
+      test += `    ${testFunction}('should return undefined (void)', ${asyncPrefix}() => {\n`;
+      test += `      const result = ${awaitPrefix}${func}(${args});\n`;
+      test += `      expect(result).toBeUndefined();\n`;
+      test += `    });\n\n`;
+    }
     return test;
   }
 
@@ -397,7 +477,9 @@ export class TestGenerator {
 
     // Generate test for each public method
     for (const method of methods) {
-      const details = code ? this.extractFunctionDetails(code, method) : { params: [], isAsync: false };
+      const details = code
+        ? this.extractFunctionDetails(code, method)
+        : { params: [], isAsync: false };
       const methodArgs = details.params
         .filter(p => !p.optional)
         .map(p => this.getSampleValue(p.type, p.name))
@@ -461,16 +543,8 @@ export class TestGenerator {
   /**
    * Extract detailed function information including parameters and return hints
    */
-  private extractFunctionDetails(code: string, funcName: string): {
-    params: Array<{ name: string; type?: string; optional?: boolean; defaultValue?: string }>;
-    isAsync: boolean;
-    returnType?: string;
-  } {
-    const details: {
-      params: Array<{ name: string; type?: string; optional?: boolean; defaultValue?: string }>;
-      isAsync: boolean;
-      returnType?: string;
-    } = { params: [], isAsync: false };
+  private extractFunctionDetails(code: string, funcName: string): FunctionDetails {
+    const details: FunctionDetails = { params: [], isAsync: false };
 
     // Match function declaration: (async) function name(params): ReturnType
     const funcDeclRegex = new RegExp(
@@ -493,7 +567,8 @@ export class TestGenerator {
     const methodMatch = code.match(methodRegex);
 
     if (funcMatch) {
-      details.isAsync = code.includes(`async function ${funcName}`) || code.includes(`async\nfunction ${funcName}`);
+      details.isAsync = code.includes(`async function ${funcName}`) ||
+        code.includes(`async\nfunction ${funcName}`);
       paramStr = funcMatch[1] ?? '';
       returnType = funcMatch[2]?.trim();
     } else if (arrowMatch) {
@@ -512,31 +587,40 @@ export class TestGenerator {
 
     // Parse parameter string into structured data
     if (paramStr.trim()) {
-      const params = this.splitParameters(paramStr);
-      for (const param of params) {
-        const trimmed = param.trim();
-        if (!trimmed) continue;
-
-        // Handle destructured params like { a, b }: Type
-        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-          details.params.push({ name: trimmed.split(':')[0]?.trim() ?? trimmed, type: 'object' });
-          continue;
-        }
-
-        // Parse name?: Type = default
-        const paramMatch = trimmed.match(/^(\w+)(\?)?\s*(?::\s*([\w<>\[\]|& ]+))?\s*(?:=\s*(.+))?$/);
-        if (paramMatch) {
-          details.params.push({
-            name: paramMatch[1]!,
-            optional: !!paramMatch[2] || !!paramMatch[4],
-            type: paramMatch[3]?.trim(),
-            defaultValue: paramMatch[4]?.trim(),
-          });
-        }
-      }
+      details.params = this.parseParamString(paramStr);
     }
 
     return details;
+  }
+
+  /**
+   * Parse a parameter list string into structured parameter data
+   */
+  private parseParamString(paramStr: string): FunctionParam[] {
+    const result: FunctionParam[] = [];
+    const params = this.splitParameters(paramStr);
+    for (const param of params) {
+      const trimmed = param.trim();
+      if (!trimmed) continue;
+
+      // Handle destructured params like { a, b }: Type
+      if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        result.push({ name: trimmed.split(':')[0]?.trim() ?? trimmed, type: 'object' });
+        continue;
+      }
+
+      // Parse name?: Type = default
+      const paramMatch = trimmed.match(/^(\w+)(\?)?\s*(?::\s*([\w<>\[\]|& ]+))?\s*(?:=\s*(.+))?$/);
+      if (paramMatch) {
+        result.push({
+          name: paramMatch[1]!,
+          optional: !!paramMatch[2] || !!paramMatch[4],
+          type: paramMatch[3]?.trim(),
+          defaultValue: paramMatch[4]?.trim(),
+        });
+      }
+    }
+    return result;
   }
 
   /**

@@ -535,39 +535,13 @@ export class FileSystemService {
     }
 
     if (this.isElectron) {
-      try {
-        await this.electronService.rename(oldPath, newPath);
-        if (this.files.has(oldPath)) {
-          const content = this.files.get(oldPath) ?? '';
-          this.files.delete(oldPath);
-          this.files.set(newPath, content);
-        }
-        this.untrackFile(oldPath);
-        this.trackFile(newPath, 'renamed', oldPath);
-        this.recordRecentFile(newPath);
-        return;
-      } catch (error) {
-        logger.error('[FileSystemService] Tauri rename error:', error);
-        throw error;
-      }
+      await this.renameViaNative(oldPath, newPath, 'Tauri');
+      return;
     }
 
     if (this.electronService.isElectron()) {
-      try {
-        await this.electronService.rename(oldPath, newPath);
-        if (this.files.has(oldPath)) {
-          const content = this.files.get(oldPath) ?? '';
-          this.files.delete(oldPath);
-          this.files.set(newPath, content);
-        }
-        this.untrackFile(oldPath);
-        this.trackFile(newPath, 'renamed', oldPath);
-        this.recordRecentFile(newPath);
-        return;
-      } catch (error) {
-        logger.error('[FileSystemService] Electron rename error:', error);
-        throw error;
-      }
+      await this.renameViaNative(oldPath, newPath, 'Electron');
+      return;
     }
 
     const existing = this.files.get(oldPath);
@@ -594,6 +568,27 @@ export class FileSystemService {
     this.trackFile(newPath, 'renamed', oldPath);
     this.recordRecentFile(newPath);
     this.persistToStorage();
+  }
+
+  private async renameViaNative(
+    oldPath: string,
+    newPath: string,
+    label: string,
+  ): Promise<void> {
+    try {
+      await this.electronService.rename(oldPath, newPath);
+      if (this.files.has(oldPath)) {
+        const content = this.files.get(oldPath) ?? '';
+        this.files.delete(oldPath);
+        this.files.set(newPath, content);
+      }
+      this.untrackFile(oldPath);
+      this.trackFile(newPath, 'renamed', oldPath);
+      this.recordRecentFile(newPath);
+    } catch (error) {
+      logger.error(`[FileSystemService] ${label} rename error:`, error);
+      throw error;
+    }
   }
 
   async createDirectory(path: string): Promise<void> {
@@ -626,72 +621,80 @@ export class FileSystemService {
   async listDirectory(path: string): Promise<FileSystemItem[]> {
     // Handle virtual demo:// paths in-memory (must be checked BEFORE Electron check)
     if (this.isVirtualPath(path)) {
-      if (path === 'demo://workspace') {
-        // Dynamically derive file list from the in-memory Map
-        const items: FileSystemItem[] = [];
-        const prefix = 'demo://workspace/';
-
-        for (const [filePath] of this.files) {
-          if (filePath.startsWith(prefix)) {
-            const name = filePath.substring(prefix.length);
-            // Only include direct children (no subdirectories in path)
-            if (!name.includes('/')) {
-              items.push({
-                name,
-                path: filePath,
-                type: 'file' as const,
-                size: this.files.get(filePath)?.length ?? 0,
-                modified: new Date(),
-              });
-            }
-          }
-        }
-        return items;
-      }
-      // Other virtual paths return empty
-      return [];
+      return this.listVirtualDirectory(path);
     }
 
     if (this.isElectron) {
-      // Use Electron filesystem API (matches preload.cjs)
-      try {
-        logger.debug('[FileSystemService] Listing directory via Electron:', path);
-        const entries = await this.electronService.readDir(path);
-
-        logger.debug('[FileSystemService] Got', entries.length, 'entries from Electron');
-
-        const items: FileSystemItem[] = [];
-        for (const entry of entries) {
-          // Normalize path separators - always use forward slash
-          const normalizedPath = entry.path.replace(/\\/g, '/');
-
-          items.push({
-            name: entry.name,
-            path: normalizedPath,
-            type: entry.isDirectory ? ('directory' as const) : ('file' as const),
-            size: 0, // Size will be fetched separately if needed
-            modified: new Date(),
-          });
-        }
-
-        logger.debug('[FileSystemService] Returning', items.length, 'items');
-        return items;
-      } catch (error) {
-        // Handle expected errors gracefully - return empty array
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        const isExpectedError =
-          errorMsg.includes('ENOENT') || errorMsg.includes('No workspace folder approved yet');
-        if (isExpectedError) {
-          logger.debug('[FileSystemService] Expected error, returning empty:', errorMsg);
-          return [];
-        }
-        logger.error('[FileSystemService] Electron listDirectory error:', error);
-        throw error;
-      }
+      return this.listElectronDirectory(path);
     }
 
     logger.warn('[FileSystemService] Directory listing not available in web mode for path:', path);
     return [];
+  }
+
+  private listVirtualDirectory(path: string): FileSystemItem[] {
+    if (path === 'demo://workspace') {
+      // Dynamically derive file list from the in-memory Map
+      const items: FileSystemItem[] = [];
+      const prefix = 'demo://workspace/';
+
+      for (const [filePath] of this.files) {
+        if (filePath.startsWith(prefix)) {
+          const name = filePath.substring(prefix.length);
+          // Only include direct children (no subdirectories in path)
+          if (!name.includes('/')) {
+            items.push({
+              name,
+              path: filePath,
+              type: 'file' as const,
+              size: this.files.get(filePath)?.length ?? 0,
+              modified: new Date(),
+            });
+          }
+        }
+      }
+      return items;
+    }
+    // Other virtual paths return empty
+    return [];
+  }
+
+  private async listElectronDirectory(path: string): Promise<FileSystemItem[]> {
+    // Use Electron filesystem API (matches preload.cjs)
+    try {
+      logger.debug('[FileSystemService] Listing directory via Electron:', path);
+      const entries = await this.electronService.readDir(path);
+
+      logger.debug('[FileSystemService] Got', entries.length, 'entries from Electron');
+
+      const items: FileSystemItem[] = [];
+      for (const entry of entries) {
+        // Normalize path separators - always use forward slash
+        const normalizedPath = entry.path.replace(/\\/g, '/');
+
+        items.push({
+          name: entry.name,
+          path: normalizedPath,
+          type: entry.isDirectory ? ('directory' as const) : ('file' as const),
+          size: 0, // Size will be fetched separately if needed
+          modified: new Date(),
+        });
+      }
+
+      logger.debug('[FileSystemService] Returning', items.length, 'items');
+      return items;
+    } catch (error) {
+      // Handle expected errors gracefully - return empty array
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      const isExpectedError =
+        errorMsg.includes('ENOENT') || errorMsg.includes('No workspace folder approved yet');
+      if (isExpectedError) {
+        logger.debug('[FileSystemService] Expected error, returning empty:', errorMsg);
+        return [];
+      }
+      logger.error('[FileSystemService] Electron listDirectory error:', error);
+      throw error;
+    }
   }
 
   async exists(path: string): Promise<boolean> {

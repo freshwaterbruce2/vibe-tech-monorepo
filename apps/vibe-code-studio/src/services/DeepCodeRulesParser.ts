@@ -80,36 +80,12 @@ export class DeepCodeRulesParser {
 
     // Check patterns
     if (rules.patterns) {
-      rules.patterns.forEach((pattern, index) => {
-        if (!pattern.name) {
-          violations.push({
-            rule: `patterns[${index}].name`,
-            severity: 'error',
-            message: 'Pattern must have a name',
-          });
-        }
-
-        if (!pattern.match || (!pattern.match.files && !pattern.match.extensions)) {
-          violations.push({
-            rule: `patterns[${index}].match`,
-            severity: 'error',
-            message: 'Pattern must have file matching criteria',
-          });
-        }
-      });
+      this.validatePatterns(rules.patterns, violations);
     }
 
     // Check templates
     if (rules.templates) {
-      Object.entries(rules.templates).forEach(([name, template]) => {
-        if (!template.code) {
-          violations.push({
-            rule: `templates.${name}.code`,
-            severity: 'error',
-            message: 'Template must have code',
-          });
-        }
-      });
+      this.validateTemplates(rules.templates, violations);
     }
 
     return {
@@ -117,6 +93,44 @@ export class DeepCodeRulesParser {
       violations,
       warnings,
     };
+  }
+
+  private validatePatterns(
+    patterns: NonNullable<DeepCodeRules['patterns']>,
+    violations: RuleViolation[],
+  ): void {
+    patterns.forEach((pattern, index) => {
+      if (!pattern.name) {
+        violations.push({
+          rule: `patterns[${index}].name`,
+          severity: 'error',
+          message: 'Pattern must have a name',
+        });
+      }
+
+      if (!pattern.match || (!pattern.match.files && !pattern.match.extensions)) {
+        violations.push({
+          rule: `patterns[${index}].match`,
+          severity: 'error',
+          message: 'Pattern must have file matching criteria',
+        });
+      }
+    });
+  }
+
+  private validateTemplates(
+    templates: NonNullable<DeepCodeRules['templates']>,
+    violations: RuleViolation[],
+  ): void {
+    Object.entries(templates).forEach(([name, template]) => {
+      if (!template.code) {
+        violations.push({
+          rule: `templates.${name}.code`,
+          severity: 'error',
+          message: 'Template must have code',
+        });
+      }
+    });
   }
 
   /**
@@ -337,7 +351,10 @@ export class DeepCodeRulesParser {
   /**
    * Deep merge two objects
    */
-  private deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
+  private deepMerge(
+    target: Record<string, unknown>,
+    source: Record<string, unknown>,
+  ): Record<string, unknown> {
     const output: Record<string, unknown> = { ...target };
 
     Object.keys(source).forEach((key) => {

@@ -106,61 +106,8 @@ export class WorkspaceService {
     };
 
     try {
-      // Check for package.json
-      const packageJsonPath = `${rootPath}/package.json`;
-      if (await this.fileExists(packageJsonPath)) {
-        const content = await this.readFile(packageJsonPath);
-        structure.packageJson = JSON.parse(content);
-        structure.configFiles.push('package.json');
-
-        // Identify main entry points
-        if (structure.packageJson?.main) {
-          structure.mainEntryPoints.push(structure.packageJson.main);
-        }
-        if (structure.packageJson?.['module']) {
-          structure.mainEntryPoints.push(structure.packageJson['module'] as string);
-        }
-      }
-
-      // Check for tsconfig.json
-
-
-      const tsconfigPath = `${rootPath}/tsconfig.json`;
-
-
-      if (await this.fileExists(tsconfigPath)) {
-
-
-        try {
-          const content = await this.readFile(tsconfigPath);
-
-          // Remove comments from JSONC (JSON with Comments) format
-          // Line comments: strip entire line after //
-          // Block comments: remove /* */ blocks
-          const jsonContent = content
-            .split('\n')
-            .map(line => {
-              // Remove line comments
-              const commentIndex = line.indexOf('//');
-              if (commentIndex !== -1) {
-                return line.substring(0, commentIndex);
-              }
-              return line;
-            })
-            .join('\n')
-            .replace(/\/\*[\s\S]*?\*\//g, ''); // Remove block comments
-
-          structure.tsConfig = JSON.parse(jsonContent);
-          structure.configFiles.push('tsconfig.json');
-
-        } catch {
-          // Silently track file exists even if parsing fails
-          // This is non-critical - tsconfig parsing is just for additional context
-          structure.configFiles.push('tsconfig.json');
-        }
-
-
-      }
+      await this.analyzePackageJson(rootPath, structure);
+      await this.analyzeTsConfig(rootPath, structure);
 
       // Check for README
       const readmePaths = ['README.md', 'readme.md', 'README.txt'];
@@ -187,6 +134,63 @@ export class WorkspaceService {
     return structure;
   }
 
+  private async analyzePackageJson(
+    rootPath: string,
+    structure: ProjectStructure
+  ): Promise<void> {
+    const packageJsonPath = `${rootPath}/package.json`;
+    if (await this.fileExists(packageJsonPath)) {
+      const content = await this.readFile(packageJsonPath);
+      structure.packageJson = JSON.parse(content);
+      structure.configFiles.push('package.json');
+
+      // Identify main entry points
+      if (structure.packageJson?.main) {
+        structure.mainEntryPoints.push(structure.packageJson.main);
+      }
+      if (structure.packageJson?.['module']) {
+        structure.mainEntryPoints.push(structure.packageJson['module'] as string);
+      }
+    }
+  }
+
+  private async analyzeTsConfig(
+    rootPath: string,
+    structure: ProjectStructure
+  ): Promise<void> {
+    const tsconfigPath = `${rootPath}/tsconfig.json`;
+    if (!(await this.fileExists(tsconfigPath))) {
+      return;
+    }
+
+    try {
+      const content = await this.readFile(tsconfigPath);
+
+      // Remove comments from JSONC (JSON with Comments) format
+      // Line comments: strip entire line after //
+      // Block comments: remove /* */ blocks
+      const jsonContent = content
+        .split('\n')
+        .map(line => {
+          // Remove line comments
+          const commentIndex = line.indexOf('//');
+          if (commentIndex !== -1) {
+            return line.substring(0, commentIndex);
+          }
+          return line;
+        })
+        .join('\n')
+        .replace(/\/\*[\s\S]*?\*\//g, ''); // Remove block comments
+
+      structure.tsConfig = JSON.parse(jsonContent);
+      structure.configFiles.push('tsconfig.json');
+    } catch {
+      // Silently track file exists even if parsing fails
+      // This is non-critical - tsconfig parsing is just for additional context
+      structure.configFiles.push('tsconfig.json');
+    }
+  }
+
   private async buildFileTree(rootPath: string): Promise<FileSystemItem[]> {
     // This would integrate with the actual file system
     // For now, return a mock structure that we can expand
@@ -196,71 +200,7 @@ export class WorkspaceService {
   private getMockFileTree(rootPath: string): FileSystemItem[] {
     // Enhanced mock with realistic project structure
     return [
-      {
-        name: 'src',
-        path: `${rootPath}/src`,
-        type: 'directory',
-        children: [
-          { name: 'App.tsx', path: `${rootPath}/src/App.tsx`, type: 'file' },
-          { name: 'index.ts', path: `${rootPath}/src/index.ts`, type: 'file' },
-          {
-            name: 'components',
-            path: `${rootPath}/src/components`,
-            type: 'directory',
-            children: [
-              { name: 'Button.tsx', path: `${rootPath}/src/components/Button.tsx`, type: 'file' },
-              { name: 'Modal.tsx', path: `${rootPath}/src/components/Modal.tsx`, type: 'file' },
-              { name: 'Editor.tsx', path: `${rootPath}/src/components/Editor.tsx`, type: 'file' },
-              { name: 'Sidebar.tsx', path: `${rootPath}/src/components/Sidebar.tsx`, type: 'file' },
-            ],
-          },
-          {
-            name: 'services',
-            path: `${rootPath}/src/services`,
-            type: 'directory',
-            children: [
-              {
-                name: 'DeepSeekService.ts',
-                path: `${rootPath}/src/services/DeepSeekService.ts`,
-                type: 'file',
-              },
-              {
-                name: 'FileSystemService.ts',
-                path: `${rootPath}/src/services/FileSystemService.ts`,
-                type: 'file',
-              },
-              {
-                name: 'WorkspaceService.ts',
-                path: `${rootPath}/src/services/WorkspaceService.ts`,
-                type: 'file',
-              },
-            ],
-          },
-          {
-            name: 'types',
-            path: `${rootPath}/src/types`,
-            type: 'directory',
-            children: [{ name: 'index.ts', path: `${rootPath}/src/types/index.ts`, type: 'file' }],
-          },
-          {
-            name: 'hooks',
-            path: `${rootPath}/src/hooks`,
-            type: 'directory',
-            children: [
-              {
-                name: 'useFileSystem.ts',
-                path: `${rootPath}/src/hooks/useFileSystem.ts`,
-                type: 'file',
-              },
-              {
-                name: 'useWorkspace.ts',
-                path: `${rootPath}/src/hooks/useWorkspace.ts`,
-                type: 'file',
-              },
-            ],
-          },
-        ],
-      },
+      this.getMockSrcTree(rootPath),
       {
         name: 'public',
         path: `${rootPath}/public`,
@@ -275,6 +215,86 @@ export class WorkspaceService {
       { name: 'vite.config.ts', path: `${rootPath}/vite.config.ts`, type: 'file' },
       { name: 'README.md', path: `${rootPath}/README.md`, type: 'file' },
     ];
+  }
+
+  private getMockSrcTree(rootPath: string): FileSystemItem {
+    return {
+      name: 'src',
+      path: `${rootPath}/src`,
+      type: 'directory',
+      children: [
+        { name: 'App.tsx', path: `${rootPath}/src/App.tsx`, type: 'file' },
+        { name: 'index.ts', path: `${rootPath}/src/index.ts`, type: 'file' },
+        this.getMockComponentsTree(rootPath),
+        this.getMockServicesTree(rootPath),
+        {
+          name: 'types',
+          path: `${rootPath}/src/types`,
+          type: 'directory',
+          children: [{ name: 'index.ts', path: `${rootPath}/src/types/index.ts`, type: 'file' }],
+        },
+        this.getMockHooksTree(rootPath),
+      ],
+    };
+  }
+
+  private getMockComponentsTree(rootPath: string): FileSystemItem {
+    return {
+      name: 'components',
+      path: `${rootPath}/src/components`,
+      type: 'directory',
+      children: [
+        { name: 'Button.tsx', path: `${rootPath}/src/components/Button.tsx`, type: 'file' },
+        { name: 'Modal.tsx', path: `${rootPath}/src/components/Modal.tsx`, type: 'file' },
+        { name: 'Editor.tsx', path: `${rootPath}/src/components/Editor.tsx`, type: 'file' },
+        { name: 'Sidebar.tsx', path: `${rootPath}/src/components/Sidebar.tsx`, type: 'file' },
+      ],
+    };
+  }
+
+  private getMockServicesTree(rootPath: string): FileSystemItem {
+    return {
+      name: 'services',
+      path: `${rootPath}/src/services`,
+      type: 'directory',
+      children: [
+        {
+          name: 'DeepSeekService.ts',
+          path: `${rootPath}/src/services/DeepSeekService.ts`,
+          type: 'file',
+        },
+        {
+          name: 'FileSystemService.ts',
+          path: `${rootPath}/src/services/FileSystemService.ts`,
+          type: 'file',
+        },
+        {
+          name: 'WorkspaceService.ts',
+          path: `${rootPath}/src/services/WorkspaceService.ts`,
+          type: 'file',
+        },
+      ],
+    };
+  }
+
+  private getMockHooksTree(rootPath: string): FileSystemItem {
+    return {
+      name: 'hooks',
+      path: `${rootPath}/src/hooks`,
+      type: 'directory',
+      children: [
+        {
+          name: 'useFileSystem.ts',
+          path: `${rootPath}/src/hooks/useFileSystem.ts`,
+          type: 'file',
+        },
+        {
+          name: 'useWorkspace.ts',
+          path: `${rootPath}/src/hooks/useWorkspace.ts`,
+          type: 'file',
+        },
+      ],
+    };
   }
 
   private async analyzeFiles(fileTree: FileSystemItem[]): Promise<void> {

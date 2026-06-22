@@ -110,6 +110,52 @@ export class AgentOrchestrator {
   /**
    * Main request processing with intelligent agent selection and coordination
    */
+  private createAndTrackTask(
+    taskId: string,
+    request: string,
+    context: AgentContext
+  ): CoordinatedTask {
+    const task: CoordinatedTask = {
+      id: taskId,
+      description: request,
+      context,
+      status: 'in_progress',
+      requiredAgents: [],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.activeTasks.set(taskId, task);
+    return task;
+  }
+
+  private buildSuccessResponse(
+    response: { content: string; recommendations: string[] },
+    agentResponses: Record<string, AgentResponse>,
+    coordination: {
+      strategy: 'sequential' | 'parallel' | 'hierarchical' | 'collaborative';
+      reasoning: string;
+      confidence: number;
+      parallelism: number;
+    },
+    totalTime: number
+  ): OrchestratorResponse {
+    return {
+      response: response.content,
+      agentResponses,
+      recommendations: response.recommendations,
+      coordination: {
+        strategy: coordination.strategy,
+        reasoning: coordination.reasoning,
+        confidence: coordination.confidence
+      },
+      performance: {
+        totalTime,
+        agentTimes: this.calculateAgentTimes(agentResponses),
+        parallelism: coordination.parallelism
+      }
+    };
+  }
+
   async processRequest(
     request: string,
     context: AgentContext = {}
@@ -119,21 +165,12 @@ export class AgentOrchestrator {
 
     try {
       // Create and track task
-      const task: CoordinatedTask = {
-        id: taskId,
-        description: request,
-        context,
-        status: 'in_progress',
-        requiredAgents: [],
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      this.activeTasks.set(taskId, task);
+      const task = this.createAndTrackTask(taskId, request, context);
 
       // Analyze request and determine optimal agent coordination
       const coordination = await this.analyzeAndCoordinate(request, context);
       const selectedAgents = coordination.agents;
-      
+
       task.requiredAgents = selectedAgents;
       task.assignedAgents = selectedAgents;
 
@@ -162,21 +199,7 @@ export class AgentOrchestrator {
       // Clean up completed task
       this.activeTasks.delete(taskId);
 
-      return {
-        response: response.content,
-        agentResponses,
-        recommendations: response.recommendations,
-        coordination: {
-          strategy: coordination.strategy,
-          reasoning: coordination.reasoning,
-          confidence: coordination.confidence
-        },
-        performance: {
-          totalTime,
-          agentTimes: this.calculateAgentTimes(agentResponses),
-          parallelism: coordination.parallelism
-        }
-      };
+      return this.buildSuccessResponse(response, agentResponses, coordination, totalTime);
 
     } catch (error) {
       logger.error('Request processing failed:', error);
@@ -197,23 +220,10 @@ export class AgentOrchestrator {
   /**
    * Advanced request analysis and coordination planning
    */
-  private async analyzeAndCoordinate(
-    request: string,
+  private scoreAgents(
+    requestLower: string,
     context: AgentContext
-  ): Promise<{
-    agents: string[];
-    strategy: 'sequential' | 'parallel' | 'hierarchical' | 'collaborative';
-    reasoning: string;
-    confidence: number;
-    parallelism: number;
-  }> {
-    const requestLower = request.toLowerCase();
-    const agents: string[] = [];
-    let strategy: 'sequential' | 'parallel' | 'hierarchical' | 'collaborative' = 'parallel';
-    let reasoning = '';
-    let confidence = 0.8;
-    let parallelism = 1;
-
+  ): Record<string, number> {
     // Complex pattern matching for agent selection
     const patterns = {
       architecture: /\b(architecture|design|structure|pattern|scalability|system)\b/g,
@@ -247,6 +257,22 @@ export class AgentOrchestrator {
       }
     }
 
+    return scores;
+  }
+
+  private selectAgents(scores: Record<string, number>): {
+    agents: string[];
+    strategy: 'sequential' | 'parallel' | 'hierarchical' | 'collaborative';
+    reasoning: string;
+    confidence: number;
+    parallelism: number;
+  } {
+    const agents: string[] = [];
+    let strategy: 'sequential' | 'parallel' | 'hierarchical' | 'collaborative' = 'parallel';
+    let reasoning = '';
+    let confidence = 0.8;
+    let parallelism = 1;
+
     // Select agents based on scores
     const sortedAgents = Object.entries(scores)
       .filter(([_, score]) => score > 0)
@@ -266,7 +292,7 @@ export class AgentOrchestrator {
     } else {
       // Multi-agent coordination
       agents.push(...sortedAgents.slice(0, 3)); // Limit to top 3 for efficiency
-      
+
       // Determine coordination strategy
       if (agents.includes('technical_lead') && agents.length > 2) {
         strategy = 'hierarchical';
@@ -281,7 +307,7 @@ export class AgentOrchestrator {
         reasoning = 'Parallel processing by multiple specialists';
         parallelism = Math.min(agents.length, 3);
       }
-      
+
       confidence = Math.min(0.9, 0.7 + (Math.max(...Object.values(scores)) / 10));
     }
 
@@ -291,12 +317,29 @@ export class AgentOrchestrator {
       strategy = 'hierarchical';
     }
 
+    return { agents, strategy, reasoning, confidence, parallelism };
+  }
+
+  private async analyzeAndCoordinate(
+    request: string,
+    context: AgentContext
+  ): Promise<{
+    agents: string[];
+    strategy: 'sequential' | 'parallel' | 'hierarchical' | 'collaborative';
+    reasoning: string;
+    confidence: number;
+    parallelism: number;
+  }> {
+    const requestLower = request.toLowerCase();
+    const scores = this.scoreAgents(requestLower, context);
+    const plan = this.selectAgents(scores);
+
     return {
-      agents: agents.filter(agent => this.agents.has(agent)),
-      strategy,
-      reasoning,
-      confidence,
-      parallelism
+      agents: plan.agents.filter(agent => this.agents.has(agent)),
+      strategy: plan.strategy,
+      reasoning: plan.reasoning,
+      confidence: plan.confidence,
+      parallelism: plan.parallelism
     };
   }
 
@@ -426,7 +469,11 @@ export class AgentOrchestrator {
 
         // Execute other agents in parallel with enhanced context
         const remainingAgents = agentKeys.filter(key => key !== techLeadKey);
-        const remainingResponses = await this.executeParallel(remainingAgents, request, enhancedContext);
+        const remainingResponses = await this.executeParallel(
+          remainingAgents,
+          request,
+          enhancedContext
+        );
         
         Object.assign(responses, remainingResponses);
       } catch (error) {
@@ -643,7 +690,9 @@ export class AgentOrchestrator {
     return `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  private calculateAgentTimes(agentResponses: Record<string, AgentResponse>): Record<string, number> {
+  private calculateAgentTimes(
+    agentResponses: Record<string, AgentResponse>
+  ): Record<string, number> {
     const times: Record<string, number> = {};
     
     Object.entries(agentResponses).forEach(([agentKey, response]) => {

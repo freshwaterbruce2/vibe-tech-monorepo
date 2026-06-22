@@ -106,50 +106,18 @@ export class SemanticSearchService {
    * Uses Apex Intelligence Engine (sqlite-vec + embeddings) when available,
    * falls back to keyword-based search otherwise
    */
-  async search(searchQuery: SearchQuery): Promise<{ results: SearchResult[]; metadata: SearchMetadata }> {
+  async search(
+    searchQuery: SearchQuery
+  ): Promise<{ results: SearchResult[]; metadata: SearchMetadata }> {
     const startTime = Date.now();
     const maxResults = searchQuery.maxResults ?? 10;
 
     logger.info('[SemanticSearch] Starting search:', searchQuery.query);
 
     // Try vector search via Apex Intelligence Engine first (Electron only)
-    if (typeof window !== 'undefined' && window.electron?.apex) {
-      try {
-        const apexStatus = await window.electron.apex['getStatus']();
-
-        if (apexStatus === 'ready') {
-          logger.info('[SemanticSearch] Using Apex vector search');
-          const vectorResults = await window.electron.apex['queryVector'](searchQuery.query, maxResults * 2);
-
-          if (vectorResults.results && vectorResults.results.length > 0) {
-            // Transform Apex results to SearchResult format
-            const results = this.transformApexResults(vectorResults.results, maxResults);
-
-            // Add AI explanations for top results
-            const resultsWithExplanations = await this.addExplanations(searchQuery.query, results);
-
-            const metadata: SearchMetadata = {
-              totalFiles: vectorResults.results.length,
-              filesSearched: vectorResults.results.length,
-              searchTime: Date.now() - startTime,
-              modelUsed: 'apex-embeddings', // Xenova/all-MiniLM-L6-v2
-            };
-
-            logger.info('[SemanticSearch] Vector search complete:', {
-              query: searchQuery.query,
-              results: resultsWithExplanations.length,
-              time: metadata.searchTime + 'ms',
-              engine: 'apex',
-            });
-
-            return { results: resultsWithExplanations, metadata };
-          }
-        } else {
-          logger.warn('[SemanticSearch] Apex not ready, status:', apexStatus);
-        }
-      } catch (error) {
-        logger.warn('[SemanticSearch] Apex query failed, falling back to keyword search:', error);
-      }
+    const vectorSearch = await this.tryVectorSearch(searchQuery, maxResults, startTime);
+    if (vectorSearch) {
+      return vectorSearch;
     }
 
     // Fallback: keyword-based search with AI ranking
@@ -185,6 +153,62 @@ export class SemanticSearchService {
       results: resultsWithExplanations,
       metadata,
     };
+  }
+
+  /**
+   * Attempt vector search via the Apex Intelligence Engine (Electron only).
+   * Returns the search bundle when vector results are available, otherwise null.
+   */
+  private async tryVectorSearch(
+    searchQuery: SearchQuery,
+    maxResults: number,
+    startTime: number
+  ): Promise<{ results: SearchResult[]; metadata: SearchMetadata } | null> {
+    if (typeof window === 'undefined' || !window.electron?.apex) {
+      return null;
+    }
+
+    try {
+      const apexStatus = await window.electron.apex['getStatus']();
+
+      if (apexStatus === 'ready') {
+        logger.info('[SemanticSearch] Using Apex vector search');
+        const vectorResults = await window.electron.apex['queryVector'](
+          searchQuery.query,
+          maxResults * 2
+        );
+
+        if (vectorResults.results && vectorResults.results.length > 0) {
+          // Transform Apex results to SearchResult format
+          const results = this.transformApexResults(vectorResults.results, maxResults);
+
+          // Add AI explanations for top results
+          const resultsWithExplanations = await this.addExplanations(searchQuery.query, results);
+
+          const metadata: SearchMetadata = {
+            totalFiles: vectorResults.results.length,
+            filesSearched: vectorResults.results.length,
+            searchTime: Date.now() - startTime,
+            modelUsed: 'apex-embeddings', // Xenova/all-MiniLM-L6-v2
+          };
+
+          logger.info('[SemanticSearch] Vector search complete:', {
+            query: searchQuery.query,
+            results: resultsWithExplanations.length,
+            time: metadata.searchTime + 'ms',
+            engine: 'apex',
+          });
+
+          return { results: resultsWithExplanations, metadata };
+        }
+      } else {
+        logger.warn('[SemanticSearch] Apex not ready, status:', apexStatus);
+      }
+    } catch (error) {
+      logger.warn('[SemanticSearch] Apex query failed, falling back to keyword search:', error);
+    }
+
+    return null;
   }
 
   /**
@@ -272,71 +296,11 @@ export class SemanticSearchService {
     }
 
     this.indexing = true;
-    let indexed = 0;
 
     try {
       logger.info('[SemanticSearch] Starting file-system indexing from:', rootPath);
 
-      const dirsToVisit: string[] = [rootPath];
-
-      while (dirsToVisit.length > 0 && indexed < maxFiles) {
-        const currentDir = dirsToVisit.shift()!;
-        let entries;
-
-        try {
-          entries = await this.fsService.listDirectory(currentDir);
-        } catch (error) {
-          logger.debug('[SemanticSearch] Could not list directory:', currentDir, error);
-          continue;
-        }
-
-        for (const entry of entries) {
-          if (indexed >= maxFiles) break;
-
-          if (entry.type === 'directory') {
-            const dirName = entry.name.toLowerCase();
-            if (!DEFAULT_EXCLUDE_DIRS.has(dirName)) {
-              dirsToVisit.push(entry.path);
-            }
-            continue;
-          }
-
-          // Determine language from file extension
-          const dotIndex = entry.name.lastIndexOf('.');
-          const ext = dotIndex > 0 ? entry.name.slice(dotIndex).toLowerCase() : '';
-          const language = EXTENSION_LANGUAGE_MAP[ext];
-
-          if (!language) {
-            // Skip binary / unsupported files
-            continue;
-          }
-
-          // Skip files that are already cached and haven't changed
-          if (this.fileCache.has(entry.path)) {
-            indexed++;
-            continue;
-          }
-
-          try {
-            const content = await this.fsService.readFile(entry.path);
-
-            // Skip very large files (>100 KB) to keep search fast
-            if (content.length > 100_000) {
-              logger.debug('[SemanticSearch] Skipping large file:', entry.path, `(${content.length} bytes)`);
-              continue;
-            }
-
-            this.fileCache.set(entry.path, {
-              path: entry.path,
-              content,
-              language,
-            });
-            indexed++;
-          } catch (error) {
-            logger.debug('[SemanticSearch] Could not read file:', entry.path, error);
-          }
-        }
-      }
+      const indexed = await this.indexDirectoryTree(rootPath, maxFiles);
 
       logger.info('[SemanticSearch] File-system indexing complete:', {
         rootPath,
@@ -347,6 +311,90 @@ export class SemanticSearchService {
       return indexed;
     } finally {
       this.indexing = false;
+    }
+  }
+
+  /**
+   * Breadth-first walk of the workspace tree, caching supported files.
+   * @returns Number of files indexed (counts cache hits too).
+   */
+  private async indexDirectoryTree(rootPath: string, maxFiles: number): Promise<number> {
+    let indexed = 0;
+    const dirsToVisit: string[] = [rootPath];
+
+    while (dirsToVisit.length > 0 && indexed < maxFiles) {
+      const currentDir = dirsToVisit.shift()!;
+      let entries;
+
+      try {
+        entries = await this.fsService.listDirectory(currentDir);
+      } catch (error) {
+        logger.debug('[SemanticSearch] Could not list directory:', currentDir, error);
+        continue;
+      }
+
+      for (const entry of entries) {
+        if (indexed >= maxFiles) break;
+
+        if (entry.type === 'directory') {
+          const dirName = entry.name.toLowerCase();
+          if (!DEFAULT_EXCLUDE_DIRS.has(dirName)) {
+            dirsToVisit.push(entry.path);
+          }
+          continue;
+        }
+
+        if (await this.indexFileEntry(entry)) {
+          indexed++;
+        }
+      }
+    }
+
+    return indexed;
+  }
+
+  /**
+   * Cache a single file entry if it is a supported, reasonably-sized source file.
+   * @returns true when the entry counts toward the indexed total.
+   */
+  private async indexFileEntry(entry: { name: string; path: string }): Promise<boolean> {
+    // Determine language from file extension
+    const dotIndex = entry.name.lastIndexOf('.');
+    const ext = dotIndex > 0 ? entry.name.slice(dotIndex).toLowerCase() : '';
+    const language = EXTENSION_LANGUAGE_MAP[ext];
+
+    if (!language) {
+      // Skip binary / unsupported files
+      return false;
+    }
+
+    // Skip files that are already cached and haven't changed
+    if (this.fileCache.has(entry.path)) {
+      return true;
+    }
+
+    try {
+      const content = await this.fsService.readFile(entry.path);
+
+      // Skip very large files (>100 KB) to keep search fast
+      if (content.length > 100_000) {
+        logger.debug(
+          '[SemanticSearch] Skipping large file:',
+          entry.path,
+          `(${content.length} bytes)`
+        );
+        return false;
+      }
+
+      this.fileCache.set(entry.path, {
+        path: entry.path,
+        content,
+        language,
+      });
+      return true;
+    } catch (error) {
+      logger.debug('[SemanticSearch] Could not read file:', entry.path, error);
+      return false;
     }
   }
 
@@ -369,7 +417,9 @@ export class SemanticSearchService {
 
       lines.forEach((line, index) => {
         // Check if line contains any keywords
-        const matchedKeywords = keywords.filter(keyword => line.toLowerCase().includes(keyword.toLowerCase()));
+        const matchedKeywords = keywords.filter(keyword =>
+          line.toLowerCase().includes(keyword.toLowerCase())
+        );
 
         if (matchedKeywords.length > 0) {
           results.push({
@@ -479,7 +529,11 @@ export class SemanticSearchService {
   /**
    * Use AI to rank results by semantic similarity
    */
-  private async semanticRank(query: string, results: SearchResult[], maxResults: number): Promise<SearchResult[]> {
+  private async semanticRank(
+    query: string,
+    results: SearchResult[],
+    maxResults: number
+  ): Promise<SearchResult[]> {
     if (results.length === 0) {
       return [];
     }

@@ -78,50 +78,56 @@ Focus on delivering high-quality, production-ready code that follows modern deve
     };
   }
 
+  private buildCurrentFileInfo(currentFile: string): string {
+    let info = `Current File: ${currentFile}\n`;
+
+    // Determine programming language and context
+    const extension = currentFile.split('.').pop()?.toLowerCase();
+    const languageMap: Record<string, string> = {
+      'ts': 'TypeScript',
+      'tsx': 'TypeScript React',
+      'js': 'JavaScript',
+      'jsx': 'JavaScript React',
+      'py': 'Python',
+      'java': 'Java',
+      'cpp': 'C++',
+      'c': 'C',
+      'cs': 'C#',
+      'go': 'Go',
+      'rs': 'Rust',
+      'php': 'PHP',
+      'rb': 'Ruby',
+      'swift': 'Swift',
+      'kt': 'Kotlin'
+    };
+
+    if (extension && languageMap[extension]) {
+      info += `Language: ${languageMap[extension]}\n`;
+    }
+
+    // Analyze file purpose
+    if (currentFile.includes('test') || currentFile.includes('spec')) {
+      info += `File Purpose: Test File\n`;
+    } else if (currentFile.includes('util') || currentFile.includes('helper')) {
+      info += `File Purpose: Utility/Helper\n`;
+    } else if (currentFile.includes('component')) {
+      info += `File Purpose: UI Component\n`;
+    } else if (currentFile.includes('service') || currentFile.includes('api')) {
+      info += `File Purpose: Service/API Layer\n`;
+    } else if (currentFile.includes('model') || currentFile.includes('entity')) {
+      info += `File Purpose: Data Model\n`;
+    }
+
+    return info;
+  }
+
   private buildCodingContext(context: AgentContext): string {
     let info = '';
-    
+
     if (context.currentFile) {
-      info += `Current File: ${context.currentFile}\n`;
-      
-      // Determine programming language and context
-      const extension = context.currentFile.split('.').pop()?.toLowerCase();
-      const languageMap: Record<string, string> = {
-        'ts': 'TypeScript',
-        'tsx': 'TypeScript React',
-        'js': 'JavaScript',
-        'jsx': 'JavaScript React',
-        'py': 'Python',
-        'java': 'Java',
-        'cpp': 'C++',
-        'c': 'C',
-        'cs': 'C#',
-        'go': 'Go',
-        'rs': 'Rust',
-        'php': 'PHP',
-        'rb': 'Ruby',
-        'swift': 'Swift',
-        'kt': 'Kotlin'
-      };
-      
-      if (extension && languageMap[extension]) {
-        info += `Language: ${languageMap[extension]}\n`;
-      }
-      
-      // Analyze file purpose
-      if (context.currentFile.includes('test') || context.currentFile.includes('spec')) {
-        info += `File Purpose: Test File\n`;
-      } else if (context.currentFile.includes('util') || context.currentFile.includes('helper')) {
-        info += `File Purpose: Utility/Helper\n`;
-      } else if (context.currentFile.includes('component')) {
-        info += `File Purpose: UI Component\n`;
-      } else if (context.currentFile.includes('service') || context.currentFile.includes('api')) {
-        info += `File Purpose: Service/API Layer\n`;
-      } else if (context.currentFile.includes('model') || context.currentFile.includes('entity')) {
-        info += `File Purpose: Data Model\n`;
-      }
+      info += this.buildCurrentFileInfo(context.currentFile);
     }
-    
+
     if (context.selectedText) {
       info += `Selected Code:\n\`\`\`\n${context.selectedText.slice(0, 600)}\n\`\`\`\n`;
       

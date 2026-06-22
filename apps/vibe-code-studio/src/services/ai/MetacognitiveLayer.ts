@@ -46,7 +46,8 @@ export interface HelpResponse {
 }
 
 export class MetacognitiveLayer {
-  private errorHistory: Map<string, { count: number; lastError: string; timestamp: number }> = new Map();
+  private errorHistory: Map<string, { count: number; lastError: string; timestamp: number }> =
+    new Map();
   private stepStartTimes: Map<string, number> = new Map();
   private helpRequestCount: number = 0;
   private readonly MAX_HELP_REQUESTS_PER_TASK = 3; // Prevent infinite help loops

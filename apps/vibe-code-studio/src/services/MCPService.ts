@@ -58,7 +58,8 @@ interface ServerConnection {
   config: MCPServerConfig;
   client: MCPClient;
   transport: MCPTransport;
-  process: { on: (event: string, handler: (...args: unknown[]) => void) => void; kill: () => void }; // ChildProcess-like, dynamically imported
+  // ChildProcess-like, dynamically imported
+  process: { on: (event: string, handler: (...args: unknown[]) => void) => void; kill: () => void };
   connected: boolean;
 }
 
@@ -129,66 +130,76 @@ export class MCPService extends EventEmitter {
     }
 
     try {
-      // Dynamic imports - only loaded in desktop environment
-      const { spawn } = await import('child_process');
-      const { Client } = await import('@modelcontextprotocol/sdk/client/index.js');
-      const { StdioClientTransport } = await import('@modelcontextprotocol/sdk/client/stdio.js');
-
-      // Spawn the server process
-      const serverProcess = spawn(config.command, config.args, {
-        env: { ...process.env, ...config.env },
-        stdio: ['pipe', 'pipe', 'pipe']
-      });
-
-      // Check if command exists
-      serverProcess.on('error', (error: Error) => {
-        this.emit('serverError', { serverName, error });
-        throw new Error(`Failed to start server ${serverName}: ${error.message}`);
-      });
-
-      // Create transport and client
-      const transport = new StdioClientTransport({
-        command: config.command,
-        args: config.args,
-        env: config.env
-      });
-
-      const client = new Client({
-        name: 'vibe-code-studio',
-        version: '1.0.0'
-      }, {
-        capabilities: {}
-      });
-
-      // Connect the client
-      await client.connect(transport);
-
-      // Store connection
-      const connection: ServerConnection = {
-        name: serverName,
-        config,
-        client,
-        transport,
-        process: serverProcess,
-        connected: true
-      };
-
+      const connection = await this.establishConnection(serverName, config);
       this.connections.set(serverName, connection);
-
-      // Handle process exit
-      serverProcess.on('exit', (code: number) => {
-        connection.connected = false;
-        this.connections.delete(serverName);
-        if (code !== 0) {
-          this.emit('serverCrashed', serverName);
-        }
-      });
-
       this.emit('serverConnected', serverName);
     } catch (error) {
       this.emit('serverError', { serverName, error });
       throw error;
     }
+  }
+
+  /**
+   * Spawn the server process and create a connected client/transport pair.
+   */
+  private async establishConnection(
+    serverName: string,
+    config: MCPServerConfig
+  ): Promise<ServerConnection> {
+    // Dynamic imports - only loaded in desktop environment
+    const { spawn } = await import('child_process');
+    const { Client } = await import('@modelcontextprotocol/sdk/client/index.js');
+    const { StdioClientTransport } = await import('@modelcontextprotocol/sdk/client/stdio.js');
+
+    // Spawn the server process
+    const serverProcess = spawn(config.command, config.args, {
+      env: { ...process.env, ...config.env },
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+
+    // Check if command exists
+    serverProcess.on('error', (error: Error) => {
+      this.emit('serverError', { serverName, error });
+      throw new Error(`Failed to start server ${serverName}: ${error.message}`);
+    });
+
+    // Create transport and client
+    const transport = new StdioClientTransport({
+      command: config.command,
+      args: config.args,
+      env: config.env
+    });
+
+    const client = new Client({
+      name: 'vibe-code-studio',
+      version: '1.0.0'
+    }, {
+      capabilities: {}
+    });
+
+    // Connect the client
+    await client.connect(transport);
+
+    // Store connection
+    const connection: ServerConnection = {
+      name: serverName,
+      config,
+      client,
+      transport,
+      process: serverProcess,
+      connected: true
+    };
+
+    // Handle process exit
+    serverProcess.on('exit', (code: number) => {
+      connection.connected = false;
+      this.connections.delete(serverName);
+      if (code !== 0) {
+        this.emit('serverCrashed', serverName);
+      }
+    });
+
+    return connection;
   }
 
   /**

@@ -20,6 +20,7 @@ import type {
     TaskPlanResponse,
 } from '../../types';
 import { ProjectStructureDetector } from '../../utils/ProjectStructureDetector';
+import type { ProjectStructure } from '../../utils/ProjectStructureDetector';
 import type { FileSystemService } from '../FileSystemService';
 
 import type { PlanningContext } from './planning/types';
@@ -55,52 +56,38 @@ export class TaskPlanner {
     }
 
     /**
-     * Plans a task by breaking down the user request into executable steps
+     * Detects project structure, returning null when unavailable or on error
      */
-    async planTask(request: TaskPlanRequest): Promise<TaskPlanResponse> {
-        const { userRequest, context, currentFileObject, options } = request;
-
-        // Phase 1: Analyze project BEFORE planning
-        logger.debug('[TaskPlanner] 🔍 Phase 1: Analyzing project before planning...');
-        const projectAnalysis = await analyzeProjectBeforePlanning(
-            context.workspaceRoot,
-            this.fileSystemService
-        );
-
-        // Detect project structure
-        let projectStructure = null;
-        if (this.structureDetector && context.workspaceRoot) {
-            try {
-                projectStructure = await this.structureDetector.detectStructure(context.workspaceRoot);
-                logger.debug('[TaskPlanner] Detected project structure:', ProjectStructureDetector.formatSummary(projectStructure));
-            } catch (error) {
-                const isWebMode = !window.electron?.isElectron;
-                if (isWebMode) {
-                    logger.warn('[TaskPlanner] Project structure detection failed in web mode.');
-                } else {
-                    logger.error('[TaskPlanner] Failed to detect project structure:', error);
-                }
-            }
+    private async detectProjectStructure(
+        workspaceRoot: string
+    ): Promise<ProjectStructure | null> {
+        if (!this.structureDetector || !workspaceRoot) {
+            return null;
         }
+        try {
+            const projectStructure = await this.structureDetector.detectStructure(workspaceRoot);
+            logger.debug(
+                '[TaskPlanner] Detected project structure:',
+                ProjectStructureDetector.formatSummary(projectStructure)
+            );
+            return projectStructure;
+        } catch (error) {
+            const isWebMode = !window.electron?.isElectron;
+            if (isWebMode) {
+                logger.warn('[TaskPlanner] Project structure detection failed in web mode.');
+            } else {
+                logger.error('[TaskPlanner] Failed to detect project structure:', error);
+            }
+            return null;
+        }
+    }
 
-        // Build planning context
-        const planningContext: PlanningContext = {
-            userRequest,
-            workspaceRoot: context.workspaceRoot,
-            openFiles: context.openFiles ?? [],
-            currentFile: context.currentFile,
-            recentFiles: context.recentFiles ?? [],
-            projectStructure: projectStructure ?? undefined,
-            projectAnalysis,
-            maxSteps: options?.maxSteps ?? 10,
-            allowDestructive: options?.allowDestructiveActions ?? true,
-        };
-
-        // Build planning prompt
-        const planningPrompt = buildPlanningPrompt(planningContext);
-
-        // Get AI response
-        const aiContextRequest = {
+    private buildAiContextRequest(
+        planningPrompt: string,
+        context: TaskPlanRequest['context'],
+        currentFileObject: TaskPlanRequest['currentFileObject']
+    ) {
+        return {
             userQuery: planningPrompt,
             workspaceContext: {
                 rootPath: context.workspaceRoot,
@@ -123,6 +110,46 @@ export class TaskPlanner {
             relatedFiles: [],
             conversationHistory: [],
         };
+    }
+
+    /**
+     * Plans a task by breaking down the user request into executable steps
+     */
+    async planTask(request: TaskPlanRequest): Promise<TaskPlanResponse> {
+        const { userRequest, context, currentFileObject, options } = request;
+
+        // Phase 1: Analyze project BEFORE planning
+        logger.debug('[TaskPlanner] 🔍 Phase 1: Analyzing project before planning...');
+        const projectAnalysis = await analyzeProjectBeforePlanning(
+            context.workspaceRoot,
+            this.fileSystemService
+        );
+
+        // Detect project structure
+        const projectStructure = await this.detectProjectStructure(context.workspaceRoot);
+
+        // Build planning context
+        const planningContext: PlanningContext = {
+            userRequest,
+            workspaceRoot: context.workspaceRoot,
+            openFiles: context.openFiles ?? [],
+            currentFile: context.currentFile,
+            recentFiles: context.recentFiles ?? [],
+            projectStructure: projectStructure ?? undefined,
+            projectAnalysis,
+            maxSteps: options?.maxSteps ?? 10,
+            allowDestructive: options?.allowDestructiveActions ?? true,
+        };
+
+        // Build planning prompt
+        const planningPrompt = buildPlanningPrompt(planningContext);
+
+        // Get AI response
+        const aiContextRequest = this.buildAiContextRequest(
+            planningPrompt,
+            context,
+            currentFileObject
+        );
 
         logger.debug('[TaskPlanner] Calling aiService.sendContextualMessage()');
         const aiResponse = await this.aiService.sendContextualMessage(aiContextRequest);
@@ -198,7 +225,9 @@ export class TaskPlanner {
     /**
      * Plan task with enhanced confidence (convenience wrapper)
      */
-    async planTaskEnhanced(request: TaskPlanRequest): Promise<TaskPlanResponse & { insights: PlanningInsights }> {
+    async planTaskEnhanced(
+        request: TaskPlanRequest
+    ): Promise<TaskPlanResponse & { insights: PlanningInsights }> {
         logger.debug('[TaskPlanner] 🎯 Using Phase 6 enhanced planning with confidence scores...');
         return this.planTaskWithConfidence(request, this.strategyMemory);
     }

@@ -37,7 +37,9 @@ export class ModelSelector {
     return [...this.models];
   }
   
-  selectBestModel(requirements: { contextSize?: number; capabilities?: string[] }): ModelConfig | null {
+  selectBestModel(
+    requirements: { contextSize?: number; capabilities?: string[] }
+  ): ModelConfig | null {
     const filtered = this.models.filter(m => {
       if (requirements.contextSize && m.contextWindow < requirements.contextSize) {
         return false;

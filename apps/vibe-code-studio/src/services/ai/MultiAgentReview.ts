@@ -137,69 +137,84 @@ export class MultiAgentReviewService {
     };
   }
 
-  private generateMockIssues(role: string, code: string): ReviewIssue[] {
+  private generateSecurityIssues(code: string): ReviewIssue[] {
     const issues: ReviewIssue[] = [];
+    if (code.includes('password')) {
+      issues.push({
+        message: 'Sensitive data (password) exposed in code',
+        line: code.split('\n').findIndex((l) => l.includes('password')) + 1,
+        column: 10,
+        severity: 'high',
+        rule: 'no-sensitive-data',
+      });
+    }
+    if (code.includes('eval(') || code.includes('innerHTML')) {
+      issues.push({
+        message: 'Potential code injection vulnerability',
+        line: 1,
+        column: 0,
+        severity: 'high',
+        rule: 'no-eval',
+      });
+    }
+    return issues;
+  }
 
+  private generatePerformanceIssues(code: string): ReviewIssue[] {
+    const issues: ReviewIssue[] = [];
+    if (code.includes('for') && code.includes('length')) {
+      issues.push({
+        message: 'Loop boundary condition may cause off-by-one error',
+        line: code.split('\n').findIndex((l) => l.includes('for')) + 1,
+        column: 5,
+        severity: 'medium',
+        rule: 'loop-optimization',
+      });
+    }
+    return issues;
+  }
+
+  private generateStyleIssues(code: string): ReviewIssue[] {
+    const issues: ReviewIssue[] = [];
+    if (code.includes('var ')) {
+      issues.push({
+        message: 'Use const or let instead of var',
+        line: code.split('\n').findIndex((l) => l.includes('var ')) + 1,
+        column: 5,
+        severity: 'low',
+        rule: 'no-var',
+      });
+    }
+    return issues;
+  }
+
+  private generateArchitectureIssues(code: string): ReviewIssue[] {
+    const issues: ReviewIssue[] = [];
+    if (code.includes('function') && !code.includes('/**')) {
+      issues.push({
+        message: 'Missing documentation for function',
+        line: 1,
+        column: 0,
+        severity: 'low',
+        rule: 'require-jsdoc',
+      });
+    }
+    return issues;
+  }
+
+  private generateMockIssues(role: string, code: string): ReviewIssue[] {
     switch (role) {
       case 'security':
-        if (code.includes('password')) {
-          issues.push({
-            message: 'Sensitive data (password) exposed in code',
-            line: code.split('\n').findIndex((l) => l.includes('password')) + 1,
-            column: 10,
-            severity: 'high',
-            rule: 'no-sensitive-data',
-          });
-        }
-        if (code.includes('eval(') || code.includes('innerHTML')) {
-          issues.push({
-            message: 'Potential code injection vulnerability',
-            line: 1,
-            column: 0,
-            severity: 'high',
-            rule: 'no-eval',
-          });
-        }
-        break;
-
+        return this.generateSecurityIssues(code);
       case 'performance':
-        if (code.includes('for') && code.includes('length')) {
-          issues.push({
-            message: 'Loop boundary condition may cause off-by-one error',
-            line: code.split('\n').findIndex((l) => l.includes('for')) + 1,
-            column: 5,
-            severity: 'medium',
-            rule: 'loop-optimization',
-          });
-        }
-        break;
-
+        return this.generatePerformanceIssues(code);
       case 'style':
-        if (code.includes('var ')) {
-          issues.push({
-            message: 'Use const or let instead of var',
-            line: code.split('\n').findIndex((l) => l.includes('var ')) + 1,
-            column: 5,
-            severity: 'low',
-            rule: 'no-var',
-          });
-        }
-        break;
-
+        return this.generateStyleIssues(code);
       case 'architecture':
-        if (code.includes('function') && !code.includes('/**')) {
-          issues.push({
-            message: 'Missing documentation for function',
-            line: 1,
-            column: 0,
-            severity: 'low',
-            rule: 'require-jsdoc',
-          });
-        }
-        break;
+        return this.generateArchitectureIssues(code);
+      default:
+        return [];
     }
-
-    return issues;
   }
 
   private generateMockSuggestions(role: string): string[] {

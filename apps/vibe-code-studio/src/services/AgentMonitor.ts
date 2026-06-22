@@ -103,7 +103,8 @@ export class AgentMonitor {
       executionCount: records.length,
       successRate: successes / records.length,
       failureRate: failures / records.length,
-      averageDuration: durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : 0,
+      averageDuration:
+        durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : 0,
       minDuration: durations.length > 0 ? Math.min(...durations) : 0,
       maxDuration: durations.length > 0 ? Math.max(...durations) : 0,
       errorCount: errors.length,
@@ -167,7 +168,8 @@ export class AgentMonitor {
     return Array.from(hourlyData.entries()).map(([hour, recs]) => ({
       hour,
       count: recs.length,
-      avgDuration: recs.filter(r => r.duration).reduce((sum, r) => sum + r.duration!, 0) / recs.length || 0
+      avgDuration:
+        recs.filter(r => r.duration).reduce((sum, r) => sum + r.duration!, 0) / recs.length || 0
     }));
   }
 

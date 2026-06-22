@@ -93,7 +93,11 @@ export class WorkspaceTemplateService {
   /**
    * Generate project files from template
    */
-  async generateProject(templateId: string, projectName: string, targetPath: string): Promise<GeneratedProject> {
+  async generateProject(
+    templateId: string,
+    projectName: string,
+    targetPath: string
+  ): Promise<GeneratedProject> {
     const template = this.templates.get(templateId);
     if (!template) {
       throw new Error(`Template not found: ${templateId}`);

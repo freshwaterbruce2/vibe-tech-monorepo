@@ -54,6 +54,16 @@ export class ModelRegistry {
    */
   private initializeDefaultModels(): void {
     const defaultModels: AIModel[] = [
+      ...this.getFreeAndLowCostModels(),
+      ...this.getMidCostModels(),
+      ...this.getHighCostModels()
+    ];
+
+    defaultModels.forEach(model => this.models.set(model.id, model));
+  }
+
+  private getFreeAndLowCostModels(): AIModel[] {
+    return [
       // Free (OpenRouter)
       {
         id: 'liquid/lfm-2.5-1.2b-thinking:free',
@@ -100,8 +110,12 @@ export class ModelRegistry {
         maxTokens: 8192,
         contextWindow: 163800,
         description: 'Best low-cost coding model with strong quality'
-      },
+      }
+    ];
+  }
 
+  private getMidCostModels(): AIModel[] {
+    return [
       // Mid Cost (OpenRouter)
       {
         id: 'deepseek/deepseek-chat',
@@ -124,8 +138,12 @@ export class ModelRegistry {
         maxTokens: 16000,
         contextWindow: 200000,
         description: 'Best mid-tier balance for complex coding tasks'
-      },
+      }
+    ];
+  }
 
+  private getHighCostModels(): AIModel[] {
+    return [
       // High Cost (OpenRouter)
       {
         id: 'openai/gpt-5.2-codex',
@@ -161,8 +179,6 @@ export class ModelRegistry {
         description: 'Premium quality reasoning at higher cost'
       }
     ];
-
-    defaultModels.forEach(model => this.models.set(model.id, model));
   }
 
   /**
@@ -250,8 +266,10 @@ export class ModelRegistry {
 
     // Rank by cost efficiency (quality / cost)
     const ranked = models.sort((a, b) => {
-      const aEfficiency = a.performance.quality / (a.pricing.inputCostPer1k + a.pricing.outputCostPer1k);
-      const bEfficiency = b.performance.quality / (b.pricing.inputCostPer1k + b.pricing.outputCostPer1k);
+      const aEfficiency =
+        a.performance.quality / (a.pricing.inputCostPer1k + a.pricing.outputCostPer1k);
+      const bEfficiency =
+        b.performance.quality / (b.pricing.inputCostPer1k + b.pricing.outputCostPer1k);
       return bEfficiency - aEfficiency;
     });
 
@@ -277,8 +295,10 @@ export class ModelRegistry {
    */
   rankByCostEfficiency(): AIModel[] {
     return this.listModels().sort((a, b) => {
-      const aEfficiency = a.performance.quality / (a.pricing.inputCostPer1k + a.pricing.outputCostPer1k);
-      const bEfficiency = b.performance.quality / (b.pricing.inputCostPer1k + b.pricing.outputCostPer1k);
+      const aEfficiency =
+        a.performance.quality / (a.pricing.inputCostPer1k + a.pricing.outputCostPer1k);
+      const bEfficiency =
+        b.performance.quality / (b.pricing.inputCostPer1k + b.pricing.outputCostPer1k);
       return bEfficiency - aEfficiency;
     });
   }
