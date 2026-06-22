@@ -135,7 +135,8 @@ export const ModelSelectorPanel = ({
             <OverBudgetWarning>Over Budget!</OverBudgetWarning>
           ) : (
             <span>
-              ${getRemainingBudget().toFixed(2)} remaining ({budgetUsagePercentage.toFixed(1)}% used)
+              {`$${getRemainingBudget().toFixed(2)} remaining (` +
+                `${budgetUsagePercentage.toFixed(1)}% used)`}
             </span>
           )}
         </BudgetText>
@@ -190,7 +191,11 @@ export const ModelSelectorPanel = ({
               <ModelHeader>
                 <ModelName>
                   {model.name}
-                  {isRecommended && <RecommendedBadge><Award size={14} /> Recommended</RecommendedBadge>}
+                  {isRecommended && (
+                    <RecommendedBadge>
+                      <Award size={14} /> Recommended
+                    </RecommendedBadge>
+                  )}
                 </ModelName>
                 <ExpandButton
                   onClick={(e) => {

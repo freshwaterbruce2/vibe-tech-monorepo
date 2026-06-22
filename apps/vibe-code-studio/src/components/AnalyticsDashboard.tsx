@@ -392,8 +392,8 @@ export default function AnalyticsDashboard({ isOpen, onClose }: AnalyticsDashboa
             <EmptyState>
               <EmptyStateTitle>No Data Yet</EmptyStateTitle>
               <EmptyStateText>
-                Start coding to collect completion analytics. Metrics will appear here once you accept your first
-                suggestion.
+                Start coding to collect completion analytics. Metrics will appear here once you
+                accept your first suggestion.
               </EmptyStateText>
             </EmptyState>
           )}
@@ -418,7 +418,9 @@ export default function AnalyticsDashboard({ isOpen, onClose }: AnalyticsDashboa
                     Avg Latency
                   </MetricHeader>
                   <MetricValue>{summary.avgFirstVisible.toFixed(0)}ms</MetricValue>
-                  <MetricLabel>First visible • {summary.avgComplete.toFixed(0)}ms complete</MetricLabel>
+                  <MetricLabel>
+                    First visible • {summary.avgComplete.toFixed(0)}ms complete
+                  </MetricLabel>
                 </MetricCard>
 
                 <MetricCard $color="#f59e0b">

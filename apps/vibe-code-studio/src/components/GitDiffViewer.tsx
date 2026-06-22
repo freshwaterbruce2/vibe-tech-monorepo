@@ -803,7 +803,9 @@ export const GitDiffViewer = ({ aiService, diffText, onClose }: GitDiffViewerPro
                           <>
                             <ManualEditArea
                               value={cState.manualContent}
-                              onChange={e => updateConflictState(file.id, { manualContent: e.target.value })}
+                              onChange={e =>
+                                updateConflictState(file.id, { manualContent: e.target.value })
+                              }
                               placeholder="Edit the conflicting code here, then click Apply..."
                               spellCheck={false}
                             />
@@ -827,7 +829,9 @@ export const GitDiffViewer = ({ aiService, diffText, onClose }: GitDiffViewerPro
                               {cState.aiSuggestion.explanation}
                             </AISuggestionText>
                             {cState.aiSuggestion.preview && (
-                              <AISuggestionPreview>{cState.aiSuggestion.preview}</AISuggestionPreview>
+                              <AISuggestionPreview>
+                                {cState.aiSuggestion.preview}
+                              </AISuggestionPreview>
                             )}
                             <ResolutionButtons>
                               <ResolutionButton

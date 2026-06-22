@@ -95,7 +95,12 @@ export interface AppHandlers {
 
   // Search
   handleOpenFileFromSearch: (file: string, line?: number, column?: number) => void;
-  handleReplaceInFile: (file: string, search: string, replace: string, options: SearchOptions) => Promise<void>;
+  handleReplaceInFile: (
+    file: string,
+    search: string,
+    replace: string,
+    options: SearchOptions
+  ) => Promise<void>;
 
   // Visual panels
   handleToggleScreenshotPanel: () => void;

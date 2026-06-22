@@ -3,6 +3,7 @@
  * Manages drag-and-drop state and element operations
  */
 import { useCallback, useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import { KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
@@ -34,16 +35,20 @@ function useDndSensors() {
   );
 }
 
-export function useVisualEditor(onCodeGenerated?: (elements: UIElement[], code: string) => void): UseVisualEditorReturn {
-  const [elements, setElements] = useState<UIElement[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [selectedElement, setSelectedElement] = useState<string | null>(null);
-  
-  const sensors = useDndSensors();
+interface VisualEditorHandlerDeps {
+  selectedElement: string | null;
+  setElements: Dispatch<SetStateAction<UIElement[]>>;
+  setActiveId: Dispatch<SetStateAction<string | null>>;
+  setSelectedElement: Dispatch<SetStateAction<string | null>>;
+}
 
+function useDragHandlers(
+  setActiveId: VisualEditorHandlerDeps['setActiveId'],
+  setElements: VisualEditorHandlerDeps['setElements']
+) {
   const handleDragStart = useCallback((event: DragStartEvent) => {
     setActiveId(event.active.id as string);
-  }, []);
+  }, [setActiveId]);
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
@@ -56,7 +61,20 @@ export function useVisualEditor(onCodeGenerated?: (elements: UIElement[], code: 
         return arrayMove(items, oldIndex, newIndex);
       });
     }
-  }, []);
+  }, [setActiveId, setElements]);
+
+  return { handleDragStart, handleDragEnd };
+}
+
+function useVisualEditorHandlers(deps: VisualEditorHandlerDeps) {
+  const {
+    selectedElement,
+    setElements,
+    setActiveId,
+    setSelectedElement,
+  } = deps;
+
+  const { handleDragStart, handleDragEnd } = useDragHandlers(setActiveId, setElements);
 
   const handleAddElement = useCallback((type: UIElement['type']) => {
     const newElement: UIElement = {
@@ -66,18 +84,18 @@ export function useVisualEditor(onCodeGenerated?: (elements: UIElement[], code: 
     };
     setElements((prev) => [...prev, newElement]);
     setSelectedElement(newElement.id);
-  }, []);
+  }, [setElements, setSelectedElement]);
 
   const handleSelectElement = useCallback((id: string) => {
     setSelectedElement(id);
-  }, []);
+  }, [setSelectedElement]);
 
   const handleDeleteElement = useCallback((id: string) => {
     setElements((prev) => prev.filter((el) => el.id !== id));
     if (selectedElement === id) {
       setSelectedElement(null);
     }
-  }, [selectedElement]);
+  }, [selectedElement, setElements, setSelectedElement]);
 
   const handleUpdateProperty = useCallback((key: string, value: unknown) => {
     if (!selectedElement) {return;}
@@ -88,7 +106,40 @@ export function useVisualEditor(onCodeGenerated?: (elements: UIElement[], code: 
           : el
       )
     );
-  }, [selectedElement]);
+  }, [selectedElement, setElements]);
+
+  return {
+    handleDragStart,
+    handleDragEnd,
+    handleAddElement,
+    handleSelectElement,
+    handleDeleteElement,
+    handleUpdateProperty,
+  };
+}
+
+export function useVisualEditor(
+  onCodeGenerated?: (elements: UIElement[], code: string) => void
+): UseVisualEditorReturn {
+  const [elements, setElements] = useState<UIElement[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [selectedElement, setSelectedElement] = useState<string | null>(null);
+
+  const sensors = useDndSensors();
+
+  const {
+    handleDragStart,
+    handleDragEnd,
+    handleAddElement,
+    handleSelectElement,
+    handleDeleteElement,
+    handleUpdateProperty,
+  } = useVisualEditorHandlers({
+    selectedElement,
+    setElements,
+    setActiveId,
+    setSelectedElement,
+  });
 
   const handleGenerateCode = useCallback(() => {
     const code = generateCode(elements);

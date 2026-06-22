@@ -210,11 +210,15 @@ const ModelSelector = ({ currentModel, onModelChange }: ModelSelectorProps) => {
     }
   };
 
-  const currentModelInfo = MODEL_REGISTRY[currentModel as keyof typeof MODEL_REGISTRY] as AIModel | undefined;
-  const currentProviderName = currentModelInfo ? getProviderName(currentModelInfo.provider) : 'Unknown';
+  const currentModelInfo =
+    MODEL_REGISTRY[currentModel as keyof typeof MODEL_REGISTRY] as AIModel | undefined;
+  const currentProviderName = currentModelInfo
+    ? getProviderName(currentModelInfo.provider)
+    : 'Unknown';
 
   type ModelWithId = AIModel & { modelId: string };
-  const groupedModels = Object.entries(MODEL_REGISTRY).reduce((acc: Record<string, ModelWithId[]>, [id, model]) => {
+  const groupedModels = Object.entries(MODEL_REGISTRY).reduce(
+    (acc: Record<string, ModelWithId[]>, [id, model]) => {
     const provider = model.provider as string;
     if (!acc[provider]) {
       acc[provider] = [];
@@ -276,7 +280,12 @@ const ModelSelector = ({ currentModel, onModelChange }: ModelSelectorProps) => {
                     </div>
                   </ModelDetails>
                   {model.id === currentModel && (
-                    <Check size={16} color={currentModelInfo?.recommended ? vibeTheme.colors.success : undefined} />
+                    <Check
+                      size={16}
+                      color={
+                        currentModelInfo?.recommended ? vibeTheme.colors.success : undefined
+                      }
+                    />
                   )}
                 </ModelOption>
               ))}

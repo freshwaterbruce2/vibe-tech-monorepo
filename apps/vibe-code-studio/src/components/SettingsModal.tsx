@@ -118,7 +118,10 @@ const SettingsModal = () => {
         toggleSettings();
     };
 
-    const handleChange = (key: keyof typeof settings, value: (typeof settings)[keyof typeof settings]) => {
+    const handleChange = (
+        key: keyof typeof settings,
+        value: (typeof settings)[keyof typeof settings]
+    ) => {
         updateSettings({ [key]: value });
     };
 

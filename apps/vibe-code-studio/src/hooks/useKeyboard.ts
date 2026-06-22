@@ -40,6 +40,59 @@ export interface UseKeyboardOptions extends KeyboardHandlers {
   stopPropagation?: boolean;
 }
 
+/** Maps an event key to the single-key handler that should fire for it. */
+type SingleKeyHandlerName = Exclude<keyof KeyboardHandlers, 'onTab' | 'onShiftTab' | 'onCustomKey'>;
+
+const KEY_HANDLER_MAP: Record<string, SingleKeyHandlerName> = {
+  Enter: 'onEnter',
+  ' ': 'onSpace',
+  Space: 'onSpace',
+  Escape: 'onEscape',
+  Esc: 'onEscape',
+  ArrowUp: 'onArrowUp',
+  Up: 'onArrowUp',
+  ArrowDown: 'onArrowDown',
+  Down: 'onArrowDown',
+  ArrowLeft: 'onArrowLeft',
+  Left: 'onArrowLeft',
+  ArrowRight: 'onArrowRight',
+  Right: 'onArrowRight',
+};
+
+/**
+ * Dispatch a keyboard event to the matching handler.
+ * Returns true if a handler was invoked.
+ */
+function dispatchKeyboardEvent(event: KeyboardEvent, handlers: KeyboardHandlers): boolean {
+  if (event.key === 'Tab') {
+    if (event.shiftKey && handlers.onShiftTab) {
+      handlers.onShiftTab(event);
+      return true;
+    }
+    if (!event.shiftKey && handlers.onTab) {
+      handlers.onTab(event);
+      return true;
+    }
+    return false;
+  }
+
+  const handlerName = KEY_HANDLER_MAP[event.key];
+  if (handlerName) {
+    const handler = handlers[handlerName];
+    if (handler) {
+      handler(event);
+      return true;
+    }
+    return false;
+  }
+
+  if (handlers.onCustomKey) {
+    handlers.onCustomKey(event.key, event);
+    return true;
+  }
+  return false;
+}
+
 export function useKeyboard(options: UseKeyboardOptions = {}) {
   const {
     enabled = true,
@@ -54,90 +107,25 @@ export function useKeyboard(options: UseKeyboardOptions = {}) {
     handlersRef.current = options;
   }, [options]);
 
-  const keyDownHandler = useCallback((event: ReactKeyboardEvent | KeyboardEvent) => {
-    if (!enabled) {return;}
+  const keyDownHandler = useCallback(
+    (event: ReactKeyboardEvent | KeyboardEvent) => {
+      if (!enabled) {
+        return;
+      }
 
-    const handlers = handlersRef.current;
-    let handled = false;
+      const handled = dispatchKeyboardEvent(event as KeyboardEvent, handlersRef.current);
 
-    switch (event.key) {
-      case 'Enter':
-        if (handlers.onEnter) {
-          handlers.onEnter(event as KeyboardEvent);
-          handled = true;
+      if (handled) {
+        if (preventDefault) {
+          event.preventDefault();
         }
-        break;
-
-      case ' ':
-      case 'Space':
-        if (handlers.onSpace) {
-          handlers.onSpace(event as KeyboardEvent);
-          handled = true;
+        if (stopPropagation) {
+          event.stopPropagation();
         }
-        break;
-
-      case 'Escape':
-      case 'Esc':
-        if (handlers.onEscape) {
-          handlers.onEscape(event as KeyboardEvent);
-          handled = true;
-        }
-        break;
-
-      case 'ArrowUp':
-      case 'Up':
-        if (handlers.onArrowUp) {
-          handlers.onArrowUp(event as KeyboardEvent);
-          handled = true;
-        }
-        break;
-
-      case 'ArrowDown':
-      case 'Down':
-        if (handlers.onArrowDown) {
-          handlers.onArrowDown(event as KeyboardEvent);
-          handled = true;
-        }
-        break;
-
-      case 'ArrowLeft':
-      case 'Left':
-        if (handlers.onArrowLeft) {
-          handlers.onArrowLeft(event as KeyboardEvent);
-          handled = true;
-        }
-        break;
-
-      case 'ArrowRight':
-      case 'Right':
-        if (handlers.onArrowRight) {
-          handlers.onArrowRight(event as KeyboardEvent);
-          handled = true;
-        }
-        break;
-
-      case 'Tab':
-        if (event.shiftKey && handlers.onShiftTab) {
-          handlers.onShiftTab(event as KeyboardEvent);
-          handled = true;
-        } else if (!event.shiftKey && handlers.onTab) {
-          handlers.onTab(event as KeyboardEvent);
-          handled = true;
-        }
-        break;
-
-      default:
-        if (handlers.onCustomKey) {
-          handlers.onCustomKey(event.key, event as KeyboardEvent);
-          handled = true;
-        }
-    }
-
-    if (handled) {
-      if (preventDefault) {event.preventDefault();}
-      if (stopPropagation) {event.stopPropagation();}
-    }
-  }, [enabled, preventDefault, stopPropagation]);
+      }
+    },
+    [enabled, preventDefault, stopPropagation]
+  );
 
   return {
     keyDownHandler,
@@ -157,11 +145,11 @@ export function useGlobalKeyboard(handlers: KeyboardHandlers, enabled = true) {
   }, [handlers]);
 
   useEffect(() => {
-    if (!enabled) {return;}
+    if (!enabled) {
+      return;
+    }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      const currentHandlers = handlersRef.current;
-
       // Don't trigger global shortcuts when typing in inputs
       const target = event.target as HTMLElement;
       if (
@@ -172,44 +160,7 @@ export function useGlobalKeyboard(handlers: KeyboardHandlers, enabled = true) {
         return;
       }
 
-      switch (event.key) {
-        case 'Enter':
-          currentHandlers.onEnter?.(event);
-          break;
-        case ' ':
-        case 'Space':
-          currentHandlers.onSpace?.(event);
-          break;
-        case 'Escape':
-        case 'Esc':
-          currentHandlers.onEscape?.(event);
-          break;
-        case 'ArrowUp':
-        case 'Up':
-          currentHandlers.onArrowUp?.(event);
-          break;
-        case 'ArrowDown':
-        case 'Down':
-          currentHandlers.onArrowDown?.(event);
-          break;
-        case 'ArrowLeft':
-        case 'Left':
-          currentHandlers.onArrowLeft?.(event);
-          break;
-        case 'ArrowRight':
-        case 'Right':
-          currentHandlers.onArrowRight?.(event);
-          break;
-        case 'Tab':
-          if (event.shiftKey) {
-            currentHandlers.onShiftTab?.(event);
-          } else {
-            currentHandlers.onTab?.(event);
-          }
-          break;
-        default:
-          currentHandlers.onCustomKey?.(event.key, event);
-      }
+      dispatchKeyboardEvent(event, handlersRef.current);
     };
 
     window.addEventListener('keydown', handleKeyDown);

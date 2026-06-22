@@ -14,7 +14,10 @@ export function useEditorSetup(
 ) {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 
-  const handleEditorDidMount = (editorInstance: editor.IStandaloneCodeEditor, monaco: typeof Monaco) => {
+  const handleEditorDidMount = (
+    editorInstance: editor.IStandaloneCodeEditor,
+    monaco: typeof Monaco
+  ) => {
     editorRef.current = editorInstance;
 
     // Provide editor to live stream service if available

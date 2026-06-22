@@ -137,7 +137,13 @@ export const CodeQualityPanel = ({
             </Metric>
             <Metric>
               <MetricLabel>Complexity</MetricLabel>
-              <MetricValue style={{ color: getComplexityColor(analyzer.getComplexityRating(fileQuality.complexity)) }}>
+              <MetricValue
+                style={{
+                  color: getComplexityColor(
+                    analyzer.getComplexityRating(fileQuality.complexity)
+                  ),
+                }}
+              >
                 {fileQuality.complexity}
               </MetricValue>
             </Metric>
@@ -234,7 +240,10 @@ export const CodeQualityPanel = ({
                       <FileName>{file.filePath.split('/').pop()}</FileName>
                       <FileMetrics>
                         <FileMetric>
-                          Quality: <span style={{ color: getQualityColor(file.quality) }}>{Math.round(file.quality)}</span>
+                          Quality:{' '}
+                          <span style={{ color: getQualityColor(file.quality) }}>
+                            {Math.round(file.quality)}
+                          </span>
                         </FileMetric>
                         <FileMetric>Issues: {file.issues.length}</FileMetric>
                         <FileMetric>Complexity: {file.complexity}</FileMetric>

@@ -13,33 +13,28 @@ interface UseComponentLibraryOptions {
   onInsertComponent?: (code: string) => void;
 }
 
-export function useComponentLibrary(options: UseComponentLibraryOptions) {
-  const { onInsertComponent } = options;
+function groupComponentsByCategory(searchQuery: string): Record<string, UIComponent[]> {
+  const filtered = SHADCN_COMPONENTS.filter((comp) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      comp.name.toLowerCase().includes(query) ||
+      comp.description.toLowerCase().includes(query) ||
+      comp.tags.some((tag) => tag.toLowerCase().includes(query))
+    );
+  });
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedComponent, setSelectedComponent] = useState<UIComponent | null>(null);
+  return filtered.reduce((acc, comp) => {
+    if (!acc[comp.category]) {
+      acc[comp.category] = [];
+    }
+    acc[comp.category]!.push(comp);
+    return acc;
+  }, {} as Record<string, UIComponent[]>);
+}
+
+function useClipboardCopy() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  // Group components by category
-  const groupedComponents = useMemo(() => {
-    const filtered = SHADCN_COMPONENTS.filter((comp) => {
-      const query = searchQuery.toLowerCase();
-      return (
-        comp.name.toLowerCase().includes(query) ||
-        comp.description.toLowerCase().includes(query) ||
-        comp.tags.some((tag) => tag.toLowerCase().includes(query))
-      );
-    });
-
-    return filtered.reduce((acc, comp) => {
-      if (!acc[comp.category]) {
-        acc[comp.category] = [];
-      }
-      acc[comp.category]!.push(comp);
-      return acc;
-    }, {} as Record<string, UIComponent[]>);
-  }, [searchQuery]);
 
   const handleCopy = useCallback(async (component: UIComponent) => {
     try {
@@ -65,6 +60,20 @@ export function useComponentLibrary(options: UseComponentLibraryOptions) {
       }
     };
   }, []);
+
+  return { copiedId, handleCopy };
+}
+
+export function useComponentLibrary(options: UseComponentLibraryOptions) {
+  const { onInsertComponent } = options;
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedComponent, setSelectedComponent] = useState<UIComponent | null>(null);
+
+  // Group components by category
+  const groupedComponents = useMemo(() => groupComponentsByCategory(searchQuery), [searchQuery]);
+
+  const { copiedId, handleCopy } = useClipboardCopy();
 
   const handleInsert = useCallback((component: UIComponent) => {
     onInsertComponent?.(component.code);

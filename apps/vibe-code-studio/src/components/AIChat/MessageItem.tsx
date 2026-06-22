@@ -26,7 +26,13 @@ export function copyToClipboard(text: string): void {
   navigator.clipboard.writeText(text);
 }
 
-export function MessageItem({ message, showReasoningProcess, renderAgentTask, onCopy, onFeedback }: MessageItemProps) {
+export function MessageItem({
+  message,
+  showReasoningProcess,
+  renderAgentTask,
+  onCopy,
+  onFeedback,
+}: MessageItemProps) {
   const role = message.role === 'system' ? 'assistant' : message.role;
 
   return (

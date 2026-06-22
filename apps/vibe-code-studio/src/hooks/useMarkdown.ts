@@ -64,63 +64,70 @@ export interface MarkdownState {
   error: Error | null;
 }
 
-export function useMarkdown(options: UseMarkdownOptions = {}) {
-  const { debounceDelay = 300, cacheSize = 10, onError } = options;
+type SetMarkdownState = React.Dispatch<React.SetStateAction<MarkdownState>>;
 
-  const workerRef = useRef<Worker | null>(null);
-  const requestIdRef = useRef(0);
-  const cacheRef = useRef<Map<string, MarkdownResult>>(new Map());
-  const debounceTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
-  const pendingRequestsRef = useRef<Map<string, (response: MarkdownResponse) => void>>(new Map());
-
-  const [state, setState] = useState<MarkdownState>({
-    html: '',
-    preview: '',
-    toc: [],
-    readingTime: null,
-    isProcessing: false,
-    error: null,
+function createMarkdownWorker(
+  pendingRequestsRef: React.MutableRefObject<Map<string, (response: MarkdownResponse) => void>>,
+  setState: SetMarkdownState,
+  onError?: (error: Error) => void
+): Worker {
+  const worker = new Worker(new URL('../workers/markdown.worker.ts', import.meta.url), {
+    type: 'module',
   });
+
+  worker.onmessage = (event: MessageEvent<MarkdownResponse>) => {
+    const { id, error } = event.data;
+
+    const pendingRequest = pendingRequestsRef.current.get(id);
+    if (!pendingRequest) return;
+
+    pendingRequest(event.data);
+    pendingRequestsRef.current.delete(id);
+
+    setState((prev) => ({
+      ...prev,
+      isProcessing: pendingRequestsRef.current.size > 0,
+      error: error ? new Error(error) : null,
+    }));
+
+    if (error) {
+      onError?.(new Error(error));
+    }
+  };
+
+  worker.onerror = (error) => {
+    logger.error('Markdown worker error:', error);
+    setState((prev) => ({
+      ...prev,
+      isProcessing: false,
+      error: new Error(`Worker error: ${error.message}`),
+    }));
+    onError?.(new Error(`Worker error: ${error.message}`));
+  };
+
+  return worker;
+}
+
+interface MarkdownWorkerRefs {
+  workerRef: React.MutableRefObject<Worker | null>;
+  pendingRequestsRef: React.MutableRefObject<Map<string, (response: MarkdownResponse) => void>>;
+  debounceTimerRef: React.MutableRefObject<NodeJS.Timeout | undefined>;
+}
+
+function useMarkdownWorker(
+  refs: MarkdownWorkerRefs,
+  setState: SetMarkdownState,
+  onError?: (error: Error) => void
+): void {
+  const { workerRef, pendingRequestsRef, debounceTimerRef } = refs;
 
   // Initialize worker
   useEffect(() => {
     // Capture refs to avoid stale closure warning
     const pendingRequests = pendingRequestsRef.current;
-    
+
     try {
-      workerRef.current = new Worker(new URL('../workers/markdown.worker.ts', import.meta.url), {
-        type: 'module',
-      });
-
-      workerRef.current.onmessage = (event: MessageEvent<MarkdownResponse>) => {
-        const { id, error } = event.data;
-
-        const pendingRequest = pendingRequestsRef.current.get(id);
-        if (!pendingRequest) return;
-
-        pendingRequest(event.data);
-        pendingRequestsRef.current.delete(id);
-
-        setState((prev) => ({
-          ...prev,
-          isProcessing: pendingRequestsRef.current.size > 0,
-          error: error ? new Error(error) : null,
-        }));
-
-        if (error) {
-          onError?.(new Error(error));
-        }
-      };
-
-      workerRef.current.onerror = (error) => {
-        logger.error('Markdown worker error:', error);
-        setState((prev) => ({
-          ...prev,
-          isProcessing: false,
-          error: new Error(`Worker error: ${error.message}`),
-        }));
-        onError?.(new Error(`Worker error: ${error.message}`));
-      };
+      workerRef.current = createMarkdownWorker(pendingRequestsRef, setState, onError);
     } catch (error) {
       logger.error('Failed to create markdown worker:', error);
       setState((prev) => ({
@@ -140,15 +147,26 @@ export function useMarkdown(options: UseMarkdownOptions = {}) {
       pendingRequests.clear();
     };
   }, [onError]);
+}
 
-  // Cache management
-  const getCacheKey = useCallback((type: string, content: string, options?: MarkdownRequest['options']) => {
-    return `${type}:${content.substring(0, 50)}:${JSON.stringify(options ?? {})}`;
-  }, []);
+interface MarkdownCache {
+  getCacheKey: (type: string, content: string, options?: MarkdownRequest['options']) => string;
+  getFromCache: (key: string) => MarkdownResult | undefined;
+  setCache: (key: string, value: MarkdownResult) => void;
+  clearCache: () => void;
+}
 
-  const getFromCache = useCallback((key: string) => {
-    return cacheRef.current.get(key);
-  }, []);
+function useMarkdownCache(
+  cacheRef: React.MutableRefObject<Map<string, MarkdownResult>>,
+  cacheSize: number
+): MarkdownCache {
+  const getCacheKey = useCallback(
+    (type: string, content: string, options?: MarkdownRequest['options']) =>
+      `${type}:${content.substring(0, 50)}:${JSON.stringify(options ?? {})}`,
+    []
+  );
+
+  const getFromCache = useCallback((key: string) => cacheRef.current.get(key), [cacheRef]);
 
   const setCache = useCallback(
     (key: string, value: MarkdownResult) => {
@@ -161,12 +179,42 @@ export function useMarkdown(options: UseMarkdownOptions = {}) {
       }
       cacheRef.current.set(key, value);
     },
-    [cacheSize]
+    [cacheRef, cacheSize]
   );
 
-  // Send request to worker
-  const sendRequest = useCallback(
-    async <T = MarkdownResult>(type: MarkdownRequest['type'], content: string, options?: MarkdownRequest['options']): Promise<T> => {
+  const clearCache = useCallback(() => {
+    cacheRef.current.clear();
+  }, [cacheRef]);
+
+  return { getCacheKey, getFromCache, setCache, clearCache };
+}
+
+type SendMarkdownRequest = <T = MarkdownResult>(
+  type: MarkdownRequest['type'],
+  content: string,
+  options?: MarkdownRequest['options']
+) => Promise<T>;
+
+interface SendRequestRefs {
+  workerRef: React.MutableRefObject<Worker | null>;
+  requestIdRef: React.MutableRefObject<number>;
+  pendingRequestsRef: React.MutableRefObject<Map<string, (response: MarkdownResponse) => void>>;
+}
+
+function useSendMarkdownRequest(
+  refs: SendRequestRefs,
+  setState: SetMarkdownState,
+  cache: MarkdownCache
+): SendMarkdownRequest {
+  const { workerRef, requestIdRef, pendingRequestsRef } = refs;
+  const { getCacheKey, getFromCache, setCache } = cache;
+
+  return useCallback(
+    async <T = MarkdownResult>(
+      type: MarkdownRequest['type'],
+      content: string,
+      options?: MarkdownRequest['options']
+    ): Promise<T> => {
       if (!workerRef.current) {
         throw new Error('Worker not initialized');
       }
@@ -206,9 +254,31 @@ export function useMarkdown(options: UseMarkdownOptions = {}) {
         }
       });
     },
-    [getCacheKey, getFromCache, setCache]
+    [getCacheKey, getFromCache, setCache, workerRef, requestIdRef, pendingRequestsRef, setState]
   );
+}
 
+interface MarkdownMethods {
+  parse: (content: string, options?: MarkdownRequest['options']) => Promise<string>;
+  generatePreview: (content: string) => void;
+  extractTOC: (content: string) => Promise<TOCItem[]>;
+  calculateReadingTime: (content: string) => Promise<ReadingTime | null>;
+  processMarkdown: (
+    content: string,
+    options?: MarkdownRequest['options']
+  ) => Promise<{ html: string; toc: TOCItem[]; readingTime: ReadingTime | null }>;
+}
+
+interface MarkdownExtractors {
+  parse: (content: string, options?: MarkdownRequest['options']) => Promise<string>;
+  extractTOC: (content: string) => Promise<TOCItem[]>;
+  calculateReadingTime: (content: string) => Promise<ReadingTime | null>;
+}
+
+function useMarkdownExtractors(
+  sendRequest: SendMarkdownRequest,
+  setState: SetMarkdownState
+): MarkdownExtractors {
   // Parse markdown to HTML
   const parse = useCallback(
     async (content: string, options?: MarkdownRequest['options']) => {
@@ -221,8 +291,49 @@ export function useMarkdown(options: UseMarkdownOptions = {}) {
         throw error;
       }
     },
-    [sendRequest]
+    [sendRequest, setState]
   );
+
+  // Extract table of contents
+  const extractTOC = useCallback(
+    async (content: string) => {
+      try {
+        const toc = await sendRequest<TOCItem[]>('toc', content);
+        setState((prev) => ({ ...prev, toc }));
+        return toc;
+      } catch (error) {
+        logger.error('TOC error:', error);
+        return [];
+      }
+    },
+    [sendRequest, setState]
+  );
+
+  // Calculate reading time
+  const calculateReadingTime = useCallback(
+    async (content: string) => {
+      try {
+        const readingTime = await sendRequest<ReadingTime>('readingTime', content);
+        setState((prev) => ({ ...prev, readingTime }));
+        return readingTime;
+      } catch (error) {
+        logger.error('Reading time error:', error);
+        return null;
+      }
+    },
+    [sendRequest, setState]
+  );
+
+  return { parse, extractTOC, calculateReadingTime };
+}
+
+function useMarkdownMethods(
+  sendRequest: SendMarkdownRequest,
+  setState: SetMarkdownState,
+  debounceTimerRef: React.MutableRefObject<NodeJS.Timeout | undefined>,
+  debounceDelay: number
+): MarkdownMethods {
+  const { parse, extractTOC, calculateReadingTime } = useMarkdownExtractors(sendRequest, setState);
 
   // Generate preview with debouncing
   const generatePreview = useCallback(
@@ -240,37 +351,7 @@ export function useMarkdown(options: UseMarkdownOptions = {}) {
         }
       }, debounceDelay);
     },
-    [sendRequest, debounceDelay]
-  );
-
-  // Extract table of contents
-  const extractTOC = useCallback(
-    async (content: string) => {
-      try {
-        const toc = await sendRequest<TOCItem[]>('toc', content);
-        setState((prev) => ({ ...prev, toc }));
-        return toc;
-      } catch (error) {
-        logger.error('TOC error:', error);
-        return [];
-      }
-    },
-    [sendRequest]
-  );
-
-  // Calculate reading time
-  const calculateReadingTime = useCallback(
-    async (content: string) => {
-      try {
-        const readingTime = await sendRequest<ReadingTime>('readingTime', content);
-        setState((prev) => ({ ...prev, readingTime }));
-        return readingTime;
-      } catch (error) {
-        logger.error('Reading time error:', error);
-        return null;
-      }
-    },
-    [sendRequest]
+    [sendRequest, debounceDelay, debounceTimerRef, setState]
   );
 
   // Process all markdown features
@@ -295,10 +376,38 @@ export function useMarkdown(options: UseMarkdownOptions = {}) {
     [parse, extractTOC, calculateReadingTime, generatePreview]
   );
 
-  // Clear cache
-  const clearCache = useCallback(() => {
-    cacheRef.current.clear();
-  }, []);
+  return { parse, generatePreview, extractTOC, calculateReadingTime, processMarkdown };
+}
+
+export function useMarkdown(options: UseMarkdownOptions = {}) {
+  const { debounceDelay = 300, cacheSize = 10, onError } = options;
+
+  const workerRef = useRef<Worker | null>(null);
+  const requestIdRef = useRef(0);
+  const cacheRef = useRef<Map<string, MarkdownResult>>(new Map());
+  const debounceTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const pendingRequestsRef = useRef<Map<string, (response: MarkdownResponse) => void>>(new Map());
+
+  const [state, setState] = useState<MarkdownState>({
+    html: '',
+    preview: '',
+    toc: [],
+    readingTime: null,
+    isProcessing: false,
+    error: null,
+  });
+
+  useMarkdownWorker({ workerRef, pendingRequestsRef, debounceTimerRef }, setState, onError);
+
+  const cache = useMarkdownCache(cacheRef, cacheSize);
+  const sendRequest = useSendMarkdownRequest(
+    { workerRef, requestIdRef, pendingRequestsRef },
+    setState,
+    cache
+  );
+
+  const { parse, generatePreview, extractTOC, calculateReadingTime, processMarkdown } =
+    useMarkdownMethods(sendRequest, setState, debounceTimerRef, debounceDelay);
 
   return {
     // State
@@ -310,8 +419,63 @@ export function useMarkdown(options: UseMarkdownOptions = {}) {
     extractTOC,
     calculateReadingTime,
     processMarkdown,
-    clearCache,
+    clearCache: cache.clearCache,
   };
+}
+
+function renderEditorPane(
+  content: string,
+  setContent: (value: string) => void,
+  readingTime: ReadingTime | null
+): React.ReactElement {
+  return React.createElement(
+    'div',
+    { style: { flex: 1, padding: '20px' } },
+    React.createElement('h2', null, 'Editor'),
+    React.createElement('textarea', {
+      value: content,
+      onChange: (e: ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value),
+      style: { width: '100%', height: '400px' },
+    }),
+    readingTime &&
+      React.createElement('p', null, `Reading time: ${readingTime.time} (${readingTime.words} words)`)
+  );
+}
+
+function renderTableOfContents(toc: TOCItem[]): React.ReactElement {
+  return React.createElement(
+    'div',
+    null,
+    React.createElement('h3', null, 'Table of Contents'),
+    React.createElement(
+      'ul',
+      null,
+      toc.map((item, index) =>
+        React.createElement(
+          'li',
+          {
+            key: index,
+            style: { marginLeft: `${(item.level - 1) * 20}px` },
+          },
+          React.createElement('a', { href: `#${item.id}` }, item.text)
+        )
+      )
+    )
+  );
+}
+
+function renderPreviewPane(
+  preview: string,
+  toc: TOCItem[],
+  isProcessing: boolean
+): React.ReactElement {
+  return React.createElement(
+    'div',
+    { style: { flex: 1, padding: '20px' } },
+    React.createElement('h2', null, `Preview ${isProcessing ? '(Processing...)' : ''}`),
+    React.createElement('div', { dangerouslySetInnerHTML: { __html: preview } }),
+    toc.length > 0 && renderTableOfContents(toc)
+  );
 }
 
 export const MarkdownEditor: React.FC = () => {
@@ -325,47 +489,7 @@ export const MarkdownEditor: React.FC = () => {
   return React.createElement(
     'div',
     { style: { display: 'flex', height: '100%' } },
-    React.createElement(
-      'div',
-      { style: { flex: 1, padding: '20px' } },
-      React.createElement('h2', null, 'Editor'),
-      React.createElement('textarea', {
-        value: content,
-        onChange: (e: ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value),
-        style: { width: '100%', height: '400px' },
-      }),
-      readingTime &&
-        React.createElement(
-          'p',
-          null,
-          `Reading time: ${readingTime.time} (${readingTime.words} words)`
-        )
-    ),
-    React.createElement(
-      'div',
-      { style: { flex: 1, padding: '20px' } },
-      React.createElement('h2', null, `Preview ${isProcessing ? '(Processing...)' : ''}`),
-      React.createElement('div', { dangerouslySetInnerHTML: { __html: preview } }),
-      toc.length > 0 &&
-        React.createElement(
-          'div',
-          null,
-          React.createElement('h3', null, 'Table of Contents'),
-          React.createElement(
-            'ul',
-            null,
-            toc.map((item, index) =>
-              React.createElement(
-                'li',
-                {
-                  key: index,
-                  style: { marginLeft: `${(item.level - 1) * 20}px` },
-                },
-                React.createElement('a', { href: `#${item.id}` }, item.text)
-              )
-            )
-          )
-        )
-    )
+    renderEditorPane(content, setContent, readingTime),
+    renderPreviewPane(preview, toc, isProcessing)
   );
 };

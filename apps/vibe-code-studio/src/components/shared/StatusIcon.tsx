@@ -22,7 +22,11 @@ export interface StatusIconProps {
 /**
  * Renders an animated icon based on the current task status.
  */
-export function StatusIcon({ status, size = 16, className }: StatusIconProps): React.ReactElement | null {
+export function StatusIcon({
+  status,
+  size = 16,
+  className,
+}: StatusIconProps): React.ReactElement | null {
   const cn = className ?? '';
 
   switch (status) {

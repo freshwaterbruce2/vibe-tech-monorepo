@@ -7,7 +7,8 @@ import { MODELS_ARRAY } from '../services/ai/AIProviderInterface';
 import ApiKeySettings from './ApiKeySettings';
 import { ModelComparison } from './ModelComparison';
 import { defaultSettings, getModelPricing, supportsReasoning } from './Settings.constants';
-import { authService, UserWithPlan } from '../services/AuthService';
+import type { UserWithPlan } from '../services/AuthService';
+import { authService } from '../services/AuthService';
 import { billingService } from '../services/BillingService';
 import {
     Button,
@@ -474,7 +475,8 @@ export const Settings = ({
                 {user.plan === 'free' ? (
                   <div>
                     <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: '#b7c3d6', lineHeight: '1.5' }}>
-                      Upgrade to Vibe Code Studio Pro to unlock proactive AI autocomplete, unlimited assistant chat queries, and advanced multi-agent executions.
+                      Upgrade to Vibe Code Studio Pro to unlock proactive AI autocomplete,
+                      unlimited assistant chat queries, and advanced multi-agent executions.
                     </p>
                     <Button
                       $variant="primary"
@@ -492,7 +494,8 @@ export const Settings = ({
                   </div>
                 ) : (
                   <p style={{ margin: 0, fontSize: '12px', color: '#67e8f9', fontWeight: 500 }}>
-                    ✨ Thank you for subscribing to Pro! You have full access to all elite agent and autocomplete features.
+                    ✨ Thank you for subscribing to Pro! You have full access to all elite agent
+                    and autocomplete features.
                   </p>
                 )}
 

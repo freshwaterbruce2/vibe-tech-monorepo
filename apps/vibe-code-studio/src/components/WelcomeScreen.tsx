@@ -19,6 +19,10 @@ import type { WorkspaceContext } from '../types';
 import { InputDialog } from './InputDialog';
 import { Button } from './ui/button';
 
+type WindowWithDirPicker = Window & {
+  showDirectoryPicker: () => Promise<{ name: string }>;
+};
+
 interface WelcomeScreenProps {
   onOpenFolder: (folderPath: string) => void;
   onCreateFile: (fileName: string) => void;
@@ -261,7 +265,7 @@ export const WelcomeScreen = ({
         // Fallback to browser file API if available
         if ('showDirectoryPicker' in window) {
           try {
-            const dirHandle = await (window as Window & { showDirectoryPicker: () => Promise<{ name: string }> }).showDirectoryPicker();
+            const dirHandle = await (window as WindowWithDirPicker).showDirectoryPicker();
             onOpenFolder(dirHandle.name);
           } catch (err) {
             logger.error('Browser folder picker error:', err);
@@ -271,7 +275,7 @@ export const WelcomeScreen = ({
     } else if ('showDirectoryPicker' in window) {
       // Use browser's File System Access API
       try {
-        const dirHandle = await (window as Window & { showDirectoryPicker: () => Promise<{ name: string }> }).showDirectoryPicker();
+        const dirHandle = await (window as WindowWithDirPicker).showDirectoryPicker();
         onOpenFolder(dirHandle.name);
       } catch (error) {
         logger.error('Browser folder picker error:', error);
@@ -377,7 +381,8 @@ export const WelcomeScreen = ({
             </IconWrapper>
             <FeatureTitle>Smart Features</FeatureTitle>
             <FeatureDescription>
-              Experience intelligent code completion, refactoring, and smart tools tuned to your workflow
+              Experience intelligent code completion, refactoring, and smart tools tuned to your
+              workflow
             </FeatureDescription>
           </FeatureCard>
         </FeatureGrid>
