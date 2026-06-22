@@ -15,6 +15,7 @@ pub struct Config {
     pub groq_api_key: String,
     #[allow(dead_code)]
     pub openrouter_api_key: String,
+    pub openrouter_base_url: String,
     #[allow(dead_code)]
     pub huggingface_api_key: String,
     #[allow(dead_code)]
@@ -55,6 +56,8 @@ impl Config {
                 .unwrap_or_else(|_| "deepseek-v3.2".to_string()),
             groq_api_key: env::var("GROQ_API_KEY").unwrap_or_else(|_| "".to_string()),
             openrouter_api_key: env::var("OPENROUTER_API_KEY").unwrap_or_else(|_| "".to_string()),
+            openrouter_base_url: env::var("OPENROUTER_BASE_URL")
+                .unwrap_or_else(|_| "http://localhost:3001/api/openrouter".to_string()),
             huggingface_api_key: env::var("HUGGINGFACE_API_KEY").unwrap_or_else(|_| "".to_string()),
             huggingface_base_url: env::var("HUGGINGFACE_BASE_URL")
                 .unwrap_or_else(|_| "https://api-inference.huggingface.co/v1".to_string()),
