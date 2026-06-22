@@ -1,18 +1,6 @@
 apply plugin: 'com.android.application'
 import groovy.json.JsonSlurper
 
-// Load keystore properties for release signing
-def keystorePropertiesFile = rootProject.file("keystore.properties")
-def keystoreProperties = new Properties()
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-}
-def hasReleaseKeystoreConfig = keystorePropertiesFile.exists() &&
-        keystoreProperties['storeFile'] &&
-        keystoreProperties['storePassword'] &&
-        keystoreProperties['keyAlias'] &&
-        keystoreProperties['keyPassword']
-
 def packageJsonFile = rootProject.file("../package.json")
 def appVersionName = "1.0.0"
 if (packageJsonFile.exists()) {
@@ -79,6 +67,11 @@ android {
             }
 
             if (targetStoreFile && targetStorePassword && targetKeyAlias && targetKeyPassword) {
+                // Path segregation guardrail: signing keys must never live inside the git-tracked code tree.
+                if (targetStoreFile.toUpperCase().startsWith("V:\\MONOREPO")) {
+                    throw new GradleException("CRITICAL: Path segregation violation. Keystore must not reside in V:\\monorepo: " + targetStoreFile)
+                }
+
                 def keystoreFile = new File(targetStoreFile)
                 if (keystoreFile.exists()) {
                     storeFile keystoreFile
@@ -88,12 +81,12 @@ android {
                 } else if (releaseTaskRequested) {
                     throw new GradleException("CRITICAL: Keystore file not found at: " + targetStoreFile)
                 } else {
-                    println "⚠️ WARNING: Keystore file not found at: " + targetStoreFile
+                    println "WARNING: Keystore file not found at: " + targetStoreFile
                 }
             } else if (releaseTaskRequested) {
                 throw new GradleException("CRITICAL: Release signing configuration is incomplete. Ensure VIBE_TUTOR_RELEASE_* properties are set in ~/.gradle/gradle.properties or env.")
             } else {
-                println "⚠️ WARNING: Release signing configuration is incomplete. Release builds will fail."
+                println "WARNING: Release signing configuration is incomplete. Release builds will fail."
             }
         }
     }
