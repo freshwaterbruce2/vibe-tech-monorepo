@@ -76,32 +76,32 @@ The workspace uses **Nx** with `appsDir: "apps"` and `libsDir: "packages"`.
 
 Product applications and standalone services:
 
-| App                              | Type                              | Stack                        |
-| -------------------------------- | --------------------------------- | ---------------------------- |
-| `nova-agent`                     | Tauri Desktop                     | React + Rust + SQLite + RAG  |
-| `vibe-code-studio`               | Tauri Desktop                     | React + Rust + Monaco Editor |
-| `vibe-tutor`                     | Electron 35.7 + Capacitor 8       | React + Express + Android + electron-builder |
-| `vibe-justice`                   | Tauri 2 frontend + Python backend | React + Vite + FastAPI + PyInstaller `.spec` |
-| `gravity-claw`                   | Local-only WIP nested repo        | React + Hono + Tauri scripts; pnpm-workspace excluded |
+| App                              | Type                                              | Stack                                                                                                                                           |
+| -------------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `nova-agent`                     | Tauri Desktop                                     | React + Rust + SQLite + RAG                                                                                                                     |
+| `vibe-code-studio`               | Tauri Desktop                                     | React + Rust + Monaco Editor                                                                                                                    |
+| `vibe-tutor`                     | Electron 35.7 + Capacitor 8                       | React + Express + Android + electron-builder                                                                                                    |
+| `vibe-justice`                   | Tauri 2 frontend + Python backend                 | React + Vite + FastAPI + PyInstaller `.spec`                                                                                                    |
+| `gravity-claw`                   | Local-only WIP nested repo                        | React + Hono + Tauri scripts; pnpm-workspace excluded                                                                                           |
 | `vibetech-command-center`        | Electron 33 Desktop (Tier 1/beta) + Control Plane | React + electron-vite + electron-builder + better-sqlite3 + MCP server (`tsconfig.mcp.json`, scripts: `mcp:start`, `probe:claude`, `probe:mcp`) |
-| `business-booking-platform-next` | React SPA (Vite) + Node backend   | No root/frontend package.json; backend package only |
-| `invoice-automation-saas`        | React SPA + Fastify               | React + Fastify + Stripe     |
-| `vibe-shop`                      | Next.js 16.1.6 storefront         | Next + Prisma + Neon         |
-| `cross-agent-reflection`         | Full-stack React + Express        | React + Express              |
-| `prompt-engineer`                | Full-stack React + Express        | React + Express + OpenAI     |
-| `chessmaster-academy`            | React SPA + Capacitor + Express   | React + chess.js + Android   |
-| `shipping-pwa`                   | React PWA + Capacitor             | React + Cloudflare Workers   |
-| `VibeBlox`                       | React SPA + Hono                  | React + Hono + SQLite        |
-| `vibe-tech-lovable`              | React SPA (Vite)                  | React + shadcn/ui + Three.js |
-| `nova-mobile-app`                | React Native (Expo 54)            | React Native 0.81 + Zustand  |
-| `crypto-enhanced`                | Python Service                    | Python + Kraken API + SQLite; root scripts manage Nx targets |
-| `desktop-commander-v3`           | MCP Server                        | TypeScript + MCP SDK         |
-| `mcp-gateway`                    | MCP Server                        | TypeScript + MCP SDK         |
-| `mcp-rag-server`                 | MCP Server                        | TypeScript + LanceDB         |
-| `mcp-skills-server`              | MCP Server                        | TypeScript + MCP SDK         |
-| `memory-mcp`                     | MCP Server                        | TypeScript + LanceDB         |
-| `workspace-mcp-server`           | MCP Server                        | TypeScript + MCP SDK         |
-| `agent-engine`                   | CLI / Node Tool                   | TypeScript + tsup            |
+| `business-booking-platform-next` | React SPA (Vite) + Node backend                   | No root/frontend package.json; backend package only                                                                                             |
+| `invoice-automation-saas`        | React SPA + Fastify                               | React + Fastify + Stripe                                                                                                                        |
+| `vibe-shop`                      | Next.js 16.1.6 storefront                         | Next + Prisma + Neon                                                                                                                            |
+| `cross-agent-reflection`         | Full-stack React + Express                        | React + Express                                                                                                                                 |
+| `prompt-engineer`                | Full-stack React + Express                        | React + Express + OpenAI                                                                                                                        |
+| `chessmaster-academy`            | React SPA + Capacitor + Express                   | React + chess.js + Android                                                                                                                      |
+| `shipping-pwa`                   | React PWA + Capacitor                             | React + Cloudflare Workers                                                                                                                      |
+| `VibeBlox`                       | React SPA + Hono                                  | React + Hono + SQLite                                                                                                                           |
+| `vibe-tech-lovable`              | React SPA (Vite)                                  | React + shadcn/ui + Three.js                                                                                                                    |
+| `nova-mobile-app`                | React Native (Expo 54)                            | React Native 0.81 + Zustand                                                                                                                     |
+| `crypto-enhanced`                | Python Service                                    | Python + Kraken API + SQLite; root scripts manage Nx targets                                                                                    |
+| `desktop-commander-v3`           | MCP Server                                        | TypeScript + MCP SDK                                                                                                                            |
+| `mcp-gateway`                    | MCP Server                                        | TypeScript + MCP SDK                                                                                                                            |
+| `mcp-rag-server`                 | MCP Server                                        | TypeScript + LanceDB                                                                                                                            |
+| `mcp-skills-server`              | MCP Server                                        | TypeScript + MCP SDK                                                                                                                            |
+| `memory-mcp`                     | MCP Server                                        | TypeScript + LanceDB                                                                                                                            |
+| `workspace-mcp-server`           | MCP Server                                        | TypeScript + MCP SDK                                                                                                                            |
+| `agent-engine`                   | CLI / Node Tool                                   | TypeScript + tsup                                                                                                                               |
 
 Two package workspaces are excluded from `pnpm-workspace.yaml`: `apps/gravity-claw`
 (local-only nested WIP, not a shipped workspace release). `packages/games` is included
@@ -335,6 +335,40 @@ The monorepo uses a multi-layered testing approach:
 - Prefer local workflows and local validation commands first.
 - Prefer GitHub workflows/remotes when repository hosting is relevant.
 
+# Source-Truth & End-of-Session Commit/PR Rule
+
+Every editor and agent must leave the repository in a commit-ready state at the end of a work session. Needed work must not remain uncommitted, unstaged, or unpushed locally.
+
+## End-of-session state
+
+Run `git status --short`. Based on the result:
+
+1. **Feature is logically complete and quality gates pass** — stage, commit with a descriptive message, push to the current feature branch, and open or mark the PR as ready for review.
+2. **Work is incomplete but compiles and passes local checks** — make a WIP commit, push to the feature branch, and open the PR as a **Draft** so CI is visible but the branch is not merged.
+3. **Work is broken or untested** — stash it (`git stash push -m "WIP: <description>"`) and leave a clear note in the session summary. Do not push broken code to a shared branch unless it is on a dedicated experimental branch.
+
+Untracked files that are part of the needed work must be staged and committed. Build outputs, live databases, `.env` files, and generated media remain local-only and must never be committed.
+
+## Branch and PR discipline
+
+- Never commit directly to protected branches (`main`, `develop`). The pre-commit hook already blocks this; do not bypass it with `--no-verify` except in genuine emergencies.
+- Use short-lived, single-task feature branches (e.g., `feature/...`, `fix/...`).
+- Keep PRs small and focused. If the current branch has grown beyond one logical concern, split the changes before opening the PR.
+- Before committing, run the relevant quality checks: `pnpm nx affected -t lint typecheck test` or `pnpm run quality:affected`.
+- Do not stage unrelated user changes. If unrelated changes are present, leave them unstaged and mention them in the final response.
+- Do not amend, rebase, reset, or rewrite history unless the user explicitly asks.
+
+## Agent output contract
+
+When finishing or pausing work, report:
+
+- Current branch name.
+- Commit hash(es) pushed.
+- PR URL or draft status.
+- Any remaining uncommitted changes, stashes, or WIP commits.
+
+This rule aligns with the repository's branch protection, CODEOWNERS requirements, and CI quality gates described in SECURITY.md and `.github/workflows/`.
+
 # Workspace Snapshot
 
 - Repository root: `V:\monorepo`.
@@ -408,10 +442,10 @@ For complex tasks (defined as requiring >5 tool calls, multi-step execution, or 
   - **Read Before Decide**: Reread the planning files before making major architecture or design decisions.
   - **Log Errors**: Record all errors, including attempt numbers, in `progress.md`.
 - **3-Strike Protocol**:
-  1. *Strike 1 (Attempt 1)*: Diagnose the issue and apply a direct fix.
-  2. *Strike 2 (Attempt 2)*: Pivot to an alternative technical approach.
-  3. *Strike 3 (Attempt 3)*: Perform a broader architectural rethink of the task.
-  4. *Post-Strike 3*: Stop immediately and escalate to the user for guidance.
+  1. _Strike 1 (Attempt 1)_: Diagnose the issue and apply a direct fix.
+  2. _Strike 2 (Attempt 2)_: Pivot to an alternative technical approach.
+  3. _Strike 3 (Attempt 3)_: Perform a broader architectural rethink of the task.
+  4. _Post-Strike 3_: Stop immediately and escalate to the user for guidance.
 
 # No Duplicates Rule
 
@@ -476,19 +510,25 @@ When project reality changes, update this file together with the relevant source
 This workspace was built for Windows 11. On Linux (Cloud Agent VMs), note these caveats:
 
 ### pnpm store-dir override
+
 The root `.npmrc` sets `store-dir=D:\pnpm-store-v2` (Windows path). On Linux, override it before any pnpm command:
+
 ```bash
 export npm_config_store_dir=/home/ubuntu/.pnpm-store
 ```
+
 The update script handles this automatically on VM startup.
 
 ### pnpm install requires --force
+
 The root `package.json` lists `@rollup/rollup-win32-x64-msvc` as a devDependency. On Linux, `pnpm install` will fail with `ERR_PNPM_UNSUPPORTED_PLATFORM` unless `--force` is passed.
 
 ### Windows-specific tests
+
 Some tests (e.g. `@vibetech/shared-utils` path-validator tests) assert Windows `D:\` drive paths and will fail on Linux. These failures are expected and not caused by agent changes.
 
 ### Running apps and services
+
 - Standard commands: `pnpm nx dev <project>`, `pnpm nx build <project>`, `pnpm nx test <project>`, `pnpm nx lint <project>` (see README.md).
 - Desktop apps (Tauri/Electron: `nova-agent`, `vibe-code-studio`, `vibetech-command-center`, `vibe-tutor`) require native toolchains (Rust, Electron) and may not fully build/run on Cloud Agent VMs.
 - Web SPAs (`chessmaster-academy`, `invoice-automation-saas`, `vibe-tech-lovable`, `VibeBlox`, `prompt-engineer-app`, `cross-agent-reflection`, `business-booking-platform-next`) start with `pnpm nx dev <project>` and are the easiest to test.
@@ -497,15 +537,18 @@ Some tests (e.g. `@vibetech/shared-utils` path-validator tests) assert Windows `
 - Do not use Vercel for Cloud Agent validation or deployment. Prefer local Nx dev/build/test workflows unless the user explicitly requests Vercel-specific work.
 
 ### Linting
+
 - `pnpm nx lint <project>` runs ESLint per-project and works on Linux.
 - Root `pnpm run lint` runs `nx run-many -t lint` across all projects.
 - Biome (`biome.json`) has a config-level issue with an unrecognized key; ESLint is the primary linter.
 
 ### Testing
+
 - `pnpm nx test <project>` runs per-project tests (usually Vitest).
 - Playwright E2E tests may timeout if they require a web server that isn't starting correctly; Vitest unit tests are the most reliable on Cloud Agent VMs.
 
 <!-- stripe-projects-cli managed:agents-md:start -->
+
 ## Stripe Projects CLI
 
 This repository is initialized for the Stripe project "dev".

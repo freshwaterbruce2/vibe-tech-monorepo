@@ -1,0 +1,29 @@
+# VibeTech Monorepo — Cursor Rules
+
+Primary rules live in `AGENTS.md` and `CLAUDE.md` in the repository root. This file repeats the non-negotiable workflow rules so Cursor stays aligned with Hermes, Claude Code, and Antigravity.
+
+## Source-Truth & End-of-Session Commit/PR Rule
+
+Every editor and agent must leave the repository in a commit-ready state at the end of a work session. Needed work must not remain uncommitted, unstaged, or unpushed locally.
+
+Before finishing, run `git status --short`:
+
+1. **Complete and quality gates pass** — commit with a descriptive message, push to the feature branch, and open or mark the PR as ready.
+2. **Incomplete but compiles/passes local checks** — make a WIP commit, push, and open the PR as a **Draft**.
+3. **Broken or untested** — stash it (`git stash push -m "WIP: <description>"`) and report the stash. Do not push broken code to a shared branch unless it is on a dedicated experimental branch.
+
+## Branch and PR discipline
+
+- Never commit directly to protected branches (`main`, `develop`).
+- Use short-lived, single-task feature branches.
+- Keep PRs small and focused; split branches that have grown beyond one logical concern.
+- Run affected quality checks before committing: `pnpm nx affected -t lint typecheck test` or `pnpm run quality:affected`.
+- Do not stage unrelated user changes; mention any you leave unstaged.
+- Do not amend, rebase, reset, or rewrite history unless explicitly asked.
+- Do not bypass pre-commit hooks (`--no-verify`) except in genuine emergencies.
+
+## Output contract
+
+When finishing or pausing, report: current branch, pushed commit hash(es), PR URL/draft status, and any remaining uncommitted changes or stashes.
+
+For full workspace rules, see `AGENTS.md`.
