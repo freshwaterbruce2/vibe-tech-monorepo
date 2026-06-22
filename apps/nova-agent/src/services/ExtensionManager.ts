@@ -159,8 +159,32 @@ export class ExtensionManager {
     }
 
     // Create extension context
+    const context = this.createExtensionContext(extension.id);
+
+    extension.context = context;
+
+    // Call activate function and capture deactivate function
+    if (extension.activateFn) {
+      const result = extension.activateFn(context);
+      if (result && typeof result.then === 'function') {
+        const awaitedResult = await result;
+        if (hasDeactivate(awaitedResult)) {
+          extension.deactivateFn = awaitedResult.deactivate;
+        }
+      } else if (hasDeactivate(result)) {
+        extension.deactivateFn = result.deactivate;
+      }
+    }
+
+    extension.isActive = true;
+  }
+
+  /**
+   * Build the sandboxed context object passed to an extension's activate fn.
+   */
+  private createExtensionContext(extensionId: string): ExtensionContext {
     const context: ExtensionContext = {
-      extensionId: extension.id,
+      extensionId,
       subscriptions: [],
       registerCommand: (commandId: string, handler: CommandHandler) => {
         this.commands.set(commandId, handler);
@@ -189,23 +213,7 @@ export class ExtensionManager {
         },
       },
     };
-
-    extension.context = context;
-
-    // Call activate function and capture deactivate function
-    if (extension.activateFn) {
-      const result = extension.activateFn(context);
-      if (result && typeof result.then === 'function') {
-        const awaitedResult = await result;
-        if (hasDeactivate(awaitedResult)) {
-          extension.deactivateFn = awaitedResult.deactivate;
-        }
-      } else if (hasDeactivate(result)) {
-        extension.deactivateFn = result.deactivate;
-      }
-    }
-
-    extension.isActive = true;
+    return context;
   }
 
   /**

@@ -10,7 +10,8 @@ const MAX_BATCH_SIZE = 20;
 const MAX_RETRIES = 5;
 const RETRY_DELAY_MS = 2000;
 const RATE_LIMIT_DELAY_MS = 10_000; // 429 back-off base
-const INTER_BATCH_DELAY_MS = 2000; // throttle between batches — 30 RPM to stay within OpenRouter limits
+// throttle between batches — 30 RPM to stay within OpenRouter limits
+const INTER_BATCH_DELAY_MS = 2000;
 
 export class RAGEmbedder {
   private endpoint: string;
@@ -141,7 +142,7 @@ export class RAGEmbedder {
           const is429 = lastError.message.includes('429');
           const delay = is429
             ? RATE_LIMIT_DELAY_MS * Math.pow(2, attempt) // 10s, 20s, 40s, 80s
-            : RETRY_DELAY_MS * Math.pow(2, attempt);     // 2s, 4s, 8s, 16s
+            : RETRY_DELAY_MS * Math.pow(2, attempt); // 2s, 4s, 8s, 16s
           console.error(
             `[RAGEmbedder] Attempt ${attempt + 1} failed${is429 ? ' (rate-limit)' : ''}, retrying in ${delay}ms:`,
             lastError.message,

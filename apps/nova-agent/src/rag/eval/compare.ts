@@ -22,7 +22,9 @@ function printComparisonTable(runs: BenchmarkRun[]): void {
   console.log('  ' + '─'.repeat(16 + colWidth * labels.length));
 
   // Metrics per K
-  const allKValues = [...new Set(runs.flatMap((r) => r.aggregate.perK.map((m) => m.k)))].sort((a, b) => a - b);
+  const allKValues = [...new Set(runs.flatMap((r) => r.aggregate.perK.map((m) => m.k)))].sort(
+    (a, b) => a - b,
+  );
 
   for (const k of allKValues) {
     for (const metric of ['ndcg', 'precision', 'recall', 'mrr'] as const) {

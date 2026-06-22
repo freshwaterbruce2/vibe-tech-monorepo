@@ -152,8 +152,8 @@ export class Contextualizer {
    * OpenRouter passes Anthropic prompt-cache markers through to upstream when
    * the model is Anthropic-family.
    */
-  private async callApi(document: string, chunkContent: string): Promise<string> {
-    const body = {
+  private buildRequestBody(document: string, chunkContent: string): unknown {
+    return {
       model: this.model,
       max_tokens: this.maxTokens,
       temperature: 0,
@@ -179,41 +179,49 @@ export class Contextualizer {
         },
       ],
     };
+  }
+
+  private async performAttempt(body: unknown): Promise<string> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    let res: Response;
+    try {
+      res = await fetch(`${this.endpoint}/v1/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Contextualizer API ${res.status}: ${errText.slice(0, 300)}`);
+    }
+
+    this.stats.apiCalls++;
+    const data = (await res.json()) as ChatCompletionResponse;
+    const usage = data.usage;
+    if (usage) {
+      this.stats.promptTokens += usage.prompt_tokens ?? 0;
+      this.stats.completionTokens += usage.completion_tokens ?? 0;
+      this.stats.cachedPromptTokens += usage.prompt_tokens_details?.cached_tokens ?? 0;
+    }
+
+    const content = data.choices[0]?.message?.content?.trim();
+    if (!content) throw new Error('Contextualizer API returned empty content');
+    return content;
+  }
+
+  private async callApi(document: string, chunkContent: string): Promise<string> {
+    const body = this.buildRequestBody(document, chunkContent);
 
     let lastError: Error | null = null;
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-        let res: Response;
-        try {
-          res = await fetch(`${this.endpoint}/v1/chat/completions`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-            signal: controller.signal,
-          });
-        } finally {
-          clearTimeout(timeout);
-        }
-
-        if (!res.ok) {
-          const errText = await res.text();
-          throw new Error(`Contextualizer API ${res.status}: ${errText.slice(0, 300)}`);
-        }
-
-        this.stats.apiCalls++;
-        const data = (await res.json()) as ChatCompletionResponse;
-        const usage = data.usage;
-        if (usage) {
-          this.stats.promptTokens += usage.prompt_tokens ?? 0;
-          this.stats.completionTokens += usage.completion_tokens ?? 0;
-          this.stats.cachedPromptTokens += usage.prompt_tokens_details?.cached_tokens ?? 0;
-        }
-
-        const content = data.choices[0]?.message?.content?.trim();
-        if (!content) throw new Error('Contextualizer API returned empty content');
-        return content;
+        return await this.performAttempt(body);
       } catch (error) {
         lastError = error as Error;
         if (attempt < MAX_RETRIES - 1) {
