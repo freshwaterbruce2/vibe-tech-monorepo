@@ -8,19 +8,19 @@ import { devtools, persist, subscribeWithSelector } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { PerformanceProfile } from '../../../services/AgentPerformanceOptimizer';
 import type {
-    AgentOrchestrator,
-    OrchestratorResponse
+  AgentOrchestrator,
+  OrchestratorResponse,
 } from '../../../services/specialized-agents/AgentOrchestrator';
 import type {
-    AgentInfo,
-    LogEntry,
-    LogEntryType,
-    LogMetrics,
-    TaskStatus,
-    WorkspaceContextInfo
+  AgentInfo,
+  LogEntry,
+  LogEntryType,
+  LogMetrics,
+  TaskStatus,
+  WorkspaceContextInfo,
 } from '../types';
-import { executeAgentTask } from './agentTaskRunner';
 import type { AgentGet, AgentSet } from './agentTaskRunner';
+import { executeAgentTask } from './agentTaskRunner';
 
 /** Performance report structure */
 interface PerformanceReport {
@@ -51,10 +51,12 @@ interface AgentModeState {
 
   // Orchestrator and optimizer references
   orchestrator: AgentOrchestrator | undefined;
-  performanceOptimizer: {
-    readonly getAgentProfile: (name: string) => PerformanceProfile | undefined;
-    readonly getPerformanceReport: () => PerformanceReport;
-  } | undefined;
+  performanceOptimizer:
+    | {
+        readonly getAgentProfile: (name: string) => PerformanceProfile | undefined;
+        readonly getPerformanceReport: () => PerformanceReport;
+      }
+    | undefined;
 
   // Available agents cache
   availableAgents: readonly AgentInfo[];
@@ -94,7 +96,7 @@ interface AgentModeActions {
   updatePerformanceReport: () => void;
 
   // Utilities
-  formatTimestamp: (date: Date) => string;
+  formatTimestamp: (date: Date | string | number) => string;
 }
 
 /** Complete Agent Mode Store Type */
@@ -132,7 +134,7 @@ const initialState: AgentModeState = {
 /** Task lifecycle: set/execute/retry/clear. */
 const createTaskActions = (set: AgentSet, get: AgentGet) => ({
   setTask: (task: string) => {
-    set((state) => {
+    set(state => {
       state.task = task;
     });
   },
@@ -147,7 +149,7 @@ const createTaskActions = (set: AgentSet, get: AgentGet) => ({
       return undefined;
     }
 
-    set((state) => {
+    set(state => {
       state.retryCount = state.retryCount + 1;
       state.lastError = null;
       state.status = 'idle';
@@ -156,14 +158,14 @@ const createTaskActions = (set: AgentSet, get: AgentGet) => ({
     addLog('info', `Retrying task (attempt ${retryCount + 2} of ${maxRetries + 1})...`);
 
     // Add exponential backoff delay
-    const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
-    await new Promise((resolve) => setTimeout(resolve, delay));
+    const delay = Math.min(1000 * 2 ** retryCount, 10000);
+    await new Promise(resolve => setTimeout(resolve, delay));
 
     return executeTask();
   },
 
   clearError: () => {
-    set((state) => {
+    set(state => {
       state.lastError = null;
       state.status = 'idle';
       state.currentProgress = '';
@@ -174,7 +176,7 @@ const createTaskActions = (set: AgentSet, get: AgentGet) => ({
 /** Stop / reset task execution state. */
 const createLifecycleActions = (set: AgentSet, get: AgentGet) => ({
   stopTask: () => {
-    set((state) => {
+    set(state => {
       state.status = 'idle';
       state.currentProgress = '';
     });
@@ -182,7 +184,7 @@ const createLifecycleActions = (set: AgentSet, get: AgentGet) => ({
   },
 
   resetTask: () => {
-    set((state) => {
+    set(state => {
       state.status = 'idle';
       state.logs = [];
       state.activeAgents = [];
@@ -206,18 +208,19 @@ const createLogActions = (set: AgentSet) => ({
       metrics,
     };
 
-    set((state) => {
+    set(state => {
       // Keep only last 1000 logs for performance
-      const logs = state.logs.length >= 1000
-        ? [...state.logs.slice(-999), newEntry]
-        : [...state.logs, newEntry];
+      const logs =
+        state.logs.length >= 1000
+          ? [...state.logs.slice(-999), newEntry]
+          : [...state.logs, newEntry];
 
       state.logs = logs;
     });
   },
 
   clearLogs: () => {
-    set((state) => {
+    set(state => {
       state.logs = [];
     });
   },
@@ -226,10 +229,10 @@ const createLogActions = (set: AgentSet) => ({
 /** Expandable-section UI state. */
 const createUIActions = (set: AgentSet) => ({
   toggleSection: (section: string) => {
-    set((state) => {
+    set(state => {
       const current = state.expandedSections;
       if (current.includes(section)) {
-        state.expandedSections = current.filter((s) => s !== section);
+        state.expandedSections = current.filter(s => s !== section);
       } else {
         state.expandedSections = [...current, section];
       }
@@ -237,7 +240,7 @@ const createUIActions = (set: AgentSet) => ({
   },
 
   setExpandedSections: (sections: readonly string[]) => {
-    set((state) => {
+    set(state => {
       state.expandedSections = [...sections];
     });
   },
@@ -246,12 +249,12 @@ const createUIActions = (set: AgentSet) => ({
 /** Workspace context + orchestrator/optimizer wiring. */
 const createContextActions = (set: AgentSet) => ({
   setWorkspaceContext: (context: WorkspaceContextInfo | undefined) => {
-    set((state) => {
+    set(state => {
       // Create mutable copy to satisfy Immer's draft state
       if (context) {
         state.workspaceContext = {
           ...context,
-          openFiles: context.openFiles ? [...context.openFiles] : []
+          openFiles: context.openFiles ? [...context.openFiles] : [],
         };
       } else {
         state.workspaceContext = undefined;
@@ -260,14 +263,14 @@ const createContextActions = (set: AgentSet) => ({
   },
 
   setOrchestrator: (orchestrator: AgentOrchestrator) => {
-    set((state) => {
+    set(state => {
       state.orchestrator = orchestrator;
       state.availableAgents = orchestrator.getAvailableAgents();
     });
   },
 
   setPerformanceOptimizer: (optimizer: AgentModeState['performanceOptimizer']) => {
-    set((state) => {
+    set(state => {
       state.performanceOptimizer = optimizer;
       if (optimizer) {
         state.performanceReport = optimizer.getPerformanceReport();
@@ -285,20 +288,20 @@ const createAgentActions = (set: AgentSet, get: AgentGet) => ({
     const agents = orchestrator.getAvailableAgents();
     const profiles = new Map<string, PerformanceProfile>();
 
-    agents.forEach((agent) => {
+    agents.forEach(agent => {
       const profile = performanceOptimizer.getAgentProfile(agent.name);
       if (profile) {
         profiles.set(agent.name, profile);
       }
     });
 
-    set((state) => {
+    set(state => {
       state.agentProfiles = profiles;
     });
   },
 
   setActiveAgents: (agents: readonly string[]) => {
-    set((state) => {
+    set(state => {
       // Create mutable copy to satisfy Immer's draft state
       state.activeAgents = [...agents];
     });
@@ -308,13 +311,14 @@ const createAgentActions = (set: AgentSet, get: AgentGet) => ({
     const { performanceOptimizer } = get();
     if (!performanceOptimizer) return;
 
-    set((state) => {
+    set(state => {
       state.performanceReport = performanceOptimizer.getPerformanceReport();
     });
   },
 
-  formatTimestamp: (date: Date) => {
-    return date.toLocaleTimeString('en-US', {
+  formatTimestamp: (date: Date | string | number) => {
+    const d = date instanceof Date ? date : new Date(date);
+    return d.toLocaleTimeString('en-US', {
       hour12: false,
       hour: '2-digit',
       minute: '2-digit',
@@ -344,6 +348,7 @@ export const useAgentModeStore = create<AgentModeStore>()(
         {
           name: 'agent-mode-storage',
           version: 2,
+          // biome-ignore lint/suspicious/noExplicitAny: persisted state is loosely typed
           migrate: (persistedState: any, version: number) => {
             if (version === 1) {
               if (persistedState && typeof persistedState === 'object') {
@@ -352,15 +357,30 @@ export const useAgentModeStore = create<AgentModeStore>()(
             }
             return persistedState;
           },
+          // biome-ignore lint/suspicious/noExplicitAny: persisted state is loosely typed
           merge: (persistedState: any, currentState: any) => {
             const merged = { ...currentState, ...persistedState };
             if (!Array.isArray(merged.expandedSections)) {
               merged.expandedSections = ['agents', 'performance'];
             }
+            // Revive ISO string timestamps from persisted logs back to Date objects
+            if (Array.isArray(merged.logs)) {
+              merged.logs = merged.logs.map((log: unknown) => {
+                if (
+                  log &&
+                  typeof log === 'object' &&
+                  'timestamp' in log &&
+                  typeof log.timestamp === 'string'
+                ) {
+                  return { ...log, timestamp: new Date(log.timestamp) };
+                }
+                return log;
+              });
+            }
             return merged;
           },
           // Only persist minimal state for recovery
-          partialize: (state) => ({
+          partialize: state => ({
             task: state.task,
             logs: state.logs.slice(-100), // Keep last 100 logs
             expandedSections: state.expandedSections,
@@ -375,29 +395,31 @@ export const useAgentModeStore = create<AgentModeStore>()(
 );
 
 // Selector hooks for optimized subscriptions
-export const useAgentTask = () => useAgentModeStore((state) => state.task);
-export const useAgentStatus = () => useAgentModeStore((state) => state.status);
-export const useAgentLogs = () => useAgentModeStore((state) => state.logs);
-export const useActiveAgents = () => useAgentModeStore((state) => state.activeAgents);
-export const useAgentProfiles = () => useAgentModeStore((state) => state.agentProfiles);
-export const useExpandedSections = () => useAgentModeStore((state) => state.expandedSections);
-export const useCurrentProgress = () => useAgentModeStore((state) => state.currentProgress);
-export const usePerformanceReport = () => useAgentModeStore((state) => state.performanceReport);
+export const useAgentTask = () => useAgentModeStore(state => state.task);
+export const useAgentStatus = () => useAgentModeStore(state => state.status);
+export const useAgentLogs = () => useAgentModeStore(state => state.logs);
+export const useActiveAgents = () => useAgentModeStore(state => state.activeAgents);
+export const useAgentProfiles = () => useAgentModeStore(state => state.agentProfiles);
+export const useExpandedSections = () => useAgentModeStore(state => state.expandedSections);
+export const useCurrentProgress = () => useAgentModeStore(state => state.currentProgress);
+export const usePerformanceReport = () => useAgentModeStore(state => state.performanceReport);
 
 // Error recovery selectors
-export const useLastError = () => useAgentModeStore((state) => state.lastError);
-export const useRetryCount = () => useAgentModeStore((state) => state.retryCount);
-export const useMaxRetries = () => useAgentModeStore((state) => state.maxRetries);
-export const useCanRetry = () => useAgentModeStore((state) => state.retryCount < state.maxRetries && state.status === 'error');
+export const useLastError = () => useAgentModeStore(state => state.lastError);
+export const useRetryCount = () => useAgentModeStore(state => state.retryCount);
+export const useMaxRetries = () => useAgentModeStore(state => state.maxRetries);
+export const useCanRetry = () =>
+  useAgentModeStore(state => state.retryCount < state.maxRetries && state.status === 'error');
 
 // Action selectors
-export const useAgentActions = () => useAgentModeStore((state) => ({
-  setTask: state.setTask,
-  executeTask: state.executeTask,
-  retryTask: state.retryTask,
-  stopTask: state.stopTask,
-  resetTask: state.resetTask,
-  clearError: state.clearError,
-  toggleSection: state.toggleSection,
-  formatTimestamp: state.formatTimestamp,
-}));
+export const useAgentActions = () =>
+  useAgentModeStore(state => ({
+    setTask: state.setTask,
+    executeTask: state.executeTask,
+    retryTask: state.retryTask,
+    stopTask: state.stopTask,
+    resetTask: state.resetTask,
+    clearError: state.clearError,
+    toggleSection: state.toggleSection,
+    formatTimestamp: state.formatTimestamp,
+  }));

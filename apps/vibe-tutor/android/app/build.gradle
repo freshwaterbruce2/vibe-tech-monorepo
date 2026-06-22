@@ -58,30 +58,49 @@ android {
 
     signingConfigs {
         release {
-            if (hasReleaseKeystoreConfig) {
-                storeFile file(keystoreProperties['storeFile'])
-                storePassword keystoreProperties['storePassword']
-                keyAlias keystoreProperties['keyAlias']
-                keyPassword keystoreProperties['keyPassword']
+            // 1. Attempt to resolve credentials from system environment variables
+            def targetStoreFile = System.getenv("VIBE_TUTOR_KEYSTORE_PATH")
+            def targetStorePassword = System.getenv("VIBE_TUTOR_KEYSTORE_PASSWORD")
+            def targetKeyAlias = System.getenv("VIBE_TUTOR_KEY_ALIAS")
+            def targetKeyPassword = System.getenv("VIBE_TUTOR_KEY_PASSWORD")
+
+            // 2. Fall back to local gradle.properties variables if environment variables are not set
+            if (!targetStoreFile && project.hasProperty('VIBE_TUTOR_RELEASE_STORE_FILE')) {
+                targetStoreFile = project.property('VIBE_TUTOR_RELEASE_STORE_FILE')
+                targetStorePassword = project.property('VIBE_TUTOR_RELEASE_STORE_PASSWORD')
+                targetKeyAlias = project.property('VIBE_TUTOR_RELEASE_KEY_ALIAS')
+                targetKeyPassword = project.property('VIBE_TUTOR_RELEASE_KEY_PASSWORD')
+            }
+
+            // 3. Enforce strict assertion if a release task is requested
+            def releaseTaskRequested = gradle.startParameter.taskNames.any { taskName ->
+                def lowered = taskName.toLowerCase()
+                lowered.contains('release') || lowered.contains('bundle')
+            }
+
+            if (targetStoreFile && targetStorePassword && targetKeyAlias && targetKeyPassword) {
+                def keystoreFile = new File(targetStoreFile)
+                if (keystoreFile.exists()) {
+                    storeFile keystoreFile
+                    storePassword targetStorePassword
+                    keyAlias targetKeyAlias
+                    keyPassword targetKeyPassword
+                } else if (releaseTaskRequested) {
+                    throw new GradleException("CRITICAL: Keystore file not found at: " + targetStoreFile)
+                } else {
+                    println "⚠️ WARNING: Keystore file not found at: " + targetStoreFile
+                }
+            } else if (releaseTaskRequested) {
+                throw new GradleException("CRITICAL: Release signing configuration is incomplete. Ensure VIBE_TUTOR_RELEASE_* properties are set in ~/.gradle/gradle.properties or env.")
+            } else {
+                println "⚠️ WARNING: Release signing configuration is incomplete. Release builds will fail."
             }
         }
     }
 
     buildTypes {
         release {
-            if (hasReleaseKeystoreConfig) {
-                signingConfig signingConfigs.release
-            } else {
-                def releaseTaskRequested = gradle.startParameter.taskNames.any { taskName ->
-                    def lowered = taskName.toLowerCase()
-                    lowered.contains('release') || lowered.contains('bundle')
-                }
-                if (releaseTaskRequested) {
-                    throw new GradleException(
-                        "Release signing is not configured. Create android/keystore.properties from keystore.properties.template before running bundleRelease."
-                    )
-                }
-            }
+            signingConfig signingConfigs.release
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'

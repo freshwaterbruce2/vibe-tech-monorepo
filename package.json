@@ -191,7 +191,8 @@
     "cleanup:all": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\\cleanup-processes.ps1 -All",
     "review": "node scripts/review.mjs",
     "review:all": "node scripts/review.mjs --all",
-    "review:strict": "node scripts/review.mjs --strict-heuristics"
+    "review:strict": "node scripts/review.mjs --strict-heuristics",
+    "db:trends": "pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/view-db-trends.ps1"
   },
   "dependencies": {
     "@floating-ui/core": "^1.7.5",

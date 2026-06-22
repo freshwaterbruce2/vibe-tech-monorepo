@@ -22,9 +22,7 @@
     "desktop-commander": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
-      "args": [
-        "V:/monorepo/apps/desktop-commander-v3/dist/mcp.js"
-      ],
+      "args": ["V:/monorepo/apps/desktop-commander-v3/dist/mcp.js"],
       "env": {
         "NODE_ENV": "production"
       }
@@ -47,25 +45,17 @@
     "sqlite": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/.local/bin/uvx.exe",
-      "args": [
-        "mcp-server-sqlite",
-        "--db-path",
-        "D:/databases/database.db"
-      ]
+      "args": ["mcp-server-sqlite", "--db-path", "D:/databases/database.db"]
     },
     "skills": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
-      "args": [
-        "V:/monorepo/apps/mcp-skills-server/dist/index.js"
-      ]
+      "args": ["V:/monorepo/apps/mcp-skills-server/dist/index.js"]
     },
     "memory": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
-      "args": [
-        "V:/monorepo/apps/memory-mcp/dist/index.js"
-      ],
+      "args": ["V:/monorepo/apps/memory-mcp/dist/index.js"],
       "env": {
         "MEMORY_DB_PATH": "D:/databases/memory.db",
         "MEMORY_EMBEDDING_MODEL": "text-embedding-3-small",
@@ -78,9 +68,7 @@
     "rag": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
-      "args": [
-        "V:/monorepo/apps/mcp-rag-server/dist/index.js"
-      ],
+      "args": ["V:/monorepo/apps/mcp-rag-server/dist/index.js"],
       "env": {
         "NODE_ENV": "production"
       }
@@ -88,9 +76,7 @@
     "workspace": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
-      "args": [
-        "V:/monorepo/apps/workspace-mcp-server/dist/index.js"
-      ],
+      "args": ["V:/monorepo/apps/workspace-mcp-server/dist/index.js"],
       "env": {
         "WORKSPACE_ROOT": "V:/monorepo"
       }
@@ -98,9 +84,7 @@
     "command-center": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
-      "args": [
-        "V:/monorepo/apps/vibetech-command-center/dist/mcp/server.js"
-      ],
+      "args": ["V:/monorepo/apps/vibetech-command-center/dist/mcp/server.js"],
       "env": {
         "NODE_ENV": "production"
       }
@@ -108,9 +92,7 @@
     "learning-pipeline": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
-      "args": [
-        "V:/monorepo/apps/learning-pipeline-mcp/dist/index.js"
-      ],
+      "args": ["V:/monorepo/apps/learning-pipeline-mcp/dist/index.js"],
       "env": {
         "LEARNING_DB_PATH": "D:/databases/agent_learning.db",
         "WORKSPACE_ROOT": "V:/monorepo",
@@ -130,13 +112,7 @@
     "notebooklm": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/.local/bin/uv.exe",
-      "args": [
-        "tool",
-        "run",
-        "--from",
-        "notebooklm-mcp-server",
-        "notebooklm-mcp"
-      ]
+      "args": ["tool", "run", "--from", "notebooklm-mcp-server", "notebooklm-mcp"]
     },
     "chrome-devtools": {
       "type": "stdio",
@@ -155,33 +131,22 @@
     "monorepo-health": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
-      "args": [
-        "V:/monorepo/apps/monorepo-health-mcp/dist/index.js"
-      ]
+      "args": ["V:/monorepo/apps/monorepo-health-mcp/dist/index.js"]
     },
     "proactive-recommendations": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
-      "args": [
-        "V:/monorepo/apps/proactive-recommendations-mcp/dist/index.js"
-      ]
+      "args": ["V:/monorepo/apps/proactive-recommendations-mcp/dist/index.js"]
     },
     "skill-feedback": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
-      "args": [
-        "V:/monorepo/apps/skill-feedback-mcp/dist/index.js"
-      ]
+      "args": ["V:/monorepo/apps/skill-feedback-mcp/dist/index.js"]
     },
     "serena": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/.local/bin/uvx.exe",
-      "args": [
-        "--from",
-        "git+https://github.com/oraios/serena",
-        "serena",
-        "start-mcp-server"
-      ]
+      "args": ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server"]
     },
     "greptile": {
       "type": "http",
@@ -189,6 +154,27 @@
       "headers": {
         "Authorization": "Bearer ${GREPTILE_API_KEY}"
       }
+    },
+    "storage-learning-server": {
+      "type": "stdio",
+      "command": "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "V:/monorepo/scripts/view-db-trends.ps1"
+      ],
+      "tools": [
+        {
+          "name": "view_database_trends",
+          "description": "Generates a 7-day terminal ASCII chart tracking SQLite size trends, deltas, and 30-day capacity projections across stateful D:\\ databases.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {}
+          }
+        }
+      ]
     }
   }
 }

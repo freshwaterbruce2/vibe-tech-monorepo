@@ -1,14 +1,12 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-  "organizeImports": {
-    "enabled": true
-  },
+  "$schema": "https://biomejs.dev/schemas/2.4.9/schema.json",
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {
     "enabled": true,
     "rules": {
       "recommended": true,
       "style": {
-        "useBlockStatements": "off" 
+        "useBlockStatements": "off"
       }
     }
   },
@@ -34,14 +32,15 @@
     }
   },
   "files": {
-    "ignore": [
-      "dist",
-      "build",
-      "coverage",
-      "node_modules",
-      ".nx",
-      ".turbo",
-      "pnpm-lock.yaml"
+    "includes": [
+      "**",
+      "!**/dist",
+      "!**/build",
+      "!**/coverage",
+      "!**/node_modules",
+      "!**/.nx",
+      "!**/.turbo",
+      "!**/pnpm-lock.yaml"
     ]
   }
 }

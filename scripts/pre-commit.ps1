@@ -177,8 +177,18 @@ if ($lineCountFiles.Count -gt 0) {
 # ============================================
 $exitCode = [Math]::Max(
     [int]$exitCode,
-    [int](Invoke-QualityCommand -Label "[5/5] Running full verify-agent-changes.ps1 verification harness..." -Command {
-        pwsh.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "verify-agent-changes.ps1")
+    [int](Invoke-QualityCommand -Label "[5/6] Running verify-agent-changes.ps1 verification harness (skipping monorepo-wide lint)..." -Command {
+        pwsh.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "verify-agent-changes.ps1") -SkipLint
+    })
+)
+
+# ============================================
+# 6. Database Growth Trend Check
+# ============================================
+$exitCode = [Math]::Max(
+    [int]$exitCode,
+    [int](Invoke-QualityCommand -Label "[6/6] Checking database growth limits (<15% growth delta)..." -Command {
+        pwsh.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "check-database-trends.ps1")
     })
 )
 
