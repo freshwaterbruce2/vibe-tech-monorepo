@@ -10,6 +10,7 @@ fn test_config() -> Config {
         deepseek_model: "deepseek-v3.2".to_string(),
         groq_api_key: String::new(),
         openrouter_api_key: String::new(),
+        openrouter_base_url: "http://localhost:3001/api/openrouter".to_string(),
         huggingface_api_key: String::new(),
         huggingface_base_url: "https://api-inference.huggingface.co/v1".to_string(),
         kimi_api_key: String::new(),

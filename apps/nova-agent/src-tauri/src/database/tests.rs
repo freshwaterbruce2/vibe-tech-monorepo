@@ -37,6 +37,31 @@ fn test_database_initialization_and_wal() {
         "ACTIVITY_DB should be in WAL mode"
     );
 
+    // Verify busy_timeout is set to 5000ms
+    let busy_tasks: i64 = service
+        .tasks_db
+        .query_row("PRAGMA busy_timeout", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(busy_tasks, 5000, "TASKS_DB busy_timeout should be 5000ms");
+
+    let busy_learning: i64 = service
+        .learning_db
+        .query_row("PRAGMA busy_timeout", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(
+        busy_learning, 5000,
+        "LEARNING_DB busy_timeout should be 5000ms"
+    );
+
+    let busy_activity: i64 = service
+        .activity_db
+        .query_row("PRAGMA busy_timeout", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(
+        busy_activity, 5000,
+        "ACTIVITY_DB busy_timeout should be 5000ms"
+    );
+
     // Verify Seed Idempotency
     let (l, t, a) = service
         .initialize_with_seed_data()

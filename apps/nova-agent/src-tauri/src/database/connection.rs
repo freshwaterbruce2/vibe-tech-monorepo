@@ -1,7 +1,9 @@
 use crate::database::types::RetryConfig;
 use rusqlite::Connection;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tracing::info;
+
+const BUSY_TIMEOUT_MS: u32 = 5000;
 
 pub struct DatabaseService {
     pub(crate) tasks_db: Connection,
@@ -33,19 +35,16 @@ impl DatabaseService {
         }
         std::fs::create_dir_all(&base_path)?;
 
-        // Connect to databases and enable WAL mode
-        let tasks_db = Connection::open(base_path.join("agent_tasks.db"))?;
-        let _ = tasks_db.query_row("PRAGMA journal_mode=WAL", [], |_| Ok(())); // Ignore result
-        info!("Connected to agent_tasks.db with WAL mode");
+        // Connect to databases, set busy timeout, and enable WAL mode
+        let tasks_db = Self::open_wal_connection(base_path.join("agent_tasks.db"))?;
+        info!("Connected to agent_tasks.db with WAL mode and busy_timeout={BUSY_TIMEOUT_MS}ms");
 
         // Agent learning database is the shared learning store across Nova and Vibe
-        let learning_db = Connection::open(base_path.join("agent_learning.db"))?;
-        let _ = learning_db.query_row("PRAGMA journal_mode=WAL", [], |_| Ok(()));
-        info!("Connected to agent_learning.db with WAL mode");
+        let learning_db = Self::open_wal_connection(base_path.join("agent_learning.db"))?;
+        info!("Connected to agent_learning.db with WAL mode and busy_timeout={BUSY_TIMEOUT_MS}ms");
 
-        let activity_db = Connection::open(base_path.join("nova_activity.db"))?;
-        let _ = activity_db.query_row("PRAGMA journal_mode=WAL", [], |_| Ok(()));
-        info!("Connected to nova_activity.db with WAL mode");
+        let activity_db = Self::open_wal_connection(base_path.join("nova_activity.db"))?;
+        info!("Connected to nova_activity.db with WAL mode and busy_timeout={BUSY_TIMEOUT_MS}ms");
 
         Ok(Self {
             tasks_db,
@@ -53,6 +52,20 @@ impl DatabaseService {
             activity_db,
             retry_config,
         })
+    }
+
+    fn open_wal_connection<P: AsRef<Path>>(
+        path: P,
+    ) -> std::result::Result<Connection, Box<dyn std::error::Error>> {
+        let conn = Connection::open(path)?;
+        conn.busy_timeout(std::time::Duration::from_millis(u64::from(BUSY_TIMEOUT_MS)))?;
+
+        let journal_mode: String = conn.query_row("PRAGMA journal_mode=WAL", [], |row| row.get(0))?;
+        if journal_mode.to_lowercase() != "wal" {
+            return Err(format!("Failed to enable WAL mode, got journal_mode={journal_mode}").into());
+        }
+
+        Ok(conn)
     }
 
     /// Check if database service is healthy
