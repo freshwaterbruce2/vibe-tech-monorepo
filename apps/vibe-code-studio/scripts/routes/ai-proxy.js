@@ -12,7 +12,9 @@
  * tracks Stripe subscriptions in stripe_subscriptions).
  */
 
-import { Readable } from 'node:stream';
+import { spawn } from 'node:child_process';
+import path from 'node:path';
+import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 
 // Each upstream resolves its key from the first matching env var. Operators set
@@ -65,8 +67,137 @@ function getSessionUser(req, ctx) {
   }
 }
 
+// --- Telemetry: persist model + token usage per AI call (best-effort) --------
+// Strictly fire-and-forget. Telemetry can NEVER delay, alter, or break a response.
+
+/** Resolve how to launch the Python telemetry entrypoint on this platform. */
+function resolveTelemetryRunner() {
+  const base = process.env.LEARNING_SYSTEM_PATH || 'D:\\learning-system';
+  const scriptPath = path.join(base, 'record_ai_telemetry.py');
+  const isWin = process.platform === 'win32';
+  return { pythonCmd: isWin ? 'py' : 'python3', pythonArgs: isWin ? ['-3'] : [], scriptPath };
+}
+
+/** Spawn the Python telemetry recorder detached; swallow every failure. */
+function recordAiTelemetry({ provider, model, tokensUsed, userSub }) {
+  if (tokensUsed == null && !model) return; // nothing useful to record
+  try {
+    const { pythonCmd, pythonArgs, scriptPath } = resolveTelemetryRunner();
+    const payload = JSON.stringify({
+      provider: provider || 'unknown',
+      model: model || null,
+      tokensUsed: typeof tokensUsed === 'number' ? tokensUsed : null,
+      userSub: userSub || null,
+      success: true,
+    });
+    const child = spawn(pythonCmd, [...pythonArgs, scriptPath, payload], {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true,
+    });
+    child.on('error', () => {}); // ENOENT (no python) etc. — never surface
+    child.unref();
+  } catch {
+    /* telemetry must never affect the request */
+  }
+}
+
+/** model id from the client request body (guarded; undefined on any failure). */
+function parseRequestModel(body) {
+  if (!body) return undefined;
+  try {
+    const obj = JSON.parse(typeof body === 'string' ? body : body.toString('utf8'));
+    return obj && typeof obj.model === 'string' ? obj.model : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** total token usage from a parsed completion/chunk object, or null. */
+function extractUsage(obj) {
+  const u = obj && obj.usage;
+  if (!u || typeof u !== 'object') return null;
+  if (typeof u.total_tokens === 'number') return u.total_tokens;
+  const prompt = typeof u.prompt_tokens === 'number' ? u.prompt_tokens : 0;
+  const completion = typeof u.completion_tokens === 'number' ? u.completion_tokens : 0;
+  const sum = prompt + completion;
+  return sum > 0 ? sum : null;
+}
+
+/** Fire telemetry from a non-streaming JSON response body (guarded). */
+function recordFromNonStreaming(text, { provider, reqModel, userSub }) {
+  let model = reqModel;
+  let tokens = null;
+  try {
+    const obj = JSON.parse(text);
+    if (obj && typeof obj.model === 'string') model = obj.model;
+    tokens = extractUsage(obj);
+  } catch {
+    /* malformed/non-JSON body — degrade to model-only (or skip) */
+  }
+  recordAiTelemetry({ provider, model, tokensUsed: tokens, userSub });
+}
+
+/** Parse one SSE line into its JSON data object, or null (never throws). */
+function parseSseData(line) {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith('data:')) return null;
+  const payload = trimmed.slice(5).trim();
+  if (!payload || payload === '[DONE]') return null;
+  try {
+    return JSON.parse(payload);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Pass-through Transform that re-emits bytes UNCHANGED while scanning the SSE
+ * stream for the model and the final usage chunk. Any parse failure is ignored
+ * so the tap can never corrupt or stall the passthrough. onDone fires at end.
+ */
+function makeSseUsageTap(onDone) {
+  let buffer = '';
+  let model;
+  let tokens = null;
+  return new Transform({
+    transform(chunk, _enc, cb) {
+      try {
+        buffer += chunk.toString('utf8');
+        let idx;
+        while ((idx = buffer.indexOf('\n')) !== -1) {
+          const parsed = parseSseData(buffer.slice(0, idx));
+          buffer = buffer.slice(idx + 1);
+          if (parsed && typeof parsed.model === 'string') model = parsed.model;
+          const usage = parsed && extractUsage(parsed);
+          if (usage != null) tokens = usage;
+        }
+        if (buffer.length > 1_000_000) buffer = ''; // defensive: never grow unbounded
+      } catch {
+        /* scanning must never break the stream */
+      }
+      cb(null, chunk); // always forward the original bytes
+    },
+    flush(cb) {
+      try {
+        onDone(model, tokens);
+      } catch {
+        /* swallow */
+      }
+      cb();
+    },
+  });
+}
+
+/** Build the SSE usage tap that records telemetry once the stream ends. */
+function streamTelemetryTap({ provider, reqModel, userSub }) {
+  return makeSseUsageTap((model, tokens) =>
+    recordAiTelemetry({ provider, model: model || reqModel, tokensUsed: tokens, userSub })
+  );
+}
+
 /** Pipe an SSE upstream response to the client with backpressure + abort. */
-async function pipeEventStream(res, upstreamRes, signal) {
+async function pipeEventStream(res, upstreamRes, signal, tap) {
   res.writeHead(upstreamRes.status, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
@@ -74,18 +205,24 @@ async function pipeEventStream(res, upstreamRes, signal) {
   });
   // pipeline() honors backpressure (awaits 'drain' instead of buffering the
   // whole upstream in memory) and tears the upstream down if the client closes.
-  await pipeline(Readable.fromWeb(upstreamRes.body), res, { signal });
+  const source = Readable.fromWeb(upstreamRes.body);
+  if (tap) {
+    await pipeline(source, tap, res, { signal });
+  } else {
+    await pipeline(source, res, { signal });
+  }
 }
 
 /**
  * Inject the server key and forward the request to the upstream provider,
  * streaming SSE responses through unchanged. Keeps registerAiProxyRoutes small.
  */
-async function forwardToUpstream(req, res, { targetUrl, provider, apiKey, getBody }) {
+async function forwardToUpstream(req, res, { targetUrl, provider, apiKey, getBody, userSub }) {
   let body;
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     body = await getBody();
   }
+  const reqModel = parseRequestModel(body);
 
   // Abort the upstream request when the client hangs up mid-flight (e.g. the user
   // cancels a generation). Otherwise the upstream keeps streaming — and billing —
@@ -113,7 +250,8 @@ async function forwardToUpstream(req, res, { targetUrl, provider, apiKey, getBod
     const contentType = upstreamRes.headers.get('content-type') || '';
 
     if (contentType.includes('text/event-stream') && upstreamRes.body) {
-      await pipeEventStream(res, upstreamRes, ac.signal);
+      const tap = streamTelemetryTap({ provider, reqModel, userSub });
+      await pipeEventStream(res, upstreamRes, ac.signal, tap);
       return;
     }
 
@@ -122,6 +260,7 @@ async function forwardToUpstream(req, res, { targetUrl, provider, apiKey, getBod
       res.writeHead(upstreamRes.status, { 'Content-Type': contentType || 'application/json' });
     }
     res.end(text);
+    if (upstreamRes.ok) recordFromNonStreaming(text, { provider, reqModel, userSub });
   } catch (err) {
     // Client disconnect / abort: the socket is already gone — don't try to write
     // a JSON error on top of flushed stream headers (that would throw again).
@@ -192,5 +331,11 @@ export async function registerAiProxyRoutes(req, res, ctx) {
   // Rebuild the upstream path: drop the '/api/ai/<provider>' prefix.
   const rest = `/${segments.slice(3).join('/')}`;
   const targetUrl = upstream.base + rest + url.search;
-  await forwardToUpstream(req, res, { targetUrl, provider, apiKey, getBody: ctx.getBody });
+  await forwardToUpstream(req, res, {
+    targetUrl,
+    provider,
+    apiKey,
+    getBody: ctx.getBody,
+    userSub: user.sub,
+  });
 }
