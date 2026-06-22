@@ -105,6 +105,219 @@ const defaultSettings: EditorSettings = {
   showReasoningProcess: false,
 };
 
+type EditorSet = (fn: (state: EditorState) => void) => void;
+type EditorGet = () => EditorState;
+
+const createFileActions = (set: EditorSet, get: EditorGet) => ({
+  openFile: (file: EditorFile) =>
+    set((state) => {
+      const exists = state.openFiles.some((f) => f.id === file.id);
+      if (!exists) {
+        state.openFiles.push(file);
+      }
+      state.currentFile = file;
+
+      // Update recent files
+      state.recentFiles = [
+        file.path,
+        ...state.recentFiles.filter((p) => p !== file.path),
+      ].slice(0, 10);
+    }),
+
+  closeFile: (fileId: string) =>
+    set((state) => {
+      const index = state.openFiles.findIndex((f) => f.id === fileId);
+      if (index > -1) {
+        state.openFiles.splice(index, 1);
+
+        // Update current file if needed
+        if (state.currentFile?.id === fileId) {
+          state.currentFile =
+            state.openFiles[index - 1] ?? state.openFiles[index] ?? null;
+        }
+      }
+    }),
+
+  updateFile: (fileId: string, updates: Partial<EditorFile>) =>
+    set((state) => {
+      const file = state.openFiles.find((f) => f.id === fileId);
+      if (file) {
+        Object.assign(file, updates);
+      }
+      if (state.currentFile?.id === fileId) {
+        Object.assign(state.currentFile, updates);
+      }
+    }),
+
+  setCurrentFile: (file: EditorFile | null) =>
+    set((state) => {
+      state.currentFile = file;
+    }),
+
+  saveFile: (fileId: string) => saveEditorFile(set, get, fileId),
+});
+
+const saveEditorFile = async (
+  set: EditorSet,
+  get: EditorGet,
+  fileId: string
+): Promise<void> => {
+  const state = get();
+  const file = state.openFiles.find((f) => f.id === fileId);
+  if (file) {
+    try {
+      // Simulate file save (replace with actual implementation)
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      set((state) => {
+        const file = state.openFiles.find((f) => f.id === fileId);
+        if (file) {
+          file.isModified = false;
+        }
+      });
+
+      state.actions.showNotification({
+        type: 'success',
+        title: 'File Saved',
+        message: `${file.name} saved successfully`,
+      });
+    } catch (error) {
+      state.actions.showNotification({
+        type: 'error',
+        title: 'Save Failed',
+        message: `Failed to save ${file.name}`,
+      });
+      throw error;
+    }
+  }
+};
+
+const createUiWorkspaceActions = (set: EditorSet) => ({
+  // Settings
+  updateSettings: (updates: Partial<EditorSettings>) =>
+    set((state) => {
+      Object.assign(state.settings, updates);
+    }),
+
+  resetSettings: () =>
+    set((state) => {
+      state.settings = { ...defaultSettings };
+    }),
+
+  // UI toggles
+  toggleSidebar: () =>
+    set((state) => {
+      state.sidebarOpen = !state.sidebarOpen;
+    }),
+
+  toggleAIChat: () =>
+    set((state) => {
+      state.aiChatOpen = !state.aiChatOpen;
+    }),
+
+  toggleSettings: () =>
+    set((state) => {
+      state.settingsOpen = !state.settingsOpen;
+    }),
+
+  toggleCommandPalette: () =>
+    set((state) => {
+      state.commandPaletteOpen = !state.commandPaletteOpen;
+    }),
+
+  // Workspace
+  setWorkspaceFolder: (folder: string | null) =>
+    set((state) => {
+      state.workspaceFolder = folder;
+    }),
+
+  setWorkspaceContext: (context: WorkspaceContext | null) =>
+    set((state) => {
+      state.workspaceContext = context;
+    }),
+
+  setIndexing: (isIndexing: boolean, progress?: number) =>
+    set((state) => {
+      state.isIndexing = isIndexing;
+      if (progress !== undefined) {
+        state.indexingProgress = progress;
+      }
+    }),
+});
+
+const createNotificationActions = (set: EditorSet, get: EditorGet) => ({
+  showNotification: (
+    notification: Omit<EditorState['notifications'][0], 'id' | 'timestamp'>
+  ) =>
+    set((state) => {
+      const id = Date.now().toString();
+      state.notifications.push({
+        ...notification,
+        id,
+        timestamp: new Date(),
+      });
+
+      // Auto-remove after 5 seconds for non-error notifications
+      if (notification.type !== 'error') {
+        const timer = setTimeout(() => {
+          notificationTimers.delete(id);
+          get().actions.removeNotification(id);
+        }, 5000);
+        notificationTimers.set(id, timer);
+      }
+    }),
+
+  removeNotification: (id: string) =>
+    set((state) => {
+      const timer = notificationTimers.get(id);
+      if (timer) {
+        clearTimeout(timer);
+        notificationTimers.delete(id);
+      }
+      const index = state.notifications.findIndex((n) => n.id === id);
+      if (index > -1) {
+        state.notifications.splice(index, 1);
+      }
+    }),
+
+  clearNotifications: () =>
+    set((state) => {
+      for (const timer of notificationTimers.values()) {
+        clearTimeout(timer);
+      }
+      notificationTimers.clear();
+      state.notifications = [];
+    }),
+});
+
+const createEditorActions = (set: EditorSet, get: EditorGet): EditorState['actions'] => ({
+  ...createFileActions(set, get),
+  ...createUiWorkspaceActions(set),
+  ...createNotificationActions(set, get),
+});
+
+const createEditorComputed = (get: EditorGet): EditorState['computed'] => ({
+  hasUnsavedChanges: () => {
+    const state = get();
+    return state.openFiles.some((f) => f.isModified);
+  },
+
+  modifiedFiles: () => {
+    const state = get();
+    return state.openFiles.filter((f) => f.isModified);
+  },
+
+  activeFileName: () => {
+    const state = get();
+    return state.currentFile?.name ?? null;
+  },
+
+  totalNotifications: () => {
+    const state = get();
+    return state.notifications.length;
+  },
+});
+
 // Create the store with middleware
 export const useEditorStore = create<EditorState>()(
   devtools(
@@ -127,200 +340,10 @@ export const useEditorStore = create<EditorState>()(
           notifications: [],
 
           // Actions
-          actions: {
-            // File management
-            openFile: (file) =>
-              set((state) => {
-                const exists = state.openFiles.some((f) => f.id === file.id);
-                if (!exists) {
-                  state.openFiles.push(file);
-                }
-                state.currentFile = file;
-
-                // Update recent files
-                state.recentFiles = [
-                  file.path,
-                  ...state.recentFiles.filter((p) => p !== file.path),
-                ].slice(0, 10);
-              }),
-
-            closeFile: (fileId) =>
-              set((state) => {
-                const index = state.openFiles.findIndex((f) => f.id === fileId);
-                if (index > -1) {
-                  state.openFiles.splice(index, 1);
-
-                  // Update current file if needed
-                  if (state.currentFile?.id === fileId) {
-                    state.currentFile =
-                      state.openFiles[index - 1] ?? state.openFiles[index] ?? null;
-                  }
-                }
-              }),
-
-            updateFile: (fileId, updates) =>
-              set((state) => {
-                const file = state.openFiles.find((f) => f.id === fileId);
-                if (file) {
-                  Object.assign(file, updates);
-                }
-                if (state.currentFile?.id === fileId) {
-                  Object.assign(state.currentFile, updates);
-                }
-              }),
-
-            setCurrentFile: (file) =>
-              set((state) => {
-                state.currentFile = file;
-              }),
-
-            saveFile: async (fileId) => {
-              const state = get();
-              const file = state.openFiles.find((f) => f.id === fileId);
-              if (file) {
-                try {
-                  // Simulate file save (replace with actual implementation)
-                  await new Promise((resolve) => setTimeout(resolve, 500));
-
-                  set((state) => {
-                    const file = state.openFiles.find((f) => f.id === fileId);
-                    if (file) {
-                      file.isModified = false;
-                    }
-                  });
-
-                  state.actions.showNotification({
-                    type: 'success',
-                    title: 'File Saved',
-                    message: `${file.name} saved successfully`,
-                  });
-                } catch (error) {
-                  state.actions.showNotification({
-                    type: 'error',
-                    title: 'Save Failed',
-                    message: `Failed to save ${file.name}`,
-                  });
-                  throw error;
-                }
-              }
-            },
-
-            // Settings
-            updateSettings: (updates) =>
-              set((state) => {
-                Object.assign(state.settings, updates);
-              }),
-
-            resetSettings: () =>
-              set((state) => {
-                state.settings = { ...defaultSettings };
-              }),
-
-            // UI toggles
-            toggleSidebar: () =>
-              set((state) => {
-                state.sidebarOpen = !state.sidebarOpen;
-              }),
-
-            toggleAIChat: () =>
-              set((state) => {
-                state.aiChatOpen = !state.aiChatOpen;
-              }),
-
-            toggleSettings: () =>
-              set((state) => {
-                state.settingsOpen = !state.settingsOpen;
-              }),
-
-            toggleCommandPalette: () =>
-              set((state) => {
-                state.commandPaletteOpen = !state.commandPaletteOpen;
-              }),
-
-            // Workspace
-            setWorkspaceFolder: (folder) =>
-              set((state) => {
-                state.workspaceFolder = folder;
-              }),
-
-            setWorkspaceContext: (context) =>
-              set((state) => {
-                state.workspaceContext = context;
-              }),
-
-            setIndexing: (isIndexing, progress) =>
-              set((state) => {
-                state.isIndexing = isIndexing;
-                if (progress !== undefined) {
-                  state.indexingProgress = progress;
-                }
-              }),
-
-            // Notifications
-            showNotification: (notification) =>
-              set((state) => {
-                const id = Date.now().toString();
-                state.notifications.push({
-                  ...notification,
-                  id,
-                  timestamp: new Date(),
-                });
-
-                // Auto-remove after 5 seconds for non-error notifications
-                if (notification.type !== 'error') {
-                  const timer = setTimeout(() => {
-                    notificationTimers.delete(id);
-                    get().actions.removeNotification(id);
-                  }, 5000);
-                  notificationTimers.set(id, timer);
-                }
-              }),
-
-            removeNotification: (id) =>
-              set((state) => {
-                const timer = notificationTimers.get(id);
-                if (timer) {
-                  clearTimeout(timer);
-                  notificationTimers.delete(id);
-                }
-                const index = state.notifications.findIndex((n) => n.id === id);
-                if (index > -1) {
-                  state.notifications.splice(index, 1);
-                }
-              }),
-
-            clearNotifications: () =>
-              set((state) => {
-                for (const timer of notificationTimers.values()) {
-                  clearTimeout(timer);
-                }
-                notificationTimers.clear();
-                state.notifications = [];
-              }),
-          },
+          actions: createEditorActions(set, get),
 
           // Computed values
-          computed: {
-            hasUnsavedChanges: () => {
-              const state = get();
-              return state.openFiles.some((f) => f.isModified);
-            },
-
-            modifiedFiles: () => {
-              const state = get();
-              return state.openFiles.filter((f) => f.isModified);
-            },
-
-            activeFileName: () => {
-              const state = get();
-              return state.currentFile?.name ?? null;
-            },
-
-            totalNotifications: () => {
-              const state = get();
-              return state.notifications.length;
-            },
-          },
+          computed: createEditorComputed(get),
         }))
       ),
       {

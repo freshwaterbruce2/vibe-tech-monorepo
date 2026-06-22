@@ -87,6 +87,39 @@ export class ProjectStructureDetector {
       hasPackageJson: false,
     };
 
+    const webModeStructure = this.getWebModeStructure(workspaceRoot);
+    if (webModeStructure) {
+      return webModeStructure;
+    }
+
+    try {
+      // 1. Check for package.json first
+      await this.applyPackageJsonInfo(workspaceRoot, result);
+
+      // 2. Detect project type based on structure
+      result.type = await this.detectProjectType(workspaceRoot, result.detectedFramework);
+
+      // 3. Find entry points based on detected type
+      const detectedEntries = await this.findEntryPoints(workspaceRoot, result.type);
+      result.entryPoints.push(...detectedEntries);
+
+      // 4. Find config files
+      result.configFiles = await this.findConfigFiles(workspaceRoot);
+
+      // Remove duplicates
+      result.entryPoints = [...new Set(result.entryPoints)];
+
+      return result;
+    } catch (error) {
+      logger.error('[ProjectStructureDetector] Error detecting structure:', error);
+      return result;
+    }
+  }
+
+  /**
+   * Return a fallback structure when running in web mode without filesystem access
+   */
+  private getWebModeStructure(workspaceRoot: string): ProjectStructure | null {
     // Check if running in web mode with real filesystem paths
     const isWebMode = !window.electron?.isElectron;
 
@@ -122,47 +155,36 @@ export class ProjectStructureDetector {
       };
     }
 
-    try {
-      // 1. Check for package.json first
-      const packageJsonPath = this.joinPath(workspaceRoot, 'package.json');
-      const hasPackageJson = await this.fileExists(packageJsonPath);
-      result.hasPackageJson = hasPackageJson;
+    return null;
+  }
 
-      if (hasPackageJson) {
-        const packageJson = await this.parsePackageJson(packageJsonPath);
+  /**
+   * Read package.json and populate entry points and framework info on the result
+   */
+  private async applyPackageJsonInfo(
+    workspaceRoot: string,
+    result: ProjectStructure
+  ): Promise<void> {
+    const packageJsonPath = this.joinPath(workspaceRoot, 'package.json');
+    const hasPackageJson = await this.fileExists(packageJsonPath);
+    result.hasPackageJson = hasPackageJson;
 
-        // Extract main entry from package.json
-        const packageMain = packageJson.main as string | undefined;
-        if (packageMain) {
-          result.packageJsonMain = packageMain;
-          const mainPath = this.joinPath(workspaceRoot, packageMain);
-          result.entryPoints.push(mainPath);
-        }
+    if (hasPackageJson) {
+      const packageJson = await this.parsePackageJson(packageJsonPath);
 
-        // Detect framework
-        const framework = this.detectFramework(packageJson);
-        if (framework) {
-          result.detectedFramework = framework;
-        }
+      // Extract main entry from package.json
+      const packageMain = packageJson.main as string | undefined;
+      if (packageMain) {
+        result.packageJsonMain = packageMain;
+        const mainPath = this.joinPath(workspaceRoot, packageMain);
+        result.entryPoints.push(mainPath);
       }
 
-      // 2. Detect project type based on structure
-      result.type = await this.detectProjectType(workspaceRoot, result.detectedFramework);
-
-      // 3. Find entry points based on detected type
-      const detectedEntries = await this.findEntryPoints(workspaceRoot, result.type);
-      result.entryPoints.push(...detectedEntries);
-
-      // 4. Find config files
-      result.configFiles = await this.findConfigFiles(workspaceRoot);
-
-      // Remove duplicates
-      result.entryPoints = [...new Set(result.entryPoints)];
-
-      return result;
-    } catch (error) {
-      logger.error('[ProjectStructureDetector] Error detecting structure:', error);
-      return result;
+      // Detect framework
+      const framework = this.detectFramework(packageJson);
+      if (framework) {
+        result.detectedFramework = framework;
+      }
     }
   }
 

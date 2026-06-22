@@ -78,7 +78,10 @@ export interface TaskQueueOptions {
 }
 
 export interface TaskExecutor {
-  execute: (task: BackgroundTask, onProgress: (progress: TaskProgress) => void) => Promise<TaskResult>;
+  execute: (
+    task: BackgroundTask,
+    onProgress: (progress: TaskProgress) => void
+  ) => Promise<TaskResult>;
   cancel?: (task: BackgroundTask) => Promise<void>;
   pause?: (task: BackgroundTask) => Promise<void>;
   resume?: (task: BackgroundTask) => Promise<void>;

@@ -111,49 +111,77 @@ function searchText(
     const lines = file.content.split('\n');
 
     lines.forEach((line, lineIndex) => {
-      const searchLine = caseSensitive ? line : line.toLowerCase();
-      let columnIndex = 0;
-
-      while (columnIndex < searchLine.length) {
-        const index = searchLine.indexOf(searchQuery, columnIndex);
-        if (index === -1) {
-          break;
-        }
-
-        // Check whole word boundary
-        if (wholeWord) {
-          const before = index > 0 ? searchLine[index - 1] ?? ' ' : ' ';
-          const after =
-            index + searchQuery.length < searchLine.length
-              ? searchLine[index + searchQuery.length] ?? ' '
-              : ' ';
-
-          if (/\w/.test(before) || /\w/.test(after)) {
-            columnIndex = index + 1;
-            continue;
-          }
-        }
-
-        results.push({
-          file: file.path,
-          line: lineIndex + 1,
-          column: index + 1,
-          match: line.substring(index, index + searchQuery.length),
-          preview: getPreview(line, index, searchQuery.length),
-          score: calculateScore(searchQuery, line, index),
-        });
-
-        columnIndex = index + searchQuery.length;
-
-        if (results.length >= maxResults) {
-          return; // Exit forEach early
-        }
-      }
+      searchTextLine(
+        { line, lineIndex, file },
+        { searchQuery, caseSensitive, wholeWord, maxResults },
+        results
+      );
     });
   });
 
   // Sort by score
   return results.sort((a, b) => b.score - a.score).slice(0, maxResults);
+}
+
+interface SearchLineTarget {
+  line: string;
+  lineIndex: number;
+  file: FileInfo;
+}
+
+interface SearchLineOptions {
+  searchQuery: string;
+  caseSensitive: boolean;
+  wholeWord: boolean;
+  maxResults: number;
+}
+
+// Collect all matches within a single line, appending to the shared results array
+function searchTextLine(
+  target: SearchLineTarget,
+  options: SearchLineOptions,
+  results: SearchResult[]
+): void {
+  const { line, lineIndex, file } = target;
+  const { searchQuery, caseSensitive, wholeWord, maxResults } = options;
+  const searchLine = caseSensitive ? line : line.toLowerCase();
+  let columnIndex = 0;
+
+  while (columnIndex < searchLine.length) {
+    const index = searchLine.indexOf(searchQuery, columnIndex);
+    if (index === -1) {
+      break;
+    }
+
+    // Check whole word boundary
+    if (wholeWord) {
+      const before = index > 0 ? searchLine[index - 1] ?? ' ' : ' ';
+      const after =
+        index + searchQuery.length < searchLine.length
+          ? searchLine[index + searchQuery.length] ?? ' '
+          : ' ';
+
+      if (/\w/.test(before) || /\w/.test(after)) {
+        columnIndex = index + 1;
+        continue;
+      }
+    }
+
+    results.push({
+      file: file.path,
+      line: lineIndex + 1,
+      column: index + 1,
+      match: line.substring(index, index + searchQuery.length),
+      preview: getPreview(line, index, searchQuery.length),
+      score: calculateScore(searchQuery, line, index),
+    });
+
+    columnIndex = index + searchQuery.length;
+
+    if (results.length >= maxResults) {
+      return; // Exit early
+    }
+  }
 }
 
 // Fuzzy search implementation

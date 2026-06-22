@@ -11,10 +11,13 @@ const initialState: EditorState = {
   selections: [],
 };
 
-export function useEditorState() {
-  const [state, setState] = useState<EditorState>(initialState);
-  const editorService = EditorService.getInstance();
+type SetEditorState = React.Dispatch<React.SetStateAction<EditorState>>;
 
+function useEditorFileOps(
+  state: EditorState,
+  setState: SetEditorState,
+  editorService: EditorService
+) {
   const openFile = async (path: string) => {
     try {
       const existingFile = state.openFiles.find((f) => f.path === path);
@@ -34,35 +37,6 @@ export function useEditorState() {
       logger.error('Failed to open file:', error);
     }
   };
-
-  const closeFile = useCallback((path: string) => {
-    setState((prev) => {
-      const newOpenFiles = prev.openFiles.filter((f) => f.path !== path);
-      const newActiveFile =
-        prev.activeFile?.path === path
-          ? newOpenFiles[newOpenFiles.length - 1] ?? null
-          : prev.activeFile;
-
-      return {
-        ...prev,
-        openFiles: newOpenFiles,
-        activeFile: newActiveFile,
-      };
-    });
-  }, []);
-
-  const updateFileContent = useCallback((path: string, content: string) => {
-    setState((prev) => ({
-      ...prev,
-      openFiles: prev.openFiles.map((file) =>
-        file.path === path ? { ...file, content, isModified: true } : file
-      ),
-      activeFile:
-        prev.activeFile?.path === path
-          ? { ...prev.activeFile, content, isModified: true }
-          : prev.activeFile,
-    }));
-  }, []);
 
   const saveFile = async (path: string) => {
     const file = state.openFiles.find((f) => f.path === path);
@@ -85,13 +59,69 @@ export function useEditorState() {
     }
   };
 
-  const setCursorPosition = useCallback((position: CursorPosition) => {
-    setState((prev) => ({ ...prev, cursorPosition: position }));
-  }, []);
+  return { openFile, saveFile };
+}
 
-  const setSelection = useCallback((selection: Selection) => {
-    setState((prev) => ({ ...prev, selections: [selection] }));
-  }, []);
+function useEditorEditActions(setState: SetEditorState) {
+  const closeFile = useCallback(
+    (path: string) => {
+      setState((prev) => {
+        const newOpenFiles = prev.openFiles.filter((f) => f.path !== path);
+        const newActiveFile =
+          prev.activeFile?.path === path
+            ? newOpenFiles[newOpenFiles.length - 1] ?? null
+            : prev.activeFile;
+
+        return {
+          ...prev,
+          openFiles: newOpenFiles,
+          activeFile: newActiveFile,
+        };
+      });
+    },
+    [setState]
+  );
+
+  const updateFileContent = useCallback(
+    (path: string, content: string) => {
+      setState((prev) => ({
+        ...prev,
+        openFiles: prev.openFiles.map((file) =>
+          file.path === path ? { ...file, content, isModified: true } : file
+        ),
+        activeFile:
+          prev.activeFile?.path === path
+            ? { ...prev.activeFile, content, isModified: true }
+            : prev.activeFile,
+      }));
+    },
+    [setState]
+  );
+
+  const setCursorPosition = useCallback(
+    (position: CursorPosition) => {
+      setState((prev) => ({ ...prev, cursorPosition: position }));
+    },
+    [setState]
+  );
+
+  const setSelection = useCallback(
+    (selection: Selection) => {
+      setState((prev) => ({ ...prev, selections: [selection] }));
+    },
+    [setState]
+  );
+
+  return { closeFile, updateFileContent, setCursorPosition, setSelection };
+}
+
+export function useEditorState() {
+  const [state, setState] = useState<EditorState>(initialState);
+  const editorService = EditorService.getInstance();
+
+  const { openFile, saveFile } = useEditorFileOps(state, setState, editorService);
+  const { closeFile, updateFileContent, setCursorPosition, setSelection } =
+    useEditorEditActions(setState);
 
   return {
     state,

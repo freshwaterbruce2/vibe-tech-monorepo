@@ -17,7 +17,9 @@ const EditorPage: React.FC = () => {
   const openFiles = useEditorStore((state) => state.openFiles);
   const sidebarOpen = useEditorStore((state) => state.sidebarOpen);
   const workspaceFolder = useEditorStore((state) => state.workspaceFolder);
-  const { openFile, toggleAIChat, toggleSettings, updateSettings } = useEditorStore((state) => state.actions);
+  const { openFile, toggleAIChat, toggleSettings, updateSettings } = useEditorStore(
+    (state) => state.actions
+  );
   const aiChatOpen = useEditorStore((state) => state.aiChatOpen);
   const settingsOpen = useEditorStore((state) => state.settingsOpen);
   const settings = useEditorStore((state) => state.settings);
