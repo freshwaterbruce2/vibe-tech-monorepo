@@ -6,9 +6,20 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-from .celery_render_worker import execute_video_render_pipeline
-from .config import settings
-from .worker import celery_app
+try:
+    from .celery_render_worker import execute_video_render_pipeline
+except ImportError:
+    from celery_render_worker import execute_video_render_pipeline
+
+try:
+    from .config import settings
+except ImportError:
+    from config import settings
+
+try:
+    from .worker import celery_app
+except ImportError:
+    from worker import celery_app
 
 
 class CreateRenderPayloadRequest(BaseModel):
