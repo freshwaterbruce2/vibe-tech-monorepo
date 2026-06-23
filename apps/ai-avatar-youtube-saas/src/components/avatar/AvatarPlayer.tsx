@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, Suspense } from "react";
 import { Avatar2D } from "./Avatar2D";
 import { Avatar3D } from "./Avatar3D";
 import { AvatarErrorBoundary } from "./AvatarErrorBoundary";
@@ -36,11 +36,18 @@ export function AvatarPlayer({ modelUrl, audioUrl, riveUrl }: AvatarPlayerProps)
           avatar2D
         ) : (
           <AvatarErrorBoundary fallback={avatar2D}>
-            <Avatar3D
-              modelUrl={modelUrl}
-              weights={weights}
-              onContextLost={() => setUse2D(true)}
-            />
+            <Suspense fallback={
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-white bg-neutral-900 gap-3">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-solid border-white border-t-transparent" />
+                <span className="text-sm font-medium">Loading 3D Avatar Model...</span>
+              </div>
+            }>
+              <Avatar3D
+                modelUrl={modelUrl}
+                weights={weights}
+                onContextLost={() => setUse2D(true)}
+              />
+            </Suspense>
           </AvatarErrorBoundary>
         )}
       </div>
