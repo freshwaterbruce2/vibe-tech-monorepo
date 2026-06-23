@@ -2,6 +2,8 @@
 
 import { createHash, randomBytes } from "node:crypto";
 import { revalidateTag } from "next/cache";
+import { resolve } from "node:path";
+import { mkdir, writeFile } from "node:fs/promises";
 
 import { verifyDpopProof } from "@/lib/dpop";
 import { getBucket } from "@/lib/gcp";
@@ -32,7 +34,37 @@ export async function uploadAvatarAsset(formData: FormData) {
 
   const bucket = getBucket();
   if (!bucket) {
-    return { success: false, error: "GCS is not configured" };
+    // Local development fallback: save to public/uploads directory
+    try {
+      const uploadDir = resolve(process.cwd(), "public", "uploads");
+      await mkdir(uploadDir, { recursive: true });
+
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const hash = createHash("sha256")
+        .update(randomBytes(16))
+        .update(buffer)
+        .digest("hex");
+
+      const ext = file.name.split(".").pop() || "webp";
+      const fileName = `uploads/${hash}.${ext}`;
+      const filePath = resolve(process.cwd(), "public", fileName);
+
+      await writeFile(filePath, buffer);
+      const url = `/${fileName}`;
+
+      insertAvatarAsset({
+        gcsPath: fileName,
+        signedUrl: url,
+        signedUrlExpires: Date.now() + URL_TTL_MS,
+        mimeType: file.type || "image/webp",
+      });
+
+      revalidateTag("avatar-assets", "max");
+
+      return { success: true, url, path: fileName };
+    } catch (err) {
+      return { success: false, error: `Local upload failed: ${String(err)}` };
+    }
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
