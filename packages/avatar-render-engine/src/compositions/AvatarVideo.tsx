@@ -1,8 +1,8 @@
-import React from 'react';
 import {
   AbsoluteFill,
   Audio,
   Sequence,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
   Video,
@@ -15,25 +15,36 @@ export interface AvatarVideoProps {
   bRollUrls: string[];
 }
 
-export const AvatarVideo: React.FC<AvatarVideoProps> = ({
+export const AvatarVideo = ({
   script,
   audioUrl,
   bRollUrls,
-}) => {
+}: AvatarVideoProps) => {
   const { fps } = useVideoConfig();
   const frame = useCurrentFrame();
   const currentTime = frame / fps;
 
+  let activeSegmentIndex = -1;
   let elapsed = 0;
-  const activeSegmentIndex = script.segments.findIndex((segment) => {
+  for (let i = 0; i < script.segments.length; i++) {
+    const segment = script.segments[i];
+    if (!segment) continue;
     const start = elapsed;
     elapsed += segment.durationSeconds;
-    return currentTime >= start && currentTime < elapsed;
-  });
+    if (currentTime >= start && currentTime < elapsed) {
+      activeSegmentIndex = i;
+      break;
+    }
+  }
 
   const segment =
     activeSegmentIndex >= 0 ? script.segments[activeSegmentIndex] : null;
   const bRollUrl = bRollUrls[activeSegmentIndex] ?? bRollUrls[0];
+
+  const resolvedBRollUrl =
+    bRollUrl && bRollUrl.startsWith('/') ? staticFile(bRollUrl) : bRollUrl;
+  const resolvedAudioUrl =
+    audioUrl && audioUrl.startsWith('/') ? staticFile(audioUrl) : audioUrl;
 
   return (
     <AbsoluteFill
@@ -43,9 +54,9 @@ export const AvatarVideo: React.FC<AvatarVideoProps> = ({
         fontFamily: 'sans-serif',
       }}
     >
-      {bRollUrl && (
+      {resolvedBRollUrl && (
         <Video
-          src={bRollUrl}
+          src={resolvedBRollUrl}
           style={{
             position: 'absolute',
             top: 0,
@@ -96,15 +107,9 @@ export const AvatarVideo: React.FC<AvatarVideoProps> = ({
         </div>
       )}
 
-      <Audio src={audioUrl} />
+      <Audio src={resolvedAudioUrl} />
     </AbsoluteFill>
   );
 };
 
-export const avatarVideoCompositionId = 'AvatarVideo';
 
-export const avatarVideoSchema = {
-  width: 1920,
-  height: 1080,
-  fps: 30,
-};

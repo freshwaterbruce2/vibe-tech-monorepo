@@ -133,16 +133,21 @@ def run_remotion_render(
         json.dump(props, props_file)
 
     # Remotion CLI compilation command: leverages headless browser engine.
+    npx_binary = "npx.cmd" if sys.platform == "win32" else "npx"
+    entry_point = os.path.join(workspace_dir, "src", "index.ts")
     cmd = [
-        "npx",
+        npx_binary,
         "remotion",
         "render",
+        entry_point,
         composition_id,
         dest_path,
         f"--props={props_file_path}",
         "--jpeg",  # faster frame extraction in headless environments
         "--quality=90",
         "--overwrite",
+        "--disable-web-security",
+        f"--public-dir={os.path.join(workspace_dir, 'public')}",
     ]
 
     try:
@@ -157,8 +162,7 @@ def run_remotion_render(
         if process.stdout is not None:
             for line in process.stdout:
                 clean_log = line.strip()
-                if "Rendering" in clean_log or "Frame" in clean_log:
-                    logger.info("[Remotion Engine] %s", clean_log)
+                logger.info("[Remotion Engine] %s", clean_log)
 
         return_code = process.wait()
         if return_code != 0:
@@ -274,9 +278,13 @@ def execute_video_render_pipeline(self, payload: dict[str, Any]) -> dict[str, An
                 "Pexels B-roll background video brollUrl parameter is missing from request payload."
             )
 
-        # Define file paths in isolated directory.
-        local_broll_path = os.path.join(temp_dir, "background_broll.mp4")
-        synthesized_voice_path = os.path.join(temp_dir, "vocal_narration.mp3")
+        # Define file paths.
+        remotion_project_root = _get_remotion_project_root()
+        remotion_public_dir = remotion_project_root / "public"
+        remotion_public_dir.mkdir(parents=True, exist_ok=True)
+
+        local_broll_path = str(remotion_public_dir / f"broll_{task_id}.mp4")
+        synthesized_voice_path = str(remotion_public_dir / f"voice_{task_id}.mp3")
         remotion_mute_output = os.path.join(temp_dir, "remotion_visuals_only.mp4")
         final_mp4_output = os.path.join(temp_dir, f"{project_id}_final_1080p.mp4")
 
@@ -307,12 +315,32 @@ def execute_video_render_pipeline(self, payload: dict[str, Any]) -> dict[str, An
             meta={"progress": 55, "status": "Running Remotion headless video layout compiler"},
         )
         remotion_project_root = str(_get_remotion_project_root())
-        remotion_props: dict[str, Any] = {
-            "brollVideoSrc": f"file://{local_broll_path}",
-            "audioVoiceSrc": f"file://{synthesized_voice_path}",
-            "scriptText": script_text,
-            "subtitles": subtitles,
-        }
+        if composition_id == "AvatarVideo":
+            broll_duration = _extract_video_duration(local_broll_path) or 10.0
+            remotion_props: dict[str, Any] = {
+                "script": {
+                    "title": "AI Avatar Render",
+                    "description": "Rendered by Celery Worker",
+                    "tags": ["render"],
+                    "segments": [
+                        {
+                            "id": "seg-1",
+                            "narration": script_text,
+                            "visualQuery": "background",
+                            "durationSeconds": broll_duration,
+                        }
+                    ]
+                },
+                "audioUrl": f"/voice_{task_id}.mp3",
+                "bRollUrls": [f"/broll_{task_id}.mp4"]
+            }
+        else:
+            remotion_props = {
+                "brollVideoSrc": f"/broll_{task_id}.mp4",
+                "audioVoiceSrc": f"/voice_{task_id}.mp3",
+                "scriptText": script_text,
+                "subtitles": subtitles,
+            }
         run_remotion_render(
             workspace_dir=remotion_project_root,
             composition_id=composition_id,
@@ -361,6 +389,17 @@ def execute_video_render_pipeline(self, payload: dict[str, Any]) -> dict[str, An
         self.update_state(state="FAILED", meta={"status": "Catastrophic error", "error": str(exc)})
         return {"status": "error", "message": str(exc)}
     finally:
+        # Cleanup public directory temporary files.
+        if "local_broll_path" in locals() and os.path.exists(local_broll_path):
+            try:
+                os.remove(local_broll_path)
+            except Exception as e:
+                logger.warning("Failed to remove public broll file: %s", e)
+        if "synthesized_voice_path" in locals() and os.path.exists(synthesized_voice_path):
+            try:
+                os.remove(synthesized_voice_path)
+            except Exception as e:
+                logger.warning("Failed to remove public voice file: %s", e)
         # Cleanup isolated scratch workspace to preserve disk space.
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)

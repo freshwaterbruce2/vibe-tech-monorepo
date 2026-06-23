@@ -33,7 +33,8 @@
       "@vibetech/payments": ["./packages/payments/src/index.ts"],
       "@vibetech/email": ["./packages/email/src/index.ts"],
       "@vibetech/ai": ["./packages/ai/src/index.ts"],
-      "@vibetech/avatar-render-engine": ["./packages/avatar-render-engine/src/index.ts"]
+      "@vibetech/avatar-render-engine": ["./packages/avatar-render-engine/src/index.ts"],
+      "@vibetech/avatar-render-engine/constants": ["./packages/avatar-render-engine/src/compositions/constants.ts"]
     },
     "resolveJsonModule": true,
     "allowJs": true,

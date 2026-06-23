@@ -26,6 +26,30 @@
       "options": {
         "packageRoot": "dist/{projectRoot}"
       }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": [
+          "packages/avatar-render-engine/**/*.ts",
+          "packages/avatar-render-engine/**/*.tsx"
+        ]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../node_modules/typescript/bin/tsc -p tsconfig.lib.json --noEmit",
+        "cwd": "packages/avatar-render-engine"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "cache": true,
+      "options": {
+        "command": "vitest run --config vitest.config.mts",
+        "cwd": "packages/avatar-render-engine"
+      }
     }
   }
 }

@@ -17,9 +17,10 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@vibetech/avatar-render-engine": ["../../packages/avatar-render-engine/src/index.ts"],
+      "@vibetech/avatar-render-engine/constants": ["../../packages/avatar-render-engine/src/compositions/constants.ts"]
     },
-    "rootDir": ".",
     "noUnusedLocals": false,
     "noUnusedParameters": false
   },
