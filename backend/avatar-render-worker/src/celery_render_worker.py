@@ -314,7 +314,7 @@ def execute_video_render_pipeline(self, payload: dict[str, Any]) -> dict[str, An
             state="PROGRESS",
             meta={"progress": 55, "status": "Running Remotion headless video layout compiler"},
         )
-        remotion_project_root = str(_get_remotion_project_root())
+        remotion_project_root_str = str(remotion_project_root)
         if composition_id == "AvatarVideo":
             broll_duration = _extract_video_duration(local_broll_path) or 10.0
             remotion_props: dict[str, Any] = {
@@ -342,7 +342,7 @@ def execute_video_render_pipeline(self, payload: dict[str, Any]) -> dict[str, An
                 "subtitles": subtitles,
             }
         run_remotion_render(
-            workspace_dir=remotion_project_root,
+            workspace_dir=remotion_project_root_str,
             composition_id=composition_id,
             props=remotion_props,
             dest_path=remotion_mute_output,

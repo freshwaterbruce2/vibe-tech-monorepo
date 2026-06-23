@@ -145,22 +145,19 @@ interface UploadVideoOptions {
   videoBuffer: Buffer;
 }
 
-export async function uploadVideo(options: UploadVideoOptions): Promise<YouTubeUploadResult> {
-  const { accessToken, title, description, tags, privacyStatus, madeForKids, videoBuffer } = options;
-  const boundary = `----yt_upload_${Date.now()}`;
-
+function buildMultipartBody(boundary: string, options: UploadVideoOptions): Buffer {
   const metadata = JSON.stringify({
     snippet: {
-      title: title.slice(0, 100),
-      description,
-      tags: tags.slice(0, 500),
+      title: options.title.slice(0, 100),
+      description: options.description,
+      tags: options.tags.slice(0, 500),
       categoryId: "22",
       defaultLanguage: "en",
       defaultAudioLanguage: "en",
     },
     status: {
-      privacyStatus,
-      selfDeclaredMadeForKids: madeForKids,
+      privacyStatus: options.privacyStatus,
+      selfDeclaredMadeForKids: options.madeForKids,
       embeddable: true,
       license: "youtube",
     },
@@ -176,16 +173,21 @@ export async function uploadVideo(options: UploadVideoOptions): Promise<YouTubeU
   );
   const closing = Buffer.from(`\r\n--${boundary}--\r\n`, "utf8");
 
-  const body = Buffer.concat([metadataPart, videoPartHeader, videoBuffer, closing]);
+  return Buffer.concat([metadataPart, videoPartHeader, options.videoBuffer, closing]);
+}
+
+export async function uploadVideo(options: UploadVideoOptions): Promise<YouTubeUploadResult> {
+  const boundary = `----yt_upload_${Date.now()}`;
+  const body = buildMultipartBody(boundary, options);
 
   const res = await fetch(`${YOUTUBE_UPLOAD_ENDPOINT}?uploadType=multipart&part=snippet,status`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${accessToken}`,
+      Authorization: `Bearer ${options.accessToken}`,
       "Content-Type": `multipart/related; boundary=${boundary}`,
       "Content-Length": String(body.length),
     },
-    body,
+    body: body as unknown as BodyInit,
   });
 
   if (!res.ok) {

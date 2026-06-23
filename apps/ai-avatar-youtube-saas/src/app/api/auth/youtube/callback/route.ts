@@ -8,7 +8,27 @@ import {
   TOKEN_COOKIE,
 } from "@/lib/youtube-auth";
 
-export const runtime = "nodejs";
+function parseReturnTo(state: string | null): string {
+  if (!state) return "/dashboard";
+  try {
+    const statePayload = JSON.parse(Buffer.from(state, "base64url").toString("utf8"));
+    if (typeof statePayload.returnTo === "string" && statePayload.returnTo.startsWith("/")) {
+      return statePayload.returnTo;
+    }
+  } catch {
+    // Ignore and fallback
+  }
+  return "/dashboard";
+}
+
+function getDecryptedVerifier(cookieValue: string | undefined, authSecret: string): string | null {
+  if (!cookieValue) return null;
+  try {
+    return decrypt(cookieValue, authSecret);
+  } catch {
+    return null;
+  }
+}
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const clientId = process.env.YOUTUBE_CLIENT_ID;
@@ -27,37 +47,23 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const code = searchParams.get("code");
   const error = searchParams.get("error");
   const state = searchParams.get("state");
-
   const baseUrl = new URL(request.url).origin;
 
-  if (error) {
-    return redirectWithError(baseUrl, "oauth_denied", error);
-  }
-
+  if (error) return redirectWithError(baseUrl, "oauth_denied", error);
   if (!code || !state) {
     return redirectWithError(baseUrl, "invalid_callback", "Missing authorization code or state");
   }
 
-  let returnTo = "/dashboard";
-  try {
-    const statePayload = JSON.parse(Buffer.from(state, "base64url").toString("utf8"));
-    if (typeof statePayload.returnTo === "string" && statePayload.returnTo.startsWith("/")) {
-      returnTo = statePayload.returnTo;
-    }
-  } catch {
-    return redirectWithError(baseUrl, "invalid_state", "State parameter is malformed");
-  }
+  const returnTo = parseReturnTo(state);
 
   const encryptedVerifier = request.cookies.get(CODE_VERIFIER_COOKIE)?.value;
-  if (!encryptedVerifier) {
-    return redirectWithError(baseUrl, "missing_verifier", "PKCE code verifier cookie is missing");
-  }
-
-  let codeVerifier: string;
-  try {
-    codeVerifier = decrypt(encryptedVerifier, authSecret);
-  } catch {
-    return redirectWithError(baseUrl, "verifier_decrypt_failed", "Could not verify PKCE challenge");
+  const codeVerifier = getDecryptedVerifier(encryptedVerifier, authSecret);
+  if (!codeVerifier) {
+    return redirectWithError(
+      baseUrl,
+      "missing_verifier",
+      "PKCE code verifier cookie is missing or invalid"
+    );
   }
 
   try {
@@ -71,10 +77,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const encryptedTokens = encrypt(JSON.stringify(tokens), authSecret);
     const response = NextResponse.redirect(new URL(returnTo, request.url));
-
-    // Persist encrypted tokens in an httpOnly cookie
     response.cookies.set(TOKEN_COOKIE, encryptedTokens, getCookieOptions(60 * 60 * 24 * 30));
-    // Clear the short-lived verifier cookie immediately
     response.cookies.set(CODE_VERIFIER_COOKIE, "", { ...getCookieOptions(0), maxAge: 0 });
 
     return response;

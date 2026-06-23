@@ -9,8 +9,6 @@ import {
   CODE_VERIFIER_COOKIE,
 } from "@/lib/youtube-auth";
 
-export const runtime = "nodejs";
-
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const clientId = process.env.YOUTUBE_CLIENT_ID;
   const redirectUri = process.env.YOUTUBE_REDIRECT_URI;

@@ -11,6 +11,10 @@ export const Root = () => {
     <Composition
       // Registers the target ID (e.g., "ShortsAvatarComposition") recognized by the Celery task
       id={avatarVideoCompositionId}
+      // Cast to ComponentType<any> is required because Remotion's Composition component
+      // expects a broad component type matching any props, and the AvatarVideo props
+      // are validated dynamically at runtime via schema.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       component={AvatarVideo as ComponentType<any>}
       // Setup default timeline bounds (e.g., 30 seconds at 30 fps)
       fps={30}

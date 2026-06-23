@@ -3,67 +3,67 @@ import { env } from "@/lib/env";
 
 const db = AppDatabase.getInstance({ path: env.APP_DB_PATH }).getDatabase();
 
+const SCHEMA_TABLES = [
+  `CREATE TABLE IF NOT EXISTS avatar_assets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    owner_id TEXT,
+    gcs_path TEXT NOT NULL UNIQUE,
+    signed_url TEXT,
+    signed_url_expires INTEGER,
+    mime_type TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  );`,
+  `CREATE TABLE IF NOT EXISTS render_jobs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    status TEXT NOT NULL DEFAULT 'queued',
+    script_prompt TEXT NOT NULL,
+    voice_id TEXT NOT NULL,
+    audio_sample_rate INTEGER NOT NULL DEFAULT 16000,
+    asset_paths TEXT NOT NULL,
+    viseme_mapping TEXT,
+    output_url TEXT,
+    error_message TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+  );`,
+  `CREATE TABLE IF NOT EXISTS oauth_tokens (
+    provider TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    access_token_encrypted TEXT NOT NULL,
+    refresh_token_encrypted TEXT,
+    expires_at INTEGER,
+    dpop_jkt TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (provider, user_id)
+  );`,
+  `CREATE TABLE IF NOT EXISTS youtube_uploads (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    render_job_id INTEGER NOT NULL,
+    video_id TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'uploaded',
+    title TEXT NOT NULL,
+    privacy_status TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (render_job_id) REFERENCES render_jobs(id)
+  );`,
+  `CREATE TABLE IF NOT EXISTS subscriptions (
+    user_id TEXT PRIMARY KEY,
+    stripe_customer_id TEXT UNIQUE,
+    stripe_subscription_id TEXT UNIQUE,
+    plan_tier TEXT DEFAULT 'hobby',
+    status TEXT DEFAULT 'active',
+    current_period_end INTEGER DEFAULT 0,
+    video_credits INTEGER DEFAULT 10,
+    updated_at INTEGER NOT NULL
+  );`,
+];
+
 export function initSchema() {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS avatar_assets (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      owner_id TEXT,
-      gcs_path TEXT NOT NULL UNIQUE,
-      signed_url TEXT,
-      signed_url_expires INTEGER,
-      mime_type TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS render_jobs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      status TEXT NOT NULL DEFAULT 'queued',
-      script_prompt TEXT NOT NULL,
-      voice_id TEXT NOT NULL,
-      audio_sample_rate INTEGER NOT NULL DEFAULT 16000,
-      asset_paths TEXT NOT NULL,
-      viseme_mapping TEXT,
-      output_url TEXT,
-      error_message TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS oauth_tokens (
-      provider TEXT NOT NULL,
-      user_id TEXT NOT NULL,
-      access_token_encrypted TEXT NOT NULL,
-      refresh_token_encrypted TEXT,
-      expires_at INTEGER,
-      dpop_jkt TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (provider, user_id)
-    );
-
-    CREATE TABLE IF NOT EXISTS youtube_uploads (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id TEXT NOT NULL,
-      render_job_id INTEGER NOT NULL,
-      video_id TEXT NOT NULL,
-      status TEXT NOT NULL DEFAULT 'uploaded',
-      title TEXT NOT NULL,
-      privacy_status TEXT NOT NULL,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (render_job_id) REFERENCES render_jobs(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS subscriptions (
-      user_id TEXT PRIMARY KEY,
-      stripe_customer_id TEXT UNIQUE,
-      stripe_subscription_id TEXT UNIQUE,
-      plan_tier TEXT DEFAULT 'hobby',
-      status TEXT DEFAULT 'active',
-      current_period_end INTEGER DEFAULT 0,
-      video_credits INTEGER DEFAULT 10,
-      updated_at INTEGER NOT NULL
-    );
-  `);
+  SCHEMA_TABLES.forEach((tableSql) => {
+    db.exec(tableSql);
+  });
 }
 
 export function insertAvatarAsset(opts: {
@@ -190,7 +190,14 @@ export function insertYouTubeUpload(opts: {
     `INSERT INTO youtube_uploads (user_id, render_job_id, video_id, status, title, privacy_status)
      VALUES (?, ?, ?, ?, ?, ?)`
   );
-  return stmt.run(opts.userId, opts.renderJobId, opts.videoId, opts.status, opts.title, opts.privacyStatus);
+  return stmt.run(
+    opts.userId,
+    opts.renderJobId,
+    opts.videoId,
+    opts.status,
+    opts.title,
+    opts.privacyStatus
+  );
 }
 
 export function getYouTubeUploadsByUser(userId: string) {

@@ -11,10 +11,13 @@ interface BillingResponse {
   error?: string;
 }
 
-export async function createCheckoutSessionAction(userId: string, tier: PlanTierKey): Promise<BillingResponse> {
+export async function createCheckoutSessionAction(
+  userId: string,
+  tier: PlanTierKey
+): Promise<BillingResponse> {
   try {
     const plan = PLAN_TIERS[tier];
-    if (!plan || !plan.priceId) {
+    if (!plan?.priceId) {
       return { success: false, error: "Invalid billing tier or missing price ID" };
     }
 
@@ -36,7 +39,6 @@ export async function createCheckoutSessionAction(userId: string, tier: PlanTier
     return { success: true, url: session.url ?? undefined };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Checkout creation failed";
-    // eslint-disable-next-line no-console
     console.error("Stripe checkout creation failed:", message);
     return { success: false, error: message };
   }
@@ -58,7 +60,6 @@ export async function createPortalSessionAction(userId: string): Promise<Billing
     return { success: true, url: portalSession.url };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Portal creation failed";
-    // eslint-disable-next-line no-console
     console.error("Stripe portal creation failed:", message);
     return { success: false, error: message };
   }

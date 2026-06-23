@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { Suspense, useEffect, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   disconnectYouTube,
@@ -17,7 +17,7 @@ interface RenderJobOption {
   createdAt: string;
 }
 
-export default function PublishPage() {
+function PublishPageContent() {
   const searchParams = useSearchParams();
   const queryError = searchParams.get("error");
 
@@ -121,7 +121,9 @@ export default function PublishPage() {
             <label className="block text-sm font-medium mb-1">Render job</label>
             <select
               value={form.renderJobId}
-              onChange={(e) => setForm((prev) => ({ ...prev, renderJobId: Number(e.target.value) }))}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, renderJobId: Number(e.target.value) }))
+              }
               className="w-full rounded-md border border-input bg-background px-3 py-2"
             >
               {jobs.length === 0 && <option value={0}>No completed renders</option>}
@@ -228,5 +230,13 @@ export default function PublishPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function PublishPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-center">Loading publish page...</div>}>
+      <PublishPageContent />
+    </Suspense>
   );
 }

@@ -25,11 +25,10 @@ export class AvatarErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    // eslint-disable-next-line no-console
     console.error("Avatar renderer crashed:", error, info.componentStack);
   }
 
-  render() {
+  render(): ReactNode {
     if (this.state.hasError) {
       return this.props.fallback;
     }

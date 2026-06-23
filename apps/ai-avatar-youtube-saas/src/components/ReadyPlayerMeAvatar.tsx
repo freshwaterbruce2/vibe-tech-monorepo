@@ -97,12 +97,16 @@ function AvatarModel({ url, lipSyncValue, mouthOpenScalar }: ModelProps) {
   const blinkStateRef = useRef({
     isBlinking: false,
     timer: 0,
-    nextBlinkInterval: Math.random() * 3 + 2, // Blink every 2 to 5 seconds
+    nextBlinkInterval: 3.5, // Initial static value to satisfy React render purity
   });
+
+  useEffect(() => {
+    blinkStateRef.current.nextBlinkInterval = Math.random() * 3 + 2;
+  }, []);
 
   useFrame((state, delta) => {
     const mesh = headMeshRef.current;
-    if (!mesh || !mesh.morphTargetDictionary || !mesh.morphTargetInfluences) return;
+    if (!mesh?.morphTargetDictionary || !mesh?.morphTargetInfluences) return;
 
     const dict = mesh.morphTargetDictionary;
     const influences = mesh.morphTargetInfluences;
@@ -133,7 +137,11 @@ function AvatarModel({ url, lipSyncValue, mouthOpenScalar }: ModelProps) {
     const jawIndex = dict["jawOpen"];
     if (jawIndex !== undefined) {
       const targetJawOpen = THREE.MathUtils.clamp(mouthOpenScalar, 0.0, 1.0);
-      influences[jawIndex] = THREE.MathUtils.lerp(influences[jawIndex] ?? 0, targetJawOpen, 20 * delta);
+      influences[jawIndex] = THREE.MathUtils.lerp(
+        influences[jawIndex] ?? 0,
+        targetJawOpen,
+        20 * delta
+      );
     }
 
     // 3. Procedural Eye Blinking Coroutine
@@ -226,7 +234,9 @@ export function ReadyPlayerMeAvatar({
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         micStreamRef.current = stream;
 
-        const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const AudioContextClass =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
         const ctx = new AudioContextClass();
         audioContextRef.current = ctx;
 
@@ -290,7 +300,7 @@ export function ReadyPlayerMeAvatar({
       }
     };
 
-    initRealTimeSync();
+    void initRealTimeSync();
 
     return () => {
       if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
@@ -317,7 +327,7 @@ export function ReadyPlayerMeAvatar({
         const firstLetter = cleanWord.charAt(0);
 
         // Map character to viseme target or fallback to a standard aa vowel
-        const visemeTarget = VISEME_MAPPING[firstLetter] || "viseme_aa";
+        const visemeTarget = VISEME_MAPPING[firstLetter] ?? "viseme_aa";
 
         setMouthOpen(0.65); // Apply constant average jaw opening during spoken words
         setLipSyncState({ viseme: visemeTarget, intensity: 0.8 });

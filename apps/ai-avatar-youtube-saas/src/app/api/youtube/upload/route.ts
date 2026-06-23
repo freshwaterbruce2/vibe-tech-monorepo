@@ -1,8 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getValidAccessToken } from "@/lib/youtube-auth-utils";
 
-export const runtime = "nodejs";
-
 const YOUTUBE_UPLOAD_ENDPOINT =
   "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status";
 const CHUNK_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
@@ -71,7 +69,7 @@ async function probeVideoSource(videoUrl: string): Promise<{
   if (!headResponse.ok) {
     throw new Error(`Failed to probe video source: ${headResponse.status}`);
   }
-  const contentType = headResponse.headers.get("content-type") || "video/mp4";
+  const contentType = headResponse.headers.get("content-type") ?? "video/mp4";
   const contentLength = headResponse.headers.get("content-length");
   return {
     contentType,
@@ -88,12 +86,12 @@ async function initiateResumableUpload(
   const metadata = {
     snippet: {
       title: body.title,
-      description: body.description || "",
-      tags: body.tags || [],
-      categoryId: body.categoryId || "22", // People & Blogs default
+      description: body.description ?? "",
+      tags: body.tags ?? [],
+      categoryId: body.categoryId ?? "22", // People & Blogs default
     },
     status: {
-      privacyStatus: body.privacyStatus || "private",
+      privacyStatus: body.privacyStatus ?? "private",
       selfDeclaredMadeForKids: false,
     },
     selfDeclaredAlteredContent: true,
@@ -131,7 +129,7 @@ async function uploadVideoInChunks(
 ): Promise<string> {
   for (let start = 0; start < totalLength; start += CHUNK_SIZE_BYTES) {
     const end = Math.min(start + CHUNK_SIZE_BYTES - 1, totalLength - 1);
-    const chunk = await withRetry(() => fetchChunk(videoUrl, start, end, contentType), `fetch chunk ${start}-${end}`);
+    const chunk = await withRetry(async () => fetchChunk(videoUrl, start, end, contentType), `fetch chunk ${start}-${end}`);
 
     const chunkResponse = await withRetry(
       async () => {
@@ -184,7 +182,12 @@ async function withRetry<T>(fn: () => Promise<T>, context: string): Promise<T> {
   throw new Error(`${context} failed after ${MAX_RETRIES} attempts: ${lastError?.message}`);
 }
 
-async function fetchChunk(videoUrl: string, start: number, end: number, contentType: string): Promise<Blob> {
+async function fetchChunk(
+  videoUrl: string,
+  start: number,
+  end: number,
+  contentType: string
+): Promise<Blob> {
   const response = await fetch(videoUrl, {
     headers: { Range: `bytes=${start}-${end}` },
   });

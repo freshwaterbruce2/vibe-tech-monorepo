@@ -3,24 +3,11 @@
 import { useEffect, useRef } from "react";
 import { Rive, Layout, Fit, Alignment, StateMachineInputType } from "@rive-app/webgl";
 import type { VisemeWeights } from "./useLipSync";
+import { dominantViseme } from "./dominantViseme";
 
 export interface Avatar2DProps {
   riveUrl?: string;
   weights: VisemeWeights;
-}
-
-export function dominantViseme(weights: VisemeWeights): number {
-  const entries = Object.entries(weights) as Array<[keyof VisemeWeights, number]>;
-  if (entries.length === 0) return 0;
-  const max = entries.reduce((a, b) => (b[1] > a[1] ? b : a));
-  if (max[1] === 0) return 0;
-  const map: Record<keyof VisemeWeights, number> = {
-    viseme_O: 1,
-    viseme_U: 2,
-    viseme_aa: 3,
-    viseme_E: 4,
-  };
-  return map[max[0]] ?? 0;
 }
 
 export function Avatar2D({ riveUrl, weights }: Avatar2DProps) {
@@ -57,7 +44,7 @@ export function Avatar2D({ riveUrl, weights }: Avatar2DProps) {
     if (!inputs) return;
 
     const visemeInput = inputs.find((input) => input.name === "viseme");
-    if (visemeInput && visemeInput.type === StateMachineInputType.Number) {
+    if (visemeInput?.type === StateMachineInputType.Number) {
       visemeInput.value = dominantViseme(weights);
     }
   }, [weights]);

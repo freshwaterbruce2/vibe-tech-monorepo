@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dominantViseme } from "./Avatar2D";
+import { dominantViseme } from "./dominantViseme";
 
 describe("dominantViseme", () => {
   it("returns 0 when all weights are zero", () => {

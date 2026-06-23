@@ -51,6 +51,36 @@ export async function getPublishableRenderJobs() {
   }));
 }
 
+function validatePayload(payload: PublishPayload) {
+  if (!payload.title || payload.title.length > 100) {
+    throw new Error("Title is required and must be under 100 characters");
+  }
+  if (!payload.description) {
+    throw new Error("Description is required");
+  }
+  if (!["private", "unlisted", "public"].includes(payload.privacyStatus)) {
+    throw new Error("Invalid privacy status");
+  }
+}
+
+function buildUploadParams(payload: PublishPayload, videoBuffer: Buffer, accessToken: string) {
+  const tags = payload.tags
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .slice(0, 10);
+
+  return {
+    accessToken,
+    title: payload.title,
+    description: buildYppDescription(payload.description, payload.aiDisclosure),
+    tags,
+    privacyStatus: payload.privacyStatus,
+    madeForKids: payload.madeForKids,
+    videoBuffer,
+  };
+}
+
 export async function publishToYouTube(payload: PublishPayload) {
   initSchema();
 
@@ -59,18 +89,14 @@ export async function publishToYouTube(payload: PublishPayload) {
     return { success: false, error: "YouTube account not connected" };
   }
 
-  if (!payload.title || payload.title.length > 100) {
-    return { success: false, error: "Title is required and must be under 100 characters" };
-  }
-  if (!payload.description) {
-    return { success: false, error: "Description is required" };
-  }
-  if (!["private", "unlisted", "public"].includes(payload.privacyStatus)) {
-    return { success: false, error: "Invalid privacy status" };
+  try {
+    validatePayload(payload);
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : "Validation failed" };
   }
 
   const job = getRenderJob(payload.renderJobId);
-  if (!job || job.status !== "completed" || !job.output_url) {
+  if (job?.status !== "completed" || !job?.output_url) {
     return { success: false, error: "Render job not ready for publishing" };
   }
 
@@ -82,21 +108,8 @@ export async function publishToYouTube(payload: PublishPayload) {
     }
     const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
 
-    const tags = payload.tags
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean)
-      .slice(0, 10);
-
-    const result = await uploadVideo({
-      accessToken,
-      title: payload.title,
-      description: buildYppDescription(payload.description, payload.aiDisclosure),
-      tags,
-      privacyStatus: payload.privacyStatus,
-      madeForKids: payload.madeForKids,
-      videoBuffer,
-    });
+    const uploadParams = buildUploadParams(payload, videoBuffer, accessToken);
+    const result = await uploadVideo(uploadParams);
 
     insertYouTubeUpload({
       userId,

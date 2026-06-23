@@ -97,6 +97,98 @@ function resetAnimationFrame(rafRef: React.MutableRefObject<number | null>) {
   }
 }
 
+function setupAudioListeners(
+  audio: HTMLAudioElement,
+  ctx: AudioContext,
+  updateWeights: () => void,
+  rafRef: React.MutableRefObject<number | null>,
+  setIsPlaying: (playing: boolean) => void,
+  setWeights: (w: VisemeWeights) => void,
+  weightsRef: React.MutableRefObject<VisemeWeights>
+) {
+  const handlePlay = () => {
+    setIsPlaying(true);
+    if (ctx.state === "suspended") {
+      void ctx.resume();
+    }
+    rafRef.current ??= requestAnimationFrame(updateWeights);
+  };
+
+  const handlePause = () => {
+    setIsPlaying(false);
+    resetAnimationFrame(rafRef);
+  };
+
+  const handleEnded = () => {
+    setIsPlaying(false);
+    weightsRef.current = emptyWeights();
+    setWeights(emptyWeights());
+    resetAnimationFrame(rafRef);
+  };
+
+  audio.addEventListener("play", handlePlay);
+  audio.addEventListener("pause", handlePause);
+  audio.addEventListener("ended", handleEnded);
+
+  return () => {
+    audio.removeEventListener("play", handlePlay);
+    audio.removeEventListener("pause", handlePause);
+    audio.removeEventListener("ended", handleEnded);
+  };
+}
+
+function processAudioFrame(
+  analyser: AnalyserNode,
+  audioContext: AudioContext | null,
+  currentWeights: VisemeWeights
+): VisemeWeights {
+  const data = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(data);
+  const sampleRate = audioContext?.sampleRate ?? 48000;
+  const target = computeTargetWeights(data, sampleRate);
+  return smoothWeights(currentWeights, target);
+}
+
+function cleanupAudioGraph(
+  ctx: AudioContext,
+  analyser: AnalyserNode,
+  source: MediaElementAudioSourceNode,
+  audioContextRef: React.MutableRefObject<AudioContext | null>,
+  analyserRef: React.MutableRefObject<AnalyserNode | null>,
+  sourceRef: React.MutableRefObject<MediaElementAudioSourceNode | null>,
+  rafRef: React.MutableRefObject<number | null>,
+  cleanupListeners: () => void
+) {
+  cleanupListeners();
+  resetAnimationFrame(rafRef);
+  source.disconnect();
+  analyser.disconnect();
+  void ctx.close();
+  audioContextRef.current = null;
+  analyserRef.current = null;
+  sourceRef.current = null;
+}
+
+function setupAudioGraph(
+  audio: HTMLAudioElement,
+  audioContextRef: React.MutableRefObject<AudioContext | null>,
+  analyserRef: React.MutableRefObject<AnalyserNode | null>,
+  sourceRef: React.MutableRefObject<MediaElementAudioSourceNode | null>,
+  setError: (e: string | null) => void
+): { ctx: AudioContext; analyser: AnalyserNode; source: MediaElementAudioSourceNode } | null {
+  const graph = createAudioGraph(audio);
+  if (!graph.ok) {
+    setError(graph.error);
+    return null;
+  }
+
+  const { ctx, analyser, source } = graph;
+  audioContextRef.current = ctx;
+  analyserRef.current = analyser;
+  sourceRef.current = source;
+  return graph;
+}
+
 export function useLipSync(audioRef: React.RefObject<HTMLAudioElement | null>) {
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -108,16 +200,12 @@ export function useLipSync(audioRef: React.RefObject<HTMLAudioElement | null>) {
   const [error, setError] = useState<string | null>(null);
 
   const updateWeights = useCallback(() => {
-    const analyser = analyserRef.current;
-    if (!analyser) return;
-
-    const data = new Uint8Array(analyser.frequencyBinCount);
-    analyser.getByteFrequencyData(data);
-
-    const sampleRate = audioContextRef.current?.sampleRate ?? 48000;
-    const target = computeTargetWeights(data, sampleRate);
-    const next = smoothWeights(weightsRef.current, target);
-
+    if (!analyserRef.current) return;
+    const next = processAudioFrame(
+      analyserRef.current,
+      audioContextRef.current,
+      weightsRef.current
+    );
     weightsRef.current = next;
     setWeights(next);
     rafRef.current = requestAnimationFrame(updateWeights);
@@ -127,52 +215,30 @@ export function useLipSync(audioRef: React.RefObject<HTMLAudioElement | null>) {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const graph = createAudioGraph(audio);
-    if (!graph.ok) {
-      setError(graph.error);
-      return;
-    }
+    const graph = setupAudioGraph(audio, audioContextRef, analyserRef, sourceRef, setError);
+    if (!graph) return;
 
-    const { ctx, analyser, source } = graph;
-    audioContextRef.current = ctx;
-    analyserRef.current = analyser;
-    sourceRef.current = source;
-
-    const handlePlay = () => {
-      setIsPlaying(true);
-      if (ctx.state === "suspended") {
-        void ctx.resume();
-      }
-      rafRef.current ??= requestAnimationFrame(updateWeights);
-    };
-
-    const handlePause = () => {
-      setIsPlaying(false);
-      resetAnimationFrame(rafRef);
-    };
-
-    const handleEnded = () => {
-      setIsPlaying(false);
-      weightsRef.current = emptyWeights();
-      setWeights(emptyWeights());
-      resetAnimationFrame(rafRef);
-    };
-
-    audio.addEventListener("play", handlePlay);
-    audio.addEventListener("pause", handlePause);
-    audio.addEventListener("ended", handleEnded);
+    const cleanupListeners = setupAudioListeners(
+      audio,
+      graph.ctx,
+      updateWeights,
+      rafRef,
+      setIsPlaying,
+      setWeights,
+      weightsRef
+    );
 
     return () => {
-      audio.removeEventListener("play", handlePlay);
-      audio.removeEventListener("pause", handlePause);
-      audio.removeEventListener("ended", handleEnded);
-      resetAnimationFrame(rafRef);
-      source.disconnect();
-      analyser.disconnect();
-      void ctx.close();
-      audioContextRef.current = null;
-      analyserRef.current = null;
-      sourceRef.current = null;
+      cleanupAudioGraph(
+        graph.ctx,
+        graph.analyser,
+        graph.source,
+        audioContextRef,
+        analyserRef,
+        sourceRef,
+        rafRef,
+        cleanupListeners
+      );
     };
   }, [audioRef, updateWeights]);
 
