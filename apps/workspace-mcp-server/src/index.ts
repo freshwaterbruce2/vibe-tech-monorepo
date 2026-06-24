@@ -101,7 +101,12 @@ Returns: { key, value (masked if sensitive), sensitive, category }`,
       return {
         content: [{
           type: 'text',
-          text: JSON.stringify({ key: entry.key, value: entry.masked, sensitive: entry.sensitive, category: entry.category }, null, 2),
+          text: JSON.stringify({
+            key: entry.key,
+            value: entry.masked,
+            sensitive: entry.sensitive,
+            category: entry.category,
+          }, null, 2),
         }],
       };
     } catch (error: unknown) {
@@ -188,7 +193,11 @@ Returns: { ranges, ports[], lastUpdated }`,
       return {
         content: [{
           type: 'text',
-          text: JSON.stringify({ ranges: registry.ranges, ports, lastUpdated: registry.lastUpdated }, null, 2),
+          text: JSON.stringify({
+            ranges: registry.ranges,
+            ports,
+            lastUpdated: registry.lastUpdated,
+          }, null, 2),
         }],
       };
     } catch (error: unknown) {
@@ -226,7 +235,8 @@ Returns: Port assignment details or "unassigned" status.`,
       }
 
       if (app) {
-        const matches = registry.ports.filter((p) => p.app.toLowerCase().includes(app.toLowerCase()));
+        const appLower = app.toLowerCase();
+        const matches = registry.ports.filter((p) => p.app.toLowerCase().includes(appLower));
         if (matches.length === 0) {
           return { content: [{ type: 'text', text: `No port registered for app "${app}".` }] };
         }
@@ -380,8 +390,9 @@ Returns: Matches grouped by source.`,
         ports: registry.ports.filter(
           (p) => p.app.toLowerCase().includes(q) || p.description.toLowerCase().includes(q),
         ),
-        mcpServers: mcpServers.filter(
-          (s) => s.name.toLowerCase().includes(q) || s.args.some((a) => a.toLowerCase().includes(q)),
+        mcpServers: mcpServers.filter((s) =>
+          s.name.toLowerCase().includes(q)
+          || s.args.some((a) => a.toLowerCase().includes(q)),
         ),
         plugins: plugins.filter(
           (p) => p.name.toLowerCase().includes(q)

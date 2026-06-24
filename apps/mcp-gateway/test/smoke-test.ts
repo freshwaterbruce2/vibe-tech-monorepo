@@ -11,7 +11,66 @@ function makeId(): string {
     return `test-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-async function main() {
+function buildIdentifyMessage(): string {
+    return JSON.stringify({
+        messageId: makeId(),
+        type: 'identify',
+        timestamp: Date.now(),
+        source: 'openclaw',
+        version: '1.0.0',
+        payload: { clientType: 'openclaw' },
+    });
+}
+
+function buildToolCallMessage(): string {
+    const callId = makeId();
+    return JSON.stringify({
+        messageId: makeId(),
+        type: 'mcp:tool:call',
+        timestamp: Date.now(),
+        source: 'openclaw',
+        target: 'antigravity',
+        version: '1.0.0',
+        correlationId: callId,
+        payload: {
+            callId,
+            server: 'sequential-thinking',
+            tool: 'sequentialthinking',
+            args: {
+                thought: 'This is a smoke test from the OpenClaw-Antigravity bridge integration test.',
+                nextThoughtNeeded: false,
+                thoughtNumber: 1,
+                totalThoughts: 1,
+            },
+        },
+    });
+}
+
+function handleMessage(
+    raw: Buffer,
+    ws: WebSocket,
+    timer: ReturnType<typeof setTimeout>,
+    resolve: () => void,
+): void {
+    const data = JSON.parse(raw.toString());
+    console.log(`[smoke-test] Received: type=${data.type}`);
+
+    if (data.type === 'mcp:tool:result') {
+        console.log('[smoke-test] ✅ SUCCESS — Got MCP_TOOL_RESULT back!');
+        console.log(`[smoke-test] Success: ${data.payload?.success}`);
+        if (data.payload?.data) {
+            console.log(`[smoke-test] Data: ${JSON.stringify(data.payload.data).slice(0, 200)}...`);
+        }
+        if (data.payload?.error) {
+            console.log(`[smoke-test] Error: ${data.payload.error}`);
+        }
+        clearTimeout(timer);
+        ws.close();
+        resolve();
+    }
+}
+
+function runSmokeTest(): Promise<void> {
     console.log('[smoke-test] Connecting to IPC Bridge...');
 
     return new Promise<void>((resolve, reject) => {
@@ -24,61 +83,13 @@ async function main() {
 
         ws.on('open', () => {
             console.log('[smoke-test] Connected to IPC Bridge');
-
-            // Identify as openclaw
-            ws.send(JSON.stringify({
-                messageId: makeId(),
-                type: 'identify',
-                timestamp: Date.now(),
-                source: 'openclaw',
-                version: '1.0.0',
-                payload: { clientType: 'openclaw' },
-            }));
-
-            // Send a test MCP_TOOL_CALL — list notebooks via notebooklm
-            const callId = makeId();
-            const msg = {
-                messageId: makeId(),
-                type: 'mcp:tool:call',
-                timestamp: Date.now(),
-                source: 'openclaw',
-                target: 'antigravity',
-                version: '1.0.0',
-                correlationId: callId,
-                payload: {
-                    callId,
-                    server: 'sequential-thinking',
-                    tool: 'sequentialthinking',
-                    args: {
-                        thought: 'This is a smoke test from the OpenClaw-Antigravity bridge integration test.',
-                        nextThoughtNeeded: false,
-                        thoughtNumber: 1,
-                        totalThoughts: 1,
-                    },
-                },
-            };
-
-            console.log(`[smoke-test] Sending MCP_TOOL_CALL: sequential-thinking.sequentialthinking`);
-            ws.send(JSON.stringify(msg));
+            ws.send(buildIdentifyMessage());
+            console.log('[smoke-test] Sending MCP_TOOL_CALL: sequential-thinking.sequentialthinking');
+            ws.send(buildToolCallMessage());
         });
 
         ws.on('message', (raw) => {
-            const data = JSON.parse(raw.toString());
-            console.log(`[smoke-test] Received: type=${data.type}`);
-
-            if (data.type === 'mcp:tool:result') {
-                console.log('[smoke-test] ✅ SUCCESS — Got MCP_TOOL_RESULT back!');
-                console.log(`[smoke-test] Success: ${data.payload?.success}`);
-                if (data.payload?.data) {
-                    console.log(`[smoke-test] Data: ${JSON.stringify(data.payload.data).slice(0, 200)}...`);
-                }
-                if (data.payload?.error) {
-                    console.log(`[smoke-test] Error: ${data.payload.error}`);
-                }
-                clearTimeout(timer);
-                ws.close();
-                resolve();
-            }
+            handleMessage(raw as Buffer, ws, timer, resolve);
         });
 
         ws.on('error', (err) => {
@@ -93,7 +104,7 @@ async function main() {
     });
 }
 
-main()
+runSmokeTest()
     .then(() => {
         console.log('[smoke-test] Test complete');
         process.exit(0);

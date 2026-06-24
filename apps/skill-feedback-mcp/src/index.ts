@@ -7,6 +7,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import Database from 'better-sqlite3';
+import type { Database as SqliteDatabase } from 'better-sqlite3';
 import { existsSync } from 'fs';
 import crypto from 'crypto';
 
@@ -41,6 +42,113 @@ interface FailureRow {
 }
 
 // --- Tool: log_skill_usage -----------------------------------------
+
+function updateSkillMetrics(
+  db: SqliteDatabase,
+  name: string,
+  success: boolean,
+  userRating: number | undefined,
+  notes: string | undefined,
+): { newUsageCount: number; newSuccessRate: number } {
+  const skill = db.prepare(
+    'SELECT usage_count, success_rate, user_rating FROM generated_skills WHERE name = ?',
+  ).get(name) as GeneratedSkillRow | undefined;
+
+  const newUsageCount = (skill?.usage_count ?? 0) + 1;
+  const successValue = success ? 1.0 : 0.0;
+  const newSuccessRate = skill?.usage_count
+    ? ((skill.success_rate * skill.usage_count) + successValue) / newUsageCount
+    : successValue;
+  const ratingToUpdate = userRating ?? skill?.user_rating ?? null;
+
+  db.prepare(`
+    UPDATE generated_skills
+    SET usage_count = ?,
+        success_rate = ?,
+        user_rating = ?,
+        last_used = datetime('now'),
+        notes = coalesce(?, notes)
+    WHERE name = ?
+  `).run(newUsageCount, newSuccessRate, ratingToUpdate, notes ?? null, name);
+
+  return { newUsageCount, newSuccessRate };
+}
+
+function recordExecution(
+  db: SqliteDatabase,
+  name: string,
+  success: boolean,
+  executionTimeMs: number | undefined,
+  errorMessage: string | undefined,
+): string {
+  const executionId = crypto.randomUUID();
+  const nowEpoch = Math.floor(Date.now() / 1000);
+  const executionTimeSec = executionTimeMs ? executionTimeMs / 1000 : 0;
+
+  db.prepare(`
+    INSERT INTO agent_executions (
+      execution_id, agent_name, task_type, tools_used,
+      started_at, completed_at, success, execution_time_ms,
+      execution_time, error_message, created_at, metadata
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    executionId,
+    'antigravity',
+    name,
+    JSON.stringify([name]),
+    new Date().toISOString(),
+    new Date().toISOString(),
+    success ? 1 : 0,
+    executionTimeMs ?? 0,
+    executionTimeSec,
+    errorMessage ?? null,
+    nowEpoch,
+    JSON.stringify({ triggered_by: 'skill-feedback-mcp' }),
+  );
+
+  return executionId;
+}
+
+function logSkillUsage(
+  name: string,
+  success: boolean,
+  executionTimeMs: number | undefined,
+  errorMessage: string | undefined,
+  userRating: number | undefined,
+  notes: string | undefined,
+): { content: Array<{ type: 'text'; text: string }>; isError?: boolean } {
+  const db = getDb();
+  try {
+    db.prepare(`
+      INSERT OR IGNORE INTO generated_skills (name, type, generated_at)
+      VALUES (?, 'skill', datetime('now'))
+    `).run(name);
+
+    const executionId = recordExecution(db, name, success, executionTimeMs, errorMessage);
+
+    const { newUsageCount, newSuccessRate } = updateSkillMetrics(
+      db,
+      name,
+      success,
+      userRating,
+      notes,
+    );
+
+    return {
+      content: [{
+        type: 'text' as const,
+        text: JSON.stringify({
+          success: true,
+          message: `Logged usage for skill "${name}". New usage count: ${newUsageCount}, success rate: ${(newSuccessRate * 100).toFixed(1)}%.`,
+          execution_id: executionId,
+        }, null, 2),
+      }],
+    };
+  } finally {
+    db.close();
+  }
+}
+
 server.tool(
   'log_skill_usage',
   'Log the execution of an auto-generated skill, update its metrics (uses/success rate), and store execution history.',
@@ -50,89 +158,19 @@ server.tool(
     executionTimeMs: z.number().optional().describe('Optional execution duration in milliseconds'),
     errorMessage: z.string().optional().describe('Optional error message if failed'),
     userRating: z.number().min(1).max(5).optional().describe('Optional user rating (1 to 5 stars)'),
-    notes: z.string().optional().describe('Optional notes about the execution')
+    notes: z.string().optional().describe('Optional notes about the execution'),
   },
   async ({ name, success, executionTimeMs, errorMessage, userRating, notes }) => {
-    let db;
     try {
-      db = getDb();
-
-      // 1. Ensure the skill exists in generated_skills
-      db.prepare(`
-        INSERT OR IGNORE INTO generated_skills (name, type, generated_at)
-        VALUES (?, 'skill', datetime('now'))
-      `).run(name);
-
-      // 2. Insert into agent_executions
-      const executionId = crypto.randomUUID();
-      const nowEpoch = Math.floor(Date.now() / 1000);
-      const executionTimeSec = executionTimeMs ? executionTimeMs / 1000 : 0;
-      
-      db.prepare(`
-        INSERT INTO agent_executions (
-          execution_id, agent_name, task_type, tools_used, 
-          started_at, completed_at, success, execution_time_ms, 
-          execution_time, error_message, created_at, metadata
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        executionId,
-        'antigravity',
-        name,
-        JSON.stringify([name]),
-        new Date().toISOString(),
-        new Date().toISOString(),
-        success ? 1 : 0,
-        executionTimeMs ?? 0,
-        executionTimeSec,
-        errorMessage ?? null,
-        nowEpoch,
-        JSON.stringify({ triggered_by: 'skill-feedback-mcp' })
-      );
-
-      // 3. Update generated_skills metrics (usage count, success rate, user rating)
-      const skill = db.prepare('SELECT usage_count, success_rate, user_rating FROM generated_skills WHERE name = ?').get(name) as GeneratedSkillRow | undefined;
-      
-      const newUsageCount = (skill?.usage_count ?? 0) + 1;
-      const successValue = success ? 1.0 : 0.0;
-      const newSuccessRate = skill?.usage_count 
-        ? ((skill.success_rate * skill.usage_count) + successValue) / newUsageCount
-        : successValue;
-
-      const ratingToUpdate = userRating ?? skill?.user_rating ?? null;
-
-      db.prepare(`
-        UPDATE generated_skills
-        SET usage_count = ?,
-            success_rate = ?,
-            user_rating = ?,
-            last_used = datetime('now'),
-            notes = coalesce(?, notes)
-        WHERE name = ?
-      `).run(newUsageCount, newSuccessRate, ratingToUpdate, notes ?? null, name);
-
-      return {
-        content: [{
-          type: 'text' as const,
-          text: JSON.stringify({
-            success: true,
-            message: `Logged usage for skill "${name}". New usage count: ${newUsageCount}, success rate: ${(newSuccessRate * 100).toFixed(1)}%.`,
-            execution_id: executionId
-          }, null, 2)
-        }]
-      };
+      return logSkillUsage(name, success, executionTimeMs, errorMessage, userRating, notes);
     } catch (error: unknown) {
       const err = error as Error;
       return {
-        content: [{
-          type: 'text' as const,
-          text: `Error logging skill usage: ${err.message}`
-        }],
-        isError: true
+        content: [{ type: 'text' as const, text: `Error logging skill usage: ${err.message}` }],
+        isError: true,
       };
-    } finally {
-      if (db) db.close();
     }
-  }
+  },
 );
 
 // --- Tool: get_skill_benchmarks ------------------------------------
@@ -180,85 +218,87 @@ server.tool(
 );
 
 // --- Tool: recommend_skill_variants --------------------------------
+
+function adaptionForError(err: string): string {
+  const lower = err.toLowerCase();
+  if (lower.includes('timeout')) {
+    return 'Increase timeout threshold, partition datasets, or run asynchronously.';
+  }
+  if (lower.includes('permission') || lower.includes('access')) {
+    return 'Verify OS permissions and workspace path configuration using paths:check.';
+  }
+  if (lower.includes('not found') || lower.includes('exist')) {
+    return 'Add safety checks (existsSync / Test-Path) before attempting file operations.';
+  }
+  if (lower.includes('duplicate')) {
+    return 'Verify skill is not attempting to recreate existing files; implement overwrite flags.';
+  }
+  return 'Analyze error logs to resolve syntax or logical issues.';
+}
+
+function recommendSkillVariants(
+  name: string,
+): { content: Array<{ type: 'text'; text: string }>; isError?: boolean } {
+  const db = getDb();
+  try {
+    const failures = db.prepare(`
+      SELECT error_message, execution_time_ms, completed_at
+      FROM agent_executions
+      WHERE (tools_used LIKE ? OR task_type = ?) AND success = 0
+      ORDER BY completed_at DESC
+      LIMIT 10
+    `).all(`%${name}%`, name) as FailureRow[];
+
+    if (failures.length === 0) {
+      return {
+        content: [{ type: 'text' as const, text: `No failures logged for skill "${name}". No variants needed.` }],
+      };
+    }
+
+    const errorCounts: Record<string, number> = {};
+    failures.forEach((f) => {
+      const errMsg = f.error_message ?? 'Unknown error';
+      errorCounts[errMsg] = (errorCounts[errMsg] ?? 0) + 1;
+    });
+
+    const recommendations = Object.entries(errorCounts).map(([err, count]) => ({
+      error: err,
+      occurrences: count,
+      suggested_adaptation: adaptionForError(err),
+    }));
+
+    return {
+      content: [{
+        type: 'text' as const,
+        text: JSON.stringify({
+          skill: name,
+          total_failed_analyzed: failures.length,
+          recommendations,
+        }, null, 2),
+      }],
+    };
+  } finally {
+    db.close();
+  }
+}
+
 server.tool(
   'recommend_skill_variants',
   'Analyze execution errors for a specific skill and suggest prompt or code adaptations to resolve them.',
   {
-    name: z.string().min(1).describe('The name of the skill/agent to analyze')
+    name: z.string().min(1).describe('The name of the skill/agent to analyze'),
   },
   async ({ name }) => {
-    let db;
     try {
-      db = getDb();
-      // Get the last 10 failed executions for this skill
-      const failures = db.prepare(`
-        SELECT error_message, execution_time_ms, completed_at
-        FROM agent_executions
-        WHERE (tools_used LIKE ? OR task_type = ?) AND success = 0
-        ORDER BY completed_at DESC
-        LIMIT 10
-      `).all(`%${name}%`, name) as FailureRow[];
-
-      if (failures.length === 0) {
-        return {
-          content: [{
-            type: 'text' as const,
-            text: `No failures logged for skill "${name}". No variants needed.`
-          }]
-        };
-      }
-
-      // Consolidate errors
-      const errorCounts: Record<string, number> = {};
-      failures.forEach((f) => {
-        const errMsg = f.error_message ?? 'Unknown error';
-        errorCounts[errMsg] = (errorCounts[errMsg] ?? 0) + 1;
-      });
-
-      // Simple heuristic variant recommendations
-      const recommendations = [];
-      for (const [err, count] of Object.entries(errorCounts)) {
-        let action = 'Analyze error logs to resolve syntax or logical issues.';
-        if (err.toLowerCase().includes('timeout')) {
-          action = 'Increase timeout threshold, partition datasets, or run asynchronously.';
-        } else if (err.toLowerCase().includes('permission') || err.toLowerCase().includes('access')) {
-          action = 'Verify OS permissions and workspace path configuration using paths:check.';
-        } else if (err.toLowerCase().includes('not found') || err.toLowerCase().includes('exist')) {
-          action = 'Add safety checks (existsSync / Test-Path) before attempting file operations.';
-        } else if (err.toLowerCase().includes('duplicate')) {
-          action = 'Verify skill is not attempting to recreate existing files; implement overwrite flags.';
-        }
-
-        recommendations.push({
-          error: err,
-          occurrences: count,
-          suggested_adaptation: action
-        });
-      }
-
-      return {
-        content: [{
-          type: 'text' as const,
-          text: JSON.stringify({
-            skill: name,
-            total_failed_analyzed: failures.length,
-            recommendations
-          }, null, 2)
-        }]
-      };
+      return recommendSkillVariants(name);
     } catch (error: unknown) {
       const err = error as Error;
       return {
-        content: [{
-          type: 'text' as const,
-          text: `Error analyzing skill variants: ${err.message}`
-        }],
-        isError: true
+        content: [{ type: 'text' as const, text: `Error analyzing skill variants: ${err.message}` }],
+        isError: true,
       };
-    } finally {
-      if (db) db.close();
     }
-  }
+  },
 );
 
 // Start server

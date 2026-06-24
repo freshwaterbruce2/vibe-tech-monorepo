@@ -619,6 +619,19 @@ export default tseslint.config(
     },
   },
 
+  // mcp-skills-server: keep typed linting scoped to its own tsconfig.lint.json
+  // to avoid loading the multi-project program that OOMs on this small server.
+  {
+    files: ['apps/mcp-skills-server/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        projectService: false,
+        project: ['./apps/mcp-skills-server/tsconfig.lint.json'],
+      },
+    },
+  },
+
   {
     files: ['packages/agent-lats/**/*.ts'],
     languageOptions: {

@@ -24,6 +24,32 @@ export interface SummarizationDeps {
   llm: LlmSummarizer | null;
 }
 
+async function dispatchTool(
+  name: string,
+  args: Record<string, unknown>,
+  memoryManager: MemoryManager,
+  analyzer: PatternAnalyzer | null,
+  exporter: MarkdownExporter | null,
+  consolidator: MemoryConsolidator | null,
+  cryptoMemory: CryptoMemory | null,
+  gitMemory: GitMemory | null,
+  novaMemory: NovaMemory | null,
+  learningBridge: LearningBridge | null,
+  summarizationDeps: SummarizationDeps,
+): Promise<CallToolResult | null> {
+  const core = await handleCoreMemory(name, args, memoryManager, analyzer, exporter, consolidator);
+  if (core) return core;
+  const integrations = await handleIntegrations(name, args, cryptoMemory, gitMemory, novaMemory);
+  if (integrations) return integrations;
+  const learning = await handleLearning(
+    name, args, learningBridge, summarizationDeps, memoryManager, novaMemory,
+  );
+  if (learning) return learning;
+  const cognitive = await handleCognitiveMemory(name, args, memoryManager);
+  if (cognitive) return cognitive;
+  return handleUnifiedSearch(name, args, memoryManager, learningBridge);
+}
+
 /**
  * Handle MCP tool calls — dispatches to domain-specific handler modules
  */
@@ -40,44 +66,21 @@ export async function handleToolCall(
   summarizationDeps: SummarizationDeps = { summarizer: null, decay: null, llm: null },
 ): Promise<CallToolResult> {
   const { name, arguments: args } = request.params;
-
   try {
-    // 1. Core memory operations (search, add, track, health, consolidate, export)
-    const coreResult = await handleCoreMemory(
-      name, args as Record<string, unknown>,
-      memoryManager, analyzer, exporter, consolidator,
+    const result = await dispatchTool(
+      name,
+      args as Record<string, unknown>,
+      memoryManager,
+      analyzer,
+      exporter,
+      consolidator,
+      cryptoMemory,
+      gitMemory,
+      novaMemory,
+      learningBridge,
+      summarizationDeps,
     );
-    if (coreResult) return coreResult;
-
-    // 2. Integration handlers (crypto, git, nova context)
-    const integrationResult = await handleIntegrations(
-      name, args as Record<string, unknown>,
-      cryptoMemory, gitMemory, novaMemory,
-    );
-    if (integrationResult) return integrationResult;
-
-    // 3. Learning, RAG pipeline, summarization & decay
-    const learningResult = await handleLearning(
-      name, args as Record<string, unknown>,
-      learningBridge, summarizationDeps, memoryManager, novaMemory,
-    );
-    if (learningResult) return learningResult;
-
-    // 4. Cognitive memory (outcomes, anti-patterns, retrieval-time scoring)
-    const cognitiveResult = await handleCognitiveMemory(
-      name, args as Record<string, unknown>, memoryManager,
-    );
-    if (cognitiveResult) return cognitiveResult;
-
-    // 5. Unified search (fans out across all sources)
-    const unifiedResult = await handleUnifiedSearch(
-      name, args as Record<string, unknown>,
-      memoryManager, learningBridge,
-    );
-    if (unifiedResult) return unifiedResult;
-
-    // Unknown tool
-    return {
+    return result ?? {
       content: [{ type: 'text', text: JSON.stringify({ error: `Unknown tool: ${name}` }) }],
       isError: true,
     };

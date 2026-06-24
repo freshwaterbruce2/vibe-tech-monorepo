@@ -135,7 +135,8 @@ export function loadMcpConfig(): McpServerEntry[] {
     const command = cfg.command || '';
 
     // Determine if it's a custom (local) server vs. npx-based.
-    const distPath = args.find((a) => /C:[/\\]dev[/\\]apps[/\\]/i.test(a)) || null;
+    // Local servers point at a workspace app's compiled entry under */apps/*/dist/*.
+    const distPath = args.find((a) => /\\?\/?apps\/[^/\\]+\/dist\//i.test(a)) || null;
     const isCustom = distPath !== null;
 
     // Mask any sensitive env vars

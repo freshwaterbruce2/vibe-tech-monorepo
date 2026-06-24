@@ -60,7 +60,10 @@ export interface HealthCheckResult {
 /**
  * Create a healthy status
  */
-export function createHealthyStatus(message?: string, details?: Record<string, unknown>): HealthStatus {
+export function createHealthyStatus(
+  message?: string,
+  details?: Record<string, unknown>,
+): HealthStatus {
   return {
     healthy: true,
     message: message ?? 'OK',
@@ -72,7 +75,10 @@ export function createHealthyStatus(message?: string, details?: Record<string, u
 /**
  * Create an unhealthy status
  */
-export function createUnhealthyStatus(message: string, details?: Record<string, unknown>): HealthStatus {
+export function createUnhealthyStatus(
+  message: string,
+  details?: Record<string, unknown>,
+): HealthStatus {
   return {
     healthy: false,
     message,
