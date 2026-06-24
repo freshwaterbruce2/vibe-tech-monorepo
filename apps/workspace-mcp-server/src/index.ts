@@ -11,6 +11,7 @@ import { z } from 'zod';
 import {
   KNOWN_DATABASES,
   DATA_PATHS,
+  WORKSPACE_ROOT,
 } from './constants.js';
 import {
   loadEnvFile,
@@ -135,7 +136,7 @@ Use this to verify API keys are configured before running services.`,
       }
 
       // Load raw entries (we need the actual value for length check)
-      const filePath = envPath || `${process.env.WORKSPACE_ROOT || 'V:\\monorepo'}\\.env`;
+      const filePath = envPath ?? `${WORKSPACE_ROOT}\\.env`;
       const { readFileSync, existsSync } = await import('fs');
       if (!existsSync(filePath)) {
         return { content: [{ type: 'text', text: `File not found: ${filePath}` }] };
@@ -290,8 +291,8 @@ Returns: Array of local plugin configurations.`,
 // ─── Tool: ws_list_databases ───────────────────────────────────────
 server.tool(
   'ws_list_databases',
-  `List all known SQLite databases on D:\\databases with existence check and file size.
-All databases live on D:\\ per workspace policy — never on V:\\monorepo.
+  `List all known SQLite databases on the data drive with existence check and file size.
+All databases live on the data drive per workspace policy — never under the source tree.
 
 Returns: Array of { name, path, purpose, exists, sizeMB }`,
   {},
@@ -329,7 +330,7 @@ Use this for a quick health check or to orient a new agent session.`,
       }
 
       const summary = {
-        workspace: process.env.WORKSPACE_ROOT || 'V:\\monorepo',
+        workspace: WORKSPACE_ROOT,
         envVars: { total: envEntries.length, byCategory: envByCategory },
         ports: {
           assigned: registry.ports.length,

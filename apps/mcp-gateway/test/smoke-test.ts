@@ -70,7 +70,7 @@ function handleMessage(
     }
 }
 
-function runSmokeTest(): Promise<void> {
+async function runSmokeTest(): Promise<void> {
     console.log('[smoke-test] Connecting to IPC Bridge...');
 
     return new Promise<void>((resolve, reject) => {

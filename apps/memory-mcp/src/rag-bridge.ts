@@ -6,12 +6,19 @@
  * Static imports allow tsup to bundle nova-agent's RAG modules at build time.
  */
 
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { RAGIndexer } from '../../nova-agent/src/rag/indexer.js';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { RAGRetriever } from '../../nova-agent/src/rag/retriever.js';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { RAGReranker } from '../../nova-agent/src/rag/reranker.js';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { RAGCache } from '../../nova-agent/src/rag/cache.js';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { DEFAULT_RAG_CONFIG } from '../../nova-agent/src/rag/types.js';
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import type { RAGConfig, SearchResult } from '../../nova-agent/src/rag/types.js';
+import { resolve } from 'path';
 
 export interface RAGSearchParams {
   query: string;
@@ -49,11 +56,11 @@ let initError: string | null = null;
 function getConfig(): RAGConfig {
   return {
     ...DEFAULT_RAG_CONFIG,
-    lanceDbPath: process.env.RAG_LANCE_DB_PATH ?? 'D:\\nova-agent-data\\lance-db',
-    cachePath: process.env.RAG_CACHE_PATH ?? 'D:\\nova-agent-data\\cache\\query-cache.sqlite',
-    hashIndexPath: process.env.RAG_HASH_INDEX_PATH ?? 'D:\\nova-agent-data\\indexes\\file-hashes.json',
-    logPath: process.env.RAG_LOG_PATH ?? 'D:\\nova-agent-data\\logs\\rag-operations.log',
-    workspaceRoot: process.env.RAG_WORKSPACE_ROOT ?? 'V:\\monorepo',
+    lanceDbPath: process.env.RAG_LANCE_DB_PATH ?? 'D:\\databases\\memory-mcp\\rag\\lance-db',
+    cachePath: process.env.RAG_CACHE_PATH ?? 'D:\\databases\\memory-mcp\\rag\\query-cache.sqlite',
+    hashIndexPath: process.env.RAG_HASH_INDEX_PATH ?? 'D:\\data\\memory-mcp\\rag\\file-hashes.json',
+    logPath: process.env.RAG_LOG_PATH ?? 'D:\\logs\\memory-mcp\\rag-operations.log',
+    workspaceRoot: process.env.RAG_WORKSPACE_ROOT ?? resolve(__dirname, '..', '..'),
     embeddingEndpoint: process.env.RAG_EMBEDDING_ENDPOINT ?? 'http://localhost:3001',
     embeddingModel: process.env.RAG_EMBEDDING_MODEL ?? 'text-embedding-3-small',
     maxChunkTokens: 512,

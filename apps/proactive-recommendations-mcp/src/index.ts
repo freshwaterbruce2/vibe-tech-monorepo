@@ -8,10 +8,10 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 import Database from 'better-sqlite3';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
-import { dirname, join } from 'path';
+import { dirname, join, resolve } from 'path';
 
 const DB_PATH = process.env.LEARNING_DB_PATH ?? 'D:/databases/agent_learning.db';
-const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT ?? 'V:/monorepo';
+const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT ?? resolve(__dirname, '..', '..');
 
 const server = new McpServer({
   name: 'proactive-recommendations-mcp',

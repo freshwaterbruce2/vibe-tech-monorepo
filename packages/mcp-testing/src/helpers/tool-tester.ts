@@ -1,3 +1,4 @@
+import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import type {
   ToolDefinition,
   ToolResult,
@@ -89,7 +90,7 @@ export class ToolTester {
 
     // Create mock context
     const context: ToolContext = {
-      server: {} as any,
+      server: {} as unknown as Server,
       logger: this.logger,
     };
 
