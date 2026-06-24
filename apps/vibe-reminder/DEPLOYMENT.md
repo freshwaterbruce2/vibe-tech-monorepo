@@ -119,8 +119,8 @@ trigger.
 
 | Variable | Required? | Purpose |
 | --- | --- | --- |
-| `REMINDER_SCHEDULER_ENABLED` | No | Set to `1` or `true` to enable the background sweep. Default: disabled. |
-| `REMINDER_SCHEDULER_INTERVAL_MS` | No | Tick interval in milliseconds. Default: `900000` (15 minutes). |
+| `REMINDER_SCHEDULER_ENABLED` | No | Set to the string `true` to enable the background sweep (only the exact value `true` is recognized). Default: disabled. |
+| `REMINDER_SCHEDULER_INTERVAL_MS` | No | Tick interval in milliseconds. Default: `300000` (5 minutes). |
 
 Behavior:
 
