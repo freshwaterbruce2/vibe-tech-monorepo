@@ -192,7 +192,9 @@
     "review": "node scripts/review.mjs",
     "review:all": "node scripts/review.mjs --all",
     "review:strict": "node scripts/review.mjs --strict-heuristics",
-    "db:trends": "pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/view-db-trends.ps1"
+    "db:trends": "pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/view-db-trends.ps1",
+    "ralph:loop": "pwsh -NoProfile -ExecutionPolicy Bypass -File tools/ralph-loop/bin/ralph.ps1",
+    "kimi:provider": "pwsh -NoProfile -ExecutionPolicy Bypass -File tools/kimi-code-provider/bin/kimi-provider.ps1"
   },
   "dependencies": {
     "@floating-ui/core": "^1.7.5",

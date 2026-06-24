@@ -1,0 +1,30 @@
+{
+  "name": "@vibetech/kimi-code-provider",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OpenAI-compatible provider adapter for Kimi K2.7 Code with schema deduplication and concurrency limits",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.lib.json",
+    "dev": "tsx src/server.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.lib.json --noEmit",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.2"
+  }
+}

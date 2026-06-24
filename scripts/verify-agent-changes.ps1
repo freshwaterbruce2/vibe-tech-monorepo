@@ -78,7 +78,50 @@ Run-Step -Name "Database Health Validation" -Action {
     & (Join-Path $PSScriptRoot "database-health.ps1") -OutputPath $dbHealthReport
 }
 
-# 3. TypeScript Typechecks
+# 3. Ralph Loop Durable-State Validation
+Run-Step -Name "Ralph Loop State Validation" -Action {
+    $ralphStateFiles = @(Get-ChildItem -Path $workspaceRoot -Recurse -File -Filter "task_plan.json" -ErrorAction SilentlyContinue |
+        Where-Object { $_.FullName -like "*ralph*" -or (Test-Path (Join-Path $_.DirectoryName "specs")) })
+
+    foreach ($stateFile in $ralphStateFiles) {
+        $progressFile = Join-Path $stateFile.DirectoryName "progress.md"
+        if (-not (Test-Path $progressFile)) {
+            throw "Missing progress.md for Ralph state: $($stateFile.FullName)"
+        }
+
+        $specsDir = Join-Path $stateFile.DirectoryName "specs"
+        if (Test-Path $specsDir) {
+            $specFiles = @(Get-ChildItem $specsDir -Filter "*.md" -ErrorAction SilentlyContinue)
+            if ($specFiles.Count -eq 0) {
+                throw "No specs found in $specsDir"
+            }
+        }
+    }
+
+    if ($ralphStateFiles.Count -eq 0) {
+        Write-Host "  No Ralph loop state detected; nothing to validate." -ForegroundColor DarkGray
+    } else {
+        Write-Host "  Validated $($ralphStateFiles.Count) Ralph loop state file(s)." -ForegroundColor DarkGray
+    }
+}
+
+# 4. Kimi Tool Schema Size Validation
+Run-Step -Name "Kimi Tool Schema Size Validation" -Action {
+    $providerDir = Join-Path $workspaceRoot "tools\kimi-code-provider"
+    if (-not (Test-Path $providerDir)) {
+        Write-Host "  Kimi provider not present; skipping." -ForegroundColor DarkGray
+        return
+    }
+
+    # Validate the deduplication module by running its unit tests.
+    & pnpm --filter @vibetech/kimi-code-provider test
+    if ($LASTEXITCODE -ne 0) {
+        throw "Kimi schema size validation failed"
+    }
+    Write-Host "  Kimi schema deduplication and size limits validated." -ForegroundColor DarkGray
+}
+
+# 5. TypeScript Typechecks
 if (-not $SkipTypecheck) {
     Run-Step -Name "TypeScript Typecheck" -Action {
         pnpm run typecheck
@@ -87,7 +130,7 @@ if (-not $SkipTypecheck) {
     Write-Host "`n>>> Skipped: TypeScript Typecheck" -ForegroundColor Yellow
 }
 
-# 4. Lints (ESLint / Biome checks)
+# 6. Lints (ESLint / Biome checks)
 if (-not $SkipLint) {
     Run-Step -Name "Lint & Formatting Checks" -Action {
         pnpm run lint
@@ -96,7 +139,7 @@ if (-not $SkipLint) {
     Write-Host "`n>>> Skipped: Lint & Formatting Checks" -ForegroundColor Yellow
 }
 
-# 5. Unit / Integration tests (Vitest)
+# 7. Unit / Integration tests (Vitest)
 if (-not $SkipTests) {
     Run-Step -Name "Unit & Integration Tests (Vitest)" -Action {
         pnpm run test:unit:all
