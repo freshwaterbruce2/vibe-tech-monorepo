@@ -38,10 +38,14 @@ for (const file of files) {
   // Skip lockfiles, images, and MCP config files
   const ext = path.extname(file).toLowerCase();
   const basename = path.basename(file).toLowerCase();
+  // The canonical MCP registry intentionally contains absolute local paths
+  // (V:/monorepo, D:/databases, etc.) so the sync tool can render working
+  // per-tool configs. Skip it rather than flagging intentional path literals.
   if (
     ['.png', '.jpg', '.jpeg', '.gif', '.ico', '.pdf', '.zip', '.tar', '.gz'].includes(ext) ||
     basename === '.mcp.json' ||
-    basename === 'check-staged-paths.js'
+    basename === 'check-staged-paths.js' ||
+    basename === 'registry.json'
   ) {
     continue;
   }

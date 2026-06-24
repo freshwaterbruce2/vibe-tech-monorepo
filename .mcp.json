@@ -146,7 +146,20 @@
     "serena": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/.local/bin/uvx.exe",
-      "args": ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server"]
+      "args": [
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server",
+        "--project",
+        "V:/monorepo",
+        "--context",
+        "claude-code",
+        "--enable-web-dashboard",
+        "false",
+        "--open-web-dashboard",
+        "false"
+      ]
     },
     "greptile": {
       "type": "http",
@@ -154,27 +167,6 @@
       "headers": {
         "Authorization": "Bearer ${GREPTILE_API_KEY}"
       }
-    },
-    "storage-learning-server": {
-      "type": "stdio",
-      "command": "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
-      "args": [
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        "V:/monorepo/scripts/view-db-trends.ps1"
-      ],
-      "tools": [
-        {
-          "name": "view_database_trends",
-          "description": "Generates a 7-day terminal ASCII chart tracking SQLite size trends, deltas, and 30-day capacity projections across stateful D:\\ databases.",
-          "inputSchema": {
-            "type": "object",
-            "properties": {}
-          }
-        }
-      ]
     }
   }
 }
