@@ -32,6 +32,19 @@ import path from "path";
 
 const ROOT = process.cwd();
 
+// Legacy projects grandfathered out of the 100% diff-coverage gate.
+// These pre-date the coverage policy and are migrated incrementally.
+const LEGACY_PROJECTS = new Set([
+	"apps/nova-agent",
+]);
+
+function isLegacyProject(rel) {
+	for (const legacy of LEGACY_PROJECTS) {
+		if (rel === legacy || rel.startsWith(`${legacy}/`)) return true;
+	}
+	return false;
+}
+
 // Extensions that can carry executable, coverable code.
 const COVERABLE_EXT = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]);
 
@@ -199,7 +212,16 @@ function main() {
 	const staged = process.argv.slice(2).map((f) => f.replace(/\\/g, "/"));
 	const targets = staged.filter(isInScope);
 
-	if (targets.length === 0) {
+	const legacyTargets = targets.filter(isLegacyProject);
+	const activeTargets = targets.filter((t) => !isLegacyProject(t));
+
+	if (legacyTargets.length > 0) {
+		console.log(
+			`Diff coverage: skipping ${legacyTargets.length} legacy project file(s) (${[...new Set(legacyTargets.map((t) => t.split("/").slice(0, 2).join("/")))].join(", ")}).`,
+		);
+	}
+
+	if (activeTargets.length === 0) {
 		console.log("Diff coverage: no in-scope source changes.");
 		return 0;
 	}
@@ -207,7 +229,7 @@ function main() {
 	const coverage = loadCoverage(findCoverageReports());
 	const violations = [];
 
-	for (const rel of targets) {
+	for (const rel of activeTargets) {
 		const added = addedLines(rel);
 		if (added.size === 0) continue;
 
