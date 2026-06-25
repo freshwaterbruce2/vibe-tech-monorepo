@@ -290,8 +290,8 @@
     "@types/react-dom": "19.2.3",
     "@vibetech/factory": "workspace:*",
     "@vitejs/plugin-react": "^5.2.0",
-    "@vitest/coverage-v8": "^4.1.2",
-    "@vitest/ui": "^4.1.2",
+    "@vitest/coverage-v8": "^4.1.9",
+    "@vitest/ui": "^4.1.9",
     "autoprefixer": "^10.4.27",
     "better-sqlite3": "12.6.2",
     "cross-env": "^10.1.0",
@@ -320,7 +320,7 @@
     "vercel": "^54.5.1",
     "verdaccio": "^6.3.2",
     "vite": "^7.3.3",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.9"
   },
   "optionalDependencies": {
     "@rollup/rollup-win32-x64-msvc": "4.59.0"
