@@ -18,6 +18,16 @@
 import type { Chunk, RAGConfig } from './types.js';
 
 const REQUEST_TIMEOUT_MS = 15_000;
+
+/**
+ * Escape characters that have special meaning in XML text content.
+ * Prevents document/chunk content from breaking the XML tags or injecting
+ * unintended structure into the LLM prompt.
+ */
+function escapeXml(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 const MAX_RETRIES = 3;
 const RETRY_BASE_DELAY_MS = 1500;
 
@@ -163,14 +173,14 @@ export class Contextualizer {
           content: [
             {
               type: 'text',
-              text: `<document>\n${document}\n</document>`,
+              text: `<document>\n${escapeXml(document)}\n</document>`,
               cache_control: { type: 'ephemeral' as const },
             },
             {
               type: 'text',
               text:
                 'Here is the chunk we want to situate within the whole document:\n' +
-                `<chunk>\n${chunkContent}\n</chunk>\n` +
+                `<chunk>\n${escapeXml(chunkContent)}\n</chunk>\n` +
                 'Please give a short succinct context to situate this chunk within ' +
                 'the overall document for the purposes of improving search retrieval ' +
                 'of the chunk. Answer only with the succinct context and nothing else.',

@@ -141,47 +141,63 @@ function attachRecognitionHandlers(
 
   recognition.onend = () => {
     recognitionRef.current = null;
-    setState((prev) => (prev === 'listening' ? 'idle' : prev));
+    setState((prev) => {
+      if (prev === 'listening') return 'idle';
+      // Do not get stuck in processing if recognition ended without TTS active
+      if (prev === 'processing') return 'idle';
+      return prev;
+    });
   };
 }
 
-/** Keep onTranscript current in a ref and clear the retry timer on unmount. */
-function useVoiceEffects(
-  onTranscript: ((text: string) => void) | undefined,
-  onTranscriptRef: { current: ((text: string) => void) | undefined },
-  retryTimerRef: { current: ReturnType<typeof setTimeout> | null },
-) {
-  useEffect(() => {
-    onTranscriptRef.current = onTranscript;
-  }, [onTranscript, onTranscriptRef]);
-
-  useEffect(
-    () => () => {
-      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-    },
-    [retryTimerRef],
-  );
+interface VoiceRefs {
+  recognitionRef: React.MutableRefObject<SpeechRecognitionInstance | null>;
+  synthRef: React.MutableRefObject<SpeechSynthesis>;
+  retryCountRef: React.MutableRefObject<number>;
+  retryTimerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
+  onTranscriptRef: React.MutableRefObject<((text: string) => void) | undefined>;
 }
 
-export function useVoice({ onTranscript, lang = 'en-US' }: UseVoiceOptions = {}) {
-  const [state, setState] = useState<VoiceState>('idle');
+/** Create and keep refs/lifecycle effects for voice recognition. */
+function useVoiceRefs(onTranscript: ((text: string) => void) | undefined): VoiceRefs {
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const synthRef = useRef(window.speechSynthesis);
   const retryCountRef = useRef(0);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Keep onTranscript in a ref so startListening never captures a stale closure
   const onTranscriptRef = useRef(onTranscript);
-  useVoiceEffects(onTranscript, onTranscriptRef, retryTimerRef);
+
+  useEffect(() => {
+    onTranscriptRef.current = onTranscript;
+  }, [onTranscript]);
+
+  useEffect(
+    () => () => {
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
+      recognitionRef.current?.stop();
+      recognitionRef.current = null;
+    },
+    [],
+  );
+
+  return { recognitionRef, synthRef, retryCountRef, retryTimerRef, onTranscriptRef };
+}
+
+export function useVoice({ onTranscript, lang = 'en-US' }: UseVoiceOptions = {}) {
+  const [state, setState] = useState<VoiceState>('idle');
+  const { recognitionRef, synthRef, retryCountRef, retryTimerRef, onTranscriptRef } =
+    useVoiceRefs(onTranscript);
 
   const cancelSpeech = useCallback(() => {
     synthRef.current.cancel();
     setState('idle');
-  }, []);
+  }, [synthRef]);
 
   const speak = useCallback(
     async (text: string): Promise<void> => runSpeech(synthRef.current, text, lang, setState),
-    [lang],
+    [lang, synthRef],
   );
 
   const stopListening = useCallback(() => {
@@ -193,10 +209,9 @@ export function useVoice({ onTranscript, lang = 'en-US' }: UseVoiceOptions = {})
     recognitionRef.current?.stop();
     recognitionRef.current = null;
     setState('idle');
-  }, []);
+  }, [recognitionRef, retryCountRef, retryTimerRef]);
 
   const startListening = useCallback(() => {
-    // Barge-in: cancel any in-progress TTS before listening
     if (synthRef.current.speaking) synthRef.current.cancel();
 
     const recognition = createRecognitionInstance(lang);
@@ -213,7 +228,7 @@ export function useVoice({ onTranscript, lang = 'en-US' }: UseVoiceOptions = {})
 
     recognitionRef.current = recognition;
     recognition.start();
-  }, [lang]); // lang is the only real dep; onTranscript is read via ref
+  }, [lang, recognitionRef, retryCountRef, retryTimerRef, onTranscriptRef, synthRef]);
 
   const isSupported =
     typeof window !== 'undefined' && !!(window.SpeechRecognition ?? window.webkitSpeechRecognition);

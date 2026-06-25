@@ -32,6 +32,16 @@ export class AnalysisManager {
   private validateCwd(cwd: string): string {
     if (!cwd || INVALID_PATH_REGEX.test(cwd)) throw new Error('Invalid project path');
     const resolvedCwd = path.resolve(cwd);
+
+    const allowedRoot = path.resolve(process.env.NOVA_WORKSPACE_ROOT ?? 'V:\\monorepo');
+    const isInsideAllowedRoot =
+      resolvedCwd === allowedRoot ||
+      resolvedCwd.toLowerCase().startsWith(`${allowedRoot.toLowerCase()}\\`) ||
+      resolvedCwd.toLowerCase().startsWith(`${allowedRoot.toLowerCase()}/`);
+    if (!isInsideAllowedRoot) {
+      throw new Error(`Project path must be inside workspace root: ${allowedRoot}`);
+    }
+
     let stat: fs.Stats;
     try {
       stat = fs.statSync(resolvedCwd);

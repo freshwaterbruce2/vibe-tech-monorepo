@@ -125,6 +125,51 @@ if ($typeScriptFiles.Count -gt 0) {
 }
 
 # ============================================
+# 3b. Diff Coverage Gate (100% coverage on new/changed source)
+# Enforces .claude/rules/testing-strategy.md: added/modified executable lines in
+# app/package/backend src must be covered by a test. Legacy code is untouched.
+# ============================================
+if ($env:COVERAGE_GATE -eq 'off') {
+    Write-Host "[cov] Diff coverage gate skipped (COVERAGE_GATE=off)" -ForegroundColor DarkGray
+} else {
+    $coverableFiles = @(
+        $sourceFiles | Where-Object {
+            ($_ -match '^(apps|packages)/[^/]+/(.*/)?src/' -or $_ -match '^backend/(.*/)?src/') -and
+            $_ -notmatch '\.(test|spec)\.[cm]?[jt]sx?$' -and
+            $_ -notmatch '\.d\.ts$' -and
+            $_ -notmatch '\.config\.[cm]?[jt]s$' -and
+            $_ -notmatch '(^|/)(__tests__|tests|e2e|__mocks__|__fixtures__|test|generated|migrations)/' -and
+            $_ -notmatch '(^|/)types\.ts$' -and
+            $_ -notmatch '\.types\.ts$'
+        }
+    )
+
+    if ($coverableFiles.Count -eq 0) {
+        Write-Host "[cov] Diff coverage skipped (no in-scope source staged)" -ForegroundColor DarkGray
+    } else {
+        $covFileList = ($coverableFiles -join ',')
+
+        # 1) Generate coverage for projects affected by the staged source.
+        #    Projects without a test:coverage target are skipped by Nx; their
+        #    changed files then surface as "no coverage report" in step 2.
+        $exitCode = [Math]::Max(
+            [int]$exitCode,
+            [int](Invoke-QualityCommand -Label "[cov 1/2] Running coverage for affected projects..." -Command {
+                pnpm exec nx affected -t test:coverage --files="$covFileList" --outputStyle=static
+            })
+        )
+
+        # 2) Enforce 100% coverage on the added lines of the staged source.
+        $exitCode = [Math]::Max(
+            [int]$exitCode,
+            [int](Invoke-QualityCommand -Label "[cov 2/2] Enforcing 100% diff coverage on changed code..." -Command {
+                node scripts/check-diff-coverage.js @coverableFiles
+            })
+        )
+    }
+}
+
+# ============================================
 # 3. File Size Check (byte size + line-count caps)
 # ============================================
 Write-Host "[4/4] Checking file sizes and line counts..." -ForegroundColor Yellow

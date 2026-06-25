@@ -29,6 +29,7 @@ import { connect } from '@lancedb/lancedb';
 import { inngest } from '@vibetech/inngest-client';
 import { RAGChunker } from './chunker.js';
 import { RAGEmbedder } from './embedder.js';
+import { buildPathFilter } from './filterUtils.js';
 import { DEFAULT_RAG_CONFIG } from './types.js';
 import type { Chunk, FileHash, RAGConfig } from './types.js';
 import type { RAGIndexSummary } from '@vibetech/inngest-client';
@@ -292,12 +293,15 @@ function buildLanceRows(embeddingResults: EmbeddingBatch[], chunks: Chunk[]): La
   return rows;
 }
 
-/** Delete stale rows for changed files, then add the freshly built rows. */
+/** Delete stale rows for changed files, then add the freshly built rows.
+ *  Returns the number of rows upserted and the set of file paths that produced
+ *  at least one successful row.
+ */
 async function upsertRowsToLance(
   config: RAGConfig,
   rows: LanceRow[],
   changedFiles: string[],
-): Promise<number> {
+): Promise<{ rowsUpserted: number; successfulPaths: string[] }> {
   const db = await connect(config.lanceDbPath);
   const tables = await db.tableNames();
   const changedSet = new Set(changedFiles);
@@ -307,7 +311,7 @@ async function upsertRowsToLance(
     // Delete old entries for changed files
     for (const path of changedSet) {
       try {
-        await table.delete(`filePath = '${path.replace(/'/g, "''")}'`);
+        await table.delete(buildPathFilter(path));
       } catch {
         /* ignore */
       }
@@ -319,20 +323,34 @@ async function upsertRowsToLance(
     await db.createTable('codebase', rows, { mode: 'overwrite' });
   }
 
+  const successfulPaths = [...new Set(rows.map((r) => r.filePath))];
   log(config, `Upserted ${rows.length} rows to LanceDB`);
-  return rows.length;
+  return { rowsUpserted: rows.length, successfulPaths };
 }
 
-/** Merge freshly computed file hashes back into the persisted hash index. */
-function applyUpdatedHashes(config: RAGConfig, hashesJson: string): number {
+/** Merge freshly computed file hashes back into the persisted hash index.
+ *  Only persists hashes for files that produced at least one successful LanceDB
+ *  row; files whose embedding/chunking failed are left unchanged so they will
+ *  be retried on the next run.
+ */
+function applyUpdatedHashes(
+  config: RAGConfig,
+  hashesJson: string,
+  successfulPaths: string[],
+): number {
   const hashes = loadFileHashes(config);
   const updatedHashes: Array<[string, FileHash]> = JSON.parse(hashesJson);
+  const successSet = new Set(successfulPaths);
+  let saved = 0;
   for (const [key, value] of updatedHashes) {
-    hashes.set(key, value);
+    if (successSet.has(key)) {
+      hashes.set(key, value);
+      saved++;
+    }
   }
   saveFileHashes(config, hashes);
-  log(config, `Saved ${updatedHashes.length} updated file hashes`);
-  return updatedHashes.length;
+  log(config, `Saved ${saved} updated file hashes`);
+  return saved;
 }
 
 /**
@@ -407,7 +425,7 @@ async function cleanupDeletedFiles(config: RAGConfig, allFiles: string[]): Promi
       if (hasTable) {
         try {
           const table = await db.openTable('codebase');
-          await table.delete(`filePath = '${path.replace(/'/g, "''")}'`);
+          await table.delete(buildPathFilter(path));
           removed++;
         } catch {
           /* ignore */
@@ -459,12 +477,13 @@ export const ragIndexPipeline = inngest.createFunction(
     // ── Step 4: Upsert to LanceDB ────────────────────────────────────────
     const upsertResult = await step.run('upsert-to-lancedb', async () => {
       const rows = buildLanceRows(embeddingResults, chunks);
-      const rowsUpserted = await upsertRowsToLance(config, rows, changedFiles);
-      return { rowsUpserted };
+      return upsertRowsToLance(config, rows, changedFiles);
     });
 
     // ── Step 5: Save file hashes ──────────────────────────────────────────
-    await step.run('save-hashes', () => applyUpdatedHashes(config, chunkResult.hashesJson));
+    await step.run('save-hashes', () =>
+      applyUpdatedHashes(config, chunkResult.hashesJson, upsertResult.successfulPaths),
+    );
 
     // ── Step 6: Cleanup deleted files ─────────────────────────────────────
     const cleanupResult = await step.run('cleanup-deleted', async () => {

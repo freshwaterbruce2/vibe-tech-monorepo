@@ -42,6 +42,31 @@ interface MarketDataPayload {
 
 type KrakenTickerMap = Record<string, MarketDataPayload | undefined>;
 
+const KRAKEN_ASSET_MAP: Record<string, string> = {
+  BTC: 'XXBT',
+  ETH: 'XETH',
+  XLM: 'XXLM',
+  USD: 'ZUSD',
+  EUR: 'ZEUR',
+  GBP: 'ZGBP',
+  CAD: 'ZCAD',
+  JPY: 'ZJPY',
+  CHF: 'ZCHF',
+  USDT: 'USDT',
+  USDC: 'USDC',
+};
+
+function toKrakenSymbol(asset: string): string {
+  const upper = asset.toUpperCase();
+  return KRAKEN_ASSET_MAP[upper] ?? (upper.length <= 3 ? `X${upper}` : upper);
+}
+
+function krakenTickerKey(pair: string): string | undefined {
+  const [base, quote] = pair.split('/');
+  if (!base || !quote) return undefined;
+  return toKrakenSymbol(base) + toKrakenSymbol(quote);
+}
+
 /**
  * Generic fetch wrapper with error handling
  */
@@ -56,10 +81,21 @@ async function apiFetch<T>(endpoint: string, options?: RequestInit): Promise<T> 
     });
 
     if (!response.ok) {
-      const errorData: ApiErrorPayload = await response.json().catch(() => ({}) as ApiErrorPayload);
+      const contentType = response.headers.get('content-type') ?? '';
+      const errorData: ApiErrorPayload = contentType.includes('application/json')
+        ? await response.json().catch(() => ({}) as ApiErrorPayload)
+        : ({} as ApiErrorPayload);
       throw new CryptoTradingApiError(
         response.status,
         errorData.detail ?? `HTTP ${response.status}: ${response.statusText}`,
+      );
+    }
+
+    const contentType = response.headers.get('content-type') ?? '';
+    if (!contentType.includes('application/json')) {
+      throw new CryptoTradingApiError(
+        response.status,
+        `Expected JSON response but received ${contentType}`,
       );
     }
 
@@ -224,16 +260,16 @@ export class CryptoTradingApi {
     position: Position,
     marketData: KrakenTickerMap,
   ): PositionSummary {
-    const rawCurrentPrice =
-      marketData[`X${position.pair.replace('/', '')}`.replace('XLM', 'XXLM').replace('USD', 'ZUSD')]
-        ?.c?.[0];
+    const tickerKey = krakenTickerKey(position.pair);
+    const rawCurrentPrice = tickerKey ? marketData[tickerKey]?.c?.[0] : undefined;
     const currentPrice = Number(rawCurrentPrice ?? position.entry_price);
 
     // Calculate unrealized P&L
     const priceDiff = currentPrice - position.entry_price;
     const unrealizedPnL =
       position.side === 'long' ? priceDiff * position.volume : -priceDiff * position.volume;
-    const unrealizedPnLPercent = (unrealizedPnL / (position.entry_price * position.volume)) * 100;
+    const costBasis = position.entry_price * position.volume;
+    const unrealizedPnLPercent = costBasis === 0 ? 0 : (unrealizedPnL / costBasis) * 100;
 
     // Calculate duration
     const openedAt = new Date(position.opened_at);

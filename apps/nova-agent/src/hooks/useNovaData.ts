@@ -166,48 +166,50 @@ function createInitialNovaData(): NovaData {
   };
 }
 
-async function fetchAllNovaData(): Promise<NovaData> {
-  const [
-    tasks,
-    activities,
-    learningEvents,
-    focusState,
-    agentStatus,
-    taskStats,
-    todayCount,
-    context,
-    memoryOverview,
-    storageHealth,
-  ] = await Promise.all([
-    invoke<Task[]>('get_tasks', { statusFilter: null, limit: 20 }).catch(() => []),
-    invoke<Activity[]>('get_recent_activities', { limit: 20, activityTypeFilter: null }).catch(
-      () => [],
-    ),
-    invoke<LearningEvent[]>('get_learning_events', { limit: 10, eventTypeFilter: null }).catch(
-      () => [],
-    ),
-    invoke<FocusState | null>('get_focus_state').catch(() => null),
-    invoke<AgentStatus>('get_agent_status').catch(() => null),
-    invoke<TaskStats>('get_task_stats').catch(() => ({})),
-    invoke<number>('get_today_activity_count').catch(() => 0),
-    invoke<SystemContext>('get_context_snapshot').catch(() => null),
-    invoke<MemoryOverview>('get_memory_overview', { limit: 5 }).catch(() => null),
-    invoke<StorageHealth>('get_storage_health').catch(() => null),
+interface NovaDataFetchResult {
+  data: Omit<NovaData, 'isLoading' | 'error'>;
+  errors: string[];
+}
+
+async function fetchAllNovaData(): Promise<NovaDataFetchResult> {
+  const results = await Promise.allSettled([
+    invoke<Task[]>('get_tasks', { statusFilter: null, limit: 20 }),
+    invoke<Activity[]>('get_recent_activities', { limit: 20, activityTypeFilter: null }),
+    invoke<LearningEvent[]>('get_learning_events', { limit: 10, eventTypeFilter: null }),
+    invoke<FocusState | null>('get_focus_state'),
+    invoke<AgentStatus>('get_agent_status'),
+    invoke<TaskStats>('get_task_stats'),
+    invoke<number>('get_today_activity_count'),
+    invoke<SystemContext>('get_context_snapshot'),
+    invoke<MemoryOverview>('get_memory_overview', { limit: 5 }),
+    invoke<StorageHealth>('get_storage_health'),
   ]);
 
+  const getValue = <T>(result: PromiseSettledResult<T>, fallback: T): T =>
+    result.status === 'fulfilled' ? result.value : fallback;
+
+  const errors = results
+    .map((r, index) => ({ r, index }))
+    .filter(({ r }) => r.status === 'rejected')
+    .map(({ r, index }) => {
+      const reason = r.status === 'rejected' ? r.reason : undefined;
+      return `invoke-${index}: ${reason instanceof Error ? reason.message : String(reason)}`;
+    });
+
   return {
-    tasks,
-    activities,
-    learningEvents,
-    focusState,
-    agentStatus,
-    taskStats,
-    todayActivityCount: todayCount,
-    context,
-    isLoading: false,
-    error: null,
-    memoryOverview,
-    storageHealth,
+    data: {
+      tasks: getValue(results[0], []),
+      activities: getValue(results[1], []),
+      learningEvents: getValue(results[2], []),
+      focusState: getValue(results[3], null),
+      agentStatus: getValue(results[4], null),
+      taskStats: getValue(results[5], {}),
+      todayActivityCount: getValue(results[6], 0),
+      context: getValue(results[7], null),
+      memoryOverview: getValue(results[8], null),
+      storageHealth: getValue(results[9], null),
+    },
+    errors,
   };
 }
 
@@ -216,7 +218,12 @@ export function useNovaData(autoRefresh: boolean = true, refreshInterval: number
 
   const fetchData = useCallback(async () => {
     try {
-      setData(await fetchAllNovaData());
+      const { data: fetchedData, errors } = await fetchAllNovaData();
+      setData({
+        ...fetchedData,
+        isLoading: false,
+        error: errors.length > 0 ? errors.join('; ') : null,
+      });
     } catch (err) {
       console.error('Failed to fetch Nova data:', err);
       setData((prev) => ({ ...prev, isLoading: false, error: String(err) }));

@@ -31,6 +31,7 @@ import { RAGEmbedder } from './embedder.js';
 import { Contextualizer } from './contextualizer.js';
 import { discoverFiles } from './fileDiscovery.js';
 import { loadFileHashes, saveFileHashes, isFileChanged } from './hashManager.js';
+import { buildPathFilter } from './filterUtils.js';
 import type { Chunk, FileHash, IndexResult, IndexState, RAGConfig } from './types.js';
 
 /** Row stored in LanceDB */
@@ -252,7 +253,7 @@ export class RAGIndexer {
     if (this.table) {
       try {
         for (const path of changedRelPaths) {
-          await this.table.delete(`filePath = '${path.replace(/'/g, "''")}'`);
+          await this.table.delete(buildPathFilter(path));
         }
         if (rows.length > 0) await this.table.add(rows);
       } catch (error) {
@@ -283,7 +284,7 @@ export class RAGIndexer {
         this.fileHashes.delete(path);
         if (this.table) {
           try {
-            await this.table.delete(`filePath = '${path.replace(/'/g, "''")}'`);
+            await this.table.delete(buildPathFilter(path));
             result.chunksRemoved++;
           } catch {
             /* ignore */

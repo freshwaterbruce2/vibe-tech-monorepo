@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import CryptoTradingApi from '@/services/cryptoTradingApi';
 import type {
   Balance,
@@ -188,6 +188,7 @@ export function useCryptoTradingDashboard(
   const { autoRefresh = true, refreshInterval = 30000 } = options;
   const s = useDashboardState();
   const { setters, setIsRefreshing } = s;
+  const hasLoadedRef = useRef(false);
 
   const fetchDashboardData = useCallback(async () => {
     const startTime = Date.now();
@@ -196,12 +197,13 @@ export function useCryptoTradingDashboard(
       setters.setError(null);
       const data = await fetchAllTradingData();
       applyTradingData(data, startTime, setters);
+      hasLoadedRef.current = true;
     } catch (err) {
-      handleFetchError(err, s.dashboardSummary === null, setters);
+      handleFetchError(err, !hasLoadedRef.current, setters);
     } finally {
       setIsRefreshing(false);
     }
-  }, [s.dashboardSummary, setters, setIsRefreshing]);
+  }, [setters, setIsRefreshing]);
 
   const refresh = useCallback(async () => {
     await fetchDashboardData();

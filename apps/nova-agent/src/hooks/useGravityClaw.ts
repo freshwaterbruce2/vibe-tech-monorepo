@@ -59,6 +59,13 @@ async function readStream(res: Response, onChunk?: (chunk: string) => void): Pro
     onChunk?.(chunk);
   }
 
+  // Flush any remaining bytes buffered in the decoder
+  const tail = decoder.decode();
+  if (tail) {
+    full += tail;
+    onChunk?.(tail);
+  }
+
   return full;
 }
 
