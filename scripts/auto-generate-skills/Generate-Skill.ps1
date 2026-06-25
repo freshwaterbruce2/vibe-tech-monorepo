@@ -81,11 +81,19 @@ Write-Host "Existing Skills: $($existingSkills -join ', ')" -ForegroundColor Gra
 Write-Host "Existing Agents: $($existingAgents -join ', ')" -ForegroundColor Gray
 Write-Host ""
 
-# Check for API key
-$apiKey = $env:GEMINI_API_KEY
-if (-not $apiKey) {
-    Write-Host "ERROR: GEMINI_API_KEY environment variable not set" -ForegroundColor Red
-    Write-Host "Set it with: `$env:GEMINI_API_KEY = 'your-key'" -ForegroundColor Yellow
+# Check for API keys (OpenRouter preferred, Gemini fallback)
+$openRouterKey = $env:OPENROUTER_API_KEY
+$geminiKey = $env:GEMINI_API_KEY
+$useOpenRouter = $false
+
+if ($openRouterKey) {
+    $useOpenRouter = $true
+    $apiKey = $openRouterKey
+} elseif ($geminiKey) {
+    $apiKey = $geminiKey
+} else {
+    Write-Host "ERROR: No API key found. Set OPENROUTER_API_KEY or GEMINI_API_KEY" -ForegroundColor Red
+    Write-Host "Set it with: `$env:OPENROUTER_API_KEY = 'your-key'" -ForegroundColor Yellow
     exit 1
 }
 
@@ -180,32 +188,62 @@ Return ONLY the complete SKILL.md content, starting with the YAML frontmatter (-
 Do NOT include any explanations before or after the markdown.
 "@
 
-Write-Host "Generating $Type with Gemini 3 Pro..." -ForegroundColor Cyan
+if ($useOpenRouter) {
+    Write-Host "Generating $Type with OpenRouter (openai/gpt-4o-mini)..." -ForegroundColor Cyan
+} else {
+    Write-Host "Generating $Type with Gemini 2.0 Flash..." -ForegroundColor Cyan
+}
 Write-Host "This may take 10-30 seconds..." -ForegroundColor Gray
 Write-Host ""
 
-# Call Gemini API
-$apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=$apiKey"
-
-$requestBody = @{
-    contents = @(
-        @{
-            parts = @(
-                @{
-                    text = $promptContent
-                }
-            )
-        }
-    )
-    generationConfig = @{
+if ($useOpenRouter) {
+    $apiUrl = "https://openrouter.ai/api/v1/chat/completions"
+    $requestBody = @{
+        model = "openai/gpt-4o-mini"
+        messages = @(
+            @{
+                role = "user"
+                content = $promptContent
+            }
+        )
         temperature = 0.7
-        maxOutputTokens = 8192
-    }
-} | ConvertTo-Json -Depth 10
+        max_tokens = 8192
+    } | ConvertTo-Json -Depth 10
+} else {
+    $apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=$apiKey"
+    $requestBody = @{
+        contents = @(
+            @{
+                parts = @(
+                    @{
+                        text = $promptContent
+                    }
+                )
+            }
+        )
+        generationConfig = @{
+            temperature = 0.7
+            maxOutputTokens = 8192
+        }
+    } | ConvertTo-Json -Depth 10
+}
 
 try {
-    $response = Invoke-RestMethod -Uri $apiUrl -Method Post -Body $requestBody -ContentType "application/json"
-    $generatedContent = $response.candidates[0].content.parts[0].text
+    $invokeParams = @{
+        Uri = $apiUrl
+        Method = "Post"
+        Body = $requestBody
+        ContentType = "application/json"
+    }
+    if ($useOpenRouter) {
+        $invokeParams.Headers = @{"Authorization" = "Bearer $apiKey" }
+    }
+    $response = Invoke-RestMethod @invokeParams
+    if ($useOpenRouter) {
+        $generatedContent = $response.choices[0].message.content
+    } else {
+        $generatedContent = $response.candidates[0].content.parts[0].text
+    }
 
     # Clean up response (remove any markdown code fences if present)
     $generatedContent = $generatedContent -replace '^```markdown\s*', '' -replace '\s*```$', ''
@@ -243,8 +281,14 @@ try {
     Write-Host "Error: $_" -ForegroundColor Red
     Write-Host ""
     Write-Host "Troubleshooting:" -ForegroundColor Yellow
-    Write-Host "- Verify GEMINI_API_KEY is valid" -ForegroundColor White
-    Write-Host "- Check internet connection" -ForegroundColor White
-    Write-Host "- Review API quotas at https://aistudio.google.com/" -ForegroundColor White
+    if ($useOpenRouter) {
+        Write-Host "- Verify OPENROUTER_API_KEY is valid" -ForegroundColor White
+        Write-Host "- Check internet connection" -ForegroundColor White
+        Write-Host "- Review OpenRouter limits at https://openrouter.ai/" -ForegroundColor White
+    } else {
+        Write-Host "- Verify GEMINI_API_KEY is valid" -ForegroundColor White
+        Write-Host "- Check internet connection" -ForegroundColor White
+        Write-Host "- Review API quotas at https://aistudio.google.com/" -ForegroundColor White
+    }
     exit 1
 }
