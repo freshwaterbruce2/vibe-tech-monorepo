@@ -169,6 +169,7 @@ function createInitialNovaData(): NovaData {
 interface NovaDataFetchResult {
   data: Omit<NovaData, 'isLoading' | 'error'>;
   errors: string[];
+  total: number;
 }
 
 async function fetchAllNovaData(): Promise<NovaDataFetchResult> {
@@ -210,6 +211,7 @@ async function fetchAllNovaData(): Promise<NovaDataFetchResult> {
       storageHealth: getValue(results[9], null),
     },
     errors,
+    total: results.length,
   };
 }
 
@@ -218,11 +220,20 @@ export function useNovaData(autoRefresh: boolean = true, refreshInterval: number
 
   const fetchData = useCallback(async () => {
     try {
-      const { data: fetchedData, errors } = await fetchAllNovaData();
+      const { data: fetchedData, errors, total } = await fetchAllNovaData();
+      if (errors.length > 0) {
+        console.warn(
+          '[useNovaData] partial fetch failures (dashboard degrades gracefully):',
+          errors,
+        );
+      }
       setData({
         ...fetchedData,
         isLoading: false,
-        error: errors.length > 0 ? errors.join('; ') : null,
+        // Only a total backend outage is fatal. A single bad/failed source
+        // (e.g. one corrupt memory row) must not blank the entire dashboard —
+        // each source already falls back to a safe empty value above.
+        error: errors.length >= total ? errors.join('; ') : null,
       });
     } catch (err) {
       console.error('Failed to fetch Nova data:', err);

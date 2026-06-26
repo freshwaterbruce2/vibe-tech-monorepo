@@ -40,6 +40,12 @@ const NODE_BUILTINS = new Set([
   'node:url',
   'node:stream',
   'node:events',
+  // Native/Node-only npm packages that leak into the bundle as dead code via the
+  // @vibetech/core barrel (DatabaseManager -> @vibetech/db-app). They load a
+  // native .node binding at module-eval time, which crashes the webview. Stub
+  // them — the webview never actually uses the DB layer (it calls Rust via IPC).
+  'better-sqlite3',
+  'bindings',
 ]);
 
 const STUB_ID = '\0node-builtin-stub';
