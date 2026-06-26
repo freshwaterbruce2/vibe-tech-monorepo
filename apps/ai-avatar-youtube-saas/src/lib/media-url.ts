@@ -32,12 +32,16 @@ function buildAllowlist(): { exact: Set<string>; suffixes: string[] } {
   return { exact, suffixes };
 }
 
-const ALLOWLIST = buildAllowlist();
+/** Allowlist of trusted storage origins (exact hosts + host suffixes). */
+export const MEDIA_HOST_ALLOWLIST = buildAllowlist();
 
 /** True when `hostname` is one of the trusted storage origins. */
 export function isAllowedMediaHost(hostname: string): boolean {
   const host = hostname.toLowerCase();
-  return ALLOWLIST.exact.has(host) || ALLOWLIST.suffixes.some((suffix) => host.endsWith(suffix));
+  return (
+    MEDIA_HOST_ALLOWLIST.exact.has(host) ||
+    MEDIA_HOST_ALLOWLIST.suffixes.some((suffix) => host.endsWith(suffix))
+  );
 }
 
 /**

@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getValidAccessToken } from "@/lib/youtube-auth-utils";
-import { isAllowedMediaHost } from "@/lib/media-url";
+import { MEDIA_HOST_ALLOWLIST } from "@/lib/media-url";
 
 export const runtime = "nodejs";
 
@@ -70,7 +70,11 @@ async function probeVideoSource(videoUrl: string): Promise<{
 }> {
   // SSRF guard: only request trusted storage hosts, never arbitrary endpoints.
   const target = new URL(videoUrl);
-  if (!isAllowedMediaHost(target.hostname)) {
+  const host = target.hostname.toLowerCase();
+  const allowed =
+    MEDIA_HOST_ALLOWLIST.exact.has(host) ||
+    MEDIA_HOST_ALLOWLIST.suffixes.some((suffix) => host.endsWith(suffix));
+  if (!allowed) {
     throw new Error("Media URL host is not in the trusted allowlist");
   }
   const headResponse = await fetch(target, { method: "HEAD" });
@@ -193,7 +197,11 @@ async function withRetry<T>(fn: () => Promise<T>, context: string): Promise<T> {
 async function fetchChunk(videoUrl: string, start: number, end: number, contentType: string): Promise<Blob> {
   // SSRF guard: only request trusted storage hosts, never arbitrary endpoints.
   const target = new URL(videoUrl);
-  if (!isAllowedMediaHost(target.hostname)) {
+  const host = target.hostname.toLowerCase();
+  const allowed =
+    MEDIA_HOST_ALLOWLIST.exact.has(host) ||
+    MEDIA_HOST_ALLOWLIST.suffixes.some((suffix) => host.endsWith(suffix));
+  if (!allowed) {
     throw new Error("Media URL host is not in the trusted allowlist");
   }
   const response = await fetch(target, {
