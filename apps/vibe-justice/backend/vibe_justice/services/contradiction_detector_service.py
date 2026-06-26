@@ -233,9 +233,9 @@ FOCUS ON CONTRADICTIONS THAT:
                     f"and suggests uncertainty about the actual cause."
                 ),
                 rebuttal=(
-                    f"Argue that the employer's inability to provide a consistent "
-                    f"termination reason demonstrates this was not a legitimate "
-                    f"discharge for misconduct under SC unemployment law."
+                    "Argue that the employer's inability to provide a consistent "
+                    "termination reason demonstrates this was not a legitimate "
+                    "discharge for misconduct under SC unemployment law."
                 )
             ))
 

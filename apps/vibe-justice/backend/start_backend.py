@@ -3,7 +3,6 @@
 Simple startup script for Vibe-Justice backend
 """
 
-import os
 import sys
 import uvicorn
 from pathlib import Path
@@ -17,7 +16,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import and run the app
-from main import app
 
 if __name__ == "__main__":
     # Detect if running as bundled executable (PyInstaller)

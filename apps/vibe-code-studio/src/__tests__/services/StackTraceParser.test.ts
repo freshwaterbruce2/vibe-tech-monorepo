@@ -263,7 +263,7 @@ processCart@https://example.com/app.js:200:15`;
       const parsed = parser.parse(stackTrace);
 
       expect(parsed.frames).toHaveLength(3);
-      expect(parsed.frames.map(f => f.functionName)).toEqual(['frame1', 'frame2', 'frame3']);
+      expect(parsed.frames.map((f: StackFrame) => f.functionName)).toEqual(['frame1', 'frame2', 'frame3']);
     });
 
     it('should normalize file paths', () => {

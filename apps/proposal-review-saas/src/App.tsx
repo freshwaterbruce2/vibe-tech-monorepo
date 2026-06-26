@@ -286,7 +286,9 @@ export function App() {
               Client
               <input
                 value={form.clientName}
-                onChange={(event) => setForm((prev) => ({ ...prev, clientName: event.target.value }))}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, clientName: event.target.value }))
+                }
               />
             </label>
             <label>
@@ -304,7 +306,9 @@ export function App() {
                 <input
                   type="number"
                   value={form.priceUsd}
-                  onChange={(event) => setForm((prev) => ({ ...prev, priceUsd: event.target.value }))}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, priceUsd: event.target.value }))
+                  }
                 />
               </label>
               <label>

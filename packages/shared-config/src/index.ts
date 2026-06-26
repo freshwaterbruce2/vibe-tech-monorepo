@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { config as loadEnv } from 'dotenv';
 import { resolve, normalize } from 'path';
 import { existsSync } from 'fs';
-export * from './database-inventory.js';
+export * from './database-inventory';
 
 // Load .env from monorepo root
 loadEnv({ path: resolve(process.cwd(), '.env'), quiet: true });

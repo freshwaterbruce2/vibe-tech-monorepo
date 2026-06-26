@@ -22,7 +22,7 @@ vi.mock('gray-matter', () => ({
 }));
 
 import { readFile, readdir, stat } from 'node:fs/promises';
-import { searchSkills, invalidateCache } from '../store.js';
+import { listSkills, searchSkills, invalidateCache } from '../store.js';
 
 const mockReaddir = vi.mocked(readdir);
 const mockStat = vi.mocked(stat);
@@ -137,6 +137,31 @@ describe('searchSkills', () => {
 
     const results = await searchSkills('git');
     expect(results[0].score).toBeGreaterThanOrEqual(results[results.length - 1].score);
+  });
+});
+
+describe('scanSkills dedup', () => {
+  it('counts a skill present in two sources only once (first source wins)', async () => {
+    // source 1 (monorepo) and source 2 (community aggregate) both contain "dup-skill";
+    // the aggregate copy is a junction to the authored one, so it must be deduped.
+    mockStat
+      .mockResolvedValueOnce(makeStatResult(true, false)) // source 1 dir exists
+      .mockResolvedValueOnce(makeStatResult(false, true)) // source1 dup-skill/SKILL.md
+      .mockResolvedValueOnce(makeStatResult(true, false)) // source 2 dir exists
+      .mockRejectedValue(new Error('ENOENT'));
+
+    mockReaddir
+      .mockResolvedValueOnce([makeDirent('dup-skill', true)] as Awaited<ReturnType<typeof readdir>>)
+      .mockResolvedValueOnce([makeDirent('dup-skill', true)] as Awaited<ReturnType<typeof readdir>>);
+
+    mockReadFile.mockResolvedValueOnce('---\nname: Dup Skill\ndescription: only once\n---\n');
+
+    invalidateCache();
+
+    const skills = await listSkills();
+    const dups = skills.filter((s) => s.id === 'dup-skill');
+    expect(dups).toHaveLength(1);
+    expect(dups[0].source).toBe('monorepo'); // first source wins
   });
 });
 

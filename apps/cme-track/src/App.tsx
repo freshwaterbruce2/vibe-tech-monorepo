@@ -1,4 +1,4 @@
-import { LandingPage, LegalPage } from '@vibetech/landing';
+import { LandingPage } from '@vibetech/landing';
 import { content } from './cmeTypes';
 import { useCmeApp } from './useCmeApp';
 
@@ -169,6 +169,39 @@ export function App() {
           </div>
         </section>
       )}
+    </main>
+  );
+}
+
+function LegalPage({
+  title,
+  intro,
+  sections,
+}: {
+  title: string;
+  intro: string;
+  sections: Array<{ heading: string; body: string }>;
+}) {
+  return (
+    <main className="legal-page">
+      <div className="legal-panel">
+        <p className="eyebrow">CME Track</p>
+        <h1>{title}</h1>
+        <p>{intro}</p>
+        <div className="legal-section-list">
+          {sections.map((section) => (
+            <section key={section.heading}>
+              <h2>{section.heading}</h2>
+              <p>{section.body}</p>
+            </section>
+          ))}
+        </div>
+        <div className="legal-links">
+          <a href="/">Back to app</a>
+          <a href="/terms">Terms</a>
+          <a href="/privacy">Privacy</a>
+        </div>
+      </div>
     </main>
   );
 }

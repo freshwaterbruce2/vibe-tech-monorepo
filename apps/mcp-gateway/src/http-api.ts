@@ -27,114 +27,129 @@ async function readBody(req: IncomingMessage): Promise<string> {
     return Buffer.concat(chunks).toString('utf-8');
 }
 
-export function startHttpApi(
-    mcpClient: McpClientManager,
-    config: GatewayConfig
-) {
-    const port = config.httpPort;
-    const apiKey = config.apiKey;
+function sendCorsHeaders(res: ServerResponse): void {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+}
 
-    function checkAuth(req: IncomingMessage, res: ServerResponse): boolean {
-        if (!apiKey) return true;
-        const header = req.headers.authorization ?? '';
-        if (header === `Bearer ${apiKey}`) return true;
-        json(res, 401, { error: 'Unauthorized' });
-        return false;
+function handleHealth(res: ServerResponse, config: GatewayConfig): void {
+    json(res, 200, {
+        status: 'ok',
+        service: 'mcp-gateway',
+        uptime: process.uptime(),
+        servers: Object.keys(config.mcpServers),
+    });
+}
+
+function handleServers(res: ServerResponse, config: GatewayConfig): void {
+    json(res, 200, { servers: Object.keys(config.mcpServers) });
+}
+
+async function handleServerTools(
+    req: IncomingMessage,
+    res: ServerResponse,
+    mcpClient: McpClientManager,
+    segments: string[],
+): Promise<void> {
+    const serverName = decodeURIComponent(segments[1]);
+    const tools = await mcpClient.listTools(serverName);
+    json(res, 200, { server: serverName, tools });
+}
+
+async function handleCall(
+    req: IncomingMessage,
+    res: ServerResponse,
+    mcpClient: McpClientManager,
+): Promise<void> {
+    const raw = await readBody(req);
+    let body: CallBody;
+    try {
+        body = JSON.parse(raw);
+    } catch {
+        json(res, 400, { error: 'Invalid JSON body' });
+        return;
     }
 
-    const server = createServer((req, res) => {
-        void handleRequest(req, res);
-    });
+    if (!body.server || !body.tool) {
+        json(res, 400, { error: 'Missing required fields: server, tool' });
+        return;
+    }
 
-    async function handleRequest(req: IncomingMessage, res: ServerResponse) {
-        // CORS for remote clients
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    const startMs = performance.now();
+    const result = await mcpClient.callTool(body.server, body.tool, body.args ?? {});
+    const durationMs = Math.round(performance.now() - startMs);
 
-        if (req.method === 'OPTIONS') {
-            res.writeHead(204);
-            res.end();
+    json(res, result.success ? 200 : 502, { ...result, durationMs });
+}
+
+function checkAuth(req: IncomingMessage, res: ServerResponse, apiKey: string | undefined): boolean {
+    if (!apiKey) return true;
+    const header = req.headers.authorization ?? '';
+    if (header === `Bearer ${apiKey}`) return true;
+    json(res, 401, { error: 'Unauthorized' });
+    return false;
+}
+
+async function handleRequest(
+    req: IncomingMessage,
+    res: ServerResponse,
+    mcpClient: McpClientManager,
+    config: GatewayConfig,
+): Promise<void> {
+    sendCorsHeaders(res);
+
+    if (req.method === 'OPTIONS') {
+        res.writeHead(204);
+        res.end();
+        return;
+    }
+
+    if (!checkAuth(req, res, config.apiKey)) return;
+
+    const { path, segments } = parseRoute(req.url ?? '/');
+
+    try {
+        if (req.method === 'GET' && path === '/health') {
+            handleHealth(res, config);
             return;
         }
 
-        if (!checkAuth(req, res)) return;
-
-        const { path, segments } = parseRoute(req.url ?? '/');
-
-        try {
-            // GET /health
-            if (req.method === 'GET' && path === '/health') {
-                json(res, 200, {
-                    status: 'ok',
-                    service: 'mcp-gateway',
-                    uptime: process.uptime(),
-                    servers: Object.keys(config.mcpServers),
-                });
-                return;
-            }
-
-            // GET /servers
-            if (req.method === 'GET' && path === '/servers') {
-                json(res, 200, { servers: Object.keys(config.mcpServers) });
-                return;
-            }
-
-            // GET /servers/:name/tools
-            if (
-                req.method === 'GET' &&
-                segments[0] === 'servers' &&
-                segments[2] === 'tools' &&
-                segments.length === 3
-            ) {
-                const serverName = decodeURIComponent(segments[1]);
-                const tools = await mcpClient.listTools(serverName);
-                json(res, 200, { server: serverName, tools });
-                return;
-            }
-
-            // POST /call
-            if (req.method === 'POST' && path === '/call') {
-                const raw = await readBody(req);
-                let body: CallBody;
-                try {
-                    body = JSON.parse(raw);
-                } catch {
-                    json(res, 400, { error: 'Invalid JSON body' });
-                    return;
-                }
-
-                if (!body.server || !body.tool) {
-                    json(res, 400, { error: 'Missing required fields: server, tool' });
-                    return;
-                }
-
-                const startMs = performance.now();
-                const result = await mcpClient.callTool(
-                    body.server,
-                    body.tool,
-                    body.args ?? {}
-                );
-                const durationMs = Math.round(performance.now() - startMs);
-
-                json(res, result.success ? 200 : 502, {
-                    ...result,
-                    durationMs,
-                });
-                return;
-            }
-
-            // 404
-            json(res, 404, { error: `Not found: ${req.method} ${path}` });
-        } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            logger.error(`Error handling ${req.method} ${path}: ${message}`);
-            json(res, 500, { error: message });
+        if (req.method === 'GET' && path === '/servers') {
+            handleServers(res, config);
+            return;
         }
-    }
 
-    server.listen(port, () => {
-        logger.info(`HTTP API listening on http://localhost:${port}`);
+        if (
+            req.method === 'GET' &&
+            segments[0] === 'servers' &&
+            segments[2] === 'tools' &&
+            segments.length === 3
+        ) {
+            await handleServerTools(req, res, mcpClient, segments);
+            return;
+        }
+
+        if (req.method === 'POST' && path === '/call') {
+            await handleCall(req, res, mcpClient);
+            return;
+        }
+
+        json(res, 404, { error: `Not found: ${req.method} ${path}` });
+    } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        logger.error(`Error handling ${req.method} ${path}: ${message}`);
+        json(res, 500, { error: message });
+    }
+}
+
+export function startHttpApi(mcpClient: McpClientManager, config: GatewayConfig) {
+    const server = createServer((req, res) => {
+        void handleRequest(req, res, mcpClient, config);
+    });
+
+    server.listen(config.httpPort, () => {
+        logger.info(`HTTP API listening on http://localhost:${config.httpPort}`);
     });
 
     return server;

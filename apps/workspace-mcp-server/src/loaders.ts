@@ -37,7 +37,7 @@ function categorizeEnvVar(key: string): string {
 }
 
 export function loadEnvFile(envPath?: string): EnvEntry[] {
-  const filePath = envPath || wsPath(ENV_FILE);
+  const filePath = envPath ?? wsPath(ENV_FILE);
   if (!existsSync(filePath)) return [];
 
   const content = readFileSync(filePath, 'utf-8');
@@ -88,7 +88,7 @@ export function loadPortRegistry(): PortRegistry {
   }
 
   const raw = JSON.parse(readFileSync(filePath, 'utf-8'));
-  const ports: PortEntry[] = Object.entries(raw.ports || {}).map(
+  const ports: PortEntry[] = Object.entries(raw.ports ?? {}).map(
     ([port, info]: [string, unknown]) => {
       const entry = info as { app: string; type: string; description: string };
       return {
@@ -101,9 +101,9 @@ export function loadPortRegistry(): PortRegistry {
   );
 
   return {
-    ranges: raw.ranges || {},
+    ranges: raw.ranges ?? {},
     ports,
-    lastUpdated: raw.lastUpdated || 'unknown',
+    lastUpdated: raw.lastUpdated ?? 'unknown',
   };
 }
 
@@ -123,7 +123,7 @@ export function loadMcpConfig(): McpServerEntry[] {
   if (!existsSync(filePath)) return [];
 
   const raw = JSON.parse(readFileSync(filePath, 'utf-8'));
-  const servers = raw.mcpServers || {};
+  const servers = raw.mcpServers ?? {};
 
   return Object.entries(servers).map(([name, config]: [string, unknown]) => {
     const cfg = config as {
@@ -131,16 +131,17 @@ export function loadMcpConfig(): McpServerEntry[] {
       args?: string[];
       env?: Record<string, string>;
     };
-    const args = cfg.args || [];
-    const command = cfg.command || '';
+    const args = cfg.args ?? [];
+    const command = cfg.command ?? '';
 
     // Determine if it's a custom (local) server vs. npx-based.
-    const distPath = args.find((a) => /C:[/\\]dev[/\\]apps[/\\]/i.test(a)) || null;
+    // Local servers point at a workspace app's compiled entry under */apps/*/dist/*.
+    const distPath = args.find((a) => /\\?\/?apps\/[^/\\]+\/dist\//i.test(a)) ?? null;
     const isCustom = distPath !== null;
 
     // Mask any sensitive env vars
     const env: Record<string, string> = {};
-    for (const [k, v] of Object.entries(cfg.env || {})) {
+    for (const [k, v] of Object.entries(cfg.env ?? {})) {
       env[k] = isSensitive(k) ? maskSecret(v) : v;
     }
 
@@ -202,12 +203,12 @@ export function loadWorkspacePlugins(): WorkspacePluginEntry[] {
         : [];
 
       plugins.push({
-        name: manifest.name || dir.name,
-        version: manifest.version || 'unknown',
-        description: manifest.description || '',
+        name: manifest.name ?? dir.name,
+        version: manifest.version ?? 'unknown',
+        description: manifest.description ?? '',
         root,
         manifestPath,
-        keywords: manifest.keywords || [],
+        keywords: manifest.keywords ?? [],
         agents: listMarkdownNames('agents'),
         commands: listMarkdownNames('commands'),
         skills,

@@ -1,0 +1,6 @@
+{
+  "buildCommand": "pnpm nx build ai-avatar-youtube-saas",
+  "devCommand": "pnpm nx dev ai-avatar-youtube-saas",
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "framework": "nextjs"
+}

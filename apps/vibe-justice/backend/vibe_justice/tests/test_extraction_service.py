@@ -1,7 +1,5 @@
 from pathlib import Path
 
-import pytest
-from vibe_justice.services.extraction_service import ExtractionService
 
 
 def test_extract_text_txt(extraction_service, tmp_path):

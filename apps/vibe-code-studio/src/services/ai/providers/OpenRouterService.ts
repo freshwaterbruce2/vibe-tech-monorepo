@@ -137,24 +137,30 @@ export class OpenRouterService implements IAIService {
       'gemini-1.5-flash': 'google/gemini-flash-1.5',
 
       // ========================================
-      // DeepSeek V3.2 & R1 (January 2026)
+      // DeepSeek V3/V4 & R1 (Updated June 2026)
       // ========================================
+      'deepseek-v4-flash': 'deepseek/deepseek-v4-flash',
       'deepseek-v3.2': 'deepseek/deepseek-v3.2',        // General purpose chat/code
+      'deepseek-v3': 'deepseek/deepseek-v3',
       'deepseek-r1': 'deepseek/deepseek-r1',            // Reasoning/CoT model (slow, high IQ)
 
       // DeepSeek Aliases
       'deepseek-reasoner': 'deepseek/deepseek-r1',      // Alias for R1
-      'deepseek-chat': 'deepseek/deepseek-v3.2',        // Default to v3.2
-      'deepseek': 'deepseek/deepseek-v3.2',
-      'deepseek-latest': 'deepseek/deepseek-v3.2',
+      'deepseek-chat': 'deepseek/deepseek-v3',          // Default to flagship V3
+      'deepseek': 'deepseek/deepseek-v3',
+      'deepseek-latest': 'deepseek/deepseek-v3',
 
       // ========================================
-      // Low/Free Models (January 2026)
+      // Low/Free Models (Updated June 2026)
       // ========================================
       'lfm-2.5-thinking': 'liquid/lfm-2.5-1.2b-thinking:free',
       'lfm-2.5-instruct': 'liquid/lfm-2.5-1.2b-instruct:free',
+      'kimi-k2.7-code': 'moonshotai/kimi-k2.7-code',    // Kimi K2.7 Coding Specialist
       'kimi-2.5-pro': 'moonshot/kimi-2.5-pro',
+      'glm-5.2': 'z-ai/glm-5.2',                        // GLM 5.2 Reasoning Model
       'glm-5': 'z-ai/glm-5',
+      'cohere-north-mini-code': 'cohere/north-mini-code:free', // MoE Free Coding
+      'or-fusion': 'openrouter/fusion',                 // OpenRouter Fusion routing
       'glm-4.7-flash': 'z-ai/glm-4.7-flash',
 
       // ========================================
@@ -242,7 +248,13 @@ export class OpenRouterService implements IAIService {
       'free-vision': 'meta-llama/llama-3.2-11b-vision-instruct:free', // Free with vision
   };
 
-  private resolveModel(model: string): string {
+  /**
+   * Map a Vibe model id/alias to a canonical OpenRouter `author/slug` id.
+   * Exposed statically so the backend-proxy client applies the SAME mapping in
+   * proxy mode — otherwise bare aliases (e.g. 'gpt-4o' from the analysis services)
+   * reach OpenRouter unmapped and get rejected with HTTP 400 "not a valid model ID".
+   */
+  static resolveModelId(model: string): string {
     const mapped = OpenRouterService.MODEL_MAP[model];
     if (mapped) return mapped;
 
@@ -251,6 +263,10 @@ export class OpenRouterService implements IAIService {
 
     // Fallback: assume OpenAI/ prefix if unknown
     return `openai/${model}`;
+  }
+
+  private resolveModel(model: string): string {
+    return OpenRouterService.resolveModelId(model);
   }
 
   async complete(request: AICompletionRequest): Promise<AICompletionResponse> {
@@ -293,7 +309,9 @@ export class OpenRouterService implements IAIService {
     const rawContent = choice.message.content;
 
     // Parse reasoning if using a reasoning model
-    const parsed = isReasoningModel(model) ? parseDeepSeekStream(rawContent) : { content: rawContent, reasoning: null };
+    const parsed = isReasoningModel(model)
+      ? parseDeepSeekStream(rawContent)
+      : { content: rawContent, reasoning: null };
 
     return {
       content: parsed.content,
@@ -307,7 +325,10 @@ export class OpenRouterService implements IAIService {
     };
   }
 
-  async *stream(messages: ChatMessage[], options?: AIChatOptions): AsyncGenerator<string, void, unknown> {
+  async *stream(
+    messages: ChatMessage[],
+    options?: AIChatOptions
+  ): AsyncGenerator<string, void, unknown> {
     // Use proxy endpoint or direct OpenRouter API
     const url = this.useProxy
       ? `${this.baseUrl}/api/openrouter/chat`
@@ -390,7 +411,10 @@ export class OpenRouterService implements IAIService {
     return response.content;
   }
 
-  async generateText(prompt: string, options?: { maxTokens?: number; temperature?: number; model?: string; signal?: AbortSignal }): Promise<string> {
+  async generateText(
+    prompt: string,
+    options?: { maxTokens?: number; temperature?: number; model?: string; signal?: AbortSignal }
+  ): Promise<string> {
     return this.chat([{ role: 'user', content: prompt }], options);
   }
 }

@@ -9,10 +9,7 @@ param(
 
     [Parameter()]
     [ValidateSet('console', 'json', 'markdown')]
-    [string]$OutputFormat = 'console',
-
-    [Parameter()]
-    [switch]$Verbose
+    [string]$OutputFormat = 'console'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -27,26 +24,25 @@ if (-not $Suite) {
 }
 
 $Filter = if ($TestId) { $TestId } elseif ($TestCategory -ne 'all') { $TestCategory } else { '' }
-$Command = @(
-    'pnpm',
-    '--dir',
-    (Join-Path $RepoRoot 'apps\agent-engine'),
-    'tsx',
-    'src/index.ts',
-    'behavioral-eval',
-    'behavioral-web-search-grounding'
-)
+$EngineDir = Join-Path $RepoRoot 'apps\agent-engine'
 
-if ($Filter) {
-    $Command += $Filter
-}
-
-if ($Verbose) {
+if ($PSBoundParameters.ContainsKey('Verbose')) {
     Write-Host "Running live behavioral suite through agent-engine:" -ForegroundColor Cyan
-    Write-Host ($Command -join ' ') -ForegroundColor DarkGray
+    Write-Host "pnpm tsx src/index.ts behavioral-eval behavioral-web-search-grounding $Filter" -ForegroundColor DarkGray
 }
 
-$Output = & $Command[0] @($Command[1..($Command.Length - 1)]) 2>&1
+$OldDir = Get-Location
+try {
+    Set-Location $EngineDir
+    if ($Filter) {
+        $Output = pnpm tsx src/index.ts behavioral-eval behavioral-web-search-grounding $Filter 2>&1
+    } else {
+        $Output = pnpm tsx src/index.ts behavioral-eval behavioral-web-search-grounding 2>&1
+    }
+} finally {
+    Set-Location $OldDir
+}
+
 $ExitCode = $LASTEXITCODE
 $Joined = ($Output | Out-String).Trim()
 

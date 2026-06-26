@@ -8,10 +8,10 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 import Database from 'better-sqlite3';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
-import { dirname, join } from 'path';
+import { dirname, join, resolve } from 'path';
 
 const DB_PATH = process.env.LEARNING_DB_PATH ?? 'D:/databases/agent_learning.db';
-const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT ?? 'V:/monorepo';
+const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT ?? resolve(__dirname, '..', '..');
 
 const server = new McpServer({
   name: 'proactive-recommendations-mcp',
@@ -154,45 +154,10 @@ server.tool(
 );
 
 // --- Tool: create_recommendation_task ------------------------------
-server.tool(
-  'create_recommendation_task',
-  'Convert a proactive recommendation into a structured task file (markdown) in the workspace to initiate execution.',
-  {
-    id: z.number().describe('The ID of the recommendation to execute'),
-    taskFilePath: z.string().optional().describe('Optional custom path for the task file in the workspace')
-  },
-  async ({ id, taskFilePath }) => {
-    let db;
-    try {
-      db = getDb();
-      
-      const rec = db.prepare(`
-        SELECT * FROM proactive_recommendations WHERE id = ?
-      `).get(id) as ProactiveRecommendationRow | undefined;
 
-      if (!rec) {
-        return {
-          content: [{
-            type: 'text' as const,
-            text: `No recommendation found with ID: ${id}`
-          }],
-          isError: true
-        };
-      }
-
-      // Generate task path
-      const defaultPath = join(WORKSPACE_ROOT, 'tasks', `proactive-task-${id}.md`);
-      const targetPath = taskFilePath ?? defaultPath;
-
-      // Ensure tasks directory exists
-      const targetDir = dirname(targetPath);
-      if (!existsSync(targetDir)) {
-        mkdirSync(targetDir, { recursive: true });
-      }
-
-      // Create markdown task template
-      const formattedDate = new Date(rec.timestamp * 1000).toISOString();
-      const markdownContent = `# Task: Proactive Recommendation (ID: ${rec.id})
+function buildTaskMarkdown(rec: ProactiveRecommendationRow): string {
+  const formattedDate = new Date(rec.timestamp * 1000).toISOString();
+  return `# Task: Proactive Recommendation (ID: ${rec.id})
 
 > **Priority**: ${rec.priority}
 > **Category**: ${rec.category}
@@ -214,43 +179,73 @@ ${rec.description}
 ---
 *Created automatically by proactive-recommendations-mcp.*
 `;
+}
 
-      writeFileSync(targetPath, markdownContent, 'utf-8');
+function executeRecommendationTask(
+  id: number,
+  taskFilePath: string | undefined,
+): { content: Array<{ type: 'text'; text: string }>; isError?: boolean } {
+  const db = getDb();
+  try {
+    const rec = db.prepare('SELECT * FROM proactive_recommendations WHERE id = ?')
+      .get(id) as ProactiveRecommendationRow | undefined;
 
-      // Update recommendation status to executed
-      db.prepare(`
-        UPDATE proactive_recommendations
-        SET executed = 1,
-            metadata = json_patch(coalesce(metadata, '{}'), ?)
-        WHERE id = ?
-      `).run(JSON.stringify({ 
-        executed_at: new Date().toISOString(),
-        task_file: targetPath
-      }), id);
-
+    if (!rec) {
       return {
-        content: [{
-          type: 'text' as const,
-          text: JSON.stringify({
-            success: true,
-            message: `Created task file at ${targetPath} and marked recommendation ID ${id} as executed.`,
-            task_file: targetPath
-          }, null, 2)
-        }]
+        content: [{ type: 'text' as const, text: `No recommendation found with ID: ${id}` }],
+        isError: true,
       };
+    }
+
+    const defaultPath = join(WORKSPACE_ROOT, 'tasks', `proactive-task-${id}.md`);
+    const targetPath = taskFilePath ?? defaultPath;
+    const targetDir = dirname(targetPath);
+    if (!existsSync(targetDir)) {
+      mkdirSync(targetDir, { recursive: true });
+    }
+
+    writeFileSync(targetPath, buildTaskMarkdown(rec), 'utf-8');
+
+    db.prepare(`
+      UPDATE proactive_recommendations
+      SET executed = 1,
+          metadata = json_patch(coalesce(metadata, '{}'), ?)
+      WHERE id = ?
+    `).run(JSON.stringify({ executed_at: new Date().toISOString(), task_file: targetPath }), id);
+
+    return {
+      content: [{
+        type: 'text' as const,
+        text: JSON.stringify({
+          success: true,
+          message: `Created task file at ${targetPath} and marked recommendation ID ${id} as executed.`,
+          task_file: targetPath,
+        }, null, 2),
+      }],
+    };
+  } finally {
+    db.close();
+  }
+}
+
+server.tool(
+  'create_recommendation_task',
+  'Convert a proactive recommendation into a structured task file (markdown) in the workspace to initiate execution.',
+  {
+    id: z.number().describe('The ID of the recommendation to execute'),
+    taskFilePath: z.string().optional().describe('Optional custom path for the task file in the workspace'),
+  },
+  async ({ id, taskFilePath }) => {
+    try {
+      return executeRecommendationTask(id, taskFilePath);
     } catch (error: unknown) {
       const err = error as Error;
       return {
-        content: [{
-          type: 'text' as const,
-          text: `Error executing recommendation: ${err.message}`
-        }],
-        isError: true
+        content: [{ type: 'text' as const, text: `Error executing recommendation: ${err.message}` }],
+        isError: true,
       };
-    } finally {
-      if (db) db.close();
     }
-  }
+  },
 );
 
 // Start server

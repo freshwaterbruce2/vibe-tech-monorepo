@@ -4,8 +4,9 @@
  * Persists successful ReAct cycles and strategies across sessions.
  * Enables the agent to learn from past experiences and reuse proven approaches.
  *
- * Storage: localStorage for web compatibility (can be upgraded to database later)
- * Learning: Tracks usage counts and success rates for each pattern
+ * Storage: durable SQLite (`strategy_memory` in D:\databases\vibe_studio.db) when running
+ * under Tauri desktop, falling back to electron-store / localStorage on web/dev.
+ * Learning: Tracks usage counts and success rates for each pattern.
  *
  * @see Phase 4: ReActExecutor for cycle generation
  */
@@ -22,6 +23,18 @@ import type {
 
 const STORAGE_KEY = 'deepcode_strategy_memory';
 const MAX_PATTERNS = 500; // Prevent unlimited growth
+
+// Durable SQLite upsert (Tauri desktop). Keyed on problemSignature == pattern_hash so it
+// matches the existing backfilled rows. Single statement only — db_execute_query rejects
+// multi-statement/DDL. Params bind as Vec<String>; SQLite affinity coerces numeric strings
+// into the REAL/INTEGER columns.
+const SQLITE_UPSERT = `INSERT INTO strategy_memory (pattern_hash, pattern_data, success_rate, usage_count)
+VALUES (?, ?, ?, ?)
+ON CONFLICT(pattern_hash) DO UPDATE SET
+  pattern_data = excluded.pattern_data,
+  success_rate = excluded.success_rate,
+  usage_count  = excluded.usage_count,
+  last_used    = CURRENT_TIMESTAMP`;
 
 export class StrategyMemory {
   private patterns: Map<string, StrategyPattern> = new Map();
@@ -56,45 +69,9 @@ export class StrategyMemory {
     const existingPattern = this.patterns.get(problemSignature);
 
     if (existingPattern) {
-      // Update existing pattern
-      existingPattern.usageCount++;
-      existingPattern.lastUsedAt = new Date();
-      existingPattern.lastSuccessAt = new Date();
-      existingPattern.successRate = this.calculateSuccessRate(
-        existingPattern.usageCount,
-        existingPattern.usageCount, // All stored patterns are successes
-      );
-      existingPattern.confidence = Math.min(
-        100,
-        existingPattern.confidence + 5, // Increase confidence with repeated success
-      );
-
-      logger.debug(`[StrategyMemory] Updated existing pattern: ${problemSignature}`);
-      logger.debug(`[StrategyMemory]   Usage count: ${existingPattern.usageCount}`);
-      logger.debug(`[StrategyMemory]   Confidence: ${existingPattern.confidence}%`);
+      this.updateExistingPattern(existingPattern, problemSignature);
     } else {
-      // Create new pattern
-      const newPattern: StrategyPattern = {
-        id: this.generateId(),
-        problemSignature,
-        problemDescription: step.description,
-        actionType: step.action.type,
-        successfulApproach: cycle.thought.approach,
-        context: context ?? {},
-        reActCycle: cycle,
-        confidence: cycle.thought.confidence,
-        usageCount: 1,
-        successRate: 100, // First success
-        createdAt: new Date(),
-        lastUsedAt: new Date(),
-        lastSuccessAt: new Date(),
-      };
-
-      this.patterns.set(problemSignature, newPattern);
-
-      logger.debug(`[StrategyMemory] ✅ Stored new pattern: ${problemSignature}`);
-      logger.debug(`[StrategyMemory]   Approach: ${newPattern.successfulApproach}`);
-      logger.debug(`[StrategyMemory]   Confidence: ${newPattern.confidence}%`);
+      this.createNewPattern(step, cycle, context, problemSignature);
     }
 
     // Enforce max patterns limit (remove oldest, least used)
@@ -102,7 +79,60 @@ export class StrategyMemory {
       this.pruneOldPatterns();
     }
 
+    // Durable write: upsert the single mutated pattern into SQLite on desktop.
+    const persisted = this.patterns.get(problemSignature);
+    if (persisted && this.hasSqliteDb()) {
+      await this.upsertPatternToSqlite(persisted);
+    }
+
     await this.saveToStorage();
+  }
+
+  /**
+   * Update an existing pattern's usage/confidence after a repeated success.
+   */
+  private updateExistingPattern(pattern: StrategyPattern, problemSignature: string): void {
+    pattern.usageCount++;
+    pattern.lastUsedAt = new Date();
+    pattern.lastSuccessAt = new Date();
+    pattern.successRate = this.calculateSuccessRate(pattern.usageCount, pattern.usageCount);
+    pattern.confidence = Math.min(100, pattern.confidence + 5);
+
+    logger.debug(`[StrategyMemory] Updated existing pattern: ${problemSignature}`);
+    logger.debug(`[StrategyMemory]   Usage count: ${pattern.usageCount}`);
+    logger.debug(`[StrategyMemory]   Confidence: ${pattern.confidence}%`);
+  }
+
+  /**
+   * Create and store a brand-new pattern from a successful ReAct cycle.
+   */
+  private createNewPattern(
+    step: AgentStep,
+    cycle: ReActCycle,
+    context: { taskType?: string; fileExtension?: string; workspaceType?: string } | undefined,
+    problemSignature: string,
+  ): void {
+    const newPattern: StrategyPattern = {
+      id: this.generateId(),
+      problemSignature,
+      problemDescription: step.description,
+      actionType: step.action.type,
+      successfulApproach: cycle.thought.approach,
+      context: context ?? {},
+      reActCycle: cycle,
+      confidence: cycle.thought.confidence,
+      usageCount: 1,
+      successRate: 100, // First success
+      createdAt: new Date(),
+      lastUsedAt: new Date(),
+      lastSuccessAt: new Date(),
+    };
+
+    this.patterns.set(problemSignature, newPattern);
+
+    logger.debug(`[StrategyMemory] ✅ Stored new pattern: ${problemSignature}`);
+    logger.debug(`[StrategyMemory]   Approach: ${newPattern.successfulApproach}`);
+    logger.debug(`[StrategyMemory]   Confidence: ${newPattern.confidence}%`);
   }
 
   /**
@@ -183,6 +213,13 @@ export class StrategyMemory {
    */
   async clearAll(): Promise<void> {
     this.patterns.clear();
+    if (this.hasSqliteDb()) {
+      try {
+        await window.electron!.db!.execute('DELETE FROM strategy_memory', []);
+      } catch (error) {
+        logger.error('[StrategyMemory] Failed to clear SQLite patterns:', error);
+      }
+    }
     await this.saveToStorage();
     logger.debug('[StrategyMemory] 🗑️ All patterns cleared');
   }
@@ -215,6 +252,11 @@ export class StrategyMemory {
       }
 
       await this.saveToStorage();
+      if (this.hasSqliteDb()) {
+        for (const pattern of this.patterns.values()) {
+          await this.upsertPatternToSqlite(pattern);
+        }
+      }
       logger.debug(`[StrategyMemory] ✅ Imported ${patterns.length} patterns`);
     } catch (error) {
       logger.error('[StrategyMemory] ❌ Failed to import patterns:', error);
@@ -384,9 +426,17 @@ export class StrategyMemory {
   }
 
   /**
-   * Load patterns from localStorage
+   * Load patterns — prefers durable SQLite on desktop, else electron-store / localStorage.
    */
   private async loadFromStorage(): Promise<void> {
+    // Durable path: SQLite via Tauri (desktop). A populated DB is authoritative.
+    if (this.hasSqliteDb()) {
+      this.storageAvailable = true;
+      const loaded = await this.loadFromSqlite();
+      if (loaded) return;
+      // Empty SQLite (fresh DB) — fall through to seed from store/localStorage if present.
+    }
+
     if (!this.isStorageAvailable()) {
       logger.warn('[StrategyMemory] storage not available, using in-memory only');
       this.storageAvailable = false;
@@ -449,5 +499,73 @@ export class StrategyMemory {
     if (window.electron?.store) return true;
     if (typeof localStorage !== 'undefined') return true;
     return false;
+  }
+
+  /**
+   * True when the Tauri SQLite bridge is available (desktop only).
+   */
+  private hasSqliteDb(): boolean {
+    return (
+      typeof window !== 'undefined' &&
+      typeof window.electron?.db?.execute === 'function' &&
+      typeof window.electron?.db?.getPatterns === 'function'
+    );
+  }
+
+  /**
+   * Upsert a single pattern into D:\databases\vibe_studio.db. Non-fatal on failure —
+   * a SQLite error must not crash the agent loop.
+   */
+  private async upsertPatternToSqlite(pattern: StrategyPattern): Promise<void> {
+    try {
+      await window.electron!.db!.execute(SQLITE_UPSERT, [
+        pattern.problemSignature,
+        JSON.stringify(pattern),
+        String(pattern.successRate),
+        String(pattern.usageCount),
+      ]);
+    } catch (error) {
+      logger.error('[StrategyMemory] Failed to persist pattern to SQLite:', error);
+    }
+  }
+
+  /**
+   * Load patterns from the SQLite store. Returns false if unavailable or empty.
+   */
+  private async loadFromSqlite(): Promise<boolean> {
+    try {
+      const result = (await window.electron!.db!.getPatterns()) as
+        | { success?: boolean; patterns?: Array<{ pattern_hash: string; pattern_data: string }> }
+        | undefined;
+      const rows = result?.patterns ?? [];
+      if (rows.length === 0) return false;
+
+      for (const row of rows) {
+        const pattern = this.deserializePattern(row.pattern_data, row.pattern_hash);
+        if (pattern) this.patterns.set(pattern.problemSignature, pattern);
+      }
+      logger.debug(`[StrategyMemory] ✅ Loaded ${this.patterns.size} patterns from SQLite`);
+      return this.patterns.size > 0;
+    } catch (error) {
+      logger.error('[StrategyMemory] Failed to load from SQLite:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Parse a stored pattern_data JSON blob back into a StrategyPattern with live Date fields.
+   */
+  private deserializePattern(raw: string, hashFallback: string): StrategyPattern | null {
+    try {
+      const pattern = JSON.parse(raw) as StrategyPattern;
+      if (!pattern.problemSignature) pattern.problemSignature = hashFallback;
+      pattern.createdAt = new Date(pattern.createdAt ?? Date.now());
+      pattern.lastUsedAt = new Date(pattern.lastUsedAt ?? Date.now());
+      if (pattern.lastSuccessAt) pattern.lastSuccessAt = new Date(pattern.lastSuccessAt);
+      return pattern;
+    } catch (error) {
+      logger.error('[StrategyMemory] Failed to parse stored pattern:', error);
+      return null;
+    }
   }
 }

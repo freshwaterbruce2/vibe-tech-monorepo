@@ -13,6 +13,7 @@ import Index from './pages/Index';
 import NotFound from './pages/NotFound';
 import NovaDashboard from './pages/NovaDashboard';
 import NovaDashboard2026 from './pages/NovaDashboard2026';
+import Orchestrator from './pages/Orchestrator';
 import Settings from './pages/Settings';
 import VibeDashboard from './pages/VibeDashboard';
 
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/document-analysis" element={<DocumentAnalysis />} />
             <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/nova-hands" element={<Orchestrator />} />
             <Route path="/admin" element={<AdminPage />} />
           </Route>
 

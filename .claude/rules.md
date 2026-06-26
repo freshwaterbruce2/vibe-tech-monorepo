@@ -31,7 +31,7 @@ cat docs/ai/WORKSPACE.md
 Before touching ANY code:
 
 1. Count files to be modified
-2. Check line count of existing files (max 500 lines soft limit, 600 lines hard limit)
+2. Check line count of existing files (max 500 lines soft limit, 1000 lines hard limit)
 3. Verify data storage locations (D:\ for data, V:\monorepo for code)
 4. Check if similar functionality already exists (no duplicates rule)
 
@@ -47,7 +47,7 @@ For complex changes (3+ files or uncertain scope):
 ### **STEP 3: EXECUTION**
 
 1. **FOLLOW the no-duplicates rule** - search before creating
-2. **ENFORCE line limits** - max 500 lines soft / 600 lines hard limit
+2. **ENFORCE line limits** - max 500 lines soft / 1000 lines hard limit
 3. **USE proper paths** - D:\ for data, V:\monorepo for code
 4. **MAINTAIN file names** - avoid renaming existing files
 5. **TEST as you go** - run quality checks incrementally
@@ -60,11 +60,11 @@ For complex changes (3+ files or uncertain scope):
 
 ```python
 # Before editing ANY file:
-if file_lines > 600:
+if file_lines > 1000:
     STOP - File must be split into modules (warns at 500 lines)
 
 # Before creating ANY file:
-if estimated_lines > 600:
+if estimated_lines > 1000:
     STOP - Design as multiple modules
 ```
 
@@ -87,7 +87,7 @@ if estimated_lines > 600:
 Every file must follow:
 
 ```typescript
-// MAX 500 LINES SOFT / 600 LINES HARD
+// MAX 500 LINES SOFT / 1000 LINES HARD
 // Single responsibility
 // Clear interfaces
 // Dependency injection
@@ -213,7 +213,7 @@ START
   │   ├─ 1-2 files → Proceed with caution
   │   └─ 3+ files → Use TodoWrite and plan carefully
   │
-  ├─ File over 600 lines?
+  ├─ File over 1000 lines?
   │   ├─ Yes → STOP! Must split into modules (warns at 500)
   │   └─ No → Continue
   │

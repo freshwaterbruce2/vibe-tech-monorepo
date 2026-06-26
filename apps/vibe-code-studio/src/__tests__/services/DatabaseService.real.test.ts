@@ -12,7 +12,14 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { ChatMessage, CodeSnippet, Setting } from '../../services/DatabaseService';
+import type { ChatMessage, CodeSnippet } from '../../services/DatabaseService';
+
+// Local shape for the `settings` key-value table (no exported type in DatabaseService)
+interface Setting {
+  key: string;
+  value: string;
+  updated_at?: Date;
+}
 // Safe import of better-sqlite3 with fallback mock
 // Using dynamic import for optional native module
 let Database: any;

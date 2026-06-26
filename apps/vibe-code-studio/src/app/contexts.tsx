@@ -82,6 +82,8 @@ export interface UIPanelContextValue {
   setErrorFixPanelOpen: (open: boolean) => void;
   agentModeOpen: boolean;
   setAgentModeOpen: (open: boolean) => void;
+  brainScanOpen: boolean;
+  setBrainScanOpen: (open: boolean) => void;
 }
 
 export const UIPanelContext = createContext<UIPanelContextValue | null>(null);
@@ -131,7 +133,12 @@ export interface WorkspaceContextValue {
 
   // Search
   handleOpenFileFromSearch: (file: string, line?: number, column?: number) => void;
-  handleReplaceInFile: (file: string, search: string, replace: string, options: SearchOptions) => Promise<void>;
+  handleReplaceInFile: (
+    file: string,
+    search: string,
+    replace: string,
+    options: SearchOptions,
+  ) => Promise<void>;
   handleSearchInFiles: (
     searchText: string,
     files: string[],

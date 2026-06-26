@@ -20,6 +20,7 @@ use modules::{
     calendar, copilot, credentials, db_handlers, execution, file_cleaner, filesystem, llm, memory,
     orchestrator, pattern_engine, prediction_engine, procedural_memory, project, prompts, rag,
     scheduler, screenshot, state::AgentState, state::AppState, state::Config, system_prompt, web,
+    computer_use,
 };
 
 struct IpcSender(tokio::sync::mpsc::Sender<websocket_client::IpcMessage>);
@@ -69,6 +70,14 @@ async fn send_ipc_message(
 
 #[tokio::main]
 async fn main() {
+    #[cfg(target_os = "windows")]
+    unsafe {
+        use windows::Win32::UI::HiDpi::{
+            SetProcessDpiAwarenessContext, DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2,
+        };
+        let _ = SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+    }
+
     let _log_guard = init_production_logging();
 
     info!("Starting NOVA Agent Desktop Application");
@@ -335,6 +344,13 @@ async fn main() {
             screenshot::capture_region,
             screenshot::list_screenshots,
             screenshot::delete_screenshot,
+            // Computer Use
+            computer_use::display::get_display_dimensions,
+            computer_use::display::capture_display,
+            computer_use::input::simulate_mouse_action,
+            computer_use::input::simulate_keyboard_action,
+            computer_use::window::get_focused_window,
+            computer_use::llm::call_multimodal_llm,
             // Code Execution
             execution::execute_code,
             orchestrator::orchestrate_desktop_action,

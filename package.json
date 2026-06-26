@@ -125,7 +125,11 @@
     "setup:hooks": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\\install-git-hooks.ps1",
     "prepare": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\\install-git-hooks.ps1",
     "lines:check": "node scripts/validate-file-size.js",
+    "mcp:sync": "node tools/mcp-sync/sync.mjs",
+    "mcp:sync:apply": "node tools/mcp-sync/sync.mjs --apply",
+    "mcp:check": "node tools/mcp-sync/sync.mjs --check",
     "databases:health": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\\database-health.ps1 -OutputPath tmp\\database-health-report.json",
+    "storage:monitor": "pwsh.exe -NoProfile -ExecutionPolicy Bypass -File scripts\\monitor-disk-space.ps1",
     "memory:health": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\\memory-health-check.ps1 -OutputPath tmp\\memory-health-report.json",
     "learning:validate": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\\validate-learning-system.ps1",
     "openclaw:recover": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\\openclaw\\Start-LocalRecovery.ps1",
@@ -187,7 +191,10 @@
     "cleanup:all": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\\cleanup-processes.ps1 -All",
     "review": "node scripts/review.mjs",
     "review:all": "node scripts/review.mjs --all",
-    "review:strict": "node scripts/review.mjs --strict-heuristics"
+    "review:strict": "node scripts/review.mjs --strict-heuristics",
+    "db:trends": "pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/view-db-trends.ps1",
+    "ralph:loop": "pwsh -NoProfile -ExecutionPolicy Bypass -File tools/ralph-loop/bin/ralph.ps1",
+    "kimi:provider": "pwsh -NoProfile -ExecutionPolicy Bypass -File tools/kimi-code-provider/bin/kimi-provider.ps1"
   },
   "dependencies": {
     "@floating-ui/core": "^1.7.5",
@@ -283,10 +290,11 @@
     "@types/react-dom": "19.2.3",
     "@vibetech/factory": "workspace:*",
     "@vitejs/plugin-react": "^5.2.0",
-    "@vitest/coverage-v8": "^4.1.2",
-    "@vitest/ui": "^4.1.2",
+    "@vitest/coverage-v8": "^4.1.9",
+    "@vitest/ui": "^4.1.9",
     "autoprefixer": "^10.4.27",
     "better-sqlite3": "12.6.2",
+    "cross-env": "^10.1.0",
     "eslint": "^9.39.4",
     "eslint-plugin-import": "2.31.0",
     "eslint-plugin-jsx-a11y": "6.10.1",
@@ -310,8 +318,9 @@
     "typescript": "5.9.3",
     "typescript-eslint": "^8.57.2",
     "vercel": "^54.5.1",
+    "verdaccio": "^6.3.2",
     "vite": "^7.3.3",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.9"
   },
   "optionalDependencies": {
     "@rollup/rollup-win32-x64-msvc": "4.59.0"

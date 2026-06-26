@@ -87,6 +87,19 @@ foreach ($db in $databases) {
             sqlite3 $dbPath "ANALYZE;" 2>&1 | Out-Null
         }
         
+        # Run database-specific optimizations
+        if (-not $DryRun) {
+            if ($dbName -eq "memory.db") {
+                Write-Log "  Optimizing memory.db indexes..." "INFO"
+                sqlite3 $dbPath "CREATE INDEX IF NOT EXISTS idx_semantic_created ON semantic_memory(created);" 2>&1 | Out-Null
+            }
+            elseif ($dbName -eq "agent_learning.db") {
+                Write-Log "  Pruning low-frequency code patterns from agent_learning.db..." "INFO"
+                $pruned = sqlite3 $dbPath "DELETE FROM code_patterns WHERE usage_count = 1 AND last_used < strftime('%s', 'now') - (30 * 86400); SELECT changes();" 2>&1
+                Write-Log "  Pruned $pruned stale patterns." "SUCCESS"
+            }
+        }
+        
         # Run VACUUM if needed
         if ($fragmentationPct -gt 5 -or $freePages -gt 100) {
             if (-not $DryRun) {
@@ -104,6 +117,12 @@ foreach ($db in $databases) {
         } else {
             Write-Log "  VACUUM not needed" "INFO"
             $stats.Skipped++
+        }
+        
+        # Checkpoint WAL
+        if (-not $DryRun) {
+            Write-Log "  Checkpointing WAL..." "INFO"
+            sqlite3 $dbPath "PRAGMA wal_checkpoint(TRUNCATE);" 2>&1 | Out-Null
         }
         
         $stats.Optimized++

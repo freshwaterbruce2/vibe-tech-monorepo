@@ -11,6 +11,7 @@ import { z } from 'zod';
 import {
   KNOWN_DATABASES,
   DATA_PATHS,
+  WORKSPACE_ROOT,
 } from './constants.js';
 import {
   loadEnvFile,
@@ -101,7 +102,12 @@ Returns: { key, value (masked if sensitive), sensitive, category }`,
       return {
         content: [{
           type: 'text',
-          text: JSON.stringify({ key: entry.key, value: entry.masked, sensitive: entry.sensitive, category: entry.category }, null, 2),
+          text: JSON.stringify({
+            key: entry.key,
+            value: entry.masked,
+            sensitive: entry.sensitive,
+            category: entry.category,
+          }, null, 2),
         }],
       };
     } catch (error: unknown) {
@@ -130,7 +136,7 @@ Use this to verify API keys are configured before running services.`,
       }
 
       // Load raw entries (we need the actual value for length check)
-      const filePath = envPath || `${process.env.WORKSPACE_ROOT || 'V:\\monorepo'}\\.env`;
+      const filePath = envPath ?? `${WORKSPACE_ROOT}\\.env`;
       const { readFileSync, existsSync } = await import('fs');
       if (!existsSync(filePath)) {
         return { content: [{ type: 'text', text: `File not found: ${filePath}` }] };
@@ -188,7 +194,11 @@ Returns: { ranges, ports[], lastUpdated }`,
       return {
         content: [{
           type: 'text',
-          text: JSON.stringify({ ranges: registry.ranges, ports, lastUpdated: registry.lastUpdated }, null, 2),
+          text: JSON.stringify({
+            ranges: registry.ranges,
+            ports,
+            lastUpdated: registry.lastUpdated,
+          }, null, 2),
         }],
       };
     } catch (error: unknown) {
@@ -226,7 +236,8 @@ Returns: Port assignment details or "unassigned" status.`,
       }
 
       if (app) {
-        const matches = registry.ports.filter((p) => p.app.toLowerCase().includes(app.toLowerCase()));
+        const appLower = app.toLowerCase();
+        const matches = registry.ports.filter((p) => p.app.toLowerCase().includes(appLower));
         if (matches.length === 0) {
           return { content: [{ type: 'text', text: `No port registered for app "${app}".` }] };
         }
@@ -280,8 +291,8 @@ Returns: Array of local plugin configurations.`,
 // ─── Tool: ws_list_databases ───────────────────────────────────────
 server.tool(
   'ws_list_databases',
-  `List all known SQLite databases on D:\\databases with existence check and file size.
-All databases live on D:\\ per workspace policy — never on V:\\monorepo.
+  `List all known SQLite databases on the data drive with existence check and file size.
+All databases live on the data drive per workspace policy — never under the source tree.
 
 Returns: Array of { name, path, purpose, exists, sizeMB }`,
   {},
@@ -319,7 +330,7 @@ Use this for a quick health check or to orient a new agent session.`,
       }
 
       const summary = {
-        workspace: process.env.WORKSPACE_ROOT || 'V:\\monorepo',
+        workspace: WORKSPACE_ROOT,
         envVars: { total: envEntries.length, byCategory: envByCategory },
         ports: {
           assigned: registry.ports.length,
@@ -380,8 +391,9 @@ Returns: Matches grouped by source.`,
         ports: registry.ports.filter(
           (p) => p.app.toLowerCase().includes(q) || p.description.toLowerCase().includes(q),
         ),
-        mcpServers: mcpServers.filter(
-          (s) => s.name.toLowerCase().includes(q) || s.args.some((a) => a.toLowerCase().includes(q)),
+        mcpServers: mcpServers.filter((s) =>
+          s.name.toLowerCase().includes(q)
+          || s.args.some((a) => a.toLowerCase().includes(q)),
         ),
         plugins: plugins.filter(
           (p) => p.name.toLowerCase().includes(q)

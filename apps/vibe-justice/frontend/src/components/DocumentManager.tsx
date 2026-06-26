@@ -22,6 +22,7 @@ import {
   caseTypeLabels,
   caseTypeDescriptions,
   formatFileSize,
+  type CaseType,
 } from './documentAnalysisTypes'
 
 export function DocumentManager() {
@@ -42,6 +43,7 @@ export function DocumentManager() {
     handleUpload,
     handleWebFileChange,
     analyzeDocument,
+    selectDocument,
     exportResults,
     printDocument,
     deleteDocument,
@@ -134,10 +136,10 @@ export function DocumentManager() {
             <label className="block text-xs font-medium text-gray-400 mb-2">Select Case Type</label>
             <select
               value={caseType}
-              onChange={(e) => setCaseType(e.target.value as any)}
+              onChange={(e) => setCaseType(e.target.value as CaseType)}
               className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-neon-mint/50 focus:ring-1 focus:ring-neon-mint/20"
             >
-              {(Object.keys(caseTypeLabels) as any[]).map((type) => (
+              {(Object.keys(caseTypeLabels) as CaseType[]).map((type) => (
                 <option key={type} value={type}>
                   {caseTypeLabels[type]}
                 </option>
@@ -175,14 +177,7 @@ export function DocumentManager() {
                   {documents.map((doc) => (
                     <div
                       key={doc.id}
-                      onClick={() => {
-                        // Use the setter from hook via a small exposed method or we keep selectedDoc exposure later if needed
-                        // For now the list click is still inside the UI; the hook doesn't expose setSelectedDoc directly to UI.
-                        // We will expose a minimal method if required. For first cut we tolerate keeping the click here.
-                        // The current hook does not expose setSelectedDoc publicly — we need to add it if we want pure UI.
-                        // Workaround for now: keep the click handler minimal and let the hook own the selection.
-                        // Revisit when we need to highlight selectedDoc from the list.
-                      }}
+                      onClick={() => selectDocument(doc)}
                       className={`document-item p-3 rounded-lg cursor-pointer transition-colors ${
                         selectedDoc?.id === doc.id
                           ? 'bg-neon-mint/20 border border-neon-mint/30'

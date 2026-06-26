@@ -60,6 +60,9 @@ function App() {
   const [folderPathDialogOpen, setFolderPathDialogOpen] = useState(false);
   const [newFileDialogOpen, setNewFileDialogOpen] = useState(false);
 
+  // Learning Memory (Brain Scan) viewer panel toggle
+  const [brainScanOpen, setBrainScanOpen] = useState(false);
+
   // App state management
   const appState = useAppState();
 
@@ -312,6 +315,7 @@ function App() {
         key: 'f', shiftKey: true, altKey: true, bubbles: true,
       }));
     },
+    onOpenBrainScan: () => setBrainScanOpen(true),
     currentFile: currentFile?.path ?? null,
   });
 
@@ -357,6 +361,7 @@ function App() {
     errorFixPanelOpen: appState.errorFixPanelOpen,
     setErrorFixPanelOpen: appState.setErrorFixPanelOpen,
     agentModeOpen: appState.agentModeOpen, setAgentModeOpen: appState.setAgentModeOpen,
+    brainScanOpen, setBrainScanOpen,
   }), [
     settingsOpen, setSettingsOpen, aiChatOpen, setAiChatOpen,
     appState.gitPanelOpen, appState.globalSearchOpen, appState.setGlobalSearchOpen,
@@ -370,6 +375,7 @@ function App() {
     appState.chatMode, appState.setChatMode,
     appState.errorFixPanelOpen, appState.setErrorFixPanelOpen,
     appState.agentModeOpen, appState.setAgentModeOpen,
+    brainScanOpen, setBrainScanOpen,
   ]);
 
   const workspaceContextValue = useMemo(() => ({

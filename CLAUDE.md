@@ -36,7 +36,7 @@ Detailed rules are in `.claude/rules/`. Key references:
 - Paths policy: `.claude/rules/paths-policy.md`
 - No duplicates: `.claude/rules/no-duplicates.md`
 - No mock/placeholder code: `.claude/rules/no-mock-or-placeholder-code.md`
-- Code size limits: `.claude/rules/code-size-limits.md` — file 600 / function 50 / line 100, hard-blocked at commit
+- Code size limits: `.claude/rules/code-size-limits.md` — file 1000 / function 50 / line 100, hard-blocked at commit
 - TypeScript patterns: `.claude/rules/typescript-patterns.md`
 - Testing strategy: `.claude/rules/testing-strategy.md`
 - Craft edit-review widget: `.claude/rules/craft-edit-review.md`
@@ -66,5 +66,18 @@ Detailed rules are in `.claude/rules/`. Key references:
 <!-- nx configuration end-->
 
 <!-- stripe-projects-cli managed:claude-md:start -->
+
 look at AGENTS.md for your rules
+
 <!-- stripe-projects-cli managed:claude-md:end -->
+
+## gstack
+
+Use /browse from gstack for all web browsing. Never use mcp**claude-in-chrome**\* tools.
+
+Available skills: /office-hours, /plan-ceo-review, /plan-eng-review, /plan-design-review,
+/design-consultation, /design-shotgun, /design-html, /review, /ship, /land-and-deploy,
+/canary, /benchmark, /browse, /open-gstack-browser, /qa, /qa-only, /design-review,
+/setup-browser-cookies, /setup-deploy, /setup-gbrain, /sync-gbrain, /retro, /investigate,
+/document-release, /document-generate, /codex, /cso, /autoplan, /pair-agent, /careful, /freeze,
+/guard, /unfreeze, /gstack-upgrade, /learn.

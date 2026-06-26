@@ -1,25 +1,33 @@
 /**
- * Provider abstraction — Moonshot generator + Gemini critics.
- * Both use the OpenAI SDK with different baseURLs (no Anthropic dependency).
+ * Provider abstraction — OpenRouter client.
+ * Configured to route through the local proxy server.
  */
-import OpenAI from 'openai';
+import { OpenRouterClient } from '@vibetech/openrouter-client';
 import type { Response } from 'express';
 import { sendEvent } from './events.js';
 
-// ── Clients ───────────────────────────────────────────────────────────────────
-export const moonshot = new OpenAI({
-  apiKey: process.env.MOONSHOT_API_KEY ?? '',
-  baseURL: 'https://api.moonshot.ai/v1',
-});
+// Load environment variables dynamically in Node 20.6+
+try {
+  process.loadEnvFile();
+} catch {
+  // Ignore missing .env
+}
 
-// Gemini via OpenAI-compatible endpoint (function calling supported)
-export const gemini = new OpenAI({
-  apiKey: process.env.GEMINI_API_KEY ?? '',
-  baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
-});
+const proxyUrl = process.env.OPENROUTER_PROXY_URL ?? 'http://localhost:3001';
+export const openRouterClient = new OpenRouterClient(proxyUrl);
 
-// ── Pricing ───────────────────────────────────────────────────────────────────
+// ── Fallback Stack ───────────────────────────────────────────────────────────
+export const FALLBACK_STACK = [
+  'cohere/north-mini-code:free',
+  'deepseek/deepseek-v4-flash',
+  'anthropic/claude-sonnet-4.6',
+];
+
+// ── Pricing (per 1M tokens) ──────────────────────────────────────────────────
 const PRICING: Record<string, { input: number; output: number }> = {
+  'cohere/north-mini-code:free': { input: 0, output: 0 },
+  'deepseek/deepseek-v4-flash':  { input: 0.09 / 1_000_000, output: 0.18 / 1_000_000 },
+  'anthropic/claude-sonnet-4.6': { input: 3.00 / 1_000_000, output: 15.00 / 1_000_000 },
   'kimi-k2.5':             { input: 0.60 / 1_000_000, output: 2.50 / 1_000_000 },
   'gemini-2.5-flash-lite': { input: 0.10 / 1_000_000, output: 0.40 / 1_000_000 },
 };
@@ -28,15 +36,11 @@ export function calcCost(
   model: string,
   usage: { prompt_tokens?: number; completion_tokens?: number },
 ): number {
-  const p = PRICING[model] ?? PRICING['kimi-k2.5'] ?? { input: 0.60 / 1_000_000, output: 2.50 / 1_000_000 };
+  const p = PRICING[model] ?? PRICING['cohere/north-mini-code:free'] ?? { input: 0, output: 0 };
   return (usage.prompt_tokens ?? 0) * p.input + (usage.completion_tokens ?? 0) * p.output;
 }
 
-// ── Model IDs ─────────────────────────────────────────────────────────────────
-export const GENERATOR_MODEL = 'kimi-k2.5';
-export const CRITIC_MODEL    = 'gemini-2.5-flash-lite';
-
-// ── Generator / Reviser (Moonshot streaming) ──────────────────────────────────
+// ── Generator / Reviser (OpenRouter streaming) ──────────────────────────────
 export async function streamGenerate(
   res: Response,
   pass: number,
@@ -47,36 +51,44 @@ export async function streamGenerate(
   let output = '';
   let promptTokens = 0;
   let completionTokens = 0;
+  let selectedModel = FALLBACK_STACK[0] ?? 'unknown';
 
-  const stream = await moonshot.chat.completions.create({
-    model: GENERATOR_MODEL,
+  const stream = openRouterClient.chatStream({
+    models: FALLBACK_STACK,
     max_tokens: 16_000,
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user',   content: userContent },
     ],
-    stream: true,
-    stream_options: { include_usage: true },
   });
 
   for await (const chunk of stream) {
-    const delta = chunk.choices[0]?.delta?.content ?? '';
+    const delta = chunk.choices?.[0]?.delta?.content ?? '';
     if (delta) {
       output += delta;
       sendEvent(res, { type: 'token', pass, role, text: delta });
     }
+    if (chunk.model) {
+      selectedModel = chunk.model;
+    }
     if (chunk.usage) {
-      promptTokens     = chunk.usage.prompt_tokens;
-      completionTokens = chunk.usage.completion_tokens;
+      promptTokens     = chunk.usage.prompt_tokens ?? promptTokens;
+      completionTokens = chunk.usage.completion_tokens ?? completionTokens;
     }
   }
 
-  return { output, cost: calcCost(GENERATOR_MODEL, { prompt_tokens: promptTokens, completion_tokens: completionTokens }) };
+  return {
+    output,
+    cost: calcCost(selectedModel, {
+      prompt_tokens: promptTokens,
+      completion_tokens: completionTokens,
+    }),
+  };
 }
 
-// ── Critic call (Gemini via OpenAI-compatible function calling) ───────────────
-export const CRITIQUE_TOOL: OpenAI.ChatCompletionTool = {
-  type: 'function',
+// ── Critic call (OpenRouter tool calling) ────────────────────────────────────
+export const CRITIQUE_TOOL = {
+  type: 'function' as const,
   function: {
     name: 'submit_critique',
     description: 'Submit your structured evaluation of the output',
@@ -107,8 +119,8 @@ export async function callCritic(
   systemPrompt: string,
   userContent: string,
 ): Promise<{ raw: Record<string, unknown> | null; cost: number }> {
-  const response = await gemini.chat.completions.create({
-    model: CRITIC_MODEL,
+  const response = await openRouterClient.chat({
+    models: FALLBACK_STACK,
     max_tokens: 2_000,
     messages: [
       { role: 'system', content: systemPrompt },
@@ -118,7 +130,10 @@ export async function callCritic(
     tool_choice: { type: 'function', function: { name: 'submit_critique' } },
   });
 
-  const toolCall = response.choices[0]?.message?.tool_calls?.[0];
+  // Cast to any is necessary because the ChatMessage type definition is missing the tool_calls property
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const message = response.choices?.[0]?.message as any;
+  const toolCall = message?.tool_calls?.[0];
   let raw: Record<string, unknown> | null = null;
   try {
     if (toolCall?.function?.arguments) {
@@ -126,7 +141,8 @@ export async function callCritic(
     }
   } catch { /* parse failure handled by caller */ }
 
-  const cost = calcCost(CRITIC_MODEL, {
+  const selectedModel = response.model ?? FALLBACK_STACK[0] ?? 'unknown';
+  const cost = calcCost(selectedModel, {
     prompt_tokens:     response.usage?.prompt_tokens     ?? 0,
     completion_tokens: response.usage?.completion_tokens ?? 0,
   });

@@ -92,7 +92,7 @@ async function runSelfEval(): Promise<void> {
 
 async function runBehavioralEval(suiteId: string, categoryOrCaseId?: string): Promise<void> {
   const evaluation = new EvaluationService('V:\\monorepo', 'auto');
-  const suites = await evaluation.runBehavioralSuites();
+  const suites = await evaluation.runBehavioralSuites(categoryOrCaseId, suiteId);
   const selected = suites.find((suite) => suite.suite === suiteId);
 
   if (!selected) {

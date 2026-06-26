@@ -33,12 +33,51 @@ interface FeedbackRow {
   timestamp: number;
 }
 
+function assertSafeDatabasePath(dbPath: string, dbName: string): void {
+  if (dbPath === ':memory:') {
+    return;
+  }
+  const resolvedPath = resolve(dbPath);
+  const resolvedPathLower = resolvedPath.toLowerCase();
+  const workspaceRoot = process.env.WORKSPACE_ROOT ? resolve(process.env.WORKSPACE_ROOT) : null;
+  if (workspaceRoot && resolvedPathLower.startsWith(workspaceRoot.toLowerCase())) {
+    throw new Error(`[PathSegregationViolation] Fatal: Database '${dbName}' path resides inside code workspace root (WORKSPACE_ROOT): ${resolvedPath}`);
+  }
+  let currentDir = dirname(resolvedPath);
+  let detectedWorkspaceRoot: string | null = null;
+  while (currentDir && currentDir !== dirname(currentDir)) {
+    if (existsSync(resolve(currentDir, 'pnpm-workspace.yaml')) || existsSync(resolve(currentDir, '.git'))) {
+      detectedWorkspaceRoot = currentDir;
+      break;
+    }
+    currentDir = dirname(currentDir);
+  }
+  if (detectedWorkspaceRoot && resolvedPathLower.startsWith(detectedWorkspaceRoot.toLowerCase())) {
+    throw new Error(`[PathSegregationViolation] Fatal: Database '${dbName}' path resides inside the detected code repository root: ${resolvedPath}\nWorkspace Root: ${detectedWorkspaceRoot}`);
+  }
+  if (resolvedPathLower.includes('v:\\monorepo') || resolvedPathLower.includes('v:/monorepo')) {
+    throw new Error(`[PathSegregationViolation] Fatal: Database '${dbName}' path contains hardcoded 'V:\\monorepo': ${resolvedPath}`);
+  }
+}
+
+import { existsSync } from 'fs';
+import { dirname } from 'path';
+
 export class RecommendationsDatabase {
   private db: Database.Database;
 
   constructor(dbPath: string = DB_PATH) {
     const resolvedPath = dbPath === ':memory:' ? ':memory:' : resolve(dbPath);
+    
+    // Assert path segregation compliance before connecting
+    assertSafeDatabasePath(resolvedPath, 'recommendations');
+
     this.db = new Database(resolvedPath);
+    
+    // Enforce WAL mode and busy_timeout = 5000
+    this.db.pragma('journal_mode = WAL');
+    this.db.pragma('busy_timeout = 5000');
+    
     this.initSchema();
   }
 

@@ -12,7 +12,7 @@ import DailyInspiration from './components/DailyInspiration';
 import Breathing from './components/Breathing';
 import JournalSecure from './components/JournalSecure';
 import Logo from './components/Logo';
-import ZenColoring from './components/ZenColoring';
+import { ZenColoring } from './components/ZenColoring';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);

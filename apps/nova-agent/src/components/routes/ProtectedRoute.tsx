@@ -11,7 +11,18 @@ interface ProtectedRouteProps {
  * Must be used within an AdminProvider.
  */
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { isAdmin } = useAdmin();
+  const { isAdmin, isLoading } = useAdmin();
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div
+          className="h-8 w-8 animate-spin rounded-full border-2 border-current border-t-transparent"
+          aria-label="Loading authentication"
+        />
+      </div>
+    );
+  }
 
   if (!isAdmin) {
     return <Navigate to="/admin" replace />;

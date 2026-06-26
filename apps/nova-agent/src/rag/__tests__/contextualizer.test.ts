@@ -50,9 +50,9 @@ describe('Contextualizer', () => {
   });
 
   it('attaches a contextPrefix to each chunk and marks them contextual', async () => {
-    const fetchMock = vi.fn().mockImplementation(() =>
-      Promise.resolve(mockChatResponse('Situated prefix.')),
-    );
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(async () => Promise.resolve(mockChatResponse('Situated prefix.')));
     vi.stubGlobal('fetch', fetchMock);
 
     const ctx = new Contextualizer(ctxConfig());
@@ -73,7 +73,7 @@ describe('Contextualizer', () => {
   it('does NOT modify the original chunk.content (display field stays raw)', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockImplementation(() => Promise.resolve(mockChatResponse('Prefix from doc.'))),
+      vi.fn().mockImplementation(async () => Promise.resolve(mockChatResponse('Prefix from doc.'))),
     );
 
     const ctx = new Contextualizer(ctxConfig());
@@ -98,7 +98,7 @@ describe('Contextualizer', () => {
   it('sends the prompt with cache_control ephemeral on the document block', async () => {
     const fetchMock = vi
       .fn()
-      .mockImplementation(() => Promise.resolve(mockChatResponse('Ctx.')));
+      .mockImplementation(async () => Promise.resolve(mockChatResponse('Ctx.')));
     vi.stubGlobal('fetch', fetchMock);
 
     const ctx = new Contextualizer(ctxConfig());
@@ -112,10 +112,36 @@ describe('Contextualizer', () => {
     expect(body.messages[0].content[1].text).toContain('<chunk>');
   });
 
+  it('escapes XML-special characters in document and chunk content', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(async () => Promise.resolve(mockChatResponse('Escaped.')));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const ctx = new Contextualizer(ctxConfig());
+    const maliciousDoc = '<script>alert(1)</script>';
+    const maliciousChunk = 'a && b < c > d';
+    await ctx.contextualizeFile('src/example.ts', maliciousDoc, [
+      baseChunk({ content: maliciousChunk }),
+    ]);
+
+    const [, init] = fetchMock.mock.calls[0]!;
+    const body = JSON.parse((init as RequestInit).body as string);
+    const docText = body.messages[0].content[0].text as string;
+    const chunkText = body.messages[0].content[1].text as string;
+
+    expect(docText).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+    expect(docText).not.toContain('<script>');
+    expect(chunkText).toContain('a &amp;&amp; b &lt; c &gt; d');
+    expect(chunkText).not.toContain('a && b');
+  });
+
   it('falls back to contextual=false on API failure (no throw)', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(new Response('boom', { status: 500 })),
+      vi
+        .fn()
+        .mockImplementation(async () => Promise.resolve(new Response('boom', { status: 500 }))),
     );
 
     const ctx = new Contextualizer(ctxConfig());
@@ -131,7 +157,7 @@ describe('Contextualizer', () => {
   it('tracks token usage stats including cached tokens', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockImplementation(() => Promise.resolve(mockChatResponse('Ctx.'))),
+      vi.fn().mockImplementation(async () => Promise.resolve(mockChatResponse('Ctx.'))),
     );
 
     const ctx = new Contextualizer(ctxConfig());

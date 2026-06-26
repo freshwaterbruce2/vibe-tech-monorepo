@@ -1,7 +1,14 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Star } from 'lucide-react';
-import React from 'react';
+
+interface WindowWithGtag extends Window {
+  gtag: (
+    command: 'set' | 'js' | 'event' | 'config',
+    action: string,
+    params?: Record<string, unknown>,
+  ) => void;
+}
 
 interface AffiliateLinkProps {
   name: string;
@@ -11,19 +18,26 @@ interface AffiliateLinkProps {
   category: string;
 }
 
-const AffiliateLink = ({
-  name,
-  url,
-  description,
-  commission,
-  category,
-}: AffiliateLinkProps) => {
+function validateAffiliateUrl(rawUrl: string): URL {
+  const parsed = new URL(rawUrl);
+  if (parsed.protocol !== 'https:') {
+    throw new Error(`Affiliate links must use HTTPS: ${rawUrl}`);
+  }
+  return parsed;
+}
+
+const AffiliateLink = ({ name, url, description, commission, category }: AffiliateLinkProps) => {
   const handleClick = () => {
-    // Track affiliate link clicks
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).gtag('event', 'affiliate_click', {
+    let safeUrl: URL;
+    try {
+      safeUrl = validateAffiliateUrl(url);
+    } catch {
+      return;
+    }
+
+    const win = window as WindowWithGtag;
+    if (typeof win.gtag === 'function') {
+      win.gtag('event', 'affiliate_click', {
         event_category: 'affiliate',
         event_label: name,
         value: category,
@@ -31,7 +45,7 @@ const AffiliateLink = ({
     }
 
     // Open in new tab
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window.open(safeUrl.toString(), '_blank', 'noopener,noreferrer');
   };
 
   return (

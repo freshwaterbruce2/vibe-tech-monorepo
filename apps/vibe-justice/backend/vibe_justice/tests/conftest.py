@@ -1,8 +1,6 @@
 """Shared pytest fixtures for vibe-justice tests."""
 import os
 import sys
-from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient

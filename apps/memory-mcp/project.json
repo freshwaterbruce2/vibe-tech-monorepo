@@ -14,7 +14,8 @@
       "executor": "nx:run-script",
       "options": { "script": "build" },
       "outputs": ["{projectRoot}/dist"],
-      "cache": true
+      "cache": true,
+      "dependsOn": []
     },
     "lint": {
       "executor": "nx:run-script",

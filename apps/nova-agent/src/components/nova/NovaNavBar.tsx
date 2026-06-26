@@ -2,7 +2,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/context/AdminContext';
 import { useNovaData } from '@/hooks/useNovaData';
-import { ChevronRight, LogOut, Settings, Shield, Sparkles, Zap } from 'lucide-react';
+import { ChevronRight, Hand, LogOut, Settings, Shield, Sparkles, Zap } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 const NovaNavBar = () => {
@@ -17,6 +17,7 @@ const NovaNavBar = () => {
     { path: '/copilot', label: 'Copilot' },
     { path: '/context-guide', label: 'Context' },
     { path: '/calendar', label: 'Calendar' },
+    { path: '/nova-hands', label: 'Nova Hands', icon: Hand },
     { path: '/admin', label: isAdmin ? 'Admin' : 'Login' },
   ];
 
@@ -25,9 +26,10 @@ const NovaNavBar = () => {
   return (
     <header className="fixed w-full z-50">
       {/* 2026 Neon Glassmorphism Navbar */}
-      <div 
+      <div
         style={{
-          background: 'linear-gradient(180deg, rgba(10, 8, 20, 0.95) 0%, rgba(15, 12, 28, 0.9) 100%)',
+          background:
+            'linear-gradient(180deg, rgba(10, 8, 20, 0.95) 0%, rgba(15, 12, 28, 0.9) 100%)',
           backdropFilter: 'blur(20px)',
           borderBottom: '1px solid rgba(176, 38, 255, 0.15)',
           boxShadow: '0 4px 30px rgba(0, 0, 0, 0.5), 0 0 40px rgba(176, 38, 255, 0.05)',
@@ -37,11 +39,12 @@ const NovaNavBar = () => {
           <div className="flex items-center justify-between h-16">
             {/* Nova Agent Logo - Neon Style */}
             <Link to="/" className="flex items-center gap-3 group">
-              <div 
+              <div
                 style={{
                   padding: '10px',
                   borderRadius: '14px',
-                  background: 'linear-gradient(135deg, rgba(176, 38, 255, 0.2), rgba(255, 45, 149, 0.1))',
+                  background:
+                    'linear-gradient(135deg, rgba(176, 38, 255, 0.2), rgba(255, 45, 149, 0.1))',
                   border: '1px solid rgba(176, 38, 255, 0.3)',
                   boxShadow: '0 0 20px rgba(176, 38, 255, 0.2)',
                   transition: 'all 0.3s ease',
@@ -49,7 +52,7 @@ const NovaNavBar = () => {
               >
                 <Sparkles style={{ width: '18px', height: '18px', color: '#b026ff' }} />
               </div>
-              <span 
+              <span
                 style={{
                   fontWeight: 800,
                   fontSize: '1.25rem',
@@ -66,8 +69,9 @@ const NovaNavBar = () => {
             {/* Main Navigation - Neon Pill Style */}
             <nav style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {navItems.map((item) => (
-                <button
+                <Link
                   key={item.path}
+                  to={item.path}
                   style={{
                     padding: '8px 18px',
                     fontSize: '0.875rem',
@@ -76,11 +80,16 @@ const NovaNavBar = () => {
                     border: 'none',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    textDecoration: 'none',
                     ...(isActive(item.path)
                       ? {
                           background: 'linear-gradient(135deg, #b026ff, #ff2d95)',
                           color: 'white',
-                          boxShadow: '0 0 20px rgba(176, 38, 255, 0.4), 0 0 40px rgba(255, 45, 149, 0.2)',
+                          boxShadow:
+                            '0 0 20px rgba(176, 38, 255, 0.4), 0 0 40px rgba(255, 45, 149, 0.2)',
                         }
                       : {
                           background: 'transparent',
@@ -99,10 +108,10 @@ const NovaNavBar = () => {
                       e.currentTarget.style.background = 'transparent';
                     }
                   }}
-                  onClick={() => { void navigate(item.path); }}
                 >
+                  {item.icon && <item.icon style={{ width: '16px', height: '16px' }} />}
                   {item.label}
-                </button>
+                </Link>
               ))}
             </nav>
 
@@ -139,7 +148,9 @@ const NovaNavBar = () => {
                   border: '1px solid rgba(255, 255, 255, 0.06)',
                   background: 'rgba(255, 255, 255, 0.03)',
                 }}
-                onClick={() => { void navigate('/settings'); }}
+                onClick={() => {
+                  void navigate('/settings');
+                }}
               >
                 <Settings style={{ width: '18px', height: '18px' }} />
               </Button>
@@ -156,7 +167,11 @@ const NovaNavBar = () => {
                     border: '1px solid rgba(255, 255, 255, 0.06)',
                     background: 'rgba(255, 255, 255, 0.03)',
                   }}
-                  onClick={() => { void logout().then(() => { void navigate('/'); }); }}
+                  onClick={() => {
+                    void logout().then(() => {
+                      void navigate('/');
+                    });
+                  }}
                   title="Logout"
                 >
                   <LogOut style={{ width: '18px', height: '18px' }} />
@@ -169,52 +184,77 @@ const NovaNavBar = () => {
         </div>
 
         {/* Sub-header with system status - Neon accents */}
-        <div 
-          style={{ 
+        <div
+          style={{
             padding: '10px 24px',
             borderTop: '1px solid rgba(176, 38, 255, 0.1)',
             background: 'rgba(0, 0, 0, 0.2)',
           }}
         >
-          <div className="max-w-7xl mx-auto" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '24px', fontSize: '0.75rem' }}>
+          <div
+            className="max-w-7xl mx-auto"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+          >
+            <div
+              style={{ display: 'flex', alignItems: 'center', gap: '24px', fontSize: '0.75rem' }}
+            >
               {/* Model Status */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: agentStatus?.ipc_connected ? '#22c55e' : '#eab308',
-                  boxShadow: `0 0 10px ${agentStatus?.ipc_connected ? 'rgba(34, 197, 94, 0.6)' : 'rgba(234, 179, 8, 0.6)'}`,
-                }} />
+                <div
+                  style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    background: agentStatus?.ipc_connected ? '#22c55e' : '#eab308',
+                    boxShadow: `0 0 10px ${agentStatus?.ipc_connected ? 'rgba(34, 197, 94, 0.6)' : 'rgba(234, 179, 8, 0.6)'}`,
+                  }}
+                />
                 <span style={{ color: '#b026ff', fontWeight: 600 }}>Model:</span>
-                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>{agentStatus?.active_model ?? 'Connecting...'}</span>
+                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                  {agentStatus?.active_model ?? 'Connecting...'}
+                </span>
               </div>
-              
+
               {/* Memory */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Zap style={{ width: '12px', height: '12px', color: '#22d3ee', opacity: 0.8 }} />
                 <span style={{ color: '#22d3ee', fontWeight: 600 }}>Memory:</span>
-                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>{agentStatus?.memory_count ?? 0} entries</span>
+                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                  {agentStatus?.memory_count ?? 0} entries
+                </span>
               </div>
-              
+
               {/* Context */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <ChevronRight style={{ width: '12px', height: '12px', color: '#ff2d95', opacity: 0.8 }} />
+                <ChevronRight
+                  style={{ width: '12px', height: '12px', color: '#ff2d95', opacity: 0.8 }}
+                />
                 <span style={{ color: '#ff2d95', fontWeight: 600 }}>Context:</span>
-                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>{agentStatus?.active_model?.includes('llama') ? '32K' : '128K'} tokens</span>
+                <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                  {agentStatus?.active_model?.includes('llama') ? '32K' : '128K'} tokens
+                </span>
               </div>
             </div>
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.4)' }}>
-              <span style={{ 
-                padding: '4px 10px', 
-                borderRadius: '8px', 
-                background: 'rgba(176, 38, 255, 0.1)', 
-                border: '1px solid rgba(176, 38, 255, 0.2)',
-                color: '#b026ff',
-                fontWeight: 500,
-              }}>
+
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                fontSize: '0.75rem',
+                color: 'rgba(255, 255, 255, 0.4)',
+              }}
+            >
+              <span
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: '8px',
+                  background: 'rgba(176, 38, 255, 0.1)',
+                  border: '1px solid rgba(176, 38, 255, 0.2)',
+                  color: '#b026ff',
+                  fontWeight: 500,
+                }}
+              >
                 v1.1.0
               </span>
               <span>© 2026 Nova</span>

@@ -242,13 +242,13 @@ interface Skill {
 export async function loadSkills(): Promise<Map<string, Skill>> {
   const skills = new Map<string, Skill>();
 
-  // Load category skills
-  const categoriesDir = 'V:/monorepo/.claude/commands/categories';
-  const categoryFiles = await readdir(categoriesDir);
+  // Load authored, git-tracked monorepo skills (source 'monorepo')
+  const monorepoDir = 'V:/monorepo/skills';
+  const monorepoFiles = await readdir(monorepoDir);
 
-  for (const file of categoryFiles) {
+  for (const file of monorepoFiles) {
     if (file.endsWith('.md')) {
-      const content = await readFile(path.join(categoriesDir, file), 'utf-8');
+      const content = await readFile(path.join(monorepoDir, file), 'utf-8');
       const { data, content: body } = matter(content);
 
       skills.set(data.name, {
@@ -261,8 +261,8 @@ export async function loadSkills(): Promise<Map<string, Skill>> {
     }
   }
 
-  // Load community skills
-  const communityDir = 'V:/monorepo/.claude/skills/skills';
+  // Load the canonical aggregate of all skills (source 'community')
+  const communityDir = `${process.env.USERPROFILE}/.claude/skills`;
   const communityFiles = await readdir(communityDir);
 
   for (const file of communityFiles) {
@@ -295,7 +295,7 @@ export async function loadSkills(): Promise<Map<string, Skill>> {
       "command": "node",
       "args": ["V:/monorepo/backend/mcp-skills-server/dist/server.js"],
       "env": {
-        "SKILLS_ROOT": "V:/monorepo/.claude"
+        "SKILLS_ROOT": "V:/monorepo/skills"
       }
     }
   }

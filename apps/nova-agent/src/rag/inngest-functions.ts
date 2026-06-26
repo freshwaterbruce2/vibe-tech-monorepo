@@ -15,12 +15,21 @@
  */
 
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync, appendFileSync } from 'node:fs';
+import {
+  readFileSync,
+  writeFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+  appendFileSync,
+} from 'node:fs';
 import { join, relative, extname } from 'node:path';
 import { connect } from '@lancedb/lancedb';
 import { inngest } from '@vibetech/inngest-client';
 import { RAGChunker } from './chunker.js';
 import { RAGEmbedder } from './embedder.js';
+import { buildPathFilter } from './filterUtils.js';
 import { DEFAULT_RAG_CONFIG } from './types.js';
 import type { Chunk, FileHash, RAGConfig } from './types.js';
 import type { RAGIndexSummary } from '@vibetech/inngest-client';
@@ -28,8 +37,17 @@ import type { RAGIndexSummary } from '@vibetech/inngest-client';
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const INDEXABLE_EXTENSIONS = new Set([
-  '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs',
-  '.py', '.md', '.mdx', '.json', '.jsonc',
+  '.ts',
+  '.tsx',
+  '.js',
+  '.jsx',
+  '.mjs',
+  '.cjs',
+  '.py',
+  '.md',
+  '.mdx',
+  '.json',
+  '.jsonc',
 ]);
 const MAX_FILE_SIZE = 500_000;
 const EMBED_BATCH_SIZE = 20;
@@ -57,7 +75,9 @@ function log(config: RAGConfig, message: string): void {
   console.error(`[RAGInngest] ${message}`);
   try {
     appendFileSync(config.logPath, line);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 function loadFileHashes(config: RAGConfig): Map<string, FileHash> {
@@ -66,7 +86,9 @@ function loadFileHashes(config: RAGConfig): Map<string, FileHash> {
       const data = JSON.parse(readFileSync(config.hashIndexPath, 'utf-8'));
       return new Map(Object.entries(data));
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return new Map();
 }
 
@@ -88,7 +110,11 @@ export function isExcluded(relPath: string, config: RAGConfig): boolean {
 
 function walkDirectory(dir: string, config: RAGConfig, results: string[]): void {
   let entries: string[];
-  try { entries = readdirSync(dir); } catch { return; }
+  try {
+    entries = readdirSync(dir);
+  } catch {
+    return;
+  }
 
   for (const entry of entries) {
     const fullPath = join(dir, entry);
@@ -96,7 +122,11 @@ function walkDirectory(dir: string, config: RAGConfig, results: string[]): void 
     if (isExcluded(relPath, config)) continue;
 
     let stat;
-    try { stat = statSync(fullPath); } catch { continue; }
+    try {
+      stat = statSync(fullPath);
+    } catch {
+      continue;
+    }
 
     if (stat.isDirectory()) {
       walkDirectory(fullPath, config, results);
@@ -119,7 +149,11 @@ function discoverFiles(config: RAGConfig): string[] {
   return files;
 }
 
-function isFileChanged(filePath: string, config: RAGConfig, hashes: Map<string, FileHash>): boolean {
+function isFileChanged(
+  filePath: string,
+  config: RAGConfig,
+  hashes: Map<string, FileHash>,
+): boolean {
   const relPath = relative(config.workspaceRoot, filePath).replace(/\\/g, '/');
   const existing = hashes.get(relPath);
   if (!existing) return true;
@@ -127,7 +161,9 @@ function isFileChanged(filePath: string, config: RAGConfig, hashes: Map<string, 
     const content = readFileSync(filePath, 'utf-8');
     const hash = createHash('sha256').update(content).digest('hex');
     return hash !== existing.hash;
-  } catch { return true; }
+  } catch {
+    return true;
+  }
 }
 
 /** Row stored in LanceDB */
@@ -146,6 +182,266 @@ interface LanceRow {
   vector: number[];
 }
 
+interface EmbeddingBatch {
+  vectors: number[][];
+  failedIndices: number[];
+}
+
+/** Walk the workspace and split files into changed vs all (relative paths). */
+function discoverChangedFiles(
+  config: RAGConfig,
+  full: boolean,
+): { changedFiles: string[]; allFiles: string[] } {
+  ensureDirs(config);
+  const all = discoverFiles(config);
+  const hashes = loadFileHashes(config);
+
+  const changed = full ? all : all.filter((f) => isFileChanged(f, config, hashes));
+
+  log(config, `Discovered ${all.length} files, ${changed.length} changed`);
+
+  const toRel = (f: string) => relative(config.workspaceRoot, f).replace(/\\/g, '/');
+  return {
+    changedFiles: changed.map(toRel),
+    allFiles: all.map(toRel),
+  };
+}
+
+/** Chunk every changed file, collecting chunks, updated hashes, and errors. */
+function chunkChangedFiles(
+  config: RAGConfig,
+  changedFiles: string[],
+): {
+  chunksJson: string;
+  chunkCount: number;
+  hashesJson: string;
+  errors: Array<{ filePath: string; error: string }>;
+} {
+  const chunker = new RAGChunker(config);
+  const allChunks: Chunk[] = [];
+  const errors: Array<{ filePath: string; error: string }> = [];
+  const updatedHashes: Array<[string, FileHash]> = [];
+
+  for (const relPath of changedFiles) {
+    const absPath = join(config.workspaceRoot, relPath);
+    try {
+      const content = readFileSync(absPath, 'utf-8');
+      const chunks = chunker.chunkFile(relPath, content);
+      allChunks.push(...chunks);
+
+      const hash = createHash('sha256').update(content).digest('hex');
+      updatedHashes.push([
+        relPath,
+        {
+          filePath: relPath,
+          hash,
+          lastIndexed: Date.now(),
+          chunkCount: chunks.length,
+        },
+      ]);
+    } catch (error) {
+      errors.push({ filePath: relPath, error: (error as Error).message });
+    }
+  }
+
+  log(config, `Chunked ${updatedHashes.length} files into ${allChunks.length} chunks`);
+
+  return {
+    // Serialise chunks — step results must be JSON-serialisable
+    chunksJson: JSON.stringify(allChunks),
+    chunkCount: allChunks.length,
+    hashesJson: JSON.stringify(updatedHashes),
+    errors,
+  };
+}
+
+/** Reassemble embedding batches into LanceDB rows, skipping failed vectors. */
+function buildLanceRows(embeddingResults: EmbeddingBatch[], chunks: Chunk[]): LanceRow[] {
+  const rows: LanceRow[] = [];
+
+  for (let batchIdx = 0; batchIdx < embeddingResults.length; batchIdx++) {
+    const batch = embeddingResults[batchIdx];
+    if (!batch) continue;
+    const batchStart = batchIdx * EMBED_BATCH_SIZE;
+
+    for (let localIdx = 0; localIdx < batch.vectors.length; localIdx++) {
+      const vector = batch.vectors[localIdx];
+      if (!vector || batch.failedIndices.includes(localIdx) || vector.length === 0) {
+        continue;
+      }
+
+      const chunk = chunks[batchStart + localIdx];
+      if (!chunk) {
+        continue;
+      }
+      rows.push({
+        id: chunk.id,
+        filePath: chunk.filePath,
+        content: chunk.content,
+        type: chunk.type,
+        startLine: chunk.startLine,
+        endLine: chunk.endLine,
+        symbolName: chunk.symbolName ?? '',
+        language: chunk.language,
+        tokenCount: chunk.tokenCount,
+        createdAt: chunk.createdAt,
+        vector,
+      });
+    }
+  }
+
+  return rows;
+}
+
+/** Delete stale rows for changed files, then add the freshly built rows.
+ *  Returns the number of rows upserted and the set of file paths that produced
+ *  at least one successful row.
+ */
+async function upsertRowsToLance(
+  config: RAGConfig,
+  rows: LanceRow[],
+  changedFiles: string[],
+): Promise<{ rowsUpserted: number; successfulPaths: string[] }> {
+  const db = await connect(config.lanceDbPath);
+  const tables = await db.tableNames();
+  const changedSet = new Set(changedFiles);
+
+  if (tables.includes('codebase')) {
+    const table = await db.openTable('codebase');
+    // Delete old entries for changed files
+    for (const path of changedSet) {
+      try {
+        await table.delete(buildPathFilter(path));
+      } catch {
+        /* ignore */
+      }
+    }
+    if (rows.length > 0) {
+      await table.add(rows);
+    }
+  } else if (rows.length > 0) {
+    await db.createTable('codebase', rows, { mode: 'overwrite' });
+  }
+
+  const successfulPaths = [...new Set(rows.map((r) => r.filePath))];
+  log(config, `Upserted ${rows.length} rows to LanceDB`);
+  return { rowsUpserted: rows.length, successfulPaths };
+}
+
+/** Merge freshly computed file hashes back into the persisted hash index.
+ *  Only persists hashes for files that produced at least one successful LanceDB
+ *  row; files whose embedding/chunking failed are left unchanged so they will
+ *  be retried on the next run.
+ */
+function applyUpdatedHashes(
+  config: RAGConfig,
+  hashesJson: string,
+  successfulPaths: string[],
+): number {
+  const hashes = loadFileHashes(config);
+  const updatedHashes: Array<[string, FileHash]> = JSON.parse(hashesJson);
+  const successSet = new Set(successfulPaths);
+  let saved = 0;
+  for (const [key, value] of updatedHashes) {
+    if (successSet.has(key)) {
+      hashes.set(key, value);
+      saved++;
+    }
+  }
+  saveFileHashes(config, hashes);
+  log(config, `Saved ${saved} updated file hashes`);
+  return saved;
+}
+
+/**
+ * Minimal shape of the Inngest `step` object used by the embed loop. The
+ * batch result is plain JSON, so the runner's serialised return is assignable
+ * to {@link EmbeddingBatch}.
+ */
+interface EmbedStepRunner {
+  run(id: string, fn: () => Promise<EmbeddingBatch>): Promise<EmbeddingBatch>;
+}
+
+/** Embed all chunk texts in independent, retryable batches. */
+async function embedAllBatches(
+  step: EmbedStepRunner,
+  config: RAGConfig,
+  texts: string[],
+): Promise<EmbeddingBatch[]> {
+  const batchCount = Math.ceil(texts.length / EMBED_BATCH_SIZE);
+  const embeddingResults: EmbeddingBatch[] = [];
+
+  for (let batchIdx = 0; batchIdx < batchCount; batchIdx++) {
+    const start = batchIdx * EMBED_BATCH_SIZE;
+    const end = Math.min(start + EMBED_BATCH_SIZE, texts.length);
+
+    const batchResult = await step.run(`embed-batch-${batchIdx}`, async () => {
+      const embedder = new RAGEmbedder(config);
+      const batchTexts = texts.slice(start, end);
+      const result = await embedder.embedBatch(batchTexts);
+
+      return {
+        vectors: result.results.map((r) => r.vector),
+        failedIndices: result.failedIndices,
+      };
+    });
+
+    embeddingResults.push(batchResult);
+  }
+
+  return embeddingResults;
+}
+
+/** Empty-run result used when no files changed. */
+function emptySummaryResult(runId: string): {
+  runId: string;
+  summary: RAGIndexSummary;
+} {
+  return {
+    runId,
+    summary: {
+      filesProcessed: 0,
+      chunksCreated: 0,
+      chunksRemoved: 0,
+      errors: [],
+      durationMs: 0,
+    },
+  };
+}
+
+/** Remove LanceDB rows + hash entries for files that no longer exist. */
+async function cleanupDeletedFiles(config: RAGConfig, allFiles: string[]): Promise<number> {
+  const hashes = loadFileHashes(config);
+  const existingPaths = new Set(allFiles);
+  let removed = 0;
+
+  const db = await connect(config.lanceDbPath);
+  const tables = await db.tableNames();
+  const hasTable = tables.includes('codebase');
+
+  for (const [path] of hashes) {
+    if (!existingPaths.has(path)) {
+      hashes.delete(path);
+      if (hasTable) {
+        try {
+          const table = await db.openTable('codebase');
+          await table.delete(buildPathFilter(path));
+          removed++;
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  }
+
+  if (removed > 0) {
+    saveFileHashes(config, hashes);
+    log(config, `Cleaned up ${removed} deleted files`);
+  }
+
+  return removed;
+}
+
 // ─── Inngest Function ────────────────────────────────────────────────────────
 
 export const ragIndexPipeline = inngest.createFunction(
@@ -160,192 +456,39 @@ export const ragIndexPipeline = inngest.createFunction(
     const runId = crypto.randomUUID();
 
     // ── Step 1: Discover changed files ────────────────────────────────────
-    const { changedFiles, allFiles } = await step.run('discover-files', () => {
-      ensureDirs(config);
-      const all = discoverFiles(config);
-      const hashes = loadFileHashes(config);
-
-      const changed = event.data.full
-        ? all
-        : all.filter((f) => isFileChanged(f, config, hashes));
-
-      log(config, `Discovered ${all.length} files, ${changed.length} changed`);
-
-      return {
-        changedFiles: changed.map((f) =>
-          relative(config.workspaceRoot, f).replace(/\\/g, '/'),
-        ),
-        allFiles: all.map((f) =>
-          relative(config.workspaceRoot, f).replace(/\\/g, '/'),
-        ),
-      };
-    });
+    const { changedFiles, allFiles } = await step.run('discover-files', () =>
+      discoverChangedFiles(config, event.data.full),
+    );
 
     if (changedFiles.length === 0) {
-      return { runId, summary: { filesProcessed: 0, chunksCreated: 0, chunksRemoved: 0, errors: [], durationMs: 0 } };
+      return emptySummaryResult(runId);
     }
 
     // ── Step 2: Chunk all changed files ───────────────────────────────────
-    const chunkResult = await step.run('chunk-files', () => {
-      const chunker = new RAGChunker(config);
-      const allChunks: Chunk[] = [];
-      const errors: Array<{ filePath: string; error: string }> = [];
-      const updatedHashes: Array<[string, FileHash]> = [];
-
-      for (const relPath of changedFiles) {
-        const absPath = join(config.workspaceRoot, relPath);
-        try {
-          const content = readFileSync(absPath, 'utf-8');
-          const chunks = chunker.chunkFile(relPath, content);
-          allChunks.push(...chunks);
-
-          const hash = createHash('sha256').update(content).digest('hex');
-          updatedHashes.push([relPath, {
-            filePath: relPath,
-            hash,
-            lastIndexed: Date.now(),
-            chunkCount: chunks.length,
-          }]);
-        } catch (error) {
-          errors.push({ filePath: relPath, error: (error as Error).message });
-        }
-      }
-
-      log(config, `Chunked ${updatedHashes.length} files into ${allChunks.length} chunks`);
-
-      return {
-        // Serialise chunks — step results must be JSON-serialisable
-        chunksJson: JSON.stringify(allChunks),
-        chunkCount: allChunks.length,
-        hashesJson: JSON.stringify(updatedHashes),
-        errors,
-      };
-    });
+    const chunkResult = await step.run('chunk-files', () =>
+      chunkChangedFiles(config, changedFiles),
+    );
 
     // ── Step 3: Embed in batches (each batch is its own retryable step) ───
     const chunks: Chunk[] = JSON.parse(chunkResult.chunksJson);
     const texts = chunks.map((c) => c.content);
-
-    // Split texts into batches for independent embedding steps
-    const batchCount = Math.ceil(texts.length / EMBED_BATCH_SIZE);
-    const embeddingResults: Array<{ vectors: number[][]; failedIndices: number[] }> = [];
-
-    for (let batchIdx = 0; batchIdx < batchCount; batchIdx++) {
-      const start = batchIdx * EMBED_BATCH_SIZE;
-      const end = Math.min(start + EMBED_BATCH_SIZE, texts.length);
-
-      const batchResult = await step.run(`embed-batch-${batchIdx}`, async () => {
-        const embedder = new RAGEmbedder(config);
-        const batchTexts = texts.slice(start, end);
-        const result = await embedder.embedBatch(batchTexts);
-
-        return {
-          vectors: result.results.map((r) => r.vector),
-          failedIndices: result.failedIndices,
-        };
-      });
-
-      embeddingResults.push(batchResult);
-    }
+    const embeddingResults = await embedAllBatches(step, config, texts);
 
     // ── Step 4: Upsert to LanceDB ────────────────────────────────────────
     const upsertResult = await step.run('upsert-to-lancedb', async () => {
-      // Reassemble vectors from all batches
-      const rows: LanceRow[] = [];
-
-      for (let batchIdx = 0; batchIdx < embeddingResults.length; batchIdx++) {
-        const batch = embeddingResults[batchIdx];
-        if (!batch) continue;
-        const batchStart = batchIdx * EMBED_BATCH_SIZE;
-
-        for (let localIdx = 0; localIdx < batch.vectors.length; localIdx++) {
-          const vector = batch.vectors[localIdx];
-          if (!vector || batch.failedIndices.includes(localIdx) || vector.length === 0) {
-            continue;
-          }
-
-          const chunk = chunks[batchStart + localIdx];
-          if (!chunk) { continue; }
-          rows.push({
-            id: chunk.id,
-            filePath: chunk.filePath,
-            content: chunk.content,
-            type: chunk.type,
-            startLine: chunk.startLine,
-            endLine: chunk.endLine,
-            symbolName: chunk.symbolName ?? '',
-            language: chunk.language,
-            tokenCount: chunk.tokenCount,
-            createdAt: chunk.createdAt,
-            vector,
-          });
-        }
-      }
-
-      // Connect to LanceDB and upsert
-      const db = await connect(config.lanceDbPath);
-      const tables = await db.tableNames();
-      const changedSet = new Set(changedFiles);
-
-      if (tables.includes('codebase')) {
-        const table = await db.openTable('codebase');
-        // Delete old entries for changed files
-        for (const path of changedSet) {
-          try {
-            await table.delete(`filePath = '${path.replace(/'/g, "''")}'`);
-          } catch { /* ignore */ }
-        }
-        if (rows.length > 0) {
-          await table.add(rows);
-        }
-      } else if (rows.length > 0) {
-        await db.createTable('codebase', rows, { mode: 'overwrite' });
-      }
-
-      log(config, `Upserted ${rows.length} rows to LanceDB`);
-      return { rowsUpserted: rows.length };
+      const rows = buildLanceRows(embeddingResults, chunks);
+      return upsertRowsToLance(config, rows, changedFiles);
     });
 
     // ── Step 5: Save file hashes ──────────────────────────────────────────
-    await step.run('save-hashes', () => {
-      const hashes = loadFileHashes(config);
-      const updatedHashes: Array<[string, FileHash]> = JSON.parse(chunkResult.hashesJson);
-      for (const [key, value] of updatedHashes) {
-        hashes.set(key, value);
-      }
-      saveFileHashes(config, hashes);
-      log(config, `Saved ${updatedHashes.length} updated file hashes`);
-    });
+    await step.run('save-hashes', () =>
+      applyUpdatedHashes(config, chunkResult.hashesJson, upsertResult.successfulPaths),
+    );
 
     // ── Step 6: Cleanup deleted files ─────────────────────────────────────
     const cleanupResult = await step.run('cleanup-deleted', async () => {
-      const hashes = loadFileHashes(config);
-      const existingPaths = new Set(allFiles);
-      let removed = 0;
-
-      const db = await connect(config.lanceDbPath);
-      const tables = await db.tableNames();
-      const hasTable = tables.includes('codebase');
-
-      for (const [path] of hashes) {
-        if (!existingPaths.has(path)) {
-          hashes.delete(path);
-          if (hasTable) {
-            try {
-              const table = await db.openTable('codebase');
-              await table.delete(`filePath = '${path.replace(/'/g, "''")}'`);
-              removed++;
-            } catch { /* ignore */ }
-          }
-        }
-      }
-
-      if (removed > 0) {
-        saveFileHashes(config, hashes);
-        log(config, `Cleaned up ${removed} deleted files`);
-      }
-
-      return { chunksRemoved: removed };
+      const chunksRemoved = await cleanupDeletedFiles(config, allFiles);
+      return { chunksRemoved };
     });
 
     // ── Build summary ─────────────────────────────────────────────────────
@@ -363,7 +506,10 @@ export const ragIndexPipeline = inngest.createFunction(
       data: { runId, summary },
     });
 
-    log(config, `Pipeline complete: ${summary.filesProcessed} files, ${summary.chunksCreated} chunks`);
+    log(
+      config,
+      `Pipeline complete: ${summary.filesProcessed} files, ${summary.chunksCreated} chunks`,
+    );
     return { runId, summary };
   },
 );

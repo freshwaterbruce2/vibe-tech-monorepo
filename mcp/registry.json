@@ -1,0 +1,163 @@
+{
+  "_comment": "CANONICAL MCP server registry for ALL agent tools (Claude Code, Gemini CLI, Antigravity, Codex, Cursor, Hermes). Edit servers HERE only, then run `pnpm mcp:sync` to regenerate every tool's native config. Secrets are referenced by env-var NAME ($VAR) and never stored literally. See tools/mcp-sync/README.md.",
+  "version": 1,
+  "tools": {
+    "claude": { "target": ".mcp.json", "format": "claude-json" },
+    "gemini": { "target": "~/.gemini/settings.json", "format": "gemini-json" },
+    "antigravity": { "target": "~/.gemini/antigravity-cli/settings.json", "format": "gemini-json" },
+    "codex": { "target": "~/.codex/config.toml", "format": "codex-toml" },
+    "cursor": { "target": "~/.cursor/mcp.json", "format": "cursor-json" },
+    "hermes": { "target": "~/.hermes/config.yaml", "format": "hermes-yaml" }
+  },
+  "defaultEnabledFor": ["claude", "gemini", "antigravity", "codex", "cursor", "hermes"],
+  "servers": {
+    "nx-mcp": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "nx-mcp@0.25.0",
+        "V:/monorepo",
+        "--transport",
+        "stdio",
+        "--disableTelemetry",
+        "--no-minimal"
+      ],
+      "env": {
+        "NX_WORKSPACE_ROOT": "V:/monorepo",
+        "NODE_OPTIONS": "--require V:/monorepo/scripts/nx-mcp-native-compat.cjs"
+      }
+    },
+    "desktop-commander": {
+      "transport": "stdio",
+      "command": "node",
+      "args": ["V:/monorepo/apps/desktop-commander-v3/dist/mcp.js"],
+      "env": { "NODE_ENV": "production" }
+    },
+    "filesystem": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "V:/monorepo",
+        "D:/databases",
+        "D:/logs",
+        "D:/learning-system",
+        "D:/data"
+      ]
+    },
+    "sqlite": {
+      "transport": "stdio",
+      "command": "uvx",
+      "args": ["mcp-server-sqlite", "--db-path", "D:/databases/database.db"]
+    },
+    "skills": {
+      "transport": "stdio",
+      "command": "node",
+      "args": ["V:/monorepo/apps/mcp-skills-server/dist/index.js"]
+    },
+    "memory": {
+      "transport": "stdio",
+      "command": "node",
+      "args": ["V:/monorepo/apps/memory-mcp/dist/index.js"],
+      "env": {
+        "MEMORY_DB_PATH": "D:/databases/memory.db",
+        "MEMORY_EMBEDDING_MODEL": "text-embedding-3-small",
+        "MEMORY_EMBEDDING_DIM": "1536",
+        "MEMORY_EMBEDDING_ENDPOINT": "http://localhost:3001",
+        "LEARNING_DB_PATH": "D:/databases/agent_learning.db"
+      },
+      "claude": { "alwaysLoad": true }
+    },
+    "rag": {
+      "transport": "stdio",
+      "command": "node",
+      "args": ["V:/monorepo/apps/mcp-rag-server/dist/index.js"],
+      "env": { "NODE_ENV": "production" }
+    },
+    "workspace": {
+      "transport": "stdio",
+      "command": "node",
+      "args": ["V:/monorepo/apps/workspace-mcp-server/dist/index.js"],
+      "env": { "WORKSPACE_ROOT": "V:/monorepo" }
+    },
+    "command-center": {
+      "transport": "stdio",
+      "command": "node",
+      "args": ["V:/monorepo/apps/vibetech-command-center/dist/mcp/server.js"],
+      "env": { "NODE_ENV": "production" }
+    },
+    "learning-pipeline": {
+      "transport": "stdio",
+      "command": "node",
+      "args": ["V:/monorepo/apps/learning-pipeline-mcp/dist/index.js"],
+      "env": {
+        "LEARNING_DB_PATH": "D:/databases/agent_learning.db",
+        "WORKSPACE_ROOT": "V:/monorepo",
+        "LEARNING_INSIGHTS_PATH": "D:/learning-system/learning_insights.json"
+      }
+    },
+    "youtube": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@anaisbetts/mcp-youtube"]
+    },
+    "notebooklm": {
+      "transport": "stdio",
+      "command": "uv",
+      "args": ["tool", "run", "--from", "notebooklm-mcp-server", "notebooklm-mcp"]
+    },
+    "chrome-devtools": {
+      "transport": "stdio",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "V:/monorepo/scripts/start-chrome-devtools-mcp.ps1"
+      ],
+      "env": { "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS": "1" }
+    },
+    "monorepo-health": {
+      "transport": "stdio",
+      "command": "node",
+      "args": ["V:/monorepo/apps/monorepo-health-mcp/dist/index.js"]
+    },
+    "proactive-recommendations": {
+      "transport": "stdio",
+      "command": "node",
+      "args": ["V:/monorepo/apps/proactive-recommendations-mcp/dist/index.js"]
+    },
+    "skill-feedback": {
+      "transport": "stdio",
+      "command": "node",
+      "args": ["V:/monorepo/apps/skill-feedback-mcp/dist/index.js"]
+    },
+    "serena": {
+      "transport": "stdio",
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server",
+        "--project",
+        "V:/monorepo",
+        "--context",
+        "claude-code",
+        "--enable-web-dashboard",
+        "false",
+        "--open-web-dashboard",
+        "false"
+      ]
+    },
+    "greptile": {
+      "transport": "http",
+      "url": "https://api.greptile.com/mcp",
+      "secretEnv": "GREPTILE_API_KEY",
+      "headers": { "Authorization": "Bearer $GREPTILE_API_KEY" }
+    }
+  }
+}

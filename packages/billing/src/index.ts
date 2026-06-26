@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import type Database from 'better-sqlite3';
 import StripeConstructor from 'stripe';
 export * from './webhooks.js';

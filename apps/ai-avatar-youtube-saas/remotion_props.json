@@ -1,0 +1,1 @@
+{"script": {"title": "AI Avatar Render", "description": "Rendered by Celery Worker", "tags": ["render"], "segments": [{"id": "seg-1", "narration": "Welcome to VibeTech", "visualQuery": "background", "durationSeconds": 2.0}]}, "audioUrl": "/voice_integration-test-task-999.mp3", "bRollUrls": ["/broll_integration-test-task-999.mp4"]}

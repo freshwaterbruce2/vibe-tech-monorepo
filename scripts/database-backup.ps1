@@ -135,24 +135,10 @@ function Backup-Database {
         }
     }
 
-    # SQLite backup using .backup command (safest method)
+    # SQLite backup using VACUUM INTO command (zero-downtime, transaction-consistent hot backup)
     try {
-        $backupCmd = ".backup '$destPath'"
+        $backupCmd = "VACUUM INTO '$destPath';"
         & sqlite3 $SourcePath $backupCmd
-
-        # CRITICAL: Copy WAL and SHM files if they exist (SQLite WAL mode)
-        $walFile = "$SourcePath-wal"
-        $shmFile = "$SourcePath-shm"
-
-        if (Test-Path $walFile) {
-            Copy-Item -Path $walFile -Destination "$destPath-wal" -Force
-            Write-Log "  Copied WAL file: $(Split-Path $walFile -Leaf)"
-        }
-
-        if (Test-Path $shmFile) {
-            Copy-Item -Path $shmFile -Destination "$destPath-shm" -Force
-            Write-Log "  Copied SHM file: $(Split-Path $shmFile -Leaf)"
-        }
 
         $sourceSize = (Get-Item $SourcePath).Length
         $backupSize = (Get-Item $destPath).Length
@@ -162,15 +148,11 @@ function Backup-Database {
         # Compress with 7-Zip if available, otherwise use .NET
         $filesToCompress = @($destPath)
 
-        # Add WAL/SHM files to compression if they exist
-        if (Test-Path "$destPath-wal") { $filesToCompress += "$destPath-wal" }
-        if (Test-Path "$destPath-shm") { $filesToCompress += "$destPath-shm" }
-
         $compressedPath = "$destPath.7z"
         if (Get-Command 7z -ErrorAction SilentlyContinue) {
             & 7z a -t7z -mx=9 $compressedPath $filesToCompress | Out-Null
-            # Remove all uncompressed files
-            $filesToCompress | ForEach-Object { Remove-Item $_ -Force -ErrorAction SilentlyContinue }
+            # Remove uncompressed file
+            Remove-Item $destPath -Force -ErrorAction SilentlyContinue
             $finalSize = (Get-Item $compressedPath).Length
             $compressionRatio = [math]::Round((1 - $finalSize/$sourceSize) * 100, 1)
             Write-Log "  Compressed: $([math]::Round($finalSize/1MB, 2)) MB (${compressionRatio}% reduction)"
@@ -179,8 +161,8 @@ function Backup-Database {
             # Use .NET compression as fallback
             $compressedPath = "$destPath.zip"
             Compress-Archive -Path $filesToCompress -DestinationPath $compressedPath -CompressionLevel Optimal
-            # Remove all uncompressed files
-            $filesToCompress | ForEach-Object { Remove-Item $_ -Force -ErrorAction SilentlyContinue }
+            # Remove uncompressed file
+            Remove-Item $destPath -Force -ErrorAction SilentlyContinue
             $finalSize = (Get-Item $compressedPath).Length
             Write-Log "  Compressed (ZIP): $([math]::Round($finalSize/1MB, 2)) MB"
         }

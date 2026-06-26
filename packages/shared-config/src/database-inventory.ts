@@ -103,6 +103,30 @@ function dedupeByPath(entries: readonly DatabaseInventoryEntry[]): DatabaseInven
   return deduped;
 }
 
+function parseMarkdownTableRow(columns: string[]): DatabaseInventoryEntry | null {
+  const [fileColumn, , ownerColumn = '', domainColumn = ''] = columns;
+  if (columns.length < 4 || !fileColumn || fileColumn === 'File' || isMarkdownSeparator(columns)) {
+    return null;
+  }
+
+  const fileMatch = fileColumn.match(/`([^`]+)`/);
+  if (!fileMatch) {
+    return null;
+  }
+
+  const [, rawFileName = ''] = fileMatch;
+  const fileName = rawFileName.trim();
+  if (!/\.(db|sqlite|sqlite3)$/i.test(fileName)) {
+    return null;
+  }
+
+  return {
+    name: fileName,
+    path: `D:\\databases\\${fileName}`,
+    purpose: buildPurpose(ownerColumn.replace(/`/g, ''), domainColumn.replace(/`/g, '')),
+  };
+}
+
 export function parseDatabaseInventoryMarkdown(markdown: string): DatabaseInventoryEntry[] {
   const lines = markdown.split(/\r?\n/);
   const entries: DatabaseInventoryEntry[] = [];
@@ -134,27 +158,10 @@ export function parseDatabaseInventoryMarkdown(markdown: string): DatabaseInvent
     }
 
     const columns = parseTableColumns(trimmed);
-    const [fileColumn, , ownerColumn = '', domainColumn = ''] = columns;
-    if (columns.length < 4 || !fileColumn || fileColumn === 'File' || isMarkdownSeparator(columns)) {
-      continue;
+    const entry = parseMarkdownTableRow(columns);
+    if (entry) {
+      entries.push(entry);
     }
-
-    const fileMatch = fileColumn.match(/`([^`]+)`/);
-    if (!fileMatch) {
-      continue;
-    }
-
-    const [, rawFileName = ''] = fileMatch;
-    const fileName = rawFileName.trim();
-    if (!/\.(db|sqlite|sqlite3)$/i.test(fileName)) {
-      continue;
-    }
-
-    entries.push({
-      name: fileName,
-      path: `D:\\databases\\${fileName}`,
-      purpose: buildPurpose(ownerColumn.replace(/`/g, ''), domainColumn.replace(/`/g, '')),
-    });
   }
 
   const hasTradingDb = entries.some((entry) => entry.path.toLowerCase() === 'd:\\databases\\trading.db');
@@ -166,7 +173,9 @@ export function parseDatabaseInventoryMarkdown(markdown: string): DatabaseInvent
   return dedupeByPath(entries);
 }
 
-export function loadDatabaseInventory(inventoryPath = DATABASE_INVENTORY_PATH): DatabaseInventoryEntry[] {
+export function loadDatabaseInventory(
+  inventoryPath = DATABASE_INVENTORY_PATH,
+): DatabaseInventoryEntry[] {
   if (!existsSync(inventoryPath)) {
     return [...FALLBACK_DATABASE_INVENTORY];
   }

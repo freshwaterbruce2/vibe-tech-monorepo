@@ -11,12 +11,12 @@ describe('ContextService', () => {
   });
 
   const createMockFile = (path: string, name?: string, content?: string): EditorFile => ({
+    id: path,
     path,
     name: name || path.split('/').pop() || 'file',
     content: content || `// Content of ${path}`,
     language: path.endsWith('.ts') || path.endsWith('.tsx') ? 'typescript' : 'javascript',
-    isDirty: false,
-    lastModified: new Date()
+    isModified: false
   });
 
   const createMockWorkspaceContext = (): WorkspaceContext => ({

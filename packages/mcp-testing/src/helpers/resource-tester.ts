@@ -1,3 +1,4 @@
+import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import type {
   ResourceDefinition,
   ResourceResult,
@@ -86,7 +87,7 @@ export class ResourceTester {
 
     // Create mock context
     const context: ResourceContext = {
-      server: {} as any,
+      server: {} as unknown as Server,
       logger: this.logger,
       params,
     };
@@ -105,7 +106,7 @@ export class ResourceTester {
         found: true,
         params,
       };
-    } catch (error) {
+    } catch {
       return {
         contents: [],
         durationMs: Date.now() - start,

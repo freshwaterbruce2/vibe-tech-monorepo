@@ -65,7 +65,29 @@ export const MODELS_ARRAY: AIModel[] = [
     maxOutput: 32768,
     costPerMillionInput: 2.00,
     costPerMillionOutput: 8.00,
-    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.CODE_COMPLETION, ModelCapability.MULTI_FILE_EDIT],
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+      ModelCapability.MULTI_FILE_EDIT,
+    ],
+    recommended: true,
+  },
+  {
+    id: 'openai/gpt-5.2-codex',
+    name: 'GPT-5.2 Codex',
+    provider: AIProvider.OPENROUTER,
+    contextWindow: 400000,
+    // OpenRouter's published max_completion_tokens for openai/gpt-5.2-codex is 128000.
+    maxOutput: 128000,
+    costPerMillionInput: 1.75,
+    costPerMillionOutput: 14.00,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+      ModelCapability.MULTI_FILE_EDIT,
+    ],
     recommended: true,
   },
   {
@@ -76,7 +98,12 @@ export const MODELS_ARRAY: AIModel[] = [
     maxOutput: 16384,
     costPerMillionInput: 3.00,
     costPerMillionOutput: 15.00,
-    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.CODE_COMPLETION, ModelCapability.MULTI_FILE_EDIT],
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+      ModelCapability.MULTI_FILE_EDIT,
+    ],
     recommended: true,
   },
   {
@@ -87,7 +114,11 @@ export const MODELS_ARRAY: AIModel[] = [
     maxOutput: 8192,
     costPerMillionInput: 0.35,
     costPerMillionOutput: 0.40,
-    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.CODE_COMPLETION],
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+    ],
     recommended: true,
   },
 
@@ -124,7 +155,11 @@ export const MODELS_ARRAY: AIModel[] = [
     maxOutput: 8192,
     costPerMillionInput: 0.55,
     costPerMillionOutput: 2.19,
-    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.EXTENDED_THINKING],
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.EXTENDED_THINKING,
+    ],
     recommended: true,
   },
   {
@@ -135,7 +170,11 @@ export const MODELS_ARRAY: AIModel[] = [
     maxOutput: 8192,
     costPerMillionInput: 0,
     costPerMillionOutput: 0,
-    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.EXTENDED_THINKING],
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.EXTENDED_THINKING,
+    ],
     recommended: true,
   },
 
@@ -154,6 +193,36 @@ export const MODELS_ARRAY: AIModel[] = [
     recommended: true,
   },
   {
+    id: 'deepseek/deepseek-v4-flash',
+    name: 'DeepSeek V4 Flash',
+    provider: AIProvider.OPENROUTER,
+    contextWindow: 128000,
+    maxOutput: 8192,
+    costPerMillionInput: 0.09,
+    costPerMillionOutput: 0.18,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+    ],
+    recommended: true,
+  },
+  {
+    id: 'deepseek/deepseek-v3',
+    name: 'DeepSeek V3',
+    provider: AIProvider.OPENROUTER,
+    contextWindow: 65536,
+    maxOutput: 8192,
+    costPerMillionInput: 0.20,
+    costPerMillionOutput: 0.77,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+    ],
+    recommended: true,
+  },
+  {
     id: 'deepseek/deepseek-v3.2',
     name: 'DeepSeek V3.2',
     provider: AIProvider.OPENROUTER,
@@ -161,7 +230,11 @@ export const MODELS_ARRAY: AIModel[] = [
     maxOutput: 8192,
     costPerMillionInput: 0.14,
     costPerMillionOutput: 0.28,
-    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.CODE_COMPLETION],
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+    ],
     recommended: true,
   },
   {
@@ -187,6 +260,22 @@ export const MODELS_ARRAY: AIModel[] = [
     recommended: true,
   },
   {
+    id: 'moonshotai/kimi-k2.7-code',
+    name: 'Kimi K2.7 Code (Best for Coding)',
+    provider: AIProvider.OPENROUTER,
+    contextWindow: 200000,
+    maxOutput: 8192,
+    costPerMillionInput: 0.61,
+    costPerMillionOutput: 3.06,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+      ModelCapability.MULTI_FILE_EDIT,
+    ],
+    recommended: true,
+  },
+  {
     id: 'moonshot/kimi-2.5-pro',
     name: 'Kimi 2.5 Pro (Coding)',
     provider: AIProvider.MOONSHOT,
@@ -198,6 +287,35 @@ export const MODELS_ARRAY: AIModel[] = [
     recommended: true,
   },
   {
+    id: 'cohere/north-mini-code:free',
+    name: 'Cohere North Mini Code (Free)',
+    provider: AIProvider.OPENROUTER,
+    contextWindow: 256000,
+    maxOutput: 8192,
+    costPerMillionInput: 0,
+    costPerMillionOutput: 0,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.CODE_COMPLETION,
+    ],
+    recommended: true,
+  },
+  {
+    id: 'z-ai/glm-5.2',
+    name: 'GLM 5.2 (Reasoning)',
+    provider: AIProvider.OPENROUTER,
+    contextWindow: 1000000,
+    maxOutput: 8192,
+    costPerMillionInput: 0.30,
+    costPerMillionOutput: 1.00,
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+    ],
+    recommended: true,
+  },
+  {
     id: 'z-ai/glm-5',
     name: 'GLM 5',
     provider: AIProvider.OPENROUTER,
@@ -205,7 +323,11 @@ export const MODELS_ARRAY: AIModel[] = [
     maxOutput: 8192,
     costPerMillionInput: 0.15,
     costPerMillionOutput: 0.50,
-    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.EXTENDED_THINKING],
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.EXTENDED_THINKING,
+    ],
     recommended: true,
   },
 
@@ -220,7 +342,12 @@ export const MODELS_ARRAY: AIModel[] = [
     maxOutput: 8192,
     costPerMillionInput: 1.25,
     costPerMillionOutput: 5.00,
-    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.VISION, ModelCapability.EXTENDED_THINKING],
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.VISION,
+      ModelCapability.EXTENDED_THINKING,
+    ],
     recommended: true,
   },
   {
@@ -246,7 +373,12 @@ export const MODELS_ARRAY: AIModel[] = [
     maxOutput: 16384,
     costPerMillionInput: 10.00,
     costPerMillionOutput: 40.00,
-    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.VISION, ModelCapability.FUNCTION_CALLING],
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.VISION,
+      ModelCapability.FUNCTION_CALLING,
+    ],
     recommended: true,
   },
   {
@@ -268,7 +400,11 @@ export const MODELS_ARRAY: AIModel[] = [
     maxOutput: 100000,
     costPerMillionInput: 15.00,
     costPerMillionOutput: 60.00,
-    capabilities: [ModelCapability.CHAT, ModelCapability.CODE_GENERATION, ModelCapability.EXTENDED_THINKING],
+    capabilities: [
+      ModelCapability.CHAT,
+      ModelCapability.CODE_GENERATION,
+      ModelCapability.EXTENDED_THINKING,
+    ],
     recommended: false,
   }
 ];
@@ -323,7 +459,10 @@ export interface StreamCompletionResponse {
 export interface IAIProvider {
   initialize(config: AIProviderConfig): Promise<void>;
   complete(model: string, options: CompletionOptions): Promise<CompletionResponse>;
-  streamComplete(model: string, options: CompletionOptions): AsyncGenerator<StreamCompletionResponse>;
+  streamComplete(
+    model: string,
+    options: CompletionOptions
+  ): AsyncGenerator<StreamCompletionResponse>;
   getAvailableModels(): Promise<AIModel[]>;
   validateConnection(): Promise<boolean>;
   getUsageStats(): Promise<{ tokensUsed: number; estimatedCost: number; requestCount: number }>;
