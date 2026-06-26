@@ -16,9 +16,9 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Paths
-$AnalysisDir = "V:\monorepo\.agent\skills\auto-skill-creator\analysis"
+$AnalysisDir = "V:\monorepo\skills\auto-skill-creator\analysis"
 $MonorepoRoot = "V:\monorepo"
-$ExistingSkillsDir = "V:\monorepo\.agent\skills"
+$ExistingSkillsDir = "V:\monorepo\skills"
 $ExistingAgentsDir = "V:\monorepo\.antigravity\agents"
 
 # Load pattern data
@@ -68,7 +68,7 @@ if ($pattern.task_type) {
     $patternSuccessRate = $pattern.success_rate_pct
     $patternSteps = "N/A (code pattern)"
 }
-$ExistingAgentsDir = "V:\\\\monorepo\\\\.agents\\\\skills"
+$ExistingAgentsDir = "V:\monorepo\skills"
 
 # Get existing skills/agents for context
 $existingSkills = Get-ChildItem -Path $ExistingSkillsDir -Directory | Select-Object -ExpandProperty Name

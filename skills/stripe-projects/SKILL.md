@@ -81,14 +81,14 @@ stripe projects init --yes
 
 If the CLI output indicates a browser was opened for authentication, stop and clearly tell the user to complete sign-in in their browser. Don’t run further commands until they confirm they’re done.
 
-**Important:** `stripe projects init` installs the `stripe-projects-cli` skill locally at `.claude/skills/stripe-projects-cli`. This skill contains the full post-init command reference.
+**Important:** `stripe projects init` installs the `stripe-projects-cli` skill locally at `~/.claude/skills/stripe-projects-cli`. This skill contains the full post-init command reference.
 
 ### Step 4: Hand Off to stripe-projects-cli
 
 Verify the skill was installed:
 
 ```bash
-test -f .claude/skills/stripe-projects-cli/SKILL.md && echo "OK" || echo "MISSING"
+test -f ~/.claude/skills/stripe-projects-cli/SKILL.md && echo "OK" || echo "MISSING"
 ```
 
 If `MISSING`: re-run `stripe projects init --yes` — the skill is bundled with the Projects plugin and installed during init.

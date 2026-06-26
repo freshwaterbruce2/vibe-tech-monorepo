@@ -4,7 +4,6 @@ _worktrees
 _worktrees/**
 .pytest_cache
 .pytest_cache/**
-.claude/skills/**
 .codex/**
 .playwright-cli/**
 .playwright-mcp/**
