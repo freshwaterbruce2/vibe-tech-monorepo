@@ -4,14 +4,14 @@
 **Database:** `D:\databases\vibe-code-studio`  
 **Logs:** `D:\logs\vibe-code-studio`  
 **Data:** `D:\data\vibe-code-studio`  
-**Type:** Electron Desktop Application (AI-Powered IDE)  
+**Type:** Tauri 2 Desktop Application (AI-Powered IDE)  
 **Status:** Active Development - Production Builds Available
 
 ---
 
 ## 🎯 Project Overview
 
-AI-powered desktop code editor built with Electron, React, and TypeScript. Features Monaco Editor integration, multi-file editing, AI assistance, and comprehensive code analysis tools.
+AI-powered desktop code editor built with Tauri 2, React, and TypeScript. Features Monaco Editor integration, multi-file editing, AI assistance, and comprehensive code analysis tools. The Windows 11 release path is Tauri-only.
 
 ### Key Features
 
@@ -31,21 +31,20 @@ AI-powered desktop code editor built with Electron, React, and TypeScript. Featu
 
 ```
 vibe-code-studio/
-├── electron/               # Electron main process
-│   ├── main.ts            # Main entry point
-│   ├── preload.ts         # Preload script
-│   └── ipc/               # IPC handlers
-├── src/                   # React renderer process
+├── src-tauri/              # Tauri backend (Rust)
+│   ├── src/               # Rust source
+│   ├── Cargo.toml         # Rust dependencies
+│   └── tauri.conf.json    # Tauri configuration
+├── src/                   # React frontend
 │   ├── components/        # React components
-│   ├── editor/            # Monaco editor integration
-│   ├── services/          # Business logic
-│   ├── store/             # State management
+│   ├── modules/           # Feature modules (editor, git, terminal, ...)
+│   ├── services/          # Business logic (incl. ElectronService Tauri bridge)
+│   ├── app/               # App shell + hooks
 │   └── utils/             # Utilities
-├── packages/              # Internal packages
-│   └── shared/            # Shared code
+├── scripts/               # Helper scripts (run-tauri.cjs, backend-server.js, ...)
 ├── public/                # Static assets
-├── dist/                  # Production builds
-├── electron.vite.config.ts
+├── dist/                  # Vite frontend build output
+├── vite.config.ts
 ├── package.json
 └── tsconfig.json
 ```
@@ -71,32 +70,32 @@ code .env
 ### Development Mode
 
 ```powershell
-# Start development server (hot reload enabled)
+# Frontend only (Vite, hot reload)
 pnpm dev
 
-# Development with debugging
-pnpm dev --inspect
+# Full Tauri dev (Rust backend + frontend)
+pnpm tauri:dev
 
-# Clean start (clear cache)
-pnpm clean
-pnpm dev
+# Preferred from the monorepo root (Nx)
+pnpm nx run vibe-code-studio:dev
 ```
 
 ### Building
 
 ```powershell
-# Build for Windows
-pnpm build:win
-
-# Build for all platforms
+# Frontend production build (tsc + vite build)
 pnpm build
 
-# Build without code signing
-pnpm build:win --no-sign
+# Full Tauri build + Windows installer
+pnpm package
+# (alias: pnpm tauri:build)
 
-# Build with verbose output
-pnpm build:win --verbose
+# Preferred from the monorepo root (Nx)
+pnpm nx run vibe-code-studio:package
 ```
+
+Installer artifacts are written to
+`apps/vibe-code-studio/src-tauri/target/release/bundle/nsis/`.
 
 ---
 
@@ -148,19 +147,21 @@ editor.onDidChangeModelContent(() => {
 });
 ```
 
-### IPC Communication
+### Native / file-system access
+
+Native access goes through `src/services/ElectronService.ts`, which detects the
+Tauri runtime (`__TAURI_INTERNALS__`) and uses the Tauri plugins
+(`@tauri-apps/plugin-fs`, `@tauri-apps/plugin-dialog`). A legacy Electron
+`window.electron` bridge is kept only as a fallback.
 
 ```typescript
-// Renderer → Main
-window.electron.ipcRenderer.send('open-file', filePath);
+import { ElectronService } from '@/services/ElectronService';
 
-// Main → Renderer
-ipcMain.on('open-file', (event, filePath) => {
-  // Handle in main process
-});
+const native = new ElectronService();
 
-// With response
-const result = await window.electron.ipcRenderer.invoke('read-file', filePath);
+// Tauri-backed file operations
+const content = await native.readFile(filePath);
+await native.writeFile(filePath, newContent);
 ```
 
 ---
@@ -255,17 +256,14 @@ monaco.editor.defineTheme('custom-dark', {
 ### Run Tests
 
 ```powershell
-# All tests
+# Unit tests (Vitest)
 pnpm test
 
-# Watch mode
-pnpm test:watch
+# Unit + E2E
+pnpm test:all
 
-# With coverage
-pnpm test:coverage
-
-# Specific test file
-pnpm test MonacoEditor.test.tsx
+# Auto-verify build harness
+pnpm test:verify
 ```
 
 ### E2E Tests
@@ -302,68 +300,45 @@ tests/
 
 ### Build Configuration
 
-**File:** `electron-builder.yml`
-
-```yaml
-appId: com.vibe.code-studio
-productName: Vibe Code Studio
-directories:
-  output: dist
-  buildResources: build-resources
-win:
-  target:
-    - nsis
-    - portable
-  icon: build-resources/icon.ico
-```
+**File:** `src-tauri/tauri.conf.json` (Tauri bundler config; targets the Windows NSIS installer)
 
 ### Creating Installers
 
 ```powershell
-# NSIS installer (recommended)
-pnpm build:win
+# Full Tauri build + Windows installer
+pnpm package
+# (alias: pnpm tauri:build)
 
-# Portable version
-pnpm build:win --portable
-
-# Both
-pnpm build:win --win nsis portable
+# Preferred from the monorepo root (Nx)
+pnpm nx run vibe-code-studio:package
 
 # Output location
-ls dist/*.exe
+ls apps\vibe-code-studio\src-tauri\target\release\bundle\nsis\
 ```
 
 ### Build Output
 
 ```
-dist/
-├── Vibe-Code-Studio-Setup-1.0.0.exe    # NSIS installer
-├── Vibe-Code-Studio-1.0.0-portable.exe # Portable version
-└── win-unpacked/                        # Unpacked files
+src-tauri/target/release/bundle/
+└── nsis/
+    └── Vibe Code Studio_<version>_x64-setup.exe   # NSIS installer
 ```
+
+Installed executable: `%LOCALAPPDATA%\Programs\vibe-code-studio\Vibe Code Studio.exe`
 
 ---
 
 ## 🔧 Configuration Files
 
-### Electron Vite Config
+### Vite Config
 
-**File:** `electron.vite.config.ts`
+**File:** `vite.config.ts` (standard Vite config for the React frontend; Tauri wraps it)
 
 ```typescript
 export default defineConfig({
-  main: {
-    // Main process config
-  },
-  preload: {
-    // Preload script config
-  },
-  renderer: {
-    // Renderer process config
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, 'src')
-      }
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'src')
     }
   }
 });
@@ -409,9 +384,8 @@ pnpm dev --inspect
 ### Production Debugging
 
 ```powershell
-# Enable logging
-$env:ELECTRON_ENABLE_LOGGING = "1"
-.\dist\win-unpacked\Vibe-Code-Studio.exe
+# Launch the installed Tauri build
+& "$env:LOCALAPPDATA\Programs\vibe-code-studio\Vibe Code Studio.exe"
 
 # Check logs
 Get-Content D:\logs\vibe-code-studio\app.log -Tail 100
@@ -419,18 +393,12 @@ Get-Content D:\logs\vibe-code-studio\app.log -Tail 100
 
 ### Common Debug Commands
 
-```javascript
-// In renderer process
+```typescript
+// In the frontend (renderer)
 console.log('Debug:', data);
 
-// In main process
-import { app } from 'electron';
-console.log('App path:', app.getPath('userData'));
-
-// IPC debugging
-ipcMain.on('*', (event, ...args) => {
-  console.log('IPC:', event.type, args);
-});
+// Rust-side logging (src-tauri) goes through the Tauri log plugin / println!;
+// view it in the terminal running `pnpm tauri:dev`.
 ```
 
 ---
@@ -441,10 +409,10 @@ ipcMain.on('*', (event, ...args) => {
 
 ```powershell
 # Clean everything
-pnpm clean
-Remove-Item -Recurse -Force node_modules, dist, out
-pnpm install
-pnpm build:win
+Remove-Item -Recurse -Force node_modules, dist
+Remove-Item -Recurse -Force src-tauri\target
+pnpm install --filter vibe-code-studio
+pnpm package
 ```
 
 ### Monaco Editor Not Loading
@@ -461,30 +429,27 @@ pnpm add monaco-editor
 Remove-Item -Recurse -Force node_modules/.vite
 ```
 
-### IPC Communication Issues
+### Native bridge / file-access Issues
 
 ```powershell
-# Check preload script
-# Ensure contextIsolation is properly configured
+# Confirm the Tauri runtime is detected (ElectronService.isTauri())
+# Verify the fs/dialog plugin capabilities in src-tauri/capabilities/
 
-# Verify IPC handlers are registered
-# Check electron/main.ts
-
-# Enable IPC logging
-$env:ELECTRON_ENABLE_LOGGING = "1"
+# Check Tauri command wiring in src-tauri/src/
+# Run `pnpm tauri:dev` and watch the terminal for Rust-side errors
 ```
 
 ### App Won't Start
 
 ```powershell
-# Check for port conflicts
+# Check for port conflicts (Vite dev server)
 netstat -ano | findstr :5173
 
 # Kill hung processes
 Get-Process | Where-Object { $_.ProcessName -like "*vibe*" } | Stop-Process -Force
 
-# Reset user data
-Remove-Item -Recurse "$env:APPDATA\vibe-code-studio"
+# Reset installed app data
+Remove-Item -Recurse "$env:LOCALAPPDATA\Programs\vibe-code-studio"
 ```
 
 ---
@@ -523,9 +488,8 @@ const FileExplorer = () => {
   const [files, setFiles] = useState([]);
   
   useEffect(() => {
-    // Load files via IPC
-    window.electron.ipcRenderer.invoke('get-files', projectPath)
-      .then(setFiles);
+    // Load files via the Tauri-backed native bridge
+    new ElectronService().readDir(projectPath).then(setFiles);
   }, [projectPath]);
   
   return (
@@ -543,21 +507,16 @@ import { Terminal } from 'xterm';
 const term = new Terminal();
 term.open(terminalElement);
 
-// Connect to shell
-window.electron.ipcRenderer.on('terminal-data', (data) => {
-  term.write(data);
-});
+// Terminal I/O is bridged through the terminal module / Tauri commands
+// (see src/modules/terminal/).
 ```
 
 ### AI Code Completion
 
 ```typescript
-// src/services/ai-completion.ts
-export async function getCompletion(code: string, position: Position) {
-  const context = extractContext(code, position);
-  const completion = await aiService.complete(context);
-  return completion;
-}
+// AI is handled by the multi-provider services under src/services/ai/
+// (e.g. UnifiedAIService.ts, AIProviderFactory.ts), proxied through OpenRouter.
+import { UnifiedAIService } from '@/services/ai/UnifiedAIService';
 ```
 
 ---
@@ -584,7 +543,7 @@ pnpm update
 pnpm test
 
 # Clean build artifacts
-pnpm clean
+Remove-Item -Recurse -Force dist, src-tauri\target
 ```
 
 ### Monthly
@@ -593,8 +552,8 @@ pnpm clean
 # Dependency audit
 pnpm audit
 
-# Performance profiling
-pnpm build:win --analyze
+# Bundle analysis
+pnpm build:analyze
 
 # Database cleanup
 python scripts\cleanup-old-data.py
@@ -615,7 +574,7 @@ python scripts\cleanup-old-data.py
 
 ```powershell
 # Analyze bundle
-pnpm build:win --analyze
+pnpm build:analyze
 
 # Check output
 ls dist -Recurse | Measure-Object -Property Length -Sum
@@ -633,7 +592,6 @@ ls dist -Recurse | Measure-Object -Property Length -Sum
 
 ---
 
-**Last Updated:** January 2, 2026  
-**Version:** 1.0.0  
+**Last Updated:** June 20, 2026 (Tauri 2 runtime sync)  
 **Status:** Active Development
 
