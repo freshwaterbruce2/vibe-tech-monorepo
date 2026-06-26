@@ -218,28 +218,26 @@ if ($lineCountFiles.Count -gt 0) {
 }
 
 # ============================================
-# 5. Full Workspace Integration Harness Check
+# 5. Full Workspace Integration Harness — MOVED OUT OF THE PER-COMMIT HOOK
 # ============================================
-$exitCode = [Math]::Max(
-    [int]$exitCode,
-    [int](Invoke-QualityCommand -Label "[5/6] Running verify-agent-changes.ps1 harness (workspace-integrity checks only)..." -Command {
-        # Scope the harness to fast workspace-integrity checks (path policy, DB
-        # health, Ralph state, Kimi schema). The heavy full-workspace
-        # `pnpm run typecheck` and `pnpm run test:unit:all` it would otherwise run
-        # are redundant here and caused multi-minute hangs (45+ vitest workers) on
-        # every commit: changed code is already gated by the scoped ESLint + `nx
-        # affected typecheck` (step 3/4) and the 100% diff-coverage gate (step cov).
-        # Full-workspace typecheck/tests belong in CI, not the per-commit hook.
-        pwsh.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "verify-agent-changes.ps1") -SkipLint -SkipTypecheck -SkipTests
-    })
-)
+# verify-agent-changes.ps1 is a full-workspace "master validation harness": it
+# runs a ~55s path-policy scan, a recursive task_plan.json search over the entire
+# tree (incl. node_modules), full `pnpm run typecheck` (~80 projects), and
+# `pnpm run test:unit:all` (the whole monorepo vitest suite). In a per-commit hook
+# that hung for many minutes, spawned 45+ orphaned vitest workers, and corrupted
+# the working tree when killed mid-run (interrupted lint-staged stash).
+#
+# Changed code is already gated above by fast, scoped checks: lint-staged's
+# staged-path AST validation, ESLint on staged files, `nx affected typecheck`
+# (step 3/4), and the 100% diff-coverage gate (step cov). The full harness belongs
+# in CI or a manual run: `pwsh scripts/verify-agent-changes.ps1`.
 
 # ============================================
 # 6. Database Growth Trend Check
 # ============================================
 $exitCode = [Math]::Max(
     [int]$exitCode,
-    [int](Invoke-QualityCommand -Label "[6/6] Checking database growth limits (<15% growth delta)..." -Command {
+    [int](Invoke-QualityCommand -Label "[5/5] Checking database growth limits (<15% growth delta)..." -Command {
         pwsh.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "check-database-trends.ps1")
     })
 )
