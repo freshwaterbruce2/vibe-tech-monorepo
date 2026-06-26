@@ -234,7 +234,10 @@ export function AppLayout() {
             <LazyAIChat
               data-testid="ai-chat"
               messages={extras.aiMessages}
+              isAiResponding={extras.isAiResponding}
+              responseState={extras.aiResponseState}
               onSendMessage={extras.handleAIMessage}
+              onCancelResponse={extras.cancelAiResponse}
               onClose={() => ui.setAiChatOpen(false)}
               showReasoningProcess={ws.editorSettings.showReasoningProcess}
               currentModel={ws.editorSettings.aiModel}

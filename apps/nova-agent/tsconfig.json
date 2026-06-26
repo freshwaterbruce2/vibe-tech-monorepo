@@ -33,9 +33,6 @@
       "path": "../../packages/openrouter-client"
     },
     {
-      "path": "../../packages/db-app"
-    },
-    {
       "path": "./tsconfig.node.json"
     }
   ]

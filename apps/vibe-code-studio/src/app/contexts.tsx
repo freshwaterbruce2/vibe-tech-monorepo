@@ -23,7 +23,7 @@ import type { UnifiedAIService } from '../services/ai/UnifiedAIService';
 import type { AIModel, AIProvider } from '../services/ai/AIProviderInterface';
 import type { SearchOptions, SearchResult, SearchScope } from '../components/GlobalSearch/types';
 import type { NotificationItem } from '../hooks/useNotifications';
-import type { AIMessage, ContextualFile, EditorFile, EditorSettings, WorkspaceContext as WorkspaceIndexContext } from '../types';
+import type { AIMessage, AIResponseState, ContextualFile, EditorFile, EditorSettings, WorkspaceContext as WorkspaceIndexContext } from '../types';
 import type { FileChange, MultiFileEditPlan } from '../types/multifile';
 import type { ChatMode, VisualPanelState } from './types';
 
@@ -173,7 +173,10 @@ export interface CommandEntry {
 export interface AppExtrasContextValue {
   // AI Chat
   aiMessages: AIMessage[];
+  isAiResponding: boolean;
+  aiResponseState: AIResponseState;
   handleAIMessage: (message: string) => Promise<void>;
+  cancelAiResponse: () => void;
   addAiMessage: (message: AIMessage) => void;
   updateAiMessage: (messageId: string, updater: (msg: AIMessage) => AIMessage) => void;
   handleModelChange: (model: AIModel) => Promise<void>;

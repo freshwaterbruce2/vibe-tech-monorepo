@@ -323,6 +323,20 @@ apps/vibe-justice/frontend/src-tauri/binaries/*.exe
 apps/vibe-tutor/release/
 apps/vibetech-command-center/release/
 
+# Generated knowledge-graph artifacts (graphify / nx graph exports)
+graphify-out/
+**/graphify-out/
+*-graph.json
+
+# User-generated uploads (data belongs on D:\ per paths-policy)
+apps/ai-avatar-youtube-saas/public/uploads/
+
+# Large source design assets (keep on disk / Git LFS, not regular git)
+apps/nova-agent/branding/nova-logo-source.png
+
+# Gemini ralph loop runtime state
+.gemini/ralph/
+
 # Archive (moved to D:\archive)
 archive/
 # Allow intentionally archived vibe-justice docs

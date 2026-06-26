@@ -12,5 +12,10 @@
     "noUnusedParameters": false
   },
   "include": ["src"],
-  "exclude": ["node_modules", "dist", "server"]
+  "exclude": ["node_modules", "dist", "server"],
+  "references": [
+    {
+      "path": "../../packages/openrouter-client"
+    }
+  ]
 }

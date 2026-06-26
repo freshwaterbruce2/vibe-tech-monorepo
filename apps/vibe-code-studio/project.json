@@ -128,6 +128,30 @@
         "cwd": "apps/vibe-code-studio"
       }
     },
+    "verify-production-build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-production-build.ps1",
+        "cwd": "apps/vibe-code-studio"
+      },
+      "cache": false
+    },
+    "signing-readiness": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-windows-signing-readiness.ps1",
+        "cwd": "apps/vibe-code-studio"
+      },
+      "cache": false
+    },
+    "smoke-msi": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke-msi-installer.ps1",
+        "cwd": "apps/vibe-code-studio"
+      },
+      "cache": false
+    },
     "lint": {
       "executor": "nx:run-commands",
       "options": {

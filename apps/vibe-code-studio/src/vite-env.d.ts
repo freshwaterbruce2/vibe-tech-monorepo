@@ -14,6 +14,11 @@ interface ImportMetaEnv {
   readonly VITE_ELECTRON_ENTRY?: string;
   readonly VITE_AI_PROXY_URL?: string;
   readonly VITE_USE_AI_PROXY?: string;
+  readonly VITE_ENABLE_TELEMETRY?: string;
+  readonly VITE_TELEMETRY_URL?: string;
+  readonly VITE_ERROR_REPORTING_URL?: string;
+  readonly VITE_ENABLE_CANCEL_LIFECYCLE?: string;
+  readonly VITE_ENABLE_CODE_CORRECTION_ROUTE?: string;
   // These are inherited from Vite's ImportMetaEnv
   // readonly MODE: string
   // readonly DEV: boolean
