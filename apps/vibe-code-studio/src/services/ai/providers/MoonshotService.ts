@@ -13,7 +13,7 @@ import type {
   AICompletionRequest,
   AICompletionResponse,
   ChatMessage,
-  IAIService
+  IAIService,
 } from '../../../types/ai';
 
 // Moonshot API types
@@ -91,14 +91,13 @@ export class MoonshotService implements IAIService {
   private apiKey: string;
 
   constructor(config?: { apiKey?: string }) {
-    this.apiKey = config?.apiKey
-      ?? import.meta.env?.['KIMI_API_KEY']
-      ?? import.meta.env?.['VITE_KIMI_API_KEY']
-      ?? import.meta.env?.['VITE_MOONSHOT_API_KEY']
-      ?? '';
+    // Provider keys are never read from the client bundle (import.meta.env). In
+    // proxy mode the backend injects the key; in direct (BYOK) mode the factory
+    // passes it from SecureApiKeyManager.
+    this.apiKey = config?.apiKey ?? '';
 
     if (!this.apiKey) {
-      logger.warn('[Moonshot] No API key provided. Set KIMI_API_KEY environment variable or VITE_KIMI_API_KEY in .env');
+      logger.warn('[Moonshot] No API key provided (add one in Settings, or use the AI proxy).');
     }
   }
 
@@ -110,9 +109,9 @@ export class MoonshotService implements IAIService {
 
     try {
       const response = await fetch(`${MOONSHOT_API_URL}/models`, {
-        headers: { 'Authorization': `Bearer ${this.apiKey}` }
+        headers: { Authorization: `Bearer ${this.apiKey}` },
       });
-      
+
       if (response.ok) {
         logger.info('[Moonshot] Connected to Kimi K2.5 API');
       } else {
@@ -126,14 +125,14 @@ export class MoonshotService implements IAIService {
   private resolveModel(model?: string): string {
     // Map common aliases to Moonshot models
     const map: Record<string, string> = {
-      'kimi': 'kimi-k2.5',
+      kimi: 'kimi-k2.5',
       'kimi-k2.5': 'kimi-k2.5',
       'kimi-k2': 'kimi-k2.5',
       'kimi-2.5-pro': 'kimi-k2.5',
       'moonshot/kimi-2.5-pro': 'kimi-k2.5',
       'kimi-latest': 'kimi-latest',
       'kimi-thinking': 'kimi-k2-thinking',
-      'moonshot': 'kimi-k2.5',
+      moonshot: 'kimi-k2.5',
       'moonshot-v1-32k': 'moonshot-v1-32k',
       'moonshot-v1-128k': 'moonshot-v1-128k',
     };
@@ -157,7 +156,7 @@ export class MoonshotService implements IAIService {
 
     const messages: MoonshotMessage[] = request.messages.map(msg => ({
       role: msg.role as 'system' | 'user' | 'assistant',
-      content: msg.content
+      content: msg.content,
     }));
 
     const body: MoonshotChatRequest = {
@@ -166,16 +165,16 @@ export class MoonshotService implements IAIService {
       temperature,
       max_tokens: request.maxTokens ?? DEFAULT_MAX_TOKENS,
       thinking: { type: useThinking ? 'enabled' : 'disabled' },
-      stream: false
+      stream: false,
     };
 
     const response = await fetch(`${MOONSHOT_API_URL}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`
+        Authorization: `Bearer ${this.apiKey}`,
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
@@ -194,15 +193,15 @@ export class MoonshotService implements IAIService {
       usage: {
         promptTokens: data.usage?.prompt_tokens ?? 0,
         completionTokens: data.usage?.completion_tokens ?? 0,
-        totalTokens: data.usage?.total_tokens ?? 0
+        totalTokens: data.usage?.total_tokens ?? 0,
       },
-      provider: 'moonshot'
+      provider: 'moonshot',
     };
   }
 
   private buildStreamRequest(
     messages: ChatMessage[],
-    options?: AIChatOptions,
+    options?: AIChatOptions
   ): MoonshotChatRequest {
     const model = this.resolveModel(options?.model);
     const useThinking = this.shouldUseThinking(model);
@@ -210,7 +209,7 @@ export class MoonshotService implements IAIService {
 
     const moonshotMessages: MoonshotMessage[] = messages.map(msg => ({
       role: msg.role as 'system' | 'user' | 'assistant',
-      content: msg.content
+      content: msg.content,
     }));
 
     return {
@@ -219,13 +218,13 @@ export class MoonshotService implements IAIService {
       temperature,
       max_tokens: options?.maxTokens ?? DEFAULT_MAX_TOKENS,
       thinking: { type: useThinking ? 'enabled' : 'disabled' },
-      stream: true
+      stream: true,
     };
   }
 
   async *stream(
     messages: ChatMessage[],
-    options?: AIChatOptions,
+    options?: AIChatOptions
   ): AsyncGenerator<string, void, unknown> {
     if (!this.apiKey) {
       throw new Error('Moonshot API key not configured');
@@ -237,9 +236,9 @@ export class MoonshotService implements IAIService {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`
+        Authorization: `Bearer ${this.apiKey}`,
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
 
     if (!response.ok || !response.body) {
@@ -274,14 +273,14 @@ export class MoonshotService implements IAIService {
       messages,
       model: options?.model,
       temperature: options?.temperature,
-      maxTokens: options?.maxTokens
+      maxTokens: options?.maxTokens,
     });
     return response.content;
   }
 
   async generateText(
     prompt: string,
-    options?: { maxTokens?: number; temperature?: number; model?: string },
+    options?: { maxTokens?: number; temperature?: number; model?: string }
   ): Promise<string> {
     return this.chat([{ role: 'user', content: prompt }], options);
   }
@@ -306,23 +305,23 @@ export class MoonshotService implements IAIService {
         role: 'user' as const,
         content: [
           { type: 'image_url', image_url: { url: imageUrl } },
-          { type: 'text', text: prompt }
-        ]
-      }
+          { type: 'text', text: prompt },
+        ],
+      },
     ];
 
     const response = await fetch(`${MOONSHOT_API_URL}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`
+        Authorization: `Bearer ${this.apiKey}`,
       },
       body: JSON.stringify({
         model: DEFAULT_MODEL,
         messages,
         max_tokens: DEFAULT_MAX_TOKENS,
-        thinking: { type: 'disabled' }
-      })
+        thinking: { type: 'disabled' },
+      }),
     });
 
     if (!response.ok) {
@@ -337,22 +336,30 @@ export class MoonshotService implements IAIService {
   /**
    * Generate code with thinking mode enabled
    */
-  async generateCode(description: string, language: string = 'typescript', context?: string): Promise<string> {
+  async generateCode(
+    description: string,
+    language: string = 'typescript',
+    context?: string
+  ): Promise<string> {
     let prompt = `Generate ${language} code for the following task:\n\n${description}`;
-    
+
     if (context) {
       prompt += `\n\nContext:\n${context}`;
     }
-    
+
     prompt += '\n\nProvide only the code without explanations.';
 
     const response = await this.complete({
       messages: [
-        { role: 'system', content: 'You are a senior software engineer. Generate clean, well-documented, production-ready code.' },
-        { role: 'user', content: prompt }
+        {
+          role: 'system',
+          content:
+            'You are a senior software engineer. Generate clean, well-documented, production-ready code.',
+        },
+        { role: 'user', content: prompt },
       ],
       model: 'kimi-k2.5',
-      maxTokens: 8192
+      maxTokens: 8192,
     });
 
     return response.content;
@@ -366,11 +373,14 @@ export class MoonshotService implements IAIService {
 
     const response = await this.complete({
       messages: [
-        { role: 'system', content: 'You are a senior code reviewer. Provide constructive, detailed feedback.' },
-        { role: 'user', content: prompt }
+        {
+          role: 'system',
+          content: 'You are a senior code reviewer. Provide constructive, detailed feedback.',
+        },
+        { role: 'user', content: prompt },
       ],
       model: 'kimi-k2.5',
-      maxTokens: 4096
+      maxTokens: 4096,
     });
 
     return response.content;

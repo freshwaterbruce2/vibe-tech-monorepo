@@ -8,14 +8,15 @@ import { useRef, useState, type Dispatch, type MutableRefObject, type SetStateAc
 import type { editor as MonacoEditor } from 'monaco-editor';
 import type { AutoFixService, GeneratedFix } from '../../services/AutoFixService';
 import type { DetectedError, ErrorDetector } from '../../services/ErrorDetector';
+import { useAIStore } from '../../stores/useAIStore';
 import type {
-    AIProviderState,
-    AppUIState,
-    ChatMode,
-    DbStatus,
-    ErrorFixState,
-    MultiFileEditState,
-    VisualPanelState,
+  AIProviderState,
+  AppUIState,
+  ChatMode,
+  DbStatus,
+  ErrorFixState,
+  MultiFileEditState,
+  VisualPanelState,
 } from '../types';
 
 export interface UseAppStateReturn {
@@ -117,8 +118,9 @@ export function useAppState(): UseAppStateReturn {
   const [fixLoading, setFixLoading] = useState(false);
   const [fixError, setFixError] = useState<string>('');
 
-  // AI Provider state
-  const [currentModel, setCurrentModel] = useState('moonshot/kimi-2.5-pro');
+  // AI Provider state — seed from the persisted AI store so the UI reflects the
+  // user's saved selection on boot instead of the hardcoded default.
+  const [currentModel, setCurrentModel] = useState(() => useAIStore.getState().currentModel);
   const [currentProvider, setCurrentProvider] = useState('openrouter'); // Use OpenRouter as default (routes all providers)
   const [openrouterApiKey, setOpenrouterApiKey] = useState<string>('');
 

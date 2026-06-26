@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { unifiedAI } from '../../../services/ai/UnifiedAIService';
+import { useAIStore } from '../../../stores/useAIStore';
 import { logger } from '../../../services/Logger';
 import { FileSystemService } from '../../../services/FileSystemService';
 import { WorkspaceService } from '../../../services/WorkspaceService';
@@ -7,16 +8,10 @@ import { GitService } from '../../../services/GitService';
 import { TaskPlanner } from '../../../services/ai/TaskPlanner';
 import { ExecutionEngine } from '../../../services/ai/ExecutionEngine';
 import { liveEditorStream } from '../../../services/LiveEditorStream';
-import type { BackgroundAgentSystem } from '../../../services/BackgroundAgentSystem';
+import { BackgroundAgentSystem } from '../../../services/BackgroundAgentSystem';
 import { AgentOrchestrator } from '../../../services/specialized-agents/AgentOrchestrator';
 import { AgentPerformanceOptimizer } from '../../../services/AgentPerformanceOptimizer';
 import { MultiFileEditor } from '../../../services/MultiFileEditor';
-
-const backgroundAgentSystem = {
-  on: () => {},
-  off: () => {},
-  submit: () => "mock-id",
-} as unknown as BackgroundAgentSystem;
 
 export function useAppServices() {
   const [isAIReady, setIsAIReady] = useState(false);
@@ -36,6 +31,13 @@ export function useAppServices() {
   const executionEngine = useMemo(
     () => new ExecutionEngine(fileSystemService, unifiedAI, workspaceService, gitService),
     [fileSystemService, workspaceService, gitService]
+  );
+
+  // Background agent system — runs real agent tasks off the UI thread via the
+  // execution engine + task planner. Single stable instance per hook lifetime.
+  const backgroundAgentSystem = useMemo(
+    () => new BackgroundAgentSystem(executionEngine, taskPlanner),
+    [executionEngine, taskPlanner]
   );
 
   // Multi-agent orchestrator — agents use UnifiedAIService internally.
@@ -62,6 +64,21 @@ export function useAppServices() {
     };
 
     initServices();
+  }, []);
+
+  // Keep UnifiedAIService aligned with the user's selected model. The selection
+  // is owned by the persisted AI store (localStorage via zustand persist).
+  // Without this, the service kept its hardcoded default and ignored the user's
+  // saved choice. Apply the hydrated selection on mount, then subscribe so later
+  // changes (model picker, settings) reach every AI request.
+  useEffect(() => {
+    unifiedAI.setModel(useAIStore.getState().currentModel);
+
+    return useAIStore.subscribe((state, prevState) => {
+      if (state.currentModel !== prevState.currentModel) {
+        unifiedAI.setModel(state.currentModel);
+      }
+    });
   }, []);
 
   return {

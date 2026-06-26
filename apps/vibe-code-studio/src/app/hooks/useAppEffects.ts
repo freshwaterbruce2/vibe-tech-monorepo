@@ -39,7 +39,7 @@ async function initProviderWithKey(
   factory: AIProviderFactory,
   provider: AIProvider,
   apiKey: string,
-  model: string,
+  model: string
 ) {
   await factory.initializeProvider({
     provider,
@@ -59,13 +59,13 @@ const OPENROUTER_BACKED_PROVIDERS = [
   AIProvider.OLLAMA,
 ];
 
-/** Get a key from an env var, falling back to SecureApiKeyManager. */
+/**
+ * Resolve a provider key for direct (BYOK) mode. Keys come only from the
+ * encrypted SecureApiKeyManager store (Settings UI) — never from the client
+ * bundle (import.meta.env), which would ship secrets to the browser.
+ */
 function makeGetKey(keyManager: ReturnType<typeof SecureApiKeyManager.getInstance>) {
-  return async (envVar: string, provider: string): Promise<string | null> => {
-    const envKey = import.meta.env[envVar];
-    if (envKey) return envKey;
-    return keyManager.getApiKey(provider);
-  };
+  return (provider: string): Promise<string | null> => keyManager.getApiKey(provider);
 }
 
 /** Build the proxy-mode config map (providers initialized without a client key). */
@@ -80,23 +80,21 @@ function buildProxyConfigs(): Map<AIProvider, AIProviderConfig> {
 
 /** Build the direct-key config map by reading keys from env vars / key manager. */
 async function buildDirectConfigs(
-  keyManager: ReturnType<typeof SecureApiKeyManager.getInstance>,
+  keyManager: ReturnType<typeof SecureApiKeyManager.getInstance>
 ): Promise<Map<AIProvider, AIProviderConfig>> {
   const configs = new Map<AIProvider, AIProviderConfig>();
   const getKey = makeGetKey(keyManager);
 
   // OpenRouter (primary - covers OpenAI, Anthropic, etc.)
-  const openRouterKey = await getKey('VITE_OPENROUTER_API_KEY', 'openrouter');
+  const openRouterKey = await getKey('openrouter');
   if (openRouterKey) {
     OPENROUTER_BACKED_PROVIDERS.forEach(p => {
       configs.set(p, { provider: p, apiKey: openRouterKey, model: 'moonshot/kimi-2.5-pro' });
     });
   }
 
-  // Moonshot (direct API) — check KIMI_API_KEY first, then VITE_ variants
-  const moonshotKey = import.meta.env['KIMI_API_KEY']
-    || await getKey('VITE_KIMI_API_KEY', 'moonshot')
-    || await getKey('VITE_MOONSHOT_API_KEY', 'moonshot');
+  // Moonshot (direct API)
+  const moonshotKey = await getKey('moonshot');
   if (moonshotKey) {
     configs.set(AIProvider.MOONSHOT, {
       provider: AIProvider.MOONSHOT,
@@ -106,7 +104,7 @@ async function buildDirectConfigs(
   }
 
   // Google (direct API)
-  const googleKey = await getKey('VITE_GOOGLE_API_KEY', 'google');
+  const googleKey = await getKey('google');
   if (googleKey) {
     configs.set(AIProvider.GOOGLE, {
       provider: AIProvider.GOOGLE,
@@ -116,7 +114,7 @@ async function buildDirectConfigs(
   }
 
   // DeepSeek (direct API)
-  const deepseekKey = await getKey('VITE_DEEPSEEK_API_KEY', 'deepseek');
+  const deepseekKey = await getKey('deepseek');
   if (deepseekKey) {
     configs.set(AIProvider.DEEPSEEK, {
       provider: AIProvider.DEEPSEEK,
@@ -333,7 +331,7 @@ function runAppInitTasks(handlersRef: { current: OpenHandlerRef }): void {
  */
 function registerAutoOpenListener(
   handlersRef: { current: OpenHandlerRef },
-  listenerRegisteredRef: { current: boolean },
+  listenerRegisteredRef: { current: boolean }
 ): (() => void) | undefined {
   const electron = (globalThis as unknown as Record<string, unknown>).electron as
     | ElectronApi
@@ -400,9 +398,7 @@ export function useAppInit(props: {
 /**
  * Hook for loading API key on mount
  */
-export function useApiKeyLoader(props: {
-  setOpenrouterApiKey: (key: string) => void;
-}) {
+export function useApiKeyLoader(props: { setOpenrouterApiKey: (key: string) => void }) {
   const { setOpenrouterApiKey } = props;
 
   useEffect(() => {

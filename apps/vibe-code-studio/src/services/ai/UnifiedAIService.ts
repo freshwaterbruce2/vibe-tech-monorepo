@@ -1,4 +1,9 @@
-import type { AIChatOptions, AICompletionRequest, AICompletionResponse, ChatMessage } from '../../types/ai';
+import type {
+  AIChatOptions,
+  AICompletionRequest,
+  AICompletionResponse,
+  ChatMessage,
+} from '../../types/ai';
 import { SecureApiKeyManager } from '@vibetech/core';
 import { logger } from '../Logger';
 import { AIProviderFactory } from './AIProviderFactory';
@@ -15,45 +20,34 @@ export interface GenerationSession {
   signal: AbortSignal;
 }
 
+// Maps a provider to its SecureApiKeyManager storage key. OpenRouter backs
+// several providers under one key.
+const PROVIDER_STORAGE_KEY: Record<string, string> = {
+  [AIProvider.OPENROUTER]: 'openrouter',
+  [AIProvider.OPENAI]: 'openrouter',
+  [AIProvider.ANTHROPIC]: 'openrouter',
+  [AIProvider.GROQ]: 'openrouter',
+  [AIProvider.PERPLEXITY]: 'openrouter',
+  [AIProvider.TOGETHER]: 'openrouter',
+  [AIProvider.OLLAMA]: 'openrouter',
+  [AIProvider.DEEPSEEK]: 'deepseek',
+  [AIProvider.GOOGLE]: 'google',
+  [AIProvider.MOONSHOT]: 'moonshot',
+};
+
 /**
- * Get API key from env vars first, then SecureApiKeyManager
+ * Resolve a provider key for direct (BYOK) mode from the encrypted
+ * SecureApiKeyManager store. Provider keys are NEVER read from the client bundle
+ * (import.meta.env) — that would ship secrets to the browser. In proxy mode
+ * (default) the backend injects keys, so this path is unused.
  */
 async function getLazyKey(providerType: AIProvider): Promise<string> {
-  // Map provider to env var name and storage key
-  const envMap: Record<string, { envVar: string; storageKey: string }> = {
-    [AIProvider.OPENROUTER]: { envVar: 'VITE_OPENROUTER_API_KEY', storageKey: 'openrouter' },
-    [AIProvider.OPENAI]: { envVar: 'VITE_OPENROUTER_API_KEY', storageKey: 'openrouter' },
-    [AIProvider.ANTHROPIC]: { envVar: 'VITE_OPENROUTER_API_KEY', storageKey: 'openrouter' },
-    [AIProvider.GROQ]: { envVar: 'VITE_OPENROUTER_API_KEY', storageKey: 'openrouter' },
-    [AIProvider.PERPLEXITY]: { envVar: 'VITE_OPENROUTER_API_KEY', storageKey: 'openrouter' },
-    [AIProvider.TOGETHER]: { envVar: 'VITE_OPENROUTER_API_KEY', storageKey: 'openrouter' },
-    [AIProvider.OLLAMA]: { envVar: 'VITE_OPENROUTER_API_KEY', storageKey: 'openrouter' },
-    [AIProvider.DEEPSEEK]: { envVar: 'VITE_DEEPSEEK_API_KEY', storageKey: 'deepseek' },
-    [AIProvider.GOOGLE]: { envVar: 'VITE_GOOGLE_API_KEY', storageKey: 'google' },
-    [AIProvider.MOONSHOT]: { envVar: 'VITE_MOONSHOT_API_KEY', storageKey: 'moonshot' },
-  };
+  const storageKey = PROVIDER_STORAGE_KEY[providerType];
+  if (!storageKey) return '';
 
-  const mapping = envMap[providerType];
-  if (!mapping) return '';
-
-  // For Moonshot, also accept the KIMI_*/VITE_KIMI_* aliases (envPrefix exposes both).
-  // Mirrors MoonshotService's own constructor resolution order.
-  if (providerType === AIProvider.MOONSHOT) {
-    const kimiKey =
-      import.meta.env['KIMI_API_KEY'] ||
-      import.meta.env['VITE_KIMI_API_KEY'] ||
-      '';
-    if (kimiKey) return kimiKey;
-  }
-
-  // Try env var first
-  const envKey = import.meta.env[mapping.envVar] || '';
-  if (envKey) return envKey;
-
-  // Fall back to SecureApiKeyManager
   try {
     const keyManager = SecureApiKeyManager.getInstance(logger);
-    return (await keyManager.getApiKey(mapping.storageKey)) || '';
+    return (await keyManager.getApiKey(storageKey)) || '';
   } catch {
     return '';
   }
@@ -150,6 +144,8 @@ export class UnifiedAIService {
     providerType: AIProvider,
     model: string
   ): Promise<IAIProvider | undefined> {
+    // Proxy mode injects keys server-side — never lazily init from a client key.
+    if (USE_AI_PROXY) return undefined;
     const lazyKey = await getLazyKey(providerType);
     if (!lazyKey) return undefined;
     logger.info(`[UnifiedAI] Lazily initializing ${providerType} prior to completion...`);
@@ -170,11 +166,15 @@ export class UnifiedAIService {
    * Pick a default model id for a fallback provider.
    */
   private fallbackModelFor(fallbackProvider: AIProvider): string {
-    return fallbackProvider === AIProvider.DEEPSEEK ? 'deepseek/deepseek-v3.2' :
-           fallbackProvider === AIProvider.GOOGLE ? 'google/gemini-3.1-pro' :
-           fallbackProvider === AIProvider.MOONSHOT ? 'moonshot/kimi-2.5-pro' :
-           fallbackProvider === AIProvider.LOCAL ? 'local/vibe-completion' :
-           'openai/gpt-5.2';
+    return fallbackProvider === AIProvider.DEEPSEEK
+      ? 'deepseek/deepseek-v3.2'
+      : fallbackProvider === AIProvider.GOOGLE
+        ? 'google/gemini-3.1-pro'
+        : fallbackProvider === AIProvider.MOONSHOT
+          ? 'moonshot/kimi-2.5-pro'
+          : fallbackProvider === AIProvider.LOCAL
+            ? 'local/vibe-completion'
+            : 'openai/gpt-5.2';
   }
 
   /**
@@ -186,15 +186,14 @@ export class UnifiedAIService {
     providerError: unknown,
     request: AICompletionRequest
   ): Promise<AICompletionResponse & { provider: string }> {
-    const errorMsg =
-      providerError instanceof Error ? providerError.message : String(providerError);
+    const errorMsg = providerError instanceof Error ? providerError.message : String(providerError);
     logger.warn(`[UnifiedAI] Provider ${modelInfo.provider} not available: ${errorMsg}`);
 
     const availableProviders = this.factory.getInitializedProviders();
     if (availableProviders.length === 0) {
       throw new Error(
         `Provider ${modelInfo.provider} is not configured and no fallback providers ` +
-        'are available. Please add an API key in Settings.'
+          'are available. Please add an API key in Settings.'
       );
     }
 
@@ -223,8 +222,9 @@ export class UnifiedAIService {
       temperature: request.temperature,
     });
 
-    return { ...response, provider: String(fallbackProvider) } as
-      AICompletionResponse & { provider: string };
+    return { ...response, provider: String(fallbackProvider) } as AICompletionResponse & {
+      provider: string;
+    };
   }
 
   /**
@@ -250,8 +250,9 @@ export class UnifiedAIService {
         signal: controller.signal,
       });
 
-      return { ...response, provider: String(providerName) } as
-        AICompletionResponse & { provider: string };
+      return { ...response, provider: String(providerName) } as AICompletionResponse & {
+        provider: string;
+      };
     } finally {
       this.activeControllers.delete(controller);
     }
@@ -272,7 +273,7 @@ export class UnifiedAIService {
         return {
           content: `Demo mode: Model "${requestedModel}" not found. Please select a valid model from Settings.`,
           usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
-          provider: 'demo'
+          provider: 'demo',
         };
       }
 
@@ -294,12 +295,12 @@ export class UnifiedAIService {
 
       return await this.executeComplete(provider, request, modelInfo.provider, requestedModel);
     } catch (primaryError) {
-        if (UnifiedAIService.isAbortError(primaryError)) {
-          throw primaryError;
-        }
-        logger.error('[UnifiedAI] AI service failed:', primaryError);
-        const errorMsg = primaryError instanceof Error ? primaryError.message : 'Unknown error';
-        throw new Error(`AI service unavailable: ${errorMsg}`);
+      if (UnifiedAIService.isAbortError(primaryError)) {
+        throw primaryError;
+      }
+      logger.error('[UnifiedAI] AI service failed:', primaryError);
+      const errorMsg = primaryError instanceof Error ? primaryError.message : 'Unknown error';
+      throw new Error(`AI service unavailable: ${errorMsg}`);
     }
   }
 
@@ -345,6 +346,8 @@ export class UnifiedAIService {
    * Returns the initialized provider, or undefined if no key or init failed.
    */
   private async lazyInitForStream(providerType: AIProvider): Promise<IAIProvider | undefined> {
+    // Proxy mode injects keys server-side — never lazily init from a client key.
+    if (USE_AI_PROXY) return undefined;
     const lazyKey = await getLazyKey(providerType);
     if (!lazyKey) return undefined;
     logger.info(`[UnifiedAI] Lazily initializing ${providerType} prior to stream...`);
@@ -368,15 +371,14 @@ export class UnifiedAIService {
     providerType: AIProvider,
     providerError: unknown
   ): Promise<IAIProvider> {
-    const errorMsg =
-      providerError instanceof Error ? providerError.message : String(providerError);
+    const errorMsg = providerError instanceof Error ? providerError.message : String(providerError);
     logger.warn(`[UnifiedAI] Provider ${providerType} not available for streaming: ${errorMsg}`);
 
     const availableProviders = this.factory.getInitializedProviders();
     if (availableProviders.length === 0) {
       throw new Error(
         `Provider ${providerType} is not configured and no fallback providers ` +
-        'are available. Please add an API key in Settings.'
+          'are available. Please add an API key in Settings.'
       );
     }
 

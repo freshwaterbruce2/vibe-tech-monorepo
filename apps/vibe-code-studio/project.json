@@ -29,9 +29,7 @@
     },
     "build": {
       "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/dist"
-      ],
+      "outputs": ["{projectRoot}/dist"],
       "cache": true,
       "options": {
         "command": "pnpm run build",
@@ -46,9 +44,7 @@
     },
     "package": {
       "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/src-tauri/target/release/bundle"
-      ],
+      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
       "cache": false,
       "options": {
         "command": "pnpm run package",
@@ -57,9 +53,7 @@
     },
     "release-build": {
       "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/dist"
-      ],
+      "outputs": ["{projectRoot}/dist"],
       "cache": false,
       "options": {
         "command": "pnpm run release:build",
@@ -68,9 +62,7 @@
     },
     "release-build-win": {
       "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/src-tauri/target/release/bundle"
-      ],
+      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
       "cache": false,
       "options": {
         "command": "pnpm run release:build:win",
@@ -79,9 +71,7 @@
     },
     "release-build-mac": {
       "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/src-tauri/target/release/bundle"
-      ],
+      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
       "cache": false,
       "options": {
         "command": "pnpm run release:build:mac",
@@ -90,9 +80,7 @@
     },
     "release-build-linux": {
       "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/src-tauri/target/release/bundle"
-      ],
+      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
       "cache": false,
       "options": {
         "command": "pnpm run release:build:linux",
@@ -101,9 +89,7 @@
     },
     "release-dist": {
       "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/dist"
-      ],
+      "outputs": ["{projectRoot}/dist"],
       "cache": false,
       "options": {
         "command": "pnpm run release:dist",
@@ -112,9 +98,7 @@
     },
     "package-win-local": {
       "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/src-tauri/target/release/bundle"
-      ],
+      "outputs": ["{projectRoot}/src-tauri/target/release/bundle"],
       "cache": false,
       "options": {
         "command": "pnpm run prepare-native-modules && pnpm run package",
@@ -200,6 +184,15 @@
       },
       "cache": true
     },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/coverage"],
+      "options": {
+        "command": "pnpm run test:coverage",
+        "cwd": "apps/vibe-code-studio"
+      },
+      "cache": true
+    },
     "rebuild-deps": {
       "executor": "nx:run-commands",
       "options": {
@@ -217,19 +210,12 @@
     "quality": {
       "executor": "nx:run-commands",
       "options": {
-        "commands": [
-          "pnpm run lint",
-          "pnpm run typecheck",
-          "pnpm run test"
-        ],
+        "commands": ["pnpm run lint", "pnpm run typecheck", "pnpm run test"],
         "parallel": false,
         "cwd": "apps/vibe-code-studio"
       },
       "cache": false
     }
   },
-  "tags": [
-    "type:desktop",
-    "scope:vibe-code-studio"
-  ]
+  "tags": ["type:desktop", "scope:vibe-code-studio"]
 }

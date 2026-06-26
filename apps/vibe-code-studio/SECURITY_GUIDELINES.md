@@ -43,12 +43,12 @@ function processUserInput(input: string): string {
   if (!input || typeof input !== 'string') {
     throw new Error('Invalid input provided');
   }
-  
+
   // Validate against whitelist/pattern
   if (!isValidPattern(input)) {
     throw new Error('Input contains invalid characters');
   }
-  
+
   return escapeHtml(input.trim());
 }
 
@@ -83,11 +83,11 @@ import path from 'path';
 function validateFilePath(filePath: string): string {
   const resolved = path.resolve(filePath);
   const allowedDir = path.resolve('/allowed/directory');
-  
+
   if (!resolved.startsWith(allowedDir)) {
     throw new Error('Access denied: Path not allowed');
   }
-  
+
   return resolved;
 }
 
@@ -110,7 +110,7 @@ function readFile(filePath: string) {
 
 ```typescript
 // ✅ Good: Secure API key handling
-import { SecureApiKeyManager } from '../utils/SecureApiKeyManager';
+import { SecureApiKeyManager } from '@vibetech/core';
 
 const keyManager = SecureApiKeyManager.getInstance();
 keyManager.storeApiKey('provider', apiKey); // Encrypted storage
@@ -137,18 +137,18 @@ async function makeApiRequest(url: string, data: any) {
   if (!isAllowedApiUrl(url)) {
     throw new Error('API URL not allowed');
   }
-  
+
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(sanitizeRequestData(data))
+    body: JSON.stringify(sanitizeRequestData(data)),
   });
-  
+
   // Validate response
   if (!response.ok) {
     throw new Error(`API error: ${response.status}`);
   }
-  
+
   return validateApiResponse(await response.json());
 }
 ```
@@ -186,13 +186,13 @@ catch (error) {
 // ✅ Good: Secure BrowserWindow configuration
 const mainWindow = new BrowserWindow({
   webPreferences: {
-    nodeIntegration: false,      // Disable Node.js in renderer
-    contextIsolation: true,      // Isolate context
-    webSecurity: true,           // Enable web security
+    nodeIntegration: false, // Disable Node.js in renderer
+    contextIsolation: true, // Isolate context
+    webSecurity: true, // Enable web security
     allowRunningInsecureContent: false,
     experimentalFeatures: false,
-    sandbox: true               // Enable sandbox (if possible)
-  }
+    sandbox: true, // Enable sandbox (if possible)
+  },
 });
 ```
 
@@ -205,10 +205,10 @@ ipcMain.handle('secure-operation', async (event, data) => {
   if (!isValidSender(event.sender)) {
     throw new Error('Unauthorized sender');
   }
-  
+
   // Validate and sanitize data
   const validatedData = validateIpcData(data);
-  
+
   return performSecureOperation(validatedData);
 });
 
@@ -222,14 +222,17 @@ ipcMain.handle('operation', async (event, data) => {
 
 ```html
 <!-- ✅ Good: Strict CSP -->
-<meta http-equiv="Content-Security-Policy" content="
+<meta
+  http-equiv="Content-Security-Policy"
+  content="
   default-src 'self';
   script-src 'self';
   style-src 'self' 'unsafe-inline';
   img-src 'self' data: https:;
   connect-src 'self' https://api.trusted-provider.com;
   object-src 'none';
-">
+"
+/>
 ```
 
 ## Development Practices

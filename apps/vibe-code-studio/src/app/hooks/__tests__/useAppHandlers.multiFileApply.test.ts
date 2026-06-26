@@ -14,6 +14,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FileChange, MultiFileEditPlan } from '@vibetech/types';
 
 import { useAppHandlers, type UseAppHandlersProps } from '../useAppHandlers';
+import { useAIStore } from '../../../stores/useAIStore';
 
 // Keep the hook render light: SearchService is instantiated via useMemo on render,
 // and monacopilot is an external dep only used inside handleEditorMount.
@@ -116,7 +117,7 @@ describe('useAppHandlers — multi-file Apply', () => {
     const applyChanges = props.multiFileEditor.applyChanges as ReturnType<typeof vi.fn>;
     expect(applyChanges).toHaveBeenCalledTimes(1);
     const passedChanges = applyChanges.mock.calls[0][0] as FileChange[];
-    expect(passedChanges.map((c) => c.path)).toEqual(['a.ts']); // 'b.ts' filtered out
+    expect(passedChanges.map(c => c.path)).toEqual(['a.ts']); // 'b.ts' filtered out
   });
 
   it('closes the panel and reports success on a successful apply', async () => {
@@ -174,5 +175,45 @@ describe('useAppHandlers — multi-file Apply', () => {
     expect(props.setMultiFileApprovalOpen).toHaveBeenCalledWith(false);
     expect(props.setMultiFileEditPlan).toHaveBeenCalledWith(null);
     expect(props.setMultiFileChanges).toHaveBeenCalledWith([]);
+  });
+});
+
+describe('useAppHandlers — model change', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useAIStore.getState().actions.setModel('moonshot/kimi-2.5-pro');
+  });
+
+  it('persists the selected model to the AI store and the service', async () => {
+    const setModel = vi.fn();
+    const setCurrentModel = vi.fn();
+    const props = makeProps({
+      aiService: { setModel } as never,
+      setCurrentModel,
+    });
+    const { result } = renderHook(() => useAppHandlers(props));
+
+    await act(async () => {
+      await result.current.handleModelChange({ id: 'openai/gpt-5.2' } as never);
+    });
+
+    expect(setCurrentModel).toHaveBeenCalledWith('openai/gpt-5.2');
+    expect(setModel).toHaveBeenCalledWith('openai/gpt-5.2');
+    expect(useAIStore.getState().currentModel).toBe('openai/gpt-5.2');
+  });
+
+  it('surfaces an error when the AI service rejects the model', async () => {
+    const setModel = vi.fn(() => {
+      throw new Error('bad model');
+    });
+    const showError = vi.fn();
+    const props = makeProps({ aiService: { setModel } as never, showError });
+    const { result } = renderHook(() => useAppHandlers(props));
+
+    await act(async () => {
+      await result.current.handleModelChange({ id: 'openai/gpt-5.2' } as never);
+    });
+
+    expect(showError).toHaveBeenCalledWith('Model Error', 'bad model');
   });
 });

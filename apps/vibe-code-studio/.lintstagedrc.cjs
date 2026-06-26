@@ -3,7 +3,7 @@ module.exports = {
   // Fast operations only - tests run on pre-push hook
   '*.{ts,tsx}': [
     // Run import sorting with ESLint with zero tolerance for warnings
-    'eslint --fix --max-warnings 0',
+    'eslint --fix --max-warnings 0 --no-warn-ignored',
     // Run Prettier after ESLint to ensure consistent formatting
     'prettier --write',
   ],
@@ -11,7 +11,7 @@ module.exports = {
   // JavaScript files
   '*.{js,jsx}': [
     // Run ESLint without TypeScript type checking with zero tolerance for warnings
-    'eslint --fix --max-warnings 0',
+    'eslint --fix --max-warnings 0 --no-warn-ignored',
     // Run Prettier after ESLint to ensure consistent formatting
     'prettier --write',
   ],
