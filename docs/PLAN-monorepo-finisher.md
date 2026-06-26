@@ -12,13 +12,13 @@
 
 ## Scoreboard (48 app dirs)
 
-| Bucket | Count | Apps |
-|---|---|---|
-| **Launch today, ~0 work** | 21 | agent-engine, cme-track, crypto-enhanced, desktop-commander-v3, mcp-gateway, monorepo-health-mcp, nova-mobile-app, prior-auth-pro, proposal-review-saas, serenity-flow, skill-feedback-mcp, symptom-tracker-api, vibe-dental, vibe-portal, vibe-reminder, vibe-tech-marketing, vibe-tutor, vibe-tutor-mobile, vibetech-command-center, workspace-mcp-server, mcp-skills-server |
-| **Launch but needs finishing** | 17 | ai-avatar-youtube-saas, learning-pipeline-mcp, memory-mcp, mcp-rag-server, nova-agent, vibe-blox, vibe-booking, vibe-booking-backend, vibe-booking-v2, vibe-chess, vibe-code-studio, vibe-discharge, vibe-invoice, vibe-justice, vibe-shipping, vibe-shop, vibe-tech-lovable |
-| **Does NOT launch (blocking bug)** | 2 | proactive-recommendations-mcp (`__dirname` crash), vibe-reflection (missing `@vibetech/openrouter-client` methods) |
-| **Dead — delete** | 1 | gravity-claw (empty/uninitialized submodule) |
-| **Factory smoke fixtures (decision)** | 6 | _-factory-runtime-smoke, factory-landing-smoke, factory-saas-smoke, factory-tauri-smoke, factory-verify, test-factory-app |
+| Bucket                                | Count | Apps                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Launch today, ~0 work**             | 21    | agent-engine, cme-track, crypto-enhanced, desktop-commander-v3, mcp-gateway, monorepo-health-mcp, nova-mobile-app, prior-auth-pro, proposal-review-saas, serenity-flow, skill-feedback-mcp, symptom-tracker-api, vibe-dental, vibe-portal, vibe-reminder, vibe-tech-marketing, vibe-tutor, vibe-tutor-mobile, vibetech-command-center, workspace-mcp-server, mcp-skills-server |
+| **Launch but needs finishing**        | 17    | ai-avatar-youtube-saas, learning-pipeline-mcp, memory-mcp, mcp-rag-server, nova-agent, vibe-blox, vibe-booking, vibe-booking-backend, vibe-booking-v2, vibe-chess, vibe-code-studio, vibe-discharge, vibe-invoice, vibe-justice, vibe-shipping, vibe-shop, vibe-tech-lovable                                                                                                   |
+| **Does NOT launch (blocking bug)**    | 2     | proactive-recommendations-mcp (`__dirname` crash), vibe-reflection (missing `@vibetech/openrouter-client` methods)                                                                                                                                                                                                                                                             |
+| **Dead — delete**                     | 1     | gravity-claw (empty/uninitialized submodule)                                                                                                                                                                                                                                                                                                                                   |
+| **Factory smoke fixtures (decision)** | 6     | \_-factory-runtime-smoke, factory-landing-smoke, factory-saas-smoke, factory-tauri-smoke, factory-verify, test-factory-app                                                                                                                                                                                                                                                     |
 
 Plus **36 packages** and **~12 backend services** (assessed in the audit, finished in Phase 4).
 
@@ -42,15 +42,15 @@ These repeat across many apps. Fixing them per-app is the slow path; fix the sha
 
 ### Phase 0 — Safety & decisions (gate)
 
-- [ ] **0.1 Rotate the committed Kimi/Moonshot key** — `apps/vibe-justice/backend/test_moonshot.py:4` (CRITICAL). Revoke at provider, switch to `os.getenv('KIMI_API_KEY')`, gitignore probe, scrub history. *(Provider revoke = Bruce; code change = me.)*
+- [ ] **0.1 Rotate the committed Kimi/Moonshot key** — `apps/vibe-justice/backend/test_moonshot.py:4` (CRITICAL). Revoke at provider, switch to `os.getenv('KIMI_API_KEY')`, gitignore probe, scrub history. _(Provider revoke = Bruce; code change = me.)_
 - [ ] **0.2 Campaign branch + D:\ snapshot** — `git checkout -b chore/monorepo-finisher`; `Save-Snapshot.ps1 -Tag "pre-finisher"`.
 - [ ] **0.3 Resolve open decisions** (booking consolidation, smoke fixtures, execution mode — see bottom).
 
 ### Phase 1 — Unblock non-launchable + lead app (vibe-code-studio)
 
-- [ ] **1.1 vibe-code-studio (finisher pass)** — remove `scripts/verify-app-working-v2.ps1`; fix `UnifiedAIService` hardcoded `moonshot/kimi-2.5-pro` to respect provider selection; replace mock `BackgroundAgentSystem` in `useAppServices.ts`; archive `docs/CONTINUATION-*.md`; resolve orphan `vscode-extension/`; route OpenRouter via backend proxy (drop `VITE_` key); delete dup `SecureApiKeyManager` fork; resolve TODOS.md deferrals (Monaco option ownership, Tauri capability hardening, docs-lint). Then `typecheck`/`lint`/`test` green + launch verify.
-- [ ] **1.2 proactive-recommendations-mcp** — fix `__dirname` in ESM (`import.meta.url`), drop unused `params`, rebuild `dist/`, verify it starts.
-- [ ] **1.3 vibe-reflection** — add `chatStream()` (models-array + SSE) and `tools`/`tool_choice` to `@vibetech/openrouter-client`; verify reflection loop. *(Fixes the shared package — also benefits other consumers.)*
+- [x] **1.1 vibe-code-studio (finisher pass)** — DONE (commit `3f001bff`). Fixed `UnifiedAIService` hardcoded model → respects persisted store selection (boot-sync + subscribe in `useAppServices`, `handleModelChange` writes store, `useAppState` seeds picker); replaced mock `BackgroundAgentSystem` with the real instance; dropped client `VITE_*_API_KEY` reads for OpenRouter + Moonshot + the lazy-key path + BYOK init (keys now from proxy/SecureApiKeyManager); deleted the dup `SecureApiKeyManager` fork + the orphan `vscode-extension/` stub. Added `test:coverage` target, `--no-warn-ignored` to lint-staged, renamed oversized hooks → `.tsx`. typecheck + full unit suite green; build green; functional diff 100% covered. _(`verify-app-working-v2.ps1`/`CONTINUATION-_.md`/`TODOS.md`never existed. Deferred: DeepSeek/Google **provider-constructor**`VITE\_` reads — only hit in BYOK mode, init layer no longer feeds them env keys — left untouched because those legacy files carry pre-existing size/line lint violations that block a clean partial edit; revisit with a dedicated cleanup. Full Tauri GUI click-through is Bruce's manual step.)\*
+- [x] **1.2 proactive-recommendations-mcp** — DONE (`bd65220f`). Fixed `__dirname` in ESM via `import.meta.url` (`moduleDir`); build + typecheck + lint green; `node dist/index.js` boots ("running on stdio").
+- [x] **1.3 vibe-reflection** — DONE (`54087d68`). Added `chatStream()` (SSE async generator over a `models` fallback stack) + `tools`/`tool_choice` + `tool_calls`/stream-chunk types to `@vibetech/openrouter-client`; re-exported the orphaned pricing/model-aliases/errors helpers; `normalizeRequest` defaults model from `models[0]`. vibe-reflection typechecks; package 95% line cov, 18 tests. Additive-only (nova-agent/vibe-tutor unaffected). _(providers.ts already targeted the new API, so no app change needed.)_
 
 ### Phase 2 — Systemic security/correctness (fix-once)
 
@@ -66,10 +66,12 @@ These repeat across many apps. Fixing them per-app is the slow path; fix the sha
 ### Phase 3 — Per-app finishing (launch + every button/link/TODO works)
 
 **3A · SaaS factory scaffolds** — finish missing endpoints, replace legal/landing stubs, `ship:check` green:
-- [ ] _-factory-runtime-smoke (missing `/api/pro/rewrite`) *(or delete per 0.3)*
-- [ ] vibe-portal (legal stubs) · cme-track · vibe-dental · prior-auth-pro · proposal-review-saas · vibe-discharge · vibe-reminder · factory-verify *(template)*
+
+- [ ] \_-factory-runtime-smoke (missing `/api/pro/rewrite`) _(or delete per 0.3)_
+- [ ] vibe-portal (legal stubs) · cme-track · vibe-dental · prior-auth-pro · proposal-review-saas · vibe-discharge · vibe-reminder · factory-verify _(template)_
 
 **3B · Web apps** — wire buttons/links, replace placeholders/mocks:
+
 - [ ] vibe-booking (alert() PDF stubs → real PDFs; fix `vite.config.mts` name `business-booking-platform-next`→`vibe-booking`; fix index.html title)
 - [ ] vibe-booking-backend (Dashboard mock `INITIAL_APPOINTMENTS` → `/api/bookings`; remove dead BookingPortal demo; fix playwright port 4211)
 - [ ] vibe-shop (run `db:generate`; reconcile AI-backend docs; implement/seed affiliate products; fix mock `affiliateLink:'#'`)
@@ -79,15 +81,18 @@ These repeat across many apps. Fixing them per-app is the slow path; fix the sha
 - [ ] vibe-chess (env wiring + verify) · serenity-flow (replace placeholder audio URLs) · vibe-tutor (drop dead scripts) · ai-avatar-youtube-saas (drop unused `ReadyPlayerMeAvatar`)
 
 **3C · Desktop (Tauri/Electron)**:
+
 - [ ] nova-agent (delete dead pages Dashboard/TradingTest/PalettePreview/Resources; consolidate NovaDashboard→2026; fix Moonshot `thinking` field leaking to all providers; env-ize hardcoded D:\ paths in Rust)
 - [ ] vibe-justice (key already handled in 0.1; SSE streaming TODO; delete `backend/fluent_ui/`, `entry_point.py`, `launcher.py`)
 - [ ] vibetech-command-center (verify launch + tests) · vibe-code-studio (polish carried from 1.1)
 
 **3D · MCP servers**:
+
 - [ ] memory-mcp (register 10 implemented-but-undeclared tools: cognitive/RAG/summarization/decay; fix `memory_learning_query` naming)
 - [ ] mcp-rag-server (remove dead `test-fixtures/`; clarify index cold-start) · learning-pipeline-mcp (align analysis path constants) · mcp-skills-server (delete stale `DEPRECATED.md`) · workspace-mcp-server (fix dead `C:\dev` regex → `WORKSPACE_ROOT`)
 
 **3E · Mobile**:
+
 - [ ] vibe-tutor-mobile (verify) · nova-mobile-app (verify env/bridge)
 
 ### Phase 4 — Dead-code sweep & de-duplication
