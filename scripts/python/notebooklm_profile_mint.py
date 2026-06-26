@@ -23,6 +23,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from urllib.parse import urlparse
 
 for _s in (sys.stdout, sys.stderr):
     try:
@@ -153,7 +154,7 @@ def main() -> int:
 
         if not ok:
             log(f"❌ Required Google cookies not decrypted after 40s. Final URL: {url!r}")
-            if "accounts.google.com" in url:
+            if (urlparse(url).hostname or "") == "accounts.google.com":
                 log("   -> redirected to login = copied session is NOT valid")
             log("   -> App-Bound Encryption most likely blocked decryption on the copy.")
             return 1
