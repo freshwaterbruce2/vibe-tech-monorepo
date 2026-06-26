@@ -20,7 +20,7 @@ if not api_key:
     print('CRITICAL: MOONSHOT_API_KEY is not set in the environment.', file=sys.stderr)
     sys.exit(1)
 
-print(f'Loaded Moonshot API key: sk-...{api_key[-4:]}')
+print('Moonshot API key loaded from the environment.')
 
 headers = {
     'Authorization': f'Bearer {api_key}',

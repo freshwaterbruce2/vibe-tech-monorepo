@@ -247,7 +247,7 @@ async function handleHttpRequest(
   } catch (err) {
     console.error('[memory-mcp] HTTP Error:', err);
     const message = err instanceof Error ? err.message : 'Internal server error';
-    res.writeHead(500);
+    res.writeHead(500, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: message }));
   }
 }
