@@ -222,8 +222,15 @@ if ($lineCountFiles.Count -gt 0) {
 # ============================================
 $exitCode = [Math]::Max(
     [int]$exitCode,
-    [int](Invoke-QualityCommand -Label "[5/6] Running verify-agent-changes.ps1 verification harness (skipping monorepo-wide lint)..." -Command {
-        pwsh.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "verify-agent-changes.ps1") -SkipLint
+    [int](Invoke-QualityCommand -Label "[5/6] Running verify-agent-changes.ps1 harness (workspace-integrity checks only)..." -Command {
+        # Scope the harness to fast workspace-integrity checks (path policy, DB
+        # health, Ralph state, Kimi schema). The heavy full-workspace
+        # `pnpm run typecheck` and `pnpm run test:unit:all` it would otherwise run
+        # are redundant here and caused multi-minute hangs (45+ vitest workers) on
+        # every commit: changed code is already gated by the scoped ESLint + `nx
+        # affected typecheck` (step 3/4) and the 100% diff-coverage gate (step cov).
+        # Full-workspace typecheck/tests belong in CI, not the per-commit hook.
+        pwsh.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "verify-agent-changes.ps1") -SkipLint -SkipTypecheck -SkipTests
     })
 )
 

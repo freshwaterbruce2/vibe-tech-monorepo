@@ -5,19 +5,22 @@
  */
 
 import { createHash } from 'node:crypto';
-import { Database, openDatabase } from '@vibetech/db-app';
+import type Database from 'better-sqlite3';
+import { AppDatabase } from '@vibetech/db-app';
 import type { CacheStats, RAGConfig, SearchResult } from './types.js';
 
 const DEFAULT_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 export class RAGCache {
+  private appDb: AppDatabase;
   private db: Database.Database;
   private ttlMs: number;
   private hits = 0;
   private misses = 0;
 
   constructor(config: Pick<RAGConfig, 'cachePath' | 'cacheTtlMs'>) {
-    this.db = openDatabase(config.cachePath, { dbName: 'rag_cache' });
+    this.appDb = new AppDatabase({ path: config.cachePath });
+    this.db = this.appDb.getDatabase();
     this.ttlMs = config.cacheTtlMs ?? DEFAULT_TTL_MS;
     this.init();
   }
@@ -192,7 +195,7 @@ export class RAGCache {
    * Close the database connection
    */
   close(): void {
-    this.db.close();
+    this.appDb.close();
   }
 
   private makeKey(queryText: string): string {
