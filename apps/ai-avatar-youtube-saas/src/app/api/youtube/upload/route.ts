@@ -77,7 +77,9 @@ async function probeVideoSource(videoUrl: string): Promise<{
   contentType: string;
   contentLength: number | null;
 }> {
-  const headResponse = await fetch(videoUrl, { method: "HEAD" });
+  // SSRF barrier local to the request site: only fetch trusted storage origins.
+  const safeUrl = assertAllowedMediaUrl(videoUrl);
+  const headResponse = await fetch(safeUrl, { method: "HEAD" });
   if (!headResponse.ok) {
     throw new Error(`Failed to probe video source: ${headResponse.status}`);
   }
@@ -195,7 +197,9 @@ async function withRetry<T>(fn: () => Promise<T>, context: string): Promise<T> {
 }
 
 async function fetchChunk(videoUrl: string, start: number, end: number, contentType: string): Promise<Blob> {
-  const response = await fetch(videoUrl, {
+  // SSRF barrier local to the request site: only fetch trusted storage origins.
+  const safeUrl = assertAllowedMediaUrl(videoUrl);
+  const response = await fetch(safeUrl, {
     headers: { Range: `bytes=${start}-${end}` },
   });
 
