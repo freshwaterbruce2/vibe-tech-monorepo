@@ -13,19 +13,28 @@ export interface AvatarPlayerProps {
 }
 
 /**
- * Only bind audio/model sources that use a safe scheme. `audioUrl` is user-
- * supplied, so block `javascript:`/`vbscript:` and other unexpected schemes
- * before it reaches the element src; anything unsafe yields an empty src.
+ * Only bind audio sources that use a safe scheme. `audioUrl` is user-supplied,
+ * so block `javascript:`/`vbscript:` and other unexpected schemes before it
+ * reaches the element src. The returned value is re-serialized from the parsed
+ * URL (not the raw input), so unsafe input cannot reach the sink unvalidated;
+ * anything unsafe yields an empty src.
  */
 function sanitizeMediaUrl(rawUrl: string): string {
   if (!rawUrl) return "";
-  if (rawUrl.startsWith("blob:") || /^data:audio\//i.test(rawUrl)) return rawUrl;
+  let parsed: URL;
   try {
-    const parsed = new URL(rawUrl, "http://localhost");
-    return parsed.protocol === "https:" || parsed.protocol === "http:" ? rawUrl : "";
+    parsed = new URL(rawUrl, "http://localhost");
   } catch {
     return "";
   }
+  const scheme = parsed.protocol;
+  if (scheme === "https:" || scheme === "http:" || scheme === "blob:") {
+    return parsed.href;
+  }
+  if (scheme === "data:" && /^data:audio\//i.test(parsed.href)) {
+    return parsed.href;
+  }
+  return "";
 }
 
 export function AvatarPlayer({ modelUrl, audioUrl, riveUrl }: AvatarPlayerProps) {
