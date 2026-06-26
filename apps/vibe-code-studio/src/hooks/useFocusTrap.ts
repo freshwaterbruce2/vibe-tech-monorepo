@@ -71,6 +71,75 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
   );
 }
 
+/**
+ * Create the keydown handler that traps Tab focus and handles Escape
+ */
+function createFocusTrapKeyHandler(
+  container: HTMLElement,
+  onEscape?: () => void
+): (event: KeyboardEvent) => void {
+  return (event: KeyboardEvent) => {
+    // Handle Escape
+    if (event.key === 'Escape' || event.key === 'Esc') {
+      event.preventDefault();
+      onEscape?.();
+      return;
+    }
+
+    // Handle Tab
+    if (event.key !== 'Tab') {
+      return;
+    }
+
+    const focusableElements = getFocusableElements(container);
+
+    if (focusableElements.length === 0) {
+      event.preventDefault();
+      return;
+    }
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    if (event.shiftKey) {
+      // Shift + Tab: moving backwards
+      if (document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement?.focus();
+      }
+    } else {
+      // Tab: moving forwards
+      if (document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement?.focus();
+      }
+    }
+  };
+}
+
+/**
+ * Schedule auto-focus of the initial/first focusable element
+ */
+function scheduleAutoFocus(
+  container: HTMLElement,
+  autoFocus: boolean,
+  initialFocus: HTMLElement | null
+): ReturnType<typeof setTimeout> | undefined {
+  if (!autoFocus && !initialFocus) {
+    return undefined;
+  }
+
+  const elementToFocus = initialFocus ?? getFocusableElements(container)[0];
+  if (!elementToFocus) {
+    return undefined;
+  }
+
+  // Use setTimeout to ensure the element is rendered and focusable
+  return setTimeout(() => {
+    elementToFocus.focus();
+  }, 0);
+}
+
 export function useFocusTrap<T extends HTMLElement = HTMLElement>(
   options: UseFocusTrapOptions = {}
 ) {
@@ -86,61 +155,17 @@ export function useFocusTrap<T extends HTMLElement = HTMLElement>(
   const previouslyFocusedElement = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (!isActive || !containerRef.current) {return;}
+    if (!isActive || !containerRef.current) {
+      return;
+    }
 
     const container = containerRef.current;
-    let focusTimeout: ReturnType<typeof setTimeout> | undefined;
 
     // Store the currently focused element to restore later
     previouslyFocusedElement.current = document.activeElement as HTMLElement;
 
-    // Auto-focus first element or initial focus element
-    if (autoFocus || initialFocus) {
-      const elementToFocus = initialFocus ?? getFocusableElements(container)[0];
-      if (elementToFocus) {
-        // Use setTimeout to ensure the element is rendered and focusable
-        focusTimeout = setTimeout(() => {
-          elementToFocus.focus();
-        }, 0);
-      }
-    }
-
-    // Handle Tab key to trap focus
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Handle Escape
-      if (event.key === 'Escape' || event.key === 'Esc') {
-        event.preventDefault();
-        onEscape?.();
-        return;
-      }
-
-      // Handle Tab
-      if (event.key === 'Tab') {
-        const focusableElements = getFocusableElements(container);
-
-        if (focusableElements.length === 0) {
-          event.preventDefault();
-          return;
-        }
-
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
-
-        if (event.shiftKey) {
-          // Shift + Tab: moving backwards
-          if (document.activeElement === firstElement) {
-            event.preventDefault();
-            lastElement?.focus();
-          }
-        } else {
-          // Tab: moving forwards
-          if (document.activeElement === lastElement) {
-            event.preventDefault();
-            firstElement?.focus();
-          }
-        }
-      }
-    };
+    const focusTimeout = scheduleAutoFocus(container, autoFocus, initialFocus);
+    const handleKeyDown = createFocusTrapKeyHandler(container, onEscape);
 
     container.addEventListener('keydown', handleKeyDown);
 

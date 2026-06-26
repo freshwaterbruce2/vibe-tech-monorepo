@@ -114,7 +114,9 @@ const statusColor = (s: string) =>
   s === 'connected' ? '#4ec94e' : s === 'connecting' ? '#e5c07b' : s === 'error' ? '#e06c75' : '#666';
 
 export function RemoteConnectionPanel() {
-  const { connections, activeConnection, connect, disconnect, addConnection, removeConnection } = useRemoteConnection();
+  const {
+    connections, activeConnection, connect, disconnect, addConnection, removeConnection,
+  } = useRemoteConnection();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     name: '',
@@ -160,7 +162,10 @@ export function RemoteConnectionPanel() {
             </div>
             <div style={{ flex: 1 }}>
               <Label>Port</Label>
-              <Input value={form.port} onChange={(e) => setForm({ ...form, port: e.target.value })} />
+              <Input
+                value={form.port}
+                onChange={(e) => setForm({ ...form, port: e.target.value })}
+              />
             </div>
           </div>
           <Label>Username</Label>

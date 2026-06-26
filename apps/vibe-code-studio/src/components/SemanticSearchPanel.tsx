@@ -319,9 +319,16 @@ export interface SemanticSearchPanelProps {
   workspaceRoot?: string | null;
 }
 
-export const SemanticSearchPanel = ({ aiService, onClose, onResultClick, workspaceRoot }: SemanticSearchPanelProps) => {
+export const SemanticSearchPanel = ({
+  aiService,
+  onClose,
+  onResultClick,
+  workspaceRoot,
+}: SemanticSearchPanelProps) => {
   const fsServiceRef = useRef(new FileSystemService());
-  const [searchService] = useState(() => new SemanticSearchService(aiService, fsServiceRef.current));
+  const [searchService] = useState(
+    () => new SemanticSearchService(aiService, fsServiceRef.current)
+  );
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [metadata, setMetadata] = useState<SearchMetadata | null>(null);
@@ -568,15 +575,21 @@ export const SemanticSearchPanel = ({ aiService, onClose, onResultClick, workspa
                     </ResultFile>
                     <ResultPath>{result.filePath}</ResultPath>
                   </ResultInfo>
-                  <RelevanceBadge $score={result.relevanceScore}>{Math.round(result.relevanceScore)}%</RelevanceBadge>
+                  <RelevanceBadge $score={result.relevanceScore}>
+                    {Math.round(result.relevanceScore)}%
+                  </RelevanceBadge>
                 </ResultHeader>
 
                 <CodeSnippet>{result.snippet}</CodeSnippet>
 
                 {result.context && (
                   <ContextTags>
-                    {result.context.functionName && <ContextTag>fn: {result.context.functionName}</ContextTag>}
-                    {result.context.className && <ContextTag>class: {result.context.className}</ContextTag>}
+                    {result.context.functionName && (
+                      <ContextTag>fn: {result.context.functionName}</ContextTag>
+                    )}
+                    {result.context.className && (
+                      <ContextTag>class: {result.context.className}</ContextTag>
+                    )}
                     {result.context.exports && result.context.exports.length > 0 && (
                       <ContextTag>exports: {result.context.exports.length}</ContextTag>
                     )}

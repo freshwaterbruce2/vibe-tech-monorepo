@@ -222,7 +222,8 @@ export const CustomInstructionsPanel = ({
               <TemplateSource key={source}>
                 <SourceName>{source}</SourceName>
                 {sourceTemplates &&
-                  Object.entries(sourceTemplates).map(([name, template]: [string, CodeTemplate]) => (
+                  Object.entries(sourceTemplates).map(
+                    ([name, template]: [string, CodeTemplate]) => (
                     <TemplateCard
                       key={name}
                       onClick={() => setSelectedTemplate(name)}
@@ -240,7 +241,8 @@ export const CustomInstructionsPanel = ({
                         ))}
                       </TemplateTags>
                     </TemplateCard>
-                  ))}
+                    )
+                  )}
               </TemplateSource>
             ))}
           </TemplateList>

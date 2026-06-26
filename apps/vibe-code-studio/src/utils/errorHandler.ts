@@ -40,6 +40,72 @@ interface ErrorWithCode {
   };
 }
 
+function rateLimitError(
+  response: NonNullable<ErrorWithCode['response']>,
+  timestamp: Date
+): ErrorInfo {
+  const { data } = response;
+  const retryAfter = response.headers?.['retry-after'];
+  return {
+    message: `Rate limit exceeded. ${retryAfter ? `Please wait ${retryAfter} seconds.` : 'Please try again later.'}`,
+    code: ErrorCodes.RATE_LIMIT,
+    details: { ...(typeof data === 'object' && data !== null ? data : {}), retryAfter },
+    timestamp,
+    retryable: true,
+  };
+}
+
+function handleApiResponseError(
+  response: NonNullable<ErrorWithCode['response']>,
+  timestamp: Date
+): ErrorInfo {
+  const { status, data } = response;
+
+  switch (status) {
+    case 401:
+      return {
+        message: 'Invalid API key. Please check your API key in settings.',
+        code: ErrorCodes.AUTH_ERROR,
+        details: data,
+        timestamp,
+        retryable: false,
+      };
+
+    case 429:
+      return rateLimitError(response, timestamp);
+
+    case 400:
+      return {
+        message: 'Invalid request. Please check your input and try again.',
+        code: ErrorCodes.INVALID_REQUEST,
+        details: data,
+        timestamp,
+        retryable: false,
+      };
+
+    case 500:
+    case 502:
+    case 503:
+    case 504:
+      return {
+        message: 'The AI service is temporarily unavailable. Please try again later.',
+        code: ErrorCodes.SERVER_ERROR,
+        details: data,
+        timestamp,
+        retryable: true,
+      };
+
+    default:
+      return {
+        message: `An error occurred: ${(data as { message?: string })?.message ?? status}`,
+        code: ErrorCodes.UNKNOWN,
+        details: data,
+        timestamp,
+        retryable: false,
+      };
+  }
+}
+
 export function handleApiError(error: unknown): ErrorInfo {
   const timestamp = new Date();
   const err = error as ErrorWithCode;
@@ -67,60 +133,7 @@ export function handleApiError(error: unknown): ErrorInfo {
 
   // API response errors
   if (err.response) {
-    const { status } = err.response;
-    const { data } = err.response;
-
-    switch (status) {
-      case 401:
-        return {
-          message: 'Invalid API key. Please check your API key in settings.',
-          code: ErrorCodes.AUTH_ERROR,
-          details: data,
-          timestamp,
-          retryable: false,
-        };
-
-      case 429: {
-        const retryAfter = err.response.headers?.['retry-after'];
-        return {
-          message: `Rate limit exceeded. ${retryAfter ? `Please wait ${retryAfter} seconds.` : 'Please try again later.'}`,
-          code: ErrorCodes.RATE_LIMIT,
-          details: { ...(typeof data === 'object' && data !== null ? data : {}), retryAfter },
-          timestamp,
-          retryable: true,
-        };
-      }
-
-      case 400:
-        return {
-          message: 'Invalid request. Please check your input and try again.',
-          code: ErrorCodes.INVALID_REQUEST,
-          details: data,
-          timestamp,
-          retryable: false,
-        };
-
-      case 500:
-      case 502:
-      case 503:
-      case 504:
-        return {
-          message: 'The AI service is temporarily unavailable. Please try again later.',
-          code: ErrorCodes.SERVER_ERROR,
-          details: data,
-          timestamp,
-          retryable: true,
-        };
-
-      default:
-        return {
-          message: `An error occurred: ${(data as { message?: string })?.message ?? status}`,
-          code: ErrorCodes.UNKNOWN,
-          details: data,
-          timestamp,
-          retryable: false,
-        };
-    }
+    return handleApiResponseError(err.response, timestamp);
   }
 
   // Generic errors

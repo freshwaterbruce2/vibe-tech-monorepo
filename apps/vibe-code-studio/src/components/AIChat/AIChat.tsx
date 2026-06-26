@@ -122,11 +122,15 @@ const AIChat = ({
     approvalResolversRef.current.clear();
   }, []);
 
-  const updateAgentMessage = useCallback((messageId: string, updater: (message: AIMessage) => AIMessage) => {
-    onUpdateMessage?.(messageId, updater);
-  }, [onUpdateMessage]);
+  const updateAgentMessage = useCallback(
+    (messageId: string, updater: (message: AIMessage) => AIMessage) => {
+      onUpdateMessage?.(messageId, updater);
+    },
+    [onUpdateMessage]
+  );
 
-  const handleApprovalDecision = useCallback((messageId: string, stepId: string, approved: boolean) => {
+  const handleApprovalDecision = useCallback(
+    (messageId: string, stepId: string, approved: boolean) => {
     const resolver = approvalResolversRef.current.get(stepId);
     if (!resolver) {
       return;
@@ -152,7 +156,9 @@ const AIChat = ({
       };
     });
     resolver(approved);
-  }, [updateAgentMessage]);
+    },
+    [updateAgentMessage]
+  );
 
   const getAgentPreflightError = useCallback((): string | null => {
     if (!workspaceContext?.workspaceRoot) {
@@ -372,7 +378,18 @@ const AIChat = ({
         } : existingMessage.agentTask,
       }));
     }
-  }, [taskPlanner, executionEngine, workspaceContext, onAddMessage, getAgentPreflightError, updateAgentMessage, onFileChanged, onApprovalRequired, onTaskComplete, onTaskError]);
+  }, [
+    taskPlanner,
+    executionEngine,
+    workspaceContext,
+    onAddMessage,
+    getAgentPreflightError,
+    updateAgentMessage,
+    onFileChanged,
+    onApprovalRequired,
+    onTaskComplete,
+    onTaskError,
+  ]);
 
   const handleSend = useCallback(async (overrideText?: string) => {
     const messageText = (overrideText ?? input).trim();
@@ -505,8 +522,14 @@ const AIChat = ({
       <InputContainer>
         <QuickActions>
           {quickActions.map((action) => (
-            <QuickActionButton key={action} onClick={() => handleQuickAction(action)}
-              whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>{action}</QuickActionButton>
+            <QuickActionButton
+              key={action}
+              onClick={() => handleQuickAction(action)}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {action}
+            </QuickActionButton>
           ))}
         </QuickActions>
         <InputWrapper>

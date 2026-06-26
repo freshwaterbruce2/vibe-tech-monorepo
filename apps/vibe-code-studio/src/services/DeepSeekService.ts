@@ -64,7 +64,13 @@ export class DeepSeekService {
     this.standardService = new StandardDeepSeekService({ apiKey: this.config.apiKey });
   }
 
-  async sendMessage(message: string, context?: { workspaceContext?: WorkspaceContext; currentFile?: { path: string; content: string } }): Promise<AIResponse> {
+  async sendMessage(
+    message: string,
+    context?: {
+      workspaceContext?: WorkspaceContext;
+      currentFile?: { path: string; content: string };
+    },
+  ): Promise<AIResponse> {
     // Legacy method for backward compatibility
     const contextRequest: AIContextRequest = {
       userQuery: message,
@@ -98,42 +104,11 @@ export class DeepSeekService {
 
       const startTime = Date.now();
 
-      const systemPrompt = await PromptBuilder.buildContextualSystemPrompt(request, this.config.model);
-
-      const standardMessages: ChatMessage[] = [
-        { role: 'system', content: systemPrompt },
-        ...this.conversationManager.getHistory().map(m => ({
-            role: m.role as MessageRole,
-            content: m.content
-        })),
-        { role: 'user', content: request.userQuery },
-      ];
-
-      // 🔧 FIX: Token counting and truncation
-      const contextLimit = getModelContextLimit(this.config.model);
-      const reserveTokens = this.config.maxTokens ?? 2000;
-      const maxInputTokens = contextLimit - reserveTokens;
-
-      const estimatedTokens = estimateMessageTokens(standardMessages);
-
-      logger.info(`[DeepSeek] Estimated tokens: ${estimatedTokens} / ${maxInputTokens}`);
-
-      // Truncate if exceeds limit
-      let finalMessages = standardMessages;
-      if (estimatedTokens > maxInputTokens) {
-        logger.warn(`[DeepSeek] Token limit exceeded, truncating history...`);
-        finalMessages = truncateToTokenLimit(standardMessages, maxInputTokens, {
-          keepSystemMessage: true,
-          reserveTokens,
-        });
-        logger.info(`[DeepSeek] Truncated to ${estimateMessageTokens(finalMessages)} tokens`);
-      }
+      const standardMessages = await this.buildContextMessages(request);
+      const finalMessages = this.truncateMessages(standardMessages, '[DeepSeek]');
 
       // 1. Attempt DeepSeek via standardized service (Fetch)
-      const chatOptions: AIChatOptions = {};
-      if (this.config.model) chatOptions.model = this.config.model;
-      if (this.config.temperature !== undefined) chatOptions.temperature = this.config.temperature;
-      if (this.config.maxTokens !== undefined) chatOptions.maxTokens = this.config.maxTokens;
+      const chatOptions = this.buildChatOptions();
 
       const content = await this.standardService.chat(finalMessages, chatOptions);
 
@@ -208,39 +183,13 @@ export class DeepSeekService {
         return;
       }
 
-      const systemPrompt = await PromptBuilder.buildContextualSystemPrompt(request, this.config.model);
-      streamMessages = [
-          { role: 'system', content: systemPrompt },
-          ...this.conversationManager.getHistory().map(m => ({
-              role: m.role as MessageRole,
-              content: m.content
-          })),
-          { role: 'user', content: request.userQuery }
-      ];
+      streamMessages = await this.buildContextMessages(request);
 
       // 🔧 FIX: Token counting and truncation for streaming
-      const contextLimit = getModelContextLimit(this.config.model);
-      const reserveTokens = this.config.maxTokens ?? 2000;
-      const maxInputTokens = contextLimit - reserveTokens;
-
-      const estimatedTokens = estimateMessageTokens(streamMessages);
-
-      // Truncate if exceeds limit
-      let finalStreamMessages = streamMessages;
-      if (estimatedTokens > maxInputTokens) {
-        logger.warn(`[DeepSeek Stream] Token limit exceeded, truncating...`);
-        finalStreamMessages = truncateToTokenLimit(streamMessages, maxInputTokens, {
-          keepSystemMessage: true,
-          reserveTokens,
-        });
-      }
+      const finalStreamMessages = this.truncateStreamMessages(streamMessages);
 
       // 1. Stream via standardized service (Fetch)
-      const chatOptions: AIChatOptions = {};
-      if (this.config.model) chatOptions.model = this.config.model;
-      if (this.config.temperature !== undefined) chatOptions.temperature = this.config.temperature;
-      if (this.config.maxTokens !== undefined) chatOptions.maxTokens = this.config.maxTokens;
-      if (signal) chatOptions.signal = signal;
+      const chatOptions = this.buildChatOptions(signal);
 
       const stream = this.standardService.stream(finalStreamMessages, chatOptions);
 
@@ -278,6 +227,79 @@ export class DeepSeekService {
        logger.error(`[DeepSeek] Stream Failed: ${errorInfo.message}`);
        yield `\n\nError: Stream failed. ${errorInfo.message}`;
     }
+  }
+
+  private async buildContextMessages(
+    request: AIContextRequest,
+  ): Promise<ChatMessage[]> {
+    const systemPrompt = await PromptBuilder.buildContextualSystemPrompt(
+      request,
+      this.config.model,
+    );
+    return [
+      { role: 'system', content: systemPrompt },
+      ...this.conversationManager.getHistory().map(m => ({
+        role: m.role as MessageRole,
+        content: m.content,
+      })),
+      { role: 'user', content: request.userQuery },
+    ];
+  }
+
+  private truncateMessages(
+    messages: ChatMessage[],
+    logPrefix: string,
+  ): ChatMessage[] {
+    const contextLimit = getModelContextLimit(this.config.model);
+    const reserveTokens = this.config.maxTokens ?? 2000;
+    const maxInputTokens = contextLimit - reserveTokens;
+
+    const estimatedTokens = estimateMessageTokens(messages);
+
+    logger.info(`${logPrefix} Estimated tokens: ${estimatedTokens} / ${maxInputTokens}`);
+
+    if (estimatedTokens <= maxInputTokens) {
+      return messages;
+    }
+
+    logger.warn(`${logPrefix} Token limit exceeded, truncating history...`);
+    const finalMessages = truncateToTokenLimit(messages, maxInputTokens, {
+      keepSystemMessage: true,
+      reserveTokens,
+    });
+    logger.info(`${logPrefix} Truncated to ${estimateMessageTokens(finalMessages)} tokens`);
+    return finalMessages;
+  }
+
+  private truncateStreamMessages(messages: ChatMessage[]): ChatMessage[] {
+    const contextLimit = getModelContextLimit(this.config.model);
+    const reserveTokens = this.config.maxTokens ?? 2000;
+    const maxInputTokens = contextLimit - reserveTokens;
+
+    const estimatedTokens = estimateMessageTokens(messages);
+
+    if (estimatedTokens <= maxInputTokens) {
+      return messages;
+    }
+
+    logger.warn(`[DeepSeek Stream] Token limit exceeded, truncating...`);
+    return truncateToTokenLimit(messages, maxInputTokens, {
+      keepSystemMessage: true,
+      reserveTokens,
+    });
+  }
+
+  private buildChatOptions(signal?: AbortSignal): AIChatOptions {
+    const chatOptions: AIChatOptions = {};
+    if (this.config.model) chatOptions.model = this.config.model;
+    if (this.config.temperature !== undefined) {
+      chatOptions.temperature = this.config.temperature;
+    }
+    if (this.config.maxTokens !== undefined) {
+      chatOptions.maxTokens = this.config.maxTokens;
+    }
+    if (signal) chatOptions.signal = signal;
+    return chatOptions;
   }
 
   // Helper methods required by legacy sendMessage

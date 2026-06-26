@@ -6,6 +6,50 @@ import type { TechnicalDebt } from './types';
 export class DebtAnalyzer {
   constructor(private readonly aiService: IAIService) {}
 
+  private async runAnalysis(debtPrompt: string): Promise<string> {
+    const contextRequest = {
+      userQuery: debtPrompt,
+      relatedFiles: [],
+      workspaceContext: {
+        rootPath: '/',
+        totalFiles: 0,
+        languages: ['JavaScript', 'TypeScript'],
+        testFiles: 0,
+        projectStructure: {},
+        dependencies: {},
+        exports: {},
+        symbols: {},
+        lastIndexed: new Date(),
+        summary: 'Technical debt analysis context',
+      },
+      conversationHistory: [],
+    };
+
+    const systemPrompt = await PromptBuilder.buildContextualSystemPrompt(
+      contextRequest,
+      'gpt-4o'
+    );
+    const messages: ChatMessage[] = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: debtPrompt }
+    ];
+
+    let analysis = '';
+    if (this.aiService.stream) {
+      for await (const chunk of this.aiService.stream(messages)) {
+        analysis += chunk;
+      }
+    } else {
+      // Fallback to complete if stream is not available
+      const response = await this.aiService.complete({
+        messages,
+        model: 'gpt-4o' // Default model
+      });
+      analysis = response.content;
+    }
+    return analysis;
+  }
+
   async analyze(_rootPath: string): Promise<TechnicalDebt[]> {
     const debtPrompt = `Analyze the codebase for technical debt:
 
@@ -27,44 +71,7 @@ For each issue, provide:
 - Impact if not fixed (low/medium/high)`;
 
     try {
-      const contextRequest = {
-        userQuery: debtPrompt,
-        relatedFiles: [],
-        workspaceContext: {
-          rootPath: '/',
-          totalFiles: 0,
-          languages: ['JavaScript', 'TypeScript'],
-          testFiles: 0,
-          projectStructure: {},
-          dependencies: {},
-          exports: {},
-          symbols: {},
-          lastIndexed: new Date(),
-          summary: 'Technical debt analysis context',
-        },
-        conversationHistory: [],
-      };
-
-      const systemPrompt = await PromptBuilder.buildContextualSystemPrompt(contextRequest, 'gpt-4o');
-      const messages: ChatMessage[] = [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: debtPrompt }
-      ];
-
-      let analysis = '';
-      if (this.aiService.stream) {
-          for await (const chunk of this.aiService.stream(messages)) {
-            analysis += chunk;
-          }
-      } else {
-          // Fallback to complete if stream is not available
-          const response = await this.aiService.complete({
-              messages,
-              model: 'gpt-4o' // Default model
-          });
-          analysis = response.content;
-      }
-
+      const analysis = await this.runAnalysis(debtPrompt);
       return this.parseDebtAnalysis(analysis);
     } catch (error) {
       logger.error('Technical debt analysis failed:', error);

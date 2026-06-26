@@ -270,7 +270,8 @@ export const CommandPalette = ({ isOpen, onClose, commands }: CommandPaletteProp
         </SearchContainer>
 
         <CommandList>
-          {Object.entries(groupedCommands).map(([category, categoryCommands]: [string, Command[]]) => (
+          {Object.entries(groupedCommands).map(
+            ([category, categoryCommands]: [string, Command[]]) => (
             <div key={category}>
               <CommandCategory>{category}</CommandCategory>
               {categoryCommands.map((cmd) => {
@@ -308,7 +309,8 @@ export const CommandPalette = ({ isOpen, onClose, commands }: CommandPaletteProp
                 );
               })}
             </div>
-          ))}
+            )
+          )}
         </CommandList>
       </Container>
     </Overlay>

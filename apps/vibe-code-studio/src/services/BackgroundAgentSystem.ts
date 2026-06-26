@@ -244,37 +244,7 @@ export class BackgroundAgentSystem extends EventEmitter {
       // Step 2: Execute the task with callbacks
       logger.debug(`[BackgroundAgent] Executing ${task.totalSteps} steps`);
 
-      const callbacks: ExecutionCallbacks = {
-        onStepStart: (step) => {
-          task.currentStep = (task.currentStep ?? 0) + 1;
-          task.stepDescription = step.description;
-          this.emit('stepStart', task, step);
-        },
-        onStepComplete: (step, result) => {
-          const progress = 10 + ((task.currentStep ?? 0) / (task.totalSteps ?? 1)) * 85;
-          task.progress = Math.min(95, progress);
-          this.emit('stepComplete', task, step, result);
-          this.emit('progress', task);
-        },
-        onStepError: (step, error) => {
-          logger.error(`[BackgroundAgent] Step error:`, error);
-          this.emit('stepError', task, step, error);
-        },
-        onTaskProgress: (completedSteps, totalSteps) => {
-          task.currentStep = completedSteps;
-          task.totalSteps = totalSteps;
-          const progress = 10 + (completedSteps / totalSteps) * 85;
-          task.progress = Math.min(95, progress);
-          this.emit('progress', task);
-        },
-        onTaskComplete: (_completedTask) => {
-          logger.debug(`[BackgroundAgent] Task completed successfully`);
-        },
-        onTaskError: (_failedTask, error) => {
-          logger.error(`[BackgroundAgent] Task error:`, error);
-        }
-      };
-
+      const callbacks = this.buildExecutionCallbacks(task);
       const executedTask = await this.executionEngine.executeTask(planResponse.task, callbacks);
 
       // Check if cancelled during execution
@@ -291,30 +261,79 @@ export class BackgroundAgentSystem extends EventEmitter {
       this.emit('completed', task);
 
     } catch (error) {
-      // Check if the task was cancelled
-      const currentTask = this.tasks.get(task.id);
-      if (currentTask?.status === 'cancelled') {
-        // Don't mark as failed if it was cancelled
-        task.endTime = Date.now();
-        this.emit('cancelled', task);
-      } else {
-        task.status = 'failed';
-        task.endTime = Date.now();
-        task.error = error as Error;
-        this.emit('failed', task);
-
-        // Retry if configured
-        if (options.retryOnFailure && (!options.maxRetries || (task.currentStep ?? 0) < options.maxRetries)) {
-          logger.debug(`[BackgroundAgent] Retrying task (attempt ${(task.currentStep ?? 0) + 1})`);
-          task.status = 'pending';
-          task.currentStep = (task.currentStep ?? 0) + 1;
-          this.queue.unshift({ task, options });
-        }
-      }
+      this.handleTaskFailure(task, error as Error, options);
     } finally {
       this.running.delete(task.id);
       this.abortControllers.delete(task.id);
       this.processQueue();
+    }
+  }
+
+  /**
+   * Build the execution callbacks that report task progress/errors.
+   */
+  private buildExecutionCallbacks(task: BackgroundTask): ExecutionCallbacks {
+    return {
+      onStepStart: (step) => {
+        task.currentStep = (task.currentStep ?? 0) + 1;
+        task.stepDescription = step.description;
+        this.emit('stepStart', task, step);
+      },
+      onStepComplete: (step, result) => {
+        const progress = 10 + ((task.currentStep ?? 0) / (task.totalSteps ?? 1)) * 85;
+        task.progress = Math.min(95, progress);
+        this.emit('stepComplete', task, step, result);
+        this.emit('progress', task);
+      },
+      onStepError: (step, error) => {
+        logger.error(`[BackgroundAgent] Step error:`, error);
+        this.emit('stepError', task, step, error);
+      },
+      onTaskProgress: (completedSteps, totalSteps) => {
+        task.currentStep = completedSteps;
+        task.totalSteps = totalSteps;
+        const progress = 10 + (completedSteps / totalSteps) * 85;
+        task.progress = Math.min(95, progress);
+        this.emit('progress', task);
+      },
+      onTaskComplete: (_completedTask) => {
+        logger.debug(`[BackgroundAgent] Task completed successfully`);
+      },
+      onTaskError: (_failedTask, error) => {
+        logger.error(`[BackgroundAgent] Task error:`, error);
+      }
+    };
+  }
+
+  /**
+   * Handle a failed task: mark cancelled/failed and re-queue for retry if configured.
+   */
+  private handleTaskFailure(
+    task: BackgroundTask,
+    error: Error,
+    options: BackgroundTaskOptions
+  ): void {
+    // Check if the task was cancelled
+    const currentTask = this.tasks.get(task.id);
+    if (currentTask?.status === 'cancelled') {
+      // Don't mark as failed if it was cancelled
+      task.endTime = Date.now();
+      this.emit('cancelled', task);
+      return;
+    }
+
+    task.status = 'failed';
+    task.endTime = Date.now();
+    task.error = error;
+    this.emit('failed', task);
+
+    // Retry if configured
+    const canRetry = !options.maxRetries || (task.currentStep ?? 0) < options.maxRetries;
+    if (options.retryOnFailure && canRetry) {
+      logger.debug(`[BackgroundAgent] Retrying task (attempt ${(task.currentStep ?? 0) + 1})`);
+      task.status = 'pending';
+      task.currentStep = (task.currentStep ?? 0) + 1;
+      this.queue.unshift({ task, options });
     }
   }
 

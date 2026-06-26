@@ -37,8 +37,36 @@ interface UseGitReturn {
   discardChanges: (filePath: string) => Promise<void>;
 }
 
-export function useGit(workingDirectory?: string): UseGitReturn {
-  const [gitService] = useState(() => new GitService(workingDirectory ?? '/'));
+interface GitState {
+  isGitRepo: boolean;
+  status: GitStatus | null;
+  commits: GitCommit[];
+  branches: GitBranch[];
+  remotes: GitRemote[];
+  isLoading: boolean;
+  error: string | null;
+}
+
+interface GitStateSetters {
+  setIsGitRepo: React.Dispatch<React.SetStateAction<boolean>>;
+  setStatus: React.Dispatch<React.SetStateAction<GitStatus | null>>;
+  setCommits: React.Dispatch<React.SetStateAction<GitCommit[]>>;
+  setBranches: React.Dispatch<React.SetStateAction<GitBranch[]>>;
+  setRemotes: React.Dispatch<React.SetStateAction<GitRemote[]>>;
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  setError: React.Dispatch<React.SetStateAction<string | null>>;
+}
+
+interface GitRefreshers {
+  checkGitRepo: () => Promise<boolean>;
+  refreshStatus: () => Promise<void>;
+  refreshCommits: () => Promise<void>;
+  refreshBranches: () => Promise<void>;
+  refreshRemotes: () => Promise<void>;
+  refresh: () => Promise<void>;
+}
+
+function useGitState(): GitState & GitStateSetters {
   const [isGitRepo, setIsGitRepo] = useState(false);
   const [status, setStatus] = useState<GitStatus | null>(null);
   const [commits, setCommits] = useState<GitCommit[]>([]);
@@ -47,7 +75,110 @@ export function useGit(workingDirectory?: string): UseGitReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Check if directory is a git repository
+  return {
+    isGitRepo,
+    status,
+    commits,
+    branches,
+    remotes,
+    isLoading,
+    error,
+    setIsGitRepo,
+    setStatus,
+    setCommits,
+    setBranches,
+    setRemotes,
+    setIsLoading,
+    setError,
+  };
+}
+
+/**
+ * Run a refresh operation guarded by isGitRepo, logging (and optionally surfacing) errors.
+ */
+async function runGuardedRefresh(
+  isGitRepo: boolean,
+  load: () => Promise<void>,
+  errorLabel: string,
+  setError?: SetError
+): Promise<void> {
+  if (!isGitRepo) {
+    return;
+  }
+
+  try {
+    await load();
+  } catch (err) {
+    if (setError) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+    logger.error(errorLabel, err);
+  }
+}
+
+type GitDataRefreshers = Pick<
+  GitRefreshers,
+  'refreshStatus' | 'refreshCommits' | 'refreshBranches' | 'refreshRemotes'
+>;
+
+function useGitDataRefreshers(
+  gitService: GitService,
+  isGitRepo: boolean,
+  setters: GitStateSetters
+): GitDataRefreshers {
+  const { setStatus, setCommits, setBranches, setRemotes, setError } = setters;
+
+  const refreshStatus = useCallback(
+    () =>
+      runGuardedRefresh(
+        isGitRepo,
+        async () => setStatus(await gitService.getStatus()),
+        'Error refreshing git status:',
+        setError
+      ),
+    [gitService, isGitRepo, setStatus, setError]
+  );
+
+  const refreshCommits = useCallback(
+    () =>
+      runGuardedRefresh(
+        isGitRepo,
+        async () => setCommits(await gitService.getLog(20)),
+        'Error refreshing commits:'
+      ),
+    [gitService, isGitRepo, setCommits]
+  );
+
+  const refreshBranches = useCallback(
+    () =>
+      runGuardedRefresh(
+        isGitRepo,
+        async () => setBranches(await gitService.getBranches()),
+        'Error refreshing branches:'
+      ),
+    [gitService, isGitRepo, setBranches]
+  );
+
+  const refreshRemotes = useCallback(
+    () =>
+      runGuardedRefresh(
+        isGitRepo,
+        async () => setRemotes(await gitService.getRemotes()),
+        'Error refreshing remotes:'
+      ),
+    [gitService, isGitRepo, setRemotes]
+  );
+
+  return { refreshStatus, refreshCommits, refreshBranches, refreshRemotes };
+}
+
+function useGitRefreshers(
+  gitService: GitService,
+  isGitRepo: boolean,
+  setters: GitStateSetters
+): GitRefreshers {
+  const { setIsGitRepo, setIsLoading, setError } = setters;
+
   const checkGitRepo = useCallback(async () => {
     try {
       const isRepo = await gitService.isGitRepository();
@@ -57,66 +188,14 @@ export function useGit(workingDirectory?: string): UseGitReturn {
       logger.error('Error checking git repository:', err);
       return false;
     }
-  }, [gitService]);
+  }, [gitService, setIsGitRepo]);
 
-  // Refresh git status
-  const refreshStatus = useCallback(async () => {
-    if (!isGitRepo) {
-      return;
-    }
+  const { refreshStatus, refreshCommits, refreshBranches, refreshRemotes } = useGitDataRefreshers(
+    gitService,
+    isGitRepo,
+    setters
+  );
 
-    try {
-      const newStatus = await gitService.getStatus();
-      setStatus(newStatus);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      logger.error('Error refreshing git status:', err);
-    }
-  }, [gitService, isGitRepo]);
-
-  // Refresh commits
-  const refreshCommits = useCallback(async () => {
-    if (!isGitRepo) {
-      return;
-    }
-
-    try {
-      const newCommits = await gitService.getLog(20);
-      setCommits(newCommits);
-    } catch (err) {
-      logger.error('Error refreshing commits:', err);
-    }
-  }, [gitService, isGitRepo]);
-
-  // Refresh branches
-  const refreshBranches = useCallback(async () => {
-    if (!isGitRepo) {
-      return;
-    }
-
-    try {
-      const newBranches = await gitService.getBranches();
-      setBranches(newBranches);
-    } catch (err) {
-      logger.error('Error refreshing branches:', err);
-    }
-  }, [gitService, isGitRepo]);
-
-  // Refresh remotes
-  const refreshRemotes = useCallback(async () => {
-    if (!isGitRepo) {
-      return;
-    }
-
-    try {
-      const newRemotes = await gitService.getRemotes();
-      setRemotes(newRemotes);
-    } catch (err) {
-      logger.error('Error refreshing remotes:', err);
-    }
-  }, [gitService, isGitRepo]);
-
-  // Refresh all git data
   const refresh = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -131,182 +210,164 @@ export function useGit(workingDirectory?: string): UseGitReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [checkGitRepo, refreshStatus, refreshCommits, refreshBranches, refreshRemotes]);
+  }, [
+    checkGitRepo,
+    refreshStatus,
+    refreshCommits,
+    refreshBranches,
+    refreshRemotes,
+    setIsLoading,
+    setError,
+  ]);
 
-  // Initialize git repository
-  const init = useCallback(async () => {
-    try {
-      await gitService.init();
-      setIsGitRepo(true);
-      await refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      throw err;
-    }
-  }, [gitService, refresh]);
+  return { checkGitRepo, refreshStatus, refreshCommits, refreshBranches, refreshRemotes, refresh };
+}
 
-  // Stage files
+type GitActions = Omit<
+  UseGitReturn,
+  'isGitRepo' | 'status' | 'commits' | 'branches' | 'remotes' | 'isLoading' | 'error' | 'refresh'
+>;
+
+type SetError = React.Dispatch<React.SetStateAction<string | null>>;
+
+/**
+ * Run a git operation followed by a refresh, surfacing errors via setError and rethrowing.
+ */
+async function runGitOp(
+  setError: SetError,
+  operation: () => Promise<unknown>,
+  afterRefresh: () => Promise<void>
+): Promise<void> {
+  try {
+    await operation();
+    await afterRefresh();
+  } catch (err) {
+    setError(err instanceof Error ? err.message : String(err));
+    throw err;
+  }
+}
+
+type GitStagingActions = Pick<
+  GitActions,
+  'init' | 'add' | 'addAll' | 'reset' | 'commit' | 'discardChanges'
+>;
+
+function useGitStagingActions(
+  gitService: GitService,
+  refreshers: GitRefreshers,
+  setIsGitRepo: React.Dispatch<React.SetStateAction<boolean>>,
+  setError: SetError
+): GitStagingActions {
+  const { refresh, refreshStatus, refreshCommits } = refreshers;
+
+  const init = useCallback(
+    () =>
+      runGitOp(
+        setError,
+        async () => {
+          await gitService.init();
+          setIsGitRepo(true);
+        },
+        refresh
+      ),
+    [gitService, refresh, setIsGitRepo, setError]
+  );
+
   const add = useCallback(
-    async (files: string | string[]) => {
-      try {
-        await gitService.add(files);
-        await refreshStatus();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-        throw err;
-      }
-    },
-    [gitService, refreshStatus]
+    (files: string | string[]) =>
+      runGitOp(setError, () => gitService.add(files), refreshStatus),
+    [gitService, refreshStatus, setError]
   );
 
-  // Stage all changes
-  const addAll = useCallback(async () => {
-    try {
-      await gitService.addAll();
-      await refreshStatus();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      throw err;
-    }
-  }, [gitService, refreshStatus]);
+  const addAll = useCallback(
+    () => runGitOp(setError, () => gitService.addAll(), refreshStatus),
+    [gitService, refreshStatus, setError]
+  );
 
-  // Unstage files
   const reset = useCallback(
-    async (files?: string | string[]) => {
-      try {
-        await gitService.reset(files);
-        await refreshStatus();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-        throw err;
-      }
-    },
-    [gitService, refreshStatus]
+    (files?: string | string[]) =>
+      runGitOp(setError, () => gitService.reset(files), refreshStatus),
+    [gitService, refreshStatus, setError]
   );
 
-  // Commit changes
   const commit = useCallback(
-    async (message: string) => {
-      try {
-        await gitService.commit(message);
+    (message: string) =>
+      runGitOp(setError, () => gitService.commit(message), async () => {
         await Promise.all([refreshStatus(), refreshCommits()]);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-        throw err;
-      }
-    },
-    [gitService, refreshStatus, refreshCommits]
+      }),
+    [gitService, refreshStatus, refreshCommits, setError]
   );
 
-  // Push changes
-  const push = useCallback(
-    async (remote: string = 'origin', branch?: string) => {
-      try {
-        await gitService.push(remote, branch);
-        await refreshStatus();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-        throw err;
-      }
-    },
-    [gitService, refreshStatus]
-  );
-
-  // Pull changes
-  const pull = useCallback(
-    async (remote: string = 'origin', branch?: string) => {
-      try {
-        await gitService.pull(remote, branch);
-        await refresh();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-        throw err;
-      }
-    },
-    [gitService, refresh]
-  );
-
-  // Fetch updates
-  const fetch = useCallback(
-    async (remote: string = 'origin') => {
-      try {
-        await gitService.fetch(remote);
-        await refreshStatus();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-        throw err;
-      }
-    },
-    [gitService, refreshStatus]
-  );
-
-  // Create branch
-  const createBranch = useCallback(
-    async (name: string) => {
-      try {
-        await gitService.createBranch(name);
-        await refreshBranches();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-        throw err;
-      }
-    },
-    [gitService, refreshBranches]
-  );
-
-  // Checkout branch
-  const checkout = useCallback(
-    async (branch: string) => {
-      try {
-        await gitService.checkout(branch);
-        await refresh();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-        throw err;
-      }
-    },
-    [gitService, refresh]
-  );
-
-  // Stash changes
-  const stash = useCallback(
-    async (message?: string) => {
-      try {
-        await gitService.stash(message);
-        await refreshStatus();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-        throw err;
-      }
-    },
-    [gitService, refreshStatus]
-  );
-
-  // Pop stash
-  const stashPop = useCallback(async () => {
-    try {
-      await gitService.stashPop();
-      await refreshStatus();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      throw err;
-    }
-  }, [gitService, refreshStatus]);
-
-  // Discard changes
   const discardChanges = useCallback(
-    async (filePath: string) => {
-      try {
-        await gitService.discardChanges(filePath);
-        await refreshStatus();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-        throw err;
-      }
-    },
-    [gitService, refreshStatus]
+    (filePath: string) =>
+      runGitOp(setError, () => gitService.discardChanges(filePath), refreshStatus),
+    [gitService, refreshStatus, setError]
   );
 
+  return { init, add, addAll, reset, commit, discardChanges };
+}
+
+type GitRemoteActions = Pick<
+  GitActions,
+  'push' | 'pull' | 'fetch' | 'createBranch' | 'checkout' | 'stash' | 'stashPop'
+>;
+
+function useGitRemoteActions(
+  gitService: GitService,
+  refreshers: GitRefreshers,
+  setError: SetError
+): GitRemoteActions {
+  const { refresh, refreshStatus, refreshBranches } = refreshers;
+
+  const push = useCallback(
+    (remote: string = 'origin', branch?: string) =>
+      runGitOp(setError, () => gitService.push(remote, branch), refreshStatus),
+    [gitService, refreshStatus, setError]
+  );
+
+  const pull = useCallback(
+    (remote: string = 'origin', branch?: string) =>
+      runGitOp(setError, () => gitService.pull(remote, branch), refresh),
+    [gitService, refresh, setError]
+  );
+
+  const fetch = useCallback(
+    (remote: string = 'origin') =>
+      runGitOp(setError, () => gitService.fetch(remote), refreshStatus),
+    [gitService, refreshStatus, setError]
+  );
+
+  const createBranch = useCallback(
+    (name: string) =>
+      runGitOp(setError, () => gitService.createBranch(name), refreshBranches),
+    [gitService, refreshBranches, setError]
+  );
+
+  const checkout = useCallback(
+    (branch: string) =>
+      runGitOp(setError, () => gitService.checkout(branch), refresh),
+    [gitService, refresh, setError]
+  );
+
+  const stash = useCallback(
+    (message?: string) =>
+      runGitOp(setError, () => gitService.stash(message), refreshStatus),
+    [gitService, refreshStatus, setError]
+  );
+
+  const stashPop = useCallback(
+    () => runGitOp(setError, () => gitService.stashPop(), refreshStatus),
+    [gitService, refreshStatus, setError]
+  );
+
+  return { push, pull, fetch, createBranch, checkout, stash, stashPop };
+}
+
+function useGitAutoLoad(
+  isGitRepo: boolean,
+  refresh: () => Promise<void>,
+  refreshStatus: () => Promise<void>
+): void {
   // Initial load
   useEffect(() => {
     refresh();
@@ -323,6 +384,23 @@ export function useGit(workingDirectory?: string): UseGitReturn {
 
     return () => clearInterval(interval);
   }, [isGitRepo, refreshStatus]);
+}
+
+export function useGit(workingDirectory?: string): UseGitReturn {
+  const [gitService] = useState(() => new GitService(workingDirectory ?? '/'));
+  const gitState = useGitState();
+  const { isGitRepo, status, commits, branches, remotes, isLoading, error } = gitState;
+
+  const refreshers = useGitRefreshers(gitService, isGitRepo, gitState);
+  const stagingActions = useGitStagingActions(
+    gitService,
+    refreshers,
+    gitState.setIsGitRepo,
+    gitState.setError
+  );
+  const remoteActions = useGitRemoteActions(gitService, refreshers, gitState.setError);
+
+  useGitAutoLoad(isGitRepo, refreshers.refresh, refreshers.refreshStatus);
 
   return {
     // State
@@ -335,20 +413,9 @@ export function useGit(workingDirectory?: string): UseGitReturn {
     error,
 
     // Actions
-    refresh,
-    init,
-    add,
-    addAll,
-    reset,
-    commit,
-    push,
-    pull,
-    fetch,
-    createBranch,
-    checkout,
-    stash,
-    stashPop,
-    discardChanges,
+    refresh: refreshers.refresh,
+    ...stagingActions,
+    ...remoteActions,
   };
 }
 

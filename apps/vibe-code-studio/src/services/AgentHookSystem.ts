@@ -127,7 +127,11 @@ export class AgentHookSystem {
   /**
    * Execute error hooks
    */
-  async executeErrorHooks(agentId: string, error: Error, context: HookContext): Promise<HookExecutionResult> {
+  async executeErrorHooks(
+    agentId: string,
+    error: Error,
+    context: HookContext
+  ): Promise<HookExecutionResult> {
     const hooks = this.getErrorHooks(agentId);
     const errorContext = { ...context, error };
     return this.executeHooks(hooks, errorContext);
@@ -136,7 +140,10 @@ export class AgentHookSystem {
   /**
    * Execute hook chain
    */
-  private async executeHooks(hooks: HookFunction[], context: HookContext): Promise<HookExecutionResult> {
+  private async executeHooks(
+    hooks: HookFunction[],
+    context: HookContext
+  ): Promise<HookExecutionResult> {
     const errors: Error[] = [];
 
     for (const hook of hooks) {

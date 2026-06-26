@@ -156,14 +156,8 @@ function calculateReadingTime(content: string): {
   };
 }
 
-// Enhanced preview with syntax highlighting simulation
-function generatePreview(content: string): string {
-  const html = parseMarkdown(content, { breaks: true, gfm: true });
-
-  // Add preview wrapper and basic styles
-  return `
-    <div class="markdown-preview">
-      <style>
+// Styles for the markdown preview wrapper
+const MARKDOWN_PREVIEW_STYLES = `
         .markdown-preview {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           line-height: 1.6;
@@ -229,7 +223,16 @@ function generatePreview(content: string): string {
           background: #27272a;
           font-weight: 600;
         }
-      </style>
+`;
+
+// Enhanced preview with syntax highlighting simulation
+function generatePreview(content: string): string {
+  const html = parseMarkdown(content, { breaks: true, gfm: true });
+
+  // Add preview wrapper and basic styles
+  return `
+    <div class="markdown-preview">
+      <style>${MARKDOWN_PREVIEW_STYLES}</style>
       ${html}
     </div>
   `;

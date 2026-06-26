@@ -70,7 +70,9 @@ export class ElectronService {
     }
   }
 
-  async readDir(dirPath: string): Promise<Array<{ name: string; path: string; isDirectory: boolean; isFile: boolean }>> {
+  async readDir(
+    dirPath: string,
+  ): Promise<Array<{ name: string; path: string; isDirectory: boolean; isFile: boolean }>> {
     if (this.isTauri()) {
       try {
         const entries = await readDir(dirPath);
@@ -177,7 +179,15 @@ export class ElectronService {
     return result.exists;
   }
 
-  async stat(targetPath: string): Promise<{ size: number; isFile: boolean; isDirectory: boolean; birthtime?: Date; mtime?: Date }> {
+  async stat(
+    targetPath: string,
+  ): Promise<{
+    size: number;
+    isFile: boolean;
+    isDirectory: boolean;
+    birthtime?: Date;
+    mtime?: Date;
+  }> {
     if (this.isTauri()) {
       const info = await stat(targetPath);
       const infoRec = info as unknown as Record<string, unknown>;
@@ -209,7 +219,9 @@ export class ElectronService {
   }
 
   // Dialog Operations
-  async openFileDialog(options?: Record<string, unknown>): Promise<{ canceled: boolean; filePaths: string[] }> {
+  async openFileDialog(
+    options?: Record<string, unknown>,
+  ): Promise<{ canceled: boolean; filePaths: string[] }> {
     if (this.isTauri()) {
       const { open } = await import('@tauri-apps/plugin-dialog');
       const result = await open({
@@ -232,7 +244,9 @@ export class ElectronService {
     };
   }
 
-  async openFolderDialog(options?: Record<string, unknown>): Promise<{ canceled: boolean; filePaths: string[] }> {
+  async openFolderDialog(
+    options?: Record<string, unknown>,
+  ): Promise<{ canceled: boolean; filePaths: string[] }> {
     if (this.isTauri()) {
       const { open } = await import('@tauri-apps/plugin-dialog');
       const result = await open({
@@ -258,7 +272,9 @@ export class ElectronService {
     };
   }
 
-  async saveFileDialog(options?: Record<string, unknown>): Promise<{ canceled: boolean; filePath?: string }> {
+  async saveFileDialog(
+    options?: Record<string, unknown>,
+  ): Promise<{ canceled: boolean; filePath?: string }> {
     if (this.isTauri()) {
       const { save } = await import('@tauri-apps/plugin-dialog');
       const result = await save({
@@ -281,7 +297,10 @@ export class ElectronService {
   }
 
   // Shell Operations
-  async executeCommand(command: string, cwd?: string): Promise<{ stdout: string; stderr: string; code: number }> {
+  async executeCommand(
+    command: string,
+    cwd?: string,
+  ): Promise<{ stdout: string; stderr: string; code: number }> {
     if (this.isTauri()) {
       const { Command } = await import('@tauri-apps/plugin-shell');
       try {

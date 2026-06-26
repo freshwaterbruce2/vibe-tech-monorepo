@@ -102,8 +102,10 @@ interface EditorProps {
   workspaceContext?: WorkspaceContext;
   getFileContext?: ((file: EditorFile) => unknown[]) | undefined;
   settings?: EditorSettings | undefined;
-  liveStream?: { setEditor?: (editor: editor.IStandaloneCodeEditor) => void }; // PHASE 7: LiveEditorStream instance for live code streaming
-  onEditorMount?: (editor: editor.IStandaloneCodeEditor, monaco: typeof Monaco) => void; // Callback when editor mounts (for Auto-Fix)
+  // PHASE 7: LiveEditorStream instance for live code streaming
+  liveStream?: { setEditor?: (editor: editor.IStandaloneCodeEditor) => void };
+  // Callback when editor mounts (for Auto-Fix)
+  onEditorMount?: (editor: editor.IStandaloneCodeEditor, monaco: typeof Monaco) => void;
   modelStrategy?: 'fast' | 'balanced' | 'accurate' | 'adaptive'; // Multi-model strategy
   currentAIModel?: string; // Current AI model being used
 }
@@ -125,13 +127,21 @@ const Editor = ({
   currentAIModel = 'moonshot/kimi-2.5-pro',
 }: EditorProps) => {
   const [findReplaceOpen, setFindReplaceOpen] = useState(false);
-  const [findMatches, setFindMatches] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
+  const [findMatches, setFindMatches] = useState<{ current: number; total: number }>({
+    current: 0,
+    total: 0,
+  });
   const decorationsRef = useRef<string[]>([]);
 
   // Week 3: Completion tracking state
   const [hasActiveCompletion, setHasActiveCompletion] = useState(false);
   const [showCompletionStats, setShowCompletionStats] = useState(false);
-  const [completionStats] = useState({ totalSuggestions: 0, accepted: 0, rejected: 0, avgLatency: 0 });
+  const [completionStats] = useState({
+    totalSuggestions: 0,
+    accepted: 0,
+    rejected: 0,
+    avgLatency: 0,
+  });
 
   // Week 4: Prefetch tracking state (kept for compatibility)
   const [showPrefetchIndicator] = useState(false);
@@ -150,13 +160,19 @@ const Editor = ({
   const [inlineEditPos, setInlineEditPos] = useState({ top: 0, left: 0 });
 
   // Hook for editor setup and reference
-  const { editorRef, handleEditorDidMount } = useEditorSetup(file, undefined, onEditorMount, liveStream);
+  const { editorRef, handleEditorDidMount } = useEditorSetup(
+    file,
+    undefined,
+    onEditorMount,
+    liveStream
+  );
 
   // Hook for inline AI editing
   useInlineEdit(editorRef);
 
   // Hook for editor actions
-  const { toggleComment, duplicateLine, moveLineUp, moveLineDown, triggerAiCompletion } = useEditorActions(editorRef);
+  const { toggleComment, duplicateLine, moveLineUp, moveLineDown, triggerAiCompletion } =
+    useEditorActions(editorRef);
 
   // Cleanup Monacopilot on unmount (handled inside useEditorSetup)
 
@@ -351,7 +367,12 @@ const Editor = ({
 
   return (
     <EditorContainer>
-      <FileTabs files={openFiles} activeFile={file} onFileSelect={onFileSelect} onCloseFile={onCloseFile} />
+      <FileTabs
+        files={openFiles}
+        activeFile={file}
+        onFileSelect={onFileSelect}
+        onCloseFile={onCloseFile}
+      />
 
       <MonacoContainer>
         {file ? (

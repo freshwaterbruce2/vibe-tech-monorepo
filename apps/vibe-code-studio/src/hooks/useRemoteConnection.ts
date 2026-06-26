@@ -3,8 +3,12 @@ import type { RemoteConnection } from '../types/remote';
 import { remoteConnectionManager } from '../services/RemoteConnectionManager';
 
 export function useRemoteConnection() {
-  const [connections, setConnections] = useState<RemoteConnection[]>(remoteConnectionManager.getSavedConnections());
-  const [activeConnection, setActiveConnection] = useState<RemoteConnection | null>(remoteConnectionManager.getActiveConnection());
+  const [connections, setConnections] = useState<RemoteConnection[]>(
+    remoteConnectionManager.getSavedConnections()
+  );
+  const [activeConnection, setActiveConnection] = useState<RemoteConnection | null>(
+    remoteConnectionManager.getActiveConnection()
+  );
 
   useEffect(() => {
     const handleChange = () => {

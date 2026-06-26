@@ -10,10 +10,51 @@ export interface NotificationItem {
   duration?: number | undefined;
 }
 
+type AddNotification = (
+  type: NotificationType,
+  title: string,
+  message?: string,
+  duration?: number
+) => string;
+
+type ShowNotification = (title: string, message?: string) => string;
+
+interface NotificationShortcuts {
+  showSuccess: ShowNotification;
+  showError: ShowNotification;
+  showWarning: ShowNotification;
+  showInfo: ShowNotification;
+}
+
+const useNotificationShortcuts = (addNotification: AddNotification): NotificationShortcuts => {
+  const showSuccess = useCallback(
+    (title: string, message?: string) => addNotification('success', title, message),
+    [addNotification]
+  );
+
+  const showError = useCallback(
+    // Errors stay longer
+    (title: string, message?: string) => addNotification('error', title, message, 8000),
+    [addNotification]
+  );
+
+  const showWarning = useCallback(
+    (title: string, message?: string) => addNotification('warning', title, message),
+    [addNotification]
+  );
+
+  const showInfo = useCallback(
+    (title: string, message?: string) => addNotification('info', title, message),
+    [addNotification]
+  );
+
+  return { showSuccess, showError, showWarning, showInfo };
+};
+
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
-  const addNotification = useCallback(
+  const addNotification = useCallback<AddNotification>(
     (type: NotificationType, title: string, message?: string, duration = 5000) => {
       const id = `notification-${Date.now()}-${Math.random()}`;
       const notification: NotificationItem = {
@@ -34,33 +75,8 @@ export const useNotifications = () => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   }, []);
 
-  const showSuccess = useCallback(
-    (title: string, message?: string) => {
-      return addNotification('success', title, message);
-    },
-    [addNotification]
-  );
-
-  const showError = useCallback(
-    (title: string, message?: string) => {
-      return addNotification('error', title, message, 8000); // Errors stay longer
-    },
-    [addNotification]
-  );
-
-  const showWarning = useCallback(
-    (title: string, message?: string) => {
-      return addNotification('warning', title, message);
-    },
-    [addNotification]
-  );
-
-  const showInfo = useCallback(
-    (title: string, message?: string) => {
-      return addNotification('info', title, message);
-    },
-    [addNotification]
-  );
+  const { showSuccess, showError, showWarning, showInfo } =
+    useNotificationShortcuts(addNotification);
 
   return {
     notifications,

@@ -26,7 +26,11 @@ export class WorkspaceDependencyIndexer {
     }
   }
 
-  private resolveRelativePath(currentPath: string, relativePath: string, files: Map<string, FileAnalysis>): string {
+  private resolveRelativePath(
+    currentPath: string,
+    relativePath: string,
+    files: Map<string, FileAnalysis>
+  ): string {
     const currentDir = currentPath.split('/').slice(0, -1).join('/');
     const resolved = `${currentDir}/${relativePath}`;
 

@@ -63,68 +63,88 @@ export class DesignTokenManager {
    */
   private getDefaultTokens(): DesignTokens {
     return {
-      colors: [
-        { name: 'primary', value: '#3b82f6', description: 'Primary brand color' },
-        { name: 'primary-foreground', value: '#ffffff', description: 'Text on primary' },
-        { name: 'secondary', value: '#64748b', description: 'Secondary accent' },
-        { name: 'secondary-foreground', value: '#ffffff', description: 'Text on secondary' },
-        { name: 'background', value: '#ffffff', description: 'Page background' },
-        { name: 'foreground', value: '#0f172a', description: 'Main text color' },
-        { name: 'muted', value: '#f1f5f9', description: 'Muted backgrounds' },
-        { name: 'muted-foreground', value: '#64748b', description: 'Muted text' },
-        { name: 'accent', value: '#f1f5f9', description: 'Accent backgrounds' },
-        { name: 'accent-foreground', value: '#0f172a', description: 'Accent text' },
-        { name: 'destructive', value: '#ef4444', description: 'Destructive actions' },
-        { name: 'destructive-foreground', value: '#ffffff', description: 'Text on destructive' },
-        { name: 'border', value: '#e2e8f0', description: 'Border color' },
-        { name: 'input', value: '#e2e8f0', description: 'Input border' },
-        { name: 'ring', value: '#3b82f6', description: 'Focus ring' },
-      ],
-      typography: [
-        { name: 'xs', fontSize: '0.75rem', lineHeight: '1rem', fontWeight: '400' },
-        { name: 'sm', fontSize: '0.875rem', lineHeight: '1.25rem', fontWeight: '400' },
-        { name: 'base', fontSize: '1rem', lineHeight: '1.5rem', fontWeight: '400' },
-        { name: 'lg', fontSize: '1.125rem', lineHeight: '1.75rem', fontWeight: '400' },
-        { name: 'xl', fontSize: '1.25rem', lineHeight: '1.75rem', fontWeight: '500' },
-        { name: '2xl', fontSize: '1.5rem', lineHeight: '2rem', fontWeight: '600' },
-        { name: '3xl', fontSize: '1.875rem', lineHeight: '2.25rem', fontWeight: '700' },
-        { name: '4xl', fontSize: '2.25rem', lineHeight: '2.5rem', fontWeight: '700' },
-      ],
-      spacing: [
-        { name: '0', value: '0px' },
-        { name: '1', value: '0.25rem' },
-        { name: '2', value: '0.5rem' },
-        { name: '3', value: '0.75rem' },
-        { name: '4', value: '1rem' },
-        { name: '5', value: '1.25rem' },
-        { name: '6', value: '1.5rem' },
-        { name: '8', value: '2rem' },
-        { name: '10', value: '2.5rem' },
-        { name: '12', value: '3rem' },
-        { name: '16', value: '4rem' },
-        { name: '20', value: '5rem' },
-      ],
-      shadows: [
-        { name: 'sm', value: '0 1px 2px 0 rgb(0 0 0 / 0.05)' },
-        { name: 'base', value: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)' },
-        { name: 'md', value: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' },
-        { name: 'lg', value: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' },
-        {
-          name: 'xl',
-          value: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
-        },
-      ],
-      borderRadius: [
-        { name: 'none', value: '0px' },
-        { name: 'sm', value: '0.125rem' },
-        { name: 'base', value: '0.25rem' },
-        { name: 'md', value: '0.375rem' },
-        { name: 'lg', value: '0.5rem' },
-        { name: 'xl', value: '0.75rem' },
-        { name: '2xl', value: '1rem' },
-        { name: 'full', value: '9999px' },
-      ],
+      colors: this.getDefaultColors(),
+      typography: this.getDefaultTypography(),
+      spacing: this.getDefaultSpacing(),
+      shadows: this.getDefaultShadows(),
+      borderRadius: this.getDefaultBorderRadius(),
     };
+  }
+
+  private getDefaultColors(): ColorToken[] {
+    return [
+      { name: 'primary', value: '#3b82f6', description: 'Primary brand color' },
+      { name: 'primary-foreground', value: '#ffffff', description: 'Text on primary' },
+      { name: 'secondary', value: '#64748b', description: 'Secondary accent' },
+      { name: 'secondary-foreground', value: '#ffffff', description: 'Text on secondary' },
+      { name: 'background', value: '#ffffff', description: 'Page background' },
+      { name: 'foreground', value: '#0f172a', description: 'Main text color' },
+      { name: 'muted', value: '#f1f5f9', description: 'Muted backgrounds' },
+      { name: 'muted-foreground', value: '#64748b', description: 'Muted text' },
+      { name: 'accent', value: '#f1f5f9', description: 'Accent backgrounds' },
+      { name: 'accent-foreground', value: '#0f172a', description: 'Accent text' },
+      { name: 'destructive', value: '#ef4444', description: 'Destructive actions' },
+      { name: 'destructive-foreground', value: '#ffffff', description: 'Text on destructive' },
+      { name: 'border', value: '#e2e8f0', description: 'Border color' },
+      { name: 'input', value: '#e2e8f0', description: 'Input border' },
+      { name: 'ring', value: '#3b82f6', description: 'Focus ring' },
+    ];
+  }
+
+  private getDefaultTypography(): TypographyToken[] {
+    return [
+      { name: 'xs', fontSize: '0.75rem', lineHeight: '1rem', fontWeight: '400' },
+      { name: 'sm', fontSize: '0.875rem', lineHeight: '1.25rem', fontWeight: '400' },
+      { name: 'base', fontSize: '1rem', lineHeight: '1.5rem', fontWeight: '400' },
+      { name: 'lg', fontSize: '1.125rem', lineHeight: '1.75rem', fontWeight: '400' },
+      { name: 'xl', fontSize: '1.25rem', lineHeight: '1.75rem', fontWeight: '500' },
+      { name: '2xl', fontSize: '1.5rem', lineHeight: '2rem', fontWeight: '600' },
+      { name: '3xl', fontSize: '1.875rem', lineHeight: '2.25rem', fontWeight: '700' },
+      { name: '4xl', fontSize: '2.25rem', lineHeight: '2.5rem', fontWeight: '700' },
+    ];
+  }
+
+  private getDefaultSpacing(): SpacingToken[] {
+    return [
+      { name: '0', value: '0px' },
+      { name: '1', value: '0.25rem' },
+      { name: '2', value: '0.5rem' },
+      { name: '3', value: '0.75rem' },
+      { name: '4', value: '1rem' },
+      { name: '5', value: '1.25rem' },
+      { name: '6', value: '1.5rem' },
+      { name: '8', value: '2rem' },
+      { name: '10', value: '2.5rem' },
+      { name: '12', value: '3rem' },
+      { name: '16', value: '4rem' },
+      { name: '20', value: '5rem' },
+    ];
+  }
+
+  private getDefaultShadows(): ShadowToken[] {
+    return [
+      { name: 'sm', value: '0 1px 2px 0 rgb(0 0 0 / 0.05)' },
+      { name: 'base', value: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)' },
+      { name: 'md', value: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' },
+      { name: 'lg', value: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' },
+      {
+        name: 'xl',
+        value: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+      },
+    ];
+  }
+
+  private getDefaultBorderRadius(): BorderRadiusToken[] {
+    return [
+      { name: 'none', value: '0px' },
+      { name: 'sm', value: '0.125rem' },
+      { name: 'base', value: '0.25rem' },
+      { name: 'md', value: '0.375rem' },
+      { name: 'lg', value: '0.5rem' },
+      { name: 'xl', value: '0.75rem' },
+      { name: '2xl', value: '1rem' },
+      { name: 'full', value: '9999px' },
+    ];
   }
 
   getTokens(): DesignTokens {

@@ -572,7 +572,8 @@ export abstract class BaseSpecializedAgent {
       : 0;
     
     const avgProcessingTime = this.performanceMetrics.length > 0
-      ? this.performanceMetrics.reduce((sum, m) => sum + m.processingTime, 0) / this.performanceMetrics.length
+      ? this.performanceMetrics.reduce((sum, m) => sum + m.processingTime, 0) /
+        this.performanceMetrics.length
       : 0;
 
     return {

@@ -160,7 +160,31 @@ export class DeepSeekService implements IAIService {
     };
   }
 
-  async *stream(messages: ChatMessage[], options?: AIChatOptions): AsyncGenerator<string, void, unknown> {
+  private *parseStreamLines(lines: string[]): Generator<string, void, unknown> {
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed === 'data: [DONE]') continue;
+
+      if (trimmed.startsWith('data: ')) {
+        try {
+          const data = JSON.parse(trimmed.slice(6));
+          const content = data.choices?.[0]?.delta?.content;
+          if (content) yield content;
+
+          // Also yield reasoning content if present
+          const reasoning = data.choices?.[0]?.delta?.reasoning_content;
+          if (reasoning) yield `<think>${reasoning}</think>`;
+        } catch {
+          // Skip malformed chunks
+        }
+      }
+    }
+  }
+
+  async *stream(
+    messages: ChatMessage[],
+    options?: AIChatOptions
+  ): AsyncGenerator<string, void, unknown> {
     if (!this.apiKey) {
       throw new Error('DeepSeek API key not configured');
     }
@@ -207,24 +231,7 @@ export class DeepSeekService implements IAIService {
         const lines = buffer.split('\n');
         buffer = lines.pop() ?? '';
 
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || trimmed === 'data: [DONE]') continue;
-
-          if (trimmed.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(trimmed.slice(6));
-              const content = data.choices?.[0]?.delta?.content;
-              if (content) yield content;
-              
-              // Also yield reasoning content if present
-              const reasoning = data.choices?.[0]?.delta?.reasoning_content;
-              if (reasoning) yield `<think>${reasoning}</think>`;
-            } catch {
-              // Skip malformed chunks
-            }
-          }
-        }
+        yield* this.parseStreamLines(lines);
       }
     } finally {
       reader.releaseLock();
@@ -241,7 +248,10 @@ export class DeepSeekService implements IAIService {
     return response.content;
   }
 
-  async generateText(prompt: string, options?: { maxTokens?: number; temperature?: number; model?: string }): Promise<string> {
+  async generateText(
+    prompt: string,
+    options?: { maxTokens?: number; temperature?: number; model?: string }
+  ): Promise<string> {
     return this.chat([{ role: 'user', content: prompt }], options);
   }
 

@@ -326,7 +326,11 @@ export class TestRunner {
   /**
    * Group test results by file
    */
-  private groupResultsByFile(result: TestSuite, testFiles: string[], startTime: number): TestSuite[] {
+  private groupResultsByFile(
+    result: TestSuite,
+    testFiles: string[],
+    startTime: number
+  ): TestSuite[] {
     if (testFiles.length <= 1) {
       return [{
         ...result,
@@ -362,7 +366,11 @@ export class TestRunner {
   }
 
   // Delegated methods
-  async generateTest(code: string, filename: string, options: TestRunnerOptions = {}): Promise<string> {
+  async generateTest(
+    code: string,
+    filename: string,
+    options: TestRunnerOptions = {}
+  ): Promise<string> {
     return this.testGenerator.generateTest(code, filename, options);
   }
 

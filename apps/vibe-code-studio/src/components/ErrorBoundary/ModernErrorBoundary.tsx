@@ -260,8 +260,8 @@ URL: ${window.location.href}
         <ErrorTitle>Oops! Something went wrong</ErrorTitle>
 
         <ErrorMessage>
-          Vibe Code Studio encountered an unexpected error. Don&apos;t worry, your work is saved. You
-          can try refreshing the page or return to the home screen.
+          Vibe Code Studio encountered an unexpected error. Don&apos;t worry, your work is
+          saved. You can try refreshing the page or return to the home screen.
         </ErrorMessage>
 
         <ActionButtons>

@@ -171,7 +171,9 @@ Provide performance analysis and optimization recommendations.`;
     return analysis;
   }
 
-  private async generateOptimizationSuggestions(_analysis: PerformanceAnalysis): Promise<OptimizationSuggestion[]> {
+  private async generateOptimizationSuggestions(
+    _analysis: PerformanceAnalysis
+  ): Promise<OptimizationSuggestion[]> {
     return [
       {
         type: 'bundle',
@@ -217,7 +219,10 @@ Provide performance analysis and optimization recommendations.`;
     ];
   }
 
-  private formatPerformanceReport(analysis: PerformanceAnalysis, suggestions: OptimizationSuggestion[]): string {
+  private formatPerformanceReport(
+    analysis: PerformanceAnalysis,
+    suggestions: OptimizationSuggestion[]
+  ): string {
     return `# Performance Analysis Report
 
 ## Metrics

@@ -508,47 +508,7 @@ export class DatabaseService {
       if (!this.useFallback && this.db) {
         // UPDATE: strategy_memory table added to handler, enabling migration.
         const parsed = JSON.parse(legacy) as Array<Record<string, unknown>>;
-        let migrated = 0;
-
-        if (this.isElectron) {
-          // Electron: use IPC query method
-          for (const entry of parsed) {
-            try {
-              await this.edb.query(
-                'INSERT INTO strategy_memory (pattern_hash, pattern_data, success_rate, usage_count, created_at) VALUES (?, ?, ?, ?, ?)',
-                [
-                  entry['pattern_hash'] ?? '',
-                  JSON.stringify(entry['pattern_data'] ?? {}),
-                  entry['success_rate'] ?? 0,
-                  entry['usage_count'] ?? 0,
-                  entry['created_at'] ?? new Date().toISOString(),
-                ],
-              );
-              migrated++;
-            } catch (err) {
-              logger.warn('[DatabaseService] Failed to migrate strategy memory row', err);
-            }
-          }
-        } else {
-          // sql.js: use prepare/run pattern
-          const stmt = this.sdb.prepare(
-            'INSERT INTO strategy_memory (pattern_hash, pattern_data, success_rate, usage_count, created_at) VALUES (?, ?, ?, ?, ?)',
-          );
-          parsed.forEach((entry: Record<string, unknown>) => {
-            try {
-              stmt.run(
-                entry.pattern_hash ?? '',
-                JSON.stringify(entry.pattern_data ?? {}),
-                entry.success_rate ?? 0,
-                entry.usage_count ?? 0,
-                entry.created_at ?? new Date().toISOString(),
-              );
-              migrated++;
-            } catch (err) {
-              logger.warn('[DatabaseService] Failed to migrate strategy memory row', err);
-            }
-          });
-        }
+        const migrated = await this.insertStrategyMemoryRows(parsed);
 
         if (typeof window !== 'undefined' && window.electron?.store) {
           await window.electron.store.delete(legacyKey);
@@ -562,6 +522,54 @@ export class DatabaseService {
       logger.warn('[DatabaseService] migrateStrategyMemory failed', error);
       return { migrated: 0 };
     }
+  }
+
+  private async insertStrategyMemoryRows(
+    parsed: Array<Record<string, unknown>>,
+  ): Promise<number> {
+    let migrated = 0;
+
+    if (this.isElectron) {
+      // Electron: use IPC query method
+      for (const entry of parsed) {
+        try {
+          await this.edb.query(
+            'INSERT INTO strategy_memory (pattern_hash, pattern_data, success_rate, usage_count, created_at) VALUES (?, ?, ?, ?, ?)',
+            [
+              entry['pattern_hash'] ?? '',
+              JSON.stringify(entry['pattern_data'] ?? {}),
+              entry['success_rate'] ?? 0,
+              entry['usage_count'] ?? 0,
+              entry['created_at'] ?? new Date().toISOString(),
+            ],
+          );
+          migrated++;
+        } catch (err) {
+          logger.warn('[DatabaseService] Failed to migrate strategy memory row', err);
+        }
+      }
+    } else {
+      // sql.js: use prepare/run pattern
+      const stmt = this.sdb.prepare(
+        'INSERT INTO strategy_memory (pattern_hash, pattern_data, success_rate, usage_count, created_at) VALUES (?, ?, ?, ?, ?)',
+      );
+      parsed.forEach((entry: Record<string, unknown>) => {
+        try {
+          stmt.run(
+            entry.pattern_hash ?? '',
+            JSON.stringify(entry.pattern_data ?? {}),
+            entry.success_rate ?? 0,
+            entry.usage_count ?? 0,
+            entry.created_at ?? new Date().toISOString(),
+          );
+          migrated++;
+        } catch (err) {
+          logger.warn('[DatabaseService] Failed to migrate strategy memory row', err);
+        }
+      });
+    }
+
+    return migrated;
   }
 
   // -------------------------------------------------------------------------

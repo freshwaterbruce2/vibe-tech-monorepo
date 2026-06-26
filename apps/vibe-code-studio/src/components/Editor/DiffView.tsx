@@ -30,7 +30,8 @@ export const DiffView: React.FC<DiffViewProps> = ({ diffs }) => {
 
           // Split by newline to render lines individually for better formatting
           const lines = diff.content.split('\n');
-          // If the last line is empty and it's not the only line, we don't need to render an extra empty div
+          // If the last line is empty and it's not the only line, we don't
+          // need to render an extra empty div
           if (lines.length > 1 && lines[lines.length - 1] === '') {
             lines.pop();
           }

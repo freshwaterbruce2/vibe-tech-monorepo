@@ -80,6 +80,27 @@ export class CodeExecutor {
   /**
    * Execute a shell command with security checks
    */
+  /**
+   * Build sandboxed execution options from caller-supplied options.
+   */
+  private buildExecOptions(options: ExecutionOptions): ExecutionOptions {
+    return {
+      timeout: options.timeout ?? this.timeout,
+      workingDirectory: options.workingDirectory ?? this.tempDir,
+      environment: {
+        PATH: this.getSafePathEnvironment(),
+        NODE_ENV: 'sandbox',
+        ...options.environment
+      },
+      shell: options.shell !== false,
+      maxMemory: Math.min(
+        options.maxMemory ?? this.securityPolicy.maxMemoryUsage,
+        this.securityPolicy.maxMemoryUsage
+      ),
+      ...(options.stdin && { stdin: options.stdin })
+    };
+  }
+
   async executeCommand(
     command: string,
     options: ExecutionOptions = {}
@@ -101,18 +122,7 @@ export class CodeExecutor {
       }
 
       // Prepare execution options
-      const execOptions: ExecutionOptions = {
-        timeout: options.timeout ?? this.timeout,
-        workingDirectory: options.workingDirectory ?? this.tempDir,
-        environment: {
-          PATH: this.getSafePathEnvironment(),
-          NODE_ENV: 'sandbox',
-          ...options.environment
-        },
-        shell: options.shell !== false,
-        maxMemory: Math.min(options.maxMemory ?? this.securityPolicy.maxMemoryUsage, this.securityPolicy.maxMemoryUsage),
-        ...(options.stdin && { stdin: options.stdin })
-      };
+      const execOptions = this.buildExecOptions(options);
 
       // Execute via Electron main process if available
       if (this.electronService.isElectron()) {
@@ -151,28 +161,10 @@ export class CodeExecutor {
     const executionId = `code_${language}_${++this.executionCounter}_${Date.now()}`;
     
     try {
-      // Validate code syntax first
-      const syntaxValidation = await this.validateSyntax(code, language);
-      if (!syntaxValidation.valid) {
-        return {
-          success: false,
-          output: '',
-          error: `Syntax errors: ${syntaxValidation.errors.join(', ')}`,
-          executionTime: Date.now() - startTime,
-          exitCode: -1
-        };
-      }
-
-      // Security validation for code content
-      const securityCheck = this.validateCodeSecurity(code, language);
-      if (!securityCheck.allowed) {
-        return {
-          success: false,
-          output: '',
-          error: `Security violation: ${securityCheck.reason}`,
-          executionTime: Date.now() - startTime,
-          exitCode: -1
-        };
+      // Validate syntax + security before running anything
+      const validationError = await this.validateBeforeExecution(code, language, startTime);
+      if (validationError) {
+        return validationError;
       }
 
       // Prepare execution based on language
@@ -212,6 +204,42 @@ export class CodeExecutor {
         exitCode: -1
       };
     }
+  }
+
+  /**
+   * Run syntax + security validation before execution.
+   * Returns an error ExecutionResult if validation fails, otherwise null.
+   */
+  private async validateBeforeExecution(
+    code: string,
+    language: SupportedLanguage,
+    startTime: number
+  ): Promise<ExecutionResult | null> {
+    // Validate code syntax first
+    const syntaxValidation = await this.validateSyntax(code, language);
+    if (!syntaxValidation.valid) {
+      return {
+        success: false,
+        output: '',
+        error: `Syntax errors: ${syntaxValidation.errors.join(', ')}`,
+        executionTime: Date.now() - startTime,
+        exitCode: -1
+      };
+    }
+
+    // Security validation for code content
+    const securityCheck = this.validateCodeSecurity(code, language);
+    if (!securityCheck.allowed) {
+      return {
+        success: false,
+        output: '',
+        error: `Security violation: ${securityCheck.reason}`,
+        executionTime: Date.now() - startTime,
+        exitCode: -1
+      };
+    }
+
+    return null;
   }
 
   /**
@@ -334,7 +362,10 @@ export class CodeExecutor {
     return { allowed: true };
   }
 
-  private validateCodeSecurity(code: string, language: SupportedLanguage): { allowed: boolean; reason?: string } {
+  private validateCodeSecurity(
+    code: string,
+    language: SupportedLanguage
+  ): { allowed: boolean; reason?: string } {
     const codeToCheck = code.toLowerCase();
     
     // Common dangerous patterns across languages
@@ -383,16 +414,15 @@ export class CodeExecutor {
     return '/usr/local/bin:/usr/bin:/bin';
   }
 
-  private getExecutionStrategy(language: SupportedLanguage, _code: string, _options: ExecutionOptions) {
+  private getExecutionStrategy(
+    language: SupportedLanguage,
+    _code: string,
+    _options: ExecutionOptions
+  ) {
     switch (language) {
       case 'javascript':
       case 'node':
-        return {
-          runtime: 'node',
-          args: ['--max-old-space-size=256', '--no-warnings'],
-          extension: '.js'
-        };
-      
+        return { runtime: 'node', args: ['--max-old-space-size=256', '--no-warnings'], extension: '.js' };
       case 'typescript':
         return {
           runtime: 'tsx',
@@ -404,35 +434,14 @@ export class CodeExecutor {
             extension: '.ts'
           }
         };
-      
       case 'python':
-        return {
-          runtime: 'python3',
-          args: ['-u'], // unbuffered output
-          extension: '.py'
-        };
-      
+        return { runtime: 'python3', args: ['-u'], extension: '.py' }; // unbuffered output
       case 'bash':
-        return {
-          runtime: 'bash',
-          args: ['-e'], // exit on error
-          extension: '.sh'
-        };
-      
+        return { runtime: 'bash', args: ['-e'], extension: '.sh' }; // exit on error
       case 'deno':
-        return {
-          runtime: 'deno',
-          args: ['run', '--allow-none'],
-          extension: '.ts'
-        };
-      
+        return { runtime: 'deno', args: ['run', '--allow-none'], extension: '.ts' };
       case 'bun':
-        return {
-          runtime: 'bun',
-          args: ['run'],
-          extension: '.js'
-        };
-      
+        return { runtime: 'bun', args: ['run'], extension: '.js' };
       default:
         throw new Error(`Unsupported language: ${language}`);
     }
@@ -660,63 +669,74 @@ export class CodeExecutor {
     };
   }
 
+  /**
+   * Create a restricted sandbox object for browser-mode JS execution.
+   */
+  private createJsSandbox(): Record<string, unknown> {
+    return {
+      console: {
+        log: (...args: unknown[]) => args.join(' '),
+        error: (...args: unknown[]) => args.join(' '),
+        warn: (...args: unknown[]) => args.join(' '),
+        info: (...args: unknown[]) => args.join(' ')
+      },
+      setTimeout: undefined,
+      setInterval: undefined,
+      clearTimeout: undefined,
+      clearInterval: undefined,
+      fetch: undefined,
+      XMLHttpRequest: undefined,
+      WebSocket: undefined
+    };
+  }
+
+  /**
+   * Run code in the sandbox, rejecting if it exceeds the timeout.
+   */
+  private runJsWithTimeout(
+    code: string,
+    timeout: number,
+    sandbox: Record<string, unknown>
+  ): Promise<unknown> {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error(`Execution timed out after ${timeout}ms`));
+      }, timeout);
+
+      try {
+        // Create function with sandbox
+        const func = new Function(
+          'sandbox',
+          `
+          const { console } = sandbox;
+          let result;
+          try {
+            ${code}
+          } catch (error) {
+            throw error;
+          }
+          return result;
+          `
+        );
+
+        const result = func(sandbox);
+        clearTimeout(timer);
+        resolve(result);
+      } catch (error) {
+        clearTimeout(timer);
+        reject(error);
+      }
+    });
+  }
+
   private async executeJavaScriptSafe(
-    code: string, 
-    options: ExecutionOptions, 
+    code: string,
+    options: ExecutionOptions,
     startTime: number
   ): Promise<ExecutionResult> {
     try {
-      // Create a sandboxed execution context
-      const sandbox = {
-        console: {
-          log: (...args: unknown[]) => args.join(' '),
-          error: (...args: unknown[]) => args.join(' '),
-          warn: (...args: unknown[]) => args.join(' '),
-          info: (...args: unknown[]) => args.join(' ')
-        },
-        setTimeout: undefined,
-        setInterval: undefined,
-        clearTimeout: undefined,
-        clearInterval: undefined,
-        fetch: undefined,
-        XMLHttpRequest: undefined,
-        WebSocket: undefined
-      };
-
-      // Create execution function with timeout
-      const executeWithTimeout = async (code: string, timeout: number): Promise<unknown> => {
-        return new Promise((resolve, reject) => {
-          const timer = setTimeout(() => {
-            reject(new Error(`Execution timed out after ${timeout}ms`));
-          }, timeout);
-
-          try {
-            // Create function with sandbox
-            const func = new Function(
-              'sandbox',
-              `
-              const { console } = sandbox;
-              let result;
-              try {
-                ${code}
-              } catch (error) {
-                throw error;
-              }
-              return result;
-              `
-            );
-            
-            const result = func(sandbox);
-            clearTimeout(timer);
-            resolve(result);
-          } catch (error) {
-            clearTimeout(timer);
-            reject(error);
-          }
-        });
-      };
-
-      const result = await executeWithTimeout(code, options.timeout ?? this.timeout);
+      const sandbox = this.createJsSandbox();
+      const result = await this.runJsWithTimeout(code, options.timeout ?? this.timeout, sandbox);
       const executionTime = Date.now() - startTime;
 
       return {

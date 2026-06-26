@@ -41,21 +41,15 @@ interface UseChatStateReturn {
 
 const CHAT_WIDTH_KEY = 'vibe-code-studio-chat-width';
 
-export function useChatState(options: UseChatStateOptions = {}): UseChatStateReturn {
-    const { messages = [] } = options;
+interface UseChatWidthReturn {
+    width: number;
+    isResizing: boolean;
+    handleResizeStart: (e: MouseEvent) => void;
+}
 
-    // State
-    const [input, setInput] = useState('');
-    const [isTyping, setIsTyping] = useState(false);
+function useChatWidth(): UseChatWidthReturn {
     const [width, setWidth] = useState(DEFAULT_WIDTH);
     const [isResizing, setIsResizing] = useState(false);
-    const [mode, setMode] = useState<ChatMode>('chat');
-    const [showModeInfo, setShowModeInfo] = useState(true);
-
-    // Refs
-    const inputRef = useRef<HTMLTextAreaElement>(null);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
 
     // Load saved width on mount
     useEffect(() => {
@@ -72,18 +66,6 @@ export function useChatState(options: UseChatStateOptions = {}): UseChatStateRet
             }
         };
         loadWidth();
-    }, []);
-
-    // Auto-scroll to bottom on new messages
-    useEffect(() => {
-        if (messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-        }
-    }, [messages.length]);
-
-    // Focus input on mount
-    useEffect(() => {
-        inputRef.current?.focus();
     }, []);
 
     // Resize handlers
@@ -121,6 +103,38 @@ export function useChatState(options: UseChatStateOptions = {}): UseChatStateRet
                 .catch(err => logger.error('Failed to save chat width', err));
         }
     }, [width, isResizing]);
+
+    return { width, isResizing, handleResizeStart };
+}
+
+export function useChatState(options: UseChatStateOptions = {}): UseChatStateReturn {
+    const { messages = [] } = options;
+
+    // State
+    const [input, setInput] = useState('');
+    const [isTyping, setIsTyping] = useState(false);
+    const [mode, setMode] = useState<ChatMode>('chat');
+    const [showModeInfo, setShowModeInfo] = useState(true);
+
+    // Width + resize state
+    const { width, isResizing, handleResizeStart } = useChatWidth();
+
+    // Refs
+    const inputRef = useRef<HTMLTextAreaElement>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    // Auto-scroll to bottom on new messages
+    useEffect(() => {
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [messages.length]);
+
+    // Focus input on mount
+    useEffect(() => {
+        inputRef.current?.focus();
+    }, []);
 
     return {
         // State

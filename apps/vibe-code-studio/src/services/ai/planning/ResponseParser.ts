@@ -150,7 +150,8 @@ function buildTaskFromParsed(
             description: step.description,
             action,
             status: 'pending' as const,
-            // System safety takes precedence - use OR to ensure destructive actions always require approval
+            // System safety takes precedence - use OR so destructive actions
+            // always require approval
             requiresApproval: step.requiresApproval ?? systemRequiresApproval,
             retryCount: 0,
             maxRetries: step.maxRetries ?? 3,
@@ -204,7 +205,9 @@ function createFallbackTask(userRequest: string): AgentTask {
 /**
  * Validates and sanitizes action parameters
  */
-export function validateAction(action: { type: string; params?: Record<string, unknown> }): StepAction {
+export function validateAction(
+    action: { type: string; params?: Record<string, unknown> }
+): StepAction {
     if (!VALID_ACTION_TYPES.includes(action.type as ActionType)) {
         throw new Error(`Invalid action type: ${action.type}`);
     }

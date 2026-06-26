@@ -361,7 +361,11 @@ export interface WorkspaceTemplatesPanelProps {
   onError?: (title: string, message: string) => void;
 }
 
-export const WorkspaceTemplatesPanel = ({ onClose, onSuccess, onError }: WorkspaceTemplatesPanelProps) => {
+export const WorkspaceTemplatesPanel = ({
+  onClose,
+  onSuccess,
+  onError,
+}: WorkspaceTemplatesPanelProps) => {
   const [templateService] = useState(() => new WorkspaceTemplateService());
   const [templates, setTemplates] = useState<ProjectTemplate[]>([]);
   const [filteredTemplates, setFilteredTemplates] = useState<ProjectTemplate[]>([]);
@@ -425,7 +429,11 @@ export const WorkspaceTemplatesPanel = ({ onClose, onSuccess, onError }: Workspa
     setIsGenerating(true);
 
     try {
-      const result = await templateService.generateProject(selectedTemplate.id, projectName, targetPath);
+      const result = await templateService.generateProject(
+        selectedTemplate.id,
+        projectName,
+        targetPath
+      );
 
       logger.info('[WorkspaceTemplates] Generated project:', result);
 

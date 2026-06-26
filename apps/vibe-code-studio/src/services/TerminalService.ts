@@ -225,7 +225,10 @@ export class TerminalService {
 
     // Send resize signal if supported
     if (session.process.stdout && 'resize' in session.process.stdout) {
-      (session.process.stdout as unknown as { resize: (opts: { columns: number; rows: number }) => void }).resize({ columns: cols, rows });
+      const resizable = session.process.stdout as unknown as {
+        resize: (opts: { columns: number; rows: number }) => void;
+      };
+      resizable.resize({ columns: cols, rows });
     }
   }
 
@@ -277,24 +280,7 @@ export class TerminalService {
     cwd?: string
   ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
     if (this._isTauri) {
-      // Use tauri-plugin-shell for one-shot commands
-      try {
-        const { Command } = await import('@tauri-apps/plugin-shell');
-        const result = await Command.create('exec-cmd', ['-c', command], {
-          cwd: cwd ?? this.getCurrentWorkingDirectory(),
-        }).execute();
-        return {
-          stdout: result.stdout,
-          stderr: result.stderr,
-          exitCode: result.code ?? 0,
-        };
-      } catch (err) {
-        return {
-          stdout: '',
-          stderr: `Tauri command execution failed: ${err}`,
-          exitCode: 1,
-        };
-      }
+      return this.executeViaTauri(command, cwd);
     }
 
     if (!this.isElectron) {
@@ -306,6 +292,37 @@ export class TerminalService {
       };
     }
 
+    return this.executeViaSpawn(command, cwd);
+  }
+
+  private async executeViaTauri(
+    command: string,
+    cwd?: string
+  ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+    // Use tauri-plugin-shell for one-shot commands
+    try {
+      const { Command } = await import('@tauri-apps/plugin-shell');
+      const result = await Command.create('exec-cmd', ['-c', command], {
+        cwd: cwd ?? this.getCurrentWorkingDirectory(),
+      }).execute();
+      return {
+        stdout: result.stdout,
+        stderr: result.stderr,
+        exitCode: result.code ?? 0,
+      };
+    } catch (err) {
+      return {
+        stdout: '',
+        stderr: `Tauri command execution failed: ${err}`,
+        exitCode: 1,
+      };
+    }
+  }
+
+  private async executeViaSpawn(
+    command: string,
+    cwd?: string
+  ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
     let spawn: typeof import('child_process').spawn;
     try {
       // Dynamic import of child_process only when in Electron

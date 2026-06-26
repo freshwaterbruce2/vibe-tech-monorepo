@@ -164,7 +164,8 @@ const AVAILABLE_PLUGINS: IPlugin[] = [
 ];
 
 export function PluginMarketplace() {
-  const { plugins, installPlugin, activatePlugin, deactivatePlugin, uninstallPlugin } = usePluginManager();
+  const { plugins, installPlugin, activatePlugin, deactivatePlugin, uninstallPlugin } =
+    usePluginManager();
   const [activeTab, setActiveTab] = useState<'installed' | 'browse'>('installed');
   const [filter, setFilter] = useState('');
 
@@ -254,7 +255,8 @@ export function PluginMarketplace() {
             <PluginCard key={plugin.manifest.id}>
               <PluginName>{plugin.manifest.name}</PluginName>
               <PluginMeta>
-                v{plugin.manifest.version} by {plugin.manifest.author} &middot; {plugin.manifest.type}
+                v{plugin.manifest.version} by {plugin.manifest.author} &middot;{' '}
+                {plugin.manifest.type}
               </PluginMeta>
               <PluginDesc>{plugin.manifest.description}</PluginDesc>
               <PluginActions>

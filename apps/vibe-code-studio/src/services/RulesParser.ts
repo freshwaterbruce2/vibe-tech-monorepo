@@ -231,7 +231,19 @@ export class RulesParser {
    */
   getTemplate(name: string): string {
     const templates: Record<string, string> = {
-      react: `---
+      react: this.getReactTemplate(),
+      typescript: this.getTypescriptTemplate(),
+      nodejs: this.getNodejsTemplate(),
+      python: this.getPythonTemplate(),
+      testing: this.getTestingTemplate(),
+      documentation: this.getDocumentationTemplate(),
+    };
+
+    return templates[name] ?? '';
+  }
+
+  private getReactTemplate(): string {
+    return `---
 description: React best practices
 globs: ["**/*.tsx", "**/*.jsx"]
 priority: high
@@ -267,9 +279,11 @@ You are an expert React developer.
 - Destructure props in function signature
 - Use optional chaining (?.) and nullish coalescing (??)
 - Prefer early returns for cleaner code
-- Add PropTypes or TypeScript interfaces`,
+- Add PropTypes or TypeScript interfaces`;
+  }
 
-      typescript: `---
+  private getTypescriptTemplate(): string {
+    return `---
 description: TypeScript coding standards
 globs: ["**/*.ts", "**/*.tsx"]
 priority: high
@@ -304,9 +318,11 @@ You are an expert TypeScript developer.
 **Error Handling:**
 - Define custom error types
 - Use discriminated unions for result types
-- Validate external data with type guards`,
+- Validate external data with type guards`;
+  }
 
-      nodejs: `---
+  private getNodejsTemplate(): string {
+    return `---
 description: Node.js backend best practices
 globs: ["**/api/**/*.ts", "**/server/**/*.ts"]
 priority: high
@@ -344,9 +360,11 @@ You are an expert Node.js backend developer.
 - Separate routes, controllers, services
 - Use dependency injection
 - Keep controllers thin, services thick
-- Use middleware for cross-cutting concerns`,
+- Use middleware for cross-cutting concerns`;
+  }
 
-      python: `---
+  private getPythonTemplate(): string {
+    return `---
 description: Python coding standards
 globs: ["**/*.py"]
 priority: high
@@ -377,9 +395,11 @@ You are an expert Python developer.
 - Use type hints (typing module)
 - Run mypy for static type checking
 - Use dataclasses for structured data
-- Leverage Protocol for duck typing`,
+- Leverage Protocol for duck typing`;
+  }
 
-      testing: `---
+  private getTestingTemplate(): string {
+    return `---
 description: Testing best practices
 globs: ["**/*.test.ts", "**/*.spec.ts", "**/*.test.tsx"]
 priority: high
@@ -410,9 +430,11 @@ You are an expert in software testing.
 - Unit tests for isolated functions
 - Integration tests for module interactions
 - E2E tests for critical user flows
-- Use snapshot testing sparingly`,
+- Use snapshot testing sparingly`;
+  }
 
-      documentation: `---
+  private getDocumentationTemplate(): string {
+    return `---
 description: Documentation standards
 globs: ["**/*.md", "**/*.mdx"]
 priority: normal
@@ -443,9 +465,6 @@ You are a technical documentation expert.
 - Keep docs in sync with code
 - Version documentation
 - Add deprecation notices
-- Use TODO for incomplete sections`,
-    };
-
-    return templates[name] ?? '';
+- Use TODO for incomplete sections`;
   }
 }

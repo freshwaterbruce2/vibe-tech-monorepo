@@ -56,7 +56,8 @@ function StepCardComponent({ step, pendingApproval, handleApproval }: MemoizedSt
           <div style={{ fontSize: '12px', marginBottom: '8px', color: vibeTheme.colors.text }}>
             <strong>Approval Required</strong>
             <div style={{ marginTop: '4px' }}>
-              Risk: {pendingApproval.impact.riskLevel} | Affected: {pendingApproval.impact.filesAffected.length} files
+              Risk: {pendingApproval.impact.riskLevel} | Affected:{' '}
+              {pendingApproval.impact.filesAffected.length} files
             </div>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>

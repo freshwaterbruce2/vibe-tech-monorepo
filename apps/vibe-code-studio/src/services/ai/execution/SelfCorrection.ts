@@ -9,23 +9,15 @@ import { logger } from '../../../services/Logger';
 import type { ActionContext, ActionType, AgentStep, AlternativeStrategy,StepAction } from './types';
 
 /**
- * Generates an alternative strategy when a step fails
- * Analyzes errors and generates different approaches instead of blind retries
+ * Builds the prompt used to request an alternative strategy from the AI
  */
-export async function generateAlternativeStrategy(
+function buildAlternativeStrategyPrompt(
     step: AgentStep,
     error: Error,
     attemptNumber: number,
-    context: ActionContext
-): Promise<StepAction | null> {
-    try {
-        logger.debug(`[SelfCorrection] 🤔 Analyzing failure for "${step.title}"`);
-        logger.debug(`[SelfCorrection] Error: ${error.message}`);
-        logger.debug(`[SelfCorrection] Original action: ${step.action.type}`);
-
-        const { aiService, workspaceService, taskState } = context;
-
-        const prompt = `I'm an AI coding agent that just failed a task step. Help me find an alternative approach.
+    taskState: ActionContext['taskState']
+): string {
+    return `I'm an AI coding agent that just failed a task step. Help me find an alternative approach.
 
 **Failed Step:**
 - Title: ${step.title}
@@ -59,6 +51,26 @@ Analyze why this failed and suggest a DIFFERENT strategy (not just retry same ac
 }
 
 Generate ONE alternative strategy that's DIFFERENT from the original approach.`;
+}
+
+/**
+ * Generates an alternative strategy when a step fails
+ * Analyzes errors and generates different approaches instead of blind retries
+ */
+export async function generateAlternativeStrategy(
+    step: AgentStep,
+    error: Error,
+    attemptNumber: number,
+    context: ActionContext
+): Promise<StepAction | null> {
+    try {
+        logger.debug(`[SelfCorrection] 🤔 Analyzing failure for "${step.title}"`);
+        logger.debug(`[SelfCorrection] Error: ${error.message}`);
+        logger.debug(`[SelfCorrection] Original action: ${step.action.type}`);
+
+        const { aiService, workspaceService, taskState } = context;
+
+        const prompt = buildAlternativeStrategyPrompt(step, error, attemptNumber, taskState);
 
         const response = await aiService.sendContextualMessage({
             userQuery: prompt,

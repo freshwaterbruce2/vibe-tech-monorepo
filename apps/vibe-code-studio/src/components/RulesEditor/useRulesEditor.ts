@@ -37,19 +37,26 @@ You are an expert developer working on this project.
 - Include usage examples
 - Document edge cases`;
 
-export function useRulesEditor(options: UseRulesEditorOptions) {
-  const { workspaceRoot, onSave } = options;
+interface RulesEditorLoaders {
+  parser: RulesParser;
+  filename: RulesFilename;
+  workspaceRoot: string;
+  editorInstance: monaco.editor.IStandaloneCodeEditor | null;
+  setContent: (value: string) => void;
+  setParsedRules: (value: ParsedRules | null) => void;
+  setParseError: (value: string | null) => void;
+}
 
-  const [content, setContent] = useState<string>('');
-  const [filename, setFilename] = useState<RulesFilename>('.deepcoderules');
-  const [parsedRules, setParsedRules] = useState<ParsedRules | null>(null);
-  const [parseError, setParseError] = useState<string | null>(null);
-  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
-  const [testFilePath, setTestFilePath] = useState<string>('');
-  const [editorInstance, setEditorInstance] = useState<monaco.editor.IStandaloneCodeEditor | null>(null);
-  const [mode, setMode] = useState<EditorMode>('edit');
-
-  const parser = new RulesParser();
+function useRulesEditorLoaders(deps: RulesEditorLoaders) {
+  const {
+    parser,
+    filename,
+    workspaceRoot,
+    editorInstance,
+    setContent,
+    setParsedRules,
+    setParseError,
+  } = deps;
   const fileSystem = new FileSystemService();
 
   const parseRules = useCallback((ruleContent: string) => {
@@ -61,7 +68,7 @@ export function useRulesEditor(options: UseRulesEditorOptions) {
       setParseError((error as Error).message);
       setParsedRules(null);
     }
-  }, [filename, parser]);
+  }, [filename, parser, setParsedRules, setParseError]);
 
   const loadRulesFile = useCallback(async () => {
     try {
@@ -82,7 +89,36 @@ export function useRulesEditor(options: UseRulesEditorOptions) {
       setContent(DEFAULT_CONTENT);
       parseRules(DEFAULT_CONTENT);
     }
-  }, [workspaceRoot, filename, editorInstance, parser, fileSystem, parseRules]);
+  }, [
+    workspaceRoot, filename, editorInstance, parser, fileSystem, parseRules,
+    setContent, setParsedRules, setParseError,
+  ]);
+
+  return { parseRules, loadRulesFile };
+}
+
+interface RulesEditorEffectDeps {
+  content: string;
+  filename: RulesFilename;
+  workspaceRoot: string;
+  editorInstance: monaco.editor.IStandaloneCodeEditor | null;
+  setContent: (value: string) => void;
+  setEditorInstance: (editor: monaco.editor.IStandaloneCodeEditor) => void;
+  parseRules: (ruleContent: string) => void;
+  loadRulesFile: () => Promise<void>;
+}
+
+function useRulesEditorEffects(deps: RulesEditorEffectDeps) {
+  const {
+    content,
+    filename,
+    workspaceRoot,
+    editorInstance,
+    setContent,
+    setEditorInstance,
+    parseRules,
+    loadRulesFile,
+  } = deps;
 
   // Initialize Monaco editor
   useEffect(() => {
@@ -131,6 +167,32 @@ export function useRulesEditor(options: UseRulesEditorOptions) {
   useEffect(() => {
     void loadRulesFile();
   }, [workspaceRoot, filename, loadRulesFile]);
+}
+
+interface RulesEditorActionDeps {
+  parser: RulesParser;
+  testFilePath: string;
+  parsedRules: ParsedRules | null;
+  content: string;
+  filename: RulesFilename;
+  onSave?: (content: string, filename: string) => Promise<void>;
+  editorInstance: monaco.editor.IStandaloneCodeEditor | null;
+  setSelectedTemplate: (value: string) => void;
+  setContent: (value: string) => void;
+}
+
+function useRulesEditorActions(deps: RulesEditorActionDeps) {
+  const {
+    parser,
+    testFilePath,
+    parsedRules,
+    content,
+    filename,
+    onSave,
+    editorInstance,
+    setSelectedTemplate,
+    setContent,
+  } = deps;
 
   const matchingRules = useMemo(() => {
     if (testFilePath && parsedRules) {
@@ -147,7 +209,7 @@ export function useRulesEditor(options: UseRulesEditorOptions) {
     if (editorInstance) {
       editorInstance.setValue(template);
     }
-  }, [editorInstance, parser]);
+  }, [editorInstance, parser, setSelectedTemplate, setContent]);
 
   const handleSave = useCallback(async () => {
     if (!onSave) {return;}
@@ -160,30 +222,61 @@ export function useRulesEditor(options: UseRulesEditorOptions) {
     }
   }, [content, filename, onSave]);
 
-  const templates = parser.getTemplates();
+  return { matchingRules, handleTemplateSelect, handleSave };
+}
+
+export function useRulesEditor(options: UseRulesEditorOptions) {
+  const { workspaceRoot, onSave } = options;
+
+  const [content, setContent] = useState<string>('');
+  const [filename, setFilename] = useState<RulesFilename>('.deepcoderules');
+  const [parsedRules, setParsedRules] = useState<ParsedRules | null>(null);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  const [testFilePath, setTestFilePath] = useState<string>('');
+  const [editorInstance, setEditorInstance] =
+    useState<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const [mode, setMode] = useState<EditorMode>('edit');
+
+  const parser = new RulesParser();
+
+  const { parseRules, loadRulesFile } = useRulesEditorLoaders({
+    parser,
+    filename,
+    workspaceRoot,
+    editorInstance,
+    setContent,
+    setParsedRules,
+    setParseError,
+  });
+
+  useRulesEditorEffects({
+    content,
+    filename,
+    workspaceRoot,
+    editorInstance,
+    setContent,
+    setEditorInstance,
+    parseRules,
+    loadRulesFile,
+  });
+
+  const { matchingRules, handleTemplateSelect, handleSave } = useRulesEditorActions({
+    parser,
+    testFilePath,
+    parsedRules,
+    content,
+    filename,
+    onSave,
+    editorInstance,
+    setSelectedTemplate,
+    setContent,
+  });
 
   return {
-    // State
-    content,
-    setContent,
-    filename,
-    setFilename,
-    parsedRules,
-    parseError,
-    selectedTemplate,
-    testFilePath,
-    setTestFilePath,
-    matchingRules,
-    editorInstance,
-    mode,
-    setMode,
-
-    // Data
-    templates,
-
-    // Actions
-    handleTemplateSelect,
-    handleSave,
-    loadRulesFile,
+    content, setContent, filename, setFilename, parsedRules, parseError,
+    selectedTemplate, testFilePath, setTestFilePath, matchingRules, editorInstance,
+    mode, setMode, templates: parser.getTemplates(),
+    handleTemplateSelect, handleSave, loadRulesFile,
   };
 }

@@ -179,7 +179,9 @@ export const GlobalSearch = ({
           <ActionButton
             $variant="danger"
             onClick={handleReplaceAll}
-            disabled={isReplacing || !searchText.trim() || !replaceText.trim() || totalResults === 0}
+            disabled={
+              isReplacing || !searchText.trim() || !replaceText.trim() || totalResults === 0
+            }
           >
             {isReplacing ? 'Replacing...' : 'Replace All'}
           </ActionButton>

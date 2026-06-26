@@ -137,7 +137,9 @@ export class ExecutionEngine {
     /**
      * Gets list of resumable tasks
      */
-    async getResumableTasks(): Promise<Array<{ id: string; title: string; progress: string; timestamp: Date }>> {
+    async getResumableTasks(): Promise<
+        Array<{ id: string; title: string; progress: string; timestamp: Date }>
+    > {
         return await this.taskLifecycleManager.getResumableTasks();
     }
 

@@ -9,6 +9,7 @@ import type {
   TaskNotification,
   TaskProgress,
   TaskQueueOptions,
+  TaskResult,
   TaskStats,
   TaskType,
 } from '@vibetech/types';
@@ -401,64 +402,72 @@ export class TaskQueue {
         this.persistState();
       });
 
-      task.result = result;
-      task.status = result.success ? TaskStatus.COMPLETED : TaskStatus.FAILED;
-      task.completedAt = new Date();
+      this.handleTaskSuccess(task, result);
+    } catch (error) {
+      this.handleTaskFailure(task, error);
+    }
+  }
+
+  private handleTaskSuccess(task: BackgroundTask, result: TaskResult): void {
+    task.result = result;
+    task.status = result.success ? TaskStatus.COMPLETED : TaskStatus.FAILED;
+    task.completedAt = new Date();
+
+    this.notify({
+      taskId: task.id,
+      taskName: task.name,
+      type: result.success ? 'completed' : 'failed',
+      message: result.success
+        ? `Task "${task.name}" completed successfully`
+        : `Task "${task.name}" failed: ${result.error}`,
+      timestamp: new Date(),
+      showToast: true,
+    });
+
+    this.runningTasks.delete(task.id);
+    this.moveToHistory(task);
+    this.persistState();
+  }
+
+  private handleTaskFailure(task: BackgroundTask, error: unknown): void {
+    task.status = TaskStatus.FAILED;
+    task.result = {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+    task.completedAt = new Date();
+
+    // Retry if enabled and under max retries
+    if (this.options.retryFailedTasks && task.retryCount < task.maxRetries) {
+      task.retryCount++;
+      task.status = TaskStatus.QUEUED;
+      // Reset timestamps for retry
+      (task as BackgroundTask & { startedAt?: Date }).startedAt = undefined;
+      (task as BackgroundTask & { completedAt?: Date }).completedAt = undefined;
 
       this.notify({
         taskId: task.id,
         taskName: task.name,
-        type: result.success ? 'completed' : 'failed',
-        message: result.success
-          ? `Task "${task.name}" completed successfully`
-          : `Task "${task.name}" failed: ${result.error}`,
+        type: 'progress',
+        message: `Task "${task.name}" failed, retrying (${task.retryCount}/${task.maxRetries})`,
+        timestamp: new Date(),
+        showToast: false,
+      });
+    } else {
+      this.notify({
+        taskId: task.id,
+        taskName: task.name,
+        type: 'failed',
+        message: `Task "${task.name}" failed: ${task.result.error}`,
         timestamp: new Date(),
         showToast: true,
       });
 
-      this.runningTasks.delete(task.id);
       this.moveToHistory(task);
-      this.persistState();
-    } catch (error) {
-      task.status = TaskStatus.FAILED;
-      task.result = {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
-      task.completedAt = new Date();
-
-      // Retry if enabled and under max retries
-      if (this.options.retryFailedTasks && task.retryCount < task.maxRetries) {
-        task.retryCount++;
-        task.status = TaskStatus.QUEUED;
-        // Reset timestamps for retry
-        (task as BackgroundTask & { startedAt?: Date }).startedAt = undefined;
-        (task as BackgroundTask & { completedAt?: Date }).completedAt = undefined;
-
-        this.notify({
-          taskId: task.id,
-          taskName: task.name,
-          type: 'progress',
-          message: `Task "${task.name}" failed, retrying (${task.retryCount}/${task.maxRetries})`,
-          timestamp: new Date(),
-          showToast: false,
-        });
-      } else {
-        this.notify({
-          taskId: task.id,
-          taskName: task.name,
-          type: 'failed',
-          message: `Task "${task.name}" failed: ${task.result.error}`,
-          timestamp: new Date(),
-          showToast: true,
-        });
-
-        this.moveToHistory(task);
-      }
-
-      this.runningTasks.delete(task.id);
-      this.persistState();
     }
+
+    this.runningTasks.delete(task.id);
+    this.persistState();
   }
 
   private notify(notification: TaskNotification): void {

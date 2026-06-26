@@ -56,12 +56,10 @@ Do not skip steps. Your reasoning should be visible and structured.
 `;
   }
 
-  static buildBaseSystemPrompt(model?: string): string {
-    // Optimize prompt based on model
-    if (model === 'deepseek/deepseek-v3.2') {
-      return this.getTreeOfThoughtPrompt(
-        `You are an elite programming AI in Vibe Code Studio. You specialize in generating high-performance, secure, and idiomatic code.`
-      ) + `
+  private static getDeepseekSystemPrompt(): string {
+    return this.getTreeOfThoughtPrompt(
+      `You are an elite programming AI in Vibe Code Studio. You specialize in generating high-performance, secure, and idiomatic code.`
+    ) + `
 Your specialized capabilities:
 - Advanced code generation with best practices
 - Deep understanding of design patterns and architectures
@@ -77,11 +75,13 @@ Coding guidelines:
 - Add helpful inline comments for complex logic
 - Optimize for both readability and performance
 - Consider security best practices`;
-    } else if (model === 'openai/gpt-5.2-codex') {
-      // High-end coding models benefit from explicit structured reasoning
-      return this.getTreeOfThoughtPrompt(
-        `You are GPT-5.2 Codex in Vibe Code Studio. You provide deep, multi-step reasoning for complex programming problems.`
-      ) + `
+  }
+
+  private static getCodexSystemPrompt(): string {
+    // High-end coding models benefit from explicit structured reasoning
+    return this.getTreeOfThoughtPrompt(
+      `You are GPT-5.2 Codex in Vibe Code Studio. You provide deep, multi-step reasoning for complex programming problems.`
+    ) + `
 Your approach:
 - Break down complex problems step-by-step
 - Show your reasoning process clearly using the 5 branches
@@ -95,6 +95,14 @@ When solving problems:
 - Consider different approaches
 - Analyze pros and cons
 - Recommend the best solution with justification`;
+  }
+
+  static buildBaseSystemPrompt(model?: string): string {
+    // Optimize prompt based on model
+    if (model === 'deepseek/deepseek-v3.2') {
+      return this.getDeepseekSystemPrompt();
+    } else if (model === 'openai/gpt-5.2-codex') {
+      return this.getCodexSystemPrompt();
     }
 
     // Default prompt for general models
@@ -117,7 +125,10 @@ Guidelines:
 - Focus on the specific programming language being used`;
   }
 
-  static async buildContextualSystemPrompt(request: AIContextRequest, model?: string): Promise<string> {
+  static async buildContextualSystemPrompt(
+    request: AIContextRequest,
+    model?: string
+  ): Promise<string> {
     let prompt = this.buildBaseSystemPrompt(model);
 
     // INJECT CUSTOM RULES FIRST (highest priority)
@@ -230,7 +241,10 @@ ${activity.recentFiles.length > 0 ? `- Recently Accessed: ${activity.recentFiles
    * Load custom rules from .deepcoderules or .cursorrules
    * with caching to improve performance
    */
-  private static async loadCustomRules(workspaceRoot: string, currentFile: string): Promise<Rule[]> {
+  private static async loadCustomRules(
+    workspaceRoot: string,
+    currentFile: string
+  ): Promise<Rule[]> {
     const cacheKey = `${workspaceRoot}:${currentFile}`;
 
     // Check cache

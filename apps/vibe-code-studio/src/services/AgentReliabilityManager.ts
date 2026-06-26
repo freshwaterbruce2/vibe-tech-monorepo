@@ -29,7 +29,11 @@ export interface HealthIssue {
 export interface RecoveryStrategy {
   type: 'retry' | 'circuit_breaker' | 'fallback' | 'restart' | 'load_balance';
   condition: (error: Error, context: AgentContext) => boolean;
-  execute: (agent: BaseSpecializedAgent, request: string, context: AgentContext) => Promise<AgentResponse>;
+  execute: (
+    agent: BaseSpecializedAgent,
+    request: string,
+    context: AgentContext
+  ) => Promise<AgentResponse>;
   maxAttempts: number;
   backoffMs: number;
 }
@@ -82,11 +86,17 @@ export class AgentReliabilityManager extends EventEmitter {
    * Initialize built-in recovery strategies
    */
   private initializeRecoveryStrategies(): void {
-    // Retry strategy for transient failures
-    this.recoveryStrategies.push({
+    this.recoveryStrategies.push(this.createRetryStrategy());
+    this.recoveryStrategies.push(this.createCircuitBreakerStrategy());
+    this.recoveryStrategies.push(this.createFallbackStrategy());
+  }
+
+  /** Retry strategy for transient failures */
+  private createRetryStrategy(): RecoveryStrategy {
+    return {
       type: 'retry',
       condition: (error: Error) => {
-        return error.message.includes('timeout') || 
+        return error.message.includes('timeout') ||
                error.message.includes('network') ||
                error.message.includes('temporary');
       },
@@ -109,10 +119,12 @@ export class AgentReliabilityManager extends EventEmitter {
       },
       maxAttempts: 3,
       backoffMs: 1000
-    });
+    };
+  }
 
-    // Circuit breaker for repeated failures
-    this.recoveryStrategies.push({
+  /** Circuit breaker for repeated failures */
+  private createCircuitBreakerStrategy(): RecoveryStrategy {
+    return {
       type: 'circuit_breaker',
       condition: (error: Error) => {
         return error.message.includes('service unavailable') ||
@@ -121,7 +133,7 @@ export class AgentReliabilityManager extends EventEmitter {
       execute: async (agent: BaseSpecializedAgent, request: string, context: AgentContext) => {
         const agentId = agent.getName();
         const breaker = this.circuitBreakers.get(agentId);
-        
+
         if (breaker?.isOpen) {
           if (breaker.halfOpenTime && Date.now() > breaker.halfOpenTime.getTime()) {
             // Half-open state: try one request
@@ -142,10 +154,12 @@ export class AgentReliabilityManager extends EventEmitter {
       },
       maxAttempts: 1,
       backoffMs: 0
-    });
+    };
+  }
 
-    // Fallback strategy using simplified request
-    this.recoveryStrategies.push({
+  /** Fallback strategy using simplified request */
+  private createFallbackStrategy(): RecoveryStrategy {
+    return {
       type: 'fallback',
       condition: (error: Error) => {
         return error.message.includes('complexity') ||
@@ -155,9 +169,9 @@ export class AgentReliabilityManager extends EventEmitter {
         // Simplify the request and context
         const simplifiedRequest = this.simplifyRequest(request);
         const simplifiedContext = this.simplifyContext(context);
-        
+
         logger.info(`Using fallback strategy for agent ${agent.getName()}`);
-        
+
         try {
           const response = await agent.process(simplifiedRequest, simplifiedContext);
           return {
@@ -176,7 +190,7 @@ export class AgentReliabilityManager extends EventEmitter {
       },
       maxAttempts: 1,
       backoffMs: 0
-    });
+    };
   }
 
   /**
@@ -260,7 +274,12 @@ export class AgentReliabilityManager extends EventEmitter {
   /**
    * Record failed agent execution
    */
-  private recordFailure(agentId: string, error: Error, context: AgentContext, _responseTime: number): void {
+  private recordFailure(
+    agentId: string,
+    error: Error,
+    context: AgentContext,
+    _responseTime: number
+  ): void {
     const metrics = this.getOrCreateMetrics(agentId);
     metrics.totalRequests++;
     metrics.failedRequests++;
@@ -539,17 +558,24 @@ export class AgentReliabilityManager extends EventEmitter {
             intervals.push(current.timestamp.getTime() - previous.timestamp.getTime());
           }
         }
-        metrics.mtbf = intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length / 1000 / 60; // minutes
+        // minutes
+        metrics.mtbf =
+          intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length / 1000 / 60;
       }
 
       // Calculate MTTR (Mean Time To Recovery)
       const recoveredFailures = history.filter(f => f.recovered && f.recoveryTime);
       if (recoveredFailures.length > 0) {
-        metrics.mttr = recoveredFailures.reduce((sum, f) => sum + (f.recoveryTime ?? 0), 0) / recoveredFailures.length / 1000; // seconds
+        // seconds
+        metrics.mttr =
+          recoveredFailures.reduce((sum, f) => sum + (f.recoveryTime ?? 0), 0) /
+          recoveredFailures.length /
+          1000;
       }
 
       // Update uptime
-      metrics.uptime = metrics.totalRequests > 0 ? metrics.successfulRequests / metrics.totalRequests : 1.0;
+      metrics.uptime =
+        metrics.totalRequests > 0 ? metrics.successfulRequests / metrics.totalRequests : 1.0;
     }
   }
 

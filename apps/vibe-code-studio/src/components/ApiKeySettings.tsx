@@ -452,7 +452,8 @@ const ApiKeySettings: React.FC = () => {
       </SecurityNote>
 
       {PROVIDERS.map(provider => {
-        const status = statuses[provider.id] ?? { provider: provider.id, hasKey: false, isValid: false };
+        const status = statuses[provider.id] ??
+          { provider: provider.id, hasKey: false, isValid: false };
 
         return (
           <ProviderSection key={provider.id}>

@@ -77,6 +77,35 @@ Generate ONLY the file content, no explanations.`;
 }
 
 /**
+ * Auto-creates a missing file (Cursor-style) and returns its read result
+ */
+async function autoCreateAndReadFile(
+    resolvedPath: string,
+    context: ActionContext
+): Promise<StepResult> {
+    const { fileSystemService, callbacks } = context;
+
+    logger.debug(`[FileActions] 🔧 File not found, auto-creating: ${resolvedPath}`);
+    const generatedContent = await generateMissingFileContent(resolvedPath, context);
+    await fileSystemService.writeFile(resolvedPath, generatedContent);
+
+    if (callbacks?.onFileChanged) {
+        callbacks.onFileChanged(resolvedPath, 'created');
+    }
+
+    logger.debug(
+        `[FileActions] ✓ Auto-created file: ${resolvedPath} (${generatedContent.length} bytes)`
+    );
+
+    const content = await fileSystemService.readFile(resolvedPath);
+    return {
+        success: true,
+        data: { content, filePath: resolvedPath, autoCreated: true },
+        message: `Auto-created and read file: ${resolvedPath}`,
+    };
+}
+
+/**
  * Read file action executor
  */
 export async function executeReadFile(
@@ -88,7 +117,7 @@ export async function executeReadFile(
             throw new Error('Missing required parameter: filePath');
         }
 
-        const { fileSystemService, taskState, callbacks } = context;
+        const { fileSystemService, taskState } = context;
         let resolvedPath = resolveFilePath(
             params['filePath'] as string,
             taskState.workspaceRoot,
@@ -110,23 +139,7 @@ export async function executeReadFile(
                 logger.debug(`[FileActions] ✓ Found file at alternate location: ${foundPath}`);
                 resolvedPath = foundPath;
             } else {
-                // Auto-create file (like Cursor does)
-                logger.debug(`[FileActions] 🔧 File not found, auto-creating: ${resolvedPath}`);
-                const generatedContent = await generateMissingFileContent(resolvedPath, context);
-                await fileSystemService.writeFile(resolvedPath, generatedContent);
-
-                if (callbacks?.onFileChanged) {
-                    callbacks.onFileChanged(resolvedPath, 'created');
-                }
-
-                logger.debug(`[FileActions] ✓ Auto-created file: ${resolvedPath} (${generatedContent.length} bytes)`);
-
-                const content = await fileSystemService.readFile(resolvedPath);
-                return {
-                    success: true,
-                    data: { content, filePath: resolvedPath, autoCreated: true },
-                    message: `Auto-created and read file: ${resolvedPath}`,
-                };
+                return await autoCreateAndReadFile(resolvedPath, context);
             }
         }
 

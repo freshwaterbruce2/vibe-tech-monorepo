@@ -26,7 +26,12 @@ export interface GlobalSearchProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenFile: (file: string, line?: number, column?: number) => void;
-  onReplaceInFile: (file: string, searchText: string, replaceText: string, options: SearchOptions) => Promise<void>;
+  onReplaceInFile: (
+    file: string,
+    searchText: string,
+    replaceText: string,
+    options: SearchOptions
+  ) => Promise<void>;
   onSearchInFiles: (
     searchText: string,
     files: string[],

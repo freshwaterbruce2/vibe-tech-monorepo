@@ -44,6 +44,97 @@ export async function executeSearchCodebase(
 }
 
 /**
+ * Builds the AI prompt for analyzing a single code file
+ */
+function buildAnalyzeCodePrompt(resolvedPath: string, fileContent: string): string {
+    return `Analyze this code file and provide a concise review:
+
+File: ${resolvedPath}
+Lines: ${fileContent.split('\n').length}
+Size: ${fileContent.length} bytes
+
+\`\`\`
+${fileContent.slice(0, 10000)}
+${fileContent.length > 10000 ? '\n... (file truncated for analysis)' : ''}
+\`\`\`
+
+Provide a brief analysis covering:
+1. Purpose and functionality
+2. Code quality (clean code, patterns used)
+3. Potential issues or improvements
+4. Notable dependencies or patterns
+
+Keep it concise (3-5 bullet points).`;
+}
+
+/**
+ * Runs AI analysis on a file, falling back to basic stats on AI failure
+ */
+async function analyzeFileWithAi(
+    aiService: ActionContext['aiService'],
+    taskState: ActionContext['taskState'],
+    resolvedPath: string,
+    fileContent: string
+): Promise<StepResult> {
+    const aiAnalysisPrompt = buildAnalyzeCodePrompt(resolvedPath, fileContent);
+
+    try {
+        const aiResponse = await aiService.sendContextualMessage({
+            userQuery: aiAnalysisPrompt,
+            workspaceContext: {
+                rootPath: taskState.workspaceRoot || '',
+                totalFiles: 0,
+                languages: [],
+                testFiles: 0,
+                projectStructure: {},
+                dependencies: {},
+                exports: {},
+                symbols: {},
+                lastIndexed: new Date(),
+                summary: 'Code analysis',
+            },
+            currentFile: undefined,
+            relatedFiles: [],
+            conversationHistory: [],
+        });
+
+        const analysis = {
+            filePath: resolvedPath,
+            content: fileContent,
+            size: fileContent.length,
+            lines: fileContent.split('\n').length,
+            aiReview: aiResponse.content,
+        };
+
+        return {
+            success: true,
+            data: { analysis, generatedCode: aiResponse.content },
+            message: `✅ AI analyzed: ${resolvedPath}`,
+        };
+    } catch (aiError) {
+        logger.error('[CodeActions] AI analysis failed, returning basic stats:', aiError);
+        return buildBasicStatsResult(resolvedPath, fileContent);
+    }
+}
+
+/**
+ * Builds a StepResult containing only basic file statistics
+ */
+function buildBasicStatsResult(resolvedPath: string, fileContent: string): StepResult {
+    const analysis = {
+        filePath: resolvedPath,
+        content: fileContent,
+        size: fileContent.length,
+        lines: fileContent.split('\n').length,
+    };
+    return {
+        success: true,
+        data: { analysis },
+        message: `Analyzed file (basic stats only): ${resolvedPath}`,
+    };
+}
+
+/**
  * Analyze code action executor
  */
 export async function executeAnalyzeCode(
@@ -66,73 +157,7 @@ export async function executeAnalyzeCode(
 
         logger.debug(`[CodeActions] Requesting AI analysis for: ${resolvedPath}`);
 
-        const aiAnalysisPrompt = `Analyze this code file and provide a concise review:
-
-File: ${resolvedPath}
-Lines: ${fileContent.split('\n').length}
-Size: ${fileContent.length} bytes
-
-\`\`\`
-${fileContent.slice(0, 10000)}
-${fileContent.length > 10000 ? '\n... (file truncated for analysis)' : ''}
-\`\`\`
-
-Provide a brief analysis covering:
-1. Purpose and functionality
-2. Code quality (clean code, patterns used)
-3. Potential issues or improvements
-4. Notable dependencies or patterns
-
-Keep it concise (3-5 bullet points).`;
-
-        try {
-            const aiResponse = await aiService.sendContextualMessage({
-                userQuery: aiAnalysisPrompt,
-                workspaceContext: {
-                    rootPath: taskState.workspaceRoot || '',
-                    totalFiles: 0,
-                    languages: [],
-                    testFiles: 0,
-                    projectStructure: {},
-                    dependencies: {},
-                    exports: {},
-                    symbols: {},
-                    lastIndexed: new Date(),
-                    summary: 'Code analysis',
-                },
-                currentFile: undefined,
-                relatedFiles: [],
-                conversationHistory: [],
-            });
-
-            const analysis = {
-                filePath: resolvedPath,
-                content: fileContent,
-                size: fileContent.length,
-                lines: fileContent.split('\n').length,
-                aiReview: aiResponse.content,
-            };
-
-            return {
-                success: true,
-                data: { analysis, generatedCode: aiResponse.content },
-                message: `✅ AI analyzed: ${resolvedPath}`,
-            };
-        } catch (aiError) {
-            logger.error('[CodeActions] AI analysis failed, returning basic stats:', aiError);
-
-            const analysis = {
-                filePath: resolvedPath,
-                content: fileContent,
-                size: fileContent.length,
-                lines: fileContent.split('\n').length,
-            };
-            return {
-                success: true,
-                data: { analysis },
-                message: `Analyzed file (basic stats only): ${resolvedPath}`,
-            };
-        }
+        return await analyzeFileWithAi(aiService, taskState, resolvedPath, fileContent);
     } catch (error) {
         throw new Error(`Failed to analyze code: ${error}`);
     }

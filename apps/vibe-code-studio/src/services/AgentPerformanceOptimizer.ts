@@ -269,7 +269,11 @@ export class AgentPerformanceOptimizer extends EventEmitter {
       const optimizedRequest = await this.applyOptimizations(agentId, request, context, profile);
       
       // Execute request with monitoring
-      const response = await this.executeWithMonitoring(agent, optimizedRequest.request, optimizedRequest.context);
+      const response = await this.executeWithMonitoring(
+        agent,
+        optimizedRequest.request,
+        optimizedRequest.context
+      );
       
       // Record performance
       const processingTime = Date.now() - startTime;
@@ -402,7 +406,12 @@ export class AgentPerformanceOptimizer extends EventEmitter {
         agentRequests.map(async (req, index) => {
           const requestId = `${agentId}_${index}`;
           try {
-            const response = await this.optimizeRequest(req.agentId, req.request, req.context, req.agent);
+            const response = await this.optimizeRequest(
+              req.agentId,
+              req.request,
+              req.context,
+              req.agent
+            );
             return { requestId, response };
           } catch (error) {
             logger.error(`Batch request failed for ${requestId}:`, error);
@@ -508,8 +517,10 @@ export class AgentPerformanceOptimizer extends EventEmitter {
     
     return {
       totalAgents: profiles.length,
-      avgResponseTime: profiles.reduce((sum, p) => sum + p.avgResponseTime, 0) / Math.max(profiles.length, 1),
-      cacheEfficiency: profiles.reduce((sum, p) => sum + p.cacheHitRate, 0) / Math.max(profiles.length, 1),
+      avgResponseTime:
+        profiles.reduce((sum, p) => sum + p.avgResponseTime, 0) / Math.max(profiles.length, 1),
+      cacheEfficiency:
+        profiles.reduce((sum, p) => sum + p.cacheHitRate, 0) / Math.max(profiles.length, 1),
       memoryUsage: profiles.reduce((sum, p) => sum + p.memoryUsage, 0),
       activeAlerts: this.getRecentAlerts().length
     };

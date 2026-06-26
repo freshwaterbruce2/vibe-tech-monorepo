@@ -5,7 +5,12 @@ import type { AgentCircuitBreaker } from './AgentCircuitBreaker';
 export interface RecoveryStrategy {
   type: 'retry' | 'circuit_breaker' | 'fallback' | 'restart' | 'load_balance';
   condition: (error: Error, context: Record<string, unknown>) => boolean;
-  execute: (agent: BaseSpecializedAgent, request: string, context: AgentContext, cb?: AgentCircuitBreaker) => Promise<AgentResponse>;
+  execute: (
+    agent: BaseSpecializedAgent,
+    request: string,
+    context: AgentContext,
+    cb?: AgentCircuitBreaker
+  ) => Promise<AgentResponse>;
   maxAttempts: number;
   backoffMs: number;
 }
@@ -18,10 +23,16 @@ export class AgentRecoveryStrategies {
   }
 
   private initializeDefaultStrategies(): void {
-    this.strategies.push({
+    this.strategies.push(this.createRetryStrategy());
+    this.strategies.push(this.createCircuitBreakerStrategy());
+    this.strategies.push(this.createFallbackStrategy());
+  }
+
+  private createRetryStrategy(): RecoveryStrategy {
+    return {
       type: 'retry',
       condition: (error: Error) => {
-        return error.message.includes('timeout') || 
+        return error.message.includes('timeout') ||
                error.message.includes('network') ||
                error.message.includes('temporary');
       },
@@ -43,17 +54,24 @@ export class AgentRecoveryStrategies {
       },
       maxAttempts: 3,
       backoffMs: 1000
-    });
+    };
+  }
 
-    this.strategies.push({
+  private createCircuitBreakerStrategy(): RecoveryStrategy {
+    return {
       type: 'circuit_breaker',
       condition: (error: Error) => {
         return error.message.includes('service unavailable') ||
                error.message.includes('connection refused');
       },
-      execute: async (agent: BaseSpecializedAgent, request: string, context: AgentContext, cb?: AgentCircuitBreaker) => {
+      execute: async (
+        agent: BaseSpecializedAgent,
+        request: string,
+        context: AgentContext,
+        cb?: AgentCircuitBreaker
+      ) => {
         const agentId = agent.getName();
-        
+
         if (cb?.isCircuitBreakerOpen(agentId)) {
           const halfOpenTime = cb.getHalfOpenTime(agentId);
           if (halfOpenTime && Date.now() > halfOpenTime.getTime()) {
@@ -74,9 +92,11 @@ export class AgentRecoveryStrategies {
       },
       maxAttempts: 1,
       backoffMs: 0
-    });
+    };
+  }
 
-    this.strategies.push({
+  private createFallbackStrategy(): RecoveryStrategy {
+    return {
       type: 'fallback',
       condition: (error: Error) => {
         return error.message.includes('complexity') ||
@@ -88,9 +108,9 @@ export class AgentRecoveryStrategies {
           ...(context.currentFile && { currentFile: context.currentFile }),
           ...(context.workspaceRoot && { workspaceRoot: context.workspaceRoot })
         };
-        
+
         logger.info(`Using fallback strategy for agent ${agent.getName()}`);
-        
+
         try {
           const response = await agent.process(simplifiedRequest, simplifiedContext);
           return {
@@ -108,7 +128,7 @@ export class AgentRecoveryStrategies {
       },
       maxAttempts: 1,
       backoffMs: 0
-    });
+    };
   }
 
   getStrategies(): RecoveryStrategy[] {

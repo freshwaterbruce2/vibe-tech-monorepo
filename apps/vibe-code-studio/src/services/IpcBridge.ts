@@ -116,7 +116,9 @@ export const IpcBridge = {
             logger.warn('[IpcBridge] ipcBridge.onMessage not available');
             return () => { };
         }
-        return window.electron.ipcBridge.onMessage(handler as (msg: Record<string, unknown>) => void);
+        return window.electron.ipcBridge.onMessage(
+            handler as (msg: Record<string, unknown>) => void
+        );
     },
 
     onStatusChange(handler: (status: { connected: boolean }) => void) {
@@ -132,7 +134,10 @@ export const IpcBridge = {
             return { connected: false };
         }
         try {
-            return await window.electron.ipcBridge.getStatus() as { connected: boolean; error?: string };
+            return (await window.electron.ipcBridge.getStatus()) as {
+                connected: boolean;
+                error?: string;
+            };
         } catch (err) {
             logger.warn('[IpcBridge] getStatus failed', err);
             return { connected: false, error: String(err) };

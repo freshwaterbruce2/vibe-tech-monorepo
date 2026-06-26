@@ -113,8 +113,16 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
    * Register command handlers for the code actions
    * Must be called after provider is registered
    */
-  registerCommandHandlers(editor: Monaco.editor.IStandaloneCodeEditor, _monacoInstance: typeof Monaco) {
-    // Handler for single fix — registered as an editor action so Monaco's command service can invoke it
+  registerCommandHandlers(
+    editor: Monaco.editor.IStandaloneCodeEditor,
+    _monacoInstance: typeof Monaco
+  ) {
+    // Handlers registered as editor actions so Monaco's command service can invoke them
+    this.registerSingleFixAction(editor);
+    this.registerFixAllAction(editor);
+  }
+
+  private registerSingleFixAction(editor: Monaco.editor.IStandaloneCodeEditor) {
     editor.addAction({
       id: 'autofix.fixWithAI',
       label: 'Fix with AI',
@@ -153,8 +161,9 @@ export class AutoFixCodeActionProvider implements Monaco.languages.CodeActionPro
         }
       }
     });
+  }
 
-    // Handler for fix all
+  private registerFixAllAction(editor: Monaco.editor.IStandaloneCodeEditor) {
     editor.addAction({
       id: 'autofix.fixAllWithAI',
       label: 'Fix all with AI',

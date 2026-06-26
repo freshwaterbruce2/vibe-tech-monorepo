@@ -6,6 +6,9 @@
 import { ElectronService } from '../ElectronService';
 import type { LoggerFunction, TestFrameworkInfo } from './types';
 
+type GlobOptions = { cwd: string; absolute: boolean; ignore?: string[] };
+type GlobFn = (pattern: string, options: GlobOptions) => Promise<string[]>;
+
 export class TestDiscovery {
   private readonly workspaceRoot: string;
   private readonly logger: LoggerFunction;
@@ -72,11 +75,11 @@ export class TestDiscovery {
   /**
    * Import glob library dynamically
    */
-  private async importGlob(): Promise<(pattern: string, options: { cwd: string; absolute: boolean; ignore?: string[] }) => Promise<string[]>> {
+  private async importGlob(): Promise<GlobFn> {
     try {
       // Try to import glob dynamically
       const { glob } = await import('glob');
-      return glob as unknown as (pattern: string, options: { cwd: string; absolute: boolean; ignore?: string[] }) => Promise<string[]>;
+      return glob as unknown as GlobFn;
     } catch {
       // Fallback to a simple file finder
       return this.simpleGlob.bind(this);

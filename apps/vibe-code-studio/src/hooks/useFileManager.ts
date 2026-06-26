@@ -68,6 +68,100 @@ function getLanguageFromExtension(filePath: string): string {
   return languageMap[ext ?? ''] ?? 'plaintext';
 }
 
+async function loadEditorFile(
+  fileSystemService: FileSystemService,
+  filePath: string
+): Promise<EditorFile> {
+  logger.debug('[useFileManager] Opening file:', filePath);
+  const content = await fileSystemService.readFile(filePath);
+  logger.debug('[useFileManager] File content length:', content?.length || 0);
+
+  const file: EditorFile = {
+    id: filePath,
+    name: filePath.split('/').pop() ?? filePath,
+    path: filePath,
+    content,
+    language: getLanguageFromExtension(filePath),
+    isModified: false,
+  };
+
+  logger.debug('[useFileManager] Created EditorFile:', {
+    name: file.name,
+    path: file.path,
+    language: file.language,
+    contentLength: file.content.length,
+  });
+
+  return file;
+}
+
+interface FileMutationState {
+  currentFile: EditorFile | null;
+  setCurrentFile: React.Dispatch<React.SetStateAction<EditorFile | null>>;
+  setOpenFiles: React.Dispatch<React.SetStateAction<EditorFile[]>>;
+}
+
+interface FileMutations {
+  handleCloseFile: (filePath: string) => void;
+  handleFileChange: (content: string) => void;
+  handleSaveFile: () => Promise<void>;
+}
+
+function useFileMutations(
+  state: FileMutationState,
+  fileSystemService: FileSystemService,
+  onSaveSuccess?: (fileName: string) => void,
+  onSaveError?: (fileName: string, error: Error) => void
+): FileMutations {
+  const { currentFile, setCurrentFile, setOpenFiles } = state;
+
+  const handleCloseFile = useCallback(
+    (filePath: string) => {
+      setOpenFiles((prev) => {
+        const filtered = prev.filter((f) => f.path !== filePath);
+
+        // Update current file if we're closing it
+        if (currentFile?.path === filePath) {
+          // Simply set to the first available file or null
+          setCurrentFile(filtered.length > 0 ? filtered[0] ?? null : null);
+        }
+
+        return filtered;
+      });
+    },
+    [currentFile, setCurrentFile, setOpenFiles]
+  );
+
+  const handleFileChange = useCallback(
+    (content: string) => {
+      if (currentFile) {
+        const updatedFile = { ...currentFile, content, isModified: true };
+        setCurrentFile(updatedFile);
+        setOpenFiles((prev) => prev.map((f) => (f.path === currentFile.path ? updatedFile : f)));
+      }
+    },
+    [currentFile, setCurrentFile, setOpenFiles]
+  );
+
+  const handleSaveFile = useCallback(async () => {
+    if (currentFile) {
+      try {
+        await fileSystemService.writeFile(currentFile.path, currentFile.content);
+        const savedFile = { ...currentFile, isModified: false };
+        setCurrentFile(savedFile);
+        setOpenFiles((prev) => prev.map((f) => (f.path === currentFile.path ? savedFile : f)));
+        onSaveSuccess?.(currentFile.name);
+      } catch (error) {
+        logger.error('Failed to save file:', error);
+        onSaveError?.(currentFile.name, error as Error);
+        throw error;
+      }
+    }
+  }, [currentFile, fileSystemService, onSaveSuccess, onSaveError, setCurrentFile, setOpenFiles]);
+
+  return { handleCloseFile, handleFileChange, handleSaveFile };
+}
+
 export function useFileManager({
   fileSystemService,
   onSaveSuccess,
@@ -79,25 +173,7 @@ export function useFileManager({
   const handleOpenFile = useCallback(
     async (filePath: string) => {
       try {
-        logger.debug('[useFileManager] Opening file:', filePath);
-        const content = await fileSystemService.readFile(filePath);
-        logger.debug('[useFileManager] File content length:', content?.length || 0);
-
-        const file: EditorFile = {
-          id: filePath,
-          name: filePath.split('/').pop() ?? filePath,
-          path: filePath,
-          content,
-          language: getLanguageFromExtension(filePath),
-          isModified: false,
-        };
-
-        logger.debug('[useFileManager] Created EditorFile:', {
-          name: file.name,
-          path: file.path,
-          language: file.language,
-          contentLength: file.content.length
-        });
+        const file = await loadEditorFile(fileSystemService, filePath);
 
         // Add to open files if not already open
         setOpenFiles((prev) => {
@@ -119,49 +195,12 @@ export function useFileManager({
     [fileSystemService]
   );
 
-  const handleCloseFile = useCallback(
-    (filePath: string) => {
-      setOpenFiles((prev) => {
-        const filtered = prev.filter((f) => f.path !== filePath);
-
-        // Update current file if we're closing it
-        if (currentFile?.path === filePath) {
-          // Simply set to the first available file or null
-          setCurrentFile(filtered.length > 0 ? filtered[0] ?? null : null);
-        }
-
-        return filtered;
-      });
-    },
-    [currentFile]
+  const { handleCloseFile, handleFileChange, handleSaveFile } = useFileMutations(
+    { currentFile, setCurrentFile, setOpenFiles },
+    fileSystemService,
+    onSaveSuccess,
+    onSaveError
   );
-
-  const handleFileChange = useCallback(
-    (content: string) => {
-      if (currentFile) {
-        const updatedFile = { ...currentFile, content, isModified: true };
-        setCurrentFile(updatedFile);
-        setOpenFiles((prev) => prev.map((f) => (f.path === currentFile.path ? updatedFile : f)));
-      }
-    },
-    [currentFile]
-  );
-
-  const handleSaveFile = useCallback(async () => {
-    if (currentFile) {
-      try {
-        await fileSystemService.writeFile(currentFile.path, currentFile.content);
-        const savedFile = { ...currentFile, isModified: false };
-        setCurrentFile(savedFile);
-        setOpenFiles((prev) => prev.map((f) => (f.path === currentFile.path ? savedFile : f)));
-        onSaveSuccess?.(currentFile.name);
-      } catch (error) {
-        logger.error('Failed to save file:', error);
-        onSaveError?.(currentFile.name, error as Error);
-        throw error;
-      }
-    }
-  }, [currentFile, fileSystemService, onSaveSuccess, onSaveError]);
 
   return {
     currentFile,

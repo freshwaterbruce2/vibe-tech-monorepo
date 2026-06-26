@@ -31,6 +31,136 @@ const resolveModelId = (candidate: unknown): string => {
   return DEFAULT_MODEL;
 };
 
+type AISet = (fn: (state: AIState) => void) => void;
+type AIGet = () => AIState;
+
+const createChatActions = (set: AISet) => ({
+  addMessage: (message: AIMessage) =>
+    set((state) => {
+      state.messages.push({
+        ...message,
+        id: message.id || Date.now().toString(),
+        timestamp: message.timestamp || new Date(),
+      });
+    }),
+
+  clearMessages: () =>
+    set((state) => {
+      state.messages = [];
+    }),
+
+  setResponding: (isResponding: boolean) =>
+    set((state) => {
+      state.isResponding = isResponding;
+    }),
+
+  updateMessage: (id: string, updates: Partial<AIMessage>) =>
+    set((state) => {
+      const message = state.messages.find((m) => m.id === id);
+      if (message) {
+        Object.assign(message, updates);
+      }
+    }),
+
+  setModel: (model: string) =>
+    set((state) => {
+      const resolvedModel = resolveModelId(model);
+      if (resolvedModel !== model) {
+        logger.warn(
+          `[AIStore] Ignoring unknown model '${model}', using '${DEFAULT_MODEL}'`
+        );
+      }
+      state.currentModel = resolvedModel;
+      if (EXTENDED_THINKING_MODEL_IDS.has(resolvedModel)) {
+        state.showReasoningProcess = true;
+      }
+    }),
+
+  toggleReasoningProcess: () =>
+    set((state) => {
+      state.showReasoningProcess = !state.showReasoningProcess;
+    }),
+
+  setCompletionEnabled: (enabled: boolean) =>
+    set((state) => {
+      state.completionEnabled = enabled;
+    }),
+
+  setLastCompletion: (completion: string | null) =>
+    set((state) => {
+      state.lastCompletion = completion;
+    }),
+});
+
+const createContextHistoryActions = (set: AISet) => ({
+  updateContext: (context: Partial<AIState['activeContext']>) =>
+    set((state) => {
+      Object.assign(state.activeContext, context);
+    }),
+
+  clearContext: () =>
+    set((state) => {
+      state.activeContext = {
+        files: [],
+        symbols: [],
+        imports: [],
+      };
+    }),
+
+  saveConversation: (title?: string) =>
+    set((state) => {
+      const conversation = {
+        id: Date.now().toString(),
+        title: title ?? `Conversation ${state.conversationHistory.length + 1}`,
+        messages: [...state.messages],
+        timestamp: new Date(),
+      };
+      state.conversationHistory.push(conversation);
+
+      // Keep only last 50 conversations
+      if (state.conversationHistory.length > 50) {
+        state.conversationHistory = state.conversationHistory.slice(-50);
+      }
+    }),
+
+  loadConversation: (id: string) =>
+    set((state) => {
+      const conversation = state.conversationHistory.find((c) => c.id === id);
+      if (conversation) {
+        state.messages = [...conversation.messages];
+      }
+    }),
+
+  deleteConversation: (id: string) =>
+    set((state) => {
+      const index = state.conversationHistory.findIndex((c) => c.id === id);
+      if (index > -1) {
+        state.conversationHistory.splice(index, 1);
+      }
+    }),
+});
+
+const createActions = (set: AISet): AIState['actions'] => ({
+  ...createChatActions(set),
+  ...createContextHistoryActions(set),
+});
+
+const createComputed = (get: AIGet): AIState['computed'] => ({
+  totalMessages: () => get().messages.length,
+
+  hasActiveConversation: () => get().messages.length > 0,
+
+  currentConversationTokens: () => {
+    // Rough token estimation: ~4 chars per token
+    const state = get();
+    const totalChars = state.messages.reduce(
+      (sum, msg) => sum + msg.content.length + (msg.reasoning_content?.length ?? 0),
+      0
+    );
+    return Math.ceil(totalChars / 4);
+  },
+});
+
 interface AIState {
   // Chat state
   messages: AIMessage[];
@@ -112,126 +242,10 @@ export const useAIStore = create<AIState>()(
         conversationHistory: [],
 
         // Actions
-        actions: {
-          addMessage: (message) =>
-            set((state) => {
-              state.messages.push({
-                ...message,
-                id: message.id || Date.now().toString(),
-                timestamp: message.timestamp || new Date(),
-              });
-            }),
-
-          clearMessages: () =>
-            set((state) => {
-              state.messages = [];
-            }),
-
-          setResponding: (isResponding) =>
-            set((state) => {
-              state.isResponding = isResponding;
-            }),
-
-          updateMessage: (id, updates) =>
-            set((state) => {
-              const message = state.messages.find((m) => m.id === id);
-              if (message) {
-                Object.assign(message, updates);
-              }
-            }),
-
-          setModel: (model) =>
-            set((state) => {
-              const resolvedModel = resolveModelId(model);
-              if (resolvedModel !== model) {
-                logger.warn(
-                  `[AIStore] Ignoring unknown model '${model}', using '${DEFAULT_MODEL}'`
-                );
-              }
-              state.currentModel = resolvedModel;
-              if (EXTENDED_THINKING_MODEL_IDS.has(resolvedModel)) {
-                state.showReasoningProcess = true;
-              }
-            }),
-
-          toggleReasoningProcess: () =>
-            set((state) => {
-              state.showReasoningProcess = !state.showReasoningProcess;
-            }),
-
-          setCompletionEnabled: (enabled) =>
-            set((state) => {
-              state.completionEnabled = enabled;
-            }),
-
-          setLastCompletion: (completion) =>
-            set((state) => {
-              state.lastCompletion = completion;
-            }),
-
-          updateContext: (context) =>
-            set((state) => {
-              Object.assign(state.activeContext, context);
-            }),
-
-          clearContext: () =>
-            set((state) => {
-              state.activeContext = {
-                files: [],
-                symbols: [],
-                imports: [],
-              };
-            }),
-
-          saveConversation: (title) =>
-            set((state) => {
-              const conversation = {
-                id: Date.now().toString(),
-                title: title ?? `Conversation ${state.conversationHistory.length + 1}`,
-                messages: [...state.messages],
-                timestamp: new Date(),
-              };
-              state.conversationHistory.push(conversation);
-
-              // Keep only last 50 conversations
-              if (state.conversationHistory.length > 50) {
-                state.conversationHistory = state.conversationHistory.slice(-50);
-              }
-            }),
-
-          loadConversation: (id) =>
-            set((state) => {
-              const conversation = state.conversationHistory.find((c) => c.id === id);
-              if (conversation) {
-                state.messages = [...conversation.messages];
-              }
-            }),
-
-          deleteConversation: (id) =>
-            set((state) => {
-              const index = state.conversationHistory.findIndex((c) => c.id === id);
-              if (index > -1) {
-                state.conversationHistory.splice(index, 1);
-              }
-            }),
-        },
+        actions: createActions(set),
 
         // Computed
-        computed: {
-          totalMessages: () => get().messages.length,
-
-          hasActiveConversation: () => get().messages.length > 0,
-
-          currentConversationTokens: () => {
-            // Rough token estimation: ~4 chars per token
-            const state = get();
-            const totalChars = state.messages.reduce(
-              (sum, msg) => sum + msg.content.length + (msg.reasoning_content?.length ?? 0),
-              0
-            );
-            return Math.ceil(totalChars / 4);
-          },
-        },
+        computed: createComputed(get),
       })),
       {
         name: 'vibe-code-studio-ai-store',
