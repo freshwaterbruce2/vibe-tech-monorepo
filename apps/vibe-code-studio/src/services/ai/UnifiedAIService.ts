@@ -3,6 +3,12 @@ import { SecureApiKeyManager } from '@vibetech/core';
 import { logger } from '../Logger';
 import { AIProviderFactory } from './AIProviderFactory';
 import { AIProvider, MODEL_REGISTRY } from './AIProviderInterface';
+import type { IAIProvider } from './AIProviderInterface';
+import { BackendProxyService } from './providers/BackendProxyService';
+
+// Proxy mode (default ON): client-side keys never exist, so provider readiness is
+// the proxy's reachability + server key config, not a local key. Mirrors AIProviderFactory.
+const USE_AI_PROXY = import.meta.env['VITE_USE_AI_PROXY'] !== 'false';
 
 /**
  * Get API key from env vars first, then SecureApiKeyManager
@@ -80,9 +86,124 @@ export class UnifiedAIService {
   }
 
   /**
+   * Lazily initialize a provider from env vars / SecureApiKeyManager.
+   * Returns the initialized provider, or undefined if no key or init failed.
+   */
+  private async lazyInitForCompletion(
+    providerType: AIProvider
+  ): Promise<IAIProvider | undefined> {
+    const lazyKey = await getLazyKey(providerType);
+    if (!lazyKey) return undefined;
+    logger.info(`[UnifiedAI] Lazily initializing ${providerType} prior to completion...`);
+    try {
+      return await this.factory.initializeProvider({
+        provider: providerType,
+        apiKey: lazyKey,
+        model: this.currentModel,
+      });
+    } catch (initErr) {
+      const msg = initErr instanceof Error ? initErr.message : String(initErr);
+      logger.warn(`[UnifiedAI] Lazy initialization failed: ${msg}`);
+      return undefined;
+    }
+  }
+
+  /**
+   * Pick a default model id for a fallback provider.
+   */
+  private fallbackModelFor(fallbackProvider: AIProvider): string {
+    return fallbackProvider === AIProvider.DEEPSEEK ? 'deepseek/deepseek-v3.2' :
+           fallbackProvider === AIProvider.GOOGLE ? 'google/gemini-3.1-pro' :
+           fallbackProvider === AIProvider.MOONSHOT ? 'moonshot/kimi-2.5-pro' :
+           fallbackProvider === AIProvider.LOCAL ? 'local/vibe-completion' :
+           'openai/gpt-5.2';
+  }
+
+  /**
+   * Fallback completion path: complete via the first initialized provider.
+   * Throws if no fallback provider is available.
+   */
+  private async completeViaFallback(
+    modelInfo: { provider: AIProvider },
+    providerError: unknown,
+    request: AICompletionRequest
+  ): Promise<AICompletionResponse & { provider: string }> {
+    const errorMsg =
+      providerError instanceof Error ? providerError.message : String(providerError);
+    logger.warn(`[UnifiedAI] Provider ${modelInfo.provider} not available: ${errorMsg}`);
+
+    const availableProviders = this.factory.getInitializedProviders();
+    if (availableProviders.length === 0) {
+      throw new Error(
+        `Provider ${modelInfo.provider} is not configured and no fallback providers ` +
+        'are available. Please add an API key in Settings.'
+      );
+    }
+
+    const fallbackProvider = availableProviders[0];
+    if (!fallbackProvider) {
+      throw new Error('No valid fallback provider available');
+    }
+    logger.info(`[UnifiedAI] Falling back to ${fallbackProvider}`);
+
+    let fallbackProviderInstance;
+    try {
+      fallbackProviderInstance = await this.factory.getProvider(fallbackProvider);
+    } catch (fallbackErr) {
+      const msg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
+      throw new Error(`Failed to get fallback provider ${fallbackProvider}: ${msg}`);
+    }
+
+    if (!fallbackProviderInstance) {
+      throw new Error(`Fallback provider ${fallbackProvider} returned null`);
+    }
+
+    const fallbackModel = this.fallbackModelFor(fallbackProvider);
+    const response = await fallbackProviderInstance.complete(fallbackModel, {
+      messages: request.messages,
+      maxTokens: request.maxTokens,
+      temperature: request.temperature,
+    });
+
+    return { ...response, provider: String(fallbackProvider) } as
+      AICompletionResponse & { provider: string };
+  }
+
+  /**
+   * Execute a completion on a resolved provider with abort wiring.
+   */
+  private async executeComplete(
+    provider: IAIProvider,
+    request: AICompletionRequest,
+    providerName: AIProvider
+  ): Promise<AICompletionResponse & { provider: string }> {
+    const controller = new AbortController();
+    if (request.signal) {
+      request.signal.addEventListener('abort', () => controller.abort());
+    }
+    this.activeControllers.add(controller);
+
+    try {
+      const response = await provider.complete(this.currentModel, {
+        messages: request.messages,
+        maxTokens: request.maxTokens,
+        temperature: request.temperature,
+        signal: controller.signal,
+      });
+
+      return { ...response, provider: String(providerName) } as
+        AICompletionResponse & { provider: string };
+    } finally {
+      this.activeControllers.delete(controller);
+    }
+  }
+
+  /**
    * Orchestrates the completion request with automatic fallback
    */
-  async complete(request: AICompletionRequest): Promise<AICompletionResponse & { provider: string }> {
+  async complete(
+    request: AICompletionRequest
+  ): Promise<AICompletionResponse & { provider: string }> {
     try {
       // Get the provider for the current model
       const modelInfo = MODEL_REGISTRY[this.currentModel];
@@ -103,86 +224,15 @@ export class UnifiedAIService {
         // [FIX for ERR: Provider not initialized]
         // If the provider wasn't initialized yet (e.g. useAppEffects mount delayed),
         // try to lazily initialize from env vars or SecureApiKeyManager before giving up.
-        let lazyKey = await getLazyKey(modelInfo.provider);
+        provider = await this.lazyInitForCompletion(modelInfo.provider);
 
-        if (lazyKey) {
-            logger.info(`[UnifiedAI] Lazily initializing ${modelInfo.provider} prior to completion...`);
-            try {
-                provider = await this.factory.initializeProvider({
-                    provider: modelInfo.provider,
-                    apiKey: lazyKey,
-                    model: this.currentModel
-                });
-            } catch (initErr) {
-                logger.warn(`[UnifiedAI] Lazy initialization failed: ${initErr instanceof Error ? initErr.message : String(initErr)}`);
-                lazyKey = ''; // Force fallback
-            }
-        }
-
-        if (!lazyKey || !provider) {
-            // No key found or lazy init failed, proceed with fallback logic
-            const errorMsg = providerError instanceof Error ? providerError.message : String(providerError);
-            logger.warn(`[UnifiedAI] Provider ${modelInfo.provider} not available: ${errorMsg}`);
-
-            // Try to fall back to an available provider
-            const availableProviders = this.factory.getInitializedProviders();
-            if (availableProviders.length > 0) {
-              const fallbackProvider = availableProviders[0];
-              if (!fallbackProvider) {
-                throw new Error('No valid fallback provider available');
-              }
-              logger.info(`[UnifiedAI] Falling back to ${fallbackProvider}`);
-              let fallbackProviderInstance;
-              try {
-                fallbackProviderInstance = await this.factory.getProvider(fallbackProvider);
-              } catch (fallbackErr) {
-                throw new Error(`Failed to get fallback provider ${fallbackProvider}: ${fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr)}`);
-              }
-
-              if (!fallbackProviderInstance) {
-                throw new Error(`Fallback provider ${fallbackProvider} returned null`);
-              }
-              provider = fallbackProviderInstance;
-
-              // Use a default model for the fallback provider
-              const fallbackModel = fallbackProvider === AIProvider.DEEPSEEK ? 'deepseek/deepseek-v3.2' :
-                                   fallbackProvider === AIProvider.GOOGLE ? 'google/gemini-3.1-pro' :
-                                   fallbackProvider === AIProvider.MOONSHOT ? 'moonshot/kimi-2.5-pro' :
-                                   fallbackProvider === AIProvider.LOCAL ? 'local/vibe-completion' :
-                                   'openai/gpt-5.2';
-
-              const response = await provider.complete(fallbackModel, {
-                messages: request.messages,
-                maxTokens: request.maxTokens,
-                temperature: request.temperature,
-              });
-
-              return { ...response, provider: String(fallbackProvider) } as AICompletionResponse & { provider: string };
-            } else {
-              // No providers available at all
-              throw new Error(`Provider ${modelInfo.provider} is not configured and no fallback providers are available. Please add an API key in Settings.`);
-            }
+        if (!provider) {
+          // No key found or lazy init failed, proceed with fallback logic
+          return await this.completeViaFallback(modelInfo, providerError, request);
         }
       }
 
-      const controller = new AbortController();
-      if (request.signal) {
-        request.signal.addEventListener('abort', () => controller.abort());
-      }
-      this.activeControllers.add(controller);
-
-      try {
-        const response = await provider.complete(this.currentModel, {
-          messages: request.messages,
-          maxTokens: request.maxTokens,
-          temperature: request.temperature,
-          signal: controller.signal,
-        });
-
-        return { ...response, provider: String(modelInfo.provider) } as AICompletionResponse & { provider: string };
-      } finally {
-        this.activeControllers.delete(controller);
-      }
+      return await this.executeComplete(provider, request, modelInfo.provider);
     } catch (primaryError) {
         logger.error('[UnifiedAI] AI service failed:', primaryError);
         const errorMsg = primaryError instanceof Error ? primaryError.message : 'Unknown error';
@@ -228,6 +278,100 @@ export class UnifiedAIService {
   }
 
   /**
+   * Lazily initialize a provider for streaming.
+   * Returns the initialized provider, or undefined if no key or init failed.
+   */
+  private async lazyInitForStream(providerType: AIProvider): Promise<IAIProvider | undefined> {
+    const lazyKey = await getLazyKey(providerType);
+    if (!lazyKey) return undefined;
+    logger.info(`[UnifiedAI] Lazily initializing ${providerType} prior to stream...`);
+    try {
+      return await this.factory.initializeProvider({
+        provider: providerType,
+        apiKey: lazyKey,
+        model: this.currentModel,
+      });
+    } catch (initErr) {
+      const msg = initErr instanceof Error ? initErr.message : String(initErr);
+      logger.warn(`[UnifiedAI] Lazy initialization failed for stream: ${msg}`);
+      return undefined;
+    }
+  }
+
+  /**
+   * Fallback provider resolution for streaming. Throws if none available.
+   */
+  private async streamFallbackProvider(
+    providerType: AIProvider,
+    providerError: unknown
+  ): Promise<IAIProvider> {
+    const errorMsg =
+      providerError instanceof Error ? providerError.message : String(providerError);
+    logger.warn(`[UnifiedAI] Provider ${providerType} not available for streaming: ${errorMsg}`);
+
+    const availableProviders = this.factory.getInitializedProviders();
+    if (availableProviders.length === 0) {
+      throw new Error(
+        `Provider ${providerType} is not configured and no fallback providers ` +
+        'are available. Please add an API key in Settings.'
+      );
+    }
+
+    const fallbackProvider = availableProviders[0];
+    if (!fallbackProvider) throw new Error('No valid fallback provider available');
+    logger.info(`[UnifiedAI] Falling back to ${fallbackProvider} for stream`);
+    try {
+      return await this.factory.getProvider(fallbackProvider);
+    } catch (fallbackErr) {
+      const msg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
+      throw new Error(`Failed to get fallback provider ${fallbackProvider}: ${msg}`);
+    }
+  }
+
+  /**
+   * Stream chunks from a provider that supports streamComplete, with abort wiring.
+   */
+  private async *streamFromProvider(
+    provider: IAIProvider,
+    context: { maxTokens?: number; temperature?: number },
+    messages: ChatMessage[]
+  ): AsyncGenerator<string, void, unknown> {
+    const controller = new AbortController();
+    this.activeControllers.add(controller);
+
+    try {
+      for await (const chunk of provider.streamComplete(this.currentModel, {
+        messages,
+        maxTokens: context.maxTokens ?? 2000,
+        temperature: context.temperature ?? 0.3,
+        signal: controller.signal,
+      })) {
+        if (chunk.content) {
+          yield chunk.content;
+        }
+      }
+    } finally {
+      this.activeControllers.delete(controller);
+    }
+  }
+
+  /**
+   * Resolve a provider for streaming, with lazy init and fallback.
+   */
+  private async resolveStreamProvider(providerType: AIProvider): Promise<IAIProvider> {
+    try {
+      return await this.factory.getProvider(providerType);
+    } catch (providerError) {
+      // [FIX for ERR: Provider not initialized]
+      // Try to lazily initialize from env vars or SecureApiKeyManager before giving up.
+      const provider = await this.lazyInitForStream(providerType);
+      if (provider) return provider;
+      // No key found or lazy init failed, try to fall back to an available provider
+      return this.streamFallbackProvider(providerType, providerError);
+    }
+  }
+
+  /**
    * Send a contextual message with streaming response
    */
   async *sendContextualMessageStream(context: {
@@ -267,68 +411,11 @@ export class UnifiedAIService {
       const modelInfo = MODEL_REGISTRY[this.currentModel];
       const providerType = modelInfo?.provider ?? AIProvider.OPENROUTER;
 
-      let provider;
-      try {
-        provider = await this.factory.getProvider(providerType);
-      } catch (providerError) {
-        // [FIX for ERR: Provider not initialized]
-        // Try to lazily initialize from env vars or SecureApiKeyManager before giving up.
-        let lazyKey = await getLazyKey(providerType);
-
-        if (lazyKey) {
-            logger.info(`[UnifiedAI] Lazily initializing ${providerType} prior to stream...`);
-            try {
-                provider = await this.factory.initializeProvider({
-                    provider: providerType,
-                    apiKey: lazyKey,
-                    model: this.currentModel
-                });
-            } catch (initErr) {
-                logger.warn(`[UnifiedAI] Lazy initialization failed for stream: ${initErr instanceof Error ? initErr.message : String(initErr)}`);
-                lazyKey = ''; // Force fallback
-            }
-        }
-
-        if (!lazyKey || !provider) {
-            // No key found or lazy init failed, try to fall back to an available provider
-            const errorMsg = providerError instanceof Error ? providerError.message : String(providerError);
-            logger.warn(`[UnifiedAI] Provider ${providerType} not available for streaming: ${errorMsg}`);
-
-            const availableProviders = this.factory.getInitializedProviders();
-            if (availableProviders.length > 0) {
-              const fallbackProvider = availableProviders[0];
-              if (!fallbackProvider) throw new Error('No valid fallback provider available');
-              logger.info(`[UnifiedAI] Falling back to ${fallbackProvider} for stream`);
-              try {
-                provider = await this.factory.getProvider(fallbackProvider);
-              } catch (fallbackErr) {
-                 throw new Error(`Failed to get fallback provider ${fallbackProvider}: ${fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr)}`);
-              }
-            } else {
-              throw new Error(`Provider ${providerType} is not configured and no fallback providers are available. Please add an API key in Settings.`);
-            }
-        }
-      }
+      const provider = await this.resolveStreamProvider(providerType);
 
       // Try streaming if supported
-      if (provider.streamComplete) {
-        const controller = new AbortController();
-        this.activeControllers.add(controller);
-
-        try {
-          for await (const chunk of provider.streamComplete(this.currentModel, {
-            messages,
-            maxTokens: context.maxTokens ?? 2000,
-            temperature: context.temperature ?? 0.3,
-            signal: controller.signal,
-          })) {
-            if (chunk.content) {
-              yield chunk.content;
-            }
-          }
-        } finally {
-          this.activeControllers.delete(controller);
-        }
+      if (typeof provider.streamComplete === 'function') {
+        yield* this.streamFromProvider(provider, context, messages);
       } else {
         // Fallback to non-streaming
         const response = await this.complete(request);
@@ -418,6 +505,40 @@ export class UnifiedAIService {
    */
   getAvailableProviders(): AIProvider[] {
     return this.factory.getInitializedProviders();
+  }
+
+  /**
+   * True if at least one provider can actually run a request — either already
+   * initialized, or a key is resolvable from env vars / SecureApiKeyManager.
+   * Lets callers fail fast with a clear message instead of silently returning
+   * canned fallback text.
+   */
+  async isAnyProviderConfigured(): Promise<boolean> {
+    if (USE_AI_PROXY) {
+      // Proxy mode: client keys never exist here. Readiness == the proxy is
+      // reachable AND has at least one server-side key. Probe fresh so a backend
+      // that started (or died) after boot is reflected, not the one-shot init flag.
+      try {
+        return await new BackendProxyService().validateConnection();
+      } catch {
+        return false;
+      }
+    }
+    if (this.factory.getInitializedProviders().length > 0) {
+      return true;
+    }
+    const candidates = [
+      AIProvider.MOONSHOT,
+      AIProvider.GOOGLE,
+      AIProvider.OPENROUTER,
+      AIProvider.DEEPSEEK,
+    ];
+    for (const provider of candidates) {
+      if (await getLazyKey(provider)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**

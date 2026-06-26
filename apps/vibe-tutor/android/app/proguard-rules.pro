@@ -24,9 +24,11 @@
 -keep class com.getcapacitor.** { *; }
 -dontwarn com.getcapacitor.**
 
-# Capacitor Community SQLite plugin
+# Capacitor Community SQLite plugin and SQLCipher native bindings
 -keep class com.getcapacitor.community.database.sqlite.** { *; }
 -dontwarn com.getcapacitor.community.database.sqlite.**
+-keep class net.sqlcipher.** { *; }
+-dontwarn net.sqlcipher.**
 
 # Native audio plugin (if present)
 -dontwarn com.mediagrid.**

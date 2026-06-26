@@ -1,0 +1,77 @@
+name: Agent Verification Gate
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - '**/*.ts'
+      - '**/*.tsx'
+      - '**/*.js'
+      - '**/*.jsx'
+      - '**/*.json'
+      - '**/*.env*'
+      - '**/*.ps1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '10.33.0'
+
+jobs:
+  path-check:
+    name: Path Segregation Audit
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+
+      # Ensure mock directories are present if needed, though D:\ exists on GHA windows runners
+      - name: Provision Drive Directories
+        shell: pwsh
+        run: |
+          if (-not (Test-Path -LiteralPath "D:\databases")) {
+              New-Item -ItemType Directory -Force -Path "D:\databases" | Out-Null
+          }
+          if (-not (Test-Path -LiteralPath "D:\logs")) {
+              New-Item -ItemType Directory -Force -Path "D:\logs" | Out-Null
+          }
+          if (-not (Test-Path -LiteralPath "D:\learning-system")) {
+              New-Item -ItemType Directory -Force -Path "D:\learning-system" | Out-Null
+          }
+          if (-not (Test-Path -LiteralPath "D:\data")) {
+              New-Item -ItemType Directory -Force -Path "D:\data" | Out-Null
+          }
+
+      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Nx cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .nx/cache
+          key: nx-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            nx-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+            nx-${{ runner.os }}-
+
+      - name: Run Master Verification Harness
+        shell: pwsh
+        run: ./scripts/verify-agent-changes.ps1
+

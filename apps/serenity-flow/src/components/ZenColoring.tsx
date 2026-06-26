@@ -5,8 +5,8 @@ import {
   ChevronLeft, Brush, ZoomIn, ZoomOut, RotateCcw,
 } from 'lucide-react';
 import { useZenColoring } from './useZenColoring';
-import { PaletteName } from './zenColoringTypes';
-import { PALETTES } from './zenColoringTypes';
+import { PaletteName, PALETTES, PALETTE_NAMES } from './zenColoringTypes';
+
 
 export function ZenColoring() {
   const hook = useZenColoring();
@@ -14,8 +14,8 @@ export function ZenColoring() {
     screen, setScreen, activeArtworkId, setActiveArtworkId, fills,
     currentArtwork, currentFills, selectedColor, setSelectedColor,
     activePalette, setActivePalette, symmetryMode, setSymmetryMode,
-    isClassicMode, activeCategory, setActiveCategory,
-    hintPathId, notice, exporting, pendingReset, selectedVectorArtwork,
+    isClassicMode, setIsClassicMode, activeCategory, setActiveCategory,
+    hintPathId, notice, exporting, pendingReset, setPendingReset, selectedVectorArtwork,
     setSelectedVectorArtwork, sessionInfo, aiLoading, currentPalette,
     svgRef, ENRICHED_ARTWORKS, VECTOR_SHIFT_ARTWORKS,
     handleFill, toggleClassicMode, handleHint, handleReset, confirmReset,
@@ -197,7 +197,7 @@ export function ZenColoring() {
                 {activePalette === 'ai' && <button onClick={() => generateAISession()} className="text-amber-500 hover:underline text-[10px]">Regenerate</button>}
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {(activePalette === 'ai' ? Object.values(sessionInfo.palette).map(o => o.hex) : currentPalette).map((hex,i) => (
+                {currentPalette.map((hex: string, i: number) => (
                   <button key={i} onClick={() => setSelectedColor(hex)} className={`w-9 h-9 rounded-full border-2 transition ${selectedColor===hex ? 'border-sky-600 scale-110' : 'border-slate-200 hover:border-slate-400'}`} style={{backgroundColor:hex}} />
                 ))}
               </div>

@@ -6,10 +6,10 @@ documents by domain, and managing (deleting) documents.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Path as PathParam
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from vibe_justice.services.evidence_service import EvidenceService
 from vibe_justice.services.retrieval_service import RetrievalService

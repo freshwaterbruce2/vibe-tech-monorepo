@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, waitFor } from '@/test/utils/test-utils'
+import { render, screen, waitFor, act } from '@/test/utils/test-utils'
 import userEvent from '@testing-library/user-event'
 import { Sidebar } from '../Sidebar'
 import * as api from '@/services/api'
@@ -33,11 +33,16 @@ describe('Sidebar', () => {
   // ==================== Rendering Tests ====================
 
   describe('Rendering', () => {
-    it('renders sidebar in collapsed state by default', () => {
+    it('renders sidebar in collapsed state by default', async () => {
       render(<Sidebar />)
 
       const sidebar = screen.getByRole('navigation').parentElement
       expect(sidebar).toHaveClass('w-16')
+
+      // Wait for mount fetch to settle and avoid act warnings
+      await waitFor(() => {
+        expect(mockListCases).toHaveBeenCalled()
+      })
     })
 
     it('renders all navigation items', async () => {
@@ -52,11 +57,16 @@ describe('Sidebar', () => {
       expect(screen.getByText('Settings')).toBeInTheDocument()
     })
 
-    it('renders menu icon', () => {
+    it('renders menu icon', async () => {
       const { container } = render(<Sidebar />)
 
       const menuIcon = container.querySelector('.lucide-menu')
       expect(menuIcon).toBeInTheDocument()
+
+      // Wait for mount fetch to settle and avoid act warnings
+      await waitFor(() => {
+        expect(mockListCases).toHaveBeenCalled()
+      })
     })
 
     it('renders security indicator', async () => {
@@ -637,14 +647,18 @@ describe('Sidebar', () => {
       render(<Sidebar />)
 
       // Dispatch global event
-      window.dispatchEvent(new Event('vibe-toggle-settings'))
+      await act(async () => {
+        window.dispatchEvent(new Event('vibe-toggle-settings'))
+      })
 
       await waitFor(() => {
         expect(screen.getByText('System Configuration')).toBeInTheDocument()
       })
 
       // Toggle again to close
-      window.dispatchEvent(new Event('vibe-toggle-settings'))
+      await act(async () => {
+        window.dispatchEvent(new Event('vibe-toggle-settings'))
+      })
 
       await waitFor(() => {
         expect(screen.queryByText('System Configuration')).not.toBeInTheDocument()

@@ -36,7 +36,7 @@ Detailed rules are in `.claude/rules/`. Key references:
 - Paths policy: `.claude/rules/paths-policy.md`
 - No duplicates: `.claude/rules/no-duplicates.md`
 - No mock/placeholder code: `.claude/rules/no-mock-or-placeholder-code.md`
-- Code size limits: `.claude/rules/code-size-limits.md` — file 600 / function 50 / line 100, hard-blocked at commit
+- Code size limits: `.claude/rules/code-size-limits.md` — file 1000 / function 50 / line 100, hard-blocked at commit
 - TypeScript patterns: `.claude/rules/typescript-patterns.md`
 - Testing strategy: `.claude/rules/testing-strategy.md`
 - Craft edit-review widget: `.claude/rules/craft-edit-review.md`

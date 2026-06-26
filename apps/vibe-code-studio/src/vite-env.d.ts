@@ -12,6 +12,8 @@ interface ImportMetaEnv {
   readonly REACT_APP_DEEPSEEK_BASE_URL?: string;
   readonly VITE_APP_TITLE?: string;
   readonly VITE_ELECTRON_ENTRY?: string;
+  readonly VITE_AI_PROXY_URL?: string;
+  readonly VITE_USE_AI_PROXY?: string;
   // These are inherited from Vite's ImportMetaEnv
   // readonly MODE: string
   // readonly DEV: boolean

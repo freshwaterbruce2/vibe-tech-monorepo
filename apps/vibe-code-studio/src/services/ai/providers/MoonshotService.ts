@@ -41,6 +41,7 @@ interface MoonshotChoice {
     role: string;
     content: string;
     reasoning?: string;
+    reasoning_content?: string;
   };
   finish_reason: string;
 }
@@ -69,6 +70,21 @@ const DEFAULT_MAX_TOKENS = 8192;
 // Temperature MUST be fixed per Moonshot docs
 const THINKING_TEMPERATURE = 1.0;
 const NON_THINKING_TEMPERATURE = 0.6;
+
+/** Parse a single SSE line, yielding the delta content token when present. */
+function* parseSseLine(line: string): Generator<string, void, unknown> {
+  const trimmed = line.trim();
+  if (!trimmed || trimmed === 'data: [DONE]') return;
+  if (!trimmed.startsWith('data: ')) return;
+
+  try {
+    const data = JSON.parse(trimmed.slice(6));
+    const content = data.choices?.[0]?.delta?.content;
+    if (content) yield content;
+  } catch {
+    // Skip malformed chunks
+  }
+}
 
 export class MoonshotService implements IAIService {
   id = 'moonshot';
@@ -172,7 +188,9 @@ export class MoonshotService implements IAIService {
 
     return {
       content: choice?.message?.content ?? '',
-      reasoning_content: choice?.message?.reasoning,
+      // kimi-k2.5 returns reasoning in `reasoning_content`; the newer K2.6 uses
+      // `reasoning`. Accept either so thinking output is never silently dropped.
+      reasoning_content: choice?.message?.reasoning_content ?? choice?.message?.reasoning,
       usage: {
         promptTokens: data.usage?.prompt_tokens ?? 0,
         completionTokens: data.usage?.completion_tokens ?? 0,
@@ -182,11 +200,10 @@ export class MoonshotService implements IAIService {
     };
   }
 
-  async *stream(messages: ChatMessage[], options?: AIChatOptions): AsyncGenerator<string, void, unknown> {
-    if (!this.apiKey) {
-      throw new Error('Moonshot API key not configured');
-    }
-
+  private buildStreamRequest(
+    messages: ChatMessage[],
+    options?: AIChatOptions,
+  ): MoonshotChatRequest {
     const model = this.resolveModel(options?.model);
     const useThinking = this.shouldUseThinking(model);
     const temperature = useThinking ? THINKING_TEMPERATURE : NON_THINKING_TEMPERATURE;
@@ -196,7 +213,7 @@ export class MoonshotService implements IAIService {
       content: msg.content
     }));
 
-    const body: MoonshotChatRequest = {
+    return {
       model,
       messages: moonshotMessages,
       temperature,
@@ -204,6 +221,17 @@ export class MoonshotService implements IAIService {
       thinking: { type: useThinking ? 'enabled' : 'disabled' },
       stream: true
     };
+  }
+
+  async *stream(
+    messages: ChatMessage[],
+    options?: AIChatOptions,
+  ): AsyncGenerator<string, void, unknown> {
+    if (!this.apiKey) {
+      throw new Error('Moonshot API key not configured');
+    }
+
+    const body = this.buildStreamRequest(messages, options);
 
     const response = await fetch(`${MOONSHOT_API_URL}/chat/completions`, {
       method: 'POST',
@@ -233,18 +261,7 @@ export class MoonshotService implements IAIService {
         buffer = lines.pop() ?? '';
 
         for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || trimmed === 'data: [DONE]') continue;
-
-          if (trimmed.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(trimmed.slice(6));
-              const content = data.choices?.[0]?.delta?.content;
-              if (content) yield content;
-            } catch {
-              // Skip malformed chunks
-            }
-          }
+          yield* parseSseLine(line);
         }
       }
     } finally {
@@ -262,7 +279,10 @@ export class MoonshotService implements IAIService {
     return response.content;
   }
 
-  async generateText(prompt: string, options?: { maxTokens?: number; temperature?: number; model?: string }): Promise<string> {
+  async generateText(
+    prompt: string,
+    options?: { maxTokens?: number; temperature?: number; model?: string },
+  ): Promise<string> {
     return this.chat([{ role: 'user', content: prompt }], options);
   }
 

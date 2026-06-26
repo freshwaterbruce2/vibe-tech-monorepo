@@ -1,0 +1,31 @@
+{
+  "name": "avatar-render-engine",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/avatar-render-engine/src",
+  "projectType": "library",
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": ["dist/{projectRoot}"],
+      "currentVersionResolver": "git-tag",
+      "fallbackCurrentVersionResolver": "disk"
+    }
+  },
+  "tags": ["scope:avatar", "type:library", "platform:render"],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/packages/avatar-render-engine",
+        "main": "packages/avatar-render-engine/src/index.ts",
+        "tsConfig": "packages/avatar-render-engine/tsconfig.lib.json",
+        "assets": ["packages/avatar-render-engine/*.md"]
+      }
+    },
+    "nx-release-publish": {
+      "options": {
+        "packageRoot": "dist/{projectRoot}"
+      }
+    }
+  }
+}

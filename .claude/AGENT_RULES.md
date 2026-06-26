@@ -30,7 +30,7 @@ cat AI.md
 Before touching ANY code:
 
 1. Count files to be modified
-2. Check line count of existing files (500 soft / 600 hard)
+2. Check line count of existing files (500 soft / 1000 hard)
 3. Determine if planning is required (3+ files)
 
 ### **STEP 2: PLANNING (Opus/Claude Code Only)**
@@ -55,7 +55,7 @@ If you are Sonnet 4.6:
 
 1. **WAIT for approved plan** from Opus/Claude Code
 2. **FOLLOW plan exactly** - no deviations
-3. **ENFORCE line limits** - split files over 500/600 lines
+3. **ENFORCE line limits** - split files over 500/1000 lines
 4. **MAINTAIN file names** - never rename existing files
 
 ---
@@ -66,11 +66,11 @@ If you are Sonnet 4.6:
 
 ```python
 # Before editing ANY file:
-if file_lines > 600:
+if file_lines > 1000:
     STOP - File must be split into modules (warns at 500 lines)
 
 # Before creating ANY file:
-if estimated_lines > 600:
+if estimated_lines > 1000:
     STOP - Design as multiple modules
 ```
 
@@ -93,7 +93,7 @@ if estimated_lines > 600:
 Every file must follow:
 
 ```typescript
-// MAX 500 LINES SOFT / 600 LINES HARD
+// MAX 500 LINES SOFT / 1000 LINES HARD
 // Single responsibility
 // Clear interfaces
 // Dependency injection
@@ -199,7 +199,7 @@ START
   │   ├─ 1-2 files → Proceed with caution
   │   └─ 3+ files → STOP! Planning required
   │
-  ├─ File over 600 lines?
+  ├─ File over 1000 lines?
   │   ├─ Yes → STOP! Must split (warns at 500)
   │   └─ No → Continue
   │

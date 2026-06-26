@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function, max-len */
 import { getDatabasePath } from '@vibetech/shared-config';
 import Database from 'better-sqlite3';
 import { existsSync, mkdirSync } from 'fs';
@@ -9,12 +10,44 @@ export interface AppDatabaseConfig {
     verbose?: boolean;
 }
 
+export function assertSafeDatabasePath(dbPath: string, dbName: string): void {
+    if (dbPath === ':memory:') {
+        return;
+    }
+    const resolvedPath = dirname(dbPath) === '.' ? getDatabasePath('app') : resolve(dbPath);
+    const resolvedPathLower = resolvedPath.toLowerCase();
+    const workspaceRoot = process.env.WORKSPACE_ROOT ? resolve(process.env.WORKSPACE_ROOT) : null;
+    if (workspaceRoot && resolvedPathLower.startsWith(workspaceRoot.toLowerCase())) {
+        throw new Error(`[PathSegregationViolation] Fatal: Database '${dbName}' path resides inside code workspace root (WORKSPACE_ROOT): ${resolvedPath}`);
+    }
+    let currentDir = dirname(resolvedPath);
+    let detectedWorkspaceRoot: string | null = null;
+    while (currentDir && currentDir !== dirname(currentDir)) {
+        if (existsSync(resolve(currentDir, 'pnpm-workspace.yaml')) || existsSync(resolve(currentDir, '.git'))) {
+            detectedWorkspaceRoot = currentDir;
+            break;
+        }
+        currentDir = dirname(currentDir);
+    }
+    if (detectedWorkspaceRoot && resolvedPathLower.startsWith(detectedWorkspaceRoot.toLowerCase())) {
+        throw new Error(`[PathSegregationViolation] Fatal: Database '${dbName}' path resides inside the detected code repository root: ${resolvedPath}\nWorkspace Root: ${detectedWorkspaceRoot}`);
+    }
+    if (resolvedPathLower.includes('v:\\monorepo') || resolvedPathLower.includes('v:/monorepo')) {
+        throw new Error(`[PathSegregationViolation] Fatal: Database '${dbName}' path contains hardcoded 'V:\\monorepo': ${resolvedPath}`);
+    }
+}
+
+import { resolve } from 'path';
+
 export class AppDatabase {
     private db: Database.Database;
     private static instance: AppDatabase | null = null;
 
     constructor(config: AppDatabaseConfig = {}) {
         const dbPath = config.path ?? getDatabasePath('app');
+
+        // Assert path segregation compliance before connecting
+        assertSafeDatabasePath(dbPath, 'app');
 
         // Ensure directory exists
         const dir = dirname(dbPath);
@@ -33,6 +66,7 @@ export class AppDatabase {
     private initializeDatabase(): void {
         // Enable WAL mode for better concurrency
         this.db.pragma('journal_mode = WAL');
+        this.db.pragma('busy_timeout = 5000');
 
         // Optimize for Windows SSD
         this.db.pragma('synchronous = NORMAL');

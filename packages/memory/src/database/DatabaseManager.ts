@@ -279,6 +279,13 @@ export class DatabaseManager {
         } catch {
           /* column already exists */
         }
+        try {
+          db.exec(
+            `CREATE INDEX IF NOT EXISTS idx_semantic_embedding_model ON semantic_memory (embedding_model)`,
+          );
+        } catch {
+          /* index may already exist */
+        }
       },
     ];
 

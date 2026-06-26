@@ -4,8 +4,14 @@
  * @module EnhancedAgentMode/types
  */
 import type { RefObject } from 'react';
-import type { PerformanceProfile, AgentPerformanceOptimizer } from '../../services/AgentPerformanceOptimizer';
-import type { OrchestratorResponse, AgentOrchestrator } from '../../services/specialized-agents/AgentOrchestrator';
+import type {
+  AgentPerformanceOptimizer,
+  PerformanceProfile,
+} from '../../services/AgentPerformanceOptimizer';
+import type {
+  AgentOrchestrator,
+  OrchestratorResponse,
+} from '../../services/specialized-agents/AgentOrchestrator';
 
 /** Props for the EnhancedAgentMode component */
 export interface EnhancedAgentModeProps {
@@ -39,8 +45,8 @@ export interface LogEntry {
   readonly id: string;
   /** Type/category of the log entry */
   readonly type: LogEntryType;
-  /** Timestamp when the log was created */
-  readonly timestamp: Date;
+  /** Timestamp when the log was created (may be an ISO string after persistence) */
+  readonly timestamp: Date | string;
   /** Log message content */
   readonly content: string;
   /** Name of the agent that generated this log (if applicable) */
@@ -63,7 +69,13 @@ export interface LogMetrics {
 }
 
 /** Task execution status */
-export type TaskStatus = 'idle' | 'analyzing' | 'coordinating' | 'executing' | 'completed' | 'error';
+export type TaskStatus =
+  | 'idle'
+  | 'analyzing'
+  | 'coordinating'
+  | 'executing'
+  | 'completed'
+  | 'error';
 
 /** Agent information for display */
 export interface AgentInfo {
@@ -123,7 +135,7 @@ export interface UseAgentTaskReturn {
   readonly resetTask: () => void;
   readonly clearError: () => void;
   readonly toggleSection: (section: string) => void;
-  readonly formatTimestamp: (date: Date) => string;
+  readonly formatTimestamp: (date: Date | string | number) => string;
   // Data
   readonly availableAgents: readonly AgentInfo[];
   readonly performanceReport: PerformanceReport;

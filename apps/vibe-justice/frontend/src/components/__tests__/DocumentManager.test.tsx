@@ -526,8 +526,11 @@ describe('DocumentManager', () => {
       const doc2Element = screen.getByText(/doc2.txt/i);
       await user.click(doc2Element);
 
-      // Verify doc2 is selected (would typically check for active/selected class)
-      expect(doc2Element.closest('.document-item')).toHaveClass('selected');
+      // Verify doc2 is selected by checking the actual selected Tailwind classes
+      expect(doc2Element.closest('.document-item')).toHaveClass(
+        'bg-neon-mint/20',
+        'border-neon-mint/30'
+      );
     });
   });
 

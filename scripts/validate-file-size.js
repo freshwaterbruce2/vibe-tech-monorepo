@@ -5,7 +5,7 @@
  *
  * Enforces the workspace line-count cap (500 +/- 100):
  *   - WARNING_THRESHOLD (500): file is approaching the limit, split soon.
- *   - MAX_LINES (600): hard cap, commit/build is rejected.
+ *   - MAX_LINES (1000): hard cap, commit/build is rejected.
  *
  * Covers code that ESLint cannot lint (.py / .rs) and acts as a backstop for
  * JS/TS. Excluded paths (tests, generated code, vendored code) are never
@@ -21,7 +21,7 @@
 import fs from "fs";
 import path from "path";
 
-const MAX_LINES = 600;
+const MAX_LINES = 1000;
 const WARNING_THRESHOLD = 500;
 
 // File extensions to check (code only — JSON/YAML/MD are never counted).

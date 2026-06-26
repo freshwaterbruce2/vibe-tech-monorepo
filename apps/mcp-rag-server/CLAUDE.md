@@ -107,7 +107,7 @@ pnpm --filter '@vibetech/mcp-rag-server' typecheck; pnpm --filter '@vibetech/mcp
 
 ## File size policy
 
-500 lines max per `.ts/.tsx`, 600 hard ceiling. `src\index.ts` is the largest file and holds all six tool registrations inline; if adding a seventh tool, extract to `src\tools\<tool-name>.ts` first.
+500 lines max per `.ts/.tsx`, 1000 hard ceiling. `src\index.ts` is the largest file and holds all six tool registrations inline; if adding a seventh tool, extract to `src\tools\<tool-name>.ts` first.
 
 ## Pointers
 

@@ -62,6 +62,16 @@ function Invoke-QualityCommand {
 }
 
 # ============================================
+# 0. Lint-Staged Check (triggers AST and regex path segregation validation)
+# ============================================
+$exitCode = [Math]::Max(
+    [int]$exitCode,
+    [int](Invoke-QualityCommand -Label "[1/4] Running Lint-Staged gates (regex & AST path checks)..." -Command {
+        pnpm exec lint-staged
+    })
+)
+
+# ============================================
 # 1. ESLint Check (if TS/JS files staged)
 # ============================================
 if ($sourceFiles.Count -gt 0) {
@@ -75,7 +85,7 @@ if ($sourceFiles.Count -gt 0) {
 
     $exitCode = [Math]::Max(
         [int]$exitCode,
-        [int](Invoke-QualityCommand -Label "[1/3] Running ESLint on staged files in batches..." -Command {
+        [int](Invoke-QualityCommand -Label "[2/4] Running ESLint on staged files in batches..." -Command {
             $batchSize = 5
             $eslintFail = $false
             for ($i = 0; $i -lt $sourceFiles.Count; $i += $batchSize) {
@@ -95,7 +105,7 @@ if ($sourceFiles.Count -gt 0) {
         })
     )
 } else {
-    Write-Host "[1/3] Lint skipped (no JS/TS files)" -ForegroundColor DarkGray
+    Write-Host "[2/4] Lint skipped (no JS/TS files)" -ForegroundColor DarkGray
 }
 
 # ============================================
@@ -106,18 +116,18 @@ if ($typeScriptFiles.Count -gt 0) {
     # unstaged work, which makes normal commits fail on other active lanes.
     $exitCode = [Math]::Max(
         [int]$exitCode,
-        [int](Invoke-QualityCommand -Label "[2/3] Running Nx affected typecheck..." -Command {
+        [int](Invoke-QualityCommand -Label "[3/4] Running Nx affected typecheck..." -Command {
             pnpm exec nx affected -t typecheck --files="$nxTypecheckFileList" --outputStyle=static
         })
     )
 } else {
-    Write-Host "[2/3] Typecheck skipped (no TS/TSX files)" -ForegroundColor DarkGray
+    Write-Host "[3/4] Typecheck skipped (no TS/TSX files)" -ForegroundColor DarkGray
 }
 
 # ============================================
 # 3. File Size Check (byte size + line-count caps)
 # ============================================
-Write-Host "[3/3] Checking file sizes and line counts..." -ForegroundColor Yellow
+Write-Host "[4/4] Checking file sizes and line counts..." -ForegroundColor Yellow
 
 $maxSizeBytes = 5MB
 $largeFiles = @()
@@ -141,7 +151,7 @@ if ($largeFiles.Count -gt 0) {
     Write-Host "  Byte sizes OK (<5MB)" -ForegroundColor Green
 }
 
-# Line-count cap (500 warn / 600 hard) via the shared validator. The script
+# Line-count cap (500 warn / 1000 hard) via the shared validator. The script
 # applies its own extension filter and exclusion globs (tests, generated code,
 # migrations, scaffolding templates).
 $lineCountFiles = @(
@@ -161,6 +171,26 @@ if ($lineCountFiles.Count -gt 0) {
 } else {
     Write-Host "  Line-count check skipped (no code files)" -ForegroundColor DarkGray
 }
+
+# ============================================
+# 5. Full Workspace Integration Harness Check
+# ============================================
+$exitCode = [Math]::Max(
+    [int]$exitCode,
+    [int](Invoke-QualityCommand -Label "[5/6] Running verify-agent-changes.ps1 verification harness (skipping monorepo-wide lint)..." -Command {
+        pwsh.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "verify-agent-changes.ps1") -SkipLint
+    })
+)
+
+# ============================================
+# 6. Database Growth Trend Check
+# ============================================
+$exitCode = [Math]::Max(
+    [int]$exitCode,
+    [int](Invoke-QualityCommand -Label "[6/6] Checking database growth limits (<15% growth delta)..." -Command {
+        pwsh.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "check-database-trends.ps1")
+    })
+)
 
 # ============================================
 # Final Result

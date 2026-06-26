@@ -1,7 +1,6 @@
 """Tests for timestamp utilities - UTC timezone handling"""
 from datetime import datetime, timezone, timedelta
 
-import pytest
 
 from vibe_justice.utils.timestamps import (
     get_utc_now,

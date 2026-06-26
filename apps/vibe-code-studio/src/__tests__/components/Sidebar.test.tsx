@@ -47,10 +47,10 @@ function renderSidebar({
 }: {
   entries?: Record<string, FileSystemItem[]>;
   refreshKey?: number;
-  onCreateFile?: ReturnType<typeof vi.fn>;
-  onCreateFolder?: ReturnType<typeof vi.fn>;
-  onRenamePath?: ReturnType<typeof vi.fn>;
-  onDeleteFile?: ReturnType<typeof vi.fn>;
+  onCreateFile?: (path: string) => Promise<void>;
+  onCreateFolder?: (path: string) => Promise<void>;
+  onRenamePath?: (oldPath: string, newPath: string) => Promise<void>;
+  onDeleteFile?: (path: string) => Promise<void>;
 } = {}) {
   const directoryEntries = entries ?? {
     '/workspace': [...baseRootEntries],
@@ -173,7 +173,7 @@ describe('Sidebar', () => {
   });
 
   it('clears the selected file after deleting it', async () => {
-    const directoryEntries = {
+    const directoryEntries: Record<string, FileSystemItem[]> = {
       '/workspace': [...baseRootEntries],
       '/workspace/src': [{ name: 'index.ts', path: '/workspace/src/index.ts', type: 'file' }],
     };

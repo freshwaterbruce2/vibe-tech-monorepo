@@ -8,8 +8,12 @@ pub struct DbState {
 }
 
 fn get_db_path() -> PathBuf {
-    // Check environment variable first
-    if let Ok(env_path) = std::env::var("DATABASE_PATH") {
+    // App-specific override ONLY. We deliberately do NOT honor the generic
+    // DATABASE_PATH here: other monorepo apps consume it (vibe-invoice, vibe-justice),
+    // and a stray DATABASE_PATH=...\database.db would point VCS at the wrong file,
+    // splitting state from the Node backend (scripts/backend-server.js). Mirrors the
+    // vibe-blox VIBEBLOX_DATABASE_PATH convention. Unset => canonical default below.
+    if let Ok(env_path) = std::env::var("VCS_DATABASE_PATH") {
         if !env_path.trim().is_empty() {
             return PathBuf::from(env_path);
         }
@@ -43,11 +47,13 @@ fn ensure_connection(state: &DbState) -> Result<(), String> {
         conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;")
             .map_err(|e| e.to_string())?;
 
-        // Create strategy_memory table if it doesn't exist
+        // Create strategy_memory table if it doesn't exist.
+        // pattern_hash is UNIQUE so db_save_pattern's ON CONFLICT(pattern_hash)
+        // upsert resolves against it (without the constraint the upsert errors).
         conn.execute(
             "CREATE TABLE IF NOT EXISTS strategy_memory (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                pattern_hash TEXT NOT NULL,
+                pattern_hash TEXT UNIQUE NOT NULL,
                 pattern_data TEXT NOT NULL,
                 success_rate REAL DEFAULT 0,
                 usage_count INTEGER DEFAULT 0,

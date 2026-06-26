@@ -202,7 +202,7 @@ describe('SearchService - Comprehensive Tests', () => {
     it('should handle file read errors', async () => {
       mockFileSystemService.readFile.mockRejectedValue(new Error('Read error'));
 
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation();
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       const pattern = /foo/gi;
       const results = await searchService.searchInFile('/test/file.ts', pattern, defaultOptions);

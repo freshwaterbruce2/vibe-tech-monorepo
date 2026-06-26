@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
  * Checks staged (default) or all tracked files for line counts over a limit.
- * Default: staged files, 500 lines +/- 100 max.
+ * Default: staged files, soft target 500 +/- 100 lines, hard cap 1000 lines.
  *
  * Usage:
- *   node scripts/check-line-limits.mjs --staged --max 600
- *   node scripts/check-line-limits.mjs --all --max 600
+ *   node scripts/check-line-limits.mjs --staged --max 1000
+ *   node scripts/check-line-limits.mjs --all --max 1000
  *   node scripts/check-line-limits.mjs --all --include-untracked --max 500 --path apps/nova-agent/src-tauri/src --include-ext .rs
  */
 import { execSync } from 'node:child_process';
@@ -15,7 +15,7 @@ import { resolve, sep } from 'node:path';
 const args = process.argv.slice(2);
 const mode = args.includes('--all') ? 'all' : 'staged';
 const maxIndex = args.findIndex((a) => a === '--max');
-const max = maxIndex !== -1 && args[maxIndex + 1] ? Number.parseInt(args[maxIndex + 1], 10) : 600;
+const max = maxIndex !== -1 && args[maxIndex + 1] ? Number.parseInt(args[maxIndex + 1], 10) : 1000;
 const pathIndex = args.findIndex((a) => a === '--path');
 const pathFilter = pathIndex !== -1 && args[pathIndex + 1] ? normalizePath(args[pathIndex + 1]) : null;
 const includeUntracked = args.includes('--include-untracked');

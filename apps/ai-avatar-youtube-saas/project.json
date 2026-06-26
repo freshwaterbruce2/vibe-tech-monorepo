@@ -1,0 +1,67 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "ai-avatar-youtube-saas",
+  "projectType": "application",
+  "sourceRoot": "apps/ai-avatar-youtube-saas/src",
+  "implicitDependencies": [
+    "@vibetech/db-app",
+    "@vibetech/shared-config"
+  ],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run dev",
+        "cwd": "apps/ai-avatar-youtube-saas"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/.next"],
+      "options": {
+        "command": "pnpm run build",
+        "cwd": "apps/ai-avatar-youtube-saas",
+        "env": {
+          "NODE_ENV": "production",
+          "SKIP_ENV_VALIDATION": "true"
+        }
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "pnpm run start",
+        "cwd": "apps/ai-avatar-youtube-saas"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run lint",
+        "cwd": "apps/ai-avatar-youtube-saas"
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run typecheck",
+        "cwd": "apps/ai-avatar-youtube-saas"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm run test",
+        "cwd": "apps/ai-avatar-youtube-saas"
+      }
+    },
+    "quality": {}
+  },
+  "tags": [
+    "scope:app",
+    "type:web",
+    "stack:nextjs",
+    "product:ai-avatar-youtube-automator"
+  ]
+}

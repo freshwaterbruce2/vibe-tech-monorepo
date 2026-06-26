@@ -6,7 +6,7 @@
  */
 
 import { AnimatePresence, motion } from 'framer-motion';
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import styled from 'styled-components';
 
 // Eagerly loaded core components (always visible)
@@ -17,105 +17,34 @@ import Sidebar from '../components/Sidebar';
 import StatusBar from '../components/StatusBar';
 import TitleBar from '../components/TitleBar';
 
-// Lazy-loaded conditional components (only loaded when their panel is opened)
-const EnhancedAgentMode = lazy(() => import('../components/EnhancedAgentMode/EnhancedAgentMode'));
-const BackgroundTaskPanel = lazy(() => import('../components/BackgroundTaskPanel').then(m => ({ default: m.BackgroundTaskPanel })));
-const ComponentLibrary = lazy(() => import('../components/ComponentLibrary').then(m => ({ default: m.ComponentLibrary })));
-const EditorStreamPanel = lazy(() => import('../components/EditorStreamPanel').then(m => ({ default: m.EditorStreamPanel })));
-const ErrorFixPanel = lazy(() => import('../components/ErrorFixPanel'));
-const GitPanel = lazy(() => import('../components/GitPanel'));
-const GlobalSearch = lazy(() => import('../components/GlobalSearch').then(m => ({ default: m.GlobalSearch })));
-const KeyboardShortcuts = lazy(() => import('../components/KeyboardShortcuts').then(m => ({ default: m.KeyboardShortcuts })));
-const MultiFileEditApprovalPanel = lazy(() => import('../components/MultiFileEditApprovalPanel').then(m => ({ default: m.MultiFileEditApprovalPanel })));
-const PerformanceMonitor = lazy(() => import('../components/PerformanceMonitor'));
-const PreviewPanel = lazy(() => import('../components/PreviewPanel').then(m => ({ default: m.PreviewPanel })));
-const ScreenshotToCodePanel = lazy(() => import('../components/ScreenshotToCodePanel').then(m => ({ default: m.ScreenshotToCodePanel })));
-const TerminalPanel = lazy(() => import('../components/TerminalPanel').then(m => ({ default: m.TerminalPanel })));
-const VisualEditor = lazy(() => import('../components/VisualEditor').then(m => ({ default: m.VisualEditor })));
-const WelcomeScreen = lazy(() => import('../components/WelcomeScreen'));
+// Lazy-loaded conditional panels (only loaded when their toggle opens them)
+import {
+  BackgroundTaskPanel,
+  BrainScanPanel,
+  ComponentLibrary,
+  EditorStreamPanel,
+  EnhancedAgentMode,
+  ErrorFixPanel,
+  GitPanel,
+  GlobalSearch,
+  KeyboardShortcuts,
+  MultiFileEditApprovalPanel,
+  PerformanceMonitor,
+  PreviewPanel,
+  ScreenshotToCodePanel,
+  TerminalPanel,
+  VisualEditor,
+  WelcomeScreen,
+} from './lazyPanels';
 
 import type { GeneratedFix } from '../services/AutoFixService';
 import { logger } from '../services/Logger';
 import { useAppExtras, useServices, useUIPanel, useWorkspaceCtx } from './contexts';
 import { useEffect } from 'react';
-import { LandingPage, createDefaultLandingContent } from '@vibetech/landing';
-import { authService, UserWithPlan } from '../services/AuthService';
+import { LandingPage } from '@vibetech/landing';
+import { authService, type UserWithPlan } from '../services/AuthService';
 import { AuthModal } from '../components/AuthModal';
-
-const vibeStudioLandingContent = createDefaultLandingContent({
-  productName: 'Vibe Code Studio',
-  badge: 'VIBE CODE STUDIO • NEURAL INTERFACE',
-  title: 'Next-generation AI-powered code editor where innovation meets elegant design',
-  subtitle: 'Resurrect your workflows with context-aware AI assistant, proactive error fixing, multi-agent orchestrations, and a premium developer environment.',
-  primaryAction: { label: 'Get Started Free', href: '#signup' },
-  secondaryAction: { label: 'Sign In', href: '#login' },
-  previewLabel: 'What\'s Included',
-  previewItems: [
-    '⚡ Proactive AI Autocomplete',
-    '🧠 Full Codebase Semantic Search',
-    '🛠️ Real-time Auto-Fix & Debugging',
-    '🤝 Multi-Agent Swarm Orchestrator'
-  ],
-  featuresHeading: 'Engineered for Elite Developers',
-  featuresSubheading: 'Built on Tauri 2.0 with a high-performance SQLite WAL storage engine.',
-  features: [
-    {
-      title: 'Context-Aware AI Chat',
-      description: 'Interact with your codebase. Vibe Code Studio understands file relationships, test suites, and project dependencies.'
-    },
-    {
-      title: 'Auto-Fix Proactive Debugger',
-      description: 'Errors are caught and resolved before you hit compile. Generate unit tests and refactor with single-click diff approval.'
-    },
-    {
-      title: 'Monetized App Factory',
-      description: 'Integrated with Stripe billing, secure scrypt/bcrypt authentication, and real-time entitlements gating.'
-    }
-  ],
-  pricingHeading: 'Simple, Flexible Pricing',
-  pricingSubheading: 'Unlock the full power of context-aware multi-agent development.',
-  tiers: [
-    {
-      name: 'Free Tier',
-      price: '$0',
-      subtitle: 'For evaluation and personal projects',
-      features: [
-        'Core editor workspace',
-        'Basic AI chat assistant (10 messages/day)',
-        'Local SQLite storage mode',
-        'Standard theme library'
-      ]
-    },
-    {
-      name: 'Pro Tier',
-      price: '$19',
-      subtitle: 'Per month, billed monthly',
-      featured: true,
-      features: [
-        'Unlimited AI chat assistant queries',
-        'Proactive AI autocomplete',
-        'Multi-agent execution engine',
-        'Custom workspace rules & parser',
-        'Priority feature flags & telemetry'
-      ]
-    }
-  ],
-  faqHeading: 'Frequently Asked Questions',
-  faqSubheading: 'Everything you need to know about plans and security.',
-  faqs: [
-    {
-      question: 'Is my codebase secure?',
-      answer: 'Yes. All state is saved locally in D:\\databases\\vibe_studio.db. We support local models and secure proxy channels.'
-    },
-    {
-      question: 'How do I upgrade to Pro?',
-      answer: 'Click the upgrade action to initiate a Stripe session. Once processed via the Stripe Webhook Bus, your features will unlock instantly.'
-    }
-  ],
-  ctaHeading: 'Ready to elevate your development environment?',
-  ctaBody: 'Create a free account or upgrade to Pro to start shipping with advanced agent intelligence.',
-  ctaAction: { label: 'Get Started Now', href: '#signup' }
-});
+import { vibeStudioLandingContent } from './landingContent';
 
 // Styled Components
 const AppContainer = styled.div`
@@ -334,7 +263,11 @@ export function AppLayout() {
           </Suspense>
         )}
 
-        {ui.gitPanelOpen && <Suspense fallback={null}><GitPanel workingDirectory={ws.workspaceFolder ?? undefined} /></Suspense>}
+        {ui.gitPanelOpen && (
+          <Suspense fallback={null}>
+            <GitPanel workingDirectory={ws.workspaceFolder ?? undefined} />
+          </Suspense>
+        )}
 
         {ui.backgroundPanelOpen && (
           <Suspense fallback={null}>
@@ -367,7 +300,10 @@ export function AppLayout() {
         onToggleVisualEditor={extras.handleToggleVisualEditor}
       />
 
-      <NotificationContainer notifications={extras.notifications} onClose={extras.removeNotification} />
+      <NotificationContainer
+        notifications={extras.notifications}
+        onClose={extras.removeNotification}
+      />
 
       <Suspense fallback={null}>
         <EditorStreamPanel
@@ -408,10 +344,15 @@ export function AppLayout() {
                 extras.setCurrentFix(null);
               }}
               onRetry={() => {
-                if (extras.currentError && ws.editorRef.current && extras.autoFixServiceRef.current) {
+                if (
+                  extras.currentError &&
+                  ws.editorRef.current &&
+                  extras.autoFixServiceRef.current
+                ) {
                   extras.setFixLoading(true);
                   extras.setFixError('');
-                  extras.autoFixServiceRef.current.generateFix(extras.currentError, ws.editorRef.current as never)
+                  extras.autoFixServiceRef.current
+                    .generateFix(extras.currentError, ws.editorRef.current as never)
                     .then((fix: GeneratedFix) => {
                       extras.setCurrentFix(fix);
                       extras.setFixLoading(false);
@@ -567,6 +508,19 @@ export function AppLayout() {
       <Suspense fallback={null}>
         <PerformanceMonitor />
       </Suspense>
+
+      {ui.brainScanOpen && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 1500,
+          background: 'rgba(8, 17, 31, 0.85)',
+        }}>
+          <Suspense fallback={null}>
+            <BrainScanPanel onClose={() => ui.setBrainScanOpen(false)} />
+          </Suspense>
+        </div>
+      )}
 
       {ui.agentModeOpen && (
         <Suspense fallback={null}>

@@ -1,8 +1,6 @@
 from io import BytesIO
-from pathlib import Path
 
 import pytest
-from vibe_justice.services.file_service import FileService
 
 
 class MockUploadFile:

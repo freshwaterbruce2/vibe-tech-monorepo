@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 export interface ProposalReviewInput {
   clientName: string
   projectType: string

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ModernErrorBoundary, useErrorHandler, withErrorBoundary } from './ModernErrorBoundary';
 import { useEffect } from 'react';
+import type { FallbackProps } from 'react-error-boundary';
 
 // Mock console methods
 const originalError = console.error;
@@ -194,8 +195,8 @@ describe('ModernErrorBoundary', () => {
   });
 
   it('uses custom fallback component', () => {
-    const CustomFallback = ({ error }: { error: Error }) => (
-      <div>Custom error: {error.message}</div>
+    const CustomFallback = ({ error }: FallbackProps) => (
+      <div>Custom error: {(error as Error).message}</div>
     );
 
     render(

@@ -1,0 +1,44 @@
+{
+  "name": "@vibetech/avatar-render-engine",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./schema": {
+      "import": "./dist/schema.js",
+      "types": "./dist/schema.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts"
+    }
+  },
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "zod": "^3.25.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "remotion": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "typescript": "5.9.3",
+    "vitest": "^4.1.2"
+  }
+}

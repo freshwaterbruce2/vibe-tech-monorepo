@@ -5,7 +5,7 @@
       "command": "cmd",
       "args": [
         "/c",
-        "npx.cmd",
+        "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/npx.cmd",
         "-y",
         "nx-mcp@0.25.0",
         "V:/monorepo",
@@ -32,7 +32,7 @@
       "command": "cmd",
       "args": [
         "/c",
-        "npx.cmd",
+        "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/npx.cmd",
         "-y",
         "@modelcontextprotocol/server-filesystem",
         "V:/monorepo",
@@ -56,32 +56,14 @@
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
       "args": ["V:/monorepo/apps/memory-mcp/dist/index.js"],
-      "alwaysLoad": true,
       "env": {
         "MEMORY_DB_PATH": "D:/databases/memory.db",
         "MEMORY_EMBEDDING_MODEL": "text-embedding-3-small",
         "MEMORY_EMBEDDING_DIM": "1536",
         "MEMORY_EMBEDDING_ENDPOINT": "http://localhost:3001",
         "LEARNING_DB_PATH": "D:/databases/agent_learning.db"
-      }
-    },
-    "youtube": {
-      "type": "stdio",
-      "command": "cmd",
-      "args": ["/c", "npx.cmd", "-y", "@anaisbetts/mcp-youtube"]
-    },
-    "notebooklm": {
-      "type": "stdio",
-      "command": "python",
-      "args": ["-m", "notebooklm_mcp_server"]
-    },
-    "chrome-devtools": {
-      "type": "stdio",
-      "command": "cmd",
-      "args": ["/c", "npx.cmd", "-y", "chrome-devtools-mcp@latest", "--autoConnect"],
-      "env": {
-        "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS": "1"
-      }
+      },
+      "alwaysLoad": true
     },
     "rag": {
       "type": "stdio",
@@ -106,6 +88,93 @@
       "env": {
         "NODE_ENV": "production"
       }
+    },
+    "learning-pipeline": {
+      "type": "stdio",
+      "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
+      "args": ["V:/monorepo/apps/learning-pipeline-mcp/dist/index.js"],
+      "env": {
+        "LEARNING_DB_PATH": "D:/databases/agent_learning.db",
+        "WORKSPACE_ROOT": "V:/monorepo",
+        "LEARNING_INSIGHTS_PATH": "D:/learning-system/learning_insights.json"
+      }
+    },
+    "youtube": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/npx.cmd",
+        "-y",
+        "@anaisbetts/mcp-youtube"
+      ]
+    },
+    "notebooklm": {
+      "type": "stdio",
+      "command": "C:/Users/fresh_zxae3v6/.local/bin/uv.exe",
+      "args": ["tool", "run", "--from", "notebooklm-mcp-server", "notebooklm-mcp"]
+    },
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "V:/monorepo/scripts/start-chrome-devtools-mcp.ps1"
+      ],
+      "env": {
+        "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS": "1"
+      }
+    },
+    "monorepo-health": {
+      "type": "stdio",
+      "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
+      "args": ["V:/monorepo/apps/monorepo-health-mcp/dist/index.js"]
+    },
+    "proactive-recommendations": {
+      "type": "stdio",
+      "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
+      "args": ["V:/monorepo/apps/proactive-recommendations-mcp/dist/index.js"]
+    },
+    "skill-feedback": {
+      "type": "stdio",
+      "command": "C:/Users/fresh_zxae3v6/AppData/Roaming/fnm/aliases/default/node.exe",
+      "args": ["V:/monorepo/apps/skill-feedback-mcp/dist/index.js"]
+    },
+    "serena": {
+      "type": "stdio",
+      "command": "C:/Users/fresh_zxae3v6/.local/bin/uvx.exe",
+      "args": ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server"]
+    },
+    "greptile": {
+      "type": "http",
+      "url": "https://api.greptile.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${GREPTILE_API_KEY}"
+      }
+    },
+    "storage-learning-server": {
+      "type": "stdio",
+      "command": "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "V:/monorepo/scripts/view-db-trends.ps1"
+      ],
+      "tools": [
+        {
+          "name": "view_database_trends",
+          "description": "Generates a 7-day terminal ASCII chart tracking SQLite size trends, deltas, and 30-day capacity projections across stateful D:\\ databases.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {}
+          }
+        }
+      ]
     }
   }
 }
