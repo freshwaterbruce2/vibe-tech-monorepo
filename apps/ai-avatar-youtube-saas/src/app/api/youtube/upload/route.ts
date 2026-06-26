@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getValidAccessToken } from "@/lib/youtube-auth-utils";
-import { assertAllowedMediaUrl } from "@/lib/media-url";
+import { isAllowedMediaHost } from "@/lib/media-url";
 
 export const runtime = "nodejs";
 
@@ -32,17 +32,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return jsonError("title is required", 400);
     }
 
-    // SSRF guard: only fetch from trusted storage origins (never arbitrary,
-    // caller-chosen local/private endpoints). Use the validated URL downstream.
-    let videoUrl: string;
-    try {
-      videoUrl = assertAllowedMediaUrl(body.videoUrl);
-    } catch {
-      return jsonError("videoUrl is not an allowed media source", 400);
-    }
-
     const accessToken = await getValidAccessToken(request, response);
-    const { contentType, contentLength } = await probeVideoSource(videoUrl);
+    const { contentType, contentLength } = await probeVideoSource(body.videoUrl);
 
     if (!contentLength || contentLength <= 0) {
       return jsonError("Could not determine video content length", 400);
@@ -57,7 +48,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const videoId = await uploadVideoInChunks(
       uploadLocation,
-      videoUrl,
+      body.videoUrl,
       contentLength,
       contentType
     );
@@ -77,9 +68,12 @@ async function probeVideoSource(videoUrl: string): Promise<{
   contentType: string;
   contentLength: number | null;
 }> {
-  // SSRF barrier local to the request site: only fetch trusted storage origins.
-  const safeUrl = assertAllowedMediaUrl(videoUrl);
-  const headResponse = await fetch(safeUrl, { method: "HEAD" });
+  // SSRF guard: only request trusted storage hosts, never arbitrary endpoints.
+  const target = new URL(videoUrl);
+  if (!isAllowedMediaHost(target.hostname)) {
+    throw new Error("Media URL host is not in the trusted allowlist");
+  }
+  const headResponse = await fetch(target, { method: "HEAD" });
   if (!headResponse.ok) {
     throw new Error(`Failed to probe video source: ${headResponse.status}`);
   }
@@ -197,9 +191,12 @@ async function withRetry<T>(fn: () => Promise<T>, context: string): Promise<T> {
 }
 
 async function fetchChunk(videoUrl: string, start: number, end: number, contentType: string): Promise<Blob> {
-  // SSRF barrier local to the request site: only fetch trusted storage origins.
-  const safeUrl = assertAllowedMediaUrl(videoUrl);
-  const response = await fetch(safeUrl, {
+  // SSRF guard: only request trusted storage hosts, never arbitrary endpoints.
+  const target = new URL(videoUrl);
+  if (!isAllowedMediaHost(target.hostname)) {
+    throw new Error("Media URL host is not in the trusted allowlist");
+  }
+  const response = await fetch(target, {
     headers: { Range: `bytes=${start}-${end}` },
   });
 

@@ -34,6 +34,12 @@ function buildAllowlist(): { exact: Set<string>; suffixes: string[] } {
 
 const ALLOWLIST = buildAllowlist();
 
+/** True when `hostname` is one of the trusted storage origins. */
+export function isAllowedMediaHost(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return ALLOWLIST.exact.has(host) || ALLOWLIST.suffixes.some((suffix) => host.endsWith(suffix));
+}
+
 /**
  * Validate that `rawUrl` targets a trusted storage origin and return the parsed,
  * canonical URL string to fetch. Throws on anything not explicitly allowed so
@@ -49,10 +55,7 @@ export function assertAllowedMediaUrl(rawUrl: string): string {
   if (url.protocol !== "https:" && url.protocol !== "http:") {
     throw new Error("Unsupported media URL protocol");
   }
-  const host = url.hostname.toLowerCase();
-  const allowed =
-    ALLOWLIST.exact.has(host) || ALLOWLIST.suffixes.some((suffix) => host.endsWith(suffix));
-  if (!allowed) {
+  if (!isAllowedMediaHost(url.hostname)) {
     throw new Error("Media URL host is not in the trusted allowlist");
   }
   return url.toString();
