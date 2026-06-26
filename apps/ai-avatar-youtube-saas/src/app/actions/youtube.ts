@@ -6,6 +6,8 @@ import { unsignSession } from "@/lib/session";
 import { getValidAccessToken, uploadVideo, buildYppDescription } from "@/lib/youtube";
 import { getRenderJob, getCompletedRenderJobs, deleteOAuthToken, insertYouTubeUpload } from "@/lib/db";
 import { initSchema } from "@/lib/db";
+import { getBillingUserId } from "@/lib/billing-user";
+import { assertAllowedMediaUrl } from "@/lib/media-url";
 
 export interface PublishPayload {
   renderJobId: number;
@@ -43,7 +45,8 @@ export async function disconnectYouTube() {
 
 export async function getPublishableRenderJobs() {
   initSchema();
-  return getCompletedRenderJobs().map((job) => ({
+  const ownerId = await getBillingUserId();
+  return getCompletedRenderJobs(ownerId).map((job) => ({
     id: Number(job.id),
     scriptPrompt: String(job.script_prompt),
     outputUrl: String(job.output_url),
@@ -69,14 +72,19 @@ export async function publishToYouTube(payload: PublishPayload) {
     return { success: false, error: "Invalid privacy status" };
   }
 
-  const job = getRenderJob(payload.renderJobId);
+  // Authorize the render job against its creator (billing identity), not just the
+  // connected YouTube session. Without this, any connected user could publish
+  // another user's completed render job by guessing its id (IDOR).
+  const ownerId = await getBillingUserId();
+  const job = getRenderJob(payload.renderJobId, ownerId);
   if (!job || job.status !== "completed" || !job.output_url) {
     return { success: false, error: "Render job not ready for publishing" };
   }
 
   try {
     const accessToken = await getValidAccessToken(userId);
-    const videoResponse = await fetch(String(job.output_url));
+    // SSRF guard: the stored output URL must resolve to a trusted storage origin.
+    const videoResponse = await fetch(assertAllowedMediaUrl(String(job.output_url)));
     if (!videoResponse.ok) {
       return { success: false, error: "Could not fetch rendered video" };
     }

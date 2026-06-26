@@ -21,10 +21,32 @@ import {
 import { parseCookies, serializeCookie, readJsonBody } from '../lib/http-helpers.js';
 
 const WEEK_SECONDS = 60 * 60 * 24 * 7;
+const DEFAULT_APP_ORIGIN = 'http://localhost:5174';
 
 function sendJson(res, status, payload) {
   res.writeHead(status, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(payload));
+}
+
+/**
+ * Resolve the post-checkout redirect base from the request Referer, constrained
+ * to the same local origins CORS trusts. A forged/external Referer must never be
+ * able to point Stripe success/cancel redirects at an arbitrary domain, so any
+ * value outside the allowlist falls back to the configured app origin.
+ */
+function resolveCheckoutBaseUrl(referer) {
+  if (!referer) return DEFAULT_APP_ORIGIN;
+  try {
+    const url = new URL(referer);
+    const isLocalHttp =
+      (url.protocol === 'http:' || url.protocol === 'https:') &&
+      (url.hostname === 'localhost' ||
+        url.hostname === '127.0.0.1' ||
+        url.hostname === 'tauri.localhost');
+    return isLocalHttp ? url.origin : DEFAULT_APP_ORIGIN;
+  } catch {
+    return DEFAULT_APP_ORIGIN;
+  }
 }
 
 /** Attach a fresh week-long session cookie for the given user. */
@@ -217,9 +239,7 @@ async function handleCheckout(req, res, ctx) {
       .prepare('SELECT id FROM stripe_customers WHERE user_id = ?')
       .get(userRow.id);
     const existingCustomerId = customerRow ? customerRow.id : undefined;
-    const baseUrl = req.headers.referer
-      ? new URL(req.headers.referer).origin
-      : 'http://localhost:5174';
+    const baseUrl = resolveCheckoutBaseUrl(req.headers.referer);
 
     const session = await buildCheckoutSession({
       currency: 'USD',

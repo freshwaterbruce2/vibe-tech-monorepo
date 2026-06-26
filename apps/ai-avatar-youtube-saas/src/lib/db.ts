@@ -17,6 +17,7 @@ export function initSchema() {
 
     CREATE TABLE IF NOT EXISTS render_jobs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      owner_id TEXT,
       status TEXT NOT NULL DEFAULT 'queued',
       script_prompt TEXT NOT NULL,
       voice_id TEXT NOT NULL,
@@ -64,6 +65,21 @@ export function initSchema() {
       updated_at INTEGER NOT NULL
     );
   `);
+
+  ensureRenderJobOwnerColumn();
+}
+
+/**
+ * Backfill the render_jobs.owner_id column on databases created before render
+ * jobs were owner-scoped. CREATE TABLE IF NOT EXISTS never alters an existing
+ * table, so older deployments need this idempotent migration. Legacy rows keep
+ * owner_id = NULL and are therefore not publishable by anyone (fail closed).
+ */
+function ensureRenderJobOwnerColumn() {
+  const columns = db.prepare("PRAGMA table_info(render_jobs)").all() as Array<{ name: string }>;
+  if (!columns.some((col) => col.name === "owner_id")) {
+    db.exec("ALTER TABLE render_jobs ADD COLUMN owner_id TEXT");
+  }
 }
 
 export function insertAvatarAsset(opts: {
@@ -90,6 +106,7 @@ export function insertAvatarAsset(opts: {
 }
 
 export function insertRenderJob(opts: {
+  ownerId: string;
   scriptPrompt: string;
   voiceId: string;
   audioSampleRate: number;
@@ -97,10 +114,11 @@ export function insertRenderJob(opts: {
   visemeMapping?: Record<string, unknown>;
 }) {
   const stmt = db.prepare(
-    `INSERT INTO render_jobs (status, script_prompt, voice_id, audio_sample_rate, asset_paths, viseme_mapping)
-     VALUES ('queued', ?, ?, ?, ?, ?)`
+    `INSERT INTO render_jobs (owner_id, status, script_prompt, voice_id, audio_sample_rate, asset_paths, viseme_mapping)
+     VALUES (?, 'queued', ?, ?, ?, ?, ?)`
   );
   return stmt.run(
+    opts.ownerId,
     opts.scriptPrompt,
     opts.voiceId,
     opts.audioSampleRate,
@@ -109,10 +127,18 @@ export function insertRenderJob(opts: {
   );
 }
 
-export function getRenderJob(id: number) {
-  return db
-    .prepare("SELECT * FROM render_jobs WHERE id = ?")
-    .get(id) as Record<string, unknown> | undefined;
+/**
+ * Look up a render job. Pass `ownerId` to enforce ownership (publish/IDOR-
+ * sensitive paths) so a caller can only read a job created under their own
+ * identity. Omit it only for non-sensitive status polling.
+ */
+export function getRenderJob(id: number, ownerId?: string) {
+  const row = (
+    ownerId === undefined
+      ? db.prepare("SELECT * FROM render_jobs WHERE id = ?").get(id)
+      : db.prepare("SELECT * FROM render_jobs WHERE id = ? AND owner_id = ?").get(id, ownerId)
+  ) as Record<string, unknown> | undefined;
+  return row;
 }
 
 export function updateRenderStatus(
@@ -172,10 +198,12 @@ export function deleteOAuthToken(provider: string, userId: string) {
   return db.prepare("DELETE FROM oauth_tokens WHERE provider = ? AND user_id = ?").run(provider, userId);
 }
 
-export function getCompletedRenderJobs() {
+export function getCompletedRenderJobs(ownerId: string) {
   return db
-    .prepare("SELECT * FROM render_jobs WHERE status = 'completed' AND output_url IS NOT NULL ORDER BY created_at DESC")
-    .all() as Array<Record<string, unknown>>;
+    .prepare(
+      "SELECT * FROM render_jobs WHERE owner_id = ? AND status = 'completed' AND output_url IS NOT NULL ORDER BY created_at DESC"
+    )
+    .all(ownerId) as Array<Record<string, unknown>>;
 }
 
 export function insertYouTubeUpload(opts: {

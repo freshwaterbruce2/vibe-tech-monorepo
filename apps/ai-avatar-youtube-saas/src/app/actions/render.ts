@@ -30,6 +30,7 @@ export async function createRenderTask(payload: RenderPayload): Promise<RenderJo
   }
 
   const info = insertRenderJob({
+    ownerId: userId,
     scriptPrompt: payload.scriptPrompt,
     voiceId: payload.voiceId,
     audioSampleRate: payload.audioSampleRate,

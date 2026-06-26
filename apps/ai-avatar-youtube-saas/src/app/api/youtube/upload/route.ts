@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getValidAccessToken } from "@/lib/youtube-auth-utils";
+import { assertAllowedMediaUrl } from "@/lib/media-url";
 
 export const runtime = "nodejs";
 
@@ -31,8 +32,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return jsonError("title is required", 400);
     }
 
+    // SSRF guard: only fetch from trusted storage origins (never arbitrary,
+    // caller-chosen local/private endpoints). Use the validated URL downstream.
+    let videoUrl: string;
+    try {
+      videoUrl = assertAllowedMediaUrl(body.videoUrl);
+    } catch {
+      return jsonError("videoUrl is not an allowed media source", 400);
+    }
+
     const accessToken = await getValidAccessToken(request, response);
-    const { contentType, contentLength } = await probeVideoSource(body.videoUrl);
+    const { contentType, contentLength } = await probeVideoSource(videoUrl);
 
     if (!contentLength || contentLength <= 0) {
       return jsonError("Could not determine video content length", 400);
@@ -47,7 +57,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const videoId = await uploadVideoInChunks(
       uploadLocation,
-      body.videoUrl,
+      videoUrl,
       contentLength,
       contentType
     );

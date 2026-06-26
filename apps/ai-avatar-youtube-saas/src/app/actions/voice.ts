@@ -36,12 +36,16 @@ function buildElevenLabsBody(options: SynthesizeVoiceOptions): object {
   };
 }
 
+// ElevenLabs voice ids are short alphanumeric tokens. Constrain to that shape so
+// the id can never inject path segments or alter the request target (SSRF).
+const VOICE_ID_PATTERN = /^[A-Za-z0-9]{1,64}$/;
+
 function validateOptions(options: SynthesizeVoiceOptions): void {
   if (!options.text || options.text.trim().length < 1) {
     throw new Error("Text is required");
   }
-  if (!options.voiceId) {
-    throw new Error("Voice ID is required");
+  if (!options.voiceId || !VOICE_ID_PATTERN.test(options.voiceId)) {
+    throw new Error("A valid Voice ID is required");
   }
   if (!env.ELEVENLABS_API_KEY) {
     throw new Error("ElevenLabs API key is not configured");
@@ -54,7 +58,7 @@ export async function synthesizeVoicePreview(
   validateOptions(options);
 
   const response = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${options.voiceId}/stream`,
+    `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(options.voiceId)}/stream`,
     {
       method: "POST",
       headers: {

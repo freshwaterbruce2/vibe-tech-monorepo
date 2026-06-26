@@ -268,10 +268,10 @@ async function forwardToUpstream(req, res, { targetUrl, provider, apiKey, getBod
       if (!res.writableEnded && typeof res.destroy === 'function') res.destroy();
       return;
     }
-    sendJson(res, 502, {
-      error: 'Upstream AI request failed',
-      details: String((err && err.message) || err),
-    });
+    // Log the underlying error server-side; never leak error/stack details to
+    // the client (information exposure).
+    console.error('[AI proxy] Upstream request failed:', err);
+    sendJson(res, 502, { error: 'Upstream AI request failed' });
   } finally {
     if (typeof res.removeListener === 'function') res.removeListener('close', onClientClose);
   }

@@ -28,6 +28,19 @@ export type {
   ReviewEvidence,
 } from './analysis-types';
 
+/**
+ * Trim leading/trailing '-' with a single linear pass. Replaces the prior
+ * `/^-+|-+$/g` regex, which backtracks polynomially on long runs of '-'
+ * (ReDoS on uncontrolled path-derived input).
+ */
+function trimDashes(value: string): string {
+  let start = 0;
+  let end = value.length;
+  while (start < end && value[start] === '-') start += 1;
+  while (end > start && value[end - 1] === '-') end -= 1;
+  return value.slice(start, end);
+}
+
 export class AnalysisManager {
   private validateCwd(cwd: string): string {
     if (!cwd || INVALID_PATH_REGEX.test(cwd)) throw new Error('Invalid project path');
@@ -228,11 +241,9 @@ export class AnalysisManager {
       AnalysisManager.artifactDirCreated = true;
     }
     const hash = crypto.createHash('sha1').update(cwd.toLowerCase()).digest('hex');
-    const safeName = path
-      .basename(cwd)
-      .toLowerCase()
-      .replace(/[^a-z0-9_-]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+    const safeName = trimDashes(
+      path.basename(cwd).toLowerCase().replace(/[^a-z0-9_-]+/g, '-'),
+    );
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     return path.join(artifactDir, `${safeName || 'project'}-${hash}-${timestamp}.json`);
   }

@@ -12,6 +12,22 @@ export interface AvatarPlayerProps {
   riveUrl?: string;
 }
 
+/**
+ * Only bind audio/model sources that use a safe scheme. `audioUrl` is user-
+ * supplied, so block `javascript:`/`vbscript:` and other unexpected schemes
+ * before it reaches the element src; anything unsafe yields an empty src.
+ */
+function sanitizeMediaUrl(rawUrl: string): string {
+  if (!rawUrl) return "";
+  if (rawUrl.startsWith("blob:") || /^data:audio\//i.test(rawUrl)) return rawUrl;
+  try {
+    const parsed = new URL(rawUrl, "http://localhost");
+    return parsed.protocol === "https:" || parsed.protocol === "http:" ? rawUrl : "";
+  } catch {
+    return "";
+  }
+}
+
 export function AvatarPlayer({ modelUrl, audioUrl, riveUrl }: AvatarPlayerProps) {
   const [use2D, setUse2D] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -28,6 +44,7 @@ export function AvatarPlayer({ modelUrl, audioUrl, riveUrl }: AvatarPlayerProps)
   };
 
   const avatar2D = <Avatar2D riveUrl={riveUrl} weights={weights} />;
+  const safeAudioUrl = sanitizeMediaUrl(audioUrl);
 
   return (
     <div className="space-y-4">
@@ -47,7 +64,7 @@ export function AvatarPlayer({ modelUrl, audioUrl, riveUrl }: AvatarPlayerProps)
 
       <audio
         ref={audioRef}
-        src={audioUrl}
+        src={safeAudioUrl}
         crossOrigin="anonymous"
         className="w-full"
         controls
