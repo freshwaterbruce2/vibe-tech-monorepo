@@ -405,3 +405,9 @@ MEMORY.md
 # Local Verdaccio npm registry cache
 .verdaccio/
 
+# Compiled TS output leaked into package src (stray tsc without outDir).
+# All packages/* are TypeScript-authored; .js/.js.map in their src is build output.
+packages/**/src/**/*.js
+packages/**/src/**/*.js.map
+*.tsbuildinfo
+
