@@ -31,10 +31,11 @@ env:
   NX_DAEMON: 'false'
   NX_NO_CLOUD: 'true'
   NX_SKIP_REMOTE_CACHE: 'true'
-  # CI runners have no V:\ — override the .npmrc developer-local store-dir to
-  # runner.temp (same volume as the workspace, so hard-linking stays valid, but
+  # CI runners have no V:\ — override the .npmrc developer-local store-dir to a
+  # sibling of the workspace (same volume, so hard-linking stays valid, but
   # outside the checkout so nx does not infer phantom projects from the store).
-  npm_config_store_dir: '${{ runner.temp }}/.pnpm-store'
+  # NB: runner.temp is unavailable in workflow-level env; github.workspace is.
+  npm_config_store_dir: '${{ github.workspace }}-pnpm-store'
 
 jobs:
   quality:
