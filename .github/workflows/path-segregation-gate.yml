@@ -22,6 +22,9 @@ concurrency:
 env:
   NODE_VERSION: '22'
   PNPM_VERSION: '10.33.0'
+  # CI runners have no V:\ — override the .npmrc developer-local store-dir to a
+  # runner-local path on the workspace volume (keeps same-volume hard-linking valid).
+  npm_config_store_dir: '${{ github.workspace }}/.pnpm-store'
 
 jobs:
   path-check:
@@ -74,4 +77,3 @@ jobs:
       - name: Run Master Verification Harness
         shell: pwsh
         run: ./scripts/verify-agent-changes.ps1
-

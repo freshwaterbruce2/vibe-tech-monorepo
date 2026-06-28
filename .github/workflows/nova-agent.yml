@@ -31,6 +31,9 @@ env:
   NX_DAEMON: 'false'
   NX_NO_CLOUD: 'true'
   NX_SKIP_REMOTE_CACHE: 'true'
+  # CI runners have no V:\ — override the .npmrc developer-local store-dir to a
+  # runner-local path on the workspace volume (keeps same-volume hard-linking valid).
+  npm_config_store_dir: '${{ github.workspace }}/.pnpm-store'
 
 jobs:
   quality:
