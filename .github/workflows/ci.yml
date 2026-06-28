@@ -41,9 +41,10 @@ env:
   NX_REJECT_UNKNOWN_LOCAL_CACHE: '0'
   # The committed .npmrc pins store-dir to a developer-local volume (V:\) so
   # pnpm hard-links stay on the same volume as the code. CI runners have no V:\,
-  # so override the store to a runner-local path on the workspace volume — keeps
-  # same-volume hard-linking valid and makes install independent of local layout.
-  npm_config_store_dir: '${{ github.workspace }}/.pnpm-store'
+  # so override the store to runner.temp — same volume as the workspace (D:\a)
+  # so same-volume hard-linking stays valid, but OUTSIDE the checkout so nx does
+  # not scan the store and infer phantom projects from its tmp extractions.
+  npm_config_store_dir: '${{ runner.temp }}/.pnpm-store'
   DATABASE_PATH: '${{ github.workspace }}/d-drive/databases/memory.db'
   LOG_PATH: '${{ github.workspace }}/d-drive/logs'
   LEARNING_SYSTEM_PATH: '${{ github.workspace }}/d-drive/learning-system'

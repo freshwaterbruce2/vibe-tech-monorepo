@@ -22,9 +22,10 @@ concurrency:
 env:
   NODE_VERSION: '22'
   PNPM_VERSION: '10.33.0'
-  # CI runners have no V:\ — override the .npmrc developer-local store-dir to a
-  # runner-local path on the workspace volume (keeps same-volume hard-linking valid).
-  npm_config_store_dir: '${{ github.workspace }}/.pnpm-store'
+  # CI runners have no V:\ — override the .npmrc developer-local store-dir to
+  # runner.temp (same volume as the workspace, so hard-linking stays valid, but
+  # outside the checkout so nx does not infer phantom projects from the store).
+  npm_config_store_dir: '${{ runner.temp }}/.pnpm-store'
 
 jobs:
   path-check:
