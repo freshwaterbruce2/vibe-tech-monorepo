@@ -1,0 +1,357 @@
+{
+  "electron/llm.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "electron/main.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 3
+    }
+  },
+  "src/components/avatar/AvatarProfile.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/components/avatar/AvatarShopUnified.tsx": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "src/components/avatar/useAvatarShop.ts": {
+    "max-len": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/components/core/SecurePinLock.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/components/dashboard/AddHomeworkModal.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/components/dashboard/ParentDashboard.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/components/dashboard/StreakTracker.tsx": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "src/components/features/MusicLibrary/hooks/useRadioStreaming.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/components/features/VibebuxRewardShop.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/components/features/WorksheetView.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/components/features/useRewardShop.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/components/games/AnagramsGame.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/components/games/BossBattleGame.tsx": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "src/components/games/MathAdventureGame.tsx": {
+    "max-len": {
+      "count": 5
+    }
+  },
+  "src/components/games/MemoryMatchGame.tsx": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "src/components/games/PatternQuestGame.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/components/games/SudokuGame.tsx": {
+    "max-len": {
+      "count": 5
+    }
+  },
+  "src/components/games/WordBuilderGame.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/components/games/WordSearchGame/WordSearchGame.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/components/games/WordSearchGame/WordSearchWordList.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/components/games/WordSearchGame/useWordSearchGame.ts": {
+    "max-len": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/components/games/WordSearchGame/useWordSearchInput.ts": {
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "src/components/games/brainGymConstants.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/components/games/brainGymHelpers.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/components/games/mathAdventureRunner.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/components/games/useBrainGymState.ts": {
+    "max-len": {
+      "count": 3
+    },
+    "max-lines-per-function": {
+      "count": 3
+    }
+  },
+  "src/components/games/useMathAdventureGame.ts": {
+    "max-len": {
+      "count": 9
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "src/components/games/usePatternQuestGame.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 3
+    }
+  },
+  "src/components/realms/RealmView.tsx": {
+    "max-len": {
+      "count": 5
+    }
+  },
+  "src/components/schedules/ScheduleInsightsCard.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/components/schedules/SchedulesHub.tsx": {
+    "max-len": {
+      "count": 5
+    }
+  },
+  "src/components/settings/RewardSettings.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/components/settings/ScreenTimeSettings.tsx": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "src/hooks/useAchievements.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/hooks/useChatMessages.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/hooks/useCountdownTimer.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/hooks/useGameAudio.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/hooks/useHomework.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/hooks/useRewards.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/hooks/useScheduleIntelligence.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/hooks/useSchedules.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/hooks/useTokenEconomy.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/hooks/useWellnessHub.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/hooks/useWorksheet.ts": {
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "src/services/SyncService.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/services/achievementService.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/services/adaptiveDifficulty.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/services/breakdownService.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/services/dailyAffirmations.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/services/databaseService.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "src/services/gameAchievements.ts": {
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "src/services/homeworkParserService.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/services/learningAnalytics.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/services/migrationService.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/services/openrouter.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/services/secureClient.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/services/tokenService.ts": {
+    "max-len": {
+      "count": 2
+    }
+  },
+  "src/services/tutorService.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/types/schedule.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "vite.config.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  }
+}
