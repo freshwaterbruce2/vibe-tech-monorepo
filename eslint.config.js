@@ -94,6 +94,10 @@ export default tseslint.config(
       'apps/vibe-code-studio/src/test-setup.ts',
       'apps/vibe-code-studio/src/**/__tests__/**',
       'apps/vibe-code-studio/src/**/*.{test,spec}.{ts,tsx}',
+      // learning-pipeline-mcp unit tests: not in its build tsconfig program
+      // (which excludes *.test.ts to keep dist clean) — vitest runs them directly.
+      'apps/learning-pipeline-mcp/src/**/__tests__/**',
+      'apps/learning-pipeline-mcp/src/**/*.{test,spec}.ts',
       // Playwright E2E specs: not in the typed tsconfig program (same intent as
       // the ignored src unit tests above) — keeps typed linting from erroring on them.
       'apps/vibe-code-studio/tests/**',
