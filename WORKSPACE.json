@@ -306,11 +306,6 @@
         "priority": "low",
         "description": "Desktop commander"
       },
-      "gravity-claw": {
-        "status": "development",
-        "priority": "medium",
-        "description": "Local-only WIP nested repo excluded from pnpm-workspace.yaml; package version is not a shipped workspace release"
-      },
       "dap-proxy": {
         "status": "production",
         "priority": "medium",
