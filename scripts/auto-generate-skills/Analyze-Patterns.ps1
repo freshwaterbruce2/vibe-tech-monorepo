@@ -254,5 +254,5 @@ Write-Host ""
 Write-Host "Next Steps:" -ForegroundColor Yellow
 Write-Host "1. Review candidates in: $OutputDir\skill-candidates.csv" -ForegroundColor White
 Write-Host "2. Run: .\Generate-Skill.ps1 -CandidateName <name>" -ForegroundColor White
-Write-Host "3. User reviews generated SKILL.md" -ForegroundColor White
-Write-Host "4. Deploy with: .\Deploy-Skill.ps1 -SkillName <name>" -ForegroundColor White
+Write-Host "3. User reviews generated SKILL.md (lands under .agent/skills/)" -ForegroundColor White
+Write-Host "4. Activate by restarting IDE; use Monitor-GeneratedSkills.ps1 (Deploy-Skill stub exists but not implemented)" -ForegroundColor White
