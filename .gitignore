@@ -411,3 +411,6 @@ packages/**/src/**/*.js
 packages/**/src/**/*.js.map
 *.tsbuildinfo
 
+# Cursor IDE local config (machine-specific, not shared)
+.cursor/
+
