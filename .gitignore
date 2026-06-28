@@ -59,6 +59,9 @@ npm-shrinkwrap.json
 **/.claude/worktrees/
 .claude/scratch/
 **/.claude/scratch/
+# Runtime scheduler lock (per-session sessionId/pid churn — not source)
+.claude/scheduled_tasks.lock
+**/.claude/scheduled_tasks.lock
 
 # OpenCode / local assistant tooling (machine-specific)
 .opencode/
