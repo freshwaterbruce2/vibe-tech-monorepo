@@ -86,8 +86,13 @@ jobs:
       - name: Typecheck
         run: cd apps/nova-agent && pnpm run typecheck
 
+      # Run through Nx (not a raw `pnpm run test`) so the `test` target's
+      # `dependsOn: ["^build"]` (nx.json targetDefaults) builds the FULL
+      # transitive workspace-dependency closure first — including
+      # @vibetech/shared-config, which the manual build step above does not
+      # cover. Vitest then resolves every workspace package's dist/ entry.
       - name: Unit tests
-        run: cd apps/nova-agent && pnpm run test
+        run: pnpm nx test nova-agent
 
   e2e:
     name: E2E Tests

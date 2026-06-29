@@ -191,7 +191,12 @@ jobs:
             Write-Host "Test skipped; changed projects do not expose test targets."
             exit 0
           }
-          pnpm nx run-many -t test --projects="$projects" --parallel=2 --outputStyle=static
+          # Exclude vibe-justice: its `test` target depends on `test:backend`
+          # (pytest), which needs a Python toolchain this JS runner does not
+          # provide. The dedicated vibe-justice.yml workflow already runs the
+          # frontend Vitest suite and the backend pytest suite, so excluding it
+          # here loses no coverage. See apps/vibe-justice/project.json.
+          pnpm nx run-many -t test --projects="$projects" --exclude=vibe-justice --parallel=2 --outputStyle=static
 
       # Nx Cloud self-healing requires Nx Cloud auth and is not supported on
       # Windows runners. Keep required PR quality gates local and deterministic.

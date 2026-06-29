@@ -44,7 +44,7 @@
       "executor": "nx:run-commands",
       "outputs": ["{projectRoot}/backend/htmlcov"],
       "options": {
-        "command": ".\\.venv\\Scripts\\python.exe -m pytest vibe_justice/tests -v --tb=short",
+        "command": "pwsh -NoProfile -File run-pytest.ps1",
         "cwd": "apps/vibe-justice/backend"
       }
     },
@@ -52,7 +52,7 @@
       "executor": "nx:run-commands",
       "outputs": ["{projectRoot}/backend/coverage"],
       "options": {
-        "command": ".\\.venv\\Scripts\\python.exe -m pytest vibe_justice/tests -v --cov=vibe_justice --cov-report=html:coverage --cov-report=term",
+        "command": "pwsh -NoProfile -File run-pytest.ps1 -Coverage",
         "cwd": "apps/vibe-justice/backend"
       }
     },
