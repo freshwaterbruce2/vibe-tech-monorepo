@@ -45,7 +45,8 @@
     "@vibetech/kimi-code-provider",
     "@vibetech/ralph-loop",
     "@vibetech/shared-utils",
-    "avatar-render-worker"
+    "avatar-render-worker",
+    "maintenance-copilot"
   ],
   "allowedStandaloneTags": ["standalone"]
 }
