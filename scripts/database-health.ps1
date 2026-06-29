@@ -192,7 +192,7 @@ $report = [ordered]@{
     databaseRoot = $DatabaseRoot
     sqlite3Available = [bool]$sqlite
     summary = [ordered]@{
-        totalDatabases = $records.Count
+        totalDatabases = @($records).Count
         coreDatabases = ($records | Where-Object isCore | Measure-Object).Count
         duplicateNameGroups = $duplicateGroups.Count
         knownDistinctNameGroups = $knownDistinctGroups.Count
@@ -214,7 +214,7 @@ $report | ConvertTo-Json -Depth 8 | Set-Content -Path $OutputPath -Encoding UTF8
 
 Write-Host "Database Health Report" -ForegroundColor Cyan
 Write-Host "  Root:       $DatabaseRoot"
-Write-Host "  Databases:  $($records.Count)"
+Write-Host "  Databases:  $(@($records).Count)"
 Write-Host "  Duplicates: $($duplicateGroups.Count)"
 Write-Host "  Known distinct names: $($knownDistinctGroups.Count)"
 Write-Host "  Large WALs: $($largeWalFiles.Count)"
