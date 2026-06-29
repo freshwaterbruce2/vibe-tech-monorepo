@@ -1,0 +1,16 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "maintenance-copilot",
+  "projectType": "application",
+  "root": "apps/maintenance-copilot",
+  "sourceRoot": "apps/maintenance-copilot/src",
+  "targets": {
+    "dev": { "executor": "nx:run-script", "options": { "script": "dev" }, "cache": false },
+    "gateway": { "executor": "nx:run-script", "options": { "script": "gateway" }, "cache": false },
+    "build:gateway": { "executor": "nx:run-script", "options": { "script": "build:gateway" }, "outputs": ["{projectRoot}/src-tauri/binaries"], "cache": false },
+    "build": { "executor": "nx:run-script", "options": { "script": "build" }, "outputs": ["{projectRoot}/dist", "{projectRoot}/src-tauri/target/release/bundle"], "cache": true },
+    "typecheck": { "executor": "nx:run-script", "options": { "script": "typecheck" }, "cache": true },
+    "lint": { "executor": "nx:run-script", "options": { "script": "lint" }, "cache": true }
+  },
+  "tags": ["scope:app", "type:desktop-app", "language:typescript"]
+}

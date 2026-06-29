@@ -1,0 +1,11 @@
+node_modules
+dist
+.tmp
+.gateway-build
+
+# Tauri / Rust build output
+src-tauri/target
+
+# compiled sidecar binaries (produced by pnpm build:gateway)
+src-tauri/binaries/*
+!src-tauri/binaries/.gitkeep
