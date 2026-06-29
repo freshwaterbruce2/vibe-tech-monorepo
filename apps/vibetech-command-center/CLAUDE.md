@@ -1,7 +1,7 @@
 # Command Center — Session Invariants
 
 ## Stack (do not suggest alternatives)
-- Electron 33 + electron-vite
+- Electron 39 + electron-vite
 - React 19, TypeScript 5.9 strict
 - Tailwind + shadcn/ui for components
 - Zustand for state, TanStack Query for server state
