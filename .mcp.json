@@ -96,7 +96,8 @@
       "env": {
         "LEARNING_DB_PATH": "D:/databases/agent_learning.db",
         "WORKSPACE_ROOT": "V:/monorepo",
-        "LEARNING_INSIGHTS_PATH": "D:/learning-system/learning_insights.json"
+        "LEARNING_INSIGHTS_PATH": "D:/learning-system/learning_insights.json",
+        "LEARNING_SYSTEM_DIR": "D:/learning-system"
       }
     },
     "youtube": {

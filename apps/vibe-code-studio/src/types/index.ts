@@ -40,6 +40,8 @@ export interface AIMessage {
   };
 }
 
+export type AIResponseState = 'idle' | 'streaming' | 'cancelling' | 'cancelled' | 'error';
+
 export interface AIResponse {
   content: string;
   suggestions?: string[];
@@ -240,6 +242,7 @@ export interface AIContextRequest {
   userActivity?: UserActivity;
   systemPrompt?: string;
   messages?: { role: 'system' | 'user' | 'assistant'; content: string }[];
+  signal?: AbortSignal;
 }
 
 export interface MultiFileEdit {

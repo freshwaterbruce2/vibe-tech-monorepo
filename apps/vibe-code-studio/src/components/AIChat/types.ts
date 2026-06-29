@@ -4,7 +4,7 @@
  */
 import type { FileChange, MultiFileEditPlan } from '@vibetech/types';
 import type { ReactElement, ReactNode } from 'react';
-import type { AIMessage, AgentStep, AgentTask, ApprovalRequest, StepStatus } from '../../types';
+import type { AIMessage, AIResponseState, AgentStep, AgentTask, ApprovalRequest, StepStatus } from '../../types';
 import type { TaskPlanner } from '../../services/ai/TaskPlanner';
 import type { ExecutionEngine } from '../../services/ai/ExecutionEngine';
 
@@ -19,8 +19,11 @@ export interface WorkspaceContext {
 
 export interface AIChatProps {
     messages: AIMessage[];
-    onSendMessage: (message: string) => void;
+    onSendMessage: (message: string) => Promise<void> | void;
     onClose: () => void;
+    isAiResponding?: boolean;
+    responseState?: AIResponseState;
+    onCancelResponse?: () => void;
     showReasoningProcess?: boolean | undefined;
     currentModel?: string | undefined;
     mode?: ChatMode;

@@ -60,6 +60,165 @@ describe('OpenRouterClient', () => {
         max_tokens: 512,
       });
     });
+
+    it('forwards tools/tool_choice and defaults model from the fallback stack', async () => {
+      const mockResponse = {
+        id: 'r-1',
+        model: 'cohere/north-mini-code:free',
+        choices: [
+          {
+            index: 0,
+            finish_reason: 'tool_calls',
+            message: {
+              role: 'assistant',
+              content: '',
+              tool_calls: [
+                {
+                  id: 't1',
+                  type: 'function',
+                  function: { name: 'submit_critique', arguments: '{"score":0.9}' },
+                },
+              ],
+            },
+          },
+        ],
+        usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+      };
+      mockAxiosInstance.post.mockResolvedValueOnce({ data: mockResponse });
+
+      const result = await client.chat({
+        models: ['cohere/north-mini-code:free', 'deepseek/deepseek-v4-flash'],
+        messages: [{ role: 'user', content: 'review' }],
+        tools: [
+          {
+            type: 'function',
+            function: {
+              name: 'submit_critique',
+              parameters: { type: 'object', properties: {} },
+            },
+          },
+        ],
+        tool_choice: { type: 'function', function: { name: 'submit_critique' } },
+      });
+
+      const [, sentBody] = mockAxiosInstance.post.mock.calls[0] as [string, Record<string, unknown>];
+      // model is defaulted from models[0] for the proxy; the fallback stack stays.
+      expect(sentBody.model).toBe('cohere/north-mini-code:free');
+      expect(sentBody.models).toEqual([
+        'cohere/north-mini-code:free',
+        'deepseek/deepseek-v4-flash',
+      ]);
+      expect(sentBody.tools).toHaveLength(1);
+      expect(sentBody.tool_choice).toEqual({
+        type: 'function',
+        function: { name: 'submit_critique' },
+      });
+      expect(result.choices[0]?.message.tool_calls?.[0]?.function.name).toBe('submit_critique');
+    });
+  });
+
+  describe('chatStream()', () => {
+    function sseResponse(payload: string) {
+      const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(payload));
+          controller.close();
+        },
+      });
+      return { ok: true, status: 200, body } as unknown as Response;
+    }
+
+    it('yields parsed SSE chunks and stops at [DONE]', async () => {
+      const payload =
+        'data: {"model":"deepseek/deepseek-v4-flash","choices":[{"index":0,"delta":{"content":"Hel"}}]}\n\n' +
+        'data: {"choices":[{"index":0,"delta":{"content":"lo"}}],"usage":{"prompt_tokens":5,"completion_tokens":2}}\n\n' +
+        'data: [DONE]\n\n';
+      const fetchMock = vi.fn().mockResolvedValue(sseResponse(payload));
+      vi.stubGlobal('fetch', fetchMock);
+
+      const chunks = [];
+      for await (const chunk of client.chatStream({
+        models: ['deepseek/deepseek-v4-flash'],
+        messages: [{ role: 'user', content: 'hi' }],
+      })) {
+        chunks.push(chunk);
+      }
+
+      expect(chunks).toHaveLength(2);
+      expect(chunks[0]?.choices[0]?.delta?.content).toBe('Hel');
+      expect(chunks[1]?.usage?.completion_tokens).toBe(2);
+
+      const [, init] = fetchMock.mock.calls[0] as [string, { body: string }];
+      const sentBody = JSON.parse(init.body) as { model?: string; stream?: boolean };
+      expect(sentBody.model).toBe('deepseek/deepseek-v4-flash');
+      expect(sentBody.stream).toBe(true);
+
+      vi.unstubAllGlobals();
+    });
+
+    it('skips malformed data lines and still yields valid chunks', async () => {
+      const payload =
+        'data: {bad json\n\n' +
+        'data: {"choices":[{"index":0,"delta":{"content":"ok"}}]}\n\n' +
+        'data: [DONE]\n\n';
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(sseResponse(payload)));
+
+      const chunks = [];
+      for await (const chunk of client.chatStream({ models: ['x'], messages: [] })) {
+        chunks.push(chunk);
+      }
+
+      expect(chunks).toHaveLength(1);
+      expect(chunks[0]?.choices[0]?.delta?.content).toBe('ok');
+      vi.unstubAllGlobals();
+    });
+
+    it('ends cleanly when the stream closes without an explicit [DONE]', async () => {
+      const payload = 'data: {"choices":[{"index":0,"delta":{"content":"hi"}}]}\n\n';
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(sseResponse(payload)));
+
+      const chunks = [];
+      for await (const chunk of client.chatStream({ models: ['x'], messages: [] })) {
+        chunks.push(chunk);
+      }
+
+      expect(chunks).toHaveLength(1);
+      expect(chunks[0]?.choices[0]?.delta?.content).toBe('hi');
+      vi.unstubAllGlobals();
+    });
+
+    it('throws OpenRouterError when the stream response is not ok', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue({
+          ok: false,
+          status: 503,
+          body: null,
+          text: async () => 'unavailable',
+        } as unknown as Response)
+      );
+
+      const iterator = client.chatStream({ models: ['x'], messages: [] });
+      await expect(iterator.next()).rejects.toThrow(/chatStream request failed \(503\)/);
+
+      vi.unstubAllGlobals();
+    });
+  });
+
+  describe('re-exported helpers', () => {
+    it('exposes pricing, model-alias and error helpers from the package root', async () => {
+      const mod = await import('../index.js');
+      expect(typeof mod.calcCost).toBe('function');
+      expect(mod.DEFAULT_FALLBACK_STACK.length).toBeGreaterThan(0);
+      expect(mod.resolveModelId('claude')).toContain('/');
+      expect(
+        mod.calcCost('deepseek/deepseek-v4-flash', {
+          prompt_tokens: 1_000_000,
+          completion_tokens: 0,
+        })
+      ).toBeCloseTo(0.09);
+      expect(mod.OpenRouterError).toBeDefined();
+    });
   });
 
   describe('getModels()', () => {

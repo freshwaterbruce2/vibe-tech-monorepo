@@ -38,9 +38,24 @@ function isAllowedCanonicalPath(p) {
     return ALLOWED_CANONICAL_ROOTS.some(root => p.startsWith(root) || p.toLowerCase().startsWith(root.toLowerCase()));
 }
 
+// Path-policy tooling scripts intentionally contain absolute path literals
+// (deprecated-path detection patterns, Windows SystemRoot fallbacks, allowed
+// canonical roots). Exempt them by basename, same rationale as the
+// registry.json/.mcp.json exemptions in check-staged-paths.js.
+const PATH_POLICY_TOOLING = new Set([
+    'monorepo-sync-audit.mjs',
+    'check-staged-paths.js',
+    'validate-paths-ast.js',
+    'check-vibe-paths.js',
+]);
+
 for (const file of files) {
     const fullPath = path.resolve(workspaceRoot, file);
     if (!fs.existsSync(fullPath)) {
+        continue;
+    }
+
+    if (PATH_POLICY_TOOLING.has(path.basename(file))) {
         continue;
     }
 

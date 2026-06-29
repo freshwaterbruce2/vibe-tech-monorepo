@@ -16,7 +16,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Paths
-$AnalysisDir = "V:\monorepo\skills\auto-skill-creator\analysis"
+$AnalysisDir = "V:\monorepo\.agent\skills\auto-skill-creator\analysis"
 $MonorepoRoot = "V:\monorepo"
 $ExistingSkillsDir = "V:\monorepo\skills"
 $ExistingAgentsDir = "V:\monorepo\.antigravity\agents"

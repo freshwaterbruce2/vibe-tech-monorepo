@@ -6,30 +6,43 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { existsSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { join, basename } from 'path';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
+
+// Exec hardening: prefer execFile (no shell) + allowlist + explicit env propagation.
+// See runCommand below. Avoids shell injection and makes args structured.
+const ALLOWED_BASES = new Set(['python', 'python.exe', 'python3', 'powershell.exe']);
 
 const server = new McpServer({
   name: 'learning-pipeline-mcp',
   version: '1.0.0',
 });
 
-const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT ?? 'V:/monorepo';
-const LEARNING_SYSTEM_DIR = 'D:/learning-system';
+// No hardcoded drive: default to the launch cwd (set WORKSPACE_ROOT to override).
+const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT ?? process.cwd();
+const LEARNING_SYSTEM_DIR = process.env.LEARNING_SYSTEM_DIR ?? 'D:/learning-system';
 
 interface ExecError extends Error {
   stdout?: string;
   stderr?: string;
 }
 
-// Helper to run a command and return response
-async function runCommand(command: string, cwd: string) {
+// Hardened runner using execFile (no shell) + allowlist + LEARNING_SYSTEM_DIR /
+// WORKSPACE_ROOT propagation. Callers pass file + arg array (safer than a string
+// command with interpolation). Exported for unit testing of the allowlist guard.
+export async function runCommand(file: string, args: string[], cwd: string) {
+  const base = basename(file).toLowerCase();
+  if (!ALLOWED_BASES.has(base) && !base.endsWith('.exe')) {
+    // allow python/powershell variants; guard other bases
+    throw new Error(`Disallowed exec base: ${base}`);
+  }
+  const env: NodeJS.ProcessEnv = { ...process.env, LEARNING_SYSTEM_DIR, WORKSPACE_ROOT };
   try {
-    const { stdout, stderr } = await execAsync(command, { cwd });
+    const { stdout, stderr } = await execFileAsync(file, args, { cwd, env });
     return {
       content: [{
         type: 'text' as const,
@@ -90,8 +103,11 @@ server.tool(
   async ({ days, dryRun }) => {
     const resolvedDays = days ?? 30;
     const resolvedDryRun = dryRun ?? false;
-    const cmd = `python "${LEARNING_SYSTEM_DIR}/scripts/refresh_insights.py" --days ${resolvedDays}${resolvedDryRun ? ' --dry-run' : ''}`;
-    const result = await runCommand(cmd, LEARNING_SYSTEM_DIR);
+    // execFile args (no shell): python interpreter + script as the first arg.
+    const script = join(LEARNING_SYSTEM_DIR, 'scripts/refresh_insights.py');
+    const args = [script, '--days', String(resolvedDays)];
+    if (resolvedDryRun) args.push('--dry-run');
+    const result = await runCommand('python', args, LEARNING_SYSTEM_DIR);
     return {
       content: result.content.map(c => ({...c, type: "text" as const}))
     };
@@ -109,8 +125,8 @@ server.tool(
   },
   async ({ daysBack, minOccurrences, minSuccessRate }) => {
     const scriptPath = join(WORKSPACE_ROOT, 'scripts/auto-generate-skills/Analyze-Patterns.ps1');
-    const cmd = `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${scriptPath}" -DaysBack ${daysBack} -MinOccurrences ${minOccurrences} -MinSuccessRate ${minSuccessRate}`;
-    const result = await runCommand(cmd, WORKSPACE_ROOT);
+    const args = ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath, '-DaysBack', String(daysBack), '-MinOccurrences', String(minOccurrences), '-MinSuccessRate', String(minSuccessRate)];
+    const result = await runCommand('powershell.exe', args, WORKSPACE_ROOT);
     return {
       content: result.content.map(c => ({...c, type: "text" as const}))
     };
@@ -128,8 +144,9 @@ server.tool(
   async ({ patternName, type }) => {
     const resolvedType = type ?? 'Skill';
     const scriptPath = join(WORKSPACE_ROOT, 'scripts/auto-generate-skills/Generate-Skill.ps1');
-    const cmd = `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${scriptPath}" -PatternName "${patternName}" -Type "${resolvedType}"`;
-    const result = await runCommand(cmd, WORKSPACE_ROOT);
+    // patternName is user input → structured args (no shell) avoid injection.
+    const args = ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath, '-PatternName', patternName, '-Type', resolvedType];
+    const result = await runCommand('powershell.exe', args, WORKSPACE_ROOT);
     return {
       content: result.content.map(c => ({...c, type: "text" as const}))
     };

@@ -1,7 +1,7 @@
 /**
  * AIChat Component - Main AI chat interface with chat and agent modes
  */
-import { Play, Send, X, Zap } from 'lucide-react';
+import { Play, Send, Square, X, Zap } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type MouseEvent as ReactMouseEvent } from 'react';
 
 import { logger } from '../../services/Logger';
@@ -11,9 +11,10 @@ import { MessageItem, TypingMessage } from './MessageItem';
 import { MemoizedStepCard, getStepIcon } from './StepCard';
 import {
     AgentEmptyState, AgentStatusBadge, AgentStatusCard, AgentStatusHeader, AgentStatusText,
-    AgentStepsList, AgentWarningList, ChatContainer, ChatHeader, CloseButton, InputContainer,
-    InputWrapper, MessagesContainer, ModeButton, ModeDescription, ModeSwitcher, QuickActionButton,
-    QuickActions, ResizeHandle, SendButton, TaskProgressBar, TaskProgressFill, TextInput,
+    AgentStepsList, AgentWarningList, CancelButton, ChatContainer, ChatHeader, CloseButton,
+    InputContainer, InputWrapper, MessagesContainer, ModeButton, ModeDescription, ModeSwitcher,
+    QuickActionButton, QuickActions, ResizeHandle, ResponseStatus, SendButton, TaskProgressBar,
+    TaskProgressFill, TextInput,
 } from './styled';
 import type { AIChatProps, ChatMode, ModeInfo } from './types';
 import { DEFAULT_WIDTH, MAX_WIDTH, MIN_WIDTH } from './types';
@@ -29,17 +30,23 @@ const MODE_QUICK_ACTIONS: Record<ChatMode, string[]> = {
 };
 
 const AIChat = ({
-  messages, onSendMessage, onClose, showReasoningProcess = false, currentModel: _currentModel = 'moonshot/kimi-2.5-pro',
+  messages, onSendMessage, onClose, isAiResponding = false, responseState = 'idle', onCancelResponse,
+  showReasoningProcess = false, currentModel: _currentModel = 'moonshot/kimi-2.5-pro',
   mode: externalMode, onModeChange, taskPlanner, executionEngine, workspaceContext,
   onAddMessage, onUpdateMessage, onFileChanged, onTaskComplete, onTaskError, onApprovalRequired,
   onMultiFileEditDetected: _onMultiFileEditDetected,
 }: AIChatProps) => {
   const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [pendingSendCount, setPendingSendCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [internalMode, setInternalMode] = useState<ChatMode>('chat');
   const mode = externalMode ?? internalMode;
+  const isTyping = pendingSendCount > 0;
+  const isChatBusy = mode === 'chat' && (isAiResponding || isTyping);
+  const inputDisabled = mode === 'agent' ? isTyping : responseState === 'cancelling';
+  const sendDisabled = !input.trim() || (mode === 'agent' && isTyping) || responseState === 'cancelling';
+  const showCancelButton = mode === 'chat' && isAiResponding && typeof onCancelResponse === 'function';
 
   const [width, setWidth] = useState<number>(DEFAULT_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
@@ -122,37 +129,43 @@ const AIChat = ({
     approvalResolversRef.current.clear();
   }, []);
 
-  const updateAgentMessage = useCallback((messageId: string, updater: (message: AIMessage) => AIMessage) => {
-    onUpdateMessage?.(messageId, updater);
-  }, [onUpdateMessage]);
+  const updateAgentMessage = useCallback(
+    (messageId: string, updater: (message: AIMessage) => AIMessage) => {
+      onUpdateMessage?.(messageId, updater);
+    },
+    [onUpdateMessage],
+  );
 
-  const handleApprovalDecision = useCallback((messageId: string, stepId: string, approved: boolean) => {
-    const resolver = approvalResolversRef.current.get(stepId);
-    if (!resolver) {
-      return;
-    }
-
-    approvalResolversRef.current.delete(stepId);
-    updateAgentMessage(messageId, (message) => {
-      if (!message.agentTask) {
-        return message;
+  const handleApprovalDecision = useCallback(
+    (messageId: string, stepId: string, approved: boolean) => {
+      const resolver = approvalResolversRef.current.get(stepId);
+      if (!resolver) {
+        return;
       }
 
-      return {
-        ...message,
-        agentTask: {
-          ...message.agentTask,
-          pendingApproval: undefined,
-          phase: approved ? 'executing' : 'failed',
-          statusMessage: approved
-            ? 'Approval granted. Resuming task.'
-            : 'Approval rejected. Task execution stopped.',
-          lastError: approved ? undefined : 'User rejected approval request.',
-        },
-      };
-    });
-    resolver(approved);
-  }, [updateAgentMessage]);
+      approvalResolversRef.current.delete(stepId);
+      updateAgentMessage(messageId, (message) => {
+        if (!message.agentTask) {
+          return message;
+        }
+
+        return {
+          ...message,
+          agentTask: {
+            ...message.agentTask,
+            pendingApproval: undefined,
+            phase: approved ? 'executing' : 'failed',
+            statusMessage: approved
+              ? 'Approval granted. Resuming task.'
+              : 'Approval rejected. Task execution stopped.',
+            lastError: approved ? undefined : 'User rejected approval request.',
+          },
+        };
+      });
+      resolver(approved);
+    },
+    [updateAgentMessage],
+  );
 
   const getAgentPreflightError = useCallback((): string | null => {
     if (!workspaceContext?.workspaceRoot) {
@@ -372,13 +385,26 @@ const AIChat = ({
         } : existingMessage.agentTask,
       }));
     }
-  }, [taskPlanner, executionEngine, workspaceContext, onAddMessage, getAgentPreflightError, updateAgentMessage, onFileChanged, onApprovalRequired, onTaskComplete, onTaskError]);
+  }, [
+    taskPlanner,
+    executionEngine,
+    workspaceContext,
+    onAddMessage,
+    getAgentPreflightError,
+    updateAgentMessage,
+    onFileChanged,
+    onApprovalRequired,
+    onTaskComplete,
+    onTaskError,
+  ]);
 
   const handleSend = useCallback(async (overrideText?: string) => {
     const messageText = (overrideText ?? input).trim();
     if (!messageText) { return; }
+    const blockedByState = responseState === 'cancelling' || (mode === 'agent' && isTyping);
+    if (blockedByState) { return; }
     if (!overrideText) setInput('');
-    setIsTyping(true);
+    setPendingSendCount((count) => count + 1);
     try {
       if (mode === 'agent') {
         await handleAgentTask(messageText);
@@ -394,9 +420,9 @@ const AIChat = ({
         timestamp: new Date(),
       });
     } finally {
-      setIsTyping(false);
+      setPendingSendCount((count) => Math.max(0, count - 1));
     }
-  }, [input, mode, onSendMessage, handleAgentTask, onAddMessage]);
+  }, [input, responseState, mode, isTyping, onSendMessage, handleAgentTask, onAddMessage]);
 
   const handleKeyPress = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
@@ -499,26 +525,52 @@ const AIChat = ({
             }}
           />
         ))}
-        {isTyping && mode === 'chat' && <TypingMessage />}
+        {isChatBusy && <TypingMessage />}
         <div ref={messagesEndRef} />
       </MessagesContainer>
       <InputContainer>
         <QuickActions>
           {quickActions.map((action) => (
-            <QuickActionButton key={action} onClick={() => handleQuickAction(action)}
-              whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>{action}</QuickActionButton>
+            <QuickActionButton
+              key={action}
+              onClick={() => handleQuickAction(action)}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {action}
+            </QuickActionButton>
           ))}
         </QuickActions>
         <InputWrapper>
           <TextInput ref={inputRef} id="ai-chat-input" name="aiChatMessage" data-testid="chat-input"
             value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress}
-            placeholder={mode === 'agent' ? agentPlaceholder : 'Ask AI about your code...'} disabled={isTyping} aria-label="Message input" />
-          <SendButton onClick={() => handleSend()} disabled={!input.trim() || isTyping} title="Send message (Enter)" aria-label="Send message"
-            whileHover={!isTyping && input.trim() ? { scale: 1.05 } : {}}
-            whileTap={!isTyping && input.trim() ? { scale: 0.95 } : {}}>
+            placeholder={mode === 'agent' ? agentPlaceholder : 'Ask AI about your code...'} disabled={inputDisabled} aria-label="Message input" />
+          <SendButton onClick={() => handleSend()} disabled={sendDisabled} title="Send message (Enter)" aria-label="Send message"
+            whileHover={!sendDisabled ? { scale: 1.05 } : {}}
+            whileTap={!sendDisabled ? { scale: 0.95 } : {}}>
             <Send size={16} />
           </SendButton>
+          {showCancelButton && (
+            <CancelButton
+              data-testid="cancel-response"
+              onClick={onCancelResponse}
+              title="Cancel generation"
+              aria-label="Cancel generation"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Square size={14} />
+            </CancelButton>
+          )}
         </InputWrapper>
+        {mode === 'chat' && responseState !== 'idle' && (
+          <ResponseStatus data-testid="ai-response-state" $state={responseState}>
+            {responseState === 'streaming' && 'AI is responding...'}
+            {responseState === 'cancelling' && 'Cancelling generation...'}
+            {responseState === 'cancelled' && 'Generation cancelled.'}
+            {responseState === 'error' && 'Last response failed. You can retry now.'}
+          </ResponseStatus>
+        )}
       </InputContainer>
     </ChatContainer>
   );

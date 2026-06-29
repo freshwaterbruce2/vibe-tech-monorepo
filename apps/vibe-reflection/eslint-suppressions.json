@@ -1,0 +1,12 @@
+{
+  "server/providers.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
+  "src/hooks/useReflectionStream.ts": {
+    "max-lines-per-function": {
+      "count": 2
+    }
+  }
+}

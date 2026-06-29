@@ -25,6 +25,8 @@ interface ExecutionRow {
   success: number;
   error_message: string | null;
   started_at: string;
+  selected_model?: string | null;
+  tokens_used?: number | null;
 }
 
 /** Raw row from success_patterns table */
@@ -320,6 +322,7 @@ export class LearningBridge {
    * Get full context for a specific agent
    * Combines execution history, patterns, and mistakes
    */
+  // eslint-disable-next-line max-lines-per-function -- legacy >50 lines (see line-limit audit)
   getAgentContext(agentName: string, limit = 10): AgentContext {
     const db = this.getDb();
 
@@ -450,6 +453,7 @@ export class LearningBridge {
    * @param reportPath - Absolute path to a self-healing JSON report
    * @returns Number of memories ingested
    */
+  // eslint-disable-next-line max-lines-per-function -- legacy >50 lines (see line-limit audit)
   async ingestHealingResult(reportPath: string): Promise<{
     episodicCount: number;
     proceduralCount: number;
@@ -655,6 +659,8 @@ export class LearningBridge {
     executionTimeMs?: number;
     errorMessage?: string;
     context?: string;
+    selectedModel?: string;
+    tokensUsed?: number;
   }): boolean {
     try {
       const db = this.getWritableDb();
@@ -662,8 +668,9 @@ export class LearningBridge {
       db.prepare(
         `INSERT INTO agent_executions
          (execution_id, agent_id, project_name, task_type, tools_used,
-          started_at, success, execution_time_ms, error_message, context)
-         VALUES (?, ?, ?, ?, ?, datetime('now'), ?, ?, ?, ?)`,
+          started_at, success, execution_time_ms, error_message, context,
+          selected_model, tokens_used)
+         VALUES (?, ?, ?, ?, ?, datetime('now'), ?, ?, ?, ?, ?, ?)`,
       ).run(
         executionId,
         execution.agentId,
@@ -674,6 +681,8 @@ export class LearningBridge {
         execution.executionTimeMs ?? null,
         execution.errorMessage ?? null,
         execution.context ?? null,
+        execution.selectedModel ?? null,
+        execution.tokensUsed ?? null,
       );
       return true;
     } catch (err) {
@@ -697,6 +706,7 @@ export class LearningBridge {
    *
    * @throws if no embedder is configured (set one via constructor or setEmbedder)
    */
+  // eslint-disable-next-line max-lines-per-function -- legacy >50 lines (see line-limit audit)
   async searchProceduralPatterns(
     query: string,
     limit = 10,

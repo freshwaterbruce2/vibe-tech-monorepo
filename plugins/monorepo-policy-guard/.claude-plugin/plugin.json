@@ -1,0 +1,17 @@
+{
+  "name": "monorepo-policy-guard",
+  "version": "0.1.0",
+  "description": "Policy-aware monorepo guardrails for code/data path separation and memory-bank handoff workflows",
+  "author": {
+    "name": "VibeTech",
+    "email": "dev@vibetech.io"
+  },
+  "license": "MIT",
+  "keywords": [
+    "monorepo",
+    "policy",
+    "guardrails",
+    "memory-bank",
+    "workflow"
+  ]
+}

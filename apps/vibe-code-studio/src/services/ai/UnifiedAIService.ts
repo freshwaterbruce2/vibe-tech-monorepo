@@ -1,4 +1,9 @@
-import type { AIChatOptions, AICompletionRequest, AICompletionResponse, ChatMessage } from '../../types/ai';
+import type {
+  AIChatOptions,
+  AICompletionRequest,
+  AICompletionResponse,
+  ChatMessage,
+} from '../../types/ai';
 import { SecureApiKeyManager } from '@vibetech/core';
 import { logger } from '../Logger';
 import { AIProviderFactory } from './AIProviderFactory';
@@ -10,45 +15,39 @@ import { BackendProxyService } from './providers/BackendProxyService';
 // the proxy's reachability + server key config, not a local key. Mirrors AIProviderFactory.
 const USE_AI_PROXY = import.meta.env['VITE_USE_AI_PROXY'] !== 'false';
 
+export interface GenerationSession {
+  id: string;
+  signal: AbortSignal;
+}
+
+// Maps a provider to its SecureApiKeyManager storage key. OpenRouter backs
+// several providers under one key.
+const PROVIDER_STORAGE_KEY: Record<string, string> = {
+  [AIProvider.OPENROUTER]: 'openrouter',
+  [AIProvider.OPENAI]: 'openrouter',
+  [AIProvider.ANTHROPIC]: 'openrouter',
+  [AIProvider.GROQ]: 'openrouter',
+  [AIProvider.PERPLEXITY]: 'openrouter',
+  [AIProvider.TOGETHER]: 'openrouter',
+  [AIProvider.OLLAMA]: 'openrouter',
+  [AIProvider.DEEPSEEK]: 'deepseek',
+  [AIProvider.GOOGLE]: 'google',
+  [AIProvider.MOONSHOT]: 'moonshot',
+};
+
 /**
- * Get API key from env vars first, then SecureApiKeyManager
+ * Resolve a provider key for direct (BYOK) mode from the encrypted
+ * SecureApiKeyManager store. Provider keys are NEVER read from the client bundle
+ * (import.meta.env) — that would ship secrets to the browser. In proxy mode
+ * (default) the backend injects keys, so this path is unused.
  */
 async function getLazyKey(providerType: AIProvider): Promise<string> {
-  // Map provider to env var name and storage key
-  const envMap: Record<string, { envVar: string; storageKey: string }> = {
-    [AIProvider.OPENROUTER]: { envVar: 'VITE_OPENROUTER_API_KEY', storageKey: 'openrouter' },
-    [AIProvider.OPENAI]: { envVar: 'VITE_OPENROUTER_API_KEY', storageKey: 'openrouter' },
-    [AIProvider.ANTHROPIC]: { envVar: 'VITE_OPENROUTER_API_KEY', storageKey: 'openrouter' },
-    [AIProvider.GROQ]: { envVar: 'VITE_OPENROUTER_API_KEY', storageKey: 'openrouter' },
-    [AIProvider.PERPLEXITY]: { envVar: 'VITE_OPENROUTER_API_KEY', storageKey: 'openrouter' },
-    [AIProvider.TOGETHER]: { envVar: 'VITE_OPENROUTER_API_KEY', storageKey: 'openrouter' },
-    [AIProvider.OLLAMA]: { envVar: 'VITE_OPENROUTER_API_KEY', storageKey: 'openrouter' },
-    [AIProvider.DEEPSEEK]: { envVar: 'VITE_DEEPSEEK_API_KEY', storageKey: 'deepseek' },
-    [AIProvider.GOOGLE]: { envVar: 'VITE_GOOGLE_API_KEY', storageKey: 'google' },
-    [AIProvider.MOONSHOT]: { envVar: 'VITE_MOONSHOT_API_KEY', storageKey: 'moonshot' },
-  };
+  const storageKey = PROVIDER_STORAGE_KEY[providerType];
+  if (!storageKey) return '';
 
-  const mapping = envMap[providerType];
-  if (!mapping) return '';
-
-  // For Moonshot, also accept the KIMI_*/VITE_KIMI_* aliases (envPrefix exposes both).
-  // Mirrors MoonshotService's own constructor resolution order.
-  if (providerType === AIProvider.MOONSHOT) {
-    const kimiKey =
-      import.meta.env['KIMI_API_KEY'] ||
-      import.meta.env['VITE_KIMI_API_KEY'] ||
-      '';
-    if (kimiKey) return kimiKey;
-  }
-
-  // Try env var first
-  const envKey = import.meta.env[mapping.envVar] || '';
-  if (envKey) return envKey;
-
-  // Fall back to SecureApiKeyManager
   try {
     const keyManager = SecureApiKeyManager.getInstance(logger);
-    return (await keyManager.getApiKey(mapping.storageKey)) || '';
+    return (await keyManager.getApiKey(storageKey)) || '';
   } catch {
     return '';
   }
@@ -60,6 +59,7 @@ export class UnifiedAIService {
   private currentModel: string = 'moonshot/kimi-2.5-pro'; // Kimi 2.5 Pro - direct Moonshot API
   private _isDemo: boolean = false;
   private activeControllers: Set<AbortController> = new Set();
+  private generationControllers: Map<string, AbortController> = new Map();
 
   private constructor() {
     this.factory = AIProviderFactory.getInstance();
@@ -72,12 +72,63 @@ export class UnifiedAIService {
     return UnifiedAIService.instance;
   }
 
+  private static isAbortError(error: unknown): boolean {
+    if (!(error instanceof Error)) {
+      return false;
+    }
+
+    return error.name === 'AbortError' || /abort(ed|ing)?/i.test(error.message);
+  }
+
+  private createSessionId(): string {
+    const randomUUID = globalThis.crypto?.randomUUID;
+    if (typeof randomUUID === 'function') {
+      return randomUUID.call(globalThis.crypto);
+    }
+
+    return `generation-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
+
+  createGenerationSession(sessionId?: string): GenerationSession {
+    const id = sessionId ?? this.createSessionId();
+
+    const existing = this.generationControllers.get(id);
+    if (existing) {
+      existing.abort();
+      this.generationControllers.delete(id);
+    }
+
+    const controller = new AbortController();
+    this.generationControllers.set(id, controller);
+    return { id, signal: controller.signal };
+  }
+
+  cancelGenerationSession(sessionId: string): boolean {
+    const controller = this.generationControllers.get(sessionId);
+    if (!controller) {
+      return false;
+    }
+
+    controller.abort();
+    this.generationControllers.delete(sessionId);
+    return true;
+  }
+
+  completeGenerationSession(sessionId: string): void {
+    this.generationControllers.delete(sessionId);
+  }
+
   cancelActiveGenerations(): void {
     logger.info(`[UnifiedAI] Cancelling ${this.activeControllers.size} active generations`);
     for (const controller of this.activeControllers) {
       controller.abort();
     }
     this.activeControllers.clear();
+
+    for (const controller of this.generationControllers.values()) {
+      controller.abort();
+    }
+    this.generationControllers.clear();
   }
 
   async initialize(): Promise<void> {
@@ -90,8 +141,11 @@ export class UnifiedAIService {
    * Returns the initialized provider, or undefined if no key or init failed.
    */
   private async lazyInitForCompletion(
-    providerType: AIProvider
+    providerType: AIProvider,
+    model: string
   ): Promise<IAIProvider | undefined> {
+    // Proxy mode injects keys server-side — never lazily init from a client key.
+    if (USE_AI_PROXY) return undefined;
     const lazyKey = await getLazyKey(providerType);
     if (!lazyKey) return undefined;
     logger.info(`[UnifiedAI] Lazily initializing ${providerType} prior to completion...`);
@@ -99,7 +153,7 @@ export class UnifiedAIService {
       return await this.factory.initializeProvider({
         provider: providerType,
         apiKey: lazyKey,
-        model: this.currentModel,
+        model,
       });
     } catch (initErr) {
       const msg = initErr instanceof Error ? initErr.message : String(initErr);
@@ -112,11 +166,15 @@ export class UnifiedAIService {
    * Pick a default model id for a fallback provider.
    */
   private fallbackModelFor(fallbackProvider: AIProvider): string {
-    return fallbackProvider === AIProvider.DEEPSEEK ? 'deepseek/deepseek-v3.2' :
-           fallbackProvider === AIProvider.GOOGLE ? 'google/gemini-3.1-pro' :
-           fallbackProvider === AIProvider.MOONSHOT ? 'moonshot/kimi-2.5-pro' :
-           fallbackProvider === AIProvider.LOCAL ? 'local/vibe-completion' :
-           'openai/gpt-5.2';
+    return fallbackProvider === AIProvider.DEEPSEEK
+      ? 'deepseek/deepseek-v3.2'
+      : fallbackProvider === AIProvider.GOOGLE
+        ? 'google/gemini-3.1-pro'
+        : fallbackProvider === AIProvider.MOONSHOT
+          ? 'moonshot/kimi-2.5-pro'
+          : fallbackProvider === AIProvider.LOCAL
+            ? 'local/vibe-completion'
+            : 'openai/gpt-5.2';
   }
 
   /**
@@ -128,15 +186,14 @@ export class UnifiedAIService {
     providerError: unknown,
     request: AICompletionRequest
   ): Promise<AICompletionResponse & { provider: string }> {
-    const errorMsg =
-      providerError instanceof Error ? providerError.message : String(providerError);
+    const errorMsg = providerError instanceof Error ? providerError.message : String(providerError);
     logger.warn(`[UnifiedAI] Provider ${modelInfo.provider} not available: ${errorMsg}`);
 
     const availableProviders = this.factory.getInitializedProviders();
     if (availableProviders.length === 0) {
       throw new Error(
         `Provider ${modelInfo.provider} is not configured and no fallback providers ` +
-        'are available. Please add an API key in Settings.'
+          'are available. Please add an API key in Settings.'
       );
     }
 
@@ -165,8 +222,9 @@ export class UnifiedAIService {
       temperature: request.temperature,
     });
 
-    return { ...response, provider: String(fallbackProvider) } as
-      AICompletionResponse & { provider: string };
+    return { ...response, provider: String(fallbackProvider) } as AICompletionResponse & {
+      provider: string;
+    };
   }
 
   /**
@@ -175,7 +233,8 @@ export class UnifiedAIService {
   private async executeComplete(
     provider: IAIProvider,
     request: AICompletionRequest,
-    providerName: AIProvider
+    providerName: AIProvider,
+    model: string
   ): Promise<AICompletionResponse & { provider: string }> {
     const controller = new AbortController();
     if (request.signal) {
@@ -184,15 +243,16 @@ export class UnifiedAIService {
     this.activeControllers.add(controller);
 
     try {
-      const response = await provider.complete(this.currentModel, {
+      const response = await provider.complete(model, {
         messages: request.messages,
         maxTokens: request.maxTokens,
         temperature: request.temperature,
         signal: controller.signal,
       });
 
-      return { ...response, provider: String(providerName) } as
-        AICompletionResponse & { provider: string };
+      return { ...response, provider: String(providerName) } as AICompletionResponse & {
+        provider: string;
+      };
     } finally {
       this.activeControllers.delete(controller);
     }
@@ -205,14 +265,15 @@ export class UnifiedAIService {
     request: AICompletionRequest
   ): Promise<AICompletionResponse & { provider: string }> {
     try {
+      const requestedModel = request.model ?? this.currentModel;
       // Get the provider for the current model
-      const modelInfo = MODEL_REGISTRY[this.currentModel];
+      const modelInfo = MODEL_REGISTRY[requestedModel];
       if (!modelInfo) {
-        logger.warn(`[UnifiedAI] Unknown model: ${this.currentModel}, using demo mode`);
+        logger.warn(`[UnifiedAI] Unknown model: ${requestedModel}, using demo mode`);
         return {
-          content: `Demo mode: Model "${this.currentModel}" not found. Please select a valid model from Settings.`,
+          content: `Demo mode: Model "${requestedModel}" not found. Please select a valid model from Settings.`,
           usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
-          provider: 'demo'
+          provider: 'demo',
         };
       }
 
@@ -224,7 +285,7 @@ export class UnifiedAIService {
         // [FIX for ERR: Provider not initialized]
         // If the provider wasn't initialized yet (e.g. useAppEffects mount delayed),
         // try to lazily initialize from env vars or SecureApiKeyManager before giving up.
-        provider = await this.lazyInitForCompletion(modelInfo.provider);
+        provider = await this.lazyInitForCompletion(modelInfo.provider, requestedModel);
 
         if (!provider) {
           // No key found or lazy init failed, proceed with fallback logic
@@ -232,11 +293,14 @@ export class UnifiedAIService {
         }
       }
 
-      return await this.executeComplete(provider, request, modelInfo.provider);
+      return await this.executeComplete(provider, request, modelInfo.provider, requestedModel);
     } catch (primaryError) {
-        logger.error('[UnifiedAI] AI service failed:', primaryError);
-        const errorMsg = primaryError instanceof Error ? primaryError.message : 'Unknown error';
-        throw new Error(`AI service unavailable: ${errorMsg}`);
+      if (UnifiedAIService.isAbortError(primaryError)) {
+        throw primaryError;
+      }
+      logger.error('[UnifiedAI] AI service failed:', primaryError);
+      const errorMsg = primaryError instanceof Error ? primaryError.message : 'Unknown error';
+      throw new Error(`AI service unavailable: ${errorMsg}`);
     }
   }
 
@@ -282,6 +346,8 @@ export class UnifiedAIService {
    * Returns the initialized provider, or undefined if no key or init failed.
    */
   private async lazyInitForStream(providerType: AIProvider): Promise<IAIProvider | undefined> {
+    // Proxy mode injects keys server-side — never lazily init from a client key.
+    if (USE_AI_PROXY) return undefined;
     const lazyKey = await getLazyKey(providerType);
     if (!lazyKey) return undefined;
     logger.info(`[UnifiedAI] Lazily initializing ${providerType} prior to stream...`);
@@ -305,15 +371,14 @@ export class UnifiedAIService {
     providerType: AIProvider,
     providerError: unknown
   ): Promise<IAIProvider> {
-    const errorMsg =
-      providerError instanceof Error ? providerError.message : String(providerError);
+    const errorMsg = providerError instanceof Error ? providerError.message : String(providerError);
     logger.warn(`[UnifiedAI] Provider ${providerType} not available for streaming: ${errorMsg}`);
 
     const availableProviders = this.factory.getInitializedProviders();
     if (availableProviders.length === 0) {
       throw new Error(
         `Provider ${providerType} is not configured and no fallback providers ` +
-        'are available. Please add an API key in Settings.'
+          'are available. Please add an API key in Settings.'
       );
     }
 
@@ -334,9 +399,20 @@ export class UnifiedAIService {
   private async *streamFromProvider(
     provider: IAIProvider,
     context: { maxTokens?: number; temperature?: number },
-    messages: ChatMessage[]
+    messages: ChatMessage[],
+    signal?: AbortSignal
   ): AsyncGenerator<string, void, unknown> {
     const controller = new AbortController();
+    const forwardAbort = () => controller.abort();
+
+    if (signal) {
+      if (signal.aborted) {
+        controller.abort();
+      } else {
+        signal.addEventListener('abort', forwardAbort, { once: true });
+      }
+    }
+
     this.activeControllers.add(controller);
 
     try {
@@ -346,11 +422,17 @@ export class UnifiedAIService {
         temperature: context.temperature ?? 0.3,
         signal: controller.signal,
       })) {
+        if (controller.signal.aborted) {
+          break;
+        }
         if (chunk.content) {
           yield chunk.content;
         }
       }
     } finally {
+      if (signal) {
+        signal.removeEventListener('abort', forwardAbort);
+      }
       this.activeControllers.delete(controller);
     }
   }
@@ -380,6 +462,7 @@ export class UnifiedAIService {
     systemPrompt?: string;
     maxTokens?: number;
     temperature?: number;
+    signal?: AbortSignal;
     // Extended context (optional, for compatibility)
     workspaceContext?: object;
     currentFile?: object;
@@ -404,6 +487,7 @@ export class UnifiedAIService {
       maxTokens: context.maxTokens ?? 2000,
       temperature: context.temperature ?? 0.3,
       stream: true,
+      signal: context.signal,
     };
 
     try {
@@ -415,13 +499,17 @@ export class UnifiedAIService {
 
       // Try streaming if supported
       if (typeof provider.streamComplete === 'function') {
-        yield* this.streamFromProvider(provider, context, messages);
+        yield* this.streamFromProvider(provider, context, messages, context.signal);
       } else {
         // Fallback to non-streaming
         const response = await this.complete(request);
         yield response.content;
       }
     } catch (error) {
+      if (UnifiedAIService.isAbortError(error)) {
+        logger.info('[UnifiedAI] Streaming cancelled by caller');
+        return;
+      }
       logger.error('[UnifiedAI] Streaming failed:', error);
       // Fallback to non-streaming
       const response = await this.complete(request);

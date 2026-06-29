@@ -781,7 +781,24 @@ if (focus === 'cleanup') {
 }
 
 if (issueCount > 0 && !reportOnly) {
-  console.error('\nBlocking issues detected. See report for details.');
+  console.error('\nBlocking issues detected:');
+  if (missingTargetsUnexpected.length) {
+    console.error('  Unexpected target gaps:');
+    console.error(JSON.stringify(missingTargetsUnexpected, null, 2));
+  }
+  if (unexpectedIsolated.length) {
+    console.error('  Unexpected isolated projects:');
+    console.error(JSON.stringify(unexpectedIsolated, null, 2));
+  }
+  if (workspaceDrift.length) {
+    console.error('  Workspace metadata drift:');
+    console.error(JSON.stringify(workspaceDrift, null, 2));
+  }
+  if (packageScriptsIssues.length) {
+    console.error('  Root CI script issues:');
+    console.error(JSON.stringify(packageScriptsIssues, null, 2));
+  }
+  console.error(`\nFull report: ${reportPath}`);
   process.exit(1);
 }
 
