@@ -13,6 +13,8 @@
     "build:gateway": "node scripts/build-gateway.mjs",
     "build": "tauri build",
     "preview": "vite preview",
+    "test": "node ../../node_modules/vitest/vitest.mjs run --passWithNoTests",
+    "test:coverage": "node ../../node_modules/vitest/vitest.mjs run --coverage --passWithNoTests",
     "typecheck": "tsc -b",
     "lint": "eslint ."
   },

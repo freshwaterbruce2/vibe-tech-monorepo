@@ -7,9 +7,30 @@
   "targets": {
     "dev": { "executor": "nx:run-script", "options": { "script": "dev" }, "cache": false },
     "gateway": { "executor": "nx:run-script", "options": { "script": "gateway" }, "cache": false },
-    "build:gateway": { "executor": "nx:run-script", "options": { "script": "build:gateway" }, "outputs": ["{projectRoot}/src-tauri/binaries"], "cache": false },
-    "build": { "executor": "nx:run-script", "options": { "script": "build" }, "outputs": ["{projectRoot}/dist", "{projectRoot}/src-tauri/target/release/bundle"], "cache": true },
-    "typecheck": { "executor": "nx:run-script", "options": { "script": "typecheck" }, "cache": true },
+    "build:gateway": {
+      "executor": "nx:run-script",
+      "options": { "script": "build:gateway" },
+      "outputs": ["{projectRoot}/src-tauri/binaries"],
+      "cache": false
+    },
+    "build": {
+      "executor": "nx:run-script",
+      "options": { "script": "build" },
+      "outputs": ["{projectRoot}/dist", "{projectRoot}/src-tauri/target/release/bundle"],
+      "cache": true
+    },
+    "typecheck": {
+      "executor": "nx:run-script",
+      "options": { "script": "typecheck" },
+      "cache": true
+    },
+    "test": { "executor": "nx:run-script", "options": { "script": "test" }, "cache": true },
+    "test:coverage": {
+      "executor": "nx:run-script",
+      "options": { "script": "test:coverage" },
+      "outputs": ["{projectRoot}/coverage"],
+      "cache": true
+    },
     "lint": { "executor": "nx:run-script", "options": { "script": "lint" }, "cache": true }
   },
   "tags": ["scope:app", "type:desktop-app", "language:typescript"]

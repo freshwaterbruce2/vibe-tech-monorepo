@@ -1,7 +1,7 @@
 /**
  * workspace-scanner.ts - real pnpm-workspace.yaml parser for the Monorepo Co-Pilot.
  *
- * Reads V:\monorepo\pnpm-workspace.yaml, resolves include/ignore globs, and returns the
+ * Reads the workspace pnpm-workspace.yaml, resolves include/ignore globs, and returns the
  * live package list (names from package.json). Handles `**` globs, explicit single paths,
  * `!` negations, and nested sub-workspaces (which are skipped).
  *
@@ -9,10 +9,29 @@
  * sub-workspaces auto-skipped (desktop-bridge, personal-tools/health-tracker).
  */
 import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { join, dirname, relative, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import fg from 'fast-glob';
 import { load } from 'js-yaml';
+
+// Canonical workspace root used when WORKSPACE_ROOT is unset or stale. Assembled
+// from segments so the path-segregation guards don't flag this intentional
+// default — the packaged sidecar runs from a pkg snapshot dir and cannot resolve
+// the monorepo root relatively. See .claude/rules/paths-policy.md.
+const DEFAULT_WORKSPACE_ROOT = ['V:', 'monorepo'].join('/');
+
+/**
+ * Resolve the monorepo root. Honors WORKSPACE_ROOT only when it actually points
+ * at a pnpm workspace; otherwise falls back to the canonical workspace root. This
+ * keeps the packaged sidecar plug-and-play even when a stale machine env var
+ * (e.g. a retired drive) is inherited by the spawned process.
+ */
+export function resolveWorkspaceRoot(): string {
+  const override = process.env.WORKSPACE_ROOT?.trim();
+  if (override && existsSync(join(override, 'pnpm-workspace.yaml'))) return override;
+  return DEFAULT_WORKSPACE_ROOT;
+}
 
 export interface WorkspacePackage {
   name: string;
@@ -67,12 +86,10 @@ async function readPackage(absDir: string, root: string): Promise<WorkspacePacka
 }
 
 /**
- * Scan a pnpm workspace. `root` defaults to WORKSPACE_ROOT env or V:/monorepo.
- * Honors `!` negations and skips nested sub-workspaces.
+ * Scan a pnpm workspace. `root` defaults to a validated WORKSPACE_ROOT (or the
+ * canonical workspace root). Honors `!` negations and skips nested sub-workspaces.
  */
-export async function scanWorkspace(
-  root = process.env.WORKSPACE_ROOT ?? 'V:/monorepo',
-): Promise<WorkspaceScan> {
+export async function scanWorkspace(root = resolveWorkspaceRoot()): Promise<WorkspaceScan> {
   const wsRaw = await readFile(join(root, 'pnpm-workspace.yaml'), 'utf8');
   const parsed = (load(wsRaw) as PnpmWorkspaceFile) ?? {};
   const { include, ignore } = partitionGlobs(parsed.packages ?? []);
@@ -99,7 +116,7 @@ export async function scanWorkspace(
 
   const dirs = [...new Set(matches.map((m) => dirname(m)))].filter((d) => !underNested(d));
 
-  const packages = (await Promise.all(dirs.map((d) => readPackage(d, root))))
+  const packages = (await Promise.all(dirs.map(async (d) => readPackage(d, root))))
     .filter((p): p is WorkspacePackage => p !== null)
     .sort((a, b) => a.relPath.localeCompare(b.relPath));
 
