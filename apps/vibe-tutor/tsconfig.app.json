@@ -36,12 +36,6 @@
   "references": [
     {
       "path": "../../packages/openrouter-client"
-    },
-    {
-      "path": "../../packages/games/tsconfig.build.json"
-    },
-    {
-      "path": "../../packages/avatars/tsconfig.build.json"
     }
   ]
 }

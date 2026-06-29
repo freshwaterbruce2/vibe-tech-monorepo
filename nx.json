@@ -166,7 +166,7 @@
       "cache": false
     },
     "typecheck": {
-      "dependsOn": ["^build"],
+      "dependsOn": [],
       "inputs": ["default", "^default", "{projectRoot}/tsconfig.json"],
       "outputs": [],
       "cache": true
