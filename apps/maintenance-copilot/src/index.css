@@ -197,3 +197,10 @@ body {
   color: var(--muted);
   font-size: 13px;
 }
+.alerts {
+  margin-top: 20px;
+}
+.alerts h2 {
+  font-size: 14px;
+  margin: 0 0 8px;
+}
