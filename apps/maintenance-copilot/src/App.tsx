@@ -1,90 +1,26 @@
-import { useCallback, useEffect, useState } from 'react';
-import type { ReactNode } from 'react';
+import { useState } from 'react';
+import { useGatewayData } from './hooks/useGatewayData';
+import { apiBaseUrl } from './lib/api';
+import { Overview } from './components/Overview';
+import { MonorepoTab } from './components/MonorepoTab';
+import { DDriveTab } from './components/DDriveTab';
+import { GitTab } from './components/GitTab';
+import { AiTab } from './components/AiTab';
+import { RemediationModal, type RemediationAction } from './components/RemediationModal';
 
-const API = (import.meta.env.VITE_GATEWAY_URL as string | undefined) ?? 'http://localhost:8675';
-
-interface PanelState<T> {
-  loading: boolean;
-  error?: string;
-  data?: T;
-}
-
-interface WorkspaceData {
-  health: { success: boolean; stdout: string; stderr: string; error?: string };
-  packages: { count: number; includeGlobs: string[]; items: Array<{ name: string; relPath: string }> };
-}
-interface ScriptResult {
-  success: boolean;
-  stdout: string;
-  stderr: string;
-  error?: string;
-}
-interface LogScan {
-  success: boolean;
-  scanned: number;
-  matches: Array<{ file: string; line: number; text: string }>;
-}
-
-function useEndpoint<T>(path: string): [PanelState<T>, () => void] {
-  const [state, setState] = useState<PanelState<T>>({ loading: true });
-  const load = useCallback(() => {
-    setState({ loading: true });
-    fetch(`${API}${path}`)
-      .then(async (r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return (await r.json()) as T;
-      })
-      .then((data) => setState({ loading: false, data }))
-      .catch((e: unknown) => setState({ loading: false, error: e instanceof Error ? e.message : String(e) }));
-  }, [path]);
-  useEffect(() => load(), [load]);
-  return [state, load];
-}
-
-function Card({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="card">
-      <h2>{title}</h2>
-      {children}
-    </section>
-  );
-}
-const Loading = () => <p className="muted">loading…</p>;
-const ErrBox = ({ msg }: { msg: string }) => (
-  <p className="err">⚠ {msg}<br /><span className="muted">Is the gateway running on :8675? (pnpm build:gateway, then pnpm dev)</span></p>
-);
+type Tab = 'overview' | 'monorepo' | 'ddrive' | 'git' | 'ai';
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'monorepo', label: 'Monorepo' },
+  { id: 'ddrive', label: 'D-Drive' },
+  { id: 'git', label: 'Git' },
+  { id: 'ai', label: 'AI' },
+];
 
 export default function App() {
-  const [ws, reloadWs] = useEndpoint<WorkspaceData>('/api/health/workspace');
-  const [db, reloadDb] = useEndpoint<ScriptResult>('/api/health/databases');
-  const [dd, reloadDd] = useEndpoint<ScriptResult>('/api/health/d-drive');
-  const [logs, reloadLogs] = useEndpoint<LogScan>('/api/health/logs/errors');
-  const [action, setAction] = useState('');
-
-  const reloadAll = () => {
-    reloadWs();
-    reloadDb();
-    reloadDd();
-    reloadLogs();
-  };
-
-  const post = async (path: string, body: unknown, label: string) => {
-    setAction(`${label}…`);
-    try {
-      const r = await fetch(`${API}${path}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const j = (await r.json()) as ScriptResult;
-      setAction(`${label}: ${j.success ? 'done ✓' : (j.error ?? 'failed')}`);
-    } catch (e) {
-      setAction(`${label}: ${e instanceof Error ? e.message : String(e)}`);
-    }
-  };
-
-  const errorCount = logs.data?.matches.length ?? 0;
-  const connected = !ws.loading && !ws.error;
+  const { loading, error, data, refetch } = useGatewayData();
+  const [tab, setTab] = useState<Tab>('overview');
+  const [remediation, setRemediation] = useState<RemediationAction | null>(null);
 
   return (
     <main className="app">
@@ -92,71 +28,64 @@ export default function App() {
         <div>
           <h1>Monorepo Maintenance Co-Pilot</h1>
           <p className="sub">
-            <span className={connected ? 'dot ok' : 'dot bad'} /> {connected ? 'Connected' : 'Disconnected'} · {API}
+            <span className={error ? 'dot bad' : 'dot ok'} /> {error ? 'Disconnected' : 'Connected'}{' '}
+            · {apiBaseUrl() || 'same-origin'}
           </p>
         </div>
-        <button className="btn" onClick={reloadAll}>↻ Refresh all</button>
+        <button className="btn" onClick={refetch} disabled={loading}>
+          ↻ Refresh
+        </button>
       </header>
 
-      <div className="grid">
-        <Card title="Workspace Stability">
-          {ws.loading ? <Loading /> : ws.error ? <ErrBox msg={ws.error} /> : (
-            <>
-              <div className="metric">{ws.data?.packages.count ?? '—'}<span> packages</span></div>
-              <p className="muted">{ws.data?.packages.includeGlobs.length ?? 0} workspace globs · pnpm</p>
-              <p className={ws.data?.health.success ? 'ok' : 'warnText'}>
-                ● {ws.data?.health.success ? 'workspace-health.ps1 OK' : 'health script flagged issues'}
-              </p>
-            </>
-          )}
-        </Card>
+      <nav className="tabs">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            className={`tab ${tab === t.id ? 'active' : ''}`}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </nav>
 
-        <Card title="Databases (D:\)">
-          {db.loading ? <Loading /> : db.error ? <ErrBox msg={db.error} /> : (
-            <>
-              <p className={db.data?.success ? 'ok' : 'warnText'}>● {db.data?.success ? 'integrity OK' : 'see output'}</p>
-              <pre className="out">{(db.data?.stdout ?? '').slice(0, 600) || 'no output'}</pre>
-            </>
+      {error ? (
+        <p className="err">
+          ⚠ {error}
+          <br />
+          <span className="muted">Is the gateway running on :8675? (pnpm build:gateway)</span>
+        </p>
+      ) : loading ? (
+        <p className="muted">loading…</p>
+      ) : (
+        <>
+          {tab === 'overview' && <Overview data={data} />}
+          {tab === 'monorepo' && (
+            <MonorepoTab
+              workspace={data.workspace}
+              onRepair={() => setRemediation('maintenance')}
+            />
           )}
-        </Card>
-
-        <Card title="D:\ Drive">
-          {dd.loading ? <Loading /> : dd.error ? <ErrBox msg={dd.error} /> : (
-            <pre className="out">{(dd.data?.stdout ?? '').slice(0, 600) || 'no output'}</pre>
-          )}
-        </Card>
-
-        <Card title="Error / Crash Log Scan">
-          {logs.loading ? <Loading /> : logs.error ? <ErrBox msg={logs.error} /> : (
-            <>
-              <div className={`metric ${errorCount ? 'danger' : 'ok'}`}>{errorCount}<span> matches</span></div>
-              <p className="muted">scanned {logs.data?.scanned ?? 0} logs in D:\learning-system\logs</p>
-              <ul className="loglist">
-                {(logs.data?.matches ?? []).slice(-6).map((m, i) => (
-                  <li key={`${m.file}-${m.line}-${i}`}><code>{m.file}:{m.line}</code> {m.text.slice(0, 80)}</li>
-                ))}
-              </ul>
-            </>
-          )}
-        </Card>
-      </div>
+          {tab === 'ddrive' && <DDriveTab dDrive={data.dDrive} databases={data.databases} />}
+          {tab === 'git' && <GitTab git={data.git} />}
+          {tab === 'ai' && <AiTab />}
+        </>
+      )}
 
       <footer className="actions">
-        <button className="btn warn" onClick={() => void post('/api/health/cleanup', { dryRun: true }, 'Fix & Align (preview)')}>
-          Fix &amp; Align (preview)
+        <button className="btn warn" onClick={() => setRemediation('cleanup')}>
+          Clean Stale Artifacts
         </button>
-        <button
-          className="btn danger"
-          onClick={() => {
-            if (window.confirm('Run maintenance (WAL checkpoint + vacuum + backup)?')) {
-              void post('/api/health/maintenance', { confirm: true, vacuum: true, backup: true }, 'Maintenance');
-            }
-          }}
-        >
-          Run Maintenance
-        </button>
-        <span className="actionmsg">{action}</span>
       </footer>
+
+      {remediation ? (
+        <RemediationModal
+          key={remediation}
+          action={remediation}
+          onClose={() => setRemediation(null)}
+          onComplete={refetch}
+        />
+      ) : null}
     </main>
   );
 }
