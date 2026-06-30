@@ -130,14 +130,54 @@ describe('GET /api/mcp/get_database_health', () => {
 
     const res = await client().get('/api/mcp/get_database_health');
     expect(res.body.databases).toEqual([
-      { name: 'a.db', size: '1.5 MB', walStatus: 'Enabled', status: 'OK', hasLock: true },
+      {
+        name: 'a.db',
+        path: 'a.db',
+        size: '1.5 MB',
+        walStatus: 'Enabled',
+        status: 'OK',
+        hasLock: true,
+      },
       {
         name: 'b.db',
+        path: 'b.db',
         size: '0.2 MB',
         walStatus: 'Disabled',
         status: 'INTEGRITY_ERROR',
         hasLock: false,
       },
+    ]);
+  });
+
+  it('preserves a unique path for same-named DBs in different folders', async () => {
+    vi.mocked(getDatabaseHealthReport).mockResolvedValue({
+      summary: { totalDatabases: 2, coreDatabases: 1, largeWalFiles: 0 },
+      files: [
+        {
+          name: 'trading.db',
+          relativePath: 'trading.db',
+          sizeMB: 1,
+          walExists: true,
+          shmExists: false,
+          integrity: 'ok',
+          isCore: true,
+        },
+        {
+          name: 'trading.db',
+          relativePath: 'crypto-enhanced/trading.db',
+          sizeMB: 2,
+          walExists: false,
+          shmExists: false,
+          integrity: 'ok',
+          isCore: false,
+        },
+      ],
+    });
+
+    const res = await client().get('/api/mcp/get_database_health');
+    expect(res.body.databases.map((d: { path: string }) => d.path)).toEqual([
+      'trading.db',
+      'crypto-enhanced/trading.db',
     ]);
   });
 });

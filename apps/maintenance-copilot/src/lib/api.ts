@@ -39,6 +39,7 @@ export interface WorkspaceHealth {
 }
 export interface DashboardDatabase {
   name: string;
+  path: string;
   size: string;
   walStatus: 'Enabled' | 'Disabled';
   status: 'OK' | 'SQLITE_BUSY' | 'INTEGRITY_ERROR';

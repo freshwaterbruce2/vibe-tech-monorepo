@@ -53,9 +53,9 @@ export function DDriveTab({ dDrive, databases }: Props) {
       ) : (
         <ul className="loglist">
           {dbs.map((d) => (
-            <li key={d.name}>
+            <li key={d.path}>
               <StatusBadge tone={d.status === 'OK' ? 'ok' : 'danger'}>{d.status}</StatusBadge>{' '}
-              <code>{d.name}</code>{' '}
+              <code>{d.path}</code>{' '}
               <span className="muted">
                 {d.size} · WAL {d.walStatus}
               </span>

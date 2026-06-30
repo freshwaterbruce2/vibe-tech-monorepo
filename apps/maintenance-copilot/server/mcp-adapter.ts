@@ -42,6 +42,7 @@ interface WorkspaceHealth {
 }
 interface DashboardDatabase {
   name: string;
+  path: string;
   size: string;
   walStatus: 'Enabled' | 'Disabled';
   status: 'OK' | 'SQLITE_BUSY' | 'INTEGRITY_ERROR';
@@ -119,6 +120,9 @@ function mapDatabase(f: DbFileRecord): DashboardDatabase {
     : 'OK';
   return {
     name: f.name,
+    // Unique key: DB names repeat across subfolders (e.g. trading.db and
+    // crypto-enhanced/trading.db), so the UI keys/labels on relativePath.
+    path: f.relativePath,
     size: `${f.sizeMB} MB`,
     walStatus: f.walExists ? 'Enabled' : 'Disabled',
     status,

@@ -11,9 +11,17 @@ const dDrive: DDriveHealth = {
 };
 const databases: DatabaseHealth = {
   databases: [
-    { name: 'a.db', size: '1.5 MB', walStatus: 'Enabled', status: 'OK', hasLock: true },
+    {
+      name: 'a.db',
+      path: 'a.db',
+      size: '1.5 MB',
+      walStatus: 'Enabled',
+      status: 'OK',
+      hasLock: true,
+    },
     {
       name: 'b.db',
+      path: 'b.db',
       size: '0.2 MB',
       walStatus: 'Disabled',
       status: 'INTEGRITY_ERROR',
@@ -30,6 +38,37 @@ describe('DDriveTab', () => {
     expect(screen.getByText('21')).toBeInTheDocument(); // Stale Files
     expect(screen.getByText('a.db')).toBeInTheDocument();
     expect(screen.getByText(/INTEGRITY_ERROR/)).toBeInTheDocument();
+  });
+
+  it('renders two same-named databases distinctly by path (unique React key)', () => {
+    render(
+      <DDriveTab
+        dDrive={dDrive}
+        databases={{
+          databases: [
+            {
+              name: 'trading.db',
+              path: 'trading.db',
+              size: '1 MB',
+              walStatus: 'Enabled',
+              status: 'OK',
+              hasLock: true,
+            },
+            {
+              name: 'trading.db',
+              path: 'crypto-enhanced\\trading.db',
+              size: '2 MB',
+              walStatus: 'Enabled',
+              status: 'OK',
+              hasLock: true,
+            },
+          ],
+        }}
+      />,
+    );
+    // Both real DBs render (the old name-keyed list silently dropped one).
+    expect(screen.getByText('trading.db')).toBeInTheDocument();
+    expect(screen.getByText('crypto-enhanced\\trading.db')).toBeInTheDocument();
   });
 
   it('shows the OOM/crash alert with reason', () => {

@@ -30,7 +30,14 @@ const healthy: GatewayData = {
   },
   databases: {
     databases: [
-      { name: 'x.db', size: '1 MB', walStatus: 'Disabled', status: 'OK', hasLock: false },
+      {
+        name: 'x.db',
+        path: 'x.db',
+        size: '1 MB',
+        walStatus: 'Disabled',
+        status: 'OK',
+        hasLock: false,
+      },
     ],
   },
   dDrive: {
@@ -69,7 +76,14 @@ describe('Overview', () => {
       },
       databases: {
         databases: [
-          { name: 'busy.db', size: '2 MB', walStatus: 'Enabled', status: 'OK', hasLock: true },
+          {
+            name: 'busy.db',
+            path: 'busy.db',
+            size: '2 MB',
+            walStatus: 'Enabled',
+            status: 'OK',
+            hasLock: true,
+          },
         ],
       },
       dDrive: {

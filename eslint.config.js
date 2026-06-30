@@ -23,6 +23,7 @@ export default tseslint.config(
       'dist',
       '**/dist/**',
       '**/dist-electron/**',
+      '**/.gateway-build/**', // maintenance-copilot bundled sidecar (build:gateway)
       '**/out/**',
       'build',
       '**/build/**',
