@@ -78,14 +78,39 @@ export interface DDriveHealthReport {
   learningSystem: { status: string; staleDays: number; staleFileCount: number };
 }
 
-/** Run a JSON-emitting health script to a temp file and parse it. */
+const reportCache = new Map<string, { at: number; data: unknown }>();
+const reportInflight = new Map<string, Promise<unknown>>();
+const REPORT_TTL_MS = 5000;
+
+/**
+ * Run a JSON-emitting health script to a temp file and parse it, with a short
+ * TTL cache + in-flight dedup. The dashboard loads every panel at once (×2 under
+ * React StrictMode in dev); without this each would spawn its own pwsh and race
+ * on the shared temp file. Dedup => one pwsh per script at a time.
+ */
 async function runReport<T>(script: string, outFile: string): Promise<T> {
-  const out = join(tmpdir(), outFile);
-  await runPs(script, `-OutputPath "${out}"`);
-  // Strip a leading UTF-8 BOM defensively (some PowerShell encoders emit one).
-  const text = await readFile(out, 'utf8');
-  const raw = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
-  return JSON.parse(raw) as T;
+  const cached = reportCache.get(script);
+  if (cached && Date.now() - cached.at < REPORT_TTL_MS) return cached.data as T;
+  const existing = reportInflight.get(script);
+  if (existing) return existing as Promise<T>;
+
+  const job = (async () => {
+    const out = join(tmpdir(), outFile);
+    await runPs(script, `-OutputPath "${out}"`);
+    // Strip a leading UTF-8 BOM defensively (some PowerShell encoders emit one).
+    const text = await readFile(out, 'utf8');
+    const raw = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+    return JSON.parse(raw) as T;
+  })();
+
+  reportInflight.set(script, job);
+  try {
+    const data = await job;
+    reportCache.set(script, { at: Date.now(), data });
+    return data;
+  } finally {
+    reportInflight.delete(script);
+  }
 }
 
 export async function getDatabaseHealthReport(): Promise<DatabaseHealthReport> {

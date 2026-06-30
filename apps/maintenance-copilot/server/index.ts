@@ -11,6 +11,13 @@ import { mcpRouter } from './mcp-adapter.js';
 
 const PORT = Number(process.env.GATEWAY_PORT ?? 8675);
 
+// Resilience: a single bad request (e.g. a slow pwsh spawn under concurrent
+// panel loads) must never take the whole gateway down — log and keep serving.
+process.on('unhandledRejection', (reason) =>
+  console.error('[gateway] unhandledRejection:', reason),
+);
+process.on('uncaughtException', (err) => console.error('[gateway] uncaughtException:', err));
+
 const app = express();
 app.use(
   cors({
