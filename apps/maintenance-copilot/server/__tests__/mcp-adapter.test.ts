@@ -13,6 +13,7 @@ vi.mock('../ps-health.js', () => ({
   getDatabaseHealthReport: vi.fn(),
   getDDriveHealthReport: vi.fn(),
   scanLogsForErrors: vi.fn(),
+  getGitStatus: vi.fn(),
   runPs: vi.fn(),
 }));
 vi.mock('../workspace-scanner.js', () => ({ scanWorkspace: vi.fn() }));
@@ -26,6 +27,7 @@ import {
   getDatabaseHealthReport,
   getDDriveHealthReport,
   scanLogsForErrors,
+  getGitStatus,
   runPs,
 } from '../ps-health.js';
 import { mcpRouter } from '../mcp-adapter.js';
@@ -175,6 +177,23 @@ describe('GET /api/mcp/get_d_drive_health', () => {
     const res = await client().get('/api/mcp/get_d_drive_health');
     expect(res.body.learningSystem.insightsCount).toBe(0);
     expect(res.body.learningSystem.crashed).toBe(false);
+  });
+});
+
+describe('GET /api/mcp/get_git_status', () => {
+  it('returns the GitReport from getGitStatus', async () => {
+    vi.mocked(getGitStatus).mockResolvedValue({
+      branch: 'feat/mc-dashboard',
+      isDirty: true,
+      recentCommits: [{ hash: 'abc123', message: 'feat: add adapter' }],
+    });
+    const res = await client().get('/api/mcp/get_git_status');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      branch: 'feat/mc-dashboard',
+      isDirty: true,
+      recentCommits: [{ hash: 'abc123', message: 'feat: add adapter' }],
+    });
   });
 });
 

@@ -124,3 +124,42 @@ export async function scanLogsForErrors(dir: string = SYSTEM_LOG_DIR): Promise<L
   }
   return { hasError: matches.length > 0, hasOOM, scanned, matches: matches.slice(-200) };
 }
+
+// --- Git status (real `git` via run(); gracefully degrades off a repo) -------
+
+export interface GitReport {
+  branch: string;
+  isDirty: boolean;
+  recentCommits: Array<{ hash: string; message: string }>;
+}
+
+/** Pure shaping of the three git command results into a GitReport. */
+export function parseGitStatus(branch: RunResult, status: RunResult, log: RunResult): GitReport {
+  if (!branch.success) return { branch: 'unknown', isDirty: false, recentCommits: [] };
+  const recentCommits = log.success
+    ? log.stdout
+        .split(/\r?\n/)
+        .filter(Boolean)
+        .map((line) => {
+          const sp = line.indexOf(' ');
+          return sp === -1
+            ? { hash: line, message: '' }
+            : { hash: line.slice(0, sp), message: line.slice(sp + 1) };
+        })
+    : [];
+  return {
+    branch: branch.stdout,
+    isDirty: status.success && status.stdout.length > 0,
+    recentCommits,
+  };
+}
+
+export async function getGitStatus(): Promise<GitReport> {
+  const branch = await run('git rev-parse --abbrev-ref HEAD', WORKSPACE_ROOT);
+  if (!branch.success) return parseGitStatus(branch, branch, branch);
+  const [status, log] = await Promise.all([
+    run('git status --porcelain', WORKSPACE_ROOT),
+    run('git log --oneline -10', WORKSPACE_ROOT),
+  ]);
+  return parseGitStatus(branch, status, log);
+}

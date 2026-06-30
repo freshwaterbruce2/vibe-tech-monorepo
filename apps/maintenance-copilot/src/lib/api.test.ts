@@ -65,6 +65,10 @@ describe('api client', () => {
     fetchMock.mockResolvedValue(jsonOk({ healthScore: 100 }));
     await api.telemetry();
     expect(fetchMock).toHaveBeenLastCalledWith('http://localhost:8675/api/telemetry');
+
+    fetchMock.mockResolvedValue(jsonOk({ branch: 'main', isDirty: false, recentCommits: [] }));
+    await api.gitStatus();
+    expect(fetchMock).toHaveBeenLastCalledWith('http://localhost:8675/api/mcp/get_git_status');
   });
 
   it('throws on non-ok GET responses', async () => {

@@ -10,6 +10,7 @@ import {
   type DatabaseHealth,
   type DDriveHealth,
   type Telemetry,
+  type GitReport,
 } from '../lib/api';
 
 export interface GatewayData {
@@ -17,6 +18,7 @@ export interface GatewayData {
   databases?: DatabaseHealth;
   dDrive?: DDriveHealth;
   telemetry?: Telemetry;
+  git?: GitReport;
 }
 
 export interface GatewayState {
@@ -34,9 +36,15 @@ export function useGatewayData(): GatewayState {
   const refetch = useCallback(() => {
     setLoading(true);
     setError(undefined);
-    Promise.all([api.workspaceHealth(), api.databaseHealth(), api.dDriveHealth(), api.telemetry()])
-      .then(([workspace, databases, dDrive, telemetry]) =>
-        setData({ workspace, databases, dDrive, telemetry }),
+    Promise.all([
+      api.workspaceHealth(),
+      api.databaseHealth(),
+      api.dDriveHealth(),
+      api.telemetry(),
+      api.gitStatus(),
+    ])
+      .then(([workspace, databases, dDrive, telemetry, git]) =>
+        setData({ workspace, databases, dDrive, telemetry, git }),
       )
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));

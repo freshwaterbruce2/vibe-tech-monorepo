@@ -8,6 +8,7 @@ vi.mock('../lib/api', () => ({
     databaseHealth: vi.fn(),
     dDriveHealth: vi.fn(),
     telemetry: vi.fn(),
+    gitStatus: vi.fn(),
   },
 }));
 
@@ -19,6 +20,11 @@ const resolveAll = () => {
   vi.mocked(api.databaseHealth).mockResolvedValue({ databases: [] } as never);
   vi.mocked(api.dDriveHealth).mockResolvedValue({ totalSize: '1 GB' } as never);
   vi.mocked(api.telemetry).mockResolvedValue({ healthScore: 90 } as never);
+  vi.mocked(api.gitStatus).mockResolvedValue({
+    branch: 'main',
+    isDirty: false,
+    recentCommits: [],
+  } as never);
 };
 
 beforeEach(() => vi.clearAllMocks());

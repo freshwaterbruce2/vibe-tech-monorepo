@@ -16,6 +16,7 @@ import {
   getDatabaseHealthReport,
   getDDriveHealthReport,
   scanLogsForErrors,
+  getGitStatus,
   runPs,
   type DbFileRecord,
 } from './ps-health.js';
@@ -173,6 +174,8 @@ mcpRouter.get('/api/mcp/get_database_health', async (_req, res) =>
 );
 
 mcpRouter.get('/api/mcp/get_d_drive_health', async (_req, res) => ok(res, buildDDriveHealth));
+
+mcpRouter.get('/api/mcp/get_git_status', async (_req, res) => ok(res, getGitStatus));
 
 mcpRouter.post('/api/mcp/run_workspace_maintenance', async (req: Request, res: Response) => {
   const dryRun = req.body?.dryRun !== false;
