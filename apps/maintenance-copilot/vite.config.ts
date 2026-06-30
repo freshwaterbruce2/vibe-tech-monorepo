@@ -16,17 +16,25 @@ export default defineConfig({
     emptyOutDir: true,
     target: 'es2022',
   },
-  // Vitest: server/ gateway logic runs in Node (no DOM); UI tests can opt into jsdom.
+  // Vitest: server/ gateway logic runs in Node; src/ UI tests opt into jsdom via
+  // a `// @vitest-environment jsdom` pragma at the top of each src test file.
   test: {
     globals: true,
     environment: 'node',
     include: ['server/**/*.test.ts', 'src/**/*.test.{ts,tsx}'],
     exclude: ['node_modules', 'dist', 'src-tauri', '.gateway-build'],
+    setupFiles: ['./src/__tests__/setup.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json'],
-      include: ['server/**/*.ts'],
-      exclude: ['server/**/*.test.ts', 'server/index.ts'],
+      include: ['server/**/*.ts', 'src/**/*.{ts,tsx}'],
+      exclude: [
+        'server/**/*.test.ts',
+        'server/index.ts',
+        'src/**/*.test.{ts,tsx}',
+        'src/__tests__/**',
+        'src/main.tsx',
+      ],
     },
   },
 });
