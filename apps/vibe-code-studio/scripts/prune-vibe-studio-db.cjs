@@ -30,7 +30,21 @@
  *   node apps\vibe-code-studio\scripts\prune-vibe-studio-db.cjs --apply    # mutate
  *   (append --db=D:\path\to\other.db to target a different file)
  */
-const Database = require('better-sqlite3');
+let Database;
+try {
+  Database = require('better-sqlite3');
+} catch (err) {
+  if (err && err.code === 'MODULE_NOT_FOUND') {
+    process.stderr.write(
+      "[prune] Missing dependency 'better-sqlite3'.\n" +
+        '  Install workspace deps from the repo root, then re-run with NODE_PATH set:\n' +
+        '    pnpm install --filter vibe-code-studio\n' +
+        '    (PowerShell) $env:NODE_PATH="V:\\monorepo\\node_modules"\n'
+    );
+    process.exit(1);
+  }
+  throw err; // a native ABI/load failure is a different problem — surface it as-is
+}
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -160,7 +174,7 @@ function main() {
   }
   if (APPLY) backupDb(DB_PATH);
 
-  const db = new Database(DB_PATH); // read-write
+  const db = new Database(DB_PATH); // read-write (dry-run reads only; never writes)
   db.pragma('busy_timeout = 5000');
   if (APPLY) db.pragma('wal_checkpoint(TRUNCATE)');
 
