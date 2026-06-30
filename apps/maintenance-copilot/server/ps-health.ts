@@ -29,10 +29,41 @@ export interface RunResult {
   error?: string;
 }
 
-/** Run a shell command the same way monorepo-health-mcp does. */
+// Cap concurrent child processes. The dashboard loads every panel at once (x2
+// under React StrictMode dev), which fired ~10+ simultaneous pwsh/git spawns —
+// a rapid spawn storm that can crash libuv natively on Windows (exit -1, not
+// catchable by JS handlers). Queueing to a small ceiling prevents that.
+const MAX_CONCURRENT_PROC = 2;
+let activeProc = 0;
+const procQueue: Array<() => void> = [];
+
+async function acquireSlot(): Promise<void> {
+  if (activeProc < MAX_CONCURRENT_PROC) {
+    activeProc += 1;
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    procQueue.push(() => {
+      activeProc += 1;
+      resolve();
+    });
+  });
+}
+
+function releaseSlot(): void {
+  activeProc -= 1;
+  procQueue.shift()?.();
+}
+
+/** Run a shell command (concurrency-capped) the way monorepo-health-mcp does. */
 export async function run(cmd: string, cwd: string): Promise<RunResult> {
+  await acquireSlot();
   try {
-    const { stdout, stderr } = await execAsync(cmd, { cwd, maxBuffer: MAX_BUFFER });
+    const { stdout, stderr } = await execAsync(cmd, {
+      cwd,
+      maxBuffer: MAX_BUFFER,
+      windowsHide: true,
+    });
     return { success: true, stdout: stdout.trim(), stderr: stderr.trim() };
   } catch (e) {
     const err = e as { message: string; stdout?: string; stderr?: string };
@@ -42,6 +73,8 @@ export async function run(cmd: string, cwd: string): Promise<RunResult> {
       stderr: err.stderr?.trim() ?? '',
       error: err.message,
     };
+  } finally {
+    releaseSlot();
   }
 }
 
