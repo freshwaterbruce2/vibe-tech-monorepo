@@ -14,49 +14,10 @@
  * SAFETY: destructive routes default to dry-run / require explicit confirm.
  */
 import { Router, type Request, type Response } from 'express';
-import { exec } from 'node:child_process';
-import { promisify } from 'node:util';
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { scanWorkspace, resolveWorkspaceRoot } from './workspace-scanner.js';
-
-const execAsync = promisify(exec);
-const MAX_BUFFER = 1024 * 1024 * 10;
-const WORKSPACE_ROOT = resolveWorkspaceRoot();
-const LEARNING_DIR = process.env.LEARNING_SYSTEM_DIR ?? 'D:/learning-system';
-const LOG_DIR = join(LEARNING_DIR, 'logs');
-
-interface RunResult {
-  success: boolean;
-  stdout: string;
-  stderr: string;
-  error?: string;
-}
-
-/** Run a shell command the same way monorepo-health-mcp does. */
-async function run(cmd: string, cwd: string): Promise<RunResult> {
-  try {
-    const { stdout, stderr } = await execAsync(cmd, { cwd, maxBuffer: MAX_BUFFER });
-    return { success: true, stdout: stdout.trim(), stderr: stderr.trim() };
-  } catch (e) {
-    const err = e as { message: string; stdout?: string; stderr?: string };
-    return {
-      success: false,
-      stdout: err.stdout?.trim() ?? '',
-      stderr: err.stderr?.trim() ?? '',
-      error: err.message,
-    };
-  }
-}
-
-/** Run a PowerShell script from the workspace `scripts/` directory. */
-async function runPs(script: string, args = ''): Promise<RunResult> {
-  const file = join(WORKSPACE_ROOT, 'scripts', script);
-  return run(
-    `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${file}"${args ? ` ${args}` : ''}`,
-    WORKSPACE_ROOT,
-  );
-}
+import { scanWorkspace } from './workspace-scanner.js';
+import { run, runPs, LEARNING_DIR, LOG_DIR, WORKSPACE_ROOT } from './ps-health.js';
 
 export const healthRouter = Router();
 
