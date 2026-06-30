@@ -49,7 +49,9 @@ export async function run(cmd: string, cwd: string): Promise<RunResult> {
 export async function runPs(script: string, args = ''): Promise<RunResult> {
   const file = join(WORKSPACE_ROOT, 'scripts', script);
   return run(
-    `powershell.exe -NoProfile -ExecutionPolicy Bypass -File "${file}"${args ? ` ${args}` : ''}`,
+    // pwsh (PowerShell 7) — the workspace standard. Avoids 5.1's UTF8-with-BOM
+    // writes and PS7-only syntax errors (e.g. d-drive-health's op_Subtraction).
+    `pwsh -NoProfile -ExecutionPolicy Bypass -File "${file}"${args ? ` ${args}` : ''}`,
     WORKSPACE_ROOT,
   );
 }
@@ -80,7 +82,10 @@ export interface DDriveHealthReport {
 async function runReport<T>(script: string, outFile: string): Promise<T> {
   const out = join(tmpdir(), outFile);
   await runPs(script, `-OutputPath "${out}"`);
-  return JSON.parse(await readFile(out, 'utf8')) as T;
+  // Strip a leading UTF-8 BOM defensively (some PowerShell encoders emit one).
+  const text = await readFile(out, 'utf8');
+  const raw = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+  return JSON.parse(raw) as T;
 }
 
 export async function getDatabaseHealthReport(): Promise<DatabaseHealthReport> {
