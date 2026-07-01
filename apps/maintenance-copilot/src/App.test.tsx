@@ -67,7 +67,7 @@ describe('App', () => {
     expect(screen.getByText('Health Score')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Monorepo' }));
-    expect(screen.getByRole('button', { name: /Align Dependencies/ })).toBeInTheDocument();
+    expect(screen.getByText(/workspace members/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'D-Drive' }));
     expect(screen.getByText('Databases')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Git' }));
@@ -76,13 +76,12 @@ describe('App', () => {
     await waitFor(() => expect(screen.getByText('AI Diagnostics')).toBeInTheDocument());
   });
 
-  it('opens the maintenance modal from MonorepoTab repair and closes it', async () => {
+  it('opens the maintenance modal from the footer and closes it', async () => {
     vi.mocked(useGatewayData).mockReturnValue(stateWith({ data: fullData }));
     render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: 'Monorepo' }));
-    fireEvent.click(screen.getByRole('button', { name: /Align Dependencies/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Run Database Maintenance' }));
     await waitFor(() =>
-      expect(screen.getByText('Align Dependencies', { selector: 'h2' })).toBeInTheDocument(),
+      expect(screen.getByText('Run Database Maintenance', { selector: 'h2' })).toBeInTheDocument(),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());

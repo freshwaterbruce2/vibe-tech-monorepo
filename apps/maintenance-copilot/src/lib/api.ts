@@ -73,6 +73,13 @@ export interface ActionResult {
   message?: string;
   error?: string;
 }
+/** Opt-in deep-clean steps for the maintenance pipeline (baseline = all false). */
+export interface MaintenanceOptions {
+  dryRun: boolean;
+  retention?: boolean;
+  vacuum?: boolean;
+  backup?: boolean;
+}
 export interface DiagnoseResult {
   active: boolean;
   notice: string;
@@ -105,8 +112,8 @@ export const api = {
   dDriveHealth: async () => getJSON<DDriveHealth>('/api/mcp/get_d_drive_health'),
   gitStatus: async () => getJSON<GitReport>('/api/mcp/get_git_status'),
   telemetry: async () => getJSON<Telemetry>('/api/telemetry'),
-  runMaintenance: async (dryRun: boolean) =>
-    postJSON<ActionResult>('/api/mcp/run_workspace_maintenance', { dryRun }),
+  runMaintenance: async (opts: MaintenanceOptions) =>
+    postJSON<ActionResult>('/api/mcp/run_workspace_maintenance', opts),
   runCleanup: async (dryRun: boolean) =>
     postJSON<ActionResult>('/api/mcp/run_workspace_cleanup', { dryRun }),
   diagnose: async () => postJSON<DiagnoseResult>('/api/diagnose', {}),

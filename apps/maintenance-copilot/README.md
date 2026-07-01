@@ -29,23 +29,27 @@ pnpm build                  # -> src-tauri\target\release\bundle\ (nsis + msi)
 ## Layout
 
 ```
-server/      Express gateway (:8675) — workspace-scanner.ts + health-adapter.ts
+server/      Express gateway (:8675) — mcp-adapter.ts (routes) + ps-health.ts
+             (PowerShell/python runners) + workspace-scanner.ts (drift)
 src/         React UI (Vite) — App.tsx dashboard
 scripts/     build-gateway.mjs (esbuild -> @yao-pkg/pkg -> triple-named binary)
 src-tauri/   Tauri 2.0 native shell (lib.rs spawns + reaps the sidecar)
 ```
 
-## Endpoints (gateway → real scripts)
+## Endpoints (gateway → real scripts; the frontend consumes these)
 
-| Route | Source |
-|-------|--------|
-| `GET /api/ping` | gateway liveness |
-| `GET /api/health/workspace` | `scripts/workspace-health.ps1` + live `pnpm-workspace.yaml` scan |
-| `GET /api/health/databases` | `scripts/database-health.ps1` |
-| `GET /api/health/d-drive` | `scripts/d-drive-health.ps1` |
-| `GET /api/health/logs/errors` | scans `D:\learning-system\logs\*.log` |
-| `POST /api/health/cleanup` | `scripts/cleanup-stale-artifacts.ps1` (dry-run default) |
-| `POST /api/health/maintenance` | `learning-system/scripts/run_maintenance.py` (requires `confirm: true`) |
+| Route                                     | Source                                                                                                                                                                                                          |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/ping`                           | gateway liveness                                                                                                                                                                                                |
+| `GET /api/mcp/get_workspace_health`       | live `pnpm-workspace.yaml` scan + cross-package version-drift detection                                                                                                                                         |
+| `GET /api/mcp/get_database_health`        | `scripts/database-health.ps1`                                                                                                                                                                                   |
+| `GET /api/mcp/get_d_drive_health`         | `scripts/d-drive-health.ps1` + `learning_insights.json` + `D:\logs` OOM scan                                                                                                                                    |
+| `GET /api/mcp/get_git_status`             | live `git` branch / status / log                                                                                                                                                                                |
+| `GET /api/telemetry`                      | aggregated health score (drift + active WAL + OOM)                                                                                                                                                              |
+| `POST /api/mcp/run_workspace_cleanup`     | `scripts/cleanup-stale-artifacts.ps1` (dry-run default)                                                                                                                                                         |
+| `POST /api/mcp/run_workspace_maintenance` | `D:\learning-system\scripts\run_maintenance.py` — baseline (integrity + WAL checkpoint + ANALYZE) with opt-in `{retention, vacuum, backup}`; VACUUM is disk-space-gated and destructive steps auto-backup first |
+
+This mirrors the canonical `apps/monorepo-health-mcp` tool contract.
 
 Env overrides: `WORKSPACE_ROOT` (default `V:/monorepo`), `LEARNING_SYSTEM_DIR`
 (default `D:/learning-system`), `GATEWAY_PORT` (default `8675`).

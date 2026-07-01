@@ -5,8 +5,6 @@
  */
 import express from 'express';
 import cors from 'cors';
-import { healthRouter } from './health-adapter.js';
-import repairRouter from './server.js';
 import { mcpRouter } from './mcp-adapter.js';
 
 const PORT = Number(process.env.GATEWAY_PORT ?? 8675);
@@ -40,8 +38,6 @@ app.get('/api/ping', (_req, res) => {
   });
 });
 
-app.use('/api/health', healthRouter);
-app.use(repairRouter);
 app.use(mcpRouter);
 
 app.listen(PORT, () => {

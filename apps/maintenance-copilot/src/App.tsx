@@ -60,12 +60,7 @@ export default function App() {
       ) : (
         <>
           {tab === 'overview' && <Overview data={data} />}
-          {tab === 'monorepo' && (
-            <MonorepoTab
-              workspace={data.workspace}
-              onRepair={() => setRemediation('maintenance')}
-            />
-          )}
+          {tab === 'monorepo' && <MonorepoTab workspace={data.workspace} />}
           {tab === 'ddrive' && <DDriveTab dDrive={data.dDrive} databases={data.databases} />}
           {tab === 'git' && <GitTab git={data.git} />}
           {tab === 'ai' && <AiTab />}
@@ -73,6 +68,9 @@ export default function App() {
       )}
 
       <footer className="actions">
+        <button className="btn" onClick={() => setRemediation('maintenance')}>
+          Run Database Maintenance
+        </button>
         <button className="btn warn" onClick={() => setRemediation('cleanup')}>
           Clean Stale Artifacts
         </button>

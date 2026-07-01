@@ -78,10 +78,13 @@ describe('api client', () => {
 
   it('POST helpers send a JSON body and return the envelope (even on failure status)', async () => {
     fetchMock.mockResolvedValue(jsonOk({ success: true, dryRun: true, script: 'x' }));
-    const r = await api.runMaintenance(true);
+    const r = await api.runMaintenance({ dryRun: true, vacuum: true });
     expect(fetchMock).toHaveBeenCalledWith(
       'http://localhost:8675/api/mcp/run_workspace_maintenance',
-      expect.objectContaining({ method: 'POST', body: JSON.stringify({ dryRun: true }) }),
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ dryRun: true, vacuum: true }),
+      }),
     );
     expect(r.success).toBe(true);
 

@@ -89,6 +89,39 @@ export async function runPs(script: string, args = ''): Promise<RunResult> {
   );
 }
 
+// --- Real DB maintenance pipeline (run_maintenance.py) -----------------------
+
+/** Opt-in steps for the maintenance pipeline. Baseline (all false) is non-destructive. */
+export interface MaintenanceOptions {
+  retention?: boolean;
+  vacuum?: boolean;
+  backup?: boolean;
+}
+
+/** Build the maintenance command string (no execution). Used for the dry-run preview. */
+export function previewMaintenance(opts: MaintenanceOptions = {}): string {
+  const flags = [
+    opts.retention && '--retention',
+    opts.vacuum && '--vacuum',
+    opts.backup && '--backup',
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const script = join(LEARNING_DIR, 'scripts/run_maintenance.py');
+  return `python "${script}"${flags ? ` ${flags}` : ''}`;
+}
+
+/**
+ * Run the real database maintenance pipeline, mirroring monorepo-health-mcp's
+ * run_workspace_maintenance. Baseline (no opts) runs integrity check → WAL
+ * checkpoint(TRUNCATE) → ANALYZE on agent_learning.db (no data loss); the
+ * --retention/--vacuum/--backup steps are opt-in. The python pipeline aborts
+ * before any destructive step if PRAGMA integrity_check fails.
+ */
+export async function runMaintenance(opts: MaintenanceOptions = {}): Promise<RunResult> {
+  return run(previewMaintenance(opts), LEARNING_DIR);
+}
+
 // --- Typed report shapes (subset of the scripts' JSON we actually consume) ---
 
 export interface DbFileRecord {

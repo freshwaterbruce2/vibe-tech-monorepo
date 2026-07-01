@@ -25,7 +25,7 @@ export function Overview({ data }: { data: GatewayData }) {
           label="Mismatched Deps"
           value={telemetry?.mismatchedDeps ?? '—'}
           tone={countTone(telemetry?.mismatchedDeps ?? 0)}
-          hint="lodash alignment"
+          hint="version drift across packages"
         />
         <MetricCard
           label="Active WAL"

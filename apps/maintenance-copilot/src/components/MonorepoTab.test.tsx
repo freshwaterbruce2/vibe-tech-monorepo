@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import { MonorepoTab } from './MonorepoTab';
 import type { WorkspaceHealth } from '../lib/api';
 
@@ -27,40 +27,33 @@ const ws: WorkspaceHealth = {
 };
 
 describe('MonorepoTab', () => {
-  it('shows the real apps/packages split and a no-drift badge', () => {
-    render(<MonorepoTab workspace={ws} onRepair={() => undefined} />);
-    expect(screen.getByText('1 apps · 1 packages')).toBeInTheDocument();
+  it('shows the real apps/packages split, drift count, and a no-drift badge', () => {
+    render(<MonorepoTab workspace={ws} />);
+    expect(screen.getByText(/1 apps · 1 packages · 0 dependencies drifting/)).toBeInTheDocument();
     expect(screen.getByText(/No dependency drift detected/)).toBeInTheDocument();
     expect(screen.getByText('2 workspace members')).toBeInTheDocument();
     expect(screen.getByText('@v/a')).toBeInTheDocument();
   });
 
-  it('lists drift versions when present', () => {
+  it('lists drift versions when present (read-only — no repair button)', () => {
     render(
       <MonorepoTab
         workspace={{
           ...ws,
           drifts: [
-            { dependencyName: 'lodash', versions: [{ version: '^4.0.0', packages: ['a', 'b'] }] },
+            { dependencyName: 'react', versions: [{ version: '18.0.0', packages: ['a', 'b'] }] },
           ],
         }}
-        onRepair={() => undefined}
       />,
     );
-    expect(screen.getByText(/\^4\.0\.0 \(2\)/)).toBeInTheDocument();
+    expect(screen.getByText(/18\.0\.0 \(2\)/)).toBeInTheDocument();
     expect(screen.queryByText(/No dependency drift/)).toBeNull();
-  });
-
-  it('fires onRepair when the Repair button is clicked', () => {
-    const onRepair = vi.fn();
-    render(<MonorepoTab workspace={ws} onRepair={onRepair} />);
-    fireEvent.click(screen.getByRole('button', { name: /Align Dependencies/ }));
-    expect(onRepair).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
   it('handles undefined workspace data', () => {
-    render(<MonorepoTab onRepair={() => undefined} />);
-    expect(screen.getByText('0 apps · 0 packages')).toBeInTheDocument();
+    render(<MonorepoTab />);
+    expect(screen.getByText(/0 apps · 0 packages · 0 dependencies drifting/)).toBeInTheDocument();
     expect(screen.getByText('0 workspace members')).toBeInTheDocument();
   });
 });

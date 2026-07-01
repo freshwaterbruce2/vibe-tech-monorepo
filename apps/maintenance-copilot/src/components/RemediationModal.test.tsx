@@ -7,43 +7,104 @@ import { api } from '../lib/api';
 import { RemediationModal } from './RemediationModal';
 
 const noop = () => undefined;
+const BASELINE = { dryRun: true, backup: false, vacuum: false, retention: false };
 
 beforeEach(() => vi.clearAllMocks());
 
 describe('RemediationModal', () => {
-  it('runs the maintenance dry-run on open and shows the PowerShell preview', async () => {
+  it('runs the maintenance dry-run with baseline flags and shows the command preview', async () => {
     vi.mocked(api.runMaintenance).mockResolvedValue({
       success: true,
       dryRun: true,
-      script: 'pnpm add lodash@^4.17.21 --save-exact --workspace-root',
+      script: 'python "D:/learning-system/scripts/run_maintenance.py"',
       message: 'preview ready',
     });
     render(<RemediationModal action="maintenance" onClose={noop} onComplete={noop} />);
 
-    expect(screen.getByText('Align Dependencies')).toBeInTheDocument();
-    expect(api.runMaintenance).toHaveBeenCalledWith(true);
-    await waitFor(() => expect(screen.getByText(/pnpm add lodash/)).toBeInTheDocument());
+    expect(screen.getByText('Run Database Maintenance')).toBeInTheDocument();
+    expect(api.runMaintenance).toHaveBeenCalledWith(BASELINE);
+    // The deep-clean opt-ins are present and default-off.
+    expect(screen.getByRole('checkbox', { name: /Backup/ })).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /VACUUM/ })).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: /Retention purge/ })).not.toBeChecked();
+    await waitFor(() => expect(screen.getByText(/run_maintenance\.py/)).toBeInTheDocument());
     expect(screen.getByText('preview ready')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Execute Live' })).toBeInTheDocument();
   });
 
-  it('executes live on confirm, shows the message, and calls onComplete', async () => {
+  it('executes the baseline live on confirm, shows the message, and calls onComplete', async () => {
     vi.mocked(api.runMaintenance)
       .mockResolvedValueOnce({ success: true, dryRun: true, script: 's', message: 'm' })
-      .mockResolvedValueOnce({ success: true, dryRun: false, message: 'aligned 1 package' });
+      .mockResolvedValueOnce({ success: true, dryRun: false, message: 'MAINTENANCE SUCCESS' });
     const onComplete = vi.fn();
     render(<RemediationModal action="maintenance" onClose={noop} onComplete={onComplete} />);
 
     await waitFor(() => screen.getByRole('button', { name: 'Execute Live' }));
     fireEvent.click(screen.getByRole('button', { name: 'Execute Live' }));
 
-    await waitFor(() => expect(screen.getByText('aligned 1 package')).toBeInTheDocument());
-    expect(api.runMaintenance).toHaveBeenLastCalledWith(false);
+    await waitFor(() => expect(screen.getByText('MAINTENANCE SUCCESS')).toBeInTheDocument());
+    expect(api.runMaintenance).toHaveBeenLastCalledWith({
+      dryRun: false,
+      backup: false,
+      vacuum: false,
+      retention: false,
+    });
     expect(onComplete).toHaveBeenCalledOnce();
     expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
   });
 
-  it('surfaces a live failure error and does NOT call onComplete', async () => {
+  it('toggling VACUUM + Retention shows the destructive warning and re-previews with flags', async () => {
+    vi.mocked(api.runMaintenance).mockResolvedValue({
+      success: true,
+      dryRun: true,
+      script: 's',
+      message: 'm',
+    });
+    render(<RemediationModal action="maintenance" onClose={noop} onComplete={noop} />);
+    await waitFor(() => screen.getByRole('button', { name: 'Execute Live' }));
+
+    fireEvent.click(screen.getByRole('checkbox', { name: /VACUUM/ }));
+    await waitFor(() =>
+      expect(api.runMaintenance).toHaveBeenCalledWith({
+        dryRun: true,
+        backup: false,
+        vacuum: true,
+        retention: false,
+      }),
+    );
+    let warn = await screen.findByText(/Destructive/);
+    expect(warn.textContent).toMatch(/VACUUM/);
+
+    fireEvent.click(screen.getByRole('checkbox', { name: /Retention purge/ }));
+    await waitFor(() =>
+      expect(api.runMaintenance).toHaveBeenCalledWith({
+        dryRun: true,
+        backup: false,
+        vacuum: true,
+        retention: true,
+      }),
+    );
+    warn = await screen.findByText(/Destructive/);
+    expect(warn.textContent).toMatch(/VACUUM \+ retention purge \(permanent\)/);
+  });
+
+  it('retention-only warns about the permanent purge without VACUUM', async () => {
+    vi.mocked(api.runMaintenance).mockResolvedValue({
+      success: true,
+      dryRun: true,
+      script: 's',
+      message: 'm',
+    });
+    render(<RemediationModal action="maintenance" onClose={noop} onComplete={noop} />);
+    await waitFor(() => screen.getByRole('button', { name: 'Execute Live' }));
+
+    fireEvent.click(screen.getByRole('checkbox', { name: /Retention purge/ }));
+    const warn = await screen.findByText(/Destructive/);
+    expect(warn.textContent).toMatch(/retention purge \(permanent\)/);
+    expect(warn.textContent).not.toMatch(/VACUUM/);
+  });
+
+  it('surfaces a live failure error and does NOT call onComplete (cleanup action)', async () => {
     vi.mocked(api.runCleanup)
       .mockResolvedValueOnce({
         success: true,
@@ -56,6 +117,8 @@ describe('RemediationModal', () => {
     render(<RemediationModal action="cleanup" onClose={noop} onComplete={onComplete} />);
 
     expect(screen.getByText('Clean Stale Artifacts')).toBeInTheDocument();
+    // cleanup has no deep-clean opt-ins
+    expect(screen.queryByRole('checkbox')).toBeNull();
     await waitFor(() => screen.getByRole('button', { name: 'Execute Live' }));
     fireEvent.click(screen.getByRole('button', { name: 'Execute Live' }));
 
@@ -63,7 +126,7 @@ describe('RemediationModal', () => {
     expect(onComplete).not.toHaveBeenCalled();
   });
 
-  it('falls back to default text when live result omits message/error', async () => {
+  it('falls back to default text when a live result omits message/error', async () => {
     vi.mocked(api.runMaintenance)
       .mockResolvedValueOnce({ success: true, dryRun: true, script: 's', message: 'm' })
       .mockResolvedValueOnce({ success: false, dryRun: false });
@@ -83,7 +146,7 @@ describe('RemediationModal', () => {
     await waitFor(() => expect(screen.getByText('Done.')).toBeInTheDocument());
   });
 
-  it('catches a live-run rejection and stringifies a non-Error', async () => {
+  it('catches a live-run rejection and stringifies a non-Error (cleanup action)', async () => {
     vi.mocked(api.runCleanup)
       .mockResolvedValueOnce({ success: true, dryRun: true, script: 's', message: 'm' })
       .mockRejectedValueOnce('socket hangup');

@@ -1,7 +1,7 @@
 /**
- * Route tests for the MCP adapter. ps-health, workspace-scanner, remediation,
- * and fs are mocked so every route + branch is exercised deterministically
- * (no real PowerShell, no disk, no workspace mutation).
+ * Route tests for the MCP adapter. ps-health, workspace-scanner, and fs are
+ * mocked so every route + branch is exercised deterministically (no real
+ * PowerShell/python, no disk, no workspace mutation).
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import express from 'express';
@@ -15,20 +15,22 @@ vi.mock('../ps-health.js', () => ({
   scanLogsForErrors: vi.fn(),
   getGitStatus: vi.fn(),
   runPs: vi.fn(),
+  runMaintenance: vi.fn(),
+  previewMaintenance: vi.fn(),
 }));
 vi.mock('../workspace-scanner.js', () => ({ scanWorkspace: vi.fn() }));
-vi.mock('../remediation.js', () => ({ handleDependencyFix: vi.fn() }));
 vi.mock('node:fs/promises', () => ({ readFile: vi.fn() }));
 
 import { readFile } from 'node:fs/promises';
 import { scanWorkspace } from '../workspace-scanner.js';
-import { handleDependencyFix } from '../remediation.js';
 import {
   getDatabaseHealthReport,
   getDDriveHealthReport,
   scanLogsForErrors,
   getGitStatus,
   runPs,
+  runMaintenance,
+  previewMaintenance,
 } from '../ps-health.js';
 import { mcpRouter } from '../mcp-adapter.js';
 
@@ -56,49 +58,123 @@ beforeEach(() => {
 });
 
 describe('GET /api/mcp/get_workspace_health', () => {
-  it('splits apps/packages, counts deps, and reports lodash drift truthfully', async () => {
+  it('detects real cross-package version drift and flags minority-version packages', async () => {
     vi.mocked(scanWorkspace).mockResolvedValue({
       root: 'V:/monorepo', // path-segregation-ignore (mock)
       includeGlobs: [],
       ignoreGlobs: [],
       scannedAt: '',
-      count: 2,
-      packages: [pkg('apps/a', '@v/a', '/ws/apps/a'), pkg('packages/b', '@v/b', '/ws/packages/b')],
+      count: 3,
+      packages: [
+        pkg('apps/a', '@v/a', '/ws/AA'),
+        pkg('packages/b', '@v/b', '/ws/BB'),
+        pkg('apps/c', '@v/c', '/ws/CC'),
+      ],
     } as never);
-    vi.mocked(readFile).mockImplementation(
-      (p) =>
-        Promise.resolve(
-          String(p).includes('apps')
-            ? JSON.stringify({ name: '@v/a', dependencies: { lodash: '^4.17.0', react: '19' } })
-            : JSON.stringify({ name: '@v/b', dependencies: {}, devDependencies: { vitest: '^4' } }),
-        ) as never,
-    );
+    vi.mocked(readFile).mockImplementation((p) => {
+      const s = String(p);
+      if (s.includes('AA'))
+        return Promise.resolve(
+          JSON.stringify({
+            name: '@v/a',
+            dependencies: { react: '19.0.0', lodash: '^4.17.21' },
+            devDependencies: { '@vibetech/shared': 'workspace:*' },
+          }),
+        ) as never;
+      if (s.includes('BB'))
+        return Promise.resolve(
+          JSON.stringify({ name: '@v/b', dependencies: { react: '19.0.0' } }),
+        ) as never;
+      return Promise.resolve(
+        JSON.stringify({ name: '@v/c', dependencies: { react: '18.0.0', lodash: '^4.17.21' } }),
+      ) as never;
+    });
 
     const res = await client().get('/api/mcp/get_workspace_health');
 
     expect(res.status).toBe(200);
-    expect(res.body.packages).toHaveLength(2);
-    const a = res.body.packages.find((p: { name: string }) => p.name === '@v/a');
-    expect(a).toMatchObject({ type: 'app', dependenciesCount: 2, status: 'drifted' });
-    const b = res.body.packages.find((p: { name: string }) => p.name === '@v/b');
-    expect(b).toMatchObject({ type: 'package', devDependenciesCount: 1, status: 'stable' });
+    // react drifts (19 majority vs 18); lodash agrees; workspace:* is excluded.
     expect(res.body.drifts).toEqual([
-      { dependencyName: 'lodash', versions: [{ version: '^4.17.0', packages: ['@v/a'] }] },
+      {
+        dependencyName: 'react',
+        versions: [
+          { version: '19.0.0', packages: ['@v/a', '@v/b'] },
+          { version: '18.0.0', packages: ['@v/c'] },
+        ],
+      },
     ]);
+    const byName = (n: string) => res.body.packages.find((p: { name: string }) => p.name === n);
+    expect(byName('@v/a')).toMatchObject({
+      type: 'app',
+      dependenciesCount: 2,
+      devDependenciesCount: 1,
+      status: 'stable',
+    });
+    expect(byName('@v/b')).toMatchObject({ type: 'package', status: 'stable' });
+    expect(byName('@v/c')).toMatchObject({ type: 'app', status: 'drifted' });
   });
 
-  it('yields empty drifts when no package carries the aligned dep (real tree state)', async () => {
+  it('reports no drift when every package agrees on the version', async () => {
     vi.mocked(scanWorkspace).mockResolvedValue({
-      packages: [pkg('apps/a', '@v/a', '/a')],
-      count: 1,
+      packages: [pkg('apps/a', '@v/a', '/ws/AA'), pkg('apps/c', '@v/c', '/ws/CC')],
+      count: 2,
     } as never);
     vi.mocked(readFile).mockResolvedValue(
-      JSON.stringify({ name: '@v/a', dependencies: { react: '19' } }) as never,
+      JSON.stringify({ name: '@v/x', dependencies: { react: '19.0.0' } }) as never,
     );
 
     const res = await client().get('/api/mcp/get_workspace_health');
     expect(res.body.drifts).toEqual([]);
-    expect(res.body.packages[0].status).toBe('stable');
+    expect(res.body.packages.every((p: { status: string }) => p.status === 'stable')).toBe(true);
+  });
+
+  it('skips packages whose package.json is unreadable', async () => {
+    vi.mocked(scanWorkspace).mockResolvedValue({
+      packages: [pkg('apps/a', '@v/a', '/ws/AA'), pkg('apps/b', '@v/b', '/ws/BB')],
+      count: 2,
+    } as never);
+    vi.mocked(readFile).mockImplementation((p) =>
+      String(p).includes('AA')
+        ? (Promise.resolve(JSON.stringify({ name: '@v/a', dependencies: {} })) as never)
+        : (Promise.reject(new Error('ENOENT')) as never),
+    );
+
+    const res = await client().get('/api/mcp/get_workspace_health');
+    expect(res.body.packages).toHaveLength(1);
+    expect(res.body.packages[0].name).toBe('@v/a');
+  });
+
+  it('sorts multiple drifts by severity (version count, then packages affected)', async () => {
+    vi.mocked(scanWorkspace).mockResolvedValue({
+      packages: [
+        pkg('apps/a', '@v/a', '/ws/AA'),
+        pkg('apps/b', '@v/b', '/ws/BB'),
+        pkg('apps/c', '@v/c', '/ws/CC'),
+      ],
+      count: 3,
+    } as never);
+    vi.mocked(readFile).mockImplementation((p) => {
+      const s = String(p);
+      if (s.includes('AA'))
+        return Promise.resolve(
+          JSON.stringify({ name: '@v/a', dependencies: { react: '19.0.0', vite: '7.0.0' } }),
+        ) as never;
+      if (s.includes('BB'))
+        return Promise.resolve(
+          JSON.stringify({ name: '@v/b', dependencies: { react: '19.0.0', vite: '6.0.0' } }),
+        ) as never;
+      return Promise.resolve(
+        JSON.stringify({ name: '@v/c', dependencies: { react: '18.0.0' } }),
+      ) as never;
+    });
+
+    const res = await client().get('/api/mcp/get_workspace_health');
+    // Both react and vite drift across 2 versions (tie on version count), so the
+    // tiebreak is total packages affected: react (3) sorts before vite (2).
+    expect(res.body.drifts.map((d: { dependencyName: string }) => d.dependencyName)).toEqual([
+      'react',
+      'vite',
+    ]);
   });
 });
 
@@ -235,29 +311,156 @@ describe('GET /api/mcp/get_git_status', () => {
       recentCommits: [{ hash: 'abc123', message: 'feat: add adapter' }],
     });
   });
+
+  it('returns 500 when the underlying query rejects (ok() error path)', async () => {
+    vi.mocked(getGitStatus).mockRejectedValue(new Error('git exploded'));
+    const res = await client().get('/api/mcp/get_git_status');
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ error: 'git exploded' });
+  });
 });
 
 describe('POST /api/mcp/run_workspace_maintenance', () => {
-  it('dry-run returns the alignment command preview without mutating', async () => {
+  it('dry-run returns the real pipeline preview + summary without executing', async () => {
+    vi.mocked(previewMaintenance).mockReturnValue('python "RM"');
     const res = await client().post('/api/mcp/run_workspace_maintenance').send({ dryRun: true });
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ success: true, dryRun: true });
-    expect(res.body.script).toContain('pnpm add lodash@^4.17.21');
-    expect(handleDependencyFix).not.toHaveBeenCalled();
+    expect(res.body).toMatchObject({ success: true, dryRun: true, script: 'python "RM"' });
+    expect(res.body.message).toContain('integrity check');
+    expect(res.body.message).toContain('WAL checkpoint');
+    expect(previewMaintenance).toHaveBeenCalledWith({
+      retention: false,
+      vacuum: false,
+      backup: false,
+    });
+    expect(runMaintenance).not.toHaveBeenCalled();
   });
 
-  it('live run bridges to handleDependencyFix and bubbles its {success,log}', async () => {
-    vi.mocked(handleDependencyFix).mockResolvedValue({ success: true, log: 'Packages: +1' });
+  it('dry-run summarizes the opt-in deep-clean steps and the auto-backup guard', async () => {
+    vi.mocked(previewMaintenance).mockReturnValue('python "RM --all"');
+    const res = await client()
+      .post('/api/mcp/run_workspace_maintenance')
+      .send({ dryRun: true, retention: true, vacuum: true, backup: true });
+    expect(res.body.message).toContain('VACUUM');
+    expect(res.body.message).toContain('retention purge');
+    expect(res.body.message).toContain('A backup runs first');
+    expect(previewMaintenance).toHaveBeenCalledWith({
+      retention: true,
+      vacuum: true,
+      backup: true,
+    });
+  });
+
+  it('live baseline runs the pipeline once and bubbles its stdout', async () => {
+    vi.mocked(runMaintenance).mockResolvedValue({
+      success: true,
+      stdout: 'MAINTENANCE SUCCESS',
+      stderr: '',
+    });
     const res = await client().post('/api/mcp/run_workspace_maintenance').send({ dryRun: false });
-    expect(handleDependencyFix).toHaveBeenCalledOnce();
-    expect(res.body).toEqual({ success: true, dryRun: false, message: 'Packages: +1' });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ success: true, dryRun: false, message: 'MAINTENANCE SUCCESS' });
+    expect(runMaintenance).toHaveBeenCalledTimes(1);
+    expect(runMaintenance).toHaveBeenCalledWith({ retention: false, vacuum: false, backup: false });
   });
 
-  it('live failure surfaces the handler log as error with 500', async () => {
-    vi.mocked(handleDependencyFix).mockResolvedValue({ success: false, log: 'ERR_PNPM' });
+  it('backup-only runs a single pass (not destructive, no pre-backup)', async () => {
+    vi.mocked(runMaintenance).mockResolvedValue({ success: true, stdout: 'backed up', stderr: '' });
+    const res = await client()
+      .post('/api/mcp/run_workspace_maintenance')
+      .send({ dryRun: false, backup: true });
+    expect(runMaintenance).toHaveBeenCalledTimes(1);
+    expect(runMaintenance).toHaveBeenCalledWith({ retention: false, vacuum: false, backup: true });
+    expect(res.body.message).toBe('backed up');
+  });
+
+  it('VACUUM passes the disk-space guardrail then backs up before the destructive pass', async () => {
+    vi.mocked(getDDriveHealthReport).mockResolvedValue({
+      disk: { status: 'OK', freeGB: 100, totalGB: 1000, usedPct: 50 },
+      learningSystem: { status: 'OK', staleDays: 30, staleFileCount: 0 },
+    });
+    vi.mocked(getDatabaseHealthReport).mockResolvedValue({
+      summary: { totalDatabases: 1, coreDatabases: 1, largeWalFiles: 0 },
+      files: [
+        {
+          name: 'agent_learning.db',
+          relativePath: 'agent_learning.db',
+          sizeMB: 10,
+          walExists: false,
+          shmExists: false,
+          integrity: 'ok',
+          isCore: true,
+        },
+      ],
+    });
+    vi.mocked(runMaintenance).mockResolvedValue({ success: true, stdout: 'ok', stderr: '' });
+
+    const res = await client()
+      .post('/api/mcp/run_workspace_maintenance')
+      .send({ dryRun: false, vacuum: true });
+
+    expect(res.status).toBe(200);
+    expect(runMaintenance).toHaveBeenCalledTimes(2);
+    expect(runMaintenance).toHaveBeenNthCalledWith(1, { backup: true });
+    expect(runMaintenance).toHaveBeenNthCalledWith(2, { retention: false, vacuum: true });
+  });
+
+  it('refuses VACUUM with 412 when D: lacks ~2× the DB size of free space', async () => {
+    vi.mocked(getDDriveHealthReport).mockResolvedValue({
+      disk: { status: 'FAIL', freeGB: 0.001, totalGB: 1000, usedPct: 99 },
+      learningSystem: { status: 'OK', staleDays: 30, staleFileCount: 0 },
+    });
+    vi.mocked(getDatabaseHealthReport).mockResolvedValue({
+      summary: { totalDatabases: 1, coreDatabases: 1, largeWalFiles: 0 },
+      files: [
+        {
+          name: 'agent_learning.db',
+          relativePath: 'agent_learning.db',
+          sizeMB: 10,
+          walExists: false,
+          shmExists: false,
+          integrity: 'ok',
+          isCore: true,
+        },
+      ],
+    });
+
+    const res = await client()
+      .post('/api/mcp/run_workspace_maintenance')
+      .send({ dryRun: false, vacuum: true });
+
+    expect(res.status).toBe(412);
+    expect(res.body.error).toContain('VACUUM needs');
+    expect(runMaintenance).not.toHaveBeenCalled();
+  });
+
+  it('aborts with 500 if the pre-destructive backup fails (retention requested)', async () => {
+    vi.mocked(runMaintenance).mockResolvedValueOnce({
+      success: false,
+      stdout: '',
+      stderr: 'disk full',
+      error: 'backup err',
+    });
+    const res = await client()
+      .post('/api/mcp/run_workspace_maintenance')
+      .send({ dryRun: false, retention: true });
+
+    expect(res.status).toBe(500);
+    expect(res.body.error).toContain('Pre-maintenance backup failed');
+    expect(runMaintenance).toHaveBeenCalledTimes(1);
+    expect(runMaintenance).toHaveBeenCalledWith({ backup: true });
+  });
+
+  it('live failure surfaces the pipeline error as 500', async () => {
+    vi.mocked(runMaintenance).mockResolvedValue({
+      success: false,
+      stdout: '',
+      stderr: '',
+      error: 'boom',
+    });
     const res = await client().post('/api/mcp/run_workspace_maintenance').send({ dryRun: false });
     expect(res.status).toBe(500);
-    expect(res.body).toEqual({ success: false, dryRun: false, error: 'ERR_PNPM' });
+    expect(res.body).toEqual({ success: false, dryRun: false, error: 'boom' });
   });
 });
 
@@ -294,13 +497,19 @@ describe('POST /api/mcp/run_workspace_cleanup', () => {
 });
 
 describe('telemetry + reset + diagnose', () => {
-  it('GET /api/telemetry aggregates real counts + heuristic healthScore', async () => {
+  it('GET /api/telemetry aggregates real drift count + heuristic healthScore', async () => {
     vi.mocked(scanWorkspace).mockResolvedValue({
-      packages: [pkg('apps/a', '@v/a', '/a')],
-      count: 1,
+      packages: [pkg('apps/a', '@v/a', '/ws/AA'), pkg('apps/c', '@v/c', '/ws/CC')],
+      count: 2,
     } as never);
-    vi.mocked(readFile).mockResolvedValue(
-      JSON.stringify({ name: '@v/a', dependencies: { lodash: '^4.0.0' } }) as never,
+    vi.mocked(readFile).mockImplementation((p) =>
+      String(p).includes('AA')
+        ? (Promise.resolve(
+            JSON.stringify({ name: '@v/a', dependencies: { react: '19.0.0' } }),
+          ) as never)
+        : (Promise.resolve(
+            JSON.stringify({ name: '@v/c', dependencies: { react: '18.0.0' } }),
+          ) as never),
     );
     vi.mocked(getDatabaseHealthReport).mockResolvedValue({
       summary: { totalDatabases: 1, coreDatabases: 0, largeWalFiles: 1 },
@@ -318,11 +527,12 @@ describe('telemetry + reset + diagnose', () => {
     });
 
     const res = await client().get('/api/telemetry');
+    // 1 drifting dep (react), 1 active WAL, no OOM => 100 - 1 - 2 - 0 = 97.
     expect(res.body).toEqual({
       mismatchedDeps: 1,
       activeLockfiles: 1,
       hasOOM: false,
-      healthScore: 93,
+      healthScore: 97,
     });
   });
 

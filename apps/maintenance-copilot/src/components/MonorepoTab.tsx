@@ -3,11 +3,14 @@ import { StatusBadge } from './StatusBadge';
 
 interface Props {
   workspace?: WorkspaceHealth;
-  onRepair: () => void;
 }
 
-/** Monorepo inspector: real 47/36 split, dependency drift, and the gated repair trigger. */
-export function MonorepoTab({ workspace, onRepair }: Props) {
+/**
+ * Monorepo inspector: real apps/packages split + read-only cross-package
+ * dependency-drift report. Drift is surfaced, not auto-fixed — aligning shared
+ * versions across apps is a judgement call, not a safe one-click action.
+ */
+export function MonorepoTab({ workspace }: Props) {
   const packages = workspace?.packages ?? [];
   const apps = packages.filter((p) => p.type === 'app').length;
   const pkgs = packages.filter((p) => p.type === 'package').length;
@@ -17,11 +20,8 @@ export function MonorepoTab({ workspace, onRepair }: Props) {
     <section>
       <div className="topbar">
         <p className="muted">
-          {apps} apps · {pkgs} packages
+          {apps} apps · {pkgs} packages · {drifts.length} dependencies drifting
         </p>
-        <button className="btn warn" onClick={onRepair}>
-          Align Dependencies (Repair)
-        </button>
       </div>
 
       {drifts.length === 0 ? (
