@@ -83,6 +83,12 @@ export class DatabaseService {
           // Restore the source-of-truth (localStorage) from the migration backup.
           await migrationService.restoreFromBackup();
 
+          // The restored data now lives in localStorage while the recreated
+          // SQLite is empty. Force the next performMigration() (run by
+          // dataStore.initialize right after this) to repopulate SQLite, or the
+          // restored data is stranded and the app reads an empty database.
+          migrationService.resetForRecovery();
+
           // Reopen a fresh connection BEFORE recreating tables. The previous
           // code called createTables() on the closed/null handle, so recovery
           // could never complete (it threw 'Database not connected').
@@ -206,7 +212,10 @@ export class DatabaseService {
         session_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`,
 
-      // Rewards table
+      // Rewards table. NOTE: `claimed`/`claimed_at` are legacy columns that are
+      // NOT read by the app — the pending-claim queue lives in user_settings
+      // under 'claimedRewards' (a reward can be claimed while still in the
+      // catalog). Kept write-only for backward-compat; do not rely on them.
       `CREATE TABLE IF NOT EXISTS rewards (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,

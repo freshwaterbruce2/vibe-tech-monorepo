@@ -1,5 +1,6 @@
 import { AI_TUTOR_PROMPT } from '../constants';
 import type { ChatMessage } from '../types';
+import { detectCrisis, getCrisisResponse } from './crisisDetection';
 import { learningAnalytics } from './learningAnalytics';
 import { personalization } from './personalizationService';
 import { createChatCompletion, type DeepSeekMessage } from './secureClient';
@@ -64,6 +65,17 @@ function addToHistory(role: 'user' | 'assistant', content: string): void {
 }
 
 export const sendMessageToTutor = async (message: string): Promise<string> => {
+  // Child-safety backstop FIRST: crisis language always gets a supportive,
+  // resource-bearing reply independent of the LLM — the Tutor chat needs this
+  // exactly as much as the Buddy chat (same component, two entry points).
+  const crisis = detectCrisis(message);
+  if (crisis) {
+    addToHistory('user', message);
+    const crisisReply = getCrisisResponse(crisis);
+    addToHistory('assistant', crisisReply);
+    return crisisReply;
+  }
+
   try {
     // Check usage limits before making request
     const canRequest = usageMonitor.canMakeRequest();

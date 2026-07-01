@@ -49,6 +49,18 @@ export class MigrationService {
   }
 
   /**
+   * Reset the migration-complete state so the next performMigration() re-runs.
+   * Used by the database self-heal path: after a corrupt DB is recreated empty
+   * and the localStorage backup is restored, the data must be migrated back into
+   * SQLite — otherwise it stays stranded in localStorage.
+   */
+  resetForRecovery(): void {
+    this.migrationComplete = false;
+    this.migrationPromise = null;
+    appStore.set('vibe_tutor_migration_complete', 'false');
+  }
+
+  /**
    * Create backup of all localStorage data before migration
    * CRITICAL: This must succeed before migration proceeds
    */

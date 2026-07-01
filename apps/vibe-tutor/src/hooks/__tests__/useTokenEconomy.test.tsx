@@ -60,7 +60,7 @@ vi.mock('../../services/dataStore', () => ({
 }));
 
 import { dataStore } from '../../services/dataStore';
-import { useTokenEconomy } from '../useTokenEconomy';
+import { useTokenEconomy, __resetLegacyImportForTests } from '../useTokenEconomy';
 
 const mockedDataStore = vi.mocked(dataStore);
 
@@ -68,6 +68,7 @@ describe('useTokenEconomy', () => {
   beforeEach(() => {
     tokenMockState.balance = 0;
     vi.clearAllMocks();
+    __resetLegacyImportForTests();
     mockedDataStore.getUserSettings.mockResolvedValue(0 as unknown as string);
     mockedDataStore.saveUserSettings.mockResolvedValue(undefined);
   });
@@ -233,5 +234,21 @@ describe('useTokenEconomy', () => {
     await vi.waitFor(() => {
       expect(mockedDataStore.saveUserSettings).toHaveBeenCalledWith('userTokens', '7');
     });
+  });
+
+  it('imports the legacy balance only once even when mounted twice (no double-credit)', async () => {
+    const { syncTokenBalanceFromLegacy } = await import('../../services/tokenService');
+    mockedDataStore.getUserSettings.mockResolvedValue(100 as unknown as string);
+
+    // Two components mount the hook concurrently (App + TokenWallet).
+    const a = renderHook(() => useTokenEconomy());
+    renderHook(() => useTokenEconomy());
+
+    await vi.waitFor(() => {
+      expect(a.result.current.userTokens).toBe(100);
+    });
+
+    // The legacy import runs exactly once total, not once per mounted instance.
+    expect(vi.mocked(syncTokenBalanceFromLegacy)).toHaveBeenCalledTimes(1);
   });
 });

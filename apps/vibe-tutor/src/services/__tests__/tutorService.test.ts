@@ -42,6 +42,17 @@ describe('tutorService', () => {
   });
 
   describe('sendMessageToTutor', () => {
+    it('short-circuits crisis messages with a safety response (never reaches the LLM)', async () => {
+      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('AI response');
+
+      const response = await sendMessageToTutor('I want to kill myself');
+
+      // The crisis backstop must fire in the Tutor chat too, not just the Buddy chat.
+      expect(response).toContain('988');
+      expect(secureClient.createChatCompletion).not.toHaveBeenCalled();
+      expect(usageMonitor.canMakeRequest).not.toHaveBeenCalled();
+    });
+
     it('checks usage limits before making request', async () => {
       vi.mocked(secureClient.createChatCompletion).mockResolvedValue('Test response');
 

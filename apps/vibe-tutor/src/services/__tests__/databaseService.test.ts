@@ -39,7 +39,10 @@ vi.mock('@capacitor/core', () => ({
 }));
 
 vi.mock('../migrationService', () => ({
-  migrationService: { restoreFromBackup: vi.fn().mockResolvedValue(undefined) },
+  migrationService: {
+    restoreFromBackup: vi.fn().mockResolvedValue(undefined),
+    resetForRecovery: vi.fn(),
+  },
 }));
 
 vi.mock('../../utils/electronStore', () => ({
@@ -157,6 +160,9 @@ describe('databaseService', () => {
     expect(fakeDb.close).toHaveBeenCalled();
     expect(fakeSqlite.closeConnection).toHaveBeenCalled();
     expect(vi.mocked(migrationService.restoreFromBackup)).toHaveBeenCalled();
+    // Recovery must reset the migration flag so dataStore.initialize's next
+    // performMigration() repopulates the empty SQLite from the restored backup.
+    expect(vi.mocked(migrationService.resetForRecovery)).toHaveBeenCalled();
     // Tables recreated after the reopen — previously threw 'Database not connected'.
     expect(fakeDb.execute).toHaveBeenCalledWith(
       expect.stringContaining('CREATE TABLE IF NOT EXISTS rewards'),
