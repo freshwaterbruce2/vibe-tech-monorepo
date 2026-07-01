@@ -6,6 +6,7 @@ import { ONBOARDING_AVATARS, ONBOARDING_BRAND } from './onboardingVisuals';
 export interface OnboardingResult {
   userType: 'kid' | 'parent';
   avatar: string;
+  name: string;
 }
 
 interface FirstRunOnboardingProps {
@@ -18,6 +19,7 @@ const FirstRunOnboarding = ({ onComplete }: FirstRunOnboardingProps) => {
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [userType, setUserType] = useState<'kid' | 'parent' | null>(null);
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const selectedAvatar = ONBOARDING_AVATARS.find((option) => option.id === avatar);
@@ -31,7 +33,7 @@ const FirstRunOnboarding = ({ onComplete }: FirstRunOnboardingProps) => {
     setSubmitError(null);
 
     try {
-      await onComplete({ userType, avatar });
+      await onComplete({ userType, avatar, name: name.trim() });
     } catch {
       setSubmitError('We could not finish setup. Please try again.');
       setIsSubmitting(false);
@@ -175,6 +177,24 @@ const FirstRunOnboarding = ({ onComplete }: FirstRunOnboardingProps) => {
               )}
             </div>
             <h1 className="text-3xl font-bold neon-text-primary">You&apos;re all set!</h1>
+            <div className="text-left">
+              <label
+                htmlFor="onboarding-name"
+                className="block text-sm text-[var(--text-secondary)] mb-1"
+              >
+                What should we call you? (optional)
+              </label>
+              <input
+                id="onboarding-name"
+                name="onboarding-name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={24}
+                placeholder="Your name"
+                className="w-full rounded-xl bg-white/5 border border-[var(--glass-border)] px-4 py-3 text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--primary-accent)] placeholder-text-muted"
+              />
+            </div>
             <p className="text-[var(--text-secondary)]">
               Here&apos;s{' '}
               <span className="font-bold neon-text-secondary">{WELCOME_TOKENS} tokens</span> to get

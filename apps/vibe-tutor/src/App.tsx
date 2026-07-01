@@ -108,6 +108,9 @@ const App = () => {
           await dataStore.saveUserSettings('onboarding_completed', 'true');
           await dataStore.saveUserSettings('user_avatar', selectedAvatarId);
           await dataStore.saveUserSettings('user_type', data.userType);
+          if (data.name.trim()) {
+            await dataStore.saveUserSettings('user_name', data.name.trim());
+          }
           await dataStore.saveAvatarState({
             equippedItems: existingAvatarState?.equippedItems ?? {},
             ownedItems: existingAvatarState?.ownedItems ?? [],
