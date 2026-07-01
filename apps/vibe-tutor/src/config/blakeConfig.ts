@@ -2,9 +2,10 @@ import { Capacitor } from '@capacitor/core';
 import { logger } from '../utils/logger';
 
 /**
- * Blake's Personalized Configuration
- * Custom settings for Blake's learning experience
- * Optimized for ADHD, ODD, and high-functioning autism
+ * Learner configuration for Vibe Tutor.
+ * Gaming-themed defaults, rewards, and supportive learning features. The
+ * display name is profile-driven (set during first-run onboarding); the value
+ * here is only a neutral fallback.
  */
 
 const isNativeCapacitor =
@@ -80,8 +81,8 @@ const RESOLVED_API_ENDPOINT = sanitizeEndpoint(
 );
 
 export const BLAKE_CONFIG = {
-  // Personal Info
-  userName: 'Blake',
+  // Personal Info — neutral fallback; the real name comes from onboarding.
+  userName: 'Friend',
   avatar: '🎮', // Gaming avatar
   favoriteColor: '#a855f7', // Purple theme
   theme: 'roblox-gaming',
@@ -261,15 +262,15 @@ export const BLAKE_CONFIG = {
 
   // Motivational Messages (Gaming-themed)
   motivationalMessages: [
-    "GG Blake! You're crushing it! 🎮",
+    "GG! You're crushing it! 🎮",
     "Level up! You're a legend! 🏆",
-    'Epic win, Blake! Keep grinding! 💪',
+    'Epic win! Keep grinding! 💪',
     "You're speedrunning homework like a pro! ⚡",
-    'Blake the Champion! Unstoppable! 👑',
+    'Champion mode! Unstoppable! 👑',
     'Big W! Your skills are insane! 🔥',
     "Achievement unlocked! You're goated! 🐐",
     "No cap, you're absolutely dominating! 💯",
-    'Sheesh! That was clean, Blake! ✨',
+    'Sheesh! That was clean! ✨',
     "You're built different! Keep it up! 💎",
   ],
 
@@ -314,16 +315,13 @@ export const BLAKE_CONFIG = {
     avatar: '🤖',
     personality: 'gaming-buddy',
     phrases: [
-      'Yo Blake, ready to grind some homework?',
+      'Yo, ready to grind some homework?',
       "Let's speedrun this assignment!",
       'GG on that last task, my dude!',
       'Time to level up your brain!',
       'This homework is easier than a Roblox obby!',
     ],
   },
-
-  // Parent Dashboard PIN
-  parentPIN: '1234',
 
   // Emergency Cool-Down Activities
   coolDownActivities: [
@@ -336,25 +334,25 @@ export const BLAKE_CONFIG = {
 };
 
 // Export personalized welcome message
-export const getWelcomeMessage = (): string => {
+export const getWelcomeMessage = (name: string = BLAKE_CONFIG.userName): string => {
   const hour = new Date().getHours();
   const timeOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
 
   const greetings = {
     morning: [
-      'Good morning Blake! Ready to dominate today? 🎮',
-      "Morning legend Blake! Let's get this bread! 🍞",
-      'Rise and grind, Blake! Time to level up! ⬆️',
+      `Good morning ${name}! Ready to dominate today? 🎮`,
+      `Morning legend ${name}! Let's get this bread! 🍞`,
+      `Rise and grind, ${name}! Time to level up! ⬆️`,
     ],
     afternoon: [
-      'Afternoon Blake! Ready for some epic wins? 🏆',
-      "Hey Blake! Let's crush some homework! 💪",
-      "What's good Blake? Time to go pro mode! 🎯",
+      `Afternoon ${name}! Ready for some epic wins? 🏆`,
+      `Hey ${name}! Let's crush some homework! 💪`,
+      `What's good ${name}? Time to go pro mode! 🎯`,
     ],
     evening: [
-      'Evening Blake! One more grind session? 🌟',
-      "Hey Blake! Let's finish strong! 🔥",
-      'Night owl mode activated, Blake! 🦉',
+      `Evening ${name}! One more grind session? 🌟`,
+      `Hey ${name}! Let's finish strong! 🔥`,
+      `Night owl mode activated, ${name}! 🦉`,
     ],
   };
 

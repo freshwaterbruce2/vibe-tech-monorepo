@@ -54,6 +54,17 @@ describe('buddyService', () => {
       expect(secureClient.createChatCompletion).not.toHaveBeenCalled();
     });
 
+    it('short-circuits crisis messages with a safety response (never reaches the LLM)', async () => {
+      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('AI response');
+
+      const response = await sendMessageToBuddy('I want to kill myself');
+
+      // The crisis backstop must fire regardless of model/usage limits.
+      expect(response).toContain('988');
+      expect(secureClient.createChatCompletion).not.toHaveBeenCalled();
+      expect(usageMonitor.canMakeRequest).not.toHaveBeenCalled();
+    });
+
     it('sends message with correct AI model and default options', async () => {
       vi.mocked(secureClient.createChatCompletion).mockResolvedValue('AI response');
 
@@ -65,7 +76,7 @@ describe('buddyService', () => {
           expect.objectContaining({ role: 'user', content: "I'm feeling anxious" }),
         ]),
         expect.objectContaining({
-          model: 'deepseek-chat',
+          model: 'deepseek/deepseek-v3.2',
           temperature: 0.8,
           top_p: 0.95,
           useReasoning: false,
@@ -129,7 +140,7 @@ describe('buddyService', () => {
       await sendMessageToBuddy('Test message');
 
       expect(learningAnalytics.logAICall).toHaveBeenCalledWith(
-        'deepseek-chat',
+        'deepseek/deepseek-v3.2',
         expect.any(Number), // Input tokens
         mockResponse.length, // Output tokens
         expect.any(Number), // Duration
@@ -291,7 +302,7 @@ describe('buddyService', () => {
           },
         ],
         expect.objectContaining({
-          model: 'deepseek-chat',
+          model: 'deepseek/deepseek-v3.2',
           temperature: 0.7,
           max_tokens: 100,
         }),
@@ -334,7 +345,7 @@ describe('buddyService', () => {
       await getMoodAnalysis('tired', 'Long day at school');
 
       expect(learningAnalytics.logAICall).toHaveBeenCalledWith(
-        'deepseek-chat',
+        'deepseek/deepseek-v3.2',
         expect.any(Number), // Prompt length
         mockResponse.length, // Response length
         expect.any(Number), // Duration

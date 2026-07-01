@@ -1,7 +1,9 @@
 import { AI_FRIEND_PROMPT } from '../constants';
 import type { ChatMessage } from '../types';
+import { detectCrisis, getCrisisResponse } from './crisisDetection';
 import { learningAnalytics } from './learningAnalytics';
 import { createChatCompletion, type DeepSeekMessage } from './secureClient';
+import { MODELS } from './openrouter';
 import { usageMonitor } from './usageMonitor';
 import { logger } from '../utils/logger';
 
@@ -58,6 +60,17 @@ export const sendMessageToBuddy = async (
   message: string,
   useReasoning: boolean = false,
 ): Promise<string> => {
+  // Safety backstop FIRST: crisis language always gets a supportive,
+  // resource-bearing reply independent of the LLM (which could be a weaker
+  // fallback model, an ignored system prompt, or unreachable offline).
+  const crisis = detectCrisis(message);
+  if (crisis) {
+    addToHistory('user', message);
+    const crisisReply = getCrisisResponse(crisis);
+    addToHistory('assistant', crisisReply);
+    return crisisReply;
+  }
+
   try {
     // Check usage limits before making request
     const canRequest = usageMonitor.canMakeRequest();
@@ -70,7 +83,7 @@ export const sendMessageToBuddy = async (
     const startTime = Date.now();
     // Use reasoning mode for complex homework questions
     const response = await createChatCompletion(conversationHistory, {
-      model: 'deepseek-chat',
+      model: MODELS.PRIMARY_PAID,
       temperature: 0.8,
       top_p: 0.95,
       useReasoning: useReasoning, // Enable DeepSeek V3.2 reasoning mode when needed
@@ -87,7 +100,7 @@ export const sendMessageToBuddy = async (
         0,
       );
       void learningAnalytics.logAICall(
-        'deepseek-chat',
+        MODELS.PRIMARY_PAID,
         inputTokens,
         assistantMessage.length,
         duration,
@@ -121,7 +134,7 @@ export const getMoodAnalysis = async (mood: string, note?: string): Promise<stri
         },
       ],
       {
-        model: 'deepseek-chat',
+        model: MODELS.PRIMARY_PAID,
         temperature: 0.7,
         max_tokens: 100,
       },
@@ -129,7 +142,7 @@ export const getMoodAnalysis = async (mood: string, note?: string): Promise<stri
 
     const duration = Date.now() - startTime;
     if (response) {
-      void learningAnalytics.logAICall('deepseek-chat', prompt.length, response.length, duration);
+      void learningAnalytics.logAICall(MODELS.PRIMARY_PAID, prompt.length, response.length, duration);
     }
 
     return response ?? "It's okay to feel your feelings. Be kind to yourself today.";

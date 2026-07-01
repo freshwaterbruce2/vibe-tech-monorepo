@@ -1,5 +1,5 @@
 import { Bot, GraduationCap, Heart, Send, Sparkles, X } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { dataStore } from '../../services/dataStore';
 import { GradientIcon } from '../ui/icons/GradientIcon';
 import { useChatMessages } from '../../hooks/useChatMessages';
@@ -27,40 +27,51 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('checking');
   const [showOfflineBanner, setShowOfflineBanner] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
+  const checkConnection = useCallback(async () => {
+    // If the device itself reports offline, skip the network round-trip.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      setConnectionStatus('disconnected');
+      setShowOfflineBanner(true);
+      return;
+    }
+
     const CHECK_TIMEOUT_MS = 3000;
-
-    const checkConnection = async () => {
-      try {
-        const timeoutPromise = new Promise<false>((resolve) =>
-          setTimeout(() => resolve(false), CHECK_TIMEOUT_MS),
-        );
-        const healthPromise = secureClient.healthCheck();
-        const isHealthy = await Promise.race([healthPromise, timeoutPromise]);
-
-        if (cancelled) return;
-
-        if (isHealthy) {
-          setConnectionStatus('connected');
-          setShowOfflineBanner(false);
-        } else {
-          setConnectionStatus('disconnected');
-          setShowOfflineBanner(true);
-        }
-      } catch {
-        if (cancelled) return;
+    try {
+      const timeoutPromise = new Promise<false>((resolve) =>
+        setTimeout(() => resolve(false), CHECK_TIMEOUT_MS),
+      );
+      const isHealthy = await Promise.race([secureClient.healthCheck(), timeoutPromise]);
+      if (isHealthy) {
+        setConnectionStatus('connected');
+        setShowOfflineBanner(false);
+      } else {
         setConnectionStatus('disconnected');
         setShowOfflineBanner(true);
       }
-    };
+    } catch {
+      setConnectionStatus('disconnected');
+      setShowOfflineBanner(true);
+    }
+  }, []);
 
+  useEffect(() => {
     void checkConnection();
 
-    return () => {
-      cancelled = true;
+    // React to device connectivity changes so the chat re-enables on reconnect
+    // and locks down immediately when the network drops.
+    const handleOnline = () => void checkConnection();
+    const handleOffline = () => {
+      setConnectionStatus('disconnected');
+      setShowOfflineBanner(true);
     };
-  }, []);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [checkConnection]);
 
   return (
     <div className="h-full flex flex-col p-4 md:p-8 pb-24 md:pb-8 relative">
@@ -400,14 +411,18 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
                 void handleSend();
               }
             }}
-            placeholder={`Message ${type === 'tutor' ? 'your AI Tutor' : 'your AI Buddy'}... (Enter to send, Shift+Enter for new line)`}
+            placeholder={
+              connectionStatus === 'disconnected'
+                ? "You're offline — reconnect to chat"
+                : `Message ${type === 'tutor' ? 'your AI Tutor' : 'your AI Buddy'}... (Enter to send, Shift+Enter for new line)`
+            }
             className="flex-1 bg-transparent px-4 py-3 text-text-primary outline-none focus:ring-2 focus:ring-[var(--primary-accent)] focus:ring-inset rounded placeholder-text-muted"
-            disabled={isLoading}
+            disabled={isLoading || connectionStatus === 'disconnected'}
             aria-label="Chat input"
           />
           <button
             onClick={() => void handleSend()}
-            disabled={isLoading || !input.trim()}
+            disabled={isLoading || !input.trim() || connectionStatus === 'disconnected'}
             className="glass-button p-3 ml-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95"
             aria-label="Send message"
           >

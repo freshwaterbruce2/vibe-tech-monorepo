@@ -584,4 +584,59 @@ describe('ChatWindow', () => {
       });
     });
   });
+
+  describe('Offline Gating', () => {
+    it('disables the input and send button when disconnected', async () => {
+      vi.mocked(secureClient.healthCheck).mockResolvedValue(false);
+
+      render(<ChatWindow {...defaultProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'AI Tutor offline');
+      });
+
+      const input = screen.getByPlaceholderText(/reconnect to chat/i) as HTMLInputElement;
+      const sendButton = screen.getByLabelText('Send message') as HTMLButtonElement;
+      expect(input.disabled).toBe(true);
+      expect(sendButton.disabled).toBe(true);
+    });
+
+    it('locks the chat when the browser fires an offline event', async () => {
+      vi.mocked(secureClient.healthCheck).mockResolvedValue(true);
+
+      render(<ChatWindow {...defaultProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'AI Tutor connected');
+      });
+
+      await act(async () => {
+        window.dispatchEvent(new Event('offline'));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'AI Tutor offline');
+      });
+      expect((screen.getByLabelText('Send message') as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it('re-checks and reconnects when the browser fires an online event', async () => {
+      vi.mocked(secureClient.healthCheck).mockResolvedValue(false);
+
+      render(<ChatWindow {...defaultProps} />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'AI Tutor offline');
+      });
+
+      vi.mocked(secureClient.healthCheck).mockResolvedValue(true);
+      await act(async () => {
+        window.dispatchEvent(new Event('online'));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'AI Tutor connected');
+      });
+    });
+  });
 });

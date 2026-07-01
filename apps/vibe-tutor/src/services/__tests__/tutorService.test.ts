@@ -73,7 +73,7 @@ describe('tutorService', () => {
           expect.objectContaining({ role: 'user', content: 'Help me with math' }),
         ]),
         expect.objectContaining({
-          model: 'deepseek-chat',
+          model: 'deepseek/deepseek-v3.2',
           temperature: 0.7,
           top_p: 0.95,
           retryCount: 3,
@@ -125,7 +125,7 @@ describe('tutorService', () => {
       await sendMessageToTutor('Test message');
 
       expect(learningAnalytics.logAICall).toHaveBeenCalledWith(
-        'deepseek-chat',
+        'deepseek/deepseek-v3.2',
         expect.any(Number), // Input tokens (history length)
         mockResponse.length, // Output tokens
         expect.any(Number), // Duration

@@ -3,6 +3,7 @@ import type { ChatMessage } from '../types';
 import { learningAnalytics } from './learningAnalytics';
 import { personalization } from './personalizationService';
 import { createChatCompletion, type DeepSeekMessage } from './secureClient';
+import { MODELS } from './openrouter';
 import { usageMonitor } from './usageMonitor';
 import { logger } from '../utils/logger';
 
@@ -92,7 +93,7 @@ export const sendMessageToTutor = async (message: string): Promise<string> => {
 
     const startTime = Date.now();
     const response = await createChatCompletion(messagesWithStyle, {
-      model: 'deepseek-chat',
+      model: MODELS.PRIMARY_PAID,
       temperature: 0.7,
       top_p: 0.95,
       retryCount: 3,
@@ -110,7 +111,7 @@ export const sendMessageToTutor = async (message: string): Promise<string> => {
         0,
       );
       void learningAnalytics.logAICall(
-        'deepseek-chat',
+        MODELS.PRIMARY_PAID,
         inputTokens,
         assistantMessage.length,
         duration,
