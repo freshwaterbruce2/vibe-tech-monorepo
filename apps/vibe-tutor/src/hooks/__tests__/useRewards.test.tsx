@@ -8,6 +8,7 @@ vi.mock('../../services/dataStore', () => ({
     getRewards: vi.fn().mockResolvedValue([]),
     getClaimedRewards: vi.fn().mockResolvedValue([]),
     saveRewards: vi.fn().mockResolvedValue(undefined),
+    saveClaimedRewards: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
@@ -27,6 +28,7 @@ describe('useRewards', () => {
     mockedDataStore.getRewards.mockResolvedValue([]);
     mockedDataStore.getClaimedRewards.mockResolvedValue([]);
     mockedDataStore.saveRewards.mockResolvedValue(undefined);
+    mockedDataStore.saveClaimedRewards.mockResolvedValue(undefined);
   });
 
   it('should initialise with empty rewards and claimedRewards', () => {
@@ -66,6 +68,28 @@ describe('useRewards', () => {
     expect(result.current.claimedRewards).toHaveLength(1);
     expect(result.current.claimedRewards[0]!.name).toBe('30 min TV');
     expect(result.current.claimedRewards[0]!.claimedDate).toBeDefined();
+  });
+
+  it('persists the claim queue to dataStore when a reward is claimed', async () => {
+    mockedDataStore.getRewards.mockResolvedValue(mockRewards);
+
+    const { result } = renderHook(() => useRewards());
+
+    await vi.waitFor(() => {
+      expect(result.current.rewards).toHaveLength(3);
+    });
+
+    act(() => {
+      result.current.claimReward('r1', 100);
+    });
+
+    // Without this persistence, claimed rewards were lost on reload and the
+    // parent approve/deny path became unreachable.
+    await vi.waitFor(() => {
+      expect(mockedDataStore.saveClaimedRewards).toHaveBeenCalledWith(
+        expect.arrayContaining([expect.objectContaining({ id: 'r1', name: '30 min TV' })]),
+      );
+    });
   });
 
   it('should refuse to claim a reward when user has insufficient points', async () => {

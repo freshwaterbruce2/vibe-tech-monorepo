@@ -48,6 +48,7 @@ vi.mock('../../services/tokenService', () => ({
     }
     return false;
   }),
+  subscribeToTokenChanges: vi.fn(() => () => {}),
 }));
 
 // Mock dataStore

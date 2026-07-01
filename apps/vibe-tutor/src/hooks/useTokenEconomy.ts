@@ -6,6 +6,7 @@ import {
   getTokenBalance,
   setTokenBalance,
   spendTokens as spendTokensInLedger,
+  subscribeToTokenChanges,
   syncTokenBalanceFromLegacy,
 } from '../services/tokenService';
 
@@ -53,13 +54,19 @@ export const useTokenEconomy = () => {
     };
   }, [refreshBalance]);
 
+  // Stay in sync with the canonical ledger no matter which component triggers
+  // the earn/spend (so the wallet and shops never show divergent balances).
+  useEffect(() => subscribeToTokenChanges(refreshBalance), [refreshBalance]);
+
   // Persist canonical balance to dataStore key used by legacy paths.
   useEffect(() => {
     if (!isInitialized) {
       return;
     }
 
-    dataStore.saveUserSettings('userTokens', String(userTokens)).catch((err) => logger.error('Failed to persist token balance:', err));
+    dataStore
+      .saveUserSettings('userTokens', String(userTokens))
+      .catch((err) => logger.error('Failed to persist token balance:', err));
   }, [isInitialized, userTokens]);
 
   const earnTokens = useCallback(
