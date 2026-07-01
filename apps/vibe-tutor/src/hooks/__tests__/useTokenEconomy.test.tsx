@@ -251,4 +251,28 @@ describe('useTokenEconomy', () => {
     // The legacy import runs exactly once total, not once per mounted instance.
     expect(vi.mocked(syncTokenBalanceFromLegacy)).toHaveBeenCalledTimes(1);
   });
+
+  it('retries the legacy import on a later mount after a transient failure', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { syncTokenBalanceFromLegacy } = await import('../../services/tokenService');
+
+    // First mount: the storage read rejects — the once-guard must be released so
+    // a transient error does not permanently block the import.
+    mockedDataStore.getUserSettings.mockRejectedValueOnce(new Error('storage unavailable'));
+    const first = renderHook(() => useTokenEconomy());
+    await vi.waitFor(() => {
+      expect(first.result.current.userTokens).toBe(0);
+    });
+    expect(vi.mocked(syncTokenBalanceFromLegacy)).not.toHaveBeenCalled();
+
+    // Second mount: read succeeds — the import runs because the guard was released.
+    mockedDataStore.getUserSettings.mockResolvedValue(60 as unknown as string);
+    const second = renderHook(() => useTokenEconomy());
+    await vi.waitFor(() => {
+      expect(second.result.current.userTokens).toBe(60);
+    });
+    expect(vi.mocked(syncTokenBalanceFromLegacy)).toHaveBeenCalledTimes(1);
+
+    errSpy.mockRestore();
+  });
 });

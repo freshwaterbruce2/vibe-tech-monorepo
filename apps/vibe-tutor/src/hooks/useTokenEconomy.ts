@@ -45,11 +45,19 @@ export const useTokenEconomy = () => {
         // that could re-credit spent tokens.
         if (!legacyImportAttempted) {
           legacyImportAttempted = true;
-          const storedValue = await dataStore.getUserSettings('userTokens');
-          const parsed = Number.parseInt(String(storedValue ?? ''), 10);
+          try {
+            const storedValue = await dataStore.getUserSettings('userTokens');
+            const parsed = Number.parseInt(String(storedValue ?? ''), 10);
 
-          if (!Number.isNaN(parsed) && parsed > 0) {
-            syncTokenBalanceFromLegacy(parsed, 'dataStore userTokens');
+            if (!Number.isNaN(parsed) && parsed > 0) {
+              syncTokenBalanceFromLegacy(parsed, 'dataStore userTokens');
+            }
+          } catch (importError) {
+            // Transient failure (e.g. a storage read error): release the guard so
+            // a later mount can retry the import instead of it being blocked for
+            // the rest of the process. Re-throw for the outer catch to log.
+            legacyImportAttempted = false;
+            throw importError;
           }
         }
 

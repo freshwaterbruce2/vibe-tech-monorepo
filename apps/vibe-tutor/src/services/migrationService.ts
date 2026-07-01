@@ -56,7 +56,10 @@ export class MigrationService {
    */
   resetForRecovery(): void {
     this.migrationComplete = false;
-    this.migrationPromise = null;
+    // Do NOT null migrationPromise here. This can run from inside a
+    // performMigration() call (via its databaseService.initialize step); nulling
+    // the in-flight promise would break the join-guard and let a second concurrent
+    // caller start a duplicate migration. performMigration()'s finally() clears it.
     appStore.set('vibe_tutor_migration_complete', 'false');
   }
 

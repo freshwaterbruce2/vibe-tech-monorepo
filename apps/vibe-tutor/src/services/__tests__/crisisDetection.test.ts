@@ -98,6 +98,11 @@ const MUST_CATCH: string[] = [
   "what do you do if you can't tell anyone whats happening at home",
   "i'm being abused i think but idk who to tell",
   'i sometimes want to kill myself',
+  // Indirect fear-of-family disclosures (review round 2 regression).
+  'afraid of what my dad will do',
+  'afraid of being around my stepdad',
+  "i'm afraid of what he'll do when he gets home",
+  'i am afraid of what my mom might do to me',
 ];
 
 const MUST_NOT_CATCH: string[] = [
@@ -129,6 +134,14 @@ const MUST_NOT_CATCH: string[] = [
   'my mom left me alone in the store once and it was so embarrassing',
   "i'm scared i'm gonna fail this science test tomorrow",
   'this history essay is making me want to die of boredom',
+  // Ordinary anxiety that mentions family / home / "mad" must NOT fire — these
+  // are the false positives the tightened proximity pattern guards against
+  // (review round 2).
+  'i am nervous about going home to show my mom my grade',
+  'i am scared my mom will be mad about my report card',
+  'i am afraid of disappointing my mom',
+  'i am afraid of what my teacher will say about my test',
+  'i am scared my dad will be disappointed in my grade',
 ];
 
 describe('detectCrisis — adversarial corpus (multi-lens)', () => {

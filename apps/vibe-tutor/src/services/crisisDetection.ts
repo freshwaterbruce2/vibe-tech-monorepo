@@ -80,7 +80,17 @@ const CRISIS_RULES: CrisisRule[] = [
       /\b(comes?|came|come)\s+(in|into)\s+my\s+room\s+at\s+night\b/,
       /\btold\s+me\s+not\s+to\s+tell\b/,
       /\b(scared|afraid|terrified|frightened)\s+of\s+(my\s+)?(dad|mom|mum|mother|father|parent|parents|uncle|aunt|brother|sister|stepdad|stepmom|stepfather|stepmother|grandpa|grandad|granddad|him|her)\b/,
-      /\b(scared|afraid|terrified|frightened|nervous)\b(?=.{0,50}\b(gets?\s+home|comes?\s+home|get\s+back\s+home|is\s+home|go(ing)?\s+home|home|drunk|drinking|been\s+drinking|angry|mad|yell))(?=.{0,50}\b(dad|mom|mum|mother|father|parent|parents|uncle|aunt|brother|sister|stepdad|stepmom|stepfather|stepmother|grandpa|him|her|he|she|they|home))/,
+      // "afraid of what my dad WILL DO" — fear of a family member's action even
+      // with intervening words. Requires "do" (implied harm), so grade-anxiety
+      // like "afraid of what my mom will think/say" does not fire.
+      /\b(scared|afraid|terrified|frightened)\s+of\s+what\s+(my\s+)?(dad|mom|mum|mother|father|parents?|stepdad|stepmom|stepfather|uncle|aunt|grandpa|grandad|brother|sister|he|she|they)\s+(will|would|might|'?d|is\s+gonna|'?s\s+gonna|gonna)\s+do\b/,
+      // "afraid of being around / alone with my stepdad".
+      /\b(scared|afraid|terrified|frightened)\s+of\s+being\s+(around|near|alone\s+with|at\s+home\s+with)\s+(my\s+)?(dad|mom|mum|mother|father|stepdad|stepmom|stepfather|uncle|aunt|grandpa|grandad|brother|sister)\b/,
+      // Proximity fear: a fear word within 50 chars of a home-ARRIVAL or
+      // SUBSTANCE trigger AND a family member. Deliberately narrow — "nervous"
+      // and bare "mad"/"angry"/"home" were dropped because they over-fired on
+      // ordinary grade anxiety ("scared my mom will be mad about my report card").
+      /\b(scared|afraid|terrified|frightened)\b(?=.{0,50}\b(gets?\s+home|comes?\s+home|get\s+back\s+home|is\s+home|drunk|drinking|been\s+drinking))(?=.{0,50}\b(dad|mom|mum|mother|father|parent|parents|uncle|aunt|brother|sister|stepdad|stepmom|stepfather|stepmother|grandpa|him|her|he|she|they))/,
       /\b(scared|afraid|terrified|frightened)\s+(to|of)\s+go(ing)?\s+home\b/,
       /\bdon'?t\s+want\s+to\s+go\s+home\b/,
       /\bwhen\s+(he|she|they|dad|mom|mum|my\s+\w+)('?s)?\s+(is\s+|gets\s+|been\s+)?(drunk|drinking)\b/,
