@@ -8,8 +8,8 @@ import { Capacitor } from '@capacitor/core';
 import { logger } from '../utils/logger';
 import type { Achievement, HomeworkItem, MusicPlaylist, Reward } from '../types';
 import { databaseService } from './databaseService';
+import { dataStore } from './dataStore';
 import { learningAnalytics } from './learningAnalytics';
-import { migrationService } from './migrationService';
 
 export interface UserStats {
   totalHomework: number;
@@ -48,13 +48,12 @@ export class AppIntegrationService {
         const useSQLite = platform === 'android' || platform === 'windows';
 
         if (useSQLite) {
-          await databaseService.initialize();
-          this.dbAvailable = true;
-
-          const migrated = await migrationService.isMigrationComplete();
-          if (!migrated) {
-            await migrationService.performMigration();
-          }
+          // Delegate DB init + migration to the single owner (dataStore). App.tsx
+          // already calls dataStore.initialize(), whose internal promise guard
+          // makes both callers share ONE init — eliminating the double-init race
+          // and the duplicate migration that ran here independently.
+          await dataStore.initialize();
+          this.dbAvailable = databaseService.getConnection() !== null;
         } else {
           this.dbAvailable = false;
         }
@@ -299,7 +298,6 @@ export class AppIntegrationService {
       if (data.points) {
         appStore.set('studentPoints', data.points);
       }
-
     } catch (error) {
       logger.error('Failed to import data:', error);
       throw error;

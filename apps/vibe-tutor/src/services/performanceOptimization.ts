@@ -264,27 +264,6 @@ export class PerformanceOptimizationService {
   }
 
   /**
-   * Cached fetch — use this instead of window.cachedFetch.
-   * Call via performanceService.cachedFetch(url, options).
-   */
-  private readonly _fetchCache = new Map<string, { data: unknown; timestamp: number }>();
-  private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-  async cachedFetch(url: string, options?: RequestInit): Promise<Response> {
-    const cacheKey = `${url}_${JSON.stringify(options)}`;
-    const cached = this._fetchCache.get(cacheKey);
-
-    if (cached && Date.now() - cached.timestamp < PerformanceOptimizationService.CACHE_DURATION) {
-      this.metrics.cacheHits++;
-      return Promise.resolve(cached.data as Response);
-    }
-
-    this.metrics.cacheMisses++;
-    const response = await fetch(url, options);
-    return response;
-  }
-
-  /**
    * Debounce function for optimizing frequent calls
    */
   debounce<T extends (...args: unknown[]) => unknown>(

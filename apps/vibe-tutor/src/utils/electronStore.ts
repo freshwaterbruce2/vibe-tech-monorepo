@@ -39,6 +39,32 @@ function isRealElectron(): boolean {
 }
 
 /**
+ * Detect a storage-quota-exceeded failure across browsers.
+ * Standard: DOMException named 'QuotaExceededError' (legacy code 22).
+ * Firefox legacy: 'NS_ERROR_DOM_QUOTA_REACHED' (code 1014).
+ */
+function isQuotaExceededError(error: unknown): boolean {
+  return (
+    error instanceof DOMException &&
+    (error.name === 'QuotaExceededError' ||
+      error.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+      error.code === 22 ||
+      error.code === 1014)
+  );
+}
+
+let quotaExceededHandler: ((key: string) => void) | null = null;
+
+/**
+ * Register a callback invoked when a persistent-store write fails because
+ * storage is full, so the UI can surface a "storage full" message instead of
+ * silently losing data. Pass null to clear the handler.
+ */
+export function onStorageQuotaExceeded(handler: ((key: string) => void) | null): void {
+  quotaExceededHandler = handler;
+}
+
+/**
  * Unified storage that works across Electron (IPC bridge) and Web (localStorage)
  * After electronInit, window.electronAPI is always available.
  */
@@ -64,6 +90,11 @@ export const appStore: AppStore = {
       const serialized = typeof value === 'string' ? value : JSON.stringify(value);
       window.electronAPI.store.set(key, serialized);
     } catch (error) {
+      if (isQuotaExceededError(error)) {
+        logger.error(`[AppStore] Storage quota exceeded while setting '${key}'`, error);
+        quotaExceededHandler?.(key);
+        return;
+      }
       logger.error(`[AppStore] Failed to set '${key}':`, error);
     }
   },
