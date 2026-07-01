@@ -1,6 +1,7 @@
 import { AI_TUTOR_PROMPT } from '../constants';
 import type { ChatMessage } from '../types';
 import { detectCrisis, getCrisisResponse } from './crisisDetection';
+import { classifyMessageSafety } from './safetyClassifier';
 import { learningAnalytics } from './learningAnalytics';
 import { personalization } from './personalizationService';
 import { createChatCompletion, type DeepSeekMessage } from './secureClient';
@@ -64,83 +65,105 @@ function addToHistory(role: 'user' | 'assistant', content: string): void {
   }
 }
 
-export const sendMessageToTutor = async (message: string): Promise<string> => {
-  // Child-safety backstop FIRST: crisis language always gets a supportive,
-  // resource-bearing reply independent of the LLM — the Tutor chat needs this
-  // exactly as much as the Buddy chat (same component, two entry points).
-  const crisis = detectCrisis(message);
-  if (crisis) {
-    addToHistory('user', message);
-    const crisisReply = getCrisisResponse(crisis);
-    addToHistory('assistant', crisisReply);
-    return crisisReply;
-  }
+const TUTOR_FALLBACKS = [
+  "I'm experiencing some technical difficulties right now. Let me try to help you again.",
+  "Sorry, I'm having connection issues. Please try asking your question again.",
+  "I'm having trouble processing that request. Could you rephrase your question?",
+  "There seems to be a temporary issue. Let's give it another try.",
+];
 
-  try {
-    // Check usage limits before making request
-    const canRequest = usageMonitor.canMakeRequest();
-    if (!canRequest.allowed) {
-      return canRequest.reason ?? 'Usage limit reached. Please try again later.';
-    }
+/** Record a detected crisis in history and return the fixed supportive reply. */
+function crisisReplyToHistory(message: string, category: 'self-harm' | 'abuse'): string {
+  addToHistory('user', message);
+  const crisisReply = getCrisisResponse(category);
+  addToHistory('assistant', crisisReply);
+  return crisisReply;
+}
 
-    // Select learning style via epsilon-greedy bandit
-    const style = personalization.selectStyle();
-    const stylePrompt = personalization.getStylePrompt(style);
+/**
+ * Over-cap path: safety still runs (a child in distress must never be gated by a
+ * usage limit — safety overrides commercial caps). Returns the crisis reply if
+ * the online classifier flags, otherwise the usage-limit reason.
+ */
+async function overCapReply(message: string, reason: string): Promise<string> {
+  const flagged = await classifyMessageSafety(message);
+  return flagged ? crisisReplyToHistory(message, flagged) : reason;
+}
 
-    // Record user message in history (without the style prompt so history stays clean)
-    addToHistory('user', message);
+/** Normal online path: classifier runs concurrently with the answer. */
+async function answerAsTutor(message: string): Promise<string> {
+  // Select learning style via epsilon-greedy bandit
+  const style = personalization.selectStyle();
+  const stylePrompt = personalization.getStylePrompt(style);
+  addToHistory('user', message);
 
-    // Build messages for this request: inject style into a fresh system entry
-    const messagesWithStyle: DeepSeekMessage[] = [
-      { role: 'system', content: AI_TUTOR_PROMPT + '\n' + stylePrompt },
-      ...tutorHistory.slice(1), // skip original system message; keep conversation history
-    ];
+  const messagesWithStyle: DeepSeekMessage[] = [
+    { role: 'system', content: AI_TUTOR_PROMPT + '\n' + stylePrompt },
+    ...tutorHistory.slice(1), // skip original system message; keep conversation history
+  ];
 
-    const fallbackResponses = [
-      "I'm experiencing some technical difficulties right now. Let me try to help you again.",
-      "Sorry, I'm having connection issues. Please try asking your question again.",
-      "I'm having trouble processing that request. Could you rephrase your question?",
-      "There seems to be a temporary issue. Let's give it another try.",
-    ];
-
-    const startTime = Date.now();
-    const response = await createChatCompletion(messagesWithStyle, {
+  const startTime = Date.now();
+  // Run the safety classifier alongside the answer (no added latency); if it
+  // flags, discard the answer and surface supportive crisis resources instead.
+  const [flagged, response] = await Promise.all([
+    classifyMessageSafety(message),
+    createChatCompletion(messagesWithStyle, {
       model: MODELS.PRIMARY_PAID,
       temperature: 0.7,
       top_p: 0.95,
       retryCount: 3,
-      fallbackMessage: fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)],
-    });
+      fallbackMessage: TUTOR_FALLBACKS[Math.floor(Math.random() * TUTOR_FALLBACKS.length)],
+    }),
+  ]);
 
-    const duration = Date.now() - startTime;
-    const assistantMessage: string =
-      response ?? fallbackResponses[0] ?? 'I had trouble responding. Please try again.';
+  if (flagged) {
+    const crisisReply = getCrisisResponse(flagged);
+    addToHistory('assistant', crisisReply);
+    return crisisReply;
+  }
 
-    // Log AI call for analytics
-    if (response && assistantMessage) {
-      const inputTokens = messagesWithStyle.reduce(
-        (acc, msg) => acc + (msg.content?.length ?? 0),
-        0,
-      );
-      void learningAnalytics.logAICall(
-        MODELS.PRIMARY_PAID,
-        inputTokens,
-        assistantMessage.length,
-        duration,
+  const duration = Date.now() - startTime;
+  const assistantMessage: string =
+    response ?? TUTOR_FALLBACKS[0] ?? 'I had trouble responding. Please try again.';
+
+  if (response && assistantMessage) {
+    const inputTokens = messagesWithStyle.reduce((acc, msg) => acc + (msg.content?.length ?? 0), 0);
+    void learningAnalytics.logAICall(
+      MODELS.PRIMARY_PAID,
+      inputTokens,
+      assistantMessage.length,
+      duration,
+    );
+  }
+
+  addToHistory('assistant', assistantMessage);
+
+  // Record outcome: student asking for re-explanation signals the style didn't land
+  const success = !RE_EXPLAIN_PATTERNS.test(message);
+  const timeSpent = (Date.now() - startTime) / 1000;
+  personalization.recordFeedback(success, timeSpent);
+  usageMonitor.recordRequest();
+
+  return assistantMessage;
+}
+
+export const sendMessageToTutor = async (message: string): Promise<string> => {
+  // Child-safety backstop FIRST: the regex floor is deterministic and offline-safe
+  // — the Tutor chat needs this exactly as much as the Buddy chat.
+  const crisis = detectCrisis(message);
+  if (crisis) {
+    return crisisReplyToHistory(message, crisis);
+  }
+
+  try {
+    const canRequest = usageMonitor.canMakeRequest();
+    if (!canRequest.allowed) {
+      return await overCapReply(
+        message,
+        canRequest.reason ?? 'Usage limit reached. Please try again later.',
       );
     }
-
-    addToHistory('assistant', assistantMessage);
-
-    // Record outcome: student asking for re-explanation signals the style didn't land
-    const success = !RE_EXPLAIN_PATTERNS.test(message);
-    const timeSpent = (Date.now() - startTime) / 1000;
-    personalization.recordFeedback(success, timeSpent);
-
-    // Record successful request
-    usageMonitor.recordRequest();
-
-    return assistantMessage;
+    return await answerAsTutor(message);
   } catch (error) {
     logger.error('Error in sendMessageToTutor:', error);
     return "I'm having some technical difficulties right now. Please try again in a moment.";

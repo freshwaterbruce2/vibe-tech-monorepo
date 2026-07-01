@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { learningAnalytics } from '../learningAnalytics';
+import { classifyMessageSafety } from '../safetyClassifier';
 import * as secureClient from '../secureClient';
 import { sendMessageToTutor } from '../tutorService';
 import { usageMonitor } from '../usageMonitor';
@@ -7,6 +8,12 @@ import { usageMonitor } from '../usageMonitor';
 // Mock dependencies
 vi.mock('../secureClient', () => ({
   createChatCompletion: vi.fn(),
+}));
+
+// The online safety classifier is mocked so tests drive its verdict directly,
+// independently of the answer mock. Default (clean) is set in beforeEach.
+vi.mock('../safetyClassifier', () => ({
+  classifyMessageSafety: vi.fn(),
 }));
 
 vi.mock('../personalizationService', () => ({
@@ -35,6 +42,8 @@ describe('tutorService', () => {
     vi.clearAllMocks();
     // Default: Allow requests
     vi.mocked(usageMonitor.canMakeRequest).mockReturnValue({ allowed: true });
+    // Default: classifier finds nothing (clean) — flag paths opt in per test.
+    vi.mocked(classifyMessageSafety).mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -71,6 +80,50 @@ describe('tutorService', () => {
 
       expect(response).toBe('Daily limit reached. Try again tomorrow.');
       expect(secureClient.createChatCompletion).not.toHaveBeenCalled();
+    });
+
+    it('overrides the answer with crisis resources when the classifier flags (under cap)', async () => {
+      vi.mocked(classifyMessageSafety).mockResolvedValue('self-harm');
+      vi.mocked(secureClient.createChatCompletion).mockResolvedValue('ordinary tutor answer');
+
+      // The regex floor needs the "...decided when" tail to fire on a note; without
+      // it the floor MISSES, so the override here comes only from the classifier —
+      // exactly the indirect-disclosure gap this Tier-3 layer exists to close.
+      const response = await sendMessageToTutor('i already wrote the note');
+
+      // The model answer is discarded in favor of the supportive crisis reply.
+      expect(response).toContain('988');
+      expect(response).not.toBe('ordinary tutor answer');
+      // A flagged turn is not billed as a normal request or logged as an AI call.
+      expect(usageMonitor.recordRequest).not.toHaveBeenCalled();
+      expect(learningAnalytics.logAICall).not.toHaveBeenCalled();
+    });
+
+    it('runs the classifier even over the usage cap and surfaces resources on a flag', async () => {
+      vi.mocked(usageMonitor.canMakeRequest).mockReturnValue({
+        allowed: false,
+        reason: 'Daily limit reached. Try again tomorrow.',
+      });
+      vi.mocked(classifyMessageSafety).mockResolvedValue('abuse');
+
+      // Regex-neutral phrasing: the flag must come from the online classifier,
+      // proving safety runs even when the usage cap would block a normal answer.
+      const response = await sendMessageToTutor('can i talk to you about something');
+
+      // Safety overrides the commercial cap; the answer model is never called.
+      expect(response).toContain('988');
+      expect(secureClient.createChatCompletion).not.toHaveBeenCalled();
+    });
+
+    it('returns a graceful error message when the answer call throws', async () => {
+      vi.mocked(secureClient.createChatCompletion).mockRejectedValue(new Error('network down'));
+
+      const response = await sendMessageToTutor('help me with my essay');
+
+      // The outer catch keeps the chat resilient instead of crashing.
+      expect(response).toBe(
+        "I'm having some technical difficulties right now. Please try again in a moment.",
+      );
     });
 
     it('sends message with correct AI model and options', async () => {

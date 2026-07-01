@@ -178,7 +178,8 @@ const SELF_HARM_RESPONSE =
 const ABUSE_RESPONSE =
   'Thank you for trusting me with this. What you feel matters, and you deserve to be ' +
   'safe. 💙 Please tell a trusted adult you feel safe with — a parent, teacher, school ' +
-  'counselor, or another grown-up. You can also call or text 988 any time to talk with ' +
+  'counselor, or another grown-up. You can also call or text 988 any time, or call the ' +
+  'Childhelp National Child Abuse Hotline at 1-800-422-4453 (1-800-4-A-CHILD) to talk with ' +
   'someone who will listen and help. If you are in immediate danger, call 911. This is ' +
   'not your fault.';
 

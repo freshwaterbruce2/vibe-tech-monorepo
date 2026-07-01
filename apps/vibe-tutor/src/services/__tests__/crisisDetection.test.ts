@@ -193,9 +193,10 @@ describe('getCrisisResponse', () => {
     expect(r).toContain('911');
   });
 
-  it('abuse response includes 988 and is reassuring', () => {
+  it('abuse response includes 988, the Childhelp hotline, and is reassuring', () => {
     const r = getCrisisResponse('abuse');
     expect(r).toContain('988');
+    expect(r).toContain('1-800-422-4453');
     expect(r.toLowerCase()).toContain('not your fault');
   });
 });

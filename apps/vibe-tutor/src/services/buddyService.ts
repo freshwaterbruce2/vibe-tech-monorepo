@@ -1,6 +1,7 @@
 import { AI_FRIEND_PROMPT } from '../constants';
 import type { ChatMessage } from '../types';
 import { detectCrisis, getCrisisResponse } from './crisisDetection';
+import { classifyMessageSafety } from './safetyClassifier';
 import { learningAnalytics } from './learningAnalytics';
 import { createChatCompletion, type DeepSeekMessage } from './secureClient';
 import { MODELS } from './openrouter';
@@ -56,66 +57,95 @@ function addToHistory(role: 'user' | 'assistant', content: string): void {
   }
 }
 
-export const sendMessageToBuddy = async (
-  message: string,
-  useReasoning: boolean = false,
-): Promise<string> => {
-  // Safety backstop FIRST: crisis language always gets a supportive,
-  // resource-bearing reply independent of the LLM (which could be a weaker
-  // fallback model, an ignored system prompt, or unreachable offline).
-  const crisis = detectCrisis(message);
-  if (crisis) {
-    addToHistory('user', message);
-    const crisisReply = getCrisisResponse(crisis);
+const BUDDY_FALLBACK =
+  "Sorry, I'm having a little trouble connecting right now. Let's talk later.";
+
+/** Record a detected crisis in history and return the fixed supportive reply. */
+function crisisReplyToHistory(message: string, category: 'self-harm' | 'abuse'): string {
+  addToHistory('user', message);
+  const crisisReply = getCrisisResponse(category);
+  addToHistory('assistant', crisisReply);
+  return crisisReply;
+}
+
+/**
+ * Over-cap path: safety still runs (a child in distress must never be gated by a
+ * usage limit — safety overrides commercial caps). Returns the crisis reply if
+ * the online classifier flags, otherwise the usage-limit reason.
+ */
+async function overCapReply(message: string, reason: string): Promise<string> {
+  const flagged = await classifyMessageSafety(message);
+  return flagged ? crisisReplyToHistory(message, flagged) : reason;
+}
+
+/** Normal online path: classifier runs concurrently with the answer. */
+async function answerAsBuddy(message: string, useReasoning: boolean): Promise<string> {
+  addToHistory('user', message);
+
+  const startTime = Date.now();
+  // Run the safety classifier alongside the answer (no added latency); if it
+  // flags, discard the answer and surface supportive crisis resources instead.
+  const [flagged, response] = await Promise.all([
+    classifyMessageSafety(message),
+    createChatCompletion(conversationHistory, {
+      model: MODELS.PRIMARY_PAID,
+      temperature: 0.8,
+      top_p: 0.95,
+      useReasoning, // Enable DeepSeek V3.2 reasoning mode when needed
+    }),
+  ]);
+
+  if (flagged) {
+    const crisisReply = getCrisisResponse(flagged);
     addToHistory('assistant', crisisReply);
     return crisisReply;
   }
 
+  const duration = Date.now() - startTime;
+  const assistantMessage = response ?? BUDDY_FALLBACK;
+
+  if (response) {
+    const inputTokens = conversationHistory.reduce(
+      (acc, msg) => acc + (msg.content?.length ?? 0),
+      0,
+    );
+    void learningAnalytics.logAICall(
+      MODELS.PRIMARY_PAID,
+      inputTokens,
+      assistantMessage.length,
+      duration,
+    );
+  }
+
+  addToHistory('assistant', assistantMessage);
+  usageMonitor.recordRequest();
+
+  return assistantMessage;
+}
+
+export const sendMessageToBuddy = async (
+  message: string,
+  useReasoning: boolean = false,
+): Promise<string> => {
+  // Safety backstop FIRST: the regex floor is deterministic and offline-safe
+  // (the LLM could be a weaker fallback model, an ignored prompt, or offline).
+  const crisis = detectCrisis(message);
+  if (crisis) {
+    return crisisReplyToHistory(message, crisis);
+  }
+
   try {
-    // Check usage limits before making request
     const canRequest = usageMonitor.canMakeRequest();
     if (!canRequest.allowed) {
-      return canRequest.reason ?? 'Usage limit reached. Please try again later.';
-    }
-
-    addToHistory('user', message);
-
-    const startTime = Date.now();
-    // Use reasoning mode for complex homework questions
-    const response = await createChatCompletion(conversationHistory, {
-      model: MODELS.PRIMARY_PAID,
-      temperature: 0.8,
-      top_p: 0.95,
-      useReasoning: useReasoning, // Enable DeepSeek V3.2 reasoning mode when needed
-    });
-
-    const duration = Date.now() - startTime;
-    const assistantMessage =
-      response ?? "Sorry, I'm having a little trouble connecting right now. Let's talk later.";
-
-    // Log AI call for analytics
-    if (response) {
-      const inputTokens = conversationHistory.reduce(
-        (acc, msg) => acc + (msg.content?.length ?? 0),
-        0,
-      );
-      void learningAnalytics.logAICall(
-        MODELS.PRIMARY_PAID,
-        inputTokens,
-        assistantMessage.length,
-        duration,
+      return await overCapReply(
+        message,
+        canRequest.reason ?? 'Usage limit reached. Please try again later.',
       );
     }
-
-    addToHistory('assistant', assistantMessage);
-
-    // Record successful request
-    usageMonitor.recordRequest();
-
-    return assistantMessage;
+    return await answerAsBuddy(message, useReasoning);
   } catch (error) {
     logger.error('Error sending message to buddy:', error);
-    return "Sorry, I'm having a little trouble connecting right now. Let's talk later.";
+    return BUDDY_FALLBACK;
   }
 };
 
