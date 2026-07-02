@@ -4,21 +4,27 @@ import ErrorBoundary from './components/ui/ErrorBoundary';
 import OfflineIndicator from './components/ui/OfflineIndicator';
 import { ResizableSplitPane } from './components/ui/ResizableSplitPane';
 import Sidebar from './components/ui/Sidebar';
-import {
-  AppViewRenderer,
-  type OnboardingFlags,
-} from './components/AppViewRenderer';
+import { AppViewRenderer, type OnboardingFlags } from './components/AppViewRenderer';
 // Note: AchievementEvent type is used via handleAchievementEvent from useAchievements
 import { appIntegration } from './services/appIntegration';
 import { dataStore } from './services/dataStore';
 import { sendMessageToTutor } from './services/tutorService';
 import { triggerVibration } from './services/uiService';
-import type { MusicPlaylist, OnboardingNavigationAction, ParsedHomework, View, SubjectType } from './types';
+import type {
+  MusicPlaylist,
+  OnboardingNavigationAction,
+  ParsedHomework,
+  View,
+  SubjectType,
+} from './types';
 // Custom hooks extracted from App.tsx
 import { useAchievements } from './hooks/useAchievements';
 import { useHomework } from './hooks/useHomework';
 import { useRewards } from './hooks/useRewards';
-import { createGameCompletionPayload, type GameCompletionDetails } from './services/gameProgression';
+import {
+  createGameCompletionPayload,
+  type GameCompletionDetails,
+} from './services/gameProgression';
 import { useTokenEconomy } from './hooks/useTokenEconomy';
 import { useWorksheet } from './hooks/useWorksheet';
 import { logger } from './utils/logger';
@@ -27,10 +33,7 @@ import { logger } from './utils/logger';
 import { TokenEarnAnimation } from './components/features/TokenEarnAnimation';
 import ChatWindow from './components/features/ChatWindow';
 import { WELCOME_TOKENS, type OnboardingResult } from './components/core/FirstRunOnboarding';
-import {
-  DEFAULT_UNLOCKED_AVATAR_IDS,
-  normalizeAvatarId,
-} from './services/avatarShopData';
+import { DEFAULT_UNLOCKED_AVATAR_IDS, normalizeAvatarId } from './services/avatarShopData';
 
 const INITIAL_ONBOARDING_FLAGS: OnboardingFlags = {
   loaded: false,
@@ -51,34 +54,29 @@ const App = () => {
   // Animation triggers
   const [tokenEarnAmount, setTokenEarnAmount] = useState(0);
   const [tokenEarnTrigger, setTokenEarnTrigger] = useState(0);
-  const [onboardingFlags, setOnboardingFlags] =
-    useState<OnboardingFlags>(INITIAL_ONBOARDING_FLAGS);
+  const [onboardingFlags, setOnboardingFlags] = useState<OnboardingFlags>(INITIAL_ONBOARDING_FLAGS);
   const [dashboardOnboardingAction, setDashboardOnboardingAction] =
     useState<OnboardingNavigationAction | null>(null);
   const [isCompletingOnboarding, setIsCompletingOnboarding] = useState(false);
+  const [userName, setUserName] = useState('');
 
   // React 19 concurrent feature for non-blocking state updates
   const [, startTransition] = useTransition();
 
   // Custom hooks for state management
-  const {
-    homeworkItems,
-    addHomework,
-    toggleComplete,
-  } = useHomework();
+  const { homeworkItems, addHomework, toggleComplete } = useHomework();
 
-  const {
-    userTokens,
-    earnTokens,
-    spendTokens,
-  } = useTokenEconomy();
+  const { userTokens, earnTokens, spendTokens } = useTokenEconomy();
 
   // Token management wrappers (canonical ledger is handled inside useTokenEconomy)
-  const handleEarnTokens = useCallback((amount: number, reason: string = 'Earned tokens') => {
-    earnTokens(amount, reason);
-    setTokenEarnAmount(amount);
-    setTokenEarnTrigger(prev => prev + 1);
-  }, [earnTokens]);
+  const handleEarnTokens = useCallback(
+    (amount: number, reason: string = 'Earned tokens') => {
+      earnTokens(amount, reason);
+      setTokenEarnAmount(amount);
+      setTokenEarnTrigger((prev) => prev + 1);
+    },
+    [earnTokens],
+  );
 
   const handleSpendTokens = useCallback(
     (amount: number, reason: string = 'Spent tokens') => {
@@ -109,7 +107,9 @@ const App = () => {
           await dataStore.saveUserSettings('user_avatar', selectedAvatarId);
           await dataStore.saveUserSettings('user_type', data.userType);
           if (data.name.trim()) {
-            await dataStore.saveUserSettings('user_name', data.name.trim());
+            const trimmedName = data.name.trim();
+            await dataStore.saveUserSettings('user_name', trimmedName);
+            setUserName(trimmedName);
           }
           await dataStore.saveAvatarState({
             equippedItems: existingAvatarState?.equippedItems ?? {},
@@ -134,15 +134,10 @@ const App = () => {
     [handleEarnTokens, isCompletingOnboarding],
   );
 
-  const {
-    achievements,
-    newlyUnlocked,
-    bonusTokens,
-    handleAchievementEvent,
-    clearNotification,
-  } = useAchievements({
-    onAwardTokens: handleEarnTokens,
-  });
+  const { achievements, newlyUnlocked, bonusTokens, handleAchievementEvent, clearNotification } =
+    useAchievements({
+      onAwardTokens: handleEarnTokens,
+    });
 
   const { rewards, claimedRewards, claimReward, handleRewardApproval, updateRewards } =
     useRewards();
@@ -187,17 +182,19 @@ const App = () => {
 
       try {
         const plsts = await dataStore.getMusicPlaylists();
-        const [completed, avatar, visitedShop, checklistDone] = await Promise.all([
+        const [completed, avatar, visitedShop, checklistDone, name] = await Promise.all([
           dataStore.getUserSettings('onboarding_completed'),
           dataStore.getUserSettings('user_avatar'),
           dataStore.getUserSettings('has_visited_shop'),
           dataStore.getUserSettings('onboarding_checklist_done'),
+          dataStore.getUserSettings('user_name'),
         ]);
         const hasCompletedFirstRun = completed === 'true';
 
         // React 19: Use startTransition for non-blocking state updates
         startTransition(() => {
           setPlaylists(plsts);
+          setUserName(name ?? '');
           setOnboardingFlags({
             loaded: true,
             hasCompletedFirstRun,
@@ -256,11 +253,7 @@ const App = () => {
   }, [view]);
 
   useEffect(() => {
-    if (
-      view === 'shop' &&
-      onboardingFlags.loaded &&
-      !onboardingFlags.hasVisitedShop
-    ) {
+    if (view === 'shop' && onboardingFlags.loaded && !onboardingFlags.hasVisitedShop) {
       void dataStore.saveUserSettings('has_visited_shop', 'true');
       setOnboardingFlags((prev) => ({ ...prev, hasVisitedShop: true }));
     }
@@ -397,12 +390,14 @@ const App = () => {
       homeworkItems={homeworkItems}
       onDashboardOnboardingActionHandled={() => setDashboardOnboardingAction(null)}
       onboardingFlags={onboardingFlags}
+      onUserNameSaved={setUserName}
       playlists={playlists}
       rewards={rewards}
       selectedRealmSubject={selectedRealmSubject}
       setSelectedRealmSubject={setSelectedRealmSubject}
       setView={setView}
       updateRewards={updateRewards}
+      userName={userName}
       userTokens={userTokens}
       view={view}
       worksheetLeveledUp={worksheetLeveledUp}
@@ -427,6 +422,7 @@ const App = () => {
         onNavigate={setView}
         isCollapsed={isNavCollapsed}
         onToggle={toggleNav}
+        userName={userName}
       />
 
       {/* Mobile: Single column layout */}
