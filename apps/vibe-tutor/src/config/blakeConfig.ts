@@ -31,7 +31,7 @@ const isLocalDev =
 const allowNativeLocalApi = import.meta.env.VITE_ALLOW_NATIVE_LOCAL_API === 'true';
 
 const LOCAL_API_ENDPOINT = 'http://localhost:3001';
-const PRODUCTION_API_ENDPOINT = 'https://vibe-tutor-api-711105902979.us-east4.run.app';
+const PRODUCTION_API_ENDPOINT = 'https://vibe-tutor-api-734857480460.us-east4.run.app';
 
 const runtimeApiEndpoint =
   typeof window !== 'undefined'
