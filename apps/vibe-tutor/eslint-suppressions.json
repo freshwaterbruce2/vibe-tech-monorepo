@@ -12,7 +12,7 @@
       "count": 3
     }
   },
-  "src/components/avatar/AvatarProfile.tsx": {
+  "render-backend/server.mjs": {
     "max-len": {
       "count": 1
     }
@@ -73,11 +73,6 @@
   "src/components/games/AnagramsGame.tsx": {
     "max-len": {
       "count": 1
-    }
-  },
-  "src/components/games/BossBattleGame.tsx": {
-    "max-len": {
-      "count": 2
     }
   },
   "src/components/games/MathAdventureGame.tsx": {
@@ -185,6 +180,11 @@
       "count": 5
     }
   },
+  "src/components/settings/PrivacyPolicy.tsx": {
+    "max-len": {
+      "count": 1
+    }
+  },
   "src/components/settings/RewardSettings.tsx": {
     "max-len": {
       "count": 1
@@ -267,6 +267,16 @@
       "count": 1
     }
   },
+  "src/services/__tests__/databaseService.test.ts": {
+    "@typescript-eslint/no-extraneous-class": {
+      "count": 2
+    }
+  },
+  "src/services/__tests__/usageMonitor.test.ts": {
+    "@typescript-eslint/consistent-type-definitions": {
+      "count": 1
+    }
+  },
   "src/services/achievementService.ts": {
     "max-len": {
       "count": 1
@@ -285,17 +295,19 @@
       "count": 1
     }
   },
+  "src/services/buddyService.ts": {
+    "max-len": {
+      "count": 1
+    }
+  },
   "src/services/dailyAffirmations.ts": {
     "max-lines-per-function": {
       "count": 1
     }
   },
   "src/services/databaseService.ts": {
-    "max-len": {
-      "count": 1
-    },
     "max-lines-per-function": {
-      "count": 2
+      "count": 1
     }
   },
   "src/services/gameAchievements.ts": {
@@ -304,9 +316,6 @@
     }
   },
   "src/services/homeworkParserService.ts": {
-    "max-len": {
-      "count": 1
-    },
     "max-lines-per-function": {
       "count": 1
     }
@@ -318,7 +327,7 @@
   },
   "src/services/migrationService.ts": {
     "max-lines-per-function": {
-      "count": 1
+      "count": 2
     }
   },
   "src/services/openrouter.ts": {
@@ -334,18 +343,13 @@
       "count": 1
     }
   },
-  "src/services/tokenService.ts": {
+  "src/types/schedule.ts": {
     "max-len": {
-      "count": 2
-    }
-  },
-  "src/services/tutorService.ts": {
-    "max-lines-per-function": {
       "count": 1
     }
   },
-  "src/types/schedule.ts": {
-    "max-len": {
+  "tests/setup.ts": {
+    "@typescript-eslint/no-dynamic-delete": {
       "count": 1
     }
   },
