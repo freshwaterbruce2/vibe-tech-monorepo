@@ -17,23 +17,18 @@ export interface AIMessage {
   reasoning_content?: string | undefined; // For thinking-model reasoning
   timestamp: Date;
   metadata?:
-  | {
-    model?: string | undefined;
-    tokens?: number | undefined;
-    processing_time?: number | undefined;
-  }
-  | undefined;
+    | {
+        model?: string | undefined;
+        tokens?: number | undefined;
+        processing_time?: number | undefined;
+      }
+    | undefined;
   // Agent mode support
   agentTask?: {
     task: AgentTask;
     currentStep?: AgentStep;
     pendingApproval?: ApprovalRequest;
-    phase?:
-    | 'planning'
-    | 'executing'
-    | 'awaiting_approval'
-    | 'completed'
-    | 'failed';
+    phase?: 'planning' | 'executing' | 'awaiting_approval' | 'completed' | 'failed';
     statusMessage?: string;
     warnings?: string[];
     lastError?: string;
@@ -106,26 +101,10 @@ export interface EditorSettings {
   autoSave: boolean;
   aiAutoComplete: boolean;
   aiSuggestions: boolean;
-  aiModel?:
-  // Moonshot (primary)
-  | 'moonshot/kimi-2.5-pro'
-  // Free (OpenRouter)
-  | 'liquid/lfm-2.5-1.2b-thinking:free'
-  | 'liquid/lfm-2.5-1.2b-instruct:free'
-  // Low cost (OpenRouter)
-  | 'z-ai/glm-4.7-flash'
-  | 'deepseek/deepseek-v3.2'
-  // Mid cost (OpenRouter)
-  | 'deepseek/deepseek-chat'
-  | 'anthropic/claude-sonnet-4.5'
-  | 'anthropic/claude-sonnet-4.6'
-  // High cost (OpenRouter)
-  | 'openai/gpt-5.2-codex'
-  | 'openai/gpt-5.2'
-  | 'anthropic/claude-opus-4.5'
-  | 'anthropic/claude-opus-4.6'
-  // Local fallback
-  | 'local/vibe-completion';
+  // Any model id from the registry (MODELS_ARRAY in AIProviderInterface.ts).
+  // The Settings dropdown is registry-driven, so a literal union here goes
+  // stale on every registry update and gets bypassed by casts anyway.
+  aiModel?: string;
   showReasoningProcess?: boolean;
   lineNumbers?: boolean;
   folding?: boolean;

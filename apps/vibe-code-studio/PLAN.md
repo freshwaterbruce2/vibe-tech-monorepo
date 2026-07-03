@@ -1,3 +1,5 @@
+> Superseded by SHIP_PLAN.md (2026-07-01 cycle).
+
 # Vibe Code Studio Review, Package, Install Plan
 
 ## Objective

@@ -17,6 +17,8 @@ import path from 'node:path';
 import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 
+import { readJsonBody } from '../lib/http-helpers.js';
+
 // Each upstream resolves its key from the first matching env var. Operators set
 // keys under different names (e.g. Kimi/Moonshot ships as KIMI_API_KEY), so we
 // accept the common aliases instead of a single hard-coded name.
@@ -35,13 +37,26 @@ const UPSTREAM = {
   },
 };
 
-/** First non-empty value among an upstream's candidate env var names. */
-function resolveUpstreamKey(cfg) {
+// Runtime key custody: keys pushed by the renderer (Settings -> save) live here,
+// in memory only — never written to disk by the server. Restarts are re-synced
+// by the app on boot. Takes precedence over env vars so the UI stays in control.
+const runtimeKeys = Object.create(null);
+
+/** Runtime-pushed key first, then the first non-empty candidate env var. */
+function resolveUpstreamKey(cfg, providerName) {
+  const pushed = providerName ? runtimeKeys[providerName] : undefined;
+  if (pushed && pushed.trim()) return pushed.trim();
   for (const name of cfg.envKeys) {
     const val = process.env[name];
     if (val && val.trim()) return val.trim();
   }
   return undefined;
+}
+
+/** True when the request originates from this machine (the app's own webview). */
+function isLoopbackRequest(req) {
+  const addr = req.socket?.remoteAddress || '';
+  return addr === '127.0.0.1' || addr === '::1' || addr === '::ffff:127.0.0.1';
 }
 
 function sendJson(res, status, payload) {
@@ -54,15 +69,28 @@ function sendJson(res, status, payload) {
 
 function getSessionUser(req, ctx) {
   const token = ctx.parseCookies(req.headers.cookie)[ctx.getSessionCookieName()];
-  if (!token) return null;
+  if (!token) {
+    console.log('[AIProxy] auth reject: no session cookie on request');
+    return null;
+  }
   try {
     const parsed = ctx.parseSessionToken(token);
-    if (!parsed || !parsed.sub) return null;
+    if (!parsed || !parsed.sub) {
+      console.log(
+        '[AIProxy] auth reject: session token invalid (bad signature or expired — sign out/in to mint a fresh one)'
+      );
+      return null;
+    }
     // Confirm the user still exists before authorizing AI spend (mirrors the
     // sibling /api routes). A signed-but-stale token for a deleted user is rejected.
     const row = ctx.db.prepare('SELECT id FROM users WHERE id = ?').get(parsed.sub);
-    return row ? parsed : null;
-  } catch {
+    if (!row) {
+      console.log(`[AIProxy] auth reject: user ${parsed.sub} not found in DB`);
+      return null;
+    }
+    return parsed;
+  } catch (err) {
+    console.log(`[AIProxy] auth reject: token parse threw: ${String(err)}`);
     return null;
   }
 }
@@ -290,7 +318,37 @@ export async function registerAiProxyRoutes(req, res, ctx) {
   if (url.pathname === '/api/ai/health' && req.method === 'GET') {
     const configured = {};
     for (const [name, cfg] of Object.entries(UPSTREAM)) {
-      configured[name] = Boolean(resolveUpstreamKey(cfg));
+      configured[name] = Boolean(resolveUpstreamKey(cfg, name));
+    }
+    sendJson(res, 200, { ok: true, configured });
+    return;
+  }
+
+  // Key custody: the renderer pushes provider keys saved in Settings so the
+  // proxy can authenticate upstream. Loopback-only; keys stay in memory.
+  // Body: { provider: 'openrouter'|'moonshot'|'google', key: string }
+  // An empty key clears the runtime entry (env fallback still applies).
+  if (url.pathname === '/api/ai/keys' && req.method === 'POST') {
+    if (!isLoopbackRequest(req)) {
+      sendJson(res, 403, { error: 'Key updates are only accepted from this machine.' });
+      return;
+    }
+    const body = await readJsonBody(ctx.getBody, res);
+    if (!body) return;
+    const keyProvider = String(body?.provider ?? '').toLowerCase();
+    if (!UPSTREAM[keyProvider]) {
+      sendJson(res, 400, { error: `Unknown AI provider "${keyProvider}".` });
+      return;
+    }
+    const key = typeof body?.key === 'string' ? body.key.trim() : '';
+    if (key) {
+      runtimeKeys[keyProvider] = key;
+    } else {
+      delete runtimeKeys[keyProvider];
+    }
+    const configured = {};
+    for (const [name, cfg] of Object.entries(UPSTREAM)) {
+      configured[name] = Boolean(resolveUpstreamKey(cfg, name));
     }
     sendJson(res, 200, { ok: true, configured });
     return;
@@ -309,11 +367,11 @@ export async function registerAiProxyRoutes(req, res, ctx) {
     return;
   }
 
-  const apiKey = resolveUpstreamKey(upstream);
+  const apiKey = resolveUpstreamKey(upstream, provider);
   if (!apiKey) {
     sendJson(res, 503, {
       error: `AI provider "${provider}" is not configured on the server.`,
-      hint: `Set one of [${upstream.envKeys.join(', ')}] in the backend environment/.env.`,
+      hint: `Save an API key in Settings, or set one of [${upstream.envKeys.join(', ')}] in the backend environment/.env.`,
     });
     return;
   }

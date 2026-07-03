@@ -7,25 +7,26 @@ import { MODELS_ARRAY } from '../services/ai/AIProviderInterface';
 import ApiKeySettings from './ApiKeySettings';
 import { ModelComparison } from './ModelComparison';
 import { defaultSettings, getModelPricing, supportsReasoning } from './Settings.constants';
-import { authService, UserWithPlan } from '../services/AuthService';
+import type { UserWithPlan } from '../services/AuthService';
+import { authService } from '../services/AuthService';
 import { billingService } from '../services/BillingService';
 import {
-    Button,
-    ButtonGroup,
-    CloseButton,
-    ModelPricingInfo,
-    NumberInput,
-    SectionTitle,
-    Select,
-    SettingControl,
-    SettingItem,
-    SettingLabel,
-    SettingsContent,
-    SettingsHeader,
-    SettingsOverlay,
-    SettingsPanel,
-    SettingsSection,
-    Toggle,
+  Button,
+  ButtonGroup,
+  CloseButton,
+  ModelPricingInfo,
+  NumberInput,
+  SectionTitle,
+  Select,
+  SettingControl,
+  SettingItem,
+  SettingLabel,
+  SettingsContent,
+  SettingsHeader,
+  SettingsOverlay,
+  SettingsPanel,
+  SettingsSection,
+  Toggle,
 } from './Settings.styles';
 
 export interface SettingsProps {
@@ -35,18 +36,13 @@ export interface SettingsProps {
   onSettingsChange: (settings: EditorSettings) => void;
 }
 
-export const Settings = ({
-  isOpen,
-  onClose,
-  settings,
-  onSettingsChange,
-}: SettingsProps) => {
+export const Settings = ({ isOpen, onClose, settings, onSettingsChange }: SettingsProps) => {
   const [localSettings, setLocalSettings] = useState<EditorSettings>(settings);
   const [showModelComparison, setShowModelComparison] = useState(false);
   const [user, setUser] = useState<UserWithPlan | null>(authService.getCurrentUser());
 
   useEffect(() => {
-    const unsubscribe = authService.subscribe((u) => {
+    const unsubscribe = authService.subscribe(u => {
       setUser(u);
     });
     return unsubscribe;
@@ -66,7 +62,7 @@ export const Settings = ({
   };
 
   const updateSetting = <K extends keyof EditorSettings>(key: K, value: EditorSettings[K]) => {
-    setLocalSettings((prev) => ({ ...prev, [key]: value }));
+    setLocalSettings(prev => ({ ...prev, [key]: value }));
   };
 
   const pricing = getModelPricing(localSettings.aiModel);
@@ -97,7 +93,7 @@ export const Settings = ({
                   name="theme"
                   aria-label="Theme selection"
                   value={localSettings.theme}
-                  onChange={(e) => updateSetting('theme', e.target.value)}
+                  onChange={e => updateSetting('theme', e.target.value)}
                 >
                   <option value="dark">Dark</option>
                   <option value="light">Light</option>
@@ -115,7 +111,7 @@ export const Settings = ({
                 <SettingControl>
                   <textarea
                     value={localSettings.customThemeJson || ''}
-                    onChange={(e) => updateSetting('customThemeJson', e.target.value)}
+                    onChange={e => updateSetting('customThemeJson', e.target.value)}
                     placeholder="{\n  'name': 'My Theme',\n  'type': 'dark',\n  'colors': { ... },\n  'tokenColors': [ ... ]\n}"
                     style={{
                       width: '100%',
@@ -127,7 +123,7 @@ export const Settings = ({
                       fontFamily: 'monospace',
                       fontSize: '12px',
                       borderRadius: '4px',
-                      resize: 'vertical'
+                      resize: 'vertical',
                     }}
                   />
                 </SettingControl>
@@ -145,7 +141,7 @@ export const Settings = ({
                   name="fontSize"
                   aria-label="Font size in pixels"
                   value={localSettings.fontSize}
-                  onChange={(e) => updateSetting('fontSize', parseInt(e.target.value))}
+                  onChange={e => updateSetting('fontSize', parseInt(e.target.value))}
                   min="10"
                   max="24"
                 />
@@ -160,7 +156,7 @@ export const Settings = ({
               <SettingControl>
                 <Toggle
                   checked={localSettings.minimap}
-                  onChange={(e) => updateSetting('minimap', e.target.checked)}
+                  onChange={e => updateSetting('minimap', e.target.checked)}
                 />
               </SettingControl>
             </SettingItem>
@@ -181,7 +177,7 @@ export const Settings = ({
                   name="tabSize"
                   aria-label="Tab size in spaces"
                   value={localSettings.tabSize}
-                  onChange={(e) => updateSetting('tabSize', parseInt(e.target.value))}
+                  onChange={e => updateSetting('tabSize', parseInt(e.target.value))}
                   min="1"
                   max="8"
                 />
@@ -196,7 +192,7 @@ export const Settings = ({
               <SettingControl>
                 <Toggle
                   checked={localSettings.wordWrap}
-                  onChange={(e) => updateSetting('wordWrap', e.target.checked)}
+                  onChange={e => updateSetting('wordWrap', e.target.checked)}
                 />
               </SettingControl>
             </SettingItem>
@@ -209,7 +205,7 @@ export const Settings = ({
               <SettingControl>
                 <Toggle
                   checked={localSettings.autoSave}
-                  onChange={(e) => updateSetting('autoSave', e.target.checked)}
+                  onChange={e => updateSetting('autoSave', e.target.checked)}
                 />
               </SettingControl>
             </SettingItem>
@@ -222,7 +218,7 @@ export const Settings = ({
               <SettingControl>
                 <Toggle
                   checked={localSettings.lineNumbers ?? true}
-                  onChange={(e) => updateSetting('lineNumbers', e.target.checked)}
+                  onChange={e => updateSetting('lineNumbers', e.target.checked)}
                 />
               </SettingControl>
             </SettingItem>
@@ -235,7 +231,7 @@ export const Settings = ({
               <SettingControl>
                 <Toggle
                   checked={localSettings.folding ?? true}
-                  onChange={(e) => updateSetting('folding', e.target.checked)}
+                  onChange={e => updateSetting('folding', e.target.checked)}
                 />
               </SettingControl>
             </SettingItem>
@@ -248,7 +244,7 @@ export const Settings = ({
               <SettingControl>
                 <Toggle
                   checked={localSettings.bracketMatching ?? true}
-                  onChange={(e) => updateSetting('bracketMatching', e.target.checked)}
+                  onChange={e => updateSetting('bracketMatching', e.target.checked)}
                 />
               </SettingControl>
             </SettingItem>
@@ -261,7 +257,7 @@ export const Settings = ({
               <SettingControl>
                 <Toggle
                   checked={localSettings.autoIndent ?? true}
-                  onChange={(e) => updateSetting('autoIndent', e.target.checked)}
+                  onChange={e => updateSetting('autoIndent', e.target.checked)}
                 />
               </SettingControl>
             </SettingItem>
@@ -274,7 +270,7 @@ export const Settings = ({
               <SettingControl>
                 <Toggle
                   checked={localSettings.formatOnSave ?? true}
-                  onChange={(e) => updateSetting('formatOnSave', e.target.checked)}
+                  onChange={e => updateSetting('formatOnSave', e.target.checked)}
                 />
               </SettingControl>
             </SettingItem>
@@ -287,7 +283,7 @@ export const Settings = ({
               <SettingControl>
                 <Toggle
                   checked={localSettings.renderWhitespace ?? false}
-                  onChange={(e) => updateSetting('renderWhitespace', e.target.checked)}
+                  onChange={e => updateSetting('renderWhitespace', e.target.checked)}
                 />
               </SettingControl>
             </SettingItem>
@@ -300,7 +296,7 @@ export const Settings = ({
               <SettingControl>
                 <Toggle
                   checked={localSettings.smoothScrolling ?? true}
-                  onChange={(e) => updateSetting('smoothScrolling', e.target.checked)}
+                  onChange={e => updateSetting('smoothScrolling', e.target.checked)}
                 />
               </SettingControl>
             </SettingItem>
@@ -313,7 +309,7 @@ export const Settings = ({
               <SettingControl>
                 <Toggle
                   checked={localSettings.cursorBlinking ?? true}
-                  onChange={(e) => updateSetting('cursorBlinking', e.target.checked)}
+                  onChange={e => updateSetting('cursorBlinking', e.target.checked)}
                 />
               </SettingControl>
             </SettingItem>
@@ -331,7 +327,7 @@ export const Settings = ({
               <SettingControl>
                 <Toggle
                   checked={localSettings.aiAutoComplete}
-                  onChange={(e) => updateSetting('aiAutoComplete', e.target.checked)}
+                  onChange={e => updateSetting('aiAutoComplete', e.target.checked)}
                 />
               </SettingControl>
             </SettingItem>
@@ -344,7 +340,7 @@ export const Settings = ({
               <SettingControl>
                 <Toggle
                   checked={localSettings.aiSuggestions}
-                  onChange={(e) => updateSetting('aiSuggestions', e.target.checked)}
+                  onChange={e => updateSetting('aiSuggestions', e.target.checked)}
                 />
               </SettingControl>
             </SettingItem>
@@ -367,10 +363,10 @@ export const Settings = ({
                       borderRadius: '4px',
                       transition: 'background 0.2s',
                     }}
-                    onMouseEnter={(e) =>
+                    onMouseEnter={e =>
                       (e.currentTarget.style.background = 'rgba(139, 92, 246, 0.1)')
                     }
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}
                     title="Compare AI models"
                   >
                     <Info size={14} />
@@ -383,19 +379,23 @@ export const Settings = ({
                   id="ai-model-select"
                   name="aiModel"
                   aria-label="AI model selection"
-                  value={localSettings.aiModel ?? 'moonshot/kimi-2.5-pro'}
-                  onChange={(e) => updateSetting('aiModel', e.target.value as EditorSettings['aiModel'])}
+                  value={localSettings.aiModel ?? 'moonshotai/kimi-k2.7-code'}
+                  onChange={e =>
+                    updateSetting('aiModel', e.target.value as EditorSettings['aiModel'])
+                  }
                 >
                   {/* Dynamically map the latest models from the registry */}
                   <optgroup label="✨ Vibe Code Studio 2026 Models">
-                    {MODELS_ARRAY.filter(m => m.recommended !== false).map((model) => (
+                    {MODELS_ARRAY.filter(m => m.recommended !== false).map(model => (
                       <option key={model.id} value={model.id}>
                         {model.name} - ${model.costPerMillionInput}/1M in
                       </option>
                     ))}
                   </optgroup>
                   <optgroup label="🏠 Local Models">
-                    <option value="local/vibe-completion">Vibe Custom (Requires Local Server)</option>
+                    <option value="local/vibe-completion">
+                      Vibe Custom (Requires Local Server)
+                    </option>
                   </optgroup>
                 </Select>
               </SettingControl>
@@ -434,7 +434,7 @@ export const Settings = ({
                 <SettingControl>
                   <Toggle
                     checked={localSettings.showReasoningProcess ?? false}
-                    onChange={(e) => updateSetting('showReasoningProcess', e.target.checked)}
+                    onChange={e => updateSetting('showReasoningProcess', e.target.checked)}
                   />
                 </SettingControl>
               </SettingItem>
@@ -451,30 +451,57 @@ export const Settings = ({
           <SettingsSection>
             <SectionTitle>Subscription & Account</SectionTitle>
             {user ? (
-              <div style={{ padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div
+                style={{
+                  padding: '16px',
+                  background: 'rgba(255,255,255,0.03)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                }}
+              >
+                <div
+                  style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
                   <div>
-                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#f5f7fb' }}>{user.fullName || 'Developer'}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#f5f7fb' }}>
+                      {user.fullName || 'Developer'}
+                    </div>
                     <div style={{ fontSize: '12px', color: '#94a3b8' }}>{user.email}</div>
                   </div>
-                  <div style={{
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    background: user.plan === 'pro' ? 'rgba(34, 211, 238, 0.15)' : 'rgba(148, 163, 184, 0.15)',
-                    color: user.plan === 'pro' ? '#67e8f9' : '#94a3b8',
-                    border: `1px solid ${user.plan === 'pro' ? 'rgba(34, 211, 238, 0.3)' : 'rgba(148, 163, 184, 0.3)'}`
-                  }}>
+                  <div
+                    style={{
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      background:
+                        user.plan === 'pro'
+                          ? 'rgba(34, 211, 238, 0.15)'
+                          : 'rgba(148, 163, 184, 0.15)',
+                      color: user.plan === 'pro' ? '#67e8f9' : '#94a3b8',
+                      border: `1px solid ${user.plan === 'pro' ? 'rgba(34, 211, 238, 0.3)' : 'rgba(148, 163, 184, 0.3)'}`,
+                    }}
+                  >
                     {user.plan}
                   </div>
                 </div>
 
                 {user.plan === 'free' ? (
                   <div>
-                    <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: '#b7c3d6', lineHeight: '1.5' }}>
-                      Upgrade to Vibe Code Studio Pro to unlock proactive AI autocomplete, unlimited assistant chat queries, and advanced multi-agent executions.
+                    <p
+                      style={{
+                        margin: '0 0 12px 0',
+                        fontSize: '12px',
+                        color: '#b7c3d6',
+                        lineHeight: '1.5',
+                      }}
+                    >
+                      Upgrade to Vibe Code Studio Pro to unlock proactive AI autocomplete, unlimited
+                      assistant chat queries, and advanced multi-agent executions.
                     </p>
                     <Button
                       $variant="primary"
@@ -485,14 +512,19 @@ export const Settings = ({
                           alert(err.message || 'Billing checkout failed');
                         }
                       }}
-                      style={{ width: '100%', background: 'linear-gradient(135deg, #22d3ee 0%, #0e7490 100%)', color: '#08111f' }}
+                      style={{
+                        width: '100%',
+                        background: 'linear-gradient(135deg, #22d3ee 0%, #0e7490 100%)',
+                        color: '#08111f',
+                      }}
                     >
                       Upgrade to Pro - $19/mo
                     </Button>
                   </div>
                 ) : (
                   <p style={{ margin: 0, fontSize: '12px', color: '#67e8f9', fontWeight: 500 }}>
-                    ✨ Thank you for subscribing to Pro! You have full access to all elite agent and autocomplete features.
+                    ✨ Thank you for subscribing to Pro! You have full access to all elite agent and
+                    autocomplete features.
                   </p>
                 )}
 
@@ -507,7 +539,7 @@ export const Settings = ({
                     fontWeight: 600,
                     cursor: 'pointer',
                     padding: 0,
-                    textDecoration: 'underline'
+                    textDecoration: 'underline',
                   }}
                 >
                   Sign Out

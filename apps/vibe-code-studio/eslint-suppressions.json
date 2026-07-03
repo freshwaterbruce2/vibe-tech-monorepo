@@ -666,11 +666,6 @@
       "count": 1
     }
   },
-  "apps/vibe-code-studio/src/workers/markdown.worker.ts": {
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "apps/vibe-code-studio/src/workers/search.worker.ts": {
     "max-lines-per-function": {
       "count": 1
