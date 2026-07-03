@@ -70,6 +70,42 @@ const EditorSection = styled.div`
   min-width: 0;
 `;
 
+/**
+ * Settings-change handler (exported for tests).
+ * ORDER MATTERS on a model change: the AI store is the source of truth — the
+ * status bar reads it and useAppServices re-syncs the service from it on every
+ * change — so the store must be written BEFORE the service. Updating only the
+ * service gets overwritten by the stale store (v1.2.1 "model switch never
+ * took" bug). Service failures surface as a Model Error toast; the store keeps
+ * the new model and re-syncs the service later.
+ */
+export async function applySettingsChange<S extends { aiModel?: string }>(
+  deps: {
+    updateEditorSettings: (settings: S) => void;
+    prevAiModel: string | undefined;
+    aiService: { setModel: (model: string) => void | Promise<void> };
+    showSuccess: (title: string, message?: string) => void;
+    showError: (title: string, message?: string) => void;
+  },
+  newSettings: S
+): Promise<void> {
+  deps.updateEditorSettings(newSettings);
+  if (newSettings.aiModel && newSettings.aiModel !== deps.prevAiModel) {
+    try {
+      useAIStore.getState().actions.setModel(newSettings.aiModel);
+      await deps.aiService.setModel(newSettings.aiModel);
+      deps.showSuccess('Settings Updated', 'Your preferences have been saved');
+    } catch (error) {
+      deps.showError(
+        'Model Error',
+        error instanceof Error ? error.message : 'Failed to update AI model'
+      );
+    }
+  } else {
+    deps.showSuccess('Settings Updated', 'Your preferences have been saved');
+  }
+}
+
 export function AppLayout() {
   // Pull state from contexts (replaces 95+ props)
   const services = useServices();
@@ -394,26 +430,18 @@ export function AppLayout() {
           isOpen={ui.settingsOpen}
           onClose={() => ui.setSettingsOpen(false)}
           settings={ws.editorSettings}
-          onSettingsChange={async newSettings => {
-            ws.updateEditorSettings(newSettings);
-            if (newSettings.aiModel && newSettings.aiModel !== ws.editorSettings.aiModel) {
-              try {
-                // The AI store is the source of truth: the status bar reads it and
-                // useAppServices re-syncs the service from it on every change —
-                // updating only the service gets overwritten by the stale store.
-                useAIStore.getState().actions.setModel(newSettings.aiModel);
-                await services.aiService.setModel(newSettings.aiModel);
-                extras.showSuccess('Settings Updated', 'Your preferences have been saved');
-              } catch (error) {
-                extras.showError(
-                  'Model Error',
-                  error instanceof Error ? error.message : 'Failed to update AI model'
-                );
-              }
-            } else {
-              extras.showSuccess('Settings Updated', 'Your preferences have been saved');
-            }
-          }}
+          onSettingsChange={newSettings =>
+            applySettingsChange(
+              {
+                updateEditorSettings: ws.updateEditorSettings,
+                prevAiModel: ws.editorSettings.aiModel,
+                aiService: services.aiService,
+                showSuccess: extras.showSuccess,
+                showError: extras.showError,
+              },
+              newSettings
+            )
+          }
         />
       </Suspense>
 

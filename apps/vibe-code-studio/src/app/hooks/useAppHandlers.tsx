@@ -340,30 +340,54 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     ]
   );
 
+  // Every failure path shows a toast and keeps the panel open so the
+  // generated code stays available. Fixes the silent no-op / false-success
+  // Apply bug: ignored executeEdits result, wrong-file edits after tab
+  // switches, and runtime errors carrying line 0 / no file.
   const handleApplyFix = useCallback(
     (suggestion: FixSuggestion) => {
-      if (!editorRef.current || !currentError) {
+      const editor = editorRef.current;
+      if (!editor || !currentError) {
         logger.error('[AutoFix] Cannot apply fix: editor or error not available');
+        showError('Fix Failed', 'Editor is not ready — reopen the file and try again');
         return;
       }
 
       try {
-        const editor = editorRef.current;
         const model = editor.getModel();
-
         if (!model) throw new Error('Editor model not available');
 
-        editor.executeEdits('auto-fix', [
+        if (currentError.file && currentError.file !== model.uri.path) {
+          showError('Fix Failed', `Fix targets ${currentError.file}, but a different file is active`);
+          return;
+        }
+
+        const { startLine, endLine } = suggestion;
+        const lineCount = model.getLineCount();
+        if (
+          !Number.isInteger(startLine) || !Number.isInteger(endLine) ||
+          startLine < 1 || endLine < startLine || endLine > lineCount
+        ) {
+          showError('Fix Failed', `Fix location (lines ${startLine}-${endLine}) is outside the file — copy the code from the panel`);
+          return;
+        }
+
+        const applied = editor.executeEdits('auto-fix', [
           {
             range: {
-              startLineNumber: suggestion.startLine,
+              startLineNumber: startLine,
               startColumn: 1,
-              endLineNumber: suggestion.endLine,
-              endColumn: model.getLineMaxColumn(suggestion.endLine),
+              endLineNumber: endLine,
+              endColumn: model.getLineMaxColumn(endLine),
             },
             text: suggestion.code,
           },
         ]);
+
+        if (!applied) {
+          showError('Fix Failed', 'Editor rejected the edit (read-only or stale document)');
+          return;
+        }
 
         showSuccess('Fix Applied', suggestion.title);
         setErrorFixPanelOpen(false);

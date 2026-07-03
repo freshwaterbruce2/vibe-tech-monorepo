@@ -29,16 +29,6 @@
       "count": 2
     }
   },
-  "apps/vibe-code-studio/src/components/ApiKeySettings.tsx": {
-    "max-len": {
-      "count": 1
-    }
-  },
-  "apps/vibe-code-studio/src/components/CodeQualityPanel.tsx": {
-    "max-len": {
-      "count": 2
-    }
-  },
   "apps/vibe-code-studio/src/components/CommandPalette.tsx": {
     "max-len": {
       "count": 1
@@ -147,16 +137,6 @@
       "count": 1
     },
     "max-lines-per-function": {
-      "count": 1
-    }
-  },
-  "apps/vibe-code-studio/src/components/Settings.tsx": {
-    "max-len": {
-      "count": 2
-    }
-  },
-  "apps/vibe-code-studio/src/components/SettingsModal.tsx": {
-    "max-len": {
       "count": 1
     }
   },
