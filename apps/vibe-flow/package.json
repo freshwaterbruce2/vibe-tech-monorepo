@@ -1,0 +1,36 @@
+{
+  "name": "vibe-flow",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Privacy-first local AI voice dictation for Windows 11",
+  "type": "module",
+  "scripts": {
+    "dev": "node ./scripts/run-tauri.cjs dev",
+    "dev:web": "vite --port 5175",
+    "build": "tsc && vite build",
+    "tauri:dev": "node ./scripts/run-tauri.cjs dev",
+    "tauri:build": "node ./scripts/run-tauri.cjs build",
+    "lint": "cd ../.. && pnpm exec eslint apps/vibe-flow/src",
+    "typecheck": "tsc --noEmit",
+    "test": "node ../../node_modules/vitest/vitest.mjs run",
+    "test:coverage": "node ../../node_modules/vitest/vitest.mjs run --coverage"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/plugin-global-shortcut": "^2",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.2.0",
+    "jsdom": "^25.0.1",
+    "typescript": "5.9.3",
+    "vite": "^7.3.1",
+    "vitest": "^4"
+  }
+}
