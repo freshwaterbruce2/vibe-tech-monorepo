@@ -13,6 +13,7 @@ export interface ProblemsState {
   panelOpen: boolean;
   actions: {
     append: (source: string, diagnostics: Diagnostic[]) => void;
+    setSource: (source: string, diagnostics: Diagnostic[]) => void;
     clearSource: (source: string) => void;
     clearAll: () => void;
     setPanelOpen: (open: boolean) => void;
@@ -27,6 +28,11 @@ const createActions = (set: SetState): ProblemsState['actions'] => ({
     set(state => {
       const existing = state.bySource[source] ?? [];
       state.bySource[source] = [...existing, ...diagnostics];
+    }),
+  setSource: (source, diagnostics) =>
+    set(state => {
+      // Replace (not append) — LSP republishes the full set per file each time.
+      state.bySource[source] = diagnostics;
     }),
   clearSource: source =>
     set(state => {

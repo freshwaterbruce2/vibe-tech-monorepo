@@ -23,7 +23,10 @@ import { logger } from '../../services/Logger';
 import { SearchService } from '../../services/SearchService';
 import type { SearchOptions } from '../../services/SearchService';
 import { useAIStore } from '../../stores/useAIStore';
+import { useEditorStore } from '../../stores/useEditorStore';
 import type { AIModel } from '../../services/ai/AIProviderInterface';
+import type { WebSocketLike } from '../../services/lsp/lspClient';
+import { initLspSocketFactory, notifyDocumentOpen } from '../../services/lsp/lspIntegration';
 import type { UnifiedAIService } from '../../services/ai/UnifiedAIService';
 import type { FileSystemService } from '../../services/FileSystemService';
 import type { MultiFileEditor } from '../../services/MultiFileEditor';
@@ -321,6 +324,16 @@ export function useAppHandlers(props: UseAppHandlersProps) {
         dispose: () => completionRegistration.deregister(),
       };
       logger.debug('[TabCompletion] Inline completion provider registered successfully');
+
+      // Spec 07 Phase 1a: attach the LSP client for this file's language so the
+      // language server publishes diagnostics into the shared Problems panel.
+      if (currentFile) {
+        initLspSocketFactory(url => new WebSocket(url) as unknown as WebSocketLike);
+        notifyDocumentOpen(currentFile.language, useEditorStore.getState().workspaceFolder, {
+          path: currentFile.path,
+          text: currentFile.content,
+        });
+      }
     },
     [
       aiService,

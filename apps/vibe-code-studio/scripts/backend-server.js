@@ -1,9 +1,13 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import Database from 'better-sqlite3';
+
+import { handleLspUpgrade } from './routes/lsp-relay.js';
+import { resolveServer } from './lib/lsp-servers.js';
 
 // Load env variables from .env files
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -209,6 +213,11 @@ wss.on('connection', ws => {
 });
 
 server.on('upgrade', (request, socket, head) => {
+  const pathname = (request.url || '').split('?')[0];
+  if (pathname.startsWith('/lsp/')) {
+    handleLspUpgrade(request, socket, head, { wss, spawn, resolveServer, isAllowedOrigin });
+    return;
+  }
   wss.handleUpgrade(request, socket, head, ws => {
     wss.emit('connection', ws, request);
   });
