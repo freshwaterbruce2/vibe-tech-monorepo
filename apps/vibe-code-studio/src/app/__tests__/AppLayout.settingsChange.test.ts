@@ -9,7 +9,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { applySettingsChange } from '../AppLayout';
+import { applySettingsChange } from '../applySettingsChange';
 import { useAIStore } from '../../stores/useAIStore';
 
 const PREV_MODEL = 'moonshot/kimi-2.5-pro';

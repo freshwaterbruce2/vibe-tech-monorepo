@@ -31,6 +31,7 @@ import {
   MultiFileEditApprovalPanel,
   PerformanceMonitor,
   PreviewPanel,
+  ProblemsPanelHost,
   ScreenshotToCodePanel,
   TerminalPanel,
   VisualEditor,
@@ -39,7 +40,7 @@ import {
 
 import type { GeneratedFix } from '../services/AutoFixService';
 import { logger } from '../services/Logger';
-import { useAIStore } from '../stores/useAIStore';
+import { applySettingsChange } from './applySettingsChange';
 import { useAppExtras, useServices, useUIPanel, useWorkspaceCtx } from './contexts';
 import { useEffect } from 'react';
 import { LandingPage } from '@vibetech/landing';
@@ -69,42 +70,6 @@ const EditorSection = styled.div`
   flex: 1;
   min-width: 0;
 `;
-
-/**
- * Settings-change handler (exported for tests).
- * ORDER MATTERS on a model change: the AI store is the source of truth — the
- * status bar reads it and useAppServices re-syncs the service from it on every
- * change — so the store must be written BEFORE the service. Updating only the
- * service gets overwritten by the stale store (v1.2.1 "model switch never
- * took" bug). Service failures surface as a Model Error toast; the store keeps
- * the new model and re-syncs the service later.
- */
-export async function applySettingsChange<S extends { aiModel?: string }>(
-  deps: {
-    updateEditorSettings: (settings: S) => void;
-    prevAiModel: string | undefined;
-    aiService: { setModel: (model: string) => void | Promise<void> };
-    showSuccess: (title: string, message?: string) => void;
-    showError: (title: string, message?: string) => void;
-  },
-  newSettings: S
-): Promise<void> {
-  deps.updateEditorSettings(newSettings);
-  if (newSettings.aiModel && newSettings.aiModel !== deps.prevAiModel) {
-    try {
-      useAIStore.getState().actions.setModel(newSettings.aiModel);
-      await deps.aiService.setModel(newSettings.aiModel);
-      deps.showSuccess('Settings Updated', 'Your preferences have been saved');
-    } catch (error) {
-      deps.showError(
-        'Model Error',
-        error instanceof Error ? error.message : 'Failed to update AI model'
-      );
-    }
-  } else {
-    deps.showSuccess('Settings Updated', 'Your preferences have been saved');
-  }
-}
 
 export function AppLayout() {
   // Pull state from contexts (replaces 95+ props)
@@ -553,6 +518,10 @@ export function AppLayout() {
 
       <Suspense fallback={null}>
         <TerminalPanel isOpen={ui.terminalOpen} onClose={() => ui.setTerminalOpen(false)} />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <ProblemsPanelHost onOpenFile={ws.handleOpenFileFromSearch} />
       </Suspense>
 
       <Suspense fallback={null}>
