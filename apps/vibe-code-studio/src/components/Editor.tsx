@@ -10,6 +10,8 @@ import { useEditorSetup } from '../hooks/useEditorSetup';
 import { useInlineEdit } from '../hooks/useInlineEdit';
 import { logger } from '../services/Logger';
 import type { UnifiedAIService } from '../services/ai/UnifiedAIService';
+import { applyEditorTheme } from '../services/theme/applyTheme';
+import { monacoThemeName } from '../services/theme/themeResolver';
 import { vibeTheme } from '../styles/theme';
 import type { EditorFile, EditorSettings, WorkspaceContext } from '../types';
 
@@ -163,36 +165,21 @@ const Editor = ({
     file,
     undefined,
     onEditorMount,
-    liveStream,
+    liveStream
   );
 
   // Hook for inline AI editing
   useInlineEdit(editorRef);
 
   // Hook for editor actions
-  const {
-    toggleComment,
-    duplicateLine,
-    moveLineUp,
-    moveLineDown,
-    triggerAiCompletion,
-  } = useEditorActions(editorRef);
+  const { toggleComment, duplicateLine, moveLineUp, moveLineDown, triggerAiCompletion } =
+    useEditorActions(editorRef);
 
   // Cleanup Monacopilot on unmount (handled inside useEditorSetup)
 
-  // Custom Theme Loader
+  // Apply the active theme (preset via Shiki, legacy built-in, or custom JSON).
   useEffect(() => {
-    if (settings?.theme === 'custom' && settings?.customThemeJson) {
-      import('../utils/themeLoader').then(({ loadCustomTheme }) => {
-        loadCustomTheme('custom-user-theme', settings.customThemeJson!).then(success => {
-          if (success) {
-            import('monaco-editor').then(m => {
-              m.editor.setTheme('custom-user-theme');
-            });
-          }
-        });
-      });
-    }
+    void applyEditorTheme(settings?.theme, settings?.customThemeJson);
   }, [settings?.theme, settings?.customThemeJson]);
 
   // Find/Replace helpers
@@ -204,65 +191,65 @@ const Editor = ({
   }, [editorRef]);
 
   // Keyboard shortcuts
-  useHotkeys('ctrl+s, cmd+s', (e) => {
+  useHotkeys('ctrl+s, cmd+s', e => {
     e.preventDefault();
     onSaveFile();
   });
 
-  useHotkeys('ctrl+/, cmd+/', (e) => {
+  useHotkeys('ctrl+/, cmd+/', e => {
     e.preventDefault();
     toggleComment();
   });
 
-  useHotkeys('ctrl+d, cmd+d', (e) => {
+  useHotkeys('ctrl+d, cmd+d', e => {
     e.preventDefault();
     duplicateLine();
   });
 
-  useHotkeys('alt+up', (e) => {
+  useHotkeys('alt+up', e => {
     e.preventDefault();
     moveLineUp();
   });
 
-  useHotkeys('alt+down', (e) => {
+  useHotkeys('alt+down', e => {
     e.preventDefault();
     moveLineDown();
   });
 
-  useHotkeys('ctrl+space, cmd+space', (e) => {
+  useHotkeys('ctrl+space, cmd+space', e => {
     e.preventDefault();
     triggerAiCompletion();
   });
 
-  useHotkeys('ctrl+f, cmd+f', (e) => {
+  useHotkeys('ctrl+f, cmd+f', e => {
     e.preventDefault();
     setFindReplaceOpen(true);
   });
 
-  useHotkeys('ctrl+k, cmd+k', (e) => {
+  useHotkeys('ctrl+k, cmd+k', e => {
     e.preventDefault();
     if (editorRef.current) {
-        const position = editorRef.current.getPosition();
-        if (position) {
-            const scroller = editorRef.current.getScrolledVisiblePosition(position);
-            if (scroller) {
-                // Adjust position to be below the current line
-                setInlineEditPos({
-                    top: scroller.top + 25,
-                    left: Math.min(scroller.left, 500) // Keep it somewhat centered or left-aligned
-                });
-                setInlineEditOpen(true);
-            }
+      const position = editorRef.current.getPosition();
+      if (position) {
+        const scroller = editorRef.current.getScrolledVisiblePosition(position);
+        if (scroller) {
+          // Adjust position to be below the current line
+          setInlineEditPos({
+            top: scroller.top + 25,
+            left: Math.min(scroller.left, 500), // Keep it somewhat centered or left-aligned
+          });
+          setInlineEditOpen(true);
         }
+      }
     }
   });
 
-  useHotkeys('ctrl+h, cmd+h', (e) => {
+  useHotkeys('ctrl+h, cmd+h', e => {
     e.preventDefault();
     setFindReplaceOpen(true);
   });
 
-  useHotkeys('escape', (e) => {
+  useHotkeys('escape', e => {
     if (findReplaceOpen) {
       e.preventDefault();
       setFindReplaceOpen(false);
@@ -270,9 +257,9 @@ const Editor = ({
     }
   });
 
-  useHotkeys('ctrl+shift+s, cmd+shift+s', (e) => {
+  useHotkeys('ctrl+shift+s, cmd+shift+s', e => {
     e.preventDefault();
-    setShowCompletionStats((prev) => !prev);
+    setShowCompletionStats(prev => !prev);
   });
 
   // Placeholder for completion tracking
@@ -280,49 +267,65 @@ const Editor = ({
     // Legacy tracking placeholder
   }, []);
 
-  const handleFind = useCallback((query: string, options: FindOptions) => {
-    if (!editorRef.current) {return;}
-    const model = editorRef.current.getModel();
-    if (!model) {return;}
-    clearFindDecorations();
-
-    if (!query) {
-      setFindMatches({ current: 0, total: 0 });
-      return;
-    }
-
-    const matches = model.findMatches(
-      query,
-      true,
-      options.regex,
-      options.caseSensitive,
-      options.wholeWord ? '\\b' : null,
-      true,
-    );
-    const decorations = matches.map((match) => ({
-      range: match.range,
-      options: {
-        className: 'find-match-decoration',
-        overviewRuler: { color: 'rgba(139, 92, 246, 0.8)', position: 4 /* OverviewRulerLane.Right */ },
-      },
-    }));
-    decorationsRef.current = editorRef.current.deltaDecorations([], decorations);
-    setFindMatches({ current: matches.length > 0 ? 1 : 0, total: matches.length });
-    if (matches.length > 0) {
-      const firstMatch = matches[0];
-      if (firstMatch) {
-        editorRef.current.revealRangeInCenter(firstMatch.range);
-        editorRef.current.setSelection(firstMatch.range);
+  const handleFind = useCallback(
+    (query: string, options: FindOptions) => {
+      if (!editorRef.current) {
+        return;
       }
-    }
-  }, [clearFindDecorations]);
+      const model = editorRef.current.getModel();
+      if (!model) {
+        return;
+      }
+      clearFindDecorations();
+
+      if (!query) {
+        setFindMatches({ current: 0, total: 0 });
+        return;
+      }
+
+      const matches = model.findMatches(
+        query,
+        true,
+        options.regex,
+        options.caseSensitive,
+        options.wholeWord ? '\\b' : null,
+        true
+      );
+      const decorations = matches.map(match => ({
+        range: match.range,
+        options: {
+          className: 'find-match-decoration',
+          overviewRuler: {
+            color: 'rgba(139, 92, 246, 0.8)',
+            position: 4 /* OverviewRulerLane.Right */,
+          },
+        },
+      }));
+      decorationsRef.current = editorRef.current.deltaDecorations([], decorations);
+      setFindMatches({ current: matches.length > 0 ? 1 : 0, total: matches.length });
+      if (matches.length > 0) {
+        const firstMatch = matches[0];
+        if (firstMatch) {
+          editorRef.current.revealRangeInCenter(firstMatch.range);
+          editorRef.current.setSelection(firstMatch.range);
+        }
+      }
+    },
+    [clearFindDecorations, editorRef]
+  );
 
   const handleReplace = (query: string, replacement: string, options: FindOptions) => {
-    if (!editorRef.current) {return;}
+    if (!editorRef.current) {
+      return;
+    }
     const selection = editorRef.current.getSelection();
-    if (!selection) {return;}
+    if (!selection) {
+      return;
+    }
     const model = editorRef.current.getModel();
-    if (!model) {return;}
+    if (!model) {
+      return;
+    }
     const match = model.findMatches(
       query,
       selection,
@@ -338,9 +341,13 @@ const Editor = ({
   };
 
   const handleReplaceAll = (query: string, replacement: string, options: FindOptions) => {
-    if (!editorRef.current) {return;}
+    if (!editorRef.current) {
+      return;
+    }
     const model = editorRef.current.getModel();
-    if (!model) {return;}
+    if (!model) {
+      return;
+    }
     const matches = model.findMatches(
       query,
       true,
@@ -349,19 +356,23 @@ const Editor = ({
       options.wholeWord ? String.raw`\b` : null,
       true
     );
-    const edits = matches.map((match) => ({ range: match.range, text: replacement }));
+    const edits = matches.map(match => ({ range: match.range, text: replacement }));
     editorRef.current.executeEdits('replaceAll', edits);
     clearFindDecorations();
     setFindMatches({ current: 0, total: 0 });
   };
 
   const handleFindNext = () => {
-    if (!editorRef.current) {return;}
+    if (!editorRef.current) {
+      return;
+    }
     editorRef.current.getAction('actions.find')?.run();
   };
 
   const handleFindPrevious = () => {
-    if (!editorRef.current) {return;}
+    if (!editorRef.current) {
+      return;
+    }
     editorRef.current.getAction('editor.action.previousMatchFindAction')?.run();
   };
 
@@ -384,16 +395,10 @@ const Editor = ({
             key={file.path}
             language={file.language}
             value={file.content}
-            onChange={(value) => onFileChange(value ?? '')}
+            onChange={value => onFileChange(value ?? '')}
             beforeMount={handleBeforeMount}
             onMount={handleEditorDidMount}
-            theme={
-              settings?.theme === 'light'
-                ? 'vs'
-                : settings?.theme === 'custom'
-                  ? 'custom-user-theme'
-                  : 'vs-dark'
-            }
+            theme={monacoThemeName(settings?.theme, Boolean(settings?.customThemeJson))}
             options={{
               selectOnLineNumbers: true,
               automaticLayout: true,
@@ -401,7 +406,12 @@ const Editor = ({
               fontSize: settings?.fontSize ?? 14,
               fontFamily: 'JetBrains Mono, Fira Code, Monaco, Consolas, monospace',
               fontLigatures: true,
-              minimap: { enabled: settings?.minimap !== false, maxColumn: 120, renderCharacters: false, showSlider: 'mouseover' },
+              minimap: {
+                enabled: settings?.minimap !== false,
+                maxColumn: 120,
+                renderCharacters: false,
+                showSlider: 'mouseover',
+              },
               wordWrap: settings?.wordWrap ? 'on' : 'off',
               tabSize: settings?.tabSize ?? 2,
               lineNumbers: 'on',
@@ -493,13 +503,18 @@ const Editor = ({
           <InlineEditWidget
             position={inlineEditPos}
             language={file?.language}
-            selectedCode={editorRef.current?.getModel()?.getValueInRange(editorRef.current.getSelection()!) ?? ''}
+            selectedCode={
+              editorRef.current?.getModel()?.getValueInRange(editorRef.current.getSelection()!) ??
+              ''
+            }
             onClose={() => setInlineEditOpen(false)}
-            onAccept={(newCode) => {
+            onAccept={newCode => {
               if (editorRef.current) {
                 const selection = editorRef.current.getSelection();
                 if (selection) {
-                  editorRef.current.executeEdits('inline-edit', [{ range: selection, text: newCode }]);
+                  editorRef.current.executeEdits('inline-edit', [
+                    { range: selection, text: newCode },
+                  ]);
                 }
               }
               setInlineEditOpen(false);
