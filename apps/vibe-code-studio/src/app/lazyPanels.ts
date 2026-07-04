@@ -43,6 +43,11 @@ export const ProblemsPanelHost = lazy(() =>
     default: m.ProblemsPanelHost,
   }))
 );
+export const SchedulePanelHost = lazy(() =>
+  import('../components/SchedulePanel/SchedulePanelHost').then(m => ({
+    default: m.SchedulePanelHost,
+  }))
+);
 export const ScreenshotToCodePanel = lazy(() =>
   import('../components/ScreenshotToCodePanel').then(m => ({ default: m.ScreenshotToCodePanel }))
 );

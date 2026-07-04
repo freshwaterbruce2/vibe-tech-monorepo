@@ -32,6 +32,7 @@ import {
   PerformanceMonitor,
   PreviewPanel,
   ProblemsPanelHost,
+  SchedulePanelHost,
   ScreenshotToCodePanel,
   TerminalPanel,
   VisualEditor,
@@ -522,6 +523,10 @@ export function AppLayout() {
 
       <Suspense fallback={null}>
         <ProblemsPanelHost onOpenFile={ws.handleOpenFileFromSearch} />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <SchedulePanelHost />
       </Suspense>
 
       <Suspense fallback={null}>

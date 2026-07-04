@@ -1,6 +1,6 @@
 # Feature Spec: Agent Scheduling (`/schedule`)
 
-**Status**: 📋 PLANNED (MISSING — no way to schedule a recurring or future agent run; `BackgroundAgentSystem` only runs tasks submitted immediately)
+**Status**: ✅ SHIPPED 2026-07-04 (Phases 1–3 core; see "Implementation status" below for deviations and deferred items)
 **Priority**: MEDIUM
 **Effort**: M (1-2wk) — the monorepo's `scheduled-tasks` MCP does the hard scheduling part; VCS only needs a UI + runner glue
 **Competitor parity**: Antigravity `/schedule` — schedule an agent task to run later or on a recurring cadence, delivered to an inbox
@@ -18,18 +18,35 @@ As a developer, I want to schedule an agent task — "run the dependency audit e
 
 ## Acceptance Criteria
 
-1. ⬜ A `/schedule` command (Command Palette + chat slash-command) accepts a task description and a one-off future time, creating a persisted schedule
-2. ⬜ Scheduled tasks are visible in a new Schedule panel: pending, next-run time, cadence (one-off vs recurring), last-run status
-3. ⬜ Recurring schedules support cron expressions (or a simplified "every day/week at HH:MM" picker that compiles to cron), delegated to the `scheduled-tasks` MCP for the actual wake-up mechanism
-4. ⬜ At the scheduled time, the runner submits the task to `BackgroundAgentSystem.submit(...)` exactly as if the user had typed it live
-5. ⬜ On completion, a result summary is delivered to the Agent Manager **Inbox** (spec 10) — not just a toast that disappears
-6. ⬜ A desktop notification (Tauri notification plugin) fires on completion/failure when VCS is running but not focused
-7. ⬜ Schedules persist across VCS restarts (survive app close/reopen) via `DatabaseService`, and missed schedules (app was closed at trigger time) either run on next launch or are skipped per a user-configurable policy
-8. ⬜ A schedule can be paused, resumed, edited (change time/cadence), or deleted from the Schedule panel
-9. ⬜ Run history per schedule (last N runs, status, duration, link to the resulting task/Inbox item) is retained and viewable
-10. ⬜ Scheduled tasks respect the same `BackgroundTaskOptions` (priority, timeout, retry) as manually submitted ones
-11. ⬜ A schedule can be scoped to a specific `workspaceRoot` and refuses to fire silently against a different workspace if the originally-targeted repo is no longer open/available — it surfaces as a failed run, not a run against the wrong directory
-12. ⬜ Creating a schedule from `/schedule` offers a "preview" step showing exactly what `BackgroundAgentSystem.submit` would be called with, before persisting, so a mistyped task description isn't discovered three days later at 9am
+1. ✅ A `/schedule` command (Command Palette entry `schedule-agent-task`) accepts a task description and a one-off future time, creating a persisted schedule (chat slash-command not wired — palette only)
+2. ✅ Scheduled tasks are visible in a new Schedule panel: pending, next-run time, cadence (one-off vs recurring), last-run status
+3. ✅\* Recurring schedules use a simplified picker (every-N-minutes / daily / weekly at HH:MM) — **not cron expressions**, and **not** the `scheduled-tasks` MCP, which does not exist in the monorepo (verified 2026-07-04; see Implementation status)
+4. ✅ At the scheduled time, the runner submits the task to `BackgroundAgentSystem.submit(...)` exactly as if the user had typed it live
+5. ⬜ Inbox delivery deferred — spec 10's Agent Manager Inbox doesn't exist yet; completions surface via the in-app notification system (the spec's own degraded mode)
+6. ⬜ OS-level desktop notification deferred — the Tauri notification plugin is not installed (new dependency requires discussion); in-app notifications shipped
+7. ✅ Schedules persist across VCS restarts (SQLite `agent_schedules` via the Tauri DB bridge, electron-store/localStorage fallback) with per-schedule run-on-launch vs skip missed-run policy
+8. ✅ A schedule can be paused, resumed, or deleted from the Schedule panel (inline edit not shipped — delete + recreate)
+9. ✅ Run history per schedule (last 20 runs, status, duration, error) is retained and viewable in the panel
+10. ✅ Scheduled tasks pass through the same `BackgroundTaskOptions` (priority, timeout, retry) as manually submitted ones
+11. ✅ Workspace-scope guard: a schedule whose `workspaceRoot` isn't the open workspace records a failed run and notifies — never silently retargets
+12. ✅ Creating a schedule offers a preview step showing exactly what `BackgroundAgentSystem.submit` would be called with, before persisting
+
+### Implementation status (2026-07-04)
+
+Shipped on `feat/vcs-task-runner`. **Key deviation**: the `scheduled-tasks` MCP this spec
+delegates cron/wake-up to **does not exist anywhere in the monorepo** — the dependency was
+aspirational. Since `BackgroundAgentSystem` can only execute while VCS is running anyway
+(the spec's own open question), the runner uses a 30s in-app tick (`ScheduleRunner`) with
+missed-run policies covering closed-app triggers. If a shared scheduler MCP is built later,
+`ScheduleRunner.check()` is the single seam to swap. Run history is embedded in the
+schedule row (JSON blob, capped 20) instead of a separate `agent_schedule_runs` table,
+matching the `strategy_memory` JSON-blob house pattern.
+
+Files: `src/services/scheduling/{types,cadence,ScheduleStore,ScheduleRunner,schedulerIntegration}.ts`,
+`src/stores/schedulesStore.ts`, `src/hooks/useScheduleCommands.tsx`,
+`src/components/SchedulePanel/*`, `src-tauri/src/db.rs` (`agent_schedules` table),
+mounts in `AppLayout.tsx` / `lazyPanels.ts` / `useAICommandPalette.tsx`.
+74 new tests (cadence, store, runner, integration, panel, host, commands).
 
 ## Example `ScheduleDefinition` shape
 
