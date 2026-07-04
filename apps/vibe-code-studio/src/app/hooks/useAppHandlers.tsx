@@ -358,17 +358,26 @@ export function useAppHandlers(props: UseAppHandlersProps) {
         if (!model) throw new Error('Editor model not available');
 
         if (currentError.file && currentError.file !== model.uri.path) {
-          showError('Fix Failed', `Fix targets ${currentError.file}, but a different file is active`);
+          showError(
+            'Fix Failed',
+            `Fix targets ${currentError.file}, but a different file is active`
+          );
           return;
         }
 
         const { startLine, endLine } = suggestion;
         const lineCount = model.getLineCount();
         if (
-          !Number.isInteger(startLine) || !Number.isInteger(endLine) ||
-          startLine < 1 || endLine < startLine || endLine > lineCount
+          !Number.isInteger(startLine) ||
+          !Number.isInteger(endLine) ||
+          startLine < 1 ||
+          endLine < startLine ||
+          endLine > lineCount
         ) {
-          showError('Fix Failed', `Fix location (lines ${startLine}-${endLine}) is outside the file — copy the code from the panel`);
+          showError(
+            'Fix Failed',
+            `Fix location (lines ${startLine}-${endLine}) is outside the file — copy the code from the panel`
+          );
           return;
         }
 
