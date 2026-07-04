@@ -181,4 +181,26 @@ describe('createLspClient', () => {
     client.dispose();
     expect(ws.closed).toBe(true);
   });
+
+  it('request resolves after initialize with the server result', async () => {
+    const { ws, client } = await connected();
+    const pending = client.request('textDocument/hover', { x: 1 });
+    await flush();
+    const req = ws.sentMessages().find(m => m.method === 'textDocument/hover');
+    expect(req).toBeDefined();
+    ws.receive({ jsonrpc: '2.0', id: req?.id, result: { contents: 'hi' } });
+    await expect(pending).resolves.toEqual({ contents: 'hi' });
+  });
+
+  it('request rejects when the relay closes before ready', async () => {
+    const client = createLspClient({
+      languageId: 'typescript',
+      workspaceRoot: null,
+      callbacks: makeCallbacks(),
+      createSocket: url => new MockWebSocket(url),
+    });
+    const pending = client.request('textDocument/hover', {});
+    MockWebSocket.last().close();
+    await expect(pending).rejects.toThrow('lsp socket closed');
+  });
 });

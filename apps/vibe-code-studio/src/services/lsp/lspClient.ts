@@ -43,6 +43,8 @@ export interface LspClient {
   didOpen: (doc: DocumentInfo) => void;
   didChange: (doc: DocumentInfo) => void;
   didClose: (path: string) => void;
+  /** Send an LSP request; resolves after `initialize`, rejects if the relay dies. */
+  request: (method: string, params?: unknown) => Promise<unknown>;
   dispose: () => void;
 }
 
@@ -86,28 +88,60 @@ export function createLspClient(options: LspClientOptions): LspClient {
     routeNotification(method, params, callbacks)
   );
 
-  let ready = false;
+  const lifecycle = wireLifecycle(socket, rpc, workspaceRoot, callbacks);
+
+  return {
+    ...createDocumentMethods(rpc, languageId, lifecycle.enqueue, callbacks),
+    request: (method, params) => lifecycle.ready.then(() => rpc.sendRequest(method, params)),
+    dispose: () => socket.close(),
+  };
+}
+
+/**
+ * Wire the socket lifecycle. Returns a `ready` promise (resolves after the
+ * initialize handshake, rejects if the socket closes/errors first) and an
+ * `enqueue` that defers document notifications until ready.
+ */
+function wireLifecycle(
+  socket: WebSocketLike,
+  rpc: ReturnType<typeof createJsonRpc>,
+  workspaceRoot: string | null,
+  callbacks: LspClientCallbacks
+): { ready: Promise<void>; enqueue: (fn: () => void) => void } {
+  let isReady = false;
   const queue: Array<() => void> = [];
   const enqueue = (fn: () => void): void => {
-    if (ready) fn();
+    if (isReady) fn();
     else queue.push(fn);
   };
+
+  let resolveReady!: () => void;
+  let rejectReady!: (reason: unknown) => void;
+  const ready = new Promise<void>((resolve, reject) => {
+    resolveReady = resolve;
+    rejectReady = reject;
+  });
+  ready.catch(() => {}); // no-op: prevents an unhandled rejection when no request awaits
 
   socket.onopen = () => {
     void rpc.sendRequest('initialize', buildInitializeParams(workspaceRoot)).then(() => {
       rpc.sendNotification('initialized', {});
-      ready = true;
+      isReady = true;
       for (const fn of queue.splice(0)) fn();
+      resolveReady();
     });
   };
   socket.onmessage = ev => rpc.handleMessage(ev.data);
-  socket.onclose = () => callbacks.onFallback?.();
-  socket.onerror = () => callbacks.onFallback?.();
-
-  return {
-    ...createDocumentMethods(rpc, languageId, enqueue, callbacks),
-    dispose: () => socket.close(),
+  socket.onclose = () => {
+    rejectReady(new Error('lsp socket closed'));
+    callbacks.onFallback?.();
   };
+  socket.onerror = () => {
+    rejectReady(new Error('lsp socket error'));
+    callbacks.onFallback?.();
+  };
+
+  return { ready, enqueue };
 }
 
 /** The document-lifecycle notification methods (`didOpen`/`didChange`/`didClose`). */
@@ -116,7 +150,7 @@ function createDocumentMethods(
   languageId: string,
   enqueue: (fn: () => void) => void,
   callbacks: LspClientCallbacks
-): Omit<LspClient, 'dispose'> {
+): Omit<LspClient, 'dispose' | 'request'> {
   return {
     didOpen: doc =>
       enqueue(() =>

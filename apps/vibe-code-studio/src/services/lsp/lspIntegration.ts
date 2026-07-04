@@ -10,6 +10,7 @@
  */
 
 import { useProblemsStore } from '../../stores/problemsStore';
+import { useEditorStore } from '../../stores/useEditorStore';
 import { isSupportedLanguage } from './languageServerRegistry';
 import {
   createLspClient,
@@ -17,9 +18,16 @@ import {
   type LspClientCallbacks,
   type WebSocketFactory,
 } from './lspClient';
+import {
+  registerLspProviders,
+  type LspMonaco,
+  type LspProviderDeps,
+  type MonacoDisposable,
+} from './lspProviders';
 
 const clients = new Map<string, LspClient>();
 const openDocs = new Map<string, Set<string>>();
+const providerDisposables = new Map<string, MonacoDisposable>();
 let socketFactory: WebSocketFactory | null = null;
 
 /** Install the socket factory (real `new WebSocket(url)`) once at startup. */
@@ -80,16 +88,41 @@ export function notifyDocumentOpen(
   }
 }
 
-/** Dispose every live client (e.g. on workspace change / teardown). */
-export function disposeLspClients(): void {
-  for (const client of clients.values()) client.dispose();
-  clients.clear();
-  openDocs.clear();
+/** Path of the file backing the active model (single-editor app → currentFile). */
+export function activeDocumentPath(): string | null {
+  return useEditorStore.getState().currentFile?.path ?? null;
 }
 
-/** Test seam: reset the singleton map + factory. */
+/**
+ * Register Phase 1b navigation providers (hover / definition / documentSymbol)
+ * once per language. No-op if already registered or if no client is available
+ * (LSP off / unsupported language) — leaving Monaco's built-ins in place.
+ */
+export function ensureLspProviders(
+  monaco: LspMonaco,
+  languageId: string,
+  workspaceRoot: string | null
+): void {
+  if (providerDisposables.has(languageId)) return;
+  const client = getLspClient(languageId, workspaceRoot);
+  if (!client) return;
+  const deps: LspProviderDeps = { getActivePath: activeDocumentPath };
+  providerDisposables.set(languageId, registerLspProviders(monaco, languageId, client, deps));
+}
+
+/** Dispose every live client + provider (e.g. on workspace change / teardown). */
+export function disposeLspClients(): void {
+  for (const client of clients.values()) client.dispose();
+  for (const disposable of providerDisposables.values()) disposable.dispose();
+  clients.clear();
+  openDocs.clear();
+  providerDisposables.clear();
+}
+
+/** Test seam: reset the singleton maps + factory. */
 export function resetLspForTests(): void {
   clients.clear();
   openDocs.clear();
+  providerDisposables.clear();
   socketFactory = null;
 }

@@ -1,14 +1,29 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import {
+  activeDocumentPath,
   disposeLspClients,
+  ensureLspProviders,
   getLspClient,
   initLspSocketFactory,
   notifyDocumentOpen,
   resetLspForTests,
 } from '../../../services/lsp/lspIntegration';
+import type { LspMonaco } from '../../../services/lsp/lspProviders';
 import { useProblemsStore } from '../../../stores/problemsStore';
+import { useEditorStore } from '../../../stores/useEditorStore';
 import { MockWebSocket } from '../../utils/MockWebSocket';
+
+function mockMonaco(): LspMonaco {
+  return {
+    Uri: { file: (path: string) => ({ __file: path }) },
+    languages: {
+      registerHoverProvider: vi.fn(() => ({ dispose: vi.fn() })),
+      registerDefinitionProvider: vi.fn(() => ({ dispose: vi.fn() })),
+      registerDocumentSymbolProvider: vi.fn(() => ({ dispose: vi.fn() })),
+    },
+  };
+}
 
 beforeEach(() => {
   resetLspForTests();
@@ -83,6 +98,46 @@ describe('lspIntegration', () => {
     initLspSocketFactory(url => new MockWebSocket(url));
     notifyDocumentOpen('cobol', null, { path: 'C:\\ws\\a.cbl', text: 'x' });
     expect(MockWebSocket.instances).toHaveLength(0);
+  });
+
+  it('activeDocumentPath reflects the editor store currentFile', () => {
+    expect(activeDocumentPath()).toBeNull();
+    useEditorStore.setState({
+      currentFile: {
+        id: '1',
+        name: 'a.ts',
+        path: 'C:\\ws\\a.ts',
+        content: '',
+        language: 'typescript',
+        isModified: false,
+      },
+    });
+    expect(activeDocumentPath()).toBe('C:\\ws\\a.ts');
+    useEditorStore.setState({ currentFile: null });
+  });
+
+  it('ensureLspProviders registers once per language and no-ops without a client', () => {
+    const monaco = mockMonaco();
+    // No factory yet → no client → no registration.
+    ensureLspProviders(monaco, 'typescript', 'C:\\ws');
+    expect(monaco.languages.registerHoverProvider).not.toHaveBeenCalled();
+
+    initLspSocketFactory(url => new MockWebSocket(url));
+    ensureLspProviders(monaco, 'typescript', 'C:\\ws');
+    ensureLspProviders(monaco, 'typescript', 'C:\\ws'); // idempotent
+    expect(monaco.languages.registerHoverProvider).toHaveBeenCalledTimes(1);
+    expect(monaco.languages.registerDefinitionProvider).toHaveBeenCalledTimes(1);
+    expect(monaco.languages.registerDocumentSymbolProvider).toHaveBeenCalledTimes(1);
+  });
+
+  it('disposeLspClients also disposes registered providers', () => {
+    initLspSocketFactory(url => new MockWebSocket(url));
+    const monaco = mockMonaco();
+    const disposeSpy = vi.fn();
+    monaco.languages.registerHoverProvider = vi.fn(() => ({ dispose: disposeSpy }));
+    ensureLspProviders(monaco, 'typescript', 'C:\\ws');
+    disposeLspClients();
+    expect(disposeSpy).toHaveBeenCalled();
   });
 
   it('disposes clients and clears the cache', () => {

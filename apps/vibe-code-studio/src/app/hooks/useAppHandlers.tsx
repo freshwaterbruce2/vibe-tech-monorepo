@@ -26,7 +26,12 @@ import { useAIStore } from '../../stores/useAIStore';
 import { useEditorStore } from '../../stores/useEditorStore';
 import type { AIModel } from '../../services/ai/AIProviderInterface';
 import type { WebSocketLike } from '../../services/lsp/lspClient';
-import { initLspSocketFactory, notifyDocumentOpen } from '../../services/lsp/lspIntegration';
+import {
+  ensureLspProviders,
+  initLspSocketFactory,
+  notifyDocumentOpen,
+} from '../../services/lsp/lspIntegration';
+import type { LspMonaco } from '../../services/lsp/lspProviders';
 import type { UnifiedAIService } from '../../services/ai/UnifiedAIService';
 import type { FileSystemService } from '../../services/FileSystemService';
 import type { MultiFileEditor } from '../../services/MultiFileEditor';
@@ -327,12 +332,18 @@ export function useAppHandlers(props: UseAppHandlersProps) {
 
       // Spec 07 Phase 1a: attach the LSP client for this file's language so the
       // language server publishes diagnostics into the shared Problems panel.
+      // Phase 1b: register hover / go-to-definition / documentSymbol providers.
       if (currentFile) {
         initLspSocketFactory(url => new WebSocket(url) as unknown as WebSocketLike);
         notifyDocumentOpen(currentFile.language, useEditorStore.getState().workspaceFolder, {
           path: currentFile.path,
           text: currentFile.content,
         });
+        ensureLspProviders(
+          typedMonaco as unknown as LspMonaco,
+          currentFile.language,
+          useEditorStore.getState().workspaceFolder
+        );
       }
     },
     [
