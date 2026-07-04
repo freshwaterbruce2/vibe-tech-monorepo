@@ -1,6 +1,34 @@
 # Feature Spec: Task Runner
 
-**Status**: 📋 PLANNED (MISSING — `EnhancedAgentMode/stores/agentTaskRunner.ts` runs AI agent tasks, not build/lint/test tasks)
+**Status**: 🚧 PHASES 1–2 SHIPPED (2026-07-03) — see Implementation status below
+
+## Implementation status (2026-07-03)
+
+Shipped on `feat/vcs-task-runner`:
+
+- `src/services/tasks/` — `TaskParser.ts` (zod, JSONC comments, typed errors),
+  `ProblemMatcherEngine.ts` (built-in `$tsc` + `$eslint-stylish`, inline regex matchers,
+  multi-line loop state machine, ANSI stripping, Windows path normalization),
+  `TaskRunnerService.ts` (TerminalService orchestration, sequential `dependsOn` with cycle
+  detection + diamond dedupe, cancel settles pending promises and aborts the chain),
+  `taskRunnerIntegration.ts` (store wiring singleton)
+- `src/stores/tasksStore.ts` + `src/stores/problemsStore.ts` (shared diagnostics sink,
+  keyed by source — the panel specs 07/12 will feed)
+- `src/components/ProblemsPanel/` — grouped-by-file list, severity filters,
+  click-to-jump via `handleOpenFileFromSearch`; `ProblemsPanelHost.tsx` owns
+  Ctrl+Shift+M (toggle) + Ctrl+Shift+B (default build) and loads `.vcs/tasks.json`
+  on workspace open
+- Command palette: "Tasks: Run …"/"Tasks: Cancel …" per task, "Tasks: Run Build Task",
+  "View: Toggle Problems" via `src/hooks/useTaskCommands.tsx`
+- Tests: ~90 new Vitest cases, 100% statement coverage on all new modules
+
+Deferred (Phase 3 / follow-ups): toast UI for schema errors (currently
+`tasksStore.loadError` + logger), `isBackground` begins/ends state machine,
+`presentation` handling, `dependsOrder: "parallel"`, legacy `.vscode/tasks.json`
+read-through, task sessions as visible TerminalPanel tabs, Playwright e2e,
+process-tree kill verification on cancel.
+
+**Original status**: 📋 PLANNED (MISSING — `EnhancedAgentMode/stores/agentTaskRunner.ts` runs AI agent tasks, not build/lint/test tasks)
 **Priority**: MEDIUM
 **Effort**: S–M — parser + terminal reuse is small; problem matchers + Problems panel push it past S
 **Competitor parity**: VS Code `tasks.json` (`Terminal: Run Task`, problem matchers, background/watch tasks)
