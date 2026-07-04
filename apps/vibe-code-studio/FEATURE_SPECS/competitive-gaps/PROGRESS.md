@@ -15,26 +15,26 @@ and the index may hold the other session's staged files.
 
 ## Checklist
 
-| #   | Spec                                 | Status           | Commit(s)              | Notes                                                                                                                                |
-| --- | ------------------------------------ | ---------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| 01  | Theming / TextMate                   | 🟡 Phase 1 done  | `0395a18b`             | Shiki tokenizer + 8-preset picker. Phase 2 (VS Code JSON/tmTheme import UI) deferred                                                 |
-| 02  | Task runner + Problems panel         | ✅ DONE          | `2f87e246`, `76e6c10f` | Keystone shipped; problemsStore is the shared sink for 07/12                                                                         |
-| 03  | Open agent standards (AGENTS.md/ACP) | ⬜ pending       |                        | Front-track candidate                                                                                                                |
-| 04  | Agent memory / Knowledge Items       | ⬜ pending       |                        | Reuses StrategyMemory + memory MCP                                                                                                   |
-| 05  | Plan Mode                            | ⬜ pending       |                        | Track B starter per README                                                                                                           |
-| 06  | Settings Sync + Profiles             | ⬜ pending       |                        |                                                                                                                                      |
-| 07  | LSP language intelligence            | 🟡 Phase 1a done | `aee44d95`             | Diagnostics: hand-rolled client + 5004-backend relay → problemsStore. 1b (hover/def/markers)/1c (completion/refs) + phase 2 deferred |
-| 08  | Test Explorer                        | ⬜ pending       |                        | services/testing/\* exists; UI is the gap                                                                                            |
-| 09  | Verifiable Artifacts                 | 🔄 in progress   |                        | Phase 1 claimed by end-track session 2026-07-04 (model + panel + task_list/plan/diff; comments/walkthrough deferred to P2/P3)        |
-| 10  | Agent Manager + parallel/worktrees   | ⬜ pending       |                        | Inbox here unblocks 16's deferred delivery                                                                                           |
-| 11  | Browser verification                 | ⬜ pending       |                        |                                                                                                                                      |
-| 12  | DAP debugger                         | ⬜ pending       |                        | L–XL; separately-scoped campaign per README                                                                                          |
-| 13  | Remote dev (SSH/containers/WSL)      | ⬜ pending       |                        | L–XL; separately-scoped campaign                                                                                                     |
-| 14  | Notebooks (.ipynb)                   | ⬜ pending       |                        | L                                                                                                                                    |
-| 15  | PR review bot                        | ✅ DONE (P1-2)   | `1597b3d3`             | Phases 1-2 + vcs-review.yml workflow. Phase 3 autofix + MultiAgentReview deferred (see below)                                        |
-| 16  | Agent scheduling (/schedule)         | ✅ DONE          | `f3a8ef15`             | See deviations below                                                                                                                 |
-| 17  | Cloud/background agents              | ⛔ deferred      |                        | XL — do not attempt as a sprint (README)                                                                                             |
-| 18  | Extension host + Open VSX            | ⛔ deferred      |                        | XL — Tier B needs its own scoping spec; Tier A (curated Open VSX) may be pulled forward after 01                                     |
+| #   | Spec                                 | Status            | Commit(s)              | Notes                                                                                                                         |
+| --- | ------------------------------------ | ----------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| 01  | Theming / TextMate                   | 🟡 Phase 1 done   | `0395a18b`             | Shiki tokenizer + 8-preset picker. Phase 2 (VS Code JSON/tmTheme import UI) deferred                                          |
+| 02  | Task runner + Problems panel         | ✅ DONE           | `2f87e246`, `76e6c10f` | Keystone shipped; problemsStore is the shared sink for 07/12                                                                  |
+| 03  | Open agent standards (AGENTS.md/ACP) | ⬜ pending        |                        | Front-track candidate                                                                                                         |
+| 04  | Agent memory / Knowledge Items       | ⬜ pending        |                        | Reuses StrategyMemory + memory MCP                                                                                            |
+| 05  | Plan Mode                            | ⬜ pending        |                        | Track B starter per README                                                                                                    |
+| 06  | Settings Sync + Profiles             | ⬜ pending        |                        |                                                                                                                               |
+| 07  | LSP language intelligence            | 🔄 1b in progress | `aee44d95`             | 1a diagnostics DONE. 1b (hover/def/documentSymbol) IN PROGRESS 2026-07-04. 1c (completion/refs) + phase 2 deferred            |
+| 08  | Test Explorer                        | ⬜ pending        |                        | services/testing/\* exists; UI is the gap                                                                                     |
+| 09  | Verifiable Artifacts                 | 🔄 in progress    |                        | Phase 1 claimed by end-track session 2026-07-04 (model + panel + task_list/plan/diff; comments/walkthrough deferred to P2/P3) |
+| 10  | Agent Manager + parallel/worktrees   | ⬜ pending        |                        | Inbox here unblocks 16's deferred delivery                                                                                    |
+| 11  | Browser verification                 | ⬜ pending        |                        |                                                                                                                               |
+| 12  | DAP debugger                         | ⬜ pending        |                        | L–XL; separately-scoped campaign per README                                                                                   |
+| 13  | Remote dev (SSH/containers/WSL)      | ⬜ pending        |                        | L–XL; separately-scoped campaign                                                                                              |
+| 14  | Notebooks (.ipynb)                   | ⬜ pending        |                        | L                                                                                                                             |
+| 15  | PR review bot                        | ✅ DONE (P1-2)    | `1597b3d3`             | Phases 1-2 + vcs-review.yml workflow. Phase 3 autofix + MultiAgentReview deferred (see below)                                 |
+| 16  | Agent scheduling (/schedule)         | ✅ DONE           | `f3a8ef15`             | See deviations below                                                                                                          |
+| 17  | Cloud/background agents              | ⛔ deferred       |                        | XL — do not attempt as a sprint (README)                                                                                      |
+| 18  | Extension host + Open VSX            | ⛔ deferred       |                        | XL — Tier B needs its own scoping spec; Tier A (curated Open VSX) may be pulled forward after 01                              |
 
 Legend: ✅ done · 🟡 partially done (phases remain) · 🔄 in progress (claimed by a session) · ⬜ pending · ⛔ deferred by design
 
