@@ -13,6 +13,8 @@ describe('useAICommandPalette', () => {
     const ids = result.current.commands.map(c => c.id);
     expect(ids).toContain('schedule-agent-task');
     expect(ids).toContain('view-toggle-schedules');
+    expect(ids).toContain('artifacts-open');
+    expect(ids).toContain('view-toggle-artifacts');
     expect(ids).toContain('view-toggle-problems');
     expect(ids).toContain('file-new');
   });

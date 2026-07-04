@@ -78,6 +78,21 @@ fn ensure_connection(state: &DbState) -> Result<(), String> {
         )
         .map_err(|e| e.to_string())?;
 
+        // Verifiable artifacts (spec 09). task_id/kind are real columns so the
+        // panel can filter server-side; the full artifact is a JSON blob.
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS artifacts (
+                id TEXT PRIMARY KEY,
+                task_id TEXT NOT NULL,
+                kind TEXT NOT NULL,
+                artifact_data TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )",
+            [],
+        )
+        .map_err(|e| e.to_string())?;
+
         *guard = Some(conn);
     }
     Ok(())

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 
 import { logger } from '../services/Logger';
+import { useArtifactCommands } from './useArtifactCommands';
 import { useScheduleCommands } from './useScheduleCommands';
 import { useTaskCommands } from './useTaskCommands';
 
@@ -58,11 +59,13 @@ export const useAICommandPalette = (props: UseAICommandPaletteProps) => {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const taskCommands = useTaskCommands();
   const scheduleCommands = useScheduleCommands();
+  const artifactCommands = useArtifactCommands();
 
   // Build comprehensive command list
   const commands: Command[] = [
     ...taskCommands,
     ...scheduleCommands,
+    ...artifactCommands,
     // File Operations
     {
       id: 'file-new',

@@ -31,6 +31,7 @@ import {
   MultiFileEditApprovalPanel,
   PerformanceMonitor,
   PreviewPanel,
+  ArtifactsPanelHost,
   ProblemsPanelHost,
   SchedulePanelHost,
   ScreenshotToCodePanel,
@@ -527,6 +528,10 @@ export function AppLayout() {
 
       <Suspense fallback={null}>
         <SchedulePanelHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <ArtifactsPanelHost />
       </Suspense>
 
       <Suspense fallback={null}>
