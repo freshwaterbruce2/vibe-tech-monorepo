@@ -1,6 +1,6 @@
 # Feature Spec: Hosted PR Review Bot
 
-**Status**: 📋 PLANNED (PARTIAL — `AICodeReviewer` + `MultiAgentReview` + `MultiAgentReviewPanel` review diffs locally inside VCS; nothing runs against a hosted GitHub PR)
+**Status**: ✅ SHIPPED 2026-07-04 (Phases 1-2; Phase 3 autofix + MultiAgentReview integration deferred — see "Implementation status" below)
 **Priority**: MEDIUM
 **Effort**: M-L (2-5wk) — GitHub App/Action plumbing + inline comment API is the bulk; the review pipeline itself already exists
 **Competitor parity**: Cursor Bugbot — automatic PR review with inline comments and one-click fixes
@@ -18,18 +18,36 @@ As a developer working with collaborators (or reviewing my own PRs before merge)
 
 ## Acceptance Criteria
 
-1. ⬜ A GitHub Action (or GitHub App webhook) triggers on `pull_request` `opened`/`synchronize`, fetches the diff, and runs the existing review pipeline headless
-2. ⬜ Phase 1: the Action posts a single PR comment summarizing `CodeReview.verdict`, `qualityScore`, and `issueCount` — no inline comments yet
-3. ⬜ Phase 2: findings post as **inline review comments** via the GitHub Pull Request Review API, one per `ReviewComment` (`file`, `line`, `severity`, `message`, `suggestion`)
-4. ⬜ Inline comments use GitHub's suggested-change format when `ReviewComment.suggestion` is present, so a human can accept with one click
-5. ⬜ Findings are deduplicated against existing open review threads on re-push (`synchronize`) — no duplicate comments on unchanged lines
-6. ⬜ Phase 3: a "Fix this" reaction/command on a bot comment spawns an autofix agent (using `CodeCorrectionAgent`/`SecurityAgent`) that pushes a fix commit to the PR branch
-7. ⬜ Autofix commits are attributed to a bot identity, never force-pushed, and only touch the flagged lines/files
-8. ⬜ A local `vcs review` / `/review` command runs the identical pipeline pre-push against the local diff, so CI and local results match
-9. ⬜ Review runs are rate-limited/budgeted per PR (max N review passes) to bound AI cost on force-push-happy branches
-10. ⬜ Findings above a configurable severity threshold can optionally block merge (branch protection integration), off by default
-11. ⬜ `MultiAgentReview`'s deeper consensus pass is opt-in per-repo (via a `.vcs/review.json` config), not run by default on every PR, to keep Phase 1-2 review latency and cost predictable
-12. ⬜ The bot's own comments are excluded from triggering re-review on `synchronize` (a fix-commit push doesn't cause the bot to review its own prior comment as new diff content)
+1. ✅ `.github/workflows/vcs-review.yml` triggers on `pull_request` opened/synchronize/reopened/ready_for_review, fetches the diff via the GitHub API (no local checkout dependency), and runs the review pipeline headless (`scripts/review-ci.mjs` → `runReviewBot`)
+2. ✅ Phase 1: each pass posts a summary comment with `verdict`, `qualityScore`, `issueCount`, pass counter, and dedup stats
+3. ✅ Phase 2: findings post as inline review comments in ONE atomic `POST /pulls/{n}/reviews` (`path`, `line`, `side: RIGHT`, body), clamped to lines present in the diff; unanchorable findings fold into the review body instead of 422ing
+4. ✅\* Suggested-change fences only for AI findings carrying an exact `replacement` field — `ReviewComment.suggestion` is PROSE, and one-click-applying prose would insert English into source (deviation from this spec's own example payload); prose renders as `_Suggestion:_` text
+5. ✅ Dedup on `synchronize` via FNV-1a fingerprints (path+line+normalized message) embedded as invisible HTML-comment markers — GitHub is the only store
+6. ⬜ Phase 3 autofix DEFERRED — needs `contents: write` + commit-push capability `GitHubService` doesn't have
+7. ⬜ Phase 3 autofix attribution — deferred with #6
+8. ✅ `scripts/review-local.mjs` runs the identical pipeline (same `buildReviewPayload` path) against `git diff <base>...HEAD` and prints the same report CI posts
+9. ✅ Per-PR pass budget (default 5, `.vcs/review.json` `maxReviewPasses`), checked FIRST — before any diff fetch or AI spend; posts a one-time "budget exhausted" notice
+10. ⬜ Merge blocking deferred (off by default per spec anyway); `requestChangesEnabled: false` downgrades REQUEST_CHANGES verdicts to COMMENT until enabled
+11. ✅\* `.vcs/review.json` exists (zod, JSONC, TaskParser pattern) with severity threshold + category suppression (spec's open question: implemented); `multiAgent.enabled` is parsed but REJECTED with a warning — `MultiAgentReview` is entirely mock (hardcoded heuristics) and must not post to real PRs
+12. ✅\* Cheap version: workflow `if: github.actor != 'github-actions[bot]'` guard; the full fix-commit exclusion ships with Phase 3
+
+### Implementation status (2026-07-04)
+
+Shipped on `feat/vcs-task-runner`, Phases 1-2. New: `src/services/review/` (types,
+reviewConfig, diffLineIndex, fingerprint, dedup, budget, githubPayload,
+aiCommentGenerator, reviewEnv, orchestrator, reporter), thin shims
+`scripts/review-ci.mjs` + `scripts/review-local.mjs` (tsx), root workflow
+`vcs-review.yml`. `GitHubService` gained `createIssueComment` / `listIssueComments`
+/ `listReviews` / `submitReview({comments})`. `AICodeReviewer.reviewChanges` gained an
+opt-in `aiCommentProvider` hook — the long-stubbed `generateAIComments` is now real
+(JSON-mode prompt → zod validation → clamp to diff lines), local panel behavior
+unchanged (cache + no-provider path byte-identical). **Also fixed a pre-existing
+`parseDiff` bug**: multi-file diffs attached each file's last chunk to the NEXT file.
+
+CI AI provider: OPENROUTER_API_KEY (preferred) or DEEPSEEK_API_KEY repo secret,
+called directly (the port-5004 proxy is session-cookie-gated — unusable from CI).
+Missing secrets degrade to heuristics-only review, never a red check. Fork PRs
+(read-only token) log 403 and exit 0.
 
 ## Example GitHub review-comment payload mapping
 
@@ -89,7 +107,7 @@ The review _logic_ is not rebuilt — `AICodeReviewer` and `MultiAgentReview` al
 ## Integration points (existing code to hook into)
 
 - `src/services/AICodeReviewer.ts` — core review engine; reuse `review()` → `CodeReview`/`ReviewComment[]` verbatim
-- `src/services/ai/MultiAgentReview.ts` — optional deeper multi-agent pass for high-severity or opt-in PRs
+- `src/services/ai/MultiAgentReview.ts` — ⚠️ currently a **mock** (hardcoded heuristics), gated OFF for real PRs per AC #11; treat as a future deeper-pass hook, not a usable reviewer, until implemented for real
 - `src/components/MultiAgentReviewPanel.tsx` — local UI counterpart; `vcs review` should render the same panel against the fetched PR diff for local preview
 - `src/services/GitHubService.ts` — PR fetch, comment/review posting, branch push for autofix commits
 - `src/services/GitDiffService.ts` — diff parsing (`ParsedDiff`/`DiffFile`/`DiffChunk`) reused for both local and hosted paths
@@ -119,6 +137,16 @@ Acceptance Criteria #8 (`vcs review` matches CI) matters more than it looks: wit
 ## Cost containment
 
 AI review cost is the operational risk most likely to surface post-launch, not a theoretical one — a busy repo with frequent force-pushes and a low `synchronize` rate limit ceiling (Acceptance Criteria #9) can otherwise run the review pipeline dozens of times against a single PR in an afternoon. `ReviewOrchestrator` should track review-pass count per PR in a lightweight counter (PR number + review count, reset on merge/close) and refuse further passes past the configured budget, surfacing a "review budget exhausted for this PR" comment rather than silently going quiet.
+
+## Post-ship follow-ups (2026-07-04)
+
+Phases 1–2 shipped and the four rollout decisions landed as specced (OpenRouter-preferred direct provider with DeepSeek fallback + heuristics degradation; all-code-PR trigger; real AI inline comments; budget + dedup guards; fork-PRs exit 0). Remaining hardening, **not yet built** — captured here so it isn't lost:
+
+- ⬜ **Skip draft PRs** — don't run on `opened` while `draft: true`; wait for `ready_for_review`, so WIP pushes don't burn review passes.
+- ⬜ **Noise / path filters** — skip diffs that are only lockfiles, generated, or vendored (`pnpm-lock.yaml`, `dist/`, `*.min.*`, coverage/build artifacts); they cost tokens for near-zero signal.
+- ⬜ **`no-bot` label escape hatch** — a PR label that suppresses the pass for docs-only or intentionally-unreviewed PRs.
+- ⬜ **Real `MultiAgentReview`** — currently a mock (hardcoded heuristics, config-rejected per AC #11). Implement for real before enabling the deeper pass, or drop it from the Architecture/Integration sections so the doc stops implying a capability that isn't wired.
+- ⬜ **Optional staged scope** — the trigger is currently all `pull_request` events repo-wide; if noise proves high, add a path/label filter to bake on `apps/vibe-code-studio` PRs before re-widening.
 
 ---
 
