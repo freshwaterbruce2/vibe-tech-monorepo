@@ -1,6 +1,6 @@
 # Feature Spec: Verifiable Artifacts
 
-**Status**: 🟡 PHASE 1 SHIPPED 2026-07-04 (model + persistence + panel + capture for task_list/plan/diff; Phase 2 comments→agent-queue and Phase 3 walkthrough/screenshots pending — see "Implementation status" below)
+**Status**: 🟡 PHASES 1–2 SHIPPED (P1 2026-07-04: model + persistence + panel + capture; P2 2026-07-05: injection channel + non-blocking comments→agent. Phase 3 walkthrough/screenshots pending — see "Implementation status" below)
 **Priority**: HIGH
 **Effort**: M (1-2wk) — data model + panel + persistence is straightforward; non-blocking comment injection into a running agent is the harder Phase 2 piece
 **Competitor parity**: Antigravity Artifacts — task list, plan, walkthrough, screenshot, diff as reviewable, commentable trust objects
@@ -23,13 +23,25 @@ As a developer reviewing an agent's work, I want a curated set of artifacts (pla
 3. ✅ Artifacts panel (`src/components/ArtifactsPanel/`, store-driven host pattern) lists artifacts grouped by task with kind icons, draft/final badges, and previews
 4. ✅ `diff` artifacts open in the existing `MultiFileDiffView` (approve/reject close the frozen record); malformed payloads fall back to a raw view instead of crashing
 5. ✅\* `plan` artifacts open as preformatted markdown — the spec-05 markdown+Mermaid viewer doesn't exist yet (spec 05 unstarted); swap in when it ships
-6. ⬜ Phase 2 — inline comments (artifact_comments table + anchored UI)
-7. ⬜ Phase 2 — non-blocking comment→agent-queue push (BackgroundAgentSystem has NO mid-run message-injection point today — confirmed; Phase 2 must add one, as the spec's risk note anticipated)
+6. ✅\* Phase 2 — comments shipped as per-artifact threads (`artifact_comments` table + `ArtifactCommentThread` on task_list/plan); anchor-based gutter UI deferred (anchor field not yet modeled)
+7. ✅ Phase 2 — non-blocking comment→agent push via the NEW `BackgroundAgentSystem.injectMessage` channel (queue drains at the next step boundary into `step.action.params.injectedUserMessages`; never preempts an in-flight step)
 8. ⬜ Phase 3 — auto walkthrough on completion
 9. ✅\* Every artifact and task group deep-links to the originating task — opens the existing Background Tasks panel (`BackgroundTaskPanel` is the shipped task surface; `TaskMonitorPanel` exists but is not mounted in AppLayout)
 10. ✅ Artifacts persist across restarts (ArtifactStore + SQLite; restart round-trip covered by tests)
-11. ⬜ Phase 2 — comment resolution audit trail
+11. ⬜ comment resolution audit trail (deferred out of P2 — delivery state ships instead: queued/delivered/feedback)
 12. ✅ `task_list` artifact is created at task START (`submitted` event) as a draft checklist that evolves live: `stepStart` appends `- [ ]`, `stepComplete` checks it, `completed`/`failed` finalize with an outcome footer
+
+### Implementation status (2026-07-05 — Phase 2, `fe774ff5` + `4827c6e9`)
+
+The injection channel is the SHARED primitive (see PROGRESS.md "Shared primitives"):
+`injectMessage(taskId, body)` queues; the run loop drains at the next `onStepStart`
+into `step.action.params.injectedUserMessages` (reaches the model through
+ReActExecutor's `Params:` prompt block); events `messageQueued`/`messageInjected`/
+`messageDropped`. Comments: `src/services/artifacts/ArtifactCommentStore.ts` +
+`artifactComments.ts` (delivery state machine) + `ArtifactCommentThread.tsx`
+(task_list/plan threads in the panel). Task not running (or finished mid-push) →
+comment recorded as plain feedback, no injection. Deferred from P2: comment anchors,
+resolution audit trail (AC #11), threads on diff/walkthrough kinds.
 
 ### Implementation status (2026-07-04 — Phase 1)
 
