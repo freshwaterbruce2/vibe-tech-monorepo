@@ -6,6 +6,7 @@
 import type { FileChange, MultiFileEditPlan } from '@vibetech/types';
 import {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   type Dispatch,
@@ -28,6 +29,7 @@ import type { AIModel } from '../../services/ai/AIProviderInterface';
 import type { WebSocketLike } from '../../services/lsp/lspClient';
 import {
   ensureLspProviders,
+  initLspOpenLocation,
   initLspSocketFactory,
   notifyDocumentOpen,
 } from '../../services/lsp/lspIntegration';
@@ -460,6 +462,14 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     },
     [handleOpenFileRaw, editorRef]
   );
+
+  // Spec 07 Phase 1c: give LSP definition/references providers the app's
+  // open-file-at-position handler so cross-file navigation works.
+  useEffect(() => {
+    initLspOpenLocation((path, range) =>
+      handleOpenFileFromSearch(path, range.startLineNumber, range.startColumn)
+    );
+  }, [handleOpenFileFromSearch]);
 
   const handleReplaceInFile = useCallback(
     async (file: string, searchText: string, replaceText: string, options: SearchOptions) => {

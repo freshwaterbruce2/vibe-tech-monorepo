@@ -5,7 +5,9 @@ import {
   disposeLspClients,
   ensureLspProviders,
   getLspClient,
+  initLspOpenLocation,
   initLspSocketFactory,
+  invokeOpenLocation,
   notifyDocumentOpen,
   resetLspForTests,
 } from '../../../services/lsp/lspIntegration';
@@ -21,9 +23,13 @@ function mockMonaco(): LspMonaco {
       registerHoverProvider: vi.fn(() => ({ dispose: vi.fn() })),
       registerDefinitionProvider: vi.fn(() => ({ dispose: vi.fn() })),
       registerDocumentSymbolProvider: vi.fn(() => ({ dispose: vi.fn() })),
+      registerCompletionItemProvider: vi.fn(() => ({ dispose: vi.fn() })),
+      registerReferenceProvider: vi.fn(() => ({ dispose: vi.fn() })),
     },
   };
 }
+
+const aRange = { startLineNumber: 2, startColumn: 1, endLineNumber: 2, endColumn: 4 };
 
 beforeEach(() => {
   resetLspForTests();
@@ -128,6 +134,15 @@ describe('lspIntegration', () => {
     expect(monaco.languages.registerHoverProvider).toHaveBeenCalledTimes(1);
     expect(monaco.languages.registerDefinitionProvider).toHaveBeenCalledTimes(1);
     expect(monaco.languages.registerDocumentSymbolProvider).toHaveBeenCalledTimes(1);
+  });
+
+  it('invokeOpenLocation forwards to the installed opener and no-ops when unset', () => {
+    const opener = vi.fn();
+    initLspOpenLocation(opener);
+    invokeOpenLocation('C:\\ws\\b.ts', aRange);
+    expect(opener).toHaveBeenCalledWith('C:\\ws\\b.ts', aRange);
+    resetLspForTests(); // clears the opener
+    expect(() => invokeOpenLocation('C:\\ws\\c.ts', aRange)).not.toThrow();
   });
 
   it('disposeLspClients also disposes registered providers', () => {

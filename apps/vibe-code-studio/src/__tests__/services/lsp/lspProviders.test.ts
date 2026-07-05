@@ -1,9 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 
 import {
+  createCompletionProvider,
   createDefinitionProvider,
   createDocumentSymbolProvider,
   createHoverProvider,
+  createReferenceProvider,
   registerLspProviders,
   type LspMonaco,
   type LspProviderDeps,
@@ -28,7 +30,10 @@ const deps = (over: Partial<LspProviderDeps> = {}): LspProviderDeps => ({
   ...over,
 });
 
-const model = { uri: { __model: true } };
+const model = {
+  uri: { __model: true },
+  getWordUntilPosition: () => ({ startColumn: 1, endColumn: 4 }),
+};
 const position = { lineNumber: 1, column: 1 };
 
 function mockMonaco(): LspMonaco {
@@ -38,6 +43,8 @@ function mockMonaco(): LspMonaco {
       registerHoverProvider: vi.fn(() => ({ dispose: vi.fn() })),
       registerDefinitionProvider: vi.fn(() => ({ dispose: vi.fn() })),
       registerDocumentSymbolProvider: vi.fn(() => ({ dispose: vi.fn() })),
+      registerCompletionItemProvider: vi.fn(() => ({ dispose: vi.fn() })),
+      registerReferenceProvider: vi.fn(() => ({ dispose: vi.fn() })),
     },
   };
 }
@@ -153,8 +160,98 @@ describe('document symbol provider', () => {
   });
 });
 
+describe('completion provider', () => {
+  it('returns empty suggestions with no active path or no word', async () => {
+    expect(
+      await createCompletionProvider(
+        clientReturning([]),
+        deps({ getActivePath: () => null })
+      ).provideCompletionItems(model, position)
+    ).toEqual({ suggestions: [] });
+    const noWordModel = { uri: {}, getWordUntilPosition: undefined };
+    expect(
+      await createCompletionProvider(clientReturning([]), deps()).provideCompletionItems(
+        noWordModel as never,
+        position
+      )
+    ).toEqual({ suggestions: [] });
+  });
+
+  it('maps completion items over the word range', async () => {
+    const provider = createCompletionProvider(clientReturning([{ label: 'foo', kind: 3 }]), deps());
+    const result = await provider.provideCompletionItems(model, position);
+    expect(result.suggestions[0]).toMatchObject({
+      label: 'foo',
+      insertText: 'foo',
+      range: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 4 },
+    });
+  });
+
+  it('returns empty suggestions when the relay rejects', async () => {
+    const provider = createCompletionProvider(clientReturning(null, true), deps());
+    expect(await provider.provideCompletionItems(model, position)).toEqual({ suggestions: [] });
+  });
+
+  it('advertises trigger characters', () => {
+    expect(createCompletionProvider(clientReturning([]), deps()).triggerCharacters).toContain('.');
+  });
+});
+
+describe('reference provider', () => {
+  const ctx = { includeDeclaration: true };
+
+  it('returns null with no active path, on reject, and on empty', async () => {
+    expect(
+      await createReferenceProvider(
+        clientReturning([]),
+        deps({ getActivePath: () => null }),
+        mockMonaco()
+      ).provideReferences(model, position, ctx)
+    ).toBeNull();
+    expect(
+      await createReferenceProvider(
+        clientReturning(null, true),
+        deps(),
+        mockMonaco()
+      ).provideReferences(model, position, ctx)
+    ).toBeNull();
+    expect(
+      await createReferenceProvider(clientReturning([]), deps(), mockMonaco()).provideReferences(
+        model,
+        position,
+        ctx
+      )
+    ).toBeNull();
+  });
+
+  it('maps same-file and cross-file reference locations', async () => {
+    const provider = createReferenceProvider(
+      clientReturning([
+        { uri: 'file:///C:/ws/a.ts', range: range(0, 0, 0, 3) },
+        { uri: 'file:///C:/ws/b.ts', range: range(4, 0, 4, 3) },
+      ]),
+      deps(),
+      mockMonaco()
+    );
+    const result = await provider.provideReferences(model, position, ctx);
+    expect(result?.[0]?.uri).toBe(model.uri); // same file → active model uri
+    expect(result?.[1]?.uri).toEqual({ __file: 'C:\\ws\\b.ts' }); // cross-file → file uri
+  });
+
+  it('defaults includeDeclaration when context is undefined', async () => {
+    const client = clientReturning([{ uri: 'file:///C:/ws/a.ts', range: range(0, 0, 0, 1) }]);
+    await createReferenceProvider(client, deps(), mockMonaco()).provideReferences(
+      model,
+      position,
+      undefined as never
+    );
+    const sent = (client.request as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    expect(sent.context).toEqual({ includeDeclaration: true });
+  });
+});
+
 describe('registerLspProviders', () => {
-  it('registers all three providers and disposes them together', () => {
+  it('registers all five providers and disposes them together', () => {
     const monaco = mockMonaco();
     const handle = registerLspProviders(monaco, 'typescript', clientReturning({}), deps());
     expect(monaco.languages.registerHoverProvider).toHaveBeenCalledWith(
@@ -163,6 +260,8 @@ describe('registerLspProviders', () => {
     );
     expect(monaco.languages.registerDefinitionProvider).toHaveBeenCalled();
     expect(monaco.languages.registerDocumentSymbolProvider).toHaveBeenCalled();
+    expect(monaco.languages.registerCompletionItemProvider).toHaveBeenCalled();
+    expect(monaco.languages.registerReferenceProvider).toHaveBeenCalled();
     handle.dispose(); // should not throw
   });
 });

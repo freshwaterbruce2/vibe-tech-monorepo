@@ -11,11 +11,14 @@
 import type { LspClient } from './lspClient';
 import { filePathToUri, uriToFilePath } from './uri';
 import {
+  completionToMonaco,
   definitionTargets,
   documentSymbolsToMonaco,
   hoverToMonaco,
   lspRangeToMonaco,
   positionParams,
+  toLspPosition,
+  type MonacoCompletionList,
   type MonacoDocumentSymbol,
   type MonacoHover,
   type MonacoPosition,
@@ -25,12 +28,17 @@ import {
 export interface LspProviderDeps {
   /** Path of the file backing the active model (single-editor app → currentFile). */
   getActivePath: () => string | null;
-  /** Open a target file at a range — used for cross-file go-to-definition. */
+  /** Open a target file at a range — used for cross-file go-to-definition/references. */
   openLocation?: (path: string, range: MonacoRange) => void;
 }
 
 interface MonacoModel {
   uri: unknown;
+  getWordUntilPosition?: (position: MonacoPosition) => { startColumn: number; endColumn: number };
+}
+
+interface ReferenceContext {
+  includeDeclaration?: boolean;
 }
 
 interface MonacoLocation {
@@ -49,6 +57,8 @@ export interface LspMonaco {
     registerHoverProvider: (languageId: string, provider: unknown) => MonacoDisposable;
     registerDefinitionProvider: (languageId: string, provider: unknown) => MonacoDisposable;
     registerDocumentSymbolProvider: (languageId: string, provider: unknown) => MonacoDisposable;
+    registerCompletionItemProvider: (languageId: string, provider: unknown) => MonacoDisposable;
+    registerReferenceProvider: (languageId: string, provider: unknown) => MonacoDisposable;
   };
 }
 
@@ -127,7 +137,72 @@ export function createDocumentSymbolProvider(client: LspClient, deps: LspProvide
   };
 }
 
-/** Register all Phase 1b providers for a language; returns an aggregate disposable. */
+export function createCompletionProvider(client: LspClient, deps: LspProviderDeps) {
+  return {
+    triggerCharacters: ['.', ':', '>'],
+    async provideCompletionItems(
+      model: MonacoModel,
+      position: MonacoPosition
+    ): Promise<MonacoCompletionList> {
+      const path = deps.getActivePath();
+      const word = model.getWordUntilPosition?.(position);
+      if (!path || !word) return { suggestions: [] };
+      const defaultRange: MonacoRange = {
+        startLineNumber: position.lineNumber,
+        startColumn: word.startColumn,
+        endLineNumber: position.lineNumber,
+        endColumn: word.endColumn,
+      };
+      try {
+        const result = await client.request(
+          'textDocument/completion',
+          positionParams(filePathToUri(path), position)
+        );
+        return completionToMonaco(result, defaultRange);
+      } catch {
+        return { suggestions: [] }; // relay down → other providers still contribute
+      }
+    },
+  };
+}
+
+export function createReferenceProvider(
+  client: LspClient,
+  deps: LspProviderDeps,
+  monaco: LspMonaco
+) {
+  return {
+    async provideReferences(
+      model: MonacoModel,
+      position: MonacoPosition,
+      context: ReferenceContext
+    ): Promise<MonacoLocation[] | null> {
+      const path = deps.getActivePath();
+      if (!path) return null;
+      let result: unknown;
+      try {
+        result = await client.request('textDocument/references', {
+          textDocument: { uri: filePathToUri(path) },
+          position: toLspPosition(position),
+          context: { includeDeclaration: context?.includeDeclaration ?? true },
+        });
+      } catch {
+        return null;
+      }
+      const targets = definitionTargets(result);
+      if (targets.length === 0) return null;
+      return targets.map(target => {
+        const targetPath = uriToFilePath(target.uri);
+        return {
+          uri: targetPath === path ? model.uri : monaco.Uri.file(targetPath),
+          range: lspRangeToMonaco(target.range),
+        };
+      });
+    },
+  };
+}
+
+/** Register all Phase 1b/1c providers for a language; returns an aggregate disposable. */
 export function registerLspProviders(
   monaco: LspMonaco,
   languageId: string,
@@ -143,6 +218,14 @@ export function registerLspProviders(
     monaco.languages.registerDocumentSymbolProvider(
       languageId,
       createDocumentSymbolProvider(client, deps)
+    ),
+    monaco.languages.registerCompletionItemProvider(
+      languageId,
+      createCompletionProvider(client, deps)
+    ),
+    monaco.languages.registerReferenceProvider(
+      languageId,
+      createReferenceProvider(client, deps, monaco)
     ),
   ];
   return { dispose: () => disposables.forEach(disposable => disposable.dispose()) };

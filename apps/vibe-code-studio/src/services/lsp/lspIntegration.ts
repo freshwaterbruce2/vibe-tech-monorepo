@@ -18,6 +18,7 @@ import {
   type LspClientCallbacks,
   type WebSocketFactory,
 } from './lspClient';
+import type { MonacoRange } from './lspNavigation';
 import {
   registerLspProviders,
   type LspMonaco,
@@ -29,6 +30,20 @@ const clients = new Map<string, LspClient>();
 const openDocs = new Map<string, Set<string>>();
 const providerDisposables = new Map<string, MonacoDisposable>();
 let socketFactory: WebSocketFactory | null = null;
+let openLocationFn: ((path: string, range: MonacoRange) => void) | null = null;
+
+/**
+ * Install the cross-file opener (the app's open-file-at-position handler) once
+ * at startup. Definition/reference providers use it to jump to other files.
+ */
+export function initLspOpenLocation(fn: (path: string, range: MonacoRange) => void): void {
+  openLocationFn = fn;
+}
+
+/** deps.openLocation — forwards to the installed opener (no-op until installed). */
+export function invokeOpenLocation(path: string, range: MonacoRange): void {
+  openLocationFn?.(path, range);
+}
 
 /** Install the socket factory (real `new WebSocket(url)`) once at startup. */
 export function initLspSocketFactory(factory: WebSocketFactory): void {
@@ -106,7 +121,10 @@ export function ensureLspProviders(
   if (providerDisposables.has(languageId)) return;
   const client = getLspClient(languageId, workspaceRoot);
   if (!client) return;
-  const deps: LspProviderDeps = { getActivePath: activeDocumentPath };
+  const deps: LspProviderDeps = {
+    getActivePath: activeDocumentPath,
+    openLocation: invokeOpenLocation,
+  };
   providerDisposables.set(languageId, registerLspProviders(monaco, languageId, client, deps));
 }
 
@@ -125,4 +143,5 @@ export function resetLspForTests(): void {
   openDocs.clear();
   providerDisposables.clear();
   socketFactory = null;
+  openLocationFn = null;
 }

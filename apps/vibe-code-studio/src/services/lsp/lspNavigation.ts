@@ -161,3 +161,106 @@ export function documentSymbolsToMonaco(result: unknown): MonacoDocumentSymbol[]
   if (!Array.isArray(result)) return [];
   return result.map(mapSymbol).filter((symbol): symbol is MonacoDocumentSymbol => symbol !== null);
 }
+
+export interface MonacoCompletionItem {
+  label: string;
+  kind: number;
+  insertText: string;
+  detail?: string;
+  documentation?: string;
+  range: MonacoRange;
+}
+
+export interface MonacoCompletionList {
+  suggestions: MonacoCompletionItem[];
+}
+
+interface LspCompletionItem {
+  label?: string;
+  kind?: number;
+  insertText?: string;
+  detail?: string;
+  documentation?: string | { value?: string };
+  textEdit?: { range?: LspRange; newText?: string };
+}
+
+// LSP CompletionItemKind (1-based, its own ordering) → Monaco CompletionItemKind.
+const COMPLETION_KIND: Record<number, number> = {
+  1: 18,
+  2: 0,
+  3: 1,
+  4: 2,
+  5: 3,
+  6: 4,
+  7: 5,
+  8: 7,
+  9: 8,
+  10: 9,
+  11: 12,
+  12: 13,
+  13: 15,
+  14: 17,
+  15: 25,
+  16: 19,
+  17: 20,
+  18: 21,
+  19: 23,
+  20: 16,
+  21: 14,
+  22: 6,
+  23: 10,
+  24: 11,
+  25: 24,
+};
+
+function completionKind(kind: number | undefined): number {
+  // Unknown/absent kind → Monaco Text (18).
+  return kind !== undefined && kind in COMPLETION_KIND ? COMPLETION_KIND[kind]! : 18;
+}
+
+function documentationString(doc: string | { value?: string } | undefined): string | undefined {
+  if (typeof doc === 'string') return doc || undefined;
+  if (doc && typeof doc.value === 'string') return doc.value || undefined;
+  return undefined;
+}
+
+function mapCompletionItem(item: unknown, defaultRange: MonacoRange): MonacoCompletionItem | null {
+  if (!item || typeof item !== 'object') return null;
+  const entry = item as LspCompletionItem;
+  if (typeof entry.label !== 'string') return null;
+  const range = entry.textEdit?.range ? lspRangeToMonaco(entry.textEdit.range) : defaultRange;
+  const insertText = entry.textEdit?.newText ?? entry.insertText ?? entry.label;
+  const suggestion: MonacoCompletionItem = {
+    label: entry.label,
+    kind: completionKind(entry.kind),
+    insertText,
+    range,
+  };
+  if (entry.detail) suggestion.detail = entry.detail;
+  const documentation = documentationString(entry.documentation);
+  if (documentation) suggestion.documentation = documentation;
+  return suggestion;
+}
+
+/**
+ * LSP `CompletionItem[]` or `CompletionList` → Monaco `CompletionList`. `defaultRange`
+ * (the word range at the cursor) is used for items without an explicit textEdit.
+ */
+export function completionToMonaco(
+  result: unknown,
+  defaultRange: MonacoRange
+): MonacoCompletionList {
+  let items: unknown[] = [];
+  if (Array.isArray(result)) items = result;
+  else if (
+    result &&
+    typeof result === 'object' &&
+    Array.isArray((result as { items?: unknown[] }).items)
+  ) {
+    items = (result as { items: unknown[] }).items;
+  }
+  const suggestions = items
+    .map(item => mapCompletionItem(item, defaultRange))
+    .filter((item): item is MonacoCompletionItem => item !== null);
+  return { suggestions };
+}

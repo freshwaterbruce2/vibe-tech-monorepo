@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import {
+  completionToMonaco,
   definitionTargets,
   documentSymbolsToMonaco,
   hoverToMonaco,
@@ -160,5 +161,67 @@ describe('documentSymbolsToMonaco', () => {
         { name: 'noRange', kind: 5 },
       ])
     ).toEqual([]);
+  });
+});
+
+describe('completionToMonaco', () => {
+  const defaultRange = { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 5 };
+
+  it('returns an empty list for non-array / non-CompletionList input', () => {
+    expect(completionToMonaco(null, defaultRange)).toEqual({ suggestions: [] });
+    expect(completionToMonaco({ nope: true }, defaultRange)).toEqual({ suggestions: [] });
+  });
+
+  it('maps a plain CompletionItem[] using the default range and label fallback', () => {
+    const { suggestions } = completionToMonaco([{ label: 'foo', kind: 3 }], defaultRange);
+    expect(suggestions).toEqual([
+      { label: 'foo', kind: 1, insertText: 'foo', range: defaultRange }, // LSP Function(3) → Monaco 1
+    ]);
+  });
+
+  it('reads items[] from a CompletionList and honors insertText + detail + documentation', () => {
+    const { suggestions } = completionToMonaco(
+      {
+        items: [
+          {
+            label: 'bar',
+            kind: 6,
+            insertText: 'bar()',
+            detail: 'fn',
+            documentation: { value: 'docs' },
+          },
+        ],
+      },
+      defaultRange
+    );
+    expect(suggestions[0]).toEqual({
+      label: 'bar',
+      kind: 4, // LSP Variable(6) → Monaco 4
+      insertText: 'bar()',
+      detail: 'fn',
+      documentation: 'docs',
+      range: defaultRange,
+    });
+  });
+
+  it('uses a textEdit range + newText when present', () => {
+    const { suggestions } = completionToMonaco(
+      [{ label: 'x', kind: 99, textEdit: { range: range(0, 0, 0, 2), newText: 'xyz' } }],
+      defaultRange
+    );
+    expect(suggestions[0]).toMatchObject({
+      insertText: 'xyz',
+      kind: 18, // unknown kind → Text
+      range: { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 3 },
+    });
+  });
+
+  it('maps string documentation and filters invalid items', () => {
+    const { suggestions } = completionToMonaco(
+      [{ label: 'a', documentation: 'plain' }, null, { kind: 5 }],
+      defaultRange
+    );
+    expect(suggestions).toHaveLength(1);
+    expect(suggestions[0]).toMatchObject({ label: 'a', documentation: 'plain', kind: 18 });
   });
 });
