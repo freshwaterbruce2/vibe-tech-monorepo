@@ -236,11 +236,6 @@
       "count": 1
     }
   },
-  "apps/vibe-code-studio/src/services/AICodeReviewer.ts": {
-    "max-lines-per-function": {
-      "count": 1
-    }
-  },
   "apps/vibe-code-studio/src/services/AgentHookSystem.ts": {
     "max-len": {
       "count": 2
