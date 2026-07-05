@@ -61,6 +61,27 @@ export interface ArtifactComment {
   delivery: CommentDelivery;
 }
 
+/**
+ * Context handed to the walkthrough verification hook (spec 11 Phase 2):
+ * runs between task settle and walkthrough generation so verification
+ * evidence (screenshots, notes) lands inside the generated walkthrough.
+ */
+export interface WalkthroughVerificationContext {
+  taskId: string;
+  outcome: 'completed' | 'failed';
+  /** diff-kind artifacts recorded for the task (the change-set surface) */
+  diffs: Artifact[];
+}
+
+/**
+ * Pre-walkthrough hook: returns Verification-section notes, or null to leave
+ * the walkthrough's verification section untouched. Must never throw upward —
+ * the capture wrapper logs and continues.
+ */
+export type WalkthroughVerificationHook = (
+  context: WalkthroughVerificationContext
+) => Promise<string[] | null>;
+
 /** Shape of the task payloads BackgroundAgentSystem emits (subset we read) */
 export interface CapturedTaskLike {
   id?: string;

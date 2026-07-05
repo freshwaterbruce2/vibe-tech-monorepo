@@ -12,6 +12,7 @@ import {
   recordScreenshotArtifact,
   resetArtifactCaptureForTests,
   runArtifactAction,
+  setWalkthroughVerificationHook,
 } from '../../../services/artifacts/artifactCapture';
 import {
   decodeDiffContent,
@@ -185,6 +186,75 @@ describe('auto walkthrough at settle (spec 09 Phase 3, AC #8)', () => {
     events.emit('completed', { id: 'never-submitted', userRequest: 'x' });
     await settle();
     expect(listWalkthroughs()).toHaveLength(0);
+  });
+});
+
+describe('walkthrough verification hook (spec 11 Phase 2)', () => {
+  const listWalkthroughs = () =>
+    useArtifactsStore.getState().artifacts.filter(a => a.kind === 'walkthrough');
+
+  async function settleCompleted(hookedEvents = makeEvents()) {
+    await initArtifactCapture(hookedEvents);
+    hookedEvents.emit('submitted', task);
+    await settle();
+    await recordDiffArtifact('task-1', 'UI diff', [
+      { path: 'src/App.tsx', originalContent: 'a', newContent: 'b', changeType: 'modify' },
+    ]);
+    hookedEvents.emit('completed', task);
+    await settle();
+  }
+
+  it('runs the hook before generation so its notes and screenshots land in the walkthrough', async () => {
+    const hook = vi.fn(async ({ taskId }: { taskId: string }) => {
+      // The hook records evidence mid-flight (what the real pass does)
+      const screenshot = await recordScreenshotArtifact(taskId, 'Verification shot', {
+        imageDataUrl: 'data:image/png;base64,BBBB',
+        capturedAt: new Date(6000).toISOString(),
+      });
+      return [`✅ Verified http://localhost:5173/ (${screenshot.id}).`];
+    });
+    setWalkthroughVerificationHook(hook);
+    await settleCompleted();
+
+    expect(hook).toHaveBeenCalledWith(
+      expect.objectContaining({
+        taskId: 'task-1',
+        outcome: 'completed',
+        diffs: [expect.objectContaining({ kind: 'diff', title: 'UI diff' })],
+      })
+    );
+    const content = listWalkthroughs()[0]?.content ?? '';
+    expect(content).toContain('✅ Verified http://localhost:5173/');
+    expect(content).toContain('![Verification shot](artifact:');
+    expect(content).not.toContain('No browser verification evidence');
+  });
+
+  it('keeps the fallback verification text when the hook returns null', async () => {
+    setWalkthroughVerificationHook(async () => null);
+    await settleCompleted();
+    expect(listWalkthroughs()[0]?.content).toContain(
+      'No browser verification evidence was captured for this task.'
+    );
+  });
+
+  it('still generates the walkthrough when the hook throws (degrade cleanly)', async () => {
+    setWalkthroughVerificationHook(async () => {
+      throw new Error('verification exploded');
+    });
+    await settleCompleted();
+    const walkthrough = listWalkthroughs()[0];
+    expect(walkthrough?.status).toBe('final');
+    expect(walkthrough?.content).toContain(
+      'No browser verification evidence was captured for this task.'
+    );
+  });
+
+  it('clears the hook on resetArtifactCaptureForTests', async () => {
+    const hook = vi.fn(async () => ['note']);
+    setWalkthroughVerificationHook(hook);
+    resetArtifactCaptureForTests();
+    await settleCompleted();
+    expect(hook).not.toHaveBeenCalled();
   });
 });
 

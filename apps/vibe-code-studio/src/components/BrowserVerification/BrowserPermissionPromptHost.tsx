@@ -11,6 +11,7 @@ import { useEffect } from 'react';
 import styled from 'styled-components';
 import { useServices } from '../../app/contexts';
 import { getBrowserSessionService } from '../../services/browser/BrowserSessionService';
+import { initBrowserVerificationLoop } from '../../services/browser/verificationLoop';
 import { useBrowserSessionStore } from '../../stores/browserSessionStore';
 import { vibeTheme } from '../../styles/theme';
 
@@ -108,7 +109,9 @@ export const BrowserPermissionPromptHost = () => {
 
   useEffect(() => {
     getBrowserSessionService().bindTaskEvents(services.backgroundAgentSystem);
-  }, [services.backgroundAgentSystem]);
+    // Spec 11 Phase 2: gated autonomous verification feeding 09 walkthroughs
+    initBrowserVerificationLoop(path => services.fileSystemService.readFile(path));
+  }, [services.backgroundAgentSystem, services.fileSystemService]);
 
   if (pending) {
     return (

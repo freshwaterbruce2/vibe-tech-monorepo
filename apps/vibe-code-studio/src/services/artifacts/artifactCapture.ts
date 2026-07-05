@@ -20,12 +20,29 @@ import {
 } from './artifactContent';
 import type { ScreenshotArtifactContent } from './artifactContent';
 import { buildWalkthroughMarkdown, buildWalkthroughTitle } from './walkthroughGenerator';
-import type { Artifact, ArtifactTaskEvents, CapturedStepLike, CapturedTaskLike } from './types';
+import type {
+  Artifact,
+  ArtifactTaskEvents,
+  CapturedStepLike,
+  CapturedTaskLike,
+  WalkthroughVerificationHook,
+} from './types';
 
 let storeInstance: ArtifactStore | null = null;
 let attachedTo: ArtifactTaskEvents | null = null;
 /** BackgroundTask id → task_list artifact id, for incremental updates */
 const taskListIds = new Map<string, string>();
+/** Spec 11 Phase 2: awaited between task settle and walkthrough generation */
+let verificationHook: WalkthroughVerificationHook | null = null;
+
+/**
+ * Register (or clear) the pre-walkthrough verification hook. The hook runs
+ * before the walkthrough artifact is generated so any screenshots it records
+ * and the notes it returns land in the walkthrough's Verification section.
+ */
+export function setWalkthroughVerificationHook(hook: WalkthroughVerificationHook | null): void {
+  verificationHook = hook;
+}
 
 function syncToUiStore(): void {
   if (!storeInstance) return;
@@ -112,6 +129,8 @@ async function recordWalkthroughForTask(
 ): Promise<void> {
   if (!task.id) return;
   const store = requireStore();
+  const diffs = store.list({ taskId: task.id, kind: 'diff' });
+  const verificationNotes = await runVerificationHook(task.id, outcome, diffs);
   await store.record({
     taskId: task.id,
     kind: 'walkthrough',
@@ -121,11 +140,31 @@ async function recordWalkthroughForTask(
       outcome,
       failureMessage: task.error?.message,
       taskListContent,
-      diffs: store.list({ taskId: task.id, kind: 'diff' }),
+      diffs,
+      // Listed AFTER the hook so verification screenshots are included
       screenshots: store.list({ taskId: task.id, kind: 'screenshot' }),
+      verificationNotes,
     }),
     status: 'final',
   });
+}
+
+/**
+ * Run the spec-11 verification hook (if registered) and degrade cleanly:
+ * hook failures are logged, never thrown, and never block the walkthrough.
+ */
+async function runVerificationHook(
+  taskId: string,
+  outcome: 'completed' | 'failed',
+  diffs: Artifact[]
+): Promise<string[] | undefined> {
+  if (!verificationHook) return undefined;
+  try {
+    return (await verificationHook({ taskId, outcome, diffs })) ?? undefined;
+  } catch (error) {
+    logger.warn('[Artifacts] walkthrough verification hook failed', error);
+    return undefined;
+  }
 }
 
 const listeners: Record<string, (...args: unknown[]) => void> = {
@@ -179,6 +218,7 @@ export function resetArtifactCaptureForTests(): void {
   attachedTo = null;
   storeInstance = null;
   taskListIds.clear();
+  verificationHook = null;
 }
 
 /** Record a diff artifact (multi-file flow / future callers) — spec AC #4 */

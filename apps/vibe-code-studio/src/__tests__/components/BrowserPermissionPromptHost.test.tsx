@@ -14,10 +14,16 @@ import { BrowserPermissionPromptHost } from '../../components/BrowserVerificatio
 import type { BrowserSessionService } from '../../services/browser/BrowserSessionService';
 import { setBrowserSessionServiceForTests } from '../../services/browser/BrowserSessionService';
 import type { BrowserPermissionRequest, BrowserSession } from '../../services/browser/types';
+import { initBrowserVerificationLoop } from '../../services/browser/verificationLoop';
 import { useBrowserSessionStore } from '../../stores/browserSessionStore';
 
+vi.mock('../../services/browser/verificationLoop', () => ({
+  initBrowserVerificationLoop: vi.fn(),
+}));
+
 const backgroundAgentSystem = { on: vi.fn(), off: vi.fn() };
-const services = { backgroundAgentSystem } as unknown as ServicesContextValue;
+const fileSystemService = { readFile: vi.fn().mockResolvedValue('{}') };
+const services = { backgroundAgentSystem, fileSystemService } as unknown as ServicesContextValue;
 
 const wrapper = ({ children }: { children: ReactNode }) => (
   <ServicesContext.Provider value={services}>{children}</ServicesContext.Provider>
@@ -60,6 +66,14 @@ describe('BrowserPermissionPromptHost', () => {
   it('binds task lifecycle events to the real backgroundAgentSystem', () => {
     render(<BrowserPermissionPromptHost />, { wrapper });
     expect(serviceStub.bindTaskEvents).toHaveBeenCalledWith(backgroundAgentSystem);
+  });
+
+  it('wires the spec-11 verification loop with a workspace file reader', async () => {
+    render(<BrowserPermissionPromptHost />, { wrapper });
+    expect(initBrowserVerificationLoop).toHaveBeenCalledTimes(1);
+    const readFile = vi.mocked(initBrowserVerificationLoop).mock.calls[0]![0];
+    await readFile('V:\\ws\\package.json');
+    expect(fileSystemService.readFile).toHaveBeenCalledWith('V:\\ws\\package.json');
   });
 
   it('renders nothing without a request or session', () => {

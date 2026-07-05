@@ -174,4 +174,32 @@ describe('buildWalkthroughMarkdown', () => {
       '(no user request recorded)'
     );
   });
+
+  it('renders verification notes without screenshots (spec 11 Phase 2)', () => {
+    const markdown = buildWalkthroughMarkdown(
+      baseInput({ verificationNotes: ['✅ Verified http://localhost:5173/ — no console errors.'] })
+    );
+    expect(markdown).toContain('✅ Verified http://localhost:5173/ — no console errors.');
+    expect(markdown).not.toContain('No browser verification evidence');
+  });
+
+  it('renders verification notes above the screenshot refs', () => {
+    const markdown = buildWalkthroughMarkdown(
+      baseInput({
+        verificationNotes: ['⚠️ 2 console error(s) detected:'],
+        screenshots: [artifact({ id: 's-1', kind: 'screenshot', title: 'Shot' })],
+      })
+    );
+    const notesIndex = markdown.indexOf('⚠️ 2 console error(s) detected:');
+    const shotIndex = markdown.indexOf(screenshotRef('s-1', 'Shot'));
+    expect(notesIndex).toBeGreaterThan(-1);
+    expect(shotIndex).toBeGreaterThan(notesIndex);
+    expect(markdown).toContain('1 browser screenshot captured');
+  });
+
+  it('keeps the fallback text when verification notes are an empty array', () => {
+    expect(buildWalkthroughMarkdown(baseInput({ verificationNotes: [] }))).toContain(
+      'No browser verification evidence was captured for this task.'
+    );
+  });
 });

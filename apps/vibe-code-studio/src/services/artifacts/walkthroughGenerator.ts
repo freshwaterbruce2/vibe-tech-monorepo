@@ -21,6 +21,8 @@ export interface WalkthroughInput {
   diffs: Artifact[];
   /** screenshot-kind artifacts recorded for the task (spec 11) */
   screenshots: Artifact[];
+  /** Verification notes from the spec-11 Phase-2 autonomous pass */
+  verificationNotes?: string[];
 }
 
 export function buildWalkthroughTitle(userRequest: string): string {
@@ -74,14 +76,19 @@ function filesTouchedSection(diffs: Artifact[]): string[] {
   return [...byPath.entries()].map(([path, changeType]) => `- \`${path}\` (${changeType})`);
 }
 
-function verificationSection(screenshots: Artifact[]): string[] {
+function verificationSection(screenshots: Artifact[], notes: string[] = []): string[] {
+  const lines = [...notes];
   if (screenshots.length === 0) {
-    return ['No browser verification evidence was captured for this task.'];
+    if (lines.length === 0) {
+      lines.push('No browser verification evidence was captured for this task.');
+    }
+    return lines;
   }
-  const lines = [
+  if (lines.length > 0) lines.push('');
+  lines.push(
     `${screenshots.length} browser screenshot${screenshots.length === 1 ? '' : 's'} captured during verification (spec 11):`,
-    '',
-  ];
+    ''
+  );
   for (const screenshot of screenshots) {
     lines.push(screenshotRef(screenshot.id, screenshot.title), '');
   }
@@ -110,6 +117,6 @@ export function buildWalkthroughMarkdown(input: WalkthroughInput): string {
     '',
     '## Verification',
     '',
-    ...verificationSection(input.screenshots),
+    ...verificationSection(input.screenshots, input.verificationNotes),
   ].join('\n');
 }
