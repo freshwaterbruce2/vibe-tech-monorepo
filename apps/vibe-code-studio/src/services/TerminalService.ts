@@ -3,8 +3,8 @@
  * Supports both Electron (child_process) and Tauri (portable-pty) backends.
  */
 
-// Type-only import to avoid bundling Node.js modules in browser
-import type { ChildProcess } from 'child_process';
+// Type-only imports to avoid bundling Node.js modules in browser
+import type { ChildProcess, spawn as NodeSpawn } from 'child_process';
 
 export interface TerminalSession {
   id: string;
@@ -29,17 +29,17 @@ export class TerminalService {
 
   constructor() {
     type ElectronWindow = Window & { electron?: unknown; __TAURI_INTERNALS__?: unknown };
-    this.isElectron = typeof window !== 'undefined' &&
-      (window as ElectronWindow).electron !== undefined;
-    this._isTauri = typeof window !== 'undefined' &&
-      (window as ElectronWindow).__TAURI_INTERNALS__ !== undefined;
+    this.isElectron =
+      typeof window !== 'undefined' && (window as ElectronWindow).electron !== undefined;
+    this._isTauri =
+      typeof window !== 'undefined' && (window as ElectronWindow).__TAURI_INTERNALS__ !== undefined;
   }
 
   /**
    * Create a new terminal session
    */
   createSession(cwd?: string): string {
-    const id = `terminal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const id = `terminal-${crypto.randomUUID()}`;
     const resolvedCwd = cwd ?? this.getCurrentWorkingDirectory();
     const shell = this.getDefaultShell();
 
@@ -81,7 +81,7 @@ export class TerminalService {
       return;
     }
 
-    let spawn: typeof import('child_process').spawn;
+    let spawn: typeof NodeSpawn;
     try {
       // Dynamic import of child_process only when in Electron
       ({ spawn } = await import('child_process'));
@@ -114,12 +114,12 @@ export class TerminalService {
     });
 
     // Handle exit
-    shellProcess.on('exit', (code) => {
+    shellProcess.on('exit', code => {
       onExit(code);
     });
 
     // Handle errors
-    shellProcess.on('error', (err) => {
+    shellProcess.on('error', err => {
       onData(`\r\nError: ${err.message}\r\n`);
     });
   }
@@ -138,20 +138,17 @@ export class TerminalService {
     const unlisteners: Array<() => void> = [];
 
     // Listen for data events
-    const unlistenData = await listen<{ id: string; data: string }>(
-      'terminal:data',
-      (event) => {
-        if (event.payload.id === session.id) {
-          onData(event.payload.data);
-        }
+    const unlistenData = await listen<{ id: string; data: string }>('terminal:data', event => {
+      if (event.payload.id === session.id) {
+        onData(event.payload.data);
       }
-    );
+    });
     unlisteners.push(unlistenData);
 
     // Listen for exit events
     const unlistenExit = await listen<{ id: string; exit_code: number | null }>(
       'terminal:exit',
-      (event) => {
+      event => {
         if (event.payload.id === session.id) {
           onExit(event.payload.exit_code);
         }
@@ -163,7 +160,7 @@ export class TerminalService {
 
     // Determine shell + args
     const platform = this.getPlatform();
-    const shell = platform === 'win32' ? 'pwsh.exe' : (this.getProcessEnv()['SHELL'] || '/bin/bash');
+    const shell = platform === 'win32' ? 'pwsh.exe' : this.getProcessEnv()['SHELL'] || '/bin/bash';
     const args = platform === 'win32' ? ['-NoLogo', '-NoProfile'] : [];
 
     // Build env
@@ -225,7 +222,11 @@ export class TerminalService {
 
     // Send resize signal if supported
     if (session.process.stdout && 'resize' in session.process.stdout) {
-      (session.process.stdout as unknown as { resize: (opts: { columns: number; rows: number }) => void }).resize({ columns: cols, rows });
+      (
+        session.process.stdout as unknown as {
+          resize: (opts: { columns: number; rows: number }) => void;
+        }
+      ).resize({ columns: cols, rows });
     }
   }
 
@@ -277,24 +278,7 @@ export class TerminalService {
     cwd?: string
   ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
     if (this._isTauri) {
-      // Use tauri-plugin-shell for one-shot commands
-      try {
-        const { Command } = await import('@tauri-apps/plugin-shell');
-        const result = await Command.create('exec-cmd', ['-c', command], {
-          cwd: cwd ?? this.getCurrentWorkingDirectory(),
-        }).execute();
-        return {
-          stdout: result.stdout,
-          stderr: result.stderr,
-          exitCode: result.code ?? 0,
-        };
-      } catch (err) {
-        return {
-          stdout: '',
-          stderr: `Tauri command execution failed: ${err}`,
-          exitCode: 1,
-        };
-      }
+      return this.executeCommandTauri(command, cwd);
     }
 
     if (!this.isElectron) {
@@ -306,7 +290,39 @@ export class TerminalService {
       };
     }
 
-    let spawn: typeof import('child_process').spawn;
+    return this.executeCommandElectron(command, cwd);
+  }
+
+  /** One-shot command via tauri-plugin-shell. */
+  private async executeCommandTauri(
+    command: string,
+    cwd?: string
+  ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+    try {
+      const { Command } = await import('@tauri-apps/plugin-shell');
+      const result = await Command.create('exec-cmd', ['-c', command], {
+        cwd: cwd ?? this.getCurrentWorkingDirectory(),
+      }).execute();
+      return {
+        stdout: result.stdout,
+        stderr: result.stderr,
+        exitCode: result.code ?? 0,
+      };
+    } catch (err) {
+      return {
+        stdout: '',
+        stderr: `Tauri command execution failed: ${err}`,
+        exitCode: 1,
+      };
+    }
+  }
+
+  /** One-shot command via child_process in the Electron renderer. */
+  private async executeCommandElectron(
+    command: string,
+    cwd?: string
+  ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+    let spawn: typeof NodeSpawn;
     try {
       // Dynamic import of child_process only when in Electron
       ({ spawn } = await import('child_process'));
@@ -327,15 +343,15 @@ export class TerminalService {
       let stdout = '';
       let stderr = '';
 
-      proc.stdout?.on('data', (data) => {
+      proc.stdout?.on('data', data => {
         stdout += data.toString();
       });
 
-      proc.stderr?.on('data', (data) => {
+      proc.stderr?.on('data', data => {
         stderr += data.toString();
       });
 
-      proc.on('exit', (code) => {
+      proc.on('exit', code => {
         resolve({
           stdout,
           stderr,
@@ -343,7 +359,7 @@ export class TerminalService {
         });
       });
 
-      proc.on('error', (err) => {
+      proc.on('error', err => {
         reject(err);
       });
     });

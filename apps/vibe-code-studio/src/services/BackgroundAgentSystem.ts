@@ -76,7 +76,7 @@ export class BackgroundAgentSystem extends EventEmitter {
     options: BackgroundTaskOptions = {}
   ): string {
     const task: BackgroundTask = {
-      id: `${agentId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `${agentId}-${crypto.randomUUID()}`,
       agentId,
       userRequest,
       workspaceRoot,
@@ -173,7 +173,7 @@ export class BackgroundAgentSystem extends EventEmitter {
     }
 
     const message: InjectedMessage = {
-      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+      id: `msg-${crypto.randomUUID()}`,
       taskId,
       body: trimmed,
       queuedAt: Date.now(),

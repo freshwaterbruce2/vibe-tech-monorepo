@@ -161,3 +161,47 @@ describe('UnifiedAIService BYOK key resolution (proxy off)', () => {
     expect(getApiKey).toHaveBeenCalledWith('moonshot');
   });
 });
+
+describe('UnifiedAIService generation sessions', () => {
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+  beforeEach(() => {
+    (UnifiedAIService as unknown as { instance?: UnifiedAIService }).instance = undefined;
+  });
+
+  it('creates a session with a crypto-generated UUID id when none is provided', () => {
+    const service = UnifiedAIService.getInstance();
+
+    const session = service.createGenerationSession();
+
+    expect(session.id).toMatch(UUID_RE);
+    expect(session.signal.aborted).toBe(false);
+
+    const second = service.createGenerationSession();
+    expect(second.id).toMatch(UUID_RE);
+    expect(second.id).not.toBe(session.id);
+  });
+
+  it('aborts the previous controller when a session id is reused', () => {
+    const service = UnifiedAIService.getInstance();
+
+    const first = service.createGenerationSession('shared-id');
+    const replacement = service.createGenerationSession('shared-id');
+
+    expect(first.signal.aborted).toBe(true);
+    expect(replacement.signal.aborted).toBe(false);
+  });
+
+  it('cancels and completes sessions through their lifecycle helpers', () => {
+    const service = UnifiedAIService.getInstance();
+
+    const session = service.createGenerationSession();
+    expect(service.cancelGenerationSession(session.id)).toBe(true);
+    expect(session.signal.aborted).toBe(true);
+    expect(service.cancelGenerationSession(session.id)).toBe(false);
+
+    const done = service.createGenerationSession();
+    service.completeGenerationSession(done.id);
+    expect(service.cancelGenerationSession(done.id)).toBe(false);
+  });
+});

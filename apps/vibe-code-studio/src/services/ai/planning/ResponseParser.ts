@@ -135,7 +135,7 @@ function buildTaskFromParsed(
   options?: TaskPlanRequest['options']
 ): AgentTask {
   // Create task ID
-  const taskId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const taskId = `task_${crypto.randomUUID()}`;
 
   // Build steps
   const steps: AgentStep[] = parsed.steps.map((step, index: number) => {
@@ -174,7 +174,7 @@ function buildTaskFromParsed(
  * Creates a fallback task when parsing fails
  */
 function createFallbackTask(userRequest: string): AgentTask {
-  const taskId = `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const taskId = `task_${crypto.randomUUID()}`;
   return {
     id: taskId,
     title: 'Manual Task',

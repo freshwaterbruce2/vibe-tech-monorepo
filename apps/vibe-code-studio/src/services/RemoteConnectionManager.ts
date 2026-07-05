@@ -39,7 +39,7 @@ class RemoteConnectionManager {
   }
 
   addConnection(conn: Omit<RemoteConnection, 'id' | 'status'>): RemoteConnection {
-    const id = `remote-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const id = `remote-${crypto.randomUUID()}`;
     const connection: RemoteConnection = {
       ...conn,
       id,
@@ -149,7 +149,7 @@ class RemoteConnectionManager {
   async listRemoteFiles(id: string, path: string): Promise<RemoteFileEntry[]> {
     const raw = await this.executeRemoteCommand(
       id,
-      `ls -la --time-style=+%s "${path}" 2>/dev/null || ls -la "${path}"`,
+      `ls -la --time-style=+%s "${path}" 2>/dev/null || ls -la "${path}"`
     );
     const lines = raw.trim().split('\n').slice(1); // skip "total" line
 
@@ -197,13 +197,13 @@ class RemoteConnectionManager {
   }
 
   private emit(event: RemoteEvent, ...args: unknown[]): void {
-    this.listeners.get(event)?.forEach((h) => h(...args));
+    this.listeners.get(event)?.forEach(h => h(...args));
   }
 
   private persistToStorage(): void {
     try {
       const data = Array.from(this.connections.values()).map(
-        ({ status: _status, error: _error, ...rest }) => rest,
+        ({ status: _status, error: _error, ...rest }) => rest
       );
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch {

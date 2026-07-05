@@ -81,12 +81,7 @@ export class UnifiedAIService {
   }
 
   private createSessionId(): string {
-    const randomUUID = globalThis.crypto?.randomUUID;
-    if (typeof randomUUID === 'function') {
-      return randomUUID.call(globalThis.crypto);
-    }
-
-    return `generation-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    return crypto.randomUUID();
   }
 
   createGenerationSession(sessionId?: string): GenerationSession {

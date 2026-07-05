@@ -65,7 +65,7 @@ export class ArtifactStore {
   async record(draft: ArtifactDraft, nowMs = Date.now()): Promise<Artifact> {
     const createdAt = new Date(nowMs).toISOString();
     const artifact: Artifact = {
-      id: `artifact-${nowMs}-${Math.random().toString(36).slice(2, 9)}`,
+      id: `artifact-${nowMs}-${crypto.randomUUID()}`,
       taskId: draft.taskId,
       kind: draft.kind,
       title: draft.title,

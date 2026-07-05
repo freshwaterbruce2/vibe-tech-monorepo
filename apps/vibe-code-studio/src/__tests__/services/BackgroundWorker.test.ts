@@ -74,7 +74,7 @@ class FakeWorker {
 
 /** The id BackgroundWorker assigned to the most recently sent task. */
 function lastTaskId(worker: FakeWorker): string {
-  const execMsg = [...worker.posted].reverse().find((m) => m.type === 'execute');
+  const execMsg = [...worker.posted].reverse().find(m => m.type === 'execute');
   return (execMsg?.payload as { id: string }).id;
 }
 
@@ -189,9 +189,7 @@ describe('BackgroundWorker', () => {
       const worker = new BackgroundWorker('worker.js');
       worker.terminate();
 
-      await expect(worker.execute('analyze', {})).rejects.toThrow(
-        'Worker has been terminated'
-      );
+      await expect(worker.execute('analyze', {})).rejects.toThrow('Worker has been terminated');
     });
 
     it('routes concurrent tasks to their own handlers by id', async () => {
@@ -309,6 +307,17 @@ describe('BackgroundWorker', () => {
       expect(worker.isActive()).toBe(false);
     });
 
+    it('re-registering the message handler after termination is a safe no-op', () => {
+      const worker = new BackgroundWorker('worker.js');
+      worker.terminate();
+
+      // terminate() nulls the underlying worker; the private setup guard must
+      // bail out instead of dereferencing it.
+      type WithSetup = { setupMessageHandler: () => void };
+      expect(() => (worker as unknown as WithSetup).setupMessageHandler()).not.toThrow();
+      expect(worker.isActive()).toBe(false);
+    });
+
     it('rejects with a timeout error when no worker response arrives in time', async () => {
       vi.useFakeTimers();
       const worker = new BackgroundWorker('worker.js');
@@ -384,7 +393,7 @@ describe('BackgroundWorkerPool', () => {
     expect(pool.getStats().availableWorkers).toBe(1);
 
     // Drive the result on whichever worker received the execute message.
-    const busy = FakeWorker.instances.find((w) => w.posted.length > 0)!;
+    const busy = FakeWorker.instances.find(w => w.posted.length > 0)!;
     busy.emit({ type: 'result', payload: { id: lastTaskId(busy), value: 7 } });
 
     const result = await promise;
@@ -414,13 +423,40 @@ describe('BackgroundWorkerPool', () => {
     });
   });
 
+  it('parks a second task in the wait loop until the only worker is released', async () => {
+    vi.useFakeTimers();
+    const pool = new BackgroundWorkerPool('worker.js', 1);
+    const fake = FakeWorker.last();
+
+    const p1 = pool.execute('first', {});
+    await vi.advanceTimersByTimeAsync(0); // let task 1 check the worker out
+
+    const p2 = pool.execute('second', {});
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Task 2 is stuck in the availability poll: nothing extra was posted yet.
+    expect(fake.posted).toHaveLength(1);
+    expect(pool.getStats().busyWorkers).toBe(1);
+
+    // Finish task 1; the poll ticks every 100ms before task 2 proceeds.
+    fake.emit({ type: 'result', payload: { id: lastTaskId(fake), n: 1 } });
+    await expect(p1).resolves.toMatchObject({ success: true });
+
+    await vi.advanceTimersByTimeAsync(100);
+    expect(fake.posted).toHaveLength(2);
+
+    fake.emit({ type: 'result', payload: { id: lastTaskId(fake), n: 2 } });
+    await expect(p2).resolves.toMatchObject({ success: true });
+    expect(pool.getStats().availableWorkers).toBe(1);
+  });
+
   it('terminates every worker and empties the pool', () => {
     const pool = new BackgroundWorkerPool('worker.js', 3);
     const fakes = [...FakeWorker.instances];
 
     pool.terminate();
 
-    expect(fakes.every((w) => w.terminated)).toBe(true);
+    expect(fakes.every(w => w.terminated)).toBe(true);
     expect(pool.getStats()).toEqual({
       totalWorkers: 0,
       availableWorkers: 0,

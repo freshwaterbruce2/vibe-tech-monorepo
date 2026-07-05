@@ -58,7 +58,7 @@ export class ArtifactCommentStore {
 
   async add(draft: ArtifactCommentDraft, nowMs = Date.now()): Promise<ArtifactComment> {
     const comment: ArtifactComment = {
-      id: `comment-${nowMs}-${Math.random().toString(36).slice(2, 9)}`,
+      id: `comment-${nowMs}-${crypto.randomUUID()}`,
       artifactId: draft.artifactId,
       taskId: draft.taskId,
       body: draft.body,

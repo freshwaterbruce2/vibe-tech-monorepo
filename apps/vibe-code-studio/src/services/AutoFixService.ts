@@ -56,7 +56,10 @@ export class AutoFixService {
   private modelRegistry: ModelRegistry;
   private config: AutoFixConfig;
 
-  constructor(private aiService: UnifiedAIService, config?: AutoFixConfig) {
+  constructor(
+    private aiService: UnifiedAIService,
+    config?: AutoFixConfig
+  ) {
     if (!aiService) {
       throw new Error('AI service is required');
     }
@@ -65,7 +68,7 @@ export class AutoFixService {
     this.config = {
       maxCostPerFix: 0.01,
       preferSpeed: true,
-      ...config
+      ...config,
     };
   }
 
@@ -89,9 +92,7 @@ export class AutoFixService {
   }
 
   private isSimpleError(error: DetectedError): boolean {
-    const simpleErrorCodes = [
-      'TS2304', 'TS2554', 'TS2551', 'TS2339', 'TS1005', 'TS1127',
-    ];
+    const simpleErrorCodes = ['TS2304', 'TS2554', 'TS2551', 'TS2339', 'TS1005', 'TS1127'];
 
     if (error.code && simpleErrorCodes.some(code => error.code?.includes(code))) {
       return true;
@@ -136,15 +137,50 @@ export class AutoFixService {
     logger.debug(`[AutoFix] Selected model: ${selectedModel}`);
 
     const prompt = this.buildFixPrompt(error, context, { filePath, languageId });
+    const estimatedCost = this.estimateFixCost(prompt, selectedModel);
+
+    const response = await this.requestFixResponse(prompt);
+
+    const generationTime = Date.now() - startTime;
+    const suggestions = this.parseResponse(response, error, selectedModel, estimatedCost);
+    const validatedSuggestions = await this.validateAndRank(
+      suggestions,
+      fileContent,
+      languageId,
+      error
+    );
+
+    const explanation = this.extractExplanation(response);
+
+    const fix: GeneratedFix = {
+      error,
+      suggestions: validatedSuggestions,
+      context,
+      explanation,
+      modelUsed: selectedModel,
+      generationTime,
+    };
+
+    logger.debug(
+      `[AutoFix] Validation complete. ${validatedSuggestions.filter(s => s.validated).length} valid fixes.`
+    );
+
+    this.cache.set(cacheKey, fix);
+    this.codeVersions.set(cacheKey, fileContent);
+
+    return fix;
+  }
+
+  private estimateFixCost(prompt: string, selectedModel: string): number {
     const promptTokens = Math.ceil(prompt.length / 4);
     const estimatedOutputTokens = 500;
-
     const modelInfo = this.modelRegistry.getModel(selectedModel);
-    const estimatedCost = modelInfo
+    return modelInfo
       ? this.modelRegistry.calculateCost(selectedModel, promptTokens, estimatedOutputTokens)
       : 0;
+  }
 
-    let response: string;
+  private async requestFixResponse(prompt: string): Promise<string> {
     try {
       this.aiService.setModel?.('moonshot/kimi-2.5-pro');
 
@@ -156,56 +192,38 @@ export class AutoFixService {
           projectType: 'unknown',
           frameworks: [],
           dependencies: [],
-          fileTree: []
+          fileTree: [],
         },
-        conversationHistory: []
+        conversationHistory: [],
       });
-      response = aiResponse.content;
+      return aiResponse.content;
     } catch (err) {
       throw new Error(`AI service error: ${(err as Error).message}`);
     }
+  }
 
-    const generationTime = Date.now() - startTime;
-    const suggestions = this.parseResponse(response, error, selectedModel, estimatedCost);
-
-    // --- SHADOW VALIDATION LOOP ---
-    // Apply fixes to a hidden model and check if they resolve the error
+  /**
+   * Shadow-validation loop: apply each fix to a hidden model, check whether it
+   * resolves the error, and re-rank so validated suggestions come first.
+   */
+  private async validateAndRank(
+    suggestions: FixSuggestion[],
+    fileContent: string,
+    languageId: string,
+    error: DetectedError
+  ): Promise<FixSuggestion[]> {
     const validatedSuggestions: FixSuggestion[] = [];
-    
+
     for (const suggestion of suggestions) {
       const isValid = await this.validateSuggestion(suggestion, fileContent, languageId, error);
-      if (isValid) {
-        suggestion.validated = true;
-        suggestion.confidence = 'high'; // Boost confidence if validated
-        validatedSuggestions.push(suggestion);
-      } else {
-        // Keep it but mark as unvalidated/low confidence
-        suggestion.validated = false;
-        suggestion.confidence = 'low';
-        validatedSuggestions.push(suggestion);
-      }
+      suggestion.validated = isValid;
+      // Boost confidence when validated; keep unvalidated fixes at low confidence.
+      suggestion.confidence = isValid ? 'high' : 'low';
+      validatedSuggestions.push(suggestion);
     }
 
-    // Re-rank suggestions: Validated first
     validatedSuggestions.sort((a, b) => (a.validated === b.validated ? 0 : a.validated ? -1 : 1));
-
-    const explanation = this.extractExplanation(response);
-
-    const fix: GeneratedFix = {
-      error,
-      suggestions: validatedSuggestions,
-      context,
-      explanation,
-      modelUsed: selectedModel,
-      generationTime
-    };
-
-    logger.debug(`[AutoFix] Validation complete. ${validatedSuggestions.filter(s => s.validated).length} valid fixes.`);
-
-    this.cache.set(cacheKey, fix);
-    this.codeVersions.set(cacheKey, fileContent);
-
-    return fix;
+    return validatedSuggestions;
   }
 
   /**
@@ -219,7 +237,9 @@ export class AutoFixService {
   ): Promise<boolean> {
     // 1. Create Shadow Model (Hidden)
     const monaco = await import('monaco-editor');
-    const shadowUri = monaco.Uri.parse(`inmemory://shadow-validation/${randomUUID()}.${languageId === 'typescript' ? 'ts' : 'js'}`);
+    const shadowUri = monaco.Uri.parse(
+      `inmemory://shadow-validation/${randomUUID()}.${languageId === 'typescript' ? 'ts' : 'js'}`
+    );
     const shadowModel = monaco.editor.createModel(originalContent, languageId, shadowUri);
 
     try {
@@ -227,13 +247,13 @@ export class AutoFixService {
       const lines = originalContent.split('\n');
       const startLine = suggestion.startLine - 1;
       const endLine = suggestion.endLine - 1;
-      
+
       // Simple line replacement logic (naive patch)
       // In production, use Monaco.Range for precise edits
       const newLines = [...lines];
       newLines.splice(startLine, endLine - startLine + 1, suggestion.code);
       const newContent = newLines.join('\n');
-      
+
       shadowModel.setValue(newContent);
 
       // 3. Check for Errors (Wait for language service)
@@ -241,17 +261,18 @@ export class AutoFixService {
       await new Promise(resolve => setTimeout(resolve, 50));
 
       const markers = monaco.editor.getModelMarkers({ resource: shadowUri });
-      
+
       // 4. Verify: Is the original error gone?
-      const errorStillExists = markers.some(m => 
-        m.startLineNumber >= suggestion.startLine && 
-        m.message === targetError.message
+      const errorStillExists = markers.some(
+        m => m.startLineNumber >= suggestion.startLine && m.message === targetError.message
       );
 
       // 5. Verify: Did we introduce NEW errors?
       // (Ignoring the original error for this check)
       const newErrorCount = markers.filter(m => m.message !== targetError.message).length;
-      const originalErrorCount = monaco.editor.getModelMarkers({ resource: monaco.Uri.parse(targetError.file) }).length;
+      const originalErrorCount = monaco.editor.getModelMarkers({
+        resource: monaco.Uri.parse(targetError.file),
+      }).length;
 
       if (errorStillExists) {
         logger.debug(`[AutoFix] Validation Failed: Fix did not resolve error.`);
@@ -264,7 +285,6 @@ export class AutoFixService {
       }
 
       return true;
-
     } catch (e) {
       logger.error('[AutoFix] Validation Error', e);
       return false;
@@ -276,7 +296,11 @@ export class AutoFixService {
   private inferCodeFence(
     filePath: string,
     languageId: string
-  ): { codeFence: 'javascript' | 'typescript' | 'jsx' | 'tsx'; languageName: string; disallowTypeScriptSyntax: boolean } {
+  ): {
+    codeFence: 'javascript' | 'typescript' | 'jsx' | 'tsx';
+    languageName: string;
+    disallowTypeScriptSyntax: boolean;
+  } {
     const lowerPath = (filePath || '').toLowerCase();
     const lowerLang = (languageId || '').toLowerCase();
 
@@ -297,23 +321,29 @@ export class AutoFixService {
       lowerPath.endsWith('.jsx');
 
     if (isTs) {
-      if (lowerLang.includes('react') || lowerPath.endsWith('.tsx')) {
-        return { codeFence: 'tsx', languageName: 'TypeScript (TSX)', disallowTypeScriptSyntax: false };
-      }
-      return { codeFence: 'typescript', languageName: 'TypeScript', disallowTypeScriptSyntax: false };
+      return lowerLang.includes('react') || lowerPath.endsWith('.tsx')
+        ? { codeFence: 'tsx', languageName: 'TypeScript (TSX)', disallowTypeScriptSyntax: false }
+        : {
+            codeFence: 'typescript',
+            languageName: 'TypeScript',
+            disallowTypeScriptSyntax: false,
+          };
     }
 
     if (isJs) {
-      if (lowerLang.includes('react') || lowerPath.endsWith('.jsx')) {
-        return { codeFence: 'jsx', languageName: 'JavaScript (JSX)', disallowTypeScriptSyntax: true };
-      }
-      return { codeFence: 'javascript', languageName: 'JavaScript', disallowTypeScriptSyntax: true };
+      return lowerLang.includes('react') || lowerPath.endsWith('.jsx')
+        ? { codeFence: 'jsx', languageName: 'JavaScript (JSX)', disallowTypeScriptSyntax: true }
+        : { codeFence: 'javascript', languageName: 'JavaScript', disallowTypeScriptSyntax: true };
     }
 
     return { codeFence: 'typescript', languageName: 'TypeScript', disallowTypeScriptSyntax: false };
   }
 
-  private extractContext(fileContent: string, errorLine: number, contextLines: number = 10): string {
+  private extractContext(
+    fileContent: string,
+    errorLine: number,
+    contextLines: number = 10
+  ): string {
     const lines = fileContent.split('\n');
     const startLine = Math.max(0, errorLine - contextLines);
     const endLine = Math.min(lines.length, errorLine + contextLines);
@@ -323,9 +353,9 @@ export class AutoFixService {
 
   private formatErrorType(type: string): string {
     const typeMap: Record<string, string> = {
-      'typescript': 'TypeScript',
-      'eslint': 'ESLint',
-      'runtime': 'Runtime'
+      typescript: 'TypeScript',
+      eslint: 'ESLint',
+      runtime: 'Runtime',
     };
     return typeMap[type] ?? type.charAt(0).toUpperCase() + type.slice(1);
   }
@@ -338,7 +368,10 @@ export class AutoFixService {
     const errorTypeCapitalized = this.formatErrorType(error.type);
     const filePath = fileInfo?.filePath ?? error.file ?? 'unknown';
     const languageId = fileInfo?.languageId ?? '';
-    const { codeFence, languageName, disallowTypeScriptSyntax } = this.inferCodeFence(filePath, languageId);
+    const { codeFence, languageName, disallowTypeScriptSyntax } = this.inferCodeFence(
+      filePath,
+      languageId
+    );
     let prompt = `You are an expert code fixer. Analyze this ${errorTypeCapitalized} error and suggest fixes.\n\n`;
 
     prompt += `File: ${filePath}\n`;
@@ -388,17 +421,19 @@ export class AutoFixService {
     const matches = Array.from(response.matchAll(codeBlockRegex));
 
     if (matches.length === 0) {
-      return [{
-        id: `fix-${error.id}-1`,
-        title: 'AI Suggestion',
-        description: 'AI-generated fix suggestion',
-        code: response.trim(),
-        startLine: error.line,
-        endLine: error.line,
-        confidence: 'low',
-        modelUsed,
-        estimatedCost
-      }];
+      return [
+        {
+          id: `fix-${error.id}-1`,
+          title: 'AI Suggestion',
+          description: 'AI-generated fix suggestion',
+          code: response.trim(),
+          startLine: error.line,
+          endLine: error.line,
+          confidence: 'low',
+          modelUsed,
+          estimatedCost,
+        },
+      ];
     }
 
     const costPerSuggestion = estimatedCost / matches.length;
@@ -420,7 +455,7 @@ export class AutoFixService {
         endLine: error.line,
         confidence,
         modelUsed,
-        estimatedCost: costPerSuggestion
+        estimatedCost: costPerSuggestion,
       });
     });
 
@@ -429,10 +464,12 @@ export class AutoFixService {
 
   private determineConfidence(index: number, error: DetectedError): 'high' | 'medium' | 'low' {
     if (index === 0) {
-      if (error.code?.includes('TS2304') ||
-          error.code?.includes('TS2345') ||
-          error.code?.includes('TS2322') ||
-          error.code?.includes('semi')) {
+      if (
+        error.code?.includes('TS2304') ||
+        error.code?.includes('TS2345') ||
+        error.code?.includes('TS2322') ||
+        error.code?.includes('semi')
+      ) {
         return 'high';
       }
 
@@ -492,9 +529,6 @@ export class AutoFixService {
   }
 }
 
-function randomUUID() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
+function randomUUID(): string {
+  return crypto.randomUUID();
 }

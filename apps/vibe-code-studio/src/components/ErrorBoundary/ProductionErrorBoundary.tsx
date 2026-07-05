@@ -88,7 +88,7 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
   cursor: pointer;
   transition: all 0.2s;
 
-  ${(props) =>
+  ${props =>
     props.$variant === 'primary'
       ? `
     background: #8b5cf6;
@@ -137,7 +137,7 @@ export class ProductionErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
-    const errorId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const errorId = crypto.randomUUID();
     return {
       hasError: true,
       error,
@@ -251,10 +251,5 @@ Please describe what you were doing when this error occurred:
   }
 }
 
-// Export a hook for functional components to report errors
-export function useErrorHandler() {
-  return (error: Error, errorInfo?: Record<string, unknown>) => {
-    telemetry.trackError(error, errorInfo, 'high');
-    throw error; // Re-throw to be caught by error boundary
-  };
-}
+// The imperative error-reporting hook lives in ./productionErrorHandler.ts
+// (react-refresh forbids non-component exports from component files).

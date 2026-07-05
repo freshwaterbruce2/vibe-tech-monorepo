@@ -42,7 +42,7 @@ export enum AgentCapability {
   DATA_VALIDATION = 'data_validation',
   INTERNATIONALIZATION = 'internationalization',
   SEO = 'seo',
-  ANALYTICS = 'analytics'
+  ANALYTICS = 'analytics',
 }
 
 export interface AgentContext {
@@ -126,7 +126,7 @@ export abstract class BaseSpecializedAgent {
   protected learningPatterns: Map<string, LearningPattern> = new Map();
   protected performanceMetrics: PerformanceMetrics[] = [];
   protected contextCache: Map<string, AgentResponse & { _cacheTime?: number }> = new Map();
-  
+
   constructor(
     protected name: string,
     protected capabilities: AgentCapability[]
@@ -149,18 +149,18 @@ export abstract class BaseSpecializedAgent {
   async process(request: string, context: AgentContext = {}): Promise<AgentResponse> {
     const startTime = Date.now();
     const memoryId = this.generateMemoryId();
-    
+
     try {
       // Enhance context with learning patterns and codebase analysis
       const enhancedContext = await this.enhanceContext(context, request);
-      
+
       // Generate context-aware prompt
       const prompt = this.generatePrompt(request, enhancedContext);
-      
+
       // Check cache for similar requests
       const cacheKey = this.generateCacheKey(request, enhancedContext);
       const cachedResponse = this.contextCache.get(cacheKey);
-      
+
       if (cachedResponse && this.isCacheValid(cachedResponse)) {
         logger.debug(`Cache hit for agent ${this.name}`);
         return this.enhanceResponseWithMetrics(cachedResponse, startTime, true);
@@ -169,24 +169,26 @@ export abstract class BaseSpecializedAgent {
       // Process with AI service
       const aiResponse = await this.aiService.sendContextualMessage({
         userQuery: prompt,
-        currentFile: enhancedContext.currentFile ? {
-          path: enhancedContext.currentFile,
-          content: ''
-        } : undefined,
+        currentFile: enhancedContext.currentFile
+          ? {
+              path: enhancedContext.currentFile,
+              content: '',
+            }
+          : undefined,
       });
 
       // Analyze and enhance response
       const response = this.analyzeResponse(aiResponse.content, enhancedContext);
-      
+
       // Cache the response
       this.contextCache.set(cacheKey, response);
-      
+
       // Learn from this interaction
       await this.learn(request, response, enhancedContext, true);
-      
+
       // Add performance metrics
       const enhancedResponse = this.enhanceResponseWithMetrics(response, startTime, false);
-      
+
       // Store memory
       this.storeMemory({
         id: memoryId,
@@ -196,14 +198,13 @@ export abstract class BaseSpecializedAgent {
         context: enhancedContext,
         success: true,
         learnings: this.extractLearnings(request, response),
-        patterns: this.identifyPatterns(request, enhancedContext)
+        patterns: this.identifyPatterns(request, enhancedContext),
       });
 
       return enhancedResponse;
-      
     } catch (error) {
       logger.error(`Agent ${this.name} processing failed:`, error);
-      
+
       // Store failed attempt for learning
       this.storeMemory({
         id: memoryId,
@@ -211,7 +212,7 @@ export abstract class BaseSpecializedAgent {
         request,
         response: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
         context,
-        success: false
+        success: false,
       });
 
       // Return fallback response
@@ -227,7 +228,7 @@ export abstract class BaseSpecializedAgent {
 
     // Add session history
     enhanced.sessionHistory = this.getRelevantMemories(request, 5);
-    
+
     // Analyze related files based on current context
     if (context.currentFile && context.files) {
       enhanced.relatedFiles = this.findRelatedFiles(context.currentFile, context.files);
@@ -243,7 +244,7 @@ export abstract class BaseSpecializedAgent {
     if (relevantPatterns.length > 0) {
       enhanced.userPreferences = {
         ...enhanced.userPreferences,
-        learnedPatterns: relevantPatterns
+        learnedPatterns: relevantPatterns,
       };
     }
 
@@ -256,25 +257,35 @@ export abstract class BaseSpecializedAgent {
   private findRelatedFiles(currentFile: string, allFiles: string[]): string[] {
     const currentDir = currentFile.split('/').slice(0, -1).join('/');
     const currentName = currentFile.split('/').pop()?.split('.')[0] ?? '';
-    
+
     return allFiles
       .filter(file => {
         // Same directory files
-        if (file.startsWith(currentDir)) {return true;}
-        
+        if (file.startsWith(currentDir)) {
+          return true;
+        }
+
         // Files with similar names
         const fileName = file.split('/').pop()?.split('.')[0] ?? '';
-        if (fileName.includes(currentName) || currentName.includes(fileName)) {return true;}
-        
+        if (fileName.includes(currentName) || currentName.includes(fileName)) {
+          return true;
+        }
+
         // Test files
         if (file.includes('test') || file.includes('spec')) {
-          if (file.includes(currentName)) {return true;}
+          if (file.includes(currentName)) {
+            return true;
+          }
         }
-        
+
         // Component/service relationships
-        if (currentFile.includes('component') && file.includes('service')) {return true;}
-        if (currentFile.includes('service') && file.includes('component')) {return true;}
-        
+        if (currentFile.includes('component') && file.includes('service')) {
+          return true;
+        }
+        if (currentFile.includes('service') && file.includes('component')) {
+          return true;
+        }
+
         return false;
       })
       .slice(0, 10); // Limit to prevent overwhelming context
@@ -293,7 +304,7 @@ export abstract class BaseSpecializedAgent {
       complexity: 0.6,
       testCoverage: 0.75,
       techStack: ['React', 'TypeScript', 'Vite', 'Electron'],
-      patterns: ['Component Pattern', 'Hook Pattern', 'Service Pattern']
+      patterns: ['Component Pattern', 'Hook Pattern', 'Service Pattern'],
     };
   }
 
@@ -309,7 +320,7 @@ export abstract class BaseSpecializedAgent {
     // Extract patterns from successful interactions
     if (success && response.confidence > 0.7) {
       const patterns = this.identifyPatterns(request, context);
-      
+
       patterns.forEach(pattern => {
         const existing = this.learningPatterns.get(pattern);
         if (existing) {
@@ -325,7 +336,7 @@ export abstract class BaseSpecializedAgent {
             frequency: 1,
             successRate: success ? 1 : 0,
             contexts: context.projectType ? [context.projectType] : [],
-            lastUsed: new Date()
+            lastUsed: new Date(),
           });
         }
       });
@@ -342,24 +353,40 @@ export abstract class BaseSpecializedAgent {
    */
   private identifyPatterns(request: string, context: AgentContext): string[] {
     const patterns: string[] = [];
-    
+
     // Request type patterns
-    if (request.toLowerCase().includes('component')) {patterns.push('component-creation');}
-    if (request.toLowerCase().includes('api')) {patterns.push('api-integration');}
-    if (request.toLowerCase().includes('test')) {patterns.push('testing');}
-    if (request.toLowerCase().includes('error')) {patterns.push('error-handling');}
-    if (request.toLowerCase().includes('performance')) {patterns.push('performance-optimization');}
-    
+    if (request.toLowerCase().includes('component')) {
+      patterns.push('component-creation');
+    }
+    if (request.toLowerCase().includes('api')) {
+      patterns.push('api-integration');
+    }
+    if (request.toLowerCase().includes('test')) {
+      patterns.push('testing');
+    }
+    if (request.toLowerCase().includes('error')) {
+      patterns.push('error-handling');
+    }
+    if (request.toLowerCase().includes('performance')) {
+      patterns.push('performance-optimization');
+    }
+
     // Context patterns
-    if (context.currentFile?.endsWith('.tsx')) {patterns.push('react-component');}
-    if (context.currentFile?.endsWith('.ts')) {patterns.push('typescript-service');}
-    if (context.currentFile?.includes('test')) {patterns.push('test-file');}
-    
+    if (context.currentFile?.endsWith('.tsx')) {
+      patterns.push('react-component');
+    }
+    if (context.currentFile?.endsWith('.ts')) {
+      patterns.push('typescript-service');
+    }
+    if (context.currentFile?.includes('test')) {
+      patterns.push('test-file');
+    }
+
     // Tech stack patterns
     context.codebaseMetrics?.techStack.forEach(tech => {
       patterns.push(`tech-${tech.toLowerCase()}`);
     });
-    
+
     return patterns;
   }
 
@@ -368,12 +395,12 @@ export abstract class BaseSpecializedAgent {
    */
   private getRelevantPatterns(request: string): LearningPattern[] {
     const requestPatterns = this.identifyPatterns(request, {});
-    
+
     return Array.from(this.learningPatterns.values())
-      .filter(pattern => 
+      .filter(pattern =>
         requestPatterns.some(rp => pattern.pattern.includes(rp) || rp.includes(pattern.pattern))
       )
-      .sort((a, b) => (b.frequency * b.successRate) - (a.frequency * a.successRate))
+      .sort((a, b) => b.frequency * b.successRate - a.frequency * a.successRate)
       .slice(0, 5);
   }
 
@@ -386,17 +413,17 @@ export abstract class BaseSpecializedAgent {
     fromCache: boolean
   ): AgentResponse {
     const processingTime = Date.now() - startTime;
-    
+
     const metrics: PerformanceMetrics = {
       processingTime,
       memoryUsage: process.memoryUsage?.()?.heapUsed || 0,
       apiCalls: fromCache ? 0 : 1,
       cacheHits: fromCache ? 1 : 0,
-      tokenCount: (response.content ?? '').length / 4 // Rough estimate
+      tokenCount: (response.content ?? '').length / 4, // Rough estimate
     };
 
     this.performanceMetrics.push(metrics);
-    
+
     // Keep only recent metrics
     if (this.performanceMetrics.length > 100) {
       this.performanceMetrics = this.performanceMetrics.slice(-50);
@@ -404,7 +431,7 @@ export abstract class BaseSpecializedAgent {
 
     return {
       ...response,
-      performance: metrics
+      performance: metrics,
     };
   }
 
@@ -420,7 +447,7 @@ export abstract class BaseSpecializedAgent {
       content: `I apologize, but I encountered an issue processing your request. Based on my specialization in ${this.getSpecialization()}, I can suggest some general approaches that might help.`,
       confidence: 0.3,
       reasoning: `Fallback response due to error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      suggestions: this.getGenericSuggestions(request, context)
+      suggestions: this.getGenericSuggestions(request, context),
     };
   }
 
@@ -429,23 +456,23 @@ export abstract class BaseSpecializedAgent {
    */
   private getGenericSuggestions(_request: string, context: AgentContext): string[] {
     const suggestions: string[] = [];
-    
+
     if (this.capabilities.includes(AgentCapability.CODE_REVIEW)) {
       suggestions.push('Consider running a code review to identify potential issues');
     }
-    
+
     if (this.capabilities.includes(AgentCapability.TESTING)) {
       suggestions.push('Add comprehensive tests to verify the implementation');
     }
-    
+
     if (this.capabilities.includes(AgentCapability.DOCUMENTATION)) {
       suggestions.push('Document the solution for future reference');
     }
-    
+
     if (context.currentFile) {
       suggestions.push(`Review the current file: ${context.currentFile}`);
     }
-    
+
     return suggestions;
   }
 
@@ -453,33 +480,34 @@ export abstract class BaseSpecializedAgent {
    * Memory and caching utilities
    */
   private generateMemoryId(): string {
-    return `${this.name}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `${this.name}_${crypto.randomUUID()}`;
   }
 
   private generateCacheKey(request: string, context: AgentContext): string {
     const contextKey = [
       context.currentFile,
       context.projectType,
-      context.selectedText?.substring(0, 100)
-    ].filter(Boolean).join('|');
-    
+      context.selectedText?.substring(0, 100),
+    ]
+      .filter(Boolean)
+      .join('|');
+
     return `${request.substring(0, 200)}_${contextKey}`.replace(/\s+/g, '_');
   }
 
   private isCacheValid(cachedResponse: AgentResponse & { _cacheTime?: number }): boolean {
     // Simple time-based cache validation (5 minutes)
-    return !!cachedResponse._cacheTime &&
-           (Date.now() - cachedResponse._cacheTime) < 5 * 60 * 1000;
+    return !!cachedResponse._cacheTime && Date.now() - cachedResponse._cacheTime < 5 * 60 * 1000;
   }
 
   private storeMemory(memory: AgentMemory): void {
     this.memory.push(memory);
-    
+
     // Keep only recent memories
     if (this.memory.length > 100) {
       this.memory = this.memory.slice(-50);
     }
-    
+
     // Persist to storage (would be implemented with actual storage)
     this.persistMemoryToStorage();
   }
@@ -499,36 +527,36 @@ export abstract class BaseSpecializedAgent {
   private calculateMemoryRelevance(request: string, memory: AgentMemory): number {
     const requestWords = request.toLowerCase().split(' ');
     const memoryWords = memory.request.toLowerCase().split(' ');
-    
+
     // Word overlap score
-    const overlap = requestWords.filter(word => 
+    const overlap = requestWords.filter(word =>
       memoryWords.some(mWord => mWord.includes(word) || word.includes(mWord))
     ).length;
-    
+
     // Recency score (more recent = higher score)
     const daysSince = (Date.now() - memory.timestamp.getTime()) / (1000 * 60 * 60 * 24);
     const recencyScore = Math.max(0, 1 - daysSince / 30); // Decay over 30 days
-    
+
     return (overlap / requestWords.length) * 0.7 + recencyScore * 0.3;
   }
 
   private extractLearnings(request: string, response: AgentResponse): string[] {
     const learnings: string[] = [];
-    
+
     if (response.confidence > 0.8) {
       learnings.push(`High confidence response for: ${request.substring(0, 50)}`);
     }
-    
+
     if (response.suggestions && response.suggestions.length > 0) {
       learnings.push(`Successful suggestion generation: ${response.suggestions.length} items`);
     }
-    
+
     return learnings;
   }
 
   private cleanupOldPatterns(): void {
     const cutoffDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
-    
+
     for (const [key, pattern] of this.learningPatterns.entries()) {
       if (pattern.lastUsed < cutoffDate && pattern.frequency < 3) {
         this.learningPatterns.delete(key);
@@ -567,19 +595,22 @@ export abstract class BaseSpecializedAgent {
     avgConfidence: number;
     avgProcessingTime: number;
   } {
-    const avgConfidence = this.memory.length > 0
-      ? this.memory.reduce((sum, m) => sum + (m.success ? 1 : 0), 0) / this.memory.length
-      : 0;
-    
-    const avgProcessingTime = this.performanceMetrics.length > 0
-      ? this.performanceMetrics.reduce((sum, m) => sum + m.processingTime, 0) / this.performanceMetrics.length
-      : 0;
+    const avgConfidence =
+      this.memory.length > 0
+        ? this.memory.reduce((sum, m) => sum + (m.success ? 1 : 0), 0) / this.memory.length
+        : 0;
+
+    const avgProcessingTime =
+      this.performanceMetrics.length > 0
+        ? this.performanceMetrics.reduce((sum, m) => sum + m.processingTime, 0) /
+          this.performanceMetrics.length
+        : 0;
 
     return {
       totalPatterns: this.learningPatterns.size,
       totalMemories: this.memory.length,
       avgConfidence,
-      avgProcessingTime
+      avgProcessingTime,
     };
   }
 

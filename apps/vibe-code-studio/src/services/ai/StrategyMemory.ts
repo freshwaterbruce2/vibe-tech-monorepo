@@ -41,8 +41,8 @@ export class StrategyMemory {
   private storageAvailable: boolean = true;
 
   constructor() {
-    this.loadFromStorage().catch((err) =>
-      logger.error('[StrategyMemory] Failed to load from storage', err),
+    this.loadFromStorage().catch(err =>
+      logger.error('[StrategyMemory] Failed to load from storage', err)
     );
   }
 
@@ -56,7 +56,7 @@ export class StrategyMemory {
       taskType?: string;
       fileExtension?: string;
       workspaceType?: string;
-    },
+    }
   ): Promise<void> {
     if (!cycle.observation.success) {
       logger.debug('[StrategyMemory] Skipping failed cycle - only storing successes');
@@ -110,7 +110,7 @@ export class StrategyMemory {
     step: AgentStep,
     cycle: ReActCycle,
     context: { taskType?: string; fileExtension?: string; workspaceType?: string } | undefined,
-    problemSignature: string,
+    problemSignature: string
   ): void {
     const newPattern: StrategyPattern = {
       id: this.generateId(),
@@ -277,7 +277,7 @@ export class StrategyMemory {
       taskType?: string;
       fileExtension?: string;
       workspaceType?: string;
-    },
+    }
   ): string {
     const normalized = description.toLowerCase().trim();
     const parts = [
@@ -294,7 +294,7 @@ export class StrategyMemory {
    * Generate a unique ID
    */
   private generateId(): string {
-    return `pattern_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    return `pattern_${crypto.randomUUID()}`;
   }
 
   /**
@@ -311,7 +311,7 @@ export class StrategyMemory {
     // Description similarity (moderate weight)
     const descSimilarity = this.calculateStringSimilarity(
       pattern.problemDescription.toLowerCase(),
-      query.problemDescription.toLowerCase(),
+      query.problemDescription.toLowerCase()
     );
     score += descSimilarity * 30;
 
@@ -351,7 +351,7 @@ export class StrategyMemory {
     const words1 = new Set(str1.split(/\s+/));
     const words2 = new Set(str2.split(/\s+/));
 
-    const intersection = new Set([...words1].filter((word) => words2.has(word)));
+    const intersection = new Set([...words1].filter(word => words2.has(word)));
     const union = new Set([...words1, ...words2]);
 
     return union.size > 0 ? intersection.size / union.size : 0;

@@ -217,7 +217,7 @@ export class TelemetryService {
    */
   private setupErrorHandlers(): void {
     // Handle unhandled errors
-    window.addEventListener('error', (event) => {
+    window.addEventListener('error', event => {
       this.trackError(
         new Error(event.message),
         {
@@ -230,10 +230,11 @@ export class TelemetryService {
     });
 
     // Handle unhandled promise rejections
-    window.addEventListener('unhandledrejection', (event) => {
-      const reason = event.reason instanceof Error
-        ? event.reason.message
-        : this.sanitizeString(String(event.reason));
+    window.addEventListener('unhandledrejection', event => {
+      const reason =
+        event.reason instanceof Error
+          ? event.reason.message
+          : this.sanitizeString(String(event.reason));
       this.trackError(
         new Error('Unhandled Promise Rejection'),
         {
@@ -267,7 +268,7 @@ export class TelemetryService {
    * Generate unique session ID
    */
   private generateSessionId(): string {
-    return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+    return crypto.randomUUID();
   }
 
   /**
