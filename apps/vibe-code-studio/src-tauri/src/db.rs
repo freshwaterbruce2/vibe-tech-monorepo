@@ -93,6 +93,21 @@ fn ensure_connection(state: &DbState) -> Result<(), String> {
         )
         .map_err(|e| e.to_string())?;
 
+        // Artifact comments (spec 09 Phase 2). artifact_id/task_id are real
+        // columns for filtering + cascade delete; the comment is a JSON blob.
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS artifact_comments (
+                id TEXT PRIMARY KEY,
+                artifact_id TEXT NOT NULL,
+                task_id TEXT NOT NULL,
+                comment_data TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )",
+            [],
+        )
+        .map_err(|e| e.to_string())?;
+
         *guard = Some(conn);
     }
     Ok(())

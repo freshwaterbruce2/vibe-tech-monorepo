@@ -33,6 +33,34 @@ export interface ArtifactTaskEvents {
   off(event: string, listener: (...args: unknown[]) => void): void;
 }
 
+/**
+ * Structural view of BackgroundAgentSystem's mid-run injection primitive
+ * (spec 09 Phase 2) as consumed by artifactComments.
+ */
+export interface ArtifactMessageInjector extends ArtifactTaskEvents {
+  getTask(taskId: string): { status: string } | undefined;
+  injectMessage(taskId: string, body: string): { id: string } | null;
+}
+
+/**
+ * How a comment reached (or didn't reach) the agent:
+ * queued → injected, awaiting the agent's next step boundary;
+ * delivered → folded into a running step's context;
+ * feedback → task wasn't running (or finished first) — recorded only.
+ */
+export type CommentDelivery = 'queued' | 'delivered' | 'feedback';
+
+/** Non-blocking comment on an artifact (spec 09 Phase 2, AC #6/#7) */
+export interface ArtifactComment {
+  id: string;
+  artifactId: string;
+  /** BackgroundTask id (copied from the artifact) so delivery events match */
+  taskId: string;
+  body: string;
+  createdAt: string;
+  delivery: CommentDelivery;
+}
+
 /** Shape of the task payloads BackgroundAgentSystem emits (subset we read) */
 export interface CapturedTaskLike {
   id?: string;

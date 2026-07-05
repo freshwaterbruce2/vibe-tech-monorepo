@@ -13,6 +13,11 @@ import {
   initArtifactCapture,
   runArtifactAction,
 } from '../../services/artifacts/artifactCapture';
+import {
+  addArtifactComment,
+  deleteCommentsForArtifact,
+  initArtifactComments,
+} from '../../services/artifacts/artifactComments';
 import { useArtifactsStore } from '../../stores/artifactsStore';
 import { ArtifactsPanel } from './index';
 
@@ -24,6 +29,7 @@ export const ArtifactsPanelHost = () => {
 
   useEffect(() => {
     runArtifactAction(() => initArtifactCapture(services.backgroundAgentSystem), 'init');
+    runArtifactAction(() => initArtifactComments(services.backgroundAgentSystem), 'init comments');
   }, [services.backgroundAgentSystem]);
 
   return (
@@ -31,7 +37,13 @@ export const ArtifactsPanelHost = () => {
       isOpen={panelOpen}
       onClose={() => setPanelOpen(false)}
       onOpenTask={() => ui.setBackgroundPanelOpen(true)}
-      onDelete={id => runArtifactAction(() => deleteArtifact(id), 'delete')}
+      onDelete={id => {
+        runArtifactAction(() => deleteArtifact(id), 'delete');
+        runArtifactAction(() => deleteCommentsForArtifact(id), 'delete comments');
+      }}
+      onAddComment={(artifact, body) =>
+        runArtifactAction(() => addArtifactComment(artifact, body), 'add comment')
+      }
     />
   );
 };

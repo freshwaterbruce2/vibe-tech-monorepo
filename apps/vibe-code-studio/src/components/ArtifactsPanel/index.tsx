@@ -19,6 +19,7 @@ import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import type { Artifact, ArtifactKind } from '../../services/artifacts/types';
 import { groupByTask, useArtifactsStore } from '../../stores/artifactsStore';
+import { ArtifactCommentThread } from './ArtifactCommentThread';
 import { ArtifactViewer } from './ArtifactViewer';
 import * as S from './styled';
 
@@ -38,16 +39,28 @@ const previewOf = (artifact: Artifact): string =>
         .trim()
         .slice(0, 140);
 
+/** Kinds that carry a comment thread (spec 09 Phase 2 starts with these) */
+const COMMENTABLE_KINDS: ReadonlySet<ArtifactKind> = new Set(['task_list', 'plan']);
+
 export interface ArtifactsPanelProps {
   isOpen: boolean;
   onClose: () => void;
   /** Deep link: open the Background Tasks panel for this task (AC #9) */
   onOpenTask: (taskId: string) => void;
   onDelete: (artifactId: string) => void;
+  /** Non-blocking comment → running agent (spec 09 Phase 2, AC #7) */
+  onAddComment: (artifact: Artifact, body: string) => void;
 }
 
-export const ArtifactsPanel = ({ isOpen, onClose, onOpenTask, onDelete }: ArtifactsPanelProps) => {
+export const ArtifactsPanel = ({
+  isOpen,
+  onClose,
+  onOpenTask,
+  onDelete,
+  onAddComment,
+}: ArtifactsPanelProps) => {
   const artifacts = useArtifactsStore(state => state.artifacts);
+  const comments = useArtifactsStore(state => state.comments);
   const selectedId = useArtifactsStore(state => state.selectedId);
   const select = useArtifactsStore(state => state.actions.select);
 
@@ -87,6 +100,12 @@ export const ArtifactsPanel = ({ isOpen, onClose, onOpenTask, onDelete }: Artifa
             </S.LinkButton>
           </S.ViewerMeta>
           <ArtifactViewer artifact={selected} onClose={() => select(null)} />
+          {COMMENTABLE_KINDS.has(selected.kind) && (
+            <ArtifactCommentThread
+              comments={comments.filter(c => c.artifactId === selected.id)}
+              onSubmit={body => onAddComment(selected, body)}
+            />
+          )}
         </S.ViewerContainer>
       ) : (
         <S.ArtifactList>

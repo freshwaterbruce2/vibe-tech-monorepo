@@ -198,3 +198,87 @@ export const ViewerMeta = styled.div`
   color: #888;
   font-size: 0.75rem;
 `;
+
+export const CommentThread = styled.div`
+  border-top: 1px solid #333;
+  padding: 8px 12px;
+  max-height: 40%;
+  overflow-y: auto;
+`;
+
+export const CommentHeading = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #9cdcfe;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+`;
+
+export const CommentItem = styled.div`
+  background: #252526;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+`;
+
+export const CommentBody = styled.div`
+  color: #d4d4d4;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+`;
+
+export const CommentMeta = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+  color: #777;
+  font-size: 0.625rem;
+`;
+
+const DELIVERY_COLOR: Record<string, string> = {
+  queued: '#f59e0b',
+  delivered: '#10b981',
+  feedback: '#888',
+};
+
+export const DeliveryBadge = styled.span<{ $delivery: string }>`
+  padding: 1px 8px;
+  border-radius: 8px;
+  border: 1px solid ${props => DELIVERY_COLOR[props.$delivery] ?? '#888'};
+  color: ${props => DELIVERY_COLOR[props.$delivery] ?? '#888'};
+  text-transform: uppercase;
+  font-weight: 600;
+  white-space: nowrap;
+`;
+
+export const CommentInputRow = styled.div`
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+`;
+
+export const CommentInput = styled.textarea`
+  flex: 1;
+  background: #1a1a1a;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  color: #d4d4d4;
+  font-size: 0.75rem;
+  font-family: inherit;
+  padding: 6px 8px;
+  resize: none;
+  min-height: 30px;
+
+  &:focus {
+    outline: none;
+    border-color: #3794ff;
+  }
+`;

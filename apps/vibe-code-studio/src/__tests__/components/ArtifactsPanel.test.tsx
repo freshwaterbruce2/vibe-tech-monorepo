@@ -8,7 +8,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ArtifactsPanel } from '../../components/ArtifactsPanel';
 import { encodeDiffContent } from '../../services/artifacts/artifactContent';
-import type { Artifact } from '../../services/artifacts/types';
+import type { Artifact, ArtifactComment } from '../../services/artifacts/types';
 import { useArtifactsStore } from '../../stores/artifactsStore';
 
 const artifact = (overrides: Partial<Artifact>): Artifact => ({
@@ -23,10 +23,21 @@ const artifact = (overrides: Partial<Artifact>): Artifact => ({
   ...overrides,
 });
 
+const comment = (overrides: Partial<ArtifactComment>): ArtifactComment => ({
+  id: 'c-1',
+  artifactId: 'a-1',
+  taskId: 'task-1',
+  body: 'focus on tests',
+  createdAt: new Date(2026, 6, 5, 10, 0).toISOString(),
+  delivery: 'queued',
+  ...overrides,
+});
+
 const handlers = {
   onClose: vi.fn(),
   onOpenTask: vi.fn(),
   onDelete: vi.fn(),
+  onAddComment: vi.fn(),
 };
 
 const renderPanel = (props: Partial<Parameters<typeof ArtifactsPanel>[0]> = {}) =>
@@ -34,7 +45,7 @@ const renderPanel = (props: Partial<Parameters<typeof ArtifactsPanel>[0]> = {}) 
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useArtifactsStore.setState({ artifacts: [], panelOpen: true, selectedId: null });
+  useArtifactsStore.setState({ artifacts: [], comments: [], panelOpen: true, selectedId: null });
 });
 
 describe('list view', () => {
@@ -143,5 +154,70 @@ describe('viewer', () => {
     renderPanel();
     fireEvent.click(screen.getByTestId('artifact-card-a-bad'));
     expect(screen.getByTestId('artifact-viewer-markdown').textContent).toContain('not json');
+  });
+});
+
+describe('comment thread (spec 09 Phase 2)', () => {
+  const openArtifact = (id = 'a-1') => {
+    renderPanel();
+    fireEvent.click(screen.getByTestId(`artifact-card-${id}`));
+  };
+
+  it('shows only the selected artifact thread with delivery badges', () => {
+    useArtifactsStore.setState({
+      artifacts: [artifact({})],
+      comments: [
+        comment({}),
+        comment({ id: 'c-2', body: 'shipped note', delivery: 'delivered' }),
+        comment({ id: 'c-other', artifactId: 'a-other', body: 'unrelated thread' }),
+      ],
+    });
+    openArtifact();
+
+    expect(screen.getByTestId('artifact-comment-thread')).toBeTruthy();
+    expect(screen.getByText('focus on tests')).toBeTruthy();
+    expect(screen.getByText('sending to agent…')).toBeTruthy();
+    expect(screen.getByText('delivered to agent')).toBeTruthy();
+    expect(screen.queryByText('unrelated thread')).toBeNull();
+    expect(screen.getByText('Comments (2)')).toBeTruthy();
+  });
+
+  it('submits a comment for the open artifact and clears the input', () => {
+    useArtifactsStore.setState({ artifacts: [artifact({})] });
+    openArtifact();
+
+    const input = screen.getByLabelText('Add a comment') as HTMLTextAreaElement;
+    fireEvent.change(input, { target: { value: 'try the shared helper' } });
+    fireEvent.click(screen.getByLabelText('Send comment'));
+
+    expect(handlers.onAddComment).toHaveBeenCalledTimes(1);
+    const [passedArtifact, body] = handlers.onAddComment.mock.calls[0]!;
+    expect(passedArtifact.id).toBe('a-1');
+    expect(body).toBe('try the shared helper');
+    expect(input.value).toBe('');
+  });
+
+  it('submits on Enter but not Shift+Enter, and never submits blanks', () => {
+    useArtifactsStore.setState({ artifacts: [artifact({})] });
+    openArtifact();
+    const input = screen.getByLabelText('Add a comment') as HTMLTextAreaElement;
+
+    fireEvent.click(screen.getByLabelText('Send comment')); // empty
+    expect(handlers.onAddComment).not.toHaveBeenCalled();
+
+    fireEvent.change(input, { target: { value: 'line one' } });
+    fireEvent.keyDown(input, { key: 'Enter', shiftKey: true });
+    expect(handlers.onAddComment).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(handlers.onAddComment).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders no thread on diff artifacts', () => {
+    useArtifactsStore.setState({
+      artifacts: [artifact({ id: 'a-diff2', kind: 'diff', content: 'not json' })],
+    });
+    openArtifact('a-diff2');
+    expect(screen.queryByTestId('artifact-comment-thread')).toBeNull();
   });
 });

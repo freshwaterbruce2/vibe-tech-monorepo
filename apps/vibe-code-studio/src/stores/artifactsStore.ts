@@ -7,15 +7,18 @@
 import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { Artifact } from '../services/artifacts/types';
+import type { Artifact, ArtifactComment } from '../services/artifacts/types';
 
 export interface ArtifactsState {
   artifacts: Artifact[];
+  /** Comment threads (all artifacts) — written by artifactComments */
+  comments: ArtifactComment[];
   panelOpen: boolean;
   /** Artifact currently open in the viewer (null = list view) */
   selectedId: string | null;
   actions: {
     setArtifacts: (artifacts: Artifact[]) => void;
+    setComments: (comments: ArtifactComment[]) => void;
     setPanelOpen: (open: boolean) => void;
     togglePanel: () => void;
     select: (id: string | null) => void;
@@ -31,6 +34,10 @@ const createActions = (set: SetState): ArtifactsState['actions'] => ({
       if (state.selectedId && !artifacts.some(a => a.id === state.selectedId)) {
         state.selectedId = null;
       }
+    }),
+  setComments: comments =>
+    set(state => {
+      state.comments = comments;
     }),
   setPanelOpen: open =>
     set(state => {
@@ -51,6 +58,7 @@ export const useArtifactsStore = create<ArtifactsState>()(
     subscribeWithSelector(
       immer(set => ({
         artifacts: [],
+        comments: [],
         panelOpen: false,
         selectedId: null,
         actions: createActions(set),

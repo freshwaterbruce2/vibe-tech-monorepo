@@ -20,7 +20,14 @@ vi.mock('../../services/artifacts/artifactCapture', async importOriginal => ({
   deleteArtifact: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('../../services/artifacts/artifactComments', () => ({
+  initArtifactComments: vi.fn().mockResolvedValue({}),
+  addArtifactComment: vi.fn().mockResolvedValue(null),
+  deleteCommentsForArtifact: vi.fn().mockResolvedValue(undefined),
+}));
+
 import * as capture from '../../services/artifacts/artifactCapture';
+import * as comments from '../../services/artifacts/artifactComments';
 
 const backgroundAgentSystem = { on: vi.fn(), off: vi.fn() };
 const setBackgroundPanelOpen = vi.fn();
@@ -47,14 +54,16 @@ const artifact: Artifact = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useArtifactsStore.setState({ artifacts: [], panelOpen: false, selectedId: null });
+  useArtifactsStore.setState({ artifacts: [], comments: [], panelOpen: false, selectedId: null });
 });
 
 describe('ArtifactsPanelHost', () => {
-  it('initializes capture with the real backgroundAgentSystem', async () => {
+  it('initializes capture and comments with the real backgroundAgentSystem', async () => {
     render(<ArtifactsPanelHost />, { wrapper });
     await waitFor(() => expect(capture.initArtifactCapture).toHaveBeenCalledTimes(1));
     expect(vi.mocked(capture.initArtifactCapture).mock.calls[0]![0]).toBe(backgroundAgentSystem);
+    await waitFor(() => expect(comments.initArtifactComments).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(comments.initArtifactComments).mock.calls[0]![0]).toBe(backgroundAgentSystem);
   });
 
   it('renders the panel only when the store opens it, closes via the store', async () => {
@@ -77,5 +86,22 @@ describe('ArtifactsPanelHost', () => {
 
     fireEvent.click(screen.getByLabelText('Delete Plan'));
     expect(capture.deleteArtifact).toHaveBeenCalledWith('a-1');
+    expect(comments.deleteCommentsForArtifact).toHaveBeenCalledWith('a-1');
+  });
+
+  it('routes comment submissions to addArtifactComment', async () => {
+    useArtifactsStore.setState({ panelOpen: true, artifacts: [artifact] });
+    render(<ArtifactsPanelHost />, { wrapper });
+
+    fireEvent.click(screen.getByTestId('artifact-card-a-1'));
+    fireEvent.change(screen.getByLabelText('Add a comment'), {
+      target: { value: 'ship it carefully' },
+    });
+    fireEvent.click(screen.getByLabelText('Send comment'));
+
+    await waitFor(() => expect(comments.addArtifactComment).toHaveBeenCalledTimes(1));
+    const [passedArtifact, body] = vi.mocked(comments.addArtifactComment).mock.calls[0]!;
+    expect(passedArtifact.id).toBe('a-1');
+    expect(body).toBe('ship it carefully');
   });
 });
