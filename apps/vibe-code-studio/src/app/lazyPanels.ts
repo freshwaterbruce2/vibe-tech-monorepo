@@ -20,6 +20,11 @@ export const BackgroundTaskPanel = lazy(() =>
 export const BrainScanPanel = lazy(() =>
   import('../components/BrainScanPanel').then(m => ({ default: m.BrainScanPanel }))
 );
+export const BrowserPermissionPromptHost = lazy(() =>
+  import('../components/BrowserVerification/BrowserPermissionPromptHost').then(m => ({
+    default: m.BrowserPermissionPromptHost,
+  }))
+);
 export const ComponentLibrary = lazy(() =>
   import('../components/ComponentLibrary').then(m => ({ default: m.ComponentLibrary }))
 );

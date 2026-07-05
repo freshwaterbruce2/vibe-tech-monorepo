@@ -21,6 +21,7 @@ import TitleBar from '../components/TitleBar';
 import {
   BackgroundTaskPanel,
   BrainScanPanel,
+  BrowserPermissionPromptHost,
   ComponentLibrary,
   EditorStreamPanel,
   EnhancedAgentMode,
@@ -532,6 +533,10 @@ export function AppLayout() {
 
       <Suspense fallback={null}>
         <ArtifactsPanelHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <BrowserPermissionPromptHost />
       </Suspense>
 
       <Suspense fallback={null}>
