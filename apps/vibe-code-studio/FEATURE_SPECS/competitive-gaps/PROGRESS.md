@@ -25,7 +25,7 @@ and the index may hold the other session's staged files.
 | 06  | Settings Sync + Profiles             | ⬜ pending                 |                                    |                                                                                                                                                                      |
 | 07  | LSP language intelligence            | 🔄 1d (rename) in progress | `aee44d95`, `04d4344c`, `9f7f3d23` | 1a+1b+1c done. 1d (rename→multi-file preview/apply) claimed 2026-07-05. Deferred: cross-file refs peek preview, markers, phase 2 (auto-download/multi-root/Settings) |
 | 08  | Test Explorer                        | ⬜ pending                 |                                    | services/testing/\* exists; UI is the gap                                                                                                                            |
-| 09  | Verifiable Artifacts                 | 🟡 Phase 1 done            | `91d3ba21`                         | Model + SQLite persistence + panel + live task_list capture. P2 (comments→agent queue) / P3 (walkthrough) deferred (see below)                                       |
+| 09  | Verifiable Artifacts                 | 🔄 Phase 2 in progress     | `91d3ba21` (P1)                    | P2 claimed 2026-07-05: artifact comments → running agent. Adds the SHARED injection primitive to `BackgroundAgentSystem` (see "Shared primitives" below)             |
 | 10  | Agent Manager + parallel/worktrees   | ⬜ pending                 |                                    | Inbox here unblocks 16's deferred delivery                                                                                                                           |
 | 11  | Browser verification                 | ⬜ pending                 |                                    |                                                                                                                                                                      |
 | 12  | DAP debugger                         | ⬜ pending                 |                                    | L–XL; separately-scoped campaign per README                                                                                                                          |
@@ -39,6 +39,23 @@ and the index may hold the other session's staged files.
 Legend: ✅ done · 🟡 partially done (phases remain) · 🔄 in progress (claimed by a session) · ⬜ pending · ⛔ deferred by design
 
 ---
+
+## Shared primitives (build once — reuse, don't duplicate)
+
+### Mid-run message injection — `BackgroundAgentSystem` (claimed by 09 P2, 2026-07-05)
+
+Spec 09 P2 is adding the per-task pending-message queue that specs 10 (Agent Manager /
+Inbox) and 16 (deferred Inbox delivery) must CONSUME rather than rebuild:
+
+- `injectMessage(taskId, body): InjectedMessage | null` — appends to a per-task queue.
+  Returns `null` (no-op) if the task doesn't exist or is not `pending`/`running`.
+- Queue is DRAINED at the next step boundary (`onStepStart`, before the step's
+  ReAct/action runs) and folded into that step's `action.params.injectedUserMessages`
+  (string[]), which reaches the model via ReActExecutor's prompt (`Params:` JSON block).
+  No preemption of an in-flight step — delivery is always at the next safe boundary.
+- Events: `messageQueued(task, msg)` on accept · `messageInjected(task, msg)` on drain
+  (UI marks delivery) · `messageDropped(task, msg)` if the task finishes/cancels with
+  messages still queued (consumers degrade to plain feedback).
 
 ## Shipped detail + open follow-ups
 
