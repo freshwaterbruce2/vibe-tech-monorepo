@@ -6,6 +6,7 @@ import type { EditorSettings } from '../types';
 import { MODELS_ARRAY } from '../services/ai/AIProviderInterface';
 import ApiKeySettings from './ApiKeySettings';
 import { ModelComparison } from './ModelComparison';
+import { ThemeSection } from './Settings/ThemeSection';
 import { defaultSettings, getModelPricing, supportsReasoning } from './Settings.constants';
 import type { UserWithPlan } from '../services/AuthService';
 import { authService } from '../services/AuthService';
@@ -85,20 +86,13 @@ export const Settings = ({ isOpen, onClose, settings, onSettingsChange }: Settin
             <SettingItem>
               <SettingLabel>
                 Theme
-                <span>Choose between standard themes or create your own</span>
+                <span>Pick a curated preset or import your own VS Code theme</span>
               </SettingLabel>
               <SettingControl>
-                <Select
-                  id="theme-select"
-                  name="theme"
-                  aria-label="Theme selection"
+                <ThemeSection
                   value={localSettings.theme}
-                  onChange={e => updateSetting('theme', e.target.value)}
-                >
-                  <option value="dark">Dark</option>
-                  <option value="light">Light</option>
-                  <option value="custom">Custom JSON</option>
-                </Select>
+                  onChange={value => updateSetting('theme', value)}
+                />
               </SettingControl>
             </SettingItem>
 

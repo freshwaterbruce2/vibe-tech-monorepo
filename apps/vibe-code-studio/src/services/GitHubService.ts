@@ -81,7 +81,7 @@ export class GitHubService {
     }
     return {
       owner: match[1]!,
-      repo: match[2]!.replace('.git', '')
+      repo: match[2]!.replace('.git', ''),
     };
   }
 
@@ -129,7 +129,7 @@ export class GitHubService {
   ): Promise<PullRequest> {
     const response = await this.fetch(`/repos/${repo.owner}/${repo.repo}/pulls`, {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     });
     return response.json();
   }
@@ -138,14 +138,11 @@ export class GitHubService {
    * Get PR diff
    */
   async getPullRequestDiff(repo: Repository, prNumber: number): Promise<string> {
-    const response = await this.fetch(
-      `/repos/${repo.owner}/${repo.repo}/pulls/${prNumber}`,
-      {
-        headers: {
-          'Accept': 'application/vnd.github.v3.diff'
-        }
-      }
-    );
+    const response = await this.fetch(`/repos/${repo.owner}/${repo.repo}/pulls/${prNumber}`, {
+      headers: {
+        Accept: 'application/vnd.github.v3.diff',
+      },
+    });
     return response.text();
   }
 
@@ -169,26 +166,41 @@ export class GitHubService {
       `/repos/${repo.owner}/${repo.repo}/pulls/${prNumber}/comments`,
       {
         method: 'POST',
-        body: JSON.stringify(comment)
+        body: JSON.stringify(comment),
       }
     );
     return response.json();
   }
 
   /**
-   * Submit review
+   * Submit review — optionally with inline comments in one atomic POST
+   * (commit_id defaults to the PR head when omitted)
    */
   async submitReview(
     repo: Repository,
     prNumber: number,
-    review: { event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT'; body?: string }
+    review: {
+      event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT';
+      body?: string;
+      comments?: Array<{ path: string; line: number; side: 'RIGHT'; body: string }>;
+    }
   ): Promise<Review> {
     const response = await this.fetch(
       `/repos/${repo.owner}/${repo.repo}/pulls/${prNumber}/reviews`,
       {
         method: 'POST',
-        body: JSON.stringify(review)
+        body: JSON.stringify(review),
       }
+    );
+    return response.json();
+  }
+
+  /**
+   * List submitted reviews on a PR
+   */
+  async listReviews(repo: Repository, prNumber: number): Promise<Review[]> {
+    const response = await this.fetch(
+      `/repos/${repo.owner}/${repo.repo}/pulls/${prNumber}/reviews`
     );
     return response.json();
   }
@@ -199,6 +211,37 @@ export class GitHubService {
   async getReviewComments(repo: Repository, prNumber: number): Promise<ReviewComment[]> {
     const response = await this.fetch(
       `/repos/${repo.owner}/${repo.repo}/pulls/${prNumber}/comments`
+    );
+    return response.json();
+  }
+
+  /**
+   * Create a PR-level (issue) comment
+   */
+  async createIssueComment(
+    repo: Repository,
+    issueNumber: number,
+    body: string
+  ): Promise<{ id: number; body: string }> {
+    const response = await this.fetch(
+      `/repos/${repo.owner}/${repo.repo}/issues/${issueNumber}/comments`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ body }),
+      }
+    );
+    return response.json();
+  }
+
+  /**
+   * List PR-level (issue) comments
+   */
+  async listIssueComments(
+    repo: Repository,
+    issueNumber: number
+  ): Promise<Array<{ id: number; body?: string; user?: { login: string } }>> {
+    const response = await this.fetch(
+      `/repos/${repo.owner}/${repo.repo}/issues/${issueNumber}/comments`
     );
     return response.json();
   }
@@ -220,7 +263,7 @@ export class GitHubService {
   ): Promise<Issue> {
     const response = await this.fetch(`/repos/${repo.owner}/${repo.repo}/issues`, {
       method: 'POST',
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     });
     return response.json();
   }
@@ -235,7 +278,7 @@ export class GitHubService {
   ): Promise<Issue> {
     const response = await this.fetch(`/repos/${repo.owner}/${repo.repo}/issues/${issueNumber}`, {
       method: 'PATCH',
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     });
     return response.json();
   }
@@ -252,7 +295,9 @@ export class GitHubService {
    * Compare branches
    */
   async compareBranches(repo: Repository, base: string, head: string): Promise<BranchComparison> {
-    const response = await this.fetch(`/repos/${repo.owner}/${repo.repo}/compare/${base}...${head}`);
+    const response = await this.fetch(
+      `/repos/${repo.owner}/${repo.repo}/compare/${base}...${head}`
+    );
     return response.json();
   }
 
@@ -263,16 +308,16 @@ export class GitHubService {
     const url = `${this.baseUrl}${endpoint}`;
 
     const headers = {
-      'Authorization': `Bearer ${this.token}`,
-      'Accept': 'application/vnd.github.v3+json',
+      Authorization: `Bearer ${this.token}`,
+      Accept: 'application/vnd.github.v3+json',
       'Content-Type': 'application/json',
-      ...options.headers
+      ...options.headers,
     };
 
     try {
       const response = await fetch(url, {
         ...options,
-        headers
+        headers,
       });
 
       if (!response.ok) {

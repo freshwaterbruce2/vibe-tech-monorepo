@@ -25,6 +25,11 @@ vi.mock('monaco-editor', () => ({
   Range: vi.fn(),
 }));
 
+// Keep the theme-apply side effect (Shiki/WASM) out of the Editor render path.
+vi.mock('../../services/theme/applyTheme', () => ({
+  applyEditorTheme: vi.fn(),
+}));
+
 // Mock Monaco Editor
 vi.mock('@monaco-editor/react', () => ({
   Editor: ({ value, onChange, onMount }: any) => (
@@ -32,7 +37,7 @@ vi.mock('@monaco-editor/react', () => ({
       <textarea
         data-testid="monaco-textarea"
         value={value}
-        onChange={(e) => onChange?.(e.target.value)}
+        onChange={e => onChange?.(e.target.value)}
       />
       <button
         data-testid="monaco-mount-trigger"
@@ -74,15 +79,12 @@ vi.mock('@monaco-editor/react', () => ({
 vi.mock('../../services/DeepSeekService');
 vi.mock('../../services/ai/UnifiedAIService');
 
-
 // Mock framer-motion
 vi.mock('framer-motion', () => {
-  const createMotionComponent = (type: string) => ({ children, ...props }: any) =>
-    type === 'div' ? (
-      <div {...props}>{children}</div>
-    ) : (
-      <button {...props}>{children}</button>
-    );
+  const createMotionComponent =
+    (type: string) =>
+    ({ children, ...props }: any) =>
+      type === 'div' ? <div {...props}>{children}</div> : <button {...props}>{children}</button>;
 
   return {
     motion: {
