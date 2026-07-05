@@ -45,6 +45,35 @@ export function decodeDiffContent(content: string): DiffArtifactContent | null {
   }
 }
 
+const screenshotContentSchema = z.object({
+  /** data: URL (base64) — rendered directly by the panel */
+  imageDataUrl: z.string().min(1),
+  capturedAt: z.string().min(1),
+  /** What the browser session was verifying when this was captured */
+  description: z.string().optional(),
+});
+
+export interface ScreenshotArtifactContent {
+  imageDataUrl: string;
+  capturedAt: string;
+  description?: string;
+}
+
+/** Serialize a screenshot payload for Artifact.content (spec 11 AC #6) */
+export function encodeScreenshotContent(payload: ScreenshotArtifactContent): string {
+  return JSON.stringify(payload);
+}
+
+/** Parse Artifact.content for kind 'screenshot'; null when malformed */
+export function decodeScreenshotContent(content: string): ScreenshotArtifactContent | null {
+  try {
+    const result = screenshotContentSchema.safeParse(JSON.parse(content));
+    return result.success ? result.data : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Markdown checklist line for a task_list artifact */
 export function taskListLine(description: string, done: boolean): string {
   return `- [${done ? 'x' : ' '}] ${description}`;

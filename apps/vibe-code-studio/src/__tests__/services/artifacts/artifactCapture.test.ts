@@ -9,10 +9,14 @@ import {
   initArtifactCapture,
   recordDiffArtifact,
   recordPlanArtifact,
+  recordScreenshotArtifact,
   resetArtifactCaptureForTests,
   runArtifactAction,
 } from '../../../services/artifacts/artifactCapture';
-import { decodeDiffContent } from '../../../services/artifacts/artifactContent';
+import {
+  decodeDiffContent,
+  decodeScreenshotContent,
+} from '../../../services/artifacts/artifactContent';
 import type { ArtifactTaskEvents } from '../../../services/artifacts/types';
 import { useArtifactsStore } from '../../../stores/artifactsStore';
 
@@ -179,6 +183,21 @@ describe('record APIs', () => {
     expect(artifact.kind).toBe('diff');
     expect(artifact.status).toBe('final');
     expect(decodeDiffContent(artifact.content)?.changes[0]?.path).toBe('src/auth.ts');
+    expect(useArtifactsStore.getState().artifacts.map(a => a.id)).toContain(artifact.id);
+  });
+
+  it('recordScreenshotArtifact stores an encoded screenshot payload (spec 11 AC #6)', async () => {
+    await initArtifactCapture(makeEvents());
+    const artifact = await recordScreenshotArtifact('task-1', 'Screenshot — verify', {
+      imageDataUrl: 'data:image/png;base64,AAAA',
+      capturedAt: new Date(5000).toISOString(),
+      description: 'verify the page',
+    });
+    expect(artifact.kind).toBe('screenshot');
+    expect(artifact.status).toBe('final');
+    expect(decodeScreenshotContent(artifact.content)?.imageDataUrl).toBe(
+      'data:image/png;base64,AAAA'
+    );
     expect(useArtifactsStore.getState().artifacts.map(a => a.id)).toContain(artifact.id);
   });
 

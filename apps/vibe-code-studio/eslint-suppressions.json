@@ -511,11 +511,6 @@
       "count": 1
     }
   },
-  "apps/vibe-code-studio/src/services/ai/planning/ResponseParser.ts": {
-    "max-len": {
-      "count": 2
-    }
-  },
   "apps/vibe-code-studio/src/services/ai/providers/DeepSeekService.ts": {
     "max-len": {
       "count": 2
@@ -610,11 +605,6 @@
   },
   "apps/vibe-code-studio/src/stores/useEditorStore.ts": {
     "max-lines-per-function": {
-      "count": 1
-    }
-  },
-  "apps/vibe-code-studio/src/types/agent.ts": {
-    "max-len": {
       "count": 1
     }
   },

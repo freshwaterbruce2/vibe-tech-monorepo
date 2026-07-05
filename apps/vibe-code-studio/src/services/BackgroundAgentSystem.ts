@@ -344,6 +344,9 @@ export class BackgroundAgentSystem extends EventEmitter {
     return {
       onStepStart: step => {
         this.drainPendingMessages(task, step);
+        // Step params carry the BackgroundTask id so executors (spec 11
+        // browser sessions/artifacts) key on the task the user actually sees
+        step.action.params['backgroundTaskId'] ??= task.id;
         task.currentStep = (task.currentStep ?? 0) + 1;
         task.stepDescription = step.description;
         this.emit('stepStart', task, step);

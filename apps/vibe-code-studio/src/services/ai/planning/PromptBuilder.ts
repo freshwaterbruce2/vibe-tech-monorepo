@@ -10,27 +10,27 @@ import type { PlanningContext, ProjectStructure } from './types';
  * Builds the main planning prompt for AI
  */
 export function buildPlanningPrompt(context: PlanningContext): string {
-    const {
-        userRequest,
-        workspaceRoot,
-        openFiles,
-        currentFile,
-        recentFiles,
-        projectStructure,
-        projectAnalysis,
-        maxSteps,
-        allowDestructive,
-    } = context;
+  const {
+    userRequest,
+    workspaceRoot,
+    openFiles,
+    currentFile,
+    recentFiles,
+    projectStructure,
+    projectAnalysis,
+    maxSteps,
+    allowDestructive,
+  } = context;
 
-    // Build project structure section
-    const structureSection = buildStructureSection(projectStructure);
+  // Build project structure section
+  const structureSection = buildStructureSection(projectStructure);
 
-    // Build project analysis section
-    const analysisSection = projectAnalysis
-        ? `\n${projectAnalysis}\n⚠️ CRITICAL: Use the ACTUAL file paths found in the analysis above. Do NOT guess paths!`
-        : '';
+  // Build project analysis section
+  const analysisSection = projectAnalysis
+    ? `\n${projectAnalysis}\n⚠️ CRITICAL: Use the ACTUAL file paths found in the analysis above. Do NOT guess paths!`
+    : '';
 
-    return `You are an AUTONOMOUS software engineering agent (like Cursor, Windsurf, Copilot) planning a task for an AI-powered code editor.
+  return `You are an AUTONOMOUS software engineering agent (like Cursor, Windsurf, Copilot) planning a task for an AI-powered code editor.
 
 🤖 AGENT MODE: You have FULL file system access. You can read ANY file, search the codebase, run commands, and make changes autonomously.
 
@@ -61,13 +61,18 @@ Generate the task plan now:`;
  * Builds the project structure section
  */
 function buildStructureSection(projectStructure?: ProjectStructure): string {
-    if (!projectStructure) {
-        return '';
-    }
+  if (!projectStructure) {
+    return '';
+  }
 
-    return `\nPROJECT STRUCTURE DETECTED:
+  return `\nPROJECT STRUCTURE DETECTED:
 - Type: ${projectStructure.type}${projectStructure.detectedFramework ? ` (${projectStructure.detectedFramework})` : ''}
-- Entry Points: ${projectStructure.entryPoints.slice(0, 3).map((p: string) => p.split('/').pop()).join(', ') || 'Not detected'}
+- Entry Points: ${
+    projectStructure.entryPoints
+      .slice(0, 3)
+      .map((p: string) => p.split('/').pop())
+      .join(', ') || 'Not detected'
+  }
 - Config Files: ${projectStructure.configFiles.map((p: string) => p.split('/').pop()).join(', ') || 'None'}
 
 ⚠️ IMPORTANT: Use the detected entry points above, NOT generic paths like "src/index.ts".
@@ -80,7 +85,7 @@ For backend projects, use "server.ts" or "backend/hono.ts".
  * Returns autonomous behavior rules
  */
 function getAutonomousBehaviorRules(): string {
-    return `⚡ AUTONOMOUS BEHAVIOR RULES:
+  return `⚡ AUTONOMOUS BEHAVIOR RULES:
 1. **Never ask the user to provide file contents** - You can read files yourself using read_file action
 2. **Be proactive** - If user says "review 3 files", search/identify the files and read them automatically
 3. **Use search_codebase** - To find files matching patterns or recently modified files
@@ -92,7 +97,7 @@ function getAutonomousBehaviorRules(): string {
  * Returns synthesis requirements section
  */
 function getSynthesisRequirements(): string {
-    return `🔴 MANDATORY SYNTHESIS REQUIREMENTS (CRITICAL - DO NOT SKIP):
+  return `🔴 MANDATORY SYNTHESIS REQUIREMENTS (CRITICAL - DO NOT SKIP):
 
 For ANY task involving multiple files/analyses, you MUST include a FINAL synthesis step:
 
@@ -121,7 +126,7 @@ Example synthesis descriptions:
  * Returns available actions documentation
  */
 function getAvailableActions(): string {
-    return `AVAILABLE ACTIONS (with required parameter schemas):
+  return `AVAILABLE ACTIONS (with required parameter schemas):
 
 1. read_file - Read a specific file's contents
    Required params: { filePath: string }
@@ -168,7 +173,16 @@ function getAvailableActions(): string {
     Optional params: { targetLanguage: string }
     Example: { "type": "generate_code", "params": { "description": "Create a user authentication class", "targetLanguage": "TypeScript" } }
 
-11. run_tests - Execute tests
+${getSystemAndBrowserActionDocs()}
+
+IMPORTANT: Use ONLY the parameter names specified above. Do NOT invent new parameters like "directory", "analysisType", "patterns", etc.`;
+}
+
+/**
+ * Returns docs for the system-level actions plus browser_action (spec 11)
+ */
+function getSystemAndBrowserActionDocs(): string {
+  return `11. run_tests - Execute tests
     Optional params: { testPattern: string, rootPath: string }
     Example: { "type": "run_tests", "params": { "testPattern": "*.test.ts", "rootPath": "C:\\\\project" } }
 
@@ -182,14 +196,26 @@ function getAvailableActions(): string {
     Returns: Complete quality report with metrics, issues, and file-by-file analysis
     Use this for: "review my code", "check code quality", "analyze the project"
 
-IMPORTANT: Use ONLY the parameter names specified above. Do NOT invent new parameters like "directory", "analysisType", "patterns", etc.`;
+14. browser_action - Drive a real browser (user-permissioned session) to verify UI work
+    Required params: { browserAction: "navigate" | "click" | "type" | "snapshot" | "read_console" | "screenshot", ...action params }
+    Variants:
+    - navigate: { "browserAction": "navigate", "url": "http://localhost:5173/" }
+    - snapshot: { "browserAction": "snapshot" }  // returns the page accessibility tree with element refs
+    - click: { "browserAction": "click", "element": "Submit button", "ref": "e12" }  // ref comes from a prior snapshot
+    - type: { "browserAction": "type", "element": "Email input", "ref": "e5", "text": "user@example.com" }
+    - read_console: { "browserAction": "read_console" }  // structured console messages
+    - screenshot: { "browserAction": "screenshot", "fullPage": true }  // saved as a reviewable artifact
+    Example: { "type": "browser_action", "params": { "browserAction": "navigate", "url": "http://localhost:5173/" } }
+    Notes: the FIRST browser_action of a task asks the user for permission (may be denied — treat a
+    permission_denied/unsupported_environment result as final, do not retry). Always snapshot before click/type
+    to obtain element refs. Use this to verify UI changes end-to-end: navigate → snapshot → interact → read_console → screenshot.`;
 }
 
 /**
  * Returns output format specification
  */
 function getOutputFormat(): string {
-    return `YOUR TASK:
+  return `YOUR TASK:
 Break down the user request into a sequence of executable steps. Each step should:
 1. Be atomic and independently executable
 2. Have clear success criteria

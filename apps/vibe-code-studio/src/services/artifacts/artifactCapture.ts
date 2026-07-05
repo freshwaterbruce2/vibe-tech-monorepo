@@ -12,7 +12,13 @@ import type { FileChange } from '@vibetech/types';
 import { useArtifactsStore } from '../../stores/artifactsStore';
 import { logger } from '../Logger';
 import { ArtifactStore } from './ArtifactStore';
-import { checkTaskListLine, encodeDiffContent, taskListLine } from './artifactContent';
+import {
+  checkTaskListLine,
+  encodeDiffContent,
+  encodeScreenshotContent,
+  taskListLine,
+} from './artifactContent';
+import type { ScreenshotArtifactContent } from './artifactContent';
 import type { Artifact, ArtifactTaskEvents, CapturedStepLike, CapturedTaskLike } from './types';
 
 let storeInstance: ArtifactStore | null = null;
@@ -154,6 +160,23 @@ export async function recordDiffArtifact(
     kind: 'diff',
     title,
     content: encodeDiffContent(changes, estimatedImpact),
+    status: 'final',
+  });
+  syncToUiStore();
+  return artifact;
+}
+
+/** Record a browser-verification screenshot (spec 11 Phase 1) — AC #6 */
+export async function recordScreenshotArtifact(
+  taskId: string,
+  title: string,
+  payload: ScreenshotArtifactContent
+): Promise<Artifact> {
+  const artifact = await requireStore().record({
+    taskId,
+    kind: 'screenshot',
+    title,
+    content: encodeScreenshotContent(payload),
     status: 'final',
   });
   syncToUiStore();

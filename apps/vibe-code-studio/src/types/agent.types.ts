@@ -60,6 +60,7 @@ export type ActionType =
   | 'run_tests'
   | 'git_commit'
   | 'review_project'
+  | 'browser_action'
   | 'custom';
 
 export interface ActionParams {
@@ -145,7 +146,8 @@ export interface TaskPlanRequest {
     currentFile?: string;
     recentFiles?: string[];
   };
-  currentFileObject?: { path: string; content: string; language: string; [key: string]: unknown }; // Full EditorFile object with content for context
+  /** Full EditorFile object with content for context */
+  currentFileObject?: { path: string; content: string; language: string; [key: string]: unknown };
   options?: {
     maxSteps?: number;
     requireApprovalForAll?: boolean;
@@ -247,20 +249,20 @@ export interface ReActStepExtension extends AgentStep {
 
 export interface StrategyPattern {
   id: string;
-  problemSignature: string;      // Hash/signature of the problem
-  problemDescription: string;     // Human-readable description
-  actionType: ActionType;         // What action was taken
-  successfulApproach: string;     // The approach that worked
+  problemSignature: string; // Hash/signature of the problem
+  problemDescription: string; // Human-readable description
+  actionType: ActionType; // What action was taken
+  successfulApproach: string; // The approach that worked
   context: {
-    taskType?: string;            // Type of task (e.g., "file_operation", "code_generation")
-    fileExtension?: string;       // Relevant file extension
-    errorType?: string;           // Error that was resolved
-    workspaceType?: string;       // Project type (React, Node, etc.)
+    taskType?: string; // Type of task (e.g., "file_operation", "code_generation")
+    fileExtension?: string; // Relevant file extension
+    errorType?: string; // Error that was resolved
+    workspaceType?: string; // Project type (React, Node, etc.)
   };
-  reActCycle?: ReActCycle;        // Full ReAct cycle for reference
-  confidence: number;             // 0-100 confidence in this pattern
-  usageCount: number;             // How many times this pattern has been used
-  successRate: number;            // Success rate when applied (0-100)
+  reActCycle?: ReActCycle; // Full ReAct cycle for reference
+  confidence: number; // 0-100 confidence in this pattern
+  usageCount: number; // How many times this pattern has been used
+  successRate: number; // Success rate when applied (0-100)
   createdAt: Date;
   lastUsedAt: Date;
   lastSuccessAt?: Date;
@@ -279,8 +281,8 @@ export interface StrategyQuery {
 
 export interface StrategyMatch {
   pattern: StrategyPattern;
-  relevanceScore: number;         // 0-100 how relevant this pattern is
-  reason: string;                 // Why this pattern matches
+  relevanceScore: number; // 0-100 how relevant this pattern is
+  reason: string; // Why this pattern matches
 }
 
 export interface StrategyMemoryStats {
@@ -299,37 +301,37 @@ export interface StrategyMemoryStats {
  */
 
 export interface StepConfidence {
-  score: number;                    // 0-100 confidence in primary approach
-  factors: ConfidenceFactor[];     // What influenced this score
-  memoryBacked: boolean;            // Based on past success?
+  score: number; // 0-100 confidence in primary approach
+  factors: ConfidenceFactor[]; // What influenced this score
+  memoryBacked: boolean; // Based on past success?
   riskLevel: 'low' | 'medium' | 'high';
 }
 
 export interface ConfidenceFactor {
-  name: string;                     // e.g., "Memory match", "File exists"
-  impact: number;                   // +/- points
+  name: string; // e.g., "Memory match", "File exists"
+  impact: number; // +/- points
   description: string;
 }
 
 export interface FallbackPlan {
   id: string;
-  stepId: string;                   // Which step this is a fallback for
-  trigger: string;                  // When to use (e.g., "If primary fails")
+  stepId: string; // Which step this is a fallback for
+  trigger: string; // When to use (e.g., "If primary fails")
   alternativeAction: StepAction;
-  confidence: number;               // Confidence in this fallback
-  reasoning: string;                // Why this fallback exists
+  confidence: number; // Confidence in this fallback
+  reasoning: string; // Why this fallback exists
 }
 
 export interface EnhancedAgentStep extends AgentStep {
-  confidence?: StepConfidence;      // Confidence in this step
-  fallbackPlans?: FallbackPlan[];   // Alternative approaches
-  confidenceHistory?: number[];     // Track confidence over retries
+  confidence?: StepConfidence; // Confidence in this step
+  fallbackPlans?: FallbackPlan[]; // Alternative approaches
+  confidenceHistory?: number[]; // Track confidence over retries
 }
 
 export interface PlanningInsights {
-  overallConfidence: number;        // Average across all steps
-  highRiskSteps: number;            // Count of high-risk steps
-  memoryBackedSteps: number;        // Steps with memory support
+  overallConfidence: number; // Average across all steps
+  highRiskSteps: number; // Count of high-risk steps
+  memoryBackedSteps: number; // Steps with memory support
   fallbacksGenerated: number;
-  estimatedSuccessRate: number;     // Based on confidence + memory
+  estimatedSuccessRate: number; // Based on confidence + memory
 }

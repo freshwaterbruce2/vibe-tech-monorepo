@@ -7,7 +7,9 @@ import type { FileChange } from '@vibetech/types';
 import {
   checkTaskListLine,
   decodeDiffContent,
+  decodeScreenshotContent,
   encodeDiffContent,
+  encodeScreenshotContent,
   taskListLine,
 } from '../../../services/artifacts/artifactContent';
 
@@ -36,6 +38,29 @@ describe('diff content codec', () => {
     expect(decodeDiffContent('not json')).toBeNull();
     expect(decodeDiffContent('{"changes": [{"path": ""}]}')).toBeNull();
     expect(decodeDiffContent('{"nope": true}')).toBeNull();
+  });
+});
+
+describe('screenshot content codec (spec 11)', () => {
+  const payload = {
+    imageDataUrl: 'data:image/png;base64,AAAA',
+    capturedAt: new Date(3000).toISOString(),
+    description: 'verify the dashboard',
+  };
+
+  it('round-trips a screenshot payload', () => {
+    expect(decodeScreenshotContent(encodeScreenshotContent(payload))).toEqual(payload);
+  });
+
+  it('keeps description optional', () => {
+    const { description: _omitted, ...minimal } = payload;
+    expect(decodeScreenshotContent(encodeScreenshotContent(minimal))).toEqual(minimal);
+  });
+
+  it('returns null for non-JSON and schema-invalid content', () => {
+    expect(decodeScreenshotContent('not json')).toBeNull();
+    expect(decodeScreenshotContent('{"imageDataUrl": ""}')).toBeNull();
+    expect(decodeScreenshotContent('{"capturedAt": "now"}')).toBeNull();
   });
 });
 

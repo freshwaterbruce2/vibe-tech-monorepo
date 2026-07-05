@@ -124,6 +124,18 @@ describe('BackgroundAgentSystem.injectMessage', () => {
     expect(injectedParams(steps[0]!)).toEqual(['earlier note', 'later note']);
   });
 
+  it('stamps every step with the BackgroundTask id at the step boundary (spec 11)', async () => {
+    steps = [makeStep(1), makeStep(2, { backgroundTaskId: 'preset-id' })];
+    system = new BackgroundAgentSystem(makeEngine(), makePlanner(steps));
+
+    const taskId = system.submit('agent', 'do work', '/ws');
+    await system.waitFor(taskId);
+
+    expect(steps[0]!.action.params.backgroundTaskId).toBe(taskId);
+    // ??= never overwrites a value already present
+    expect(steps[1]!.action.params.backgroundTaskId).toBe('preset-id');
+  });
+
   it('delivers a mid-step message at the NEXT step boundary (no preemption)', async () => {
     const taskId = system.submit('agent', 'do work', '/ws');
     system.on('stepStart', (task: BackgroundTask, step: AgentStep) => {
