@@ -19,6 +19,7 @@ import {
   taskListLine,
 } from './artifactContent';
 import type { ScreenshotArtifactContent } from './artifactContent';
+import { buildWalkthroughMarkdown, buildWalkthroughTitle } from './walkthroughGenerator';
 import type { Artifact, ArtifactTaskEvents, CapturedStepLike, CapturedTaskLike } from './types';
 
 let storeInstance: ArtifactStore | null = null;
@@ -87,12 +88,44 @@ async function onFinished(task: CapturedTaskLike, outcome: 'completed' | 'failed
     outcome === 'completed'
       ? '\n\n✅ Task completed.'
       : `\n\n❌ Task failed${task.error?.message ? `: ${task.error.message}` : ''}.`;
+  const finalContent = existing.content + footer;
   await requireStore().update(existing.id, {
-    content: existing.content + footer,
+    content: finalContent,
     status: 'final',
   });
   if (task.id) taskListIds.delete(task.id);
+  await recordWalkthroughForTask(task, outcome, finalContent);
   syncToUiStore();
+}
+
+/**
+ * Auto walkthrough at task settle (spec 09 Phase 3, AC #8): packages the
+ * task_list outcome, the task's diff artifacts, and spec-11 screenshot
+ * artifacts (embedded as inline refs) into one reviewable document.
+ * Runs only for tasks whose lifecycle this capture observed (the task_list
+ * guard in onFinished), so retries/unknown tasks never double-generate.
+ */
+async function recordWalkthroughForTask(
+  task: CapturedTaskLike,
+  outcome: 'completed' | 'failed',
+  taskListContent: string
+): Promise<void> {
+  if (!task.id) return;
+  const store = requireStore();
+  await store.record({
+    taskId: task.id,
+    kind: 'walkthrough',
+    title: buildWalkthroughTitle(task.userRequest ?? ''),
+    content: buildWalkthroughMarkdown({
+      userRequest: task.userRequest ?? '',
+      outcome,
+      failureMessage: task.error?.message,
+      taskListContent,
+      diffs: store.list({ taskId: task.id, kind: 'diff' }),
+      screenshots: store.list({ taskId: task.id, kind: 'screenshot' }),
+    }),
+    status: 'final',
+  });
 }
 
 const listeners: Record<string, (...args: unknown[]) => void> = {

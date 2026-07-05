@@ -74,6 +74,42 @@ export function decodeScreenshotContent(content: string): ScreenshotArtifactCont
   }
 }
 
+/**
+ * Inline screenshot reference used in walkthrough markdown (spec 09 Phase 3).
+ * Walkthroughs stay text-only — image bytes live in the referenced
+ * screenshot artifact, resolved at render time by the viewer.
+ */
+export function screenshotRef(artifactId: string, title: string): string {
+  return `![${title}](artifact:${artifactId})`;
+}
+
+export type WalkthroughSegment =
+  | { type: 'text'; text: string }
+  | { type: 'screenshot'; artifactId: string; title: string };
+
+const SCREENSHOT_REF_RE = /!\[([^\]]*)\]\(artifact:([^)\s]+)\)/g;
+
+/**
+ * Split walkthrough markdown into text runs and screenshot references so the
+ * viewer can render referenced images inline (missing refs degrade to text).
+ */
+export function splitWalkthroughSegments(markdown: string): WalkthroughSegment[] {
+  const segments: WalkthroughSegment[] = [];
+  let last = 0;
+  for (const match of markdown.matchAll(SCREENSHOT_REF_RE)) {
+    const index = match.index ?? 0;
+    if (index > last) {
+      segments.push({ type: 'text', text: markdown.slice(last, index) });
+    }
+    segments.push({ type: 'screenshot', title: match[1] ?? '', artifactId: match[2] ?? '' });
+    last = index + match[0].length;
+  }
+  if (last < markdown.length) {
+    segments.push({ type: 'text', text: markdown.slice(last) });
+  }
+  return segments;
+}
+
 /** Markdown checklist line for a task_list artifact */
 export function taskListLine(description: string, done: boolean): string {
   return `- [${done ? 'x' : ' '}] ${description}`;

@@ -9,6 +9,8 @@
 import { decodeDiffContent } from '../../services/artifacts/artifactContent';
 import type { Artifact } from '../../services/artifacts/types';
 import { MultiFileDiffView } from '../MultiFileDiffView';
+import { ArtifactScreenshotView } from './ArtifactScreenshotView';
+import { ArtifactWalkthroughView } from './ArtifactWalkthroughView';
 import * as S from './styled';
 
 export interface ArtifactViewerProps {
@@ -31,6 +33,20 @@ export const ArtifactViewer = ({ artifact, onClose }: ArtifactViewerProps) => {
         </S.ViewerBody>
       );
     }
+  }
+  if (artifact.kind === 'screenshot') {
+    return (
+      <S.ViewerBody>
+        <ArtifactScreenshotView artifact={artifact} />
+      </S.ViewerBody>
+    );
+  }
+  if (artifact.kind === 'walkthrough') {
+    return (
+      <S.ViewerBody>
+        <ArtifactWalkthroughView artifact={artifact} />
+      </S.ViewerBody>
+    );
   }
   return (
     <S.ViewerBody data-testid="artifact-viewer-markdown">

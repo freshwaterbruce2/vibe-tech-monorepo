@@ -76,6 +76,24 @@ describe('list view', () => {
     expect(screen.getAllByText(/read files/).length).toBeGreaterThanOrEqual(1);
   });
 
+  it('shows a friendly preview for screenshot cards instead of raw JSON (spec 09 P3)', () => {
+    useArtifactsStore.setState({
+      artifacts: [
+        artifact({
+          id: 'shot-1',
+          kind: 'screenshot',
+          title: 'Login page',
+          content: '{"imageDataUrl":"data:image/png;base64,AAAA","capturedAt":"x"}',
+        }),
+      ],
+    });
+    renderPanel();
+    expect(screen.getByTestId('artifact-card-shot-1').textContent).toContain(
+      'Browser screenshot — open to view the image'
+    );
+    expect(screen.getByTestId('artifact-card-shot-1').textContent).not.toContain('imageDataUrl');
+  });
+
   it('deep links to the originating task (AC #9)', () => {
     useArtifactsStore.setState({ artifacts: [artifact({})] });
     renderPanel();

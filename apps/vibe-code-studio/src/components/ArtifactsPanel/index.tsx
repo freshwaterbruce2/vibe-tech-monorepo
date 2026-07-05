@@ -31,13 +31,14 @@ const KIND_ICON: Record<ArtifactKind, ReactNode> = {
   diff: <FileDiff size={14} />,
 };
 
-const previewOf = (artifact: Artifact): string =>
-  artifact.kind === 'diff'
-    ? 'File changes — open to review in the diff viewer'
-    : artifact.content
-        .replace(/[#*`\-[\]]/g, '')
-        .trim()
-        .slice(0, 140);
+const previewOf = (artifact: Artifact): string => {
+  if (artifact.kind === 'diff') return 'File changes — open to review in the diff viewer';
+  if (artifact.kind === 'screenshot') return 'Browser screenshot — open to view the image';
+  return artifact.content
+    .replace(/[#*`\-[\]]/g, '')
+    .trim()
+    .slice(0, 140);
+};
 
 /** Kinds that carry a comment thread (spec 09 Phase 2 starts with these) */
 const COMMENTABLE_KINDS: ReadonlySet<ArtifactKind> = new Set(['task_list', 'plan']);

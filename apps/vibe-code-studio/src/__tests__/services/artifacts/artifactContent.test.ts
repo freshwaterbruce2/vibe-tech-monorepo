@@ -10,6 +10,8 @@ import {
   decodeScreenshotContent,
   encodeDiffContent,
   encodeScreenshotContent,
+  screenshotRef,
+  splitWalkthroughSegments,
   taskListLine,
 } from '../../../services/artifacts/artifactContent';
 
@@ -61,6 +63,45 @@ describe('screenshot content codec (spec 11)', () => {
     expect(decodeScreenshotContent('not json')).toBeNull();
     expect(decodeScreenshotContent('{"imageDataUrl": ""}')).toBeNull();
     expect(decodeScreenshotContent('{"capturedAt": "now"}')).toBeNull();
+  });
+});
+
+describe('walkthrough screenshot refs (spec 09 Phase 3)', () => {
+  it('screenshotRef renders the inline reference format', () => {
+    expect(screenshotRef('a-1', 'Login page')).toBe('![Login page](artifact:a-1)');
+  });
+
+  it('splits text around refs, including refs at start and end', () => {
+    const markdown = `${screenshotRef('s-1', 'First')}\nmiddle text\n${screenshotRef('s-2', 'Second')}`;
+    expect(splitWalkthroughSegments(markdown)).toEqual([
+      { type: 'screenshot', artifactId: 's-1', title: 'First' },
+      { type: 'text', text: '\nmiddle text\n' },
+      { type: 'screenshot', artifactId: 's-2', title: 'Second' },
+    ]);
+  });
+
+  it('returns a single text segment when there are no refs', () => {
+    expect(splitWalkthroughSegments('plain markdown')).toEqual([
+      { type: 'text', text: 'plain markdown' },
+    ]);
+  });
+
+  it('handles consecutive refs and empty titles', () => {
+    const markdown = `${screenshotRef('s-1', '')}${screenshotRef('s-2', 'B')}`;
+    expect(splitWalkthroughSegments(markdown)).toEqual([
+      { type: 'screenshot', artifactId: 's-1', title: '' },
+      { type: 'screenshot', artifactId: 's-2', title: 'B' },
+    ]);
+  });
+
+  it('returns no segments for empty markdown', () => {
+    expect(splitWalkthroughSegments('')).toEqual([]);
+  });
+
+  it('leaves ordinary markdown images alone (non-artifact URLs are text)', () => {
+    expect(splitWalkthroughSegments('![alt](https://x/y.png)')).toEqual([
+      { type: 'text', text: '![alt](https://x/y.png)' },
+    ]);
   });
 });
 

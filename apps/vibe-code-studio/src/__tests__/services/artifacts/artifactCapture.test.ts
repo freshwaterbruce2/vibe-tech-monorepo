@@ -123,6 +123,71 @@ describe('task_list lifecycle', () => {
   });
 });
 
+describe('auto walkthrough at settle (spec 09 Phase 3, AC #8)', () => {
+  const listWalkthroughs = () =>
+    useArtifactsStore.getState().artifacts.filter(a => a.kind === 'walkthrough');
+
+  it('records a final walkthrough on completed, linking diffs and screenshots', async () => {
+    const events = makeEvents();
+    await initArtifactCapture(events);
+    events.emit('submitted', task);
+    await settle();
+    events.emit('stepStart', task, { description: 'apply edits' });
+    await settle();
+    events.emit('stepComplete', task, { description: 'apply edits' });
+    await settle();
+    await recordDiffArtifact('task-1', 'Auth refactor diff', [
+      { path: 'src/auth.ts', originalContent: 'a', newContent: 'b', changeType: 'modify' },
+    ]);
+    const screenshot = await recordScreenshotArtifact('task-1', 'Login page', {
+      imageDataUrl: 'data:image/png;base64,AAAA',
+      capturedAt: new Date(4000).toISOString(),
+    });
+
+    events.emit('completed', task);
+    await settle();
+
+    const walkthroughs = listWalkthroughs();
+    expect(walkthroughs).toHaveLength(1);
+    const walkthrough = walkthroughs[0]!;
+    expect(walkthrough).toMatchObject({
+      taskId: 'task-1',
+      status: 'final',
+      title: 'Walkthrough — refactor the auth module',
+    });
+    expect(walkthrough.content).toContain('## Goal');
+    expect(walkthrough.content).toContain('refactor the auth module');
+    expect(walkthrough.content).toContain('✅ Task completed.');
+    expect(walkthrough.content).toContain('1/1 planned steps completed.');
+    expect(walkthrough.content).toContain('- Auth refactor diff');
+    expect(walkthrough.content).toContain('- `src/auth.ts` (modify)');
+    expect(walkthrough.content).toContain(`![Login page](artifact:${screenshot.id})`);
+  });
+
+  it('records a failure walkthrough with the error message', async () => {
+    const events = makeEvents();
+    await initArtifactCapture(events);
+    events.emit('submitted', task);
+    await settle();
+    events.emit('failed', { ...task, error: { message: 'boom' } });
+    await settle();
+
+    const walkthrough = listWalkthroughs()[0];
+    expect(walkthrough?.content).toContain('❌ Task failed: boom.');
+    expect(walkthrough?.content).toContain(
+      'No browser verification evidence was captured for this task.'
+    );
+  });
+
+  it('does not generate a walkthrough for tasks it never observed', async () => {
+    const events = makeEvents();
+    await initArtifactCapture(events);
+    events.emit('completed', { id: 'never-submitted', userRequest: 'x' });
+    await settle();
+    expect(listWalkthroughs()).toHaveLength(0);
+  });
+});
+
 describe('initArtifactCapture', () => {
   it('is idempotent and does not double-attach listeners', async () => {
     const events = makeEvents();

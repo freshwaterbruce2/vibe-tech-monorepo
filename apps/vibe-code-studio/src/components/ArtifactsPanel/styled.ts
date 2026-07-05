@@ -189,6 +189,26 @@ export const MarkdownBlock = styled.pre`
   line-height: 1.5;
 `;
 
+export const ScreenshotFigure = styled.figure`
+  margin: 8px 0;
+`;
+
+export const ScreenshotImage = styled.img`
+  display: block;
+  max-width: 100%;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  background: #111;
+`;
+
+export const ScreenshotCaption = styled.figcaption`
+  margin-top: 4px;
+  color: #888;
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+`;
+
 export const ViewerMeta = styled.div`
   display: flex;
   flex-wrap: wrap;
