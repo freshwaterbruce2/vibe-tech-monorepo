@@ -9,6 +9,7 @@
  */
 
 import type { LspClient } from './lspClient';
+import { workspaceEditToFileEdits, type RenameFileEdits } from './lspRename';
 import { filePathToUri, uriToFilePath } from './uri';
 import {
   completionToMonaco,
@@ -30,6 +31,8 @@ export interface LspProviderDeps {
   getActivePath: () => string | null;
   /** Open a target file at a range — used for cross-file go-to-definition/references. */
   openLocation?: (path: string, range: MonacoRange) => void;
+  /** Route a rename WorkspaceEdit into the app's multi-file preview/apply flow. */
+  requestRename?: (newName: string, fileEdits: RenameFileEdits[]) => void;
 }
 
 interface MonacoModel {
@@ -59,6 +62,7 @@ export interface LspMonaco {
     registerDocumentSymbolProvider: (languageId: string, provider: unknown) => MonacoDisposable;
     registerCompletionItemProvider: (languageId: string, provider: unknown) => MonacoDisposable;
     registerReferenceProvider: (languageId: string, provider: unknown) => MonacoDisposable;
+    registerRenameProvider: (languageId: string, provider: unknown) => MonacoDisposable;
   };
 }
 
@@ -202,7 +206,40 @@ export function createReferenceProvider(
   };
 }
 
-/** Register all Phase 1b/1c providers for a language; returns an aggregate disposable. */
+/**
+ * Rename provider (Phase 1d, F2 / Monaco rename action). Requests
+ * `textDocument/rename` and hands the resulting WorkspaceEdit to the app's
+ * multi-file preview/apply flow via `deps.requestRename` — Monaco itself never
+ * applies the edits (cross-file targets may not have models). Degrades to null
+ * (Monaco default, no-op) when LSP is unavailable or the server returns nothing.
+ */
+export function createRenameProvider(client: LspClient, deps: LspProviderDeps) {
+  return {
+    async provideRenameEdits(
+      _model: MonacoModel,
+      position: MonacoPosition,
+      newName: string
+    ): Promise<{ edits: never[] } | null> {
+      const path = deps.getActivePath();
+      if (!path) return null;
+      let result: unknown;
+      try {
+        result = await client.request('textDocument/rename', {
+          ...positionParams(filePathToUri(path), position),
+          newName,
+        });
+      } catch {
+        return null;
+      }
+      const fileEdits = workspaceEditToFileEdits(result);
+      if (fileEdits.length === 0) return null;
+      deps.requestRename?.(newName, fileEdits);
+      return { edits: [] }; // the app owns preview + apply
+    },
+  };
+}
+
+/** Register all Phase 1b/1c/1d providers for a language; returns an aggregate disposable. */
 export function registerLspProviders(
   monaco: LspMonaco,
   languageId: string,
@@ -227,6 +264,7 @@ export function registerLspProviders(
       languageId,
       createReferenceProvider(client, deps, monaco)
     ),
+    monaco.languages.registerRenameProvider(languageId, createRenameProvider(client, deps)),
   ];
   return { dispose: () => disposables.forEach(disposable => disposable.dispose()) };
 }

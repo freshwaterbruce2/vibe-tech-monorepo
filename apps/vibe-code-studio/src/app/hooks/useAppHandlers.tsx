@@ -30,9 +30,11 @@ import type { WebSocketLike } from '../../services/lsp/lspClient';
 import {
   ensureLspProviders,
   initLspOpenLocation,
+  initLspRenameRequest,
   initLspSocketFactory,
   notifyDocumentOpen,
 } from '../../services/lsp/lspIntegration';
+import { renameEditsToPlan } from '../../services/lsp/lspRename';
 import type { LspMonaco } from '../../services/lsp/lspProviders';
 import type { UnifiedAIService } from '../../services/ai/UnifiedAIService';
 import type { FileSystemService } from '../../services/FileSystemService';
@@ -743,6 +745,20 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     },
     [setMultiFileEditPlan, setMultiFileChanges, setMultiFileApprovalOpen]
   );
+
+  // Spec 07 Phase 1d: route LSP rename WorkspaceEdits into the existing
+  // multi-file preview/apply flow (same approval panel as AI multi-file edits).
+  useEffect(() => {
+    initLspRenameRequest((newName, fileEdits) => {
+      void renameEditsToPlan(newName, fileEdits, path => fileSystemService.readFile(path))
+        .then(result => {
+          if (result) handleMultiFileEditDetected(result.plan, result.changes);
+        })
+        .catch((error: unknown) => {
+          showError('Rename Failed', error instanceof Error ? error.message : 'Unknown error');
+        });
+    });
+  }, [fileSystemService, handleMultiFileEditDetected, showError]);
 
   return {
     handleEditorMount,

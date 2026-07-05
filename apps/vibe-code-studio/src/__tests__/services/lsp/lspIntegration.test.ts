@@ -6,8 +6,10 @@ import {
   ensureLspProviders,
   getLspClient,
   initLspOpenLocation,
+  initLspRenameRequest,
   initLspSocketFactory,
   invokeOpenLocation,
+  invokeRenameRequest,
   notifyDocumentOpen,
   resetLspForTests,
 } from '../../../services/lsp/lspIntegration';
@@ -25,6 +27,7 @@ function mockMonaco(): LspMonaco {
       registerDocumentSymbolProvider: vi.fn(() => ({ dispose: vi.fn() })),
       registerCompletionItemProvider: vi.fn(() => ({ dispose: vi.fn() })),
       registerReferenceProvider: vi.fn(() => ({ dispose: vi.fn() })),
+      registerRenameProvider: vi.fn(() => ({ dispose: vi.fn() })),
     },
   };
 }
@@ -143,6 +146,26 @@ describe('lspIntegration', () => {
     expect(opener).toHaveBeenCalledWith('C:\\ws\\b.ts', aRange);
     resetLspForTests(); // clears the opener
     expect(() => invokeOpenLocation('C:\\ws\\c.ts', aRange)).not.toThrow();
+  });
+
+  it('invokeRenameRequest forwards to the installed sink and no-ops when unset', () => {
+    const fileEdits = [
+      {
+        path: 'C:\\ws\\b.ts',
+        edits: [
+          {
+            range: { start: { line: 0, character: 0 }, end: { line: 0, character: 3 } },
+            newText: 'bar',
+          },
+        ],
+      },
+    ];
+    const sink = vi.fn();
+    initLspRenameRequest(sink);
+    invokeRenameRequest('bar', fileEdits);
+    expect(sink).toHaveBeenCalledWith('bar', fileEdits);
+    resetLspForTests(); // clears the sink
+    expect(() => invokeRenameRequest('bar', fileEdits)).not.toThrow();
   });
 
   it('disposeLspClients also disposes registered providers', () => {

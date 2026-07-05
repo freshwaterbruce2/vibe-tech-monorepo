@@ -19,6 +19,7 @@ import {
   type WebSocketFactory,
 } from './lspClient';
 import type { MonacoRange } from './lspNavigation';
+import type { RenameFileEdits } from './lspRename';
 import {
   registerLspProviders,
   type LspMonaco,
@@ -31,6 +32,7 @@ const openDocs = new Map<string, Set<string>>();
 const providerDisposables = new Map<string, MonacoDisposable>();
 let socketFactory: WebSocketFactory | null = null;
 let openLocationFn: ((path: string, range: MonacoRange) => void) | null = null;
+let renameRequestFn: ((newName: string, fileEdits: RenameFileEdits[]) => void) | null = null;
 
 /**
  * Install the cross-file opener (the app's open-file-at-position handler) once
@@ -43,6 +45,21 @@ export function initLspOpenLocation(fn: (path: string, range: MonacoRange) => vo
 /** deps.openLocation — forwards to the installed opener (no-op until installed). */
 export function invokeOpenLocation(path: string, range: MonacoRange): void {
   openLocationFn?.(path, range);
+}
+
+/**
+ * Install the rename sink (spec 07 Phase 1d) once at startup: the app handler
+ * that previews a rename WorkspaceEdit in the multi-file approval panel.
+ */
+export function initLspRenameRequest(
+  fn: (newName: string, fileEdits: RenameFileEdits[]) => void
+): void {
+  renameRequestFn = fn;
+}
+
+/** deps.requestRename — forwards to the installed sink (no-op until installed). */
+export function invokeRenameRequest(newName: string, fileEdits: RenameFileEdits[]): void {
+  renameRequestFn?.(newName, fileEdits);
 }
 
 /** Install the socket factory (real `new WebSocket(url)`) once at startup. */
@@ -124,6 +141,7 @@ export function ensureLspProviders(
   const deps: LspProviderDeps = {
     getActivePath: activeDocumentPath,
     openLocation: invokeOpenLocation,
+    requestRename: invokeRenameRequest,
   };
   providerDisposables.set(languageId, registerLspProviders(monaco, languageId, client, deps));
 }
@@ -144,4 +162,5 @@ export function resetLspForTests(): void {
   providerDisposables.clear();
   socketFactory = null;
   openLocationFn = null;
+  renameRequestFn = null;
 }

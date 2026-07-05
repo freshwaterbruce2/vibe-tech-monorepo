@@ -6,6 +6,7 @@ import {
   createDocumentSymbolProvider,
   createHoverProvider,
   createReferenceProvider,
+  createRenameProvider,
   registerLspProviders,
   type LspMonaco,
   type LspProviderDeps,
@@ -45,6 +46,7 @@ function mockMonaco(): LspMonaco {
       registerDocumentSymbolProvider: vi.fn(() => ({ dispose: vi.fn() })),
       registerCompletionItemProvider: vi.fn(() => ({ dispose: vi.fn() })),
       registerReferenceProvider: vi.fn(() => ({ dispose: vi.fn() })),
+      registerRenameProvider: vi.fn(() => ({ dispose: vi.fn() })),
     },
   };
 }
@@ -250,8 +252,64 @@ describe('reference provider', () => {
   });
 });
 
+describe('rename provider', () => {
+  const workspaceEdit = {
+    changes: { 'file:///C:/ws/b.ts': [{ range: range(0, 4, 0, 7), newText: 'bar' }] },
+  };
+
+  it('returns null with no active path, on reject, and on an empty workspace edit', async () => {
+    expect(
+      await createRenameProvider(
+        clientReturning(workspaceEdit),
+        deps({ getActivePath: () => null })
+      ).provideRenameEdits(model, position, 'bar')
+    ).toBeNull();
+    expect(
+      await createRenameProvider(clientReturning(null, true), deps()).provideRenameEdits(
+        model,
+        position,
+        'bar'
+      )
+    ).toBeNull();
+    expect(
+      await createRenameProvider(clientReturning({}), deps()).provideRenameEdits(
+        model,
+        position,
+        'bar'
+      )
+    ).toBeNull();
+  });
+
+  it('sends textDocument/rename with the new name at the LSP position', async () => {
+    const client = clientReturning(workspaceEdit);
+    await createRenameProvider(client, deps()).provideRenameEdits(model, position, 'bar');
+    expect(client.request).toHaveBeenCalledWith('textDocument/rename', {
+      textDocument: { uri: 'file:///C:/ws/a.ts' },
+      position: { line: 0, character: 0 },
+      newName: 'bar',
+    });
+  });
+
+  it('routes the mapped edits to requestRename and returns an empty WorkspaceEdit', async () => {
+    const requestRename = vi.fn();
+    const provider = createRenameProvider(clientReturning(workspaceEdit), deps({ requestRename }));
+    expect(await provider.provideRenameEdits(model, position, 'bar')).toEqual({ edits: [] });
+    expect(requestRename).toHaveBeenCalledWith('bar', [
+      {
+        path: 'C:\\ws\\b.ts',
+        edits: [{ range: range(0, 4, 0, 7), newText: 'bar' }],
+      },
+    ]);
+  });
+
+  it('still resolves when no requestRename dep is installed', async () => {
+    const provider = createRenameProvider(clientReturning(workspaceEdit), deps());
+    expect(await provider.provideRenameEdits(model, position, 'bar')).toEqual({ edits: [] });
+  });
+});
+
 describe('registerLspProviders', () => {
-  it('registers all five providers and disposes them together', () => {
+  it('registers all six providers and disposes them together', () => {
     const monaco = mockMonaco();
     const handle = registerLspProviders(monaco, 'typescript', clientReturning({}), deps());
     expect(monaco.languages.registerHoverProvider).toHaveBeenCalledWith(
@@ -262,6 +320,10 @@ describe('registerLspProviders', () => {
     expect(monaco.languages.registerDocumentSymbolProvider).toHaveBeenCalled();
     expect(monaco.languages.registerCompletionItemProvider).toHaveBeenCalled();
     expect(monaco.languages.registerReferenceProvider).toHaveBeenCalled();
+    expect(monaco.languages.registerRenameProvider).toHaveBeenCalledWith(
+      'typescript',
+      expect.any(Object)
+    );
     handle.dispose(); // should not throw
   });
 });
