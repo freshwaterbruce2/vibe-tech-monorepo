@@ -8,6 +8,8 @@
 
 ---
 
+> **⚠️ Existing infra to reuse — dependency audit 2026-07-04:** The monorepo **already ships `backend/lsp-proxy/`** — a working WebSocket↔stdio LSP bridge (default port 5002) that already spawns `typescript-language-server`, `pyright-langserver`, and `rust-analyzer` with correct `Content-Length` framing. **Phase 1 should extend that proxy, not build a new bridge from scratch.** Open decision (resolve with spec 12): keep it as a standalone Node backend service VCS connects to over WS (its current shape, shared with other tools), or port it into a Tauri `externalBin` sidecar for a single-process desktop install. Also: the **`serena` MCP** (`mcp/registry.json`) already exposes `find_symbol` / `find_referencing_symbols` and can bootstrap go-to-def / find-refs while the LSP UI is built out.
+
 ## User Story
 
 As a developer working across a multi-file TypeScript/Python/Rust codebase, I want accurate cross-file go-to-definition, find-all-references, rename, hover, signature help, and live diagnostics, so that I get VS Code-grade navigation instead of Monaco's single-buffer guesswork.

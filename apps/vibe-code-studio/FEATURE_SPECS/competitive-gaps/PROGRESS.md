@@ -6,7 +6,8 @@ from the END (← 18). **Before starting a spec, mark it 🔄 IN PROGRESS here (
 or at least save the file) so the other session doesn't collide. When shipped, check it
 off with the commit hash.**
 
-Branch: `feat/vcs-task-runner` (as of 2026-07-04). All work follows the repo gates:
+Branch: `feat/vcs-lsp` (as of 2026-07-06; batch-1 specs 02/16/01/15 already merged to
+main via PR #77). All work follows the repo gates:
 100% diff coverage on new logic, lint/typecheck green, pathspec commits only
 (`git commit -m ... -- <your paths>`) — parallel sessions share this working tree
 and the index may hold the other session's staged files.
