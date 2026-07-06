@@ -163,41 +163,27 @@ export class BackendProxyService implements IAIService {
     const openRouterAvailable = configured?.['openrouter'] === true;
 
     if (provider === AIProvider.MOONSHOT) {
-      const upstreamId = this.resolveMoonshotModel(model);
       if (configured && configured['moonshot'] !== true && openRouterAvailable) {
-        // Moonshot's upstream ids exist on OpenRouter under the moonshotai/
-        // author (verified against the live catalog: moonshotai/kimi-k2.5,
-        // kimi-k2.6, kimi-k2.7-code, kimi-latest).
-        const orId = upstreamId.startsWith('moonshotai/') ? upstreamId : `moonshotai/${upstreamId}`;
+        const rerouted = this.buildOpenRouterRoute(model);
         logger.info(
-          `[BackendProxy] Rerouting ${model} -> ${orId} via OpenRouter (no Moonshot server key)`
+          `[BackendProxy] Rerouting ${model} -> ${rerouted.model} via OpenRouter (no Moonshot server key)`
         );
-        // provider becomes OPENROUTER: body shaping must NOT apply Moonshot's
-        // fixed-temperature/thinking fields on the OpenRouter route.
-        return {
-          url: `${this.baseUrl}/openrouter/api/v1/chat/completions`,
-          model: orId,
-          provider: AIProvider.OPENROUTER,
-        };
+        return rerouted;
       }
       return {
         url: `${this.baseUrl}/moonshot/v1/chat/completions`,
-        model: upstreamId,
+        model: this.resolveMoonshotModel(model),
         provider,
       };
     }
 
     if (provider === AIProvider.GOOGLE) {
       if (configured && configured['google'] !== true && openRouterAvailable) {
-        const orId = model.startsWith('google/') ? model : `google/${model}`;
+        const rerouted = this.buildOpenRouterRoute(model);
         logger.info(
-          `[BackendProxy] Rerouting ${model} -> ${orId} via OpenRouter (no Google server key)`
+          `[BackendProxy] Rerouting ${model} -> ${rerouted.model} via OpenRouter (no Google server key)`
         );
-        return {
-          url: `${this.baseUrl}/openrouter/api/v1/chat/completions`,
-          model: orId,
-          provider: AIProvider.OPENROUTER,
-        };
+        return rerouted;
       }
       return {
         url: `${this.baseUrl}/google/v1beta/openai/chat/completions`,
@@ -214,6 +200,45 @@ export class BackendProxyService implements IAIService {
       model: OpenRouterService.resolveModelId(model),
       provider,
     };
+  }
+
+  /**
+   * The OpenRouter-hosted equivalent of ANY model id. Moonshot upstream ids
+   * exist on OpenRouter under the moonshotai/ author (verified against the
+   * live catalog: moonshotai/kimi-k2.5, kimi-k2.6, kimi-latest); Google under
+   * google/. Body shaping keys off the returned OPENROUTER provider, so
+   * Moonshot's fixed-temperature/thinking fields are NOT applied here.
+   */
+  private buildOpenRouterRoute(model: string): ProxyRoute {
+    const provider = this.resolveProvider(model);
+    let orId: string;
+    if (provider === AIProvider.MOONSHOT) {
+      const upstreamId = this.resolveMoonshotModel(model);
+      orId = upstreamId.startsWith('moonshotai/') ? upstreamId : `moonshotai/${upstreamId}`;
+    } else if (provider === AIProvider.GOOGLE) {
+      orId = model.startsWith('google/') ? model : `google/${model}`;
+    } else {
+      orId = OpenRouterService.resolveModelId(model);
+    }
+    return {
+      url: `${this.baseUrl}/openrouter/api/v1/chat/completions`,
+      model: orId,
+      provider: AIProvider.OPENROUTER,
+    };
+  }
+
+  /**
+   * When an upstream answers with a quota/billing error (429 or 402) on a
+   * non-OpenRouter route and the server has an OpenRouter key, return the
+   * OpenRouter route to retry ONCE. Reads the cached /health snapshot
+   * directly (a fallback decision happens after a real upstream response, so
+   * the VITEST guard in configuredSnapshot must not blank it).
+   */
+  private quotaFallbackRoute(status: number, route: ProxyRoute, model: string): ProxyRoute | null {
+    if (status !== 429 && status !== 402) return null;
+    if (route.provider === AIProvider.OPENROUTER) return null;
+    if (this.configuredCache?.value['openrouter'] !== true) return null;
+    return this.buildOpenRouterRoute(model);
   }
 
   /** Kimi 'thinking'/'r1' variants run in thinking mode (mirrors MoonshotService). */
@@ -247,50 +272,89 @@ export class BackendProxyService implements IAIService {
     return body;
   }
 
+  /** Track an AbortController for cancelStream, chained to the caller's signal. */
+  private trackController(signal?: AbortSignal): AbortController {
+    const controller = new AbortController();
+    if (signal) {
+      signal.addEventListener('abort', () => controller.abort());
+    }
+    this.activeControllers.add(controller);
+    return controller;
+  }
+
+  /** POST one chat request to a route (body shaped per the route's provider). */
+  private postChat(
+    route: ProxyRoute,
+    messages: ChatMessage[],
+    options: { temperature?: number; maxTokens?: number; stream: boolean },
+    controller: AbortController
+  ): Promise<Response> {
+    const body = this.buildBody(messages, route, options);
+    return fetch(route.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  }
+
+  private parseCompletion(data: {
+    choices?: Array<{
+      message?: { content?: string; reasoning_content?: string; reasoning?: string };
+    }>;
+    usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
+  }): AICompletionResponse {
+    const choice = data.choices?.[0];
+    return {
+      content: choice?.message?.content ?? '',
+      // kimi-k2.5 returns reasoning in `reasoning_content`; the newer K2.6 uses
+      // `reasoning`. Accept either so thinking output is never silently dropped.
+      reasoning_content: choice?.message?.reasoning_content ?? choice?.message?.reasoning,
+      usage: {
+        promptTokens: data.usage?.prompt_tokens ?? 0,
+        completionTokens: data.usage?.completion_tokens ?? 0,
+        totalTokens: data.usage?.total_tokens ?? 0,
+      },
+      provider: 'backend-proxy',
+    };
+  }
+
   async complete(request: AICompletionRequest): Promise<AICompletionResponse> {
     const modelInput = request.model ?? DEFAULT_MODEL;
     const route = this.buildRoute(modelInput, this.configuredSnapshot());
-    const body = this.buildBody(request.messages, route, {
+    const options = {
       temperature: request.temperature,
       maxTokens: request.maxTokens,
       stream: false,
-    });
-
-    const controller = new AbortController();
-    if (request.signal) {
-      request.signal.addEventListener('abort', () => controller.abort());
-    }
-    this.activeControllers.add(controller);
+    };
+    const controller = this.trackController(request.signal);
 
     try {
-      const response = await fetch(route.url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      });
+      let response = await this.postChat(route, request.messages, options, controller);
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`AI proxy error (${response.status}): ${errorText}`);
+        const fallback = this.quotaFallbackRoute(response.status, route, modelInput);
+        if (!fallback) {
+          throw new Error(`AI proxy error (${response.status}): ${errorText}`);
+        }
+        logger.warn(
+          `[BackendProxy] ${route.provider} quota error (${response.status}) — ` +
+            `retrying via OpenRouter as ${fallback.model}`
+        );
+        const originalStatus = response.status;
+        response = await this.postChat(fallback, request.messages, options, controller);
+        if (!response.ok) {
+          const retryText = await response.text();
+          throw new Error(
+            `AI proxy error (${originalStatus}): ${errorText} ` +
+              `(OpenRouter fallback failed with ${response.status}: ${retryText})`
+          );
+        }
       }
 
-      const data = await response.json();
-      const choice = data.choices?.[0];
-
-      return {
-        content: choice?.message?.content ?? '',
-        // kimi-k2.5 returns reasoning in `reasoning_content`; the newer K2.6 uses
-        // `reasoning`. Accept either so thinking output is never silently dropped.
-        reasoning_content: choice?.message?.reasoning_content ?? choice?.message?.reasoning,
-        usage: {
-          promptTokens: data.usage?.prompt_tokens ?? 0,
-          completionTokens: data.usage?.completion_tokens ?? 0,
-          totalTokens: data.usage?.total_tokens ?? 0,
-        },
-        provider: 'backend-proxy',
-      };
+      return this.parseCompletion(await response.json());
     } finally {
       this.activeControllers.delete(controller);
     }
@@ -302,30 +366,35 @@ export class BackendProxyService implements IAIService {
   ): AsyncGenerator<string, void, unknown> {
     const modelInput = options?.model ?? DEFAULT_MODEL;
     const route = this.buildRoute(modelInput, this.configuredSnapshot());
-    const body = this.buildBody(messages, route, {
+    const requestOptions = {
       temperature: options?.temperature,
       maxTokens: options?.maxTokens,
       stream: true,
-    });
-
-    const controller = new AbortController();
-    if (options?.signal) {
-      options.signal.addEventListener('abort', () => controller.abort());
-    }
-    this.activeControllers.add(controller);
+    };
+    const controller = this.trackController(options?.signal);
 
     try {
-      const response = await fetch(route.url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      });
+      let response = await this.postChat(route, messages, requestOptions, controller);
 
       if (!response.ok || !response.body) {
         const text = await response.text();
-        throw new Error(`AI proxy stream error (${response.status}): ${text}`);
+        const fallback = this.quotaFallbackRoute(response.status, route, modelInput);
+        if (!fallback) {
+          throw new Error(`AI proxy stream error (${response.status}): ${text}`);
+        }
+        logger.warn(
+          `[BackendProxy] ${route.provider} quota error (${response.status}) — ` +
+            `retrying stream via OpenRouter as ${fallback.model}`
+        );
+        const originalStatus = response.status;
+        response = await this.postChat(fallback, messages, requestOptions, controller);
+        if (!response.ok || !response.body) {
+          const retryText = await response.text();
+          throw new Error(
+            `AI proxy stream error (${originalStatus}): ${text} ` +
+              `(OpenRouter fallback failed with ${response.status}: ${retryText})`
+          );
+        }
       }
 
       yield* this.drainSSE(response.body);
