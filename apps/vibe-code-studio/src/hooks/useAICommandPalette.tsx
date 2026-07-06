@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 
 import { logger } from '../services/Logger';
+import { useAgentManagerCommands } from './useAgentManagerCommands';
 import { useArtifactCommands } from './useArtifactCommands';
 import { useKnowledgeCommands } from './useKnowledgeCommands';
 import { usePlanModeCommands } from './usePlanModeCommands';
@@ -68,6 +69,7 @@ export const useAICommandPalette = (props: UseAICommandPaletteProps) => {
   const settingsSyncCommands = useSettingsSyncCommands();
   const knowledgeCommands = useKnowledgeCommands();
   const testExplorerCommands = useTestExplorerCommands();
+  const agentManagerCommands = useAgentManagerCommands();
 
   // Build comprehensive command list
   const commands: Command[] = [
@@ -78,6 +80,7 @@ export const useAICommandPalette = (props: UseAICommandPaletteProps) => {
     ...settingsSyncCommands,
     ...knowledgeCommands,
     ...testExplorerCommands,
+    ...agentManagerCommands,
     // File Operations
     {
       id: 'file-new',

@@ -19,6 +19,7 @@ import TitleBar from '../components/TitleBar';
 
 // Lazy-loaded conditional panels (only loaded when their toggle opens them)
 import {
+  AgentManagerPanelHost,
   BackgroundTaskPanel,
   BrainScanPanel,
   BrowserPermissionPromptHost,
@@ -557,6 +558,10 @@ export function AppLayout() {
 
       <Suspense fallback={null}>
         <TestExplorerPanelHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <AgentManagerPanelHost />
       </Suspense>
 
       <Suspense fallback={null}>

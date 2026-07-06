@@ -9,6 +9,11 @@ import { lazy } from 'react';
 export const EnhancedAgentMode = lazy(
   () => import('../components/EnhancedAgentMode/EnhancedAgentMode')
 );
+export const AgentManagerPanelHost = lazy(() =>
+  import('../components/AgentManagerPanel/AgentManagerPanelHost').then(m => ({
+    default: m.AgentManagerPanelHost,
+  }))
+);
 export const ArtifactsPanelHost = lazy(() =>
   import('../components/ArtifactsPanel/ArtifactsPanelHost').then(m => ({
     default: m.ArtifactsPanelHost,
