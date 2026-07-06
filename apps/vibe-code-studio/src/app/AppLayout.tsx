@@ -31,6 +31,7 @@ import {
   KeyboardShortcuts,
   MultiFileEditApprovalPanel,
   PerformanceMonitor,
+  PlanModeDialogHost,
   PreviewPanel,
   ArtifactsPanelHost,
   ProblemsPanelHost,
@@ -537,6 +538,10 @@ export function AppLayout() {
 
       <Suspense fallback={null}>
         <BrowserPermissionPromptHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <PlanModeDialogHost />
       </Suspense>
 
       <Suspense fallback={null}>

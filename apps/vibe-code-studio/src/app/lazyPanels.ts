@@ -45,6 +45,11 @@ export const MultiFileEditApprovalPanel = lazy(() =>
   }))
 );
 export const PerformanceMonitor = lazy(() => import('../components/PerformanceMonitor'));
+export const PlanModeDialogHost = lazy(() =>
+  import('../components/PlanMode/PlanModeDialogHost').then(m => ({
+    default: m.PlanModeDialogHost,
+  }))
+);
 export const PreviewPanel = lazy(() =>
   import('../components/PreviewPanel').then(m => ({ default: m.PreviewPanel }))
 );

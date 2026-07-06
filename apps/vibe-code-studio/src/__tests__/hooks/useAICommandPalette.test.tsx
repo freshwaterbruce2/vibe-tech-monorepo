@@ -16,6 +16,8 @@ describe('useAICommandPalette', () => {
     expect(ids).toContain('artifacts-open');
     expect(ids).toContain('view-toggle-artifacts');
     expect(ids).toContain('view-toggle-problems');
+    expect(ids).toContain('plan-mode-create');
+    expect(ids).toContain('plan-mode-view-plans');
     expect(ids).toContain('file-new');
   });
 
