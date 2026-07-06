@@ -1,5 +1,6 @@
 import type { AIContextRequest, WorkspaceContext, UserActivity } from '../../types';
 import { FileSystemService } from '../FileSystemService';
+import { buildKnowledgeSection } from '../knowledge/knowledgeIntegration';
 import { type Rule, RulesParser } from '../RulesParser';
 import { loadAgentsStandardsSection } from './standards/AgentsMdLoader';
 
@@ -155,6 +156,11 @@ Do not skip steps. Your reasoning should be visible and structured.
       prompt += await this.loadAgentsStandards(
         request.workspaceContext.rootPath,
         request.currentFile.name
+      );
+
+      // Knowledge items (spec 04) — top-N relevant durable facts, char-budgeted
+      prompt += await buildKnowledgeSection(
+        `${request.workspaceContext.rootPath} ${request.currentFile.name} ${request.userQuery}`
       );
     }
 

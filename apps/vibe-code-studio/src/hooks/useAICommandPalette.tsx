@@ -20,6 +20,7 @@ import {
 
 import { logger } from '../services/Logger';
 import { useArtifactCommands } from './useArtifactCommands';
+import { useKnowledgeCommands } from './useKnowledgeCommands';
 import { usePlanModeCommands } from './usePlanModeCommands';
 import { useScheduleCommands } from './useScheduleCommands';
 import { useSettingsSyncCommands } from './useSettingsSyncCommands';
@@ -64,6 +65,7 @@ export const useAICommandPalette = (props: UseAICommandPaletteProps) => {
   const artifactCommands = useArtifactCommands();
   const planModeCommands = usePlanModeCommands();
   const settingsSyncCommands = useSettingsSyncCommands();
+  const knowledgeCommands = useKnowledgeCommands();
 
   // Build comprehensive command list
   const commands: Command[] = [
@@ -72,6 +74,7 @@ export const useAICommandPalette = (props: UseAICommandPaletteProps) => {
     ...artifactCommands,
     ...planModeCommands,
     ...settingsSyncCommands,
+    ...knowledgeCommands,
     // File Operations
     {
       id: 'file-new',

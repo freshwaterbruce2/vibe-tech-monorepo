@@ -29,6 +29,7 @@ import {
   GitPanel,
   GlobalSearch,
   KeyboardShortcuts,
+  KnowledgePanelHost,
   MultiFileEditApprovalPanel,
   PerformanceMonitor,
   PlanModeDialogHost,
@@ -547,6 +548,10 @@ export function AppLayout() {
 
       <Suspense fallback={null}>
         <SettingsSyncDialog />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <KnowledgePanelHost />
       </Suspense>
 
       <Suspense fallback={null}>

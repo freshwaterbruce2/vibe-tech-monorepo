@@ -36,6 +36,11 @@ export const GitPanel = lazy(() => import('../components/GitPanel'));
 export const GlobalSearch = lazy(() =>
   import('../components/GlobalSearch').then(m => ({ default: m.GlobalSearch }))
 );
+export const KnowledgePanelHost = lazy(() =>
+  import('../components/KnowledgePanel/KnowledgePanelHost').then(m => ({
+    default: m.KnowledgePanelHost,
+  }))
+);
 export const KeyboardShortcuts = lazy(() =>
   import('../components/KeyboardShortcuts').then(m => ({ default: m.KeyboardShortcuts }))
 );

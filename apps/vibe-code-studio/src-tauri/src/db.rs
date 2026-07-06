@@ -108,6 +108,21 @@ fn ensure_connection(state: &DbState) -> Result<(), String> {
         )
         .map_err(|e| e.to_string())?;
 
+        // Knowledge items (spec 04). category is a real column for panel
+        // filtering; the full item is a JSON blob (renderer uses
+        // db_execute_query, which rejects DDL — table must be created here).
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS knowledge_items (
+                id TEXT PRIMARY KEY,
+                category TEXT NOT NULL,
+                item_data TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )",
+            [],
+        )
+        .map_err(|e| e.to_string())?;
+
         *guard = Some(conn);
     }
     Ok(())
