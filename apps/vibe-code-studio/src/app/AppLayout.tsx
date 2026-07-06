@@ -37,6 +37,7 @@ import {
   ProblemsPanelHost,
   SchedulePanelHost,
   ScreenshotToCodePanel,
+  SettingsSyncDialog,
   TerminalPanel,
   VisualEditor,
   WelcomeScreen,
@@ -542,6 +543,10 @@ export function AppLayout() {
 
       <Suspense fallback={null}>
         <PlanModeDialogHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <SettingsSyncDialog />
       </Suspense>
 
       <Suspense fallback={null}>

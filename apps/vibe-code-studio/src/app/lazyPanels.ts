@@ -63,6 +63,11 @@ export const SchedulePanelHost = lazy(() =>
     default: m.SchedulePanelHost,
   }))
 );
+export const SettingsSyncDialog = lazy(() =>
+  import('../components/SettingsSync/SettingsSyncDialog').then(m => ({
+    default: m.SettingsSyncDialog,
+  }))
+);
 export const ScreenshotToCodePanel = lazy(() =>
   import('../components/ScreenshotToCodePanel').then(m => ({ default: m.ScreenshotToCodePanel }))
 );
