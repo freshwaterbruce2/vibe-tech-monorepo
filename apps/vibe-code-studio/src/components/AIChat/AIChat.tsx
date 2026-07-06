@@ -96,10 +96,17 @@ const AIChat = ({
   onTaskError,
   onApprovalRequired,
   onMultiFileEditDetected: _onMultiFileEditDetected,
+  onClearMessages,
 }: AIChatProps) => {
   const [input, setInput] = useState('');
   const [pendingSendCount, setPendingSendCount] = useState(0);
   const { clearMessages } = useAIActions();
+  // The rendered conversation lives in useAIChat (via the messages prop);
+  // clear BOTH it and the useAIStore copy so no layer keeps stale history.
+  const handleClearChat = useCallback(() => {
+    onClearMessages?.();
+    clearMessages();
+  }, [onClearMessages, clearMessages]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [internalMode, setInternalMode] = useState<ChatMode>('chat');
@@ -640,7 +647,7 @@ const AIChat = ({
           </ModeButton>
         </ModeSwitcher>
         <CloseButton
-          onClick={clearMessages}
+          onClick={handleClearChat}
           title="Clear chat"
           aria-label="Clear chat"
           data-testid="clear-chat"

@@ -28,15 +28,35 @@ interface SqliteRows {
 export class KnowledgeStore {
   private items = new Map<string, KnowledgeItem>();
   private loaded = false;
+  /** Shared in-flight load so concurrent callers await the SAME read. */
+  private loadPromise: Promise<void> | null = null;
 
-  /** Load persisted items. Idempotent; safe to call before every read. */
+  /**
+   * Load persisted items. Idempotent and concurrency-safe: parallel callers
+   * share one read, and `loaded` is only latched once a read SUCCEEDS — a
+   * degraded read (DB bridge not ready) does not latch an empty store, so a
+   * later call retries instead of returning empty for the whole session.
+   */
   async load(): Promise<void> {
     if (this.loaded) return;
-    this.loaded = true;
-    const raw = await this.readPersisted();
-    for (const entry of raw) {
+    this.loadPromise ??= this.doLoad();
+    try {
+      await this.loadPromise;
+    } finally {
+      this.loadPromise = null;
+    }
+  }
+
+  private async doLoad(): Promise<void> {
+    const { entries, degraded } = await this.readPersisted();
+    for (const entry of entries) {
       const parsed = this.deserialize(entry);
       if (parsed) this.items.set(parsed.id, parsed);
+    }
+    // Only latch when the read was trustworthy; a degraded+empty read leaves
+    // loaded=false so the next load() re-attempts once the DB is ready.
+    if (!degraded || this.items.size > 0) {
+      this.loaded = true;
     }
     logger.debug(`[KnowledgeStore] Loaded ${this.items.size} knowledge items`);
   }
@@ -63,7 +83,7 @@ export class KnowledgeStore {
     };
     this.items.set(item.id, item);
     await this.persist(item);
-    this.pruneOldest();
+    await this.pruneOldest();
     return item;
   }
 
@@ -102,13 +122,25 @@ export class KnowledgeStore {
 
   // -- persistence ----------------------------------------------------------
 
-  private pruneOldest(): void {
+  private async pruneOldest(): Promise<void> {
     if (this.items.size <= MAX_ITEMS) return;
     const sorted = this.list().sort((a, b) => a.updatedAt.localeCompare(b.updatedAt));
     const excess = sorted.slice(0, this.items.size - MAX_ITEMS);
     for (const item of excess) {
       this.items.delete(item.id);
     }
+    // Eviction must reach durable storage too, or pruned rows resurrect on the
+    // next load() and the cap never actually bounds the corpus.
+    if (this.hasSqliteDb()) {
+      for (const item of excess) {
+        try {
+          await window.electron!.db!.execute('DELETE FROM knowledge_items WHERE id = ?', [item.id]);
+        } catch (error) {
+          logger.error('[KnowledgeStore] Failed to delete pruned knowledge row', error);
+        }
+      }
+    }
+    await this.saveFallback();
   }
 
   private async persist(item: KnowledgeItem): Promise<void> {
@@ -126,7 +158,7 @@ export class KnowledgeStore {
     await this.saveFallback();
   }
 
-  private async readPersisted(): Promise<string[]> {
+  private async readPersisted(): Promise<{ entries: string[]; degraded: boolean }> {
     if (this.hasSqliteDb()) {
       try {
         const result = (await window.electron!.db!.execute(
@@ -135,13 +167,18 @@ export class KnowledgeStore {
         )) as SqliteRows;
         const rows = result?.data ?? [];
         if (rows.length > 0) {
-          return rows.map(row => row.item_data ?? '').filter(Boolean);
+          return { entries: rows.map(row => row.item_data ?? '').filter(Boolean), degraded: false };
         }
+        // Reachable SQLite that returned zero rows is a trustworthy empty.
+        return { entries: [], degraded: false };
       } catch (error) {
+        // DB present but unusable (bridge/table not ready): degraded — fall
+        // through to the local snapshot but let the caller retry later.
         logger.error('[KnowledgeStore] Failed to load knowledge items from SQLite', error);
+        return { entries: await this.readFallback(), degraded: true };
       }
     }
-    return this.readFallback();
+    return { entries: await this.readFallback(), degraded: false };
   }
 
   private async readFallback(): Promise<string[]> {

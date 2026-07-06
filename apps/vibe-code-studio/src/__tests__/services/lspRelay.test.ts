@@ -12,7 +12,7 @@ function makeChild() {
   const child = new EventEmitter() as EventEmitter & Record<string, unknown>;
   child.stdout = new EventEmitter();
   child.stderr = new EventEmitter();
-  child.stdin = { writable: true, write: vi.fn() };
+  child.stdin = { writable: true, write: vi.fn(), end: vi.fn() };
   child.kill = vi.fn();
   return child;
 }
@@ -69,11 +69,27 @@ describe('bridgeServer', () => {
     expect(ws.send).toHaveBeenCalledWith('{"ok":true}');
   });
 
-  it('kills the child when the socket closes', () => {
+  it('ends stdin (EOF) BEFORE killing the child when the socket closes', () => {
     const spawn = vi.fn(() => child);
     bridgeServer(ws, spec, { spawn, logger: silentLogger });
     ws.emit('close');
+    const end = (child.stdin as { end: ReturnType<typeof vi.fn> }).end;
+    expect(end).toHaveBeenCalled();
     expect(child.kill).toHaveBeenCalled();
+    // stdin.end() must run first so the server sees EOF and self-exits; the
+    // wrapper kill is the fallback (Windows .cmd shims don't cascade).
+    expect(end.mock.invocationCallOrder[0]).toBeLessThan(
+      (child.kill as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0]!
+    );
+  });
+
+  it('does not throw on close when the child has no stdin (still kills)', () => {
+    const noStdinChild = makeChild();
+    noStdinChild.stdin = undefined;
+    const spawn = vi.fn(() => noStdinChild);
+    bridgeServer(ws, spec, { spawn, logger: silentLogger });
+    expect(() => ws.emit('close')).not.toThrow();
+    expect(noStdinChild.kill).toHaveBeenCalled();
   });
 
   it('closes the socket when the server exits', () => {

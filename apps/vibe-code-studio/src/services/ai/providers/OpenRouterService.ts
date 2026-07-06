@@ -171,7 +171,11 @@ export class OpenRouterService implements IAIService {
     'lfm-2.5-thinking': 'liquid/lfm-2.5-1.2b-thinking:free',
     'lfm-2.5-instruct': 'liquid/lfm-2.5-1.2b-instruct:free',
     'kimi-k2.7-code': 'moonshotai/kimi-k2.7-code', // Kimi K2.7 Coding Specialist
-    'kimi-2.5-pro': 'moonshot/kimi-2.5-pro',
+    // OpenRouter author is 'moonshotai/' (NOT 'moonshot/', which is the
+    // direct-Moonshot-API form and 404s on OpenRouter). Must agree with
+    // BackendProxyService.buildOpenRouterRoute's moonshotai/kimi-k2.5.
+    'kimi-2.5-pro': 'moonshotai/kimi-k2.5',
+    'moonshot/kimi-2.5-pro': 'moonshotai/kimi-k2.5',
     'glm-5.2': 'z-ai/glm-5.2', // GLM 5.2 Reasoning Model
     'glm-5': 'z-ai/glm-5',
     'cohere-north-mini-code': 'cohere/north-mini-code:free', // MoE Free Coding

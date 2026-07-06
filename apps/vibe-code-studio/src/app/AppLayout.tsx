@@ -260,6 +260,7 @@ export function AppLayout() {
               responseState={extras.aiResponseState}
               onSendMessage={extras.handleAIMessage}
               onCancelResponse={extras.cancelAiResponse}
+              onClearMessages={extras.clearAiMessages}
               onClose={() => ui.setAiChatOpen(false)}
               showReasoningProcess={ws.editorSettings.showReasoningProcess}
               currentModel={ws.editorSettings.aiModel}

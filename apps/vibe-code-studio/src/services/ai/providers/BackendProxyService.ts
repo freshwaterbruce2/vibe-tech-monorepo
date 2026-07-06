@@ -100,15 +100,38 @@ export class BackendProxyService implements IAIService {
     return this.configuredCache?.value ?? null;
   }
 
-  private async refreshConfigured(): Promise<void> {
-    try {
-      const health = await this.health();
-      if (health.reachable) {
-        this.configuredCache = { value: health.configured, at: Date.now() };
+  /** Dedups concurrent /health probes so a request burst fires one fetch. */
+  private healthInFlight: Promise<void> | null = null;
+
+  private refreshConfigured(): Promise<void> {
+    this.healthInFlight ??= (async () => {
+      try {
+        const health = await this.health();
+        if (health.reachable) {
+          this.configuredCache = { value: health.configured, at: Date.now() };
+        }
+      } catch {
+        // keep last snapshot
+      } finally {
+        this.healthInFlight = null;
       }
-    } catch {
-      // keep last snapshot
+    })();
+    return this.healthInFlight;
+  }
+
+  /**
+   * Whether OpenRouter has a server key, awaiting a one-shot /health probe
+   * when the snapshot is still cold (first request after start, before
+   * initialize()'s background refresh lands). Used only on the quota-error
+   * path, so the extra await costs nothing on the happy path.
+   */
+  private async isOpenRouterConfigured(): Promise<boolean> {
+    // Warm the snapshot only when cold and outside vitest (the VITEST guard
+    // keeps fetch-mock ordering deterministic; tests seed configuredCache).
+    if (!this.configuredCache && !import.meta.env['VITEST']) {
+      await this.refreshConfigured();
     }
+    return this.configuredCache?.value['openrouter'] === true;
   }
 
   /**
@@ -234,10 +257,17 @@ export class BackendProxyService implements IAIService {
    * directly (a fallback decision happens after a real upstream response, so
    * the VITEST guard in configuredSnapshot must not blank it).
    */
-  private quotaFallbackRoute(status: number, route: ProxyRoute, model: string): ProxyRoute | null {
+  private async quotaFallbackRoute(
+    status: number,
+    route: ProxyRoute,
+    model: string
+  ): Promise<ProxyRoute | null> {
     if (status !== 429 && status !== 402) return null;
     if (route.provider === AIProvider.OPENROUTER) return null;
-    if (this.configuredCache?.value['openrouter'] !== true) return null;
+    // Await a health probe if the snapshot is cold so a quota error on the
+    // very first request (before initialize()'s refresh lands) still falls
+    // back instead of surfacing the raw 429.
+    if (!(await this.isOpenRouterConfigured())) return null;
     return this.buildOpenRouterRoute(model);
   }
 
@@ -335,7 +365,7 @@ export class BackendProxyService implements IAIService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        const fallback = this.quotaFallbackRoute(response.status, route, modelInput);
+        const fallback = await this.quotaFallbackRoute(response.status, route, modelInput);
         if (!fallback) {
           throw new Error(`AI proxy error (${response.status}): ${errorText}`);
         }
@@ -378,7 +408,7 @@ export class BackendProxyService implements IAIService {
 
       if (!response.ok || !response.body) {
         const text = await response.text();
-        const fallback = this.quotaFallbackRoute(response.status, route, modelInput);
+        const fallback = await this.quotaFallbackRoute(response.status, route, modelInput);
         if (!fallback) {
           throw new Error(`AI proxy stream error (${response.status}): ${text}`);
         }

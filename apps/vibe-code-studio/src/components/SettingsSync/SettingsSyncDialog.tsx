@@ -7,6 +7,8 @@
  */
 import { useMemo, useState } from 'react';
 import styled from 'styled-components';
+import { useAppExtras, useServices } from '../../app/contexts';
+import { applySettingsChange } from '../../app/applySettingsChange';
 import {
   buildSettingsPatch,
   computeSettingsDiff,
@@ -121,6 +123,8 @@ export const SettingsSyncDialog = () => {
   const close = useSettingsSyncStore(state => state.actions.close);
   const settings = useEditorStore(state => state.settings);
   const updateSettings = useEditorStore(state => state.actions.updateSettings);
+  const { aiService } = useServices();
+  const { showSuccess, showError } = useAppExtras();
   const [pasted, setPasted] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<SettingsDiffEntry[] | null>(null);
@@ -149,7 +153,20 @@ export const SettingsSyncDialog = () => {
 
   const applyImport = () => {
     if (preview && preview.length > 0) {
-      updateSettings(buildSettingsPatch(preview));
+      // Route through applySettingsChange (not raw updateSettings) so an
+      // imported aiModel reaches useAIStore + aiService.setModel — the same
+      // side effects the Settings UI triggers. A raw patch would only update
+      // the display and silently keep the old live model (v1.2.1 bug).
+      void applySettingsChange(
+        {
+          updateEditorSettings: updateSettings,
+          prevAiModel: settings.aiModel,
+          aiService,
+          showSuccess,
+          showError,
+        },
+        buildSettingsPatch(preview)
+      );
       setApplied(true);
       setPreview(null);
     }

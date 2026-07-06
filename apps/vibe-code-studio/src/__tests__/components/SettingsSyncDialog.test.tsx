@@ -4,12 +4,20 @@
  * and the no-changes path. Drives real stores (settingsSyncStore +
  * useEditorStore); editor settings are reset per test because the store
  * persists through the file-lifetime electron store mock.
+ *
+ * Apply now routes through applySettingsChange (via useServices().aiService +
+ * useAppExtras() showSuccess/showError) so an imported aiModel reaches
+ * useAIStore.setModel + aiService.setModel — the contexts are supplied here
+ * through a provider wrapper, exactly like SchedulePanelHost.test.
  */
 import { fireEvent, render, screen } from '@testing-library/react';
-import { act } from 'react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { act, type ReactNode } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AppExtrasContext, ServicesContext } from '../../app/contexts';
+import type { AppExtrasContextValue, ServicesContextValue } from '../../app/contexts';
 import { SettingsSyncDialog } from '../../components/SettingsSync/SettingsSyncDialog';
 import { SETTINGS_EXPORT_VERSION } from '../../services/settings/settingsSchema';
+import { useAIStore } from '../../stores/useAIStore';
 import { useSettingsSyncStore } from '../../stores/settingsSyncStore';
 import { useEditorStore } from '../../stores/useEditorStore';
 
@@ -26,6 +34,21 @@ const applyButton = (): HTMLButtonElement =>
 const previewButton = (): HTMLButtonElement =>
   screen.getByTestId('settings-sync-preview') as HTMLButtonElement;
 
+const setModel = vi.fn();
+const showSuccess = vi.fn();
+const showError = vi.fn();
+
+const services = { aiService: { setModel } } as unknown as ServicesContextValue;
+const extras = { showSuccess, showError } as unknown as AppExtrasContextValue;
+
+const wrapper = ({ children }: { children: ReactNode }) => (
+  <ServicesContext.Provider value={services}>
+    <AppExtrasContext.Provider value={extras}>{children}</AppExtrasContext.Provider>
+  </ServicesContext.Provider>
+);
+
+const renderDialog = () => render(<SettingsSyncDialog />, { wrapper });
+
 const pasteAndPreview = (json: string) => {
   fireEvent.change(screen.getByTestId('settings-sync-input'), { target: { value: json } });
   fireEvent.click(previewButton());
@@ -33,20 +56,24 @@ const pasteAndPreview = (json: string) => {
 
 beforeEach(() => {
   useSettingsSyncStore.setState({ mode: 'closed' });
+  useAIStore.setState({ currentModel: 'moonshot/kimi-2.5-pro' });
   act(() => {
     useEditorStore.getState().actions.resetSettings();
   });
+  setModel.mockReset();
+  showSuccess.mockReset();
+  showError.mockReset();
 });
 
 describe('SettingsSyncDialog', () => {
   it('renders nothing while the store is closed', () => {
-    render(<SettingsSyncDialog />);
+    renderDialog();
     expect(screen.queryByTestId('settings-sync-dialog')).toBeNull();
   });
 
   it('export mode shows the versioned JSON and the no-API-keys note', () => {
     useSettingsSyncStore.setState({ mode: 'export' });
-    render(<SettingsSyncDialog />);
+    renderDialog();
 
     expect(screen.getByText('Export Settings (versioned JSON)')).toBeTruthy();
     expect(
@@ -61,7 +88,7 @@ describe('SettingsSyncDialog', () => {
 
   it('import mode shows a validation error for invalid JSON', () => {
     useSettingsSyncStore.setState({ mode: 'import' });
-    render(<SettingsSyncDialog />);
+    renderDialog();
     expect(screen.getByText('Import Settings')).toBeTruthy();
 
     pasteAndPreview('{not json');
@@ -71,7 +98,7 @@ describe('SettingsSyncDialog', () => {
 
   it('previews a per-key diff and applies it to useEditorStore', () => {
     useSettingsSyncStore.setState({ mode: 'import' });
-    render(<SettingsSyncDialog />);
+    renderDialog();
 
     pasteAndPreview(exportPayload({ fontSize: 18, rulers: [120] }));
     expect(screen.queryByTestId('settings-sync-error')).toBeNull();
@@ -85,14 +112,41 @@ describe('SettingsSyncDialog', () => {
     expect(useEditorStore.getState().settings.fontSize).toBe(18);
     expect(useEditorStore.getState().settings.rulers).toEqual([120]);
     expect(screen.getByTestId('settings-sync-applied').textContent).toBe('Settings applied.');
+    // No aiModel change → applySettingsChange takes the plain-success branch,
+    // never touching the live model.
+    expect(setModel).not.toHaveBeenCalled();
     // preview is cleared after applying, so Apply disables again
     expect(applyButton().disabled).toBe(true);
     expect(screen.queryByTestId('settings-sync-diff')).toBeNull();
   });
 
+  it('routes an imported aiModel change through applySettingsChange (aiService + useAIStore)', () => {
+    useSettingsSyncStore.setState({ mode: 'import' });
+    renderDialog();
+
+    // Default settings.aiModel is 'moonshot/kimi-2.5-pro'; import a different
+    // REGISTERED model so useAIStore.setModel keeps it (unknown ids collapse to
+    // the default and would hide the propagation).
+    pasteAndPreview(exportPayload({ aiModel: 'deepseek/deepseek-r1' }));
+    const rows = Array.from(screen.getByTestId('settings-sync-diff').querySelectorAll('li')).map(
+      li => li.textContent
+    );
+    expect(rows).toEqual(['aiModel: "moonshot/kimi-2.5-pro" → "deepseek/deepseek-r1"']);
+
+    fireEvent.click(applyButton());
+
+    // The two applySettingsChange side effects on a model change: the AI store
+    // is written (source of truth) AND the live service is re-pointed — neither
+    // happens on a raw updateSettings patch (the v1.2.1 bug this fix closes).
+    expect(useAIStore.getState().currentModel).toBe('deepseek/deepseek-r1');
+    expect(setModel).toHaveBeenCalledWith('deepseek/deepseek-r1');
+    expect(useEditorStore.getState().settings.aiModel).toBe('deepseek/deepseek-r1');
+    expect(screen.getByTestId('settings-sync-applied').textContent).toBe('Settings applied.');
+  });
+
   it('recovers from an error once a valid payload is previewed', () => {
     useSettingsSyncStore.setState({ mode: 'import' });
-    render(<SettingsSyncDialog />);
+    renderDialog();
 
     pasteAndPreview(exportPayload({ fontSize: 'big' }));
     expect(screen.getByTestId('settings-sync-error').textContent).toMatch(
@@ -106,7 +160,7 @@ describe('SettingsSyncDialog', () => {
 
   it('shows the no-changes note and keeps Apply disabled when already in sync', () => {
     useSettingsSyncStore.setState({ mode: 'import' });
-    render(<SettingsSyncDialog />);
+    renderDialog();
 
     pasteAndPreview(exportPayload({ fontSize: 14, theme: 'dark' }));
     expect(screen.getByTestId('settings-sync-no-changes').textContent).toBe(
@@ -122,7 +176,7 @@ describe('SettingsSyncDialog', () => {
 
   it('disables Preview while the textarea is empty or whitespace', () => {
     useSettingsSyncStore.setState({ mode: 'import' });
-    render(<SettingsSyncDialog />);
+    renderDialog();
 
     expect(previewButton().disabled).toBe(true);
     fireEvent.change(screen.getByTestId('settings-sync-input'), { target: { value: '   ' } });
@@ -133,7 +187,7 @@ describe('SettingsSyncDialog', () => {
 
   it('Close writes to the store and the dialog unmounts', () => {
     useSettingsSyncStore.setState({ mode: 'export' });
-    render(<SettingsSyncDialog />);
+    renderDialog();
     expect(screen.getByTestId('settings-sync-dialog')).toBeTruthy();
 
     fireEvent.click(screen.getByText('Close'));

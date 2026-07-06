@@ -64,6 +64,16 @@ export function bridgeServer(ws, spec, { spawn, logger = console }) {
     }
   });
   ws.on('close', () => {
+    // For Windows .cmd shims spawned with shell:true, `child` is cmd.exe and
+    // TerminateProcess does NOT cascade to the real language server. Close
+    // stdin first so the server sees EOF and self-exits (tsserver/pyright do),
+    // then kill the wrapper; otherwise node.exe LSP processes orphan on every
+    // reconnect.
+    try {
+      child.stdin?.end();
+    } catch {
+      // stdin already gone
+    }
     if (typeof child.kill === 'function') child.kill();
   });
 }

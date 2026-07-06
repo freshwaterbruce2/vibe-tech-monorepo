@@ -101,6 +101,32 @@ describe('PromptBuilder.buildContextualSystemPrompt — AGENTS.md standards', ()
     expect(agentsReadCount()).toBe(1);
   });
 
+  it('uses the full currentFile.path so a nested AGENTS.md is discovered (not just the basename)', async () => {
+    // Only a subdir AGENTS.md exists — never one at the workspace root. This is
+    // reachable ONLY when the loader receives the full path (path || name); a
+    // bare basename collapses discovery to root-only and would find nothing.
+    const NESTED_AGENTS = `${ROOT}/packages/ui/AGENTS.md`;
+    readFileMock.mockImplementation(async (path: string): Promise<string> => {
+      if (path === NESTED_AGENTS) {
+        return '# Nested standards\nUse styled-components in this package.';
+      }
+      throw new Error(`ENOENT: ${path}`);
+    });
+
+    const prompt = await PromptBuilder.buildContextualSystemPrompt(
+      makeRequest({
+        currentFile: { ...currentFile, name: 'Button.tsx', path: `${ROOT}/packages/ui/Button.tsx` },
+      })
+    );
+
+    expect(prompt).toContain(STANDARDS_HEADER);
+    expect(prompt).toContain(`<!-- source: ${NESTED_AGENTS} -->`);
+    expect(prompt).toContain('Use styled-components in this package.');
+    // The root AGENTS.md was probed (and absent) on the way down to the file dir.
+    expect(readFileMock.mock.calls.some(([p]) => p === AGENTS_PATH)).toBe(true);
+    expect(readFileMock.mock.calls.some(([p]) => p === NESTED_AGENTS)).toBe(true);
+  });
+
   it('serves the second call from the standards cache (early-return)', async () => {
     withAgentsMd();
 

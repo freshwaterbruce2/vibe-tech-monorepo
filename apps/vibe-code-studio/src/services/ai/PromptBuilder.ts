@@ -152,10 +152,13 @@ Do not skip steps. Your reasoning should be visible and structured.
         prompt += this.buildCustomRulesSection(customRules);
       }
 
-      // AGENTS.md standards (spec 03) — injected alongside .deepcoderules
+      // AGENTS.md standards (spec 03) — injected alongside .deepcoderules.
+      // Pass the FULL path (not .name): AgentsMdLoader needs it to discover
+      // nested AGENTS.md (closest-wins) and to match path-scoped globs; a
+      // bare basename collapses discovery to root-only and drops glob rules.
       prompt += await this.loadAgentsStandards(
         request.workspaceContext.rootPath,
-        request.currentFile.name
+        request.currentFile.path || request.currentFile.name
       );
 
       // Knowledge items (spec 04) — top-N relevant durable facts, char-budgeted

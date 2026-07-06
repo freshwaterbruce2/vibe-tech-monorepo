@@ -623,6 +623,84 @@ describe('BackendProxyService — quota fallback (429/402 retry via OpenRouter)'
   });
 });
 
+/**
+ * refreshConfigured dedups concurrent /health probes via healthInFlight so a
+ * burst of requests fires a single fetch. configuredSnapshot() short-circuits
+ * under vitest, so drive refreshConfigured() directly (it has no VITEST guard).
+ */
+describe('BackendProxyService — refreshConfigured in-flight dedup', () => {
+  let svc: BackendProxyService;
+
+  beforeEach(() => {
+    svc = new BackendProxyService({ baseUrl: BASE });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const refresh = (s: BackendProxyService): Promise<void> =>
+    (s as unknown as { refreshConfigured: () => Promise<void> }).refreshConfigured();
+
+  it('coalesces concurrent probes into a single /health fetch', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ configured: { openrouter: true } }),
+    } as unknown as Response);
+    global.fetch = fetchMock;
+
+    await Promise.all([refresh(svc), refresh(svc), refresh(svc)]);
+
+    const healthCalls = fetchMock.mock.calls.filter(([url]) => String(url) === `${BASE}/health`);
+    expect(healthCalls).toHaveLength(1);
+    // Snapshot landed, so isOpenRouterConfigured now reads it without another fetch.
+    expect(
+      await (
+        svc as unknown as { isOpenRouterConfigured: () => Promise<boolean> }
+      ).isOpenRouterConfigured()
+    ).toBe(true);
+    expect(fetchMock.mock.calls.filter(([url]) => String(url) === `${BASE}/health`)).toHaveLength(
+      1
+    );
+  });
+
+  it('clears healthInFlight so a later probe fetches again', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ configured: { openrouter: false } }),
+    } as unknown as Response);
+    global.fetch = fetchMock;
+
+    await refresh(svc);
+    await refresh(svc);
+
+    expect(fetchMock.mock.calls.filter(([url]) => String(url) === `${BASE}/health`)).toHaveLength(
+      2
+    );
+  });
+
+  it('isOpenRouterConfigured awaits a cold-cache /health probe when NOT under vitest', async () => {
+    // configuredCache is null and VITEST is stubbed off, so the quota-fallback
+    // path must fetch /health once and read the fresh snapshot.
+    vi.stubEnv('VITEST', '');
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ configured: { openrouter: true } }),
+    } as unknown as Response);
+    global.fetch = fetchMock;
+
+    const configured = await (
+      svc as unknown as { isOpenRouterConfigured: () => Promise<boolean> }
+    ).isOpenRouterConfigured();
+
+    expect(configured).toBe(true);
+    expect(fetchMock.mock.calls.filter(([url]) => String(url) === `${BASE}/health`)).toHaveLength(
+      1
+    );
+    vi.unstubAllEnvs();
+  });
+});
+
 describe('BackendProxyService — parseCompletion reasoning fields', () => {
   let svc: BackendProxyService;
 

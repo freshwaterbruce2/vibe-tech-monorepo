@@ -39,3 +39,30 @@ describe('provider key custody (no client-bundle env keys)', () => {
     expect(() => new OpenRouterService({ apiKey: 'sk-or' })).not.toThrow();
   });
 });
+
+/**
+ * MODEL_MAP resolution: the Kimi 2.5 aliases must map to the OpenRouter-hosted
+ * `moonshotai/kimi-k2.5` slug so proxy-mode fallback (BackendProxyService
+ * .buildOpenRouterRoute) and direct OpenRouter mode agree. `moonshot/` is the
+ * direct-Moonshot-API author and 404s on OpenRouter, so it must be rewritten.
+ */
+describe('OpenRouterService.resolveModelId (Kimi 2.5 aliases)', () => {
+  it('maps both kimi-2.5-pro aliases to moonshotai/kimi-k2.5', () => {
+    expect(OpenRouterService.resolveModelId('kimi-2.5-pro')).toBe('moonshotai/kimi-k2.5');
+    expect(OpenRouterService.resolveModelId('moonshot/kimi-2.5-pro')).toBe('moonshotai/kimi-k2.5');
+  });
+
+  it('passes through an already-canonical author/slug id unchanged', () => {
+    expect(OpenRouterService.resolveModelId('deepseek/deepseek-r1')).toBe('deepseek/deepseek-r1');
+  });
+
+  it('maps a known bare alias via MODEL_MAP', () => {
+    expect(OpenRouterService.resolveModelId('gpt-4o')).toBe('openai/gpt-4o');
+  });
+
+  it('prefixes a genuinely unknown, slash-less slug with openai/ (fallback)', () => {
+    expect(OpenRouterService.resolveModelId('totally-unknown-slug')).toBe(
+      'openai/totally-unknown-slug'
+    );
+  });
+});

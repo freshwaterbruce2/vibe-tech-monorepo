@@ -235,14 +235,17 @@ describe('KnowledgeStore (SQLite bridge)', () => {
     expect(store.list()).toHaveLength(0);
   });
 
-  it('falls back to the fallback store when the SELECT returns no rows', async () => {
+  it('treats zero SQLite rows as a trustworthy empty (does NOT read the fallback)', async () => {
+    // A reachable SQLite that returns no rows is authoritative — the store must
+    // NOT resurrect stale localStorage entries behind it.
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify([makeItem('knowledge-fb-1', new Date(2026, 6, 1).toISOString())])
     );
     const store = new KnowledgeStore();
     await store.load();
-    expect(store.get('knowledge-fb-1')).toBeDefined();
+    expect(store.get('knowledge-fb-1')).toBeUndefined();
+    expect(store.list()).toHaveLength(0);
   });
 
   it('treats an undefined bridge result as no rows', async () => {
@@ -304,6 +307,81 @@ describe('KnowledgeStore (SQLite bridge)', () => {
       '[KnowledgeStore] Failed to delete knowledge row',
       expect.any(Error)
     );
+  });
+
+  it('prune DELETEs the evicted row from SQLite and re-saves the fallback snapshot', async () => {
+    const store = new KnowledgeStore();
+    await store.load();
+    const items = internalMap(store);
+    const base = Date.UTC(2026, 0, 1);
+    for (let i = 0; i < 500; i++) {
+      const stamp = new Date(base + i * 1000).toISOString();
+      items.set(`knowledge-seed-${i}`, makeItem(`knowledge-seed-${i}`, stamp));
+    }
+    execute.mockClear(); // ignore the initial load SELECT
+
+    // NOW (2026-07-05) is newer than every seed, so seed-0 is the oldest evicted.
+    const created = await store.create(draft(), () => NOW);
+
+    const del = execute.mock.calls.find(
+      ([sql, args]) =>
+        String(sql).includes('DELETE FROM knowledge_items') &&
+        Array.isArray(args) &&
+        args[0] === 'knowledge-seed-0'
+    );
+    expect(del).toBeDefined();
+    expect(items.has('knowledge-seed-0')).toBe(false);
+    expect(items.has(created.id)).toBe(true);
+    expect(items.size).toBe(500);
+
+    // saveFallback re-ran (localStorage here — the SQLite describe has no electron.store).
+    const saved = localStorage.getItem(STORAGE_KEY);
+    expect(saved).toContain(created.id);
+    expect(saved).not.toContain('knowledge-seed-0');
+  });
+
+  it('does not latch a degraded (throwing) first load; a later load retries and succeeds', async () => {
+    vi.spyOn(logger, 'error').mockImplementation(() => {});
+    // First SELECT throws → degraded read, empty store, MUST NOT latch loaded.
+    execute.mockRejectedValueOnce(new Error('db bridge not ready'));
+    const store = new KnowledgeStore();
+    await store.load();
+    expect(store.list()).toHaveLength(0);
+
+    // DB now ready: the next load() retries (loaded was never latched) and fills.
+    const stored = makeItem('knowledge-db-1', new Date(2026, 6, 1).toISOString());
+    execute.mockResolvedValueOnce({
+      success: true,
+      data: [{ id: 'knowledge-db-1', item_data: JSON.stringify(stored) }],
+    });
+    await store.load();
+    expect(store.get('knowledge-db-1')?.title).toBe('Title for knowledge-db-1');
+  });
+
+  it('shares one in-flight read across concurrent load() calls', async () => {
+    const stored = makeItem('knowledge-db-1', new Date(2026, 6, 1).toISOString());
+    let resolveExec: (value: unknown) => void = () => {};
+    execute.mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          resolveExec = resolve;
+        })
+    );
+    const store = new KnowledgeStore();
+    const p1 = store.load();
+    const p2 = store.load(); // joins the same in-flight SELECT
+
+    resolveExec({
+      success: true,
+      data: [{ id: 'knowledge-db-1', item_data: JSON.stringify(stored) }],
+    });
+    await Promise.all([p1, p2]);
+
+    expect(store.list()).toHaveLength(1);
+    const selects = execute.mock.calls.filter(([sql]) =>
+      String(sql).includes('SELECT id, item_data')
+    );
+    expect(selects).toHaveLength(1); // one read despite two concurrent load() calls
   });
 });
 

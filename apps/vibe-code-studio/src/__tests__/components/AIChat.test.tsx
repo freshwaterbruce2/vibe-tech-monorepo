@@ -223,13 +223,14 @@ describe('AIChat', () => {
       useAIStore.setState({ messages: [] });
     });
 
-    it('renders in the header and empties the AI store messages on click', () => {
+    it('invokes onClearMessages AND empties the AI store messages on click', () => {
       const { actions } = useAIStore.getState();
       actions.addMessage({ id: 'm1', role: 'user', content: 'hello', timestamp: new Date() });
       actions.addMessage({ id: 'm2', role: 'assistant', content: 'hi!', timestamp: new Date() });
       expect(useAIStore.getState().messages).toHaveLength(2);
 
-      render(<AIChatHarness />);
+      const onClearMessages = vi.fn();
+      render(<AIChatHarness onClearMessages={onClearMessages} />);
 
       const button = screen.getByTestId('clear-chat');
       expect(button).toHaveAttribute('aria-label', 'Clear chat');
@@ -237,6 +238,20 @@ describe('AIChat', () => {
 
       fireEvent.click(button);
 
+      // handleClearChat clears BOTH the useAIChat-owned copy (onClearMessages)
+      // and the useAIStore copy so no layer keeps stale history.
+      expect(onClearMessages).toHaveBeenCalledTimes(1);
+      expect(useAIStore.getState().messages).toHaveLength(0);
+    });
+
+    it('still clears the store (and does not throw) when onClearMessages is omitted', () => {
+      const { actions } = useAIStore.getState();
+      actions.addMessage({ id: 'm1', role: 'user', content: 'hello', timestamp: new Date() });
+      expect(useAIStore.getState().messages).toHaveLength(1);
+
+      render(<AIChatHarness />);
+
+      expect(() => fireEvent.click(screen.getByTestId('clear-chat'))).not.toThrow();
       expect(useAIStore.getState().messages).toHaveLength(0);
     });
 

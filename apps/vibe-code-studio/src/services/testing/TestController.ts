@@ -13,7 +13,18 @@ import type { Diagnostic } from '../tasks/types';
 import { TestRunner } from './TestRunner';
 import type { TestDiscoveryResult, TestResult, TestRunnerOptions, TestSuite } from './types';
 
-export const TEST_DIAGNOSTIC_SOURCE = 'tests';
+/**
+ * Problems-panel source keys are namespaced per file ('test:<file>') so they
+ * cannot collide with a user-defined .vcs/tasks.json task label (which is used
+ * raw as a source key) and so per-file re-runs replace cleanly without a
+ * read-modify-write race. Mirrors the LSP convention ('lsp:<path>').
+ */
+export const TEST_DIAGNOSTIC_PREFIX = 'test:';
+
+/** Source key for one test file's diagnostics. */
+export function testSourceKey(file: string): string {
+  return `${TEST_DIAGNOSTIC_PREFIX}${file}`;
+}
 
 /** Runner factory seam — tests swap `create` for a fake. */
 export const runnerFactory: { create: (workspaceRoot: string) => TestRunnerLike } = {
@@ -56,39 +67,50 @@ export interface TestFileNode {
   duration: number;
 }
 
+/** A test's tree status: passed, skipped (todo/pending), or a real failure. */
+function caseStatus(result: TestResult): TestNodeStatus {
+  if (result.passed) return 'passed';
+  return result.skipped ? 'skipped' : 'failed';
+}
+
 /** Map one TestResult to a tree leaf. */
 export function resultToCaseNode(result: TestResult, index: number): TestCaseNode {
   return {
     id: `${result.location?.file ?? 'unknown'}::${result.testName}::${index}`,
     name: result.testName,
-    status: result.passed ? 'passed' : 'failed',
+    status: caseStatus(result),
     duration: result.duration,
     error: result.error,
     line: result.location?.line,
   };
 }
 
-/** Map a run TestSuite to a file node. */
+/** Map a run TestSuite to a file node. Counts are recomputed from the mapped
+ * nodes so skipped tests never inflate the failure count (parsers fold
+ * skipped into failedTests). */
 export function suiteToFileNode(suite: TestSuite): TestFileNode {
   const tests = suite.tests.map(resultToCaseNode);
-  const failed = suite.failedTests;
+  const passed = tests.filter(t => t.status === 'passed').length;
+  const failed = tests.filter(t => t.status === 'failed').length;
+  const skipped = tests.filter(t => t.status === 'skipped').length;
   return {
     file: suite.file ?? suite.name,
-    status: failed > 0 ? 'failed' : suite.totalTests > 0 ? 'passed' : 'idle',
+    status: failed > 0 ? 'failed' : tests.length > 0 ? 'passed' : 'idle',
     tests,
-    passed: suite.passedTests,
+    passed,
     failed,
-    skipped: suite.skippedTests ?? 0,
+    skipped,
     duration: suite.duration,
   };
 }
 
-/** Failures → Problems panel diagnostics (file/line best-effort). */
+/** Failures → Problems panel diagnostics (file/line best-effort). Skipped
+ * (todo/pending) tests are not failures and produce no diagnostic. */
 export function failuresToDiagnostics(suites: TestSuite[]): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
   for (const suite of suites) {
     for (const test of suite.tests) {
-      if (test.passed) {
+      if (test.passed || test.skipped) {
         continue;
       }
       diagnostics.push({
@@ -97,7 +119,7 @@ export function failuresToDiagnostics(suites: TestSuite[]): Diagnostic[] {
         column: test.location?.column ?? 1,
         severity: 'error',
         message: `${test.testName}: ${test.error ?? 'test failed'}`,
-        source: TEST_DIAGNOSTIC_SOURCE,
+        source: testSourceKey(suite.file ?? suite.name),
       });
     }
   }
@@ -139,7 +161,9 @@ export async function runTestFile(runner: TestRunnerLike, file: string): Promise
     const suite = await runner.runTests(file);
     const node = { ...suiteToFileNode(suite), file };
     explorer().upsertFileNode(node);
-    mergeFileDiagnostics(file, failuresToDiagnostics([suite]));
+    // Per-file source key: replaces THIS file's diagnostics only, no shared
+    // read-modify-write, no cross-file clobber.
+    problems().setSource(testSourceKey(file), failuresToDiagnostics([suite]));
   } catch (error) {
     logger.error('[TestController] run failed', error);
     explorer().setFileStatus(file, 'failed');
@@ -147,15 +171,16 @@ export async function runTestFile(runner: TestRunnerLike, file: string): Promise
   }
 }
 
-/** Run everything; Problems panel gets the full replaced set. */
+/** Run everything; each file's diagnostics land under its own source key. */
 export async function runAllTests(runner: TestRunnerLike): Promise<void> {
   explorer().setRunningAll(true);
   try {
     const suites = await runner.runAllTests();
+    clearTestDiagnostics();
     for (const suite of suites) {
       explorer().upsertFileNode(suiteToFileNode(suite));
+      problems().setSource(testSourceKey(suite.file ?? suite.name), failuresToDiagnostics([suite]));
     }
-    problems().setSource(TEST_DIAGNOSTIC_SOURCE, failuresToDiagnostics(suites));
   } catch (error) {
     logger.error('[TestController] run-all failed', error);
     explorer().setError(error instanceof Error ? error.message : 'Test run failed.');
@@ -164,9 +189,12 @@ export async function runAllTests(runner: TestRunnerLike): Promise<void> {
   }
 }
 
-/** Replace only this file's diagnostics, keeping other files' entries. */
-function mergeFileDiagnostics(file: string, fileDiagnostics: Diagnostic[]): void {
-  const current = useProblemsStore.getState().bySource[TEST_DIAGNOSTIC_SOURCE] ?? [];
-  const others = current.filter(diagnostic => diagnostic.file !== file);
-  problems().setSource(TEST_DIAGNOSTIC_SOURCE, [...others, ...fileDiagnostics]);
+/** Clear every per-file test diagnostic source (used before a full run). */
+function clearTestDiagnostics(): void {
+  const bySource = useProblemsStore.getState().bySource;
+  for (const key of Object.keys(bySource)) {
+    if (key.startsWith(TEST_DIAGNOSTIC_PREFIX)) {
+      problems().clearSource(key);
+    }
+  }
 }
