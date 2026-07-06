@@ -117,8 +117,11 @@ if ($sourceFiles.Count -gt 0) {
                     $batch = $groupFiles[$i..$end]
                     if ($batch -and $batch.Count -gt 0) {
                         if ($suppressions) {
+                            # Subset lint always leaves other files' baseline
+                            # entries unused — don't fail on unpruned ones.
                             pnpm exec eslint --max-warnings=0 --no-warn-ignored `
-                                --suppressions-location $suppressions @batch
+                                --suppressions-location $suppressions `
+                                --pass-on-unpruned-suppressions @batch
                         } else {
                             pnpm exec eslint --max-warnings=0 --no-warn-ignored @batch
                         }
