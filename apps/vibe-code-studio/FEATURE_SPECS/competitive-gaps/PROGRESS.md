@@ -14,6 +14,11 @@ and the index may hold the other session's staged files.
 
 ---
 
+> **🔄 2026-07-06 session claim**: cross-spec small-follow-up sweep (11 palette /browser ·
+> 16 Inbox delivery + slash-command + inline edit · 03 toggles AC #10/#11 · 09
+> recordDiffArtifact wiring · 01 theme import P2), then remaining phases of 03–11 per the
+> finish-line campaign. Batch-2 PR to main: **#80**.
+
 ## Checklist
 
 | #   | Spec                                 | Status             | Commit(s)                                      | Notes                                                                                                                                                                                                                                                                                                                                                                                                                   |
