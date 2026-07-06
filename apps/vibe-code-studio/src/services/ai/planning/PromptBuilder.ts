@@ -18,6 +18,7 @@ export function buildPlanningPrompt(context: PlanningContext): string {
     recentFiles,
     projectStructure,
     projectAnalysis,
+    agentStandards,
     maxSteps,
     allowDestructive,
   } = context;
@@ -30,6 +31,9 @@ export function buildPlanningPrompt(context: PlanningContext): string {
     ? `\n${projectAnalysis}\n⚠️ CRITICAL: Use the ACTUAL file paths found in the analysis above. Do NOT guess paths!`
     : '';
 
+  // AGENTS.md standards section (spec 03) — already source-tagged by the loader
+  const standardsSection = agentStandards?.trim() ? `\n${agentStandards.trim()}\n` : '';
+
   return `You are an AUTONOMOUS software engineering agent (like Cursor, Windsurf, Copilot) planning a task for an AI-powered code editor.
 
 🤖 AGENT MODE: You have FULL file system access. You can read ANY file, search the codebase, run commands, and make changes autonomously.
@@ -40,7 +44,7 @@ WORKSPACE CONTEXT:
 - Root: ${workspaceRoot}
 - Open Files: ${openFiles?.join(', ') || 'None'}
 - Current File: ${currentFile ?? 'None'}
-- Recent Files: ${recentFiles?.join(', ') || 'None'}${structureSection}${analysisSection}
+- Recent Files: ${recentFiles?.join(', ') || 'None'}${structureSection}${analysisSection}${standardsSection}
 
 ${getAutonomousBehaviorRules()}
 

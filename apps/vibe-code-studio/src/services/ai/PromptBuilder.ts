@@ -1,6 +1,56 @@
 import type { AIContextRequest, WorkspaceContext, UserActivity } from '../../types';
 import { FileSystemService } from '../FileSystemService';
 import { type Rule, RulesParser } from '../RulesParser';
+import { loadAgentsStandardsSection } from './standards/AgentsMdLoader';
+
+// Model-specific capability suffixes appended to the Tree-of-Thought preamble.
+const DEEPSEEK_CAPABILITIES = `
+Your specialized capabilities:
+- Advanced code generation with best practices
+- Deep understanding of design patterns and architectures
+- Performance optimization and algorithms
+- Complex refactoring and modernization
+- Multi-file code generation and project structure
+- Advanced debugging and root cause analysis
+
+Coding guidelines:
+- Write production-ready, clean code
+- Follow language-specific conventions and idioms
+- Include proper error handling and edge cases
+- Add helpful inline comments for complex logic
+- Optimize for both readability and performance
+- Consider security best practices`;
+
+const CODEX_APPROACH = `
+Your approach:
+- Break down complex problems step-by-step
+- Show your reasoning process clearly using the 5 branches
+- Consider multiple solutions and trade-offs
+- Explain the "why" behind recommendations
+- Validate assumptions and edge cases
+- Provide comprehensive analysis
+
+When solving problems:
+- First understand the requirements fully
+- Consider different approaches
+- Analyze pros and cons
+- Recommend the best solution with justification`;
+
+const DEFAULT_CAPABILITIES = `
+Your capabilities:
+- Code completion and generation
+- Code explanation and documentation
+- Debugging and error fixing
+- Code refactoring and optimization
+- Best practices and code review
+
+Guidelines:
+- Be concise but thorough
+- Provide working, production-ready code
+- Explain complex concepts clearly
+- Suggest improvements when relevant
+- Use markdown formatting for code blocks
+- Focus on the specific programming language being used`;
 
 /**
  * Builds system prompts and context for AI interactions
@@ -11,6 +61,7 @@ export class PromptBuilder {
   private static rulesParser = new RulesParser();
   private static fileSystem = new FileSystemService();
   private static rulesCache: Map<string, Rule[]> = new Map();
+  private static standardsCache: Map<string, string> = new Map();
   private static cacheExpiry: Map<string, number> = new Map();
   private static readonly CACHE_TTL = 60000; // 1 minute cache
 
@@ -19,8 +70,9 @@ export class PromptBuilder {
    * This forces the model to explore multiple reasoning paths before converging.
    */
   private static getTreeOfThoughtPrompt(role: string): string {
-    return `${role}` +
-`
+    return (
+      `${role}` +
+      `
 
 You MUST use the **5-Branch Tree-of-Thought (ToT)** methodology for every complex request.
 Do not skip steps. Your reasoning should be visible and structured.
@@ -53,71 +105,39 @@ Do not skip steps. Your reasoning should be visible and structured.
     *   Add concise comments explaining *why*, not just *what*.
 
 ---
-`;
+`
+    );
   }
 
   static buildBaseSystemPrompt(model?: string): string {
     // Optimize prompt based on model
     if (model === 'deepseek/deepseek-v3.2') {
-      return this.getTreeOfThoughtPrompt(
-        `You are an elite programming AI in Vibe Code Studio. You specialize in generating high-performance, secure, and idiomatic code.`
-      ) + `
-Your specialized capabilities:
-- Advanced code generation with best practices
-- Deep understanding of design patterns and architectures
-- Performance optimization and algorithms
-- Complex refactoring and modernization
-- Multi-file code generation and project structure
-- Advanced debugging and root cause analysis
-
-Coding guidelines:
-- Write production-ready, clean code
-- Follow language-specific conventions and idioms
-- Include proper error handling and edge cases
-- Add helpful inline comments for complex logic
-- Optimize for both readability and performance
-- Consider security best practices`;
+      return (
+        this.getTreeOfThoughtPrompt(
+          `You are an elite programming AI in Vibe Code Studio. You specialize in generating high-performance, secure, and idiomatic code.`
+        ) + DEEPSEEK_CAPABILITIES
+      );
     } else if (model === 'openai/gpt-5.2-codex') {
       // High-end coding models benefit from explicit structured reasoning
-      return this.getTreeOfThoughtPrompt(
-        `You are GPT-5.2 Codex in Vibe Code Studio. You provide deep, multi-step reasoning for complex programming problems.`
-      ) + `
-Your approach:
-- Break down complex problems step-by-step
-- Show your reasoning process clearly using the 5 branches
-- Consider multiple solutions and trade-offs
-- Explain the "why" behind recommendations
-- Validate assumptions and edge cases
-- Provide comprehensive analysis
-
-When solving problems:
-- First understand the requirements fully
-- Consider different approaches
-- Analyze pros and cons
-- Recommend the best solution with justification`;
+      return (
+        this.getTreeOfThoughtPrompt(
+          `You are GPT-5.2 Codex in Vibe Code Studio. You provide deep, multi-step reasoning for complex programming problems.`
+        ) + CODEX_APPROACH
+      );
     }
 
     // Default prompt for general models
-    return this.getTreeOfThoughtPrompt(
-      `You are an expert programming assistant built into Vibe Code Studio. You help developers write, understand, and improve code using advanced reasoning.`
-    ) + `
-Your capabilities:
-- Code completion and generation
-- Code explanation and documentation
-- Debugging and error fixing
-- Code refactoring and optimization
-- Best practices and code review
-
-Guidelines:
-- Be concise but thorough
-- Provide working, production-ready code
-- Explain complex concepts clearly
-- Suggest improvements when relevant
-- Use markdown formatting for code blocks
-- Focus on the specific programming language being used`;
+    return (
+      this.getTreeOfThoughtPrompt(
+        `You are an expert programming assistant built into Vibe Code Studio. You help developers write, understand, and improve code using advanced reasoning.`
+      ) + DEFAULT_CAPABILITIES
+    );
   }
 
-  static async buildContextualSystemPrompt(request: AIContextRequest, model?: string): Promise<string> {
+  static async buildContextualSystemPrompt(
+    request: AIContextRequest,
+    model?: string
+  ): Promise<string> {
     let prompt = this.buildBaseSystemPrompt(model);
 
     // INJECT CUSTOM RULES FIRST (highest priority)
@@ -130,6 +150,12 @@ Guidelines:
       if (customRules.length > 0) {
         prompt += this.buildCustomRulesSection(customRules);
       }
+
+      // AGENTS.md standards (spec 03) — injected alongside .deepcoderules
+      prompt += await this.loadAgentsStandards(
+        request.workspaceContext.rootPath,
+        request.currentFile.name
+      );
     }
 
     // Add workspace context
@@ -160,7 +186,7 @@ Related Files:
 ${request.relatedFiles
   .slice(0, 3)
   .map(
-    (file) =>
+    file =>
       `- ${file.path} (relevance: ${file.relevance}): ${file.content.substring(0, 200)}${file.content.length > 200 ? '...' : ''}`
   )
   .join('\n')}`;
@@ -200,37 +226,65 @@ ${activity.recentFiles.length > 0 ? `- Recently Accessed: ${activity.recentFiles
     language: string,
     position: { line: number; column: number }
   ): string {
-    return 'Complete the following ' + language + ' code. Only return the completion, no explanations:\n\n' +
-    '````' + language + '\n' +
-    code + '\n' +
-    '````\n\n' +
-    'Complete from line ' + position.line + ', column ' + position.column + '.';
+    return (
+      'Complete the following ' +
+      language +
+      ' code. Only return the completion, no explanations:\n\n' +
+      '````' +
+      language +
+      '\n' +
+      code +
+      '\n' +
+      '````\n\n' +
+      'Complete from line ' +
+      position.line +
+      ', column ' +
+      position.column +
+      '.'
+    );
   }
 
   static buildCodeExplanationPrompt(code: string, language: string): string {
-    return 'Explain this ' + language + ' code in detail:\n\n' +
-    '````' + language + '\n' +
-    code + '\n' +
-    '````\n\n' +
-    'Please provide:\n' +
-    '1. What the code does\n' +
-    '2. How it works\n' +
-    '3. Any potential issues or improvements';
+    return (
+      'Explain this ' +
+      language +
+      ' code in detail:\n\n' +
+      '````' +
+      language +
+      '\n' +
+      code +
+      '\n' +
+      '````\n\n' +
+      'Please provide:\n' +
+      '1. What the code does\n' +
+      '2. How it works\n' +
+      '3. Any potential issues or improvements'
+    );
   }
 
   static buildRefactorPrompt(code: string, language: string): string {
-    return 'Refactor this ' + language + ' code to improve readability, performance, and maintainability:\n\n' +
-    '````' + language + '\n' +
-    code + '\n' +
-    '````\n\n' +
-    'Provide the refactored code with explanations of the changes made.';
+    return (
+      'Refactor this ' +
+      language +
+      ' code to improve readability, performance, and maintainability:\n\n' +
+      '````' +
+      language +
+      '\n' +
+      code +
+      '\n' +
+      '````\n\n' +
+      'Provide the refactored code with explanations of the changes made.'
+    );
   }
 
   /**
    * Load custom rules from .deepcoderules or .cursorrules
    * with caching to improve performance
    */
-  private static async loadCustomRules(workspaceRoot: string, currentFile: string): Promise<Rule[]> {
+  private static async loadCustomRules(
+    workspaceRoot: string,
+    currentFile: string
+  ): Promise<Rule[]> {
     const cacheKey = `${workspaceRoot}:${currentFile}`;
 
     // Check cache
@@ -245,7 +299,7 @@ ${activity.recentFiles.length > 0 ? `- Recently Accessed: ${activity.recentFiles
       // Try loading .deepcoderules first (modern format)
       const deepcodeRulesPath = `${workspaceRoot}/.deepcoderules`;
 
-      this.rulesParser.setFileReader(async (path) => {
+      this.rulesParser.setFileReader(async path => {
         return await this.fileSystem.readFile(path);
       });
 
@@ -259,10 +313,7 @@ ${activity.recentFiles.length > 0 ? `- Recently Accessed: ${activity.recentFiles
       }
 
       // Filter rules that match the current file
-      const matchingRules = this.rulesParser.mergeRulesForFile(
-        parsedRules.rules,
-        currentFile
-      );
+      const matchingRules = this.rulesParser.mergeRulesForFile(parsedRules.rules, currentFile);
 
       // Cache the results
       this.rulesCache.set(cacheKey, matchingRules);
@@ -279,12 +330,18 @@ ${activity.recentFiles.length > 0 ? `- Recently Accessed: ${activity.recentFiles
    * Build custom rules section for prompt injection
    */
   private static buildCustomRulesSection(rules: Rule[]): string {
-    if (rules.length === 0) {return '';}
+    if (rules.length === 0) {
+      return '';
+    }
 
-    const rulesContent = rules.map((rule, index) => {
-      const header = rule.description ? `### ${rule.description}` : `### Custom Rule ${index + 1}`;
-      return `${header}\n${rule.content}`;
-    }).join('\n\n');
+    const rulesContent = rules
+      .map((rule, index) => {
+        const header = rule.description
+          ? `### ${rule.description}`
+          : `### Custom Rule ${index + 1}`;
+        return `${header}\n${rule.content}`;
+      })
+      .join('\n\n');
 
     return `
 
@@ -296,10 +353,36 @@ IMPORTANT: The above custom instructions have the HIGHEST PRIORITY. Follow them 
   }
 
   /**
+   * Load the AGENTS.md standards section for a workspace/file pair, cached
+   * on the same TTL as custom rules. Never throws.
+   */
+  private static async loadAgentsStandards(
+    workspaceRoot: string,
+    currentFile: string
+  ): Promise<string> {
+    const cacheKey = `agents:${workspaceRoot}:${currentFile}`;
+    const cached = this.standardsCache.get(cacheKey);
+    const expiry = this.cacheExpiry.get(cacheKey);
+    if (cached !== undefined && expiry !== undefined && Date.now() < expiry) {
+      return cached;
+    }
+
+    const section = await loadAgentsStandardsSection(
+      { readFile: path => this.fileSystem.readFile(path) },
+      workspaceRoot,
+      currentFile
+    );
+    this.standardsCache.set(cacheKey, section);
+    this.cacheExpiry.set(cacheKey, Date.now() + this.CACHE_TTL);
+    return section;
+  }
+
+  /**
    * Clear rules cache (useful when rules file changes)
    */
   static clearRulesCache(): void {
     this.rulesCache.clear();
+    this.standardsCache.clear();
     this.cacheExpiry.clear();
   }
 }
