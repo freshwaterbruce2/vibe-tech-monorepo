@@ -86,18 +86,49 @@ if ($sourceFiles.Count -gt 0) {
     $exitCode = [Math]::Max(
         [int]$exitCode,
         [int](Invoke-QualityCommand -Label "[2/4] Running ESLint on staged files in batches..." -Command {
+            # Group staged files by their nearest eslint-suppressions.json so
+            # per-project bulk-suppression baselines (ESLint >= 9.24) apply when
+            # linting from the repo root (see .claude/rules/code-size-limits.md —
+            # vibe-code-studio pins its baseline via --suppressions-location).
+            # New violations still fail; only baselined legacy counts pass.
+            $groups = @{}
+            foreach ($file in $sourceFiles) {
+                $dir = Split-Path $file -Parent
+                $suppressions = ''
+                while ($dir) {
+                    $candidate = Join-Path $dir 'eslint-suppressions.json'
+                    if (Test-Path $candidate) { $suppressions = $candidate; break }
+                    $parent = Split-Path $dir -Parent
+                    if (-not $parent -or $parent -eq $dir) { break }
+                    $dir = $parent
+                }
+                if (-not $groups.ContainsKey($suppressions)) {
+                    $groups[$suppressions] = [System.Collections.ArrayList]::new()
+                }
+                [void]$groups[$suppressions].Add($file)
+            }
+
             $batchSize = 5
             $eslintFail = $false
-            for ($i = 0; $i -lt $sourceFiles.Count; $i += $batchSize) {
-                $end = [Math]::Min($i + $batchSize - 1, $sourceFiles.Count - 1)
-                $batch = $sourceFiles[$i..$end]
-                if ($batch -and $batch.Count -gt 0) {
-                    pnpm exec eslint --max-warnings=0 --no-warn-ignored @batch
-                    if ($LASTEXITCODE -ne 0) {
-                        $eslintFail = $true
-                        break
+            foreach ($suppressions in @($groups.Keys)) {
+                $groupFiles = @($groups[$suppressions])
+                for ($i = 0; $i -lt $groupFiles.Count; $i += $batchSize) {
+                    $end = [Math]::Min($i + $batchSize - 1, $groupFiles.Count - 1)
+                    $batch = $groupFiles[$i..$end]
+                    if ($batch -and $batch.Count -gt 0) {
+                        if ($suppressions) {
+                            pnpm exec eslint --max-warnings=0 --no-warn-ignored `
+                                --suppressions-location $suppressions @batch
+                        } else {
+                            pnpm exec eslint --max-warnings=0 --no-warn-ignored @batch
+                        }
+                        if ($LASTEXITCODE -ne 0) {
+                            $eslintFail = $true
+                            break
+                        }
                     }
                 }
+                if ($eslintFail) { break }
             }
             if ($eslintFail) {
                 cmd.exe /c "exit 1"
