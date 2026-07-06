@@ -40,6 +40,7 @@ import {
   ScreenshotToCodePanel,
   SettingsSyncDialog,
   TerminalPanel,
+  TestExplorerPanelHost,
   VisualEditor,
   WelcomeScreen,
 } from './lazyPanels';
@@ -552,6 +553,10 @@ export function AppLayout() {
 
       <Suspense fallback={null}>
         <KnowledgePanelHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <TestExplorerPanelHost />
       </Suspense>
 
       <Suspense fallback={null}>

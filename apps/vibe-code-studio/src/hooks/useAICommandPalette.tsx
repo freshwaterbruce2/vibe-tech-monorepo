@@ -24,6 +24,7 @@ import { useKnowledgeCommands } from './useKnowledgeCommands';
 import { usePlanModeCommands } from './usePlanModeCommands';
 import { useScheduleCommands } from './useScheduleCommands';
 import { useSettingsSyncCommands } from './useSettingsSyncCommands';
+import { useTestExplorerCommands } from './useTestExplorerCommands';
 import { useTaskCommands } from './useTaskCommands';
 
 interface Command {
@@ -66,6 +67,7 @@ export const useAICommandPalette = (props: UseAICommandPaletteProps) => {
   const planModeCommands = usePlanModeCommands();
   const settingsSyncCommands = useSettingsSyncCommands();
   const knowledgeCommands = useKnowledgeCommands();
+  const testExplorerCommands = useTestExplorerCommands();
 
   // Build comprehensive command list
   const commands: Command[] = [
@@ -75,6 +77,7 @@ export const useAICommandPalette = (props: UseAICommandPaletteProps) => {
     ...planModeCommands,
     ...settingsSyncCommands,
     ...knowledgeCommands,
+    ...testExplorerCommands,
     // File Operations
     {
       id: 'file-new',

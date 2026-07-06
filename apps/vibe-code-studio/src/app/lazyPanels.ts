@@ -76,6 +76,11 @@ export const SettingsSyncDialog = lazy(() =>
 export const ScreenshotToCodePanel = lazy(() =>
   import('../components/ScreenshotToCodePanel').then(m => ({ default: m.ScreenshotToCodePanel }))
 );
+export const TestExplorerPanelHost = lazy(() =>
+  import('../components/TestExplorerPanel/TestExplorerPanelHost').then(m => ({
+    default: m.TestExplorerPanelHost,
+  }))
+);
 export const TerminalPanel = lazy(() =>
   import('../components/TerminalPanel').then(m => ({ default: m.TerminalPanel }))
 );
