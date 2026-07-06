@@ -10,6 +10,7 @@
  */
 
 import { createFramer, encodeMessage } from '../lib/lsp-framing.js';
+import { buildSpawnCommand } from '../lib/lsp-servers.js';
 
 /**
  * Extract the languageId from a `/lsp/<languageId>` upgrade URL.
@@ -33,7 +34,9 @@ export function parseLanguageId(url) {
 export function bridgeServer(ws, spec, { spawn, logger = console }) {
   let child;
   try {
-    child = spawn(spec.command, spec.args);
+    // .cmd/.bat shims need a shell on Windows; buildSpawnCommand decides.
+    const { command, args, options } = buildSpawnCommand(spec);
+    child = spawn(command, args, options);
   } catch (err) {
     logger.error('[lsp-relay] spawn threw', err);
     ws.close();

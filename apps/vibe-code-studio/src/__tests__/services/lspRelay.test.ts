@@ -97,6 +97,35 @@ describe('bridgeServer', () => {
     (child as EventEmitter).emit('error', new Error('spawn ENOENT'));
     expect(ws.close).toHaveBeenCalled();
   });
+
+  it('logs server stderr output without closing the socket', () => {
+    const spawn = vi.fn(() => child);
+    bridgeServer(ws, spec, { spawn, logger: silentLogger });
+    (child.stderr as EventEmitter).emit('data', Buffer.from('boom', 'utf8'));
+    expect(silentLogger.error).toHaveBeenCalledWith('[lsp-relay:stderr]', 'boom');
+    expect(ws.close).not.toHaveBeenCalled();
+  });
+
+  it('spawns .cmd shims quoted with shell:true + windowsHide (Windows shim fix)', () => {
+    const spawn = vi.fn(() => child);
+    const cmdSpec = { command: 'C:\\ws\\.bin\\typescript-language-server.cmd', args: ['--stdio'] };
+    bridgeServer(ws, cmdSpec, { spawn, logger: silentLogger });
+    expect(spawn).toHaveBeenCalledWith(
+      '"C:\\ws\\.bin\\typescript-language-server.cmd"',
+      ['--stdio'],
+      { shell: true, windowsHide: true }
+    );
+  });
+
+  it('spawns bare commands directly with windowsHide and NO shell', () => {
+    const spawn = vi.fn(() => child);
+    bridgeServer(ws, spec, { spawn, logger: silentLogger });
+    expect(spawn).toHaveBeenCalledWith('typescript-language-server', ['--stdio'], {
+      windowsHide: true,
+    });
+    const call = spawn.mock.calls[0] as unknown as [string, string[], Record<string, unknown>];
+    expect(call[2].shell).toBeUndefined();
+  });
 });
 
 describe('handleLspUpgrade', () => {
@@ -126,7 +155,9 @@ describe('handleLspUpgrade', () => {
       logger: silentLogger,
     });
     expect(wss.handleUpgrade).toHaveBeenCalled();
-    expect(spawn).toHaveBeenCalledWith('typescript-language-server', ['--stdio']);
+    expect(spawn).toHaveBeenCalledWith('typescript-language-server', ['--stdio'], {
+      windowsHide: true,
+    });
     expect(socket.destroy).not.toHaveBeenCalled();
   });
 
