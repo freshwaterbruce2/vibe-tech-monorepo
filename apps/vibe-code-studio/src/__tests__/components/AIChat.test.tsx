@@ -1,8 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useState, type ComponentProps } from 'react';
 
 import { AIChat } from '../../components/AIChat/index';
+import { useAIStore } from '../../stores/useAIStore';
 import type { AIMessage, AgentStep, AgentTask, ApprovalRequest } from '../../types';
 import type { TaskPlanner } from '../../services/ai/TaskPlanner';
 import type { ExecutionEngine } from '../../services/ai/ExecutionEngine';
@@ -57,14 +58,14 @@ function AIChatHarness(props: Partial<AIChatProps>) {
       messages={messages}
       onSendMessage={onSendMessage}
       onClose={vi.fn()}
-      onAddMessage={(message) => {
-        setMessages((prev) => [...prev, message]);
+      onAddMessage={message => {
+        setMessages(prev => [...prev, message]);
         props.onAddMessage?.(message);
       }}
       onUpdateMessage={(messageId, updater) => {
-        setMessages((prev) => prev.map((message) => (
-          message.id === messageId ? updater(message) : message
-        )));
+        setMessages(prev =>
+          prev.map(message => (message.id === messageId ? updater(message) : message))
+        );
         props.onUpdateMessage?.(messageId, updater);
       }}
       {...props}
@@ -79,7 +80,9 @@ describe('AIChat', () => {
     fireEvent.click(screen.getByTestId('mode-agent'));
 
     expect(await screen.findByTestId('agent-empty-state')).toHaveTextContent('Agent mode is ready');
-    expect(screen.getByPlaceholderText('Open a folder to use agent mode effectively...')).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText('Open a folder to use agent mode effectively...')
+    ).toBeInTheDocument();
   });
 
   it('surfaces a user-facing preflight error when agent prerequisites are missing', async () => {
@@ -127,7 +130,9 @@ describe('AIChat', () => {
       />
     );
 
-    fireEvent.change(screen.getByTestId('chat-input'), { target: { value: 'Update the app file' } });
+    fireEvent.change(screen.getByTestId('chat-input'), {
+      target: { value: 'Update the app file' },
+    });
     fireEvent.click(screen.getByTitle('Send message (Enter)'));
 
     expect(await screen.findByText('Task completed successfully.')).toBeInTheDocument();
@@ -205,11 +210,7 @@ describe('AIChat', () => {
     const onCancelResponse = vi.fn();
 
     render(
-      <AIChatHarness
-        isAiResponding
-        responseState="streaming"
-        onCancelResponse={onCancelResponse}
-      />,
+      <AIChatHarness isAiResponding responseState="streaming" onCancelResponse={onCancelResponse} />
     );
 
     expect(screen.getByTestId('ai-response-state')).toHaveTextContent('AI is responding...');
@@ -217,15 +218,43 @@ describe('AIChat', () => {
     expect(onCancelResponse).toHaveBeenCalledTimes(1);
   });
 
+  describe('clear-chat header button', () => {
+    beforeEach(() => {
+      useAIStore.setState({ messages: [] });
+    });
+
+    it('renders in the header and empties the AI store messages on click', () => {
+      const { actions } = useAIStore.getState();
+      actions.addMessage({ id: 'm1', role: 'user', content: 'hello', timestamp: new Date() });
+      actions.addMessage({ id: 'm2', role: 'assistant', content: 'hi!', timestamp: new Date() });
+      expect(useAIStore.getState().messages).toHaveLength(2);
+
+      render(<AIChatHarness />);
+
+      const button = screen.getByTestId('clear-chat');
+      expect(button).toHaveAttribute('aria-label', 'Clear chat');
+      expect(button).not.toBeDisabled();
+
+      fireEvent.click(button);
+
+      expect(useAIStore.getState().messages).toHaveLength(0);
+    });
+
+    it('is disabled while the chat is busy responding', () => {
+      render(<AIChatHarness isAiResponding responseState="streaming" />);
+      expect(screen.getByTestId('clear-chat')).toBeDisabled();
+    });
+
+    it('is NOT disabled by a chat response while in agent mode', () => {
+      render(<AIChatHarness mode="agent" isAiResponding />);
+      expect(screen.getByTestId('clear-chat')).not.toBeDisabled();
+    });
+  });
+
   it('blocks quick-action sends while cancellation is in progress', () => {
     const onSendMessage = vi.fn();
 
-    render(
-      <AIChatHarness
-        responseState="cancelling"
-        onSendMessage={onSendMessage}
-      />
-    );
+    render(<AIChatHarness responseState="cancelling" onSendMessage={onSendMessage} />);
 
     fireEvent.click(screen.getByText('Explain this code'));
 
