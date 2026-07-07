@@ -92,6 +92,13 @@ export const Settings = ({ isOpen, onClose, settings, onSettingsChange }: Settin
                 <ThemeSection
                   value={localSettings.theme}
                   onChange={value => updateSetting('theme', value)}
+                  onImport={result =>
+                    setLocalSettings(prev => ({
+                      ...prev,
+                      theme: 'custom',
+                      customThemeJson: result.customThemeJson,
+                    }))
+                  }
                 />
               </SettingControl>
             </SettingItem>
