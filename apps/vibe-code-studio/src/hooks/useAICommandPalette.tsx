@@ -21,6 +21,7 @@ import {
 import { logger } from '../services/Logger';
 import { useAgentManagerCommands } from './useAgentManagerCommands';
 import { useArtifactCommands } from './useArtifactCommands';
+import { useBrowserCommands } from './useBrowserCommands';
 import { useKnowledgeCommands } from './useKnowledgeCommands';
 import { usePlanModeCommands } from './usePlanModeCommands';
 import { useScheduleCommands } from './useScheduleCommands';
@@ -70,6 +71,7 @@ export const useAICommandPalette = (props: UseAICommandPaletteProps) => {
   const knowledgeCommands = useKnowledgeCommands();
   const testExplorerCommands = useTestExplorerCommands();
   const agentManagerCommands = useAgentManagerCommands();
+  const browserCommands = useBrowserCommands({ onToggleAIChat: props.onToggleAIChat });
 
   // Build comprehensive command list
   const commands: Command[] = [
@@ -81,6 +83,7 @@ export const useAICommandPalette = (props: UseAICommandPaletteProps) => {
     ...knowledgeCommands,
     ...testExplorerCommands,
     ...agentManagerCommands,
+    ...browserCommands,
     // File Operations
     {
       id: 'file-new',
