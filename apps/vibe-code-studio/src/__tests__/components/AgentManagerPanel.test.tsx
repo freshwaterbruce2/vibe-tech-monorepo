@@ -85,12 +85,16 @@ describe('InboxSection', () => {
       makeEntry({ id: 'q', kind: 'queued' }),
       makeEntry({ id: 'd', kind: 'dropped' }),
       makeEntry({ id: 'f', kind: 'failed' }),
+      makeEntry({ id: 'sc', kind: 'schedule-completed' }),
+      makeEntry({ id: 'sf', kind: 'schedule-failed' }),
     ];
     render(<InboxSection entries={entries} onSelect={vi.fn()} onDismiss={vi.fn()} />);
-    expect(screen.getByText('Inbox (3)')).toBeTruthy();
+    expect(screen.getByText('Inbox (5)')).toBeTruthy();
     expect(screen.getByText('[reply queued]')).toBeTruthy();
     expect(screen.getByText('[undelivered]')).toBeTruthy();
     expect(screen.getByText('[failed]')).toBeTruthy();
+    expect(screen.getByText('[scheduled run done]')).toBeTruthy();
+    expect(screen.getByText('[scheduled run failed]')).toBeTruthy();
   });
 
   it('selects the entry task on click', () => {

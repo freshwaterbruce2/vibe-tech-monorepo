@@ -54,6 +54,7 @@ interface Harness {
   store: ScheduleStore;
   submitter: ReturnType<typeof makeSubmitter>;
   notify: ReturnType<typeof vi.fn>;
+  deliver: ReturnType<typeof vi.fn>;
   onSchedulesChanged: ReturnType<typeof vi.fn>;
   runner: ScheduleRunner;
   clock: { nowMs: number };
@@ -63,6 +64,7 @@ function makeHarness(workspaceRoot: string | null = WORKSPACE): Harness {
   const store = new ScheduleStore();
   const submitter = makeSubmitter();
   const notify = vi.fn();
+  const deliver = vi.fn();
   const onSchedulesChanged = vi.fn();
   const clock = { nowMs: NOW };
   const runner = new ScheduleRunner({
@@ -70,11 +72,12 @@ function makeHarness(workspaceRoot: string | null = WORKSPACE): Harness {
     submitter,
     getWorkspaceRoot: () => workspaceRoot,
     notify,
+    deliver,
     onSchedulesChanged,
     now: () => clock.nowMs,
     tickMs: 1000,
   });
-  return { store, submitter, notify, onSchedulesChanged, runner, clock };
+  return { store, submitter, notify, deliver, onSchedulesChanged, runner, clock };
 }
 
 beforeEach(() => {
@@ -238,6 +241,14 @@ describe('run finalization', () => {
     expect(run?.status).toBe('completed');
     expect(run?.durationMs).toBe(5000);
     expect(h.notify).toHaveBeenCalledWith('success', 'Scheduled task completed', 'run the audit');
+    expect(h.deliver).toHaveBeenCalledWith({
+      runId: run?.id,
+      scheduleId: created.id,
+      taskId: 'task-1',
+      status: 'completed',
+      userRequest: 'run the audit',
+      finishedAtMs: NOW + 5000,
+    });
     h.runner.stop();
   });
 
@@ -255,6 +266,27 @@ describe('run finalization', () => {
     expect(run?.status).toBe('failed');
     expect(run?.error).toBe('boom');
     expect(h.notify).toHaveBeenCalledWith('error', 'Scheduled task failed', 'boom');
+    expect(h.deliver).toHaveBeenCalledWith(
+      expect.objectContaining({
+        scheduleId: created.id,
+        taskId: 'task-1',
+        status: 'failed',
+        error: 'boom',
+      })
+    );
+    h.runner.stop();
+  });
+
+  it('does not deliver to the inbox for tasks it did not submit', async () => {
+    const h = makeHarness();
+    await h.store.load(NOW);
+    const created = await h.store.create(draft(), NOW);
+    await h.store.update(created.id, { nextRunAtMs: NOW - 1 });
+    await h.runner.start();
+
+    h.submitter.emit('completed', { id: 'someone-elses-task' });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(h.deliver).not.toHaveBeenCalled();
     h.runner.stop();
   });
 

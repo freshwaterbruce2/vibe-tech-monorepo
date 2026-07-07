@@ -8,12 +8,14 @@ import type { InboxEntry } from '../../../services/agentManager/inbox';
 import {
   addFailed,
   addQueued,
+  addScheduleRun,
   clearQueuedForTask,
   dismissEntry,
   markDropped,
   resolveInjected,
 } from '../../../services/agentManager/inbox';
 import type { BackgroundTask, InjectedMessage } from '../../../services/BackgroundAgentSystem';
+import type { ScheduleRunDelivery } from '../../../services/scheduling/types';
 
 const makeMessage = (overrides: Partial<InjectedMessage> = {}): InjectedMessage => ({
   id: 'msg-1',
@@ -114,6 +116,61 @@ describe('addFailed', () => {
     const again = addFailed(entries, makeTask({ error: new Error('boom again') }), 3_000);
     expect(again).toBe(entries);
     expect(again).toHaveLength(1);
+  });
+});
+
+describe('addScheduleRun (spec 16 AC #5)', () => {
+  const makeDelivery = (overrides: Partial<ScheduleRunDelivery> = {}): ScheduleRunDelivery => ({
+    runId: 'run-1',
+    scheduleId: 'sched-1',
+    taskId: 'task-1',
+    status: 'completed',
+    userRequest: 'run the audit',
+    finishedAtMs: 5_000,
+    ...overrides,
+  });
+
+  it('adds a schedule-completed entry summarizing the request', () => {
+    const result = addScheduleRun([], makeDelivery());
+    expect(result).toEqual([
+      {
+        id: 'schedule-run-run-1',
+        taskId: 'task-1',
+        kind: 'schedule-completed',
+        summary: 'run the audit',
+        at: 5_000,
+      },
+    ]);
+  });
+
+  it('adds a schedule-failed entry with the error appended', () => {
+    const result = addScheduleRun([], makeDelivery({ status: 'failed', error: 'boom' }));
+    expect(result[0]).toEqual({
+      id: 'schedule-run-run-1',
+      taskId: 'task-1',
+      kind: 'schedule-failed',
+      summary: 'run the audit — boom',
+      at: 5_000,
+    });
+  });
+
+  it('falls back to the request when a failed run has no error', () => {
+    const result = addScheduleRun([], makeDelivery({ status: 'failed' }));
+    expect(result[0]!.kind).toBe('schedule-failed');
+    expect(result[0]!.summary).toBe('run the audit');
+  });
+
+  it('is idempotent per run id (returns the same array)', () => {
+    const entries = addScheduleRun([], makeDelivery());
+    const again = addScheduleRun(entries, makeDelivery({ status: 'failed', error: 'later' }));
+    expect(again).toBe(entries);
+    expect(again).toHaveLength(1);
+  });
+
+  it('does not mutate the input array', () => {
+    const entries: InboxEntry[] = [];
+    addScheduleRun(entries, makeDelivery());
+    expect(entries).toHaveLength(0);
   });
 });
 

@@ -50,6 +50,8 @@ const KIND_BADGES: Record<InboxEntryKind, { label: string; color: string }> = {
   queued: { label: 'reply queued', color: '#e5c07b' },
   dropped: { label: 'undelivered', color: '#ff9d5c' },
   failed: { label: 'failed', color: '#ff6b6b' },
+  'schedule-completed': { label: 'scheduled run done', color: '#98c379' },
+  'schedule-failed': { label: 'scheduled run failed', color: '#ff6b6b' },
 };
 
 const Badge = ({ kind }: { kind: InboxEntryKind }) => (

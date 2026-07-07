@@ -13,9 +13,11 @@ import type {
   BackgroundTask,
   InjectedMessage,
 } from '../BackgroundAgentSystem';
+import type { ScheduleRunDelivery } from '../scheduling/types';
 import {
   addFailed,
   addQueued,
+  addScheduleRun,
   clearQueuedForTask,
   dismissEntry,
   markDropped,
@@ -128,6 +130,15 @@ export function replyToTask(
 
 export function cancelTask(system: BackgroundAgentSystem, taskId: string): boolean {
   return system.cancel(taskId);
+}
+
+/**
+ * Deliver a settled scheduled run into the Inbox (spec 16 AC #5). Called by
+ * the scheduling engine — works whether or not the panel is mounted, since
+ * it writes the store directly.
+ */
+export function deliverScheduleRun(delivery: ScheduleRunDelivery): void {
+  store().actions.setInbox(addScheduleRun(store().inbox, delivery));
 }
 
 /** Dismiss an inbox entry (user action). */

@@ -6,6 +6,7 @@
  * Spec: FEATURE_SPECS/competitive-gaps/16-AGENT-SCHEDULING.md
  */
 import { useSchedulesStore } from '../../stores/schedulesStore';
+import { deliverScheduleRun } from '../agentManager/agentManagerIntegration';
 import { logger } from '../Logger';
 import { computeNextRunAt } from './cadence';
 import { ScheduleRunner } from './ScheduleRunner';
@@ -38,6 +39,8 @@ export async function initScheduling(deps: SchedulerInitDeps): Promise<ScheduleR
     submitter: deps.submitter,
     getWorkspaceRoot: deps.getWorkspaceRoot,
     notify: deps.notify,
+    // Spec 16 AC #5 — settled runs land in the Agent Manager Inbox (spec 10)
+    deliver: deliverScheduleRun,
     onSchedulesChanged: syncToUiStore,
   });
   await runnerInstance.start();

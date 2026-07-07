@@ -9,6 +9,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   cancelTask,
+  deliverScheduleRun,
   dismissInboxEntry,
   initAgentManager,
   replyToTask,
@@ -250,5 +251,45 @@ describe('replyToTask / cancelTask / dismissInboxEntry', () => {
     ]);
     dismissInboxEntry('m1');
     expect(state().inbox.map(e => e.id)).toEqual(['m2']);
+  });
+});
+
+describe('deliverScheduleRun (spec 16 AC #5)', () => {
+  it('appends a schedule entry to the store inbox without needing the panel', () => {
+    deliverScheduleRun({
+      runId: 'run-1',
+      scheduleId: 'sched-1',
+      taskId: 'bg-1',
+      status: 'completed',
+      userRequest: 'nightly audit',
+      finishedAtMs: 9_000,
+    });
+    expect(state().inbox).toEqual([
+      {
+        id: 'schedule-run-run-1',
+        taskId: 'bg-1',
+        kind: 'schedule-completed',
+        summary: 'nightly audit',
+        at: 9_000,
+      },
+    ]);
+  });
+
+  it('keeps existing entries and dedupes repeat deliveries of the same run', () => {
+    state().actions.setInbox([queuedEntry('m1', 't1', 'queued')]);
+    const delivery = {
+      runId: 'run-2',
+      scheduleId: 'sched-1',
+      taskId: 'bg-2',
+      status: 'failed' as const,
+      userRequest: 'nightly audit',
+      error: 'boom',
+      finishedAtMs: 9_500,
+    };
+    deliverScheduleRun(delivery);
+    deliverScheduleRun(delivery);
+    expect(state().inbox.map(e => e.id)).toEqual(['m1', 'schedule-run-run-2']);
+    expect(state().inbox[1]!.kind).toBe('schedule-failed');
+    expect(state().inbox[1]!.summary).toBe('nightly audit — boom');
   });
 });

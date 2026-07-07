@@ -69,6 +69,21 @@ export interface ScheduleDraft {
 }
 
 /**
+ * Settled schedule-originated run, delivered to the Agent Manager Inbox
+ * (spec 16 AC #5, consumed by spec 10's inbox reducers).
+ */
+export interface ScheduleRunDelivery {
+  runId: string;
+  scheduleId: string;
+  /** BackgroundAgentSystem task id — deep-links the inbox entry to the task */
+  taskId: string;
+  status: 'completed' | 'failed';
+  userRequest: string;
+  error?: string;
+  finishedAtMs: number;
+}
+
+/**
  * Minimal structural view of BackgroundAgentSystem used by the runner —
  * lets tests substitute a fake without constructing the real system.
  */

@@ -11,7 +11,12 @@
 import { logger } from '../Logger';
 import { computeNextRunAt, isRecurring } from './cadence';
 import type { ScheduleStore } from './ScheduleStore';
-import type { ScheduleDefinition, ScheduleRunRecord, ScheduleTaskSubmitter } from './types';
+import type {
+  ScheduleDefinition,
+  ScheduleRunDelivery,
+  ScheduleRunRecord,
+  ScheduleTaskSubmitter,
+} from './types';
 
 export interface ScheduleRunnerDeps {
   store: ScheduleStore;
@@ -19,6 +24,8 @@ export interface ScheduleRunnerDeps {
   getWorkspaceRoot: () => string | null;
   /** Surfaced on run completion/failure (in-app notifications) */
   notify: (kind: 'success' | 'error', title: string, message: string) => void;
+  /** Settled runs pushed to the Agent Manager Inbox (spec 16 AC #5) */
+  deliver?: (delivery: ScheduleRunDelivery) => void;
   /** Called after any schedule mutation so the UI store can re-sync */
   onSchedulesChanged: () => void;
   now?: () => number;
@@ -199,5 +206,14 @@ export class ScheduleRunner {
     } else {
       this.deps.notify('error', 'Scheduled task failed', errorMessage ?? schedule.userRequest);
     }
+    this.deps.deliver?.({
+      runId: finished.id,
+      scheduleId,
+      taskId,
+      status,
+      userRequest: schedule.userRequest,
+      finishedAtMs: finishedMs,
+      ...(errorMessage !== undefined ? { error: errorMessage } : {}),
+    });
   }
 }

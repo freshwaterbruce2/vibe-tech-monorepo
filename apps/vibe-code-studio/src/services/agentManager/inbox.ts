@@ -5,8 +5,14 @@
  * Spec: FEATURE_SPECS/competitive-gaps/10-AGENT-MANAGER-PARALLEL.md
  */
 import type { BackgroundTask, InjectedMessage } from '../BackgroundAgentSystem';
+import type { ScheduleRunDelivery } from '../scheduling/types';
 
-export type InboxEntryKind = 'queued' | 'dropped' | 'failed';
+export type InboxEntryKind =
+  | 'queued'
+  | 'dropped'
+  | 'failed'
+  | 'schedule-completed'
+  | 'schedule-failed';
 
 export interface InboxEntry {
   /** Message id for message-borne entries, `failed-<taskId>` for failures. */
@@ -73,6 +79,25 @@ export function addFailed(entries: InboxEntry[], task: BackgroundTask, at: numbe
       kind: 'failed',
       summary: task.error?.message ?? `${task.agentId} failed`,
       at,
+    },
+  ];
+}
+
+/** Scheduled run settled (spec 16 AC #5) → summary entry (idempotent per run id). */
+export function addScheduleRun(entries: InboxEntry[], run: ScheduleRunDelivery): InboxEntry[] {
+  const id = `schedule-run-${run.runId}`;
+  if (entries.some(entry => entry.id === id)) {
+    return entries;
+  }
+  const failedSummary = run.error ? `${run.userRequest} — ${run.error}` : run.userRequest;
+  return [
+    ...entries,
+    {
+      id,
+      taskId: run.taskId,
+      kind: run.status === 'completed' ? 'schedule-completed' : 'schedule-failed',
+      summary: run.status === 'failed' ? failedSummary : run.userRequest,
+      at: run.finishedAtMs,
     },
   ];
 }
