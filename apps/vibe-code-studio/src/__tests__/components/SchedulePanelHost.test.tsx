@@ -19,6 +19,7 @@ vi.mock('../../services/scheduling/schedulerIntegration', async importOriginal =
   ...((await importOriginal()) as object),
   initScheduling: vi.fn().mockResolvedValue({}),
   createSchedule: vi.fn().mockResolvedValue({}),
+  editSchedule: vi.fn().mockResolvedValue(undefined),
   pauseSchedule: vi.fn().mockResolvedValue(undefined),
   resumeSchedule: vi.fn().mockResolvedValue(undefined),
   deleteSchedule: vi.fn().mockResolvedValue(undefined),
@@ -41,7 +42,7 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useSchedulesStore.setState({ schedules: [], panelOpen: false });
+  useSchedulesStore.setState({ schedules: [], panelOpen: false, createPrefill: null });
   useEditorStore.setState({ workspaceFolder: 'V:\\monorepo' });
 });
 
@@ -120,6 +121,39 @@ describe('SchedulePanelHost', () => {
     render(<SchedulePanelHost />, { wrapper });
     fireEvent.click(screen.getByLabelText('Resume refactor'));
     expect(integration.resumeSchedule).toHaveBeenCalledWith('s-2');
+  });
+
+  it('routes inline edits through schedulerIntegration.editSchedule', () => {
+    useSchedulesStore.setState({
+      panelOpen: true,
+      schedules: [
+        {
+          id: 's-3',
+          agentId: 'frontend',
+          userRequest: 'audit',
+          workspaceRoot: 'V:\\monorepo',
+          parameters: {},
+          options: {},
+          cadence: { type: 'interval', everyMinutes: 5 },
+          status: 'active',
+          missedRunPolicy: 'skip',
+          createdAt: new Date(2026, 6, 4).toISOString(),
+          nextRunAtMs: null,
+          runs: [],
+        },
+      ],
+    });
+    render(<SchedulePanelHost />, { wrapper });
+    fireEvent.click(screen.getByLabelText('Edit audit'));
+    fireEvent.change(screen.getByTestId('schedule-request'), {
+      target: { value: 'audit nightly' },
+    });
+    fireEvent.click(screen.getByTestId('schedule-preview-button'));
+    fireEvent.click(screen.getByText('Save changes'));
+    expect(integration.editSchedule).toHaveBeenCalledWith(
+      's-3',
+      expect.objectContaining({ userRequest: 'audit nightly' })
+    );
   });
 
   it('creates schedules from the form flow', async () => {

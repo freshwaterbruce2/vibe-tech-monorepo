@@ -4,11 +4,12 @@
  * store; mutations go through schedulerIntegration.
  * Spec: FEATURE_SPECS/competitive-gaps/16-AGENT-SCHEDULING.md
  */
-import { CalendarClock, Pause, Play, Plus, Trash2, X } from 'lucide-react';
+import { CalendarClock, Pause, Pencil, Play, Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { describeCadence } from '../../services/scheduling/cadence';
 import type { ScheduleDefinition, ScheduleDraft } from '../../services/scheduling/types';
 import { useSchedulesStore } from '../../stores/schedulesStore';
+import { initialFromSchedule } from './cadenceFields';
 import { CreateScheduleForm } from './CreateScheduleForm';
 import * as S from './styled';
 
@@ -17,6 +18,7 @@ export interface SchedulePanelProps {
   workspaceRoot: string | null;
   onClose: () => void;
   onCreate: (draft: ScheduleDraft) => void;
+  onEdit: (id: string, draft: ScheduleDraft) => void;
   onPause: (id: string) => void;
   onResume: (id: string) => void;
   onDelete: (id: string) => void;
@@ -46,14 +48,24 @@ export const SchedulePanel = ({
   workspaceRoot,
   onClose,
   onCreate,
+  onEdit,
   onPause,
   onResume,
   onDelete,
 }: SchedulePanelProps) => {
   const schedules = useSchedulesStore(state => state.schedules);
+  const createPrefill = useSchedulesStore(state => state.createPrefill);
+  const clearCreatePrefill = useSchedulesStore(state => state.actions.clearCreatePrefill);
   const [creating, setCreating] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const showCreateForm = (creating || createPrefill !== null) && !!workspaceRoot;
+  const closeCreateForm = (): void => {
+    setCreating(false);
+    clearCreatePrefill();
+  };
 
   return (
     <S.PanelContainer data-testid="schedule-panel">
@@ -77,14 +89,16 @@ export const SchedulePanel = ({
         </S.HeaderActions>
       </S.PanelHeader>
 
-      {creating && workspaceRoot && (
+      {showCreateForm && workspaceRoot && (
         <CreateScheduleForm
+          key={createPrefill ?? 'new-schedule'}
           workspaceRoot={workspaceRoot}
+          initial={createPrefill ? { userRequest: createPrefill } : undefined}
           onSubmit={draft => {
             onCreate(draft);
-            setCreating(false);
+            closeCreateForm();
           }}
-          onCancel={() => setCreating(false)}
+          onCancel={closeCreateForm}
         />
       )}
 
@@ -121,6 +135,13 @@ export const SchedulePanel = ({
                     </S.IconButton>
                   )}
                   <S.IconButton
+                    onClick={() => setEditingId(id => (id === schedule.id ? null : schedule.id))}
+                    title="Edit"
+                    aria-label={`Edit ${schedule.userRequest}`}
+                  >
+                    <Pencil size={14} />
+                  </S.IconButton>
+                  <S.IconButton
                     onClick={() => onDelete(schedule.id)}
                     title="Delete"
                     aria-label={`Delete ${schedule.userRequest}`}
@@ -129,13 +150,28 @@ export const SchedulePanel = ({
                   </S.IconButton>
                 </S.CardActions>
               </S.CardHeader>
-              <S.CardTitle>{schedule.userRequest}</S.CardTitle>
-              <S.CardMeta>
-                <span>{describeCadence(schedule.cadence)}</span>
-                <span>Agent: {schedule.agentId}</span>
-                <span>Next: {formatNextRun(schedule)}</span>
-              </S.CardMeta>
-              {schedule.runs.length > 0 && (
+              {editingId === schedule.id ? (
+                <CreateScheduleForm
+                  workspaceRoot={schedule.workspaceRoot}
+                  initial={initialFromSchedule(schedule)}
+                  submitLabel="Save changes"
+                  onSubmit={draft => {
+                    onEdit(schedule.id, draft);
+                    setEditingId(null);
+                  }}
+                  onCancel={() => setEditingId(null)}
+                />
+              ) : (
+                <>
+                  <S.CardTitle>{schedule.userRequest}</S.CardTitle>
+                  <S.CardMeta>
+                    <span>{describeCadence(schedule.cadence)}</span>
+                    <span>Agent: {schedule.agentId}</span>
+                    <span>Next: {formatNextRun(schedule)}</span>
+                  </S.CardMeta>
+                </>
+              )}
+              {editingId !== schedule.id && schedule.runs.length > 0 && (
                 <S.RunHistory>
                   {schedule.runs.map(run => (
                     <S.RunRow key={run.id}>

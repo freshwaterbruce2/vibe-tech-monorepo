@@ -4,6 +4,7 @@ import { useState, type ComponentProps } from 'react';
 
 import { AIChat } from '../../components/AIChat/index';
 import { useAIStore } from '../../stores/useAIStore';
+import { useSchedulesStore } from '../../stores/schedulesStore';
 import type { AIMessage, AgentStep, AgentTask, ApprovalRequest } from '../../types';
 import type { TaskPlanner } from '../../services/ai/TaskPlanner';
 import type { ExecutionEngine } from '../../services/ai/ExecutionEngine';
@@ -83,6 +84,34 @@ describe('AIChat', () => {
     expect(
       screen.getByPlaceholderText('Open a folder to use agent mode effectively...')
     ).toBeInTheDocument();
+  });
+
+  it('intercepts /schedule and opens the schedule flow instead of sending', async () => {
+    useSchedulesStore.setState({ schedules: [], panelOpen: false, createPrefill: null });
+    const onSendMessage = vi.fn();
+    render(<AIChatHarness onSendMessage={onSendMessage} />);
+
+    const input = screen.getByTestId('chat-input');
+    fireEvent.change(input, { target: { value: '/schedule run the nightly audit' } });
+    fireEvent.keyPress(input, { key: 'Enter', charCode: 13 });
+
+    expect(onSendMessage).not.toHaveBeenCalled();
+    expect(useSchedulesStore.getState().panelOpen).toBe(true);
+    expect(useSchedulesStore.getState().createPrefill).toBe('run the nightly audit');
+    expect((input as HTMLTextAreaElement).value).toBe('');
+  });
+
+  it('sends non-command messages through to the AI as before', async () => {
+    useSchedulesStore.setState({ schedules: [], panelOpen: false, createPrefill: null });
+    const onSendMessage = vi.fn().mockResolvedValue(undefined);
+    render(<AIChatHarness onSendMessage={onSendMessage} />);
+
+    const input = screen.getByTestId('chat-input');
+    fireEvent.change(input, { target: { value: 'explain this code' } });
+    fireEvent.keyPress(input, { key: 'Enter', charCode: 13 });
+
+    await waitFor(() => expect(onSendMessage).toHaveBeenCalledWith('explain this code'));
+    expect(useSchedulesStore.getState().panelOpen).toBe(false);
   });
 
   it('surfaces a user-facing preflight error when agent prerequisites are missing', async () => {

@@ -5,7 +5,11 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SchedulePanel } from '../../components/SchedulePanel';
-import { cadenceFromFields } from '../../components/SchedulePanel/cadenceFields';
+import {
+  cadenceFromFields,
+  fieldsFromCadence,
+  initialFromSchedule,
+} from '../../components/SchedulePanel/cadenceFields';
 import type { ScheduleDefinition } from '../../services/scheduling/types';
 import { useSchedulesStore } from '../../stores/schedulesStore';
 
@@ -29,6 +33,7 @@ const baseSchedule: ScheduleDefinition = {
 const handlers = {
   onClose: vi.fn(),
   onCreate: vi.fn(),
+  onEdit: vi.fn(),
   onPause: vi.fn(),
   onResume: vi.fn(),
   onDelete: vi.fn(),
@@ -39,7 +44,7 @@ const renderPanel = (props: Partial<Parameters<typeof SchedulePanel>[0]> = {}) =
 
 beforeEach(() => {
   vi.clearAllMocks();
-  useSchedulesStore.setState({ schedules: [], panelOpen: true });
+  useSchedulesStore.setState({ schedules: [], panelOpen: true, createPrefill: null });
 });
 
 describe('SchedulePanel rendering', () => {
@@ -215,6 +220,105 @@ describe('create → preview → confirm flow', () => {
   });
 });
 
+describe('inline schedule editing', () => {
+  it('opens a prefilled edit form and saves changes through onEdit', () => {
+    useSchedulesStore.setState({ schedules: [baseSchedule] });
+    renderPanel();
+    fireEvent.click(screen.getByLabelText('Edit run the audit'));
+
+    // form is prefilled with the existing schedule's values
+    expect((screen.getByTestId('schedule-request') as HTMLTextAreaElement).value).toBe(
+      'run the audit'
+    );
+    expect((screen.getByTestId('schedule-agent') as HTMLInputElement).value).toBe('frontend');
+    expect((screen.getByTestId('schedule-cadence-type') as HTMLSelectElement).value).toBe('daily');
+    expect((screen.getByTestId('schedule-time') as HTMLInputElement).value).toBe('09:00');
+
+    fireEvent.change(screen.getByTestId('schedule-request'), {
+      target: { value: 'run the audit nightly' },
+    });
+    fireEvent.change(screen.getByTestId('schedule-cadence-type'), {
+      target: { value: 'interval' },
+    });
+    fireEvent.change(screen.getByTestId('schedule-interval'), { target: { value: '120' } });
+    fireEvent.click(screen.getByTestId('schedule-preview-button'));
+    fireEvent.click(screen.getByText('Save changes'));
+
+    expect(handlers.onEdit).toHaveBeenCalledWith(
+      's-1',
+      expect.objectContaining({
+        userRequest: 'run the audit nightly',
+        agentId: 'frontend',
+        workspaceRoot: WORKSPACE,
+        cadence: { type: 'interval', everyMinutes: 120 },
+      })
+    );
+    expect(handlers.onCreate).not.toHaveBeenCalled();
+    // edit form closed, card meta visible again
+    expect(screen.queryByTestId('schedule-form')).toBeNull();
+    expect(screen.getByText('Agent: frontend')).toBeTruthy();
+  });
+
+  it('the edit button toggles the form and Cancel restores the card', () => {
+    useSchedulesStore.setState({ schedules: [baseSchedule] });
+    renderPanel();
+    fireEvent.click(screen.getByLabelText('Edit run the audit'));
+    expect(screen.getByTestId('schedule-form')).toBeTruthy();
+    fireEvent.click(screen.getByText('Cancel'));
+    expect(screen.queryByTestId('schedule-form')).toBeNull();
+    expect(handlers.onEdit).not.toHaveBeenCalled();
+
+    // clicking edit twice toggles it closed
+    fireEvent.click(screen.getByLabelText('Edit run the audit'));
+    fireEvent.click(screen.getByLabelText('Edit run the audit'));
+    expect(screen.queryByTestId('schedule-form')).toBeNull();
+  });
+
+  it('prefills a once cadence with its local run time', () => {
+    const runAt = new Date(2026, 6, 10, 14, 5);
+    useSchedulesStore.setState({
+      schedules: [
+        {
+          ...baseSchedule,
+          cadence: { type: 'once', runAt: runAt.toISOString() },
+        },
+      ],
+    });
+    renderPanel();
+    fireEvent.click(screen.getByLabelText('Edit run the audit'));
+    expect((screen.getByTestId('schedule-runat') as HTMLInputElement).value).toBe(
+      '2026-07-10T14:05'
+    );
+  });
+});
+
+describe('create form prefill from /schedule chat command', () => {
+  it('opens the create form prefilled and clears the prefill on submit', () => {
+    useSchedulesStore.setState({ createPrefill: 'nightly audit from chat' });
+    renderPanel();
+    expect((screen.getByTestId('schedule-request') as HTMLTextAreaElement).value).toBe(
+      'nightly audit from chat'
+    );
+    fireEvent.change(screen.getByTestId('schedule-cadence-type'), {
+      target: { value: 'interval' },
+    });
+    fireEvent.click(screen.getByTestId('schedule-preview-button'));
+    fireEvent.click(screen.getByText('Create schedule'));
+    expect(handlers.onCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ userRequest: 'nightly audit from chat' })
+    );
+    expect(useSchedulesStore.getState().createPrefill).toBeNull();
+  });
+
+  it('clears the prefill when the form is cancelled', () => {
+    useSchedulesStore.setState({ createPrefill: 'to be discarded' });
+    renderPanel();
+    fireEvent.click(screen.getByText('Cancel'));
+    expect(useSchedulesStore.getState().createPrefill).toBeNull();
+    expect(screen.queryByTestId('schedule-form')).toBeNull();
+  });
+});
+
 describe('cadenceFromFields', () => {
   const fields = {
     type: 'daily' as const,
@@ -240,5 +344,37 @@ describe('cadenceFromFields', () => {
       hour: 8,
       minute: 30,
     });
+  });
+});
+
+describe('fieldsFromCadence / initialFromSchedule', () => {
+  it('maps each cadence variant back onto form fields', () => {
+    const runAt = new Date(2026, 6, 10, 9, 0);
+    expect(fieldsFromCadence({ type: 'once', runAt: runAt.toISOString() }).runAt).toBe(
+      '2026-07-10T09:00'
+    );
+    expect(fieldsFromCadence({ type: 'interval', everyMinutes: 15 }).everyMinutes).toBe('15');
+    expect(fieldsFromCadence({ type: 'daily', hour: 8, minute: 5 }).time).toBe('08:05');
+    const weekly = fieldsFromCadence({ type: 'weekly', dayOfWeek: 3, hour: 18, minute: 30 });
+    expect(weekly.time).toBe('18:30');
+    expect(weekly.dayOfWeek).toBe('3');
+  });
+
+  it('round-trips through cadenceFromFields', () => {
+    const cadence = { type: 'weekly' as const, dayOfWeek: 5, hour: 7, minute: 45 };
+    expect(cadenceFromFields(fieldsFromCadence(cadence))).toEqual(cadence);
+  });
+
+  it('falls back to an empty runAt for an invalid once timestamp', () => {
+    expect(fieldsFromCadence({ type: 'once', runAt: 'not-a-date' }).runAt).toBe('');
+  });
+
+  it('initialFromSchedule carries agent, request, policy, and cadence fields', () => {
+    const initial = initialFromSchedule(baseSchedule);
+    expect(initial.agentId).toBe('frontend');
+    expect(initial.userRequest).toBe('run the audit');
+    expect(initial.missedRunPolicy).toBe('run-on-launch');
+    expect(initial.fields.type).toBe('daily');
+    expect(initial.fields.time).toBe('09:00');
   });
 });

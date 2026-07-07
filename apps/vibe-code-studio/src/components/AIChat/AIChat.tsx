@@ -12,6 +12,7 @@ import {
 } from 'react';
 
 import { logger } from '../../services/Logger';
+import { handleScheduleChatCommand } from '../../services/scheduling/scheduleChatCommand';
 import { useAIActions } from '../../stores/useAIStore';
 import type { AIMessage, AgentStep, AgentTask, ApprovalRequest } from '../../types';
 
@@ -514,6 +515,14 @@ const AIChat = ({
     async (overrideText?: string) => {
       const messageText = (overrideText ?? input).trim();
       if (!messageText) {
+        return;
+      }
+      // Chat variant of the palette /schedule command (spec 16) — opens the
+      // schedule-creation flow instead of sending the message to the AI.
+      if (handleScheduleChatCommand(messageText)) {
+        if (!overrideText) {
+          setInput('');
+        }
         return;
       }
       const blockedByState = responseState === 'cancelling' || (mode === 'agent' && isTyping);

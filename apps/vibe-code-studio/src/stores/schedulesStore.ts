@@ -12,10 +12,14 @@ import type { ScheduleDefinition } from '../services/scheduling/types';
 export interface SchedulesState {
   schedules: ScheduleDefinition[];
   panelOpen: boolean;
+  /** Prompt text to prefill the create form with (set by the /schedule chat command) */
+  createPrefill: string | null;
   actions: {
     setSchedules: (schedules: ScheduleDefinition[]) => void;
     setPanelOpen: (open: boolean) => void;
     togglePanel: () => void;
+    openCreateWithPrefill: (prefill: string) => void;
+    clearCreatePrefill: () => void;
   };
 }
 
@@ -34,6 +38,15 @@ const createActions = (set: SetState): SchedulesState['actions'] => ({
     set(state => {
       state.panelOpen = !state.panelOpen;
     }),
+  openCreateWithPrefill: prefill =>
+    set(state => {
+      state.panelOpen = true;
+      state.createPrefill = prefill;
+    }),
+  clearCreatePrefill: () =>
+    set(state => {
+      state.createPrefill = null;
+    }),
 });
 
 export const useSchedulesStore = create<SchedulesState>()(
@@ -42,6 +55,7 @@ export const useSchedulesStore = create<SchedulesState>()(
       immer(set => ({
         schedules: [],
         panelOpen: false,
+        createPrefill: null,
         actions: createActions(set),
       }))
     ),
