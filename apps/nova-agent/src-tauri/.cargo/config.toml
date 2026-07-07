@@ -1,9 +1,10 @@
 [build]
 jobs = 1
 
-[target.x86_64-pc-windows-msvc]
-linker = "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\link.exe"
-rustflags = ["-L", "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.44.35207\\lib\\x64"]
+# NOTE: no MSVC linker/toolchain pins here — cargo auto-detects via vswhere on
+# every machine (CI runners have VS2022 at a different path than local VS18).
+# If a specific machine needs a pinned toolset, put it in the untracked
+# %USERPROFILE%\.cargo\config.toml, never in the repo.
 
 [env]
 # Increase rustc thread stack size to prevent STATUS_STACK_BUFFER_OVERRUN
@@ -13,10 +14,3 @@ RUST_MIN_STACK = "16777216"
 # required for compilation and has produced blocking .NET error dialogs locally.
 VSCMD_SKIP_SENDTELEMETRY = "1"
 DOTNET_CLI_TELEMETRY_OPTOUT = "1"
-# Force cc crate to use VS Community instead of BuildTools
-VCINSTALLDIR = "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\"
-VCToolsVersion = "14.44.35207"
-CC = "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\cl.exe"
-CXX = "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\HostX64\\x64\\cl.exe"
-INCLUDE = "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.44.35207\\include;C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0\\um;C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0\\winrt"
-LIB = "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.44.35207\\lib\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.26100.0\\ucrt\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.26100.0\\um\\x64"
