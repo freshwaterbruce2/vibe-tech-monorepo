@@ -29,11 +29,14 @@ import { useEditorStore } from '../../stores/useEditorStore';
 import type { AIModel } from '../../services/ai/AIProviderInterface';
 import type { WebSocketLike } from '../../services/lsp/lspClient';
 import {
+  attachLspMarkers,
   ensureLspProviders,
   initLspOpenLocation,
+  initLspReadFile,
   initLspRenameRequest,
   initLspSocketFactory,
   notifyDocumentOpen,
+  type LspMarkerMonaco,
 } from '../../services/lsp/lspIntegration';
 import { renameEditsToPlan } from '../../services/lsp/lspRename';
 import type { LspMonaco } from '../../services/lsp/lspProviders';
@@ -349,6 +352,8 @@ export function useAppHandlers(props: UseAppHandlersProps) {
           currentFile.language,
           useEditorStore.getState().workspaceFolder
         );
+        // Polish: sync LSP diagnostics onto the mounted model as squiggles.
+        attachLspMarkers(typedMonaco as unknown as LspMarkerMonaco, () => typedEditor.getModel());
       }
     },
     [
@@ -761,7 +766,10 @@ export function useAppHandlers(props: UseAppHandlersProps) {
 
   // Spec 07 Phase 1d: route LSP rename WorkspaceEdits into the existing
   // multi-file preview/apply flow (same approval panel as AI multi-file edits).
+  // Polish: also install the file reader the reference provider uses to build
+  // cross-file peek preview models.
   useEffect(() => {
+    initLspReadFile(path => fileSystemService.readFile(path));
     initLspRenameRequest((newName, fileEdits) => {
       void renameEditsToPlan(newName, fileEdits, path => fileSystemService.readFile(path))
         .then(result => {

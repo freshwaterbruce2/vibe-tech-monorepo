@@ -8,7 +8,11 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FileChange, MultiFileEditPlan } from '@vibetech/types';
 
-import { invokeRenameRequest, resetLspForTests } from '../../../services/lsp/lspIntegration';
+import {
+  invokeReadFile,
+  invokeRenameRequest,
+  resetLspForTests,
+} from '../../../services/lsp/lspIntegration';
 import type { RenameFileEdits } from '../../../services/lsp/lspRename';
 import { useAppHandlers, type UseAppHandlersProps } from '../useAppHandlers';
 
@@ -136,6 +140,16 @@ describe('useAppHandlers — LSP rename wiring (spec 07 Phase 1d)', () => {
       expect(props.showError).toHaveBeenCalledWith('Rename Failed', `Cannot read ${A_PATH}`)
     );
     expect(props.setMultiFileApprovalOpen).not.toHaveBeenCalled();
+  });
+
+  it('installs the LSP file reader (cross-file peek previews) on mount', async () => {
+    const props = makeProps();
+    renderHook(() => useAppHandlers(props));
+
+    await expect(invokeReadFile(A_PATH)).resolves.toBe('const foo = 1;');
+    const readFile = (props.fileSystemService as unknown as { readFile: ReturnType<typeof vi.fn> })
+      .readFile;
+    expect(readFile).toHaveBeenCalledWith(A_PATH);
   });
 
   it('reports non-Error rejections as Unknown error', async () => {

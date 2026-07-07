@@ -192,6 +192,41 @@ describe('createLspClient', () => {
     await expect(pending).resolves.toEqual({ contents: 'hi' });
   });
 
+  it('captures server capabilities from the initialize result', async () => {
+    const callbacks = makeCallbacks();
+    const client = createLspClient({
+      languageId: 'typescript',
+      workspaceRoot: 'C:\\ws',
+      callbacks,
+      createSocket: url => new MockWebSocket(url),
+    });
+    expect(client.getCapabilities()).toBeNull(); // pre-handshake
+    const ws = MockWebSocket.last();
+    ws.open();
+    ws.receive({
+      jsonrpc: '2.0',
+      id: 1,
+      result: { capabilities: { renameProvider: { prepareProvider: true } } },
+    });
+    await flush();
+    expect(client.getCapabilities()).toEqual({ renameProvider: { prepareProvider: true } });
+  });
+
+  it('leaves capabilities null when the initialize result has none', async () => {
+    const callbacks = makeCallbacks();
+    const client = createLspClient({
+      languageId: 'typescript',
+      workspaceRoot: null,
+      callbacks,
+      createSocket: url => new MockWebSocket(url),
+    });
+    const ws = MockWebSocket.last();
+    ws.open();
+    ws.receive({ jsonrpc: '2.0', id: 1, result: {} });
+    await flush();
+    expect(client.getCapabilities()).toBeNull();
+  });
+
   it('request rejects when the relay closes before ready', async () => {
     const client = createLspClient({
       languageId: 'typescript',

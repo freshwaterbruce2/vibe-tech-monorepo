@@ -1,17 +1,22 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   activeDocumentPath,
+  attachLspMarkers,
   disposeLspClients,
   ensureLspProviders,
   getLspClient,
   initLspOpenLocation,
+  initLspReadFile,
   initLspRenameRequest,
   initLspSocketFactory,
   invokeOpenLocation,
+  invokeReadFile,
   invokeRenameRequest,
   notifyDocumentOpen,
+  refreshLspMarkers,
   resetLspForTests,
+  searchWorkspaceSymbols,
 } from '../../../services/lsp/lspIntegration';
 import type { LspMonaco } from '../../../services/lsp/lspProviders';
 import { useProblemsStore } from '../../../stores/problemsStore';
@@ -21,6 +26,10 @@ import { MockWebSocket } from '../../utils/MockWebSocket';
 function mockMonaco(): LspMonaco {
   return {
     Uri: { file: (path: string) => ({ __file: path }) },
+    editor: {
+      getModel: vi.fn(() => null),
+      createModel: vi.fn(),
+    },
     languages: {
       registerHoverProvider: vi.fn(() => ({ dispose: vi.fn() })),
       registerDefinitionProvider: vi.fn(() => ({ dispose: vi.fn() })),
@@ -28,8 +37,35 @@ function mockMonaco(): LspMonaco {
       registerCompletionItemProvider: vi.fn(() => ({ dispose: vi.fn() })),
       registerReferenceProvider: vi.fn(() => ({ dispose: vi.fn() })),
       registerRenameProvider: vi.fn(() => ({ dispose: vi.fn() })),
+      registerSignatureHelpProvider: vi.fn(() => ({ dispose: vi.fn() })),
     },
   };
+}
+
+const A_FILE = {
+  id: '1',
+  name: 'a.ts',
+  path: 'C:\\ws\\a.ts',
+  content: '',
+  language: 'typescript',
+  isModified: false,
+};
+
+function publishDiagnostic(ws: MockWebSocket, message = 'x'): void {
+  ws.receive({
+    jsonrpc: '2.0',
+    method: 'textDocument/publishDiagnostics',
+    params: {
+      uri: 'file:///C:/ws/a.ts',
+      diagnostics: [
+        {
+          range: { start: { line: 0, character: 0 }, end: { line: 0, character: 1 } },
+          severity: 1,
+          message,
+        },
+      ],
+    },
+  });
 }
 
 const aRange = { startLineNumber: 2, startColumn: 1, endLineNumber: 2, endColumn: 4 };
@@ -186,5 +222,153 @@ describe('lspIntegration', () => {
     expect(ws.closed).toBe(true);
     getLspClient('typescript', null);
     expect(MockWebSocket.instances).toHaveLength(2); // fresh client after dispose
+  });
+
+  it('invokeReadFile forwards to the installed reader and resolves undefined when unset', async () => {
+    await expect(invokeReadFile('C:\\ws\\a.ts')).resolves.toBeUndefined();
+    initLspReadFile(path => Promise.resolve(`content of ${path}`));
+    await expect(invokeReadFile('C:\\ws\\a.ts')).resolves.toBe('content of C:\\ws\\a.ts');
+  });
+});
+
+describe('lspIntegration — Monaco marker sync', () => {
+  const editorModel = { uri: { __model: true } };
+
+  afterEach(() => {
+    useEditorStore.setState({ currentFile: null });
+  });
+
+  function attach() {
+    const setModelMarkers = vi.fn();
+    attachLspMarkers({ editor: { setModelMarkers } }, () => editorModel);
+    return setModelMarkers;
+  }
+
+  it('pushes markers for the active file when diagnostics publish, and clears on re-publish', () => {
+    useEditorStore.setState({ currentFile: A_FILE });
+    initLspSocketFactory(url => new MockWebSocket(url));
+    getLspClient('typescript', 'C:\\ws');
+    const ws = MockWebSocket.last();
+    const setModelMarkers = attach();
+    setModelMarkers.mockClear(); // drop the attach-time refresh
+
+    publishDiagnostic(ws, 'bad');
+    expect(setModelMarkers).toHaveBeenCalledWith(editorModel, 'lsp', [
+      expect.objectContaining({
+        severity: 8,
+        message: 'bad',
+        startLineNumber: 1,
+        startColumn: 1,
+      }),
+    ]);
+
+    ws.receive({
+      jsonrpc: '2.0',
+      method: 'textDocument/publishDiagnostics',
+      params: { uri: 'file:///C:/ws/a.ts', diagnostics: [] },
+    });
+    expect(setModelMarkers).toHaveBeenLastCalledWith(editorModel, 'lsp', []);
+  });
+
+  it('applies existing diagnostics immediately on attach (file switch remount)', () => {
+    useEditorStore.setState({ currentFile: A_FILE });
+    useProblemsStore.getState().actions.setSource('lsp:C:\\ws\\a.ts', [
+      {
+        file: 'C:\\ws\\a.ts',
+        line: 2,
+        column: 3,
+        severity: 'warning',
+        message: 'w',
+        source: 'lsp',
+      },
+    ]);
+    const setModelMarkers = attach();
+    expect(setModelMarkers).toHaveBeenCalledWith(editorModel, 'lsp', [
+      expect.objectContaining({ severity: 4, startLineNumber: 2, startColumn: 3 }),
+    ]);
+  });
+
+  it('no-ops without an attached target, an active file, or a mounted model', () => {
+    expect(() => refreshLspMarkers()).not.toThrow(); // no target
+
+    const setModelMarkers = vi.fn();
+    attachLspMarkers({ editor: { setModelMarkers } }, () => editorModel);
+    expect(setModelMarkers).not.toHaveBeenCalled(); // no active file at attach
+
+    useEditorStore.setState({ currentFile: A_FILE });
+    attachLspMarkers({ editor: { setModelMarkers } }, () => null);
+    refreshLspMarkers();
+    expect(setModelMarkers).not.toHaveBeenCalled(); // model not mounted
+  });
+
+  it('subscribes to the problems store once across re-attaches', () => {
+    useEditorStore.setState({ currentFile: A_FILE });
+    const first = vi.fn();
+    const second = vi.fn();
+    attachLspMarkers({ editor: { setModelMarkers: first } }, () => editorModel);
+    attachLspMarkers({ editor: { setModelMarkers: second } }, () => editorModel);
+    first.mockClear();
+    second.mockClear();
+    useProblemsStore
+      .getState()
+      .actions.setSource('lsp:C:\\ws\\a.ts', [
+        { file: 'C:\\ws\\a.ts', line: 1, column: 1, severity: 'info', message: 'i', source: 'lsp' },
+      ]);
+    expect(first).not.toHaveBeenCalled(); // replaced by the second attach
+    expect(second).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('lspIntegration — workspace symbol search', () => {
+  const flush = async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  };
+
+  async function connectedClient(): Promise<MockWebSocket> {
+    initLspSocketFactory(url => new MockWebSocket(url));
+    getLspClient('typescript', 'C:\\ws');
+    const ws = MockWebSocket.last();
+    ws.open();
+    ws.receive({ jsonrpc: '2.0', id: 1, result: { capabilities: {} } });
+    await flush();
+    return ws;
+  }
+
+  it('returns [] when no clients are live', async () => {
+    await expect(searchWorkspaceSymbols('foo')).resolves.toEqual([]);
+  });
+
+  it('queries live clients and maps the merged results', async () => {
+    const ws = await connectedClient();
+    const pending = searchWorkspaceSymbols('foo');
+    await flush();
+    const request = ws.sentMessages().find(message => message.method === 'workspace/symbol');
+    expect(request?.params).toEqual({ query: 'foo' });
+    ws.receive({
+      jsonrpc: '2.0',
+      id: request?.id,
+      result: [
+        {
+          name: 'fooBar',
+          kind: 12,
+          location: {
+            uri: 'file:///C:/ws/b.ts',
+            range: { start: { line: 0, character: 0 }, end: { line: 0, character: 6 } },
+          },
+        },
+      ],
+    });
+    await expect(pending).resolves.toEqual([
+      expect.objectContaining({ name: 'fooBar', kindLabel: 'Function', path: 'C:\\ws\\b.ts' }),
+    ]);
+  });
+
+  it('a dead relay contributes nothing instead of failing the search', async () => {
+    initLspSocketFactory(url => new MockWebSocket(url));
+    getLspClient('typescript', 'C:\\ws');
+    const pending = searchWorkspaceSymbols('foo');
+    MockWebSocket.last().close(); // request rejects (socket closed before ready)
+    await expect(pending).resolves.toEqual([]);
   });
 });

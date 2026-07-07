@@ -12,6 +12,7 @@
 
 import type { Diagnostic } from '../tasks/types';
 import { adaptDiagnostics, type PublishDiagnosticsParams } from './diagnosticsAdapter';
+import { extractCapabilities } from './lspCapabilities';
 import { createJsonRpc } from './jsonRpc';
 import { wsUrl } from './languageServerRegistry';
 import { filePathToUri, uriToFilePath } from './uri';
@@ -45,6 +46,8 @@ export interface LspClient {
   didClose: (path: string) => void;
   /** Send an LSP request; resolves after `initialize`, rejects if the relay dies. */
   request: (method: string, params?: unknown) => Promise<unknown>;
+  /** Server capabilities from the `initialize` result (null until the handshake). */
+  getCapabilities: () => unknown;
   dispose: () => void;
 }
 
@@ -93,22 +96,29 @@ export function createLspClient(options: LspClientOptions): LspClient {
   return {
     ...createDocumentMethods(rpc, languageId, lifecycle.enqueue, callbacks),
     request: (method, params) => lifecycle.ready.then(() => rpc.sendRequest(method, params)),
+    getCapabilities: lifecycle.getCapabilities,
     dispose: () => socket.close(),
   };
 }
 
 /**
  * Wire the socket lifecycle. Returns a `ready` promise (resolves after the
- * initialize handshake, rejects if the socket closes/errors first) and an
- * `enqueue` that defers document notifications until ready.
+ * initialize handshake, rejects if the socket closes/errors first), an
+ * `enqueue` that defers document notifications until ready, and the server
+ * capabilities captured from the `initialize` result.
  */
 function wireLifecycle(
   socket: WebSocketLike,
   rpc: ReturnType<typeof createJsonRpc>,
   workspaceRoot: string | null,
   callbacks: LspClientCallbacks
-): { ready: Promise<void>; enqueue: (fn: () => void) => void } {
+): {
+  ready: Promise<void>;
+  enqueue: (fn: () => void) => void;
+  getCapabilities: () => unknown;
+} {
   let isReady = false;
+  let capabilities: unknown = null;
   const queue: Array<() => void> = [];
   const enqueue = (fn: () => void): void => {
     if (isReady) fn();
@@ -124,7 +134,8 @@ function wireLifecycle(
   ready.catch(() => {}); // no-op: prevents an unhandled rejection when no request awaits
 
   socket.onopen = () => {
-    void rpc.sendRequest('initialize', buildInitializeParams(workspaceRoot)).then(() => {
+    void rpc.sendRequest('initialize', buildInitializeParams(workspaceRoot)).then(result => {
+      capabilities = extractCapabilities(result);
       rpc.sendNotification('initialized', {});
       isReady = true;
       for (const fn of queue.splice(0)) fn();
@@ -141,7 +152,7 @@ function wireLifecycle(
     callbacks.onFallback?.();
   };
 
-  return { ready, enqueue };
+  return { ready, enqueue, getCapabilities: () => capabilities };
 }
 
 /** The document-lifecycle notification methods (`didOpen`/`didChange`/`didClose`). */
@@ -150,7 +161,7 @@ function createDocumentMethods(
   languageId: string,
   enqueue: (fn: () => void) => void,
   callbacks: LspClientCallbacks
-): Omit<LspClient, 'dispose' | 'request'> {
+): Pick<LspClient, 'didOpen' | 'didChange' | 'didClose'> {
   return {
     didOpen: doc =>
       enqueue(() =>

@@ -7,6 +7,7 @@ import {
   createHoverProvider,
   createReferenceProvider,
   createRenameProvider,
+  createSignatureHelpProvider,
   registerLspProviders,
   type LspMonaco,
   type LspProviderDeps,
@@ -19,12 +20,14 @@ const range = (sl: number, sc: number, el: number, ec: number) => ({
   end: { line: el, character: ec },
 });
 
-function clientReturning(result: unknown, reject = false): LspClient {
+function clientReturning(result: unknown, reject = false, capabilities: unknown = null): LspClient {
   const request = reject
     ? vi.fn().mockRejectedValue(new Error('relay down'))
     : vi.fn().mockResolvedValue(result);
-  return { request } as unknown as LspClient;
+  return { request, getCapabilities: () => capabilities } as unknown as LspClient;
 }
+
+const PREPARE_CAPS = { renameProvider: { prepareProvider: true } };
 
 const deps = (over: Partial<LspProviderDeps> = {}): LspProviderDeps => ({
   getActivePath: () => ACTIVE,
@@ -34,12 +37,24 @@ const deps = (over: Partial<LspProviderDeps> = {}): LspProviderDeps => ({
 const model = {
   uri: { __model: true },
   getWordUntilPosition: () => ({ startColumn: 1, endColumn: 4 }),
+  getWordAtPosition: () => ({ word: 'foo', startColumn: 1, endColumn: 4 }),
+  getValueInRange: () => 'docText',
 };
 const position = { lineNumber: 1, column: 1 };
+const WORD_RANGE = { startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 4 };
 
-function mockMonaco(): LspMonaco {
+function mockMonaco(existingModels: string[] = []): LspMonaco & {
+  createModel: ReturnType<typeof vi.fn>;
+} {
+  const createModel = vi.fn();
   return {
     Uri: { file: (path: string) => ({ __file: path }) },
+    editor: {
+      getModel: (uri: unknown) =>
+        existingModels.includes((uri as { __file: string }).__file) ? {} : null,
+      createModel,
+    },
+    createModel,
     languages: {
       registerHoverProvider: vi.fn(() => ({ dispose: vi.fn() })),
       registerDefinitionProvider: vi.fn(() => ({ dispose: vi.fn() })),
@@ -47,6 +62,7 @@ function mockMonaco(): LspMonaco {
       registerCompletionItemProvider: vi.fn(() => ({ dispose: vi.fn() })),
       registerReferenceProvider: vi.fn(() => ({ dispose: vi.fn() })),
       registerRenameProvider: vi.fn(() => ({ dispose: vi.fn() })),
+      registerSignatureHelpProvider: vi.fn(() => ({ dispose: vi.fn() })),
     },
   };
 }
@@ -240,6 +256,46 @@ describe('reference provider', () => {
     expect(result?.[1]?.uri).toEqual({ __file: 'C:\\ws\\b.ts' }); // cross-file → file uri
   });
 
+  it('creates peek preview models for cross-file targets via deps.readFile', async () => {
+    const monaco = mockMonaco();
+    const readFile = vi.fn().mockResolvedValue('file b content');
+    const provider = createReferenceProvider(
+      clientReturning([
+        { uri: 'file:///C:/ws/a.ts', range: range(0, 0, 0, 3) },
+        { uri: 'file:///C:/ws/b.ts', range: range(4, 0, 4, 3) },
+      ]),
+      deps({ readFile }),
+      monaco
+    );
+    await provider.provideReferences(model, position, ctx);
+    expect(readFile).toHaveBeenCalledWith('C:\\ws\\b.ts');
+    expect(readFile).not.toHaveBeenCalledWith(ACTIVE);
+    expect(monaco.createModel).toHaveBeenCalledWith('file b content', undefined, {
+      __file: 'C:\\ws\\b.ts',
+    });
+  });
+
+  it('skips preview models that already exist and works without readFile', async () => {
+    const monaco = mockMonaco(['C:\\ws\\b.ts']);
+    const readFile = vi.fn().mockResolvedValue('x');
+    const locations = [{ uri: 'file:///C:/ws/b.ts', range: range(0, 0, 0, 1) }];
+    await createReferenceProvider(
+      clientReturning(locations),
+      deps({ readFile }),
+      monaco
+    ).provideReferences(model, position, ctx);
+    expect(monaco.createModel).not.toHaveBeenCalled();
+
+    const bare = mockMonaco();
+    const result = await createReferenceProvider(
+      clientReturning(locations),
+      deps(),
+      bare
+    ).provideReferences(model, position, ctx);
+    expect(bare.createModel).not.toHaveBeenCalled();
+    expect(result).toHaveLength(1); // locations still returned without previews
+  });
+
   it('defaults includeDeclaration when context is undefined', async () => {
     const client = clientReturning([{ uri: 'file:///C:/ws/a.ts', range: range(0, 0, 0, 1) }]);
     await createReferenceProvider(client, deps(), mockMonaco()).provideReferences(
@@ -308,8 +364,149 @@ describe('rename provider', () => {
   });
 });
 
+describe('rename provider — resolveRenameLocation (prepareRename)', () => {
+  it('falls back to the word when the server lacks prepareRename support', async () => {
+    const client = clientReturning({}, false, { renameProvider: true });
+    const provider = createRenameProvider(client, deps());
+    expect(await provider.resolveRenameLocation(model, position)).toEqual({
+      range: WORD_RANGE,
+      text: 'foo',
+    });
+    expect(client.request).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the word when there is no active path', async () => {
+    const provider = createRenameProvider(
+      clientReturning({}, false, PREPARE_CAPS),
+      deps({
+        getActivePath: () => null,
+      })
+    );
+    expect(await provider.resolveRenameLocation(model, position)).toEqual({
+      range: WORD_RANGE,
+      text: 'foo',
+    });
+  });
+
+  it('rejects (with a reason) when unsupported and there is no word at the cursor', async () => {
+    const noWordModel = { ...model, getWordAtPosition: () => null };
+    const provider = createRenameProvider(clientReturning({}, false, null), deps());
+    const location = await provider.resolveRenameLocation(noWordModel, position);
+    expect(location.rejectReason).toBe('No renameable symbol at the cursor.');
+  });
+
+  it('sends textDocument/prepareRename when supported and maps the placeholder', async () => {
+    const client = clientReturning(
+      { range: range(0, 6, 0, 9), placeholder: 'oldName' },
+      false,
+      PREPARE_CAPS
+    );
+    const provider = createRenameProvider(client, deps());
+    expect(await provider.resolveRenameLocation(model, position)).toEqual({
+      range: { startLineNumber: 1, startColumn: 7, endLineNumber: 1, endColumn: 10 },
+      text: 'oldName',
+    });
+    expect(client.request).toHaveBeenCalledWith('textDocument/prepareRename', {
+      textDocument: { uri: 'file:///C:/ws/a.ts' },
+      position: { line: 0, character: 0 },
+    });
+  });
+
+  it('reads the document text for a bare Range result', async () => {
+    const client = clientReturning(range(0, 6, 0, 9), false, PREPARE_CAPS);
+    const provider = createRenameProvider(client, deps());
+    expect(await provider.resolveRenameLocation(model, position)).toEqual({
+      range: { startLineNumber: 1, startColumn: 7, endLineNumber: 1, endColumn: 10 },
+      text: 'docText',
+    });
+  });
+
+  it('rejects the rename when the server answers null', async () => {
+    const provider = createRenameProvider(clientReturning(null, false, PREPARE_CAPS), deps());
+    const location = await provider.resolveRenameLocation(model, position);
+    expect(location.rejectReason).toBe('This element cannot be renamed.');
+    expect(location.range).toEqual(WORD_RANGE); // keeps the word range for the widget
+  });
+
+  it('falls back to the word when the prepareRename request rejects', async () => {
+    const provider = createRenameProvider(clientReturning(null, true, PREPARE_CAPS), deps());
+    expect(await provider.resolveRenameLocation(model, position)).toEqual({
+      range: WORD_RANGE,
+      text: 'foo',
+    });
+  });
+
+  it('maps a defaultBehavior answer to the word fallback', async () => {
+    const client = clientReturning({ defaultBehavior: true }, false, PREPARE_CAPS);
+    const provider = createRenameProvider(client, deps());
+    expect(await provider.resolveRenameLocation(model, position)).toEqual({
+      range: WORD_RANGE,
+      text: 'foo',
+    });
+  });
+});
+
+describe('signature help provider', () => {
+  const signatureHelp = {
+    signatures: [{ label: 'f(a: string): void', parameters: [{ label: 'a: string' }] }],
+    activeSignature: 0,
+    activeParameter: 0,
+  };
+
+  it('advertises default trigger characters until capabilities arrive', () => {
+    const provider = createSignatureHelpProvider(clientReturning(signatureHelp), deps());
+    expect(provider.signatureHelpTriggerCharacters).toEqual(['(', ',']);
+    expect(provider.signatureHelpRetriggerCharacters).toEqual([')']);
+  });
+
+  it('reads trigger characters live from server capabilities', () => {
+    const caps = {
+      signatureHelpProvider: { triggerCharacters: ['<'], retriggerCharacters: ['>', ')'] },
+    };
+    const provider = createSignatureHelpProvider(
+      clientReturning(signatureHelp, false, caps),
+      deps()
+    );
+    expect(provider.signatureHelpTriggerCharacters).toEqual(['<']);
+    expect(provider.signatureHelpRetriggerCharacters).toEqual(['>', ')']);
+  });
+
+  it('maps a signatureHelp result and requests at the LSP position', async () => {
+    const client = clientReturning(signatureHelp);
+    const provider = createSignatureHelpProvider(client, deps());
+    const result = await provider.provideSignatureHelp(model, position);
+    expect(result?.value.signatures[0]?.label).toBe('f(a: string): void');
+    expect(() => result?.dispose()).not.toThrow();
+    expect(client.request).toHaveBeenCalledWith('textDocument/signatureHelp', {
+      textDocument: { uri: 'file:///C:/ws/a.ts' },
+      position: { line: 0, character: 0 },
+    });
+  });
+
+  it('returns null with no active path, on reject, and on an empty result', async () => {
+    expect(
+      await createSignatureHelpProvider(
+        clientReturning(signatureHelp),
+        deps({ getActivePath: () => null })
+      ).provideSignatureHelp(model, position)
+    ).toBeNull();
+    expect(
+      await createSignatureHelpProvider(clientReturning(null, true), deps()).provideSignatureHelp(
+        model,
+        position
+      )
+    ).toBeNull();
+    expect(
+      await createSignatureHelpProvider(
+        clientReturning({ signatures: [] }),
+        deps()
+      ).provideSignatureHelp(model, position)
+    ).toBeNull();
+  });
+});
+
 describe('registerLspProviders', () => {
-  it('registers all six providers and disposes them together', () => {
+  it('registers all seven providers and disposes them together', () => {
     const monaco = mockMonaco();
     const handle = registerLspProviders(monaco, 'typescript', clientReturning({}), deps());
     expect(monaco.languages.registerHoverProvider).toHaveBeenCalledWith(
@@ -321,6 +518,10 @@ describe('registerLspProviders', () => {
     expect(monaco.languages.registerCompletionItemProvider).toHaveBeenCalled();
     expect(monaco.languages.registerReferenceProvider).toHaveBeenCalled();
     expect(monaco.languages.registerRenameProvider).toHaveBeenCalledWith(
+      'typescript',
+      expect.any(Object)
+    );
+    expect(monaco.languages.registerSignatureHelpProvider).toHaveBeenCalledWith(
       'typescript',
       expect.any(Object)
     );

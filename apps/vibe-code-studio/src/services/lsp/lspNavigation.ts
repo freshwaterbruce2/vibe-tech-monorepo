@@ -218,7 +218,10 @@ function completionKind(kind: number | undefined): number {
   return kind !== undefined && kind in COMPLETION_KIND ? COMPLETION_KIND[kind]! : 18;
 }
 
-function documentationString(doc: string | { value?: string } | undefined): string | undefined {
+/** LSP documentation (`string` or `MarkupContent`) → plain string (shared with signatureHelp). */
+export function documentationString(
+  doc: string | { value?: string } | undefined
+): string | undefined {
   if (typeof doc === 'string') return doc || undefined;
   if (doc && typeof doc.value === 'string') return doc.value || undefined;
   return undefined;
