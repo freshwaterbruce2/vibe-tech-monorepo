@@ -22,7 +22,7 @@ As a developer, I want to schedule an agent task — "run the dependency audit e
 2. ✅ Scheduled tasks are visible in a new Schedule panel: pending, next-run time, cadence (one-off vs recurring), last-run status
 3. ✅\* Recurring schedules use a simplified picker (every-N-minutes / daily / weekly at HH:MM) — **not cron expressions**, and **not** the `scheduled-tasks` MCP, which does not exist in the monorepo (verified 2026-07-04; see Implementation status)
 4. ✅ At the scheduled time, the runner submits the task to `BackgroundAgentSystem.submit(...)` exactly as if the user had typed it live
-5. ⬜ Inbox delivery deferred — spec 10's Agent Manager Inbox doesn't exist yet; completions surface via the in-app notification system (the spec's own degraded mode)
+5. ✅ Inbox delivery (2026-07-06, spec 10 Phase 1 unblocked it) — settled schedule-originated runs (completed/failed) land in the Agent Manager Inbox via `ScheduleRunner.deliver` → `deliverScheduleRun` → `addScheduleRun` (idempotent per run id, deep-links to the task); in-app notifications retained alongside
 6. ⬜ OS-level desktop notification deferred — the Tauri notification plugin is not installed (new dependency requires discussion); in-app notifications shipped
 7. ✅ Schedules persist across VCS restarts (SQLite `agent_schedules` via the Tauri DB bridge, electron-store/localStorage fallback) with per-schedule run-on-launch vs skip missed-run policy
 8. ✅ A schedule can be paused, resumed, or deleted from the Schedule panel (inline edit not shipped — delete + recreate)
