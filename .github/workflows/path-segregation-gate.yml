@@ -32,7 +32,10 @@ jobs:
   path-check:
     name: Path Segregation Audit
     runs-on: windows-latest
-    timeout-minutes: 15
+    # 35 min: the full 108-project typecheck legitimately needs ~20+ min on a
+    # cold Nx cache now that nova-agent's CI build failure is fixed (a 15-min
+    # cap read as mysterious "cancelled" conclusions with no failing step).
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
