@@ -1,8 +1,5 @@
 {
   "apps/vibe-code-studio/src/App.tsx": {
-    "max-len": {
-      "count": 2
-    },
     "max-lines": {
       "count": 1
     }
@@ -77,11 +74,6 @@
   },
   "apps/vibe-code-studio/src/components/CodeQualityPanel.tsx": {
     "max-lines": {
-      "count": 1
-    }
-  },
-  "apps/vibe-code-studio/src/components/CommandPalette.tsx": {
-    "max-len": {
       "count": 1
     }
   },
@@ -582,9 +574,6 @@
     }
   },
   "apps/vibe-code-studio/src/services/ai/PromptBuilder.ts": {
-    "max-len": {
-      "count": 2
-    },
     "max-lines-per-function": {
       "count": 1
     }
@@ -595,14 +584,6 @@
     },
     "max-lines-per-function": {
       "count": 3
-    }
-  },
-  "apps/vibe-code-studio/src/services/ai/TaskPlanner.ts": {
-    "max-len": {
-      "count": 2
-    },
-    "max-lines-per-function": {
-      "count": 1
     }
   },
   "apps/vibe-code-studio/src/services/ai/completion/ModelSelector.ts": {
@@ -703,11 +684,6 @@
     },
     "max-lines-per-function": {
       "count": 1
-    }
-  },
-  "apps/vibe-code-studio/src/services/testing/OutputParser.ts": {
-    "max-len": {
-      "count": 3
     }
   },
   "apps/vibe-code-studio/src/services/testing/TestDiscovery.ts": {

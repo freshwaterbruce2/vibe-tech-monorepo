@@ -11,7 +11,7 @@ import {
   TestTube,
   Trash2,
 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 
 import { logger } from '../services/Logger';
@@ -348,15 +348,9 @@ const ApiKeySettings: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successes, setSuccesses] = useState<Record<string, string>>({});
 
-  const keyManager = SecureApiKeyManager.getInstance(logger);
+  const keyManager = useMemo(() => SecureApiKeyManager.getInstance(logger), []);
 
-  useEffect(() => {
-    loadApiKeyStatuses();
-    // Run-once-on-mount: loadApiKeyStatuses is stable for the component's lifetime.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadApiKeyStatuses = async () => {
+  const loadApiKeyStatuses = useCallback(async () => {
     const storedProviders = await keyManager.getStoredProviders();
     const newStatuses: Record<string, ApiKeyStatus> = {};
 
@@ -371,7 +365,11 @@ const ApiKeySettings: React.FC = () => {
     });
 
     setStatuses(newStatuses);
-  };
+  }, [keyManager]);
+
+  useEffect(() => {
+    loadApiKeyStatuses();
+  }, [loadApiKeyStatuses]);
 
   const handleKeyChange = (provider: string, value: string) => {
     setApiKeys(prev => ({ ...prev, [provider]: value }));
