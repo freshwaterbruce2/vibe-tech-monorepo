@@ -3,6 +3,7 @@ import { FileSystemService } from '../FileSystemService';
 import { buildKnowledgeSection } from '../knowledge/knowledgeIntegration';
 import { type Rule, RulesParser } from '../RulesParser';
 import { loadAgentsStandardsSection } from './standards/AgentsMdLoader';
+import { loadStandardsSettings } from './standards/standardsSettings';
 
 // Model-specific capability suffixes appended to the Tree-of-Thought preamble.
 const DEEPSEEK_CAPABILITIES = `
@@ -143,23 +144,31 @@ Do not skip steps. Your reasoning should be visible and structured.
 
     // INJECT CUSTOM RULES FIRST (highest priority)
     if (request.workspaceContext?.rootPath && request.currentFile?.name) {
-      const customRules = await this.loadCustomRules(
-        request.workspaceContext.rootPath,
-        request.currentFile.name
-      );
+      // Spec 03 AC #10: each standards source is individually toggleable in
+      // Settings; a disabled source is skipped entirely (no reads, no cache).
+      const standardsSettings = await loadStandardsSettings();
 
-      if (customRules.length > 0) {
-        prompt += this.buildCustomRulesSection(customRules);
+      if (standardsSettings.projectRules) {
+        const customRules = await this.loadCustomRules(
+          request.workspaceContext.rootPath,
+          request.currentFile.name
+        );
+
+        if (customRules.length > 0) {
+          prompt += this.buildCustomRulesSection(customRules);
+        }
       }
 
       // AGENTS.md standards (spec 03) — injected alongside .deepcoderules.
       // Pass the FULL path (not .name): AgentsMdLoader needs it to discover
       // nested AGENTS.md (closest-wins) and to match path-scoped globs; a
       // bare basename collapses discovery to root-only and drops glob rules.
-      prompt += await this.loadAgentsStandards(
-        request.workspaceContext.rootPath,
-        request.currentFile.path || request.currentFile.name
-      );
+      if (standardsSettings.agentsMd) {
+        prompt += await this.loadAgentsStandards(
+          request.workspaceContext.rootPath,
+          request.currentFile.path || request.currentFile.name
+        );
+      }
 
       // Knowledge items (spec 04) — top-N relevant durable facts, char-budgeted
       prompt += await buildKnowledgeSection(

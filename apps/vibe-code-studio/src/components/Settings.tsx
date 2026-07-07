@@ -6,6 +6,7 @@ import type { EditorSettings } from '../types';
 import { MODELS_ARRAY } from '../services/ai/AIProviderInterface';
 import ApiKeySettings from './ApiKeySettings';
 import { ModelComparison } from './ModelComparison';
+import { StandardsSection } from './Settings/StandardsSection';
 import { ThemeSection } from './Settings/ThemeSection';
 import { defaultSettings, getModelPricing, supportsReasoning } from './Settings.constants';
 import type { UserWithPlan } from '../services/AuthService';
@@ -440,6 +441,12 @@ export const Settings = ({ isOpen, onClose, settings, onSettingsChange }: Settin
                 </SettingControl>
               </SettingItem>
             )}
+          </SettingsSection>
+
+          {/* Agent Standards Section (spec 03 AC #10) — self-persisting */}
+          <SettingsSection>
+            <SectionTitle>Agent Standards</SectionTitle>
+            <StandardsSection />
           </SettingsSection>
 
           {/* API Keys Section */}

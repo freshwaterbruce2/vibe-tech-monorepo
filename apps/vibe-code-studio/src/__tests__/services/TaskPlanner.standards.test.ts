@@ -9,7 +9,11 @@
  * validateTask / calculateStepConfidence / generateFallbackPlans wrappers.
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  resetStandardsSettingsForTests,
+  setStandardsSetting,
+} from '../../services/ai/standards/standardsSettings';
 import { StrategyMemory } from '../../services/ai/StrategyMemory';
 import { TaskPlanner } from '../../services/ai/TaskPlanner';
 import type { UnifiedAIService } from '../../services/ai/UnifiedAIService';
@@ -116,6 +120,14 @@ const makeRequest = (overrides: Partial<TaskPlanRequest> = {}): TaskPlanRequest 
 
 const win = window as unknown as { electron?: { isElectron?: boolean } };
 
+beforeEach(() => {
+  // Standards toggles (spec 03 AC #10): start each test from all-on defaults
+  // without the global electron.store mock's file-lifetime Map.
+  delete win.electron;
+  localStorage.clear();
+  resetStandardsSettingsForTests();
+});
+
 afterEach(() => {
   delete win.electron;
   vi.restoreAllMocks();
@@ -137,6 +149,23 @@ describe('TaskPlanner planTask — AGENTS.md standards wiring', () => {
     // The AI plan parsed into a real task, not the fallback.
     expect(response.task.title).toBe('Read the current file');
     expect(response.task.steps[0]?.action.type).toBe('read_file');
+  });
+
+  it('skips AGENTS.md (no read) when the agentsMd settings toggle is off', async () => {
+    await setStandardsSetting('agentsMd', false);
+    const { aiService, sendContextualMessage } = makeAiService();
+    const fileSystemService = makeFileSystemService();
+    const planner = new TaskPlanner(aiService, fileSystemService);
+
+    await planner.planTask(makeRequest());
+
+    const sent = sendContextualMessage.mock.calls[0]?.[0];
+    expect(sent?.userQuery).not.toContain(STANDARDS_HEADER);
+    const readFile = fileSystemService.readFile as unknown as ReturnType<typeof vi.fn>;
+    const agentsReads = readFile.mock.calls.filter(
+      ([path]: [string]) => path === `${ROOT}/AGENTS.md`
+    );
+    expect(agentsReads).toHaveLength(0); // disabled source is never probed
   });
 
   it('skips standards and structure detection without a fileSystemService', async () => {

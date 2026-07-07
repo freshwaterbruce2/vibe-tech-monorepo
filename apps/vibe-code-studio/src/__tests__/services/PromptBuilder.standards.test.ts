@@ -13,6 +13,10 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PromptBuilder } from '../../services/ai/PromptBuilder';
+import {
+  resetStandardsSettingsForTests,
+  setStandardsSetting,
+} from '../../services/ai/standards/standardsSettings';
 import type { AIContextRequest, EditorFile, UserActivity, WorkspaceContext } from '../../types';
 
 const { readFileMock } = vi.hoisted(() => ({
@@ -82,6 +86,11 @@ const withAgentsMd = (): void => {
 };
 
 beforeEach(() => {
+  // Standards toggles (spec 03 AC #10): drop the global electron.store mock
+  // (file-lifetime Map) so settings start from all-on defaults every test.
+  delete (window as unknown as { electron?: unknown }).electron;
+  localStorage.clear();
+  resetStandardsSettingsForTests();
   PromptBuilder.clearRulesCache();
   readFileMock.mockReset();
   readFileMock.mockImplementation(async (path: string): Promise<string> => {
@@ -216,6 +225,46 @@ describe('PromptBuilder.buildContextualSystemPrompt — AGENTS.md standards', ()
     // The '' result was cached, so the second call did not probe AGENTS.md again.
     expect(readsAfterFirst).toBe(1);
     expect(agentsReadCount()).toBe(readsAfterFirst);
+  });
+
+  it('skips AGENTS.md (no read) when the agentsMd toggle is off, keeping custom rules', async () => {
+    readFileMock.mockImplementation(async (path: string): Promise<string> => {
+      if (path === AGENTS_PATH) {
+        return '# Team standards\nAlways use pnpm.';
+      }
+      if (path === `${ROOT}/.deepcoderules`) {
+        return 'Prefer functional components everywhere.';
+      }
+      throw new Error(`ENOENT: ${path}`);
+    });
+    await setStandardsSetting('agentsMd', false);
+
+    const prompt = await PromptBuilder.buildContextualSystemPrompt(makeRequest());
+
+    expect(prompt).not.toContain(STANDARDS_HEADER);
+    expect(agentsReadCount()).toBe(0); // disabled source is never probed
+    expect(prompt).toContain('PROJECT-SPECIFIC CUSTOM INSTRUCTIONS:');
+    expect(prompt).toContain('Prefer functional components everywhere.');
+  });
+
+  it('skips custom rules (no read) when the projectRules toggle is off, keeping AGENTS.md', async () => {
+    readFileMock.mockImplementation(async (path: string): Promise<string> => {
+      if (path === AGENTS_PATH) {
+        return '# Team standards\nAlways use pnpm.';
+      }
+      if (path === `${ROOT}/.deepcoderules`) {
+        return 'Prefer functional components everywhere.';
+      }
+      throw new Error(`ENOENT: ${path}`);
+    });
+    await setStandardsSetting('projectRules', false);
+
+    const prompt = await PromptBuilder.buildContextualSystemPrompt(makeRequest());
+
+    expect(prompt).not.toContain('PROJECT-SPECIFIC CUSTOM INSTRUCTIONS:');
+    expect(deepcodeReadCount()).toBe(0); // disabled source is never probed
+    expect(prompt).toContain(STANDARDS_HEADER);
+    expect(prompt).toContain('Always use pnpm.');
   });
 
   it('truncates long current-file and related-file content', async () => {

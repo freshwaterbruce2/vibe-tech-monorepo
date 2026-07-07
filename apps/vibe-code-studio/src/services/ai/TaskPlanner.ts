@@ -38,6 +38,7 @@ import {
   validateTask,
 } from './planning';
 import { loadAgentsStandardsSection } from './standards/AgentsMdLoader';
+import { loadStandardsSettings } from './standards/standardsSettings';
 import { StrategyMemory } from './StrategyMemory';
 import type { UnifiedAIService } from './UnifiedAIService';
 
@@ -70,14 +71,16 @@ export class TaskPlanner {
 
     const projectStructure = await this.detectProjectStructure(context.workspaceRoot);
 
-    // AGENTS.md standards (spec 03) — never throws, '' when absent
-    const agentStandards = this.fileSystemService
-      ? await loadAgentsStandardsSection(
-          { readFile: path => this.fileSystemService!.readFile(path) },
-          context.workspaceRoot,
-          context.currentFile
-        )
-      : '';
+    // AGENTS.md standards (spec 03) — never throws, '' when absent or when
+    // the "Read AGENTS.md files" settings toggle is off (AC #10).
+    const agentStandards =
+      this.fileSystemService && (await loadStandardsSettings()).agentsMd
+        ? await loadAgentsStandardsSection(
+            { readFile: path => this.fileSystemService!.readFile(path) },
+            context.workspaceRoot,
+            context.currentFile
+          )
+        : '';
 
     // Build planning context
     const planningContext: PlanningContext = {

@@ -106,6 +106,15 @@ export class TaskRunnerService {
   }
 
   /**
+   * Runs a one-off task that is not defined in .vcs/tasks.json (spec 03
+   * AC #11: AGENTS.md fenced commands). No dependsOn resolution — the task
+   * runs exactly as given, through the same session/lifecycle plumbing.
+   */
+  runAdHoc(task: VcsTask): Promise<number | null> {
+    return this.runSingle(task);
+  }
+
+  /**
    * Cancels a running task: settles its pending runTask promise with a null
    * exit code and closes the terminal session. (Session close removes the
    * Tauri exit listeners, so waiting for a natural onExit would leak forever.)

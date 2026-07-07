@@ -44,9 +44,16 @@ vi.mock('../../../services/FileSystemService', () => ({
 }));
 
 import {
+  resetStandardsSettingsForTests,
+  setStandardsSetting,
+} from '../../../services/ai/standards/standardsSettings';
+import type { AgentsMdCommand } from '../../../services/tasks/agentsMdCommands';
+import {
   cancelWorkspaceTask,
   getTaskRunner,
+  loadAgentsMdCommands,
   loadWorkspaceTasks,
+  runAgentsMdCommand,
   runDefaultBuildTask,
   runWorkspaceTask,
   setTaskRunnerForTests,
@@ -80,6 +87,10 @@ beforeEach(() => {
   mockTerminal.handlers.clear();
   mockTerminal.resetCounter();
   mockReadFile.mockReset();
+  // Standards toggles (spec 03 AC #10): all-on defaults, no leaked persistence.
+  delete (window as unknown as { electron?: unknown }).electron;
+  localStorage.clear();
+  resetStandardsSettingsForTests();
 });
 
 describe('taskRunnerIntegration', () => {
@@ -148,5 +159,70 @@ describe('taskRunnerIntegration', () => {
     await loadWorkspaceTasks('V:\\ws');
     await expect(runDefaultBuildTask()).resolves.toBeNull();
     expect(cancelWorkspaceTask('x')).toBe(false);
+  });
+});
+
+const AGENTS_MD = ['# Project', '## Commands', '```bash', 'pnpm build', '```'].join('\n');
+
+describe('taskRunnerIntegration — AGENTS.md commands (spec 03 AC #11)', () => {
+  it('loadAgentsMdCommands parses fenced Commands from the workspace AGENTS.md', async () => {
+    mockReadFile.mockResolvedValue(AGENTS_MD);
+
+    const commands = await loadAgentsMdCommands('C:/ws');
+
+    expect(mockReadFile).toHaveBeenCalledWith('C:/ws/AGENTS.md');
+    expect(commands).toHaveLength(1);
+    expect(commands[0]).toMatchObject({ command: 'pnpm build', sourcePath: 'C:/ws/AGENTS.md' });
+  });
+
+  it('returns [] when AGENTS.md is absent', async () => {
+    mockReadFile.mockRejectedValue(new Error('ENOENT'));
+
+    await expect(loadAgentsMdCommands('C:/ws')).resolves.toEqual([]);
+  });
+
+  it('returns [] without reading when the agentsMd toggle is off', async () => {
+    await setStandardsSetting('agentsMd', false);
+
+    await expect(loadAgentsMdCommands('C:/ws')).resolves.toEqual([]);
+    expect(mockReadFile).not.toHaveBeenCalled();
+  });
+
+  it('returns [] without reading when the agentsMdCommands toggle is off', async () => {
+    await setStandardsSetting('agentsMdCommands', false);
+
+    await expect(loadAgentsMdCommands('C:/ws')).resolves.toEqual([]);
+    expect(mockReadFile).not.toHaveBeenCalled();
+  });
+
+  it('runAgentsMdCommand executes through the shared task runner as an ad-hoc task', async () => {
+    const command: AgentsMdCommand = { id: 'c1', command: 'pnpm build', sourcePath: 'AGENTS.md' };
+
+    const promise = runAgentsMdCommand(command, 'C:/ws');
+    await flush();
+
+    const running = useTasksStore.getState().running['AGENTS.md: pnpm build'];
+    expect(running).toBeDefined();
+    expect(mockTerminal.createSession).toHaveBeenCalledWith('C:/ws');
+    expect(mockTerminal.writeInput).toHaveBeenCalledWith(
+      'session-1',
+      'pnpm build; exit $LASTEXITCODE\r'
+    );
+
+    mockTerminal.emitExit('session-1', 0);
+    await expect(promise).resolves.toBe(0);
+    const tasks = useTasksStore.getState();
+    expect(tasks.running['AGENTS.md: pnpm build']).toBeUndefined();
+    expect(tasks.lastExitCodes['AGENTS.md: pnpm build']).toBe(0);
+  });
+
+  it('a running AGENTS.md command is cancellable by its label', async () => {
+    const command: AgentsMdCommand = { id: 'c2', command: 'pnpm dev', sourcePath: 'AGENTS.md' };
+
+    const promise = runAgentsMdCommand(command, 'C:/ws');
+    await flush();
+
+    expect(cancelWorkspaceTask('AGENTS.md: pnpm dev')).toBe(true);
+    await expect(promise).resolves.toBeNull();
   });
 });

@@ -20,6 +20,7 @@ import {
 
 import { logger } from '../services/Logger';
 import { useAgentManagerCommands } from './useAgentManagerCommands';
+import { useAgentsMdCommands } from './useAgentsMdCommands';
 import { useArtifactCommands } from './useArtifactCommands';
 import { useBrowserCommands } from './useBrowserCommands';
 import { useKnowledgeCommands } from './useKnowledgeCommands';
@@ -64,6 +65,7 @@ interface UseAICommandPaletteProps {
 export const useAICommandPalette = (props: UseAICommandPaletteProps) => {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const taskCommands = useTaskCommands();
+  const agentsMdCommands = useAgentsMdCommands();
   const scheduleCommands = useScheduleCommands();
   const artifactCommands = useArtifactCommands();
   const planModeCommands = usePlanModeCommands();
@@ -76,6 +78,7 @@ export const useAICommandPalette = (props: UseAICommandPaletteProps) => {
   // Build comprehensive command list
   const commands: Command[] = [
     ...taskCommands,
+    ...agentsMdCommands,
     ...scheduleCommands,
     ...artifactCommands,
     ...planModeCommands,
