@@ -6,6 +6,10 @@
       "target": ".mcp.json",
       "format": "claude-json"
     },
+    "claude-desktop": {
+      "target": "C:/Users/fresh_zxae3v6/AppData/Roaming/Claude/claude_desktop_config.json",
+      "format": "cursor-json"
+    },
     "gemini": {
       "target": "~/.gemini/settings.json",
       "format": "gemini-json"
@@ -29,9 +33,23 @@
     "hermes": {
       "target": "~/.hermes/config.yaml",
       "format": "hermes-yaml"
+    },
+    "vscode": {
+      "target": "V:/monorepo/.vscode/mcp.json",
+      "format": "vscode-json"
     }
   },
-  "defaultEnabledFor": ["claude", "gemini", "antigravity", "codex", "cursor", "kimi", "hermes"],
+  "defaultEnabledFor": [
+    "claude",
+    "claude-desktop",
+    "gemini",
+    "antigravity",
+    "codex",
+    "cursor",
+    "kimi",
+    "hermes",
+    "vscode"
+  ],
   "servers": {
     "nx-mcp": {
       "transport": "stdio",
@@ -90,7 +108,9 @@
         "MEMORY_EMBEDDING_MODEL": "text-embedding-3-small",
         "MEMORY_EMBEDDING_DIM": "1536",
         "MEMORY_EMBEDDING_ENDPOINT": "http://localhost:3001",
-        "LEARNING_DB_PATH": "D:/databases/agent_learning.db"
+        "LEARNING_DB_PATH": "D:/databases/agent_learning.db",
+        "RAG_WORKSPACE_ROOT": "V:/monorepo",
+        "RAG_INDEX_PATHS": "apps/,packages/,backend/"
       },
       "claude": {
         "alwaysLoad": true
@@ -136,10 +156,10 @@
       "command": "npx",
       "args": ["-y", "@anaisbetts/mcp-youtube"]
     },
-    "notebooklm": {
+    "notebooklm-mcp": {
       "transport": "stdio",
       "command": "uv",
-      "args": ["tool", "run", "--from", "notebooklm-mcp-server", "notebooklm-mcp"]
+      "args": ["tool", "run", "--from", "notebooklm-mcp-cli", "notebooklm-mcp"]
     },
     "chrome-devtools": {
       "transport": "stdio",
