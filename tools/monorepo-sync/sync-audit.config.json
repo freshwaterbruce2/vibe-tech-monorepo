@@ -8,7 +8,8 @@
     "vibe-code-studio-vscode": ["test"],
     "chessmaster-academy-api": ["typecheck", "test", "build"],
     "desktop-bridge": ["typecheck", "test", "build"],
-    "vibe-reflection": ["test"]
+    "vibe-reflection": ["test"],
+    "vibe-tutor-api": ["typecheck", "test", "build"]
   },
   "allowedIsolatedProjects": [
     "@vibetech/anthropic-api-tools",
@@ -46,7 +47,9 @@
     "@vibetech/ralph-loop",
     "@vibetech/shared-utils",
     "avatar-render-worker",
-    "maintenance-copilot"
+    "maintenance-copilot",
+    "vibe-tutor-api",
+    "vibe-flow"
   ],
   "allowedStandaloneTags": ["standalone"]
 }

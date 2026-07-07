@@ -96,6 +96,7 @@ export const BLAKE_CONFIG = {
     chat: '/api/openrouter/chat',
     session: '/api/session/init',
     health: '/api/health',
+    logAnalytics: '/api/analytics/log',
   },
 
   // Learning Preferences (ADHD optimized)

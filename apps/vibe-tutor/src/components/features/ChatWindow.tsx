@@ -1,4 +1,4 @@
-import { Bot, GraduationCap, Heart, Send, Sparkles, X } from 'lucide-react';
+import { Bot, Flag, GraduationCap, Heart, Send, Sparkles, X } from 'lucide-react';
 import React, { useEffect, useState, useCallback } from 'react';
 import { dataStore } from '../../services/dataStore';
 import { GradientIcon } from '../ui/icons/GradientIcon';
@@ -7,6 +7,7 @@ import { secureClient } from '../../services/secureClient';
 import LifeSkillsChecklist from './LifeSkillsChecklist';
 import SocialSkillsTips from './SocialSkillsTips';
 import { logger } from '../../utils/logger';
+import type { ChatMessage } from '../../types';
 
 interface ChatWindowProps {
   title: string;
@@ -19,13 +20,46 @@ type ConnectionStatus = 'checking' | 'connected' | 'disconnected';
 
 const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatWindowProps) => {
   const {
-    messages, setMessages, input, setInput, isLoading,
-    showLifeSkills, setShowLifeSkills, showSocialTips, setShowSocialTips,
-    messagesEndRef, handleSend, handleAskBuddy, startTransition,
+    messages,
+    setMessages,
+    input,
+    setInput,
+    isLoading,
+    showLifeSkills,
+    setShowLifeSkills,
+    showSocialTips,
+    setShowSocialTips,
+    messagesEndRef,
+    handleSend,
+    handleAskBuddy,
+    startTransition,
   } = useChatMessages({ title, type, onSendMessage });
 
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('checking');
   const [showOfflineBanner, setShowOfflineBanner] = useState(false);
+  const [reportedTimestamps, setReportedTimestamps] = useState<Set<number>>(new Set());
+  const [reportingTimestamp, setReportingTimestamp] = useState<number | null>(null);
+
+  const handleReport = useCallback(
+    async (msg: ChatMessage) => {
+      if (reportingTimestamp !== null || reportedTimestamps.has(msg.timestamp)) return;
+      setReportingTimestamp(msg.timestamp);
+      try {
+        await secureClient.reportMessage({
+          role: msg.role,
+          content: msg.content,
+          timestamp: msg.timestamp,
+          chatType: type,
+        });
+        setReportedTimestamps((prev) => new Set(prev).add(msg.timestamp));
+      } catch (error) {
+        logger.error('Failed to report message:', error);
+      } finally {
+        setReportingTimestamp(null);
+      }
+    },
+    [reportingTimestamp, reportedTimestamps, type],
+  );
 
   const checkConnection = useCallback(async () => {
     // If the device itself reports offline, skip the network round-trip.
@@ -347,7 +381,31 @@ const ChatWindow = ({ title, description, onSendMessage, type = 'tutor' }: ChatW
                     }`}
                   >
                     <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                    <div className="flex justify-end mt-2">
+                    <div className="flex items-center justify-end gap-3 mt-2">
+                      {msg.role !== 'user' && (
+                        <button
+                          type="button"
+                          onClick={() => void handleReport(msg)}
+                          disabled={
+                            reportingTimestamp === msg.timestamp ||
+                            reportedTimestamps.has(msg.timestamp)
+                          }
+                          className="flex items-center gap-1 text-xs opacity-60 hover:opacity-100 disabled:opacity-40 transition-opacity"
+                          aria-label={
+                            reportedTimestamps.has(msg.timestamp)
+                              ? 'Message reported'
+                              : 'Report this message'
+                          }
+                          title={
+                            reportedTimestamps.has(msg.timestamp)
+                              ? 'Reported — thank you'
+                              : 'Report inappropriate response'
+                          }
+                        >
+                          <Flag size={12} />
+                          {reportedTimestamps.has(msg.timestamp) ? 'Reported' : 'Report'}
+                        </button>
+                      )}
                       <span className="text-xs opacity-60">
                         {new Date(msg.timestamp).toLocaleTimeString([], {
                           hour: '2-digit',
