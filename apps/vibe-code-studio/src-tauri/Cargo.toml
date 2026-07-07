@@ -1,6 +1,6 @@
 [package]
 name = "vibe-code-studio"
-version = "1.2.0"
+version = "1.2.1"
 description = "AI-Powered Code Editor"
 authors = ["VibeTech"]
 edition = "2021"

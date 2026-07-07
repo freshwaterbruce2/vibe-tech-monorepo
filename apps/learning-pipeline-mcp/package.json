@@ -10,11 +10,12 @@
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "test:coverage": "vitest run --coverage",
+    "validate": "pnpm run typecheck && pnpm run lint && pnpm test"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.0",
-    "dotenv": "^16.5.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

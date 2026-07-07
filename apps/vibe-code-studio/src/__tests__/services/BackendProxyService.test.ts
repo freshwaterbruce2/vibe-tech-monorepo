@@ -325,3 +325,78 @@ describe('BackendProxyService', () => {
     });
   });
 });
+
+/**
+ * Key-aware rerouting (v1.2.1): when the natural provider has no SERVER-side
+ * key but OpenRouter does, buildRoute translates the model to its
+ * OpenRouter-hosted id and sends it via the OpenRouter route. 17+ call sites
+ * hardcode moonshot/google ids; without this they 503 in installed builds.
+ *
+ * configuredSnapshot() is disabled under vitest (returns null), so these tests
+ * stub the VITEST env off and seed the private configuredCache directly.
+ */
+describe('BackendProxyService — key-aware rerouting', () => {
+  let svc: BackendProxyService;
+
+  function seedConfigured(value: Record<string, boolean>) {
+    (svc as unknown as { configuredCache: { value: Record<string, boolean>; at: number } | null })
+      .configuredCache = { value, at: Date.now() };
+  }
+
+  beforeEach(() => {
+    vi.stubEnv('VITEST', '');
+    global.fetch = vi.fn().mockResolvedValue(okJson(CHAT_PAYLOAD));
+    svc = new BackendProxyService({ baseUrl: BASE });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  it('reroutes a hardcoded kimi id through OpenRouter when moonshot has no server key', async () => {
+    seedConfigured({ moonshot: false, openrouter: true });
+    await svc.complete({ messages: msgs, model: 'moonshot/kimi-2.5-pro', temperature: 0.3 });
+
+    expect(lastCall()[0]).toBe(`${BASE}/openrouter/api/v1/chat/completions`);
+    const body = lastBody();
+    // upstream id gains the OpenRouter author prefix
+    expect(body.model).toBe('moonshotai/kimi-k2.5');
+    // OpenRouter route: caller temperature passes through, no thinking fields
+    expect(body.temperature).toBe(0.3);
+    expect(body.thinking).toBeUndefined();
+  });
+
+  it('reroutes an unregistered gemini id through OpenRouter when google has no server key', async () => {
+    seedConfigured({ google: false, openrouter: true });
+    await svc.complete({ messages: msgs, model: 'gemini-2.0-flash', temperature: 0.5 });
+
+    expect(lastCall()[0]).toBe(`${BASE}/openrouter/api/v1/chat/completions`);
+    expect(lastBody().model).toBe('google/gemini-2.0-flash');
+  });
+
+  it('does NOT reroute when the natural provider has a server key', async () => {
+    seedConfigured({ moonshot: true, openrouter: true });
+    await svc.complete({ messages: msgs, model: 'moonshot/kimi-2.5-pro' });
+
+    expect(lastCall()[0]).toBe(`${BASE}/moonshot/v1/chat/completions`);
+    const body = lastBody();
+    expect(body.model).toBe('kimi-k2.5');
+    // moonshot shaping still applies on the moonshot route
+    expect(body.thinking).toEqual({ type: 'disabled' });
+  });
+
+  it('does NOT reroute when OpenRouter itself has no server key', async () => {
+    seedConfigured({ moonshot: false, openrouter: false });
+    await svc.complete({ messages: msgs, model: 'moonshot/kimi-2.5-pro' });
+
+    expect(lastCall()[0]).toBe(`${BASE}/moonshot/v1/chat/completions`);
+    expect(lastBody().model).toBe('kimi-k2.5');
+  });
+
+  it('keeps legacy behavior (no reroute) when no snapshot exists yet', async () => {
+    // no seed — configuredCache is null and the background refresh is async
+    await svc.complete({ messages: msgs, model: 'moonshot/kimi-2.5-pro' });
+    expect(lastCall()[0]).toBe(`${BASE}/moonshot/v1/chat/completions`);
+  });
+});

@@ -9,9 +9,14 @@ import { z } from 'zod';
 import Database from 'better-sqlite3';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { dirname, join, resolve } from 'path';
+import { fileURLToPath } from 'node:url';
+
+// ESM has no __dirname — derive it from the module URL so the workspace-root
+// fallback works under "type": "module" instead of crashing at load.
+const moduleDir = dirname(fileURLToPath(import.meta.url));
 
 const DB_PATH = process.env.LEARNING_DB_PATH ?? 'D:/databases/agent_learning.db';
-const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT ?? resolve(__dirname, '..', '..');
+const WORKSPACE_ROOT = process.env.WORKSPACE_ROOT ?? resolve(moduleDir, '..', '..');
 
 const server = new McpServer({
   name: 'proactive-recommendations-mcp',

@@ -22,6 +22,12 @@
     },
     {
       "path": "./packages/auth"
+    },
+    {
+      "path": "./tools/kimi-code-provider"
+    },
+    {
+      "path": "./tools/ralph-loop"
     }
   ]
 }

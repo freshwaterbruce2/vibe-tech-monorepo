@@ -1,0 +1,7 @@
+{
+  "server/src/routes.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  }
+}

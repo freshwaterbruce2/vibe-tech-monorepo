@@ -110,15 +110,27 @@ foreach ($path in @(
 }
 
 Write-Host "`n[3/5] Checking canonical documentation..." -ForegroundColor Yellow
+# Current vs historical expectations:
+# - Present authoritative files under D:\learning-system: README.md, D_DRIVE_OVERVIEW.md,
+#   COMPLETE_GUIDE.md, DOCUMENTATION_INDEX.md, enhanced_agent_guidelines.md
+# - DB inventory is canonical under D:\databases\DB_INVENTORY.md
+# - DATABASE_INVENTORY.md under learning-system is a retired/historical name (still on disk but not required)
 foreach ($path in @(
         @{ Path = (Join-Path $learningRoot 'README.md'); Label = 'README' },
+        @{ Path = (Join-Path $learningRoot 'D_DRIVE_OVERVIEW.md'); Label = 'D_DRIVE_OVERVIEW' },
         @{ Path = (Join-Path $learningRoot 'COMPLETE_GUIDE.md'); Label = 'COMPLETE_GUIDE' },
-        @{ Path = (Join-Path $learningRoot 'DATABASE_INVENTORY.md'); Label = 'DATABASE_INVENTORY' },
         @{ Path = (Join-Path $learningRoot 'DOCUMENTATION_INDEX.md'); Label = 'DOCUMENTATION_INDEX' },
         @{ Path = (Join-Path $learningRoot 'enhanced_agent_guidelines.md'); Label = 'enhanced_agent_guidelines' },
         @{ Path = 'D:\databases\DB_INVENTORY.md'; Label = 'D:\databases DB_INVENTORY' }
     )) {
     Test-RequiredPath -Path $path.Path -Label $path.Label
+}
+# Historical/retired under learning-system (tolerated, not blocking)
+$histDbInv = Join-Path $learningRoot 'DATABASE_INVENTORY.md'
+if (Test-Path -LiteralPath $histDbInv) {
+    Write-Host "  OK  (historical) DATABASE_INVENTORY.md (retired name; prefer databases/DB_INVENTORY)" -ForegroundColor DarkGray
+} else {
+    Write-Host "  (absent historical DATABASE_INVENTORY.md - acceptable)" -ForegroundColor DarkGray
 }
 
 Write-Host "`n[4/5] Checking environment and hooks..." -ForegroundColor Yellow

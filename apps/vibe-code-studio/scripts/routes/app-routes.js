@@ -27,7 +27,16 @@ function sendJson(res, status, payload) {
   res.end(JSON.stringify(payload));
 }
 
-/** Attach a fresh week-long session cookie for the given user. */
+/**
+ * Attach a fresh week-long session cookie for the given user.
+ *
+ * SameSite=None + Secure is required: the installed app's webview origin is
+ * http://tauri.localhost while this server is http://localhost:5004 — a
+ * CROSS-SITE pair, so Lax cookies are never attached to fetches and every AI
+ * call 401s in installed builds (dev serves from localhost:5173 = same site,
+ * which is why Lax worked there). Chromium/WebView2 treats localhost as a
+ * trustworthy origin, so Secure cookies are accepted over plain http here.
+ */
 function setSessionCookie(res, authUser) {
   const token = createSessionToken(authUser);
   res.setHeader(
@@ -36,7 +45,8 @@ function setSessionCookie(res, authUser) {
       path: '/',
       httpOnly: true,
       maxAge: WEEK_SECONDS,
-      sameSite: 'lax',
+      sameSite: 'none',
+      secure: true,
     })
   );
 }
@@ -51,7 +61,7 @@ function resolvePlan(db, email, fallbackTier) {
        ORDER BY s.updated_at DESC LIMIT 1`
     )
     .get(email);
-  return subRow ? subRow.plan : (fallbackTier || 'free');
+  return subRow ? subRow.plan : fallbackTier || 'free';
 }
 
 /** Verify a password against either legacy bcrypt or scrypt storage. */
@@ -93,10 +103,14 @@ async function handleRegister(req, res, ctx) {
     }
 
     const { salt, hash } = await hashPassword(password);
-    const result = ctx.db.prepare(`
+    const result = ctx.db
+      .prepare(
+        `
       INSERT INTO users (email, password_hash, password_salt, full_name, company_name, subscription_tier)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(email.trim().toLowerCase(), hash, salt, fullName || '', companyName || '', 'free');
+    `
+      )
+      .run(email.trim().toLowerCase(), hash, salt, fullName || '', companyName || '', 'free');
 
     const authUser = {
       id: String(result.lastInsertRowid),
@@ -146,8 +160,7 @@ async function handleLogin(req, res, ctx) {
 
 function handleMe(req, res, ctx) {
   const token = parseCookies(req.headers.cookie)[getSessionCookieName()];
-  const respondUnconfigured = () =>
-    sendJson(res, 200, { ok: true, configured: false, user: null });
+  const respondUnconfigured = () => sendJson(res, 200, { ok: true, configured: false, user: null });
 
   if (!token) {
     respondUnconfigured();
@@ -188,7 +201,13 @@ function handleMe(req, res, ctx) {
 function handleLogout(req, res) {
   res.setHeader(
     'Set-Cookie',
-    serializeCookie(getSessionCookieName(), '', { path: '/', httpOnly: true, maxAge: -1 })
+    serializeCookie(getSessionCookieName(), '', {
+      path: '/',
+      httpOnly: true,
+      maxAge: -1,
+      sameSite: 'none',
+      secure: true,
+    })
   );
   sendJson(res, 200, { ok: true });
 }

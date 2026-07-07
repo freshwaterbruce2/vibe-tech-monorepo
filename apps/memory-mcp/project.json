@@ -28,6 +28,13 @@
       "cache": true,
       "dependsOn": []
     },
+    "test:coverage": {
+      "executor": "nx:run-script",
+      "options": { "script": "test:coverage" },
+      "outputs": ["{projectRoot}/coverage"],
+      "cache": true,
+      "dependsOn": []
+    },
     "typecheck": {
       "executor": "nx:run-script",
       "options": { "script": "typecheck" },

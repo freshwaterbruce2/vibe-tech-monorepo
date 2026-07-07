@@ -59,27 +59,14 @@ export class DatabaseService {
           await this.initWebPlatform();
         }
 
-        // Check connection consistency
-        const checkConsistency = await this.sqlite.checkConnectionsConsistency();
-        const isConn = (await this.sqlite.isConnection(DATABASE_NAME, false)).result;
-
-        if (checkConsistency.result && isConn) {
-          this.db = await this.sqlite.retrieveConnection(DATABASE_NAME, false);
-        } else {
-          this.db = await this.sqlite.createConnection(
-            DATABASE_NAME,
-            false,
-            'no-encryption',
-            DATABASE_VERSION,
-            false,
-          );
-        }
-
-        await this.db.open();
+        // Open (or retrieve) the connection with WAL + busy-timeout pragmas.
+        await this.openConnection();
+        const db = this.db;
+        if (!db) throw new Error('Database connection failed to open');
 
         // --- SELF-HEALING INTEGRITY CHECK ---
         try {
-          const integrity = await this.db.query('PRAGMA integrity_check;');
+          const integrity = await db.query('PRAGMA integrity_check;');
           const status = integrity.values?.[0]?.['integrity_check'];
 
           if (status !== 'ok') {
@@ -88,19 +75,24 @@ export class DatabaseService {
           }
         } catch (e) {
           logger.warn('[Database] Corruption detected or check failed. Initiating restore...', e);
-          // Close and delete corrupt DB
-          await this.db.close();
+          // Close the corrupt connection.
+          await db.close();
           await this.sqlite.closeConnection(DATABASE_NAME, false);
-          // Note: CapacitorSQLite deleteConnection might be needed here, or file deletion
+          this.db = null;
 
-          // Restore from migration backup
+          // Restore the source-of-truth (localStorage) from the migration backup.
           await migrationService.restoreFromBackup();
 
-          // Re-open (migration/restore puts data in appStore/localStorage, migrationService.performMigration will re-populate DB)
-          // For now, we assume restoreFromBackup fixes the source of truth (localStorage)
-          // and we might need to re-run migration or clear DB tables.
-          // Simple approach: Throwing here might crash app loop.
-          // Better: Allow performMigration to run next.
+          // The restored data now lives in localStorage while the recreated
+          // SQLite is empty. Force the next performMigration() (run by
+          // dataStore.initialize right after this) to repopulate SQLite, or the
+          // restored data is stranded and the app reads an empty database.
+          migrationService.resetForRecovery();
+
+          // Reopen a fresh connection BEFORE recreating tables. The previous
+          // code called createTables() on the closed/null handle, so recovery
+          // could never complete (it threw 'Database not connected').
+          await this.openConnection();
         }
 
         await this.createTables();
@@ -132,6 +124,40 @@ export class DatabaseService {
     document.body.appendChild(jeepEl);
     await customElements.whenDefined('jeep-sqlite');
     await this.sqlite.initWebStore();
+  }
+
+  /**
+   * Create-or-retrieve the SQLite connection, open it, and apply the
+   * WAL + busy-timeout pragmas. Extracted so both the initial open and the
+   * corruption-recovery path use the exact same connection setup.
+   */
+  private async openConnection(): Promise<void> {
+    const checkConsistency = await this.sqlite.checkConnectionsConsistency();
+    const isConn = (await this.sqlite.isConnection(DATABASE_NAME, false)).result;
+
+    if (checkConsistency.result && isConn) {
+      this.db = await this.sqlite.retrieveConnection(DATABASE_NAME, false);
+    } else {
+      this.db = await this.sqlite.createConnection(
+        DATABASE_NAME,
+        false,
+        'no-encryption',
+        DATABASE_VERSION,
+        false,
+      );
+    }
+
+    await this.db.open();
+
+    // Concurrency + durability: App.tsx, several hooks and dashboard panels all
+    // trigger initialization in parallel against this single connection. WAL +
+    // a busy timeout prevent SQLITE_BUSY on the main app DB.
+    try {
+      await this.db.execute('PRAGMA journal_mode=WAL;');
+      await this.db.execute('PRAGMA busy_timeout=5000;');
+    } catch (pragmaError) {
+      logger.warn('[Database] Failed to apply WAL/busy_timeout pragmas:', pragmaError);
+    }
   }
 
   /**
@@ -186,7 +212,10 @@ export class DatabaseService {
         session_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`,
 
-      // Rewards table
+      // Rewards table. NOTE: `claimed`/`claimed_at` are legacy columns that are
+      // NOT read by the app — the pending-claim queue lives in user_settings
+      // under 'claimedRewards' (a reward can be claimed while still in the
+      // catalog). Kept write-only for backward-compat; do not rely on them.
       `CREATE TABLE IF NOT EXISTS rewards (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
@@ -240,6 +269,27 @@ export class DatabaseService {
     if (this.db) {
       await this.sqlite.closeConnection(DATABASE_NAME, false);
       this.db = null;
+    }
+  }
+
+  /**
+   * Run a unit of work inside a single SQLite transaction, committing on
+   * success and rolling back on any error, so batched writes apply atomically.
+   */
+  async runInTransaction(work: () => Promise<void>): Promise<void> {
+    if (!this.db) throw new Error('Database not connected');
+
+    await this.db.beginTransaction();
+    try {
+      await work();
+      await this.db.commitTransaction();
+    } catch (error) {
+      try {
+        await this.db.rollbackTransaction();
+      } catch (rollbackError) {
+        logger.error('[Database] Transaction rollback failed:', rollbackError);
+      }
+      throw error;
     }
   }
 

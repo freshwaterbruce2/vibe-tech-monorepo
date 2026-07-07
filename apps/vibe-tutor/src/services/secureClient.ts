@@ -34,6 +34,13 @@ export interface ChatCompletionResponse {
   }>;
 }
 
+export interface ReportMessagePayload {
+  role: 'user' | 'model';
+  content: string;
+  timestamp: number;
+  chatType: 'tutor' | 'friend';
+}
+
 class SecureAPIClient {
   private baseURL: string;
   private sessionToken: string | null = null;
@@ -193,6 +200,43 @@ class SecureAPIClient {
     }
 
     throw lastError ?? new Error('Request failed after all retries');
+  }
+
+  /**
+   * Report an AI-generated (or user) message as inappropriate, for Play Store
+   * content-moderation compliance. Logged server-side via /api/analytics/log.
+   */
+  async reportMessage(payload: ReportMessagePayload): Promise<void> {
+    await this.ensureValidSession();
+
+    const post = async () =>
+      CapacitorHttp.post({
+        url: `${this.baseURL}${BLAKE_CONFIG.endpoints.logAnalytics}`,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.sessionToken}`,
+        },
+        data: {
+          event: 'report',
+          data: {
+            chatType: payload.chatType,
+            role: payload.role,
+            content: payload.content,
+            messageTimestamp: payload.timestamp,
+          },
+        },
+      });
+
+    let response = await post();
+
+    if (response.status === 401) {
+      await this.initSession();
+      response = await post();
+    }
+
+    if (response.status < 200 || response.status >= 300) {
+      throw new Error(`Report failed: ${response.status}`);
+    }
   }
 
   /**

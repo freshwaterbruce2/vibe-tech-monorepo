@@ -2,10 +2,13 @@
  * Advanced Agent Orchestrator with intelligent coordination and optimization
  * Manages multiple specialized agents and coordinates their collaboration
  */
+import { isCodeCorrectionRouteEnabled } from '../../config/aiRolloutFlags';
 import { logger } from '../../utils/logger';
+import { telemetry } from '../TelemetryService';
 
 import { BackendEngineerAgent } from './BackendEngineerAgent';
 import type { AgentCapability,AgentContext, AgentResponse, BaseSpecializedAgent } from './BaseSpecializedAgent';
+import { CodeCorrectionAgent } from './CodeCorrectionAgent';
 import { FrontendEngineerAgent } from './FrontendEngineerAgent';
 import { PerformanceAgent } from './PerformanceAgent';
 import { SecurityAgent } from './SecurityAgent';
@@ -63,6 +66,26 @@ export interface OrchestratorResponse {
   };
 }
 
+type CoordinationStrategy = 'sequential' | 'parallel' | 'hierarchical' | 'collaborative';
+
+interface CoordinationPlan {
+  agents: string[];
+  strategy: CoordinationStrategy;
+  reasoning: string;
+  confidence: number;
+  parallelism: number;
+}
+
+interface AgentScores {
+  technical_lead: number;
+  frontend_engineer: number;
+  backend_engineer: number;
+  security_specialist: number;
+  performance_specialist: number;
+  code_corrector: number;
+  super_coder: number;
+}
+
 /**
  * Intelligent Agent Orchestrator with advanced coordination capabilities
  */
@@ -91,6 +114,7 @@ export class AgentOrchestrator {
       { key: 'backend_engineer', AgentClass: BackendEngineerAgent },
       { key: 'performance_specialist', AgentClass: PerformanceAgent },
       { key: 'security_specialist', AgentClass: SecurityAgent },
+      { key: 'code_corrector', AgentClass: CodeCorrectionAgent },
       { key: 'super_coder', AgentClass: SuperCodingAgent }
     ];
 
@@ -116,82 +140,91 @@ export class AgentOrchestrator {
   ): Promise<OrchestratorResponse> {
     const startTime = Date.now();
     const taskId = this.generateTaskId();
+    const task = this.createTrackedTask(taskId, request, context);
+    this.activeTasks.set(taskId, task);
 
     try {
-      // Create and track task
-      const task: CoordinatedTask = {
-        id: taskId,
-        description: request,
-        context,
-        status: 'in_progress',
-        requiredAgents: [],
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      this.activeTasks.set(taskId, task);
-
-      // Analyze request and determine optimal agent coordination
       const coordination = await this.analyzeAndCoordinate(request, context);
       const selectedAgents = coordination.agents;
-      
       task.requiredAgents = selectedAgents;
       task.assignedAgents = selectedAgents;
-
       logger.info(`Processing request with agents: ${selectedAgents.join(', ')}`);
-
-      // Execute agents based on coordination strategy
       const agentResponses = await this.executeCoordination(
         selectedAgents,
         request,
         context,
         coordination.strategy
       );
-
-      // Generate synthesized response
       const response = this.synthesizeResponse(request, agentResponses, coordination);
-
-      // Update task completion
-      task.status = 'completed';
-      task.results = agentResponses;
-      task.updatedAt = new Date();
-
-      // Track performance
+      this.markTaskCompleted(task, agentResponses);
       const totalTime = Date.now() - startTime;
       this.recordPerformance(request, selectedAgents, totalTime, true);
-
-      // Clean up completed task
       this.activeTasks.delete(taskId);
-
-      return {
-        response: response.content,
-        agentResponses,
-        recommendations: response.recommendations,
-        coordination: {
-          strategy: coordination.strategy,
-          reasoning: coordination.reasoning,
-          confidence: coordination.confidence
-        },
-        performance: {
-          totalTime,
-          agentTimes: this.calculateAgentTimes(agentResponses),
-          parallelism: coordination.parallelism
-        }
-      };
+      return this.buildOrchestratorResponse(response, agentResponses, coordination, totalTime);
 
     } catch (error) {
       logger.error('Request processing failed:', error);
-      
-      // Update task failure
-      const task = this.activeTasks.get(taskId);
-      if (task) {
-        task.status = 'failed';
-        task.updatedAt = new Date();
-      }
-
+      this.markTaskFailed(taskId);
       this.recordPerformance(request, [], Date.now() - startTime, false);
-      
       throw error;
     }
+  }
+
+  private createTrackedTask(
+    taskId: string,
+    request: string,
+    context: AgentContext,
+  ): CoordinatedTask {
+    return {
+      id: taskId,
+      description: request,
+      context,
+      status: 'in_progress',
+      requiredAgents: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  }
+
+  private markTaskCompleted(
+    task: CoordinatedTask,
+    agentResponses: Record<string, AgentResponse>,
+  ): void {
+    task.status = 'completed';
+    task.results = agentResponses;
+    task.updatedAt = new Date();
+  }
+
+  private markTaskFailed(taskId: string): void {
+    const task = this.activeTasks.get(taskId);
+    if (!task) {
+      return;
+    }
+    task.status = 'failed';
+    task.updatedAt = new Date();
+  }
+
+  private buildOrchestratorResponse(
+    response: { content: string; recommendations: string[] },
+    agentResponses: Record<string, AgentResponse>,
+    coordination: CoordinationPlan,
+    totalTime: number,
+  ): OrchestratorResponse {
+    return {
+      response: response.content,
+      agentResponses,
+      recommendations: response.recommendations,
+      coordination: {
+        strategy: coordination.strategy,
+        reasoning: coordination.reasoning,
+        confidence: coordination.confidence,
+      },
+      performance: {
+        totalTime,
+        agentTimes: this.calculateAgentTimes(agentResponses),
+        parallelism: coordination.parallelism,
+      },
+    };
   }
 
   /**
@@ -200,104 +233,275 @@ export class AgentOrchestrator {
   private async analyzeAndCoordinate(
     request: string,
     context: AgentContext
-  ): Promise<{
-    agents: string[];
-    strategy: 'sequential' | 'parallel' | 'hierarchical' | 'collaborative';
-    reasoning: string;
-    confidence: number;
-    parallelism: number;
-  }> {
-    const requestLower = request.toLowerCase();
-    const agents: string[] = [];
-    let strategy: 'sequential' | 'parallel' | 'hierarchical' | 'collaborative' = 'parallel';
-    let reasoning = '';
-    let confidence = 0.8;
-    let parallelism = 1;
+  ): Promise<CoordinationPlan> {
+    const correctionRouteEnabled = isCodeCorrectionRouteEnabled();
+    const scores = this.buildAgentScores(request.toLowerCase());
+    this.applyContextScoreAdjustments(scores, context);
+    const eligibleSortedAgents = this.getEligibleSortedAgents(scores, correctionRouteEnabled);
+    const correctionScore = scores.code_corrector;
+    const isCorrectionRequest = correctionScore > 0;
+    const correctionRouteSelected = isCorrectionRequest && correctionRouteEnabled;
+    const plan = correctionRouteSelected
+      ? this.buildCorrectionRoutePlan(eligibleSortedAgents, context, correctionScore)
+      : this.buildStandardRoutePlan(
+          eligibleSortedAgents,
+          scores,
+          isCorrectionRequest,
+          correctionRouteEnabled,
+        );
+    this.ensureTechnicalLeadForComplexPlan(plan);
+    const selectedAgents = plan.agents.filter((agent) => this.agents.has(agent));
+    this.trackCoordinationTelemetry({
+      request,
+      context,
+      selectedAgents,
+      correctionRouteSelected,
+      isCorrectionRequest,
+      correctionRouteEnabled,
+      correctionScore,
+      strategy: plan.strategy,
+      parallelism: plan.parallelism,
+      confidence: plan.confidence,
+    });
+    return { ...plan, agents: selectedAgents };
+  }
 
-    // Complex pattern matching for agent selection
+  private buildAgentScores(requestLower: string): AgentScores {
     const patterns = {
       architecture: /\b(architecture|design|structure|pattern|scalability|system)\b/g,
       frontend: /\b(react|ui|component|interface|frontend|client|user|css|html|styling)\b/g,
       backend: /\b(api|server|backend|database|endpoint|service|microservice)\b/g,
       security: /\b(security|auth|authentication|vulnerability|secure|protection)\b/g,
       performance: /\b(performance|optimization|speed|memory|efficiency|profiling)\b/g,
-      general: /\b(code|function|method|class|implementation|development)\b/g
+      correction: /\b(fix|bug|debug|error|issue|regression|failing|broken|crash|exception|patch|correct)\b/g,
+      general: /\b(code|function|method|class|implementation|development)\b/g,
     };
 
-    // Score each agent type
-    const scores = {
+    return {
       technical_lead: (requestLower.match(patterns.architecture)?.length ?? 0) * 2,
       frontend_engineer: (requestLower.match(patterns.frontend)?.length ?? 0) * 2,
       backend_engineer: (requestLower.match(patterns.backend)?.length ?? 0) * 2,
       security_specialist: (requestLower.match(patterns.security)?.length ?? 0) * 3,
       performance_specialist: (requestLower.match(patterns.performance)?.length ?? 0) * 3,
-      super_coder: (requestLower.match(patterns.general)?.length ?? 0) * 1
+      code_corrector: (requestLower.match(patterns.correction)?.length ?? 0) * 4,
+      super_coder: (requestLower.match(patterns.general)?.length ?? 0),
     };
+  }
 
-    // Add context-based scoring
-    if (context.currentFile) {
-      if (context.currentFile.includes('.tsx') || context.currentFile.includes('.jsx')) {
-        scores.frontend_engineer += 2;
-      }
-      if (context.currentFile.includes('api') || context.currentFile.includes('service')) {
-        scores.backend_engineer += 2;
-      }
-      if (context.currentFile.includes('test')) {
-        scores.super_coder += 1;
-      }
+  private applyContextScoreAdjustments(scores: AgentScores, context: AgentContext): void {
+    if (!context.currentFile) {
+      return;
     }
 
-    // Select agents based on scores
+    if (context.currentFile.includes('.tsx') || context.currentFile.includes('.jsx')) {
+      scores.frontend_engineer += 2;
+    }
+    if (context.currentFile.includes('api') || context.currentFile.includes('service')) {
+      scores.backend_engineer += 2;
+    }
+    if (context.currentFile.includes('test')) {
+      scores.code_corrector += 2;
+      scores.super_coder += 1;
+    }
+  }
+
+  private getEligibleSortedAgents(
+    scores: AgentScores,
+    correctionRouteEnabled: boolean,
+  ): string[] {
     const sortedAgents = Object.entries(scores)
       .filter(([_, score]) => score > 0)
       .sort(([_, a], [__, b]) => b - a)
-      .map(([agent, _]) => agent);
+      .map(([agent]) => agent);
+    return sortedAgents.filter(
+      (agentKey) => correctionRouteEnabled || agentKey !== 'code_corrector'
+    );
+  }
 
-    if (sortedAgents.length === 0) {
-      // Default to technical lead for unclear requests
-      agents.push('technical_lead');
-      reasoning = 'Request pattern unclear, defaulting to technical leadership';
-      confidence = 0.6;
-    } else if (sortedAgents.length === 1) {
-      const selectedAgent = sortedAgents[0]!; // Length check guarantees existence
-      agents.push(selectedAgent);
-      reasoning = `Single specialized agent selected: ${selectedAgent}`;
-      strategy = 'sequential';
-    } else {
-      // Multi-agent coordination
-      agents.push(...sortedAgents.slice(0, 3)); // Limit to top 3 for efficiency
-      
-      // Determine coordination strategy
-      if (agents.includes('technical_lead') && agents.length > 2) {
-        strategy = 'hierarchical';
-        reasoning = 'Hierarchical coordination with technical lead oversight';
-        parallelism = Math.min(agents.length - 1, 2);
-      } else if (agents.length <= 2) {
-        strategy = 'collaborative';
-        reasoning = 'Collaborative approach between complementary specialists';
-        parallelism = agents.length;
-      } else {
-        strategy = 'parallel';
-        reasoning = 'Parallel processing by multiple specialists';
-        parallelism = Math.min(agents.length, 3);
+  private buildCorrectionRoutePlan(
+    eligibleSortedAgents: string[],
+    context: AgentContext,
+    correctionScore: number,
+  ): CoordinationPlan {
+    const agents: string[] = [];
+    this.addUniqueAgent(agents, 'code_corrector');
+    const contextSpecialist = this.getContextSpecialist(context.currentFile);
+    if (contextSpecialist && eligibleSortedAgents.includes(contextSpecialist)) {
+      this.addUniqueAgent(agents, contextSpecialist);
+    }
+
+    eligibleSortedAgents
+      .filter((agentKey) => !['code_corrector', 'super_coder'].includes(agentKey))
+      .forEach((agentKey) => this.addUniqueAgent(agents, agentKey));
+
+    const hasCrossCuttingRisk = agents.some((agentKey) =>
+      ['security_specialist', 'performance_specialist'].includes(agentKey)
+    );
+    if (hasCrossCuttingRisk || agents.length > 2) {
+      if (!agents.includes('technical_lead')) {
+        agents.unshift('technical_lead');
       }
-      
-      confidence = Math.min(0.9, 0.7 + (Math.max(...Object.values(scores)) / 10));
+      return {
+        agents,
+        strategy: 'hierarchical',
+        reasoning: 'Code-correction flow with technical lead oversight for cross-cutting risks',
+        confidence: Math.min(0.92, 0.72 + (Math.min(correctionScore, 12) / 20)),
+        parallelism: Math.min(Math.max(agents.length - 1, 1), 3),
+      };
     }
-
-    // Always include technical lead for complex multi-agent tasks
-    if (agents.length > 2 && !agents.includes('technical_lead')) {
-      agents.unshift('technical_lead');
-      strategy = 'hierarchical';
+    if (agents.length === 1) {
+      return {
+        agents,
+        strategy: 'sequential',
+        reasoning: 'Code-correction flow focused on root-cause analysis and minimal patching',
+        confidence: Math.min(0.92, 0.72 + (Math.min(correctionScore, 12) / 20)),
+        parallelism: 1,
+      };
     }
-
     return {
-      agents: agents.filter(agent => this.agents.has(agent)),
-      strategy,
-      reasoning,
-      confidence,
-      parallelism
+      agents,
+      strategy: 'collaborative',
+      reasoning: 'Code-correction flow with specialist collaboration',
+      confidence: Math.min(0.92, 0.72 + (Math.min(correctionScore, 12) / 20)),
+      parallelism: Math.min(agents.length, 2),
     };
+  }
+
+  private buildStandardRoutePlan(
+    eligibleSortedAgents: string[],
+    scores: AgentScores,
+    isCorrectionRequest: boolean,
+    correctionRouteEnabled: boolean,
+  ): CoordinationPlan {
+    if (eligibleSortedAgents.length === 0) {
+      return {
+        agents: ['technical_lead'],
+        strategy: 'parallel',
+        reasoning: isCorrectionRequest && !correctionRouteEnabled
+          ? 'Correction intent detected, but code-correction route is disabled by rollout flag'
+          : 'Request pattern unclear, defaulting to technical leadership',
+        confidence: 0.6,
+        parallelism: 1,
+      };
+    }
+    if (eligibleSortedAgents.length === 1) {
+      const selectedAgent = eligibleSortedAgents[0]!;
+      return {
+        agents: [selectedAgent],
+        strategy: 'sequential',
+        reasoning: `Single specialized agent selected: ${selectedAgent}`,
+        confidence: 0.8,
+        parallelism: 1,
+      };
+    }
+    return this.buildMultiAgentStandardRoutePlan(eligibleSortedAgents.slice(0, 3), scores);
+  }
+
+  private buildMultiAgentStandardRoutePlan(
+    agents: string[],
+    scores: AgentScores,
+  ): CoordinationPlan {
+    const confidence = Math.min(0.9, 0.7 + (Math.max(...Object.values(scores)) / 10));
+    if (agents.includes('technical_lead') && agents.length > 2) {
+      return {
+        agents,
+        strategy: 'hierarchical',
+        reasoning: 'Hierarchical coordination with technical lead oversight',
+        confidence,
+        parallelism: Math.min(agents.length - 1, 2),
+      };
+    }
+    if (agents.length <= 2) {
+      return {
+        agents,
+        strategy: 'collaborative',
+        reasoning: 'Collaborative approach between complementary specialists',
+        confidence,
+        parallelism: agents.length,
+      };
+    }
+    return {
+      agents,
+      strategy: 'parallel',
+      reasoning: 'Parallel processing by multiple specialists',
+      confidence,
+      parallelism: Math.min(agents.length, 3),
+    };
+  }
+
+  private getContextSpecialist(
+    currentFile?: string,
+  ): 'frontend_engineer' | 'backend_engineer' | undefined {
+    if (!currentFile) {
+      return undefined;
+    }
+    if (currentFile.includes('.tsx') || currentFile.includes('.jsx')) {
+      return 'frontend_engineer';
+    }
+    if (currentFile.includes('api') || currentFile.includes('service')) {
+      return 'backend_engineer';
+    }
+    return undefined;
+  }
+
+  private ensureTechnicalLeadForComplexPlan(plan: CoordinationPlan): void {
+    if (plan.agents.length > 2 && !plan.agents.includes('technical_lead')) {
+      plan.agents.unshift('technical_lead');
+      plan.strategy = 'hierarchical';
+    }
+  }
+
+  private addUniqueAgent(agents: string[], agentKey: string): void {
+    if (!agents.includes(agentKey)) {
+      agents.push(agentKey);
+    }
+  }
+
+  private trackCoordinationTelemetry(params: {
+    request: string;
+    context: AgentContext;
+    selectedAgents: string[];
+    correctionRouteSelected: boolean;
+    isCorrectionRequest: boolean;
+    correctionRouteEnabled: boolean;
+    correctionScore: number;
+    strategy: CoordinationStrategy;
+    parallelism: number;
+    confidence: number;
+  }): void {
+    const route = params.selectedAgents.includes('code_corrector')
+      ? 'code_correction'
+      : 'standard';
+    if (params.correctionRouteSelected) {
+      this.trackOrchestratorTelemetry('orchestrator_code_correction_route_selected', {
+        request_mode: 'agent',
+        route,
+        strategy: params.strategy,
+        selected_agent_count: params.selectedAgents.length,
+        correction_score: params.correctionScore,
+        correction_route_enabled: params.correctionRouteEnabled,
+      });
+    } else if (params.isCorrectionRequest && !params.correctionRouteEnabled) {
+      this.trackOrchestratorTelemetry('orchestrator_code_correction_route_suppressed', {
+        request_mode: 'agent',
+        route,
+        result_status: 'flag_disabled',
+        correction_score: params.correctionScore,
+        correction_route_enabled: params.correctionRouteEnabled,
+      });
+    }
+
+    this.trackOrchestratorTelemetry('orchestrator_strategy_selected', {
+      request_mode: 'agent',
+      route,
+      request_category: this.categorizeRequest(params.request),
+      strategy: params.strategy,
+      selected_agent_count: params.selectedAgents.length,
+      parallelism: params.parallelism,
+      confidence: Math.round(params.confidence * 100) / 100,
+      correction_route_enabled: params.correctionRouteEnabled,
+      current_file_type: this.extractFileType(params.context.currentFile),
+    });
   }
 
   /**
@@ -408,32 +612,41 @@ export class AgentOrchestrator {
     // Technical lead provides initial analysis
     const techLeadKey = 'technical_lead';
     const techLead = this.agents.get(techLeadKey);
-    
-    if (techLead && agentKeys.includes(techLeadKey)) {
-      try {
-        const techLeadResponse = await techLead.process(request, context);
-        responses[techLeadKey] = techLeadResponse;
-        
-        // Enhance context with technical lead's guidance
-        const enhancedContext = {
-          ...context,
-          userPreferences: {
-            ...context.userPreferences,
-            technicalGuidance: techLeadResponse.suggestions ?? [],
-            architecturalContext: techLeadResponse.content
-          }
-        };
 
-        // Execute other agents in parallel with enhanced context
-        const remainingAgents = agentKeys.filter(key => key !== techLeadKey);
-        const remainingResponses = await this.executeParallel(remainingAgents, request, enhancedContext);
-        
-        Object.assign(responses, remainingResponses);
-      } catch (error) {
-        logger.error('Technical lead failed in hierarchical execution:', error);
-        // Fallback to parallel execution
-        return this.executeParallel(agentKeys, request, context);
-      }
+    if (!techLead || !agentKeys.includes(techLeadKey)) {
+      logger.warn(
+        'Hierarchical execution requested without technical lead; falling back to parallel execution'
+      );
+      return this.executeParallel(agentKeys, request, context);
+    }
+
+    try {
+      const techLeadResponse = await techLead.process(request, context);
+      responses[techLeadKey] = techLeadResponse;
+      
+      // Enhance context with technical lead's guidance
+      const enhancedContext = {
+        ...context,
+        userPreferences: {
+          ...context.userPreferences,
+          technicalGuidance: techLeadResponse.suggestions ?? [],
+          architecturalContext: techLeadResponse.content
+        }
+      };
+
+      // Execute other agents in parallel with enhanced context
+      const remainingAgents = agentKeys.filter(key => key !== techLeadKey);
+      const remainingResponses = await this.executeParallel(
+        remainingAgents,
+        request,
+        enhancedContext
+      );
+      
+      Object.assign(responses, remainingResponses);
+    } catch (error) {
+      logger.error('Technical lead failed in hierarchical execution:', error);
+      // Fallback to parallel execution
+      return this.executeParallel(agentKeys, request, context);
     }
 
     return responses;
@@ -643,7 +856,9 @@ export class AgentOrchestrator {
     return `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  private calculateAgentTimes(agentResponses: Record<string, AgentResponse>): Record<string, number> {
+  private calculateAgentTimes(
+    agentResponses: Record<string, AgentResponse>
+  ): Record<string, number> {
     const times: Record<string, number> = {};
     
     Object.entries(agentResponses).forEach(([agentKey, response]) => {
@@ -676,6 +891,9 @@ export class AgentOrchestrator {
   private categorizeRequest(request: string): string {
     const requestLower = request.toLowerCase();
     
+    if (/\b(fix|bug|debug|error|regression|failing|broken|patch|correct)\b/.test(requestLower)) {
+      return 'code-correction';
+    }
     if (requestLower.includes('component') || requestLower.includes('ui')) {return 'ui-development';}
     if (requestLower.includes('api') || requestLower.includes('backend')) {return 'api-development';}
     if (requestLower.includes('security') || requestLower.includes('auth')) {return 'security';}
@@ -684,6 +902,31 @@ export class AgentOrchestrator {
     if (requestLower.includes('architecture') || requestLower.includes('design')) {return 'architecture';}
     
     return 'general';
+  }
+
+  private trackOrchestratorTelemetry(
+    event: string,
+    properties: Record<string, string | number | boolean | undefined>
+  ): void {
+    const payload: Record<string, string | number | boolean> = {};
+    Object.entries(properties).forEach(([key, value]) => {
+      if (value !== undefined) {
+        payload[key] = value;
+      }
+    });
+    telemetry.trackEvent(event, payload);
+  }
+
+  private extractFileType(currentFile?: string): string {
+    if (!currentFile) {
+      return 'unknown';
+    }
+    const normalized = currentFile.trim();
+    const extension = normalized.split('.').pop();
+    if (!extension || extension === normalized) {
+      return 'unknown';
+    }
+    return extension.toLowerCase();
   }
 
   /**

@@ -64,6 +64,20 @@ fn ensure_connection(state: &DbState) -> Result<(), String> {
         )
         .map_err(|e| e.to_string())?;
 
+        // Agent schedules (spec 16). The renderer persists full definitions as
+        // JSON blobs via db_execute_query, which rejects DDL — so the table
+        // must be created here.
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS agent_schedules (
+                id TEXT PRIMARY KEY,
+                definition_data TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )",
+            [],
+        )
+        .map_err(|e| e.to_string())?;
+
         *guard = Some(conn);
     }
     Ok(())

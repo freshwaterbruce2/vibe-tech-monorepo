@@ -69,23 +69,35 @@ export const StatusSection = styled.div`
 
 const getStatusBackground = (status: TaskStatus) => {
   switch (status) {
-    case 'analyzing': return `${vibeTheme.colors.cyan}20`;
-    case 'coordinating': return `${vibeTheme.colors.purple}20`;
-    case 'executing': return 'rgba(251, 191, 36, 0.2)';
-    case 'completed': return `${vibeTheme.colors.success}20`;
-    case 'error': return `${vibeTheme.colors.error}20`;
-    default: return vibeTheme.colors.surface;
+    case 'analyzing':
+      return `${vibeTheme.colors.cyan}20`;
+    case 'coordinating':
+      return `${vibeTheme.colors.purple}20`;
+    case 'executing':
+      return 'rgba(251, 191, 36, 0.2)';
+    case 'completed':
+      return `${vibeTheme.colors.success}20`;
+    case 'error':
+      return `${vibeTheme.colors.error}20`;
+    default:
+      return vibeTheme.colors.surface;
   }
 };
 
 const getStatusColor = (status: TaskStatus) => {
   switch (status) {
-    case 'analyzing': return vibeTheme.colors.cyan;
-    case 'coordinating': return vibeTheme.colors.purple;
-    case 'executing': return '#fbbf24';
-    case 'completed': return vibeTheme.colors.success;
-    case 'error': return vibeTheme.colors.error;
-    default: return vibeTheme.colors.text;
+    case 'analyzing':
+      return vibeTheme.colors.cyan;
+    case 'coordinating':
+      return vibeTheme.colors.purple;
+    case 'executing':
+      return '#fbbf24';
+    case 'completed':
+      return vibeTheme.colors.success;
+    case 'error':
+      return vibeTheme.colors.error;
+    default:
+      return vibeTheme.colors.text;
   }
 };
 
@@ -105,6 +117,7 @@ export const MainContent = styled.div`
   flex: 1;
   display: flex;
   overflow: hidden;
+  min-height: 0;
 `;
 
 export const TaskSection = styled.div`
@@ -112,6 +125,8 @@ export const TaskSection = styled.div`
   display: flex;
   flex-direction: column;
   border-right: ${vibeTheme.borders.thin};
+  min-height: 0;
+  overflow-y: auto;
 `;
 
 export const TaskInput = styled.div`
@@ -153,31 +168,46 @@ export const ExecutionLog = styled.div`
 
 const getLogBorderColor = (type: LogEntryType) => {
   switch (type) {
-    case 'agent': return vibeTheme.colors.purple;
-    case 'coordination': return vibeTheme.colors.cyan;
-    case 'success': return vibeTheme.colors.success;
-    case 'error': return vibeTheme.colors.error;
-    case 'performance': return '#fbbf24';
-    default: return 'transparent';
+    case 'agent':
+      return vibeTheme.colors.purple;
+    case 'coordination':
+      return vibeTheme.colors.cyan;
+    case 'success':
+      return vibeTheme.colors.success;
+    case 'error':
+      return vibeTheme.colors.error;
+    case 'performance':
+      return '#fbbf24';
+    default:
+      return 'transparent';
   }
 };
 
 const getLogBackground = (type: LogEntryType) => {
   switch (type) {
-    case 'agent': return `${vibeTheme.colors.purple}08`;
-    case 'coordination': return `${vibeTheme.colors.cyan}08`;
-    case 'success': return `${vibeTheme.colors.success}08`;
-    case 'error': return `${vibeTheme.colors.error}08`;
-    case 'performance': return 'rgba(251, 191, 36, 0.08)';
-    default: return 'transparent';
+    case 'agent':
+      return `${vibeTheme.colors.purple}08`;
+    case 'coordination':
+      return `${vibeTheme.colors.cyan}08`;
+    case 'success':
+      return `${vibeTheme.colors.success}08`;
+    case 'error':
+      return `${vibeTheme.colors.error}08`;
+    case 'performance':
+      return 'rgba(251, 191, 36, 0.08)';
+    default:
+      return 'transparent';
   }
 };
 
 const getLogAgentColor = (type: LogEntryType) => {
   switch (type) {
-    case 'agent': return vibeTheme.colors.purple;
-    case 'coordination': return vibeTheme.colors.cyan;
-    default: return 'inherit';
+    case 'agent':
+      return vibeTheme.colors.purple;
+    case 'coordination':
+      return vibeTheme.colors.cyan;
+    default:
+      return 'inherit';
   }
 };
 
@@ -216,6 +246,8 @@ export const Sidebar = styled.div`
   flex-direction: column;
   background: rgba(139, 92, 246, 0.05);
   border-left: ${vibeTheme.borders.thin};
+  min-height: 0;
+  overflow-y: auto;
 `;
 
 export const SidebarSection = styled.div`
@@ -248,8 +280,9 @@ export const AgentCard = styled.div<{ $active: boolean }>`
   padding: 12px;
   border-radius: 8px;
   margin-bottom: 8px;
-  background: ${props => props.$active ? `${vibeTheme.colors.purple}15` : vibeTheme.colors.surface};
-  border: 2px solid ${props => props.$active ? vibeTheme.colors.purple : 'transparent'};
+  background: ${props =>
+    props.$active ? `${vibeTheme.colors.purple}15` : vibeTheme.colors.surface};
+  border: 2px solid ${props => (props.$active ? vibeTheme.colors.purple : 'transparent')};
   transition: all 0.2s;
 
   .agent-name {
@@ -303,10 +336,14 @@ type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'warning';
 
 const getButtonBackground = (variant?: ButtonVariant) => {
   switch (variant) {
-    case 'primary': return vibeTheme.colors.purple;
-    case 'danger': return vibeTheme.colors.error;
-    case 'warning': return vibeTheme.colors.warning || '#f59e0b';
-    default: return vibeTheme.colors.surface;
+    case 'primary':
+      return vibeTheme.colors.purple;
+    case 'danger':
+      return vibeTheme.colors.error;
+    case 'warning':
+      return vibeTheme.colors.warning || '#f59e0b';
+    default:
+      return vibeTheme.colors.surface;
   }
 };
 

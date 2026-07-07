@@ -2,14 +2,36 @@
   "_comment": "CANONICAL MCP server registry for ALL agent tools (Claude Code, Gemini CLI, Antigravity, Codex, Cursor, Hermes). Edit servers HERE only, then run `pnpm mcp:sync` to regenerate every tool's native config. Secrets are referenced by env-var NAME ($VAR) and never stored literally. See tools/mcp-sync/README.md.",
   "version": 1,
   "tools": {
-    "claude": { "target": ".mcp.json", "format": "claude-json" },
-    "gemini": { "target": "~/.gemini/settings.json", "format": "gemini-json" },
-    "antigravity": { "target": "~/.gemini/antigravity-cli/settings.json", "format": "gemini-json" },
-    "codex": { "target": "~/.codex/config.toml", "format": "codex-toml" },
-    "cursor": { "target": "~/.cursor/mcp.json", "format": "cursor-json" },
-    "hermes": { "target": "~/.hermes/config.yaml", "format": "hermes-yaml" }
+    "claude": {
+      "target": ".mcp.json",
+      "format": "claude-json"
+    },
+    "gemini": {
+      "target": "~/.gemini/settings.json",
+      "format": "gemini-json"
+    },
+    "antigravity": {
+      "target": "~/.gemini/antigravity-cli/settings.json",
+      "format": "gemini-json"
+    },
+    "codex": {
+      "target": "~/.codex/config.toml",
+      "format": "codex-toml"
+    },
+    "cursor": {
+      "target": "~/.cursor/mcp.json",
+      "format": "cursor-json"
+    },
+    "kimi": {
+      "target": "~/.kimi-code/mcp.json",
+      "format": "cursor-json"
+    },
+    "hermes": {
+      "target": "~/.hermes/config.yaml",
+      "format": "hermes-yaml"
+    }
   },
-  "defaultEnabledFor": ["claude", "gemini", "antigravity", "codex", "cursor", "hermes"],
+  "defaultEnabledFor": ["claude", "gemini", "antigravity", "codex", "cursor", "kimi", "hermes"],
   "servers": {
     "nx-mcp": {
       "transport": "stdio",
@@ -32,7 +54,9 @@
       "transport": "stdio",
       "command": "node",
       "args": ["V:/monorepo/apps/desktop-commander-v3/dist/mcp.js"],
-      "env": { "NODE_ENV": "production" }
+      "env": {
+        "NODE_ENV": "production"
+      }
     },
     "filesystem": {
       "transport": "stdio",
@@ -68,25 +92,33 @@
         "MEMORY_EMBEDDING_ENDPOINT": "http://localhost:3001",
         "LEARNING_DB_PATH": "D:/databases/agent_learning.db"
       },
-      "claude": { "alwaysLoad": true }
+      "claude": {
+        "alwaysLoad": true
+      }
     },
     "rag": {
       "transport": "stdio",
       "command": "node",
       "args": ["V:/monorepo/apps/mcp-rag-server/dist/index.js"],
-      "env": { "NODE_ENV": "production" }
+      "env": {
+        "NODE_ENV": "production"
+      }
     },
     "workspace": {
       "transport": "stdio",
       "command": "node",
       "args": ["V:/monorepo/apps/workspace-mcp-server/dist/index.js"],
-      "env": { "WORKSPACE_ROOT": "V:/monorepo" }
+      "env": {
+        "WORKSPACE_ROOT": "V:/monorepo"
+      }
     },
     "command-center": {
       "transport": "stdio",
       "command": "node",
       "args": ["V:/monorepo/apps/vibetech-command-center/dist/mcp/server.js"],
-      "env": { "NODE_ENV": "production" }
+      "env": {
+        "NODE_ENV": "production"
+      }
     },
     "learning-pipeline": {
       "transport": "stdio",
@@ -95,7 +127,8 @@
       "env": {
         "LEARNING_DB_PATH": "D:/databases/agent_learning.db",
         "WORKSPACE_ROOT": "V:/monorepo",
-        "LEARNING_INSIGHTS_PATH": "D:/learning-system/learning_insights.json"
+        "LEARNING_INSIGHTS_PATH": "D:/learning-system/learning_insights.json",
+        "LEARNING_SYSTEM_DIR": "D:/learning-system"
       }
     },
     "youtube": {
@@ -118,7 +151,9 @@
         "-File",
         "V:/monorepo/scripts/start-chrome-devtools-mcp.ps1"
       ],
-      "env": { "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS": "1" }
+      "env": {
+        "CHROME_DEVTOOLS_MCP_NO_USAGE_STATISTICS": "1"
+      }
     },
     "monorepo-health": {
       "transport": "stdio",
@@ -157,7 +192,39 @@
       "transport": "http",
       "url": "https://api.greptile.com/mcp",
       "secretEnv": "GREPTILE_API_KEY",
-      "headers": { "Authorization": "Bearer $GREPTILE_API_KEY" }
+      "headers": {
+        "Authorization": "Bearer $GREPTILE_API_KEY"
+      }
+    },
+    "notebooks": {
+      "transport": "stdio",
+      "command": "node",
+      "args": [
+        "C:/Users/fresh_zxae3v6/.cursor/extensions/googlecloudtools.datacloud-0.5.2-universal/mcp_servers/cli/mcp_proxy_bundle.js",
+        "notebooks-cursor"
+      ],
+      "enabledFor": ["cursor"]
+    },
+    "visualization": {
+      "transport": "stdio",
+      "command": "node",
+      "args": [
+        "C:/Users/fresh_zxae3v6/.cursor/extensions/googlecloudtools.datacloud-0.5.2-universal/mcp_servers/cli/mcp_proxy_bundle.js",
+        "visualization-cursor"
+      ],
+      "enabledFor": ["cursor"]
+    },
+    "playwright": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest", "--allow-unrestricted-file-access"],
+      "enabledFor": ["kimi"]
+    },
+    "context7": {
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"],
+      "enabledFor": ["kimi"]
     }
   }
 }

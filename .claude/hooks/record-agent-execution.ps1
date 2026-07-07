@@ -64,11 +64,17 @@ try {
         }
     }
 
-    # Infer project from cwd
+    # Infer project from cwd (with special handling for VCS/vibe-code-studio runs)
     $project = $null
-    if ($hookData.cwd -match 'V:\\monorepo\\apps\\([^\\]+)') { $project = $matches[1] }
+    $descLower = (($description ?? '') + ' ' + ($contextSnippet ?? '') + ' ' + ($hookData.tool_input.description ?? '')).ToLowerInvariant()
+    if ($hookData.cwd -match 'vibe-code-studio' -or $descLower -match 'vibe.?code.?studio|agentorchestrator|code.?correction|correction agent|lint') {
+        $project = 'vibe-code-studio'
+    }
+    elseif ($hookData.cwd -match 'V:\\monorepo\\apps\\([^\\]+)') { $project = $matches[1] }
     elseif ($hookData.cwd -match 'V:\\monorepo\\packages\\([^\\]+)') { $project = $matches[1] }
     elseif ($hookData.cwd -match 'V:\\monorepo\\backend\\([^\\]+)') { $project = $matches[1] }
+    elseif ($hookData.cwd -match 'V:\\monorepo') { $project = 'vibetech-monorepo' }
+    if (-not $project -and $descLower -match 'studio|vcs|code-studio') { $project = 'vibe-code-studio' }
 
     # Build MCP payload
     $mcpArgs = @{
@@ -80,6 +86,12 @@ try {
     if ($executionTimeMs) { $mcpArgs.executionTimeMs = $executionTimeMs }
     if ($errorMessage) { $mcpArgs.errorMessage = $errorMessage }
     if ($contextSnippet) { $mcpArgs.context = $contextSnippet }
+
+    # Pass model + token telemetry when present (from hook or future AI layers) so selected_model/tokens_used get populated
+    if ($hookData.selected_model) { $mcpArgs.selectedModel = $hookData.selected_model }
+    elseif ($hookData.model) { $mcpArgs.selectedModel = $hookData.model }
+    if ($hookData.tokens_used) { $mcpArgs.tokensUsed = [int]$hookData.tokens_used }
+    elseif ($hookData.usage -and $hookData.usage.totalTokens) { $mcpArgs.tokensUsed = [int]$hookData.usage.totalTokens }
 
     $payload = @{
         jsonrpc = '2.0'

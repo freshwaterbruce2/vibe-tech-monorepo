@@ -4,10 +4,14 @@
  * Displays code quality metrics and issues for the current file or project
  */
 import { useEffect, useState } from 'react';
-import { AlertCircle, AlertTriangle, CheckCircle, FileText,Info, TrendingUp } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle, FileText, Info, TrendingUp } from 'lucide-react';
 import styled from 'styled-components';
 
-import type { CodeQualityAnalyzer, FileQuality, QualityReport } from '../services/CodeQualityAnalyzer';
+import type {
+  CodeQualityAnalyzer,
+  FileQuality,
+  QualityReport,
+} from '../services/CodeQualityAnalyzer';
 import { logger } from '../services/Logger';
 
 interface CodeQualityPanelProps {
@@ -36,10 +40,14 @@ export const CodeQualityPanel = ({
     if (currentFile && view === 'file') {
       analyzeCurrentFile();
     }
+    // analyzeCurrentFile is recreated per render; deps intentionally track only its inputs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentFile, view]);
 
   const analyzeCurrentFile = async () => {
-    if (!currentFile) {return;}
+    if (!currentFile) {
+      return;
+    }
 
     setLoading(true);
     try {
@@ -53,7 +61,9 @@ export const CodeQualityPanel = ({
   };
 
   const analyzeProject = async () => {
-    if (!workspaceRoot) {return;}
+    if (!workspaceRoot) {
+      return;
+    }
 
     setLoading(true);
     try {
@@ -67,15 +77,25 @@ export const CodeQualityPanel = ({
   };
 
   const getQualityColor = (score: number): string => {
-    if (score >= 80) {return '#10b981';} // Green
-    if (score >= 60) {return '#f59e0b';} // Orange
+    if (score >= 80) {
+      return '#10b981';
+    } // Green
+    if (score >= 60) {
+      return '#f59e0b';
+    } // Orange
     return '#ef4444'; // Red
   };
 
   const getComplexityColor = (rating: string): string => {
-    if (rating === 'simple') {return '#10b981';}
-    if (rating === 'moderate') {return '#f59e0b';}
-    if (rating === 'complex') {return '#fb923c';}
+    if (rating === 'simple') {
+      return '#10b981';
+    }
+    if (rating === 'moderate') {
+      return '#f59e0b';
+    }
+    if (rating === 'complex') {
+      return '#fb923c';
+    }
     return '#ef4444'; // very-complex
   };
 
@@ -103,7 +123,9 @@ export const CodeQualityPanel = ({
             active={view === 'project'}
             onClick={() => {
               setView('project');
-              if (!projectQuality) {analyzeProject();}
+              if (!projectQuality) {
+                analyzeProject();
+              }
             }}
           >
             <TrendingUp size={16} />
@@ -137,7 +159,11 @@ export const CodeQualityPanel = ({
             </Metric>
             <Metric>
               <MetricLabel>Complexity</MetricLabel>
-              <MetricValue style={{ color: getComplexityColor(analyzer.getComplexityRating(fileQuality.complexity)) }}>
+              <MetricValue
+                style={{
+                  color: getComplexityColor(analyzer.getComplexityRating(fileQuality.complexity)),
+                }}
+              >
                 {fileQuality.complexity}
               </MetricValue>
             </Metric>
@@ -145,7 +171,12 @@ export const CodeQualityPanel = ({
               <MetricLabel>Maintainability</MetricLabel>
               <MetricValue
                 style={{
-                  color: fileQuality.maintainability === 'high' ? '#10b981' : fileQuality.maintainability === 'medium' ? '#f59e0b' : '#ef4444',
+                  color:
+                    fileQuality.maintainability === 'high'
+                      ? '#10b981'
+                      : fileQuality.maintainability === 'medium'
+                        ? '#f59e0b'
+                        : '#ef4444',
                 }}
               >
                 {fileQuality.maintainability}
@@ -156,9 +187,7 @@ export const CodeQualityPanel = ({
           {/* Issues List */}
           {fileQuality.issues.length > 0 && (
             <IssuesSection>
-              <SectionTitle>
-                Issues ({fileQuality.issues.length})
-              </SectionTitle>
+              <SectionTitle>Issues ({fileQuality.issues.length})</SectionTitle>
               <IssuesList>
                 {fileQuality.issues.map((issue, idx) => (
                   <IssueItem
@@ -168,9 +197,7 @@ export const CodeQualityPanel = ({
                     <IssueHeader>
                       {getSeverityIcon(issue.severity)}
                       <IssueType>{issue.type}</IssueType>
-                      <IssueSeverity severity={issue.severity}>
-                        {issue.severity}
-                      </IssueSeverity>
+                      <IssueSeverity $severity={issue.severity}>{issue.severity}</IssueSeverity>
                     </IssueHeader>
                     <IssueMessage>{issue.message}</IssueMessage>
                     {issue.suggestion && (
@@ -234,7 +261,10 @@ export const CodeQualityPanel = ({
                       <FileName>{file.filePath.split('/').pop()}</FileName>
                       <FileMetrics>
                         <FileMetric>
-                          Quality: <span style={{ color: getQualityColor(file.quality) }}>{Math.round(file.quality)}</span>
+                          Quality:{' '}
+                          <span style={{ color: getQualityColor(file.quality) }}>
+                            {Math.round(file.quality)}
+                          </span>
                         </FileMetric>
                         <FileMetric>Issues: {file.issues.length}</FileMetric>
                         <FileMetric>Complexity: {file.complexity}</FileMetric>
@@ -272,7 +302,8 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  border-bottom: 1px solid ${p => p.theme.border || (p.theme.borders?.divider) || 'rgba(255, 255, 255, 0.08)'};
+  border-bottom: 1px solid
+    ${p => p.theme.border || p.theme.borders?.divider || 'rgba(255, 255, 255, 0.08)'};
 `;
 
 const Title = styled.h2`
@@ -290,7 +321,7 @@ const ViewToggle = styled.div`
 `;
 
 const ViewButton = styled.button.withConfig({
-  shouldForwardProp: (prop) => prop !== 'active',
+  shouldForwardProp: prop => prop !== 'active',
 })<{ active: boolean }>`
   display: flex;
   align-items: center;
@@ -305,7 +336,8 @@ const ViewButton = styled.button.withConfig({
   transition: all 0.2s;
 
   &:hover {
-    background: ${p => (p.active ? p.theme.primary || p.theme.colors.purple : p.theme.hover || p.theme.colors.hover)};
+    background: ${p =>
+      p.active ? p.theme.primary || p.theme.colors.purple : p.theme.hover || p.theme.colors.hover};
   }
 `;
 
@@ -417,14 +449,15 @@ const IssueType = styled.span`
   text-transform: capitalize;
 `;
 
-const IssueSeverity = styled.span<{ severity: string }>`
+const IssueSeverity = styled.span<{ $severity: string }>`
   margin-left: auto;
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 12px;
   background: ${p =>
-    p.severity === 'error' ? '#fee2e2' : p.severity === 'warning' ? '#fef3c7' : '#dbeafe'};
-  color: ${p => (p.severity === 'error' ? '#991b1b' : p.severity === 'warning' ? '#92400e' : '#1e40af')};
+    p.$severity === 'error' ? '#fee2e2' : p.$severity === 'warning' ? '#fef3c7' : '#dbeafe'};
+  color: ${p =>
+    p.$severity === 'error' ? '#991b1b' : p.$severity === 'warning' ? '#92400e' : '#1e40af'};
 `;
 
 const IssueMessage = styled.div`

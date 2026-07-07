@@ -7,7 +7,7 @@ import styled, { keyframes } from 'styled-components';
 
 import { vibeTheme } from '../../styles/theme';
 import { shouldForwardMotionProp } from '../../utils/motionProps';
-import type { StepStatus } from '../../types';
+import type { AIResponseState, StepStatus } from '../../types';
 
 import type { ChatMode } from './types';
 
@@ -452,6 +452,53 @@ export const SendButton = styled(motion.button).withConfig({
   &:active:not(:disabled) {
     transform: scale(0.95);
   }
+`;
+
+export const CancelButton = styled(motion.button).withConfig({
+  shouldForwardProp: shouldForwardMotionProp,
+})`
+  background: rgba(239, 68, 68, 0.16);
+  border: 2px solid rgba(239, 68, 68, 0.45);
+  color: ${vibeTheme.colors.error};
+  padding: ${vibeTheme.spacing.sm};
+  border-radius: ${vibeTheme.borderRadius.medium};
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  transition: all ${vibeTheme.animation.duration.normal} ease;
+
+  &:hover {
+    transform: scale(1.05);
+    background: rgba(239, 68, 68, 0.24);
+    box-shadow: ${vibeTheme.shadows.small};
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
+export const ResponseStatus = styled.div<{ $state: AIResponseState }>`
+  margin-top: ${vibeTheme.spacing.xs};
+  font-size: ${vibeTheme.typography.fontSize.xs};
+  color: ${(props) => {
+    switch (props.$state) {
+      case 'streaming':
+        return vibeTheme.colors.cyan;
+      case 'cancelling':
+        return vibeTheme.colors.warning;
+      case 'cancelled':
+        return vibeTheme.colors.textSecondary;
+      case 'error':
+        return vibeTheme.colors.error;
+      case 'idle':
+      default:
+        return vibeTheme.colors.textMuted;
+    }
+  }};
 `;
 
 export const TypingIndicator = styled.div`

@@ -49,6 +49,21 @@ export class MigrationService {
   }
 
   /**
+   * Reset the migration-complete state so the next performMigration() re-runs.
+   * Used by the database self-heal path: after a corrupt DB is recreated empty
+   * and the localStorage backup is restored, the data must be migrated back into
+   * SQLite — otherwise it stays stranded in localStorage.
+   */
+  resetForRecovery(): void {
+    this.migrationComplete = false;
+    // Do NOT null migrationPromise here. This can run from inside a
+    // performMigration() call (via its databaseService.initialize step); nulling
+    // the in-flight promise would break the join-guard and let a second concurrent
+    // caller start a duplicate migration. performMigration()'s finally() clears it.
+    appStore.set('vibe_tutor_migration_complete', 'false');
+  }
+
+  /**
    * Create backup of all localStorage data before migration
    * CRITICAL: This must succeed before migration proceeds
    */
@@ -68,7 +83,7 @@ export class MigrationService {
       focusSessions: this.toStoredString(appStore.get('focusSessions'), '[]'),
       'chat-history-tutor': this.toStoredString(appStore.get('chat-history-tutor'), '[]'),
       'chat-history-friend': this.toStoredString(appStore.get('chat-history-friend'), '[]'),
-      'sensory-prefs': this.toStoredString(appStore.get('sensory-prefs'), '{}')
+      'sensory-prefs': this.toStoredString(appStore.get('sensory-prefs'), '{}'),
     };
 
     try {
@@ -92,7 +107,11 @@ export class MigrationService {
       let backup: Record<string, unknown>;
       if (typeof backupData === 'string') {
         backup = JSON.parse(backupData) as Record<string, unknown>;
-      } else if (typeof backupData === 'object' && backupData !== null && !Array.isArray(backupData)) {
+      } else if (
+        typeof backupData === 'object' &&
+        backupData !== null &&
+        !Array.isArray(backupData)
+      ) {
         backup = backupData as Record<string, unknown>;
       } else {
         throw new Error('Invalid backup format');
@@ -178,7 +197,6 @@ export class MigrationService {
         throw new Error('Validation failed: Homework items not migrated');
       }
     }
-
   }
 
   /**
@@ -225,7 +243,7 @@ export class MigrationService {
         achievement.unlocked ? 1 : 0,
         achievement.progress ?? 0,
         achievement.progressGoal ?? 0,
-        achievement.pointsAwarded ?? 0
+        achievement.pointsAwarded ?? 0,
       ]);
     }
   }
@@ -249,24 +267,34 @@ export class MigrationService {
         VALUES (?, ?, ?, ?, ?)
       `;
 
+      // The app stores the price in `cost`; map it onto `points_required`
+      // (fall back to a legacy `pointsRequired` field if present).
       await db.run(query, [
         reward.id,
         reward.name,
-        reward.pointsRequired,
+        reward.cost ?? reward.pointsRequired ?? 0,
         reward.description ?? '',
-        0
+        0,
       ]);
     }
 
-    // Also migrate claimed rewards
+    // Migrate the pending-claim queue into its own JSON list (user_settings),
+    // matching dataStore.getClaimedRewards — a reward can be claimed while still
+    // in the catalog, so claims are not represented by the catalog `claimed` flag.
     const claimedData = appStore.get('claimedRewards');
     if (claimedData) {
       const claimed = this.parseStoredArray<ClaimedReward>(claimedData);
-      for (const claimedReward of claimed) {
-        await db.run(
-          `UPDATE rewards SET claimed = 1, claimed_at = ? WHERE id = ?`,
-          [claimedReward.claimedAt, claimedReward.id]
-        );
+      if (claimed.length > 0) {
+        await db.run(`
+          CREATE TABLE IF NOT EXISTS user_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT
+          )
+        `);
+        await db.run(`INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`, [
+          'claimedRewards',
+          JSON.stringify(claimed),
+        ]);
       }
     }
   }
@@ -290,11 +318,7 @@ export class MigrationService {
         VALUES (?, ?, ?)
       `;
 
-      await db.run(query, [
-        playlist.id,
-        playlist.name,
-        JSON.stringify(playlist.tracks)
-      ]);
+      await db.run(query, [playlist.id, playlist.name, JSON.stringify(playlist.tracks)]);
     }
   }
 
@@ -316,55 +340,55 @@ export class MigrationService {
     // Migrate student points
     const points = appStore.get('studentPoints');
     if (points) {
-      await db.run(
-        `INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`,
-        ['student_points', points]
-      );
+      await db.run(`INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`, [
+        'student_points',
+        points,
+      ]);
     }
 
     // Migrate user tokens
     const userTokens = appStore.get('userTokens');
     if (userTokens) {
-      await db.run(
-        `INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`,
-        ['user_tokens', userTokens]
-      );
+      await db.run(`INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`, [
+        'user_tokens',
+        userTokens,
+      ]);
     }
 
     // Migrate homework stats
     const stats = appStore.get('homeworkStats');
     if (stats) {
       const statsData = this.parseStoredJson<Record<string, unknown>>(stats, {});
-      await db.run(
-        `INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`,
-        ['homework_stats', JSON.stringify(statsData)]
-      );
+      await db.run(`INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`, [
+        'homework_stats',
+        JSON.stringify(statsData),
+      ]);
     }
 
     // Migrate brain game stats
     const brainGameStats = appStore.get('brainGamesStats');
     if (brainGameStats) {
-      await db.run(
-        `INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`,
-        ['brainGamesStats', brainGameStats]
-      );
+      await db.run(`INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`, [
+        'brainGamesStats',
+        brainGameStats,
+      ]);
     }
 
     // Migrate schedule data
     const scheduleData = appStore.get('blake_daily_schedule');
     if (scheduleData) {
-      await db.run(
-        `INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`,
-        ['blake_daily_schedule', scheduleData]
-      );
+      await db.run(`INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`, [
+        'blake_daily_schedule',
+        scheduleData,
+      ]);
     }
 
     const scheduleDate = appStore.get('blake_schedule_date');
     if (scheduleDate) {
-      await db.run(
-        `INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`,
-        ['blake_schedule_date', scheduleDate]
-      );
+      await db.run(`INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`, [
+        'blake_schedule_date',
+        scheduleDate,
+      ]);
     }
 
     // Migrate parental control settings (11 settings)
@@ -379,16 +403,16 @@ export class MigrationService {
       'soundsEnabled',
       'scheduleRequired',
       'firstThenGate',
-      'parentalControlsEnabled'
+      'parentalControlsEnabled',
     ];
 
     for (const settingKey of parentalSettings) {
       const value = appStore.get(settingKey);
       if (value !== null) {
-        await db.run(
-          `INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`,
-          [settingKey, value]
-        );
+        await db.run(`INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`, [
+          settingKey,
+          value,
+        ]);
       }
     }
   }
@@ -414,31 +438,33 @@ export class MigrationService {
       const sessions = this.parseStoredArray<{ duration?: number; points?: number }>(focusSessions);
 
       for (const session of sessions) {
-        await db.run(`
+        await db.run(
+          `
           INSERT INTO learning_sessions
           (session_type, duration_minutes, focus_score, tasks_completed)
           VALUES (?, ?, ?, ?)
         `, // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- 0 duration is invalid
-        ['focus', session.duration || 25, session.points ?? 0, 0]);
+          ['focus', session.duration || 25, session.points ?? 0, 0],
+        );
       }
     }
 
     // Migrate chat history (AI Tutor)
     const chatHistoryTutor = appStore.get('chat-history-tutor');
     if (chatHistoryTutor) {
-      await db.run(
-        `INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`,
-        ['chat-history-tutor', chatHistoryTutor]
-      );
+      await db.run(`INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`, [
+        'chat-history-tutor',
+        chatHistoryTutor,
+      ]);
     }
 
     // Migrate chat history (AI Friend/Buddy)
     const chatHistoryFriend = appStore.get('chat-history-friend');
     if (chatHistoryFriend) {
-      await db.run(
-        `INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`,
-        ['chat-history-friend', chatHistoryFriend]
-      );
+      await db.run(`INSERT OR REPLACE INTO user_settings (key, value) VALUES (?, ?)`, [
+        'chat-history-friend',
+        chatHistoryFriend,
+      ]);
     }
 
     // Migrate sensory preferences
@@ -451,10 +477,10 @@ export class MigrationService {
         )
       `);
 
-      await db.run(
-        `INSERT OR REPLACE INTO user_preferences (key, value) VALUES (?, ?)`,
-        ['sensory_prefs', sensoryPrefs]
-      );
+      await db.run(`INSERT OR REPLACE INTO user_preferences (key, value) VALUES (?, ?)`, [
+        'sensory_prefs',
+        sensoryPrefs,
+      ]);
     }
   }
 
@@ -472,12 +498,15 @@ export class MigrationService {
     // Export achievements
     const achievements = await db.query(`SELECT * FROM achievements`);
     if (achievements.values) {
-      appStore.set('achievements', JSON.stringify(
-        achievements.values.map((a: { unlocked?: number | boolean; [key: string]: unknown }) => ({
-          ...a,
-          unlocked: a.unlocked === 1
-        }))
-      ));
+      appStore.set(
+        'achievements',
+        JSON.stringify(
+          achievements.values.map((a: { unlocked?: number | boolean; [key: string]: unknown }) => ({
+            ...a,
+            unlocked: a.unlocked === 1,
+          })),
+        ),
+      );
     }
   }
 
@@ -485,11 +514,9 @@ export class MigrationService {
    * Clear localStorage after successful migration
    */
   async clearLocalStorage(keepSettings = true): Promise<void> {
-    const keysToKeep = keepSettings ? [
-      'vibe_tutor_migration_complete',
-      'vibetutor_session',
-      'vibetutor_expiry'
-    ] : [];
+    const keysToKeep = keepSettings
+      ? ['vibe_tutor_migration_complete', 'vibetutor_session', 'vibetutor_expiry']
+      : [];
 
     const allKeys = Object.keys(localStorage);
     for (const key of allKeys) {

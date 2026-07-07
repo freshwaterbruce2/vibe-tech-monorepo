@@ -1,0 +1,402 @@
+import { loadConfig } from './config.js';
+import { loadLocalEnv } from '../server/src/loadLocalEnv.js';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// Resolve project root relative to this file so verify works from any cwd.
+const here = path.dirname(fileURLToPath(import.meta.url));
+const projectRoot = path.resolve(here, '..', '..');
+
+interface CheckResult {
+  id: string;
+  ok: boolean;
+  detail: string;
+  blocking?: boolean;
+}
+
+const results: CheckResult[] = [];
+
+loadLocalEnv(projectRoot);
+
+async function main(): Promise<void> {
+  const config = await loadConfig();
+
+  const frontendUrl = config.deployed.frontendUrl;
+  const backendUrl = config.deployed.backendUrl;
+
+  if (!config.deployed.deployed || !frontendUrl || !backendUrl) {
+    console.error('[verify] Project has not been deployed. Run deploy first.');
+    process.exit(1);
+  }
+
+  // After the guard above, these are guaranteed non-null. Re-assign to narrow
+  // the type so downstream calls accept string rather than string | null.
+  const frontend: string = frontendUrl;
+  const backend: string = backendUrl;
+
+  await checkFrontend(frontend);
+  await checkApiHealth(backend);
+  await checkAuthMePreLogin(backend);
+  await checkProUnauthorized(backend);
+
+  const cookie = await login(backend);
+  if (cookie) {
+    await checkAuthMePostLogin(backend, cookie);
+    await checkProAuthorized(backend, cookie);
+    await checkAiUsage(backend, cookie);
+  }
+
+  await checkEmailReceipt(backend);
+  await checkBillingCheckout(backend);
+  if (cookie) {
+    await logout(backend, cookie);
+  }
+
+  printResults();
+
+  if (results.some((r) => !r.ok && r.blocking !== false)) {
+    process.exitCode = 1;
+  }
+}
+
+async function checkFrontend(frontendUrl: string): Promise<void> {
+  try {
+    const response = await fetch(frontendUrl, { redirect: 'manual' });
+    // 200 is the happy path; 3xx redirects are acceptable for SPA entry routes.
+    const ok = response.status === 200 || response.status >= 300;
+    results.push({
+      id: 'frontend-reachable',
+      ok,
+      detail: ok
+        ? `Frontend responded with ${response.status}`
+        : `Frontend returned unexpected status ${response.status}`,
+    });
+  } catch (error) {
+    results.push({
+      id: 'frontend-reachable',
+      ok: false,
+      detail: `Frontend unreachable: ${formatError(error)}`,
+    });
+  }
+}
+
+async function checkApiHealth(backendUrl: string): Promise<void> {
+  try {
+    const response = await fetch(`${backendUrl}/api/health`);
+    const body = (await response.json()) as { ok?: boolean; app?: string };
+    const ok = response.ok && body.ok === true && body.app === '<%= projectName %>';
+    results.push({
+      id: 'api-health',
+      ok,
+      detail: ok
+        ? 'API health endpoint reports ok with correct app identity'
+        : `API health returned status ${response.status}, ok=${body.ok}, app=${body.app}`,
+    });
+  } catch (error) {
+    results.push({
+      id: 'api-health',
+      ok: false,
+      detail: `API health check failed: ${formatError(error)}`,
+    });
+  }
+}
+
+async function checkAuthMePreLogin(backendUrl: string): Promise<void> {
+  try {
+    const response = await fetch(`${backendUrl}/api/auth/me`);
+    const body = (await response.json()) as { configured?: boolean; user?: unknown };
+    const ok = body.configured === true && body.user === null;
+    results.push({
+      id: 'auth-me-pre-login',
+      ok,
+      detail: ok
+        ? 'Auth is configured and starts unauthenticated'
+        : `Auth me returned configured=${body.configured}, user=${JSON.stringify(body.user)}`,
+    });
+  } catch (error) {
+    results.push({
+      id: 'auth-me-pre-login',
+      ok: false,
+      detail: `Auth me pre-login failed: ${formatError(error)}`,
+    });
+  }
+}
+
+async function checkProUnauthorized(backendUrl: string): Promise<void> {
+  try {
+    const response = await fetch(`${backendUrl}/api/pro`, {
+      headers: { 'x-plan': 'pro' },
+    });
+    const ok = response.status === 401;
+    results.push({
+      id: 'pro-unauthorized',
+      ok,
+      detail: ok
+        ? 'Protected pro route rejects unauthenticated access'
+        : `Protected pro route returned ${response.status} before login`,
+    });
+  } catch (error) {
+    results.push({
+      id: 'pro-unauthorized',
+      ok: false,
+      detail: `Pro unauthorized check failed: ${formatError(error)}`,
+    });
+  }
+}
+
+async function login(backendUrl: string): Promise<string | null> {
+  const email = process.env.DEMO_USER_EMAIL;
+  const password = process.env.DEMO_USER_PASSWORD;
+  if (!email || !password) {
+    results.push({
+      id: 'auth-login',
+      ok: false,
+      detail: 'DEMO_USER_EMAIL or DEMO_USER_PASSWORD not set; cannot test login',
+    });
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${backendUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      results.push({
+        id: 'auth-login',
+        ok: false,
+        detail: `Login returned ${response.status}`,
+      });
+      return null;
+    }
+
+    const cookie = extractSetCookie(response.headers);
+    if (!cookie) {
+      results.push({
+        id: 'auth-login',
+        ok: false,
+        detail: 'Login response did not include a session cookie',
+      });
+      return null;
+    }
+
+    results.push({
+      id: 'auth-login',
+      ok: true,
+      detail: 'Login returned a session cookie',
+    });
+    return cookie;
+  } catch (error) {
+    results.push({
+      id: 'auth-login',
+      ok: false,
+      detail: `Login failed: ${formatError(error)}`,
+    });
+    return null;
+  }
+}
+
+async function checkAuthMePostLogin(backendUrl: string, cookie: string): Promise<void> {
+  const expectedEmail = process.env.DEMO_USER_EMAIL ?? '';
+  try {
+    const response = await fetch(`${backendUrl}/api/auth/me`, {
+      headers: { cookie },
+    });
+    const body = (await response.json()) as {
+      configured?: boolean;
+      user?: { email?: string } | null;
+    };
+    const ok = body.configured === true && body.user?.email === expectedEmail;
+    results.push({
+      id: 'auth-me-post-login',
+      ok,
+      detail: ok
+        ? 'Authenticated session persists the demo operator account'
+        : `Auth me post-login returned user.email=${body.user?.email ?? 'null'}`,
+    });
+  } catch (error) {
+    results.push({
+      id: 'auth-me-post-login',
+      ok: false,
+      detail: `Auth me post-login failed: ${formatError(error)}`,
+    });
+  }
+}
+
+async function checkProAuthorized(backendUrl: string, cookie: string): Promise<void> {
+  try {
+    const response = await fetch(`${backendUrl}/api/pro`, {
+      headers: { 'x-plan': 'pro', cookie },
+    });
+    const body = (await response.json()) as { feature?: string };
+    const ok = response.ok && body.feature === 'analytics.revenue';
+    results.push({
+      id: 'pro-authorized',
+      ok,
+      detail: ok
+        ? 'Protected pro route returns the monetization feature key after login'
+        : `Pro route returned status ${response.status}, feature=${body.feature ?? 'null'}`,
+    });
+  } catch (error) {
+    results.push({
+      id: 'pro-authorized',
+      ok: false,
+      detail: `Pro authorized check failed: ${formatError(error)}`,
+    });
+  }
+}
+
+async function checkEmailReceipt(backendUrl: string): Promise<void> {
+  try {
+    const response = await fetch(`${backendUrl}/api/emails/demo-receipt`);
+    const body = (await response.json()) as {
+      subject?: string;
+      html?: string;
+      text?: string;
+    };
+    const ok =
+      typeof body.subject === 'string' &&
+      body.subject.length > 0 &&
+      typeof body.html === 'string' &&
+      body.html.length > 0 &&
+      typeof body.text === 'string' &&
+      body.text.length > 0;
+    results.push({
+      id: 'email-receipt',
+      ok,
+      detail: ok
+        ? 'Receipt email route renders subject, html, and text output'
+        : 'Receipt email route did not return the expected shared email payload',
+    });
+  } catch (error) {
+    results.push({
+      id: 'email-receipt',
+      ok: false,
+      detail: `Email receipt check failed: ${formatError(error)}`,
+    });
+  }
+}
+
+async function checkAiUsage(backendUrl: string, cookie: string): Promise<void> {
+  try {
+    const response = await fetch(`${backendUrl}/api/ai/demo-usage`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-plan': 'pro', cookie },
+      body: '{}',
+    });
+    const body = (await response.json()) as { usage?: { totalTokens?: number } };
+    const ok = response.ok && body.usage?.totalTokens === 200;
+    results.push({
+      id: 'ai-usage',
+      ok,
+      detail: ok
+        ? 'Protected AI usage route records expected metering state'
+        : `AI usage returned status ${response.status}, totalTokens=${body.usage?.totalTokens ?? 'null'}`,
+    });
+  } catch (error) {
+    results.push({
+      id: 'ai-usage',
+      ok: false,
+      detail: `AI usage check failed: ${formatError(error)}`,
+    });
+  }
+}
+
+async function checkBillingCheckout(backendUrl: string): Promise<void> {
+  const hasStripe = Boolean(process.env.STRIPE_SECRET_KEY);
+  try {
+    const response = await fetch(`${backendUrl}/api/billing/demo-checkout`);
+
+    if (!hasStripe) {
+      // Without Stripe credentials the route should signal misconfiguration.
+      const ok = response.status === 503;
+      results.push({
+        id: 'billing-checkout',
+        ok,
+        blocking: false,
+        detail: ok
+          ? 'Checkout route returns 503 without Stripe credentials (expected)'
+          : `Checkout route returned ${response.status} without Stripe credentials`,
+      });
+      return;
+    }
+
+    if (!response.ok) {
+      results.push({
+        id: 'billing-checkout',
+        ok: false,
+        detail: `Checkout route failed with ${response.status}: ${await response.text()}`,
+      });
+      return;
+    }
+
+    const body = (await response.json()) as { url?: string };
+    const ok = typeof body.url === 'string' && body.url.startsWith('https://checkout.stripe.com/');
+    results.push({
+      id: 'billing-checkout',
+      ok,
+      detail: ok
+        ? 'Checkout route returns a Stripe Checkout URL'
+        : 'Checkout route did not return a Stripe Checkout URL',
+    });
+  } catch (error) {
+    results.push({
+      id: 'billing-checkout',
+      ok: false,
+      detail: `Billing checkout check failed: ${formatError(error)}`,
+    });
+  }
+}
+
+async function logout(backendUrl: string, cookie: string): Promise<void> {
+  if (!cookie) {
+    return;
+  }
+  try {
+    const response = await fetch(`${backendUrl}/api/auth/logout`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: '{}',
+    });
+    const body = (await response.json()) as { ok?: boolean };
+    const ok = response.ok && body.ok === true;
+    results.push({
+      id: 'auth-logout',
+      ok,
+      detail: ok ? 'Logout clears the session' : `Logout returned status ${response.status}`,
+    });
+  } catch (error) {
+    results.push({
+      id: 'auth-logout',
+      ok: false,
+      detail: `Logout check failed: ${formatError(error)}`,
+    });
+  }
+}
+
+function extractSetCookie(headers: Headers): string | null {
+  const raw = headers.get('set-cookie');
+  if (!raw) {
+    return null;
+  }
+  return raw.split(';', 1)[0] ?? null;
+}
+
+function printResults(): void {
+  console.log('\n[verify] Results:');
+  for (const result of results) {
+    const label = result.ok ? 'PASS' : result.blocking === false ? 'WARN' : 'FAIL';
+    console.log(`  ${label} ${result.id}: ${result.detail}`);
+  }
+}
+
+function formatError(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
+
+await main();

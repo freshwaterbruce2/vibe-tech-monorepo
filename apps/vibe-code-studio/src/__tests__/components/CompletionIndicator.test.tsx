@@ -1,9 +1,8 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-import CompletionIndicator, {
-  CompletionStats,
-} from '@/components/CompletionIndicator';
+import CompletionIndicator, { CompletionStats } from '@/components/CompletionIndicator';
 
 /**
  * Real behavioral tests for CompletionIndicator + CompletionStats.
@@ -18,14 +17,27 @@ import CompletionIndicator, {
  * hints are purely visual labels. So we assert the labels exist, but we do not
  * assert any keydown listener behavior that the component does not implement.
  */
+/**
+ * CompletionIndicator flips `visible` via queueMicrotask right after mount.
+ * Rendering inside async act() flushes that microtask within act, keeping
+ * React's "update not wrapped in act(...)" warning out of the test output.
+ */
+const renderInAct = async (ui: ReactElement) => {
+  let result!: ReturnType<typeof render>;
+  await act(async () => {
+    result = render(ui);
+  });
+  return result;
+};
+
 describe('CompletionIndicator Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('Rendering', () => {
-    it('renders the static title and key hints', () => {
-      render(
+    it('renders the static title and key hints', async () => {
+      await renderInAct(
         <CompletionIndicator
           isActive={true}
           hasCompletion={true}
@@ -46,23 +58,16 @@ describe('CompletionIndicator Component', () => {
       expect(screen.getByText('for next')).toBeInTheDocument();
     });
 
-    it('renders the dismiss close button with a title', () => {
-      render(
-        <CompletionIndicator
-          isActive={true}
-          hasCompletion={true}
-        />
-      );
+    it('renders the dismiss close button with a title', async () => {
+      await renderInAct(<CompletionIndicator isActive={true} hasCompletion={true} />);
 
-      expect(
-        screen.getByTitle('Dismiss')
-      ).toBeInTheDocument();
+      expect(screen.getByTitle('Dismiss')).toBeInTheDocument();
     });
   });
 
   describe('Visibility behavior', () => {
     it('becomes visible (display: flex) once hasCompletion is true and isActive', async () => {
-      const { container } = render(
+      const { container } = await renderInAct(
         <CompletionIndicator isActive={true} hasCompletion={true} />
       );
 
@@ -76,27 +81,31 @@ describe('CompletionIndicator Component', () => {
     });
 
     it('stays hidden (display: none) when there is no completion', async () => {
-      const { container } = render(
+      const { container } = await renderInAct(
         <CompletionIndicator isActive={true} hasCompletion={false} />
       );
 
       const outer = container.firstElementChild as HTMLElement;
 
       // Give any microtask/effect a chance to run, then confirm it never shows.
-      await Promise.resolve();
+      await act(async () => {
+        await Promise.resolve();
+      });
       expect(getComputedStyle(outer).display).toBe('none');
     });
 
     it('stays hidden when not active even if a completion is available', async () => {
-      const { container } = render(
+      const { container } = await renderInAct(
         <CompletionIndicator isActive={false} hasCompletion={true} />
       );
 
       const outer = container.firstElementChild as HTMLElement;
 
       // visible may flip true, but `visible && isActive` is false -> none.
-      await Promise.resolve();
-      await Promise.resolve();
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
       expect(getComputedStyle(outer).display).toBe('none');
     });
   });
@@ -109,86 +118,53 @@ describe('CompletionIndicator Component', () => {
       ['moonshot/kimi-2.5-pro', 'AI'],
     ];
 
-    it.each(cases)(
-      'maps model "%s" to badge label "%s"',
-      (model, expectedLabel) => {
-        render(
-          <CompletionIndicator
-            isActive={true}
-            hasCompletion={true}
-            model={model}
-          />
-        );
+    it.each(cases)('maps model "%s" to badge label "%s"', async (model, expectedLabel) => {
+      await renderInAct(<CompletionIndicator isActive={true} hasCompletion={true} model={model} />);
 
-        expect(screen.getByText(expectedLabel)).toBeInTheDocument();
-      }
-    );
+      expect(screen.getByText(expectedLabel)).toBeInTheDocument();
+    });
 
-    it('matches model name case-insensitively', () => {
-      render(
-        <CompletionIndicator
-          isActive={true}
-          hasCompletion={true}
-          model="Claude-SONNET-Latest"
-        />
+    it('matches model name case-insensitively', async () => {
+      await renderInAct(
+        <CompletionIndicator isActive={true} hasCompletion={true} model="Claude-SONNET-Latest" />
       );
 
       expect(screen.getByText('Sonnet 4.5')).toBeInTheDocument();
     });
 
-    it('defaults the badge to "AI" when no model prop is passed', () => {
+    it('defaults the badge to "AI" when no model prop is passed', async () => {
       // default prop is 'moonshot/kimi-2.5-pro' which maps to AI.
-      render(<CompletionIndicator isActive={true} hasCompletion={true} />);
+      await renderInAct(<CompletionIndicator isActive={true} hasCompletion={true} />);
       expect(screen.getByText('AI')).toBeInTheDocument();
     });
   });
 
   describe('Strategy description', () => {
-    it('shows the fast-strategy description by default', () => {
-      render(<CompletionIndicator isActive={true} hasCompletion={true} />);
-      expect(
-        screen.getByText('Using fast strategy for quick suggestions')
-      ).toBeInTheDocument();
+    it('shows the fast-strategy description by default', async () => {
+      await renderInAct(<CompletionIndicator isActive={true} hasCompletion={true} />);
+      expect(screen.getByText('Using fast strategy for quick suggestions')).toBeInTheDocument();
     });
 
-    it('shows the balanced-strategy description', () => {
-      render(
-        <CompletionIndicator
-          isActive={true}
-          hasCompletion={true}
-          strategy="balanced"
-        />
+    it('shows the balanced-strategy description', async () => {
+      await renderInAct(
+        <CompletionIndicator isActive={true} hasCompletion={true} strategy="balanced" />
       );
-      expect(
-        screen.getByText('Using balanced strategy for quick suggestions')
-      ).toBeInTheDocument();
+      expect(screen.getByText('Using balanced strategy for quick suggestions')).toBeInTheDocument();
     });
 
-    it('shows the accurate-strategy description', () => {
-      render(
-        <CompletionIndicator
-          isActive={true}
-          hasCompletion={true}
-          strategy="accurate"
-        />
+    it('shows the accurate-strategy description', async () => {
+      await renderInAct(
+        <CompletionIndicator isActive={true} hasCompletion={true} strategy="accurate" />
       );
-      expect(
-        screen.getByText('Using accurate strategy for quick suggestions')
-      ).toBeInTheDocument();
+      expect(screen.getByText('Using accurate strategy for quick suggestions')).toBeInTheDocument();
     });
 
-    it('shows the special adaptive description (not the generic template)', () => {
-      render(
-        <CompletionIndicator
-          isActive={true}
-          hasCompletion={true}
-          strategy="adaptive"
-        />
+    it('shows the special adaptive description (not the generic template)', async () => {
+      await renderInAct(
+        <CompletionIndicator isActive={true} hasCompletion={true} strategy="adaptive" />
       );
 
-      expect(
-        screen.getByText('AI is choosing the best model for your code')
-      ).toBeInTheDocument();
+      expect(screen.getByText('AI is choosing the best model for your code')).toBeInTheDocument();
       expect(
         screen.queryByText('Using adaptive strategy for quick suggestions')
       ).not.toBeInTheDocument();
@@ -196,32 +172,24 @@ describe('CompletionIndicator Component', () => {
   });
 
   describe('Dismiss behavior', () => {
-    it('calls onDismiss when the close button is clicked', () => {
+    it('calls onDismiss when the close button is clicked', async () => {
       const onDismiss = vi.fn();
-      render(
-        <CompletionIndicator
-          isActive={true}
-          hasCompletion={true}
-          onDismiss={onDismiss}
-        />
+      await renderInAct(
+        <CompletionIndicator isActive={true} hasCompletion={true} onDismiss={onDismiss} />
       );
 
       fireEvent.click(screen.getByTitle('Dismiss'));
       expect(onDismiss).toHaveBeenCalledTimes(1);
     });
 
-    it('does not throw when dismissed without an onDismiss handler', () => {
-      render(
-        <CompletionIndicator isActive={true} hasCompletion={true} />
-      );
+    it('does not throw when dismissed without an onDismiss handler', async () => {
+      await renderInAct(<CompletionIndicator isActive={true} hasCompletion={true} />);
 
-      expect(() =>
-        fireEvent.click(screen.getByTitle('Dismiss'))
-      ).not.toThrow();
+      expect(() => fireEvent.click(screen.getByTitle('Dismiss'))).not.toThrow();
     });
 
     it('hides the indicator after dismiss', async () => {
-      const { container } = render(
+      const { container } = await renderInAct(
         <CompletionIndicator isActive={true} hasCompletion={true} />
       );
       const outer = container.firstElementChild as HTMLElement;
@@ -238,27 +206,23 @@ describe('CompletionIndicator Component', () => {
     });
 
     it('stays dismissed even when a new completion arrives', async () => {
-      const { container, rerender } = render(
+      const { container, rerender } = await renderInAct(
         <CompletionIndicator isActive={true} hasCompletion={true} />
       );
       const outer = container.firstElementChild as HTMLElement;
 
-      await waitFor(() =>
-        expect(getComputedStyle(outer).display).toBe('flex')
-      );
+      await waitFor(() => expect(getComputedStyle(outer).display).toBe('flex'));
 
       fireEvent.click(screen.getByTitle('Dismiss'));
-      await waitFor(() =>
-        expect(getComputedStyle(outer).display).toBe('none')
-      );
+      await waitFor(() => expect(getComputedStyle(outer).display).toBe('none'));
 
       // hasCompletion stays true, but dismissed gate keeps it hidden.
-      rerender(
-        <CompletionIndicator isActive={true} hasCompletion={true} />
-      );
+      rerender(<CompletionIndicator isActive={true} hasCompletion={true} />);
 
-      await Promise.resolve();
-      await Promise.resolve();
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
       expect(getComputedStyle(outer).display).toBe('none');
     });
   });

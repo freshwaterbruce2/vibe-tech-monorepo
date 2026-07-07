@@ -41,11 +41,15 @@ for (const file of files) {
   // The canonical MCP registry intentionally contains absolute local paths
   // (V:/monorepo, D:/databases, etc.) so the sync tool can render working
   // per-tool configs. Skip it rather than flagging intentional path literals.
+  // WORKSPACE.json is workspace metadata whose projectPaths (e.g.
+  // "apps": "V:/monorepo/apps") and action-history prose intentionally
+  // reference the workspace root — same rationale as registry.json.
   if (
     ['.png', '.jpg', '.jpeg', '.gif', '.ico', '.pdf', '.zip', '.tar', '.gz'].includes(ext) ||
     basename === '.mcp.json' ||
     basename === 'check-staged-paths.js' ||
-    basename === 'registry.json'
+    basename === 'registry.json' ||
+    basename === 'workspace.json'
   ) {
     continue;
   }

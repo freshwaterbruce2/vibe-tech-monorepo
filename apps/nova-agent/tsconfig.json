@@ -18,6 +18,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@vibetech/shared-ipc": ["../../packages/shared-ipc/src/index.ts"],
+      "@vibetech/db-app": ["../../packages/db-app/src/index.ts"],
       "@vibetech/core": ["../../packages/core/src/index.ts"],
       "@vibetech/ui": ["../../packages/ui/src/index.ts"],
       "@vibetech/inngest-client": ["../../packages/inngest-client/src/index.ts"],
@@ -29,12 +30,6 @@
   "include": ["src"],
   "exclude": ["node_modules"],
   "references": [
-    {
-      "path": "../../packages/openrouter-client"
-    },
-    {
-      "path": "../../packages/db-app"
-    },
     {
       "path": "./tsconfig.node.json"
     }

@@ -8,10 +8,13 @@ import AvatarProfile from '../avatar/AvatarProfile';
 import { AvatarShopUnified } from '../avatar/AvatarShopUnified';
 import { appStore } from '../../utils/electronStore';
 
-type BrainGymHubProps = ComponentProps<typeof SharedBrainGymHub>;
+type BrainGymHubProps = ComponentProps<typeof SharedBrainGymHub> & {
+  userName?: string;
+  onUserNameSaved?: (name: string) => void;
+};
 
 export default function BrainGymHub(props: BrainGymHubProps) {
-  const { onEarnTokens, onGameCompleted } = props;
+  const { onEarnTokens, onGameCompleted, userName, onUserNameSaved, ...hubProps } = props;
   const bridge = useMemo<GamesHostBridge>(
     () => ({
       loadConfig: <T,>(key: string) => appStore.get<T>(key) ?? undefined,
@@ -33,8 +36,16 @@ export default function BrainGymHub(props: BrainGymHubProps) {
   return (
     <GamesHostBridgeProvider bridge={bridge}>
       <SharedBrainGymHub
-        {...props}
-        renderAvatarProfile={({ onOpenShop }) => <AvatarProfile onOpenShop={onOpenShop} />}
+        {...hubProps}
+        onEarnTokens={onEarnTokens}
+        onGameCompleted={onGameCompleted}
+        renderAvatarProfile={({ onOpenShop }) => (
+          <AvatarProfile
+            onOpenShop={onOpenShop}
+            userName={userName}
+            onUserNameSaved={onUserNameSaved}
+          />
+        )}
         renderAvatarShop={({ userTokens, onSpendTokens }) => (
           <AvatarShopUnified userTokens={userTokens} onSpendTokens={onSpendTokens} />
         )}

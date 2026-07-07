@@ -1,6 +1,7 @@
 import React, { useRef, useTransition } from 'react';
 import { dataStore } from '../../services/dataStore';
 import { logger } from '../../utils/logger';
+import PrivacyPolicy from './PrivacyPolicy';
 
 const DataManagement = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -176,6 +177,7 @@ const DataManagement = () => {
                 Reset App
             </button>
        </div>
+       <PrivacyPolicy />
     </div>
   );
 };

@@ -14,7 +14,22 @@ export default defineConfig({
     include: ['**/*.test.{ts,tsx}'],
     coverage: {
       provider: 'istanbul',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'json-summary', 'html'],
+      // `all` instruments every in-scope source file, not just those a test
+      // imports — so untested files surface in the report and the diff-coverage
+      // gate (which reads coverage-final.json) can see them.
+      all: true,
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.test.{ts,tsx}',
+        'src/**/__tests__/**',
+        'src/**/*.d.ts',
+        'src/types.ts',
+        'src/**/*.types.ts',
+        'src/types/**',
+        'src/**/*.config.*',
+        'src/vite-env.d.ts',
+      ],
     },
   },
   resolve: {

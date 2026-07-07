@@ -50,11 +50,12 @@ function createTask(overrides?: Partial<AgentTask>): AgentTask {
 
 function AIChatHarness(props: Partial<AIChatProps>) {
   const [messages, setMessages] = useState<AIMessage[]>(props.messages ?? []);
+  const onSendMessage = props.onSendMessage ?? vi.fn();
 
   return (
     <AIChat
       messages={messages}
-      onSendMessage={vi.fn()}
+      onSendMessage={onSendMessage}
       onClose={vi.fn()}
       onAddMessage={(message) => {
         setMessages((prev) => [...prev, message]);
@@ -198,5 +199,36 @@ describe('AIChat', () => {
     fireEvent.click(screen.getByText('Approve'));
 
     expect(await screen.findByText('Task completed successfully.')).toBeInTheDocument();
+  });
+
+  it('shows cancel controls while a chat response is active', () => {
+    const onCancelResponse = vi.fn();
+
+    render(
+      <AIChatHarness
+        isAiResponding
+        responseState="streaming"
+        onCancelResponse={onCancelResponse}
+      />,
+    );
+
+    expect(screen.getByTestId('ai-response-state')).toHaveTextContent('AI is responding...');
+    fireEvent.click(screen.getByTestId('cancel-response'));
+    expect(onCancelResponse).toHaveBeenCalledTimes(1);
+  });
+
+  it('blocks quick-action sends while cancellation is in progress', () => {
+    const onSendMessage = vi.fn();
+
+    render(
+      <AIChatHarness
+        responseState="cancelling"
+        onSendMessage={onSendMessage}
+      />
+    );
+
+    fireEvent.click(screen.getByText('Explain this code'));
+
+    expect(onSendMessage).not.toHaveBeenCalled();
   });
 });

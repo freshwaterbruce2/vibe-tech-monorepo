@@ -31,6 +31,8 @@ import {
   MultiFileEditApprovalPanel,
   PerformanceMonitor,
   PreviewPanel,
+  ProblemsPanelHost,
+  SchedulePanelHost,
   ScreenshotToCodePanel,
   TerminalPanel,
   VisualEditor,
@@ -39,6 +41,7 @@ import {
 
 import type { GeneratedFix } from '../services/AutoFixService';
 import { logger } from '../services/Logger';
+import { applySettingsChange } from './applySettingsChange';
 import { useAppExtras, useServices, useUIPanel, useWorkspaceCtx } from './contexts';
 import { useEffect } from 'react';
 import { LandingPage } from '@vibetech/landing';
@@ -89,7 +92,7 @@ export function AppLayout() {
     };
     initSession();
 
-    const unsubscribe = authService.subscribe((u) => {
+    const unsubscribe = authService.subscribe(u => {
       setUser(u);
     });
     return unsubscribe;
@@ -121,8 +124,8 @@ export function AppLayout() {
         ? {
             workspaceRoot: ws.workspaceFolder,
             currentFile: ws.currentFile?.path,
-            openFiles: ws.openFiles.map((f) => f.path),
-            recentFiles: ws.openFiles.slice(0, 5).map((f) => f.path),
+            openFiles: ws.openFiles.map(f => f.path),
+            recentFiles: ws.openFiles.slice(0, 5).map(f => f.path),
           }
         : undefined,
     [ws.workspaceFolder, ws.currentFile?.path, ws.openFiles]
@@ -130,7 +133,17 @@ export function AppLayout() {
 
   if (!sessionChecked) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#08111f', color: '#67e8f9', fontFamily: 'system-ui' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          background: '#08111f',
+          color: '#67e8f9',
+          fontFamily: 'system-ui',
+        }}
+      >
         <div style={{ fontSize: '18px', fontWeight: 600 }}>Initializing Neural Interface...</div>
       </div>
     );
@@ -161,7 +174,9 @@ export function AppLayout() {
         onOpenFolder={ws.handleOpenFolderDialog}
         onSaveAll={ws.handleSaveAll}
         onCloseFolder={ws.handleCloseFolder}
-        onScreenshotToCode={() => ui.setActiveVisualPanel(ui.activeVisualPanel === 'screenshot' ? 'none' : 'screenshot')}
+        onScreenshotToCode={() =>
+          ui.setActiveVisualPanel(ui.activeVisualPanel === 'screenshot' ? 'none' : 'screenshot')
+        }
         onToggleSidebar={() => ui.setSidebarOpen(!ui.sidebarOpen)}
         onToggleAIChat={() => ui.setAiChatOpen(!ui.aiChatOpen)}
         onTogglePreview={() => ui.setPreviewOpen(!ui.previewOpen)}
@@ -234,7 +249,10 @@ export function AppLayout() {
             <LazyAIChat
               data-testid="ai-chat"
               messages={extras.aiMessages}
+              isAiResponding={extras.isAiResponding}
+              responseState={extras.aiResponseState}
               onSendMessage={extras.handleAIMessage}
+              onCancelResponse={extras.cancelAiResponse}
               onClose={() => ui.setAiChatOpen(false)}
               showReasoningProcess={ws.editorSettings.showReasoningProcess}
               currentModel={ws.editorSettings.aiModel}
@@ -247,16 +265,19 @@ export function AppLayout() {
               onUpdateMessage={extras.updateAiMessage}
               onFileChanged={(filePath, action) => {
                 logger.debug('[App] Agent file changed:', filePath, action);
-                setWorkspaceRefreshKey((current) => current + 1);
+                setWorkspaceRefreshKey(current => current + 1);
                 if (action === 'created' || action === 'modified') {
                   ws.handleOpenFile(filePath);
                 }
               }}
-              onTaskComplete={(task) => {
+              onTaskComplete={task => {
                 extras.showSuccess('Task Completed', `Successfully executed: ${task.title}`);
               }}
               onTaskError={(task, error) => {
-                extras.showError('Task Failed', `Failed to execute ${task.title}: ${error.message}`);
+                extras.showError(
+                  'Task Failed',
+                  `Failed to execute ${task.title}: ${error.message}`
+                );
               }}
               onMultiFileEditDetected={extras.handleMultiFileEditDetected}
             />
@@ -273,7 +294,7 @@ export function AppLayout() {
           <Suspense fallback={null}>
             <BackgroundTaskPanel
               backgroundAgent={services.backgroundAgentSystem}
-              onTaskClick={(task) => {
+              onTaskClick={task => {
                 logger.debug('[App] Background task clicked:', task);
               }}
             />
@@ -308,11 +329,11 @@ export function AppLayout() {
       <Suspense fallback={null}>
         <EditorStreamPanel
           isStreaming={services.liveStream.isCurrentlyStreaming()}
-          onApprove={(filePath) => {
+          onApprove={filePath => {
             logger.debug(`[App] Approved changes for: ${filePath}`);
             extras.showSuccess('Changes Approved', `Applied changes to ${filePath}`);
           }}
-          onReject={(filePath) => {
+          onReject={filePath => {
             logger.debug(`[App] Rejected changes for: ${filePath}`);
             extras.showWarning('Changes Rejected', `Discarded changes to ${filePath}`);
           }}
@@ -321,15 +342,17 @@ export function AppLayout() {
 
       {/* Auto-Fix Error Panel */}
       {ui.errorFixPanelOpen && extras.currentError && (
-        <div style={{
-          position: 'fixed',
-          bottom: '80px',
-          right: '20px',
-          zIndex: 2000,
-          maxWidth: '600px',
-          maxHeight: 'calc(100vh - 100px)',
-          overflowY: 'auto',
-        }}>
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '80px',
+            right: '20px',
+            zIndex: 2000,
+            maxWidth: '600px',
+            maxHeight: 'calc(100vh - 100px)',
+            overflowY: 'auto',
+          }}
+        >
           <Suspense fallback={null}>
             <ErrorFixPanel
               error={extras.currentError}
@@ -373,22 +396,18 @@ export function AppLayout() {
           isOpen={ui.settingsOpen}
           onClose={() => ui.setSettingsOpen(false)}
           settings={ws.editorSettings}
-          onSettingsChange={async (newSettings) => {
-            ws.updateEditorSettings(newSettings);
-            if (newSettings.aiModel && newSettings.aiModel !== ws.editorSettings.aiModel) {
-              try {
-                await services.aiService.setModel(newSettings.aiModel);
-                extras.showSuccess('Settings Updated', 'Your preferences have been saved');
-              } catch (error) {
-                extras.showError(
-                  'Model Error',
-                  error instanceof Error ? error.message : 'Failed to update AI model'
-                );
-              }
-            } else {
-              extras.showSuccess('Settings Updated', 'Your preferences have been saved');
-            }
-          }}
+          onSettingsChange={newSettings =>
+            applySettingsChange(
+              {
+                updateEditorSettings: ws.updateEditorSettings,
+                prevAiModel: ws.editorSettings.aiModel,
+                aiService: services.aiService,
+                showSuccess: extras.showSuccess,
+                showError: extras.showError,
+              },
+              newSettings
+            )
+          }
         />
       </Suspense>
 
@@ -407,7 +426,7 @@ export function AppLayout() {
           onOpenFile={ws.handleOpenFileFromSearch}
           onReplaceInFile={ws.handleReplaceInFile}
           onSearchInFiles={ws.handleSearchInFiles}
-          workspaceFiles={ws.openFiles.map((f) => f.path)}
+          workspaceFiles={ws.openFiles.map(f => f.path)}
           workspaceRoot={ws.workspaceFolder}
         />
       </Suspense>
@@ -499,10 +518,15 @@ export function AppLayout() {
       </AnimatePresence>
 
       <Suspense fallback={null}>
-        <TerminalPanel
-          isOpen={ui.terminalOpen}
-          onClose={() => ui.setTerminalOpen(false)}
-        />
+        <TerminalPanel isOpen={ui.terminalOpen} onClose={() => ui.setTerminalOpen(false)} />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <ProblemsPanelHost onOpenFile={ws.handleOpenFileFromSearch} />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <SchedulePanelHost />
       </Suspense>
 
       <Suspense fallback={null}>
@@ -510,12 +534,14 @@ export function AppLayout() {
       </Suspense>
 
       {ui.brainScanOpen && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 1500,
-          background: 'rgba(8, 17, 31, 0.85)',
-        }}>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1500,
+            background: 'rgba(8, 17, 31, 0.85)',
+          }}
+        >
           <Suspense fallback={null}>
             <BrainScanPanel onClose={() => ui.setBrainScanOpen(false)} />
           </Suspense>
@@ -533,11 +559,15 @@ export function AppLayout() {
             }}
             orchestrator={services.orchestrator}
             performanceOptimizer={services.performanceOptimizer}
-            workspaceContext={ws.workspaceFolder ? {
-              workspaceFolder: ws.workspaceFolder,
-              currentFile: ws.currentFile?.path,
-              openFiles: ws.openFiles.map((f) => f.path),
-            } : undefined}
+            workspaceContext={
+              ws.workspaceFolder
+                ? {
+                    workspaceFolder: ws.workspaceFolder,
+                    currentFile: ws.currentFile?.path,
+                    openFiles: ws.openFiles.map(f => f.path),
+                  }
+                : undefined
+            }
           />
         </Suspense>
       )}

@@ -1,7 +1,16 @@
 import { SecureApiKeyManager } from '@vibetech/core';
 import { motion } from 'framer-motion';
 import { shouldForwardMotionProp } from '../utils/motionProps';
-import { AlertTriangle, CheckCircle, Eye, EyeOff, Save, Shield, TestTube, Trash2 } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle,
+  Eye,
+  EyeOff,
+  Save,
+  Shield,
+  TestTube,
+  Trash2,
+} from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 
@@ -82,16 +91,22 @@ const StatusBadge = styled.div<{ $status: 'valid' | 'invalid' | 'unknown' }>`
   font-weight: ${vibeTheme.typography.fontWeight.semibold};
   background: ${props => {
     switch (props.$status) {
-      case 'valid': return 'rgba(34, 197, 94, 0.2)';
-      case 'invalid': return 'rgba(239, 68, 68, 0.2)';
-      default: return 'rgba(107, 114, 128, 0.2)';
+      case 'valid':
+        return 'rgba(34, 197, 94, 0.2)';
+      case 'invalid':
+        return 'rgba(239, 68, 68, 0.2)';
+      default:
+        return 'rgba(107, 114, 128, 0.2)';
     }
   }};
   color: ${props => {
     switch (props.$status) {
-      case 'valid': return '#22c55e';
-      case 'invalid': return '#ef4444';
-      default: return '#6b7280';
+      case 'valid':
+        return '#22c55e';
+      case 'invalid':
+        return '#ef4444';
+      default:
+        return '#6b7280';
     }
   }};
 `;
@@ -168,18 +183,25 @@ const Button = styled(motion.button).withConfig({
 })<{ variant?: 'primary' | 'secondary' | 'danger' }>`
   background: ${props => {
     switch (props.variant) {
-      case 'primary': return vibeTheme.gradients.primary;
-      case 'danger': return 'rgba(239, 68, 68, 0.8)';
-      default: return 'rgba(139, 92, 246, 0.2)';
+      case 'primary':
+        return vibeTheme.gradients.primary;
+      case 'danger':
+        return 'rgba(239, 68, 68, 0.8)';
+      default:
+        return 'rgba(139, 92, 246, 0.2)';
     }
   }};
-  border: 2px solid ${props => {
-    switch (props.variant) {
-      case 'primary': return 'transparent';
-      case 'danger': return 'rgba(239, 68, 68, 0.3)';
-      default: return 'rgba(139, 92, 246, 0.3)';
-    }
-  }};
+  border: 2px solid
+    ${props => {
+      switch (props.variant) {
+        case 'primary':
+          return 'transparent';
+        case 'danger':
+          return 'rgba(239, 68, 68, 0.3)';
+        default:
+          return 'rgba(139, 92, 246, 0.3)';
+      }
+    }};
   color: ${vibeTheme.colors.text};
   padding: ${vibeTheme.spacing.sm} ${vibeTheme.spacing.md};
   border-radius: ${vibeTheme.borderRadius.medium};
@@ -284,34 +306,38 @@ const PROVIDERS = [
     name: 'OpenRouter (Primary)',
     placeholder: 'sk-or-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     models: [
+      { name: 'Nemotron 3 Ultra 550B (Free)', input: 'FREE', output: 'FREE', context: '1M' },
       { name: 'LFM 2.5 1.2B Thinking (Free)', input: 'FREE', output: 'FREE', context: '32K' },
-      { name: 'LFM 2.5 1.2B Instruct (Free)', input: 'FREE', output: 'FREE', context: '32K' },
-      { name: 'GLM 4.7 Flash', input: '$0.07/M', output: '$0.40/M', context: '200K' },
-      { name: 'DeepSeek V3.2', input: '$0.25/M', output: '$0.38/M', context: '163.8K' },
-      { name: 'DeepSeek Chat', input: '$0.30/M', output: '$1.20/M', context: '163.8K' },
-      { name: 'Claude Sonnet 4.5', input: '$3.00/M', output: '$15.00/M', context: '1M' },
-      { name: 'GPT-5.2 Codex', input: '$1.75/M', output: '$14.00/M', context: '400K' },
-      { name: 'GPT-5.2', input: '$1.75/M', output: '$14.00/M', context: '400K' },
-      { name: 'Claude Opus 4.5', input: '$5.00/M', output: '$25.00/M', context: '200K' }
-    ]
+      { name: 'DeepSeek V4 Flash', input: '$0.09/M', output: '$0.18/M', context: '1M' },
+      { name: 'DeepSeek V4 Pro', input: '$0.43/M', output: '$0.87/M', context: '1M' },
+      { name: 'Qwen 3.7 Plus', input: '$0.32/M', output: '$1.28/M', context: '1M' },
+      { name: 'GLM 5.2', input: '$1.00/M', output: '$4.00/M', context: '1M' },
+      { name: 'Grok 4.3', input: '$1.25/M', output: '$2.50/M', context: '1M' },
+      { name: 'Claude Sonnet 4.6', input: '$3.00/M', output: '$15.00/M', context: '1M' },
+      { name: 'GPT-5.5', input: '$5.00/M', output: '$30.00/M', context: '1M' },
+      { name: 'Claude Opus 4.8', input: '$5.00/M', output: '$25.00/M', context: '1M' },
+      { name: 'Claude Fable 5', input: '$10.00/M', output: '$50.00/M', context: '1M' },
+    ],
   },
   {
     id: 'moonshot',
-    name: 'Moonshot AI / Kimi 2.5',
+    name: 'Moonshot AI / Kimi',
     placeholder: 'sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     models: [
-      { name: 'Kimi 2.5 Pro (Coding)', input: '$0.20/M', output: '$0.80/M', context: '200K' }
-    ]
+      { name: 'Kimi K2.7 Code', input: '$0.61/M', output: '$3.07/M', context: '262K' },
+      { name: 'Kimi 2.5 Pro (Coding)', input: '$0.20/M', output: '$0.80/M', context: '200K' },
+    ],
   },
   {
     id: 'google',
     name: 'Google AI (Fallback)',
     placeholder: 'AIzaxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
     models: [
+      { name: 'Gemini 3.5 Flash', input: '$1.50/M', output: '$9.00/M', context: '1M' },
       { name: 'Gemini 3.1 Pro', input: '$1.25/M', output: '$5.00/M', context: '2M' },
-      { name: 'Gemini 2.0 Flash (Free)', input: 'FREE', output: 'FREE', context: '1M' }
-    ]
-  }
+      { name: 'Gemini 2.0 Flash (Free)', input: 'FREE', output: 'FREE', context: '1M' },
+    ],
+  },
 ];
 
 const ApiKeySettings: React.FC = () => {
@@ -326,6 +352,8 @@ const ApiKeySettings: React.FC = () => {
 
   useEffect(() => {
     loadApiKeyStatuses();
+    // Run-once-on-mount: loadApiKeyStatuses is stable for the component's lifetime.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadApiKeyStatuses = async () => {
@@ -338,7 +366,7 @@ const ApiKeySettings: React.FC = () => {
         provider: provider.id,
         hasKey: !!stored,
         isValid: stored?.metadata.isValid ?? false,
-        ...(stored?.metadata.lastValidated && { lastValidated: stored.metadata.lastValidated })
+        ...(stored?.metadata.lastValidated && { lastValidated: stored.metadata.lastValidated }),
       };
     });
 
@@ -386,7 +414,10 @@ const ApiKeySettings: React.FC = () => {
         setErrors(prev => ({ ...prev, [provider]: message }));
       }
     } catch (error) {
-      setErrors(prev => ({ ...prev, [provider]: error instanceof Error ? error.message : 'Failed to save API key' }));
+      setErrors(prev => ({
+        ...prev,
+        [provider]: error instanceof Error ? error.message : 'Failed to save API key',
+      }));
     }
   };
 
@@ -400,11 +431,17 @@ const ApiKeySettings: React.FC = () => {
       if (isValid) {
         setSuccesses(prev => ({ ...prev, [provider]: 'API key is valid and working' }));
       } else {
-        setErrors(prev => ({ ...prev, [provider]: 'API key test failed - key may be invalid or expired' }));
+        setErrors(prev => ({
+          ...prev,
+          [provider]: 'API key test failed - key may be invalid or expired',
+        }));
       }
       await loadApiKeyStatuses();
     } catch (error) {
-      setErrors(prev => ({ ...prev, [provider]: error instanceof Error ? error.message : 'Test failed' }));
+      setErrors(prev => ({
+        ...prev,
+        [provider]: error instanceof Error ? error.message : 'Test failed',
+      }));
     } finally {
       setTesting(prev => ({ ...prev, [provider]: false }));
     }
@@ -421,17 +458,23 @@ const ApiKeySettings: React.FC = () => {
   };
 
   const getStatusBadge = (status: ApiKeyStatus) => {
-    if (!status.hasKey) {return 'unknown';}
+    if (!status.hasKey) {
+      return 'unknown';
+    }
     return status.isValid ? 'valid' : 'invalid';
   };
 
   const getStatusText = (status: ApiKeyStatus) => {
-    if (!status.hasKey) {return 'Not configured';}
+    if (!status.hasKey) {
+      return 'Not configured';
+    }
     return status.isValid ? 'Valid' : 'Invalid';
   };
 
   const getStatusIcon = (status: ApiKeyStatus) => {
-    if (!status.hasKey) {return <AlertTriangle size={12} />;}
+    if (!status.hasKey) {
+      return <AlertTriangle size={12} />;
+    }
     return status.isValid ? <CheckCircle size={12} /> : <AlertTriangle size={12} />;
   };
 
@@ -445,14 +488,18 @@ const ApiKeySettings: React.FC = () => {
       <SecurityNote>
         <Shield size={16} color={vibeTheme.colors.cyan} />
         <SecurityText>
-          All API keys are encrypted using AES-256 before being stored locally.
-          Keys are validated for format and security before storage.
-          Never share your API keys or store them in version control.
+          All API keys are encrypted using AES-256 before being stored locally. Keys are validated
+          for format and security before storage. Never share your API keys or store them in version
+          control.
         </SecurityText>
       </SecurityNote>
 
       {PROVIDERS.map(provider => {
-        const status = statuses[provider.id] ?? { provider: provider.id, hasKey: false, isValid: false };
+        const status = statuses[provider.id] ?? {
+          provider: provider.id,
+          hasKey: false,
+          isValid: false,
+        };
 
         return (
           <ProviderSection key={provider.id}>
@@ -471,7 +518,7 @@ const ApiKeySettings: React.FC = () => {
                   id={provider.id}
                   type={showKeys[provider.id] ? 'text' : 'password'}
                   value={apiKeys[provider.id] ?? ''}
-                  onChange={(e) => handleKeyChange(provider.id, e.target.value)}
+                  onChange={e => handleKeyChange(provider.id, e.target.value)}
                   placeholder={provider.placeholder}
                 />
                 <IconButton
@@ -483,13 +530,9 @@ const ApiKeySettings: React.FC = () => {
                 </IconButton>
               </InputWrapper>
 
-              {errors[provider.id] && (
-                <ErrorMessage>{errors[provider.id]}</ErrorMessage>
-              )}
+              {errors[provider.id] && <ErrorMessage>{errors[provider.id]}</ErrorMessage>}
 
-              {successes[provider.id] && (
-                <SuccessMessage>{successes[provider.id]}</SuccessMessage>
-              )}
+              {successes[provider.id] && <SuccessMessage>{successes[provider.id]}</SuccessMessage>}
             </InputGroup>
 
             <ButtonGroup>

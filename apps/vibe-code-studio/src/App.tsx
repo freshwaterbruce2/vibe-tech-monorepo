@@ -138,8 +138,11 @@ function App() {
   const {
     aiMessages,
     aiChatOpen,
+    isAiResponding,
+    aiResponseState,
     setAiChatOpen,
     handleSendMessage: handleAIMessage,
+    cancelAiResponse,
     addAiMessage,
     updateAiMessage,
   } = useAIChat({
@@ -403,7 +406,7 @@ function App() {
   ]);
 
   const appExtrasContextValue = useMemo(() => ({
-    aiMessages, handleAIMessage, addAiMessage, updateAiMessage,
+    aiMessages, isAiResponding, aiResponseState, handleAIMessage, cancelAiResponse, addAiMessage, updateAiMessage,
     handleModelChange: handlers.handleModelChange,
     handleProviderChange: handlers.handleProviderChange,
     handleMultiFileEditDetected: handlers.handleMultiFileEditDetected,
@@ -425,7 +428,7 @@ function App() {
     handleToggleVisualEditor: handlers.handleToggleVisualEditor,
     handleInsertCode: handlers.handleInsertCode,
   }), [
-    aiMessages, handleAIMessage, addAiMessage, updateAiMessage,
+    aiMessages, isAiResponding, aiResponseState, handleAIMessage, cancelAiResponse, addAiMessage, updateAiMessage,
     handlers.handleModelChange, handlers.handleProviderChange, handlers.handleMultiFileEditDetected,
     appState.currentModel, appState.currentProvider, appState.openrouterApiKey,
     appState.currentError, appState.currentFix, appState.fixLoading, appState.fixError,

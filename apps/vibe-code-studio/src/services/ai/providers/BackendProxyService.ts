@@ -22,7 +22,7 @@ import type {
   AICompletionRequest,
   AICompletionResponse,
   ChatMessage,
-  IAIService
+  IAIService,
 } from '../../../types/ai';
 import type { AIModel } from '../AIProviderInterface';
 import { AIProvider, MODEL_REGISTRY } from '../AIProviderInterface';
@@ -42,14 +42,14 @@ const NON_THINKING_TEMPERATURE = 0.6;
  * Mirrors MoonshotService.resolveModel so proxy and direct mode agree.
  */
 const MOONSHOT_MODEL_MAP: Record<string, string> = {
-  'kimi': 'kimi-k2.5',
+  kimi: 'kimi-k2.5',
   'kimi-k2.5': 'kimi-k2.5',
   'kimi-k2': 'kimi-k2.5',
   'kimi-2.5-pro': 'kimi-k2.5',
   'moonshot/kimi-2.5-pro': 'kimi-k2.5',
   'kimi-latest': 'kimi-latest',
   'kimi-thinking': 'kimi-k2-thinking',
-  'moonshot': 'kimi-k2.5',
+  moonshot: 'kimi-k2.5',
   'moonshot-v1-32k': 'moonshot-v1-32k',
   'moonshot-v1-128k': 'moonshot-v1-128k',
 };
@@ -77,17 +77,47 @@ export class BackendProxyService implements IAIService {
   id = 'backend-proxy';
   private baseUrl: string;
   private activeControllers: Set<AbortController> = new Set();
+  /** Cached /health `configured` map — drives key-aware provider rerouting. */
+  private configuredCache: { value: Record<string, boolean>; at: number } | null = null;
 
   constructor(config?: { baseUrl?: string }) {
-    this.baseUrl =
-      config?.baseUrl ?? import.meta.env['VITE_AI_PROXY_URL'] ?? DEFAULT_BASE_URL;
+    this.baseUrl = config?.baseUrl ?? import.meta.env['VITE_AI_PROXY_URL'] ?? DEFAULT_BASE_URL;
+  }
+
+  /**
+   * Last-known /health `configured` map, refreshed in the background when
+   * stale (30s). Fully synchronous so the request path adds no await before
+   * fetch (callers may abort synchronously right after invoking). Null = no
+   * rerouting (legacy behavior) — also the case under vitest, where there is
+   * no sidecar and the extra fetch would only break fetch-mock ordering.
+   */
+  private configuredSnapshot(): Record<string, boolean> | null {
+    if (import.meta.env['VITEST']) return null;
+    const now = Date.now();
+    if (!this.configuredCache || now - this.configuredCache.at > 30_000) {
+      void this.refreshConfigured();
+    }
+    return this.configuredCache?.value ?? null;
+  }
+
+  private async refreshConfigured(): Promise<void> {
+    try {
+      const health = await this.health();
+      if (health.reachable) {
+        this.configuredCache = { value: health.configured, at: Date.now() };
+      }
+    } catch {
+      // keep last snapshot
+    }
   }
 
   /**
    * No client API key required — the backend injects the provider key.
+   * Warms the configured-keys snapshot so the first user call can reroute.
    */
   async initialize(): Promise<void> {
     logger.info(`[BackendProxy] Using AI proxy at ${this.baseUrl}`);
+    void this.refreshConfigured();
   }
 
   /**
@@ -121,19 +151,54 @@ export class BackendProxyService implements IAIService {
 
   /**
    * Build the per-provider proxy URL and upstream model id.
+   *
+   * Key-aware rerouting: when the request's natural provider has NO key on the
+   * server but OpenRouter does, translate the model to its OpenRouter-hosted
+   * equivalent and send it via the OpenRouter route. This makes a single
+   * OpenRouter key serve EVERY feature — including services that hardcode
+   * Moonshot/Google model ids — instead of 503ing.
    */
-  private buildRoute(model: string): ProxyRoute {
+  private buildRoute(model: string, configured?: Record<string, boolean> | null): ProxyRoute {
     const provider = this.resolveProvider(model);
+    const openRouterAvailable = configured?.['openrouter'] === true;
 
     if (provider === AIProvider.MOONSHOT) {
+      const upstreamId = this.resolveMoonshotModel(model);
+      if (configured && configured['moonshot'] !== true && openRouterAvailable) {
+        // Moonshot's upstream ids exist on OpenRouter under the moonshotai/
+        // author (verified against the live catalog: moonshotai/kimi-k2.5,
+        // kimi-k2.6, kimi-k2.7-code, kimi-latest).
+        const orId = upstreamId.startsWith('moonshotai/') ? upstreamId : `moonshotai/${upstreamId}`;
+        logger.info(
+          `[BackendProxy] Rerouting ${model} -> ${orId} via OpenRouter (no Moonshot server key)`
+        );
+        // provider becomes OPENROUTER: body shaping must NOT apply Moonshot's
+        // fixed-temperature/thinking fields on the OpenRouter route.
+        return {
+          url: `${this.baseUrl}/openrouter/api/v1/chat/completions`,
+          model: orId,
+          provider: AIProvider.OPENROUTER,
+        };
+      }
       return {
         url: `${this.baseUrl}/moonshot/v1/chat/completions`,
-        model: this.resolveMoonshotModel(model),
+        model: upstreamId,
         provider,
       };
     }
 
     if (provider === AIProvider.GOOGLE) {
+      if (configured && configured['google'] !== true && openRouterAvailable) {
+        const orId = model.startsWith('google/') ? model : `google/${model}`;
+        logger.info(
+          `[BackendProxy] Rerouting ${model} -> ${orId} via OpenRouter (no Google server key)`
+        );
+        return {
+          url: `${this.baseUrl}/openrouter/api/v1/chat/completions`,
+          model: orId,
+          provider: AIProvider.OPENROUTER,
+        };
+      }
       return {
         url: `${this.baseUrl}/google/v1beta/openai/chat/completions`,
         model: model.replace(/^google\//, ''),
@@ -184,7 +249,7 @@ export class BackendProxyService implements IAIService {
 
   async complete(request: AICompletionRequest): Promise<AICompletionResponse> {
     const modelInput = request.model ?? DEFAULT_MODEL;
-    const route = this.buildRoute(modelInput);
+    const route = this.buildRoute(modelInput, this.configuredSnapshot());
     const body = this.buildBody(request.messages, route, {
       temperature: request.temperature,
       maxTokens: request.maxTokens,
@@ -236,7 +301,7 @@ export class BackendProxyService implements IAIService {
     options?: AIChatOptions
   ): AsyncGenerator<string, void, unknown> {
     const modelInput = options?.model ?? DEFAULT_MODEL;
-    const route = this.buildRoute(modelInput);
+    const route = this.buildRoute(modelInput, this.configuredSnapshot());
     const body = this.buildBody(messages, route, {
       temperature: options?.temperature,
       maxTokens: options?.maxTokens,
@@ -270,9 +335,7 @@ export class BackendProxyService implements IAIService {
   }
 
   /** Read an SSE response body and yield each chunk's content delta. */
-  private async *drainSSE(
-    body: ReadableStream<Uint8Array>
-  ): AsyncGenerator<string, void, unknown> {
+  private async *drainSSE(body: ReadableStream<Uint8Array>): AsyncGenerator<string, void, unknown> {
     const reader = body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';

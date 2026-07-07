@@ -34,23 +34,72 @@ struct BackendSidecar(Mutex<Option<CommandChild>>);
 /// user environment. `VCS_DATABASE_PATH` pins the canonical DB; `WORKSPACE_ROOT` is left
 /// unset so the @vibetech/db-app path-segregation guard stays satisfied.
 #[cfg(not(debug_assertions))]
+fn vcs_diag(msg: &str) {
+    use std::io::Write;
+    if let Ok(mut f) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("D:\\nx-workspace-data\\ship-logs\\vcs-121\\rust-sidecar.log")
+    {
+        let _ = writeln!(f, "{msg}");
+    }
+}
+
+#[cfg(not(debug_assertions))]
 fn spawn_backend_sidecar(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    use tauri_plugin_shell::process::CommandEvent;
     use tauri_plugin_shell::ShellExt;
 
+    vcs_diag("spawn_backend_sidecar: enter");
     let resource_dir = app.path().resource_dir()?;
     let script = resource_dir.join("sidecar").join("backend-bundle.mjs");
+    // resource_dir comes back as a verbatim path (\\?\C:\...). Node's module
+    // resolver cannot handle the \\?\ prefix (EISDIR: lstat 'C:') and the
+    // sidecar dies before executing a single line. Strip it.
+    let script_arg = {
+        let s = script.to_string_lossy().to_string();
+        s.strip_prefix(r"\\?\").map(str::to_string).unwrap_or(s)
+    };
+    vcs_diag(&format!(
+        "resource_dir={} script_exists={} arg={script_arg}",
+        resource_dir.display(),
+        script.exists()
+    ));
 
     let sidecar = app
         .shell()
         .sidecar("vcs-backend")?
-        .args([script.to_string_lossy().to_string()])
+        .args([script_arg])
         .env("VCS_DATABASE_PATH", "D:\\databases\\vibe_studio.db")
         .env("NODE_ENV", "production");
+    vcs_diag("sidecar command built");
 
     let (mut rx, child) = sidecar.spawn()?;
+    vcs_diag(&format!("spawned pid={}", child.pid()));
 
     // Drain the sidecar's output so its stdout/stderr pipes never fill and block it.
-    tauri::async_runtime::spawn(async move { while rx.recv().await.is_some() {} });
+    // Log the first events so startup failures are visible in the diag log.
+    tauri::async_runtime::spawn(async move {
+        let mut logged = 0u32;
+        while let Some(ev) = rx.recv().await {
+            if logged < 60 {
+                logged += 1;
+                match &ev {
+                    CommandEvent::Stdout(b) => {
+                        vcs_diag(&format!("sidecar stdout: {}", String::from_utf8_lossy(b)))
+                    }
+                    CommandEvent::Stderr(b) => {
+                        vcs_diag(&format!("sidecar stderr: {}", String::from_utf8_lossy(b)))
+                    }
+                    CommandEvent::Terminated(t) => {
+                        vcs_diag(&format!("sidecar TERMINATED: {t:?}"))
+                    }
+                    other => vcs_diag(&format!("sidecar event: {other:?}")),
+                }
+            }
+        }
+        vcs_diag("sidecar event channel closed");
+    });
 
     app.manage(BackendSidecar(Mutex::new(Some(child))));
     Ok(())
@@ -84,9 +133,12 @@ pub fn run() {
             // fails, the window still opens (landing page) rather than the app bricking.
             #[cfg(not(debug_assertions))]
             {
+                vcs_diag("setup: about to spawn sidecar");
                 if let Err(e) = spawn_backend_sidecar(app) {
+                    vcs_diag(&format!("SPAWN FAILED: {e}"));
                     eprintln!("[vcs] failed to start backend sidecar: {e}");
                 }
+                vcs_diag("setup: after spawn call");
             }
 
             Ok(())

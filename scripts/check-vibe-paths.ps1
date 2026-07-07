@@ -7,6 +7,17 @@ param(
 $ErrorActionPreference = 'Stop'
 $workspaceRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 
+# Repository root: prefer the CI-provided workspace ($env:GITHUB_WORKSPACE),
+# fall back to the PSScriptRoot-relative path for local execution. CI runners
+# check out under D:\a\... and have no V:\ drive, so the source root must not be
+# hardcoded to V:\monorepo.
+$repoRoot = if ($env:GITHUB_WORKSPACE) {
+    (Resolve-Path -LiteralPath $env:GITHUB_WORKSPACE).Path
+}
+else {
+    $workspaceRoot
+}
+
 $script:issues = New-Object System.Collections.Generic.List[string]
 $script:warnings = New-Object System.Collections.Generic.List[string]
 
@@ -166,7 +177,7 @@ if ($FixPermissions) {
 
 Write-Host "[1/3] Checking canonical storage roots..." -ForegroundColor Yellow
 foreach ($entry in @(
-        @{ Path = 'V:\monorepo'; Label = 'source root' },
+        @{ Path = $repoRoot; Label = 'source root' },
         @{ Path = 'D:\learning-system'; Label = 'learning-system root' },
         @{ Path = 'D:\databases'; Label = 'databases root' },
         @{ Path = 'D:\logs'; Label = 'logs root' },

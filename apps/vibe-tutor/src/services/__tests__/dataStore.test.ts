@@ -187,6 +187,19 @@ describe('dataStore (web/localStorage path)', () => {
       expect(tutor[0]!.content).toBe('Tutor');
       expect(friend[0]!.content).toBe('Friend');
     });
+
+    it('caps persisted history to the most recent 200 messages', async () => {
+      const many = Array.from({ length: 250 }, (_, i) => ({
+        role: 'user',
+        content: `msg-${i}`,
+      })) as unknown as ChatMessage[];
+      await dataStore.saveChatHistory('tutor', many);
+      const result = await dataStore.getChatHistory('tutor');
+      expect(result).toHaveLength(200);
+      // Newest retained, oldest dropped.
+      expect(result[result.length - 1]!.content).toBe('msg-249');
+      expect(result[0]!.content).toBe('msg-50');
+    });
   });
 
   // ── Schedule ───────────────────────────────────────────────────

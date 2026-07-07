@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 
 import { logger } from '../services/Logger';
+import { useScheduleCommands } from './useScheduleCommands';
+import { useTaskCommands } from './useTaskCommands';
 
 interface Command {
   id: string;
@@ -54,9 +56,13 @@ interface UseAICommandPaletteProps {
 
 export const useAICommandPalette = (props: UseAICommandPaletteProps) => {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const taskCommands = useTaskCommands();
+  const scheduleCommands = useScheduleCommands();
 
   // Build comprehensive command list
   const commands: Command[] = [
+    ...taskCommands,
+    ...scheduleCommands,
     // File Operations
     {
       id: 'file-new',
@@ -248,7 +254,7 @@ export const useAICommandPalette = (props: UseAICommandPaletteProps) => {
   ];
 
   const toggleCommandPalette = useCallback(() => {
-    setCommandPaletteOpen((prev) => !prev);
+    setCommandPaletteOpen(prev => !prev);
   }, []);
 
   return {

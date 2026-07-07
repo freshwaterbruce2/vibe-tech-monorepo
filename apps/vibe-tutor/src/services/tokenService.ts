@@ -46,6 +46,31 @@ const DEFAULT_STATE: TokenStateStore = {
 let stateCache: TokenStateStore | null = null;
 let transactionsCache: TokenTransaction[] | null = null;
 
+type TokenChangeListener = () => void;
+const tokenListeners = new Set<TokenChangeListener>();
+
+/**
+ * Subscribe to token ledger mutations (earn/spend/set). Returns an unsubscribe
+ * function. Lets every consumer (e.g. the wallet) stay in sync with the single
+ * canonical balance instead of reading a stale module-cache snapshot.
+ */
+export function subscribeToTokenChanges(listener: TokenChangeListener): () => void {
+  tokenListeners.add(listener);
+  return () => {
+    tokenListeners.delete(listener);
+  };
+}
+
+function notifyTokenListeners(): void {
+  tokenListeners.forEach((listener) => {
+    try {
+      listener();
+    } catch {
+      // A listener error must never break the ledger.
+    }
+  });
+}
+
 function asNumber(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return Math.max(0, Math.floor(value));
@@ -72,12 +97,7 @@ function parseTokenState(value: unknown): TokenStateStore | null {
   const totalSpent = asNumber(candidate.totalSpent);
   const updatedAt = asNumber(candidate.updatedAt);
 
-  if (
-    balance === null ||
-    totalEarned === null ||
-    totalSpent === null ||
-    updatedAt === null
-  ) {
+  if (balance === null || totalEarned === null || totalSpent === null || updatedAt === null) {
     return null;
   }
 
@@ -108,10 +128,16 @@ function normalizeTransaction(input: unknown): TokenTransaction | null {
   }
 
   return {
-    id: typeof candidate.id === 'string' && candidate.id.length > 0 ? candidate.id : `txn_${timestamp}`,
+    id:
+      typeof candidate.id === 'string' && candidate.id.length > 0
+        ? candidate.id
+        : `txn_${timestamp}`,
     type: candidate.type,
     amount,
-    reason: typeof candidate.reason === 'string' && candidate.reason.length > 0 ? candidate.reason : 'Token update',
+    reason:
+      typeof candidate.reason === 'string' && candidate.reason.length > 0
+        ? candidate.reason
+        : 'Token update',
     relatedId: typeof candidate.relatedId === 'string' ? candidate.relatedId : undefined,
     timestamp,
   };
@@ -122,16 +148,14 @@ function parseTransactionList(value: unknown): TokenTransaction[] {
     return [];
   }
 
-  return value
-    .map(normalizeTransaction)
-    .filter((tx): tx is TokenTransaction => tx !== null);
+  return value.map(normalizeTransaction).filter((tx): tx is TokenTransaction => tx !== null);
 }
 
 function buildLegacyState(): TokenStateStore {
   const legacyState = parseTokenState(appStore.get(LEGACY_BALANCE_KEY));
-  const legacyBalances = LEGACY_USER_TOKENS_KEYS
-    .map((key) => asNumber(appStore.get(key)))
-    .filter((value): value is number => value !== null);
+  const legacyBalances = LEGACY_USER_TOKENS_KEYS.map((key) => asNumber(appStore.get(key))).filter(
+    (value): value is number => value !== null,
+  );
 
   const inferredBalance = legacyBalances.length > 0 ? Math.max(...legacyBalances) : 0;
 
@@ -239,6 +263,9 @@ function appendTransaction(transaction: TokenTransaction): void {
   stateCache.updatedAt = Date.now();
   trimOldTransactions(90);
   saveStateAndTransactions();
+  // Fires only on real earn/spend mutations (never on initial load), so
+  // subscribers can refresh without setState-during-render hazards.
+  notifyTokenListeners();
 }
 
 function applyEarning(amount: number, reason: string, relatedId?: string): TokenTransaction {
@@ -256,7 +283,11 @@ function applyEarning(amount: number, reason: string, relatedId?: string): Token
   return transaction;
 }
 
-function applySpending(amount: number, reason: string, relatedId?: string): TokenTransaction | null {
+function applySpending(
+  amount: number,
+  reason: string,
+  relatedId?: string,
+): TokenTransaction | null {
   ensureLoaded();
 
   if (!stateCache) {
@@ -296,7 +327,11 @@ export function getTokenStats(): TokenBalance {
   };
 }
 
-export function earnTokens(amount: number, reason: string, relatedId?: string): TokenTransaction | null {
+export function earnTokens(
+  amount: number,
+  reason: string,
+  relatedId?: string,
+): TokenTransaction | null {
   const normalized = normalizeAmount(amount);
   if (normalized <= 0) {
     return null;
@@ -360,9 +395,7 @@ export function syncTokenBalanceFromLegacy(
 export function getRecentTransactions(limit = 10): TokenTransaction[] {
   ensureLoaded();
   const max = Math.max(1, Math.floor(limit));
-  return [...(transactionsCache ?? [])]
-    .sort((a, b) => b.timestamp - a.timestamp)
-    .slice(0, max);
+  return [...(transactionsCache ?? [])].sort((a, b) => b.timestamp - a.timestamp).slice(0, max);
 }
 
 export function getTransactionsByType(type: 'earn' | 'spend', limit = 20): TokenTransaction[] {

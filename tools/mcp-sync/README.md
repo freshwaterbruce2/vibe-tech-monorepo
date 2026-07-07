@@ -6,17 +6,18 @@ and Hermes stay in sync instead of drifting.
 
 ## Why
 
-MCP the *protocol* is universal; the *config* is not. Each tool uses a different
+MCP the _protocol_ is universal; the _config_ is not. Each tool uses a different
 file, format, and field names:
 
-| Tool | File | Format |
-|------|------|--------|
-| Claude Code | `V:\monorepo\.mcp.json` | JSON (`mcpServers`, `type`) |
-| Gemini CLI | `~/.gemini/settings.json` | JSON (`mcpServers`, `httpUrl`) |
-| Antigravity | `~/.gemini/antigravity-cli/settings.json` | JSON |
-| Codex | `~/.codex/config.toml` | TOML (`[mcp_servers.*]`) |
-| Cursor | `~/.cursor/mcp.json` | JSON (`url`) |
-| Hermes | `~/.hermes/config.yaml` | YAML (`mcp_servers:`) |
+| Tool        | File                                      | Format                         |
+| ----------- | ----------------------------------------- | ------------------------------ |
+| Claude Code | `V:\monorepo\.mcp.json`                   | JSON (`mcpServers`, `type`)    |
+| Gemini CLI  | `~/.gemini/settings.json`                 | JSON (`mcpServers`, `httpUrl`) |
+| Antigravity | `~/.gemini/antigravity-cli/settings.json` | JSON                           |
+| Codex       | `~/.codex/config.toml`                    | TOML (`[mcp_servers.*]`)       |
+| Cursor      | `~/.cursor/mcp.json`                      | JSON (`url`)                   |
+| Kimi Code   | `~/.kimi-code/mcp.json`                   | JSON (same shape as Cursor)    |
+| Hermes      | `~/.hermes/config.yaml`                   | YAML (`mcp_servers:`)          |
 
 ## Workflow
 
@@ -41,7 +42,7 @@ node tools/mcp-sync/sync.mjs --out-dir D:/temp/mcp-render
   every other setting is preserved.
 - **Backups** — every target is copied to `D:\backups\mcp-sync\` before writing.
 - **Dry-run by default** — nothing is written without `--apply`.
-- **Secrets never written literally** — the registry stores env-var *names*
+- **Secrets never written literally** — the registry stores env-var _names_
   (`secretEnv`); each tool gets its native env-ref (`${VAR}` for Claude/Gemini,
   `bearer_token_env_var` for Codex).
 - **Windows command resolution** — logical `node`/`npx`/`uvx` are rendered to the
@@ -54,19 +55,19 @@ node tools/mcp-sync/sync.mjs --out-dir D:/temp/mcp-render
 {
   "servers": {
     "my-server": {
-      "transport": "stdio",            // or "http"
-      "command": "node",               // logical; resolved per-platform
+      "transport": "stdio", // or "http"
+      "command": "node", // logical; resolved per-platform
       "args": ["V:/monorepo/.../index.js"],
       "env": { "FOO": "bar" },
-      "enabledFor": ["claude","gemini","codex"], // optional; defaults to all
-      "claude": { "alwaysLoad": true } // optional Claude-only passthrough
+      "enabledFor": ["claude", "gemini", "codex"], // optional; defaults to all
+      "claude": { "alwaysLoad": true }, // optional Claude-only passthrough
     },
     "remote": {
       "transport": "http",
       "url": "https://api.example.com/mcp",
-      "secretEnv": "EXAMPLE_API_KEY"   // -> Bearer ${EXAMPLE_API_KEY}
-    }
-  }
+      "secretEnv": "EXAMPLE_API_KEY", // -> Bearer ${EXAMPLE_API_KEY}
+    },
+  },
 }
 ```
 

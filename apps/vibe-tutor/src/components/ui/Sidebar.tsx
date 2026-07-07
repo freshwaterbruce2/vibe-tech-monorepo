@@ -17,6 +17,7 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { getWelcomeMessage } from '../../config';
 import type { View } from '../../types';
 import { GradientDefs, GradientIcon } from './icons/GradientIcon';
 import { VibeTechLogo } from './icons/VibeTechLogo';
@@ -26,6 +27,7 @@ interface SidebarProps {
   onNavigate: (view: View) => void;
   isCollapsed?: boolean;
   onToggle?: () => void;
+  userName?: string;
 }
 
 /** All navigation items — desktop sidebar shows all, mobile shows primary 5 + "More" */
@@ -61,9 +63,16 @@ const MOBILE_PRIMARY: View[] = ['dashboard', 'tutor', 'friend', 'music', 'sensor
 const primaryNavItems = navItems.filter((item) => MOBILE_PRIMARY.includes(item.view as View));
 const secondaryNavItems = navItems.filter((item) => !MOBILE_PRIMARY.includes(item.view as View));
 
-const Sidebar = ({ currentView, onNavigate, isCollapsed = false, onToggle }: SidebarProps) => {
+const Sidebar = ({
+  currentView,
+  onNavigate,
+  isCollapsed = false,
+  onToggle,
+  userName,
+}: SidebarProps) => {
   const [moreOpen, setMoreOpen] = useState(false);
   const shouldHideMobileNav = currentView === 'onboarding';
+  const welcomeMessage = getWelcomeMessage(userName?.trim() || undefined);
 
   useEffect(() => {
     if (shouldHideMobileNav && moreOpen) {
@@ -94,7 +103,9 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed = false, onToggle }: Sid
               {!isCollapsed && (
                 <div>
                   <h1 className="text-xl font-bold neon-text-primary">Vibe-Tech</h1>
-                  <p className="text-sm text-[var(--text-secondary)] opacity-80">AI Tutor</p>
+                  <p className="text-sm text-[var(--text-secondary)] opacity-80">
+                    {welcomeMessage}
+                  </p>
                 </div>
               )}
             </div>
@@ -206,7 +217,9 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed = false, onToggle }: Sid
                     gradientId={currentView === view ? 'vibe-gradient-mobile' : gradient}
                     className="mb-1"
                   />
-                  <span className="text-[10px] font-medium leading-tight text-center break-words w-full truncate text-wrap">{label}</span>
+                  <span className="text-[10px] font-medium leading-tight text-center break-words w-full truncate text-wrap">
+                    {label}
+                  </span>
                 </button>
               ))}
               {/* Parent Zone in More menu */}
@@ -226,7 +239,9 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed = false, onToggle }: Sid
                   }
                   className="mb-1"
                 />
-                <span className="text-[10px] font-medium leading-tight text-center break-words w-full truncate text-wrap">Parent</span>
+                <span className="text-[10px] font-medium leading-tight text-center break-words w-full truncate text-wrap">
+                  Parent
+                </span>
               </button>
             </div>
           </div>
@@ -257,7 +272,9 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed = false, onToggle }: Sid
                   gradientId={currentView === view ? 'vibe-gradient-mobile' : gradient}
                   className="mb-0.5"
                 />
-                <span className="text-[10px] font-medium leading-tight text-center break-words w-full truncate text-wrap">{label}</span>
+                <span className="text-[10px] font-medium leading-tight text-center break-words w-full truncate text-wrap">
+                  {label}
+                </span>
               </button>
             ))}
             {/* More button */}
@@ -272,7 +289,9 @@ const Sidebar = ({ currentView, onNavigate, isCollapsed = false, onToggle }: Sid
               title="More"
             >
               <Menu className="w-[22px] h-[22px] mb-0.5" />
-              <span className="text-[10px] font-medium leading-tight text-center break-words w-full truncate text-wrap">More</span>
+              <span className="text-[10px] font-medium leading-tight text-center break-words w-full truncate text-wrap">
+                More
+              </span>
             </button>
           </div>
         </nav>

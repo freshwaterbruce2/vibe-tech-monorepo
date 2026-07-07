@@ -38,7 +38,9 @@ function createCanonicalSchema(db: Database.Database): void {
       context        TEXT,
       tools_used     TEXT,
       error_message  TEXT,
-      started_at     TEXT NOT NULL DEFAULT (datetime('now'))
+      started_at     TEXT NOT NULL DEFAULT (datetime('now')),
+      selected_model TEXT,
+      tokens_used    INTEGER
     );
     CREATE TABLE IF NOT EXISTS success_patterns (
       id               INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -106,11 +108,22 @@ describe('LearningBridge — schema contract', () => {
   });
 
   it('can query agent_executions using canonical column names (agent_id, execution_time_ms, started_at)', () => {
-    insertExecution(db, { executionId: 'e1', agentId: 'nova-agent', startedAt: '2026-01-01T00:00:00' });
+    insertExecution(db, {
+      executionId: 'e1',
+      agentId: 'nova-agent',
+      startedAt: '2026-01-01T00:00:00',
+    });
 
     const row = db
-      .prepare('SELECT execution_id, agent_id, execution_time_ms, started_at FROM agent_executions WHERE agent_id = ?')
-      .get('nova-agent') as { execution_id: string; agent_id: string; execution_time_ms: number; started_at: string };
+      .prepare(
+        'SELECT execution_id, agent_id, execution_time_ms, started_at FROM agent_executions WHERE agent_id = ?',
+      )
+      .get('nova-agent') as {
+      execution_id: string;
+      agent_id: string;
+      execution_time_ms: number;
+      started_at: string;
+    };
 
     expect(row.execution_id).toBe('e1');
     expect(row.agent_id).toBe('nova-agent');
@@ -161,8 +174,16 @@ describe('LearningBridge — sinceTimestamp watermark', () => {
   });
 
   it('ingestExecutions without sinceTimestamp ingests all rows', async () => {
-    insertExecution(db, { executionId: 'e1', agentId: 'nova-agent', startedAt: '2026-01-01T00:00:00' });
-    insertExecution(db, { executionId: 'e2', agentId: 'nova-agent', startedAt: '2026-01-02T00:00:00' });
+    insertExecution(db, {
+      executionId: 'e1',
+      agentId: 'nova-agent',
+      startedAt: '2026-01-01T00:00:00',
+    });
+    insertExecution(db, {
+      executionId: 'e2',
+      agentId: 'nova-agent',
+      startedAt: '2026-01-02T00:00:00',
+    });
     db.close();
 
     const { manager, addManySpy } = buildMemoryManager();
@@ -178,8 +199,16 @@ describe('LearningBridge — sinceTimestamp watermark', () => {
   });
 
   it('ingestExecutions with sinceTimestamp only ingests newer rows', async () => {
-    insertExecution(db, { executionId: 'old', agentId: 'nova-agent', startedAt: '2026-01-01T00:00:00' });
-    insertExecution(db, { executionId: 'new', agentId: 'nova-agent', startedAt: '2026-01-03T00:00:00' });
+    insertExecution(db, {
+      executionId: 'old',
+      agentId: 'nova-agent',
+      startedAt: '2026-01-01T00:00:00',
+    });
+    insertExecution(db, {
+      executionId: 'new',
+      agentId: 'nova-agent',
+      startedAt: '2026-01-03T00:00:00',
+    });
     db.close();
 
     const { manager, addManySpy } = buildMemoryManager();
@@ -195,7 +224,11 @@ describe('LearningBridge — sinceTimestamp watermark', () => {
   });
 
   it('second sync with previous timestamp ingests zero new executions', async () => {
-    insertExecution(db, { executionId: 'e1', agentId: 'nova-agent', startedAt: '2026-01-01T10:00:00' });
+    insertExecution(db, {
+      executionId: 'e1',
+      agentId: 'nova-agent',
+      startedAt: '2026-01-01T10:00:00',
+    });
     db.close();
 
     const { manager, addManySpy } = buildMemoryManager();
@@ -218,6 +251,82 @@ describe('LearningBridge — sinceTimestamp watermark', () => {
   });
 });
 
+describe('LearningBridge — recordExecution', () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    cleanup();
+    db = new Database(LEARNING_DB);
+    createCanonicalSchema(db);
+    db.close();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('persists selected_model and tokens_used columns', () => {
+    const { manager } = buildMemoryManager();
+    const bridge = new LearningBridge(manager, LEARNING_DB);
+
+    const ok = bridge.recordExecution({
+      agentId: 'vibe-code-studio-ai',
+      projectName: 'vibe-code-studio',
+      taskType: 'chat-generation',
+      success: true,
+      executionTimeMs: 1234,
+      context: 'hello',
+      selectedModel: 'deepseek-r1',
+      tokensUsed: 512,
+    });
+
+    expect(ok).toBe(true);
+
+    const verify = new Database(LEARNING_DB);
+    const row = verify
+      .prepare(
+        'SELECT agent_id, project_name, selected_model, tokens_used FROM agent_executions WHERE agent_id = ?',
+      )
+      .get('vibe-code-studio-ai') as {
+      agent_id: string;
+      project_name: string;
+      selected_model: string;
+      tokens_used: number;
+    };
+    verify.close();
+
+    expect(row.project_name).toBe('vibe-code-studio');
+    expect(row.selected_model).toBe('deepseek-r1');
+    expect(row.tokens_used).toBe(512);
+
+    bridge.close();
+  });
+
+  it('writes NULL for selected_model and tokens_used when omitted', () => {
+    const { manager } = buildMemoryManager();
+    const bridge = new LearningBridge(manager, LEARNING_DB);
+
+    const ok = bridge.recordExecution({
+      agentId: 'nova-agent',
+      taskType: 'analysis',
+      success: false,
+    });
+
+    expect(ok).toBe(true);
+
+    const verify = new Database(LEARNING_DB);
+    const row = verify
+      .prepare('SELECT selected_model, tokens_used FROM agent_executions WHERE agent_id = ?')
+      .get('nova-agent') as { selected_model: string | null; tokens_used: number | null };
+    verify.close();
+
+    expect(row.selected_model).toBeNull();
+    expect(row.tokens_used).toBeNull();
+
+    bridge.close();
+  });
+});
+
 describe('LearningBridge — getAgentContext', () => {
   let db: Database.Database;
 
@@ -233,8 +342,17 @@ describe('LearningBridge — getAgentContext', () => {
   });
 
   it('returns executions only for the requested agent_id', () => {
-    insertExecution(db, { executionId: 'nova1', agentId: 'nova-agent', startedAt: '2026-01-01T00:00:00', success: true });
-    insertExecution(db, { executionId: 'other1', agentId: 'crypto-expert', startedAt: '2026-01-01T00:00:00' });
+    insertExecution(db, {
+      executionId: 'nova1',
+      agentId: 'nova-agent',
+      startedAt: '2026-01-01T00:00:00',
+      success: true,
+    });
+    insertExecution(db, {
+      executionId: 'other1',
+      agentId: 'crypto-expert',
+      startedAt: '2026-01-01T00:00:00',
+    });
     db.close();
 
     const { manager } = buildMemoryManager();
@@ -250,8 +368,18 @@ describe('LearningBridge — getAgentContext', () => {
   });
 
   it('stats.successRate reflects actual success column values', () => {
-    insertExecution(db, { executionId: 'ok', agentId: 'nova-agent', startedAt: '2026-01-01T00:00:00', success: true });
-    insertExecution(db, { executionId: 'fail', agentId: 'nova-agent', startedAt: '2026-01-02T00:00:00', success: false });
+    insertExecution(db, {
+      executionId: 'ok',
+      agentId: 'nova-agent',
+      startedAt: '2026-01-01T00:00:00',
+      success: true,
+    });
+    insertExecution(db, {
+      executionId: 'fail',
+      agentId: 'nova-agent',
+      startedAt: '2026-01-02T00:00:00',
+      success: false,
+    });
     db.close();
 
     const { manager } = buildMemoryManager();
