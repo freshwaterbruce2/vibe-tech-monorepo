@@ -139,6 +139,7 @@ node_modules/.vite/
 # Test coverage
 coverage/
 coverage-report/
+coverage-*/
 *.lcov
 *.coverage
 .nyc_output
