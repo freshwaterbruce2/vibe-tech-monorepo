@@ -21,6 +21,7 @@ import { AutoFixService } from '../../services/AutoFixService';
 import type { DetectedError } from '../../services/ErrorDetector';
 import { ErrorDetector } from '../../services/ErrorDetector';
 import { logger } from '../../services/Logger';
+import { recordDiffArtifact, runArtifactAction } from '../../services/artifacts/artifactCapture';
 import { SearchService } from '../../services/SearchService';
 import type { SearchOptions } from '../../services/SearchService';
 import { useAIStore } from '../../stores/useAIStore';
@@ -589,6 +590,18 @@ export function useAppHandlers(props: UseAppHandlersProps) {
           showSuccess(
             'Changes Applied',
             `Successfully applied changes to ${result.appliedFiles.length} file(s)`
+          );
+
+          // Spec 09 AC #4: applied multi-file edits produce a reviewable diff artifact
+          runArtifactAction(
+            () =>
+              recordDiffArtifact(
+                multiFileEditPlan.id,
+                `Applied edits — ${multiFileEditPlan.description}`,
+                selectedChanges,
+                multiFileEditPlan.estimatedImpact
+              ),
+            'multi-file diff record'
           );
 
           if (currentFile && selectedFiles.includes(currentFile.path)) {
