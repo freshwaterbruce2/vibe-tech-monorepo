@@ -23,6 +23,6 @@
     "@vitejs/plugin-react": "^5.2.0",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vitest": "^4.1.9"
+    "vitest": "catalog:"
   }
 }

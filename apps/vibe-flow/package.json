@@ -31,6 +31,6 @@
     "jsdom": "^25.0.1",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vitest": "^4"
+    "vitest": "catalog:"
   }
 }

@@ -34,7 +34,7 @@
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "^5.2.0",
-    "autoprefixer": "^10.4.27",
+    "autoprefixer": "catalog:",
     "postcss": "^8.5.8",
     "tailwindcss": "catalog:",
     "typescript": "catalog:",

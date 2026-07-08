@@ -40,6 +40,6 @@
     "eslint": "^9.39.4",
     "jsdom": "28.0.0",
     "typescript": "catalog:",
-    "vitest": "^4.1.9"
+    "vitest": "catalog:"
   }
 }

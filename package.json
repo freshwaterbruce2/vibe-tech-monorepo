@@ -345,9 +345,9 @@
     "@types/react-dom": "catalog:",
     "@vibetech/factory": "workspace:*",
     "@vitejs/plugin-react": "^5.2.0",
-    "@vitest/coverage-v8": "^4.1.9",
-    "@vitest/ui": "^4.1.9",
-    "autoprefixer": "^10.4.27",
+    "@vitest/coverage-v8": "catalog:",
+    "@vitest/ui": "catalog:",
+    "autoprefixer": "catalog:",
     "better-sqlite3": "catalog:",
     "cross-env": "^10.1.0",
     "eslint": "^9.39.4",
@@ -375,7 +375,7 @@
     "vercel": "^54.5.1",
     "verdaccio": "^6.3.2",
     "vite": "catalog:",
-    "vitest": "^4.1.9"
+    "vitest": "catalog:"
   },
   "optionalDependencies": {
     "@rollup/rollup-win32-x64-msvc": "4.59.0"

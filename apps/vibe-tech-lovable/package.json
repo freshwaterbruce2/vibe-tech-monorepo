@@ -94,7 +94,7 @@
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "^5.2.0",
     "@vitejs/plugin-react-swc": "^4.3.0",
-    "autoprefixer": "^10.4.27",
+    "autoprefixer": "catalog:",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
@@ -109,6 +109,6 @@
     "typescript-eslint": "^8.57.2",
     "vite": "catalog:",
     "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^4.1.9"
+    "vitest": "catalog:"
   }
 }

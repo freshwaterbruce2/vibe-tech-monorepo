@@ -45,7 +45,7 @@
     "@types/react": "catalog:",
     "eslint": "^9.39.4",
     "typescript": "catalog:",
-    "vitest": "^4.1.9"
+    "vitest": "catalog:"
   },
   "private": true
 }

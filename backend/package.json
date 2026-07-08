@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.14",
-    "vitest": "^4.1.9",
+    "vitest": "catalog:",
     "supertest": "^7.0.0"
   }
 }

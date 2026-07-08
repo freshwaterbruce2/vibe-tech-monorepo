@@ -27,10 +27,10 @@
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^25.5.0",
-    "autoprefixer": "^10.4.27",
+    "autoprefixer": "catalog:",
     "esbuild": "0.27.3",
     "tailwindcss": "catalog:",
-    "tsx": "^4.21.0",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:"
   }

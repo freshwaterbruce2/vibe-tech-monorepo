@@ -146,8 +146,8 @@
     "@typescript-eslint/eslint-plugin": "^8.57.2",
     "@typescript-eslint/parser": "^8.57.2",
     "@vitejs/plugin-react": "^5.2.0",
-    "@vitest/ui": "^4.1.9",
-    "autoprefixer": "^10.4.27",
+    "@vitest/ui": "catalog:",
+    "autoprefixer": "catalog:",
     "common-tags": "^1.8.2",
     "critical": "^7.2.1",
     "eslint": "^9.39.4",
@@ -163,12 +163,12 @@
     "sharp": "^0.34.5",
     "tailwindcss": "catalog:",
     "ts-node": "^10.9.2",
-    "tsx": "^4.21.0",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "typescript-eslint": "^8.57.2",
     "vite": "catalog:",
     "vite-plugin-pwa": "^1.2.0",
-    "vitest": "^4.1.9",
+    "vitest": "catalog:",
     "wrangler": "^4.77.0"
   }
 }

@@ -54,7 +54,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
+    "@types/better-sqlite3": "catalog:",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.5.0",
     "@types/react": "catalog:",
@@ -62,7 +62,7 @@
     "@typescript-eslint/eslint-plugin": "^8.57.2",
     "@typescript-eslint/parser": "^8.57.2",
     "@vitejs/plugin-react": "^5.2.0",
-    "autoprefixer": "^10.4.27",
+    "autoprefixer": "catalog:",
     "camelcase-css": "^2.0.1",
     "cross-env": "^10.1.0",
     "eslint": "^9.39.4",
@@ -70,9 +70,9 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "postcss": "^8.5.8",
     "tailwindcss": "catalog:",
-    "tsx": "^4.21.0",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vitest": "^4.1.9"
+    "vitest": "catalog:"
   }
 }

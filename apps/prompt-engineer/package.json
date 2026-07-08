@@ -44,10 +44,10 @@
     "@types/react-dom": "catalog:",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^5.2.0",
-    "autoprefixer": "^10.4.27",
+    "autoprefixer": "catalog:",
     "postcss": "^8.5.8",
     "tailwindcss": "catalog:",
-    "tsx": "^4.19.4",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:"
   }

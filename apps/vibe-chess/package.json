@@ -47,9 +47,9 @@
     "@capacitor/cli": "^8.3.1",
     "@types/express": "^4.17.21",
     "@types/node": "^25.5.0",
-    "autoprefixer": "^10.4.21",
+    "autoprefixer": "catalog:",
     "tailwindcss": "catalog:",
-    "tsx": "^4.21.0",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:"
   }

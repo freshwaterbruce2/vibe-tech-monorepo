@@ -39,7 +39,7 @@
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react-swc": "^3.9.1",
     "tailwindcss": "catalog:",
-    "tsx": "^4.19.4",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:"
   }

@@ -26,7 +26,7 @@
     "@types/node": "^25.5.0",
     "@types/react": "catalog:",
     "typescript": "catalog:",
-    "vitest": "^4.1.9"
+    "vitest": "catalog:"
   },
   "engines": {
     "node": ">=22.0.0",
