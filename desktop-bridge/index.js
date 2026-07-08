@@ -1,9 +1,10 @@
+/* eslint-disable no-console -- CLI/server entrypoint; stdout logging is intentional */
 import { spawn } from 'node:child_process';
 import path from 'node:path';
-import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import Fastify from 'fastify';
 import fastifyCors from '@fastify/cors';
+// eslint-disable-next-line @nx/enforce-module-boundaries -- external pkg (non-Nx project)
 import fastifyWebsocket from '@fastify/websocket';
 import dotenv from 'dotenv';
 
@@ -11,78 +12,52 @@ import dotenv from 'dotenv';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '.env') });
 
-const port = parseInt(process.env.CC_BRIDGE_PORT || '8743', 10);
-const host = process.env.CC_BRIDGE_HOST || '0.0.0.0';
-const token = process.env.CC_BRIDGE_TOKEN;
-const workspaceRoot = process.env.WORKSPACE_ROOT || 'V:\\monorepo';
+// desktop-bridge lives at <repo-root>/desktop-bridge, so the parent is the repo
+// root. Derived from the script location so it stays drive-agnostic.
+const REPO_ROOT = path.resolve(__dirname, '..');
 
-if (!token) {
-  console.warn('[Warning] CC_BRIDGE_TOKEN is not defined in the environment. All requests will be accepted.');
+// Authentication helper factory. Returns true when no token is configured.
+function createAuthChecker(token) {
+  return (req) => {
+    if (!token) return true;
+
+    // Check Authorization header
+    const authHeader = req.headers['authorization'];
+    if (authHeader) {
+      const provided = authHeader.replace(/^Bearer\s+/i, '').trim();
+      if (provided === token) return true;
+    }
+
+    // Check query parameter
+    const queryToken = req.query?.token;
+    if (queryToken === token) return true;
+
+    return false;
+  };
 }
 
-const fastify = Fastify({
-  logger: true
-});
+function registerHealthRoute(app) {
+  // Public Health Check
+  app.get('/health', () => ({ status: 'ok' }));
+}
 
-// Enable CORS
-await fastify.register(fastifyCors, {
-  origin: true,
-  credentials: true
-});
-
-// Enable WebSockets
-await fastify.register(fastifyWebsocket);
-
-// Authentication helper
-const isAuthenticated = (req) => {
-  if (!token) return true;
-  
-  // Check Authorization header
-  const authHeader = req.headers['authorization'];
-  if (authHeader) {
-    const provided = authHeader.replace(/^Bearer\s+/i, '').trim();
-    if (provided === token) return true;
-  }
-
-  // Check query parameter
-  const queryToken = req.query?.token;
-  if (queryToken === token) return true;
-
-  return false;
-};
-
-// -----------------------------------------------------------------------------
-// REST Routes
-// -----------------------------------------------------------------------------
-
-// Public Health Check
-fastify.get('/health', async (request, reply) => {
-  return { status: 'ok' };
-});
-
-// Authenticated Build Endpoint
-fastify.post('/build/:project', async (request, reply) => {
-  if (!isAuthenticated(request)) {
-    reply.status(401).send({ error: 'Unauthorized' });
-    return;
-  }
-
-  const project = request.params.project;
-  if (!project) {
-    reply.status(400).send({ error: 'Project name is required' });
-    return;
-  }
-
+// Stream a `pnpm run build:<project>` invocation back to the client over the raw
+// response. Shared by both /build routes.
+function startBuildStream(reply, project, workspaceRoot) {
   reply.header('Content-Type', 'text/plain; charset=utf-8');
   reply.header('Transfer-Encoding', 'chunked');
 
   console.log(`[Build] Starting build for project: ${project}`);
-  
+
   // Use PowerShell 7 to execute pnpm run build:<project> in workspace root
-  const child = spawn('pwsh', ['-NoProfile', '-NonInteractive', '-Command', `pnpm run build:${project}`], {
-    cwd: workspaceRoot,
-    env: { ...process.env }
-  });
+  const child = spawn(
+    'pwsh',
+    ['-NoProfile', '-NonInteractive', '-Command', `pnpm run build:${project}`],
+    {
+      cwd: workspaceRoot,
+      env: { ...process.env },
+    },
+  );
   child.stdin.end();
 
   child.stdout.on('data', (data) => {
@@ -97,135 +72,187 @@ fastify.post('/build/:project', async (request, reply) => {
     reply.raw.write(`\n[Build Finished] Process exited with code ${code}\n`);
     reply.raw.end();
   });
-});
+}
 
-// Alternative POST /build with JSON body
-fastify.post('/build', async (request, reply) => {
-  if (!isAuthenticated(request)) {
-    reply.status(401).send({ error: 'Unauthorized' });
-    return;
-  }
-
-  const body = request.body || {};
-  const project = body.project || request.query?.project;
-
-  if (!project) {
-    reply.status(400).send({ error: 'Project name is required in request body or query parameter' });
-    return;
-  }
-
-  reply.header('Content-Type', 'text/plain; charset=utf-8');
-  reply.header('Transfer-Encoding', 'chunked');
-
-  console.log(`[Build] Starting build for project: ${project}`);
-
-  const child = spawn('pwsh', ['-NoProfile', '-NonInteractive', '-Command', `pnpm run build:${project}`], {
-    cwd: workspaceRoot,
-    env: { ...process.env }
-  });
-  child.stdin.end();
-
-  child.stdout.on('data', (data) => {
-    reply.raw.write(data);
-  });
-
-  child.stderr.on('data', (data) => {
-    reply.raw.write(data);
-  });
-
-  child.on('close', (code) => {
-    reply.raw.write(`\n[Build Finished] Process exited with code ${code}\n`);
-    reply.raw.end();
-  });
-});
-
-// -----------------------------------------------------------------------------
-// WebSocket Route
-// -----------------------------------------------------------------------------
-
-// WebSockets at /ws
-fastify.route({
-  method: 'GET',
-  url: '/ws',
-  handler: async (request, reply) => {
-    // Normal HTTP requests to /ws get 400
-    reply.status(400).send({ error: 'WebSocket connection expected' });
-  },
-  wsHandler: (connection, req) => {
-    console.log('[WS] Client connecting...');
-
-    // Authenticate WebSocket connection
-    const tokenQuery = req.query?.token;
-    if (token && tokenQuery !== token) {
-      console.log('[WS] Authentication failed: invalid token.');
-      connection.socket.send(JSON.stringify({ type: 'error', message: 'Unauthorized' }));
-      connection.socket.close();
+function registerBuildRoutes(app, { isAuthenticated, workspaceRoot }) {
+  // Authenticated Build Endpoint
+  app.post('/build/:project', (request, reply) => {
+    if (!isAuthenticated(request)) {
+      reply.status(401).send({ error: 'Unauthorized' });
       return;
     }
 
-    connection.socket.send(JSON.stringify({ type: 'info', message: 'Connected and authenticated to Desktop Bridge' }));
+    const { project } = request.params;
+    if (!project) {
+      reply.status(400).send({ error: 'Project name is required' });
+      return;
+    }
 
-    connection.socket.on('message', (message) => {
-      try {
-        const payload = JSON.parse(message.toString());
-        console.log(`[WS] Received payload:`, payload);
+    startBuildStream(reply, project, workspaceRoot);
+  });
 
-        if (payload.type === 'ping') {
-          connection.socket.send(JSON.stringify({ type: 'pong' }));
-          return;
-        }
+  // Alternative POST /build with JSON body
+  app.post('/build', (request, reply) => {
+    if (!isAuthenticated(request)) {
+      reply.status(401).send({ error: 'Unauthorized' });
+      return;
+    }
 
-        if (payload.type === 'exec') {
-          const command = payload.command;
-          if (!command) {
-            connection.socket.send(JSON.stringify({ type: 'error', message: 'No command provided' }));
-            return;
-          }
+    const body = request.body || {};
+    const project = body.project || request.query?.project;
 
-          console.log(`[WS Exec] Running command: ${command}`);
-          const child = spawn('pwsh', ['-NoProfile', '-NonInteractive', '-Command', '-'], {
-            cwd: workspaceRoot,
-            env: { ...process.env }
-          });
+    if (!project) {
+      reply
+        .status(400)
+        .send({ error: 'Project name is required in request body or query parameter' });
+      return;
+    }
 
-          child.stdout.on('data', (data) => {
-            connection.socket.send(JSON.stringify({ type: 'stdout', data: data.toString() }));
-          });
+    startBuildStream(reply, project, workspaceRoot);
+  });
+}
 
-          child.stderr.on('data', (data) => {
-            connection.socket.send(JSON.stringify({ type: 'stderr', data: data.toString() }));
-          });
+// Spawn a PowerShell process for a WS `exec` payload and stream its output back.
+function runExec(socket, command, workspaceRoot) {
+  console.log(`[WS Exec] Running command: ${command}`);
+  const child = spawn('pwsh', ['-NoProfile', '-NonInteractive', '-Command', '-'], {
+    cwd: workspaceRoot,
+    env: { ...process.env },
+  });
 
-          child.on('error', (err) => {
-            console.error('[WS Exec Error] Failed to start child:', err);
-            connection.socket.send(JSON.stringify({ type: 'error', message: `Spawn error: ${err.message}` }));
-          });
+  child.stdout.on('data', (data) => {
+    socket.send(JSON.stringify({ type: 'stdout', data: data.toString() }));
+  });
 
-          child.on('close', (code) => {
-            connection.socket.send(JSON.stringify({ type: 'exit', code }));
-          });
+  child.stderr.on('data', (data) => {
+    socket.send(JSON.stringify({ type: 'stderr', data: data.toString() }));
+  });
 
-          child.stdin.write(command);
-          child.stdin.end();
-        }
-      } catch (err) {
-        connection.socket.send(JSON.stringify({ type: 'error', message: `Parse error: ${err.message}` }));
+  child.on('error', (err) => {
+    console.error('[WS Exec Error] Failed to start child:', err);
+    socket.send(JSON.stringify({ type: 'error', message: `Spawn error: ${err.message}` }));
+  });
+
+  child.on('close', (code) => {
+    socket.send(JSON.stringify({ type: 'exit', code }));
+  });
+
+  child.stdin.write(command);
+  child.stdin.end();
+}
+
+// Handle a single inbound WS message (ping / exec).
+function handleWsMessage(socket, message, workspaceRoot) {
+  try {
+    const payload = JSON.parse(message.toString());
+    console.log(`[WS] Received payload:`, payload);
+
+    if (payload.type === 'ping') {
+      socket.send(JSON.stringify({ type: 'pong' }));
+      return;
+    }
+
+    if (payload.type === 'exec') {
+      const { command } = payload;
+      if (!command) {
+        socket.send(JSON.stringify({ type: 'error', message: 'No command provided' }));
+        return;
       }
-    });
 
-    connection.socket.on('close', () => {
-      console.log('[WS] Client disconnected');
-    });
+      runExec(socket, command, workspaceRoot);
+    }
+  } catch (err) {
+    socket.send(JSON.stringify({ type: 'error', message: `Parse error: ${err.message}` }));
   }
-});
+}
 
-// Start Server
-try {
-  await fastify.listen({ port, host });
-  console.log(`\n[Bridge] 🚀 Server running at http://${host}:${port}`);
-  console.log(`[Bridge] Accessible locally via http://localhost:${port}`);
-  console.log(`[Bridge] Security token active: ${token ? 'YES' : 'NO'}\n`);
-} catch (err) {
-  fastify.log.error(err);
-  process.exit(1);
+function registerWsRoute(app, { token, workspaceRoot }) {
+  // WebSockets at /ws
+  app.route({
+    method: 'GET',
+    url: '/ws',
+    handler: (_request, reply) => {
+      // Normal HTTP requests to /ws get 400
+      reply.status(400).send({ error: 'WebSocket connection expected' });
+    },
+    wsHandler: (socket, req) => {
+      console.log('[WS] Client connecting...');
+
+      // Authenticate WebSocket connection
+      const tokenQuery = req.query?.token;
+      if (token && tokenQuery !== token) {
+        console.log('[WS] Authentication failed: invalid token.');
+        socket.send(JSON.stringify({ type: 'error', message: 'Unauthorized' }));
+        socket.close();
+        return;
+      }
+
+      socket.send(
+        JSON.stringify({ type: 'info', message: 'Connected and authenticated to Desktop Bridge' }),
+      );
+
+      socket.on('message', (message) => handleWsMessage(socket, message, workspaceRoot));
+
+      socket.on('close', () => {
+        console.log('[WS] Client disconnected');
+      });
+    },
+  });
+}
+
+/**
+ * Build the Fastify instance with cors + websocket + all routes registered,
+ * WITHOUT calling `.listen()`. Returns the instance so callers (and tests)
+ * control the lifecycle.
+ *
+ * @param {{ token?: string, workspaceRoot?: string }} opts
+ */
+export async function buildServer(opts = {}) {
+  const token = opts.token ?? process.env.CC_BRIDGE_TOKEN;
+  const workspaceRoot = opts.workspaceRoot ?? process.env.WORKSPACE_ROOT ?? REPO_ROOT;
+
+  if (!token) {
+    console.warn(
+      '[Warning] CC_BRIDGE_TOKEN is not defined in the environment. All requests will be accepted.',
+    );
+  }
+
+  const fastify = Fastify({
+    logger: true,
+  });
+
+  // Enable CORS
+  await fastify.register(fastifyCors, {
+    origin: true,
+    credentials: true,
+  });
+
+  // Enable WebSockets
+  await fastify.register(fastifyWebsocket);
+
+  const isAuthenticated = createAuthChecker(token);
+
+  registerHealthRoute(fastify);
+  registerBuildRoutes(fastify, { isAuthenticated, workspaceRoot });
+  registerWsRoute(fastify, { token, workspaceRoot });
+
+  return fastify;
+}
+
+// Start the server only when this file is executed directly as the entry point.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const port = parseInt(process.env.CC_BRIDGE_PORT || '8743', 10);
+  const host = process.env.CC_BRIDGE_HOST || '0.0.0.0';
+  const token = process.env.CC_BRIDGE_TOKEN;
+
+  const app = await buildServer();
+  try {
+    await app.listen({ port, host });
+    console.log(`\n[Bridge] 🚀 Server running at http://${host}:${port}`);
+    console.log(`[Bridge] Accessible locally via http://localhost:${port}`);
+    console.log(`[Bridge] Security token active: ${token ? 'YES' : 'NO'}\n`);
+  } catch (err) {
+    app.log.error(err);
+    process.exit(1);
+  }
 }
