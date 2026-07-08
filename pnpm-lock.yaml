@@ -98,6 +98,7 @@ overrides:
   protobufjs@>=8.0.0 <8.6.0: ^8.6.0
   ws@>=6.0.0 <6.2.4: ^6.2.4
   joi@>=18.0.0 <18.2.1: ^18.2.1
+  '@xhmikosr/decompress@>=11.0.0 <11.1.3': ^11.1.3
 
 patchedDependencies:
   nx@22.7.1:
@@ -3872,8 +3873,8 @@ importers:
         specifier: ^25.5.0
         version: 25.5.0
       '@types/nodemailer':
-        specifier: ^7.0.11
-        version: 7.0.12
+        specifier: ^8.0.1
+        version: 8.0.1
       '@types/react':
         specifier: 19.2.14
         version: 19.2.14
@@ -8534,10 +8535,6 @@ packages:
   '@google/generative-ai@0.24.1':
     resolution: {integrity: sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q==}
     engines: {node: '>=18.0.0'}
-
-  '@grpc/grpc-js@1.14.3':
-    resolution: {integrity: sha512-Iq8QQQ/7X3Sac15oB6p0FmUg/klxQvXLeileoqrTRGJYLV+/9tubbr9ipz0GKHjmXVsgFPo/+W+2cA8eNcR+XA==}
-    engines: {node: '>=12.10.0'}
 
   '@grpc/grpc-js@1.14.4':
     resolution: {integrity: sha512-k9Dj3DV/itK9D06Y8f190Qgop7/Ui+D0njFV3LHMPwPT75DpXLQohE9Wmz0QElrJnzsjB7KPWiKJbOl7IPDArQ==}
@@ -14132,8 +14129,8 @@ packages:
   '@types/node@26.1.0':
     resolution: {integrity: sha512-O0A1G3xPGy4w7AgQdAQYUlQ+BKk2Oovw8eRpofyp5KdBZULnbe+WqaOVNrm705SHphCiG4XHsACrSmPu1f+Kgw==}
 
-  '@types/nodemailer@7.0.12':
-    resolution: {integrity: sha512-80vKwiIsVSyFA1rRovH59jNPLBOuc6dRZIHEu40gXTkBkZnQv8vog1xSGEb9j5q/tdMAs5ivvDR2pLTU0hGHXA==}
+  '@types/nodemailer@8.0.1':
+    resolution: {integrity: sha512-PxpaInm8V1JQDd4j0ds5HfvWQk8JupS1C0Picb96QJsrrRDjBH+DlK7L4ZdNSqNULhiZRQHc40nLVShaGxXAMw==}
 
   '@types/normalize-package-data@2.4.4':
     resolution: {integrity: sha512-37i+OaWTh9qeK4LSHPsyRC7NahnGotNuZvjLSgcPzblpHB3rrCJxAOgI5gCdKm7coonsaX1Of0ILiTcnZjbfxA==}
@@ -14777,12 +14774,12 @@ packages:
     resolution: {integrity: sha512-1JXu2b6yrpm5EuBoOzMU57B4qrHXJKWQQ7LlMynNEiz85mEjDciO3ayf//GXaTLLCEKiHjWlU3q3THjgf7uODA==}
     engines: {node: '>=20'}
 
-  '@xhmikosr/decompress-unzip@8.1.0':
-    resolution: {integrity: sha512-hVcpEZIS8avXU1ioR0Pb2LcBYHfah1lzzTQPDItkBi3W+kSE/DxSeEgOoHJB8rn+Izm0ArWZxxlpsvEK4ySjaw==}
+  '@xhmikosr/decompress-unzip@8.2.1':
+    resolution: {integrity: sha512-2MS94QnmXQwjkKN8WyFiu1sU7J3rcWJcMze4kRYsX7tN+CXpUGECgkh4YSOhujpkWPuVlFudIziJHO/TxOqkQQ==}
     engines: {node: '>=20'}
 
-  '@xhmikosr/decompress@11.1.2':
-    resolution: {integrity: sha512-f2hlnMN1ChbifAfdzWns6mssojjr3lgJm6MtT4ttVAClx85QEIQAdGXN22bPqy/qKxbvDf93GdqbR6+xIO/a4A==}
+  '@xhmikosr/decompress@11.1.3':
+    resolution: {integrity: sha512-NiyhJq6z7ERsYghcnXZUI6ooDXgZtoB+G9eUsYhfSM4VLp2rKx9UxhKI1NEf1PqosrNPxG3bnSsr2UBVbNurlg==}
     engines: {node: '>=20'}
 
   '@xhmikosr/downloader@16.1.2':
@@ -25701,8 +25698,8 @@ packages:
   yauzl@2.10.0:
     resolution: {integrity: sha512-p4a9I6X6nu6IhoGmBqAcbJy1mlC4j27vEPZX9F4L4/vZT3Lyq1VkFHw/V/PUcB9Buo+DG3iHkT0x3Qya58zc3g==}
 
-  yauzl@3.3.0:
-    resolution: {integrity: sha512-PtGEvEP30p7sbIBJKUBjUnqgTVOyMURc4dLo9iNyAJnNIEz9pm88cCXF21w94Kg3k6RXkeZh5DHOGS0qEONvNQ==}
+  yauzl@3.4.0:
+    resolution: {integrity: sha512-jIH9yLR9wqr0wOS0TpBvo/g/2UgZH5qePVbjgRliiF0BYvOZyaBknKsF+x9Iht0O6sqgnB93rCICdOZFecJuDw==}
     engines: {node: '>=12'}
 
   yjs@13.6.30:
@@ -29118,7 +29115,7 @@ snapshots:
       '@firebase/logger': 0.5.1
       '@firebase/util': 1.15.1
       '@firebase/webchannel-wrapper': 1.0.6
-      '@grpc/grpc-js': 1.14.3
+      '@grpc/grpc-js': 1.14.4
       '@grpc/proto-loader': 0.7.15
       tslib: 2.8.1
 
@@ -29334,11 +29331,6 @@ snapshots:
       - utf-8-validate
 
   '@google/generative-ai@0.24.1': {}
-
-  '@grpc/grpc-js@1.14.3':
-    dependencies:
-      '@grpc/proto-loader': 0.8.0
-      '@js-sdsl/ordered-map': 4.4.2
 
   '@grpc/grpc-js@1.14.4':
     dependencies:
@@ -35650,7 +35642,7 @@ snapshots:
     dependencies:
       undici-types: 8.3.0
 
-  '@types/nodemailer@7.0.12':
+  '@types/nodemailer@8.0.1':
     dependencies:
       '@types/node': 22.19.15
 
@@ -37115,20 +37107,20 @@ snapshots:
       - react-native-b4a
       - supports-color
 
-  '@xhmikosr/decompress-unzip@8.1.0':
+  '@xhmikosr/decompress-unzip@8.2.1':
     dependencies:
       file-type: 21.3.4
       get-stream: 9.0.1
-      yauzl: 3.3.0
+      yauzl: 3.4.0
     transitivePeerDependencies:
       - supports-color
 
-  '@xhmikosr/decompress@11.1.2':
+  '@xhmikosr/decompress@11.1.3':
     dependencies:
       '@xhmikosr/decompress-tar': 9.0.1
       '@xhmikosr/decompress-tarbz2': 9.0.1
       '@xhmikosr/decompress-targz': 9.0.1
-      '@xhmikosr/decompress-unzip': 8.1.0
+      '@xhmikosr/decompress-unzip': 8.2.1
       graceful-fs: 4.2.11
       strip-dirs: 3.0.0
     transitivePeerDependencies:
@@ -37139,7 +37131,7 @@ snapshots:
   '@xhmikosr/downloader@16.1.2':
     dependencies:
       '@xhmikosr/archive-type': 8.0.1
-      '@xhmikosr/decompress': 11.1.2
+      '@xhmikosr/decompress': 11.1.3
       content-disposition: 1.1.0
       ext-name: 5.0.0
       file-type: 21.3.4
@@ -51835,9 +51827,8 @@ snapshots:
       buffer-crc32: 0.2.13
       fd-slicer: 1.1.0
 
-  yauzl@3.3.0:
+  yauzl@3.4.0:
     dependencies:
-      buffer-crc32: 0.2.13
       pend: 1.2.0
 
   yjs@13.6.30:
