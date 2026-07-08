@@ -12,6 +12,8 @@ dist
 dist-ssr
 space-agent/
 *.local
+scratch/
+.mcp-fleet-staging/
 
 # Editor directories and files
 .vscode/*
