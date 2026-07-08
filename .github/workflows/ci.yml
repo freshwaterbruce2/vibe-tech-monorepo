@@ -99,7 +99,11 @@ jobs:
         run: |
           $changedFiles = @(
             git diff --name-only origin/main...HEAD |
-              Where-Object { $_ -match '^(apps|packages|plugins|backend|tools)/' }
+              # Only SOURCE changes gate lint/typecheck/test. Manifest/config-only
+              # changes (package.json, tsconfig, *.yml) must not trigger whole-project
+              # legacy-debt checks; dependency correctness is covered by
+              # `pnpm install --frozen-lockfile` and the build job.
+              Where-Object { $_ -match '^(apps|packages|plugins|backend|tools)/' -and $_ -match '\.(ts|tsx|js|jsx|mjs|cjs)$' }
           )
 
           if ($changedFiles.Count -eq 0) {
