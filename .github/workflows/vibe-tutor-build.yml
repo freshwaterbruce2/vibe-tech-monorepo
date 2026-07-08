@@ -1,0 +1,90 @@
+# Vibe Tutor Desktop Build (Electron, electron-builder ^26)
+#
+# Packages the actual Windows NSIS installer on every PR/push that could touch
+# the Electron desktop build. Without this, an electron-builder config or
+# main/preload build regression would only surface on a manual local
+# `pnpm build:desktop` run — the Android/PWA CI paths do not exercise it.
+#
+# Lint/typecheck/unit tests are already covered elsewhere — this workflow
+# only builds the installer, nothing else. (build:desktop does run its own
+# internal `tsc` typecheck as a packaging prerequisite; that's unavoidable,
+# not a duplicated CI job.)
+
+name: Vibe Tutor Desktop Build
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/vibe-tutor/**'
+      - 'packages/**'
+      - '.github/workflows/vibe-tutor-build.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'apps/vibe-tutor/**'
+      - 'packages/**'
+      - '.github/workflows/vibe-tutor-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vibe-tutor-build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '10.34.1'
+  NODE_OPTIONS: '--max-old-space-size=4096'
+  # CI runners have no V:\ — override the .npmrc developer-local store-dir
+  # (store-dir=V:\pnpm-store) to a sibling of the workspace (same volume, so
+  # hard-linking stays valid, but outside the checkout so nx does not infer
+  # phantom projects from the store).
+  npm_config_store_dir: '${{ github.workspace }}-pnpm-store'
+
+jobs:
+  build:
+    name: electron-builder (Windows NSIS)
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      # electron-builder downloads Electron + winCodeSign binaries on every
+      # cold run (100MB+); cache them so repeat builds don't re-fetch.
+      - name: Cache Electron download cache
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: |
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+          key: ${{ runner.os }}-electron-${{ hashFiles('apps/vibe-tutor/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # build:desktop = typecheck -> vite build -> electron:build (tsc) ->
+      # electron:install-deps (rebuild native better-sqlite3 for Electron's
+      # Node ABI) -> electron:ensure-cjs -> electron-builder --win (NSIS).
+      - name: Build Electron installer
+        run: pnpm --filter vibe-tutor run build:desktop
+
+      - name: Upload installer
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: vibe-tutor-installer
+          path: apps/vibe-tutor/release/
+          retention-days: 7
