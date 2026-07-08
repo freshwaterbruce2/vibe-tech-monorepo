@@ -15,17 +15,17 @@
   "dependencies": {
     "@vibetech/billing": "workspace:*",
     "@tauri-apps/api": "2.11.0",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react": "catalog:",
+    "react-dom": "catalog:"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.11.4",
     "@types/node": "^25.5.0",
-    "@types/react": "19.2.14",
-    "@types/react-dom": "19.2.3",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "^5.2.0",
-    "typescript": "5.9.3",
-    "vite": "^7.3.1",
+    "typescript": "catalog:",
+    "vite": "catalog:",
     "vitest": "^4.1.9"
   }
 }

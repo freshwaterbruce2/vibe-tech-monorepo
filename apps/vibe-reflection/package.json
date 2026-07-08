@@ -22,25 +22,25 @@
     "concurrently": "^9.1.2",
     "cors": "^2.8.5",
     "express": "^4.21.2",
-    "lucide-react": "^0.511.0",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "lucide-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "tailwind-merge": "^3.3.1",
     "uuid": "^11.1.0",
-    "zod": "^4.3.6"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.10",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.3",
     "@types/node": "^22.15.31",
-    "@types/react": "^19.1.6",
-    "@types/react-dom": "^19.1.5",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react-swc": "^3.9.1",
-    "tailwindcss": "^4.1.10",
+    "tailwindcss": "catalog:",
     "tsx": "^4.19.4",
-    "typescript": "^5.9.3",
-    "vite": "^7.3.1"
+    "typescript": "catalog:",
+    "vite": "catalog:"
   }
 }

@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "zod": "^3.25.0"
+    "zod": "catalog:"
   },
   "peerDependencies": {
     "react": "^19.0.0",
@@ -38,11 +38,11 @@
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "typescript": "5.9.3",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "typescript": "catalog:",
     "vitest": "^4.1.9"
   }
 }

@@ -19,7 +19,7 @@
     "@vibetech/core": "workspace:*",
     "@vibetech/logger": "workspace:*",
     "@vibetech/shared-ipc": "workspace:*",
-    "better-sqlite3": "12.6.2",
+    "better-sqlite3": "catalog:",
     "electron-log": "^5.4.3",
     "sqlite-vec": "0.1.7",
     "ws": "^8.20.0"
@@ -27,6 +27,6 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.5.0",
-    "typescript": "5.9.3"
+    "typescript": "catalog:"
   }
 }

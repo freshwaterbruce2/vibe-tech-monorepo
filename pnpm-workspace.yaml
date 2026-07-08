@@ -16,3 +16,16 @@ packages:
   # Exclude backend directories that are not independent packages.
   - '!backend/types'
   - '!backend/llm-finetuning'
+
+catalog:
+  react: 19.2.4
+  react-dom: 19.2.4
+  '@types/react': 19.2.14
+  '@types/react-dom': 19.2.3
+  typescript: 5.9.3
+  vite: ^7.3.5
+  zod: ^4.3.6
+  tailwindcss: 4.1.18
+  lucide-react: 0.563.0
+  better-sqlite3: 12.6.2
+  '@modelcontextprotocol/sdk': 1.27.0

@@ -12,17 +12,17 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.27.0",
+    "@modelcontextprotocol/sdk": "catalog:",
     "@vibetech/logger": "workspace:*",
     "@vibetech/shared-ipc": "workspace:*",
     "ws": "^8.20.0",
-    "zod": "^4.3.6"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
     "@types/ws": "^8.18.1",
     "tsx": "^4.21.0",
-    "typescript": "5.9.3",
+    "typescript": "catalog:",
     "vitest": "^4.1.9"
   }
 }

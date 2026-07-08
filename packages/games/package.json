@@ -46,7 +46,7 @@
     "@react-three/fiber": "^9.5.0",
     "canvas-confetti": "^1.9.4",
     "chess.js": "^1.4.0",
-    "lucide-react": "0.563.0",
+    "lucide-react": "catalog:",
     "react-chessboard": "^5.10.0",
     "sudoku-umd": "^1.0.1",
     "three": "^0.183.2"
@@ -55,11 +55,11 @@
     "@testing-library/react": "^16.3.2",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^25.5.0",
-    "@types/react": "19.2.10",
-    "@types/react-dom": "19.2.3",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
     "@types/three": "^0.183.1",
     "jsdom": "28.1.0",
-    "typescript": "5.9.3",
+    "typescript": "catalog:",
     "vitest": "^4.1.9"
   }
 }
