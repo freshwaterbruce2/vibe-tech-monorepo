@@ -61,7 +61,9 @@
         "MEMORY_EMBEDDING_MODEL": "text-embedding-3-small",
         "MEMORY_EMBEDDING_DIM": "1536",
         "MEMORY_EMBEDDING_ENDPOINT": "http://localhost:3001",
-        "LEARNING_DB_PATH": "D:/databases/agent_learning.db"
+        "LEARNING_DB_PATH": "D:/databases/agent_learning.db",
+        "RAG_WORKSPACE_ROOT": "V:/monorepo",
+        "RAG_INDEX_PATHS": "apps/,packages/,backend/"
       },
       "alwaysLoad": true
     },
@@ -110,10 +112,10 @@
         "@anaisbetts/mcp-youtube"
       ]
     },
-    "notebooklm": {
+    "notebooklm-mcp": {
       "type": "stdio",
       "command": "C:/Users/fresh_zxae3v6/.local/bin/uv.exe",
-      "args": ["tool", "run", "--from", "notebooklm-mcp-server", "notebooklm-mcp"]
+      "args": ["tool", "run", "--from", "notebooklm-mcp-cli", "notebooklm-mcp"]
     },
     "chrome-devtools": {
       "type": "stdio",

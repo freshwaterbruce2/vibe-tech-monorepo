@@ -19,8 +19,10 @@ import TitleBar from '../components/TitleBar';
 
 // Lazy-loaded conditional panels (only loaded when their toggle opens them)
 import {
+  AgentManagerPanelHost,
   BackgroundTaskPanel,
   BrainScanPanel,
+  BrowserPermissionPromptHost,
   ComponentLibrary,
   EditorStreamPanel,
   EnhancedAgentMode,
@@ -28,13 +30,18 @@ import {
   GitPanel,
   GlobalSearch,
   KeyboardShortcuts,
+  KnowledgePanelHost,
   MultiFileEditApprovalPanel,
   PerformanceMonitor,
+  PlanModeDialogHost,
   PreviewPanel,
+  ArtifactsPanelHost,
   ProblemsPanelHost,
   SchedulePanelHost,
   ScreenshotToCodePanel,
+  SettingsSyncDialog,
   TerminalPanel,
+  TestExplorerPanelHost,
   VisualEditor,
   WelcomeScreen,
 } from './lazyPanels';
@@ -253,6 +260,7 @@ export function AppLayout() {
               responseState={extras.aiResponseState}
               onSendMessage={extras.handleAIMessage}
               onCancelResponse={extras.cancelAiResponse}
+              onClearMessages={extras.clearAiMessages}
               onClose={() => ui.setAiChatOpen(false)}
               showReasoningProcess={ws.editorSettings.showReasoningProcess}
               currentModel={ws.editorSettings.aiModel}
@@ -527,6 +535,34 @@ export function AppLayout() {
 
       <Suspense fallback={null}>
         <SchedulePanelHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <ArtifactsPanelHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <BrowserPermissionPromptHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <PlanModeDialogHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <SettingsSyncDialog />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <KnowledgePanelHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <TestExplorerPanelHost />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <AgentManagerPanelHost />
       </Suspense>
 
       <Suspense fallback={null}>

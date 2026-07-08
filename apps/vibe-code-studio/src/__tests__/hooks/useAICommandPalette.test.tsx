@@ -4,7 +4,7 @@
  * visibility toggles.
  */
 import { act, renderHook } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { useAICommandPalette } from '../../hooks/useAICommandPalette';
 
 describe('useAICommandPalette', () => {
@@ -13,8 +13,20 @@ describe('useAICommandPalette', () => {
     const ids = result.current.commands.map(c => c.id);
     expect(ids).toContain('schedule-agent-task');
     expect(ids).toContain('view-toggle-schedules');
+    expect(ids).toContain('artifacts-open');
+    expect(ids).toContain('view-toggle-artifacts');
     expect(ids).toContain('view-toggle-problems');
+    expect(ids).toContain('plan-mode-create');
+    expect(ids).toContain('plan-mode-view-plans');
+    expect(ids).toContain('browser-verify');
     expect(ids).toContain('file-new');
+  });
+
+  it('wires the /browser verify entry to the AI chat toggle', () => {
+    const onToggleAIChat = vi.fn();
+    const { result } = renderHook(() => useAICommandPalette({ onToggleAIChat }));
+    result.current.commands.find(c => c.id === 'browser-verify')?.action();
+    expect(onToggleAIChat).toHaveBeenCalledTimes(1);
   });
 
   it('toggles palette visibility', () => {

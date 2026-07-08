@@ -48,7 +48,7 @@ $usedPct = [math]::Round((($d.Size - $d.FreeSpace) / $d.Size) * 100, 1)
 $diskStatus = if ($usedPct -gt 90) { 'FAIL' } elseif ($usedPct -gt 75) { 'WARN' } else { 'OK' }
 
 Write-Host "`nD: Drive Health Check" -ForegroundColor Cyan
-Write-Status "Disk space" $diskStatus "$freeGB GB free of $total GB ($usedPct% used)"
+Write-Status "Disk space" $diskStatus "$freeGB GB free of $totalGB GB ($usedPct% used)"
 
 # 2. Database Health (delegate to existing script)
 $dbHealthJson = Join-Path $env:TEMP "db-health-$(Get-Date -Format 'yyyyMMddHHmmss').json"
@@ -96,18 +96,59 @@ $learningStatus = if ($staleFiles.Count -gt 10) { 'WARN' } elseif ($staleFiles.C
 Write-Status "Learning system" $learningStatus "$($staleFiles.Count) stale files > ${LearningStaleDays}d"
 
 # 5. Backups
-$backupRoot = 'D:\_backups'
+function Get-OldestSubdirInfo {
+    param([string]$Root)
+    if (-not (Test-Path $Root)) { return $null }
+    $dirs = @(Get-ChildItem $Root -Directory -ErrorAction SilentlyContinue)
+    if ($dirs.Count -eq 0) { return $null }
+    return [pscustomobject]@{
+        count  = $dirs.Count
+        oldest = ($dirs | Sort-Object CreationTime | Select-Object -First 1).CreationTime
+    }
+}
+
+$backupRoot = 'D:\backups'
+$snapshotRepoRoot = 'D:\repositories\vibetech'
 $backupStatus = 'OK'
 $backupCount = 0
-if (Test-Path $backupRoot) {
-    $backups = Get-ChildItem $backupRoot -Directory -ErrorAction SilentlyContinue
-    $backupCount = $backups.Count
-    $oldest = ($backups | Sort-Object CreationTime | Select-Object -First 1).CreationTime
-    $daysOld = [math]::Round(((Get-Date) - $oldest).TotalDays, 1)
+$backupOldest = $null
+$backupSource = $backupRoot
+
+$primaryBackups = Get-OldestSubdirInfo -Root $backupRoot
+if ($primaryBackups) {
+    $backupCount = $primaryBackups.count
+    $backupOldest = $primaryBackups.oldest
+}
+
+if ($backupCount -eq 0) {
+    # No dated backup dirs under D:\backups — fall back to the D:\ snapshot
+    # version-control repo (see .claude/rules/d-drive-version-control.md).
+    $snapshotSearchRoot = if (Test-Path (Join-Path $snapshotRepoRoot 'snapshots')) {
+        Join-Path $snapshotRepoRoot 'snapshots'
+    } else {
+        $snapshotRepoRoot
+    }
+    $fallbackSnapshots = Get-OldestSubdirInfo -Root $snapshotSearchRoot
+    if ($fallbackSnapshots) {
+        $backupCount = $fallbackSnapshots.count
+        $backupOldest = $fallbackSnapshots.oldest
+        $backupSource = $snapshotSearchRoot
+    } elseif (Test-Path (Join-Path $snapshotRepoRoot '.git')) {
+        $commitDate = git -C $snapshotRepoRoot log -1 --format=%cI 2>$null
+        if ($commitDate) {
+            $backupCount = 1
+            $backupOldest = [datetime]$commitDate
+            $backupSource = "$snapshotRepoRoot (git)"
+        }
+    }
+}
+
+if ($backupCount -gt 0 -and $backupOldest) {
+    $daysOld = [math]::Round(((Get-Date) - $backupOldest).TotalDays, 1)
     if ($daysOld -gt 14) { $backupStatus = 'WARN' }
-    Write-Status "Backups" $backupStatus "$backupCount snapshots, oldest ${daysOld}d"
+    Write-Status "Backups" $backupStatus "$backupCount snapshots ($backupSource), oldest ${daysOld}d"
 } else {
-    Write-Status "Backups" "OK" "no backup directory"
+    Write-Status "Backups" "OK" "no backup snapshots found"
 }
 
 # Build report

@@ -53,7 +53,7 @@ export class ScheduleStore {
   async create(draft: ScheduleDraft, nowMs: number): Promise<ScheduleDefinition> {
     const nextRunAtMs = computeNextRunAt(draft.cadence, nowMs);
     const definition: ScheduleDefinition = {
-      id: `schedule-${nowMs}-${Math.random().toString(36).slice(2, 9)}`,
+      id: `schedule-${nowMs}-${crypto.randomUUID()}`,
       agentId: draft.agentId,
       userRequest: draft.userRequest,
       workspaceRoot: draft.workspaceRoot,

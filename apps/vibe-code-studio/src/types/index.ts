@@ -1,4 +1,4 @@
-import type { AgentTask, AgentStep, ApprovalRequest } from './agent';
+import type { AgentTask, AgentStep, ApprovalRequest } from './agent.types';
 
 export interface EditorFile {
   id: string;
@@ -410,7 +410,7 @@ export interface NotificationOptions {
 }
 
 // Re-export agent types
-export * from './agent';
+export * from './agent.types';
 
 // Note: @vibetech/types (tasks, errorfix, multifile) can be imported from '@vibetech/types'
 // to avoid naming conflicts with agent.ts types

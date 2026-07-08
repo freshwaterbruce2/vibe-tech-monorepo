@@ -30,17 +30,17 @@ import { useWorkspace } from './hooks/useWorkspace';
 // App-specific hooks and components
 import { AppLayout } from './app/AppLayout';
 import {
-    AppExtrasContext,
-    ServicesContext,
-    UIPanelContext,
-    WorkspaceContext,
+  AppExtrasContext,
+  ServicesContext,
+  UIPanelContext,
+  WorkspaceContext,
 } from './app/contexts';
 import {
-    useAIProviderInit,
-    useApiKeyLoader,
-    useAppInit,
-    useDatabaseInit,
-    useKeyboardShortcuts
+  useAIProviderInit,
+  useApiKeyLoader,
+  useAppInit,
+  useDatabaseInit,
+  useKeyboardShortcuts,
 } from './app/hooks/useAppEffects';
 import { useAppHandlers } from './app/hooks/useAppHandlers';
 import { useAppState } from './app/hooks/useAppState';
@@ -119,20 +119,23 @@ function App() {
     setOpenFiles,
   } = useFileManager({
     fileSystemService,
-    onSaveSuccess: (fileName) => showSuccess('File Saved', `${fileName} saved successfully`),
-    onSaveError: (fileName) => showError('Save Failed', `Unable to save ${fileName}`),
+    onSaveSuccess: fileName => showSuccess('File Saved', `${fileName} saved successfully`),
+    onSaveError: fileName => showError('Save Failed', `Unable to save ${fileName}`),
   });
 
   // Wrap handleOpenFile with error handling
-  const handleOpenFile = useCallback(async (filePath: string) => {
-    try {
-      await handleOpenFileRaw(filePath);
-    } catch (error) {
-      logger.error('[App] Failed to open file:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to open file';
-      showError('Open File Failed', errorMessage);
-    }
-  }, [handleOpenFileRaw, showError]);
+  const handleOpenFile = useCallback(
+    async (filePath: string) => {
+      try {
+        await handleOpenFileRaw(filePath);
+      } catch (error) {
+        logger.error('[App] Failed to open file:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to open file';
+        showError('Open File Failed', errorMessage);
+      }
+    },
+    [handleOpenFileRaw, showError]
+  );
 
   // AI Chat
   const {
@@ -145,6 +148,7 @@ function App() {
     cancelAiResponse,
     addAiMessage,
     updateAiMessage,
+    clearAiMessages,
   } = useAIChat({
     aiService,
     currentFile,
@@ -153,7 +157,7 @@ function App() {
     workspaceFolder,
     sidebarOpen,
     previewOpen: appState.previewOpen,
-    onError: (error) =>
+    onError: error =>
       showError(
         'AI Service Error',
         getUserFriendlyError({
@@ -173,32 +177,35 @@ function App() {
   }, []);
 
   // Handle workspace opening
-  const handleOpenFolder = useCallback(async (folderPath: string) => {
-    try {
-      logger.debug(`Opening workspace: ${folderPath}`);
-      setWorkspaceFolder(folderPath);
-      const indexedContext = await indexWorkspace(folderPath);
+  const handleOpenFolder = useCallback(
+    async (folderPath: string) => {
+      try {
+        logger.debug(`Opening workspace: ${folderPath}`);
+        setWorkspaceFolder(folderPath);
+        const indexedContext = await indexWorkspace(folderPath);
 
-      if (indexedContext) {
+        if (indexedContext) {
+          addAiMessage({
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: `✅ **Workspace Indexed Successfully!**\n\nI've analyzed your project at \`${folderPath}\` and I'm now ready to help with:\n\n🔍 **Repository Understanding**: ${indexedContext.totalFiles || 0} files indexed\n🚀 **Multi-file Context**: I understand relationships between your files\n⚡ **Smart Suggestions**: Context-aware code completion and generation\n🧠 **Project Knowledge**: Familiar with your codebase structure\n\n**Languages Detected**: ${indexedContext.languages.join(', ') || 'Analyzing...'}\n**Test Files**: ${indexedContext.testFiles || 0} detected\n\nTry asking me:\n- "Create a new component that fits my project structure"\n- "Explain how this file relates to others"\n- "Generate tests for this function"\n- "Refactor this code to match project patterns"\n\nI'm now your context-aware coding companion! 🎯`,
+            timestamp: new Date(),
+          });
+        } else {
+          throw new Error('Failed to index workspace');
+        }
+      } catch (error) {
+        logger.error('Failed to open workspace:', error);
         addAiMessage({
           id: Date.now().toString(),
           role: 'assistant',
-          content: `✅ **Workspace Indexed Successfully!**\n\nI've analyzed your project at \`${folderPath}\` and I'm now ready to help with:\n\n🔍 **Repository Understanding**: ${indexedContext.totalFiles || 0} files indexed\n🚀 **Multi-file Context**: I understand relationships between your files\n⚡ **Smart Suggestions**: Context-aware code completion and generation\n🧠 **Project Knowledge**: Familiar with your codebase structure\n\n**Languages Detected**: ${indexedContext.languages.join(', ') || 'Analyzing...'}\n**Test Files**: ${indexedContext.testFiles || 0} detected\n\nTry asking me:\n- "Create a new component that fits my project structure"\n- "Explain how this file relates to others"\n- "Generate tests for this function"\n- "Refactor this code to match project patterns"\n\nI'm now your context-aware coding companion! 🎯`,
+          content: `❌ Failed to index workspace at \`${folderPath}\`. I can still help with individual files, but won't have full project context. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
           timestamp: new Date(),
         });
-      } else {
-        throw new Error('Failed to index workspace');
       }
-    } catch (error) {
-      logger.error('Failed to open workspace:', error);
-      addAiMessage({
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: `❌ Failed to index workspace at \`${folderPath}\`. I can still help with individual files, but won't have full project context. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        timestamp: new Date(),
-      });
-    }
-  }, [setWorkspaceFolder, indexWorkspace, addAiMessage]);
+    },
+    [setWorkspaceFolder, indexWorkspace, addAiMessage]
+  );
 
   // Handle workspace opening with file picker
   const handleOpenFolderDialog = useCallback(async () => {
@@ -225,7 +232,10 @@ function App() {
       }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') return;
-      showError('Open Folder Failed', `Unable to open the selected folder: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      showError(
+        'Open Folder Failed',
+        `Unable to open the selected folder: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }, [handleOpenFolder, showError]);
 
@@ -314,9 +324,14 @@ function App() {
     onAIAddComments: async () => handlers.handleAICommand('add-comments'),
     onAIGenerateComponent: async () => handlers.handleAICommand('generate-component'),
     onFormatDocument: () => {
-      document.dispatchEvent(new KeyboardEvent('keydown', {
-        key: 'f', shiftKey: true, altKey: true, bubbles: true,
-      }));
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          key: 'f',
+          shiftKey: true,
+          altKey: true,
+          bubbles: true,
+        })
+      );
     },
     onOpenBrainScan: () => setBrainScanOpen(true),
     currentFile: currentFile?.path ?? null,
@@ -337,110 +352,243 @@ function App() {
   });
 
   // Memoize context values to prevent unnecessary re-renders of consumers
-  const servicesContextValue = useMemo(() => ({
-    aiService, fileSystemService, taskPlanner, liveStream, executionEngine, backgroundAgentSystem,
-    orchestrator, performanceOptimizer,
-  }), [
-    aiService, fileSystemService, taskPlanner, liveStream,
-    executionEngine, backgroundAgentSystem, orchestrator, performanceOptimizer,
-  ]);
+  const servicesContextValue = useMemo(
+    () => ({
+      aiService,
+      fileSystemService,
+      taskPlanner,
+      liveStream,
+      executionEngine,
+      backgroundAgentSystem,
+      orchestrator,
+      performanceOptimizer,
+    }),
+    [
+      aiService,
+      fileSystemService,
+      taskPlanner,
+      liveStream,
+      executionEngine,
+      backgroundAgentSystem,
+      orchestrator,
+      performanceOptimizer,
+    ]
+  );
 
-  const uiPanelContextValue = useMemo(() => ({
-    settingsOpen, setSettingsOpen,
-    aiChatOpen, setAiChatOpen,
-    gitPanelOpen: appState.gitPanelOpen,
-    globalSearchOpen: appState.globalSearchOpen, setGlobalSearchOpen: appState.setGlobalSearchOpen,
-    keyboardShortcutsOpen: appState.keyboardShortcutsOpen,
-    setKeyboardShortcutsOpen: appState.setKeyboardShortcutsOpen,
-    backgroundPanelOpen: appState.backgroundPanelOpen,
-    setBackgroundPanelOpen: appState.setBackgroundPanelOpen,
-    commandPaletteOpen, setCommandPaletteOpen,
-    previewOpen: appState.previewOpen, setPreviewOpen: appState.setPreviewOpen,
-    terminalOpen: appState.terminalOpen, setTerminalOpen: appState.setTerminalOpen,
-    sidebarOpen, setSidebarOpen,
-    activeVisualPanel: appState.activeVisualPanel,
-    setActiveVisualPanel: appState.setActiveVisualPanel,
-    chatMode: appState.chatMode, setChatMode: appState.setChatMode,
-    errorFixPanelOpen: appState.errorFixPanelOpen,
-    setErrorFixPanelOpen: appState.setErrorFixPanelOpen,
-    agentModeOpen: appState.agentModeOpen, setAgentModeOpen: appState.setAgentModeOpen,
-    brainScanOpen, setBrainScanOpen,
-  }), [
-    settingsOpen, setSettingsOpen, aiChatOpen, setAiChatOpen,
-    appState.gitPanelOpen, appState.globalSearchOpen, appState.setGlobalSearchOpen,
-    appState.keyboardShortcutsOpen, appState.setKeyboardShortcutsOpen,
-    appState.backgroundPanelOpen, appState.setBackgroundPanelOpen,
-    commandPaletteOpen, setCommandPaletteOpen,
-    appState.previewOpen, appState.setPreviewOpen,
-    appState.terminalOpen, appState.setTerminalOpen,
-    sidebarOpen, setSidebarOpen,
-    appState.activeVisualPanel, appState.setActiveVisualPanel,
-    appState.chatMode, appState.setChatMode,
-    appState.errorFixPanelOpen, appState.setErrorFixPanelOpen,
-    appState.agentModeOpen, appState.setAgentModeOpen,
-    brainScanOpen, setBrainScanOpen,
-  ]);
+  const uiPanelContextValue = useMemo(
+    () => ({
+      settingsOpen,
+      setSettingsOpen,
+      aiChatOpen,
+      setAiChatOpen,
+      gitPanelOpen: appState.gitPanelOpen,
+      globalSearchOpen: appState.globalSearchOpen,
+      setGlobalSearchOpen: appState.setGlobalSearchOpen,
+      keyboardShortcutsOpen: appState.keyboardShortcutsOpen,
+      setKeyboardShortcutsOpen: appState.setKeyboardShortcutsOpen,
+      backgroundPanelOpen: appState.backgroundPanelOpen,
+      setBackgroundPanelOpen: appState.setBackgroundPanelOpen,
+      commandPaletteOpen,
+      setCommandPaletteOpen,
+      previewOpen: appState.previewOpen,
+      setPreviewOpen: appState.setPreviewOpen,
+      terminalOpen: appState.terminalOpen,
+      setTerminalOpen: appState.setTerminalOpen,
+      sidebarOpen,
+      setSidebarOpen,
+      activeVisualPanel: appState.activeVisualPanel,
+      setActiveVisualPanel: appState.setActiveVisualPanel,
+      chatMode: appState.chatMode,
+      setChatMode: appState.setChatMode,
+      errorFixPanelOpen: appState.errorFixPanelOpen,
+      setErrorFixPanelOpen: appState.setErrorFixPanelOpen,
+      agentModeOpen: appState.agentModeOpen,
+      setAgentModeOpen: appState.setAgentModeOpen,
+      brainScanOpen,
+      setBrainScanOpen,
+    }),
+    [
+      settingsOpen,
+      setSettingsOpen,
+      aiChatOpen,
+      setAiChatOpen,
+      appState.gitPanelOpen,
+      appState.globalSearchOpen,
+      appState.setGlobalSearchOpen,
+      appState.keyboardShortcutsOpen,
+      appState.setKeyboardShortcutsOpen,
+      appState.backgroundPanelOpen,
+      appState.setBackgroundPanelOpen,
+      commandPaletteOpen,
+      setCommandPaletteOpen,
+      appState.previewOpen,
+      appState.setPreviewOpen,
+      appState.terminalOpen,
+      appState.setTerminalOpen,
+      sidebarOpen,
+      setSidebarOpen,
+      appState.activeVisualPanel,
+      appState.setActiveVisualPanel,
+      appState.chatMode,
+      appState.setChatMode,
+      appState.errorFixPanelOpen,
+      appState.setErrorFixPanelOpen,
+      appState.agentModeOpen,
+      appState.setAgentModeOpen,
+      brainScanOpen,
+      setBrainScanOpen,
+    ]
+  );
 
-  const workspaceContextValue = useMemo(() => ({
-    currentFile, openFiles, workspaceFolder,
-    workspaceContext, isIndexing, indexingProgress, getFileContext,
-    editorSettings, updateEditorSettings, setCurrentFile,
-    handleOpenFile, handleCloseFile, handleFileChange, handleSaveFile,
-    handleDeleteFile, handleCreateWorkspaceFile, handleCreateWorkspaceFolder,
-    handleRenameWorkspacePath, handleNewFile, handleOpenFolderDialog,
-    handleCloseFolder, handleOpenFolder, handleCreateFile, handleSaveAll,
-    handleEditorMount: handlers.handleEditorMount, editorRef: appState.editorRef,
-    handleOpenFileFromSearch: handlers.handleOpenFileFromSearch,
-    handleReplaceInFile: handlers.handleReplaceInFile,
-    handleSearchInFiles: handlers.handleSearchInFiles,
-  }), [
-    currentFile, openFiles, workspaceFolder,
-    workspaceContext, isIndexing, indexingProgress, getFileContext,
-    editorSettings, updateEditorSettings, setCurrentFile,
-    handleOpenFile, handleCloseFile, handleFileChange, handleSaveFile,
-    handleDeleteFile, handleCreateWorkspaceFile, handleCreateWorkspaceFolder,
-    handleRenameWorkspacePath, handleNewFile, handleOpenFolderDialog,
-    handleCloseFolder, handleOpenFolder, handleCreateFile, handleSaveAll,
-    handlers.handleEditorMount, appState.editorRef,
-    handlers.handleOpenFileFromSearch, handlers.handleReplaceInFile, handlers.handleSearchInFiles,
-  ]);
+  const workspaceContextValue = useMemo(
+    () => ({
+      currentFile,
+      openFiles,
+      workspaceFolder,
+      workspaceContext,
+      isIndexing,
+      indexingProgress,
+      getFileContext,
+      editorSettings,
+      updateEditorSettings,
+      setCurrentFile,
+      handleOpenFile,
+      handleCloseFile,
+      handleFileChange,
+      handleSaveFile,
+      handleDeleteFile,
+      handleCreateWorkspaceFile,
+      handleCreateWorkspaceFolder,
+      handleRenameWorkspacePath,
+      handleNewFile,
+      handleOpenFolderDialog,
+      handleCloseFolder,
+      handleOpenFolder,
+      handleCreateFile,
+      handleSaveAll,
+      handleEditorMount: handlers.handleEditorMount,
+      editorRef: appState.editorRef,
+      handleOpenFileFromSearch: handlers.handleOpenFileFromSearch,
+      handleReplaceInFile: handlers.handleReplaceInFile,
+      handleSearchInFiles: handlers.handleSearchInFiles,
+    }),
+    [
+      currentFile,
+      openFiles,
+      workspaceFolder,
+      workspaceContext,
+      isIndexing,
+      indexingProgress,
+      getFileContext,
+      editorSettings,
+      updateEditorSettings,
+      setCurrentFile,
+      handleOpenFile,
+      handleCloseFile,
+      handleFileChange,
+      handleSaveFile,
+      handleDeleteFile,
+      handleCreateWorkspaceFile,
+      handleCreateWorkspaceFolder,
+      handleRenameWorkspacePath,
+      handleNewFile,
+      handleOpenFolderDialog,
+      handleCloseFolder,
+      handleOpenFolder,
+      handleCreateFile,
+      handleSaveAll,
+      handlers.handleEditorMount,
+      appState.editorRef,
+      handlers.handleOpenFileFromSearch,
+      handlers.handleReplaceInFile,
+      handlers.handleSearchInFiles,
+    ]
+  );
 
-  const appExtrasContextValue = useMemo(() => ({
-    aiMessages, isAiResponding, aiResponseState, handleAIMessage, cancelAiResponse, addAiMessage, updateAiMessage,
-    handleModelChange: handlers.handleModelChange,
-    handleProviderChange: handlers.handleProviderChange,
-    handleMultiFileEditDetected: handlers.handleMultiFileEditDetected,
-    currentModel: appState.currentModel, currentProvider: appState.currentProvider,
-    openrouterApiKey: appState.openrouterApiKey,
-    currentError: appState.currentError, currentFix: appState.currentFix,
-    fixLoading: appState.fixLoading, fixError: appState.fixError,
-    setCurrentError: appState.setCurrentError, setCurrentFix: appState.setCurrentFix,
-    setFixLoading: appState.setFixLoading, setFixError: appState.setFixError,
-    handleApplyFix: handlers.handleApplyFix, autoFixServiceRef: appState.autoFixServiceRef,
-    multiFileEditPlan: appState.multiFileEditPlan, multiFileChanges: appState.multiFileChanges,
-    multiFileApprovalOpen: appState.multiFileApprovalOpen,
-    handleApplyMultiFileChanges: handlers.handleApplyMultiFileChanges,
-    handleRejectMultiFileChanges: handlers.handleRejectMultiFileChanges,
-    notifications, showSuccess, showError, showWarning, removeNotification,
-    commands,
-    handleToggleScreenshotPanel: handlers.handleToggleScreenshotPanel,
-    handleToggleComponentLibrary: handlers.handleToggleComponentLibrary,
-    handleToggleVisualEditor: handlers.handleToggleVisualEditor,
-    handleInsertCode: handlers.handleInsertCode,
-  }), [
-    aiMessages, isAiResponding, aiResponseState, handleAIMessage, cancelAiResponse, addAiMessage, updateAiMessage,
-    handlers.handleModelChange, handlers.handleProviderChange, handlers.handleMultiFileEditDetected,
-    appState.currentModel, appState.currentProvider, appState.openrouterApiKey,
-    appState.currentError, appState.currentFix, appState.fixLoading, appState.fixError,
-    appState.setCurrentError, appState.setCurrentFix, appState.setFixLoading, appState.setFixError,
-    handlers.handleApplyFix, appState.autoFixServiceRef,
-    appState.multiFileEditPlan, appState.multiFileChanges, appState.multiFileApprovalOpen,
-    handlers.handleApplyMultiFileChanges, handlers.handleRejectMultiFileChanges,
-    notifications, showSuccess, showError, showWarning, removeNotification,
-    commands,
-    handlers.handleToggleScreenshotPanel, handlers.handleToggleComponentLibrary,
-    handlers.handleToggleVisualEditor, handlers.handleInsertCode,
-  ]);
+  const appExtrasContextValue = useMemo(
+    () => ({
+      aiMessages,
+      isAiResponding,
+      aiResponseState,
+      handleAIMessage,
+      cancelAiResponse,
+      addAiMessage,
+      updateAiMessage,
+      clearAiMessages,
+      handleModelChange: handlers.handleModelChange,
+      handleProviderChange: handlers.handleProviderChange,
+      handleMultiFileEditDetected: handlers.handleMultiFileEditDetected,
+      currentModel: appState.currentModel,
+      currentProvider: appState.currentProvider,
+      openrouterApiKey: appState.openrouterApiKey,
+      currentError: appState.currentError,
+      currentFix: appState.currentFix,
+      fixLoading: appState.fixLoading,
+      fixError: appState.fixError,
+      setCurrentError: appState.setCurrentError,
+      setCurrentFix: appState.setCurrentFix,
+      setFixLoading: appState.setFixLoading,
+      setFixError: appState.setFixError,
+      handleApplyFix: handlers.handleApplyFix,
+      autoFixServiceRef: appState.autoFixServiceRef,
+      multiFileEditPlan: appState.multiFileEditPlan,
+      multiFileChanges: appState.multiFileChanges,
+      multiFileApprovalOpen: appState.multiFileApprovalOpen,
+      handleApplyMultiFileChanges: handlers.handleApplyMultiFileChanges,
+      handleRejectMultiFileChanges: handlers.handleRejectMultiFileChanges,
+      notifications,
+      showSuccess,
+      showError,
+      showWarning,
+      removeNotification,
+      commands,
+      handleToggleScreenshotPanel: handlers.handleToggleScreenshotPanel,
+      handleToggleComponentLibrary: handlers.handleToggleComponentLibrary,
+      handleToggleVisualEditor: handlers.handleToggleVisualEditor,
+      handleInsertCode: handlers.handleInsertCode,
+    }),
+    [
+      aiMessages,
+      isAiResponding,
+      aiResponseState,
+      handleAIMessage,
+      cancelAiResponse,
+      addAiMessage,
+      updateAiMessage,
+      clearAiMessages,
+      handlers.handleModelChange,
+      handlers.handleProviderChange,
+      handlers.handleMultiFileEditDetected,
+      appState.currentModel,
+      appState.currentProvider,
+      appState.openrouterApiKey,
+      appState.currentError,
+      appState.currentFix,
+      appState.fixLoading,
+      appState.fixError,
+      appState.setCurrentError,
+      appState.setCurrentFix,
+      appState.setFixLoading,
+      appState.setFixError,
+      handlers.handleApplyFix,
+      appState.autoFixServiceRef,
+      appState.multiFileEditPlan,
+      appState.multiFileChanges,
+      appState.multiFileApprovalOpen,
+      handlers.handleApplyMultiFileChanges,
+      handlers.handleRejectMultiFileChanges,
+      notifications,
+      showSuccess,
+      showError,
+      showWarning,
+      removeNotification,
+      commands,
+      handlers.handleToggleScreenshotPanel,
+      handlers.handleToggleComponentLibrary,
+      handlers.handleToggleVisualEditor,
+      handlers.handleInsertCode,
+    ]
+  );
 
   // Loading screen
   if (appState.isLoading) {
@@ -457,13 +605,13 @@ function App() {
     >
       <Router>
         <ServicesContext.Provider value={servicesContextValue}>
-        <UIPanelContext.Provider value={uiPanelContextValue}>
-        <WorkspaceContext.Provider value={workspaceContextValue}>
-        <AppExtrasContext.Provider value={appExtrasContextValue}>
-          <AppLayout />
-        </AppExtrasContext.Provider>
-        </WorkspaceContext.Provider>
-        </UIPanelContext.Provider>
+          <UIPanelContext.Provider value={uiPanelContextValue}>
+            <WorkspaceContext.Provider value={workspaceContextValue}>
+              <AppExtrasContext.Provider value={appExtrasContextValue}>
+                <AppLayout />
+              </AppExtrasContext.Provider>
+            </WorkspaceContext.Provider>
+          </UIPanelContext.Provider>
         </ServicesContext.Provider>
       </Router>
 
@@ -472,7 +620,7 @@ function App() {
         isOpen={folderPathDialogOpen}
         title="Open Folder"
         placeholder="/path/to/folder"
-        onConfirm={(folderPath) => {
+        onConfirm={folderPath => {
           setFolderPathDialogOpen(false);
           if (folderPath) handleOpenFolder(folderPath);
         }}
@@ -483,7 +631,7 @@ function App() {
         isOpen={newFileDialogOpen}
         title="New File"
         placeholder="script.js"
-        onConfirm={(fileName) => {
+        onConfirm={fileName => {
           setNewFileDialogOpen(false);
           if (fileName) handleCreateFile(fileName);
         }}

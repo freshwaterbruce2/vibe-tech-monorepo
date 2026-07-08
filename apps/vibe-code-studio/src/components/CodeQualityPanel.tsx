@@ -3,7 +3,7 @@
  *
  * Displays code quality metrics and issues for the current file or project
  */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AlertCircle, AlertTriangle, CheckCircle, FileText, Info, TrendingUp } from 'lucide-react';
 import styled from 'styled-components';
 
@@ -35,16 +35,7 @@ export const CodeQualityPanel = ({
   const [view, setView] = useState<'file' | 'project'>('file');
   const [loading, setLoading] = useState(false);
 
-  // Analyze current file
-  useEffect(() => {
-    if (currentFile && view === 'file') {
-      analyzeCurrentFile();
-    }
-    // analyzeCurrentFile is recreated per render; deps intentionally track only its inputs.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentFile, view]);
-
-  const analyzeCurrentFile = async () => {
+  const analyzeCurrentFile = useCallback(async () => {
     if (!currentFile) {
       return;
     }
@@ -58,7 +49,14 @@ export const CodeQualityPanel = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentFile, analyzer]);
+
+  // Analyze current file
+  useEffect(() => {
+    if (currentFile && view === 'file') {
+      analyzeCurrentFile();
+    }
+  }, [currentFile, view, analyzeCurrentFile]);
 
   const analyzeProject = async () => {
     if (!workspaceRoot) {

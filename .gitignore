@@ -12,6 +12,8 @@ dist
 dist-ssr
 space-agent/
 *.local
+scratch/
+.mcp-fleet-staging/
 
 # Editor directories and files
 .vscode/*
@@ -139,6 +141,7 @@ node_modules/.vite/
 # Test coverage
 coverage/
 coverage-report/
+coverage-*/
 *.lcov
 *.coverage
 .nyc_output

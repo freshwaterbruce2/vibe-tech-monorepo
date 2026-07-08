@@ -6,41 +6,140 @@ from the END (← 18). **Before starting a spec, mark it 🔄 IN PROGRESS here (
 or at least save the file) so the other session doesn't collide. When shipped, check it
 off with the commit hash.**
 
-Branch: `feat/vcs-task-runner` (as of 2026-07-04). All work follows the repo gates:
+Branch: `feat/vcs-lsp` (as of 2026-07-06; batch-1 specs 02/16/01/15 already merged to
+main via PR #77). All work follows the repo gates:
 100% diff coverage on new logic, lint/typecheck green, pathspec commits only
 (`git commit -m ... -- <your paths>`) — parallel sessions share this working tree
 and the index may hold the other session's staged files.
 
 ---
 
+> **🔄 2026-07-06 session claim**: cross-spec small-follow-up sweep (11 palette /browser ·
+> 16 Inbox delivery + slash-command + inline edit · 03 toggles AC #10/#11 · 09
+> recordDiffArtifact wiring · 01 theme import P2), then remaining phases of 03–11 per the
+> finish-line campaign. Batch-2 PR to main: **#80**.
+
 ## Checklist
 
-| #   | Spec                                 | Status          | Commit(s)              | Notes                                                                                            |
-| --- | ------------------------------------ | --------------- | ---------------------- | ------------------------------------------------------------------------------------------------ |
-| 01  | Theming / TextMate                   | 🟡 Phase 1 done | `0395a18b`             | Shiki tokenizer + 8-preset picker. Phase 2 (VS Code JSON/tmTheme import UI) deferred             |
-| 02  | Task runner + Problems panel         | ✅ DONE         | `2f87e246`, `76e6c10f` | Keystone shipped; problemsStore is the shared sink for 07/12                                     |
-| 03  | Open agent standards (AGENTS.md/ACP) | ⬜ pending      |                        | Front-track candidate                                                                            |
-| 04  | Agent memory / Knowledge Items       | ⬜ pending      |                        | Reuses StrategyMemory + memory MCP                                                               |
-| 05  | Plan Mode                            | ⬜ pending      |                        | Track B starter per README                                                                       |
-| 06  | Settings Sync + Profiles             | ⬜ pending      |                        |                                                                                                  |
-| 07  | LSP language intelligence            | 🔄 in progress  |                        | Claimed for front-track session (LSP client/relay work staged in tree 2026-07-04)                |
-| 08  | Test Explorer                        | ⬜ pending      |                        | services/testing/\* exists; UI is the gap                                                        |
-| 09  | Verifiable Artifacts                 | ⬜ pending      |                        |                                                                                                  |
-| 10  | Agent Manager + parallel/worktrees   | ⬜ pending      |                        | Inbox here unblocks 16's deferred delivery                                                       |
-| 11  | Browser verification                 | ⬜ pending      |                        |                                                                                                  |
-| 12  | DAP debugger                         | ⬜ pending      |                        | L–XL; separately-scoped campaign per README                                                      |
-| 13  | Remote dev (SSH/containers/WSL)      | ⬜ pending      |                        | L–XL; separately-scoped campaign                                                                 |
-| 14  | Notebooks (.ipynb)                   | ⬜ pending      |                        | L                                                                                                |
-| 15  | PR review bot                        | ✅ DONE (P1-2)  | `1597b3d3`             | Phases 1-2 + vcs-review.yml workflow. Phase 3 autofix + MultiAgentReview deferred (see below)    |
-| 16  | Agent scheduling (/schedule)         | ✅ DONE         | `f3a8ef15`             | See deviations below                                                                             |
-| 17  | Cloud/background agents              | ⛔ deferred     |                        | XL — do not attempt as a sprint (README)                                                         |
-| 18  | Extension host + Open VSX            | ⛔ deferred     |                        | XL — Tier B needs its own scoping spec; Tier A (curated Open VSX) may be pulled forward after 01 |
+| #   | Spec                                 | Status             | Commit(s)                                                  | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| --- | ------------------------------------ | ------------------ | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 01  | Theming / TextMate                   | 🟡 P1–2 done       | `0395a18b`, `799f02c3`                                     | Shiki tokenizer + 8-preset picker. P2 shipped 2026-07-06: VS Code theme-JSON import (ThemeImporter parser + file-picker/drag-drop in ThemeSection, inline error on malformed, terminal.ansi\* survive). Remaining: .tmTheme XML (needs plist parser dep — Bruce sign-off)                                                                                                                                                                  |
+| 02  | Task runner + Problems panel         | ✅ DONE            | `2f87e246`, `76e6c10f`                                     | Keystone shipped; problemsStore is the shared sink for 07/12                                                                                                                                                                                                                                                                                                                                                                               |
+| 03  | Open agent standards (AGENTS.md/ACP) | 🟡 P1 + AC10/11    | `f45a5ab0`, `8f124393`                                     | AGENTS.md loader → planning + chat prompts (source-tagged, closest-wins). SystemPromptBuilder skipped (no production callers). 2026-07-07 `8f124393`: per-source standards toggles in Settings (AC #10) + AGENTS.md fenced commands as palette commands via TaskRunnerService.runAdHoc (AC #11). Phases 2 (SKILL.md) + 3 (ACP) deferred                                                                                                    |
+| 04  | Agent memory / Knowledge Items       | 🟡 Phase 1 done    | `21f29b88`                                                 | knowledge_items SQLite + KnowledgeStore (ScheduleStore contract) + Jaccard relevance + panel; top-3 char-budgeted injection beside the 03 seam. P2 distiller + P3 conflict/staleness/memory-MCP sync deferred                                                                                                                                                                                                                              |
+| 05  | Plan Mode                            | 🟡 Phase 1 done    | `2aa88b96`                                                 | /plan dialog → TaskPlanner research (03 standards in prompt) → .vcs/plans/<slug>-<ts>.md → spec-09 plan artifact; MarkdownContent viewer replaces preformatted plan view. Markdown-only (no mermaid). Phases 2 (clarifying Qs) + 3 (dispatch) deferred                                                                                                                                                                                     |
+| 06  | Settings Sync + Profiles             | 🟡 Phase 1 done    | `68418d81`                                                 | Export/import versioned JSON + preview diff (zod satisfies-bound; API keys excluded by construction). Gist sync (P2) + profiles (P3) deferred                                                                                                                                                                                                                                                                                              |
+| 07  | LSP language intelligence            | 🟡 1a–1e done      | `aee44d95`, `04d4344c`, `9f7f3d23`, `b6da9713`, `2e4fd231` | 1e shipped 2026-07-07: capabilities tracking (lspCapabilities) + prepareRename gating, signature help, cross-file refs peek preview, Ctrl+T `#` workspace-symbol palette mode, Monaco marker squiggles (attachLspMarkers). Deferred: phase 2 (auto-download/multi-root/Settings, semantic tokens). `bdc5c459`: Windows .cmd shim spawn fix — pnpm/npm-global servers now resolve from PATH (install `typescript-language-server` globally) |
+| 08  | Test Explorer                        | 🟡 Phase 1 done    | `1d36bc8f`                                                 | TestController over EXISTING services/testing + tree panel + run/run-all/re-run-failed; failures → problemsStore 'tests'. P2 gutter decorations + P3 jest/playwright/pytest + DAP debug-test deferred                                                                                                                                                                                                                                      |
+| 09  | Verifiable Artifacts                 | ✅ P1–3 done       | `91d3ba21`, `fe774ff5`, `4827c6e9`, `2111ddda`             | P3 shipped 2026-07-05: auto walkthrough at task settle (Goal/What Changed/Files Touched/Verification, spec-11 screenshots as inline `artifact:` refs) + screenshot image renderer in the viewer. 2026-07-06 `98dd06c9`: recordDiffArtifact wired into the multi-file apply flow (AC #4 follow-up). Remaining (deferred by design): comment anchors + resolution audit trail (AC #11)                                                       |
+| 10  | Agent Manager + parallel/worktrees   | 🟡 Phase 1 done    | `9f5efa24`                                                 | NEW AgentManagerPanel (event-driven, idempotent subscription; BackgroundTaskPanel retires in P2): first UI submit() entry point, Inbox over the shared injectMessage channel (unblocks 16's deferred delivery), reply/cancel. Worktrees (P2) + Tauri window/cross-workspace (P3) deferred                                                                                                                                                  |
+| 11  | Browser verification                 | 🟡 Phases 1–2 done | `6c972ddf`, `b86d3e2c`, `f3328c34`                         | P2 shipped 2026-07-05: autonomous post-edit verification loop (gated) — dev server via TerminalService, navigate/screenshot/console, notes+screenshots auto-fill the 09 P3 walkthrough Verification section. See detail below. 2026-07-06 `c242d288`: palette /browser commands (status/approve/deny/revoke). Phase 3 (network capture, recordings, unattended) deferred                                                                   |
+| 12  | DAP debugger                         | ⬜ pending         |                                                            | L–XL; separately-scoped campaign per README                                                                                                                                                                                                                                                                                                                                                                                                |
+| 13  | Remote dev (SSH/containers/WSL)      | ⬜ pending         |                                                            | L–XL; separately-scoped campaign                                                                                                                                                                                                                                                                                                                                                                                                           |
+| 14  | Notebooks (.ipynb)                   | ⬜ pending         |                                                            | L                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| 15  | PR review bot                        | ✅ DONE (P1-2)     | `1597b3d3`                                                 | Phases 1-2 + vcs-review.yml workflow. Phase 3 autofix + MultiAgentReview deferred (see below)                                                                                                                                                                                                                                                                                                                                              |
+| 16  | Agent scheduling (/schedule)         | ✅ DONE            | `f3a8ef15`                                                 | See deviations below. 2026-07-06: AC #5 Inbox delivery shipped (settled runs → Agent Manager Inbox via `deliverScheduleRun`)                                                                                                                                                                                                                                                                                                               |
+| 17  | Cloud/background agents              | ⛔ deferred        |                                                            | XL — do not attempt as a sprint (README)                                                                                                                                                                                                                                                                                                                                                                                                   |
+| 18  | Extension host + Open VSX            | ⛔ deferred        |                                                            | XL — Tier B needs its own scoping spec; Tier A (curated Open VSX) may be pulled forward after 01                                                                                                                                                                                                                                                                                                                                           |
 
 Legend: ✅ done · 🟡 partially done (phases remain) · 🔄 in progress (claimed by a session) · ⬜ pending · ⛔ deferred by design
 
 ---
 
+## Shared primitives (build once — reuse, don't duplicate)
+
+### Mid-run message injection — `BackgroundAgentSystem` (SHIPPED by 09 P2, `fe774ff5`)
+
+The per-task pending-message queue that specs 10 (Agent Manager / Inbox) and 16
+(deferred Inbox delivery) must CONSUME rather than rebuild:
+
+- `injectMessage(taskId, body): InjectedMessage | null` — appends to a per-task queue.
+  Returns `null` (no-op) if the task doesn't exist or is not `pending`/`running`.
+- Queue is DRAINED at the next step boundary (`onStepStart`, before the step's
+  ReAct/action runs) and folded into that step's `action.params.injectedUserMessages`
+  (string[]), which reaches the model via ReActExecutor's prompt (`Params:` JSON block).
+  No preemption of an in-flight step — delivery is always at the next safe boundary.
+- Events: `messageQueued(task, msg)` on accept · `messageInjected(task, msg)` on drain
+  (UI marks delivery) · `messageDropped(task, msg)` if the task finishes/cancels with
+  messages still queued (consumers degrade to plain feedback).
+
 ## Shipped detail + open follow-ups
+
+### 09 — Verifiable Artifacts P3 (✅ 2026-07-05, `2111ddda`)
+
+- Auto walkthrough (AC #8): `artifactCapture.onFinished` (the existing completed/failed
+  capture listeners — no new agent-loop hook) now records a final `walkthrough` artifact
+  built by `walkthroughGenerator.ts`: Goal / What Changed (outcome + `n/m planned steps
+completed` derived from the task_list checklist + diff titles) / Files Touched (deduped
+  across decoded diff artifacts) / Verification (spec-11 screenshots).
+- Screenshots embed as inline refs `![title](artifact:<id>)` — walkthrough content stays
+  text-only; `ArtifactWalkthroughView` resolves refs against the artifacts store at render
+  time (missing/undecodable → placeholder text). Text-only degradation everywhere.
+- Deferred spec-11 follow-up landed: `ArtifactScreenshotView` renders screenshot-kind
+  artifacts as images (data-URL + caption; malformed → raw fallback) and screenshot cards
+  get a friendly preview instead of raw JSON.
+- Generation gate = the task_list lifecycle guard: only tasks capture observed produce a
+  walkthrough; requeued retries and unknown tasks never double-generate.
+- Still deferred by design: comment anchors + resolution audit trail (AC #11) · threads on
+  diff/walkthrough kinds · narrated/interactive walkthroughs · spec 11 P3's autonomous
+  verify loop feeding these automatically.
+
+### 11 — Browser verification P2 (🟡 Phases 1–2, 2026-07-05, `f3328c34`)
+
+- Autonomous post-edit verification loop (spec Phase 3's loop, shipped as our Phase 2 scope):
+  `artifactCapture` gained a pre-walkthrough hook (`setWalkthroughVerificationHook`) awaited
+  between task settle and walkthrough generation — verification screenshots + notes land
+  INSIDE the 09 P3 walkthrough's Verification section (`WalkthroughInput.verificationNotes`).
+  Hook failures are logged, never thrown; the walkthrough always generates.
+- `services/browser/`: `uiChangeHeuristic` (UI-affecting filter over recorded diff-artifact
+  paths — tsx/jsx/css/scss/less/html anywhere or ts/js under src/, tests + `*.types.ts`/`.d.ts`
+  excluded; route derivation from pages/routes/views) · `devServerOrchestrator`
+  (`resolveDevCommand` from package.json scripts → `pnpm dev`/`pnpm start`; PTY via the
+  existing TerminalService, readiness = local URL in ANSI-stripped rolling output, timeout
+  60s, teardown = closeSession; idle→starting→ready|failed→stopped) · `verificationLoop`
+  (skip notes for no-UI-change/no-workspace/no-dev-script/permission-denied; teardown in
+  `finally`: server stop + `endSessionsForTask`).
+- Still fully gated (AC #7 + #12): the pass calls `ensureSession` — Phase 1's permission
+  prompt IS the offer; deny/timeout → skip note. Session is created post-settle so the
+  loop ends it explicitly; only completed tasks verify.
+- Wiring: `BrowserPermissionPromptHost` calls `initBrowserVerificationLoop(readFile)`
+  (readFile = FileSystemService). 100% diff coverage, zero COVERAGE_GATE=off.
+- Deferred to Phase 3: network summaries + session recordings to
+  `.vcs/artifacts/recordings/` (AC #5) · fully unattended verification (stays gated).
+
+### 11 — Browser verification P1 (2026-07-05, `6c972ddf` + `b86d3e2c`)
+
+- `/browser` rides the registered `playwright` MCP (mcp/registry.json) through the existing
+  `MCPService` client — NO new CDP/Playwright sidecar (DEPENDENCY_AUDIT reuse finding).
+  `services/browser/`: `BrowserSessionService` (permission gate) + `browserMcpAdapter`
+  (action ↔ tool mapping, defensive result parsing) + `browserSessionStore` +
+  `BrowserPermissionPromptHost` (AppLayout host; approve/deny modal + session chip w/ revoke).
+- Agent surface: new `browser_action` ActionType (registry/planner docs/parser). Allowlist:
+  navigate/click/type/snapshot/read_console/screenshot — click/type address elements by
+  `ref` from a prior `snapshot` (@playwright/mcp model). All failures return structured
+  results (`no_session`/`permission_denied`/`server_error`/…), never throws to the agent.
+- Session contract (AC #1/#9/#12): single active session, scoped to ONE BackgroundTask;
+  first `browser_action` triggers the prompt (120s timeout = deny); ends on user revoke,
+  task settle (`bindTaskEvents` on completed/failed/cancelled), or replacement.
+- Screenshots → spec 09 `screenshot`-kind artifacts (`recordScreenshotArtifact` +
+  `encode/decodeScreenshotContent`, data-URL embedded, 4M-char cap) — the seam 09 P3
+  walkthroughs consume.
+- **Shared step-param (spec 10/12 may reuse):** `BackgroundAgentSystem` now stamps
+  `step.action.params.backgroundTaskId ??= task.id` at the `onStepStart` boundary (same
+  drain pattern as `injectedUserMessages`) — executors can key per-task state on the
+  BackgroundTask id the UI shows, not the planner's internal AgentTask id.
+- Compliance side effects: `types/agent.ts` → `agent.types.ts` (types-only; joins the
+  `*.types.ts` coverage-exclusion convention — prettier reflow had put its interface lines
+  under the diff gate with no coverable statements); ResponseParser got a full test suite
+  (reflow → 100% covered) + legacy over-length lines fixed; suppressions pruned.
+- Deviation from spec: no Tauri sidecar/`Command.sidecar()` (AC #2) — the MCP server IS the
+  isolated browser process; web mode degrades to a structured `unsupported_environment`.
+  ArtifactsPanel renders screenshot artifacts via raw-content fallback for now (image viewer
+  is a small follow-up).
+- Open follow-ups: Phase 2 (console/network streaming + recording to `.vcs/artifacts/recordings/`)
+  · Phase 3 (post-edit autonomous verify loop + walkthrough, with spec 09 P3) · screenshot
+  artifact image renderer in ArtifactsPanel · ~~palette `/browser` shortcut~~ (shipped
+  2026-07-06, `c242d288`: status-aware verify/approve/deny/revoke commands).
 
 ### 02 — Task Runner + Problems panel (✅ 2026-07-03)
 
@@ -51,7 +150,13 @@ Legend: ✅ done · 🟡 partially done (phases remain) · 🔄 in progress (cla
 
 - `/schedule` palette command, Schedule panel (create→preview→confirm, pause/resume/delete, run history 20), `ScheduleStore` (SQLite `agent_schedules` + fallback), cadence engine (once/interval/daily/weekly), `ScheduleRunner` 30s tick, missed-run policies, workspace guard.
 - **Deviation**: the `scheduled-tasks` MCP named in the spec DOES NOT EXIST in the monorepo — in-app tick replaces it. Verify MCP dependencies named in other specs before relying on them.
-- Open follow-ups: Inbox delivery (blocked on spec 10) · OS desktop notifications (Tauri notification plugin not installed — needs Bruce's dependency sign-off) · chat slash-command variant · inline schedule editing.
+- ~~Inbox delivery (blocked on spec 10)~~ SHIPPED 2026-07-06: `ScheduleRunner` takes an optional
+  `deliver` dep, hardwired in `initScheduling` to `deliverScheduleRun` → `addScheduleRun`
+  (new `schedule-completed`/`schedule-failed` inbox kinds, idempotent per run id, entry
+  deep-links to the settled task). Workspace-mismatch failures stay notification-only
+  (no task to link — spec's Phase 3 wording is task-settle only).
+- ~~chat slash-command variant · inline schedule editing~~ SHIPPED 2026-07-07 `c4992a16`: /schedule in AIChat (handleScheduleChatCommand) + inline schedule editing in the panel.
+- Open follow-ups: OS desktop notifications (Tauri notification plugin not installed — needs Bruce's dependency sign-off).
 
 ### 15 — PR Review Bot (✅ Phases 1-2, 2026-07-04, `1597b3d3`)
 
@@ -60,6 +165,27 @@ Legend: ✅ done · 🟡 partially done (phases remain) · 🔄 in progress (cla
 - **Setup needed (Bruce):** add `OPENROUTER_API_KEY` repo secret to light up AI comments (without it the bot posts heuristics-only reviews). Smoke-test on a scratch PR after merge to main.
 - Open follow-ups: Phase 3 autofix (needs `contents: write` + push capability) · MultiAgentReview integration (service is MOCK — do not wire to real PRs) · merge-blocking (AC 10) · `requestChangesEnabled` default-off until dogfooded.
 - Gotcha for future specs: app `scripts/*.ts` files fail lint-staged (tsconfig doesn't include them) — CI/utility shims must be `.mjs`; `console.log` is lint-banned even there (use `process.stdout.write`).
+
+### 09 — Verifiable Artifacts P2 (🟡 Phases 1–2, 2026-07-05, `fe774ff5` + `4827c6e9`)
+
+- Comment threads on task_list/plan artifacts (`ArtifactCommentThread`, `artifact_comments`
+  SQLite table + `ArtifactCommentStore` fallback pattern, 1000-comment retention, cascade on
+  artifact delete). `addArtifactComment` → `injectMessage` while the task is pending/running;
+  delivery badge tracks queued → delivered (`messageInjected`) and degrades to feedback on
+  `messageDropped`/finished-task. Agent sees messages via `step.action.params.injectedUserMessages`
+  in ReActExecutor's prompt.
+- Compliance side effect: `BackgroundAgentSystem.executeTask` split (planTask /
+  buildExecutionCallbacks / handleExecutionFailure), `waitFor` settle listeners consolidated —
+  the pre-commit ESLint ignores the suppressions baseline, so a touched legacy file must
+  actually meet the 50-line cap. Suppressions pruned (file entry + stale AICodeReviewer).
+- Open follow-ups: P3 auto walkthrough (+ spec 11 screenshots) · comment anchors + resolution
+  audit trail (AC #6 anchored UI, AC #11) · diff/walkthrough-kind threads · everything below.
+
+### 09 — Verifiable Artifacts P1 (2026-07-04, `91d3ba21`)
+
+- Artifact model + `artifacts` SQLite table (db.rs) + `ArtifactStore` (500-artifact retention) + task-grouped ArtifactsPanel (host pattern) + palette commands. Capture is event-driven off `BackgroundAgentSystem` (no changes to it): task_list born at task START as a live checklist, finalized on completed/failed. Diff artifacts re-render via `MultiFileDiffView`; malformed content falls back to raw view.
+- **Confirmed for P2 planning**: `BackgroundAgentSystem` has NO mid-run message-injection point — P2's non-blocking comments must add one (spec's risk note was right).
+- Open follow-ups: P2 comments + agent-queue push · P3 auto walkthrough (+ spec 11 screenshots) · ~~wire `recordDiffArtifact` into the multi-file approval flow~~ (shipped 2026-07-06, `98dd06c9`) · EnhancedAgentMode shortcut · swap plan viewer to spec 05's markdown+Mermaid viewer when it exists.
 
 ### 01 — Theming (🟡 Phase 1, 2026-07-04, `0395a18b`)
 
@@ -73,5 +199,5 @@ Legend: ✅ done · 🟡 partially done (phases remain) · 🔄 in progress (cla
 - **Pathspec commits only** while sessions run in parallel: `git add <your paths>` then `git commit -m ... -- <your paths>`. Never bare `git commit` or `git add -A` — the index may carry the other session's staged mid-flight work.
 - lint-staged runs `react-refresh/only-export-components` at max-warnings 0: no non-component exports from component `.tsx` files — put helpers in sibling `.ts` modules.
 - `db_execute_query` rejects DDL: new SQLite tables go in `src-tauri/src/db.rs` `ensure_connection()`.
-- AppLayout mount JSX has no render harness: `COVERAGE_GATE=off` with a documented justification in the commit message is the established precedent (76e6c10f, f3a8ef15, 0395a18b) — everything else must be 100% diff-covered.
+- **Sanctioned `COVERAGE_GATE=off` category** (narrow — NOT a general escape hatch): a UI/Monaco **mount-wiring** line with no render harness. Two forms qualify: (a) AppLayout lazy-mount JSX; (b) the single provider/attach call inside `handleEditorMount` where the `monaco` instance only exists at mount. **Rule: only that one mount-wiring line may be uncovered; every logic module it calls must be 100% diff-covered, and the commit message must carry the justification.** Anything beyond a single mount line — parsers, adapters, stores, registries, business logic — must be tested; write the test. Precedents: `76e6c10f`, `f3a8ef15`, `0395a18b` (AppLayout JSX / legacy reflow); `aee44d95`, `04d4344c` (LSP editor-mount wiring, all 10 logic files 100%).
 - Global vitest setup mocks `window.electron.store` with a file-lifetime Map that never clears — `delete (window as ...).electron` in `beforeEach` when testing persistence.

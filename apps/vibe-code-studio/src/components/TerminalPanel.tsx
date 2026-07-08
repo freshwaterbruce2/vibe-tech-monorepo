@@ -19,7 +19,7 @@ const TerminalContainer = styled.div<{ $isOpen: boolean; $isMaximized: boolean }
   bottom: 0;
   left: 0;
   right: 0;
-  height: ${props => props.$isMaximized ? '100%' : props.$isOpen ? '40%' : '0'};
+  height: ${props => (props.$isMaximized ? '100%' : props.$isOpen ? '40%' : '0')};
   background: #1e1e1e;
   border-top: 1px solid #404040;
   display: flex;
@@ -59,8 +59,8 @@ const Tab = styled.div<{ $isActive: boolean }>`
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
-  background: ${props => props.$isActive ? '#1e1e1e' : 'transparent'};
-  color: ${props => props.$isActive ? '#d4d4d4' : '#888'};
+  background: ${props => (props.$isActive ? '#1e1e1e' : 'transparent')};
+  color: ${props => (props.$isActive ? '#d4d4d4' : '#888')};
   border: none;
   border-radius: 4px 4px 0 0;
   cursor: pointer;
@@ -68,7 +68,7 @@ const Tab = styled.div<{ $isActive: boolean }>`
   white-space: nowrap;
 
   &:hover {
-    background: ${props => props.$isActive ? '#1e1e1e' : '#2d2d2d'};
+    background: ${props => (props.$isActive ? '#1e1e1e' : '#2d2d2d')};
     color: #d4d4d4;
   }
 `;
@@ -131,7 +131,7 @@ const TerminalContent = styled.div`
 `;
 
 const TerminalWrapper = styled.div<{ $isActive: boolean }>`
-  display: ${props => props.$isActive ? 'block' : 'none'};
+  display: ${props => (props.$isActive ? 'block' : 'none')};
   width: 100%;
   height: 100%;
 `;
@@ -145,7 +145,7 @@ interface TerminalTab {
 }
 
 const createTerminalTab = (tabNumber: number): TerminalTab => {
-  const id = `term-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const id = `term-${crypto.randomUUID()}`;
   const sessionId = terminalService.createSession();
 
   const terminal = new Terminal({
@@ -178,7 +178,7 @@ const createTerminalTab = (tabNumber: number): TerminalTab => {
   const fitAddon = new FitAddon();
   terminal.loadAddon(fitAddon);
   terminal.loadAddon(new WebLinksAddon());
-  terminal.onData((data) => {
+  terminal.onData(data => {
     terminalService.writeInput(sessionId, data);
   });
 
@@ -215,8 +215,8 @@ export const TerminalPanel = ({ isOpen, onClose }: TerminalPanelProps) => {
     tab.fitAddon.fit();
     terminalService.startShell(
       tab.sessionId,
-      (data) => tab.terminal.write(data),
-      (code) => {
+      data => tab.terminal.write(data),
+      code => {
         tab.terminal.write(`\r\n\r\nProcess exited with code ${code}\r\n`);
       }
     );
@@ -261,7 +261,7 @@ export const TerminalPanel = ({ isOpen, onClose }: TerminalPanelProps) => {
             >
               <span>{tab.title}</span>
               <TabCloseButton
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                   closeTerminal(tab.id);
                 }}
@@ -276,7 +276,7 @@ export const TerminalPanel = ({ isOpen, onClose }: TerminalPanelProps) => {
           <IconButton onClick={createNewTerminal} title="New Terminal">
             <Plus />
           </IconButton>
-          <IconButton onClick={handleMaximize} title={isMaximized ? "Restore" : "Maximize"}>
+          <IconButton onClick={handleMaximize} title={isMaximized ? 'Restore' : 'Maximize'}>
             {isMaximized ? <Minimize2 /> : <Maximize2 />}
           </IconButton>
           <IconButton onClick={onClose} title="Close Terminal">
@@ -290,7 +290,7 @@ export const TerminalPanel = ({ isOpen, onClose }: TerminalPanelProps) => {
           <TerminalWrapper
             key={tab.id}
             $isActive={tab.id === activeTerminalId}
-            ref={(el) => {
+            ref={el => {
               if (el) {
                 terminalRefs.current.set(tab.id, el);
                 ensureTerminalStarted(tab, el);

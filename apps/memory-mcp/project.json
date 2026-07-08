@@ -38,7 +38,8 @@
     "typecheck": {
       "executor": "nx:run-script",
       "options": { "script": "typecheck" },
-      "cache": true
+      "cache": true,
+      "dependsOn": []
     }
   },
   "tags": ["scope:mcp", "type:mcp-server", "language:typescript"]

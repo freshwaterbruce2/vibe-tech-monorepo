@@ -10,6 +10,7 @@ import { useAppExtras, useServices } from '../../app/contexts';
 import {
   createSchedule,
   deleteSchedule,
+  editSchedule,
   initScheduling,
   pauseSchedule,
   resumeSchedule,
@@ -48,6 +49,7 @@ export const SchedulePanelHost = () => {
       workspaceRoot={workspaceFolder}
       onClose={() => setPanelOpen(false)}
       onCreate={draft => runScheduleAction(() => createSchedule(draft), 'create')}
+      onEdit={(id, draft) => runScheduleAction(() => editSchedule(id, draft), 'edit')}
       onPause={id => runScheduleAction(() => pauseSchedule(id), 'pause')}
       onResume={id => runScheduleAction(() => resumeSchedule(id), 'resume')}
       onDelete={id => runScheduleAction(() => deleteSchedule(id), 'delete')}

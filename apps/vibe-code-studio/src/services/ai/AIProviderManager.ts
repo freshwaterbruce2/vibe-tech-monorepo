@@ -5,8 +5,7 @@
  * via IPC (see `electron/main.ts`), including DeepSeek→HF Router hedged fallback.
  */
 import { logger } from '../../services/Logger';
-import type {
-  IAIProvider} from './AIProviderInterface';
+import type { IAIProvider } from './AIProviderInterface';
 import {
   AIProvider,
   type AIModel,
@@ -17,18 +16,6 @@ import {
   type StreamCompletionResponse,
 } from './AIProviderInterface';
 import { LocalProvider } from './providers/LocalProvider';
-
-/**
- * A minimal typing for the Web Crypto API surface used in `createRequestId`.
- * `globalThis.crypto` is available in modern browsers and Node 19+, but may
- * not appear in older TypeScript `lib` targets.
- */
-interface WebCryptoGlobal {
-  randomUUID(): string;
-}
-
-/** Subset of `typeof globalThis` that may optionally carry the crypto API. */
-type GlobalWithCrypto = typeof globalThis & { crypto?: WebCryptoGlobal };
 
 /**
  * Narrowed view of `window.electron.ipc` used by this module.
@@ -47,7 +34,10 @@ interface ElectronIpcBridge {
 }
 
 type MainAIChatRole = 'system' | 'user' | 'assistant';
-interface MainAIChatMessage { role: MainAIChatRole; content: string }
+interface MainAIChatMessage {
+  role: MainAIChatRole;
+  content: string;
+}
 
 interface MainAIRequestPayload {
   messages: MainAIChatMessage[];
@@ -94,9 +84,9 @@ interface PendingCompletionResult extends MainCompletionResponse {
 }
 
 type FromMainMessage =
-  | { type: 'ai:complete:result'; requestId: string } & MainAICompleteResult
+  | ({ type: 'ai:complete:result'; requestId: string } & MainAICompleteResult)
   | { type: 'ai:stream:chunk'; requestId: string; chunk: string; provider: 'deepseek' | 'hfRouter' }
-  | { type: 'ai:stream:done'; requestId: string } & MainAIStreamDone;
+  | ({ type: 'ai:stream:done'; requestId: string } & MainAIStreamDone);
 
 interface PendingCompletion {
   resolve: (result: PendingCompletionResult) => void;
@@ -113,17 +103,13 @@ interface PendingStream {
 }
 
 function createRequestId(): string {
-  const cryptoObj = (globalThis as GlobalWithCrypto).crypto;
-  if (cryptoObj?.randomUUID) return cryptoObj.randomUUID();
-  return `req_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  return `req_${crypto.randomUUID()}`;
 }
 
 function isElectronIpcAvailable(): boolean {
   // `window.electron` is declared globally in `src/types/electron.d.ts`.
   return (
-    typeof window !== 'undefined' &&
-    !!window.electron?.ipc?.send &&
-    !!window.electron?.ipc?.on
+    typeof window !== 'undefined' && !!window.electron?.ipc?.send && !!window.electron?.ipc?.on
   );
 }
 
@@ -326,7 +312,7 @@ export class AIProviderManager {
     // Production integration should use IPC-based calls below (DeepSeek/HF Router).
     // This method remains a safe placeholder for unit tests and future expansion.
     throw new Error(
-      `Provider ${providerConfig.provider} completion not implemented via direct call. Use completeViaMain.`,
+      `Provider ${providerConfig.provider} completion not implemented via direct call. Use completeViaMain.`
     );
   }
 
@@ -353,7 +339,7 @@ export class AIProviderManager {
     }
 
     throw new Error(
-      `Provider ${providerConfig.provider} streaming not implemented via direct call. Use streamViaMain.`,
+      `Provider ${providerConfig.provider} streaming not implemented via direct call. Use streamViaMain.`
     );
   }
 
@@ -376,7 +362,7 @@ export class AIProviderManager {
     requestId: string,
     electronIpc: ElectronIpcBridge,
     payload: MainAIRequestPayload,
-    signal?: AbortSignal,
+    signal?: AbortSignal
   ): Promise<MainCompletionResponse> {
     let abortHandler: (() => void) | undefined;
     return new Promise<MainCompletionResponse>((resolve, reject) => {
@@ -388,11 +374,11 @@ export class AIProviderManager {
       };
 
       AIProviderManager.pendingCompletions.set(requestId, {
-        resolve: (result) => {
+        resolve: result => {
           cleanup();
           resolve({ provider: result.provider, model: result.model, content: result.content });
         },
-        reject: (error) => {
+        reject: error => {
           cleanup();
           reject(error);
         },

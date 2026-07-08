@@ -40,12 +40,27 @@ foreach ($dir in $buildDirs) {
     }
 }
 
-# 3. Clean pnpm store
-Write-Host "3. Cleaning pnpm store..." -ForegroundColor Cyan
+# 3. Prune Next.js (Turbopack) disk cache
+# Next 16 Turbopack has no built-in disk cache pruning — apps/*/.next/cache
+# (and the dev-mode apps/*/.next/dev) can accumulate unbounded (a 218MB .sst
+# file was found here before). The buildDirs pass above already removes a
+# whole ".next" dir when nothing has it locked; this targets just cache/dev
+# so it still helps when a running dev server holds other .next files open.
+Write-Host "3. Pruning Next.js Turbopack cache..." -ForegroundColor Cyan
+$nextCacheDirs = @("cache", "dev")
+foreach ($dir in $nextCacheDirs) {
+    Get-ChildItem -Path "V:\monorepo\apps\*\.next\$dir" -Directory -ErrorAction SilentlyContinue |
+    ForEach-Object {
+        Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# 4. Clean pnpm store
+Write-Host "4. Cleaning pnpm store..." -ForegroundColor Cyan
 & pnpm store prune 2>$null
 
-# 4. Clean npm cache
-Write-Host "4. Cleaning npm cache..." -ForegroundColor Cyan
+# 5. Clean npm cache
+Write-Host "5. Cleaning npm cache..." -ForegroundColor Cyan
 & npm cache clean --force 2>$null
 
 # Check new space

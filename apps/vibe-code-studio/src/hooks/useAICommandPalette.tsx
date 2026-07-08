@@ -19,7 +19,15 @@ import {
 } from 'lucide-react';
 
 import { logger } from '../services/Logger';
+import { useAgentManagerCommands } from './useAgentManagerCommands';
+import { useAgentsMdCommands } from './useAgentsMdCommands';
+import { useArtifactCommands } from './useArtifactCommands';
+import { useBrowserCommands } from './useBrowserCommands';
+import { useKnowledgeCommands } from './useKnowledgeCommands';
+import { usePlanModeCommands } from './usePlanModeCommands';
 import { useScheduleCommands } from './useScheduleCommands';
+import { useSettingsSyncCommands } from './useSettingsSyncCommands';
+import { useTestExplorerCommands } from './useTestExplorerCommands';
 import { useTaskCommands } from './useTaskCommands';
 
 interface Command {
@@ -57,12 +65,28 @@ interface UseAICommandPaletteProps {
 export const useAICommandPalette = (props: UseAICommandPaletteProps) => {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const taskCommands = useTaskCommands();
+  const agentsMdCommands = useAgentsMdCommands();
   const scheduleCommands = useScheduleCommands();
+  const artifactCommands = useArtifactCommands();
+  const planModeCommands = usePlanModeCommands();
+  const settingsSyncCommands = useSettingsSyncCommands();
+  const knowledgeCommands = useKnowledgeCommands();
+  const testExplorerCommands = useTestExplorerCommands();
+  const agentManagerCommands = useAgentManagerCommands();
+  const browserCommands = useBrowserCommands({ onToggleAIChat: props.onToggleAIChat });
 
   // Build comprehensive command list
   const commands: Command[] = [
     ...taskCommands,
+    ...agentsMdCommands,
     ...scheduleCommands,
+    ...artifactCommands,
+    ...planModeCommands,
+    ...settingsSyncCommands,
+    ...knowledgeCommands,
+    ...testExplorerCommands,
+    ...agentManagerCommands,
+    ...browserCommands,
     // File Operations
     {
       id: 'file-new',

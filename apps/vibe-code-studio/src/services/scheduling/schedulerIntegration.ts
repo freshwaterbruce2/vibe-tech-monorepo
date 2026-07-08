@@ -6,6 +6,7 @@
  * Spec: FEATURE_SPECS/competitive-gaps/16-AGENT-SCHEDULING.md
  */
 import { useSchedulesStore } from '../../stores/schedulesStore';
+import { deliverScheduleRun } from '../agentManager/agentManagerIntegration';
 import { logger } from '../Logger';
 import { computeNextRunAt } from './cadence';
 import { ScheduleRunner } from './ScheduleRunner';
@@ -38,6 +39,8 @@ export async function initScheduling(deps: SchedulerInitDeps): Promise<ScheduleR
     submitter: deps.submitter,
     getWorkspaceRoot: deps.getWorkspaceRoot,
     notify: deps.notify,
+    // Spec 16 AC #5 — settled runs land in the Agent Manager Inbox (spec 10)
+    deliver: deliverScheduleRun,
     onSchedulesChanged: syncToUiStore,
   });
   await runnerInstance.start();
@@ -76,6 +79,26 @@ export async function resumeSchedule(id: string): Promise<void> {
   await store.update(id, {
     status: 'active',
     nextRunAtMs: computeNextRunAt(schedule.cadence, Date.now()),
+  });
+  syncToUiStore();
+}
+
+/**
+ * Apply an edited draft (cadence/prompt/agent/policy) to an existing schedule.
+ * The next trigger is recomputed from the new cadence; a completed once
+ * schedule becomes active again since it now has a future occurrence.
+ */
+export async function editSchedule(id: string, draft: ScheduleDraft): Promise<void> {
+  const store = requireStore();
+  const existing = store.get(id);
+  if (!existing) return;
+  await store.update(id, {
+    agentId: draft.agentId,
+    userRequest: draft.userRequest,
+    cadence: draft.cadence,
+    missedRunPolicy: draft.missedRunPolicy ?? existing.missedRunPolicy,
+    status: existing.status === 'completed' ? 'active' : existing.status,
+    nextRunAtMs: computeNextRunAt(draft.cadence, Date.now()),
   });
   syncToUiStore();
 }

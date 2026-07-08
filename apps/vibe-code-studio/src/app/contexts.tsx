@@ -23,7 +23,14 @@ import type { UnifiedAIService } from '../services/ai/UnifiedAIService';
 import type { AIModel, AIProvider } from '../services/ai/AIProviderInterface';
 import type { SearchOptions, SearchResult, SearchScope } from '../components/GlobalSearch/types';
 import type { NotificationItem } from '../hooks/useNotifications';
-import type { AIMessage, AIResponseState, ContextualFile, EditorFile, EditorSettings, WorkspaceContext as WorkspaceIndexContext } from '../types';
+import type {
+  AIMessage,
+  AIResponseState,
+  ContextualFile,
+  EditorFile,
+  EditorSettings,
+  WorkspaceContext as WorkspaceIndexContext,
+} from '../types';
 import type { FileChange, MultiFileEditPlan } from '../types/multifile';
 import type { ChatMode, VisualPanelState } from './types';
 
@@ -137,13 +144,13 @@ export interface WorkspaceContextValue {
     file: string,
     search: string,
     replace: string,
-    options: SearchOptions,
+    options: SearchOptions
   ) => Promise<void>;
   handleSearchInFiles: (
     searchText: string,
     files: string[],
     options: SearchOptions,
-    scope?: SearchScope,
+    scope?: SearchScope
   ) => Promise<Record<string, SearchResult[]>>;
 }
 
@@ -179,6 +186,7 @@ export interface AppExtrasContextValue {
   cancelAiResponse: () => void;
   addAiMessage: (message: AIMessage) => void;
   updateAiMessage: (messageId: string, updater: (msg: AIMessage) => AIMessage) => void;
+  clearAiMessages: () => void;
   handleModelChange: (model: AIModel) => Promise<void>;
   handleProviderChange: (provider: AIProvider) => Promise<void>;
   handleMultiFileEditDetected?: (plan: MultiFileEditPlan, changes: FileChange[]) => void;

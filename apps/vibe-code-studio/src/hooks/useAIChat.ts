@@ -6,7 +6,13 @@ import type { UnifiedAIService } from '../services/ai/UnifiedAIService';
 import { logger } from '../services/Logger';
 import { telemetry } from '../services/TelemetryService';
 import { entitlementsService } from '../services/EntitlementsService';
-import type { AIContextRequest, AIMessage, AIResponseState, EditorFile, WorkspaceContext } from '../types';
+import type {
+  AIContextRequest,
+  AIMessage,
+  AIResponseState,
+  EditorFile,
+  WorkspaceContext,
+} from '../types';
 import type { FileChange, MultiFileEditPlan } from '../types/multifile';
 
 const CHAT_STORAGE_KEY = 'vibe-code-studio:chat-messages';
@@ -48,10 +54,7 @@ type CancelReason =
 
 type TelemetryValue = string | number | boolean | undefined;
 
-function emitLifecycleTelemetry(
-  event: string,
-  dimensions: Record<string, TelemetryValue>
-): void {
+function emitLifecycleTelemetry(event: string, dimensions: Record<string, TelemetryValue>): void {
   const sanitizedDimensions: Record<string, string | number | boolean> = {};
   Object.entries(dimensions).forEach(([key, value]) => {
     if (value !== undefined) {
@@ -76,7 +79,7 @@ function loadPersistedMessages(): AIMessage[] {
     const raw = localStorage.getItem(CHAT_STORAGE_KEY);
     if (!raw) return [WELCOME_MESSAGE];
     const parsed = JSON.parse(raw) as Array<AIMessage & { timestamp: string }>;
-    return parsed.map((m) => ({ ...m, timestamp: new Date(m.timestamp) }));
+    return parsed.map(m => ({ ...m, timestamp: new Date(m.timestamp) }));
   } catch {
     return [WELCOME_MESSAGE];
   }
@@ -136,7 +139,7 @@ export function useAIChat({
         ...dimensions,
       });
     },
-    [cancellationLifecycleEnabled],
+    [cancellationLifecycleEnabled]
   );
 
   const addAiMessage = useCallback((message: AIMessage) => {
@@ -145,10 +148,10 @@ export function useAIChat({
     const isUrgent = message.role === 'user';
 
     if (isUrgent) {
-      setAiMessages((prev) => [...prev, message]);
+      setAiMessages(prev => [...prev, message]);
     } else {
       startTransition(() => {
-        setAiMessages((prev) => [...prev, message]);
+        setAiMessages(prev => [...prev, message]);
       });
     }
   }, []);
@@ -157,10 +160,10 @@ export function useAIChat({
     (messageId: string, updater: (msg: AIMessage) => AIMessage) => {
       // Use startTransition for non-urgent message updates (agent task step progress)
       startTransition(() => {
-        setAiMessages((prev) => prev.map((msg) => (msg.id === messageId ? updater(msg) : msg)));
+        setAiMessages(prev => prev.map(msg => (msg.id === messageId ? updater(msg) : msg)));
       });
     },
-    [],
+    []
   );
 
   const clearAiMessages = useCallback(() => {
@@ -174,8 +177,8 @@ export function useAIChat({
 
   const markResponseCancelled = useCallback((responseMessageId: string) => {
     startTransition(() => {
-      setAiMessages((prev) =>
-        prev.map((msg) => {
+      setAiMessages(prev =>
+        prev.map(msg => {
           if (msg.id !== responseMessageId || msg.role !== 'assistant') {
             return msg;
           }
@@ -233,7 +236,7 @@ export function useAIChat({
 
       return true;
     },
-    [aiService, cancellationLifecycleEnabled, emitGenerationTelemetry, markResponseCancelled],
+    [aiService, cancellationLifecycleEnabled, emitGenerationTelemetry, markResponseCancelled]
   );
 
   const cancelAiResponse = useCallback(() => {
@@ -247,7 +250,7 @@ export function useAIChat({
       }
       setAiChatOpenState(open);
     },
-    [cancelAiResponseWithReason],
+    [cancelAiResponseWithReason]
   );
 
   useEffect(() => {
@@ -277,7 +280,7 @@ export function useAIChat({
     async (message: string, contextRequest?: Partial<AIContextRequest>) => {
       const plan = entitlementsService.getCurrentPlan();
       if (plan === 'free') {
-        const userMsgsCount = aiMessages.filter((m) => m.role === 'user').length;
+        const userMsgsCount = aiMessages.filter(m => m.role === 'user').length;
         if (userMsgsCount >= 10) {
           const limitMsg: AIMessage = {
             id: crypto.randomUUID(),
@@ -285,7 +288,7 @@ export function useAIChat({
             content: `⚠️ **Free Plan Limit Reached**\n\nYou have used your daily limit of 10 messages. Please click the [Upgrade to Pro](#login) link or go to Settings to unlock unlimited AI assistant queries, autocomplete, custom rules, and multi-agent execution.`,
             timestamp: new Date(),
           };
-          setAiMessages((prev) => [...prev, limitMsg]);
+          setAiMessages(prev => [...prev, limitMsg]);
           return;
         }
       }
@@ -360,16 +363,16 @@ export function useAIChat({
         }
 
         if (openFiles.length > 0) {
-          systemPrompt += `\n\n## Open Files\n${openFiles.map((f) => `- ${f.name}`).join('\n')}`;
+          systemPrompt += `\n\n## Open Files\n${openFiles.map(f => `- ${f.name}`).join('\n')}`;
         }
 
         systemPrompt += `\n\nWhen the user asks you to review, explain, or modify code, use the file contents above. Provide specific, actionable feedback referencing line numbers and code snippets.`;
 
         // Build conversation history from previous messages
         const conversationMessages = aiMessages
-          .filter((m) => m.role === 'user' || m.role === 'assistant')
+          .filter(m => m.role === 'user' || m.role === 'assistant')
           .slice(-10) // Last 10 messages for context
-          .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+          .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
 
         // Get AI response using streaming
         let aiResponseContent = '';
@@ -414,7 +417,7 @@ export function useAIChat({
             sidebarOpen,
             previewOpen,
             aiChatOpen,
-            recentFiles: openFiles.slice(0, 5).map((f) => f.name),
+            recentFiles: openFiles.slice(0, 5).map(f => f.name),
             workspaceFolder,
           },
           ...contextRequest,
@@ -450,8 +453,8 @@ export function useAIChat({
             ) {
               return;
             }
-            setAiMessages((prev) => {
-              return prev.map((msg) => {
+            setAiMessages(prev => {
+              return prev.map(msg => {
                 if (msg.id === aiResponseId) {
                   const updatedMsg: AIMessage = {
                     ...msg,
@@ -539,14 +542,17 @@ export function useAIChat({
         });
 
         // Add error message
+        const detail = error instanceof Error ? error.message : 'Unknown error';
+        const quotaError = /\b(429|402)\b|insufficient balance|quota/i.test(detail);
+        const hint = quotaError
+          ? 'The provider account is out of credit — check Settings > API Keys or switch model.'
+          : detail.includes('API key')
+            ? 'Please add your API key in Settings > API Keys.'
+            : 'Please try again.';
         const errorMessage: AIMessage = {
           id: crypto.randomUUID(),
           role: 'assistant',
-          content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}. ${
-            error instanceof Error && error.message.includes('API key')
-              ? 'Please add your API key in Settings > API Keys.'
-              : 'Please try again.'
-          }`,
+          content: `Sorry, I encountered an error: ${detail}. ${hint}`,
           timestamp: new Date(),
         };
         addAiMessage(errorMessage);
@@ -563,8 +569,8 @@ export function useAIChat({
 
         if (isMountedRef.current && activeRequestTokenRef.current === requestToken) {
           setIsAiResponding(false);
-          setAiResponseState((prev) =>
-            prev === 'streaming' || prev === 'cancelling' ? 'idle' : prev,
+          setAiResponseState(prev =>
+            prev === 'streaming' || prev === 'cancelling' ? 'idle' : prev
           );
         }
       }
@@ -586,7 +592,7 @@ export function useAIChat({
       emitGenerationTelemetry,
       markResponseCancelled,
       onMultiFileEditDetected,
-    ],
+    ]
   );
 
   return {

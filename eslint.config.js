@@ -99,6 +99,14 @@ export default tseslint.config(
       // (which excludes *.test.ts to keep dist clean) — vitest runs them directly.
       'apps/learning-pipeline-mcp/src/**/__tests__/**',
       'apps/learning-pipeline-mcp/src/**/*.{test,spec}.ts',
+      // monorepo-health-mcp unit tests: same reason — build tsconfig excludes
+      // *.test.ts to keep dist clean; vitest runs them directly.
+      'apps/monorepo-health-mcp/src/**/__tests__/**',
+      'apps/monorepo-health-mcp/src/**/*.{test,spec}.ts',
+      // vibe-shipping unit tests: not in its build tsconfig program (excludes
+      // *.test.ts to keep dist clean) — vitest runs them directly.
+      'apps/vibe-shipping/src/**/__tests__/**',
+      'apps/vibe-shipping/src/**/*.{test,spec}.{ts,tsx}',
       // Playwright E2E specs: not in the typed tsconfig program (same intent as
       // the ignored src unit tests above) — keeps typed linting from erroring on them.
       'apps/vibe-code-studio/tests/**',
@@ -305,6 +313,8 @@ export default tseslint.config(
   // Workspace size caps (500 +/- 100 line policy)
   // File cap 1000 (hard) / warning band starts at 500 via Prettier + reviews.
   // Line length 100. Exclusions handled in the override block below.
+  // A stricter component cap (300) is scoped to vibe-code-studio only, below —
+  // see that block's comment for why it isn't applied workspace-wide.
   // ========================================
   {
     files: [
@@ -330,6 +340,20 @@ export default tseslint.config(
           ignoreComments: false,
         },
       ],
+    },
+  },
+
+  // vibe-code-studio component cap (300 lines, stricter than the 1000-line
+  // workspace default). Scoped to this app only: it's the only project whose
+  // lint script wires up a bulk-suppressions baseline (--suppressions-location
+  // eslint-suppressions.json), so pre-existing oversized components can be
+  // grandfathered at their current line count instead of breaking CI outright.
+  // Other apps have no such baseline wired in, so a repo-wide 300 cap would
+  // fail dozens of existing files with no way to grandfather them.
+  {
+    files: ['apps/vibe-code-studio/src/**/*.{tsx,jsx}'],
+    rules: {
+      'max-lines': ['error', { max: 300, skipBlankLines: true, skipComments: true }],
     },
   },
 

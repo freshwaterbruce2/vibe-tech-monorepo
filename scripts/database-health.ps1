@@ -2,7 +2,7 @@
 [CmdletBinding()]
 param(
     [string]$DatabaseRoot = 'D:\databases',
-    [string]$OutputPath = (Join-Path (Resolve-Path (Join-Path $PSScriptRoot '..')).Path 'tmp\database-health-report.json'),
+    [string]$OutputPath,
     [switch]$IncludeIntegrityCheck,
     [switch]$IncludeArchived,
     [switch]$CheckpointLargeWal
@@ -10,6 +10,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $workspaceRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+if ([string]::IsNullOrEmpty($OutputPath)) {
+    $OutputPath = Join-Path $workspaceRoot 'tmp\database-health-report.json'
+}
 $sqlite = Get-Command sqlite3 -ErrorAction SilentlyContinue
 $excludedPathFragments = @('\_archive', '\backups\', '\cdev-databases\')
 $knownDistinctNameGroups = @(

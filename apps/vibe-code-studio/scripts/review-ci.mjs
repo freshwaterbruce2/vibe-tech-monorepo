@@ -70,9 +70,13 @@ async function main() {
     log: message => writeLine(message),
   });
 
+  const coverageNote = result.diffCoverage
+    ? ` (large PR: reviewed ${result.diffCoverage.includedFiles}/` +
+      `${result.diffCoverage.totalFiles} files)`
+    : '';
   writeLine(
     `[ReviewBot] ${result.reason} — pass ${result.passNumber}, ` +
-      `${result.inlineCount} inline comment(s)`
+      `${result.inlineCount} inline comment(s)${coverageNote}`
   );
 }
 

@@ -31,6 +31,15 @@ describe('problemsStore actions', () => {
     expect(useProblemsStore.getState().bySource['build']).toHaveLength(2);
   });
 
+  it('setSource replaces a source instead of accumulating', () => {
+    const { actions } = useProblemsStore.getState();
+    actions.append('lsp:a.ts', [diag({}), diag({ line: 2 })]);
+    actions.setSource('lsp:a.ts', [diag({ line: 9, source: 'lsp' })]);
+    const list = useProblemsStore.getState().bySource['lsp:a.ts'];
+    expect(list).toHaveLength(1);
+    expect(list?.[0]?.line).toBe(9);
+  });
+
   it('clears a single source without touching others', () => {
     const { actions } = useProblemsStore.getState();
     actions.append('build', [diag({})]);

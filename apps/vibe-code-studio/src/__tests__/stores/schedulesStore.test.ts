@@ -22,7 +22,7 @@ const schedule: ScheduleDefinition = {
 };
 
 beforeEach(() => {
-  useSchedulesStore.setState({ schedules: [], panelOpen: false });
+  useSchedulesStore.setState({ schedules: [], panelOpen: false, createPrefill: null });
 });
 
 describe('schedulesStore', () => {
@@ -46,6 +46,21 @@ describe('schedulesStore', () => {
     actions.togglePanel();
     expect(useSchedulesStore.getState().panelOpen).toBe(false);
     actions.togglePanel();
+    expect(useSchedulesStore.getState().panelOpen).toBe(true);
+  });
+
+  it('openCreateWithPrefill opens the panel and stores the prefill', () => {
+    const { actions } = useSchedulesStore.getState();
+    actions.openCreateWithPrefill('run the audit later');
+    expect(useSchedulesStore.getState().panelOpen).toBe(true);
+    expect(useSchedulesStore.getState().createPrefill).toBe('run the audit later');
+  });
+
+  it('clearCreatePrefill resets the prefill without closing the panel', () => {
+    const { actions } = useSchedulesStore.getState();
+    actions.openCreateWithPrefill('run the audit later');
+    actions.clearCreatePrefill();
+    expect(useSchedulesStore.getState().createPrefill).toBeNull();
     expect(useSchedulesStore.getState().panelOpen).toBe(true);
   });
 });

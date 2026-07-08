@@ -36,7 +36,12 @@ function okJson(payload: unknown): Response {
 }
 
 function errResponse(status: number, text: string): Response {
-  return { ok: false, status, json: async () => ({}), text: async () => text } as unknown as Response;
+  return {
+    ok: false,
+    status,
+    json: async () => ({}),
+    text: async () => text,
+  } as unknown as Response;
 }
 
 /** Build an ok streaming Response whose body emits the given pieces as SSE bytes. */
@@ -209,7 +214,7 @@ describe('BackendProxyService', () => {
     it('returns the model registry', async () => {
       const models = await svc.getAvailableModels();
       expect(models.length).toBeGreaterThan(0);
-      expect(models.some((m) => m.id === 'moonshot/kimi-2.5-pro')).toBe(true);
+      expect(models.some(m => m.id === 'moonshot/kimi-2.5-pro')).toBe(true);
     });
   });
 
@@ -225,13 +230,15 @@ describe('BackendProxyService', () => {
 
   describe('streaming (stream / drainSSE / parseChunk)', () => {
     it('yields content deltas from SSE and stops at [DONE]', async () => {
-      global.fetch = vi.fn().mockResolvedValue(
-        sseResponse([
-          'data: {"choices":[{"delta":{"content":"Hel"}}]}\n',
-          'data: {"choices":[{"delta":{"content":"lo"}}]}\n',
-          'data: [DONE]\n',
-        ])
-      );
+      global.fetch = vi
+        .fn()
+        .mockResolvedValue(
+          sseResponse([
+            'data: {"choices":[{"delta":{"content":"Hel"}}]}\n',
+            'data: {"choices":[{"delta":{"content":"lo"}}]}\n',
+            'data: [DONE]\n',
+          ])
+        );
       const out: string[] = [];
       for await (const chunk of svc.stream(msgs, { model: 'moonshot/kimi-2.5-pro' })) {
         out.push(chunk);
@@ -241,26 +248,26 @@ describe('BackendProxyService', () => {
     });
 
     it('tolerates malformed and empty-delta chunks (parseChunk returns null)', async () => {
-      global.fetch = vi.fn().mockResolvedValue(
-        sseResponse([
-          'data: not-json\n',
-          'data: {"choices":[{"delta":{}}]}\n',
-          'data: {"choices":[{"delta":{"content":"ok"}}]}\n',
-        ])
-      );
+      global.fetch = vi
+        .fn()
+        .mockResolvedValue(
+          sseResponse([
+            'data: not-json\n',
+            'data: {"choices":[{"delta":{}}]}\n',
+            'data: {"choices":[{"delta":{"content":"ok"}}]}\n',
+          ])
+        );
       const out: string[] = [];
       for await (const chunk of svc.stream(msgs)) out.push(chunk);
       expect(out).toEqual(['ok']);
     });
 
     it('reassembles a delta split across read() boundaries', async () => {
-      global.fetch = vi.fn().mockResolvedValue(
-        sseResponse([
-          'data: {"choices":[{"delta":{"con',
-          'tent":"Split"}}]}\n',
-          'data: [DONE]\n',
-        ])
-      );
+      global.fetch = vi
+        .fn()
+        .mockResolvedValue(
+          sseResponse(['data: {"choices":[{"delta":{"con', 'tent":"Split"}}]}\n', 'data: [DONE]\n'])
+        );
       const out: string[] = [];
       for await (const chunk of svc.stream(msgs)) out.push(chunk);
       expect(out.join('')).toBe('Split');
@@ -283,7 +290,11 @@ describe('BackendProxyService', () => {
           init.signal?.addEventListener('abort', () => reject(new Error('aborted')));
         });
       });
-      const p = svc.complete({ messages: msgs, model: 'moonshot/kimi-2.5-pro', signal: ctrl.signal });
+      const p = svc.complete({
+        messages: msgs,
+        model: 'moonshot/kimi-2.5-pro',
+        signal: ctrl.signal,
+      });
       ctrl.abort();
       await expect(p).rejects.toThrow(/aborted/);
       expect(seen?.aborted).toBe(true);
@@ -339,8 +350,9 @@ describe('BackendProxyService — key-aware rerouting', () => {
   let svc: BackendProxyService;
 
   function seedConfigured(value: Record<string, boolean>) {
-    (svc as unknown as { configuredCache: { value: Record<string, boolean>; at: number } | null })
-      .configuredCache = { value, at: Date.now() };
+    (
+      svc as unknown as { configuredCache: { value: Record<string, boolean>; at: number } | null }
+    ).configuredCache = { value, at: Date.now() };
   }
 
   beforeEach(() => {
@@ -398,5 +410,335 @@ describe('BackendProxyService — key-aware rerouting', () => {
     // no seed — configuredCache is null and the background refresh is async
     await svc.complete({ messages: msgs, model: 'moonshot/kimi-2.5-pro' });
     expect(lastCall()[0]).toBe(`${BASE}/moonshot/v1/chat/completions`);
+  });
+});
+
+/**
+ * Quota fallback (429/402 → single OpenRouter retry). Unlike the key-aware
+ * rerouting above, quotaFallbackRoute reads this.configuredCache DIRECTLY (a
+ * fallback decision happens after a real upstream response), so these tests
+ * keep the VITEST guard active — buildRoute stays on the natural provider —
+ * and seed the private cache to enable the fallback.
+ */
+describe('BackendProxyService — quota fallback (429/402 retry via OpenRouter)', () => {
+  let svc: BackendProxyService;
+
+  function seedConfigured(value: Record<string, boolean>) {
+    (
+      svc as unknown as {
+        configuredCache: { value: Record<string, boolean>; at: number } | null;
+      }
+    ).configuredCache = { value, at: Date.now() };
+  }
+
+  function fetchCalls(): Array<[string, RequestInit]> {
+    return vi.mocked(global.fetch).mock.calls as unknown as Array<[string, RequestInit]>;
+  }
+
+  function bodyOfCall(index: number): Record<string, unknown> {
+    return JSON.parse(fetchCalls()[index]![1].body as string);
+  }
+
+  beforeEach(() => {
+    global.fetch = vi.fn();
+    svc = new BackendProxyService({ baseUrl: BASE });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('complete(): retries a moonshot 429 once via OpenRouter with OpenRouter shaping', async () => {
+    seedConfigured({ openrouter: true });
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce(errResponse(429, 'insufficient balance'))
+      .mockResolvedValueOnce(okJson(CHAT_PAYLOAD));
+
+    const res = await svc.complete({
+      messages: msgs,
+      model: 'moonshot/kimi-2.5-pro',
+      temperature: 0.3,
+    });
+
+    expect(res.content).toBe('PONG');
+    expect(fetchCalls()).toHaveLength(2);
+    expect(fetchCalls()[0]![0]).toBe(`${BASE}/moonshot/v1/chat/completions`);
+    expect(fetchCalls()[1]![0]).toBe(`${BASE}/openrouter/api/v1/chat/completions`);
+    // first attempt was moonshot-shaped…
+    expect(bodyOfCall(0).model).toBe('kimi-k2.5');
+    expect(bodyOfCall(0).thinking).toEqual({ type: 'disabled' });
+    // …the retry is OpenRouter-shaped: author-prefixed id, no thinking, caller temp
+    const retryBody = bodyOfCall(1);
+    expect(retryBody.model).toBe('moonshotai/kimi-k2.5');
+    expect(retryBody.thinking).toBeUndefined();
+    expect(retryBody.temperature).toBe(0.3);
+  });
+
+  it('complete(): throws a combined error when the OpenRouter fallback also fails', async () => {
+    seedConfigured({ openrouter: true });
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce(errResponse(429, 'quota exceeded'))
+      .mockResolvedValueOnce(errResponse(402, 'no balance'));
+
+    await expect(svc.complete({ messages: msgs, model: 'moonshot/kimi-2.5-pro' })).rejects.toThrow(
+      /AI proxy error \(429\): quota exceeded.*OpenRouter fallback failed with 402: no balance/
+    );
+    expect(fetchCalls()).toHaveLength(2);
+  });
+
+  it('complete(): 402 on the natural route also triggers the fallback', async () => {
+    seedConfigured({ openrouter: true });
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce(errResponse(402, 'payment required'))
+      .mockResolvedValueOnce(okJson(CHAT_PAYLOAD));
+
+    const res = await svc.complete({ messages: msgs, model: 'moonshot/kimi-2.5-pro' });
+    expect(res.content).toBe('PONG');
+    expect(fetchCalls()).toHaveLength(2);
+    expect(fetchCalls()[1]![0]).toBe(`${BASE}/openrouter/api/v1/chat/completions`);
+  });
+
+  it('does NOT fall back when the server has no OpenRouter key', async () => {
+    seedConfigured({ openrouter: false });
+    vi.mocked(global.fetch).mockResolvedValue(errResponse(429, 'insufficient balance'));
+
+    await expect(svc.complete({ messages: msgs, model: 'moonshot/kimi-2.5-pro' })).rejects.toThrow(
+      /AI proxy error \(429\): insufficient balance/
+    );
+    expect(fetchCalls()).toHaveLength(1);
+  });
+
+  it('does NOT fall back when no configured snapshot exists at all', async () => {
+    // configuredCache stays null — legacy single-attempt behavior
+    vi.mocked(global.fetch).mockResolvedValue(errResponse(429, 'insufficient balance'));
+
+    await expect(svc.complete({ messages: msgs, model: 'moonshot/kimi-2.5-pro' })).rejects.toThrow(
+      /AI proxy error \(429\)/
+    );
+    expect(fetchCalls()).toHaveLength(1);
+  });
+
+  it('does NOT fall back on non-quota statuses (500)', async () => {
+    seedConfigured({ openrouter: true });
+    vi.mocked(global.fetch).mockResolvedValue(errResponse(500, 'internal error'));
+
+    await expect(svc.complete({ messages: msgs, model: 'moonshot/kimi-2.5-pro' })).rejects.toThrow(
+      /AI proxy error \(500\): internal error/
+    );
+    expect(fetchCalls()).toHaveLength(1);
+  });
+
+  it('does NOT fall back when the route is already OpenRouter', async () => {
+    seedConfigured({ openrouter: true });
+    vi.mocked(global.fetch).mockResolvedValue(errResponse(429, 'quota'));
+
+    await expect(svc.complete({ messages: msgs, model: 'deepseek/deepseek-r1' })).rejects.toThrow(
+      /AI proxy error \(429\): quota/
+    );
+    expect(fetchCalls()).toHaveLength(1);
+    expect(fetchCalls()[0]![0]).toBe(`${BASE}/openrouter/api/v1/chat/completions`);
+  });
+
+  it('does not double-prefix an already moonshotai/-prefixed model on fallback', async () => {
+    seedConfigured({ openrouter: true });
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce(errResponse(429, 'quota'))
+      .mockResolvedValueOnce(okJson(CHAT_PAYLOAD));
+
+    await svc.complete({ messages: msgs, model: 'moonshotai/kimi-k2.5' });
+    expect(fetchCalls()[0]![0]).toBe(`${BASE}/moonshot/v1/chat/completions`);
+    expect(bodyOfCall(1).model).toBe('moonshotai/kimi-k2.5');
+  });
+
+  it('keeps an existing google/ prefix when falling back from the google route', async () => {
+    seedConfigured({ openrouter: true });
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce(errResponse(429, 'quota'))
+      .mockResolvedValueOnce(okJson(CHAT_PAYLOAD));
+
+    await svc.complete({ messages: msgs, model: 'google/gemini-flash-latest' });
+    expect(fetchCalls()[0]![0]).toBe(`${BASE}/google/v1beta/openai/chat/completions`);
+    expect(fetchCalls()[1]![0]).toBe(`${BASE}/openrouter/api/v1/chat/completions`);
+    expect(bodyOfCall(1).model).toBe('google/gemini-flash-latest');
+  });
+
+  it('buildOpenRouterRoute maps other providers through the OpenRouter alias table', () => {
+    // Defensive branch — unreachable via quota fallback (an OpenRouter route
+    // never falls back to itself), so exercise the private method directly.
+    const route = (
+      svc as unknown as {
+        buildOpenRouterRoute: (m: string) => { url: string; model: string };
+      }
+    ).buildOpenRouterRoute('gpt-4o');
+    expect(route.url).toBe(`${BASE}/openrouter/api/v1/chat/completions`);
+    expect(route.model).toBe('openai/gpt-4o');
+  });
+
+  it('stream(): retries a moonshot 429 once via OpenRouter and yields the SSE deltas', async () => {
+    seedConfigured({ openrouter: true });
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce(errResponse(429, 'insufficient balance'))
+      .mockResolvedValueOnce(
+        sseResponse([
+          'data: {"choices":[{"delta":{"content":"Hel"}}]}\n',
+          'data: {"choices":[{"delta":{"content":"lo"}}]}\n',
+          'data: [DONE]\n',
+        ])
+      );
+
+    const out: string[] = [];
+    for await (const chunk of svc.stream(msgs, { model: 'moonshot/kimi-2.5-pro' })) {
+      out.push(chunk);
+    }
+
+    expect(out.join('')).toBe('Hello');
+    expect(fetchCalls()).toHaveLength(2);
+    expect(fetchCalls()[1]![0]).toBe(`${BASE}/openrouter/api/v1/chat/completions`);
+    const retryBody = bodyOfCall(1);
+    expect(retryBody.model).toBe('moonshotai/kimi-k2.5');
+    expect(retryBody.stream).toBe(true);
+    expect(retryBody.thinking).toBeUndefined();
+  });
+
+  it('stream(): throws a combined error when the fallback stream also fails', async () => {
+    seedConfigured({ openrouter: true });
+    vi.mocked(global.fetch)
+      .mockResolvedValueOnce(errResponse(429, 'quota'))
+      .mockResolvedValueOnce(errResponse(502, 'bad gateway'));
+
+    const gen = svc.stream(msgs, { model: 'moonshot/kimi-2.5-pro' });
+    await expect(gen.next()).rejects.toThrow(
+      /AI proxy stream error \(429\): quota.*OpenRouter fallback failed with 502: bad gateway/
+    );
+    expect(fetchCalls()).toHaveLength(2);
+  });
+
+  it('stream(): does not fall back on a non-quota stream error', async () => {
+    seedConfigured({ openrouter: true });
+    vi.mocked(global.fetch).mockResolvedValue(errResponse(503, 'not configured'));
+
+    const gen = svc.stream(msgs, { model: 'moonshot/kimi-2.5-pro' });
+    await expect(gen.next()).rejects.toThrow(/AI proxy stream error \(503\): not configured/);
+    expect(fetchCalls()).toHaveLength(1);
+  });
+});
+
+/**
+ * refreshConfigured dedups concurrent /health probes via healthInFlight so a
+ * burst of requests fires a single fetch. configuredSnapshot() short-circuits
+ * under vitest, so drive refreshConfigured() directly (it has no VITEST guard).
+ */
+describe('BackendProxyService — refreshConfigured in-flight dedup', () => {
+  let svc: BackendProxyService;
+
+  beforeEach(() => {
+    svc = new BackendProxyService({ baseUrl: BASE });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const refresh = (s: BackendProxyService): Promise<void> =>
+    (s as unknown as { refreshConfigured: () => Promise<void> }).refreshConfigured();
+
+  it('coalesces concurrent probes into a single /health fetch', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ configured: { openrouter: true } }),
+    } as unknown as Response);
+    global.fetch = fetchMock;
+
+    await Promise.all([refresh(svc), refresh(svc), refresh(svc)]);
+
+    const healthCalls = fetchMock.mock.calls.filter(([url]) => String(url) === `${BASE}/health`);
+    expect(healthCalls).toHaveLength(1);
+    // Snapshot landed, so isOpenRouterConfigured now reads it without another fetch.
+    expect(
+      await (
+        svc as unknown as { isOpenRouterConfigured: () => Promise<boolean> }
+      ).isOpenRouterConfigured()
+    ).toBe(true);
+    expect(fetchMock.mock.calls.filter(([url]) => String(url) === `${BASE}/health`)).toHaveLength(
+      1
+    );
+  });
+
+  it('clears healthInFlight so a later probe fetches again', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ configured: { openrouter: false } }),
+    } as unknown as Response);
+    global.fetch = fetchMock;
+
+    await refresh(svc);
+    await refresh(svc);
+
+    expect(fetchMock.mock.calls.filter(([url]) => String(url) === `${BASE}/health`)).toHaveLength(
+      2
+    );
+  });
+
+  it('isOpenRouterConfigured awaits a cold-cache /health probe when NOT under vitest', async () => {
+    // configuredCache is null and VITEST is stubbed off, so the quota-fallback
+    // path must fetch /health once and read the fresh snapshot.
+    vi.stubEnv('VITEST', '');
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ configured: { openrouter: true } }),
+    } as unknown as Response);
+    global.fetch = fetchMock;
+
+    const configured = await (
+      svc as unknown as { isOpenRouterConfigured: () => Promise<boolean> }
+    ).isOpenRouterConfigured();
+
+    expect(configured).toBe(true);
+    expect(fetchMock.mock.calls.filter(([url]) => String(url) === `${BASE}/health`)).toHaveLength(
+      1
+    );
+    vi.unstubAllEnvs();
+  });
+});
+
+describe('BackendProxyService — parseCompletion reasoning fields', () => {
+  let svc: BackendProxyService;
+
+  beforeEach(() => {
+    svc = new BackendProxyService({ baseUrl: BASE });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('prefers reasoning_content (kimi-k2.5) when both fields are present', async () => {
+    global.fetch = vi.fn().mockResolvedValue(
+      okJson({
+        choices: [{ message: { content: 'A', reasoning_content: 'RC', reasoning: 'R' } }],
+        usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+      })
+    );
+    const res = await svc.complete({ messages: msgs, model: 'moonshot/kimi-2.5-pro' });
+    expect(res.reasoning_content).toBe('RC');
+  });
+
+  it('falls back to reasoning (K2.6) when reasoning_content is absent', async () => {
+    global.fetch = vi.fn().mockResolvedValue(
+      okJson({
+        choices: [{ message: { content: 'A', reasoning: 'R-only' } }],
+      })
+    );
+    const res = await svc.complete({ messages: msgs, model: 'moonshot/kimi-2.5-pro' });
+    expect(res.reasoning_content).toBe('R-only');
+    // absent usage zero-fills
+    expect(res.usage).toEqual({ promptTokens: 0, completionTokens: 0, totalTokens: 0 });
+  });
+
+  it('returns empty content and no reasoning when the choices array is empty', async () => {
+    global.fetch = vi.fn().mockResolvedValue(okJson({ choices: [] }));
+    const res = await svc.complete({ messages: msgs, model: 'moonshot/kimi-2.5-pro' });
+    expect(res.content).toBe('');
+    expect(res.reasoning_content).toBeUndefined();
   });
 });

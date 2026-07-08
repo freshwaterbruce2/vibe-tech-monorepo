@@ -29,6 +29,15 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/__tests__/setup.ts'],
+    // Vitest 4's default forks pool spawns one worker per CPU; under machine load
+    // its workers intermittently stop polling IPC and time out ("Failed to start
+    // forks worker — Timeout waiting for worker to respond", vitest #8766/#9701),
+    // which starves the ~100-file suite and drops coverage. Cap fork concurrency
+    // to cut contention, and raise the test/hook timeouts to absorb slow workers.
+    pool: 'forks',
+    poolOptions: { forks: { minForks: 1, maxForks: 2 } },
+    testTimeout: 20000,
+    hookTimeout: 30000,
     exclude: [
       '**/node_modules/**',
       'tests/**/*.spec.ts',

@@ -54,7 +54,7 @@ overrides:
   '@opentelemetry/core@<2.8.0': ^2.8.0
   '@protobufjs/utf8@<=1.1.0': ^1.1.1
   dompurify@<=3.4.10: ^3.4.11
-  fastify@<=5.8.2: ^5.8.3
+  fastify@<5.8.5: ^5.8.5
   follow-redirects@<=1.15.11: ^1.16.0
   hono@<4.12.25: ^4.12.25
   http-proxy-middleware@>=3.0.0 <3.0.6: ^3.0.6
@@ -71,6 +71,12 @@ overrides:
   electron@>=39.0.0 <39.8.5: ^39.8.5
   react-router@>=7.12.0 <7.15.1: ^7.15.1
   undici@>=6.0.0 <6.27.0: ^6.27.0
+  undici@>=7.0.0 <7.28.0: ^7.28.0
+  undici@>=5.0.0 <5.28.5: ^5.28.5
+  '@grpc/grpc-js@>=1.14.0 <1.14.4': ^1.14.4
+  protobufjs@>=8.0.0 <8.6.0: ^8.6.0
+  ws@>=6.0.0 <6.2.4: ^6.2.4
+  joi@>=18.0.0 <18.2.1: ^18.2.1
 
 patchedDependencies:
   nx@22.7.1:
@@ -477,7 +483,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/landing
       fastify:
-        specifier: ^5.8.4
+        specifier: ^5.8.5
         version: 5.9.0
       react:
         specifier: 19.2.4
@@ -687,7 +693,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/payments
       fastify:
-        specifier: ^5.8.4
+        specifier: ^5.8.5
         version: 5.9.0
       fastify-raw-body:
         specifier: ^5.0.0
@@ -834,7 +840,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/landing
       fastify:
-        specifier: ^5.8.4
+        specifier: ^5.8.5
         version: 5.9.0
       react:
         specifier: 19.2.4
@@ -944,7 +950,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/payments
       fastify:
-        specifier: ^5.8.4
+        specifier: ^5.8.5
         version: 5.9.0
       fastify-raw-body:
         specifier: ^5.0.0
@@ -1677,7 +1683,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/landing
       fastify:
-        specifier: ^5.8.4
+        specifier: ^5.8.5
         version: 5.9.0
       react:
         specifier: 19.2.4
@@ -1866,7 +1872,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/landing
       fastify:
-        specifier: ^5.8.4
+        specifier: ^5.8.5
         version: 5.9.0
       react:
         specifier: 19.2.4
@@ -2044,7 +2050,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/landing
       fastify:
-        specifier: ^5.8.4
+        specifier: ^5.8.5
         version: 5.9.0
       react:
         specifier: 19.2.4
@@ -2273,7 +2279,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/payments
       fastify:
-        specifier: ^5.8.4
+        specifier: ^5.8.5
         version: 5.9.0
       fastify-raw-body:
         specifier: ^5.0.0
@@ -2349,7 +2355,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/payments
       fastify:
-        specifier: ^5.8.4
+        specifier: ^5.8.5
         version: 5.9.0
       fastify-raw-body:
         specifier: ^5.0.0
@@ -2823,7 +2829,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/payments
       fastify:
-        specifier: ^5.8.4
+        specifier: ^5.8.5
         version: 5.9.0
       fastify-raw-body:
         specifier: ^5.0.0
@@ -2899,7 +2905,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/payments
       fastify:
-        specifier: ^5.8.4
+        specifier: ^5.8.5
         version: 5.9.0
       react:
         specifier: 19.2.4
@@ -3054,7 +3060,7 @@ importers:
         specifier: ^16.6.1
         version: 16.6.1
       fastify:
-        specifier: ^5.8.4
+        specifier: ^5.8.5
         version: 5.9.0
       framer-motion:
         specifier: ^12.38.0
@@ -3361,7 +3367,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/payments
       fastify:
-        specifier: ^5.8.4
+        specifier: ^5.8.5
         version: 5.9.0
       fastify-raw-body:
         specifier: ^5.0.0
@@ -3522,7 +3528,7 @@ importers:
         specifier: 12.6.2
         version: 12.6.2
       fastify:
-        specifier: ^5.8.4
+        specifier: ^5.8.5
         version: 5.9.0
       fastify-raw-body:
         specifier: ^5.0.0
@@ -10874,9 +10880,6 @@ packages:
 
   '@protobufjs/float@1.0.2':
     resolution: {integrity: sha512-Ddb+kVXlXst9d+R9PfTIxh1EdNkgoRe5tOX6t01f1lYWOvJnSPDBlG241QLzcyPdoNTsblLUdujGSE4RzrTZGQ==}
-
-  '@protobufjs/inquire@1.1.2':
-    resolution: {integrity: sha512-pa0vFRuws4wkvaXKK1uXZMAwAX4/t8ANaJo45iw/oQHNQ9q5xUzwgFmVJGXiga2BeN+zpX7Vf9vmsiIa2J+MUw==}
 
   '@protobufjs/path@1.1.2':
     resolution: {integrity: sha512-6JOcJ5Tm08dOHAbdR3GrvP+yUUfkjG5ePsHYczMFLq3ZmMkAD98cDgcT2iA1lJ9NVwFd4tH/iSSoe44YWkltEA==}
@@ -19209,7 +19212,7 @@ packages:
       '@vercel/node': '>=2.15.9'
       aws-lambda: '>=1.0.7'
       express: '>=4.19.2'
-      fastify: ^5.8.3
+      fastify: ^5.8.5
       h3: '>=1.8.1'
       hono: ^4.12.25
       koa: ^3.1.2
@@ -22388,8 +22391,8 @@ packages:
     resolution: {integrity: sha512-RJJPTTpvFfHcWLkIa2JFWK4XvtSzS0yEWDmunqHXli1h3JlkbcQZXDZdcWxv+JK3Xsl5/UFDPZ0iGm7DAengYw==}
     engines: {node: '>=12.0.0'}
 
-  protobufjs@8.0.1:
-    resolution: {integrity: sha512-NWWCCscLjs+cOKF/s/XVNFRW7Yih0fdH+9brffR5NZCy8k42yRdl5KlWKMVXuI1vfCoy4o1z80XR/W/QUb3V3w==}
+  protobufjs@8.6.6:
+    resolution: {integrity: sha512-RkLIhE+Tdc2Kpq1F4Uw6OnpAXPca7B+GSDov/GqGCqNBpVyDskQ9yReZfgM+C7xw9AAix873iQZXbBWXj6NzYQ==}
     engines: {node: '>=12.0.0'}
 
   proxy-addr@2.0.7:
@@ -24883,21 +24886,13 @@ packages:
   undici-types@8.3.0:
     resolution: {integrity: sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==}
 
-  undici@5.28.4:
-    resolution: {integrity: sha512-72RFADWFqKmUb2hmmvNODKL3p9hcB6Gt2DOQMis1SEBaV6a4MH8soBvzg+95CYhCKPFedut2JY9bMfrDl9D23g==}
+  undici@5.29.0:
+    resolution: {integrity: sha512-raqeBD6NQK4SkWhQzeYKd1KmIG6dllBOTt55Rmkt4HtI9mwdWtJljnrXjAFUBLTSN67HWrOIZ3EPF4kjUw80Bg==}
     engines: {node: '>=14.0'}
 
   undici@6.27.0:
     resolution: {integrity: sha512-YmfV3YnEDzXRC5lZ2jWtWWHKGUm1zIt8AhesR1tens+HTNv+YZlN/dp6G727LOvMJ8xjP9Be7Y2Sdr96LDm+pg==}
     engines: {node: '>=18.17'}
-
-  undici@7.24.4:
-    resolution: {integrity: sha512-BM/JzwwaRXxrLdElV2Uo6cTLEjhSb3WXboncJamZ15NgUURmvlXvxa6xkwIOILIjPNo9i8ku136ZvWV0Uly8+w==}
-    engines: {node: '>=20.18.1'}
-
-  undici@7.24.7:
-    resolution: {integrity: sha512-H/nlJ/h0ggGC+uRL3ovD+G0i4bqhvsDOpbDv7At5eFLlj2b41L8QliGbnl2H7SnDiYhENphh1tQFJZf+MyfLsQ==}
-    engines: {node: '>=20.18.1'}
 
   undici@7.28.0:
     resolution: {integrity: sha512-cRZYrTDwWznlnRiPjggAGxZXanty6M8RV1ff8Wm4LWXBp7/IG8v5DnOm74DtUBp9OONpK75YlPnIjQqX0dBDtA==}
@@ -30252,7 +30247,7 @@ snapshots:
       isomorphic-ws: 5.0.0(ws@8.21.0)
       node-schedule: 2.1.1
       typescript: 5.9.3
-      undici: 7.24.7
+      undici: 7.28.0
       ws: 8.21.0
     transitivePeerDependencies:
       - bufferutil
@@ -31920,7 +31915,7 @@ snapshots:
       '@opentelemetry/sdk-logs': 0.217.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-metrics': 2.7.1(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-trace-base': 2.7.1(@opentelemetry/api@1.9.1)
-      protobufjs: 8.0.1
+      protobufjs: 8.6.6
 
   '@opentelemetry/propagator-b3@2.7.1(@opentelemetry/api@1.9.1)':
     dependencies:
@@ -32404,8 +32399,6 @@ snapshots:
       '@protobufjs/aspromise': 1.1.2
 
   '@protobufjs/float@1.0.2': {}
-
-  '@protobufjs/inquire@1.1.2': {}
 
   '@protobufjs/path@1.1.2': {}
 
@@ -36545,7 +36538,7 @@ snapshots:
       ts-morph: 12.0.0
       tsx: 4.21.0
       typescript: 5.9.3
-      undici: 5.28.4
+      undici: 5.29.0
     transitivePeerDependencies:
       - encoding
       - rollup
@@ -45413,7 +45406,7 @@ snapshots:
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
       sharp: 0.34.5
-      undici: 7.24.4
+      undici: 7.28.0
       workerd: 1.20260317.1
       ws: 8.21.0
       youch: 4.1.0-beta.10
@@ -47402,19 +47395,8 @@ snapshots:
       '@types/node': 22.19.15
       long: 5.3.2
 
-  protobufjs@8.0.1:
+  protobufjs@8.6.6:
     dependencies:
-      '@protobufjs/aspromise': 1.1.2
-      '@protobufjs/base64': 1.1.2
-      '@protobufjs/codegen': 2.0.5
-      '@protobufjs/eventemitter': 1.1.1
-      '@protobufjs/fetch': 1.1.1
-      '@protobufjs/float': 1.0.2
-      '@protobufjs/inquire': 1.1.2
-      '@protobufjs/path': 1.1.2
-      '@protobufjs/pool': 1.1.0
-      '@protobufjs/utf8': 1.1.1
-      '@types/node': 22.19.15
       long: 5.3.2
 
   proxy-addr@2.0.7:
@@ -50545,15 +50527,11 @@ snapshots:
 
   undici-types@8.3.0: {}
 
-  undici@5.28.4:
+  undici@5.29.0:
     dependencies:
       '@fastify/busboy': 2.1.1
 
   undici@6.27.0: {}
-
-  undici@7.24.4: {}
-
-  undici@7.24.7: {}
 
   undici@7.28.0: {}
 

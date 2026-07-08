@@ -9,11 +9,26 @@ import { lazy } from 'react';
 export const EnhancedAgentMode = lazy(
   () => import('../components/EnhancedAgentMode/EnhancedAgentMode')
 );
+export const AgentManagerPanelHost = lazy(() =>
+  import('../components/AgentManagerPanel/AgentManagerPanelHost').then(m => ({
+    default: m.AgentManagerPanelHost,
+  }))
+);
+export const ArtifactsPanelHost = lazy(() =>
+  import('../components/ArtifactsPanel/ArtifactsPanelHost').then(m => ({
+    default: m.ArtifactsPanelHost,
+  }))
+);
 export const BackgroundTaskPanel = lazy(() =>
   import('../components/BackgroundTaskPanel').then(m => ({ default: m.BackgroundTaskPanel }))
 );
 export const BrainScanPanel = lazy(() =>
   import('../components/BrainScanPanel').then(m => ({ default: m.BrainScanPanel }))
+);
+export const BrowserPermissionPromptHost = lazy(() =>
+  import('../components/BrowserVerification/BrowserPermissionPromptHost').then(m => ({
+    default: m.BrowserPermissionPromptHost,
+  }))
 );
 export const ComponentLibrary = lazy(() =>
   import('../components/ComponentLibrary').then(m => ({ default: m.ComponentLibrary }))
@@ -26,6 +41,11 @@ export const GitPanel = lazy(() => import('../components/GitPanel'));
 export const GlobalSearch = lazy(() =>
   import('../components/GlobalSearch').then(m => ({ default: m.GlobalSearch }))
 );
+export const KnowledgePanelHost = lazy(() =>
+  import('../components/KnowledgePanel/KnowledgePanelHost').then(m => ({
+    default: m.KnowledgePanelHost,
+  }))
+);
 export const KeyboardShortcuts = lazy(() =>
   import('../components/KeyboardShortcuts').then(m => ({ default: m.KeyboardShortcuts }))
 );
@@ -35,6 +55,11 @@ export const MultiFileEditApprovalPanel = lazy(() =>
   }))
 );
 export const PerformanceMonitor = lazy(() => import('../components/PerformanceMonitor'));
+export const PlanModeDialogHost = lazy(() =>
+  import('../components/PlanMode/PlanModeDialogHost').then(m => ({
+    default: m.PlanModeDialogHost,
+  }))
+);
 export const PreviewPanel = lazy(() =>
   import('../components/PreviewPanel').then(m => ({ default: m.PreviewPanel }))
 );
@@ -48,8 +73,18 @@ export const SchedulePanelHost = lazy(() =>
     default: m.SchedulePanelHost,
   }))
 );
+export const SettingsSyncDialog = lazy(() =>
+  import('../components/SettingsSync/SettingsSyncDialog').then(m => ({
+    default: m.SettingsSyncDialog,
+  }))
+);
 export const ScreenshotToCodePanel = lazy(() =>
   import('../components/ScreenshotToCodePanel').then(m => ({ default: m.ScreenshotToCodePanel }))
+);
+export const TestExplorerPanelHost = lazy(() =>
+  import('../components/TestExplorerPanel/TestExplorerPanelHost').then(m => ({
+    default: m.TestExplorerPanelHost,
+  }))
 );
 export const TerminalPanel = lazy(() =>
   import('../components/TerminalPanel').then(m => ({ default: m.TerminalPanel }))

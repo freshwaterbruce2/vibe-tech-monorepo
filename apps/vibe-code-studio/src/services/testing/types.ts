@@ -6,6 +6,8 @@
 // Enhanced interfaces for comprehensive test support
 export interface TestResult {
   passed: boolean;
+  /** True for skipped/todo/pending tests (passed is false but not a failure). */
+  skipped?: boolean;
   testName: string;
   output: string;
   error?: string;
@@ -99,6 +101,6 @@ export function getDefaultCoverage(): CoverageInfo {
     functions: { covered: 0, total: 0, percentage: 0 },
     branches: { covered: 0, total: 0, percentage: 0 },
     statements: { covered: 0, total: 0, percentage: 0 },
-    files: []
+    files: [],
   };
 }

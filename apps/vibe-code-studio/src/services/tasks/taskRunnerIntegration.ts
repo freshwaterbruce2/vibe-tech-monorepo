@@ -4,10 +4,16 @@
  * ProblemsPanelHost) call these functions instead of constructing services.
  * Spec: FEATURE_SPECS/competitive-gaps/02-TASK-RUNNER.md
  */
+import { loadStandardsSettings } from '../ai/standards/standardsSettings';
 import { FileSystemService } from '../FileSystemService';
 import { terminalService } from '../TerminalService';
 import { useProblemsStore } from '../../stores/problemsStore';
 import { useTasksStore } from '../../stores/tasksStore';
+import {
+  type AgentsMdCommand,
+  buildAgentsMdTask,
+  extractAgentsMdCommands,
+} from './agentsMdCommands';
 import { TaskRunnerService } from './TaskRunnerService';
 import type { TaskParseResult, VcsTask } from './types';
 
@@ -69,4 +75,32 @@ export async function runDefaultBuildTask(): Promise<number | null> {
 
 export function cancelWorkspaceTask(label: string): boolean {
   return getTaskRunner().cancelTask(label);
+}
+
+/**
+ * Reads the workspace-root AGENTS.md and extracts its "Commands" fenced
+ * blocks as one-click actions (spec 03 AC #11). Returns [] when either the
+ * AGENTS.md or the Commands toggle is off (AC #10), when the file is absent,
+ * or when no Commands section parses. Never throws.
+ */
+export async function loadAgentsMdCommands(workspaceRoot: string): Promise<AgentsMdCommand[]> {
+  const settings = await loadStandardsSettings();
+  if (!settings.agentsMd || !settings.agentsMdCommands) {
+    return [];
+  }
+  const sourcePath = `${workspaceRoot}/AGENTS.md`;
+  try {
+    const content = await new FileSystemService().readFile(sourcePath);
+    return extractAgentsMdCommands(content, sourcePath);
+  } catch {
+    return []; // absent AGENTS.md — the common case
+  }
+}
+
+/** Runs one AGENTS.md command through the task runner (shared PTY plumbing). */
+export async function runAgentsMdCommand(
+  command: AgentsMdCommand,
+  workspaceRoot: string
+): Promise<number | null> {
+  return getTaskRunner().runAdHoc(buildAgentsMdTask(command, workspaceRoot));
 }

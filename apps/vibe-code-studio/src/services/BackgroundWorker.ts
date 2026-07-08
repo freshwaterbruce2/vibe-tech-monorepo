@@ -2,7 +2,7 @@
  * BackgroundWorker - Web Worker wrapper for CPU-intensive tasks
  * Provides a clean API for offloading work to background threads
  */
-import type { TaskProgress,TaskResult } from '@vibetech/types';
+import type { TaskProgress, TaskResult } from '@vibetech/types';
 
 import { logger } from '../services/Logger';
 
@@ -83,12 +83,15 @@ export class BackgroundWorker {
       this.postMessage({ type: 'execute', payload: task });
 
       // Timeout after 5 minutes
-      const timeoutId = setTimeout(() => {
-        if (this.messageHandlers.has(taskId)) {
-          this.messageHandlers.delete(taskId);
-          reject(new Error('Task execution timeout'));
-        }
-      }, 5 * 60 * 1000);
+      const timeoutId = setTimeout(
+        () => {
+          if (this.messageHandlers.has(taskId)) {
+            this.messageHandlers.delete(taskId);
+            reject(new Error('Task execution timeout'));
+          }
+        },
+        5 * 60 * 1000
+      );
     });
   }
 
@@ -114,7 +117,9 @@ export class BackgroundWorker {
   // --- Private Methods ---
 
   private setupMessageHandler(): void {
-    if (!this.worker) {return;}
+    if (!this.worker) {
+      return;
+    }
 
     this.worker.onmessage = (event: MessageEvent<WorkerMessage>) => {
       const message = event.data;
@@ -133,7 +138,7 @@ export class BackgroundWorker {
       logger.error('Worker error:', error);
 
       // Notify all pending handlers
-      this.messageHandlers.forEach((handler) => {
+      this.messageHandlers.forEach(handler => {
         handler({
           type: 'error',
           payload: error.message || 'Worker error',
@@ -151,7 +156,7 @@ export class BackgroundWorker {
   }
 
   private generateId(): string {
-    return `worker_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `worker_${crypto.randomUUID()}`;
   }
 }
 
@@ -194,7 +199,7 @@ export class BackgroundWorkerPool {
    * Terminate all workers in the pool
    */
   terminate(): void {
-    this.workers.forEach((worker) => worker.terminate());
+    this.workers.forEach(worker => worker.terminate());
     this.workers = [];
     this.availableWorkers = [];
   }
@@ -227,7 +232,7 @@ export class BackgroundWorkerPool {
   private async getAvailableWorker(): Promise<BackgroundWorker> {
     // Wait for an available worker
     while (this.availableWorkers.length === 0) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
 
     const worker = this.availableWorkers.shift();

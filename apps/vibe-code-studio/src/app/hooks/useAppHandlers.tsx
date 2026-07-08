@@ -6,6 +6,7 @@
 import type { FileChange, MultiFileEditPlan } from '@vibetech/types';
 import {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   type Dispatch,
@@ -20,10 +21,25 @@ import { AutoFixService } from '../../services/AutoFixService';
 import type { DetectedError } from '../../services/ErrorDetector';
 import { ErrorDetector } from '../../services/ErrorDetector';
 import { logger } from '../../services/Logger';
+import { recordDiffArtifact, runArtifactAction } from '../../services/artifacts/artifactCapture';
 import { SearchService } from '../../services/SearchService';
 import type { SearchOptions } from '../../services/SearchService';
 import { useAIStore } from '../../stores/useAIStore';
+import { useEditorStore } from '../../stores/useEditorStore';
 import type { AIModel } from '../../services/ai/AIProviderInterface';
+import type { WebSocketLike } from '../../services/lsp/lspClient';
+import {
+  attachLspMarkers,
+  ensureLspProviders,
+  initLspOpenLocation,
+  initLspReadFile,
+  initLspRenameRequest,
+  initLspSocketFactory,
+  notifyDocumentOpen,
+  type LspMarkerMonaco,
+} from '../../services/lsp/lspIntegration';
+import { renameEditsToPlan } from '../../services/lsp/lspRename';
+import type { LspMonaco } from '../../services/lsp/lspProviders';
 import type { UnifiedAIService } from '../../services/ai/UnifiedAIService';
 import type { FileSystemService } from '../../services/FileSystemService';
 import type { MultiFileEditor } from '../../services/MultiFileEditor';
@@ -321,6 +337,24 @@ export function useAppHandlers(props: UseAppHandlersProps) {
         dispose: () => completionRegistration.deregister(),
       };
       logger.debug('[TabCompletion] Inline completion provider registered successfully');
+
+      // Spec 07 Phase 1a: attach the LSP client for this file's language so the
+      // language server publishes diagnostics into the shared Problems panel.
+      // Phase 1b: register hover / go-to-definition / documentSymbol providers.
+      if (currentFile) {
+        initLspSocketFactory(url => new WebSocket(url) as unknown as WebSocketLike);
+        notifyDocumentOpen(currentFile.language, useEditorStore.getState().workspaceFolder, {
+          path: currentFile.path,
+          text: currentFile.content,
+        });
+        ensureLspProviders(
+          typedMonaco as unknown as LspMonaco,
+          currentFile.language,
+          useEditorStore.getState().workspaceFolder
+        );
+        // Polish: sync LSP diagnostics onto the mounted model as squiggles.
+        attachLspMarkers(typedMonaco as unknown as LspMarkerMonaco, () => typedEditor.getModel());
+      }
     },
     [
       aiService,
@@ -436,6 +470,14 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     },
     [handleOpenFileRaw, editorRef]
   );
+
+  // Spec 07 Phase 1c: give LSP definition/references providers the app's
+  // open-file-at-position handler so cross-file navigation works.
+  useEffect(() => {
+    initLspOpenLocation((path, range) =>
+      handleOpenFileFromSearch(path, range.startLineNumber, range.startColumn)
+    );
+  }, [handleOpenFileFromSearch]);
 
   const handleReplaceInFile = useCallback(
     async (file: string, searchText: string, replaceText: string, options: SearchOptions) => {
@@ -553,6 +595,18 @@ export function useAppHandlers(props: UseAppHandlersProps) {
           showSuccess(
             'Changes Applied',
             `Successfully applied changes to ${result.appliedFiles.length} file(s)`
+          );
+
+          // Spec 09 AC #4: applied multi-file edits produce a reviewable diff artifact
+          runArtifactAction(
+            () =>
+              recordDiffArtifact(
+                multiFileEditPlan.id,
+                `Applied edits — ${multiFileEditPlan.description}`,
+                selectedChanges,
+                multiFileEditPlan.estimatedImpact
+              ),
+            'multi-file diff record'
           );
 
           if (currentFile && selectedFiles.includes(currentFile.path)) {
@@ -709,6 +763,23 @@ export function useAppHandlers(props: UseAppHandlersProps) {
     },
     [setMultiFileEditPlan, setMultiFileChanges, setMultiFileApprovalOpen]
   );
+
+  // Spec 07 Phase 1d: route LSP rename WorkspaceEdits into the existing
+  // multi-file preview/apply flow (same approval panel as AI multi-file edits).
+  // Polish: also install the file reader the reference provider uses to build
+  // cross-file peek preview models.
+  useEffect(() => {
+    initLspReadFile(path => fileSystemService.readFile(path));
+    initLspRenameRequest((newName, fileEdits) => {
+      void renameEditsToPlan(newName, fileEdits, path => fileSystemService.readFile(path))
+        .then(result => {
+          if (result) handleMultiFileEditDetected(result.plan, result.changes);
+        })
+        .catch((error: unknown) => {
+          showError('Rename Failed', error instanceof Error ? error.message : 'Unknown error');
+        });
+    });
+  }, [fileSystemService, handleMultiFileEditDetected, showError]);
 
   return {
     handleEditorMount,

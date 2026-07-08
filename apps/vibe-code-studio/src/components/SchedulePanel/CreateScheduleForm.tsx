@@ -8,31 +8,33 @@ import { useState } from 'react';
 import { describeCadence, validateCadence } from '../../services/scheduling/cadence';
 import { buildSubmitPreview } from '../../services/scheduling/schedulerIntegration';
 import type { MissedRunPolicy, ScheduleDraft } from '../../services/scheduling/types';
-import { cadenceFromFields, DAY_OPTIONS } from './cadenceFields';
-import type { CadenceFields } from './cadenceFields';
+import { cadenceFromFields, DAY_OPTIONS, DEFAULT_CADENCE_FIELDS } from './cadenceFields';
+import type { CadenceFields, ScheduleFormInitial } from './cadenceFields';
 import * as S from './styled';
 
 export interface CreateScheduleFormProps {
   workspaceRoot: string;
+  /** Prefill (create-from-chat) or existing values (edit) */
+  initial?: Partial<ScheduleFormInitial>;
+  /** Confirm-button label; defaults to the create wording */
+  submitLabel?: string;
   onSubmit: (draft: ScheduleDraft) => void;
   onCancel: () => void;
 }
 
 export const CreateScheduleForm = ({
   workspaceRoot,
+  initial,
+  submitLabel = 'Create schedule',
   onSubmit,
   onCancel,
 }: CreateScheduleFormProps) => {
-  const [agentId, setAgentId] = useState('general');
-  const [userRequest, setUserRequest] = useState('');
-  const [missedRunPolicy, setMissedRunPolicy] = useState<MissedRunPolicy>('run-on-launch');
-  const [fields, setFields] = useState<CadenceFields>({
-    type: 'once',
-    runAt: '',
-    everyMinutes: '60',
-    time: '09:00',
-    dayOfWeek: '1',
-  });
+  const [agentId, setAgentId] = useState(initial?.agentId ?? 'general');
+  const [userRequest, setUserRequest] = useState(initial?.userRequest ?? '');
+  const [missedRunPolicy, setMissedRunPolicy] = useState<MissedRunPolicy>(
+    initial?.missedRunPolicy ?? 'run-on-launch'
+  );
+  const [fields, setFields] = useState<CadenceFields>(initial?.fields ?? DEFAULT_CADENCE_FIELDS);
   const [error, setError] = useState<string | null>(null);
   const [previewDraft, setPreviewDraft] = useState<ScheduleDraft | null>(null);
 
@@ -75,7 +77,7 @@ export const CreateScheduleForm = ({
         <S.PreviewBlock>{buildSubmitPreview(previewDraft)}</S.PreviewBlock>
         <S.ButtonRow>
           <S.SecondaryButton onClick={() => setPreviewDraft(null)}>Back</S.SecondaryButton>
-          <S.PrimaryButton onClick={() => onSubmit(previewDraft)}>Create schedule</S.PrimaryButton>
+          <S.PrimaryButton onClick={() => onSubmit(previewDraft)}>{submitLabel}</S.PrimaryButton>
         </S.ButtonRow>
       </S.FormSection>
     );

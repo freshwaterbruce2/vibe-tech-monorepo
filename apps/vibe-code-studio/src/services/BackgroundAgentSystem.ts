@@ -5,10 +5,10 @@
  * Integrates with ExecutionEngine to run real agent tasks
  */
 import { logger } from '../services/Logger';
-import type { AgentTask } from '../types';
+import type { AgentStep, AgentTask } from '../types';
 import { EventEmitter } from '../utils/EventEmitter';
 
-import type { ExecutionCallbacks,ExecutionEngine } from './ai/ExecutionEngine';
+import type { ExecutionCallbacks, ExecutionEngine } from './ai/ExecutionEngine';
 import type { TaskPlanner } from './ai/TaskPlanner';
 
 export interface BackgroundTask {
@@ -35,12 +35,26 @@ export interface BackgroundTaskOptions {
   maxRetries?: number;
 }
 
+/**
+ * A user message queued for a pending/running task via injectMessage() —
+ * the SHARED mid-run injection primitive (spec 09 Phase 2). Spec 10's Agent
+ * Manager/Inbox and spec 16's deferred delivery consume this same channel;
+ * do not build a second queue.
+ */
+export interface InjectedMessage {
+  id: string;
+  taskId: string;
+  body: string;
+  queuedAt: number;
+}
+
 export class BackgroundAgentSystem extends EventEmitter {
   private tasks: Map<string, BackgroundTask> = new Map();
   private queue: Array<{ task: BackgroundTask; options: BackgroundTaskOptions }> = [];
   private running: Set<string> = new Set();
   private maxConcurrent: number;
   private abortControllers: Map<string, AbortController> = new Map(); // For cancellation
+  private pendingMessages: Map<string, InjectedMessage[]> = new Map(); // Per-task injection queue
 
   constructor(
     private executionEngine: ExecutionEngine,
@@ -62,7 +76,7 @@ export class BackgroundAgentSystem extends EventEmitter {
     options: BackgroundTaskOptions = {}
   ): string {
     const task: BackgroundTask = {
-      id: `${agentId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `${agentId}-${crypto.randomUUID()}`,
       agentId,
       userRequest,
       workspaceRoot,
@@ -70,7 +84,7 @@ export class BackgroundAgentSystem extends EventEmitter {
       status: 'pending',
       progress: 0,
       currentStep: 0,
-      totalSteps: 0
+      totalSteps: 0,
     };
 
     this.tasks.set(task.id, task);
@@ -79,7 +93,10 @@ export class BackgroundAgentSystem extends EventEmitter {
     // Sort by priority
     this.queue.sort((a, b) => {
       const priorityOrder = { high: 3, normal: 2, low: 1 };
-      return priorityOrder[b.options.priority ?? 'normal'] - priorityOrder[a.options.priority ?? 'normal'];
+      return (
+        priorityOrder[b.options.priority ?? 'normal'] -
+        priorityOrder[a.options.priority ?? 'normal']
+      );
     });
 
     this.processQueue();
@@ -114,11 +131,14 @@ export class BackgroundAgentSystem extends EventEmitter {
    */
   cancel(taskId: string): boolean {
     const task = this.tasks.get(taskId);
-    if (!task) {return false;}
+    if (!task) {
+      return false;
+    }
 
     if (task.status === 'pending') {
       task.status = 'cancelled';
       this.queue = this.queue.filter(q => q.task.id !== taskId);
+      this.dropPendingMessages(task);
       this.emit('cancelled', task);
       return true;
     }
@@ -126,12 +146,80 @@ export class BackgroundAgentSystem extends EventEmitter {
     if (task.status === 'running') {
       task.status = 'cancelled';
       this.running.delete(taskId);
+      this.dropPendingMessages(task);
       this.emit('cancelled', task);
       this.processQueue();
       return true;
     }
 
     return false;
+  }
+
+  /**
+   * Queue a message for a pending/running task (spec 09 Phase 2 primitive).
+   * It is NOT applied immediately: the run loop drains the queue at the next
+   * step boundary and folds messages into that step's context — an in-flight
+   * step is never preempted. Emits 'messageQueued' on accept.
+   * Returns null (no-op) when the task is missing/finished or body is blank.
+   */
+  injectMessage(taskId: string, body: string): InjectedMessage | null {
+    const task = this.tasks.get(taskId);
+    const trimmed = body.trim();
+    if (!task || !trimmed) {
+      return null;
+    }
+    if (task.status !== 'pending' && task.status !== 'running') {
+      return null;
+    }
+
+    const message: InjectedMessage = {
+      id: `msg-${crypto.randomUUID()}`,
+      taskId,
+      body: trimmed,
+      queuedAt: Date.now(),
+    };
+    const queue = this.pendingMessages.get(taskId) ?? [];
+    queue.push(message);
+    this.pendingMessages.set(taskId, queue);
+    this.emit('messageQueued', task, message);
+    return message;
+  }
+
+  /**
+   * Drain queued messages at a step boundary: fold them into the step's
+   * action params (ReActExecutor includes params in its prompts, so the
+   * agent sees them on this step) and emit 'messageInjected' per message.
+   */
+  private drainPendingMessages(task: BackgroundTask, step: AgentStep): void {
+    const queue = this.pendingMessages.get(task.id);
+    if (!queue || queue.length === 0) {
+      return;
+    }
+    this.pendingMessages.delete(task.id);
+
+    const existing = step.action.params.injectedUserMessages;
+    const prior = Array.isArray(existing) ? existing : [];
+    step.action.params.injectedUserMessages = [...prior, ...queue.map(m => m.body)];
+
+    for (const message of queue) {
+      this.emit('messageInjected', task, message);
+    }
+  }
+
+  /**
+   * Discard messages that can no longer reach the agent (task finished or
+   * cancelled with messages still queued). Emits 'messageDropped' per
+   * message so consumers can degrade to plain feedback.
+   */
+  private dropPendingMessages(task: BackgroundTask): void {
+    const queue = this.pendingMessages.get(task.id);
+    if (!queue) {
+      return;
+    }
+    this.pendingMessages.delete(task.id);
+    for (const message of queue) {
+      this.emit('messageDropped', task, message);
+    }
   }
 
   /**
@@ -148,43 +236,29 @@ export class BackgroundAgentSystem extends EventEmitter {
     }
 
     return new Promise((resolve, reject) => {
-      const timeoutId = timeout ? setTimeout(() => {
-        reject(new Error('Task timeout'));
-      }, timeout) : null;
+      const timeoutId = timeout
+        ? setTimeout(() => {
+            reject(new Error('Task timeout'));
+          }, timeout)
+        : null;
 
-      const onComplete = (completedTask: BackgroundTask) => {
-        if (completedTask.id === taskId) {
-          if (timeoutId) {clearTimeout(timeoutId);}
-          this.off('completed', onComplete);
-          this.off('failed', onFailed);
-          this.off('cancelled', onCancelled);
-          resolve(completedTask);
+      // completed/failed/cancelled all settle the wait identically
+      const onSettled = (settledTask: BackgroundTask) => {
+        if (settledTask.id !== taskId) {
+          return;
         }
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+        this.off('completed', onSettled);
+        this.off('failed', onSettled);
+        this.off('cancelled', onSettled);
+        resolve(settledTask);
       };
 
-      const onFailed = (failedTask: BackgroundTask) => {
-        if (failedTask.id === taskId) {
-          if (timeoutId) {clearTimeout(timeoutId);}
-          this.off('completed', onComplete);
-          this.off('failed', onFailed);
-          this.off('cancelled', onCancelled);
-          resolve(failedTask);
-        }
-      };
-
-      const onCancelled = (cancelledTask: BackgroundTask) => {
-        if (cancelledTask.id === taskId) {
-          if (timeoutId) {clearTimeout(timeoutId);}
-          this.off('completed', onComplete);
-          this.off('failed', onFailed);
-          this.off('cancelled', onCancelled);
-          resolve(cancelledTask);
-        }
-      };
-
-      this.on('completed', onComplete);
-      this.on('failed', onFailed);
-      this.on('cancelled', onCancelled);
+      this.on('completed', onSettled);
+      this.on('failed', onSettled);
+      this.on('cancelled', onSettled);
     });
   }
 
@@ -207,114 +281,127 @@ export class BackgroundAgentSystem extends EventEmitter {
     task.status = 'running';
     task.startTime = Date.now();
     this.running.add(task.id);
-
-    // Create abort controller for cancellation
-    const abortController = new AbortController();
-    this.abortControllers.set(task.id, abortController);
-
+    this.abortControllers.set(task.id, new AbortController()); // for cancellation
     this.emit('started', task);
 
     try {
-      // Step 1: Plan the task
-      logger.debug(`[BackgroundAgent] Planning task: ${task.userRequest}`);
-      task.stepDescription = 'Planning task...';
-      task.progress = 5;
-      this.emit('progress', task);
-
-      const planResponse = await this.taskPlanner.planTask({
-        userRequest: task.userRequest,
-        context: {
-          workspaceRoot: task.workspaceRoot,
-          openFiles: (task.parameters.files as string[]) ?? [],
-          ...(task.parameters.context as Record<string, unknown> ?? {})
-        }
-      });
-
-      // Check if cancelled during planning
-      const taskInMap = this.tasks.get(task.id);
-      if (taskInMap?.status === 'cancelled') {
+      const planResponse = await this.planTask(task);
+      if (this.tasks.get(task.id)?.status === 'cancelled') {
         throw new Error('Task cancelled during planning');
       }
 
-      // Update total steps
       task.totalSteps = planResponse.task.steps.length;
       task.progress = 10;
       this.emit('progress', task);
 
-      // Step 2: Execute the task with callbacks
       logger.debug(`[BackgroundAgent] Executing ${task.totalSteps} steps`);
-
-      const callbacks: ExecutionCallbacks = {
-        onStepStart: (step) => {
-          task.currentStep = (task.currentStep ?? 0) + 1;
-          task.stepDescription = step.description;
-          this.emit('stepStart', task, step);
-        },
-        onStepComplete: (step, result) => {
-          const progress = 10 + ((task.currentStep ?? 0) / (task.totalSteps ?? 1)) * 85;
-          task.progress = Math.min(95, progress);
-          this.emit('stepComplete', task, step, result);
-          this.emit('progress', task);
-        },
-        onStepError: (step, error) => {
-          logger.error(`[BackgroundAgent] Step error:`, error);
-          this.emit('stepError', task, step, error);
-        },
-        onTaskProgress: (completedSteps, totalSteps) => {
-          task.currentStep = completedSteps;
-          task.totalSteps = totalSteps;
-          const progress = 10 + (completedSteps / totalSteps) * 85;
-          task.progress = Math.min(95, progress);
-          this.emit('progress', task);
-        },
-        onTaskComplete: (_completedTask) => {
-          logger.debug(`[BackgroundAgent] Task completed successfully`);
-        },
-        onTaskError: (_failedTask, error) => {
-          logger.error(`[BackgroundAgent] Task error:`, error);
-        }
-      };
-
-      const executedTask = await this.executionEngine.executeTask(planResponse.task, callbacks);
-
-      // Check if cancelled during execution
-      const currentTask = this.tasks.get(task.id);
-      if (currentTask?.status === 'cancelled') {
+      const executedTask = await this.executionEngine.executeTask(
+        planResponse.task,
+        this.buildExecutionCallbacks(task)
+      );
+      if (this.tasks.get(task.id)?.status === 'cancelled') {
         throw new Error('Task cancelled during execution');
       }
 
-      // Success!
       task.status = 'completed';
       task.endTime = Date.now();
       task.progress = 100;
       task.result = executedTask;
       this.emit('completed', task);
-
     } catch (error) {
-      // Check if the task was cancelled
-      const currentTask = this.tasks.get(task.id);
-      if (currentTask?.status === 'cancelled') {
-        // Don't mark as failed if it was cancelled
-        task.endTime = Date.now();
-        this.emit('cancelled', task);
-      } else {
-        task.status = 'failed';
-        task.endTime = Date.now();
-        task.error = error as Error;
-        this.emit('failed', task);
-
-        // Retry if configured
-        if (options.retryOnFailure && (!options.maxRetries || (task.currentStep ?? 0) < options.maxRetries)) {
-          logger.debug(`[BackgroundAgent] Retrying task (attempt ${(task.currentStep ?? 0) + 1})`);
-          task.status = 'pending';
-          task.currentStep = (task.currentStep ?? 0) + 1;
-          this.queue.unshift({ task, options });
-        }
-      }
+      this.handleExecutionFailure(task, options, error);
     } finally {
       this.running.delete(task.id);
       this.abortControllers.delete(task.id);
+      // handleExecutionFailure may have requeued the task ('pending'); its
+      // messages stay queued for the retry — otherwise they're undeliverable
+      if (this.tasks.get(task.id)?.status !== 'pending') {
+        this.dropPendingMessages(task);
+      }
       this.processQueue();
+    }
+  }
+
+  /** Step 1: plan the task via TaskPlanner, emitting progress */
+  private async planTask(task: BackgroundTask): ReturnType<TaskPlanner['planTask']> {
+    logger.debug(`[BackgroundAgent] Planning task: ${task.userRequest}`);
+    task.stepDescription = 'Planning task...';
+    task.progress = 5;
+    this.emit('progress', task);
+
+    return this.taskPlanner.planTask({
+      userRequest: task.userRequest,
+      context: {
+        workspaceRoot: task.workspaceRoot,
+        openFiles: (task.parameters.files as string[]) ?? [],
+        ...((task.parameters.context as Record<string, unknown>) ?? {}),
+      },
+    });
+  }
+
+  /** Engine callbacks that mirror execution progress onto the BackgroundTask */
+  private buildExecutionCallbacks(task: BackgroundTask): ExecutionCallbacks {
+    return {
+      onStepStart: step => {
+        this.drainPendingMessages(task, step);
+        // Step params carry the BackgroundTask id so executors (spec 11
+        // browser sessions/artifacts) key on the task the user actually sees
+        step.action.params['backgroundTaskId'] ??= task.id;
+        task.currentStep = (task.currentStep ?? 0) + 1;
+        task.stepDescription = step.description;
+        this.emit('stepStart', task, step);
+      },
+      onStepComplete: (step, result) => {
+        const progress = 10 + ((task.currentStep ?? 0) / (task.totalSteps ?? 1)) * 85;
+        task.progress = Math.min(95, progress);
+        this.emit('stepComplete', task, step, result);
+        this.emit('progress', task);
+      },
+      onStepError: (step, error) => {
+        logger.error(`[BackgroundAgent] Step error:`, error);
+        this.emit('stepError', task, step, error);
+      },
+      onTaskProgress: (completedSteps, totalSteps) => {
+        task.currentStep = completedSteps;
+        task.totalSteps = totalSteps;
+        task.progress = Math.min(95, 10 + (completedSteps / totalSteps) * 85);
+        this.emit('progress', task);
+      },
+      onTaskComplete: _completedTask => {
+        logger.debug(`[BackgroundAgent] Task completed successfully`);
+      },
+      onTaskError: (_failedTask, error) => {
+        logger.error(`[BackgroundAgent] Task error:`, error);
+      },
+    };
+  }
+
+  /** Failure path: preserve 'cancelled', emit 'failed', optionally requeue */
+  private handleExecutionFailure(
+    task: BackgroundTask,
+    options: BackgroundTaskOptions,
+    error: unknown
+  ): void {
+    task.endTime = Date.now();
+    if (this.tasks.get(task.id)?.status === 'cancelled') {
+      // Don't mark as failed if it was cancelled
+      this.emit('cancelled', task);
+      return;
+    }
+
+    task.status = 'failed';
+    task.error = error as Error;
+    this.emit('failed', task);
+
+    // Retry if configured
+    if (
+      options.retryOnFailure &&
+      (!options.maxRetries || (task.currentStep ?? 0) < options.maxRetries)
+    ) {
+      logger.debug(`[BackgroundAgent] Retrying task (attempt ${(task.currentStep ?? 0) + 1})`);
+      task.status = 'pending';
+      task.currentStep = (task.currentStep ?? 0) + 1;
+      this.queue.unshift({ task, options });
     }
   }
 
@@ -347,7 +434,7 @@ export class BackgroundAgentSystem extends EventEmitter {
       running: tasks.filter(t => t.status === 'running').length,
       completed: tasks.filter(t => t.status === 'completed').length,
       failed: tasks.filter(t => t.status === 'failed').length,
-      cancelled: tasks.filter(t => t.status === 'cancelled').length
+      cancelled: tasks.filter(t => t.status === 'cancelled').length,
     };
   }
 }

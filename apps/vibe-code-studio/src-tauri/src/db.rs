@@ -78,6 +78,51 @@ fn ensure_connection(state: &DbState) -> Result<(), String> {
         )
         .map_err(|e| e.to_string())?;
 
+        // Verifiable artifacts (spec 09). task_id/kind are real columns so the
+        // panel can filter server-side; the full artifact is a JSON blob.
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS artifacts (
+                id TEXT PRIMARY KEY,
+                task_id TEXT NOT NULL,
+                kind TEXT NOT NULL,
+                artifact_data TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )",
+            [],
+        )
+        .map_err(|e| e.to_string())?;
+
+        // Artifact comments (spec 09 Phase 2). artifact_id/task_id are real
+        // columns for filtering + cascade delete; the comment is a JSON blob.
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS artifact_comments (
+                id TEXT PRIMARY KEY,
+                artifact_id TEXT NOT NULL,
+                task_id TEXT NOT NULL,
+                comment_data TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )",
+            [],
+        )
+        .map_err(|e| e.to_string())?;
+
+        // Knowledge items (spec 04). category is a real column for panel
+        // filtering; the full item is a JSON blob (renderer uses
+        // db_execute_query, which rejects DDL — table must be created here).
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS knowledge_items (
+                id TEXT PRIMARY KEY,
+                category TEXT NOT NULL,
+                item_data TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )",
+            [],
+        )
+        .map_err(|e| e.to_string())?;
+
         *guard = Some(conn);
     }
     Ok(())

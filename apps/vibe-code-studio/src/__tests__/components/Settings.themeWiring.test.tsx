@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { Settings } from '../../components/Settings';
@@ -32,5 +32,41 @@ describe('Settings — theme wiring', () => {
     await userEvent.click(screen.getByText('Save Changes'));
 
     expect(onSettingsChange).toHaveBeenCalledWith(expect.objectContaining({ theme: 'dracula' }));
+  });
+
+  it('routes an imported VS Code theme into custom settings on save', async () => {
+    const onSettingsChange = vi.fn();
+    render(
+      <Settings
+        isOpen
+        onClose={vi.fn()}
+        settings={baseSettings}
+        onSettingsChange={onSettingsChange}
+      />
+    );
+
+    const themeJson = JSON.stringify({
+      name: 'Dropped Theme',
+      type: 'dark',
+      colors: { 'editor.background': '#0b0b0b' },
+      tokenColors: [{ scope: 'comment', settings: { foreground: '#777777' } }],
+    });
+    fireEvent.change(screen.getByLabelText('Theme file'), {
+      target: {
+        files: [new File([themeJson], 'dropped-theme.json', { type: 'application/json' })],
+      },
+    });
+
+    await waitFor(() =>
+      expect(screen.getByLabelText('Custom JSON theme')).toHaveAttribute('aria-selected', 'true')
+    );
+    await userEvent.click(screen.getByText('Save Changes'));
+
+    expect(onSettingsChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        theme: 'custom',
+        customThemeJson: expect.stringContaining('"name": "Dropped Theme"'),
+      })
+    );
   });
 });

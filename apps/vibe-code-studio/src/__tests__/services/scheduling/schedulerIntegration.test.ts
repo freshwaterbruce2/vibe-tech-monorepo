@@ -8,6 +8,7 @@ import {
   buildSubmitPreview,
   createSchedule,
   deleteSchedule,
+  editSchedule,
   initScheduling,
   pauseSchedule,
   resetSchedulingForTests,
@@ -112,6 +113,75 @@ describe('mutations', () => {
   it('resumeSchedule is a no-op for unknown ids', async () => {
     await init();
     await expect(resumeSchedule('missing')).resolves.toBeUndefined();
+  });
+
+  it('editSchedule applies the draft and recomputes the next trigger', async () => {
+    await init();
+    const created = await createSchedule(draft());
+    await editSchedule(created.id, {
+      agentId: 'backend',
+      userRequest: 'run the audit nightly',
+      workspaceRoot: 'V:\\monorepo',
+      cadence: { type: 'daily', hour: 2, minute: 30 },
+      missedRunPolicy: 'skip',
+    });
+    const edited = useSchedulesStore.getState().schedules[0];
+    expect(edited?.agentId).toBe('backend');
+    expect(edited?.userRequest).toBe('run the audit nightly');
+    expect(edited?.cadence).toEqual({ type: 'daily', hour: 2, minute: 30 });
+    expect(edited?.missedRunPolicy).toBe('skip');
+    expect(edited?.status).toBe('active');
+    expect(edited?.nextRunAtMs).toBeGreaterThan(Date.now());
+  });
+
+  it('editSchedule keeps a paused schedule paused and the old policy without one', async () => {
+    await init();
+    const created = await createSchedule(draft({ missedRunPolicy: 'skip' }));
+    await pauseSchedule(created.id);
+    await editSchedule(created.id, {
+      agentId: 'frontend',
+      userRequest: 'still paused',
+      workspaceRoot: 'V:\\monorepo',
+      cadence: { type: 'interval', everyMinutes: 15 },
+    });
+    const edited = useSchedulesStore.getState().schedules[0];
+    expect(edited?.status).toBe('paused');
+    expect(edited?.missedRunPolicy).toBe('skip');
+  });
+
+  it('editSchedule reactivates a completed schedule with a new cadence', async () => {
+    // seed a completed (exhausted once) schedule into persistence before init
+    localStorage.setItem(
+      'vcs_agent_schedules',
+      JSON.stringify([
+        {
+          id: 's-done',
+          agentId: 'frontend',
+          userRequest: 'one-off',
+          workspaceRoot: 'V:\\monorepo',
+          cadence: { type: 'once', runAt: new Date(2026, 0, 1).toISOString() },
+          status: 'completed',
+          missedRunPolicy: 'run-on-launch',
+          nextRunAtMs: null,
+          runs: [],
+        },
+      ])
+    );
+    await init();
+    await editSchedule('s-done', {
+      agentId: 'frontend',
+      userRequest: 'run again',
+      workspaceRoot: 'V:\\monorepo',
+      cadence: { type: 'interval', everyMinutes: 5 },
+    });
+    const edited = useSchedulesStore.getState().schedules.find(s => s.id === 's-done');
+    expect(edited?.status).toBe('active');
+    expect(edited?.nextRunAtMs).toBeGreaterThan(Date.now());
+  });
+
+  it('editSchedule is a no-op for unknown ids', async () => {
+    await init();
+    await expect(editSchedule('missing', draft())).resolves.toBeUndefined();
   });
 
   it('deleteSchedule removes from the UI store', async () => {

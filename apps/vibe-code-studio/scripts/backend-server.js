@@ -1,9 +1,13 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 import Database from 'better-sqlite3';
+
+import { handleLspUpgrade } from './routes/lsp-relay.js';
+import { resolveServer } from './lib/lsp-servers.js';
 
 // Load env variables from .env files
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -208,7 +212,26 @@ wss.on('connection', ws => {
   });
 });
 
+// Resolve LSP server commands to absolute paths on PATH so Windows `.cmd`
+// shims (pnpm/npm global installs) become spawnable (spec 07 gotcha).
+const lspResolveOpts = {
+  paths: (process.env.PATH || '').split(path.delimiter).filter(Boolean),
+  exts: process.platform === 'win32' ? ['.cmd', '.exe', '.bat', ''] : [''],
+  exists: p => fs.existsSync(p),
+  sep: path.sep,
+};
+
 server.on('upgrade', (request, socket, head) => {
+  const pathname = (request.url || '').split('?')[0];
+  if (pathname.startsWith('/lsp/')) {
+    handleLspUpgrade(request, socket, head, {
+      wss,
+      spawn,
+      resolveServer: languageId => resolveServer(languageId, lspResolveOpts),
+      isAllowedOrigin,
+    });
+    return;
+  }
   wss.handleUpgrade(request, socket, head, ws => {
     wss.emit('connection', ws, request);
   });

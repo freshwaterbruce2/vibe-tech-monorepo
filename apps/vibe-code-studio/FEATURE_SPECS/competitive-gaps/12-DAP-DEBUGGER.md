@@ -8,6 +8,8 @@
 
 ---
 
+> **⚠️ Existing infra to reuse — dependency audit 2026-07-04:** The monorepo **already ships `backend/dap-proxy/`** — a working WebSocket↔stdio DAP bridge (default port 5003) wired for `node` and `python` (debugpy), with `Content-Length` framing. **Phase 1 should extend that proxy rather than build a fresh adapter host.** Caveat: its Node path uses raw `node --inspect-brk`, which is _not_ a real DAP adapter — genuine breakpoint / variable / call-stack fidelity still needs **`vscode-js-debug`** (as this spec's Architecture already specifies). Same standalone-Node-service vs. Tauri-sidecar decision as spec 07 — resolve them together.
+
 ## User Story
 
 As a developer debugging a failing test or a runtime crash, I want to set breakpoints, step through code, inspect the call stack and live variable values, and evaluate watch expressions, so that I don't have to leave VCS and open VS Code just to debug.
