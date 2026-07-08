@@ -172,6 +172,7 @@
     "prepare": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\\configure-pnpm-store.ps1 ; pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\\install-git-hooks.ps1",
     "store:configure": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\\configure-pnpm-store.ps1",
     "lines:check": "node scripts/validate-file-size.js",
+    "catalog:check": "node scripts/check-catalog-drift.mjs",
     "mcp:sync": "node tools/mcp-sync/sync.mjs",
     "mcp:sync:apply": "node tools/mcp-sync/sync.mjs --apply",
     "mcp:check": "node tools/mcp-sync/sync.mjs --check",

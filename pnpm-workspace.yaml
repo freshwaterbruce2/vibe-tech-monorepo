@@ -17,6 +17,11 @@ packages:
   - '!backend/types'
   - '!backend/llm-finetuning'
 
+# Governance: `pnpm add <dep>` for a cataloged dependency must use the catalog
+# version — adding an out-of-range version errors. Prevents version drift from
+# creeping back in. Requires pnpm >= 10.29 (fixes the circular `catalog:` write).
+catalogMode: strict
+
 catalog:
   react: 19.2.4
   react-dom: 19.2.4
