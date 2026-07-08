@@ -99,6 +99,10 @@ export interface SummaryMeta {
   aiEnabled: boolean;
   inlinePosted: number;
   dedupSkipped: number;
+  /** Set when the diff was reconstructed from the paginated files API
+   *  (GitHub 406'd the single-diff request as too large) and some files
+   *  had to be skipped to stay under the reconstruction size cap. */
+  diffCoverage?: { includedFiles: number; totalFiles: number; skippedFiles: string[] };
 }
 
 /** PR-level summary comment (also the budget counter via SUMMARY_MARKER) */
@@ -113,6 +117,14 @@ export function buildSummaryBody(review: CodeReview, meta: SummaryMeta): string 
     `**Inline comments:** ${meta.inlinePosted} posted` +
       (meta.dedupSkipped > 0 ? ` (${meta.dedupSkipped} unchanged, skipped)` : ''),
   ];
+  if (meta.diffCoverage) {
+    const { includedFiles, totalFiles } = meta.diffCoverage;
+    lines.push(
+      '',
+      `⚠️ **Large PR:** reviewed ${includedFiles} of ${totalFiles} changed files ` +
+        '(diff exceeded the single-request size limit; remaining files were skipped).'
+    );
+  }
   if (!meta.aiEnabled) {
     lines.push('', '_AI comments disabled (no API key configured) — heuristic checks only._');
   }

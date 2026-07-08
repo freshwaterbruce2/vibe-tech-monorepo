@@ -5,7 +5,12 @@
  * Spec: FEATURE_SPECS/competitive-gaps/15-PR-REVIEW-BOT.md
  */
 import type { CodeReview, ParsedDiff, ReviewComment } from '../AICodeReviewer';
-import type { Repository, Review, ReviewComment as GitHubReviewComment } from '../GitHubService';
+import type {
+  PullRequestDiffCoverage,
+  Repository,
+  Review,
+  ReviewComment as GitHubReviewComment,
+} from '../GitHubService';
 
 export type ReviewSeverity = 'error' | 'warning' | 'info';
 export type ReviewCategory = 'bug' | 'style' | 'performance' | 'security' | 'best-practice';
@@ -54,6 +59,14 @@ export interface ReviewBotResult {
   passNumber: number;
   inlineCount: number;
   review: CodeReview | null;
+  /** Present when the diff came from the paginated-files fallback (large PR,
+   *  406 on the single-diff request) and some files were skipped to stay
+   *  under the reconstruction size cap. */
+  diffCoverage?: {
+    includedFiles: number;
+    totalFiles: number;
+    skippedFiles: string[];
+  };
 }
 
 /**
@@ -61,7 +74,10 @@ export interface ReviewBotResult {
  * substitute a plain object; the CI shim passes the real service.
  */
 export interface ReviewBotGitHub {
-  getPullRequestDiff(repo: Repository, prNumber: number): Promise<string>;
+  getPullRequestDiffWithCoverage(
+    repo: Repository,
+    prNumber: number
+  ): Promise<PullRequestDiffCoverage>;
   getReviewComments(repo: Repository, prNumber: number): Promise<GitHubReviewComment[]>;
   listIssueComments(repo: Repository, issueNumber: number): Promise<Array<{ body?: string }>>;
   createIssueComment(repo: Repository, issueNumber: number, body: string): Promise<unknown>;

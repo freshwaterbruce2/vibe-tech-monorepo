@@ -132,6 +132,158 @@ describe('GitHubService', () => {
     });
   });
 
+  describe('PR diff coverage fallback (large PR — 406 diff-too-large)', () => {
+    function mockDiffTooLargeOnce() {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 406,
+        json: async () => ({
+          message: 'Sorry, the diff exceeded the maximum number of lines (20000)',
+        }),
+      });
+    }
+
+    function mockFilesPage(files: unknown[], linkHeader: string | null) {
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => files,
+        headers: { get: (name: string) => (name === 'link' ? linkHeader : null) },
+      });
+    }
+
+    it('returns the diff directly when the initial fetch succeeds (no 406)', async () => {
+      if (!GitHubService) return;
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        text: async () => 'diff --git a/file.ts b/file.ts\n+new line',
+      });
+
+      const service = new GitHubService(mockToken);
+      const result = await service.getPullRequestDiffWithCoverage(mockRepo, 1);
+
+      expect(result).toEqual({
+        diff: 'diff --git a/file.ts b/file.ts\n+new line',
+        truncated: false,
+        includedFiles: 0,
+        totalFiles: 0,
+        skippedFiles: [],
+      });
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('falls back to the paginated files API and reconstructs patches across 2 pages', async () => {
+      if (!GitHubService) return;
+
+      mockDiffTooLargeOnce();
+      mockFilesPage(
+        [
+          {
+            filename: 'src/a.ts',
+            status: 'modified',
+            changes: 3,
+            patch: '@@ -1,1 +1,2 @@\n+added',
+          },
+          {
+            filename: 'src/b.ts',
+            status: 'modified',
+            changes: 1,
+            patch: '@@ -1,1 +1,1 @@\n-old\n+new',
+          },
+        ],
+        '<https://api.github.com/repos/testowner/testrepo/pulls/1/files?page=2>; rel="next"'
+      );
+      mockFilesPage(
+        [{ filename: 'src/c.ts', status: 'added', changes: 5, patch: '@@ -0,0 +1,5 @@\n+created' }],
+        null
+      );
+
+      const service = new GitHubService(mockToken);
+      const result = await service.getPullRequestDiffWithCoverage(mockRepo, 1);
+
+      expect(result.truncated).toBe(false);
+      expect(result.totalFiles).toBe(3);
+      expect(result.includedFiles).toBe(3);
+      expect(result.skippedFiles).toEqual([]);
+      expect(result.diff).toContain('diff --git a/src/a.ts b/src/a.ts');
+      expect(result.diff).toContain('diff --git a/src/c.ts b/src/c.ts');
+      expect(result.diff).toContain('+created');
+      expect(global.fetch).toHaveBeenCalledTimes(3);
+      const urls = (global.fetch as any).mock.calls.map((call: unknown[]) => call[0]);
+      expect(urls[2]).toContain('page=2');
+    });
+
+    it('gives a placeholder section for a binary file with no patch', async () => {
+      if (!GitHubService) return;
+
+      mockDiffTooLargeOnce();
+      mockFilesPage([{ filename: 'assets/logo.png', status: 'modified', changes: 0 }], null);
+
+      const service = new GitHubService(mockToken);
+      const result = await service.getPullRequestDiffWithCoverage(mockRepo, 1);
+
+      expect(result.diff).toContain('diff --git a/assets/logo.png b/assets/logo.png');
+      expect(result.diff).toContain('no patch available');
+      expect(result.totalFiles).toBe(1);
+      expect(result.includedFiles).toBe(1);
+      expect(result.truncated).toBe(false);
+    });
+
+    it('sets truncated and records skipped files once the size cap is exceeded', async () => {
+      if (!GitHubService) return;
+
+      mockDiffTooLargeOnce();
+      const hugePatch = '+'.repeat(410_000);
+      mockFilesPage(
+        [
+          { filename: 'huge.ts', status: 'modified', changes: 1, patch: hugePatch },
+          { filename: 'small.ts', status: 'modified', changes: 1, patch: '@@ -1,1 +1,1 @@\n+x' },
+        ],
+        null
+      );
+
+      const service = new GitHubService(mockToken);
+      const result = await service.getPullRequestDiffWithCoverage(mockRepo, 1);
+
+      expect(result.truncated).toBe(true);
+      expect(result.skippedFiles).toEqual(['huge.ts']);
+      expect(result.includedFiles).toBe(1);
+      expect(result.totalFiles).toBe(2);
+      expect(result.diff).toContain('diff --git a/small.ts b/small.ts');
+      expect(result.diff).not.toContain('diff --git a/huge.ts');
+    });
+
+    it('non-406 errors on the diff request still throw, without falling back', async () => {
+      if (!GitHubService) return;
+
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        json: async () => ({ message: 'Server error' }),
+      });
+
+      const service = new GitHubService(mockToken);
+      await expect(service.getPullRequestDiffWithCoverage(mockRepo, 1)).rejects.toThrow(/500/);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not fall back for a non-Error thrown value (isDiffTooLargeError false branch)', async () => {
+      if (!GitHubService) return;
+
+      // ok:true so the private fetch() wrapper's try/catch never runs; the
+      // rejection comes from response.text() itself, so it reaches
+      // getPullRequestDiffWithCoverage's catch as a raw non-Error value.
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.reject('boom'),
+      });
+
+      const service = new GitHubService(mockToken);
+      await expect(service.getPullRequestDiffWithCoverage(mockRepo, 1)).rejects.toBe('boom');
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('Code Review', () => {
     it('should get PR files', async () => {
       if (!GitHubService) return;

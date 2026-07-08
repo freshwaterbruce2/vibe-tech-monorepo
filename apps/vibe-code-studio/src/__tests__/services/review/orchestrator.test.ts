@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AICodeReviewer } from '../../../services/AICodeReviewer';
 import type { UnifiedAIService } from '../../../services/ai/UnifiedAIService';
 import { BUDGET_MARKER, SUMMARY_MARKER } from '../../../services/review/fingerprint';
+import type { PullRequestDiffCoverage } from '../../../services/GitHubService';
 import { runReviewBot } from '../../../services/review/orchestrator';
 import type { ReviewBotDeps } from '../../../services/review/orchestrator';
 import { DEFAULT_REVIEW_CONFIG } from '../../../services/review/reviewConfig';
@@ -23,13 +24,23 @@ interface FakeGitHub extends ReviewBotGitHub {
   postedSummaries: string[];
 }
 
-function makeGitHub(diff = FIXTURE_DIFF): FakeGitHub {
+function makeGitHub(
+  diff = FIXTURE_DIFF,
+  coverageOverrides: Partial<PullRequestDiffCoverage> = {}
+): FakeGitHub {
   const github: FakeGitHub = {
     issueComments: [],
     reviewComments: [],
     submitted: [],
     postedSummaries: [],
-    getPullRequestDiff: vi.fn(async () => diff),
+    getPullRequestDiffWithCoverage: vi.fn(async () => ({
+      diff,
+      truncated: false,
+      includedFiles: 0,
+      totalFiles: 0,
+      skippedFiles: [],
+      ...coverageOverrides,
+    })),
     getReviewComments: vi.fn(async () => github.reviewComments),
     listIssueComments: vi.fn(async () => github.issueComments),
     createIssueComment: vi.fn(async (_repo, _n, body: string) => {
@@ -119,7 +130,7 @@ describe('budget gate', () => {
     const result = await runReviewBot(makeDeps(github, { aiProvider }));
 
     expect(result.reason).toBe('budget-exhausted');
-    expect(github.getPullRequestDiff).not.toHaveBeenCalled();
+    expect(github.getPullRequestDiffWithCoverage).not.toHaveBeenCalled();
     expect(aiProvider).not.toHaveBeenCalled();
     expect(github.postedSummaries[0]).toContain(BUDGET_MARKER);
   });
@@ -132,6 +143,33 @@ describe('budget gate', () => {
     ];
     await runReviewBot(makeDeps(github));
     expect(github.postedSummaries).toHaveLength(0);
+  });
+});
+
+describe('large-PR diff coverage (spec 15 406 fallback)', () => {
+  it('threads diffCoverage into the result and summary when the diff was truncated', async () => {
+    const github = makeGitHub(FIXTURE_DIFF, {
+      truncated: true,
+      includedFiles: 2,
+      totalFiles: 5,
+      skippedFiles: ['big/one.ts', 'big/two.ts', 'big/three.ts'],
+    });
+    const result = await runReviewBot(makeDeps(github));
+
+    expect(result.diffCoverage).toEqual({
+      includedFiles: 2,
+      totalFiles: 5,
+      skippedFiles: ['big/one.ts', 'big/two.ts', 'big/three.ts'],
+    });
+    expect(github.postedSummaries[0]).toContain('reviewed 2 of 5 changed files');
+  });
+
+  it('does not set diffCoverage when the single-diff request succeeded', async () => {
+    const github = makeGitHub();
+    const result = await runReviewBot(makeDeps(github));
+
+    expect(result.diffCoverage).toBeUndefined();
+    expect(github.postedSummaries[0]).not.toContain('changed files');
   });
 });
 
@@ -169,7 +207,7 @@ describe('failure tolerance', () => {
 
   it('unexpected errors still propagate', async () => {
     const github = makeGitHub();
-    vi.mocked(github.getPullRequestDiff).mockRejectedValue(new Error('network down'));
+    vi.mocked(github.getPullRequestDiffWithCoverage).mockRejectedValue(new Error('network down'));
     await expect(runReviewBot(makeDeps(github))).rejects.toThrow('network down');
   });
 

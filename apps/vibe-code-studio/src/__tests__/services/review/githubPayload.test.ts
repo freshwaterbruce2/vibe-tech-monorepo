@@ -144,4 +144,16 @@ describe('buildSummaryBody', () => {
     });
     expect(body).toContain('AI comments disabled');
   });
+
+  it('notes partial file coverage when the diff was reconstructed from the files API', () => {
+    const body = buildSummaryBody(reviewOf([]), {
+      passNumber: 1,
+      maxPasses: 5,
+      aiEnabled: true,
+      inlinePosted: 0,
+      dedupSkipped: 0,
+      diffCoverage: { includedFiles: 3, totalFiles: 8, skippedFiles: ['a.ts', 'b.ts'] },
+    });
+    expect(body).toContain('Large PR:** reviewed 3 of 8 changed files');
+  });
 });
