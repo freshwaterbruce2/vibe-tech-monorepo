@@ -33,7 +33,7 @@ concurrency:
 
 env:
   NODE_VERSION: '22'
-  PNPM_VERSION: '10.34.1'
+  PNPM_VERSION: '10.33.0'
   NODE_OPTIONS: '--max-old-space-size=4096'
   # CI runners have no V:\ — override the .npmrc developer-local store-dir
   # (store-dir=V:\pnpm-store) to a sibling of the workspace (same volume, so
