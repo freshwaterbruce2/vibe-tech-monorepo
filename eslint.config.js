@@ -99,6 +99,10 @@ export default tseslint.config(
       // (which excludes *.test.ts to keep dist clean) — vitest runs them directly.
       'apps/learning-pipeline-mcp/src/**/__tests__/**',
       'apps/learning-pipeline-mcp/src/**/*.{test,spec}.ts',
+      // monorepo-health-mcp unit tests: same reason — build tsconfig excludes
+      // *.test.ts to keep dist clean; vitest runs them directly.
+      'apps/monorepo-health-mcp/src/**/__tests__/**',
+      'apps/monorepo-health-mcp/src/**/*.{test,spec}.ts',
       // Playwright E2E specs: not in the typed tsconfig program (same intent as
       // the ignored src unit tests above) — keeps typed linting from erroring on them.
       'apps/vibe-code-studio/tests/**',
