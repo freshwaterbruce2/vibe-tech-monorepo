@@ -326,3 +326,46 @@ Verify: `.\scripts\check-vibe-paths.ps1` clean;
 - [ ] `D:\active-project\active-project.json` exists (null state); fresh snapshot in `D:\repositories\vibetech` dated ≥ 2026-07-07
 - [ ] `rg "TODO|FIXME" --type-add 'src:*.{ts,tsx,py,rs}' -t src` in production paths → 0 hits
 - [ ] Both leaked keys rotated (Bruce confirms); history scrub scheduled or done
+
+---
+
+## P7 — Ship-readiness gaps from web research (added 2026-07-07, executed same session)
+
+Ranked findings from a sourced 2026 best-practices sweep (full report with URLs in session log):
+
+1. **pnpm CVE-2026-50021** `[agent — routed to chore/deps]`: pnpm ≤10.34.0 skips tarball
+   integrity verification when a lockfile entry lacks `integrity:`, even under
+   `--frozen-lockfile`. We pin 10.33.0 in `package.json` `packageManager` + `PNPM_VERSION` in
+   ci.yml / nova-agent.yml / vcs-review.yml / path-segregation-gate.yml. Fix: bump all to
+   **10.34.1**, regen lockfile under the fixed version.
+2. **Renovate is dead config** `[agent]`: root `renovate.json` exists but the Renovate app has
+   0 PRs ever (not installed). Dependabot is the active bot. Delete `renovate.json`.
+3. **No CI build for shippable desktop apps** `[agent]`: only nova-agent (Tauri) and
+   vibetech-command-center (Electron) package installers in CI; vibe-code-studio and vibe-tutor
+   don't — a packaging regression ships silently. Add windows-latest build+artifact workflows.
+4. **nova-agent.yml Rust caching** `[agent]`: uses raw actions/cache on target/ only — crates
+   re-download every run. Swap to swatinem/rust-cache@v2 (registry+git+target, correct keys).
+5. **Two release mechanisms configured, one active** `[agent]`: nx.json `release` block is
+   unused (Changesets in ci.yml is authoritative). Remove the block.
+6. **CI cache key gap** `[agent — routed to chore/deps]`: Nx cache keys hash only
+   pnpm-lock.yaml; pnpm 10 reads hoisting config from pnpm-workspace.yaml → add it to hashFiles.
+7. **Windows code signing absent** `[Bruce — decision + cert purchase]`: no Authenticode signing
+   on any Tauri/Electron artifact (Android signing exists). 2026 guidance: OV cert or Azure
+   Artifact Signing; Tauri supports it natively via tauri.conf.json bundle.windows.\*. Required
+   before public distribution; not blocking internal builds.
+8. **Next 16 Turbopack cache never prunes itself** `[agent]`: no framework pruning exists (the
+   218MB .sst was this). Add `apps/*/.next/cache` pruning to Quick-Cleanup.ps1.
+9. **pnpm 11 migration trap** `[future gate — documented]`: pnpm 11 silently ignores
+   `pnpm.overrides` in package.json (must move to pnpm-workspace.yaml). When the pnpm 11 major
+   bump PR appears: move the overrides block in the same change, verify with `pnpm why`.
+   Do NOT auto-merge pnpm's own major bump.
+10. **Electron 39 smoke-test scope** `[Bruce — gates chore/deps merge]`: must cover app launch +
+    contextBridge IPC round-trip, electron-builder packaging with ASAR integrity (now stable,
+    fails closed), auto-updater if present, native-module rebuild (command-center
+    rebuild:native). Read breaking-changes for EVERY intermediate major (34-39).
+11. **Review bot 300-file API cap** `[agent — after review-bot fix lands]`: GitHub's files API
+    caps at 300 files/PR regardless of pagination — add a comment + totalFiles caveat in
+    GitHubService.ts.
+
+Already conforming (verified): SHA-pinned actions, `.npmrc` trust-policy/minimum-release-age
+hardening, store-dir isolation in CI, evidence-based hardlink choice on ReFS.
