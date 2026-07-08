@@ -103,6 +103,10 @@ export default tseslint.config(
       // *.test.ts to keep dist clean; vitest runs them directly.
       'apps/monorepo-health-mcp/src/**/__tests__/**',
       'apps/monorepo-health-mcp/src/**/*.{test,spec}.ts',
+      // vibe-shipping unit tests: not in its build tsconfig program (excludes
+      // *.test.ts to keep dist clean) — vitest runs them directly.
+      'apps/vibe-shipping/src/**/__tests__/**',
+      'apps/vibe-shipping/src/**/*.{test,spec}.{ts,tsx}',
       // Playwright E2E specs: not in the typed tsconfig program (same intent as
       // the ignored src unit tests above) — keeps typed linting from erroring on them.
       'apps/vibe-code-studio/tests/**',

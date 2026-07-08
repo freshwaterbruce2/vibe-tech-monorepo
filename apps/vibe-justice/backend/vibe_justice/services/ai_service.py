@@ -263,7 +263,6 @@ class AIService:
             # Extract answer content
             answer = data["choices"][0]["message"]["content"]
 
-            # TODO: Add streaming support via SSE for real-time reasoning display
             return {
                 "reasoning": "",  # Reasoning embedded in answer for now
                 "answer": answer
@@ -437,7 +436,6 @@ class AIService:
             # Extract answer content
             answer = data["choices"][0]["message"]["content"]
 
-            # TODO: Add streaming support via SSE for real-time reasoning display
             return {
                 "reasoning": "",  # Reasoning embedded in answer for now
                 "answer": answer

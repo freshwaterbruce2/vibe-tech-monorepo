@@ -32,7 +32,8 @@ export interface StorageQuota {
 
 export interface SyncStatus {
   isOnline: boolean
-  lastSync: number
+  /** Epoch ms of the last completed sync, or null if none has run yet. */
+  lastSync: number | null
   pendingOperations: number
   failedOperations: number
   syncInProgress: boolean
@@ -315,7 +316,9 @@ class AdvancedOfflineManager {
 
     return {
       isOnline: navigator.onLine,
-      lastSync: await this.getLastSyncTime(),
+      // No sync-completion timestamp is persisted by this manager yet, so
+      // report the honest "unknown" state instead of a fabricated value.
+      lastSync: null,
       pendingOperations: pendingOps.length,
       failedOperations: failedOps.length,
       syncInProgress: this.syncInProgress,
@@ -604,10 +607,6 @@ class AdvancedOfflineManager {
     _operation: OfflineQueueItem
   ): Promise<void> {
     // Implementation for handling failed operations
-  }
-
-  private async getLastSyncTime(): Promise<number> {
-    return Date.now() - 3600000 // Placeholder
   }
 
   private estimateSyncTime(operations: OfflineQueueItem[]): number {
