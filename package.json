@@ -188,6 +188,7 @@
     "workspace:cleanup:drift": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\\cleanup-stale-artifacts.ps1",
     "workspace:cleanup:drift:dry": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\\cleanup-stale-artifacts.ps1 -DryRun",
     "ci:sync": "pnpm run sync:audit",
+    "ci:local": "node scripts/ci-local.mjs",
     "ci:lint": "nx affected -t lint --base=origin/main --head=HEAD",
     "ci:typecheck": "nx affected -t typecheck --base=origin/main --head=HEAD",
     "ci:test": "nx affected -t test --base=origin/main --head=HEAD",
