@@ -36,21 +36,27 @@ export class BackupService {
       label,
       startedAt,
       completedAt: 0,
-      durationMs: 0
+      durationMs: 0,
     };
 
     if (!existsSync(source)) {
-      return { ...baseline, completedAt: Date.now(), durationMs: Date.now() - startedAt, error: 'source not found' };
+      return {
+        ...baseline,
+        completedAt: Date.now(),
+        durationMs: Date.now() - startedAt,
+        error: 'source not found',
+      };
     }
 
     if (!existsSync(destDir)) {
-      try { mkdirSync(destDir, { recursive: true }); }
-      catch (err) {
+      try {
+        mkdirSync(destDir, { recursive: true });
+      } catch (err) {
         return {
           ...baseline,
           completedAt: Date.now(),
           durationMs: Date.now() - startedAt,
-          error: `could not create destination: ${(err as Error).message}`
+          error: `could not create destination: ${(err as Error).message}`,
         };
       }
     }
@@ -64,13 +70,34 @@ export class BackupService {
     try {
       await this.runCompressArchive(source, zipPath);
       if (!existsSync(zipPath)) {
-        return { ...baseline, zipPath, completedAt: Date.now(), durationMs: Date.now() - startedAt, error: 'zip not produced' };
+        return {
+          ...baseline,
+          zipPath,
+          completedAt: Date.now(),
+          durationMs: Date.now() - startedAt,
+          error: 'zip not produced',
+        };
       }
       const sizeBytes = statSync(zipPath).size;
       const completedAt = Date.now();
-      return { success: true, zipPath, sizeBytes, sourcePath: source, label, startedAt, completedAt, durationMs: completedAt - startedAt };
+      return {
+        success: true,
+        zipPath,
+        sizeBytes,
+        sourcePath: source,
+        label,
+        startedAt,
+        completedAt,
+        durationMs: completedAt - startedAt,
+      };
     } catch (err) {
-      return { ...baseline, zipPath, completedAt: Date.now(), durationMs: Date.now() - startedAt, error: (err as Error).message };
+      return {
+        ...baseline,
+        zipPath,
+        completedAt: Date.now(),
+        durationMs: Date.now() - startedAt,
+        error: (err as Error).message,
+      };
     }
   }
 
@@ -82,7 +109,12 @@ export class BackupService {
       .map((n) => {
         const full = join(dir, n);
         const st = statSync(full);
-        return { zipPath: full, sizeBytes: st.size, createdAt: st.mtimeMs, label: this.labelFromName(n) };
+        return {
+          zipPath: full,
+          sizeBytes: st.size,
+          createdAt: st.mtimeMs,
+          label: this.labelFromName(n),
+        };
       })
       .sort((a, b) => b.createdAt - a.createdAt)
       .slice(0, limit);
@@ -97,16 +129,18 @@ export class BackupService {
           '-NoProfile',
           '-NonInteractive',
           '-Command',
-          'Compress-Archive -Path $env:BKP_SOURCE -DestinationPath $env:BKP_DEST -CompressionLevel Optimal -Force'
+          'Compress-Archive -Path $env:BKP_SOURCE -DestinationPath $env:BKP_DEST -CompressionLevel Optimal -Force',
         ];
         const proc = spawn(psPath, args, {
           shell: false,
           windowsHide: true,
-          env: { ...process.env, BKP_SOURCE: source, BKP_DEST: zipPath }
+          env: { ...process.env, BKP_SOURCE: source, BKP_DEST: zipPath },
         });
         let stderr = '';
         if (proc.stderr) {
-          proc.stderr.on('data', (d) => { stderr += d.toString(); });
+          proc.stderr.on('data', (d) => {
+            stderr += d.toString();
+          });
         }
         const timer = setTimeout(() => {
           proc.kill();

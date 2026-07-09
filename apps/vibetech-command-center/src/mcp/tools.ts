@@ -1,7 +1,12 @@
 import type { ServiceContainer } from '../main/service-container';
 import type {
-  ClaudeAllowedTool, NxGraph, DbMetric,
-  ProbeResult, BackupResult, BackupLogEntry, RagSearchResult
+  ClaudeAllowedTool,
+  NxGraph,
+  DbMetric,
+  ProbeResult,
+  BackupResult,
+  BackupLogEntry,
+  RagSearchResult,
 } from '../shared/types';
 
 export interface McpTool {
@@ -26,16 +31,20 @@ export function registerTools(c: ServiceContainer): McpTool[] {
       inputSchema: {
         type: 'object',
         properties: {
-          filter_tag: { type: 'string', description: 'Optional: only return apps with this tag (e.g., "scope:ai")' }
+          filter_tag: {
+            type: 'string',
+            description: 'Optional: only return apps with this tag (e.g., "scope:ai")',
+          },
         },
-        additionalProperties: false
+        additionalProperties: false,
       },
       handler: async (args): Promise<unknown> => {
         const graph: NxGraph = await c.nxGraph.getGraph();
         const apps = Object.values(graph.projects).filter((p) => p.type === 'app');
-        const filtered = typeof args['filter_tag'] === 'string'
-          ? apps.filter((a) => a.tags.includes(args['filter_tag'] as string))
-          : apps;
+        const filtered =
+          typeof args['filter_tag'] === 'string'
+            ? apps.filter((a) => a.tags.includes(args['filter_tag'] as string))
+            : apps;
         return {
           count: filtered.length,
           apps: filtered.map((a) => ({
@@ -43,10 +52,10 @@ export function registerTools(c: ServiceContainer): McpTool[] {
             root: a.root,
             absolute_path: `V:\\monorepo\\${a.root.replace(/\//g, '\\')}`,
             tags: a.tags,
-            dependencies: graph.dependencies[a.name]?.map((d) => d.target) ?? []
-          }))
+            dependencies: graph.dependencies[a.name]?.map((d) => d.target) ?? [],
+          })),
         };
-      }
+      },
     },
 
     {
@@ -60,9 +69,9 @@ export function registerTools(c: ServiceContainer): McpTool[] {
           checked_at: Date.now(),
           reachable_count: results.filter((r) => r.reachable).length,
           total_count: results.length,
-          services: results
+          services: results,
         };
-      }
+      },
     },
 
     {
@@ -72,24 +81,23 @@ export function registerTools(c: ServiceContainer): McpTool[] {
       inputSchema: {
         type: 'object',
         properties: {
-          name: { type: 'string', description: 'Optional: return metrics for only this database' }
+          name: { type: 'string', description: 'Optional: return metrics for only this database' },
         },
-        additionalProperties: false
+        additionalProperties: false,
       },
       handler: async (args): Promise<unknown> => {
         const all: DbMetric[] = await c.dbMetrics.collectAll();
-        const filtered = typeof args['name'] === 'string'
-          ? all.filter((m) => m.name === args['name'])
-          : all;
+        const filtered =
+          typeof args['name'] === 'string' ? all.filter((m) => m.name === args['name']) : all;
         return filtered.map((m) => ({
           ...m,
           warnings: [
             m.walSizeBytes > 100 * 1024 * 1024 ? 'WAL_LARGE' : null,
             m.sizeBytes > 500 * 1024 * 1024 ? 'SIZE_LARGE' : null,
-            m.error ? `ERROR: ${m.error}` : null
-          ].filter((w) => w !== null)
+            m.error ? `ERROR: ${m.error}` : null,
+          ].filter((w) => w !== null),
         }));
-      }
+      },
     },
 
     {
@@ -99,17 +107,21 @@ export function registerTools(c: ServiceContainer): McpTool[] {
       inputSchema: {
         type: 'object',
         properties: {
-          app_only: { type: 'boolean', description: 'If true, return only app-type projects (exclude libs)' }
+          app_only: {
+            type: 'boolean',
+            description: 'If true, return only app-type projects (exclude libs)',
+          },
         },
-        additionalProperties: false
+        additionalProperties: false,
       },
       handler: async (args): Promise<unknown> => {
         const graph: NxGraph = await c.nxGraph.getGraph();
-        const projects = args['app_only'] === true
-          ? Object.fromEntries(Object.entries(graph.projects).filter(([, p]) => p.type === 'app'))
-          : graph.projects;
+        const projects =
+          args['app_only'] === true
+            ? Object.fromEntries(Object.entries(graph.projects).filter(([, p]) => p.type === 'app'))
+            : graph.projects;
         return { ...graph, projects };
-      }
+      },
     },
 
     {
@@ -119,17 +131,27 @@ export function registerTools(c: ServiceContainer): McpTool[] {
       inputSchema: {
         type: 'object',
         properties: {
-          path: { type: 'string', description: 'Absolute Windows path, e.g., V:\\monorepo\\apps\\nova-agent\\dist' }
+          path: {
+            type: 'string',
+            description: 'Absolute Windows path, e.g., V:\\monorepo\\apps\\nova-agent\\dist',
+          },
         },
         required: ['path'],
-        additionalProperties: false
+        additionalProperties: false,
       },
       handler: async (args): Promise<unknown> => {
         const path = args['path'];
         if (typeof path !== 'string' || !path) throw new Error('path required');
         const { existsSync, statSync } = await import('node:fs');
         if (!existsSync(path)) {
-          return { path, exists: false, isDirectory: false, isFile: false, sizeBytes: 0, mtimeMs: null };
+          return {
+            path,
+            exists: false,
+            isDirectory: false,
+            isFile: false,
+            sizeBytes: 0,
+            mtimeMs: null,
+          };
         }
         const s = statSync(path);
         return {
@@ -138,9 +160,9 @@ export function registerTools(c: ServiceContainer): McpTool[] {
           isDirectory: s.isDirectory(),
           isFile: s.isFile(),
           sizeBytes: s.size,
-          mtimeMs: s.mtimeMs
+          mtimeMs: s.mtimeMs,
         };
-      }
+      },
     },
 
     {
@@ -150,18 +172,18 @@ export function registerTools(c: ServiceContainer): McpTool[] {
       inputSchema: {
         type: 'object',
         properties: {
-          limit: { type: 'number', description: 'Max entries to return (default 20, max 100)' }
+          limit: { type: 'number', description: 'Max entries to return (default 20, max 100)' },
         },
-        additionalProperties: false
+        additionalProperties: false,
       },
       handler: async (args): Promise<unknown> => {
         const limit = Math.min(
           Math.max(typeof args['limit'] === 'number' ? args['limit'] : 20, 1),
-          100
+          100,
         );
         const entries: BackupLogEntry[] = c.backup.listRecent(limit);
         return { count: entries.length, backups: entries };
-      }
+      },
     },
 
     // ---------- actions ----------
@@ -172,11 +194,17 @@ export function registerTools(c: ServiceContainer): McpTool[] {
       inputSchema: {
         type: 'object',
         properties: {
-          source_path: { type: 'string', description: 'Absolute path to back up (file or directory)' },
-          label: { type: 'string', description: 'Optional label appended to filename (sanitized to alnum+dash)' }
+          source_path: {
+            type: 'string',
+            description: 'Absolute path to back up (file or directory)',
+          },
+          label: {
+            type: 'string',
+            description: 'Optional label appended to filename (sanitized to alnum+dash)',
+          },
         },
         required: ['source_path'],
-        additionalProperties: false
+        additionalProperties: false,
       },
       handler: async (args): Promise<unknown> => {
         const sourcePath = args['source_path'];
@@ -184,10 +212,10 @@ export function registerTools(c: ServiceContainer): McpTool[] {
         if (typeof sourcePath !== 'string' || !sourcePath) throw new Error('source_path required');
         const result: BackupResult = await c.backup.createBackup({
           sourcePath,
-          label: typeof label === 'string' ? label : undefined
+          label: typeof label === 'string' ? label : undefined,
         });
         return result;
-      }
+      },
     },
 
     {
@@ -197,12 +225,15 @@ export function registerTools(c: ServiceContainer): McpTool[] {
       inputSchema: {
         type: 'object',
         properties: {
-          query: { type: 'string', description: 'Natural language query, e.g., "claude code bridge spawn logic"' },
+          query: {
+            type: 'string',
+            description: 'Natural language query, e.g., "claude code bridge spawn logic"',
+          },
           top_k: { type: 'number', description: 'Max hits to return (default 8)' },
-          app_filter: { type: 'string', description: 'Optional: restrict results to an app name' }
+          app_filter: { type: 'string', description: 'Optional: restrict results to an app name' },
         },
         required: ['query'],
-        additionalProperties: false
+        additionalProperties: false,
       },
       handler: async (args): Promise<unknown> => {
         const query = args['query'];
@@ -212,10 +243,10 @@ export function registerTools(c: ServiceContainer): McpTool[] {
         const result: RagSearchResult = await c.rag.search({
           query,
           topK,
-          filter: appFilter ? { app: appFilter } : undefined
+          filter: appFilter ? { app: appFilter } : undefined,
         });
         return result;
-      }
+      },
     },
 
     {
@@ -225,22 +256,31 @@ export function registerTools(c: ServiceContainer): McpTool[] {
       inputSchema: {
         type: 'object',
         properties: {
-          app_name: { type: 'string', description: 'Nx project name (must be type:app). Determines cwd.' },
+          app_name: {
+            type: 'string',
+            description: 'Nx project name (must be type:app). Determines cwd.',
+          },
           prompt: { type: 'string', description: 'The full prompt passed via -p' },
           allowed_tools: {
             type: 'array',
-            items: { type: 'string', enum: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'WebFetch', 'WebSearch'] },
-            description: 'Tools Claude Code may use. Defaults to Read,Glob,Grep (read-only).'
+            items: {
+              type: 'string',
+              enum: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'WebFetch', 'WebSearch'],
+            },
+            description: 'Tools Claude Code may use. Defaults to Read,Glob,Grep (read-only).',
           },
           permission_mode: {
             type: 'string',
             enum: ['plan', 'acceptEdits', 'bypassPermissions', 'default'],
-            description: 'Permission mode. "plan" is read-only (recommended default).'
+            description: 'Permission mode. "plan" is read-only (recommended default).',
           },
-          timeout_ms: { type: 'number', description: 'Max runtime in ms (default 600000 = 10 min)' }
+          timeout_ms: {
+            type: 'number',
+            description: 'Max runtime in ms (default 600000 = 10 min)',
+          },
         },
         required: ['app_name', 'prompt'],
-        additionalProperties: false
+        additionalProperties: false,
       },
       handler: async (args): Promise<unknown> => {
         const appName = args['app_name'];
@@ -258,20 +298,22 @@ export function registerTools(c: ServiceContainer): McpTool[] {
         const allowedTools = Array.isArray(args['allowed_tools'])
           ? (args['allowed_tools'] as ClaudeAllowedTool[])
           : (['Read', 'Glob', 'Grep'] as ClaudeAllowedTool[]);
-        const permissionMode = typeof args['permission_mode'] === 'string'
-          ? (args['permission_mode'] as 'plan' | 'acceptEdits' | 'bypassPermissions' | 'default')
-          : 'plan';
-        const timeoutMs = typeof args['timeout_ms'] === 'number' ? args['timeout_ms'] : 10 * 60 * 1000;
+        const permissionMode =
+          typeof args['permission_mode'] === 'string'
+            ? (args['permission_mode'] as 'plan' | 'acceptEdits' | 'bypassPermissions' | 'default')
+            : 'plan';
+        const timeoutMs =
+          typeof args['timeout_ms'] === 'number' ? args['timeout_ms'] : 10 * 60 * 1000;
 
         const result = await c.claude.invoke({
           prompt,
           cwd,
           allowedTools,
           permissionMode,
-          timeoutMs
+          timeoutMs,
         });
         return result;
-      }
+      },
     },
 
     {
@@ -284,44 +326,59 @@ export function registerTools(c: ServiceContainer): McpTool[] {
           status: {
             type: 'string',
             enum: ['running', 'exited', 'killed', 'error'],
-            description: 'Optional: filter by status'
-          }
+            description: 'Optional: filter by status',
+          },
         },
-        additionalProperties: false
+        additionalProperties: false,
       },
       handler: async (args): Promise<unknown> => {
         const all = c.runner.list();
         const status = args['status'];
         const filtered = typeof status === 'string' ? all.filter((p) => p.status === status) : all;
         return { count: filtered.length, processes: filtered };
-      }
+      },
     },
 
     // ---------- meta ----------
     {
       name: 'dashboard_overview',
       description:
-        "Return a one-shot situational overview of the monorepo: app count, database sizes (with any alerts), reachable services, recent backup count, processes running. Use this as the first call when Bruce asks \"what's the state of things?\"",
+        'Return a one-shot situational overview of the monorepo: app count, database sizes (with any alerts), reachable services, recent backup count, processes running. Use this as the first call when Bruce asks "what\'s the state of things?"',
       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
       handler: async (): Promise<unknown> => {
         const [graph, dbs, probes, backups] = await Promise.all([
-          c.nxGraph.getGraph().catch((e: Error) => ({ error: e.message, projects: {}, dependencies: {}, generatedAt: 0 })),
+          c.nxGraph
+            .getGraph()
+            .catch((e: Error) => ({
+              error: e.message,
+              projects: {},
+              dependencies: {},
+              generatedAt: 0,
+            })),
           c.dbMetrics.collectAll().catch((e: Error) => [{ error: e.message }]),
           c.health.probeAll().catch((e: Error) => [{ error: e.message }]),
-          Promise.resolve(c.backup.listRecent(5))
+          Promise.resolve(c.backup.listRecent(5)),
         ]);
 
         const projects = 'projects' in graph ? graph.projects : {};
-        const apps = Object.values(projects).filter((p: unknown) => (p as { type?: string }).type === 'app');
-        const libs = Object.values(projects).filter((p: unknown) => (p as { type?: string }).type === 'lib');
+        const apps = Object.values(projects).filter(
+          (p: unknown) => (p as { type?: string }).type === 'app',
+        );
+        const libs = Object.values(projects).filter(
+          (p: unknown) => (p as { type?: string }).type === 'lib',
+        );
 
-        const dbArray = Array.isArray(dbs) ? dbs as DbMetric[] : [];
+        const dbArray = Array.isArray(dbs) ? (dbs as DbMetric[]) : [];
         const dbAlerts = dbArray
           .filter((d) => !('error' in d && d.error))
           .filter((d) => d.walSizeBytes > 100 * 1024 * 1024 || d.sizeBytes > 500 * 1024 * 1024)
-          .map((d) => ({ name: d.name, size_mb: (d.sizeBytes / 1024 / 1024).toFixed(1), wal_mb: (d.walSizeBytes / 1024 / 1024).toFixed(1) }));
+          .map((d) => ({
+            name: d.name,
+            size_mb: (d.sizeBytes / 1024 / 1024).toFixed(1),
+            wal_mb: (d.walSizeBytes / 1024 / 1024).toFixed(1),
+          }));
 
-        const probeArray = Array.isArray(probes) ? probes as ProbeResult[] : [];
+        const probeArray = Array.isArray(probes) ? (probes as ProbeResult[]) : [];
         const reachable = probeArray.filter((p) => p.reachable).map((p) => p.service);
         const unreachable = probeArray.filter((p) => !p.reachable).map((p) => p.service);
 
@@ -330,29 +387,34 @@ export function registerTools(c: ServiceContainer): McpTool[] {
           monorepo: {
             apps_count: apps.length,
             libs_count: libs.length,
-            root: 'V:\\monorepo'
+            root: 'V:\\monorepo',
           },
           databases: {
             tracked: dbArray.length,
             alerts: dbAlerts,
-            missing: dbArray.filter((d) => 'error' in d && d.error === 'file not found').map((d) => d.name)
+            missing: dbArray
+              .filter((d) => 'error' in d && d.error === 'file not found')
+              .map((d) => d.name),
           },
           services: {
             reachable,
-            unreachable
+            unreachable,
           },
           backups: {
             recent: backups.length,
             most_recent: backups[0]
-              ? { file: backups[0].zipPath.split('\\').pop(), at: new Date(backups[0].createdAt).toISOString() }
-              : null
+              ? {
+                  file: backups[0].zipPath.split('\\').pop(),
+                  at: new Date(backups[0].createdAt).toISOString(),
+                }
+              : null,
           },
           processes: {
             running: c.runner.list().filter((p) => p.status === 'running').length,
-            total: c.runner.list().length
-          }
+            total: c.runner.list().length,
+          },
         };
-      }
-    }
+      },
+    },
   ];
 }

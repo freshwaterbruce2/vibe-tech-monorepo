@@ -3,7 +3,10 @@ import type { ServiceContainer } from './service-container';
 
 let tray: Tray | null = null;
 
-export function setupTray(container: ServiceContainer, getWindow: () => BrowserWindow | null): void {
+export function setupTray(
+  container: ServiceContainer,
+  getWindow: () => BrowserWindow | null,
+): void {
   const icon = nativeImage.createFromBuffer(makeCyanDotPng());
 
   tray = new Tray(icon);
@@ -18,9 +21,13 @@ export function setupTray(container: ServiceContainer, getWindow: () => BrowserW
         click: () => {
           const w = getWindow();
           if (!w) return;
-          if (w.isVisible()) w.hide(); else { w.show(); w.focus(); }
+          if (w.isVisible()) w.hide();
+          else {
+            w.show();
+            w.focus();
+          }
           rebuildMenu();
-        }
+        },
       },
       { type: 'separator' },
       {
@@ -29,7 +36,7 @@ export function setupTray(container: ServiceContainer, getWindow: () => BrowserW
           void container.backup
             .createBackup({ sourcePath: 'V:\\monorepo\\apps', label: 'tray-quick' })
             .catch((error) => console.error('tray backup failed for apps:', error));
-        }
+        },
       },
       {
         label: 'Backup V:\\monorepo\\packages',
@@ -37,10 +44,10 @@ export function setupTray(container: ServiceContainer, getWindow: () => BrowserW
           void container.backup
             .createBackup({ sourcePath: 'V:\\monorepo\\packages', label: 'tray-quick' })
             .catch((error) => console.error('tray backup failed for packages:', error));
-        }
+        },
       },
       { type: 'separator' },
-      { label: 'Quit', click: () => app.quit() }
+      { label: 'Quit', click: () => app.quit() },
     ]);
     if (tray) {
       tray.setContextMenu(menu);
@@ -50,14 +57,21 @@ export function setupTray(container: ServiceContainer, getWindow: () => BrowserW
   tray.on('click', () => {
     const w = getWindow();
     if (!w) return;
-    if (w.isVisible()) w.hide(); else { w.show(); w.focus(); }
+    if (w.isVisible()) w.hide();
+    else {
+      w.show();
+      w.focus();
+    }
   });
 
   rebuildMenu();
 }
 
 export function teardownTray(): void {
-  if (tray) { tray.destroy(); tray = null; }
+  if (tray) {
+    tray.destroy();
+    tray = null;
+  }
 }
 
 function makeCyanDotPng(): Buffer {

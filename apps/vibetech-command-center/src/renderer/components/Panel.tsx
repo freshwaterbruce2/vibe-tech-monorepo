@@ -13,7 +13,15 @@ export interface PanelProps {
   className?: string;
 }
 
-export function Panel({ title, children, actions, loading, error, onRefresh, className }: PanelProps) {
+export function Panel({
+  title,
+  children,
+  actions,
+  loading,
+  error,
+  onRefresh,
+  className,
+}: PanelProps) {
   return (
     <section className={clsx('panel mb-6', className)}>
       <header className="panel-header">
@@ -29,9 +37,7 @@ export function Panel({ title, children, actions, loading, error, onRefresh, cla
         </div>
       </header>
       <div className="p-4">
-        {error ? (
-          <div className="text-status-error text-sm font-mono">{error}</div>
-        ) : children}
+        {error ? <div className="text-status-error text-sm font-mono">{error}</div> : children}
       </div>
     </section>
   );
@@ -57,9 +63,6 @@ export function RelativeTime({ ts }: { ts: number }) {
   const hr = Math.floor(min / 60);
   const day = Math.floor(hr / 24);
   const text =
-    day > 0 ? `${day}d ago` :
-    hr > 0 ? `${hr}h ago` :
-    min > 0 ? `${min}m ago` :
-    `${sec}s ago`;
+    day > 0 ? `${day}d ago` : hr > 0 ? `${hr}h ago` : min > 0 ? `${min}m ago` : `${sec}s ago`;
   return <span className="text-slate-500 font-mono text-xs">{text}</span>;
 }

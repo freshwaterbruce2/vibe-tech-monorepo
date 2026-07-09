@@ -7,7 +7,7 @@ import type {
   ClaudeInvocation,
   ClaudeStreamEvent,
   ClaudeInvocationResult,
-  ProcessChunk
+  ProcessChunk,
 } from '../../shared/types';
 
 export interface ClaudeBridgeOptions {
@@ -43,7 +43,7 @@ export class ClaudeBridge extends EventEmitter {
     }
     return {
       command: this.opts.nodeCommand ?? resolveNodeExe(),
-      jsPath: this.opts.claudeJsPath ?? resolveClaudeJs()
+      jsPath: this.opts.claudeJsPath ?? resolveClaudeJs(),
     };
   }
 
@@ -63,7 +63,7 @@ export class ClaudeBridge extends EventEmitter {
       command,
       args,
       cwd: inv.cwd,
-      timeoutMs: inv.timeoutMs ?? this.defaultTimeoutMs
+      timeoutMs: inv.timeoutMs ?? this.defaultTimeoutMs,
     });
 
     const onChunk = (chunk: ProcessChunk) => {
@@ -98,7 +98,10 @@ export class ClaudeBridge extends EventEmitter {
 
     this.runner.on('chunk', onChunk);
     try {
-      const exited = await this.runner.waitFor(handle.id, (inv.timeoutMs ?? this.defaultTimeoutMs) + 5_000);
+      const exited = await this.runner.waitFor(
+        handle.id,
+        (inv.timeoutMs ?? this.defaultTimeoutMs) + 5_000,
+      );
       const durationMs = Date.now() - startedAt;
       return {
         invocationId,
@@ -109,7 +112,7 @@ export class ClaudeBridge extends EventEmitter {
         durationMs,
         totalCostUsd,
         numTurns,
-        error: exited.exitCode === 0 ? undefined : `exit ${exited.exitCode}`
+        error: exited.exitCode === 0 ? undefined : `exit ${exited.exitCode}`,
       };
     } finally {
       this.runner.off('chunk', onChunk);
@@ -118,10 +121,13 @@ export class ClaudeBridge extends EventEmitter {
 
   protected buildArgs(inv: ClaudeInvocation): string[] {
     const args: string[] = [
-      '-p', inv.prompt,
-      '--output-format', 'stream-json',
+      '-p',
+      inv.prompt,
+      '--output-format',
+      'stream-json',
       '--verbose',
-      '--allowedTools', inv.allowedTools.join(',')
+      '--allowedTools',
+      inv.allowedTools.join(','),
     ];
     if (inv.resumeSessionId) args.push('--resume', inv.resumeSessionId);
     if (inv.appendSystemPrompt) args.push('--append-system-prompt', inv.appendSystemPrompt);
@@ -133,7 +139,7 @@ export class ClaudeBridge extends EventEmitter {
     invocationId: string,
     type: ClaudeStreamEvent['type'],
     subtype: string | undefined,
-    payload: unknown
+    payload: unknown,
   ): ClaudeStreamEvent {
     return { invocationId, type, subtype, payload, timestamp: Date.now() };
   }
@@ -160,9 +166,7 @@ function resolveNodeExe(): string {
   for (const p of candidates) {
     if (existsSync(p)) return p;
   }
-  throw new Error(
-    'node.exe not found — set NODE_EXE_PATH env var to the full path of node.exe'
-  );
+  throw new Error('node.exe not found — set NODE_EXE_PATH env var to the full path of node.exe');
 }
 
 function resolveClaudeJs(): string {
@@ -177,10 +181,22 @@ function resolveClaudeJs(): string {
   if (existsSync(claudeCmd)) {
     const src = readFileSync(claudeCmd, 'utf8');
     // The shim contains: node  "%~dp0\global\5\.pnpm\@anthropic-ai+claude-code@X.Y.Z\...cli.js"
-    const m = src.match(/global[/\\]5[/\\]\.pnpm[/\\](@anthropic-ai\+claude-code@[^\\]+)[/\\].*?cli\.js/i);
+    const m = src.match(
+      /global[/\\]5[/\\]\.pnpm[/\\](@anthropic-ai\+claude-code@[^\\]+)[/\\].*?cli\.js/i,
+    );
     if (m?.[1]) {
-      const resolved = join(localAppData, 'pnpm', 'global', '5', '.pnpm', m[1],
-        'node_modules', '@anthropic-ai', 'claude-code', 'cli.js');
+      const resolved = join(
+        localAppData,
+        'pnpm',
+        'global',
+        '5',
+        '.pnpm',
+        m[1],
+        'node_modules',
+        '@anthropic-ai',
+        'claude-code',
+        'cli.js',
+      );
       if (existsSync(resolved)) return resolved;
     }
   }
@@ -199,12 +215,18 @@ function resolveClaudeJs(): string {
   }
 
   // npm global fallback
-  const npmGlobal = join(process.env['APPDATA'] ?? '', 'npm', 'node_modules',
-    '@anthropic-ai', 'claude-code', 'cli.js');
+  const npmGlobal = join(
+    process.env['APPDATA'] ?? '',
+    'npm',
+    'node_modules',
+    '@anthropic-ai',
+    'claude-code',
+    'cli.js',
+  );
   if (existsSync(npmGlobal)) return npmGlobal;
 
   throw new Error(
     'Claude Code CLI not found — set CLAUDE_JS_PATH env var to the full path of cli.js, ' +
-    'or install Claude Code globally: pnpm add -g @anthropic-ai/claude-code'
+      'or install Claude Code globally: pnpm add -g @anthropic-ai/claude-code',
   );
 }

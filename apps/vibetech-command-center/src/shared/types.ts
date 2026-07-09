@@ -5,10 +5,10 @@ export type FileEventType = 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir'
 
 export interface FileEvent {
   type: FileEventType;
-  path: string;          // absolute Windows path
+  path: string; // absolute Windows path
   appName: string | null; // derived from path, null if not inside apps/* or packages/*
   packageName: string | null;
-  timestamp: number;      // epoch ms
+  timestamp: number; // epoch ms
   sizeBytes?: number;
 }
 
@@ -16,7 +16,7 @@ export interface FileEvent {
 export interface NxProject {
   name: string;
   type: 'app' | 'lib';
-  root: string;           // relative to V:\monorepo
+  root: string; // relative to V:\monorepo
   sourceRoot?: string;
   tags: string[];
   implicitDependencies: string[];
@@ -35,11 +35,7 @@ export interface NxGraph {
 }
 
 // ---------- factory status ----------
-export type FactoryStripeStatus =
-  | 'connected'
-  | 'scaffolded'
-  | 'not-configured'
-  | 'not-applicable';
+export type FactoryStripeStatus = 'connected' | 'scaffolded' | 'not-configured' | 'not-applicable';
 
 export interface FactoryReadiness {
   auth: boolean;
@@ -106,9 +102,9 @@ export interface AffectedProject {
   root: string;
   tags: string[];
   targets: string[];
-  upstream: string[];    // projects that depend on this
-  downstream: string[];  // projects this depends on
-  healthScore: number;   // 0-100
+  upstream: string[]; // projects that depend on this
+  downstream: string[]; // projects this depends on
+  healthScore: number; // 0-100
   riskFlags: RiskFlag[];
 }
 
@@ -267,12 +263,12 @@ export interface MemoryVizSnapshot {
 
 // ---------- health-probe ----------
 export type ServiceName =
-  | 'ipc-bridge'        // 5004
-  | 'symptom-tracker'   // 5055
-  | 'dashboard-ui'      // 5180
-  | 'openrouter-proxy'  // 3001
-  | 'memory-mcp'        // 3200
-  | 'dashboard-ipc';    // 3210
+  | 'ipc-bridge' // 5004
+  | 'symptom-tracker' // 5055
+  | 'dashboard-ui' // 5180
+  | 'openrouter-proxy' // 3001
+  | 'memory-mcp' // 3200
+  | 'dashboard-ipc'; // 3210
 
 export interface ProbeResult {
   service: ServiceName;
@@ -348,10 +344,17 @@ export interface ProcessChunk {
 
 // ---------- claude-bridge ----------
 export type ClaudeAllowedTool =
-  | 'Read' | 'Write' | 'Edit' | 'Bash' | 'Glob' | 'Grep' | 'WebFetch' | 'WebSearch';
+  | 'Read'
+  | 'Write'
+  | 'Edit'
+  | 'Bash'
+  | 'Glob'
+  | 'Grep'
+  | 'WebFetch'
+  | 'WebSearch';
 
 export interface ClaudeInvocation {
-  invocationId?: string;     // client-generated correlation id; bridge uses it as-is or generates one
+  invocationId?: string; // client-generated correlation id; bridge uses it as-is or generates one
   prompt: string;
   cwd: string;
   allowedTools: ClaudeAllowedTool[];
@@ -385,7 +388,7 @@ export interface ClaudeInvocationResult {
 export interface RagSearchQuery {
   query: string;
   topK?: number;
-  filter?: { app?: string; language?: string; };
+  filter?: { app?: string; language?: string };
 }
 
 export interface RagHit {
@@ -462,10 +465,10 @@ export const IPC_CHANNELS = {
   MEMORY_VIZ_DECAY: 'cc:memory:decay',
   MEMORY_VIZ_CONSOLIDATE: 'cc:memory:consolidate',
   ENV_CONFIG_LIST: 'cc:envConfig:list',
-  ENV_CONFIG_UPDATE: 'cc:envConfig:update'
+  ENV_CONFIG_UPDATE: 'cc:envConfig:update',
 } as const;
 
-export type IpcChannel = typeof IPC_CHANNELS[keyof typeof IPC_CHANNELS];
+export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
 
 export type StreamTopic =
   | 'cc.watcher.events'
@@ -504,7 +507,12 @@ export interface CommandCenterAPI {
     list(limit?: number): Promise<IpcResult<BackupLogEntry[]>>;
   };
   process: {
-    spawn(spec: { command: string; args: string[]; cwd: string; timeoutMs?: number }): Promise<IpcResult<ProcessHandle>>;
+    spawn(spec: {
+      command: string;
+      args: string[];
+      cwd: string;
+      timeoutMs?: number;
+    }): Promise<IpcResult<ProcessHandle>>;
     kill(id: string): Promise<IpcResult<boolean>>;
     list(): Promise<IpcResult<ProcessHandle[]>>;
   };
@@ -543,7 +551,12 @@ export interface CommandCenterAPI {
   };
   envConfig: {
     list(force?: boolean): Promise<IpcResult<ProjectEnvInfo[]>>;
-    update(spec: { projectRoot: string; file: '.env' | '.env.local'; key: string; value: string }): Promise<IpcResult<void>>;
+    update(spec: {
+      projectRoot: string;
+      file: '.env' | '.env.local';
+      key: string;
+      value: string;
+    }): Promise<IpcResult<void>>;
   };
 
   stream: {
