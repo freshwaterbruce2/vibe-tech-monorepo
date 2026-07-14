@@ -12,6 +12,7 @@
     "preview": "node ../../node_modules/vite/bin/vite.js preview",
     "analyze": "npm run build:production && npx vite-bundle-analyzer dist",
     "test": "node ../../node_modules/vitest/vitest.mjs run --passWithNoTests",
+    "test:coverage": "node ../../node_modules/vitest/vitest.mjs run --coverage --passWithNoTests",
     "test:unit": "node ../../node_modules/vitest/vitest.mjs run --passWithNoTests",
     "test:e2e": "playwright test",
     "test:ui": "playwright test --ui",
