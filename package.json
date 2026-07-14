@@ -170,7 +170,7 @@
     "sync:audit:report": "node scripts/monorepo-sync-audit.mjs --report-only",
     "paths:check": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\\check-vibe-paths.ps1",
     "setup:hooks": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\\install-git-hooks.ps1",
-    "prepare": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\\configure-pnpm-store.ps1 ; pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\\install-git-hooks.ps1",
+    "prepare": "node scripts/prepare-workspace.mjs",
     "store:configure": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\\configure-pnpm-store.ps1",
     "lines:check": "node scripts/validate-file-size.js",
     "mcp:sync": "node tools/mcp-sync/sync.mjs",
