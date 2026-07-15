@@ -56,7 +56,7 @@ const Terms = () => {
               <h2 className="text-2xl font-semibold text-white mb-3">Contact</h2>
               <p>
                 For terms or service questions, contact Bruce Freshwater at
-                freshwaterbruce@icloud.com or use the contact page on Vibe-Tech.org.
+                Bfreshwater@vibe-tech.org or use the contact page on Vibe-Tech.org.
               </p>
             </section>
           </div>

@@ -157,7 +157,8 @@ const Contact = () => {
               <div>
                 <h2 className="text-2xl font-semibold mb-6 font-heading text-white">Contact Information</h2>
                 <p className="text-white mb-8">
-                  Bruce Freshwater would love to hear from you! Contact using the information below or fill out the form and we'll get back to you as soon as possible.
+                  Bruce Freshwater would love to hear from you! Contact using the information
+                  below or fill out the form and we'll get back to you as soon as possible.
                 </p>
                 <div className="space-y-6">
                   <div className="flex items-start">
@@ -167,8 +168,8 @@ const Contact = () => {
                     <div>
                       <h3 className="text-lg font-medium text-white">Email</h3>
                       <p className="text-white">
-                        <a href="mailto:freshwaterbruce@icloud.com" className="hover:text-aura-accent">
-                          freshwaterbruce@icloud.com
+                        <a href="mailto:Bfreshwater@vibe-tech.org" className="hover:text-aura-accent">
+                          Bfreshwater@vibe-tech.org
                         </a>
                       </p>
                     </div>
@@ -180,8 +181,8 @@ const Contact = () => {
                     <div>
                       <h3 className="text-lg font-medium text-white">Phone</h3>
                       <p className="text-white">
-                        <a href="tel:18038258860" className="hover:text-aura-accent">
-                          1-803-825-8860
+                        <a href="tel:+18038252876" className="hover:text-aura-accent">
+                          (803) 825-2876
                         </a>
                       </p>
                     </div>

@@ -39,8 +39,8 @@ const Privacy = () => {
               <h2 className="text-2xl font-semibold text-white mb-3">Third-Party Services</h2>
               <p>
                 The site may rely on infrastructure and service providers such as hosting,
-                analytics, email, payment, and backend platforms. Those providers process information
-                only as needed to deliver the requested site or product functionality.
+                analytics, email, payment, and backend platforms. Those providers process
+                information only as needed to deliver the requested site or product functionality.
               </p>
             </section>
 
@@ -48,15 +48,15 @@ const Privacy = () => {
               <h2 className="text-2xl font-semibold text-white mb-3">Data Retention</h2>
               <p>
                 We keep lead and project information only as long as reasonably needed for business
-                follow-up, support, legal compliance, or service improvement. You may request that we
-                delete or correct your information.
+                follow-up, support, legal compliance, or service improvement. You may request that
+                we delete or correct your information.
               </p>
             </section>
 
             <section>
               <h2 className="text-2xl font-semibold text-white mb-3">Contact</h2>
               <p>
-                For privacy questions, contact Bruce Freshwater at freshwaterbruce@icloud.com or use
+                For privacy questions, contact Bruce Freshwater at Bfreshwater@vibe-tech.org or use
                 the contact form on Vibe-Tech.org.
               </p>
             </section>
