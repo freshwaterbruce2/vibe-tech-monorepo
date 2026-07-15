@@ -26,13 +26,13 @@
   },
   "dependencies": {
     "@nova/types": "workspace:*",
-    "better-sqlite3": "12.6.2"
+    "better-sqlite3": "catalog:"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
+    "@types/better-sqlite3": "catalog:",
     "rimraf": "^6.1.3",
-    "typescript": "5.9.3",
-    "vitest": "^4.1.9"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "keywords": [
     "nova",

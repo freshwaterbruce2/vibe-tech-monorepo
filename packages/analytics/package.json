@@ -19,8 +19,8 @@
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
-    "typescript": "5.9.3",
-    "vitest": "^4.1.9"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "engines": {
     "node": ">=22.0.0",

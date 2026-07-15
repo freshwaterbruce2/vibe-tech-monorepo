@@ -1,12 +1,27 @@
 import { useEffect, useState } from 'react';
-import { useQuery, useMutation, type UseQueryResult, type UseMutationResult } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  type UseQueryResult,
+  type UseMutationResult,
+} from '@tanstack/react-query';
 import { unwrap } from '@renderer/lib/ipc';
 import { useUiStore } from '@renderer/stores';
 import type {
-  NxGraph, ProbeResult, DbMetric, BackupLogEntry, ProcessHandle,
-  FileEvent, StreamTopic, RagSearchQuery, RagSearchResult,
-  ClaudeInvocation, ClaudeInvocationResult, ClaudeStreamEvent, FactoryAppStatus,
-  ProjectEnvInfo
+  NxGraph,
+  ProbeResult,
+  DbMetric,
+  BackupLogEntry,
+  ProcessHandle,
+  FileEvent,
+  StreamTopic,
+  RagSearchQuery,
+  RagSearchResult,
+  ClaudeInvocation,
+  ClaudeInvocationResult,
+  ClaudeStreamEvent,
+  FactoryAppStatus,
+  ProjectEnvInfo,
 } from '@shared/types';
 
 export function useNxGraph(): UseQueryResult<NxGraph> {
@@ -14,7 +29,7 @@ export function useNxGraph(): UseQueryResult<NxGraph> {
     queryKey: ['nx', 'graph'],
     queryFn: async () => unwrap(window.commandCenter.nx.get()),
     staleTime: 30_000,
-    refetchInterval: 60_000
+    refetchInterval: 60_000,
   });
 }
 
@@ -23,7 +38,7 @@ export function useFactoryApps(): UseQueryResult<FactoryAppStatus[]> {
     queryKey: ['factory', 'apps'],
     queryFn: async () => unwrap(window.commandCenter.factory.list()),
     staleTime: 30_000,
-    refetchInterval: 60_000
+    refetchInterval: 60_000,
   });
 }
 
@@ -31,7 +46,7 @@ export function useHealth(): UseQueryResult<ProbeResult[]> {
   return useQuery({
     queryKey: ['health', 'all'],
     queryFn: async () => unwrap(window.commandCenter.health.probeAll()),
-    refetchInterval: 5_000
+    refetchInterval: 5_000,
   });
 }
 
@@ -39,7 +54,7 @@ export function useDbMetrics(): UseQueryResult<DbMetric[]> {
   return useQuery({
     queryKey: ['db', 'metrics'],
     queryFn: async () => unwrap(window.commandCenter.db.collectAll()),
-    refetchInterval: 30_000
+    refetchInterval: 30_000,
   });
 }
 
@@ -47,7 +62,7 @@ export function useBackupList(limit = 20): UseQueryResult<BackupLogEntry[]> {
   return useQuery({
     queryKey: ['backups', 'recent', limit],
     queryFn: async () => unwrap(window.commandCenter.backup.list(limit)),
-    refetchInterval: 10_000
+    refetchInterval: 10_000,
   });
 }
 
@@ -55,7 +70,7 @@ export function useProcessList(): UseQueryResult<ProcessHandle[]> {
   return useQuery({
     queryKey: ['processes', 'list'],
     queryFn: async () => unwrap(window.commandCenter.process.list()),
-    refetchInterval: 2_000
+    refetchInterval: 2_000,
   });
 }
 
@@ -92,13 +107,17 @@ export function useFileEventSubscription(): void {
 
 export function useRagSearch(): UseMutationResult<RagSearchResult, Error, RagSearchQuery> {
   return useMutation({
-    mutationFn: async (query: RagSearchQuery) => unwrap(window.commandCenter.rag.search(query))
+    mutationFn: async (query: RagSearchQuery) => unwrap(window.commandCenter.rag.search(query)),
   });
 }
 
-export function useClaudeInvoke(): UseMutationResult<ClaudeInvocationResult, Error, ClaudeInvocation> {
+export function useClaudeInvoke(): UseMutationResult<
+  ClaudeInvocationResult,
+  Error,
+  ClaudeInvocation
+> {
   return useMutation({
-    mutationFn: async (inv: ClaudeInvocation) => unwrap(window.commandCenter.claude.invoke(inv))
+    mutationFn: async (inv: ClaudeInvocation) => unwrap(window.commandCenter.claude.invoke(inv)),
   });
 }
 
@@ -106,7 +125,10 @@ export function useClaudeStream(invocationId: string | null): ClaudeStreamEvent[
   const [events, setEvents] = useState<ClaudeStreamEvent[]>([]);
 
   useEffect(() => {
-    if (!invocationId) { setEvents([]); return; }
+    if (!invocationId) {
+      setEvents([]);
+      return;
+    }
     const unsub = window.commandCenter.stream.subscribe('cc.claude.stream', (payload) => {
       const evt = payload as ClaudeStreamEvent;
       if (evt.invocationId === invocationId) {
@@ -120,21 +142,30 @@ export function useClaudeStream(invocationId: string | null): ClaudeStreamEvent[
 }
 
 export function useProcessOutput(
-  processId: string | null
+  processId: string | null,
 ): Array<{ stream: 'stdout' | 'stderr'; data: string; timestamp: number }> {
   const [chunks, setChunks] = useState<
     Array<{ stream: 'stdout' | 'stderr'; data: string; timestamp: number }>
   >([]);
 
   useEffect(() => {
-    if (!processId) { setChunks([]); return; }
+    if (!processId) {
+      setChunks([]);
+      return;
+    }
     const unsub = window.commandCenter.stream.subscribe('cc.process.chunk', (payload) => {
-      const chunk = payload as { processId: string; stream: 'stdout' | 'stderr'; data: string; timestamp: number };
+      const chunk = payload as {
+        processId: string;
+        stream: 'stdout' | 'stderr';
+        data: string;
+        timestamp: number;
+      };
       if (chunk.processId === processId) {
-        setChunks((prev) => [
-          ...prev,
-          { stream: chunk.stream, data: chunk.data, timestamp: chunk.timestamp }
-        ].slice(-2000));
+        setChunks((prev) =>
+          [...prev, { stream: chunk.stream, data: chunk.data, timestamp: chunk.timestamp }].slice(
+            -2000,
+          ),
+        );
       }
     });
     return unsub;
@@ -148,7 +179,7 @@ export function useEnvConfigs(force?: boolean): UseQueryResult<ProjectEnvInfo[]>
     queryKey: ['env', 'configs', force],
     queryFn: async () => unwrap(window.commandCenter.envConfig.list(force)),
     staleTime: 10_000,
-    refetchInterval: 30_000
+    refetchInterval: 30_000,
   });
 }
 
@@ -158,6 +189,6 @@ export function useUpdateEnvConfig(): UseMutationResult<
   { projectRoot: string; file: '.env' | '.env.local'; key: string; value: string }
 > {
   return useMutation({
-    mutationFn: async (spec) => unwrap(window.commandCenter.envConfig.update(spec))
+    mutationFn: async (spec) => unwrap(window.commandCenter.envConfig.update(spec)),
   });
 }

@@ -7,9 +7,9 @@ import type { NxGraph, NxProject, NxDependency } from '../../shared/types';
 export interface NxGraphServiceOptions {
   monorepoRoot: string;
   cacheTtlMs?: number;
-  nxCommand?: string;       // default: 'pnpm.cmd'
-  nxArgs?: string[];        // default: ['exec', 'nx', 'graph', ...]
-  timeoutMs?: number;       // default: 30_000
+  nxCommand?: string; // default: 'pnpm.cmd'
+  nxArgs?: string[]; // default: ['exec', 'nx', 'graph', ...]
+  timeoutMs?: number; // default: 30_000
 }
 
 export class NxGraphService {
@@ -41,11 +41,13 @@ export class NxGraphService {
       const proc = spawn(cmd, args, {
         cwd: this.opts.monorepoRoot,
         shell: true,
-        windowsHide: true
+        windowsHide: true,
       });
 
       let stderr = '';
-      proc.stderr.on('data', (d: Buffer) => { stderr += d.toString(); });
+      proc.stderr.on('data', (d: Buffer) => {
+        stderr += d.toString();
+      });
 
       const timer = setTimeout(() => {
         proc.kill();
@@ -81,7 +83,18 @@ export class NxGraphService {
   protected parse(raw: unknown): NxGraph {
     const r = raw as {
       graph?: {
-        nodes?: Record<string, { type?: string; data?: { root?: string; sourceRoot?: string; tags?: string[]; implicitDependencies?: string[] } }>;
+        nodes?: Record<
+          string,
+          {
+            type?: string;
+            data?: {
+              root?: string;
+              sourceRoot?: string;
+              tags?: string[];
+              implicitDependencies?: string[];
+            };
+          }
+        >;
         dependencies?: Record<string, Array<{ source: string; target: string; type?: string }>>;
       };
     };
@@ -92,11 +105,11 @@ export class NxGraphService {
     for (const [name, node] of Object.entries(nodes)) {
       projects[name] = {
         name,
-        type: (node.type === 'app' ? 'app' : 'lib'),
+        type: node.type === 'app' ? 'app' : 'lib',
         root: node.data?.root ?? '',
         sourceRoot: node.data?.sourceRoot,
         tags: node.data?.tags ?? [],
-        implicitDependencies: node.data?.implicitDependencies ?? []
+        implicitDependencies: node.data?.implicitDependencies ?? [],
       };
     }
 
@@ -105,7 +118,7 @@ export class NxGraphService {
       dependencies[src] = list.map((d) => ({
         source: d.source,
         target: d.target,
-        type: (d.type === 'dynamic' ? 'dynamic' : d.type === 'implicit' ? 'implicit' : 'static')
+        type: d.type === 'dynamic' ? 'dynamic' : d.type === 'implicit' ? 'implicit' : 'static',
       }));
     }
 

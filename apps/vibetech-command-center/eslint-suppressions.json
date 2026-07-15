@@ -1,0 +1,73 @@
+{
+  "src/main/ipc/index.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/main/services/backup-service.ts": {
+    "max-len": {
+      "count": 1
+    },
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/main/services/claude-bridge.ts": {
+    "max-len": {
+      "count": 2
+    },
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "src/main/services/database-inventory.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/main/services/db-explorer.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/main/services/db-metrics.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/main/services/factory-status.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/main/services/memory-viz.ts": {
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "src/main/services/nx-affected.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/main/tray.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/mcp/server.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  },
+  "src/mcp/tools.ts": {
+    "max-lines-per-function": {
+      "count": 2
+    }
+  },
+  "src/preload/index.ts": {
+    "max-lines-per-function": {
+      "count": 1
+    }
+  }
+}

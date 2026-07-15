@@ -28,22 +28,22 @@
     "@vibetech/landing": "workspace:*",
     "@vibetech/monetization": "workspace:*",
     "@vibetech/payments": "workspace:*",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "fastify": "^5.8.4",
     "fastify-raw-body": "^5.0.0",
     "@fastify/cors": "^11.2.0"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
-    "@types/react": "19.2.14",
-    "@types/react-dom": "19.2.3",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
     "@nx/playwright": "22.7.1",
     "@playwright/test": "^1.58.2",
     "@vitejs/plugin-react": "^5.2.0",
-    "tsx": "^4.21.0",
-    "typescript": "5.9.3",
-    "vite": "^7.3.1",
-    "vitest": "^4.1.9"
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
   }
 }

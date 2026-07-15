@@ -16,3 +16,27 @@ packages:
   # Exclude backend directories that are not independent packages.
   - '!backend/types'
   - '!backend/llm-finetuning'
+
+# Governance: `pnpm add <dep>` for a cataloged dependency must use the catalog
+# version — adding an out-of-range version errors. Prevents version drift from
+# creeping back in. Requires pnpm >= 10.29 (fixes the circular `catalog:` write).
+catalogMode: strict
+
+catalog:
+  react: 19.2.4
+  react-dom: 19.2.4
+  '@types/react': 19.2.14
+  '@types/react-dom': 19.2.3
+  typescript: 5.9.3
+  vite: ^7.3.5
+  zod: ^4.3.6
+  tailwindcss: 4.1.18
+  lucide-react: 0.563.0
+  better-sqlite3: 12.6.2
+  '@modelcontextprotocol/sdk': 1.27.0
+  vitest: ^4.1.9
+  '@vitest/coverage-v8': ^4.1.9
+  '@vitest/ui': ^4.1.9
+  tsx: ^4.21.0
+  autoprefixer: ^10.4.27
+  '@types/better-sqlite3': ^7.6.13

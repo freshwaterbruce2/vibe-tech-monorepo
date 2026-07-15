@@ -20,13 +20,13 @@
   "dependencies": {
     "@react-email/components": "^1.0.12",
     "@react-email/render": "^2.0.8",
-    "react": "19.2.4"
+    "react": "catalog:"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
-    "@types/react": "19.2.14",
-    "typescript": "5.9.3",
-    "vitest": "^4.1.9"
+    "@types/react": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "engines": {
     "node": ">=22.0.0",

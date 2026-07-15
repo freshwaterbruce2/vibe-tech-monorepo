@@ -44,12 +44,11 @@ export class FactoryStatusService {
   constructor(private readonly opts: FactoryStatusServiceOptions) {}
 
   async listStatuses(graph: NxGraph): Promise<FactoryAppStatus[]> {
-    const projects = Object.values(graph.projects)
-      .filter((project) => project.type === 'app' && this.isFactoryGeneratedProject(project));
-
-    const statuses = await Promise.all(
-      projects.map((project) => this.readProjectStatus(project))
+    const projects = Object.values(graph.projects).filter(
+      (project) => project.type === 'app' && this.isFactoryGeneratedProject(project),
     );
+
+    const statuses = await Promise.all(projects.map((project) => this.readProjectStatus(project)));
 
     return statuses.sort((a, b) => a.name.localeCompare(b.name));
   }
@@ -129,7 +128,11 @@ export class FactoryStatusService {
       stripeStatus = 'scaffolded';
     }
 
-    if (stripeStatus !== 'not-applicable' && stripeSecretKey && !isDummyStripeKey(stripeSecretKey)) {
+    if (
+      stripeStatus !== 'not-applicable' &&
+      stripeSecretKey &&
+      !isDummyStripeKey(stripeSecretKey)
+    ) {
       try {
         const balanceRes = await this.queryStripeAPI('balance', stripeSecretKey);
         if (balanceRes) {
@@ -146,11 +149,15 @@ export class FactoryStatusService {
               }
             }
             if (oldestCharge && oldestCharge.created) {
-              firstRevenueAt = new Date(oldestCharge.created * 1000).toISOString().split('T')[0] ?? null;
+              firstRevenueAt =
+                new Date(oldestCharge.created * 1000).toISOString().split('T')[0] ?? null;
             }
           }
 
-          const subsRes = await this.queryStripeAPI('subscriptions?status=active&limit=100', stripeSecretKey);
+          const subsRes = await this.queryStripeAPI(
+            'subscriptions?status=active&limit=100',
+            stripeSecretKey,
+          );
           if (subsRes && Array.isArray(subsRes.data)) {
             let computedMrr = 0;
             for (const sub of subsRes.data) {
@@ -183,12 +190,13 @@ export class FactoryStatusService {
           }
 
           // Cache monetization signals to vibe-app.json manifest to avoid redundant API queries
-          if (stripeStatus === 'connected' && (
-            monetization.stripeConnected !== true ||
-            monetization.firstRevenueAt !== firstRevenueAt ||
-            monetization.mrrCents !== mrrCents ||
-            monetization.currency !== currency
-          )) {
+          if (
+            stripeStatus === 'connected' &&
+            (monetization.stripeConnected !== true ||
+              monetization.firstRevenueAt !== firstRevenueAt ||
+              monetization.mrrCents !== mrrCents ||
+              monetization.currency !== currency)
+          ) {
             try {
               const updatedManifest = {
                 ...manifest,
@@ -201,7 +209,10 @@ export class FactoryStatusService {
               };
               writeFileSync(manifestPath, JSON.stringify(updatedManifest, null, 2), 'utf8');
             } catch (writeErr) {
-              console.warn(`Failed to write monetization status back to vibe-app.json for ${project.name}:`, writeErr);
+              console.warn(
+                `Failed to write monetization status back to vibe-app.json for ${project.name}:`,
+                writeErr,
+              );
             }
           }
         }
@@ -243,9 +254,8 @@ export class FactoryStatusService {
       },
       links: {
         localDevUrl: this.resolveLocalDevUrl(packageJson, projectRoot),
-        stripeDashboardUrl: stripeStatus === 'not-applicable'
-          ? null
-          : 'https://dashboard.stripe.com/test/payments',
+        stripeDashboardUrl:
+          stripeStatus === 'not-applicable' ? null : 'https://dashboard.stripe.com/test/payments',
       },
       metadataSource: manifest ? 'vibe-app.json' : 'heuristic',
     };
@@ -269,21 +279,21 @@ export class FactoryStatusService {
   private normalizeMonetization(
     monetization: FactoryManifest['monetization'] | undefined,
   ): FactoryMonetizationSignals {
-    const stripeConnected = typeof monetization?.stripeConnected === 'boolean'
-      ? monetization.stripeConnected
-      : null;
-    const firstRevenueAt = typeof monetization?.firstRevenueAt === 'string'
-      && monetization.firstRevenueAt.trim().length > 0
-      ? monetization.firstRevenueAt.trim()
-      : null;
-    const mrrCents = typeof monetization?.mrrCents === 'number'
-      && Number.isFinite(monetization.mrrCents)
-      ? monetization.mrrCents
-      : null;
-    const currency = typeof monetization?.currency === 'string'
-      && monetization.currency.trim().length > 0
-      ? monetization.currency.trim().toLowerCase()
-      : null;
+    const stripeConnected =
+      typeof monetization?.stripeConnected === 'boolean' ? monetization.stripeConnected : null;
+    const firstRevenueAt =
+      typeof monetization?.firstRevenueAt === 'string' &&
+      monetization.firstRevenueAt.trim().length > 0
+        ? monetization.firstRevenueAt.trim()
+        : null;
+    const mrrCents =
+      typeof monetization?.mrrCents === 'number' && Number.isFinite(monetization.mrrCents)
+        ? monetization.mrrCents
+        : null;
+    const currency =
+      typeof monetization?.currency === 'string' && monetization.currency.trim().length > 0
+        ? monetization.currency.trim().toLowerCase()
+        : null;
 
     return { stripeConnected, firstRevenueAt, mrrCents, currency };
   }
@@ -306,8 +316,9 @@ export class FactoryStatusService {
     }
 
     const hasBilling = input.dependencyNames.has('@vibetech/billing');
-    const hasEnv = existsSync(input.envExamplePath)
-      && readFileSync(input.envExamplePath, 'utf8').includes('STRIPE_SECRET_KEY');
+    const hasEnv =
+      existsSync(input.envExamplePath) &&
+      readFileSync(input.envExamplePath, 'utf8').includes('STRIPE_SECRET_KEY');
 
     if (hasBilling || hasEnv) {
       return 'scaffolded';
@@ -328,11 +339,13 @@ export class FactoryStatusService {
     }
   }
 
-  private resolveLocalDevUrl(packageJson: PackageManifest | undefined, projectRoot: string): string | null {
-    const candidateScripts = [
-      packageJson?.scripts?.['dev:web'],
-      packageJson?.scripts?.dev,
-    ].filter((script): script is string => typeof script === 'string' && script.length > 0);
+  private resolveLocalDevUrl(
+    packageJson: PackageManifest | undefined,
+    projectRoot: string,
+  ): string | null {
+    const candidateScripts = [packageJson?.scripts?.['dev:web'], packageJson?.scripts?.dev].filter(
+      (script): script is string => typeof script === 'string' && script.length > 0,
+    );
 
     for (const script of candidateScripts) {
       const portMatch = script.match(/--port\s+(\d+)/);
@@ -360,7 +373,10 @@ export class FactoryStatusService {
     return value;
   }
 
-  private getMissingKeysForProject(envVars: Record<string, string>, keys: readonly string[]): string[] {
+  private getMissingKeysForProject(
+    envVars: Record<string, string>,
+    keys: readonly string[],
+  ): string[] {
     return keys.filter((key) => {
       const value = envVars[key] ?? process.env[key];
       return typeof value !== 'string' || value.length === 0;

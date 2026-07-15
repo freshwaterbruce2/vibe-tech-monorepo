@@ -22,7 +22,7 @@ const TEMPLATES: TaskTemplate[] = [
     promptTemplate: (app) =>
       `Give me a concise architectural overview of the ${app} app. Identify entry points, main modules, and notable patterns. Do not modify any files.`,
     allowedTools: ['Read', 'Glob', 'Grep'],
-    permissionMode: 'plan'
+    permissionMode: 'plan',
   },
   {
     id: 'review',
@@ -31,7 +31,7 @@ const TEMPLATES: TaskTemplate[] = [
     promptTemplate: (app) =>
       `Review the ${app} app for: (1) obvious bugs, (2) code duplication, (3) violations of the 500-line file limit, (4) opportunities to extract shared logic. List findings with file:line references. Read-only.`,
     allowedTools: ['Read', 'Glob', 'Grep'],
-    permissionMode: 'plan'
+    permissionMode: 'plan',
   },
   {
     id: 'fix-crash',
@@ -40,7 +40,7 @@ const TEMPLATES: TaskTemplate[] = [
     promptTemplate: (app) =>
       `There is a crash in the ${app} app. Investigate recent file changes, read relevant files, identify the root cause, and implement a minimal fix. Keep files under 500 lines. Output a short summary of what changed and why.`,
     allowedTools: ['Read', 'Edit', 'Glob', 'Grep', 'Bash'],
-    permissionMode: 'acceptEdits'
+    permissionMode: 'acceptEdits',
   },
   {
     id: 'refactor',
@@ -49,7 +49,7 @@ const TEMPLATES: TaskTemplate[] = [
     promptTemplate: (app) =>
       `Find any .ts or .tsx file in the ${app} app that exceeds 500 lines. Propose a split plan first, then implement it while preserving exports. Stop after one file.`,
     allowedTools: ['Read', 'Edit', 'Glob', 'Grep'],
-    permissionMode: 'acceptEdits'
+    permissionMode: 'acceptEdits',
   },
   {
     id: 'add-test',
@@ -58,8 +58,8 @@ const TEMPLATES: TaskTemplate[] = [
     promptTemplate: (app) =>
       `Find an untested module in the ${app} app and add a focused Vitest spec for it. Run the test, ensure it passes, and report coverage delta.`,
     allowedTools: ['Read', 'Edit', 'Glob', 'Grep', 'Bash'],
-    permissionMode: 'acceptEdits'
-  }
+    permissionMode: 'acceptEdits',
+  },
 ];
 
 export function ClaudeLauncher() {
@@ -87,9 +87,8 @@ export function ClaudeLauncher() {
     throw new Error('ClaudeLauncher requires at least one task template.');
   }
 
-  const resolvedPrompt = !promptDirty && selectedApp
-    ? template.promptTemplate(selectedApp)
-    : prompt;
+  const resolvedPrompt =
+    !promptDirty && selectedApp ? template.promptTemplate(selectedApp) : prompt;
 
   const handleLaunch = (): void => {
     const promptToRun = resolvedPrompt.trim();
@@ -98,24 +97,28 @@ export function ClaudeLauncher() {
     if (!app) return;
     const cwd = `V:\\monorepo\\${app.root.replace(/\//g, '\\')}`;
 
-    // Generate ID client-side BEFORE mutate — subscription is live before first stream event arrives.
+    // Generate ID client-side BEFORE mutate — subscription is live before
+    // first stream event arrives.
     const invocationId = crypto.randomUUID();
     setActiveInvocationId(invocationId);
 
-    invoke.mutate({
-      invocationId,
-      prompt: promptToRun,
-      cwd,
-      allowedTools: template.allowedTools,
-      permissionMode: template.permissionMode,
-      resumeSessionId: lastSessionId ?? undefined,
-      timeoutMs: 20 * 60 * 1000
-    }, {
-      onSuccess: (result) => {
-        if (result.sessionId) setLastSessionId(result.sessionId);
-        setCompletedRun({ invocationId, result });
-      }
-    });
+    invoke.mutate(
+      {
+        invocationId,
+        prompt: promptToRun,
+        cwd,
+        allowedTools: template.allowedTools,
+        permissionMode: template.permissionMode,
+        resumeSessionId: lastSessionId ?? undefined,
+        timeoutMs: 20 * 60 * 1000,
+      },
+      {
+        onSuccess: (result) => {
+          if (result.sessionId) setLastSessionId(result.sessionId);
+          setCompletedRun({ invocationId, result });
+        },
+      },
+    );
   };
 
   return (
@@ -124,7 +127,11 @@ export function ClaudeLauncher() {
       error={invoke.error instanceof Error ? invoke.error.message : null}
       actions={
         lastSessionId ? (
-          <button className="btn text-xs" onClick={() => setLastSessionId(null)} title="Clear resume session">
+          <button
+            className="btn text-xs"
+            onClick={() => setLastSessionId(null)}
+            title="Clear resume session"
+          >
             <RotateCw size={12} /> Reset session
           </button>
         ) : undefined
@@ -132,14 +139,23 @@ export function ClaudeLauncher() {
     >
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div className="lg:col-span-3 space-y-3">
-          <AppPicker apps={apps} selected={selectedApp} onSelect={setSelectedApp} loading={nx.isLoading} />
+          <AppPicker
+            apps={apps}
+            selected={selectedApp}
+            onSelect={setSelectedApp}
+            loading={nx.isLoading}
+          />
           <TemplatePicker
             selected={selectedTemplate}
-            onSelect={(id) => { setSelectedTemplate(id); setPromptDirty(false); }}
+            onSelect={(id) => {
+              setSelectedTemplate(id);
+              setPromptDirty(false);
+            }}
           />
           {lastSessionId && (
             <div className="text-[10px] text-slate-500 font-mono p-2 bg-bg-elev border border-bg-line rounded">
-              resuming session<br />
+              resuming session
+              <br />
               <span className="text-pulse-cyan-400">{lastSessionId.slice(0, 18)}...</span>
             </div>
           )}
@@ -149,7 +165,10 @@ export function ClaudeLauncher() {
           <label className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Prompt</label>
           <textarea
             value={resolvedPrompt}
-            onChange={(e) => { setPrompt(e.target.value); setPromptDirty(true); }}
+            onChange={(e) => {
+              setPrompt(e.target.value);
+              setPromptDirty(true);
+            }}
             rows={12}
             placeholder="select an app to auto-fill from the template"
             className="flex-1 bg-bg-elev border border-bg-line rounded p-3 text-xs font-mono text-slate-200
@@ -162,13 +181,19 @@ export function ClaudeLauncher() {
               disabled={!selectedApp || !resolvedPrompt.trim() || invoke.isPending}
               className="btn btn-primary"
             >
-              {invoke.isPending
-                ? (<><Sparkles size={14} className="animate-pulse" /> Running...</>)
-                : (<><Play size={14} /> Launch</>)
-              }
+              {invoke.isPending ? (
+                <>
+                  <Sparkles size={14} className="animate-pulse" /> Running...
+                </>
+              ) : (
+                <>
+                  <Play size={14} /> Launch
+                </>
+              )}
             </button>
             <div className="text-[10px] text-slate-500 font-mono">
-              tools: {template.allowedTools.join(',')}<br />
+              tools: {template.allowedTools.join(',')}
+              <br />
               mode: {template.permissionMode}
             </div>
           </div>
@@ -186,7 +211,12 @@ export function ClaudeLauncher() {
   );
 }
 
-function AppPicker({ apps, selected, onSelect, loading }: {
+function AppPicker({
+  apps,
+  selected,
+  onSelect,
+  loading,
+}: {
   apps: NxProject[];
   selected: string;
   onSelect: (name: string) => void;
@@ -203,13 +233,23 @@ function AppPicker({ apps, selected, onSelect, loading }: {
                    focus:outline-none focus:border-pulse-cyan-700"
       >
         <option value="">— choose —</option>
-        {apps.map((a) => <option key={a.name} value={a.name}>{a.name}</option>)}
+        {apps.map((a) => (
+          <option key={a.name} value={a.name}>
+            {a.name}
+          </option>
+        ))}
       </select>
     </div>
   );
 }
 
-function TemplatePicker({ selected, onSelect }: { selected: string; onSelect: (id: string) => void }) {
+function TemplatePicker({
+  selected,
+  onSelect,
+}: {
+  selected: string;
+  onSelect: (id: string) => void;
+}) {
   return (
     <div>
       <label className="text-[10px] uppercase tracking-wider text-slate-500 mb-1 block">Task</label>
@@ -234,10 +274,19 @@ function TemplatePicker({ selected, onSelect }: { selected: string; onSelect: (i
   );
 }
 
-function StreamViewer({ events, running, result }: {
+function StreamViewer({
+  events,
+  running,
+  result,
+}: {
   events: ClaudeStreamEvent[];
   running: boolean;
-  result: { resultText: string | null; totalCostUsd: number | null; numTurns: number | null; durationMs: number } | null;
+  result: {
+    resultText: string | null;
+    totalCostUsd: number | null;
+    numTurns: number | null;
+    durationMs: number;
+  } | null;
 }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -253,7 +302,8 @@ function StreamViewer({ events, running, result }: {
         <label className="text-[10px] uppercase tracking-wider text-slate-500">Stream</label>
         {result && (
           <div className="text-[10px] text-slate-500 font-mono">
-            {result.numTurns ?? 0} turns • ${result.totalCostUsd?.toFixed(4) ?? '0.00'} • {(result.durationMs / 1000).toFixed(1)}s
+            {result.numTurns ?? 0} turns • ${result.totalCostUsd?.toFixed(4) ?? '0.00'} •{' '}
+            {(result.durationMs / 1000).toFixed(1)}s
           </div>
         )}
       </div>
@@ -270,7 +320,9 @@ function StreamViewer({ events, running, result }: {
             <Sparkles size={12} className="animate-pulse" /> starting claude...
           </div>
         )}
-        {events.map((e, i) => <StreamLine key={i} event={e} />)}
+        {events.map((e, i) => (
+          <StreamLine key={i} event={e} />
+        ))}
         {result?.resultText && (
           <div className="mt-3 pt-3 border-t border-bg-line">
             <div className="text-[10px] uppercase text-slate-500 mb-1">result</div>
@@ -284,11 +336,15 @@ function StreamViewer({ events, running, result }: {
 
 function StreamLine({ event }: { event: ClaudeStreamEvent }) {
   const color =
-    event.type === 'error'     ? 'text-status-error' :
-    event.type === 'result'    ? 'text-pulse-cyan-300' :
-    event.type === 'assistant' ? 'text-slate-300' :
-    event.type === 'system'    ? 'text-slate-500' :
-                                 'text-slate-600';
+    event.type === 'error'
+      ? 'text-status-error'
+      : event.type === 'result'
+        ? 'text-pulse-cyan-300'
+        : event.type === 'assistant'
+          ? 'text-slate-300'
+          : event.type === 'system'
+            ? 'text-slate-500'
+            : 'text-slate-600';
 
   const summary = (() => {
     if (event.type === 'system' && event.subtype === 'init') return 'session initialized';
@@ -296,9 +352,10 @@ function StreamLine({ event }: { event: ClaudeStreamEvent }) {
     if (event.type === 'error') return `error: ${JSON.stringify(event.payload).slice(0, 120)}`;
     const p = event.payload as { message?: { content?: unknown } };
     if (event.type === 'assistant' && p?.message?.content) {
-      const content = typeof p.message.content === 'string'
-        ? p.message.content
-        : JSON.stringify(p.message.content);
+      const content =
+        typeof p.message.content === 'string'
+          ? p.message.content
+          : JSON.stringify(p.message.content);
       return content.slice(0, 200);
     }
     return event.type + (event.subtype ? `:${event.subtype}` : '');
@@ -307,8 +364,7 @@ function StreamLine({ event }: { event: ClaudeStreamEvent }) {
   return (
     <div className={`${color} leading-relaxed`}>
       <span className="text-slate-600">[{new Date(event.timestamp).toLocaleTimeString()}]</span>{' '}
-      <span className="text-slate-500">{event.type}</span>{' '}
-      {summary}
+      <span className="text-slate-500">{event.type}</span> {summary}
     </div>
   );
 }

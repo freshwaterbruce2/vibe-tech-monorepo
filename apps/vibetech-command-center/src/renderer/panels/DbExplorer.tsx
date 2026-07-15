@@ -2,8 +2,15 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import clsx from 'clsx';
 import {
-  Database as DbIcon, Table, ChevronRight, ChevronDown,
-  Play, Loader2, AlertCircle, ShieldCheck, AlertTriangle
+  Database as DbIcon,
+  Table,
+  ChevronRight,
+  ChevronDown,
+  Play,
+  Loader2,
+  AlertCircle,
+  ShieldCheck,
+  AlertTriangle,
 } from 'lucide-react';
 import { unwrap } from '@renderer/lib/ipc';
 import type { DbExplorerDatabase, DbTableSchema, DbExplorerResult } from '@shared/types';
@@ -38,7 +45,7 @@ function Spinner({ className }: { className?: string }) {
 
 function Badge({
   children,
-  variant = 'default'
+  variant = 'default',
 }: {
   children: React.ReactNode;
   variant?: 'default' | 'warn' | 'success' | 'danger';
@@ -47,10 +54,12 @@ function Badge({
     default: 'bg-bg-panel text-slate-400 border-bg-line',
     warn: 'bg-status-warn/10 text-status-warn border-status-warn/30',
     success: 'bg-status-ok/10 text-status-ok border-status-ok/30',
-    danger: 'bg-status-error/10 text-status-error border-status-error/30'
+    danger: 'bg-status-error/10 text-status-error border-status-error/30',
   };
   return (
-    <span className={clsx('text-[10px] px-1.5 py-0.5 rounded border font-mono uppercase', map[variant])}>
+    <span
+      className={clsx('text-[10px] px-1.5 py-0.5 rounded border font-mono uppercase', map[variant])}
+    >
       {children}
     </span>
   );
@@ -67,7 +76,7 @@ export function DbExplorer() {
 
   const listQuery = useQuery<DbExplorerDatabase[]>({
     queryKey: ['dbExplorer', 'list'],
-    queryFn: async () => unwrap(window.commandCenter.dbExplorer.list())
+    queryFn: async () => unwrap(window.commandCenter.dbExplorer.list()),
   });
 
   const schemaQuery = useQuery<DbTableSchema[]>({
@@ -76,16 +85,17 @@ export function DbExplorer() {
       if (!selectedDbPath) return [];
       return unwrap(window.commandCenter.dbExplorer.schema(selectedDbPath));
     },
-    enabled: !!selectedDbPath
+    enabled: !!selectedDbPath,
   });
 
   const queryMutation = useMutation<DbExplorerResult, Error, { dbPath: string; sql: string }>({
-    mutationFn: async ({ dbPath, sql: q }) => unwrap(window.commandCenter.dbExplorer.query(dbPath, q))
+    mutationFn: async ({ dbPath, sql: q }) =>
+      unwrap(window.commandCenter.dbExplorer.query(dbPath, q)),
   });
 
   const selectedDb = useMemo(
     () => listQuery.data?.find((d) => d.path === selectedDbPath) ?? null,
-    [listQuery.data, selectedDbPath]
+    [listQuery.data, selectedDbPath],
   );
 
   const toggleTable = (name: string) => {
@@ -124,11 +134,13 @@ export function DbExplorer() {
         {listQuery.error && (
           <div className="text-status-error text-sm flex items-center gap-1">
             <AlertCircle size={14} />
-            {listQuery.error instanceof Error ? listQuery.error.message : 'Failed to load databases'}
+            {listQuery.error instanceof Error
+              ? listQuery.error.message
+              : 'Failed to load databases'}
           </div>
         )}
 
-        {!listQuery.isLoading && !listQuery.error && (listQuery.data?.length === 0) && (
+        {!listQuery.isLoading && !listQuery.error && listQuery.data?.length === 0 && (
           <div className="text-slate-500 text-sm">No databases found.</div>
         )}
 
@@ -141,7 +153,7 @@ export function DbExplorer() {
                 'w-full text-left rounded-lg border p-3 transition-colors',
                 selectedDbPath === db.path
                   ? 'bg-pulse-cyan-900/20 border-pulse-cyan/40'
-                  : 'bg-bg-elev border-bg-line hover:border-slate-600'
+                  : 'bg-bg-elev border-bg-line hover:border-slate-600',
               )}
             >
               <div className="flex items-center gap-2 mb-1">
@@ -153,7 +165,9 @@ export function DbExplorer() {
               </div>
               <div className="flex flex-wrap gap-1">
                 <Badge>{fmtBytes(db.sizeBytes)}</Badge>
-                {db.walSizeBytes > 0 && <Badge variant="warn">WAL {fmtBytes(db.walSizeBytes)}</Badge>}
+                {db.walSizeBytes > 0 && (
+                  <Badge variant="warn">WAL {fmtBytes(db.walSizeBytes)}</Badge>
+                )}
                 <Badge variant="default">{fmtTime(db.lastModifiedAt)}</Badge>
               </div>
             </button>
@@ -181,7 +195,9 @@ export function DbExplorer() {
         {schemaQuery.error && (
           <div className="text-status-error text-sm flex items-center gap-1">
             <AlertCircle size={14} />
-            {schemaQuery.error instanceof Error ? schemaQuery.error.message : 'Failed to load schema'}
+            {schemaQuery.error instanceof Error
+              ? schemaQuery.error.message
+              : 'Failed to load schema'}
           </div>
         )}
 
@@ -198,15 +214,25 @@ export function DbExplorer() {
                     onClick={() => toggleTable(table.name)}
                     className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-bg-panel/50 transition-colors"
                   >
-                    {expanded ? <ChevronDown size={14} className="text-slate-400" /> : <ChevronRight size={14} className="text-slate-400" />}
+                    {expanded ? (
+                      <ChevronDown size={14} className="text-slate-400" />
+                    ) : (
+                      <ChevronRight size={14} className="text-slate-400" />
+                    )}
                     <Table size={14} className="text-pulse-cyan shrink-0" />
-                    <span className="font-semibold text-slate-200 text-sm truncate">{table.name}</span>
-                    <span className="ml-auto text-[10px] text-slate-500 font-mono">{table.rowCount.toLocaleString()} rows</span>
+                    <span className="font-semibold text-slate-200 text-sm truncate">
+                      {table.name}
+                    </span>
+                    <span className="ml-auto text-[10px] text-slate-500 font-mono">
+                      {table.rowCount.toLocaleString()} rows
+                    </span>
                   </button>
 
                   {expanded && (
                     <div className="px-3 pb-2">
-                      <div className="text-[10px] text-slate-500 mb-1 uppercase tracking-wider">Columns</div>
+                      <div className="text-[10px] text-slate-500 mb-1 uppercase tracking-wider">
+                        Columns
+                      </div>
                       <div className="space-y-1">
                         {table.columns.map((col) => (
                           <button
@@ -216,7 +242,10 @@ export function DbExplorer() {
                             title={`Click to auto-fill query: SELECT * FROM "${table.name}" LIMIT 100`}
                           >
                             <span className="font-mono">{col.name}</span>
-                            <span className="text-slate-500 font-mono">{col.type}{col.notNull ? ' NOT NULL' : ''}</span>
+                            <span className="text-slate-500 font-mono">
+                              {col.type}
+                              {col.notNull ? ' NOT NULL' : ''}
+                            </span>
                           </button>
                         ))}
                       </div>
@@ -245,7 +274,10 @@ export function DbExplorer() {
       <div className="w-[40%] flex flex-col gap-3 min-w-0 border-l border-bg-line pl-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-200">Query</h3>
-          <Badge variant="success"><ShieldCheck size={10} className="inline mr-1" />Read-only</Badge>
+          <Badge variant="success">
+            <ShieldCheck size={10} className="inline mr-1" />
+            Read-only
+          </Badge>
         </div>
 
         <textarea
@@ -262,7 +294,7 @@ export function DbExplorer() {
           className={clsx(
             'w-full h-28 resize-none rounded-lg border bg-bg-panel p-3 text-xs font-mono text-slate-200',
             'focus:outline-none focus:border-pulse-cyan/60',
-            !selectedDb && 'opacity-50 cursor-not-allowed'
+            !selectedDb && 'opacity-50 cursor-not-allowed',
           )}
           spellCheck={false}
         />
@@ -273,7 +305,8 @@ export function DbExplorer() {
             disabled={!selectedDb || !sql.trim() || queryMutation.isPending}
             className={clsx(
               'btn flex items-center gap-2 text-xs',
-              (!selectedDb || !sql.trim() || queryMutation.isPending) && 'opacity-50 cursor-not-allowed'
+              (!selectedDb || !sql.trim() || queryMutation.isPending) &&
+                'opacity-50 cursor-not-allowed',
             )}
           >
             {queryMutation.isPending ? <Spinner /> : <Play size={12} />}
@@ -304,7 +337,10 @@ export function DbExplorer() {
                 <Badge>{queryMutation.data.rowCount.toLocaleString()} rows</Badge>
                 <Badge>{queryMutation.data.executionMs.toFixed(1)} ms</Badge>
                 {queryMutation.data.truncated && (
-                  <Badge variant="warn"><AlertTriangle size={10} className="inline mr-1" />Truncated to 1,000 rows</Badge>
+                  <Badge variant="warn">
+                    <AlertTriangle size={10} className="inline mr-1" />
+                    Truncated to 1,000 rows
+                  </Badge>
                 )}
               </div>
 
@@ -313,7 +349,10 @@ export function DbExplorer() {
                   <thead className="bg-bg-elev text-slate-400 uppercase tracking-wider sticky top-0">
                     <tr>
                       {queryMutation.data.columns.map((col) => (
-                        <th key={col} className="text-left px-2 py-1.5 font-medium whitespace-nowrap border-b border-bg-line">
+                        <th
+                          key={col}
+                          className="text-left px-2 py-1.5 font-medium whitespace-nowrap border-b border-bg-line"
+                        >
                           {col}
                         </th>
                       ))}
@@ -323,7 +362,10 @@ export function DbExplorer() {
                     {queryMutation.data.rows.map((row, i) => (
                       <tr key={i} className="border-t border-bg-line hover:bg-bg-elev/40">
                         {row.map((cell, j) => (
-                          <td key={j} className="px-2 py-1.5 text-slate-300 font-mono whitespace-nowrap max-w-[200px] truncate">
+                          <td
+                            key={j}
+                            className="px-2 py-1.5 text-slate-300 font-mono whitespace-nowrap max-w-[200px] truncate"
+                          >
                             {cell === null ? (
                               <span className="text-slate-600 italic">NULL</span>
                             ) : typeof cell === 'object' ? (

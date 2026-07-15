@@ -66,7 +66,7 @@ export class DbExplorerService {
         sizeBytes,
         walSizeBytes,
         lastModifiedAt,
-        tables: []
+        tables: [],
       });
     }
 
@@ -90,7 +90,7 @@ export class DbExplorerService {
             sizeBytes,
             walSizeBytes,
             lastModifiedAt,
-            tables: []
+            tables: [],
           });
         }
       } catch {
@@ -115,13 +115,17 @@ export class DbExplorerService {
       db.pragma('query_only = ON');
 
       const tableRows = db
-        .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
+        )
         .all() as Array<{ name: string }>;
 
       const schemas: DbTableSchema[] = [];
       for (const t of tableRows) {
         const tableName = t.name;
-        const infoRows = db.prepare(`PRAGMA table_info("${tableName.replace(/"/g, '""')}")`).all() as Array<{
+        const infoRows = db
+          .prepare(`PRAGMA table_info("${tableName.replace(/"/g, '""')}")`)
+          .all() as Array<{
           name: string;
           type: string;
           notnull: number;
@@ -132,12 +136,14 @@ export class DbExplorerService {
           name: col.name,
           type: col.type,
           notNull: col.notnull !== 0,
-          defaultValue: col.dflt_value ?? null
+          defaultValue: col.dflt_value ?? null,
         }));
 
         let rowCount = 0;
         try {
-          const countRow = db.prepare(`SELECT COUNT(*) as c FROM "${tableName.replace(/"/g, '""')}"`).get() as { c: number };
+          const countRow = db
+            .prepare(`SELECT COUNT(*) as c FROM "${tableName.replace(/"/g, '""')}"`)
+            .get() as { c: number };
           rowCount = countRow.c;
         } catch {
           rowCount = -1;
@@ -145,7 +151,9 @@ export class DbExplorerService {
 
         let estimatedSizeBytes: number | null = null;
         try {
-          const sizeRow = db.prepare('SELECT SUM(pgsize) as s FROM dbstat WHERE name = ?').get(tableName) as { s: number } | undefined;
+          const sizeRow = db
+            .prepare('SELECT SUM(pgsize) as s FROM dbstat WHERE name = ?')
+            .get(tableName) as { s: number } | undefined;
           estimatedSizeBytes = sizeRow?.s ?? null;
         } catch {
           estimatedSizeBytes = null;
@@ -189,14 +197,18 @@ export class DbExplorerService {
         rows: limitedRows,
         rowCount: limitedRows.length,
         truncated,
-        executionMs: Date.now() - startedAt
+        executionMs: Date.now() - startedAt,
       };
     } finally {
       db?.close();
     }
   }
 
-  private statDb(dbPath: string): { sizeBytes: number; walSizeBytes: number; lastModifiedAt: number } {
+  private statDb(dbPath: string): {
+    sizeBytes: number;
+    walSizeBytes: number;
+    lastModifiedAt: number;
+  } {
     if (!existsSync(dbPath)) {
       return { sizeBytes: 0, walSizeBytes: 0, lastModifiedAt: 0 };
     }

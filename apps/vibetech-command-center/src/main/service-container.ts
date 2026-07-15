@@ -12,7 +12,7 @@ import {
   AgentOrchestratorService,
   MemoryVizService,
   FactoryStatusService,
-  EnvConfigService
+  EnvConfigService,
 } from './services';
 
 export interface ServiceContainer {
@@ -54,12 +54,32 @@ export function createServiceContainer(opts: ServiceContainerOptions): ServiceCo
   const factory = new FactoryStatusService({ monorepoRoot: opts.monorepoRoot });
   const envConfig = new EnvConfigService({ monorepoRoot: opts.monorepoRoot });
 
-  return { watcher, nxGraph, nxAffected, health, dbMetrics, backup, runner, claude, rag, dbExplorer, agent, memory, factory, envConfig, wsPort: opts.wsPort };
+  return {
+    watcher,
+    nxGraph,
+    nxAffected,
+    health,
+    dbMetrics,
+    backup,
+    runner,
+    claude,
+    rag,
+    dbExplorer,
+    agent,
+    memory,
+    factory,
+    envConfig,
+    wsPort: opts.wsPort,
+  };
 }
 
 export async function disposeServiceContainer(c: ServiceContainer): Promise<void> {
-  try { await c.watcher.stop(); } catch {}
-  try { await c.rag.disconnect(); } catch {}
+  try {
+    await c.watcher.stop();
+  } catch {}
+  try {
+    await c.rag.disconnect();
+  } catch {}
   for (const p of c.runner.list()) {
     if (p.status === 'running') c.runner.kill(p.id);
   }

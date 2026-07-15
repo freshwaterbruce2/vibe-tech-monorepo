@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import Fastify from 'fastify';
 import fastifyCors from '@fastify/cors';
-// eslint-disable-next-line @nx/enforce-module-boundaries -- external pkg (non-Nx project)
+ 
 import fastifyWebsocket from '@fastify/websocket';
 import dotenv from 'dotenv';
 

@@ -11,13 +11,13 @@
     "dev": "tsx src/index.ts"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@modelcontextprotocol/sdk": "catalog:",
     "ws": "^8.18.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/ws": "^8.5.13",
-    "tsx": "^4.19.0",
-    "typescript": "^5.6.0"
+    "tsx": "catalog:",
+    "typescript": "catalog:"
   }
 }

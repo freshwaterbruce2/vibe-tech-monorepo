@@ -29,6 +29,12 @@ concurrency:
 env:
   NODE_VERSION: '22'
   PNPM_VERSION: '10.33.0'
+  # The committed .npmrc pins store-dir to a developer-local volume (V:\) so
+  # pnpm hard-links stay on the same volume as the code. CI runners have no
+  # V:\, so override the store to a sibling of the workspace (see ci.yml for
+  # the full rationale) or `pnpm install --frozen-lockfile` fails with
+  # ENOENT trying to mkdir the unreachable path.
+  npm_config_store_dir: '${{ github.workspace }}-pnpm-store'
 
 jobs:
   # ============================================
