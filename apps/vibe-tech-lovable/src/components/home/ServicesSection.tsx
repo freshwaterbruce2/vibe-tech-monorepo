@@ -94,31 +94,6 @@ const services: Service[] = [
   },
 ];
 
-interface CircuitTraceProps {
-  className: string;
-  delay: number;
-  reverse?: boolean;
-  reduceMotion: boolean;
-}
-
-const CircuitTrace = ({ className, delay, reverse = false, reduceMotion }: CircuitTraceProps) => (
-  <div
-    className={`absolute h-px bg-gradient-to-r from-cyan-300/10 via-cyan-300/45 to-violet-400/20 ${className}`}
-  >
-    <span className={`absolute top-0 h-10 w-px bg-cyan-300/25 ${reverse ? 'left-0' : 'right-0'}`} />
-    <span
-      className={`absolute top-[-2px] h-[5px] w-[5px] border border-cyan-200/50 bg-[#07101e] ${
-        reverse ? 'left-0' : 'right-0'
-      }`}
-    />
-    <motion.span
-      className="absolute top-[-1px] h-[3px] w-16 bg-gradient-to-r from-transparent via-cyan-200 to-transparent shadow-[0_0_10px_rgba(103,232,249,0.8)]"
-      animate={reduceMotion ? undefined : { left: reverse ? ['100%', '-15%'] : ['-15%', '100%'] }}
-      transition={{ duration: 4.8, delay, repeat: Infinity, ease: 'linear' }}
-    />
-  </div>
-);
-
 const ProcessorDivider = () => {
   const reduceMotion = Boolean(useReducedMotion());
   const pins = [22, 50, 78];
@@ -175,42 +150,6 @@ const ProcessorDivider = () => {
           <span className="absolute bottom-2 right-2 top-4 w-px bg-violet-200/35" />
         </motion.div>
       </div>
-    </div>
-  );
-};
-
-const CircuitBackdrop = () => {
-  const reduceMotion = Boolean(useReducedMotion());
-  const traces = [
-    { className: 'left-0 top-[22%] w-[43%]', delay: 0 },
-    { className: 'left-[5%] top-[39%] w-[38%]', delay: 1.4 },
-    { className: 'left-0 top-[71%] w-[43%]', delay: 2.6 },
-    { className: 'right-0 top-[27%] w-[43%]', delay: 0.7, reverse: true },
-    { className: 'right-[4%] top-[53%] w-[39%]', delay: 2.1, reverse: true },
-    { className: 'right-0 top-[76%] w-[43%]', delay: 3.2, reverse: true },
-  ];
-
-  return (
-    <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-      <div
-        className="absolute inset-0 opacity-60"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(82,138,172,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(82,138,172,0.12) 1px, transparent 1px)',
-          backgroundSize: '52px 52px',
-        }}
-      />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,247,255,0.11),transparent_52%)]" />
-      {traces.map((trace) => (
-        <CircuitTrace
-          key={trace.className}
-          className={trace.className}
-          delay={trace.delay}
-          reverse={trace.reverse}
-          reduceMotion={reduceMotion}
-        />
-      ))}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#050814]/45 via-transparent to-[#050814]/80" />
     </div>
   );
 };
@@ -346,10 +285,9 @@ const ServicesSection = () => {
 
   return (
     <section
-      className="relative overflow-hidden border-y border-white/10 bg-[rgba(5,8,20,0.86)] px-4 py-16 shadow-[inset_0_1px_0_rgba(0,255,255,0.08),inset_0_-1px_0_rgba(185,51,255,0.08)] md:py-24"
+      className="relative overflow-hidden border-y border-white/10 bg-[rgba(5,8,20,0.72)] px-4 py-16 shadow-[inset_0_1px_0_rgba(0,255,255,0.08),inset_0_-1px_0_rgba(185,51,255,0.08)] backdrop-blur-[2px] md:py-24"
       data-testid="services-section"
     >
-      <CircuitBackdrop />
       <div className="relative z-10 mx-auto max-w-7xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
