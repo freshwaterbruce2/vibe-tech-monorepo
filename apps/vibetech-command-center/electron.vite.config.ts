@@ -12,7 +12,12 @@ export default defineConfig({
       }
     },
     build: {
-      outDir: 'out/main'
+      outDir: 'out/main',
+      rollupOptions: {
+        input: {
+          index: resolve('src/main/entry.ts'),
+        },
+      },
     }
   },
   preload: {
