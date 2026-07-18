@@ -8,16 +8,16 @@ The Command Center is an Electron 33 desktop app that provides real-time visibil
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| Desktop Runtime | Electron 33 |
-| Frontend | React 19, TypeScript 5.9 (strict) |
-| Bundler | electron-vite |
-| Styling | Tailwind CSS 4, shadcn/ui |
-| State | Zustand (client), TanStack Query (server) |
-| Native Modules | better-sqlite3 (read-only for external DBs) |
-| Testing | Vitest (unit), Playwright (E2E) |
-| Package Manager | pnpm |
+| Layer           | Technology                                                         |
+| --------------- | ------------------------------------------------------------------ |
+| Desktop Runtime | Electron 33                                                        |
+| Frontend        | React 19, TypeScript 5.9 (strict)                                  |
+| Bundler         | electron-vite                                                      |
+| Styling         | Tailwind CSS 4, shadcn/ui                                          |
+| State           | Zustand (client), TanStack Query (server)                          |
+| Native Modules  | better-sqlite3 (read-only for external DBs)                        |
+| Testing         | Vitest (unit), Playwright (E2E)                                    |
+| Package Manager | pnpm (workspace root `.npmrc`; portable `store-dir=../pnpm-store`) |
 
 ---
 
@@ -25,18 +25,18 @@ The Command Center is an Electron 33 desktop app that provides real-time visibil
 
 All commands run from `apps/vibetech-command-center`.
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start electron-vite in dev mode with hot reload |
-| `pnpm build` | Production build of main, preload, renderer, and MCP server |
-| `pnpm test` | Run Vitest unit/integration tests |
-| `pnpm test:e2e` | Build and run Playwright E2E tests |
-| `pnpm package` | Build + package NSIS installer (`release/`) |
-| `pnpm package:dir` | Build + package unpacked directory (`release/`) |
-| `pnpm rebuild:native` | Rebuild `better-sqlite3` for Electron ABI |
-| `pnpm restore:native` | Restore `better-sqlite3` for Node ABI |
-| `pnpm mcp:start` | Start the MCP server standalone (stdio) |
-| `pnpm typecheck` | Run `tsc --noEmit` |
+| Command               | Description                                                 |
+| --------------------- | ----------------------------------------------------------- |
+| `pnpm dev`            | Start electron-vite in dev mode with hot reload             |
+| `pnpm build`          | Production build of main, preload, renderer, and MCP server |
+| `pnpm test`           | Run Vitest unit/integration tests                           |
+| `pnpm test:e2e`       | Build and run Playwright E2E tests                          |
+| `pnpm package`        | Build + package NSIS installer (`release/`)                 |
+| `pnpm package:dir`    | Build + package unpacked directory (`release/`)             |
+| `pnpm rebuild:native` | Rebuild `better-sqlite3` for Electron ABI                   |
+| `pnpm restore:native` | Restore `better-sqlite3` for Node ABI                       |
+| `pnpm mcp:start`      | Start the MCP server standalone (stdio)                     |
+| `pnpm typecheck`      | Run `tsc --noEmit`                                          |
 
 ---
 
@@ -93,19 +93,19 @@ Secure IPC bridge exposing typed channels defined in `src/shared/types.ts`. No `
 
 ### Renderer Panels
 
-| Panel | Purpose |
-|-------|---------|
-| **Affected Intelligence Dashboard** | Pre-commit impact analysis: affected projects, dependency subgraph, health scores (0-100), risk flags |
-| **DB Explorer** | Read-only SQLite browser. Schema introspection, safe query runner (SELECT/WITH only, 5s timeout, 1,000-row cap) |
-| **Agent Orchestrator** | MCP server health monitoring (7+ servers), Nx task launcher, process grid with kill/restart, searchable log stream |
-| **Memory Viz** | Episodic timeline, semantic explorer with importance bars, procedural patterns table, decay visualization |
-| **Backup Log** | Historical backup events and integrity status |
-| **Build Status** | Live build progress and failure summaries |
-| **Apps Grid** | Catalog of all monorepo apps with tags and quick actions |
-| **Claude Launcher** | One-click Claude Code session starter with stream output |
-| **Agent Console** | Raw agent logs and command replay |
-| **Db Health** | Database size, WAL growth, and table-level metrics |
-| **Rag Search** | Vector search across LanceDB semantic memory |
+| Panel                               | Purpose                                                                                                            |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **Affected Intelligence Dashboard** | Pre-commit impact analysis: affected projects, dependency subgraph, health scores (0-100), risk flags              |
+| **DB Explorer**                     | Read-only SQLite browser. Schema introspection, safe query runner (SELECT/WITH only, 5s timeout, 1,000-row cap)    |
+| **Agent Orchestrator**              | MCP server health monitoring (7+ servers), Nx task launcher, process grid with kill/restart, searchable log stream |
+| **Memory Viz**                      | Episodic timeline, semantic explorer with importance bars, procedural patterns table, decay visualization          |
+| **Backup Log**                      | Historical backup events and integrity status                                                                      |
+| **Build Status**                    | Live build progress and failure summaries                                                                          |
+| **Apps Grid**                       | Catalog of all monorepo apps with tags and quick actions                                                           |
+| **Claude Launcher**                 | One-click Claude Code session starter with stream output                                                           |
+| **Agent Console**                   | Raw agent logs and command replay                                                                                  |
+| **Db Health**                       | Database size, WAL growth, and table-level metrics                                                                 |
+| **Rag Search**                      | Vector search across LanceDB semantic memory                                                                       |
 
 ### MCP Server
 
@@ -117,11 +117,11 @@ The app bundles an MCP server (`src/mcp/`) compiled to `dist/mcp/`. It exposes 1
 
 Copy `.env.example` to `.env` for local development.
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `VIBETECH_COMMAND_CENTER_WS_PORT` | `3210` | WebSocket hub port for renderer↔main stream communication |
-| `DB_EXPLORER_ROOTS` | `D:\databases;V:\monorepo` | Semicolon-separated list of allowed DB roots for DB Explorer |
-| `NODE_ENV` | `development` | Node environment |
+| Variable                          | Default                    | Description                                                  |
+| --------------------------------- | -------------------------- | ------------------------------------------------------------ |
+| `VIBETECH_COMMAND_CENTER_WS_PORT` | `3210`                     | WebSocket hub port for renderer↔main stream communication    |
+| `DB_EXPLORER_ROOTS`               | `D:\databases;V:\monorepo` | Semicolon-separated list of allowed DB roots for DB Explorer |
+| `NODE_ENV`                        | `development`              | Node environment                                             |
 
 ---
 
