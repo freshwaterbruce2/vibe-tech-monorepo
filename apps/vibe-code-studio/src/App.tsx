@@ -11,7 +11,7 @@
  * File length optimized (~360 LOC) ✅
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 
 // Core Module
@@ -45,6 +45,8 @@ import {
 import { useAppHandlers } from './app/hooks/useAppHandlers';
 import { useAppState } from './app/hooks/useAppState';
 import { useWorkspaceFileHandlers } from './app/hooks/useWorkspaceFileHandlers';
+import { runOpenFolderDialog } from './app/openFolderDialog';
+import { useAppContextValues } from './app/useAppContextValues';
 
 // Components
 import { ModernErrorBoundary } from './components/ErrorBoundary/index';
@@ -74,6 +76,7 @@ function App() {
     taskPlanner,
     liveStream,
     executionEngine,
+    agentRuntime,
     backgroundAgentSystem,
     orchestrator,
     performanceOptimizer,
@@ -91,9 +94,10 @@ function App() {
     showWarning,
   });
 
-  // Workspace management
+  // Workspace management — share the app's real FileSystemService so indexing
+  // reads actual workspace files (feeds AI context), not fabricated data.
   const { workspaceContext, isIndexing, indexingProgress, getFileContext, indexWorkspace } =
-    useWorkspace();
+    useWorkspace(fileSystemService);
 
   // App settings and UI state
   const {
@@ -209,34 +213,11 @@ function App() {
 
   // Handle workspace opening with file picker
   const handleOpenFolderDialog = useCallback(async () => {
-    try {
-      if (window.electron?.isElectron) {
-        const result = await window.electron.dialog.openFolder({});
-        if (!result.canceled && result.filePaths?.length > 0 && result.filePaths[0]) {
-          const normalizedPath = result.filePaths[0].replace(/\\/g, '/');
-          await handleOpenFolder(normalizedPath);
-        }
-      } else if ('showDirectoryPicker' in window) {
-        const directoryPicker = globalThis as typeof globalThis & {
-          showDirectoryPicker?: () => Promise<{ path?: string; name: string }>;
-        };
-        const dirHandle = await directoryPicker.showDirectoryPicker?.();
-        if (!dirHandle) {
-          throw new Error('Directory picker not available');
-        }
-        const folderPath = dirHandle.path ?? dirHandle.name;
-        await handleOpenFolder(folderPath);
-      } else {
-        // Fallback: use InputDialog for manual path entry
-        setFolderPathDialogOpen(true);
-      }
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') return;
-      showError(
-        'Open Folder Failed',
-        `Unable to open the selected folder: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    }
+    await runOpenFolderDialog({
+      handleOpenFolder,
+      showError,
+      setFolderPathDialogOpen,
+    });
   }, [handleOpenFolder, showError]);
 
   // Workspace file handlers (create / rename / delete / save / close)
@@ -307,35 +288,37 @@ function App() {
   });
 
   // AI-Powered Command Palette
-  const { commandPaletteOpen, setCommandPaletteOpen, commands } = useAICommandPalette({
-    onSaveFile: handleSaveFile,
-    onOpenFolder: handleOpenFolderDialog,
-    onNewFile: handleNewFile,
-    onSaveAll: handleSaveAll,
-    onCloseFolder: handleCloseFolder,
-    onToggleSidebar: () => setSidebarOpen(!sidebarOpen),
-    onToggleAIChat: () => setAiChatOpen(!aiChatOpen),
-    onOpenSettings: () => setSettingsOpen(true),
-    onAIExplainCode: async () => handlers.handleAICommand('explain'),
-    onAIGenerateTests: async () => handlers.handleAICommand('generate-tests'),
-    onAIRefactor: async () => handlers.handleAICommand('refactor'),
-    onAIFixBugs: async () => handlers.handleAICommand('fix-bugs'),
-    onAIOptimize: async () => handlers.handleAICommand('optimize'),
-    onAIAddComments: async () => handlers.handleAICommand('add-comments'),
-    onAIGenerateComponent: async () => handlers.handleAICommand('generate-component'),
-    onFormatDocument: () => {
-      document.dispatchEvent(
-        new KeyboardEvent('keydown', {
-          key: 'f',
-          shiftKey: true,
-          altKey: true,
-          bubbles: true,
-        })
-      );
-    },
-    onOpenBrainScan: () => setBrainScanOpen(true),
-    currentFile: currentFile?.path ?? null,
-  });
+  const { commandPaletteOpen, setCommandPaletteOpen, toggleCommandPalette, commands } =
+    useAICommandPalette({
+      onSaveFile: handleSaveFile,
+      onOpenFolder: handleOpenFolderDialog,
+      onNewFile: handleNewFile,
+      onSaveAll: handleSaveAll,
+      onCloseFolder: handleCloseFolder,
+      onToggleSidebar: () => setSidebarOpen(!sidebarOpen),
+      onToggleAIChat: () => setAiChatOpen(!aiChatOpen),
+      onOpenSettings: () => setSettingsOpen(true),
+      onFind: () => appState.setGlobalSearchOpen(true),
+      onAIExplainCode: async () => handlers.handleAICommand('explain'),
+      onAIGenerateTests: async () => handlers.handleAICommand('generate-tests'),
+      onAIRefactor: async () => handlers.handleAICommand('refactor'),
+      onAIFixBugs: async () => handlers.handleAICommand('fix-bugs'),
+      onAIOptimize: async () => handlers.handleAICommand('optimize'),
+      onAIAddComments: async () => handlers.handleAICommand('add-comments'),
+      onAIGenerateComponent: async () => handlers.handleAICommand('generate-component'),
+      onFormatDocument: () => {
+        document.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            key: 'f',
+            shiftKey: true,
+            altKey: true,
+            bubbles: true,
+          })
+        );
+      },
+      onOpenBrainScan: () => setBrainScanOpen(true),
+      currentFile: currentFile?.path ?? null,
+    });
 
   // Side effects
   useAIProviderInit();
@@ -349,39 +332,34 @@ function App() {
     setKeyboardShortcutsOpen: appState.setKeyboardShortcutsOpen,
     setTerminalOpen: appState.setTerminalOpen,
     terminalOpen: appState.terminalOpen,
+    setGitPanelOpen: appState.setGitPanelOpen,
+    toggleCommandPalette,
   });
 
-  // Memoize context values to prevent unnecessary re-renders of consumers
-  const servicesContextValue = useMemo(
-    () => ({
+  const {
+    servicesContextValue,
+    uiPanelContextValue,
+    workspaceContextValue,
+    appExtrasContextValue,
+  } = useAppContextValues({
+    services: {
       aiService,
       fileSystemService,
       taskPlanner,
       liveStream,
       executionEngine,
+      agentRuntime,
       backgroundAgentSystem,
       orchestrator,
       performanceOptimizer,
-    }),
-    [
-      aiService,
-      fileSystemService,
-      taskPlanner,
-      liveStream,
-      executionEngine,
-      backgroundAgentSystem,
-      orchestrator,
-      performanceOptimizer,
-    ]
-  );
-
-  const uiPanelContextValue = useMemo(
-    () => ({
+    },
+    uiPanel: {
       settingsOpen,
       setSettingsOpen,
       aiChatOpen,
       setAiChatOpen,
       gitPanelOpen: appState.gitPanelOpen,
+      setGitPanelOpen: appState.setGitPanelOpen,
       globalSearchOpen: appState.globalSearchOpen,
       setGlobalSearchOpen: appState.setGlobalSearchOpen,
       keyboardShortcutsOpen: appState.keyboardShortcutsOpen,
@@ -406,42 +384,8 @@ function App() {
       setAgentModeOpen: appState.setAgentModeOpen,
       brainScanOpen,
       setBrainScanOpen,
-    }),
-    [
-      settingsOpen,
-      setSettingsOpen,
-      aiChatOpen,
-      setAiChatOpen,
-      appState.gitPanelOpen,
-      appState.globalSearchOpen,
-      appState.setGlobalSearchOpen,
-      appState.keyboardShortcutsOpen,
-      appState.setKeyboardShortcutsOpen,
-      appState.backgroundPanelOpen,
-      appState.setBackgroundPanelOpen,
-      commandPaletteOpen,
-      setCommandPaletteOpen,
-      appState.previewOpen,
-      appState.setPreviewOpen,
-      appState.terminalOpen,
-      appState.setTerminalOpen,
-      sidebarOpen,
-      setSidebarOpen,
-      appState.activeVisualPanel,
-      appState.setActiveVisualPanel,
-      appState.chatMode,
-      appState.setChatMode,
-      appState.errorFixPanelOpen,
-      appState.setErrorFixPanelOpen,
-      appState.agentModeOpen,
-      appState.setAgentModeOpen,
-      brainScanOpen,
-      setBrainScanOpen,
-    ]
-  );
-
-  const workspaceContextValue = useMemo(
-    () => ({
+    },
+    workspace: {
       currentFile,
       openFiles,
       workspaceFolder,
@@ -471,42 +415,8 @@ function App() {
       handleOpenFileFromSearch: handlers.handleOpenFileFromSearch,
       handleReplaceInFile: handlers.handleReplaceInFile,
       handleSearchInFiles: handlers.handleSearchInFiles,
-    }),
-    [
-      currentFile,
-      openFiles,
-      workspaceFolder,
-      workspaceContext,
-      isIndexing,
-      indexingProgress,
-      getFileContext,
-      editorSettings,
-      updateEditorSettings,
-      setCurrentFile,
-      handleOpenFile,
-      handleCloseFile,
-      handleFileChange,
-      handleSaveFile,
-      handleDeleteFile,
-      handleCreateWorkspaceFile,
-      handleCreateWorkspaceFolder,
-      handleRenameWorkspacePath,
-      handleNewFile,
-      handleOpenFolderDialog,
-      handleCloseFolder,
-      handleOpenFolder,
-      handleCreateFile,
-      handleSaveAll,
-      handlers.handleEditorMount,
-      appState.editorRef,
-      handlers.handleOpenFileFromSearch,
-      handlers.handleReplaceInFile,
-      handlers.handleSearchInFiles,
-    ]
-  );
-
-  const appExtrasContextValue = useMemo(
-    () => ({
+    },
+    extras: {
       aiMessages,
       isAiResponding,
       aiResponseState,
@@ -546,49 +456,8 @@ function App() {
       handleToggleComponentLibrary: handlers.handleToggleComponentLibrary,
       handleToggleVisualEditor: handlers.handleToggleVisualEditor,
       handleInsertCode: handlers.handleInsertCode,
-    }),
-    [
-      aiMessages,
-      isAiResponding,
-      aiResponseState,
-      handleAIMessage,
-      cancelAiResponse,
-      addAiMessage,
-      updateAiMessage,
-      clearAiMessages,
-      handlers.handleModelChange,
-      handlers.handleProviderChange,
-      handlers.handleMultiFileEditDetected,
-      appState.currentModel,
-      appState.currentProvider,
-      appState.openrouterApiKey,
-      appState.currentError,
-      appState.currentFix,
-      appState.fixLoading,
-      appState.fixError,
-      appState.setCurrentError,
-      appState.setCurrentFix,
-      appState.setFixLoading,
-      appState.setFixError,
-      handlers.handleApplyFix,
-      appState.autoFixServiceRef,
-      appState.multiFileEditPlan,
-      appState.multiFileChanges,
-      appState.multiFileApprovalOpen,
-      handlers.handleApplyMultiFileChanges,
-      handlers.handleRejectMultiFileChanges,
-      notifications,
-      showSuccess,
-      showError,
-      showWarning,
-      removeNotification,
-      commands,
-      handlers.handleToggleScreenshotPanel,
-      handlers.handleToggleComponentLibrary,
-      handlers.handleToggleVisualEditor,
-      handlers.handleInsertCode,
-    ]
-  );
+    },
+  });
 
   // Loading screen
   if (appState.isLoading) {

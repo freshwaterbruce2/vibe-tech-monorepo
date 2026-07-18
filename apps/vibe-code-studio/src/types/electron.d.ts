@@ -32,10 +32,21 @@ interface WindowElectron {
     }>;
   };
   dialog: {
-    openFolder: (options?: any) => Promise<{ success?: boolean; canceled: boolean; filePaths: string[]; error?: string }>;
-    openFile: (options?: any) => Promise<{ success?: boolean; canceled: boolean; filePaths: string[]; error?: string }>;
-    saveFile: (options?: any) => Promise<{ success?: boolean; canceled: boolean; filePath?: string; error?: string }>;
-    showMessage: (options?: any) => Promise<{ success?: boolean; response?: number; checkboxChecked?: boolean; error?: string }>;
+    openFolder: (
+      options?: any
+    ) => Promise<{ success?: boolean; canceled: boolean; filePaths: string[]; error?: string }>;
+    openFile: (
+      options?: any
+    ) => Promise<{ success?: boolean; canceled: boolean; filePaths: string[]; error?: string }>;
+    saveFile: (
+      options?: any
+    ) => Promise<{ success?: boolean; canceled: boolean; filePath?: string; error?: string }>;
+    showMessage: (options?: any) => Promise<{
+      success?: boolean;
+      response?: number;
+      checkboxChecked?: boolean;
+      error?: string;
+    }>;
   };
   store?: ElectronStore;
   fs: {
@@ -60,7 +71,12 @@ interface WindowElectron {
     openExternal: (url: string) => Promise<any>;
   };
   api?: {
-    request: (options: { url: string; method: string; headers?: Record<string, string>; body?: any }) => Promise<any>;
+    request: (options: {
+      url: string;
+      method: string;
+      headers?: Record<string, string>;
+      body?: any;
+    }) => Promise<any>;
   };
   storage?: {
     get: (key: string) => Promise<any>;
@@ -74,6 +90,12 @@ interface WindowElectron {
     execute: (sql: string, params?: unknown[]) => Promise<any>;
     close: () => Promise<any>;
     getPatterns: () => Promise<any>;
+    recordLearningOutcome?: (outcome: unknown) => Promise<any>;
+    recordAgentTransition?: (input: unknown) => Promise<any>;
+    recordAgentTerminal?: (input: unknown) => Promise<any>;
+    getResumableAgentTasks?: (limit?: number) => Promise<any>;
+    getAgentChatOutcomes?: (taskId: string, limit?: number) => Promise<any>;
+    flushAgentLearningOutbox?: () => Promise<any>;
   };
   learning?: {
     recordMistake: (mistake: any) => Promise<any>;
@@ -148,4 +170,4 @@ declare global {
   }
 }
 
-export { };
+export {};

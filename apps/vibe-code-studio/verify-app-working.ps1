@@ -1,26 +1,31 @@
+param(
+  [string]$ExecutablePath
+)
+
 $ErrorActionPreference = 'Stop'
 
-$projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-
 $candidates = @(
-  (Join-Path $env:LOCALAPPDATA 'Vibe Code Studio\vibe-code-studio.exe'),
-  (Join-Path $env:LOCALAPPDATA 'Programs\vibe-code-studio\Vibe Code Studio.exe'),
-  (Join-Path $env:LOCALAPPDATA 'Programs\Vibe Code Studio\Vibe Code Studio.exe'),
-  'D:\cargo-targets\release\vibe-code-studio.exe',
-  'D:\cargo-targets\release\Vibe Code Studio.exe',
-  (Join-Path $projectRoot 'src-tauri\target\release\Vibe Code Studio.exe'),
-  (Join-Path $projectRoot 'src-tauri\target\release\vibe-code-studio.exe')
+  'V:\Apps\Vibe_Code_Studio\vibe-code-studio.exe'
 )
+
+if (-not [string]::IsNullOrWhiteSpace($ExecutablePath)) {
+  $candidates = @($ExecutablePath)
+}
 
 $exe = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 if (-not $exe) {
   Write-Error "Vibe Code Studio executable not found. Checked:`n$($candidates -join "`n")"
   exit 1
 }
+$exe = (Resolve-Path -LiteralPath $exe).Path
+if (-not $exe.StartsWith('V:\Apps\', [System.StringComparison]::OrdinalIgnoreCase)) {
+  Write-Error "Installed-app verification only accepts executables under V:\Apps: $exe"
+  exit 1
+}
 
 Write-Host "Verifying executable: $exe"
 
-$proc = Start-Process -FilePath $exe -PassThru
+$proc = Start-Process -FilePath $exe -PassThru -WindowStyle Hidden
 Start-Sleep -Seconds 5
 
 if ($proc.HasExited) {
@@ -33,7 +38,14 @@ if ($proc.HasExited) {
   exit 1
 }
 
-Write-Host "App is running (PID $($proc.Id)); stopping test process."
-Stop-Process -Id $proc.Id -Force
+Write-Host "App is running (PID $($proc.Id)); requesting a normal close."
+$null = $proc.CloseMainWindow()
+$proc.WaitForExit(10000) | Out-Null
+if (-not $proc.HasExited) {
+  Write-Warning 'App did not close within 10 seconds; forcing only the verified test process to stop.'
+  Stop-Process -Id $proc.Id -Force
+  $proc.WaitForExit(5000) | Out-Null
+}
+Start-Sleep -Milliseconds 500
 Write-Host "Verification succeeded."
 exit 0

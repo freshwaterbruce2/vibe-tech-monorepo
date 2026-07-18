@@ -5,6 +5,23 @@
 import { logger } from '../../utils/logger';
 import { unifiedAI, type UnifiedAIService } from '../ai/UnifiedAIService';
 
+/** File-extension -> language id used for real codebase language breakdown. */
+const LANGUAGE_BY_EXTENSION: Record<string, string> = {
+  ts: 'typescript',
+  tsx: 'typescript',
+  js: 'javascript',
+  jsx: 'javascript',
+  mjs: 'javascript',
+  cjs: 'javascript',
+  css: 'css',
+  scss: 'css',
+  py: 'python',
+  rs: 'rust',
+  json: 'json',
+  md: 'markdown',
+  html: 'html',
+};
+
 export enum AgentCapability {
   CODE_ANALYSIS = 'code_analysis',
   CODE_GENERATION = 'code_generation',
@@ -126,13 +143,14 @@ export abstract class BaseSpecializedAgent {
   protected learningPatterns: Map<string, LearningPattern> = new Map();
   protected performanceMetrics: PerformanceMetrics[] = [];
   protected contextCache: Map<string, AgentResponse & { _cacheTime?: number }> = new Map();
+  private readonly hydrationPromise: Promise<void>;
 
   constructor(
     protected name: string,
     protected capabilities: AgentCapability[]
   ) {
     this.aiService = unifiedAI;
-    this.loadMemoryFromStorage();
+    this.hydrationPromise = this.loadMemoryFromStorage();
   }
 
   /**
@@ -147,6 +165,7 @@ export abstract class BaseSpecializedAgent {
    * Main processing method with enhanced context awareness and learning
    */
   async process(request: string, context: AgentContext = {}): Promise<AgentResponse> {
+    await this.hydrationPromise;
     const startTime = Date.now();
     const memoryId = this.generateMemoryId();
 
@@ -190,7 +209,7 @@ export abstract class BaseSpecializedAgent {
       const enhancedResponse = this.enhanceResponseWithMetrics(response, startTime, false);
 
       // Store memory
-      this.storeMemory({
+      await this.storeMemory({
         id: memoryId,
         timestamp: new Date(),
         request,
@@ -206,7 +225,7 @@ export abstract class BaseSpecializedAgent {
       logger.error(`Agent ${this.name} processing failed:`, error);
 
       // Store failed attempt for learning
-      this.storeMemory({
+      await this.storeMemory({
         id: memoryId,
         timestamp: new Date(),
         request,
@@ -236,7 +255,7 @@ export abstract class BaseSpecializedAgent {
 
     // Add codebase metrics if workspace is available
     if (context.workspaceRoot) {
-      enhanced.codebaseMetrics = await this.analyzeCodebase(context.workspaceRoot);
+      enhanced.codebaseMetrics = await this.analyzeCodebase(context);
     }
 
     // Add learning patterns relevant to this request
@@ -292,20 +311,77 @@ export abstract class BaseSpecializedAgent {
   }
 
   /**
-   * Codebase analysis for better context understanding
+   * Codebase analysis for better context understanding.
+   *
+   * Derives real, deterministic metrics from the file list supplied in the
+   * context (counts, language breakdown, inferred tech stack). Metrics that
+   * cannot be computed without reading file contents (total lines, complexity)
+   * are reported as unknown (0) rather than fabricated.
    */
-  private async analyzeCodebase(_workspaceRoot: string): Promise<CodebaseMetrics> {
-    // This would be implemented with actual file system analysis
-    // For now, return mock data structure
+  private async analyzeCodebase(context: AgentContext): Promise<CodebaseMetrics> {
+    const files = context.files ?? [];
     return {
-      totalFiles: 100,
-      totalLines: 10000,
-      languages: { typescript: 0.7, javascript: 0.2, css: 0.1 },
-      complexity: 0.6,
-      testCoverage: 0.75,
-      techStack: ['React', 'TypeScript', 'Vite', 'Electron'],
-      patterns: ['Component Pattern', 'Hook Pattern', 'Service Pattern'],
+      totalFiles: files.length,
+      totalLines: 0,
+      languages: this.computeLanguageBreakdown(files),
+      complexity: 0,
+      techStack: this.inferTechStack(files),
+      patterns: [],
     };
+  }
+
+  /** Language distribution (0-1 fractions) inferred from file extensions. */
+  private computeLanguageBreakdown(files: string[]): Record<string, number> {
+    const counts: Record<string, number> = {};
+    files.forEach(file => {
+      const language = this.languageForFile(file);
+      if (language) {
+        counts[language] = (counts[language] ?? 0) + 1;
+      }
+    });
+
+    const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+    if (total === 0) {
+      return {};
+    }
+
+    const breakdown: Record<string, number> = {};
+    Object.entries(counts).forEach(([language, count]) => {
+      breakdown[language] = Math.round((count / total) * 100) / 100;
+    });
+    return breakdown;
+  }
+
+  /** Map a file path to a language id via its extension. */
+  private languageForFile(file: string): string | undefined {
+    const extension = file.split('.').pop()?.toLowerCase();
+    return extension ? LANGUAGE_BY_EXTENSION[extension] : undefined;
+  }
+
+  /** Infer the tech stack from the file extensions present in the workspace. */
+  private inferTechStack(files: string[]): string[] {
+    const stack = new Set<string>();
+    files.forEach(file => {
+      if (file.endsWith('.tsx') || file.endsWith('.jsx')) {
+        stack.add('React');
+      }
+      if (file.endsWith('.ts') || file.endsWith('.tsx')) {
+        stack.add('TypeScript');
+      }
+      if (file.endsWith('.js') || file.endsWith('.jsx')) {
+        stack.add('JavaScript');
+      }
+      if (file.includes('vite.config')) {
+        stack.add('Vite');
+      }
+      if (file.includes('tauri') || file.endsWith('.rs')) {
+        stack.add('Tauri/Rust');
+      }
+      if (file.endsWith('.py')) {
+        stack.add('Python');
+      }
+    });
+    return Array.from(stack);
   }
 
   /**
@@ -436,44 +512,25 @@ export abstract class BaseSpecializedAgent {
   }
 
   /**
-   * Generate fallback response for errors
+   * Honest failure result for when the AI request cannot be completed.
+   *
+   * Never fabricates findings or suggestions: returns confidence 0 with a
+   * message stating the real error, so callers (and the hollow-run detector in
+   * agentTaskRunner) can distinguish a failed run from a genuine analysis.
    */
   private generateFallbackResponse(
-    request: string,
-    context: AgentContext,
+    _request: string,
+    _context: AgentContext,
     error: unknown
   ): AgentResponse {
+    const message = error instanceof Error ? error.message : 'Unknown error';
     return {
-      content: `I apologize, but I encountered an issue processing your request. Based on my specialization in ${this.getSpecialization()}, I can suggest some general approaches that might help.`,
-      confidence: 0.3,
-      reasoning: `Fallback response due to error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      suggestions: this.getGenericSuggestions(request, context),
+      content:
+        `${this.name} could not complete analysis: the AI request failed (${message}). ` +
+        'No findings were produced.',
+      confidence: 0,
+      reasoning: `AI request failed: ${message}`,
     };
-  }
-
-  /**
-   * Generic suggestions based on agent capabilities
-   */
-  private getGenericSuggestions(_request: string, context: AgentContext): string[] {
-    const suggestions: string[] = [];
-
-    if (this.capabilities.includes(AgentCapability.CODE_REVIEW)) {
-      suggestions.push('Consider running a code review to identify potential issues');
-    }
-
-    if (this.capabilities.includes(AgentCapability.TESTING)) {
-      suggestions.push('Add comprehensive tests to verify the implementation');
-    }
-
-    if (this.capabilities.includes(AgentCapability.DOCUMENTATION)) {
-      suggestions.push('Document the solution for future reference');
-    }
-
-    if (context.currentFile) {
-      suggestions.push(`Review the current file: ${context.currentFile}`);
-    }
-
-    return suggestions;
   }
 
   /**
@@ -500,7 +557,7 @@ export abstract class BaseSpecializedAgent {
     return !!cachedResponse._cacheTime && Date.now() - cachedResponse._cacheTime < 5 * 60 * 1000;
   }
 
-  private storeMemory(memory: AgentMemory): void {
+  private async storeMemory(memory: AgentMemory): Promise<void> {
     this.memory.push(memory);
 
     // Keep only recent memories
@@ -509,7 +566,7 @@ export abstract class BaseSpecializedAgent {
     }
 
     // Persist to storage (would be implemented with actual storage)
-    this.persistMemoryToStorage();
+    await this.persistMemoryToStorage();
   }
 
   private getRelevantMemories(request: string, limit: number): AgentMemory[] {
@@ -564,14 +621,47 @@ export abstract class BaseSpecializedAgent {
     }
   }
 
-  private loadMemoryFromStorage(): void {
-    // Implementation would load from persistent storage
-    // For now, start with empty memory
+  private get storageKey(): string {
+    return `specialized-agent:${this.name}:learning`;
   }
 
-  private persistMemoryToStorage(): void {
-    // Implementation would persist to storage
-    // For now, keep in memory only
+  private async loadMemoryFromStorage(): Promise<void> {
+    try {
+      if (typeof window === 'undefined' || !window.electron?.isTauri) return;
+      const raw = await window.electron?.store?.get(this.storageKey);
+      if (typeof raw !== 'string' || !raw) return;
+      const persisted = JSON.parse(raw) as {
+        memory?: Array<Omit<AgentMemory, 'timestamp'> & { timestamp: string }>;
+        patterns?: Array<[string, Omit<LearningPattern, 'lastUsed'> & { lastUsed: string }]>;
+      };
+      this.memory = (persisted.memory ?? []).map(item => ({
+        ...item,
+        timestamp: new Date(item.timestamp),
+      }));
+      this.learningPatterns = new Map(
+        (persisted.patterns ?? []).map(([key, pattern]) => [
+          key,
+          { ...pattern, lastUsed: new Date(pattern.lastUsed) },
+        ])
+      );
+    } catch (error) {
+      logger.warn(`Failed to hydrate learning for agent ${this.name}:`, error);
+    }
+  }
+
+  private async persistMemoryToStorage(): Promise<void> {
+    try {
+      if (typeof window === 'undefined' || !window.electron?.isTauri) return;
+      await window.electron?.store?.set(
+        this.storageKey,
+        JSON.stringify({
+          memory: this.memory,
+          patterns: Array.from(this.learningPatterns.entries()),
+        })
+      );
+    } catch (error) {
+      logger.warn(`Failed to persist learning for agent ${this.name}:`, error);
+    }
   }
 
   /**
@@ -622,5 +712,8 @@ export abstract class BaseSpecializedAgent {
     this.learningPatterns.clear();
     this.performanceMetrics = [];
     this.contextCache.clear();
+    if (typeof window !== 'undefined' && window.electron?.isTauri) {
+      void window.electron?.store?.delete(this.storageKey);
+    }
   }
 }

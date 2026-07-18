@@ -103,11 +103,40 @@ describe('UnifiedAIService model routing', () => {
     );
   });
 
-  it('does not lazily init from a client key in proxy mode and surfaces a clear error', async () => {
-    // Proxy mode is the default in tests (VITE_USE_AI_PROXY unset). When the
-    // provider is not initialized, the lazy-init guard returns undefined instead
-    // of reading a client-side key, and with no fallback we get a clear error.
+  it('forwards a pre-aborted signal to the provider', async () => {
+    const service = UnifiedAIService.getInstance();
+    service.setModel('deepseek/deepseek-v4-pro');
+    const controller = new AbortController();
+    controller.abort();
+
+    await service.sendContextualMessage({ userQuery: 'plan', signal: controller.signal });
+
+    expect(completeSpy).toHaveBeenCalledWith(
+      'deepseek/deepseek-v4-pro',
+      expect.objectContaining({ signal: expect.objectContaining({ aborted: true }) })
+    );
+  });
+
+  it('lazily initializes via backend proxy when the factory has no provider yet', async () => {
+    mockFactory.getProvider
+      .mockRejectedValueOnce(new Error('Provider not initialized'))
+      .mockResolvedValue(mockProvider);
+    mockFactory.initializeProvider.mockResolvedValue(mockProvider);
+    mockFactory.getInitializedProviders.mockReturnValue([]);
+
+    const service = UnifiedAIService.getInstance();
+    service.setModel('moonshot/kimi-2.5-pro');
+
+    const content = await service.chat([{ role: 'user', content: 'hi' }]);
+    expect(content).toBe('override-model-response');
+    expect(mockFactory.initializeProvider).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: AIProvider.MOONSHOT, apiKey: '' })
+    );
+  });
+
+  it('returns undefined path when proxy lazy init fails and surfaces unavailable', async () => {
     mockFactory.getProvider.mockRejectedValue(new Error('Provider not initialized'));
+    mockFactory.initializeProvider.mockRejectedValue(new Error('proxy down'));
     mockFactory.getInitializedProviders.mockReturnValue([]);
 
     const service = UnifiedAIService.getInstance();
@@ -120,6 +149,7 @@ describe('UnifiedAIService model routing', () => {
 
   it('propagates the no-provider error through the streaming path (proxy guard)', async () => {
     mockFactory.getProvider.mockRejectedValue(new Error('Provider not initialized'));
+    mockFactory.initializeProvider.mockRejectedValue(new Error('proxy down'));
     mockFactory.getInitializedProviders.mockReturnValue([]);
 
     const service = UnifiedAIService.getInstance();
@@ -132,6 +162,42 @@ describe('UnifiedAIService model routing', () => {
     };
 
     await expect(drain()).rejects.toThrow();
+  });
+
+  it('lazily initializes via proxy for streamComplete', async () => {
+    mockFactory.getProvider
+      .mockRejectedValueOnce(new Error('Provider not initialized'))
+      .mockResolvedValue(mockProvider);
+    mockFactory.initializeProvider.mockResolvedValue(mockProvider);
+    mockFactory.getInitializedProviders.mockReturnValue([]);
+    mockProvider.streamComplete.mockImplementation(async function* () {
+      yield {
+        id: 's',
+        choices: [{ delta: { content: 'x' }, index: 0 }],
+        model: 'm',
+        created: Date.now(),
+        content: 'x',
+      };
+    });
+
+    const service = UnifiedAIService.getInstance();
+    service.setModel('moonshot/kimi-2.5-pro');
+    const chunks: unknown[] = [];
+    for await (const chunk of service.sendContextualMessageStream({ userQuery: 'stream' })) {
+      chunks.push(chunk);
+    }
+    expect(mockFactory.initializeProvider).toHaveBeenCalled();
+    expect(chunks.length).toBeGreaterThan(0);
+  });
+
+  it('raises a real error instead of returning fake demo content for an unregistered model', async () => {
+    const service = UnifiedAIService.getInstance();
+    service.setModel('local/vibe-completion');
+
+    await expect(service.chat([{ role: 'user', content: 'hi' }])).rejects.toThrow(
+      /Model "local\/vibe-completion" is not available/i
+    );
+    expect(mockFactory.getProvider).not.toHaveBeenCalled();
   });
 });
 

@@ -39,11 +39,11 @@ export class ProjectStructureDetector {
     ],
     // Expo/React Native
     expo: [
-      'app/index.tsx',      // Expo Router entry
-      'app/_layout.tsx',    // Expo Router layout
-      'App.tsx',            // Traditional React Native
+      'app/index.tsx', // Expo Router entry
+      'app/_layout.tsx', // Expo Router layout
+      'App.tsx', // Traditional React Native
       'App.js',
-      'app.json',           // Expo config
+      'app.json', // Expo config
       'app.config.ts',
       'app.config.js',
     ],
@@ -60,18 +60,12 @@ export class ProjectStructureDetector {
     react: [
       'src/App.tsx',
       'src/App.js',
-      'src/main.tsx',      // Vite pattern
+      'src/main.tsx', // Vite pattern
       'src/index.tsx',
       'src/index.js',
     ],
     // Configuration files
-    config: [
-      'package.json',
-      'tsconfig.json',
-      'vite.config.ts',
-      'next.config.js',
-      'expo.config.ts',
-    ],
+    config: ['package.json', 'tsconfig.json', 'vite.config.ts', 'next.config.js', 'expo.config.ts'],
   };
 
   constructor(private fileSystemService: FileSystemService) {}
@@ -97,8 +91,12 @@ export class ProjectStructureDetector {
     const isRealWindowsPath = /^[A-Za-z]:[/\\]/.test(workspaceRoot);
 
     if (isWebMode && isRealWindowsPath) {
-      logger.warn(`[ProjectStructureDetector] Web mode cannot access real filesystem path: ${workspaceRoot}`);
-      logger.warn(`[ProjectStructureDetector] Returning demo project structure. Use Electron desktop app for real filesystem access.`);
+      logger.warn(
+        `[ProjectStructureDetector] Web mode cannot access real filesystem path: ${workspaceRoot}`
+      );
+      logger.warn(
+        `[ProjectStructureDetector] Returning demo project structure. Use Electron desktop app for real filesystem access.`
+      );
 
       // Return a reasonable default structure for web mode
       return {
@@ -107,7 +105,7 @@ export class ProjectStructureDetector {
         configFiles: ['package.json', 'tsconfig.json', 'vite.config.ts'],
         hasPackageJson: true,
         packageJsonMain: 'src/index.tsx',
-        detectedFramework: 'vite'
+        detectedFramework: 'vite',
       };
     }
 
@@ -118,7 +116,7 @@ export class ProjectStructureDetector {
         entryPoints: ['demo://workspace/index.js'],
         configFiles: [],
         hasPackageJson: false,
-        detectedFramework: undefined
+        detectedFramework: undefined,
       };
     }
 
@@ -169,17 +167,29 @@ export class ProjectStructureDetector {
   /**
    * Detect framework from package.json dependencies
    */
-  private detectFramework(packageJson: Record<string, unknown>): ProjectStructure['detectedFramework'] {
+  private detectFramework(
+    packageJson: Record<string, unknown>
+  ): ProjectStructure['detectedFramework'] {
     const deps = {
       ...(packageJson.dependencies as Record<string, string> | undefined),
       ...(packageJson.devDependencies as Record<string, string> | undefined),
     };
 
-    if (deps['expo'] || deps['expo-router']) {return 'expo';}
-    if (deps['react-native']) {return 'react-native';}
-    if (deps['next']) {return 'next';}
-    if (deps['vite']) {return 'vite';}
-    if (deps['react-scripts']) {return 'create-react-app';}
+    if (deps['expo'] || deps['expo-router']) {
+      return 'expo';
+    }
+    if (deps['react-native']) {
+      return 'react-native';
+    }
+    if (deps['next']) {
+      return 'next';
+    }
+    if (deps['vite']) {
+      return 'vite';
+    }
+    if (deps['react-scripts']) {
+      return 'create-react-app';
+    }
 
     return undefined;
   }
@@ -201,7 +211,7 @@ export class ProjectStructureDetector {
     if (await this.directoryExists(appDir)) {
       const appIndex = this.joinPath(appDir, 'index.tsx');
       const appLayout = this.joinPath(appDir, '_layout.tsx');
-      if (await this.fileExists(appIndex) || await this.fileExists(appLayout)) {
+      if ((await this.fileExists(appIndex)) || (await this.fileExists(appLayout))) {
         return 'expo';
       }
     }
@@ -209,7 +219,7 @@ export class ProjectStructureDetector {
     // Check for backend server files
     const serverTs = this.joinPath(workspaceRoot, 'server.ts');
     const backendDir = this.joinPath(workspaceRoot, 'backend');
-    if (await this.fileExists(serverTs) || await this.directoryExists(backendDir)) {
+    if ((await this.fileExists(serverTs)) || (await this.directoryExists(backendDir))) {
       return 'backend';
     }
 
@@ -315,8 +325,8 @@ export class ProjectStructureDetector {
    */
   private async directoryExists(path: string): Promise<boolean> {
     try {
-      const files = await this.fileSystemService.listDirectory(path);
-      return files.length >= 0;
+      const stats = await this.fileSystemService.getFileStats(path);
+      return stats.isDirectory;
     } catch {
       return false;
     }
@@ -357,7 +367,9 @@ export class ProjectStructureDetector {
     }
 
     if (structure.configFiles.length > 0) {
-      lines.push(`\nConfig Files: ${structure.configFiles.map(f => f.split('/').pop()).join(', ')}`);
+      lines.push(
+        `\nConfig Files: ${structure.configFiles.map(f => f.split('/').pop()).join(', ')}`
+      );
     }
 
     return lines.join('\n');

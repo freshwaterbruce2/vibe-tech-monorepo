@@ -1,6 +1,6 @@
 {
   "productName": "Vibe Code Studio",
-  "version": "1.2.1",
+  "version": "1.2.3",
   "identifier": "com.vibetech.vibe-code-studio",
   "build": {
     "beforeDevCommand": "pnpm exec vite --port 5174",
@@ -13,6 +13,7 @@
     "windows": [
       {
         "label": "main",
+        "create": false,
         "title": "Vibe Code Studio",
         "width": 1400,
         "height": 900,
@@ -26,8 +27,8 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' ipc: http://ipc.localhost https://ipc.localhost tauri: http://localhost:* ws://localhost:* wss://localhost:* https://openrouter.ai https://api.anthropic.com https://api.openai.com https://api.deepseek.com https://api.groq.com https://api.moonshot.ai https://api.github.com https://generativelanguage.googleapis.com https://fonts.googleapis.com https://fonts.gstatic.com; worker-src 'self' blob:; media-src 'self' blob:; child-src 'self' blob:",
-      "dangerousDisableAssetCspModification": true
+      "csp": "default-src 'self'; script-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' ipc: http://ipc.localhost https://ipc.localhost tauri: http://127.0.0.1:3190 http://localhost:3190 http://127.0.0.1:5004 http://localhost:5004 http://localhost:3001 http://localhost:3100 ws://localhost:4444 ws://127.0.0.1:5004 ws://localhost:5004 https://api.github.com; worker-src 'self' blob:; media-src 'self' blob:; child-src 'self' blob:",
+      "dangerousDisableAssetCspModification": ["style-src"]
     }
   },
   "bundle": {
@@ -37,7 +38,10 @@
     "resources": ["sidecar/**/*"],
     "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.ico"],
     "windows": {
-      "wix": null,
+      "wix": {
+        "fragmentPaths": ["windows/explicit-install-dir.wxs"],
+        "componentGroupRefs": ["ExplicitInstallDirSupportGroup"]
+      },
       "nsis": {
         "installMode": "currentUser"
       }

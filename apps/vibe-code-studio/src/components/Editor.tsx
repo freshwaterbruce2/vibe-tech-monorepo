@@ -7,7 +7,6 @@ import styled from 'styled-components';
 
 import { useEditorActions } from '../hooks/useEditorActions';
 import { useEditorSetup } from '../hooks/useEditorSetup';
-import { useInlineEdit } from '../hooks/useInlineEdit';
 import { logger } from '../services/Logger';
 import type { UnifiedAIService } from '../services/ai/UnifiedAIService';
 import { applyEditorTheme } from '../services/theme/applyTheme';
@@ -15,12 +14,10 @@ import { monacoThemeName } from '../services/theme/themeResolver';
 import { vibeTheme } from '../styles/theme';
 import type { EditorFile, EditorSettings, WorkspaceContext } from '../types';
 
-import CompletionIndicator, { CompletionStats } from './CompletionIndicator';
 import { InlineEditWidget } from './Editor/InlineEditWidget';
 import FileTabs from './FileTabs';
 import type { FindOptions } from './FindReplace';
 import FindReplace from './FindReplace';
-import PrefetchIndicator from './PrefetchIndicator';
 
 const EditorContainer = styled.div`
   display: flex;
@@ -124,8 +121,8 @@ const Editor = ({
   settings,
   liveStream,
   onEditorMount,
-  modelStrategy = 'fast',
-  currentAIModel = 'moonshot/kimi-2.5-pro',
+  modelStrategy: _modelStrategy = 'fast',
+  currentAIModel: _currentAIModel = 'moonshot/kimi-2.5-pro',
 }: EditorProps) => {
   const [findReplaceOpen, setFindReplaceOpen] = useState(false);
   const [findMatches, setFindMatches] = useState<{ current: number; total: number }>({
@@ -133,28 +130,6 @@ const Editor = ({
     total: 0,
   });
   const decorationsRef = useRef<string[]>([]);
-
-  // Week 3: Completion tracking state
-  const [hasActiveCompletion, setHasActiveCompletion] = useState(false);
-  const [showCompletionStats, setShowCompletionStats] = useState(false);
-  const [completionStats] = useState({
-    totalSuggestions: 0,
-    accepted: 0,
-    rejected: 0,
-    avgLatency: 0,
-  });
-
-  // Week 4: Prefetch tracking state (kept for compatibility)
-  const [showPrefetchIndicator] = useState(false);
-  const [prefetchStats] = useState({
-    cacheSize: 0,
-    queueSize: 0,
-    activeCount: 0,
-    hitRate: 0,
-    avgLatency: 0,
-    memoryUsageMB: 0,
-  });
-  const [prefetchStatus] = useState<'idle' | 'active' | 'learning'>('idle');
 
   // Inline edit dialog state (Cmd+K)
   const [inlineEditOpen, setInlineEditOpen] = useState(false);
@@ -168,8 +143,8 @@ const Editor = ({
     liveStream
   );
 
-  // Hook for inline AI editing
-  useInlineEdit(editorRef);
+  // Inline AI editing (Cmd+K) is handled by the useHotkeys('ctrl+k') binding
+  // below + InlineEditWidget; the old useInlineEdit hook was a dead duplicate.
 
   // Hook for editor actions
   const { toggleComment, duplicateLine, moveLineUp, moveLineDown, triggerAiCompletion } =
@@ -256,16 +231,6 @@ const Editor = ({
       clearFindDecorations();
     }
   });
-
-  useHotkeys('ctrl+shift+s, cmd+shift+s', e => {
-    e.preventDefault();
-    setShowCompletionStats(prev => !prev);
-  });
-
-  // Placeholder for completion tracking
-  useEffect(() => {
-    // Legacy tracking placeholder
-  }, []);
 
   const handleFind = useCallback(
     (query: string, options: FindOptions) => {
@@ -469,35 +434,6 @@ const Editor = ({
           currentMatch={findMatches.current}
           totalMatches={findMatches.total}
         />
-
-        {/* Completion Indicator */}
-        <CompletionIndicator
-          isActive={hasActiveCompletion}
-          model={currentAIModel}
-          strategy={modelStrategy}
-          hasCompletion={hasActiveCompletion}
-          onDismiss={() => setHasActiveCompletion(false)}
-        />
-
-        {showCompletionStats && (
-          <CompletionStats
-            totalSuggestions={completionStats.totalSuggestions}
-            accepted={completionStats.accepted}
-            rejected={completionStats.rejected}
-            avgLatency={completionStats.avgLatency}
-            currentModel={currentAIModel}
-          />
-        )}
-
-        {showPrefetchIndicator && (
-          <PrefetchIndicator
-            stats={prefetchStats}
-            isActive={prefetchStatus === 'active'}
-            status={prefetchStatus}
-            predictions={[]}
-            learningStats={{ patternsLearned: 0, accuracy: prefetchStats.hitRate }}
-          />
-        )}
 
         {inlineEditOpen && (
           <InlineEditWidget

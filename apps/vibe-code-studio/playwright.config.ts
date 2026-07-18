@@ -1,11 +1,25 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Playwright configuration for DeepCode Editor
+ * Playwright configuration for Vibe Code Studio (web mode on port 3001).
  * See https://playwright.dev/docs/test-configuration
+ *
+ * Artifacts (test-results, HTML report) are redirected to D:\ per the
+ * workspace paths policy — they must not land inside V:\monorepo.
  */
+const ARTIFACT_ROOT = process.env.PLAYWRIGHT_ARTIFACT_DIR ?? 'D:/temp/playwright/vibe-code-studio';
+
 export default defineConfig({
   testDir: './tests',
+
+  /* Keep Playwright artifacts out of the repo */
+  outputDir: `${ARTIFACT_ROOT}/test-results`,
+
+  /*
+   * First page load on a cold Vite dev server can exceed the 30s default
+   * while the module graph (Monaco etc.) is transformed for parallel workers.
+   */
+  timeout: 120_000,
 
   /* Run tests in files in parallel */
   fullyParallel: false,
@@ -19,8 +33,8 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
 
-  /* Reporter to use */
-  reporter: 'html',
+  /* Reporters: terminal list + HTML report outside the repo */
+  reporter: [['list'], ['html', { outputFolder: `${ARTIFACT_ROOT}/html-report`, open: 'never' }]],
 
   /* Shared settings for all the projects below */
   use: {
@@ -45,9 +59,7 @@ export default defineConfig({
     },
   ],
 
-  /* Run your local dev server before starting the tests */
-  /* Note: For Electron app testing, tests should be run with app already running via `pnpm dev` */
-  /* Or configure Electron-specific Playwright testing with @playwright/test electron support */
+  /* Run the Vite dev server (web mode) before starting the tests */
   webServer: {
     command: 'pnpm run dev:web',
     url: 'http://localhost:3001',

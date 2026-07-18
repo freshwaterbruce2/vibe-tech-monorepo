@@ -15,6 +15,7 @@
  * @property {string[]} [exts] extension probe order (e.g. ['.cmd', '.exe', ''])
  * @property {(p: string) => boolean} [exists] injected fs predicate
  * @property {string} [sep] path separator
+ * @property {boolean} [requireResolved] return null instead of spawning an unverified bare command
  */
 
 /** @type {Record<string, ServerSpec>} */
@@ -78,7 +79,7 @@ export function resolveServer(languageId, opts = {}) {
   const base = SERVERS[languageId];
   if (!base) return null;
 
-  const { binDir, paths, exts, exists, sep = '\\' } = opts;
+  const { binDir, paths, exts, exists, requireResolved = false, sep = '\\' } = opts;
   if (paths && exists) {
     const found = findExecutable(base.command, { paths, exts, exists, sep });
     if (found) {
@@ -93,6 +94,7 @@ export function resolveServer(languageId, opts = {}) {
       }
     }
   }
+  if (requireResolved) return null;
   return { command: base.command, args: base.args };
 }
 

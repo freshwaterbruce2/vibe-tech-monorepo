@@ -61,6 +61,17 @@ describe('resolveServer with PATH scanning (opts.paths)', () => {
     ).toEqual({ command: 'rust-analyzer', args: [] });
   });
 
+  it('returns null when an installed build requires a verified executable', () => {
+    expect(
+      resolveServer('typescript', {
+        paths: ['V:\\Apps\\Vibe_Code_Studio'],
+        exts: ['.cmd', '.exe'],
+        exists: () => false,
+        requireResolved: true,
+      })
+    ).toBeNull();
+  });
+
   it('prefers a paths match over a binDir match', () => {
     const exists = (p: string) =>
       p === 'C:\\path\\pyright-langserver.cmd' || p === 'C:\\bin\\pyright-langserver.cmd';

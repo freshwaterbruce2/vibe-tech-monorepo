@@ -90,7 +90,7 @@ export class GitService {
     const ahead = parts[0] ? parseInt(parts[0], 10) || 0 : 0;
     const behind = parts[1] ? parseInt(parts[1], 10) || 0 : 0;
 
-    const files = statusOutput.split('\n').filter((line) => line.trim());
+    const files = statusOutput.split('\n').filter(line => line.trim());
     const status: GitStatus = {
       branch,
       isClean: files.length === 0,
@@ -102,7 +102,7 @@ export class GitService {
       behind,
     };
 
-    files.forEach((line) => {
+    files.forEach(line => {
       const [statusCode, ...filePathParts] = line.trim().split(' ');
       const filePath = filePathParts.join(' ');
 
@@ -125,7 +125,7 @@ export class GitService {
    */
   async add(files: string | string[]): Promise<void> {
     const fileList = Array.isArray(files) ? files : [files];
-    const quotedFiles = fileList.map((f) => `"${f}"`).join(' ');
+    const quotedFiles = fileList.map(f => `"${f}"`).join(' ');
     await this.execGit(`add ${quotedFiles}`);
   }
 
@@ -146,7 +146,7 @@ export class GitService {
     }
 
     const fileList = Array.isArray(files) ? files : [files];
-    const quotedFiles = fileList.map((f) => `"${f}"`).join(' ');
+    const quotedFiles = fileList.map(f => `"${f}"`).join(' ');
     await this.execGit(`reset ${quotedFiles}`);
   }
 
@@ -172,8 +172,8 @@ export class GitService {
 
     return output
       .split('\n')
-      .filter((line) => line.trim())
-      .map((line) => {
+      .filter(line => line.trim())
+      .map(line => {
         const [hash, author, date, message] = line.split('|');
         return {
           hash: hash ?? '',
@@ -191,7 +191,7 @@ export class GitService {
     const output = await this.execGit('branch -a');
     const branches: GitBranch[] = [];
 
-    output.split('\n').forEach((line) => {
+    output.split('\n').forEach(line => {
       const trimmed = line.trim();
       if (!trimmed) {
         return;
@@ -258,7 +258,7 @@ export class GitService {
     const output = await this.execGit('remote -v');
     const remotes = new Map<string, string>();
 
-    output.split('\n').forEach((line) => {
+    output.split('\n').forEach(line => {
       const [name, url] = line.split('\t');
       if (name && url?.includes('(fetch)')) {
         remotes.set(name, url.replace(' (fetch)', ''));
@@ -281,6 +281,40 @@ export class GitService {
   async getDiff(staged: boolean = false): Promise<string> {
     const command = staged ? 'diff --cached' : 'diff';
     return await this.execGit(command);
+  }
+
+  private async execGitRaw(command: string): Promise<string> {
+    if (typeof window !== 'undefined' && window.electron?.shell) {
+      const result = await window.electron.shell.execute(`git ${command}`, this.workingDirectory);
+      if (!result.success) {
+        throw new Error(`Git command failed: ${result.stderr || 'Unknown error'}`);
+      }
+      return result.stdout;
+    }
+    throw new Error('Git operations require Electron environment');
+  }
+
+  /** Read a workspace-relative file from HEAD without changing the worktree. */
+  async getFileAtHead(
+    filePath: string,
+    workingDirectory = this.workingDirectory
+  ): Promise<string | null> {
+    const normalized = filePath.replace(/\\/g, '/').replace(/^\.\//, '');
+    const unsafe =
+      !normalized ||
+      normalized.startsWith('/') ||
+      /^[a-z]:/i.test(normalized) ||
+      normalized.split('/').includes('..') ||
+      /\s|"/.test(normalized) ||
+      normalized.includes('\u0000');
+    if (unsafe) return null;
+    try {
+      const workspaceGit = new GitService(workingDirectory);
+      const prefix = await workspaceGit.execGit('rev-parse --show-prefix');
+      return await workspaceGit.execGitRaw(`show HEAD:${prefix}${normalized}`);
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -335,8 +369,8 @@ export class GitService {
 
     return output
       .split('\n')
-      .filter((line) => line.trim())
-      .map((line) => {
+      .filter(line => line.trim())
+      .map(line => {
         const [hash, author, date, message] = line.split('|');
         return {
           hash: hash ?? '',

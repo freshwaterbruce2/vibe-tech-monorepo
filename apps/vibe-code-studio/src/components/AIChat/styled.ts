@@ -27,16 +27,21 @@ export const pulse = keyframes`
 export const ChatContainer = styled.div<{ $width: number; $mode: ChatMode }>`
   width: ${props => props.$width}px;
   background: ${props => {
-        switch (props.$mode) {
-            case 'agent': return 'linear-gradient(180deg, rgba(139, 92, 246, 0.05) 0%, rgba(26, 26, 46, 1) 100%)';
-            default: return vibeTheme.colors.secondary;
-        }
-    }};
-  border-left: 2px solid ${props => {
-        switch (props.$mode) {
-            case 'agent': return 'rgba(139, 92, 246, 0.4)';
-            default: return 'rgba(139, 92, 246, 0.2)';
-        }
+    switch (props.$mode) {
+      case 'agent':
+        return 'linear-gradient(180deg, rgba(139, 92, 246, 0.05) 0%, rgba(26, 26, 46, 1) 100%)';
+      default:
+        return vibeTheme.colors.secondary;
+    }
+  }};
+  border-left: 2px solid
+    ${props => {
+      switch (props.$mode) {
+        case 'agent':
+          return 'rgba(139, 92, 246, 0.4)';
+        default:
+          return 'rgba(139, 92, 246, 0.2)';
+      }
     }};
   display: flex;
   flex-direction: column;
@@ -44,11 +49,13 @@ export const ChatContainer = styled.div<{ $width: number; $mode: ChatMode }>`
   position: relative;
   transition: all 0.3s ease;
   box-shadow: ${props => {
-        switch (props.$mode) {
-            case 'agent': return '0 0 40px rgba(139, 92, 246, 0.1)';
-            default: return 'none';
-        }
-    }};
+    switch (props.$mode) {
+      case 'agent':
+        return '0 0 40px rgba(139, 92, 246, 0.1)';
+      default:
+        return 'none';
+    }
+  }};
 
   &::before {
     content: '';
@@ -58,12 +65,14 @@ export const ChatContainer = styled.div<{ $width: number; $mode: ChatMode }>`
     width: 2px;
     height: 100%;
     background: ${props => {
-        switch (props.$mode) {
-            case 'agent': return 'linear-gradient(180deg, rgba(139, 92, 246, 0.8), rgba(139, 92, 246, 0.2))';
-            default: return vibeTheme.gradients.border;
-        }
+      switch (props.$mode) {
+        case 'agent':
+          return 'linear-gradient(180deg, rgba(139, 92, 246, 0.8), rgba(139, 92, 246, 0.2))';
+        default:
+          return vibeTheme.gradients.border;
+      }
     }};
-    opacity: ${props => props.$mode !== 'chat' ? 1 : 0.6};
+    opacity: ${props => (props.$mode !== 'chat' ? 1 : 0.6)};
   }
 `;
 
@@ -75,7 +84,7 @@ export const ResizeHandle = styled.div<{ $isResizing: boolean }>`
   width: 8px;
   cursor: col-resize;
   z-index: 10;
-  background: ${props => props.$isResizing ? 'rgba(139, 92, 246, 0.3)' : 'transparent'};
+  background: ${props => (props.$isResizing ? 'rgba(139, 92, 246, 0.3)' : 'transparent')};
   transition: background 0.2s ease;
 
   &:hover {
@@ -90,9 +99,10 @@ export const ResizeHandle = styled.div<{ $isResizing: boolean }>`
     transform: translate(-50%, -50%);
     width: 4px;
     height: 40px;
-    background: ${props => props.$isResizing ? vibeTheme.colors.purple : 'rgba(139, 92, 246, 0.5)'};
+    background: ${props =>
+      props.$isResizing ? vibeTheme.colors.purple : 'rgba(139, 92, 246, 0.5)'};
     border-radius: 2px;
-    opacity: ${props => props.$isResizing ? 1 : 0};
+    opacity: ${props => (props.$isResizing ? 1 : 0)};
     transition: opacity 0.2s ease;
   }
 
@@ -157,13 +167,13 @@ export const ModeButton = styled(motion.button).withConfig({
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: ${props => props.$active ? vibeTheme.colors.purple : 'transparent'};
-  color: ${props => props.$active ? 'white' : vibeTheme.colors.textSecondary};
+  background: ${props => (props.$active ? vibeTheme.colors.purple : 'transparent')};
+  color: ${props => (props.$active ? 'white' : vibeTheme.colors.textSecondary)};
   position: relative;
 
   &:hover {
-    background: ${props => props.$active ? vibeTheme.colors.purple : 'rgba(139, 92, 246, 0.2)'};
-    color: ${props => props.$active ? 'white' : vibeTheme.colors.text};
+    background: ${props => (props.$active ? vibeTheme.colors.purple : 'rgba(139, 92, 246, 0.2)')};
+    color: ${props => (props.$active ? 'white' : vibeTheme.colors.text)};
   }
 `;
 
@@ -272,8 +282,8 @@ export const MessageIcon = styled.div<{ role: 'user' | 'assistant' }>`
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: ${(props) =>
-        props.role === 'user' ? vibeTheme.gradients.primary : vibeTheme.gradients.secondary};
+  background: ${props =>
+    props.role === 'user' ? vibeTheme.gradients.primary : vibeTheme.gradients.secondary};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -281,7 +291,7 @@ export const MessageIcon = styled.div<{ role: 'user' | 'assistant' }>`
   margin-top: 2px;
   box-shadow: ${vibeTheme.shadows.small};
   border: 2px solid
-    ${(props) => (props.role === 'user' ? vibeTheme.colors.cyan : vibeTheme.colors.purple)};
+    ${props => (props.role === 'user' ? vibeTheme.colors.cyan : vibeTheme.colors.purple)};
 
   svg {
     color: ${vibeTheme.colors.text};
@@ -427,20 +437,20 @@ export const TextInput = styled.textarea`
 export const SendButton = styled(motion.button).withConfig({
   shouldForwardProp: shouldForwardMotionProp,
 })<{ disabled: boolean }>`
-  background: ${(props) =>
-        props.disabled ? 'rgba(139, 92, 246, 0.2)' : vibeTheme.gradients.primary};
-  border: 2px solid ${(props) => (props.disabled ? 'rgba(139, 92, 246, 0.1)' : 'transparent')};
-  color: ${(props) => (props.disabled ? vibeTheme.colors.textMuted : vibeTheme.colors.text)};
+  background: ${props =>
+    props.disabled ? 'rgba(139, 92, 246, 0.2)' : vibeTheme.gradients.primary};
+  border: 2px solid ${props => (props.disabled ? 'rgba(139, 92, 246, 0.1)' : 'transparent')};
+  color: ${props => (props.disabled ? vibeTheme.colors.textMuted : vibeTheme.colors.text)};
   padding: ${vibeTheme.spacing.sm};
   border-radius: ${vibeTheme.borderRadius.medium};
-  cursor: ${(props) => (props.disabled ? 'not-allowed' : 'pointer')};
+  cursor: ${props => (props.disabled ? 'not-allowed' : 'pointer')};
   display: flex;
   align-items: center;
   justify-content: center;
   width: 40px;
   height: 40px;
   transition: all ${vibeTheme.animation.duration.normal} ease;
-  box-shadow: ${(props) => (props.disabled ? 'none' : vibeTheme.shadows.small)};
+  box-shadow: ${props => (props.disabled ? 'none' : vibeTheme.shadows.small)};
 
   &:hover:not(:disabled) {
     transform: scale(1.05);
@@ -484,7 +494,7 @@ export const CancelButton = styled(motion.button).withConfig({
 export const ResponseStatus = styled.div<{ $state: AIResponseState }>`
   margin-top: ${vibeTheme.spacing.xs};
   font-size: ${vibeTheme.typography.fontSize.xs};
-  color: ${(props) => {
+  color: ${props => {
     switch (props.$state) {
       case 'streaming':
         return vibeTheme.colors.cyan;
@@ -573,22 +583,33 @@ export const CompactStepCard = styled(motion.div).withConfig({
   padding: ${vibeTheme.spacing.sm};
   border-radius: ${vibeTheme.borderRadius.small};
   background: ${props => {
-        switch (props.$status) {
-            case 'in_progress': return 'rgba(139, 92, 246, 0.1)';
-            case 'completed': return 'rgba(34, 197, 94, 0.1)';
-            case 'failed': return 'rgba(239, 68, 68, 0.1)';
-            case 'awaiting_approval': return 'rgba(251, 191, 36, 0.1)';
-            default: return 'rgba(100, 116, 139, 0.05)';
-        }
-    }};
-  border: 1px solid ${props => {
-        switch (props.$status) {
-            case 'in_progress': return vibeTheme.colors.purple;
-            case 'completed': return vibeTheme.colors.success;
-            case 'failed': return vibeTheme.colors.error;
-            case 'awaiting_approval': return '#fbbf24';
-            default: return 'rgba(100, 116, 139, 0.2)';
-        }
+    switch (props.$status) {
+      case 'in_progress':
+        return 'rgba(139, 92, 246, 0.1)';
+      case 'completed':
+        return 'rgba(34, 197, 94, 0.1)';
+      case 'failed':
+        return 'rgba(239, 68, 68, 0.1)';
+      case 'awaiting_approval':
+        return 'rgba(251, 191, 36, 0.1)';
+      default:
+        return 'rgba(100, 116, 139, 0.05)';
+    }
+  }};
+  border: 1px solid
+    ${props => {
+      switch (props.$status) {
+        case 'in_progress':
+          return vibeTheme.colors.purple;
+        case 'completed':
+          return vibeTheme.colors.success;
+        case 'failed':
+          return vibeTheme.colors.error;
+        case 'awaiting_approval':
+          return '#fbbf24';
+        default:
+          return 'rgba(100, 116, 139, 0.2)';
+      }
     }};
 `;
 
@@ -607,14 +628,19 @@ export const StepIconCompact = styled.div<{ $status: StepStatus }>`
   justify-content: center;
   flex-shrink: 0;
   color: ${props => {
-        switch (props.$status) {
-            case 'in_progress': return vibeTheme.colors.purple;
-            case 'completed': return vibeTheme.colors.success;
-            case 'failed': return vibeTheme.colors.error;
-            case 'awaiting_approval': return '#fbbf24';
-            default: return vibeTheme.colors.textMuted;
-        }
-    }};
+    switch (props.$status) {
+      case 'in_progress':
+        return vibeTheme.colors.purple;
+      case 'completed':
+        return vibeTheme.colors.success;
+      case 'failed':
+        return vibeTheme.colors.error;
+      case 'awaiting_approval':
+        return '#fbbf24';
+      default:
+        return vibeTheme.colors.textMuted;
+    }
+  }};
 `;
 
 export const StepTitleCompact = styled.div`
@@ -665,7 +691,9 @@ export const AgentStatusHeader = styled.div`
   gap: ${vibeTheme.spacing.sm};
 `;
 
-export const AgentStatusBadge = styled.span<{ $phase: 'planning' | 'executing' | 'awaiting_approval' | 'completed' | 'failed' }>`
+export const AgentStatusBadge = styled.span<{
+  $phase: 'planning' | 'executing' | 'awaiting_approval' | 'completed' | 'failed' | 'cancelled';
+}>`
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -675,7 +703,7 @@ export const AgentStatusBadge = styled.span<{ $phase: 'planning' | 'executing' |
   font-weight: ${vibeTheme.typography.fontWeight.semibold};
   text-transform: uppercase;
   letter-spacing: ${vibeTheme.typography.letterSpacing.wider};
-  background: ${(props) => {
+  background: ${props => {
     switch (props.$phase) {
       case 'planning':
         return 'rgba(59, 130, 246, 0.18)';
@@ -686,10 +714,11 @@ export const AgentStatusBadge = styled.span<{ $phase: 'planning' | 'executing' |
       case 'completed':
         return 'rgba(34, 197, 94, 0.18)';
       case 'failed':
+      case 'cancelled':
         return 'rgba(239, 68, 68, 0.18)';
     }
   }};
-  color: ${(props) => {
+  color: ${props => {
     switch (props.$phase) {
       case 'planning':
         return vibeTheme.colors.info;
@@ -700,6 +729,7 @@ export const AgentStatusBadge = styled.span<{ $phase: 'planning' | 'executing' |
       case 'completed':
         return vibeTheme.colors.success;
       case 'failed':
+      case 'cancelled':
         return vibeTheme.colors.error;
     }
   }};
@@ -747,7 +777,8 @@ export const ApprovalButton = styled(motion.button).withConfig({
   align-items: center;
   justify-content: center;
   gap: 4px;
-  background: ${props => props.$variant === 'approve' ? vibeTheme.colors.success : vibeTheme.colors.error};
+  background: ${props =>
+    props.$variant === 'approve' ? vibeTheme.colors.success : vibeTheme.colors.error};
   color: white;
   transition: all 0.2s ease;
 

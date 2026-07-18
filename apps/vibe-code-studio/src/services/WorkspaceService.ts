@@ -1,12 +1,24 @@
 import { logger } from '../services/Logger';
 import type { FileAnalysis, FileSystemItem, WorkspaceContext } from '../types';
 
+import { FileSystemService } from './FileSystemService';
+import { walkDirectoryTree } from './fileTreeWalker';
+
+/** Minimal file-access surface WorkspaceService needs (real FS or a test double). */
+export interface WorkspaceFileSystem {
+  listDirectory(path: string): Promise<FileSystemItem[]>;
+  readFile(path: string): Promise<string>;
+  exists(path: string): Promise<boolean>;
+}
+
 export interface WorkspaceIndex {
   files: Map<string, FileAnalysis>;
   dependencies: Map<string, string[]>;
   exports: Map<string, string[]>;
   imports: Map<string, string[]>;
   symbols: Map<string, string[]>;
+  /** First N chars of each analyzed code file — real content for AI context. */
+  contentPreviews: Map<string, string>;
   lastUpdated: Date;
 }
 
@@ -48,19 +60,64 @@ export class WorkspaceService {
   private index: WorkspaceIndex;
   private projectStructure: ProjectStructure | null = null;
   private indexingInProgress = false;
+  private readonly fs: WorkspaceFileSystem;
 
-  constructor() {
-    this.index = {
+  // Extensions whose text content is worth reading + parsing for context.
+  private static readonly CODE_EXTENSIONS = new Set([
+    'ts',
+    'tsx',
+    'js',
+    'jsx',
+    'mjs',
+    'cjs',
+    'json',
+    'md',
+    'mdx',
+    'css',
+    'scss',
+    'less',
+    'html',
+    'py',
+    'rs',
+    'go',
+    'java',
+    'rb',
+    'php',
+    'c',
+    'cpp',
+    'cs',
+    'sh',
+    'sql',
+    'yaml',
+    'yml',
+    'toml',
+  ]);
+  private static readonly MAX_FILES = 4000;
+  private static readonly PREVIEW_CHARS = 4000;
+
+  constructor(fileSystem?: WorkspaceFileSystem) {
+    // Default to the real FileSystemService (Tauri disk reads on desktop,
+    // in-memory demo files on web). Injectable for tests.
+    this.fs = fileSystem ?? new FileSystemService();
+    this.index = this.emptyIndex();
+  }
+
+  private emptyIndex(): WorkspaceIndex {
+    return {
       files: new Map(),
       dependencies: new Map(),
       exports: new Map(),
       imports: new Map(),
       symbols: new Map(),
+      contentPreviews: new Map(),
       lastUpdated: new Date(),
     };
   }
 
-  async indexWorkspace(rootPath: string): Promise<WorkspaceContext> {
+  async indexWorkspace(
+    rootPath: string,
+    onProgress?: (progress: number) => void
+  ): Promise<WorkspaceContext> {
     // If indexing is already in progress, return existing context gracefully
     // This handles React StrictMode double-invoke and rapid re-renders
     if (this.indexingInProgress) {
@@ -72,22 +129,33 @@ export class WorkspaceService {
     logger.debug(`Starting workspace indexing for: ${rootPath}`);
 
     try {
+      // Reset so a re-index reflects the current tree (not a merge of old runs).
+      this.index = this.emptyIndex();
+      onProgress?.(0);
+
+      // Real phase-based progress: each callback fires only after the stage it
+      // reports genuinely completes (no simulated/random ticking).
       // 1. Analyze project structure
       this.projectStructure = await this.analyzeProjectStructure(rootPath);
+      onProgress?.(15);
 
       // 2. Build file tree and index files
       const fileTree = await this.buildFileTree(rootPath);
+      onProgress?.(30);
 
-      // 3. Analyze each file for context
+      // 3. Analyze each file for context (heaviest stage)
       await this.analyzeFiles(fileTree);
+      onProgress?.(75);
 
       // 4. Build dependency graph
       await this.buildDependencyGraph();
+      onProgress?.(90);
 
       // 5. Extract symbols and exports
       await this.extractSymbolsAndExports();
 
       this.index.lastUpdated = new Date();
+      onProgress?.(100);
 
       logger.debug(`Workspace indexing completed. Indexed ${this.index.files.size} files`);
 
@@ -124,13 +192,9 @@ export class WorkspaceService {
 
       // Check for tsconfig.json
 
-
       const tsconfigPath = `${rootPath}/tsconfig.json`;
 
-
       if (await this.fileExists(tsconfigPath)) {
-
-
         try {
           const content = await this.readFile(tsconfigPath);
 
@@ -152,14 +216,11 @@ export class WorkspaceService {
 
           structure.tsConfig = JSON.parse(jsonContent);
           structure.configFiles.push('tsconfig.json');
-
         } catch {
           // Silently track file exists even if parsing fails
           // This is non-critical - tsconfig parsing is just for additional context
           structure.configFiles.push('tsconfig.json');
         }
-
-
       }
 
       // Check for README
@@ -178,7 +239,7 @@ export class WorkspaceService {
         const content = await this.readFile(gitignorePath);
         structure.gitignore = content
           .split('\n')
-          .filter((line) => line.trim() && !line.startsWith('#'));
+          .filter(line => line.trim() && !line.startsWith('#'));
       }
     } catch (error) {
       logger.warn('Error analyzing project structure:', error);
@@ -187,124 +248,46 @@ export class WorkspaceService {
     return structure;
   }
 
+  /** Build a real recursive file tree from the workspace, skipping build/dep dirs. */
   private async buildFileTree(rootPath: string): Promise<FileSystemItem[]> {
-    // This would integrate with the actual file system
-    // For now, return a mock structure that we can expand
-    return this.getMockFileTree(rootPath);
-  }
-
-  private getMockFileTree(rootPath: string): FileSystemItem[] {
-    // Enhanced mock with realistic project structure
-    return [
-      {
-        name: 'src',
-        path: `${rootPath}/src`,
-        type: 'directory',
-        children: [
-          { name: 'App.tsx', path: `${rootPath}/src/App.tsx`, type: 'file' },
-          { name: 'index.ts', path: `${rootPath}/src/index.ts`, type: 'file' },
-          {
-            name: 'components',
-            path: `${rootPath}/src/components`,
-            type: 'directory',
-            children: [
-              { name: 'Button.tsx', path: `${rootPath}/src/components/Button.tsx`, type: 'file' },
-              { name: 'Modal.tsx', path: `${rootPath}/src/components/Modal.tsx`, type: 'file' },
-              { name: 'Editor.tsx', path: `${rootPath}/src/components/Editor.tsx`, type: 'file' },
-              { name: 'Sidebar.tsx', path: `${rootPath}/src/components/Sidebar.tsx`, type: 'file' },
-            ],
-          },
-          {
-            name: 'services',
-            path: `${rootPath}/src/services`,
-            type: 'directory',
-            children: [
-              {
-                name: 'DeepSeekService.ts',
-                path: `${rootPath}/src/services/DeepSeekService.ts`,
-                type: 'file',
-              },
-              {
-                name: 'FileSystemService.ts',
-                path: `${rootPath}/src/services/FileSystemService.ts`,
-                type: 'file',
-              },
-              {
-                name: 'WorkspaceService.ts',
-                path: `${rootPath}/src/services/WorkspaceService.ts`,
-                type: 'file',
-              },
-            ],
-          },
-          {
-            name: 'types',
-            path: `${rootPath}/src/types`,
-            type: 'directory',
-            children: [{ name: 'index.ts', path: `${rootPath}/src/types/index.ts`, type: 'file' }],
-          },
-          {
-            name: 'hooks',
-            path: `${rootPath}/src/hooks`,
-            type: 'directory',
-            children: [
-              {
-                name: 'useFileSystem.ts',
-                path: `${rootPath}/src/hooks/useFileSystem.ts`,
-                type: 'file',
-              },
-              {
-                name: 'useWorkspace.ts',
-                path: `${rootPath}/src/hooks/useWorkspace.ts`,
-                type: 'file',
-              },
-            ],
-          },
-        ],
-      },
-      {
-        name: 'public',
-        path: `${rootPath}/public`,
-        type: 'directory',
-        children: [
-          { name: 'index.html', path: `${rootPath}/public/index.html`, type: 'file' },
-          { name: 'icon.png', path: `${rootPath}/public/icon.png`, type: 'file' },
-        ],
-      },
-      { name: 'package.json', path: `${rootPath}/package.json`, type: 'file' },
-      { name: 'tsconfig.json', path: `${rootPath}/tsconfig.json`, type: 'file' },
-      { name: 'vite.config.ts', path: `${rootPath}/vite.config.ts`, type: 'file' },
-      { name: 'README.md', path: `${rootPath}/README.md`, type: 'file' },
-    ];
+    return walkDirectoryTree(this.fs, rootPath);
   }
 
   private async analyzeFiles(fileTree: FileSystemItem[]): Promise<void> {
-    const analyzeItem = async (item: FileSystemItem): Promise<void> => {
+    const files: FileSystemItem[] = [];
+    const collect = (item: FileSystemItem): void => {
       if (item.type === 'file') {
-        const analysis = await this.analyzeFile(item.path);
-        this.index.files.set(item.path, analysis);
+        files.push(item);
       } else if (item.children) {
-        for (const child of item.children) {
-          await analyzeItem(child);
-        }
+        item.children.forEach(collect);
       }
     };
+    fileTree.forEach(collect);
 
-    for (const item of fileTree) {
-      await analyzeItem(item);
+    // Cap total analyzed files so a huge workspace can't stall the UI thread.
+    const capped = files.slice(0, WorkspaceService.MAX_FILES);
+    for (const item of capped) {
+      const analysis = await this.analyzeFile(item.path, item.size);
+      this.index.files.set(item.path, analysis);
+    }
+    if (files.length > capped.length) {
+      logger.warn(
+        `[WorkspaceService] Indexed ${capped.length}/${files.length} files (MAX_FILES cap)`
+      );
     }
   }
 
-  private async analyzeFile(filePath: string): Promise<FileAnalysis> {
-    const extension = filePath.split('.').pop()?.toLowerCase();
+  private async analyzeFile(filePath: string, knownSize?: number): Promise<FileAnalysis> {
+    const extension = filePath.split('.').pop()?.toLowerCase() ?? '';
     const fileName = filePath.split('/').pop() ?? '';
+    const language = this.getLanguageFromExtension(extension);
 
-    // Mock file content analysis - in real implementation would read actual files
     const analysis: FileAnalysis = {
       path: filePath,
       name: fileName,
-      extension: extension ?? '',
-      language: this.getLanguageFromExtension(extension ?? ''),
-      size: Math.floor(Math.random() * 10000) + 100, // Mock size
+      extension,
+      language,
+      size: knownSize ?? 0,
       lastModified: new Date(),
       imports: [],
       exports: [],
@@ -312,65 +295,93 @@ export class WorkspaceService {
       dependencies: [],
       isTestFile: this.isTestFile(filePath),
       isConfigFile: this.isConfigFile(filePath),
-      complexity: Math.floor(Math.random() * 10) + 1,
-      summary: `${fileName} - ${this.getLanguageFromExtension(extension ?? '')} file`,
+      complexity: 1,
+      summary: `${fileName} - ${language} file`,
     };
 
-    // Add mock imports/exports based on file type
-    if (extension === 'tsx' || extension === 'ts') {
-      analysis.imports = this.getMockImports(filePath);
-      analysis.exports = this.getMockExports(filePath);
-      analysis.symbols = this.getMockSymbols(filePath);
+    // Only read+parse text/code files; skip binaries and unknown types.
+    if (!WorkspaceService.CODE_EXTENSIONS.has(extension)) {
+      return analysis;
+    }
+
+    let content: string;
+    try {
+      content = await this.fs.readFile(filePath);
+    } catch (error) {
+      logger.warn(`[WorkspaceService] Failed to read ${filePath}:`, error);
+      return analysis;
+    }
+
+    analysis.size = knownSize && knownSize > 0 ? knownSize : content.length;
+    analysis.complexity = this.computeComplexity(content);
+    this.index.contentPreviews.set(filePath, content.slice(0, WorkspaceService.PREVIEW_CHARS));
+
+    if (['ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs'].includes(extension)) {
+      analysis.imports = this.extractImports(content);
+      analysis.exports = this.extractExports(content);
+      analysis.symbols = this.extractSymbols(content);
     }
 
     return analysis;
   }
 
-  private getMockImports(filePath: string): string[] {
-    const fileName =
-      filePath
-        .split('/')
-        .pop()
-        ?.replace(/\.(tsx?|jsx?)$/, '') ?? '';
-
-    const commonImports = ['react', 'styled-components'];
-    const mockImports: string[] = [...commonImports];
-
-    if (fileName.includes('Service')) {
-      mockImports.push('axios', '../types');
+  /** Extract module specifiers from import/export-from/require statements. */
+  private extractImports(content: string): string[] {
+    const specifiers = new Set<string>();
+    const fromRe = /(?:import|export)[\s\S]*?from\s*['"]([^'"]+)['"]/g;
+    const bareRe = /import\s*['"]([^'"]+)['"]/g;
+    const requireRe = /require\(\s*['"]([^'"]+)['"]\s*\)/g;
+    for (const re of [fromRe, bareRe, requireRe]) {
+      let match: RegExpExecArray | null;
+      while ((match = re.exec(content)) !== null) {
+        if (match[1]) specifiers.add(match[1]);
+      }
     }
-    if (fileName.includes('Component') || fileName.includes('tsx')) {
-      mockImports.push('lucide-react', 'framer-motion');
-    }
-
-    return mockImports;
+    return [...specifiers];
   }
 
-  private getMockExports(filePath: string): string[] {
-    const fileName =
-      filePath
-        .split('/')
-        .pop()
-        ?.replace(/\.(tsx?|jsx?)$/, '') ?? '';
-    return [fileName, `${fileName}Props`, `use${fileName}`];
+  /** Extract exported names (declarations, re-exports, and default). */
+  private extractExports(content: string): string[] {
+    const names = new Set<string>();
+    const declRe =
+      /export\s+(?:default\s+)?(?:async\s+)?(?:const|let|var|function|class|interface|type|enum)\s+([A-Za-z0-9_$]+)/g;
+    const namedRe = /export\s*\{([^}]+)\}/g;
+    let match: RegExpExecArray | null;
+    while ((match = declRe.exec(content)) !== null) {
+      if (match[1]) names.add(match[1]);
+    }
+    while ((match = namedRe.exec(content)) !== null) {
+      const group = match[1] ?? '';
+      for (const part of group.split(',')) {
+        const name = part
+          .trim()
+          .split(/\s+as\s+/)
+          .pop()
+          ?.trim();
+        if (name) names.add(name);
+      }
+    }
+    if (/export\s+default/.test(content)) {
+      names.add('default');
+    }
+    return [...names];
   }
 
-  private getMockSymbols(filePath: string): string[] {
-    const fileName =
-      filePath
-        .split('/')
-        .pop()
-        ?.replace(/\.(tsx?|jsx?)$/, '') ?? '';
-    const symbols: string[] = [];
-
-    if (fileName.includes('Service')) {
-      symbols.push(`${fileName}`, `get${fileName}Instance`, `${fileName.toLowerCase()}Methods`);
+  /** Extract top-level declared symbol names for search/context. */
+  private extractSymbols(content: string): string[] {
+    const names = new Set<string>();
+    const re = /(?:function|class|interface|type|enum|const|let|var)\s+([A-Za-z0-9_$]+)/g;
+    let match: RegExpExecArray | null;
+    while ((match = re.exec(content)) !== null) {
+      if (match[1]) names.add(match[1]);
     }
-    if (fileName.includes('Component') || fileName.includes('tsx')) {
-      symbols.push(`${fileName}`, `${fileName}Props`, `Styled${fileName}`);
-    }
+    return [...names];
+  }
 
-    return symbols;
+  /** Cyclomatic-ish complexity: count of branch/loop keywords (real, not random). */
+  private computeComplexity(content: string): number {
+    const matches = content.match(/\b(if|else|for|while|switch|case|catch|try)\b/g);
+    return (matches ? matches.length : 0) + 1;
   }
 
   private async buildDependencyGraph(): Promise<void> {
@@ -401,19 +412,27 @@ export class WorkspaceService {
   }
 
   private resolveRelativePath(currentPath: string, relativePath: string): string {
-    // Simple relative path resolution - in real implementation would be more robust
-    const currentDir = currentPath.split('/').slice(0, -1).join('/');
-    const resolved = `${currentDir}/${relativePath}`;
+    // Normalize '.'/'..' segments against the importing file's directory.
+    const stack = currentPath.split('/').slice(0, -1);
+    for (const part of relativePath.split('/')) {
+      if (part === '' || part === '.') continue;
+      if (part === '..') stack.pop();
+      else stack.push(part);
+    }
+    const resolved = stack.join('/');
 
-    // Add common extensions if not present
-    const extensions = ['.ts', '.tsx', '.js', '.jsx'];
+    // Try the path as-is, with a source extension, or as a directory index.
+    const extensions = ['', '.ts', '.tsx', '.js', '.jsx'];
     for (const ext of extensions) {
-      const withExt = `${resolved}${ext}`;
-      if (this.index.files.has(withExt)) {
-        return withExt;
+      if (this.index.files.has(`${resolved}${ext}`)) {
+        return `${resolved}${ext}`;
       }
     }
-
+    for (const ext of ['.ts', '.tsx', '.js', '.jsx']) {
+      if (this.index.files.has(`${resolved}/index${ext}`)) {
+        return `${resolved}/index${ext}`;
+      }
+    }
     return resolved;
   }
 
@@ -453,7 +472,7 @@ export class WorkspaceService {
       /\/__tests__\//,
       /\/tests?\//,
     ];
-    return testPatterns.some((pattern) => pattern.test(filePath));
+    return testPatterns.some(pattern => pattern.test(filePath));
   }
 
   private isConfigFile(filePath: string): boolean {
@@ -466,63 +485,31 @@ export class WorkspaceService {
       /\.prettierrc/,
       /\.gitignore$/,
     ];
-    return configPatterns.some((pattern) => pattern.test(filePath));
+    return configPatterns.some(pattern => pattern.test(filePath));
   }
 
   private async fileExists(path: string): Promise<boolean> {
-    // In Electron, use IPC to check actual file system
-    // For renderer process, always return true for common project files to avoid random failures
-    const commonFiles = [
-      'package.json',
-      'tsconfig.json',
-      'README.md',
-      'readme.md',
-      '.gitignore',
-      '.eslintrc',
-      '.prettierrc',
-    ];
-
-    // Check if path matches common project files
-    for (const file of commonFiles) {
-      if (path.endsWith(file)) {
-        return true;
-      }
+    try {
+      return await this.fs.exists(path);
+    } catch (error) {
+      logger.warn(`[WorkspaceService] exists() failed for ${path}:`, error);
+      return false;
     }
-
-    // For demo mode, return true for most paths to avoid indexing failures
-    return true;
   }
 
   private async readFile(path: string): Promise<string> {
-    // Mock implementation - in real app would read actual file
-    if (path.includes('package.json')) {
-      return JSON.stringify(
-        {
-          name: 'vibe-code-studio',
-          version: '1.0.0',
-          main: 'src/index.ts',
-          dependencies: {
-            react: '^18.3.1',
-            typescript: '^5.2.2',
-            'styled-components': '^6.1.11',
-          },
-        },
-        null,
-        2
-      );
-    }
+    return this.fs.readFile(path);
+  }
 
-    if (path.includes('README.md')) {
-      return '# Vibe Code Studio\n\nAI-powered code editor.';
-    }
-
-    return `// Mock content for ${path}`;
+  /** Real content preview (first N chars) captured during indexing, for AI context. */
+  getFileContentPreview(path: string): string {
+    return this.index.contentPreviews.get(path) ?? '';
   }
 
   getWorkspaceContext(): WorkspaceContext {
     const totalFiles = this.index.files.size;
-    const languages = new Set(Array.from(this.index.files.values()).map((f) => f.language));
-    const testFiles = Array.from(this.index.files.values()).filter((f) => f.isTestFile);
+    const languages = new Set(Array.from(this.index.files.values()).map(f => f.language));
+    const testFiles = Array.from(this.index.files.values()).filter(f => f.isTestFile);
 
     return {
       rootPath: this.projectStructure?.rootPath ?? '',
@@ -540,8 +527,8 @@ export class WorkspaceService {
 
   private generateWorkspaceSummary(): string {
     const totalFiles = this.index.files.size;
-    const languages = new Set(Array.from(this.index.files.values()).map((f) => f.language));
-    const testFiles = Array.from(this.index.files.values()).filter((f) => f.isTestFile).length;
+    const languages = new Set(Array.from(this.index.files.values()).map(f => f.language));
+    const testFiles = Array.from(this.index.files.values()).filter(f => f.isTestFile).length;
 
     let summary = `Workspace contains ${totalFiles} files across ${languages.size} languages. `;
     summary += `Primary languages: ${Array.from(languages).slice(0, 3).join(', ')}. `;

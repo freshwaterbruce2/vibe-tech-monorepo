@@ -8,7 +8,7 @@ import { SecureApiKeyManager } from '@vibetech/core';
 import { logger } from '../Logger';
 import { AIProviderFactory } from './AIProviderFactory';
 import { AIProvider, MODEL_REGISTRY } from './AIProviderInterface';
-import type { IAIProvider } from './AIProviderInterface';
+import type { CompletionResponse, IAIProvider } from './AIProviderInterface';
 import { BackendProxyService } from './providers/BackendProxyService';
 
 // Proxy mode (default ON): client-side keys never exist, so provider readiness is
@@ -56,7 +56,10 @@ async function getLazyKey(providerType: AIProvider): Promise<string> {
 export class UnifiedAIService {
   private static instance: UnifiedAIService;
   private readonly factory: AIProviderFactory;
-  private currentModel: string = 'moonshot/kimi-2.5-pro'; // Kimi 2.5 Pro - direct Moonshot API
+  // Best-value OpenRouter coding model (see Settings.constants.ts for rationale):
+  // works with a single OpenRouter key, no separate Moonshot key required.
+  private currentModel: string = 'deepseek/deepseek-v4-pro';
+  private reasoningEffort: 'low' | 'medium' | 'high' = 'medium';
   private _isDemo: boolean = false;
   private activeControllers: Set<AbortController> = new Set();
   private generationControllers: Map<string, AbortController> = new Map();
@@ -132,15 +135,30 @@ export class UnifiedAIService {
   }
 
   /**
-   * Lazily initialize a provider from env vars / SecureApiKeyManager.
-   * Returns the initialized provider, or undefined if no key or init failed.
+   * Lazily initialize a provider. Proxy mode creates BackendProxyService with no
+   * client key (server injects OpenRouter/etc). Direct mode uses SecureApiKeyManager.
+   * Returns the initialized provider, or undefined if init failed.
    */
   private async lazyInitForCompletion(
     providerType: AIProvider,
     model: string
   ): Promise<IAIProvider | undefined> {
-    // Proxy mode injects keys server-side — never lazily init from a client key.
-    if (USE_AI_PROXY) return undefined;
+    if (USE_AI_PROXY) {
+      logger.info(
+        `[UnifiedAI] Lazily initializing ${providerType} via backend proxy (no client key)...`
+      );
+      try {
+        return await this.factory.initializeProvider({
+          provider: providerType,
+          apiKey: '',
+          model,
+        });
+      } catch (initErr) {
+        const msg = initErr instanceof Error ? initErr.message : String(initErr);
+        logger.warn(`[UnifiedAI] Proxy lazy initialization failed: ${msg}`);
+        return undefined;
+      }
+    }
     const lazyKey = await getLazyKey(providerType);
     if (!lazyKey) return undefined;
     logger.info(`[UnifiedAI] Lazily initializing ${providerType} prior to completion...`);
@@ -215,10 +233,29 @@ export class UnifiedAIService {
       messages: request.messages,
       maxTokens: request.maxTokens,
       temperature: request.temperature,
+      reasoningEffort: request.reasoningEffort,
+      responseFormat: request.responseFormat,
+      providerPreferences: request.providerPreferences,
+      tools: request.tools,
+      toolChoice: request.toolChoice,
     });
 
-    return { ...response, provider: String(fallbackProvider) } as AICompletionResponse & {
-      provider: string;
+    return this.normalizeCompletion(response, String(fallbackProvider));
+  }
+
+  private normalizeCompletion(
+    response: CompletionResponse,
+    provider: string
+  ): AICompletionResponse & { provider: string } {
+    const choice = response.choices?.[0];
+    return {
+      content: response.content,
+      usage: response.usage,
+      provider,
+      requestId: response.id,
+      model: response.model,
+      finishReason: choice?.finishReason,
+      toolCalls: choice?.message.toolCalls,
     };
   }
 
@@ -232,9 +269,9 @@ export class UnifiedAIService {
     model: string
   ): Promise<AICompletionResponse & { provider: string }> {
     const controller = new AbortController();
-    if (request.signal) {
-      request.signal.addEventListener('abort', () => controller.abort());
-    }
+    const abortFromCaller = () => controller.abort(request.signal?.reason);
+    if (request.signal?.aborted) abortFromCaller();
+    else request.signal?.addEventListener('abort', abortFromCaller, { once: true });
     this.activeControllers.add(controller);
 
     try {
@@ -243,12 +280,16 @@ export class UnifiedAIService {
         maxTokens: request.maxTokens,
         temperature: request.temperature,
         signal: controller.signal,
+        reasoningEffort: request.reasoningEffort,
+        responseFormat: request.responseFormat,
+        providerPreferences: request.providerPreferences,
+        tools: request.tools,
+        toolChoice: request.toolChoice,
       });
 
-      return { ...response, provider: String(providerName) } as AICompletionResponse & {
-        provider: string;
-      };
+      return this.normalizeCompletion(response, String(providerName));
     } finally {
+      request.signal?.removeEventListener('abort', abortFromCaller);
       this.activeControllers.delete(controller);
     }
   }
@@ -264,12 +305,9 @@ export class UnifiedAIService {
       // Get the provider for the current model
       const modelInfo = MODEL_REGISTRY[requestedModel];
       if (!modelInfo) {
-        logger.warn(`[UnifiedAI] Unknown model: ${requestedModel}, using demo mode`);
-        return {
-          content: `Demo mode: Model "${requestedModel}" not found. Please select a valid model from Settings.`,
-          usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
-          provider: 'demo',
-        };
+        throw new Error(
+          `Model "${requestedModel}" is not available. Select a valid model in Settings.`
+        );
       }
 
       // Try to get the appropriate provider
@@ -313,6 +351,11 @@ export class UnifiedAIService {
     currentFile?: object;
     relatedFiles?: object[];
     conversationHistory?: object[];
+    responseFormat?: AICompletionRequest['responseFormat'];
+    providerPreferences?: AICompletionRequest['providerPreferences'];
+    tools?: AICompletionRequest['tools'];
+    toolChoice?: AICompletionRequest['toolChoice'];
+    signal?: AbortSignal;
   }): Promise<AICompletionResponse> {
     const messages: ChatMessage[] = [];
 
@@ -331,6 +374,12 @@ export class UnifiedAIService {
       model: this.currentModel,
       maxTokens: context.maxTokens ?? 2000,
       temperature: context.temperature ?? 0.3,
+      reasoningEffort: this.reasoningEffort,
+      responseFormat: context.responseFormat,
+      providerPreferences: context.providerPreferences,
+      tools: context.tools,
+      toolChoice: context.toolChoice,
+      signal: context.signal,
     };
 
     return this.complete(request);
@@ -341,8 +390,22 @@ export class UnifiedAIService {
    * Returns the initialized provider, or undefined if no key or init failed.
    */
   private async lazyInitForStream(providerType: AIProvider): Promise<IAIProvider | undefined> {
-    // Proxy mode injects keys server-side — never lazily init from a client key.
-    if (USE_AI_PROXY) return undefined;
+    if (USE_AI_PROXY) {
+      logger.info(
+        `[UnifiedAI] Lazily initializing ${providerType} via backend proxy for stream...`
+      );
+      try {
+        return await this.factory.initializeProvider({
+          provider: providerType,
+          apiKey: '',
+          model: this.currentModel,
+        });
+      } catch (initErr) {
+        const msg = initErr instanceof Error ? initErr.message : String(initErr);
+        logger.warn(`[UnifiedAI] Proxy stream lazy init failed: ${msg}`);
+        return undefined;
+      }
+    }
     const lazyKey = await getLazyKey(providerType);
     if (!lazyKey) return undefined;
     logger.info(`[UnifiedAI] Lazily initializing ${providerType} prior to stream...`);
@@ -415,6 +478,7 @@ export class UnifiedAIService {
         messages,
         maxTokens: context.maxTokens ?? 2000,
         temperature: context.temperature ?? 0.3,
+        reasoningEffort: this.reasoningEffort,
         signal: controller.signal,
       })) {
         if (controller.signal.aborted) {
@@ -552,6 +616,10 @@ export class UnifiedAIService {
    */
   getModel(): string {
     return this.currentModel;
+  }
+
+  setReasoningEffort(effort: 'low' | 'medium' | 'high'): void {
+    this.reasoningEffort = effort;
   }
 
   /**

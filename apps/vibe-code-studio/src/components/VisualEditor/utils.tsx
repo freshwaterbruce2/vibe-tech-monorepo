@@ -9,7 +9,7 @@ import type { PaletteItem, UIElement } from './types';
 // Component palette items
 export const PALETTE_ITEMS: PaletteItem[] = [
   { type: 'button', label: 'Button', icon: '🔘' },
-  { type: 'input', label: 'Input', icon: '��' },
+  { type: 'input', label: 'Input', icon: '📝' },
   { type: 'text', label: 'Text', icon: '📄' },
   { type: 'card', label: 'Card', icon: '🎴' },
   { type: 'container', label: 'Container', icon: '📦' },
@@ -20,26 +20,67 @@ export function renderElement(element: UIElement): React.ReactElement {
   switch (element.type) {
     case 'button':
       return (
-        <button style={{ padding: '10px 20px', borderRadius: '6px', border: 'none', background: '#3b82f6', color: 'white', cursor: 'pointer' }}>
+        <button
+          style={{
+            padding: '10px 20px',
+            borderRadius: '6px',
+            border: 'none',
+            background: '#3b82f6',
+            color: 'white',
+            cursor: 'pointer',
+          }}
+        >
           {(element.props['text'] as string) || 'Button'}
         </button>
       );
     case 'input':
       return (
-        <input type="text" placeholder={(element.props['placeholder'] as string) || 'Enter text...'} aria-label="Text input" style={{ padding: '10px', borderRadius: '6px', border: '1px solid #e5e7eb', width: '100%' }} />
+        <input
+          type="text"
+          placeholder={(element.props['placeholder'] as string) || 'Enter text...'}
+          aria-label="Text input"
+          style={{
+            padding: '10px',
+            borderRadius: '6px',
+            border: '1px solid #e5e7eb',
+            width: '100%',
+          }}
+        />
       );
     case 'text':
-      return <p style={{ margin: 0, fontSize: '14px', color: '#1f2937' }}>{(element.props['content'] as string) || 'Text content'}</p>;
+      return (
+        <p style={{ margin: 0, fontSize: '14px', color: '#1f2937' }}>
+          {(element.props['content'] as string) || 'Text content'}
+        </p>
+      );
     case 'card':
       return (
-        <div style={{ padding: '20px', borderRadius: '8px', border: '1px solid #e5e7eb', background: '#f9fafb' }}>
-          <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '600' }}>{(element.props['title'] as string) || 'Card Title'}</h3>
-          <p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>{(element.props['description'] as string) || 'Card description'}</p>
+        <div
+          style={{
+            padding: '20px',
+            borderRadius: '8px',
+            border: '1px solid #e5e7eb',
+            background: '#f9fafb',
+          }}
+        >
+          <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: '600' }}>
+            {(element.props['title'] as string) || 'Card Title'}
+          </h3>
+          <p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>
+            {(element.props['description'] as string) || 'Card description'}
+          </p>
         </div>
       );
     case 'container':
       return (
-        <div style={{ padding: '16px', borderRadius: '8px', border: '1px dashed #d1d5db', background: '#f3f4f6' }}>
+        <div
+          style={{
+            padding: '16px',
+            borderRadius: '8px',
+            border: '1px dashed #d1d5db',
+            background: '#f3f4f6',
+          }}
+        >
           Container (can nest elements here)
         </div>
       );

@@ -8,7 +8,13 @@ import type { editor as MonacoEditor } from 'monaco-editor';
 import type * as MonacoNS from 'monaco-editor';
 import type { GeneratedFix, FixSuggestion } from '../services/AutoFixService';
 import type { DetectedError } from '../services/ErrorDetector';
-import type { AIMessage, ContextualFile, EditorFile, EditorSettings, WorkspaceContext } from '../types';
+import type {
+  AIMessage,
+  ContextualFile,
+  EditorFile,
+  EditorSettings,
+  WorkspaceContext,
+} from '../types';
 import type { AIModel } from '../services/ai/AIProviderInterface';
 import type { SearchOptions } from '../components/GlobalSearch/types';
 
@@ -95,7 +101,12 @@ export interface AppHandlers {
 
   // Search
   handleOpenFileFromSearch: (file: string, line?: number, column?: number) => void;
-  handleReplaceInFile: (file: string, search: string, replace: string, options: SearchOptions) => Promise<void>;
+  handleReplaceInFile: (
+    file: string,
+    search: string,
+    replace: string,
+    options: SearchOptions
+  ) => Promise<void>;
 
   // Visual panels
   handleToggleScreenshotPanel: () => void;
@@ -124,6 +135,7 @@ export interface AppHandlers {
   setSettingsOpen: (open: boolean) => void;
   setAiChatOpen: (open: boolean) => void;
   setSidebarOpen: (open: boolean) => void;
+  setGitPanelOpen: (open: boolean) => void;
   setGlobalSearchOpen: (open: boolean) => void;
   setKeyboardShortcutsOpen: (open: boolean) => void;
   setBackgroundPanelOpen: (open: boolean) => void;

@@ -2,6 +2,8 @@
 param(
     [string]$MsiPath,
     [string]$ProjectRoot,
+    [string]$InstallDirectory = 'V:\Apps\Vibe_Code_Studio_MsiSmoke',
+    [string]$TempRoot = 'V:\temp\vibe-code-studio',
     [switch]$Force
 )
 
@@ -107,6 +109,10 @@ function Resolve-MsiArtifactPath {
 }
 
 $resolvedMsiPath = Resolve-MsiArtifactPath -InputPath $MsiPath -LocalProjectRoot $ProjectRoot
+$resolvedInstallDirectory = [System.IO.Path]::GetFullPath($InstallDirectory)
+if (-not $resolvedInstallDirectory.StartsWith('V:\Apps\', [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw "MSI smoke InstallDirectory must stay under V:\Apps: $resolvedInstallDirectory"
+}
 $productCode = Get-MsiProperty -Path $resolvedMsiPath -PropertyName 'ProductCode'
 $productName = Get-MsiProperty -Path $resolvedMsiPath -PropertyName 'ProductName'
 
@@ -132,90 +138,107 @@ if ($existingInstall -and -not $Force) {
     exit 0
 }
 
-$runDir = Join-Path $env:TEMP ("vcs-msi-smoke-{0}" -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
+$resolvedTempRoot = [System.IO.Path]::GetFullPath($TempRoot)
+if (-not $resolvedTempRoot.StartsWith('V:\', [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw "MSI smoke TempRoot must stay on V:\: $resolvedTempRoot"
+}
+$runDir = Join-Path $resolvedTempRoot ("vcs-msi-smoke-{0}" -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
 New-Item -ItemType Directory -Path $runDir -Force | Out-Null
 $installLog = Join-Path $runDir 'install.log'
 $uninstallLog = Join-Path $runDir 'uninstall.log'
+$cleanupRequired = $false
 
-Write-Host "[1/4] Installing MSI silently..." -ForegroundColor Yellow
-$installArgs = @(
-    '/i',
-    "`"$resolvedMsiPath`"",
-    'ALLUSERS=2',
-    'MSIINSTALLPERUSER=1',
-    'REBOOT=ReallySuppress',
-    '/qn',
-    '/norestart',
-    '/L*v',
-    "`"$installLog`""
-)
-$installExitCode = Invoke-MsiExec -Arguments $installArgs -Phase 'MSI install'
-if ($installExitCode -notin @(0, 3010)) {
-    $requiresElevation = $false
-    if ($installExitCode -eq 1603 -and (Test-Path -LiteralPath $installLog)) {
-        $requiresElevation = Select-String -Path $installLog -Pattern 'Error 1925' -Quiet -ErrorAction SilentlyContinue
+try {
+    Write-Host "[1/4] Installing MSI silently..." -ForegroundColor Yellow
+    $installArgs = @(
+        '/i',
+        "`"$resolvedMsiPath`"",
+        'ALLUSERS=2',
+        'MSIINSTALLPERUSER=1',
+        "REQUESTEDINSTALLDIR=$resolvedInstallDirectory",
+        'REBOOT=ReallySuppress',
+        '/qn',
+        '/norestart',
+        '/L*v',
+        "`"$installLog`""
+    )
+    $installExitCode = Invoke-MsiExec -Arguments $installArgs -Phase 'MSI install'
+    $cleanupRequired = $null -ne (Get-InstalledMsiEntry -ProductCode $productCode)
+    if ($installExitCode -notin @(0, 3010)) {
+        $requiresElevation = $false
+        if ($installExitCode -eq 1603 -and (Test-Path -LiteralPath $installLog)) {
+            $requiresElevation = Select-String -Path $installLog -Pattern 'Error 1925' -Quiet -ErrorAction SilentlyContinue
+        }
+
+        if ($requiresElevation) {
+            Write-Host '[SKIP] MSI requires elevated privileges on this machine; skipping smoke to keep local runs safe.' -ForegroundColor Yellow
+            Write-Host "       Install log: $installLog" -ForegroundColor Yellow
+            Write-Host '       Run this script from an elevated PowerShell session to execute full install/uninstall coverage.' -ForegroundColor Yellow
+            exit 0
+        }
+
+        throw "MSI install failed with msiexec exit code $installExitCode."
+    }
+    Write-Host "      Install exit code: $installExitCode" -ForegroundColor Green
+
+    Write-Host "[2/4] Verifying MSI install registration..." -ForegroundColor Yellow
+    $installedEntry = Get-InstalledMsiEntry -ProductCode $productCode
+    if (-not $installedEntry) {
+        throw "MSI install completed but ProductCode was not registered: $productCode"
+    }
+    Write-Host "      Registered uninstall key: $($installedEntry.keyPath)" -ForegroundColor Green
+
+    $exeCandidates = @(
+        (Join-Path $resolvedInstallDirectory 'vibe-code-studio.exe'),
+        (Join-Path $resolvedInstallDirectory 'Vibe Code Studio.exe')
+    )
+    $exePath = $exeCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+    if ($exePath) {
+        $resolvedExePath = (Resolve-Path -LiteralPath $exePath).Path
+        if (-not $resolvedExePath.StartsWith($resolvedInstallDirectory, [System.StringComparison]::OrdinalIgnoreCase)) {
+            throw "MSI ignored the approved V-drive install directory: $resolvedExePath"
+        }
+        Write-Host "      Installed executable detected: $exePath" -ForegroundColor Green
+    } else {
+        throw "Installed executable was not found under approved directory: $resolvedInstallDirectory"
     }
 
-    if ($requiresElevation) {
-        Write-Host '[SKIP] MSI requires elevated privileges on this machine; skipping smoke to keep local runs safe.' -ForegroundColor Yellow
-        Write-Host "       Install log: $installLog" -ForegroundColor Yellow
-        Write-Host '       Run this script from an elevated PowerShell session to execute full install/uninstall coverage.' -ForegroundColor Yellow
-        exit 0
+    Write-Host "[3/4] Uninstalling MSI silently..." -ForegroundColor Yellow
+    $uninstallArgs = @(
+        '/x',
+        $productCode,
+        'REBOOT=ReallySuppress',
+        '/qn',
+        '/norestart',
+        '/L*v',
+        "`"$uninstallLog`""
+    )
+    $uninstallExitCode = Invoke-MsiExec -Arguments $uninstallArgs -Phase 'MSI uninstall'
+    if ($uninstallExitCode -notin @(0, 3010)) {
+        throw "MSI uninstall failed with msiexec exit code $uninstallExitCode."
     }
+    Write-Host "      Uninstall exit code: $uninstallExitCode" -ForegroundColor Green
 
-    throw "MSI install failed with msiexec exit code $installExitCode."
-}
-Write-Host "      Install exit code: $installExitCode" -ForegroundColor Green
+    Write-Host "[4/4] Verifying uninstall cleanup..." -ForegroundColor Yellow
+    $remainingEntry = Get-InstalledMsiEntry -ProductCode $productCode
+    if ($remainingEntry) {
+        throw "MSI uninstall did not remove ProductCode from registry: $productCode"
+    }
+    $cleanupRequired = $false
+    Write-Host '      MSI uninstall cleanup verified.' -ForegroundColor Green
 
-Write-Host "[2/4] Verifying MSI install registration..." -ForegroundColor Yellow
-$installedEntry = Get-InstalledMsiEntry -ProductCode $productCode
-if (-not $installedEntry) {
-    throw "MSI install completed but ProductCode was not registered: $productCode"
+    Write-Host ''
+    Write-Host 'MSI smoke test passed.' -ForegroundColor Green
+    Write-Host "Install log:   $installLog" -ForegroundColor DarkGray
+    Write-Host "Uninstall log: $uninstallLog" -ForegroundColor DarkGray
+} finally {
+    if ($cleanupRequired -or (Get-InstalledMsiEntry -ProductCode $productCode)) {
+        Write-Warning 'MSI smoke did not reach normal cleanup; attempting a safety uninstall.'
+        $cleanupExitCode = Invoke-MsiExec -Arguments @(
+            '/x', $productCode, 'REBOOT=ReallySuppress', '/qn', '/norestart'
+        ) -Phase 'MSI safety uninstall'
+        if ($cleanupExitCode -notin @(0, 1605, 3010)) {
+            Write-Warning "MSI safety uninstall failed with exit code $cleanupExitCode."
+        }
+    }
 }
-Write-Host "      Registered uninstall key: $($installedEntry.keyPath)" -ForegroundColor Green
-
-$exeCandidates = @()
-if (-not [string]::IsNullOrWhiteSpace($installedEntry.installLocation)) {
-    $exeCandidates += (Join-Path $installedEntry.installLocation 'vibe-code-studio.exe')
-    $exeCandidates += (Join-Path $installedEntry.installLocation 'Vibe Code Studio.exe')
-}
-$exeCandidates += @(
-    (Join-Path $env:LOCALAPPDATA 'Vibe Code Studio\vibe-code-studio.exe'),
-    (Join-Path $env:LOCALAPPDATA 'Programs\vibe-code-studio\Vibe Code Studio.exe'),
-    (Join-Path $env:LOCALAPPDATA 'Programs\Vibe Code Studio\Vibe Code Studio.exe')
-)
-$exePath = $exeCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
-if ($exePath) {
-    Write-Host "      Installed executable detected: $exePath" -ForegroundColor Green
-} else {
-    Write-Host '      Installed executable was not found in common locations; continuing with uninstall validation.' -ForegroundColor Yellow
-}
-
-Write-Host "[3/4] Uninstalling MSI silently..." -ForegroundColor Yellow
-$uninstallArgs = @(
-    '/x',
-    $productCode,
-    'REBOOT=ReallySuppress',
-    '/qn',
-    '/norestart',
-    '/L*v',
-    "`"$uninstallLog`""
-)
-$uninstallExitCode = Invoke-MsiExec -Arguments $uninstallArgs -Phase 'MSI uninstall'
-if ($uninstallExitCode -notin @(0, 3010)) {
-    throw "MSI uninstall failed with msiexec exit code $uninstallExitCode."
-}
-Write-Host "      Uninstall exit code: $uninstallExitCode" -ForegroundColor Green
-
-Write-Host "[4/4] Verifying uninstall cleanup..." -ForegroundColor Yellow
-$remainingEntry = Get-InstalledMsiEntry -ProductCode $productCode
-if ($remainingEntry) {
-    throw "MSI uninstall did not remove ProductCode from registry: $productCode"
-}
-Write-Host '      MSI uninstall cleanup verified.' -ForegroundColor Green
-
-Write-Host ''
-Write-Host 'MSI smoke test passed.' -ForegroundColor Green
-Write-Host "Install log:   $installLog" -ForegroundColor DarkGray
-Write-Host "Uninstall log: $uninstallLog" -ForegroundColor DarkGray
-exit 0

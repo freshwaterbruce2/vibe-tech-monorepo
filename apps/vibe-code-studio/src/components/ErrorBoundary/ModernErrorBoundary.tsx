@@ -1,11 +1,7 @@
-import type { ErrorInfo} from 'react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import type {
-  FallbackProps} from 'react-error-boundary';
-import {
-  ErrorBoundary as ReactErrorBoundary,
-  useErrorBoundary,
-} from 'react-error-boundary';
+import type { ComponentType, ErrorInfo, ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { FallbackProps } from 'react-error-boundary';
+import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary';
 import { AlertTriangle, Bug, Copy, Home, RefreshCw } from 'lucide-react';
 import styled from 'styled-components';
 
@@ -92,7 +88,7 @@ const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
   transition: all ${vibeTheme.animation.duration.fast} ease;
   border: 2px solid transparent;
 
-  ${(props) =>
+  ${props =>
     props.$variant === 'primary'
       ? `
     background: ${vibeTheme.gradients.primary};
@@ -200,7 +196,11 @@ function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
   const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Type guard: React Error Boundary error is unknown in React 19+
-  const errorObj = error instanceof Error ? error : new Error(String(error));
+  // Memoized so the useCallback hooks below keep a stable dependency.
+  const errorObj = useMemo(
+    () => (error instanceof Error ? error : new Error(String(error))),
+    [error]
+  );
 
   const copyErrorToClipboard = useCallback(() => {
     const errorText = `
@@ -234,7 +234,9 @@ URL: ${window.location.href}
 
   // Auto-report in production
   useEffect(() => {
-    if (!import.meta.env.PROD || reportSent) {return;}
+    if (!import.meta.env.PROD || reportSent) {
+      return;
+    }
     const timer = setTimeout(() => {
       sendReport();
     }, 0);
@@ -260,8 +262,8 @@ URL: ${window.location.href}
         <ErrorTitle>Oops! Something went wrong</ErrorTitle>
 
         <ErrorMessage>
-          Vibe Code Studio encountered an unexpected error. Don&apos;t worry, your work is saved. You
-          can try refreshing the page or return to the home screen.
+          Vibe Code Studio encountered an unexpected error. Don&apos;t worry, your work is saved.
+          You can try refreshing the page or return to the home screen.
         </ErrorMessage>
 
         <ActionButtons>
@@ -309,9 +311,9 @@ URL: ${window.location.href}
 }
 
 // Modern error boundary wrapper with 2025 patterns
-interface ModernErrorBoundaryProps {
-  children: React.ReactNode;
-  fallback?: React.ComponentType<FallbackProps> | undefined;
+export interface ModernErrorBoundaryProps {
+  children: ReactNode;
+  fallback?: ComponentType<FallbackProps> | undefined;
   onError?: ((error: Error, errorInfo: ErrorInfo) => void) | undefined;
   onReset?: (() => void) | undefined;
   resetKeys?: Array<string | number> | undefined;
@@ -340,26 +342,6 @@ export function ModernErrorBoundary({
       {children}
     </ReactErrorBoundary>
   );
-}
-
-// Hook for imperatively handling errors
-export const useErrorHandler = useErrorBoundary;
-
-// HOC pattern for wrapping components
-export function withErrorBoundary<P extends object>(
-  Component: React.ComponentType<P>,
-  errorBoundaryProps?: Omit<ModernErrorBoundaryProps, 'children'>
-) {
-  const WrappedComponent = (props: P) => (
-    <ModernErrorBoundary {...errorBoundaryProps}>
-      <Component {...props} />
-    </ModernErrorBoundary>
-  );
-
-  const ComponentForError = Component as React.FC<P> & { displayName?: string; name?: string };
-  WrappedComponent.displayName = `withErrorBoundary(${ComponentForError.displayName ?? ComponentForError.name})`;
-
-  return WrappedComponent;
 }
 
 export default ModernErrorBoundary;

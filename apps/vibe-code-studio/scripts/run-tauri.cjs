@@ -19,12 +19,10 @@ function resolveTauriCli() {
   process.exit(1);
 }
 
-function loadWindowsBuildEnv(baseEnv) {
+function loadWindowsBuildEnv(baseEnv, workspaceTemp) {
   if (process.platform !== 'win32') {
     return baseEnv;
   }
-
-  const os = require('node:os');
 
   // Use vswhere.exe (official Microsoft VS locator) to find the installation
   const vsInstallerDir = path.join(
@@ -60,7 +58,7 @@ function loadWindowsBuildEnv(baseEnv) {
 
   // Use a temp batch file to avoid cmd.exe quoting issues with spaces in paths.
   // Also prepend the VS Installer dir to PATH so vcvarsall.bat can find vswhere.exe.
-  const tmpBat = path.join(os.tmpdir(), `run-tauri-vcvars-${process.pid}.bat`);
+  const tmpBat = path.join(workspaceTemp, `run-tauri-vcvars-${process.pid}.bat`);
   fs.writeFileSync(tmpBat, [
     '@echo off',
     `set "PATH=${vsInstallerDir};%PATH%"`,
@@ -105,7 +103,14 @@ function loadWindowsBuildEnv(baseEnv) {
 }
 
 const tauriCli = resolveTauriCli();
-const env = loadWindowsBuildEnv(process.env);
+const workspaceTemp = path.resolve(projectRoot, '..', '..', '.nx', 'tmp', 'vibe-code-studio');
+fs.mkdirSync(workspaceTemp, { recursive: true });
+const baseEnv = {
+  ...process.env,
+  TEMP: workspaceTemp,
+  TMP: workspaceTemp,
+};
+const env = loadWindowsBuildEnv(baseEnv, workspaceTemp);
 const args = [tauriCli, ...process.argv.slice(2)];
 
 // Spawn companion backend server in the background

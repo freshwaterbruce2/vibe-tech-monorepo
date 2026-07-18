@@ -13,11 +13,13 @@ export const defaultSettings: EditorSettings = {
   autoSave: true,
   aiAutoComplete: true,
   aiSuggestions: true,
-  // OpenRouter-served id: the default must work with a single OpenRouter key.
-  // 'moonshot/kimi-2.5-pro' routes to Moonshot's direct API and 503s unless a
-  // separate Moonshot key is configured server-side.
-  aiModel: 'moonshotai/kimi-k2.7-code',
+  // Best-value OpenRouter coding model (SOTA SWE-bench, ~10x cheaper than
+  // Opus-tier). OpenRouter-served id: the default must work with a single
+  // OpenRouter key — 'moonshot/kimi-2.5-pro' routes to Moonshot's direct API
+  // and 503s unless a separate Moonshot key is configured server-side.
+  aiModel: 'deepseek/deepseek-v4-pro',
   showReasoningProcess: false,
+  reasoningEffort: 'medium',
   lineNumbers: true,
   folding: true,
   bracketMatching: true,
@@ -68,9 +70,6 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   'anthropic/claude-opus-4.6': { input: '$5.00/M', output: '$25.00/M', context: '200K' },
   'anthropic/claude-opus-4.8': { input: '$5.00/M', output: '$25.00/M', context: '1M' },
   'anthropic/claude-fable-5': { input: '$10.00/M', output: '$50.00/M', context: '1M' },
-
-  // Local
-  'local/vibe-completion': { input: 'FREE', output: 'FREE', context: 'Unlimited' },
 };
 
 /** Models that support reasoning/thinking display */

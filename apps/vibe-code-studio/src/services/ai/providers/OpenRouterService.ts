@@ -288,6 +288,25 @@ export class OpenRouterService implements IAIService {
     return OpenRouterService.resolveModelId(model);
   }
 
+  private buildCompletionBody(request: AICompletionRequest, model: string) {
+    return {
+      model,
+      messages: request.messages,
+      temperature: request.temperature,
+      max_tokens: request.maxTokens,
+      stream: false,
+      response_format: request.responseFormat
+        ? { type: request.responseFormat.type, json_schema: request.responseFormat.jsonSchema }
+        : undefined,
+      provider: request.providerPreferences
+        ? { require_parameters: request.providerPreferences.requireParameters }
+        : undefined,
+      reasoning: request.reasoningEffort ? { effort: request.reasoningEffort } : undefined,
+      tools: request.tools,
+      tool_choice: request.toolChoice,
+    };
+  }
+
   async complete(request: AICompletionRequest): Promise<AICompletionResponse> {
     // Use proxy endpoint or direct OpenRouter API
     const url = this.useProxy
@@ -297,13 +316,7 @@ export class OpenRouterService implements IAIService {
     const model = this.resolveModel(modelInput);
 
     // OpenRouter specific: mapping 'maxTokens' to 'max_tokens' is standard
-    const body = {
-      model, // Resolved model
-      messages: request.messages,
-      temperature: request.temperature,
-      max_tokens: request.maxTokens,
-      stream: false,
-    };
+    const body = this.buildCompletionBody(request, model);
 
     const response = await fetch(url, {
       method: 'POST',
@@ -334,6 +347,10 @@ export class OpenRouterService implements IAIService {
 
     return {
       content: parsed.content,
+      requestId: data.id,
+      model: data.model ?? model,
+      finishReason: choice.finish_reason,
+      toolCalls: choice.message.tool_calls,
       reasoning_content: parsed.reasoning ?? undefined,
       usage: {
         promptTokens: data.usage?.prompt_tokens ?? 0,
@@ -360,6 +377,7 @@ export class OpenRouterService implements IAIService {
       temperature: options?.temperature,
       max_tokens: options?.maxTokens,
       stream: true,
+      reasoning: options?.reasoningEffort ? { effort: options.reasoningEffort } : undefined,
     };
 
     const response = await fetch(url, {
@@ -412,7 +430,10 @@ export class OpenRouterService implements IAIService {
   private parseChunk(line: string): string | null {
     try {
       const data = JSON.parse(line.slice(6));
-      return data.choices?.[0]?.delta?.content ?? null;
+      const delta = data.choices?.[0]?.delta;
+      const reasoning = delta?.reasoning_content ?? delta?.reasoning;
+      if (reasoning) return `[REASONING] ${reasoning}[/REASONING]`;
+      return delta?.content ?? null;
     } catch {
       return null;
     }

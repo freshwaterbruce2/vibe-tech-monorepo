@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { logger } from '../services/Logger';
 import { WorkspaceService } from '../services/WorkspaceService';
+import type { WorkspaceFileSystem } from '../services/WorkspaceService';
 import type { ContextualFile, EditorFile, WorkspaceContext } from '../types';
 
 export interface UseWorkspaceReturn {
@@ -20,8 +21,8 @@ export interface UseWorkspaceReturn {
   clearWorkspace: () => void;
 }
 
-export const useWorkspace = (): UseWorkspaceReturn => {
-  const [workspaceService] = useState(() => new WorkspaceService());
+export const useWorkspace = (fileSystem?: WorkspaceFileSystem): UseWorkspaceReturn => {
+  const [workspaceService] = useState(() => new WorkspaceService(fileSystem));
   const [workspaceContext, setWorkspaceContext] = useState<WorkspaceContext | null>(null);
   const [currentRootPath, setCurrentRootPath] = useState<string | null>(null);
   const [isIndexing, setIsIndexing] = useState(false);
@@ -42,29 +43,16 @@ export const useWorkspace = (): UseWorkspaceReturn => {
         indexingTimeoutRef.current = undefined;
       }
 
-      let progressInterval: ReturnType<typeof setInterval> | undefined;
-
       try {
         setIsIndexing(true);
         setError(null);
         setIndexingProgress(0);
 
-        // Simulate progress updates
-        progressInterval = setInterval(() => {
-          setIndexingProgress((prev) => {
-            if (prev >= 90) {
-              clearInterval(progressInterval);
-              return 90;
-            }
-            return prev + Math.random() * 15;
-          });
-        }, 200);
-
         logger.debug(`Starting workspace indexing for: ${rootPath}`);
-        const context = await workspaceService.indexWorkspace(rootPath);
+        // Real per-stage progress reported by the service as each indexing
+        // phase completes (structure → tree → files → deps → symbols).
+        const context = await workspaceService.indexWorkspace(rootPath, setIndexingProgress);
 
-        clearInterval(progressInterval);
-        progressInterval = undefined;
         setIndexingProgress(100);
         setWorkspaceContext(context);
         setCurrentRootPath(context?.rootPath || null);
@@ -80,9 +68,6 @@ export const useWorkspace = (): UseWorkspaceReturn => {
         setError(err instanceof Error ? err.message : 'Indexing failed');
         return null;
       } finally {
-        if (progressInterval) {
-          clearInterval(progressInterval);
-        }
         setIsIndexing(false);
       }
     },
@@ -109,7 +94,7 @@ export const useWorkspace = (): UseWorkspaceReturn => {
 
       const relatedPaths = workspaceService.getRelatedFiles(filePath, maxResults);
 
-      return relatedPaths.map((path) => {
+      return relatedPaths.map(path => {
         const analysis = workspaceService.getFileContent(path);
         if (!analysis) {
           return {
@@ -148,12 +133,15 @@ export const useWorkspace = (): UseWorkspaceReturn => {
           reason = reason === 'Related file' ? 'Same directory' : reason;
         }
 
-        // Mock content - in real implementation would read actual file
-        const mockContent = `// ${analysis.name}\n// ${analysis.language} file\n// ${analysis.summary}\n\n// Mock content for context`;
+        // Real content preview captured during indexing (falls back to a short
+        // descriptor when the file had no readable text content).
+        const preview = workspaceService.getFileContentPreview(path);
+        const content =
+          preview || `// ${analysis.name}\n// ${analysis.language} file\n// ${analysis.summary}`;
 
         return {
           path,
-          content: mockContent,
+          content,
           relevance,
           reason,
         };
@@ -220,7 +208,7 @@ export const useWorkspace = (): UseWorkspaceReturn => {
       const ctx = workspaceContextRef.current;
       if (ctx && !isIndexing) {
         logger.debug('[useWorkspace] Debounced refresh triggered');
-        indexWorkspace(ctx.rootPath).catch((err) => {
+        indexWorkspace(ctx.rootPath).catch(err => {
           logger.error('[useWorkspace] Debounced refresh failed:', err);
         });
       }
@@ -259,7 +247,10 @@ export const useWorkspace = (): UseWorkspaceReturn => {
       logger.debug('[useWorkspace] Cleaning up auto-refresh interval');
       clearInterval(interval);
     };
-  }, [currentRootPath]); // FIXED: Use separate state to prevent interval recreation when context object changes
+    // Recreating the 5-minute interval when the debounced refresh or indexing
+    // flag changes is harmless (it just restarts the countdown) and keeps the
+    // interval callback reading current values instead of a stale closure.
+  }, [currentRootPath, isIndexing, debouncedRefreshIndex]);
 
   return {
     workspaceService,

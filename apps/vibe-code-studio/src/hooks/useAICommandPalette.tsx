@@ -18,7 +18,6 @@ import {
   Zap,
 } from 'lucide-react';
 
-import { logger } from '../services/Logger';
 import { useAgentManagerCommands } from './useAgentManagerCommands';
 import { useAgentsMdCommands } from './useAgentsMdCommands';
 import { useArtifactCommands } from './useArtifactCommands';
@@ -58,6 +57,7 @@ interface UseAICommandPaletteProps {
   onAIAddComments?: () => void;
   onAIGenerateComponent?: () => void;
   onFormatDocument?: () => void;
+  onFind?: () => void;
   onOpenBrainScan?: () => void;
   currentFile?: string | null;
 }
@@ -224,10 +224,7 @@ export const useAICommandPalette = (props: UseAICommandPaletteProps) => {
       description: 'Find in current file',
       icon: <Search size={18} />,
       shortcut: 'Ctrl+F',
-      action: () => {
-        // Will be handled by Monaco editor
-        logger.debug('Find triggered');
-      },
+      action: () => props.onFind?.(),
       category: 'Editor',
       keywords: ['find', 'search'],
     },

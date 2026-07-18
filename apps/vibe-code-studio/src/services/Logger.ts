@@ -1,7 +1,7 @@
 /**
  * Production-ready Logger Service
  * Console output + file persistence for ERROR+ in Tauri builds.
- * Logs written to $APPDATA/vibe-code-studio/logs/app.log (rotated at 5 MB).
+ * Logs written to D:\logs\vibe-code-studio\app.log (rotated at 5 MB).
  */
 
 export enum LogLevel {
@@ -113,8 +113,12 @@ class LoggerService {
     if (this.fsInitPromise) return this.fsInitPromise;
 
     this.fsInitPromise = this.initFs().then(
-      () => { this.fsReady = true; },
-      () => { /* not in Tauri — file logging disabled */ },
+      () => {
+        this.fsReady = true;
+      },
+      () => {
+        /* not in Tauri — file logging disabled */
+      }
     );
     return this.fsInitPromise;
   }
@@ -124,9 +128,7 @@ class LoggerService {
       throw new Error('Not Tauri');
     }
 
-    const pathMod = await import('@tauri-apps/api/path');
-    const appData = await pathMod.appDataDir();
-    this.logDir = `${appData}\\logs`;
+    this.logDir = 'D:\\logs\\vibe-code-studio';
     this.logPath = `${this.logDir}\\app.log`;
 
     // Ensure logs directory exists
@@ -143,10 +145,16 @@ class LoggerService {
 
     const timestamp = new Date().toISOString();
     const extra = args.length
-      ? ' ' + args.map(a => {
-          try { return typeof a === 'string' ? a : JSON.stringify(a); }
-          catch { return String(a); }
-        }).join(' ')
+      ? ' ' +
+        args
+          .map(a => {
+            try {
+              return typeof a === 'string' ? a : JSON.stringify(a);
+            } catch {
+              return String(a);
+            }
+          })
+          .join(' ')
       : '';
     const line = `${timestamp} [${level}] ${message}${extra}\n`;
 
@@ -172,7 +180,11 @@ class LoggerService {
         const stat = await fsMod.stat(this.logPath);
         if (stat.size > MAX_FILE_BYTES) {
           const rotated = `${this.logDir}\\app.log.1`;
-          try { await fsMod.remove(rotated); } catch { /* ok */ }
+          try {
+            await fsMod.remove(rotated);
+          } catch {
+            /* ok */
+          }
           await fsMod.rename(this.logPath, rotated);
         }
       } catch {

@@ -14,7 +14,12 @@ export interface UseGlobalSearchOptions {
   isOpen: boolean;
   onClose: () => void;
   onOpenFile: (file: string, line?: number, column?: number) => void;
-  onReplaceInFile: (file: string, searchText: string, replaceText: string, options: SearchOptions) => Promise<void>;
+  onReplaceInFile: (
+    file: string,
+    searchText: string,
+    replaceText: string,
+    options: SearchOptions
+  ) => Promise<void>;
   onSearchInFiles: (
     searchText: string,
     files: string[],
@@ -46,18 +51,31 @@ export function useGlobalSearch({
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Keyboard shortcuts
-  useHotkeys('ctrl+shift+f', (e) => {
+  useHotkeys('ctrl+shift+f', e => {
     e.preventDefault();
-    if (!isOpen) {return;}
+    if (!isOpen) {
+      return;
+    }
     searchInputRef.current?.focus();
   });
 
-  useHotkeys('escape', (e) => {
-    if (isOpen) {
+  // Escape closes the panel. enableOnFormTags is required: the search input is
+  // auto-focused on open and react-hotkeys-hook ignores key events originating
+  // from form elements by default, so without it Escape never fired and the
+  // overlay could not be dismissed. The isComposing guard leaves Escape to the
+  // IME while composing text in the nested inputs.
+  useHotkeys(
+    'escape',
+    e => {
+      if (!isOpen || e.isComposing) {
+        return;
+      }
       e.preventDefault();
       onClose();
-    }
-  });
+    },
+    { enabled: isOpen, enableOnFormTags: ['input', 'textarea', 'select'] },
+    [isOpen, onClose]
+  );
 
   // Focus search input when opened
   useEffect(() => {
@@ -114,12 +132,17 @@ export function useGlobalSearch({
     });
   }, []);
 
-  const handleResultClick = useCallback((result: SearchResult) => {
-    onOpenFile(result.file, result.line, result.column);
-  }, [onOpenFile]);
+  const handleResultClick = useCallback(
+    (result: SearchResult) => {
+      onOpenFile(result.file, result.line, result.column);
+    },
+    [onOpenFile]
+  );
 
   const handleReplaceAll = useCallback(async () => {
-    if (!replaceText.trim() || !searchText.trim()) {return;}
+    if (!replaceText.trim() || !searchText.trim()) {
+      return;
+    }
 
     setIsReplacing(true);
 
@@ -138,15 +161,21 @@ export function useGlobalSearch({
     }
   }, [replaceText, searchText, results, options, onReplaceInFile, performSearch]);
 
-  const toggleOption = useCallback((key: keyof Pick<SearchOptions, 'caseSensitive' | 'wholeWord' | 'regex'>) => {
-    setOptions(prev => ({ ...prev, [key]: !prev[key] }));
-  }, []);
+  const toggleOption = useCallback(
+    (key: keyof Pick<SearchOptions, 'caseSensitive' | 'wholeWord' | 'regex'>) => {
+      setOptions(prev => ({ ...prev, [key]: !prev[key] }));
+    },
+    []
+  );
 
   const setFilterOption = useCallback((key: 'includeFiles' | 'excludeFiles', value: string) => {
     setOptions(prev => ({ ...prev, [key]: value }));
   }, []);
 
-  const totalResults = Object.values(results).reduce((sum, fileResults) => sum + fileResults.length, 0);
+  const totalResults = Object.values(results).reduce(
+    (sum, fileResults) => sum + fileResults.length,
+    0
+  );
   const fileCount = Object.keys(results).length;
 
   return {

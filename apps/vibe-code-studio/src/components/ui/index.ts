@@ -25,8 +25,10 @@ export { Card } from './card';
 
 // Menus & Overlays
 export type { ContextMenuItem, ContextMenuProps } from './context-menu';
-export { ContextMenu, useContextMenu } from './context-menu';
+export { ContextMenu } from './context-menu';
+export { useContextMenu } from './useContextMenu';
 export type { DialogProps, DialogVariant } from './dialog';
-export { Dialog, useDialog } from './dialog';
+export { Dialog } from './dialog';
+export { useDialog } from './useDialog';
 export type { DropdownMenuItem, DropdownMenuProps } from './dropdown-menu';
 export { DropdownMenu } from './dropdown-menu';

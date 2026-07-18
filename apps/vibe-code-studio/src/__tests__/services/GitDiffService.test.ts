@@ -206,6 +206,22 @@ describe('GitDiffService', () => {
       expect(complete).toHaveBeenCalled();
     });
 
+    it('gives every AI call a reasoning-safe token budget (>= 1024)', async () => {
+      // Reasoning models spend maxTokens on reasoning before emitting content;
+      // tiny budgets returned finish_reason:"length" with empty content.
+      complete.mockResolvedValue({ content: 'ok' });
+
+      const files = service.parseDiff(`${simpleDiff}\n${conflictDiff}`);
+      await service.analyzeDiff(files); // insights + per-file explanations
+      const [conflictFile] = service.parseDiff(conflictDiff);
+      await service.suggestConflictResolution(conflictFile, conflictFile.hunks[0]);
+
+      expect(complete).toHaveBeenCalled();
+      for (const call of complete.mock.calls) {
+        expect(call[0].maxTokens).toBeGreaterThanOrEqual(1024);
+      }
+    });
+
     it('returns undefined insights when the AI call fails', async () => {
       complete.mockRejectedValue(new Error('offline'));
 

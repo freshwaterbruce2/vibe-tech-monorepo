@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools, persist, subscribeWithSelector } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
+import { DEFAULT_MODEL } from '../services/ai/AIProviderInterface';
 import type { EditorFile, EditorSettings, WorkspaceContext } from '../types';
 
 // Track notification auto-remove timers so they can be cleared on manual removal
@@ -101,8 +102,9 @@ const defaultSettings: EditorSettings = {
   autoSave: true,
   aiAutoComplete: true,
   aiSuggestions: true,
-  aiModel: 'moonshot/kimi-2.5-pro',
+  aiModel: DEFAULT_MODEL,
   showReasoningProcess: false,
+  reasoningEffort: 'medium',
 };
 
 // Create the store with middleware
@@ -129,9 +131,9 @@ export const useEditorStore = create<EditorState>()(
           // Actions
           actions: {
             // File management
-            openFile: (file) =>
-              set((state) => {
-                const exists = state.openFiles.some((f) => f.id === file.id);
+            openFile: file =>
+              set(state => {
+                const exists = state.openFiles.some(f => f.id === file.id);
                 if (!exists) {
                   state.openFiles.push(file);
                 }
@@ -140,13 +142,13 @@ export const useEditorStore = create<EditorState>()(
                 // Update recent files
                 state.recentFiles = [
                   file.path,
-                  ...state.recentFiles.filter((p) => p !== file.path),
+                  ...state.recentFiles.filter(p => p !== file.path),
                 ].slice(0, 10);
               }),
 
-            closeFile: (fileId) =>
-              set((state) => {
-                const index = state.openFiles.findIndex((f) => f.id === fileId);
+            closeFile: fileId =>
+              set(state => {
+                const index = state.openFiles.findIndex(f => f.id === fileId);
                 if (index > -1) {
                   state.openFiles.splice(index, 1);
 
@@ -159,8 +161,8 @@ export const useEditorStore = create<EditorState>()(
               }),
 
             updateFile: (fileId, updates) =>
-              set((state) => {
-                const file = state.openFiles.find((f) => f.id === fileId);
+              set(state => {
+                const file = state.openFiles.find(f => f.id === fileId);
                 if (file) {
                   Object.assign(file, updates);
                 }
@@ -169,21 +171,21 @@ export const useEditorStore = create<EditorState>()(
                 }
               }),
 
-            setCurrentFile: (file) =>
-              set((state) => {
+            setCurrentFile: file =>
+              set(state => {
                 state.currentFile = file;
               }),
 
-            saveFile: async (fileId) => {
+            saveFile: async fileId => {
               const state = get();
-              const file = state.openFiles.find((f) => f.id === fileId);
+              const file = state.openFiles.find(f => f.id === fileId);
               if (file) {
                 try {
                   // Simulate file save (replace with actual implementation)
-                  await new Promise((resolve) => setTimeout(resolve, 500));
+                  await new Promise(resolve => setTimeout(resolve, 500));
 
-                  set((state) => {
-                    const file = state.openFiles.find((f) => f.id === fileId);
+                  set(state => {
+                    const file = state.openFiles.find(f => f.id === fileId);
                     if (file) {
                       file.isModified = false;
                     }
@@ -206,50 +208,50 @@ export const useEditorStore = create<EditorState>()(
             },
 
             // Settings
-            updateSettings: (updates) =>
-              set((state) => {
+            updateSettings: updates =>
+              set(state => {
                 Object.assign(state.settings, updates);
               }),
 
             resetSettings: () =>
-              set((state) => {
+              set(state => {
                 state.settings = { ...defaultSettings };
               }),
 
             // UI toggles
             toggleSidebar: () =>
-              set((state) => {
+              set(state => {
                 state.sidebarOpen = !state.sidebarOpen;
               }),
 
             toggleAIChat: () =>
-              set((state) => {
+              set(state => {
                 state.aiChatOpen = !state.aiChatOpen;
               }),
 
             toggleSettings: () =>
-              set((state) => {
+              set(state => {
                 state.settingsOpen = !state.settingsOpen;
               }),
 
             toggleCommandPalette: () =>
-              set((state) => {
+              set(state => {
                 state.commandPaletteOpen = !state.commandPaletteOpen;
               }),
 
             // Workspace
-            setWorkspaceFolder: (folder) =>
-              set((state) => {
+            setWorkspaceFolder: folder =>
+              set(state => {
                 state.workspaceFolder = folder;
               }),
 
-            setWorkspaceContext: (context) =>
-              set((state) => {
+            setWorkspaceContext: context =>
+              set(state => {
                 state.workspaceContext = context;
               }),
 
             setIndexing: (isIndexing, progress) =>
-              set((state) => {
+              set(state => {
                 state.isIndexing = isIndexing;
                 if (progress !== undefined) {
                   state.indexingProgress = progress;
@@ -257,8 +259,8 @@ export const useEditorStore = create<EditorState>()(
               }),
 
             // Notifications
-            showNotification: (notification) =>
-              set((state) => {
+            showNotification: notification =>
+              set(state => {
                 const id = Date.now().toString();
                 state.notifications.push({
                   ...notification,
@@ -276,21 +278,21 @@ export const useEditorStore = create<EditorState>()(
                 }
               }),
 
-            removeNotification: (id) =>
-              set((state) => {
+            removeNotification: id =>
+              set(state => {
                 const timer = notificationTimers.get(id);
                 if (timer) {
                   clearTimeout(timer);
                   notificationTimers.delete(id);
                 }
-                const index = state.notifications.findIndex((n) => n.id === id);
+                const index = state.notifications.findIndex(n => n.id === id);
                 if (index > -1) {
                   state.notifications.splice(index, 1);
                 }
               }),
 
             clearNotifications: () =>
-              set((state) => {
+              set(state => {
                 for (const timer of notificationTimers.values()) {
                   clearTimeout(timer);
                 }
@@ -303,12 +305,12 @@ export const useEditorStore = create<EditorState>()(
           computed: {
             hasUnsavedChanges: () => {
               const state = get();
-              return state.openFiles.some((f) => f.isModified);
+              return state.openFiles.some(f => f.isModified);
             },
 
             modifiedFiles: () => {
               const state = get();
-              return state.openFiles.filter((f) => f.isModified);
+              return state.openFiles.filter(f => f.isModified);
             },
 
             activeFileName: () => {
@@ -325,7 +327,7 @@ export const useEditorStore = create<EditorState>()(
       ),
       {
         name: 'vibe-code-studio-editor-store',
-        partialize: (state) => ({
+        partialize: state => ({
           recentFiles: state.recentFiles,
           settings: state.settings,
           sidebarOpen: state.sidebarOpen,
@@ -340,12 +342,12 @@ export const useEditorStore = create<EditorState>()(
 );
 
 // Selector hooks for performance optimization
-export const useCurrentFile = () => useEditorStore((state) => state.currentFile);
-export const useOpenFiles = () => useEditorStore((state) => state.openFiles);
-export const useSettings = () => useEditorStore((state) => state.settings);
-export const useNotifications = () => useEditorStore((state) => state.notifications);
+export const useCurrentFile = () => useEditorStore(state => state.currentFile);
+export const useOpenFiles = () => useEditorStore(state => state.openFiles);
+export const useSettings = () => useEditorStore(state => state.settings);
+export const useNotifications = () => useEditorStore(state => state.notifications);
 export const useWorkspace = () =>
-  useEditorStore((state) => ({
+  useEditorStore(state => ({
     folder: state.workspaceFolder,
     context: state.workspaceContext,
     isIndexing: state.isIndexing,
@@ -353,9 +355,9 @@ export const useWorkspace = () =>
   }));
 
 // Action hooks
-export const useEditorActions = () => useEditorStore((state) => state.actions);
+export const useEditorActions = () => useEditorStore(state => state.actions);
 export const useFileActions = () =>
-  useEditorStore((state) => ({
+  useEditorStore(state => ({
     openFile: state.actions.openFile,
     closeFile: state.actions.closeFile,
     updateFile: state.actions.updateFile,
@@ -368,10 +370,7 @@ export const subscribeToFileChanges = (
   fileId: string,
   callback: (file: EditorFile | undefined) => void
 ) => {
-  return useEditorStore.subscribe(
-    (state) => state.openFiles.find((f) => f.id === fileId),
-    callback
-  );
+  return useEditorStore.subscribe(state => state.openFiles.find(f => f.id === fileId), callback);
 };
 
 // DevTools actions

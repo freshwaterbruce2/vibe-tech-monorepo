@@ -131,7 +131,7 @@ describe('SettingsSyncDialog', () => {
     const rows = Array.from(screen.getByTestId('settings-sync-diff').querySelectorAll('li')).map(
       li => li.textContent
     );
-    expect(rows).toEqual(['aiModel: "moonshot/kimi-2.5-pro" → "deepseek/deepseek-r1"']);
+    expect(rows).toEqual(['aiModel: "deepseek/deepseek-v4-pro" → "deepseek/deepseek-r1"']);
 
     fireEvent.click(applyButton());
 

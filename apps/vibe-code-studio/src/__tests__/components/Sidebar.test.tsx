@@ -24,7 +24,7 @@ function createFileSystemMock(entries: Record<string, FileSystemItem[]>) {
     exists: vi.fn(async (path: string) => {
       return Object.values(entries)
         .flat()
-        .some((entry) => entry.path === path);
+        .some(entry => entry.path === path);
     }),
     createFile: vi.fn(),
     createDirectory: vi.fn(),
@@ -75,7 +75,15 @@ function renderSidebar({
     />
   );
 
-  return { ...utils, fileSystemService, directoryEntries, onCreateFile, onCreateFolder, onRenamePath, onDeleteFile };
+  return {
+    ...utils,
+    fileSystemService,
+    directoryEntries,
+    onCreateFile,
+    onCreateFolder,
+    onRenamePath,
+    onDeleteFile,
+  };
 }
 
 describe('Sidebar', () => {
@@ -136,18 +144,52 @@ describe('Sidebar', () => {
     });
   });
 
+  it('creates files/folders and copies path from the context menu', async () => {
+    const onCreateFile = vi.fn().mockResolvedValue(undefined);
+    const onCreateFolder = vi.fn().mockResolvedValue(undefined);
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+
+    renderSidebar({ onCreateFile, onCreateFolder });
+
+    const folder = await screen.findByText('src');
+    fireEvent.contextMenu(folder);
+    fireEvent.click(await screen.findByText('Copy Path'));
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith('/workspace/src');
+    });
+
+    fireEvent.contextMenu(folder);
+    fireEvent.click(await screen.findByText('New File Here'));
+    fireEvent.change(screen.getByPlaceholderText('Enter a file name'), {
+      target: { value: 'new.ts' },
+    });
+    fireEvent.click(screen.getByText('Confirm'));
+    await waitFor(() => {
+      expect(onCreateFile).toHaveBeenCalledWith('/workspace/src/new.ts');
+    });
+
+    fireEvent.contextMenu(folder);
+    fireEvent.click(await screen.findByText('New Folder Here'));
+    fireEvent.change(screen.getByPlaceholderText('Enter a folder name'), {
+      target: { value: 'nested' },
+    });
+    fireEvent.click(screen.getByText('Confirm'));
+    await waitFor(() => {
+      expect(onCreateFolder).toHaveBeenCalledWith('/workspace/src/nested');
+    });
+  });
+
   it('keeps expanded folder children visible after renaming a folder', async () => {
     const directoryEntries: Record<string, FileSystemItem[]> = {
       '/workspace': [...baseRootEntries],
       '/workspace/src': [{ name: 'index.ts', path: '/workspace/src/index.ts', type: 'file' }],
     };
     const onRenamePath = vi.fn().mockImplementation(async (oldPath: string, newPath: string) => {
-      directoryEntries['/workspace'] = directoryEntries['/workspace'].map((entry) =>
-        entry.path === oldPath
-          ? { ...entry, name: 'source', path: newPath }
-          : entry
+      directoryEntries['/workspace'] = directoryEntries['/workspace'].map(entry =>
+        entry.path === oldPath ? { ...entry, name: 'source', path: newPath } : entry
       );
-      directoryEntries[newPath] = (directoryEntries[oldPath] ?? []).map((entry) => ({
+      directoryEntries[newPath] = (directoryEntries[oldPath] ?? []).map(entry => ({
         ...entry,
         path: entry.path.replace(oldPath, newPath),
       }));
@@ -179,7 +221,7 @@ describe('Sidebar', () => {
     };
     const onDeleteFile = vi.fn().mockImplementation(async (targetPath: string) => {
       directoryEntries['/workspace'] = directoryEntries['/workspace'].filter(
-        (entry) => entry.path !== targetPath
+        entry => entry.path !== targetPath
       );
     });
 
@@ -199,6 +241,26 @@ describe('Sidebar', () => {
     await waitFor(() => {
       expect(screen.queryByText('notes.txt')).not.toBeInTheDocument();
     });
+  });
+
+  it('focuses the file search input when the footer search button is clicked', async () => {
+    renderSidebar();
+
+    const searchInput = await screen.findByPlaceholderText('Search files...');
+    expect(searchInput).not.toHaveFocus();
+
+    fireEvent.click(screen.getByLabelText('Search'));
+
+    expect(searchInput).toHaveFocus();
+  });
+
+  it('updates the search term as the user types', async () => {
+    renderSidebar();
+
+    const searchInput = await screen.findByPlaceholderText('Search files...');
+    fireEvent.change(searchInput, { target: { value: 'index' } });
+
+    expect(searchInput).toHaveValue('index');
   });
 
   it('reloads the tree when refresh is clicked', async () => {

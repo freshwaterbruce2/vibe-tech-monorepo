@@ -184,6 +184,14 @@
       },
       "cache": true
     },
+    "test-native": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cargo test --manifest-path src-tauri/Cargo.toml --locked --offline",
+        "cwd": "apps/vibe-code-studio"
+      },
+      "cache": true
+    },
     "test:coverage": {
       "executor": "nx:run-commands",
       "outputs": ["{projectRoot}/coverage"],
@@ -207,6 +215,15 @@
         "cwd": "apps/vibe-code-studio"
       }
     },
+    "e2e": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": {
+        "command": "playwright test",
+        "cwd": "apps/vibe-code-studio"
+      },
+      "outputs": []
+    },
     "quality": {
       "executor": "nx:run-commands",
       "options": {
@@ -217,5 +234,11 @@
       "cache": false
     }
   },
-  "tags": ["type:desktop", "scope:vibe-code-studio"]
+  "tags": [
+    "type:desktop",
+    "scope:vibe-code-studio",
+    "kind:app",
+    "runtime:desktop",
+    "domain:vibe-code-studio"
+  ]
 }

@@ -336,7 +336,9 @@ export class GitDiffService {
         ],
         model: 'moonshot/kimi-2.5-pro',
         temperature: 0.5,
-        maxTokens: 500,
+        // Reasoning-capable models spend the budget on reasoning first; small
+        // caps returned finish_reason:"length" with EMPTY content. Keep >= 1024.
+        maxTokens: 1024,
       });
 
       // Parse AI response
@@ -458,7 +460,8 @@ Focus on the semantic meaning, not line-by-line details.
       ],
       model: 'moonshot/kimi-2.5-pro',
       temperature: 0.5,
-      maxTokens: 100,
+      // >= 1024: reasoning models consume the budget before emitting content.
+      maxTokens: 1024,
     });
 
     return (response.content ?? '').trim();
@@ -492,7 +495,8 @@ Focus on the semantic meaning, not line-by-line details.
         ],
         model: 'moonshot/kimi-2.5-pro',
         temperature: 0.3, // Low temperature for consistent suggestions
-        maxTokens: 300,
+        // >= 1024: reasoning models consume the budget before emitting content.
+        maxTokens: 1024,
       });
 
       return this.parseConflictSuggestion(response.content ?? '');

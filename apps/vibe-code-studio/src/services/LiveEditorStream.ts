@@ -31,12 +31,10 @@ export interface StreamProgress {
 export interface LiveStreamSettings {
   enabled: boolean;
   streamSpeed: number; // Characters per second (1-100)
-  autoApprove: boolean; // Skip approval for low-risk changes
   showDiffOnly: boolean; // Don't stream, just show final diff
   minimizePanel: boolean; // Start with minimized control panel
 }
 
-type ApprovalCallback = (approved: boolean, filePath: string) => void;
 type ProgressCallback = (progress: StreamProgress) => void;
 
 /**
@@ -45,13 +43,11 @@ type ProgressCallback = (progress: StreamProgress) => void;
 export class LiveEditorStream {
   private editor: Monaco.editor.IStandaloneCodeEditor | null = null;
   private decorations: string[] = [];
-  private approvalCallback: ApprovalCallback | null = null;
   private progressCallback: ProgressCallback | null = null;
   private isStreaming: boolean = false;
   private settings: LiveStreamSettings = {
     enabled: true,
     streamSpeed: 50, // 50 chars/second = smooth but not too slow
-    autoApprove: false,
     showDiffOnly: false,
     minimizePanel: false,
   };
@@ -75,13 +71,6 @@ export class LiveEditorStream {
    */
   getSettings(): LiveStreamSettings {
     return { ...this.settings };
-  }
-
-  /**
-   * Set callback for approval events
-   */
-  onApprovalRequired(callback: ApprovalCallback) {
-    this.approvalCallback = callback;
   }
 
   /**
@@ -128,7 +117,9 @@ export class LiveEditorStream {
 
     // Determine starting position
     const model = this.editor.getModel();
-    if (!model) {return;}
+    if (!model) {
+      return;
+    }
 
     const position = startPosition ?? {
       lineNumber: model.getLineCount(),
@@ -140,7 +131,9 @@ export class LiveEditorStream {
 
     // Stream character by character
     for (const char of content) {
-      if (!this.isStreaming) {break;} // Allow interruption
+      if (!this.isStreaming) {
+        break;
+      } // Allow interruption
 
       // Insert character at current position
       const monaco = await import('monaco-editor');
@@ -210,7 +203,9 @@ export class LiveEditorStream {
     oldContent: string,
     newContent: string
   ): Promise<DiffChange[]> {
-    if (!this.editor) {return [];}
+    if (!this.editor) {
+      return [];
+    }
 
     const changes = this.calculateDiff(oldContent, newContent);
 
@@ -223,8 +218,8 @@ export class LiveEditorStream {
         change.type === 'addition'
           ? 'live-stream-addition'
           : change.type === 'deletion'
-          ? 'live-stream-deletion'
-          : 'live-stream-modification';
+            ? 'live-stream-deletion'
+            : 'live-stream-modification';
 
       const decoration: Monaco.editor.IModelDeltaDecoration = {
         range: new monaco.Range(
@@ -240,8 +235,8 @@ export class LiveEditorStream {
             change.type === 'addition'
               ? 'live-stream-addition-glyph'
               : change.type === 'deletion'
-              ? 'live-stream-deletion-glyph'
-              : '',
+                ? 'live-stream-deletion-glyph'
+                : '',
         },
       };
 
@@ -249,10 +244,7 @@ export class LiveEditorStream {
     }
 
     // Apply decorations
-    this.decorations = this.editor.deltaDecorations(
-      this.decorations,
-      decorationsArray
-    );
+    this.decorations = this.editor.deltaDecorations(this.decorations, decorationsArray);
 
     return changes;
   }
@@ -261,43 +253,10 @@ export class LiveEditorStream {
    * Clear all decorations from editor
    */
   clearDecorations(): void {
-    if (!this.editor) {return;}
-    this.decorations = this.editor.deltaDecorations(this.decorations, []);
-  }
-
-  /**
-   * Show approval UI and wait for user decision
-   *
-   * @param filePath - File being modified
-   * @param changes - Diff changes to display
-   * @returns Promise<boolean> - true if approved, false if rejected
-   */
-  async requestApproval(
-    _filePath: string,
-    _changes: DiffChange[]
-  ): Promise<boolean> {
-    // Auto-approve if enabled
-    if (this.settings.autoApprove) {
-      return true;
+    if (!this.editor) {
+      return;
     }
-
-    // Return promise that resolves when user approves/rejects
-    return new Promise<boolean>((resolve) => {
-      if (this.approvalCallback) {
-        // Temporarily store resolver
-        const originalCallback = this.approvalCallback;
-
-        // Wrap callback to resolve promise
-        this.approvalCallback = (approved: boolean, path: string) => {
-          originalCallback(approved, path);
-          resolve(approved);
-          this.approvalCallback = originalCallback; // Restore original
-        };
-      } else {
-        // No callback registered, default to approved
-        resolve(true);
-      }
-    });
+    this.decorations = this.editor.deltaDecorations(this.decorations, []);
   }
 
   /**
@@ -350,16 +309,8 @@ export class LiveEditorStream {
         newIndex++;
       } else {
         // Lines differ - find next match
-        const nextMatchOld = this.findNextMatch(
-          oldLines,
-          newLines[newIndex]!,
-          oldIndex
-        );
-        const nextMatchNew = this.findNextMatch(
-          newLines,
-          oldLines[oldIndex]!,
-          newIndex
-        );
+        const nextMatchOld = this.findNextMatch(oldLines, newLines[newIndex]!, oldIndex);
+        const nextMatchNew = this.findNextMatch(newLines, oldLines[oldIndex]!, newIndex);
 
         if (nextMatchOld !== -1 && nextMatchOld < nextMatchNew) {
           // Deletion detected
@@ -400,11 +351,7 @@ export class LiveEditorStream {
   /**
    * Find next matching line in array
    */
-  private findNextMatch(
-    lines: string[],
-    target: string,
-    startIndex: number
-  ): number {
+  private findNextMatch(lines: string[], target: string, startIndex: number): number {
     for (let i = startIndex; i < Math.min(lines.length, startIndex + 10); i++) {
       if (lines[i] === target) {
         return i;
@@ -417,7 +364,7 @@ export class LiveEditorStream {
    * Sleep utility for streaming delay
    */
   private async sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
 

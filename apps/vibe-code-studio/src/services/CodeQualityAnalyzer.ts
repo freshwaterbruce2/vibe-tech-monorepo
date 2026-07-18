@@ -13,6 +13,7 @@ import { logger } from '../services/Logger';
 import type { FileSystemItem } from '../types';
 
 import type { FileSystemService } from './FileSystemService';
+import { walkDirectoryTree } from './fileTreeWalker';
 
 export interface QualityIssue {
   type: 'code-smell' | 'complexity' | 'documentation' | 'style';
@@ -82,8 +83,8 @@ export class CodeQualityAnalyzer {
    * Analyze entire project
    */
   async analyzeProject(rootPath: string): Promise<QualityReport> {
-    // Get all files from the FileSystemService's in-memory map
-    const tree = await this.fileSystemService.getDirectoryStructure(rootPath);
+    // Walk the workspace recursively (skips node_modules, dist, .git, etc.)
+    const tree = await walkDirectoryTree(this.fileSystemService, rootPath);
     const files = this.flattenFileTree(tree);
 
     // Filter code files only
@@ -104,12 +105,10 @@ export class CodeQualityAnalyzer {
     // Calculate project metrics
     const totalFiles = fileReports.length;
     const totalLinesOfCode = fileReports.reduce((sum, r) => sum + r.linesOfCode, 0);
-    const averageQuality = totalFiles > 0
-      ? fileReports.reduce((sum, r) => sum + r.quality, 0) / totalFiles
-      : 0;
-    const averageComplexity = totalFiles > 0
-      ? fileReports.reduce((sum, r) => sum + r.complexity, 0) / totalFiles
-      : 0;
+    const averageQuality =
+      totalFiles > 0 ? fileReports.reduce((sum, r) => sum + r.quality, 0) / totalFiles : 0;
+    const averageComplexity =
+      totalFiles > 0 ? fileReports.reduce((sum, r) => sum + r.complexity, 0) / totalFiles : 0;
     const filesWithIssues = fileReports.filter(r => r.issues.length > 0).length;
 
     return {
@@ -234,9 +233,13 @@ export class CodeQualityAnalyzer {
     let score = 100;
 
     // Penalize based on complexity
-    if (complexity > 20) {score -= 30;}
-    else if (complexity > 10) {score -= 20;}
-    else if (complexity > 5) {score -= 10;}
+    if (complexity > 20) {
+      score -= 30;
+    } else if (complexity > 10) {
+      score -= 20;
+    } else if (complexity > 5) {
+      score -= 10;
+    }
 
     // Penalize based on issues
     const errorCount = issues.filter(i => i.severity === 'error').length;
@@ -248,8 +251,12 @@ export class CodeQualityAnalyzer {
     // Reward documentation
     if (linesOfCode > 0) {
       const docRatio = commentLines / (linesOfCode + commentLines);
-      if (docRatio > 0.2) {score += 10;} // Good documentation
-      else if (docRatio < 0.05 && linesOfCode > 10) {score -= 10;} // Poor documentation
+      if (docRatio > 0.2) {
+        score += 10;
+      } // Good documentation
+      else if (docRatio < 0.05 && linesOfCode > 10) {
+        score -= 10;
+      } // Poor documentation
     } else {
       // Empty files get neutral score
       score = 75;
@@ -269,7 +276,9 @@ export class CodeQualityAnalyzer {
       const trimmed = line.trim();
 
       // Skip empty lines
-      if (trimmed.length === 0) {continue;}
+      if (trimmed.length === 0) {
+        continue;
+      }
 
       // Handle multi-line comments
       if (trimmed.startsWith('/*')) {
@@ -279,10 +288,14 @@ export class CodeQualityAnalyzer {
         inMultiLineComment = false;
         continue;
       }
-      if (inMultiLineComment) {continue;}
+      if (inMultiLineComment) {
+        continue;
+      }
 
       // Skip single-line comments
-      if (trimmed.startsWith('//')) {continue;}
+      if (trimmed.startsWith('//')) {
+        continue;
+      }
 
       count++;
     }
@@ -301,7 +314,9 @@ export class CodeQualityAnalyzer {
       const trimmed = line.trim();
 
       // Skip empty lines
-      if (trimmed.length === 0) {continue;}
+      if (trimmed.length === 0) {
+        continue;
+      }
 
       if (trimmed.startsWith('/*')) {
         inMultiLineComment = true;
@@ -332,9 +347,15 @@ export class CodeQualityAnalyzer {
    * Get complexity rating
    */
   getComplexityRating(complexity: number): string {
-    if (complexity <= 5) {return 'simple';}
-    if (complexity <= 10) {return 'moderate';}
-    if (complexity <= 20) {return 'complex';}
+    if (complexity <= 5) {
+      return 'simple';
+    }
+    if (complexity <= 10) {
+      return 'moderate';
+    }
+    if (complexity <= 20) {
+      return 'complex';
+    }
     return 'very-complex';
   }
 
@@ -342,8 +363,12 @@ export class CodeQualityAnalyzer {
    * Get maintainability rating
    */
   getMaintainabilityRating(qualityScore: number): 'low' | 'medium' | 'high' {
-    if (qualityScore >= 70) {return 'high';}
-    if (qualityScore >= 50) {return 'medium';}
+    if (qualityScore >= 70) {
+      return 'high';
+    }
+    if (qualityScore >= 50) {
+      return 'medium';
+    }
     return 'low';
   }
 
@@ -353,18 +378,18 @@ export class CodeQualityAnalyzer {
   private detectLanguage(filePath: string): string {
     const ext = filePath.split('.').pop()?.toLowerCase();
     const langMap: Record<string, string> = {
-      'ts': 'typescript',
-      'tsx': 'typescript',
-      'js': 'javascript',
-      'jsx': 'javascript',
-      'py': 'python',
-      'java': 'java',
-      'cpp': 'cpp',
-      'c': 'c',
-      'cs': 'csharp',
-      'go': 'go',
-      'rs': 'rust',
-      'json': 'json',
+      ts: 'typescript',
+      tsx: 'typescript',
+      js: 'javascript',
+      jsx: 'javascript',
+      py: 'python',
+      java: 'java',
+      cpp: 'cpp',
+      c: 'c',
+      cs: 'csharp',
+      go: 'go',
+      rs: 'rust',
+      json: 'json',
     };
     return langMap[ext ?? ''] ?? 'unknown';
   }
@@ -373,14 +398,26 @@ export class CodeQualityAnalyzer {
    * Check if file is a code file
    */
   private isCodeFile(filePath: string): boolean {
-    const codeExtensions = ['.ts', '.tsx', '.js', '.jsx', '.py', '.java', '.cpp', '.c', '.cs', '.go', '.rs'];
+    const codeExtensions = [
+      '.ts',
+      '.tsx',
+      '.js',
+      '.jsx',
+      '.py',
+      '.java',
+      '.cpp',
+      '.c',
+      '.cs',
+      '.go',
+      '.rs',
+    ];
     return codeExtensions.some(ext => filePath.endsWith(ext));
   }
 
   /**
    * Flatten file tree to array of file paths
    */
-  private flattenFileTree(tree: FileSystemItem): string[] {
+  private flattenFileTree(tree: FileSystemItem[]): string[] {
     const files: string[] = [];
 
     const traverse = (node: FileSystemItem) => {
@@ -393,7 +430,9 @@ export class CodeQualityAnalyzer {
       }
     };
 
-    traverse(tree);
+    for (const node of tree) {
+      traverse(node);
+    }
     return files;
   }
 }

@@ -5,6 +5,7 @@ import {
   Eye,
   FileText,
   FolderOpen,
+  GitBranch,
   HelpCircle,
   Image,
   Info,
@@ -21,7 +22,6 @@ import {
 import styled from 'styled-components';
 
 import { ElectronService } from '../services/ElectronService';
-import { logger } from '../services/Logger';
 import { vibeTheme } from '../styles/theme';
 
 import type { DropdownMenuItem } from './ui/dropdown-menu';
@@ -100,7 +100,7 @@ const StatusDot = styled.div<{ $status: 'online' | 'offline' | 'loading' }>`
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: ${(props) => {
+  background: ${props => {
     switch (props.$status) {
       case 'online':
         return vibeTheme.colors.success;
@@ -113,19 +113,19 @@ const StatusDot = styled.div<{ $status: 'online' | 'offline' | 'loading' }>`
     }
   }};
   box-shadow: 0 0 8px
-    ${(props) => {
-    switch (props.$status) {
-      case 'online':
-        return vibeTheme.colors.success;
-      case 'offline':
-        return vibeTheme.colors.error;
-      case 'loading':
-        return vibeTheme.colors.cyan;
-      default:
-        return 'transparent';
-    }
-  }};
-  animation: ${(props) => (props.$status === 'loading' ? 'pulse 2s infinite' : 'none')};
+    ${props => {
+      switch (props.$status) {
+        case 'online':
+          return vibeTheme.colors.success;
+        case 'offline':
+          return vibeTheme.colors.error;
+        case 'loading':
+          return vibeTheme.colors.cyan;
+        default:
+          return 'transparent';
+      }
+    }};
+  animation: ${props => (props.$status === 'loading' ? 'pulse 2s infinite' : 'none')};
 
   @keyframes pulse {
     0%,
@@ -160,24 +160,24 @@ const ActionButton = styled.button<{ $variant?: 'primary' | 'danger' }>`
   position: relative;
 
   &:hover {
-    background: ${(props) => {
-    if (props.$variant === 'danger') {
-      return 'rgba(239, 68, 68, 0.2)';
-    }
-    if (props.$variant === 'primary') {
-      return 'rgba(139, 92, 246, 0.2)';
-    }
-    return 'rgba(255, 255, 255, 0.1)';
-  }};
-    color: ${(props) => {
-    if (props.$variant === 'danger') {
-      return vibeTheme.colors.error;
-    }
-    if (props.$variant === 'primary') {
-      return vibeTheme.colors.purple;
-    }
-    return vibeTheme.colors.text;
-  }};
+    background: ${props => {
+      if (props.$variant === 'danger') {
+        return 'rgba(239, 68, 68, 0.2)';
+      }
+      if (props.$variant === 'primary') {
+        return 'rgba(139, 92, 246, 0.2)';
+      }
+      return 'rgba(255, 255, 255, 0.1)';
+    }};
+    color: ${props => {
+      if (props.$variant === 'danger') {
+        return vibeTheme.colors.error;
+      }
+      if (props.$variant === 'primary') {
+        return vibeTheme.colors.purple;
+      }
+      return vibeTheme.colors.text;
+    }};
     transform: scale(1.05);
   }
 
@@ -196,6 +196,53 @@ const MenuButton = styled(ActionButton)`
   }
 `;
 
+const AboutOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 17, 31, 0.75);
+  -webkit-app-region: no-drag;
+`;
+
+const AboutDialog = styled.div`
+  min-width: 320px;
+  padding: ${vibeTheme.spacing.xl};
+  background: ${vibeTheme.colors.elevated};
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: ${vibeTheme.borderRadius.md};
+  box-shadow: ${vibeTheme.shadows.lg};
+  color: ${vibeTheme.colors.text};
+  text-align: center;
+`;
+
+const AboutTitle = styled.h2`
+  margin: 0 0 ${vibeTheme.spacing.sm};
+  background: ${vibeTheme.gradients.primary};
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: ${vibeTheme.typography.fontSize.lg};
+`;
+
+const AboutVersion = styled.p`
+  margin: 0 0 ${vibeTheme.spacing.lg};
+  color: ${vibeTheme.colors.textSecondary};
+  font-size: ${vibeTheme.typography.fontSize.sm};
+`;
+
+const AboutCloseButton = styled.button`
+  padding: ${vibeTheme.spacing.sm} ${vibeTheme.spacing.lg};
+  background: ${vibeTheme.colors.purple};
+  border: none;
+  border-radius: ${vibeTheme.borderRadius.small};
+  color: ${vibeTheme.colors.text};
+  cursor: pointer;
+  font-weight: ${vibeTheme.typography.fontWeight.medium};
+`;
+
 interface TitleBarProps {
   onSettingsClick?: () => void;
   onNewFile?: () => void;
@@ -207,6 +254,11 @@ interface TitleBarProps {
   onToggleAIChat?: () => void;
   onTogglePreview?: () => void;
   onToggleBackgroundPanel?: () => void;
+  onToggleGitPanel?: () => void;
+  onFind?: () => void;
+  onReplace?: () => void;
+  onZoomIn?: () => void;
+  onZoomOut?: () => void;
   previewOpen?: boolean;
   children?: ReactNode;
 }
@@ -222,10 +274,17 @@ const TitleBar = ({
   onToggleAIChat,
   onTogglePreview,
   onToggleBackgroundPanel,
+  onToggleGitPanel,
+  onFind,
+  onReplace,
+  onZoomIn,
+  onZoomOut,
   previewOpen,
   children,
 }: TitleBarProps) => {
   const [electronService] = useState(() => new ElectronService());
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const appVersion = (import.meta.env['VITE_APP_VERSION'] as string | undefined) ?? 'dev';
 
   const menuItems: DropdownMenuItem[] = [
     {
@@ -271,13 +330,13 @@ const TitleBar = ({
           label: 'Find',
           icon: <Search size={16} />,
           shortcut: 'Ctrl+F',
-          onClick: () => logger.debug('Find'),
+          onClick: onFind,
         },
         {
           id: 'edit-replace',
           label: 'Replace',
           shortcut: 'Ctrl+H',
-          onClick: () => logger.debug('Replace'),
+          onClick: onReplace,
         },
         { id: 'divider-3', label: '', divider: true },
         {
@@ -306,6 +365,13 @@ const TitleBar = ({
           onClick: onToggleAIChat,
         },
         {
+          id: 'view-source-control',
+          label: 'Source Control',
+          icon: <GitBranch size={16} />,
+          shortcut: 'Ctrl+Shift+G',
+          onClick: onToggleGitPanel,
+        },
+        {
           id: 'view-preview',
           label: 'Toggle Preview Panel',
           icon: <Eye size={16} />,
@@ -332,14 +398,14 @@ const TitleBar = ({
           label: 'Zoom In',
           icon: <ZoomIn size={16} />,
           shortcut: 'Ctrl++',
-          onClick: () => logger.debug('Zoom In'),
+          onClick: onZoomIn,
         },
         {
           id: 'view-zoom-out',
           label: 'Zoom Out',
           icon: <ZoomOut size={16} />,
           shortcut: 'Ctrl+-',
-          onClick: () => logger.debug('Zoom Out'),
+          onClick: onZoomOut,
         },
       ],
     },
@@ -358,7 +424,7 @@ const TitleBar = ({
           id: 'help-about',
           label: 'About Vibe Code Studio',
           icon: <Info size={16} />,
-          onClick: () => logger.debug('About'),
+          onClick: () => setAboutOpen(true),
         },
       ],
     },
@@ -403,7 +469,11 @@ const TitleBar = ({
       <LeftSection>
         <DropdownMenu
           items={menuItems}
-          trigger={<MenuButton><Menu /></MenuButton>}
+          trigger={
+            <MenuButton aria-label="Open application menu" title="Application menu">
+              <Menu />
+            </MenuButton>
+          }
           align="left"
           width="220px"
         />
@@ -426,6 +496,7 @@ const TitleBar = ({
           <ActionButton
             onClick={onTogglePreview}
             title="Toggle Preview Panel (Ctrl+Shift+V)"
+            aria-label="Toggle preview panel"
             style={{
               background: previewOpen ? 'rgba(139, 92, 246, 0.2)' : 'transparent',
               color: previewOpen ? vibeTheme.colors.purple : vibeTheme.colors.textSecondary,
@@ -434,19 +505,42 @@ const TitleBar = ({
             <Eye />
           </ActionButton>
         )}
-        <ActionButton onClick={handleSettingsClick} title="Settings">
+        <ActionButton onClick={handleSettingsClick} title="Settings" aria-label="Open settings">
           <Settings />
         </ActionButton>
-        <ActionButton onClick={handleMinimize}>
+        <ActionButton onClick={handleMinimize} title="Minimize" aria-label="Minimize window">
           <Minimize2 />
         </ActionButton>
-        <ActionButton onClick={handleMaximize}>
+        <ActionButton onClick={handleMaximize} title="Maximize" aria-label="Maximize window">
           <Square />
         </ActionButton>
-        <ActionButton $variant="danger" onClick={handleClose}>
+        <ActionButton
+          $variant="danger"
+          onClick={handleClose}
+          title="Close"
+          aria-label="Close window"
+        >
           <X />
         </ActionButton>
       </RightSection>
+
+      {aboutOpen && (
+        <AboutOverlay
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="vcs-about-title"
+          onClick={() => setAboutOpen(false)}
+          onKeyDown={event => {
+            if (event.key === 'Escape') setAboutOpen(false);
+          }}
+        >
+          <AboutDialog onClick={e => e.stopPropagation()} tabIndex={-1} autoFocus>
+            <AboutTitle id="vcs-about-title">Vibe Code Studio</AboutTitle>
+            <AboutVersion>Version {appVersion}</AboutVersion>
+            <AboutCloseButton onClick={() => setAboutOpen(false)}>Close</AboutCloseButton>
+          </AboutDialog>
+        </AboutOverlay>
+      )}
     </TitleBarContainer>
   );
 };

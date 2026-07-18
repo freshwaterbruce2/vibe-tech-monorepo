@@ -20,10 +20,7 @@ const isWorkspaceContextEqual = (a: any, b: any) => {
     if (aOpenFiles[i] !== bOpenFiles[i]) return false;
   }
 
-  return (
-    a.workspaceFolder === b.workspaceFolder &&
-    a.currentFile === b.currentFile
-  );
+  return a.workspaceFolder === b.workspaceFolder && a.currentFile === b.currentFile;
 };
 
 type CompleteTimeoutRef = MutableRefObject<ReturnType<typeof setTimeout> | undefined>;
@@ -37,7 +34,7 @@ function useAgentTaskEffects(
   options: UseAgentTaskOptions,
   logs: UseAgentTaskReturn['logs'],
   logEndRef: RefObject<HTMLDivElement | null>,
-  onCompleteTimeoutRef: CompleteTimeoutRef,
+  onCompleteTimeoutRef: CompleteTimeoutRef
 ): void {
   const { orchestrator, performanceOptimizer, workspaceContext } = options;
 
@@ -73,23 +70,23 @@ function useAgentTaskEffects(
     return () => clearInterval(interval);
   }, []);
 
-  // Cleanup pending onComplete timeout on unmount
+  // Cleanup pending onComplete timeout on unmount. We intentionally read the
+  // ref's latest value at cleanup time (the pending timeout id), so copying it
+  // into a variable at effect-setup — as the lint rule suggests — would be wrong.
   useEffect(() => {
     return () => {
       if (onCompleteTimeoutRef.current) {
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         clearTimeout(onCompleteTimeoutRef.current);
       }
     };
   }, [onCompleteTimeoutRef]);
 }
 
-/** Map the Zustand store snapshot + wrapped actions to the hook's public shape. */
+/** Map the Zustand store snapshot to the hook's public shape (minus refs/actions). */
 function buildAgentTaskReturn(
-  store: ReturnType<typeof useAgentModeStore.getState>,
-  logEndRef: RefObject<HTMLDivElement | null>,
-  executeTask: () => Promise<void>,
-  retryTask: () => Promise<void>,
-): UseAgentTaskReturn {
+  store: ReturnType<typeof useAgentModeStore.getState>
+): Omit<UseAgentTaskReturn, 'logEndRef' | 'executeTask' | 'retryTask'> {
   return {
     // State
     task: store.task,
@@ -100,7 +97,6 @@ function buildAgentTaskReturn(
     agentProfiles: store.agentProfiles,
     expandedSections: store.expandedSections,
     currentProgress: store.currentProgress,
-    logEndRef,
 
     // Error recovery state
     lastError: store.lastError,
@@ -109,8 +105,6 @@ function buildAgentTaskReturn(
     canRetry: store.retryCount < store.maxRetries && store.status === 'error',
 
     // Actions - no memoization needed
-    executeTask,
-    retryTask,
     handleStop: store.stopTask,
     resetTask: store.resetTask,
     clearError: store.clearError,
@@ -169,7 +163,12 @@ export function useAgentTask(options: UseAgentTaskOptions): UseAgentTaskReturn {
     }
   };
 
-  return buildAgentTaskReturn(store, logEndRef, executeTask, retryTask);
+  return {
+    ...buildAgentTaskReturn(store),
+    logEndRef,
+    executeTask,
+    retryTask,
+  };
 }
 
 // Re-export the original types for compatibility

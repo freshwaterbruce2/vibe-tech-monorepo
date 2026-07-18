@@ -6,7 +6,7 @@ import { useAIChat } from '../../hooks/useAIChat';
 import { entitlementsService } from '../../services/EntitlementsService';
 import { telemetry } from '../../services/TelemetryService';
 import type { UnifiedAIService } from '../../services/ai/UnifiedAIService';
-import type { AIContextRequest } from '../../types';
+import type { AIContextRequest, AIMessage, AgentTask } from '../../types';
 
 vi.mock('../../services/Logger', () => ({
   logger: {
@@ -114,10 +114,70 @@ function createMockAIService() {
 
 describe('useAIChat cancellation lifecycle', () => {
   beforeEach(() => {
+    window.electron = undefined;
     localStorage.clear();
     vi.clearAllMocks();
     vi.mocked(entitlementsService.getCurrentPlan).mockReturnValue('pro');
     vi.mocked(isCancellationLifecycleEnabled).mockReturnValue(true);
+  });
+
+  it('hydrates the exact native terminal report before persisting desktop chat history', async () => {
+    const task: AgentTask = {
+      id: 'task-reload-1',
+      title: 'Reload verification',
+      description: 'Verify the terminal result after reload.',
+      userRequest: 'Verify reload',
+      steps: [],
+      status: 'in_progress',
+      createdAt: new Date('2026-07-12T05:00:00.000Z'),
+    };
+    const storedMessages: AIMessage[] = [
+      {
+        id: 'agent-task-reload-1',
+        role: 'assistant',
+        content: '**Agent Task**: Reload verification\n\nStale plan text',
+        timestamp: new Date('2026-07-12T05:00:00.000Z'),
+        agentTask: { task, phase: 'executing' },
+      },
+    ];
+    const storeSet = vi.fn().mockResolvedValue(undefined);
+    window.electron = {
+      store: {
+        get: vi.fn().mockResolvedValue(JSON.stringify(storedMessages)),
+        set: storeSet,
+        delete: vi.fn().mockResolvedValue(undefined),
+      },
+      db: {
+        getAgentChatOutcomes: vi.fn().mockResolvedValue({
+          success: true,
+          data: [
+            {
+              taskId: task.id,
+              outcome: 'completed',
+              finalReport: 'Concrete persisted report. LIVE-REPORT-7319',
+              createdAt: '2026-07-12T05:01:00.000Z',
+            },
+          ],
+        }),
+      },
+    } as Window['electron'];
+
+    const mockService = createMockAIService();
+    const { result } = renderHook(() => useAIChat({ aiService: mockService.service }));
+
+    await waitFor(() => {
+      expect(result.current.aiMessages[0]?.content).toContain(
+        'Concrete persisted report. LIVE-REPORT-7319'
+      );
+    });
+    expect(result.current.aiMessages[0]?.agentTask?.task.finalReport).toBe(
+      'Concrete persisted report. LIVE-REPORT-7319'
+    );
+    expect(result.current.aiMessages[0]?.agentTask?.phase).toBe('completed');
+    expect(storeSet).not.toHaveBeenCalledWith(
+      'vibe-code-studio:chat-messages',
+      expect.stringContaining('Welcome to Vibe Code Studio')
+    );
   });
 
   it('auto-cancels an active generation before starting a new one', async () => {

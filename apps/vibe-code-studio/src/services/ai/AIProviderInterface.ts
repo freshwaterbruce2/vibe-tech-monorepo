@@ -3,7 +3,7 @@
  * Supports OpenAI, Anthropic, Google, DeepSeek, and others
  */
 
-import type { ChatMessage as ChatMessageType } from '../../types/ai';
+import type { AICompletionRequest, ChatMessage as ChatMessageType } from '../../types/ai';
 
 export interface AIProviderConfig {
   provider: AIProvider;
@@ -532,6 +532,20 @@ export const MODEL_REGISTRY: Record<string, AIModel> = Object.fromEntries(
   MODELS_ARRAY.map(model => [model.id, model])
 );
 
+/**
+ * Single source of truth for the app's default model.
+ *
+ * Best-value OpenRouter coding model: works with a single OpenRouter key and
+ * needs no separate Moonshot key. Every provider default that falls back to an
+ * app-level model should reference this constant rather than hardcoding an id —
+ * a bare 'moonshot/kimi-2.5-pro' default routes to Moonshot's direct API and
+ * 503s unless a Moonshot key is configured server-side.
+ */
+export const DEFAULT_MODEL = 'deepseek/deepseek-v4-pro';
+
+/** Default latency-sensitive model for inline completion and quick fixes. */
+export const DEFAULT_FAST_MODEL = 'deepseek/deepseek-v4-flash';
+
 // Provider interface types - re-export from types/ai.ts for compatibility
 export type ChatMessage = ChatMessageType;
 
@@ -541,6 +555,14 @@ export interface CompletionOptions {
   maxTokens?: number;
   stream?: boolean;
   signal?: AbortSignal;
+  reasoningEffort?: 'low' | 'medium' | 'high';
+  responseFormat?: {
+    type: 'json_schema';
+    jsonSchema: { name: string; strict: true; schema: Record<string, unknown> };
+  };
+  providerPreferences?: { requireParameters: boolean };
+  tools?: AICompletionRequest['tools'];
+  toolChoice?: AICompletionRequest['toolChoice'];
 }
 
 export interface CompletionResponse {
@@ -549,8 +571,13 @@ export interface CompletionResponse {
     message: {
       role: string;
       content: string;
+      toolCalls?: Array<{
+        id: string;
+        type: 'function';
+        function: { name: string; arguments: string };
+      }>;
     };
-    finishReason: string;
+    finishReason?: string;
     index: number;
   }>;
   usage: {

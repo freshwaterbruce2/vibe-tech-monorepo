@@ -4,14 +4,8 @@
  * Displays and manages background agent tasks
  */
 
-import { useEffect, useState } from 'react';
-import {
-  Activity,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  Loader,
-  X} from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Activity, AlertCircle, CheckCircle, Clock, Loader, X } from 'lucide-react';
 import styled from 'styled-components';
 
 import type { BackgroundAgentSystem, BackgroundTask } from '../services/BackgroundAgentSystem';
@@ -22,10 +16,7 @@ interface BackgroundTaskPanelProps {
   onTaskClick?: (task: BackgroundTask) => void;
 }
 
-export const BackgroundTaskPanel = ({
-  backgroundAgent,
-  onTaskClick,
-}: BackgroundTaskPanelProps) => {
+export const BackgroundTaskPanel = ({ backgroundAgent, onTaskClick }: BackgroundTaskPanelProps) => {
   const [tasks, setTasks] = useState<BackgroundTask[]>([]);
   const [filter, setFilter] = useState<'all' | 'running' | 'completed' | 'failed'>('all');
   const [currentTime, setCurrentTime] = useState(0);
@@ -35,14 +26,14 @@ export const BackgroundTaskPanel = ({
     running: 0,
     completed: 0,
     failed: 0,
-    cancelled: 0
+    cancelled: 0,
   });
 
-  const updateTasks = () => {
+  const updateTasks = useCallback(() => {
     const allTasks = backgroundAgent.getAllTasks();
     setTasks(allTasks);
     setStats(backgroundAgent.getStats());
-  };
+  }, [backgroundAgent]);
 
   useEffect(() => {
     // Initial load
@@ -54,7 +45,7 @@ export const BackgroundTaskPanel = ({
     return () => {
       clearInterval(interval);
     };
-  }, []);
+  }, [updateTasks]);
 
   const handleCancel = (taskId: string) => {
     backgroundAgent.cancel(taskId);
@@ -93,13 +84,17 @@ export const BackgroundTaskPanel = ({
   }, []);
 
   const formatDuration = (task: BackgroundTask, now: number): string => {
-    if (!task.startTime) {return '-';}
+    if (!task.startTime) {
+      return '-';
+    }
 
     const endTime = task.endTime ?? now;
     const duration = endTime - task.startTime;
     const seconds = Math.floor(duration / 1000);
 
-    if (seconds < 60) {return `${seconds}s`;}
+    if (seconds < 60) {
+      return `${seconds}s`;
+    }
     const minutes = Math.floor(seconds / 60);
     return `${minutes}m ${seconds % 60}s`;
   };
@@ -158,35 +153,21 @@ export const BackgroundTaskPanel = ({
       </Header>
 
       <FilterBar>
-        <FilterButton
-          active={filter === 'all'}
-          onClick={() => setFilter('all')}
-        >
+        <FilterButton active={filter === 'all'} onClick={() => setFilter('all')}>
           All ({tasks.length})
         </FilterButton>
-        <FilterButton
-          active={filter === 'running'}
-          onClick={() => setFilter('running')}
-        >
+        <FilterButton active={filter === 'running'} onClick={() => setFilter('running')}>
           Active ({stats.running + stats.pending})
         </FilterButton>
-        <FilterButton
-          active={filter === 'completed'}
-          onClick={() => setFilter('completed')}
-        >
+        <FilterButton active={filter === 'completed'} onClick={() => setFilter('completed')}>
           Completed ({stats.completed})
         </FilterButton>
-        <FilterButton
-          active={filter === 'failed'}
-          onClick={() => setFilter('failed')}
-        >
+        <FilterButton active={filter === 'failed'} onClick={() => setFilter('failed')}>
           Failed ({stats.failed})
         </FilterButton>
 
         {stats.completed > 0 && (
-          <ClearButton onClick={handleClearCompleted}>
-            Clear Completed
-          </ClearButton>
+          <ClearButton onClick={handleClearCompleted}>Clear Completed</ClearButton>
         )}
       </FilterBar>
 
@@ -195,16 +176,11 @@ export const BackgroundTaskPanel = ({
           <EmptyState>
             <Activity size={48} />
             <EmptyText>No tasks yet</EmptyText>
-            <EmptySubtext>
-              Background tasks will appear here when you run agents
-            </EmptySubtext>
+            <EmptySubtext>Background tasks will appear here when you run agents</EmptySubtext>
           </EmptyState>
         ) : (
           getFilteredTasks().map(task => (
-            <TaskItem
-              key={task.id}
-              onClick={() => onTaskClick?.(task)}
-            >
+            <TaskItem key={task.id} onClick={() => onTaskClick?.(task)}>
               <TaskHeader>
                 <TaskStatus color={getStatusColor(task.status)}>
                   {getStatusIcon(task.status)}
@@ -213,7 +189,7 @@ export const BackgroundTaskPanel = ({
                 <TaskActions>
                   {task.status === 'running' && (
                     <ActionButton
-                      onClick={(e) => {
+                      onClick={e => {
                         e.stopPropagation();
                         handleCancel(task.id);
                       }}
@@ -237,15 +213,16 @@ export const BackgroundTaskPanel = ({
                     <ProgressText>
                       {Math.round(task.progress ?? 0)}%
                       {task.currentStep && task.totalSteps && (
-                        <> · Step {task.currentStep}/{task.totalSteps}</>
+                        <>
+                          {' '}
+                          · Step {task.currentStep}/{task.totalSteps}
+                        </>
                       )}
                     </ProgressText>
                   </ProgressBar>
                 )}
 
-                {task.error && (
-                  <ErrorMessage>{task.error.message}</ErrorMessage>
-                )}
+                {task.error && <ErrorMessage>{task.error.message}</ErrorMessage>}
               </TaskContent>
 
               <TaskFooter>
@@ -321,19 +298,19 @@ const FilterBar = styled.div`
 `;
 
 const FilterButton = styled.button.withConfig({
-  shouldForwardProp: (prop) => prop !== 'active',
+  shouldForwardProp: prop => prop !== 'active',
 })<{ active?: boolean }>`
   padding: 6px 12px;
-  border: 1px solid ${props => props.active ? '#3b82f6' : '#444'};
-  background: ${props => props.active ? '#3b82f633' : 'transparent'};
-  color: ${props => props.active ? '#3b82f6' : '#d4d4d4'};
+  border: 1px solid ${props => (props.active ? '#3b82f6' : '#444')};
+  background: ${props => (props.active ? '#3b82f633' : 'transparent')};
+  color: ${props => (props.active ? '#3b82f6' : '#d4d4d4')};
   border-radius: 4px;
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    background: ${props => props.active ? '#3b82f644' : '#ffffff11'};
+    background: ${props => (props.active ? '#3b82f644' : '#ffffff11')};
   }
 `;
 
@@ -419,8 +396,12 @@ const TaskStatus = styled.div<{ color: string }>`
   }
 
   @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 `;
 

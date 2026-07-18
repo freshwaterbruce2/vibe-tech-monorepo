@@ -1,4 +1,5 @@
 import http from 'node:http';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
@@ -37,9 +38,12 @@ for (const envPath of envPaths) {
   }
 }
 
-// Fallback AUTH_SECRET if still missing or too short
+// A packaged desktop app must never fall back to a source-known signing key.
+// Generate a process-local secret when none was supplied. Existing sessions
+// intentionally expire when the sidecar restarts; users can sign in again.
 if (!process.env.AUTH_SECRET || process.env.AUTH_SECRET.length < 32) {
-  process.env.AUTH_SECRET = 'default_vibe_studio_secret_32_chars_long';
+  process.env.AUTH_SECRET = crypto.randomBytes(48).toString('base64url');
+  console.warn('[Backend] AUTH_SECRET was not configured; generated an ephemeral local secret.');
 }
 import { parseSessionToken, getSessionCookieName } from '@vibetech/auth';
 import { parseCookies } from './lib/http-helpers.js';
@@ -60,10 +64,25 @@ let db;
 try {
   db = new Database(DB_PATH);
   db.pragma('journal_mode = WAL');
+  db.pragma('busy_timeout = 5000');
   db.pragma('foreign_keys = ON');
 
-  // Safely seed custom tables for Stripe billing integration
+  // Safely seed custom tables. The `users` table backs auth/register/auto-login
+  // and is owned by this app (integer id + subscription_tier). Historically it
+  // was assumed to pre-exist; create it here so a fresh D:\databases DB works on
+  // first launch. password_hash/salt are scrypt BLOBs (see @vibetech/auth).
   db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id                INTEGER PRIMARY KEY AUTOINCREMENT,
+      email             TEXT NOT NULL UNIQUE,
+      password_hash     BLOB NOT NULL,
+      password_salt     BLOB NOT NULL,
+      full_name         TEXT,
+      company_name      TEXT,
+      subscription_tier TEXT NOT NULL DEFAULT 'free',
+      created_at        TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS stripe_customers (
       id TEXT PRIMARY KEY,
       user_id TEXT,
@@ -218,11 +237,19 @@ const lspResolveOpts = {
   paths: (process.env.PATH || '').split(path.delimiter).filter(Boolean),
   exts: process.platform === 'win32' ? ['.cmd', '.exe', '.bat', ''] : [''],
   exists: p => fs.existsSync(p),
+  // Installed builds must never optimistically spawn a command that PATH
+  // scanning already proved absent. The editor then falls back to Monaco.
+  requireResolved: true,
   sep: path.sep,
 };
 
 server.on('upgrade', (request, socket, head) => {
   const pathname = (request.url || '').split('?')[0];
+  if (!isAllowedOrigin(request.headers.origin)) {
+    socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+    socket.destroy();
+    return;
+  }
   if (pathname.startsWith('/lsp/')) {
     handleLspUpgrade(request, socket, head, {
       wss,
@@ -232,13 +259,18 @@ server.on('upgrade', (request, socket, head) => {
     });
     return;
   }
+  if (pathname !== '/ws') {
+    socket.write('HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n');
+    socket.destroy();
+    return;
+  }
   wss.handleUpgrade(request, socket, head, ws => {
     wss.emit('connection', ws, request);
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`\n[Backend] 🚀 Local Backend Server running on port ${PORT}`);
+server.listen(PORT, '127.0.0.1', () => {
+  console.log(`\n[Backend] 🚀 Local Backend Server running on 127.0.0.1:${PORT}`);
   console.log('[Backend] Waiting for Vibe Code Studio to connect...\n');
 });
 

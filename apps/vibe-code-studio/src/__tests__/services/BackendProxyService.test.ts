@@ -102,6 +102,47 @@ describe('BackendProxyService', () => {
   });
 
   describe('openrouter routing', () => {
+    it('forwards strict structured-output and provider capability requirements', async () => {
+      const schema = { type: 'object', properties: { title: { type: 'string' } } };
+      await svc.complete({
+        messages: msgs,
+        model: 'anthropic/claude-sonnet-4.6',
+        responseFormat: {
+          type: 'json_schema',
+          jsonSchema: { name: 'agent_plan_v1', strict: true, schema },
+        },
+        providerPreferences: { requireParameters: true },
+      });
+
+      expect(lastBody()).toMatchObject({
+        response_format: {
+          type: 'json_schema',
+          json_schema: { name: 'agent_plan_v1', strict: true, schema },
+        },
+        provider: { require_parameters: true },
+      });
+    });
+
+    it('forwards native tool definitions and required tool choice', async () => {
+      const tools = [
+        {
+          type: 'function' as const,
+          function: {
+            name: 'submit_agent_plan',
+            description: 'submit',
+            parameters: { type: 'object' },
+          },
+        },
+      ];
+      await svc.complete({
+        messages: msgs,
+        model: 'anthropic/claude-sonnet-4.6',
+        tools,
+        toolChoice: 'required',
+      });
+      expect(lastBody()).toMatchObject({ tools, tool_choice: 'required' });
+    });
+
     it('passes the model verbatim, forwards caller temperature, omits thinking', async () => {
       await svc.complete({ messages: msgs, model: 'deepseek/deepseek-r1', temperature: 0.3 });
       expect(lastCall()[0]).toBe(`${BASE}/openrouter/api/v1/chat/completions`);
@@ -147,8 +188,11 @@ describe('BackendProxyService', () => {
   describe('defaults & response parsing', () => {
     it('falls back to the default model and max_tokens when omitted', async () => {
       await svc.complete({ messages: msgs });
+      // Default is the unified app default (deepseek/deepseek-v4-pro), a registered
+      // OpenRouter model — so it routes through OpenRouter, not Moonshot.
+      expect(lastCall()[0]).toBe(`${BASE}/openrouter/api/v1/chat/completions`);
       const body = lastBody();
-      expect(body.model).toBe('kimi-k2.5');
+      expect(body.model).toBe('deepseek/deepseek-v4-pro');
       expect(body.max_tokens).toBe(8192);
     });
 

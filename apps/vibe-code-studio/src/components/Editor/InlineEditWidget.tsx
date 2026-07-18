@@ -1,6 +1,6 @@
 import { Check, RefreshCw, Sparkles, X } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
-import { inlineEditService, DiffResult } from '../../services/ai/InlineEditService';
+import { inlineEditService, type DiffResult } from '../../services/ai/InlineEditService';
 import { logger } from '../../services/Logger';
 import { DiffView } from './DiffView';
 
@@ -44,7 +44,7 @@ export const InlineEditWidget = ({
       const response = await inlineEditService.generateEdit({
         code: selectedCode,
         instruction,
-        language
+        language,
       });
 
       setGeneratedCode(response.modifiedCode);
@@ -79,16 +79,12 @@ export const InlineEditWidget = ({
       {/* Input Area */}
       <div className="flex items-center p-2 gap-2 border-b border-white/5">
         <div className="flex-none text-purple-400">
-          {isThinking ? (
-            <RefreshCw className="animate-spin" size={16} />
-          ) : (
-            <Sparkles size={16} />
-          )}
+          {isThinking ? <RefreshCw className="animate-spin" size={16} /> : <Sparkles size={16} />}
         </div>
         <input
           ref={inputRef}
           value={instruction}
-          onChange={(e) => setInstruction(e.target.value)}
+          onChange={e => setInstruction(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Edit selection... (e.g. 'Add error handling')"
           disabled={isThinking || !!generatedCode}
@@ -98,18 +94,24 @@ export const InlineEditWidget = ({
         />
         {generatedCode && (
           <button
-            onClick={() => { setGeneratedCode(null); setDiffs([]); setInstruction(''); }}
+            onClick={() => {
+              setGeneratedCode(null);
+              setDiffs([]);
+              setInstruction('');
+            }}
             className="text-xs text-gray-500 hover:text-white"
           >
             Retry
           </button>
         )}
       </div>
-      
+
       {error && (
         <div className="px-3 py-2 text-xs text-red-400 bg-red-400/10" data-testid="error-message">
           {error}
-          <button className="ml-2 underline" onClick={handleGenerate} data-testid="retry-button">Try again</button>
+          <button className="ml-2 underline" onClick={handleGenerate} data-testid="retry-button">
+            Try again
+          </button>
         </div>
       )}
 

@@ -25,7 +25,6 @@ export {
 } from './styled';
 
 // Hooks
-export { useEditorKeyboard } from './useEditorKeyboard';
 export { useEditorState } from './useEditorState';
 
 // Main component (re-exported from parent for backward compatibility)

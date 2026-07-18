@@ -85,9 +85,20 @@ const EXTENSION_LANGUAGE_MAP: Record<string, string> = {
 
 /** Directories that should always be excluded from indexing */
 const DEFAULT_EXCLUDE_DIRS = new Set([
-  'node_modules', '.git', 'dist', 'build', '.nx', '.cache',
-  'coverage', '.next', '.turbo', '__pycache__', '.venv',
-  'vendor', 'target', '.output',
+  'node_modules',
+  '.git',
+  'dist',
+  'build',
+  '.nx',
+  '.cache',
+  'coverage',
+  '.next',
+  '.turbo',
+  '__pycache__',
+  '.venv',
+  'vendor',
+  'target',
+  '.output',
 ]);
 
 export class SemanticSearchService {
@@ -106,7 +117,9 @@ export class SemanticSearchService {
    * Uses Apex Intelligence Engine (sqlite-vec + embeddings) when available,
    * falls back to keyword-based search otherwise
    */
-  async search(searchQuery: SearchQuery): Promise<{ results: SearchResult[]; metadata: SearchMetadata }> {
+  async search(
+    searchQuery: SearchQuery
+  ): Promise<{ results: SearchResult[]; metadata: SearchMetadata }> {
     const startTime = Date.now();
     const maxResults = searchQuery.maxResults ?? 10;
 
@@ -119,7 +132,10 @@ export class SemanticSearchService {
 
         if (apexStatus === 'ready') {
           logger.info('[SemanticSearch] Using Apex vector search');
-          const vectorResults = await window.electron.apex['queryVector'](searchQuery.query, maxResults * 2);
+          const vectorResults = await window.electron.apex['queryVector'](
+            searchQuery.query,
+            maxResults * 2
+          );
 
           if (vectorResults.results && vectorResults.results.length > 0) {
             // Transform Apex results to SearchResult format
@@ -190,13 +206,16 @@ export class SemanticSearchService {
   /**
    * Transform Apex vector results to SearchResult format
    */
-  private transformApexResults(apexResults: Array<{
-    file_path: string;
-    chunk_start: number;
-    chunk_end: number;
-    content: string;
-    similarity: number;
-  }>, maxResults: number): SearchResult[] {
+  private transformApexResults(
+    apexResults: Array<{
+      file_path: string;
+      chunk_start: number;
+      chunk_end: number;
+      content: string;
+      similarity: number;
+    }>,
+    maxResults: number
+  ): SearchResult[] {
     return apexResults.slice(0, maxResults).map((result, _index) => {
       const fileName = result.file_path.split(/[/\\]/).pop() ?? result.file_path;
       const fileExt = fileName.split('.').pop() ?? 'txt';
@@ -262,10 +281,7 @@ export class SemanticSearchService {
    * @param maxFiles  Safety cap to prevent runaway indexing (default 500)
    * @returns Number of files indexed
    */
-  async indexFilesFromWorkspace(
-    rootPath: string,
-    maxFiles: number = 500,
-  ): Promise<number> {
+  async indexFilesFromWorkspace(rootPath: string, maxFiles: number = 500): Promise<number> {
     if (this.indexing) {
       logger.warn('[SemanticSearch] Indexing already in progress, skipping');
       return 0;
@@ -322,7 +338,11 @@ export class SemanticSearchService {
 
             // Skip very large files (>100 KB) to keep search fast
             if (content.length > 100_000) {
-              logger.debug('[SemanticSearch] Skipping large file:', entry.path, `(${content.length} bytes)`);
+              logger.debug(
+                '[SemanticSearch] Skipping large file:',
+                entry.path,
+                `(${content.length} bytes)`
+              );
               continue;
             }
 
@@ -369,7 +389,9 @@ export class SemanticSearchService {
 
       lines.forEach((line, index) => {
         // Check if line contains any keywords
-        const matchedKeywords = keywords.filter(keyword => line.toLowerCase().includes(keyword.toLowerCase()));
+        const matchedKeywords = keywords.filter(keyword =>
+          line.toLowerCase().includes(keyword.toLowerCase())
+        );
 
         if (matchedKeywords.length > 0) {
           results.push({
@@ -395,7 +417,21 @@ export class SemanticSearchService {
    */
   private extractKeywords(query: string): string[] {
     // Remove stop words and extract meaningful terms
-    const stopWords = new Set(['find', 'show', 'get', 'where', 'is', 'the', 'a', 'an', 'in', 'on', 'at', 'to', 'for']);
+    const stopWords = new Set([
+      'find',
+      'show',
+      'get',
+      'where',
+      'is',
+      'the',
+      'a',
+      'an',
+      'in',
+      'on',
+      'at',
+      'to',
+      'for',
+    ]);
 
     return query
       .toLowerCase()
@@ -479,7 +515,11 @@ export class SemanticSearchService {
   /**
    * Use AI to rank results by semantic similarity
    */
-  private async semanticRank(query: string, results: SearchResult[], maxResults: number): Promise<SearchResult[]> {
+  private async semanticRank(
+    query: string,
+    results: SearchResult[],
+    maxResults: number
+  ): Promise<SearchResult[]> {
     if (results.length === 0) {
       return [];
     }
@@ -505,7 +545,8 @@ export class SemanticSearchService {
         ],
         model: 'moonshot/kimi-2.5-pro',
         temperature: 0.3, // Low temperature for consistent ranking
-        maxTokens: 1000,
+        // >= 1024: reasoning models consume the budget before emitting content.
+        maxTokens: 1024,
       });
 
       // Parse AI response to get ranked result IDs
@@ -645,7 +686,8 @@ Focus on the semantic meaning and functionality.
       messages: [
         {
           role: 'system',
-          content: 'You are a code search assistant. Provide concise explanations of code relevance.',
+          content:
+            'You are a code search assistant. Provide concise explanations of code relevance.',
         },
         {
           role: 'user',
@@ -654,7 +696,8 @@ Focus on the semantic meaning and functionality.
       ],
       model: 'moonshot/kimi-2.5-pro',
       temperature: 0.5,
-      maxTokens: 100,
+      // >= 1024: reasoning models consume the budget before emitting content.
+      maxTokens: 1024,
     });
 
     return (response.content ?? '').trim();

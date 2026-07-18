@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+    <Property Id="REQUESTEDINSTALLDIR" Secure="yes" />
+    <SetProperty
+      Id="INSTALLDIR"
+      Value="[REQUESTEDINSTALLDIR]"
+      After="AppSearch"
+      Sequence="both"
+    >REQUESTEDINSTALLDIR</SetProperty>
+
+    <DirectoryRef Id="INSTALLDIR">
+      <Component Id="ExplicitInstallDirSupport" Guid="*">
+        <RegistryValue
+          Root="HKCU"
+          Key="Software\vibetech\Vibe Code Studio"
+          Name="ExplicitInstallDirSupport"
+          Type="integer"
+          Value="1"
+          KeyPath="yes"
+        />
+      </Component>
+    </DirectoryRef>
+
+    <ComponentGroup Id="ExplicitInstallDirSupportGroup">
+      <ComponentRef Id="ExplicitInstallDirSupport" />
+    </ComponentGroup>
+  </Fragment>
+</Wix>

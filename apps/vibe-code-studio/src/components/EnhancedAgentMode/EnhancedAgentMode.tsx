@@ -3,31 +3,26 @@
  * Multi-agent coordination interface with real-time feedback and performance monitoring
  */
 import { AnimatePresence } from 'framer-motion';
-import {
-    Activity,
-    Play,
-    Square,
-    Zap
-} from 'lucide-react';
+import { Activity, Play, Square, Zap } from 'lucide-react';
 import React, { useState } from 'react';
 
 import {
-    ActionButton,
-    ActionButtonGroup,
-    AgentCountText,
-    Backdrop,
-    Container,
-    Footer,
-    Header,
-    MainContent,
-    ProgressIndicator,
-    Sidebar,
-    StatusIndicator,
-    StatusSection,
-    TaskInput,
-    TaskSection,
-    TaskTextarea,
-    Title
+  ActionButton,
+  ActionButtonGroup,
+  AgentCountText,
+  Backdrop,
+  Container,
+  Footer,
+  Header,
+  MainContent,
+  ProgressIndicator,
+  Sidebar,
+  StatusIndicator,
+  StatusSection,
+  TaskInput,
+  TaskSection,
+  TaskTextarea,
+  Title,
 } from './styled';
 import type { EnhancedAgentModeProps } from './types';
 import { useAgentTask } from './useAgentTask';
@@ -40,6 +35,7 @@ export function EnhancedAgentMode({
   orchestrator,
   performanceOptimizer,
   workspaceContext,
+  currentModel,
 }: EnhancedAgentModeProps): React.ReactElement | null {
   const {
     task,
@@ -69,7 +65,7 @@ export function EnhancedAgentMode({
 
   // Selected log entry for the detail view (toggled by clicking a log row)
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
-  const selectedLog = logs.find((entry) => entry.id === selectedLogId) ?? null;
+  const selectedLog = logs.find(entry => entry.id === selectedLogId) ?? null;
 
   if (!isOpen) return null;
 
@@ -80,7 +76,7 @@ export function EnhancedAgentMode({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.3 }}
-        onClick={(e) => {
+        onClick={e => {
           if (e.target === e.currentTarget) {
             onClose();
           }
@@ -91,7 +87,7 @@ export function EnhancedAgentMode({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 50 }}
           transition={{ duration: 0.3, type: 'spring', damping: 25 }}
-          onClick={(e) => e.stopPropagation()}
+          onClick={e => e.stopPropagation()}
         >
           <Header>
             <Title>
@@ -103,9 +99,8 @@ export function EnhancedAgentMode({
                 <StatusIcon status={status} />
                 {status.charAt(0).toUpperCase() + status.slice(1)}
               </StatusIndicator>
-              <AgentCountText>
-                {availableAgents.length} agents available
-              </AgentCountText>
+              <AgentCountText>{availableAgents.length} agents available</AgentCountText>
+              <AgentCountText>Model: {currentModel || 'Settings selection'}</AgentCountText>
             </StatusSection>
           </Header>
 
@@ -114,10 +109,10 @@ export function EnhancedAgentMode({
               <TaskInput>
                 <TaskTextarea
                   value={task}
-                  onChange={(e) => setTask(e.target.value)}
+                  onChange={e => setTask(e.target.value)}
                   placeholder="Describe what you want the multi-agent system to analyze, build, or optimize..."
                   disabled={status !== 'idle'}
-                  onKeyDown={(e) => {
+                  onKeyDown={e => {
                     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                       executeTask();
                     }
@@ -143,9 +138,7 @@ export function EnhancedAgentMode({
                 logs={logs}
                 formatTimestamp={formatTimestamp}
                 height={400}
-                onLogClick={(log) =>
-                  setSelectedLogId((prev) => (prev === log.id ? null : log.id))
-                }
+                onLogClick={log => setSelectedLogId(prev => (prev === log.id ? null : log.id))}
               />
               <div ref={logEndRef} />
 
@@ -176,9 +169,7 @@ export function EnhancedAgentMode({
                       {selectedLog.agentName ? ` · ${selectedLog.agentName}` : ''}
                     </strong>
                     <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <span style={{ opacity: 0.7 }}>
-                        {formatTimestamp(selectedLog.timestamp)}
-                      </span>
+                      <span style={{ opacity: 0.7 }}>{formatTimestamp(selectedLog.timestamp)}</span>
                       <button
                         type="button"
                         onClick={() => {

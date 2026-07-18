@@ -18,11 +18,7 @@ import type { WorkspaceService } from '../WorkspaceService';
 
 import { TaskLifecycleManager } from './execution/TaskLifecycle';
 // Import from modular execution system
-import type {
-    ExecutionCallbacks,
-    StepExecutionContext,
-    TaskState,
-} from './execution/types';
+import type { ExecutionCallbacks, StepExecutionContext, TaskState } from './execution/types';
 import { NonRetryableError } from './execution/types';
 import { MetacognitiveLayer } from './MetacognitiveLayer';
 import { ReActExecutor } from './ReActExecutor';
@@ -41,142 +37,144 @@ export type { ExecutionCallbacks };
  * but delegates to specialized modules internally.
  */
 export class ExecutionEngine {
-    private taskPersistence: TaskPersistence;
-    private metacognitiveLayer: MetacognitiveLayer;
-    private reactExecutor: ReActExecutor;
-    private strategyMemory: StrategyMemory;
-    private taskLifecycleManager: TaskLifecycleManager;
-    private liveStream: LiveEditorStream | undefined;
-    private enableReAct: boolean = true;
-    private enableMemory: boolean = true;
-    private currentCallbacks: ExecutionCallbacks | undefined;
-    private currentTaskState: TaskState = {
-        task: null,
-        userRequest: '',
-        workspaceRoot: '',
+  private taskPersistence: TaskPersistence;
+  private metacognitiveLayer: MetacognitiveLayer;
+  private reactExecutor: ReActExecutor;
+  private strategyMemory: StrategyMemory;
+  private taskLifecycleManager: TaskLifecycleManager;
+  private liveStream: LiveEditorStream | undefined;
+  private enableReAct: boolean = true;
+  private enableMemory: boolean = true;
+  private currentCallbacks: ExecutionCallbacks | undefined;
+  private currentTaskState: TaskState = {
+    task: null,
+    userRequest: '',
+    workspaceRoot: '',
+  };
+
+  constructor(
+    private fileSystemService: FileSystemService,
+    private aiService: UnifiedAIService,
+    private workspaceService: WorkspaceService,
+    private gitService: GitService,
+    taskPersistence?: TaskPersistence
+  ) {
+    this.taskPersistence = taskPersistence ?? new TaskPersistence(fileSystemService);
+    this.metacognitiveLayer = new MetacognitiveLayer(aiService);
+    this.reactExecutor = new ReActExecutor(aiService);
+    this.strategyMemory = new StrategyMemory();
+    this.taskLifecycleManager = new TaskLifecycleManager(this.taskPersistence);
+
+    // Preserve the model selected by chat/provider configuration.
+  }
+
+  /**
+   * Sets task context for persistence
+   */
+  setTaskContext(userRequest: string, workspaceRoot: string): void {
+    this.currentTaskState.userRequest = userRequest;
+    this.currentTaskState.workspaceRoot = workspaceRoot;
+  }
+
+  /**
+   * Sets live editor stream instance for Phase 7 live streaming
+   */
+  setLiveStream(liveStream: LiveEditorStream): void {
+    this.liveStream = liveStream;
+  }
+
+  /**
+   * Creates the step execution context with all dependencies
+   */
+  private createStepExecutionContext(): StepExecutionContext {
+    return {
+      fileSystemService: this.fileSystemService,
+      aiService: this.aiService,
+      workspaceService: this.workspaceService,
+      gitService: this.gitService,
+      taskState: this.currentTaskState,
+      liveStream: this.liveStream,
+      callbacks: this.currentCallbacks,
+      metacognitiveLayer: this.metacognitiveLayer,
+      reactExecutor: this.reactExecutor,
+      strategyMemory: this.strategyMemory,
+      enableReAct: this.enableReAct,
+      enableMemory: this.enableMemory,
     };
+  }
 
-    constructor(
-        private fileSystemService: FileSystemService,
-        private aiService: UnifiedAIService,
-        private workspaceService: WorkspaceService,
-        private gitService: GitService
-    ) {
-        this.taskPersistence = new TaskPersistence(fileSystemService);
-        this.metacognitiveLayer = new MetacognitiveLayer(aiService);
-        this.reactExecutor = new ReActExecutor(aiService);
-        this.strategyMemory = new StrategyMemory();
-        this.taskLifecycleManager = new TaskLifecycleManager(this.taskPersistence);
+  /**
+   * Executes a complete task with all its steps
+   */
+  async executeTask(task: AgentTask, callbacks?: ExecutionCallbacks): Promise<AgentTask> {
+    this.currentTaskState.task = task;
+    this.currentCallbacks = callbacks;
 
-        // Use GPT-5.2 Codex for agentic tasks (OpenRouter)
-        this.aiService.setModel('openai/gpt-5.2-codex');
+    const context = this.createStepExecutionContext();
+    return await this.taskLifecycleManager.executeTask(task, context, callbacks);
+  }
+
+  /**
+   * Resumes a previously persisted task
+   */
+  async resumeTask(taskId: string, callbacks?: ExecutionCallbacks): Promise<AgentTask | null> {
+    this.currentCallbacks = callbacks;
+
+    const context = this.createStepExecutionContext();
+    const result = await this.taskLifecycleManager.resumeTask(taskId, context, callbacks);
+
+    if (result) {
+      this.currentTaskState.task = result;
     }
 
-    /**
-     * Sets task context for persistence
-     */
-    setTaskContext(userRequest: string, workspaceRoot: string): void {
-        this.currentTaskState.userRequest = userRequest;
-        this.currentTaskState.workspaceRoot = workspaceRoot;
-    }
+    return result;
+  }
 
-    /**
-     * Sets live editor stream instance for Phase 7 live streaming
-     */
-    setLiveStream(liveStream: LiveEditorStream): void {
-        this.liveStream = liveStream;
-    }
+  /**
+   * Gets list of resumable tasks
+   */
+  async getResumableTasks(): Promise<
+    Array<{ id: string; title: string; progress: string; timestamp: Date }>
+  > {
+    return await this.taskLifecycleManager.getResumableTasks();
+  }
 
-    /**
-     * Creates the step execution context with all dependencies
-     */
-    private createStepExecutionContext(): StepExecutionContext {
-        return {
-            fileSystemService: this.fileSystemService,
-            aiService: this.aiService,
-            workspaceService: this.workspaceService,
-            gitService: this.gitService,
-            taskState: this.currentTaskState,
-            liveStream: this.liveStream,
-            callbacks: this.currentCallbacks,
-            metacognitiveLayer: this.metacognitiveLayer,
-            reactExecutor: this.reactExecutor,
-            strategyMemory: this.strategyMemory,
-            enableReAct: this.enableReAct,
-            enableMemory: this.enableMemory,
-        };
-    }
+  /**
+   * Rolls back a task by reversing completed steps
+   */
+  async rollbackTask(task: AgentTask): Promise<{
+    success: boolean;
+    stepsRolledBack: string[];
+    filesRestored: string[];
+    error?: string;
+  }> {
+    const context = this.createStepExecutionContext();
+    return await this.taskLifecycleManager.rollbackTask(task, context);
+  }
 
-    /**
-     * Executes a complete task with all its steps
-     */
-    async executeTask(task: AgentTask, callbacks?: ExecutionCallbacks): Promise<AgentTask> {
-        this.currentTaskState.task = task;
-        this.currentCallbacks = callbacks;
+  // Control methods
+  pause(): void {
+    this.taskLifecycleManager.pause();
+  }
 
-        const context = this.createStepExecutionContext();
-        return await this.taskLifecycleManager.executeTask(task, context, callbacks);
-    }
+  resume(): void {
+    this.taskLifecycleManager.resume();
+  }
 
-    /**
-     * Resumes a previously persisted task
-     */
-    async resumeTask(taskId: string, callbacks?: ExecutionCallbacks): Promise<AgentTask | null> {
-        this.currentCallbacks = callbacks;
+  isPausedState(): boolean {
+    return this.taskLifecycleManager.isPausedState();
+  }
 
-        const context = this.createStepExecutionContext();
-        const result = await this.taskLifecycleManager.resumeTask(taskId, context, callbacks);
+  clearHistory(taskId: string): void {
+    this.taskLifecycleManager.clearHistory(taskId);
+  }
 
-        if (result) {
-            this.currentTaskState.task = result;
-        }
+  // Feature flag setters
+  setEnableReAct(enabled: boolean): void {
+    this.enableReAct = enabled;
+  }
 
-        return result;
-    }
-
-    /**
-     * Gets list of resumable tasks
-     */
-    async getResumableTasks(): Promise<Array<{ id: string; title: string; progress: string; timestamp: Date }>> {
-        return await this.taskLifecycleManager.getResumableTasks();
-    }
-
-    /**
-     * Rolls back a task by reversing completed steps
-     */
-    async rollbackTask(task: AgentTask): Promise<{
-        success: boolean;
-        stepsRolledBack: string[];
-        filesRestored: string[];
-        error?: string;
-    }> {
-        const context = this.createStepExecutionContext();
-        return await this.taskLifecycleManager.rollbackTask(task, context);
-    }
-
-    // Control methods
-    pause(): void {
-        this.taskLifecycleManager.pause();
-    }
-
-    resume(): void {
-        this.taskLifecycleManager.resume();
-    }
-
-    isPausedState(): boolean {
-        return this.taskLifecycleManager.isPausedState();
-    }
-
-    clearHistory(taskId: string): void {
-        this.taskLifecycleManager.clearHistory(taskId);
-    }
-
-    // Feature flag setters
-    setEnableReAct(enabled: boolean): void {
-        this.enableReAct = enabled;
-    }
-
-    setEnableMemory(enabled: boolean): void {
-        this.enableMemory = enabled;
-    }
+  setEnableMemory(enabled: boolean): void {
+    this.enableMemory = enabled;
+  }
 }

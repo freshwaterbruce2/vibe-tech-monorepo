@@ -5,6 +5,7 @@
  * handler matches a single route; `routeAppRequest` dispatches and returns true
  * when it handled the request so the server can fall through to other routes.
  */
+import { randomBytes } from 'node:crypto';
 import bcryptjs from 'bcryptjs';
 import {
   verifyPassword,
@@ -158,44 +159,74 @@ async function handleLogin(req, res, ctx) {
   }
 }
 
-function handleMe(req, res, ctx) {
+/** Map a users row to the AuthUser shape used for the session token. */
+function rowToAuthUser(userRow) {
+  return {
+    id: String(userRow.id),
+    email: userRow.email,
+    fullName: userRow.full_name || undefined,
+    companyName: userRow.company_name || undefined,
+  };
+}
+
+const LOCAL_USER_EMAIL = 'local@vibe.studio';
+
+/**
+ * Single-user desktop: return an account to sign in, provisioning one if the DB
+ * is empty. Picks the first existing user (Bruce's own account if he ever
+ * registered), else creates a local account with a random, unusable password
+ * (password login is never used on the desktop build). Enables the editor to
+ * open directly without a login screen.
+ */
+async function ensureLocalUser(db) {
+  const existing = db.prepare('SELECT * FROM users ORDER BY id LIMIT 1').get();
+  if (existing) return existing;
+
+  const { salt, hash } = await hashPassword(randomBytes(32).toString('hex'));
+  const result = db
+    .prepare(
+      `INSERT INTO users (email, password_hash, password_salt, full_name, company_name, subscription_tier)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    )
+    .run(LOCAL_USER_EMAIL, hash, salt, 'Local User', '', 'free');
+  return db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
+}
+
+async function handleMe(req, res, ctx) {
   const token = parseCookies(req.headers.cookie)[getSessionCookieName()];
-  const respondUnconfigured = () => sendJson(res, 200, { ok: true, configured: false, user: null });
 
-  if (!token) {
-    respondUnconfigured();
-    return;
+  // Resolve the user from a valid session cookie when present.
+  let userRow = null;
+  if (token) {
+    try {
+      const parsed = parseSessionToken(token);
+      if (parsed && parsed.sub) {
+        userRow = ctx.db.prepare('SELECT * FROM users WHERE id = ?').get(parsed.sub);
+      }
+    } catch (err) {
+      console.error('[Backend] Me token parse error:', err);
+    }
   }
 
-  try {
-    const parsed = parseSessionToken(token);
-    if (!parsed || !parsed.sub) {
-      respondUnconfigured();
+  // No valid session -> auto-login the local user and set a fresh cookie so the
+  // single-user desktop app never shows a login screen.
+  if (!userRow) {
+    try {
+      userRow = await ensureLocalUser(ctx.db);
+      setSessionCookie(res, rowToAuthUser(userRow));
+    } catch (err) {
+      console.error('[Backend] Auto-login error:', err);
+      sendJson(res, 200, { ok: true, configured: false, user: null });
       return;
     }
-
-    const userRow = ctx.db.prepare('SELECT * FROM users WHERE id = ?').get(parsed.sub);
-    if (!userRow) {
-      respondUnconfigured();
-      return;
-    }
-
-    const plan = resolvePlan(ctx.db, userRow.email, userRow.subscription_tier);
-    sendJson(res, 200, {
-      ok: true,
-      configured: true,
-      user: {
-        id: String(userRow.id),
-        email: userRow.email,
-        fullName: userRow.full_name || undefined,
-        companyName: userRow.company_name || undefined,
-        plan,
-      },
-    });
-  } catch (err) {
-    console.error('[Backend] Me error:', err);
-    sendJson(res, 500, { error: 'Internal server error', details: err.message });
   }
+
+  const plan = resolvePlan(ctx.db, userRow.email, userRow.subscription_tier);
+  sendJson(res, 200, {
+    ok: true,
+    configured: true,
+    user: { ...rowToAuthUser(userRow), plan },
+  });
 }
 
 function handleLogout(req, res) {
@@ -308,7 +339,7 @@ export async function routeAppRequest(req, res, pathname, ctx) {
     return true;
   }
   if (pathname === '/api/auth/me' && get) {
-    handleMe(req, res, ctx);
+    await handleMe(req, res, ctx);
     return true;
   }
   if (pathname === '/api/auth/logout' && post) {

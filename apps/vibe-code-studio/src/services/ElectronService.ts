@@ -6,7 +6,16 @@
  * by electron/preload.cjs to ensure proper IPC communication
  */
 import type { OpenDialogOptions, SaveDialogOptions } from '@tauri-apps/plugin-dialog';
-import { exists, mkdir, readDir, readTextFile, remove, rename, stat, writeTextFile } from '@tauri-apps/plugin-fs';
+import {
+  exists,
+  mkdir,
+  readDir,
+  readTextFile,
+  remove,
+  rename,
+  stat,
+  writeTextFile,
+} from '@tauri-apps/plugin-fs';
 import { logger } from '../services/Logger';
 
 interface NativeDirEntry {
@@ -22,6 +31,23 @@ interface NativeFileStat {
   isDirectory: boolean;
   birthtime?: Date;
   mtime?: Date;
+}
+
+/**
+ * Native filesystem adapters use platform-specific messages for a missing path.
+ * Absence is an expected result for discovery probes, unlike permission or I/O
+ * failures, which must remain visible to the caller and error log.
+ */
+export function isExpectedPathAbsence(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    /\bENOENT\b/i.test(message) ||
+    /\bos error (?:2|3)\b/i.test(message) ||
+    /no such file or directory/i.test(message) ||
+    /the system cannot find the file specified/i.test(message) ||
+    /the system cannot find the path specified/i.test(message) ||
+    message.includes('No workspace folder approved yet')
+  );
 }
 
 // Service to handle Native API integration
@@ -85,9 +111,7 @@ export class ElectronService {
     }
   }
 
-  async readDir(
-    dirPath: string
-  ): Promise<NativeDirEntry[]> {
+  async readDir(dirPath: string): Promise<NativeDirEntry[]> {
     if (this.isTauri()) {
       try {
         const entries = await readDir(dirPath);
@@ -95,10 +119,12 @@ export class ElectronService {
           name: entry.name ?? 'unknown',
           path: `${dirPath}/${entry.name}`,
           isDirectory: entry.isDirectory,
-          isFile: entry.isFile
+          isFile: entry.isFile,
         }));
       } catch (e: unknown) {
-        logger.error('[ElectronService] readDir failed (Tauri):', e);
+        if (!isExpectedPathAbsence(e)) {
+          logger.error('[ElectronService] readDir failed (Tauri):', e);
+        }
         throw new Error(e instanceof Error ? e.message : String(e));
       }
     }
@@ -112,11 +138,7 @@ export class ElectronService {
 
     if (!result.success) {
       const errorMsg = result.error ?? 'Failed to read directory';
-      const isExpectedError = errorMsg.includes('ENOENT') || errorMsg.includes('No workspace folder approved yet');
-      // Expected errors (ENOENT, no workspace) - log at debug level
-      if (isExpectedError) {
-        logger.debug('[ElectronService] readDir expected error:', errorMsg);
-      } else {
+      if (!isExpectedPathAbsence(errorMsg)) {
         logger.error('[ElectronService] readDir failed:', errorMsg);
       }
       throw new Error(errorMsg);
@@ -194,9 +216,7 @@ export class ElectronService {
     return result.exists;
   }
 
-  async stat(
-    targetPath: string
-  ): Promise<NativeFileStat> {
+  async stat(targetPath: string): Promise<NativeFileStat> {
     if (this.isTauri()) {
       const info = await stat(targetPath);
       const infoRec = info as unknown as Record<string, unknown>;
@@ -441,12 +461,6 @@ export class ElectronService {
 
   // Store Operations (KV)
   async storeGet(key: string): Promise<unknown> {
-    if (this.isTauri()) {
-      const { load } = await import('@tauri-apps/plugin-store');
-      const store = await load('store.json');
-      return await store.get(key) ?? undefined;
-    }
-
     if (this.electron?.store) {
       return await this.electron.store.get(key);
     }
@@ -454,26 +468,12 @@ export class ElectronService {
   }
 
   async storeSet(key: string, value: string): Promise<void> {
-    if (this.isTauri()) {
-      const { load } = await import('@tauri-apps/plugin-store');
-      const store = await load('store.json');
-      await store.set(key, value);
-      return;
-    }
-
     if (this.electron?.store) {
       await this.electron.store.set(key, value);
     }
   }
 
   async storeDelete(key: string): Promise<void> {
-    if (this.isTauri()) {
-      const { load } = await import('@tauri-apps/plugin-store');
-      const store = await load('store.json');
-      await store.delete(key);
-      return;
-    }
-
     if (this.electron?.store) {
       await this.electron.store.delete(key);
     }

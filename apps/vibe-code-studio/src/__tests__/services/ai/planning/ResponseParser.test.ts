@@ -62,7 +62,7 @@ describe('parseTaskPlan extraction formats', () => {
   it('parses a plain JSON response', () => {
     const task = parseTaskPlan(planJson(), 'do the work');
     expect(task.title).toBe('Do the work');
-    expect(task.status).toBe('awaiting_approval');
+    expect(task.status).toBe('planning');
     expect(task.steps).toHaveLength(1);
     expect(task.steps[0]).toMatchObject({
       order: 1,
@@ -91,13 +91,7 @@ describe('parseTaskPlan extraction formats', () => {
   });
 });
 
-describe('parseTaskPlan fallback degradation', () => {
-  const isFallback = (task: AgentTask) =>
-    task.title === 'Manual Task' &&
-    task.steps.length === 1 &&
-    task.steps[0]?.action.type === 'custom' &&
-    task.steps[0]?.requiresApproval === true;
-
+describe('parseTaskPlan invalid response handling', () => {
   it.each([
     ['empty response', ''],
     ['no JSON at all', 'I cannot produce a plan right now.'],
@@ -108,10 +102,10 @@ describe('parseTaskPlan fallback degradation', () => {
       planJson({ steps: [{ title: 't', description: 'd', action: { type: 'launch_missiles' } }] }),
     ],
     ['missing steps array', '{ "title": "no steps" }'],
-  ])('degrades to a single approval-gated custom step on %s', (_label, response) => {
-    const task = parseTaskPlan(response, 'the request');
-    expect(isFallback(task)).toBe(true);
-    expect(task.steps[0]?.action.params['userRequest']).toBe('the request');
+  ])('rejects %s instead of inventing an executable fallback', (_label, response) => {
+    expect(() => parseTaskPlan(response, 'the request')).toThrow(
+      /Planning response was not executable/
+    );
   });
 });
 
@@ -129,9 +123,60 @@ describe('parseTaskPlan defaults and approval precedence', () => {
   it('applies the system approval rule when the AI omits requiresApproval', () => {
     const response = JSON.stringify({
       title: 'Write',
-      steps: [{ title: 'w', description: 'd', action: { type: 'write_file' } }],
+      steps: [
+        {
+          title: 'w',
+          description: 'd',
+          action: { type: 'write_file', params: { filePath: 'a.ts', content: 'x' } },
+          requiresApproval: false,
+        },
+      ],
     });
     expect(parseTaskPlan(response, 'req').steps[0]?.requiresApproval).toBe(true);
+  });
+
+  it('normalizes hostile model order values to contiguous one-based positions', () => {
+    const response = planJson({
+      steps: [
+        { order: 99, title: 'a', description: 'a', action: { type: 'analyze_code' } },
+        { order: -4, title: 'b', description: 'b', action: { type: 'review_project' } },
+      ],
+    });
+    expect(parseTaskPlan(response, 'req').steps.map(step => step.order)).toEqual([1, 2]);
+  });
+
+  it('marks a final fileless report after two inspections as display-only synthesis', () => {
+    const reportDescription = 'Report the verified compiled artifacts and configuration findings';
+    const task = parseTaskPlan(
+      planJson({
+        steps: [
+          {
+            title: 'Read package metadata',
+            description: 'Inspect package.json',
+            action: { type: 'read_file', params: { filePath: 'package.json' } },
+          },
+          {
+            title: 'Analyze compiler settings',
+            description: 'Inspect tsconfig.json',
+            action: { type: 'analyze_code', params: { filePath: 'tsconfig.json' } },
+          },
+          {
+            title: 'Synthesize verified report',
+            description: 'Summarize the inspected findings without changing files',
+            action: { type: 'generate_code', params: { description: reportDescription } },
+          },
+        ],
+      }),
+      'Review the workspace without making changes'
+    );
+
+    expect(task.steps[2]).toMatchObject({
+      action: {
+        type: 'generate_code',
+        params: { description: reportDescription, displayOnly: true },
+      },
+      requiresApproval: false,
+    });
   });
 });
 
@@ -146,6 +191,69 @@ describe('validateAction', () => {
   it('throws on unknown action types', () => {
     expect(() => validateAction({ type: 'nuke_everything' })).toThrow(/Invalid action type/);
   });
+
+  it('validates required action parameters', () => {
+    expect(() => validateAction({ type: 'read_file' })).toThrow(/filePath/);
+    expect(() => validateAction({ type: 'write_file', params: { filePath: 'a.ts' } })).toThrow(
+      /content/
+    );
+    expect(() => validateAction({ type: 'run_command' })).toThrow(/command/);
+    expect(() => validateAction({ type: 'run_tests' })).toThrow(/projectName/);
+    expect(() =>
+      validateAction({
+        type: 'run_tests',
+        params: { projectName: 'vibe-code-studio', targets: [42] },
+      })
+    ).toThrow(/targets/);
+    expect(
+      validateAction({
+        type: 'run_tests',
+        params: { projectName: 'vibe-code-studio', targets: ['typecheck', 'test'] },
+      })
+    ).toMatchObject({ type: 'run_tests' });
+    expect(() =>
+      validateAction({
+        type: 'run_tests',
+        params: { projectName: 'vibe-code-studio', targets: ['lint-fix'] },
+      })
+    ).toThrow(/typecheck, lint, test, or build/);
+    expect(() =>
+      validateAction({
+        type: 'run_tests',
+        params: { projectName: '--help', targets: ['test'] },
+      })
+    ).toThrow(/projectName/);
+    expect(() =>
+      validateAction({
+        type: 'search_codebase',
+        params: { searchQuery: '' },
+      })
+    ).toThrow(/non-empty searchQuery/);
+    expect(() =>
+      validateAction({
+        type: 'search_codebase',
+        params: { searchQuery: [] },
+      })
+    ).toThrow(/non-empty searchQuery/);
+    expect(() =>
+      validateAction({
+        type: 'generate_code',
+        params: { filePath: 'src/index.ts' },
+      })
+    ).toThrow(/description/);
+    expect(
+      validateAction({
+        type: 'search_codebase',
+        params: { searchQuery: 'TODO' },
+      })
+    ).toMatchObject({ type: 'search_codebase' });
+    expect(
+      validateAction({
+        type: 'search_codebase',
+        params: { searchQuery: ['asset', 'image'] },
+      })
+    ).toMatchObject({ type: 'search_codebase' });
+  });
 });
 
 describe('shouldRequireApproval', () => {
@@ -154,14 +262,14 @@ describe('shouldRequireApproval', () => {
     expect(shouldRequireApproval({ type: 'git_commit', params: {} })).toBe(true);
   });
 
-  it('flags dangerous commands and passes safe ones', () => {
+  it('requires approval for every command, regardless of command text', () => {
     expect(shouldRequireApproval({ type: 'run_command', params: { command: 'rm -rf /' } })).toBe(
       true
     );
     expect(shouldRequireApproval({ type: 'run_command', params: { command: 'pnpm build' } })).toBe(
-      false
+      true
     );
-    expect(shouldRequireApproval({ type: 'run_command', params: {} })).toBe(false);
+    expect(shouldRequireApproval({ type: 'run_command', params: {} })).toBe(true);
   });
 
   it('honors requireApprovalForAll', () => {

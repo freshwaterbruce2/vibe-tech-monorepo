@@ -1,15 +1,16 @@
-import React, { forwardRef } from 'react';
-import type { ReactNode } from 'react';
-import { motion } from 'framer-motion';
-import styled, { css } from 'styled-components';
+import { forwardRef } from 'react';
+import type { HTMLAttributes, ReactNode } from 'react';
 
-import { vibeTheme } from '../../styles/theme';
-import { shouldForwardMotionProp } from '../../utils/motionProps';
+import type { CardPadding, CardVariant } from './card.styles';
+import { CardContent, CardFooter, CardHeader, StyledCard } from './card.styles';
 
-export type CardVariant = 'default' | 'elevated' | 'outline' | 'glass';
-export type CardPadding = 'none' | 'sm' | 'md' | 'lg' | 'xl';
+export type { CardPadding, CardVariant } from './card.styles';
+export { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './card.styles';
 
-export interface CardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onAnimationStart' | 'onAnimationEnd' | 'onDrag' | 'onDragStart' | 'onDragEnd'> {
+export interface CardProps extends Omit<
+  HTMLAttributes<HTMLDivElement>,
+  'onAnimationStart' | 'onAnimationEnd' | 'onDrag' | 'onDragStart' | 'onDragEnd'
+> {
   variant?: CardVariant;
   padding?: CardPadding;
   hoverable?: boolean;
@@ -18,132 +19,6 @@ export interface CardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'o
   footer?: ReactNode;
   children?: ReactNode;
 }
-
-// Padding configurations
-const paddingStyles = {
-  none: css`
-    padding: 0;
-  `,
-  sm: css`
-    padding: ${vibeTheme.spacing[3]};
-  `,
-  md: css`
-    padding: ${vibeTheme.spacing[4]};
-  `,
-  lg: css`
-    padding: ${vibeTheme.spacing[6]};
-  `,
-  xl: css`
-    padding: ${vibeTheme.spacing[8]};
-  `,
-};
-
-// Variant styles
-const variantStyles = {
-  default: css`
-    background: ${vibeTheme.colors.tertiary};
-    border: 1px solid rgba(139, 92, 246, 0.15);
-    box-shadow: ${vibeTheme.shadows.sm};
-  `,
-
-  elevated: css`
-    background: ${vibeTheme.colors.elevated};
-    border: 1px solid rgba(139, 92, 246, 0.2);
-    box-shadow: ${vibeTheme.shadows.md}, ${vibeTheme.shadows.glow};
-  `,
-
-  outline: css`
-    background: transparent;
-    border: 1px solid rgba(139, 92, 246, 0.3);
-  `,
-
-  glass: css`
-    background: linear-gradient(
-      135deg,
-      rgba(139, 92, 246, 0.05) 0%,
-      rgba(0, 212, 255, 0.03) 100%
-    );
-    border: 1px solid rgba(139, 92, 246, 0.2);
-    backdrop-filter: blur(20px);
-    box-shadow: ${vibeTheme.shadows.sm};
-  `,
-};
-
-const StyledCard = styled(motion.div).withConfig({
-  shouldForwardProp: shouldForwardMotionProp,
-})<{
-  $variant: CardVariant;
-  $padding: CardPadding;
-  $hoverable: boolean;
-  $clickable: boolean;
-  $hasHeader: boolean;
-  $hasFooter: boolean;
-}>`
-  /* Base styles */
-  border-radius: ${vibeTheme.borderRadius.lg};
-  transition: ${vibeTheme.animation.transition.all};
-  position: relative;
-  overflow: hidden;
-
-  /* Variant styles */
-  ${props => variantStyles[props.$variant]}
-
-  /* Padding - only apply to content area if no header/footer */
-  ${props => !props.$hasHeader && !props.$hasFooter && paddingStyles[props.$padding]}
-
-  /* Hoverable state */
-  ${props => props.$hoverable && css`
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: ${vibeTheme.shadows.lg}, ${vibeTheme.shadows.glowStrong};
-      border-color: rgba(139, 92, 246, 0.4);
-    }
-  `}
-
-  /* Clickable state */
-  ${props => props.$clickable && css`
-    cursor: pointer;
-
-    &:active {
-      transform: translateY(0);
-    }
-  `}
-
-  /* Focus visible */
-  &:focus-visible {
-    outline: 2px solid ${vibeTheme.colors.focus};
-    outline-offset: 2px;
-  }
-`;
-
-export const CardHeader = styled.div<{ $padding?: CardPadding }>`
-  ${props => paddingStyles[props.$padding ?? 'md']}
-  border-bottom: 1px solid rgba(139, 92, 246, 0.15);
-`;
-
-export const CardTitle = styled.h3`
-  margin: 0;
-  font-size: ${vibeTheme.typography.fontSize.lg};
-  font-weight: ${vibeTheme.typography.fontWeight.semibold};
-  color: ${vibeTheme.colors.text};
-`;
-
-export const CardDescription = styled.p`
-  margin: ${vibeTheme.spacing[1]} 0 0 0;
-  font-size: ${vibeTheme.typography.fontSize.sm};
-  color: ${vibeTheme.colors.textSecondary};
-  line-height: ${vibeTheme.typography.lineHeight.relaxed};
-`;
-
-export const CardContent = styled.div<{ $padding?: CardPadding }>`
-  ${props => paddingStyles[props.$padding ?? 'md']}
-  flex: 1;
-`;
-
-export const CardFooter = styled.div<{ $padding?: CardPadding }>`
-  ${props => paddingStyles[props.$padding ?? 'md']}
-  border-top: 1px solid rgba(139, 92, 246, 0.15);
-`;
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
   (
@@ -179,21 +54,11 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
         whileTap={clickable ? { scale: 0.99 } : undefined}
         {...props}
       >
-        {hasHeader && (
-          <CardHeader>
-            {header}
-          </CardHeader>
-        )}
+        {hasHeader && <CardHeader>{header}</CardHeader>}
 
-        <CardContent>
-          {children}
-        </CardContent>
+        <CardContent>{children}</CardContent>
 
-        {hasFooter && (
-          <CardFooter>
-            {footer}
-          </CardFooter>
-        )}
+        {hasFooter && <CardFooter>{footer}</CardFooter>}
       </StyledCard>
     );
   }

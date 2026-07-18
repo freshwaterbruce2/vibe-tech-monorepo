@@ -29,6 +29,18 @@ describe('useAICommandPalette', () => {
     expect(onToggleAIChat).toHaveBeenCalledTimes(1);
   });
 
+  it('wires the Find command to the onFind handler', () => {
+    const onFind = vi.fn();
+    const { result } = renderHook(() => useAICommandPalette({ onFind }));
+    result.current.commands.find(c => c.id === 'editor-find')?.action();
+    expect(onFind).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves the Find command a safe no-op when onFind is not provided', () => {
+    const { result } = renderHook(() => useAICommandPalette({}));
+    expect(() => result.current.commands.find(c => c.id === 'editor-find')?.action()).not.toThrow();
+  });
+
   it('toggles palette visibility', () => {
     const { result } = renderHook(() => useAICommandPalette({}));
     expect(result.current.commandPaletteOpen).toBe(false);

@@ -6,8 +6,8 @@ import type * as Monaco from 'monaco-editor';
 
 import { logger } from '../services/Logger';
 
+import { DEFAULT_FAST_MODEL, DEFAULT_MODEL, MODEL_REGISTRY } from './ai/AIProviderInterface';
 import type { UnifiedAIService } from './ai/UnifiedAIService';
-import { ModelRegistry } from './ModelRegistry';
 
 export interface DetectedError {
   id: string;
@@ -53,7 +53,6 @@ export interface AutoFixConfig {
 export class AutoFixService {
   private cache: Map<string, GeneratedFix> = new Map();
   private codeVersions: Map<string, string> = new Map();
-  private modelRegistry: ModelRegistry;
   private config: AutoFixConfig;
 
   constructor(
@@ -64,7 +63,6 @@ export class AutoFixService {
       throw new Error('AI service is required');
     }
 
-    this.modelRegistry = new ModelRegistry();
     this.config = {
       maxCostPerFix: 0.01,
       preferSpeed: true,
@@ -81,13 +79,13 @@ export class AutoFixService {
     const isComplexRefactoring = contextSize > 50 || error.stackTrace !== undefined;
 
     if (isSimpleError) {
-      return 'claude-haiku-4.5';
+      return DEFAULT_FAST_MODEL;
     } else if (isComplexRefactoring) {
-      return 'claude-sonnet-4.5';
+      return DEFAULT_MODEL;
     } else if (this.config.preferSpeed) {
-      return 'claude-haiku-4.5';
+      return DEFAULT_FAST_MODEL;
     } else {
-      return 'claude-sonnet-4.5';
+      return DEFAULT_MODEL;
     }
   }
 
@@ -139,7 +137,7 @@ export class AutoFixService {
     const prompt = this.buildFixPrompt(error, context, { filePath, languageId });
     const estimatedCost = this.estimateFixCost(prompt, selectedModel);
 
-    const response = await this.requestFixResponse(prompt);
+    const response = await this.requestFixResponse(prompt, selectedModel);
 
     const generationTime = Date.now() - startTime;
     const suggestions = this.parseResponse(response, error, selectedModel, estimatedCost);
@@ -174,15 +172,17 @@ export class AutoFixService {
   private estimateFixCost(prompt: string, selectedModel: string): number {
     const promptTokens = Math.ceil(prompt.length / 4);
     const estimatedOutputTokens = 500;
-    const modelInfo = this.modelRegistry.getModel(selectedModel);
-    return modelInfo
-      ? this.modelRegistry.calculateCost(selectedModel, promptTokens, estimatedOutputTokens)
-      : 0;
+    const modelInfo = MODEL_REGISTRY[selectedModel];
+    if (!modelInfo) return 0;
+
+    const inputCost = (promptTokens / 1_000_000) * modelInfo.costPerMillionInput;
+    const outputCost = (estimatedOutputTokens / 1_000_000) * modelInfo.costPerMillionOutput;
+    return inputCost + outputCost;
   }
 
-  private async requestFixResponse(prompt: string): Promise<string> {
+  private async requestFixResponse(prompt: string, selectedModel: string): Promise<string> {
     try {
-      this.aiService.setModel?.('moonshot/kimi-2.5-pro');
+      this.aiService.setModel?.(selectedModel);
 
       const aiResponse = await this.aiService.sendContextualMessage({
         userQuery: prompt,

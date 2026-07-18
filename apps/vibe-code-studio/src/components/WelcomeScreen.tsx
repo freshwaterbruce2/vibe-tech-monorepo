@@ -1,13 +1,13 @@
 import { motion } from 'framer-motion';
 import { shouldForwardMotionProp } from '../utils/motionProps';
 import {
-    Code,
-    FileText,
-    FolderOpen,
-    GitBranch,
-    MessageSquare,
-    Sparkles,
-    Terminal,
+  Code,
+  FileText,
+  FolderOpen,
+  GitBranch,
+  MessageSquare,
+  Sparkles,
+  Terminal,
 } from 'lucide-react';
 import { useState } from 'react';
 import styled, { keyframes } from 'styled-components';
@@ -123,7 +123,7 @@ const FeatureGrid = styled.div`
 const FeatureCard = styled(motion.div).withConfig({
   shouldForwardProp: shouldForwardMotionProp,
 })<{ $variant?: 'primary' | 'secondary' }>`
-  background: ${(props) =>
+  background: ${props =>
     props.$variant === 'primary'
       ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(0, 212, 255, 0.05) 100%)'
       : 'rgba(26, 26, 46, 0.7)'};
@@ -141,8 +141,8 @@ const FeatureCard = styled(motion.div).withConfig({
     position: absolute;
     inset: 0;
     padding: 2px;
-    background: ${(props) =>
-    props.$variant === 'primary' ? vibeTheme.gradients.border : 'rgba(139, 92, 246, 0.2)'};
+    background: ${props =>
+      props.$variant === 'primary' ? vibeTheme.gradients.border : 'rgba(139, 92, 246, 0.2)'};
     border-radius: ${vibeTheme.borderRadius.large};
     mask:
       linear-gradient(#fff 0 0) content-box,
@@ -166,7 +166,7 @@ const IconWrapper = styled.div<{ $variant?: 'primary' | 'secondary' }>`
   width: 48px;
   height: 48px;
   border-radius: ${vibeTheme.borderRadius.medium};
-  background: ${(props) =>
+  background: ${props =>
     props.$variant === 'primary' ? vibeTheme.gradients.primary : vibeTheme.gradients.secondary};
   display: flex;
   align-items: center;
@@ -247,31 +247,27 @@ export const WelcomeScreen = ({
   const [fileDialogOpen, setFileDialogOpen] = useState(false);
 
   const handleOpenFolder = async () => {
-    // Use Electron's folder picker if available
+    // Use the native folder picker when available. The Tauri shim
+    // (tauriShim.ts) and the Electron preload both expose dialog.openFolder
+    // mapped to the platform dialog — never show manual path entry first.
     if (window.electron?.dialog) {
       try {
-        const result = await window.electron.dialog.openFolder({
-          properties: ['openDirectory'],
-        });
+        // The Tauri shim owns the native directory/multiple options. Passing
+        // Electron's legacy `properties` array breaks the Windows folder picker.
+        const result = await window.electron.dialog.openFolder({});
         if (!result.canceled && result.filePaths?.length > 0 && result.filePaths[0]) {
-          onOpenFolder(result.filePaths[0]);
+          onOpenFolder(result.filePaths[0].replace(/\\/g, '/'));
         }
       } catch (error) {
-        logger.error('Error opening folder:', error);
-        // Fallback to browser file API if available
-        if ('showDirectoryPicker' in window) {
-          try {
-            const dirHandle = await (window as Window & { showDirectoryPicker: () => Promise<{ name: string }> }).showDirectoryPicker();
-            onOpenFolder(dirHandle.name);
-          } catch (err) {
-            logger.error('Browser folder picker error:', err);
-          }
-        }
+        logger.error('Native folder picker failed, falling back to manual entry:', error);
+        setFolderDialogOpen(true);
       }
     } else if ('showDirectoryPicker' in window) {
       // Use browser's File System Access API
       try {
-        const dirHandle = await (window as Window & { showDirectoryPicker: () => Promise<{ name: string }> }).showDirectoryPicker();
+        const dirHandle = await (
+          window as Window & { showDirectoryPicker: () => Promise<{ name: string }> }
+        ).showDirectoryPicker();
         onOpenFolder(dirHandle.name);
       } catch (error) {
         logger.error('Browser folder picker error:', error);
@@ -301,7 +297,8 @@ export const WelcomeScreen = ({
   const validateFileName = (fileName: string): string | null => {
     // Validate file name doesn't contain invalid characters
     // \u0000-\u001F = control characters (ASCII 0-31)
-     
+
+    // eslint-disable-next-line no-control-regex -- filename validation must reject control chars
     const invalidChars = new RegExp('[<>:"/\\\\|?*\\x00-\\x1F]');
     if (invalidChars.test(fileName)) {
       return 'File name contains invalid characters';
@@ -377,7 +374,8 @@ export const WelcomeScreen = ({
             </IconWrapper>
             <FeatureTitle>Smart Features</FeatureTitle>
             <FeatureDescription>
-              Experience intelligent code completion, refactoring, and smart tools tuned to your workflow
+              Experience intelligent code completion, refactoring, and smart tools tuned to your
+              workflow
             </FeatureDescription>
           </FeatureCard>
         </FeatureGrid>
@@ -425,11 +423,7 @@ export const WelcomeScreen = ({
             >
               API Endpoint
             </Button>
-            <Button
-              variant="outline"
-              icon={<GitBranch />}
-              onClick={handleOpenFolder}
-            >
+            <Button variant="outline" icon={<GitBranch />} onClick={handleOpenFolder}>
               Open Repo
             </Button>
           </div>
