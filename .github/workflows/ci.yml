@@ -9,23 +9,12 @@ on:
   workflow_dispatch:
   push:
     branches: [main, develop, 'feature/*']
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-      - 'LICENSE'
-      - '*.txt'
   pull_request:
     branches: [main, develop]
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-      - 'LICENSE'
-      - '*.txt'
 
 # Least-privilege: default to read-only for all jobs
 permissions:
   contents: read
-  pull-requests: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -57,6 +46,9 @@ jobs:
   quality:
     name: Quality Gates
     runs-on: windows-latest
+    environment:
+      name: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'nx-cloud-protected' || 'nx-cloud-unprotected' }}
+      deployment: false
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -211,6 +203,9 @@ jobs:
   build:
     name: Build
     runs-on: windows-latest
+    environment:
+      name: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'nx-cloud-protected' || 'nx-cloud-unprotected' }}
+      deployment: false
     needs: quality
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     steps:
@@ -297,10 +292,14 @@ jobs:
   release:
     name: Release
     runs-on: windows-latest
+    environment:
+      name: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'nx-cloud-protected' || 'nx-cloud-unprotected' }}
+      deployment: false
     needs: [quality, build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     permissions:
       contents: write
+      pull-requests: write
     env:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
@@ -316,31 +315,22 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Version packages
-        run: |
-          $changesets = Get-ChildItem .changeset -Filter "*.md" | Where-Object { $_.Name -ne "README.md" }
-          if ($changesets.Count -gt 0) {
-            Write-Host "Found $($changesets.Count) changesets. Bumping versions..."
-            git config user.email "ci@github.com"
-            git config user.name "GitHub Actions"
-            pnpm changeset version
-            git add .
-            git commit -m "chore(release): version packages [skip ci]" 2>$null
-            git push origin main 2>$null
-          } else {
-            Write-Host "No changesets to process"
-          }
-
-      - name: Publish packages
-        if: env.NPM_TOKEN != ''
-        run: |
-          "//registry.npmjs.org/:_authToken=$env:NPM_TOKEN" | Out-File ~/.npmrc
-          pnpm changeset publish
-          git push origin --tags 2>$null
+      - name: Create release pull request or publish packages
+        uses: changesets/action@d94a5c301145045a0960133674e003b265942a22 # v1.8.0
+        with:
+          version: pnpm changeset version
+          publish: pnpm changeset publish
+          commit: 'chore(release): version packages'
+          title: 'chore(release): version packages'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   # ============================================
   # COVERAGE (non-blocking while coverage targets are being completed)
@@ -348,6 +338,9 @@ jobs:
   coverage:
     name: Coverage (affected, non-blocking)
     runs-on: windows-latest
+    environment:
+      name: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'nx-cloud-protected' || 'nx-cloud-unprotected' }}
+      deployment: false
     needs: quality
     if: always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch')
     continue-on-error: true
@@ -402,6 +395,9 @@ jobs:
   node24-canary:
     name: Node 24 Compatibility (non-blocking)
     runs-on: windows-latest
+    environment:
+      name: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'nx-cloud-protected' || 'nx-cloud-unprotected' }}
+      deployment: false
     needs: quality
     if: always() && (github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch')
     continue-on-error: true
@@ -455,6 +451,9 @@ jobs:
   e2e:
     name: E2E Tests (Chromium)
     runs-on: windows-latest
+    environment:
+      name: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'nx-cloud-protected' || 'nx-cloud-unprotected' }}
+      deployment: false
     needs: quality
     timeout-minutes: 30
     # The legacy business-booking-platform Playwright suite is currently
