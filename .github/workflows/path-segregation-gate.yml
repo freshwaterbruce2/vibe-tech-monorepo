@@ -27,6 +27,7 @@ env:
   # outside the checkout so nx does not infer phantom projects from the store).
   # NB: runner.temp is unavailable in workflow-level env; github.workspace is.
   npm_config_store_dir: '${{ github.workspace }}-pnpm-store'
+  NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
 
 jobs:
   path-check:
