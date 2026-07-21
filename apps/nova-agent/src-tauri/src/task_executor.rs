@@ -1,7 +1,9 @@
+use crate::database::checkpoints::{digest_value, CheckpointContent};
 use crate::database::{types::Task, DatabaseService};
 use crate::modules::state::Config;
 use crate::modules::{llm, procedural_memory, prompts};
-use serde::Deserialize;
+use crate::task_executor_support::{execution_prompt, review_gate_error, TaskExecutionMetadata};
+use serde_json::json;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex as AsyncMutex;
@@ -9,34 +11,6 @@ use tokio::time::sleep;
 use tracing::{debug, error, info, warn};
 
 const MAX_EXECUTION_DURATION_MINUTES: u64 = 240;
-
-#[derive(Debug, Default, Deserialize)]
-struct TaskExecutionMetadata {
-    description: Option<String>,
-    project_path: Option<String>,
-    auto_execute: Option<bool>,
-    risk: Option<String>,
-    max_duration_minutes: Option<u64>,
-    requires_approval: Option<bool>,
-    approved_for_execution: Option<bool>,
-    review_artifact_path: Option<String>,
-    review_completed: Option<bool>,
-    review_target_path: Option<String>,
-    review_evidence_count: Option<u64>,
-    reviewed_at: Option<String>,
-    review_version: Option<String>,
-    plan_grounded: Option<bool>,
-    generic_plan_flags: Option<Vec<String>>,
-}
-
-impl TaskExecutionMetadata {
-    fn from_task(task: &Task) -> Self {
-        task.metadata
-            .as_deref()
-            .and_then(|raw| serde_json::from_str::<TaskExecutionMetadata>(raw).ok())
-            .unwrap_or_default()
-    }
-}
 
 /// Task Executor - Autonomous task processing engine
 /// Monitors the task queue and executes tasks using LLM + tools
@@ -174,12 +148,90 @@ impl TaskExecutor {
             .min(MAX_EXECUTION_DURATION_MINUTES)
             .max(1);
 
-        if (requires_approval || auto_execute) && !approved_for_execution {
+        let (workspace_fingerprint, preconditions) = {
+            let db_guard = db.lock().await;
+            let service = db_guard.as_ref().ok_or("Database not available")?;
+            service.trusted_resume_evidence(&task.id)?
+        };
+        let plan = json!({
+            "steps":["validate_review","execute_with_tools","verify_outcome"],
+            "task_definition_digest": preconditions.get("task_definition_digest"),
+        });
+        let action_fingerprint = digest_value(&json!({
+            "kind": "task_execution",
+            "plan": plan,
+            "workspace": workspace_fingerprint,
+            "evidence": preconditions,
+        }));
+
+        let mut checkpoint = {
+            let db_guard = db.lock().await;
+            let service = db_guard.as_ref().ok_or("Database not available")?;
+            match service
+                .get_checkpoint(&task.id)
+                .map_err(|e| e.to_string())?
+            {
+                Some(existing)
+                    if existing.content.workspace_fingerprint == workspace_fingerprint
+                        && existing.content.preconditions == preconditions =>
+                {
+                    existing
+                }
+                Some(_) => return Err("CURRENT_WORKSPACE_REVIEW_REQUIRED".to_string()),
+                None => service.save_checkpoint(
+                    &task.id,
+                    0,
+                    &CheckpointContent {
+                        state: "planned".to_string(),
+                        plan: plan.clone(),
+                        progress: json!({"completed":[]}),
+                        tool_results: json!([]),
+                        pending_approval: None,
+                        errors: json!([]),
+                        conversation: json!([]),
+                        next_action: json!({"kind":"validate_review"}),
+                        workspace_fingerprint: workspace_fingerprint.clone(),
+                        preconditions: preconditions.clone(),
+                    },
+                )?,
+            }
+        };
+        let approval_digest = {
+            let db_guard = db.lock().await;
+            let service = db_guard.as_ref().ok_or("Database not available")?;
+            service.effect_approval_digest(
+                &task.id,
+                &checkpoint.content.plan,
+                &action_fingerprint,
+            )?
+        };
+        let approval_is_current =
+            metadata.approved_plan_digest.as_deref() == Some(&approval_digest);
+
+        if (requires_approval || auto_execute) && (!approved_for_execution || !approval_is_current)
+        {
             let db_guard = db.lock().await;
             if let Some(service) = db_guard.as_ref() {
-                let _ = service.update_task_status(&task.id, "awaiting_approval");
+                if checkpoint.content.pending_approval.is_none() {
+                    checkpoint.content.state = "awaiting_approval".to_string();
+                    checkpoint.content.pending_approval = Some(json!({
+                        "checkpoint_revision": checkpoint.revision + 1,
+                        "action_fingerprint": action_fingerprint.clone(),
+                        "approval_digest": approval_digest,
+                        "action_kind": "task_execution",
+                    }));
+                    checkpoint.content.next_action = json!({"kind":"await_approval"});
+                    checkpoint = service.save_checkpoint(
+                        &task.id,
+                        checkpoint.revision,
+                        &checkpoint.content,
+                    )?;
+                }
+                service
+                    .update_task_status(&task.id, "awaiting_approval")
+                    .map_err(|e| e.to_string())?;
             }
-            info!("Task {} moved to awaiting_approval", task.id);
+            info!("Task {} is awaiting checkpoint-bound approval", task.id);
             return Ok(());
         }
 
@@ -187,79 +239,22 @@ impl TaskExecutor {
             let db_guard = db.lock().await;
             if let Some(service) = db_guard.as_ref() {
                 let _ = service.update_task_status(&task.id, "queued");
+                checkpoint.content.state = "paused".to_string();
+                checkpoint.content.next_action = json!({"kind":"manual_start"});
+                let _ = service.save_checkpoint(&task.id, checkpoint.revision, &checkpoint.content);
             }
             debug!("Skipping task {} because auto_execute is disabled", task.id);
             return Ok(());
         }
 
-        let review_completed = metadata.review_completed.unwrap_or(false);
-        let plan_grounded = metadata.plan_grounded.unwrap_or(false);
-        let generic_plan_flags = metadata.generic_plan_flags.clone().unwrap_or_default();
-        let review_target_path = metadata.review_target_path.clone().unwrap_or_default();
-        let review_artifact_path = metadata.review_artifact_path.clone();
-        let review_evidence_count = metadata.review_evidence_count.unwrap_or(0);
-        let reviewed_at = metadata
-            .reviewed_at
-            .clone()
-            .unwrap_or_else(|| "unknown".to_string());
-        let review_version = metadata
-            .review_version
-            .clone()
-            .unwrap_or_else(|| "unknown".to_string());
-
-        let review_gate_error = if !review_completed {
-            Some(format!(
-                "Task {} is blocked: no grounded project review is attached. Run `nova analyze --path {}` first.",
-                task.id, project_path
-            ))
-        } else if !plan_grounded {
-            Some(format!(
-                "Task {} is blocked: the plan was marked ungrounded. Flags: {}",
-                task.id,
-                if generic_plan_flags.is_empty() {
-                    "none supplied".to_string()
-                } else {
-                    generic_plan_flags.join(" | ")
-                }
-            ))
-        } else if !generic_plan_flags.is_empty() {
-            Some(format!(
-                "Task {} is blocked: generic plan flags were detected: {}",
-                task.id,
-                generic_plan_flags.join(" | ")
-            ))
-        } else {
-            match crate::modules::project_review::validate_review_for_project(
-                &project_path,
-                review_artifact_path.as_deref(),
-            ) {
-                Ok(review) => {
-                    if !review_target_path.is_empty()
-                        && review.reviewed_path.to_lowercase() != review_target_path.to_lowercase()
-                    {
-                        Some(format!(
-                            "Task {} is blocked: review target mismatch. Metadata points to {}, artifact points to {}.",
-                            task.id, review_target_path, review.reviewed_path
-                        ))
-                    } else if review_evidence_count > 0
-                        && review.evidence_count < review_evidence_count as usize
-                    {
-                        Some(format!(
-                            "Task {} is blocked: review evidence count regressed from {} to {}.",
-                            task.id, review_evidence_count, review.evidence_count
-                        ))
-                    } else {
-                        None
-                    }
-                }
-                Err(e) => Some(format!("Task {} is blocked: {}", task.id, e)),
-            }
-        };
-
-        if let Some(reason) = review_gate_error {
+        if let Some(reason) = review_gate_error(&task.id, &metadata, &project_path) {
             let db_guard = db.lock().await;
             if let Some(service) = db_guard.as_ref() {
                 let _ = service.update_task_status(&task.id, "blocked_review");
+                checkpoint.content.state = "needs_review".to_string();
+                checkpoint.content.errors = json!([{"stage":"review_gate","summary":&reason}]);
+                checkpoint.content.next_action = json!({"kind":"review_required"});
+                let _ = service.save_checkpoint(&task.id, checkpoint.revision, &checkpoint.content);
                 let _ = service.log_activity("Task Blocked", &reason);
                 let _ = service.log_learning_event(
                     "autonomous_task_blocked_review",
@@ -275,6 +270,11 @@ impl TaskExecutor {
         {
             let db_guard = db.lock().await;
             if let Some(service) = db_guard.as_ref() {
+                checkpoint.content.state = "running".to_string();
+                checkpoint.content.progress = json!({"completed":["validate_review"]});
+                checkpoint.content.next_action = json!({"kind":"execute_with_tools"});
+                checkpoint =
+                    service.save_checkpoint(&task.id, checkpoint.revision, &checkpoint.content)?;
                 service
                     .update_task_status(&task.id, "in_progress")
                     .map_err(|e| format!("Failed to update task status: {}", e))?;
@@ -293,57 +293,13 @@ impl TaskExecutor {
         let procedural_hints = procedural_memory::format_recall_for_prompt(&recall_patterns);
 
         // Build execution prompt
-        let execution_prompt = format!(
-            "You have been assigned a task to complete autonomously.
-
-\
-             TASK DETAILS:
-\
-             - Title: {}
-\
-             - Description: {}
-\
-             - Project Path: {}
-\
-             - Risk: {}
-\
-             - Max Duration Minutes: {}
-\
-             - Review Completed: {}
-\
-             - Review Version: {}
-\
-             - Review Timestamp: {}
-\
-             - Review Evidence Count: {}
-
-\
-             EXECUTION CONSTRAINTS:
-\
-             1. Stay within the reviewed project path.
-\
-             2. Base changes on the grounded review context and the files you verify during execution.
-\
-             3. Do not invent files, dashboards, or deliverables as if they already exist.
-\
-             4. If the reviewed evidence and current files disagree, stop and report the mismatch.
-\
-             5. Verify your changes before claiming completion.
-
-\
-             Available tools: read_file, write_file, list_directory, execute_code, internet_search
-
-\
-             Begin working on this task now. Be thorough and methodical.",
-            task.title,
-            description,
-            project_path,
-            risk,
+        let execution_prompt = execution_prompt(
+            &task,
+            &description,
+            &project_path,
+            &risk,
             max_duration_minutes,
-            review_completed,
-            review_version,
-            reviewed_at,
-            review_evidence_count,
+            &metadata,
         );
         let execution_prompt = if procedural_hints.is_empty() {
             execution_prompt
@@ -367,17 +323,23 @@ impl TaskExecutor {
                 &task_model,
                 config,
                 db,
+                Some(&task.id),
             ),
         )
         .await
         {
             Ok(Ok(result)) => {
                 info!("✅ Task completed successfully: {}", task.id);
-                info!("Result: {}", result);
 
                 // Update status to completed
                 let db_guard = db.lock().await;
                 if let Some(service) = db_guard.as_ref() {
+                    checkpoint.content.state = "completed".to_string();
+                    checkpoint.content.progress = json!({"completed":["validate_review","execute_with_tools","verify_outcome"]});
+                    checkpoint.content.tool_results =
+                        json!([{"kind":"summary","outcome":"success","result_bytes":result.len()}]);
+                    checkpoint.content.next_action = json!({"kind":"none"});
+                    service.save_checkpoint(&task.id, checkpoint.revision, &checkpoint.content)?;
                     service
                         .update_task_status(&task.id, "completed")
                         .map_err(|e| format!("Failed to update task status: {}", e))?;
@@ -411,13 +373,22 @@ impl TaskExecutor {
                 Ok(())
             }
             Ok(Err(e)) => {
+                if e == "TOOL_APPROVAL_REQUIRED" {
+                    info!("Task {} paused for explicit tool approval", task.id);
+                    return Ok(());
+                }
                 error!("❌ Task failed: {} - Error: {}", task.id, e);
 
                 // Update status to failed
                 let db_guard = db.lock().await;
                 if let Some(service) = db_guard.as_ref() {
+                    checkpoint.content.state = "needs_review".to_string();
+                    checkpoint.content.errors =
+                        json!([{"stage":"execution","summary":e.to_string()}]);
+                    checkpoint.content.next_action = json!({"kind":"review_partial_failure"});
+                    service.save_checkpoint(&task.id, checkpoint.revision, &checkpoint.content)?;
                     service
-                        .update_task_status(&task.id, "failed")
+                        .update_task_status(&task.id, "needs_review")
                         .map_err(|e| format!("Failed to update task status: {}", e))?;
 
                     // Log failure to activity
@@ -450,8 +421,13 @@ impl TaskExecutor {
 
                 let db_guard = db.lock().await;
                 if let Some(service) = db_guard.as_ref() {
+                    checkpoint.content.state = "needs_review".to_string();
+                    checkpoint.content.errors =
+                        json!([{"stage":"execution","summary":"execution timed out"}]);
+                    checkpoint.content.next_action = json!({"kind":"review_partial_failure"});
+                    service.save_checkpoint(&task.id, checkpoint.revision, &checkpoint.content)?;
                     service
-                        .update_task_status(&task.id, "timed_out")
+                        .update_task_status(&task.id, "needs_review")
                         .map_err(|e| format!("Failed to update task status: {}", e))?;
                     let _ = service.log_activity(
                         "Task Timed Out",

@@ -14,8 +14,50 @@ export interface PendingTask {
   metadata: string | null;
 }
 
+export type CheckpointClassification =
+  | 'resumable'
+  | 'awaiting_approval'
+  | 'needs_review'
+  | 'stale'
+  | 'corrupt'
+  | 'completed';
+
+export interface ResumeCandidate {
+  task_id: string;
+  revision: number;
+  classification: CheckpointClassification;
+  reason: string | null;
+  pending_approval: { action_fingerprint: string; approval_digest: string } | null;
+  uncertain_action_ids: string[];
+}
+
 export class AgentService {
   private readonly __instanceMarker = true;
+  private static readonly taskMutations = new Map<string, Promise<void>>();
+
+  private static async serializeTaskMutation(
+    taskId: string,
+    action: () => Promise<void>,
+  ): Promise<void> {
+    const previous = this.taskMutations.get(taskId);
+    const current = previous ? previous.catch(() => undefined).then(action) : action();
+    this.taskMutations.set(taskId, current);
+    const cleanup = () => {
+      if (this.taskMutations.get(taskId) === current) this.taskMutations.delete(taskId);
+    };
+    void current.then(cleanup, cleanup);
+    return await current;
+  }
+
+  static filterResumeCandidates(candidates: ResumeCandidate[]): ResumeCandidate[] {
+    const recoverable = new Set<CheckpointClassification>([
+      'resumable',
+      'stale',
+      'corrupt',
+      'needs_review',
+    ]);
+    return candidates.filter((candidate) => recoverable.has(candidate.classification));
+  }
 
   static async chat(message: string, projectId?: string): Promise<string> {
     try {
@@ -191,26 +233,62 @@ export class AgentService {
   }
 
   static async approveTask(taskId: string): Promise<void> {
-    try {
-      await invoke('update_task_status', {
+    return this.serializeTaskMutation(taskId, async () => {
+      const candidates = await this.getResumeCandidates();
+      const candidate = candidates.find((item) => item.task_id === taskId);
+      const fingerprint = candidate?.pending_approval?.action_fingerprint;
+      if (!candidate || !fingerprint) throw new Error('Pending approval checkpoint is unavailable');
+      await invoke('decide_task_approval', {
         taskId,
-        newStatus: 'pending',
+        revision: candidate.revision,
+        actionFingerprint: fingerprint,
+        approved: true,
       });
-    } catch (error) {
-      console.error('Failed to approve task:', error);
-      throw error;
-    }
+    });
   }
 
   static async rejectTask(taskId: string): Promise<void> {
-    try {
-      await invoke('update_task_status', {
+    return this.serializeTaskMutation(taskId, async () => {
+      const candidates = await this.getResumeCandidates();
+      const candidate = candidates.find((item) => item.task_id === taskId);
+      const fingerprint = candidate?.pending_approval?.action_fingerprint;
+      if (!candidate || !fingerprint) throw new Error('Pending approval checkpoint is unavailable');
+      await invoke('decide_task_approval', {
         taskId,
-        newStatus: 'rejected',
+        revision: candidate.revision,
+        actionFingerprint: fingerprint,
+        approved: false,
       });
-    } catch (error) {
-      console.error('Failed to reject task:', error);
-      throw error;
-    }
+    });
+  }
+
+  static async getResumeCandidates(): Promise<ResumeCandidate[]> {
+    return await invoke<ResumeCandidate[]>('get_resume_candidates');
+  }
+
+  static async resumeTask(candidate: ResumeCandidate): Promise<void> {
+    return this.serializeTaskMutation(candidate.task_id, async () => {
+      await invoke('resume_task', {
+        taskId: candidate.task_id,
+        revision: candidate.revision,
+      });
+    });
+  }
+
+  static async startTaskOver(taskId: string): Promise<void> {
+    return this.serializeTaskMutation(taskId, async () => {
+      await invoke('start_task_over', { taskId });
+    });
+  }
+
+  static async reconcileTaskAction(
+    taskId: string,
+    actionId: string,
+    decision: 'confirm_completed' | 'retry' | 'abandon',
+    evidence?: string,
+  ): Promise<void> {
+    return this.serializeTaskMutation(taskId, async () => {
+      await invoke('reconcile_task_action', { taskId, actionId, decision, evidence });
+    });
   }
 }

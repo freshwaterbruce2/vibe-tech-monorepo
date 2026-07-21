@@ -1,6 +1,7 @@
 #![allow(unused_imports)]
 /// Database-related Tauri command compatibility facade.
 pub(crate) mod activity;
+pub(crate) mod checkpoints;
 pub(crate) mod config;
 pub(crate) mod deep_work;
 pub(crate) mod guidance;
@@ -11,6 +12,10 @@ mod types;
 pub use activity::{
     get_activities_in_range, get_learning_by_outcome, get_learning_events, get_recent_activities,
     get_today_activity_count, log_activity, log_learning_event,
+};
+pub use checkpoints::{
+    decide_task_approval, get_resume_candidates, reconcile_task_action, resume_task,
+    start_task_over,
 };
 pub use config::get_trading_config;
 pub use deep_work::get_deep_work_data;

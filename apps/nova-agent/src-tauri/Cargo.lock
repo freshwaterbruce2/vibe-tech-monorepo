@@ -5211,6 +5211,7 @@ dependencies = [
  "arrow-array",
  "arrow-schema",
  "axum",
+ "blake3",
  "chrono",
  "dotenv",
  "futures-util",

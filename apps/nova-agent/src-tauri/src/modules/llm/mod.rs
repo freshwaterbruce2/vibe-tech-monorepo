@@ -3,6 +3,8 @@
 pub(crate) mod commands;
 mod protocol;
 mod provider;
+mod secure_continuation;
+mod tool_checkpoint;
 mod tools;
 mod validation;
 

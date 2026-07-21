@@ -53,7 +53,7 @@ fn tool_result_succeeded(result: &str) -> bool {
     tool_result_kind(result) == "success"
 }
 
-fn tool_result_kind(result: &str) -> &'static str {
+pub(super) fn tool_result_kind(result: &str) -> &'static str {
     let trimmed = result.trim_start();
     if trimmed.is_empty() {
         "empty"
@@ -158,7 +158,7 @@ fn summarize_tool_args(tool_name: &str, raw_args: &str) -> serde_json::Value {
     }
 }
 
-async fn dispatch_tool_call(
+pub(super) async fn dispatch_tool_call(
     tool_call: &ToolCall,
     db: Arc<AsyncMutex<Option<database::DatabaseService>>>,
 ) -> String {

@@ -35,16 +35,22 @@ impl DatabaseService {
 
         // Connect to databases and enable WAL mode
         let tasks_db = Connection::open(base_path.join("agent_tasks.db"))?;
+        tasks_db.execute_batch("PRAGMA foreign_keys=ON;")?;
         let _ = tasks_db.query_row("PRAGMA journal_mode=WAL", [], |_| Ok(())); // Ignore result
+        tasks_db.busy_timeout(std::time::Duration::from_millis(5000))?;
         info!("Connected to agent_tasks.db with WAL mode");
 
         // Agent learning database is the shared learning store across Nova and Vibe
         let learning_db = Connection::open(base_path.join("agent_learning.db"))?;
+        learning_db.execute_batch("PRAGMA foreign_keys=ON;")?;
         let _ = learning_db.query_row("PRAGMA journal_mode=WAL", [], |_| Ok(()));
+        learning_db.busy_timeout(std::time::Duration::from_millis(5000))?;
         info!("Connected to agent_learning.db with WAL mode");
 
         let activity_db = Connection::open(base_path.join("nova_activity.db"))?;
+        activity_db.execute_batch("PRAGMA foreign_keys=ON;")?;
         let _ = activity_db.query_row("PRAGMA journal_mode=WAL", [], |_| Ok(()));
+        activity_db.busy_timeout(std::time::Duration::from_millis(5000))?;
         info!("Connected to nova_activity.db with WAL mode");
 
         Ok(Self {
