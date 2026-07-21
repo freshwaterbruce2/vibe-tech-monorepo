@@ -108,9 +108,11 @@ impl DatabaseService {
     }
 
     pub fn start_task_over(&self, task_id: &str) -> Result<(), String> {
-        if self
+        let existing_checkpoint = self
             .get_checkpoint(task_id)
-            .map_err(|error| error.to_string())?
+            .map_err(|error| error.to_string())?;
+        if existing_checkpoint
+            .as_ref()
             .is_some_and(|checkpoint| checkpoint.content.state == "completed")
         {
             return Err("completed checkpoints cannot be started over".to_string());
@@ -139,8 +141,20 @@ impl DatabaseService {
         object.remove("approved_plan_digest");
         object.remove("approved_effect_digests");
         object.remove("approval_decided_at");
+        let generation = object
+            .get("execution_generation")
+            .and_then(Value::as_u64)
+            .unwrap_or(0)
+            .saturating_add(1);
+        object.insert("execution_generation".to_string(), json!(generation));
         tx.execute(
             "DELETE FROM task_execution_checkpoints WHERE task_id=?1",
+            params![task_id],
+        )
+        .map_err(|e| e.to_string())?;
+        tx.execute(
+            "UPDATE task_action_ledger SET continuation_retire_pending=1
+             WHERE task_id=?1 AND continuation_ref IS NOT NULL",
             params![task_id],
         )
         .map_err(|e| e.to_string())?;
@@ -149,7 +163,9 @@ impl DatabaseService {
              stop_condition=NULL,updated_at=?2 WHERE id=?3",
             params![metadata.to_string(), now(), task_id],
         ).map_err(|e| e.to_string())?;
-        tx.commit().map_err(|e| e.to_string())
+        tx.commit().map_err(|e| e.to_string())?;
+        let _ = self.retry_pending_continuation_cleanup();
+        Ok(())
     }
 
     pub fn reconcile_action(
@@ -224,7 +240,19 @@ impl DatabaseService {
             params![transition.task_status, now(), task_id],
         )
         .map_err(|e| e.to_string())?;
-        tx.commit().map_err(|e| e.to_string())
+        if decision == "abandon" {
+            tx.execute(
+                "UPDATE task_action_ledger SET continuation_retire_pending=1
+                 WHERE task_id=?1 AND continuation_ref IS NOT NULL",
+                params![task_id],
+            )
+            .map_err(|e| e.to_string())?;
+        }
+        tx.commit().map_err(|e| e.to_string())?;
+        if decision == "abandon" {
+            let _ = self.retry_pending_continuation_cleanup();
+        }
+        Ok(())
     }
 }
 

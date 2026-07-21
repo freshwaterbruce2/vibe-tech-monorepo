@@ -6,6 +6,76 @@ use rusqlite::{params, Transaction};
 use serde_json::Value;
 
 impl DatabaseService {
+    pub(crate) fn transition_task_outcome(
+        &self,
+        task_id: &str,
+        expected_revision: i64,
+        task_status: &str,
+        content: &CheckpointContent,
+    ) -> Result<TaskCheckpoint, String> {
+        self.transition_task_outcome_inner(task_id, expected_revision, task_status, content, None)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn transition_task_outcome_with_failure(
+        &self,
+        task_id: &str,
+        expected_revision: i64,
+        task_status: &str,
+        content: &CheckpointContent,
+        fail_after_write: usize,
+    ) -> Result<TaskCheckpoint, String> {
+        self.transition_task_outcome_inner(
+            task_id,
+            expected_revision,
+            task_status,
+            content,
+            Some(fail_after_write),
+        )
+    }
+
+    fn transition_task_outcome_inner(
+        &self,
+        task_id: &str,
+        expected_revision: i64,
+        task_status: &str,
+        content: &CheckpointContent,
+        fail_after_write: Option<usize>,
+    ) -> Result<TaskCheckpoint, String> {
+        if compatible_task_status(&content.state) != task_status {
+            return Err("checkpoint state and task status are incompatible".to_string());
+        }
+        let tx = self
+            .tasks_db
+            .unchecked_transaction()
+            .map_err(|error| error.to_string())?;
+        update_checkpoint_in_tx(&tx, task_id, expected_revision, content)?;
+        fail_outcome_transition(fail_after_write, 1)?;
+        let task_changed = tx
+            .execute(
+                "UPDATE task_tasks SET status=?1,updated_at=?2 WHERE id=?3",
+                params![task_status, now(), task_id],
+            )
+            .map_err(|error| error.to_string())?;
+        if task_changed != 1 {
+            return Err("task outcome transition conflict".to_string());
+        }
+        fail_outcome_transition(fail_after_write, 2)?;
+        if matches!(task_status, "completed" | "abandoned" | "rejected") {
+            tx.execute(
+                "UPDATE task_action_ledger SET continuation_retire_pending=1
+                 WHERE task_id=?1 AND continuation_ref IS NOT NULL",
+                params![task_id],
+            )
+            .map_err(|error| error.to_string())?;
+            fail_outcome_transition(fail_after_write, 3)?;
+        }
+        tx.commit().map_err(|error| error.to_string())?;
+        self.get_checkpoint(task_id)
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| "checkpoint missing after committed outcome transition".to_string())
+    }
+
     pub(crate) fn complete_action_and_checkpoint(
         &self,
         task_id: &str,
@@ -95,6 +165,13 @@ impl DatabaseService {
     }
 }
 
+fn fail_outcome_transition(fail_after_write: Option<usize>, write: usize) -> Result<(), String> {
+    if fail_after_write == Some(write) {
+        return Err(format!("injected task outcome failure after write {write}"));
+    }
+    Ok(())
+}
+
 pub(super) fn update_checkpoint_in_tx(
     tx: &Transaction<'_>,
     task_id: &str,
@@ -143,6 +220,8 @@ pub(super) fn compatible_task_status(checkpoint_state: &str) -> &str {
         "awaiting_approval" => "awaiting_approval",
         "needs_review" => "needs_review",
         "paused" => "paused",
+        "abandoned" => "abandoned",
+        "rejected" => "rejected",
         _ => "in_progress",
     }
 }

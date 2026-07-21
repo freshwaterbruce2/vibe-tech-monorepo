@@ -124,6 +124,9 @@ async fn main() {
             if let Err(e) = service.mark_interrupted_actions() {
                 error!("Failed to classify interrupted task actions: {}", e);
             }
+            if let Err(e) = service.retry_pending_continuation_cleanup() {
+                error!("Failed to retry task continuation cleanup: {}", e);
+            }
             Some(service)
         }
         Err(e) => {

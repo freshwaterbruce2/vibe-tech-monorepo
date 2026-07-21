@@ -19,6 +19,12 @@ pub(super) fn load_secure_continuation(reference: &str) -> Result<SecureToolCont
     secure_continuation::load(reference)
 }
 
+fn durable_completed_result(reference: &str) -> Result<String, String> {
+    load_secure_continuation(reference)?
+        .result
+        .ok_or_else(|| "completed tool result is unavailable; reconciliation required".to_string())
+}
+
 pub(super) async fn execute_checkpointed_tool(
     tool_call: &ToolCall,
     db: Arc<AsyncMutex<Option<database::DatabaseService>>>,
@@ -39,9 +45,25 @@ pub(super) async fn execute_checkpointed_tool(
         return Ok(result);
     };
 
-    let base_fingerprint = call_fingerprint(tool_call);
+    let execution_identity = {
+        let guard = db.lock().await;
+        let checkpoint = guard
+            .as_ref()
+            .ok_or_else(|| "Database not available".to_string())?
+            .get_checkpoint(task_id)
+            .map_err(|error| error.to_string())?
+            .ok_or_else(|| "Task checkpoint is missing".to_string())?;
+        checkpoint
+            .content
+            .preconditions
+            .get("task_definition_digest")
+            .and_then(Value::as_str)
+            .unwrap_or(&checkpoint.checksum)
+            .to_string()
+    };
+    let base_fingerprint = call_fingerprint(tool_call, &execution_identity);
     let mut fingerprint = base_fingerprint.clone();
-    let mut action_id = format!("{task_id}:tool:{}", tool_call.id);
+    let mut action_id = format!("{task_id}:tool:{}:{base_fingerprint}", tool_call.id);
     let consequential = is_consequential(&tool_call.function.name);
 
     {
@@ -92,7 +114,7 @@ pub(super) async fn execute_checkpointed_tool(
         }
         let effect_digest =
             service.effect_approval_digest(task_id, &checkpoint.content.plan, &fingerprint)?;
-        let secure_reference = secure_continuation::store(
+        let secure_reference = secure_continuation::store_pending(
             task_id,
             &action_id,
             &SecureToolContinuation {
@@ -142,8 +164,12 @@ pub(super) async fn execute_checkpointed_tool(
             &tool_call.function.name,
             consequential,
         )? {
-            ActionClaim::Started => {}
-            ActionClaim::Completed(summary) => return Ok(summary),
+            ActionClaim::Started => {
+                service.bind_action_continuation(&action_id, &fingerprint, &secure_reference)?;
+            }
+            ActionClaim::Completed(_) => {
+                return durable_completed_result(&secure_reference);
+            }
             ActionClaim::Running => return Err("READ_ONLY_RETRY_REQUIRES_NEW_ACTION".to_string()),
             ActionClaim::Uncertain => {
                 return Err("CONSEQUENTIAL_ACTION_REQUIRES_RECONCILIATION".to_string())
@@ -241,8 +267,9 @@ fn canonical_arguments(raw: &str) -> Value {
     serde_json::from_str(raw).unwrap_or_else(|_| json!({"invalid_json_chars": raw.chars().count()}))
 }
 
-fn call_fingerprint(tool_call: &ToolCall) -> String {
+fn call_fingerprint(tool_call: &ToolCall, execution_identity: &str) -> String {
     digest_value(&json!({
+        "execution": execution_identity,
         "call_id": tool_call.id,
         "tool": tool_call.function.name,
         "arguments": canonical_arguments(&tool_call.function.arguments),
@@ -317,7 +344,40 @@ mod tests {
         let restarted = read_one.clone();
         let mut read_two = read_one.clone();
         read_two.id = "call-read-2".into();
-        assert_eq!(call_fingerprint(&read_one), call_fingerprint(&restarted));
-        assert_ne!(call_fingerprint(&read_one), call_fingerprint(&read_two));
+        assert_eq!(
+            call_fingerprint(&read_one, "generation-1"),
+            call_fingerprint(&restarted, "generation-1")
+        );
+        assert_ne!(
+            call_fingerprint(&read_one, "generation-1"),
+            call_fingerprint(&read_two, "generation-1")
+        );
+        assert_ne!(
+            call_fingerprint(&read_one, "generation-1"),
+            call_fingerprint(&read_one, "generation-2")
+        );
+    }
+
+    #[test]
+    fn completed_replay_returns_original_durable_result_not_summary() {
+        let continuation = SecureToolContinuation {
+            tool_call: ToolCall {
+                id: "completed-call".into(),
+                r#type: "function".into(),
+                function: crate::modules::state::ToolCallFunction {
+                    name: "read_file".into(),
+                    arguments: "{}".into(),
+                },
+            },
+            result: Some("original tool payload".into()),
+        };
+        let reference =
+            secure_continuation::store("completed-task", "completed-action", &continuation)
+                .unwrap();
+        assert_eq!(
+            durable_completed_result(&reference).unwrap(),
+            "original tool payload"
+        );
+        secure_continuation::delete(&reference).unwrap();
     }
 }

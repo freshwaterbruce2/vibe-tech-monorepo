@@ -1,4 +1,5 @@
 pub mod activity;
+mod checkpoint_cleanup;
 mod checkpoint_digest;
 mod checkpoint_evidence;
 mod checkpoint_reconciliation;
@@ -20,7 +21,11 @@ pub use connection::DatabaseService;
 pub use types::{Activity, FocusState, LearningEvent, Task};
 
 #[cfg(test)]
+mod checkpoint_cleanup_tests;
+#[cfg(test)]
 mod checkpoint_closure_tests;
+#[cfg(test)]
+mod checkpoint_transition_tests;
 #[cfg(test)]
 mod checkpoints_tests;
 #[cfg(test)]

@@ -2,7 +2,9 @@ use crate::database::checkpoints::{digest_value, CheckpointContent};
 use crate::database::{types::Task, DatabaseService};
 use crate::modules::state::Config;
 use crate::modules::{llm, procedural_memory, prompts};
-use crate::task_executor_support::{execution_prompt, review_gate_error, TaskExecutionMetadata};
+use crate::task_executor_support::{
+    append_checkpoint_item, execution_prompt, review_gate_error, TaskExecutionMetadata,
+};
 use serde_json::json;
 use std::sync::Arc;
 use std::time::Duration;
@@ -83,6 +85,7 @@ impl TaskExecutor {
     ) -> Result<(), String> {
         let db_guard = db.lock().await;
         let service = db_guard.as_ref().ok_or("Database not available")?;
+        let _ = service.retry_pending_continuation_cleanup();
 
         // Get pending tasks (status = "pending" or "ready")
         let tasks = service
@@ -334,15 +337,24 @@ impl TaskExecutor {
                 // Update status to completed
                 let db_guard = db.lock().await;
                 if let Some(service) = db_guard.as_ref() {
+                    checkpoint = service
+                        .get_checkpoint(&task.id)
+                        .map_err(|error| error.to_string())?
+                        .ok_or_else(|| "Task checkpoint is missing".to_string())?;
                     checkpoint.content.state = "completed".to_string();
                     checkpoint.content.progress = json!({"completed":["validate_review","execute_with_tools","verify_outcome"]});
-                    checkpoint.content.tool_results =
-                        json!([{"kind":"summary","outcome":"success","result_bytes":result.len()}]);
+                    append_checkpoint_item(
+                        &mut checkpoint.content.tool_results,
+                        json!({"kind":"summary","outcome":"success","result_bytes":result.len()}),
+                    );
                     checkpoint.content.next_action = json!({"kind":"none"});
-                    service.save_checkpoint(&task.id, checkpoint.revision, &checkpoint.content)?;
-                    service
-                        .update_task_status(&task.id, "completed")
-                        .map_err(|e| format!("Failed to update task status: {}", e))?;
+                    service.transition_task_outcome(
+                        &task.id,
+                        checkpoint.revision,
+                        "completed",
+                        &checkpoint.content,
+                    )?;
+                    let _ = service.retry_pending_continuation_cleanup();
 
                     // Log completion to activity
                     let _ = service.log_activity(
@@ -382,14 +394,24 @@ impl TaskExecutor {
                 // Update status to failed
                 let db_guard = db.lock().await;
                 if let Some(service) = db_guard.as_ref() {
+                    checkpoint = service
+                        .get_checkpoint(&task.id)
+                        .map_err(|error| error.to_string())?
+                        .ok_or_else(|| "Task checkpoint is missing".to_string())?;
                     checkpoint.content.state = "needs_review".to_string();
-                    checkpoint.content.errors =
-                        json!([{"stage":"execution","summary":e.to_string()}]);
-                    checkpoint.content.next_action = json!({"kind":"review_partial_failure"});
-                    service.save_checkpoint(&task.id, checkpoint.revision, &checkpoint.content)?;
-                    service
-                        .update_task_status(&task.id, "needs_review")
-                        .map_err(|e| format!("Failed to update task status: {}", e))?;
+                    append_checkpoint_item(
+                        &mut checkpoint.content.errors,
+                        json!({"stage":"execution","summary":e.to_string()}),
+                    );
+                    if checkpoint.content.next_action.get("secure_ref").is_none() {
+                        checkpoint.content.next_action = json!({"kind":"review_partial_failure"});
+                    }
+                    service.transition_task_outcome(
+                        &task.id,
+                        checkpoint.revision,
+                        "needs_review",
+                        &checkpoint.content,
+                    )?;
 
                     // Log failure to activity
                     let _ = service.log_activity(
@@ -421,14 +443,24 @@ impl TaskExecutor {
 
                 let db_guard = db.lock().await;
                 if let Some(service) = db_guard.as_ref() {
+                    checkpoint = service
+                        .get_checkpoint(&task.id)
+                        .map_err(|error| error.to_string())?
+                        .ok_or_else(|| "Task checkpoint is missing".to_string())?;
                     checkpoint.content.state = "needs_review".to_string();
-                    checkpoint.content.errors =
-                        json!([{"stage":"execution","summary":"execution timed out"}]);
-                    checkpoint.content.next_action = json!({"kind":"review_partial_failure"});
-                    service.save_checkpoint(&task.id, checkpoint.revision, &checkpoint.content)?;
-                    service
-                        .update_task_status(&task.id, "needs_review")
-                        .map_err(|e| format!("Failed to update task status: {}", e))?;
+                    append_checkpoint_item(
+                        &mut checkpoint.content.errors,
+                        json!({"stage":"execution","summary":"execution timed out"}),
+                    );
+                    if checkpoint.content.next_action.get("secure_ref").is_none() {
+                        checkpoint.content.next_action = json!({"kind":"review_partial_failure"});
+                    }
+                    service.transition_task_outcome(
+                        &task.id,
+                        checkpoint.revision,
+                        "needs_review",
+                        &checkpoint.content,
+                    )?;
                     let _ = service.log_activity(
                         "Task Timed Out",
                         &format!(

@@ -35,6 +35,8 @@ impl DatabaseService {
                 status TEXT NOT NULL,
                 result_json TEXT,
                 error_summary TEXT,
+                continuation_ref TEXT,
+                continuation_retire_pending INTEGER NOT NULL DEFAULT 0,
                 started_at INTEGER NOT NULL,
                 finished_at INTEGER,
                 UNIQUE(task_id, fingerprint)
@@ -43,7 +45,30 @@ impl DatabaseService {
                 ON task_execution_checkpoints(state, updated_at);
              CREATE INDEX IF NOT EXISTS idx_task_action_ledger_task
                 ON task_action_ledger(task_id, sequence);",
-        )
+        )?;
+        let has_continuation_ref: i64 = self.tasks_db.query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('task_action_ledger') WHERE name='continuation_ref'",
+            [],
+            |row| row.get(0),
+        )?;
+        if has_continuation_ref == 0 {
+            self.tasks_db.execute(
+                "ALTER TABLE task_action_ledger ADD COLUMN continuation_ref TEXT",
+                [],
+            )?;
+        }
+        let has_retire_pending: i64 = self.tasks_db.query_row(
+            "SELECT COUNT(*) FROM pragma_table_info('task_action_ledger') WHERE name='continuation_retire_pending'",
+            [],
+            |row| row.get(0),
+        )?;
+        if has_retire_pending == 0 {
+            self.tasks_db.execute(
+                "ALTER TABLE task_action_ledger ADD COLUMN continuation_retire_pending INTEGER NOT NULL DEFAULT 0",
+                [],
+            )?;
+        }
+        Ok(())
     }
 }
 

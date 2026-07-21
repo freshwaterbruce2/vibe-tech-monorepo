@@ -17,6 +17,21 @@ pub(super) fn store<T: Serialize>(
     Ok(reference)
 }
 
+pub(super) fn store_pending<T: Serialize>(
+    task_id: &str,
+    action_id: &str,
+    value: &T,
+) -> Result<String, String> {
+    let plaintext = serde_json::to_vec(value).map_err(|error| error.to_string())?;
+    let ciphertext = protect(&plaintext)?;
+    let object_id = blake3::hash(format!("{task_id}\0{action_id}").as_bytes()).to_hex();
+    let reference = format!("{REFERENCE_PREFIX}{object_id}");
+    let mut envelope = blake3::hash(&ciphertext).as_bytes().to_vec();
+    envelope.extend_from_slice(&ciphertext);
+    write_ciphertext_if_absent(&reference, &envelope)?;
+    Ok(reference)
+}
+
 pub(super) fn load<T: DeserializeOwned>(reference: &str) -> Result<T, String> {
     validate_reference(reference)?;
     let envelope = read_ciphertext(reference)?
@@ -33,10 +48,9 @@ pub(super) fn load<T: DeserializeOwned>(reference: &str) -> Result<T, String> {
         .map_err(|_| "secure continuation is corrupt; fresh re-plan required".to_string())
 }
 
-pub(super) fn delete(reference: &str) {
-    if validate_reference(reference).is_ok() {
-        let _ = delete_ciphertext(reference);
-    }
+pub(super) fn delete(reference: &str) -> Result<(), String> {
+    validate_reference(reference)?;
+    delete_ciphertext(reference)
 }
 
 fn validate_reference(reference: &str) -> Result<(), String> {
@@ -66,6 +80,19 @@ fn write_ciphertext(reference: &str, ciphertext: &[u8]) -> Result<(), String> {
     let final_path = path_for(reference)?;
     native_atomic_replace(&final_path, ciphertext)
         .map_err(|_| "secure continuation storage failed; fresh re-plan required".to_string())
+}
+
+#[cfg(all(windows, not(test)))]
+fn write_ciphertext_if_absent(reference: &str, ciphertext: &[u8]) -> Result<(), String> {
+    let path = path_for(reference)?;
+    if path.exists() || path.with_extension("blob.bak").exists() {
+        return Ok(());
+    }
+    match native_atomic_replace(&path, ciphertext) {
+        Ok(()) => Ok(()),
+        Err(_) if path.exists() => Ok(()),
+        Err(_) => Err("secure continuation storage failed; fresh re-plan required".to_string()),
+    }
 }
 
 #[cfg(windows)]
@@ -202,11 +229,19 @@ fn read_canonical_or_backup(path: &std::path::Path) -> Result<Option<Vec<u8>>, S
 #[cfg(all(windows, not(test)))]
 fn delete_ciphertext(reference: &str) -> Result<(), String> {
     let path = path_for(reference)?;
-    match std::fs::remove_file(path) {
-        Ok(()) => Ok(()),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        Err(error) => Err(error.to_string()),
+    delete_canonical_and_backup(&path)
+}
+
+#[cfg(windows)]
+fn delete_canonical_and_backup(path: &std::path::Path) -> Result<(), String> {
+    for candidate in [path.to_path_buf(), path.with_extension("blob.bak")] {
+        match std::fs::remove_file(candidate) {
+            Ok(()) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(error) => return Err(error.to_string()),
+        }
     }
+    Ok(())
 }
 
 #[cfg(all(windows, not(test)))]
@@ -288,6 +323,11 @@ fn write_ciphertext(_: &str, _: &[u8]) -> Result<(), String> {
 }
 
 #[cfg(all(not(windows), not(test)))]
+fn write_ciphertext_if_absent(_: &str, _: &[u8]) -> Result<(), String> {
+    Err("secure continuation storage requires Windows DPAPI; fresh re-plan required".to_string())
+}
+
+#[cfg(all(not(windows), not(test)))]
 fn read_ciphertext(_: &str) -> Result<Option<Vec<u8>>, String> {
     Err("secure continuation retrieval requires Windows DPAPI; fresh re-plan required".to_string())
 }
@@ -321,6 +361,16 @@ fn write_ciphertext(reference: &str, ciphertext: &[u8]) -> Result<(), String> {
         .lock()
         .map_err(|_| "test secure store poisoned".to_string())?
         .insert(reference.to_string(), ciphertext.to_vec());
+    Ok(())
+}
+
+#[cfg(test)]
+fn write_ciphertext_if_absent(reference: &str, ciphertext: &[u8]) -> Result<(), String> {
+    test_store()
+        .lock()
+        .map_err(|_| "test secure store poisoned".to_string())?
+        .entry(reference.to_string())
+        .or_insert_with(|| ciphertext.to_vec());
     Ok(())
 }
 
@@ -362,8 +412,25 @@ mod tests {
         assert!(!reference.contains("SECRET_CODE_SENTINEL"));
         assert!(!String::from_utf8_lossy(&ciphertext).contains("SECRET_CODE_SENTINEL"));
         assert_eq!(load::<Secret>(&reference).unwrap(), value);
-        delete(&reference);
+        delete(&reference).unwrap();
         assert!(load::<Secret>(&reference).is_err());
+    }
+
+    #[test]
+    fn pending_write_never_overwrites_a_completed_continuation() {
+        let completed = Secret {
+            code: "original-result".into(),
+        };
+        let reference = store("replay", "action", &completed).unwrap();
+        let pending = Secret {
+            code: "pending".into(),
+        };
+        assert_eq!(
+            store_pending("replay", "action", &pending).unwrap(),
+            reference
+        );
+        assert_eq!(load::<Secret>(&reference).unwrap(), completed);
+        delete(&reference).unwrap();
     }
 
     #[test]
@@ -387,5 +454,8 @@ mod tests {
             read_canonical_or_backup(&path).unwrap().unwrap(),
             b"second-ciphertext"
         );
+        delete_canonical_and_backup(&path).unwrap();
+        assert!(!path.exists());
+        assert!(!backup.exists());
     }
 }

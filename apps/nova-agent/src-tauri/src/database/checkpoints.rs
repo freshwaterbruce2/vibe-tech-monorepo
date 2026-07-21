@@ -320,6 +320,27 @@ impl DatabaseService {
         }
     }
 
+    pub(crate) fn bind_action_continuation(
+        &self,
+        action_id: &str,
+        fingerprint: &str,
+        reference: &str,
+    ) -> Result<(), String> {
+        let changed = self
+            .tasks_db
+            .execute(
+                "UPDATE task_action_ledger SET continuation_ref=?1,continuation_retire_pending=0
+             WHERE action_id=?2 AND fingerprint=?3 AND status='running'",
+                params![reference, action_id, fingerprint],
+            )
+            .map_err(|error| error.to_string())?;
+        if changed == 1 {
+            Ok(())
+        } else {
+            Err("continuation binding conflict".to_string())
+        }
+    }
+
     pub fn fail_action(
         &self,
         action_id: &str,

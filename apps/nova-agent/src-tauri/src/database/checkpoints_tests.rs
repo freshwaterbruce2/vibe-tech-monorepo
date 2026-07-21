@@ -129,6 +129,7 @@ fn reset_clears_all_approval_bindings_and_requires_fresh_approval() {
     assert_eq!(metadata["approved_for_execution"], false);
     assert!(metadata.get("approved_plan_digest").is_none());
     assert!(metadata.get("approval_decided_at").is_none());
+    assert_eq!(metadata["execution_generation"], 1);
     assert!(service.get_checkpoint("task-1").unwrap().is_none());
     assert_eq!(task.status, "pending");
 }

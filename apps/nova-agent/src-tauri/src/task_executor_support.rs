@@ -1,5 +1,6 @@
 use crate::database::types::Task;
 use serde::Deserialize;
+use serde_json::Value;
 
 #[derive(Debug, Default, Deserialize)]
 pub(crate) struct TaskExecutionMetadata {
@@ -28,6 +29,12 @@ impl TaskExecutionMetadata {
             .and_then(|raw| serde_json::from_str::<Self>(raw).ok())
             .unwrap_or_default()
     }
+}
+
+pub(crate) fn append_checkpoint_item(target: &mut Value, item: Value) {
+    let mut items = target.as_array().cloned().unwrap_or_default();
+    items.push(item);
+    *target = Value::Array(items);
 }
 
 pub(crate) fn review_gate_error(
