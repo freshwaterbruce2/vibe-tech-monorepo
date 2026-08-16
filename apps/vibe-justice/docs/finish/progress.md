@@ -72,3 +72,15 @@ case data, package Tauri, or perform any GitHub/remote action.
   remote hosting, Tauri packaging, GitHub connection, push, or publication occurred.
 - Status: Partial. The dedicated evidence import/reload/backend-restart Playwright
   acceptance flow required by the Phase 2B definition of done is not implemented or run.
+
+## Evidence-to-legal-issue matching plan
+
+- Added `evidence-legal-issue-matching-plan.md` as the durable Phase 3/4 execution
+  contract. It covers case-scoped retrieval, exact evidence citations, versioned legal
+  packs, element-by-element matching, missing/contrary facts, cautious issue labels,
+  provider consent boundaries, adversarial tests, and physical acceptance.
+- Source audit found the legacy global retrieval/knowledge/violation paths are not safe
+  to connect to real cases as-is. In particular, keyword fallbacks and uncited legal
+  labels cannot satisfy the new grounded finding contract.
+- Implementation has not started. Next unit is the missing Phase 2B evidence browser
+  acceptance flow, then offline case-scoped retrieval and citations.

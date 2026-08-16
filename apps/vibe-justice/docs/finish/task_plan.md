@@ -54,8 +54,11 @@ acceptance contract.
 - [ ] Phase 2B: case-scoped evidence provenance and durable reopening. (Partial:
   backend and frontend unit/build gates pass; dedicated evidence-import Playwright
   restart acceptance remains unimplemented and untested.)
-- [ ] Phase 3: case-scoped retrieval and navigable citations.
-- [ ] Phase 4: jurisdiction-aware, versioned legal knowledge packs.
+- [ ] Phase 3: case-scoped retrieval and navigable citations. Detailed execution plan:
+  `evidence-legal-issue-matching-plan.md` Slice 3A.
+- [ ] Phase 4: jurisdiction-aware, versioned legal knowledge packs and evidence-to-
+  element potential-issue matching. Detailed execution plan:
+  `evidence-legal-issue-matching-plan.md` Slices 4A-4C.
 - [ ] Phase 5: universal personal-paralegal workflows.
 - [ ] Phase 6: editable drafts and genuine DOCX/PDF export.
 - [ ] Phase 7: Walmart working-copy acceptance.
@@ -86,6 +89,10 @@ the 16 physical and functional demonstrations in the user-supplied finish contra
   path, while retaining the packaged Windows desktop app as the release target.
 - 2026-08-16: Do not install or operate the entire monorepo. Scope dependency setup
   and validation to Vibe Justice and its direct workspace dependency only.
+- 2026-08-16: Legal issue discovery must be element-based and source-grounded. Replace
+  unsupported keyword `violation` labels in the real case workflow with cautious,
+  versioned potential-issue findings that show evidence, authority, missing facts,
+  contrary facts, applicability limits, and exact citations.
 
 ## Status
 
