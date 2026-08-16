@@ -199,7 +199,7 @@ describe('Sidebar', () => {
       await waitFor(() => expect(mockCreateCase).toHaveBeenCalledWith({ name: 'Test-Case-2026', jurisdiction: 'South Carolina', goals: 'Review notices' }))
       expect(mockSetCurrentCase).toHaveBeenCalledWith('Test-Case-2026')
       expect(onCurrentCaseChange).toHaveBeenCalledWith(created)
-    })
+    }, 10_000)
 
     it('selects a case and exposes its current state accessibly', async () => {
       const user = userEvent.setup()

@@ -15,6 +15,23 @@ describe('API Service', () => {
     vi.unstubAllEnvs()
   })
 
+  describe('case-scoped evidence retrieval', () => {
+    it('indexes, reads chunks, and searches using encoded case-scoped routes', async () => {
+      mockFetch
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ evidence_id: 'ev/1', status: 'indexed', chunk_count: 1, text_sha256: 'hash' }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ evidence_id: 'ev/1', status: 'indexed', chunk_count: 1, text_sha256: 'hash', chunks: [] }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ query: 'repair notice', total: 0, results: [] }) })
+
+      await justiceApi.indexEvidence('case A', 'ev/1')
+      await justiceApi.getEvidenceChunks('case A', 'ev/1')
+      await justiceApi.searchEvidence('case A', 'repair notice', 7)
+
+      expect(mockFetch).toHaveBeenNthCalledWith(1, expect.stringContaining('/cases/case%20A/evidence/ev%2F1/index'), expect.objectContaining({ method: 'POST' }))
+      expect(mockFetch).toHaveBeenNthCalledWith(2, expect.stringContaining('/cases/case%20A/evidence/ev%2F1/chunks'), expect.objectContaining({ method: 'GET' }))
+      expect(mockFetch).toHaveBeenNthCalledWith(3, expect.stringContaining('/cases/case%20A/evidence/search?q=repair+notice&limit=7'), expect.objectContaining({ method: 'GET' }))
+    })
+  })
+
   describe('uploadEvidence', () => {
     it('successfully uploads file with case ID', async () => {
       const mockFile = new File(['evidence content'], 'evidence.pdf', { type: 'application/pdf' })

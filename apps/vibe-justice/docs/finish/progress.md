@@ -102,3 +102,22 @@ case data, package Tauri, or perform any GitHub/remote action.
   labels cannot satisfy the new grounded finding contract.
 - Phase 2B browser acceptance is complete. Next unit is offline case-scoped retrieval
   and citations (Slice 3A); its implementation has not started.
+
+## Slice 3A result
+
+- Added durable case-scoped evidence chunks, extraction-time text hashes, additive
+  existing-database migration, deterministic indexing, tamper/stale handling, exact
+  PDF page locators, and bounded offline lexical retrieval.
+- Added authenticated index/chunks/search APIs with typed wrappers and cross-case 404.
+- Added current-case evidence indexing/search UI with exact quote, source identity,
+  locators, matched terms, metadata navigation, and authenticated original download.
+- Independent review found four initial integrity/isolation issues and one follow-up
+  same-case race; all were fixed and the final targeted review found no residuals.
+- Full backend: 214 passed, 1 expected xfail; coverage 72.06% exceeded the 55% floor.
+- Full frontend: 441 passed, 1 todo. Lint passed with zero errors and one pre-existing
+  warning; typecheck and production build passed.
+- Serialized Playwright: 3 passed, including durable index/search before and after
+  browser reload and a verified backend PID change. No listeners remained afterward.
+- `git diff --check` passed. No provider/network call, real-case access, root install,
+  GitHub action, push, publication, remote hosting, or Tauri packaging occurred.
+- Slice 3A status: Confirmed. Next: Slice 4A versioned South Carolina legal pack.

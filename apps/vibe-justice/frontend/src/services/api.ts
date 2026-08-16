@@ -77,6 +77,44 @@ export interface EvidenceProvenance {
   evidenceDate?: string;
 }
 
+export interface EvidenceChunk {
+  chunk_id: string;
+  evidence_id: string;
+  ordinal: number;
+  quote: string;
+  page_number: number | null;
+  paragraph_index: number | null;
+  char_start: number;
+  char_end: number;
+  text_sha256: string;
+  extraction_attempt_id: string;
+}
+
+export interface EvidenceIndexStatus {
+  evidence_id: string;
+  status: string;
+  chunk_count: number;
+  text_sha256: string | null;
+}
+
+export interface EvidenceChunksResponse {
+  evidence_id: string;
+  status: string;
+  chunks: EvidenceChunk[];
+}
+
+export interface EvidenceSearchResult extends EvidenceChunk {
+  original_filename: string;
+  score: number;
+  match_terms: string[];
+}
+
+export interface EvidenceSearchResponse {
+  query: string;
+  results: EvidenceSearchResult[];
+  total: number;
+}
+
 interface EvidenceApiRecord {
   evidence_id: string;
   case_id: string;
@@ -199,6 +237,55 @@ export const justiceApi = {
       throw new Error(`Retry extraction failed: ${response.status} ${errorText}`);
     }
     return normalizeEvidence(await response.json() as EvidenceApiRecord);
+  },
+
+  async indexEvidence(caseId: string, evidenceId: string): Promise<EvidenceIndexStatus> {
+    const response = await fetch(
+      `${API_BASE}/cases/${encodeURIComponent(caseId)}/evidence/${encodeURIComponent(evidenceId)}/index`,
+      { method: 'POST', headers: jsonHeaders() },
+    );
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Index evidence failed: ${response.status} ${errorText}`);
+    }
+    return response.json() as Promise<EvidenceIndexStatus>;
+  },
+
+  async getEvidenceChunks(caseId: string, evidenceId: string): Promise<EvidenceChunksResponse> {
+    const response = await fetch(
+      `${API_BASE}/cases/${encodeURIComponent(caseId)}/evidence/${encodeURIComponent(evidenceId)}/chunks`,
+      { method: 'GET', headers: jsonHeaders() },
+    );
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Get evidence index failed: ${response.status} ${errorText}`);
+    }
+    return response.json() as Promise<EvidenceChunksResponse>;
+  },
+
+  async searchEvidence(caseId: string, query: string, limit: number = 20): Promise<EvidenceSearchResponse> {
+    const params = new URLSearchParams({ q: query, limit: String(limit) });
+    const response = await fetch(
+      `${API_BASE}/cases/${encodeURIComponent(caseId)}/evidence/search?${params.toString()}`,
+      { method: 'GET', headers: jsonHeaders() },
+    );
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Search evidence failed: ${response.status} ${errorText}`);
+    }
+    return response.json() as Promise<EvidenceSearchResponse>;
+  },
+
+  async downloadEvidenceOriginal(caseId: string, evidenceId: string): Promise<Blob> {
+    const response = await fetch(
+      `${API_BASE}/cases/${encodeURIComponent(caseId)}/evidence/${encodeURIComponent(evidenceId)}/original`,
+      { method: 'GET', headers: authHeaders() },
+    );
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Download evidence failed: ${response.status} ${errorText}`);
+    }
+    return response.blob();
   },
 
   /**

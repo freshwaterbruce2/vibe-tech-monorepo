@@ -103,5 +103,27 @@
 - The frontend Evidence tab is gated by the authoritative current case and shows
   provenance, MIME/type, size, SHA-256, import time, truthful extraction status, and
   retry without claiming analysis, indexing, or citation.
-- Phase 2B remains Partial because no dedicated Playwright flow yet imports evidence,
-  reloads it, restarts the backend, verifies it again, and proves exact-run cleanup.
+- Phase 2B was initially Partial because the dedicated restart-aware Playwright flow was
+  missing; that gap is now closed by the physical acceptance result recorded below.
+
+## 2026-08-16 Phase 3A retrieval and citation result
+
+- The new case workflow does not use the legacy global Chroma collections, proxy
+  embeddings, hash-vector fallback, legal cache, or keyword violation detector.
+- `EvidenceChunk` records are tied to case, evidence, extraction attempt, exact derived-
+  text SHA-256, ordinal, and source locator. Indexing is deterministic and idempotent.
+- Extraction attempts now store the derivative SHA-256 at creation. A narrow additive
+  SQLite migration adds the column to existing databases; legacy attempts without a
+  trusted digest must be re-extracted before indexing.
+- Direct and pre-index derivative tampering fail closed. Missing, stale, empty, or
+  whitespace-only derivatives never produce citation text.
+- PDF indexing reconstructs page spans from the immutable original, verifies exact
+  equality with the derivative, and distinguishes identical passages on different pages.
+- Offline lexical search is bounded and case-filtered before ranking. Results expose
+  exact quotes, matched terms, evidence identity, page/paragraph/character locators,
+  extraction attempt, and text hash without making legal conclusions.
+- Independent review found and closed cross-case and same-case asynchronous UI races.
+  Late loads, searches, indexes, retries, and downloads cannot overwrite a newer case
+  or query state.
+- Serialized Playwright acceptance now proves import -> index -> search -> reload ->
+  search -> changed backend PID -> search using one exact synthetic data root.

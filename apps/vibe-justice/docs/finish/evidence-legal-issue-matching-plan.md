@@ -208,13 +208,13 @@ exceptions.
 
 ### Slice 3A: local evidence retrieval and navigable citations
 
-- [ ] Audit and quarantine legacy global Chroma/knowledge/violation paths from the new
+- [x] Audit and quarantine legacy global Chroma/knowledge/violation paths from the new
   case workflow; preserve unrelated compatibility only when isolation is not weakened.
-- [ ] Lock `EvidenceChunk`, locators, staleness, indexing state, and failure semantics in
+- [x] Lock `EvidenceChunk`, locators, staleness, indexing state, and failure semantics in
   tests.
-- [ ] Implement restart-safe, case-scoped deterministic chunking and lexical retrieval.
-- [ ] Add exact evidence citation navigation and integrity verification.
-- [ ] Prove no cross-case retrieval and no provider/network dependency.
+- [x] Implement restart-safe, case-scoped deterministic chunking and lexical retrieval.
+- [x] Add exact evidence citation navigation and integrity verification.
+- [x] Prove no cross-case retrieval and no provider/network dependency.
 
 ### Slice 4A: one versioned South Carolina legal pack
 
@@ -314,7 +314,8 @@ next bounded slice.
 
 ## Status
 
-Slice 2B-acceptance is complete: the serialized synthetic browser flow passed across a
-real backend PID change and exact-run cleanup left zero listeners. The next executable
-unit is `Slice 3A`. Each slice requires separate verification and a local-only
-checkpoint. No GitHub action is permitted.
+Slices 2B-acceptance and 3A are complete. The serialized synthetic browser flow now
+proves evidence import, exact-hash provenance, durable indexing, exact-passage search,
+reload, and a real backend PID change with zero listeners. The next executable unit is
+`Slice 4A`, one bounded versioned South Carolina legal pack. Each slice requires
+separate verification and a local-only checkpoint. No GitHub action is permitted.

@@ -35,7 +35,14 @@ class EvidenceImportService:
         @event.listens_for(self.engine, "connect")
         def pragmas(connection, _):
             cursor=connection.cursor(); cursor.execute("PRAGMA journal_mode=WAL"); cursor.execute("PRAGMA busy_timeout=5000"); cursor.execute("PRAGMA foreign_keys=ON"); cursor.close()
-        SQLModel.metadata.create_all(self.engine); self.reconcile()
+        SQLModel.metadata.create_all(self.engine); self._migrate_schema(); self.reconcile()
+
+    def _migrate_schema(self):
+        """Apply narrow additive migrations needed by existing local databases."""
+        with self.engine.begin() as connection:
+            columns={row[1] for row in connection.exec_driver_sql("PRAGMA table_info(extraction_attempts)")}
+            if "text_sha256" not in columns:
+                connection.exec_driver_sql("ALTER TABLE extraction_attempts ADD COLUMN text_sha256 VARCHAR(64)")
 
     @staticmethod
     def validate_filename(raw):
@@ -177,7 +184,7 @@ class EvidenceImportService:
             if attempt.status=="running":
                 target=original.parents[1]/"extracted"/f"{attempt.attempt_id}.txt"; target.parent.mkdir(parents=True,exist_ok=True)
                 with target.open("x",encoding="utf-8",newline="") as output: output.write(text); output.flush(); os.fsync(output.fileno())
-                attempt.text_path=self.relative(target); attempt.status="succeeded"
+                attempt.text_path=self.relative(target); attempt.text_sha256=hashlib.sha256(text.encode("utf-8")).hexdigest(); attempt.status="succeeded"
             attempt.page_count=pages
         except Exception: attempt.status,attempt.error_code,attempt.error_message="failed","extraction_failed","Local text extraction failed"
         attempt.completed_at=datetime.now(timezone.utc)

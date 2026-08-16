@@ -52,7 +52,7 @@ acceptance contract.
 ### Later phases
 
 - [x] Phase 2B: case-scoped evidence provenance and durable reopening.
-- [ ] Phase 3: case-scoped retrieval and navigable citations. Detailed execution plan:
+- [x] Phase 3: case-scoped retrieval and navigable citations. Detailed execution plan:
   `evidence-legal-issue-matching-plan.md` Slice 3A.
 - [ ] Phase 4: jurisdiction-aware, versioned legal knowledge packs and evidence-to-
   element potential-issue matching. Detailed execution plan:
@@ -101,4 +101,7 @@ archive/restore is complete with atomic disk state and temporary-data acceptance
 Phase 2B is complete. The durable backend contract, immutable case-contained originals,
 provenance, extraction history/retry, current-case UI, adversarial backend tests, and
 serialized evidence import -> reload -> changed-backend-PID browser acceptance all pass.
-The next bounded slice is Phase 3A offline case-scoped retrieval and exact citations.
+Phase 3A is complete: extracted text is hash-bound at creation, indexed into durable
+case-scoped chunks, searched locally without providers, and returned with verified
+page/paragraph/character citations. The next bounded slice is Phase 4A, one versioned
+South Carolina legal knowledge pack built from reviewed primary-source snapshots.
