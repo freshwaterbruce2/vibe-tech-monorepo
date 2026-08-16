@@ -38,9 +38,19 @@
 
 ## Current action
 
-Align the package manager and install the root and backend dependencies, then record
-the exact result of every Phase 0 Nx target.
+Implement and verify one durable case slice: create a case, select/open it, reload the
+web app, and restore the same current case. Keep the test record synthetic and isolated;
+do not touch Walmart or landlord evidence yet.
 
-The user approved localhost web operation if needed. This is recorded as a fallback,
-not a replacement for the packaged desktop definition of finished. Dependency setup
-is now Vibe Justice-only.
+## Durable case slice result
+
+- Backend case lifecycle tests: 13 passed; full backend: 203 passed, 1 expected xfail,
+  67.33% coverage.
+- Frontend focused tests: 81 passed; full frontend: 431 passed, 1 todo. Lint,
+  typecheck, and production build passed (2,004 modules).
+- Focused case Playwright acceptance passed in 10.4 seconds.
+- Full serialized browser suite passed: 2 tests in 10.8 seconds.
+- Test data used a unique `%TEMP%\vibe-justice-e2e-<uuid>` root and exact-run cleanup.
+- No listeners remained on ports 8000 or 5175 after the run.
+- Phase 2A is complete. Next: case-scoped evidence import, hashes, provenance, extraction
+  status, retry, and restart-safe reopening.

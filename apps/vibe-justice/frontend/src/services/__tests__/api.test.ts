@@ -246,6 +246,27 @@ describe('API Service', () => {
     })
   })
 
+  describe('create and current case', () => {
+    it('creates a case and updates the disk-backed current case', async () => {
+      const created = { case_id: 'Case-2026' }
+      mockFetch
+        .mockResolvedValueOnce({ ok: true, json: async () => created })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ current_case: created }) })
+
+      await expect(justiceApi.createCase({ name: 'Case-2026', jurisdiction: 'SC', goals: 'Review' })).resolves.toEqual(created)
+      await expect(justiceApi.setCurrentCase('Case-2026')).resolves.toEqual(created)
+      expect(mockFetch).toHaveBeenNthCalledWith(1, `${apiBase}/cases/create`, expect.objectContaining({ method: 'POST', body: JSON.stringify({ name: 'Case-2026', jurisdiction: 'SC', goals: 'Review' }) }))
+      expect(mockFetch).toHaveBeenNthCalledWith(2, `${apiBase}/cases/current`, expect.objectContaining({ method: 'PUT', body: JSON.stringify({ case_id: 'Case-2026' }) }))
+    })
+
+    it('restores the current case from the backend', async () => {
+      const current = { case_id: 'Case-2026' }
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ current_case: current }) })
+      await expect(justiceApi.getCurrentCase()).resolves.toEqual(current)
+      expect(mockFetch).toHaveBeenCalledWith(`${apiBase}/cases/current`, expect.objectContaining({ method: 'GET' }))
+    })
+  })
+
   describe('listCases', () => {
     it('successfully lists active cases by default', async () => {
       const mockCases = [

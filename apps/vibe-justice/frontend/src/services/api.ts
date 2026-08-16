@@ -32,6 +32,12 @@ export interface Case {
   archived_at: string | null;
 }
 
+export interface CreateCaseRequest {
+  name: string;
+  jurisdiction: string;
+  goals: string;
+}
+
 export interface UploadEvidenceResponse {
   evidence_id: string;
   filename: string;
@@ -43,6 +49,58 @@ export interface UploadEvidenceResponse {
 }
 
 export const justiceApi = {
+  async createCase(request: CreateCaseRequest): Promise<Case> {
+    const response = await fetch(`${API_BASE}/cases/create`, {
+      method: 'POST',
+      headers: jsonHeaders(),
+      body: JSON.stringify(request),
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Create case failed: ${response.status} ${errorText}`);
+    }
+    return response.json() as Promise<Case>;
+  },
+
+  async getCase(caseId: string): Promise<Case> {
+    const response = await fetch(`${API_BASE}/cases/${encodeURIComponent(caseId)}`, {
+      method: 'GET',
+      headers: jsonHeaders(),
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Get case failed: ${response.status} ${errorText}`);
+    }
+    return response.json() as Promise<Case>;
+  },
+
+  async getCurrentCase(): Promise<Case | null> {
+    const response = await fetch(`${API_BASE}/cases/current`, {
+      method: 'GET',
+      headers: jsonHeaders(),
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Get current case failed: ${response.status} ${errorText}`);
+    }
+    const payload = await response.json() as { current_case: Case | null };
+    return payload.current_case;
+  },
+
+  async setCurrentCase(caseId: string): Promise<Case | null> {
+    const response = await fetch(`${API_BASE}/cases/current`, {
+      method: 'PUT',
+      headers: jsonHeaders(),
+      body: JSON.stringify({ case_id: caseId }),
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Set current case failed: ${response.status} ${errorText}`);
+    }
+    const payload = await response.json() as { current_case: Case | null };
+    return payload.current_case;
+  },
+
   /**
    * Uploads a file to the Vibe-Justice backend.
    * Endpoint: POST /api/evidence/upload

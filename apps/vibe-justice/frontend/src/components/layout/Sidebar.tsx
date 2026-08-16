@@ -8,7 +8,8 @@ import {
   RefreshCw,
   Settings,
 } from 'lucide-react'
-import { useCallback, useEffect, useState, type MouseEvent } from 'react'
+import * as Dialog from '@radix-ui/react-dialog'
+import { useCallback, useEffect, useState, type FormEvent, type MouseEvent } from 'react'
 import { cn } from '../../lib/utils'
 import { justiceApi, type Case } from '../../services/api'
 import { SettingsModal } from '../settings/SettingsModal'
@@ -16,9 +17,13 @@ import { SettingsModal } from '../settings/SettingsModal'
 interface SidebarProps {
   activeTab?: string
   setActiveTab?: (tab: string) => void
+  currentCase?: Case | null
+  onCurrentCaseChange?: (caseRecord: Case | null) => void
 }
 
-export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
+const CASE_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/
+
+export function Sidebar({ activeTab, setActiveTab, currentCase = null, onCurrentCaseChange }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
@@ -26,6 +31,12 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const [isSecure, setIsSecure] = useState(true)
   const [cases, setCases] = useState<Case[]>([])
   const [loading, setLoading] = useState(false)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [caseId, setCaseId] = useState('')
+  const [jurisdiction, setJurisdiction] = useState('South Carolina')
+  const [goals, setGoals] = useState('')
+  const [createError, setCreateError] = useState('')
+  const [creating, setCreating] = useState(false)
 
   // Listen for global shortcut
   useEffect(() => {
@@ -65,6 +76,10 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         await justiceApi.restoreCase(caseId)
       } else {
         await justiceApi.archiveCase(caseId)
+        if (currentCase?.case_id === caseId) {
+          const reconciled = await justiceApi.getCurrentCase()
+          onCurrentCaseChange?.(reconciled)
+        }
       }
     } catch (e) {
       console.error('Failed to update status', e)
@@ -75,6 +90,41 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     }
   }
 
+  const selectCase = async (caseRecord: Case) => {
+    if (caseRecord.is_archived || currentCase?.case_id === caseRecord.case_id) return
+    try {
+      const selected = await justiceApi.setCurrentCase(caseRecord.case_id)
+      onCurrentCaseChange?.(selected ?? caseRecord)
+      setActiveTab?.('investigation')
+    } catch (error) {
+      console.error('Failed to select case', error)
+    }
+  }
+
+  const createCase = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!CASE_ID_PATTERN.test(caseId)) {
+      setCreateError('Use 1-64 letters, numbers, periods, underscores, or hyphens; start with a letter or number.')
+      return
+    }
+    setCreating(true)
+    setCreateError('')
+    try {
+      const created = await justiceApi.createCase({ name: caseId, jurisdiction: jurisdiction.trim(), goals: goals.trim() })
+      const selected = await justiceApi.setCurrentCase(created.case_id)
+      onCurrentCaseChange?.(selected ?? created)
+      await fetchCases()
+      setActiveTab?.('investigation')
+      setIsCreateOpen(false)
+      setCaseId('')
+      setGoals('')
+    } catch (error) {
+      setCreateError(error instanceof Error ? error.message : 'Unable to create the case.')
+    } finally {
+      setCreating(false)
+    }
+  }
+
   const filteredCases = cases.filter((c) => (showArchived ? true : !c.is_archived))
 
   const navItems = [
@@ -82,7 +132,7 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       icon: PlusCircle,
       label: 'New Investigation',
       id: 'investigation',
-      onClick: () => setActiveTab?.('investigation'),
+      onClick: () => setIsCreateOpen(true),
     },
     {
       icon: Archive,
@@ -162,7 +212,13 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
                   : 'hover:bg-white/5 hover:border-white/10'
               )}
             >
-              <div className="flex items-center gap-2 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => selectCase(c)}
+                disabled={c.is_archived}
+                aria-current={currentCase?.case_id === c.case_id ? 'true' : undefined}
+                className="flex min-h-11 flex-1 items-center gap-2 overflow-hidden rounded text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-mint disabled:cursor-not-allowed"
+              >
                 <FolderOpen
                   className={cn(
                     'w-4 h-4 shrink-0',
@@ -170,12 +226,13 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
                   )}
                 />
                 <span className="text-xs text-gray-300 truncate font-mono">{c.case_id}</span>
-              </div>
+                {currentCase?.case_id === c.case_id && <span className="text-[10px] font-semibold text-neon-mint">Current</span>}
+              </button>
 
               <button
                 onClick={async (e) => toggleCaseArchive(c.case_id, c.is_archived, e)}
                 className={cn(
-                  'opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-white/10',
+                  'min-h-11 min-w-11 transition-opacity p-2 rounded hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-mint',
                   c.is_archived ? 'text-neon-mint' : 'text-gray-400 hover:text-alert-pink'
                 )}
                 title={c.is_archived ? 'Restore Case' : 'Archive Case'}
@@ -234,6 +291,35 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         showArchived={showArchived}
         onToggleArchived={setShowArchived}
       />
+      <Dialog.Root open={isCreateOpen} onOpenChange={(open) => { setIsCreateOpen(open); if (!open) setCreateError('') }}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-[60] bg-black/70" />
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-[61] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-xl border border-white/10 bg-slate-950 p-6 text-white shadow-2xl focus:outline-none">
+            <Dialog.Title className="text-xl font-bold">New Investigation</Dialog.Title>
+            <Dialog.Description className="mt-1 text-sm text-gray-400">Create a private case workspace and make it the current case.</Dialog.Description>
+            <form onSubmit={createCase} className="mt-5 space-y-4">
+              <div>
+                <label htmlFor="new-case-id" className="mb-1 block text-sm font-medium">Case ID</label>
+                <input id="new-case-id" value={caseId} onChange={(e) => setCaseId(e.target.value)} required maxLength={64} pattern="[A-Za-z0-9][A-Za-z0-9._-]{0,63}" aria-describedby="case-id-help create-case-error" className="min-h-11 w-full rounded-md border border-white/20 bg-slate-900 px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-mint" placeholder="Example-Case-2026" />
+                <p id="case-id-help" className="mt-1 text-xs text-gray-400">1-64 letters, numbers, periods, underscores, or hyphens. Start with a letter or number.</p>
+              </div>
+              <div>
+                <label htmlFor="new-case-jurisdiction" className="mb-1 block text-sm font-medium">Jurisdiction</label>
+                <input id="new-case-jurisdiction" value={jurisdiction} onChange={(e) => setJurisdiction(e.target.value)} required className="min-h-11 w-full rounded-md border border-white/20 bg-slate-900 px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-mint" />
+              </div>
+              <div>
+                <label htmlFor="new-case-goals" className="mb-1 block text-sm font-medium">Research goals</label>
+                <textarea id="new-case-goals" value={goals} onChange={(e) => setGoals(e.target.value)} required rows={4} className="w-full rounded-md border border-white/20 bg-slate-900 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-mint" placeholder="Describe the questions this investigation should answer." />
+              </div>
+              {createError && <p id="create-case-error" role="alert" className="text-sm text-red-400">{createError}</p>}
+              <div className="flex justify-end gap-3">
+                <Dialog.Close type="button" disabled={creating} className="min-h-11 rounded-md border border-white/20 px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-mint">Cancel</Dialog.Close>
+                <button type="submit" disabled={creating} className="min-h-11 rounded-md bg-neon-mint px-4 font-semibold text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-50">{creating ? 'Creating…' : 'Create case'}</button>
+              </div>
+            </form>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   )
 }

@@ -1,24 +1,53 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '@playwright/test'
 
-test.describe('Case Management', () => {
-  test('should create a new case', async ({ page }) => {
-    await page.goto('/');
+const CASE_ID = 'E2E-CASE-CURRENT-001'
 
-    // Check if we are on the dashboard
-    await expect(page).toHaveTitle(/Vibe-Justice/);
+test.describe('Case management persistence', () => {
+  test('creates, restores current selection, archives, and restores a synthetic case', async ({
+    page,
+  }) => {
+    test.setTimeout(60_000)
+    await page.goto('/')
+    await expect(page).toHaveTitle(/Vibe Justice/)
 
-    // Click 'New Case' button (assuming there's a button with this text or ID)
-    const newCaseBtn = page.getByRole('button', { name: /New Case/i });
-    await newCaseBtn.click();
+    await page.getByRole('button', { name: 'New Investigation' }).click()
+    const createDialog = page.getByRole('dialog', { name: 'New Investigation' })
+    await expect(createDialog).toBeVisible()
+    await createDialog.getByLabel('Case ID').fill(CASE_ID)
+    await createDialog.getByLabel('Jurisdiction').fill('South Carolina')
+    await createDialog
+      .getByLabel('Research goals')
+      .fill('Synthetic local-only Playwright verification. No provider calls.')
+    await createDialog.getByRole('button', { name: 'Create case' }).click()
 
-    // Fill in case details
-    await page.fill('input[placeholder*="Case Name"]', 'Test Case 2026');
-    await page.fill('textarea[placeholder*="Description"]', 'Automated test case for local verification.');
+    await expect(createDialog).toBeHidden()
+    const currentCaseButton = page.getByRole('button', {
+      name: new RegExp(`^${CASE_ID}\\s+Current$`),
+    })
+    await expect(currentCaseButton).toHaveAttribute('aria-current', 'true')
 
-    // Submit
-    await page.click('button:has-text("Create")');
+    await page.reload()
+    await page.getByRole('navigation').locator('..').hover()
+    await expect(
+      page.getByRole('button', { name: new RegExp(`^${CASE_ID}\\s+Current$`) })
+    ).toHaveAttribute('aria-current', 'true')
 
-    // Verify it appeared in the list
-    await expect(page.locator('text=Test Case 2026')).toBeVisible();
-  });
-});
+    await page.getByTitle('Archive Case').click()
+    await expect(page.getByText(CASE_ID, { exact: true })).toBeHidden()
+    await expect(page.getByText('Current', { exact: true })).toBeHidden()
+
+    await page.getByRole('button', { name: 'Settings' }).click()
+    const settingsDialog = page.getByRole('dialog', { name: 'System Configuration' })
+    await page.locator('button.w-10.h-5').click()
+    await page.getByRole('button', { name: 'Save Configuration' }).click()
+
+    await expect(page.getByText(CASE_ID, { exact: true })).toBeVisible()
+    await page.getByTitle('Restore Case').click()
+    await expect(page.getByTitle('Archive Case')).toBeVisible()
+
+    await page.getByRole('button', { name: CASE_ID, exact: true }).click()
+    await expect(
+      page.getByRole('button', { name: new RegExp(`^${CASE_ID}\\s+Current$`) })
+    ).toHaveAttribute('aria-current', 'true')
+  })
+})

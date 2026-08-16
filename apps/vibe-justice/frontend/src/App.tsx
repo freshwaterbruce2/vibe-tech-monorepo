@@ -9,7 +9,7 @@ import {
   Scale,
   Send,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DiagnosticsPanel } from './components/DiagnosticsPanel'
 import { DocumentManager } from './components/DocumentManager'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -18,6 +18,7 @@ import { ColdCases } from './components/views/ColdCases'
 import { KnowledgeBase } from './components/views/KnowledgeBase'
 import { VibeDashboard } from './containers/VibeDashboard'
 import { httpClient } from './services/httpClient'
+import { justiceApi, type Case } from './services/api'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -320,6 +321,15 @@ function LegalAssistantView() {
 
 function App() {
   const [activeTab, setActiveTab] = useState('investigation')
+  const [currentCase, setCurrentCase] = useState<Case | null>(null)
+
+  useEffect(() => {
+    let active = true
+    justiceApi.getCurrentCase()
+      .then((caseRecord) => { if (active) setCurrentCase(caseRecord) })
+      .catch((error) => console.error('Failed to restore current case', error))
+    return () => { active = false }
+  }, [])
 
   const renderContent = () => {
     switch (activeTab) {
@@ -342,7 +352,7 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <DashboardLayout activeTab={activeTab} setActiveTab={setActiveTab}>
+      <DashboardLayout activeTab={activeTab} setActiveTab={setActiveTab} currentCase={currentCase} onCurrentCaseChange={setCurrentCase}>
         <div className="h-full flex flex-col">
           {/* Quick access tabs bar */}
           <div className="bg-gradient-to-b from-slate-900/95 to-slate-950/95 backdrop-blur-sm border-b border-white/5 px-4 py-2.5 shadow-lg shadow-black/20">

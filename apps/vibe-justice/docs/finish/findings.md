@@ -45,6 +45,23 @@
 - Phase 1A backend verification after security changes: 190 passed, 1 expected xfail,
   63.58% coverage. Every non-health route is authenticated; `/api/health` stays public.
 
+## 2026-08-16 durable case slice
+
+- Case creation now publishes from a unique staging directory with atomic metadata
+  writes and an exclusive sibling lock. Duplicate IDs return 409 without overwrite;
+  failed creation removes only its own staging tree.
+- The backend exposes validated create/list/get/current/archive/restore contracts.
+  Current case is persisted in app data, survives a fresh client/backend restart, is
+  cleared on archive, and is not silently selected on restore.
+- The frontend restores authoritative current state from the backend, provides an
+  accessible create dialog, keyboard case selection, `aria-current`, and a visible
+  Current marker. Chat/evidence are intentionally not case-scoped in this slice.
+- Backend verification: 203 passed, 1 expected xfail, 67.33% coverage.
+- Frontend verification: 431 passed, 1 todo; lint, typecheck, and production build pass.
+- Serialized loopback Playwright acceptance uses a unique exact-run `%TEMP%` root,
+  one worker, and a test-only key. Both settings and full create -> reload -> archive ->
+  restore -> reselect flows pass; no provider was called and no real case data was used.
+
 ## Open questions to resolve from source
 
 - Exact backend dependency/venv bootstrap contract.
