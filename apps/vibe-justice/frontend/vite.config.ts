@@ -16,6 +16,7 @@ export default defineConfig({
   // Prevent Vite from obscuring Rust errors
   clearScreen: false,
   server: {
+    host: '127.0.0.1',
     port: 5175,
     strictPort: true, // Tauri requires strict port
     proxy: {

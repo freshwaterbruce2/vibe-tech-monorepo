@@ -1,6 +1,5 @@
 import os
 import platform
-import sys
 from pathlib import Path
 
 
@@ -33,11 +32,12 @@ def get_data_directory() -> Path:
     # Priority 1: Environment override
     override = os.getenv("VIBE_JUSTICE_DATA_DIR")
     if override:
-        return Path(override)
+        data_dir = Path(override)
+        data_dir.mkdir(parents=True, exist_ok=True)
+        return data_dir
 
     # Priority 2: Standard Vibe hierarchy
-    root = get_platform_data_root()
-    data_dir = root / "vibe-justice"
+    data_dir = get_platform_data_root()
 
     # Create if doesn't exist
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -55,7 +55,9 @@ def get_log_directory() -> Path:
     r"""Get platform-specific log directory (Strictly D:\logs)"""
     override = os.getenv("VIBE_JUSTICE_LOG_DIR")
     if override:
-        return Path(override)
+        log_dir = Path(override)
+        log_dir.mkdir(parents=True, exist_ok=True)
+        return log_dir
 
     system = platform.system()
 
@@ -76,7 +78,9 @@ def get_chroma_directory() -> Path:
     """Get ChromaDB/vector database directory"""
     override = os.getenv("VIBE_JUSTICE_CHROMA_DIR")
     if override:
-        return Path(override)
+        chroma_dir = Path(override)
+        chroma_dir.mkdir(parents=True, exist_ok=True)
+        return chroma_dir
 
     chroma_dir = get_data_directory() / "chroma"
     chroma_dir.mkdir(parents=True, exist_ok=True)
@@ -109,7 +113,9 @@ def get_database_directory() -> Path:
     # Priority 2: legacy per-app override
     override = os.getenv("VIBE_JUSTICE_DB_DIR")
     if override:
-        return Path(override)
+        db_dir = Path(override)
+        db_dir.mkdir(parents=True, exist_ok=True)
+        return db_dir
 
     system = platform.system()
 
@@ -155,6 +161,18 @@ def get_database_path(db_name: str = "vibe_justice.db") -> Path:
 
 
 # Verify write permissions on startup
+def resolve_contained_path(root: Path, filename: str) -> Path:
+    """Resolve a filename below root and reject traversal or absolute paths."""
+    candidate_name = (filename or "").strip()
+    if not candidate_name or Path(candidate_name).name != candidate_name:
+        raise ValueError("Invalid filename")
+    resolved_root = root.resolve()
+    candidate = (resolved_root / candidate_name).resolve()
+    if candidate.parent != resolved_root:
+        raise ValueError("Invalid filename")
+    return candidate
+
+
 def verify_permissions():
     """Verify all directories are writable"""
     dirs = [
@@ -169,13 +187,11 @@ def verify_permissions():
         if not path.exists():
             try:
                 path.mkdir(parents=True, exist_ok=True)
-            except PermissionError:
-                print(f"❌ ERROR: Cannot create {name} directory: {path}")
-                sys.exit(1)
+            except OSError as exc:
+                raise RuntimeError(f"Cannot create {name} directory: {path}") from exc
 
         if not os.access(path, os.W_OK):
-            print(f"❌ ERROR: No write access to {name} directory: {path}")
-            sys.exit(1)
+            raise RuntimeError(f"No write access to {name} directory: {path}")
 
     print("✅ All directories accessible:")
     for name, path in dirs:

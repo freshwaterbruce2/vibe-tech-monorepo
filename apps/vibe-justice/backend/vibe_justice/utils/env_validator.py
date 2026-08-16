@@ -24,7 +24,7 @@ OPTIONAL_ENV_VARS = {
 }
 
 
-def validate_environment():
+def validate_environment(*, strict: bool = False):
     """
     Validate required environment variables on startup.
 
@@ -61,11 +61,15 @@ def validate_environment():
     # Validate API key strength
     api_key = os.getenv("VIBE_JUSTICE_API_KEY")
     if len(api_key) < 32:
+        if strict:
+            raise RuntimeError("VIBE_JUSTICE_API_KEY must be at least 32 characters")
         print("WARNING: API key should be at least 32 characters")
         print(f"   Generate secure key: {secrets.token_urlsafe(32)}")
 
     # Validate OpenRouter API key format
     openrouter_key = os.getenv("OPENROUTER_API_KEY")
     if not openrouter_key.startswith("sk-or-"):
+        if strict:
+            raise RuntimeError("OPENROUTER_API_KEY must start with 'sk-or-'")
         print("WARNING: OPENROUTER_API_KEY should start with 'sk-or-'")
         print("   Get your key at: https://openrouter.ai/keys")

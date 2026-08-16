@@ -1,0 +1,46 @@
+# Vibe Justice Finish Progress
+
+## 2026-08-16
+
+- Confirmed remote access with `git ls-remote`; default branch is `main`.
+- Cloned the complete repository to `C:\projects\vibe-tech-monorepo`.
+- Created branch `codex/vibe-justice-finish-20260816` at
+  `db33d791459061ca28789ee6011cb08054e36f3c`.
+- Loaded root `AGENTS.md`, master-agent routing, and the file-backed planning workflow.
+- Tool discovery error: GitHub CLI (`gh`) is not installed. Git HTTPS access works, so
+  this does not block local implementation; PR creation remains untested.
+- Sparse-checkout probe error: `C:\Users\fresh\vibe-development` is not a valid Git
+  repository. Replaced it with a fresh canonical checkout rather than repairing unknown remnants.
+- Scope correction: stopped `corepack pnpm install --frozen-lockfile` after the user
+  clarified that the whole monorepo must not be installed. It exited from Ctrl+C while
+  partially populating the ignored pnpm store/node_modules; no source files were changed.
+- Filter attempt 1: `pnpm install --filter vibe-justice-frontend...` still announced
+  all 5,241 packages because of the hoisted workspace layout. Stopped immediately and
+  moved to investigating a truly isolated app install.
+- Backend dependency install completed in `apps/vibe-justice/backend/.venv` using
+  Python 3.11.15 and the app's pinned `requirements.txt`.
+- Backend baseline command passed: `python -m pytest vibe_justice/tests -v --tb=short`;
+  185 passed, 1 xfailed, total coverage 63.10% (required 55%).
+- Isolated frontend install completed from `apps/vibe-justice/frontend` using
+  `corepack pnpm install --ignore-workspace`; app-local lockfile created.
+- Frontend lint passed with only the pre-existing ESLintIgnore migration warning.
+- Frontend typecheck passed.
+- Frontend unit baseline passed: 21 files, 427 tests passed, 1 todo.
+- Frontend build attempt 1 failed because `@tailwindcss/postcss` was undeclared and
+  resolved from partial root node_modules. Added the direct app dependency.
+- Frontend build attempt 2 passed: 1,949 modules, main JS 435.49 kB (131.39 kB gzip).
+- E2E attempt 1 hit an unrelated service on stale port 5173 and failed both tests.
+  Corrected Playwright/Vite to `127.0.0.1:5175`, disabled server reuse, capped one worker.
+- Focused settings E2E passed. Full E2E remains red solely on missing case creation.
+- Phase 1A backend implementation passed 190 tests with 1 expected xfail and 63.58%
+  coverage. Loopback binding, health probing, startup validation, non-health auth,
+  canonical backend root, and containment checks are implemented.
+
+## Current action
+
+Align the package manager and install the root and backend dependencies, then record
+the exact result of every Phase 0 Nx target.
+
+The user approved localhost web operation if needed. This is recorded as a fallback,
+not a replacement for the packaged desktop definition of finished. Dependency setup
+is now Vibe Justice-only.

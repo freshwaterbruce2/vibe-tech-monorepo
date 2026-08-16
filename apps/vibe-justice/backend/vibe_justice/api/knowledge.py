@@ -212,7 +212,10 @@ async def delete_document(
         logger.info(f"Deleting document: {document_id}")
 
         # Check if file exists
-        file_path = evidence_service.uploads_dir / document_id
+        try:
+            file_path = evidence_service.resolve_upload_path(document_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
         if not file_path.exists():
             raise HTTPException(status_code=404, detail="Document not found")
 
