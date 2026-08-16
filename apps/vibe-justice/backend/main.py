@@ -31,6 +31,7 @@ from vibe_justice.api import (
     evidence,
     forms,
     knowledge,
+    legal_packs,
     search,
 )
 
@@ -89,6 +90,7 @@ app.include_router(search.router, prefix="/api/policy", tags=["policy"], depende
 app.include_router(knowledge.router, prefix="/api/knowledge", tags=["knowledge"], dependencies=_authenticated)
 app.include_router(cases.router, prefix="/api", tags=["cases"], dependencies=_authenticated)
 app.include_router(evidence.router, prefix="/api", tags=["evidence"], dependencies=_authenticated)
+app.include_router(legal_packs.router, prefix="/api", tags=["legal-packs"], dependencies=_authenticated)
 app.include_router(document_analysis.router, prefix="/api", tags=["document-analysis"], dependencies=_authenticated)
 app.include_router(batch_processing.router, dependencies=_authenticated)
 

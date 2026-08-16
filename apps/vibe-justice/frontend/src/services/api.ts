@@ -115,6 +115,53 @@ export interface EvidenceSearchResponse {
   total: number;
 }
 
+export interface LegalPackSource {
+  source_id: string;
+  title: string;
+  canonical_url: string;
+  official: boolean;
+  status: string;
+  sha256: string;
+  excerpt: string;
+  locator: string;
+}
+
+export interface LegalPack {
+  pack_id: string;
+  jurisdiction: string;
+  matter_type: string;
+  version: string;
+  as_of: string;
+  status: string;
+  retrieval_status: string;
+  approval_status: string;
+  retrieved_at: string;
+  sha256: string;
+  sources: LegalPackSource[];
+}
+
+export interface LegalPackElement {
+  element_id: string;
+  ordinal: number;
+  authority_text: string;
+  applicability: string;
+  status: string;
+}
+
+export interface LegalPackSourceDetail extends LegalPackSource {
+  pack_id: string;
+  pack_status: string;
+  approval_status: string;
+  version: string;
+  as_of: string;
+  retrieved_at: string;
+  elements: LegalPackElement[];
+}
+
+export interface LegalPacksResponse {
+  packs: LegalPack[];
+}
+
 interface EvidenceApiRecord {
   evidence_id: string;
   case_id: string;
@@ -141,6 +188,23 @@ const normalizeEvidence = (record: EvidenceApiRecord): EvidenceRecord => ({
 });
 
 export const justiceApi = {
+  async listLegalPacks(): Promise<LegalPacksResponse> {
+    const response = await fetch(`${API_BASE}/legal-packs`, { method: 'GET', headers: jsonHeaders() });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`List legal packs failed: ${response.status} ${errorText}`);
+    }
+    return response.json() as Promise<LegalPacksResponse>;
+  },
+
+  async getLegalPackSource(packId: string, sourceId: string): Promise<LegalPackSourceDetail> {
+    const response = await fetch(`${API_BASE}/legal-packs/${encodeURIComponent(packId)}/sources/${encodeURIComponent(sourceId)}`, { method: 'GET', headers: jsonHeaders() });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Get legal pack source failed: ${response.status} ${errorText}`);
+    }
+    return response.json() as Promise<LegalPackSourceDetail>;
+  },
   async createCase(request: CreateCaseRequest): Promise<Case> {
     const response = await fetch(`${API_BASE}/cases/create`, {
       method: 'POST',

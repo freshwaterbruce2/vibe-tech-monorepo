@@ -218,12 +218,12 @@ exceptions.
 
 ### Slice 4A: one versioned South Carolina legal pack
 
-- [ ] Lock the pack manifest/source/version/hash schema and update behavior in tests.
-- [ ] Ingest a bounded, reviewed South Carolina landlord-tenant source set from primary
+- [x] Lock the pack manifest/source/version/hash schema and update behavior in tests.
+- [x] Ingest a bounded, reviewed South Carolina landlord-tenant source set from primary
   sources into immutable snapshots and derived passages.
-- [ ] Create source-checked rule elements with applicability and exceptions.
-- [ ] Display pack inventory, as-of warnings, source links, and stale-pack state.
-- [ ] Test changed/repealed/missing/ambiguous authority behavior without using real case
+- [x] Create source-checked rule elements with applicability and exceptions.
+- [x] Display pack inventory, as-of warnings, source links, and stale-pack state.
+- [x] Test changed/repealed/missing/ambiguous authority behavior without using real case
   facts.
 
 ### Slice 4B: evidence-to-element issue matching
@@ -314,8 +314,15 @@ next bounded slice.
 
 ## Status
 
-Slices 2B-acceptance and 3A are complete. The serialized synthetic browser flow now
+Slices 2B-acceptance, 3A, and 4A are complete. The serialized synthetic browser flow
 proves evidence import, exact-hash provenance, durable indexing, exact-passage search,
-reload, and a real backend PID change with zero listeners. The next executable unit is
-`Slice 4A`, one bounded versioned South Carolina legal pack. Each slice requires
+reload, and a real backend PID change with zero listeners. The installed offline South
+Carolina residential landlord-tenant pack preserves exact General Assembly excerpts,
+the online-Code disclaimer, immutable per-version manifests and hashes, applicability
+and exclusion sources, and explicit `source_checked` / `not_approved_for_matching`
+status. Canonical verification fails closed for snapshot or database tampering, and
+retained versions remain independently readable after an update. The Knowledge Base
+shows the verified inventory, source detail, official links, as-of metadata, and legal
+research warnings. Independent re-review found no actionable residuals. The next
+executable unit is `Slice 4B`, evidence-to-element issue matching. Each slice requires
 separate verification and a local-only checkpoint. No GitHub action is permitted.

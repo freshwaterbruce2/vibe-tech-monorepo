@@ -32,6 +32,20 @@ describe('API Service', () => {
     })
   })
 
+  describe('legal pack inventory', () => {
+    it('loads installed legal packs from the authenticated inventory route', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ packs: [] }) })
+      await expect(justiceApi.listLegalPacks()).resolves.toEqual({ packs: [] })
+      expect(mockFetch).toHaveBeenCalledWith(`${apiBase}/legal-packs`, expect.objectContaining({ method: 'GET' }))
+    })
+
+    it('loads exact source detail using encoded pack and source identifiers', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ pack_id: 'pack/1', source_id: 'source 1', elements: [] }) })
+      await justiceApi.getLegalPackSource('pack/1', 'source 1')
+      expect(mockFetch).toHaveBeenCalledWith(`${apiBase}/legal-packs/pack%2F1/sources/source%201`, expect.objectContaining({ method: 'GET' }))
+    })
+  })
+
   describe('uploadEvidence', () => {
     it('successfully uploads file with case ID', async () => {
       const mockFile = new File(['evidence content'], 'evidence.pdf', { type: 'application/pdf' })
