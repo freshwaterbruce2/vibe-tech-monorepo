@@ -1,176 +1,48 @@
-"""
-Evidence API endpoints
+"""Authenticated, case-scoped evidence API."""
+from datetime import datetime
+from typing import Optional
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse, PlainTextResponse
+from pydantic import BaseModel, ConfigDict, Field
+from vibe_justice.services.evidence_import_service import EvidenceImportService
 
-Supports:
-- Uploading evidence files (txt/pdf/docx) into DATA_DIRECTORY/uploads (D:\\learning-system by default)
-- Listing uploaded evidence
-- Indexing extracted text into ChromaDB for RAG chat
-"""
-
-from __future__ import annotations
-
-from typing import List, Optional
-
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from pydantic import BaseModel
-from vibe_justice.services.evidence_service import EvidenceService
-from vibe_justice.utils.auth import require_api_key
-from vibe_justice.utils.domain import normalize_domain
-
-router = APIRouter()
-evidence_service = EvidenceService()
-
-
-class EvidenceFile(BaseModel):
-    filename: str
-    size_bytes: int
-    uploaded_at: str
-
-
-class UploadEvidenceResponse(BaseModel):
-    evidence_id: str
-    filename: str
-    size_bytes: int
-    status: str
-    category: str
-    case_id: Optional[str] = None
-    message: str
-
-
-class IndexEvidenceRequest(BaseModel):
-    filename: str
-    domain: str = "general"
-    chunk_size: int = 1200
-    overlap: int = 200
-
-
-class IndexEvidenceResponse(BaseModel):
-    domain: str
-    filename: str
-    chunks_indexed: int
-    message: str
-
-
-@router.get("/files", response_model=List[EvidenceFile])
-async def list_evidence_files():
-    return evidence_service.list_files()
-
-
-@router.post("/upload", response_model=UploadEvidenceResponse, dependencies=[Depends(require_api_key)])
-async def upload_evidence(
-    file: UploadFile = File(...),
-    category: str = Form("other"),
-    case_id: Optional[str] = Form(None),
-):
+router=APIRouter(prefix="/cases/{case_id}/evidence",tags=["Evidence"])
+class AttemptResponse(BaseModel):
+    model_config=ConfigDict(from_attributes=True)
+    attempt_id:str; status:str; started_at:datetime; completed_at:Optional[datetime]; page_count:Optional[int]; error_code:Optional[str]; error_message:Optional[str]
+class EvidenceResponse(BaseModel):
+    model_config=ConfigDict(from_attributes=True)
+    evidence_id:str; case_id:str; display_filename:str; byte_length:int; sha256:str
+    declared_mime:Optional[str]; detected_mime:str; detected_type:str; imported_at:datetime
+    source_label:str; received_from:Optional[str]; notes:Optional[str]; evidence_date:Optional[datetime]
+    status:str; error_code:Optional[str]; error_message:Optional[str]; same_content_as:Optional[str]
+    attempts:list[AttemptResponse]=Field(default_factory=list)
+def service(): return EvidenceImportService()
+def response(item):
+    manager=service(); value=EvidenceResponse.model_validate(item); value.attempts=[AttemptResponse.model_validate(a) for a in manager.attempts(item.evidence_id)]; return value
+@router.post("",response_model=EvidenceResponse,status_code=201)
+async def upload(case_id:str,file:UploadFile=File(...),source_label:str=Form(...),received_from:Optional[str]=Form(None),notes:Optional[str]=Form(None),evidence_date:Optional[datetime]=Form(None)):
+    if not source_label.strip() or len(source_label)>200: raise HTTPException(422,"Source label is required")
     try:
-        storage_category = category if category != "other" else case_id or "other"
-        result = evidence_service.save_upload(file, category=storage_category)
-        return UploadEvidenceResponse(
-            evidence_id=result["filename"],
-            filename=result["filename"],
-            size_bytes=result["size_bytes"],
-            status="uploaded",
-            category=result.get("category", "other"),
-            case_id=case_id,
-            message=f"Uploaded successfully ({result.get('category', 'other')})",
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        print(f"Evidence upload error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to upload evidence")
-
-
-@router.post("/index", response_model=IndexEvidenceResponse, dependencies=[Depends(require_api_key)])
-async def index_evidence(request: IndexEvidenceRequest):
-    domain = normalize_domain(request.domain)
-    try:
-        result = evidence_service.index_file(
-            filename=request.filename,
-            domain=domain,
-            chunk_size=request.chunk_size,
-            overlap=request.overlap,
-        )
-        return IndexEvidenceResponse(
-            domain=domain,
-            filename=request.filename,
-            chunks_indexed=result["chunks_indexed"],
-            message="Indexed successfully",
-        )
-    except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="Evidence file not found")
-    except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e))
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        print(f"Evidence index error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to index evidence")
-
-
-class DeleteRequest(BaseModel):
-    filename: str
-
-
-class DeleteResponse(BaseModel):
-    deleted: str
-    message: str
-
-
-@router.post("/delete", response_model=DeleteResponse, dependencies=[Depends(require_api_key)])
-async def delete_evidence(request: DeleteRequest):
-    """Delete an evidence file and remove from index."""
-    try:
-        result = evidence_service.delete_file(request.filename)
-        return DeleteResponse(deleted=result["deleted"], message="Deleted successfully")
-    except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="File not found")
-    except Exception as e:
-        print(f"Delete error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to delete file")
-
-
-class StatusResponse(BaseModel):
-    filename: str
-    status: str
-    chunks: int
-    collections: List[str] = []
-
-
-@router.get("/status/{filename}", response_model=StatusResponse)
-async def get_evidence_status(filename: str):
-    """Get index status for an evidence file."""
-    try:
-        result = evidence_service.get_index_status(filename)
-        return StatusResponse(
-            filename=filename,
-            status=result["status"],
-            chunks=result.get("chunks", 0),
-            collections=result.get("collections", []),
-        )
-    except Exception as e:
-        print(f"Status error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to get status")
-
-
-class PreviewResponse(BaseModel):
-    filename: str
-    preview: str
-    total_chars: int
-
-
-@router.get("/preview/{filename}", response_model=PreviewResponse)
-async def get_evidence_preview(filename: str):
-    """Get text preview of an evidence file."""
-    try:
-        result = evidence_service.get_preview(filename)
-        return PreviewResponse(
-            filename=result["filename"],
-            preview=result["preview"],
-            total_chars=result["total_chars"],
-        )
-    except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="File not found")
-    except Exception as e:
-        print(f"Preview error: {e}")
-        raise HTTPException(status_code=500, detail="Failed to get preview")
+        return response(await service().import_upload(case_id,file,source_label.strip(),received_from,notes,evidence_date))
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(500,"Evidence import failed safely") from exc
+@router.get("",response_model=list[EvidenceResponse])
+def list_evidence(case_id:str): return [response(item) for item in service().list(case_id)]
+@router.get("/{evidence_id}",response_model=EvidenceResponse)
+def get_evidence(case_id:str,evidence_id:str): return response(service().get(case_id,evidence_id))
+@router.get("/{evidence_id}/original")
+def download_original(case_id:str,evidence_id:str):
+    manager=service(); item=manager.get(case_id,evidence_id)
+    if item.status in {"missing","corrupt"}: raise HTTPException(409,item.error_message)
+    return FileResponse(manager.resolve(item.original_path),media_type=item.detected_mime,filename=item.display_filename)
+@router.get("/{evidence_id}/text")
+def extracted_text(case_id:str,evidence_id:str):
+    manager=service(); item=manager.get(case_id,evidence_id); attempt=next((a for a in manager.attempts(evidence_id) if a.status=="succeeded"),None)
+    if not attempt or not attempt.text_path: raise HTTPException(409,f"Extracted text is not available ({item.status})")
+    return PlainTextResponse(manager.resolve(attempt.text_path).read_text(encoding="utf-8"))
+@router.post("/{evidence_id}/extract",response_model=EvidenceResponse)
+def retry_extraction(case_id:str,evidence_id:str):
+    manager=service(); manager.extract(case_id,evidence_id); return response(manager.get(case_id,evidence_id))

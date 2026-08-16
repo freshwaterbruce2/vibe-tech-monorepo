@@ -88,7 +88,7 @@ app.include_router(forms.router, prefix="/api/forms", tags=["forms"], dependenci
 app.include_router(search.router, prefix="/api/policy", tags=["policy"], dependencies=_authenticated)
 app.include_router(knowledge.router, prefix="/api/knowledge", tags=["knowledge"], dependencies=_authenticated)
 app.include_router(cases.router, prefix="/api", tags=["cases"], dependencies=_authenticated)
-app.include_router(evidence.router, prefix="/api/evidence", tags=["evidence"], dependencies=_authenticated)
+app.include_router(evidence.router, prefix="/api", tags=["evidence"], dependencies=_authenticated)
 app.include_router(document_analysis.router, prefix="/api", tags=["document-analysis"], dependencies=_authenticated)
 app.include_router(batch_processing.router, dependencies=_authenticated)
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { justiceApi } from '../../services/api';
 
-export function AnalysisPanel({ caseId = "default-case" }: { caseId?: string }) {
+export function AnalysisPanel({ caseId }: { caseId: string }) {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 

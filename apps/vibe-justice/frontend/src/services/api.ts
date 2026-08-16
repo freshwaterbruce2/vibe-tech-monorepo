@@ -38,15 +38,69 @@ export interface CreateCaseRequest {
   goals: string;
 }
 
-export interface UploadEvidenceResponse {
-  evidence_id: string;
-  filename: string;
-  size_bytes: number;
-  status: 'uploaded';
-  category: string;
-  case_id: string | null;
-  message: string;
+export type ExtractionStatus = 'pending' | 'running' | 'succeeded' | 'failed' | 'unsupported' | 'encrypted';
+
+export interface ExtractionAttempt {
+  attempt_id: string;
+  status: ExtractionStatus;
+  extractor_name?: string;
+  extractor_version?: string;
+  started_at: string;
+  completed_at: string | null;
+  page_count: number | null;
+  error_code: string | null;
+  error_message: string | null;
 }
+
+export interface EvidenceRecord {
+  evidence_id: string;
+  case_id: string;
+  original_filename: string;
+  byte_length: number;
+  sha256: string;
+  declared_mime: string | null;
+  detected_mime: string;
+  imported_at: string;
+  source_label: string;
+  received_from: string | null;
+  notes: string | null;
+  evidence_date: string | null;
+  lifecycle_status: string;
+  same_content_as: string | null;
+  latest_extraction: ExtractionAttempt | null;
+}
+
+export interface EvidenceProvenance {
+  sourceLabel: string;
+  receivedFrom?: string;
+  notes?: string;
+  evidenceDate?: string;
+}
+
+interface EvidenceApiRecord {
+  evidence_id: string;
+  case_id: string;
+  display_filename: string;
+  byte_length: number;
+  sha256: string;
+  declared_mime: string | null;
+  detected_mime: string;
+  imported_at: string;
+  source_label: string;
+  received_from: string | null;
+  notes: string | null;
+  evidence_date: string | null;
+  status: string;
+  same_content_as: string | null;
+  attempts: ExtractionAttempt[];
+}
+
+const normalizeEvidence = (record: EvidenceApiRecord): EvidenceRecord => ({
+  ...record,
+  original_filename: record.display_filename,
+  lifecycle_status: record.status,
+  latest_extraction: record.attempts[record.attempts.length - 1] ?? null,
+});
 
 export const justiceApi = {
   async createCase(request: CreateCaseRequest): Promise<Case> {
@@ -101,16 +155,15 @@ export const justiceApi = {
     return payload.current_case;
   },
 
-  /**
-   * Uploads a file to the Vibe-Justice backend.
-   * Endpoint: POST /api/evidence/upload
-   */
-  async uploadEvidence(file: File, caseId: string): Promise<UploadEvidenceResponse> {
+  async uploadEvidence(file: File, caseId: string, provenance: EvidenceProvenance = { sourceLabel: 'Unspecified source' }): Promise<EvidenceRecord> {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('case_id', caseId);
+    formData.append('source_label', provenance.sourceLabel);
+    if (provenance.receivedFrom) formData.append('received_from', provenance.receivedFrom);
+    if (provenance.notes) formData.append('notes', provenance.notes);
+    if (provenance.evidenceDate) formData.append('evidence_date', provenance.evidenceDate);
 
-    const response = await fetch(`${API_BASE}/evidence/upload`, {
+    const response = await fetch(`${API_BASE}/cases/${encodeURIComponent(caseId)}/evidence`, {
       method: 'POST',
       headers: authHeaders(),
       body: formData,
@@ -121,7 +174,31 @@ export const justiceApi = {
       throw new Error(`Upload failed: ${response.status} ${errorText}`);
     }
 
-    return response.json() as Promise<UploadEvidenceResponse>;
+    return normalizeEvidence(await response.json() as EvidenceApiRecord);
+  },
+
+  async listEvidence(caseId: string): Promise<EvidenceRecord[]> {
+    const response = await fetch(`${API_BASE}/cases/${encodeURIComponent(caseId)}/evidence`, {
+      method: 'GET',
+      headers: jsonHeaders(),
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`List evidence failed: ${response.status} ${errorText}`);
+    }
+    return (await response.json() as EvidenceApiRecord[]).map(normalizeEvidence);
+  },
+
+  async retryEvidenceExtraction(caseId: string, evidenceId: string): Promise<EvidenceRecord> {
+    const response = await fetch(
+      `${API_BASE}/cases/${encodeURIComponent(caseId)}/evidence/${encodeURIComponent(evidenceId)}/extract`,
+      { method: 'POST', headers: jsonHeaders() },
+    );
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Retry extraction failed: ${response.status} ${errorText}`);
+    }
+    return normalizeEvidence(await response.json() as EvidenceApiRecord);
   },
 
   /**

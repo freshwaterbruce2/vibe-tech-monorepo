@@ -38,9 +38,10 @@
 
 ## Current action
 
-Implement and verify one durable case slice: create a case, select/open it, reload the
-web app, and restore the same current case. Keep the test record synthetic and isolated;
-do not touch Walmart or landlord evidence yet.
+Implement and verify Phase 2B only: case-scoped evidence import, immutable originals,
+provenance, durable extraction status/history, retry, and restart-safe reopening. Use
+only synthetic fixtures and app-local dependencies; do not call providers, touch real
+case data, package Tauri, or perform any GitHub/remote action.
 
 ## Durable case slice result
 
@@ -54,3 +55,20 @@ do not touch Walmart or landlord evidence yet.
 - No listeners remained on ports 8000 or 5175 after the run.
 - Phase 2A is complete. Next: case-scoped evidence import, hashes, provenance, extraction
   status, retry, and restart-safe reopening.
+
+## Phase 2B result
+
+- Installed the reviewed, pinned `filetype==1.2.0` dependency only into the existing
+  Vibe Justice backend virtual environment; no monorepo install was performed.
+- Focused evidence backend tests: 7 passed, including supported synthetic formats,
+  auth/case isolation, duplicate provenance, restart/integrity, encrypted PDF, hostile
+  DOCX shapes, exact size limits, and injected atomic-publish failure cleanup.
+- Full backend gate: 210 passed, 1 expected xfail; coverage 70.30% exceeded the 55% floor.
+- Frontend lint passed with zero errors and one pre-existing unused-variable warning;
+  typecheck passed; 434 tests passed with 1 todo; production build passed.
+- Existing serialized Playwright suite passed 2 tests using loopback listeners and a
+  unique synthetic data root. No listeners remained on ports 8000 or 5175 afterward.
+- `git diff --check` passed. No provider call, real evidence access, root install,
+  remote hosting, Tauri packaging, GitHub connection, push, or publication occurred.
+- Status: Partial. The dedicated evidence import/reload/backend-restart Playwright
+  acceptance flow required by the Phase 2B definition of done is not implemented or run.

@@ -16,6 +16,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { DashboardLayout } from './components/layout/DashboardLayout'
 import { ColdCases } from './components/views/ColdCases'
 import { KnowledgeBase } from './components/views/KnowledgeBase'
+import { EvidenceBoard } from './components/workspace/EvidenceBoard'
 import { VibeDashboard } from './containers/VibeDashboard'
 import { httpClient } from './services/httpClient'
 import { justiceApi, type Case } from './services/api'
@@ -337,6 +338,8 @@ function App() {
         return <LegalAssistantView />
       case 'documents':
         return <DocumentManager />
+      case 'evidence':
+        return <EvidenceBoard currentCase={currentCase} />
       case 'brainscan':
         return <VibeDashboard />
       case 'cold-cases':
@@ -378,6 +381,17 @@ function App() {
               >
                 <FolderOpen className="w-4 h-4" />
                 Documents
+              </button>
+              <button
+                onClick={() => setActiveTab('evidence')}
+                className={`px-3 py-1.5 rounded-md text-sm flex items-center gap-2 transition-colors ${
+                  activeTab === 'evidence'
+                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                    : 'text-gray-400 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                Evidence
               </button>
               <button
                 onClick={() => setActiveTab('brainscan')}

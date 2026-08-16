@@ -24,28 +24,28 @@ describe('API Service', () => {
         ok: true,
         json: async () => ({
           evidence_id: 'evidence-456',
-          filename: 'evidence.pdf',
-          size_bytes: 16,
-          status: 'uploaded',
-          category: caseId,
+          display_filename: 'evidence.pdf',
+          byte_length: 16,
+          status: 'stored',
           case_id: caseId,
-          message: 'Uploaded successfully'
+          attempts: []
         })
       })
 
-      const result = await justiceApi.uploadEvidence(mockFile, caseId)
+      const result = await justiceApi.uploadEvidence(mockFile, caseId, { sourceLabel: 'Synthetic fixture', notes: 'Test only' })
 
       expect(result.evidence_id).toBe('evidence-456')
-      expect(result.filename).toBe('evidence.pdf')
-      expect(result.status).toBe('uploaded')
+      expect(result.original_filename).toBe('evidence.pdf')
+      expect(result.lifecycle_status).toBe('stored')
       expect(result.case_id).toBe(caseId)
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/evidence/upload'),
+        expect.stringContaining('/api/cases/case-123/evidence'),
         expect.objectContaining({ method: 'POST' })
       )
       const uploadBody = mockFetch.mock.calls[0]?.[1]?.body
       expect(uploadBody).toBeInstanceOf(FormData)
-      expect((uploadBody as FormData).get('case_id')).toBe(caseId)
+      expect((uploadBody as FormData).get('source_label')).toBe('Synthetic fixture')
+      expect((uploadBody as FormData).get('notes')).toBe('Test only')
     })
 
     it('sends configured API key on protected fetch requests', async () => {
@@ -56,19 +56,18 @@ describe('API Service', () => {
         ok: true,
         json: async () => ({
           evidence_id: 'evidence-456',
-          filename: 'evidence.pdf',
-          size_bytes: 16,
-          status: 'uploaded',
-          category: 'case-123',
+          display_filename: 'evidence.pdf',
+          byte_length: 16,
+          status: 'stored',
           case_id: 'case-123',
-          message: 'Uploaded successfully'
+          attempts: []
         })
       })
 
       await justiceApi.uploadEvidence(mockFile, 'case-123')
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/evidence/upload'),
+        expect.stringContaining('/api/cases/case-123/evidence'),
         expect.objectContaining({
           headers: { 'X-API-Key': 'test-api-key' },
         })

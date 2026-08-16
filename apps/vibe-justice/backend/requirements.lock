@@ -80,6 +80,8 @@ durationpy==0.10
     # via kubernetes
 fastapi==0.115.0
     # via -r requirements.txt
+filetype==1.2.0
+    # via -r requirements.txt
 filelock==3.29.0
     # via huggingface-hub
 flatbuffers==25.12.19

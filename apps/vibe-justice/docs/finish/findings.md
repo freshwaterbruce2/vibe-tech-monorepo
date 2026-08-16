@@ -68,3 +68,40 @@
 - Current runtime-data roots and whether repository-wide D-drive guidance fits packaged app data.
 - Current API authentication coverage and launcher/health implementation paths.
 - Whether E2E actually launches Tauri or retains Electron assumptions.
+
+## 2026-08-16 Phase 2B evidence-import audit
+
+- The existing evidence surface is not case-scoped: `api/evidence.py` uses a global
+  `EvidenceService`, treats the filename as the evidence identifier, and retains
+  indexing/deletion routes that belong outside this slice.
+- Additional upload implementations exist in document analysis, batch processing,
+  and search. Phase 2B must establish one canonical case-scoped import service rather
+  than duplicating their validation logic; unrelated legacy routes remain compatibility
+  surfaces and are not evidence-acceptance proof.
+- `EvidenceBoard.tsx` still hardcodes `CASE-2024-001` for upload/export/analysis and
+  displays demo evidence. The Phase 2A backend-restored current case must be passed into
+  the evidence surface instead.
+- Existing app-local dependencies already include SQLModel, pypdf, python-docx, and
+  Pillow. Upstream review confirms SQLModel is MIT licensed, pypdf uses the permissive
+  BSD 3-Clause license, and `filetype` 1.2.0 is the current PyPI release (2022-11-02)
+  under MIT. If used, pin `filetype==1.2.0`; do not copy signature tables.
+- Paperless-ngx remains architecture reference only. No GPL source may be copied or
+  translated into this ISC-licensed application.
+- User direction supersedes the continuation prompt's push step: retain local Git
+  checkpoints, but do not connect, push, publish, or open a pull request on GitHub.
+- Phase 2B now uses durable SQLModel evidence and extraction-attempt records, generated
+  case-contained storage names, bounded streaming SHA-256, parser/signature validation,
+  immutable originals, duplicate-content provenance links, and authenticated case-
+  constrained list/get/download/text/retry routes.
+- Failure injection exposed and then corrected a cross-resource publish gap. A failed
+  pre-publish rename removes only the request row/staging/generated empty directory;
+  a post-publish finalization failure retains an explicit staged record for startup
+  reconciliation, so an original is not orphaned.
+- Focused adversarial coverage now includes the exact configured size boundary,
+  encrypted PDF preservation/status, DOCX traversal/entry/expanded-size/compression
+  defenses, and atomic-publish cleanup without damage to pre-existing evidence.
+- The frontend Evidence tab is gated by the authoritative current case and shows
+  provenance, MIME/type, size, SHA-256, import time, truthful extraction status, and
+  retry without claiming analysis, indexing, or citation.
+- Phase 2B remains Partial because no dedicated Playwright flow yet imports evidence,
+  reloads it, restarts the backend, verifies it again, and proves exact-run cleanup.
