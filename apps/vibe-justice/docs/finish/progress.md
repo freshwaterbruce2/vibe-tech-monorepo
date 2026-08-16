@@ -73,6 +73,24 @@ case data, package Tauri, or perform any GitHub/remote action.
 - Status: Partial. The dedicated evidence import/reload/backend-restart Playwright
   acceptance flow required by the Phase 2B definition of done is not implemented or run.
 
+## Phase 2B physical acceptance closure
+
+- Added a parent E2E launcher that creates one unique `%TEMP%` root and propagates it
+  to every Playwright process.
+- Added a test-only backend supervisor that validates the sole loopback listener,
+  verifies a changed PID on restart, preserves the synthetic data root during the
+  controlled restart, and delegates deletion to global teardown.
+- The serialized evidence flow creates/selects a synthetic case, imports an in-memory
+  TXT original, verifies exact SHA-256/provenance/notes/Ready status, reloads, restarts
+  the backend, and verifies the same durable record again.
+- Full Playwright suite: 3 passed in 1.3 minutes. Frontend lint passed with zero errors
+  and one pre-existing warning; typecheck passed; 434 tests passed with 1 todo.
+- Latest exact-run cleanup left zero listeners on ports 8000/5175 and no matching
+  latest run directory. Two older failed-run synthetic temp directories were identified;
+  automated recursive cleanup was policy-blocked and they contain no real case data.
+- Phase 2B status is now Confirmed. Next: Slice 3A offline case-scoped retrieval and
+  navigable evidence citations.
+
 ## Evidence-to-legal-issue matching plan
 
 - Added `evidence-legal-issue-matching-plan.md` as the durable Phase 3/4 execution
@@ -82,5 +100,5 @@ case data, package Tauri, or perform any GitHub/remote action.
 - Source audit found the legacy global retrieval/knowledge/violation paths are not safe
   to connect to real cases as-is. In particular, keyword fallbacks and uncited legal
   labels cannot satisfy the new grounded finding contract.
-- Implementation has not started. Next unit is the missing Phase 2B evidence browser
-  acceptance flow, then offline case-scoped retrieval and citations.
+- Phase 2B browser acceptance is complete. Next unit is offline case-scoped retrieval
+  and citations (Slice 3A); its implementation has not started.

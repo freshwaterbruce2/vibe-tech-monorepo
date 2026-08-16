@@ -201,10 +201,10 @@ exceptions.
 
 ### Slice 2B-acceptance: close the evidence foundation
 
-- [ ] Add a serialized synthetic Playwright flow: create/select case, import evidence,
+- [x] Add a serialized synthetic Playwright flow: create/select case, import evidence,
   verify provenance/hash/status, reload, restart backend, verify again, clean exact-run
   data, and prove zero listeners.
-- [ ] Mark Phase 2B complete only after the physical browser acceptance passes.
+- [x] Mark Phase 2B complete only after the physical browser acceptance passes.
 
 ### Slice 3A: local evidence retrieval and navigable citations
 
@@ -314,6 +314,7 @@ next bounded slice.
 
 ## Status
 
-Plan written; implementation not started. The next executable unit is
-`Slice 2B-acceptance`, followed by `Slice 3A`. Each slice requires separate verification
-and a local-only checkpoint. No GitHub action is permitted.
+Slice 2B-acceptance is complete: the serialized synthetic browser flow passed across a
+real backend PID change and exact-run cleanup left zero listeners. The next executable
+unit is `Slice 3A`. Each slice requires separate verification and a local-only
+checkpoint. No GitHub action is permitted.

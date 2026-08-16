@@ -24,7 +24,9 @@ if (-not $resolvedRunRoot.StartsWith($resolvedTempBase, [System.StringComparison
     throw "Refusing unsafe E2E temporary path: $resolvedRunRoot"
 }
 
-New-Item -ItemType Directory -Path $resolvedRunRoot | Out-Null
+if (-not (Test-Path -LiteralPath $resolvedRunRoot -PathType Container)) {
+    New-Item -ItemType Directory -Path $resolvedRunRoot | Out-Null
+}
 
 $env:VIBE_JUSTICE_ENV = 'test'
 $env:VIBE_JUSTICE_BIND_HOST = '127.0.0.1'
@@ -50,7 +52,9 @@ try {
 }
 finally {
     $checkedRunRoot = [System.IO.Path]::GetFullPath($resolvedRunRoot)
-    if ($checkedRunRoot.StartsWith($resolvedTempBase, [System.StringComparison]::OrdinalIgnoreCase) -and
+    $preserveForSupervisedRestart = $env:VIBE_JUSTICE_E2E_PRESERVE_RUN_ROOT -eq 'true'
+    if (-not $preserveForSupervisedRestart -and
+        $checkedRunRoot.StartsWith($resolvedTempBase, [System.StringComparison]::OrdinalIgnoreCase) -and
         ([System.IO.Path]::GetFileName($checkedRunRoot) -match '^vibe-justice-e2e-[a-f0-9]{32}$') -and
         (Test-Path -LiteralPath $checkedRunRoot)) {
         Remove-Item -LiteralPath $checkedRunRoot -Recurse -Force

@@ -51,9 +51,7 @@ acceptance contract.
 
 ### Later phases
 
-- [ ] Phase 2B: case-scoped evidence provenance and durable reopening. (Partial:
-  backend and frontend unit/build gates pass; dedicated evidence-import Playwright
-  restart acceptance remains unimplemented and untested.)
+- [x] Phase 2B: case-scoped evidence provenance and durable reopening.
 - [ ] Phase 3: case-scoped retrieval and navigable citations. Detailed execution plan:
   `evidence-legal-issue-matching-plan.md` Slice 3A.
 - [ ] Phase 4: jurisdiction-aware, versioned legal knowledge packs and evidence-to-
@@ -100,7 +98,7 @@ Phase 0 remains partial only because Tauri packaging is untested. Isolated lint,
 typecheck, 431 frontend tests, 203 backend tests, production build, and both browser
 E2E flows pass. Phase 1A is backend-verified. Phase 2A durable create/select/reload/
 archive/restore is complete with atomic disk state and temporary-data acceptance proof.
-Phase 2B is Partial. The durable backend contract, immutable case-contained originals,
+Phase 2B is complete. The durable backend contract, immutable case-contained originals,
 provenance, extraction history/retry, current-case UI, adversarial backend tests, and
-app-local gates are confirmed. A dedicated serialized evidence import -> reload ->
-backend restart Playwright flow is still required before Phase 2B can be marked complete.
+serialized evidence import -> reload -> changed-backend-PID browser acceptance all pass.
+The next bounded slice is Phase 3A offline case-scoped retrieval and exact citations.

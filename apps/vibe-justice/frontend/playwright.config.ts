@@ -1,16 +1,13 @@
 import { defineConfig, devices } from '@playwright/test'
-import { randomUUID } from 'node:crypto'
-import { join } from 'node:path'
-import { tmpdir } from 'node:os'
 
-process.env.VIBE_JUSTICE_E2E_RUN_ROOT = join(
-  tmpdir(),
-  `vibe-justice-e2e-${randomUUID().replaceAll('-', '')}`
-)
+if (!process.env.VIBE_JUSTICE_E2E_RUN_ROOT) {
+  throw new Error('Run Playwright through `pnpm run e2e` so one isolated data root is shared by every test process.')
+}
 
 export default defineConfig({
   testDir: './e2e',
-  globalTeardown: '../scripts/cleanup-e2e-data.ts',
+  globalSetup: './e2e/backend-harness.setup.ts',
+  globalTeardown: './e2e/backend-harness.teardown.ts',
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -27,12 +24,6 @@ export default defineConfig({
     },
   ],
   webServer: [
-    {
-      command: 'pwsh -NoProfile -File ../scripts/run-e2e-backend.ps1',
-      url: 'http://127.0.0.1:8000/api/health',
-      reuseExistingServer: false,
-      timeout: 120_000,
-    },
     {
       command: 'pnpm run dev',
       url: 'http://127.0.0.1:5175',
