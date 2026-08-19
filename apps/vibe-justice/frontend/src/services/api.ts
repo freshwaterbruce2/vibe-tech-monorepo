@@ -162,6 +162,58 @@ export interface LegalPacksResponse {
   packs: LegalPack[];
 }
 
+export type IssueLabel = 'possible' | 'conflicting' | 'missing_facts' | 'not_supported';
+export type IssueDispositionValue = 'accepted' | 'dismissed' | 'needs_review';
+export interface IssueRun { run_id:string; case_id:string; pack_id:string; engine_id:string; ruleset_id:string; ruleset_sha256:string; screening_status:'approved_for_candidate_screening'; input_sha256:string; input_manifest:Record<string,unknown>; status:string; created_at:string; completed_at:string|null; pack_status:string; approval_status:string }
+export interface IssueCitation {
+  citation_id: string
+  kind: string
+  chunk_id: string | null
+  evidence_id: string | null
+  original_filename: string | null
+  provenance: string | null
+  imported_at: string | null
+  quote: string
+  ordinal: number | null
+  page_number: number | null
+  paragraph_index: number | null
+  char_start: number | null
+  char_end: number | null
+  source_id: string | null
+  locator: string | null
+  authority_title: string | null
+  canonical_url: string | null
+  retrieved_at: string | null
+  as_of: string | null
+  source_status: string | null
+  approval_status: string | null
+  text_sha256: string
+}
+export interface IssueMissingFact { missing_id:string; fact_key:string; description:string }
+export interface IssueQualification { qualification_id:string; code:string; description:string }
+export interface IssueDisposition {
+  disposition_id: string
+  finding_id: string
+  version: number
+  value: IssueDispositionValue
+  note: string | null
+  created_at: string
+}
+export interface IssueElementMatrix { element_id:string; condition_key:string; condition_text:string; authority_quote:string; legal_locator:string; status:'missing'; support_citation_ids:string[]; contrary_citation_ids:string[]; missing_fact_ids:string[] }
+export interface IssueFindingSummary { finding_id:string; run_id:string; case_id:string; issue_key:string; title:string; label:IssueLabel; rationale:string; confidence:'low'|'moderate'; source_id:string; element_id:string; created_at:string; latest_disposition:IssueDispositionValue|null }
+export interface IssueFindingDetail extends IssueFindingSummary {
+  support_citations: IssueCitation[]
+  contrary_citations: IssueCitation[]
+  legal_citations: IssueCitation[]
+  missing_facts: IssueMissingFact[]
+  qualifications: IssueQualification[]
+  dispositions: IssueDisposition[]
+  element_matrix: IssueElementMatrix[]
+  safe_next_steps: string[]
+  warnings: string[]
+}
+export interface AnalyzeIssuesResponse { run:IssueRun; findings:IssueFindingDetail[] }
+
 interface EvidenceApiRecord {
   evidence_id: string;
   case_id: string;
@@ -204,6 +256,33 @@ export const justiceApi = {
       throw new Error(`Get legal pack source failed: ${response.status} ${errorText}`);
     }
     return response.json() as Promise<LegalPackSourceDetail>;
+  },
+
+  async analyzePotentialIssues(
+    caseId: string,
+    request: { pack_id?: string; matter_type?: string; evidence_ids?: string[] }
+  ): Promise<AnalyzeIssuesResponse> {
+    const response = await fetch(`${API_BASE}/cases/${encodeURIComponent(caseId)}/issues/analyze`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(request) });
+    if (!response.ok) { const errorText = await response.text(); throw new Error(`Potential issue analysis failed: ${response.status} ${errorText}`); }
+    return response.json() as Promise<AnalyzeIssuesResponse>;
+  },
+
+  async setIssueDisposition(
+    caseId: string,
+    findingId: string,
+    value: IssueDispositionValue,
+    note?: string
+  ): Promise<IssueDisposition> {
+    const response = await fetch(
+      `${API_BASE}/cases/${encodeURIComponent(caseId)}/issues/${encodeURIComponent(findingId)}/disposition`,
+      {
+        method: 'POST',
+        headers: jsonHeaders(),
+        body: JSON.stringify({ value, note: note ?? undefined }),
+      }
+    )
+    if (!response.ok) { const errorText = await response.text(); throw new Error(`Save issue disposition failed: ${response.status} ${errorText}`); }
+    return response.json() as Promise<IssueDisposition>;
   },
   async createCase(request: CreateCaseRequest): Promise<Case> {
     const response = await fetch(`${API_BASE}/cases/create`, {
@@ -327,7 +406,11 @@ export const justiceApi = {
     return response.json() as Promise<EvidenceChunksResponse>;
   },
 
-  async searchEvidence(caseId: string, query: string, limit: number = 20): Promise<EvidenceSearchResponse> {
+  async searchEvidence(
+    caseId: string,
+    query: string,
+    limit: number = 20
+  ): Promise<EvidenceSearchResponse> {
     const params = new URLSearchParams({ q: query, limit: String(limit) });
     const response = await fetch(
       `${API_BASE}/cases/${encodeURIComponent(caseId)}/evidence/search?${params.toString()}`,

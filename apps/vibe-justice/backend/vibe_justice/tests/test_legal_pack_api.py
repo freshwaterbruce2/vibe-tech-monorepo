@@ -60,7 +60,7 @@ def test_new_version_keeps_old_version_readable(tmp_path,monkeypatch):
  monkeypatch.setenv("VIBE_JUSTICE_API_KEY","legal-pack-test-key");monkeypatch.setenv("VIBE_JUSTICE_DATA_DIR",str(tmp_path));original=LegalPackService().list()[0]
  monkeypatch.setattr(bundled,"VERSION","2025-session-v2-test");monkeypatch.setattr(bundled,"AS_OF","current through the 2025 Session; test revision")
  upgraded=LegalPackService();packs=upgraded.list();assert {p.pack_id for p in packs}=={original.pack_id,"sc-residential-landlord-tenant-act@2025-session-v2-test"}
- old_pack,old_sources=upgraded.sources(original.pack_id);assert old_pack.sha256==original.sha256;assert len(old_sources)==11
+ old_pack,old_sources=upgraded.sources(original.pack_id);assert old_pack.sha256==original.sha256;assert len(old_sources)==len(bundled.SECTIONS)+1
  with TestClient(app) as client:
   response=client.get("/api/legal-packs",headers=HEADERS);assert response.status_code==200;assert len(response.json()["packs"])==2
 

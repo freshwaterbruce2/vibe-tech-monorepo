@@ -1,6 +1,6 @@
 """Exact official-site excerpts checked 2026-08-16; no legal paraphrases."""
 PACK_KEY="sc-residential-landlord-tenant-act"
-VERSION="2025-session-v1"
+VERSION="2025-session-v2"
 AS_OF="current through the 2025 Session"
 RETRIEVED_AT="2026-08-16T12:00:00+00:00"
 CODE_URL="https://www.scstatehouse.gov/code/t27c040.php"
@@ -65,6 +65,8 @@ A tenant shall:
 (7) conduct himself and require other persons on the premises with the tenant's permission or who are allowed access to the premises by the tenant to conduct themselves in a manner that will not disturb other tenant's peaceful enjoyment of the premises;
 (8) comply with the lease and rules and regulations which are enforceable pursuant to SECTION 27-40-520.
 HISTORY: 1986 Act No. 336, SECTION 1.""",
+"27-40-530(c)":"""SECTION 27-40-530. Access.
+(c) A landlord shall not abuse the right of access or use it to harass the tenant. Except in cases under item (b) above, the landlord shall give the tenant at least twenty-four hours notice of his intent to enter and may enter only at reasonable times.""",
 "27-40-610":"""SECTION 27-40-610. Noncompliance by landlord in general.
 (a) Except as provided in this chapter, if there is a material noncompliance by the landlord with the rental agreement or a noncompliance with SECTION 27-40-440 materially affecting health and safety or the physical condition of the property, the tenant may deliver a written notice to the landlord specifying the acts and omissions constituting the breach and that the rental agreement will terminate upon a date not less than fourteen days after receipt of the notice if the breach is not remedied within fourteen days.
 The rental agreement shall terminate as provided in the notice except that:

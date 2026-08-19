@@ -46,9 +46,10 @@ citation, or present itself as a lawyer or court.
 - Retain source dates and warnings. The South Carolina General Assembly web code is a
   public research source that says the official version remains the published code;
   the UI must disclose that limitation and the pack's retrieval date.
-- Findings use calibrated labels: `possible`, `supported`, `conflicting`,
-  `missing_facts`, or `not_supported`. Do not use `guilty`, `illegal`, `law_broken`,
-  or a numeric legal-win probability.
+- Findings use calibrated labels: `possible`, `conflicting`, `missing_facts`, or
+  `not_supported`. The bounded lexical candidate screener may never emit `supported`;
+  actor, negation, timing, elements, and exceptions require human review. Do not use
+  `guilty`, `illegal`, `law_broken`, or a numeric legal-win probability.
 - Do not begin email ingestion, reminders, form generation, real-data import, remote
   hosting, or Tauri packaging in this plan's first implementation slice.
 - Local Git checkpoints only. Do not push, publish, or create GitHub pull requests.
@@ -202,16 +203,16 @@ exceptions.
 ### Slice 2B-acceptance: close the evidence foundation
 
 - [x] Add a serialized synthetic Playwright flow: create/select case, import evidence,
-  verify provenance/hash/status, reload, restart backend, verify again, clean exact-run
-  data, and prove zero listeners.
+      verify provenance/hash/status, reload, restart backend, verify again, clean exact-run
+      data, and prove zero listeners.
 - [x] Mark Phase 2B complete only after the physical browser acceptance passes.
 
 ### Slice 3A: local evidence retrieval and navigable citations
 
 - [x] Audit and quarantine legacy global Chroma/knowledge/violation paths from the new
-  case workflow; preserve unrelated compatibility only when isolation is not weakened.
+      case workflow; preserve unrelated compatibility only when isolation is not weakened.
 - [x] Lock `EvidenceChunk`, locators, staleness, indexing state, and failure semantics in
-  tests.
+      tests.
 - [x] Implement restart-safe, case-scoped deterministic chunking and lexical retrieval.
 - [x] Add exact evidence citation navigation and integrity verification.
 - [x] Prove no cross-case retrieval and no provider/network dependency.
@@ -220,34 +221,35 @@ exceptions.
 
 - [x] Lock the pack manifest/source/version/hash schema and update behavior in tests.
 - [x] Ingest a bounded, reviewed South Carolina landlord-tenant source set from primary
-  sources into immutable snapshots and derived passages.
+      sources into immutable snapshots and derived passages.
 - [x] Create source-checked rule elements with applicability and exceptions.
 - [x] Display pack inventory, as-of warnings, source links, and stale-pack state.
 - [x] Test changed/repealed/missing/ambiguous authority behavior without using real case
-  facts.
+      facts.
 
 ### Slice 4B: evidence-to-element issue matching
 
-- [ ] Lock finding states, citation coverage, contrary evidence, missing facts,
-  cancellation, and reproducibility in tests.
-- [ ] Implement local candidate generation and structured element matrices.
-- [ ] Reject unsupported propositions and mismatched or stale citations.
-- [ ] Build the Potential Issues UI and side-by-side citation viewer.
-- [ ] Add user dispositions and versioned reruns without overwriting history.
-- [ ] Keep any model-assisted explanation behind a later explicit consent gate; the
-  source-grounded local baseline must remain independently usable.
+- [x] Lock finding states, citation coverage, contrary evidence, missing facts,
+      cancellation, and reproducibility in tests.
+- [x] Implement local candidate generation and structured element matrices.
+- [x] Reject unsupported propositions and mismatched or stale citations.
+- [x] Build the Potential Issues UI with colocated, navigable evidence and authority
+      citations.
+- [x] Add user dispositions and versioned reruns without overwriting history.
+- [x] Keep any model-assisted explanation behind a later explicit consent gate; the
+      source-grounded local baseline must remain independently usable.
 
 ### Slice 4C: acceptance and independent review
 
-- [ ] Run a synthetic scenario where a text message potentially conflicts with a cited
-  legal duty and verify the complete issue card.
-- [ ] Run negative scenarios: similar words but no applicable rule, missing element,
-  contrary evidence, wrong jurisdiction, authority outside effective dates, stale pack,
-  malicious prompt-like evidence, and cross-case citation attempt.
-- [ ] Restart backend/frontend and reproduce the same finding and locators.
-- [ ] Independently review auth, isolation, citation accuracy, quote fidelity, legal
-  overstatement, pack provenance, data egress, and original immutability.
-- [ ] Run all app-local backend/frontend/build/E2E gates and verify listener cleanup.
+- [x] Run a synthetic scenario where a text message potentially conflicts with a cited
+      legal duty and verify the complete issue card.
+- [x] Run negative scenarios: similar words but no applicable rule, missing element,
+      contrary evidence, wrong jurisdiction, authority outside effective dates, stale pack,
+      malicious prompt-like evidence, and cross-case citation attempt.
+- [x] Restart backend/frontend and reproduce the same finding and locators.
+- [x] Independently review auth, isolation, citation accuracy, quote fidelity, legal
+      overstatement, pack provenance, data egress, and original immutability.
+- [x] Run all app-local backend/frontend/build/E2E gates and verify listener cleanup.
 
 ## Required test matrix
 
@@ -314,15 +316,25 @@ next bounded slice.
 
 ## Status
 
-Slices 2B-acceptance, 3A, and 4A are complete. The serialized synthetic browser flow
+Slices 2B-acceptance, 3A, 4A, 4B, and 4C are complete. The serialized synthetic browser flow
 proves evidence import, exact-hash provenance, durable indexing, exact-passage search,
-reload, and a real backend PID change with zero listeners. The installed offline South
+potential-issue screening, exact evidence and authority excerpts, reproducible input
+hashes, reload, and a real backend PID change with zero listeners. The installed offline South
 Carolina residential landlord-tenant pack preserves exact General Assembly excerpts,
 the online-Code disclaimer, immutable per-version manifests and hashes, applicability
 and exclusion sources, and explicit `source_checked` / `not_approved_for_matching`
 status. Canonical verification fails closed for snapshot or database tampering, and
 retained versions remain independently readable after an update. The Knowledge Base
 shows the verified inventory, source detail, official links, as-of metadata, and legal
-research warnings. Independent re-review found no actionable residuals. The next
-executable unit is `Slice 4B`, evidence-to-element issue matching. Each slice requires
-separate verification and a local-only checkpoint. No GitHub action is permitted.
+research warnings. Potential Issues performs only deterministic, local candidate
+screening under a separately hashed `approved_for_candidate_screening` ruleset; it
+never emits `supported`, and every statutory condition remains explicitly missing until
+human review. Stored findings fail closed if evidence or authority citations no longer
+match their verified sources. Independent review findings on negation, actor confusion,
+pack selection, case-switch isolation, audit manifests, and disposition concurrency are
+closed by focused regressions. Final gates on 2026-08-18: backend 222 passed and one
+expected xfail at 74.39% coverage; frontend 453 passed and one todo in serialized mode;
+lint/typecheck/build passed; Playwright 3/3 passed with exact-run cleanup. This bounded
+South Carolina candidate-screening capability is Confirmed. Email ingestion, reminders,
+form workflows, other jurisdictions, and any provider-assisted analysis remain separate
+future slices requiring explicit scope and verification. No GitHub action is permitted.

@@ -1,6 +1,11 @@
 import { defineConfig, devices } from '@playwright/test'
 
-if (!process.env.VIBE_JUSTICE_E2E_RUN_ROOT) {
+const isPlaywrightRuntime = process.argv.some((argument) =>
+  /@playwright[\\/]test[\\/]cli\.js/i.test(argument) ||
+  /(?:^|[\\/])playwright(?:\.cmd|\.js)?$/i.test(argument)
+)
+
+if (isPlaywrightRuntime && !process.env.VIBE_JUSTICE_E2E_RUN_ROOT) {
   throw new Error('Run Playwright through `pnpm run e2e` so one isolated data root is shared by every test process.')
 }
 
