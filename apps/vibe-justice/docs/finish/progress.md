@@ -1,0 +1,150 @@
+# Vibe Justice Finish Progress
+
+## 2026-08-16
+
+- Confirmed remote access with `git ls-remote`; default branch is `main`.
+- Cloned the complete repository to `C:\projects\vibe-tech-monorepo`.
+- Created branch `codex/vibe-justice-finish-20260816` at
+  `db33d791459061ca28789ee6011cb08054e36f3c`.
+- Loaded root `AGENTS.md`, master-agent routing, and the file-backed planning workflow.
+- Tool discovery error: GitHub CLI (`gh`) is not installed. Git HTTPS access works, so
+  this does not block local implementation; PR creation remains untested.
+- Sparse-checkout probe error: `C:\Users\fresh\vibe-development` is not a valid Git
+  repository. Replaced it with a fresh canonical checkout rather than repairing unknown remnants.
+- Scope correction: stopped `corepack pnpm install --frozen-lockfile` after the user
+  clarified that the whole monorepo must not be installed. It exited from Ctrl+C while
+  partially populating the ignored pnpm store/node_modules; no source files were changed.
+- Filter attempt 1: `pnpm install --filter vibe-justice-frontend...` still announced
+  all 5,241 packages because of the hoisted workspace layout. Stopped immediately and
+  moved to investigating a truly isolated app install.
+- Backend dependency install completed in `apps/vibe-justice/backend/.venv` using
+  Python 3.11.15 and the app's pinned `requirements.txt`.
+- Backend baseline command passed: `python -m pytest vibe_justice/tests -v --tb=short`;
+  185 passed, 1 xfailed, total coverage 63.10% (required 55%).
+- Isolated frontend install completed from `apps/vibe-justice/frontend` using
+  `corepack pnpm install --ignore-workspace`; app-local lockfile created.
+- Frontend lint passed with only the pre-existing ESLintIgnore migration warning.
+- Frontend typecheck passed.
+- Frontend unit baseline passed: 21 files, 427 tests passed, 1 todo.
+- Frontend build attempt 1 failed because `@tailwindcss/postcss` was undeclared and
+  resolved from partial root node_modules. Added the direct app dependency.
+- Frontend build attempt 2 passed: 1,949 modules, main JS 435.49 kB (131.39 kB gzip).
+- E2E attempt 1 hit an unrelated service on stale port 5173 and failed both tests.
+  Corrected Playwright/Vite to `127.0.0.1:5175`, disabled server reuse, capped one worker.
+- Focused settings E2E passed. Full E2E remains red solely on missing case creation.
+- Phase 1A backend implementation passed 190 tests with 1 expected xfail and 63.58%
+  coverage. Loopback binding, health probing, startup validation, non-health auth,
+  canonical backend root, and containment checks are implemented.
+
+## Current action
+
+Complete the private Windows app before the optional ChatGPT/MCP guide. Milestone 1
+reconciliation and Phase 1A backend closure are complete; native Tauri execution remains
+blocked by missing MSVC `link.exe`. The next bounded unit is Milestone 2: the synthetic,
+case-scoped daily paralegal workspace. Do not call providers or touch real case data.
+
+## 2026-08-21 Milestone 1 result
+
+- Fresh backend: 234 passed, 1 expected xfail, 75.14% coverage.
+- Frontend lint passed with 0 errors/4 warnings; typecheck passed; 401 tests passed with
+  1 todo; production build passed; serialized Playwright passed 3/3.
+- Canonical relational ownership, frozen Alembic migrations, startup migration,
+  providerless production validation, protected instance readiness, and lazy service
+  construction are implemented and independently reviewed.
+- Tauri uses an in-memory per-launch key, authenticated PID/instance readiness,
+  generation-safe start/stop/termination state, numeric loopback, and narrowed renderer
+  capabilities. Direct browser OpenRouter calls are fail-closed.
+- No listeners remained on 8000/5175 after E2E. No real evidence/provider was used.
+- Rust formatting and metadata pass. Native Rust compile/tests, packaged sidecar, and
+  physical installer lifecycle are Blocked by missing MSVC `link.exe`; they are not
+  claimed complete.
+
+## Phase 5A start
+
+- User explicitly requested a personal Vibe Justice paralegal that guides the tenant
+  through the eviction situation.
+- Docs-first review completed against current official OpenAI plugin quickstart, MCP
+  server, UI, examples, tool-planning, and reference pages.
+- Scope frozen in `task_plan.md`; implementation has not yet changed application source.
+- Three read-only audits completed: backend composition/deadline prerequisites, MCP
+  tool/privacy/auth contract, and widget/accessibility/test contract.
+- Phase 5A0 is complete. Phase 5A1-5A4 remain planned and unimplemented.
+
+## Durable case slice result
+
+- Backend case lifecycle tests: 13 passed; full backend: 203 passed, 1 expected xfail,
+  67.33% coverage.
+- Frontend focused tests: 81 passed; full frontend: 431 passed, 1 todo. Lint,
+  typecheck, and production build passed (2,004 modules).
+- Focused case Playwright acceptance passed in 10.4 seconds.
+- Full serialized browser suite passed: 2 tests in 10.8 seconds.
+- Test data used a unique `%TEMP%\vibe-justice-e2e-<uuid>` root and exact-run cleanup.
+- No listeners remained on ports 8000 or 5175 after the run.
+- Phase 2A is complete. Next: case-scoped evidence import, hashes, provenance, extraction
+  status, retry, and restart-safe reopening.
+
+## Phase 2B result
+
+- Installed the reviewed, pinned `filetype==1.2.0` dependency only into the existing
+  Vibe Justice backend virtual environment; no monorepo install was performed.
+- Focused evidence backend tests: 7 passed, including supported synthetic formats,
+  auth/case isolation, duplicate provenance, restart/integrity, encrypted PDF, hostile
+  DOCX shapes, exact size limits, and injected atomic-publish failure cleanup.
+- Full backend gate: 210 passed, 1 expected xfail; coverage 70.30% exceeded the 55% floor.
+- Frontend lint passed with zero errors and one pre-existing unused-variable warning;
+  typecheck passed; 434 tests passed with 1 todo; production build passed.
+- Existing serialized Playwright suite passed 2 tests using loopback listeners and a
+  unique synthetic data root. No listeners remained on ports 8000 or 5175 afterward.
+- `git diff --check` passed. No provider call, real evidence access, root install,
+  remote hosting, Tauri packaging, GitHub connection, push, or publication occurred.
+- Status: Partial. The dedicated evidence import/reload/backend-restart Playwright
+  acceptance flow required by the Phase 2B definition of done is not implemented or run.
+
+## Phase 2B physical acceptance closure
+
+- Added a parent E2E launcher that creates one unique `%TEMP%` root and propagates it
+  to every Playwright process.
+- Added a test-only backend supervisor that validates the sole loopback listener,
+  verifies a changed PID on restart, preserves the synthetic data root during the
+  controlled restart, and delegates deletion to global teardown.
+- The serialized evidence flow creates/selects a synthetic case, imports an in-memory
+  TXT original, verifies exact SHA-256/provenance/notes/Ready status, reloads, restarts
+  the backend, and verifies the same durable record again.
+- Full Playwright suite: 3 passed in 1.3 minutes. Frontend lint passed with zero errors
+  and one pre-existing warning; typecheck passed; 434 tests passed with 1 todo.
+- Latest exact-run cleanup left zero listeners on ports 8000/5175 and no matching
+  latest run directory. Two older failed-run synthetic temp directories were identified;
+  automated recursive cleanup was policy-blocked and they contain no real case data.
+- Phase 2B status is now Confirmed. Next: Slice 3A offline case-scoped retrieval and
+  navigable evidence citations.
+
+## Evidence-to-legal-issue matching plan
+
+- Added `evidence-legal-issue-matching-plan.md` as the durable Phase 3/4 execution
+  contract. It covers case-scoped retrieval, exact evidence citations, versioned legal
+  packs, element-by-element matching, missing/contrary facts, cautious issue labels,
+  provider consent boundaries, adversarial tests, and physical acceptance.
+- Source audit found the legacy global retrieval/knowledge/violation paths are not safe
+  to connect to real cases as-is. In particular, keyword fallbacks and uncited legal
+  labels cannot satisfy the new grounded finding contract.
+- Phase 2B browser acceptance is complete. Next unit is offline case-scoped retrieval
+  and citations (Slice 3A); its implementation has not started.
+
+## Slice 3A result
+
+- Added durable case-scoped evidence chunks, extraction-time text hashes, additive
+  existing-database migration, deterministic indexing, tamper/stale handling, exact
+  PDF page locators, and bounded offline lexical retrieval.
+- Added authenticated index/chunks/search APIs with typed wrappers and cross-case 404.
+- Added current-case evidence indexing/search UI with exact quote, source identity,
+  locators, matched terms, metadata navigation, and authenticated original download.
+- Independent review found four initial integrity/isolation issues and one follow-up
+  same-case race; all were fixed and the final targeted review found no residuals.
+- Full backend: 214 passed, 1 expected xfail; coverage 72.06% exceeded the 55% floor.
+- Full frontend: 441 passed, 1 todo. Lint passed with zero errors and one pre-existing
+  warning; typecheck and production build passed.
+- Serialized Playwright: 3 passed, including durable index/search before and after
+  browser reload and a verified backend PID change. No listeners remained afterward.
+- `git diff --check` passed. No provider/network call, real-case access, root install,
+  GitHub action, push, publication, remote hosting, or Tauri packaging occurred.
+- Slice 3A status: Confirmed. Next: Slice 4A versioned South Carolina legal pack.

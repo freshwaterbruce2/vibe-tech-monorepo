@@ -4,7 +4,6 @@ Simple startup script for Vibe-Justice backend
 """
 
 import sys
-import uvicorn
 from pathlib import Path
 
 # Add backend to path
@@ -18,6 +17,7 @@ load_dotenv()
 # Import and run the app
 
 if __name__ == "__main__":
+    from vibe_justice.utils.startup import run_server
     # Detect if running as bundled executable (PyInstaller)
     is_bundled = getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
 
@@ -35,4 +35,4 @@ if __name__ == "__main__":
     print("="*50 + "\n")
 
     # Disable reload in production (bundled mode)
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=not is_bundled)
+    run_server("main:app", reload=not is_bundled)

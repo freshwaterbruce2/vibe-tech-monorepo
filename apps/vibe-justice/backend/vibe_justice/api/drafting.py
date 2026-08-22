@@ -10,7 +10,14 @@ from vibe_justice.utils.auth import require_api_key
 from vibe_justice.utils.rate_limit import limiter
 
 router = APIRouter(dependencies=[Depends(require_api_key)])
-drafting_service = DraftingService()
+drafting_service = None
+
+
+def _drafting_service():
+    global drafting_service
+    if drafting_service is None:
+        drafting_service = DraftingService()
+    return drafting_service
 
 
 class DraftingRequest(BaseModel):
@@ -34,7 +41,7 @@ async def generate_draft(request: Request, body: DraftingRequest):
         raise HTTPException(status_code=400, detail="Case details cannot be empty")
 
     try:
-        filepath = drafting_service.generate_document(
+        filepath = _drafting_service().generate_document(
             body.template_type,
             body.case_details,
             body.domain

@@ -11,7 +11,8 @@ BACKEND_DIR = Path(__file__).resolve().parents[2]
 
 def test_alembic_env_reads_database_path():
     src = (BACKEND_DIR / "alembic" / "env.py").read_text(encoding="utf-8")
-    assert "DATABASE_PATH" in src
+    assert "get_database_url" in src
+    assert "import vibe_justice.models" in src
     assert "set_main_option" in src
 
 def test_alembic_ini_url_blank():
@@ -89,16 +90,15 @@ def test_retrieval_uses_proxy_embedding():
 def test_retrieval_integration():
     pytest.fail("integration-level; see xfail")
 
-def test_alembic_baseline_is_real():
-    src = (BACKEND_DIR / "alembic" / "versions" / "0731d6d83b4a_initial_migration_baseline_setup.py").read_text(encoding="utf-8")
-    assert "SQLModel.metadata.create_all" in src
-    assert "SQLModel.metadata.drop_all" in src
-    tree = ast.parse(src)
-    for node in ast.walk(tree):
-        if isinstance(node, ast.FunctionDef) and node.name in ("upgrade", "downgrade"):
-            real = [s for s in node.body if not (isinstance(s, ast.Expr) and isinstance(s.value, ast.Constant))]
-            assert real, node.name
-            assert not all(isinstance(s, ast.Pass) for s in real), node.name
+def test_alembic_revisions_are_frozen_and_do_not_import_runtime_metadata():
+    versions = BACKEND_DIR / "alembic" / "versions"
+    sources = [path.read_text(encoding="utf-8") for path in versions.glob("*.py")]
+    assert all("SQLModel.metadata" not in source for source in sources)
+    assert all("create_all" not in source for source in sources)
+    assert all("vibe_justice.models" not in source for source in sources)
+    schema = (versions / "20260821_01_canonical_runtime_schema.py").read_text(encoding="utf-8")
+    assert "op.create_table" in schema
+    assert "op.create_index" in schema
 
 def test_rate_limit_module_exists():
     mod = importlib.import_module("vibe_justice.utils.rate_limit")

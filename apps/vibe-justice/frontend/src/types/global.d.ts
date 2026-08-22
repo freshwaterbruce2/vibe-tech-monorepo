@@ -12,9 +12,6 @@ declare global {
       setSetting: <T = SettingValue>(key: string, value: T) => Promise<void>;
       onSettingsChanged?: (callback: (value: unknown) => void) => void;
     };
-    electronAPI?: {
-      ping: () => Promise<string>;
-    };
   }
 }
 

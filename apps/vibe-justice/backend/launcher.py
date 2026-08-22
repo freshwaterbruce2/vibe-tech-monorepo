@@ -13,7 +13,7 @@ DETACHED_PROCESS = 0x00000008
 CREATE_NEW_PROCESS_GROUP = 0x00000200
 
 # Backend health endpoint
-HEALTH_URL = "http://127.0.0.1:8000/health"
+HEALTH_URL = "http://127.0.0.1:8000/api/health"
 LOG_DIR = Path("D:/logs/vibe-justice")
 
 
@@ -71,11 +71,10 @@ def start_backend_detached() -> subprocess.Popen:
 def run_backend_blocking() -> int:
     """Run backend in blocking mode (when --backend flag is passed)."""
     print("[LAUNCHER] Running backend (blocking mode)...")
-    import uvicorn
-
     from backend.main import app
+    from backend.vibe_justice.utils.startup import run_server
 
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)
+    run_server(app, reload=False)
     return 0
 
 

@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from vibe_justice.utils.paths import resolve_contained_path
+
 
 class FileService:
     META_SUFFIX = ".meta"
@@ -70,7 +72,7 @@ class FileService:
         }
 
     def delete_file(self, filename: str) -> None:
-        file_path = self.uploads_dir / filename
+        file_path = resolve_contained_path(self.uploads_dir, filename)
         meta_path = file_path.with_suffix(file_path.suffix + self.META_SUFFIX)
 
         if file_path.exists():
@@ -79,7 +81,8 @@ class FileService:
             meta_path.unlink()
 
     def get_category(self, filename: str) -> str:
-        meta_path = self.uploads_dir / (filename + self.META_SUFFIX)
+        file_path = resolve_contained_path(self.uploads_dir, filename)
+        meta_path = file_path.with_suffix(file_path.suffix + self.META_SUFFIX)
         if meta_path.exists():
             return meta_path.read_text(encoding="utf-8").strip()
         return "other"

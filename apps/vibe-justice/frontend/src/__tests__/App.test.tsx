@@ -11,6 +11,9 @@ vi.mock('../services/httpClient', () => ({
     post: vi.fn(),
   },
 }))
+vi.mock('../services/api', () => ({
+  justiceApi: { getCurrentCase: vi.fn().mockResolvedValue(null) },
+}))
 
 describe('App', () => {
   let mockPost: ReturnType<typeof vi.fn>

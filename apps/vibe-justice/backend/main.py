@@ -4,10 +4,12 @@ FastAPI application for South Carolina legal research assistant
 Now powered by DeepSeek R1 reasoning model
 """
 
+from contextlib import asynccontextmanager
 import os
+import uuid
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -18,6 +20,8 @@ load_dotenv()
 # Rate limiter lives in its own module so route files can import it without
 # importing `main` (which would cause a circular import). See utils/rate_limit.py.
 from vibe_justice.utils.rate_limit import limiter
+from vibe_justice.utils.auth import require_api_key
+from vibe_justice.utils.startup import docs_enabled, validate_startup
 
 from vibe_justice.api import (
     analysis,
@@ -29,15 +33,29 @@ from vibe_justice.api import (
     evidence,
     forms,
     knowledge,
+    legal_packs,
+    issues,
     search,
 )
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    """Validate security and migrate storage before accepting requests."""
+    validate_startup()
+    yield
+
 
 # Create FastAPI app
 app = FastAPI(
     title="Vibe-Justice Backend",
     description="SC Legal Research Assistant with DeepSeek R1",
     version="2.0.0",
+    docs_url="/docs" if docs_enabled() else None,
+    redoc_url="/redoc" if docs_enabled() else None,
+    openapi_url="/openapi.json" if docs_enabled() else None,
+    lifespan=lifespan,
 )
+app.state.instance_id = os.getenv("VIBE_JUSTICE_INSTANCE_ID", "").strip() or str(uuid.uuid4())
 
 # Wire limiter into app
 app.state.limiter = limiter
@@ -75,23 +93,26 @@ app.add_middleware(
 )
 
 # Include API routers
-app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
-app.include_router(analysis.router, prefix="/api/analysis", tags=["analysis"])
-app.include_router(drafting.router, prefix="/api/drafting", tags=["drafting"])
-app.include_router(forms.router, prefix="/api/forms", tags=["forms"])
-app.include_router(search.router, prefix="/api/policy", tags=["policy"])
-app.include_router(knowledge.router, prefix="/api/knowledge", tags=["knowledge"])
-app.include_router(cases.router, prefix="/api", tags=["cases"])
-app.include_router(evidence.router, prefix="/api/evidence", tags=["evidence"])
-app.include_router(document_analysis.router, prefix="/api", tags=["document-analysis"])
-app.include_router(batch_processing.router)  # Prefix and tags already defined in router
+_authenticated = [Depends(require_api_key)]
+app.include_router(chat.router, prefix="/api/chat", tags=["chat"], dependencies=_authenticated)
+app.include_router(analysis.router, prefix="/api/analysis", tags=["analysis"], dependencies=_authenticated)
+app.include_router(drafting.router, prefix="/api/drafting", tags=["drafting"], dependencies=_authenticated)
+app.include_router(forms.router, prefix="/api/forms", tags=["forms"], dependencies=_authenticated)
+app.include_router(search.router, prefix="/api/policy", tags=["policy"], dependencies=_authenticated)
+app.include_router(knowledge.router, prefix="/api/knowledge", tags=["knowledge"], dependencies=_authenticated)
+app.include_router(cases.router, prefix="/api", tags=["cases"], dependencies=_authenticated)
+app.include_router(evidence.router, prefix="/api", tags=["evidence"], dependencies=_authenticated)
+app.include_router(legal_packs.router, prefix="/api", tags=["legal-packs"], dependencies=_authenticated)
+app.include_router(issues.router, prefix="/api", tags=["issues"], dependencies=_authenticated)
+app.include_router(document_analysis.router, prefix="/api", tags=["document-analysis"], dependencies=_authenticated)
+app.include_router(batch_processing.router, dependencies=_authenticated)
 
 
-@app.get("/")
+@app.get("/", dependencies=_authenticated)
 def root():
     return {
         "message": "Vibe-Justice Backend API",
-        "docs": "/docs",
+        "docs": "/docs" if docs_enabled() else None,
         "health": "/api/health",
         "model": "DeepSeek R1 (deepseek-reasoner)",
     }
@@ -117,8 +138,19 @@ def health_check():
     }
 
 
+@app.get("/api/ready", dependencies=_authenticated)
+def readiness_check():
+    """Authenticated identity probe for the owning desktop sidecar."""
+    return {
+        "status": "ready",
+        "service": "Vibe-Justice Backend",
+        "pid": os.getpid(),
+        "instance_id": app.state.instance_id,
+    }
+
+
 if __name__ == "__main__":
-    import uvicorn
+    from vibe_justice.utils.startup import run_server
 
     print("\n" + "=" * 50)
     print("🚀 Starting Vibe-Justice Backend Server")
@@ -129,6 +161,6 @@ if __name__ == "__main__":
     print("💻 Frontend: http://localhost:5175")
     print("=" * 50 + "\n")
 
-    is_dev = os.getenv("VIBE_ENV", "development").lower() == "development"
+    is_dev = os.getenv("VIBE_JUSTICE_ENV", "development").lower() == "development"
     # Production safety: reload=False unless explicitly in dev mode
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=is_dev)
+    run_server("main:app", reload=is_dev)

@@ -5,7 +5,7 @@
   "identifier": "com.vibetech.vibe-justice",
   "build": {
     "beforeDevCommand": "pnpm dev",
-    "devUrl": "http://localhost:5175",
+    "devUrl": "http://127.0.0.1:5175",
     "beforeBuildCommand": "pnpm build && pnpm build:backend",
     "frontendDist": "../dist"
   },
@@ -25,29 +25,20 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' http://localhost:8000 http://localhost:3001 http://localhost:11434 ws://localhost:8000; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';"
+      "csp": "default-src 'self'; connect-src 'self' http://127.0.0.1:8000; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';"
     }
   },
   "bundle": {
     "active": true,
     "targets": ["msi", "nsis"],
-    "icon": [
-      "icons/icon.ico"
-    ],
-    "externalBin": [
-      "binaries/backend"
-    ],
+    "icon": ["icons/icon.ico"],
+    "externalBin": ["binaries/backend"],
     "windows": {
       "digestAlgorithm": "sha256",
       "nsis": {
         "installMode": "currentUser",
         "languages": ["English"]
       }
-    }
-  },
-  "plugins": {
-    "shell": {
-      "open": true
     }
   }
 }

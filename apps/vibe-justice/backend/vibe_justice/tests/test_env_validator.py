@@ -17,13 +17,13 @@ class TestRequiredEnvVars:
         """VIBE_JUSTICE_API_KEY should be required"""
         assert "VIBE_JUSTICE_API_KEY" in REQUIRED_ENV_VARS
 
-    def test_openrouter_key_is_required(self):
-        """OPENROUTER_API_KEY should be required (2026 migration)"""
-        assert "OPENROUTER_API_KEY" in REQUIRED_ENV_VARS
+    def test_openrouter_key_is_optional(self):
+        """Local-only startup must not require a cloud provider key."""
+        assert "OPENROUTER_API_KEY" not in REQUIRED_ENV_VARS
 
     def test_has_minimum_required_vars(self):
         """Should have at least the critical security vars"""
-        assert len(REQUIRED_ENV_VARS) >= 2
+        assert REQUIRED_ENV_VARS == ["VIBE_JUSTICE_API_KEY"]
 
 
 class TestValidateEnvironment:
@@ -103,3 +103,14 @@ class TestValidateEnvironment:
             captured = capsys.readouterr()
             # Should show example .env format
             assert ".env" in captured.out or "VIBE_JUSTICE_API_KEY" in captured.out
+
+    def test_optional_openrouter_key_format_is_validated_only_when_present(self):
+        with patch.dict(os.environ, {"VIBE_JUSTICE_API_KEY": "a" * 32}, clear=True):
+            validate_environment(strict=True)
+        with patch.dict(
+            os.environ,
+            {"VIBE_JUSTICE_API_KEY": "a" * 32, "OPENROUTER_API_KEY": "invalid"},
+            clear=True,
+        ):
+            with pytest.raises(RuntimeError, match="OPENROUTER_API_KEY"):
+                validate_environment(strict=True)

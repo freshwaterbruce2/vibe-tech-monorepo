@@ -6,9 +6,10 @@ use std::fs;
 
 fn read_json(rel: &str) -> serde_json::Value {
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(rel);
-    serde_json::from_str(&fs::read_to_string(&path).unwrap_or_else(|e| {
-        panic!("failed to read {}: {}", path.display(), e)
-    }))
+    serde_json::from_str(
+        &fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("failed to read {}: {}", path.display(), e)),
+    )
     .unwrap_or_else(|e| panic!("invalid JSON in {}: {}", path.display(), e))
 }
 
@@ -40,8 +41,14 @@ fn csp_declares_object_and_frame_ancestors_none() {
         .or_else(|| conf.pointer("/tauri/security/csp"))
         .and_then(|v| v.as_str())
         .unwrap_or("");
-    assert!(csp.contains("object-src 'none'"), "CSP missing object-src 'none'");
-    assert!(csp.contains("frame-ancestors 'none'"), "CSP missing frame-ancestors 'none'");
+    assert!(
+        csp.contains("object-src 'none'"),
+        "CSP missing object-src 'none'"
+    );
+    assert!(
+        csp.contains("frame-ancestors 'none'"),
+        "CSP missing frame-ancestors 'none'"
+    );
 }
 
 #[test]
@@ -76,4 +83,31 @@ fn fs_scope_excludes_databases_dir() {
         !raw.contains("D:/databases") && !raw.contains("D:\\\\databases"),
         "HIGH: fs scope must not expose D:/databases"
     );
+}
+
+#[test]
+fn lifecycle_uses_loopback_health_and_production_environment() {
+    let source =
+        fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/lib.rs"))
+            .unwrap();
+    assert!(source.contains("http://127.0.0.1:8000/api/ready"));
+    assert!(source.contains(".env(\"VIBE_JUSTICE_ENV\", \"production\")"));
+    assert!(source.contains(".env(\"VIBE_JUSTICE_BIND_HOST\", \"127.0.0.1\")"));
+    assert!(source.contains("get_internal_api_key"));
+    assert!(source.contains("VIBE_JUSTICE_INSTANCE_ID"));
+    assert!(!source.contains("VIBE_JUSTICE_DB_DIR"));
+    assert!(!source.contains("http://localhost:8000/docs"));
+}
+
+#[test]
+fn csp_allows_only_the_numeric_core_backend() {
+    let conf = read_json("tauri.conf.json");
+    let csp = conf
+        .pointer("/app/security/csp")
+        .and_then(|v| v.as_str())
+        .unwrap();
+    assert!(csp.contains("connect-src 'self' http://127.0.0.1:8000"));
+    assert!(!csp.contains("localhost"));
+    assert!(!csp.contains(":3001"));
+    assert!(!csp.contains(":11434"));
 }

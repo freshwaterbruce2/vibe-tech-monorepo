@@ -10,7 +10,14 @@ from vibe_justice.utils.auth import require_api_key
 from vibe_justice.utils.rate_limit import limiter
 
 router = APIRouter(dependencies=[Depends(require_api_key)])
-analysis_service = AnalysisService()
+analysis_service = None
+
+
+def _analysis_service():
+    global analysis_service
+    if analysis_service is None:
+        analysis_service = AnalysisService()
+    return analysis_service
 
 
 class AnalysisRequest(BaseModel):
@@ -32,7 +39,7 @@ async def run_analysis(request: Request, body: AnalysisRequest):
         raise HTTPException(status_code=400, detail="Document text cannot be empty")
 
     try:
-        result = analysis_service.analyze_document(
+        result = _analysis_service().analyze_document(
             body.document_text,
             body.domain
         )

@@ -10,12 +10,18 @@ vi.mock('@/services/api', () => ({
     listCases: vi.fn(),
     archiveCase: vi.fn(),
     restoreCase: vi.fn(),
+    createCase: vi.fn(),
+    setCurrentCase: vi.fn(),
+    getCurrentCase: vi.fn(),
   },
 }))
 
 const mockListCases = vi.mocked(api.justiceApi.listCases)
 const mockArchiveCase = vi.mocked(api.justiceApi.archiveCase)
 const mockRestoreCase = vi.mocked(api.justiceApi.restoreCase)
+const mockCreateCase = vi.mocked(api.justiceApi.createCase)
+const mockSetCurrentCase = vi.mocked(api.justiceApi.setCurrentCase)
+const mockGetCurrentCase = vi.mocked(api.justiceApi.getCurrentCase)
 
 describe('Sidebar', () => {
   const mockSetActiveTab = vi.fn()
@@ -24,6 +30,8 @@ describe('Sidebar', () => {
     vi.clearAllMocks()
     // Default mock: return empty cases array
     mockListCases.mockResolvedValue([])
+    mockSetCurrentCase.mockResolvedValue(null)
+    mockGetCurrentCase.mockResolvedValue(null)
   })
 
   afterEach(() => {
@@ -169,6 +177,41 @@ describe('Sidebar', () => {
       await waitFor(() => {
         expect(screen.getByText('System Configuration')).toBeInTheDocument()
       })
+    })
+  })
+
+  describe('Create and select cases', () => {
+    it('creates and selects a valid case from the accessible dialog', async () => {
+      const user = userEvent.setup()
+      const created = { case_id: 'Test-Case-2026', name: 'Test-Case-2026', jurisdiction: 'South Carolina', research_goals: 'Review notices', created_at: '2026-08-16T00:00:00Z', status: 'Initializing', assigned_agent: 'LegalAssistant_V1', is_archived: false, archived_at: null }
+      mockCreateCase.mockResolvedValue(created)
+      mockSetCurrentCase.mockResolvedValue(created)
+      const onCurrentCaseChange = vi.fn()
+      render(<Sidebar onCurrentCaseChange={onCurrentCaseChange} setActiveTab={mockSetActiveTab} />)
+
+      await user.click(screen.getByRole('button', { name: 'New Investigation' }))
+      await user.type(screen.getByLabelText('Case ID'), 'Test-Case-2026')
+      await user.clear(screen.getByLabelText('Jurisdiction'))
+      await user.type(screen.getByLabelText('Jurisdiction'), 'South Carolina')
+      await user.type(screen.getByLabelText('Research goals'), 'Review notices')
+      await user.click(screen.getByRole('button', { name: 'Create case' }))
+
+      await waitFor(() => expect(mockCreateCase).toHaveBeenCalledWith({ name: 'Test-Case-2026', jurisdiction: 'South Carolina', goals: 'Review notices' }))
+      expect(mockSetCurrentCase).toHaveBeenCalledWith('Test-Case-2026')
+      expect(onCurrentCaseChange).toHaveBeenCalledWith(created)
+    }, 10_000)
+
+    it('selects a case and exposes its current state accessibly', async () => {
+      const user = userEvent.setup()
+      const selected = { case_id: 'case-001', name: 'Case One', jurisdiction: 'SC', research_goals: '', created_at: '', status: 'Active', assigned_agent: '', is_archived: false, archived_at: null }
+      mockListCases.mockResolvedValue([selected])
+      mockSetCurrentCase.mockResolvedValue(selected)
+      const onCurrentCaseChange = vi.fn()
+      const { rerender } = render(<Sidebar onCurrentCaseChange={onCurrentCaseChange} />)
+      await user.click(await screen.findByRole('button', { name: /case-001/i }))
+      expect(mockSetCurrentCase).toHaveBeenCalledWith('case-001')
+      rerender(<Sidebar currentCase={selected} onCurrentCaseChange={onCurrentCaseChange} />)
+      expect(screen.getByRole('button', { name: /case-001.*current/i })).toHaveAttribute('aria-current', 'true')
     })
   })
 

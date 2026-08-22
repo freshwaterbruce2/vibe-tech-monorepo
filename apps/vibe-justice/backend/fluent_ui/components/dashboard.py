@@ -362,7 +362,7 @@ class ProDashboard(QWidget):
 
         # Check Backend Status
         try:
-            response = requests.get("http://localhost:8000/health", timeout=1)
+            response = requests.get("http://127.0.0.1:8000/api/health", timeout=1)
             if response.status_code == 200:
                 self.status_card.set_status(True)
             else:

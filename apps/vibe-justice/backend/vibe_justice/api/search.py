@@ -74,8 +74,22 @@ def _is_url_safe(url: str) -> bool:
     return True
 
 # Initialize services
-web_search_service = get_web_search_service()
-evidence_service = EvidenceService()
+web_search_service = None
+evidence_service = None
+
+
+def _web_search_service():
+    global web_search_service
+    if web_search_service is None:
+        web_search_service = get_web_search_service()
+    return web_search_service
+
+
+def _evidence_service():
+    global evidence_service
+    if evidence_service is None:
+        evidence_service = EvidenceService()
+    return evidence_service
 
 
 # ----- Request/Response Models -----
@@ -158,7 +172,7 @@ async def search_policies(request: Request, body: PolicySearchRequest):
         )
 
         # Execute search
-        results = web_search_service.search_policies(
+        results = _web_search_service().search_policies(
             query=body.query,
             company=body.company,
             policy_type=body.policy_type,
@@ -220,7 +234,7 @@ async def download_policy(request: Request, body: PolicyDownloadRequest):
 
         # Download the document
         try:
-            content = web_search_service.download_document(url_str)
+            content = _web_search_service().download_document(url_str)
         except WebSearchError as e:
             logger.error(f"Download failed: {e}")
             raise HTTPException(status_code=400, detail=f"Download failed: {str(e)}")
@@ -236,8 +250,9 @@ async def download_policy(request: Request, body: PolicyDownloadRequest):
         filename = f"{safe_title[:50]}{extension}"
 
         # Save to uploads directory
-        upload_path = evidence_service.uploads_dir / filename
-        evidence_service.uploads_dir.mkdir(parents=True, exist_ok=True)
+        service = _evidence_service()
+        upload_path = service.uploads_dir / filename
+        service.uploads_dir.mkdir(parents=True, exist_ok=True)
 
         with open(upload_path, "wb") as f:
             f.write(content)
@@ -246,7 +261,7 @@ async def download_policy(request: Request, body: PolicyDownloadRequest):
 
         # Index the document
         try:
-            index_result = evidence_service.index_file(filename, body.domain)
+            index_result = service.index_file(filename, body.domain)
             chunks_indexed = index_result.get("chunks_indexed", 0)
         except FileNotFoundError:
             raise HTTPException(status_code=500, detail="Failed to save document")

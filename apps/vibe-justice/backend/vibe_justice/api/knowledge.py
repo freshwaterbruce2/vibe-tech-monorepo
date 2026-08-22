@@ -19,8 +19,22 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # Initialize services
-evidence_service = EvidenceService()
-retrieval_service = RetrievalService()
+evidence_service = None
+retrieval_service = None
+
+
+def _evidence_service():
+    global evidence_service
+    if evidence_service is None:
+        evidence_service = EvidenceService()
+    return evidence_service
+
+
+def _retrieval_service():
+    global retrieval_service
+    if retrieval_service is None:
+        retrieval_service = RetrievalService()
+    return retrieval_service
 
 
 # ----- Response Models -----
@@ -96,7 +110,7 @@ async def get_knowledge_status():
 
         # Get stats for each configured domain
         for domain_key, config in DOMAINS.items():
-            stats = retrieval_service.get_collection_stats(domain_key)
+            stats = _retrieval_service().get_collection_stats(domain_key)
 
             doc_count = stats.get("count", 0)
             total_documents += doc_count
@@ -146,7 +160,8 @@ async def list_domain_documents(
         logger.info(f"Listing documents for domain: {normalized_domain}")
 
         # Get all uploaded files
-        all_files = evidence_service.list_files()
+        service = _evidence_service()
+        all_files = service.list_files()
 
         # Filter and enrich with index status for this domain
         domain_documents = []
@@ -157,7 +172,7 @@ async def list_domain_documents(
                 continue
 
             # Get index status for this file
-            index_status = evidence_service.get_index_status(filename)
+            index_status = service.get_index_status(filename)
             collections = index_status.get("collections", [])
 
             # Check if file is indexed in the requested domain's collection
@@ -212,12 +227,16 @@ async def delete_document(
         logger.info(f"Deleting document: {document_id}")
 
         # Check if file exists
-        file_path = evidence_service.uploads_dir / document_id
+        try:
+            service = _evidence_service()
+            file_path = service.resolve_upload_path(document_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
         if not file_path.exists():
             raise HTTPException(status_code=404, detail="Document not found")
 
         # Delete file and index entries
-        result = evidence_service.delete_file(document_id)
+        result = service.delete_file(document_id)
 
         return DeleteResponse(
             success=True,

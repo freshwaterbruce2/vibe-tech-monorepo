@@ -131,7 +131,7 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText(/multiple errors detected/i)).toBeInTheDocument()
   })
 
-  it('sends errors to /api/client-errors in production mode', async () => {
+  it('does not send unauthenticated error telemetry in production mode', () => {
     // Wave 2F: ErrorBoundary reads `import.meta.env.PROD` (Vite) rather than
     // `process.env.NODE_ENV`. Use vi.stubEnv so the component sees PROD=true.
     vi.stubEnv('PROD', true)
@@ -144,17 +144,7 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       )
 
-      // Wait for async error reporting
-      await vi.waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledWith(
-          '/api/client-errors',
-          expect.objectContaining({
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: expect.stringContaining('Test error')
-          })
-        )
-      })
+      expect(global.fetch).not.toHaveBeenCalled()
     } finally {
       vi.unstubAllEnvs()
     }

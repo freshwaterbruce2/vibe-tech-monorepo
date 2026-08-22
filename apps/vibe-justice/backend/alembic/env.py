@@ -1,7 +1,7 @@
-import os
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
+from sqlalchemy import event
 from sqlalchemy import pool
 
 from alembic import context
@@ -17,21 +17,17 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-# Import SQLModel for future database models
+# Import every model module so SQLModel metadata is complete in Alembic-only processes.
 from sqlmodel import SQLModel
+import vibe_justice.models  # noqa: F401
+from vibe_justice.utils.database import get_database_url
 target_metadata = SQLModel.metadata
 
 
-# Populate sqlalchemy.url from the DATABASE_PATH env var (monorepo policy).
-# Accepts either a full sqlalchemy URL ("sqlite:///D:/databases/vibe.db") or a
-# raw filesystem path ("D:/databases/vibe.db"). alembic.ini intentionally ships
-# with a blank sqlalchemy.url so we fail fast if DATABASE_PATH is missing.
-_db_url = os.getenv("DATABASE_PATH")
-if _db_url:
-    if not _db_url.startswith("sqlite:"):
-        # Normalize Windows backslashes so SQLAlchemy accepts the URL.
-        _db_url = f"sqlite:///{_db_url.replace(chr(92), '/')}"
-    config.set_main_option("sqlalchemy.url", _db_url)
+# Programmatic startup may preconfigure the URL. CLI migration resolves the exact
+# same canonical path used by runtime services.
+if not config.get_main_option("sqlalchemy.url"):
+    config.set_main_option("sqlalchemy.url", get_database_url())
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -75,6 +71,14 @@ def run_migrations_online() -> None:
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
+
+    @event.listens_for(connectable, "connect")
+    def apply_sqlite_pragmas(connection, _):
+        cursor = connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA busy_timeout=30000")
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 
     with connectable.connect() as connection:
         context.configure(

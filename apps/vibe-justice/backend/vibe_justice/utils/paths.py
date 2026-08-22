@@ -1,6 +1,5 @@
 import os
 import platform
-import sys
 from pathlib import Path
 
 
@@ -33,11 +32,12 @@ def get_data_directory() -> Path:
     # Priority 1: Environment override
     override = os.getenv("VIBE_JUSTICE_DATA_DIR")
     if override:
-        return Path(override)
+        data_dir = Path(override)
+        data_dir.mkdir(parents=True, exist_ok=True)
+        return data_dir
 
     # Priority 2: Standard Vibe hierarchy
-    root = get_platform_data_root()
-    data_dir = root / "vibe-justice"
+    data_dir = get_platform_data_root()
 
     # Create if doesn't exist
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -55,7 +55,9 @@ def get_log_directory() -> Path:
     r"""Get platform-specific log directory (Strictly D:\logs)"""
     override = os.getenv("VIBE_JUSTICE_LOG_DIR")
     if override:
-        return Path(override)
+        log_dir = Path(override)
+        log_dir.mkdir(parents=True, exist_ok=True)
+        return log_dir
 
     system = platform.system()
 
@@ -76,11 +78,32 @@ def get_chroma_directory() -> Path:
     """Get ChromaDB/vector database directory"""
     override = os.getenv("VIBE_JUSTICE_CHROMA_DIR")
     if override:
-        return Path(override)
+        chroma_dir = Path(override)
+        chroma_dir.mkdir(parents=True, exist_ok=True)
+        return chroma_dir
 
     chroma_dir = get_data_directory() / "chroma"
     chroma_dir.mkdir(parents=True, exist_ok=True)
     return chroma_dir
+
+
+def _filesystem_database_path() -> str | None:
+    """Return DATABASE_PATH when it is a real filesystem location.
+
+    CI sets DATABASE_PATH=:memory: to avoid a developer-machine path. That
+    sentinel is not a directory; treating Path(':memory:').parent as '.'
+    makes every test share ./vibe_justice.sqlite3 and then fail-closed when
+    a later test looks for legal-pack snapshots under a new tmp data dir.
+    """
+    database_path = os.getenv("DATABASE_PATH")
+    if not database_path:
+        return None
+    raw = database_path
+    if raw.startswith("sqlite:///"):
+        raw = raw[len("sqlite:///"):]
+    if raw in {":memory:", "memory:"} or raw.endswith(":memory:"):
+        return None
+    return raw
 
 
 def get_database_directory() -> Path:
@@ -96,12 +119,8 @@ def get_database_directory() -> Path:
         Path to database directory (D:\databases\vibe-justice on Windows)
     """
     # Priority 1: DATABASE_PATH (monorepo-standard env var)
-    database_path = os.getenv("DATABASE_PATH")
-    if database_path:
-        # Accept either a sqlalchemy-style URL (sqlite:///...) or a raw path.
-        raw = database_path
-        if raw.startswith("sqlite:///"):
-            raw = raw[len("sqlite:///"):]
+    raw = _filesystem_database_path()
+    if raw:
         parent = Path(raw).parent
         parent.mkdir(parents=True, exist_ok=True)
         return parent
@@ -109,24 +128,18 @@ def get_database_directory() -> Path:
     # Priority 2: legacy per-app override
     override = os.getenv("VIBE_JUSTICE_DB_DIR")
     if override:
-        return Path(override)
+        db_dir = Path(override)
+        db_dir.mkdir(parents=True, exist_ok=True)
+        return db_dir
 
-    system = platform.system()
-
-    if system == "Windows":
-        # Strictly D:\databases per monorepo rules
-        db_dir = Path("D:/databases/vibe-justice")
-        if not db_dir.parent.exists():
-            # Fallback to local app data if D: is totally missing
-            db_dir = Path.home() / "AppData" / "Local" / "VibeJustice" / "databases"
-    else:
-        db_dir = Path.home() / ".local" / "share" / "vibe-justice" / "db"
-
+    # Default relational storage shares the canonical application-data root.
+    # DATABASE_PATH and VIBE_JUSTICE_DB_DIR remain explicit compatibility overrides.
+    db_dir = get_data_directory()
     db_dir.mkdir(parents=True, exist_ok=True)
     return db_dir
 
 
-def get_database_path(db_name: str = "vibe_justice.db") -> Path:
+def get_database_path(db_name: str = "vibe_justice.sqlite3") -> Path:
     """
     Get path to a specific SQLite database file.
 
@@ -140,11 +153,8 @@ def get_database_path(db_name: str = "vibe_justice.db") -> Path:
     Returns:
         Full path to the database file
     """
-    database_path = os.getenv("DATABASE_PATH")
-    if database_path:
-        raw = database_path
-        if raw.startswith("sqlite:///"):
-            raw = raw[len("sqlite:///"):]
+    raw = _filesystem_database_path()
+    if raw:
         candidate = Path(raw)
         # Treat entries that look like file paths (have a suffix) as complete.
         if candidate.suffix:
@@ -155,6 +165,18 @@ def get_database_path(db_name: str = "vibe_justice.db") -> Path:
 
 
 # Verify write permissions on startup
+def resolve_contained_path(root: Path, filename: str) -> Path:
+    """Resolve a filename below root and reject traversal or absolute paths."""
+    candidate_name = (filename or "").strip()
+    if not candidate_name or Path(candidate_name).name != candidate_name:
+        raise ValueError("Invalid filename")
+    resolved_root = root.resolve()
+    candidate = (resolved_root / candidate_name).resolve()
+    if candidate.parent != resolved_root:
+        raise ValueError("Invalid filename")
+    return candidate
+
+
 def verify_permissions():
     """Verify all directories are writable"""
     dirs = [
@@ -169,13 +191,11 @@ def verify_permissions():
         if not path.exists():
             try:
                 path.mkdir(parents=True, exist_ok=True)
-            except PermissionError:
-                print(f"❌ ERROR: Cannot create {name} directory: {path}")
-                sys.exit(1)
+            except OSError as exc:
+                raise RuntimeError(f"Cannot create {name} directory: {path}") from exc
 
         if not os.access(path, os.W_OK):
-            print(f"❌ ERROR: No write access to {name} directory: {path}")
-            sys.exit(1)
+            raise RuntimeError(f"No write access to {name} directory: {path}")
 
     print("✅ All directories accessible:")
     for name, path in dirs:

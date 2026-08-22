@@ -1,24 +1,17 @@
-"""Initial migration - baseline setup
+"""Historical baseline marker.
+
+The additive successor revision owns the frozen runtime schema so legacy
+unversioned databases can be inspected and upgraded without runtime metadata.
 
 Revision ID: 0731d6d83b4a
 Revises:
 Create Date: 2026-01-19 12:36:08.113301
 
-This baseline migration is intentionally a snapshot of whatever SQLModel
-schema is registered at the time ``alembic upgrade head`` runs. The
-application's runtime code historically created tables via
-``SQLModel.metadata.create_all()``; this migration delegates to the same
-mechanism using the active Alembic connection so the two paths stay in
-sync and ``alembic upgrade head`` on an empty database produces the
-expected schema.
-
-Future deltas should use proper ``op.create_table`` / ``op.add_column``
-calls so migrations remain reversible and auditable.
+Older development builds bootstrapped their database from runtime metadata.
+The additive successor revision freezes that historical shape explicitly.
 """
 from typing import Sequence, Union
 
-from alembic import op
-from sqlmodel import SQLModel  # noqa: F401 — needed so metadata is populated
 
 
 # revision identifiers, used by Alembic.
@@ -34,8 +27,7 @@ def upgrade() -> None:
     Safe to run on an empty database. If a table already exists the call
     is a no-op (``checkfirst=True`` is the SQLAlchemy default).
     """
-    bind = op.get_bind()
-    SQLModel.metadata.create_all(bind)
+    pass
 
 
 def downgrade() -> None:
@@ -44,5 +36,4 @@ def downgrade() -> None:
     This is a destructive operation (it drops every table the SQLModel
     metadata knows about). Only intended for teardown in tests / dev.
     """
-    bind = op.get_bind()
-    SQLModel.metadata.drop_all(bind)
+    pass

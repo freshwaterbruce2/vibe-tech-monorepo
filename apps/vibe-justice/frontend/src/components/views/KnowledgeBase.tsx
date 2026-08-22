@@ -24,6 +24,7 @@ import {
 import axios from 'axios'
 import { httpClient } from '../../services/httpClient'
 import { PolicySearch } from '../PolicySearch'
+import { LegalPackInventory } from './LegalPackInventory'
 
 // Domain configuration with icons and colors
 const DOMAIN_CONFIG: Record<string, { label: string; icon: ElementType; color: string; bgColor: string }> = {
@@ -305,6 +306,8 @@ export function KnowledgeBase() {
           </div>
         ) : null}
       </div>
+
+      <LegalPackInventory />
 
       {/* Error Banner */}
       {errorMessage && (

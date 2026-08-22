@@ -4,7 +4,7 @@ import { justiceApi } from '../api'
 // Mock the global fetch
 const mockFetch = vi.fn()
 global.fetch = mockFetch as unknown as typeof fetch
-const apiBase = `${import.meta.env.VITE_API_URL ?? 'http://localhost:8000'}/api`
+const apiBase = `${import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000'}/api`
 
 describe('API Service', () => {
   beforeEach(() => {
@@ -13,6 +13,37 @@ describe('API Service', () => {
 
   afterEach(() => {
     vi.unstubAllEnvs()
+  })
+
+  describe('case-scoped evidence retrieval', () => {
+    it('indexes, reads chunks, and searches using encoded case-scoped routes', async () => {
+      mockFetch
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ evidence_id: 'ev/1', status: 'indexed', chunk_count: 1, text_sha256: 'hash' }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ evidence_id: 'ev/1', status: 'indexed', chunk_count: 1, text_sha256: 'hash', chunks: [] }) })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ query: 'repair notice', total: 0, results: [] }) })
+
+      await justiceApi.indexEvidence('case A', 'ev/1')
+      await justiceApi.getEvidenceChunks('case A', 'ev/1')
+      await justiceApi.searchEvidence('case A', 'repair notice', 7)
+
+      expect(mockFetch).toHaveBeenNthCalledWith(1, expect.stringContaining('/cases/case%20A/evidence/ev%2F1/index'), expect.objectContaining({ method: 'POST' }))
+      expect(mockFetch).toHaveBeenNthCalledWith(2, expect.stringContaining('/cases/case%20A/evidence/ev%2F1/chunks'), expect.objectContaining({ method: 'GET' }))
+      expect(mockFetch).toHaveBeenNthCalledWith(3, expect.stringContaining('/cases/case%20A/evidence/search?q=repair+notice&limit=7'), expect.objectContaining({ method: 'GET' }))
+    })
+  })
+
+  describe('legal pack inventory', () => {
+    it('loads installed legal packs from the authenticated inventory route', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ packs: [] }) })
+      await expect(justiceApi.listLegalPacks()).resolves.toEqual({ packs: [] })
+      expect(mockFetch).toHaveBeenCalledWith(`${apiBase}/legal-packs`, expect.objectContaining({ method: 'GET' }))
+    })
+
+    it('loads exact source detail using encoded pack and source identifiers', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ pack_id: 'pack/1', source_id: 'source 1', elements: [] }) })
+      await justiceApi.getLegalPackSource('pack/1', 'source 1')
+      expect(mockFetch).toHaveBeenCalledWith(`${apiBase}/legal-packs/pack%2F1/sources/source%201`, expect.objectContaining({ method: 'GET' }))
+    })
   })
 
   describe('uploadEvidence', () => {
@@ -24,28 +55,28 @@ describe('API Service', () => {
         ok: true,
         json: async () => ({
           evidence_id: 'evidence-456',
-          filename: 'evidence.pdf',
-          size_bytes: 16,
-          status: 'uploaded',
-          category: caseId,
+          display_filename: 'evidence.pdf',
+          byte_length: 16,
+          status: 'stored',
           case_id: caseId,
-          message: 'Uploaded successfully'
+          attempts: []
         })
       })
 
-      const result = await justiceApi.uploadEvidence(mockFile, caseId)
+      const result = await justiceApi.uploadEvidence(mockFile, caseId, { sourceLabel: 'Synthetic fixture', notes: 'Test only' })
 
       expect(result.evidence_id).toBe('evidence-456')
-      expect(result.filename).toBe('evidence.pdf')
-      expect(result.status).toBe('uploaded')
+      expect(result.original_filename).toBe('evidence.pdf')
+      expect(result.lifecycle_status).toBe('stored')
       expect(result.case_id).toBe(caseId)
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/evidence/upload'),
+        expect.stringContaining('/api/cases/case-123/evidence'),
         expect.objectContaining({ method: 'POST' })
       )
       const uploadBody = mockFetch.mock.calls[0]?.[1]?.body
       expect(uploadBody).toBeInstanceOf(FormData)
-      expect((uploadBody as FormData).get('case_id')).toBe(caseId)
+      expect((uploadBody as FormData).get('source_label')).toBe('Synthetic fixture')
+      expect((uploadBody as FormData).get('notes')).toBe('Test only')
     })
 
     it('sends configured API key on protected fetch requests', async () => {
@@ -56,19 +87,18 @@ describe('API Service', () => {
         ok: true,
         json: async () => ({
           evidence_id: 'evidence-456',
-          filename: 'evidence.pdf',
-          size_bytes: 16,
-          status: 'uploaded',
-          category: 'case-123',
+          display_filename: 'evidence.pdf',
+          byte_length: 16,
+          status: 'stored',
           case_id: 'case-123',
-          message: 'Uploaded successfully'
+          attempts: []
         })
       })
 
       await justiceApi.uploadEvidence(mockFile, 'case-123')
 
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/evidence/upload'),
+        expect.stringContaining('/api/cases/case-123/evidence'),
         expect.objectContaining({
           headers: { 'X-API-Key': 'test-api-key' },
         })
@@ -243,6 +273,27 @@ describe('API Service', () => {
       expect(result.reasoning).toBe('Detailed reasoning process')
       expect(result.model_used).toBe('deepseek-reasoner')
       expect(result.message).toBe('Success')
+    })
+  })
+
+  describe('create and current case', () => {
+    it('creates a case and updates the disk-backed current case', async () => {
+      const created = { case_id: 'Case-2026' }
+      mockFetch
+        .mockResolvedValueOnce({ ok: true, json: async () => created })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ current_case: created }) })
+
+      await expect(justiceApi.createCase({ name: 'Case-2026', jurisdiction: 'SC', goals: 'Review' })).resolves.toEqual(created)
+      await expect(justiceApi.setCurrentCase('Case-2026')).resolves.toEqual(created)
+      expect(mockFetch).toHaveBeenNthCalledWith(1, `${apiBase}/cases/create`, expect.objectContaining({ method: 'POST', body: JSON.stringify({ name: 'Case-2026', jurisdiction: 'SC', goals: 'Review' }) }))
+      expect(mockFetch).toHaveBeenNthCalledWith(2, `${apiBase}/cases/current`, expect.objectContaining({ method: 'PUT', body: JSON.stringify({ case_id: 'Case-2026' }) }))
+    })
+
+    it('restores the current case from the backend', async () => {
+      const current = { case_id: 'Case-2026' }
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ current_case: current }) })
+      await expect(justiceApi.getCurrentCase()).resolves.toEqual(current)
+      expect(mockFetch).toHaveBeenCalledWith(`${apiBase}/cases/current`, expect.objectContaining({ method: 'GET' }))
     })
   })
 

@@ -9,15 +9,18 @@ import {
   Scale,
   Send,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DiagnosticsPanel } from './components/DiagnosticsPanel'
 import { DocumentManager } from './components/DocumentManager'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { DashboardLayout } from './components/layout/DashboardLayout'
 import { ColdCases } from './components/views/ColdCases'
 import { KnowledgeBase } from './components/views/KnowledgeBase'
+import { EvidenceBoard } from './components/workspace/EvidenceBoard'
+import { AnalysisPanel } from './components/workspace/AnalysisPanel'
 import { VibeDashboard } from './containers/VibeDashboard'
 import { httpClient } from './services/httpClient'
+import { justiceApi, type Case } from './services/api'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -75,7 +78,7 @@ function LegalAssistantView() {
     setLoading(true)
     try {
       const response = await api.post('/api/analysis/run', { document_text: analysisText, domain })
-      setAnalysisResult(response.data.analysis || response.data.result)
+      setAnalysisResult(response.data.analysis ?? response.data.result)
     } catch {
       setAnalysisResult('Error analyzing document. Please try again.')
     } finally {
@@ -93,7 +96,7 @@ function LegalAssistantView() {
         case_details: caseDetails,
         domain,
       })
-      setDraftPath(response.data.file_path || response.data.filepath)
+      setDraftPath(response.data.file_path ?? response.data.filepath)
     } catch {
       setDraftError('Error generating draft. Please try again.')
       setDraftPath('')
@@ -179,7 +182,8 @@ function LegalAssistantView() {
                   </div>
                   <p className="text-lg font-medium text-gray-200">Ask me anything about your legal situation</p>
                   <p className="text-sm mt-2 text-gray-500 max-w-md">
-                    I specialize in SC unemployment claims, Walmart/Sedgwick issues, and general legal questions.
+                    I specialize in SC unemployment claims, Walmart/Sedgwick issues, and general
+                    legal questions.
                   </p>
                 </div>
               )}
@@ -215,7 +219,7 @@ function LegalAssistantView() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault()
-                    sendMessage()
+                    void sendMessage()
                   }
                 }}
                 placeholder="Type your legal question..."
@@ -223,7 +227,7 @@ function LegalAssistantView() {
                 disabled={loading}
               />
               <button
-                onClick={sendMessage}
+                onClick={() => void sendMessage()}
                 disabled={loading}
                 className="px-6 py-3 bg-neon-mint text-slate-950 rounded-lg hover:bg-neon-mint/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold shadow-lg shadow-neon-mint/20 hover:shadow-neon-mint/40 transition-all"
               >
@@ -245,7 +249,7 @@ function LegalAssistantView() {
               disabled={loading}
             />
             <button
-              onClick={analyzeDocument}
+              onClick={() => void analyzeDocument()}
               disabled={loading || !analysisText.trim()}
               className="mt-4 px-6 py-3 bg-neon-mint text-slate-950 rounded-lg hover:bg-neon-mint/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold shadow-lg shadow-neon-mint/20 hover:shadow-neon-mint/40 transition-all w-fit"
             >
@@ -285,7 +289,7 @@ function LegalAssistantView() {
               disabled={loading}
             />
             <button
-              onClick={generateDraft}
+              onClick={() => void generateDraft()}
               disabled={loading || !caseDetails.trim()}
               className="mt-4 px-6 py-3 bg-neon-mint text-slate-950 rounded-lg hover:bg-neon-mint/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-semibold shadow-lg shadow-neon-mint/20 hover:shadow-neon-mint/40 transition-all w-fit"
             >
@@ -320,13 +324,24 @@ function LegalAssistantView() {
 
 function App() {
   const [activeTab, setActiveTab] = useState('investigation')
+  const [currentCase, setCurrentCase] = useState<Case | null>(null)
+
+  useEffect(() => {
+    let active = true
+    justiceApi.getCurrentCase()
+      .then((caseRecord) => { if (active) setCurrentCase(caseRecord) })
+      .catch((error) => console.error('Failed to restore current case', error))
+    return () => { active = false }
+  }, [])
 
   const renderContent = () => {
     switch (activeTab) {
       case 'investigation':
-        return <LegalAssistantView />
+        return <div className="h-full overflow-y-auto"><AnalysisPanel currentCase={currentCase} /><LegalAssistantView /></div>
       case 'documents':
         return <DocumentManager />
+      case 'evidence':
+        return <EvidenceBoard currentCase={currentCase} />
       case 'brainscan':
         return <VibeDashboard />
       case 'cold-cases':
@@ -342,7 +357,12 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <DashboardLayout activeTab={activeTab} setActiveTab={setActiveTab}>
+      <DashboardLayout
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        currentCase={currentCase}
+        onCurrentCaseChange={setCurrentCase}
+      >
         <div className="h-full flex flex-col">
           {/* Quick access tabs bar */}
           <div className="bg-gradient-to-b from-slate-900/95 to-slate-950/95 backdrop-blur-sm border-b border-white/5 px-4 py-2.5 shadow-lg shadow-black/20">
@@ -368,6 +388,17 @@ function App() {
               >
                 <FolderOpen className="w-4 h-4" />
                 Documents
+              </button>
+              <button
+                onClick={() => setActiveTab('evidence')}
+                className={`px-3 py-1.5 rounded-md text-sm flex items-center gap-2 transition-colors ${
+                  activeTab === 'evidence'
+                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                    : 'text-gray-400 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                Evidence
               </button>
               <button
                 onClick={() => setActiveTab('brainscan')}

@@ -8,7 +8,14 @@ from pydantic import BaseModel
 from vibe_justice.services.forms_service import FormsService
 
 router = APIRouter()
-forms_service = FormsService()
+forms_service = None
+
+
+def _forms_service():
+    global forms_service
+    if forms_service is None:
+        forms_service = FormsService()
+    return forms_service
 
 
 class FormInfo(BaseModel):
@@ -24,7 +31,7 @@ async def list_forms(domain: str = "general"):
     """
     Returns available legal forms for the specified domain.
     """
-    forms = forms_service.get_forms(domain)
+    forms = _forms_service().get_forms(domain)
     return [FormInfo(**form) for form in forms]
 
 
@@ -33,7 +40,7 @@ async def get_form(form_id: str):
     """
     Get specific form details.
     """
-    forms = forms_service.get_forms()
+    forms = _forms_service().get_forms()
     for form in forms:
         if form["id"] == form_id:
             return form

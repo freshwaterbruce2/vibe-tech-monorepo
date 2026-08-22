@@ -21,7 +21,7 @@ from vibe_justice.services.file_service import FileService
 from vibe_justice.services.retrieval_service import _hash_embedding
 from vibe_justice.utils.chunking import chunk_text
 from vibe_justice.utils.domain import normalize_domain
-from vibe_justice.utils.paths import get_data_directory
+from vibe_justice.utils.paths import get_data_directory, resolve_contained_path
 
 
 class EvidenceService:
@@ -92,7 +92,7 @@ class EvidenceService:
             return {"status": "error", "chunks": 0}
 
     def get_preview(self, filename: str, max_chars: int = 500) -> Dict[str, Any]:
-        file_path = self.uploads_dir / filename
+        file_path = self.resolve_upload_path(filename)
         if not file_path.exists():
             raise FileNotFoundError(filename)
 
@@ -101,7 +101,7 @@ class EvidenceService:
         return {"filename": filename, "preview": preview, "total_chars": len(text)}
 
     def index_file(self, filename: str, domain: str) -> Dict[str, Any]:
-        file_path = self.uploads_dir / filename
+        file_path = self.resolve_upload_path(filename)
         if not file_path.exists():
             raise FileNotFoundError(filename)
 
@@ -127,6 +127,9 @@ class EvidenceService:
 
         collection.upsert(ids=ids, documents=docs, embeddings=emiss, metadatas=metas)
         return {"chunks_indexed": len(ids), "status": "indexed"}
+
+    def resolve_upload_path(self, filename: str) -> Path:
+        return resolve_contained_path(self.uploads_dir, filename)
 
     def _calculate_file_hash(self, path: Path) -> str:
         hasher = hashlib.sha256()
