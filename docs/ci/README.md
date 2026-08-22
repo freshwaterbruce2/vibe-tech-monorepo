@@ -34,9 +34,9 @@ The current workflow does not implement an automatic full-workspace fallback.
 Use the explicit `ci:*:all` or `*:all` scripts when a full sweep is required.
 
 CI starts an Nx Cloud CI pipeline execution when available and runs
-`pnpm exec nx fix-ci` at the end of PR quality jobs. Self-healing policy lives in
-`.nx/SELF_HEALING.md`; cloud-side workspace settings control which fixes can be
-suggested or auto-applied.
+`pnpm exec nx fix-ci` at the end of PR quality jobs. Local loop policy lives in
+`.github/self-healing-config.yml`; cloud-side workspace settings control which
+fixes can be suggested or auto-applied.
 
 Known flaky skips must be recorded in `quarantine.json`. Do not skip tests in
 source code without an entry and an owner/tracking issue.

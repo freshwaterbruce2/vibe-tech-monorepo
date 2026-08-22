@@ -180,8 +180,9 @@ These security measures are already applied in `.github/workflows/ci.yml`:
 
 3. **Concurrency control** - Cancels redundant workflow runs on same branch
 
-4. **Self-healing restricted** - Nx Cloud `fix-ci` runs as a non-blocking PR step
-   and follows `.nx/SELF_HEALING.md`; the workflow no longer auto-pushes fixes.
+4. **Self-healing restricted** - Nx Cloud `fix-ci` runs as a non-blocking PR step.
+   Local loop policy is `.github/self-healing-config.yml`; the workflow no longer
+   auto-pushes fixes.
 
 5. **Frozen lockfile** - `pnpm install --frozen-lockfile` prevents dependency tampering
 

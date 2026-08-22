@@ -97,7 +97,6 @@ npm-shrinkwrap.json
 build/
 .nx/*
 !.nx/
-!.nx/SELF_HEALING.md
 .next/
 out/
 *.tsbuildinfo
@@ -387,7 +386,6 @@ vitest.config.*.timestamp*
 
 # NX local cache
 .nx/
-!.nx/SELF_HEALING.md
 
 # Personal scratchpad
 MEMORY.md

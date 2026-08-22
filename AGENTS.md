@@ -305,7 +305,6 @@ The monorepo uses a multi-layered testing approach:
 | Workflow                              | Trigger                                   | Purpose                                                                                                                                       |
 | ------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `ci.yml`                              | Push/PR to `main`, `develop`, `feature/*` | Main quality pipeline: dependency review, sync audit, affected lint/typecheck/test/build, changeset check, release, coverage, canary Node 24. |
-| `release.yml`                         | `workflow_dispatch`                       | Legacy gravity-claw version workflow; verify nested/local-only state before use.                                                              |
 | `nova-agent-visual.yml`               | Path-filtered to `apps/nova-agent/**`     | Stylelint + Playwright visual regression.                                                                                                     |
 | `vibe-justice.yml`                    | Path-filtered to `apps/vibe-justice/**`   | Frontend (Nx) + Backend (pytest) validation.                                                                                                  |
 | `vibe-tutor-privacy-policy-pages.yml` | Push to `main`                            | Deploys static pages to GitHub Pages.                                                                                                         |
@@ -315,7 +314,7 @@ The monorepo uses a multi-layered testing approach:
 - **Runner**: `windows-latest` (primary development environment is Windows 11).
 - **Nx Cloud**: Enabled, ID `6977fcd7ceb01e5b11be2a95`. Self-healing (`nx fix-ci`) on PRs.
 - **Actions**: Pinned to commit SHAs. Least-privilege permissions. Concurrency groups cancel in-progress runs.
-- **Self-Healing**: Configured in `.nx/SELF_HEALING.md`. Auto-applies drift corrections via `nx fix-ci`.
+- **Self-Healing**: Local loop policy is `.github/self-healing-config.yml`. Nx Cloud auto-applies drift corrections via `nx fix-ci`.
 
 ## Release Process
 
