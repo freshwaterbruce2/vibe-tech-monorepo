@@ -1,10 +1,11 @@
 // Re-export the centralized axios instance so callers can switch progressively.
 export { httpClient } from './httpClient';
+import { getRuntimeApiKey } from './runtimeAuth';
 
-const API_BASE = `${import.meta.env.VITE_API_URL ?? 'http://localhost:8000'}/api`;
+const API_BASE = `${import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000'}/api`;
 
 const authHeaders = (): HeadersInit => {
-  const apiKey = import.meta.env.VITE_VIBE_JUSTICE_API_KEY;
+  const apiKey = getRuntimeApiKey();
   return apiKey ? { 'X-API-Key': apiKey } : {};
 };
 

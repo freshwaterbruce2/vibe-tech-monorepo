@@ -164,6 +164,7 @@ function findCoverageReports() {
 		for (const entry of fs.readdirSync(baseAbs, { withFileTypes: true })) {
 			if (!entry.isDirectory()) continue;
 			candidates.push(path.join(baseAbs, entry.name, "coverage", "coverage-final.json"));
+			candidates.push(path.join(baseAbs, entry.name, "frontend", "coverage", "coverage-final.json"));
 		}
 	}
 	candidates.push(path.join(ROOT, "backend", "coverage", "coverage-final.json"));

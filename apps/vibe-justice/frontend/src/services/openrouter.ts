@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 // Inline types for OpenRouter client (avoiding external module dependency)
 export interface Message {
   role: 'system' | 'user' | 'assistant'
@@ -40,55 +41,35 @@ interface ChatRequest {
  * OpenRouter client for AI model access
  */
 class OpenRouterClient {
-  private baseUrl: string
   // Config stored for future use (timeout, retries, etc.)
   // @ts-expect-error Config reserved for future timeout/retry implementation
   private _config: OpenRouterClientConfig
 
-  constructor(baseUrl: string, config: OpenRouterClientConfig = {}) {
-    this.baseUrl = baseUrl
+  constructor(_baseUrl: string, config: OpenRouterClientConfig = {}) {
+    void _baseUrl
     this._config = config
   }
 
   async chat(request: ChatRequest): Promise<ChatResponse> {
-    const response = await fetch(`${this.baseUrl}/api/openrouter/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request),
-    })
-
-    if (!response.ok) {
-      throw new Error(`OpenRouter API error: ${response.status}`)
-    }
-
-    return response.json()
+    void request
+    throw new Error('External provider access is disabled pending explicit per-action consent')
   }
 
   async healthCheck(): Promise<boolean> {
-    try {
-      const response = await fetch(`${this.baseUrl}/health`)
-      return response.ok
-    } catch {
-      return false
-    }
+    return false
   }
 
   async getModels(): Promise<string[]> {
-    const response = await fetch(`${this.baseUrl}/api/v1/models`)
-    if (!response.ok) return []
-    const data = await response.json()
-    return data.models || []
+    return []
   }
 
   async getUsage(_period: string): Promise<unknown> {
-    const response = await fetch(`${this.baseUrl}/api/v1/usage`)
-    if (!response.ok) return null
-    return response.json()
+    return null
   }
 }
 
 // Create configured OpenRouter client instance
-export const openRouterClient = new OpenRouterClient('http://localhost:3001', {
+export const openRouterClient = new OpenRouterClient('disabled://consent-required', {
   timeout: 60000, // 60 seconds for legal document analysis
   retries: 3,
   retryDelay: 2000,

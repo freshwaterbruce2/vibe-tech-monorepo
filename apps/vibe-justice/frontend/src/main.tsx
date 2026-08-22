@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App'
 import './index.css'
 import { isTauri, createVibeTechBridge } from './services/tauri'
+import { initializeRuntimeAuth } from './services/runtimeAuth'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -33,10 +34,18 @@ if (isTauri()) {
   }
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+initializeRuntimeAuth().then(() => {
+  const root = document.getElementById('root')
+  if (!root) throw new Error('Missing #root element')
+  ReactDOM.createRoot(root).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <App />
     </QueryClientProvider>
   </StrictMode>,
-)
+  )
+}).catch((error) => {
+  console.error('Unable to initialize private backend authentication', error)
+  const root = document.getElementById('root')
+  if (root) root.textContent = 'Vibe Justice could not initialize its private backend connection.'
+})

@@ -11,7 +11,7 @@ export const useBrainScan = () => {
     setError(null);
 
     try {
-      // ✅ Correct: Uses the exposed Electron Bridge
+      // Unified bridge: real Tauri IPC on desktop, inert local fallback in web mode.
       const result: BrainScanResult = await window.vibeTech.searchLogic(codeSnippet);
       
       // Handle potential response format differences gracefully
@@ -32,7 +32,7 @@ export const useBrainScan = () => {
       // Merge relational metadata with vector scores
       const enrichedResults = patterns.map((p: LogicPattern, i: number) => ({
         ...p,
-        relevance: scores[i]?.score || 0,
+        relevance: scores[i]?.score ?? 0,
       }));
 
       setResults(enrichedResults);

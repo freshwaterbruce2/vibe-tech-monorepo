@@ -4,7 +4,7 @@ import { justiceApi } from '../api'
 // Mock the global fetch
 const mockFetch = vi.fn()
 global.fetch = mockFetch as unknown as typeof fetch
-const apiBase = `${import.meta.env.VITE_API_URL ?? 'http://localhost:8000'}/api`
+const apiBase = `${import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000'}/api`
 
 describe('API Service', () => {
   beforeEach(() => {

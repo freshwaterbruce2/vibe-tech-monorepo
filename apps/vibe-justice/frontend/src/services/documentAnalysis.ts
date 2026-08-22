@@ -20,12 +20,13 @@ import type {
   AnalyzeContradictionsRequest,
   CompleteAnalysisRequest,
 } from '../types/documentAnalysis';
+import { getRuntimeApiKey } from './runtimeAuth';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000';
 const ANALYSIS_PREFIX = '/api/document-analysis';
 
 const authHeaders = (): HeadersInit => {
-  const apiKey = import.meta.env.VITE_VIBE_JUSTICE_API_KEY;
+  const apiKey = getRuntimeApiKey();
   return apiKey ? { 'X-API-Key': apiKey } : {};
 };
 
@@ -58,7 +59,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
     try {
       const errorData = await response.json();
-      errorMessage = errorData.detail || errorData.message || errorMessage;
+      errorMessage = errorData.detail ?? errorData.message ?? errorMessage;
       errorDetails = errorData;
     } catch {
       // If response is not JSON, use status text
@@ -92,7 +93,9 @@ export const documentAnalysisApi = {
 
     for (const file of files) {
       const hasValidType = allowedTypes.includes(file.type);
-      const hasValidExtension = allowedExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+      const hasValidExtension = allowedExtensions.some((ext) =>
+        file.name.toLowerCase().endsWith(ext),
+      );
 
       if (!hasValidType && !hasValidExtension) {
         throw new DocumentAnalysisError(
@@ -141,7 +144,7 @@ export const documentAnalysisApi = {
       headers: jsonHeaders(),
       body: JSON.stringify({
         documents: request.documents,
-        case_type: request.case_type || 'unemployment',
+        case_type: request.case_type ?? 'unemployment',
       }),
     });
 
@@ -214,7 +217,7 @@ export const documentAnalysisApi = {
       headers: jsonHeaders(),
       body: JSON.stringify({
         documents: request.documents,
-        case_type: request.case_type || 'unemployment',
+        case_type: request.case_type ?? 'unemployment',
       }),
     });
 

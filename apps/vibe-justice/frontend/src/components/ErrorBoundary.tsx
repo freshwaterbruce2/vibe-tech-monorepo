@@ -41,30 +41,10 @@ class ErrorBoundary extends Component<Props, State> {
       this.props.onError(error, errorInfo);
     }
 
-    // Log to external service in production
-    if (import.meta.env.PROD) {
-      this.logErrorToService(error, errorInfo);
-    }
-
     this.setState({
       errorInfo,
       errorCount: this.state.errorCount + 1
     });
-  }
-
-  private logErrorToService(error: Error, errorInfo: ErrorInfo) {
-    // Send to backend logging endpoint
-    fetch('/api/client-errors', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: error.toString(),
-        stack: error.stack,
-        componentStack: errorInfo.componentStack,
-        timestamp: new Date().toISOString(),
-        userAgent: navigator.userAgent
-      })
-    }).catch(console.error);
   }
 
   private handleReset = () => {
@@ -83,7 +63,7 @@ class ErrorBoundary extends Component<Props, State> {
     window.location.href = '/';
   };
 
-  public render() {
+  public render(): ReactNode {
     if (this.state.hasError) {
       // Use custom fallback if provided
       if (this.props.fallback) {
