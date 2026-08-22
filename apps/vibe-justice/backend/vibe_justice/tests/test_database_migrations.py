@@ -37,6 +37,13 @@ def test_default_database_is_under_canonical_data_root(monkeypatch, tmp_path):
     assert get_database_path() == tmp_path / "vibe_justice.sqlite3"
 
 
+@pytest.mark.parametrize("sentinel", (":memory:", "sqlite:///:memory:"))
+def test_memory_database_path_does_not_escape_data_root(monkeypatch, tmp_path, sentinel):
+    monkeypatch.setenv("DATABASE_PATH", sentinel)
+    monkeypatch.setenv("VIBE_JUSTICE_DATA_DIR", str(tmp_path))
+    assert get_database_path() == tmp_path / "vibe_justice.sqlite3"
+
+
 def test_blank_database_upgrades_to_current_schema(monkeypatch, tmp_path):
     path = tmp_path / "blank.sqlite3"
     _set_database(monkeypatch, path)

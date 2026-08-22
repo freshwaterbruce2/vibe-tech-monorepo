@@ -87,6 +87,25 @@ def get_chroma_directory() -> Path:
     return chroma_dir
 
 
+def _filesystem_database_path() -> str | None:
+    """Return DATABASE_PATH when it is a real filesystem location.
+
+    CI sets DATABASE_PATH=:memory: to avoid a developer-machine path. That
+    sentinel is not a directory; treating Path(':memory:').parent as '.'
+    makes every test share ./vibe_justice.sqlite3 and then fail-closed when
+    a later test looks for legal-pack snapshots under a new tmp data dir.
+    """
+    database_path = os.getenv("DATABASE_PATH")
+    if not database_path:
+        return None
+    raw = database_path
+    if raw.startswith("sqlite:///"):
+        raw = raw[len("sqlite:///"):]
+    if raw in {":memory:", "memory:"} or raw.endswith(":memory:"):
+        return None
+    return raw
+
+
 def get_database_directory() -> Path:
     r"""
     Get SQLite database directory (Strictly D:\databases per monorepo rules).
@@ -100,12 +119,8 @@ def get_database_directory() -> Path:
         Path to database directory (D:\databases\vibe-justice on Windows)
     """
     # Priority 1: DATABASE_PATH (monorepo-standard env var)
-    database_path = os.getenv("DATABASE_PATH")
-    if database_path:
-        # Accept either a sqlalchemy-style URL (sqlite:///...) or a raw path.
-        raw = database_path
-        if raw.startswith("sqlite:///"):
-            raw = raw[len("sqlite:///"):]
+    raw = _filesystem_database_path()
+    if raw:
         parent = Path(raw).parent
         parent.mkdir(parents=True, exist_ok=True)
         return parent
@@ -138,11 +153,8 @@ def get_database_path(db_name: str = "vibe_justice.sqlite3") -> Path:
     Returns:
         Full path to the database file
     """
-    database_path = os.getenv("DATABASE_PATH")
-    if database_path:
-        raw = database_path
-        if raw.startswith("sqlite:///"):
-            raw = raw[len("sqlite:///"):]
+    raw = _filesystem_database_path()
+    if raw:
         candidate = Path(raw)
         # Treat entries that look like file paths (have a suffix) as complete.
         if candidate.suffix:
