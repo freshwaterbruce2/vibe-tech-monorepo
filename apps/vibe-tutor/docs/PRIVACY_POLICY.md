@@ -1,17 +1,18 @@
 # Privacy Policy for Vibe Tutor
 
-**Effective Date:** March 9, 2026  
-**Last Updated:** March 9, 2026
+**Effective Date:** August 22, 2026  
+**Last Updated:** August 22, 2026
 
 ## Overview
 
-Vibe Tutor is an educational app from **VibeTech**. It helps users study, manage assignments, use optional AI tutoring features, and access optional audio features such as internet radio. This Privacy Policy explains how Vibe Tutor accesses, stores, uses, and shares data.
+Vibe Tutor is an educational app from **Vibe Tech LLC**. It helps users study, manage assignments, use optional AI tutoring features, and access optional audio features such as internet radio. This Privacy Policy explains how Vibe Tutor accesses, stores, uses, and shares data.
 
-Vibe Tutor is intended for users age 13 and older and is not directed to children under 13.
+Vibe Tutor is intended for teens ages 13 to 17 and is not directed to children under 13.
 
 ## Who We Are
 
-- **Developer:** VibeTech
+- **Developer:** Vibe Tech LLC
+- **Android package:** `com.vibetech.tutor`
 - **App:** Vibe Tutor
 - **Privacy Contact:** freshwaterbruce2@gmail.com
 
@@ -123,7 +124,7 @@ If you use AI, radio, or hosted backend features, your data may be processed by 
 
 ## Age Scope
 
-Vibe Tutor is intended for users **13 and older** and is **not directed to children under 13**. If you believe a child under 13 has provided personal information through the app, contact us at freshwaterbruce2@gmail.com so we can review the issue.
+Vibe Tutor is intended for teens ages **13 to 17** and is **not directed to children under 13**. If you believe a child under 13 has provided personal information through the app, contact us at freshwaterbruce2@gmail.com so we can review the issue.
 
 ## Changes to This Policy
 
@@ -133,5 +134,5 @@ We may update this Privacy Policy from time to time. When we do, we will update 
 
 If you have questions about this Privacy Policy, contact:
 
-- **VibeTech**
+- **Vibe Tech LLC**
 - **Email:** freshwaterbruce2@gmail.com
