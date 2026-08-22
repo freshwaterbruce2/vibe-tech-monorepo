@@ -42,7 +42,7 @@ scraper = "0.18.1"
 chrono = { version = "0.4", features = ["serde"] }
 walkdir = "2.5"
 tauri-plugin-shell = "2.3.5"
-keyring = "2"
+keyring = "4"
 regex = "1"
 jsonwebtoken = "9"
 screenshots = "0.8"
