@@ -38,10 +38,37 @@
 
 ## Current action
 
-Implement and verify Phase 2B only: case-scoped evidence import, immutable originals,
-provenance, durable extraction status/history, retry, and restart-safe reopening. Use
-only synthetic fixtures and app-local dependencies; do not call providers, touch real
-case data, package Tauri, or perform any GitHub/remote action.
+Complete the private Windows app before the optional ChatGPT/MCP guide. Milestone 1
+reconciliation and Phase 1A backend closure are complete; native Tauri execution remains
+blocked by missing MSVC `link.exe`. The next bounded unit is Milestone 2: the synthetic,
+case-scoped daily paralegal workspace. Do not call providers or touch real case data.
+
+## 2026-08-21 Milestone 1 result
+
+- Fresh backend: 234 passed, 1 expected xfail, 75.14% coverage.
+- Frontend lint passed with 0 errors/4 warnings; typecheck passed; 401 tests passed with
+  1 todo; production build passed; serialized Playwright passed 3/3.
+- Canonical relational ownership, frozen Alembic migrations, startup migration,
+  providerless production validation, protected instance readiness, and lazy service
+  construction are implemented and independently reviewed.
+- Tauri uses an in-memory per-launch key, authenticated PID/instance readiness,
+  generation-safe start/stop/termination state, numeric loopback, and narrowed renderer
+  capabilities. Direct browser OpenRouter calls are fail-closed.
+- No listeners remained on 8000/5175 after E2E. No real evidence/provider was used.
+- Rust formatting and metadata pass. Native Rust compile/tests, packaged sidecar, and
+  physical installer lifecycle are Blocked by missing MSVC `link.exe`; they are not
+  claimed complete.
+
+## Phase 5A start
+
+- User explicitly requested a personal Vibe Justice paralegal that guides the tenant
+  through the eviction situation.
+- Docs-first review completed against current official OpenAI plugin quickstart, MCP
+  server, UI, examples, tool-planning, and reference pages.
+- Scope frozen in `task_plan.md`; implementation has not yet changed application source.
+- Three read-only audits completed: backend composition/deadline prerequisites, MCP
+  tool/privacy/auth contract, and widget/accessibility/test contract.
+- Phase 5A0 is complete. Phase 5A1-5A4 remain planned and unimplemented.
 
 ## Durable case slice result
 

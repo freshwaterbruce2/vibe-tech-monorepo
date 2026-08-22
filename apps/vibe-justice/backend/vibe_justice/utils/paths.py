@@ -117,22 +117,14 @@ def get_database_directory() -> Path:
         db_dir.mkdir(parents=True, exist_ok=True)
         return db_dir
 
-    system = platform.system()
-
-    if system == "Windows":
-        # Strictly D:\databases per monorepo rules
-        db_dir = Path("D:/databases/vibe-justice")
-        if not db_dir.parent.exists():
-            # Fallback to local app data if D: is totally missing
-            db_dir = Path.home() / "AppData" / "Local" / "VibeJustice" / "databases"
-    else:
-        db_dir = Path.home() / ".local" / "share" / "vibe-justice" / "db"
-
+    # Default relational storage shares the canonical application-data root.
+    # DATABASE_PATH and VIBE_JUSTICE_DB_DIR remain explicit compatibility overrides.
+    db_dir = get_data_directory()
     db_dir.mkdir(parents=True, exist_ok=True)
     return db_dir
 
 
-def get_database_path(db_name: str = "vibe_justice.db") -> Path:
+def get_database_path(db_name: str = "vibe_justice.sqlite3") -> Path:
     """
     Get path to a specific SQLite database file.
 

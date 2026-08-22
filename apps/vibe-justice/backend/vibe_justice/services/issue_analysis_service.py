@@ -3,7 +3,7 @@ import hashlib,json,re
 from datetime import datetime,timezone
 from uuid import uuid4
 from fastapi import HTTPException
-from sqlmodel import Session,SQLModel,select
+from sqlmodel import Session,select
 from vibe_justice.api.cases import _load_case
 from vibe_justice.models.issue import FindingCitation,FindingDisposition,FindingMissingFact,FindingQualification,IssueAnalysisRun,IssueFinding
 from vibe_justice.services.evidence_retrieval_service import EvidenceRetrievalService
@@ -28,8 +28,7 @@ DATE_SCOPE_CONDITION=("authority_date_scope","The cited authority version applie
 class IssueAnalysisService:
  def __init__(self):
   if hashlib.sha256((json.dumps(RULESET,sort_keys=True,separators=(",",":"))+"\n").encode()).hexdigest()!=RULESET_SHA256 or RULESET.get("status")!="approved_for_candidate_screening":raise HTTPException(409,"Candidate ruleset manifest failed integrity verification")
-  self.legal=LegalPackService();self.evidence=EvidenceRetrievalService();self.engine=self.legal.engine;SQLModel.metadata.create_all(self.engine)
-  with self.engine.begin() as connection:connection.exec_driver_sql("CREATE UNIQUE INDEX IF NOT EXISTS uq_finding_disposition_version_idx ON finding_dispositions(finding_id,version)")
+  self.legal=LegalPackService();self.evidence=EvidenceRetrievalService();self.engine=self.legal.engine
  def _pack(self,pack_id):
   packs=self.legal.list();compatible=[p for p in packs if p.jurisdiction=="South Carolina" and p.matter_type=="residential landlord-tenant" and p.status=="source_checked"]
   pack=next((p for p in compatible if p.pack_id==pack_id),None) if pack_id else (max(compatible,key=lambda p:(p.version,p.retrieved_at)) if compatible else None)

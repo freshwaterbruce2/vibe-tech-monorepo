@@ -2,21 +2,17 @@
 import hashlib,json,os
 from datetime import datetime
 from fastapi import HTTPException
-from sqlalchemy import event
-from sqlmodel import Session,SQLModel,create_engine,select
+from sqlmodel import Session,select
 from vibe_justice.legal_packs import sc_residential_landlord_tenant_2025 as bundled
 from vibe_justice.models.legal_pack import LegalPack,LegalRuleElement,LegalSource
 from vibe_justice.utils.paths import get_data_directory
+from vibe_justice.utils.database import create_runtime_engine, upgrade_database
 def sha(value:bytes)->str:return hashlib.sha256(value).hexdigest()
 JURISDICTION="South Carolina";MATTER_TYPE="residential landlord-tenant";PACK_STATUS="source_checked";APPROVAL_STATUS="not_approved_for_matching";SOURCE_STATUS="source_checked"
 APPLICABILITY="Potentially applicable only to South Carolina residential rental arrangements governed by Chapter 40, Title 27; Section 27-40-120 exclusions and case facts require explicit human review."
 class LegalPackService:
  def __init__(self):
-  self.data_root=get_data_directory().resolve(); self.engine=create_engine(f"sqlite:///{(self.data_root/'vibe_justice.sqlite3').as_posix()}",connect_args={"check_same_thread":False})
-  @event.listens_for(self.engine,"connect")
-  def pragmas(connection,_):
-   cursor=connection.cursor();cursor.execute("PRAGMA journal_mode=WAL");cursor.execute("PRAGMA busy_timeout=5000");cursor.execute("PRAGMA foreign_keys=ON");cursor.close()
-  SQLModel.metadata.create_all(self.engine);self.install_bundled()
+  self.data_root=get_data_directory().resolve();upgrade_database();self.engine=create_runtime_engine();self.install_bundled()
  def _payload(self):return {"pack_key":bundled.PACK_KEY,"jurisdiction":JURISDICTION,"matter_type":MATTER_TYPE,"status":PACK_STATUS,"approval_status":APPROVAL_STATUS,"version":bundled.VERSION,"as_of":bundled.AS_OF,"retrieved_at":bundled.RETRIEVED_AT,"canonical_url":bundled.CODE_URL,"disclaimer_url":bundled.DISCLAIMER_URL,"disclaimer":bundled.DISCLAIMER,"sections":bundled.SECTIONS}
  def _bytes(self):return (json.dumps(self._payload(),ensure_ascii=False,sort_keys=True,indent=2)+"\n").encode()
  def _snapshot(self):return self.data_root/"legal-packs"/bundled.PACK_KEY/bundled.VERSION/"official-source-excerpts.json"

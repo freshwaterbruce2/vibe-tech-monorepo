@@ -9,7 +9,6 @@ import secrets
 # Required environment variables (January 2026)
 REQUIRED_ENV_VARS = [
     "VIBE_JUSTICE_API_KEY",
-    "OPENROUTER_API_KEY"
 ]
 
 # Optional environment variables with defaults
@@ -30,7 +29,7 @@ def validate_environment(*, strict: bool = False):
 
     Required (2026):
     - VIBE_JUSTICE_API_KEY: Internal API authentication
-    - OPENROUTER_API_KEY: OpenRouter API access key
+    - Provider keys are optional for local-only operation.
 
     Optional:
     - OPENROUTER_API_BASE: API endpoint (default: https://openrouter.ai/api/v1)
@@ -48,9 +47,6 @@ def validate_environment(*, strict: bool = False):
         for var in missing:
             if var == "VIBE_JUSTICE_API_KEY":
                 print(f"{var}={secrets.token_urlsafe(32)}")
-            elif var == "OPENROUTER_API_KEY":
-                print(f"{var}=your_openrouter_api_key_here")
-                print("# Get your key at: https://openrouter.ai/keys")
             else:
                 print(f"{var}=your_key_here")
         print("\n# Optional (recommended):")
@@ -68,7 +64,7 @@ def validate_environment(*, strict: bool = False):
 
     # Validate OpenRouter API key format
     openrouter_key = os.getenv("OPENROUTER_API_KEY")
-    if not openrouter_key.startswith("sk-or-"):
+    if openrouter_key and not openrouter_key.startswith("sk-or-"):
         if strict:
             raise RuntimeError("OPENROUTER_API_KEY must start with 'sk-or-'")
         print("WARNING: OPENROUTER_API_KEY should start with 'sk-or-'")

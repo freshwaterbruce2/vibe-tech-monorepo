@@ -209,7 +209,7 @@
         "{projectRoot}/frontend/test-results"
       ],
       "options": {
-        "command": "pnpm exec playwright test",
+        "command": "pnpm run e2e",
         "cwd": "apps/vibe-justice/frontend"
       }
     }

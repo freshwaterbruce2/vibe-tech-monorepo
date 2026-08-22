@@ -62,12 +62,72 @@
   one worker, and a test-only key. Both settings and full create -> reload -> archive ->
   restore -> reselect flows pass; no provider was called and no real case data was used.
 
-## Open questions to resolve from source
+## 2026-08-21 Windows completion reconciliation
 
-- Exact backend dependency/venv bootstrap contract.
-- Current runtime-data roots and whether repository-wide D-drive guidance fits packaged app data.
-- Current API authentication coverage and launcher/health implementation paths.
-- Whether E2E actually launches Tauri or retains Electron assumptions.
+- Fresh app-local baseline passes: backend 234 passed plus 1 expected xfail at 75.14%
+  coverage; frontend lint/typecheck, 401 tests plus 1 todo, production build, and 3
+  serialized Playwright flows pass. Browser E2E is synthetic and does not prove Tauri.
+- The relational database now defaults to `VIBE_JUSTICE_DATA_DIR/vibe_justice.sqlite3`;
+  explicit `DATABASE_PATH` remains the highest-priority compatibility override.
+- Alembic revisions are frozen, startup upgrades before serving, SQLite enables WAL,
+  foreign keys, and bounded busy timeout, and an adjacent-file lock serializes
+  cross-process upgrades. Synthetic tests cover blank, legacy, same-path replacement,
+  failure/retry, and concurrent upgrade cases.
+- Providerless production startup is valid. A strong internal API key remains required;
+  optional OpenRouter credentials are validated only when configured.
+- Tauri now generates an in-memory per-launch internal key and instance UUID, starts the
+  sidecar with explicit production/loopback/app-data settings, and accepts readiness
+  only from authenticated `/api/ready` with the expected PID and instance UUID.
+- Lifecycle state is generation-owned: concurrent starts are rejected, stale termination
+  events cannot clear a newer child, and stop during startup invalidates/kills the child.
+- Renderer capabilities no longer expose shell, recursive app data, D-drive, database,
+  or directory access. Only dialog-selected file read/write remains.
+- Direct browser OpenRouter calls are quarantined and tested to perform no fetch. This
+  is a temporary fail-closed boundary until the explicit consent milestone.
+- Native Rust compilation/tests and the Tauri installer are Blocked because MSVC
+  `link.exe` is unavailable. Source review, Rust formatting, and Cargo metadata pass;
+  no sidecar/installer or physical desktop lifecycle has been proven.
+
+## 2026-08-20 personal eviction guide planning
+
+- User goal is active guidance, not a passive document connector: show what to do
+  next, why it matters, what date/status is verified, and which evidence supports it.
+- Current OpenAI documentation now presents Apps SDK concepts under Plugins. The
+  standard MCP Apps contract remains: data tools return concise `structuredContent`;
+  only render tools attach `_meta.ui.resourceUri`; UI resources use
+  `text/html;profile=mcp-app`; the widget receives `ui/notifications/tool-result` and
+  uses `tools/call` for repeated interactions.
+- Chosen archetype is `interactive-decoupled`: read-only case/guidance tools plus one
+  long-lived React guide widget. This is not a company-knowledge connector, so custom
+  case-scoped tools are preferable to pretending local evidence URLs satisfy public
+  `search`/`fetch` citation requirements.
+- The existing backend already owns case identity, immutable evidence, local retrieval,
+  legal packs, cautious issue findings, citations, missing facts, and safe next steps.
+  Phase 5A should compose those contracts, not create a parallel legal-analysis engine.
+- The repository has unrelated dirty work under other apps and the root lockfile.
+  Phase 5A must not stage, rewrite, clean, or otherwise touch those files.
+- `chatgpt-app/` does not exist and MCP Apps dependencies are not installed locally.
+  Any dependency setup must remain isolated to the new app-local package.
+- The current case model does not establish eviction posture. It lacks structured paper
+  type, court/case number, service or receipt event, hearing date, and counting-rule
+  facts. `evidence_date` is provenance metadata, not a verified service event.
+- The installed South Carolina pack is integrity/source checked but
+  `not_approved_for_matching`, retains historical-effective-date uncertainty, and does
+  not yet cover the complete eviction filing/service/response/hearing procedure. Any
+  deadline must currently be `not_calculable` with a null date.
+- The guide must summarize existing issue runs only. `POST .../issues/analyze` and
+  disposition are writes. Legacy date extraction, violation detection, global
+  retrieval, provider document analysis, and legal-cache paths do not satisfy this
+  slice's case/citation contract and are excluded.
+- Some service constructors can initialize schema, indexes, or the bundled pack. That
+  bootstrap behavior must be separated from the guidance query path before the MCP
+  tools can truthfully claim retry-safe, logical read-only behavior.
+- Synthetic mode must not instantiate the real backend client or read the case root.
+  Real-case ChatGPT use is a later data-egress/auth decision; the current backend API
+  key must never enter the widget, model-visible result, or `_meta`.
+- The compact widget should separate urgency from verification, display candidate-rule
+  approval separately from authority approval, and never repeat the desktop claim that
+  data stays on-device once data is sent through ChatGPT.
 
 ## 2026-08-16 Phase 2B evidence-import audit
 

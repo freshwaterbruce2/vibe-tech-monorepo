@@ -9,6 +9,7 @@ from typing import Any
 import uvicorn
 
 from vibe_justice.utils.env_validator import validate_environment
+from vibe_justice.utils.database import upgrade_database
 from vibe_justice.utils.paths import verify_permissions
 
 
@@ -47,6 +48,7 @@ def validate_startup() -> None:
         validate_environment(strict=True)
     resolve_bind_host()
     verify_permissions()
+    upgrade_database()
 
 
 def run_server(app: Any, *, reload: bool = False, port: int = 8000) -> None:

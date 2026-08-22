@@ -15,30 +15,8 @@
     "core:window:allow-maximize",
     "core:window:allow-unmaximize",
     "core:webview:default",
-    "shell:default",
-    {
-      "identifier": "shell:allow-open",
-      "allow": [
-        { "url": "^https?://(localhost|127\\.0\\.0\\.1|vibetech\\.com)" }
-      ]
-    },
-    "fs:default",
     "fs:allow-read-file",
     "fs:allow-write-file",
-    "fs:allow-read-dir",
-    "fs:allow-exists",
-    "fs:allow-app-read",
-    "fs:allow-app-write",
-    "fs:allow-app-read-recursive",
-    "fs:allow-app-write-recursive",
-    {
-      "identifier": "fs:scope",
-      "allow": [
-        "$APPDATA/*",
-        "$RESOURCE/*",
-        "D:/logs/vibe-justice/*"
-      ]
-    },
     "dialog:default",
     "dialog:allow-open",
     "dialog:allow-save",

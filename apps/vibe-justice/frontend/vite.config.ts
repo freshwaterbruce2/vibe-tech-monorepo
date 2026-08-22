@@ -2,6 +2,10 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
+if (process.env.TAURI_ENV_PLATFORM && process.env.VITE_VIBE_JUSTICE_API_KEY) {
+  throw new Error('Refusing to compile VITE_VIBE_JUSTICE_API_KEY into a Tauri production bundle')
+}
+
 // https://vite.dev/config/
 // Tauri 2.x compatible configuration
 export default defineConfig({
@@ -21,7 +25,7 @@ export default defineConfig({
     strictPort: true, // Tauri requires strict port
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true
       }
     },

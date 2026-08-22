@@ -9,11 +9,11 @@ from docx import Document
 from fastapi import HTTPException, UploadFile
 from PIL import Image
 from pypdf import PdfReader
-from sqlalchemy import event
-from sqlmodel import Session, SQLModel, create_engine, select
+from sqlmodel import Session, select
 from vibe_justice.api.cases import _load_case
 from vibe_justice.models.evidence import EvidenceRecord, ExtractionAttempt
 from vibe_justice.utils.paths import get_data_directory
+from vibe_justice.utils.database import create_runtime_engine, upgrade_database
 try:
     import filetype
 except ImportError:  # The pinned dependency is present in production; parsers remain authoritative.
@@ -31,18 +31,9 @@ class EvidenceImportService:
     def __init__(self):
         self.data_root = get_data_directory().resolve()
         self.staging_root = self.data_root / ".evidence-staging"; self.staging_root.mkdir(parents=True, exist_ok=True)
-        self.engine = create_engine(f"sqlite:///{(self.data_root/'vibe_justice.sqlite3').as_posix()}", connect_args={"check_same_thread":False})
-        @event.listens_for(self.engine, "connect")
-        def pragmas(connection, _):
-            cursor=connection.cursor(); cursor.execute("PRAGMA journal_mode=WAL"); cursor.execute("PRAGMA busy_timeout=5000"); cursor.execute("PRAGMA foreign_keys=ON"); cursor.close()
-        SQLModel.metadata.create_all(self.engine); self._migrate_schema(); self.reconcile()
-
-    def _migrate_schema(self):
-        """Apply narrow additive migrations needed by existing local databases."""
-        with self.engine.begin() as connection:
-            columns={row[1] for row in connection.exec_driver_sql("PRAGMA table_info(extraction_attempts)")}
-            if "text_sha256" not in columns:
-                connection.exec_driver_sql("ALTER TABLE extraction_attempts ADD COLUMN text_sha256 VARCHAR(64)")
+        upgrade_database()
+        self.engine = create_runtime_engine()
+        self.reconcile()
 
     @staticmethod
     def validate_filename(raw):

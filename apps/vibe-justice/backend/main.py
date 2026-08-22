@@ -4,7 +4,9 @@ FastAPI application for South Carolina legal research assistant
 Now powered by DeepSeek R1 reasoning model
 """
 
+from contextlib import asynccontextmanager
 import os
+import uuid
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI
@@ -19,7 +21,7 @@ load_dotenv()
 # importing `main` (which would cause a circular import). See utils/rate_limit.py.
 from vibe_justice.utils.rate_limit import limiter
 from vibe_justice.utils.auth import require_api_key
-from vibe_justice.utils.startup import docs_enabled
+from vibe_justice.utils.startup import docs_enabled, validate_startup
 
 from vibe_justice.api import (
     analysis,
@@ -36,6 +38,13 @@ from vibe_justice.api import (
     search,
 )
 
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    """Validate security and migrate storage before accepting requests."""
+    validate_startup()
+    yield
+
+
 # Create FastAPI app
 app = FastAPI(
     title="Vibe-Justice Backend",
@@ -44,7 +53,9 @@ app = FastAPI(
     docs_url="/docs" if docs_enabled() else None,
     redoc_url="/redoc" if docs_enabled() else None,
     openapi_url="/openapi.json" if docs_enabled() else None,
+    lifespan=lifespan,
 )
+app.state.instance_id = os.getenv("VIBE_JUSTICE_INSTANCE_ID", "").strip() or str(uuid.uuid4())
 
 # Wire limiter into app
 app.state.limiter = limiter
@@ -124,6 +135,17 @@ def health_check():
             "batch_formats": "/api/batch/supported-formats",
             "batch_status": "/api/batch/status/{batch_id}",
         },
+    }
+
+
+@app.get("/api/ready", dependencies=_authenticated)
+def readiness_check():
+    """Authenticated identity probe for the owning desktop sidecar."""
+    return {
+        "status": "ready",
+        "service": "Vibe-Justice Backend",
+        "pid": os.getpid(),
+        "instance_id": app.state.instance_id,
     }
 
 

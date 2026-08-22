@@ -14,8 +14,22 @@ from vibe_justice.utils.auth import require_api_key
 from vibe_justice.utils.rate_limit import limiter
 
 router = APIRouter(dependencies=[Depends(require_api_key)])
-ai_service = get_ai_service()
-retrieval_service = RetrievalService()
+ai_service = None
+retrieval_service = None
+
+
+def _ai_service():
+    global ai_service
+    if ai_service is None:
+        ai_service = get_ai_service()
+    return ai_service
+
+
+def _retrieval_service():
+    global retrieval_service
+    if retrieval_service is None:
+        retrieval_service = RetrievalService()
+    return retrieval_service
 
 
 class ChatRequest(BaseModel):
@@ -47,15 +61,16 @@ def simple_chat(request: Request, body: ChatRequest):
 
     try:
         # Get streaming response with reasoning
-        result = ai_service.generate_response_streaming(
+        service = _ai_service()
+        result = service.generate_response_streaming(
             body.message,
             body.domain,
             body.use_reasoning
         )
 
         # Determine which model was used
-        is_reasoning = body.use_reasoning if body.use_reasoning is not None else ai_service.is_complex_legal_query(body.message)
-        model_used = ai_service.reasoning_model if is_reasoning else ai_service.chat_model
+        is_reasoning = body.use_reasoning if body.use_reasoning is not None else service.is_complex_legal_query(body.message)
+        model_used = service.reasoning_model if is_reasoning else service.chat_model
 
         return ChatResponse(
             content=result["answer"],
@@ -82,14 +97,15 @@ def rag_chat(request: Request, body: ChatRequest):
 
     try:
         # Retrieve relevant context
-        context_chunks = retrieval_service.retrieve_context(
+        context_chunks = _retrieval_service().retrieve_context(
             body.message,
             body.domain
         )
 
         if context_chunks:
             # Use RAG response with context
-            result = ai_service.generate_rag_response_streaming(
+            service = _ai_service()
+            result = service.generate_rag_response_streaming(
                 body.message,
                 context_chunks,
                 body.domain,
@@ -97,14 +113,15 @@ def rag_chat(request: Request, body: ChatRequest):
             )
         else:
             # Fallback to simple response
-            result = ai_service.generate_response_streaming(
+            service = _ai_service()
+            result = service.generate_response_streaming(
                 body.message,
                 body.domain,
                 body.use_reasoning
             )
 
-        is_reasoning = body.use_reasoning if body.use_reasoning is not None else ai_service.is_complex_legal_query(body.message)
-        model_used = ai_service.reasoning_model if is_reasoning else ai_service.chat_model
+        is_reasoning = body.use_reasoning if body.use_reasoning is not None else service.is_complex_legal_query(body.message)
+        model_used = service.reasoning_model if is_reasoning else service.chat_model
 
         return ChatResponse(
             content=result["answer"],
