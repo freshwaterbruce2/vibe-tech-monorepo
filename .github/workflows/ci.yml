@@ -1,5 +1,4 @@
 # GitHub Actions CI for pnpm monorepo
-# Converted from .woodpecker.yml on 2026-03-09
 # Nx-affected quality gates + monorepo sync audit
 # Security: Actions pinned to commit SHAs, least-privilege permissions
 

@@ -1,6 +1,6 @@
 # Self-Healing Monorepo Configuration
 # Source of truth for safety rules and healing loop settings.
-# Read by: tools/self-healing/orchestrator.py, scripts/validate-auto-fix-safety.mjs
+# Read by: tools/self-healing/orchestrator.py
 
 safety:
   blocked_paths:
@@ -10,7 +10,7 @@ safety:
     - '**/*.env*'
     - '**/secrets/**'
     - '**/credentials/**'
-    - 'scripts/validate-auto-fix-safety.mjs'
+    - '.github/self-healing-config.yml'
     - '.github/workflows/ci.yml'
     - 'tools/self-healing/**'
     - '**/node_modules/**'

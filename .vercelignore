@@ -13,7 +13,6 @@
 .pnpm
 .serena
 .vscode
-.woodpecker
 _scripts
 _worktrees
 memory

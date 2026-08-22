@@ -16,7 +16,6 @@ pnpm-lock.yaml @freshwaterbruce2
 
 # Pre-commit hooks and quality gates
 .git/hooks/ @freshwaterbruce2
-scripts/validate-auto-fix-safety.mjs @freshwaterbruce2
 
 # Financial / trading system (NEVER auto-merge)
 apps/crypto-enhanced/ @freshwaterbruce2
