@@ -15,17 +15,7 @@ if (packageJsonFile.exists()) {
     }
 }
 
-def semverMatcher = (appVersionName =~ /^(\d+)\.(\d+)\.(\d+).*/)
-def appVersionCode = 1
-if (semverMatcher.matches()) {
-    def major = semverMatcher[0][1] as int
-    def minor = semverMatcher[0][2] as int
-    def patch = semverMatcher[0][3] as int
-    // Keep Android versionCode monotonic and derived from semver (major.minor.patch).
-    appVersionCode = (major * 10000) + (minor * 100) + patch
-} else {
-    logger.warn("Version '${appVersionName}' is not semver-like; using versionCode=1")
-}
+def appVersionCode = rootProject.ext.androidVersionCode
 
 android {
     namespace "com.vibetech.tutor"

@@ -26,11 +26,9 @@ From `apps/vibe-tutor/android`:
 
 ## 3) Versioning Rules
 
-- Source of truth: `apps/vibe-tutor/package.json` `version`.
-- `android/app/build.gradle` derives:
-  - `versionName` from package version.
-  - `versionCode` from semver as `major * 10000 + minor * 100 + patch`.
-- Keep package version monotonic for every release (`1.5.8` -> `1.5.9`, etc.).
+- `versionName` is read from `apps/vibe-tutor/package.json` `version`.
+- `versionCode` is an explicit Android release integer in `android/variables.gradle` (`androidVersionCode`). Increment it for every Play-uploadable AAB, even if `versionName` remains unchanged.
+- Keep both release identifiers monotonic; do not reuse a Play-uploaded `versionCode`.
 
 ## 4) Build and Validate with Nx
 
