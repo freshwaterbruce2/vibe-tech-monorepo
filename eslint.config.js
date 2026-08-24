@@ -732,6 +732,22 @@ export default tseslint.config(
     },
   },
 
+  // vibe-justice frontend tests are excluded from the build tsconfig; lint via lint tsconfig
+  {
+    files: [
+      'apps/vibe-justice/frontend/src/**/*.test.{ts,tsx}',
+      'apps/vibe-justice/frontend/src/**/*.spec.{ts,tsx}',
+      'apps/vibe-justice/frontend/src/**/__tests__/**/*.{ts,tsx}',
+    ],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+        projectService: false,
+        project: ['./apps/vibe-justice/frontend/tsconfig.lint.json'],
+      },
+    },
+  },
+
   // vibe-reflection: server and client have separate configs, use tsconfig.lint.json
   {
     files: ['apps/vibe-reflection/**/*.{ts,tsx}'],
