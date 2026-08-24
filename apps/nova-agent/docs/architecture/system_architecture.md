@@ -58,6 +58,23 @@ graph TD
 
 ## Key Components
 
+### Crash-safe task execution
+
+Autonomous task state is checkpointed in `agent_tasks.db` after each meaningful transition.
+`task_execution_checkpoints` stores a versioned, checksummed plan, progress summary, redacted and
+bounded tool-result summaries, approval binding, error summary, conversation state, preconditions,
+and the next action. `task_action_ledger` gives each effect a stable action ID and fingerprint so a
+completed action is reused rather than replayed.
+
+Startup never resumes work automatically. The task UI classifies saved work as resumable,
+awaiting approval, stale, corrupt, completed, or needing review. Checkpoints older than seven days,
+from another workspace, or with changed preconditions are review-only. A consequential action that
+was running when Nova stopped is marked uncertain and cannot be replayed automatically. Approval is
+bound to the checkpoint revision and action fingerprint, and Resume is an explicit user action.
+
+Checkpoint payloads must not be copied into logs or UI. The UI shows classification and a safe
+reason only; raw tool output remains bounded and redacted in the task database.
+
 ### 1. Context Awareness Engine
 
 - **Responsibility**: Monitors user activity to determine "Current Context".

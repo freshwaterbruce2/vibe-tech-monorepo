@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useGravityClaw, type GCMessage } from '@/hooks/useGravityClaw';
 import { useVoice } from '@/hooks/useVoice';
-import { AgentService, type PendingTask } from '@/services/AgentService';
+import { AgentService, type PendingTask, type ResumeCandidate } from '@/services/AgentService';
 import type { AgentState, ChatMessage } from '@/types/agent';
 import { Store } from '@tauri-apps/plugin-store';
 import { ChatSidebar } from './chat/ChatSidebar';
@@ -33,6 +33,7 @@ const ChatInterface = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [agentState, setAgentState] = useState<AgentState | null>(null);
   const [pendingTasks, setPendingTasks] = useState<PendingTask[]>([]);
+  const [resumeCandidates, setResumeCandidates] = useState<ResumeCandidate[]>([]);
   const [gravityClawMode, setGravityClawMode] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
 
@@ -193,9 +194,13 @@ const ChatInterface = () => {
       if (cancelled) return;
       let nextDelay = 15_000;
       try {
-        const tasks = await AgentService.getPendingTasks();
+        const [tasks, candidates] = await Promise.all([
+          AgentService.getPendingTasks(),
+          AgentService.getResumeCandidates(),
+        ]);
         if (!cancelled) {
           setPendingTasks(tasks);
+          setResumeCandidates(AgentService.filterResumeCandidates(candidates));
           nextDelay = tasks.length > 0 ? 5_000 : 15_000;
         }
       } catch {
@@ -383,6 +388,8 @@ const ChatInterface = () => {
         agentState={agentState}
         pendingTasks={pendingTasks}
         onTasksChange={setPendingTasks}
+        resumeCandidates={resumeCandidates}
+        onRecoveryChange={setResumeCandidates}
       />
     </div>
   );

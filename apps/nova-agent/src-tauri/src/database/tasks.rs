@@ -30,6 +30,28 @@ impl DatabaseService {
             "CREATE INDEX IF NOT EXISTS idx_task_tasks_app_source ON task_tasks(app_source)",
             [],
         )?;
+        self.ensure_task_resume_columns()?;
+        self.create_checkpoint_tables()?;
+        Ok(())
+    }
+
+    fn ensure_task_resume_columns(&self) -> rusqlite::Result<()> {
+        let mut stmt = self.tasks_db.prepare("PRAGMA table_info(task_tasks)")?;
+        let columns = stmt
+            .query_map([], |row| row.get::<_, String>(1))?
+            .collect::<rusqlite::Result<std::collections::HashSet<_>>>()?;
+        for (name, sql_type) in [
+            ("next_action", "TEXT"),
+            ("blocked_reason", "TEXT"),
+            ("stop_condition", "TEXT"),
+        ] {
+            if !columns.contains(name) {
+                self.tasks_db.execute(
+                    &format!("ALTER TABLE task_tasks ADD COLUMN {name} {sql_type}"),
+                    [],
+                )?;
+            }
+        }
         Ok(())
     }
 
@@ -40,7 +62,10 @@ impl DatabaseService {
             .as_secs() as i64;
 
         self.tasks_db.execute(
-            "INSERT OR REPLACE INTO task_tasks (id, title, status, priority, app_source, created_at, updated_at) VALUES (?1, ?2, ?3, 'normal', 'nova', ?4, ?5)",
+            "INSERT INTO task_tasks (id, title, status, priority, app_source, created_at, updated_at)
+             VALUES (?1, ?2, ?3, 'normal', 'nova', ?4, ?5)
+             ON CONFLICT(id) DO UPDATE SET title=excluded.title,status=excluded.status,
+             updated_at=excluded.updated_at",
             params![task_id, title, status, now, now],
         )?;
         Ok(())

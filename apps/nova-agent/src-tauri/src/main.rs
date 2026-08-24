@@ -14,13 +14,14 @@ mod guidance_engine;
 mod http_server;
 mod modules;
 mod task_executor;
+mod task_executor_support;
 mod websocket_client;
 
 use modules::{
-    calendar, copilot, credentials, db_handlers, execution, file_cleaner, filesystem, llm, memory,
-    orchestrator, pattern_engine, prediction_engine, procedural_memory, project, prompts, rag,
-    scheduler, screenshot, state::AgentState, state::AppState, state::Config, system_prompt, web,
-    computer_use,
+    calendar, computer_use, copilot, credentials, db_handlers, execution, file_cleaner, filesystem,
+    llm, memory, orchestrator, pattern_engine, prediction_engine, procedural_memory, project,
+    prompts, rag, scheduler, screenshot, state::AgentState, state::AppState, state::Config,
+    system_prompt, web,
 };
 
 struct IpcSender(tokio::sync::mpsc::Sender<websocket_client::IpcMessage>);
@@ -119,6 +120,12 @@ async fn main() {
                 Err(e) => {
                     error!("Failed to initialize database tables: {}", e);
                 }
+            }
+            if let Err(e) = service.mark_interrupted_actions() {
+                error!("Failed to classify interrupted task actions: {}", e);
+            }
+            if let Err(e) = service.retry_pending_continuation_cleanup() {
+                error!("Failed to retry task continuation cleanup: {}", e);
             }
             Some(service)
         }
@@ -398,6 +405,11 @@ async fn main() {
             db_handlers::health::db_health_check,
             db_handlers::health::get_storage_health,
             db_handlers::tasks::create_task,
+            db_handlers::checkpoints::get_resume_candidates,
+            db_handlers::checkpoints::resume_task,
+            db_handlers::checkpoints::decide_task_approval,
+            db_handlers::checkpoints::start_task_over,
+            db_handlers::checkpoints::reconcile_task_action,
             db_handlers::deep_work::get_deep_work_data,
             // Prediction Engine (ML-powered recommendations)
             prediction_engine::commands::get_task_prediction,

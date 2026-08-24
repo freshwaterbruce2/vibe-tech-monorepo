@@ -83,6 +83,7 @@ pub async fn chat_with_agent(
         &active_model,
         &config,
         &db,
+        None,
     )
     .await
     {

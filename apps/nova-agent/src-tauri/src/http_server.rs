@@ -157,6 +157,7 @@ async fn chat_handler(
         &active_model,
         &state.config,
         &state.db,
+        None,
     )
     .await
     {

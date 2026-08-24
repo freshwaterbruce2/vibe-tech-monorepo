@@ -6,7 +6,7 @@ use tokio::sync::Mutex as AsyncMutex;
 use tracing::info;
 
 use super::protocol::{get_tools, ChatCompletionRequest, ChatCompletionResponse, ThinkingConfig};
-use super::tools::{execute_tool_call, record_tool_call_outcome};
+use super::tool_checkpoint::{execute_checkpointed_tool, load_secure_continuation};
 async fn call_openai_compatible(
     api_key: &str,
     base_url: &str,
@@ -16,6 +16,7 @@ async fn call_openai_compatible(
     system_prompt: &str,
     supports_tools: bool,
     db: Arc<AsyncMutex<Option<database::DatabaseService>>>,
+    task_id: Option<String>,
 ) -> Result<String, String> {
     let client = reqwest::Client::new();
     let tools = if supports_tools {
@@ -61,6 +62,50 @@ async fn call_openai_compatible(
     });
 
     let max_iterations = 15; // Increased for complex multi-tool tasks
+
+    if let Some(task_id) = task_id.as_deref() {
+        let pending_reference = {
+            let guard = db.lock().await;
+            guard
+                .as_ref()
+                .and_then(|service| service.get_checkpoint(task_id).ok().flatten())
+                .and_then(|checkpoint| {
+                    checkpoint
+                        .content
+                        .next_action
+                        .get("secure_ref")?
+                        .as_str()
+                        .map(str::to_string)
+                })
+        };
+        if let Some(reference) = pending_reference {
+            let continuation = load_secure_continuation(&reference)?;
+            let tool_call = continuation.tool_call;
+            messages.push(ChatMessage {
+                role: "assistant".to_string(),
+                content: None,
+                tool_calls: Some(vec![tool_call.clone()]),
+                tool_call_id: None,
+                name: None,
+                reasoning_content: None,
+            });
+            let result = match continuation.result {
+                Some(result) => result,
+                None => {
+                    execute_checkpointed_tool(&tool_call, db.clone(), Some(task_id), &messages)
+                        .await?
+                }
+            };
+            messages.push(ChatMessage {
+                role: "tool".to_string(),
+                content: Some(result),
+                tool_calls: None,
+                tool_call_id: Some(tool_call.id),
+                name: Some(tool_call.function.name),
+                reasoning_content: None,
+            });
+        }
+    }
 
     for _ in 0..max_iterations {
         // Kimi K2.5 Configuration:
@@ -123,22 +168,13 @@ async fn call_openai_compatible(
                 if !tool_calls.is_empty() {
                     info!("🔧 Executing {} tool call(s)...", tool_calls.len());
                     for tool_call in tool_calls {
-                        let result = match tokio::time::timeout(
-                            std::time::Duration::from_secs(30),
-                            execute_tool_call(tool_call, db.clone()),
+                        let result = execute_checkpointed_tool(
+                            tool_call,
+                            db.clone(),
+                            task_id.as_deref(),
+                            &messages,
                         )
-                        .await
-                        {
-                            Ok(result) => result,
-                            Err(_) => {
-                                let result = format!(
-                                    "Tool '{}' timed out after 30s",
-                                    tool_call.function.name
-                                );
-                                record_tool_call_outcome(tool_call, &db, &result).await;
-                                result
-                            }
-                        };
+                        .await?;
 
                         messages.push(ChatMessage {
                             role: "tool".to_string(),
@@ -353,6 +389,7 @@ pub async fn dispatch_model_request(
     active_model: &str,
     config: &Config,
     db: &Arc<AsyncMutex<Option<database::DatabaseService>>>,
+    task_id: Option<&str>,
 ) -> Result<String, String> {
     let provider = resolve_provider(active_model, config)?;
 
@@ -374,6 +411,7 @@ pub async fn dispatch_model_request(
         system_prompt,
         provider.supports_tools,
         db.clone(),
+        task_id.map(str::to_string),
     )
     .await
 }
