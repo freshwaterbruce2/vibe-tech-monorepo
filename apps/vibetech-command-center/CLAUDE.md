@@ -1,7 +1,8 @@
 # Command Center — Session Invariants
 
 ## Stack (do not suggest alternatives)
-- Electron 33 + electron-vite
+
+- Electron 39 + electron-vite
 - React 19, TypeScript 5.9 strict
 - Tailwind + shadcn/ui for components
 - Zustand for state, TanStack Query for server state
@@ -10,6 +11,7 @@
 - pnpm only — npm corrupts the lockfile
 
 ## Rules
+
 - Windows 11. All paths backslashed. PowerShell 7+, chain with `;`.
 - No git. Manual zip backups via `Compress-Archive` before destructive changes.
 - Hard cap 500 lines per .ts/.tsx file. Components 200-300 lines target.
@@ -18,6 +20,7 @@
 - Dashboard ports: UI dev 5180, IPC/WS 3210. MCP server is stdio.
 
 ## Paths
+
 - App root: `V:\monorepo\apps\vibetech-command-center`
 - Monorepo root: `V:\monorepo`
 - Backups: `V:\monorepo\_backups\`
@@ -25,6 +28,7 @@
 - LanceDB (RAG): `D:\nova-agent-data\lance-db\`
 
 ## Before any destructive change
+
 Output the `Compress-Archive` command first, then the change. No exceptions.
 
 ## Ship state (post-Chunk 8)
